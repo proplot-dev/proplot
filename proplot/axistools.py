@@ -23,6 +23,8 @@ __all__ = [
     'AutoFormatter', 'CutoffScale', 'ExpScale',
     'FracFormatter', 'FuncScale',
     'InverseScale',
+    'LinearScale',
+    'LogitScale',
     'LogScale',
     'MercatorLatitudeScale', 'PowerScale', 'SimpleFormatter',
     'SineLatitudeScale',
@@ -468,17 +470,8 @@ def FracFormatter(symbol='', number=1):
     return mticker.FuncFormatter(f)
 
 #-----------------------------------------------------------------------------#
-# Simple scale overrides
+# Native scale overrides
 #-----------------------------------------------------------------------------#
-class _dummy_axis(object):
-    """Dummy axis used to initialize scales."""
-    # See notes in source code for `~matplotlib.scale.ScaleBase`. All scales
-    # accept 'axis' for backwards-compatibility reasons, but it is *virtually
-    # unused* except to check for the `axis_name` attribute in log scales to
-    # interpret input keyword args!
-    # TODO: Submit matplotlib pull request! How has no one fixed this already!
-    axis_name = 'x'
-
 def _scale_factory(scale, axis, *args, **kwargs):
     """If `scale` is a `~matplotlib.scale.ScaleBase` instance, nothing is
     done. If it is a registered scale name, that scale is looked up and
@@ -507,12 +500,91 @@ def _parse_logscale_args(kwargs, *keys):
             kwargs[key + 'x'] = value
     return kwargs
 
-class LogScale(mscale.LogScale):
+class _dummy_axis(object):
+    """Dummy axis used to initialize scales."""
+    # See notes in source code for `~matplotlib.scale.ScaleBase`. All scales
+    # accept 'axis' for backwards-compatibility reasons, but it is *virtually
+    # unused* except to check for the `axis_name` attribute in log scales to
+    # interpret input keyword args!
+    # TODO: Submit matplotlib pull request! How has no one fixed this already!
+    axis_name = 'x'
+
+class _Scale(object):
+    """Mixin scale class that standardizes required methods."""
+    def set_default_locators_and_formatters(self, axis, only_if_default=False):
+        """
+        Apply all locators and formatters defined as attributes on
+        initialization, and define defaults for all scales.
+
+        Parameters
+        ----------
+        axis : `~matplotlib.axis.Axis`
+            The axis.
+        only_if_default : bool, optional
+            Whether to refrain from updating the locators and formatters if
+            the axis is currently using non-default versions. Useful if we
+            want to avoid overwriting user customization when the scale
+            is changed.
+        """
+        # * We assert isDefault settings, because matplotlib does this in
+        #   axis._set_scale but sometimes we need to bypass this method!
+        # * Minor locator can be "non default" even when user has not changed
+        #   it, due to "turning minor ticks" on and off, so always apply
+        #   default if it is currently AutoMinorLocator.
+        if getattr(self, '_smart_bounds', None):
+            axis.set_smart_bounds(True) # unnecessary?
+        if not only_if_default or axis.isDefault_majloc:
+            axis.set_major_locator(
+                getattr(self, '_major_locator', None) or Locator('auto')
+                )
+            axis.isDefault_majloc = True
+        if not only_if_default or axis.isDefault_majfmt:
+            axis.set_major_formatter(
+                getattr(self, '_major_formatter', None) or Formatter('default')
+                )
+            axis.isDefault_majfmt = True
+        if (not only_if_default or axis.isDefault_minloc
+            or isinstance(axis.get_minor_locator(), mticker.AutoMinorLocator)):
+            name = axis.axis_name if axis.axis_name in 'xy' else 'x'
+            minor = 'minor' if rc.get(name + 'tick.minor.visible') else 'null'
+            axis.set_minor_locator(
+                getattr(self, '_minor_locator', None) or Locator(minor)
+                )
+            axis.isDefault_minloc = True
+        if (not only_if_default or axis.isDefault_minfmt
+            or isinstance(axis.get_minor_formatter(), mticker.NullFormatter)):
+            axis.set_minor_formatter(
+                getattr(self, '_minor_formatter', None) or Formatter('null')
+                )
+            axis.isDefault_minfmt = True
+    def get_transform(self):
+        """Returns the scale transform."""
+        return getattr(self, '_transform', mtransforms.IdentityTransform())
+
+class LinearScale(_Scale, mscale.LinearScale):
     """
-    As with `~matplotlib.scale.LogScale`, but fixes the inexplicable
-    choice to have separate "``x``" and "``y``" versions of each keyword argument.
+    As with `~matplotlib.scale.LinearScale`, but applies new default
+    major formatter.
+    """
+    name = 'linear'
+    """The registered scale name."""
+
+class LogitScale(_Scale, mscale.LogitScale):
+    """
+    As with `~matplotlib.scale.LogitScale`, but applies new default
+    major formatter.
+    """
+    name = 'logit'
+    """The registered scale name."""
+
+class LogScale(_Scale, mscale.LogScale):
+    """
+    As with `~matplotlib.scale.LogScale`, but applies new default major
+    formatter and fixes the inexplicable choice to have separate "``x``" and
+    "``y``" versions of each keyword argument.
     """
     name = 'log'
+    """The registered scale name."""
     def __init__(self, axis, **kwargs):
         """
         Parameters
@@ -533,24 +605,18 @@ class LogScale(mscale.LogScale):
         kwargs = _parse_logscale_args(kwargs,
             'base', 'nonpos', 'subs')
         super().__init__(axis, **kwargs)
+        self._major_locator = Locator('log', base=self.base)
+        self._minor_locator = Locator('log', base=self.base, subs=self.subs)
+        # self._major_formatter = Formatter('log')
 
-    def set_default_locators_and_formatters(self, axis):
-        """
-        Set the default locators and formatters.
-        """
-        axis.set_major_locator(Locator('log',
-            base=self.base))
-        axis.set_minor_locator(Locator('log',
-            base=self.base, subs=self.subs))
-        axis.set_major_formatter(Formatter('default')) # use 'log' instead?
-        axis.set_minor_formatter(Formatter('null'))
-
-class SymmetricalLogScale(mscale.SymmetricalLogScale):
+class SymmetricalLogScale(_Scale, mscale.SymmetricalLogScale):
     """
-    As with `~matplotlib.scale.SymmetricLogScale`, but fixes the inexplicable
-    choice to have separate "``x``" and "``y``" versions of each keyword argument.
+    As with `~matplotlib.scale.SymmetricLogScale`, but applies new default
+    major formatter and fixes the inexplicable choice to have separate "``x``"
+    and "``y``" versions of each keyword argument.
     """
     name = 'symlog'
+    """The registered scale name."""
     def __init__(self, axis, **kwargs):
         """
         Parameters
@@ -579,29 +645,25 @@ class SymmetricalLogScale(mscale.SymmetricalLogScale):
         kwargs = _parse_logscale_args(kwargs,
             'base', 'linthresh', 'linscale', 'subs')
         super().__init__(axis, **kwargs)
+        self._major_locator = Locator('symlog',
+                transform=self.get_transform()) # locator gets base and linthresh from transform
+        self._minor_locator = Locator('symlog',
+                transform=self.get_transform(), subs=self.subs)
+        # self._major_formatter = Formatter('symlog'))
 
-    def set_default_locators_and_formatters(self, axis):
-        """
-        Set the default locators and formatters.
-        """
-        axis.set_major_locator(Locator('symlog',
-            transform=self.get_transform())) # note locator gets base and linthresh from transform
-        axis.set_minor_locator(Locator('symlog',
-            transform=self.get_transform(), subs=self.subs))
-        axis.set_major_formatter(Formatter('default')) # use 'log' instead?
-        axis.set_minor_formatter(Formatter('null'))
-
-#-----------------------------------------------------------------------------#
-# Scales from functions
-#-----------------------------------------------------------------------------#
-class FuncScale(mscale.ScaleBase):
-    """Arbitrary scale with user-supplied forward and inverse functions and
+class FuncScale(_Scale, mscale.ScaleBase):
+    """
+    Arbitrary scale with user-supplied forward and inverse functions and
     arbitrary additional transform applied thereafter. Input is a tuple
     of functions and, optionally, a `~matplotlib.transforms.Transform` or
-    `~matplotlib.scale.ScaleBase` instance."""
+    `~matplotlib.scale.ScaleBase` instance.
+    """
     name = 'function'
     """The registered scale name."""
-    def __init__(self, axis, functions, transform=None):
+    def __init__(self, axis, functions, transform=None, scale=None,
+        major_locator=None, minor_locator=None,
+        major_formatter=None, minor_formatter=None,
+        ):
         """
         Parameters
         ----------
@@ -613,26 +675,32 @@ class FuncScale(mscale.ScaleBase):
         transform : `~matplotlib.transforms.Transform`, optional
             Additional transform applied after the forward function
             and before the inverse function.
+        major_locator, minor_locator : `~matplotlib.ticker.Locator`, optional
+            The default major and minor locator. By default these are the same
+            as `~matplotlib.scale.LinearScale`.
+        major_formatter, minor_formatter : `~matplotlib.ticker.Formatter`, optional
+            The default major and minor formatter. By default these are the
+            same as `~matplotlib.scale.LinearScale`.
         """
         if np.iterable(functions) and len(functions) == 2 and all(callable(ifunction) for ifunction in functions):
             forward, inverse = functions
         else:
             raise ValueError(f'This scale needs length-2 list of forward and inverse functions, not {functions!r}.')
-        trans = FuncTransform(forward, inverse)
+        functransform = FuncTransform(forward, inverse)
         if transform is not None:
             if isinstance(transform, mtransforms.Transform):
-                trans = trans + transform
+                functransform = functransform + transform
             else:
                 raise ValueError(f'transform {transform!r} must be a Transform instance, not {type(transform)!r}.')
-        self._transform = trans
-    def get_transform(self):
-        return self._transform
-    def set_default_locators_and_formatters(self, axis):
-        minor = 'minor' if rc.get('xtick.minor.visible') or rc.get('ytick.minor.visible') else 'null'
-        axis.set_major_locator(Locator('auto'))
-        axis.set_minor_locator(Locator(minor))
-        axis.set_major_formatter(Formatter('default'))
-        axis.set_minor_formatter(Formatter('null'))
+        self._transform = functransform
+        if major_locator:
+            self._major_locator = major_locator
+        if minor_locator:
+            self._minor_locator = minor_locator
+        if major_formatter:
+            self._major_formatter = major_formatter
+        if minor_formatter:
+            self._minor_formatter = minor_formatter
 
 class FuncTransform(mtransforms.Transform):
     # Arbitrary forward and inverse transform
@@ -654,9 +722,9 @@ class FuncTransform(mtransforms.Transform):
         return FuncTransform(self._inverse, self._forward)
 
 #-----------------------------------------------------------------------------#
-# Power axis scale
+# Custom scale classes
 #-----------------------------------------------------------------------------#
-class PowerScale(mscale.ScaleBase):
+class PowerScale(_Scale, mscale.ScaleBase):
     r"""
     Returns a "power scale" that performs the transformation
 
@@ -667,9 +735,8 @@ class PowerScale(mscale.ScaleBase):
     """
     name = 'power'
     """The registered scale name."""
-    def __init__(self,
-        axis, power=1, inverse=False, *, minpos=1e-300,
-        **kwargs):
+    def __init__(self, axis,
+        power=1, inverse=False, *, minpos=1e-300, **kwargs):
         """
         Parameters
         ----------
@@ -685,18 +752,12 @@ class PowerScale(mscale.ScaleBase):
         """
         super().__init__(axis)
         if not inverse:
-            transform = PowerTransform(power, minpos)
+            self._transform = PowerTransform(power, minpos)
         else:
-            transform = InvertedPowerTransform(power, minpos)
-        self._transform = transform
+            self._transform = InvertedPowerTransform(power, minpos)
     def limit_range_for_scale(self, vmin, vmax, minpos):
+        """Returns the range *vmin* and *vmax* limited to positive numbers."""
         return max(vmin, minpos), max(vmax, minpos)
-    def set_default_locators_and_formatters(self, axis):
-        axis.set_smart_bounds(True) # unnecessary?
-        axis.set_major_formatter(Formatter('default'))
-        axis.set_minor_formatter(Formatter('null'))
-    def get_transform(self):
-        return self._transform
 
 class PowerTransform(mtransforms.Transform):
     input_dims = 1
@@ -708,7 +769,7 @@ class PowerTransform(mtransforms.Transform):
         self.minpos = minpos
         self._power = power
     def transform(self, a):
-        aa = np.array(a).copy()
+        aa = np.array(a)
         aa[aa <= self.minpos] = self.minpos # necessary
         return np.power(np.array(a), self._power)
     def transform_non_affine(self, a):
@@ -726,7 +787,7 @@ class InvertedPowerTransform(mtransforms.Transform):
         self.minpos = minpos
         self._power = power
     def transform(self, a):
-        aa = np.array(a).copy()
+        aa = np.array(a)
         aa[aa <= self.minpos] = self.minpos # necessary
         return np.power(np.array(a), 1/self._power)
     def transform_non_affine(self, a):
@@ -734,10 +795,7 @@ class InvertedPowerTransform(mtransforms.Transform):
     def inverted(self):
         return PowerTransform(self._power, self.minpos)
 
-#-----------------------------------------------------------------------------#
-# Exp axis scale
-#-----------------------------------------------------------------------------#
-class ExpScale(mscale.ScaleBase):
+class ExpScale(_Scale, mscale.ScaleBase):
     """
     An "exponential scale". When `inverse` is ``False`` (the default), this
     performs the transformation
@@ -779,18 +837,12 @@ class ExpScale(mscale.ScaleBase):
         """
         super().__init__(axis)
         if not inverse:
-            transform = ExpTransform(a, b, c, minpos)
+            self._transform = ExpTransform(a, b, c, minpos)
         else:
-            transform = InvertedExpTransform(a, b, c, minpos)
-        self._transform = transform
+            self._transform = InvertedExpTransform(a, b, c, minpos)
     def limit_range_for_scale(self, vmin, vmax, minpos):
+        """Returns the range *vmin* and *vmax* limited to positive numbers."""
         return max(vmin, minpos), max(vmax, minpos)
-    def set_default_locators_and_formatters(self, axis):
-        axis.set_smart_bounds(True) # unnecessary?
-        axis.set_major_formatter(Formatter('default'))
-        axis.set_minor_formatter(Formatter('null'))
-    def get_transform(self):
-        return self._transform
 
 class ExpTransform(mtransforms.Transform):
     # Arbitrary exponential function
@@ -824,7 +876,7 @@ class InvertedExpTransform(mtransforms.Transform):
         self._b = b
         self._c = c
     def transform(self, a):
-        aa = np.array(a).copy()
+        aa = np.array(a)
         aa[aa <= self.minpos] = self.minpos # necessary
         return np.log(aa/self._c)/(self._b * np.log(self._a))
     def transform_non_affine(self, a):
@@ -832,10 +884,7 @@ class InvertedExpTransform(mtransforms.Transform):
     def inverted(self):
         return ExpTransform(self._a, self._b, self._c, self.minpos)
 
-#-----------------------------------------------------------------------------#
-# Cutoff axis
-#-----------------------------------------------------------------------------#
-class CutoffScale(mscale.ScaleBase):
+class CutoffScale(_Scale, mscale.ScaleBase):
     """Axis scale with arbitrary cutoffs that "accelerate" parts of the
     axis, "decelerate" parts of the axes, or discretely jumps between
     numbers.
@@ -888,13 +937,6 @@ class CutoffScale(mscale.ScaleBase):
             raise ValueError('For a discrete jump, need both lower and upper bounds. You just provided lower bounds.')
         super().__init__(axis)
         self._transform = CutoffTransform(scale, lower, upper)
-    def get_transform(self):
-        return self._transform
-    def set_default_locators_and_formatters(self, axis):
-        # TODO: add example to bug list, smart bounds screws up ticking!
-        # axis.set_smart_bounds(True) # may prevent ticks from extending off sides
-        axis.set_major_formatter(Formatter('default'))
-        axis.set_minor_formatter(Formatter('null'))
 
 class CutoffTransform(mtransforms.Transform):
     # Create transform object
@@ -974,10 +1016,7 @@ class InvertedCutoffTransform(mtransforms.Transform):
     def inverted(self):
         return CutoffTransform(self._scale, self._lower, self._upper)
 
-#-----------------------------------------------------------------------------#
-# Cartographic scales
-#-----------------------------------------------------------------------------#
-class MercatorLatitudeScale(mscale.ScaleBase):
+class MercatorLatitudeScale(_Scale, mscale.ScaleBase):
     r"""
     Scales axis as with latitude in the `Mercator projection
     <http://en.wikipedia.org/wiki/Mercator_projection>`__. Adapted from `this
@@ -1011,15 +1050,14 @@ class MercatorLatitudeScale(mscale.ScaleBase):
         super().__init__(axis)
         if thresh >= 90.0:
             raise ValueError('Threshold "thresh" must be <=90.')
-        self.thresh = thresh
-    def get_transform(self):
-        return MercatorLatitudeTransform(self.thresh)
+        self._thresh = thresh
+        self._transform = MercatorLatitudeTransform(thresh)
+        self._major_formatter = Formatter('deg')
+        self._smart_bounds = True
     def limit_range_for_scale(self, vmin, vmax, minpos):
-        return max(vmin, -self.thresh), min(vmax, self.thresh)
-    def set_default_locators_and_formatters(self, axis):
-        axis.set_smart_bounds(True)
-        axis.set_major_formatter(Formatter('deg'))
-        axis.set_minor_formatter(Formatter('null'))
+        """Returns the range *vmin* and *vmax* limited to some range within
+        +/-90 degrees (exclusive)."""
+        return max(vmin, -self._thresh), min(vmax, self._thresh)
 
 class MercatorLatitudeTransform(mtransforms.Transform):
     # Default attributes
@@ -1029,18 +1067,18 @@ class MercatorLatitudeTransform(mtransforms.Transform):
     has_inverse = True
     def __init__(self, thresh):
         super().__init__()
-        self.thresh = thresh
+        self._thresh = thresh
     def transform_non_affine(self, a):
         # With safeguards
         # TODO: Can improve this?
         a = np.deg2rad(a) # convert to radians
-        m = ma.masked_where((a < -self.thresh) | (a > self.thresh), a)
+        m = ma.masked_where((a < -self._thresh) | (a > self._thresh), a)
         if m.mask.any():
             return ma.log(np.abs(ma.tan(m) + 1/ma.cos(m)))
         else:
             return np.log(np.abs(np.tan(a) + 1/np.cos(a)))
     def inverted(self):
-        return InvertedMercatorLatitudeTransform(self.thresh)
+        return InvertedMercatorLatitudeTransform(self._thresh)
 
 class InvertedMercatorLatitudeTransform(mtransforms.Transform):
     # As above, but for the inverse transform
@@ -1050,14 +1088,14 @@ class InvertedMercatorLatitudeTransform(mtransforms.Transform):
     has_inverse = True
     def __init__(self, thresh):
         super().__init__()
-        self.thresh = thresh
+        self._thresh = thresh
     def transform_non_affine(self, a):
-        # m = ma.masked_where((a < -self.thresh) | (a > self.thresh), a)
+        # m = ma.masked_where((a < -self._thresh) | (a > self._thresh), a)
         return np.rad2deg(np.arctan2(1, np.sinh(a))) # always assume in first/fourth quadrant, i.e. go from -pi/2 to pi/2
     def inverted(self):
-        return MercatorLatitudeTransform(self.thresh)
+        return MercatorLatitudeTransform(self._thresh)
 
-class SineLatitudeScale(mscale.ScaleBase):
+class SineLatitudeScale(_Scale, mscale.ScaleBase):
     r"""
     Scales axis to be linear in the *sine* of *x* in degrees.
     The scale function is as follows.
@@ -1082,14 +1120,13 @@ class SineLatitudeScale(mscale.ScaleBase):
             The matplotlib axis. Required for compatibility reasons.
         """
         super().__init__(axis)
-    def get_transform(self):
-        return SineLatitudeTransform()
+        self._transform = SineLatitudeTransform()
+        self._major_formatter = Formatter('deg')
+        self._smart_bounds = True
     def limit_range_for_scale(self, vmin, vmax, minpos):
+        """Returns the range *vmin* and *vmax* limited to some range within
+        +/-90 degrees (inclusive)."""
         return max(vmin, -90), min(vmax, 90)
-    def set_default_locators_and_formatters(self, axis):
-        axis.set_smart_bounds(True)
-        axis.set_major_formatter(Formatter('deg'))
-        axis.set_minor_formatter(Formatter('null'))
 
 class SineLatitudeTransform(mtransforms.Transform):
     # Default attributes
@@ -1129,10 +1166,7 @@ class InvertedSineLatitudeTransform(mtransforms.Transform):
     def inverted(self):
         return SineLatitudeTransform()
 
-#-----------------------------------------------------------------------------#
-# Other transformations
-#-----------------------------------------------------------------------------#
-class InverseScale(mscale.ScaleBase):
+class InverseScale(_Scale, mscale.ScaleBase):
     r"""
     Scales axis to be linear in the *inverse* of *x*. The scale
     function and inverse scale function are as follows.
@@ -1149,29 +1183,22 @@ class InverseScale(mscale.ScaleBase):
     # Declare name
     name = 'inverse'
     """The registered scale name."""
-    def __init__(self, axis, minpos=1e-300, **kwargs):
+    def __init__(self, axis, **kwargs):
         """
         Parameters
         ----------
         axis : `~matplotlib.axis.Axis`
             The matplotlib axis. Required for compatibility reasons.
-        minpos : float, optional
-            The minimum permissible value, used to truncate negative values.
         """
         super().__init__(axis)
-        self.minpos = minpos
-    def get_transform(self):
-        return InverseTransform(self.minpos)
+        self._transform = InverseTransform()
+        self._major_locator = Locator('log', base=10, subs=(1, 2, 5))
+        self._minor_locator = Locator('log', base=10, subs='auto')
+        self._smart_bounds = True
+        # self._minor_formatter = Fromatter('log')
     def limit_range_for_scale(self, vmin, vmax, minpos):
+        """Returns the range *vmin* and *vmax* limited to positive numbers."""
         return max(vmin, minpos), max(vmax, minpos)
-    def set_default_locators_and_formatters(self, axis):
-        # TODO: Fix minor locator issue
-        # NOTE: Log formatter can ignore certain major ticks! Why is that?
-        axis.set_smart_bounds(True) # may prevent ticks from extending off sides
-        axis.set_major_locator(Locator('log', base=10, subs=(1, 2, 5)))
-        axis.set_minor_locator(Locator('log', base=10, subs='auto'))
-        axis.set_major_formatter(Formatter('default')) # use 'log' instead?
-        axis.set_minor_formatter(Formatter('null')) # use 'minorlog' instead?
 
 class InverseTransform(mtransforms.Transform):
     # Create transform object
@@ -1179,20 +1206,18 @@ class InverseTransform(mtransforms.Transform):
     output_dims = 1
     is_separable = True
     has_inverse = True
-    def __init__(self, minpos):
+    def __init__(self):
         super().__init__()
-        self.minpos = minpos
     def transform(self, a):
         a = np.array(a)
-        aa = a.copy()
         # f = np.abs(a) <= self.minpos # attempt for negative-friendly
         # aa[f] = np.sign(a[f])*self.minpos
-        aa[aa <= self.minpos] = self.minpos
-        return 1.0/aa
+        with np.errstate(divide='ignore', invalid='ignore'):
+            return 1.0/a
     def transform_non_affine(self, a):
         return self.transform(a)
     def inverted(self):
-        return InverseTransform(self.minpos)
+        return InverseTransform()
 
 #-----------------------------------------------------------------------------#
 # Declare dictionaries
@@ -1265,6 +1290,8 @@ if mscale.scale_factory is not _scale_factory:
 mscale.register_scale(CutoffScale)
 mscale.register_scale(ExpScale)
 mscale.register_scale(LogScale)
+mscale.register_scale(LinearScale)
+mscale.register_scale(LogitScale)
 mscale.register_scale(FuncScale)
 mscale.register_scale(PowerScale)
 mscale.register_scale(SymmetricalLogScale)
