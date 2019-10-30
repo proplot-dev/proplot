@@ -187,7 +187,6 @@ from . import utils
 from .utils import _counter, _timer, DEBUG
 import re
 import os
-import sys
 import yaml
 import cycler
 import warnings
