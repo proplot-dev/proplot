@@ -804,14 +804,14 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             is the colormap name. Valid extensions are described in
             the below table.
 
-            =====================  ==================================================================================================================
+            =====================  ==========================================================
             Extension              Description
-            =====================  ==================================================================================================================
+            =====================  ==========================================================
             ``.json`` (default)    JSON database of the channel segment data.
-            ``.hex``               List of HEX strings in any format (comma-separated, separate lines, with double quotes... anything goes).
-            ``.rgb``, ``.txt``     3-column table delimited by commas or consecutive spaces, each column indicating red, blue and green color values.
-            ``.rgba``              As with ``.rgb``, but with a trailing opacity (or "alpha") column.
-            =====================  ==================================================================================================================
+            ``.hex``               Comma-delimited list of HEX strings.
+            ``.rgb``, ``.txt``     3-column table of comma-delimited RGB values.
+            ``.rgba``              As with ``.rgb``, but with an opacity (or "alpha") column.
+            =====================  ==========================================================
         """
         dirname = os.path.join('~', '.proplot', 'cmaps')
         filename = self._parse_path(path, dirname, 'json')
@@ -1044,13 +1044,13 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
             is the colormap name. Valid extensions are described in
             the below table.
 
-            =====================  ==================================================================================================================
+            =====================  ==========================================================
             Extension              Description
-            =====================  ==================================================================================================================
-            ``.hex`` (default)     List of HEX strings in any format (comma-separated, separate lines, with double quotes... anything goes).
-            ``.rgb``, ``.txt``     3-column table delimited by commas or consecutive spaces, each column indicating red, blue and green color values.
-            ``.rgba``              As with ``.rgb``, but with a trailing opacity (or "alpha") column.
-            =====================  ==================================================================================================================
+            =====================  ==========================================================
+            ``.hex`` (default)     Comma-delimited list of HEX strings.
+            ``.rgb``, ``.txt``     3-column table of comma-delimited RGB values.
+            ``.rgba``              As with ``.rgb``, but with an opacity (or "alpha") column.
+            =====================  ==========================================================
         """
         dirname = os.path.join('~', '.proplot', 'cmaps')
         filename = self._parse_path(path, dirname, 'hex')
@@ -1774,7 +1774,7 @@ def Cycle(*args, samples=None, name=None,
         * If `~matplotlib.colors.ListedColormap`, colors from the ``colors``
           attribute are used.
         * If string color cycle name, that `~matplotlib.colors.ListedColormap`
-          is looked up and its ``colors`` attribute is used.
+          is looked up and its ``colors`` attribute is used. See `cycles`.
         * Otherwise, the argument is passed to `Colormap`, and colors
           from the resulting `~matplotlib.colors.LinearSegmentedColormap`
           are used. See the `samples` argument.
@@ -1878,7 +1878,7 @@ def Cycle(*args, samples=None, name=None,
             colors = cmap(samples)
 
         # Register and save the samples as a ListedColormap
-        name = name or 'no_name'
+        name = name or '_no_name'
         cmap = ListedColormap(colors, name=name, N=N)
         mcm.cmap_d[name] = cmap
         if save:
