@@ -35,6 +35,8 @@ __all__ = [
     'cmaps', 'cycles', 'colordict',
     'fonts', 'fonts_system', 'fonts_proplot',
     'colors',
+    'ListedColormap',
+    'LinearSegmentedColormap',
     'make_mapping_array',
     'register_cmaps', 'register_colors', 'register_cycles', 'register_fonts',
     'saturate', 'shade', 'show_cmaps', 'show_channels',
