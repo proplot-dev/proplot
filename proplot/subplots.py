@@ -1938,7 +1938,7 @@ def subplots(array=None, ncols=1, nrows=1,
     nums = np.unique(array[array != 0])
     naxs = len(nums)
     if {*nums.flat} != {*range(1, naxs+1)}:
-        raise ValueError('Invalid subplot array {array!r}. Numbers must span integers 1 to naxs (i.e. cannot skip over numbers), with 0 representing empty spaces.')
+        raise ValueError(f'Invalid subplot array {array!r}. Numbers must span integers 1 to naxs (i.e. cannot skip over numbers), with 0 representing empty spaces.')
     if ref not in nums:
         raise ValueError(f'Invalid reference number {ref!r}. For array {array!r}, must be one of {nums}.')
     nrows, ncols = array.shape
