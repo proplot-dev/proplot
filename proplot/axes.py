@@ -15,7 +15,6 @@ start with the documentation on the following methods.
 axis labels, tick locations, tick labels grid lines, axis scales, titles,
 a-b-c labelling, adding geographic features, and much more.
 """
-import re
 import numpy as np
 import warnings
 import functools
@@ -23,6 +22,7 @@ from numbers import Integral
 import matplotlib.projections as mproj
 import matplotlib.axes as maxes
 import matplotlib.dates as mdates
+import matplotlib.scale as mscale
 import matplotlib.text as mtext
 import matplotlib.ticker as mticker
 import matplotlib.patches as mpatches
@@ -188,10 +188,10 @@ class Axes(maxes.Axes):
         # Shared and spanning axes
         if main:
             self.figure._axes_main.append(self)
-        self._spanx = spanx # boolean toggles, whether we want to span axes labels
-        self._spany = spany
-        self._alignx = alignx
-        self._aligny = aligny
+        self._spanx_on = spanx
+        self._spany_on = spany
+        self._alignx_on = alignx
+        self._aligny_on = aligny
         self._sharex_level = sharex
         self._sharey_level = sharey
         self._share_setup()
@@ -214,6 +214,8 @@ class Axes(maxes.Axes):
         s = side[0]
         if s not in 'lrbt':
             raise ValueError(f'Invalid side {side!r}.')
+        if not hasattr(self, 'get_subplotspec'):
+            return [self]
         x = ('x' if s in 'lr' else 'y')
         idx = (0 if s in 'lt' else 1) # which side of range to test
         coord = self._range_gridspec(x)[idx] # side for a particular axes
@@ -229,6 +231,8 @@ class Axes(maxes.Axes):
         gridspec matches the horizontal or vertical extend of this axes.
         Also sorts the list so the leftmost or bottommost axes is at the
         start of the list."""
+        if not hasattr(self, 'get_subplotspec'):
+            return [self]
         y = ('y' if x == 'x' else 'x')
         idx = (0 if x == 'x' else 1)
         argfunc = (np.argmax if x == 'x' else np.argmin)
@@ -308,11 +312,6 @@ class Axes(maxes.Axes):
             obj.set_transform(self.transAxes)
         return loc, obj, kw
 
-    def _hide_labels(self):
-        """Defaults as a no-op. Implemented only for cartesian axes."""
-        # TODO: Implement for rectangular projection axes!
-        pass
-
     @staticmethod
     def _loc_translate(loc, **kwargs):
         """Translates location string `loc` into a standardized form."""
@@ -333,8 +332,7 @@ class Axes(maxes.Axes):
         return inset_locator
 
     def _range_gridspec(self, x):
-        """Gets the column or row range for the axes. Use `topmost` to get
-        properties for the main gridspec grid."""
+        """Gets the column or row range for the axes."""
         subplotspec = self.get_subplotspec()
         if x == 'x':
             _, _, _, _, col1, col2 = subplotspec.get_active_rows_columns()
@@ -977,6 +975,7 @@ class Axes(maxes.Axes):
             self.yaxis.set_visible(False)
             self.patch.set_alpha(0)
             self._panel_filled = True
+
             # Draw colorbar with arbitrary length relative to full length of panel
             side = self._panel_side
             length = _notNone(length, rc['colorbar.length'])
@@ -1002,6 +1001,7 @@ class Axes(maxes.Axes):
             if ax is self:
                 raise ValueError(f'Uh oh.')
             self.add_child_axes(ax)
+
             # Location
             if side in ('bottom','top'):
                 outside, inside = 'bottom', 'top'
@@ -1015,6 +1015,7 @@ class Axes(maxes.Axes):
                     outside, inside = inside, outside
                 ticklocation = outside
                 orientation  = 'vertical'
+
             # Keyword args and add as child axes
             orient = kwargs.get('orientation', None)
             if orient is not None and orient != orientation:
@@ -1033,6 +1034,7 @@ class Axes(maxes.Axes):
             cblength = units(_notNone(cblength, rc['colorbar.insetlength']))/width
             pad = units(_notNone(pad, rc['colorbar.axespad']))
             xpad, ypad = pad/width, pad/height
+
             # Get location in axes-relative coordinates
             # Bounds are x0, y0, width, height in axes-relative coordinate to start
             if kwargs.get('label', ''):
@@ -1056,6 +1058,7 @@ class Axes(maxes.Axes):
                 raise ValueError(f'Invalid colorbar location {loc!r}.')
             bounds = (bounds[0], bounds[1], cblength, cbwidth)
             fbounds = (fbounds[0], fbounds[1], 2*xpad + cblength, 2*ypad + cbwidth + xspace)
+
             # Make frame
             # NOTE: We do not allow shadow effects or fancy edges effect.
             # Also keep zorder same as with legend.
@@ -1073,12 +1076,14 @@ class Axes(maxes.Axes):
                 patch.update({'alpha':alpha, 'linewidth':linewidth,
                               'edgecolor':edgecolor, 'facecolor':facecolor})
                 self.add_artist(patch)
+
             # Make axes
             locator = self._make_inset_locator(bounds, self.transAxes)
             bbox = locator(None, None)
             ax = maxes.Axes(self.figure, bbox.bounds, zorder=5)
             ax.set_axes_locator(locator)
             self.add_child_axes(ax)
+
             # Default keyword args
             orient = kwargs.pop('orientation', None)
             if orient is not None and orient != 'horizontal':
@@ -1181,7 +1186,6 @@ class Axes(maxes.Axes):
 
     def draw(self, renderer=None, *args, **kwargs):
         """Adds post-processing steps before axes is drawn."""
-        self._hide_labels()
         self._reassign_title()
         super().draw(renderer, *args, **kwargs)
 
@@ -1195,7 +1199,6 @@ class Axes(maxes.Axes):
     def get_tightbbox(self, renderer, *args, **kwargs):
         """Adds post-processing steps before tight bounding box is
         calculated, and stores the bounding box as an attribute."""
-        self._hide_labels()
         self._reassign_title()
         bbox = super().get_tightbbox(renderer, *args, **kwargs)
         self._tight_bbox = bbox
@@ -1478,9 +1481,118 @@ class Axes(maxes.Axes):
 #-----------------------------------------------------------------------------#
 # Axes subclasses
 #-----------------------------------------------------------------------------#
+dualxy_kwargs = (
+    'label', 'locator', 'formatter', 'ticks', 'ticklabels',
+    'minorlocator', 'minorticks', 'tickminor',
+    'ticklen', 'tickrange', 'tickdir', 'ticklabeldir', 'tickrotation',
+    'bounds', 'margin', 'color', 'grid', 'gridminor', 'gridcolor',
+    )
+
+dualxy_descrip = """
+Makes a secondary *%(x)s* axis for denoting equivalent *%(x)s*
+coordinates in *alternate units*.
+
+Parameters
+----------
+forward : function, optional
+    Function used to transform units from the original axis to the
+    secondary axis. Should take 1 value and perform a *forward
+    linear transformation*. For example, to convert Kelvin to Celsius,
+    use ``ax.dual%(x)s(lambda x: x - 273.15)``. To convert kilometers to
+    meters, use ``ax.dual%(x)s(lambda x: x*1e3)``.
+inverse : function, optional
+    Function used to transform units from the secondary axis back to
+    the original axis. If `forward` was a non-linear function, you
+    *must* provide this, or the transformation will be incorrect!
+
+    For example, to apply the square, use
+    ``ax.dual%(x)s(lambda x: x**2, lambda x: x**0.5)``.
+scale : scale-spec, optional
+    The axis scale from which forward and inverse transformations
+    are inferred. Passed to `~proplot.axistools.Scale`.
+
+    For example, to apply the inverse, use ``ax.dual%(x)s('inverse')``;
+    To apply the base-10 exponential function, use
+    ``ax.dual%(x)s(('exp', 10, 1, 10))`` or ``ax.dual%(x)s(plot.Scale('exp', 10))``.
+scale_kw : dict-like, optional
+    Ignored if `scale` is ``None``. Passed to
+    `~proplot.axistools.Scale`.
+%(args)s : optional
+    Prepended with ``'y'`` and passed to `Axes.format`.
+"""
+
+altxy_descrip = """
+Alias and more intuitive name for `~CartesianAxes.twin%(y)s`.
+The matplotlib `~matplotlib.axes.Axes.twiny` function
+generates two *x* axes with a shared ("twin") *y* axis.
+Enforces the following settings.
+
+* Places the old *%(x)s* axis on the %(x1)s and the new *%(x)s* axis
+  on the %(x2)s.
+* Makes the old %(x2)s spine invisible and the new %(x1)s, %(y1)s,
+  and %(y2)s spines invisible.
+* Adjusts the *%(x)s* axis tick, tick label, and axis label positions
+  according to the visible spine positions.
+* Locks the old and new *%(y)s* axis limits and scales, and makes the new
+  %(y)s axis labels invisible.
+"""
+
+twinxy_descrip = """
+Mimics matplotlib's `~matplotlib.axes.Axes.twin%(y)s`.
+Enforces the following settings.
+
+* Places the old *%(x)s* axis on the %(x1)s and the new *%(x)s* axis
+  on the %(x2)s.
+* Makes the old %(x2)s spine invisible and the new %(x1)s, %(y1)s,
+  and %(y2)s spines invisible.
+* Adjusts the *%(x)s* axis tick, tick label, and axis label positions
+  according to the visible spine positions.
+* Locks the old and new *%(y)s* axis limits and scales, and makes the new
+  %(y)s axis labels invisible.
+"""
+
+def _parse_dualxy_args(x, transform, transform_kw, kwargs):
+    """Interprets the dualx and dualy transform and various keyword
+    arguments. Returns a list of forward transform, inverse transform, and
+    overrides for default locators and formatters."""
+    # Transform using input functions
+    # TODO: Also support transforms? Probably not -- transforms are a huge
+    # group that include ND and non-invertable transformations, but transforms
+    # used for axis scales are subset of invertible 1D functions
+    defaults = None
+    transform_kw = transform_kw or {}
+    if isinstance(transform, (str, mscale.ScaleBase)) or transform_kw:
+        transform = transform or 'linear'
+        scale = axistools.Scale(transform, **transform_kw)
+        defaults = scale.set_default_locators_and_formatters
+        transform = scale.get_transform()
+        funcs = (transform.transform, transform.inverted().transform, defaults)
+    elif np.iterable(transform) and len(transform) == 2 and all(callable(itransform) for itransform in transform):
+        funcs = (*transform, None)
+    elif callable(transform):
+        funcs = (transform, lambda x: x, None)
+    else:
+        raise ValueError(f'Invalid transform {transform!r}. Must be function, tuple of two functions, or scale name.')
+    # Parse keyword arguments
+    kwargs_bad = {}
+    for key in (*kwargs.keys(),):
+        value = kwargs.pop(key)
+        if key[0] == x and key[1:] in dualxy_kwargs:
+            warnings.warn(f'dual{x}() keyword arg {key!r} is deprecated. Use {key[1:]!r} instead.')
+            kwargs[key] = value
+        elif key in dualxy_kwargs:
+            kwargs[x + key] = value
+        else:
+            kwargs_bad[key] = value
+        if kwargs_bad:
+            raise TypeError(f'dual{x}() got unexpected keyword argument(s): {kwargs_bad}')
+    return funcs, kwargs
+
 def _rcloc_to_stringloc(x, string): # figures out string location
-    """Gets *location string* from the *boolean* rc settings, for a given
-    string prefix like ``'axes.spines'`` or ``'xtick'``."""
+    """Gets *location string* from the *boolean* "left", "right", "top", and
+    "bottom" rc settings, e.g. :rc:`axes.spines.left` or :rc:`ytick.left`.
+    Might be ``None`` if settings are unchanged."""
+    # For x axes
     if x == 'x':
         top = rc[f'{string}.top']
         bottom = rc[f'{string}.bottom']
@@ -1494,7 +1606,8 @@ def _rcloc_to_stringloc(x, string): # figures out string location
             return 'bottom'
         else:
             return 'neither'
-    elif x == 'y':
+    # For y axes
+    else:
         left = rc[f'{string}.left']
         right = rc[f'{string}.right']
         if left is None and right is None:
@@ -1507,8 +1620,6 @@ def _rcloc_to_stringloc(x, string): # figures out string location
             return 'right'
         else:
             return 'neither'
-    else:
-        raise ValueError(f'"x" must equal "x" or "y".')
 
 class CartesianAxes(Axes):
     """
@@ -1532,14 +1643,15 @@ class CartesianAxes(Axes):
         self.yaxis.isDefault_majfmt = True
         # Custom attributes
         self._datex_rotated = False # whether to automatically apply rotation to datetime labels during post processing
-        self._dualy_scale = None # for scaling units on opposite side of ax
-        self._dualx_scale = None
+        self._dualy_funcs = None # for scaling units on opposite side of ax
+        self._dualx_funcs = None
 
     def _altx_overrides(self):
         """Applies alternate *x* axis overrides."""
         # Unlike matplotlib API, we strong arm user into certain twin axes
         # settings... doesn't really make sense to have twin axes without this
         if self._altx_child is not None: # altx was called on this axes
+            self._shared_y_axes.join(self, self._altx_child)
             self.spines['top'].set_visible(False)
             self.spines['bottom'].set_visible(True)
             self.xaxis.tick_bottom()
@@ -1557,6 +1669,7 @@ class CartesianAxes(Axes):
     def _alty_overrides(self):
         """Applies alternate *y* axis overrides."""
         if self._alty_child is not None:
+            self._shared_x_axes.join(self, self._alty_child)
             self.spines['right'].set_visible(False)
             self.spines['left'].set_visible(True)
             self.yaxis.tick_left()
@@ -1587,42 +1700,67 @@ class CartesianAxes(Axes):
             label.update(kw)
         self._datex_rotated = True # do not need to apply more than once
 
-    def _dualx_lock(self):
-        """Locks child "dual" x-axis limits to the parent."""
+    def _dualx_overrides(self, locators_formatters=False):
+        """Locks child "dual" *x* axis limits to the parent."""
         # Why did I copy and paste the dualx/dualy code you ask? Copy
         # pasting is bad, but so are a bunch of ugly getattr(attr)() calls
-        scale = self._dualx_scale
-        if scale is None:
+        funcs = self._dualx_funcs
+        if funcs is None:
             return
+        # Build the FuncScale
+        # Sometimes we do *not* want to apply default locator and formatter
+        # overrides, in case user has manually changed them! Also, sometimes
+        # we want to borrow method that sets default from the scale from which
+        # forward and inverse funcs were drawn, instead of from FuncScale.
+        scale = self.xaxis._scale
+        transform = scale.get_transform()
         child = self._altx_child
-        xlim = self.get_xlim()
-        xscale = self.get_xscale()
-        if any(np.array(xlim) <= 0) and re.match('^(log|inverse)', xscale):
-            raise ValueError(f'Axis limits go negative, but "alternate units" axis uses {xscale!r} scale.')
-        # Transform axis limits with axis scale transform
-        transform = child.xaxis._scale.get_transform()
-        nlim = transform.inverted().transform(np.array(xlim))
+        funcscale = axistools.Scale('function', funcs[1::-1], transform)
+        if locators_formatters:
+            if funcs[2] is not None:
+                funcs[2](child.xaxis)
+            elif not isinstance(scale, mscale.LinearScale):
+                scale.set_default_locators_and_formatters(child.xaxis)
+            else:
+                funcscale.set_default_locators_and_formatters(child.xaxis)
+        child.xaxis._scale = funcscale
+        child._update_transScale()
+        child.stale = True
+        child.autoscale_view(scaley=False)
+        # Transform axis limits
         # If the transform flipped the limits, when we set axis limits, it
         # will get flipped again! So reverse the flip
-        if np.sign(np.diff(xlim)) != np.sign(np.diff(nlim)):
+        lim = self.get_xlim()
+        nlim = list(map(funcs[0], np.array(lim)))
+        if np.sign(np.diff(lim)) != np.sign(np.diff(nlim)):
             nlim = nlim[::-1]
-        child.set_xlim(scale[0] + scale[1]*nlim)
+        child.set_xlim(nlim)
 
-    def _dualy_lock(self):
-        """Locks child "dual" y-axis limits to the parent."""
-        scale = self._dualy_scale
-        if scale is None:
+    def _dualy_overrides(self, locators_formatters=False):
+        """Locks child "dual" *y* axis limits to the parent."""
+        funcs = self._dualy_funcs
+        if funcs is None:
             return
+        scale = self.yaxis._scale
+        transform = scale.get_transform()
         child = self._alty_child
-        ylim = self.get_ylim()
-        yscale = self.get_yscale()
-        if any(np.array(ylim) <= 0) and re.match('^(log|inverse)', yscale):
-            raise ValueError(f'Axis limits go negative, but "alternate units" axis uses {yscale!r} scale.')
-        transform = child.yaxis._scale.get_transform()
-        nlim = transform.inverted().transform(np.array(ylim))
-        if np.sign(np.diff(ylim)) != np.sign(np.diff(nlim)):
+        funcscale = axistools.Scale('function', funcs[1::-1], transform)
+        if locators_formatters:
+            if funcs[2] is not None:
+                funcs[2](child.yaxis)
+            elif not isinstance(scale, mscale.LinearScale):
+                scale.set_default_locators_and_formatters(child.yaxis)
+            else:
+                funcscale.set_default_locators_and_formatters(child.yaxis)
+        child.yaxis._scale = funcscale
+        child._update_transScale()
+        child.stale = True
+        child.autoscale_view(scalex=False)
+        lim = self.get_ylim()
+        nlim = list(map(funcs[0], np.array(lim)))
+        if np.sign(np.diff(lim)) != np.sign(np.diff(nlim)):
             nlim = nlim[::-1]
-        child.set_ylim(scale[0] + scale[1]*nlim)
+        child.set_ylim(nlim)
 
     def _hide_labels(self):
         """Function called at drawtime that enforces "shared" axis and
@@ -1640,8 +1778,7 @@ class CartesianAxes(Axes):
                     axis.set_major_formatter(mticker.NullFormatter())
             # Enforce no minor ticks labels
             # TODO: Document this?
-            if not isinstance(axis.get_minor_formatter(), mticker.NullFormatter):
-                axis.set_minor_formatter(mticker.NullFormatter())
+            axis.set_minor_formatter(mticker.NullFormatter())
 
     def _sharex_setup(self, sharex, level):
         """Sets up shared axes. The input is the 'parent' axes, from which
@@ -1827,7 +1964,7 @@ class CartesianAxes(Axes):
         ----
         If you plot something with a `datetime64 <https://docs.scipy.org/doc/numpy/reference/arrays.datetime.html>`__,
         `pandas.Timestamp`, `pandas.DatetimeIndex`, `datetime.date`,
-        `datetime.time`, or `datetime.datetime` array as the *x* or *y*-axis
+        `datetime.time`, or `datetime.datetime` array as the *x* or *y* axis
         coordinate, the axis ticks and tick labels will be automatically
         formatted as dates.
 
@@ -1958,13 +2095,14 @@ class CartesianAxes(Axes):
                 # WARNING: Changing axis scale also changes default locators
                 # and formatters, so do it first
                 if scale is not None:
-                    if (formatter is None and getattr(scale,'name',scale) in
-                        ('log','logit','inverse','symlog')):
-                        formatter = 'simple'
-                    scale, args, kw = axistools.Scale(scale, **scale_kw)
-                    getattr(self, 'set_' + x + 'scale')(scale, *args, **kw)
+                    scale = axistools.Scale(scale, **scale_kw)
+                    getattr(self, 'set_' + x + 'scale')(scale)
                 # Is this a date axis?
                 # NOTE: Make sure to get this *after* lims set!
+                # See: https://matplotlib.org/api/units_api.html
+                # And: https://matplotlib.org/api/dates_api.html
+                # Also see: https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axis.py
+                # The axis_date() method just sets the converter to the date one
                 date = isinstance(axis.converter, mdates.DateConverter)
 
                 # Fix spines
@@ -2191,19 +2329,16 @@ class CartesianAxes(Axes):
             super().format(**kwargs)
 
     def altx(self, *args, **kwargs):
-        """Alias and more intuitive name for `~CartesianAxes.twiny`.
-        The matplotlib `~matplotlib.axes.Axes.twiny` function
-        generates two *x*-axes with a shared ("twin") *y*-axis."""
         # Cannot wrap twiny() because we want to use CartesianAxes, not
         # matplotlib Axes. Instead use hidden method _make_twin_axes.
         # See https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_subplots.py
         if self._altx_child:
-            raise ValueError('No more than *two* twin axes!')
+            raise RuntimeError('No more than *two* twin axes!')
         if self._altx_parent:
-            raise ValueError('This *is* a twin axes!')
+            raise RuntimeError('This *is* a twin axes!')
         with self.figure._unlock():
             ax = self._make_twin_axes(sharey=self, projection='cartesian')
-        # ax.set_autoscaley_on(self.get_autoscaley_on()) # shared axes must have matching autoscale
+        ax.set_autoscaley_on(self.get_autoscaley_on()) # shared axes must have matching autoscale
         ax.grid(False)
         self._altx_child = ax
         ax._altx_parent = self
@@ -2213,17 +2348,13 @@ class CartesianAxes(Axes):
         return ax
 
     def alty(self):
-        """Alias and more intuitive name for `~CartesianAxes.twinx`.
-        The matplotlib `~matplotlib.axes.Axes.twinx` function
-        generates two *y*-axes with a shared ("twin") *x*-axis."""
-        # Must reproduce twinx here because need to generate CartesianAxes
         if self._alty_child:
-            raise ValueError('No more than *two* twin axes!')
+            raise RuntimeError('No more than *two* twin axes!')
         if self._alty_parent:
-            raise ValueError('This *is* a twin axes!')
+            raise RuntimeError('This *is* a twin axes!')
         with self.figure._unlock():
             ax = self._make_twin_axes(sharex=self, projection='cartesian')
-        # ax.set_autoscalex_on(self.get_autoscalex_on()) # shared axes must have matching autoscale
+        ax.set_autoscalex_on(self.get_autoscalex_on()) # shared axes must have matching autoscale
         ax.grid(False)
         self._alty_child = ax
         ax._alty_parent = self
@@ -2232,106 +2363,42 @@ class CartesianAxes(Axes):
         self.add_child_axes(ax)
         return ax
 
-    def dualx(self, offset=0, scale=1, xscale='linear', xlabel=None, **kwargs):
-        """
-        Makes a secondary *x*-axis for denoting equivalent *x*
-        coordinates in *alternate units*. Returns nothing.
-
-        Parameters
-        ----------
-        scale : float, optional
-            The constant multiple applied after scaling data with `transform`.
-            Default is ``1``.
-            For example, if your *x*-axis is meters and you
-            want kilometers on the other side, use ``scale=1e-3``.
-        offset : float, optional
-            The constant offset added after multipyling by `scale`.
-            Default is ``0``.
-            For example, if your *x*-axis is Kelvin and you want degrees
-            Celsius on the opposite side, use ``offset=-273.15``.
-        xscale : str, optional
-            The registered scale name used to transform data to the alternate
-            units.  Default is ``'linear'``.
-            For example, if your *x*-axis is wavenumber and you want wavelength
-            on the opposite side, use ``xscale='inverse'``. If your *x*-axis
-            is height and you want pressure on the opposite side, use
-            ``xscale='pressure'``. For the opposite, use ``xscale='height'``.
-        xlabel : str, optional
-            The axis label (highly recommended). A warning will be issued if
-            this is not supplied.
-        **kwargs
-            Passed to `Axes.format`.
-        """
+    def dualx(self, transform, transform_kw=None, **kwargs):
         # The axis scale is used to transform units on the left axis, linearly
         # spaced, to units on the right axis... so the right scale must scale
         # its data with the *inverse* of this transform. We do this below.
-        # TODO: Use matplotlib 3.1 'secondary axis' feature? Adds a 'child axes'
-        # just like 'insets' -- also *colorbars* (these are only two ways that
-        # child axes are added). *Only* place child axes appear is in automatic
-        # title positioning and in get_children function.
-        parent = self.get_xscale()
-        if parent != 'linear':
-            warnings.warn(f'Parent axis scale must be linear. Overriding current {parent!r} scale.')
-            self.set_xscale('linear')
+        # NOTE: Matplotlib 3.1 has a 'secondary axis' feature. This one is
+        # simpler, because it does not implement the function transform as
+        # an axis scale (meaning user just has to supply the forward
+        # transformation, not the backwards one), and does not invent a new
+        # class with a bunch of complicated setters.
         ax = self.twiny()
-        if xlabel is None:
-            warnings.warn('Axis label is highly recommended for "alternate units" axis. Use the "xlabel" keyword argument.')
-        xscale = axistools.InvertedScaleFactory(xscale)
-        ax.format(xscale=xscale, xlabel=xlabel, **kwargs)
-        self._dualx_scale = (offset, scale)
+        funcs, kwargs = _parse_dualxy_args('x',
+                transform, transform_kw, kwargs)
+        self._dualx_funcs = funcs
+        self._dualx_overrides(True)
+        ax.format(**kwargs)
         return ax
 
-    def dualy(self, offset=0, scale=1, yscale='linear', ylabel=None, **kwargs):
-        """
-        Makes a secondary *y*-axis for denoting equivalent *y*
-        coordinates in *alternate units*. Returns nothing.
-
-        Parameters
-        ----------
-        scale : float, optional
-            The constant multiple applied after scaling data with `transform`.
-            Default is ``1``.
-            For example, if your *y*-axis is meters and you
-            want kilometers on the other side, use ``scale=1e-3``.
-        offset : float, optional
-            The constant offset added after multipyling by `scale`.
-            Default is ``0``.
-            For example, if your *y*-axis is Kelvin and you want degrees
-            Celsius on the opposite side, use ``offset=-273.15``.
-        yscale : str, optional
-            The registered scale name used to transform data to the alternate
-            units.  Default is ``'linear'``.
-            For example, if your *y*-axis is wavenumber and you want wavelength
-            on the opposite side, use ``yscale='inverse'``. If your *y*-axis
-            is height and you want pressure on the opposite side, use
-            ``yscale='pressure'``. For the opposite, use ``xscale='height'``.
-        ylabel : str, optional
-            The axis label (highly recommended). A warning will be issued if
-            this is not supplied.
-        **kwargs
-            Passed to `Axes.format`.
-        """
-        parent = self.get_yscale()
-        if parent != 'linear':
-            warnings.warn(f'Parent axis scale must be linear. Overriding current {parent!r} scale.')
-            self.set_yscale('linear')
+    def dualy(self, transform, transform_kw=None, **kwargs):
         ax = self.twinx()
-        if ylabel is None:
-            warnings.warn('Axis label is highly recommended for "alternate units" axis. Use the "ylabel" keyword argument.')
-        yscale = axistools.InvertedScaleFactory(yscale)
-        ax.format(yscale=yscale, ylabel=ylabel, **kwargs)
-        self._dualy_scale = (offset, scale)
+        funcs, kwargs = _parse_dualxy_args('y',
+                transform, transform_kw, kwargs)
+        self._dualy_funcs = funcs
+        self._dualy_overrides(True)
+        ax.format(**kwargs)
         return ax
 
     def draw(self, renderer=None, *args, **kwargs):
         """Adds post-processing steps before axes is drawn."""
         # NOTE: This mimics matplotlib API, which calls identical
         # post-processing steps in both draw() and get_tightbbox()
-        self._datex_rotate()
-        self._dualx_lock()
-        self._dualy_lock()
+        self._hide_labels()
         self._altx_overrides()
         self._alty_overrides()
+        self._dualx_overrides()
+        self._dualy_overrides()
+        self._datex_rotate()
         if self._inset_parent is not None and self._inset_zoom:
             self.indicate_inset_zoom()
         super().draw(renderer, *args, **kwargs)
@@ -2339,24 +2406,45 @@ class CartesianAxes(Axes):
     def get_tightbbox(self, renderer, *args, **kwargs):
         """Adds post-processing steps before tight bounding box is
         calculated."""
-        self._datex_rotate()
-        self._dualx_lock()
-        self._dualy_lock()
+        self._hide_labels()
         self._altx_overrides()
         self._alty_overrides()
+        self._dualx_overrides()
+        self._dualy_overrides()
+        self._datex_rotate()
+        if self._inset_parent is not None and self._inset_zoom:
+            self.indicate_inset_zoom()
         return super().get_tightbbox(renderer, *args, **kwargs)
 
     def twinx(self):
-        """Mimics matplotlib's `~matplotlib.axes.Axes.twinx` and intelligently
-        handles axis ticks, gridlines, axis tick labels, axis labels, and axis
-        sharing. Returns a `CartesianAxes` instance."""
         return self.alty()
 
     def twiny(self):
-        """Mimics matplotlib's `~matplotlib.axes.Axes.twiny` and intelligently
-        handles axis ticks, gridlines, axis tick labels, axis labels, and axis
-        sharing. Returns a `CartesianAxes` instance."""
         return self.altx()
+
+    # Add documentation
+    altx.__doc__ = altxy_descrip % {
+        'x':'x', 'x1':'bottom', 'x2':'top',
+        'y':'y', 'y1':'left', 'y2':'right',
+        }
+    alty.__doc__ = altxy_descrip % {
+        'x':'y', 'x1':'left', 'x2':'right',
+        'y':'x', 'y1':'bottom', 'y2':'top',
+        }
+    dualx.__doc__ = dualxy_descrip % {
+        'x':'x', 'args':', '.join(dualxy_kwargs)
+        }
+    dualy.__doc__ = dualxy_descrip % {
+        'x':'y', 'args':', '.join(dualxy_kwargs)
+        }
+    twinx.__doc__ = twinxy_descrip % {
+        'x':'y', 'x1':'left', 'x2':'right',
+        'y':'x', 'y1':'bottom', 'y2':'top',
+        }
+    twiny.__doc__ = twinxy_descrip % {
+        'x':'x', 'x1':'bottom', 'x2':'top',
+        'y':'y', 'y1':'left', 'y2':'right',
+        }
 
 class PolarAxes(Axes, mproj.PolarAxes):
     """Intermediate class, mixes `ProjectionAxes` with
@@ -2821,7 +2909,7 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
 
         See also
         --------
-        `~proplot.subplots.subplots`, `Axes`, `~proplot.projs`
+        `~proplot.subplots.subplots`, `Axes`, `~proplot.projs.Proj`
         """
         # GeoAxes initialization. Note that critical attributes like
         # outline_patch needed by _format_apply are added before it is called.
@@ -2958,14 +3046,14 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
                     latlines[-1] -= eps
                 gl.ylocator = mticker.FixedLocator(latlines)
         # Grid label toggling
-        # Let cartopy issue warning when no labels possible
-        # if not isinstance(self.projection, (ccrs.Mercator, ccrs.PlateCarree)):
-        #     if latarray is not None and any(latarray):
-        #         warnings.warn(f'Cannot add gridline labels on cartopy {self.projection} projection.')
-        #         latarray = [0]*4
-        #     if lonarray is not None and any(lonarray):
-        #         warnings.warn(f'Cannot add gridline labels on cartopy {self.projection} projection.')
-        #         lonarray = [0]*4
+        # Issue warning instead of error!
+        if not isinstance(self.projection, (ccrs.Mercator, ccrs.PlateCarree)):
+            if latarray is not None and any(latarray):
+                warnings.warn(f'Cannot add gridline labels on cartopy {self.projection} projection.')
+                latarray = [0]*4
+            if lonarray is not None and any(lonarray):
+                warnings.warn(f'Cannot add gridline labels on cartopy {self.projection} projection.')
+                lonarray = [0]*4
         if latarray is not None:
             gl.ylabels_left   = latarray[0]
             gl.ylabels_right  = latarray[1]
@@ -3034,6 +3122,11 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
             'linewidth': 'geoaxes.linewidth'
             })
         self.outline_patch.update(kw_edge)
+
+    def _hide_labels(self):
+        """No-op for now. In future will hide meridian and parallel labels
+        for rectangular projections."""
+        pass
 
     def get_tightbbox(self, renderer, *args, **kwargs):
         """Draw gridliner objects so tight bounding box algorithm will
@@ -3153,7 +3246,7 @@ class BasemapAxes(ProjectionAxes):
 
         See also
         --------
-        `~proplot.subplots.subplots`, `Axes`, `~proplot.projs`
+        `~proplot.subplots.subplots`, `Axes`, `~proplot.projs.Proj`
         """
         # Map boundary notes
         # * Must set boundary before-hand, otherwise the set_axes_limits method

@@ -55,11 +55,12 @@ Geographic projections
 ----------------------
 
 To specify a geographic projection, pass e.g. ``proj='name'`` to
-`~proplot.subplots.subplots`, where ``'name'`` is any valid cartopy or
-basemap listed in the :ref:`Table of projections`. This generates a
-`~proplot.axes.CartopyAxes` or `~proplot.axes.BasemapAxes`,
-depending on whether you passed ``basemap=True`` to
-`~proplot.subplots.subplots`. These axes are designed as follows.
+`~proplot.subplots.subplots`, where ``'name'`` is any valid PROJ.4
+projection name listed in the :ref:`~proplot.projs.Proj` table. This
+generates a `~proplot.axes.CartopyAxes` or
+`~proplot.axes.BasemapAxes`, depending on whether you passed
+``basemap=True`` to `~proplot.subplots.subplots`. These axes are
+designed as follows.
 
 -  `~proplot.axes.CartopyAxes` joins the cartopy
    `~cartopy.mpl.geoaxes.GeoAxes` class with the ProPlot
@@ -128,16 +129,16 @@ cartopy, ProPlot support for basemap may be removed.
 .. image:: projection/projection_8_1.svg
 
 
-Registered cartopy projections
-------------------------------
+Included cartopy projections
+----------------------------
 
 The available `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`__
-projections are plotted below. See the :ref:`Table of projections` for
-details. ProPlot adds to cartopy the previously unavailable Aitoff,
-Hammer, Winkel Tripel, and Kavrisky VII projections (i.e. ``'aitoff'``,
-``'hammer'``, ``'wintri'``, and ``'kav7'``), as well as North Polar and
-South Polar versions of the Stereographic, Azimuthal Equidistant,
-Lambert Azimuthal Equal-Area, and Gnomic projections (i.e.
+projections are plotted below. See the :ref:`~proplot.projs.Proj`
+documentation for details. ProPlot adds to cartopy the previously
+unavailable Aitoff, Hammer, Winkel Tripel, and Kavrisky VII projections
+(i.e. ``'aitoff'``, ``'hammer'``, ``'wintri'``, and ``'kav7'``), as well
+as North Polar and South Polar versions of the Stereographic, Azimuthal
+Equidistant, Lambert Azimuthal Equal-Area, and Gnomic projections (i.e.
 ``'npstere'``, ``'spstere'``, ``'npaeqd'``, ``'spaeqd'``, ``'nplaea'``,
 ``'splaea'``, ``'npgnom'``, and ``'spgnom'``).
 
@@ -161,15 +162,15 @@ Lambert Azimuthal Equal-Area, and Gnomic projections (i.e.
 .. image:: projection/projection_11_1.svg
 
 
-Registered basemap projections
-------------------------------
+Included basemap projections
+----------------------------
 
 The available `basemap <https://matplotlib.org/basemap/index.html>`__
-projections are plotted below. See the :ref:`Table of projections` for
-details. Basemap projection bounds are usually rectangles, while cartopy
-bounds are more flexible. Basemap used to have many more projections
-than cartopy, but the ProPlot additions to cartopy have made the matchup
-more even.
+projections are plotted below. See the :ref:`~proplot.projs.Proj`
+documentation for details. Basemap projection bounds are usually
+rectangles, while cartopy bounds are more flexible. Basemap used to have
+many more projections than cartopy, but the ProPlot additions to cartopy
+have made the matchup more even.
 
 .. code:: ipython3
 
