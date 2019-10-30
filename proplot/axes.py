@@ -22,13 +22,13 @@ from numbers import Integral
 import matplotlib.projections as mproj
 import matplotlib.axes as maxes
 import matplotlib.dates as mdates
+import matplotlib.scale as mscale
 import matplotlib.text as mtext
 import matplotlib.ticker as mticker
 import matplotlib.patches as mpatches
 import matplotlib.gridspec as mgridspec
 import matplotlib.transforms as mtransforms
 import matplotlib.collections as mcollections
-from matplotlib import docstring
 from . import utils, projs, axistools
 from .utils import _notNone, units
 from .rctools import rc, RC_NODOTSNAMES
@@ -1487,6 +1487,7 @@ dualxy_kwargs = (
     'ticklen', 'tickrange', 'tickdir', 'ticklabeldir', 'tickrotation',
     'bounds', 'margin', 'color', 'grid', 'gridminor', 'gridcolor',
     )
+
 dualxy_descrip = """
 Makes a secondary *%(x)s* axis for denoting equivalent *%(x)s*
 coordinates in *alternate units*.
@@ -1520,7 +1521,10 @@ scale_kw : dict-like, optional
     Prepended with ``'y'`` and passed to `Axes.format`.
 """
 
-_extra_descrip = """
+altxy_descrip = """
+Alias and more intuitive name for `~CartesianAxes.twin%(y)s`.
+The matplotlib `~matplotlib.axes.Axes.twiny` function
+generates two *x* axes with a shared ("twin") *y* axis.
 Enforces the following settings.
 
 * Places the old *%(x)s* axis on the %(x1)s and the new *%(x)s* axis
@@ -1532,35 +1536,39 @@ Enforces the following settings.
 * Locks the old and new *%(y)s* axis limits and scales, and makes the new
   %(y)s axis labels invisible.
 """
-altxy_descrip = """
-Alias and more intuitive name for `~CartesianAxes.twin%(y)s`.
-The matplotlib `~matplotlib.axes.Axes.twiny` function
-generates two *x* axes with a shared ("twin") *y* axis.
-""" + _extra_descrip
+
 twinxy_descrip = """
 Mimics matplotlib's `~matplotlib.axes.Axes.twin%(y)s`.
-""" + _extra_descrip
+Enforces the following settings.
 
-def _parse_dualxy_args(x, forward, inverse, scale, scale_kw, kwargs):
-    """Interprets the dualx and dualy transform and keyword arguments."""
+* Places the old *%(x)s* axis on the %(x1)s and the new *%(x)s* axis
+  on the %(x2)s.
+* Makes the old %(x2)s spine invisible and the new %(x1)s, %(y1)s,
+  and %(y2)s spines invisible.
+* Adjusts the *%(x)s* axis tick, tick label, and axis label positions
+  according to the visible spine positions.
+* Locks the old and new *%(y)s* axis limits and scales, and makes the new
+  %(y)s axis labels invisible.
+"""
+
+def _parse_dualxy_args(x, transform, transform_kw, kwargs):
+    """Interprets the dualx and dualy transform and various keyword
+    arguments."""
     # Transform using input functions
     # TODO: Also support transforms? Probably not -- transforms are a huge
     # group that include ND and non-invertable transformations, but transforms
     # used for axis scales are subset of invertible 1D functions
-    scale_kw = scale_kw or {}
-    if scale or scale_kw:
-        if forward or inverse:
-            warnings.warn(f'Ignoring functions forward={forward!r} and inverse={inverse!r}.')
-        forward = axistools.Scale(scale or 'linear', **scale_kw).get_transform()
-        funcs = (forward.transform, forward.inverted().transform)
+    transform_kw = transform_kw or {}
+    if isinstance(transform, (str, mscale.ScaleBase)) or transform_kw:
+        transform = transform or 'linear'
+        transform = axistools.Scale(transform, **transform_kw).get_transform()
+        funcs = (transform.transform, transform.inverted().transform)
+    elif np.iterable(transform) and len(transform) == 2 and all(callable(itransform) for itransform in transform):
+        funcs = transform
+    elif callable(transform):
+        funcs = (transform, (lambda x: x))
     else:
-        forward = forward or (lambda x: x)
-        inverse = inverse or (lambda x: x)
-        if not callable(forward):
-            raise ValueError(f'Forward transformation must be a callable function, got {forward!r}.')
-        if not callable(inverse):
-            raise ValueError(f'Inverse transformation must be a callable function, got {inverse!r}.')
-        funcs = (forward, inverse)
+        raise ValueError(f'Invalid transform {transform!r}. Must be function, tuple of two functions, or scale name.')
     # Parse keyword arguments
     kwargs_bad = {}
     for key in (*kwargs.keys(),):
@@ -2311,10 +2319,6 @@ class CartesianAxes(Axes):
         ax._altx_overrides()
         self.add_child_axes(ax)
         return ax
-    altx.__doc__ = altxy_descrip % {
-        'x':'x', 'x1':'bottom', 'x2':'top',
-        'y':'y', 'y1':'left', 'y2':'right',
-        }
 
     def alty(self):
         if self._alty_child:
@@ -2331,14 +2335,8 @@ class CartesianAxes(Axes):
         ax._alty_overrides()
         self.add_child_axes(ax)
         return ax
-    alty.__doc__ = altxy_descrip % {
-        'x':'y', 'x1':'left', 'x2':'right',
-        'y':'x', 'y1':'bottom', 'y2':'top',
-        }
 
-    def dualx(self,
-        forward=None, inverse=None, *, scale=None, scale_kw=None,
-        **kwargs):
+    def dualx(self, transform, transform_kw=None, **kwargs):
         # The axis scale is used to transform units on the left axis, linearly
         # spaced, to units on the right axis... so the right scale must scale
         # its data with the *inverse* of this transform. We do this below.
@@ -2348,29 +2346,19 @@ class CartesianAxes(Axes):
         # transformation, not the backwards one), and does not invent a new
         # class with a bunch of complicated setters.
         ax = self.twiny()
-        funcs, kwargs = _parse_dualxy_args('x',
-            forward, inverse, scale, scale_kw, kwargs)
+        funcs, kwargs = _parse_dualxy_args('x', transform, transform_kw, kwargs)
         self._dualx_funcs = funcs
         self._dualx_overrides()
         ax.format(**kwargs)
         return ax
-    dualx.__doc__ = dualxy_descrip % {
-        'x':'x', 'args':', '.join(dualxy_kwargs)
-        }
 
-    def dualy(self,
-        forward=None, inverse=None, *, scale=None, scale_kw=None,
-        **kwargs):
+    def dualy(self, transform, transform_kw=None, **kwargs):
         ax = self.twinx()
-        funcs, kwargs = _parse_dualxy_args('y',
-            forward, inverse, scale, scale_kw, kwargs)
+        funcs, kwargs = _parse_dualxy_args('y', transform, transform_kw, kwargs)
         self._dualy_funcs = funcs
         self._dualy_overrides()
         ax.format(**kwargs)
         return ax
-    dualy.__doc__ = dualxy_descrip % {
-        'x':'y', 'args':', '.join(dualxy_kwargs)
-        }
 
     def draw(self, renderer=None, *args, **kwargs):
         """Adds post-processing steps before axes is drawn."""
@@ -2399,17 +2387,31 @@ class CartesianAxes(Axes):
             self.indicate_inset_zoom()
         return super().get_tightbbox(renderer, *args, **kwargs)
 
-    @docstring.dedent_interpd
     def twinx(self):
         return self.alty()
+
+    def twiny(self):
+        return self.altx()
+
+    # Add documentation
+    altx.__doc__ = altxy_descrip % {
+        'x':'x', 'x1':'bottom', 'x2':'top',
+        'y':'y', 'y1':'left', 'y2':'right',
+        }
+    alty.__doc__ = altxy_descrip % {
+        'x':'y', 'x1':'left', 'x2':'right',
+        'y':'x', 'y1':'bottom', 'y2':'top',
+        }
+    dualx.__doc__ = dualxy_descrip % {
+        'x':'x', 'args':', '.join(dualxy_kwargs)
+        }
+    dualy.__doc__ = dualxy_descrip % {
+        'x':'y', 'args':', '.join(dualxy_kwargs)
+        }
     twinx.__doc__ = twinxy_descrip % {
         'x':'y', 'x1':'left', 'x2':'right',
         'y':'x', 'y1':'bottom', 'y2':'top',
         }
-
-    @docstring.dedent_interpd
-    def twiny(self):
-        return self.altx()
     twiny.__doc__ = twinxy_descrip % {
         'x':'x', 'x1':'bottom', 'x2':'top',
         'y':'y', 'y1':'left', 'y2':'right',
