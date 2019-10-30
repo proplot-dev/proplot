@@ -129,8 +129,8 @@ cartopy, ProPlot support for basemap may be removed.
 .. image:: projection/projection_8_1.svg
 
 
-Registered cartopy projections
-------------------------------
+Included cartopy projections
+----------------------------
 
 The available `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`__
 projections are plotted below. See the :ref:`~proplot.projs.Proj`
@@ -162,8 +162,8 @@ Equidistant, Lambert Azimuthal Equal-Area, and Gnomic projections (i.e.
 .. image:: projection/projection_11_1.svg
 
 
-Registered basemap projections
-------------------------------
+Included basemap projections
+----------------------------
 
 The available `basemap <https://matplotlib.org/basemap/index.html>`__
 projections are plotted below. See the :ref:`~proplot.projs.Proj`

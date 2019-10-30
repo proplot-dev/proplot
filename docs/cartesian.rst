@@ -269,6 +269,7 @@ details.
                   xgridminor=True, xgrid=False,
                   xlocator='month', xminorlocator='weekday', xformatter='%B') # minor ticks every Monday, major every month
     axs.format(ylocator='null', suptitle='Tick locators and formatters with time axes in ProPlot')
+    plot.rc.reset()
 
 
 
@@ -300,23 +301,20 @@ pass the name of any registered “axis scale” to the ``xscale`` or
               xcolor=c2, gridcolor=c2,
               suptitle='Duplicate x-axes with simple, custom transformations', ylocator=[], # locator=[] has same result as locator='null'
               )
-    ax.dualx(scale=1e-3, xlabel='kilometers', grid=True, xcolor=c1, gridcolor=c1)
+    ax.dualx(lambda x: x*1e-3, label='kilometers', grid=True, color=c1)
     ax = axs[1]
     ax.format(yformatter='null', xlabel='temperature (K)', title='', xlim=(200,300), ylocator='null',
              xcolor=c2, gridcolor=c2)
-    ax.dualx(offset=-273.15, xlabel='temperature (\N{DEGREE SIGN}C)',
-             xcolor=c1, gridcolor=c1, grid=True)
-    
+    ax.dualx(lambda x: x - 273.15, label='temperature (\N{DEGREE SIGN}C)', grid=True, color=c1)
     # These next 2 are for atmospheric scientists; note the assumed scale height is 7km
     f, axs = plot.subplots(ncols=2, share=0, aspect=0.4, axwidth=1.8)
     ax = axs[0]
-    ax.format(xformatter='null', ylabel='pressure (hPa)', ylim=(1000,10), xlocator=[], 
-              gridcolor=c1, ycolor=c1)
-    ax.dualy(yscale='height', ylabel='height (km)', yticks=2.5, color=c2, gridcolor=c2, grid=True)
+    ax.format(xformatter='null', ylabel='pressure (hPa)', ylim=(1000,10), xlocator=[], ycolor=c1)
+    ax.dualy('height', label='height (km)', ticks=2.5, color=c2, grid=True)
     ax = axs[1] # span
     ax.format(xformatter='null', ylabel='height (km)', ylim=(0,20), xlocator='null', gridcolor=c2, ycolor=c2,
               suptitle='Duplicate y-axes with special transformations', grid=True)
-    ax.dualy(yscale='pressure', ylabel='pressure (hPa)', ylocator=100, grid=True, color=c1, gridcolor=c1)
+    ax.dualy('pressure', label='pressure (hPa)', locator=100, color=c1, grid=True)
 
 
 
@@ -347,19 +345,12 @@ pass the name of any registered “axis scale” to the ``xscale`` or
     ax.axvline(cutoff, lw=2, ls='-', color=red)
     ax.fill_between([0.27, 0.33], 0, 1, color=red, alpha=0.3)
     ax.format(xlabel='wavenumber (days$^{-1}$)', ylabel='response', gridminor=True)
-    ax.dualx(xscale='inverse', xlocator=np.array([20, 10, 5, 2, 1, 0.5, 0.2, 0.1, 0.05]),
-              xlabel='period (days)',
-              title='Imaginary response function',
-              suptitle='Duplicate x-axes with wavenumber and period', 
-              )
+    ax = ax.dualx('inverse', locator=np.array([20, 10, 5, 2, 1, 0.5, 0.2, 0.1, 0.05]), label='period (days)')
+    ax.format(title='Imaginary response function', suptitle='Duplicate x-axes with wavenumber and period')
 
 
 
-
-
-
-
-.. image:: cartesian/cartesian_20_1.svg
+.. image:: cartesian/cartesian_20_0.svg
 
 
 Panel axes
@@ -443,7 +434,7 @@ the ``zoom_kw`` argument.
     axi = ax.inset([5,5,4,4], transform='data', zoom=True, zoom_kw={'color':'red', 'lw':2})
     axi.format(xlim=(2,4), ylim=(2,4), color='red', linewidth=1.5, ticklabelweight='bold')
     axi.pcolormesh(data, cmap='Grays', levels=N)
-    ax.format(suptitle='Inet axes demo')
+    ax.format(suptitle='Inset axes demo')
 
 
 
