@@ -139,24 +139,22 @@ CMAPS_DELETE = (
     'gnuplot', 'gnuplot2', 'cmrmap', 'hsv', 'hot', 'rainbow',
     'gist_rainbow', 'jet', 'nipy_spectral', 'gist_ncar', 'cubehelix',
     )
-CMAPS_DIV_SLICES = {
-    'piyg': (None, 2, None),
-    'prgn': (None, 1, 2, None), # purple red green
-    'brbg': (None, 2, 3, None), # brown blue green
-    'puor': (None, 2, None),
-    'rdgy': (None, 2, None),
-    'rdbu': (None, 2, None),
-    'rdylbu': (None, 2, 4, None),
-    'rdylgn': (None, 2, 4, None),
-    'br': (None, 1, None),
-    'coldhot': (None, 4, None),
-    'negpos': (None, 3, None),
-    'drywet': (None, 3, None),
-    } # slice args used to split up segments of names
-CMAPS_DIV_PAIRS = [
-    (name, ''.join(reversed([name[slice(*idxs[i:i+2])] for i in range(len(idxs)-1)])),)
-    for name,idxs in CMAPS_DIV_SLICES.items()
-    ] # tuple pairs of mirror image cmap names
+CMAPS_DIVERGING = tuple(
+    (key1.lower(), key2.lower()) for key1,key2 in (
+    ('PiYG', 'GYPi'),
+    ('PRGn', 'GnRP'),
+    ('BrBG', 'GBBr'),
+    ('PuOr', 'OrPu'),
+    ('RdGy', 'GyRd'),
+    ('RdBu', 'BuRd'),
+    ('RdYlBu', 'BuYlRd'),
+    ('RdYlGn', 'GnYlRd'),
+    ('BR', 'RB'),
+    ('CoolWarm', 'WarmCool'),
+    ('ColdHot', 'HotCold'),
+    ('NegPos', 'PosNeg'),
+    ('DryWet', 'WetDry')
+    ))
 
 # Color cycle stuff
 CYCLES_PRESET = {
@@ -1446,7 +1444,7 @@ class CmapDict(dict):
         return super().__setitem__(key, item)
 
     def __contains__(self, item):
-        """Sanitized key name for `'in'`."""
+        """Tests membership for sanitized key name."""
         try: # by default __contains__ uses object.__getitem__ and ignores overrides
             self.__getitem__(item)
             return True
@@ -1464,10 +1462,10 @@ class CmapDict(dict):
             reverse = True
         if mirror and not super().__contains__(key): # search for mirrored key
             key_mirror = key
-            for mirror in CMAPS_DIV_PAIRS:
+            for pair in CMAPS_DIVERGING:
                 try:
-                    idx = mirror.index(key)
-                    key_mirror = mirror[1 - idx]
+                    idx = pair.index(key)
+                    key_mirror = pair[1 - idx]
                 except (ValueError,KeyError):
                     continue
             if super().__contains__(key_mirror):
@@ -1507,18 +1505,13 @@ class ColorCacheDict(dict):
     arbitrary named colormaps."""
     def __getitem__(self, key):
         """
-        Either samples the color from a colormap or color cycle,
-        or calls the parent getitem to look up the color name.
+        Optionally samples colors from a colormap or color cycle.
 
-        For a **smooth colormap**, usage is e.g.
-        ``color=('Blues', 0.8)`` -- the number should be between 0 and 1, and
-        indicates where to draw the color from the smooth colormap. For a
-        "listed" colormap, i.e. a **color cycle**, usage is e.g.
-        ``color=('colorblind', 2)``. The number indicates the index in the
-        list of discrete colors.
-
-        These examples work with any matplotlib command that accepts
-        a ``color`` keyword arg.
+        For a smooth colormap, usage is e.g. ``color=('Blues', 0.8)`` -- the
+        number indicates the colormap index, and should fall between 0 and 1.
+        For a color cycle, usage is e.g. ``color=('colorblind', 2)`` -- the
+        number is simply the list index. These examples work with any
+        matplotlib command that accepts a ``color`` keyword arg.
         """
         # Matplotlib 'color' args are passed to to_rgba, which tries to read
         # directly from cache and if that fails, sanitizes input, which
