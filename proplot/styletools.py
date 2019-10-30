@@ -1394,20 +1394,8 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
 class CmapDict(dict):
     """
     Dictionary subclass used to replace the `matplotlib.cm.cmap_d`
-    colormap directory. Does the following:
-
-    1. Converts all matplotlib `~matplotlib.colors.ListedColormap`\ s
-       to ProPlot `ListedColormap`\ s, and converts all matplotlib
-       `~matplotlib.colors.LinearSegmentedColormap`\ s
-       to ProPlot `LinearSegmentedColormap`\ s.
-    2. Makes colormap names case insensitive. ``'Blues'``, ``'blues'``, and
-       ``'bLuEs'`` are all valid names for the "Blues" colormap.
-    3. Does not store "reversed" colormaps. Requesting e.g.
-       ``'Blues_r'`` will just look up ``'Blues'``, then return the result
-       of the `~matplotlib.colors.Colormap.reversed` method.
-    4. Permits specifying diverging colormaps by their "inverted" name.
-       For example, ``'BuRd'`` is equivalent to ``'RdBu_r'``, as are
-       ``'BuYlRd'`` and ``'RdYlBu_r'``.
+    colormap dictionary. See `~CmapDict.__getitem__` and
+    `~CmapDict.__setitem__` for details.
     """
     def __init__(self, kwargs):
         """
@@ -1424,7 +1412,11 @@ class CmapDict(dict):
             self[key] = value
 
     def __getitem__(self, key):
-        """Sanitizes key name then queries the dictionary."""
+        """Retrieves case-insensitive colormap name. If the name ends in
+        ``'_r'``, returns the result of ``cmap.reversed()`` for the colormap
+        with name ``key[:-2]``. Also returns reversed diverging colormaps
+        when their "reversed name" is requested -- for example, ``'BuRd'`` is
+        equivalent to ``'RdBu_r'``."""
         key = self._sanitize_key(key, mirror=True)
         reverse = (key[-2:] == '_r')
         if reverse:
@@ -1438,7 +1430,10 @@ class CmapDict(dict):
         return value
 
     def __setitem__(self, key, item):
-        """Sanitizes key name and converts item to colormap subclass."""
+        """Stores the colormap under its lowercase name. If the colormap is
+        a matplotlib `~matplotlib.colors.ListedColormap` or
+        `~matplotlib.colors.LinearSegmentedColormap`, it is converted to the
+        ProPlot `ListedColormap` or `LinearSegmentedColormap` subclass."""
         if type(item) is mcolors.LinearSegmentedColormap:
             item = LinearSegmentedColormap(
                 item.name, item._segmentdata, item.N, item._gamma)
