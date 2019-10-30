@@ -3043,14 +3043,14 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
                     latlines[-1] -= eps
                 gl.ylocator = mticker.FixedLocator(latlines)
         # Grid label toggling
-        # Let cartopy issue warning when no labels possible
-        # if not isinstance(self.projection, (ccrs.Mercator, ccrs.PlateCarree)):
-        #     if latarray is not None and any(latarray):
-        #         warnings.warn(f'Cannot add gridline labels on cartopy {self.projection} projection.')
-        #         latarray = [0]*4
-        #     if lonarray is not None and any(lonarray):
-        #         warnings.warn(f'Cannot add gridline labels on cartopy {self.projection} projection.')
-        #         lonarray = [0]*4
+        # Issue warning instead of error!
+        if not isinstance(self.projection, (ccrs.Mercator, ccrs.PlateCarree)):
+            if latarray is not None and any(latarray):
+                warnings.warn(f'Cannot add gridline labels on cartopy {self.projection} projection.')
+                latarray = [0]*4
+            if lonarray is not None and any(lonarray):
+                warnings.warn(f'Cannot add gridline labels on cartopy {self.projection} projection.')
+                lonarray = [0]*4
         if latarray is not None:
             gl.ylabels_left   = latarray[0]
             gl.ylabels_right  = latarray[1]
