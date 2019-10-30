@@ -1508,9 +1508,9 @@ class ColorCacheDict(dict):
         Optionally samples colors from a colormap or color cycle.
 
         For a smooth colormap, usage is e.g. ``color=('Blues', 0.8)`` -- the
-        number indicates the colormap index, and should fall between 0 and 1.
+        number is the colormap index, and must be between 0 and 1.
         For a color cycle, usage is e.g. ``color=('colorblind', 2)`` -- the
-        number is simply the list index. These examples work with any
+        number is the list index. These examples work with any
         matplotlib command that accepts a ``color`` keyword arg.
         """
         # Matplotlib 'color' args are passed to to_rgba, which tries to read
