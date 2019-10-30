@@ -139,24 +139,22 @@ CMAPS_DELETE = (
     'gnuplot', 'gnuplot2', 'cmrmap', 'hsv', 'hot', 'rainbow',
     'gist_rainbow', 'jet', 'nipy_spectral', 'gist_ncar', 'cubehelix',
     )
-CMAPS_DIV_SLICES = {
-    'piyg': (None, 2, None),
-    'prgn': (None, 1, 2, None), # purple red green
-    'brbg': (None, 2, 3, None), # brown blue green
-    'puor': (None, 2, None),
-    'rdgy': (None, 2, None),
-    'rdbu': (None, 2, None),
-    'rdylbu': (None, 2, 4, None),
-    'rdylgn': (None, 2, 4, None),
-    'br': (None, 1, None),
-    'coldhot': (None, 4, None),
-    'negpos': (None, 3, None),
-    'drywet': (None, 3, None),
-    } # slice args used to split up segments of names
-CMAPS_DIV_PAIRS = [
-    (name, ''.join(reversed([name[slice(*idxs[i:i+2])] for i in range(len(idxs)-1)])),)
-    for name,idxs in CMAPS_DIV_SLICES.items()
-    ] # tuple pairs of mirror image cmap names
+CMAPS_DIVERGING = tuple(
+    (key1.lower(), key2.lower()) for key1,key2 in (
+    ('PiYG', 'GYPi'),
+    ('PRGn', 'GnRP'),
+    ('BrBG', 'GBBr'),
+    ('PuOr', 'OrPu'),
+    ('RdGy', 'GyRd'),
+    ('RdBu', 'BuRd'),
+    ('RdYlBu', 'BuYlRd'),
+    ('RdYlGn', 'GnYlRd'),
+    ('BR', 'RB'),
+    ('CoolWarm', 'WarmCool'),
+    ('ColdHot', 'HotCold'),
+    ('NegPos', 'PosNeg'),
+    ('DryWet', 'WetDry')
+    ))
 
 # Color cycle stuff
 CYCLES_PRESET = {
@@ -605,9 +603,9 @@ class _Colormap():
         return path
 
 class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
-    """New base class for all `~matplotlib.colors.LinearSegmentedColormap`s."""
+    """New base class for all `~matplotlib.colors.LinearSegmentedColormap`\ s."""
     def __str__(self):
-        return self.__repr__()
+        return type(self).__name__ + f'(name={self.name!r})'
     def __repr__(self):
         string = f" 'name': {self.name!r},\n"
         if hasattr(self, '_space'):
@@ -630,37 +628,11 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
     def _resample(self, N):
         """Returns a resampled copy of the colormap."""
-        return self.copy(self, N=N)
-
-    def copy(self, name=None, segmentdata=None, N=None,
-        gamma=None, cyclic=None):
-        """
-        Returns a new colormap, with relevant properties copied from this one
-        if they were not provided as keyword arguments.
-
-        Parameters
-        ----------
-        name : str
-            The colormap name. Default is ``self.name + '_copy'``.
-        segmentdata, N, gamma, cyclic : optional
-            See `LinearSegmentedColormap`. If not provided,
-            these are copied from the current colormap.
-        """
-        if name is None:
-            name = self.name + '_copy'
-        if segmentdata is None:
-            segmentdata = self._segmentdata
-        if gamma is None:
-            gamma = self._gamma
-        if cyclic is None:
-            cyclic = self._cyclic
-        if N is None:
-            N = self.N
-        return LinearSegmentedColormap(name, segmentdata, N, gamma=gamma, cyclic=cyclic)
+        return self.new(self, N=N)
 
     def concatenate(self, *args, ratios=1, name=None, **kwargs):
         """
-        Append arbitrary colormaps onto this one.
+        Appends arbitrary colormaps onto this one.
 
         Parameters
         ----------
@@ -668,10 +640,10 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             Instances of `LinearSegmentedColormap`.
         ratios : list of float, optional
             Indicates the ratios used to *merge* the colormaps. Length must
-            equal ``len(args)``. For example, if `args` contains
-            ``['blues', 'reds']`` and `ratios` is ``[2, 1]``, this generates a
-            colormap with two-thirds blue colors on the left and one-third red
-            colors on the right.
+            equal ``len(args) + 1``. For example,
+            ``cmap1.concatenate(cmap2, ratios=[2,1])`` generates a colormap
+            with the left two-thrids containing colors from ``cmap1`` and the
+            right one-third containing colors from ``cmap2``.
         name : str, optional
             The colormap name. Default is
             ``'_'.join(cmap.name for cmap in args)``.
@@ -679,8 +651,8 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             Number of points in the colormap lookup table.
             Default is :rc:`image.lut` times ``len(args)``.
         **kwargs
-            Passed to `LinearSegmentedColormap.copy`
-            or `PerceptuallyUniformColormap.copy`.
+            Passed to `LinearSegmentedColormap.new`
+            or `PerceptuallyUniformColormap.new`.
         """
         # Try making a simple copy
         if not args:
@@ -753,7 +725,33 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             kwargs[ikey] = gamma
 
         # Return copy
-        return self.copy(name=name, segmentdata=segmentdata, **kwargs)
+        return self.new(name=name, segmentdata=segmentdata, **kwargs)
+
+    def new(self, name=None, segmentdata=None, N=None,
+        gamma=None, cyclic=None):
+        """
+        Returns a new colormap, with relevant properties copied from this one
+        if they were not provided as keyword arguments.
+
+        Parameters
+        ----------
+        name : str
+            The colormap name. Default is ``self.name + '_new'``.
+        segmentdata, N, gamma, cyclic : optional
+            See `LinearSegmentedColormap`. If not provided,
+            these are copied from the current colormap.
+        """
+        if name is None:
+            name = self.name + '_new'
+        if segmentdata is None:
+            segmentdata = self._segmentdata
+        if gamma is None:
+            gamma = self._gamma
+        if cyclic is None:
+            cyclic = self._cyclic
+        if N is None:
+            N = self.N
+        return LinearSegmentedColormap(name, segmentdata, N, gamma=gamma, cyclic=cyclic)
 
     @staticmethod
     def from_list(name, colors, *args, **kwargs):
@@ -843,8 +841,8 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         name : str, optional
             The new colormap name. Default is ``self.name + '_r'``.
         **kwargs
-            Passed to `LinearSegmentedColormap.copy`
-            or `PerceptuallyUniformColormap.copy`.
+            Passed to `LinearSegmentedColormap.new`
+            or `PerceptuallyUniformColormap.new`.
         """
         if name is None:
             name = self.name + '_r'
@@ -862,7 +860,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             gamma = getattr(self, '_' + key, None)
             if gamma is not None and np.iterable(gamma):
                 kwargs[key] = gamma[::-1]
-        return self.copy(name, segmentdata, **kwargs)
+        return self.new(name, segmentdata, **kwargs)
 
     def shifted(self, shift=None, name=None, **kwargs):
         """
@@ -876,8 +874,8 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         name : str, optional
             The name of the new colormap. Default is ``self.name + '_shifted'``.
         **kwargs
-            Passed to `LinearSegmentedColormap.copy`
-            or `PerceptuallyUniformColormap.copy`.
+            Passed to `LinearSegmentedColormap.new`
+            or `PerceptuallyUniformColormap.new`.
         """
         # Bail out
         if not shift:
@@ -898,7 +896,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             array[:,0] -= array[:,0].min()
             array[:,0] /= array[:,0].max()
             segmentdata[key] = array
-        return self.copy(name, segmentdata, **kwargs)
+        return self.new(name, segmentdata, **kwargs)
 
     def sliced(self, left=None, right=None, cut=None, name=None, **kwargs):
         """
@@ -922,8 +920,8 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         name : str, optional
             The name of the new colormap. Default is ``self.name + '_sliced'``.
         **kwargs
-            Passed to `LinearSegmentedColormap.copy`
-            or `PerceptuallyUniformColormap.copy`.
+            Passed to `LinearSegmentedColormap.new`
+            or `PerceptuallyUniformColormap.new`.
         """
         # Cut out central colors
         if cut is not None and cut > 0:
@@ -975,41 +973,21 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
                 if np.iterable(gamma):
                     gamma = gamma[l-1:r+1]
                 kwargs[ikey] = gamma
-        return self.copy(name, segmentdata, **kwargs)
+        return self.new(name, segmentdata, **kwargs)
 
 class ListedColormap(mcolors.ListedColormap, _Colormap):
-    """New base class for all `~matplotlib.colors.ListedColormap`s."""
+    """New base class for all `~matplotlib.colors.ListedColormap`\ s."""
     def __str__(self):
-        return self.__repr__()
+        return f'ListedColormap(name={self.name!r})'
     def __repr__(self):
         return ("ListedColormap({\n"
             f" 'name': {self.name!r},\n"
             f" 'colors': {[mcolors.to_hex(color) for color in self.colors]},\n"
             "})")
 
-    def copy(self, colors=None, name=None, N=None):
-        """
-        Creates copy of the colormap.
-
-        Parameters
-        ----------
-        name : str
-            The colormap name. Default is ``self.name + '_copy'``.
-        colors, N : optional
-            See `~matplotlib.colors.ListedColormap`. If not provided,
-            these are copied from the current colormap.
-        """
-        if name is None:
-            name = self.name + '_copy'
-        if colors is None:
-            colors = self.colors
-        if N is None:
-            N = self.N
-        return ListedColormap(colors, name, N)
-
     def concatenate(self, *args, name=None, N=None, **kwargs):
         """
-        Concatenates arbitrary colormaps into one colormap.
+        Appends arbitrary colormaps onto this colormap.
 
         Parameters
         ----------
@@ -1030,7 +1008,27 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         if name is None:
             name = '_'.join(cmap.name for cmap in cmaps)
         colors = [color for cmap in cmaps for color in cmap.colors]
-        return self.copy(colors, name, N or len(colors))
+        return self.new(colors, name, N or len(colors))
+
+    def new(self, colors=None, name=None, N=None):
+        """
+        Creates copy of the colormap.
+
+        Parameters
+        ----------
+        name : str
+            The colormap name. Default is ``self.name + '_new'``.
+        colors, N : optional
+            See `~matplotlib.colors.ListedColormap`. If not provided,
+            these are copied from the current colormap.
+        """
+        if name is None:
+            name = self.name + '_new'
+        if colors is None:
+            colors = self.colors
+        if N is None:
+            N = self.N
+        return ListedColormap(colors, name, N)
 
     def save(self, path=None):
         """
@@ -1040,7 +1038,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         ----------
         path : str, optional
             The output filename. If not provided, the colormap
-            is saved under ``~/.proplot/cmaps/name.hex`` where ``name``
+            is saved under ``~/.proplot/cycles/name.hex`` where ``name``
             is the colormap name. Valid extensions are described in
             the below table.
 
@@ -1080,7 +1078,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         shift = shift % len(self.colors)
         colors = [*self.colors] # ensure list
         colors = colors[shift:] + colors[:shift]
-        return self.copy(colors, name, len(colors))
+        return self.new(colors, name, len(colors))
 
     def sliced(self, left=None, right=None, name=None):
         """
@@ -1105,7 +1103,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         if name is None:
             name = self.name + '_sliced'
         colors = self.colors[left:right]
-        return self.copy(colors, name, len(colors))
+        return self.new(colors, name, len(colors))
 
 class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
     """Similar to `~matplotlib.colors.LinearSegmentedColormap`, but instead
@@ -1211,9 +1209,9 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
 
     def _resample(self, N):
         """Returns a new colormap with *N* entries."""
-        return self.copy(N=N)
+        return self.new(N=N)
 
-    def copy(self, name=None, segmentdata=None, N=None, space=None,
+    def new(self, name=None, segmentdata=None, N=None, space=None,
         clip=None, gamma=None, gamma1=None, gamma2=None, cyclic=None):
         """
         Returns a new colormap, with relevant properties copied from this one
@@ -1222,13 +1220,13 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         Parameters
         ----------
         name : str
-            The colormap name. Default is ``self.name + '_copy'``.
+            The colormap name. Default is ``self.name + '_new'``.
         segmentdata, N, space, clip, gamma, gamma1, gamma2, cyclic : optional
             See `PerceptuallyUniformColormap`. If not provided,
             these are copied from the current colormap.
         """
         if name is None:
-            name = self.name + '_copy'
+            name = self.name + '_new'
         if segmentdata is None:
             segmentdata = self._segmentdata
         if space is None:
@@ -1317,7 +1315,7 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
             value lists.
 
             For example, ``luminance=[100,50,0]`` with ``ratios=[2,1]``
-            places the *x*-coordinate where the luminance is 50 at 0.66 --
+            places the *x*-coordinate where the luminance is 50 at 0.66, i.e.
             the white to gray transition is "slower" than the gray to black
             transition.
 
@@ -1394,20 +1392,8 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
 class CmapDict(dict):
     """
     Dictionary subclass used to replace the `matplotlib.cm.cmap_d`
-    colormap directory. Does the following:
-
-    1. Converts all matplotlib `~matplotlib.colors.ListedColormap`s
-       to ProPlot `ListedColormap`s, and converts all matplotlib
-       `~matplotlib.colors.LinearSegmentedColormap`s
-       to ProPlot `LinearSegmentedColormap`s.
-    2. Makes colormap names case insensitive. ``'Blues'``, ``'blues'``, and
-       ``'bLuEs'`` are all valid names for the "Blues" colormap.
-    3. Does not store "reversed" colormaps. Requesting e.g.
-       ``'Blues_r'`` will just look up ``'Blues'``, then return the result
-       of the `~matplotlib.colors.Colormap.reversed` method.
-    4. Permits specifying diverging colormaps by their "inverted" name.
-       For example, ``'BuRd'`` is equivalent to ``'RdBu_r'``, as are
-       ``'BuYlRd'`` and ``'RdYlBu_r'``.
+    colormap dictionary. See `~CmapDict.__getitem__` and
+    `~CmapDict.__setitem__` for details.
     """
     def __init__(self, kwargs):
         """
@@ -1424,7 +1410,11 @@ class CmapDict(dict):
             self[key] = value
 
     def __getitem__(self, key):
-        """Sanitizes key name then queries the dictionary."""
+        """Retrieves case-insensitive colormap name. If the name ends in
+        ``'_r'``, returns the result of ``cmap.reversed()`` for the colormap
+        with name ``key[:-2]``. Also returns reversed diverging colormaps
+        when their "reversed name" is requested -- for example, ``'BuRd'`` is
+        equivalent to ``'RdBu_r'``."""
         key = self._sanitize_key(key, mirror=True)
         reverse = (key[-2:] == '_r')
         if reverse:
@@ -1438,7 +1428,10 @@ class CmapDict(dict):
         return value
 
     def __setitem__(self, key, item):
-        """Sanitizes key name and converts item to colormap subclass."""
+        """Stores the colormap under its lowercase name. If the colormap is
+        a matplotlib `~matplotlib.colors.ListedColormap` or
+        `~matplotlib.colors.LinearSegmentedColormap`, it is converted to the
+        ProPlot `ListedColormap` or `LinearSegmentedColormap` subclass."""
         if type(item) is mcolors.LinearSegmentedColormap:
             item = LinearSegmentedColormap(
                 item.name, item._segmentdata, item.N, item._gamma)
@@ -1446,12 +1439,12 @@ class CmapDict(dict):
             item = ListedColormap(
                 item.colors, item.name, item.N)
         elif not isinstance(item, (ListedColormap, LinearSegmentedColormap)):
-            raise ValueError(f'Invalid colormap {item!r}. Must be instance of matplotlib.colors.ListedColormap or matplotlib.colors.LinearSegmentedColormap.')
+            raise ValueError(f'Invalid colormap {item}. Must be instance of matplotlib.colors.ListedColormap or matplotlib.colors.LinearSegmentedColormap.')
         key = self._sanitize_key(key, mirror=False)
         return super().__setitem__(key, item)
 
     def __contains__(self, item):
-        """Sanitized key name for `'in'`."""
+        """Tests membership for sanitized key name."""
         try: # by default __contains__ uses object.__getitem__ and ignores overrides
             self.__getitem__(item)
             return True
@@ -1469,10 +1462,10 @@ class CmapDict(dict):
             reverse = True
         if mirror and not super().__contains__(key): # search for mirrored key
             key_mirror = key
-            for mirror in CMAPS_DIV_PAIRS:
+            for pair in CMAPS_DIVERGING:
                 try:
-                    idx = mirror.index(key)
-                    key_mirror = mirror[1 - idx]
+                    idx = pair.index(key)
+                    key_mirror = pair[1 - idx]
                 except (ValueError,KeyError):
                     continue
             if super().__contains__(key_mirror):
@@ -1512,18 +1505,13 @@ class ColorCacheDict(dict):
     arbitrary named colormaps."""
     def __getitem__(self, key):
         """
-        Either samples the color from a colormap or color cycle,
-        or calls the parent getitem to look up the color name.
+        Optionally samples colors from a colormap or color cycle.
 
-        For a **smooth colormap**, usage is e.g.
-        ``color=('Blues', 0.8)`` -- the number should be between 0 and 1, and
-        indicates where to draw the color from the smooth colormap. For a
-        "listed" colormap, i.e. a **color cycle**, usage is e.g.
-        ``color=('colorblind', 2)``. The number indicates the index in the
-        list of discrete colors.
-
-        These examples work with any matplotlib command that accepts
-        a ``color`` keyword arg.
+        For a smooth colormap, usage is e.g. ``color=('Blues', 0.8)`` -- the
+        number is the colormap index, and must be between 0 and 1.
+        For a color cycle, usage is e.g. ``color=('colorblind', 2)`` -- the
+        number is the list index. These examples work with any
+        matplotlib command that accepts a ``color`` keyword arg.
         """
         # Matplotlib 'color' args are passed to to_rgba, which tries to read
         # directly from cache and if that fails, sanitizes input, which
@@ -1650,8 +1638,8 @@ def Colormap(*args, name=None, listmode='perceptual',
         `ListedColormap.save`.
     **kwargs
         Passed to `LinearSegmentedColormap.concatenate` or
-        `ListedColormap.concatenate`. Each of these functions accepts arbitrary
-        colormap settings.
+        `ListedColormap.concatenate`. Each of these functions accepts
+        arbitrary colormap settings.
 
     Returns
     -------
@@ -1716,7 +1704,7 @@ def Colormap(*args, name=None, listmode='perceptual',
     if len(cmaps) > 1: # more than one map?
         cmap = cmaps[0].concatenate(*cmaps[1:], **kwargs)
     elif kwargs: # modify any props?
-        cmap = cmaps[0].copy(**kwargs)
+        cmap = cmaps[0].new(**kwargs)
 
     # Cut the edges or center
     left = None if np.iterable(left) else left
@@ -1784,11 +1772,11 @@ def Cycle(*args, samples=None, name=None,
         If the last positional argument is numeric, it is used for the `samples`
         keyword argument.
     samples : float or list of float, optional
-        For `~matplotlib.colors.ListedColormap` maps, this is the number of
+        For `~matplotlib.colors.ListedColormap`\ s, this is the number of
         colors to select. For example, ``Cycle('538', 4)`` returns the first 4
         colors of the ``'538'`` color cycle.
 
-        For `~matplotlib.colors.LinearSegmentedColormap` maps, this is either
+        For `~matplotlib.colors.LinearSegmentedColormap`\ s, this is either
         a list of sample coordinates used to draw colors from the map, or an
         integer number of colors to draw. If the latter, the sample coordinates
         are ``np.linspace(0, 1, samples)``. For example, ``Cycle('Reds', 5)``
