@@ -800,8 +800,9 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         ----------
         path : str, optional
             The output filename. If not provided, the colormap
-            is saved under ``'~/.proplot/cmaps/' + self.name + '.json'``.
-            Valid extensions are described in the below table.
+            is saved under ``~/.proplot/cmaps/name.json`` where ``name``
+            is the colormap name. Valid extensions are described in
+            the below table.
 
             =====================  ==================================================================================================================
             Extension              Description
@@ -809,7 +810,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             ``.json`` (default)    JSON database of the channel segment data.
             ``.hex``               List of HEX strings in any format (comma-separated, separate lines, with double quotes... anything goes).
             ``.rgb``, ``.txt``     3-column table delimited by commas or consecutive spaces, each column indicating red, blue and green color values.
-            ``.rgba``              As with ``.rgb``, but with 4 columns. The first column indicates the colormap coordinate.
+            ``.rgba``              As with ``.rgb``, but with a trailing opacity (or "alpha") column.
             =====================  ==================================================================================================================
         """
         dirname = os.path.join('~', '.proplot', 'cmaps')
@@ -1039,15 +1040,16 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         ----------
         path : str, optional
             The output filename. If not provided, the colormap
-            is saved under ``'~/.proplot/cmaps/' + self.name + '.hex'``.
-            Valid extensions are described in the below table.
+            is saved under ``~/.proplot/cmaps/name.hex`` where ``name``
+            is the colormap name. Valid extensions are described in
+            the below table.
 
             =====================  ==================================================================================================================
             Extension              Description
             =====================  ==================================================================================================================
             ``.hex`` (default)     List of HEX strings in any format (comma-separated, separate lines, with double quotes... anything goes).
             ``.rgb``, ``.txt``     3-column table delimited by commas or consecutive spaces, each column indicating red, blue and green color values.
-            ``.rgba``              As with ``.rgb``, but with 4 columns. The first column indicates the colormap coordinate.
+            ``.rgba``              As with ``.rgb``, but with a trailing opacity (or "alpha") column.
             =====================  ==================================================================================================================
         """
         dirname = os.path.join('~', '.proplot', 'cmaps')
