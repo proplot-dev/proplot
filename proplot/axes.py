@@ -1567,7 +1567,9 @@ def _parse_dualxy_args(x, transform, transform_kw, kwargs):
         transform = scale.get_transform()
         funcscale_funcs = (transform.transform, transform.inverted().transform)
         for key in ('major_locator', 'minor_locator', 'major_formatter', 'minor_formatter'):
-            funcscale_kw[key] = getattr(scale, '_' + key)
+            default = getattr(scale, '_' + key, None)
+            if default:
+                funcscale_kw[key] = default
     elif np.iterable(transform) and len(transform) == 2 and all(callable(itransform) for itransform in transform):
         funcscale_funcs = transform
     elif callable(transform):
