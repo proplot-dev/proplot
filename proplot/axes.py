@@ -1712,15 +1712,18 @@ class CartesianAxes(Axes):
         # overrides, in case user has manually changed them! Also, sometimes
         # we want to borrow method that sets default from the scale from which
         # forward and inverse funcs were drawn, instead of from FuncScale.
-        transform = self.xaxis._scale.get_transform()
+        scale = self.xaxis._scale
+        transform = scale.get_transform()
         child = self._altx_child
-        scale = axistools.Scale('function', funcs[1::-1], transform)
+        funcscale = axistools.Scale('function', funcs[1::-1], transform)
         if locators_formatters:
             if funcs[2] is not None:
                 funcs[2](child.xaxis)
-            else:
+            elif not isinstance(scale, mscale.LinearScale):
                 scale.set_default_locators_and_formatters(child.xaxis)
-        child.xaxis._scale = scale
+            else:
+                funcscale.set_default_locators_and_formatters(child.xaxis)
+        child.xaxis._scale = funcscale
         child._update_transScale()
         child.stale = True
         child.autoscale_view(scaley=False)
@@ -1738,15 +1741,18 @@ class CartesianAxes(Axes):
         funcs = self._dualy_funcs
         if funcs is None:
             return
-        transform = self.yaxis._scale.get_transform()
+        scale = self.yaxis._scale
+        transform = scale.get_transform()
         child = self._alty_child
-        scale = axistools.Scale('function', funcs[1::-1], transform)
+        funcscale = axistools.Scale('function', funcs[1::-1], transform)
         if locators_formatters:
             if funcs[2] is not None:
                 funcs[2](child.yaxis)
-            else:
+            elif not isinstance(scale, mscale.LinearScale):
                 scale.set_default_locators_and_formatters(child.yaxis)
-        child.yaxis._scale = scale
+            else:
+                funcscale.set_default_locators_and_formatters(child.yaxis)
+        child.yaxis._scale = funcscale
         child._update_transScale()
         child.stale = True
         child.autoscale_view(scalex=False)
@@ -2089,9 +2095,6 @@ class CartesianAxes(Axes):
                 # WARNING: Changing axis scale also changes default locators
                 # and formatters, so do it first
                 if scale is not None:
-                    if (formatter is None and getattr(scale,'name',scale) in
-                        ('log', 'logit', 'inverse', 'symlog')):
-                        formatter = 'simple'
                     scale = axistools.Scale(scale, **scale_kw)
                     getattr(self, 'set_' + x + 'scale')(scale)
                 # Is this a date axis?
