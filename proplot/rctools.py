@@ -184,7 +184,7 @@ is shown below. The syntax is roughly the same as that used for
 # TODO: Add 'style' setting that overrides .proplotrc
 # Adapted from seaborn; see: https://github.com/mwaskom/seaborn/blob/master/seaborn/rcmod.py
 from . import utils
-from .utils import _counter, _timer, DEBUG
+from .utils import _counter, _timer, _benchmark
 import re
 import os
 import yaml
@@ -192,12 +192,8 @@ import cycler
 import warnings
 import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
-if DEBUG:
-    import time
-    t = time.clock()
-import matplotlib.pyplot as plt
-if DEBUG:
-    print(f'pyplot: {time.clock() - t}')
+with _benchmark('pyplot'):
+    import matplotlib.pyplot as plt
 try:
     import IPython
     get_ipython = IPython.get_ipython
