@@ -1757,8 +1757,10 @@ def Cycle(*args, samples=None, name=None,
         object. If more than one argument is passed, the resulting cycles are
         merged. Arguments are interpreted as follows.
 
-        * If `~cycler.Cycler`, nothing more is done.
-        * If list of RGB tuples or color strings, these colors are used.
+        * If `~cycler.Cycler`, nothing more
+          is done.
+        * If list of RGB tuples or color strings, these
+          colors are used.
         * If `~matplotlib.colors.ListedColormap`, colors from the ``colors``
           attribute are used.
         * If string color cycle name, that `~matplotlib.colors.ListedColormap`
