@@ -1040,7 +1040,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         ----------
         path : str, optional
             The output filename. If not provided, the colormap
-            is saved under ``~/.proplot/cmaps/name.hex`` where ``name``
+            is saved under ``~/.proplot/cycles/name.hex`` where ``name``
             is the colormap name. Valid extensions are described in
             the below table.
 
