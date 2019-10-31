@@ -2758,6 +2758,7 @@ class ProjectionAxes(Axes):
             Passed to `Axes.format` and `Axes.context`.
         """
         # Parse alternative keyword args
+        # TODO: Why isn't default latmax 80 respected sometimes?
         context, kwargs = self.context(**kwargs)
         with context:
             lonlines = _notNone(lonlines, lonlocator, rc['geogrid.lonstep'], names=('lonlines', 'lonlocator'))
@@ -2772,6 +2773,9 @@ class ProjectionAxes(Axes):
             # Longitude gridlines, draw relative to projection prime meridian
             # NOTE: Always generate gridlines array at least on first format call
             # because rc setting will be not None
+            # NOTE: Cartopy seems to need longitude lines to fall within
+            # -180 and 180. Also if they are not circular, latitude lines will
+            # not extend across entire sphere.
             if isinstance(self, CartopyAxes):
                 lon_0 = self.projection.proj4_params.get('lon_0', 0)
             else:
@@ -2780,6 +2784,9 @@ class ProjectionAxes(Axes):
             if lonlines is not None:
                 if not np.iterable(lonlines):
                     lonlines = utils.arange(lon_0 - 180, lon_0 + 180, lonlines)
+                lonlines = (np.array(lonlines) + 180) % 360 - 180
+                if lonlines[0] == lonlines[-1]:
+                    lonlines[-1] += 360
                 lonlines = [*lonlines]
 
             # Latitudes gridlines, draw from -latmax to latmax unless result would
