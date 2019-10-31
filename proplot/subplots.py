@@ -42,7 +42,6 @@ import matplotlib.transforms as mtransforms
 import matplotlib.gridspec as mgridspec
 from numbers import Integral
 from matplotlib import docstring
-from matplotlib.gridspec import SubplotSpec
 try:
     import matplotlib.backends.backend_macosx as mbackend
 except ImportError:
@@ -51,7 +50,10 @@ from .rctools import rc
 from .utils import _notNone, _counter, units
 from . import projs, axes
 __all__ = [
-    'axes_grid', 'close', 'figure', 'show', 'subplots', 'Figure', 'GridSpec',
+    'axes_grid', 'close', 'figure',
+    'Figure', 'GridSpec',
+    'show', 'subplots',
+    'SubplotSpec',
     ]
 
 # Translation
@@ -79,23 +81,15 @@ JOURNAL_SPECS = {
     'aaas2': '12cm', # AAAS 2 column
     }
 
-
 #-----------------------------------------------------------------------------#
 # Miscellaneous stuff
 #-----------------------------------------------------------------------------#
 # Wrapper functions, so user doesn't have to import pyplot
-def close():
-    """Alias for ``matplotlib.pyplot.close('all')``, included so you don't have
-    to import `~matplotlib.pyplot`. Closes all figures stored
-    in memory."""
-    plt.close('all') # easy peasy
-
-def show():
-    """Alias for ``matplotlib.pyplot.show()``, included so you don't have
-    to import `~matplotlib.pyplot`. Note this command should be
-    unnecessary if you are doing inline iPython notebook plotting and ran the
-    `~proplot.notebook.nbsetup` command."""
-    plt.show()
+def _fp_equal(num1, num2, digits=10):
+    """Tests equality of two floating point numbers out to `N` digits. Used
+    in a couple places."""
+    hi, lo = 10**digits, 10**-digits
+    return round(num1*hi)*lo == round(num2*hi)*lo
 
 # Helper classes
 class axes_grid(list):
@@ -286,7 +280,7 @@ class axes_grid(list):
 #-----------------------------------------------------------------------------#
 # Gridspec classes
 #-----------------------------------------------------------------------------#
-class FlexibleSubplotSpec(mgridspec.SubplotSpec):
+class SubplotSpec(mgridspec.SubplotSpec):
     """
     Adds two helper methods to `~matplotlib.gridspec.SubplotSpec` that return
     the geometry *excluding* rows and columns allocated for spaces.
@@ -311,7 +305,7 @@ class FlexibleSubplotSpec(mgridspec.SubplotSpec):
         else:
             row2 = row1
             col2 = col1
-        return nrows//2, ncols//2, row1//2, row2//2, col1//2, col2//2
+        return (nrows + 1)//2, (ncols + 1)//2, row1//2, row2//2, col1//2, col2//2
 
 class GridSpec(mgridspec.GridSpec):
     """
@@ -325,15 +319,13 @@ class GridSpec(mgridspec.GridSpec):
     These "spaces" are then allowed to vary in width using the builtin
     `width_ratios` and `height_ratios` properties.
     """
-    def __init__(self, figure, nrows=1, ncols=1, **kwargs):
+    def __init__(self, nrows=1, ncols=1, **kwargs):
         """
         Parameters
         ----------
-        figure : `Figure`
-            The figure instance filled by this gridspec. Unlike
-            `~matplotlib.gridspec.GridSpec`, this argument is required.
         nrows, ncols : int, optional
-            The number of rows and columns on the subplot grid.
+            The number of rows and columns on the subplot grid. This is
+            applied automatically when the gridspec is passed.
         hspace, wspace : float or list of float
             The vertical and horizontal spacing between rows and columns of
             subplots, respectively. In `~proplot.subplots.subplots`, ``wspace``
@@ -355,8 +347,9 @@ class GridSpec(mgridspec.GridSpec):
         **kwargs
             Passed to `~matplotlib.gridspec.GridSpec`.
         """
-        self._nrows = nrows*2-1 # used with get_geometry
-        self._ncols = ncols*2-1
+        self._figures = set() # figure tracker
+        self._nrows = nrows*2 - 1 # used with get_geometry
+        self._ncols = ncols*2 - 1
         self._nrows_active = nrows
         self._ncols_active = ncols
         wratios, hratios, kwargs = self._spaces_as_ratios(**kwargs)
@@ -364,7 +357,6 @@ class GridSpec(mgridspec.GridSpec):
                 hspace=0, wspace=0, # we implement these as inactive rows/columns
                 width_ratios=wratios,
                 height_ratios=hratios,
-                figure=figure,
                 **kwargs,
                 )
 
@@ -385,7 +377,7 @@ class GridSpec(mgridspec.GridSpec):
             num1, num2 = np.ravel_multi_index((num1, num2), (nrows, ncols))
         num1 = self._positem(num1)
         num2 = self._positem(num2)
-        return FlexibleSubplotSpec(self, num1, num2)
+        return SubplotSpec(self, num1, num2)
 
     @staticmethod
     def _positem(size):
@@ -452,6 +444,17 @@ class GridSpec(mgridspec.GridSpec):
             hratios_final[1::2] = [*hspace]
         return wratios_final, hratios_final, kwargs # bring extra kwargs back
 
+    def add_figure(self, fig):
+        """Adds `~matplotlib.figure.Figure` to the list of figures that are
+        using this gridspec. This is done automatically when calling
+        `~Figure.add_subplot` with a subplotspec generated by this gridspec."""
+        self._figures.add(fig)
+
+    def remove_figure(self):
+        """Removes `~matplotlib.figure.Figure` from the list of figures that
+        are using this gridspec."""
+        self._figures.discard(fig)
+
     def get_margins(self):
         """Returns left, bottom, right, top values. Not sure why this method
         doesn't already exist on `~matplotlib.gridspec.GridSpec`."""
@@ -478,17 +481,17 @@ class GridSpec(mgridspec.GridSpec):
         columns that aren't skipped by `~GridSpec.__getitem__`."""
         return self._nrows_active, self._ncols_active
 
-    def update(self, **kwargs):
+    def update(self, figure=None, **kwargs):
         """
-        Updates the width ratios, height ratios, gridspec margins, and spacing
+        Updates the width and height ratios, gridspec margins, and spacing
         allocated between subplot rows and columns.
 
         The default `~matplotlib.gridspec.GridSpec.update` tries to update
         positions for axes on all active figures -- but this can fail after
         successive figure edits if it has been removed from the figure
-        manager. So, we explicitly require that the gridspec is dedicated to
-        a particular `~matplotlib.figure.Figure` instance, and just edit axes
-        positions for axes on that instance.
+        manager. ProPlot insists one gridspec per figure, tracks
+        the figures using this gridspec object, and applies updates to those
+        tracked figures.
         """
         # Convert spaces to ratios
         wratios, hratios, kwargs = self._spaces_as_ratios(**kwargs)
@@ -505,13 +508,13 @@ class GridSpec(mgridspec.GridSpec):
         if kwargs:
             raise ValueError(f'Unknown keyword arg(s): {kwargs}.')
 
-        # Apply to figure and all axes
-        fig = self.figure
-        fig.subplotpars.update(self.left, self.bottom, self.right, self.top)
-        for ax in fig.axes:
-            ax.update_params()
-            ax.set_position(ax.figbox)
-        fig.stale = True
+        # Apply to figure(s) and all axes
+        for fig in self._figures:
+            fig.subplotpars.update(self.left, self.bottom, self.right, self.top)
+            for ax in fig.axes:
+                ax.update_params()
+                ax.set_position(ax.figbox)
+            fig.stale = True
 
 #-----------------------------------------------------------------------------#
 # Helper funcs
@@ -745,21 +748,25 @@ class Figure(mfigure.Figure):
         tight=None,
         pad=None, axpad=None, panelpad=None, includepanels=False,
         autoformat=True, ref_num=1, # ref_num should never change
-        subplots_kw=None, gridspec_kw=None, subplots_orig_kw=None,
+        subplots_kw=None, subplots_orig_kw=None,
         tight_layout=None, constrained_layout=None,
         **kwargs):
         """
         Parameters
         ----------
         %(figure_kwargs)s
-        gridspec_kw, subplots_kw, subplots_orig_kw
-            Keywords used for initializing the main gridspec, for initializing
-            the figure, and original spacing keyword args used for initializing
-            the figure that override tight layout spacing.
-        tight_layout, constrained_layout
-            Ignored, because ProPlot uses its own tight layout algorithm.
+        subplots_kw, subplots_orig_kw : dict-like, optional
+            Dictionaries storing the "current" figure geometry properties
+            and properties manually specified by the user. This is used
+            for the tight layout algorithm.
         **kwargs
             Passed to `matplotlib.figure.Figure`.
+
+        Other parameters
+        ----------------
+        tight_layout, constrained_layout
+            Ignored, because ProPlot uses its own tight layout algorithm.
+            A warning will be issued if these are set to ``True``.
         """
         # Initialize first, because need to provide fully initialized figure
         # as argument to gridspec, because matplotlib tight_layout does that
@@ -773,7 +780,7 @@ class Figure(mfigure.Figure):
         self._auto_format = autoformat
         self._auto_tight_layout = _notNone(tight, rc['tight'])
         self._include_panels = includepanels
-        self._ref_num = ref
+        self._ref_num = ref_num
         self._axes_main = []
         self._subplots_orig_kw = subplots_orig_kw
         self._subplots_kw = subplots_kw
@@ -781,13 +788,18 @@ class Figure(mfigure.Figure):
         self._tpanels = []
         self._lpanels = []
         self._rpanels = []
-        gridspec = GridSpec(self, **(gridspec_kw or {}))
+        self._gridspec = None
+
+    def _initialize_geometry(self, gridspec):
+        """Initializes figure geometry using the input gridspec."""
+        # FIXME: Axes panels mess up the below arrays! Means we end up
+        # stacking panels that don't need to be stacked.
         nrows, ncols = gridspec.get_active_geometry()
         self._barray = np.empty((0, ncols), dtype=bool)
         self._tarray = np.empty((0, ncols), dtype=bool)
         self._larray = np.empty((0, nrows), dtype=bool)
         self._rarray = np.empty((0, nrows), dtype=bool)
-        self._gridspec_main = gridspec
+        self._gridspec = gridspec
         self.suptitle('') # add _suptitle attribute
 
     @_counter
@@ -818,7 +830,7 @@ class Figure(mfigure.Figure):
             iratio = (row1 - offset if s == 't' else row2 + offset)
             idx1 = iratio
             idx2 = slice(col1, col2 + 1)
-        gridspec_prev = self._gridspec_main
+        gridspec_prev = self._gridspec
         gridspec = self._insert_row_column(side, iratio,
             width, space, space_orig, figure=False,
             )
@@ -957,16 +969,13 @@ class Figure(mfigure.Figure):
             else:
                 pass # matplotlib issues warning, forces aspect == 'auto'
         # Apply aspect
-        # Account for floating point errors
-        if aspect is not None:
-            aspect = round(aspect*1e10)*1e-10
-            subplots_kw = self._subplots_kw
-            aspect_prev = round(subplots_kw['aspect']*1e10)*1e-10
-            if aspect != aspect_prev:
-                subplots_kw['aspect'] = aspect
-                figsize, gridspec_kw, _ = _subplots_geometry(**subplots_kw)
-                self.set_size_inches(figsize)
-                self._gridspec_main.update(**gridspec_kw)
+        # Account for floating point errors by rounding to 10 digits
+        subplots_kw = self._subplots_kw
+        if aspect is not None and not _fp_equal(aspect, subplots_kw['aspect']):
+            subplots_kw['aspect'] = aspect
+            figsize, gridspec_kw, _ = _subplots_geometry(**subplots_kw)
+            self.set_size_inches(figsize)
+            self._gridspec.update(**gridspec_kw)
 
     def _adjust_tight_layout(self, renderer):
         """Applies tight layout scaling that permits flexible figure
@@ -977,7 +986,7 @@ class Figure(mfigure.Figure):
         axs = self._iter_axes()
         obox = self.bbox_inches # original bbox
         bbox = self.get_tightbbox(renderer)
-        gridspec = self._gridspec_main
+        gridspec = self._gridspec
         subplots_kw = self._subplots_kw
         subplots_orig_kw = self._subplots_orig_kw # tight layout overrides
         if not axs or not subplots_kw or not subplots_orig_kw:
@@ -1077,7 +1086,7 @@ class Figure(mfigure.Figure):
             'wspace':spaces[0], 'hspace':spaces[1],
             })
         figsize, gridspec_kw, _ = _subplots_geometry(**subplots_kw)
-        self._gridspec_main.update(**gridspec_kw)
+        self._gridspec.update(**gridspec_kw)
         self.set_size_inches(figsize)
 
     def _align_axislabels(self, b=True):
@@ -1272,12 +1281,13 @@ class Figure(mfigure.Figure):
         figsize, gridspec_kw, _ = _subplots_geometry(**subplots_kw)
         self.set_size_inches(figsize)
         if exists:
-            gridspec = self._gridspec_main
+            gridspec = self._gridspec
             gridspec.update(**gridspec_kw)
         else:
             # New gridspec
-            gridspec = GridSpec(self, **gridspec_kw)
-            self._gridspec_main = gridspec
+            self._gridspec.remove_figure(self)
+            gridspec = GridSpec(**gridspec_kw)
+            self._gridspec = gridspec
             # Reassign subplotspecs to all axes and update positions
             # May seem inefficient but it literally just assigns a hidden,
             # attribute, and the creation time for subpltospecs is tiny
@@ -1438,8 +1448,9 @@ class Figure(mfigure.Figure):
             There are three options here. See the matplotlib
             `~matplotlib.figure.add_subplot` documentation for details.
 
-            * A `~matplotlib.gridspec.SubplotSpec` instance. Must be a child of
-              the "main" gridspec.
+            * A `SubplotSpec` instance. Must be a child of the "main"
+              gridspec, and must be a ProPlot `SubplotSpec` instead of a native
+              matplotlib `~matplotlib.gridspec.SubplotSpec`.
             * A 3-digit integer, e.g. ``121``. Geometry must be equivalent to
               or divide the "main" gridspec geometry.
             * A tuple indicating (nrows, ncols, index). Geometry must be
@@ -1455,7 +1466,6 @@ class Figure(mfigure.Figure):
             Passed to `~matplotlib.figure.Figure.add_subplot`. Also passed
             to `~proplot.proj.Proj` if this is a cartopy or basemap projection.
         """
-        # TODO: Consider permitting add_subplot?
         # Copied from matplotlib add_subplot
         if not len(args):
             args = (1, 1, 1)
@@ -1463,12 +1473,16 @@ class Figure(mfigure.Figure):
             if not 100 <= args[0] <= 999:
                 raise ValueError(f'Integer subplot specification must be a three-digit number, not {args[0]!r}.')
             args = tuple(map(int, str(args[0])))
-        # Copied from SubplotBase __init__ and modified to enforce restrictions
-        gridspec = self._gridspec_main
+
+        # Copied from SubplotBase __init__
+        # Interpret positional args
+        gridspec = self._gridspec
         subplotspec = None
         if len(args) == 1:
             if isinstance(args[0], SubplotSpec):
                 subplotspec = args[0]
+            elif isinstance(args[0], mgridspec.SubplotSpec):
+                raise ValueError(f'Invalid subplotspec {args[0]!r}. Figure.add_subplot() only accepts SubplotSpec objects generated by the ProPlot GridSpec class.')
             else:
                 try:
                     s = str(int(args[0]))
@@ -1478,32 +1492,42 @@ class Figure(mfigure.Figure):
         elif len(args) == 3:
             rows, cols, num = args
         else:
-            raise ValueError(f'Illegal argument(s) to add_subplot: {args}')
+            raise ValueError(f'Illegal argument(s) to add_subplot: {args!r}')
+
+        # Initialize gridspec and subplotspec
+        # Also enforce constant geometry
         if subplotspec is None:
-            rows = int(rows)
-            cols = int(cols)
+            rows, cols = int(rows), int(cols)
             if isinstance(num, tuple) and len(num) == 2:
                 num = [int(n) for n in num]
             else:
                 if num < 1 or num > rows*cols:
                     raise ValueError(f'num must be 1 <= num <= {rows*cols}, not {num}')
+            if not isinstance(num, tuple):
+                num = (num, num)
+            if gridspec is None:
+                gridspec = GridSpec(rows, cols) # use default params
+                self._initialize_geometry(gridspec)
+            subplotspec = gridspec[(num[0] - 1):num[1]]
+        else:
+            rows, cols, *_ = subplotspec.get_active_geometry()
+            if gridspec is None:
+                gridspec = subplotspec.get_gridspec()
+                self._initialize_geometry(gridspec)
+        if subplotspec.get_gridspec() is not gridspec:
+            raise ValueError(f'Invalid subplotspec {args[0]!r}. Figure.add_subplot() only accepts SubplotSpec objects whose parent is the main gridspec.')
         if (rows, cols) != gridspec.get_active_geometry():
             raise ValueError(f'Input arguments {args!r} conflict with existing gridspec geometry of {rows} rows, {cols} columns.')
-        if not isinstance(num, tuple):
-            num = (num, num)
-        subplotspec = gridspec[(num[0] - 1):num[1]]
+        gridspec.add_figure(self)
 
         # The default is CartesianAxes
         proj = _notNone(proj, projection, 'cartesian', names=('proj', 'projection'))
         proj_kw = _notNone(proj_kw, projection_kw, {}, names=('proj_kw', 'projection_kw'))
-        # Builtin matplotlib polar axes, just use my overridden version
-        if proj == 'polar':
-            proj = 'polar2'
         # Custom Basemap and Cartopy axes
         # TODO: Have Proj return all unused keyword args, with a
         # map_projection = obj entry, and maybe hide the Proj constructor as
         # an argument processing utility?
-        elif proj != 'cartesian':
+        if proj not in ('cartesian', 'polar'):
             map_projection = projs.Proj(proj, basemap=basemap, **proj_kw)
             if 'map_projection' in kwargs:
                 warnings.warn(f'Ignoring input "map_projection" {kwargs["map_projection"]!r}.')
@@ -1713,9 +1737,9 @@ class Figure(mfigure.Figure):
         return axs
 
 #-----------------------------------------------------------------------------#
-# Primary functions used to create figures and axes
+# Main user interface and helper funcs
 #-----------------------------------------------------------------------------#
-def _journals(journal):
+def _journal_figsize(journal):
     """Journal sizes for figures."""
     # Get dimensions for figure from common journals.
     value = JOURNAL_SPECS.get(journal, None)
@@ -1769,6 +1793,19 @@ def _axes_dict(naxs, value, kw=False, default=None):
     if {*range(1, naxs+1)} != {*kwargs.keys()}:
         raise ValueError(f'Have {naxs} axes, but {value} has properties for axes {", ".join(str(i) for i in sorted(kwargs.keys()))}.')
     return kwargs
+
+def close():
+    """Alias for ``matplotlib.pyplot.close('all')``, included so you don't have
+    to import `~matplotlib.pyplot`. Closes all figures stored
+    in memory."""
+    plt.close('all')
+
+def show():
+    """Alias for ``matplotlib.pyplot.show()``, included so you don't have
+    to import `~matplotlib.pyplot`. Note this command should be
+    unnecessary if you are doing inline iPython notebook plotting and ran the
+    `~proplot.notebook.nbsetup` command."""
+    plt.show()
 
 # TODO: Figure out how to save subplots keyword args!
 @docstring.dedent_interpd
@@ -2026,13 +2063,10 @@ def subplots(array=None, ncols=1, nrows=1,
     proj_kw = _axes_dict(naxs, proj_kw, kw=True)
     basemap = _axes_dict(naxs, basemap, kw=False, default=False)
 
-    #-------------------------------------------------------------------------#
-    # Figure architecture
-    #-------------------------------------------------------------------------#
     # Figure and/or axes dimensions
     names, values = (), ()
     if journal:
-        figsize = _journals(journal) # if user passed width=<string > , will use that journal size
+        figsize = _journal_figsize(journal)
         spec = f'journal={journal!r}'
         names = ('axwidth', 'axheight', 'width')
         values = (axwidth, axheight, width)
@@ -2062,6 +2096,7 @@ def subplots(array=None, ncols=1, nrows=1,
     # Standardized user input border spaces
     left, right = units(left), units(right)
     bottom, top = units(bottom), units(top)
+
     # Standardized user input spaces
     wspace = np.atleast_1d(units(_notNone(wspace, space)))
     hspace = np.atleast_1d(units(_notNone(hspace, space)))
@@ -2073,6 +2108,7 @@ def subplots(array=None, ncols=1, nrows=1,
         hspace = np.repeat(hspace, (nrows-1,))
     if len(hspace) != nrows-1:
         raise ValueError(f'Require {nrows-1} height spacings for {nrows} rows, got {len(hspace)}.')
+
     # Standardized user input ratios
     wratios = np.atleast_1d(_notNone(width_ratios, wratios, 1,
         names=('width_ratios', 'wratios')))
@@ -2124,17 +2160,14 @@ def subplots(array=None, ncols=1, nrows=1,
         wratios=wratios, hratios=hratios, wspace=wspace, hspace=hspace,
         wpanels=['']*ncols, hpanels=['']*nrows,
         )
+    gridspec = GridSpec(**gridspec_kw)
     fig = plt.figure(FigureClass=Figure, tight=tight, figsize=figsize,
         ref_num=ref,
         pad=pad, axpad=axpad, panelpad=panelpad, autoformat=autoformat,
         includepanels=includepanels,
         subplots_orig_kw=subplots_orig_kw, subplots_kw=subplots_kw,
-        gridspec_kw=gridspec_kw)
-    gridspec = fig._gridspec_main
+        )
 
-    #-------------------------------------------------------------------------#
-    # Draw on figure
-    #-------------------------------------------------------------------------#
     # Draw main subplots
     axs = naxs*[None] # list of axes
     for idx in range(naxs):
