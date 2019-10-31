@@ -3277,7 +3277,7 @@ class BasemapAxes(ProjectionAxes):
         # Checks
         if (lonlim is not None or latlim is not None or
             boundinglat is not None):
-            warnings.warn('Got lonlim={lonlim}, latlim={latlim}, boundinglat={boundinglat}, but you cannot "zoom into" a basemap projection after creating it. Pass a proj_kw dictionary in your call to subplots, with any of the following basemap keywords: boundinglat, llcrnrlon, llcrnrlat, urcrnrlon, urcrnrlat, llcrnrx, llcrnry, urcrnrx, urcrnry, width, or height.')
+            warnings.warn(f'Got lonlim={lonlim!r}, latlim={latlim!r}, boundinglat={boundinglat!r}, but you cannot "zoom into" a basemap projection after creating it. Pass a proj_kw dictionary in your call to subplots, with any of the following basemap keywords: boundinglat, llcrnrlon, llcrnrlat, urcrnrlon, urcrnrlat, llcrnrx, llcrnry, urcrnrx, urcrnry, width, or height.')
 
         # Map boundary
         # * First have to *manually replace* the old boundary by just
