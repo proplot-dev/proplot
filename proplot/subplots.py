@@ -258,25 +258,6 @@ class axes_grid(list):
         # Mixed
         raise AttributeError(f'Found mixed types for attribute {attr!r}.')
 
-    # TODO: No more putting panels, legends, colorbars on the SubplotSpec.
-    # Put them in the margin, increase default space, and lock them to
-    # subplot bounds with locators, borrowing from axes_grid1 toolkit
-    # TODO: Consider adding Github issue, would be major API change.
-    # def colorbar(self, loc=None):
-    #     """Draws a colorbar that spans axes in the selected range."""
-    #     for ax in self:
-    #         pass
-    #
-    # def legend(self, loc=None):
-    #     """Draws a legend that spans axes in the selected range."""
-    #     for ax in self:
-    #         pass
-    #
-    # def text(self, loc=None):
-    #     """Draws text that spans axes in the selected range."""
-    #     for ax in self:
-    #         pass
-
 #-----------------------------------------------------------------------------#
 # Gridspec classes
 #-----------------------------------------------------------------------------#
