@@ -686,9 +686,9 @@ def _subplots_geometry(**kwargs):
 #-----------------------------------------------------------------------------#
 # Figure class and helper classes
 #-----------------------------------------------------------------------------#
-class _hidelabels(object):
-    """Hides objects temporarily so they are ignored by the tight bounding box
-    algorithm."""
+class _hide_labels(object):
+    """Hides objects temporarily so they are ignored by the tight bounding
+    box algorithm."""
     def __init__(self, *args):
         self._labels = args
     def __enter__(self):
@@ -1154,7 +1154,7 @@ class Figure(mfigure.Figure):
             coords = [None]*len(axs)
             if s == 't' and suptitle_on:
                 supaxs = axs
-            with _hidelabels(*labels):
+            with _hide_labels(*labels):
                 for i,(ax,label) in enumerate(zip(axs,labels)):
                     label_on = label.get_text().strip()
                     if not label_on:
