@@ -128,8 +128,8 @@ class Axes(maxes.Axes):
         Parameters
         ----------
         number : int
-            The subplot number, used for a-b-c labelling (see
-            `~Axes.format`).
+            The subplot number, used for a-b-c labeling. See `~Axes.format`
+            for details. Note the first axes is ``1``, not ``0``.
         sharex, sharey : {3, 2, 1, 0}, optional
             The "axis sharing level" for the *x* axis, *y* axis, or both
             axes. See `~proplot.subplots.subplots` for details.
@@ -147,7 +147,6 @@ class Axes(maxes.Axes):
         # Call parent
         super().__init__(*args, **kwargs)
         # Properties
-        self._number = number # for abc numbering
         self._abc_loc = None
         self._abc_text = None
         self._titles_dict = {} # dictionary of title text objects and their locations
@@ -189,6 +188,7 @@ class Axes(maxes.Axes):
         self._sharex_level = sharex
         self._sharey_level = sharey
         self._share_setup()
+        self.number = number # for abc numbering
         self.format(mode=1) # mode == 1 applies the rcExtraParams
 
     def _draw_auto_legends_colorbars(self):
@@ -305,6 +305,18 @@ class Axes(maxes.Axes):
             obj = self.text(x, y, '', ha=ha, va=va, transform=self.transAxes)
             obj.set_transform(self.transAxes)
         return loc, obj, kw
+
+    def _iter_panels(self, sides='lrbt'):
+        """Iterates over axes and child panel axes."""
+        axs = [self] if self.get_visible() else []
+        if not ({*sides} <= {*'lrbt'}):
+            raise ValueError(f'Invalid sides {sides!r}.')
+        for s in sides:
+            for ax in getattr(self, '_' + s + 'panels'):
+                if not ax or not ax.get_visible():
+                    continue
+                axs.append(ax)
+        return axs
 
     @staticmethod
     def _loc_translate(loc, **kwargs):
@@ -1364,17 +1376,11 @@ class Axes(maxes.Axes):
         `~proplot.subplots.subplots`."""
         return self._number
 
-    def _iter_panels(self, sides='lrbt'):
-        """Iterates over axes and child panel axes."""
-        axs = [self] if self.get_visible() else []
-        if not ({*sides} <= {*'lrbt'}):
-            raise ValueError(f'Invalid sides {sides!r}.')
-        for s in sides:
-            for ax in getattr(self, '_' + s + 'panels'):
-                if not ax or not ax.get_visible():
-                    continue
-                axs.append(ax)
-        return axs
+    @number.setter
+    def number(self, num):
+        if not isinstance(num, Integral) or num < 1:
+            raise ValueError(f'Invalid number {num!r}. Must be integer >=1.')
+        self._number = num
 
     # Wrapped by special functions
     # Also support redirecting to Basemap methods
@@ -2438,12 +2444,6 @@ class CartesianAxes(Axes):
         'x':'y', 'x1':'left', 'x2':'right',
         'y':'x', 'y1':'bottom', 'y2':'top',
         }
-    dualx.__doc__ = dualxy_descrip % {
-        'x':'x', 'args':', '.join(dualxy_kwargs)
-        }
-    dualy.__doc__ = dualxy_descrip % {
-        'x':'y', 'args':', '.join(dualxy_kwargs)
-        }
     twinx.__doc__ = twinxy_descrip % {
         'x':'y', 'x1':'left', 'x2':'right',
         'y':'x', 'y1':'bottom', 'y2':'top',
@@ -2451,6 +2451,12 @@ class CartesianAxes(Axes):
     twiny.__doc__ = twinxy_descrip % {
         'x':'x', 'x1':'bottom', 'x2':'top',
         'y':'y', 'y1':'left', 'y2':'right',
+        }
+    dualx.__doc__ = dualxy_descrip % {
+        'x':'x', 'args':', '.join(dualxy_kwargs)
+        }
+    dualy.__doc__ = dualxy_descrip % {
+        'x':'y', 'args':', '.join(dualxy_kwargs)
         }
 
 class PolarAxes(Axes, mproj.PolarAxes):

@@ -157,14 +157,17 @@ def Proj(name, basemap=False, **kwargs):
     # Cartopy
     else:
         import cartopy.crs as ccrs # verify package is available
-        kwargs = {CARTOPY_CRS_TRANSLATE.get(key, key): value for key,value in kwargs.items()}
+        kwargs = {
+            CARTOPY_CRS_TRANSLATE.get(key, key): value
+            for key,value in kwargs.items()
+            }
         crs = cartopy_projs.get(name, None)
         if name == 'geos': # fix common mistake
             kwargs.pop('central_latitude', None)
         if 'boundinglat' in kwargs:
             raise ValueError(f'"boundinglat" must be passed to the ax.format() command for cartopy axes.')
         if crs is None:
-            raise ValueError(f'Unknown projection "{name}". Options are: {", ".join(cartopy_projs.keys())}.')
+            raise ValueError(f'Unknown projection {name!r}. Options are: {", ".join(map(repr, cartopy_projs.keys()))}.')
         proj = crs(**kwargs)
     return proj
 

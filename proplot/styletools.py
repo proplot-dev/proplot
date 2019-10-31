@@ -232,13 +232,7 @@ BASE_COLORS_FULL = {
     }
 
 # Docstring fragments
-cyclic_doc = """
-cyclic : bool, optional
-    Whether this colormap is cyclic. This affects how colors at either
-    end of the colorbar are scaled, and which `extend` settings other
-    than ``'neither'`` are allowed.
-"""
-gamma_doc = """
+_gamma_params = """
 gamma1 : float, optional
     If >1, makes low saturation colors more prominent. If <1,
     makes high saturation colors more prominent. Similar to the
@@ -250,10 +244,9 @@ gamma2 : float, optional
     `HCLWizard <http://hclwizard.org:64230/hclwizard/>`_ option.
     See `make_mapping_array` for details.
 gamma : float, optional
-    Use this to identically set `gamma1` and `gamma2` at once.
+    Sets `gamma1` and `gamma2` to this identical value.
 """
-docstring.interpd.update(gamma_doc=gamma_doc)
-docstring.interpd.update(cyclic_doc=cyclic_doc)
+docstring.interpd.update(gamma_params=_gamma_params)
 
 #-----------------------------------------------------------------------------#
 # Color manipulation functions
@@ -321,7 +314,7 @@ def to_rgb(color, space='rgb', cycle=None):
                 cycle = mcm.cmap_d[cycle].colors
             except (KeyError, AttributeError):
                 cycles = sorted(name for name,cmap in mcm.cmap_d.items() if isinstance(cmap, ListedColormap))
-                raise ValueError(f'Invalid cycle name "{cycle}". Options are: {", ".join(cycles)}')
+                raise ValueError(f'Invalid cycle name {cycle!r}. Options are: {", ".join(map(repr, cycles))}')
         elif cycle is None:
             cycle = rcParams['axes.prop_cycle'].by_key()
             if 'color' not in cycle:
@@ -329,14 +322,14 @@ def to_rgb(color, space='rgb', cycle=None):
             else:
                 cycle = cycle['color']
         elif not np.iterable(cycle):
-            raise ValueError(f'Invalid cycle "{cycle}".')
+            raise ValueError(f'Invalid cycle specifier {cycle!r}.')
         color = cycle[int(color[-1]) % len(cycle)]
     # Translate RGB strings and (cmap,index) tuples
     if isinstance(color, str) or (np.iterable(color) and len(color) == 2):
         try:
             color = mcolors.to_rgb(color) # ensure is valid color
         except (ValueError, TypeError):
-            raise ValueError(f'Invalid RGB argument "{color}".')
+            raise ValueError(f'Invalid RGB argument {color!r}.')
     elif space == 'rgb':
         color = color[:3] # trim alpha
         try:
@@ -578,7 +571,7 @@ class _Colormap():
             data = [rgb(color) for color in colors]
             data = '\n'.join(','.join(str(num) for num in line) for line in data)
         else:
-            raise ValueError(f'Invalid extension {ext!r}. Options are "hex", "txt", "rgb", or "rgba".')
+            raise ValueError(f'Invalid extension {ext!r}. Options are: "hex", "txt", "rgb", "rgba".')
         return data
 
     def _parse_path(self, path, dirname='.', ext=''):
@@ -614,12 +607,14 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             string += f' {key!r}: [{data[0][2]:.3f}, ..., {data[-1][1]:.3f}],\n'
         return type(self).__name__ + '({\n' + string + '})'
 
-    @docstring.dedent_interpd
     def __init__(self, *args, cyclic=False, **kwargs):
         """
         Parameters
         ----------
-        %(cyclic_doc)s
+        cyclic : bool, optional
+            Whether this colormap is cyclic. This affects how colors at either
+            end of the colorbar are scaled, and which `extend` settings other
+            than ``'neither'`` are allowed.
         *args, **kwargs
             Passed to `~matplotlib.colors.LinearSegmentedColormap`.
         """
@@ -738,7 +733,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         name : str
             The colormap name. Default is ``self.name + '_new'``.
         segmentdata, N, gamma, cyclic : optional
-            See `LinearSegmentedColormap`. If not provided,
+            See `LinearSegmentedColormap` for details. If not provided,
             these are copied from the current colormap.
         """
         if name is None:
@@ -1019,8 +1014,8 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         name : str
             The colormap name. Default is ``self.name + '_new'``.
         colors, N : optional
-            See `~matplotlib.colors.ListedColormap`. If not provided,
-            these are copied from the current colormap.
+            See `~matplotlib.colors.ListedColormap` for details. If not
+            provided, these are copied from the current colormap.
         """
         if name is None:
             name = self.name + '_new'
@@ -1142,8 +1137,10 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         clip : bool, optional
             Whether to "clip" impossible colors, i.e. truncate HCL colors
             with RGB channels with values >1, or mask them out as gray.
-        %(gamma_doc)s
-        %(cyclic_doc)s
+        cyclic : bool, optional
+            Whether this colormap is cyclic. See `LinearSegmentedColormap`
+            for details.
+        %(gamma_params)s
 
         Example
         -------
@@ -1182,7 +1179,7 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
                 segmentdata[key][i] = xyy
         # Initialize
         N = N or rcParams['image.lut']
-        super().__init__(name, segmentdata, N, gamma=1.0)
+        super().__init__(name, segmentdata, N, gamma=1.0, cyclic=cyclic)
 
     def _init(self):
         """As with `~matplotlib.colors.LinearSegmentedColormap`, but converts
@@ -1222,7 +1219,7 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         name : str
             The colormap name. Default is ``self.name + '_new'``.
         segmentdata, N, space, clip, gamma, gamma1, gamma2, cyclic : optional
-            See `PerceptuallyUniformColormap`. If not provided,
+            See `PerceptuallyUniformColormap` for details. If not provided,
             these are copied from the current colormap.
         """
         if name is None:
@@ -1379,7 +1376,7 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
 
         Parameters
         ----------
-        %(gamma_doc)s
+        %(gamma_params)s
         """
         gamma1 = _notNone(gamma1, gamma)
         gamma2 = _notNone(gamma2, gamma)
@@ -1651,7 +1648,7 @@ def Colormap(*args, name=None, listmode='perceptual',
     if not args:
         raise ValueError(f'Colormap() requires at least one positional argument.')
     if listmode not in ('listed', 'linear', 'perceptual'):
-        raise ValueError(f'Invalid listmode={listmode!r}. Options are "listed", "linear", and "perceptual".')
+        raise ValueError(f'Invalid listmode={listmode!r}. Options are: "listed", "linear", "perceptual".')
     cmaps = []
     tmp = '_no_name' # name required, but we only care about name of final merged map
     for i,cmap in enumerate(args):
@@ -1692,10 +1689,10 @@ def Colormap(*args, name=None, listmode='perceptual',
             try:
                 color = to_rgb(cmap, cycle=cycle)
             except (ValueError, TypeError):
-                msg = f'Invalid cmap, cycle, or color "{cmap}".'
+                msg = f'Invalid cmap, cycle, or color {cmap!r}.'
                 if isinstance(cmap, str):
-                    msg += (f'\nValid cmap and cycle names: {", ".join(sorted(mcm.cmap_d))}.'
-                            f'\nValid color names: {", ".join(sorted(mcolors.colorConverter.colors.keys()))}.')
+                    msg += (f'\nValid cmap and cycle names: {", ".join(map(repr, sorted(mcm.cmap_d)))}.'
+                            f'\nValid color names: {", ".join(map(repr, sorted(mcolors.colorConverter.colors)))}.')
                 raise ValueError(msg)
             cmap = PerceptuallyUniformColormap.from_color(tmp, color, fade)
         # Transform colormap by clipping colors or reversing
@@ -1937,11 +1934,11 @@ def Norm(norm, levels=None, **kwargs):
         # Get class
         norm_out = normalizers.get(norm, None)
         if norm_out is None:
-            raise ValueError(f'Unknown normalizer "{norm}". Options are {", ".join(normalizers.keys())}.')
+            raise ValueError(f'Unknown normalizer {norm!r}. Options are: {", ".join(map(repr, normalizers.keys()))}.')
         # Instantiate class
         if norm_out is LinearSegmentedNorm:
             if not np.iterable(levels):
-                raise ValueError(f'Need levels for normalizer "{norm}". Received levels={levels}.')
+                raise ValueError(f'Need levels for normalizer {norm!r}. Received levels={levels!r}.')
             kwargs.update({'levels':levels})
         norm_out = norm_out(**kwargs) # initialize
     else:
