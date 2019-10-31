@@ -789,6 +789,7 @@ class Figure(mfigure.Figure):
         self._lpanels = []
         self._rpanels = []
         self._gridspec = None
+        self.suptitle('') # add _suptitle attribute
 
     def _initialize_geometry(self, gridspec):
         """Initializes figure geometry using the input gridspec."""
@@ -800,7 +801,6 @@ class Figure(mfigure.Figure):
         self._larray = np.empty((0, nrows), dtype=bool)
         self._rarray = np.empty((0, nrows), dtype=bool)
         self._gridspec = gridspec
-        self.suptitle('') # add _suptitle attribute
 
     @_counter
     def _add_axes_panel(self, ax, side, filled=False, **kwargs):
@@ -1520,13 +1520,12 @@ class Figure(mfigure.Figure):
             raise ValueError(f'Input arguments {args!r} conflict with existing gridspec geometry of {rows} rows, {cols} columns.')
         gridspec.add_figure(self)
 
-        # The default is CartesianAxes
-        proj = _notNone(proj, projection, 'cartesian', names=('proj', 'projection'))
-        proj_kw = _notNone(proj_kw, projection_kw, {}, names=('proj_kw', 'projection_kw'))
-        # Custom Basemap and Cartopy axes
+        # Impose projection
         # TODO: Have Proj return all unused keyword args, with a
         # map_projection = obj entry, and maybe hide the Proj constructor as
         # an argument processing utility?
+        proj = _notNone(proj, projection, 'cartesian', names=('proj', 'projection'))
+        proj_kw = _notNone(proj_kw, projection_kw, {}, names=('proj_kw', 'projection_kw'))
         if proj not in ('cartesian', 'polar'):
             map_projection = projs.Proj(proj, basemap=basemap, **proj_kw)
             if 'map_projection' in kwargs:
@@ -1821,7 +1820,6 @@ def figure(**kwargs):
         Passed to `~matplotlib.figure.Figure`.
     """
     # TODO: Repair subplots-dependent behavior! Permit serial args!
-    kwargs['gridspec_kw'] = None
     kwargs['subplots_kw'] = None
     kwargs['subplots_orig_kw'] = None
     return plt.figure(FigureClass=Figure, **kwargs)
