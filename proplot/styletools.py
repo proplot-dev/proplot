@@ -1664,9 +1664,15 @@ def Colormap(*args, name=None, listmode='perceptual',
         ireverse = False if not np.iterable(reverse) else reverse[i]
         ileft = None if not np.iterable(left) else left[i]
         iright = None if not np.iterable(right) else right[i]
-        # Interpret existing colormap
-        if isinstance(cmap, mcolors.Colormap):
+        # Convert matplotlib colormaps to subclasses
+        if isinstance(cmap, (ListedColormap, LinearSegmentedColormap)):
             pass
+        elif type(cmap) is mcolors.LinearSegmentedColormap:
+            cmap = LinearSegmentedColormap(
+                cmap.name, cmap._segmentdata, cmap.N, cmap._gamma)
+        elif type(cmap) is mcolors.ListedColormap:
+            cmap = ListedColormap(
+                cmap.colors, cmap.name, cmap.N)
         # Dictionary of hue/sat/luminance values or 2-tuples representing linear transition
         elif isinstance(cmap, dict):
             cmap = PerceptuallyUniformColormap.from_hsl(tmp, **cmap)
