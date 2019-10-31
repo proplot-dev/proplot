@@ -14,17 +14,29 @@ try:
     from icecream import ic
 except ImportError:  # graceful fallback if IceCream isn't installed
     ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a) # noqa
-__all__ = ['arange', 'edges', 'units', 'DEBUG']
+__all__ = ['arange', 'edges', 'units']
 
-# Debug decorators
-DEBUG = False # debug mode, used for profiling and activating timer decorators
+# Change this to turn on benchmarking
+BENCHMARK = False
+
+# Benchmarking tools for developers
+class _benchmark(object):
+    """Timer object that can be used to time things."""
+    def __init__(self, message):
+        self.message = message
+    def __enter__(self):
+        self.time = time.clock()
+    def __exit__(self, *args):
+        if BENCHMARK:
+            print(f'{self.message}: {time.clock() - self.time}s')
+
 def _logger(func):
     """A decorator that logs the activity of the script (it actually just prints it,
     but it could be logging!). See: https://stackoverflow.com/a/1594484/4970632"""
     @functools.wraps(func)
     def decorator(*args, **kwargs):
         res = func(*args, **kwargs)
-        if DEBUG:
+        if BENCHMARK:
             print(f'{func.__name__} called with: {args} {kwargs}')
         return res
     return decorator
@@ -34,10 +46,10 @@ def _timer(func):
     See: https://stackoverflow.com/a/1594484/4970632"""
     @functools.wraps(func)
     def decorator(*args, **kwargs):
-        if DEBUG:
+        if BENCHMARK:
             t = time.clock()
         res = func(*args, **kwargs)
-        if DEBUG:
+        if BENCHMARK:
             print(f'{func.__name__}() time: {time.clock()-t}s')
         return res
     return decorator
@@ -47,10 +59,10 @@ def _counter(func):
     has benn running. See: https://stackoverflow.com/a/1594484/4970632"""
     @functools.wraps(func)
     def decorator(*args, **kwargs):
-        if DEBUG:
+        if BENCHMARK:
             t = time.clock()
         res = func(*args, **kwargs)
-        if DEBUG:
+        if BENCHMARK:
             decorator.time += (time.clock() - t)
             decorator.count += 1
             print(f'{func.__name__}() cumulative time: {decorator.time}s ({decorator.count} calls)')
@@ -157,7 +169,6 @@ def edges(array, axis=-1):
     array = np.swapaxes(array, axis, -1)
     return array
 
-# Units
 def units(value, numeric='in'):
     """
     Flexible units -- this function is used internally all over ProPlot, so
