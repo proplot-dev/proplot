@@ -509,7 +509,7 @@ class _dummy_axis(object):
     # TODO: Submit matplotlib pull request! How has no one fixed this already!
     axis_name = 'x'
 
-class _Scale(object):
+class _ScaleBase(object):
     """Mixin scale class that standardizes required methods."""
     def set_default_locators_and_formatters(self, axis, only_if_default=False):
         """
@@ -561,7 +561,7 @@ class _Scale(object):
         """Returns the scale transform."""
         return getattr(self, '_transform', mtransforms.IdentityTransform())
 
-class LinearScale(_Scale, mscale.LinearScale):
+class LinearScale(_ScaleBase, mscale.LinearScale):
     """
     As with `~matplotlib.scale.LinearScale`, but applies new default
     major formatter.
@@ -569,7 +569,7 @@ class LinearScale(_Scale, mscale.LinearScale):
     name = 'linear'
     """The registered scale name."""
 
-class LogitScale(_Scale, mscale.LogitScale):
+class LogitScale(_ScaleBase, mscale.LogitScale):
     """
     As with `~matplotlib.scale.LogitScale`, but applies new default
     major formatter.
@@ -577,7 +577,7 @@ class LogitScale(_Scale, mscale.LogitScale):
     name = 'logit'
     """The registered scale name."""
 
-class LogScale(_Scale, mscale.LogScale):
+class LogScale(_ScaleBase, mscale.LogScale):
     """
     As with `~matplotlib.scale.LogScale`, but applies new default major
     formatter and fixes the inexplicable choice to have separate "``x``" and
@@ -609,7 +609,7 @@ class LogScale(_Scale, mscale.LogScale):
         self._minor_locator = Locator('log', base=self.base, subs=self.subs)
         # self._major_formatter = Formatter('log')
 
-class SymmetricalLogScale(_Scale, mscale.SymmetricalLogScale):
+class SymmetricalLogScale(_ScaleBase, mscale.SymmetricalLogScale):
     """
     As with `~matplotlib.scale.SymmetricLogScale`, but applies new default
     major formatter and fixes the inexplicable choice to have separate "``x``"
@@ -651,7 +651,7 @@ class SymmetricalLogScale(_Scale, mscale.SymmetricalLogScale):
                 transform=self.get_transform(), subs=self.subs)
         # self._major_formatter = Formatter('symlog'))
 
-class FuncScale(_Scale, mscale.ScaleBase):
+class FuncScale(_ScaleBase, mscale.ScaleBase):
     """
     Arbitrary scale with user-supplied forward and inverse functions and
     arbitrary additional transform applied thereafter. Input is a tuple
@@ -724,7 +724,7 @@ class FuncTransform(mtransforms.Transform):
 #-----------------------------------------------------------------------------#
 # Custom scale classes
 #-----------------------------------------------------------------------------#
-class PowerScale(_Scale, mscale.ScaleBase):
+class PowerScale(_ScaleBase, mscale.ScaleBase):
     r"""
     Returns a "power scale" that performs the transformation
 
@@ -795,7 +795,7 @@ class InvertedPowerTransform(mtransforms.Transform):
     def inverted(self):
         return PowerTransform(self._power, self.minpos)
 
-class ExpScale(_Scale, mscale.ScaleBase):
+class ExpScale(_ScaleBase, mscale.ScaleBase):
     """
     An "exponential scale". When `inverse` is ``False`` (the default), this
     performs the transformation
@@ -884,7 +884,7 @@ class InvertedExpTransform(mtransforms.Transform):
     def inverted(self):
         return ExpTransform(self._a, self._b, self._c, self.minpos)
 
-class CutoffScale(_Scale, mscale.ScaleBase):
+class CutoffScale(_ScaleBase, mscale.ScaleBase):
     """Axis scale with arbitrary cutoffs that "accelerate" parts of the
     axis, "decelerate" parts of the axes, or discretely jumps between
     numbers.
@@ -1016,7 +1016,7 @@ class InvertedCutoffTransform(mtransforms.Transform):
     def inverted(self):
         return CutoffTransform(self._scale, self._lower, self._upper)
 
-class MercatorLatitudeScale(_Scale, mscale.ScaleBase):
+class MercatorLatitudeScale(_ScaleBase, mscale.ScaleBase):
     r"""
     Scales axis as with latitude in the `Mercator projection
     <http://en.wikipedia.org/wiki/Mercator_projection>`__. Adapted from `this
@@ -1095,7 +1095,7 @@ class InvertedMercatorLatitudeTransform(mtransforms.Transform):
     def inverted(self):
         return MercatorLatitudeTransform(self._thresh)
 
-class SineLatitudeScale(_Scale, mscale.ScaleBase):
+class SineLatitudeScale(_ScaleBase, mscale.ScaleBase):
     r"""
     Scales axis to be linear in the *sine* of *x* in degrees.
     The scale function is as follows.
@@ -1166,7 +1166,7 @@ class InvertedSineLatitudeTransform(mtransforms.Transform):
     def inverted(self):
         return SineLatitudeTransform()
 
-class InverseScale(_Scale, mscale.ScaleBase):
+class InverseScale(_ScaleBase, mscale.ScaleBase):
     r"""
     Scales axis to be linear in the *inverse* of *x*. The scale
     function and inverse scale function are as follows.
