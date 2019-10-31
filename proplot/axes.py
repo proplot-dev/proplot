@@ -123,7 +123,6 @@ class Axes(maxes.Axes):
     def __init__(self, *args, number=None,
         sharex=0, sharey=0,
         spanx=None, spany=None, alignx=None, aligny=None,
-        main=False,
         **kwargs):
         """
         Parameters
@@ -140,9 +139,6 @@ class Axes(maxes.Axes):
         alignx, aligny : bool, optional
             Boolean toggle for whether aligned axis labels are enabled for the
             *x* and *y* axes. See `~proplot.subplots.subplots` for details.
-        main : bool, optional
-            Used internally, indicates whether this is a "main axes" rather
-            than a twin, panel, or inset axes.
 
         See also
         --------
@@ -186,8 +182,6 @@ class Axes(maxes.Axes):
         self._blabel = self.text(0.5, 0.05, '', va='top', ha='center', transform=coltransform)
         self._tlabel    = self.text(0.5, 0.95, '', va='bottom', ha='center', transform=coltransform) # reasonable starting point
         # Shared and spanning axes
-        if main:
-            self.figure._axes_main.append(self)
         self._spanx_on = spanx
         self._spany_on = spany
         self._alignx_on = alignx
@@ -996,10 +990,8 @@ class Axes(maxes.Axes):
                         height_ratios=((1-length)/2, length, (1-length)/2),
                         )
                 subplotspec = gridspec[1]
-            with self.figure._unlock():
-                ax = self.figure.add_subplot(subplotspec, projection=None)
-            if ax is self:
-                raise ValueError(f'Uh oh.')
+            ax = self.figure.add_subplot(subplotspec,
+                main=False, projection=None)
             self.add_child_axes(ax)
 
             # Location
@@ -1783,6 +1775,19 @@ class CartesianAxes(Axes):
             # TODO: Document this?
             axis.set_minor_formatter(mticker.NullFormatter())
 
+    def _make_twin_axes(self, *args, **kwargs):
+        """Makes a twin axes of self. This is used for twinx and twiny. Copied
+        from matplotlib in case the API changes."""
+        # Typically, SubplotBase._make_twin_axes is called instead of this.
+        # There is also an override in axes_grid1/axes_divider.py.
+        if 'sharex' in kwargs and 'sharey' in kwargs:
+            raise ValueError('Twinned Axes may share only one axis.')
+        ax2 = self.figure.add_axes(self.get_position(True), *args, **kwargs)
+        self.set_adjustable('datalim')
+        ax2.set_adjustable('datalim')
+        self._twinned_axes.join(self, ax2)
+        return ax2
+
     def _sharex_setup(self, sharex, level):
         """Sets up shared axes. The input is the 'parent' axes, from which
         this one will draw its properties."""
@@ -2335,12 +2340,12 @@ class CartesianAxes(Axes):
         # Cannot wrap twiny() because we want to use CartesianAxes, not
         # matplotlib Axes. Instead use hidden method _make_twin_axes.
         # See https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_subplots.py
+        # NOTE: _make_twin_axes uses self.add_axes
         if self._altx_child:
             raise RuntimeError('No more than *two* twin axes!')
         if self._altx_parent:
             raise RuntimeError('This *is* a twin axes!')
-        with self.figure._unlock():
-            ax = self._make_twin_axes(sharey=self, projection='cartesian')
+        ax = self._make_twin_axes(sharey=self, projection='cartesian')
         ax.set_autoscaley_on(self.get_autoscaley_on()) # shared axes must have matching autoscale
         ax.grid(False)
         self._altx_child = ax
@@ -2355,8 +2360,7 @@ class CartesianAxes(Axes):
             raise RuntimeError('No more than *two* twin axes!')
         if self._alty_parent:
             raise RuntimeError('This *is* a twin axes!')
-        with self.figure._unlock():
-            ax = self._make_twin_axes(sharex=self, projection='cartesian')
+        ax = self._make_twin_axes(sharex=self, projection='cartesian')
         ax.set_autoscalex_on(self.get_autoscalex_on()) # shared axes must have matching autoscale
         ax.grid(False)
         self._alty_child = ax

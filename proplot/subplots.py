@@ -686,16 +686,6 @@ def _subplots_geometry(**kwargs):
 #-----------------------------------------------------------------------------#
 # Figure class and helper classes
 #-----------------------------------------------------------------------------#
-class _unlocker(object):
-    """Suppresses warning message when adding subplots, and cleanly resets
-    lock setting if exception raised."""
-    def __init__(self, fig):
-        self._fig = fig
-    def __enter__(self):
-        self._fig._locked = False
-    def __exit__(self, *args):
-        self._fig._locked = True
-
 class _hidelabels(object):
     """Hides objects temporarily so they are ignored by the tight bounding box
     algorithm."""
@@ -841,10 +831,9 @@ class Figure(mfigure.Figure):
                 idx2 += 1
 
         # Draw and setup panel
-        with self._unlock():
-            pax = self.add_subplot(gridspec[idx1,idx2],
-                sharex=ax._sharex_level, sharey=ax._sharey_level,
-                projection='cartesian')
+        pax = self.add_subplot(gridspec[idx1,idx2], main=False,
+            sharex=ax._sharex_level, sharey=ax._sharey_level,
+            projection='cartesian')
         getattr(ax, '_' + s + 'panels').append(pax)
         pax._panel_side = side
         pax._panel_share = share
@@ -941,9 +930,8 @@ class Figure(mfigure.Figure):
             )
 
         # Draw and setup panel
-        with self._unlock():
-            pax = self.add_subplot(gridspec[idx1,idx2],
-                projection='cartesian')
+        pax = self.add_subplot(gridspec[idx1,idx2],
+            main=False, projection='cartesian')
         getattr(self, '_' + s + 'panels').append(pax)
         pax._panel_side = side
         pax._panel_share = False
@@ -1370,11 +1358,6 @@ class Figure(mfigure.Figure):
         ord = [ax._range_gridspec(y)[0] for ax in axs]
         return [ax for _,ax in sorted(zip(ord, axs)) if ax.get_visible()]
 
-    def _unlock(self):
-        """Prevents warning message when adding subplots one-by-one, used
-        internally."""
-        return _unlocker(self)
-
     def _update_axislabels(self, axis=None, **kwargs):
         """Applies axis labels to the relevant shared axis. If spanning
         labels are toggled, keeps the labels synced for all subplots in the
@@ -1437,7 +1420,7 @@ class Figure(mfigure.Figure):
 
     def add_subplot(self, *args,
         proj=None, projection=None, basemap=False,
-        proj_kw=None, projection_kw=None,
+        proj_kw=None, projection_kw=None, main=True,
         **kwargs):
         """
         Adds subplot using the existing figure gridspec.
@@ -1457,8 +1440,14 @@ class Figure(mfigure.Figure):
               equivalent to or divide the "main" gridspec geometry.
         proj, projection : str, optional
             The registered matplotlib projection name, or a basemap or cartopy
-            map projection name. For valid map projection names, see the
-            :ref:`Table of projections`.
+            map projection name. Passed to `~proplot.projs.Proj`. See
+            `~proplot.projs.Proj` for a table of map projection names.
+        proj_kw, projection_kw : dict-like, optional
+            Dictionary of keyword args for the projection class. Passed to
+            `~proplot.projs.Proj`.
+        main : bool, optional
+            Used internally. Indicates whether this is a "main axes" rather
+            than a twin, panel, or inset axes. Default is ``True``.
 
         Other parameters
         ----------------
@@ -1535,6 +1524,8 @@ class Figure(mfigure.Figure):
 
         # Initialize
         ax = super().add_subplot(subplotspec, projection=proj, **kwargs)
+        if main:
+            self._axes_main.append(ax)
         return ax
 
     def colorbar(self, *args,
@@ -2175,11 +2166,10 @@ def subplots(array=None, ncols=1, nrows=1,
         y0, y1 = yrange[idx,0], yrange[idx,1]
         # Draw subplot
         subplotspec = gridspec[y0:y1+1, x0:x1+1]
-        with fig._unlock():
-            axs[idx] = fig.add_subplot(subplotspec, number=num,
-                spanx=spanx, spany=spany, alignx=alignx, aligny=aligny,
-                sharex=sharex, sharey=sharey, main=True,
-                proj=proj[num], basemap=basemap[num], **proj_kw[num])
+        axs[idx] = fig.add_subplot(subplotspec, number=num,
+            spanx=spanx, spany=spany, alignx=alignx, aligny=aligny,
+            sharex=sharex, sharey=sharey, main=True,
+            proj=proj[num], basemap=basemap[num], **proj_kw[num])
 
     # Return figure and axes
     n = (ncols if order == 'C' else nrows)
