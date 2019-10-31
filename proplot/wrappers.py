@@ -1145,13 +1145,21 @@ def violinplot_wrapper(self, func, *args,
 
 def _get_transform(self, transform):
     """Translates user input transform. Also used in an axes method."""
-    if isinstance(transform, mtransforms.Transform):
+    try:
+        from cartopy.crs import CRS
+    except ModuleNotFoundError:
+        CRS = None
+    cartopy = (getattr(self, 'name', '') == 'cartopy')
+    if (isinstance(transform, mtransforms.Transform)
+        or CRS and isinstance(transform, CRS)):
         return transform
     elif transform == 'figure':
         return self.figure.transFigure
     elif transform == 'axes':
         return self.transAxes
     elif transform == 'data':
+        return PlateCarree() if cartopy else self.transData
+    elif cartopy and transform == 'map':
         return self.transData
     else:
         raise ValueError(f'Unknown transform {transform!r}.')
