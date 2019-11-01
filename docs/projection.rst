@@ -271,7 +271,7 @@ These features are powered by the `~proplot.wrappers.standardize_2d`,
     y = plot.arange(-60,60+1,30)
     data = np.random.rand(len(y), len(x))
     titles = ('Geophysical data demo', 'Global coverage demo')
-    for globe in (False,True):
+    for globe in (False,True,):
         f, axs = plot.subplots(ncols=2, nrows=2, axwidth=2.5,
             proj='kav7', basemap={(1,3):False, (2,4):True})
         for i,ax in enumerate(axs):
@@ -281,11 +281,12 @@ These features are powered by the `~proplot.wrappers.standardize_2d`,
                 f.colorbar(m, loc='b', span=i+1, label='values', tickminor=False, extendsize='1.7em')
             else:
                 ax.pcolor(x, y, data, cmap=cmap, globe=globe, extend='both')
-            if not globe:
-                ix = offset + np.linspace(0, 360, 20)
-                for cmd in (np.sin,np.cos):
-                    iy = cmd(ix*np.pi/180)*60
-                    ax.plot(ix, iy, color='k', lw=0, marker='o')
+            if globe:
+                continue
+            ix = offset + np.linspace(0, 360, 20)
+            for cmd in (np.sin,np.cos):
+                iy = cmd(ix*np.pi/180)*60
+                ax.plot(ix, iy, color='k', lw=0, marker='o')
         axs.format(suptitle=titles[globe],
                    collabels=['Cartopy example', 'Basemap example'],
                    rowlabels=['Contourf', 'Pcolor'], latlabels='r', lonlabels='b', lonlines=90,
