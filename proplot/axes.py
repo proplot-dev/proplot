@@ -3185,53 +3185,51 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
         text = _text_wrapper(
             GeoAxes.text
             )
-        plot = _plot_wrapper(_standardize_1d(_add_errorbars(_cycle_changer(
-            _default_transform(GeoAxes.plot)
-            ))))
-        scatter = _scatter_wrapper(_standardize_1d(_add_errorbars(_cycle_changer(
-            _default_transform(GeoAxes.scatter)
-            ))))
+        # Wrapped by standardize method
+        plot = _default_transform(_plot_wrapper(_standardize_1d(_add_errorbars(_cycle_changer(
+            GeoAxes.plot
+            )))))
+        scatter = _default_transform(_scatter_wrapper(_standardize_1d(_add_errorbars(_cycle_changer(
+            GeoAxes.scatter
+            )))))
         fill_between  = _fill_between_wrapper(_standardize_1d(_cycle_changer(
             GeoAxes.fill_between
             )))
         fill_betweenx = _fill_betweenx_wrapper(_standardize_1d(_cycle_changer(
             GeoAxes.fill_betweenx
             )))
-
-        # Wrapped by cmap wrapper and standardized
-        # Also support redirecting to Basemap methods
-        contour = _standardize_2d(_cmap_changer(
-            _default_transform(GeoAxes.contour)
-            ))
-        contourf = _standardize_2d(_cmap_changer(
-            _default_transform(GeoAxes.contourf)
-            ))
-        pcolor = _standardize_2d(_cmap_changer(
-            _default_transform(GeoAxes.pcolor)
-            ))
-        pcolormesh = _standardize_2d(_cmap_changer(
-            _default_transform(GeoAxes.pcolormesh)
-            ))
-        quiver = _standardize_2d(_cmap_changer(
-            _default_transform(GeoAxes.quiver)
-            ))
-        streamplot = _standardize_2d(_cmap_changer(
-            _default_transform(GeoAxes.streamplot)
-            ))
-        barbs = _standardize_2d(_cmap_changer(
-            _default_transform(GeoAxes.barbs)
-            ))
+        contour = _default_transform(_standardize_2d(_cmap_changer(
+            GeoAxes.contour
+            )))
+        contourf = _default_transform(_standardize_2d(_cmap_changer(
+            GeoAxes.contourf
+            )))
+        pcolor = _default_transform(_standardize_2d(_cmap_changer(
+            GeoAxes.pcolor
+            )))
+        pcolormesh = _default_transform(_standardize_2d(_cmap_changer(
+            GeoAxes.pcolormesh
+            )))
+        quiver = _default_transform(_standardize_2d(_cmap_changer(
+            GeoAxes.quiver
+            )))
+        streamplot = _default_transform(_standardize_2d(_cmap_changer(
+            GeoAxes.streamplot
+            )))
+        barbs = _default_transform(_standardize_2d(_cmap_changer(
+            GeoAxes.barbs
+            )))
 
         # Wrapped only by cmap wrapper
-        tripcolor = _cmap_changer(
-            _default_transform(GeoAxes.tripcolor)
-            )
-        tricontour = _cmap_changer(
-            _default_transform(GeoAxes.tricontour)
-            )
-        tricontourf = _cmap_changer(
-            _default_transform(GeoAxes.tricontourf)
-            )
+        tripcolor = _default_transform(_cmap_changer(
+            GeoAxes.tripcolor
+            ))
+        tricontour = _default_transform(_cmap_changer(
+            GeoAxes.tricontour
+            ))
+        tricontourf = _default_transform(_cmap_changer(
+            GeoAxes.tricontourf
+            ))
 
         # Special GeoAxes commands
         get_extent = _default_crs(GeoAxes.get_extent)
