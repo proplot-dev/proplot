@@ -308,24 +308,24 @@ class GridSpec(mgridspec.GridSpec):
         nrows, ncols : int, optional
             The number of rows and columns on the subplot grid. This is
             applied automatically when the gridspec is passed.
-        hspace, wspace : float or list of float
+        hspace, wspace : float or str or list thereof, optional
             The vertical and horizontal spacing between rows and columns of
-            subplots, respectively. In `~proplot.subplots.subplots`, ``wspace``
-            and ``hspace`` are in physical units. When calling
-            `GridSpec` directly, values are scaled relative to
-            the average subplot height or width.
+            subplots, respectively. These are specified in physical units.
+            Units are interpreted by `~proplot.utils.units`.
 
-            If float, the spacing is identical between all rows and columns. If
-            list of float, the length of the lists must equal ``nrows-1``
+            If float or string, the spacing is identical between all rows and
+            columns. If a list, this sets arbitrary spacing between different
+            rows and columns. The length of the list must equal ``nrows-1``
             and ``ncols-1``, respectively.
-        height_ratios, width_ratios : list of float
+        height_ratios, width_ratios : list of float, optional
             Ratios for the relative heights and widths for rows and columns
             of subplots, respectively. For example, ``width_ratios=(1,2)``
             scales a 2-column gridspec so that the second column is twice as
             wide as the first column.
-        left, right, top, bottom : float or str
-            Passed to `~matplotlib.gridspec.GridSpec`, denotes the margin
-            positions in figure-relative coordinates.
+        left, right, top, bottom : float or str, optional
+            Denotes the margin *widths* in physical units. These are *not*
+            the margin coordinates. Units are interpreted by
+            `~proplot.utils.units`.
         **kwargs
             Passed to `~matplotlib.gridspec.GridSpec`.
         """
