@@ -31,7 +31,7 @@ import matplotlib.transforms as mtransforms
 import matplotlib.collections as mcollections
 from . import utils, projs, axistools
 from .utils import _notNone, units
-from .rctools import rc, RC_NODOTSNAMES
+from .rctools import rc, RC_NODOTS
 from .wrappers import (
     _get_transform, _norecurse, _redirect,
     _add_errorbars, _bar_wrapper, _barh_wrapper, _boxplot_wrapper,
@@ -123,7 +123,7 @@ def _parse_kwargs(self, *, mode=2, rc_kw=None, **kwargs):
     kw = {}
     rc_kw = rc_kw or {}
     for key,value in kwargs.items():
-        key_fixed = RC_NODOTSNAMES.get(key, None)
+        key_fixed = RC_NODOTS.get(key, None)
         if key_fixed is None:
             kw[key] = value
         else:

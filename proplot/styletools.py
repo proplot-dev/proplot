@@ -2379,10 +2379,8 @@ def register_cycles():
             if name is None:
                 continue
             if isinstance(cycle, LinearSegmentedColormap):
-                cycle = colors()
-                warnings.warn(f'Failed to load {filename!r} as color cycle.')
-                continue
-            cmap = ListedColormap(colors, name=name)
+                cycle = colors(cycle)
+            cmap = ListedColormap(cycle, name=name)
             cmap.colors = [to_rgb(color) for color in cmap.colors] # sanitize
             mcm.cmap_d[name] = cmap
             cycles.append(name)

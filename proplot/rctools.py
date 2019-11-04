@@ -393,6 +393,7 @@ if not os.path.isfile(_rc_file):
             value = '' if value is None else repr(value)
             space = ' ' * (maxlen - len(key) + 1) * int(bool(value))
             string += f'#  {key}:{space}{value}\n'
+        return string.strip()
     with open(_rc_file, 'x') as f:
         f.write(f"""
 #------------------------------------------------------
@@ -408,7 +409,7 @@ if not os.path.isfile(_rc_file):
 #
 # Matplotlib settings
 {_tabulate(defaultParams)}
-""")
+""".strip())
 
 # "Global" settings and the lower-level settings they change
 # NOTE: This whole section, declaring dictionaries and sets, takes 1ms
