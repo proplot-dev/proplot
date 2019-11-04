@@ -4,16 +4,16 @@ This page documents the axes subclasses returned by
 `~proplot.subplots.subplots` and their various method wrappers. You should
 start with the documentation on the following methods.
 
-* `Axes.format`
-* `Axes.context`
 * `CartesianAxes.format`
+* `PolarAxes.format`
 * `ProjectionAxes.format`
+* `Axes.format`
 
-`Axes.format` and `Axes.context` are both called by
-`CartesianAxes.format` and `ProjectionAxes.format`. ``format`` is your
-**one-stop-shop for changing axes settings** like *x* and *y* axis limits,
-axis labels, tick locations, tick labels grid lines, axis scales, titles,
-a-b-c labelling, adding geographic features, and much more.
+`CartesianAxes.format`, `PolarAxes.format`, and `ProjectionAxes.format` all
+call `Axes.format`. Call ``ax.format(...)`` to change a variety of axes
+settings like *x* and *y* axis limits, axis labels, tick locations, tick
+labels grid lines, axis scales, titles, a-b-c labelling, adding geographic
+features, and much more.
 """
 import numpy as np
 import warnings
@@ -117,6 +117,19 @@ def _disable_decorator(msg):
 #-----------------------------------------------------------------------------#
 # Generalized custom axes class
 #-----------------------------------------------------------------------------#
+def _parse_kwargs(self, *, mode=2, rc_kw=None, **kwargs):
+    """Separate rc setting keyword arguments from format command keyword
+    arguments."""
+    kw = {}
+    rc_kw = rc_kw or {}
+    for key,value in kwargs.items():
+        key_fixed = RC_NODOTSNAMES.get(key, None)
+        if key_fixed is None:
+            kw[key] = value
+        else:
+            rc_kw[key_fixed] = value
+    return rc_kw, rc_mode, kw
+
 class Axes(maxes.Axes):
     """Lowest-level axes subclass. Handles titles and axis
     sharing. Adds several new methods and overrides existing ones."""
@@ -319,7 +332,7 @@ class Axes(maxes.Axes):
         return axs
 
     @staticmethod
-    def _loc_translate(loc, **kwargs):
+    def _loc_translate(loc):
         """Translates location string `loc` into a standardized form."""
         if loc is True:
             loc = None
@@ -538,63 +551,6 @@ class Axes(maxes.Axes):
         x = _notNone(kwargs.pop('x', x), pos[0])
         y = _notNone(kwargs.pop('y', y), pos[1])
         return self.text(x, y, text, **kwextra)
-
-    def context(self, *, mode=2, rc_kw=None, **kwargs):
-        """
-        For internal use. Sets up temporary `~proplot.rctools.rc` settings by
-        returning the result of `~proplot.rctools.rc_configurator.context`.
-
-        Parameters
-        ----------
-        rc_kw : dict, optional
-            A dictionary containing "rc" configuration settings that will
-            be applied to this axes. Temporarily updates the
-            `~proplot.rctools.rc` object.
-        **kwargs
-            Any of three options:
-
-            * A keyword arg for `Axes.format`, `CartesianAxes.format`,
-              or `ProjectionAxes.format`.
-            * A global "rc" keyword arg, like ``linewidth`` or ``color``.
-            * A standard "rc" keyword arg **with the dots omitted**,
-              like ``landcolor`` instead of ``land.color``.
-
-            The latter two options update the `~proplot.rctools.rc`
-            object, just like `rc_kw`.
-
-        Other parameters
-        ----------------
-        mode : int, optional
-            The "getitem mode". This is used under-the-hood -- you shouldn't
-            have to use it directly. Determines whether queries to the
-            `~proplot.rctools.rc` object will ignore `rcParams <https://matplotlib.org/users/customizing.html>`__.
-            This can help prevent a massive number of unnecessary lookups
-            when the settings haven't been changed by the user.
-            See `~proplot.rctools.rc_configurator` for details.
-
-        Returns
-        -------
-        `~proplot.rctools.rc_configurator`
-            The `proplot.rctools.rc` object primed for use in a "with"
-            statement.
-        dict
-            Dictionary of keyword arguments that are not `~proplot.rctools.rc`
-            properties, to be passed to the ``format`` methods.
-        """
-        # Figure out which kwargs are valid rc settings
-        # TODO: Support for 'small', 'large', etc. font
-        kw = {} # for format
-        rc_kw = rc_kw or {}
-        for key,value in kwargs.items():
-            key_fixed = RC_NODOTSNAMES.get(key, None)
-            if key_fixed is None:
-                kw[key] = value
-            else:
-                rc_kw[key_fixed] = value
-        rc._getitem_mode = 0 # might still be non-zero if had error
-        # Return "context object", which is just the configurator itself
-        # primed for use in a "with" statement
-        return rc.context(rc_kw, mode=mode), kw
 
     def format(self, *, title=None, top=None,
         figtitle=None, suptitle=None, rowlabels=None, collabels=None,
@@ -930,7 +886,7 @@ class Axes(maxes.Axes):
         pad : float or str, optional
             The space between the axes edge and the colorbar. For inset
             colorbars only. Units are interpreted by `~proplot.utils.units`.
-            Default is :rc:`colorbar.axespad`.
+            Default is :rc:`colorbar.insetpad`.
         length : float or str, optional
             The colorbar length. For outer colorbars, units are relative to the
             axes width or height. Default is :rc:`colorbar.length`. For inset
@@ -938,16 +894,17 @@ class Axes(maxes.Axes):
             is :rc:`colorbar.insetlength`.
         width : float or str, optional
             The colorbar width. Units are interpreted by `~proplot.utils.units`.
-            Default is :rc:`colorbar.width` or :rc:`colorbar.insetwidth`.
+            For outer colorbars, default is :rc:`colorbar.width`. For inset
+            colorbars, default is :rc:`colorbar.insetwidth`.
         space : float or str, optional
             The space between the colorbar and the main axes. For outer
             colorbars only. Units are interpreted by `~proplot.utils.units`.
             When :rcraw:`tight` is ``True``, this is adjusted automatically.
-            Otherwise, defaut is :rc:`subplots.panelspace`.
+            Otherwise, the default is :rc:`subplots.panelspace`.
         frame, frameon : bool, optional
-            Whether to draw a frame around inset colorbars, just like
-            `~matplotlib.axes.Axes.legend`.
-            Default is :rc:`colorbar.frameon`.
+            For inset colorbars, indicates whether to draw a "frame", just
+            like `~matplotlib.axes.Axes.legend`. Default is
+            :rc:`colorbar.frameon`.
         alpha, linewidth, edgecolor, facecolor : optional
             Transparency, edge width, edge color, and face color for the frame
             around the inset colorbar. Default is
@@ -959,12 +916,11 @@ class Axes(maxes.Axes):
         """
         # TODO: add option to pad inset away from axes edge!
         kwargs.update({'edgecolor':edgecolor, 'linewidth':linewidth})
-        loc = _notNone(loc, rc['colorbar.loc'])
-        loc = self._loc_translate(loc)
-        if loc == 'best': # a white lie
-            loc = 'lower right'
+        loc = self._loc_translate(_notNone(loc, rc['colorbar.loc']))
         if not isinstance(loc, str): # e.g. 2-tuple or ndarray
             raise ValueError(f'Invalid colorbar location {loc!r}.')
+        if loc == 'best': # white lie
+            loc = 'lower right'
 
         # Generate panel
         if loc in ('left','right','top','bottom'):
@@ -1036,7 +992,7 @@ class Axes(maxes.Axes):
             extend = units(_notNone(kwargs.get('extendsize',None), rc['colorbar.insetextend']))
             cbwidth = units(_notNone(cbwidth, rc['colorbar.insetwidth']))/height
             cblength = units(_notNone(cblength, rc['colorbar.insetlength']))/width
-            pad = units(_notNone(pad, rc['colorbar.axespad']))
+            pad = units(_notNone(pad, rc['colorbar.insetpad']))
             xpad, ypad = pad/width, pad/height
 
             # Get location in axes-relative coordinates
@@ -1142,14 +1098,14 @@ class Axes(maxes.Axes):
             The space between the axes and the legend for outer legends.
             Units are interpreted by `~proplot.utils.units`.
             When :rcraw:`tight` is ``True``, this is adjusted automatically.
-            Otherwise, defaut is :rc:`subplots.panelspace`.
+            Otherwise, the default is :rc:`subplots.panelspace`.
 
         Other parameters
         ----------------
         *args, **kwargs
             Passed to `~proplot.wrappers.legend_wrapper`.
         """
-        loc = self._loc_translate(loc, width=width, space=space)
+        loc = self._loc_translate(_notNone(loc, rc['legend.loc']))
         if isinstance(loc, np.ndarray):
             loc = loc.tolist()
 
@@ -1346,7 +1302,7 @@ class Axes(maxes.Axes):
         space : float or str or list thereof, optional
             Empty space between the main subplot and the panel.
             When :rcraw:`tight` is ``True``, this is adjusted automatically.
-            Otherwise, defaut is :rc:`subplots.panelspace`.
+            Otherwise, the default is :rc:`subplots.panelspace`.
         share : bool, optional
             Whether to enable axis sharing between the *x* and *y* axes of the
             main subplot and the panel long axes for each panel in the stack.
@@ -1971,8 +1927,14 @@ class CartesianAxes(Axes):
             Keyword arguments used to update the background patch object. You
             can use this, for example, to set background hatching with
             ``patch_kw={'hatch':'xxx'}``.
+        rc_kw : dict, optional
+            Dictionary containing `~proplot.rctools.rc` settings applied to
+            this axes using `~proplot.rctools.rc_configurator.context`.
         **kwargs
-            Passed to `Axes.format` and `Axes.context`.
+            Passed to `Axes.format` or passed to
+            `~proplot.rctools.rc_configurator.context` and used to update
+            axes `~proplot.rctools.rc` settings. For example,
+            ``axestitlesize=15`` modifies the :rcraw:`axes.titlesize` setting.
 
         Note
         ----
@@ -1987,8 +1949,8 @@ class CartesianAxes(Axes):
         `~proplot.axistools.Scale`, `~proplot.axistools.Locator`,
         `~proplot.axistools.Formatter`
         """
-        context, kwargs = self.context(**kwargs)
-        with context:
+        rc_kw, rc_mode, kwargs = _parse_kwargs(**kwargs)
+        with rc.context(rc_kw, mode=rc_mode):
             # Background basics
             self.patch.set_clip_on(False)
             self.patch.set_zorder(-1)
@@ -2537,11 +2499,17 @@ class PolarAxes(Axes, mproj.PolarAxes):
         thetaformatter_kw, rformatter_kw : dict-like, optional
             The azimuthal and radial label formatter settings. Passed to
             `~proplot.axistools.Formatter`.
+        rc_kw : dict, optional
+            Dictionary containing `~proplot.rctools.rc` settings applied to
+            this axes using `~proplot.rctools.rc_configurator.context`.
         **kwargs
-            Passed to `Axes.format` and `Axes.context`
+            Passed to `Axes.format` or passed to
+            `~proplot.rctools.rc_configurator.context` and used to update
+            axes `~proplot.rctools.rc` settings. For example,
+            ``axestitlesize=15`` modifies the :rcraw:`axes.titlesize` setting.
         """
-        context, kwargs = self.context(**kwargs)
-        with context:
+        rc_kw, rc_mode, kwargs = _parse_kwargs(**kwargs)
+        with rc.context(rc_kw, mode=rc_mode):
             # Not mutable default args
             thetalocator_kw   = thetalocator_kw or {}
             thetaformatter_kw = thetaformatter_kw or {}
@@ -2764,13 +2732,19 @@ class ProjectionAxes(Axes):
             Keyword arguments used to update the background patch object. You
             can use this, for example, to set background hatching with
             ``patch_kw={'hatch':'xxx'}``.
+        rc_kw : dict, optional
+            Dictionary containing `~proplot.rctools.rc` settings applied to
+            this axes using `~proplot.rctools.rc_configurator.context`.
         **kwargs
-            Passed to `Axes.format` and `Axes.context`.
+            Passed to `Axes.format` or passed to
+            `~proplot.rctools.rc_configurator.context` and used to update
+            axes `~proplot.rctools.rc` settings. For example,
+            ``axestitlesize=15`` modifies the :rcraw:`axes.titlesize` setting.
         """
-        # Parse alternative keyword args
-        # TODO: Why isn't default latmax 80 respected sometimes?
-        context, kwargs = self.context(**kwargs)
-        with context:
+        rc_kw, rc_mode, kwargs = _parse_kwargs(**kwargs)
+        with rc.context(rc_kw, mode=rc_mode):
+            # Parse alternative keyword args
+            # TODO: Why isn't default latmax 80 respected sometimes?
             lonlines = _notNone(lonlines, lonlocator, rc['geogrid.lonstep'], names=('lonlines', 'lonlocator'))
             latlines = _notNone(latlines, latlocator, rc['geogrid.latstep'], names=('latlines', 'latlocator'))
             latmax = _notNone(latmax, rc['geogrid.latmax'])

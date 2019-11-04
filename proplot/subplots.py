@@ -5,30 +5,6 @@ The `subplots` function is all you'll need to directly use here.
 It returns a `Figure` instance and an `axes_grid` container of
 `~proplot.axes.Axes` axes, whose positions are controlled by the new
 `GridSpec` class.
-
-.. raw:: html
-
-   <h1>Developer notes</h1>
-
-While matplotlib permits arbitrarily many gridspecs per figure, ProPlot
-permits only *one*. When `subplots` is used, this is trivial to enforce. When
-`~Figure.add_subplot` is used, the figure geometry is "locked" after the
-first call -- although `~Figure.add_subplot` calls that divide into the
-existing geometry are also acceptable (for example, two square subplots above
-a longer rectangle subplots with the integers ``221``, ``222``, and ``212``).
-This choice is not a major imposition on the user, and *considerably*
-simplifies gridspec adjustments, e.g. the "tight layout" adjustments.
-
-While matplotlib's `~matplotlib.pyplot.subplots` returns a 2D `~numpy.ndarray`,
-a 1D `~numpy.ndarray`, or the axes itself, ProPlot's `subplots` returns an
-`axes_grid` of axes, meant to unify these three possible return values.
-`axes_grid` is a `list` subclass supporting 1D indexing (e.g. ``axs[0]``), but
-permits 2D indexing (e.g. ``axs[1,0]``) *just in case* the user *happened*
-to draw a clean 2D matrix of subplots. The `~axes_grid.__getattr__` override
-also means it no longer matters whether you are calling a method on an axes
-or a singleton `axes_grid` of axes. Finally, `axes_grid` lets `subplots`
-support complex arrangements of subplots -- just use 1D indexing when they
-don't look like a 2D matrix.
 """
 # NOTE: Importing backend causes issues with sphinx, and anyway not sure it's
 # always included, so make it optional
@@ -1959,7 +1935,6 @@ def show():
     plt.show()
 
 # TODO: Figure out how to save subplots keyword args!
-@docstring.dedent_interpd
 def figure(**kwargs):
     """
     Analogous to `matplotlib.pyplot.figure`, creates an empty figure meant
@@ -1967,16 +1942,11 @@ def figure(**kwargs):
 
     Parameters
     ----------
-    %(subplot_params)s
-
-    Other parameters
-    ----------------
     **kwargs
         Passed to `~matplotlib.figure.Figure`.
     """
     return plt.figure(FigureClass=Figure, **kwargs)
 
-@docstring.dedent_interpd
 def subplots(array=None, ncols=1, nrows=1,
     ref=1, order='C',
     hspace=None, wspace=None, space=None,
@@ -2013,7 +1983,6 @@ def subplots(array=None, ncols=1, nrows=1,
         (``'F'``) order. Analogous to `numpy.array` ordering. This controls
         the order axes appear in the `axs` list, and the order of subplot
         a-b-c labeling (see `~proplot.axes.Axes.format`).
-    %(subplot_params)s
     hratios, wratios
         Aliases for `height_ratios`, `width_ratios`.
     width_ratios, height_ratios : float or list thereof, optional
@@ -2049,7 +2018,6 @@ def subplots(array=None, ncols=1, nrows=1,
         ``False``. Can be set for specific subplots just like `proj`.
         For example, with ``basemap={1:False, 2:True}``, the left subplot is
         a cartopy projection and the right subplot is a basemap projection.
-
 
     Other parameters
     ----------------

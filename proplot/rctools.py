@@ -7,7 +7,7 @@ the following three categories.
 
 1. Builtin matplotlib `rcParams <https://matplotlib.org/users/customizing.html>`__
    settings. These have the format ``x.y`` or ``x.y.z``.
-2. ProPlot :ref:`rcParamsCustom` settings. These also have the format ``x.y``
+2. ProPlot :ref:`rcParamsLong` settings. These also have the format ``x.y``
    (see below).
 3. ProPlot :ref:`rcParamsShort` settings. These have no dots (see below).
 
@@ -25,7 +25,7 @@ following.
 * ``ax.format(rc_kw={'name':value})``
 
 In all of these examples, if the setting name ``name`` contains
-any dots, you can simply **omit the dots**. For example, to change the
+any dots, you can simply omit the dots. For example, to change the
 :rcraw:`title.loc` property, use ``plot.rc.titleloc = value``,
 ``plot.rc.update(titleloc=value)``, or ``ax.format(titleloc=value)``.
 
@@ -81,9 +81,9 @@ Key               Description
 ``rivers``        Boolean, toggles river lines on and off.
 ================  ====================================================================================================================================================================================================================================
 
-##############
-rcParamsCustom
-##############
+############
+rcParamsLong
+############
 The ``subplots`` category controls the default layout for figures
 and axes. The ``abc``, ``title``, and ``tick`` categories control
 a-b-c label, title, and axis tick label settings. The
@@ -124,7 +124,7 @@ Key(s)                                                               Description
 ``colorbar.insetlength``                                             Length of inset colorbars. Units are interpreted by `~proplot.utils.units`.
 ``colorbar.width``                                                   Width of outer colorbars. Units are interpreted by `~proplot.utils.units`.
 ``colorbar.insetwidth``                                              Width of inset colorbars. Units are interpreted by `~proplot.utils.units`.
-``colorbar.axespad``                                                 Padding between axes edge and inset colorbars. Units are interpreted by `~proplot.utils.units`.
+``colorbar.insetpad``                                                Padding between axes edge and inset colorbars. Units are interpreted by `~proplot.utils.units`.
 ``colorbar.extend``                                                  Length of rectangular or triangular "extensions" for panel colorbars. Units are interpreted by `~proplot.utils.units`.
 ``colorbar.insetextend``                                             Length of rectangular or triangular "extensions" for inset colorbars. Units are interpreted by `~proplot.utils.units`.
 ``geoaxes.facecolor``, ``geoaxes.edgecolor``, ``geoaxes.linewidth``  Face color, edge color, and edge width for the map outline patch.
@@ -202,9 +202,213 @@ except ModuleNotFoundError:
 __all__ = ['rc', 'rc_configurator', 'nb_setup']
 
 # Initialize
-from matplotlib import rcParams as rcParams
-rcParamsShort = {}
-rcParamsCustom = {}
+from matplotlib import rcParams, RcParams
+class RcParamsShort(dict):
+    """Class for holding short-name settings. So far just `dict`."""
+    pass
+class RcParamsLong(dict):
+    """Class for holding custom settings. So far just `dict`."""
+    pass
+defaultParamsShort = RcParamsShort({
+    'nbsetup':      True,
+    'format':       'retina',
+    'autosave':     30,
+    'autoreload':   2,
+    'abc':          False,
+    'share':        3,
+    'align':        False,
+    'span':         True,
+    'tight':        True,
+    'fontname':     'Helvetica Neue',
+    'cmap':         'fire',
+    'lut':          256,
+    'cycle':        'colorblind',
+    'rgbcycle':     False,
+    'color':        'k',
+    'alpha':        1,
+    'facecolor':    'w',
+    'small':        8,
+    'large':        9,
+    'linewidth':    0.6,
+    'margin':       0.0,
+    'grid':         True,
+    'gridminor':    False,
+    'ticklen':      4.0,
+    'tickdir':      'out',
+    'tickpad':      2.0,
+    'tickratio':    0.8,
+    'ticklenratio': 0.5,
+    'gridratio':    0.5,
+    'reso':         'lo',
+    'geogrid':      True,
+    'land':         False,
+    'ocean':        False,
+    'coast':        False,
+    'rivers':       False,
+    'lakes':        False,
+    'borders':      False,
+    'innerborders': False,
+    })
+defaultParamsLong = RcParamsLong({
+    'abc.loc':                     'l', # left side above the axes
+    'title.loc':                   'c', # centered above the axes
+    'title.pad':                   3.0, # copy
+    'abc.style':                   'a',
+    'abc.size':                    None, # = large
+    'abc.color':                   'k',
+    'abc.weight':                  'bold',
+    'abc.border':                  True,
+    'abc.linewidth':               1.5,
+    'tick.labelsize':              None, # = small
+    'tick.labelcolor':             None, # = color
+    'tick.labelweight':            'normal',
+    'title.size':                  None, # = large
+    'title.color':                 'k',
+    'title.weight':                'normal',
+    'title.border':                True,
+    'title.linewidth':             1.5,
+    'suptitle.size':               None, # = large
+    'suptitle.color':              'k',
+    'suptitle.weight':             'bold',
+    'leftlabel.size':              None, # = large
+    'leftlabel.weight':            'bold',
+    'leftlabel.color':             'k',
+    'toplabel.size':               None, # = large
+    'toplabel.weight':             'bold',
+    'toplabel.color':              'k',
+    'rightlabel.size':             None, # = large
+    'rightlabel.weight':           'bold',
+    'rightlabel.color':            'k',
+    'bottomlabel.size':            None, # = large
+    'bottomlabel.weight':          'bold',
+    'bottomlabel.color':           'k',
+    'image.edgefix':               True,
+    'image.levels':                11,
+    'axes.alpha':                  None, # if empty, depends on 'savefig.transparent' setting
+    'axes.formatter.zerotrim':     True,
+    'axes.formatter.timerotation': 90,
+    'axes.gridminor':              True,
+    'axes.geogrid':                True,
+    'gridminor.alpha':             None, # = grid.alpha
+    'gridminor.color':             None, # = grid.color
+    'gridminor.linestyle':         None, # = grid.linewidth
+    'gridminor.linewidth':         None, # = grid.linewidth x gridratio
+    'geogrid.labels':              False,
+    'geogrid.labelsize':           None, # = small
+    'geogrid.latmax':              90,
+    'geogrid.lonstep':             30,
+    'geogrid.latstep':             20,
+    'geogrid.alpha':               0.5,
+    'geogrid.color':               'k',
+    'geogrid.linewidth':           1.0,
+    'geogrid.linestyle':           ':                                                         ',
+    'geoaxes.linewidth':           None, # = linewidth
+    'geoaxes.facecolor':           None, # = facecolor
+    'geoaxes.edgecolor':           None, # = color
+    'land.color':                  'k',
+    'ocean.color':                 'w',
+    'lakes.color':                 'w',
+    'coast.color':                 'k',
+    'coast.linewidth':             0.6,
+    'borders.color':               'k',
+    'borders.linewidth':           0.6,
+    'innerborders.color':          'k',
+    'innerborders.linewidth':      0.6,
+    'rivers.color':                'k',
+    'rivers.linewidth':            0.6,
+    'colorbar.loc':                'right',
+    'colorbar.grid':               False,
+    'colorbar.frameon':            True,
+    'colorbar.framealpha':         0.8,
+    'colorbar.insetpad':           '0.5em',
+    'colorbar.extend':             '1.3em',
+    'colorbar.insetextend':        '1em',
+    'colorbar.length':             1,
+    'colorbar.insetlength':        '8em',
+    'colorbar.width':              '1.5em',
+    'colorbar.insetwidth':         '1.2em',
+    'subplots.axwidth':            '18em',
+    'subplots.panelwidth':         '4em',
+    'subplots.pad':                '0.5em',
+    'subplots.axpad':              '1em',
+    'subplots.panelpad':           '0.5em',
+    'subplots.panelspace':         '1em',
+    'subplots.innerspace':         '1.5em',
+    'subplots.ylabspace':          '5.5em',
+    'subplots.xlabspace':          '4em',
+    'subplots.titlespace':         '2em',
+    })
+defaultParams = RcParams({
+    'figure.dpi':              90,
+    'figure.facecolor':        '#f2f2f2',
+    'figure.autolayout':       False,
+    'figure.titleweight':      'bold',
+    'figure.max_open_warning': 0,
+    'savefig.directory':       '',
+    'savefig.dpi':             300,
+    'savefig.facecolor':       'white',
+    'savefig.transparent':     True,
+    'savefig.format':          'pdf',
+    'savefig.bbox':            'standard',
+    'savefig.pad_inches':      0.0,
+    'axes.titleweight':        'normal',
+    'axes.xmargin':            0.0,
+    'axes.ymargin':            0.0,
+    'axes.grid':               True,
+    'axes.labelpad':           3.0,
+    'axes.titlepad':           3.0,
+    'grid.color':              'k',
+    'grid.alpha':              0.1,
+    'grid.linewidth':          0.6,
+    'grid.linestyle':          '-',
+    'hatch.color':             'k',
+    'hatch.linewidth':         0.6,
+    'lines.linewidth':         1.3,
+    'lines.markersize':        3.0,
+    'legend.frameon':          True,
+    'legend.framealpha':       0.8,
+    'legend.fancybox':         False,
+    'legend.labelspacing':     0.5,
+    'legend.handletextpad':    0.5,
+    'legend.handlelength':     1.5,
+    'legend.columnspacing':    1.0,
+    'legend.borderpad':        0.5,
+    'legend.borderaxespad':    0,
+    'xtick.minor.visible':     True,
+    'ytick.minor.visible':     True,
+    'mathtext.bf':             'sans:bold',
+    'mathtext.it':             'sans:it',
+    'mathtext.default':        'regular',
+    })
+rcParamsShort = RcParamsShort({})
+rcParamsLong = RcParamsLong({})
+
+# Initialize user file
+_rc_file = os.path.join(os.path.expanduser('~'), '.proplotrc')
+if not os.path.isfile(_rc_file):
+    def _tabulate(rcdict):
+        string = ''
+        maxlen = max(map(len, rcdict))
+        for key,value in rcdict.items():
+            value = '' if value is None else repr(value)
+            space = ' ' * (maxlen - len(key) + 1) * int(bool(value))
+            string += f'#  {key}:{space}{value}\n'
+    with open(_rc_file, 'x') as f:
+        f.write(f"""
+#------------------------------------------------------
+# Use this file to customize your settings
+# For descriptions of each key name see:
+# https://proplot.readthedocs.io/en/latest/rctools.html
+#------------------------------------------------------
+# ProPlot short name settings
+{_tabulate(defaultParamsShort)}
+#
+# ProPlot long name settings
+{_tabulate(defaultParamsLong)}
+#
+# Matplotlib settings
+{_tabulate(defaultParams)}
+""")
 
 # "Global" settings and the lower-level settings they change
 # NOTE: This whole section, declaring dictionaries and sets, takes 1ms
@@ -222,98 +426,37 @@ RC_CHILDREN = {
     'grid':         ('axes.grid',),
     'gridminor':    ('axes.gridminor',),
     'geogrid':      ('axes.geogrid',),
-    'ticklen' :     ('xtick.major.size', 'ytick.major.size'),
+    'ticklen':      ('xtick.major.size', 'ytick.major.size'),
     'tickdir':      ('xtick.direction',  'ytick.direction'),
     'tickpad':      ('xtick.major.pad', 'xtick.minor.pad', 'ytick.major.pad', 'ytick.minor.pad'),
     }
 
-# Names of the new settings
-RC_PARAMNAMES = {*rcParams.keys()}
-RC_SHORTNAMES = {
-    'abc', 'span', 'share', 'align', 'tight', 'fontname', 'cmap', 'lut',
-    'cycle', 'rgbcycle', 'alpha', 'facecolor', 'color', 'small', 'large',
-    'linewidth', 'margin', 'grid', 'gridminor', 'geogrid',
-    'ticklen' , 'tickdir', 'tickpad', 'tickratio', 'ticklenratio', 'gridratio',
-    'reso', 'land', 'ocean', 'lakes', 'coast', 'borders', 'innerborders', 'rivers',
-    'nbsetup', 'format', 'autosave', 'autoreload'
-    }
-RC_CUSTOMNAMES = {
-    'axes.formatter.zerotrim', 'axes.formatter.timerotation',
-    'axes.gridminor', 'axes.geogrid', 'axes.alpha',
-    'image.levels', 'image.edgefix',
-    'geoaxes.linewidth', 'geoaxes.facecolor', 'geoaxes.edgecolor',
-    'land.color', 'ocean.color', 'lakes.color', 'coast.color', 'coast.linewidth',
-    'borders.color', 'borders.linewidth', 'innerborders.color', 'innerborders.linewidth', 'rivers.color', 'rivers.linewidth',
-    'abc.size', 'abc.weight', 'abc.color', 'abc.loc', 'abc.style', 'abc.border', 'abc.linewidth',
-    'title.loc', 'title.pad', 'title.color', 'title.border', 'title.linewidth', 'title.weight', 'title.size',
-    'suptitle.size', 'suptitle.weight', 'suptitle.color',
-    'leftlabel.size', 'leftlabel.weight', 'leftlabel.color',
-    'rightlabel.size', 'rightlabel.weight', 'rightlabel.color',
-    'toplabel.size', 'toplabel.weight', 'toplabel.color',
-    'bottomlabel.size', 'bottomlabel.weight', 'bottomlabel.color',
-    'gridminor.alpha', 'gridminor.color', 'gridminor.linestyle', 'gridminor.linewidth',
-    'geogrid.labels', 'geogrid.alpha', 'geogrid.color', 'geogrid.labelsize', 'geogrid.linewidth', 'geogrid.linestyle', 'geogrid.latmax', 'geogrid.lonstep', 'geogrid.latstep',
-    'tick.labelweight', 'tick.labelcolor', 'tick.labelsize',
-    'subplots.pad', 'subplots.axpad', 'subplots.panelpad',
-    'subplots.ylabspace', 'subplots.xlabspace', 'subplots.innerspace', 'subplots.titlespace',
-    'subplots.axwidth', 'subplots.panelwidth', 'subplots.panelspace',
-    'colorbar.grid', 'colorbar.frameon', 'colorbar.framealpha',
-    'colorbar.loc', 'colorbar.length', 'colorbar.width', 'colorbar.insetlength', 'colorbar.insetwidth',
-    'colorbar.extend', 'colorbar.insetextend', 'colorbar.axespad',
-    }
 # Used by Axes.format, allows user to pass rc settings as keyword args,
 # way less verbose. For example, landcolor='b' vs. rc_kw={'land.color':'b'}.
-RC_NODOTSNAMES = { # useful for passing these as kwargs
-    name.replace('.', ''):name for names in
-    (RC_CUSTOMNAMES, RC_PARAMNAMES, RC_SHORTNAMES)
-    for name in names
+RC_NODOTS = { # useful for passing these as kwargs
+    name.replace('.', ''): name for names
+    in (rcParams, rcParamsLong) for name in names
     }
 # Categories for returning dict of subcategory properties
 RC_CATEGORIES = {
-    *(re.sub('\.[^.]*$', '', name) for names in (RC_CUSTOMNAMES, RC_PARAMNAMES) for name in names),
-    *(re.sub('\..*$', '', name) for names in (RC_CUSTOMNAMES, RC_PARAMNAMES) for name in names)
+    *(re.sub('\.[^.]*$', '', name) for names in (rcParams, rcParamsLong) for name in names),
+    *(re.sub('\..*$', '', name) for names in (rcParams, rcParamsLong) for name in names)
     }
 
-# Unit conversion
-# See: https://matplotlib.org/users/customizing.html, all props matching
-# the below strings use the units 'points', and my special categories are inches!
-def _convert_units(key, value):
+# Helper funcs
+def _to_points(key, value):
     """Converts certain keys to the units "points". If "key" is passed, tests
     that key against possible keys that accept physical units."""
-    # WARNING: Must keep colorbar and subplots units alive, so when user
-    # requests em units, values change with respect to font size. The points
-    # thing is a conveniene feature so not as important for them.
+    # See: https://matplotlib.org/users/customizing.html, all props matching
+    # the below strings use the units 'points', and custom categories are in
     if (isinstance(value,str) and key.split('.')[0] not in ('colorbar','subplots')
         and re.match('^.*(width|space|size|pad|len|small|large)$', key)):
         value = utils.units(value, 'pt')
     return value
 
-def _set_cycler(name):
-    """Sets the default color cycler."""
-    # Draw from dictionary
-    try:
-        colors = mcm.cmap_d[name].colors
-    except (KeyError, AttributeError):
-        cycles = sorted(name for name,cmap in mcm.cmap_d.items() if isinstance(cmap, mcolors.ListedColormap))
-        raise ValueError(f'Invalid cycle name {name!r}. Options are: {", ".join(cycles)}')
-    # Apply color name definitions
-    if rcParamsShort['rgbcycle'] and name.lower() == 'colorblind':
-        regcolors = colors + [(0.1, 0.1, 0.1)]
-    elif mcolors.to_rgb('r') != (1.0,0.0,0.0): # reset
-        regcolors = [(0.0, 0.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.75, 0.75, 0.0), (0.75, 0.75, 0.0), (0.0, 0.75, 0.75), (0.0, 0.0, 0.0)]
-    else:
-        regcolors = [] # no reset necessary
-    for code,color in zip('brgmyck', regcolors):
-        rgb = mcolors.to_rgb(color)
-        mcolors.colorConverter.colors[code] = rgb
-        mcolors.colorConverter.cache[code]  = rgb
-    # Pass to cycle constructor
-    rcParams['patch.facecolor'] = colors[0]
-    rcParams['axes.prop_cycle'] = cycler.cycler('color', colors)
-
 def _get_config_paths():
     """Returns configuration file paths."""
-    # Get paths
+    # Local configuration
     idir = os.getcwd()
     paths = []
     while idir: # not empty string
@@ -329,15 +472,11 @@ def _get_config_paths():
     ipath = os.path.join(os.path.expanduser('~'), '.proplotrc')
     if os.path.exists(ipath) and ipath not in paths:
         paths.insert(0, ipath)
-    # Global configuration
-    ipath = os.path.join(os.path.dirname(__file__), '.proplotrc')
-    if ipath not in paths:
-        paths.insert(0, ipath)
     return paths
 
 def _get_synced_params(key=None, value=None):
     """Returns dictionaries for updating "child" properties in
-    `rcParams` and `rcParamsCustom` with global property."""
+    `rcParams` and `rcParamsLong` with global property."""
     kw = {} # builtin properties that global setting applies to
     kw_custom = {} # custom properties that global setting applies to
     if key is not None and value is not None:
@@ -345,210 +484,73 @@ def _get_synced_params(key=None, value=None):
     else:
         items = rcParamsShort.items()
     for key,value in items:
+        # Cycler
+        if key in ('cycle', 'rgbcycle'):
+            if key == 'rgbcycle':
+                cycle, rgbcycle = rcParamsShort['cycle'], value
+            else:
+                cycle, rgbcycle = value, rcParamsShort['rgbcycle']
+            try:
+                colors = mcm.cmap_d[cycle].colors
+            except (KeyError, AttributeError):
+                cycles = sorted(name for name,cmap in mcm.cmap_d.items() if isinstance(cmap, mcolors.ListedColormap))
+                raise ValueError(f'Invalid cycle name {cycle!r}. Options are: {", ".join(map(repr, cycles))}')
+            if rgbcycle and cycle.lower() == 'colorblind':
+                regcolors = colors + [(0.1, 0.1, 0.1)]
+            elif mcolors.to_rgb('r') != (1.0,0.0,0.0): # reset
+                regcolors = [(0.0, 0.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.75, 0.75, 0.0), (0.75, 0.75, 0.0), (0.0, 0.75, 0.75), (0.0, 0.0, 0.0)]
+            else:
+                regcolors = [] # no reset necessary
+            for code,color in zip('brgmyck', regcolors):
+                rgb = mcolors.to_rgb(color)
+                mcolors.colorConverter.colors[code] = rgb
+                mcolors.colorConverter.cache[code]  = rgb
+            kw['patch.facecolor'] = colors[0]
+            kw['axes.prop_cycle'] = cycler.cycler('color', colors)
+
+        # Zero linewidth almost always means zero tick length
+        elif key == 'linewidth' and _to_points(key, value) == 0:
+            ikw, ikw_custom = _get_synced_params('ticklen', 0)
+            kw.update(ikw)
+            kw_custom.update(ikw_custom)
+
         # Tick length/major-minor tick length ratio
-        if key in ('ticklen', 'ticklenratio'):
+        elif key in ('ticklen', 'ticklenratio'):
             if key == 'ticklen':
-                ticklen = _convert_units(key, value)
+                ticklen = _to_points(key, value)
                 ratio = rcParamsShort['ticklenratio']
             else:
                 ticklen = rcParamsShort['ticklen']
                 ratio = value
             kw['xtick.minor.size'] = ticklen*ratio
             kw['ytick.minor.size'] = ticklen*ratio
+
         # Spine width/major-minor tick width ratio
         elif key in ('linewidth', 'tickratio'):
             if key == 'linewidth':
-                tickwidth = _convert_units(key, value)
+                tickwidth = _to_points(key, value)
                 ratio = rcParamsShort['tickratio']
             else:
                 tickwidth = rcParamsShort['linewidth']
                 ratio = value
             kw['xtick.minor.width'] = tickwidth*ratio
             kw['ytick.minor.width'] = tickwidth*ratio
-        # Grid line
+
+        # Gridline width
         elif key in ('grid.linewidth', 'gridratio'):
             if key == 'grid.linewidth':
-                gridwidth = _convert_units(key, value)
+                gridwidth = _to_points(key, value)
                 ratio = rcParamsShort['gridratio']
             else:
                 gridwidth = rcParams['grid.linewidth']
                 ratio = value
             kw_custom['gridminor.linewidth'] = gridwidth*ratio
-        # Now update linked settings
-        val = None
-        for name in RC_CHILDREN.get(key, ()):
-            val = _convert_units(key, value)
-            if name in rcParamsCustom:
-                kw_custom[name] = val
-            else:
-                kw[name] = val
-        if key == 'linewidth' and val == 0:
-            ikw, ikw_custom = _get_synced_params('ticklen', 0)
-            kw.update(ikw)
-            kw_custom.update(ikw_custom)
-    return kw, kw_custom
-
-class rc_configurator(object):
-    _public_api = (
-        'get', 'fill', 'category', 'reset', 'context', 'update'
-        ) # getattr and setattr will not look for these items
-    def __str__(self):
-        return type(rcParams).__str__(rcParamsShort) # just show globals
-    def __repr__(self):
-        return type(rcParams).__repr__(rcParamsShort)
-    def __contains__(self, key):
-        return (key in RC_SHORTNAMES or key in RC_CUSTOMNAMES or key in
-            RC_PARAMNAMES or key in RC_NODOTSNAMES) # query biggest lists last
-
-    @_counter # about 0.05s
-    def __init__(self):
-        """Magical abstract class for managing matplotlib `rcParams
-        <https://matplotlib.org/users/customizing.html>`__ settings, ProPlot
-        :ref:`rcParamsCustom` settings, and :ref:`rcParamsShort` "global" settings.
-        When initialized, this loads defaults settings plus any user overrides
-        in the ``~/.proplotrc`` file. See the `~proplot.rctools` documentation
-        for details."""
-        # Set the default style. Note that after first figure made, backend
-        # is 'sticky', never changes! See: https://stackoverflow.com/a/48322150/4970632
-        plt.style.use('default')
-
-        # Load the defaults from file
-        for i,file in enumerate(_get_config_paths()):
-            # Load
-            if not os.path.exists(file):
-                continue
-            with open(file) as f:
-                try:
-                    data = yaml.safe_load(f)
-                except yaml.YAMLError as err:
-                    print('{file!r} has invalid YAML syntax.')
-                    raise err
-            # Special duplicate keys
-            if data is None:
-                continue
-            # Add keys to dictionaries
-            gkeys, ckeys = {*()}, {*()}
-            for key,value in data.items():
-                if key in RC_SHORTNAMES:
-                    rcParamsShort[key] = value
-                    if i == 0:
-                        gkeys.add(key)
-                elif key in RC_CUSTOMNAMES:
-                    value = _convert_units(key, value)
-                    rcParamsCustom[key] = value
-                    if i == 0:
-                        ckeys.add(key)
-                elif key in RC_PARAMNAMES:
-                    value = _convert_units(key, value)
-                    rcParams[key] = value
-                else:
-                    raise RuntimeError(f'{file!r} has invalid key {key!r}.')
-            # Make sure we did not miss anything
-            if i == 0:
-                if gkeys != RC_SHORTNAMES:
-                    raise RuntimeError(f'{file!r} has incomplete or invalid global keys {RC_SHORTNAMES - gkeys}.')
-                if ckeys != RC_CUSTOMNAMES:
-                    raise RuntimeError(f'{file!r} has incomplete or invalid custom keys {RC_CUSTOMNAMES - ckeys}.')
-
-        # Apply *global settings* to children settings
-        rcParams['axes.titlepad'] = rcParamsCustom['title.pad']
-        _set_cycler(rcParamsShort['cycle'])
-        rc, rc_new = _get_synced_params()
-        for key,value in rc.items():
-            rcParams[key] = value
-        for key,value in rc_new.items():
-            rcParamsCustom[key] = value
-
-        # Caching stuff
-        self._init = True
-        self._getitem_mode = 0
-        self._context = {}
-        self._cache = {}
-        self._cache_orig = {}
-        self._cache_restore = {}
-
-    def __getitem__(self, key):
-        """Returns `rcParams <https://matplotlib.org/users/customizing.html>`__,
-        :ref:`rcParamsCustom`, and :ref:`rcParamsShort` settings. If we are in a
-        `~rc_configurator.context` block, may return ``None`` if the setting
-        is not cached (i.e. if it was not changed by the user)."""
-        # Can get a whole bunch of different things
-        # Get full dictionary e.g. for rc[None]
-        if not key:
-            return {**rcParams, **rcParamsCustom}
-
-        # Standardize
-        # NOTE: If key is invalid, raise error down the line.
-        if '.' not in key and key not in rcParamsShort:
-            key = RC_NODOTSNAMES.get(key, key)
-
-        # Allow for special time-saving modes where we *ignore rcParams*
-        # or even *ignore rcParamsCustom*.
-        mode = self._getitem_mode
-        if mode == 0:
-            kws = (self._cache, rcParamsShort, rcParamsCustom, rcParams)
-        elif mode == 1:
-            kws = (self._cache, rcParamsShort, rcParamsCustom) # custom only!
-        elif mode == 2:
-            kws = (self._cache,) # changed only!
-        else:
-            raise KeyError(f'Invalid caching mode {mode!r}.')
-
-        # Get individual property. Will successively index a few different dicts
-        # Try to return the value
-        for kw in kws:
-            try:
-                return kw[key]
-            except KeyError:
-                continue
-        # If we were in one of the exclusive modes, return None
-        if mode == 0:
-            raise KeyError(f'Invalid prop name {key!r}.')
-        else:
-            return None
-
-    def __setitem__(self, key, value):
-        """Sets `rcParams <https://matplotlib.org/users/customizing.html>`__,
-        :ref:`rcParamsCustom`, and :ref:`rcParamsShort` settings."""
-        # Check whether we are in context block
-        # NOTE: Do not add key to cache until we are sure it is a valid key
-        cache = self._cache
-        context = bool(self._context) # test if context dict is non-empty
-        if context:
-            restore = self._cache_restore
-
-        # Standardize
-        # NOTE: If key is invalid, raise error down the line.
-        if '.' not in key and key not in rcParamsShort:
-            key = RC_NODOTSNAMES.get(key, key)
-
-        # Special keys
-        if key == 'title.pad':
-            key = 'axes.titlepad'
-        if key == 'rgbcycle': # if must re-apply cycler afterward
-            cache[key] = value
-            rcParamsShort[key] = value
-            key, value = 'cycle', rcParamsShort['cycle']
-
-        # Set the default cycler
-        if key == 'cycle':
-            cache[key] = value
-            if context:
-                restore[key] = rcParamsShort[key]
-                restore['axes.prop_cycle'] = rcParams['axes.prop_cycle']
-                restore['patch.facecolor'] = rcParams['patch.facecolor']
-            _set_cycler(value)
 
         # Gridline toggling, complicated because of the clunky way this is
         # implemented in matplotlib. There should be a gridminor setting!
         elif key in ('grid', 'gridminor'):
-            cache[key] = value
             ovalue = rcParams['axes.grid']
             owhich = rcParams['axes.grid.which']
-            if context:
-                restore[key] = rcParamsShort[key]
-                restore['axes.grid'] = ovalue
-                restore['axes.grid.which'] = owhich
             # Instruction is to turn off gridlines
             if not value:
                 # Gridlines are already off, or they are on for the particular
@@ -576,58 +578,122 @@ class rc_configurator(object):
                 # don't want to turn on. We can just turn on these ones.
                 else:
                     which = owhich
-            cache.update({'axes.grid':value, 'axes.grid.which':which})
-            rcParams.update({'axes.grid':value, 'axes.grid.which':which})
+            kw['axes.grid'] = value
+            kw['axes.grid.which'] = which
 
-        # Ordinary settings
-        elif key in rcParamsShort:
-            # Update global setting
-            cache[key] = value
-            if context:
-                restore[key] = rcParamsShort[key]
-            rcParamsShort[key] = value
-            # Update children of setting
-            rc, rc_new = _get_synced_params(key, value)
-            cache.update(rc)
-            cache.update(rc_new)
-            if context:
-                restore.update({key:rcParams[key] for key in rc})
-                restore.update({key:rcParamsCustom[key] for key in rc_new})
+        # Now update linked settings
+        value = _to_points(key, value)
+        for name in RC_CHILDREN.get(key, ()):
+            if name in rcParamsLong:
+                kw_custom[name] = value
+            else:
+                kw[name] = value
+    return kw, kw_custom
+
+#-----------------------------------------------------------------------------#
+# Class
+#-----------------------------------------------------------------------------#
+class _mode_mod(object):
+    """Helper class that temporarily modifies the getitem mode."""
+    def __init__(self, mode):
+        self._mode = mode
+    def __enter__(self):
+        if self._mode is not None:
+            self._mode_prev = rc._mode
+            object.__setattr__(rc, '_mode', self._mode)
+    def __exit__(self, *args):
+        if self._mode is not None:
+            object.__setattr__(rc, '_mode', self._mode_prev)
+
+class rc_configurator(object):
+    """
+    Magical abstract class for managing matplotlib `rcParams
+    <https://matplotlib.org/users/customizing.html>`__ and additional
+    ProPlot :ref:`rcParamsLong` and :ref:`rcParamsShort` settings. When
+    initialized, this loads defaults settings plus any user overrides in the
+    ``~/.proplotrc`` file. See the `~proplot.rctools` documentation for
+    details.
+    """
+    def __str__(self):
+        return type(rcParams).__str__(rcParamsShort) # just show globals
+    def __repr__(self):
+        return type(rcParams).__repr__(rcParamsShort)
+    def __contains__(self, key):
+        return key in rcParamsShort or key in rcParamsLong or key in rcParams
+
+    @_counter # about 0.05s
+    def __init__(self, local=True):
+        """
+        Parameters
+        ----------
+        local : bool, optional
+            Whether to load overrides from local and user ``.proplotrc``
+            file(s). Default is ``True``.
+        """
+        # Attributes and style
+        object.__setattr__(self, '_mode', 0)
+        object.__setattr__(self, '_context', [])
+        plt.style.use('default')
+
+        # Update from defaults
+        rcParamsLong.clear()
+        rcParamsLong.update(defaultParamsLong)
+        rcParamsShort.clear()
+        rcParamsShort.update(defaultParamsShort)
+        for key,value in rcParamsShort.items():
+            rc, rc_long = _get_synced_params(key, value)
             rcParams.update(rc)
-            rcParamsCustom.update(rc_new)
-        # Update normal settings
-        elif key in RC_CUSTOMNAMES:
-            value = _convert_units(key, value)
-            cache[key] = value
-            if context:
-                restore[key] = rcParamsCustom[key]
-            rcParamsCustom[key] = value
-        elif key in RC_PARAMNAMES:
-            value = _convert_units(key, value)
-            cache[key] = value
-            if context:
-                restore[key] = rcParams[key]
-            rcParams[key] = value # rcParams dict has key validation
-        else:
-            raise KeyError(f'Invalid key {key!r}.')
-        self._init = False # setitem was successful, we are no longer in initial state
+            rcParamsLong.update(rc_long)
 
-    # Attributes same as items
-    def __getattribute__(self, attr):
-        """Invokes `~rc_configurator.__getitem__`."""
-        if attr[:1] == '_' or attr in self._public_api:
-            return object.__getattribute__(self, attr)
-        else:
-            return self[attr]
+        # Update from files
+        if not local:
+            return
+        for i,file in enumerate(_get_config_paths()):
+            if not os.path.exists(file):
+                continue
+            with open(file) as f:
+                try:
+                    data = yaml.safe_load(f)
+                except yaml.YAMLError as err:
+                    print('{file!r} has invalid YAML syntax.')
+                    raise err
+            for key,value in (data or {}).items():
+                try:
+                    self[key] = value
+                except KeyError:
+                    raise RuntimeError(f'{file!r} has invalid key {key!r}.')
 
-    def __setattr__(self, attr, value):
-        """Invokes `~rc_configurator.__setitem__`."""
-        if attr[:1] == '_':
-            object.__setattr__(self, attr, value)
-        else:
-            self[attr] = value
+    def __enter__(self):
+        """Applies settings from the most recent context object."""
+        # Get context information
+        _, mode, kwargs, cache, restore = self._context[-1] # missing arg is previous mode
+        object.__setattr__(self, '_mode', mode)
+        def _set_item(rcdict, key, value):
+            restore[key] = rcdict[key]
+            cache[key] = rcdict[key] = value
 
-    # Immutability
+        # Apply settings
+        for key,value in kwargs.items():
+            if key in rcParamsShort:
+                rc, rc_long = _get_synced_params(key, value)
+                _set_item(rcParamsShort, key, value)
+                for ikey, ivalue in rc_long.items():
+                    _set_item(rcParamsLong, ikey, ivalue)
+                for ikey, ivalue in rc.items():
+                    _set_item(rcParams, ikey, ivalue)
+            elif key in rcParamsLong:
+                _set_item(rcParamsLong, ikey, ivalue)
+            elif key in rcParams:
+                _set_item(rcParams, ikey, ivalue)
+
+    def __exit__(self, *args):
+        """Restores configurator cache to initial state."""
+        mode, _, _, _, restore = self._context[-1]
+        for key,value in restore.items():
+            self[key] = value
+        del self._context[-1]
+        object.__setattr__(self, '_mode', mode)
+
     def __delitem__(self, *args):
         """Pseudo-immutability."""
         raise RuntimeError('rc settings cannot be deleted.')
@@ -636,24 +702,118 @@ class rc_configurator(object):
         """Pseudo-immutability."""
         raise RuntimeError('rc settings cannot be deleted.')
 
-    # Context tools
-    def __enter__(self):
-        """Apply settings from configurator cache."""
-        self._cache_orig = rc._cache.copy()
-        self._cache_restore = {} # shouldn't be necessary but just in case
-        self._cache = {}
-        for key,value in self._context.items():
-            self[key] = value # applies globally linked and individual settings
+    def __getattr__(self, attr):
+        """Invokes `~rc_configurator.__getitem__`."""
+        return self[attr]
 
-    def __exit__(self, *args):
-        """Restore configurator cache to initial state."""
-        self._context = {}
-        self._getitem_mode = 0
-        for key,value in self._cache_restore.items():
-            self[key] = value
-        self._cache = self._cache_orig
-        self._cache_restore = {}
-        self._cache_orig = {}
+    def __getitem__(self, key):
+        """Returns `rcParams <https://matplotlib.org/users/customizing.html>`__,
+        :ref:`rcParamsLong`, and :ref:`rcParamsShort` settings. If we are in a
+        `~rc_configurator.context` block, may return ``None`` if the setting
+        is not cached (i.e. if it was not changed by the user)."""
+        # Can get a whole bunch of different things
+        # Get full dictionary e.g. for rc[None]
+        if not key:
+            return {**rcParams, **rcParamsLong}
+
+        # Standardize
+        # NOTE: If key is invalid, raise error down the line.
+        if '.' not in key and key not in rcParamsShort:
+            key = RC_NODOTS.get(key, key)
+
+        # Allow for special time-saving modes where we *ignore rcParams*
+        # or even *ignore rcParamsLong*.
+        mode = self._mode
+        if mode == 0:
+            kws = (rcParamsShort, rcParamsLong, rcParams)
+        elif mode == 1:
+            kws = (rcParamsShort, rcParamsLong) # custom only!
+        elif mode == 2:
+            kws = ()
+        else:
+            raise KeyError(f'Invalid caching mode {mode!r}.')
+        if self._context:
+            kws = (self._context[-1][-2], *kws)
+
+        # Get individual property. Will successively index a few different dicts
+        # Try to return the value
+        for kw in kws:
+            try:
+                return kw[key]
+            except KeyError:
+                continue
+        # If we were in one of the exclusive modes, return None
+        if mode == 0:
+            raise KeyError(f'Invalid property name {key!r}.')
+        else:
+            return None
+
+    def __setattr__(self, attr, value):
+        """Invokes `~rc_configurator.__setitem__`."""
+        self[attr] = value
+
+    def __setitem__(self, key, value):
+        """Sets `rcParams <https://matplotlib.org/users/customizing.html>`__,
+        :ref:`rcParamsLong`, and :ref:`rcParamsShort` settings."""
+        if '.' not in key and key not in rcParamsShort:
+            key = RC_NODOTS.get(key, key)
+        if key == 'title.pad':
+            key = 'axes.titlepad'
+        if key in rcParamsShort:
+            rc, rc_long = _get_synced_params(key, value)
+            rcParamsShort[key] = value
+            for ikey, ivalue in rc.items():
+                rcParams[ikey] = ivalue
+            for ikey, ivalue in rc_long.items():
+                rcParamsLong[ikey] = ivalue
+        elif key in rcParamsLong:
+            rcParamsLong[key] = _to_points(key, value)
+        elif key in rcParams:
+            rcParams[key] = _to_points(key, value)
+        else:
+            raise KeyError(f'Invalid key {key!r}.')
+
+    def _setattr(self, attr, value):
+        """Helper function that sets attribute."""
+        object.__setattr__(self, attr, value)
+
+    def category(self, cat, cache=True):
+        """
+        Returns a dictionary of settings belonging to the indicated category,
+        i.e. settings beginning with the substring ``cat + '.'``.
+
+        Parameters
+        ----------
+        cat : str, optional
+            The `rc` settings category.
+        cache : bool, optional
+            If ``False``, the `~rc_configurator.__getitem__` mode is temporarily
+            set to ``0`` (see `~rc_configurator.context`).
+        """
+        # Check input mode
+        if cat not in RC_CATEGORIES:
+            raise ValueError(f'rc category {cat!r} does not exist. Valid categories are {", ".join(map(repr, RC_CATEGORIES))}.')
+        mode = 0 if not cache else self._mode
+        if mode == 0:
+            kws = (rcParamsLong, rcParams)
+        elif mode == 1:
+            kws = (rcParamsLong,)
+        elif mode == 2:
+            kws = ()
+        else:
+            raise KeyError(f'Invalid caching mode {mode}.')
+        if self._context:
+            kws = (self._context[-1][-2], *kws)
+
+        # Return params dictionary
+        output = {}
+        for kw in kws:
+            for category,value in kw.items():
+                if re.search(f'^{cat}\.', category):
+                    subcategory = re.sub(f'^{cat}\.', '', category)
+                    if subcategory and '.' not in subcategory:
+                        output[subcategory] = value
+        return output
 
     def context(self, *args, mode=0, **kwargs):
         """
@@ -670,28 +830,26 @@ class rc_configurator(object):
         Parameters
         ----------
         *args
-            Dictionaries of setting names and values.
+            Dictionaries of `rc` names and values.
         **kwargs
-            Setting names and values passed as keyword arguments.
+            `rc` names and values passed as keyword arguments. If the
+            name has dots, simply omit them.
 
         Other parameters
         ----------------
         mode : {0,1,2}, optional
-            The `~rc_configurator.__getitem__` mode.
-            Dictates the behavior of the `rc` object within a ``with...as``
-            block when settings are requested with e.g. :rcraw:`setting`. If
-            you are using `~rc_configurator.context` manually, the `mode` is
-            automatically set to ``0`` -- other input is ignored. Internally,
-            ProPlot uses all of the three available modes.
+            The `~rc_configurator.__getitem__` mode. Dictates the behavior of
+            the `rc` object within a ``with...as`` block when settings are
+            requested.
 
             0. All settings (`rcParams <https://matplotlib.org/users/customizing.html>`__,
-               :ref:`rcParamsCustom`, and :ref:`rcParamsShort`) are returned, whether
-               or not `~rc_configurator.context` has changed them.
+               :ref:`rcParamsLong`, and :ref:`rcParamsShort`) are returned,
+               whether or not `~rc_configurator.context` has changed them.
             1. Unchanged `rcParams <https://matplotlib.org/users/customizing.html>`__
-               return ``None``. :ref:`rcParamsCustom` and :ref:`rcParamsShort` are
-               returned whether or not `~rc_configurator.context` has changed them.
-               This is used in the `~proplot.axes.Axes.__init__` call to
-               `~proplot.axes.Axes.format`. When a setting lookup returns
+               return ``None``. :ref:`rcParamsLong` and :ref:`rcParamsShort`
+               are returned whether or not `~rc_configurator.context` has
+               changed them.  This is used in the `~proplot.axes.Axes.__init__`
+               call to `~proplot.axes.Axes.format`. When a lookup returns
                ``None``, `~proplot.axes.Axes.format` does not apply it.
             2. All unchanged settings return ``None``. This is used during user
                calls to `~proplot.axes.Axes.format`.
@@ -706,16 +864,13 @@ class rc_configurator(object):
 
         """
         if mode not in range(3):
-            raise ValueError(f'Invalid _getitem_mode {mode}.')
+            raise ValueError(f'Invalid mode {mode!r}.')
         for arg in args:
             if not isinstance(arg, dict):
-                raise ValueError('Non-dictionary argument.')
+                raise ValueError('Non-dictionary argument {arg!r}.')
             kwargs.update(arg)
-        self._context = kwargs # could be empty
-        self._getitem_mode = mode
-        return self
+        self._context.append((self._mode, mode, kwargs, {}, {}))
 
-    # Other tools
     def get(self, key, cache=False):
         """
         Returns a setting.
@@ -728,13 +883,9 @@ class rc_configurator(object):
             If ``False``, the `~rc_configurator.__getitem__` mode is temporarily
             set to ``0`` (see `~rc_configurator.context`).
         """
-        if not cache:
-            orig = self._getitem_mode
-            self._getitem_mode = 0
-        item = self[key]
-        if not cache:
-            self._getitem_mode = orig
-        return item
+        mode = 0 if not cache else None
+        with _mode_mod(mode):
+            return self[key]
 
     def fill(self, props, cache=True):
         """
@@ -754,75 +905,33 @@ class rc_configurator(object):
             lookup returns ``None``, the setting is omitted from the output
             dictionary.
         """
-        if not cache:
-            orig = self._getitem_mode
-            self._getitem_mode = 0
-        props_out = {}
-        for key,value in props.items():
-            item = self[value]
-            if item is not None:
-                props_out[key] = item
-        if not cache:
-            self._getitem_mode = orig
-        return props_out
-
-    def category(self, cat, cache=True):
-        """
-        Returns a dictionary of settings belonging to the indicated category,
-        i.e. settings beginning with the substring ``cat + '.'``.
-
-        Parameters
-        ----------
-        cat : str, optional
-            The `rc` settings category.
-        cache : bool, optional
-            If ``False``, the `~rc_configurator.__getitem__` mode is temporarily
-            set to ``0`` (see `~rc_configurator.context`).
-        """
-        # Check
-        if cat not in RC_CATEGORIES:
-            raise ValueError(f'RC category {cat} does not exist. Valid categories are {", ".join(RC_CATEGORIES)}.')
-        if not cache:
-            mode = 0
-        else:
-            mode = self._getitem_mode
-
-        # Allow for special time-saving modes where we *ignore rcParams*
-        # or even *ignore rcParamsCustom*.
-        if mode == 0:
-            kws = (self._cache, rcParamsShort, rcParamsCustom, rcParams)
-        elif mode == 1:
-            kws = (self._cache, rcParamsShort, rcParamsCustom)
-        elif mode == 2:
-            kws = (self._cache, rcParamsShort)
-        else:
-            raise KeyError(f'Invalid caching mode {mode}.')
-
-        # Return params dictionary
-        params = {}
-        for kw in kws:
-            for category,value in kw.items():
-                if re.search(f'^{cat}\.', category):
-                    subcategory = re.sub(f'^{cat}\.', '', category)
-                    if subcategory and '.' not in subcategory:
-                        params[subcategory] = value
-        return params
+        mode = 0 if not cache else None
+        output = {}
+        with _mode_mod(mode):
+            for key,value in props.items():
+                item = self[value]
+                if item is not None:
+                    output[key] = item
+        return output
 
     def update(self, *args, **kwargs):
         """
-        Bulk updates settings, usage is similar to python `dict` objects.
+        Bulk updates settings.
 
         Parameters
         ----------
         *args : str, dict, or (str, dict)
-            Positional arguments can be a dictionary of `rc` settings and/or
-            a "category" string name. If a category name is passed, all settings
-            in the dictionary (if it was passed) and all keyword arg names
-            (if they were passed) are prepended with the string ``cat + '.'``.
-            For example, ``rc.update('axes', labelsize=20, titlesize=20)``
-            changes the ``axes.labelsize`` and ``axes.titlesize`` properties.
+            The first argument can optionally be a "category" string name,
+            in which case all other setting names passed to this function are
+            prepended with the string ``cat + '.'``. For example,
+            ``rc.update('axes', labelsize=20, titlesize=20)`` changes the
+            :rcraw:`axes.labelsize` and :rcraw:`axes.titlesize` properties.
+
+            The first or second argument can also be a dictionary of `rc`
+            names and values.
         **kwargs
-            `rc` settings passed as keyword args.
+            `rc` names and values passed as keyword arguments. If the
+            name has dots, simply omit them.
         """
         # Parse args
         kw = {}
@@ -844,16 +953,21 @@ class rc_configurator(object):
         for key,value in kw.items():
             self[prefix + key] = value
 
-    def reset(self):
-        """Restores settings to the initial state -- ProPlot defaults, plus
-        any user overrides in the ``~/.proplotrc`` file."""
-        if not self._init: # save resources if rc is unchanged!
-            return self.__init__()
+    def reset(self, **kwargs):
+        """
+        Resets the configurator to its initial state.
+
+        Parameters
+        ----------
+        **kwargs
+            Passed to `rc_configurator`.
+        """
+        self.__init__(**kwargs)
 
 # Declare rc object
 # WARNING: Must be instantiated after ipython notebook setup! The default
 # backend may change some rc settings!
-rc = rc_configurator()
+rc = rc_configurator(True)
 """Instance of `rc_configurator`. This is used to change global settings.
 See the `~proplot.rctools` documentation for details."""
 
@@ -884,7 +998,6 @@ def nb_setup():
 
     # Initialize with default 'inline' settings
     # Reset rc object afterwards
-    rc._init = False
     try:
         # For notebooks
         ipython.magic("matplotlib inline")
