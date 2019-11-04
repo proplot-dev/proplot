@@ -183,22 +183,22 @@ def units(value, output='in'):
         like ``'123.456unit'``, where the number is the magnitude and
         ``'unit'`` is one of the following.
 
-        ======  ==========================================================================================
+        ======  =========================================================================================
         Key     Description
-        ======  ==========================================================================================
+        ======  =========================================================================================
         ``m``   Meters
         ``cm``  Centimeters
         ``mm``  Millimeters
         ``ft``  Feet
         ``in``  Inches
         ``pt``  Points (1/72 inches)
-        ``px``  Pixels on screen, uses dpi of ``rc['figure.dpi']``
-        ``pp``  Pixels once printed, uses dpi of ``rc['savefig.dpi']``
-        ``em``  `Em square <https://en.wikipedia.org/wiki/Em_(typography)>`__ for ``rc['font.size']``
-        ``en``  `En square <https://en.wikipedia.org/wiki/En_(typography)>`__ for ``rc['font.size']``
-        ``Em``  `Em square <https://en.wikipedia.org/wiki/Em_(typography)>`__ for ``rc['axes.titlesize']``
-        ``En``  `En square <https://en.wikipedia.org/wiki/En_(typography)>`__ for ``rc['axes.titlesize']``
-        ======  ==========================================================================================
+        ``px``  Pixels on screen, uses dpi of :rcraw:`figure.dpi`
+        ``pp``  Pixels once printed, uses dpi of :rcraw:`savefig.dpi`
+        ``em``  `Em square <https://en.wikipedia.org/wiki/Em_(typography)>`__ for :rcraw:`font.size`
+        ``en``  `En square <https://en.wikipedia.org/wiki/En_(typography)>`__ for :rcraw:`font.size`
+        ``Em``  `Em square <https://en.wikipedia.org/wiki/Em_(typography)>`__ for :rcraw:`axes.titlesize`
+        ``En``  `En square <https://en.wikipedia.org/wiki/En_(typography)>`__ for :rcraw:`axes.titlesize`
+        ======  =========================================================================================
 
     output : str, optional
         The output units. Default is inches, i.e. ``'in'``.

@@ -202,14 +202,8 @@ except ModuleNotFoundError:
 __all__ = ['rc', 'rc_configurator', 'nb_setup']
 
 # Initialize
-from matplotlib import rcParams, RcParams
-class RcParamsShort(dict):
-    """Class for holding short-name settings. So far just `dict`."""
-    pass
-class RcParamsLong(dict):
-    """Class for holding custom settings. So far just `dict`."""
-    pass
-defaultParamsShort = RcParamsShort({
+from matplotlib import rcParams
+defaultParamsShort = {
     'nbsetup':      True,
     'format':       'retina',
     'autosave':     30,
@@ -248,8 +242,8 @@ defaultParamsShort = RcParamsShort({
     'lakes':        False,
     'borders':      False,
     'innerborders': False,
-    })
-defaultParamsLong = RcParamsLong({
+    }
+defaultParamsLong = {
     'abc.loc':                     'l', # left side above the axes
     'title.loc':                   'c', # centered above the axes
     'title.pad':                   3.0, # copy
@@ -337,8 +331,8 @@ defaultParamsLong = RcParamsLong({
     'subplots.ylabspace':          '5.5em',
     'subplots.xlabspace':          '4em',
     'subplots.titlespace':         '2em',
-    })
-defaultParams = RcParams({
+    }
+defaultParams = {
     'figure.dpi':              90,
     'figure.facecolor':        '#f2f2f2',
     'figure.autolayout':       False,
@@ -379,9 +373,9 @@ defaultParams = RcParams({
     'mathtext.bf':             'sans:bold',
     'mathtext.it':             'sans:it',
     'mathtext.default':        'regular',
-    })
-rcParamsShort = RcParamsShort({})
-rcParamsLong = RcParamsLong({})
+    }
+rcParamsShort = {}
+rcParamsLong = {}
 
 # Initialize user file
 _rc_file = os.path.join(os.path.expanduser('~'), '.proplotrc')
@@ -397,7 +391,7 @@ if not os.path.isfile(_rc_file):
     with open(_rc_file, 'x') as f:
         f.write(f"""
 #------------------------------------------------------
-# Use this file to customize your settings
+# Use this file to customize settings
 # For descriptions of each key name see:
 # https://proplot.readthedocs.io/en/latest/rctools.html
 #------------------------------------------------------
@@ -431,7 +425,6 @@ RC_CHILDREN = {
     'tickdir':      ('xtick.direction',  'ytick.direction'),
     'tickpad':      ('xtick.major.pad', 'xtick.minor.pad', 'ytick.major.pad', 'ytick.minor.pad'),
     }
-
 # Used by Axes.format, allows user to pass rc settings as keyword args,
 # way less verbose. For example, landcolor='b' vs. rc_kw={'land.color':'b'}.
 RC_NODOTS = { # useful for passing these as kwargs
@@ -592,19 +585,15 @@ def _get_synced_params(key=None, value=None):
     return kw, kw_custom
 
 #-----------------------------------------------------------------------------#
-# Class
+# Main class
 #-----------------------------------------------------------------------------#
-class _mode_mod(object):
-    """Helper class that temporarily modifies the getitem mode."""
-    def __init__(self, mode):
-        self._mode = mode
-    def __enter__(self):
-        if self._mode is not None:
-            self._mode_prev = rc._mode
-            object.__setattr__(rc, '_mode', self._mode)
-    def __exit__(self, *args):
-        if self._mode is not None:
-            object.__setattr__(rc, '_mode', self._mode_prev)
+def _sanitize_key(key):
+    """Converts the key to a palatable value."""
+    if not isinstance(key, str):
+        raise KeyError(f'Invalid key {key!r}. Must be string.')
+    if '.' not in key and key not in rcParamsShort:
+        key = RC_NODOTS.get(key, key)
+    return key.lower()
 
 class rc_configurator(object):
     """
@@ -615,12 +604,20 @@ class rc_configurator(object):
     ``~/.proplotrc`` file. See the `~proplot.rctools` documentation for
     details.
     """
-    def __str__(self):
-        return type(rcParams).__str__(rcParamsShort) # just show globals
-    def __repr__(self):
-        return type(rcParams).__repr__(rcParamsShort)
     def __contains__(self, key):
         return key in rcParamsShort or key in rcParamsLong or key in rcParams
+    def __iter__(self):
+        for key in sorted((*rcParamsShort, *rcParamsLong, *rcParams)):
+            yield key
+    def __repr__(self):
+        rcdict = type('rc', (dict,), {})(rcParamsShort)
+        string = type(rcParams).__repr__(rcdict)
+        indent = ' ' * 4 # indent is rc({
+        return string.strip('})') + f'\n{indent}... (rcParams) ...\n{indent}}})'
+    def __str__(self): # encapsulate params in temporary class whose name is used by rcParams.__str__
+        rcdict = type('rc', (dict,), {})(rcParamsShort)
+        string = type(rcParams).__str__(rcdict)
+        return string + '\n... (rcParams) ...'
 
     @_counter # about 0.05s
     def __init__(self, local=True):
@@ -632,7 +629,6 @@ class rc_configurator(object):
             file(s). Default is ``True``.
         """
         # Attributes and style
-        object.__setattr__(self, '_mode', 0)
         object.__setattr__(self, '_context', [])
         plt.style.use('default')
 
@@ -667,8 +663,7 @@ class rc_configurator(object):
     def __enter__(self):
         """Applies settings from the most recent context object."""
         # Get context information
-        _, mode, kwargs, cache, restore = self._context[-1] # missing arg is previous mode
-        object.__setattr__(self, '_mode', mode)
+        *_, kwargs, cache, restore = self._context[-1] # missing arg is previous mode
         def _set_item(rcdict, key, value):
             restore[key] = rcdict[key]
             cache[key] = rcdict[key] = value
@@ -689,11 +684,10 @@ class rc_configurator(object):
 
     def __exit__(self, *args):
         """Restores configurator cache to initial state."""
-        mode, _, _, _, restore = self._context[-1]
+        *_, restore = self._context[-1]
         for key,value in restore.items():
             self[key] = value
         del self._context[-1]
-        object.__setattr__(self, '_mode', mode)
 
     def __delitem__(self, *args):
         """Pseudo-immutability."""
@@ -709,45 +703,14 @@ class rc_configurator(object):
 
     def __getitem__(self, key):
         """Returns `rcParams <https://matplotlib.org/users/customizing.html>`__,
-        :ref:`rcParamsLong`, and :ref:`rcParamsShort` settings. If we are in a
-        `~rc_configurator.context` block, may return ``None`` if the setting
-        is not cached (i.e. if it was not changed by the user)."""
-        # Can get a whole bunch of different things
-        # Get full dictionary e.g. for rc[None]
-        if not key:
-            return {**rcParams, **rcParamsLong}
-
-        # Standardize
-        # NOTE: If key is invalid, raise error down the line.
-        if '.' not in key and key not in rcParamsShort:
-            key = RC_NODOTS.get(key, key)
-
-        # Allow for special time-saving modes where we *ignore rcParams*
-        # or even *ignore rcParamsLong*.
-        mode = self._mode
-        if mode == 0:
-            kws = (rcParamsShort, rcParamsLong, rcParams)
-        elif mode == 1:
-            kws = (rcParamsShort, rcParamsLong) # custom only!
-        elif mode == 2:
-            kws = ()
-        else:
-            raise KeyError(f'Invalid caching mode {mode!r}.')
-        if self._context:
-            kws = (self._context[-1][-2], *kws)
-
-        # Get individual property. Will successively index a few different dicts
-        # Try to return the value
-        for kw in kws:
+        :ref:`rcParamsLong`, and :ref:`rcParamsShort` settings."""
+        key = _sanitize_key(key)
+        for kw in (rcParamsShort, rcParamsLong, rcParams):
             try:
                 return kw[key]
             except KeyError:
                 continue
-        # If we were in one of the exclusive modes, return None
-        if mode == 0:
-            raise KeyError(f'Invalid property name {key!r}.')
-        else:
-            return None
+        raise KeyError(f'Invalid property name {key!r}.')
 
     def __setattr__(self, attr, value):
         """Invokes `~rc_configurator.__setitem__`."""
@@ -774,11 +737,34 @@ class rc_configurator(object):
         else:
             raise KeyError(f'Invalid key {key!r}.')
 
-    def _setattr(self, attr, value):
-        """Helper function that sets attribute."""
-        object.__setattr__(self, attr, value)
+    def _get_item(self, key, mode=None):
+        """Ax with `~rc_configurator.__getitem__`, but limits the search
+        based on the context mode, and returns ``None`` if the key is not
+        found in the searched dictionaries."""
+        if mode is None:
+            mode = min((context[0] for context in self._context), default=0)
+        caches = (context[2] for context in self._context)
+        if mode == 0:
+            rcdicts = (*caches, rcParamsShort, rcParamsLong, rcParams)
+        elif mode == 1:
+            rcdicts = (*caches, rcParamsShort, rcParamsLong) # custom only!
+        elif mode == 2:
+            rcdicts = (*caches,)
+        else:
+            raise KeyError(f'Invalid caching mode {mode!r}.')
+        for rcdict in rcdicts:
+            if not rcdict:
+                continue
+            try:
+                return rcdict[key]
+            except KeyError:
+                continue
+        if mode == 0:
+            raise KeyError(f'Invalid property name {key!r}.')
+        else:
+            return None
 
-    def category(self, cat, cache=True):
+    def category(self, cat, context=False):
         """
         Returns a dictionary of settings belonging to the indicated category,
         i.e. settings beginning with the substring ``cat + '.'``.
@@ -787,34 +773,24 @@ class rc_configurator(object):
         ----------
         cat : str, optional
             The `rc` settings category.
-        cache : bool, optional
-            If ``False``, the `~rc_configurator.__getitem__` mode is temporarily
-            set to ``0`` (see `~rc_configurator.context`).
+        context : bool, optional
+            If ``True``, then each category setting that is not found in the
+            context mode dictionaries is omitted from the output dictionary.
+            See `~rc_configurator.context`.
         """
-        # Check input mode
         if cat not in RC_CATEGORIES:
-            raise ValueError(f'rc category {cat!r} does not exist. Valid categories are {", ".join(map(repr, RC_CATEGORIES))}.')
-        mode = 0 if not cache else self._mode
-        if mode == 0:
-            kws = (rcParamsLong, rcParams)
-        elif mode == 1:
-            kws = (rcParamsLong,)
-        elif mode == 2:
-            kws = ()
-        else:
-            raise KeyError(f'Invalid caching mode {mode}.')
-        if self._context:
-            kws = (self._context[-1][-2], *kws)
-
-        # Return params dictionary
-        output = {}
-        for kw in kws:
-            for category,value in kw.items():
-                if re.search(f'^{cat}\.', category):
-                    subcategory = re.sub(f'^{cat}\.', '', category)
-                    if subcategory and '.' not in subcategory:
-                        output[subcategory] = value
-        return output
+            raise ValueError(f'Invalid rc category {cat!r}. Valid categories are {", ".join(map(repr, RC_CATEGORIES))}.')
+        kw = {}
+        mode = 0 if not context else None
+        for rcdict in (rcParamsLong, rcParams):
+            for key in rcdict:
+                if not re.search(f'^{cat}[.][^.]+$', key):
+                    continue
+                value = self._get_item(key, mode)
+                if value is None:
+                    continue
+                kw[key] = value
+        return kw
 
     def context(self, *args, mode=0, **kwargs):
         """
@@ -839,9 +815,10 @@ class rc_configurator(object):
         Other parameters
         ----------------
         mode : {0,1,2}, optional
-            The `~rc_configurator.__getitem__` mode. Dictates the behavior of
-            the `rc` object within a ``with...as`` block when settings are
-            requested.
+            The context mode. Dictates the behavior of `~rc_configurator.get`,
+            `~rc_configurator.fill`, and `~rc_configurator.category` within a
+            "with as" block when called with ``context=True``. The options are
+            as follows.
 
             0. All settings (`rcParams <https://matplotlib.org/users/customizing.html>`__,
                :ref:`rcParamsLong`, and :ref:`rcParamsShort`) are returned,
@@ -870,9 +847,19 @@ class rc_configurator(object):
             if not isinstance(arg, dict):
                 raise ValueError('Non-dictionary argument {arg!r}.')
             kwargs.update(arg)
-        self._context.append((self._mode, mode, kwargs, {}, {}))
+        self._context.append((mode, kwargs, {}, {}))
+        return self
 
-    def get(self, key, cache=False):
+    def dict(self):
+        """
+        Returns a dictionary of all settings.
+        """
+        output = {}
+        for key in sorted((*rcParamsShort, *rcParamsLong, *rcParams)):
+            output[key] = self[key]
+        return output
+
+    def get(self, key, context=False):
         """
         Returns a setting.
 
@@ -880,15 +867,14 @@ class rc_configurator(object):
         ----------
         key : str
             The setting name.
-        cache : bool, optional
-            If ``False``, the `~rc_configurator.__getitem__` mode is temporarily
-            set to ``0`` (see `~rc_configurator.context`).
+        context : bool, optional
+            If ``True``, then ``None`` is returned if the setting is not found
+            in the context mode dictionaries. See `~rc_configurator.context`.
         """
-        mode = 0 if not cache else None
-        with _mode_mod(mode):
-            return self[key]
+        mode = 0 if not context else None
+        return self._get_item(key, mode)
 
-    def fill(self, props, cache=True):
+    def fill(self, props, context=False):
         """
         Returns a dictionary filled with `rc` settings, used internally to build
         dictionaries for updating `~matplotlib.artist.Artist` instances.
@@ -900,20 +886,32 @@ class rc_configurator(object):
             are replaced with the corresponding property only if
             `~rc_configurator.__getitem__` does not return ``None``. Otherwise,
             that key, value pair is omitted from the output dictionary.
-        cache : bool, optional
-            If ``False``, the `~rc_configurator.__getitem__` mode is temporarily
-            set to ``0`` (see `~rc_configurator.context`). Otherwise, if an `rc`
-            lookup returns ``None``, the setting is omitted from the output
-            dictionary.
+        context : bool, optional
+            If ``True``, then each setting that is not found in the
+            context mode dictionaries is omitted from the output dictionary.
+            See `~rc_configurator.context`.
         """
-        mode = 0 if not cache else None
-        output = {}
-        with _mode_mod(mode):
-            for key,value in props.items():
-                item = self[value]
-                if item is not None:
-                    output[key] = item
-        return output
+        kw = {}
+        mode = 0 if not context else None
+        for key,value in props.items():
+            item = self._get_item(value, mode)
+            if item is not None:
+                kw[key] = item
+        return kw
+
+    def items(self):
+        """
+        Iterates over all setting names and values. Same as `dict.items`.
+        """
+        for key in self:
+            yield key, self[key]
+
+    def keys(self):
+        """
+        Iterates over all setting names. Same as `dict.keys`.
+        """
+        for key in self:
+            yield key
 
     def update(self, *args, **kwargs):
         """
@@ -964,6 +962,13 @@ class rc_configurator(object):
             Passed to `rc_configurator`.
         """
         self.__init__(**kwargs)
+
+    def values(self):
+        """
+        Iterates over all setting values. Same as `dict.values`.
+        """
+        for key in self:
+            yield self[key]
 
 # Declare rc object
 # WARNING: Must be instantiated after ipython notebook setup! The default

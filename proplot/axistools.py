@@ -355,7 +355,7 @@ class AutoFormatter(mticker.ScalarFormatter):
         """
         tickrange = tickrange or (-np.inf, np.inf)
         super().__init__(*args, **kwargs)
-        zerotrim = _notNone(zerotrim, rc.get('axes.formatter.zerotrim'))
+        zerotrim = _notNone(zerotrim, rc['axes.formatter.zerotrim'])
         self._maxprecision = precision
         self._zerotrim = zerotrim
         self._tickrange = tickrange
@@ -546,7 +546,7 @@ class _ScaleBase(object):
         if (not only_if_default or axis.isDefault_minloc
             or isinstance(axis.get_minor_locator(), mticker.AutoMinorLocator)):
             name = axis.axis_name if axis.axis_name in 'xy' else 'x'
-            minor = 'minor' if rc.get(name + 'tick.minor.visible') else 'null'
+            minor = 'minor' if rc[name + 'tick.minor.visible'] else 'null'
             axis.set_minor_locator(
                 getattr(self, '_minor_locator', None) or Locator(minor)
                 )

@@ -20,7 +20,7 @@ import cycler
 from collections.abc import Sized
 from lxml import etree
 from numbers import Number, Integral
-from matplotlib import docstring, rcParams
+from matplotlib import rcParams
 import numpy as np
 import numpy.ma as ma
 import matplotlib.colors as mcolors
@@ -195,23 +195,6 @@ BASE_COLORS = {
     'black':   (0, 0, 0),
     'white':   (1, 1, 1),
     }
-
-# Docstring fragments
-_gamma_params = """
-gamma1 : float, optional
-    If >1, makes low saturation colors more prominent. If <1,
-    makes high saturation colors more prominent. Similar to the
-    `HCLWizard <http://hclwizard.org:64230/hclwizard/>`_ option.
-    See `make_mapping_array` for details.
-gamma2 : float, optional
-    If >1, makes high luminance colors more prominent. If <1,
-    makes low luminance colors more prominent. Similar to the
-    `HCLWizard <http://hclwizard.org:64230/hclwizard/>`_ option.
-    See `make_mapping_array` for details.
-gamma : float, optional
-    Sets `gamma1` and `gamma2` to this identical value.
-"""
-docstring.interpd.update(gamma_params=_gamma_params)
 
 #-----------------------------------------------------------------------------#
 # Color manipulation functions
@@ -1069,7 +1052,6 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
     """Similar to `~matplotlib.colors.LinearSegmentedColormap`, but instead
     of varying the RGB channels, we vary hue, saturation, and luminance in
     either the HCL colorspace or the HSLuv or HPLuv scalings of HCL."""
-    @docstring.dedent_interpd
     def __init__(self,
         name, segmentdata, N=None, space=None, clip=True,
         gamma=None, gamma1=None, gamma2=None, cyclic=False,
@@ -1105,7 +1087,18 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         cyclic : bool, optional
             Whether this colormap is cyclic. See `LinearSegmentedColormap`
             for details.
-        %(gamma_params)s
+        gamma : float, optional
+            Sets `gamma1` and `gamma2` to this identical value.
+        gamma1 : float, optional
+            If >1, makes low saturation colors more prominent. If <1,
+            makes high saturation colors more prominent. Similar to the
+            `HCLWizard <http://hclwizard.org:64230/hclwizard/>`_ option.
+            See `make_mapping_array` for details.
+        gamma2 : float, optional
+            If >1, makes high luminance colors more prominent. If <1,
+            makes low luminance colors more prominent. Similar to the
+            `HCLWizard <http://hclwizard.org:64230/hclwizard/>`_ option.
+            See `make_mapping_array` for details.
 
         Example
         -------
@@ -1333,14 +1326,24 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
             cdict[key] = _make_segmentdata_array(channel, ratios, **kwargs)
         return PerceptuallyUniformColormap(name, cdict, **kwargs)
 
-    @docstring.dedent_interpd
     def set_gamma(self, gamma=None, gamma1=None, gamma2=None):
         """
-        Set new gamma value(s) and regenerates the colormap.
+        Sets new gamma value(s) and regenerates the colormap.
 
         Parameters
         ----------
-        %(gamma_params)s
+        gamma : float, optional
+            Sets `gamma1` and `gamma2` to this identical value.
+        gamma1 : float, optional
+            If >1, makes low saturation colors more prominent. If <1,
+            makes high saturation colors more prominent. Similar to the
+            `HCLWizard <http://hclwizard.org:64230/hclwizard/>`_ option.
+            See `make_mapping_array` for details.
+        gamma2 : float, optional
+            If >1, makes high luminance colors more prominent. If <1,
+            makes low luminance colors more prominent. Similar to the
+            `HCLWizard <http://hclwizard.org:64230/hclwizard/>`_ option.
+            See `make_mapping_array` for details.
         """
         gamma1 = _notNone(gamma1, gamma)
         gamma2 = _notNone(gamma2, gamma)
@@ -2560,7 +2563,7 @@ def show_channels(*args, N=100, rgb=True, scalings=True, minhue=0, width=100,
     # Figure and plot
     from . import subplots
     if not args:
-        args = (rcParams['image.cmap'],)
+        raise ValueError(f'At least one positional argument required.')
     array = [[1,1,2,2,3,3]]
     labels = ('Hue', 'Chroma', 'Luminance')
     if scalings:

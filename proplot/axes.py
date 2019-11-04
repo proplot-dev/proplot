@@ -18,7 +18,7 @@ features, and much more.
 import numpy as np
 import warnings
 import functools
-from numbers import Integral
+from numbers import Integral, Number
 import matplotlib.projections as mproj
 import matplotlib.axes as maxes
 import matplotlib.dates as mdates
@@ -63,7 +63,6 @@ SIDE_TRANSLATE = {
     't': 'top',
     }
 LOC_TRANSLATE = {
-    None:    None,
     'inset': 'best',
     'i':     'best',
     0:       'best',
@@ -117,9 +116,9 @@ def _disable_decorator(msg):
 #-----------------------------------------------------------------------------#
 # Generalized custom axes class
 #-----------------------------------------------------------------------------#
-def _parse_kwargs(self, *, mode=2, rc_kw=None, **kwargs):
-    """Separate rc setting keyword arguments from format command keyword
-    arguments."""
+def _parse_kwargs(mode=2, rc_kw=None, **kwargs):
+    """Separates `~proplot.rctools.rc` setting name value pairs from
+    `~Axes.format` keyword arguments."""
     kw = {}
     rc_kw = rc_kw or {}
     for key,value in kwargs.items():
@@ -128,7 +127,7 @@ def _parse_kwargs(self, *, mode=2, rc_kw=None, **kwargs):
             kw[key] = value
         else:
             rc_kw[key_fixed] = value
-    return rc_kw, rc_mode, kw
+    return rc_kw, mode, kw
 
 class Axes(maxes.Axes):
     """Lowest-level axes subclass. Handles titles and axis
@@ -164,7 +163,7 @@ class Axes(maxes.Axes):
         self._abc_text = None
         self._titles_dict = {} # dictionary of title text objects and their locations
         self._title_loc = None # location of main title
-        self._title_pad = rc.get('axes.titlepad') # so we can copy to top panel
+        self._title_pad = rc['axes.titlepad'] # so we can copy to top panel
         self._title_above_panel = True # TODO: add rc prop?
         # Children and related properties
         self._bpanels = []
@@ -256,67 +255,71 @@ class Axes(maxes.Axes):
         """Returns standardized location name, position keyword arguments, and
         setting keyword arguments for the relevant title or a-b-c label at location
         `loc`."""
-        # Props
+        # Location string and position coordinates
+        cache = True
+        prefix = 'abc' if abc else 'title'
+        loc = _notNone(loc, rc.get(f'{prefix}.loc', True))
+        loc_prev = getattr(self, '_' + ('abc' if abc else 'title') + '_loc') # old
+        if loc is None:
+            loc = loc_prev
+        elif loc_prev is not None and loc != loc_prev:
+            cache = False
+        try:
+            loc = self._loc_translate(loc)
+        except KeyError:
+            raise ValueError(f'Invalid title or abc loc {loc!r}.')
+        else:
+            if loc in ('top','bottom','best') or not isinstance(loc, str):
+                raise ValueError(f'Invalid title or abc loc {loc!r}.')
+
+        # Existing object
+        if loc in ('left','right','center'):
+            if loc == 'center':
+                obj = self.title
+            else:
+                obj = getattr(self, '_' + loc + '_title')
+        elif loc in self._titles_dict:
+            obj = self._titles_dict[loc]
+        # New object
+        else:
+            cache = False
+            width, height = self.get_size_inches()
+            if loc in ('upper center', 'lower center'):
+                x, ha = 0.5, 'center'
+            elif loc in ('upper left', 'lower left'):
+                xpad = rc['axes.titlepad']/(72*width)
+                x, ha = 1.5*xpad, 'left'
+            elif loc in ('upper right', 'lower right'):
+                xpad = rc['axes.titlepad']/(72*width)
+                x, ha = 1 - 1.5*xpad, 'right'
+            else:
+                raise RuntimeError # should be impossible
+            if loc in ('upper left', 'upper right', 'upper center'):
+                ypad = rc['axes.titlepad']/(72*height)
+                y, va = 1 - 1.5*ypad, 'top'
+            elif loc in ('lower left', 'lower right', 'lower center'):
+                ypad = rc['axes.titlepad']/(72*height)
+                y, va = 1.5*ypad, 'bottom'
+            else:
+                raise RuntimeError # should be impossible
+            obj = self.text(x, y, '', ha=ha, va=va, transform=self.transAxes)
+            obj.set_transform(self.transAxes)
+
+        # Return location, object, and settings
         # NOTE: Sometimes we load all properties from rc object, sometimes
         # just changed ones. This is important if e.g. user calls in two
-        # lines ax.format(titleweight='bold') then ax.format(title='text'),
-        # don't want to override custom setting with rc default setting.
-        props = lambda cache: rc.fill({
+        # lines ax.format(titleweight='bold') then ax.format(title='text')
+        kw = rc.fill({
             'fontsize':   f'{prefix}.size',
             'weight':     f'{prefix}.weight',
             'color':      f'{prefix}.color',
             'border':     f'{prefix}.border',
             'linewidth':  f'{prefix}.linewidth',
             'fontfamily': 'font.family',
-            }, cache=cache)
-
-        # Location string and position coordinates
-        cache = True
-        prefix = 'abc' if abc else 'title'
-        loc = _notNone(loc, rc[f'{prefix}.loc'])
-        iloc = getattr(self, '_' + ('abc' if abc else 'title') + '_loc') # old
-        if loc is None:
-            loc = iloc
-        elif iloc is not None and loc != iloc:
-            cache = False
-
-        # Above axes
-        loc = LOC_TRANSLATE.get(loc, loc)
-        if loc in ('top','bottom'):
-            raise ValueError(f'Invalid title location {loc!r}.')
-        elif loc in ('left','right','center'):
-            kw = props(cache)
-            kw.pop('border', None) # no border for titles outside axes
+            }, cache)
+        if loc in ('left', 'right', 'center'):
+            kw.pop('border', None)
             kw.pop('linewidth', None)
-            if loc == 'center':
-                obj = self.title
-            else:
-                obj = getattr(self, '_' + loc + '_title')
-        # Inside axes
-        elif loc in self._titles_dict:
-            kw = props(cache)
-            obj = self._titles_dict[loc]
-        else:
-            kw = props(False)
-            width, height = self.get_size_inches()
-            if loc in ('upper center','lower center'):
-                x, ha = 0.5, 'center'
-            elif loc in ('upper left','lower left'):
-                xpad = rc.get('axes.titlepad')/(72*width)
-                x, ha = 1.5*xpad, 'left'
-            elif loc in ('upper right','lower right'):
-                xpad = rc.get('axes.titlepad')/(72*width)
-                x, ha = 1 - 1.5*xpad, 'right'
-            else:
-                raise ValueError(f'Invalid title or abc "loc" {loc}.')
-            if loc in ('upper left','upper right','upper center'):
-                ypad = rc.get('axes.titlepad')/(72*height)
-                y, va = 1 - 1.5*ypad, 'top'
-            elif loc in ('lower left','lower right','lower center'):
-                ypad = rc.get('axes.titlepad')/(72*height)
-                y, va = 1.5*ypad, 'bottom'
-            obj = self.text(x, y, '', ha=ha, va=va, transform=self.transAxes)
-            obj.set_transform(self.transAxes)
         return loc, obj, kw
 
     def _iter_panels(self, sides='lrbt'):
@@ -332,12 +335,19 @@ class Axes(maxes.Axes):
         return axs
 
     @staticmethod
-    def _loc_translate(loc):
+    def _loc_translate(loc, default=None):
         """Translates location string `loc` into a standardized form."""
-        if loc is True:
-            loc = None
+        if loc in (None, True):
+            loc = default
         elif isinstance(loc, (str, Integral)):
-            loc = LOC_TRANSLATE.get(loc, loc)
+            try:
+                loc = LOC_TRANSLATE[loc]
+            except KeyError:
+                raise KeyError(f'Invalid location {loc!r}.')
+        elif np.iterable(loc) and len(loc) == 2 and all(isinstance(l, Number) for l in loc):
+            loc = np.array(loc)
+        else:
+            raise KeyError(f'Invalid location {loc!r}.')
         return loc
 
     def _make_inset_locator(self, bounds, trans):
@@ -633,11 +643,11 @@ class Axes(maxes.Axes):
         """
         # Figure patch (for some reason needs to be re-asserted even if
         # declared before figure is drawn)
-        kw = rc.fill({'facecolor':'figure.facecolor'})
+        kw = rc.fill({'facecolor':'figure.facecolor'}, True)
         self.figure.patch.update(kw)
         if top is not None:
             self._title_above_panel = top
-        pad = rc['axes.titlepad']
+        pad = rc.get('axes.titlepad', True)
         if pad is not None:
             self._set_title_offset_trans(pad)
             self._title_pad = pad
@@ -654,7 +664,7 @@ class Axes(maxes.Axes):
             'weight':     'suptitle.weight',
             'color':      'suptitle.color',
             'fontfamily': 'font.family'
-            })
+            }, True)
         if suptitle or kw:
             fig._update_suptitle(suptitle, **kw)
         # Labels
@@ -679,10 +689,10 @@ class Axes(maxes.Axes):
         titles_dict = self._titles_dict
         if not self._panel_side:
             # Location and text
-            abcstyle = rc['abc.style'] # changed or running format first time?
+            abcstyle = rc.get('abc.style', True) # changed or running format first time?
             if 'abcformat' in kwargs: # super sophisticated deprecation system
                 abcstyle = kwargs.pop('abcformat')
-                warnings.warn(f'rc setting "abcformat" is deprecated. Please use "abcstyle".')
+                warnings.warn(f'The "abcformat" setting is deprecated. Please use "abcstyle".')
             if abcstyle and self.number is not None:
                 if not isinstance(abcstyle, str) or (abcstyle.count('a') != 1
                     and abcstyle.count('A') != 1):
@@ -707,7 +717,7 @@ class Axes(maxes.Axes):
             # Toggle visibility
             # NOTE: If abc is a matplotlib 'title' attribute, making it
             # invisible messes stuff up. Just set text to empty.
-            abc = rc['abc']
+            abc = rc.get('abc', True)
             if abc is not None:
                 obj.set_text(self._abc_text if bool(abc) else '')
 
@@ -916,7 +926,7 @@ class Axes(maxes.Axes):
         """
         # TODO: add option to pad inset away from axes edge!
         kwargs.update({'edgecolor':edgecolor, 'linewidth':linewidth})
-        loc = self._loc_translate(_notNone(loc, rc['colorbar.loc']))
+        loc = self._loc_translate(loc, rc['colorbar.loc'])
         if not isinstance(loc, str): # e.g. 2-tuple or ndarray
             raise ValueError(f'Invalid colorbar location {loc!r}.')
         if loc == 'best': # white lie
@@ -989,7 +999,7 @@ class Axes(maxes.Axes):
             # Default props
             cbwidth, cblength = width, length
             width, height = self.get_size_inches()
-            extend = units(_notNone(kwargs.get('extendsize',None), rc['colorbar.insetextend']))
+            extend = units(_notNone(kwargs.get('extendsize', None), rc['colorbar.insetextend']))
             cbwidth = units(_notNone(cbwidth, rc['colorbar.insetwidth']))/height
             cblength = units(_notNone(cblength, rc['colorbar.insetlength']))/width
             pad = units(_notNone(pad, rc['colorbar.insetpad']))
@@ -1024,17 +1034,18 @@ class Axes(maxes.Axes):
             # Also keep zorder same as with legend.
             frameon = _notNone(frame, frameon, rc['colorbar.frameon'], names=('frame','frameon'))
             if frameon:
-                # Make patch object
                 xmin, ymin, width, height = fbounds
                 patch = mpatches.Rectangle((xmin,ymin), width, height,
                         snap=True, zorder=4.5, transform=self.transAxes)
-                # Update patch props
                 alpha = _notNone(alpha, rc['colorbar.framealpha'])
                 linewidth = _notNone(linewidth, rc['axes.linewidth'])
                 edgecolor = _notNone(edgecolor, rc['axes.edgecolor'])
                 facecolor = _notNone(facecolor, rc['axes.facecolor'])
-                patch.update({'alpha':alpha, 'linewidth':linewidth,
-                              'edgecolor':edgecolor, 'facecolor':facecolor})
+                patch.update({
+                    'alpha':alpha,
+                    'linewidth':linewidth,
+                    'edgecolor':edgecolor,
+                    'facecolor':facecolor})
                 self.add_artist(patch)
 
             # Make axes
@@ -1105,7 +1116,7 @@ class Axes(maxes.Axes):
         *args, **kwargs
             Passed to `~proplot.wrappers.legend_wrapper`.
         """
-        loc = self._loc_translate(_notNone(loc, rc['legend.loc']))
+        loc = self._loc_translate(loc, rc['legend.loc'])
         if isinstance(loc, np.ndarray):
             loc = loc.tolist()
 
@@ -1551,8 +1562,8 @@ def _rcloc_to_stringloc(x, string): # figures out string location
     Might be ``None`` if settings are unchanged."""
     # For x axes
     if x == 'x':
-        top = rc[f'{string}.top']
-        bottom = rc[f'{string}.bottom']
+        top = rc.get(f'{string}.top', True)
+        bottom = rc.get(f'{string}.bottom', True)
         if top is None and bottom is None:
             return None
         elif top and bottom:
@@ -1565,8 +1576,8 @@ def _rcloc_to_stringloc(x, string): # figures out string location
             return 'neither'
     # For y axes
     else:
-        left = rc[f'{string}.left']
-        right = rc[f'{string}.right']
+        left = rc.get(f'{string}.left', True)
+        right = rc.get(f'{string}.right', True)
         if left is None and right is None:
             return None
         elif left and right:
@@ -1651,7 +1662,7 @@ class CartesianAxes(Axes):
             return
         rotation = rc['axes.formatter.timerotation']
         kw = {'rotation':rotation}
-        if rotation not in (0,90,-90):
+        if rotation not in (0, 90, -90):
             kw['ha'] = ('right' if rotation > 0 else 'left')
         for label in self.xaxis.get_ticklabels():
             label.update(kw)
@@ -1957,7 +1968,7 @@ class CartesianAxes(Axes):
             kw_face = rc.fill({
                 'facecolor': 'axes.facecolor',
                 'alpha': 'axes.alpha'
-                })
+                }, True)
             patch_kw = patch_kw or {}
             kw_face.update(patch_kw)
             self.patch.update(kw_face)
@@ -1974,12 +1985,12 @@ class CartesianAxes(Axes):
             xminorlocator_kw = xminorlocator_kw or {}
             yminorlocator_kw = yminorlocator_kw or {}
             # Flexible keyword args, declare defaults
-            xmargin       = _notNone(xmargin, rc['axes.xmargin'])
-            ymargin       = _notNone(ymargin, rc['axes.ymargin'])
-            xtickdir      = _notNone(xtickdir, rc['xtick.direction'])
-            ytickdir      = _notNone(ytickdir, rc['ytick.direction'])
-            xtickminor    = _notNone(xtickminor, rc['xtick.minor.visible'])
-            ytickminor    = _notNone(ytickminor, rc['ytick.minor.visible'])
+            xmargin       = _notNone(xmargin, rc.get('axes.xmargin', True))
+            ymargin       = _notNone(ymargin, rc.get('axes.ymargin', True))
+            xtickdir      = _notNone(xtickdir, rc.get('xtick.direction', True))
+            ytickdir      = _notNone(ytickdir, rc.get('ytick.direction', True))
+            xtickminor    = _notNone(xtickminor, rc.get('xtick.minor.visible', True))
+            ytickminor    = _notNone(ytickminor, rc.get('ytick.minor.visible', True))
             xformatter    = _notNone(xticklabels, xformatter, None, names=('xticklabels', 'xformatter'))
             yformatter    = _notNone(yticklabels, yformatter, None, names=('yticklabels', 'yformatter'))
             xlocator      = _notNone(xticks, xlocator, None, names=('xticks', 'xlocator'))
@@ -1987,13 +1998,14 @@ class CartesianAxes(Axes):
             xminorlocator = _notNone(xminorticks, xminorlocator, None, names=('xminorticks', 'xminorlocator'))
             yminorlocator = _notNone(yminorticks, yminorlocator, None, names=('yminorticks', 'yminorlocator'))
             # Grid defaults are more complicated
-            axis = rc.get('axes.grid.axis') # always need this property
-            grid, which = rc['axes.grid'], rc['axes.grid.which']
+            grid = rc.get('axes.grid', True)
+            which = rc.get('axes.grid.which', True)
             if which is not None or grid is not None: # if *one* was changed
+                axis = rc['axes.grid.axis'] # always need this property
                 if grid is None:
-                    grid = rc.get('axes.grid')
+                    grid = rc['axes.grid']
                 elif which is None:
-                    which = rc.get('axes.grid.which')
+                    which = rc['axes.grid.which']
                 xgrid = _notNone(xgrid, grid
                     and axis in ('x','both') and which in ('major','both'))
                 ygrid = _notNone(ygrid, grid
@@ -2085,7 +2097,7 @@ class CartesianAxes(Axes):
                 kw = rc.fill({
                     'linewidth': 'axes.linewidth',
                     'color':     'axes.edgecolor',
-                    })
+                    }, True)
                 if color is not None:
                     kw['color'] = color
                 sides = ('bottom','top') if x == 'x' else ('left','right')
@@ -2124,7 +2136,7 @@ class CartesianAxes(Axes):
 
                 # Tick and grid settings for major and minor ticks separately
                 # Override is just a "new default", but user can override this
-                grid_dict = lambda grid: {
+                _grid_dict = lambda grid: {
                     'grid_color':     grid + '.color',
                     'grid_alpha':     grid + '.alpha',
                     'grid_linewidth': grid + '.linewidth',
@@ -2132,7 +2144,7 @@ class CartesianAxes(Axes):
                     }
                 for which,igrid in zip(('major', 'minor'), (grid,gridminor)):
                     # Tick properties
-                    kw_ticks = rc.category(x + 'tick.' + which)
+                    kw_ticks = rc.category(x + 'tick.' + which, True)
                     if kw_ticks is None:
                         kw_ticks = {}
                     else:
@@ -2141,15 +2153,15 @@ class CartesianAxes(Axes):
                         if which == 'major':
                             kw_ticks['size'] = utils.units(ticklen, 'pt')
                         else:
-                            kw_ticks['size'] = utils.units(ticklen, 'pt') * rc.get('ticklenratio')
+                            kw_ticks['size'] = utils.units(ticklen, 'pt') * rc['ticklenratio']
                     # Grid style and toggling
                     if igrid is not None:
                         axis.grid(igrid, which=which) # toggle with special global props
                     if which == 'major':
-                        kw_grid = rc.fill(grid_dict('grid'))
+                        kw_grid = rc.fill(_grid_dict('grid'), True)
                     else:
                         kw_major = kw_grid
-                        kw_grid = rc.fill(grid_dict('gridminor'))
+                        kw_grid = rc.fill(_grid_dict('gridminor'), True)
                         kw_grid.update({key:value for key,value in kw_major.items() if key not in kw_grid})
                     # Changed rc settings
                     axis.set_tick_params(which=which, **kw_grid, **kw_ticks)
@@ -2196,7 +2208,7 @@ class CartesianAxes(Axes):
                     'labelcolor': 'tick.labelcolor', # new props
                     'labelsize': 'tick.labelsize',
                     'color': x + 'tick.color',
-                    })
+                    }, True)
                 if color:
                     kw['color'] = color
                     kw['labelcolor'] = color
@@ -2205,10 +2217,8 @@ class CartesianAxes(Axes):
                     kw['pad'] = 1 # ticklabels should be much closer
                 if ticklabeldir == 'in': # put tick labels inside the plot
                     tickdir = 'in'
-                    pad = (rc.get(x + 'tick.major.size')
-                           + rc.get(x + 'tick.major.pad')
-                           + rc.get(x + 'tick.labelsize'))
-                    kw['pad'] = -pad
+                    kw['pad'] = -1*sum(rc[f'{x}tick.{key}']
+                        for key in ('major.size', 'major.pad', 'labelsize'))
                 if tickdir is not None:
                     kw['direction'] = tickdir
                 axis.set_tick_params(which='both', **kw)
@@ -2218,7 +2228,7 @@ class CartesianAxes(Axes):
                 kw = rc.fill({
                     'fontfamily': 'font.family',
                     'weight':     'tick.labelweight'
-                    })
+                    }, True)
                 if rotation is not None:
                     kw = {'rotation':rotation}
                     if x == 'x':
@@ -2239,7 +2249,7 @@ class CartesianAxes(Axes):
                     'fontsize':   'axes.labelsize',
                     'weight':     'axes.labelweight',
                     'fontfamily': 'font.family',
-                    })
+                    }, True)
                 if label is not None:
                     kw['text'] = label
                 if color:
@@ -2570,7 +2580,7 @@ class PolarAxes(Axes, mproj.PolarAxes):
                 kw = rc.fill({
                     'linewidth': 'axes.linewidth',
                     'color': 'axes.edgecolor',
-                    })
+                    }, True)
                 sides = ('inner','polar') if r == 'r' else ('start','end')
                 spines = [self.spines[s] for s in sides]
                 for spine,side in zip(spines,sides):
@@ -2586,13 +2596,13 @@ class PolarAxes(Axes, mproj.PolarAxes):
                     'grid_alpha': 'grid.alpha',
                     'grid_linewidth': 'grid.linewidth',
                     'grid_linestyle': 'grid.linestyle',
-                    })
+                    }, True)
                 axis.set_tick_params(which='both', **kw)
                 # Label settings that can't be controlled with set_tick_params
                 kw = rc.fill({
                     'fontfamily': 'font.family',
                     'weight':     'tick.labelweight'
-                    })
+                    }, True)
                 for t in axis.get_ticklabels():
                     t.update(kw)
 
@@ -2745,11 +2755,11 @@ class ProjectionAxes(Axes):
         with rc.context(rc_kw, mode=rc_mode):
             # Parse alternative keyword args
             # TODO: Why isn't default latmax 80 respected sometimes?
-            lonlines = _notNone(lonlines, lonlocator, rc['geogrid.lonstep'], names=('lonlines', 'lonlocator'))
-            latlines = _notNone(latlines, latlocator, rc['geogrid.latstep'], names=('latlines', 'latlocator'))
-            latmax = _notNone(latmax, rc['geogrid.latmax'])
-            labels = _notNone(labels, rc['geogrid.labels'])
-            grid = _notNone(grid, rc['geogrid'])
+            lonlines = _notNone(lonlines, lonlocator, rc.get('geogrid.lonstep', True), names=('lonlines', 'lonlocator'))
+            latlines = _notNone(latlines, latlocator, rc.get('geogrid.latstep', True), names=('latlines', 'latlocator'))
+            latmax = _notNone(latmax, rc.get('geogrid.latmax', True))
+            labels = _notNone(labels, rc.get('geogrid.labels', True))
+            grid = _notNone(grid, rc.get('geogrid', True))
             if labels:
                 lonlabels = _notNone(lonlabels, 1)
                 latlabels = _notNone(latlabels, 1)
@@ -2782,8 +2792,8 @@ class ProjectionAxes(Axes):
             if latlines is not None or latmax is not None:
                 # Fill defaults
                 if latlines is None:
-                    latlines = _notNone(self._latlines_values, rc.get('geogrid.latstep'))
-                ilatmax = _notNone(latmax, self._latmax, rc.get('geogrid.latmax'))
+                    latlines = _notNone(self._latlines_values, rc['geogrid.latstep'])
+                ilatmax = _notNone(latmax, self._latmax, rc['geogrid.latmax'])
                 # Get tick locations
                 if not np.iterable(latlines):
                     if (ilatmax % latlines) == (-ilatmax % latlines):
@@ -3018,7 +3028,7 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
             'color':     'geogrid.color',
             'linewidth': 'geogrid.linewidth',
             'linestyle': 'geogrid.linestyle',
-            }) # cached changes
+            }, True)
         gl.collection_kwargs.update(kw)
         # Grid locations
         # TODO: Check eps
@@ -3068,9 +3078,9 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
         # NOTE: The e.g. cfeature.COASTLINE features are just for convenience,
         # hi res versions. Use cfeature.COASTLINE.name to see how it can be looked
         # up with NaturalEarthFeature.
-        reso = rc.get('reso')
+        reso = rc['reso']
         if reso not in ('lo','med','hi'):
-            raise ValueError(f'Invalid resolution {reso}.')
+            raise ValueError(f'Invalid resolution {reso!r}.')
         reso = {
             'lo':  '110m',
             'med': '50m',
@@ -3087,14 +3097,14 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
             }
         for name,args in features.items():
             # Get feature
-            if not rc.get(name): # toggled
+            if not rc[name]: # toggled
                 continue
             if getattr(self, '_' + name, None): # already drawn
                 continue
             feat = cfeature.NaturalEarthFeature(*args, reso)
             # For 'lines', need to specify edgecolor and facecolor
             # See: https://github.com/SciTools/cartopy/issues/803
-            kw = rc.category(name, cache=False)
+            kw = rc.category(name) # do not omit uncached props
             if name in ('coast', 'rivers', 'borders', 'innerborders'):
                 kw['edgecolor'] = kw.pop('color')
                 kw['facecolor'] = 'none'
@@ -3108,13 +3118,13 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
         # Update patch
         kw_face = rc.fill({
             'facecolor': 'geoaxes.facecolor'
-            })
+            }, True)
         kw_face.update(patch_kw)
         self.background_patch.update(kw_face)
         kw_edge = rc.fill({
             'edgecolor': 'geoaxes.edgecolor',
             'linewidth': 'geoaxes.linewidth'
-            })
+            }, True)
         self.outline_patch.update(kw_edge)
 
     def _hide_labels(self):
@@ -3279,10 +3289,10 @@ class BasemapAxes(ProjectionAxes):
         kw_edge = rc.fill({
             'linewidth': 'geoaxes.linewidth',
             'edgecolor': 'geoaxes.edgecolor'
-            })
+            }, True)
         kw_face = rc.fill({
             'facecolor': 'geoaxes.facecolor'
-            })
+            }, True)
         patch_kw = patch_kw or {}
         kw_face.update(patch_kw)
         self.axesPatch = self.patch # bugfix or something
@@ -3309,11 +3319,11 @@ class BasemapAxes(ProjectionAxes):
             'color':     'geogrid.color',
             'linewidth': 'geogrid.linewidth',
             'linestyle': 'geogrid.linestyle',
-            }, cache=False)
+            }) # always apply
         tkw = rc.fill({
             'color':    'geogrid.color',
             'fontsize': 'geogrid.labelsize',
-            }, cache=False)
+            })
         # Change from left/right/bottom/top to left/right/top/bottom
         if lonarray is not None:
             lonarray[2:] = lonarray[2:][::-1]
@@ -3372,11 +3382,11 @@ class BasemapAxes(ProjectionAxes):
             'innerborders': 'drawstates',
             }
         for name, method in features.items():
-            if not rc.get(name): # toggled
+            if not rc[name]: # toggled
                 continue
             if getattr(self, f'_{name}', None): # already drawn
                 continue
-            kw = rc.category(name, cache=False)
+            kw = rc.category(name)
             feat = getattr(self.projection, method)(ax=self)
             if isinstance(feat, (list,tuple)): # can return single artist or list of artists
                 for obj in feat:

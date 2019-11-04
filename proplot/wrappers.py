@@ -1224,7 +1224,7 @@ def text_wrapper(self, func,
     size = _notNone(fontsize, size, None, names=('fontsize', 'size'))
     if size is not None:
         kwargs['fontsize'] = utils.units(size, 'pt')
-    kwargs.setdefault('color', rc.get('text.color')) # text.color is ignored sometimes unless we apply this
+    kwargs.setdefault('color', rc['text.color']) # text.color is ignored sometimes unless we apply this
     obj = func(self, x, y, text, transform=transform, **kwargs)
 
     # Optionally draw border around text
@@ -1871,7 +1871,7 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
         # See: https://stackoverflow.com/a/20998634/4970632
         elif 'pcolor' in name:
             obj.update_scalarmappable() # populates the _facecolors attribute, initially filled with just a single color
-            labels_kw_ = {'size':rc['small'], 'ha':'center', 'va':'center'}
+            labels_kw_ = {'size': rc['small'], 'ha': 'center', 'va': 'center'}
             labels_kw_.update(labels_kw)
             array = obj.get_array()
             paths = obj.get_paths()
@@ -2174,11 +2174,11 @@ def legend_wrapper(self,
     # Also apply override settings
     kw_handle = {}
     outline = rc.fill({
-        'linewidth':'axes.linewidth',
-        'edgecolor':'axes.edgecolor',
-        'facecolor':'axes.facecolor',
-        'alpha':'legend.framealpha',
-        }, cache=False)
+        'linewidth': 'axes.linewidth',
+        'edgecolor': 'axes.edgecolor',
+        'facecolor': 'axes.facecolor',
+        'alpha': 'legend.framealpha',
+        })
     for key in (*outline,):
         if key != 'linewidth':
             if kwargs.get(key, None):
@@ -2517,11 +2517,11 @@ def colorbar_wrapper(self,
             if orientation == 'horizontal':
                 scale = 3 # em squares alotted for labels
                 length = width*abs(self.get_position().width)
-                fontsize = kw_ticklabels.get('size', rc.get('xtick.labelsize'))
+                fontsize = kw_ticklabels.get('size', rc['xtick.labelsize'])
             else:
                 scale = 1
                 length = height*abs(self.get_position().height)
-                fontsize = kw_ticklabels.get('size', rc.get('ytick.labelsize'))
+                fontsize = kw_ticklabels.get('size', rc['ytick.labelsize'])
             maxn = _notNone(maxn, int(length/(scale*fontsize/72)))
             maxn_minor = _notNone(maxn_minor, int(length/(0.5*fontsize/72)))
             # Get locator
@@ -2685,7 +2685,6 @@ def colorbar_wrapper(self,
         cb.outline.update(kw_outline)
     if cb.dividers is not None:
         cb.dividers.update(kw_outline)
-        # cb.dividers.update(rc.category('grid', cache=False))
     # Label and tick label settings
     # WARNING: Must use colorbar set_label to set text, calling set_text on
     # the axis will do nothing!
