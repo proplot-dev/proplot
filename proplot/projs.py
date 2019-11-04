@@ -27,15 +27,18 @@ __all__ = [
     'WinkelTripel',
     ]
 try:
-    from cartopy.crs import (_WarpedRectangularProjection,
+    from mpl_toolkits.basemap import Basemap
+except:
+    Basemap = object
+try:
+    from cartopy.crs import (CRS, _WarpedRectangularProjection,
         LambertAzimuthalEqualArea, AzimuthalEquidistant, Gnomonic)
-    _cartopy_installed = True
 except ModuleNotFoundError:
+    CRS = object
     _WarpedRectangularProjection = object
     LambertAzimuthalEqualArea = object
     AzimuthalEquidistant = object
     Gnomonic = object
-    _cartopy_installed = False
 
 def Circle(N=100):
     """Returns a circle `~matplotlib.path.Path` used as the outline
@@ -58,10 +61,13 @@ def Proj(name, basemap=False, **kwargs):
 
     Parameters
     ----------
-    name : str
-        The projection name. Like basemap, we use the PROJ.4 shorthands. The
-        following table lists the valid projection names, their full names
-        (with links to the relevant `PROJ.4 documentation
+    name : str, `~mpl_toolkits.basemap.Basemap`, or `cartopy.crs.Projection`
+        The projection name or projection class instance. If the latter, it
+        is simply returned. If the former, it must correspond to one of the
+        PROJ.4 projection name shorthands, like in basemap.
+
+        The following table lists the valid projection name shorthands, their
+        full names (with links to the relevant `PROJ.4 documentation
         <https://proj4.org/operations/projections/index.html>`__),
         and whether they are available in the cartopy and basemap packages.
         "``(added)``" indicates a cartopy projection that ProPlot has
@@ -122,8 +128,8 @@ def Proj(name, basemap=False, **kwargs):
         ====================================  ===========================================================================================  =========  =======
 
     basemap : bool, optional
-        Whether to use the basemap or cartopy package. Default is
-        ``False``.
+        Whether to use the basemap package as opposed to the cartopy package.
+        Default is ``False``.
     **kwargs
         Passed to the `~mpl_toolkits.basemap.Basemap` or
         cartopy `~cartopy.crs.Projection` class.
@@ -141,8 +147,14 @@ def Proj(name, basemap=False, **kwargs):
     --------
     `~proplot.axes.CartopyProjectionAxes`, `~proplot.axes.BasemapProjectionAxes`
     """
+    # Class instances
+    if ((CRS is not object and isinstance(name, CRS))
+        or (Basemap is not object and isinstance(name, Basemap))):
+        proj = name
+    elif not isinstance(proj, str):
+        raise ValueError(f'Unexpected Proj() argument {proj!r}. Must be name, mpl_toolkits.basemap.Basemap instance, or cartopy.crs.CRS instance.')
     # Basemap
-    if basemap:
+    elif basemap:
         import mpl_toolkits.basemap as mbasemap # verify package is available
         name = BASEMAP_TRANSLATE.get(name, name)
         kwproj = basemap_rc.get(name, {})
@@ -313,7 +325,7 @@ so ProPlot imposes some sensible default behavior."""
 
 cartopy_projs = {}
 """Mapping of "projection names" to cartopy `~cartopy.crs.Projection` classes."""
-if _cartopy_installed:
+if CRS is not object:
     # Custom ones, these are always present
     import cartopy.crs as ccrs # verify package is available
     cartopy_projs = { # interpret string, create cartopy projection

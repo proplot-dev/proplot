@@ -1429,13 +1429,15 @@ class CmapDict(dict):
         a matplotlib `~matplotlib.colors.ListedColormap` or
         `~matplotlib.colors.LinearSegmentedColormap`, it is converted to the
         ProPlot `ListedColormap` or `LinearSegmentedColormap` subclass."""
-        if type(item) is mcolors.LinearSegmentedColormap:
+        if isinstance(item, (ListedColormap, LinearSegmentedColormap)):
+            pass
+        elif isinstance(item, mcolors.LinearSegmentedColormap):
             item = LinearSegmentedColormap(
                 item.name, item._segmentdata, item.N, item._gamma)
-        elif type(item) is mcolors.ListedColormap:
+        elif isinstance(item, mcolors.ListedColormap):
             item = ListedColormap(
                 item.colors, item.name, item.N)
-        elif not isinstance(item, (ListedColormap, LinearSegmentedColormap)):
+        else:
             raise ValueError(f'Invalid colormap {item}. Must be instance of matplotlib.colors.ListedColormap or matplotlib.colors.LinearSegmentedColormap.')
         key = self._sanitize_key(key, mirror=False)
         return super().__setitem__(key, item)
@@ -1664,10 +1666,10 @@ def Colormap(*args, name=None, listmode='perceptual',
         # Convert matplotlib colormaps to subclasses
         if isinstance(cmap, (ListedColormap, LinearSegmentedColormap)):
             pass
-        elif type(cmap) is mcolors.LinearSegmentedColormap:
+        elif isinstance(cmap, mcolors.LinearSegmentedColormap):
             cmap = LinearSegmentedColormap(
                 cmap.name, cmap._segmentdata, cmap.N, cmap._gamma)
-        elif type(cmap) is mcolors.ListedColormap:
+        elif isinstance(cmap, mcolors.ListedColormap):
             cmap = ListedColormap(
                 cmap.colors, cmap.name, cmap.N)
         # Dictionary of hue/sat/luminance values or 2-tuples representing linear transition
