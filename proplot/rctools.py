@@ -667,7 +667,7 @@ class rc_configurator(object):
             rcdict[key] = cache[key] = value
         for key,value in kwargs.items():
             rc_short, rc_long, rc = _get_synced_params(key, value)
-            if ikey,ivalue in rc_short.items():
+            for ikey,ivalue in rc_short.items():
                 _set_item(rcParamsShort, key, value)
             for ikey, ivalue in rc_long.items():
                 _set_item(rcParamsLong, ikey, ivalue)
