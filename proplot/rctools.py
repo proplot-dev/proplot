@@ -148,11 +148,6 @@ Key(s)                                                               Description
 ``subplots.pad``                                                     Padding around figure edge. Units are interpreted by `~proplot.utils.units`.
 ``subplots.axpad``                                                   Padding between adjacent subplots. Units are interpreted by `~proplot.utils.units`.
 ``subplots.panelpad``                                                Padding between subplots and panels, and between stacked panels. Units are interpreted by `~proplot.utils.units`.
-``subplots.titlespace``                                              Vertical space for titles. Units are interpreted by `~proplot.utils.units`.
-``subplots.ylabspace``                                               Horizontal space between subplots alotted for *y*-labels. Units are interpreted by `~proplot.utils.units`.
-``subplots.xlabspace``                                               Vertical space between subplots alotted for *x*-labels. Units are interpreted by `~proplot.utils.units`.
-``subplots.innerspace``                                              Space between subplots alotted for tick marks. Units are interpreted by `~proplot.utils.units`.
-``subplots.panelspace``                                              Purely empty space between main axes and side panels. Units are interpreted by `~proplot.utils.units`.
 ``suptitle.color``, ``suptitle.size``, ``suptitle.weight``           Font color, size, and weight for the figure title.
 ``tick.labelcolor``, ``tick.labelsize``, ``tick.labelweight``        Font color, size, and weight for axis tick labels. These mirror the ``axes.labelcolor``, ``axes.labelsize``, and ``axes.labelweight`` `~matplotlib.rcParams` settings used for axes labels.
 ``title.loc``                                                        Title position. For options, see `~proplot.axes.Axes.format`.
@@ -326,11 +321,6 @@ defaultParamsLong = {
     'subplots.pad':                '0.5em',
     'subplots.axpad':              '1em',
     'subplots.panelpad':           '0.5em',
-    'subplots.panelspace':         '1em',
-    'subplots.innerspace':         '1.5em',
-    'subplots.ylabspace':          '5.5em',
-    'subplots.xlabspace':          '4em',
-    'subplots.titlespace':         '2em',
     }
 defaultParams = {
     'figure.dpi':              90,
@@ -408,22 +398,23 @@ if not os.path.isfile(_rc_file):
 # "Global" settings and the lower-level settings they change
 # NOTE: This whole section, declaring dictionaries and sets, takes 1ms
 RC_CHILDREN = {
-    'fontname':     ('font.family',),
-    'cmap':         ('image.cmap',),
-    'lut':          ('image.lut',),
-    'alpha':        ('axes.alpha',), # this is a custom setting
-    'facecolor':    ('axes.facecolor', 'geoaxes.facecolor'),
-    'color':        ('axes.edgecolor', 'geoaxes.edgecolor', 'axes.labelcolor', 'tick.labelcolor', 'hatch.color', 'xtick.color', 'ytick.color'), # change the 'color' of an axes
-    'small':        ('font.size', 'tick.labelsize', 'xtick.labelsize', 'ytick.labelsize', 'axes.labelsize', 'legend.fontsize', 'geogrid.labelsize'), # the 'small' fonts
-    'large':        ('abc.size', 'figure.titlesize', 'axes.titlesize', 'suptitle.size', 'title.size', 'leftlabel.size', 'toplabel.size', 'rightlabel.size', 'bottomlabel.size'), # the 'large' fonts
-    'linewidth':    ('axes.linewidth', 'geoaxes.linewidth', 'hatch.linewidth', 'xtick.major.width', 'ytick.major.width'),
-    'margin':       ('axes.xmargin', 'axes.ymargin'),
-    'grid':         ('axes.grid',),
-    'gridminor':    ('axes.gridminor',),
-    'geogrid':      ('axes.geogrid',),
-    'ticklen':      ('xtick.major.size', 'ytick.major.size'),
-    'tickdir':      ('xtick.direction',  'ytick.direction'),
-    'tickpad':      ('xtick.major.pad', 'xtick.minor.pad', 'ytick.major.pad', 'ytick.minor.pad'),
+    'fontname':  ('font.family',),
+    'cmap':      ('image.cmap',),
+    'lut':       ('image.lut',),
+    'alpha':     ('axes.alpha',), # this is a custom setting
+    'facecolor': ('axes.facecolor', 'geoaxes.facecolor'),
+    'color':     ('axes.edgecolor', 'geoaxes.edgecolor', 'axes.labelcolor', 'tick.labelcolor', 'hatch.color', 'xtick.color', 'ytick.color'), # change the 'color' of an axes
+    'small':     ('font.size', 'tick.labelsize', 'xtick.labelsize', 'ytick.labelsize', 'axes.labelsize', 'legend.fontsize', 'geogrid.labelsize'), # the 'small' fonts
+    'large':     ('abc.size', 'figure.titlesize', 'axes.titlesize', 'suptitle.size', 'title.size', 'leftlabel.size', 'toplabel.size', 'rightlabel.size', 'bottomlabel.size'), # the 'large' fonts
+    'linewidth': ('axes.linewidth', 'geoaxes.linewidth', 'hatch.linewidth', 'xtick.major.width', 'ytick.major.width'),
+    'margin':    ('axes.xmargin', 'axes.ymargin'),
+    'grid':      ('axes.grid',),
+    'gridminor': ('axes.gridminor',),
+    'geogrid':   ('axes.geogrid',),
+    'ticklen':   ('xtick.major.size', 'ytick.major.size'),
+    'tickdir':   ('xtick.direction',  'ytick.direction'),
+    'tickpad':   ('xtick.major.pad', 'xtick.minor.pad', 'ytick.major.pad', 'ytick.minor.pad'),
+    'title.pad': ('axes.titlepad',),
     }
 # Used by Axes.format, allows user to pass rc settings as keyword args,
 # way less verbose. For example, landcolor='b' vs. rc_kw={'land.color':'b'}.
@@ -468,121 +459,128 @@ def _get_config_paths():
         paths.insert(0, ipath)
     return paths
 
-def _get_synced_params(key=None, value=None):
+def _get_synced_params(key, value):
     """Returns dictionaries for updating "child" properties in
     `rcParams` and `rcParamsLong` with global property."""
     kw = {} # builtin properties that global setting applies to
-    kw_custom = {} # custom properties that global setting applies to
-    if key is not None and value is not None:
-        items = [(key,value)]
-    else:
-        items = rcParamsShort.items()
-    for key,value in items:
-        # Cycler
-        if key in ('cycle', 'rgbcycle'):
-            if key == 'rgbcycle':
-                cycle, rgbcycle = rcParamsShort['cycle'], value
-            else:
-                cycle, rgbcycle = value, rcParamsShort['rgbcycle']
-            try:
-                colors = mcm.cmap_d[cycle].colors
-            except (KeyError, AttributeError):
-                cycles = sorted(name for name,cmap in mcm.cmap_d.items() if isinstance(cmap, mcolors.ListedColormap))
-                raise ValueError(f'Invalid cycle name {cycle!r}. Options are: {", ".join(map(repr, cycles))}')
-            if rgbcycle and cycle.lower() == 'colorblind':
-                regcolors = colors + [(0.1, 0.1, 0.1)]
-            elif mcolors.to_rgb('r') != (1.0,0.0,0.0): # reset
-                regcolors = [(0.0, 0.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.75, 0.75, 0.0), (0.75, 0.75, 0.0), (0.0, 0.75, 0.75), (0.0, 0.0, 0.0)]
-            else:
-                regcolors = [] # no reset necessary
-            for code,color in zip('brgmyck', regcolors):
-                rgb = mcolors.to_rgb(color)
-                mcolors.colorConverter.colors[code] = rgb
-                mcolors.colorConverter.cache[code]  = rgb
-            kw['patch.facecolor'] = colors[0]
-            kw['axes.prop_cycle'] = cycler.cycler('color', colors)
+    kw_long = {} # custom properties that global setting applies to
+    kw_short = {} # short name properties
+    if '.' not in key and key not in rcParamsShort:
+        key = RC_NODOTS.get(key, key)
+    # Skip full name keys
+    if '.' in key:
+        pass
+    # Cycler
+    elif key in ('cycle', 'rgbcycle'):
+        if key == 'rgbcycle':
+            cycle, rgbcycle = rcParamsShort['cycle'], value
+        else:
+            cycle, rgbcycle = value, rcParamsShort['rgbcycle']
+        try:
+            colors = mcm.cmap_d[cycle].colors
+        except (KeyError, AttributeError):
+            cycles = sorted(name for name,cmap in mcm.cmap_d.items() if isinstance(cmap, mcolors.ListedColormap))
+            raise ValueError(f'Invalid cycle name {cycle!r}. Options are: {", ".join(map(repr, cycles))}')
+        if rgbcycle and cycle.lower() == 'colorblind':
+            regcolors = colors + [(0.1, 0.1, 0.1)]
+        elif mcolors.to_rgb('r') != (1.0,0.0,0.0): # reset
+            regcolors = [(0.0, 0.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.75, 0.75, 0.0), (0.75, 0.75, 0.0), (0.0, 0.75, 0.75), (0.0, 0.0, 0.0)]
+        else:
+            regcolors = [] # no reset necessary
+        for code,color in zip('brgmyck', regcolors):
+            rgb = mcolors.to_rgb(color)
+            mcolors.colorConverter.colors[code] = rgb
+            mcolors.colorConverter.cache[code]  = rgb
+        kw['patch.facecolor'] = colors[0]
+        kw['axes.prop_cycle'] = cycler.cycler('color', colors)
 
-        # Zero linewidth almost always means zero tick length
-        elif key == 'linewidth' and _to_points(key, value) == 0:
-            ikw, ikw_custom = _get_synced_params('ticklen', 0)
-            kw.update(ikw)
-            kw_custom.update(ikw_custom)
+    # Zero linewidth almost always means zero tick length
+    elif key == 'linewidth' and _to_points(key, value) == 0:
+        _, ikw_long, ikw = _get_synced_params('ticklen', 0)
+        kw.update(ikw)
+        kw_long.update(ikw_long)
 
-        # Tick length/major-minor tick length ratio
-        elif key in ('ticklen', 'ticklenratio'):
-            if key == 'ticklen':
-                ticklen = _to_points(key, value)
-                ratio = rcParamsShort['ticklenratio']
-            else:
-                ticklen = rcParamsShort['ticklen']
-                ratio = value
-            kw['xtick.minor.size'] = ticklen*ratio
-            kw['ytick.minor.size'] = ticklen*ratio
+    # Tick length/major-minor tick length ratio
+    elif key in ('ticklen', 'ticklenratio'):
+        if key == 'ticklen':
+            ticklen = _to_points(key, value)
+            ratio = rcParamsShort['ticklenratio']
+        else:
+            ticklen = rcParamsShort['ticklen']
+            ratio = value
+        kw['xtick.minor.size'] = ticklen*ratio
+        kw['ytick.minor.size'] = ticklen*ratio
 
-        # Spine width/major-minor tick width ratio
-        elif key in ('linewidth', 'tickratio'):
-            if key == 'linewidth':
-                tickwidth = _to_points(key, value)
-                ratio = rcParamsShort['tickratio']
-            else:
-                tickwidth = rcParamsShort['linewidth']
-                ratio = value
-            kw['xtick.minor.width'] = tickwidth*ratio
-            kw['ytick.minor.width'] = tickwidth*ratio
+    # Spine width/major-minor tick width ratio
+    elif key in ('linewidth', 'tickratio'):
+        if key == 'linewidth':
+            tickwidth = _to_points(key, value)
+            ratio = rcParamsShort['tickratio']
+        else:
+            tickwidth = rcParamsShort['linewidth']
+            ratio = value
+        kw['xtick.minor.width'] = tickwidth*ratio
+        kw['ytick.minor.width'] = tickwidth*ratio
 
-        # Gridline width
-        elif key in ('grid.linewidth', 'gridratio'):
-            if key == 'grid.linewidth':
-                gridwidth = _to_points(key, value)
-                ratio = rcParamsShort['gridratio']
-            else:
-                gridwidth = rcParams['grid.linewidth']
-                ratio = value
-            kw_custom['gridminor.linewidth'] = gridwidth*ratio
+    # Gridline width
+    elif key in ('grid.linewidth', 'gridratio'):
+        if key == 'grid.linewidth':
+            gridwidth = _to_points(key, value)
+            ratio = rcParamsShort['gridratio']
+        else:
+            gridwidth = rcParams['grid.linewidth']
+            ratio = value
+        kw_long['gridminor.linewidth'] = gridwidth*ratio
 
-        # Gridline toggling, complicated because of the clunky way this is
-        # implemented in matplotlib. There should be a gridminor setting!
-        elif key in ('grid', 'gridminor'):
-            ovalue = rcParams['axes.grid']
-            owhich = rcParams['axes.grid.which']
-            # Instruction is to turn off gridlines
-            if not value:
-                # Gridlines are already off, or they are on for the particular
-                # ones that we want to turn off. Instruct to turn both off.
-                if not ovalue or (key == 'grid' and owhich == 'major') or (key == 'gridminor' and owhich == 'minor'):
-                    which = 'both' # disable both sides
-                # Gridlines are currently on for major and minor ticks, so we instruct
-                # to turn on gridlines for the one we *don't* want off
-                elif owhich == 'both': # and ovalue is True, as we already tested
-                    value = True
-                    which = 'major' if key == 'gridminor' else 'minor' # if gridminor=False, enable major, and vice versa
-                # Gridlines are on for the ones that we *didn't* instruct to turn
-                # off, and off for the ones we do want to turn off. This just
-                # re-asserts the ones that are already on.
-                else:
-                    value = True
-                    which = owhich
-            # Instruction is to turn on gridlines
+    # Gridline toggling, complicated because of the clunky way this is
+    # implemented in matplotlib. There should be a gridminor setting!
+    elif key in ('grid', 'gridminor'):
+        ovalue = rcParams['axes.grid']
+        owhich = rcParams['axes.grid.which']
+        # Instruction is to turn off gridlines
+        if not value:
+            # Gridlines are already off, or they are on for the particular
+            # ones that we want to turn off. Instruct to turn both off.
+            if not ovalue or (key == 'grid' and owhich == 'major') or (key == 'gridminor' and owhich == 'minor'):
+                which = 'both' # disable both sides
+            # Gridlines are currently on for major and minor ticks, so we instruct
+            # to turn on gridlines for the one we *don't* want off
+            elif owhich == 'both': # and ovalue is True, as we already tested
+                value = True
+                which = 'major' if key == 'gridminor' else 'minor' # if gridminor=False, enable major, and vice versa
+            # Gridlines are on for the ones that we *didn't* instruct to turn
+            # off, and off for the ones we do want to turn off. This just
+            # re-asserts the ones that are already on.
             else:
-                # Gridlines are already both on, or they are off only for the ones
-                # that we want to turn on. Turn on gridlines for both.
-                if owhich == 'both' or (key == 'grid' and owhich == 'minor') or (key == 'gridminor' and owhich == 'major'):
-                    which = 'both'
-                # Gridlines are off for both, or off for the ones that we
-                # don't want to turn on. We can just turn on these ones.
-                else:
-                    which = owhich
-            kw['axes.grid'] = value
-            kw['axes.grid.which'] = which
+                value = True
+                which = owhich
+        # Instruction is to turn on gridlines
+        else:
+            # Gridlines are already both on, or they are off only for the ones
+            # that we want to turn on. Turn on gridlines for both.
+            if owhich == 'both' or (key == 'grid' and owhich == 'minor') or (key == 'gridminor' and owhich == 'major'):
+                which = 'both'
+            # Gridlines are off for both, or off for the ones that we
+            # don't want to turn on. We can just turn on these ones.
+            else:
+                which = owhich
+        kw['axes.grid'] = value
+        kw['axes.grid.which'] = which
 
-        # Now update linked settings
-        value = _to_points(key, value)
-        for name in RC_CHILDREN.get(key, ()):
-            if name in rcParamsLong:
-                kw_custom[name] = value
-            else:
-                kw[name] = value
-    return kw, kw_custom
+    # Now update linked settings
+    value = _to_points(key, value)
+    if key in rcParamsShort:
+        kw_short[key] = value
+    elif key in rcParamsLong:
+        kw_long[key] = value
+    elif key in rcParams:
+        kw[key] = value
+    for name in RC_CHILDREN.get(key, ()):
+        if name in rcParamsLong:
+            kw_long[name] = value
+        else:
+            kw[name] = value
+    return kw_short, kw_long, kw
 
 #-----------------------------------------------------------------------------#
 # Main class
@@ -637,10 +635,11 @@ class rc_configurator(object):
         rcParamsLong.update(defaultParamsLong)
         rcParamsShort.clear()
         rcParamsShort.update(defaultParamsShort)
-        for key,value in rcParamsShort.items():
-            rc, rc_long = _get_synced_params(key, value)
-            rcParams.update(rc)
-            rcParamsLong.update(rc_long)
+        for rcdict in (rcParamsShort, rcParamsLong):
+            for key,value in rcdict.items():
+                _, rc_long, rc = _get_synced_params(key, value)
+                rcParamsLong.update(rc_long)
+                rcParams.update(rc)
 
         # Update from files
         if not local:
@@ -662,24 +661,17 @@ class rc_configurator(object):
 
     def __enter__(self):
         """Applies settings from the most recent context object."""
-        # Get context information
         *_, kwargs, cache, restore = self._context[-1] # missing arg is previous mode
         def _set_item(rcdict, key, value):
             restore[key] = rcdict[key]
-            cache[key] = rcdict[key] = value
-
-        # Apply settings
+            rcdict[key] = cache[key] = value
         for key,value in kwargs.items():
-            if key in rcParamsShort:
-                rc, rc_long = _get_synced_params(key, value)
+            rc_short, rc_long, rc = _get_synced_params(key, value)
+            if ikey,ivalue in rc_short.items():
                 _set_item(rcParamsShort, key, value)
-                for ikey, ivalue in rc_long.items():
-                    _set_item(rcParamsLong, ikey, ivalue)
-                for ikey, ivalue in rc.items():
-                    _set_item(rcParams, ikey, ivalue)
-            elif key in rcParamsLong:
+            for ikey, ivalue in rc_long.items():
                 _set_item(rcParamsLong, ikey, ivalue)
-            elif key in rcParams:
+            for ikey, ivalue in rc.items():
                 _set_item(rcParams, ikey, ivalue)
 
     def __exit__(self, *args):
@@ -719,6 +711,16 @@ class rc_configurator(object):
     def __setitem__(self, key, value):
         """Sets `rcParams <https://matplotlib.org/users/customizing.html>`__,
         :ref:`rcParamsLong`, and :ref:`rcParamsShort` settings."""
+        rc_short, rc_long, rc = _get_synced_params(key, value)
+        for ikey, ivalue in rc_short.items():
+            rcParamsShort[ikey] = ivalue
+        for ikey, ivalue in rc_long.items():
+            rcParamsLong[ikey] = ivalue
+        for ikey, ivalue in rc.items():
+            rcParams[ikey] = ivalue
+
+
+
         if '.' not in key and key not in rcParamsShort:
             key = RC_NODOTS.get(key, key)
         if key == 'title.pad':
@@ -794,7 +796,7 @@ class rc_configurator(object):
 
     def context(self, *args, mode=0, **kwargs):
         """
-        Temporarily modifies settings in a ``with...as`` block,
+        Temporarily modifies settings in a "with as" block,
         used by ProPlot internally but may also be useful for power users.
 
         This function was invented to prevent successive calls to
@@ -802,7 +804,9 @@ class rc_configurator(object):
         re-applying unchanged settings. Testing showed that these gratuitous
         `rcParams <https://matplotlib.org/users/customizing.html>`__
         lookups and artist updates increased runtime by seconds, even for
-        relatively simple plots.
+        relatively simple plots. It also resulted in overwriting previous
+        rc changes with the default values on successive calls to
+        `~proplot.axes.Axes.format`.
 
         Parameters
         ----------
@@ -834,11 +838,20 @@ class rc_configurator(object):
 
         Example
         -------
+        The below applies settings to axes in a specific figure using
+        `~rc_configurator.context`.
 
         >>> import proplot as plot
         >>> with plot.rc.context(linewidth=2, ticklen=5):
         ...     f, ax = plot.subplots()
         ...     ax.plot(data)
+
+        By contrast, the below applies settings to a specific axes using
+        `~proplot.axes.Axes.format`.
+
+        >>> import proplot as plot
+        >>> f, ax = plot.subplots()
+        >>> ax.format(linewidth=2, ticklen=5)
 
         """
         if mode not in range(3):

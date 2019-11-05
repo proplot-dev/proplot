@@ -910,7 +910,6 @@ class Axes(maxes.Axes):
             The space between the colorbar and the main axes. For outer
             colorbars only. Units are interpreted by `~proplot.utils.units`.
             When :rcraw:`tight` is ``True``, this is adjusted automatically.
-            Otherwise, the default is :rc:`subplots.panelspace`.
         frame, frameon : bool, optional
             For inset colorbars, indicates whether to draw a "frame", just
             like `~matplotlib.axes.Axes.legend`. Default is
@@ -1109,7 +1108,6 @@ class Axes(maxes.Axes):
             The space between the axes and the legend for outer legends.
             Units are interpreted by `~proplot.utils.units`.
             When :rcraw:`tight` is ``True``, this is adjusted automatically.
-            Otherwise, the default is :rc:`subplots.panelspace`.
 
         Other parameters
         ----------------
@@ -1313,7 +1311,6 @@ class Axes(maxes.Axes):
         space : float or str or list thereof, optional
             Empty space between the main subplot and the panel.
             When :rcraw:`tight` is ``True``, this is adjusted automatically.
-            Otherwise, the default is :rc:`subplots.panelspace`.
         share : bool, optional
             Whether to enable axis sharing between the *x* and *y* axes of the
             main subplot and the panel long axes for each panel in the stack.
