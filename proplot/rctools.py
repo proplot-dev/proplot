@@ -766,7 +766,7 @@ class rc_configurator(object):
         else:
             return None
 
-    def category(self, cat, context=False):
+    def category(self, cat, *, context=False):
         """
         Returns a dictionary of settings belonging to the indicated category,
         i.e. settings beginning with the substring ``cat + '.'``.
@@ -872,7 +872,7 @@ class rc_configurator(object):
             output[key] = self[key]
         return output
 
-    def get(self, key, context=False):
+    def get(self, key, *, context=False):
         """
         Returns a setting.
 
@@ -887,7 +887,7 @@ class rc_configurator(object):
         mode = 0 if not context else None
         return self._get_item(key, mode)
 
-    def fill(self, props, context=False):
+    def fill(self, props, *, context=False):
         """
         Returns a dictionary filled with `rc` settings, used internally to build
         dictionaries for updating `~matplotlib.artist.Artist` instances.
