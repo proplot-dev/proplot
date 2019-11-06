@@ -1561,9 +1561,10 @@ def Colormap(*args, name=None, listmode='perceptual',
     save=False, save_kw=None,
     **kwargs):
     """
-    Function for generating and merging colormaps in a variety of ways;
-    used to interpret the `cmap` and `cmap_kw` arguments when passed to
-    any plotting method wrapped by `~proplot.wrappers.cmap_wrapper`.
+    Generates or retrieves colormaps and optionally merges and manipulates
+    them in a variety of ways; used to interpret the `cmap` and `cmap_kw`
+    arguments when passed to any plotting method wrapped by
+    `~proplot.wrappers.cmap_wrapper`.
 
     Parameters
     ----------
@@ -1574,6 +1575,8 @@ def Colormap(*args, name=None, listmode='perceptual',
 
         * If `~matplotlib.colors.Colormap` or a registered colormap name, the
           colormap is simply returned.
+        * If a filename string with valid extension, the colormap data will
+          be loaded. See `register_cmaps` and `register_cycles`.
         * If RGB tuple or color string, a `PerceptuallyUniformColormap` is
           generated with `~PerceptuallyUniformColormap.from_color`. If the
           string ends in ``'_r'``, the monochromatic map will be *reversed*,
@@ -1655,11 +1658,19 @@ def Colormap(*args, name=None, listmode='perceptual',
     cmaps = []
     tmp = '_no_name' # name required, but we only care about name of final merged map
     for i,cmap in enumerate(args):
-        if isinstance(cmap,str):
-            try:
-                cmap = mcm.cmap_d[cmap]
-            except KeyError:
-                pass
+        # First load data
+        # TODO: Document how 'listmode' also affects loaded files
+        if isinstance(cmap, str):
+            if '.' in cmap:
+                if os.path.isfile(os.path.expanduser(cmap)):
+                    tmp, cmap = _load_cmap_cycle(cmap, cmap=(listmode != 'listed'))
+                else:
+                    raise FileNotFoundError(f'Colormap or cycle file {cmap!r} not found.')
+            else:
+                try:
+                    cmap = mcm.cmap_d[cmap]
+                except KeyError:
+                    pass
         # Properties specific to each map
         ireverse = False if not np.iterable(reverse) else reverse[i]
         ileft = None if not np.iterable(left) else left[i]
@@ -1678,7 +1689,10 @@ def Colormap(*args, name=None, listmode='perceptual',
             cmap = PerceptuallyUniformColormap.from_hsl(tmp, **cmap)
         # List of color tuples or color strings, i.e. iterable of iterables
         elif not isinstance(cmap, str) and np.iterable(cmap) and all(np.iterable(color) for color in cmap):
-            cmap = [to_rgb(color, cycle=cycle) for color in cmap] # transform C0, C1, etc. to actual names
+            try:
+                cmap = [to_rgb(color, cycle=cycle) for color in cmap] # transform C0, C1, etc. to actual names
+            except (ValueError, TypeError):
+                pass # raise error later on
             if listmode == 'listed':
                 cmap = ListedColormap(cmap, tmp)
             elif listmode == 'linear':
@@ -2245,13 +2259,14 @@ def _get_data_paths(dirname):
         paths.insert(0, ipath)
     return paths
 
-def _read_cmap_cycle_data(filename):
+def _load_cmap_cycle(filename, cmap=False):
     """
     Helper function that reads generalized colormap and color cycle files.
     """
-    empty = (None, None, None)
+    N = rcParams['image.lut'] # query this when register function is called
+    filename = os.path.expanduser(filename)
     if os.path.isdir(filename): # no warning
-        return empty
+        return None, None
 
     # Directly read segmentdata json file
     # NOTE: This is special case! Immediately return name and cmap
@@ -2260,17 +2275,15 @@ def _read_cmap_cycle_data(filename):
     if ext == 'json':
         with open(filename, 'r') as f:
             data = json.load(f)
-        N = rcParams['image.lut']
         if 'red' in data:
-            cmap = LinearSegmentedColormap(name, data, N=N)
+            data = LinearSegmentedColormap(name, data, N=N)
         else:
             kw = {}
             for key in ('space', 'gamma1', 'gamma2'):
                 kw[key] = data.pop(key, None)
-            cmap = PerceptuallyUniformColormap(name, data, N=N, **kw)
+            data = PerceptuallyUniformColormap(name, data, N=N, **kw)
         if name[-2:] == '_r':
-            cmap = cmap.reversed(name[:-2])
-        return name, None, cmap
+            data = data.reversed(name[:-2])
 
     # Read .rgb, .rgba, .xrgb, and .xrgba files
     elif ext in ('txt', 'rgb', 'xrgb', 'rgba', 'xrgba'):
@@ -2283,12 +2296,12 @@ def _read_cmap_cycle_data(filename):
             data = [[float(num) for num in line] for line in data]
         except ValueError:
             warnings.warn(f'Failed to load "{filename}". Expected a table of comma or space-separated values.')
-            return empty
+            return None, None
         # Build x-coordinates and standardize shape
         data = np.array(data)
         if data.shape[1] != len(ext):
             warnings.warn(f'Failed to load "{filename}". Got {data.shape[1]} columns, but expected {len(ext)}.')
-            return empty
+            return None, None
         if ext[0] != 'x': # i.e. no x-coordinates specified explicitly
             x = np.linspace(0, 1, data.shape[0])
         else:
@@ -2301,16 +2314,16 @@ def _read_cmap_cycle_data(filename):
             xmldoc = etree.parse(filename)
         except IOError:
             warnings.warn(f'Failed to load "{filename}".')
-            return empty
+            return None, None
         x, data = [], []
         for s in xmldoc.getroot().findall('.//Point'):
             # Verify keys
             if any(key not in s.attrib for key in 'xrgb'):
                 warnings.warn(f'Failed to load "{filename}". Missing an x, r, g, or b specification inside one or more <Point> tags.')
-                return empty
+                return None, None
             if 'o' in s.attrib and 'a' in s.attrib:
                 warnings.warn(f'Failed to load "{filename}". Contains ambiguous opacity key.')
-                return empty
+                return None, None
             # Get data
             color = []
             for key in 'rgbao': # o for opacity
@@ -2322,7 +2335,7 @@ def _read_cmap_cycle_data(filename):
         # Convert to array
         if not all(len(data[0]) == len(color) for color in data):
              warnings.warn(f'File {filename} has some points with alpha channel specified, some without.')
-             return empty
+             return None, None
 
     # Read hex strings
     elif ext == 'hex':
@@ -2331,26 +2344,36 @@ def _read_cmap_cycle_data(filename):
         data = re.findall('#[0-9a-fA-F]{6}', string) # list of strings
         if len(data) < 2:
             warnings.warn(f'Failed to load "{filename}".')
-            return empty
+            return None, None
         # Convert to array
         x = np.linspace(0, 1, len(data))
         data = [to_rgb(color) for color in data]
     else:
         warnings.warn(f'Colormap or cycle file {filename!r} has unknown extension.')
-        return empty
+        return None, None
 
     # Standardize and reverse if necessary to cmap
-    x, data = np.array(x), np.array(data)
-    x = (x - x.min()) / (x.max() - x.min()) # for some reason, some aren't in 0-1 range
-    if (data > 2).any(): # from 0-255 to 0-1
-        data = data/255
-    if name[-2:] == '_r':
-        name = name[:-2]
-        data = data[::-1,:]
-        x = 1 - x[::-1]
+    # TODO: Document the fact that filenames ending in _r return a reversed
+    # version of the colormap stored in that file.
+    if isinstance(data, LinearSegmentedColormap):
+        if not cmap:
+            warnings.warn(f'Failed to load {filename!r} as color cycle.')
+            return None, None
+    else:
+        x, data = np.array(x), np.array(data)
+        x = (x - x.min()) / (x.max() - x.min()) # for some reason, some aren't in 0-1 range
+        if (data > 2).any(): # from 0-255 to 0-1
+            data = data/255
+        if name[-2:] == '_r':
+            name = name[:-2]
+            data = data[::-1,:]
+            x = 1 - x[::-1]
+        if cmap:
+            data = [(x,color) for x,color in zip(x,data)]
+            data = LinearSegmentedColormap.from_list(name, data, N=N)
 
-    # Return data
-    return name, x, data
+    # Return colormap or data
+    return name, data
 
 @_timer
 def register_cmaps():
@@ -2398,17 +2421,11 @@ def register_cmaps():
         ]
 
     # Add colormaps from ProPlot and user directories
-    N = rcParams['image.lut'] # query this when register function is called
     for path in _get_data_paths('cmaps'):
         for filename in sorted(glob.glob(os.path.join(path, '*'))):
-            name, x, data = _read_cmap_cycle_data(filename)
+            name, cmap = _load_cmap_cycle(filename, cmap=True)
             if name is None:
                 continue
-            if isinstance(data, LinearSegmentedColormap):
-                cmap = data
-            else:
-                data = [(x,color) for x,color in zip(x,data)]
-                cmap = LinearSegmentedColormap.from_list(name, data, N=N)
             mcm.cmap_d[name] = cmap
             cmaps.append(name)
     # Add cyclic attribute
@@ -2445,11 +2462,8 @@ def register_cycles():
     icycles = {}
     for path in _get_data_paths('cycles'):
         for filename in sorted(glob.glob(os.path.join(path, '*'))):
-            name, _, data = _read_cmap_cycle_data(filename)
+            name, data = _load_cmap_cycle(filename, cmap=False)
             if name is None:
-                continue
-            if isinstance(data, LinearSegmentedColormap):
-                warnings.warn(f'Failed to load {filename!r} as color cycle.')
                 continue
             icycles[name] = data
 
