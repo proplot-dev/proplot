@@ -18,6 +18,7 @@ __all__ = ['arange', 'edges', 'units']
 
 # Change this to turn on benchmarking
 BENCHMARK = False
+NUMBER = re.compile('^([-+]?[0-9._]+([eE][-+]?[0-9_]+)?)(.*)$')
 
 # Benchmarking tools for developers
 class _benchmark(object):
@@ -169,7 +170,7 @@ def edges(array, axis=-1):
     array = np.swapaxes(array, axis, -1)
     return array
 
-def units(value, output='in', axes=None, figure=None, width=True):
+def units(value, units='in', axes=None, figure=None, width=True):
     """
     Converts values and lists of values between arbitrary physical units. This
     function is used internally all over ProPlot, permitting flexible units
@@ -179,31 +180,33 @@ def units(value, output='in', axes=None, figure=None, width=True):
     ----------
     value : float or str or list thereof
         A size specifier or *list thereof*. If numeric, nothing is done.
-        If string, it is converted to `output` units. The string should look
+        If string, it is converted to `units` units. The string should look
         like ``'123.456unit'``, where the number is the magnitude and
         ``'unit'`` is one of the following.
 
-        =======  =========================================================================================
-        Key      Description
-        =======  =========================================================================================
-        ``m``    Meters
-        ``cm``   Centimeters
-        ``mm``   Millimeters
-        ``ft``   Feet
-        ``in``   Inches
-        ``pt``   Points (1/72 inches)
-        ``px``   Pixels on screen, uses dpi of :rcraw:`figure.dpi`
-        ``pp``   Pixels once printed, uses dpi of :rcraw:`savefig.dpi`
-        ``em``   `Em square <https://en.wikipedia.org/wiki/Em_(typography)>`__ for :rcraw:`font.size`
-        ``en``   `En square <https://en.wikipedia.org/wiki/En_(typography)>`__ for :rcraw:`font.size`
-        ``Em``   `Em square <https://en.wikipedia.org/wiki/Em_(typography)>`__ for :rcraw:`axes.titlesize`
-        ``En``   `En square <https://en.wikipedia.org/wiki/En_(typography)>`__ for :rcraw:`axes.titlesize`
-        ``ax``   Axes relative units. Not always available.
-        ``fig``  Figure relative units. Not always available.
-        =======  =========================================================================================
+        =========  =========================================================================================
+        Key        Description
+        =========  =========================================================================================
+        ``'m'``    Meters
+        ``'cm'``   Centimeters
+        ``'mm'``   Millimeters
+        ``'ft'``   Feet
+        ``'in'``   Inches
+        ``'pt'``   `Points <https://en.wikipedia.org/wiki/Point_(typography)>`__ (1/72 inches)
+        ``'pc'``   `Pica <https://en.wikipedia.org/wiki/Pica_(typography)>`__ (1/6 inches)
+        ``'px'``   Pixels on screen, uses dpi of :rcraw:`figure.dpi`
+        ``'pp'``   Pixels once printed, uses dpi of :rcraw:`savefig.dpi`
+        ``'em'``   `Em square <https://en.wikipedia.org/wiki/Em_(typography)>`__ for :rcraw:`font.size`
+        ``'en'``   `En square <https://en.wikipedia.org/wiki/En_(typography)>`__ for :rcraw:`font.size`
+        ``'Em'``   `Em square <https://en.wikipedia.org/wiki/Em_(typography)>`__ for :rcraw:`axes.titlesize`
+        ``'En'``   `En square <https://en.wikipedia.org/wiki/En_(typography)>`__ for :rcraw:`axes.titlesize`
+        ``'ax'``   Axes relative units. Not always available.
+        ``'fig'``  Figure relative units. Not always available.
+        ``'ly'``   Light years ;)
+        =========  =========================================================================================
 
-    output : str, optional
-        The output units. Default is inches, i.e. ``'in'``.
+    units : str, optional
+        The destination units. Default is inches, i.e. ``'in'``.
     axes : `~matplotlib.axes.Axes`, optional
         The axes to use for scaling units that look like ``0.1ax``.
     figure : `~matplotlib.figure.Figure`, optional
@@ -232,10 +235,12 @@ def units(value, output='in', axes=None, figure=None, width=True):
         'cm': 0.3937,
         'mm': 0.03937,
         'pt': 1/72.0,
+        'pc': 1/6.0,
         'em': small/72.0,
         'en': 0.5*small/72.0,
         'Em': large/72.0,
         'En': 0.5*large/72.0,
+        'ly': 3.725e+17,
         }
     # Scales for converting display units to inches
     # WARNING: In ipython shell these take the value 'figure'
@@ -252,9 +257,9 @@ def units(value, output='in', axes=None, figure=None, width=True):
         unit_dict['fig'] = fig.get_size_inches()[1-int(width)]
     # Scale for converting inches to arbitrary other unit
     try:
-        scale = unit_dict[output]
+        scale = unit_dict[units]
     except KeyError:
-        raise ValueError(f'Invalid numeric unit {output!r}. Valid units are {", ".join(map(repr, unit_dict.keys()))}.')
+        raise ValueError(f'Invalid destination units {units!r}. Valid units are {", ".join(map(repr, unit_dict.keys()))}.')
 
     # Convert units for each value in list
     result = []
@@ -265,10 +270,12 @@ def units(value, output='in', axes=None, figure=None, width=True):
             continue
         elif not isinstance(val, str):
             raise ValueError(f'Size spec must be string or number or list thereof. Got {value!r}.')
-        regex = re.match('^([-+]?[0-9.]*)(.*)$', val)
-        num, unit = regex.groups()
+        regex = NUMBER.match(val)
+        if not regex:
+            raise ValueError(f'Invalid size spec {val!r}. Valid units are {", ".join(map(repr, unit_dict.keys()))}.')
+        number, _, units = regex.groups() # second group is exponential
         try:
-            result.append(float(num) * (unit_dict[unit]/scale if unit else 1))
+            result.append(float(number) * (unit_dict[units]/scale if units else 1))
         except (KeyError, ValueError):
             raise ValueError(f'Invalid size spec {val!r}. Valid units are {", ".join(map(repr, unit_dict.keys()))}.')
     if singleton:

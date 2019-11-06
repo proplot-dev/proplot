@@ -43,7 +43,8 @@ from .wrappers import (
     colorbar_wrapper, legend_wrapper,
     )
 try:
-    from cartopy.mpl.geoaxes import GeoAxes, CRS
+    from cartopy.mpl.geoaxes import GeoAxes
+    from cartopy.crs import CRS
 except ModuleNotFoundError:
     GeoAxes = object
 
@@ -342,12 +343,12 @@ class Axes(maxes.Axes):
 
     def _range_gridspec(self, x):
         """Gets the column or row range for the axes."""
-        subplotspec = self.get_subplotspec()
+        ss = self.get_subplotspec()
         if x == 'x':
-            _, _, _, _, col1, col2 = subplotspec.get_rows_columns()
+            _, _, _, _, col1, col2 = ss.get_rows_columns()
             return col1, col2
         else:
-            _, _, row1, row2, _, _ = subplotspec.get_rows_columns()
+            _, _, row1, row2, _, _ = ss.get_rows_columns()
             return row1, row2
 
     def _range_tightbbox(self, x):
@@ -933,25 +934,22 @@ class Axes(maxes.Axes):
             # if implement colorbars as "parasite" objects instead.
             side = self._panel_side
             length = _notNone(length, rc['colorbar.length'])
-            subplotspec = self.get_subplotspec()
+            ss = self.get_subplotspec()
             if length <= 0 or length > 1:
                 raise ValueError(f'Panel colorbar length must satisfy 0 < length <= 1, got length={length!r}.')
             if side in ('bottom','top'):
-                gridspec = mgridspec.GridSpecFromSubplotSpec(
+                gs = mgridspec.GridSpecFromSubplotSpec(
                         nrows=1, ncols=3, wspace=0,
-                        subplot_spec=subplotspec,
+                        subplot_spec=ss,
                         width_ratios=((1-length)/2, length, (1-length)/2),
                         )
-                subplotspec = gridspec[1]
             else:
-                gridspec = mgridspec.GridSpecFromSubplotSpec(
+                gs = mgridspec.GridSpecFromSubplotSpec(
                         nrows=3, ncols=1, hspace=0,
-                        subplot_spec=subplotspec,
+                        subplot_spec=ss,
                         height_ratios=((1-length)/2, length, (1-length)/2),
                         )
-                subplotspec = gridspec[1]
-            ax = self.figure.add_subplot(subplotspec,
-                main=False, projection=None)
+            ax = self.figure.add_subplot(gs[1], main=False, projection=None)
             self.add_child_axes(ax)
 
             # Location
@@ -2416,18 +2414,22 @@ class CartesianAxes(Axes):
     altx.__doc__ = _alt_doc % {
         'x':'x', 'x1':'bottom', 'x2':'top',
         'y':'y', 'y1':'left', 'y2':'right',
+        'args':', '.join(_twin_kwargs),
         }
     alty.__doc__ = _alt_doc % {
         'x':'y', 'x1':'left', 'x2':'right',
         'y':'x', 'y1':'bottom', 'y2':'top',
+        'args':', '.join(_twin_kwargs),
         }
     twinx.__doc__ = _twin_doc % {
         'x':'y', 'x1':'left', 'x2':'right',
         'y':'x', 'y1':'bottom', 'y2':'top',
+        'args':', '.join(_twin_kwargs),
         }
     twiny.__doc__ = _twin_doc % {
         'x':'x', 'x1':'bottom', 'x2':'top',
         'y':'y', 'y1':'left', 'y2':'right',
+        'args':', '.join(_twin_kwargs),
         }
     dualx.__doc__ = _dual_doc % {
         'x':'x', 'args':', '.join(_twin_kwargs)
