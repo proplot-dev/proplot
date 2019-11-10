@@ -44,7 +44,6 @@ from .wrappers import (
     )
 try:
     from cartopy.mpl.geoaxes import GeoAxes
-    from cartopy.crs import CRS
 except ModuleNotFoundError:
     GeoAxes = object
 
@@ -297,7 +296,7 @@ class Axes(maxes.Axes):
             'border':     f'{prefix}.border',
             'linewidth':  f'{prefix}.linewidth',
             'fontfamily': 'font.family',
-            }, context=True)
+            }, context=context)
         if loc in ('left', 'right', 'center'):
             kw.pop('border', None)
             kw.pop('linewidth', None)
@@ -356,7 +355,7 @@ class Axes(maxes.Axes):
         which are not considered real children and so aren't ordinarily included in
         the tight bounding box calc. `~proplot.axes.Axes.get_tightbbox` caches
         tight bounding boxes when `~Figure.get_tightbbox` is called."""
-        # TODO: Better resting for axes visibility
+        # TODO: Better testing for axes visibility
         if x == 'x':
             return self._tight_bbox.xmin, self._tight_bbox.xmax
         else:
@@ -1964,7 +1963,7 @@ class CartesianAxes(Axes):
             self.patch.set_zorder(-1)
             kw_face = rc.fill({
                 'facecolor': 'axes.facecolor',
-                'alpha': 'axes.alpha'
+                'alpha':     'axes.facealpha'
                 }, context=True)
             patch_kw = patch_kw or {}
             kw_face.update(patch_kw)
@@ -3124,14 +3123,15 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
 
         # Update patch
         kw_face = rc.fill({
-            'facecolor': 'geoaxes.facecolor'
+            'facecolor': 'geoaxes.facecolor',
+            'alpha':     'geoaxes.facealpha',
             }, context=True)
-        kw_face.update(patch_kw)
-        self.background_patch.update(kw_face)
         kw_edge = rc.fill({
             'edgecolor': 'geoaxes.edgecolor',
-            'linewidth': 'geoaxes.linewidth'
+            'linewidth': 'geoaxes.linewidth',
             }, context=True)
+        kw_face.update(patch_kw or {})
+        self.background_patch.update(kw_face)
         self.outline_patch.update(kw_edge)
 
     def _hide_labels(self):
@@ -3298,15 +3298,15 @@ class BasemapAxes(ProjectionAxes):
         #   edges/fill color disappear
         # * For now will enforce that map plots *always* have background
         #   whereas axes plots can have transparent background
+        kw_face = rc.fill({
+            'facecolor': 'geoaxes.facecolor',
+            'alpha':     'geoaxes.facealpha',
+            }, context=True)
         kw_edge = rc.fill({
             'linewidth': 'geoaxes.linewidth',
-            'edgecolor': 'geoaxes.edgecolor'
+            'edgecolor': 'geoaxes.edgecolor',
             }, context=True)
-        kw_face = rc.fill({
-            'facecolor': 'geoaxes.facecolor'
-            }, context=True)
-        patch_kw = patch_kw or {}
-        kw_face.update(patch_kw)
+        kw_face.update(patch_kw or {})
         self.axesPatch = self.patch # bugfix or something
         if self.projection.projection in self._proj_non_rectangular:
             self.patch.set_alpha(0) # make patch invisible
@@ -3314,12 +3314,13 @@ class BasemapAxes(ProjectionAxes):
                 p = self.projection.drawmapboundary(ax=self) # set fill_color to 'none' to make transparent
             else:
                 p = self.projection._mapboundarydrawn
-            p.update({**kw_face, **kw_edge})
+            p.update(kw_face)
+            p.update(kw_edge)
             p.set_rasterized(False)
             p.set_clip_on(False) # so edges denoting boundary aren't cut off
             self._map_boundary = p
         else:
-            self.patch.update({**kw_face, 'edgecolor':'none'})
+            self.patch.update(edgecolor='none', **kw_face)
             for spine in self.spines.values():
                 spine.update(kw_edge)
 

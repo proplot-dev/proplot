@@ -13,7 +13,6 @@ import numpy as np
 import functools
 import warnings
 from matplotlib import docstring
-import matplotlib.pyplot as plt
 import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
 import matplotlib.gridspec as mgridspec
@@ -22,12 +21,18 @@ try:
     import matplotlib.backends.backend_macosx as mbackend
 except ImportError:
     mbackend = None
-from .rctools import rc
-from .utils import _notNone, _counter, units
 from . import projs, axes
+from .rctools import rc
+from .utils import _notNone, _counter, _benchmark, units
+with _benchmark('pyplot'):
+    import matplotlib.pyplot as plt
 __all__ = [
-    'axes_grid', 'close', 'figure',
-    'Figure', 'GridSpec',
+    'axes_grid', 'close',
+    'EdgeStack',
+    'figure',
+    'Figure',
+    'GeometrySolver',
+    'GridSpec',
     'show', 'subplots',
     'SubplotSpec',
     ]
@@ -711,7 +716,16 @@ def _get_space(key, share=0, pad=None):
         raise KeyError(f'Invalid space key {key!r}.')
     return space
 
-class geometry_configurator(object):
+class EdgeStack(object):
+    """
+    Container for groups of `~matplotlib.artist.Artist` objects stacked
+    along the edge of a subplot. Calculates bounding box coordiantes for
+    objects in the stack.
+    """
+    # def __init__(self, *args):
+    #     if not all(isinstance(arg, martist.Artst), args)
+
+class GeometrySolver(object):
     """
     ProPlot's answer to the matplotlib `~matplotlib.figure.SubplotParams`
     class. When `tight` is ``False``, this object is filled with sensible
@@ -727,7 +741,7 @@ class geometry_configurator(object):
             The figure instance associated with this geometry configuration.
         """
         if not isinstance(figure, Figure):
-            raise ValueError(f'geometry_configurator() accepts only ProPlot Figure instances, you passed {type(figure)}.')
+            raise ValueError(f'GeometrySolver() accepts only ProPlot Figure instances, you passed {type(figure)}.')
         self._figure = figure
         self._isinit = False
 
@@ -751,7 +765,7 @@ class geometry_configurator(object):
         fig = self.figure
         gs = self._gridspec
         if gs is None:
-            raise RuntimeError(f'GridSpec is not present. Cannot initialize geometry_configurator.')
+            raise RuntimeError(f'GridSpec is not present. Cannot initialize GeometrySolver.')
 
         # Add spacing params to the object for label alignment calculations
         # Note that gridspec wspace and hspace are already sanitized
@@ -913,7 +927,7 @@ class geometry_configurator(object):
         fig = self.figure
         gs = fig.gridspec
         if gs is None:
-            raise ValueError(f'GridSpec has not been initialized yet. Cannot update geometry_configurator.')
+            raise ValueError(f'GridSpec has not been initialized yet. Cannot update GeometrySolver.')
 
         # Adjust aspect ratio
         ax = fig.get_ref_axes()
@@ -1286,7 +1300,7 @@ class Figure(mfigure.Figure):
         # self._dimensions = (units(width), units(height), units(axwidth), units(axheight), aspect)
         if np.iterable(aspect):
             aspect = aspect[0]/aspect[1]
-        self._geometryconfig = geometry_configurator(width, height, axwidth, axheight, aspect)
+        self._geometryconfig = GeometrySolver(width, height, axwidth, axheight, aspect)
         self._gridspecpars = (units(left), units(bottom), units(right), units(top), units(wspace), units(hspace))
         if any(np.iterable(space) for space in self._gridspecpars_user):
             raise ValueError(f'Invalid spacing parameter. Must be scalar when passed to Figure().')
@@ -1841,16 +1855,19 @@ class Figure(mfigure.Figure):
         *args, **kwargs
             Passed to `~proplot.axes.Axes.colorbar`.
         """
-        if 'cax' in kwargs:
-            return super().colorbar(*args, **kwargs)
-        elif 'ax' in kwargs:
-            return kwargs.pop('ax').colorbar(*args,
-                    space=space, width=width, **kwargs)
-        else:
-            ax = self._add_figure_panel(loc,
-                    space=space, width=width, span=span,
-                    row=row, col=col, rows=rows, cols=cols)
-            return ax.colorbar(*args, loc='_fill', **kwargs)
+        ax = kwargs.pop('ax', None)
+        cax = kwargs.pop('cax', None)
+        # Fill this axes
+        if cax is not None:
+            return super().colorbar(*args, cax=cax, **kwargs)
+        # Generate axes panel
+        elif ax is not None:
+            return ax.colorbar(*args, space=space, width=width, **kwargs)
+        # Generate figure panel
+        ax = self._add_figure_panel(loc,
+                space=space, width=width, span=span,
+                row=row, col=col, rows=rows, cols=cols)
+        return ax.colorbar(*args, loc='_fill', **kwargs)
 
     def get_alignx(self):
         """Returns the *x* axis label alignment mode."""
@@ -1932,14 +1949,15 @@ class Figure(mfigure.Figure):
         *args, **kwargs
             Passed to `~proplot.axes.Axes.legend`.
         """
-        if 'ax' in kwargs:
-            return kwargs.pop('ax').legend(*args,
-                    space=space, width=width, **kwargs)
-        else:
-            ax = self._add_figure_panel(loc,
-                    space=space, width=width, span=span,
-                    row=row, col=col, rows=rows, cols=cols)
-            return ax.legend(*args, loc='_fill', **kwargs)
+        ax = kwargs.pop('ax', None)
+        # Generate axes panel
+        if ax is not None:
+            return ax.legend(*args, space=space, width=width, **kwargs)
+        # Generate figure panel
+        ax = self._add_figure_panel(loc,
+                space=space, width=width, span=span,
+                row=row, col=col, rows=rows, cols=cols)
+        return ax.legend(*args, loc='_fill', **kwargs)
 
     @_counter
     def draw(self, renderer):

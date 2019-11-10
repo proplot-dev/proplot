@@ -16,17 +16,16 @@ except ImportError:  # graceful fallback if IceCream isn't installed
     ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a) # noqa
 __all__ = ['arange', 'edges', 'units']
 
-# Change this to turn on benchmarking
-BENCHMARK = False
 NUMBER = re.compile('^([-+]?[0-9._]+([eE][-+]?[0-9_]+)?)(.*)$')
+BENCHMARK = False
 
-# Benchmarking tools for developers
 class _benchmark(object):
-    """Timer object that can be used to time things."""
+    """Context object that can be used to time import statements."""
     def __init__(self, message):
         self.message = message
     def __enter__(self):
-        self.time = time.clock()
+        if BENCHMARK:
+            self.time = time.clock()
     def __exit__(self, *args):
         if BENCHMARK:
             print(f'{self.message}: {time.clock() - self.time}s')
@@ -72,7 +71,6 @@ def _counter(func):
     decorator.count = 0 # initialize
     return decorator
 
-# Important private helper func
 def _notNone(*args, names=None):
     """Returns the first non-``None`` value, used with keyword arg aliases and
     for setting default values. Ugly name but clear purpose. Pass the `names`

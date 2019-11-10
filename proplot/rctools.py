@@ -41,11 +41,13 @@ the *x* and *y* axes in one go.
 ================  ====================================================================================================================================================================================================================================
 Key               Description
 ================  ====================================================================================================================================================================================================================================
-``nbsetup``       Whether to run `nb_setup` on import. Can only be changed from the ``~/.proplotrc`` file.
-``format``        The inline backend figure format, one of ``retina``, ``png``, ``jpeg``, ``pdf``, or ``svg``. Can only be changed from the ``~/.proplotrc`` file.
+``abc``           Boolean, indicates whether to draw a-b-c labels by default.
 ``autosave``      If not empty or ``0`` and :rcraw:`nbsetup` is ``True``, passed to `%autosave <https://www.webucator.com/blog/2016/03/change-default-autosave-interval-in-ipython-notebook/>`__. Can only be changed from the ``~/.proplotrc`` file.
 ``autoreload``    If not empty or ``0`` and :rcraw:`nbsetup` is ``True``, passed to `%autoreload <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html#magic-autoreload>`__. Can only be changed from the ``~/.proplotrc`` file.
-``abc``           Boolean, indicates whether to draw a-b-c labels by default.
+``alpha``         The opacity of the background axes patch.
+``facecolor``     The color of the background axes patch.
+``format``        The inline backend figure format, one of ``retina``, ``png``, ``jpeg``, ``pdf``, or ``svg``. Can only be changed from the ``~/.proplotrc`` file.
+``nbsetup``       Whether to run `notebook_setup` on import. Can only be changed from the ``~/.proplotrc`` file.
 ``tight``         Boolean, indicates whether to auto-adjust figure bounds and subplot spacings.
 ``share``         The axis sharing level, one of ``0``, ``1``, ``2``, or ``3``. See `~proplot.subplots.subplots` for details.
 ``align``         Whether to align axis labels during draw. See `aligning labels <https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/align_labels_demo.html>`__.
@@ -56,8 +58,6 @@ Key               Description
 ``cycle``         The default color cycle name, used e.g. for lines.
 ``rgbcycle``      If ``True``, and ``colorblind`` is the current cycle, this registers the ``colorblind`` colors as ``'r'``, ``'b'``, ``'g'``, etc., like in `seaborn <https://seaborn.pydata.org/tutorial/color_palettes.html>`__.
 ``color``         The color of axis spines, tick marks, tick labels, and labels.
-``alpha``         The opacity of the background axes patch.
-``facecolor``     The color of the background axes patch.
 ``small``         Font size for legend text, tick labels, axis labels, and text generated with `~matplotlib.axes.Axes.text`.
 ``large``         Font size for titles, "super" titles, and a-b-c subplot labels.
 ``linewidth``     Thickness of axes spines and major tick lines.
@@ -95,14 +95,15 @@ There are two new additions to the ``image`` category, and the new
 `~proplot.axes.Axes.colorbar` properties.
 
 The new ``gridminor`` category controls minor gridline settings,
-and the new ``geogrid`` category controls meridian and parallel line settings
-for `~proplot.axes.ProjectionAxes`. For both ``gridminor`` and ``geogrid``, if
-a property is empty, the corresponding property from ``grid`` is used.
+and the new ``geogrid`` category controls `~proplot.axes.ProjectionAxes`
+meridian and parallel line settings. For both ``gridminor`` and ``geogrid``,
+if a property is empty, the corresponding property from ``grid`` is used.
 
 Finally, the ``geoaxes``, ``land``, ``ocean``, ``rivers``, ``lakes``,
-``borders``, and ``innerborders`` categories control various
-`~proplot.axes.ProjectionAxes` settings. These are used when the boolean
-toggles for the corresponding :ref:`rcParamsShort` settings are turned on.
+``borders``, and ``innerborders`` categories control properties for
+`~proplot.axes.ProjectionAxes` geographic features. These are used when the
+boolean toggles for the corresponding :ref:`rcParamsShort` settings are turned
+on.
 
 ===================================================================  =========================================================================================================================================================================================================================================================
 Key(s)                                                               Description
@@ -112,6 +113,7 @@ Key(s)                                                               Description
 ``abc.border``                                                       Boolean, indicates whether to draw a white border around a-b-c labels inside an axes.
 ``abc.linewidth``                                                    Width of the white border around a-b-c labels.
 ``abc.color``, ``abc.size``, ``abc.weight``                          Font color, size, and weight for a-b-c labels.
+``axes.facealpha``                                                   Transparency of the axes background.
 ``axes.formatter.zerotrim``                                          Boolean, indicates whether trailing decimal zeros are trimmed on tick labels.
 ``axes.formatter.timerotation``                                      Float, indicates the default *x* axis tick label rotation for datetime tick labels.
 ``borders.color``, ``borders.linewidth``                             Line color and linewidth for country border lines.
@@ -176,10 +178,10 @@ is shown below. The syntax is roughly the same as that used for
    :literal:
 
 """
-# TODO: Add 'style' setting that overrides .proplotrc
+# TODO: Add 'style' option that overrides .proplotrc
 # Adapted from seaborn; see: https://github.com/mwaskom/seaborn/blob/master/seaborn/rcmod.py
 from . import utils
-from .utils import _counter, _timer, _benchmark
+from .utils import _counter, _timer
 import re
 import os
 import yaml
@@ -187,17 +189,15 @@ import cycler
 import warnings
 import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
-with _benchmark('pyplot'):
-    import matplotlib.pyplot as plt
 try:
     import IPython
     get_ipython = IPython.get_ipython
 except ModuleNotFoundError:
     get_ipython = lambda: None
-__all__ = ['rc', 'rc_configurator', 'nb_setup']
+__all__ = ['rc', 'rc_configurator', 'notebook_setup']
 
 # Initialize
-from matplotlib import rcParams
+from matplotlib import style, rcParams
 defaultParamsShort = {
     'nbsetup':      True,
     'format':       'retina',
@@ -239,9 +239,9 @@ defaultParamsShort = {
     'innerborders': False,
     }
 defaultParamsLong = {
-    'abc.loc':                     'l', # left side above the axes
     'title.loc':                   'c', # centered above the axes
     'title.pad':                   3.0, # copy
+    'abc.loc':                     'l', # left side above the axes
     'abc.style':                   'a',
     'abc.size':                    None, # = large
     'abc.color':                   'k',
@@ -273,7 +273,7 @@ defaultParamsLong = {
     'bottomlabel.color':           'k',
     'image.edgefix':               True,
     'image.levels':                11,
-    'axes.alpha':                  None, # if empty, depends on 'savefig.transparent' setting
+    'axes.facealpha':              None, # if empty, depends on 'savefig.transparent' setting
     'axes.formatter.zerotrim':     True,
     'axes.formatter.timerotation': 90,
     'axes.gridminor':              True,
@@ -293,6 +293,7 @@ defaultParamsLong = {
     'geogrid.linestyle':           ':                                                         ',
     'geoaxes.linewidth':           None, # = linewidth
     'geoaxes.facecolor':           None, # = facecolor
+    'geoaxes.facealpha':           None, # = alpha
     'geoaxes.edgecolor':           None, # = color
     'land.color':                  'k',
     'ocean.color':                 'w',
@@ -323,32 +324,23 @@ defaultParamsLong = {
     'subplots.panelpad':           '0.5em',
     }
 defaultParams = {
-    'figure.dpi':              90,
-    'figure.facecolor':        '#f2f2f2',
-    'figure.autolayout':       False,
-    'figure.titleweight':      'bold',
-    'figure.max_open_warning': 0,
-    'savefig.directory':       '',
-    'savefig.dpi':             300,
-    'savefig.facecolor':       'white',
-    'savefig.transparent':     True,
-    'savefig.format':          'pdf',
-    'savefig.bbox':            'standard',
-    'savefig.pad_inches':      0.0,
     'axes.titleweight':        'normal',
     'axes.xmargin':            0.0,
     'axes.ymargin':            0.0,
     'axes.grid':               True,
     'axes.labelpad':           3.0,
     'axes.titlepad':           3.0,
+    'figure.dpi':              90,
+    'figure.facecolor':        '#f2f2f2',
+    'figure.autolayout':       False,
+    'figure.titleweight':      'bold',
+    'figure.max_open_warning': 0,
     'grid.color':              'k',
     'grid.alpha':              0.1,
     'grid.linewidth':          0.6,
     'grid.linestyle':          '-',
     'hatch.color':             'k',
     'hatch.linewidth':         0.6,
-    'lines.linewidth':         1.3,
-    'lines.markersize':        3.0,
     'legend.frameon':          True,
     'legend.framealpha':       0.8,
     'legend.fancybox':         False,
@@ -358,11 +350,20 @@ defaultParams = {
     'legend.columnspacing':    1.0,
     'legend.borderpad':        0.5,
     'legend.borderaxespad':    0,
-    'xtick.minor.visible':     True,
-    'ytick.minor.visible':     True,
+    'lines.linewidth':         1.3,
+    'lines.markersize':        3.0,
     'mathtext.bf':             'sans:bold',
     'mathtext.it':             'sans:it',
     'mathtext.default':        'regular',
+    'savefig.directory':       '',
+    'savefig.dpi':             300,
+    'savefig.facecolor':       'white',
+    'savefig.transparent':     True,
+    'savefig.format':          'pdf',
+    'savefig.bbox':            'standard',
+    'savefig.pad_inches':      0.0,
+    'xtick.minor.visible':     True,
+    'ytick.minor.visible':     True,
     }
 rcParamsShort = {}
 rcParamsLong = {}
@@ -401,7 +402,7 @@ RC_CHILDREN = {
     'fontname':  ('font.family',),
     'cmap':      ('image.cmap',),
     'lut':       ('image.lut',),
-    'alpha':     ('axes.alpha',), # this is a custom setting
+    'alpha':     ('axes.facealpha', 'geoaxes.facealpha'), # this is a custom setting
     'facecolor': ('axes.facecolor', 'geoaxes.facecolor'),
     'color':     ('axes.edgecolor', 'geoaxes.edgecolor', 'axes.labelcolor', 'tick.labelcolor', 'hatch.color', 'xtick.color', 'ytick.color'), # change the 'color' of an axes
     'small':     ('font.size', 'tick.labelsize', 'xtick.labelsize', 'ytick.labelsize', 'axes.labelsize', 'legend.fontsize', 'geogrid.labelsize'), # the 'small' fonts
@@ -628,7 +629,7 @@ class rc_configurator(object):
         """
         # Attributes and style
         object.__setattr__(self, '_context', [])
-        plt.style.use('default')
+        style.use('default')
 
         # Update from defaults
         rcParamsLong.clear()
@@ -992,7 +993,7 @@ See the `~proplot.rctools` documentation for details."""
 
 # Ipython notebook behavior
 @_timer
-def nb_setup():
+def notebook_setup():
     """
     Sets up your iPython workspace, called on import if :rcraw:`nbsetup` is
     ``True``. For all iPython sessions, passes :rcraw:`autoreload` to the useful
@@ -1043,7 +1044,7 @@ def nb_setup():
 # Setup notebook and issue warning
 # TODO: Add to list of incompatible backends?
 if rcParamsShort['nbsetup']:
-    nb_setup()
+    notebook_setup()
 if rcParams['backend'][:2] == 'nb' or rcParams['backend'] in ('MacOSX',):
     warnings.warn(f'Due to automatic figure resizing, using ProPlot with the {rcParams["backend"]!r} backend may result in unexpected behavior. Try using %matplotlib inline or %matplotlib qt, or just import ProPlot before specifying the backend and ProPlot will automatically load it.')
 
