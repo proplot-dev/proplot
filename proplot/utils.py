@@ -17,7 +17,7 @@ except ImportError:  # graceful fallback if IceCream isn't installed
 __all__ = ['arange', 'edges', 'units']
 
 NUMBER = re.compile('^([-+]?[0-9._]+([eE][-+]?[0-9_]+)?)(.*)$')
-BENCHMARK = False
+BENCHMARK = True
 
 class _benchmark(object):
     """Context object that can be used to time import statements."""
@@ -30,19 +30,8 @@ class _benchmark(object):
         if BENCHMARK:
             print(f'{self.message}: {time.clock() - self.time}s')
 
-def _logger(func):
-    """A decorator that logs the activity of the script (it actually just prints it,
-    but it could be logging!). See: https://stackoverflow.com/a/1594484/4970632"""
-    @functools.wraps(func)
-    def decorator(*args, **kwargs):
-        res = func(*args, **kwargs)
-        if BENCHMARK:
-            print(f'{func.__name__} called with: {args} {kwargs}')
-        return res
-    return decorator
-
 def _timer(func):
-    """A decorator that prints the time a function takes to execute.
+    """Decorator that prints the time a function takes to execute.
     See: https://stackoverflow.com/a/1594484/4970632"""
     @functools.wraps(func)
     def decorator(*args, **kwargs):
@@ -55,7 +44,7 @@ def _timer(func):
     return decorator
 
 def _counter(func):
-    """A decorator that counts and prints the cumulative time a function
+    """Decorator that counts and prints the cumulative time a function
     has benn running. See: https://stackoverflow.com/a/1594484/4970632"""
     @functools.wraps(func)
     def decorator(*args, **kwargs):
@@ -72,10 +61,10 @@ def _counter(func):
     return decorator
 
 def _notNone(*args, names=None):
-    """Returns the first non-``None`` value, used with keyword arg aliases and
-    for setting default values. Ugly name but clear purpose. Pass the `names`
-    keyword arg to issue warning if multiple args were passed. Must be list
-    of non-empty strings."""
+    """Return the first non-``None`` value. This is used with keyword arg
+    aliases and for setting default values. Ugly name but clear purpose. Pass
+    the `names` keyword arg to issue warning if multiple args were passed. Must
+    be list of non-empty strings."""
     if names is None:
         for arg in args:
             if arg is not None:
@@ -93,15 +82,16 @@ def _notNone(*args, names=None):
                     first = arg
                 if name:
                     kwargs[name] = arg
-        if len(kwargs)>1:
-            warnings.warn(f'Got conflicting or duplicate keyword args, using the first one: {kwargs}')
+        if len(kwargs) > 1:
+            warnings.warn(f'Got conflicting or duplicate keyword args: {kwargs}. Using the first one.')
         return first
 
 # Accessible for user
 def arange(min_, *args):
-    """Identical to `numpy.arange`, but with inclusive endpoints. For
+    """Identical to `numpy.arange` but with inclusive endpoints. For
     example, ``plot.arange(2,4)`` returns ``np.array([2,3,4])`` instead
-    of ``np.array([2,3])``."""
+    of ``np.array([2,3])``. This command is useful for generating lists of
+    tick locations or colorbar level boundaries."""
     # Optional arguments just like np.arange
     if len(args) == 0:
         max_ = min_
@@ -129,10 +119,12 @@ def arange(min_, *args):
 
 def edges(array, axis=-1):
     """
-    Calculates approximate "edge" values given "center" values. This is used
-    internally to calculate graitule edges when you supply centers to
-    `~matplotlib.axes.Axes.pcolor` or `~matplotlib.axes.Axes.pcolormesh`, and
-    in a few other places.
+    Calculate the approximate "edge" values along an arbitrary axis, given
+    "center" values. This is used internally to calculate graticule edges when
+    you supply centers to `~matplotlib.axes.Axes.pcolor` or
+    `~matplotlib.axes.Axes.pcolormesh`, and to calculate colorbar level edges
+    when you supply centers to any method wrapped by
+    `~proplot.wrappers.cmap_changer`.
 
     Parameters
     ----------
@@ -170,9 +162,9 @@ def edges(array, axis=-1):
 
 def units(value, units='in', axes=None, figure=None, width=True):
     """
-    Converts values and lists of values between arbitrary physical units. This
-    function is used internally all over ProPlot, permitting flexible units
-    for various keyword arguments.
+    Convert values and lists of values between arbitrary physical units. This
+    is used internally all over ProPlot, permitting flexible units for various
+    keyword arguments.
 
     Parameters
     ----------

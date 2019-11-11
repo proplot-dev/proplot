@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Defines various axis scales, locators, and formatters. Also "registers"
-the locator and formatter names, so that they can be called selected with
-the `~proplot.axes.CartesianAxes.format` method.
+This page documents new axis formatters, new axis scales, and the constructor
+functions `Scale`, `Formatter`, and `Locator` that are used to
+"register" classes for use with `~proplot.axes.Axes.format`.
 """
 import re
 from .utils import _notNone
@@ -49,8 +49,8 @@ SCALE_PRESETS = {
 #-----------------------------------------------------------------------------#
 def Locator(locator, *args, **kwargs):
     """
-    Returns a `~matplotlib.ticker.Locator` instance, used to interpret the
-    `xlocator`, `xlocator_kw`, `ylocator`, `ylocator_kw`, `xminorlocator`,
+    Return a `~matplotlib.ticker.Locator` instance. This function is used to
+    interpret the `xlocator`, `xlocator_kw`, `ylocator`, `ylocator_kw`, `xminorlocator`,
     `xminorlocator_kw`, `yminorlocator`, and `yminorlocator_kw` arguments when
     passed to `~proplot.axes.CartesianAxes.format`, and the `locator`, `locator_kw`
     `minorlocator`, and `minorlocator_kw` arguments when passed to colorbar
@@ -130,8 +130,8 @@ def Locator(locator, *args, **kwargs):
 
 def Formatter(formatter, *args, date=False, **kwargs):
     r"""
-    Returns a `~matplotlib.ticker.Formatter` instance, used to interpret the
-    `xformatter`, `xformatter_kw`, `yformatter`, and `yformatter_kw` arguments
+    Return a `~matplotlib.ticker.Formatter` instance. This function is used to
+    interpret the `xformatter`, `xformatter_kw`, `yformatter`, and `yformatter_kw` arguments
     when passed to `~proplot.axes.CartesianAxes.format`, and the `formatter`
     and `formatter_kw` arguments when passed to colorbar methods wrapped by
     `~proplot.wrappers.colorbar_wrapper`.
@@ -249,9 +249,9 @@ def Formatter(formatter, *args, date=False, **kwargs):
 
 def Scale(scale, *args, **kwargs):
     """
-    Returns a `~matplotlib.scale.ScaleBase` instance, used to interpret the
-    `xscale`, `xscale_kw`, `yscale`, and `yscale_kw` arguments when passed to
-    `~proplot.axes.CartesianAxes.format`.
+    Return a `~matplotlib.scale.ScaleBase` instance. This function is used to
+    interpret the `xscale`, `xscale_kw`, `yscale`, and `yscale_kw` arguments
+    when passed to `~proplot.axes.CartesianAxes.format`.
 
     Parameters
     ----------
@@ -395,10 +395,11 @@ def SimpleFormatter(*args, precision=6,
         prefix=None, suffix=None, negpos=None,
         **kwargs):
     """
-    Replicates features of `AutoFormatter`, but as a simpler
-    `~matplotlib.ticker.FuncFormatter` instance. This is more suitable for
-    arbitrary number formatting not necessarily associated with any
-    `~matplotlib.axis.Axis` instance, e.g. labelling contours.
+    Return a formatter function that replicates the features of
+    `AutoFormatter` with a `~matplotlib.ticker.FuncFormatter` instance. This
+    is suitable for arbitrary number formatting that is not necessarily
+    associated with any `~matplotlib.axis.Axis` instance, e.g. labelling
+    contours.
 
     Parameters
     ----------
@@ -434,12 +435,10 @@ def SimpleFormatter(*args, precision=6,
 
 def FracFormatter(symbol='', number=1):
     r"""
-    Returns a `~matplotlib.ticker.FuncFormatter` that formats numbers as
-    fractions or multiples of some value, e.g. a physical constant.
-
-    This is powered by the python builtin `~fractions.Fraction` class.
-    We account for floating point errors using the
-    `~fractions.Fraction.limit_denominator` method.
+    Return a `~matplotlib.ticker.FuncFormatter` that formats numbers as
+    fractions or multiples of some arbitrary value.
+    This is powered by the builtin `~fractions.Fraction` class
+    and the `~fractions.Fraction.limit_denominator` method.
 
     Parameters
     ----------
@@ -473,9 +472,8 @@ def FracFormatter(symbol='', number=1):
 # Native scale overrides
 #-----------------------------------------------------------------------------#
 def _scale_factory(scale, axis, *args, **kwargs):
-    """If `scale` is a `~matplotlib.scale.ScaleBase` instance, nothing is
-    done. If it is a registered scale name, that scale is looked up and
-    instantiated."""
+    """If `scale` is a `~matplotlib.scale.ScaleBase` instance, do nothing. If
+    it is a registered scale name, look up and instantiate that scale."""
     if isinstance(scale, mscale.ScaleBase):
         if args or kwargs:
             warnings.warn(f'Ignoring args {args} and keyword args {kwargs}.')
@@ -487,7 +485,7 @@ def _scale_factory(scale, axis, *args, **kwargs):
         return scales[scale](axis, *args, **kwargs)
 
 def _parse_logscale_args(kwargs, *keys):
-    """Parses args for `LogScale` and `SymmetricalLogScale` that
+    """Parse arguments for `LogScale` and `SymmetricalLogScale` that
     inexplicably require ``x`` and ``y`` suffixes by default."""
     for key in keys:
         value = _notNone( # issues warning when multiple args passed!
@@ -501,7 +499,7 @@ def _parse_logscale_args(kwargs, *keys):
     return kwargs
 
 class _dummy_axis(object):
-    """Dummy axis used to initialize scales."""
+    """Empty dummy class used to initialize scales."""
     # See notes in source code for `~matplotlib.scale.ScaleBase`. All scales
     # accept 'axis' for backwards-compatibility reasons, but it is *virtually
     # unused* except to check for the `axis_name` attribute in log scales to
@@ -514,7 +512,7 @@ class _ScaleBase(object):
     def set_default_locators_and_formatters(self, axis, only_if_default=False):
         """
         Apply all locators and formatters defined as attributes on
-        initialization, and define defaults for all scales.
+        initialization and define defaults for all scales.
 
         Parameters
         ----------
@@ -563,25 +561,25 @@ class _ScaleBase(object):
 
 class LinearScale(_ScaleBase, mscale.LinearScale):
     """
-    As with `~matplotlib.scale.LinearScale`, but applies new default
-    major formatter.
+    As with `~matplotlib.scale.LinearScale`. `AutoFormatter` is the new
+    default major formatter.
     """
     name = 'linear'
     """The registered scale name."""
 
 class LogitScale(_ScaleBase, mscale.LogitScale):
     """
-    As with `~matplotlib.scale.LogitScale`, but applies new default
-    major formatter.
+    As with `~matplotlib.scale.LogitScale`. `AutoFormatter` is the new
+    default major formatter.
     """
     name = 'logit'
     """The registered scale name."""
 
 class LogScale(_ScaleBase, mscale.LogScale):
     """
-    As with `~matplotlib.scale.LogScale`, but applies new default major
-    formatter and fixes the inexplicable choice to have separate "``x``" and
-    "``y``" versions of each keyword argument.
+    As with `~matplotlib.scale.LogScale`. `AutoFormatter` is the new
+    default major formatter. Separate "``x``" and "``y``" versions of each
+    keyword argument are no longer required.
     """
     name = 'log'
     """The registered scale name."""
@@ -611,9 +609,9 @@ class LogScale(_ScaleBase, mscale.LogScale):
 
 class SymmetricalLogScale(_ScaleBase, mscale.SymmetricalLogScale):
     """
-    As with `~matplotlib.scale.SymmetricLogScale`, but applies new default
-    major formatter and fixes the inexplicable choice to have separate "``x``"
-    and "``y``" versions of each keyword argument.
+    As with `~matplotlib.scale.SymmetricLogScale`. `AutoFormatter` is the new
+    default major formatter. Separate "``x``" and "``y``" versions of each
+    keyword argument are no longer required.
     """
     name = 'symlog'
     """The registered scale name."""
@@ -654,9 +652,9 @@ class SymmetricalLogScale(_ScaleBase, mscale.SymmetricalLogScale):
 class FuncScale(_ScaleBase, mscale.ScaleBase):
     """
     Arbitrary scale with user-supplied forward and inverse functions and
-    arbitrary additional transform applied thereafter. Input is a tuple
-    of functions and, optionally, a `~matplotlib.transforms.Transform` or
-    `~matplotlib.scale.ScaleBase` instance.
+    an arbitrary additional transform applied thereafter. The input should
+    be a tuple of functions and, optionally, a
+    `~matplotlib.transforms.Transform` instance.
     """
     name = 'function'
     """The registered scale name."""
@@ -726,7 +724,7 @@ class FuncTransform(mtransforms.Transform):
 #-----------------------------------------------------------------------------#
 class PowerScale(_ScaleBase, mscale.ScaleBase):
     r"""
-    Returns a "power scale" that performs the transformation
+    "Power scale" that performs the transformation
 
     .. math::
 
@@ -797,16 +795,16 @@ class InvertedPowerTransform(mtransforms.Transform):
 
 class ExpScale(_ScaleBase, mscale.ScaleBase):
     """
-    An "exponential scale". When `inverse` is ``False`` (the default), this
-    performs the transformation
+    "Exponential scale" that performs either of two transformations. When
+    `inverse` is ``False`` (the default), performs the transformation
 
     .. math::
 
         Ca^{bx}
 
     where the constants :math:`a`, :math:`b`, and :math:`C` are set by the
-    input (see below). When `inverse` is ``False``, this performs the inverse
-    transformation
+    input arguments (see below). When `inverse` is ``True``, performs the
+    inverse transformation
 
     .. math::
 
@@ -841,7 +839,7 @@ class ExpScale(_ScaleBase, mscale.ScaleBase):
         else:
             self._transform = InvertedExpTransform(a, b, c, minpos)
     def limit_range_for_scale(self, vmin, vmax, minpos):
-        """Returns the range *vmin* and *vmax* limited to positive numbers."""
+        """Return *vmin* and *vmax* limited to positive numbers."""
         return max(vmin, minpos), max(vmax, minpos)
 
 class ExpTransform(mtransforms.Transform):
@@ -885,8 +883,8 @@ class InvertedExpTransform(mtransforms.Transform):
         return ExpTransform(self._a, self._b, self._c, self.minpos)
 
 class CutoffScale(_ScaleBase, mscale.ScaleBase):
-    """Axis scale with arbitrary cutoffs that "accelerate" parts of the
-    axis, "decelerate" parts of the axes, or discretely jumps between
+    """Axis scale with arbitrary cutoffs that "accelerates" parts of the
+    axis, "decelerates" parts of the axes, or discretely jumps between
     numbers.
 
     If `upper` is not provided, you have the following two possibilities.
@@ -1018,7 +1016,7 @@ class InvertedCutoffTransform(mtransforms.Transform):
 
 class MercatorLatitudeScale(_ScaleBase, mscale.ScaleBase):
     r"""
-    Scales axis as with latitude in the `Mercator projection
+    Axis scale that transforms values as with latitude in the `Mercator projection
     <http://en.wikipedia.org/wiki/Mercator_projection>`__. Adapted from `this
     example <https://matplotlib.org/examples/api/custom_scale_example.html>`__.
 
@@ -1055,7 +1053,7 @@ class MercatorLatitudeScale(_ScaleBase, mscale.ScaleBase):
         self._major_formatter = Formatter('deg')
         self._smart_bounds = True
     def limit_range_for_scale(self, vmin, vmax, minpos):
-        """Returns the range *vmin* and *vmax* limited to some range within
+        """Return *vmin* and *vmax* limited to some range within
         +/-90 degrees (exclusive)."""
         return max(vmin, -self._thresh), min(vmax, self._thresh)
 
@@ -1097,8 +1095,9 @@ class InvertedMercatorLatitudeTransform(mtransforms.Transform):
 
 class SineLatitudeScale(_ScaleBase, mscale.ScaleBase):
     r"""
-    Scales axis to be linear in the *sine* of *x* in degrees.
-    The scale function is as follows.
+    Axis scale that is linear in the *sine* of *x*. The axis limits are
+    constrained to fall between ``-90`` and ``+90`` degrees. The scale
+    function is as follows.
 
     .. math::
 
@@ -1124,7 +1123,7 @@ class SineLatitudeScale(_ScaleBase, mscale.ScaleBase):
         self._major_formatter = Formatter('deg')
         self._smart_bounds = True
     def limit_range_for_scale(self, vmin, vmax, minpos):
-        """Returns the range *vmin* and *vmax* limited to some range within
+        """Return *vmin* and *vmax* limited to some range within
         +/-90 degrees (inclusive)."""
         return max(vmin, -90), min(vmax, 90)
 
@@ -1168,8 +1167,8 @@ class InvertedSineLatitudeTransform(mtransforms.Transform):
 
 class InverseScale(_ScaleBase, mscale.ScaleBase):
     r"""
-    Scales axis to be linear in the *inverse* of *x*. The scale
-    function and inverse scale function are as follows.
+    Axis scale that is linear in the *inverse* of *x*. The forward and inverse
+    scale functions are as follows.
 
     .. math::
 
@@ -1197,7 +1196,7 @@ class InverseScale(_ScaleBase, mscale.ScaleBase):
         self._smart_bounds = True
         # self._minor_formatter = Fromatter('log')
     def limit_range_for_scale(self, vmin, vmax, minpos):
-        """Returns the range *vmin* and *vmax* limited to positive numbers."""
+        """Return *vmin* and *vmax* limited to positive numbers."""
         return max(vmin, minpos), max(vmax, minpos)
 
 class InverseTransform(mtransforms.Transform):

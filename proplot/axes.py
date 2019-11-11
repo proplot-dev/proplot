@@ -101,10 +101,11 @@ def _abc(i):
 
 # Wrapper generator
 def _disable_decorator(msg):
-    """Generates decorators that disable methods. Also sets __doc__ to None so
-    that ProPlot fork of automodapi doesn't add these methods to the website
-    documentation. Users can still call help(ax.method) because python looks
-    for superclass method docstrings if a docstring is empty."""
+    """Return a decorator that disables methods with message `msg`. The
+    docstring is set to ``None`` so the ProPlot fork of automodapi doesn't add
+    these methods to the website documentation. Users can still call
+    help(ax.method) because python looks for superclass method docstrings if a
+    docstring is empty."""
     def decorator(func):
         @functools.wraps(func)
         def _wrapper(self, *args, **kwargs):
@@ -117,7 +118,7 @@ def _disable_decorator(msg):
 # Generalized custom axes class
 #-----------------------------------------------------------------------------#
 def _parse_format(mode=2, rc_kw=None, **kwargs):
-    """Separates `~proplot.rctools.rc` setting name value pairs from
+    """Separate `~proplot.rctools.rc` setting name value pairs from
     `~Axes.format` keyword arguments."""
     kw = {}
     rc_kw = rc_kw or {}
@@ -195,7 +196,7 @@ class Axes(maxes.Axes):
         self._auto_colorbar = {}
 
     def _get_side_axes(self, side):
-        """Returns axes whose left, right, top, or bottom side abutts
+        """Return the axes whose left, right, top, or bottom sides abutt
         against the same row or column as this axes."""
         s = side[0]
         if s not in 'lrbt':
@@ -213,10 +214,9 @@ class Axes(maxes.Axes):
             return axs
 
     def _get_extent_axes(self, x):
-        """Returns axes whose horizontal or vertical extent in the main
+        """Return the axes whose horizontal or vertical extent in the main
         gridspec matches the horizontal or vertical extend of this axes.
-        Also sorts the list so the leftmost or bottommost axes is at the
-        start of the list."""
+        The lefmost or bottommost axes are at the start of the list."""
         if not hasattr(self, 'get_subplotspec'):
             return [self]
         y = ('y' if x == 'x' else 'x')
@@ -232,9 +232,9 @@ class Axes(maxes.Axes):
             return [pax, *axs]
 
     def _get_title_props(self, abc=False, loc=None):
-        """Returns standardized location name, position keyword arguments, and
-        setting keyword arguments for the relevant title or a-b-c label at location
-        `loc`."""
+        """Return the standardized location name, position keyword arguments,
+        and setting keyword arguments for the relevant title or a-b-c label at
+        location `loc`."""
         # Location string and position coordinates
         context = True
         prefix = 'abc' if abc else 'title'
@@ -303,7 +303,7 @@ class Axes(maxes.Axes):
         return loc, obj, kw
 
     def _iter_panels(self, sides='lrbt'):
-        """Iterates over axes and child panel axes."""
+        """Return a list of axes and child panel axes."""
         axs = [self] if self.get_visible() else []
         if not ({*sides} <= {*'lrbt'}):
             raise ValueError(f'Invalid sides {sides!r}.')
@@ -316,7 +316,8 @@ class Axes(maxes.Axes):
 
     @staticmethod
     def _loc_translate(loc, default=None):
-        """Translates location string `loc` into a standardized form."""
+        """Return the location string `loc` translated into a standardized
+        form."""
         if loc in (None, True):
             loc = default
         elif isinstance(loc, (str, Integral)):
@@ -331,7 +332,7 @@ class Axes(maxes.Axes):
         return loc
 
     def _make_inset_locator(self, bounds, trans):
-        """Helper function, copied from private matplotlib version."""
+        """Return a locator that determines inset axes bounds."""
         def inset_locator(ax, renderer):
             bbox = mtransforms.Bbox.from_bounds(*bounds)
             bb = mtransforms.TransformedBbox(bbox, trans)
@@ -341,7 +342,9 @@ class Axes(maxes.Axes):
         return inset_locator
 
     def _range_gridspec(self, x):
-        """Gets the column or row range for the axes."""
+        """Return the column or row gridspec range for the axes."""
+        if not hasattr(self, 'get_subplotspec'):
+            raise RuntimeError(f'Axes is not a subplot.')
         ss = self.get_subplotspec()
         if x == 'x':
             _, _, _, _, col1, col2 = ss.get_rows_columns()
@@ -351,10 +354,11 @@ class Axes(maxes.Axes):
             return row1, row2
 
     def _range_tightbbox(self, x):
-        """Gets span of tight bounding box, including twin axes and panels
-        which are not considered real children and so aren't ordinarily included in
-        the tight bounding box calc. `~proplot.axes.Axes.get_tightbbox` caches
-        tight bounding boxes when `~Figure.get_tightbbox` is called."""
+        """Return the tight bounding box span, including twin axes and panels
+        which are not considered real children and so aren't ordinarily
+        included in the tight bounding box calculation.
+        `~proplot.axes.Axes.get_tightbbox` caches tight bounding boxes when
+        `~Figure.get_tightbbox` is called."""
         # TODO: Better testing for axes visibility
         if x == 'x':
             return self._tight_bbox.xmin, self._tight_bbox.xmax
@@ -362,11 +366,13 @@ class Axes(maxes.Axes):
             return self._tight_bbox.ymin, self._tight_bbox.ymax
 
     def _reassign_suplabel(self, side):
-        """Re-assigns the column and row labels to panel axes, if they exist.
-        This is called by `~proplot.subplots.Figure._align_suplabel`."""
+        """Re-assign the column and row labels to the relevant panel if
+        present. This is called by `~proplot.subplots.Figure._align_suplabel`.
+        """
         # Place column and row labels on panels instead of axes -- works when
         # this is called on the main axes *or* on the relevant panel itself
         # TODO: Mixed figure panels with super labels? How does that work?
+        # TODO: Remove this when panels implemented as stacks!
         s = side[0]
         side = SIDE_TRANSLATE[s]
         if s == self._panel_side:
@@ -391,13 +397,15 @@ class Axes(maxes.Axes):
         return pax
 
     def _reassign_title(self):
-        """Re-assigns title to the first upper panel if present. We cannot
-        simply add upper panel as child axes, because then title will be offset
-        but still belong to main axes, which messes up tight bounding box."""
+        """Re-assign the title to the first upper panel if present. We cannot
+        simply add the upper panel as a child axes, because then the title will
+        be offset but still belong to main axes, which messes up the tight
+        bounding box."""
         # Reassign title from main axes to top panel -- works when this is
         # called on the main axes *or* on the top panel itself. This is
         # critical for bounding box calcs; not always clear whether draw() and
         # get_tightbbox() are called on the main axes or panel first
+        # TODO: Remove this when panels implemented as stacks!
         if self._panel_side == 'top' and self._panel_parent:
             ax, taxs = self._panel_parent, [self]
         else:
@@ -433,7 +441,8 @@ class Axes(maxes.Axes):
         tax._set_title_offset_trans(self._title_pad + pad)
 
     def _sharex_setup(self, sharex, level=None):
-        """Sets up panel axis sharing."""
+        """Configure x-axis sharing for panels. Main axis sharing is done in
+        `~CartesianAxes._sharex_setup`."""
         if level is None:
             level = self.figure._sharex
         if level not in range(4):
@@ -444,7 +453,8 @@ class Axes(maxes.Axes):
         self._share_long_axis(sharex,  't', level)
 
     def _sharey_setup(self, sharey, level):
-        """Sets up panel axis sharing."""
+        """Configure y-axis sharing for panels. Main axis sharing is done in
+        `~CartesianAxes._sharey_setup`."""
         if level is None:
             level = self.figure._sharey
         if level not in range(4):
@@ -455,8 +465,8 @@ class Axes(maxes.Axes):
         self._share_long_axis(sharey,  'r', level)
 
     def _share_setup(self):
-        """Applies axis sharing for axes that share the same horizontal or
-        vertical extent, and for their panels."""
+        """Automatically configure axis sharing based on the horizontal and
+        vertical extent of subplots in the figure gridspec."""
         # Panel axes sharing, between main subplot and its panels
         shared = lambda paxs: [pax for pax in paxs if not pax._panel_filled and pax._panel_share]
         if not self._panel_side: # this is a main axes
@@ -521,7 +531,8 @@ class Axes(maxes.Axes):
             getattr(pax, '_share' + axis + '_setup')(share, level)
 
     def _update_title(self, obj, **kwargs):
-        """Redraws title if updating with input keyword args failed."""
+        """Redraw the title if updating with the input keyword arguments
+        failed."""
         # Try to just return updated object, redraw may be necessary
         # WARNING: Making text instances invisible seems to mess up tight
         # bounding box calculations and cause other issues. Just reset text.
@@ -550,9 +561,9 @@ class Axes(maxes.Axes):
         **kwargs,
         ):
         """
-        Called by `CartesianAxes.format`, `ProjectionAxes.format`, and
-        `PolarAxes.format`. Formats the axes title(s), the a-b-c label, row
-        and column labels, and the figure title.
+        Modify the axes title(s), the a-b-c label, row and column labels, and
+        the figure title. Called by `CartesianAxes.format`,
+        `ProjectionAxes.format`, and `PolarAxes.format`.
 
         Parameters
         ----------
@@ -760,14 +771,11 @@ class Axes(maxes.Axes):
         cmap=None, norm=None,
         interp=0, **kwargs):
         """
-        Invoked when you pass the `cmap` keyword argument to
-        `~matplotlib.axes.Axes.plot`. Draws a "colormap line",
-        i.e. a line whose color changes as a function of the parametric
-        coordinate ``values``. using the input colormap ``cmap``.
-
-        This is actually a collection of lines, added as a
-        `~matplotlib.collections.LineCollection` instance. See `this matplotlib example
-        <https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line.html>`__.
+        Draw a "colormap line" whose color changes as a function of the
+        parametric coordinate ``values`` using the input colormap ``cmap``.
+        Invoked when you pass ``cmap`` to `~matplotlib.axes.Axes.plot`.
+        Returns a `~matplotlib.collections.LineCollection` instance. See
+        `this matplotlib example <https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line.html>`__.
 
         Parameters
         ----------
@@ -851,8 +859,8 @@ class Axes(maxes.Axes):
         alpha=None, linewidth=None, edgecolor=None, facecolor=None,
         **kwargs):
         """
-        Adds colorbar as an *inset* or along the outside edge of the axes.
-        See `~proplot.wrappers.colorbar_wrapper` for details.
+        Add an *inset* colorbar or *outer* colorbar along the outside edge of
+        the axes. See `~proplot.wrappers.colorbar_wrapper` for details.
 
         Parameters
         ----------
@@ -1051,7 +1059,7 @@ class Axes(maxes.Axes):
 
     def legend(self, *args, loc=None, width=None, space=None, **kwargs):
         """
-        Adds an *inset* legend or *outer* legend along the edge of the axes.
+        Add an *inset* legend or *outer* legend along the edge of the axes.
         See `~proplot.wrappers.legend_wrapper` for details.
 
         Parameters
@@ -1134,29 +1142,31 @@ class Axes(maxes.Axes):
         return legend_wrapper(self, *args, loc=loc, **kwargs)
 
     def draw(self, renderer=None, *args, **kwargs):
-        """Adds post-processing steps before axes is drawn."""
+        """Perform post-processing steps then draw the axes."""
         self._reassign_title()
         super().draw(renderer, *args, **kwargs)
 
     def get_size_inches(self):
-        """Returns the width and the height of the axes in inches."""
+        """Return the width and the height of the axes in inches. Similar
+        to `~matplotlib.Figure.get_size_inches`."""
         width, height = self.figure.get_size_inches()
         width = width*abs(self.get_position().width)
         height = height*abs(self.get_position().height)
         return width, height
 
     def get_tightbbox(self, renderer, *args, **kwargs):
-        """Adds post-processing steps before tight bounding box is
-        calculated, and stores the bounding box as an attribute."""
+        """Perform post-processing steps, return the tight bounding box
+        surrounding axes artists, and cache the bounding box as an attribute.
+        """
         self._reassign_title()
         bbox = super().get_tightbbox(renderer, *args, **kwargs)
         self._tight_bbox = bbox
         return bbox
 
     def heatmap(self, *args, **kwargs):
-        """Calls `~matplotlib.axes.Axes.pcolormesh` and applies default formatting
-        that is suitable for heatmaps: no gridlines, no minor ticks, and major
-        ticks at the center of each grid box."""
+        """Pass all arguments to `~matplotlib.axes.Axes.pcolormesh` then apply
+        settings that are suitable for heatmaps: no gridlines, no minor ticks,
+        and major ticks at the center of each grid box."""
         obj = self.pcolormesh(*args, **kwargs)
         xlocator, ylocator = None, None
         if hasattr(obj, '_coordinates'): # be careful in case private API changes! but this is only way to infer coordinates
@@ -1173,8 +1183,8 @@ class Axes(maxes.Axes):
     def inset_axes(self, bounds, *, transform=None, zorder=5,
         zoom=True, zoom_kw=None, **kwargs):
         """
-        Like the builtin `~matplotlib.axes.Axes.inset_axes` method, but
-        draws an inset `CartesianAxes` axes and adds some options.
+        Return an inset `CartesianAxes`. This is similar to the builtin
+        `~matplotlib.axes.Axes.inset_axes` but includes some extra options.
 
         Parameters
         ----------
@@ -1228,11 +1238,11 @@ class Axes(maxes.Axes):
         lw=None, linewidth=None,
         color=None, edgecolor=None, **kwargs):
         """
-        Called automatically when using `~Axes.inset` with ``zoom=True``.
-        Like `~matplotlib.axes.Axes.indicate_inset_zoom`, but *refreshes* the
-        lines at draw-time.
-
-        This method is called from the *inset* axes, not the parent axes.
+        Draw lines indicating the zoom range of the inset axes. This is similar
+        to the builtin `~matplotlib.axes.Axes.indicate_inset_zoom` except
+        lines are *refreshed* at draw-time. This is also called automatically
+        when ``zoom=True`` is passed to `~Axes.inset_axes`. Note this method
+        must be called from the *inset* axes and not the parent axes.
 
         Parameters
         ----------
@@ -1279,7 +1289,7 @@ class Axes(maxes.Axes):
 
     def panel_axes(self, side, **kwargs):
         """
-        Returns a panel drawn along the edge of an axes.
+        Return a panel axes drawn along the edge of this axes.
 
         Parameters
         ----------
@@ -1315,8 +1325,8 @@ class Axes(maxes.Axes):
 
     @property
     def number(self):
-        """The axes number, controls a-b-c label order and order of
-        appearence in the `~proplot.subplots.axes_grid` returned by
+        """The axes number. This controls the order of a-b-c labels and the
+        order of appearence in the `~proplot.subplots.axes_grid` returned by
         `~proplot.subplots.subplots`."""
         return self._number
 
@@ -1431,7 +1441,7 @@ _twin_kwargs = (
     )
 
 _dual_doc = """
-Makes a secondary *%(x)s* axis for denoting equivalent *%(x)s*
+Return a secondary *%(x)s* axis for denoting equivalent *%(x)s*
 coordinates in *alternate units*.
 
 Parameters
@@ -1464,9 +1474,10 @@ scale_kw : dict-like, optional
 """
 
 _alt_doc = """
-Alias and more intuitive name for `~CartesianAxes.twin%(y)s`.
-The matplotlib `~matplotlib.axes.Axes.twiny` function
-generates two *x* axes with a shared ("twin") *y* axis.
+Return an axes in the same location as this one but whose %(x)s axis is on
+the %(x2)s. This is an alias and more intuitive name for
+`~CartesianAxes.twin%(y)s`, which confusingly generates two *%(x)s* axes with
+a shared ("twin") *%(y)s* axes.
 
 Parameters
 ----------
@@ -1489,7 +1500,7 @@ This function enforces the following settngs.
 """
 
 _twin_doc = """
-Mimics matplotlib's `~matplotlib.axes.Axes.twin%(y)s`.
+Mimics the builtin `~matplotlib.axes.Axes.twin%(y)s` method.
 
 Parameters
 ----------
@@ -1511,7 +1522,7 @@ This function enforces the following settngs.
 """
 
 def _parse_alt(x, kwargs):
-    """Interprets keyword args passed to all "twin axis" methods so they
+    """Interpret keyword args passed to all "twin axis" methods so they
     can be passed to Axes.format."""
     kw_bad, kw_out = {}, {}
     for key,value in kwargs.items():
@@ -1527,7 +1538,7 @@ def _parse_alt(x, kwargs):
     return kwargs
 
 def _parse_transform(transform, transform_kw):
-    """Interprets the dualx and dualy transform. Returns the forward and
+    """Interpret the dualx and dualy transform and return the forward and
     inverse transform functions and keyword args passed to the FuncScale."""
     # NOTE: Do not support arbitrary transforms, because transforms are a huge
     # group that include ND and non-invertable transformations, but transforms
@@ -1552,8 +1563,8 @@ def _parse_transform(transform, transform_kw):
     return funcscale_funcs, funcscale_kw
 
 def _parse_rcloc(x, string): # figures out string location
-    """Converts *boolean* "left", "right", "top", and "bottom" rc settings to
-    location *string*. Will return ``None`` if settings are unchanged."""
+    """Convert the *boolean* "left", "right", "top", and "bottom" rc settings
+    to a location string. Returns ``None`` if settings are unchanged."""
     if x == 'x':
         top = rc.get(f'{string}.top', context=True)
         bottom = rc.get(f'{string}.bottom', context=True)
@@ -1607,7 +1618,7 @@ class CartesianAxes(Axes):
         self._dualx_data = None
 
     def _altx_overrides(self):
-        """Applies alternate *x* axis overrides."""
+        """Apply alternate *x* axis overrides."""
         # Unlike matplotlib API, we strong arm user into certain twin axes
         # settings... doesn't really make sense to have twin axes without this
         if self._altx_child is not None: # altx was called on this axes
@@ -1627,7 +1638,7 @@ class CartesianAxes(Axes):
             self.patch.set_visible(False)
 
     def _alty_overrides(self):
-        """Applies alternate *y* axis overrides."""
+        """Apply alternate *y* axis overrides."""
         if self._alty_child is not None:
             self._shared_x_axes.join(self, self._alty_child)
             self.spines['right'].set_visible(False)
@@ -1645,7 +1656,7 @@ class CartesianAxes(Axes):
             self.patch.set_visible(False)
 
     def _datex_rotate(self):
-        """Applies default rotation to datetime axis coordinates."""
+        """Apply default rotation to datetime axis coordinates."""
         # NOTE: Rotation is done *before* horizontal/vertical alignment,
         # cannot change alignment with set_tick_params. Must apply to text
         # objects. fig.autofmt_date calls subplots_adjust, so cannot use it.
@@ -1661,7 +1672,7 @@ class CartesianAxes(Axes):
         self._datex_rotated = True # do not need to apply more than once
 
     def _dualx_overrides(self):
-        """Locks child "dual" *x* axis limits to the parent."""
+        """Lock the child "dual" *x* axis limits to the parent."""
         # Why did I copy and paste the dualx/dualy code you ask? Copy
         # pasting is bad, but so are a bunch of ugly getattr(attr)() calls
         data = self._dualx_data
@@ -1697,7 +1708,7 @@ class CartesianAxes(Axes):
         child.set_xlim(nlim)
 
     def _dualy_overrides(self):
-        """Locks child "dual" *y* axis limits to the parent."""
+        """Lock the child "dual" *y* axis limits to the parent."""
         data = self._dualy_data
         if data is None:
             return
@@ -1723,9 +1734,9 @@ class CartesianAxes(Axes):
         child.set_ylim(nlim)
 
     def _hide_labels(self):
-        """Function called at drawtime that enforces "shared" axis and
-        tick labels. If this is not called at drawtime, "shared" labels can
-        be inadvertantly turned off e.g. when the axis scale is changed."""
+        """Enforce the "shared" axis labels and axis tick labels. If this is
+        not called at drawtime, "shared" labels can be inadvertantly turned
+        off e.g. when the axis scale is changed."""
         for x in 'xy':
             # "Shared" axis and tick labels
             axis = getattr(self, x + 'axis')
@@ -1741,8 +1752,8 @@ class CartesianAxes(Axes):
             axis.set_minor_formatter(mticker.NullFormatter())
 
     def _make_twin_axes(self, *args, **kwargs):
-        """Makes a twin axes of self. This is used for twinx and twiny. Copied
-        from matplotlib in case the API changes."""
+        """Return a twin of this axes. This is used for twinx and twiny and was
+        copied from matplotlib in case the private API changes."""
         # Typically, SubplotBase._make_twin_axes is called instead of this.
         # There is also an override in axes_grid1/axes_divider.py.
         if 'sharex' in kwargs and 'sharey' in kwargs:
@@ -1754,8 +1765,8 @@ class CartesianAxes(Axes):
         return ax2
 
     def _sharex_setup(self, sharex, level):
-        """Sets up shared axes. The input is the 'parent' axes, from which
-        this one will draw its properties."""
+        """Configure shared axes accounting for panels. The input is the
+        'parent' axes, from which this one will draw its properties."""
         # Call Axes method
         super()._sharex_setup(sharex, level) # sets up panels
         if sharex in (None,self) or not isinstance(sharex, CartesianAxes):
@@ -1767,8 +1778,8 @@ class CartesianAxes(Axes):
             self._shared_x_axes.join(self, sharex)
 
     def _sharey_setup(self, sharey, level):
-        """Sets up shared axes. The input is the 'parent' axes, from which
-        this one will draw its properties."""
+        """Configure shared axes accounting for panels. The input is the
+        'parent' axes, from which this one will draw its properties."""
         # Call Axes method
         super()._sharey_setup(sharey, level)
         if sharey in (None,self) or not isinstance(sharey, CartesianAxes):
@@ -1813,9 +1824,9 @@ class CartesianAxes(Axes):
         patch_kw=None,
         **kwargs):
         """
-        Calls `Axes.format` and `Axes.context`, formats the
-        *x* and *y* axis labels, tick locations, tick labels,
-        axis scales, spine settings, and more.
+        Modify the *x* and *y* axis labels, tick locations, tick labels,
+        axis scales, spine settings, and more. Unknown keyword arguments
+        are passed to `Axes.format` and `Axes.context`.
 
         Parameters
         ----------
@@ -2315,7 +2326,7 @@ class CartesianAxes(Axes):
             super().format(**kwargs)
 
     def altx(self, **kwargs):
-        """Docstring applied below."""
+        """This docstring is replaced below."""
         # Cannot wrap twiny() because we want to use CartesianAxes, not
         # matplotlib Axes. Instead use hidden method _make_twin_axes.
         # See https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_subplots.py
@@ -2336,7 +2347,7 @@ class CartesianAxes(Axes):
         return ax
 
     def alty(self, **kwargs):
-        """Docstring applied below."""
+        """This docstring is replaced below."""
         if self._alty_child:
             raise RuntimeError('No more than *two* twin axes!')
         if self._alty_parent:
@@ -2353,7 +2364,7 @@ class CartesianAxes(Axes):
         return ax
 
     def dualx(self, transform, transform_kw=None, **kwargs):
-        """Docstring applied below."""
+        """This docstring is replaced below."""
         # The axis scale is used to transform units on the left axis, linearly
         # spaced, to units on the right axis... so the right scale must scale
         # its data with the *inverse* of this transform. We do this below.
@@ -2368,14 +2379,14 @@ class CartesianAxes(Axes):
         return self.altx(**kwargs)
 
     def dualy(self, transform, transform_kw=None, **kwargs):
-        """Docstring applied below."""
+        """This docstring is replaced below."""
         funcscale_funcs, funcscale_kw = _parse_transform(transform, transform_kw)
         self._dualy_data = (funcscale_funcs, funcscale_kw)
         self._dualy_overrides()
         return self.alty(**kwargs)
 
     def draw(self, renderer=None, *args, **kwargs):
-        """Adds post-processing steps before axes is drawn."""
+        """Perform post-processing steps then draw the axes."""
         # NOTE: This mimics matplotlib API, which calls identical
         # post-processing steps in both draw() and get_tightbbox()
         self._hide_labels()
@@ -2389,8 +2400,7 @@ class CartesianAxes(Axes):
         super().draw(renderer, *args, **kwargs)
 
     def get_tightbbox(self, renderer, *args, **kwargs):
-        """Adds post-processing steps before tight bounding box is
-        calculated."""
+        """Perform post-processing steps then return the tight bounding box."""
         self._hide_labels()
         self._altx_overrides()
         self._alty_overrides()
@@ -2402,11 +2412,11 @@ class CartesianAxes(Axes):
         return super().get_tightbbox(renderer, *args, **kwargs)
 
     def twinx(self):
-        """Docstring applied below."""
+        """This docstring is replaced below."""
         return self.alty()
 
     def twiny(self):
-        """Docstring applied below."""
+        """This docstring is replaced below."""
         return self.altx()
 
     # Add documentation
@@ -2468,10 +2478,10 @@ class PolarAxes(Axes, mproj.PolarAxes):
         thetaformatter_kw=None, rformatter_kw=None,
         **kwargs):
         """
-        Calls `Axes.format` and `Axes.context`, formats radial gridline
-        locations, gridline labels, limits, and more. All ``theta`` arguments
-        are specified in *degrees*, not radians. The below parameters are
-        specific to `PolarAxes`.
+        Modify radial gridline locations, gridline labels, limits, and more.
+        Unknown keyword arguments are passed to `Axes.format` and
+        `Axes.context`. All ``theta`` arguments are specified in *degrees*, not
+        radians. The below parameters are specific to `PolarAxes`.
 
         Parameters
         ----------
@@ -2698,9 +2708,9 @@ class ProjectionAxes(Axes):
         patch_kw=None, **kwargs,
         ):
         """
-        Calls `Axes.format` and `Axes.context`, formats the meridian
-        and parallel labels, longitude and latitude map limits, geographic
-        features, and more.
+        Modify the meridian and parallel labels, longitude and latitude map
+        limits, geographic features, and more. Unknown keyword arguments are
+        passed to `Axes.format` and `Axes.context`.
 
         Parameters
         ----------
@@ -2948,7 +2958,7 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
 
     def _format_apply(self, patch_kw, lonlim, latlim, boundinglat,
         lonlines, latlines, latmax, lonarray, latarray):
-        """Applies formatting to cartopy axes."""
+        """Apply changes to the cartopy axes."""
         # Imports
         import cartopy.feature as cfeature
         import cartopy.crs as ccrs
@@ -3135,13 +3145,12 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
         self.outline_patch.update(kw_edge)
 
     def _hide_labels(self):
-        """No-op for now. In future will hide meridian and parallel labels
-        for rectangular projections."""
+        """No-op for now. In future this will hide meridian and parallel
+        labels for rectangular projections."""
         pass
 
     def get_tightbbox(self, renderer, *args, **kwargs):
-        """Draw gridliner objects so tight bounding box algorithm will
-        incorporate gridliner labels."""
+        """Draw the gridliner objects then return the tight bounding box."""
         self._hide_labels()
         if self.get_autoscale_on() and self.ignore_existing_data_limits:
             self.autoscale_view()
@@ -3236,8 +3245,8 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
 class BasemapAxes(ProjectionAxes):
     """Axes subclass for plotting `~mpl_toolkits.basemap` projections. The
     `~mpl_toolkits.basemap.Basemap` projection instance is added as
-    the `map_projection` attribute, but this is all abstracted away -- you can use
-    `~matplotlib.axes.Axes` methods like `~matplotlib.axes.Axes.plot` and
+    the `map_projection` attribute, but this is all abstracted away -- you can
+    use `~matplotlib.axes.Axes` methods like `~matplotlib.axes.Axes.plot` and
     `~matplotlib.axes.Axes.contour` with your raw longitude-latitude data."""
     name = 'basemap'
     """The registered projection name."""
@@ -3284,7 +3293,7 @@ class BasemapAxes(ProjectionAxes):
 
     def _format_apply(self, patch_kw, lonlim, latlim, boundinglat,
         lonlines, latlines, latmax, lonarray, latarray):
-        """Applies formatting to basemap axes."""
+        """Apply changes to the basemap axes."""
         # Checks
         if (lonlim is not None or latlim is not None or
             boundinglat is not None):

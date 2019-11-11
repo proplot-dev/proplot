@@ -431,8 +431,7 @@ RC_CATEGORIES = {
 
 # Helper funcs
 def _to_points(key, value):
-    """Converts certain keys to the units "points". If "key" is passed, tests
-    that key against possible keys that accept physical units."""
+    """Convert certain rc keys to the units "points"."""
     # See: https://matplotlib.org/users/customizing.html, all props matching
     # the below strings use the units 'points', and custom categories are in
     if (isinstance(value,str) and key.split('.')[0] not in ('colorbar','subplots')
@@ -441,7 +440,7 @@ def _to_points(key, value):
     return value
 
 def _get_config_paths():
-    """Returns configuration file paths."""
+    """Return a list of configuration file paths."""
     # Local configuration
     idir = os.getcwd()
     paths = []
@@ -461,8 +460,8 @@ def _get_config_paths():
     return paths
 
 def _get_synced_params(key, value):
-    """Returns dictionaries for updating "child" properties in
-    `rcParams` and `rcParamsLong` with global property."""
+    """Return dictionaries for updating the `rcParamsShort`, `rcParamsLong`,
+    and `rcParams` properties associted with this key."""
     kw = {} # builtin properties that global setting applies to
     kw_long = {} # custom properties that global setting applies to
     kw_short = {} # short name properties
@@ -576,6 +575,8 @@ def _get_synced_params(key, value):
         kw_long[key] = value
     elif key in rcParams:
         kw[key] = value
+    else:
+        raise KeyError(f'Invalid key {key!r}.')
     for name in RC_CHILDREN.get(key, ()):
         if name in rcParamsLong:
             kw_long[name] = value
@@ -587,7 +588,7 @@ def _get_synced_params(key, value):
 # Main class
 #-----------------------------------------------------------------------------#
 def _sanitize_key(key):
-    """Converts the key to a palatable value."""
+    """Convert the key to a palatable value."""
     if not isinstance(key, str):
         raise KeyError(f'Invalid key {key!r}. Must be string.')
     if '.' not in key and key not in rcParamsShort:
@@ -661,42 +662,41 @@ class rc_configurator(object):
                     raise RuntimeError(f'{file!r} has invalid key {key!r}.')
 
     def __enter__(self):
-        """Applies settings from the most recent context object."""
+        """Apply settings from the most recent context block."""
         *_, kwargs, cache, restore = self._context[-1] # missing arg is previous mode
-        def _set_item(rcdict, key, value):
-            restore[key] = rcdict[key]
-            rcdict[key] = cache[key] = value
+        def _update(rcdict, newdict):
+            for key,value in newdict.items():
+                restore[key] = rcdict[key]
+                rcdict[key] = cache[key] = value
         for key,value in kwargs.items():
             rc_short, rc_long, rc = _get_synced_params(key, value)
-            for ikey,ivalue in rc_short.items():
-                _set_item(rcParamsShort, key, value)
-            for ikey, ivalue in rc_long.items():
-                _set_item(rcParamsLong, ikey, ivalue)
-            for ikey, ivalue in rc.items():
-                _set_item(rcParams, ikey, ivalue)
+            _update(rcParamsShort, rc_short)
+            _update(rcParamsLong, rc_long)
+            _update(rcParams, rc)
 
     def __exit__(self, *args):
-        """Restores configurator cache to initial state."""
+        """Restore settings from the most recent context block."""
         *_, restore = self._context[-1]
         for key,value in restore.items():
             self[key] = value
         del self._context[-1]
 
     def __delitem__(self, *args):
-        """Pseudo-immutability."""
+        """Raise an error. This enforces pseudo-immutability."""
         raise RuntimeError('rc settings cannot be deleted.')
 
     def __delattr__(self, *args):
-        """Pseudo-immutability."""
+        """Raise an error. This enforces pseudo-immutability."""
         raise RuntimeError('rc settings cannot be deleted.')
 
     def __getattr__(self, attr):
-        """Invokes `~rc_configurator.__getitem__`."""
+        """Pass the attribute to `~rc_configurator.__getitem__` and return
+        the result."""
         return self[attr]
 
     def __getitem__(self, key):
-        """Returns `rcParams <https://matplotlib.org/users/customizing.html>`__,
-        :ref:`rcParamsLong`, and :ref:`rcParamsShort` settings."""
+        """Return the relevant `rcParams <https://matplotlib.org/users/customizing.html>`__,
+        :ref:`rcParamsLong`, and :ref:`rcParamsShort` setting."""
         key = _sanitize_key(key)
         for kw in (rcParamsShort, rcParamsLong, rcParams):
             try:
@@ -706,44 +706,21 @@ class rc_configurator(object):
         raise KeyError(f'Invalid property name {key!r}.')
 
     def __setattr__(self, attr, value):
-        """Invokes `~rc_configurator.__setitem__`."""
+        """Pass the attribute and value to `~rc_configurator.__setitem__`."""
         self[attr] = value
 
     def __setitem__(self, key, value):
-        """Sets `rcParams <https://matplotlib.org/users/customizing.html>`__,
-        :ref:`rcParamsLong`, and :ref:`rcParamsShort` settings."""
+        """Modify the relevant `rcParams <https://matplotlib.org/users/customizing.html>`__,
+        :ref:`rcParamsLong`, and :ref:`rcParamsShort` setting(s)."""
         rc_short, rc_long, rc = _get_synced_params(key, value)
-        for ikey, ivalue in rc_short.items():
-            rcParamsShort[ikey] = ivalue
-        for ikey, ivalue in rc_long.items():
-            rcParamsLong[ikey] = ivalue
-        for ikey, ivalue in rc.items():
-            rcParams[ikey] = ivalue
-
-
-
-        if '.' not in key and key not in rcParamsShort:
-            key = RC_NODOTS.get(key, key)
-        if key == 'title.pad':
-            key = 'axes.titlepad'
-        if key in rcParamsShort:
-            rc, rc_long = _get_synced_params(key, value)
-            rcParamsShort[key] = value
-            for ikey, ivalue in rc.items():
-                rcParams[ikey] = ivalue
-            for ikey, ivalue in rc_long.items():
-                rcParamsLong[ikey] = ivalue
-        elif key in rcParamsLong:
-            rcParamsLong[key] = _to_points(key, value)
-        elif key in rcParams:
-            rcParams[key] = _to_points(key, value)
-        else:
-            raise KeyError(f'Invalid key {key!r}.')
+        rcParamsShort.update(rc_short)
+        rcParamsLong.update(rc_long)
+        rcParams.update(rc)
 
     def _get_item(self, key, mode=None):
-        """Ax with `~rc_configurator.__getitem__`, but limits the search
-        based on the context mode, and returns ``None`` if the key is not
-        found in the searched dictionaries."""
+        """As with `~rc_configurator.__getitem__` but the search is limited
+        based on the context mode and ``None`` is returned if the key is not
+        found in the dictionaries."""
         if mode is None:
             mode = min((context[0] for context in self._context), default=0)
         caches = (context[2] for context in self._context)
@@ -769,8 +746,8 @@ class rc_configurator(object):
 
     def category(self, cat, *, context=False):
         """
-        Returns a dictionary of settings belonging to the indicated category,
-        i.e. settings beginning with the substring ``cat + '.'``.
+        Return a dictionary of settings beginning with the substring
+        ``cat + '.'``.
 
         Parameters
         ----------
@@ -797,16 +774,16 @@ class rc_configurator(object):
 
     def context(self, *args, mode=0, **kwargs):
         """
-        Temporarily modifies settings in a "with as" block,
-        used by ProPlot internally but may also be useful for power users.
+        Temporarily modify the rc settings in a "with as" block.
 
-        This function was invented to prevent successive calls to
+        This is used by ProPlot internally but may also be useful for power
+        users. It was invented to prevent successive calls to
         `~proplot.axes.Axes.format` from constantly looking up and
         re-applying unchanged settings. Testing showed that these gratuitous
         `rcParams <https://matplotlib.org/users/customizing.html>`__
         lookups and artist updates increased runtime by seconds, even for
         relatively simple plots. It also resulted in overwriting previous
-        rc changes with the default values on successive calls to
+        rc changes with the default values upon subsequent calls to
         `~proplot.axes.Axes.format`.
 
         Parameters
@@ -866,7 +843,7 @@ class rc_configurator(object):
 
     def dict(self):
         """
-        Returns a dictionary of all settings.
+        Return a raw dictionary of all settings.
         """
         output = {}
         for key in sorted((*rcParamsShort, *rcParamsLong, *rcParams)):
@@ -875,7 +852,7 @@ class rc_configurator(object):
 
     def get(self, key, *, context=False):
         """
-        Returns a setting.
+        Return a single setting.
 
         Parameters
         ----------
@@ -890,13 +867,13 @@ class rc_configurator(object):
 
     def fill(self, props, *, context=False):
         """
-        Returns a dictionary filled with `rc` settings, used internally to build
-        dictionaries for updating `~matplotlib.artist.Artist` instances.
+        Return a dictionary filled with settings whose names match the
+        string values in the input dictionary.
 
         Parameters
         ----------
         props : dict-like
-            Dictionary whose values are names of `rc` settings. The values
+            Dictionary whose values are names of settings. The values
             are replaced with the corresponding property only if
             `~rc_configurator.__getitem__` does not return ``None``. Otherwise,
             that key, value pair is omitted from the output dictionary.
@@ -915,21 +892,23 @@ class rc_configurator(object):
 
     def items(self):
         """
-        Iterates over all setting names and values. Same as `dict.items`.
+        Return an iterator that loops over all setting names and values.
+        Same as `dict.items`.
         """
         for key in self:
             yield key, self[key]
 
     def keys(self):
         """
-        Iterates over all setting names. Same as `dict.keys`.
+        Return an iterator that loops over all setting names.
+        Same as `dict.items`.
         """
         for key in self:
             yield key
 
     def update(self, *args, **kwargs):
         """
-        Bulk updates settings.
+        Update multiple settings at once.
 
         Parameters
         ----------
@@ -968,7 +947,7 @@ class rc_configurator(object):
 
     def reset(self, **kwargs):
         """
-        Resets the configurator to its initial state.
+        Reset the configurator to its initial state.
 
         Parameters
         ----------
@@ -979,7 +958,8 @@ class rc_configurator(object):
 
     def values(self):
         """
-        Iterates over all setting values. Same as `dict.values`.
+        Return an iterator that loops over all setting values.
+        Same as `dict.values`.
         """
         for key in self:
             yield self[key]
@@ -995,14 +975,13 @@ See the `~proplot.rctools` documentation for details."""
 @_timer
 def notebook_setup():
     """
-    Sets up your iPython workspace, called on import if :rcraw:`nbsetup` is
-    ``True``. For all iPython sessions, passes :rcraw:`autoreload` to the useful
+    Set up the iPython workspace. This is called on import if :rcraw:`nbsetup`
+    is ``True``. For all iPython sessions, this passes :rcraw:`autoreload` to the useful
     `autoreload <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html>`__
-    extension. For iPython *notebook* sessions, results in higher-quality inline figures
-    and passes :rcraw:`autosave` to the `autosave <https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__
+    extension. For *notebook* iPython sessions, this also configures the inline
+    backend for higher quality figures and passes :rcraw:`autosave` to the
+    `autosave <https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__
     extension.
-
-    See the `~proplot.rctools` documentation for details.
     """
     # Make sure we are in session
     ipython = get_ipython()

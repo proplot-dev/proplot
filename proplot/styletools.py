@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 """
-Registers colormaps, color cycles, and color string names with `register_cmaps`,
-`register_cycles`, and `register_colors`. Defines the `Colormap` and `Cycle`
-tools for creating new colormaps and color cycles. Defines helpful new
-`~matplotlib.colors.Normalize` and `~matplotlib.colors.Colormap` classes.
-Adds tools for visualizing colorspaces, colormaps, color names, and color
-cycles.
-
-See the :ref:`Color usage` section for details.
+This page includes new colormap and dictionary classes,
+functions for loading colors, fonts, colormaps, and color cycles,
+and the constructor functions `Colormap`, `Cycle`, and
+`Norm` used for generating arbitrary colormaps, color cycles, and colornmap
+normalizers. It also includes various ``show_`` functions for visualizing
+the available colors, fonts, colormaps, color cycles, colorspaces, and
+colormap channel values. See the :ref:`Color usage` section for details.
 """
 # Potential bottleneck, loading all this stuff?  *No*. Try using @timer on
 # register functions, turns out worst is colormap one at 0.1 seconds. Just happens
@@ -200,7 +199,7 @@ BASE_COLORS = {
 # Color manipulation functions
 #-----------------------------------------------------------------------------#
 def _get_space(space):
-    """Verify requested colorspace is valid."""
+    """Return a sanitized version of the colorspace name."""
     space = space.lower()
     if space in ('hpluv', 'hsluv'):
         space = space[:3]
@@ -209,7 +208,7 @@ def _get_space(space):
     return space
 
 def _get_channel(color, channel, space='hsl'):
-    """Gets hue, saturation, or luminance channel value from registered
+    """Return the hue, saturation, or luminance channel value from registered
     string color name. The color name `color` can optionally be a string
     with the format ``'color+x'`` or ``'color-x'``, where `x` specifies
     the offset from the channel value."""
@@ -234,7 +233,8 @@ def _get_channel(color, channel, space='hsl'):
     return offset + to_xyz(to_rgb(color), space)[channel]
 
 def shade(color, scale=0.5):
-    """Changes the "shade" of a color by scaling its luminance channel by `scale`."""
+    """"Shade" the input color. Its luminance channel is multiplied by
+    `scale`."""
     color = to_rgb(color) # ensure is valid color
     color = [*colormath.rgb_to_hsl(*color)]
     color[2] = max(0, min(color[2]*scale, 100)) # multiply luminance by this value
@@ -242,7 +242,8 @@ def shade(color, scale=0.5):
     return tuple(color)
 
 def saturate(color, scale=0.5):
-    """Changes the saturation of a color by scaling its saturation channel by `scale`."""
+    """"Saturate" the input color. Its saturation channel is multiplied by
+    `scale`."""
     color = to_rgb(color) # ensure is valid color
     color = [*colormath.rgb_to_hsl(*color)]
     color[1] = max(0, min(color[1]*scale, 100)) # multiply luminance by this value
@@ -250,11 +251,21 @@ def saturate(color, scale=0.5):
     return tuple(color)
 
 def to_rgb(color, space='rgb', cycle=None):
-    """Generalization of matplotlib's `~matplotlib.colors.to_rgb`. Translates
-    colors from *any* colorspace to RGB, converts color strings to RGB
-    tuples, and transforms color cycle strings (e.g. ``'C0'``, ``'C1'``, ``'C2'``)
-    into their corresponding RGB colors using the input `cycle`, which defaults
-    to the current color cycler. Inverse of `to_xyz`."""
+    """
+    Return the RGB tuple matching the input color. Inverse of `to_xyz`.
+    This is a generalization of matplotlib's `~matplotlib.colors.to_rgb`.
+
+    Parameters
+    ----------
+    color : str or length-3 list
+        The color specification or container of channel values.
+    space : {'rgb', 'hsv', 'hpl', 'hsl', 'hcl'}, optional
+        The colorspace for the input channel values. Ignored unless `color` is
+        an container of numbers.
+    cycle : str or list, optional
+        The registered color cycle name or a list of colors. Ignored unless
+        `color` is a color cycle string, e.g. ``'C0'``, ``'C1'``, ...
+    """
     # Convert color cycle strings
     if isinstance(color, str) and re.match('^C[0-9]$', color):
         if isinstance(cycle, str):
@@ -300,8 +311,16 @@ def to_rgb(color, space='rgb', cycle=None):
     return color
 
 def to_xyz(color, space):
-    """Translates from the RGB colorspace to colorspace `space`. Inverse
-    of `to_rgb`."""
+    """Return the channel values matching the input RGB color. This is the
+    inverse of `to_rgb`.
+
+    Parameters
+    ----------
+    color : color-spec
+        The RGB color. Interpreted by `to_rgb`.
+    space : {'rgb', 'hsv', 'hpl', 'hsl', 'hcl'}, optional
+        The colorspace for the output channel values.
+    """
     # Run tuple conversions
     # NOTE: Don't pass color tuple, because we may want to permit out-of-bounds RGB values to invert conversion
     color = to_rgb(color)
@@ -324,9 +343,9 @@ def to_xyz(color, space):
 #-----------------------------------------------------------------------------#
 def _clip_colors(colors, clip=True, gray=0.2):
     """
-    Clips impossible colors rendered in an HSl-to-RGB colorspace conversion.
+    Clip impossible colors rendered in an HSL-to-RGB colorspace conversion.
     Used by `PerceptuallyUniformColormap`. If `mask` is ``True``, impossible
-    colors are masked out
+    colors are masked out.
 
     Parameters
     ----------
@@ -390,9 +409,9 @@ def _make_segmentdata_array(values, ratios=None):
 
 def make_mapping_array(N, data, gamma=1.0, inverse=False):
     r"""
-    Mostly a copy of `~matplotlib.colors.makeMappingArray`, but allows
+    Similar to `~matplotlib.colors.makeMappingArray` but permits
     *circular* hue gradations along 0-360, disables clipping of
-    out-of-bounds channel values, and with fancier "gamma" scaling.
+    out-of-bounds channel values, and uses fancier "gamma" scaling.
 
     Parameters
     ----------
@@ -498,7 +517,7 @@ class _Colormap():
     """Mixin class used to add some helper methods."""
     def _get_data(self, ext):
         """
-        Returns a string containing the colormap colors for saving.
+        Return a string containing the colormap colors for saving.
 
         Parameters
         ----------
@@ -524,7 +543,7 @@ class _Colormap():
 
     def _parse_path(self, path, dirname='.', ext=''):
         """
-        Parses user input path.
+        Parse the user input path.
 
         Parameters
         ----------
@@ -577,7 +596,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
     def concatenate(self, *args, ratios=1, name=None, **kwargs):
         """
-        Appends arbitrary colormaps onto this one.
+        Append arbitrary colormaps onto this one.
 
         Parameters
         ----------
@@ -675,7 +694,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
     def updated(self, name=None, segmentdata=None, N=None,
         gamma=None, cyclic=None):
         """
-        Returns a new colormap, with relevant properties copied from this one
+        Return a new colormap, with relevant properties copied from this one
         if they were not provided as keyword arguments.
 
         Parameters
@@ -700,7 +719,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
     def reversed(self, name=None, **kwargs):
         """
-        Returns a reversed copy of the colormap, as in
+        Return a reversed copy of the colormap, as in
         `~matplotlib.colors.LinearSegmentedColormap`.
 
         Parameters
@@ -731,7 +750,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
     def save(self, path=None):
         """
-        Saves the colormap data to a file.
+        Save the colormap data to a file.
 
         Parameters
         ----------
@@ -772,14 +791,14 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
     def set_cyclic(self, b):
         """
-        Accepts boolean value that sets whether this colormap is
-        "cyclic". See `LinearSegmentedColormap` for details.
+        Set whether this colormap is "cyclic". See `LinearSegmentedColormap`
+        for details.
         """
         self._cyclic = bool(b)
 
     def shifted(self, shift=None, name=None, **kwargs):
         """
-        Returns a cyclically shifted copy of the colormap.
+        Return a cyclically shifted copy of the colormap.
 
         Parameters
         ----------
@@ -815,7 +834,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
     def sliced(self, left=None, right=None, cut=None, name=None, **kwargs):
         """
-        Returns a sliced copy of the colormap.
+        Return a sliced copy of the colormap.
 
         Parameters
         ----------
@@ -893,7 +912,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
     @staticmethod
     def from_list(name, colors, *args, **kwargs):
         """
-        Makes a linear segmented colormap from a list of colors. See
+        Make a linear segmented colormap from a list of colors. See
         `~matplotlib.colors.LinearSegmentedColormap`.
 
         Parameters
@@ -939,7 +958,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
 
     def concatenate(self, *args, name=None, N=None, **kwargs):
         """
-        Appends arbitrary colormaps onto this colormap.
+        Append arbitrary colormaps onto this colormap.
 
         Parameters
         ----------
@@ -964,7 +983,8 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
 
     def updated(self, colors=None, name=None, N=None):
         """
-        Creates copy of the colormap.
+        Return a new colormap, with relevant properties copied from this one
+        if they were not provided as keyword arguments.
 
         Parameters
         ----------
@@ -984,7 +1004,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
 
     def save(self, path=None):
         """
-        Saves the colormap data to a file.
+        Save the colormap data to a file.
 
         Parameters
         ----------
@@ -1013,7 +1033,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
 
     def shifted(self, shift=None, name=None):
         """
-        Returns a copy of the colormap with cyclically shifted colors.
+        Return a copy of the colormap with cyclically shifted colors.
 
         Parameters
         ----------
@@ -1034,7 +1054,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
 
     def sliced(self, left=None, right=None, name=None):
         """
-        Returns a copy of the colormap containing a subselection of the
+        Return a copy of the colormap containing a subselection of the
         original colors.
 
         Parameters
@@ -1059,8 +1079,9 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
 
 class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
     """Similar to `~matplotlib.colors.LinearSegmentedColormap`, but instead
-    of varying the RGB channels, we vary hue, saturation, and luminance in
-    either the HCL colorspace or the HSLuv or HPLuv scalings of HCL."""
+    of varying the RGB channels, the hue, saturation, and luminance channels
+    are varied across the HCL colorspace or the HSLuv or HPLuv scalings of
+    HCL."""
     def __init__(self,
         name, segmentdata, N=None, space=None, clip=True,
         gamma=None, gamma1=None, gamma2=None, cyclic=False,
@@ -1149,8 +1170,8 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         super().__init__(name, segmentdata, N, gamma=1.0, cyclic=cyclic)
 
     def _init(self):
-        """As with `~matplotlib.colors.LinearSegmentedColormap`, but converts
-        each value in the lookup table from 'input' to RGB."""
+        """As with `~matplotlib.colors.LinearSegmentedColormap`, but convert
+        each value in the lookup table from ``self._space`` to RGB."""
         # First generate the lookup table
         channels = ('hue','saturation','luminance')
         inverses = (False, False, True) # gamma weights *low chroma* and *high luminance*
@@ -1172,13 +1193,13 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         self._lut[:,:3] = _clip_colors(self._lut[:,:3], self._clip)
 
     def _resample(self, N):
-        """Returns a new colormap with *N* entries."""
+        """Return a new colormap with *N* entries."""
         return self.updated(N=N)
 
     def updated(self, name=None, segmentdata=None, N=None, space=None,
         clip=None, gamma=None, gamma1=None, gamma2=None, cyclic=None):
         """
-        Returns a new colormap, with relevant properties copied from this one
+        Return a new colormap, with relevant properties copied from this one
         if they were not provided as keyword arguments.
 
         Parameters
@@ -1214,7 +1235,7 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
     @staticmethod
     def from_color(name, color, fade=None, space='hsl', **kwargs):
         """
-        Returns a monochromatic "sequential" colormap that blends from white
+        Return a monochromatic "sequential" colormap that blends from white
         or near-white to the input color.
 
         Parameters
@@ -1254,7 +1275,7 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         hue=0, saturation=100, luminance=(100, 20), alpha=None,
         ratios=None, **kwargs):
         """
-        Makes a `~PerceptuallyUniformColormap` by specifying the hue,
+        Make a `~PerceptuallyUniformColormap` by specifying the hue,
         saturation, and luminance transitions individually.
 
         Parameters
@@ -1300,7 +1321,7 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
     @staticmethod
     def from_list(name, colors, ratios=None, **kwargs):
         """
-        Makes a `PerceptuallyUniformColormap` from a list of RGB colors.
+        Make a `PerceptuallyUniformColormap` from a list of RGB colors.
 
         Parameters
         ----------
@@ -1337,7 +1358,7 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
 
     def set_gamma(self, gamma=None, gamma1=None, gamma2=None):
         """
-        Sets new gamma value(s) and regenerates the colormap.
+        Modify the gamma value(s) and refresh the lookup table.
 
         Parameters
         ----------
@@ -1383,11 +1404,12 @@ class CmapDict(dict):
             self[key] = value
 
     def __getitem__(self, key):
-        """Retrieves case-insensitive colormap name. If the name ends in
-        ``'_r'``, returns the result of ``cmap.reversed()`` for the colormap
-        with name ``key[:-2]``. Also returns reversed diverging colormaps
-        when their "reversed name" is requested -- for example, ``'BuRd'`` is
-        equivalent to ``'RdBu_r'``."""
+        """Retrieve the colormap associated with the sanitized key name. The
+        key name is case insensitive. If it ends in ``'_r'``, the result of
+        ``cmap.reversed()`` is returned for the colormap registered under
+        the name ``key[:-2]``. Reversed diverging colormaps can be requested
+        with their "reversed" name -- for example, ``'BuRd'`` is equivalent
+        to ``'RdBu_r'``."""
         key = self._sanitize_key(key, mirror=True)
         reverse = (key[-2:] == '_r')
         if reverse:
@@ -1401,7 +1423,7 @@ class CmapDict(dict):
         return value
 
     def __setitem__(self, key, item):
-        """Stores the colormap under its lowercase name. If the colormap is
+        """Store the colormap under its lowercase name. If the colormap is
         a matplotlib `~matplotlib.colors.ListedColormap` or
         `~matplotlib.colors.LinearSegmentedColormap`, it is converted to the
         ProPlot `ListedColormap` or `LinearSegmentedColormap` subclass."""
@@ -1421,7 +1443,7 @@ class CmapDict(dict):
         return super().__setitem__(key, item)
 
     def __contains__(self, item):
-        """Tests membership for sanitized key name."""
+        """Test for membership using the sanitized colormap name."""
         try: # by default __contains__ uses object.__getitem__ and ignores overrides
             self.__getitem__(item)
             return True
@@ -1429,7 +1451,7 @@ class CmapDict(dict):
             return False
 
     def _sanitize_key(self, key, mirror=True):
-        """Sanitizes key name."""
+        """Return the sanitized colormap name."""
         if not isinstance(key, str):
             raise KeyError(f'Invalid key {key!r}. Key must be a string.')
         key = key.lower()
@@ -1453,17 +1475,17 @@ class CmapDict(dict):
         return key
 
     def get(self, key, *args):
-        """Retrieves sanitized key name."""
+        """Retrieve the sanitized colormap name."""
         key = self._sanitize_key(key, mirror=True)
         return super().get(key, *args)
 
     def pop(self, key, *args):
-        """Pops sanitized key name."""
+        """Pop the sanitized colormap name."""
         key = self._sanitize_key(key, mirror=True)
         return super().pop(key, *args)
 
     def update(self, *args, **kwargs):
-        """Replicates dictionary update with sanitized key names."""
+        """Update the dictionary with sanitized colormap names."""
         if len(args) == 1:
             kwargs.update(args[0])
         elif len(args) > 1:
@@ -1518,8 +1540,8 @@ class ColorCacheDict(dict):
 # Colormap and cycle constructor functions
 #-----------------------------------------------------------------------------#
 def colors(*args, **kwargs):
-    """Identical to `Cycle`, but returns a list of colors instead of
-    a `~cycler.Cycler` object."""
+    """Pass all arguments to `Cycle` and return the list of colors from
+    the cycler object."""
     cycle = Cycle(*args, **kwargs)
     return [dict_['color'] for dict_ in cycle]
 
@@ -1529,10 +1551,10 @@ def Colormap(*args, name=None, listmode='perceptual',
     save=False, save_kw=None,
     **kwargs):
     """
-    Generates or retrieves colormaps and optionally merges and manipulates
-    them in a variety of ways; used to interpret the `cmap` and `cmap_kw`
-    arguments when passed to any plotting method wrapped by
-    `~proplot.wrappers.cmap_wrapper`.
+    Generate a new colormap, retrieve a registered colormap, or merge and
+    manipulate colormap(s) in a variety of ways. This is used to interpret
+    the `cmap` and `cmap_kw` arguments when passed to any plotting method
+    wrapped by `~proplot.wrappers.cmap_changer`.
 
     Parameters
     ----------
@@ -1880,9 +1902,9 @@ def Cycle(*args, N=None, name=None,
 #-----------------------------------------------------------------------------#
 def Norm(norm, levels=None, **kwargs):
     """
-    Returns an arbitrary `~matplotlib.colors.Normalize` instance, used to
-    interpret the `norm` and `norm_kw` arguments when passed to any plotting
-    method wrapped by `~proplot.wrappers.cmap_wrapper`.
+    Return an arbitrary `~matplotlib.colors.Normalize` instance. This is
+    used to interpret the `norm` and `norm_kw` arguments when passed to any
+    plotting method wrapped by `~proplot.wrappers.cmap_changer`.
 
     Parameters
     ----------
@@ -2058,7 +2080,7 @@ class BinNorm(mcolors.BoundaryNorm):
         self.N = levels.size
 
     def __call__(self, xq, clip=None):
-        """Normalizes data values to the range 0-1."""
+        """Normalize data values to 0-1."""
         # Follow example of LinearSegmentedNorm, but perform no interpolation,
         # just use searchsorted to bin the data.
         norm_clip = self._norm_clip
@@ -2070,7 +2092,7 @@ class BinNorm(mcolors.BoundaryNorm):
         return ma.array(yq, mask=mask)
 
     def inverse(self, yq):
-        """Raises RuntimeError. Inversion after discretization is impossible."""
+        """Raise an error. Inversion after discretization is impossible."""
         raise RuntimeError('BinNorm is not invertible.')
 
 #-----------------------------------------------------------------------------#
@@ -2080,12 +2102,13 @@ class LinearSegmentedNorm(mcolors.Normalize):
     """
     This is the default normalizer paired with `BinNorm` whenever `levels`
     are non-linearly spaced. The normalized value is linear with respect to
-    its **average index** in the `levels` vector, allowing uniform color transitions
-    across **arbitrarily spaced** monotonically increasing values.
+    its average index in the `levels` vector, allowing uniform color
+    transitions across arbitrarily spaced monotonically increasing values.
 
-    It accomplishes this following the example of the `~matplotlib.colors.LinearSegmentedColormap`
-    source code, by performing efficient, vectorized linear interpolation
-    between the provided boundary levels.
+    It accomplishes this following the example of the
+    `~matplotlib.colors.LinearSegmentedColormap` source code, by performing
+    efficient, vectorized linear interpolation between the provided boundary
+    levels.
 
     Can be used by passing ``norm='segmented'`` or ``norm='segments'`` to any
     command accepting ``cmap``. The default midpoint is zero.
@@ -2114,7 +2137,7 @@ class LinearSegmentedNorm(mcolors.Normalize):
         self._y = np.linspace(0, 1, len(levels))
 
     def __call__(self, xq, clip=None):
-        """Normalizes data values to the range 0-1. Inverse operation
+        """Normalize the data values to 0-1. Inverse
         of `~LinearSegmentedNorm.inverse`."""
         # Follow example of make_mapping_array for efficient, vectorized
         # linear interpolation across multiple segments.
@@ -2173,8 +2196,7 @@ class MidpointNorm(mcolors.Normalize):
         self._midpoint = midpoint
 
     def __call__(self, xq, clip=None):
-        """Normalizes data values to the range 0-1. Inverse operation of
-        `~MidpointNorm.inverse`."""
+        """Normalize data values to 0-1. Inverse of `~MidpointNorm.inverse`."""
         # Get middle point in 0-1 coords, and value
         # Notes:
         # * Look up these three values in case vmin/vmax changed; this is
@@ -2217,7 +2239,7 @@ class MidpointNorm(mcolors.Normalize):
 # Functions for loading and visualizing stuff
 #-----------------------------------------------------------------------------#
 def _get_data_paths(dirname):
-    """Returns configuration file paths."""
+    """Return the data directory paths."""
     # Home configuration
     paths = []
     ipath = os.path.join(os.path.expanduser('~'), '.proplot', dirname)
@@ -2230,9 +2252,7 @@ def _get_data_paths(dirname):
     return paths
 
 def _load_cmap(filename, listed=False):
-    """
-    Helper function that reads generalized colormap and color cycle files.
-    """
+    """Read generalized colormap and color cycle files."""
     filename = os.path.expanduser(filename)
     if os.path.isdir(filename): # no warning
         return
@@ -2344,7 +2364,7 @@ def _load_cmap(filename, listed=False):
 @_timer
 def register_cmaps():
     """
-    Adds colormaps packaged with ProPlot or saved to the ``~/.proplot/cmaps``
+    Register colormaps packaged with ProPlot or saved to the ``~/.proplot/cmaps``
     folder. This is called on import. Maps are registered according to their
     filenames -- for example, ``name.xyz`` will be registered as ``'name'``.
     Use `show_cmaps` to generate a table of the registered colormaps
@@ -2385,7 +2405,7 @@ def register_cmaps():
 @_timer
 def register_cycles():
     """
-    Adds color cycles packaged with ProPlot or saved to the ``~/.proplot/cycles``
+    Register color cycles packaged with ProPlot or saved to the ``~/.proplot/cycles``
     folder. This is called on import. Cycles are registered according to their
     filenames -- for example, ``name.hex`` will be registered under the name
     ``'name'`` as a `~matplotlib.colors.ListedColormap` map (see `Cycle` for
@@ -2417,10 +2437,11 @@ def register_cycles():
 @_timer
 def register_colors(nmax=np.inf):
     """
-    Reads full database of crowd-sourced XKCD color names and official
-    Crayola color names, then filters them to be sufficiently "perceptually
-    distinct" in the HCL colorspace. This is called on import. Use `show_colors`
-    to generate a table of the resulting filtered colors.
+    Register colors from the crowd-sourced XKCD color names database and
+    the official Crayola color names. Too-similar colors are omitted by
+    ensuring they are sufficiently distinct in the perceptually uniform HCL
+    colorspace. This is called on import. Use `show_colors` to generate a
+    table of the resulting filtered colors.
     """
     # Reset native colors dictionary and add some default groups
     # Add in CSS4 so no surprises for user, but we will not encourage this
@@ -2488,10 +2509,9 @@ def register_colors(nmax=np.inf):
 
 @_timer
 def register_fonts():
-    """Adds fonts packaged with ProPlot or saved to the ``~/.proplot/fonts``
-    folder. Also deletes the font cache, which may cause delays.
-    Detects ``.ttf`` and ``.otf`` files -- see `this link
-    <https://gree2.github.io/python/2015/04/27/python-change-matplotlib-font-on-mac>`__
+    """Add fonts packaged with ProPlot or saved to the ``~/.proplot/fonts``
+    folder, if they are not already added. Detects ``.ttf`` and ``.otf`` files
+    -- see `this link <https://gree2.github.io/python/2015/04/27/python-change-matplotlib-font-on-mac>`__
     for a guide on converting various other font file types to ``.ttf`` and
     ``.otf`` for use with matplotlib."""
     # Add proplot path to TTFLIST and rebuild cache
@@ -2551,10 +2571,9 @@ def register_fonts():
 def show_channels(*args, N=100, rgb=True, scalings=True, minhue=0, width=100,
     aspect=1, axwidth=1.7):
     """
-    Shows how arbitrary colormap(s) vary with respect to the hue, chroma,
-    luminance, HSL saturation, and HPL saturation channels, and optionally
-    the red, blue and green channels. Adapted from
-    `this example <https://matplotlib.org/3.1.0/tutorials/colors/colormaps.html#lightness-of-matplotlib-colormaps>`__.
+    Visualize how the input colormap(s) vary with respect to the hue, chroma,
+    and luminance channels. Adapted from `this example
+    <https://matplotlib.org/3.1.0/tutorials/colors/colormaps.html#lightness-of-matplotlib-colormaps>`__.
 
     Parameters
     ----------
@@ -2669,7 +2688,7 @@ def show_channels(*args, N=100, rgb=True, scalings=True, minhue=0, width=100,
 
 def show_colorspaces(luminance=None, saturation=None, hue=None):
     """
-    Generates hue-saturation, hue-luminance, and luminance-saturation
+    Generate hue-saturation, hue-luminance, and luminance-saturation
     cross-sections for the HCL, HSLuv, and HPLuv colorspaces.
 
     Parameters
@@ -2747,7 +2766,7 @@ def show_colorspaces(luminance=None, saturation=None, hue=None):
 
 def show_colors(nhues=17, minsat=0.2):
     """
-    Visualizes the registered color names in two figures. Adapted from
+    Generate two tables of the registered color names. Adapted from
     `this example <https://matplotlib.org/examples/color/named_colors.html>`_.
 
     Parameters
@@ -2857,15 +2876,14 @@ def show_colors(nhues=17, minsat=0.2):
 
 def show_cmaps(*args, N=256, length=4.0, width=0.2, unknown='User'):
     """
-    Visualizes all registered colormaps, or the list of colormap names if
-    positional arguments are passed. Adapted from `this example
+    Generate a table of the registered colormaps or the input colormaps.
+    Adapted from `this example
     <http://matplotlib.org/examples/color/colormaps_reference.html>`__.
 
     Parameters
     ----------
     *args : colormap-spec, optional
-        Positional arguments are colormap names or objects. Default is
-        all of the registered colormaps.
+        Colormap names or objects.
     N : int, optional
         The number of levels in each colorbar.
     length : float or str, optional
@@ -2944,14 +2962,13 @@ def show_cmaps(*args, N=256, length=4.0, width=0.2, unknown='User'):
 
 def show_cycles(*args, axwidth=1.5):
     """
-    Visualizes all registered color cycles, or the list of cycle names if
-    positional arguments are passed.
+    Generate a table of registered color cycle names or the input color
+    cycles.
 
     Parameters
     ----------
     *args : colormap-spec, optional
-        Positional arguments are cycle names or objects. Default is
-        all of the registered colormaps.
+        Cycle names or objects.
     axwidth : str or float, optional
         Average width of each subplot. Units are interpreted by `~proplot.utils.units`.
 
@@ -2993,8 +3010,10 @@ def show_cycles(*args, axwidth=1.5):
     return fig
 
 def show_fonts(fonts=None, size=12):
-    """Displays table of the fonts installed by ProPlot or in the user-supplied
-    `fonts` list. Use `size` to change the fontsize for fonts shown in the figure."""
+    """
+    Generate a table of the fonts installed by ProPlot or by the user.
+    Use `size` to change the fontsize for fonts shown in the figure.
+    """
     from . import subplots
     fonts = ('DejaVu Sans', *fonts_proplot)
     math = r'(0) + {1} - [2] * <3> / 4,0 $\geq\gg$ 5.0 $\leq\ll$ ~6 $\times$ 7 $\equiv$ 8 $\approx$ 9 $\propto$'
