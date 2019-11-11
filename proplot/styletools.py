@@ -417,7 +417,7 @@ def _clip_colors(colors, clip=True, gray=0.2):
     #         warnings.warn(f'{message} "{name}" channel ( > 1).')
     return colors
 
-def _make_segmentdata_array(values, ratios=None, **kwargs):
+def _make_segmentdata_array(values, ratios=None):
     """Constructs a list of linear segments for an individual channel.
     This was made so that user can input e.g. a callable function for
     one channel, but request linear interpolation for another one."""
@@ -628,7 +628,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
     def _resample(self, N):
         """Returns a resampled copy of the colormap."""
-        return self.new(self, N=N)
+        return self.updated(self, N=N)
 
     def concatenate(self, *args, ratios=1, name=None, **kwargs):
         """
@@ -725,9 +725,9 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             kwargs[ikey] = gamma
 
         # Return copy
-        return self.new(name=name, segmentdata=segmentdata, **kwargs)
+        return self.updated(name=name, segmentdata=segmentdata, **kwargs)
 
-    def new(self, name=None, segmentdata=None, N=None,
+    def updated(self, name=None, segmentdata=None, N=None,
         gamma=None, cyclic=None):
         """
         Returns a new colormap, with relevant properties copied from this one
@@ -736,13 +736,13 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         Parameters
         ----------
         name : str
-            The colormap name. Default is ``self.name + '_new'``.
+            The colormap name. Default is ``self.name + '_updated'``.
         segmentdata, N, gamma, cyclic : optional
             See `LinearSegmentedColormap`. If not provided,
             these are copied from the current colormap.
         """
         if name is None:
-            name = self.name + '_new'
+            name = self.name + '_updated'
         if segmentdata is None:
             segmentdata = self._segmentdata
         if gamma is None:
@@ -860,7 +860,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             gamma = getattr(self, '_' + key, None)
             if gamma is not None and np.iterable(gamma):
                 kwargs[key] = gamma[::-1]
-        return self.new(name, segmentdata, **kwargs)
+        return self.updated(name, segmentdata, **kwargs)
 
     def shifted(self, shift=None, name=None, **kwargs):
         """
@@ -896,7 +896,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             array[:,0] -= array[:,0].min()
             array[:,0] /= array[:,0].max()
             segmentdata[key] = array
-        return self.new(name, segmentdata, **kwargs)
+        return self.updated(name, segmentdata, **kwargs)
 
     def sliced(self, left=None, right=None, cut=None, name=None, **kwargs):
         """
@@ -973,7 +973,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
                 if np.iterable(gamma):
                     gamma = gamma[l-1:r+1]
                 kwargs[ikey] = gamma
-        return self.new(name, segmentdata, **kwargs)
+        return self.updated(name, segmentdata, **kwargs)
 
 class ListedColormap(mcolors.ListedColormap, _Colormap):
     """New base class for all `~matplotlib.colors.ListedColormap`\ s."""
@@ -1008,22 +1008,22 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         if name is None:
             name = '_'.join(cmap.name for cmap in cmaps)
         colors = [color for cmap in cmaps for color in cmap.colors]
-        return self.new(colors, name, N or len(colors))
+        return self.updated(colors, name, N or len(colors))
 
-    def new(self, colors=None, name=None, N=None):
+    def updated(self, colors=None, name=None, N=None):
         """
         Creates copy of the colormap.
 
         Parameters
         ----------
         name : str
-            The colormap name. Default is ``self.name + '_new'``.
+            The colormap name. Default is ``self.name + '_updated'``.
         colors, N : optional
             See `~matplotlib.colors.ListedColormap`. If not provided,
             these are copied from the current colormap.
         """
         if name is None:
-            name = self.name + '_new'
+            name = self.name + '_updated'
         if colors is None:
             colors = self.colors
         if N is None:
@@ -1078,7 +1078,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         shift = shift % len(self.colors)
         colors = [*self.colors] # ensure list
         colors = colors[shift:] + colors[:shift]
-        return self.new(colors, name, len(colors))
+        return self.updated(colors, name, len(colors))
 
     def sliced(self, left=None, right=None, name=None):
         """
@@ -1103,7 +1103,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         if name is None:
             name = self.name + '_sliced'
         colors = self.colors[left:right]
-        return self.new(colors, name, len(colors))
+        return self.updated(colors, name, len(colors))
 
 class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
     """Similar to `~matplotlib.colors.LinearSegmentedColormap`, but instead
@@ -1209,9 +1209,9 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
 
     def _resample(self, N):
         """Returns a new colormap with *N* entries."""
-        return self.new(N=N)
+        return self.updated(N=N)
 
-    def new(self, name=None, segmentdata=None, N=None, space=None,
+    def updated(self, name=None, segmentdata=None, N=None, space=None,
         clip=None, gamma=None, gamma1=None, gamma2=None, cyclic=None):
         """
         Returns a new colormap, with relevant properties copied from this one
@@ -1220,13 +1220,13 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         Parameters
         ----------
         name : str
-            The colormap name. Default is ``self.name + '_new'``.
+            The colormap name. Default is ``self.name + '_updated'``.
         segmentdata, N, space, clip, gamma, gamma1, gamma2, cyclic : optional
             See `PerceptuallyUniformColormap`. If not provided,
             these are copied from the current colormap.
         """
         if name is None:
-            name = self.name + '_new'
+            name = self.name + '_updated'
         if segmentdata is None:
             segmentdata = self._segmentdata
         if space is None:
@@ -1330,7 +1330,7 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
             ('hue','saturation','luminance','alpha'),
             (hue,saturation,luminance,alpha)
             ):
-            cdict[key] = _make_segmentdata_array(channel, ratios, **kwargs)
+            cdict[key] = _make_segmentdata_array(channel, ratios)
         return PerceptuallyUniformColormap(name, cdict, **kwargs)
 
     @staticmethod
@@ -1724,7 +1724,7 @@ def Colormap(*args, name=None, listmode='perceptual',
     if len(cmaps) > 1: # more than one map?
         cmap = cmaps[0].concatenate(*cmaps[1:], **kwargs)
     elif kwargs: # modify any props?
-        cmap = cmaps[0].new(**kwargs)
+        cmap = cmaps[0].updated(**kwargs)
 
     # Cut the edges or center
     left = None if np.iterable(left) else left
