@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
-#------------------------------------------------------------------------------#
 # Import everything into the top-level module namespace
-# Have sepearate files for various categories, so we don't end up with a
-# single enormous 12,000-line file
-#------------------------------------------------------------------------------#
-# Constants
+# Package is broken up so we don't end up with a single enormous 12k line file
 name = 'ProPlot'
 __version__ = '1.0'
 
 # Monkey patch warnings format for warnings issued by ProPlot, make sure to
-# detect if this is just a matplotlib warning traced back to ProPlot code
+# detect if this is just a matplotlib warning traced back to ProPlot code by
+# testing whether the warned line contains "warnings.warn"
 # See: https://stackoverflow.com/a/2187390/4970632
 # For internal warning call signature: https://docs.python.org/3/library/warnings.html#warnings.showwarning
 # For default warning source code see: https://github.com/python/cpython/blob/master/Lib/warnings.py

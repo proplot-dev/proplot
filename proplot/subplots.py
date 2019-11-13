@@ -16,6 +16,7 @@ from matplotlib import docstring
 import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
 import matplotlib.gridspec as mgridspec
+import matplotlib.pyplot as plt
 from numbers import Integral
 try:
     import matplotlib.backends.backend_macosx as mbackend
@@ -23,9 +24,7 @@ except ImportError:
     mbackend = None
 from . import projs, axes
 from .rctools import rc
-from .utils import _notNone, _counter, _benchmark, units
-with _benchmark('pyplot'):
-    import matplotlib.pyplot as plt
+from .utils import _notNone, _counter, units
 __all__ = [
     'axes_grid', 'close',
     'EdgeStack',

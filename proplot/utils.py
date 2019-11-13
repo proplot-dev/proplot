@@ -4,12 +4,11 @@ Simple tools used in various places across this package.
 """
 import re
 import time
-import numpy as np
 import functools
 import warnings
-import matplotlib as mpl
+import numpy as np
+from matplotlib import rcParams
 from numbers import Number, Integral
-rcParams = mpl.rcParams
 try:
     from icecream import ic
 except ImportError:  # graceful fallback if IceCream isn't installed
@@ -17,7 +16,7 @@ except ImportError:  # graceful fallback if IceCream isn't installed
 __all__ = ['arange', 'edges', 'units']
 
 NUMBER = re.compile('^([-+]?[0-9._]+([eE][-+]?[0-9_]+)?)(.*)$')
-BENCHMARK = True
+BENCHMARK = False
 
 class _benchmark(object):
     """Context object that can be used to time import statements."""
@@ -39,13 +38,13 @@ def _timer(func):
             t = time.clock()
         res = func(*args, **kwargs)
         if BENCHMARK:
-            print(f'{func.__name__}() time: {time.clock()-t}s')
+            print(f'  {func.__name__}() time: {time.clock()-t}s')
         return res
     return decorator
 
 def _counter(func):
     """Decorator that counts and prints the cumulative time a function
-    has benn running. See: https://stackoverflow.com/a/1594484/4970632"""
+    has been running. See: https://stackoverflow.com/a/1594484/4970632"""
     @functools.wraps(func)
     def decorator(*args, **kwargs):
         if BENCHMARK:
@@ -54,7 +53,7 @@ def _counter(func):
         if BENCHMARK:
             decorator.time += (time.clock() - t)
             decorator.count += 1
-            print(f'{func.__name__}() cumulative time: {decorator.time}s ({decorator.count} calls)')
+            print(f'  {func.__name__}() cumulative time: {decorator.time}s ({decorator.count} calls)')
         return res
     decorator.time = 0
     decorator.count = 0 # initialize

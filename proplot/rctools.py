@@ -181,7 +181,7 @@ is shown below. The syntax is roughly the same as that used for
 # TODO: Add 'style' option that overrides .proplotrc
 # Adapted from seaborn; see: https://github.com/mwaskom/seaborn/blob/master/seaborn/rcmod.py
 from . import utils
-from .utils import _counter, _timer
+from .utils import _counter, _timer, _benchmark
 import re
 import os
 import yaml
@@ -189,15 +189,15 @@ import cycler
 import warnings
 import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
+from matplotlib import style, rcParams
 try:
-    import IPython
-    get_ipython = IPython.get_ipython
+    from IPython import get_ipython
+    from IPython.utils.io import capture_output
 except ModuleNotFoundError:
     get_ipython = lambda: None
 __all__ = ['rc', 'rc_configurator', 'notebook_setup']
 
 # Initialize
-from matplotlib import style, rcParams
 defaultParamsShort = {
     'nbsetup':      True,
     'format':       'retina',
@@ -630,7 +630,8 @@ class rc_configurator(object):
         """
         # Attributes and style
         object.__setattr__(self, '_context', [])
-        style.use('default')
+        with _benchmark('  use'):
+            style.use('default')
 
         # Update from defaults
         rcParamsLong.clear()
@@ -1013,7 +1014,7 @@ def notebook_setup():
         # Choose svg vector or retina hi-res bitmap backends
         autosave = rcParamsShort['autosave']
         if autosave: # capture annoying message + line breaks
-            with IPython.utils.io.capture_output():
+            with capture_output():
                 ipython.magic("autosave " + str(autosave))
         ipython.magic("config InlineBackend.figure_formats = ['" + rcParamsShort['format'] + "']")
         ipython.magic("config InlineBackend.rc = {}") # no notebook-specific overrides

@@ -71,7 +71,7 @@ CMAPS_TABLE = {
         'NegPos', 'Div', 'DryWet', 'Moisture',
         ),
     # Nice diverging maps
-    'Miscellaneous Diverging': (
+    'Other Diverging': (
         'ColdHot', 'CoolWarm', 'BR',
         ),
     # cmOcean
@@ -123,7 +123,7 @@ CMAPS_TABLE = {
         'gist_earth', 'gist_gray', 'gist_heat', 'gist_ncar',
         'gist_rainbow', 'gist_stern', 'gist_yarg',
         ),
-    'Miscellaneous': (
+    'Other': (
         'binary', 'bwr', 'brg', # appear to be custom matplotlib, very simple construction
         'cubehelix', 'wistia',  'CMRmap', # individually released
         'seismic', 'terrain', 'nipy_spectral', # origin ambiguous
@@ -1650,12 +1650,16 @@ def Colormap(*args, name=None, listmode='perceptual',
     cmaps = []
     tmp = '_no_name' # name required, but we only care about name of final merged map
     for i,cmap in enumerate(args):
-        # First load data
+        # Properties specific to each map
+        ireverse = False if not np.iterable(reverse) else reverse[i]
+        ileft = None if not np.iterable(left) else left[i]
+        iright = None if not np.iterable(right) else right[i]
+        # Load registered colormaps and maps on file
         # TODO: Document how 'listmode' also affects loaded files
         if isinstance(cmap, str):
             if '.' in cmap:
                 if os.path.isfile(os.path.expanduser(cmap)):
-                    tmp, cmap = _load_cmap(cmap, cmap=(listmode != 'listed'))
+                    cmap = _load_cmap(cmap, listed=(listmode == 'listed'))
                 else:
                     raise FileNotFoundError(f'Colormap or cycle file {cmap!r} not found.')
             else:
@@ -1663,10 +1667,6 @@ def Colormap(*args, name=None, listmode='perceptual',
                     cmap = mcm.cmap_d[cmap]
                 except KeyError:
                     pass
-        # Properties specific to each map
-        ireverse = False if not np.iterable(reverse) else reverse[i]
-        ileft = None if not np.iterable(left) else left[i]
-        iright = None if not np.iterable(right) else right[i]
         # Convert matplotlib colormaps to subclasses
         if isinstance(cmap, (ListedColormap, LinearSegmentedColormap)):
             pass
@@ -2568,6 +2568,45 @@ def register_fonts():
         })
     fonts[:] = sorted((*fonts_system, *fonts_proplot))
 
+def _draw_bars(cmapdict, length=4.0, width=0.2, nrows=None):
+    """
+    Draw colorbars for "colormaps" and "color cycles". This is called by
+    `show_cycles` and `show_cmaps`.
+    """
+    # Figure
+    from . import subplots
+    naxs = len(cmapdict) + sum(map(len, cmapdict.values()))
+    fig, axs = subplots(
+        nrows=naxs, axwidth=length, axheight=width,
+        share=0, hspace=0.03,
+        )
+    iax = -1
+    nheads = nbars = 0 # for deciding which axes to plot in
+    a = np.linspace(0, 1, 257).reshape(1,-1)
+    a = np.vstack((a,a))
+    for cat,names in cmapdict.items():
+        if not names:
+            continue
+        nheads += 1
+        for imap,name in enumerate(names):
+            iax += 1
+            if imap + nheads + nbars > naxs:
+                break
+            ax = axs[iax]
+            if imap == 0: # allocate this axes for title
+                iax += 1
+                ax.set_visible(False)
+                ax = axs[iax]
+            cmap = mcm.cmap_d[name]
+            ax.imshow(a, cmap=name, origin='lower', aspect='auto',
+                levels=cmap.N)
+            ax.format(ylabel=name,
+                ylabel_kw={'rotation':0, 'ha':'right', 'va':'center'},
+                xticks='none',  yticks='none', # no ticks
+                xloc='neither', yloc='neither', # no spines
+                title=(cat if imap == 0 else None))
+        nbars += len(names)
+
 def show_channels(*args, N=100, rgb=True, scalings=True, minhue=0, width=100,
     aspect=1, axwidth=1.7):
     """
@@ -2874,7 +2913,7 @@ def show_colors(nhues=17, minsat=0.2):
         figs.append(fig)
     return figs
 
-def show_cmaps(*args, N=256, length=4.0, width=0.2, unknown='User'):
+def show_cmaps(*args, N=None, unknown='User', **kwargs):
     """
     Generate a table of the registered colormaps or the input colormaps.
     Adapted from `this example
@@ -2885,16 +2924,17 @@ def show_cmaps(*args, N=256, length=4.0, width=0.2, unknown='User'):
     *args : colormap-spec, optional
         Colormap names or objects.
     N : int, optional
-        The number of levels in each colorbar.
-    length : float or str, optional
-        The length of each colorbar. Units are interpreted by
-        `~proplot.utils.units`.
-    width : float or str, optional
-        The width of each colorbar. Units are interpreted by
-        `~proplot.utils.units`.
+        The number of levels in each colorbar. Default is
+        :rc:`image.lut`.
     unknown : str, optional
         Category name for colormaps that are unknown to ProPlot. The
         default is ``'User'``.
+    length : float or str, optional
+        The length of the colorbars. Units are interpreted by
+        `~proplot.utils.units`.
+    width : float or str, optional
+        The width of the colorbars. Units are interpreted by
+        `~proplot.utils.units`.
 
     Returns
     -------
@@ -2902,65 +2942,26 @@ def show_cmaps(*args, N=256, length=4.0, width=0.2, unknown='User'):
         The figure.
     """
     # Have colormaps separated into categories
+    N = _notNone(N, rcParams['image.lut'])
     if args:
-        inames = [Colormap(cmap, N=N).name for cmap in args]
+        names = [Colormap(cmap, N=N).name for cmap in args]
     else:
-        inames = [
-            name for name in mcm.cmap_d.keys() if name not in ('vega', 'greys', 'no_name')
-            and isinstance(mcm.cmap_d[name], LinearSegmentedColormap)
+        names = [name for name in mcm.cmap_d.keys() if
+            isinstance(mcm.cmap_d[name], LinearSegmentedColormap)
             ]
 
     # Get dictionary of registered colormaps and their categories
-    inames = list(map(str.lower, inames))
-    cats = {cat:names for cat,names in CMAPS_TABLE.items()}
-    cats_plot = {cat:[name for name in names if name.lower() in inames] for cat,names in cats.items()}
-    # Distinguish known from unknown (i.e. user) maps, add as a new category
-    imaps_known = [name.lower() for cat,names in cats.items() for name in names if name.lower() in inames]
-    imaps_unknown = [name for name in inames if name not in imaps_known]
-    # Remove categories with no known maps and put user at start
-    cats_plot = {unknown:imaps_unknown, **cats_plot}
-    cats_plot = {cat:maps for cat,maps in cats_plot.items() if maps}
+    cmapdict = {}
+    names_all = list(map(str.lower, names))
+    names_known = sum(CMAPS_TABLE.values(), [])
+    cmapdict[unknown] = [name for name in names if name not in names_known]
+    for cat,names in CMAPS_TABLE.items():
+        cmapdict[cat] = [name for name in names if name.lower() in names_all]
 
-    # Figure
-    from . import subplots
-    naxs = len(imaps_known) + len(imaps_unknown) + len(cats_plot)
-    fig, axs = subplots(
-        nrows=naxs, axwidth=length, axheight=width,
-        share=0, hspace=0.03,
-        )
-    iax = -1
-    ntitles = nplots = 0 # for deciding which axes to plot in
-    a = np.linspace(0, 1, 257).reshape(1,-1)
-    a = np.vstack((a,a))
-    for cat,names in cats_plot.items():
-        # Space for title
-        if not names:
-            continue
-        ntitles += 1
-        for imap,name in enumerate(names):
-            # Draw colorbar
-            iax += 1
-            if imap + ntitles + nplots > naxs:
-                break
-            ax = axs[iax]
-            if imap == 0: # allocate this axes for title
-                iax += 1
-                ax.set_visible(False)
-                ax = axs[iax]
-            if name not in mcm.cmap_d or name.lower() not in inames: # i.e. the expected builtin colormap is missing
-                ax.set_visible(False) # empty space
-                continue
-            ax.imshow(a, cmap=name, origin='lower', aspect='auto', levels=N)
-            ax.format(ylabel=name,
-                      ylabel_kw={'rotation':0, 'ha':'right', 'va':'center'},
-                      xticks='none',  yticks='none', # no ticks
-                      xloc='neither', yloc='neither', # no spines
-                      title=(cat if imap == 0 else None))
-        # Space for plots
-        nplots += len(names)
-    return fig
+    # Return figure of colorbars
+    return _draw_bars(cmapdict, **kwargs)
 
-def show_cycles(*args, axwidth=1.5):
+def show_cycles(*args, **kwargs):
     """
     Generate a table of registered color cycle names or the input color
     cycles.
@@ -2969,8 +2970,12 @@ def show_cycles(*args, axwidth=1.5):
     ----------
     *args : colormap-spec, optional
         Cycle names or objects.
-    axwidth : str or float, optional
-        Average width of each subplot. Units are interpreted by `~proplot.utils.units`.
+    length : float or str, optional
+        The length of the colorbars. Units are interpreted by
+        `~proplot.utils.units`.
+    width : float or str, optional
+        The width of the colorbars. Units are interpreted by
+        `~proplot.utils.units`.
 
     Returns
     -------
@@ -2979,35 +2984,15 @@ def show_cycles(*args, axwidth=1.5):
     """
     # Get the list of cycles
     if args:
-        icycles = [colors(cycle) for cycle in args]
+        names = [Colormap(cmap, listmode='listed').name for cmap in args]
     else:
-        icycles = {key:mcm.cmap_d[key].colors for key in cycles} # use global cycles variable
-    nrows = len(icycles)//3 + len(icycles)%3
+        names = [name for name in mcm.cmap_d.keys() if
+            isinstance(mcm.cmap_d[name], ListedColormap)
+            ]
 
-    # Create plot
-    from . import subplots
-    state = np.random.RandomState(12345)
-    fig, axs = subplots(
-        ncols=3, nrows=nrows, aspect=1, axwidth=axwidth,
-        sharey=False, sharex=False, axpad=0.05
-        )
-    for i,(ax,(key,cycle)) in enumerate(zip(axs, icycles.items())):
-        key = key.lower()
-        array = state.rand(20,len(cycle)) - 0.5
-        array = array[:,:1] + array.cumsum(axis=0) + np.arange(0,len(cycle))
-        for j,color in enumerate(cycle):
-            l, = ax.plot(array[:,j], lw=5, ls='-', color=color)
-            l.set_zorder(10+len(cycle)-j) # make first lines have big zorder
-        title = f'{key}: {len(cycle)} colors'
-        ax.set_title(title)
-        ax.grid(True)
-        for axis in 'xy':
-            ax.tick_params(axis=axis,
-                    which='both', labelbottom=False, labelleft=False,
-                    bottom=False, top=False, left=False, right=False)
-    if axs[i+1:]:
-        axs[i+1:].set_visible(False)
-    return fig
+    # Return figure of colorbars
+    cmapdict = {'Color cycles': names}
+    return _draw_bars(cmapdict, **kwargs)
 
 def show_fonts(fonts=None, size=12):
     """
@@ -3040,7 +3025,7 @@ for _name in CMAPS_TABLE['Matplotlib Originals']: # initialize as empty lists
     _cmap = mcm.cmap_d.get(_name, None)
     if _cmap and isinstance(_cmap, mcolors.ListedColormap):
         mcm.cmap_d[_name] = LinearSegmentedColormap.from_list(_name, _cmap.colors, cyclic=('twilight' in _name))
-for _cat in ('MATLAB', 'GNUplot', 'GIST', 'Miscellaneous'):
+for _cat in ('MATLAB', 'GNUplot', 'GIST', 'Other'):
     for _name in CMAPS_TABLE[_cat]:
         mcm.cmap_d.pop(_name, None)
 
