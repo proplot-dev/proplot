@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Imported by `~proplot.axes`, declares wrappers for various plotting functions.
+Wrappers for various plotting functions. These are applied to axes
+using `~proplot.axes`.
 """
 import sys
 import numpy as np

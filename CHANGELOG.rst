@@ -4,7 +4,7 @@ Changelog History
 
 ProPlot v1.0.0
 ==============
-First official release. Coming soon! Future changes and releases will be documented.
+First official release (ETA: January 2020). Future changes and releases will be documented.
 
 Internals/Minor Fixes
 ---------------------
