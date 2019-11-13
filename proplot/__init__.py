@@ -31,42 +31,46 @@ def _warning_proplot(message, category, filename, lineno, line=None):
 if warnings.formatwarning is not _warning_proplot:
     warnings.formatwarning = _warning_proplot
 
+# Initialize customization folders and files
+import os
+_rc_folder = os.path.join(os.path.expanduser('~'), '.proplot')
+if not os.path.isdir(_rc_folder):
+    os.mkdir(_rc_folder)
+for _rc_sub in ('cmaps', 'cycles', 'colors', 'fonts'):
+    _rc_sub = os.path.join(_rc_folder, _rc_sub)
+    if not os.path.isdir(_rc_sub):
+        os.mkdir(_rc_sub)
+_rc_file = os.path.join(os.path.expanduser('~'), '.proplotrc')
+_rc_file_default = os.path.join(os.path.dirname(__file__), '.proplotrc')
+if not os.path.isfile(_rc_file):
+    with open(_rc_file_default) as f:
+        lines = ''.join(
+            '#   ' + line if line.strip() and line[0] != '#' else line
+            for line in f.readlines()
+            )
+    with open(_rc_file, 'x') as f:
+        f.write('# User default settings\n'
+            + '# See https://proplot.readthedocs.io/en/latest/rctools.html\n'
+            + lines)
+
 # Import stuff
 # WARNING: Import order is meaningful! Loads modules that are dependencies
 # of other modules last, and loads styletools early so we can try to update
 # TTFPATH before the fontManager is loaded by other matplotlib modules
-from .utils import * # misc stuff, debug mode
-if DEBUG:
-    import time
-    t = time.clock()
-    t0 = t
-from .styletools import * # colors and fonts
-if DEBUG:
-    print(f'styletools: {time.clock() - t}')
-    t = time.clock()
-from .rctools import * # custom configuration implementation
-if DEBUG:
-    print(f'rctools: {time.clock() - t}')
-    t = time.clock()
-from .axistools import * # locators, normalizers, and formatters
-if DEBUG:
-    print(f'axistools: {time.clock() - t}')
-    t = time.clock()
-from .wrappers import * # wrappers
-if DEBUG:
-    print(f'wrappers: {time.clock() - t}')
-    t = time.clock()
-from .projs import * # projections and whatnot
-if DEBUG:
-    print(f'projs: {time.clock() - t}')
-    t = time.clock()
-from .axes import * # axes classes
-if DEBUG:
-    print(f'axes: {time.clock() - t}')
-    t = time.clock()
-from .subplots import * # subplots and figure class
-if DEBUG:
-    print(f'subplots: {time.clock() - t}')
-    t = time.clock()
-    print(f'total time: {time.clock() - t0}')
-
+from .utils import _benchmark
+with _benchmark('total time'):
+    from .utils import *
+    with _benchmark('styletools'): # colors and fonts
+        from .styletools import *
+    with _benchmark('rctools'): # custom configuration implementation
+        from .rctools import *
+    with _benchmark('axistools'): # locators, normalizers, and formatters
+        from .axistools import *
+    with _benchmark('wrappers'): # wrappers
+        from .wrappers import *
+    with _benchmark('projs'): # map projections and tools
+        from .projs import *
+    with _benchmark('axes'): # axes classes
+        from .axes import *
+    with _benchmark('subplots'): # subplots and figure class
+        from .subplots import *

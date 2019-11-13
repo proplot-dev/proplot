@@ -13,7 +13,7 @@ Installation
 ============
 
 This package is a work-in-progress -- currently, there is no formal release
-on PyPi (but it's coming soon!). For the time being, you may install directly from Github using:
+on PyPi (ETA: January 2020). For the time being, you may install directly from Github using:
 
 .. code-block:: bash
 
@@ -91,13 +91,13 @@ To get started, check out the :ref:`Introduction`.
 .. toctree::
    :hidden:
    :maxdepth: 4
-   :caption: Tutorial
+   :caption: Overview
 
-   tutorial1
-   tutorial2
-   tutorial3
-   tutorial4
-   tutorial5
+   intro
+   cartesian
+   projection
+   colors
+   plots
 
 .. toctree::
    :hidden:

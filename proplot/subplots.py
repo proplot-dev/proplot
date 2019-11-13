@@ -295,25 +295,6 @@ class axes_grid(list):
         # Mixed
         raise AttributeError(f'Found mixed types for attribute {attr!r}.')
 
-    # TODO: No more putting panels, legends, colorbars on the SubplotSpec.
-    # Put them in the margin, increase default space, and lock them to
-    # subplot bounds with locators, borrowing from axes_grid1 toolkit
-    # TODO: Consider adding Github issue, would be major API change.
-    # def colorbar(self, loc=None):
-    #     """Draws a colorbar that spans axes in the selected range."""
-    #     for ax in self:
-    #         pass
-    #
-    # def legend(self, loc=None):
-    #     """Draws a legend that spans axes in the selected range."""
-    #     for ax in self:
-    #         pass
-    #
-    # def text(self, loc=None):
-    #     """Draws text that spans axes in the selected range."""
-    #     for ax in self:
-    #         pass
-
 #-----------------------------------------------------------------------------#
 # Gridspec classes
 #-----------------------------------------------------------------------------#
@@ -565,7 +546,7 @@ def _panels_kwargs(side,
         default = rc['subplots.panelwidth']
     share = _notNone(share, (not filled))
     width = units(_notNone(width, default))
-    space = _notNone(space, units(rc['subplots.' + ('panel' if share
+    space = _notNone(units(space), units(rc['subplots.' + ('panel' if share
         and not figure
         else 'xlab' if s == 'b' else 'ylab' if s == 'l'
         else 'inner' if figure else 'panel') + 'space']))
@@ -862,8 +843,8 @@ class Figure(mfigure.Figure):
         # Draw and setup panel
         with self._unlock():
             pax = self.add_subplot(gridspec[idx1,idx2],
-                    sharex=ax._sharex_level, sharey=ax._sharey_level,
-                    projection='cartesian')
+                sharex=ax._sharex_level, sharey=ax._sharey_level,
+                projection='cartesian')
         getattr(ax, '_' + s + 'panels').append(pax)
         pax._panel_side = side
         pax._panel_share = share
@@ -961,7 +942,8 @@ class Figure(mfigure.Figure):
 
         # Draw and setup panel
         with self._unlock():
-            pax = self.add_subplot(gridspec[idx1,idx2], projection='cartesian')
+            pax = self.add_subplot(gridspec[idx1,idx2],
+                projection='cartesian')
         getattr(self, '_' + s + 'panels').append(pax)
         pax._panel_side = side
         pax._panel_share = False
@@ -1122,8 +1104,8 @@ class Figure(mfigure.Figure):
                 continue
             for x,axis in zip('xy', (ax.xaxis, ax.yaxis)):
                 s = axis.get_label_position()[0] # top or bottom, left or right
-                span = getattr(ax, '_span' + x)
-                align = getattr(ax, '_align' + x)
+                span = getattr(ax, '_span' + x + '_on')
+                align = getattr(ax, '_align' + x + '_on')
                 if s not in 'bl' or axis in tracker:
                     continue
                 axs = ax._get_side_axes(s)
@@ -1409,15 +1391,13 @@ class Figure(mfigure.Figure):
 
         # Defer to parent (main) axes if possible, then get the axes
         # shared by that parent
-        # TODO: Share panels in successive stacks, but share short axes
-        # just like sharing long axes
         ax = axis.axes
         ax = ax._panel_parent or ax
         ax = getattr(ax, '_share' + x) or ax
 
         # Apply to spanning axes and their panels
         axs = [ax]
-        if getattr(ax, '_span' + x):
+        if getattr(ax, '_span' + x + '_on'):
             s = axis.get_label_position()[0]
             if s in 'lb':
                 axs = ax._get_side_axes(s)
@@ -1748,14 +1728,6 @@ def subplots(array=None, ncols=1, nrows=1,
 
     Parameters
     ----------
-    ncols, nrows : int, optional
-        Number of columns, rows. Ignored if `array` is not ``None``.
-        Use these arguments for simpler subplot grids.
-    order : {'C', 'F'}, optional
-        Whether subplots are numbered in column-major (``'C'``) or row-major
-        (``'F'``) order. Analogous to `numpy.array` ordering. This controls
-        the order axes appear in the `axs` list, and the order of subplot
-        a-b-c labeling (see `~proplot.axes.Axes.format`).
     array : array-like of int, optional
         2-dimensional array specifying complex grid of subplots. Think of
         this array as a "picture" of your figure. For example, the array
@@ -1766,6 +1738,14 @@ def subplots(array=None, ncols=1, nrows=1,
         ``0`` indicates an empty space. For example, ``[[1, 1, 1], [2, 0, 3]]``
         creates one long subplot in the top row with two subplots in the bottom
         row separated by a space.
+    ncols, nrows : int, optional
+        Number of columns, rows. Ignored if `array` is not ``None``.
+        Use these arguments for simpler subplot grids.
+    order : {'C', 'F'}, optional
+        Whether subplots are numbered in column-major (``'C'``) or row-major
+        (``'F'``) order. Analogous to `numpy.array` ordering. This controls
+        the order axes appear in the `axs` list, and the order of subplot
+        a-b-c labeling (see `~proplot.axes.Axes.format`).
     figsize : length-2 tuple, optional
         Tuple specifying the figure `(width, height)`.
     width, height : float or str, optional
@@ -1773,8 +1753,24 @@ def subplots(array=None, ncols=1, nrows=1,
         `~proplot.utils.units`.
     journal : str, optional
         String name corresponding to an academic journal standard that is used
-        to control the figure width (and height, if specified). Valid names
-        are described in a table below.
+        to control the figure width (and height, if specified). See below
+        table.
+
+        ===========  ====================  ==========================================================================================================================================================
+        Key          Size description      Organization
+        ===========  ====================  ==========================================================================================================================================================
+        ``'pnas1'``  1-column              `Proceedings of the National Academy of Sciences <http://www.pnas.org/page/authors/submission>`__
+        ``'pnas2'``  2-column              ”
+        ``'pnas3'``  landscape page        ”
+        ``'ams1'``   1-column              `American Meteorological Society <https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/>`__
+        ``'ams2'``   small 2-column        ”
+        ``'ams3'``   medium 2-column       ”
+        ``'ams4'``   full 2-column         ”
+        ``'agu1'``   1-column              `American Geophysical Union <https://publications.agu.org/author-resource-center/figures-faq/>`__
+        ``'agu2'``   2-column              ”
+        ``'agu3'``   full height 1-column  ”
+        ``'agu4'``   full height 2-column  ”
+        ===========  ====================  ==========================================================================================================================================================
 
     ref : int, optional
         The reference axes number. The `axwidth`, `axheight`, and `aspect`
@@ -1847,7 +1843,7 @@ def subplots(array=None, ncols=1, nrows=1,
         The map projection name. The argument is interpreted as follows.
 
         * If string, this projection is used for all subplots. For valid
-          names, see the :ref:`Table of projections`.
+          names, see the `~proplot.projs.Proj` documentation.
         * If list of string, these are the projections to use for each
           subplot in their `array` order.
         * If dict-like, keys are integers or tuple integers that indicate
@@ -1901,26 +1897,6 @@ def subplots(array=None, ncols=1, nrows=1,
         The figure instance.
     axs : `axes_grid`
         A special list of axes instances. See `axes_grid`.
-
-
-    Current options for the `journal` keyword argument are as follows.
-    If you'd like to add additional standards, feel free to submit a pull request
-
-    ===========  ====================  ==========================================================================================================================================================
-    Key          Size description      Organization
-    ===========  ====================  ==========================================================================================================================================================
-    ``'pnas1'``  1-column              `Proceedings of the National Academy of Sciences <http://www.pnas.org/page/authors/submission>`__
-    ``'pnas2'``  2-column              ”
-    ``'pnas3'``  landscape page        ”
-    ``'ams1'``   1-column              `American Meteorological Society <https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/>`__
-    ``'ams2'``   small 2-column        ”
-    ``'ams3'``   medium 2-column       ”
-    ``'ams4'``   full 2-column         ”
-    ``'agu1'``   1-column              `American Geophysical Union <https://publications.agu.org/author-resource-center/figures-faq/>`__
-    ``'agu2'``   2-column              ”
-    ``'agu3'``   full height 1-column  ”
-    ``'agu4'``   full height 2-column  ”
-    ===========  ====================  ==========================================================================================================================================================
     """
     rc._getitem_mode = 0 # ensure still zero; might be non-zero if had error in 'with context' block
     # Build array
@@ -1943,7 +1919,7 @@ def subplots(array=None, ncols=1, nrows=1,
     nums = np.unique(array[array != 0])
     naxs = len(nums)
     if {*nums.flat} != {*range(1, naxs+1)}:
-        raise ValueError('Invalid subplot array {array!r}. Numbers must span integers 1 to naxs (i.e. cannot skip over numbers), with 0 representing empty spaces.')
+        raise ValueError(f'Invalid subplot array {array!r}. Numbers must span integers 1 to naxs (i.e. cannot skip over numbers), with 0 representing empty spaces.')
     if ref not in nums:
         raise ValueError(f'Invalid reference number {ref!r}. For array {array!r}, must be one of {nums}.')
     nrows, ncols = array.shape

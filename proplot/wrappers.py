@@ -822,9 +822,9 @@ def scatter_wrapper(self, func, *args,
     cmap_kw = cmap_kw or {}
     norm_kw = norm_kw or {}
     if cmap is not None:
-        cmap = styletools.Colormap(cmap, N=None, **cmap_kw)
+        cmap = styletools.Colormap(cmap, **cmap_kw)
     if norm is not None:
-        norm = styletools.Norm(norm, N=None, **norm_kw)
+        norm = styletools.Norm(norm, **norm_kw)
 
     # Apply some aliases for keyword arguments
     c = _notNone(c, color, markercolor, None, names=('c', 'color', 'markercolor'))
@@ -1145,13 +1145,21 @@ def violinplot_wrapper(self, func, *args,
 
 def _get_transform(self, transform):
     """Translates user input transform. Also used in an axes method."""
-    if isinstance(transform, mtransforms.Transform):
+    try:
+        from cartopy.crs import CRS
+    except ModuleNotFoundError:
+        CRS = None
+    cartopy = (getattr(self, 'name', '') == 'cartopy')
+    if (isinstance(transform, mtransforms.Transform)
+        or CRS and isinstance(transform, CRS)):
         return transform
     elif transform == 'figure':
         return self.figure.transFigure
     elif transform == 'axes':
         return self.transAxes
     elif transform == 'data':
+        return PlateCarree() if cartopy else self.transData
+    elif cartopy and transform == 'map':
         return self.transData
     else:
         raise ValueError(f'Unknown transform {transform!r}.')
@@ -1719,8 +1727,8 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
         cmap = _notNone(cmap, rc['image.cmap'])
     if cmap is not None:
         # Get colormap object
-        cmap = styletools.Colormap(cmap, N=None, **cmap_kw)
-        cyclic = cmap._cyclic
+        cmap = styletools.Colormap(cmap, **cmap_kw)
+        cyclic = getattr(cmap, '_cyclic', False)
         if cyclic and extend != 'neither':
             warnings.warn(f'Cyclic colormap requires extend="neither". Overriding user input extend={extend!r}.')
             extend = 'neither'

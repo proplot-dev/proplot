@@ -14,7 +14,62 @@ try:
     from icecream import ic
 except ImportError:  # graceful fallback if IceCream isn't installed
     ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a) # noqa
-__all__ = ['arange', 'edges', 'units', 'DEBUG']
+__all__ = ['arange', 'edges', 'units']
+
+# Change this to turn on benchmarking
+BENCHMARK = False
+
+# Benchmarking tools for developers
+class _benchmark(object):
+    """Timer object that can be used to time things."""
+    def __init__(self, message):
+        self.message = message
+    def __enter__(self):
+        self.time = time.clock()
+    def __exit__(self, *args):
+        if BENCHMARK:
+            print(f'{self.message}: {time.clock() - self.time}s')
+
+def _logger(func):
+    """A decorator that logs the activity of the script (it actually just prints it,
+    but it could be logging!). See: https://stackoverflow.com/a/1594484/4970632"""
+    @functools.wraps(func)
+    def decorator(*args, **kwargs):
+        res = func(*args, **kwargs)
+        if BENCHMARK:
+            print(f'{func.__name__} called with: {args} {kwargs}')
+        return res
+    return decorator
+
+def _timer(func):
+    """A decorator that prints the time a function takes to execute.
+    See: https://stackoverflow.com/a/1594484/4970632"""
+    @functools.wraps(func)
+    def decorator(*args, **kwargs):
+        if BENCHMARK:
+            t = time.clock()
+        res = func(*args, **kwargs)
+        if BENCHMARK:
+            print(f'{func.__name__}() time: {time.clock()-t}s')
+        return res
+    return decorator
+
+def _counter(func):
+    """A decorator that counts and prints the cumulative time a function
+    has benn running. See: https://stackoverflow.com/a/1594484/4970632"""
+    @functools.wraps(func)
+    def decorator(*args, **kwargs):
+        if BENCHMARK:
+            t = time.clock()
+        res = func(*args, **kwargs)
+        if BENCHMARK:
+            decorator.time += (time.clock() - t)
+            decorator.count += 1
+            print(f'{func.__name__}() cumulative time: {decorator.time}s ({decorator.count} calls)')
+        return res
+    decorator.time = 0
+    decorator.count = 0 # initialize
+    return decorator
 
 # Important private helper func
 def _notNone(*args, names=None):
@@ -28,8 +83,8 @@ def _notNone(*args, names=None):
                 return arg
         return arg # last one
     else:
-        ret = {}
         first = None
+        kwargs = {}
         if len(names) != len(args) - 1:
             raise ValueError(f'Need {len(args)+1} names for {len(args)} args, but got {len(names)} names.')
         names = [*names, '']
@@ -38,58 +93,16 @@ def _notNone(*args, names=None):
                 if first is None:
                     first = arg
                 if name:
-                    ret[name] = arg
-        if len(ret)>1:
-            warnings.warn(f'Got conflicting or duplicate keyword args, using the first one: {ret}')
+                    kwargs[name] = arg
+        if len(kwargs)>1:
+            warnings.warn(f'Got conflicting or duplicate keyword args, using the first one: {kwargs}')
         return first
-
-# Debug decorators
-DEBUG = False # debug mode, used for profiling and activating timer decorators
-def _logger(func):
-    """A decorator that logs the activity of the script (it actually just prints it,
-    but it could be logging!). See: https://stackoverflow.com/a/1594484/4970632"""
-    @functools.wraps(func)
-    def decorator(*args, **kwargs):
-        res = func(*args, **kwargs)
-        if DEBUG:
-            print(f'{func.__name__} called with: {args} {kwargs}')
-        return res
-    return decorator
-
-def _timer(func):
-    """A decorator that prints the time a function takes to execute.
-    See: https://stackoverflow.com/a/1594484/4970632"""
-    @functools.wraps(func)
-    def decorator(*args, **kwargs):
-        if DEBUG:
-            t = time.clock()
-        res = func(*args, **kwargs)
-        if DEBUG:
-            print(f'{func.__name__}() time: {time.clock()-t}s')
-        return res
-    return decorator
-
-def _counter(func):
-    """A decorator that counts and prints the cumulative time a function
-    has benn running. See: https://stackoverflow.com/a/1594484/4970632"""
-    @functools.wraps(func)
-    def decorator(*args, **kwargs):
-        if DEBUG:
-            t = time.clock()
-        res = func(*args, **kwargs)
-        if DEBUG:
-            decorator.time += (time.clock() - t)
-            decorator.count += 1
-            print(f'{func.__name__}() cumulative time: {decorator.time}s ({decorator.count} calls)')
-        return res
-    decorator.time = 0
-    decorator.count = 0 # initialize
-    return decorator
 
 # Accessible for user
 def arange(min_, *args):
     """Identical to `numpy.arange`, but with inclusive endpoints. For
-    example, ``plot.arange(2,4)`` returns ``np.array([2,3,4])``."""
+    example, ``plot.arange(2,4)`` returns ``np.array([2,3,4])`` instead
+    of ``np.array([2,3])``."""
     # Optional arguments just like np.arange
     if len(args) == 0:
         max_ = min_
@@ -115,31 +128,47 @@ def arange(min_, *args):
         max_ += step/2
     return np.arange(min_, max_, step)
 
-def edges(values, axis=-1):
-    """Returns approximate edge values along the axis `axis`. This can be used
-    e.g. when you have grid centers and need to calculate grid edges for a
-    `~matplotlib.axes.Axes.pcolor` or `~matplotlib.axes.Axes.pcolormesh` plot."""
+def edges(array, axis=-1):
+    """
+    Calculates approximate "edge" values given "center" values. This is used
+    internally to calculate graitule edges when you supply centers to
+    `~matplotlib.axes.Axes.pcolor` or `~matplotlib.axes.Axes.pcolormesh`, and
+    in a few other places.
+
+    Parameters
+    ----------
+    array : array-like
+        Array of any shape or size. Generally, should be monotonically
+        increasing or decreasing along `axis`.
+    axis : int, optional
+        The axis along which "edges" are calculated. The size of this axis
+        will be augmented by one.
+
+    Returns
+    -------
+    `~numpy.ndarray`
+        Array of "edge" coordinates.
+    """
     # First permute
-    values = np.array(values)
-    values = np.swapaxes(values, axis, -1)
+    array = np.array(array)
+    array = np.swapaxes(array, axis, -1)
     # Next operate
     flip = False
-    idxs = [[0] for _ in range(values.ndim-1)] # must be list because we use it twice
-    if values[np.ix_(*idxs, [1])] < values[np.ix_(*idxs, [0])]:
+    idxs = [[0] for _ in range(array.ndim-1)] # must be list because we use it twice
+    if array[np.ix_(*idxs, [1])] < array[np.ix_(*idxs, [0])]:
         flip = True
-        values = np.flip(values, axis=-1)
-    values = np.concatenate((
-        values[...,:1]  - (values[...,1]-values[...,0])/2,
-        (values[...,1:] + values[...,:-1])/2,
-        values[...,-1:] + (values[...,-1]-values[...,-2])/2,
+        array = np.flip(array, axis=-1)
+    array = np.concatenate((
+        array[...,:1]  - (array[...,1]-array[...,0])/2,
+        (array[...,1:] + array[...,:-1])/2,
+        array[...,-1:] + (array[...,-1]-array[...,-2])/2,
         ), axis=-1)
     if flip:
-        values = np.flip(values, axis=-1)
+        array = np.flip(array, axis=-1)
     # Permute back and return
-    values = np.swapaxes(values, axis, -1)
-    return values
+    array = np.swapaxes(array, axis, -1)
+    return array
 
-# Units
 def units(value, numeric='in'):
     """
     Flexible units -- this function is used internally all over ProPlot, so

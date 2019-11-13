@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Introduces the generalized `~mpl_toolkits.basemap.Basemap`
-and `cartopy.crs.Projection` projection instantiator "`Proj`".
-Also "registers" cartopy projections by their `PROJ.4 aliases
+and `cartopy.crs.Projection` instantiator "`Proj`", which
+"registers" cartopy projections by their `PROJ.4 aliases
 <https://proj4.org/operations/projections/index.html>`_ like in
 `~mpl_toolkits.basemap`.
 
@@ -11,69 +11,6 @@ Also adds pseudocylindrical `cartopy projections
 that are currently unavailable (Hammer, Aitoff, Kavrayskiy VII,
 and Winkel tripel), along with polar versions of the Azimuthal Equidistant and
 Lambert Azimuthal Equal Area projections, just like in `~mpl_toolkits.basemap`.
-
-####################
-Table of projections
-####################
-The following is a table of registered projections, their full names (with a
-link to the `PROJ.4 documentation <https://proj4.org/operations/projections/index.html>`_
-if it exists), and whether they are available in the cartopy and basemap packages.
-Note both basemap and cartopy use `PROJ.4` as their backends. The ``(added)``
-parenthetical indicates a cartopy projection that has been added by ProPlot.
-
-====================================  ===========================================================================================  =========  =======
-Key                                   Name                                                                                         Cartopy    Basemap
-====================================  ===========================================================================================  =========  =======
-``'aea'``                             `Albers Equal Area <https://proj4.org/operations/projections/aea.html>`_                     ✓          ✓
-``'aeqd'``                            `Azimuthal Equidistant <https://proj4.org/operations/projections/aeqd.html>`_                ✓          ✓
-``'aitoff'``                          `Aitoff <https://proj4.org/operations/projections/aitoff.html>`_                             ✓ (added)  ✗
-``'cass'``                            `Cassini-Soldner <https://proj4.org/operations/projections/cass.html>`_                      ✗          ✓
-``'cea'``                             `Cylindrical Equal Area <https://proj4.org/operations/projections/cea.html>`_                ✗          ✓
-``'eqc'``, ```'cyl'``, ``'pcarree'``  `Cylindrical Equidistant <https://proj4.org/operations/projections/eqc.html>`_               ✓          ✓
-``'eck1'``                            `Eckert I <https://proj4.org/operations/projections/eck1.html>`_                             ✓          ✗
-``'eck2'``                            `Eckert II <https://proj4.org/operations/projections/eck2.html>`_                            ✓          ✗
-``'eck3'``                            `Eckert III <https://proj4.org/operations/projections/eck3.html>`_                           ✓          ✗
-``'eck4'``                            `Eckert IV <https://proj4.org/operations/projections/eck4.html>`_                            ✓          ✓
-``'eck5'``                            `Eckert V <https://proj4.org/operations/projections/eck5.html>`_                             ✓          ✗
-``'eck6'``                            `Eckert VI <https://proj4.org/operations/projections/eck6.html>`_                            ✓          ✗
-``'eqdc'``                            `Equidistant Conic <https://proj4.org/operations/projections/eqdc.html>`_                    ✓          ✓
-``'eqearth'``                         `Equal Earth <https://proj4.org/operations/projections/eqearth.html>`_                       ✓          ✗
-``'europp'``                          Euro PP (Europe)                                                                             ✓          ✗
-``'gall'``                            `Gall Stereographic Cylindrical <https://proj4.org/operations/projections/gall.html>`_       ✗          ✓
-``'geos'``                            `Geostationary <https://proj4.org/operations/projections/geos.html>`_                        ✓          ✓
-``'gnom'``                            `Gnomonic <https://proj4.org/operations/projections/gnom.html>`_                             ✓          ✓
-``'hammer'``                          `Hammer <https://proj4.org/operations/projections/hammer.html>`_                             ✓ (added)  ✓
-``'igh'``                             `Interrupted Goode Homolosine <https://proj4.org/operations/projections/igh.html>`_          ✓          ✗
-``'kav7'``                            `Kavrayskiy VII <https://proj4.org/operations/projections/kav7.html>`_                       ✓ (added)  ✓
-``'laea'``                            `Lambert Azimuthal Equal Area <https://proj4.org/operations/projections/laea.html>`_         ✓          ✓
-``'lcc'``                             `Lambert Conformal <https://proj4.org/operations/projections/lcc.html>`_                     ✓          ✓
-``'lcyl'``                            Lambert Cylindrical                                                                          ✓          ✗
-``'mbtfpq'``                          `McBryde-Thomas Flat-Polar Quartic <https://proj4.org/operations/projections/mbtfpq.html>`_  ✗          ✓
-``'merc'``                            `Mercator <https://proj4.org/operations/projections/merc.html>`_                             ✓          ✓
-``'mill'``                            `Miller Cylindrical <https://proj4.org/operations/projections/mill.html>`_                   ✓          ✓
-``'moll'``                            `Mollweide <https://proj4.org/operations/projections/moll.html>`_                            ✓          ✓
-``'npaeqd'``                          North-Polar Azimuthal Equidistant                                                            ✓ (added)  ✓
-``'npgnom'``                          North-Polar Gnomonic                                                                         ✓ (added)  ✗
-``'nplaea'``                          North-Polar Lambert Azimuthal                                                                ✓ (added)  ✓
-``'npstere'``                         North-Polar Stereographic                                                                    ✓          ✓
-``'nsper'``                           `Near-Sided Perspective <https://proj4.org/operations/projections/nsper.html>`_              ✓          ✓
-``'osni'``                            OSNI (Ireland)                                                                               ✓          ✗
-``'osgb'``                            OSGB (UK)                                                                                    ✓          ✗
-``'omerc'``                           `Oblique Mercator <https://proj4.org/operations/projections/omerc.html>`_                    ✗          ✓
-``'ortho'``                           `Orthographic <https://proj4.org/operations/projections/ortho.html>`_                        ✓          ✓
-``'poly'``                            `Polyconic <https://proj4.org/operations/projections/poly.html>`_                            ✗          ✓
-``'rotpole'``                         Rotated Pole                                                                                 ✓          ✓
-``'sinu'``                            `Sinusoidal <https://proj4.org/operations/projections/sinu.html>`_                           ✓          ✓
-``'spaeqd'``                          South-Polar Azimuthal Equidistant                                                            ✓ (added)  ✓
-``'spgnom'``                          South-Polar Gnomonic                                                                         ✓ (added)  ✗
-``'splaea'``                          South-Polar Lambert Azimuthal                                                                ✓ (added)  ✓
-``'spstere'``                         South-Polar Stereographic                                                                    ✓          ✓
-``'stere'``                           `Stereographic <https://proj4.org/operations/projections/stere.html>`_                       ✓          ✓
-``'tmerc'``                           `Transverse Mercator <https://proj4.org/operations/projections/tmerc.html>`_                 ✓          ✓
-``'utm'``                             `Universal Transverse Mercator <https://proj4.org/operations/projections/utm.html>`_         ✓          ✗
-``'vandg'``                           `van der Grinten <https://proj4.org/operations/projections/vandg.html>`_                     ✗          ✓
-``'wintri'``                          `Winkel tripel <https://proj4.org/operations/projections/wintri.html>`_                      ✓ (added)  ✗
-====================================  ===========================================================================================  =========  =======
 """
 # from packaging import version
 # if version.parse(cartopy.__version__) < version.parse("0.13"):
@@ -122,13 +59,74 @@ def Proj(name, basemap=False, **kwargs):
     Parameters
     ----------
     name : str
-        The projection name. For a table of valid names, see the
-        `~proplot.projs` documentation.
+        The projection name. Like basemap, we use the PROJ.4 shorthands. The
+        following table lists the valid projection names, their full names
+        (with links to the relevant `PROJ.4 documentation
+        <https://proj4.org/operations/projections/index.html>`__),
+        and whether they are available in the cartopy and basemap packages.
+        "``(added)``" indicates a cartopy projection that ProPlot has
+        added using the native cartopy API.
+
+        ====================================  ===========================================================================================  =========  =======
+        Key                                   Name                                                                                         Cartopy    Basemap
+        ====================================  ===========================================================================================  =========  =======
+        ``'aea'``                             `Albers Equal Area <https://proj4.org/operations/projections/aea.html>`_                     ✓          ✓
+        ``'aeqd'``                            `Azimuthal Equidistant <https://proj4.org/operations/projections/aeqd.html>`_                ✓          ✓
+        ``'aitoff'``                          `Aitoff <https://proj4.org/operations/projections/aitoff.html>`_                             ✓ (added)  ✗
+        ``'cass'``                            `Cassini-Soldner <https://proj4.org/operations/projections/cass.html>`_                      ✗          ✓
+        ``'cea'``                             `Cylindrical Equal Area <https://proj4.org/operations/projections/cea.html>`_                ✗          ✓
+        ``'eqc'``, ```'cyl'``, ``'pcarree'``  `Cylindrical Equidistant <https://proj4.org/operations/projections/eqc.html>`_               ✓          ✓
+        ``'eck1'``                            `Eckert I <https://proj4.org/operations/projections/eck1.html>`_                             ✓          ✗
+        ``'eck2'``                            `Eckert II <https://proj4.org/operations/projections/eck2.html>`_                            ✓          ✗
+        ``'eck3'``                            `Eckert III <https://proj4.org/operations/projections/eck3.html>`_                           ✓          ✗
+        ``'eck4'``                            `Eckert IV <https://proj4.org/operations/projections/eck4.html>`_                            ✓          ✓
+        ``'eck5'``                            `Eckert V <https://proj4.org/operations/projections/eck5.html>`_                             ✓          ✗
+        ``'eck6'``                            `Eckert VI <https://proj4.org/operations/projections/eck6.html>`_                            ✓          ✗
+        ``'eqdc'``                            `Equidistant Conic <https://proj4.org/operations/projections/eqdc.html>`_                    ✓          ✓
+        ``'eqearth'``                         `Equal Earth <https://proj4.org/operations/projections/eqearth.html>`_                       ✓          ✗
+        ``'europp'``                          Euro PP (Europe)                                                                             ✓          ✗
+        ``'gall'``                            `Gall Stereographic Cylindrical <https://proj4.org/operations/projections/gall.html>`_       ✗          ✓
+        ``'geos'``                            `Geostationary <https://proj4.org/operations/projections/geos.html>`_                        ✓          ✓
+        ``'gnom'``                            `Gnomonic <https://proj4.org/operations/projections/gnom.html>`_                             ✓          ✓
+        ``'hammer'``                          `Hammer <https://proj4.org/operations/projections/hammer.html>`_                             ✓ (added)  ✓
+        ``'igh'``                             `Interrupted Goode Homolosine <https://proj4.org/operations/projections/igh.html>`_          ✓          ✗
+        ``'kav7'``                            `Kavrayskiy VII <https://proj4.org/operations/projections/kav7.html>`_                       ✓ (added)  ✓
+        ``'laea'``                            `Lambert Azimuthal Equal Area <https://proj4.org/operations/projections/laea.html>`_         ✓          ✓
+        ``'lcc'``                             `Lambert Conformal <https://proj4.org/operations/projections/lcc.html>`_                     ✓          ✓
+        ``'lcyl'``                            Lambert Cylindrical                                                                          ✓          ✗
+        ``'mbtfpq'``                          `McBryde-Thomas Flat-Polar Quartic <https://proj4.org/operations/projections/mbtfpq.html>`_  ✗          ✓
+        ``'merc'``                            `Mercator <https://proj4.org/operations/projections/merc.html>`_                             ✓          ✓
+        ``'mill'``                            `Miller Cylindrical <https://proj4.org/operations/projections/mill.html>`_                   ✓          ✓
+        ``'moll'``                            `Mollweide <https://proj4.org/operations/projections/moll.html>`_                            ✓          ✓
+        ``'npaeqd'``                          North-Polar Azimuthal Equidistant                                                            ✓ (added)  ✓
+        ``'npgnom'``                          North-Polar Gnomonic                                                                         ✓ (added)  ✗
+        ``'nplaea'``                          North-Polar Lambert Azimuthal                                                                ✓ (added)  ✓
+        ``'npstere'``                         North-Polar Stereographic                                                                    ✓          ✓
+        ``'nsper'``                           `Near-Sided Perspective <https://proj4.org/operations/projections/nsper.html>`_              ✓          ✓
+        ``'osni'``                            OSNI (Ireland)                                                                               ✓          ✗
+        ``'osgb'``                            OSGB (UK)                                                                                    ✓          ✗
+        ``'omerc'``                           `Oblique Mercator <https://proj4.org/operations/projections/omerc.html>`_                    ✗          ✓
+        ``'ortho'``                           `Orthographic <https://proj4.org/operations/projections/ortho.html>`_                        ✓          ✓
+        ``'poly'``                            `Polyconic <https://proj4.org/operations/projections/poly.html>`_                            ✗          ✓
+        ``'rotpole'``                         Rotated Pole                                                                                 ✓          ✓
+        ``'sinu'``                            `Sinusoidal <https://proj4.org/operations/projections/sinu.html>`_                           ✓          ✓
+        ``'spaeqd'``                          South-Polar Azimuthal Equidistant                                                            ✓ (added)  ✓
+        ``'spgnom'``                          South-Polar Gnomonic                                                                         ✓ (added)  ✗
+        ``'splaea'``                          South-Polar Lambert Azimuthal                                                                ✓ (added)  ✓
+        ``'spstere'``                         South-Polar Stereographic                                                                    ✓          ✓
+        ``'stere'``                           `Stereographic <https://proj4.org/operations/projections/stere.html>`_                       ✓          ✓
+        ``'tmerc'``                           `Transverse Mercator <https://proj4.org/operations/projections/tmerc.html>`_                 ✓          ✓
+        ``'utm'``                             `Universal Transverse Mercator <https://proj4.org/operations/projections/utm.html>`_         ✓          ✗
+        ``'vandg'``                           `van der Grinten <https://proj4.org/operations/projections/vandg.html>`_                     ✗          ✓
+        ``'wintri'``                          `Winkel tripel <https://proj4.org/operations/projections/wintri.html>`_                      ✓ (added)  ✗
+        ====================================  ===========================================================================================  =========  =======
+
     basemap : bool, optional
-        Whether to use the basemap or cartopy package. Default is ``False``.
+        Whether to use the basemap or cartopy package. Default is
+        ``False``.
     **kwargs
-        Passed to the `~mpl_toolkits.basemap.Basemap` or `cartopy.crs.Projection`
-        initializers.
+        Passed to the `~mpl_toolkits.basemap.Basemap` or
+        cartopy `~cartopy.crs.Projection` class.
 
     Returns
     -------
