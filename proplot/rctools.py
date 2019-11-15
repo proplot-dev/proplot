@@ -65,6 +65,7 @@ Key               Description
 ``ticklen``       Length of major ticks in points.
 ``tickdir``       Major and minor tick direction. Must be one of ``out``, ``in``, or ``inout``.
 ``tickpad``       Padding between ticks and tick labels in points.
+``tickminor``     Boolean, toggles minor ticks on and off.
 ``grid``          Boolean, toggles major grid lines on and off.
 ``gridminor``     Boolean, toggles minor grid lines on and off.
 ``tickratio``     Ratio of minor tickline width to major tickline width.
@@ -227,6 +228,7 @@ defaultParamsShort = {
     'tickpad':      2.0,
     'tickratio':    0.8,
     'ticklenratio': 0.5,
+    'tickminor':    True,
     'gridratio':    0.5,
     'reso':         'lo',
     'geogrid':      True,
@@ -413,7 +415,8 @@ RC_CHILDREN = {
     'gridminor': ('axes.gridminor',),
     'geogrid':   ('axes.geogrid',),
     'ticklen':   ('xtick.major.size', 'ytick.major.size'),
-    'tickdir':   ('xtick.direction',  'ytick.direction'),
+    'tickdir':   ('xtick.direction', 'ytick.direction'),
+    'tickminor': ('xtick.minor.visible', 'ytick.minor.visible'),
     'tickpad':   ('xtick.major.pad', 'xtick.minor.pad', 'ytick.major.pad', 'ytick.minor.pad'),
     'title.pad': ('axes.titlepad',),
     }
