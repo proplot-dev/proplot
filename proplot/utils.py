@@ -183,26 +183,26 @@ def units(value, numeric='in'):
         If string, we look for the format ``'123.456unit'``, where the
         number is the value and ``'unit'`` is one of the following.
 
-        ======  ===================================================================
-        Key     Description
-        ======  ===================================================================
+        ======  =====================================================
+        Unit    Description
+        ======  =====================================================
         ``m``   Meters
         ``cm``  Centimeters
         ``mm``  Millimeters
         ``ft``  Feet
         ``in``  Inches
         ``pt``  Points (1/72 inches)
-        ``px``  Pixels on screen, uses dpi of ``rc['figure.dpi']``
-        ``pp``  Pixels once printed, uses dpi of ``rc['savefig.dpi']``
-        ``em``  Em-square for ``rc['font.size']``
-        ``ex``  Ex-square for ``rc['font.size']``
-        ``Em``  Em-square for ``rc['axes.titlesize']``
-        ``Ex``  Ex-square for ``rc['axes.titlesize']``
-        ======  ===================================================================
+        ``px``  Pixels on screen, uses dpi of :rcraw:`figure.dpi`
+        ``pp``  Pixels once printed, uses dpi of :rcraw:`savefig.dpi`
+        ``em``  Em-square for :rcraw:`font.size`
+        ``ex``  Ex-square for :rcraw:`font.size`
+        ``Em``  Em-square for :rcraw:`axes.titlesize`
+        ``Ex``  Ex-square for :rcraw:`axes.titlesize`
+        ======  =====================================================
 
     numeric : str, optional
         The assumed unit for numeric arguments, and the output unit. Default
-        is **inches**, i.e. ``'in'``.
+        is inches, i.e. ``'in'``.
     """
     # Loop through arbitrary list, or return None if input was None (this
     # is the exception).

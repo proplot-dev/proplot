@@ -2912,8 +2912,8 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
         """
         Parameters
         ----------
-        map_projection : `~mpl_toolkits.basemap.Basemap`
-            The `~mpl_toolkits.basemap.Basemap` instance.
+        map_projection : `~cartopy.crs.Projection`
+            The `~cartopy.crs.Projection` instance.
         *args, **kwargs
             Passed to `Axes.__init__`.
 

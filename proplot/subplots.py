@@ -1670,8 +1670,8 @@ def subplots(array=None, ncols=1, nrows=1,
 
     Parameters
     ----------
-    array : array-like of int, optional
-        2-dimensional array specifying complex grid of subplots. Think of
+    array : 2D array-like of int, optional
+        Array specifying complex grid of subplots. Think of
         this array as a "picture" of your figure. For example, the array
         ``[[1, 1], [2, 3]]`` creates one long subplot in the top row, two
         smaller subplots in the bottom row. Integers must range from 1 to the

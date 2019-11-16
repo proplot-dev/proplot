@@ -62,6 +62,7 @@ extensions = [
 
 extlinks = {
     'issue': ('https://github.com/lukelbd/proplot/issues/%s', 'GH#'),
+    'commit': ('https://github.com/lukelbd/proplot/commit/%s', '@'),
     'pr': ('https://github.com/lukelbd/proplot/pull/%s', 'GH#'),
 }
 
@@ -113,10 +114,10 @@ add_module_names = False # confusing, because I use submodules for *organization
 
 # Napoleon options
 # See: http://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html
-napoleon_use_rtype = False
-napoleon_use_param = False
 napoleon_use_ivar = False
+napoleon_use_param = True
 napoleon_use_keyword = False
+napoleon_use_rtype = False
 napoleon_numpy_docstring = True
 napoleon_google_docstring = False
 napoleon_include_init_with_doc = False # move init doc to 'class' doc

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Defines various axis scales, locators, and formatters. Also "registers"
-the locator and formatter names, so that they can be called selected with
+Defines various axis locators, formatters, and scales. Also "registers"
+the locator and formatter names, so that they can be selected with
 the `~proplot.axes.CartesianAxes.format` method.
 """
 import re
@@ -148,12 +148,10 @@ def Formatter(formatter, *args, date=False, **kwargs):
         If string, there are 4 possibilities:
 
         1. If string contains ``'%'`` and `date` is ``False``, ticks will be formatted
-           using the C-notation ``string % number`` method. See `this page
-           <https://docs.python.org/3.4/library/string.html#format-specification-mini-language>`__
+           using the C-notation ``string % number`` method. See `this page <https://docs.python.org/3.4/library/string.html#format-specification-mini-language>`__
            for a review.
         2. If string contains ``'%'`` and `date` is ``True``, datetime
-           ``string % number`` formatting is used. See `this page
-           <https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior>`__
+           ``string % number`` formatting is used. See `this page <https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior>`__
            for a review.
         3. If string contains ``{x}`` or ``{x:...}``, ticks will be
            formatted by calling ``string.format(x=number)``.
@@ -260,9 +258,9 @@ def Scale(scale, *args, **kwargs):
         tuple or list is passed, the items after the string are passed to
         the scale as positional arguments.
 
-        =================  ===============================  ===========================================================================================================
+        =================  ===============================  =======================================================================
         Key                Class                            Description
-        =================  ===============================  ===========================================================================================================
+        =================  ===============================  =======================================================================
         ``'linear'``       `~matplotlib.scale.LinearScale`  Linear
         ``'log'``          `LogScale`                       Logarithmic
         ``'symlog'``       `SymmetricalLogScale`            Logarithmic beyond finite space around zero
@@ -274,16 +272,16 @@ def Scale(scale, *args, **kwargs):
         ``'exp'``          `ExpScale`                       Arbitrary exponential function
         ``'power'``        `PowerScale`                     Arbitrary power function
         ``'cutoff'``       `CutoffScale`                    Arbitrary linear transformations
-        ``'quadratic'``    `PowerScale` (preset)            Quadratic function, generated with ``PowerScale(axis, 2)``
-        ``'cubic'``        `PowerScale` (preset)            Cubic function, generated with ``PowerScale(axis, 3)``
-        ``'quartic'`       `PowerScale` (preset)            Cubic function, generated with ``PowerScale(axis, 4)``
-        ``'pressure'``     `ExpScale` (preset)              Expresses height (in km) linear in pressure, generated with ``ExpScale(axis, np.e, -1/7, 1013.25, False)``
-        ``'height'``       `ExpScale` (preset)              Expresses pressure (in mb) linear in height, generated with ``ExpScale(axis, np.e, -1/7, 1013.25, True)``
-        ``'db'``           `ExpScale` (preset)              Ratio expressed as `decibels <https://en.wikipedia.org/wiki/Decibel>`__.
-        ``'np'``           `ExpScale` (preset)              Ratio expressed as `nepers <https://en.wikipedia.org/wiki/Neper>`__.
-        ``'idb'``          `ExpScale` (preset)              `Decibels <https://en.wikipedia.org/wiki/Decibel>`__ expressed as ratio.
-        ``'inp'``          `ExpScale` (preset)              `Nepers <https://en.wikipedia.org/wiki/Neper>`__ expressed as ratio.
-        =================  ===============================  ===========================================================================================================
+        ``'quadratic'``    `PowerScale` (preset)            Quadratic function
+        ``'cubic'``        `PowerScale` (preset)            Cubic function
+        ``'quartic'``      `PowerScale` (preset)            Cubic function
+        ``'pressure'``     `ExpScale` (preset)              Height (in km) expressed linear in pressure
+        ``'height'``       `ExpScale` (preset)              Pressure (in hPa) expressed linear in height
+        ``'db'``           `ExpScale` (preset)              Ratio expressed as `decibels <https://en.wikipedia.org/wiki/Decibel>`__
+        ``'np'``           `ExpScale` (preset)              Ratio expressed as `nepers <https://en.wikipedia.org/wiki/Neper>`__
+        ``'idb'``          `ExpScale` (preset)              `Decibels <https://en.wikipedia.org/wiki/Decibel>`__ expressed as ratio
+        ``'inp'``          `ExpScale` (preset)              `Nepers <https://en.wikipedia.org/wiki/Neper>`__ expressed as ratio
+        =================  ===============================  =======================================================================
 
     *args, **kwargs
         Passed to the `~matplotlib.scale.ScaleBase` class.
@@ -597,7 +595,7 @@ class LogScale(_ScaleBase, mscale.LogScale):
         subs : list of int, optional
             Default tick locations are on these multiples of each power
             of the base. For example, ``subs=(1,2,5)`` draws ticks on 1, 2, 5,
-            10, 20, 50, 100, 200, 500, etc.
+            10, 20, 50, etc.
         basex, basey, nonposx, nonposy, subsx, subsy
             Aliases for the above keywords. These used to be conditional
             on the *name* of the axis...... yikes.
@@ -805,13 +803,15 @@ class ExpScale(_ScaleBase, mscale.ScaleBase):
         Ca^{bx}
 
     where the constants :math:`a`, :math:`b`, and :math:`C` are set by the
-    input (see below). When `inverse` is ``False``, this performs the inverse
+    input (see below). When `inverse` is ``True``, this performs the inverse
     transformation
 
     .. math::
 
         (\log_a(x) - \log_a(C))/b
 
+    which in appearence is equivalent to `LogScale` since it is just a linear
+    transformation of the logarithm.
     """
     name = 'exp'
     """The registered scale name."""
