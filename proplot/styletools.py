@@ -17,7 +17,7 @@ import json
 import glob
 import cycler
 from collections.abc import Sized
-from lxml import etree
+from xml.etree import ElementTree
 from numbers import Number, Integral
 from matplotlib import rcParams
 import numpy as np
@@ -2302,12 +2302,12 @@ def _load_cmap(filename, listed=False):
     # Adapted from script found here: https://sciviscolor.org/matlab-matplotlib-pv44/
     elif ext == 'xml':
         try:
-            xmldoc = etree.parse(filename)
+            doc = ElementTree.parse(filename)
         except IOError:
             warnings.warn(f'Failed to load {filename!r}.')
             return
         x, data = [], []
-        for s in xmldoc.getroot().findall('.//Point'):
+        for s in doc.getroot().findall('.//Point'):
             # Verify keys
             if any(key not in s.attrib for key in 'xrgb'):
                 warnings.warn(f'Failed to load {filename!r}. Missing an x, r, g, or b specification inside one or more <Point> tags.')
@@ -2331,7 +2331,7 @@ def _load_cmap(filename, listed=False):
         string = open(filename).read() # into single string
         data = re.findall('#[0-9a-fA-F]{6}', string) # list of strings
         if len(data) < 2:
-            warnings.warn(f'Failed to load "{filename}".')
+            warnings.warn(f'Failed to load {filename!r}. No hex strings found.')
             return
         # Convert to array
         x = np.linspace(0, 1, len(data))
