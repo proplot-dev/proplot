@@ -173,18 +173,6 @@ docstring.interpd.update(figure_doc=_figure_doc)
 #-----------------------------------------------------------------------------#
 # Helper classes
 #-----------------------------------------------------------------------------#
-class _hide_labels(object):
-    """Hide objects temporarily so they are ignored by the tight bounding
-    box algorithm."""
-    def __init__(self, *args):
-        self._labels = args
-    def __enter__(self):
-        for label in self._labels:
-            label.set_visible(False)
-    def __exit__(self, *args):
-        for label in self._labels:
-            label.set_visible(True)
-
 class axes_grid(list):
     """List subclass and pseudo-2D array that is used as a container for the
     list of axes returned by `subplots`, lists of figure panels, and lists of
@@ -352,6 +340,22 @@ class axes_grid(list):
 
         # Mixed
         raise AttributeError(f'Found mixed types for attribute {attr!r}.')
+
+    # TODO: Implement these
+    # def colorbar(self, loc=None):
+    #     """Draws a colorbar that spans axes in the selected range."""
+    #     for ax in self:
+    #         pass
+    #
+    # def legend(self, loc=None):
+    #     """Draws a legend that spans axes in the selected range."""
+    #     for ax in self:
+    #         pass
+    #
+    # def text(self, loc=None):
+    #     """Draws text that spans axes in the selected range."""
+    #     for ax in self:
+    #         pass
 
 class SubplotSpec(mgridspec.SubplotSpec):
     """
@@ -714,6 +718,19 @@ def _get_space(key, share=0, pad=None):
     else:
         raise KeyError(f'Invalid space key {key!r}.')
     return space
+
+class _hide_labels(object):
+    """Hides objects temporarily so they are ignored by the tight bounding
+    box algorithm."""
+    # TODO: Remove this by overriding the tight bounding box calculation
+    def __init__(self, *args):
+        self._labels = args
+    def __enter__(self):
+        for label in self._labels:
+            label.set_visible(False)
+    def __exit__(self, *args):
+        for label in self._labels:
+            label.set_visible(True)
 
 class EdgeStack(object):
     """
