@@ -115,7 +115,7 @@ add_module_names = False # confusing, because I use submodules for *organization
 # Napoleon options
 # See: http://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html
 napoleon_use_ivar = False
-napoleon_use_param = True
+napoleon_use_param = False
 napoleon_use_keyword = False
 napoleon_use_rtype = False
 napoleon_numpy_docstring = True
