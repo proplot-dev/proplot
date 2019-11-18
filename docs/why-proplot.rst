@@ -9,8 +9,8 @@ beautiful graphics. This page
 enumerates these limitations and
 describes how ProPlot addresses them.
 
-Efficiency
-==========
+Efficient modifications
+=======================
 Problem
 -------
 Power users often need to change lots of plot settings all at once. In matplotlib, this requires a bunch of one-liner setters and getters, like `~matplotlib.axes.Axes.set_title`. 
