@@ -149,7 +149,11 @@ language = None
 # This pattern also affects html_static_path and html_extra_path .
 # WARNING: Must add 'include' files or will get duplicate label warnings.
 # WARNING: Must add files containing showcase examples
-exclude_patterns = ['_templates', '_themes', 'showcase', 'sphinxext', 'automodapi', 'trash', '.DS_Store']
+exclude_patterns = [
+    '_templates', '_themes', 'showcase',
+    'sphinxext', 'automodapi',
+    'trash', '.DS_Store', '**.ipynb_checkpoints'
+    ]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
