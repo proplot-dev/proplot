@@ -54,6 +54,18 @@ div.sphinxsidebar {
   /* color: #404040; */
 }
 
+/* Table rows */
+.wy-table-odd td,
+.wy-table-striped tr:nth-child(2n-1) td,
+.rst-content table.docutils:not(.field-list) tr:nth-child(2n-1) td {
+  background: #f0f0f0;
+}
+.wy-table-even td,
+.wy-table-striped tr:nth-child(2n) td,
+.rst-content table.docutils:not(.field-list) tr:nth-child(2n) td {
+  background: #fcfcfc;
+}
+
 /* Light mode background colors very similar to defaults */
 /* Includes text-logo color, needed for small windows and mobile */
 .wy-menu a
