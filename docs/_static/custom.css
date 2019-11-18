@@ -23,8 +23,6 @@ div.sphinxsidebar {
 /* Grayscale Parameters and Returns headers */
 /* Note specificity has to be high so will be overridden */
 .rst-content dl:not(.docutils) .field-list>dt {
-  border-top: solid 3px #ccc;
-  border-left: 0;
   font-weight: bold;
   font-size: 16px; /* todo make relative */
   color: #404040;
@@ -37,7 +35,7 @@ div.sphinxsidebar {
  *   border: 0;
  *   background: transparent;
  *   font-weight: bold;
- *   font-size: 16px; [> todo make relative <]
+ *   font-size: 16px;
  *   color: #404040;
  * } */
 
