@@ -34,24 +34,24 @@ div.sphinxsidebar {
 /* Pale header to grayscale */
 /* Use same color for call signature border and note block title background */
 /* :root {
- *     --pale: #f4f4f4;
+ *     --pale: #color;
  * } */
+.rst-content dl:not(.docutils) dt .property,
+.rst-content dl:not(.docutils) dt .descname {
+  color: #404040; /* Name and property colors */
+}
+.rst-content dl:not(.docutils) dt {
+  color: #606060; /* Arguments colors */
+  background: #f0f0f0;
+  border-top-color: #d0d0d0;
+}
 .rst-content dl:not(.docutils) .admonition {
-  background: #f4f4f4;
+  background: #f0f0f0;
 }
 .rst-content dl:not(.docutils) .admonition>.admonition-title {
   color: #404040;
   background: #d0d0d0;
   /* color: #404040; */
-}
-.rst-content dl:not(.docutils) dt {
-  color: #606060; /* Arguments colors */
-  background: #f4f4f4;
-  border-top-color: #d0d0d0;
-}
-.rst-content dl:not(.docutils) dt .property,
-.rst-content dl:not(.docutils) dt .descname {
-  color: #404040; /* Name and property colors */
 }
 
 /* Light mode background colors very similar to defaults */
@@ -67,7 +67,7 @@ div.sphinxsidebar {
 .wy-nav-top,
 .wy-side-nav-search,
 .wy-nav-content-wrap {
-  background: #f4f4f4;
+  background: #f0f0f0;
 }
 .wy-menu a:hover,
 .wy-menu .toctree-l1.current>a:hover,
