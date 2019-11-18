@@ -16,7 +16,7 @@ import sys
 
 # Sphinx-automodapi requires proplot on path
 sys.path.insert(0, os.path.abspath('..'))
-# Then add path for local sphinxext extensions
+# Then add path for local 'sphinxext' extensions
 # Not sure when abspath is required
 sys.path.append(os.path.abspath('.'))
 
@@ -45,6 +45,7 @@ extensions = [
     # 'nbsphinx', # TODO: add this! might require custom fork
     'sphinx.ext.autodoc',           # include documentation from docstrings
     'sphinx.ext.doctest',           # >>> examples
+    'sphinx.ext.extlinks',          # for :pr:, :issue:, :commit:
     'sphinx.ext.autosectionlabel',  # use :ref:`Heading` for any heading
     'sphinx.ext.intersphinx',       # external links
     'sphinx.ext.todo',              # Todo headers and todo:: directives
@@ -52,7 +53,7 @@ extensions = [
     'sphinx.ext.viewcode',          # view code links
     'sphinx.ext.autosummary',       # autosummary directive
     'sphinx.ext.napoleon',          # for NumPy style docstrings, instead of reStructred Text
-    'sphinx_automodapi.automodapi', # my fork of the astropy extension
+    'sphinx_automodapi.automodapi', # custom fork of the astropy extension
     'sphinxext.custom_roles',       # local extension
     # 'IPython.sphinxext.ipython_console_highlighting',
     # 'IPython.sphinxext.ipython_directive',  # for ipython highlighting
@@ -130,9 +131,7 @@ numpydoc_show_class_members = False
 templates_path = ['_templates']
 
 # The suffix(es) of source filenames.
-# You can specify multiple suffix as a list of string:
-#
-# source_suffix = ['.rst', '.md']
+# You can specify multiple suffix as a list of string.
 source_suffix = '.rst'
 
 # The master toctree document.
@@ -162,25 +161,75 @@ default_role = 'py:obj' # default family is py, but can also set default role so
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-#
-# html_theme = 'alabaster' # ugly default
-# html_theme = 'sphinx_rtd_theme' # from: https://sphinx-rtd-theme.readthedocs.io/en/latest/installing.html
-html_theme = 'rtd_custom'
-html_theme_path = ['_themes']
+
+# Rtd theme still the best
+# in _templates but can just use below optoin.
+# We set "style_nav_header_background" in custom.css
+html_theme = 'sphinx_rtd_theme'
 html_theme_options = {
     'logo_only': True,
     'display_version': False,
     'collapse_navigation': True,
     'navigation_depth': 4,
+    'prev_next_buttons_location': 'bottom', # top and bottom
     }
-# html_sidebars = {'**': ['layout.html', 'search.html', 'breadcrumbs.html', 'footer.html', 'searchbox.html']}
-# html_sidebars = {'**': ['fulltoc.html', 'relations.html', 'sourcelink.html', 'searchbox.html']}
-# html_sidebars = {'**': ['fulltoc.html', 'relations.html', 'sourcelink.html', 'searchbox.html']}
+
+# Matplotlib theme, ugly
+# html_theme = "sphinxdoc" # like matplotlib
+
+# Beautiful but sidebar is not locked
+# import sphinx_modern_theme
+# html_theme = 'sphinx_modern_theme'
+# pygments_style = 'default'
+# html_theme_path = [
+#     sphinx_modern_theme.get_html_theme_path(),
+# ]
+
+# Simple but insufficient
+# Tried: https://stackoverflow.com/a/57040610/4970632
+# But items disappear after adding html_sidebars dictionary
+# html_theme = 'alabaster'
+# html_logo = None # or get 2 logos! need to specify in dictionary so text does not appear
+# html_theme_options = {
+#     'logo': 'logo.png',
+#     'logo_name': False,
+#     'description': 'A matplotlib wrapper for making beautiful, publication-quality graphics.',
+#     'page_width': '90%',
+#     'fixed_sidebar': True,
+#     'show_relbars': True,
+#     'sidebar_collapse': True,
+#     'sidebar_width': '20%',
+#     'caption_font_size': 'x-large',
+#     'sidebar_link_underscore': 'transparent',
+#     }
+
+# Clean but no margins, no full TOC, no box around tables
+# To modify see: For guzzle theme: https://github.com/guzzle/guzzle_sphinx_theme/issues/22
+# import guzzle_sphinx_theme
+# html_theme_path = guzzle_sphinx_theme.html_theme_path()
+# html_theme = 'guzzle_sphinx_theme'
+# extensions.append("guzzle_sphinx_theme")
+# html_theme_options = {
+#     # Set the name of the project to appear in the sidebar
+#     # "project_nav_name": "Project Name",
+#     'navigation_depth': 4,
+# }
+
+# Readthedocs clones
+# import rtcat_sphinx_theme
+# html_theme = "rtcat_sphinx_theme"
+# html_theme_path = [rtcat_sphinx_theme.get_html_theme_path()]
+# import sphinx_pdj_theme
+# html_theme = 'sphinx_pdj_theme'
+# htm_theme_path = [sphinx_pdj_theme.get_html_theme_path()]
+
+# Custom theme in the future?
+# html_theme = 'custom'
+# html_theme_path = ['_themes']
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#
 # html_theme_options = {}
 
 # Add any paths that contain custom static files (such as style sheets) here,

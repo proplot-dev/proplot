@@ -148,10 +148,12 @@ def Formatter(formatter, *args, date=False, **kwargs):
         If string, there are 4 possibilities:
 
         1. If string contains ``'%'`` and `date` is ``False``, ticks will be formatted
-           using the C-notation ``string % number`` method. See `this page <https://docs.python.org/3.4/library/string.html#format-specification-mini-language>`__
+           using the C-notation ``string % number`` method. See
+           `this page <https://docs.python.org/3.4/library/string.html#format-specification-mini-language>`__
            for a review.
         2. If string contains ``'%'`` and `date` is ``True``, datetime
-           ``string % number`` formatting is used. See `this page <https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior>`__
+           ``string % number`` formatting is used. See
+           `this page <https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior>`__
            for a review.
         3. If string contains ``{x}`` or ``{x:...}``, ticks will be
            formatted by calling ``string.format(x=number)``.

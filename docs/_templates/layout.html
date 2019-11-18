@@ -1,17 +1,14 @@
 {% extends "!layout.html" %}
-  {% block footer %} {{ super() }}
-
-  <style>
-    /* Sidebar header (and topbar for mobile) */
-    .wy-side-nav-search, .wy-nav-top {
-      background: #2968b2;
-    }
-    /* background: #2968b2; */
-    /* background: #888888; */
-    /* background: #5b9dff; */
-    /* background: #ff0000; */
-    /* Sidebar */
-    .wy-nav-side {
-    }
-  </style>
+<!--
+  Blocks: https://www.sphinx-doc.org/en/master/templating.html#blocks
+  Edit extrahead: https://stackoverflow.com/questions/23211695/modifying-content-width-of-the-sphinx-theme-read-the-docs
+  Edit footer: https://stackoverflow.com/a/48281750/4970632
+  The css_files method: https://stackoverflow.com/a/32079202/4970632
+  Critical to use pathto() instead of "_static/custom.css" because auto
+  generated docs are in "api" subfolder so link becomes invalid!
+  Use extrahead because it is recommended in templating instructions, css_files
+  method does *not require* pathto() but do not understand why, seems sketchy
+-->
+{% block extrahead %}
+    <link href="{{ pathto("_static/custom.css", True) }}" rel="stylesheet" type="text/css">
 {% endblock %}

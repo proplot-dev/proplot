@@ -1,0 +1,156 @@
+/* This file contains edits to the Alabaster and RTD theme CSS style
+ * sheets. The latter requires a _templates/layout.html file.
+ * https://learn.shayhowe.com/advanced-html-css/complex-selectors/
+ * - item is tag e.g. <item></item>
+ * - #item is id e.g. <p id="item"></p>
+ * - .item is class e.g. <p class="item"></p>
+ * - item[key] or item[key=*] filters tags e.g. <item key="key"></item>
+ * - .item1.item2 {} matches tag belonging to *both* classes/ids
+ * - .item1 .item2 {} matches where item2 is *descendent* of item tag/class/id
+ * - .item1, .item2 {} matches tag belonging to *either* tag/class/id
+ * - item1:key {} matches "pseudo-class" e.g. item1:hover or "pseudo-element" e..g item1:first-line
+ * - default blue for header and links: 2f81b7
+ * - better blue used before: 2d6ab0
+ */
+
+/* Alabaster scroll sidebar: https://stackoverflow.com/a/57040610/4970632 */
+div.sphinxsidebar {
+    max-height: 100%;
+    overflow-y: auto;
+}
+
+/* Rtd edits see https://stackoverflow.com/a/48281750/4970632 */
+/* Parameter table headers */
+/* Note specificity has to be high so will be overridden */
+.rst-content dl:not(.docutils) .field-list>dt {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font-weight: bold;
+  font-size: 16px; /* todo make relative */
+  color: #404040;
+}
+
+/* Pale header to grayscale */
+/* Use same color for call signature border and note block title background */
+/* :root {
+ *     --pale: #f4f4f4;
+ * } */
+.rst-content dl:not(.docutils) .admonition {
+  background: #f4f4f4;
+}
+.rst-content dl:not(.docutils) .admonition>.admonition-title {
+  color: #404040;
+  background: #d0d0d0;
+  /* color: #404040; */
+}
+.rst-content dl:not(.docutils) dt {
+  color: #606060; /* Arguments colors */
+  background: #f4f4f4;
+  border-top-color: #d0d0d0;
+}
+.rst-content dl:not(.docutils) dt .property,
+.rst-content dl:not(.docutils) dt .descname {
+  color: #404040; /* Name and property colors */
+}
+
+/* Light mode background colors very similar to defaults */
+/* Includes text-logo color, needed for small windows and mobile */
+.wy-nav-side,
+.wy-nav-top,
+.wy-side-nav-search,
+.wy-nav-content-wrap {
+  background: #f4f4f4;
+}
+.wy-nav-content {
+  background: #fcfcfc;
+}
+.wy-menu-vertical a:hover{
+  background-color: #fcfcfc;
+}
+.wy-nav-top {
+  color: #404040;
+}
+
+/* Dark mode background colors with light mode in center */
+
+
+/* Sidebar text colors */
+/* .wy-nav .wy-menu-vertical a:hover {
+ *   background-color: #ffffff;
+ *   color: #404040;
+ * } */
+/* .wy-menu-vertical a,
+ * .wy-menu-vertical header,
+ * .wy-menu-vertical p.caption {
+ *   color: #404040;
+ * } */
+/* .wy-table-secondary{
+ *   color: #404040;
+ *   font-size: 90%
+ * }
+ * .wy-table-tertiary{
+ *   color: #404040;
+ *   font-size: 80%
+ * }
+ * .wy-menu-vertical a{
+ *   color: #000000;
+ * }
+ * .wy-menu-vertical {
+ *   color: #000000;
+ * }
+ * .wy-menu-vertical li ul li a {
+ *   color: #000000;
+ * }
+ * .wy-menu-vertical a:hover span.toctree-expand{
+ *   color: #000000
+ * } */
+
+/* Make logo flush in box */
+/* Use same specific selectors as in stylesheet */
+.wy-side-nav-search .wy-dropdown>a img.logo,
+.wy-side-nav-search>a img.logo {
+  padding: 0;
+}
+.wy-side-nav-search .wy-dropdown>a,
+.wy-side-nav-search>a {
+  padding: 0;
+}
+
+/* Hyperlink colors */
+a {
+  color: #2d6ab0;
+}
+a:hover {
+  color: #0079ff;
+}
+a:visited {
+  color: #452db0;
+}
+
+/* Literal code color */
+.rst-content code.literal,
+.rst-content tt.literal {
+  color: #808080;
+}
+
+/* Parameter reference code color */
+.rst-content code.xref.docutils.literal,
+.rst-content tt.xref.docutils.literal {
+  color: #404040;
+}
+
+/* Sphinx link color matching normal hyperlinks */
+.rst-content a code.xref.docutils.literal,
+.rst-content a tt.xref.docutils.literal {
+  color: #2d6ab0;
+}
+.rst-content a:hover code.xref.docutils.literal,
+.rst-content a:hover tt.xref.docutils.literal {
+  color: #0079ff;
+}
+.rst-content a:visited code.xref.docutils.literal,
+.rst-content a:visited tt.xref.docutils.literal {
+  color: #452bb0;
+}
+
