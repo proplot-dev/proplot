@@ -9,14 +9,12 @@ ProPlot
 
 A comprehensive, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful, publication-quality graphics. The Github page is `here <https://github.com/lukelbd/proplot>`__.
 
-.. include:: importing.rst
-
 .. include:: installation.rst
 
-Usage
-=====
+Instructions
+============
 
-To get started, check out the :ref:`Introduction` of the User Guide.
+To get started, check out the :ref:`Quick overview` and the User Guide :ref:`Introduction`.
 
 .. :hidden: means do not put a table of links right here but include links in sidebar
 
@@ -28,9 +26,8 @@ To get started, check out the :ref:`Introduction` of the User Guide.
    :caption: Getting Started
 
    why-proplot
-   faq
    quick-overview
-   installation
+   faq
 
 .. toctree::
    :hidden:

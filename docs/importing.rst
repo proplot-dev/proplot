@@ -1,7 +1,7 @@
 Importing
 =========
 
-I recommend importing ProPlot with
+We recommend importing ProPlot with
 
 .. code-block:: python
 
