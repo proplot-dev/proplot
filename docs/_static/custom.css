@@ -56,47 +56,67 @@ div.sphinxsidebar {
 
 /* Light mode background colors very similar to defaults */
 /* Includes text-logo color, needed for small windows and mobile */
+.wy-menu a
+.wy-menu header,
+.wy-menu a:visited,
+.wy-menu p.caption,
+.wy-nav-top .fa-bars {
+  color: #404040;
+}
 .wy-nav-side,
 .wy-nav-top,
 .wy-side-nav-search,
-.wy-nav-content-wrap { /* Outside */
+.wy-nav-content-wrap {
   background: #f4f4f4;
 }
-.wy-nav-content { /* Content */
-  background: #fcfcfc;
-}
 .wy-menu a:hover,
-.wy-menu .toctree-l1.current>a { /* Hover and current */
-  background: #fcfcfc;
+.wy-menu .toctree-l1.current>a:hover,
+.wy-menu .toctree-l1.current>a {
+  background: #e3e3e3;
 }
-.wy-nav-top,
-.wy-menu a,
-.wy-menu header,
-.wy-menu a:visited,
-.wy-menu p.caption {
-  color: #404040;
+.wy-nav-content {
+  background: #fcfcfc;
 }
 
 /* Dark mode background colors with light mode in center */
-/* .wy-nav-content {
- *   background: #fcfcfc;
+/* Combination dark and light is gross so forget this */
+/* .wy-nav-content-wrap {
+ *   background: #fcfcfc; [> make right color same as content <]
  * }
  * .wy-nav-side,
  * .wy-nav-top,
- * .wy-side-nav-search,
- * .wy-nav-content-wrap {
+ * .wy-side-nav-search {
+ *   background: #303030;
+ * }
+ * .wy-menu a
+ * .wy-menu header,
+ * .wy-menu a:visited,
+ * .wy-menu p.caption {
+ *   color: #fcfcfc;
+ * }
+ * .wy-menu .toctree-l1 a:hover,
+ * .wy-menu .toctree-l1.current>a { [> Hover and current <]
  *   background: #202020;
  * }
- * .wy-menu-vertical a:hover {
- *   background-color: #fcfcfc;
+ * .wy-menu .toctree-l2 a,
+ * .wy-menu .toctree-l2 header,
+ * .wy-menu .toctree-l2 a:visited,
+ * .wy-menu .toctree-l2 p.caption {
+ *   color: #e0e0e0;
+ *   background: #404040;
  * }
- * .wy-nav-top {
- *   color: #404040;
+ * .wy-menu .toctree-l2 a:hover,
+ * .wy-menu .toctree-l2.current>a { [> Hover and current <]
+ *   color: #e0e0e0;
+ *   background: #202020;
  * } */
 
 
 /* Make logo flush in box */
 /* Use same specific selectors as in stylesheet */
+.wy-side-nav-search {
+  margin-bottom: 0;
+}
 .wy-side-nav-search .wy-dropdown>a img.logo,
 .wy-side-nav-search>a img.logo {
   padding: 0;
@@ -118,15 +138,24 @@ a:visited {
 }
 
 /* Literal code color */
+/* Not docutils needed to match specificity of default tags */
+/* Without not docutils needed for some pages e.g. Configuration */
 .rst-content code.literal,
 .rst-content tt.literal {
-  color: #808080;
+  color: #606060;
+  font-weight: normal;
+}
+.rst-content dl:not(.docutils) code.literal,
+.rst-content dl:not(.docutils) tt.literal {
+  color: #606060;
+  font-weight: normal;
 }
 
 /* Parameter reference code color */
 .rst-content code.xref.docutils.literal,
 .rst-content tt.xref.docutils.literal {
   color: #404040;
+  font-weight: bold;
 }
 
 /* Sphinx link color matching normal hyperlinks */

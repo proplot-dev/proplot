@@ -52,8 +52,8 @@ extensions = [
     'sphinx.ext.viewcode',          # view code links
     'sphinx.ext.autosummary',       # autosummary directive
     'sphinx.ext.napoleon',          # for NumPy style docstrings, instead of reStructred Text
-    'sphinxext.custom_roles',       # local extension
     'sphinx.ext.intersphinx',       # external links
+    'sphinxext.custom_roles',       # local extension
     'sphinx_automodapi.automodapi', # custom fork of the astropy extension
     # 'IPython.sphinxext.ipython_console_highlighting',
     # 'IPython.sphinxext.ipython_directive',  # for ipython highlighting
