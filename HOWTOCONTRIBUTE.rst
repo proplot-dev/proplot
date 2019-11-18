@@ -1,5 +1,5 @@
 ==================
-Contribution Guide
+Contribution guide
 ==================
 
 Contributions are highly welcomed and appreciated.  Every little help counts,
@@ -62,15 +62,15 @@ without using a local copy.  This can be convenient for small fixes.
 Our documentation is written in reStructuredText. You can follow our conventions in already written documents. Some helpful guides are located `here <http://docutils.sourceforge.net/docs/user/rst/quickref.html>`__ and `here <https://github.com/ralsina/rst-cheatsheet/blob/master/rst-cheatsheet.rst>`__.
 
 .. note::
-    Build the documentation locally with the following command:
+    To build the documentation locally, use the following commands:
 
     .. code:: bash
 
-        $ conda env update -f ci/environment-dev-3.6.yml
-        $ cd docs
-        $ make html
+        cd docs
+        pip install requirements.txt
+        make html
 
-    The built documentation should be available in the ``docs/build/``.
+    The built documentation should be available in the ``docs/_build/html``.
 
 If you need to add new functions to the API, run ``sphinx-autogen -o api api.rst`` from the ``docs/source`` directory and add the functions to ``api.rst``.
 
@@ -89,41 +89,44 @@ Preparing Pull Requests
    under your user.
 
 #. Clone your fork locally using `git <https://git-scm.com/>`__, connect your repository
-   to the upstream (main project), and create a branch::
+   to the upstream (main project), and create a branch:
 
-    $ git clone git@github.com:YOUR_GITHUB_USERNAME/proplot.git
-    $ cd proplot
-    $ git remote add upstream git@github.com:lukelbd/proplot.git
+   .. code-block:: bash
 
-    # now, to fix a bug or add feature create your own branch off "master":
+      git clone git@github.com:YOUR_GITHUB_USERNAME/proplot.git
+      cd proplot
+      git remote add upstream git@github.com:lukelbd/proplot.git
+      git checkout -b your-bugfix-feature-branch-name master
 
-    $ git checkout -b your-bugfix-feature-branch-name master
+   If you need some help with git, follow the
+   `quick start guide <https://git.wiki.kernel.org/index.php/QuickStart>`__.
 
-   If you need some help with Git, follow this quick start
-   guide: https://git.wiki.kernel.org/index.php/QuickStart
+#. Make an editable install of proplot by running:
 
-#. Install dependencies into a new conda environment::
+   .. code-block:: bash
 
-    $ conda env update -f ci/environment-dev-3.7.yml
-    $ conda activate proplot-dev
+      pip install -e .
 
-#. Make an editable install of proplot by running::
-
-    $ pip install -e .
+   This way when you ``import proplot``, your
+   local copy is used. Make sure matplotlib is already installed.
 
 #. Break your edits up into reasonably sized commits.
 
-    $ git commit -a -m "<commit message>"
-    $ git push -u
+   .. code-block:: bash
 
-#. Run all the tests
+      git commit -a -m "<commit message>"
+      git push -u
 
-   Now running tests is as simple as issuing this command::
+   The commit messages should be short, sweet, and use the imperative mood,
+   e.g. "Fix bug" instead of "Fixed bug".
 
-    $ coverage run --source proplot -m py.test
+#. Run all the tests. Now running tests is as simple as issuing this command:
 
+   .. code-block:: bash
 
-   This command will run tests via the "pytest" tool against Python 3.6.
+      coverage run --source proplot -m py.test
+
+   This command will run tests via the ``pytest`` tool against Python 3.7.
 
 
 #. Create a new changelog entry in ``CHANGELOG.rst``:
@@ -136,13 +139,15 @@ Preparing Pull Requests
 
    - Add yourself to list of authors at the end of ``CHANGELOG.rst`` file if not there yet, in alphabetical order.
 
-#. Finally, submit a pull request through the GitHub website using this data::
+#. Finally, submit a pull request through the GitHub website using this data:
 
-    head-fork: YOUR_GITHUB_USERNAME/proplot
-    compare: your-branch-name
+   .. code-block::
 
-    base-fork: lukelbd/proplot
-    base: master
+      head-fork: YOUR_GITHUB_USERNAME/proplot
+      compare: your-branch-name
+
+      base-fork: lukelbd/proplot
+      base: master
 
 Note that you can create the Pull Request while you're working on this. The PR will update
 as you add more commits. ``proplot`` developers and contributors can then review your code
@@ -156,12 +161,12 @@ API changes, a minor version adds functionality, and a patch covers bug fixes.
 
 #. Create a new branch ``release-vX.x.x`` with the version for the release.
 
-  * Update ``CHANGELOG.rst``.
-  * Make sure all new changes, features are reflected in the documentation.
+   * Update ``CHANGELOG.rst``.
+   * Make sure all new changes, features are reflected in the documentation.
 
-#. Open a new pull request for this branch targeting `master` 
+#. Open a new pull request for this branch targeting ``master``.
 
-#. After all tests pass and the PR has been approved, merge the PR into ``master`` 
+#. After all tests pass and the PR has been approved, merge the PR into ``master``.
 
 #. Tag a release and push to github::
 
@@ -173,11 +178,4 @@ API changes, a minor version adds functionality, and a patch covers bug fixes.
     $ git clean -xfd # remove any files not checked into git
     $ python setup.py sdist bdist_wheel --universal # build package
     $ twine upload dist/* # register and push to pypi
-
-Past and current contributors
-=============================
-
-`Luke Davis <https://github.com/lukelbd>`__ is the sole developer, as of November 2019. Luke is a graduate student in climate science at Colorado State University who has always been frustrated by repetitive and clumsy plotting code. As an undergraduate, he developed an extensive set of MATLAB plotting utilities for personal use. When he switched to python in graduate school, he translated most of these utilities to python, learned more about the language, began to rapidly develop them, and thought they were worth sharing with the rest of the scientific community. Luke is also a vim enthusiast and has authored `a number of vim plugins <https://github.com/lukelbd?tab=repositories>`__.
-
-`Riley Brady <https://github.com/bradyrx>`__ is another important contributor. You can thank him for his recommendations on how to organize this project, set up automatic testing, allow new contributors to join, and deploy it to the world. He is also the earliest user of ProPlot and helped Luke fix a lot of the initial bugs. If your field is atmospheric science, check out his `decadal climate prediction package <https://github.com/bradyrx/climpred>`__.
 

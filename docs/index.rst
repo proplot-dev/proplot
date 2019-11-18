@@ -53,6 +53,7 @@ To get started, check out the :ref:`Introduction` of the User Guide.
    changelog
    contributions
    external-links
+   authors
 
 .. toctree::
 
