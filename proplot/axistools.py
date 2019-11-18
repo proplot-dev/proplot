@@ -13,7 +13,7 @@ import numpy as np
 import numpy.ma as ma
 import warnings
 import matplotlib.dates as mdates
-import matplotlib.projections as mproj
+import matplotlib.projections.polar as mpolar
 import matplotlib.ticker as mticker
 import matplotlib.scale as mscale
 import matplotlib.transforms as mtransforms
@@ -58,7 +58,9 @@ def Locator(locator, *args, **kwargs):
 
     Parameters
     ----------
-    locator : str, float, or list of float
+    locator : `~matplotlib.ticker.Locator`, str, float, or list of float
+        If `~matplotlib.ticker.Locator`, the object is returned.
+
         If number, specifies the *multiple* used to define tick separation.
         Returns a `~matplotlib.ticker.MultipleLocator` instance.
 
@@ -67,31 +69,32 @@ def Locator(locator, *args, **kwargs):
 
         If string, a dictionary lookup is performed (see below table).
 
-        ======================  ==========================================  =========================================================================================
-        Key                     Class                                       Description
-        ======================  ==========================================  =========================================================================================
-        ``'null'``, ``'none'``  `~matplotlib.ticker.NullLocator`            No ticks
-        ``'auto'``              `~matplotlib.ticker.AutoLocator`            Major ticks at sensible locations
-        ``'minor'``             `~matplotlib.ticker.AutoMinorLocator`       Minor ticks at sensible locations
-        ``'date'``              `~matplotlib.dates.AutoDateLocator`         Default tick locations for datetime axes
-        ``'log'``               `~matplotlib.ticker.LogLocator` preset      For log-scale axes, ticks on each power of the base
-        ``'logminor'``          `~matplotlib.ticker.LogLocator` preset      For log-scale axes, ticks on the 1st through 9th multiples of each power of the base
-        ``'maxn'``              `~matplotlib.ticker.MaxNLocator`            No more than ``N`` ticks at sensible locations
-        ``'linear'``            `~matplotlib.ticker.LinearLocator`          Exactly ``N`` ticks encompassing the axis limits, spaced as ``numpy.linspace(lo, hi, N)``
-        ``'multiple'``          `~matplotlib.ticker.MultipleLocator`        Ticks every ``N`` step away from zero
-        ``'fixed'``             `~matplotlib.ticker.FixedLocator`           Ticks at these exact locations
-        ``'index'``             `~matplotlib.ticker.IndexLocator`           Ticks on the non-negative integers
-        ``'symlog'``            `~matplotlib.ticker.SymmetricalLogLocator`  Ticks for symmetrical log-scale axes
-        ``'logit'``             `~matplotlib.ticker.LogitLocator`           Ticks for logit-scale axes
-        ``'year'``              `~matplotlib.dates.YearLocator`             Ticks every ``N`` years
-        ``'month'``             `~matplotlib.dates.MonthLocator`            Ticks every ``N`` months
-        ``'weekday'``           `~matplotlib.dates.WeekdayLocator`          Ticks every ``N`` weekdays
-        ``'day'``               `~matplotlib.dates.DayLocator`              Ticks every ``N`` days
-        ``'hour'``              `~matplotlib.dates.HourLocator`             Ticks every ``N`` hours
-        ``'minute'``            `~matplotlib.dates.MinuteLocator`           Ticks every ``N`` minutes
-        ``'second'``            `~matplotlib.dates.SecondLocator`           Ticks every ``N`` seconds
-        ``'microsecond'``       `~matplotlib.dates.MicrosecondLocator`      Ticks every ``N`` microseconds
-        ======================  ==========================================  =========================================================================================
+        ======================  ============================================  =========================================================================================
+        Key                     Class                                         Description
+        ======================  ============================================  =========================================================================================
+        ``'null'``, ``'none'``  `~matplotlib.ticker.NullLocator`              No ticks
+        ``'auto'``              `~matplotlib.ticker.AutoLocator`              Major ticks at sensible locations
+        ``'minor'``             `~matplotlib.ticker.AutoMinorLocator`         Minor ticks at sensible locations
+        ``'date'``              `~matplotlib.dates.AutoDateLocator`           Default tick locations for datetime axes
+        ``'log'``               `~matplotlib.ticker.LogLocator` preset        For log-scale axes, ticks on each power of the base
+        ``'logminor'``          `~matplotlib.ticker.LogLocator` preset        For log-scale axes, ticks on the 1st through 9th multiples of each power of the base
+        ``'maxn'``              `~matplotlib.ticker.MaxNLocator`              No more than ``N`` ticks at sensible locations
+        ``'linear'``            `~matplotlib.ticker.LinearLocator`            Exactly ``N`` ticks encompassing the axis limits, spaced as ``numpy.linspace(lo, hi, N)``
+        ``'multiple'``          `~matplotlib.ticker.MultipleLocator`          Ticks every ``N`` step away from zero
+        ``'fixed'``             `~matplotlib.ticker.FixedLocator`             Ticks at these exact locations
+        ``'index'``             `~matplotlib.ticker.IndexLocator`             Ticks on the non-negative integers
+        ``'symlog'``            `~matplotlib.ticker.SymmetricalLogLocator`    Ticks for symmetrical log-scale axes
+        ``'logit'``             `~matplotlib.ticker.LogitLocator`             Ticks for logit-scale axes
+        ``'theta'``             `~matplotlib.projections.polar.ThetaLocator`  Like the base locator but default locations are every `numpy.pi`/8 radians
+        ``'year'``              `~matplotlib.dates.YearLocator`               Ticks every ``N`` years
+        ``'month'``             `~matplotlib.dates.MonthLocator`              Ticks every ``N`` months
+        ``'weekday'``           `~matplotlib.dates.WeekdayLocator`            Ticks every ``N`` weekdays
+        ``'day'``               `~matplotlib.dates.DayLocator`                Ticks every ``N`` days
+        ``'hour'``              `~matplotlib.dates.HourLocator`               Ticks every ``N`` hours
+        ``'minute'``            `~matplotlib.dates.MinuteLocator`             Ticks every ``N`` minutes
+        ``'second'``            `~matplotlib.dates.SecondLocator`             Ticks every ``N`` seconds
+        ``'microsecond'``       `~matplotlib.dates.MicrosecondLocator`        Ticks every ``N`` microseconds
+        ======================  ============================================  =========================================================================================
 
     *args, **kwargs
         Passed to the `~matplotlib.ticker.Locator` class.
@@ -118,7 +121,7 @@ def Locator(locator, *args, **kwargs):
                 args = (*args, 0)
         # Lookup
         if locator not in locators:
-            raise ValueError(f'Unknown locator {locator!r}. Options are {", ".join(locators.keys())}.')
+            raise ValueError(f'Unknown locator {locator!r}. Options are {", ".join(map(repr, locators.keys()))}.')
         locator = locators[locator](*args, **kwargs)
     elif isinstance(locator, Number): # scalar variable
         locator = mticker.MultipleLocator(locator, *args, **kwargs)
@@ -138,7 +141,9 @@ def Formatter(formatter, *args, date=False, **kwargs):
 
     Parameters
     ----------
-    formatter : str, list of str, or function
+    formatter : `~matplotlib.ticker.Formatter`, str, list of str, or function
+        If `~matplotlib.ticker.Formatter`, the object is returned.
+
         If list of strings, ticks are labeled with these strings. Returns a
         `~matplotlib.ticker.FixedFormatter` instance.
 
@@ -149,46 +154,46 @@ def Formatter(formatter, *args, date=False, **kwargs):
 
         1. If string contains ``'%'`` and `date` is ``False``, ticks will be formatted
            using the C-notation ``string % number`` method. See
-           `this page <https://docs.python.org/3.4/library/string.html#format-specification-mini-language>`__
+           `this page <https://docs.python.org/3/library/stdtypes.html#printf-style-string-formatting>`__
            for a review.
         2. If string contains ``'%'`` and `date` is ``True``, datetime
            ``string % number`` formatting is used. See
-           `this page <https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior>`__
+           `this page <https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes>`__
            for a review.
         3. If string contains ``{x}`` or ``{x:...}``, ticks will be
            formatted by calling ``string.format(x=number)``.
         4. In all other cases, a dictionary lookup is performed
            (see below table).
 
-        =========================  ============================================  ============================================================================================================================================
-        Key                        Class                                         Description
-        =========================  ============================================  ============================================================================================================================================
-        ``'null'``, ``'none'``     `~matplotlib.ticker.NullFormatter`            No tick labels
-        ``'auto'``, ``'default'``  `AutoFormatter`                               New default tick labels for axes
-        ``'simple'``               `SimpleFormatter`                             New default tick labels for e.g. contour labels
-        ``'frac'``                 `FracFormatter`                               Rational fractions
-        ``'date'``                 `~matplotlib.dates.AutoDateFormatter`         Default tick labels for datetime axes
-        ``'datestr'``              `~matplotlib.dates.DateFormatter`             Date formatting with C-style ``string % format`` notation
-        ``'concise'``              `~matplotlib.dates.ConciseDateForamtter`      More concise default tick labels, introduced in `matplotlib 3.1 <https://matplotlib.org/3.1.0/users/whats_new.html#concisedateformatter>`__
-        ``'scalar'``               `~matplotlib.ticker.ScalarFormatter`          Old default tick labels for axes
-        ``'strmethod'``            `~matplotlib.ticker.StrMethodFormatter`       From the ``string.format`` method
-        ``'formatstr'``            `~matplotlib.ticker.FormatStrFormatter`       From C-style ``string % format`` notation
-        ``'log'``, ``'sci'``       `~matplotlib.ticker.LogFormatterSciNotation`  For log-scale axes with scientific notation
-        ``'math'``                 `~matplotlib.ticker.LogFormatterMathtext`     For log-scale axes with math text
-        ``'logit'``                `~matplotlib.ticker.LogitFormatter`           For logistic-scale axes
-        ``'eng'``                  `~matplotlib.ticker.EngFormatter`             Engineering notation
-        ``'percent'``              `~matplotlib.ticker.PercentFormatter`         Trailing percent sign
-        ``'fixed'``                `~matplotlib.ticker.FixedFormatter`           List of strings
-        ``'index'``                `~matplotlib.ticker.IndexFormatter`           List of strings corresponding to non-negative integer positions along the axis
-        ``'theta'``                `~matplotlib.proj.ThetaFormatter`             Formats radians as degrees, with a degree symbol
-        ``'pi'``                   `FracFormatter` preset                        Fractions of :math:`\pi`
-        ``'e'``                    `FracFormatter` preset                        Fractions of *e*
-        ``'deg'``                  `SimpleFormatter` preset                      Trailing degree symbol
-        ``'deglon'``               `SimpleFormatter` preset                      Trailing degree symbol and cardinal "WE" indicator
-        ``'deglat'``               `SimpleFormatter` preset                      Trailing degree symbol and cardinal "SN" indicator
-        ``'lon'``                  `SimpleFormatter` preset                      Cardinal "WE" indicator
-        ``'lat'``                  `SimpleFormatter` preset                      Cardinal "SN" indicator
-        =========================  ============================================  ============================================================================================================================================
+        =========================  ==============================================  ============================================================================================================================================
+        Key                        Class                                           Description
+        =========================  ==============================================  ============================================================================================================================================
+        ``'null'``, ``'none'``     `~matplotlib.ticker.NullFormatter`              No tick labels
+        ``'auto'``, ``'default'``  `AutoFormatter`                                 New default tick labels for axes
+        ``'simple'``               `SimpleFormatter`                               New default tick labels for e.g. contour labels
+        ``'frac'``                 `FracFormatter`                                 Rational fractions
+        ``'date'``                 `~matplotlib.dates.AutoDateFormatter`           Default tick labels for datetime axes
+        ``'datestr'``              `~matplotlib.dates.DateFormatter`               Date formatting with C-style ``string % format`` notation
+        ``'concise'``              `~matplotlib.dates.ConciseDateFormatter`        More concise default tick labels, introduced in `matplotlib 3.1 <https://matplotlib.org/3.1.0/users/whats_new.html#concisedateformatter>`__
+        ``'scalar'``               `~matplotlib.ticker.ScalarFormatter`            Old default tick labels for axes
+        ``'strmethod'``            `~matplotlib.ticker.StrMethodFormatter`         From the ``string.format`` method
+        ``'formatstr'``            `~matplotlib.ticker.FormatStrFormatter`         From C-style ``string % format`` notation
+        ``'log'``, ``'sci'``       `~matplotlib.ticker.LogFormatterSciNotation`    For log-scale axes with scientific notation
+        ``'math'``                 `~matplotlib.ticker.LogFormatterMathtext`       For log-scale axes with math text
+        ``'logit'``                `~matplotlib.ticker.LogitFormatter`             For logistic-scale axes
+        ``'eng'``                  `~matplotlib.ticker.EngFormatter`               Engineering notation
+        ``'percent'``              `~matplotlib.ticker.PercentFormatter`           Trailing percent sign
+        ``'fixed'``                `~matplotlib.ticker.FixedFormatter`             List of strings
+        ``'index'``                `~matplotlib.ticker.IndexFormatter`             List of strings corresponding to non-negative integer positions along the axis
+        ``'theta'``                `~matplotlib.projections.polar.ThetaFormatter`  Formats radians as degrees, with a degree symbol
+        ``'pi'``                   `FracFormatter` preset                          Fractions of :math:`\pi`
+        ``'e'``                    `FracFormatter` preset                          Fractions of *e*
+        ``'deg'``                  `SimpleFormatter` preset                        Trailing degree symbol
+        ``'deglon'``               `SimpleFormatter` preset                        Trailing degree symbol and cardinal "WE" indicator
+        ``'deglat'``               `SimpleFormatter` preset                        Trailing degree symbol and cardinal "SN" indicator
+        ``'lon'``                  `SimpleFormatter` preset                        Cardinal "WE" indicator
+        ``'lat'``                  `SimpleFormatter` preset                        Cardinal "SN" indicator
+        =========================  ==============================================  ============================================================================================================================================
 
     date : bool, optional
         Toggles the behavior when `formatter` contains a ``'%'`` sign (see
@@ -220,9 +225,11 @@ def Formatter(formatter, *args, date=False, **kwargs):
             # Fraction shorthands
             if formatter in ('pi', 'e'):
                 if formatter == 'pi':
-                    kwargs.update({'symbol': r'$\pi$', 'number': np.pi})
+                    symbol, number = r'$\pi$', np.pi
                 else:
-                    kwargs.update({'symbol': '$e$', 'number': np.e})
+                    symbol, number = '$e$', np.e
+                kwargs.setdefault('symbol', symbol)
+                kwargs.setdefault('number', number)
                 formatter = 'frac'
             # Cartographic shorthands
             if formatter in ('deg', 'deglon', 'deglat', 'lon', 'lat'):
@@ -233,11 +240,12 @@ def Formatter(formatter, *args, date=False, **kwargs):
                     negpos = 'SN'
                 if 'lon' in formatter:
                     negpos = 'WE'
-                kwargs.update({'suffix':suffix, 'negpos':negpos})
+                kwargs.setdefault('suffix', suffix)
+                kwargs.setdefault('negpos', negpos)
                 formatter = 'simple'
             # Lookup
             if formatter not in formatters:
-                raise ValueError(f'Unknown formatter {formatter!r}. Options are {", ".join(formatters.keys())}.')
+                raise ValueError(f'Unknown formatter {formatter!r}. Options are {", ".join(map(repr, formatters.keys()))}.')
             formatter = formatters[formatter](*args, **kwargs)
     elif callable(formatter):
         formatter = mticker.FuncFormatter(formatter, *args, **kwargs)
@@ -255,10 +263,13 @@ def Scale(scale, *args, **kwargs):
 
     Parameters
     ----------
-    scale : str, (str, ...), or class
-        The registered scale name or scale "preset" (see below table). If a
-        tuple or list is passed, the items after the string are passed to
-        the scale as positional arguments.
+    scale : `~matplotlib.scale.ScaleBase`, str, (str, ...), or class
+        If `~matplotlib.scale.ScaleBase`, the object is returned.
+
+        If string, this is the registered scale name or scale "preset" (see
+        below table). If an iterable is passed with the scale name as the
+        first element, the subsequent items are passed to the scale class as
+        positional arguments.
 
         =================  ===============================  =======================================================================
         Key                Class                            Description
@@ -293,27 +304,24 @@ def Scale(scale, *args, **kwargs):
     `~matplotlib.scale.ScaleBase`
         The scale instance.
     """
-    if isinstance(scale, type):
-        # User-supplied scale class
-        mscale.register_scale(scale) # ensure it is registered!
+    if isinstance(scale, mscale.ScaleBase):
+        return scale
+    # Pull out extra args
+    if np.iterable(scale) and not isinstance(scale, str):
+        scale, args = scale[0], (*scale[1:], *args)
+    if not isinstance(scale, str):
+        raise ValueError(f'Invalid scale name {scale!r}. Must be string.')
+    # Get scale preset
+    if scale in SCALE_PRESETS:
+        if args or kwargs:
+            warnings.warn(f'Scale {scale!r} is a scale *preset*. Ignoring positional argument(s): {args} and keyword argument(s): {kwargs}. ')
+        scale, *args = SCALE_PRESETS[scale]
+    # Get scale
+    scale = scale.lower()
+    if scale in scales:
+        scale = scales[scale]
     else:
-        # Pull out extra args
-        if np.iterable(scale) and not isinstance(scale, str):
-            scale, args = scale[0], (*scale[1:], *args)
-        if not isinstance(scale, str):
-            raise ValueError(f'Invalid scale name {scale!r}. Must be string.')
-        # Scale presets
-        if scale in SCALE_PRESETS:
-            if args or kwargs:
-                warnings.warn(f'Scale {scale!r} is a scale *preset*. Ignoring positional argument(s): {args} and keyword argument(s): {kwargs}. ')
-            scale, *args = SCALE_PRESETS[scale]
-        # Get scale
-        scale = scale.lower()
-        if scale in scales:
-            scale = scales[scale]
-        else:
-            raise ValueError(f'Unknown scale {scale!r}. Options are {", ".join(scales.keys())}.')
-    # Initialize scale (see _dummy_axis comments)
+        raise ValueError(f'Unknown scale or preset {scale!r}. Options are {", ".join(map(repr, list(scales) + list(SCALE_PRESETS)))}.')
     axis = _dummy_axis()
     return scale(axis, *args, **kwargs)
 
@@ -483,7 +491,7 @@ def _scale_factory(scale, axis, *args, **kwargs):
     else:
         scale = scale.lower()
         if scale not in scales:
-            raise ValueError(f'Unknown scale {scale!r}. Options are {", ".join(scales.keys())}.')
+            raise ValueError(f'Unknown scale {scale!r}. Options are {", ".join(map(repr, scales.keys()))}.')
         return scales[scale](axis, *args, **kwargs)
 
 def _parse_logscale_args(kwargs, *keys):
@@ -1254,6 +1262,8 @@ locators = {
     }
 """Mapping of strings to `~matplotlib.ticker.Locator` classes. See
 `Locator` for a table."""
+if hasattr(mpolar, 'ThetaLocator'):
+    locators['theta'] = mpolar.ThetaLocator
 
 formatters = { # note default LogFormatter uses ugly e+00 notation
     'default':    AutoFormatter,
@@ -1279,8 +1289,8 @@ formatters = { # note default LogFormatter uses ugly e+00 notation
 `Formatter` for a table."""
 if hasattr(mdates, 'ConciseDateFormatter'):
     formatters['concise'] = mdates.ConciseDateFormatter
-if hasattr(mproj, 'ThetaFormatter'):
-    formatters['theta'] = mproj.ThetaFormatter
+if hasattr(mpolar, 'ThetaFormatter'):
+    formatters['theta'] = mpolar.ThetaFormatter
 
 # Monkey patch
 # Force scale_factory to accept ScaleBase instances, so that set_xscale and

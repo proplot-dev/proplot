@@ -67,6 +67,7 @@ Function                        Returns                        Interpreted by
 `~proplot.axistools.Scale`      Axis scale                     ``xscale=``, ``yscale=``
 `~proplot.styletools.Colormap`  Colormap                       ``cmap=``
 `~proplot.styletools.Cycle`     Property cycler                ``cycle=``
+`~proplot.styletools.Norm`      Colormap normalizer            ``norm=``
 `~proplot.projs.Proj`           Cartopy or basemap projection  ``proj=``
 ==============================  =============================  ========================================================
 
