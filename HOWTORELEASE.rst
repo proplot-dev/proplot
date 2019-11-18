@@ -1,6 +1,7 @@
 Release procedure
 =================
-ProPlot follows semantic versioning, e.g., v1.0.0. A major version causes incompatible
+
+proplot follows semantic versioning, e.g., v1.0.0. A major version causes incompatible
 API changes, a minor version adds functionality, and a patch covers bug fixes.
 
 #. Create a new branch ``release-vX.x.x`` with the version for the release.
