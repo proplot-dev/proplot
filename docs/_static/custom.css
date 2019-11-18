@@ -59,52 +59,41 @@ div.sphinxsidebar {
 .wy-nav-side,
 .wy-nav-top,
 .wy-side-nav-search,
-.wy-nav-content-wrap {
+.wy-nav-content-wrap { /* Outside */
   background: #f4f4f4;
 }
-.wy-nav-content {
+.wy-nav-content { /* Content */
   background: #fcfcfc;
 }
-.wy-menu-vertical a:hover{
-  background-color: #fcfcfc;
+.wy-menu a:hover,
+.wy-menu .toctree-l1.current>a { /* Hover and current */
+  background: #fcfcfc;
 }
-.wy-nav-top {
+.wy-nav-top,
+.wy-menu a,
+.wy-menu header,
+.wy-menu a:visited,
+.wy-menu p.caption {
   color: #404040;
 }
 
 /* Dark mode background colors with light mode in center */
+/* .wy-nav-content {
+ *   background: #fcfcfc;
+ * }
+ * .wy-nav-side,
+ * .wy-nav-top,
+ * .wy-side-nav-search,
+ * .wy-nav-content-wrap {
+ *   background: #202020;
+ * }
+ * .wy-menu-vertical a:hover {
+ *   background-color: #fcfcfc;
+ * }
+ * .wy-nav-top {
+ *   color: #404040;
+ * } */
 
-
-/* Sidebar text colors */
-/* .wy-nav .wy-menu-vertical a:hover {
- *   background-color: #ffffff;
- *   color: #404040;
- * } */
-/* .wy-menu-vertical a,
- * .wy-menu-vertical header,
- * .wy-menu-vertical p.caption {
- *   color: #404040;
- * } */
-/* .wy-table-secondary{
- *   color: #404040;
- *   font-size: 90%
- * }
- * .wy-table-tertiary{
- *   color: #404040;
- *   font-size: 80%
- * }
- * .wy-menu-vertical a{
- *   color: #000000;
- * }
- * .wy-menu-vertical {
- *   color: #000000;
- * }
- * .wy-menu-vertical li ul li a {
- *   color: #000000;
- * }
- * .wy-menu-vertical a:hover span.toctree-expand{
- *   color: #000000
- * } */
 
 /* Make logo flush in box */
 /* Use same specific selectors as in stylesheet */

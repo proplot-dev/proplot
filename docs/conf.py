@@ -47,14 +47,14 @@ extensions = [
     'sphinx.ext.doctest',           # >>> examples
     'sphinx.ext.extlinks',          # for :pr:, :issue:, :commit:
     'sphinx.ext.autosectionlabel',  # use :ref:`Heading` for any heading
-    'sphinx.ext.intersphinx',       # external links
     'sphinx.ext.todo',              # Todo headers and todo:: directives
     'sphinx.ext.mathjax',           # LaTeX style math
     'sphinx.ext.viewcode',          # view code links
     'sphinx.ext.autosummary',       # autosummary directive
     'sphinx.ext.napoleon',          # for NumPy style docstrings, instead of reStructred Text
-    'sphinx_automodapi.automodapi', # custom fork of the astropy extension
     'sphinxext.custom_roles',       # local extension
+    'sphinx.ext.intersphinx',       # external links
+    'sphinx_automodapi.automodapi', # custom fork of the astropy extension
     # 'IPython.sphinxext.ipython_console_highlighting',
     # 'IPython.sphinxext.ipython_directive',  # for ipython highlighting
     # 'matplotlib.sphinxext.only_directives', # deprecated, see: https://github.com/statsmodels/statsmodels/issues/5291
