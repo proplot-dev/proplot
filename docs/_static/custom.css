@@ -154,12 +154,12 @@ a:visited {
 /* Without not docutils needed for some pages e.g. Configuration */
 .rst-content code.literal,
 .rst-content tt.literal {
-  color: #606060;
+  color: #e54d42; /* #606060 */
   font-weight: normal;
 }
 .rst-content dl:not(.docutils) code.literal,
 .rst-content dl:not(.docutils) tt.literal {
-  color: #606060;
+  color: #e54d42;
   font-weight: normal;
 }
 

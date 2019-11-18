@@ -13,8 +13,6 @@ The documentation is `published on readthedocs <https://proplot.readthedocs.io>`
 
 .. include:: docs/importing.rst
 
-.. include:: docs/quick-overview.rst
-
 Donations
 =========
 At well over 10,000 lines of code, this package took a huge amount of time to write and an equally huge amount of time to share online -- especially with my day job as a graduate student. If ProPlot has been useful for you, consider clicking the `"donate" badge <https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=VMJSNABTFF4AA&source=url>`__ and sending me a small donation.

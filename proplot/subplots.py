@@ -103,7 +103,7 @@ class axes_grid(list):
         return 'axes_grid([' + ', '.join(str(ax) for ax in self) + '])'
 
     def __setitem__(self, key, value):
-        """Pseudo immutability, raises error."""
+        """Pseudo immutability. Raises error."""
         raise LookupError('axes_grid is immutable.')
 
     def __getitem__(self, key):
@@ -187,8 +187,7 @@ class axes_grid(list):
         returns a tuple of the results. This lets you call arbitrary methods
         on multiple axes at once! If the `axes_grid` has length ``1``,
         just returns the single result. If the attribute is *not callable*,
-        returns a tuple of identically named attributes for every object in
-        the list.
+        returns a tuple of attributes for every object in the list.
 
         Example
         -------

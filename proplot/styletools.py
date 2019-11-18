@@ -1972,7 +1972,7 @@ def Norm(norm, levels=None, **kwargs):
 class BinNorm(mcolors.BoundaryNorm):
     """
     This normalizer is used for all colormap plots. It can be thought of as a
-    "parent" normalizer: it first scales the data according to any
+    "meta-normalizer": It first scales the data according to any
     arbitrary `~matplotlib.colors.Normalize` class, then maps the normalized
     values ranging from 0-1 into **discrete** levels.
 
@@ -2052,6 +2052,10 @@ class BinNorm(mcolors.BoundaryNorm):
         # First get coordinates
         if not norm:
             norm = mcolors.Normalize() # WARNING: Normalization to 0-1 must always take place first, required by colorbar_factory ticks manager.
+        elif not isinstance(norm, mcolors.Normalize):
+            raise ValueError(f'Normalizer must be matplotlib.colors.Normalize, got {type(norm)}.')
+        elif isinstance(norm, mcolors.BoundaryNorm):
+            raise ValueError(f'Normalizer cannot be an instance of matplotlib.colors.BoundaryNorm.')
         x_b = norm(levels)
         x_m = (x_b[1:] + x_b[:-1])/2 # get level centers after norm scaling
         y = (x_m - x_m.min())/(x_m.max() - x_m.min())

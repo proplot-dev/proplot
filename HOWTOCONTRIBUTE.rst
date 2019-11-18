@@ -4,36 +4,28 @@ Contribution Guide
 
 Contributions are highly welcomed and appreciated.  Every little help counts,
 so do not hesitate! You can make a high impact on ``proplot`` just by using it and
-reporting `issues <https://github.com/lukelbd/proplot/issues>`_.
+reporting `issues <https://github.com/lukelbd/proplot/issues>`__.
 
 The following sections cover some general guidelines
 regarding development in ``proplot`` for maintainers and contributors.
 Nothing here is set in stone and can't be changed.
 Feel free to suggest improvements or changes in the workflow.
 
-Thanks to Riley Brady and his `climpred <https://github.com/lukelbd/proplot/blob/master/HOWTOCONTRIBUTE.rst>`_ project for providing a template for this guide.
-
-.. contents:: Contribution links
-   :depth: 2
-
-
 Feature requests and feedback
 =============================
 
 We are eager to hear about your requests for new features and any suggestions about the
 API, infrastructure, and so on. Feel free to submit these as
-`issues <https://github.com/lukelbd/proplot/issues/new>`_ with the label "feature request."
+`issues <https://github.com/lukelbd/proplot/issues/new>`__ with the label "feature request."
 
 Please make sure to explain in detail how the feature should work and keep the scope as
 narrow as possible. This will make it easier to implement in small PRs.
 
 
-.. _reportbugs:
-
 Report bugs
 ===========
 
-Report bugs for ``proplot`` in the `issue tracker <https://github.com/lukelbd/proplot/issues>`_
+Report bugs for ``proplot`` in the `issue tracker <https://github.com/lukelbd/proplot/issues>`__
 with the label "bug".
 
 If you are reporting a bug, please include:
@@ -48,12 +40,10 @@ If you can write a demonstration test that currently fails but *should* pass,
 that is a very useful commit to make as well, even if you cannot fix the bug itself.
 
 
-.. _fixbugs:
-
 Fix bugs
 ========
 
-Look through the `GitHub issues for bugs <https://github.com/lukelbd/proplot/labels/bug>`_.
+Look through the `GitHub issues for bugs <https://github.com/lukelbd/proplot/labels/bug>`__.
 
 Talk to developers to find out how you can fix specific bugs.
 
@@ -69,7 +59,7 @@ Write documentation
 You can also edit documentation files directly in the GitHub web interface,
 without using a local copy.  This can be convenient for small fixes.
 
-Our documentation is written in reStructuredText. You can follow our conventions in already written documents. Some helpful guides are located `here <http://docutils.sourceforge.net/docs/user/rst/quickref.html>`_ and `here <https://github.com/ralsina/rst-cheatsheet/blob/master/rst-cheatsheet.rst>`_.
+Our documentation is written in reStructuredText. You can follow our conventions in already written documents. Some helpful guides are located `here <http://docutils.sourceforge.net/docs/user/rst/quickref.html>`__ and `here <https://github.com/ralsina/rst-cheatsheet/blob/master/rst-cheatsheet.rst>`__.
 
 .. note::
     Build the documentation locally with the following command:
@@ -84,17 +74,11 @@ Our documentation is written in reStructuredText. You can follow our conventions
 
 If you need to add new functions to the API, run ``sphinx-autogen -o api api.rst`` from the ``docs/source`` directory and add the functions to ``api.rst``.
 
- .. _`pull requests`:
-.. _pull-requests:
-
-
 Preparing Pull Requests
 =======================
 
-.. _submitfeedback:
-
 #. If you intend to make changes / add examples to the ipython notebooks,
-   you need to install [nbstripout](https://github.com/kynan/nbstripout)
+   you need to install `nbstripout <https://github.com/kynan/nbstripout>`__
    with ``pip install nbstripout``. This deletes notebook cell output so
    `nbsphinx <https://nbsphinx.readthedocs.io/en/0.4.3/>`__ always reruns them
    after git pushes.
@@ -104,7 +88,7 @@ Preparing Pull Requests
    fine to use ``proplot`` as your fork repository name because it will live
    under your user.
 
-#. Clone your fork locally using `git <https://git-scm.com/>`_, connect your repository
+#. Clone your fork locally using `git <https://git-scm.com/>`__, connect your repository
    to the upstream (main project), and create a branch::
 
     $ git clone git@github.com:YOUR_GITHUB_USERNAME/proplot.git
@@ -148,12 +132,9 @@ Preparing Pull Requests
 
     <description> (``:pr:`#<pull request number>```) ```<author's names>`_``
 
-    where ``<description>`` is the description of the PR related to the change and ``<pull request number>`` is
-    the pull request number and ``<author's names>`` are your first and last names.
+    where ``<description>`` is the description of the PR related to the change and ``<pull request number>`` is the pull request number and ``<author's names>`` are your first and last names.
 
    - Add yourself to list of authors at the end of ``CHANGELOG.rst`` file if not there yet, in alphabetical order.
-
- #. Add yourself to the `contributors <https://proplot.readthedocs.io/en/latest/contributors.html>_` list via ``docs/source/contributors.rst``.
 
 #. Finally, submit a pull request through the GitHub website using this data::
 
@@ -166,3 +147,37 @@ Preparing Pull Requests
 Note that you can create the Pull Request while you're working on this. The PR will update
 as you add more commits. ``proplot`` developers and contributors can then review your code
 and offer suggestions.
+
+Release procedure
+=================
+
+``proplot`` follows semantic versioning, e.g., v1.0.0. A major version causes incompatible
+API changes, a minor version adds functionality, and a patch covers bug fixes.
+
+#. Create a new branch ``release-vX.x.x`` with the version for the release.
+
+  * Update ``CHANGELOG.rst``.
+  * Make sure all new changes, features are reflected in the documentation.
+
+#. Open a new pull request for this branch targeting `master` 
+
+#. After all tests pass and the PR has been approved, merge the PR into ``master`` 
+
+#. Tag a release and push to github::
+
+    $ git tag -a v1.0.0 -m "Version 1.0.0"
+    $ git push origin master --tags
+
+#. Build and publish release on PyPI::
+
+    $ git clean -xfd # remove any files not checked into git
+    $ python setup.py sdist bdist_wheel --universal # build package
+    $ twine upload dist/* # register and push to pypi
+
+Past and current contributors
+=============================
+
+`Luke Davis <https://github.com/lukelbd>`__ is the sole developer, as of November 2019. Luke is a graduate student in climate science at Colorado State University who has always been frustrated by repetitive and clumsy plotting code. As an undergraduate, he developed an extensive set of MATLAB plotting utilities for personal use. When he switched to python in graduate school, he translated most of these utilities to python, learned more about the language, began to rapidly develop them, and thought they were worth sharing with the rest of the scientific community. Luke is also a vim enthusiast and has authored `a number of vim plugins <https://github.com/lukelbd?tab=repositories>`__.
+
+`Riley Brady <https://github.com/bradyrx>`__ is another important contributor. You can thank him for his recommendations on how to organize this project, set up automatic testing, allow new contributors to join, and deploy it to the world. He is also the earliest user of ProPlot and helped Luke fix a lot of the initial bugs. If your field is atmospheric science, check out his `decadal climate prediction package <https://github.com/bradyrx/climpred>`__.
+
