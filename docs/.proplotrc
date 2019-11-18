@@ -1,0 +1,192 @@
+# User default settings
+# See https://proplot.readthedocs.io/en/latest/rctools.html
+#------------------------
+# ProPlot global settings
+#------------------------
+# Notebooks
+    nbsetup:    True
+    format:     svg
+#   autosave:   30
+#   autoreload: 2
+# Style
+#   abc:          False
+#   share:        3
+#   align:        False
+#   span:         True
+#   tight:        True
+#   fontname:     'Helvetica Neue'
+#   cmap:         fire
+#   lut:          256
+#   cycle:        colorblind
+#   rgbcycle:     False
+#   color:        k
+#   alpha:        1
+#   facecolor:    w
+#   small:        8
+#   large:        9
+#   linewidth:    0.6
+#   margin:       0.0
+#   grid:         True
+#   gridminor:    False
+#   ticklen:      4.0
+#   tickdir:      out
+#   tickpad:      2.0
+#   tickratio:    0.8
+#   ticklenratio: 0.5
+#   gridratio:    0.5
+# Geography
+#   reso:         lo
+#   geogrid:      True
+#   land:         False
+#   ocean:        False
+#   coast:        False
+#   rivers:       False
+#   lakes:        False
+#   borders:      False
+#   innerborders: False
+
+#---------------------------------------------------
+# rcParams defaults
+# See: https://matplotlib.org/users/customizing.html
+#---------------------------------------------------
+#   figure.dpi:              90
+#   figure.facecolor:        '#f2f2f2'
+#   figure.autolayout:       False
+#   figure.titleweight:      bold
+#   figure.max_open_warning: 0
+#   savefig.directory:
+#   savefig.dpi:             300
+#   savefig.facecolor:       white
+#   savefig.transparent:     True
+#   savefig.format:          pdf
+#   savefig.bbox:            standard
+#   savefig.pad_inches:      0.0
+#   axes.titleweight:        normal
+#   axes.xmargin:            0.0
+#   axes.ymargin:            0.0
+#   axes.grid:               True
+#   axes.labelpad:           3.0
+#   axes.titlepad:           3.0
+#   grid.color:              'k'
+#   grid.alpha:              0.1
+#   grid.linewidth:          0.6
+#   grid.linestyle:          '-'
+#   hatch.color:             k
+#   hatch.linewidth:         0.6
+#   lines.linewidth:         1.3
+#   lines.markersize:        3.0
+#   legend.frameon:          True
+#   legend.framealpha:       0.8
+#   legend.fancybox:         False
+#   legend.labelspacing:     0.5
+#   legend.handletextpad:    0.5
+#   legend.handlelength:     1.5
+#   legend.columnspacing:    1.0
+#   legend.borderpad:        0.5
+#   legend.borderaxespad:    0
+#   xtick.minor.visible:     True
+#   ytick.minor.visible:     True
+#   mathtext.bf:             'sans:bold'
+#   mathtext.it:             'sans:it'
+#   mathtext.default:        regular
+
+#-----------------------
+# rcExtraParams defaults
+#-----------------------
+# Extra label settings
+#   abc.loc:            l # left side above the axes
+#   title.loc:          c # centered above the axes
+#   title.pad:          3.0 # copy
+#   abc.style:          a
+#   abc.size:           # filled by 'large'
+#   abc.color:          k
+#   abc.weight:         bold
+#   abc.border:         True
+#   abc.linewidth:      1.5
+#   tick.labelsize:     # filled by 'small'
+#   tick.labelcolor:    # filled by 'color'
+#   tick.labelweight:   normal
+#   title.size:         # filled by 'large'
+#   title.color:        k
+#   title.weight:       normal
+#   title.border:       True
+#   title.linewidth:    1.5
+#   suptitle.size:      # filled by 'large'
+#   suptitle.color:     k
+#   suptitle.weight:    bold
+#   leftlabel.size:     # filled by 'large'
+#   leftlabel.weight:   bold
+#   leftlabel.color:    k
+#   toplabel.size:      # filled by 'large'
+#   toplabel.weight:    bold
+#   toplabel.color:     k
+#   rightlabel.size:    # filled by 'large'
+#   rightlabel.weight:  bold
+#   rightlabel.color:   k
+#   bottomlabel.size:   # filled by 'large'
+#   bottomlabel.weight: bold
+#   bottomlabel.color:  k
+# Extra image settings
+#   image.edgefix: True
+#   image.levels: 11
+# Extra axes settings
+#   axes.alpha: # if empty, depends on 'savefig.transparent' setting
+#   axes.formatter.zerotrim: True
+#   axes.formatter.timerotation: 90
+#   axes.gridminor: True
+#   axes.geogrid: True
+# Minor tick gridlines
+#   gridminor.alpha:     # filled by "grid.alpha"
+#   gridminor.color:     # filled by "grid.color"
+#   gridminor.linestyle: # filled by "grid.linewidth"
+#   gridminor.linewidth: # filled by "grid.linewidth" x "gridratio"
+# Parallels and meridians
+#   geogrid.labels:    False
+#   geogrid.labelsize: # filled by "small"
+#   geogrid.latmax:    90
+#   geogrid.lonstep:   30
+#   geogrid.latstep:   20
+#   geogrid.alpha:     0.5
+#   geogrid.color:     k
+#   geogrid.linewidth: 1.0
+#   geogrid.linestyle: ':'
+# Geographic content
+#   geoaxes.linewidth:          # filled by "linewidth"
+#   geoaxes.facecolor:          # filled by "facecolor"
+#   geoaxes.edgecolor:          # filled by "color"
+#   land.color:             k
+#   ocean.color:            w
+#   lakes.color:            w
+#   coast.color:            k
+#   coast.linewidth:        0.6
+#   borders.color:          k
+#   borders.linewidth:      0.6
+#   innerborders.color:     k
+#   innerborders.linewidth: 0.6
+#   rivers.color:           k
+#   rivers.linewidth:       0.6
+# Colorbar settings
+#   colorbar.loc:         right
+#   colorbar.grid:        False
+#   colorbar.frameon:     True
+#   colorbar.framealpha:  0.8
+#   colorbar.axespad:     0.5em
+#   colorbar.extend:      1.3em
+#   colorbar.insetextend: 1em
+#   colorbar.length:      1
+#   colorbar.insetlength: 8em
+#   colorbar.width:       1.5em # 0.17 inches
+#   colorbar.insetwidth:  1.2em
+# Subplot properties
+# Use font relative units for everything because this is common way user
+# might want to increase figure resolution
+#   subplots.axwidth:    18em  # 2 inches
+#   subplots.panelwidth: 4em   # 0.45 inches
+#   subplots.pad:        0.5em
+#   subplots.axpad:      1em
+#   subplots.panelpad:   0.5em
+#   subplots.panelspace: 1em
+#   subplots.innerspace: 1.5em
+#   subplots.ylabspace:  5.5em
+#   subplots.xlabspace:  4em
+#   subplots.titlespace: 2em

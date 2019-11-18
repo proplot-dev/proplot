@@ -26,7 +26,7 @@ __pycache__
 # Notebooks
 # NOTE: For now ignore, contributors just need RST files to build docs and
 # have personal control over quickstart.
-*.ipynb
+**/tests/*.ipynb
 .ipynb_checkpoints
 
 # OS files

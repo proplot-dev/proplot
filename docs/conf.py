@@ -42,7 +42,7 @@ release = ''
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    # 'nbsphinx', # TODO: add this! might require custom fork
+    'nbsphinx',
     'sphinx.ext.autodoc',           # include documentation from docstrings
     'sphinx.ext.doctest',           # >>> examples
     'sphinx.ext.extlinks',          # for :pr:, :issue:, :commit:
