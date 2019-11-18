@@ -1,0 +1,14 @@
+# .readthedocs.yml
+# Read the Docs configuration file
+version: 2
+
+# Sphinx config
+sphinx:
+  builder: html
+  configuration: docs/conf.py
+
+# Python config
+python:
+  version: 3.6
+  install:
+    - requirements: docs/requirements.txt
