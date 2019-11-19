@@ -39,27 +39,26 @@ div.sphinxsidebar {
  *   color: #404040;
  * } */
 
-/* Call signature headers and "note" blocks to grayscale */
-/* Use same color for call signature border and note block title background */
-/* :root {
- *     --pale: #color;
- * } */
-.rst-content dl:not(.docutils) dt .property,
-.rst-content dl:not(.docutils) dt .descname {
-  color: #404040; /* Name and property colors */
-}
+/* Call signature headers to grayscale */
 .rst-content dl:not(.docutils) dt {
   color: #606060; /* Arguments colors */
   background: #f0f0f0;
   border-top-color: #d0d0d0;
 }
+.rst-content dl:not(.docutils) dt .property,
+.rst-content dl:not(.docutils) dt .descname {
+  color: #404040; /* Name and property colors */
+}
+
+/* "Admonition" blocks, i.e. note, todo, etc. */
+.rst-content .admonition,
 .rst-content dl:not(.docutils) .admonition {
   background: #f0f0f0;
 }
+.rst-content .admonition>.admonition-title,
 .rst-content dl:not(.docutils) .admonition>.admonition-title {
-  color: #404040;
-  background: #d0d0d0;
-  /* color: #404040; */
+  color: #f0f0f0;
+  background: #606060;
 }
 
 /* Table rows */
