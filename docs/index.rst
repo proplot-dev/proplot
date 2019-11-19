@@ -11,18 +11,12 @@ A comprehensive, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper fo
 
 .. include:: installation.rst
 
-Instructions
-============
-
-To get started, check out the :ref:`Quick overview` and the User Guide :ref:`Introduction`.
-
 .. :hidden: means do not put a table of links right here but include links in sidebar
 
 .. _MIT: LICENSE.txt
 
 .. toctree::
-   :hidden:
-   :maxdepth: 4
+   :maxdepth: 1
    :caption: Getting Started
 
    why-proplot
@@ -30,8 +24,7 @@ To get started, check out the :ref:`Quick overview` and the User Guide :ref:`Int
    faq
 
 .. toctree::
-   :hidden:
-   :maxdepth: 4
+   :maxdepth: 1
    :caption: User Guide
 
    intro
@@ -42,8 +35,7 @@ To get started, check out the :ref:`Quick overview` and the User Guide :ref:`Int
    configuration
 
 .. toctree::
-   :hidden:
-   :maxdepth: 4
+   :maxdepth: 1
    :caption: Reference
 
    api

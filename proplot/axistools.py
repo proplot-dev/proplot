@@ -390,18 +390,19 @@ class AutoFormatter(mticker.ScalarFormatter):
             head, tail = string.split('.')
             string = head + '.' + tail[:self._maxprecision]
         if self._zerotrim:
-            string = re.sub(r'\.0+$', '', string)
-            string = re.sub(r'^(.*\..*?)0+$', r'\1', string)
-        string = re.sub(r'^[−-]0$', '0', string) # '-0' to '0'; necessary?
+            string = re.sub(r'\A(.*\..*?)0+\Z', r'\1', string)
+        if string == '-0' or string == '\N{MINUS SIGN}0':
+            string = '0'
         # Prefix and suffix
-        prefix = ''
-        if string and string[0] in '−-': # unicode minus or hyphen
-            prefix, string = string[0], string[1:]
-        return prefix + self._prefix + string + self._suffix
+        sign = ''
+        string = string.replace('-', '\N{MINUS SIGN}')
+        if string and string[0] == '\N{MINUS SIGN}':
+            sign, string = string[0], string[1:]
+        return sign + self._prefix + string + self._suffix
 
 def SimpleFormatter(*args, precision=6,
-        prefix=None, suffix=None, negpos=None,
-        **kwargs):
+    prefix=None, suffix=None, negpos=None, zerotrim=True,
+    **kwargs):
     """
     Replicates features of `AutoFormatter`, but as a simpler
     `~matplotlib.ticker.FuncFormatter` instance. This is more suitable for
@@ -418,26 +419,34 @@ def SimpleFormatter(*args, precision=6,
         Length-2 string that indicates suffix for "negative" and "positive"
         numbers, meant to replace the minus sign. This is useful for
         indicating cardinal geographic coordinates.
+    zerotrim : bool, optional
+        Whether to trim trailing zeros.
+        Default is :rc:`axes.formatter.zerotrim`.
     """
     prefix = prefix or ''
     suffix = suffix or ''
+    zerotrim = _notNone(zerotrim, rc['axes.formatter.zerotrim'])
     def f(x, pos):
         # Apply suffix if not on equator/prime meridian
         if not negpos:
-            negpos_ = ''
+            tail = ''
         elif x > 0:
-            negpos_ = negpos[1]
+            tail = negpos[1]
         else:
             x *= -1
-            negpos_ = negpos[0]
+            tail = negpos[0]
         # Finally use default formatter
         string = f'{{:.{precision}f}}'.format(x)
-        string = re.sub(r'\.0+$', '', string)
-        string = re.sub(r'^(.*\..*?)0+$', r'\1', string) # note the non-greedy secondary glob!
-        if string == '-0':
+        if zerotrim:
+            string = re.sub(r'\A^(.*\..*?)0+\Z', r'\1', string) # note the non-greedy secondary glob!
+        if string == '-0' or string == '\N{MINUS SIGN}0':
             string = '0'
+        # Prefix and suffix
+        sign = ''
         string = string.replace('-', '\N{MINUS SIGN}')
-        return prefix + string + suffix + negpos_
+        if string and string[0] == '\N{MINUS SIGN}':
+            sign, string = string[0], string[1:]
+        return sign + prefix + string + suffix + tail
     return mticker.FuncFormatter(f)
 
 def FracFormatter(symbol='', number=1):
@@ -458,7 +467,7 @@ def FracFormatter(symbol='', number=1):
     """
     def f(x, pos): # must accept location argument
         frac = Fraction(x/number).limit_denominator()
-        if x == 0: # zero
+        if x == 0:
             string = '0'
         elif frac.denominator == 1: # denominator is one
             if frac.numerator == 1 and symbol:
@@ -467,14 +476,14 @@ def FracFormatter(symbol='', number=1):
                 string = f'-{symbol:s}'
             else:
                 string = f'{frac.numerator:d}{symbol:s}'
-        elif frac.numerator == 1 and symbol: # numerator is +/-1
-            string = f'{symbol:s}/{frac.denominator:d}'
-        elif frac.numerator == -1 and symbol:
-            string = f'-{symbol:s}/{frac.denominator:d}'
-        else: # and again make sure we use unicode minus!
-            string = f'{frac.numerator:d}{symbol:s}/{frac.denominator:d}'
+        else:
+            if frac.numerator == 1 and symbol: # numerator is +/-1
+                string = f'{symbol:s}/{frac.denominator:d}'
+            elif frac.numerator == -1 and symbol:
+                string = f'-{symbol:s}/{frac.denominator:d}'
+            else: # and again make sure we use unicode minus!
+                string = f'{frac.numerator:d}{symbol:s}/{frac.denominator:d}'
         return string.replace('-', '\N{MINUS SIGN}')
-    # And create FuncFormatter class
     return mticker.FuncFormatter(f)
 
 #-----------------------------------------------------------------------------#
