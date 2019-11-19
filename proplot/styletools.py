@@ -232,9 +232,9 @@ BASE_COLORS_FULL = {
 # Docstring fragments
 cyclic_doc = """
 cyclic : bool, optional
-    Whether this colormap is cyclic. This affects how colors at either
-    end of the colorbar are scaled, and which `extend` settings other
-    than ``'neither'`` are allowed.
+    Whether the colormap is cyclic. If ``True``, this changes how the
+    leftmost and rightmost color levels are selected, and `extend` can only
+    be ``'neither'`` (a warning will be issued otherwise).
 """
 gamma_doc = """
 gamma1 : float, optional

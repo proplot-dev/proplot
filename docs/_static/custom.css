@@ -73,6 +73,12 @@ div.sphinxsidebar {
   background: #fcfcfc;
 }
 
+/* Thinner tables */
+/* For some reason cells have extra padding */
+.rst-content dl table p {
+  margin-bottom: 0 !important; /* default was 12px */
+}
+
 /* Make logo flush in box */
 /* Also remove bottom margins because TOC caption padding is enough */
 .wy-side-nav-search {

@@ -54,17 +54,16 @@ JOURNAL_SPECS = {
 # Miscellaneous stuff
 #-----------------------------------------------------------------------------#
 # Wrapper functions, so user doesn't have to import pyplot
-def close():
-    """Alias for ``matplotlib.pyplot.close('all')``, included so you don't have
-    to import `~matplotlib.pyplot`. Closes all figures stored
-    in memory."""
-    plt.close('all') # easy peasy
+def close(*args, **kwargs):
+    """Call `matplotlib.pyplot.close`. This is included so you don't have
+    to import `~matplotlib.pyplot`."""
+    plt.close(*args, **kwargs)
 
 def show():
-    """Alias for ``matplotlib.pyplot.show()``, included so you don't have
-    to import `~matplotlib.pyplot`. Note this command should be
-    unnecessary if you are doing inline iPython notebook plotting and ran the
-    `~proplot.notebook.nbsetup` command."""
+    """Call `matplotlib.pyplot.show`. This is included so you don't have
+    to import `~matplotlib.pyplot`. Note this command should *not be
+    necessary* if you are working in an iPython notebook and
+    :rcraw:`nbsetup` is set to ``True``."""
     plt.show()
 
 # Helper classes
