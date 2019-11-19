@@ -52,7 +52,7 @@ def Locator(locator, *args, **kwargs):
     Returns a `~matplotlib.ticker.Locator` instance, used to interpret the
     `xlocator`, `xlocator_kw`, `ylocator`, `ylocator_kw`, `xminorlocator`,
     `xminorlocator_kw`, `yminorlocator`, and `yminorlocator_kw` arguments when
-    passed to `~proplot.axes.CartesianAxes.format`, and the `locator`, `locator_kw`
+    passed to `~proplot.axes.XYAxes.format`, and the `locator`, `locator_kw`
     `minorlocator`, and `minorlocator_kw` arguments when passed to colorbar
     methods wrapped by `~proplot.wrappers.colorbar_wrapper`.
 
@@ -135,7 +135,7 @@ def Formatter(formatter, *args, date=False, **kwargs):
     r"""
     Returns a `~matplotlib.ticker.Formatter` instance, used to interpret the
     `xformatter`, `xformatter_kw`, `yformatter`, and `yformatter_kw` arguments
-    when passed to `~proplot.axes.CartesianAxes.format`, and the `formatter`
+    when passed to `~proplot.axes.XYAxes.format`, and the `formatter`
     and `formatter_kw` arguments when passed to colorbar methods wrapped by
     `~proplot.wrappers.colorbar_wrapper`.
 
@@ -259,7 +259,7 @@ def Scale(scale, *args, **kwargs):
     """
     Returns a `~matplotlib.scale.ScaleBase` instance, used to interpret the
     `xscale`, `xscale_kw`, `yscale`, and `yscale_kw` arguments when passed to
-    `~proplot.axes.CartesianAxes.format`.
+    `~proplot.axes.XYAxes.format`.
 
     Parameters
     ----------

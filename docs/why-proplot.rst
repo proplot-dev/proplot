@@ -251,6 +251,6 @@ ProPlot makes longitude-latitude coordinates
 the *default*:
 
 * ``latlon=True`` is the new default for `~proplot.axes.BasemapAxes` plotting methods.
-* ``transform=ccrs.PlateCarree()`` is the new default for `~proplot.axes.CartopyAxes` plotting methods.
+* ``transform=ccrs.PlateCarree()`` is the new default for `~proplot.axes.GeoAxes` plotting methods.
 
 

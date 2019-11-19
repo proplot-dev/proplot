@@ -98,12 +98,12 @@ There are two new additions to the ``image`` category, and the new
 
 The new ``gridminor`` category controls minor gridline settings,
 and the new ``geogrid`` category controls meridian and parallel line settings
-for `~proplot.axes.ProjectionAxes`. For both ``gridminor`` and ``geogrid``, if
+for `~proplot.axes.ProjAxes`. For both ``gridminor`` and ``geogrid``, if
 a property is empty, the corresponding property from ``grid`` is used.
 
 Finally, the ``geoaxes``, ``land``, ``ocean``, ``rivers``, ``lakes``,
 ``borders``, and ``innerborders`` categories control various
-`~proplot.axes.ProjectionAxes` settings. These are used when the boolean
+`~proplot.axes.ProjAxes` settings. These are used when the boolean
 toggles for the corresponding :ref:`rcParamsShort` settings are turned on.
 
 ===================================================================  =========================================================================================================================================================================================================================================================

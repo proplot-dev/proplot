@@ -137,7 +137,7 @@ def Proj(name, basemap=False, **kwargs):
 
     See also
     --------
-    `~proplot.axes.CartopyAxes`, `~proplot.axes.BasemapAxes`
+    `~proplot.axes.GeoAxes`, `~proplot.axes.BasemapAxes`
     """
     # Basemap
     if basemap:

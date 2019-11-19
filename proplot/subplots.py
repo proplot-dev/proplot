@@ -782,7 +782,7 @@ class Figure(mfigure.Figure):
         with self._unlock():
             pax = self.add_subplot(gridspec[idx1,idx2],
                 sharex=ax._sharex_level, sharey=ax._sharey_level,
-                projection='cartesian')
+                projection='xy')
         getattr(ax, '_' + s + 'panels').append(pax)
         pax._panel_side = side
         pax._panel_share = share
@@ -881,7 +881,7 @@ class Figure(mfigure.Figure):
         # Draw and setup panel
         with self._unlock():
             pax = self.add_subplot(gridspec[idx1,idx2],
-                projection='cartesian')
+                projection='xy')
         getattr(self, '_' + s + 'panels').append(pax)
         pax._panel_side = side
         pax._panel_share = False
@@ -1038,7 +1038,7 @@ class Figure(mfigure.Figure):
         # call, so cannot put this inside Axes draw
         tracker = {*()}
         for ax in self._axes_main:
-            if not isinstance(ax, axes.CartesianAxes):
+            if not isinstance(ax, axes.XYAxes):
                 continue
             for x,axis in zip('xy', (ax.xaxis, ax.yaxis)):
                 s = axis.get_label_position()[0] # top or bottom, left or right
@@ -1786,7 +1786,7 @@ def subplots(array=None, ncols=1, nrows=1,
           subplot in their `array` order.
         * If dict-like, keys are integers or tuple integers that indicate
           the projection to use for each subplot. If a key is not provided,
-          that subplot will be a `~proplot.axes.CartesianAxes`. For example,
+          that subplot will be a `~proplot.axes.XYAxes`. For example,
           in a 4-subplot figure, ``proj={2:'merc', (3,4):'stere'}``
           draws a Cartesian axes for the first subplot, a Mercator
           projection for the second subplot, and a Stereographic projection
@@ -1887,14 +1887,14 @@ def subplots(array=None, ncols=1, nrows=1,
     # Get basemap.Basemap or cartopy.crs.Projection instances for map
     proj = _notNone(projection, proj, None, names=('projection', 'proj'))
     proj_kw = _notNone(projection_kw, proj_kw, {}, names=('projection_kw', 'proj_kw'))
-    proj    = _axes_dict(naxs, proj, kw=False, default='cartesian')
+    proj    = _axes_dict(naxs, proj, kw=False, default='xy')
     proj_kw = _axes_dict(naxs, proj_kw, kw=True)
     basemap = _axes_dict(naxs, basemap, kw=False, default=False)
     axes_kw = {num:{} for num in range(1, naxs+1)}  # stores add_subplot arguments
     for num,name in proj.items():
-        # The default is CartesianAxes
-        if name is None or name == 'cartesian':
-            axes_kw[num]['projection'] = 'cartesian'
+        # The default is XYAxes
+        if name is None or name == 'xy':
+            axes_kw[num]['projection'] = 'xy'
         # Builtin matplotlib polar axes, just use my overridden version
         elif name == 'polar':
             axes_kw[num]['projection'] = 'polar2'
@@ -1902,7 +1902,7 @@ def subplots(array=None, ncols=1, nrows=1,
                 aspect = 1
         # Custom Basemap and Cartopy axes
         else:
-            package = 'basemap' if basemap[num] else 'cartopy'
+            package = 'basemap' if basemap[num] else 'geo'
             obj, iaspect = projs.Proj(name, basemap=basemap[num], **proj_kw[num])
             if num == ref:
                 aspect = iaspect

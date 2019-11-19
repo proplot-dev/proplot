@@ -76,7 +76,7 @@ def default_latlon(self, func, *args, latlon=True, **kwargs):
 
 def default_transform(self, func, *args, transform=None, **kwargs):
     """
-    Wraps %(methods)s for `~proplot.axes.CartopyAxes`.
+    Wraps %(methods)s for `~proplot.axes.GeoAxes`.
 
     With the default `~cartopy.mpl.geoaxes.GeoAxes` API, you need to pass
     ``transform=cartopy.crs.PlateCarree()`` if your data coordinates are
@@ -93,7 +93,7 @@ def default_transform(self, func, *args, transform=None, **kwargs):
 
 def default_crs(self, func, *args, crs=None, **kwargs):
     """
-    Wraps %(methods)s for `~proplot.axes.CartopyAxes` and fixes a
+    Wraps %(methods)s for `~proplot.axes.GeoAxes` and fixes a
     `~cartopy.mpl.geoaxes.GeoAxes.set_extent` bug associated with tight
     bounding boxes.
 
@@ -286,8 +286,8 @@ def standardize_1d(self, func, *args, **kwargs):
 #-----------------------------------------------------------------------------#
 # NOTE: Why are projection grid fixes in standardize_2d, and not in their
 # own wrappers? Because grid fixes must come *after* automatic formatting,
-# which means we'd have to apply these wrappers separately on CartesianAxes,
-# BasemapAxes, CartopyAxes, and PolarAxes. Would be super redundant.
+# which means we'd have to apply these wrappers separately on XYAxes,
+# BasemapAxes, GeoAxes, and PolarAxes. Would be super redundant.
 def _interp_poles(y, Z):
     """Adds data points on the poles as the average of highest latitude data."""
     # Get means
@@ -367,7 +367,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
       if *centers* were provided. For all other methods, coordinate *centers*
       are calculated if *edges* were provided.
 
-    For `~proplot.axes.CartopyAxes` and `~proplot.axes.BasemapAxes`, the
+    For `~proplot.axes.GeoAxes` and `~proplot.axes.BasemapAxes`, the
     `globe` keyword arg is added, suitable for plotting datasets with global
     coverage. Passing ``globe=True`` does the following.
 
