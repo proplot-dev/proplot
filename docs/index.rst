@@ -31,7 +31,9 @@ A comprehensive, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper fo
    customizing
    tight
    colorbars_legends
-   colors
+   colormaps
+   cycles
+   colors_fonts
    projection
    axis
    insets_panels

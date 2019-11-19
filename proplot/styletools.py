@@ -4,7 +4,8 @@ Tools for registering and visualizing colormaps, color cycles, color string
 names, and fonts. Defines new colormap classes, new colormap normalizer
 classes, and new constructor functions for generating instances of these
 classes. Includes related utilities for manipulating colors. See
-:ref:`Color usage` for details.
+:ref:`Colormaps`, :ref:`Color cycles`, and :ref:`Colors and fonts`
+for details.
 """
 # Potential bottleneck, loading all this stuff?  *No*. Try using @timer on
 # register functions, turns out worst is colormap one at 0.1 seconds. Just happens

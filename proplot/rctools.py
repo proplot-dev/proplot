@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 Utilities for configuring matplotlib and ProPlot global settings.
+See :ref:`Configuring proplot` for details.
 """
 # TODO: Add 'style' setting that overrides .proplotrc
 # Adapted from seaborn; see: https://github.com/mwaskom/seaborn/blob/master/seaborn/rcmod.py

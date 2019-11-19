@@ -15,7 +15,7 @@ This differentiates ProPlot from the usual ``plt`` abbreviation used for the `~m
 
 Importing proplot immediately adds a bunch of new colormaps, property cyclers, color names, and fonts to matplotlib and changes some default settings.
 If this is all you want and you don't care about the plotting features, simply
-``import proplot`` at the top of your script. See :ref:`Color usage`, `~proplot.styletools.register_cmaps`, `~proplot.styletools.register_cycles`, `~proplot.styletools.register_colors`, and `~proplot.styletools.register_fonts` for details.
+``import proplot`` at the top of your script. See :ref:`Colormaps`, :ref:`Color cycles`, :ref:`Colors and fonts`, `~proplot.styletools.register_cmaps`, `~proplot.styletools.register_cycles`, `~proplot.styletools.register_colors`, and `~proplot.styletools.register_fonts` for details.
 
 Top-level commands
 ==================
