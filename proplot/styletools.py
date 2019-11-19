@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
 """
-Registers colormaps, color cycles, and color string names with `register_cmaps`,
-`register_cycles`, and `register_colors`. Defines the `Colormap` and `Cycle`
-tools for creating new colormaps and color cycles. Defines helpful new
-`~matplotlib.colors.Normalize` and `~matplotlib.colors.Colormap` classes.
-Adds tools for visualizing colorspaces, colormaps, color names, and color
-cycles.
-
-See the :ref:`Color usage` section for details.
+Tools for registering and visualizing colormaps, color cycles, color string
+names, and fonts. Defines new colormap classes, new colormap normalizer
+classes, and new constructor functions for generating instances of these
+classes. Includes related utilities for manipulating colors. See
+:ref:`Color usage` for details.
 """
 # Potential bottleneck, loading all this stuff?  *No*. Try using @timer on
 # register functions, turns out worst is colormap one at 0.1 seconds. Just happens

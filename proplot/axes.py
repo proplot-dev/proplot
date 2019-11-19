@@ -1,19 +1,6 @@
 #!/usr/bin/env python3
 """
-This page documents the axes subclasses returned by
-`~proplot.subplots.subplots` and their various method wrappers. You should
-start with the documentation on the following methods.
-
-* `Axes.format`
-* `Axes.context`
-* `CartesianAxes.format`
-* `ProjectionAxes.format`
-
-`Axes.format` and `Axes.context` are both called by
-`CartesianAxes.format` and `ProjectionAxes.format`. ``format`` is your
-**one-stop-shop for changing axes settings** like *x* and *y* axis limits,
-axis labels, tick locations, tick labels grid lines, axis scales, titles,
-a-b-c labelling, adding geographic features, and much more.
+The axes classes used for all ProPlot figures.
 """
 import numpy as np
 import warnings

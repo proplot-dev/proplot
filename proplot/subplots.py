@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 """
-The starting point for creating custom ProPlot figures and axes.
-The `subplots` function is all you'll need to directly use here.
-It returns a `Figure` instance and an `axes_grid` container of
-`~proplot.axes.Axes` axes, whose positions are controlled by the
-`FlexibleGridSpec` class.
+The starting point for creating custom ProPlot figures. Includes
+pyplot-inspired functions for creating figures and related classes.
 """
 # NOTE: Importing backend causes issues with sphinx, and anyway not sure it's
 # always included, so make it optional

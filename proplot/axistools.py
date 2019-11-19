@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Defines various axis locators, formatters, and scales. Also "registers"
-the locator and formatter names, so that they can be selected with
-the `~proplot.axes.CartesianAxes.format` method.
+Various axis locator, formatter, and scale classes. Includes constructor
+functions so that these classes can be selected with with a shorthand
+syntax.
 """
 import re
 from .utils import _notNone

@@ -1,16 +1,10 @@
 #!/usr/bin/env python3
 """
-Introduces the generalized `~mpl_toolkits.basemap.Basemap`
-and `cartopy.crs.Projection` instantiator "`Proj`", which
-"registers" cartopy projections by their `PROJ.4 aliases
-<https://proj4.org/operations/projections/index.html>`_ like in
-`~mpl_toolkits.basemap`.
-
-Also adds pseudocylindrical `cartopy projections
-<https://scitools.org.uk/cartopy/docs/latest/crs/projections.html>`_
-that are currently unavailable (Hammer, Aitoff, Kavrayskiy VII,
-and Winkel tripel), along with polar versions of the Azimuthal Equidistant and
-Lambert Azimuthal Equal Area projections, just like in `~mpl_toolkits.basemap`.
+New cartopy projection classes and related tools.
+Includes projection constructor function for generating
+`~mpl_toolkits.basemap.Basemap` and cartopy `cartopy.crs.Projection` classes
+with their `PROJ.4 <https://proj4.org/operations/projections/index.html>`__
+string name aliases, just like `~mpl_toolkits.basemap`.
 """
 # from packaging import version
 # if version.parse(cartopy.__version__) < version.parse("0.13"):

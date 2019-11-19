@@ -5,8 +5,8 @@ API reference
 Top-level functions
 ===================
 
-These functions are used to instantiate figures or copied
-from `~matplotlib.pyplot`.
+Primary functions used to interactively work with figures. Modeled after the
+`~matplotlib.pyplot` versions.
 
 .. automodsumm:: proplot.subplots
    :functions-only:
@@ -15,8 +15,7 @@ from `~matplotlib.pyplot`.
 Figure classes
 ==============
 
-These are classes related to
-making figures.
+The figure class and a couple related classes.
 
 .. automodsumm:: proplot.subplots
    :classes-only:
@@ -25,32 +24,23 @@ making figures.
 Axes classes
 ============
 
-These are the axes classes embedded in all ProPlot figures.
+.. automodule:: proplot.axes
 
 .. automodsumm:: proplot.axes
    :toctree: api
    :classes-only:
 
-
 Plotting wrappers
 =================
 
-These are applied to axes plotting methods.
+.. automodule:: proplot.wrappers
 
 .. automodsumm:: proplot.wrappers
    :toctree: api
    :functions-only:
 
-Configuration
-=============
-
-.. automodule:: proplot.rctools
-
-.. automodsumm:: proplot.rctools
-   :toctree: api
-
-Map projection utilities
-========================
+Map projection tools
+====================
 
 .. automodule:: proplot.projs
 
@@ -72,8 +62,8 @@ Map projection utilities
    :classes-only:
    :toctree: api
 
-Axis locators, formatters, and scales
-=====================================
+Axis tools
+==========
 
 .. automodule:: proplot.axistools
 
@@ -95,8 +85,8 @@ Axis locators, formatters, and scales
    :toctree: api
    :variables-only:
 
-Colormaps, cycles, colors, and fonts
-====================================
+Color and font tools
+====================
 
 .. automodule:: proplot.styletools
 
@@ -118,8 +108,16 @@ Colormaps, cycles, colors, and fonts
    :variables-only:
    :toctree: api
 
-Utilities
-=========
+Rc configuration tools
+======================
+
+.. automodule:: proplot.rctools
+
+.. automodsumm:: proplot.rctools
+   :toctree: api
+
+Miscellaneous utilities
+=======================
 
 .. automodule:: proplot.utils
 
