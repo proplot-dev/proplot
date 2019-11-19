@@ -581,9 +581,9 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         Parameters
         ----------
         cyclic : bool, optional
-            Whether this colormap is cyclic. This affects how colors at either
-            end of the colorbar are scaled, and whether `extend` settings other
-            than ``'neither'`` are allowed.
+            Whether the colormap is cyclic. If ``True``, this changes how the
+            leftmost and rightmost color levels are selected, and `extend` can only
+            be ``'neither'`` (a warning will be issued otherwise).
         *args, **kwargs
             Passed to `~matplotlib.colors.LinearSegmentedColormap`.
         """
@@ -910,6 +910,29 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         return self.updated(name, segmentdata, **kwargs)
 
     @staticmethod
+    def from_file(path):
+        """
+        Load colormap from a file.
+        Valid file extensions are described in the below table.
+
+        =====================  =============================================================================================================================================================================================================
+        Extension              Description
+        =====================  =============================================================================================================================================================================================================
+        ``.hex``               List of HEX strings in any format (comma-separated, separate lines, with double quotes... anything goes).'ColorBlind10': 
+        ``.xml``               XML files with ``<Point .../>`` entries specifying ``x``, ``r``, ``g``, ``b``, and optionally, ``a`` values, where ``x`` is the colormap coordinate and the rest are the RGB and opacity (or "alpha") values.
+        ``.rgb``               3-column table delimited by commas or consecutive spaces, each column indicating red, blue and green color values.
+        ``.xrgb``              As with ``.rgb``, but with 4 columns. The first column indicates the colormap coordinate.
+        ``.rgba``, ``.xrgba``  As with ``.rgb``, ``.xrgb``, but with a trailing opacity (or "alpha") column.
+        =====================  =============================================================================================================================================================================================================
+
+        Parameters
+        ----------
+        path : str
+            The file path.
+        """
+        return _from_file(path, listed=False)
+
+    @staticmethod
     def from_list(name, colors, *args, **kwargs):
         """
         Make a linear segmented colormap from a list of colors. See
@@ -1077,6 +1100,29 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         colors = self.colors[left:right]
         return self.updated(colors, name, len(colors))
 
+    @staticmethod
+    def from_file(path):
+        """
+        Load color cycle from a file.
+        Valid file extensions are described in the below table.
+
+        =====================  =============================================================================================================================================================================================================
+        Extension              Description
+        =====================  =============================================================================================================================================================================================================
+        ``.hex``               List of HEX strings in any format (comma-separated, separate lines, with double quotes... anything goes).'ColorBlind10': 
+        ``.xml``               XML files with ``<Point .../>`` entries specifying ``x``, ``r``, ``g``, ``b``, and optionally, ``a`` values, where ``x`` is the colormap coordinate and the rest are the RGB and opacity (or "alpha") values.
+        ``.rgb``               3-column table delimited by commas or consecutive spaces, each column indicating red, blue and green color values.
+        ``.xrgb``              As with ``.rgb``, but with 4 columns. The first column indicates the colormap coordinate.
+        ``.rgba``, ``.xrgba``  As with ``.rgb``, ``.xrgb``, but with a trailing opacity (or "alpha") column.
+        =====================  =============================================================================================================================================================================================================
+
+        Parameters
+        ----------
+        path : str
+            The file path.
+        """
+        return _from_file(path, listed=True)
+
 class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
     """Similar to `~matplotlib.colors.LinearSegmentedColormap`, but instead
     of varying the RGB channels, the hue, saturation, and luminance channels
@@ -1115,8 +1161,9 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
             Whether to "clip" impossible colors, i.e. truncate HCL colors
             with RGB channels with values >1, or mask them out as gray.
         cyclic : bool, optional
-            Whether this colormap is cyclic. See `LinearSegmentedColormap`
-            for details.
+            Whether the colormap is cyclic. If ``True``, this changes how the
+            leftmost and rightmost color levels are selected, and `extend` can only
+            be ``'neither'`` (a warning will be issued otherwise).
         gamma : float, optional
             Sets `gamma1` and `gamma2` to this identical value.
         gamma1 : float, optional
@@ -1659,7 +1706,10 @@ def Colormap(*args, name=None, listmode='perceptual',
         if isinstance(cmap, str):
             if '.' in cmap:
                 if os.path.isfile(os.path.expanduser(cmap)):
-                    cmap = _load_cmap(cmap, listed=(listmode == 'listed'))
+                    if listmode == 'listed':
+                        cmap = ListedColormap.from_file(cmap)
+                    else:
+                        cmap = LinearSegmentedColormap.from_file(cmap)
                 else:
                     raise FileNotFoundError(f'Colormap or cycle file {cmap!r} not found.')
             else:
@@ -2251,7 +2301,7 @@ def _get_data_paths(dirname):
         paths.insert(0, ipath)
     return paths
 
-def _load_cmap(filename, listed=False):
+def _from_file(filename, listed=False):
     """Read generalized colormap and color cycle files."""
     filename = os.path.expanduser(filename)
     if os.path.isdir(filename): # no warning
@@ -2367,19 +2417,9 @@ def register_cmaps():
     Register colormaps packaged with ProPlot or saved to the ``~/.proplot/cmaps``
     folder. This is called on import. Maps are registered according to their
     filenames -- for example, ``name.xyz`` will be registered as ``'name'``.
-    Use `show_cmaps` to generate a table of the registered colormaps
 
-    Valid extensions are described in the below table.
-
-    =====================  =============================================================================================================================================================================================================
-    Extension              Description
-    =====================  =============================================================================================================================================================================================================
-    ``.hex``               List of HEX strings in any format (comma-separated, separate lines, with double quotes... anything goes).'ColorBlind10': 
-    ``.xml``               XML files with ``<Point .../>`` entries specifying ``x``, ``r``, ``g``, ``b``, and optionally, ``a`` values, where ``x`` is the colormap coordinate and the rest are the RGB and opacity (or "alpha") values.
-    ``.rgb``               3-column table delimited by commas or consecutive spaces, each column indicating red, blue and green color values.
-    ``.xrgb``              As with ``.rgb``, but with 4 columns. The first column indicates the colormap coordinate.
-    ``.rgba``, ``.xrgba``  As with ``.rgb``, ``.xrgb``, but with a trailing opacity (or "alpha") column.
-    =====================  =============================================================================================================================================================================================================
+    For a table of valid extensions, see `LinearSegmentedColormap.from_file`.
+    To visualize the registerd colormaps, use `show_cmaps`.
     """
     # Fill initial user-accessible cmap list with the colormaps we will keep
     cmaps.clear()
@@ -2391,7 +2431,7 @@ def register_cmaps():
     # Add colormaps from ProPlot and user directories
     for i,path in enumerate(_get_data_paths('cmaps')):
         for filename in sorted(glob.glob(os.path.join(path, '*'))):
-            cmap = _load_cmap(filename, listed=False)
+            cmap = LinearSegmentedColormap.from_file(filename)
             if not cmap:
                 continue
             if i == 0 and cmap.name.lower() in ('phase', 'graycycle'):
@@ -2411,7 +2451,8 @@ def register_cycles():
     ``'name'`` as a `~matplotlib.colors.ListedColormap` map (see `Cycle` for
     details). Use `show_cycles` to generate a table of the registered cycles.
 
-    For valid file formats, see `register_cmaps`.
+    For a table of valid extensions, see `ListedColormap.from_file`.
+    To visualize the registerd colormaps, use `show_cmaps`.
     """
     # Empty out user-accessible cycle list
     cycles.clear()
@@ -2423,7 +2464,7 @@ def register_cycles():
     # Read cycles from directories
     for path in _get_data_paths('cycles'):
         for filename in sorted(glob.glob(os.path.join(path, '*'))):
-            cmap = _load_cmap(filename, listed=True)
+            cmap = ListedColormap.from_file(filename)
             if not cmap:
                 continue
             if isinstance(cmap, LinearSegmentedColormap):
