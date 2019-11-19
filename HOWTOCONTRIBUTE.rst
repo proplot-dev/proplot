@@ -50,16 +50,14 @@ Talk to developers to find out how you can fix specific bugs.
 Write documentation
 ===================
 
-``proplot`` could always use more documentation.  What exactly is needed?
+`proplot` could always use better documentation. For small changes, you can edit documentation files directly in the GitHub web interface,
+without using a local copy.
 
-* More complementary documentation.  Have you perhaps found something unclear?
-* Docstrings.  There can never be too many of them.
-* Example notebooks with different Earth System Models, lead times, etc. -- they're all very appreciated.
+* The documentation is written in reStructuredText with `numpydoc <https://numpydoc.readthedocs.io/en/latest/>`__ style headers.
+* The `default ReST role <https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-default_role>`__ is ``'py:obj'``. This is meant to encourage populating docstrings with links to the API reference. ProPlot uses `intersphinx <http://www.sphinx-doc.org/en/stable/ext/intersphinx.html>`__, so you can also link to sphinx documentation from other projects, e.g. matplotlib. In general, you should compress your links with a tilde, e.g. ``~path.to.function``.
+* When editing the ipython notebooks found in ``docs``, make sure to put your example descriptions inside reStructedText cells, not markdown cells. This lets us populate the descriptions with sphinx links. See `this guide <https://nbsphinx.readthedocs.io/en/0.4.3/raw-cells.html#Usage>`__ for how to convert cells to ReST.
 
-You can also edit documentation files directly in the GitHub web interface,
-without using a local copy.  This can be convenient for small fixes.
-
-Our documentation is written in reStructuredText. You can follow our conventions in already written documents. Some helpful guides are located `here <http://docutils.sourceforge.net/docs/user/rst/quickref.html>`__ and `here <https://github.com/ralsina/rst-cheatsheet/blob/master/rst-cheatsheet.rst>`__.
+Some helpful ReST guides are located `here <http://docutils.sourceforge.net/docs/user/rst/quickref.html>`__ and `here <https://github.com/ralsina/rst-cheatsheet/blob/master/rst-cheatsheet.rst>`__.
 
 .. note::
     To build the documentation locally, use the following commands:
@@ -71,8 +69,6 @@ Our documentation is written in reStructuredText. You can follow our conventions
         make html
 
     The built documentation should be available in the ``docs/_build/html``.
-
-If you need to add new functions to the API, run ``sphinx-autogen -o api api.rst`` from the ``docs/source`` directory and add the functions to ``api.rst``.
 
 Preparing Pull Requests
 =======================
@@ -132,10 +128,12 @@ Preparing Pull Requests
 #. Create a new changelog entry in ``CHANGELOG.rst``:
 
    - The entry should be entered as:
+     
+      .. code-block::
 
-    <description> (``:pr:`#<pull request number>```) ```<author's names>`_``
+         <description> (``:pr:`#<PR number>```) ```<author's names>`_``
 
-    where ``<description>`` is the description of the PR related to the change and ``<pull request number>`` is the pull request number and ``<author's names>`` are your first and last names.
+    where ``<description>`` is the description of the PR related to the change, ``<PR number>`` is the pull request number, and ``<author's names>`` are your first and last names.
 
    - Add yourself to list of authors at the end of ``CHANGELOG.rst`` file if not there yet, in alphabetical order.
 
@@ -161,21 +159,24 @@ API changes, a minor version adds functionality, and a patch covers bug fixes.
 
 #. Create a new branch ``release-vX.x.x`` with the version for the release.
 
-   * Update ``CHANGELOG.rst``.
-   * Make sure all new changes, features are reflected in the documentation.
+#. Update ``CHANGELOG.rst``, and make sure all new changes, features are reflected in the documentation.
 
 #. Open a new pull request for this branch targeting ``master``.
 
 #. After all tests pass and the PR has been approved, merge the PR into ``master``.
 
-#. Tag a release and push to github::
+#. Tag a release and push to github:
 
-    $ git tag -a v1.0.0 -m "Version 1.0.0"
-    $ git push origin master --tags
+   .. code-block:: bash
 
-#. Build and publish release on PyPI::
+      git tag -a v1.0.0 -m "Version 1.0.0"
+      git push origin master --tags
 
-    $ git clean -xfd # remove any files not checked into git
-    $ python setup.py sdist bdist_wheel --universal # build package
-    $ twine upload dist/* # register and push to pypi
+#. Build and publish release on PyPI:
+
+   .. code-block:: bash
+
+    git clean -xfd # remove any files not checked into git
+    python setup.py sdist bdist_wheel --universal # build package
+    twine upload dist/* # register and push to pypi
 
