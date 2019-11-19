@@ -44,6 +44,8 @@ is much more succinct than
    ax.set_xlabel('x axis', color='gray')
    ax.set_ylabel('y axis', color='gray')
 
+If you tend to use the `~matplotlib.pyplot` API and are not familiar with the "axes" and "figure" classes, you should first take a look at `this page <https://matplotlib.org/api/api_overview.html#the-pyplot-api>`__. Using axes and figure objects directly is much more clear and concise than using the `~matplotlib.pyplot` API. And changing settings for more than one axes at once gets really cumbersome with `~matplotlib.pyplot`.
+
 Constructor functions
 =====================
 Problem
