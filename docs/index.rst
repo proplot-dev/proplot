@@ -27,11 +27,16 @@ A comprehensive, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper fo
    :maxdepth: 1
    :caption: User Guide
 
-   intro
-   cartesian
-   projection
+   figures
+   customizing
+   tight
+   colorbars_legends
    colors
-   plots
+   projection
+   axis
+   insets_panels
+   1dplots
+   2dplots
    configuration
 
 .. toctree::

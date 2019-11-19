@@ -134,8 +134,9 @@ a:visited {
 }
 
 /* Light mode background colors very similar to defaults */
+/* Also edit sidebar font */
 /* Includes text-logo color, needed for small windows and mobile */
-.wy-menu a
+.wy-menu a,
 .wy-menu header,
 .wy-menu a:visited,
 .wy-menu p.caption,
