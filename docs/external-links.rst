@@ -11,7 +11,7 @@ Python packages
 * `matplotlib <https://matplotlib.org>`__ - The venerable plotting package that we all know and love.
 * `xarray <http://xarray.pydata.org/en/stable/api.html>`__ - Package for working with annotated ND numpy arrays. If you haven't heard of it and you work with NetCDF files, it will change your life.
 * `pandas <https://pandas.pydata.org>`__ - Package that turns spreadsheets and tables into annotated 2D numpy arrays. Invaluable for certain types of data.
-* `seaborn <https://seaborn.pydata.org>`__ - A statistical data visualization package. It has some awesome features, but few people in my field use it because it is geared more toward statistical data than geophysical data and other data types.
+* `seaborn <https://seaborn.pydata.org>`__ - A statistical data visualization package. It has some awesome features, but few people in my field use it because it is geared more toward statistical data than geophysical data.
 
 Downloadable colormaps
 ======================
@@ -20,8 +20,8 @@ imported and registered by ProPlot.
 
 #. `Color Brewer <http://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3>`__ - The O.G. perceptually uniform colormap distribution. These are included with the matplotlib distribution.
 #. `cmocean <https://matplotlib.org/cmocean/>`__ - Perceptually uniform colormaps designed for oceanography, but suitable for plenty of other applications.
-#. `SciVisColor <https://sciviscolor.org/>`__ - Science-focused colormaps created by the viz team at UT Austin. Provides tools for *merging* and *combining* colormaps, suitable for complex datasets with weird distributions.
-#. `Fabio Crameri <http://www.fabiocrameri.ch/colourmaps.php>`__ - Perceptually uniform colormaps for geosciences.
+#. `SciVisColor <https://sciviscolor.org/>`__ - Science-focused colormaps created by the viz team at UT Austin. Provides tools for *concatenating* colormaps, suitable for complex datasets with weird distributions.
+#. `Fabio Crameri <http://www.fabiocrameri.ch/colourmaps.php>`__ - Perceptually uniform colormaps for geosciences. These maps have very unusual and interesting color transitions.
 
 Tools for making new colormaps
 ==============================
