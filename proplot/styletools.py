@@ -2654,8 +2654,8 @@ normalizers = {
 #-----------------------------------------------------------------------------#
 # Demos
 #-----------------------------------------------------------------------------#
-def show_channels(*args, N=100, rgb=True, scalings=True, minhue=0, width=100,
-    aspect=1, axwidth=1.7):
+def show_channels(*args, N=100, rgb=True, saturation=True,
+    minhue=0, maxsat=1000, axwidth=None, width=100):
     """
     Shows how arbitrary colormap(s) vary with respect to the hue, chroma,
     luminance, HSL saturation, and HPL saturation channels, and optionally
@@ -2672,17 +2672,17 @@ def show_channels(*args, N=100, rgb=True, scalings=True, minhue=0, width=100,
     rgb : bool, optional
         Whether to also show the red, blue, and green channels in the bottom
         row. Default is ``True``.
-    scalings : bool, optional
-        Whether to show the HSL and HPL scalings of the chroma channel
-        alongside raw chroma.
+    saturation : bool, optional
+        Whether to show the HSL and HPL saturation channels alongside the
+        raw chroma.
     minhue : float, optional
         The minimum hue. This lets you rotate the hue plot cyclically.
+    maxsat : float, optional
+        The maximum saturation. Use this to truncate large saturation values.
     width : int, optional
         The width of each colormap line in points.
-    aspect : float or (float,float), optional
-        The aspect ratio of the subplot.
-    axwidth : float, optional
-        The width of the subplots.
+    axwidth : int or str, optional
+        The width of each subplot. Passed to `~proplot.subplots.subplots`.
 
     Returns
     -------
@@ -2695,15 +2695,15 @@ def show_channels(*args, N=100, rgb=True, scalings=True, minhue=0, width=100,
         args = (rcParams['image.cmap'],)
     array = [[1,1,2,2,3,3]]
     labels = ('Hue', 'Chroma', 'Luminance')
-    if scalings:
+    if saturation:
         array += [[0,4,4,5,5,0]]
         labels += ('HSL saturation', 'HPL saturation')
     if rgb:
-        array += [np.array([4,4,5,5,6,6]) + 2*int(scalings)]
+        array += [np.array([4,4,5,5,6,6]) + 2*int(saturation)]
         labels += ('Red', 'Blue', 'Green')
     fig, axs = subplots(
-        array=array, axwidth=axwidth, span=False, share=1,
-        aspect=aspect, axpad='1em',
+        array=array, span=False, share=1,
+        aspect=1, axwidth=axwidth, axpad='1em',
         )
     # Iterate through colormaps
     mc, ms, mp = 0, 0, 0
@@ -2726,7 +2726,7 @@ def show_channels(*args, N=100, rgb=True, scalings=True, minhue=0, width=100,
         # Plot channels
         # If rgb is False, the zip will just truncate the other iterables
         data = (*hcl_data,)
-        if scalings:
+        if saturation:
             data += (hsl_data, hpl_data)
         if rgb:
             data += (*rgb_data,)
@@ -2746,13 +2746,13 @@ def show_channels(*args, N=100, rgb=True, scalings=True, minhue=0, width=100,
                     y[y < minhue] += 360
             else:
                 if label == 'Chroma':
-                    mc = max(mc,max(y))
+                    mc = min(max(mc, max(y)), maxsat)
                     m = mc
                 elif 'HSL' in label:
-                    ms = max(ms,max(y))
+                    ms = min(max(ms, max(y)), maxsat)
                     m = ms
                 else:
-                    mp = max(mp,max(y))
+                    mp = min(max(mp, max(y)), maxsat)
                     m = mp
                 ylim = (0,m)
                 ylocator = ('maxn', 5)

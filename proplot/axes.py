@@ -790,7 +790,7 @@ class Axes(maxes.Axes):
 
     @_standardize_1d
     @_cmap_changer
-    def cmapline(self, *args, values=None,
+    def parametric(self, *args, values=None,
         cmap=None, norm=None,
         interp=0, **kwargs):
         """

@@ -55,7 +55,7 @@ STYLE_ARGS_TRANSLATE = {
     'contour':    {'colors':'colors', 'linewidths':'linewidths', 'linestyles':'linestyles'},
     'hexbin':     {'colors':'edgecolors', 'linewidths':'linewidths'},
     'tricontour': {'colors':'colors', 'linewidths':'linewidths', 'linestyles':'linestyles'},
-    'cmapline':   {'colors':'color',  'linewidths':'linewidth', 'linestyles':'linestyle'},
+    'parametric': {'colors':'color',  'linewidths':'linewidth', 'linestyles':'linestyle'},
     'pcolor':     {'colors':'edgecolors', 'linewidths':'linewidth', 'linestyles':'linestyle'},
     'tripcolor':  {'colors':'edgecolors', 'linewidths':'linewidth', 'linestyles':'linestyle'},
     'pcolormesh': {'colors':'edgecolors', 'linewidths':'linewidth', 'linestyles':'linestyle'},
@@ -751,7 +751,7 @@ def plot_wrapper(self, func, *args, cmap=None, values=None, **kwargs):
     *args : (y,), (x,y), or (x,y,fmt)
         Passed to `~matplotlib.axes.Axes.plot`.
     cmap, values : optional
-        Passed to `~proplot.axes.Axes.cmapline`.
+        Passed to `~proplot.axes.Axes.parametric`.
     **kwargs
         `~matplotlib.lines.Line2D` properties.
     """
@@ -760,7 +760,7 @@ def plot_wrapper(self, func, *args, cmap=None, values=None, **kwargs):
     if cmap is None:
         lines = func(self, *args, values=values, **kwargs)
     else:
-        lines = self.cmapline(*args, cmap=cmap, values=values, **kwargs)
+        lines = self.parametric(*args, cmap=cmap, values=values, **kwargs)
     return lines
 
 def scatter_wrapper(self, func, *args,
@@ -1616,7 +1616,7 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
     ----------------
     lw, linewidth, linewidths
         The width of `~matplotlib.axes.Axes.contour` lines and
-        `~proplot.axes.Axes.cmapline` lines. Also the width of lines
+        `~proplot.axes.Axes.parametric` lines. Also the width of lines
         *between* `~matplotlib.axes.Axes.pcolor` boxes,
         `~matplotlib.axes.Axes.pcolormesh` boxes, and
         `~matplotlib.axes.Axes.contourf` filled contours.
@@ -1695,7 +1695,7 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
             levels = values + 1
         elif np.iterable(values):
             # Plotting command accepts a 'values' keyword arg
-            if name in ('cmapline',):
+            if name in ('parametric',):
                 kwargs['values'] = values
             # Try to generate levels such that a LinearSegmentedNorm will
             # place values ticks right at the center of each colorbar level
@@ -1917,7 +1917,7 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
             _, label = _auto_label(args[-1]) # last one is data, we assume
             if label:
                 colorbar_kw.setdefault('label', label)
-        if name in ('cmapline',) and values is not None:
+        if name in ('parametric',) and values is not None:
             colorbar_kw.setdefault('values', values)
         if loc != 'fill':
             colorbar_kw.setdefault('loc', loc)
@@ -2773,7 +2773,7 @@ def _wrapper_decorator(driver):
         docstring = driver._docstring_orig
         if '%(methods)s' in docstring:
             name = func.__name__
-            if name in ('cmapline', 'heatmap', 'area', 'areax'):
+            if name in ('parametric', 'heatmap', 'area', 'areax'):
                 name = f'`~proplot.axes.Axes.{name}`'
             else:
                 name = f'`~matplotlib.axes.Axes.{name}`'

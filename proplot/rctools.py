@@ -228,7 +228,7 @@ class rc_configurator(object):
         <https://matplotlib.org/users/customizing.html>`__ settings, ProPlot
         :ref:`rcParamsCustom` settings, and :ref:`rcParamsShort` "global" settings.
         When initialized, this loads defaults settings plus any user overrides
-        in the ``~/.proplotrc`` file. See the `~proplot.rctools` documentation
+        in the ``~/.proplotrc`` file. See :ref:`Configuring proplot`
         for details."""
         # Set the default style. Note that after first figure made, backend
         # is 'sticky', never changes! See: https://stackoverflow.com/a/48322150/4970632
@@ -677,7 +677,7 @@ class rc_configurator(object):
 # backend may change some rc settings!
 rc = rc_configurator()
 """Instance of `rc_configurator`. This is used to change global settings.
-See the `~proplot.rctools` documentation for details."""
+See :ref:`Configuring proplot` for details."""
 
 # Ipython notebook behavior
 @_timer
@@ -690,7 +690,7 @@ def nb_setup():
     and passes :rcraw:`autosave` to the `autosave <https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__
     extension.
 
-    See the `~proplot.rctools` documentation for details.
+    See :ref:`Configuring proplot` for details.
     """
     # Make sure we are in session
     ipython = get_ipython()
