@@ -117,7 +117,8 @@ Easier colorbars and legends
 ============================
 Problem
 -------
-In matplotlib, it is hard to put colorbars and legends on the outside of subplots without messing up subplot aspect ratios. Colorbars tend to be too narrow, too wide, or mess up subplot aspect ratios.
+In matplotlib, it is hard to put colorbars and legends on the outside of subplots. It can end up messing up subplot aspect ratios, and colorbars tend to be too narrow or too wide.
+Drawing colorbars and legends that span the figure edge or serve as reference to more than one subplot is also very tricky and requires lots of tinkering.
 
 ..
    Drawing colorbars and legends is pretty clumsy in matplotlib -- especially when trying to draw them outside of the figure. They can be too narrow, too wide, and mess up your subplot aspect ratios.
