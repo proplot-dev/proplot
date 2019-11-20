@@ -138,9 +138,12 @@ a:visited {
   color: #452bb0;
 }
 
-/* Light mode background colors very similar to defaults */
-/* Also edit sidebar font */
-/* Includes text-logo color, needed for small windows and mobile */
+/*** Light mode ***/
+/* RST content background color */
+.wy-nav-content {
+  background: #fcfcfc;
+}
+/* Sidebar text color, includes text-logo color for mobile */
 .wy-menu a,
 .wy-menu header,
 .wy-menu a:visited,
@@ -148,22 +151,49 @@ a:visited {
 .wy-nav-top .fa-bars {
   color: #404040;
 }
+/* Sidebar and background colors very similar to defaults */
 .wy-nav-side,
 .wy-nav-top,
 .wy-side-nav-search,
 .wy-nav-content-wrap {
   background: #f0f0f0;
 }
-.wy-menu a:hover,
-.wy-menu .toctree-l1.current>a:hover,
-.wy-menu .toctree-l1.current>a {
+/* New colors for individual levels */
+/* Make sure to match specificity of RTD sheet, note level 2 entries
+ * that don't belong to current level 1 entry can be expanded, but this is
+ * not true for deeper ones. Also only put border around level 1 or
+ * borders start to stack and colors conflict with eachother */
+/* .wy-menu a:hover, */
+.wy-menu li.toctree-l1>a:hover,
+.wy-menu li.toctree-l1.current>a,
+.wy-menu li.toctree-l2>a {
   background: #e3e3e3;
+  border-right: 0;
 }
-.wy-nav-content {
-  background: #fcfcfc;
+.wy-menu li.toctree-l1.current>a {
+  border-top: solid 1px #c9c9c9;
+  border-bottom: solid 1px #c9c9c9;
+}
+.wy-menu li.toctree-l2>a:hover,
+.wy-menu li.toctree-l2.current>a,
+.wy-menu li.toctree-l2.current li.toctree-l3>a {
+  background: #d6d6d6;
+  border-right: 0;
+}
+.wy-menu li.toctree-l2.current li.toctree-l3>a:hover,
+.wy-menu li.toctree-l2.current li.toctree-l3.current>a,
+.wy-menu li.toctree-l3.current li.toctree-l4>a {
+  background: #c9c9c9;
+  border-right: 0;
+}
+.wy-menu li.toctree-l3.current li.toctree-l4>a:hover,
+.wy-menu li.toctree-l3.current li.toctree-l4.current>a,
+.wy-menu li.toctree-l4.current li.toctree-l5>a {
+  background: #b6b6b6;
+  border-right: 0;
 }
 
-/* Dark mode background colors with light mode in center */
+/*** Dark mode ***/
 /* Combination dark and light is gross so forget this */
 /* .wy-nav-content-wrap {
  *   background: #fcfcfc; [> make right color same as content <]
@@ -195,4 +225,3 @@ a:visited {
  *   color: #e0e0e0;
  *   background: #202020;
  * } */
-
