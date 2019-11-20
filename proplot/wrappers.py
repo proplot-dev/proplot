@@ -2760,26 +2760,29 @@ def _wrapper_decorator(driver):
     for superclass method docstrings if a docstring is empty."""
     driver._docstring_orig = driver.__doc__ or ''
     driver._methods_wrapped = []
+    new_methods = ('parametric', 'heatmap', 'area', 'areax')
     def decorator(func):
-        # Define wrapper
+        # Define wrapper and suppress documentation
+        # We only document wrapper functions, not the methods they wrap
         @functools.wraps(func)
         def _wrapper(self, *args, **kwargs):
             return driver(self, func, *args, **kwargs)
-        _wrapper.__doc__ = None
+        name = func.__name__
+        if name not in new_methods:
+            _wrapper.__doc__ = None
 
         # List wrapped methods in the driver function docstring
         # Prevents us from having to both explicitly apply decorators in
         # axes.py and explicitly list functions *again* in this file
         docstring = driver._docstring_orig
         if '%(methods)s' in docstring:
-            name = func.__name__
-            if name in ('parametric', 'heatmap', 'area', 'areax'):
-                name = f'`~proplot.axes.Axes.{name}`'
+            if name in new_methods:
+                link = f'`~proplot.axes.Axes.{name}`'
             else:
-                name = f'`~matplotlib.axes.Axes.{name}`'
+                link = f'`~matplotlib.axes.Axes.{name}`'
             methods = driver._methods_wrapped
-            if name not in methods:
-                methods.append(name)
+            if link not in methods:
+                methods.append(link)
                 string = (', '.join(methods[:-1])
                     + ','*min(1, len(methods)-2) # Oxford comma bitches
                     + ' and ' + methods[-1])

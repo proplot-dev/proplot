@@ -788,98 +788,6 @@ class Axes(maxes.Axes):
         """Alias for `~matplotlib.axes.Axes.boxplot`."""
         return self.boxplot(*args, **kwargs)
 
-    @_standardize_1d
-    @_cmap_changer
-    def parametric(self, *args, values=None,
-        cmap=None, norm=None,
-        interp=0, **kwargs):
-        """
-        Invoked when you pass the `cmap` keyword argument to
-        `~matplotlib.axes.Axes.plot`. Draws a "colormap line",
-        i.e. a line whose color changes as a function of the parametric
-        coordinate ``values``. using the input colormap ``cmap``.
-
-        This is actually a collection of lines, added as a
-        `~matplotlib.collections.LineCollection` instance. See `this matplotlib example
-        <https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line.html>`__.
-
-        Parameters
-        ----------
-        *args : (y,) or (x,y)
-            The coordinates. If `x` is not provided, it is inferred from `y`.
-        cmap : colormap spec, optional
-            The colormap specifier, passed to `~proplot.styletools.Colormap`.
-        values : list of float
-            The parametric values used to map points on the line to colors
-            in the colormap.
-        norm : normalizer spec, optional
-            The normalizer, passed to `~proplot.styletools.Norm`.
-        interp : int, optional
-            Number of values between each line joint and each *halfway* point
-            between line joints to which you want to interpolate.
-        """
-        # First error check
-        # WARNING: So far this only works for 1D *x* and *y* coordinates. Cannot
-        # draw multiple colormap lines at once, unlike `~matplotlib.axes.Axes.plot`.
-        if values is None:
-            raise ValueError('Requires a "values" keyword arg.')
-        if len(args) not in (1,2):
-            raise ValueError(f'Requires 1-2 arguments, got {len(args)}.')
-        y = np.array(args[-1]).squeeze()
-        x = np.arange(y.shape[-1]) if len(args) == 1 else np.array(args[0]).squeeze()
-        values = np.array(values).squeeze()
-        if x.ndim != 1 or y.ndim != 1 or values.ndim != 1:
-            raise ValueError(f'x ({x.ndim}-d), y ({y.ndim}-d), and values ({values.ndim}-d) must be 1-dimensional.')
-        if len(x) != len(y) or len(x) != len(values) or len(y) != len(values):
-            raise ValueError(f'{len(x)} xs, {len(y)} ys, but {len(values)} colormap values.')
-
-        # Interpolate values to allow for smooth gradations between values
-        # (bins=False) or color switchover halfway between points (bins=True)
-        # Then optionally interpolate the corresponding colormap values
-        if interp > 0:
-            xorig, yorig, vorig = x, y, values
-            x, y, values = [], [], []
-            for j in range(xorig.shape[0]-1):
-                idx = (slice(None, -1) if j+1 < xorig.shape[0]-1 else slice(None))
-                x.extend(np.linspace(xorig[j], xorig[j+1], interp + 2)[idx].flat)
-                y.extend(np.linspace(yorig[j], yorig[j+1], interp + 2)[idx].flat)
-                values.extend(np.linspace(vorig[j], vorig[j+1], interp + 2)[idx].flat)
-            x, y, values = np.array(x), np.array(y), np.array(values)
-        coords = []
-        levels = utils.edges(values)
-        for j in range(y.shape[0]):
-            # Get x/y coordinates and values for points to the 'left' and
-            # 'right' of each joint
-            if j == 0:
-                xleft, yleft = [], []
-            else:
-                xleft = [(x[j-1] + x[j])/2, x[j]]
-                yleft = [(y[j-1] + y[j])/2, y[j]]
-            if j+1 == y.shape[0]:
-                xright, yright = [], []
-            else:
-                xleft  = xleft[:-1] # prevent repetition when joined with right
-                yleft  = yleft[:-1]
-                xright = [x[j], (x[j+1] + x[j])/2]
-                yright = [y[j], (y[j+1] + y[j])/2]
-            pleft  = np.stack((xleft,  yleft), axis=1)
-            pright = np.stack((xright, yright), axis=1)
-            coords.append(np.concatenate((pleft, pright), axis=0))
-
-        # Create LineCollection and update with values
-        hs = mcollections.LineCollection(np.array(coords), cmap=cmap, norm=norm,
-                linestyles='-', capstyle='butt', joinstyle='miter')
-        hs.set_array(np.array(values))
-        hs.update({key:value for key,value in kwargs.items() if key not in ('color',)})
-
-        # Add collection, with some custom attributes
-        self.add_collection(hs)
-        if self.get_autoscale_on() and self.ignore_existing_data_limits:
-            self.autoscale_view() # data limits not updated otherwise
-        hs.values = values
-        hs.levels = levels # needed for other functions some
-        return hs
-
     def colorbar(self, *args, loc=None, pad=None,
         length=None, width=None, space=None, frame=None, frameon=None,
         alpha=None, linewidth=None, edgecolor=None, facecolor=None,
@@ -1342,6 +1250,100 @@ class Axes(maxes.Axes):
             The panel axes.
         """
         return self.figure._add_axes_panel(self, side, **kwargs)
+
+    @_standardize_1d
+    @_cmap_changer
+    def parametric(self, *args, values=None,
+        cmap=None, norm=None,
+        interp=0, **kwargs):
+        """
+        Invoked when you pass the `cmap` keyword argument to
+        `~matplotlib.axes.Axes.plot`. Draws a "colormap line",
+        i.e. a line whose color changes as a function of the parametric
+        coordinate ``values``. using the input colormap ``cmap``.
+
+        This is actually a collection of lines, added as a
+        `~matplotlib.collections.LineCollection` instance. See `this matplotlib example
+        <https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line.html>`__.
+
+        Parameters
+        ----------
+        *args : (y,) or (x,y)
+            The coordinates. If `x` is not provided, it is inferred from `y`.
+        cmap : colormap spec, optional
+            The colormap specifier, passed to `~proplot.styletools.Colormap`.
+        values : list of float
+            The parametric values used to map points on the line to colors
+            in the colormap.
+        norm : normalizer spec, optional
+            The normalizer, passed to `~proplot.styletools.Norm`.
+        interp : int, optional
+            If greater than ``0``, we interpolate to additional points
+            between the `values` coordinates. The number corresponds to the
+            number of additional color levels between the line joints
+            and the halfway points between line joints.
+        """
+        # First error check
+        # WARNING: So far this only works for 1D *x* and *y* coordinates. Cannot
+        # draw multiple colormap lines at once, unlike `~matplotlib.axes.Axes.plot`.
+        if values is None:
+            raise ValueError('Requires a "values" keyword arg.')
+        if len(args) not in (1,2):
+            raise ValueError(f'Requires 1-2 arguments, got {len(args)}.')
+        y = np.array(args[-1]).squeeze()
+        x = np.arange(y.shape[-1]) if len(args) == 1 else np.array(args[0]).squeeze()
+        values = np.array(values).squeeze()
+        if x.ndim != 1 or y.ndim != 1 or values.ndim != 1:
+            raise ValueError(f'x ({x.ndim}-d), y ({y.ndim}-d), and values ({values.ndim}-d) must be 1-dimensional.')
+        if len(x) != len(y) or len(x) != len(values) or len(y) != len(values):
+            raise ValueError(f'{len(x)} xs, {len(y)} ys, but {len(values)} colormap values.')
+
+        # Interpolate values to allow for smooth gradations between values
+        # (bins=False) or color switchover halfway between points (bins=True)
+        # Then optionally interpolate the corresponding colormap values
+        if interp > 0:
+            xorig, yorig, vorig = x, y, values
+            x, y, values = [], [], []
+            for j in range(xorig.shape[0]-1):
+                idx = (slice(None, -1) if j+1 < xorig.shape[0]-1 else slice(None))
+                x.extend(np.linspace(xorig[j], xorig[j+1], interp + 2)[idx].flat)
+                y.extend(np.linspace(yorig[j], yorig[j+1], interp + 2)[idx].flat)
+                values.extend(np.linspace(vorig[j], vorig[j+1], interp + 2)[idx].flat)
+            x, y, values = np.array(x), np.array(y), np.array(values)
+        coords = []
+        levels = utils.edges(values)
+        for j in range(y.shape[0]):
+            # Get x/y coordinates and values for points to the 'left' and
+            # 'right' of each joint
+            if j == 0:
+                xleft, yleft = [], []
+            else:
+                xleft = [(x[j-1] + x[j])/2, x[j]]
+                yleft = [(y[j-1] + y[j])/2, y[j]]
+            if j+1 == y.shape[0]:
+                xright, yright = [], []
+            else:
+                xleft  = xleft[:-1] # prevent repetition when joined with right
+                yleft  = yleft[:-1]
+                xright = [x[j], (x[j+1] + x[j])/2]
+                yright = [y[j], (y[j+1] + y[j])/2]
+            pleft  = np.stack((xleft,  yleft), axis=1)
+            pright = np.stack((xright, yright), axis=1)
+            coords.append(np.concatenate((pleft, pright), axis=0))
+
+        # Create LineCollection and update with values
+        hs = mcollections.LineCollection(np.array(coords), cmap=cmap, norm=norm,
+                linestyles='-', capstyle='butt', joinstyle='miter')
+        hs.set_array(np.array(values))
+        hs.update({key:value for key,value in kwargs.items() if key not in ('color',)})
+
+        # Add collection, with some custom attributes
+        self.add_collection(hs)
+        if self.get_autoscale_on() and self.ignore_existing_data_limits:
+            self.autoscale_view() # data limits not updated otherwise
+        hs.values = values
+        hs.levels = levels # needed for other functions some
+        return hs
 
     def violins(self, *args, **kwargs):
         """Alias for `~matplotlib.axes.Axes.violinplot`."""
