@@ -98,18 +98,16 @@ Solution
 --------
 In ProPlot, the tight layout algorithm is simpler and more accurate because:
 
-#. The new `~proplot.subplots.GridSpec` class permits variable spacing between rows and columns.
-#. The `~proplot.subplots.GridSpec` spacing parameters are specified in physical units instead of figure-relative units.
-#. Figures are restricted to have only *one* `~matplotlib.gridspec.GridSpec` per figure. When a `~matplotlib.gridspec.SubplotSpec` is passed to `~proplot.subplots.Figure.add_subplot`, the figure is locked to the associated `~matplotlib.gridspec.GridSpec`. When an integer or tuple is passed to `~proplot.subplots.Figure.add_subplot`, the geometry implied by subsequent calls must *divide* or *multiply* the initial geometry -- for example, two square subplots above a longer rectangle subplot can be drawn by passing ``221``, ``222``, and ``212`` to `~proplot.subplots.Figure.add_subplot`. This *considerably* simplifies the algorithm (see :pr:`50` for details).
-
-
+#. The new `~proplot.subplots.FlexibleGridSpec` class permits variable spacing between rows and columns.
+#. The `~proplot.subplots.FlexibleGridSpec` spacing parameters are specified in physical units instead of figure-relative units.
+#. Figures are restricted to have only *one* `~matplotlib.gridspec.FlexibleGridSpec` per figure. This is done by requiring users to draw all of their subplots at once with `~proplot.subplots.subplots`. This requirement *considerably* simplifies the algorithm (see :pr:`50` for details).
 
 ..
-   The `~matplotlib.gridspec.GridSpec` class is useful for creating figures with complex subplot geometry.
+   The `~matplotlib.gridspec.FlexibleGridSpec` class is useful for creating figures with complex subplot geometry.
 ..
    Users want to control axes positions with gridspecs.
 ..
-   * Matplotlib permits arbitrarily many `~matplotlib.gridspec.GridSpec`\ s per figure. This greatly complicates the tight layout algorithm for little evident gain.
+   * Matplotlib permits arbitrarily many `~matplotlib.gridspec.FlexibleGridSpec`\ s per figure. This greatly complicates the tight layout algorithm for little evident gain.
 ..
    ProPlot introduces a marginal limitation (see discussion in :pr:`50`) but *considerably* simplifies the tight layout algorithm.
 
@@ -132,7 +130,7 @@ individual subplots and along contiguous subplots on the edge of the figure:
 * There is a new `~proplot.axes.Axes` `~proplot.axes.Axes.colorbar` method for drawing *inset* colorbars or adding colorbars along the outer edge of axes.
 * The `~proplot.subplots.Figure` `~proplot.subplots.Figure.colorbar` and `~proplot.subplots.Figure.legend` commands draw colorbars and legends that are centered relative to the *subplot grid*, not the axes. This is critical if your left-right or top-bottom border padding is asymmetric.
 * You can put colorbars and legends along the edge of axes or along the edge of the whole figure by passing ``loc='l'``, ``loc='r'``, ``loc='b'``, or ``loc='t'`` to the colorbar and legend commands.
-* Outer colorbars and legends don't mess up the subplot layout or subplot aspect ratios, since the new `~proplot.subplots.GridSpec` class permits variable spacing between subplot rows and columns. This is critical e.g. if you have a colorbar between columns 1 and 2 but nothing between columns 2 and 3.
+* Outer colorbars and legends don't mess up the subplot layout or subplot aspect ratios, since the new `~proplot.subplots.FlexibleGridSpec` class permits variable spacing between subplot rows and columns. This is critical e.g. if you have a colorbar between columns 1 and 2 but nothing between columns 2 and 3.
 * The width of colorbars are now specified in physical units. This makes it easier to get the thickness just right, and makes thickness independent of figure size.
 
 A useful axes container

@@ -143,6 +143,13 @@ a:visited {
 .wy-nav-content {
   background: #fcfcfc;
 }
+/* Sidebar and background colors very similar to defaults */
+.wy-nav-side,
+.wy-nav-top,
+.wy-side-nav-search,
+.wy-nav-content-wrap {
+  background: #f0f0f0;
+}
 /* Sidebar text color, includes text-logo color for mobile */
 .wy-menu a,
 .wy-menu header,
@@ -151,27 +158,20 @@ a:visited {
 .wy-nav-top .fa-bars {
   color: #404040;
 }
-/* Sidebar and background colors very similar to defaults */
-.wy-nav-side,
-.wy-nav-top,
-.wy-side-nav-search,
-.wy-nav-content-wrap {
-  background: #f0f0f0;
-}
 /* New colors for individual levels */
 /* Make sure to match specificity of RTD sheet */
-.wy-menu li.toctree-l1>a:hover,
-.wy-menu li.toctree-l1.current>a,
-.wy-menu li.toctree-l2>a {
-  background: #e3e3e3;
-  border-right: 0;
-}
 .wy-menu li.toctree-l1.current>a {
   border-top: solid 1px #c9c9c9;
   border-bottom: solid 1px #c9c9c9;
 }
-.wy-menu li.toctree-l2>a:hover,
-.wy-menu li.toctree-l2.current>a,
+.wy-menu li.toctree-l1>a:hover,
+.wy-menu li.toctree-l1.current>a,
+.wy-menu li.toctree-l1.current li.toctree-l2>a {
+  background: #e3e3e3;
+  border-right: 0;
+}
+.wy-menu li.toctree-l1.current li.toctree-l2>a:hover,
+.wy-menu li.toctree-l1.current li.toctree-l2.current>a,
 .wy-menu li.toctree-l2.current li.toctree-l3>a {
   background: #d6d6d6;
   border-right: 0;
@@ -187,6 +187,24 @@ a:visited {
 .wy-menu li.toctree-l4.current li.toctree-l5>a {
   background: #b6b6b6;
   border-right: 0;
+}
+/* Toctree expansion button */
+.wy-menu li.toctree-l1 a span.toctree-expand,
+.wy-menu li.toctree-l2 a span.toctree-expand,
+.wy-menu li.toctree-l3 a span.toctree-expand,
+.wy-menu li.toctree-l1 a:hover span.toctree-expand,
+.wy-menu li.toctree-l2 a:hover span.toctree-expand,
+.wy-menu li.toctree-l3 a:hover span.toctree-expand {
+  color: #404040;
+}
+/* Suppress expansion button when not on current item */
+.wy-menu li.toctree-l1:not(.current) a span.toctree-expand,
+.wy-menu li.toctree-l2:not(.current) a span.toctree-expand,
+.wy-menu li.toctree-l3:not(.current) a span.toctree-expand,
+.wy-menu li.toctree-l1:not(.current) a:hover span.toctree-expand,
+.wy-menu li.toctree-l2:not(.current) a:hover span.toctree-expand,
+.wy-menu li.toctree-l3:not(.current) a:hover span.toctree-expand {
+  display: none;
 }
 
 /*** Dark mode ***/
