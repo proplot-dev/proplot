@@ -211,12 +211,11 @@ More accurate colorbars
 =======================
 Problem
 -------
-In matplotlib, when ``extend='min'``, ``extend='max'``, or ``extend='neither'`` is passed to `~matplotlib.figure.Figure.colorbar` , colormap colors reserved for "out-of-bounds" values are simply truncated. But most of the time, users want to utilize the full colormap range.
-
-The problem is that matplotlib divides colormap colors up into "levels" by generating a low-resolution lookup table (see `~matplotolib.colors.LinearSegmentedColormap` for details).
+In matplotlib, when ``extend='min'``, ``extend='max'``, or ``extend='neither'`` is passed to `~matplotlib.figure.Figure.colorbar` , colormap colors reserved for "out-of-bounds" values are truncated.
+The problem is that matplotlib discretizes colormaps by generating a low-resolution lookup table (see `~matplotlib.colors.LinearSegmentedColormap` for details).
 This approach cannot be fine-tuned, creates an unnecessary copy of the colormap, and prevents you from using the resulting colormap for plots with different numbers of levels.
 
-It is clear that the task of "discretizing" the possible colormap colors should be left to the **normalizer**, not the colormap itself. Matplotlib provides `~matplotlib.colors.BoundaryNorm` for this purpose, but it is seldom used and its features are limited.
+It is clear that the task discretizing colormap colors should be left to the **normalizer**, not the colormap itself. Matplotlib provides `~matplotlib.colors.BoundaryNorm` for this purpose, but it is seldom used and its features are limited.
 
 Solution
 --------
