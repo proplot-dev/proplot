@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Various axis locator, formatter, and scale classes. Includes constructor
-functions so that these classes can be selected with with a shorthand
-syntax.
+Various axis `~matplotlib.ticker.Formatter` and `~matplotlib.scale.ScaleBase`
+classes. Includes constructor functions so that these classes can be selected
+with with a shorthand syntax.
 """
 import re
 from .utils import _notNone

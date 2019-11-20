@@ -1,4 +1,5 @@
-.. proplot documentation master file, created by
+..
+   ProPlot documentation master file, created by
    sphinx-quickstart on Wed Feb 20 01:31:20 2019.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
@@ -9,11 +10,7 @@ ProPlot
 
 A comprehensive, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful, publication-quality graphics. The Github page is `here <https://github.com/lukelbd/proplot>`__.
 
-.. include:: installation.rst
-
-.. :hidden: means do not put a table of links right here but include links in sidebar
-
-.. _MIT: LICENSE.txt
+.. include:: ../INSTALL.rst
 
 .. toctree::
    :maxdepth: 1

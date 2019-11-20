@@ -9,7 +9,7 @@ Documentation
 =============
 The documentation is `published on readthedocs <https://proplot.readthedocs.io>`__.
 
-.. include:: docs/installation.rst
+.. include:: INSTALL.rst
 
 Donations
 =========

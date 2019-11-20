@@ -2,7 +2,7 @@
 """
 New cartopy projection classes and related tools.
 Includes projection constructor function for generating
-`~mpl_toolkits.basemap.Basemap` and cartopy `cartopy.crs.Projection` classes
+`~mpl_toolkits.basemap.Basemap` and cartopy `~cartopy.crs.Projection` classes
 with their `PROJ.4 <https://proj4.org/operations/projections/index.html>`__
 string name aliases, just like `~mpl_toolkits.basemap`.
 """

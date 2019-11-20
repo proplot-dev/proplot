@@ -63,7 +63,8 @@ def show():
     """Call `matplotlib.pyplot.show`. This is included so you don't have
     to import `~matplotlib.pyplot`. Note this command should *not be
     necessary* if you are working in an iPython notebook and
-    :rcraw:`nbsetup` is set to ``True``."""
+    :rcraw:`nbsetup` is set to ``True`` -- when you create a figure in a cell,
+    it will be automatically displayed."""
     plt.show()
 
 # Helper classes
