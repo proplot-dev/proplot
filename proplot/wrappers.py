@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """
-Wrapper functions applied to various ProPlot axes plotting methods.
+Plotting wrappers applied to various `~proplot.axes.Axes` plotting methods.
+In a future version these features will be integrated more closely with the
+individual plotting methods and documented on the plotting methods themselves,
+but for now they are documented separately.
 """
 import sys
 import numpy as np
@@ -742,9 +745,9 @@ def add_errorbars(self, func, *args,
 #-----------------------------------------------------------------------------#
 def plot_wrapper(self, func, *args, cmap=None, values=None, **kwargs):
     """
-    Wraps %(methods)s, draws a "colormap line" if the ``cmap`` argument was passed.
+    Wraps %(methods)s, draws a "colormap line" if the `cmap` argument was passed.
     "Colormap lines" change color as a function of the parametric coordinate
-    ``values`` using the input colormap ``cmap``.
+    `values` using the input colormap `cmap`.
 
     Parameters
     ----------
@@ -929,7 +932,7 @@ def hist_wrapper(self, func, x, bins=None, **kwargs):
     return func(self, x, bins=bins, **kwargs)
 
 def barh_wrapper(self, func, y=None, width=None, height=0.8, left=None, **kwargs):
-    """Wraps %(methods)s, usage is same as `bar`."""
+    """Wraps %(methods)s, usage is same as `bar_wrapper`."""
     kwargs.setdefault('orientation', 'horizontal')
     if y is None and width is None:
         raise ValueError(f'barh() requires at least 1 positional argument, got 0.')
@@ -1521,7 +1524,7 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
     color=None, colors=None, edgecolor=None, edgecolors=None,
     **kwargs):
     """
-    Wraps methods that take a ``cmap`` argument (%(methods)s),
+    Wraps methods that take a `cmap` argument (%(methods)s),
     adds several new keyword args and features.
     Uses the `~proplot.styletools.BinNorm` normalizer to bin data into
     discrete color levels (see notes).
@@ -1935,7 +1938,7 @@ def legend_wrapper(self,
     dashes=None, linestyle=None, markersize=None, frameon=None, frame=None,
     **kwargs):
     """
-    Wraps `~matplotlib.axes.Axes` `~matplotlib.axes.Axes.legend` and
+    Wraps `~proplot.axes.Axes` `~proplot.axes.Axes.legend` and
     `~proplot.subplots.Figure` `~proplot.subplots.Figure.legend`, adds some
     handy features.
 
@@ -2261,7 +2264,7 @@ def colorbar_wrapper(self,
     fixticks=False,
     **kwargs):
     """
-    Wraps `~matplotlib.axes.Axes` `~matplotlib.axes.Axes.colorbar` and
+    Wraps `~proplot.axes.Axes` `~proplot.axes.Axes.colorbar` and
     `~proplot.subplots.Figure` `~proplot.subplots.Figure.colorbar`, adds some
     handy features.
 
@@ -2760,7 +2763,8 @@ def _wrapper_decorator(driver):
     for superclass method docstrings if a docstring is empty."""
     driver._docstring_orig = driver.__doc__ or ''
     driver._methods_wrapped = []
-    new_methods = ('parametric', 'heatmap', 'area', 'areax')
+    proplot_methods = ('parametric', 'heatmap', 'area', 'areax')
+    cartopy_methods = ('get_extent', 'set_extent')
     def decorator(func):
         # Define wrapper and suppress documentation
         # We only document wrapper functions, not the methods they wrap
@@ -2768,7 +2772,7 @@ def _wrapper_decorator(driver):
         def _wrapper(self, *args, **kwargs):
             return driver(self, func, *args, **kwargs)
         name = func.__name__
-        if name not in new_methods:
+        if name not in proplot_methods:
             _wrapper.__doc__ = None
 
         # List wrapped methods in the driver function docstring
@@ -2776,16 +2780,20 @@ def _wrapper_decorator(driver):
         # axes.py and explicitly list functions *again* in this file
         docstring = driver._docstring_orig
         if '%(methods)s' in docstring:
-            if name in new_methods:
+            if name in proplot_methods:
                 link = f'`~proplot.axes.Axes.{name}`'
+            elif name in cartopy_methods:
+                link = f'`~cartopy.mpl.geoaxes.GeoAxes.{name}`'
             else:
                 link = f'`~matplotlib.axes.Axes.{name}`'
             methods = driver._methods_wrapped
             if link not in methods:
                 methods.append(link)
-                string = (', '.join(methods[:-1])
-                    + ','*min(1, len(methods)-2) # Oxford comma bitches
-                    + ' and ' + methods[-1])
+                string = (
+                    ', '.join(methods[:-1])
+                    + ',' * int(len(methods)>2) # Oxford comma bitches
+                    + ' and ' * int(len(methods)>1)
+                    + methods[-1])
                 driver.__doc__ = docstring % {'methods': string}
         return _wrapper
     return decorator
