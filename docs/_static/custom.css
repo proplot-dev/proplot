@@ -159,11 +159,7 @@ a:visited {
   background: #f0f0f0;
 }
 /* New colors for individual levels */
-/* Make sure to match specificity of RTD sheet, note level 2 entries
- * that don't belong to current level 1 entry can be expanded, but this is
- * not true for deeper ones. Also only put border around level 1 or
- * borders start to stack and colors conflict with eachother */
-/* .wy-menu a:hover, */
+/* Make sure to match specificity of RTD sheet */
 .wy-menu li.toctree-l1>a:hover,
 .wy-menu li.toctree-l1.current>a,
 .wy-menu li.toctree-l2>a {
