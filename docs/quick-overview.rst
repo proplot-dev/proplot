@@ -20,13 +20,12 @@ If this is all you want and you don't care about the plotting features, simply
 Top-level commands
 ==================
 
-ProPlot's features derive from the `~proplot.subplots.subplots` and `~proplot.subplots.figure` commands, inspired
-by the pyplot `~matplotlib.pyplot.subplots` and `~matplotlib.pyplot.figure`
-commands.  These create a `~proplot.subplots.Figure` subclass
-that generates special `~proplot.axes.Axes` subclasses
-when `~proplot.subplots.Figure.add_subplot` is called.
-
-The features provided by `~proplot.subplots.subplots` and `~proplot.subplots.figure` are numerous. One highlight is the new `tight layout <https://matplotlib.org/3.1.1/tutorials/intermediate/tight_layout_guide.html>`__ algorithm applied to all figures by default. This allows the figure width and height to vary so that subplot aspect ratios remain fixed, which is particularly useful for grids of map projections and images. Arbitrary physical units, including *metric* units like ``cm`` and ``mm``, can be used for sizing arguments.
+ProPlot's features derive from the `~proplot.subplots.subplots` command, inspired
+by the pyplot `~matplotlib.pyplot.subplots` command.
+`~proplot.subplots.subplots` creates a `~proplot.subplots.Figure` subclass
+populated with special `~proplot.axes.Axes` subclasses,
+and is packed with new features -- one highlight is the new :ref:`Tight layout`
+algorithm applied to all `~proplot.subplots.Figure`\ s by default.
 
 Figure and axes commands
 ========================
@@ -46,7 +45,7 @@ Integration with other packages
 ProPlot includes integration with `xarray`, `pandas`, `cartopy`, and `~mpl_toolkits.basemap`:
 
 * Axis labels, tick labels, titles, colorbar labels, and legend labels are automatically applied when you pass an `xarray.DataArray`, `pandas.DataFrame`, or `pandas.Series` object to any plotting command. This works just like the native `xarray.DataArray.plot` and `pandas.DataFrame.plot` methods.
-* The `~proplot.projs.Proj` function lets you make arbitrary grids of map projections by passing a `proj` name to `~proplot.subplots.Figure.add_subplot` or `~proplot.subplots.Figure.subplots`. The resulting axes are instances of `~proplot.axes.ProjAxes` with `~proplot.axes.ProjAxes.format` that can be used to add geographic features and custom meridian and parallel gridlines.
+* The `~proplot.projs.Proj` function lets you make arbitrary grids of map projections. It is used to interpret the `proj` keyword arg passed to `~proplot.subplots.Figure.subplots`. The resulting axes are instances of `~proplot.axes.ProjAxes` with `~proplot.axes.ProjAxes.format` methods that can be used to add geographic features and custom meridian and parallel gridlines.
 
 Additional tools
 ================
