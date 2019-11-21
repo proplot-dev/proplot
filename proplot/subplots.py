@@ -1657,12 +1657,7 @@ def subplots(array=None, ncols=1, nrows=1,
     ):
     """
     Analogous to `matplotlib.pyplot.subplots`, creates a figure with a single
-    axes or arbitrary grids of axes, any of which can be map projections,
-    and optional "panels" along axes or figure edges.
-
-    The parameters are sorted into the following rough sections: subplot grid
-    specifications, figure and subplot sizes, axis sharing,
-    figure panels, axes panels, and map projections.
+    axes or arbitrary grids of axes, any of which can be map projections.
 
     Parameters
     ----------
