@@ -9,68 +9,145 @@
  * - .item1 .item2 {} matches where item2 is *descendent* of item tag/class/id
  * - .item1, .item2 {} matches tag belonging to *either* tag/class/id
  * - item1:key {} matches "pseudo-class" e.g. item1:hover or "pseudo-element" e..g item1:first-line
+ * - item1 + item2 matches item2 *immediately following* item1, but not inside
  * - default blue for header and links: 2f81b7
  * - better blue used before: 2d6ab0
+ * Alabaster scroll sidebar: https://stackoverflow.com/a/57040610/4970632
+ * Rtd edits: https://stackoverflow.com/a/48281750/4970632
+ * Note we only use !important where RTD uses !important
+ * Otherwise just try to match specificity of RTD selectors
  */
 
-/* Alabaster scroll sidebar: https://stackoverflow.com/a/57040610/4970632 */
-div.sphinxsidebar {
-    max-height: 100%;
-    overflow-y: auto;
+/* Default light mode variables */
+:root {
+  --dark-color: #505050; /* for toggle button */
+  --light-color: #f0f0f0; /* for toggle button */
+  --call-color: #606060;
+  --main-color: #404040;
+  --code-color: #e54d42;
+  --link-color: #2d6ab0;
+  --link-hover-color: #0079ff;
+  --link-visited-color: #452bb0;
+  --code-border-color: #e0e0e0;
+  --l1-border-color: #c9c9c9;
+  --main-bg-color: #fcfcfc;
+  --code-bg-color: #ffffff;
+  --block-bg-color: #f0f0f0;
+  --accent-bg-color: #d0d0d0;
+  --search-border-color: #aaa;
+  --search-shadow-color: #ddd;
+  --l1-bg-color: #f0f0f0;
+  --l2-bg-color: #e3e3e3;
+  --l3-bg-color: #d6d6d6;
+  --l4-bg-color: #c9c9c9;
+  --l5-bg-color: #b6b6b6;
 }
 
-/* Rtd edits see https://stackoverflow.com/a/48281750/4970632 */
+/* Dark mode variables */
+/* See: https://dev.to/ananyaneogi/create-a-dark-light-mode-switch-with-css-variables-34l8 */
+[data-theme="dark"] {
+  --call-color: #d0d0d0;
+  --main-color: #fcfcfc;
+  --code-color: #ff8f4f;
+  --link-color: #69acff;
+  --link-hover-color: #549aeb;
+  --link-visited-color: #c194ff;
+  --code-border-color: #707070;
+  --l1-border-color: #808080;
+  --main-bg-color: #404040;
+  --code-bg-color: #555555;
+  --block-bg-color: #4a4a4a;
+  --accent-bg-color: #707070;
+  --search-border-color: #555;
+  --search-shadow-color: #444;
+  --l1-bg-color: #505050;
+  --l2-bg-color: #606060;
+  --l3-bg-color: #707070;
+  --l4-bg-color: #808080;
+  --l5-bg-color: #909090;
+}
+
+/* RST content background color */
+body.scroll-up,
+body.scroll-down,
+.wy-nav-content {
+  background: var(--main-bg-color);
+}
+
+/* Horizontal rules */
+hr {
+  color: var(--code-border-color);
+}
+
+/* Code background color */
+code,
+.rst-content tt,
+.rst-content code {
+  border: solid 1px var(--code-border-color);
+  background: var(--code-bg-color);
+}
+
+/* For literal code blocks, do not inherit main text color */
+/* Need !important because nbshpinx hardcodes <style> into HTML */
+/* Can also use this to sync code-block and nbinput backgrounds but probably
+ * better if they have different colors. */
+.rst-content div[class^='highlight'],
+.rst-content pre.literal-block {
+  border-color: var(--code-border-color) !important;
+}
+div[class^='highlight'] div.highlight,
+div.nbinput div.input_area {
+  color: #404040 !important;
+  border-radius: 0 !important;
+}
+div.nbinput div.prompt pre {
+  color: var(--link-color) !important;
+}
+div.nboutput div.prompt pre {
+  color: var(--code-color) !important;
+}
+
 /* Grayscale Parameters and Returns headers */
-/* Note specificity has to be high so will be overridden */
 .rst-content dl:not(.docutils) .field-list>dt {
   font-weight: bold;
   font-size: 16px; /* todo make relative */
-  color: #404040;
+  color: var(--main-color);
+  background: var(--block-bg-color);
+  border-left-color: var(--accent-bg-color);
 }
-
-/* Parameters and Return headers that look like ordinary headers */
-/* Decided against this because these sections need extra prominence */
+/* No accent, decided against this because they need extra prominence */
 /* .rst-content dl:not(.docutils) .field-list>dt {
  *   padding: 0;
  *   border: 0;
  *   background: transparent;
  *   font-weight: bold;
  *   font-size: 16px;
- *   color: #404040;
+ *   color: var(--main-color);
  * } */
 
 /* Call signature headers to grayscale */
-.rst-content dl:not(.docutils) dt {
-  color: #606060; /* Arguments colors */
-  background: #f0f0f0;
-  border-top-color: #d0d0d0;
-}
+body,
+.rst-content dl:not(.docutils) dt .headerlink,
 .rst-content dl:not(.docutils) dt .property,
-.rst-content dl:not(.docutils) dt .descname {
-  color: #404040; /* Name and property colors */
+.rst-content dl:not(.docutils) dt .descname,
+.rst-content dl:not(.docutils) dt .descclassname {
+  color: var(--main-color);
+}
+.rst-content dl:not(.docutils) dt {
+  color: var(--call-color);
+  background: var(--block-bg-color);
+  border-top-color: var(--accent-bg-color);
 }
 
 /* "Admonition" blocks, i.e. note, todo, etc. */
 .rst-content .admonition,
 .rst-content dl:not(.docutils) .admonition {
-  background: #f0f0f0;
+  background: var(--block-bg-color);
 }
 .rst-content .admonition>.admonition-title,
 .rst-content dl:not(.docutils) .admonition>.admonition-title {
-  color: #f0f0f0;
-  background: #606060;
-}
-
-/* Table rows */
-.wy-table-odd td,
-.wy-table-striped tr:nth-child(2n-1) td,
-.rst-content table.docutils:not(.field-list) tr:nth-child(2n-1) td {
-  background: #f0f0f0;
-}
-.wy-table-even td,
-.wy-table-striped tr:nth-child(2n) td,
-.rst-content table.docutils:not(.field-list) tr:nth-child(2n) td {
-  background: #fcfcfc;
+  color: var(--main-color); /* title text is same as block bg */
+  background: var(--accent-bg-color);
 }
 
 /* Thinner tables */
@@ -79,125 +156,60 @@ div.sphinxsidebar {
   margin-bottom: 0 !important; /* default was 12px */
 }
 
-/* Make logo flush in box */
-/* Also remove bottom margins because TOC caption padding is enough */
-.wy-side-nav-search {
-  margin-bottom: 0;
-  padding-bottom: 0;
+/* Table rows */
+.wy-table-odd td,
+.wy-table-striped tr:nth-child(2n-1) td,
+.rst-content table.docutils:not(.field-list) tr:nth-child(2n-1) td {
+  background: var(--block-bg-color);
 }
-.wy-side-nav-search .wy-dropdown>a img.logo,
-.wy-side-nav-search>a img.logo,
-.wy-side-nav-search .wy-dropdown>a,
-.wy-side-nav-search>a {
-  padding: 0;
-}
-
-/* Hyperlink colors */
-a {
-  color: #2d6ab0;
-}
-a:hover {
-  color: #0079ff;
-}
-a:visited {
-  color: #452db0;
+.wy-table-even td,
+.wy-table-striped tr:nth-child(2n) td,
+.rst-content table.docutils:not(.field-list) tr:nth-child(2n) td {
+  background: var(--main-bg-color);
 }
 
-/* Literal code color */
-/* Not docutils needed to match specificity of default tags */
-/* Without not docutils needed for some pages e.g. Configuration */
-.rst-content code.literal,
-.rst-content tt.literal {
-  color: #e54d42; /* #606060 */
-  font-weight: normal;
-}
-.rst-content dl:not(.docutils) code.literal,
-.rst-content dl:not(.docutils) tt.literal {
-  color: #e54d42;
-  font-weight: normal;
+/* Table borders */
+.wy-table-bordered-all,
+.rst-content table.docutils,
+.wy-table-bordered-all td,
+.rst-content table.docutils td {
+  border-color: var(--accent-bg-color);
 }
 
-/* Literal parameter color */
+/* Parameter color */
 .rst-content code.xref.docutils.literal,
 .rst-content tt.xref.docutils.literal {
-  color: #404040;
+  color: var(--main-color);
   font-weight: bold;
 }
 
-/* Literal API link color */
+/* Hyperlink and API link color */
+a,
 .rst-content a code.xref.docutils.literal,
 .rst-content a tt.xref.docutils.literal {
-  color: #2d6ab0;
+  color: var(--link-color);
 }
+a:hover,
 .rst-content a:hover code.xref.docutils.literal,
 .rst-content a:hover tt.xref.docutils.literal {
-  color: #0079ff;
+  color: var(--link-hover-color);
 }
+a:visited,
 .rst-content a:visited code.xref.docutils.literal,
 .rst-content a:visited tt.xref.docutils.literal {
-  color: #452bb0;
+  color: var(--link-visited-color);
 }
 
-/*** Light mode ***/
-/* RST content background color */
-.wy-nav-content {
-  background: #fcfcfc;
+/* Code color, dl:not(.docutils) needed to match specificity */
+.rst-content code.literal,
+.rst-content tt.literal,
+.rst-content dl:not(.docutils) code.literal,
+.rst-content dl:not(.docutils) tt.literal {
+  color: var(--code-color);
+  font-weight: normal;
 }
-/* Sidebar and background colors very similar to defaults */
-.wy-nav-side,
-.wy-nav-top,
-.wy-side-nav-search,
-.wy-nav-content-wrap {
-  background: #f0f0f0;
-}
-/* Sidebar text color, includes text-logo color for mobile */
-.wy-menu a,
-.wy-menu header,
-.wy-menu a:visited,
-.wy-menu p.caption,
-.wy-nav-top .fa-bars {
-  color: #404040;
-}
-/* New colors for individual levels */
-/* Make sure to match specificity of RTD sheet */
-.wy-menu li.toctree-l1.current>a {
-  border-top: solid 1px #c9c9c9;
-  border-bottom: solid 1px #c9c9c9;
-}
-.wy-menu li.toctree-l1>a:hover,
-.wy-menu li.toctree-l1.current>a,
-.wy-menu li.toctree-l1.current li.toctree-l2>a {
-  background: #e3e3e3;
-  border-right: 0;
-}
-.wy-menu li.toctree-l1.current li.toctree-l2>a:hover,
-.wy-menu li.toctree-l1.current li.toctree-l2.current>a,
-.wy-menu li.toctree-l2.current li.toctree-l3>a {
-  background: #d6d6d6;
-  border-right: 0;
-}
-.wy-menu li.toctree-l2.current li.toctree-l3>a:hover,
-.wy-menu li.toctree-l2.current li.toctree-l3.current>a,
-.wy-menu li.toctree-l3.current li.toctree-l4>a {
-  background: #c9c9c9;
-  border-right: 0;
-}
-.wy-menu li.toctree-l3.current li.toctree-l4>a:hover,
-.wy-menu li.toctree-l3.current li.toctree-l4.current>a,
-.wy-menu li.toctree-l4.current li.toctree-l5>a {
-  background: #b6b6b6;
-  border-right: 0;
-}
-/* Toctree expansion button */
-.wy-menu li.toctree-l1 a span.toctree-expand,
-.wy-menu li.toctree-l2 a span.toctree-expand,
-.wy-menu li.toctree-l3 a span.toctree-expand,
-.wy-menu li.toctree-l1 a:hover span.toctree-expand,
-.wy-menu li.toctree-l2 a:hover span.toctree-expand,
-.wy-menu li.toctree-l3 a:hover span.toctree-expand {
-  color: #404040;
-}
-/* Suppress expansion button when not on current item */
+
+/* Hide expansion button when not on current item */
 .wy-menu li.toctree-l1:not(.current) a span.toctree-expand,
 .wy-menu li.toctree-l2:not(.current) a span.toctree-expand,
 .wy-menu li.toctree-l3:not(.current) a span.toctree-expand,
@@ -207,35 +219,151 @@ a:visited {
   display: none;
 }
 
-/*** Dark mode ***/
-/* Combination dark and light is gross so forget this */
-/* .wy-nav-content-wrap {
- *   background: #fcfcfc; [> make right color same as content <]
- * }
- * .wy-nav-side,
- * .wy-nav-top,
- * .wy-side-nav-search {
- *   background: #303030;
- * }
- * .wy-menu a
- * .wy-menu header,
- * .wy-menu a:visited,
- * .wy-menu p.caption {
- *   color: #fcfcfc;
- * }
- * .wy-menu .toctree-l1 a:hover,
- * .wy-menu .toctree-l1.current>a { [> Hover and current <]
- *   background: #202020;
- * }
- * .wy-menu .toctree-l2 a,
- * .wy-menu .toctree-l2 header,
- * .wy-menu .toctree-l2 a:visited,
- * .wy-menu .toctree-l2 p.caption {
- *   color: #e0e0e0;
- *   background: #404040;
- * }
- * .wy-menu .toctree-l2 a:hover,
- * .wy-menu .toctree-l2.current>a { [> Hover and current <]
- *   color: #e0e0e0;
- *   background: #202020;
- * } */
+/* Make logo flush in box */
+/* Also remove bottom margins because TOC caption padding is enough */
+.wy-side-nav-search .wy-dropdown>a img.logo,
+.wy-side-nav-search>a img.logo,
+.wy-side-nav-search .wy-dropdown>a,
+.wy-side-nav-search>a {
+  padding: 0;
+}
+.wy-side-nav-search input[type=text] {
+  color: var(--main-color);
+  border: 1px solid var(--search-border-color);
+  background-color: var(--main-bg-color);
+  box-shadow: inset 0 1px 3px var(--main-bg-color);
+  /* border-color: var(--search-border-color); */
+}
+.wy-side-nav-search {
+  border-color: var(--search-border-color) ;
+  box-shadow-color: var(--search-shadow-color) ;
+  background-color: var(--main-color);
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+/* Current item outline color */
+.wy-menu li.toctree-l1.current>a {
+  border-top: solid 1px var(--l1-border-color);
+  border-bottom: solid 1px var(--l1-border-color);
+}
+
+/* Sidebar text color, includes text-logo color for mobile */
+/* and expansion buttons. Matches specificity of RTD sheet */
+.wy-menu p.caption,
+.wy-menu li.toctree-l1 a,
+.wy-menu li.toctree-l2 a,
+.wy-menu li.toctree-l3 a,
+.wy-menu li.toctree-l4 a,
+.wy-menu li.toctree-l1 a span.toctree-expand,
+.wy-menu li.toctree-l2 a span.toctree-expand,
+.wy-menu li.toctree-l3 a span.toctree-expand,
+.wy-menu li.toctree-l1 a:hover span.toctree-expand,
+.wy-menu li.toctree-l2 a:hover span.toctree-expand,
+.wy-menu li.toctree-l3 a:hover span.toctree-expand,
+.wy-nav-top .fa-bars {
+  color: var(--main-color);
+}
+
+/* Sidebar and background colors, the .wy-body-for-nav is rubber band scroll */
+.wy-body-for-nav,
+.wy-nav-content-wrap,
+.wy-nav-side,
+.wy-nav-top,
+.wy-side-nav-search {
+  background: var(--l1-bg-color);
+  border-right: 0;
+}
+
+/* Sidebar level colors */
+/* Matches specificity of RTD sheet */
+.wy-menu li.toctree-l1>a:hover,
+.wy-menu li.toctree-l1.current>a,
+.wy-menu li.toctree-l1.current li.toctree-l2>a {
+  background: var(--l2-bg-color);
+  border-right: 0;
+}
+.wy-menu li.toctree-l1.current li.toctree-l2>a:hover,
+.wy-menu li.toctree-l1.current li.toctree-l2.current>a,
+.wy-menu li.toctree-l2.current li.toctree-l3>a {
+  background: var(--l3-bg-color);
+  border-right: 0;
+}
+.wy-menu li.toctree-l2.current li.toctree-l3>a:hover,
+.wy-menu li.toctree-l2.current li.toctree-l3.current>a,
+.wy-menu li.toctree-l3.current li.toctree-l4>a {
+  background: var(--l4-bg-color);
+  border-right: 0;
+}
+.wy-menu li.toctree-l3.current li.toctree-l4>a:hover,
+.wy-menu li.toctree-l3.current li.toctree-l4.current>a,
+.wy-menu li.toctree-l4.current li.toctree-l5>a {
+  background: var(--l5-bg-color);
+  border-right: 0;
+}
+
+/* Next and previous buttons */
+.btn {
+  border: 1px solid var(--block-color);
+  transition: all 0.1s linear;
+  box-shadow: none;
+  -moz-box-shadow: none;
+  -webkit-box-shadow: none;
+}
+.btn-neutral,
+.btn-neutral:hover,
+.btn-neutral:visited {
+  color: var(--main-color) !important;
+}
+.btn-neutral {
+  background-color: var(--block-bg-color) !important;
+}
+.btn-neutral:hover {
+  background-color: var(--accent-bg-color) !important;
+}
+
+/* Dark mode toggle switcher */
+/* See: https://dev.to/ananyaneogi/create-a-dark-light-mode-switch-with-css-variables-34l8 */
+/* Color changes cannot be in :before tag or they won't apply to padding */
+.wy-breadcrumbs li.wy-breadcrumbs-switch {
+  float: right;
+}
+label.theme-switch {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  font-size: 100%;
+}
+label.theme-switch input {
+  display: none; /* hides the check box */
+}
+label.theme-switch div.btn-neutral {
+  padding: 0;
+  border-width: 5px;
+  border-style: solid;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.1s linear;
+  overflow: hidden;
+}
+label.theme-switch:hover div.btn-neutral,
+label.theme-switch input:checked + div.btn-neutral {
+  color: var(--light-color) !important;
+  border-color: var(--dark-color) !important;
+  background-color: var(--dark-color) !important;
+}
+label.theme-switch div.btn-neutral,
+label.theme-switch:hover input:checked + div.btn-neutral {
+  color: var(--dark-color) !important;
+  border-color: var(--light-color) !important;
+  background-color: var(--light-color) !important;
+}
+label.theme-switch:hover div.btn-neutral:before,
+label.theme-switch input:checked + div.btn-neutral:before {
+  content: "Dark mode";
+}
+label.theme-switch div.btn-neutral:before,
+label.theme-switch:hover input:checked + div.btn-neutral:before {
+  content: "Light mode";
+}
+

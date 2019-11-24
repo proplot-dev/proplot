@@ -48,9 +48,6 @@ A comprehensive, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper fo
    external-links
    authors
 
-.. toctree::
-
-
 
 Indices and tables
 ==================

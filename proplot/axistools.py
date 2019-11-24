@@ -389,8 +389,8 @@ class AutoFormatter(mticker.ScalarFormatter):
         if self._maxprecision is not None and '.' in string:
             head, tail = string.split('.')
             string = head + '.' + tail[:self._maxprecision]
-        if self._zerotrim:
-            string = re.sub(r'\A(.*\..*?)0+\Z', r'\1', string)
+        if self._zerotrim and '.' in string:
+            string = string.rstrip('0.')
         if string == '-0' or string == '\N{MINUS SIGN}0':
             string = '0'
         # Prefix and suffix
@@ -436,9 +436,9 @@ def SimpleFormatter(*args, precision=6,
             x *= -1
             tail = negpos[0]
         # Finally use default formatter
-        string = f'{{:.{precision}f}}'.format(x)
-        if zerotrim:
-            string = re.sub(r'\A^(.*\..*?)0+\Z', r'\1', string) # note the non-greedy secondary glob!
+        string = ('{:.%df}' % precision).format(x)
+        if zerotrim and '.' in string:
+            string = string.rstrip('0.')
         if string == '-0' or string == '\N{MINUS SIGN}0':
             string = '0'
         # Prefix and suffix

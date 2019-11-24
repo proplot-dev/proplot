@@ -42,7 +42,9 @@ release = ''
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'nbsphinx',
+    # 'matplotlib.sphinxext.plot_directive',  # see: https://matplotlib.org/sampledoc/extensions.html
+    'IPython.sphinxext.ipython_console_highlighting',
+    'IPython.sphinxext.ipython_directive',  # for ipython highlighting
     'sphinx.ext.autodoc',           # include documentation from docstrings
     'sphinx.ext.doctest',           # >>> examples
     'sphinx.ext.extlinks',          # for :pr:, :issue:, :commit:
@@ -55,10 +57,7 @@ extensions = [
     'sphinx.ext.intersphinx',       # external links
     'sphinxext.custom_roles',       # local extension
     'sphinx_automodapi.automodapi', # custom fork of the astropy extension
-    # 'IPython.sphinxext.ipython_console_highlighting',
-    # 'IPython.sphinxext.ipython_directive',  # for ipython highlighting
-    # 'matplotlib.sphinxext.only_directives', # deprecated, see: https://github.com/statsmodels/statsmodels/issues/5291
-    # 'matplotlib.sphinxext.plot_directive',  # see: https://matplotlib.org/sampledoc/extensions.html
+    'nbsphinx',
     ]
 
 extlinks = {

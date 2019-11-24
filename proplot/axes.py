@@ -2904,7 +2904,7 @@ class GeoAxes(ProjAxes, GeoAxes):
         map_projection : `~cartopy.crs.Projection`
             The `~cartopy.crs.Projection` instance.
         *args, **kwargs
-            Passed to `Axes.__init__`.
+            Passed to `~cartopy.mpl.geoaxes.GeoAxes`.
 
         See also
         --------
@@ -3239,7 +3239,7 @@ class BasemapAxes(ProjAxes):
         map_projection : `~mpl_toolkits.basemap.Basemap`
             The `~mpl_toolkits.basemap.Basemap` instance.
         **kwargs
-            Passed to `Axes.__init__`.
+            Passed to `Axes`.
 
         See also
         --------

@@ -684,7 +684,7 @@ class Figure(mfigure.Figure):
             :rc:`subplots.axpad`.
         panelpad : float or str, optional
             Padding between subplots and axes panels, and between "stacked"
-            panels. Units are interpreted by `~proplot.utils.units`.Default is
+            panels. Units are interpreted by `~proplot.utils.units`. Default is
             :rc:`subplots.panelpad`.
         includepanels : bool, optional
             Whether to include panels when centering *x* axis labels,
@@ -709,6 +709,10 @@ class Figure(mfigure.Figure):
             Ignored, because ProPlot uses its own tight layout algorithm.
         **kwargs
             Passed to `matplotlib.figure.Figure`.
+
+        See also
+        --------
+        `~matplotlib.figure.Figure`
         """
         # Initialize first, because need to provide fully initialized figure
         # as argument to gridspec, because matplotlib tight_layout does that
