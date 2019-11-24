@@ -10,10 +10,9 @@ string name aliases, just like `~mpl_toolkits.basemap`.
 # if version.parse(cartopy.__version__) < version.parse("0.13"):
 #     raise RuntimeError('Require cartopy version >=0.13.') # adds set_boundary method
 import numpy as np
-import matplotlib.path as mpath
 import warnings
 __all__ = [
-    'Circle', 'Proj',
+    'Proj',
     'basemap_rc', 'cartopy_projs',
     'Aitoff', 'Hammer', 'KavrayskiyVII',
     'NorthPolarAzimuthalEquidistant', 'NorthPolarLambertAzimuthalEqualArea',
@@ -30,19 +29,6 @@ except ModuleNotFoundError:
     AzimuthalEquidistant = object
     Gnomonic = object
     _cartopy_installed = False
-
-def Circle(N=100):
-    """Returns a circle `~matplotlib.path.Path` used as the outline
-    for polar stereographic, azimuthal equidistant, and Lambert
-    conformal projections. This was developed from `this cartopy example
-    <https://scitools.org.uk/cartopy/docs/v0.15/examples/always_circular_stereo.html>`_."""
-    # WARNING: Tempting to use classmethod mpath.Path.circle, but this ends up
-    # failing and drawing weird polygon. Need manual approach.
-    # mpath.Path([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [0.0, 0.0]]) # rectangle
-    theta = np.linspace(0, 2*np.pi, N)
-    center, radius = [0.5, 0.5], 0.5
-    verts = np.vstack([np.sin(theta), np.cos(theta)]).T
-    return mpath.Path(verts * radius + center)
 
 def Proj(name, basemap=False, **kwargs):
     """

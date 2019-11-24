@@ -11,6 +11,7 @@ import matplotlib.axes as maxes
 import matplotlib.dates as mdates
 import matplotlib.scale as mscale
 import matplotlib.text as mtext
+import matplotlib.path as mpath
 import matplotlib.ticker as mticker
 import matplotlib.patches as mpatches
 import matplotlib.gridspec as mgridspec
@@ -2661,6 +2662,16 @@ class PolarAxes(Axes, mproj.PolarAxes):
     phase_spectrum     = _disable(Axes.phase_spectrum)
     magnitude_spectrum = _disable(Axes.magnitude_spectrum)
 
+def _circle_path(N=100):
+    """Return a circle `~matplotlib.path.Path` used as the outline
+    for polar stereographic, azimuthal equidistant, and Lambert
+    conformal projections. This was developed from `this cartopy example
+    <https://scitools.org.uk/cartopy/docs/v0.15/examples/always_circular_stereo.html>`_."""
+    theta = np.linspace(0, 2*np.pi, N)
+    center, radius = [0.5, 0.5], 0.5
+    verts = np.vstack([np.sin(theta), np.cos(theta)]).T
+    return mpath.Path(verts * radius + center)
+
 class ProjAxes(Axes):
     """Intermediate class, shared by `GeoAxes` and
     `BasemapAxes`. Disables methods that are inappropriate for map
@@ -2931,7 +2942,7 @@ class GeoAxes(ProjAxes, GeoAxes):
             projs.NorthPolarLambertAzimuthalEqualArea,
             projs.SouthPolarAzimuthalEquidistant,
             projs.SouthPolarLambertAzimuthalEqualArea)):
-            self.set_boundary(projs.Circle(100), transform=self.transAxes)
+            self.set_boundary(_circle_path(100), transform=self.transAxes)
         else:
             self.set_global()
 
