@@ -134,8 +134,8 @@ Rc configuration tools
 .. automodsumm:: proplot.rctools
    :toctree: api
 
-General utilities
-=================
+Miscellaneous tools
+===================
 
 .. automodule:: proplot.utils
 

@@ -131,9 +131,9 @@ Preparing Pull Requests
      
       .. code-block::
 
-         <description> (``:pr:`#<PR number>```) ```<author's names>`_``
+         <description> (:pr:`<PR number>`) `<author name>`_
 
-    where ``<description>`` is the description of the PR related to the change, ``<PR number>`` is the pull request number, and ``<author's names>`` are your first and last names.
+    where ``<description>`` is the description of the PR related to the change, ``<PR number>`` is the pull request number, and ``<author name>`` is your first and last name.
 
    - Add yourself to list of authors at the end of ``CHANGELOG.rst`` file if not there yet, in alphabetical order.
 

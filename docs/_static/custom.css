@@ -339,6 +339,7 @@ label.theme-switch input {
 }
 label.theme-switch div.btn-neutral {
   padding: 0;
+  margin-left: 5px;
   border-width: 5px;
   border-style: solid;
   border-radius: 2px;
