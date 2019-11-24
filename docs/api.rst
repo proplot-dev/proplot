@@ -44,22 +44,28 @@ Map projection tools
 
 .. automodule:: proplot.projs
 
-**Variables**
+.. raw:: html
+
+   <h3>Classes</h3>
 
 .. automodsumm:: proplot.projs
-   :variables-only:
+   :classes-only:
    :toctree: api
 
-**Functions**
+.. raw:: html
+
+   <h3>Functions</h3>
 
 .. automodsumm:: proplot.projs
    :functions-only:
    :toctree: api
 
-**Classes**
+.. raw:: html
+
+   <h3>Variables</h3>
 
 .. automodsumm:: proplot.projs
-   :classes-only:
+   :variables-only:
    :toctree: api
 
 Axis tools
@@ -67,19 +73,25 @@ Axis tools
 
 .. automodule:: proplot.axistools
 
-**Classes**
+.. raw:: html
+
+   <h3>Classes</h3>
 
 .. automodsumm:: proplot.axistools
    :toctree: api
    :classes-only:
 
-**Functions**
+.. raw:: html
+
+   <h3>Functions</h3>
 
 .. automodsumm:: proplot.axistools
    :toctree: api
    :functions-only:
 
-**Variables**
+.. raw:: html
+
+   <h3>Variables</h3>
 
 .. automodsumm:: proplot.axistools
    :toctree: api
@@ -90,19 +102,25 @@ Color and font tools
 
 .. automodule:: proplot.styletools
 
-**Classes**
+.. raw:: html
+
+   <h3>Classes</h3>
 
 .. automodsumm:: proplot.styletools
    :classes-only:
    :toctree: api
 
-**Functions**
+.. raw:: html
+
+   <h3>Functions</h3>
 
 .. automodsumm:: proplot.styletools
    :functions-only:
    :toctree: api
 
-**Variables**
+.. raw:: html
+
+   <h3>Variables</h3>
 
 .. automodsumm:: proplot.styletools
    :variables-only:
@@ -116,8 +134,8 @@ Rc configuration tools
 .. automodsumm:: proplot.rctools
    :toctree: api
 
-Miscellaneous utilities
-=======================
+General utilities
+=================
 
 .. automodule:: proplot.utils
 
