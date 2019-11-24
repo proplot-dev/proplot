@@ -24,7 +24,7 @@
   --light-color: #f0f0f0; /* for toggle button */
   --call-color: #606060;
   --main-color: #404040;
-  --code-color: #e54d42;
+  --code-color: #e65820;
   --link-color: #2d6ab0;
   --link-hover-color: #0079ff;
   --link-visited-color: #452bb0;
@@ -36,7 +36,7 @@
   --search-shadow-color: #ddd;
   --empty-bg-color: #f4f4f4;
   --l1-bg-color: #e9e9e9;
-  --l2-bg-color: #dedede;
+  --l2-bg-color: #dcdcdc;
   --l3-bg-color: #d0d0d0;
   --l4-bg-color: #c3c3c3;
   --l5-bg-color: #b6b6b6;
@@ -61,10 +61,10 @@
   --code-bg-color: #3a3a3a;
   --empty-bg-color: #363636;
   --l1-bg-color: #404040;
-  --l2-bg-color: #505050;
-  --l3-bg-color: #606060;
-  --l4-bg-color: #707070;
-  --l5-bg-color: #808080;
+  --l2-bg-color: #4c4c4c;
+  --l3-bg-color: #595959;
+  --l4-bg-color: #666666;
+  --l5-bg-color: #737373;
   --block-bg-color: #3a3a3a;
   --accent-bg-color: #606060;
 }

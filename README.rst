@@ -1,4 +1,4 @@
-.. image:: docs/_static/long.png
+.. image:: docs/_static/logo_long.png
    :width: 1000px
 
 |build-status| |coverage| |quality| |docs| |license| |pr-welcome| |donations|

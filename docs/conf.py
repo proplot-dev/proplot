@@ -13,6 +13,8 @@
 
 import os
 import sys
+from pygments.formatters import HtmlFormatter
+from pygments.styles import get_all_styles
 
 # Sphinx-automodapi requires proplot on path
 sys.path.insert(0, os.path.abspath('..'))
@@ -83,7 +85,7 @@ automodapi_toctreedirnm = 'api' # create much better URL for the page
 automodsumm_inherited_members = False
 
 # Logo
-html_logo = '_static/logo.png'
+html_logo = '_static/logo_square.png'
 
 # Turn off code and image links for embedded mpl plots
 # plot_html_show_source_link = False
@@ -156,7 +158,20 @@ exclude_patterns = [
 
 # The name of the Pygments (syntax highlighting) style to use.
 # The light-dark theme toggler overloads this, but set default anyway
-pygments_style = None
+pygments_style = 'none'
+
+# Create local pygments copies
+# Previously used: https://github.com/richleland/pygments-css
+# But do not want to depend on some random repository
+path = os.path.join('_static', 'pygments')
+if not os.path.isdir(path):
+    os.mkdir(path)
+for style in get_all_styles():
+    path = os.path.join('_static', 'pygments', style + '.css')
+    if os.path.isfile(path):
+        continue
+    with open(path, 'w') as f:
+        f.write(HtmlFormatter(style=style).get_style_defs('.highlight'))
 
 # Role
 default_role = 'py:obj' # default family is py, but can also set default role so don't need :func:`name`, :module:`name`, etc.
@@ -195,7 +210,7 @@ html_theme_options = {
 # html_theme = 'alabaster'
 # html_logo = None # or get 2 logos! need to specify in dictionary so text does not appear
 # html_theme_options = {
-#     'logo': 'logo.png',
+#     'logo': 'logo_square.png',
 #     'logo_name': False,
 #     'description': 'A matplotlib wrapper for making beautiful, publication-quality graphics.',
 #     'page_width': '90%',
@@ -255,8 +270,8 @@ html_static_path = ['_static']
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large. Static folder is for CSS and image files.
 # For icons see: https://icons8.com/icon
-# To convert: convert icon.png icon.ico
-html_favicon = os.path.join('_static', 'icon.ico')
+# To convert: convert logo_blank.png logo_blank.ico
+html_favicon = os.path.join('_static', 'logo_blank.ico')
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
