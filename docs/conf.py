@@ -156,7 +156,7 @@ exclude_patterns = [
 
 # The name of the Pygments (syntax highlighting) style to use.
 # The light-dark theme toggler overloads this, but set default anyway
-pygments_style = 'monokai'
+pygments_style = None
 
 # Role
 default_role = 'py:obj' # default family is py, but can also set default role so don't need :func:`name`, :module:`name`, etc.
