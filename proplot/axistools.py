@@ -390,7 +390,7 @@ class AutoFormatter(mticker.ScalarFormatter):
             head, tail = string.split('.')
             string = head + '.' + tail[:self._maxprecision]
         if self._zerotrim and '.' in string:
-            string = string.rstrip('0.')
+            string = string.rstrip('0').rstrip('.')
         if string == '-0' or string == '\N{MINUS SIGN}0':
             string = '0'
         # Prefix and suffix
@@ -438,7 +438,7 @@ def SimpleFormatter(*args, precision=6,
         # Finally use default formatter
         string = ('{:.%df}' % precision).format(x)
         if zerotrim and '.' in string:
-            string = string.rstrip('0.')
+            string = string.rstrip('0').rstrip('.')
         if string == '-0' or string == '\N{MINUS SIGN}0':
             string = '0'
         # Prefix and suffix

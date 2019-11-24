@@ -92,19 +92,24 @@ code,
 /* Can also use this to sync code-block and nbinput backgrounds but probably
  * better if they have different colors. */
 .rst-content div[class^='highlight'],
+.rst-content div.nbinput div.input_area,
 .rst-content pre.literal-block {
   border-color: var(--code-border-color) !important;
 }
-div[class^='highlight'] div.highlight,
-div.nbinput div.input_area {
+.rst-content div[class^='highlight'],
+.rst-content div.nbinput div.input_area,
+.rst-content pre.literal-block {
   color: #404040 !important;
   border-radius: 0 !important;
 }
-div.nbinput div.prompt pre {
+.rst-content div.nbinput div.prompt pre {
   color: var(--link-color) !important;
 }
-div.nboutput div.prompt pre {
+.rst-content div.nboutput div.prompt pre {
   color: var(--code-color) !important;
+}
+.rst-content div.nboutput div.output_area div.highlight {
+  color: var(--main-color) !important;
 }
 
 /* Grayscale Parameters and Returns headers */
