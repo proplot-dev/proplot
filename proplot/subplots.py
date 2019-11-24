@@ -14,9 +14,9 @@ import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
 import matplotlib.gridspec as mgridspec
 try:
-    import matplotlib.backends.backend_macosx as mbackend
+    from matplotlib.backends.backend_macosx import FigureCanvasMac
 except ImportError:
-    mbackend = None
+    FigureCanvasMac = type(None) # standin null type
 from .rctools import rc
 from .utils import _notNone, _counter, units
 from . import projs, axes
@@ -1501,24 +1501,26 @@ class Figure(mfigure.Figure):
         """Before drawing the figure, applies "tight layout" and aspect
         ratio-conserving adjustments, and aligns row and column labels."""
         # Renderer fixes
-        # WARNING: *Critical* that draw() is invoked with the same renderer
-        # FigureCanvasAgg.print_png() uses to render the image. But print_png()
-        # calls get_renderer() after draw(), and get_renderer() returns a new
-        # renderer if it detects renderer dims and figure dims are out of sync!
-        # 1. Could use 'get_renderer' to update 'canvas.renderer' with the new
-        #    figure width and height, then use that renderer for rest of draw
-        #    This repair *breaks* just the *macosx* popup backend and not the
-        #    qt backend! So for now just employ simple exception if this is
-        #    macosx backend.
-        # 2. Could set '_lastKey' on canvas and 'width' and 'height' on renderer,
-        #    but then '_renderer' was initialized with wrong width and height,
-        #    which causes bugs. And _renderer was generated with cython code
         # WARNING: Vector graphic renderers are another ballgame, *impossible*
         # to consistently apply successive figure size changes. SVGRenderer
         # and PDFRenderer both query the size in inches before calling draw,
         # and cannot modify PDFPage or SVG renderer props inplace, so idea was
         # to override get_size_inches. But when get_size_inches is called, the
         # canvas has no renderer, so cannot apply tight layout yet!
+        # WARNING: Raster graphic renderers are fixable, but *critical* that
+        # draw() is invoked with the same renderer FigureCanvasAgg.print_png()
+        # uses to render the image. Since print_png() calls get_renderer()
+        # after draw(), and get_renderer() returns a new renderer if it detects
+        # renderer dims and figure dims are out of sync, need to fix this!
+        # 1. We use 'get_renderer' to update 'canvas.renderer' with the new
+        #    figure width and height, then use that renderer for rest of draw
+        #    This repair *breaks* just the *macosx* popup backend and not the
+        #    qt backend! So for now just employ simple exception if this is
+        #    macosx backend.
+        # 2. Could also set '_lastKey' on canvas and 'width' and 'height' on
+        #    renderer, but then '_renderer' was initialized with wrong width
+        #    and height, which causes bugs. And _renderer was generated with
+        #    cython code so not sure how to update the object manually.
         for ax in self._iter_axes():
             ax._draw_auto_legends_colorbars()
         self._adjust_aspect()
@@ -1528,8 +1530,8 @@ class Figure(mfigure.Figure):
             self._adjust_tight_layout(renderer)
         self._align_axislabels(True)
         canvas = getattr(self, 'canvas', None)
-        if hasattr(canvas, 'get_renderer') and (mbackend is None or
-            not isinstance(canvas, mbackend.FigureCanvasMac)):
+        if (hasattr(canvas, 'get_renderer')
+            and not isinstance(canvas, FigureCanvasMac)):
             renderer = canvas.get_renderer()
             canvas.renderer = renderer
         return super().draw(renderer)
