@@ -39,8 +39,8 @@ Plotting wrappers
    :toctree: api
    :functions-only:
 
-Map projection tools
-====================
+Projection tools
+================
 
 .. automodule:: proplot.projs
 

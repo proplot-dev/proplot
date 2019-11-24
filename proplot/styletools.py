@@ -2112,8 +2112,8 @@ class LinearSegmentedNorm(mcolors.Normalize):
     """
     This is the default normalizer paired with `BinNorm` whenever `levels`
     are non-linearly spaced. The normalized value is linear with respect to
-    its **average index** in the `levels` vector, allowing uniform color transitions
-    across **arbitrarily spaced** monotonically increasing values.
+    its *average index* in the `levels` vector, allowing uniform color transitions
+    across *arbitrarily spaced* monotonically increasing values.
 
     It accomplishes this following the example of the `~matplotlib.colors.LinearSegmentedColormap`
     source code, by performing efficient, vectorized linear interpolation
@@ -2134,7 +2134,6 @@ class LinearSegmentedNorm(mcolors.Normalize):
         **kwargs
             Passed to `~matplotlib.colors.Normalize`.
         """
-        # Save levels
         levels = np.atleast_1d(levels)
         if levels.size <= 1:
             raise ValueError('Need at least two levels.')
@@ -2150,7 +2149,6 @@ class LinearSegmentedNorm(mcolors.Normalize):
         of `~LinearSegmentedNorm.inverse`."""
         # Follow example of make_mapping_array for efficient, vectorized
         # linear interpolation across multiple segments.
-        # Notes:
         # * Normal test puts values at a[i] if a[i-1] < v <= a[i]; for
         #   left-most data, satisfy a[0] <= v <= a[1]
         # * searchsorted gives where xq[i] must be inserted so it is larger
@@ -2160,7 +2158,7 @@ class LinearSegmentedNorm(mcolors.Normalize):
         xq = np.atleast_1d(xq)
         ind = np.searchsorted(x, xq)
         ind[ind == 0] = 1
-        ind[ind == len(x)] = len(x) - 1 # actually want to go to left of that
+        ind[ind == len(x)] = len(x) - 1
         distance = (xq - x[ind - 1])/(x[ind] - x[ind - 1])
         yq = distance*(y[ind] - y[ind - 1]) + y[ind - 1]
         mask = ma.getmaskarray(xq)

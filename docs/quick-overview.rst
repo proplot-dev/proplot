@@ -24,7 +24,7 @@ ProPlot's features derive from the `~proplot.subplots.subplots` command, inspire
 by the pyplot `~matplotlib.pyplot.subplots` command.
 `~proplot.subplots.subplots` creates a `~proplot.subplots.Figure` subclass
 populated with special `~proplot.axes.Axes` subclasses,
-and is packed with new features -- one highlight is the new :ref:`Tight layout`
+and is packed with new features -- one highlight is the new :ref:`Figure tight layout`
 algorithm applied to all `~proplot.subplots.Figure`\ s by default.
 
 Figure and axes commands

@@ -20,7 +20,7 @@
 
 /* Default light mode variables */
 :root {
-  --dark-color: #505050; /* for toggle button */
+  --dark-color: #404040; /* for toggle button */
   --light-color: #f0f0f0; /* for toggle button */
   --call-color: #606060;
   --main-color: #404040;
@@ -29,18 +29,19 @@
   --link-hover-color: #0079ff;
   --link-visited-color: #452bb0;
   --code-border-color: #e0e0e0;
-  --l1-border-color: #c9c9c9;
   --main-bg-color: #fcfcfc;
   --code-bg-color: #ffffff;
-  --block-bg-color: #f0f0f0;
-  --accent-bg-color: #d0d0d0;
+  --menu-border-color: #909090;
   --search-border-color: #aaa;
   --search-shadow-color: #ddd;
-  --l1-bg-color: #f0f0f0;
-  --l2-bg-color: #e3e3e3;
-  --l3-bg-color: #d6d6d6;
-  --l4-bg-color: #c9c9c9;
-  --l5-bg-color: #b6b6b6;
+  --empty-bg-color: #f4f4f4;
+  --l1-bg-color: #e9e9e9;
+  --l2-bg-color: #d9d9d9;
+  --l3-bg-color: #c9c9c9;
+  --l4-bg-color: #b9b9b9;
+  --l5-bg-color: #a9a9a9;
+  --block-bg-color: #f0f0f0;
+  --accent-bg-color: #d0d0d0;
 }
 
 /* Dark mode variables */
@@ -53,18 +54,19 @@
   --link-hover-color: #549aeb;
   --link-visited-color: #c194ff;
   --code-border-color: #707070;
-  --l1-border-color: #808080;
-  --main-bg-color: #3a3a3a;
-  --code-bg-color: #484848;
-  --block-bg-color: #4a4a4a;
-  --accent-bg-color: #707070;
+  --menu-border-color: #909090;
   --search-border-color: #555;
   --search-shadow-color: #444;
-  --l1-bg-color: #505050;
-  --l2-bg-color: #606060;
-  --l3-bg-color: #707070;
-  --l4-bg-color: #808080;
-  --l5-bg-color: #909090;
+  --main-bg-color: #303030;
+  --code-bg-color: #3a3a3a;
+  --empty-bg-color: #363636;
+  --l1-bg-color: #404040;
+  --l2-bg-color: #505050;
+  --l3-bg-color: #606060;
+  --l4-bg-color: #707070;
+  --l5-bg-color: #808080;
+  --block-bg-color: #3a3a3a;
+  --accent-bg-color: #606060;
 }
 
 /* RST content background color */
@@ -101,9 +103,11 @@ code,
 }
 .rst-content div.nbinput div.prompt pre {
   color: var(--link-color) !important;
+  background-color: var(--main-bg-color) !important;
 }
 .rst-content div.nboutput div.prompt pre {
   color: var(--code-color) !important;
+  background-color: var(--main-bg-color) !important;
 }
 .rst-content div.nboutput div.output_area div.highlight {
   color: var(--main-color) !important;
@@ -156,10 +160,12 @@ body,
   background: var(--accent-bg-color);
 }
 
-/* Thinner tables */
-/* For some reason cells have extra padding */
-.rst-content dl table p {
-  margin-bottom: 0 !important; /* default was 12px */
+/* Remove bottom margin for paragraph elements in tables */
+.wy-table thead p,
+.rst-content table p,
+.rst-content table.docutils thead p,
+.rst-content table.field-list thead p {
+  margin-bottom: 0 !important;
 }
 
 /* Table rows */
@@ -179,7 +185,16 @@ body,
 .rst-content table.docutils,
 .wy-table-bordered-all td,
 .rst-content table.docutils td {
-  border-color: var(--accent-bg-color);
+  border: 1px solid var(--accent-bg-color);
+  /* border-color: var(--accent-bg-color); */
+}
+
+/* Table heads */
+.wy-table thead,
+.rst-content table.docutils thead,
+.rst-content table.field-list thead {
+  color: var(--main-color);
+  background: var(--main-bg-color);
 }
 
 /* Parameter color */
@@ -249,9 +264,33 @@ a:visited,
 }
 
 /* Current item outline color */
-.wy-menu li.toctree-l1.current>a {
-  border-top: solid 1px var(--l1-border-color);
-  border-bottom: solid 1px var(--l1-border-color);
+.wy-menu li.toctree-l1.current:has(ul) {
+  border-top: solid 1px var(--l3-bg-color);
+  border-bottom: solid 1px var(--l3-bg-color);
+}
+.wy-menu li.toctree-l2.current:has(ul) {
+  border-top: solid 1px var(--l4-bg-color);
+  border-bottom: solid 1px var(--l4-bg-color);
+}
+.wy-menu li.toctree-l3.current:has(ul) {
+  border-top: solid 1px var(--l5-bg-color);
+  border-bottom: solid 1px var(--l5-bg-color);
+}
+.wy-menu li.toctree-l4.current:has(ul) {
+  border-top: solid 1px var(--l6-bg-color);
+  border-bottom: solid 1px var(--l6-bg-color);
+}
+.wy-menu li.toctree-l5.current:has(ul) {
+  border-top: solid 1px var(--l7-bg-color);
+  border-bottom: solid 1px var(--l7-bg-color);
+}
+.wy-menu li.toctree-l1.current>a,
+.wy-menu li.toctree-l2.current>a,
+.wy-menu li.toctree-l3.current>a,
+.wy-menu li.toctree-l4.current>a,
+.wy-menu li.toctree-l5.current>a {
+  border-top: 0;
+  border-bottom: 0;
 }
 
 /* Sidebar text color, includes text-logo color for mobile */
@@ -273,7 +312,9 @@ a:visited,
 
 /* Sidebar and background colors, the .wy-body-for-nav is rubber band scroll */
 .wy-body-for-nav,
-.wy-nav-content-wrap,
+.wy-nav-content-wrap {
+  background: var(--empty-bg-color);
+}
 .wy-nav-side,
 .wy-nav-top,
 .wy-side-nav-search {
@@ -331,19 +372,19 @@ a:visited,
 /* Dark mode toggle switcher */
 /* See: https://dev.to/ananyaneogi/create-a-dark-light-mode-switch-with-css-variables-34l8 */
 /* Color changes cannot be in :before tag or they won't apply to padding */
-.wy-breadcrumbs li.wy-breadcrumbs-lightdark {
+#lightdark-li {
   float: right;
 }
-label#lightdark-label {
+#lightdark-label {
   border: 0;
   margin: 0;
   padding: 0;
   font-size: 100%;
 }
-label#lightdark-label input {
+#lightdark-label input {
   display: none; /* hides the check box */
 }
-label#lightdark-label div.btn-neutral {
+#lightdark-label div.btn-neutral {
   padding: 0;
   margin-left: 5px;
   border-width: 5px;
@@ -353,24 +394,24 @@ label#lightdark-label div.btn-neutral {
   transition: all 0.1s linear;
   overflow: hidden;
 }
-label#lightdark-label:hover div.btn-neutral,
-label#lightdark-label input:checked + div.btn-neutral {
+#lightdark-label:hover div.btn-neutral,
+#lightdark-label input:checked + div.btn-neutral {
   color: var(--light-color) !important;
   border-color: var(--dark-color) !important;
   background-color: var(--dark-color) !important;
 }
-label#lightdark-label div.btn-neutral,
-label#lightdark-label:hover input:checked + div.btn-neutral {
+#lightdark-label div.btn-neutral,
+#lightdark-label:hover input:checked + div.btn-neutral {
   color: var(--dark-color) !important;
   border-color: var(--light-color) !important;
   background-color: var(--light-color) !important;
 }
-label#lightdark-label:hover div.btn-neutral:before,
-label#lightdark-label input:checked + div.btn-neutral:before {
+#lightdark-label:hover div.btn-neutral:before,
+#lightdark-label input:checked + div.btn-neutral:before {
   content: "Dark mode";
 }
-label#lightdark-label div.btn-neutral:before,
-label#lightdark-label:hover input:checked + div.btn-neutral:before {
+#lightdark-label div.btn-neutral:before,
+#lightdark-label:hover input:checked + div.btn-neutral:before {
   content: "Light mode";
 }
 
