@@ -14,7 +14,8 @@
     css_files method does *not require* pathto() but do not understand why
 -->
 {% block extrahead %}
-  <link href="{{ pathto("_static/custom.css", True) }}" rel="stylesheet" type="text/css">
+  <link rel="stylesheet" href="{{ pathto("_static/custom.css", True) }}" type="text/css">
+  <link rel="stylesheet" type="text/css" id="pygments-style">
   {{ super() }}
 {% endblock %}
 {% block footer %}

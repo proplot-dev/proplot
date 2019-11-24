@@ -54,8 +54,8 @@
   --link-visited-color: #c194ff;
   --code-border-color: #707070;
   --l1-border-color: #808080;
-  --main-bg-color: #404040;
-  --code-bg-color: #555555;
+  --main-bg-color: #3a3a3a;
+  --code-bg-color: #484848;
   --block-bg-color: #4a4a4a;
   --accent-bg-color: #707070;
   --search-border-color: #555;
@@ -94,13 +94,10 @@ code,
 .rst-content div[class^='highlight'],
 .rst-content div.nbinput div.input_area,
 .rst-content pre.literal-block {
-  border-color: var(--code-border-color) !important;
-}
-.rst-content div[class^='highlight'],
-.rst-content div.nbinput div.input_area,
-.rst-content pre.literal-block {
-  color: #404040 !important;
+  color: var(--main-color) !important;
   border-radius: 0 !important;
+  border-color: var(--code-border-color) !important;
+  background-color: var(--code-bg-color) !important;
 }
 .rst-content div.nbinput div.prompt pre {
   color: var(--link-color) !important;
@@ -110,6 +107,7 @@ code,
 }
 .rst-content div.nboutput div.output_area div.highlight {
   color: var(--main-color) !important;
+  background-color: var(--main-bg-color) !important;
 }
 .rst-content div.nboutput div.output_area {
   padding-left: 0;
@@ -336,16 +334,16 @@ a:visited,
 .wy-breadcrumbs li.wy-breadcrumbs-switch {
   float: right;
 }
-label.theme-switch {
+label#theme-switch {
   border: 0;
   margin: 0;
   padding: 0;
   font-size: 100%;
 }
-label.theme-switch input {
+label#theme-switch input {
   display: none; /* hides the check box */
 }
-label.theme-switch div.btn-neutral {
+label#theme-switch div.btn-neutral {
   padding: 0;
   margin-left: 5px;
   border-width: 5px;
@@ -355,24 +353,24 @@ label.theme-switch div.btn-neutral {
   transition: all 0.1s linear;
   overflow: hidden;
 }
-label.theme-switch:hover div.btn-neutral,
-label.theme-switch input:checked + div.btn-neutral {
+label#theme-switch:hover div.btn-neutral,
+label#theme-switch input:checked + div.btn-neutral {
   color: var(--light-color) !important;
   border-color: var(--dark-color) !important;
   background-color: var(--dark-color) !important;
 }
-label.theme-switch div.btn-neutral,
-label.theme-switch:hover input:checked + div.btn-neutral {
+label#theme-switch div.btn-neutral,
+label#theme-switch:hover input:checked + div.btn-neutral {
   color: var(--dark-color) !important;
   border-color: var(--light-color) !important;
   background-color: var(--light-color) !important;
 }
-label.theme-switch:hover div.btn-neutral:before,
-label.theme-switch input:checked + div.btn-neutral:before {
+label#theme-switch:hover div.btn-neutral:before,
+label#theme-switch input:checked + div.btn-neutral:before {
   content: "Dark mode";
 }
-label.theme-switch div.btn-neutral:before,
-label.theme-switch:hover input:checked + div.btn-neutral:before {
+label#theme-switch div.btn-neutral:before,
+label#theme-switch:hover input:checked + div.btn-neutral:before {
   content: "Light mode";
 }
 
