@@ -134,7 +134,10 @@ class Axes(maxes.Axes):
 
         See also
         --------
-        `~matplotlib.axes.Axes`, `XYAxes`, `PolarAxes`, `ProjAxes`
+        :py:obj:`matplotlib.axes.Axes`,
+        :py:obj:`XYAxes`,
+        :py:obj:`PolarAxes`,
+        :py:obj:`ProjAxes`
         """
         # Call parent
         super().__init__(*args, **kwargs)
@@ -656,6 +659,13 @@ class Axes(maxes.Axes):
         changed by the call to `~Axes.context`. They are documented here
         because it is extremely common to change them with `~Axes.format`.
         They also appear in the tables in the `~proplot.rctools` documention.
+
+        See also
+        --------
+        :py:obj:`Axes.context`,
+        :py:obj:`XYAxes.format`,
+        :py:obj:`ProjAxes.format`,
+        :py:obj:`PolarAxes.format`,
         """
         # Figure patch (for some reason needs to be re-asserted even if
         # declared before figure is drawn)
@@ -1963,8 +1973,7 @@ class XYAxes(Axes):
 
         See also
         --------
-        `~proplot.axistools.Scale`, `~proplot.axistools.Locator`,
-        `~proplot.axistools.Formatter`
+        :py:obj:`Axes.format`, :py:obj:`Axes.context`
         """
         context, kwargs = self.context(**kwargs)
         with context:
@@ -2519,6 +2528,10 @@ class PolarAxes(Axes, mproj.PolarAxes):
             `~proplot.axistools.Formatter`.
         **kwargs
             Passed to `Axes.format` and `Axes.context`
+
+        See also
+        --------
+        :py:obj:`Axes.format`, :py:obj:`Axes.context`
         """
         context, kwargs = self.context(**kwargs)
         with context:
@@ -2756,6 +2769,10 @@ class ProjAxes(Axes):
             ``patch_kw={'hatch':'xxx'}``.
         **kwargs
             Passed to `Axes.format` and `Axes.context`.
+
+        See also
+        --------
+        :py:obj:`Axes.format`, :py:obj:`Axes.context`
         """
         # Parse alternative keyword args
         # TODO: Why isn't default latmax 80 respected sometimes?

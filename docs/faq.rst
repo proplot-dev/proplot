@@ -2,14 +2,15 @@
 Frequently asked questions
 ==========================
 
-How does ProPlot differ from other matplotlib wrappers?
-=======================================================
+What makes this matplotlib wrapper special?
+===========================================
 
-There is already a great matplotlib wrapper called `seaborn <https://seaborn.pydata.org/>`__. Furthermore, `pandas <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.plot.html>`__ and `xarray <http://xarray.pydata.org/en/stable/plotting.html>`__ both offer convenient matplotlib plotting commands. How does ProPlot compare against these tools?
+There is already a great matplotlib wrapper called `seaborn <https://seaborn.pydata.org/>`__. Also, `pandas <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.plot.html>`__ and `xarray <http://xarray.pydata.org/en/stable/plotting.html>`__ both offer convenient matplotlib plotting commands. How does ProPlot compare against these tools?
 
 * ProPlot, seaborn, pandas, and xarray all offer tools for generating rigid, simple, nice-looking plots from data stored in `~pandas.DataFrame`\ s and `~xarray.DataArray`\ s (ProPlot tries to apply labels from these objects, just like pandas and xarray).
-* Unlike seaborn, pandas, and xarray, (1) ProPlot includes new tools that permit an extremely high level of customization, (2) its features work for arbitrarily complex subplot grids instead of just single-subplot figures, and (3) it includes powerful tools for working with *geographic* data.
-* ProPlot reproduces many of the seaborn tools for working with color and global settings, but also introduces some really awesome *new* tools, like `~proplot.styletools.Colormap`, `~proplot.styletools.PerceptuallyUniformColormap`, and `~proplot.rctools.rc_configurator`.
+* Unlike seaborn, pandas, and xarray, ProPlot works for arbitrarily complex subplot grids, and ProPlot provides tools that *encourage* heavy customization by its users.
+* ProPlot is integrated with *cartopy* and *basemap*. You will find plotting geophysical data in ProPlot to be much, much simpler than working with cartopy and basemap directly.
+* ProPlot *expands upon* the seaborn tools for working with color and global settings. For example, see `~proplot.styletools.Colormap`, `~proplot.styletools.PerceptuallyUniformColormap`, and `~proplot.rctools.rc_configurator`.
 * ProPlot is built *right into the matplotlib API*, thanks to special subclasses of the `~matplotlib.figure.Figure` and `~matplotlib.axes.Axes` classes, while seaborn, pandas, and xarray are meant to be used separately from the matplotlib API. This massively reduces the learning curve for new ProPlot users.
 
 In a nutshell, ProPlot is intended to *unify the convenience of seaborn, pandas, and xarray plotting with the power and customizability of the underlying matplotlib API*.
@@ -17,8 +18,8 @@ In a nutshell, ProPlot is intended to *unify the convenience of seaborn, pandas,
 .. So while ProPlot includes similar tools, the scope and goals are largely different.
 .. Indeed, parts of ProPlot were inspired by these projects -- in particular, ``rctools.py`` and ``colortools.py`` are modeled after seaborn. However the goals and scope of ProPlot are largely different:
 
-Why not contribute to matplotlib directly?
-==========================================
+Why didn't you contribute to matplotlib directly?
+=================================================
 
 Since ProPlot is built right into the matplotlib API, you might be wondering why we didn't contribute to the matplotlib project directly. The main answer is *speed* and *autonomy*, but there are a few practical limitations:
 
@@ -33,14 +34,14 @@ These days, most publications prefer plots saved as `vector graphics <https://en
 
 This is where matplotlib comes in:
 
-* The default matplotlib backends produce really small, low-resolution, artifact-plagued jpeg figures. To make the backend-generated images legible, matplotlib uses a fairly large default figure width of 6.5 inches (usually only suitable for multi-panel plots) and a fairly large default font size of 10 points (most journals recommend 5-9 points).
-* Unfortunately, these sizes often mean your figure has to be downscaled. And when a vector graphic is downscaled, the sizes you used for fonts and lines in your plotting code are not the sizes that appear in the document. This kind of defeats the purpose of vector graphics.
+* The default matplotlib backends produce really low-resolution, artifact-plagued jpeg figures. To make the backend-generated images legible, matplotlib uses a fairly large default figure width of 6.5 inches (usually only suitable for multi-panel plots) and a fairly large default font size of 10 points (most journals recommend 5-9 points).
+* These sizes often mean your figure has to be downscaled. And when a vector graphic is downscaled, the sizes you used for fonts and lines in your plotting code are not the sizes that appear in the document. This kind of defeats the purpose of vector graphics.
 
-To remedy this, ProPlot uses a **higher resolution** default inline backend, a **smaller** default font size, and makes the default figure size dependent on the **number of subplots** in the figure. ProPlot also adds a ``journal`` keyword argument to `~proplot.subplots.Figure`, which lets you apply figure dimensions from a particular academic journal standard.
+To remedy this, ProPlot uses a *higher resolution* default inline backend, a *smaller* default font size, and a *smaller* default figure size for single-subplot figures. ProPlot also adds a ``journal`` keyword argument to `~proplot.subplots.Figure`, which selects figure dimensions from a particular academic journal standard.
 
 With ProPlot, you should never have to shrink your figure when embedding it in a document. The physical sizes recorded in the file will be true.
 
-.. [1] `Vector graphics <https://en.wikipedia.org/wiki/Vector_graphics>`__ are infinitely scalable, and the file sizes are often smaller than bitmap graphics. We recommend using vector graphics even when your plots are not destined for publication.
+.. [1] You should consider using `vector graphics <https://en.wikipedia.org/wiki/Vector_graphics>`__ even when your plots are not destined for publication. `Vector graphics <https://en.wikipedia.org/wiki/Vector_graphics>`__ are infinitely scalable, and the file sizes are often smaller than bitmap graphics.
 
 .. users to enlarge their figure dimensions and font sizes so that content inside of the inline figure is visible -- but when saving the figures for publication, it generally has to be shrunk back down!
 

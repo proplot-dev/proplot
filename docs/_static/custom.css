@@ -111,6 +111,9 @@ code,
 .rst-content div.nboutput div.output_area div.highlight {
   color: var(--main-color) !important;
 }
+.rst-content div.nboutput div.output_area {
+  padding-left: 0;
+}
 
 /* Grayscale Parameters and Returns headers */
 .rst-content dl:not(.docutils) .field-list>dt {
