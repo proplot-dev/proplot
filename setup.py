@@ -23,9 +23,9 @@ else:
 
 if exists('LICENSE.txt'):
     with open('LICENSE.txt') as f:
-        license = f.read()
+        license_text = f.read()
 else:
-    license = ''
+    license_text = ''
 
 setup(
     url = 'https://lukelbd.github.io/proplot',
@@ -46,7 +46,7 @@ setup(
     include_package_data = True, # use MANIFEST.in
     classifiers = classifiers,
     install_requires = install_req,
-    license = license,
+    license = license_text,
     description = 'A comprehensive wrapper for making beautiful, publication-quality graphics.',
     long_description = long_description,
     )

@@ -1531,7 +1531,7 @@ class Figure(mfigure.Figure):
         self._align_axislabels(True)
         canvas = getattr(self, 'canvas', None)
         if (hasattr(canvas, 'get_renderer')
-            and not isinstance(canvas, FigureCanvasMac)):
+                and not isinstance(canvas, FigureCanvasMac)):
             renderer = canvas.get_renderer()
             canvas.renderer = renderer
         return super().draw(renderer)
