@@ -87,8 +87,8 @@ Function                        Returns                        Interpreted by
 
 
 
-Nice-looking figures out of the box
-===================================
+Automatic dimensions and spacing
+================================
 
 .. raw:: html
 
@@ -99,7 +99,7 @@ Matplotlib plots tend to require lots of "tweaking" when you have more than one 
 #. The subplot aspect ratio is usually more relevant than the figure aspect ratio, e.g. for map projections.
 #. The subplot width and height control the evident thickness of text and other content plotted inside the axes.
 
-Matplotlib has a `tight layout <https://matplotlib.org/tutorials/intermediate/tight_layout_guide.html>`__ algorithm to keep you from having to "tweak" the spacing, but the algorithm cannot apply different amounts of spacing between different subplot row and column boundaries. This sometimes creates figures with unnecessary extra whitespace.
+Matplotlib has a `tight layout <https://matplotlib.org/tutorials/intermediate/tight_layout_guide.html>`__ algorithm to keep you from having to "tweak" the spacing, but the algorithm cannot apply different amounts of spacing between different subplot row and column boundaries. This is a silly limitation that often results in unnecessary whitespace, and can be a major problem when you want to put e.g. a legend on the outside of a subplot.
 
 .. raw:: html
 
@@ -110,13 +110,15 @@ In ProPlot, you can specify the physical dimensions of *subplots* instead of the
 ..
    Several matplotlib backends require figure dimensions to be fixed. When `~proplot.subplots.Figure.draw` changes the figure dimensions, this can "surprise" the backend and cause unexpected behavior. ProPlot fixes this issue for the static inline backend and the Qt popup backend. However, this issue is unfixable the "notebook" inline backend, the "macosx" popup backend, and possibly other untested backends.
 
-The tight layout algorithm is also simpler and more accurate because:
+ProPlot also applies a new tight layout algorithm to figures *by default*. This algorithm is simpler and more accurate because:
 
-#. The new `~proplot.subplots.FlexibleGridSpec` class permits variable spacing between rows and columns.
-#. The `~proplot.subplots.FlexibleGridSpec` spacing parameters are specified in physical units instead of figure-relative units.
+#. The new `~proplot.subplots.FlexibleGridSpec` class permits variable spacing between rows and columns. It turns out this is *critical* for putting :ref:`Colorbars and legends` on the outside of subplots.
 #. Figures are restricted to have only *one* `~proplot.subplots.FlexibleGridSpec` per figure. This is done by requiring users to draw all of their subplots at once with `~proplot.subplots.subplots`. This requirement *considerably* simplifies the algorithm (see :pr:`50` for details).
 
 See :ref:`Figure tight layout` for details.
+
+..
+   #. The `~proplot.subplots.FlexibleGridSpec` spacing parameters are specified in physical units instead of figure-relative units.
 
 ..
    The `~matplotlib.gridspec.FlexibleGridSpec` class is useful for creating figures with complex subplot geometry.
