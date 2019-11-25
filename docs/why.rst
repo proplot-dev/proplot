@@ -21,7 +21,7 @@ No more boilerplate
 
 Power users often need to change lots of plot settings all at once. In matplotlib, this requires a bunch of one-liner setters and getters, like `~matplotlib.axes.Axes.set_title`. 
 
-This workflow is cumbersome, verbose, and often confusing. It can be unclear whether settings can be changed from a `~matplotlib.figure.Figure` setter, an `~matplotlib.axes.Axes` setter, an `~matplotlib.axis.XAxis` or `~matplotlib.axis.YAxis` setter, or a miscellaneous bulk function like `~matplotlib.axes.Axes.tick_params`.
+This workflow is verbose and often confusing. It can be unclear whether settings can be changed from a `~matplotlib.figure.Figure` setter, an `~matplotlib.axes.Axes` setter, an `~matplotlib.axis.XAxis` or `~matplotlib.axis.YAxis` setter, or a miscellaneous bulk function like `~matplotlib.axes.Axes.tick_params`.
 
 .. raw:: html
 
@@ -354,38 +354,3 @@ In ProPlot, all colormap visualizations are automatically discretized with the `
 
 `~proplot.styletools.BinNorm` can also apply an arbitrary continuous normalizer, e.g. `~matplotlib.colors.LogNorm`, before discretization. Think of it as a "meta-normalizer" -- other normalizers perform the continuous transformation step, while this performs the discretization step.
 
-Arbitrary physical units
-========================
-
-..
-   * Configuring spaces and dimensions in matplotlib often requires physical units.
-
-.. raw:: html
-
-   <h3>Problem</h3>
-
-Matplotlib uses "inches" for figure dimensions and figure-relative or axes-relative units almost everywhere else. The problem is:
-
-* Inches are foreign to the world outside of the U.S.
-* Figure-relative and axes-relative units encourage "tinkering" with meaningless numbers that change the subjective appearance when the physical dimensions change, since *text* and *lines* are specified in the physical units "points".
-
-.. raw:: html
-
-   <h3>Solution</h3>
-
-ProPlot permits arbitrary physical units for almost all sizing arguments, e.g. ``left='0.5cm'``. This is done by passing various keyword arguments through the `~proplot.utils.units` engine.
-
-* This prevents "tinkering" and encourages users to be aware of the physical dimensions describing their figure.
-* You can also use font-relative units, e.g. ``left='1em'``. This is nice when you don't care about physical dimensions, but need something more intuitive than figure-relative units.
-
-..
-   * You can still use axes-relative and figure-relative units for most arguments with e.g. ``left='0.1fig'`` or ``left='0.1ax'``.
-
-...and much more!
-=================
-
-This page is not comprehensive -- it just
-illustrates how ProPlot addresses
-some of the stickiest matplotlib limitations
-that bug your average power user.
-See :ref:`Quick overview` and the User Guide for a more comprehensive overview.
