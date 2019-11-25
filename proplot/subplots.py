@@ -104,9 +104,9 @@ class axes_grid(list):
         raise LookupError('axes_grid is immutable.')
 
     def __getitem__(self, key):
-        """If an integer is passed, the item is returned, and if a slice is passed,
-        an `axes_grid` of the items is returned. You can also use 2D indexing,
-        and the corresponding axes in the axes grid will be chosen.
+        """If an integer is passed, the item is returned, and if a slice is
+        passed, an `axes_grid` of the items is returned. You can also use 2D
+        indexing, and the corresponding axes in the axes grid will be chosen.
 
         Example
         -------

@@ -38,7 +38,7 @@ This massively reduces the amount of code needed to create highly customized fig
    ax.format(linewidth=1, color='gray')
    ax.format(xticks=20, xtickminor=True, xlabel='x axis', ylabel='y axis')
 
-is much more succinct than
+...is much more succinct than
 
 .. code-block:: python
 
@@ -53,6 +53,7 @@ is much more succinct than
    ax.tick_params(axis='x', which='minor', bottom=True)
    ax.set_xlabel('x axis', color='gray')
    ax.set_ylabel('y axis', color='gray')
+
 
 Constructor functions
 =====================
@@ -105,7 +106,7 @@ Matplotlib has a `tight layout <https://matplotlib.org/tutorials/intermediate/ti
 
    <h3>Solution</h3>
 
-In ProPlot, you can specify the physical dimensions of *subplots* instead of the figure by passing `axwidth` or `axheight` to `~proplot.subplots.Figure`. The default behavior is ``axwidth=2`` (inches). Figure dimensions are then automatically calculated to accommodate the subplot geometry and the spacing adjustments.
+In ProPlot, you can specify the physical dimensions of *subplots* instead of the figure by passing `axwidth`, `axheight`, and/or `aspect` to `~proplot.subplots.Figure`. The default behavior is ``axwidth=2`` (inches) with ``aspect=1``. Figure dimensions are then automatically calculated to accommodate the subplot geometry and the spacing adjustments.
 
 ..
    Several matplotlib backends require figure dimensions to be fixed. When `~proplot.subplots.Figure.draw` changes the figure dimensions, this can "surprise" the backend and cause unexpected behavior. ProPlot fixes this issue for the static inline backend and the Qt popup backend. However, this issue is unfixable the "notebook" inline backend, the "macosx" popup backend, and possibly other untested backends.
@@ -159,8 +160,8 @@ individual subplots and along contiguous subplots on the edge of the figure:
 * Outer colorbars and legends don't mess up the subplot layout or subplot aspect ratios, since the new `~proplot.subplots.FlexibleGridSpec` class permits variable spacing between subplot rows and columns. This is critical e.g. if you have a colorbar between columns 1 and 2 but nothing between columns 2 and 3.
 * The width of colorbars are now specified in physical units. This makes it easier to get the thickness just right, and makes thickness independent of figure size.
 
-A useful axes container
-=======================
+The axes container class
+========================
 
 ..
    The `~matplotlib.pyplot.subplots` command is useful for generating a scaffolding of * axes all at once. This is generally faster than successive `~matplotlib.subplots.Figure.add_subplot` commands.
@@ -181,7 +182,7 @@ In ProPlot, `~proplot.subplots.subplots` returns an `~proplot.subplots.axes_grid
 * `~proplot.subplots.axes_grid` supports row-major or column-major 1D indexing, e.g. ``axs[0]``. The order can be changed by passing ``order='F'`` or ``order='C'`` to `~proplot.subplots.subplots`.
 * `~proplot.subplots.axes_grid` permits 2D indexing, e.g. ``axs[1,0]``. Since `~proplot.subplots.subplots` can generate figures with arbitrarily complex subplot geometry, this 2D indexing is useful only when the arrangement happens to be a clean 2D matrix.
 
-Further, thanks to the `~proplot.subplots.axes_grid.__getattr__` override, `~proplot.subplots.axes_grid` allows you to call arbitrary methods on arbitrary axes all at once, e.g. ``axs.format(tickminor=False)``.
+Further, `~proplot.subplots.axes_grid` allows you to call arbitrary methods on arbitrary axes all at once, e.g. ``axs.format(tickminor=False)``. This goes with ProPlot's theme of preserving the object-oriented spirit, but making things easier for users.
 
 Xarray and pandas integration
 =============================
