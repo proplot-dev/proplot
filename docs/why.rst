@@ -4,15 +4,17 @@ Why ProPlot?
 
 ProPlot's core mission
 is to improve upon the parts of matplotlib that
-tend to be cumbersome and repetitive.
+tend to be cumbersome or repetitive
+for power users.
 This page
 enumerates these limitations and
 describes how ProPlot addresses them.
-For a more comprehensive overview of ProPlot's features,
+To start using these new features, see
 see :ref:`Quick overview` and the User Guide.
 
-Efficient modifications
-=======================
+No more boilerplate
+===================
+
 .. raw:: html
 
    <h3>Problem</h3>
@@ -71,17 +73,17 @@ This may seem "unpythonic" but it is absolutely invaluable when making plots. Pl
 
 The below table lists the constructor functions and the keyword arguments that use them.
 
-==============================  =============================  ========================================================
+==============================  =============================  ================================================================================================================================================================================================
 Function                        Returns                        Interpreted by
-==============================  =============================  ========================================================
-`~proplot.axistools.Locator`    Axis locator                   ``locator=``, ``xlocator=``, ``ylocator=``
-`~proplot.axistools.Formatter`  Axis formatter                 ``formatter=``, ``xformatter=``, ``yformatter=``
+==============================  =============================  ================================================================================================================================================================================================
+`~proplot.axistools.Locator`    Axis locator                   ``locator=``, ``xlocator=``, ``ylocator=``, ``minorlocator=``, ``xminorlocator=``, ``yminorlocator=``, ``ticks=``, ``xticks=``, ``yticks=``, ``minorticks=``, ``xminorticks=``, ``yminorticks=``
+`~proplot.axistools.Formatter`  Axis formatter                 ``formatter=``, ``xformatter=``, ``yformatter=``, ``ticklabels=``, ``xticklabels=``, ``yticklabels=``
 `~proplot.axistools.Scale`      Axis scale                     ``xscale=``, ``yscale=``
 `~proplot.styletools.Colormap`  Colormap                       ``cmap=``
 `~proplot.styletools.Cycle`     Property cycler                ``cycle=``
 `~proplot.styletools.Norm`      Colormap normalizer            ``norm=``
 `~proplot.projs.Proj`           Cartopy or basemap projection  ``proj=``
-==============================  =============================  ========================================================
+==============================  =============================  ================================================================================================================================================================================================
 
 Fluid figure dimensions
 =======================
@@ -104,6 +106,7 @@ Several matplotlib backends require figure dimensions to be fixed. When `~proplo
 
 The right layout every time
 ===========================
+
 .. raw:: html
 
    <h3>Problem</h3>
@@ -129,8 +132,9 @@ In ProPlot, the tight layout algorithm is simpler and more accurate because:
 ..
    ProPlot introduces a marginal limitation (see discussion in :pr:`50`) but *considerably* simplifies the tight layout algorithm.
 
-Easier colorbars and legends
-============================
+Simpler colorbars and legends
+=============================
+
 .. raw:: html
 
    <h3>Problem</h3>
@@ -182,32 +186,95 @@ In ProPlot, `~proplot.subplots.subplots` returns an `~proplot.subplots.axes_grid
 
 Further, thanks to the `~proplot.subplots.axes_grid.__getattr__` override, `~proplot.subplots.axes_grid` allows you to call arbitrary methods on arbitrary axes all at once, e.g. ``axs.format(tickminor=False)``.
 
-Arbitrary physical units
-========================
-
-..
-   * Configuring spaces and dimensions in matplotlib often requires physical units.
+Xarray and pandas integration
+=============================
 
 .. raw:: html
 
    <h3>Problem</h3>
 
-Matplotlib uses "inches" for figure dimensions and figure-relative or axes-relative units almost everywhere else. The problem is:
+Matplotlib strips metadata from the array-like `xarray` `~xarray.DataArray` container and the `pandas` `~pandas.DataFrame` and `~pandas.Series` containers. To create plots that
+are automatically labeled with metadata from these containers, you need to use
+the dedicated `xarray plotting <http://xarray.pydata.org/en/stable/plotting.html>`__ and `pandas plotting <https://pandas.pydata.org/pandas-docs/stable/user_guide/visualization.html>`__ tools.
 
-* Inches are foreign to the world outside of the U.S.
-* Figure-relative and axes-relative units encourage "tinkering" with meaningless numbers that change the subjective appearance when the physical dimensions change, since *text* and *lines* are specified in the physical units "points".
+This approach is somewhat cumbersome -- plotting methods should be invoked on the axes, not on the data container! It also requires learning a slightly different syntax, and tends to encourage using the `~matplotlib.pyplot` API rather than the object-oriented API.
 
 .. raw:: html
 
    <h3>Solution</h3>
 
-ProPlot permits arbitrary physical units for almost all sizing arguments, e.g. ``left='0.5cm'``. This is done by passing various keyword arguments through the `~proplot.utils.units` engine.
+ProPlot *reproduces* most of the `xarray.DataArray.plot` and `pandas.DataFrame.plot` features on the `~proplot.axes.Axes`
+plotting methods themselves! Axis tick labels, axis labels, subplot titles, and colorbar and legend labels are automatically applied
+when a `~xarray.DataArray`, `~pandas.DataFrame`, or `~pandas.Series` is passed through
+a plotting method instead of a `~numpy.ndarray`.
+This is accomplished by passing positional arguments through the
+`~proplot.wrappers.standardize_1d` and `~proplot.wrappers.standardize_2d`
+wrappers.
 
-* This prevents "tinkering" and encourages users to be aware of the physical dimensions describing their figure.
-* You can also use font-relative units, e.g. ``left='1em'``. This is nice when you don't care about physical dimensions, but need something more intuitive than figure-relative units.
+Various plotting improvements
+=============================
 
-..
-   * You can still use axes-relative and figure-relative units for most arguments with e.g. ``left='0.1fig'`` or ``left='0.1ax'``.
+.. raw:: html
+
+   <h3>Problem</h3>
+
+Certain plotting tasks are quite difficult to accomplish
+with the default matplotlib API. The `seaborn`, `xarray`, and `pandas`
+packages offer improvements, but it would be nice
+to have this functionality build right into matplotlib.
+
+.. raw:: html
+
+   <h3>Solutions</h3>
+
+The ProPlot `~proplot.axes.Axes` class
+wraps various plotting methods to reproduce
+certain features from `seaborn`, `xarray`, and `pandas`:
+
+* The new `~proplot.axes.Axes.heatmap` command draws `~matplotlib.axes.Axes.pcolormesh` plots and puts ticks at the center of each box.
+* The `~matplotlib.axes.Axes.bar` and `~matplotlib.axes.Axes.barh` commands now accept 2D arrays, and can *stack* or *group* successive columns of data, thanks to `~proplot.wrappers.bar_wrapper`.
+* The new `~proplot.axes.Axes.area` and `~proplot.axes.Axes.areax` commands mimic the `~proplot.axes.Axes.fill_between` and `~proplot.axes.Axes.fill_betweenx` commands, but also support drawing *stacked* area plots for 2D arrays.
+
+`~proplot.axes.Axes` also includes the following
+new plotting features:
+
+* `~matplotlib.axes.Axes.pcolor` and `~matplotlib.axes.Axes.pcolormesh` plots use auto-generated coordinate *edges* if you pass coordinate *centers*.
+* `~proplot.axes.Axes.area` plots can be assigned different colors for negative and positive values. This will also be added to `~matplotlib.axes.Axes.bar` soon.
+* `~matplotlib.axes.Axes.pcolor`, `~matplotlib.axes.Axes.pcolormesh`, `~proplot.axes.Axes.heatmap`,  `~matplotlib.axes.Axes.contour` and `~matplotlib.axes.Axes.contourf` plots can be assigned contour and box labels by simply passing ``labels=True`` to the plotting command.
+* `~matplotlib.axes.Axes.plot`, `~matplotlib.axes.Axes.scatter`, and `~matplotlib.axes.Axes.bar` plots can be assigned error bars using a variety of `~proplot.wrappers.errorbar_wrapper` keyword args.
+* `~proplot.axes.Axes.parametric` plots can be made with colormap colors marking the parametric coordinates rather than text annotations.
+* `~matplotlib.axes.Axes.pcolor`, `~matplotlib.axes.Axes.pcolormesh`, `~proplot.axes.Axes.heatmap`,  `~matplotlib.axes.Axes.contour` and `~matplotlib.axes.Axes.contourf` plots on geographic axes can be inteprolated to global coverage by passing ``globe=True`` tot he plotting command.
+
+See :ref:`1d plotting commands` and :ref:`2d plotting commands`
+for details.
+
+Cartopy and basemap integration
+===============================
+
+.. raw:: html
+
+   <h3>Problem</h3>
+
+There are two widely-used engines
+for plotting geophysical data with matplotlib: `cartopy` and `~mpl_toolkits.basemap`.
+Using cartopy tends to be quite verbose and involve lots of boilerplate code,
+while basemap is outdated and requires you to use plotting commands on a separate `~mpl_toolkits.basemap.Basemap` object.
+
+Also, `cartopy` and `~mpl_toolkits.basemap` plotting commands assume *map projection coordinates* unless specified otherwise. For most of us, this choice is very frustrating, since geophysical data are usually stored in longitude-latitude or "Plate Carrée" coordinates.
+
+.. raw:: html
+
+   <h3>Solution</h3>
+
+ProPlot includes various `cartopy` and `~mpl_toolkits.basemap` features
+using the `~proplot.axes.ProjAxes` class. The corresponding `~proplot.axes.ProjAxes.format` command lets you apply all kinds of geographic plot settings, like coastlines, continents, political boundaries, and meridian and parallel gridlines.
+It also makes longitude-latitude coordinates the *default*:
+
+* ``latlon=True`` is the default for `~proplot.axes.BasemapAxes` plotting methods.
+* ``transform=ccrs.PlateCarree()`` is the default for `~proplot.axes.GeoAxes` plotting methods.
+
+Note that the basemap developers plan to `halt active development after 2020 <https://matplotlib.org/basemap/users/intro.html#cartopy-new-management-and-eol-announcement>`__, since cartopy is integrated more closely with the matplotlib API and has more room for growth. For now, cartopy is `missing several features <https://matplotlib.org/basemap/api/basemap_api.html#module-mpl_toolkits.basemap>`__ offered by basemap -- namely, flexible meridian and parallel gridline labels, drawing physical map scales, and convenience features for adding background images like the "blue marble". But once these are added to cartopy, ProPlot support for basemap may be removed.
+
 
 Working with colormaps
 ======================
@@ -283,27 +350,36 @@ It is clear that the task discretizing colormap colors should be left to the **n
 
    <h3>Solution</h3>
 
-In ProPlot, all colormap visualizations are automatically discretized with the `~proplot.styletools.BinNorm` class. This reads the ``extend`` property passed to your plotting command and chooses colormap indices so that your colorbar levels *always* traverse the full range of colormap colors.
+In ProPlot, all colormap visualizations are automatically discretized with the `~proplot.styletools.BinNorm` class. This reads the `extend` property passed to your plotting command and chooses colormap indices so that your colorbar levels *always* traverse the full range of colormap colors.
 
 `~proplot.styletools.BinNorm` can also apply an arbitrary continuous normalizer, e.g. `~matplotlib.colors.LogNorm`, before discretization. Think of it as a "meta-normalizer" -- other normalizers perform the continuous transformation step, while this performs the discretization step.
 
-Cartopy and basemap defaults
-============================
+Arbitrary physical units
+========================
+
+..
+   * Configuring spaces and dimensions in matplotlib often requires physical units.
+
 .. raw:: html
 
    <h3>Problem</h3>
 
-In cartopy and basemap, the default coordinate system is always map projection coordinates. For most of us, this choice is very frustrating. Geophysical data is almost always stored in longitude-latitude or "Plate Carrée" coordinates.
+Matplotlib uses "inches" for figure dimensions and figure-relative or axes-relative units almost everywhere else. The problem is:
+
+* Inches are foreign to the world outside of the U.S.
+* Figure-relative and axes-relative units encourage "tinkering" with meaningless numbers that change the subjective appearance when the physical dimensions change, since *text* and *lines* are specified in the physical units "points".
 
 .. raw:: html
 
    <h3>Solution</h3>
 
-ProPlot makes longitude-latitude coordinates
-the *default*:
+ProPlot permits arbitrary physical units for almost all sizing arguments, e.g. ``left='0.5cm'``. This is done by passing various keyword arguments through the `~proplot.utils.units` engine.
 
-* ``latlon=True`` is the new default for `~proplot.axes.BasemapAxes` plotting methods.
-* ``transform=ccrs.PlateCarree()`` is the new default for `~proplot.axes.GeoAxes` plotting methods.
+* This prevents "tinkering" and encourages users to be aware of the physical dimensions describing their figure.
+* You can also use font-relative units, e.g. ``left='1em'``. This is nice when you don't care about physical dimensions, but need something more intuitive than figure-relative units.
+
+..
+   * You can still use axes-relative and figure-relative units for most arguments with e.g. ``left='0.1fig'`` or ``left='0.1ax'``.
 
 ...and much more!
 =================
@@ -312,5 +388,4 @@ This page is not comprehensive -- it just
 illustrates how ProPlot addresses
 some of the stickiest matplotlib limitations
 that bug your average power user.
-
 See :ref:`Quick overview` and the User Guide for a more comprehensive overview.

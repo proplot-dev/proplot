@@ -2,8 +2,8 @@
 Frequently asked questions
 ==========================
 
-What makes this matplotlib wrapper special?
-===========================================
+What makes this matplotlib wrapper different?
+=============================================
 
 There is already a great matplotlib wrapper called `seaborn <https://seaborn.pydata.org/>`__. Also, `pandas <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.plot.html>`__ and `xarray <http://xarray.pydata.org/en/stable/plotting.html>`__ both offer convenient matplotlib plotting commands. How does ProPlot compare against these tools?
 
@@ -18,8 +18,8 @@ In a nutshell, ProPlot is intended to *unify the convenience of seaborn, pandas,
 .. So while ProPlot includes similar tools, the scope and goals are largely different.
 .. Indeed, parts of ProPlot were inspired by these projects -- in particular, ``rctools.py`` and ``colortools.py`` are modeled after seaborn. However the goals and scope of ProPlot are largely different:
 
-Why didn't you contribute to matplotlib directly?
-=================================================
+Why didn't you add to matplotlib directly?
+==========================================
 
 Since ProPlot is built right into the matplotlib API, you might be wondering why we didn't contribute to the matplotlib project directly. The main answer is *speed* and *autonomy*, but there are a few practical limitations:
 

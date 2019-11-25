@@ -8,7 +8,7 @@ If you tend to use the `~matplotlib.pyplot` API and are not familiar with the "a
 
 This page is meant as the starting point for new users. It is
 populated with links to the :ref:`API reference` and User Guide.
-For a more in-depth perspective, see :ref:`Why proplot?`
+For more in-depth descriptions, see :ref:`Why ProPlot?`.
 
 Importing proplot
 =================
@@ -30,7 +30,8 @@ Top-level commands
 
 ProPlot's features derive from the `~proplot.subplots.subplots` command, inspired
 by the pyplot `~matplotlib.pyplot.subplots` command.
-`~proplot.subplots.subplots` creates a `~proplot.subplots.Figure` subclass
+
+The `~proplot.subplots.subplots` command creates a `~proplot.subplots.Figure` subclass
 populated with special `~proplot.axes.Axes` subclasses,
 and is packed with new features -- one highlight is the new :ref:`Figure tight layout`
 algorithm applied to all `~proplot.subplots.Figure`\ s by default.

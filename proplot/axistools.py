@@ -372,6 +372,8 @@ class AutoFormatter(mticker.ScalarFormatter):
 
     def __call__(self, x, pos=None):
         """
+        Convert number to a string.
+
         Parameters
         ----------
         x : float
