@@ -2771,7 +2771,7 @@ def show_channels(*args, N=100, rgb=True, saturation=True,
             locator='null', label=cmap.name, labelweight='bold')
     return fig
 
-def show_colorspaces(luminance=None, saturation=None, hue=None):
+def show_colorspaces(luminance=None, saturation=None, hue=None, axwidth=2):
     """
     Generates hue-saturation, hue-luminance, and luminance-saturation
     cross-sections for the HCL, HSLuv, and HPLuv colorspaces.
@@ -2787,6 +2787,9 @@ def show_colorspaces(luminance=None, saturation=None, hue=None):
     hue : float, optional
         If passed, luminance-saturation cross-sections are drawn for this hue.
         Must be between ``0` and ``360``.
+    axwidth : str or float, optional
+        Average width of each subplot. Units are interpreted by
+        `~proplot.utils.units`.
 
     Returns
     -------
@@ -2831,7 +2834,7 @@ def show_colorspaces(luminance=None, saturation=None, hue=None):
     # Note we invert the x-y ordering for imshow
     from . import subplots
     fig, axs = subplots(
-        ncols=3, share=0, axwidth=2, aspect=1, axpad=0.05
+        ncols=3, share=0, axwidth=axwidth, aspect=1, axpad=0.05
         )
     for ax,space in zip(axs,('hcl','hsl','hpl')):
         rgba = np.ones((*hsl.shape[:2][::-1], 4)) # RGBA
@@ -2948,8 +2951,7 @@ def show_colors(nbreak=17, minsat=0.2):
                 xi_line = wsep*(col + 0.05)
                 xf_line = wsep*(col + 0.25*swatch)
                 xi_text = wsep*(col + 0.25*swatch + 0.03*swatch)
-                ax.text(xi_text, y, re.sub('^xkcd:', '', name),
-                        fontsize=hsep*0.8, ha='left', va='center')
+                ax.text(xi_text, y, name, ha='left', va='center')
                 ax.hlines(y_line, xi_line, xf_line, color=icolors[name], lw=hsep*0.6)
         # Apply formatting
         ax.format(xlim=(0,X), ylim=(0,Y))
@@ -3055,7 +3057,8 @@ def show_cycles(*args, axwidth=1.5):
         Positional arguments are cycle names or objects. Default is
         all of the registered colormaps.
     axwidth : str or float, optional
-        Average width of each subplot. Units are interpreted by `~proplot.utils.units`.
+        Average width of each subplot. Units are interpreted by
+        `~proplot.utils.units`.
 
     Returns
     -------

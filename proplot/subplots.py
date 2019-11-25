@@ -1898,7 +1898,7 @@ def subplots(array=None, ncols=1, nrows=1,
             axes_kw[num]['projection'] = 'xy'
         # Builtin matplotlib polar axes, just use my overridden version
         elif name == 'polar':
-            axes_kw[num]['projection'] = 'polar2'
+            axes_kw[num]['projection'] = 'polar'
             if num == ref:
                 aspect = 1
         # Custom Basemap and Cartopy axes

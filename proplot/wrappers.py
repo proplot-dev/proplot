@@ -509,7 +509,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
             raise ValueError(f'Invalid order {order!r}. Choose from "C" (row-major, default) and "F" (column-major).')
 
     # Cartopy projection axes
-    if (getattr(self, 'name', '') == 'cartopy' and
+    if (getattr(self, 'name', '') == 'geo' and
         isinstance(kwargs.get('transform', None), PlateCarree)):
         x, y = _standardize_latlon(x, y)
         ix, iZs = x, []
@@ -1152,7 +1152,7 @@ def _get_transform(self, transform):
         from cartopy.crs import CRS
     except ModuleNotFoundError:
         CRS = None
-    cartopy = (getattr(self, 'name', '') == 'cartopy')
+    cartopy = (getattr(self, 'name', '') == 'geo')
     if (isinstance(transform, mtransforms.Transform)
         or CRS and isinstance(transform, CRS)):
         return transform
@@ -1878,9 +1878,15 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
             labels_kw_.update(labels_kw)
             array = obj.get_array()
             paths = obj.get_paths()
-            colors = obj.get_facecolors() # *flattened* list of objects
-            for color,path,num in zip(colors,paths,array):
+            colors = np.asarray(obj.get_facecolors())
+            edgecolors = np.asarray(obj.get_edgecolors())
+            if len(colors) == 1: # weird flex but okay
+                colors = np.repeat(colors, len(array), axis=0)
+            if len(edgecolors) == 1:
+                edgecolors = np.repeat(edgecolors, len(array), axis=0)
+            for i,(color,path,num) in enumerate(zip(colors,paths,array)):
                 if not np.isfinite(num):
+                    edgecolors[i,:] = 0
                     continue
                 bbox = path.get_extents()
                 x = (bbox.xmin + bbox.xmax)/2
@@ -1893,6 +1899,7 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
                         color = 'k'
                     labels_kw_['color'] = color
                 self.text(x, y, fmt(num), **labels_kw_)
+            obj.set_edgecolors(edgecolors)
         else:
             raise RuntimeError(f'Not possible to add labels to {name!r} plot.')
 

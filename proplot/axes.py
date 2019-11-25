@@ -2451,7 +2451,7 @@ class XYAxes(Axes):
 class PolarAxes(Axes, mproj.PolarAxes):
     """Intermediate class, mixes `ProjAxes` with
     `~matplotlib.projections.polar.PolarAxes`."""
-    name = 'polar2'
+    name = 'polar'
     """The registered projection name."""
     def __init__(self, *args, **kwargs):
         """

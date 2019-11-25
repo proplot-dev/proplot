@@ -41,8 +41,7 @@ release = ''
 # needs_sphinx = '1.0'
 
 # Add any Sphinx extension module names here, as strings. They can be
-# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
-# ones.
+# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
     # 'matplotlib.sphinxext.plot_directive',  # see: https://matplotlib.org/sampledoc/extensions.html
     'IPython.sphinxext.ipython_console_highlighting',
@@ -58,7 +57,7 @@ extensions = [
     'sphinx.ext.napoleon',          # for NumPy style docstrings, instead of reStructred Text
     'sphinx.ext.intersphinx',       # external links
     'sphinxext.custom_roles',       # local extension
-    'sphinx_automodapi.automodapi', # custom fork of the astropy extension
+    'sphinx_automodapi.automodapi', # see: https://github.com/lukelbd/sphinx-automodapi/tree/proplot-mods
     'nbsphinx',
     ]
 

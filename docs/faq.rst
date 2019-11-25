@@ -28,20 +28,24 @@ Since ProPlot is built right into the matplotlib API, you might be wondering why
 
 Nevertheless, if any core matplotlib think that some of ProPlot's features should be added to matplotlib, please contact core developer `Luke Davis <https://github.com/lukelbd>`__ and let him know!
 
-Why do inline figures look different / why is the font so small?
-================================================================
-These days, most publications prefer plots saved as `vector graphics <https://en.wikipedia.org/wiki/Vector_graphics>`__ [1]_ (e.g. PDF, EPS, SVG) rather than `raster graphics <https://en.wikipedia.org/wiki/Raster_graphics>`__ (e.g. PNG, JPG). The latter records data in pixels, while the former records data in physical units, e.g. inches and `points <https://en.wikipedia.org/wiki/Point_(typography)>`__. When you save a vector graphic, the content sizes should be appropriate for embedding the plot in a document. For example, if an academic journal recommends 8-point font for plots, you should use 8-point font in your plotting code.
+Why do my inline figures look different?
+========================================
 
-This is where matplotlib comes in:
+These days, most publications prefer plots saved as `vector graphics <https://en.wikipedia.org/wiki/Vector_graphics>`__ [1]_ rather than `raster graphics <https://en.wikipedia.org/wiki/Raster_graphics>`__ [2]_. When you save vector graphics, the content sizes should be appropriate for embedding the plot in a document (for example, if an academic journal recommends 8-point font for plots, you should use 8-point font in your plotting code).
 
-* The default matplotlib backends produce really low-resolution, artifact-plagued jpeg figures. To make the backend-generated images legible, matplotlib uses a fairly large default figure width of 6.5 inches (usually only suitable for multi-panel plots) and a fairly large default font size of 10 points (most journals recommend 5-9 points).
-* These sizes often mean your figure has to be downscaled. And when a vector graphic is downscaled, the sizes you used for fonts and lines in your plotting code are not the sizes that appear in the document. This kind of defeats the purpose of vector graphics.
+Matplotlib tends to generate really low-resolution, artifact-plagued jpegs -- and to keep them legible, they use a fairly large default figure width of 6.5 inches (usually only suitable for multi-panel plots) and a fairly large default font size of 10 points (where most journals recommend 5-9 points). This means your figures have to be downscaled, so the sizes used in your plotting code are not the sizes that appear in the document.
 
-To remedy this, ProPlot uses a *higher resolution* default inline backend, a *smaller* default font size, and a *smaller* default figure size for single-subplot figures. ProPlot also adds a ``journal`` keyword argument to `~proplot.subplots.Figure`, which selects figure dimensions from a particular academic journal standard.
+ProPlot helps you get your figure sizes *correct* for embedding
+them as vector graphics inside publications.
+It uses a slightly smaller default font size, calculates the default figure
+size from the number of subplot rows and columns, and
+adds the ``journal`` keyword argument to `~proplot.subplots.Figure` which can
+be used to employ figure dimensions from a particular journal standard.
+To keep the inline figures legible, ProPlot also employs a *higher quality* default
+inline backend.
 
-With ProPlot, you should never have to shrink your figure when embedding it in a document. The physical sizes recorded in the file will be true.
-
-.. [1] You should consider using `vector graphics <https://en.wikipedia.org/wiki/Vector_graphics>`__ even when your plots are not destined for publication. `Vector graphics <https://en.wikipedia.org/wiki/Vector_graphics>`__ are infinitely scalable, and the file sizes are often smaller than bitmap graphics.
+.. [1] `Vector graphics <https://en.wikipedia.org/wiki/Vector_graphics>`__ use physical units (e.g. inches, `points <https://en.wikipedia.org/wiki/Point_(typography)>`__), are infinitely scalable, and often have much smaller file sizes than bitmap graphics.  You should consider using them even when your plots are not destined for publication. PDF, SVG, and EPS are the most common formats.
+.. [2] `Raster graphics <https://en.wikipedia.org/wiki/Raster_graphics>`__ use pixels and are *not* infinitely scalable. They tend to be faster to display and easier to view, but they are discouraged by most academic publishers. PNG and JPG are the most common formats.
 
 .. users to enlarge their figure dimensions and font sizes so that content inside of the inline figure is visible -- but when saving the figures for publication, it generally has to be shrunk back down!
 

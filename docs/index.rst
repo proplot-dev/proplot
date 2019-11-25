@@ -16,8 +16,8 @@ A comprehensive, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper fo
    :maxdepth: 1
    :caption: Getting Started
 
-   why-proplot
    quick-overview
+   why-proplot
    faq
 
 .. toctree::

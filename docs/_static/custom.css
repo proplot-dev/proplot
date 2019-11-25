@@ -93,28 +93,28 @@ code,
 /* Need !important because nbshpinx hardcodes <style> into HTML */
 /* Can also use this to sync code-block and nbinput backgrounds but probably
  * better if they have different colors. */
-.rst-content div[class^='highlight'],
-.rst-content div.nbinput div.input_area,
+.rst-content div:not(.stderr)>div[class^='highlight'],
+.rst-content div.nbinput>div.input_area,
 .rst-content pre.literal-block {
   color: var(--main-color) !important;
   border-radius: 0 !important;
   border-color: var(--code-border-color) !important;
   background-color: var(--code-bg-color) !important;
 }
-.rst-content div.nbinput div.prompt pre {
+.rst-content div.nbinput>div.prompt>pre {
   color: var(--link-color) !important;
   background-color: var(--main-bg-color) !important;
 }
-.rst-content div.nboutput div.prompt pre {
+.rst-content div.nboutput>div.prompt>pre {
   color: var(--code-color) !important;
   background-color: var(--main-bg-color) !important;
 }
-.rst-content div.nboutput div.output_area div.highlight {
+.rst-content div.nboutput>div.output_area:not(.stderr) {
+  padding-left: 0;
+}
+.rst-content div.nboutput>div.output_area:not(.stderr)>div.highlight {
   color: var(--main-color) !important;
   background-color: var(--main-bg-color) !important;
-}
-.rst-content div.nboutput div.output_area {
-  padding-left: 0;
 }
 
 /* Grayscale Parameters and Returns headers */
