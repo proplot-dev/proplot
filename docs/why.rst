@@ -85,16 +85,21 @@ Function                        Returns                        Interpreted by
 `~proplot.projs.Proj`           Cartopy or basemap projection  ``proj=``
 ==============================  =============================  ================================================================================================================================================================================================
 
-Fluid figure dimensions
-=======================
+
+
+Nice-looking figures out of the box
+===================================
+
 .. raw:: html
 
    <h3>Problem</h3>
 
-In matplotlib, you have to specify the physical dimensions of the figure. However, the dimensions of the *individual subplots* are often more important:
+Matplotlib plots tend to require lots of "tweaking" when you have more than one subplot in the figure. This is partly because you must specify the physical dimensions of the figure, while the dimensions of the *individual subplots* are more important:
 
 #. The subplot aspect ratio is usually more relevant than the figure aspect ratio, e.g. for map projections.
 #. The subplot width and height control the evident thickness of text and other content plotted inside the axes.
+
+Matplotlib has a `tight layout <https://matplotlib.org/tutorials/intermediate/tight_layout_guide.html>`__ algorithm to keep you from having to "tweak" the spacing, but the algorithm cannot apply different amounts of spacing between different subplot row and column boundaries. This sometimes creates figures with unnecessary extra whitespace.
 
 .. raw:: html
 
@@ -102,26 +107,16 @@ In matplotlib, you have to specify the physical dimensions of the figure. Howeve
 
 In ProPlot, you can specify the physical dimensions of *subplots* instead of the figure by passing `axwidth` or `axheight` to `~proplot.subplots.Figure`. The default behavior is ``axwidth=2`` (inches). Figure dimensions are then automatically calculated to accommodate the subplot geometry and the spacing adjustments.
 
-Several matplotlib backends require figure dimensions to be fixed. When `~proplot.subplots.Figure.draw` changes the figure dimensions, this can "surprise" the backend and cause unexpected behavior. ProPlot fixes this issue for the static inline backend and the Qt popup backend. However, this issue is unfixable the "notebook" inline backend, the "macosx" popup backend, and possibly other untested backends.
+..
+   Several matplotlib backends require figure dimensions to be fixed. When `~proplot.subplots.Figure.draw` changes the figure dimensions, this can "surprise" the backend and cause unexpected behavior. ProPlot fixes this issue for the static inline backend and the Qt popup backend. However, this issue is unfixable the "notebook" inline backend, the "macosx" popup backend, and possibly other untested backends.
 
-The right layout every time
-===========================
-
-.. raw:: html
-
-   <h3>Problem</h3>
-
-In matplotlib, the tight layout algorithm is very complex, and it cannot apply different amounts of spacing to different subplot rows and columns.
-
-.. raw:: html
-
-   <h3>Solution</h3>
-
-In ProPlot, the tight layout algorithm is simpler and more accurate because:
+The tight layout algorithm is also simpler and more accurate because:
 
 #. The new `~proplot.subplots.FlexibleGridSpec` class permits variable spacing between rows and columns.
 #. The `~proplot.subplots.FlexibleGridSpec` spacing parameters are specified in physical units instead of figure-relative units.
 #. Figures are restricted to have only *one* `~proplot.subplots.FlexibleGridSpec` per figure. This is done by requiring users to draw all of their subplots at once with `~proplot.subplots.subplots`. This requirement *considerably* simplifies the algorithm (see :pr:`50` for details).
+
+See :ref:`Figure tight layout` for details.
 
 ..
    The `~matplotlib.gridspec.FlexibleGridSpec` class is useful for creating figures with complex subplot geometry.
@@ -276,43 +271,42 @@ It also makes longitude-latitude coordinates the *default*:
 Note that the basemap developers plan to `halt active development after 2020 <https://matplotlib.org/basemap/users/intro.html#cartopy-new-management-and-eol-announcement>`__, since cartopy is integrated more closely with the matplotlib API and has more room for growth. For now, cartopy is `missing several features <https://matplotlib.org/basemap/api/basemap_api.html#module-mpl_toolkits.basemap>`__ offered by basemap -- namely, flexible meridian and parallel gridline labels, drawing physical map scales, and convenience features for adding background images like the "blue marble". But once these are added to cartopy, ProPlot support for basemap may be removed.
 
 
-Working with colormaps
-======================
+Colormaps and property cycles
+=============================
+
 .. raw:: html
 
    <h3>Problem</h3>
 
-In matplotlib, colormaps are implemented with the `~matplotlib.colors.ListedColormap` and `~matplotlib.colors.LinearSegmentedColormap` classes. They are very hard to modify and hard to create.
-
-Colormap identification by string name is also suboptimal. The names are case-sensitive, and reversed versions of each colormap (i.e. names that end in ``'_r'``) are not guaranteed to exist.
+In matplotlib, colormaps are implemented with the `~matplotlib.colors.ListedColormap` and `~matplotlib.colors.LinearSegmentedColormap` classes. They are very hard to modify and hard to create. Colormap identification by string name is also suboptimal. The names are case-sensitive, and reversed versions of each colormap (i.e. names that end in ``'_r'``) are not guaranteed to exist.
 
 .. raw:: html
 
    <h3>Solution</h3>
 
-In ProPlot, it is easy to generate, combine, and modify colormaps using the `~proplot.styletools.Colormap` constructor function, and thanks to the new `~proplot.styletools.ListedColormap`, `~proplot.styletools.LinearSegmentedColormap`, and `~proplot.styletools.PerceptuallyUniformColormap`. This includes new tools for making colormaps that vary linearly in `perceptually uniform colorspaces <https://en.wikipedia.org/wiki/HCL_color_space>`__, so that they portray your data accurately (see :ref:`Perceptually uniform colormaps` for details).
-
+In ProPlot, it is easy to generate, combine, and modify colormaps using the `~proplot.styletools.Colormap` constructor function, and thanks to the new `~proplot.styletools.ListedColormap`, `~proplot.styletools.LinearSegmentedColormap`, and `~proplot.styletools.PerceptuallyUniformColormap`. This includes new tools for making colormaps that are `perceptually uniform <https://en.wikipedia.org/wiki/HCL_color_space>`__ (see :ref:`Perceptually uniform colormaps` for details).
 The `~proplot.styletools.CmapDict` dictionary used to store colormaps also makes colormap identification a bit easier. All colormap names are case-insensitive, and reversed colormaps are automatically created when you request a name ending in ``'_r'``.
 
-..
-   Also, "colormaps" and "color cycles" are now *fluid*, e.g. you can use a colormap as the color cycler for line plots. This is ProPlot's answer to seaborn's "palettes".
+In ProPlot, you can also create arbitrary property cycles with `~proplot.styletools.Cycle` and use them with arbitrary plotting commands with the `cycle` keyword argument. You can also create property cycles from arbitrary colormaps! See `~proplot.styletools.Cycle` for details.
 
-Working with property cycles
-============================
+Improved colormap normalization
+===============================
 .. raw:: html
 
    <h3>Problem</h3>
 
-Changing the property cycle is tricky in matplotlib. You have to work with the :rcraw:`axes. prop_cycle` setting and the `~cycler.Cycler` class directly.
+In matplotlib, when ``extend='min'``, ``extend='max'``, or ``extend='neither'`` is passed to `~matplotlib.figure.Figure.colorbar` , colormap colors reserved for "out-of-bounds" values are truncated. The problem is that matplotlib discretizes colormaps by generating a low-resolution lookup table (see `~matplotlib.colors.LinearSegmentedColormap` for details).
+This approach cannot be fine-tuned, creates an unnecessary copy of the colormap, and prevents you from using the resulting colormap for plots with different numbers of levels.
+
+It is clear that the task discretizing colormap colors should be left to the **normalizer**, not the colormap itself. Matplotlib provides `~matplotlib.colors.BoundaryNorm` for this purpose, but it is seldom used and its features are limited.
 
 .. raw:: html
 
    <h3>Solution</h3>
 
-In ProPlot, you can create arbitrary property cycles with `~proplot.styletools.Cycle` and use them with arbitrary plotting commands with the `cycle` keyword argument. You can also create property cycles from arbitrary colormaps! See `~proplot.styletools.Cycle` for details.
+In ProPlot, all colormap visualizations are automatically discretized with the `~proplot.styletools.BinNorm` class. This reads the `extend` property passed to your plotting command and chooses colormap indices so that your colorbar levels *always* traverse the full range of colormap colors.
 
-..
-   Changing the property cycle is easy in ProPlot.
+`~proplot.styletools.BinNorm` can also apply an arbitrary continuous normalizer, e.g. `~matplotlib.colors.LogNorm`, before discretization. Think of it as a "meta-normalizer" -- other normalizers perform the continuous transformation step, while this performs the discretization step.
 
 Working with fonts
 ==================
@@ -333,24 +327,4 @@ In ProPlot, the default font is Helvetica. Albeit somewhat overused, this is a t
 
 ProPlot also makes it easier to work with custom fonts by making use of a completely undocumented feature: ``$TTFPATH``. Matplotlib adds ``.ttf`` and ``.otf`` font files in folders listed in the ``$TTFPATH`` environment variable, so ProPlot simply populates that variable. Feel free to  drop your own font files into ``~/.proplot/fonts``, and you're good to go.
 
-
-Improved colormap levels
-========================
-.. raw:: html
-
-   <h3>Problem</h3>
-
-In matplotlib, when ``extend='min'``, ``extend='max'``, or ``extend='neither'`` is passed to `~matplotlib.figure.Figure.colorbar` , colormap colors reserved for "out-of-bounds" values are truncated.
-The problem is that matplotlib discretizes colormaps by generating a low-resolution lookup table (see `~matplotlib.colors.LinearSegmentedColormap` for details).
-This approach cannot be fine-tuned, creates an unnecessary copy of the colormap, and prevents you from using the resulting colormap for plots with different numbers of levels.
-
-It is clear that the task discretizing colormap colors should be left to the **normalizer**, not the colormap itself. Matplotlib provides `~matplotlib.colors.BoundaryNorm` for this purpose, but it is seldom used and its features are limited.
-
-.. raw:: html
-
-   <h3>Solution</h3>
-
-In ProPlot, all colormap visualizations are automatically discretized with the `~proplot.styletools.BinNorm` class. This reads the `extend` property passed to your plotting command and chooses colormap indices so that your colorbar levels *always* traverse the full range of colormap colors.
-
-`~proplot.styletools.BinNorm` can also apply an arbitrary continuous normalizer, e.g. `~matplotlib.colors.LogNorm`, before discretization. Think of it as a "meta-normalizer" -- other normalizers perform the continuous transformation step, while this performs the discretization step.
 
