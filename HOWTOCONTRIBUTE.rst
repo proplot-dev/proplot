@@ -70,14 +70,8 @@ Some helpful ReST guides are located `here <http://docutils.sourceforge.net/docs
 
     The built documentation should be available in the ``docs/_build/html``.
 
-Preparing Pull Requests
+Preparing pull requests
 =======================
-
-#. If you intend to make changes / add examples to the ipython notebooks,
-   you need to install `nbstripout <https://github.com/kynan/nbstripout>`__
-   with ``pip install nbstripout``. This deletes notebook cell output so
-   `nbsphinx <https://nbsphinx.readthedocs.io/en/0.4.3/>`__ always reruns them
-   after git pushes.
 
 #. Fork the
    `proplot GitHub repository <https://github.com/lukelbd/proplot>`__.  It's
@@ -96,6 +90,23 @@ Preparing Pull Requests
 
    If you need some help with git, follow the
    `quick start guide <https://git.wiki.kernel.org/index.php/QuickStart>`__.
+
+#. If you intend to make changes / add examples to the ipython notebooks,
+   you need to install and configure
+   `nbstripout <https://github.com/kynan/nbstripout>`__ with
+
+   .. code-block:: bash
+
+      cd proplot
+      pip install nbstripout
+      git config --local include.path ../.gitconfig
+
+   This strips notebook cell output when files are staged, which reduces the
+   repo storage size and lets us use
+   `nbsphinx <https://nbsphinx.readthedocs.io/en/0.4.3/>`__
+   to test each ``git push``, since ``nbsphinx`` must then re-run every cell.
+   The ``git config`` command configures the filters referenced in
+   ``proplot/.gitattributes`` with the options declared in ``proplot/.gitconfig``.
 
 #. Make an editable install of proplot by running:
 

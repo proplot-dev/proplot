@@ -1,3 +1,4 @@
+# See: https://github.com/kynan/nbstripout
 [diff "ipynb"]
 	textconv = nbstripout -t
 [filter "nbstripout"]

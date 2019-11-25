@@ -3,7 +3,6 @@ from os.path import sep
 from proplot import rc
 
 # Adapted from matplotlib
-# TODO: Understand what the hell is going on here
 def get_nodes(rawtext, text, inliner):
     rctext = (f"rc['{text}']" if '.' in text else f'rc.{text}')
     rendered = nodes.Text(rctext)
