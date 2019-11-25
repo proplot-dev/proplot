@@ -137,11 +137,10 @@ Simpler colorbars and legends
 
    <h3>Problem</h3>
 
-In matplotlib, it is hard to put colorbars and legends on the outside of subplots. It can end up messing up subplot aspect ratios, and colorbars tend to be too narrow or too wide.
+In matplotlib, it is hard to draw `~matplotlib.figure.Figure.colorbar`\ s and
+`~matplotlib.axes.Axes.legend`\ s on the outside of subplots. It can end up messing up subplot aspect ratios, and colorbars tend to be too narrow or too wide.
 
-It is *also* difficult to draw colorbars and legends that span the figure edge or serve as reference to more than one subplot.
-Because this requires so much tinkering, most users just add identical colorbars
-to every single subplot, which is incredibly repetitive!
+It is *also* difficult to draw `~matplotlib.figure.Figure.colorbar`\ s and `~matplotlib.figure.Figure.legend`\ s that span the figure edge or reference more than one subplot. "Figure colorbars" require drawing your own dedicated colorbar axes, which requires so much tinkering that most users just add identical colorbars to every single subplot! Meanwhile legends tend to look misaligned -- they are centered with respect to the figure edges rather than the subplot grid, which is a problem if your left-right or top-bottom border padding is asymmetric.
 
 ..
    Drawing colorbars and legends is pretty clumsy in matplotlib -- especially when trying to draw them outside of the figure. They can be too narrow, too wide, and mess up your subplot aspect ratios.
@@ -153,12 +152,9 @@ to every single subplot, which is incredibly repetitive!
 ProPlot introduces a brand new engine for drawing colorbars and legends along the outside of
 individual subplots and along contiguous subplots on the edge of the figure:
 
-* The `~proplot.axes.Axes` `~proplot.axes.Axes.legend` command and the `~proplot.subplots.Figure` `~proplot.subplots.Figure.colorbar` and `~proplot.subplots.Figure.legend` commands are overridden, adding various new features.
-* There is a new `~proplot.axes.Axes` `~proplot.axes.Axes.colorbar` method for drawing *inset* colorbars or adding colorbars along the outer edge of axes.
-* The `~proplot.subplots.Figure` `~proplot.subplots.Figure.colorbar` and `~proplot.subplots.Figure.legend` commands draw colorbars and legends that are centered relative to the *subplot grid*, not the axes. This is critical if your left-right or top-bottom border padding is asymmetric.
-* You can put colorbars and legends along the edge of axes or along the edge of the whole figure by passing ``loc='l'``, ``loc='r'``, ``loc='b'``, or ``loc='t'`` to the colorbar and legend commands.
-* Outer colorbars and legends don't mess up the subplot layout or subplot aspect ratios, since the new `~proplot.subplots.FlexibleGridSpec` class permits variable spacing between subplot rows and columns. This is critical e.g. if you have a colorbar between columns 1 and 2 but nothing between columns 2 and 3.
-* The width of colorbars are now specified in physical units. This makes it easier to get the thickness just right, and makes thickness independent of figure size.
+* The `~proplot.axes.Axes` `~proplot.axes.Axes.legend` command and the `~proplot.subplots.Figure` `~proplot.subplots.Figure.colorbar` and `~proplot.subplots.Figure.legend` commands are overridden, adding various new features like colorbars-from-lines and centered-row legends. There is also a new `~proplot.axes.Axes` `~proplot.axes.Axes.colorbar` method for drawing *inset* colorbars or colorbars along the outer edge of axes.
+* Passing ``loc='l'``, ``loc='r'``, ``loc='b'``, or ``loc='t'`` to `~proplot.axes.Axes` `~proplot.axes.Axes.colorbar` or `~proplot.axes.Axes` `~proplot.axes.Axes.legend` draws the colorbar or legend along outside of the axes. Passing these to `~proplot.subplots.Figure` `~proplot.subplots.Figure.colorbar` and `~proplot.subplots.Figure.legend` draws the colorbar or legend along the edge of the figure, centered relative to the *subplot grid* rather than figure coordinates.
+* Outer colorbars and legends don't mess up the subplot layout or subplot aspect ratios, since the new `~proplot.subplots.FlexibleGridSpec` class permits variable spacing between subplot rows and columns. This is critical e.g. if you have a colorbar between columns 1 and 2 but nothing between columns 2 and 3. Colorbar widths are also specified in physical units, which makes the thickness independent of figure size and makes it easier to get the thickness just right.
 
 The axes container class
 ========================
