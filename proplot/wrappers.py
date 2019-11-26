@@ -2198,9 +2198,11 @@ def legend_wrapper(self,
         self.add_artist(leg)
         leg.legendPatch.update(outline) # or get_frame()
         for obj in leg.legendHandles:
-            obj.update(kw_handle)
+            if isinstance(obj, martist.Artist):
+                obj.update(kw_handle)
         for obj in leg.get_texts():
-            obj.update(kw_text)
+            if isinstance(obj, martist.Artist):
+                obj.update(kw_text)
     # Draw manual fancy bounding box for un-aligned legend
     # WARNING: The matplotlib legendPatch transform is the default transform,
     # i.e. universal coordinates in points. Means we have to transform
