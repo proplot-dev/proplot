@@ -21,7 +21,10 @@ try:
     get_ipython = IPython.get_ipython
 except ModuleNotFoundError:
     get_ipython = lambda: None
-__all__ = ['rc', 'rc_configurator', 'nb_setup']
+__all__ = [
+    'rc', 'rc_configurator', 'autosave_setup',
+    'autoreload_setup', 'backend_setup'
+    ]
 
 # Initialize
 from matplotlib import rcParams as rcParams
@@ -672,68 +675,103 @@ class rc_configurator(object):
         if not self._init: # save resources if rc is unchanged!
             return self.__init__()
 
-# Declare rc object
+@_timer
+def backend_setup(backend=None, format=None):
+    """
+    Set up the matplotlib backend for your iPython workspace.
+
+    Parameters
+    ----------
+    backend : str, optional
+        The backend name. Leave this empty or use ``'auto'`` to revert to the
+        ProPlot defaults.
+    format : str, optional
+        The inline backend file format. Valid formats include ``'jpg'``,
+        ``'png'``, ``'svg'``, ``'pdf'``, and ``'retina'``. This is ignored
+        for non-inline backends.
+    """
+    # Initialize with default 'inline' settings
+    # Reset rc object afterwards
+    ipython = get_ipython()
+    format = format or rcParamsShort['format']
+    backend = backend or (
+        'auto' if rcParamsShort.get('autobackend', True) else None
+        ) or rcParams['backend']
+    if ipython is None or backend is None:
+        return
+    if backend[:2] == 'nb' or backend in ('MacOSX',):
+        warnings.warn(f'Using ProPlot with the {backend!r} backend may result in unexpected behavior due to automatic figure resizing. Try using %matplotlib inline or %matplotlib qt, or just import proplot before specifying the backend and one of these will be automatically loaded.')
+        backend = 'auto'
+
+    # For notebooks
+    rc._init = False
+    try:
+        ibackend = ('inline' if backend == 'auto' else backend)
+        ipython.magic('matplotlib ' + ibackend)
+        rc.reset()
+    # For terminals
+    # KeyError is evidently a subclass of the UnknownBackup exception
+    except KeyError as err:
+        if backend != 'auto':
+            raise err
+        ipython.magic('matplotlib qt') # use any available Qt backend
+        rc.reset()
+
+    # Configure inline backend no matter what type of session this is
+    # Should be silently ignored for terminal ipython sessions
+    ipython.magic("config InlineBackend.figure_formats = ['" + format + "']")
+    ipython.magic("config InlineBackend.rc = {}") # no notebook-specific overrides
+    ipython.magic("config InlineBackend.close_figures = True") # memory issues
+    ipython.magic("config InlineBackend.print_figure_kwargs = {'bbox_inches':None}") # use ProPlot tight layout
+
+def autoreload_setup(autoreload=None):
+    """
+    Set up the
+    `autoreload <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html>`__
+    utility for ipython sessions.
+
+    Parameters
+    ----------
+    autoreload : float, optional
+        The autoreload level. Default is :rc:`autoreload`.
+    """
+    ipython = get_ipython()
+    autoreload = autoreload or rcParamsShort['autoreload']
+    if ipython is None or autoreload is None:
+        return
+    if 'autoreload' not in ipython.magics_manager.magics['line']:
+        with IPython.utils.io.capture_output(): # capture annoying message
+            ipython.magic("load_ext autoreload")
+    ipython.magic("autoreload " + str(autoreload))
+
+def autosave_setup(autosave=None):
+    """
+    Set up the
+    `autosave <https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__
+    utility for ipython notebook sessions.
+
+    Parameters
+    ----------
+    autosave : float, optional
+        The autosave interval in seconds. Default is :rc:`autosave`.
+    """
+    ipython = get_ipython()
+    autosave = autosave or rcParamsShort['autosave']
+    if ipython is None or autosave is None:
+        return
+    with IPython.utils.io.capture_output(): # capture annoying message
+        try:
+            ipython.magic("autosave " + str(autosave))
+        except IPython.core.error.UsageError:
+            pass
+
+# Call setup functions and declare rc object
 # WARNING: Must be instantiated after ipython notebook setup! The default
 # backend may change some rc settings!
 rc = rc_configurator()
 """Instance of `rc_configurator`. This is used to change global settings.
 See :ref:`Configuring proplot` for details."""
-
-# Ipython notebook behavior
-@_timer
-def nb_setup():
-    """
-    Sets up your iPython workspace, called on import if :rcraw:`nbsetup` is
-    ``True``. For all iPython sessions, passes :rcraw:`autoreload` to the useful
-    `autoreload <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html>`__
-    extension. For iPython *notebook* sessions, results in higher-quality inline figures
-    and passes :rcraw:`autosave` to the `autosave <https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__
-    extension.
-
-    See :ref:`Configuring proplot` for details.
-    """
-    # Make sure we are in session
-    ipython = get_ipython()
-    if ipython is None:
-        return
-
-    # Only do this if not already loaded -- otherwise will get *recursive*
-    # reloading, even with unload_ext command!
-    if rcParamsShort['autoreload']:
-        if 'autoreload' not in ipython.magics_manager.magics['line']:
-            ipython.magic("reload_ext autoreload") # reload instead of load, to avoid annoying message
-        ipython.magic("autoreload " + str(rcParamsShort['autoreload'])) # turn on expensive autoreloading
-
-    # Initialize with default 'inline' settings
-    # Reset rc object afterwards
-    rc._init = False
-    try:
-        # For notebooks
-        ipython.magic("matplotlib inline")
-        rc.reset()
-    except KeyError:
-        # For terminals
-        # TODO: Fix auto tight layout with osx backend -- currently has
-        # standard issue where content adjusted but canvas size not adjusted
-        # until second draw command, and other issue where window size does
-        # not sync with figure size
-        ipython.magic("matplotlib qt")
-        rc.reset()
-    else:
-        # Choose svg vector or retina hi-res bitmap backends
-        autosave = rcParamsShort['autosave']
-        if autosave: # capture annoying message + line breaks
-            with IPython.utils.io.capture_output():
-                ipython.magic("autosave " + str(autosave))
-        ipython.magic("config InlineBackend.figure_formats = ['" + rcParamsShort['format'] + "']")
-        ipython.magic("config InlineBackend.rc = {}") # no notebook-specific overrides
-        ipython.magic("config InlineBackend.close_figures = True") # memory issues
-        ipython.magic("config InlineBackend.print_figure_kwargs = {'bbox_inches':None}") # use ProPlot tight layout
-
-# Setup notebook and issue warning
-# TODO: Add to list of incompatible backends?
-if rcParamsShort['nbsetup']:
-    nb_setup()
-if rcParams['backend'][:2] == 'nb' or rcParams['backend'] in ('MacOSX',):
-    warnings.warn(f'Due to automatic figure resizing, using ProPlot with the {rcParams["backend"]!r} backend may result in unexpected behavior. Try using %matplotlib inline or %matplotlib qt, or just import ProPlot before specifying the backend and ProPlot will automatically load it.')
+backend_setup()
+autoreload_setup()
+autosave_setup()
 

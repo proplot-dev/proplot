@@ -1697,13 +1697,13 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
         if isinstance(values, Number):
             levels = values + 1
         elif np.iterable(values):
-            # Plotting command accepts a 'values' keyword arg
-            if name in ('parametric',):
-                kwargs['values'] = values
             # Try to generate levels such that a LinearSegmentedNorm will
-            # place values ticks right at the center of each colorbar level
+            # place values ticks at the center of each colorbar level.
+            # utile.edges works only for evenly spaced values arrays.
+            # We solve for: (x1 + x2)/2 = y --> x2 = 2*y - x1
+            # with arbitrary starting point x1.
             if norm is None or norm in ('segments','segmented'):
-                levels = [values[0] - (values[1]-values[0])/2] # reasonable starting point
+                levels = [values[0] - (values[1] - values[0])/2]
                 for i,val in enumerate(values):
                     levels.append(2*val - levels[-1])
                 if any(np.diff(levels) <= 0): # algorithm failed, default to this
@@ -1713,6 +1713,8 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
             else:
                 inorm = styletools.Norm(norm, **norm_kw)
                 levels = inorm.inverse(utils.edges(inorm(values)))
+            if name in ('parametric',):
+                kwargs['values'] = values
         else:
             raise ValueError(f'Unexpected input values={values!r}. Must be integer or list of numbers.')
 

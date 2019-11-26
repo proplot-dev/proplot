@@ -33,7 +33,7 @@ Why do my inline figures look different?
 
 These days, most publications prefer plots saved as `vector graphics <https://en.wikipedia.org/wiki/Vector_graphics>`__ [1]_ rather than `raster graphics <https://en.wikipedia.org/wiki/Raster_graphics>`__ [2]_. When you save vector graphics, the content sizes should be appropriate for embedding the plot in a document (for example, if an academic journal recommends 8-point font for plots, you should use 8-point font in your plotting code).
 
-Matplotlib tends to generate really low-resolution, artifact-plagued jpegs -- and to keep them legible, they use a fairly large default figure width of 6.5 inches (usually only suitable for multi-panel plots) and a fairly large default font size of 10 points (where most journals recommend 5-9 points). This means your figures have to be downscaled, so the sizes used in your plotting code are not the sizes that appear in the document.
+Most of the default matplotlib backends make low-quality, artifact-plagued jpegs. To keep them legible, matplotlib uses a fairly large default figure width of 6.5 inches (usually only suitable for multi-panel plots) and a slightly large default font size of 10 points (where most journals recommend 5-9 points). This means your figures have to be downscaled so the sizes used in your plotting code are *not* the sizes that appear in the document.
 
 ProPlot helps you get your figure sizes *correct* for embedding
 them as vector graphics inside publications.
