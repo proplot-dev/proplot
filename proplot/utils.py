@@ -153,21 +153,49 @@ def edges(array, axis=-1):
     array = np.array(array)
     array = np.swapaxes(array, axis, -1)
     # Next operate
-    flip = False
-    idxs = [[0] for _ in range(array.ndim-1)] # must be list because we use it twice
-    if array[np.ix_(*idxs, [1])] < array[np.ix_(*idxs, [0])]:
-        flip = True
-        array = np.flip(array, axis=-1)
     array = np.concatenate((
         array[...,:1]  - (array[...,1]-array[...,0])/2,
         (array[...,1:] + array[...,:-1])/2,
         array[...,-1:] + (array[...,-1]-array[...,-2])/2,
         ), axis=-1)
-    if flip:
-        array = np.flip(array, axis=-1)
     # Permute back and return
     array = np.swapaxes(array, axis, -1)
     return array
+
+def edges2d(z):
+    """
+    Like :func:`edges` but for 2D arrays.
+    The size of both axes are increased of one.
+
+    Parameters
+    ----------
+    array : array-like
+        Two-dimensional array.
+
+    Returns
+    -------
+    `~numpy.ndarray`
+        Array of "edge" coordinates.
+    """
+    z = np.asarray(z)
+    ny, nx = z.shape
+    zzb = np.zeros((ny+1, nx+1))
+
+    # Inner
+    zzb[1:-1, 1:-1] = 0.25 * (z[1:, 1:] + z[:-1, 1:] +
+                              z[1:, :-1] + z[:-1, :-1])
+    # Lower and upper
+    zzb[0] += edges(1.5*z[0]-0.5*z[1])
+    zzb[-1] += edges(1.5*z[-1]-0.5*z[-2])
+
+    # Left and right
+    zzb[:, 0] += edges(1.5*z[:, 0]-0.5*z[:, 1])
+    zzb[:, -1] += edges(1.5*z[:, -1]-0.5*z[:, -2])
+
+    # Corners
+    zzb[[0, 0, -1, -1], [0, -1, -1, 0]] *= 0.5
+
+    return zzb
 
 def units(value, numeric='in'):
     """

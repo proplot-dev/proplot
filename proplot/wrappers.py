@@ -473,6 +473,13 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
                 if all(z.ndim == 1 and z.size > 1 and z.dtype != 'object' for z in (x,y)):
                     x = utils.edges(x)
                     y = utils.edges(y)
+                else:
+                    if (x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1 and
+                            x.dtype != 'object'):
+                        x = utils.edges2d(x)
+                    if (y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1 and
+                            y.dtype != 'object'):
+                        y = utils.edges2d(y)
             elif Z.shape[1] != xlen-1 or Z.shape[0] != ylen-1:
                 raise ValueError(f'Input shapes x {x.shape} and y {y.shape} must match Z centers {Z.shape} or Z borders {tuple(i+1 for i in Z.shape)}.')
         # Optionally re-order
@@ -491,10 +498,19 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
         for Z in Zs:
             if Z.ndim != 2:
                 raise ValueError(f'Input arrays must be 2D, instead got shape {Z.shape}.')
-            elif Z.shape[1] == xlen-1 and Z.shape[0] == ylen-1 and x.ndim == 1 and y.ndim == 1:
+            elif Z.shape[1] == xlen-1 and Z.shape[0] == ylen-1:
                 if all(z.ndim == 1 and z.size > 1 and z.dtype != 'object' for z in (x,y)):
                     x = (x[1:] + x[:-1])/2
                     y = (y[1:] + y[:-1])/2
+                else:
+                    if (x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1 and
+                            x.dtype != 'object'):
+                        x = 0.25 * (x[:-1, :-1] + x[:-1, 1:] +
+                                    x[1:, :-1] + x[1:, 1:])
+                    if (y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1 and
+                            y.dtype != 'object'):
+                        y = 0.25 * (y[:-1, :-1] + y[:-1, 1:] +
+                                    y[1:, :-1] + y[1:, 1:])
             elif Z.shape[1] != xlen or Z.shape[0] != ylen:
                 raise ValueError(f'Input shapes x {x.shape} and y {y.shape} must match Z centers {Z.shape} or Z borders {tuple(i+1 for i in Z.shape)}.')
         # Optionally re-order
