@@ -62,30 +62,45 @@ Constructor functions
 
    <h3>Problem</h3>
 
-Matplotlib and cartopy introduce a bunch of classes with verbose names like `~matplotlib.ticker.MultipleLocator`, `~matplotlib.ticker.FormatStrFormatter`, `~cartopy.crs.AlbersEqualArea`, and `~cartopy.crs.NorthPolarStereo`.
-But matplotlib `axis scales <https://matplotlib.org/3.1.0/gallery/scales/scales.html>`__ and `colormaps <https://matplotlib.org/3.1.1/gallery/color/colormap_reference.html>`__ are **registered** under string names, as are `map projections <https://matplotlib.org/basemap/users/mapsetup.html>`__ in basemap. So why not register other verbose class names too?
+Matplotlib and cartopy introduce a bunch of classes with verbose names like `~matplotlib.ticker.MultipleLocator`, `~matplotlib.ticker.FormatStrFormatter`, and
+`~cartopy.crs.LambertAzimuthalEqualArea`. Since plotting code has a half life of about 30 seconds, typing out all of these extra class names and import statements can be a *major* drag.
+
+*Other* parts of the matplotlib API were designed with this in mind.
+`Native axes projections <https://matplotlib.org/3.1.1/api/projections_api.html>`__,
+`axis scale classes <https://matplotlib.org/3.1.0/gallery/scales/scales.html>`__, and `colormap instances <https://matplotlib.org/3.1.1/gallery/color/colormap_reference.html>`__ are referenced with "registered" string names,
+as are `basemap projection types <https://matplotlib.org/basemap/users/mapsetup.html>`__.
+If these are already "registered", why not "register" everything else?
 
 .. raw:: html
 
    <h3>Solution</h3>
 
-In ProPlot, tick locators, tick formatters, axis scales, cartopy projections, colormaps, and property cyclers are all **registered**. This is done by creating **constructor functions** and passing various keyword argument through the functions, allowing users to use class names instead of instances.
+In ProPlot, tick locators, tick formatters, axis scales, cartopy projections, colormaps, and property cyclers are all "registered". This is done by creating several **constructor functions** and passing various keyword argument *through* the constructor functions.
+This may seem "unpythonic" but it is absolutely invaluable when making plots.
 
-This may seem "unpythonic" but it is absolutely invaluable when making plots. Plotting code has a half life of about 30 seconds, and typing out all of these extra class names and import statements gets to be a major drag.
+The constructor functions also accept *other* types of input: For
+example, scalar numbers passed to `~proplot.axistools.Locator` returns
+a `~matplotlib.ticker.MultipleLocator` instance, lists of strings passed
+to `~proplot.axistools.Formatter` returns a `~matplotlib.ticker.FixedFormatter` instance, and `~proplot.styletools.Colormap` and `~proplot.styletools.Cycle` accept all kinds of input. And if an instance of the corresponding class is passed to any constructor function, it is simply returned. See :ref:`X and Y axis settings`, :ref:`Colormaps`, and :ref:`Color cycles` for details.
 
-The below table lists the constructor functions and the keyword arguments that use them.
+The below table lists the constructor functions and the keyword arguments that
+use them.
 
-==============================  =============================  ================================================================================================================================================================================================
-Function                        Returns                        Interpreted by
-==============================  =============================  ================================================================================================================================================================================================
-`~proplot.axistools.Locator`    Axis locator                   ``locator=``, ``xlocator=``, ``ylocator=``, ``minorlocator=``, ``xminorlocator=``, ``yminorlocator=``, ``ticks=``, ``xticks=``, ``yticks=``, ``minorticks=``, ``xminorticks=``, ``yminorticks=``
-`~proplot.axistools.Formatter`  Axis formatter                 ``formatter=``, ``xformatter=``, ``yformatter=``, ``ticklabels=``, ``xticklabels=``, ``yticklabels=``
-`~proplot.axistools.Scale`      Axis scale                     ``xscale=``, ``yscale=``
-`~proplot.styletools.Colormap`  Colormap                       ``cmap=``
-`~proplot.styletools.Cycle`     Property cycler                ``cycle=``
-`~proplot.styletools.Norm`      Colormap normalizer            ``norm=``
-`~proplot.projs.Proj`           Cartopy or basemap projection  ``proj=``
-==============================  =============================  ================================================================================================================================================================================================
+==============================  ============================================================  =============================================================  =================================================================================================================================================================================================
+Function                        Returns                                                       Interpreted by                                                 Keyword argument(s)
+==============================  ============================================================  =============================================================  =================================================================================================================================================================================================
+`~proplot.axistools.Locator`    Axis `~matplotlib.ticker.Locator`                             `~proplot.axes.Axes.format` and `~proplot.axes.Axes.colorbar`  ``locator=``, ``xlocator=``, ``ylocator=``, ``minorlocator=``, ``xminorlocator=``, ``yminorlocator=``, ``ticks=``, ``xticks=``, ``yticks=``, ``minorticks=``, ``xminorticks=``, ``yminorticks=``
+`~proplot.axistools.Formatter`  Axis `~matplotlib.ticker.Formatter`                           `~proplot.axes.Axes.format` and `~proplot.axes.Axes.colorbar`  ``formatter=``, ``xformatter=``, ``yformatter=``, ``ticklabels=``, ``xticklabels=``, ``yticklabels=``
+`~proplot.axistools.Scale`      Axis `~matplotlib.scale.ScaleBase`                            `~proplot.axes.Axes.format`                                    ``xscale=``, ``yscale=``
+`~proplot.styletools.Colormap`  `~matplotlib.colors.Colormap` instance                        Various plotting methods                                       ``cmap=``
+`~proplot.styletools.Cycle`     Property `~cycler.Cycler`                                     Various plotting methods                                       ``cycle=``
+`~proplot.styletools.Norm`      `~matplotlib.colors.Normalize` instance                       Various plotting methods                                       ``norm=``
+`~proplot.projs.Proj`           `~cartopy.crs.Projection` or `~mpl_toolkits.basemap.Basemap`  `~proplot.subplots.subplots`                                   ``proj=``
+==============================  ============================================================  =============================================================  =================================================================================================================================================================================================
+
+Note that `~matplotlib.axes.Axes.set_xscale` and `~matplotlib.axes.Axes.set_yscale`
+now accept instances of `~matplotlib.scale.ScaleBase` thanks to a monkey patch
+applied by ProPlot.
 
 Automatic dimensions and spacing
 ================================
@@ -187,6 +202,7 @@ unifies the behavior of the three possible `matplotlib.pyplot.subplots` return v
 * `~proplot.subplots.axes_grid` supports row-major or column-major 1D indexing, e.g. ``axs[0]``. The order can be changed by passing ``order='F'`` or ``order='C'`` to `~proplot.subplots.subplots`.
 * `~proplot.subplots.axes_grid` permits 2D indexing, e.g. ``axs[1,0]``. Since `~proplot.subplots.subplots` can generate figures with arbitrarily complex subplot geometry, this 2D indexing is useful only when the arrangement happens to be a clean 2D matrix.
 
+See :ref:`Creating figures` for details.
 
 ..
    This goes with ProPlot's theme of preserving the object-oriented spirit, but making things easier for users.
@@ -208,12 +224,14 @@ This approach is not ideal -- plotting methods should be invoked on the `~proplo
 
    <h3>Solution</h3>
 
-ProPlot *reproduces* most of the `xarray.DataArray.plot`, `pandas.DataFrame.plot`, and `pandas.Series.plot` features on the `~proplot.axes.Axes` methods themselves! Axis tick labels, axis labels, subplot titles, and colorbar and legend labels are automatically applied
+ProPlot *reproduces* most of the `xarray.DataArray.plot`, `pandas.DataFrame.plot`, and `pandas.Series.plot` features on the `~proplot.axes.Axes` methods themselves!
+
+Axis tick labels, axis labels, subplot titles, and colorbar and legend labels are automatically applied
 when a `~xarray.DataArray`, `~pandas.DataFrame`, or `~pandas.Series` is passed through
 a plotting method instead of a `~numpy.ndarray`.
 This is accomplished by passing positional arguments through the
 `~proplot.wrappers.standardize_1d` and `~proplot.wrappers.standardize_2d`
-wrappers.
+wrappers. See :ref:`1d plotting` and :ref:`2d plotting` for details.
 
 Various plotting improvements
 =============================
@@ -302,13 +320,15 @@ overrides various plotting methods:
 See :ref:`Geographic and polar plots` for details.
 
 Note that active development on basemap will `halt after 2020 <https://matplotlib.org/basemap/users/intro.html#cartopy-new-management-and-eol-announcement>`__.
-This is the right decision: Cartopy is integrated more closely with the matplotlib API
-and is more amenable to further development. For now, cartopy is
+For now, cartopy is
 `missing several features <https://matplotlib.org/basemap/api/basemap_api.html#module-mpl_toolkits.basemap>`__
 offered by basemap -- namely, flexible meridian and parallel gridline labels,
 drawing physical map scales, and convenience features for adding background images like
 the "blue marble". But once these are added to cartopy, ProPlot may remove the `~mpl_toolkits.basemap` integration features.
 
+..
+  This is the right decision: Cartopy is integrated more closely with the matplotlib API
+  and is more amenable to further development. 
 
 Colormaps and property cycles
 =============================
@@ -330,7 +350,7 @@ They are hard to edit and hard to create from scratch.
 In ProPlot, it is easy to manipulate colormaps and property cycles:
 
 * The `~proplot.styletools.Colormap` constructor function can be used to slice and merge existing colormaps and/or generate brand new ones.
-* The `~proplot.styletools.Cycle` constructor function can be used to make *color cycles* from *colormaps*! These cycles can be applied by passing th e`cycle` keyword argument to plotting commands or changing the :rcraw:`cycle` setting. See :ref:`Color cycles` for details.
+* The `~proplot.styletools.Cycle` constructor function can be used to make *color cycles* from *colormaps*! These cycles can be applied by passing the `cycle` keyword argument to plotting commands or changing the :rcraw:`cycle` setting. See :ref:`Color cycles` for details.
 * The new `~proplot.styletools.ListedColormap` and `~proplot.styletools.LinearSegmentedColormap` classes include several new methods, e.g. `~proplot.styletools.LinearSegmentedColormap.save` and `~proplot.styletools.LinearSegmentedColormap.concatenate`, and have a much nicer REPL representation.
 * The `~proplot.styletools.PerceptuallyUniformColormap` class is used to make :ref:`Perceptually uniform colormaps`. These have smooth, aesthetically pleasing color transitions represent your data *accurately*.
 
@@ -345,7 +365,10 @@ Smarter colormap normalization
 In matplotlib, when ``extend='min'``, ``extend='max'``, or ``extend='neither'`` is passed to `~matplotlib.figure.Figure.colorbar` , colormap colors reserved for "out-of-bounds" values are truncated.
 
 The problem is that matplotlib discretizes colormaps by generating a low-resolution lookup table (see `~matplotlib.colors.LinearSegmentedColormap` for details).
-This approach cannot be fine-tuned, creates an unnecessary copy of the colormap, and prevents you from using the resulting colormap for plots with different numbers of levels.
+This approach cannot be fine-tuned and creates an unnecessary copy of the colormap.
+
+..
+   and prevents you from using the resulting colormap for plots with different numbers of levels.
 
 It is clear that the task discretizing colormap colors should be left to the **normalizer**, not the colormap itself. Matplotlib provides `~matplotlib.colors.BoundaryNorm` for this purpose, but it is seldom used and its features are limited.
 
@@ -376,11 +399,11 @@ ProPlot comes packaged with several additional fonts. The new default font is He
 
 ProPlot adds fonts to matplotlib by making use of a completely undocumented feature: the ``$TTFPATH`` environment variable (matplotlib adds ``.ttf`` and ``.otf`` font files from folders listed in ``$TTFPATH``). You can also use *your own* font files by dropping them in ``~/.proplot/fonts``.
 
-...and much more!
-=================
-
-This page is not comprehensive -- it just
-illustrates how ProPlot addresses
-some of the stickiest matplotlib limitations
-that bug your average power user.
-See the User Guide for a more comprehensive overview.
+..
+   ...and much more!
+   =================
+   This page is not comprehensive -- it just
+   illustrates how ProPlot addresses
+   some of the stickiest matplotlib limitations
+   that bug your average power user.
+   See the User Guide for a more comprehensive overview.
