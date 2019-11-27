@@ -14,7 +14,7 @@ try:
     from icecream import ic
 except ImportError:  # graceful fallback if IceCream isn't installed
     ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a) # noqa
-__all__ = ['arange', 'edges', 'units']
+__all__ = ['arange', 'edges', 'edges2d', 'units']
 
 # Change this to turn on benchmarking
 BENCHMARK = False
