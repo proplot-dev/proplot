@@ -6,8 +6,13 @@ ProPlot's core mission
 is to improve upon the parts of matplotlib that
 tend to be cumbersome or repetitive
 for power users.
-This page enumerates these limitations and
-describes how ProPlot addresses them.
+This page enumerates the stickiest of these limitations
+and describes how ProPlot addresses them.
+
+..
+   This page is not comprehensive --
+   see the User Guide for a comprehensive overview
+   with worked examples.
 
 ..
    To start using these new features, see
@@ -279,7 +284,7 @@ to various plotting methods:
 * All 1d plotting methods accept a `cycle` keyword argument interpreted by `~proplot.styletools.Cycle`. See :ref:`Color cycles` for details.
 * All 2d plotting methods accept a `cmap` keyword argument interpreted by `~proplot.styletools.Colormap`. See :ref:`Colormaps` for details.
 * 1d coordinate vectors passed to 2d plotting methods can be graticule *edges* or *centers*. When edges are passed to `~matplotlib.axes.Axes.contour` or `~matplotlib.axes.Axes.contourf`, centers are calculated from the edges. When centers are passed to `~matplotlib.axes.Axes.pcolor` or `~matplotlib.axes.Axes.pcolormesh`, *edges* are estimated from the centers.
-* ProPlot fixes the annoying `white-lines-between-filled-contours <https://stackoverflow.com/q/8263769/4970632>`__, `white-lines-between-pcolor-rectangles <https://stackoverflow.com/q/27092991/4970632>`__, and `white-lines-between-colorbar-levels <https://stackoverflow.com/q/15003353/4970632>`__ issues for `~matplotlib.axes.Axes.contouf` plots, `~matplotlib.axes.Axes.imshow` plots, and `~proplot.subplots.Figure` and `~proplot.axes.Axes` colorbars.
+* ProPlot fixes the annoying `white-lines-between-filled-contours <https://stackoverflow.com/q/8263769/4970632>`__, `white-lines-between-pcolor-rectangles <https://stackoverflow.com/q/27092991/4970632>`__, and `white-lines-between-colorbar-levels <https://stackoverflow.com/q/15003353/4970632>`__ issues for `~matplotlib.axes.Axes.contourf` plots, `~matplotlib.axes.Axes.imshow` plots, and `~proplot.subplots.Figure` and `~proplot.axes.Axes` colorbars.
 
 See :ref:`1d plotting` and :ref:`2d plotting`
 for details.
@@ -314,9 +319,9 @@ This lets you apply all kinds of geographic plot settings, like coastlines, cont
 `~proplot.axes.ProjAxes` also
 overrides various plotting methods:
 
-* ``globe=True`` can be passed to any 2D plotting command to enforce *global* coverage over the poles and across the longitude boundaries.
-* ``latlon=True`` is the new default for all `~proplot.axes.BasemapAxes` plotting methods.
 * ``transform=ccrs.PlateCarree()`` is the new default for all `~proplot.axes.GeoAxes` plotting methods.
+* ``latlon=True`` is the new default for all `~proplot.axes.BasemapAxes` plotting methods.
+* ``globe=True`` can be passed to any 2D plotting command to enforce *global* coverage over the poles and across the longitude boundaries.
 
 See :ref:`Geographic and polar plots` for details.
 
@@ -399,6 +404,42 @@ In matplotlib, the default font is DejaVu Sans. In this developer's humble opini
 ProPlot comes packaged with several additional fonts. The new default font is Helvetica. Albeit somewhat overused, this is a tried and tested, aesthetically pleasing sans serif font.
 
 ProPlot adds fonts to matplotlib by making use of a completely undocumented feature: the ``$TTFPATH`` environment variable (matplotlib adds ``.ttf`` and ``.otf`` font files from folders listed in ``$TTFPATH``). You can also use *your own* font files by dropping them in ``~/.proplot/fonts``.
+
+Physical units engine
+=====================
+.. raw:: html
+
+   <h3>Problem</h3>
+
+Matplotlib requires users to use
+*inches* for the figure size `figsize`. This must be confusing for users outside
+of the U.S.
+
+Matplotlib also uses figure-relative units for the margins
+`left`, `right`, `bottom`, and `top`, and axes-relative units
+for the column and row spacing `wspace` and `hspace`.
+Relative units tend to require "tinkering" with meaningless numbers until you find the
+right one... and then if your figure size changes, you have to adjust them again.
+
+.. raw:: html
+
+   <h3>Solution</h3>
+
+ProPlot introduces the physical units engine `~proplot.utils.units`
+for interpreting `figsize`, `width`, `height`, `axwidth`, `axheight`,
+`left`, `right`, `top`, `bottom`, `wspace`, `hspace`, and arguments
+in a few other places. Acceptable units include inches, centimeters,
+millimeters, `points <https://en.wikipedia.org/wiki/Point_(typography)>`__,
+pixels, em-heights, and light years (because
+why not?). Em-heights are particularly useful, as labels already
+present can be useful *rulers* for figuring out the amount
+of space needed.
+
+`~proplot.utils.units` is also used to convert settings
+passed to `~proplot.rctools.rc` from arbitrary physical units
+to *points* -- for example, :rcraw:`linewidth`, :rcraw:`ticklen`,
+:rcraw:`axes.titlesize`, and :rcraw:`axes.titlepad`.
+See :ref:`Configuring proplot` for details.
 
 ..
    ...and much more!
