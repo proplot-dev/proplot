@@ -1,19 +1,15 @@
 .. image:: docs/_static/logo_long.png
    :width: 1000px
 
-|build-status| |coverage| |quality| |docs| |license| |gitter| |pr-welcome| |donations|
+|build-status| |coverage| |quality| |docs| |license| |gitter| |pr-welcome|
 
 A comprehensive, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful, publication-quality graphics.
+
+.. include:: INSTALL.rst
 
 Documentation
 =============
 The documentation is `published on readthedocs <https://proplot.readthedocs.io>`__.
-
-.. include:: INSTALL.rst
-
-Donations
-=========
-At well over 10,000 lines of code, this package took a huge amount of time to write and an equally huge amount of time to share online -- especially with my day job as a graduate student. If ProPlot has been useful for you, consider clicking the `"donate" badge <https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=VMJSNABTFF4AA&source=url>`__ and sending me a small donation.
 
 .. |build-status| image:: https://img.shields.io/travis/lukelbd/proplot.svg?style=flat
    :alt: build status
@@ -42,10 +38,6 @@ At well over 10,000 lines of code, this package took a huge amount of time to wr
 .. |pr-welcome| image:: https://img.shields.io/badge/PR-Welcome-%23FF8300.svg?
    :alt: PR welcome
    :target: https://git-scm.com/book/en/v2/GitHub-Contributing-to-a-Project
-
-.. |donations| image:: https://img.shields.io/badge/Donate-PayPal-green.svg
-   :alt: PayPal donations
-   :target: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=VMJSNABTFF4AA&source=url
 
 ..
    |hits| image:: http://hits.dwyl.io/lukelbd/lukelbd/proplot.svg

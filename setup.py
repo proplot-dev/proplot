@@ -1,3 +1,4 @@
+import re
 from setuptools import setup
 from os.path import exists
 
@@ -16,10 +17,22 @@ classifiers = [
     ]
 
 if exists('README.rst'): # when does this not exist?
-    with open('README.rst', encoding='utf-8') as f:
-        long_description = f.read()
+    with open('README.rst') as f:
+        long_description = f.readlines()
 else:
-    long_description = ''
+    long_description = []
+
+regex = re.compile(r'\A\.\.\s+include::\s+(.*)\s*\Z')
+long_description_noinclude = [] # PyPi complains
+for line in long_description:
+    match = regex.match(line)
+    if match:
+        path, = match.groups()
+        with open(path) as f:
+            long_description_noinclude.extend(f.readlines())
+    else:
+        long_description_noinclude.append(line)
+long_description = ''.join(long_description_noinclude)
 
 setup(
     url = 'https://lukelbd.github.io/proplot',
