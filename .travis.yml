@@ -6,7 +6,7 @@
 sudo: false # use container based build
 language: python
 notifications:
-    email: false
+  email: false
 
 python:
   - "3.6"

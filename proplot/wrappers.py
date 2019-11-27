@@ -2427,7 +2427,7 @@ def colorbar_wrapper(self,
     # Parse flexible input
     label = _notNone(title, label, None, names=('title', 'label'))
     locator = _notNone(ticks, locator, None, names=('ticks', 'locator'))
-    formatter = _notNone(ticklabels, formatter, 'default', names=('ticklabels', 'formatter'))
+    formatter = _notNone(ticklabels, formatter, 'auto', names=('ticklabels', 'formatter'))
     minorlocator = _notNone(minorticks, minorlocator, None, names=('minorticks', 'minorlocator'))
     ticklocation = _notNone(tickloc, ticklocation, None, names=('tickloc', 'ticklocation'))
 
