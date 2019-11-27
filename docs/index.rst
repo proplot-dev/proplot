@@ -45,6 +45,7 @@ A comprehensive, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper fo
    api
    changelog
    contributions
+   release
    external-links
    authors
 
