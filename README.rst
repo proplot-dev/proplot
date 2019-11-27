@@ -16,12 +16,12 @@ Donations
 At well over 10,000 lines of code, this package took a huge amount of time to write and an equally huge amount of time to share online -- especially with my day job as a graduate student. If ProPlot has been useful for you, consider clicking the `"donate" badge <https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=VMJSNABTFF4AA&source=url>`__ and sending me a small donation.
 
 .. |build-status| image:: https://img.shields.io/travis/lukelbd/proplot.svg?style=flat
-    :alt: build status
-    :target: https://travis-ci.org/lukelbd/proplot
+   :alt: build status
+   :target: https://travis-ci.org/lukelbd/proplot
 
 .. |coverage| image:: https://codecov.io/gh/lukelbd/proplot.org/branch/master/graph/badge.svg
-    :alt: coverage
-    :target: https://codecov.io/gh/lukelbd/proplot.org
+   :alt: coverage
+   :target: https://codecov.io/gh/lukelbd/proplot.org
 
 .. |quality| image:: https://api.codacy.com/project/badge/Grade/931d7467c69c40fbb1e97a11d092f9cd
    :alt: quality
@@ -32,8 +32,8 @@ At well over 10,000 lines of code, this package took a huge amount of time to wr
    :target: LICENSE.txt
 
 .. |docs| image:: https://readthedocs.org/projects/proplot/badge/?version=latest
-    :alt: docs
-    :target: https://proplot.readthedocs.io/en/latest/?badge=latest
+   :alt: docs
+   :target: https://proplot.readthedocs.io/en/latest/?badge=latest
 
 .. |gitter| image:: https://badges.gitter.im/gitterHQ/gitter.svg
    :alt: gitter
