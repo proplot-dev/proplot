@@ -47,6 +47,7 @@ setup(
     license = license_text,
     description = 'A comprehensive wrapper for making beautiful, publication-quality graphics.',
     long_description = long_description,
+    long_description_content_type = 'text/x-rst',
     use_scm_version={'version_scheme': 'post-release', 'local_scheme': 'dirty-tag'},
     setup_requires=[
         'setuptools_scm',

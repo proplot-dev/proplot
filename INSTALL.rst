@@ -10,5 +10,5 @@ on PyPi (ETA: January 2020). For the time being, you may install directly from G
 
 To upgrade to the latest version, run ``pip uninstall proplot``, then re-install.
 
-The dependencies are `matplotlib <https://matplotlib.org/>`__ and `numpy <http://www.numpy.org/>`__.  The optional geographic mapping features require `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`__ and/or `basemap <https://matplotlib.org/basemap/index.html>`__.
+The dependencies are `matplotlib <https://matplotlib.org/>`__ and `numpy <http://www.numpy.org/>`__.  The optional geographic mapping features require `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`__ and/or `basemap <https://matplotlib.org/basemap/index.html>`__. The optional integration features require `xarray <http://xarray.pydata.org>`__ and `pandas <https://pandas.pydata.org>`__.
 
