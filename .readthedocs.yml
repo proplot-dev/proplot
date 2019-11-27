@@ -12,6 +12,6 @@ build:
   image: latest
 python:
   version: 3.6
-  pip_install: true
+  system_packages: true
 conda:
   environment: docs/environment.yml
