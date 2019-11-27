@@ -1,4 +1,3 @@
-import re
 from setuptools import setup
 from os.path import exists
 
@@ -21,18 +20,6 @@ if exists('README.rst'): # when does this not exist?
         long_description = f.readlines()
 else:
     long_description = []
-
-regex = re.compile(r'\A\.\.\s+include::\s+(.*)\s*\Z')
-long_description_noinclude = [] # PyPi complains
-for line in long_description:
-    match = regex.match(line)
-    if match:
-        path, = match.groups()
-        with open(path) as f:
-            long_description_noinclude.extend(f.readlines())
-    else:
-        long_description_noinclude.append(line)
-long_description = ''.join(long_description_noinclude)
 
 setup(
     url = 'https://lukelbd.github.io/proplot',
