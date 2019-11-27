@@ -12,20 +12,10 @@ python:
 install:
   - which pip
   - which python
-  - pip install .
-  - python setup.py install --user
-  # - pip install pytest-cov
-  # - pip install coveralls
-  # - pip install black
-  # - pip install flake8
-  # - pip install isort
+  - pip install -r docs/requirements.txt
 
 script:
-  # - coverage run --source proplot -m py.test
-  # - coverage report
   - pushd docs
   - make html
   - popd
 
-after_success:
-  # - coveralls
