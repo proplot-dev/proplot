@@ -9,10 +9,22 @@ notifications:
 python:
   - "3.6"
 
+before_install:
+  - wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no --set show_channel_urls true
+  - conda update -q conda
+  - conda info -a
+
 install:
-  - which pip
+  - conda env create -n proplot-dev --file docs/environment.yml
+  - conda activate proplot-dev
+  - conda install pip
+  - conda list
+  - which conda
   - which python
-  - pip install -r docs/requirements.txt
 
 script:
   - pushd docs

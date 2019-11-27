@@ -8,7 +8,9 @@ sphinx:
   configuration: docs/conf.py
 
 # Python config
+build:
+  image: latest
 python:
   version: 3.6
-  install:
-    - requirements: docs/requirements.txt
+conda:
+  environment: docs/environment.yml
