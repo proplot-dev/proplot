@@ -1,6 +1,8 @@
 # Travis Continuos Integration
 # Currently only tests notebook files
 # Based on http://conda.pydata.org/docs/travis.html
+# Not sure why pip install . is necessary since conf.py adds it
+# to the the path. Maybe nbsphinx executes in separate environment.
 sudo: false # use container based build
 language: python
 notifications:
@@ -25,6 +27,8 @@ install:
   - conda list
   - which conda
   - which python
+  - pip install .
+  - python setup.py install --user
 
 script:
   - pushd docs
