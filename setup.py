@@ -21,12 +21,6 @@ if exists('README.rst'): # when does this not exist?
 else:
     long_description = ''
 
-if exists('LICENSE.txt'):
-    with open('LICENSE.txt', encoding='utf-8') as f:
-        license_text = f.read()
-else:
-    license_text = ''
-
 setup(
     url = 'https://lukelbd.github.io/proplot',
     name = 'proplot',
@@ -44,7 +38,7 @@ setup(
     classifiers = classifiers,
     include_package_data = True, # normally uses MANIFEST.in but setuptools_scm auto-detects tracked files
     install_requires = install_req,
-    license = license_text,
+    license = 'MIT',
     description = 'A comprehensive wrapper for making beautiful, publication-quality graphics.',
     long_description = long_description,
     long_description_content_type = 'text/x-rst',
