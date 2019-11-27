@@ -20,7 +20,7 @@ before_install:
 
 install:
   - conda env create -n proplot-dev --file docs/environment.yml
-  - conda activate proplot-dev
+  - source activate proplot-dev
   - conda install pip
   - conda list
   - which conda

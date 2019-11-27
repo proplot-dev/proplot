@@ -1,3 +1,5 @@
+# Hard requirements for notebook examples and documentation build
+# Proplot itself just needs matplotlib
 name: proplot-dev
 channels:
   - conda-forge
