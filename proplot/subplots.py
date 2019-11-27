@@ -761,7 +761,7 @@ class Figure(mfigure.Figure):
 
         # Get gridspec and subplotspec indices
         subplotspec = ax.get_subplotspec()
-        nrows, ncols, row1, row2, col1, col2 = subplotspec.get_active_rows_columns()
+        *_, row1, row2, col1, col2 = subplotspec.get_active_rows_columns()
         pgrid = getattr(ax, '_' + s + 'panels')
         offset = (len(pgrid)*bool(pgrid)) + 1
         if s in 'lr':
@@ -1249,7 +1249,7 @@ class Figure(mfigure.Figure):
                 igridspec = subplotspec.get_gridspec()
                 topmost = subplotspec.get_topmost_subplotspec()
                 # Apply new subplotspec!
-                nrows, ncols, *coords = topmost.get_active_rows_columns()
+                _, _, *coords = topmost.get_active_rows_columns()
                 for i in range(4):
                     # if inserts[i] is not None and coords[i] >= inserts[i]:
                     if inserts[i] is not None and coords[i] >= inserts[i]:
@@ -1311,43 +1311,13 @@ class Figure(mfigure.Figure):
         edge = (min_ if s in 'lt' else max_)
         # Return axes on edge sorted by order of appearance
         axs = [ax for ax in self._axes_main if ax._range_gridspec(x)[idx] == edge]
-        ord = [ax._range_gridspec(y)[0] for ax in axs]
-        return [ax for _,ax in sorted(zip(ord, axs)) if ax.get_visible()]
+        ranges = [ax._range_gridspec(y)[0] for ax in axs]
+        return [ax for _,ax in sorted(zip(ranges, axs)) if ax.get_visible()]
 
     def _unlock(self):
         """Prevents warning message when adding subplots one-by-one, used
         internally."""
         return _unlocker(self)
-
-    def _update_axislabels(self, axis=None, **kwargs):
-        """Applies axis labels to the relevant shared axis. If spanning
-        labels are toggled, keeps the labels synced for all subplots in the
-        same row or column. Label positions will be adjusted at draw-time
-        with _align_axislabels."""
-        x = axis.axis_name
-        if x not in 'xy':
-            return
-        # Update label on this axes
-        axis.label.update(kwargs)
-        kwargs.pop('color', None)
-
-        # Defer to parent (main) axes if possible, then get the axes
-        # shared by that parent
-        ax = axis.axes
-        ax = ax._panel_parent or ax
-        ax = getattr(ax, '_share' + x) or ax
-
-        # Apply to spanning axes and their panels
-        axs = [ax]
-        if getattr(ax, '_span' + x + '_on'):
-            s = axis.get_label_position()[0]
-            if s in 'lb':
-                axs = ax._get_side_axes(s)
-        for ax in axs:
-            getattr(ax, x + 'axis').label.update(kwargs) # apply to main axes
-            pax = getattr(ax, '_share' + x)
-            if pax is not None: # apply to panel?
-                getattr(pax, x + 'axis').label.update(kwargs)
 
     def _update_suplabels(self, ax, side, labels, **kwargs):
         """Assigns side labels, updates label settings."""

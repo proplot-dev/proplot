@@ -1906,18 +1906,23 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
             raise RuntimeError(f'Not possible to add labels to {name!r} plot.')
 
     # Fix white lines between filled contours/mesh, allow user to override!
-    if edgefix:
-        color = 'face'
-        linewidth = 0.4 # seems to be lowest threshold where white lines disappear
-        linestyle = '-'
-        if 'pcolor' in name: # 'pcolor', 'pcolormesh', 'tripcolor'
-            obj.set_edgecolor(color)
-            obj.set_linewidth(linewidth) # seems to do the trick, without dots in corner being visible
-        elif 'contourf' in name: # 'contourf', 'tricontourf'
-            for contour in obj.collections:
-                contour.set_edgecolor(color)
-                contour.set_linewidth(linewidth)
-                contour.set_linestyle(linestyle)
+    # 0.4 points is thick enough to hide lines but thin enough to not
+    # add "dots" in corner of pcolor plots
+    # *Never* use this when colormap has opacity
+    # See: https://stackoverflow.com/q/15003353/4970632
+    if 'pcolor' in name or 'contourf' in name:
+        cmap = obj.get_cmap()
+        if not cmap._isinit:
+            cmap._init()
+        if edgefix and all(cmap._lut[:-1,3] == 1):
+            if 'pcolor' in name: # 'pcolor', 'pcolormesh', 'tripcolor'
+                obj.set_edgecolor('face')
+                obj.set_linewidth(0.4)
+            elif 'contourf' in name: # 'contourf', 'tricontourf'
+                for contour in obj.collections:
+                    contour.set_edgecolor('face')
+                    contour.set_linewidth(0.4)
+                    contour.set_linestyle('-')
 
     # Add colorbar
     if colorbar:
@@ -2663,31 +2668,6 @@ def colorbar_wrapper(self,
     axis.set_ticks(vals[1], minor=True)
     axis.set_minor_formatter(mticker.NullFormatter()) # to make sure
 
-    # Fix alpha issues. Cannot set edgecolor to 'face' if alpha non-zero
-    # because blending will occur, will get colored lines instead of white ones;
-    # need to perform manual alpha blending.
-    # NOTE: For some reason cb solids uses listed colormap with always 1.0
-    # alpha, then alpha is applied after.
-    # See: https://stackoverflow.com/a/35672224/4970632
-    alpha = None
-    if cb.solids: # for e.g. contours with colormap, colorbar will just be lines
-        alpha = cb.solids.get_alpha()
-    if alpha is not None and alpha < 1:
-        # First get reference color
-        warnings.warn('Performing manual alpha-blending for colorbar solids.')
-        reference = mappable.axes.get_facecolor() # the axes facecolor
-        reference = [(1 - reference[-1]) + reference[-1]*color for color in reference[:3]]
-        # Next get solids
-        reference = [1,1,1] # override?
-        alpha = 1 - (1 - alpha)**2 # make more colorful
-        colors = cb.solids.get_cmap().colors
-        colors = np.array(colors)
-        for i in range(3): # Do not include the last column!
-            colors[:,i] = (reference[i] - alpha) + alpha*colors[:,i]
-        cmap = mcolors.ListedColormap(colors, name='colorbar-fix')
-        cb.solids.set_cmap(cmap)
-        cb.solids.set_alpha(1.0)
-
     # Outline
     kw_outline = {
         'edgecolor': _notNone(edgecolor, rc['axes.edgecolor']),
@@ -2697,7 +2677,38 @@ def colorbar_wrapper(self,
         cb.outline.update(kw_outline)
     if cb.dividers is not None:
         cb.dividers.update(kw_outline)
-        # cb.dividers.update(rc.category('grid', cache=False))
+
+    # Fix alpha-blending issues.
+    # Cannot set edgecolor to 'face' if alpha non-zero
+    # because blending will occur, will get colored lines instead of white ones;
+    # need to perform manual alpha blending.
+    # NOTE: For some reason cb solids uses listed colormap with always 1.0
+    # alpha, then alpha is applied after.
+    # See: https://stackoverflow.com/a/35672224/4970632
+    # alpha = None
+    # if cb.solids: # for e.g. contours with colormap, colorbar will just be lines
+    #     alpha = cb.solids.get_alpha()
+    # if alpha is not None and alpha < 1:
+    cmap = cb.cmap
+    if not cmap._isinit:
+        cmap._init()
+    if any(cmap._lut[:-1,3] < 1):
+        warnings.warn(f'Using manual alpha-blending for {cmap.name!r} colorbar solids.')
+        # Generate "secret" copy of the colormap!
+        lut = cmap._lut.copy()
+        cmap = mcolors.Colormap('_colorbar_fix', N=cmap.N)
+        cmap._isinit = True
+        cmap._init = (lambda : None)
+        # Manually fill lookup table with alpha-blended RGB colors!
+        for i in range(lut.shape[0] - 1):
+            alpha = lut[i,3]
+            lut[i,:3] =  (1 - alpha)*1 + alpha*lut[i,:3] # blend with *white*
+            lut[i,3] = 1
+        cmap._lut = lut
+        # Update colorbar
+        cb.cmap = cmap
+        cb.draw_all()
+
     # Label and tick label settings
     # WARNING: Must use colorbar set_label to set text, calling set_text on
     # the axis will do nothing!
@@ -2706,6 +2717,7 @@ def colorbar_wrapper(self,
     axis.label.update(kw_label)
     for obj in axis.get_ticklabels():
         obj.update(kw_ticklabels)
+
     # Ticks
     xy = axis.axis_name
     for which in ('minor','major'):
@@ -2716,13 +2728,13 @@ def colorbar_wrapper(self,
         if linewidth:
             kw['width'] = linewidth
         axis.set_tick_params(which=which, **kw)
-    # Fix pesky white lines between levels + misalignment
-    # Fix misalignment with border due to rasterized blocks
-    if cb.solids:
-        cb.solids.set_linewidth(0.4) # lowest size that works
-        cb.solids.set_edgecolor('face')
-        cb.solids.set_rasterized(False)
     axis.set_ticks_position(ticklocation)
+
+    # *Never* rasterize because it causes misalignment with border lines
+    if cb.solids:
+        cb.solids.set_rasterized(False)
+        cb.solids.set_linewidth(0.4)
+        cb.solids.set_edgecolor('face')
     return cb
 
 #------------------------------------------------------------------------------#

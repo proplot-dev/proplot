@@ -735,10 +735,10 @@ class FuncTransform(mtransforms.Transform):
             self._inverse = inverse
         else:
             raise ValueError('arguments to FuncTransform must be functions')
-    def transform_non_affine(self, values):
-        return self._forward(values)
     def inverted(self):
         return FuncTransform(self._inverse, self._forward)
+    def transform_non_affine(self, values):
+        return self._forward(values)
 
 #-----------------------------------------------------------------------------#
 # Custom scale classes
@@ -787,14 +787,14 @@ class PowerTransform(mtransforms.Transform):
         super().__init__()
         self.minpos = minpos
         self._power = power
+    def inverted(self):
+        return InvertedPowerTransform(self._power, self.minpos)
     def transform(self, a):
         aa = np.array(a)
         aa[aa <= self.minpos] = self.minpos # necessary
         return np.power(np.array(a), self._power)
     def transform_non_affine(self, a):
         return self.transform(a)
-    def inverted(self):
-        return InvertedPowerTransform(self._power, self.minpos)
 
 class InvertedPowerTransform(mtransforms.Transform):
     input_dims = 1
@@ -805,14 +805,14 @@ class InvertedPowerTransform(mtransforms.Transform):
         super().__init__()
         self.minpos = minpos
         self._power = power
+    def inverted(self):
+        return PowerTransform(self._power, self.minpos)
     def transform(self, a):
         aa = np.array(a)
         aa[aa <= self.minpos] = self.minpos # necessary
         return np.power(np.array(a), 1/self._power)
     def transform_non_affine(self, a):
         return self.transform(a)
-    def inverted(self):
-        return PowerTransform(self._power, self.minpos)
 
 class ExpScale(_ScaleBase, mscale.ScaleBase):
     """
@@ -877,12 +877,12 @@ class ExpTransform(mtransforms.Transform):
         self._a = a
         self._b = b
         self._c = c
+    def inverted(self):
+        return InvertedExpTransform(self._a, self._b, self._c, self.minpos)
     def transform(self, a):
         return self._c*np.power(self._a, self._b*np.array(a))
     def transform_non_affine(self, a):
         return self.transform(a)
-    def inverted(self):
-        return InvertedExpTransform(self._a, self._b, self._c, self.minpos)
 
 class InvertedExpTransform(mtransforms.Transform):
     # Inverse exponential transform
@@ -896,14 +896,14 @@ class InvertedExpTransform(mtransforms.Transform):
         self._a = a
         self._b = b
         self._c = c
+    def inverted(self):
+        return ExpTransform(self._a, self._b, self._c, self.minpos)
     def transform(self, a):
         aa = np.array(a)
         aa[aa <= self.minpos] = self.minpos # necessary
         return np.log(aa/self._c)/(self._b * np.log(self._a))
     def transform_non_affine(self, a):
         return self.transform(a)
-    def inverted(self):
-        return ExpTransform(self._a, self._b, self._c, self.minpos)
 
 class CutoffScale(_ScaleBase, mscale.ScaleBase):
     """Axis scale with arbitrary cutoffs that "accelerate" parts of the
@@ -970,6 +970,8 @@ class CutoffTransform(mtransforms.Transform):
         self._scale = scale
         self._lower = lower
         self._upper = upper
+    def inverted(self):
+        return InvertedCutoffTransform(self._scale, self._lower, self._upper)
     def transform(self, a):
         a = np.array(a) # very numpy array
         aa = a.copy()
@@ -995,8 +997,6 @@ class CutoffTransform(mtransforms.Transform):
         return aa
     def transform_non_affine(self, a):
         return self.transform(a)
-    def inverted(self):
-        return InvertedCutoffTransform(self._scale, self._lower, self._upper)
 
 class InvertedCutoffTransform(mtransforms.Transform):
     # Inverse of cutoff transform
@@ -1009,6 +1009,8 @@ class InvertedCutoffTransform(mtransforms.Transform):
         self._scale = scale
         self._lower = lower
         self._upper = upper
+    def inverted(self):
+        return CutoffTransform(self._scale, self._lower, self._upper)
     def transform(self, a):
         a = np.array(a)
         aa = a.copy()
@@ -1034,8 +1036,6 @@ class InvertedCutoffTransform(mtransforms.Transform):
         return aa
     def transform_non_affine(self, a):
         return self.transform(a)
-    def inverted(self):
-        return CutoffTransform(self._scale, self._lower, self._upper)
 
 class MercatorLatitudeScale(_ScaleBase, mscale.ScaleBase):
     r"""
@@ -1089,6 +1089,8 @@ class MercatorLatitudeTransform(mtransforms.Transform):
     def __init__(self, thresh):
         super().__init__()
         self._thresh = thresh
+    def inverted(self):
+        return InvertedMercatorLatitudeTransform(self._thresh)
     def transform_non_affine(self, a):
         # With safeguards
         # TODO: Can improve this?
@@ -1098,8 +1100,6 @@ class MercatorLatitudeTransform(mtransforms.Transform):
             return ma.log(np.abs(ma.tan(m) + 1/ma.cos(m)))
         else:
             return np.log(np.abs(np.tan(a) + 1/np.cos(a)))
-    def inverted(self):
-        return InvertedMercatorLatitudeTransform(self._thresh)
 
 class InvertedMercatorLatitudeTransform(mtransforms.Transform):
     # As above, but for the inverse transform
@@ -1110,11 +1110,11 @@ class InvertedMercatorLatitudeTransform(mtransforms.Transform):
     def __init__(self, thresh):
         super().__init__()
         self._thresh = thresh
+    def inverted(self):
+        return MercatorLatitudeTransform(self._thresh)
     def transform_non_affine(self, a):
         # m = ma.masked_where((a < -self._thresh) | (a > self._thresh), a)
         return np.rad2deg(np.arctan2(1, np.sinh(a))) # always assume in first/fourth quadrant, i.e. go from -pi/2 to pi/2
-    def inverted(self):
-        return MercatorLatitudeTransform(self._thresh)
 
 class SineLatitudeScale(_ScaleBase, mscale.ScaleBase):
     r"""
@@ -1158,6 +1158,8 @@ class SineLatitudeTransform(mtransforms.Transform):
     def __init__(self):
         # Initialize, declare attribute
         super().__init__()
+    def inverted(self):
+        return InvertedSineLatitudeTransform()
     def transform_non_affine(self, a):
         # With safeguards
         # TODO: Can improve this?
@@ -1168,8 +1170,6 @@ class SineLatitudeTransform(mtransforms.Transform):
             return ma.sin(np.deg2rad(aa))
         else:
             return np.sin(np.deg2rad(a))
-    def inverted(self):
-        return InvertedSineLatitudeTransform()
 
 class InvertedSineLatitudeTransform(mtransforms.Transform):
     # Inverse of SineLatitudeTransform
@@ -1179,13 +1179,13 @@ class InvertedSineLatitudeTransform(mtransforms.Transform):
     has_inverse = True
     def __init__(self):
         super().__init__()
+    def inverted(self):
+        return SineLatitudeTransform()
     def transform_non_affine(self, a):
         # Clipping, instead of setting invalid
         # NOTE: Using ma.arcsin below caused super weird errors, dun do that
         aa = a.copy()
         return np.rad2deg(np.arcsin(aa))
-    def inverted(self):
-        return SineLatitudeTransform()
 
 class InverseScale(_ScaleBase, mscale.ScaleBase):
     r"""
@@ -1229,6 +1229,8 @@ class InverseTransform(mtransforms.Transform):
     has_inverse = True
     def __init__(self):
         super().__init__()
+    def inverted(self):
+        return InverseTransform()
     def transform(self, a):
         a = np.array(a)
         # f = np.abs(a) <= self.minpos # attempt for negative-friendly
@@ -1237,8 +1239,6 @@ class InverseTransform(mtransforms.Transform):
             return 1.0/a
     def transform_non_affine(self, a):
         return self.transform(a)
-    def inverted(self):
-        return InverseTransform()
 
 #-----------------------------------------------------------------------------#
 # Declare dictionaries

@@ -501,6 +501,35 @@ class Axes(maxes.Axes):
         for pax in paxs:
             getattr(pax, '_share' + axis + '_setup')(share, level)
 
+    def _update_axislabels(self, x='x', **kwargs):
+        """Apply axis labels to the relevant shared axis. If spanning
+        labels are toggled this keeps the labels synced for all subplots in
+        the same row or column. Label positions will be adjusted at draw-time
+        with figure._align_axislabels."""
+        if x not in 'xy':
+            return
+        # Update label on this axes
+        axis = getattr(self, x + 'axis')
+        axis.label.update(kwargs)
+        kwargs.pop('color', None)
+
+        # Defer to parent (main) axes if possible, then get the axes
+        # shared by that parent
+        ax = self._panel_parent or self
+        ax = getattr(ax, '_share' + x) or ax
+
+        # Apply to spanning axes and their panels
+        axs = [ax]
+        if getattr(ax, '_span' + x + '_on'):
+            s = axis.get_label_position()[0]
+            if s in 'lb':
+                axs = ax._get_side_axes(s)
+        for ax in axs:
+            getattr(ax, x + 'axis').label.update(kwargs) # apply to main axes
+            pax = getattr(ax, '_share' + x)
+            if pax is not None: # apply to panel?
+                getattr(pax, x + 'axis').label.update(kwargs)
+
     def _update_title(self, obj, **kwargs):
         """Redraws title if updating with input keyword args failed."""
         # Try to just return updated object, redraw may be necessary
@@ -2272,7 +2301,7 @@ class XYAxes(Axes):
                     kw['color'] = color
                 kw.update(label_kw)
                 if kw: # NOTE: initially keep spanning labels off
-                    self.figure._update_axislabels(axis, **kw)
+                    self._update_axislabels(x, **kw)
 
                 # Major and minor locator
                 # WARNING: MultipleLocator fails sometimes, notably when doing

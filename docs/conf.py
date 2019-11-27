@@ -67,6 +67,10 @@ extlinks = {
     'pr': ('https://github.com/lukelbd/proplot/pull/%s', 'GH#'),
 }
 
+# Give *lots* of time for cell execution! The projection tables
+# in particular are massive.
+nbsphinx_timeout = 120
+
 # Do not run doctest tests, these are just to show syntax and expected
 # output may be graphical
 doctest_test_doctest_blocks = ''

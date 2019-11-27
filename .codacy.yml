@@ -1,8 +1,8 @@
 ---
 exclude_paths:
   - 'docs/**'
+  - 'proplot/tests/**'
   - 'proplot/fonts/**'
   - 'proplot/colors/**'
   - 'proplot/cycles/**'
   - 'proplot/cmaps/**'
-  - 'proplot/cmaps_rejects/**'

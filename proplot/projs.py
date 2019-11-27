@@ -127,7 +127,7 @@ def Proj(name, basemap=False, **kwargs):
     """
     # Basemap
     if basemap:
-        import mpl_toolkits.basemap as mbasemap # verify package is available
+        import mpl_toolkits.basemap as mbasemap
         name = BASEMAP_TRANSLATE.get(name, name)
         kwproj = basemap_rc.get(name, {})
         kwproj.update(kwargs)
@@ -142,7 +142,7 @@ def Proj(name, basemap=False, **kwargs):
                  (proj.urcrnry - proj.llcrnry)
     # Cartopy
     else:
-        import cartopy.crs as ccrs # verify package is available
+        import cartopy.crs as _
         kwargs = {CARTOPY_CRS_TRANSLATE.get(key, key): value for key,value in kwargs.items()}
         crs = cartopy_projs.get(name, None)
         if name == 'geos': # fix common mistake

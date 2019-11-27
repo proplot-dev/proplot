@@ -6,6 +6,7 @@
 # since otherwise setup.py will not think it is necessary to rebuild
 lxml>=4.0.0
 pyyaml>=5.0.0
+sphinx>=2.2.0
 numpy>=1.14
 ipython>=7.0.0
 ipykernel>=5.0.0

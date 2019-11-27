@@ -1,7 +1,7 @@
 .. image:: docs/_static/logo_long.png
    :width: 1000px
 
-|build-status| |coverage| |quality| |docs| |license| |pr-welcome| |donations|
+|build-status| |coverage| |quality| |docs| |license| |gitter| |pr-welcome| |donations|
 
 A comprehensive, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful, publication-quality graphics.
 
@@ -14,8 +14,6 @@ The documentation is `published on readthedocs <https://proplot.readthedocs.io>`
 Donations
 =========
 At well over 10,000 lines of code, this package took a huge amount of time to write and an equally huge amount of time to share online -- especially with my day job as a graduate student. If ProPlot has been useful for you, consider clicking the `"donate" badge <https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=VMJSNABTFF4AA&source=url>`__ and sending me a small donation.
-
-.. Links and badges
 
 .. |build-status| image:: https://img.shields.io/travis/lukelbd/proplot.svg?style=flat
     :alt: build status
@@ -36,6 +34,10 @@ At well over 10,000 lines of code, this package took a huge amount of time to wr
 .. |docs| image:: https://readthedocs.org/projects/proplot/badge/?version=latest
     :alt: docs
     :target: https://proplot.readthedocs.io/en/latest/?badge=latest
+
+.. |gitter| image:: https://badges.gitter.im/gitterHQ/gitter.svg
+   :alt: gitter
+   :target: https://gitter.im/pro-plot/community
 
 .. |pr-welcome| image:: https://img.shields.io/badge/PR-Welcome-%23FF8300.svg?
    :alt: PR welcome

@@ -156,8 +156,9 @@ def _get_config_paths():
         paths.insert(0, ipath)
     # Global configuration
     ipath = os.path.join(os.path.dirname(__file__), '.proplotrc')
-    if ipath not in paths:
-        paths.insert(0, ipath)
+    if ipath in paths:
+        paths.remove(ipath)
+    paths.insert(0, ipath)
     return paths
 
 def _get_synced_params(key=None, value=None):
@@ -692,11 +693,12 @@ def backend_setup(backend=None, format=None):
     """
     # Initialize with default 'inline' settings
     # Reset rc object afterwards
+    # TODO: Change nbsetup --> autobackend in add-subplot branch
     ipython = get_ipython()
     format = format or rcParamsShort['format']
-    backend = backend or (
-        'auto' if rcParamsShort.get('autobackend', True) else None
-        ) or rcParams['backend']
+    backend = backend or ('auto' if
+        rcParamsShort.get('autobackend', rcParamsShort.get('nbsetup', True))
+        else None) or rcParams['backend']
     if ipython is None or backend is None:
         return
     if backend[:2] == 'nb' or backend in ('MacOSX',):

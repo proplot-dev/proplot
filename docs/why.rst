@@ -170,7 +170,7 @@ In matplotlib, it is difficult to draw `~matplotlib.figure.Figure.colorbar`\ s a
 ProPlot introduces a *brand new engine* for drawing colorbars and legends along the outside of
 individual subplots and along contiguous subplots on the edge of the figure:
 
-* Passing ``loc='l'``, ``loc='r'``, ``loc='b'``, or ``loc='t'`` to `~proplot.axes.Axes` `~proplot.axes.Axes.colorbar` or `~proplot.axes.Axes` `~proplot.axes.Axes.legend` draws the colorbar or legend along outside of the axes.
+* Passing ``loc='l'``, ``loc='r'``, ``loc='b'``, or ``loc='t'`` to `~proplot.axes.Axes` `~proplot.axes.Axes.colorbar` or `~proplot.axes.Axes` `~proplot.axes.Axes.legend` draws the colorbar or legend along the outside of the axes.
 * Passing ``loc='l'``, ``loc='r'``, ``loc='b'``, or ``loc='t'`` to `~proplot.subplots.Figure` `~proplot.subplots.Figure.colorbar` and `~proplot.subplots.Figure.legend` draws the colorbar or legend along the edge of the figure, centered relative to the *subplot grid* rather than figure coordinates.
 * Outer colorbars and legends don't mess up the subplot layout or subplot aspect ratios, since `~proplot.subplots.FlexibleGridSpec` permits variable spacing between subplot rows and columns. This is critical e.g. if you have a colorbar between columns 1 and 2 but nothing between columns 2 and 3.
 * `~proplot.subplots.Figure` and `~proplot.axes.Axes` colorbar widths are specified in *physical* units rather than relative units. This makes colorbar thickness independent of figure size and easier to get just right.
@@ -279,6 +279,7 @@ to various plotting methods:
 * All 1d plotting methods accept a `cycle` keyword argument interpreted by `~proplot.styletools.Cycle`. See :ref:`Color cycles` for details.
 * All 2d plotting methods accept a `cmap` keyword argument interpreted by `~proplot.styletools.Colormap`. See :ref:`Colormaps` for details.
 * 1d coordinate vectors passed to 2d plotting methods can be graticule *edges* or *centers*. When edges are passed to `~matplotlib.axes.Axes.contour` or `~matplotlib.axes.Axes.contourf`, centers are calculated from the edges. When centers are passed to `~matplotlib.axes.Axes.pcolor` or `~matplotlib.axes.Axes.pcolormesh`, *edges* are estimated from the centers.
+* ProPlot fixes the annoying `white-lines-between-filled-contours <https://stackoverflow.com/q/8263769/4970632>`__, `white-lines-between-pcolor-rectangles <https://stackoverflow.com/q/27092991/4970632>`__, and `white-lines-between-colorbar-levels <https://stackoverflow.com/q/15003353/4970632>`__ issues for `~matplotlib.axes.Axes.contouf` plots, `~matplotlib.axes.Axes.imshow` plots, and `~proplot.subplots.Figure` and `~proplot.axes.Axes` colorbars.
 
 See :ref:`1d plotting` and :ref:`2d plotting`
 for details.

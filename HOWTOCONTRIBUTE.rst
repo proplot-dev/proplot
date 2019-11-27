@@ -3,11 +3,11 @@ Contribution guide
 ==================
 
 Contributions are highly welcomed and appreciated.  Every little help counts,
-so do not hesitate! You can make a high impact on ``proplot`` just by using it and
+so do not hesitate! You can make a high impact on ProPlot just by using it and
 reporting `issues <https://github.com/lukelbd/proplot/issues>`__.
 
 The following sections cover some general guidelines
-regarding development in ``proplot`` for maintainers and contributors.
+regarding development in ProPlot for maintainers and contributors.
 Nothing here is set in stone and can't be changed.
 Feel free to suggest improvements or changes in the workflow.
 
@@ -16,7 +16,7 @@ Feature requests and feedback
 
 We are eager to hear about your requests for new features and any suggestions about the
 API, infrastructure, and so on. Feel free to submit these as
-`issues <https://github.com/lukelbd/proplot/issues/new>`__ with the label "feature request."
+`issues <https://github.com/lukelbd/proplot/issues/new>`__ with the label "feature."
 
 Please make sure to explain in detail how the feature should work and keep the scope as
 narrow as possible. This will make it easier to implement in small PRs.
@@ -25,14 +25,14 @@ narrow as possible. This will make it easier to implement in small PRs.
 Report bugs
 ===========
 
-Report bugs for ``proplot`` in the `issue tracker <https://github.com/lukelbd/proplot/issues>`__
+Report bugs for ProPlot in the `issue tracker <https://github.com/lukelbd/proplot/issues>`__
 with the label "bug".
 
 If you are reporting a bug, please include:
 
 * Your operating system name and version.
 * Any details about your local setup that might be helpful in troubleshooting,
-  specifically the Python interpreter version, installed libraries, and ``proplot``
+  specifically the Python interpreter version, installed libraries, and ProPlot
   version.
 * Detailed steps to reproduce the bug.
 
@@ -50,7 +50,7 @@ Talk to developers to find out how you can fix specific bugs.
 Write documentation
 ===================
 
-`proplot` could always use better documentation. For small changes, you can edit documentation files directly in the GitHub web interface,
+ProPlot could always use better documentation. For small changes, you can edit documentation files directly in the GitHub web interface,
 without using a local copy.
 
 * The documentation is written in reStructuredText with `numpydoc <https://numpydoc.readthedocs.io/en/latest/>`__ style headers.
@@ -75,7 +75,7 @@ Preparing pull requests
 
 #. Fork the
    `proplot GitHub repository <https://github.com/lukelbd/proplot>`__.  It's
-   fine to use ``proplot`` as your fork repository name because it will live
+   fine to use ProPlot as your fork repository name because it will live
    under your user.
 
 #. Clone your fork locally using `git <https://git-scm.com/>`__, connect your repository
@@ -105,10 +105,13 @@ Preparing pull requests
    repo storage size and lets us use
    `nbsphinx <https://nbsphinx.readthedocs.io/en/0.4.3/>`__
    to test each ``git push``, since ``nbsphinx`` must then re-run every cell.
-   The ``git config`` command configures the filters referenced in
-   ``proplot/.gitattributes`` with the options declared in ``proplot/.gitconfig``.
 
-#. Make an editable install of proplot by running:
+   The ``git config`` command associates the filters declared in
+   ``proplot/.gitattributes`` with the operations described in ``proplot/.gitconfig``
+   by adding them to the *recognized* local configuration file
+   ``proplot/.git/config``.
+
+#. Make an editable install of ProPlot by running:
 
    .. code-block:: bash
 
@@ -127,19 +130,16 @@ Preparing pull requests
    The commit messages should be short, sweet, and use the imperative mood,
    e.g. "Fix bug" instead of "Fixed bug".
 
-#. Run all the tests. Now running tests is as simple as issuing this command:
-
-   .. code-block:: bash
-
-      coverage run --source proplot -m py.test
-
-   This command will run tests via the ``pytest`` tool against Python 3.7.
-
+   ..
+      #. Run all the tests. Now running tests is as simple as issuing this command:
+         .. code-block:: bash
+            coverage run --source proplot -m py.test
+         This command will run tests via the ``pytest`` tool against Python 3.7.
 
 #. Create a new changelog entry in ``CHANGELOG.rst``:
 
    - The entry should be entered as:
-     
+
       .. code-block::
 
          <description> (:pr:`<PR number>`) `<author name>`_
@@ -159,13 +159,13 @@ Preparing pull requests
       base: master
 
 Note that you can create the Pull Request while you're working on this. The PR will update
-as you add more commits. ``proplot`` developers and contributors can then review your code
+as you add more commits. ProPlot developers and contributors can then review your code
 and offer suggestions.
 
 Release procedure
 =================
 
-``proplot`` follows semantic versioning, e.g., v1.0.0. A major version causes incompatible
+ProPlot follows semantic versioning, e.g., v1.0.0. A major version causes incompatible
 API changes, a minor version adds functionality, and a patch covers bug fixes.
 
 #. Create a new branch ``release-vX.x.x`` with the version for the release.
