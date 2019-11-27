@@ -156,7 +156,7 @@ def _auto_label(data, axis=None, units=True):
         if axis is not None and data.ndim > axis:
             data = data.coords[data.dims[axis]]
         label = getattr(data, 'name', '') or ''
-        for key in ('long_name', 'standard_name'):
+        for key in ('standard_name', 'long_name'):
             label = data.attrs.get(key, label)
         if units:
             units = data.attrs.get('units', '')
