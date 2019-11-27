@@ -1,4 +1,4 @@
-.. image:: docs/_static/logo_long.png
+.. image:: https://github.com/lukelbd/proplot/blob/master/docs/_static/logo_long.png?raw=true
    :width: 1000px
 
 |build-status| |coverage| |quality| |docs| |license| |gitter| |pr-welcome|
