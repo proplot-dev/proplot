@@ -2644,12 +2644,14 @@ def _load_cmap_cycle(filename, cmap=False):
 @_timer
 def register_cmaps():
     """
-    Adds colormaps packaged with ProPlot or saved to the ``~/.proplot/cmaps``
+    Add colormaps packaged with ProPlot or saved to the ``~/.proplot/cmaps``
     folder. This is called on import. Maps are registered according to their
     filenames -- for example, ``name.xyz`` will be registered as ``'name'``.
-    Use `show_cmaps` to generate a table of the registered colormaps
 
-    Valid extensions are described in the below table.
+    This is called on import. Use `show_cmaps` to generate a table of the
+    registered colormaps
+
+    Valid extensions are listed in the below table.
 
     =====================  =============================================================================================================================================================================================================
     Extension              Description
@@ -2704,13 +2706,14 @@ def register_cmaps():
 @_timer
 def register_cycles():
     """
-    Adds color cycles packaged with ProPlot or saved to the ``~/.proplot/cycles``
+    Add color cycles packaged with ProPlot or saved to the ``~/.proplot/cycles``
     folder. This is called on import. Cycles are registered according to their
     filenames -- for example, ``name.hex`` will be registered under the name
     ``'name'`` as a `~matplotlib.colors.ListedColormap` map (see `Cycle` for
-    details). Use `show_cycles` to generate a table of the registered cycles.
+    details).
 
-    For valid file formats, see `register_cmaps`.
+    This is called on import. Use `show_cycles` to generate a table of the
+    registered cycles. For valid file formats, see `register_cmaps`.
     """
     # Empty out user-accessible cycle list
     cycles.clear()
@@ -2746,10 +2749,15 @@ def register_cycles():
 @_timer
 def register_colors(nmax=np.inf):
     """
-    Reads full database of crowd-sourced XKCD color names and official
-    Crayola color names, then filters them to be sufficiently "perceptually
-    distinct" in the HCL colorspace. This is called on import. Use `show_colors`
-    to generate a table of the resulting filtered colors.
+    Add color names packaged with ProPlot or saved to the ``~/.proplot/colors``
+    folder. ProPlot loads the crowd-sourced XKCD color
+    name database, Crayola crayon color database, and any user input
+    files, then filters them to be "perceptually distinct" in the HCL
+    colorspace. Files must just have one line per color in the format
+    ``name : hex``. Whitespace is ignored.
+
+    This is called on import. Use `show_colors` to generate a table of the
+    resulting colors.
     """
     # Reset native colors dictionary and add some default groups
     # Add in CSS4 so no surprises for user, but we will not encourage this
@@ -2781,7 +2789,7 @@ def register_colors(nmax=np.inf):
                 dict_ = {name:color for name,color in data}
                 colordict.update({'open': dict_})
                 continue
-            # Other color dictionaries are filtered, and their names are sanitized
+            # Remaining dicts are filtered and their names are sanitized
             i = 0
             dict_ = {}
             ihcls = []
@@ -2803,16 +2811,21 @@ def register_colors(nmax=np.inf):
 
     # Remove colors that are 'too similar' by rounding to the nearest n units
     # WARNING: Unique axis argument requires numpy version >=1.13
-    deleted = 0
-    hcls = hcls/np.array(scale)
-    hcls = np.round(hcls/FILTER_THRESH).astype(np.int64)
-    _, idxs, _ = np.unique(hcls, return_index=True, return_counts=True, axis=0) # get unique rows
-    for idx,(cat,name) in enumerate(pairs):
-        if name not in FILTER_ADD and idx not in idxs:
-            deleted += 1
-        else:
-            colordict[cat][name] = _colordict_unfiltered[cat][name]
-    # Add to colors mapping
+    if hcls.size > 0:
+        hcls = hcls/np.array(scale)
+        hcls = np.round(hcls/FILTER_THRESH).astype(np.int64)
+        deleted = 0
+        _, idxs, _ = np.unique(hcls,
+            return_index=True,
+            return_counts=True,
+            axis=0) # get unique rows
+        for idx,(cat,name) in enumerate(pairs):
+            if name not in FILTER_ADD and idx not in idxs:
+                deleted += 1
+            else:
+                colordict[cat][name] = _colordict_unfiltered[cat][name]
+
+    # Update the color converter
     for _,kw in colordict.items():
         mcolors.colorConverter.colors.update(kw)
 

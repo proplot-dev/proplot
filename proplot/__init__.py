@@ -4,10 +4,6 @@
 # Have sepearate files for various categories, so we don't end up with a
 # single enormous 12,000-line file
 #------------------------------------------------------------------------------#
-# Constants
-name = 'ProPlot'
-__version__ = '0.1'
-
 # Monkey patch warnings format for warnings issued by ProPlot, make sure to
 # detect if this is just a matplotlib warning traced back to ProPlot code
 # See: https://stackoverflow.com/a/2187390/4970632
@@ -55,46 +51,31 @@ if not _os.path.isfile(_rc_file):
             + '# See https://proplot.readthedocs.io/en/latest/rctools.html\n'
             + lines)
 
-# Initialize customization folders and files
-import os
-_rc_folder = os.path.join(os.path.expanduser('~'), '.proplot')
-if not os.path.isdir(_rc_folder):
-    os.mkdir(_rc_folder)
-for _rc_sub in ('cmaps', 'cycles', 'colors', 'fonts'):
-    _rc_sub = os.path.join(_rc_folder, _rc_sub)
-    if not os.path.isdir(_rc_sub):
-        os.mkdir(_rc_sub)
-_rc_file = os.path.join(os.path.expanduser('~'), '.proplotrc')
-_rc_file_default = os.path.join(os.path.dirname(__file__), '.proplotrc')
-if not os.path.isfile(_rc_file):
-    with open(_rc_file_default) as f:
-        lines = ''.join(
-            '#   ' + line if line.strip() and line[0] != '#' else line
-            for line in f.readlines()
-            )
-    with open(_rc_file, 'x') as f:
-        f.write('# User default settings\n'
-            + '# See https://proplot.readthedocs.io/en/latest/rctools.html\n'
-            + lines)
-
-# Import stuff
-# WARNING: Import order is meaningful! Loads modules that are dependencies
-# of other modules last, and loads styletools early so we can try to update
-# TTFPATH before the fontManager is loaded by other matplotlib modules
+# Import stuff in reverse dependency order
+# Make sure to load styletools early so we can try to update TTFPATH before
+# the fontManager is loaded by other modules (requiring a rebuild)
 from .utils import _benchmark
 with _benchmark('total time'):
     from .utils import *
-    with _benchmark('styletools'): # colors and fonts
+    with _benchmark('styletools'):
         from .styletools import *
-    with _benchmark('rctools'): # custom configuration implementation
+    with _benchmark('rctools'):
         from .rctools import *
-    with _benchmark('axistools'): # locators, normalizers, and formatters
+    with _benchmark('axistools'):
         from .axistools import *
-    with _benchmark('wrappers'): # wrappers
+    with _benchmark('wrappers'):
         from .wrappers import *
-    with _benchmark('projs'): # map projections and tools
+    with _benchmark('projs'):
         from .projs import *
-    with _benchmark('axes'): # axes classes
+    with _benchmark('axes'):
         from .axes import *
-    with _benchmark('subplots'): # subplots and figure class
+    with _benchmark('subplots'):
         from .subplots import *
+
+# SCM versioning
+import pkg_resources as _pkg
+name = 'ProPlot'
+try:
+    version = __version__ = _pkg.get_distribution(__name__).version
+except _pkg.DistributionNotFound:
+    version = __version__ = 'unknown'

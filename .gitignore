@@ -6,6 +6,7 @@
 # PyPi stuff
 build
 dist
+.eggs
 *.egg-info
 
 # Local docs builds

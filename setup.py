@@ -30,7 +30,6 @@ else:
 setup(
     url = 'https://lukelbd.github.io/proplot',
     name = 'proplot',
-    version = '1.0',
     author = 'Luke Davis',
     author_email = 'lukelbd@gmail.com',
     maintainer = 'Luke Davis',
@@ -42,11 +41,16 @@ setup(
         'Source Code': 'https://github.com/lukelbd/proplot'
         },
     packages = ['proplot'],
-    package_data = {'': ['cmaps/*', 'fonts/*', 'colors/*', '.proplotrc']},
-    include_package_data = True, # use MANIFEST.in
     classifiers = classifiers,
+    include_package_data = True, # normally uses MANIFEST.in but setuptools_scm auto-detects tracked files
     install_requires = install_req,
     license = license_text,
     description = 'A comprehensive wrapper for making beautiful, publication-quality graphics.',
     long_description = long_description,
+    use_scm_version={'version_scheme': 'post-release', 'local_scheme': 'dirty-tag'},
+    setup_requires=[
+        'setuptools_scm',
+        'setuptools>=30.3.0',
+        'setuptools_scm_git_archive',
+        ],
     )

@@ -165,7 +165,7 @@ and offer suggestions.
 Release procedure
 =================
 
-ProPlot follows semantic versioning, e.g., v1.0.0. A major version causes incompatible
+ProPlot will follow semantic versioning, e.g. v1.0.0. A major version causes incompatible
 API changes, a minor version adds functionality, and a patch covers bug fixes.
 
 #. Create a new branch ``release-vX.x.x`` with the version for the release.
@@ -175,6 +175,13 @@ API changes, a minor version adds functionality, and a patch covers bug fixes.
 #. Open a new pull request for this branch targeting ``master``.
 
 #. After all tests pass and the PR has been approved, merge the PR into ``master``.
+
+#. Pull down the new version of master:
+
+   .. code-block:: bash
+
+      git checkout master
+      git pull
 
 #. Tag a release and push to github:
 
@@ -187,7 +194,7 @@ API changes, a minor version adds functionality, and a patch covers bug fixes.
 
    .. code-block:: bash
 
-    git clean -xfd # remove any files not checked into git
+    git clean -xfd # remove files not checked into git
     python setup.py sdist bdist_wheel --universal # build package
     twine upload dist/* # register and push to pypi
 
