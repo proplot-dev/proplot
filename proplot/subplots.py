@@ -1,68 +1,7 @@
 #!/usr/bin/env python3
 """
-The starting point for creating custom ProPlot figures and axes.
-The `subplots` function is all you'll need to directly use here.
-It returns a `Figure` instance and an `axes_grid` container of
-`~proplot.axes.Axes` axes, whose positions are controlled by the
-`FlexibleGridSpec` class.
-
-.. raw:: html
-
-   <h1>Developer notes</h1>
-
-Matplotlib permits arbitrarily many gridspecs per figure, and
-encourages serial calls to `~matplotlib.figure.Figure.add_subplot`. By
-contrast, ProPlot permits only *one* `~matplotlib.gridspec.GridSpec` per
-figure, and forces the user to construct axes and figures with `subplots`. On
-the whole, matplotlib's approach is fairly cumbersome, but necessary owing to
-certain design limitations. The following describes how ProPlot addresses
-these limitations.
-
-* Matplotlib's `~matplotlib.gridspec.GridSpec` can only implement *uniform*
-  spacing between rows and columns of subplots. This seems to be the main
-  reason the `~matplotlib.gridspec.GridSpecFromSubplotSpec` class was
-  invented. To get variable spacing, users have to build their own nested
-  `~matplotlib.gridspec.GridSpec` objects and manually pass
-  `~matplotlib.gridspec.SubplotSpec` objects to
-  `~matplotlib.figure.Figure.add_subplot`.
-
-  ProPlot's `FlexibleGridSpec` class permits *variable* spacing between
-  rows and columns of subplots. This largely eliminates the need for
-  `~matplotlib.gridspec.GridSpecFromSubplotSpec`, and prevents users
-  from having to pass their own `~matplotlib.gridspec.SubplotSpec` objects
-  to `~matplotlib.figure.Figure.add_subplot`.
-
-* Matplotlib's `~matplotlib.pyplot.subplots` can only draw simple 2D
-  arrangements of subplots. To make complex arrangements, the user must
-  generate their own `~matplotlib.gridspec.SubplotSpec` instances, or serially
-  pass 3-digit integers or 3 positional arguments
-  `~matplotlib.figure.Figure.add_subplot`. And to simplify this workflow, the
-  gridspec geometry must be allowed to vary. For example, to draw a simple
-  grid with two subplots on the top and one subplot on the bottom, the user
-  can serially pass ``221``, ``222``, and ``212`` to
-  `~matplotlib.figure.Figure.add_subplot`. But if the gridspec geometry
-  was required to remain the same, instead of ``212``, the user would have to
-  use ``2, 2, (3,4)``, which is much more cumbersome. So, the figure
-  must support multiple gridspec geometries -- i.e. it must support multiple
-  gridspecs!
-
-  With ProPlot, users can build complex subplot grids using the ``array``
-  `subplots` argument. This means that serial calls to
-  `~matplotlib.figure.Figure.add_subplot` are no longer necessary, and we can
-  use just *one* gridspec for the whole figure without imposing any new
-  limitations. Among other things, this simplifies the "tight layout"
-  algorithm.
-
-
-Also note that ProPlot's `subplots` returns an `axes_grid` of axes, while
-matplotlib's `~matplotlib.pyplot.subplots` returns a 2D `~numpy.ndarray`,
-a 1D `~numpy.ndarray`, or the axes itself. `axes_grid` was invented in
-part because `subplots` can draw arbitrarily complex arrangements of
-subplots, not just simple grids. `axes_grid` is a `list` subclass supporting
-1D indexing (e.g. ``axs[0]``), but permits 2D indexing (e.g. ``axs[1,0]``)
-*just in case* the user *happened* to draw a clean 2D matrix of subplots.
-The `~axes_grid.__getattr__` override also means it no longer matters
-whether you are calling a method on an axes or a singleton `axes_grid` of axes.
+The starting point for creating custom ProPlot figures. Includes
+pyplot-inspired functions for creating figures and related classes.
 """
 # NOTE: Importing backend causes issues with sphinx, and anyway not sure it's
 # always included, so make it optional
@@ -75,9 +14,9 @@ import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
 import matplotlib.gridspec as mgridspec
 try:
-    import matplotlib.backends.backend_macosx as mbackend
+    from matplotlib.backends.backend_macosx import FigureCanvasMac
 except ImportError:
-    mbackend = None
+    FigureCanvasMac = type(None) # standin null type
 from .rctools import rc
 from .utils import _notNone, _counter, units
 from . import projs, axes
@@ -115,17 +54,17 @@ JOURNAL_SPECS = {
 # Miscellaneous stuff
 #-----------------------------------------------------------------------------#
 # Wrapper functions, so user doesn't have to import pyplot
-def close():
-    """Alias for ``matplotlib.pyplot.close('all')``, included so you don't have
-    to import `~matplotlib.pyplot`. Closes all figures stored
-    in memory."""
-    plt.close('all') # easy peasy
+def close(*args, **kwargs):
+    """Call `matplotlib.pyplot.close`. This is included so you don't have
+    to import `~matplotlib.pyplot`."""
+    plt.close(*args, **kwargs)
 
 def show():
-    """Alias for ``matplotlib.pyplot.show()``, included so you don't have
-    to import `~matplotlib.pyplot`. Note this command should be
-    unnecessary if you are doing inline iPython notebook plotting and ran the
-    `~proplot.notebook.nbsetup` command."""
+    """Call `matplotlib.pyplot.show`. This is included so you don't have
+    to import `~matplotlib.pyplot`. Note this command should *not be
+    necessary* if you are working in an iPython notebook and
+    :rcraw:`nbsetup` is set to ``True`` -- when you create a figure in a cell,
+    it will be automatically displayed."""
     plt.show()
 
 # Helper classes
@@ -161,13 +100,13 @@ class axes_grid(list):
         return 'axes_grid([' + ', '.join(str(ax) for ax in self) + '])'
 
     def __setitem__(self, key, value):
-        """Pseudo immutability, raises error."""
+        """Pseudo immutability. Raises error."""
         raise LookupError('axes_grid is immutable.')
 
     def __getitem__(self, key):
-        """If an integer is passed, the item is returned, and if a slice is passed,
-        an `axes_grid` of the items is returned. You can also use 2D indexing,
-        and the corresponding axes in the axes grid will be chosen.
+        """If an integer is passed, the item is returned, and if a slice is
+        passed, an `axes_grid` of the items is returned. You can also use 2D
+        indexing, and the corresponding axes in the axes grid will be chosen.
 
         Example
         -------
@@ -245,8 +184,7 @@ class axes_grid(list):
         returns a tuple of the results. This lets you call arbitrary methods
         on multiple axes at once! If the `axes_grid` has length ``1``,
         just returns the single result. If the attribute is *not callable*,
-        returns a tuple of identically named attributes for every object in
-        the list.
+        returns a tuple of attributes for every object in the list.
 
         Example
         -------
@@ -746,7 +684,7 @@ class Figure(mfigure.Figure):
             :rc:`subplots.axpad`.
         panelpad : float or str, optional
             Padding between subplots and axes panels, and between "stacked"
-            panels. Units are interpreted by `~proplot.utils.units`.Default is
+            panels. Units are interpreted by `~proplot.utils.units`. Default is
             :rc:`subplots.panelpad`.
         includepanels : bool, optional
             Whether to include panels when centering *x* axis labels,
@@ -771,6 +709,10 @@ class Figure(mfigure.Figure):
             Ignored, because ProPlot uses its own tight layout algorithm.
         **kwargs
             Passed to `matplotlib.figure.Figure`.
+
+        See also
+        --------
+        `~matplotlib.figure.Figure`
         """
         # Initialize first, because need to provide fully initialized figure
         # as argument to gridspec, because matplotlib tight_layout does that
@@ -819,7 +761,7 @@ class Figure(mfigure.Figure):
 
         # Get gridspec and subplotspec indices
         subplotspec = ax.get_subplotspec()
-        nrows, ncols, row1, row2, col1, col2 = subplotspec.get_active_rows_columns()
+        *_, row1, row2, col1, col2 = subplotspec.get_active_rows_columns()
         pgrid = getattr(ax, '_' + s + 'panels')
         offset = (len(pgrid)*bool(pgrid)) + 1
         if s in 'lr':
@@ -844,7 +786,7 @@ class Figure(mfigure.Figure):
         with self._unlock():
             pax = self.add_subplot(gridspec[idx1,idx2],
                 sharex=ax._sharex_level, sharey=ax._sharey_level,
-                projection='cartesian')
+                projection='xy')
         getattr(ax, '_' + s + 'panels').append(pax)
         pax._panel_side = side
         pax._panel_share = share
@@ -943,7 +885,7 @@ class Figure(mfigure.Figure):
         # Draw and setup panel
         with self._unlock():
             pax = self.add_subplot(gridspec[idx1,idx2],
-                projection='cartesian')
+                projection='xy')
         getattr(self, '_' + s + 'panels').append(pax)
         pax._panel_side = side
         pax._panel_share = False
@@ -1100,7 +1042,7 @@ class Figure(mfigure.Figure):
         # call, so cannot put this inside Axes draw
         tracker = {*()}
         for ax in self._axes_main:
-            if not isinstance(ax, axes.CartesianAxes):
+            if not isinstance(ax, axes.XYAxes):
                 continue
             for x,axis in zip('xy', (ax.xaxis, ax.yaxis)):
                 s = axis.get_label_position()[0] # top or bottom, left or right
@@ -1307,7 +1249,7 @@ class Figure(mfigure.Figure):
                 igridspec = subplotspec.get_gridspec()
                 topmost = subplotspec.get_topmost_subplotspec()
                 # Apply new subplotspec!
-                nrows, ncols, *coords = topmost.get_active_rows_columns()
+                _, _, *coords = topmost.get_active_rows_columns()
                 for i in range(4):
                     # if inserts[i] is not None and coords[i] >= inserts[i]:
                     if inserts[i] is not None and coords[i] >= inserts[i]:
@@ -1369,43 +1311,13 @@ class Figure(mfigure.Figure):
         edge = (min_ if s in 'lt' else max_)
         # Return axes on edge sorted by order of appearance
         axs = [ax for ax in self._axes_main if ax._range_gridspec(x)[idx] == edge]
-        ord = [ax._range_gridspec(y)[0] for ax in axs]
-        return [ax for _,ax in sorted(zip(ord, axs)) if ax.get_visible()]
+        ranges = [ax._range_gridspec(y)[0] for ax in axs]
+        return [ax for _,ax in sorted(zip(ranges, axs)) if ax.get_visible()]
 
     def _unlock(self):
         """Prevents warning message when adding subplots one-by-one, used
         internally."""
         return _unlocker(self)
-
-    def _update_axislabels(self, axis=None, **kwargs):
-        """Applies axis labels to the relevant shared axis. If spanning
-        labels are toggled, keeps the labels synced for all subplots in the
-        same row or column. Label positions will be adjusted at draw-time
-        with _align_axislabels."""
-        x = axis.axis_name
-        if x not in 'xy':
-            return
-        # Update label on this axes
-        axis.label.update(kwargs)
-        kwargs.pop('color', None)
-
-        # Defer to parent (main) axes if possible, then get the axes
-        # shared by that parent
-        ax = axis.axes
-        ax = ax._panel_parent or ax
-        ax = getattr(ax, '_share' + x) or ax
-
-        # Apply to spanning axes and their panels
-        axs = [ax]
-        if getattr(ax, '_span' + x + '_on'):
-            s = axis.get_label_position()[0]
-            if s in 'lb':
-                axs = ax._get_side_axes(s)
-        for ax in axs:
-            getattr(ax, x + 'axis').label.update(kwargs) # apply to main axes
-            pax = getattr(ax, '_share' + x)
-            if pax is not None: # apply to panel?
-                getattr(pax, x + 'axis').label.update(kwargs)
 
     def _update_suplabels(self, ax, side, labels, **kwargs):
         """Assigns side labels, updates label settings."""
@@ -1559,24 +1471,26 @@ class Figure(mfigure.Figure):
         """Before drawing the figure, applies "tight layout" and aspect
         ratio-conserving adjustments, and aligns row and column labels."""
         # Renderer fixes
-        # WARNING: *Critical* that draw() is invoked with the same renderer
-        # FigureCanvasAgg.print_png() uses to render the image. But print_png()
-        # calls get_renderer() after draw(), and get_renderer() returns a new
-        # renderer if it detects renderer dims and figure dims are out of sync!
-        # 1. Could use 'get_renderer' to update 'canvas.renderer' with the new
-        #    figure width and height, then use that renderer for rest of draw
-        #    This repair *breaks* just the *macosx* popup backend and not the
-        #    qt backend! So for now just employ simple exception if this is
-        #    macosx backend.
-        # 2. Could set '_lastKey' on canvas and 'width' and 'height' on renderer,
-        #    but then '_renderer' was initialized with wrong width and height,
-        #    which causes bugs. And _renderer was generated with cython code
         # WARNING: Vector graphic renderers are another ballgame, *impossible*
         # to consistently apply successive figure size changes. SVGRenderer
         # and PDFRenderer both query the size in inches before calling draw,
         # and cannot modify PDFPage or SVG renderer props inplace, so idea was
         # to override get_size_inches. But when get_size_inches is called, the
         # canvas has no renderer, so cannot apply tight layout yet!
+        # WARNING: Raster graphic renderers are fixable, but *critical* that
+        # draw() is invoked with the same renderer FigureCanvasAgg.print_png()
+        # uses to render the image. Since print_png() calls get_renderer()
+        # after draw(), and get_renderer() returns a new renderer if it detects
+        # renderer dims and figure dims are out of sync, need to fix this!
+        # 1. We use 'get_renderer' to update 'canvas.renderer' with the new
+        #    figure width and height, then use that renderer for rest of draw
+        #    This repair *breaks* just the *macosx* popup backend and not the
+        #    qt backend! So for now just employ simple exception if this is
+        #    macosx backend.
+        # 2. Could also set '_lastKey' on canvas and 'width' and 'height' on
+        #    renderer, but then '_renderer' was initialized with wrong width
+        #    and height, which causes bugs. And _renderer was generated with
+        #    cython code so not sure how to update the object manually.
         for ax in self._iter_axes():
             ax._draw_auto_legends_colorbars()
         self._adjust_aspect()
@@ -1586,8 +1500,8 @@ class Figure(mfigure.Figure):
             self._adjust_tight_layout(renderer)
         self._align_axislabels(True)
         canvas = getattr(self, 'canvas', None)
-        if hasattr(canvas, 'get_renderer') and (mbackend is None or
-            not isinstance(canvas, mbackend.FigureCanvasMac)):
+        if (hasattr(canvas, 'get_renderer')
+                and not isinstance(canvas, FigureCanvasMac)):
             renderer = canvas.get_renderer()
             canvas.renderer = renderer
         return super().draw(renderer)
@@ -1719,17 +1633,12 @@ def subplots(array=None, ncols=1, nrows=1,
     ):
     """
     Analogous to `matplotlib.pyplot.subplots`, creates a figure with a single
-    axes or arbitrary grids of axes, any of which can be map projections,
-    and optional "panels" along axes or figure edges.
-
-    The parameters are sorted into the following rough sections: subplot grid
-    specifications, figure and subplot sizes, axis sharing,
-    figure panels, axes panels, and map projections.
+    axes or arbitrary grids of axes, any of which can be map projections.
 
     Parameters
     ----------
-    array : array-like of int, optional
-        2-dimensional array specifying complex grid of subplots. Think of
+    array : 2D array-like of int, optional
+        Array specifying complex grid of subplots. Think of
         this array as a "picture" of your figure. For example, the array
         ``[[1, 1], [2, 3]]`` creates one long subplot in the top row, two
         smaller subplots in the bottom row. Integers must range from 1 to the
@@ -1812,7 +1721,7 @@ def subplots(array=None, ncols=1, nrows=1,
     sharex, sharey, share : {3, 2, 1, 0}, optional
         The "axis sharing level" for the *x* axis, *y* axis, or both axes.
         Default is ``3``. This can considerably redundancy in your figure.
-        Options are as follows:
+        The options are as follows:
 
         0. No axis sharing. Also sets the default `spanx` and `spany` values
            to ``False``.
@@ -1848,7 +1757,7 @@ def subplots(array=None, ncols=1, nrows=1,
           subplot in their `array` order.
         * If dict-like, keys are integers or tuple integers that indicate
           the projection to use for each subplot. If a key is not provided,
-          that subplot will be a `~proplot.axes.CartesianAxes`. For example,
+          that subplot will be a `~proplot.axes.XYAxes`. For example,
           in a 4-subplot figure, ``proj={2:'merc', (3,4):'stere'}``
           draws a Cartesian axes for the first subplot, a Mercator
           projection for the second subplot, and a Stereographic projection
@@ -1949,22 +1858,22 @@ def subplots(array=None, ncols=1, nrows=1,
     # Get basemap.Basemap or cartopy.crs.Projection instances for map
     proj = _notNone(projection, proj, None, names=('projection', 'proj'))
     proj_kw = _notNone(projection_kw, proj_kw, {}, names=('projection_kw', 'proj_kw'))
-    proj    = _axes_dict(naxs, proj, kw=False, default='cartesian')
+    proj    = _axes_dict(naxs, proj, kw=False, default='xy')
     proj_kw = _axes_dict(naxs, proj_kw, kw=True)
     basemap = _axes_dict(naxs, basemap, kw=False, default=False)
     axes_kw = {num:{} for num in range(1, naxs+1)}  # stores add_subplot arguments
     for num,name in proj.items():
-        # The default is CartesianAxes
-        if name is None or name == 'cartesian':
-            axes_kw[num]['projection'] = 'cartesian'
+        # The default is XYAxes
+        if name is None or name == 'xy':
+            axes_kw[num]['projection'] = 'xy'
         # Builtin matplotlib polar axes, just use my overridden version
         elif name == 'polar':
-            axes_kw[num]['projection'] = 'polar2'
+            axes_kw[num]['projection'] = 'polar'
             if num == ref:
                 aspect = 1
         # Custom Basemap and Cartopy axes
         else:
-            package = 'basemap' if basemap[num] else 'cartopy'
+            package = 'basemap' if basemap[num] else 'geo'
             obj, iaspect = projs.Proj(name, basemap=basemap[num], **proj_kw[num])
             if num == ref:
                 aspect = iaspect

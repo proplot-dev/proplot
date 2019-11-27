@@ -20,8 +20,8 @@ rgbcycle:     False
 color:        k
 alpha:        1
 facecolor:    w
-small:        8
-large:        9
+small:        9
+large:        10
 linewidth:    0.6
 margin:       0.0
 grid:         True

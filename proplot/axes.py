@@ -1,19 +1,6 @@
 #!/usr/bin/env python3
 """
-This page documents the axes subclasses returned by
-`~proplot.subplots.subplots` and their various method wrappers. You should
-start with the documentation on the following methods.
-
-* `Axes.format`
-* `Axes.context`
-* `CartesianAxes.format`
-* `ProjectionAxes.format`
-
-`Axes.format` and `Axes.context` are both called by
-`CartesianAxes.format` and `ProjectionAxes.format`. ``format`` is your
-**one-stop-shop for changing axes settings** like *x* and *y* axis limits,
-axis labels, tick locations, tick labels grid lines, axis scales, titles,
-a-b-c labelling, adding geographic features, and much more.
+The axes classes used for all ProPlot figures.
 """
 import numpy as np
 import warnings
@@ -24,6 +11,7 @@ import matplotlib.axes as maxes
 import matplotlib.dates as mdates
 import matplotlib.scale as mscale
 import matplotlib.text as mtext
+import matplotlib.path as mpath
 import matplotlib.ticker as mticker
 import matplotlib.patches as mpatches
 import matplotlib.gridspec as mgridspec
@@ -50,9 +38,9 @@ except ModuleNotFoundError:
 __all__ = [
     'Axes',
     'BasemapAxes',
-    'CartesianAxes',
-    'CartopyAxes',
-    'PolarAxes', 'ProjectionAxes',
+    'GeoAxes',
+    'PolarAxes', 'ProjAxes',
+    'XYAxes',
     ]
 
 # Translator for inset colorbars and legends
@@ -146,7 +134,10 @@ class Axes(maxes.Axes):
 
         See also
         --------
-        `~matplotlib.axes.Axes`, `CartesianAxes`, `PolarAxes`, `ProjectionAxes`
+        :py:obj:`matplotlib.axes.Axes`,
+        :py:obj:`XYAxes`,
+        :py:obj:`PolarAxes`,
+        :py:obj:`ProjAxes`
         """
         # Call parent
         super().__init__(*args, **kwargs)
@@ -510,6 +501,35 @@ class Axes(maxes.Axes):
         for pax in paxs:
             getattr(pax, '_share' + axis + '_setup')(share, level)
 
+    def _update_axislabels(self, x='x', **kwargs):
+        """Apply axis labels to the relevant shared axis. If spanning
+        labels are toggled this keeps the labels synced for all subplots in
+        the same row or column. Label positions will be adjusted at draw-time
+        with figure._align_axislabels."""
+        if x not in 'xy':
+            return
+        # Update label on this axes
+        axis = getattr(self, x + 'axis')
+        axis.label.update(kwargs)
+        kwargs.pop('color', None)
+
+        # Defer to parent (main) axes if possible, then get the axes
+        # shared by that parent
+        ax = self._panel_parent or self
+        ax = getattr(ax, '_share' + x) or ax
+
+        # Apply to spanning axes and their panels
+        axs = [ax]
+        if getattr(ax, '_span' + x + '_on'):
+            s = axis.get_label_position()[0]
+            if s in 'lb':
+                axs = ax._get_side_axes(s)
+        for ax in axs:
+            getattr(ax, x + 'axis').label.update(kwargs) # apply to main axes
+            pax = getattr(ax, '_share' + x)
+            if pax is not None: # apply to panel?
+                getattr(pax, x + 'axis').label.update(kwargs)
+
     def _update_title(self, obj, **kwargs):
         """Redraws title if updating with input keyword args failed."""
         # Try to just return updated object, redraw may be necessary
@@ -547,8 +567,8 @@ class Axes(maxes.Axes):
         **kwargs
             Any of three options:
 
-            * A keyword arg for `Axes.format`, `CartesianAxes.format`,
-              or `ProjectionAxes.format`.
+            * A keyword arg for `Axes.format`, `XYAxes.format`,
+              or `ProjAxes.format`.
             * A global "rc" keyword arg, like ``linewidth`` or ``color``.
             * A standard "rc" keyword arg **with the dots omitted**,
               like ``landcolor`` instead of ``land.color``.
@@ -597,7 +617,7 @@ class Axes(maxes.Axes):
         **kwargs,
         ):
         """
-        Called by `CartesianAxes.format`, `ProjectionAxes.format`, and
+        Called by `XYAxes.format`, `ProjAxes.format`, and
         `PolarAxes.format`. Formats the axes title(s), the a-b-c label, row
         and column labels, and the figure title.
 
@@ -668,6 +688,13 @@ class Axes(maxes.Axes):
         changed by the call to `~Axes.context`. They are documented here
         because it is extremely common to change them with `~Axes.format`.
         They also appear in the tables in the `~proplot.rctools` documention.
+
+        See also
+        --------
+        :py:obj:`Axes.context`,
+        :py:obj:`XYAxes.format`,
+        :py:obj:`ProjAxes.format`,
+        :py:obj:`PolarAxes.format`,
         """
         # Figure patch (for some reason needs to be re-asserted even if
         # declared before figure is drawn)
@@ -800,98 +827,6 @@ class Axes(maxes.Axes):
     def boxes(self, *args, **kwargs):
         """Alias for `~matplotlib.axes.Axes.boxplot`."""
         return self.boxplot(*args, **kwargs)
-
-    @_standardize_1d
-    @_cmap_changer
-    def cmapline(self, *args, values=None,
-        cmap=None, norm=None,
-        interp=0, **kwargs):
-        """
-        Invoked when you pass the `cmap` keyword argument to
-        `~matplotlib.axes.Axes.plot`. Draws a "colormap line",
-        i.e. a line whose color changes as a function of the parametric
-        coordinate ``values``. using the input colormap ``cmap``.
-
-        This is actually a collection of lines, added as a
-        `~matplotlib.collections.LineCollection` instance. See `this matplotlib example
-        <https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line.html>`__.
-
-        Parameters
-        ----------
-        *args : (y,) or (x,y)
-            The coordinates. If `x` is not provided, it is inferred from `y`.
-        cmap : colormap spec, optional
-            The colormap specifier, passed to `~proplot.styletools.Colormap`.
-        values : list of float
-            The parametric values used to map points on the line to colors
-            in the colormap.
-        norm : normalizer spec, optional
-            The normalizer, passed to `~proplot.styletools.Norm`.
-        interp : int, optional
-            Number of values between each line joint and each *halfway* point
-            between line joints to which you want to interpolate.
-        """
-        # First error check
-        # WARNING: So far this only works for 1D *x* and *y* coordinates. Cannot
-        # draw multiple colormap lines at once, unlike `~matplotlib.axes.Axes.plot`.
-        if values is None:
-            raise ValueError('Requires a "values" keyword arg.')
-        if len(args) not in (1,2):
-            raise ValueError(f'Requires 1-2 arguments, got {len(args)}.')
-        y = np.array(args[-1]).squeeze()
-        x = np.arange(y.shape[-1]) if len(args) == 1 else np.array(args[0]).squeeze()
-        values = np.array(values).squeeze()
-        if x.ndim != 1 or y.ndim != 1 or values.ndim != 1:
-            raise ValueError(f'x ({x.ndim}-d), y ({y.ndim}-d), and values ({values.ndim}-d) must be 1-dimensional.')
-        if len(x) != len(y) or len(x) != len(values) or len(y) != len(values):
-            raise ValueError(f'{len(x)} xs, {len(y)} ys, but {len(values)} colormap values.')
-
-        # Interpolate values to allow for smooth gradations between values
-        # (bins=False) or color switchover halfway between points (bins=True)
-        # Then optionally interpolate the corresponding colormap values
-        if interp > 0:
-            xorig, yorig, vorig = x, y, values
-            x, y, values = [], [], []
-            for j in range(xorig.shape[0]-1):
-                idx = (slice(None, -1) if j+1 < xorig.shape[0]-1 else slice(None))
-                x.extend(np.linspace(xorig[j], xorig[j+1], interp + 2)[idx].flat)
-                y.extend(np.linspace(yorig[j], yorig[j+1], interp + 2)[idx].flat)
-                values.extend(np.linspace(vorig[j], vorig[j+1], interp + 2)[idx].flat)
-            x, y, values = np.array(x), np.array(y), np.array(values)
-        coords = []
-        levels = utils.edges(values)
-        for j in range(y.shape[0]):
-            # Get x/y coordinates and values for points to the 'left' and
-            # 'right' of each joint
-            if j == 0:
-                xleft, yleft = [], []
-            else:
-                xleft = [(x[j-1] + x[j])/2, x[j]]
-                yleft = [(y[j-1] + y[j])/2, y[j]]
-            if j+1 == y.shape[0]:
-                xright, yright = [], []
-            else:
-                xleft  = xleft[:-1] # prevent repetition when joined with right
-                yleft  = yleft[:-1]
-                xright = [x[j], (x[j+1] + x[j])/2]
-                yright = [y[j], (y[j+1] + y[j])/2]
-            pleft  = np.stack((xleft,  yleft), axis=1)
-            pright = np.stack((xright, yright), axis=1)
-            coords.append(np.concatenate((pleft, pright), axis=0))
-
-        # Create LineCollection and update with values
-        hs = mcollections.LineCollection(np.array(coords), cmap=cmap, norm=norm,
-                linestyles='-', capstyle='butt', joinstyle='miter')
-        hs.set_array(np.array(values))
-        hs.update({key:value for key,value in kwargs.items() if key not in ('color',)})
-
-        # Add collection, with some custom attributes
-        self.add_collection(hs)
-        if self.get_autoscale_on() and self.ignore_existing_data_limits:
-            self.autoscale_view() # data limits not updated otherwise
-        hs.values = values
-        hs.levels = levels # needed for other functions some
-        return hs
 
     def colorbar(self, *args, loc=None, pad=None,
         length=None, width=None, space=None, frame=None, frameon=None,
@@ -1225,7 +1160,7 @@ class Axes(maxes.Axes):
         zoom=True, zoom_kw=None, **kwargs):
         """
         Like the builtin `~matplotlib.axes.Axes.inset_axes` method, but
-        draws an inset `CartesianAxes` axes and adds some options.
+        draws an inset `XYAxes` axes and adds some options.
 
         Parameters
         ----------
@@ -1251,7 +1186,7 @@ class Axes(maxes.Axes):
         Other parameters
         ----------------
         **kwargs
-            Passed to `CartesianAxes`.
+            Passed to `XYAxes`.
         """
         # Carbon copy with my custom axes
         if not transform:
@@ -1262,7 +1197,7 @@ class Axes(maxes.Axes):
         # This puts the rectangle into figure-relative coordinates.
         locator = self._make_inset_locator(bounds, transform)
         bb = locator(None, None)
-        ax = CartesianAxes(self.figure, bb.bounds, zorder=zorder, label=label, **kwargs)
+        ax = XYAxes(self.figure, bb.bounds, zorder=zorder, label=label, **kwargs)
         # The following locator lets the axes move if we used data coordinates,
         # is called by ax.apply_aspect()
         ax.set_axes_locator(locator)
@@ -1355,6 +1290,100 @@ class Axes(maxes.Axes):
             The panel axes.
         """
         return self.figure._add_axes_panel(self, side, **kwargs)
+
+    @_standardize_1d
+    @_cmap_changer
+    def parametric(self, *args, values=None,
+        cmap=None, norm=None,
+        interp=0, **kwargs):
+        """
+        Invoked when you pass the `cmap` keyword argument to
+        `~matplotlib.axes.Axes.plot`. Draws a "colormap line",
+        i.e. a line whose color changes as a function of the parametric
+        coordinate ``values``. using the input colormap ``cmap``.
+
+        This is actually a collection of lines, added as a
+        `~matplotlib.collections.LineCollection` instance. See `this matplotlib example
+        <https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line.html>`__.
+
+        Parameters
+        ----------
+        *args : (y,) or (x,y)
+            The coordinates. If `x` is not provided, it is inferred from `y`.
+        cmap : colormap spec, optional
+            The colormap specifier, passed to `~proplot.styletools.Colormap`.
+        values : list of float
+            The parametric values used to map points on the line to colors
+            in the colormap.
+        norm : normalizer spec, optional
+            The normalizer, passed to `~proplot.styletools.Norm`.
+        interp : int, optional
+            If greater than ``0``, we interpolate to additional points
+            between the `values` coordinates. The number corresponds to the
+            number of additional color levels between the line joints
+            and the halfway points between line joints.
+        """
+        # First error check
+        # WARNING: So far this only works for 1D *x* and *y* coordinates. Cannot
+        # draw multiple colormap lines at once, unlike `~matplotlib.axes.Axes.plot`.
+        if values is None:
+            raise ValueError('Requires a "values" keyword arg.')
+        if len(args) not in (1,2):
+            raise ValueError(f'Requires 1-2 arguments, got {len(args)}.')
+        y = np.array(args[-1]).squeeze()
+        x = np.arange(y.shape[-1]) if len(args) == 1 else np.array(args[0]).squeeze()
+        values = np.array(values).squeeze()
+        if x.ndim != 1 or y.ndim != 1 or values.ndim != 1:
+            raise ValueError(f'x ({x.ndim}-d), y ({y.ndim}-d), and values ({values.ndim}-d) must be 1-dimensional.')
+        if len(x) != len(y) or len(x) != len(values) or len(y) != len(values):
+            raise ValueError(f'{len(x)} xs, {len(y)} ys, but {len(values)} colormap values.')
+
+        # Interpolate values to allow for smooth gradations between values
+        # (bins=False) or color switchover halfway between points (bins=True)
+        # Then optionally interpolate the corresponding colormap values
+        if interp > 0:
+            xorig, yorig, vorig = x, y, values
+            x, y, values = [], [], []
+            for j in range(xorig.shape[0]-1):
+                idx = (slice(None, -1) if j+1 < xorig.shape[0]-1 else slice(None))
+                x.extend(np.linspace(xorig[j], xorig[j+1], interp + 2)[idx].flat)
+                y.extend(np.linspace(yorig[j], yorig[j+1], interp + 2)[idx].flat)
+                values.extend(np.linspace(vorig[j], vorig[j+1], interp + 2)[idx].flat)
+            x, y, values = np.array(x), np.array(y), np.array(values)
+        coords = []
+        levels = utils.edges(values)
+        for j in range(y.shape[0]):
+            # Get x/y coordinates and values for points to the 'left' and
+            # 'right' of each joint
+            if j == 0:
+                xleft, yleft = [], []
+            else:
+                xleft = [(x[j-1] + x[j])/2, x[j]]
+                yleft = [(y[j-1] + y[j])/2, y[j]]
+            if j+1 == y.shape[0]:
+                xright, yright = [], []
+            else:
+                xleft  = xleft[:-1] # prevent repetition when joined with right
+                yleft  = yleft[:-1]
+                xright = [x[j], (x[j+1] + x[j])/2]
+                yright = [y[j], (y[j+1] + y[j])/2]
+            pleft  = np.stack((xleft,  yleft), axis=1)
+            pright = np.stack((xright, yright), axis=1)
+            coords.append(np.concatenate((pleft, pright), axis=0))
+
+        # Create LineCollection and update with values
+        hs = mcollections.LineCollection(np.array(coords), cmap=cmap, norm=norm,
+                linestyles='-', capstyle='butt', joinstyle='miter')
+        hs.set_array(np.array(values))
+        hs.update({key:value for key,value in kwargs.items() if key not in ('color',)})
+
+        # Add collection, with some custom attributes
+        self.add_collection(hs)
+        if self.get_autoscale_on() and self.ignore_existing_data_limits:
+            self.autoscale_view() # data limits not updated otherwise
+        hs.values = values
+        hs.levels = levels # needed for other functions some
+        return hs
 
     def violins(self, *args, **kwargs):
         """Alias for `~matplotlib.axes.Axes.violinplot`."""
@@ -1522,7 +1551,7 @@ scale_kw : dict-like, optional
 """
 
 altxy_descrip = """
-Alias and more intuitive name for `~CartesianAxes.twin%(y)s`.
+Alias and more intuitive name for `~XYAxes.twin%(y)s`.
 The matplotlib `~matplotlib.axes.Axes.twiny` function
 generates two *x* axes with a shared ("twin") *y* axis.
 Enforces the following settings.
@@ -1624,12 +1653,12 @@ def _rcloc_to_stringloc(x, string): # figures out string location
         else:
             return 'neither'
 
-class CartesianAxes(Axes):
+class XYAxes(Axes):
     """
-    Axes subclass for ordinary Cartesian axes. Adds several new methods and
-    overrides existing ones.
+    Axes subclass for ordinary 2D cartesian coordinates. Adds several new
+    methods and overrides existing ones.
     """
-    name = 'cartesian'
+    name = 'xy'
     """The registered projection name."""
     def __init__(self, *args, **kwargs):
         """
@@ -1639,7 +1668,7 @@ class CartesianAxes(Axes):
         """
         # Impose default formatter
         super().__init__(*args, **kwargs)
-        formatter = axistools.Formatter('default')
+        formatter = axistools.Formatter('auto')
         self.xaxis.set_major_formatter(formatter)
         self.yaxis.set_major_formatter(formatter)
         self.xaxis.isDefault_majfmt = True
@@ -1788,7 +1817,7 @@ class CartesianAxes(Axes):
         this one will draw its properties."""
         # Call Axes method
         super()._sharex_setup(sharex, level) # sets up panels
-        if sharex in (None,self) or not isinstance(sharex, CartesianAxes):
+        if sharex in (None,self) or not isinstance(sharex, XYAxes):
             return
         # Builtin sharing features
         if level > 0:
@@ -1801,7 +1830,7 @@ class CartesianAxes(Axes):
         this one will draw its properties."""
         # Call Axes method
         super()._sharey_setup(sharey, level)
-        if sharey in (None,self) or not isinstance(sharey, CartesianAxes):
+        if sharey in (None,self) or not isinstance(sharey, XYAxes):
             return
         # Builtin features
         if level > 0:
@@ -1973,8 +2002,7 @@ class CartesianAxes(Axes):
 
         See also
         --------
-        `~proplot.axistools.Scale`, `~proplot.axistools.Locator`,
-        `~proplot.axistools.Formatter`
+        :py:obj:`Axes.format`, :py:obj:`Axes.context`
         """
         context, kwargs = self.context(**kwargs)
         with context:
@@ -2273,7 +2301,7 @@ class CartesianAxes(Axes):
                     kw['color'] = color
                 kw.update(label_kw)
                 if kw: # NOTE: initially keep spanning labels off
-                    self.figure._update_axislabels(axis, **kw)
+                    self._update_axislabels(x, **kw)
 
                 # Major and minor locator
                 # WARNING: MultipleLocator fails sometimes, notably when doing
@@ -2332,7 +2360,7 @@ class CartesianAxes(Axes):
             super().format(**kwargs)
 
     def altx(self, *args, **kwargs):
-        # Cannot wrap twiny() because we want to use CartesianAxes, not
+        # Cannot wrap twiny() because we want to use XYAxes, not
         # matplotlib Axes. Instead use hidden method _make_twin_axes.
         # See https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_subplots.py
         if self._altx_child:
@@ -2340,7 +2368,7 @@ class CartesianAxes(Axes):
         if self._altx_parent:
             raise RuntimeError('This *is* a twin axes!')
         with self.figure._unlock():
-            ax = self._make_twin_axes(sharey=self, projection='cartesian')
+            ax = self._make_twin_axes(sharey=self, projection='xy')
         ax.set_autoscaley_on(self.get_autoscaley_on()) # shared axes must have matching autoscale
         ax.grid(False)
         self._altx_child = ax
@@ -2356,7 +2384,7 @@ class CartesianAxes(Axes):
         if self._alty_parent:
             raise RuntimeError('This *is* a twin axes!')
         with self.figure._unlock():
-            ax = self._make_twin_axes(sharex=self, projection='cartesian')
+            ax = self._make_twin_axes(sharex=self, projection='xy')
         ax.set_autoscalex_on(self.get_autoscalex_on()) # shared axes must have matching autoscale
         ax.grid(False)
         self._alty_child = ax
@@ -2450,9 +2478,9 @@ class CartesianAxes(Axes):
         }
 
 class PolarAxes(Axes, mproj.PolarAxes):
-    """Intermediate class, mixes `ProjectionAxes` with
+    """Intermediate class, mixes `ProjAxes` with
     `~matplotlib.projections.polar.PolarAxes`."""
-    name = 'polar2'
+    name = 'polar'
     """The registered projection name."""
     def __init__(self, *args, **kwargs):
         """
@@ -2463,7 +2491,7 @@ class PolarAxes(Axes, mproj.PolarAxes):
         # Set tick length to zero so azimuthal labels are not too offset
         # Change default radial axis formatter but keep default theta one
         super().__init__(*args, **kwargs)
-        formatter = axistools.Formatter('default')
+        formatter = axistools.Formatter('auto')
         self.yaxis.set_major_formatter(formatter)
         self.yaxis.isDefault_majfmt = True
         for axis in (self.xaxis, self.yaxis):
@@ -2529,6 +2557,10 @@ class PolarAxes(Axes, mproj.PolarAxes):
             `~proplot.axistools.Formatter`.
         **kwargs
             Passed to `Axes.format` and `Axes.context`
+
+        See also
+        --------
+        :py:obj:`Axes.format`, :py:obj:`Axes.context`
         """
         context, kwargs = self.context(**kwargs)
         with context:
@@ -2672,17 +2704,27 @@ class PolarAxes(Axes, mproj.PolarAxes):
     phase_spectrum     = _disable(Axes.phase_spectrum)
     magnitude_spectrum = _disable(Axes.magnitude_spectrum)
 
-class ProjectionAxes(Axes):
-    """Intermediate class, shared by `CartopyAxes` and
+def _circle_path(N=100):
+    """Return a circle `~matplotlib.path.Path` used as the outline
+    for polar stereographic, azimuthal equidistant, and Lambert
+    conformal projections. This was developed from `this cartopy example
+    <https://scitools.org.uk/cartopy/docs/v0.15/examples/always_circular_stereo.html>`_."""
+    theta = np.linspace(0, 2*np.pi, N)
+    center, radius = [0.5, 0.5], 0.5
+    verts = np.vstack([np.sin(theta), np.cos(theta)]).T
+    return mpath.Path(verts * radius + center)
+
+class ProjAxes(Axes):
+    """Intermediate class, shared by `GeoAxes` and
     `BasemapAxes`. Disables methods that are inappropriate for map
-    projections and adds `ProjectionAxes.format`, so that arguments
-    passed to `Axes.format` are identical for `CartopyAxes`
+    projections and adds `ProjAxes.format`, so that arguments
+    passed to `Axes.format` are identical for `GeoAxes`
     and `BasemapAxes`."""
     def __init__(self, *args, **kwargs): # just to disable docstring inheritence
         """
         See also
         --------
-        `~proplot.subplots.subplots`, `Axes`, `CartopyAxes`, `BasemapAxes`
+        `~proplot.subplots.subplots`, `Axes`, `GeoAxes`, `BasemapAxes`
         """
         # Store props that let us dynamically and incrementally modify
         # line locations and settings like with Cartesian axes
@@ -2756,6 +2798,10 @@ class ProjectionAxes(Axes):
             ``patch_kw={'hatch':'xxx'}``.
         **kwargs
             Passed to `Axes.format` and `Axes.context`.
+
+        See also
+        --------
+        :py:obj:`Axes.format`, :py:obj:`Axes.context`
         """
         # Parse alternative keyword args
         # TODO: Why isn't default latmax 80 respected sometimes?
@@ -2776,7 +2822,7 @@ class ProjectionAxes(Axes):
             # NOTE: Cartopy seems to need longitude lines to fall within
             # -180 and 180. Also if they are not circular, latitude lines will
             # not extend across entire sphere.
-            if isinstance(self, CartopyAxes):
+            if isinstance(self, GeoAxes):
                 lon_0 = self.projection.proj4_params.get('lon_0', 0)
             else:
                 base = 5
@@ -2898,24 +2944,24 @@ class ProjectionAxes(Axes):
 # Cartopy takes advantage of documented feature where any class with method
 # named _as_mpl_axes can be passed as 'projection' object.
 # Feature documented here: https://matplotlib.org/devel/add_new_projection.html
-class CartopyAxes(ProjectionAxes, GeoAxes):
+class GeoAxes(ProjAxes, GeoAxes):
     """Axes subclass for plotting `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`__
     projections. Initializes the `cartopy.crs.Projection` instance, enforces
     `global extent <https://stackoverflow.com/a/48956844/4970632>`__ for most
     projections by default, and draws `circular boundaries <https://scitools.org.uk/cartopy/docs/latest/gallery/always_circular_stereo.html>`__
     around polar azimuthal, stereographic, and Gnomonic projections bounded at
     the equator by default."""
-    name = 'cartopy'
+    name = 'geo'
     """The registered projection name."""
     _n_points = 100 # number of points for drawing circle map boundary
     def __init__(self, *args, map_projection=None, **kwargs):
         """
         Parameters
         ----------
-        map_projection : `~mpl_toolkits.basemap.Basemap`
-            The `~mpl_toolkits.basemap.Basemap` instance.
+        map_projection : `~cartopy.crs.Projection`
+            The `~cartopy.crs.Projection` instance.
         *args, **kwargs
-            Passed to `Axes.__init__`.
+            Passed to `~cartopy.mpl.geoaxes.GeoAxes`.
 
         See also
         --------
@@ -2925,7 +2971,7 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
         # outline_patch needed by _format_apply are added before it is called.
         import cartopy.crs as ccrs
         if not isinstance(map_projection, ccrs.Projection):
-            raise ValueError('You must initialize CartopyAxes with map_projection=<cartopy.crs.Projection>.')
+            raise ValueError('You must initialize GeoAxes with map_projection=<cartopy.crs.Projection>.')
         super().__init__(*args, map_projection=map_projection, **kwargs)
 
         # Zero out ticks so gridlines are not offset
@@ -2942,7 +2988,7 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
             projs.NorthPolarLambertAzimuthalEqualArea,
             projs.SouthPolarAzimuthalEquidistant,
             projs.SouthPolarLambertAzimuthalEqualArea)):
-            self.set_boundary(projs.Circle(100), transform=self.transAxes)
+            self.set_boundary(_circle_path(100), transform=self.transAxes)
         else:
             self.set_global()
 
@@ -3227,7 +3273,7 @@ class CartopyAxes(ProjectionAxes, GeoAxes):
         set_xticks = _default_crs(GeoAxes.set_xticks)
         set_yticks = _default_crs(GeoAxes.set_yticks)
 
-class BasemapAxes(ProjectionAxes):
+class BasemapAxes(ProjAxes):
     """Axes subclass for plotting `~mpl_toolkits.basemap` projections. The
     `~mpl_toolkits.basemap.Basemap` projection instance is added as
     the `map_projection` attribute, but this is all abstracted away -- you can use
@@ -3250,7 +3296,7 @@ class BasemapAxes(ProjectionAxes):
         map_projection : `~mpl_toolkits.basemap.Basemap`
             The `~mpl_toolkits.basemap.Basemap` instance.
         **kwargs
-            Passed to `Axes.__init__`.
+            Passed to `Axes`.
 
         See also
         --------
@@ -3449,6 +3495,6 @@ class BasemapAxes(ProjectionAxes):
 
 # Register the projections
 mproj.register_projection(PolarAxes)
-mproj.register_projection(CartesianAxes)
+mproj.register_projection(XYAxes)
+mproj.register_projection(GeoAxes)
 mproj.register_projection(BasemapAxes)
-mproj.register_projection(CartopyAxes)

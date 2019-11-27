@@ -1,9 +1,0 @@
-# Install shinx extensions
-# WARNING: Pip install hangs onto older commits unless __version__ is changed
-# since otherwise setup.py will not think it is necessary to rebuild
-lxml>=4.0.0
-pyyaml>=5.0.0
-numpy>=1.14
-ipython>=7.0.0
-matplotlib>=3.0
-git+https://github.com/lukelbd/sphinx-automodapi@v0.6.proplot-mods

@@ -1,0 +1,22 @@
+# Hard requirements for notebook examples and documentation build
+# Proplot itself just needs matplotlib
+name: proplot-dev
+channels:
+  - conda-forge
+dependencies:
+  - pip
+  - numpy
+  - xarray
+  - pandas
+  - matplotlib
+  - cartopy
+  - basemap
+  - sphinx
+  - nbsphinx
+  - ipython
+  - ipykernel
+  - pip:
+    - lxml
+    - pyyaml
+    - sphinx_rtd_theme
+    - git+https://github.com/lukelbd/sphinx-automodapi@v0.6.proplot-mods
