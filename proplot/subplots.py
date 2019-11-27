@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 """
-The starting point for creating custom ProPlot figures and axes.
-The `subplots` function is all you'll need to directly use here.
-It returns a `Figure` instance and an `axes_grid` container of
-`~proplot.axes.Axes` axes, whose positions are controlled by the new
-`GridSpec` class.
+The starting point for creating custom ProPlot figures. Includes
+pyplot-inspired functions for creating figures and related classes.
 """
 # NOTE: Importing backend causes issues with sphinx, and anyway not sure it's
 # always included, so make it optional
@@ -19,9 +16,9 @@ import matplotlib.gridspec as mgridspec
 import matplotlib.pyplot as plt
 from numbers import Integral
 try:
-    import matplotlib.backends.backend_macosx as mbackend
+    from matplotlib.backends.backend_macosx import FigureCanvasMac
 except ImportError:
-    mbackend = None
+    FigureCanvasMac = type(None) # standin null type
 from . import projs, axes
 from .rctools import rc
 from .utils import _notNone, _counter, units
@@ -171,8 +168,21 @@ journal : str, optional
 docstring.interpd.update(figure_doc=_figure_doc)
 
 #-----------------------------------------------------------------------------#
-# Helper classes
+# Helper classes and misc funcs
 #-----------------------------------------------------------------------------#
+def close(*args, **kwargs):
+    """Call `matplotlib.pyplot.close`. This is included so you don't have
+    to import `~matplotlib.pyplot`."""
+    plt.close(*args, **kwargs)
+
+def show():
+    """Call `matplotlib.pyplot.show`. This is included so you don't have
+    to import `~matplotlib.pyplot`. Note this command should *not be
+    necessary* if you are working in an iPython notebook and
+    :rcraw:`nbsetup` is set to ``True`` -- when you create a figure in a cell,
+    it will be automatically displayed."""
+    plt.show()
+
 class axes_grid(list):
     """List subclass and pseudo-2D array that is used as a container for the
     list of axes returned by `subplots`, lists of figure panels, and lists of
@@ -205,7 +215,7 @@ class axes_grid(list):
         return 'axes_grid([' + ', '.join(str(ax) for ax in self) + '])'
 
     def __setitem__(self, key, value):
-        """Pseudo immutability, raises error."""
+        """Pseudo immutability. Raises error."""
         raise LookupError('axes_grid is immutable.')
 
     def __getitem__(self, key):
@@ -1106,7 +1116,7 @@ class GeometrySolver(object):
                 (alignx, aligny), (grpx, grpy)):
                 # Settings
                 if (not span and not align) or not isinstance(ax,
-                    axes.CartesianAxes) or axis in tracker:
+                    axes.XYAxes) or axis in tracker:
                     continue
                 s = axis.get_label_position()[0] # top or bottom, left or right
                 if s not in 'bl':
@@ -1980,24 +1990,26 @@ class Figure(mfigure.Figure):
         figure dimensions to account for axes; align row, column, and axis
         labels; and optionally apply "tight layout" gridspec adjustments."""
         # Renderer fixes
-        # WARNING: *Critical* that draw() is invoked with the same renderer
-        # FigureCanvasAgg.print_png() uses to render the image. But print_png()
-        # calls get_renderer() after draw(), and get_renderer() returns a new
-        # renderer if it detects renderer dims and figure dims are out of sync!
-        # 1. Could use 'get_renderer' to update 'canvas.renderer' with the new
-        #    figure width and height, then use that renderer for rest of draw
-        #    This repair *breaks* just the *macosx* popup backend and not the
-        #    qt backend! For now just issue warning if this is macosx backend.
-        # 2. Could set '_lastKey' on canvas and 'width' and 'height' on renderer,
-        #    but then '_renderer' was initialized with wrong width and height,
-        #    which causes bugs. And _renderer was generated with cython code
-        #    so hard to see how it can be modified.
         # WARNING: Vector graphic renderers are another ballgame, *impossible*
         # to consistently apply successive figure size changes. SVGRenderer
         # and PDFRenderer both query the size in inches before calling draw,
         # and cannot modify PDFPage or SVG renderer props inplace, so idea was
         # to override get_size_inches. But when get_size_inches is called, the
         # canvas has no renderer, so cannot apply tight layout yet!
+        # WARNING: Raster graphic renderers are fixable, but *critical* that
+        # draw() is invoked with the same renderer FigureCanvasAgg.print_png()
+        # uses to render the image. Since print_png() calls get_renderer()
+        # after draw(), and get_renderer() returns a new renderer if it detects
+        # renderer dims and figure dims are out of sync, need to fix this!
+        # 1. We use 'get_renderer' to update 'canvas.renderer' with the new
+        #    figure width and height, then use that renderer for rest of draw
+        #    This repair *breaks* just the *macosx* popup backend and not the
+        #    qt backend! So for now just employ simple exception if this is
+        #    macosx backend.
+        # 2. Could also set '_lastKey' on canvas and 'width' and 'height' on
+        #    renderer, but then '_renderer' was initialized with wrong width
+        #    and height, which causes bugs. And _renderer was generated with
+        #    cython code so not sure how to update the object manually.
         for ax in self._iter_axes():
             ax._draw_auto_legends_colorbars()
         self._fill_gridspecpars()
@@ -2008,8 +2020,8 @@ class Figure(mfigure.Figure):
             self._adjust_tight_layout(renderer)
         self._align_axislabels(True)
         canvas = getattr(self, 'canvas', None)
-        if hasattr(canvas, 'get_renderer') and (mbackend is None or
-            not isinstance(canvas, mbackend.FigureCanvasMac)):
+        if (hasattr(canvas, 'get_renderer')
+                and not isinstance(canvas, FigureCanvasMac)):
             renderer = canvas.get_renderer()
             canvas.renderer = renderer
         return super().draw(renderer)
@@ -2175,19 +2187,6 @@ def _journal_figsize(journal):
         width = value
     return width, height
 
-def close():
-    """Alias for ``matplotlib.pyplot.close('all')``. This is included so you
-    don't have to import `~matplotlib.pyplot`. Closes all figures stored
-    in memory."""
-    plt.close('all')
-
-def show():
-    """Alias for ``matplotlib.pyplot.show()``. This is included so you don't
-    have to import `~matplotlib.pyplot`. Note this command should be
-    unnecessary if you are doing inline iPython notebook plotting and ran the
-    `~proplot.notebook.notebook_setup` command."""
-    plt.show()
-
 # TODO: Figure out how to save subplots keyword args!
 @docstring.dedent_interpd
 def figure(**kwargs):
@@ -2210,14 +2209,14 @@ def subplots(array=None, ncols=1, nrows=1, ref=1, order='C',
     basemap=False, **kwargs
     ):
     """
-    Analogous to `matplotlib.pyplot.subplots`, create a figure with a single
-    axes or arbitrary grid of axes. The axes can use arbitrary map
+    Create a figure with a single axes or arbitrary grid of axes, analogous
+    to `matplotlib.pyplot.subplots`. The axes can have arbitrary map
     projections.
 
     Parameters
     ----------
-    array : array-like of int, optional
-        2-dimensional array specifying complex grid of subplots. Think of
+    array : 2D array-like of int, optional
+        Array specifying complex grid of subplots. Think of
         this array as a "picture" of your figure. For example, the array
         ``[[1, 1], [2, 3]]`` creates one long subplot in the top row, two
         smaller subplots in the bottom row. Integers must range from 1 to the
@@ -2311,7 +2310,7 @@ def subplots(array=None, ncols=1, nrows=1, ref=1, order='C',
     # Get basemap.Basemap or cartopy.crs.Projection instances for map
     proj = _notNone(projection, proj, None, names=('projection', 'proj'))
     proj_kw = _notNone(projection_kw, proj_kw, {}, names=('projection_kw', 'proj_kw'))
-    proj    = _axes_dict(naxs, proj, kw=False, default='cartesian')
+    proj    = _axes_dict(naxs, proj, kw=False, default='xy')
     proj_kw = _axes_dict(naxs, proj_kw, kw=True)
     basemap = _axes_dict(naxs, basemap, kw=False, default=False)
 

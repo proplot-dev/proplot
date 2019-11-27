@@ -13,7 +13,7 @@ try:
     from icecream import ic
 except ImportError:  # graceful fallback if IceCream isn't installed
     ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a) # noqa
-__all__ = ['arange', 'edges', 'units']
+__all__ = ['arange', 'edges', 'edges2d', 'units']
 
 NUMBER = re.compile('^([-+]?[0-9._]+([eE][-+]?[0-9_]+)?)(.*)$')
 BENCHMARK = False
@@ -116,20 +116,19 @@ def arange(min_, *args):
         max_ += step/2
     return np.arange(min_, max_, step)
 
-def edges(array, axis=-1):
+def edges(Z, axis=-1):
     """
     Calculate the approximate "edge" values along an arbitrary axis, given
     "center" values. This is used internally to calculate graticule edges when
     you supply centers to `~matplotlib.axes.Axes.pcolor` or
-    `~matplotlib.axes.Axes.pcolormesh`, and to calculate colorbar level edges
+    `~matplotlib.axes.Axes.pcolormesh` and to calculate colormap levels
     when you supply centers to any method wrapped by
     `~proplot.wrappers.cmap_changer`.
 
     Parameters
     ----------
-    array : array-like
-        Array of any shape or size. Generally, should be monotonically
-        increasing or decreasing along `axis`.
+    Z : array-like
+        Array of any shape or size.
     axis : int, optional
         The axis along which "edges" are calculated. The size of this axis
         will be augmented by one.
@@ -139,25 +138,47 @@ def edges(array, axis=-1):
     `~numpy.ndarray`
         Array of "edge" coordinates.
     """
-    # First permute
-    array = np.array(array)
-    array = np.swapaxes(array, axis, -1)
-    # Next operate
-    flip = False
-    idxs = [[0] for _ in range(array.ndim-1)] # must be list because we use it twice
-    if array[np.ix_(*idxs, [1])] < array[np.ix_(*idxs, [0])]:
-        flip = True
-        array = np.flip(array, axis=-1)
-    array = np.concatenate((
-        array[...,:1]  - (array[...,1]-array[...,0])/2,
-        (array[...,1:] + array[...,:-1])/2,
-        array[...,-1:] + (array[...,-1]-array[...,-2])/2,
+    Z = np.swapaxes(Z, axis, -1)
+    Z = np.concatenate((
+        Z[...,:1]  - (Z[...,1] - Z[...,0])/2,
+        (Z[...,1:] + Z[...,:-1])/2,
+        Z[...,-1:] + (Z[...,-1] - Z[...,-2])/2,
         ), axis=-1)
-    if flip:
-        array = np.flip(array, axis=-1)
-    # Permute back and return
-    array = np.swapaxes(array, axis, -1)
-    return array
+    return np.swapaxes(Z, axis, -1)
+
+def edges2d(Z):
+    """
+    Like `edges` but for 2d arrays.
+    The size of both axes are increased by one.
+
+    Parameters
+    ----------
+    Z : array-like
+        2-dimensional array.
+
+    Returns
+    -------
+    `~numpy.ndarray`
+        Array of "edge" coordinates.
+    """
+    Z = np.asarray(Z)
+    ny, nx = Z.shape
+    Zb = np.zeros((ny+1, nx+1))
+
+    # Inner
+    Zb[1:-1, 1:-1] = 0.25 * (Z[1:, 1:] + Z[:-1, 1:] +
+                             Z[1:, :-1] + Z[:-1, :-1])
+    # Lower and upper
+    Zb[0] += edges(1.5*Z[0] - 0.5*Z[1])
+    Zb[-1] += edges(1.5*Z[-1] - 0.5*Z[-2])
+
+    # Left and right
+    Zb[:, 0] += edges(1.5*Z[:, 0] - 0.5*Z[:, 1])
+    Zb[:, -1] += edges(1.5*Z[:, -1] - 0.5*Z[:, -2])
+
+    # Corners
+    Zb[[0, 0, -1, -1], [0, -1, -1, 0]] *= 0.5
+    return Zb
 
 def units(value, units='in', axes=None, figure=None, width=True):
     """

@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
+#------------------------------------------------------------------------------#
 # Import everything into the top-level module namespace
-# Package is broken up so we don't end up with a single enormous 12k line file
-name = 'ProPlot'
-__version__ = '1.0'
-
+#------------------------------------------------------------------------------#
 # Monkey patch warnings format for warnings issued by ProPlot, make sure to
 # detect if this is just a matplotlib warning traced back to ProPlot code by
 # testing whether the warned line contains "warnings.warn"
 # See: https://stackoverflow.com/a/2187390/4970632
 # For internal warning call signature: https://docs.python.org/3/library/warnings.html#warnings.showwarning
 # For default warning source code see: https://github.com/python/cpython/blob/master/Lib/warnings.py
-import warnings
+import warnings as _warnings
 def _warning_proplot(message, category, filename, lineno, line=None):
     if line is None:
         try:
@@ -25,27 +23,45 @@ def _warning_proplot(message, category, filename, lineno, line=None):
         if line is not None:
             string += ('\n' + line) # default behavior
     return (string + '\n') # must end in newline or not shown in IPython
-if warnings.formatwarning is not _warning_proplot:
-    warnings.formatwarning = _warning_proplot
+if _warnings.formatwarning is not _warning_proplot:
+    _warnings.formatwarning = _warning_proplot
 
-# Import stuff
-# WARNING: Import order is meaningful! Loads modules that are dependencies
-# of other modules last, and loads styletools early so we can try to update
-# TTFPATH before the fontManager is loaded by other matplotlib modules
-from .utils import *
+# Initialize customization folders
+import os as _os
+_rc_folder = _os.path.join(_os.path.expanduser('~'), '.proplot')
+if not _os.path.isdir(_rc_folder):
+    _os.mkdir(_rc_folder)
+for _rc_sub in ('cmaps', 'cycles', 'colors', 'fonts'):
+    _rc_sub = _os.path.join(_rc_folder, _rc_sub)
+    if not _os.path.isdir(_rc_sub):
+        _os.mkdir(_rc_sub)
+
+# Import stuff in reverse dependency order
+# Make sure to load styletools early so we can try to update TTFPATH before
+# the fontManager is loaded by other modules (requiring a rebuild)
 from .utils import _benchmark
 with _benchmark('total time'):
-    with _benchmark('styletools'): # colors and fonts
+    from .utils import *
+    with _benchmark('styletools'):
         from .styletools import *
-    with _benchmark('rctools'): # custom configuration implementation
+    with _benchmark('rctools'):
         from .rctools import *
-    with _benchmark('axistools'): # locators, normalizers, and formatters
+    with _benchmark('axistools'):
         from .axistools import *
-    with _benchmark('wrappers'): # wrappers
+    with _benchmark('wrappers'):
         from .wrappers import *
-    with _benchmark('projs'): # map projections and tools
+    with _benchmark('projs'):
         from .projs import *
-    with _benchmark('axes'): # axes classes
+    with _benchmark('axes'):
         from .axes import *
-    with _benchmark('subplots'): # subplots and figure class
+    with _benchmark('subplots'):
         from .subplots import *
+
+# SCM versioning
+import pkg_resources as _pkg
+name = 'proplot'
+try:
+    version = __version__ = _pkg.get_distribution(__name__).version
+except _pkg.DistributionNotFound:
+    version = __version__ = 'unknown'
+
