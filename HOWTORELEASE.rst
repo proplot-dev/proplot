@@ -34,5 +34,7 @@ API changes, a minor version adds functionality, and a patch covers bug fixes.
       rm -r dist build *.egg-info # remove previous build products
       python setup.py sdist bdist_wheel --universal # build package
       twine check dist/* # check that the README is valid
+      twine upload --repository-url https://test.pypi.org/legacy/ dist/* # test
+      pip install --index-url https://test.pypi.org/simple/ proplot # test
       twine upload dist/* # register and push to pypi
 
