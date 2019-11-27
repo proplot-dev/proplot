@@ -1135,8 +1135,9 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             kwargs[ikey] = gamma
         return self.updated(name, segmentdata, **kwargs)
 
-    def updated(self, name=None, segmentdata=None, N=None,
-        *, alpha=None, gamma=None, cyclic=None):
+    def updated(self, name=None, segmentdata=None, N=None, *,
+        alpha=None, gamma=None, cyclic=None,
+        ):
         """
         Returns a new colormap, with relevant properties copied from this one
         if they were not provided as keyword arguments.
@@ -1306,7 +1307,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         colors = self.colors[left:right]
         return self.updated(colors, name, len(colors))
 
-    def updated(self, colors=None, alpha=None, name=None, N=None):
+    def updated(self, colors=None, name=None, N=None, *, alpha=None):
         """
         Creates copy of the colormap.
 
@@ -1314,7 +1315,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         ----------
         name : str
             The colormap name. Default is ``self.name + '_updated'``.
-        alpha, colors, N : optional
+        colors, N, alpha : optional
             See `ListedColormap`. If not provided,
             these are copied from the current colormap.
         """
@@ -1610,9 +1611,10 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
             self._gamma2 = gamma2
         self._init()
 
-    def updated(self, name=None, segmentdata=None, N=None,
-        *, alpha=None, clip=None, cyclic=None,
-        gamma=None, gamma1=None, gamma2=None, space=None):
+    def updated(self, name=None, segmentdata=None, N=None, *,
+        alpha=None, gamma=None, cyclic=None,
+        clip=None, gamma1=None, gamma2=None, space=None,
+        ):
         """
         Returns a new colormap, with relevant properties copied from this one
         if they were not provided as keyword arguments.

@@ -1668,7 +1668,7 @@ class XYAxes(Axes):
         """
         # Impose default formatter
         super().__init__(*args, **kwargs)
-        formatter = axistools.Formatter('default')
+        formatter = axistools.Formatter('auto')
         self.xaxis.set_major_formatter(formatter)
         self.yaxis.set_major_formatter(formatter)
         self.xaxis.isDefault_majfmt = True
@@ -2491,7 +2491,7 @@ class PolarAxes(Axes, mproj.PolarAxes):
         # Set tick length to zero so azimuthal labels are not too offset
         # Change default radial axis formatter but keep default theta one
         super().__init__(*args, **kwargs)
-        formatter = axistools.Formatter('default')
+        formatter = axistools.Formatter('auto')
         self.yaxis.set_major_formatter(formatter)
         self.yaxis.isDefault_majfmt = True
         for axis in (self.xaxis, self.yaxis):

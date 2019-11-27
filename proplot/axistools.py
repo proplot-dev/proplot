@@ -165,35 +165,35 @@ def Formatter(formatter, *args, date=False, **kwargs):
         4. In all other cases, a dictionary lookup is performed
            (see below table).
 
-        =========================  ==============================================  ============================================================================================================================================
-        Key                        Class                                           Description
-        =========================  ==============================================  ============================================================================================================================================
-        ``'null'``, ``'none'``     `~matplotlib.ticker.NullFormatter`              No tick labels
-        ``'auto'``, ``'default'``  `AutoFormatter`                                 New default tick labels for axes
-        ``'simple'``               `SimpleFormatter`                               New default tick labels for e.g. contour labels
-        ``'frac'``                 `FracFormatter`                                 Rational fractions
-        ``'date'``                 `~matplotlib.dates.AutoDateFormatter`           Default tick labels for datetime axes
-        ``'datestr'``              `~matplotlib.dates.DateFormatter`               Date formatting with C-style ``string % format`` notation
-        ``'concise'``              `~matplotlib.dates.ConciseDateFormatter`        More concise default tick labels, introduced in `matplotlib 3.1 <https://matplotlib.org/3.1.0/users/whats_new.html#concisedateformatter>`__
-        ``'scalar'``               `~matplotlib.ticker.ScalarFormatter`            Old default tick labels for axes
-        ``'strmethod'``            `~matplotlib.ticker.StrMethodFormatter`         From the ``string.format`` method
-        ``'formatstr'``            `~matplotlib.ticker.FormatStrFormatter`         From C-style ``string % format`` notation
-        ``'log'``, ``'sci'``       `~matplotlib.ticker.LogFormatterSciNotation`    For log-scale axes with scientific notation
-        ``'math'``                 `~matplotlib.ticker.LogFormatterMathtext`       For log-scale axes with math text
-        ``'logit'``                `~matplotlib.ticker.LogitFormatter`             For logistic-scale axes
-        ``'eng'``                  `~matplotlib.ticker.EngFormatter`               Engineering notation
-        ``'percent'``              `~matplotlib.ticker.PercentFormatter`           Trailing percent sign
-        ``'fixed'``                `~matplotlib.ticker.FixedFormatter`             List of strings
-        ``'index'``                `~matplotlib.ticker.IndexFormatter`             List of strings corresponding to non-negative integer positions along the axis
-        ``'theta'``                `~matplotlib.projections.polar.ThetaFormatter`  Formats radians as degrees, with a degree symbol
-        ``'pi'``                   `FracFormatter` preset                          Fractions of :math:`\pi`
-        ``'e'``                    `FracFormatter` preset                          Fractions of *e*
-        ``'deg'``                  `SimpleFormatter` preset                        Trailing degree symbol
-        ``'deglon'``               `SimpleFormatter` preset                        Trailing degree symbol and cardinal "WE" indicator
-        ``'deglat'``               `SimpleFormatter` preset                        Trailing degree symbol and cardinal "SN" indicator
-        ``'lon'``                  `SimpleFormatter` preset                        Cardinal "WE" indicator
-        ``'lat'``                  `SimpleFormatter` preset                        Cardinal "SN" indicator
-        =========================  ==============================================  ============================================================================================================================================
+        ======================  ==============================================  ===================================================================================================================================
+        Key                     Class                                           Description
+        ======================  ==============================================  ===================================================================================================================================
+        ``'null'``, ``'none'``  `~matplotlib.ticker.NullFormatter`              No tick labels
+        ``'auto'``              `AutoFormatter`                                 New default tick labels for axes
+        ``'simple'``            `SimpleFormatter`                               New default tick labels for e.g. contour labels
+        ``'frac'``              `FracFormatter`                                 Rational fractions
+        ``'date'``              `~matplotlib.dates.AutoDateFormatter`           Default tick labels for datetime axes
+        ``'datestr'``           `~matplotlib.dates.DateFormatter`               Date formatting with C-style ``string % format`` notation
+        ``'concise'``           `~matplotlib.dates.ConciseDateFormatter`        More concise date labels introduced in `matplotlib 3.1 <https://matplotlib.org/3.1.0/users/whats_new.html#concisedateformatter>`__
+        ``'scalar'``            `~matplotlib.ticker.ScalarFormatter`            Old default tick labels for axes
+        ``'strmethod'``         `~matplotlib.ticker.StrMethodFormatter`         From the ``string.format`` method
+        ``'formatstr'``         `~matplotlib.ticker.FormatStrFormatter`         From C-style ``string % format`` notation
+        ``'log'``, ``'sci'``    `~matplotlib.ticker.LogFormatterSciNotation`    For log-scale axes with scientific notation
+        ``'math'``              `~matplotlib.ticker.LogFormatterMathtext`       For log-scale axes with math text
+        ``'logit'``             `~matplotlib.ticker.LogitFormatter`             For logistic-scale axes
+        ``'eng'``               `~matplotlib.ticker.EngFormatter`               Engineering notation
+        ``'percent'``           `~matplotlib.ticker.PercentFormatter`           Trailing percent sign
+        ``'fixed'``             `~matplotlib.ticker.FixedFormatter`             List of strings
+        ``'index'``             `~matplotlib.ticker.IndexFormatter`             List of strings corresponding to non-negative integer positions along the axis
+        ``'theta'``             `~matplotlib.projections.polar.ThetaFormatter`  Formats radians as degrees, with a degree symbol
+        ``'pi'``                `FracFormatter` preset                          Fractions of :math:`\pi`
+        ``'e'``                 `FracFormatter` preset                          Fractions of *e*
+        ``'deg'``               `SimpleFormatter` preset                        Trailing degree symbol
+        ``'deglon'``            `SimpleFormatter` preset                        Trailing degree symbol and cardinal "WE" indicator
+        ``'deglat'``            `SimpleFormatter` preset                        Trailing degree symbol and cardinal "SN" indicator
+        ``'lon'``               `SimpleFormatter` preset                        Cardinal "WE" indicator
+        ``'lat'``               `SimpleFormatter` preset                        Cardinal "SN" indicator
+        ======================  ==============================================  ===================================================================================================================================
 
     date : bool, optional
         Toggles the behavior when `formatter` contains a ``'%'`` sign (see
@@ -559,7 +559,7 @@ class _ScaleBase(object):
             axis.isDefault_majloc = True
         if not only_if_default or axis.isDefault_majfmt:
             axis.set_major_formatter(
-                getattr(self, '_major_formatter', None) or Formatter('default')
+                getattr(self, '_major_formatter', None) or Formatter('auto')
                 )
             axis.isDefault_majfmt = True
         if (not only_if_default or axis.isDefault_minloc
@@ -1277,7 +1277,6 @@ if hasattr(mpolar, 'ThetaLocator'):
     locators['theta'] = mpolar.ThetaLocator
 
 formatters = { # note default LogFormatter uses ugly e+00 notation
-    'default':    AutoFormatter,
     'auto':       AutoFormatter,
     'frac':       FracFormatter,
     'simple':     SimpleFormatter,

@@ -677,7 +677,7 @@ class rc_configurator(object):
             return self.__init__()
 
 @_timer
-def backend_setup(backend=None, format=None):
+def backend_setup(backend=None, fmt=None):
     """
     Set up the matplotlib backend for your iPython workspace.
 
@@ -686,7 +686,7 @@ def backend_setup(backend=None, format=None):
     backend : str, optional
         The backend name. Leave this empty or use ``'auto'`` to revert to the
         ProPlot defaults.
-    format : str, optional
+    fmt : str, optional
         The inline backend file format. Valid formats include ``'jpg'``,
         ``'png'``, ``'svg'``, ``'pdf'``, and ``'retina'``. This is ignored
         for non-inline backends.
@@ -694,8 +694,8 @@ def backend_setup(backend=None, format=None):
     # Initialize with default 'inline' settings
     # Reset rc object afterwards
     # TODO: Change nbsetup --> autobackend in add-subplot branch
+    fmt = fmt or rcParamsShort['format']
     ipython = get_ipython()
-    format = format or rcParamsShort['format']
     backend = backend or ('auto' if
         rcParamsShort.get('autobackend', rcParamsShort.get('nbsetup', True))
         else None) or rcParams['backend']
@@ -721,7 +721,7 @@ def backend_setup(backend=None, format=None):
 
     # Configure inline backend no matter what type of session this is
     # Should be silently ignored for terminal ipython sessions
-    ipython.magic("config InlineBackend.figure_formats = ['" + format + "']")
+    ipython.magic("config InlineBackend.figure_formats = ['" + fmt + "']")
     ipython.magic("config InlineBackend.rc = {}") # no notebook-specific overrides
     ipython.magic("config InlineBackend.close_figures = True") # memory issues
     ipython.magic("config InlineBackend.print_figure_kwargs = {'bbox_inches':None}") # use ProPlot tight layout
