@@ -17,9 +17,9 @@ classifiers = [
 
 if exists('README.rst'): # when does this not exist?
     with open('README.rst') as f:
-        long_description = f.readlines()
+        long_description = f.read()
 else:
-    long_description = []
+    long_description = ''
 
 setup(
     url = 'https://lukelbd.github.io/proplot',
