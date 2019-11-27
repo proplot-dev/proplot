@@ -1,17 +1,20 @@
 # Requirements for building documentation
+# No versions required because they are all loaded from scratch
 # Ipykernel and ipython are for nbsphinx and ipython directives
 # Automodapi is a fork that changes several features
 # See: https://github.com/lukelbd/sphinx-automodapi/tree/proplot-mods
-# Note that pip install hangs onto older commits unless __version__ is changed
-# since otherwise setup.py will not think it is necessary to rebuild
-lxml>=4.0.0
-pyyaml>=5.0.0
-sphinx>=2.2.0
-numpy>=1.14
-ipython>=7.0.0
-ipykernel>=5.0.0
-sphinx>=2.2.0
-nbsphinx>=0.4.0
-matplotlib>=3.0
-sphinx_rtd_theme>=0.4.0
+numpy
+xarray
+pandas
+matplotlib
+pyproj
+cartopy
+basemap
+lxml
+pyyaml
+sphinx
+nbsphinx
+ipython
+ipykernel
+sphinx_rtd_theme
 git+https://github.com/lukelbd/sphinx-automodapi@v0.6.proplot-mods

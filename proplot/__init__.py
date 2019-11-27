@@ -74,7 +74,7 @@ with _benchmark('total time'):
 
 # SCM versioning
 import pkg_resources as _pkg
-name = 'ProPlot'
+name = 'proplot'
 try:
     version = __version__ = _pkg.get_distribution(__name__).version
 except _pkg.DistributionNotFound:
