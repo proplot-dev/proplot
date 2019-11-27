@@ -11,12 +11,11 @@ dependencies:
   - matplotlib
   - cartopy
   - basemap
-  - sphinx
-  - nbsphinx
-  - ipython
-  - ipykernel
   - pip:
     - lxml
     - pyyaml
+    - sphinx
+    - nbsphinx
+    - ipykernel
     - sphinx_rtd_theme
     - git+https://github.com/lukelbd/sphinx-automodapi@v0.6.proplot-mods
