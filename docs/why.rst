@@ -429,9 +429,9 @@ ProPlot introduces the physical units engine `~proplot.utils.units`
 for interpreting `figsize`, `width`, `height`, `axwidth`, `axheight`,
 `left`, `right`, `top`, `bottom`, `wspace`, `hspace`, and arguments
 in a few other places. Acceptable units include inches, centimeters,
-millimeters, `points <https://en.wikipedia.org/wiki/Point_(typography)>`__,
-pixels, em-heights, and light years (because
-why not?). Em-heights are particularly useful, as labels already
+millimeters, pixels, `points <https://en.wikipedia.org/wiki/Point_(typography)>`__,
+`picas <https://en.wikipedia.org/wiki/Pica_(typography)>`__, `em-heights <https://en.wikipedia.org/wiki/Em_(typography)>`__, and `light years <https://en.wikipedia.org/wiki/Light-year>`__ (because why not?).
+Em-heights are particularly useful, as labels already
 present can be useful *rulers* for figuring out the amount
 of space needed.
 
