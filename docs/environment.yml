@@ -1,5 +1,6 @@
 # Hard requirements for notebook examples and documentation build
 # Proplot itself just needs matplotlib
+# Try to pip install stuff as it is lighter workload
 name: proplot-dev
 channels:
   - conda-forge
@@ -15,6 +16,8 @@ dependencies:
     - lxml
     - pyyaml
     - sphinx
+    - pandoc
+    - nbconvert
     - nbsphinx
     - ipykernel
     - sphinx_rtd_theme
