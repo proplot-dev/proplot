@@ -48,28 +48,31 @@ At well over 10,000 lines of code, this package took a huge amount of time to wr
    :target: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=VMJSNABTFF4AA&source=url
 
 ..
-.. |hits| image:: http://hits.dwyl.io/lukelbd/lukelbd/proplot.svg
+   |hits| image:: http://hits.dwyl.io/lukelbd/lukelbd/proplot.svg
    :alt: hits
    :target: http://hits.dwyl.io/lukelbd/lukelbd/proplot
 
 ..
-.. |pypi| image:: http://img.shields.io/pypi/v/proplot.svg?text=version
+   |pypi| image:: http://img.shields.io/pypi/v/proplot.svg?text=version
     :target: https://pypi.org/project/proplot/
     :alt: Latest release
 
 ..
-.. |contributions| image:: https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat
+   |contributions| image:: https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat
    :alt: contributions
    :target: https://github.com/lukelbd/issues
 
 ..
-.. |issues| image:: https://img.shields.io/github/issues/lukelbd/proplot.svg
+   |issues| image:: https://img.shields.io/github/issues/lukelbd/proplot.svg
    :alt: issues
    :target: https://github.com/lukelbd/issues
 
-.. Sphinx is used following this guide (less traditional approach):
+..
+   Sphinx is used following this guide (less traditional approach):
    https://daler.github.io/sphinxdoc-test/includeme.html
-.. Docstrings formatted according to:
+
+..
+   Docstrings formatted according to:
    numpy guide:      https://numpydoc.readthedocs.io/en/latest/format.html
    matplotlib guide: https://matplotlib.org/devel/documenting_mpl.html
 

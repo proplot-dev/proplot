@@ -16,13 +16,13 @@ classifiers = [
     ]
 
 if exists('README.rst'): # when does this not exist?
-    with open('README.rst') as f:
+    with open('README.rst', encoding='utf-8') as f:
         long_description = f.read()
 else:
     long_description = ''
 
 if exists('LICENSE.txt'):
-    with open('LICENSE.txt') as f:
+    with open('LICENSE.txt', encoding='utf-8') as f:
         license_text = f.read()
 else:
     license_text = ''

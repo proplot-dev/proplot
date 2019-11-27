@@ -31,6 +31,7 @@ API changes, a minor version adds functionality, and a patch covers bug fixes.
 
    .. code-block:: bash
 
+      rm -r dist build *.egg-info # old build products
       python setup.py sdist bdist_wheel --universal # build package
       twine upload dist/* # register and push to pypi
 
