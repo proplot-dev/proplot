@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """
-Imported by `~proplot.axes`, declares wrappers for various plotting functions.
+Plotting wrappers applied to various `~proplot.axes.Axes` plotting methods.
+In a future version these features will be integrated more closely with the
+individual plotting methods and documented on the plotting methods themselves,
+but for now they are documented separately.
 """
 import sys
 import numpy as np
@@ -45,7 +48,7 @@ STYLE_ARGS_TRANSLATE = {
     'contour':    {'colors':'colors', 'linewidths':'linewidths', 'linestyles':'linestyles'},
     'hexbin':     {'colors':'edgecolors', 'linewidths':'linewidths'},
     'tricontour': {'colors':'colors', 'linewidths':'linewidths', 'linestyles':'linestyles'},
-    'cmapline':   {'colors':'color',  'linewidths':'linewidth', 'linestyles':'linestyle'},
+    'parametric': {'colors':'color',  'linewidths':'linewidth', 'linestyles':'linestyle'},
     'pcolor':     {'colors':'edgecolors', 'linewidths':'linewidth', 'linestyles':'linestyle'},
     'tripcolor':  {'colors':'edgecolors', 'linewidths':'linewidth', 'linestyles':'linestyle'},
     'pcolormesh': {'colors':'edgecolors', 'linewidths':'linewidth', 'linestyles':'linestyle'},
@@ -66,7 +69,7 @@ def default_latlon(self, func, *args, latlon=True, **kwargs):
 
 def default_transform(self, func, *args, transform=None, **kwargs):
     """
-    Wraps %(methods)s for `~proplot.axes.CartopyAxes`.
+    Wraps %(methods)s for `~proplot.axes.GeoAxes`.
 
     With the default `~cartopy.mpl.geoaxes.GeoAxes` API, you need to pass
     ``transform=cartopy.crs.PlateCarree()`` if your data coordinates are
@@ -83,7 +86,7 @@ def default_transform(self, func, *args, transform=None, **kwargs):
 
 def default_crs(self, func, *args, crs=None, **kwargs):
     """
-    Wraps %(methods)s for `~proplot.axes.CartopyAxes` and fixes a
+    Wraps %(methods)s for `~proplot.axes.GeoAxes` and fixes a
     `~cartopy.mpl.geoaxes.GeoAxes.set_extent` bug associated with tight
     bounding boxes.
 
@@ -143,7 +146,7 @@ def _auto_label(data, axis=None, units=True):
         if axis is not None and data.ndim > axis:
             data = data.coords[data.dims[axis]]
         label = getattr(data, 'name', '') or ''
-        for key in ('long_name', 'standard_name'):
+        for key in ('standard_name', 'long_name'):
             label = data.attrs.get(key, label)
         if units:
             units = data.attrs.get('units', '')
@@ -281,8 +284,8 @@ docstring.interpd.update(standardize_1d_kwargs=standardize_1d_kwargs)
 #-----------------------------------------------------------------------------#
 # NOTE: Why are projection grid fixes in standardize_2d, and not in their
 # own wrappers? Because grid fixes must come *after* automatic formatting,
-# which means we'd have to apply these wrappers separately on CartesianAxes,
-# BasemapAxes, CartopyAxes, and PolarAxes. Would be super redundant.
+# which means we'd have to apply these wrappers separately on XYAxes,
+# BasemapAxes, GeoAxes, and PolarAxes. Would be super redundant.
 def _interp_poles(y, Z):
     """Adds data points on the poles as the average of highest latitude data."""
     # Get means
@@ -440,6 +443,13 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
                 if all(z.ndim == 1 and z.size > 1 and z.dtype != 'object' for z in (x,y)):
                     x = utils.edges(x)
                     y = utils.edges(y)
+                else:
+                    if (x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1 and
+                            x.dtype != 'object'):
+                        x = utils.edges2d(x)
+                    if (y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1 and
+                            y.dtype != 'object'):
+                        y = utils.edges2d(y)
             elif Z.shape[1] != xlen-1 or Z.shape[0] != ylen-1:
                 raise ValueError(f'Input shapes x {x.shape} and y {y.shape} must match Z centers {Z.shape} or Z borders {tuple(i+1 for i in Z.shape)}.')
         # Optionally re-order
@@ -458,10 +468,19 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
         for Z in Zs:
             if Z.ndim != 2:
                 raise ValueError(f'Input arrays must be 2D, instead got shape {Z.shape}.')
-            elif Z.shape[1] == xlen-1 and Z.shape[0] == ylen-1 and x.ndim == 1 and y.ndim == 1:
+            elif Z.shape[1] == xlen-1 and Z.shape[0] == ylen-1:
                 if all(z.ndim == 1 and z.size > 1 and z.dtype != 'object' for z in (x,y)):
                     x = (x[1:] + x[:-1])/2
                     y = (y[1:] + y[:-1])/2
+                else:
+                    if (x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1 and
+                            x.dtype != 'object'):
+                        x = 0.25 * (x[:-1, :-1] + x[:-1, 1:] +
+                                    x[1:, :-1] + x[1:, 1:])
+                    if (y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1 and
+                            y.dtype != 'object'):
+                        y = 0.25 * (y[:-1, :-1] + y[:-1, 1:] +
+                                    y[1:, :-1] + y[1:, 1:])
             elif Z.shape[1] != xlen or Z.shape[0] != ylen:
                 raise ValueError(f'Input shapes x {x.shape} and y {y.shape} must match Z centers {Z.shape} or Z borders {tuple(i+1 for i in Z.shape)}.')
         # Optionally re-order
@@ -473,7 +492,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
             raise ValueError(f'Invalid order {order!r}. Choose from "C" (row-major, default) and "F" (column-major).')
 
     # Cartopy projection axes
-    if (getattr(self, 'name', '') == 'cartopy' and
+    if (getattr(self, 'name', '') == 'geo' and
         isinstance(kwargs.get('transform', None), PlateCarree)):
         x, y = _standardize_latlon(x, y)
         ix, iZs = x, []
@@ -1077,13 +1096,13 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
         if isinstance(values, Number):
             levels = values + 1
         elif np.iterable(values):
-            # Plotting command accepts a 'values' keyword arg
-            if name in ('cmapline',):
-                kwargs['values'] = values
             # Try to generate levels such that a LinearSegmentedNorm will
-            # place values ticks right at the center of each colorbar level
+            # place values ticks at the center of each colorbar level.
+            # utile.edges works only for evenly spaced values arrays.
+            # We solve for: (x1 + x2)/2 = y --> x2 = 2*y - x1
+            # with arbitrary starting point x1.
             if norm is None or norm in ('segments','segmented'):
-                levels = [values[0] - (values[1]-values[0])/2] # reasonable starting point
+                levels = [values[0] - (values[1] - values[0])/2]
                 for i,val in enumerate(values):
                     levels.append(2*val - levels[-1])
                 if any(np.diff(levels) <= 0): # algorithm failed, default to this
@@ -1093,6 +1112,8 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
             else:
                 inorm = styletools.Norm(norm, **norm_kw)
                 levels = inorm.inverse(utils.edges(inorm(values)))
+            if name in ('parametric',):
+                kwargs['values'] = values
         else:
             raise ValueError(f'Unexpected input values={values!r}. Must be integer or list of numbers.')
 
@@ -1110,8 +1131,8 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
         cmap = _notNone(cmap, rc['image.cmap'])
     if cmap is not None:
         # Get colormap object
-        cmap = styletools.Colormap(cmap, N=None, **cmap_kw)
-        cyclic = cmap._cyclic
+        cmap = styletools.Colormap(cmap, **cmap_kw)
+        cyclic = getattr(cmap, '_cyclic', False)
         if cyclic and extend != 'neither':
             warnings.warn(f'Cyclic colormap requires extend="neither". Overriding user input extend={extend!r}.')
             extend = 'neither'
@@ -1258,9 +1279,15 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
             labels_kw_.update(labels_kw)
             array = obj.get_array()
             paths = obj.get_paths()
-            colors = obj.get_facecolors() # *flattened* list of objects
-            for color,path,num in zip(colors,paths,array):
+            colors = np.asarray(obj.get_facecolors())
+            edgecolors = np.asarray(obj.get_edgecolors())
+            if len(colors) == 1: # weird flex but okay
+                colors = np.repeat(colors, len(array), axis=0)
+            if len(edgecolors) == 1:
+                edgecolors = np.repeat(edgecolors, len(array), axis=0)
+            for i,(color,path,num) in enumerate(zip(colors,paths,array)):
                 if not np.isfinite(num):
+                    edgecolors[i,:] = 0
                     continue
                 bbox = path.get_extents()
                 x = (bbox.xmin + bbox.xmax)/2
@@ -1273,22 +1300,28 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
                         color = 'k'
                     labels_kw_['color'] = color
                 self.text(x, y, fmt(num), **labels_kw_)
+            obj.set_edgecolors(edgecolors)
         else:
             raise RuntimeError(f'Not possible to add labels to {name!r} plot.')
 
     # Fix white lines between filled contours/mesh, allow user to override!
-    if edgefix:
-        color = 'face'
-        linewidth = 0.4 # seems to be lowest threshold where white lines disappear
-        linestyle = '-'
-        if 'pcolor' in name: # 'pcolor', 'pcolormesh', 'tripcolor'
-            obj.set_edgecolor(color)
-            obj.set_linewidth(linewidth) # seems to do the trick, without dots in corner being visible
-        elif 'contourf' in name: # 'contourf', 'tricontourf'
-            for contour in obj.collections:
-                contour.set_edgecolor(color)
-                contour.set_linewidth(linewidth)
-                contour.set_linestyle(linestyle)
+    # 0.4 points is thick enough to hide lines but thin enough to not
+    # add "dots" in corner of pcolor plots
+    # *Never* use this when colormap has opacity
+    # See: https://stackoverflow.com/q/15003353/4970632
+    if 'pcolor' in name or 'contourf' in name:
+        cmap = obj.get_cmap()
+        if not cmap._isinit:
+            cmap._init()
+        if edgefix and all(cmap._lut[:-1,3] == 1):
+            if 'pcolor' in name: # 'pcolor', 'pcolormesh', 'tripcolor'
+                obj.set_edgecolor('face')
+                obj.set_linewidth(0.4)
+            elif 'contourf' in name: # 'contourf', 'tricontourf'
+                for contour in obj.collections:
+                    contour.set_edgecolor('face')
+                    contour.set_linewidth(0.4)
+                    contour.set_linestyle('-')
 
     # Add colorbar
     if colorbar:
@@ -1300,7 +1333,7 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
             _, label = _auto_label(args[-1]) # last one is data, we assume
             if label:
                 colorbar_kw.setdefault('label', label)
-        if name in ('cmapline',) and values is not None:
+        if name in ('parametric',) and values is not None:
             colorbar_kw.setdefault('values', values)
         if loc != 'fill':
             colorbar_kw.setdefault('loc', loc)
@@ -1611,9 +1644,11 @@ def legend_wrapper(self,
         self.add_artist(leg)
         leg.legendPatch.update(outline) # or get_frame()
         for obj in leg.legendHandles:
-            obj.update(kw_handle)
+            if isinstance(obj, martist.Artist):
+                obj.update(kw_handle)
         for obj in leg.get_texts():
-            obj.update(kw_text)
+            if isinstance(obj, martist.Artist):
+                obj.update(kw_text)
     # Draw manual fancy bounding box for un-aligned legend
     # WARNING: The matplotlib legendPatch transform is the default transform,
     # i.e. universal coordinates in points. Means we have to transform
@@ -1752,7 +1787,7 @@ def colorbar_wrapper(self,
     # Parse flexible input
     label = _notNone(title, label, None, names=('title', 'label'))
     locator = _notNone(ticks, locator, None, names=('ticks', 'locator'))
-    formatter = _notNone(ticklabels, formatter, 'default', names=('ticklabels', 'formatter'))
+    formatter = _notNone(ticklabels, formatter, 'auto', names=('ticklabels', 'formatter'))
     minorlocator = _notNone(minorticks, minorlocator, None, names=('minorticks', 'minorlocator'))
     ticklocation = _notNone(tickloc, ticklocation, None, names=('tickloc', 'ticklocation'))
 
@@ -2011,31 +2046,6 @@ def colorbar_wrapper(self,
     axis.set_ticks(vals[1], minor=True)
     axis.set_minor_formatter(mticker.NullFormatter()) # to make sure
 
-    # Fix alpha issues. Cannot set edgecolor to 'face' if alpha non-zero
-    # because blending will occur, will get colored lines instead of white ones;
-    # need to perform manual alpha blending.
-    # NOTE: For some reason cb solids uses listed colormap with always 1.0
-    # alpha, then alpha is applied after.
-    # See: https://stackoverflow.com/a/35672224/4970632
-    alpha = None
-    if cb.solids: # for e.g. contours with colormap, colorbar will just be lines
-        alpha = cb.solids.get_alpha()
-    if alpha is not None and alpha < 1:
-        # First get reference color
-        warnings.warn('Performing manual alpha-blending for colorbar solids.')
-        reference = mappable.axes.get_facecolor() # the axes facecolor
-        reference = [(1 - reference[-1]) + reference[-1]*color for color in reference[:3]]
-        # Next get solids
-        reference = [1,1,1] # override?
-        alpha = 1 - (1 - alpha)**2 # make more colorful
-        colors = cb.solids.get_cmap().colors
-        colors = np.array(colors)
-        for i in range(3): # Do not include the last column!
-            colors[:,i] = (reference[i] - alpha) + alpha*colors[:,i]
-        cmap = mcolors.ListedColormap(colors, name='colorbar-fix')
-        cb.solids.set_cmap(cmap)
-        cb.solids.set_alpha(1.0)
-
     # Outline
     kw_outline = {
         'edgecolor': _notNone(edgecolor, rc['axes.edgecolor']),
@@ -2045,7 +2055,38 @@ def colorbar_wrapper(self,
         cb.outline.update(kw_outline)
     if cb.dividers is not None:
         cb.dividers.update(kw_outline)
-        # cb.dividers.update(rc.category('grid', cache=False))
+
+    # Fix alpha-blending issues.
+    # Cannot set edgecolor to 'face' if alpha non-zero
+    # because blending will occur, will get colored lines instead of white ones;
+    # need to perform manual alpha blending.
+    # NOTE: For some reason cb solids uses listed colormap with always 1.0
+    # alpha, then alpha is applied after.
+    # See: https://stackoverflow.com/a/35672224/4970632
+    # alpha = None
+    # if cb.solids: # for e.g. contours with colormap, colorbar will just be lines
+    #     alpha = cb.solids.get_alpha()
+    # if alpha is not None and alpha < 1:
+    cmap = cb.cmap
+    if not cmap._isinit:
+        cmap._init()
+    if any(cmap._lut[:-1,3] < 1):
+        warnings.warn(f'Using manual alpha-blending for {cmap.name!r} colorbar solids.')
+        # Generate "secret" copy of the colormap!
+        lut = cmap._lut.copy()
+        cmap = mcolors.Colormap('_colorbar_fix', N=cmap.N)
+        cmap._isinit = True
+        cmap._init = (lambda : None)
+        # Manually fill lookup table with alpha-blended RGB colors!
+        for i in range(lut.shape[0] - 1):
+            alpha = lut[i,3]
+            lut[i,:3] =  (1 - alpha)*1 + alpha*lut[i,:3] # blend with *white*
+            lut[i,3] = 1
+        cmap._lut = lut
+        # Update colorbar
+        cb.cmap = cmap
+        cb.draw_all()
+
     # Label and tick label settings
     # WARNING: Must use colorbar set_label to set text, calling set_text on
     # the axis will do nothing!
@@ -2054,6 +2095,7 @@ def colorbar_wrapper(self,
     axis.label.update(kw_label)
     for obj in axis.get_ticklabels():
         obj.update(kw_ticklabels)
+
     # Ticks
     xy = axis.axis_name
     for which in ('minor','major'):
@@ -2064,13 +2106,13 @@ def colorbar_wrapper(self,
         if linewidth:
             kw['width'] = linewidth
         axis.set_tick_params(which=which, **kw)
-    # Fix pesky white lines between levels + misalignment
-    # Fix misalignment with border due to rasterized blocks
-    if cb.solids:
-        cb.solids.set_linewidth(0.4) # lowest size that works
-        cb.solids.set_edgecolor('face')
-        cb.solids.set_rasterized(False)
     axis.set_ticks_position(ticklocation)
+
+    # *Never* rasterize because it causes misalignment with border lines
+    if cb.solids:
+        cb.solids.set_rasterized(False)
+        cb.solids.set_linewidth(0.4)
+        cb.solids.set_edgecolor('face')
     return cb
 
 colorbar_args = """
@@ -2227,31 +2269,38 @@ def _wrapper_decorator(driver):
     for superclass method docstrings if a docstring is empty."""
     driver._docstring_orig = driver.__doc__ or ''
     driver._methods_wrapped = []
+    proplot_methods = ('parametric', 'heatmap', 'area', 'areax')
+    cartopy_methods = ('get_extent', 'set_extent')
     def decorator(func):
         """"""
         # Define wrapper
         @functools.wraps(func)
         def _wrapper(self, *args, **kwargs):
             return driver(self, func, *args, **kwargs)
-        _wrapper.__doc__ = None
+        name = func.__name__
+        if name not in proplot_methods:
+            _wrapper.__doc__ = None
 
         # List wrapped methods in the driver function docstring
         # Prevents us from having to both explicitly apply decorators in
         # axes.py and explicitly list functions *again* in this file
-        doc = driver._docstring_orig
-        if '%(methods)s' in doc:
-            name = func.__name__
-            if name in ('cmapline', 'heatmap', 'area', 'areax'):
-                name = f'`~proplot.axes.Axes.{name}`'
+        docstring = driver._docstring_orig
+        if '%(methods)s' in docstring:
+            if name in proplot_methods:
+                link = f'`~proplot.axes.Axes.{name}`'
+            elif name in cartopy_methods:
+                link = f'`~cartopy.mpl.geoaxes.GeoAxes.{name}`'
             else:
-                name = f'`~matplotlib.axes.Axes.{name}`'
+                link = f'`~matplotlib.axes.Axes.{name}`'
             methods = driver._methods_wrapped
-            if name not in methods:
-                methods.append(name)
-                string = (', '.join(methods[:-1])
-                    + ','*min(1, len(methods)-2) # Oxford comma bitches
-                    + ' and ' + methods[-1])
-                driver.__doc__ = doc % {'methods': string}
+            if link not in methods:
+                methods.append(link)
+                string = (
+                    ', '.join(methods[:-1])
+                    + ',' * int(len(methods)>2) # Oxford comma bitches
+                    + ' and ' * int(len(methods)>1)
+                    + methods[-1])
+                driver.__doc__ = docstring % {'methods': string}
         return _wrapper
     return decorator
 

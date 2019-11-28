@@ -14,7 +14,62 @@ try:
     from icecream import ic
 except ImportError:  # graceful fallback if IceCream isn't installed
     ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a) # noqa
-__all__ = ['arange', 'edges', 'units', 'DEBUG']
+__all__ = ['arange', 'edges', 'edges2d', 'units']
+
+# Change this to turn on benchmarking
+BENCHMARK = False
+
+# Benchmarking tools for developers
+class _benchmark(object):
+    """Timer object that can be used to time things."""
+    def __init__(self, message):
+        self.message = message
+    def __enter__(self):
+        self.time = time.clock()
+    def __exit__(self, *args):
+        if BENCHMARK:
+            print(f'{self.message}: {time.clock() - self.time}s')
+
+def _logger(func):
+    """A decorator that logs the activity of the script (it actually just prints it,
+    but it could be logging!). See: https://stackoverflow.com/a/1594484/4970632"""
+    @functools.wraps(func)
+    def decorator(*args, **kwargs):
+        res = func(*args, **kwargs)
+        if BENCHMARK:
+            print(f'{func.__name__} called with: {args} {kwargs}')
+        return res
+    return decorator
+
+def _timer(func):
+    """A decorator that prints the time a function takes to execute.
+    See: https://stackoverflow.com/a/1594484/4970632"""
+    @functools.wraps(func)
+    def decorator(*args, **kwargs):
+        if BENCHMARK:
+            t = time.clock()
+        res = func(*args, **kwargs)
+        if BENCHMARK:
+            print(f'{func.__name__}() time: {time.clock()-t}s')
+        return res
+    return decorator
+
+def _counter(func):
+    """A decorator that counts and prints the cumulative time a function
+    has benn running. See: https://stackoverflow.com/a/1594484/4970632"""
+    @functools.wraps(func)
+    def decorator(*args, **kwargs):
+        if BENCHMARK:
+            t = time.clock()
+        res = func(*args, **kwargs)
+        if BENCHMARK:
+            decorator.time += (time.clock() - t)
+            decorator.count += 1
+            print(f'{func.__name__}() cumulative time: {decorator.time}s ({decorator.count} calls)')
+        return res
+    decorator.time = 0
+    decorator.count = 0 # initialize
+    return decorator
 
 # Important private helper func
 def _notNone(*args, names=None):
@@ -28,8 +83,8 @@ def _notNone(*args, names=None):
                 return arg
         return arg # last one
     else:
-        ret = {}
         first = None
+        kwargs = {}
         if len(names) != len(args) - 1:
             raise ValueError(f'Need {len(args)+1} names for {len(args)} args, but got {len(names)} names.')
         names = [*names, '']
@@ -38,53 +93,10 @@ def _notNone(*args, names=None):
                 if first is None:
                     first = arg
                 if name:
-                    ret[name] = arg
-        if len(ret)>1:
-            warnings.warn(f'Got conflicting or duplicate keyword args, using the first one: {ret}')
+                    kwargs[name] = arg
+        if len(kwargs)>1:
+            warnings.warn(f'Got conflicting or duplicate keyword args, using the first one: {kwargs}')
         return first
-
-# Debug decorators
-DEBUG = False # debug mode, used for profiling and activating timer decorators
-def _logger(func):
-    """A decorator that logs the activity of the script (it actually just prints it,
-    but it could be logging!). See: https://stackoverflow.com/a/1594484/4970632"""
-    @functools.wraps(func)
-    def decorator(*args, **kwargs):
-        res = func(*args, **kwargs)
-        if DEBUG:
-            print(f'{func.__name__} called with: {args} {kwargs}')
-        return res
-    return decorator
-
-def _timer(func):
-    """A decorator that prints the time a function takes to execute.
-    See: https://stackoverflow.com/a/1594484/4970632"""
-    @functools.wraps(func)
-    def decorator(*args, **kwargs):
-        if DEBUG:
-            t = time.clock()
-        res = func(*args, **kwargs)
-        if DEBUG:
-            print(f'{func.__name__}() time: {time.clock()-t}s')
-        return res
-    return decorator
-
-def _counter(func):
-    """A decorator that counts and prints the cumulative time a function
-    has benn running. See: https://stackoverflow.com/a/1594484/4970632"""
-    @functools.wraps(func)
-    def decorator(*args, **kwargs):
-        if DEBUG:
-            t = time.clock()
-        res = func(*args, **kwargs)
-        if DEBUG:
-            decorator.time += (time.clock() - t)
-            decorator.count += 1
-            print(f'{func.__name__}() cumulative time: {decorator.time}s ({decorator.count} calls)')
-        return res
-    decorator.time = 0
-    decorator.count = 0 # initialize
-    return decorator
 
 # Accessible for user
 def arange(min_, *args):
@@ -141,23 +153,50 @@ def edges(array, axis=-1):
     array = np.array(array)
     array = np.swapaxes(array, axis, -1)
     # Next operate
-    flip = False
-    idxs = [[0] for _ in range(array.ndim-1)] # must be list because we use it twice
-    if array[np.ix_(*idxs, [1])] < array[np.ix_(*idxs, [0])]:
-        flip = True
-        array = np.flip(array, axis=-1)
     array = np.concatenate((
         array[...,:1]  - (array[...,1]-array[...,0])/2,
         (array[...,1:] + array[...,:-1])/2,
         array[...,-1:] + (array[...,-1]-array[...,-2])/2,
         ), axis=-1)
-    if flip:
-        array = np.flip(array, axis=-1)
     # Permute back and return
     array = np.swapaxes(array, axis, -1)
     return array
 
-# Units
+def edges2d(z):
+    """
+    Like :func:`edges` but for 2D arrays.
+    The size of both axes are increased of one.
+
+    Parameters
+    ----------
+    array : array-like
+        Two-dimensional array.
+
+    Returns
+    -------
+    `~numpy.ndarray`
+        Array of "edge" coordinates.
+    """
+    z = np.asarray(z)
+    ny, nx = z.shape
+    zzb = np.zeros((ny+1, nx+1))
+
+    # Inner
+    zzb[1:-1, 1:-1] = 0.25 * (z[1:, 1:] + z[:-1, 1:] +
+                              z[1:, :-1] + z[:-1, :-1])
+    # Lower and upper
+    zzb[0] += edges(1.5*z[0]-0.5*z[1])
+    zzb[-1] += edges(1.5*z[-1]-0.5*z[-2])
+
+    # Left and right
+    zzb[:, 0] += edges(1.5*z[:, 0]-0.5*z[:, 1])
+    zzb[:, -1] += edges(1.5*z[:, -1]-0.5*z[:, -2])
+
+    # Corners
+    zzb[[0, 0, -1, -1], [0, -1, -1, 0]] *= 0.5
+
+    return zzb
+
 def units(value, numeric='in'):
     """
     Flexible units -- this function is used internally all over ProPlot, so
@@ -172,26 +211,26 @@ def units(value, numeric='in'):
         If string, we look for the format ``'123.456unit'``, where the
         number is the value and ``'unit'`` is one of the following.
 
-        ======  ===================================================================
-        Key     Description
-        ======  ===================================================================
+        ======  =====================================================
+        Unit    Description
+        ======  =====================================================
         ``m``   Meters
         ``cm``  Centimeters
         ``mm``  Millimeters
         ``ft``  Feet
         ``in``  Inches
         ``pt``  Points (1/72 inches)
-        ``px``  Pixels on screen, uses dpi of ``rc['figure.dpi']``
-        ``pp``  Pixels once printed, uses dpi of ``rc['savefig.dpi']``
-        ``em``  Em-square for ``rc['font.size']``
-        ``ex``  Ex-square for ``rc['font.size']``
-        ``Em``  Em-square for ``rc['axes.titlesize']``
-        ``Ex``  Ex-square for ``rc['axes.titlesize']``
-        ======  ===================================================================
+        ``px``  Pixels on screen, uses dpi of :rcraw:`figure.dpi`
+        ``pp``  Pixels once printed, uses dpi of :rcraw:`savefig.dpi`
+        ``em``  Em-square for :rcraw:`font.size`
+        ``ex``  Ex-square for :rcraw:`font.size`
+        ``Em``  Em-square for :rcraw:`axes.titlesize`
+        ``Ex``  Ex-square for :rcraw:`axes.titlesize`
+        ======  =====================================================
 
     numeric : str, optional
         The assumed unit for numeric arguments, and the output unit. Default
-        is **inches**, i.e. ``'in'``.
+        is inches, i.e. ``'in'``.
     """
     # Loop through arbitrary list, or return None if input was None (this
     # is the exception).

@@ -1,0 +1,4 @@
+# Hard requirements
+# TODO: Remove lxml after #50 merged
+matplotlib
+lxml
