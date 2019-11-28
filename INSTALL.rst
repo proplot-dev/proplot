@@ -1,14 +1,17 @@
 Installation
 ============
 
-This package is a work-in-progress -- currently, there is no formal release
-on PyPi (ETA: January 2020). For the time being, you may install directly from Github using:
+To install ProPlot:
 
 .. code-block:: bash
 
-   pip install git+https://github.com/lukelbd/proplot.git
+   pip install proplot
 
-To upgrade to the latest version, run ``pip uninstall proplot``, then re-install.
+To upgrade to the latest version:
 
-The dependencies are `matplotlib <https://matplotlib.org/>`__ and `numpy <http://www.numpy.org/>`__.  The optional geographic mapping features require `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`__ and/or `basemap <https://matplotlib.org/basemap/index.html>`__.
+.. code-block:: bash
+
+   pip install --upgrade proplot
+
+ProPlot's only hard dependency is `matplotlib <https://matplotlib.org/>`__. The *soft* dependencies are `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`__, `basemap <https://matplotlib.org/basemap/index.html>`__, `xarray <http://xarray.pydata.org>`__, and `pandas <https://pandas.pydata.org>`__. See the documentation for details.
 

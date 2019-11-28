@@ -151,7 +151,7 @@ def Proj(name, basemap=False, **kwargs):
         proj = mbasemap.Basemap(projection=name, resolution=reso, **kwproj)
     # Cartopy
     else:
-        import cartopy.crs as _
+        import cartopy.crs as _ # noqa
         kwargs = {
             CARTOPY_CRS_TRANSLATE.get(key, key): value
             for key,value in kwargs.items()
