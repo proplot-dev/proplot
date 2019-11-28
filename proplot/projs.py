@@ -166,65 +166,7 @@ def Proj(name, basemap=False, **kwargs):
         proj = crs(**kwargs)
     return proj
 
-# Various pseudo-rectangular projections
-# Inspired by source code for Mollweide implementation
-class Hammer(_WarpedRectangularProjection):
-    """The `Hammer <https://en.wikipedia.org/wiki/Hammer_projection>`__
-    projection."""
-    __name__ = 'hammer'
-    name = 'hammer'
-    """Registered projection name."""
-    def __init__(self, central_longitude=0, globe=None): #, threshold=1e2):
-        proj4_params = {'proj':'hammer', 'lon_0':central_longitude}
-        super().__init__(proj4_params, central_longitude, globe=globe)
-    @property
-    def threshold(self): # how finely to interpolate line data, etc.
-        """Projection resolution."""
-        return 1e4
-
-class Aitoff(_WarpedRectangularProjection):
-    """The `Aitoff <https://en.wikipedia.org/wiki/Aitoff_projection>`__
-    projection."""
-    __name__ = 'aitoff'
-    name = 'aitoff'
-    """Registered projection name."""
-    def __init__(self, central_longitude=0, globe=None): #, threshold=1e2):
-        proj4_params = {'proj':'aitoff', 'lon_0':central_longitude}
-        super().__init__(proj4_params, central_longitude, globe=globe)
-    @property
-    def threshold(self): # how finely to interpolate line data, etc.
-        """Projection resolution."""
-        return 1e4
-
-class KavrayskiyVII(_WarpedRectangularProjection):
-    """The `Kavrayskiy VII <https://en.wikipedia.org/wiki/Kavrayskiy_VII_projection>`__
-    projection."""
-    __name__ = 'kavrayskiyVII'
-    name = 'kavrayskiyVII'
-    """Registered projection name."""
-    def __init__(self, central_longitude=0, globe=None):
-        proj4_params = {'proj':'kav7', 'lon_0':central_longitude}
-        super().__init__(proj4_params, central_longitude, globe=globe)
-    @property
-    def threshold(self):
-        """Projection resolution."""
-        return 1e4
-
-class WinkelTripel(_WarpedRectangularProjection):
-    """The `Winkel tripel (Winkel III) <https://en.wikipedia.org/wiki/Winkel_tripel_projection>`__
-    projection."""
-    __name__ = 'winkeltripel'
-    name = 'winkeltripel'
-    """Registered projection name."""
-    def __init__(self, central_longitude=0, globe=None):
-        proj4_params = {'proj':'wintri', 'lon_0':central_longitude}
-        super(WinkelTripel, self).__init__(proj4_params, central_longitude, globe=globe)
-    @property
-    def threshold(self):
-        """Projection resolution."""
-        return 1e4
-
-# Extra polar projections matching basemap's options
+# New cartopy projections
 class NorthPolarAzimuthalEquidistant(AzimuthalEquidistant):
     """Analogous to `~cartopy.crs.NorthPolarStereo`."""
     def __init__(self, central_longitude=0.0, globe=None):
@@ -260,6 +202,62 @@ class SouthPolarGnomonic(Gnomonic):
     def __init__(self, central_longitude=0.0, globe=None):
         super().__init__(central_latitude=-90,
                 central_longitude=central_longitude, globe=globe)
+
+class Aitoff(_WarpedRectangularProjection):
+    """The `Aitoff <https://en.wikipedia.org/wiki/Aitoff_projection>`__
+    projection."""
+    __name__ = 'aitoff'
+    name = 'aitoff'
+    """Registered projection name."""
+    def __init__(self, central_longitude=0, globe=None): #, threshold=1e2):
+        proj4_params = {'proj':'aitoff', 'lon_0':central_longitude}
+        super().__init__(proj4_params, central_longitude, globe=globe)
+    @property
+    def threshold(self): # how finely to interpolate line data, etc.
+        """Projection resolution."""
+        return 1e4
+
+class Hammer(_WarpedRectangularProjection):
+    """The `Hammer <https://en.wikipedia.org/wiki/Hammer_projection>`__
+    projection."""
+    __name__ = 'hammer'
+    name = 'hammer'
+    """Registered projection name."""
+    def __init__(self, central_longitude=0, globe=None): #, threshold=1e2):
+        proj4_params = {'proj':'hammer', 'lon_0':central_longitude}
+        super().__init__(proj4_params, central_longitude, globe=globe)
+    @property
+    def threshold(self): # how finely to interpolate line data, etc.
+        """Projection resolution."""
+        return 1e4
+
+class KavrayskiyVII(_WarpedRectangularProjection):
+    """The `Kavrayskiy VII <https://en.wikipedia.org/wiki/Kavrayskiy_VII_projection>`__
+    projection."""
+    __name__ = 'kavrayskiyVII'
+    name = 'kavrayskiyVII'
+    """Registered projection name."""
+    def __init__(self, central_longitude=0, globe=None):
+        proj4_params = {'proj':'kav7', 'lon_0':central_longitude}
+        super().__init__(proj4_params, central_longitude, globe=globe)
+    @property
+    def threshold(self):
+        """Projection resolution."""
+        return 1e4
+
+class WinkelTripel(_WarpedRectangularProjection):
+    """The `Winkel tripel (Winkel III) <https://en.wikipedia.org/wiki/Winkel_tripel_projection>`__
+    projection."""
+    __name__ = 'winkeltripel'
+    name = 'winkeltripel'
+    """Registered projection name."""
+    def __init__(self, central_longitude=0, globe=None):
+        proj4_params = {'proj':'wintri', 'lon_0':central_longitude}
+        super(WinkelTripel, self).__init__(proj4_params, central_longitude, globe=globe)
+    @property
+    def threshold(self):
+        """Projection resolution."""
+        return 1e4
 
 # Hidden constants
 BASEMAP_TRANSLATE = {
