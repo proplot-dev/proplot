@@ -1256,7 +1256,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         alpha : float
             The opacity.
         """
-        colors = [list(to_rgba(color)) for color in self.colors]
+        colors = [list(mcolors.to_rgba(color)) for color in self.colors]
         for color in colors:
             color[3] = alpha
         self.colors = colors

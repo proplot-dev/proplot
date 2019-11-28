@@ -1,7 +1,7 @@
 .. image:: https://github.com/lukelbd/proplot/blob/master/docs/_static/logo_long.png?raw=true
    :width: 1000px
 
-|build-status| |coverage| |quality| |docs| |license| |gitter| |pr-welcome|
+|build-status| |coverage| |docs| |license| |gitter| |pr-welcome|
 
 A comprehensive, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful, publication-quality graphics.
 
@@ -34,10 +34,6 @@ The documentation is `published on readthedocs <https://proplot.readthedocs.io>`
    :alt: coverage
    :target: https://codecov.io/gh/lukelbd/proplot.org
 
-.. |quality| image:: https://api.codacy.com/project/badge/Grade/931d7467c69c40fbb1e97a11d092f9cd
-   :alt: quality
-   :target: https://www.codacy.com/app/lukelbd/proplot?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=lukelbd/proplot&amp;utm_campaign=Badge_Grade
-
 .. |license| image:: https://img.shields.io/github/license/lukelbd/proplot.svg
    :alt: license
    :target: LICENSE.txt
@@ -53,6 +49,11 @@ The documentation is `published on readthedocs <https://proplot.readthedocs.io>`
 .. |pr-welcome| image:: https://img.shields.io/badge/PR-Welcome-%23FF8300.svg?
    :alt: PR welcome
    :target: https://git-scm.com/book/en/v2/GitHub-Contributing-to-a-Project
+
+..
+   |quality| image:: https://api.codacy.com/project/badge/Grade/931d7467c69c40fbb1e97a11d092f9cd
+   :alt: quality
+   :target: https://www.codacy.com/app/lukelbd/proplot?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=lukelbd/proplot&amp;utm_campaign=Badge_Grade
 
 ..
    |hits| image:: http://hits.dwyl.io/lukelbd/lukelbd/proplot.svg

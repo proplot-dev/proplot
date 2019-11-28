@@ -142,7 +142,7 @@ def Proj(name, basemap=False, **kwargs):
                  (proj.urcrnry - proj.llcrnry)
     # Cartopy
     else:
-        import cartopy.crs as _
+        import cartopy.crs as _ # noqa
         kwargs = {CARTOPY_CRS_TRANSLATE.get(key, key): value for key,value in kwargs.items()}
         crs = cartopy_projs.get(name, None)
         if name == 'geos': # fix common mistake
