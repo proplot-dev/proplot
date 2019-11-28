@@ -172,10 +172,10 @@ class Axes(maxes.Axes):
         # TODO: Add text labels as panels instead of as axes children?
         coltransform = mtransforms.blended_transform_factory(self.transAxes, self.figure.transFigure)
         rowtransform = mtransforms.blended_transform_factory(self.figure.transFigure, self.transAxes)
-        self._llabel   = self.text(0.05, 0.5, '', va='center', ha='right', transform=rowtransform)
-        self._rlabel  = self.text(0.95, 0.5, '', va='center', ha='left', transform=rowtransform)
+        self._llabel = self.text(0.05, 0.5, '', va='center', ha='right', transform=rowtransform)
+        self._rlabel = self.text(0.95, 0.5, '', va='center', ha='left', transform=rowtransform)
         self._blabel = self.text(0.5, 0.05, '', va='top', ha='center', transform=coltransform)
-        self._tlabel    = self.text(0.5, 0.95, '', va='bottom', ha='center', transform=coltransform) # reasonable starting point
+        self._tlabel = self.text(0.5, 0.95, '', va='bottom', ha='center', transform=coltransform) # reasonable starting point
         # Shared and spanning axes
         if main:
             self.figure._axes_main.append(self)
@@ -192,9 +192,9 @@ class Axes(maxes.Axes):
         """Generate automatic legends and colorbars. Wrapper funcs
         let user add handles to location lists with successive calls to
         make successive calls to plotting commands."""
-        for loc,(handles,kwargs) in self._auto_colorbar.items():
+        for loc, (handles, kwargs) in self._auto_colorbar.items():
             self.colorbar(handles, **kwargs)
-        for loc,(handles,kwargs) in self._auto_legend.items():
+        for loc, (handles, kwargs) in self._auto_legend.items():
             self.legend(handles, **kwargs)
         self._auto_legend = {}
         self._auto_colorbar = {}
@@ -211,7 +211,7 @@ class Axes(maxes.Axes):
         idx = (0 if s in 'lt' else 1) # which side of range to test
         coord = self._range_gridspec(x)[idx] # side for a particular axes
         axs = [ax for ax in self.figure._axes_main
-                if ax._range_gridspec(x)[idx] == coord]
+            if ax._range_gridspec(x)[idx] == coord]
         if not axs:
             return [self]
         else:
@@ -229,7 +229,7 @@ class Axes(maxes.Axes):
         argfunc = (np.argmax if x == 'x' else np.argmin)
         irange = self._range_gridspec(x)
         axs = [ax for ax in self.figure._axes_main
-                if ax._range_gridspec(x) == irange]
+            if ax._range_gridspec(x) == irange]
         if not axs:
             return [self]
         else:
@@ -245,14 +245,15 @@ class Axes(maxes.Axes):
         # just changed ones. This is important if e.g. user calls in two
         # lines ax.format(titleweight='bold') then ax.format(title='text'),
         # don't want to override custom setting with rc default setting.
-        props = lambda cache: rc.fill({
-            'fontsize':   f'{prefix}.size',
-            'weight':     f'{prefix}.weight',
-            'color':      f'{prefix}.color',
-            'border':     f'{prefix}.border',
-            'linewidth':  f'{prefix}.linewidth',
-            'fontfamily': 'font.family',
-            }, cache=cache)
+        def props(cache):
+            return rc.fill({
+                'fontsize':   f'{prefix}.size',
+                'weight':     f'{prefix}.weight',
+                'color':      f'{prefix}.color',
+                'border':     f'{prefix}.border',
+                'linewidth':  f'{prefix}.linewidth',
+                'fontfamily': 'font.family',
+                }, cache=cache)
 
         # Location string and position coordinates
         cache = True
@@ -266,9 +267,9 @@ class Axes(maxes.Axes):
 
         # Above axes
         loc = LOC_TRANSLATE.get(loc, loc)
-        if loc in ('top','bottom'):
+        if loc in ('top', 'bottom'):
             raise ValueError(f'Invalid title location {loc!r}.')
-        elif loc in ('left','right','center'):
+        elif loc in ('left', 'right', 'center'):
             kw = props(cache)
             kw.pop('border', None) # no border for titles outside axes
             kw.pop('linewidth', None)
@@ -283,20 +284,20 @@ class Axes(maxes.Axes):
         else:
             kw = props(False)
             width, height = self.get_size_inches()
-            if loc in ('upper center','lower center'):
+            if loc in ('upper center', 'lower center'):
                 x, ha = 0.5, 'center'
-            elif loc in ('upper left','lower left'):
+            elif loc in ('upper left', 'lower left'):
                 xpad = rc.get('axes.titlepad')/(72*width)
                 x, ha = 1.5*xpad, 'left'
-            elif loc in ('upper right','lower right'):
+            elif loc in ('upper right', 'lower right'):
                 xpad = rc.get('axes.titlepad')/(72*width)
                 x, ha = 1 - 1.5*xpad, 'right'
             else:
                 raise ValueError(f'Invalid title or abc "loc" {loc}.')
-            if loc in ('upper left','upper right','upper center'):
+            if loc in ('upper left', 'upper right', 'upper center'):
                 ypad = rc.get('axes.titlepad')/(72*height)
                 y, va = 1 - 1.5*ypad, 'top'
-            elif loc in ('lower left','lower right','lower center'):
+            elif loc in ('lower left', 'lower right', 'lower center'):
                 ypad = rc.get('axes.titlepad')/(72*height)
                 y, va = 1.5*ypad, 'bottom'
             obj = self.text(x, y, '', ha=ha, va=va, transform=self.transAxes)
