@@ -1,0 +1,18 @@
+# See: https://pre-commit.com/hooks.html
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.2.3
+    hooks:
+    - id: double-quote-string-fixer
+    - id: trailing-whitespace
+    - id: end-of-file-fixer
+    - id: check-yaml
+    - id: debug-statements
+    - id: check-merge-conflict
+    - id: no-commit-to-branch
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.2.3
+    hooks:
+    - id: flake8
+      args: ["--max-line-length=88", "--exclude=__init__.py"]

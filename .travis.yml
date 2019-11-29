@@ -31,7 +31,7 @@ install:
   - python setup.py install --user
 
 script:
+  - flake8 proplot --ignore=W503,F401,F403
   - pushd docs
   - make html
   - popd
-
