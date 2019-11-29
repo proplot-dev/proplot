@@ -19,11 +19,12 @@ try:
     import IPython
     from IPython import get_ipython
 except ModuleNotFoundError:
-    get_ipython = lambda: None
+    def get_ipython():
+        return None
 __all__ = [
     'rc', 'rc_configurator', 'autosave_setup',
     'autoreload_setup', 'backend_setup'
-    ]
+]
 
 # Initialize
 defaultParamsShort = {
@@ -274,7 +275,7 @@ def _get_config_paths():
     # Local configuration
     idir = os.getcwd()
     paths = []
-    while idir: # not empty string
+    while idir:  # not empty string
         ipath = os.path.join(idir, '.proplotrc')
         if os.path.exists(ipath):
             paths.append(ipath)
@@ -282,7 +283,7 @@ def _get_config_paths():
         if ndir == idir:
             break
         idir = ndir
-    paths = paths[::-1] # sort from decreasing to increasing importantce
+    paths = paths[::-1]  # sort from decreasing to increasing importantce
     # Home configuration
     ipath = os.path.join(os.path.expanduser('~'), '.proplotrc')
     if os.path.exists(ipath) and ipath not in paths:
@@ -424,6 +425,7 @@ def _sanitize_key(key):
     if '.' not in key and key not in rcParamsShort:
         key = RC_NODOTS.get(key, key)
     return key.lower()
+
 
 class rc_configurator(object):
     """
@@ -760,7 +762,11 @@ class rc_configurator(object):
         kw = {}
         prefix = ''
         if len(args) > 2:
-            raise ValueError('Accepts 1-2 positional arguments. Use plot.rc.update(kw) to update a bunch of names, or plot.rc.update(category, kw) to update subcategories belonging to single category e.g. axes. All kwargs will be added to the dict.')
+            raise ValueError(
+                'Accepts 1-2 positional arguments. Use plot.rc.update(kw) '
+                'to update a bunch of names, or plot.rc.update(category, kw) '
+                'to update subcategories belonging to single category '
+                'e.g. axes. Keyword args are added to the kw dict.')
         elif len(args) == 2:
             prefix = args[0]
             kw = args[1]
@@ -773,7 +779,7 @@ class rc_configurator(object):
         if prefix:
             prefix = prefix + '.'
         kw.update(kwargs)
-        for key,value in kw.items():
+        for key, value in kw.items():
             self[prefix + key] = value
 
     def reset(self, **kwargs):
@@ -795,6 +801,7 @@ class rc_configurator(object):
         for key in self:
             yield self[key]
 
+
 @_timer
 def backend_setup(backend=None, fmt=None):
     """
@@ -815,13 +822,19 @@ def backend_setup(backend=None, fmt=None):
     # TODO: Change nbsetup --> autobackend in add-subplot branch
     fmt = fmt or rcParamsShort['format']
     ipython = get_ipython()
-    backend = backend or ('auto' if
-        rcParamsShort.get('autobackend', rcParamsShort.get('nbsetup', True))
-        else None) or rcParams['backend']
+    backend = backend or (
+        'auto' if rcParamsShort.get(
+            'autobackend', rcParamsShort.get('nbsetup', True)
+        ) else None) or rcParams['backend']
     if ipython is None or backend is None:
         return
     if backend[:2] == 'nb' or backend in ('MacOSX',):
-        warnings.warn(f'Using ProPlot with the {backend!r} backend may result in unexpected behavior due to automatic figure resizing. Try using %matplotlib inline or %matplotlib qt, or just import proplot before specifying the backend and one of these will be automatically loaded.')
+        warnings.warn(
+            f'Using ProPlot with the {backend!r} backend may result in '
+            'unexpected behavior due to automatic figure resizing. '
+            'Try using %matplotlib inline or %matplotlib qt, or just '
+            'import proplot before specifying the backend and one of these '
+            'will be automatically loaded.')
         backend = 'auto'
 
     # For notebooks
@@ -834,64 +847,68 @@ def backend_setup(backend=None, fmt=None):
     except KeyError as err:
         if backend != 'auto':
             raise err
-        ipython.magic('matplotlib qt') # use any available Qt backend
+        ipython.magic('matplotlib qt')  # use any available Qt backend
         rc.reset()
 
     # Configure inline backend no matter what type of session this is
     # Should be silently ignored for terminal ipython sessions
     ipython.magic("config InlineBackend.figure_formats = ['" + fmt + "']")
-    ipython.magic("config InlineBackend.rc = {}") # no notebook-specific overrides
-    ipython.magic("config InlineBackend.close_figures = True") # memory issues
-    ipython.magic("config InlineBackend.print_figure_kwargs = {'bbox_inches':None}") # use ProPlot tight layout
+    # no notebook-specific overrides
+    ipython.magic('config InlineBackend.rc = {}')
+    ipython.magic('config InlineBackend.close_figures = True')  # memory issues
+    # use ProPlot tight layout
+    ipython.magic(
+        "config InlineBackend.print_figure_kwargs = {'bbox_inches':None}")
+
 
 def autoreload_setup(autoreload=None):
     """
-    Set up the
-    `autoreload <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html>`__
+    Set up the `autoreload
+    <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html>`__
     utility for ipython sessions.
 
     Parameters
     ----------
     autoreload : float, optional
         The autoreload level. Default is :rc:`autoreload`.
-    """
+    """  # noqa
     ipython = get_ipython()
     autoreload = autoreload or rcParamsShort['autoreload']
     if ipython is None or autoreload is None:
         return
     if 'autoreload' not in ipython.magics_manager.magics['line']:
-        with IPython.utils.io.capture_output(): # capture annoying message
-            ipython.magic("load_ext autoreload")
-    ipython.magic("autoreload " + str(autoreload))
+        with IPython.utils.io.capture_output():  # capture annoying message
+            ipython.magic('load_ext autoreload')
+    ipython.magic('autoreload ' + str(autoreload))
+
 
 def autosave_setup(autosave=None):
     """
-    Set up the
-    `autosave <https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__
+    Set up the `autosave
+    <https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__
     utility for ipython notebook sessions.
 
     Parameters
     ----------
     autosave : float, optional
         The autosave interval in seconds. Default is :rc:`autosave`.
-    """
+    """  # noqa
     ipython = get_ipython()
     autosave = autosave or rcParamsShort['autosave']
     if ipython is None or autosave is None:
         return
-    with IPython.utils.io.capture_output(): # capture annoying message
+    with IPython.utils.io.capture_output():  # capture annoying message
         try:
-            ipython.magic("autosave " + str(autosave))
+            ipython.magic('autosave ' + str(autosave))
         except IPython.core.error.UsageError:
             pass
 
+
 # Call setup functions and declare rc object
-# WARNING: Must be instantiated after ipython notebook setup! The default
-# backend may change some rc settings!
+# WARNING: Must be instantiated after ipython notebook setup!
+#: Instance of `rc_configurator`. This is used to change global settings.
+#: See :ref:`Configuring proplot` for details.
 rc = rc_configurator()
-"""Instance of `rc_configurator`. This is used to change global settings.
-See :ref:`Configuring proplot` for details."""
 backend_setup()
 autoreload_setup()
 autosave_setup()
-

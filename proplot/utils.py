@@ -12,8 +12,9 @@ from numbers import Number, Integral
 try:
     from icecream import ic
 except ImportError:  # graceful fallback if IceCream isn't installed
-    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a) # noqa
+    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
 __all__ = ['arange', 'edges', 'edges2d', 'units']
+BENCHMARK = False  # change this to turn on benchmarking
 
 NUMBER = re.compile('^([-+]?[0-9._]+([eE][-+]?[0-9_]+)?)(.*)$')
 BENCHMARK = False
@@ -22,6 +23,7 @@ class _benchmark(object):
     """Context object that can be used to time import statements."""
     def __init__(self, message):
         self.message = message
+
     def __enter__(self):
         if BENCHMARK:
             self.time = time.clock()
@@ -42,6 +44,7 @@ def _timer(func):
         return res
     return decorator
 
+
 def _counter(func):
     """Decorator that counts and prints the cumulative time a function
     has been running. See: https://stackoverflow.com/a/1594484/4970632"""
@@ -56,7 +59,7 @@ def _counter(func):
             print(f'  {func.__name__}() cumulative time: {decorator.time}s ({decorator.count} calls)')
         return res
     decorator.time = 0
-    decorator.count = 0 # initialize
+    decorator.count = 0  # initialize
     return decorator
 
 def _notNone(*args, names=None):
@@ -68,14 +71,16 @@ def _notNone(*args, names=None):
         for arg in args:
             if arg is not None:
                 return arg
-        return arg # last one
+        return arg  # last one
     else:
         first = None
         kwargs = {}
         if len(names) != len(args) - 1:
-            raise ValueError(f'Need {len(args)+1} names for {len(args)} args, but got {len(names)} names.')
+            raise ValueError(
+                f'Need {len(args)+1} names for {len(args)} args, '
+                f'but got {len(names)} names.')
         names = [*names, '']
-        for name,arg in zip(names,args):
+        for name, arg in zip(names, args):
             if arg is not None:
                 if first is None:
                     first = arg
@@ -86,6 +91,8 @@ def _notNone(*args, names=None):
         return first
 
 # Accessible for user
+
+
 def arange(min_, *args):
     """Identical to `numpy.arange` but with inclusive endpoints. For
     example, ``plot.arange(2,4)`` returns ``np.array([2,3,4])`` instead
@@ -105,7 +112,7 @@ def arange(min_, *args):
     else:
         raise ValueError('Function takes from one to three arguments.')
     # All input is integer
-    if all(isinstance(val,Integral) for val in (min_,max_,step)):
+    if all(isinstance(val, Integral) for val in (min_, max_, step)):
         min_, max_, step = np.int64(min_), np.int64(max_), np.int64(step)
         max_ += 1
     # Input is float or mixed, cast to float64
@@ -113,7 +120,7 @@ def arange(min_, *args):
     # round-off errors from continually adding step to min mess this up
     else:
         min_, max_, step = np.float64(min_), np.float64(max_), np.float64(step)
-        max_ += step/2
+        max_ += step / 2
     return np.arange(min_, max_, step)
 
 def edges(Z, axis=-1):
@@ -234,8 +241,9 @@ def units(value, units='in', axes=None, figure=None, width=True):
     large = rcParams['axes.titlesize']
     if isinstance(large, str):
         import matplotlib.font_manager as mfonts
-        scale = mfonts.font_scalings.get(large, 1) # error will be raised somewhere else if string name is invalid!
-        large = small*scale
+        # error will be raised somewhere else if string name is invalid!
+        scale = mfonts.font_scalings.get(large, 1)
+        large = small * scale
 
     # Scales for converting physical units to inches
     unit_dict = {
@@ -291,4 +299,3 @@ def units(value, units='in', axes=None, figure=None, width=True):
     if singleton:
         result = result[0]
     return result
-

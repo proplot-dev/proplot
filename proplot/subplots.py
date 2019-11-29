@@ -35,28 +35,28 @@ __all__ = [
 
 # Translation
 SIDE_TRANSLATE = {
-    'l':'left',
-    'r':'right',
-    'b':'bottom',
-    't':'top',
-    }
+    'l': 'left',
+    'r': 'right',
+    'b': 'bottom',
+    't': 'top',
+}
 
 # Dimensions of figures for common journals
 JOURNAL_SPECS = {
     'pnas1': '8.7cm',
     'pnas2': '11.4cm',
     'pnas3': '17.8cm',
-    'ams1': 3.2, # spec is in inches
+    'ams1': 3.2,  # spec is in inches
     'ams2': 4.5,
     'ams3': 5.5,
     'ams4': 6.5,
-    'agu1': ('95mm',  '115mm'),
+    'agu1': ('95mm', '115mm'),
     'agu2': ('190mm', '115mm'),
-    'agu3': ('95mm',  '230mm'),
+    'agu3': ('95mm', '230mm'),
     'agu4': ('190mm', '230mm'),
-    'aaas1': '5.5cm', # AAAS (e.g., Science) 1 column
-    'aaas2': '12cm', # AAAS 2 column
-    }
+    'aaas1': '5.5cm',  # AAAS (e.g., Science) 1 column
+    'aaas2': '12cm',  # AAAS 2 column
+}
 
 # Documentation
 _figure_doc = """
@@ -175,6 +175,7 @@ def close(*args, **kwargs):
     to import `~matplotlib.pyplot`."""
     plt.close(*args, **kwargs)
 
+
 def show():
     """Call `matplotlib.pyplot.show`. This is included so you don't have
     to import `~matplotlib.pyplot`. Note this command should *not be
@@ -189,6 +190,7 @@ class axes_grid(list):
     stacked axes panels. The shape of the array is stored in the ``shape``
     attribute. See the `~axes_grid.__getattr__` and `~axes_grid.__getitem__`
     methods for details."""
+
     def __init__(self, objs, n=1, order='C'):
         """
         Parameters
@@ -197,19 +199,20 @@ class axes_grid(list):
             1D iterable of `~proplot.axes.Axes` instances.
         n : int, optional
             The length of the fastest-moving dimension, i.e. the number of
-            columns when `order` is ``'C'``, and the number of rows when `order`
-            is ``'F'``. Used to treat lists as pseudo-2D arrays.
+            columns when `order` is ``'C'``, and the number of rows when
+            `order` is ``'F'``. Used to treat lists as pseudo-2D arrays.
         order : {'C', 'F'}, optional
             Whether 1D indexing returns results in row-major (C-style) or
             column-major (Fortran-style) order, respectively. Used to treat
             lists as pseudo-2D arrays.
         """
         if not all(isinstance(obj, axes.Axes) for obj in objs):
-            raise ValueError(f'Axes grid must be filled with Axes instances, got {objs!r}.')
+            raise ValueError(
+                f'Axes grid must be filled with Axes instances, got {objs!r}.')
         self._n = n
         self._order = order
         super().__init__(objs)
-        self.shape = (len(self)//n, n)[::(1 if order == 'C' else -1)]
+        self.shape = (len(self) // n, n)[::(1 if order == 'C' else -1)]
 
     def __repr__(self):
         return 'axes_grid([' + ', '.join(str(ax) for ax in self) + '])'
@@ -237,7 +240,9 @@ class axes_grid(list):
         # Allow 2D specification
         if isinstance(key, tuple) and len(key) == 1:
             key = key[0]
-        if not isinstance(key, tuple): # do not expand single slice to list of integers or we get recursion! len() operator uses __getitem__!
+        # do not expand single slice to list of integers or we get recursion!
+        # len() operator uses __getitem__!
+        if not isinstance(key, tuple):
             axlist = isinstance(key, slice)
             objs = list.__getitem__(self, key)
         elif len(key) == 2:
@@ -245,11 +250,11 @@ class axes_grid(list):
             # Expand keys
             keys = []
             order = self._order
-            for i,ikey in enumerate(key):
+            for i, ikey in enumerate(key):
                 if (i == 1 and order == 'C') or (i == 0 and order != 'C'):
                     n = self._n
                 else:
-                    n = len(self)//self._n
+                    n = len(self) // self._n
                 if isinstance(ikey, slice):
                     start, stop, step = ikey.start, ikey.stop, ikey.step
                     if start is None:
@@ -276,12 +281,14 @@ class axes_grid(list):
             # reversing the order of the keys.
             objs = []
             if self._order == 'C':
-                idxs = [key0*self._n + key1 for key0 in keys[0] for key1 in keys[1]]
+                idxs = [key0 * self._n + key1 for key0 in keys[0]
+                        for key1 in keys[1]]
             else:
-                idxs = [key1*self._n + key0 for key1 in keys[1] for key0 in keys[0]]
+                idxs = [key1 * self._n + key0 for key1 in keys[1]
+                        for key0 in keys[0]]
             for idx in idxs:
                 objs.append(list.__getitem__(self, idx))
-            if not axlist: # objs will always be length 1
+            if not axlist:  # objs will always be length 1
                 objs = objs[0]
         else:
             raise IndexError
@@ -311,12 +318,13 @@ class axes_grid(list):
         ... f, axs = plot.subplots(nrows=2, ncols=2)
         ... axs.format(...) # calls "format" on all subplots in the list
         ... paxs = axs.panel_axes('r')
-        ... paxs.format(...) # calls "format" on all panels in the axes_grid returned by "axs.panel_axes"
+        ... paxs.format(...) # calls "format" on all panels
 
         """
         if not self:
-            raise AttributeError(f'Invalid attribute {attr!r}, axes grid {self!r} is empty.')
-        objs = (*(getattr(ax, attr) for ax in self),) # may raise error
+            raise AttributeError(
+                f'Invalid attribute {attr!r}, axes grid {self!r} is empty.')
+        objs = (*(getattr(ax, attr) for ax in self),)  # may raise error
 
         # Objects
         if not any(callable(_) for _ in objs):
@@ -735,9 +743,11 @@ class _hide_labels(object):
     # TODO: Remove this by overriding the tight bounding box calculation
     def __init__(self, *args):
         self._labels = args
+
     def __enter__(self):
         for label in self._labels:
             label.set_visible(False)
+
     def __exit__(self, *args):
         for label in self._labels:
             label.set_visible(True)
@@ -994,11 +1004,11 @@ class GeometrySolver(object):
         if mode == 'equal':
             xscale, yscale = ax.get_xscale(), ax.get_yscale()
             if xscale == 'linear' and yscale == 'linear':
-                aspect = 1.0/ax.get_data_ratio()
+                aspect = 1.0 / ax.get_data_ratio()
             elif xscale == 'log' and yscale == 'log':
-                aspect = 1.0/ax.get_data_ratio_log()
+                aspect = 1.0 / ax.get_data_ratio_log()
             else:
-                pass # matplotlib issues warning, forces aspect == 'auto'
+                pass  # matplotlib issues warning, forces aspect == 'auto'
         # Apply aspect
         # Account for floating point errors by rounding to 10 digits
         if aspect is not None and not _approx_equal(aspect, self.aspect):
@@ -1042,18 +1052,22 @@ class GeometrySolver(object):
                 # Figure out whether this is a normal space, or a
                 # panel stack space/axes panel space
                 pad = axpad
-                if (panels[i] in ('l','t') and panels[i+1] in ('l','t','')
-                    or panels[i] in ('','r','b') and panels[i+1] in ('r','b')
-                    or panels[i] == 'f' and panels[i+1] == 'f'):
+                if (panels[i] in ('l', 't')
+                        and panels[i + 1] in ('l', 't', '')
+                        or panels[i] in ('', 'r', 'b')
+                        and panels[i + 1] in ('r', 'b')
+                        or panels[i] == 'f' and panels[i + 1] == 'f'):
                     pad = panelpad
                 # Find axes that abutt aginst this space on each row
                 groups = []
-                filt1 = ralong[:,1] == i # i.e. right/bottom edge abutts against this space
-                filt2 = ralong[:,0] == i + 1 # i.e. left/top edge abutts against this space
-                for j in range(nacross): # e.g. each row
+                # i.e. right/bottom edge abutts against this space
+                filt1 = ralong[:, 1] == i
+                # i.e. left/top edge abutts against this space
+                filt2 = ralong[:, 0] == i + 1
+                for j in range(nacross):  # e.g. each row
                     # Get indices
-                    filt = (racross[:,0] <= j) & (j <= racross[:,1])
-                    if sum(filt) < 2: # no interface here
+                    filt = (racross[:, 0] <= j) & (j <= racross[:, 1])
+                    if sum(filt) < 2:  # no interface here
                         continue
                     idx1, = np.where(filt & filt1)
                     idx2, = np.where(filt & filt2)
@@ -1068,24 +1082,24 @@ class GeometrySolver(object):
                     # (left axes, right axes) or (bottom axes, top axes) pairs.
                     ax1, ax2 = axs[idx1], axs[idx2]
                     if x != 'x':
-                        ax1, ax2 = ax2, ax1 # yrange is top-to-bottom, so make this bottom-to-top
+                        ax1, ax2 = ax2, ax1  # yrange is top-to-bottom, so make this bottom-to-top  # noqa
                     newgroup = True
-                    for (group1,group2) in groups:
+                    for (group1, group2) in groups:
                         if ax1 in group1 or ax2 in group2:
                             newgroup = False
                             group1.add(ax1)
                             group2.add(ax2)
                             break
                     if newgroup:
-                        groups.append([{ax1}, {ax2}]) # form new group
+                        groups.append([{ax1}, {ax2}])  # form new group
                 # Get spaces
-                # Remember layout is lspace, lspaces[0], rspaces[0], wspace, ...
+                # Layout is lspace, lspaces[0], rspaces[0], wspace, ...
                 # so panels spaces are located where i % 3 is 1 or 2
                 jspaces = []
-                for (group1,group2) in groups:
+                for (group1, group2) in groups:
                     x1 = max(ax._range_tightbbox(x)[1] for ax in group1)
                     x2 = min(ax._range_tightbbox(x)[0] for ax in group2)
-                    jspaces.append((x2 - x1)/self.dpi)
+                    jspaces.append((x2 - x1) / self.dpi)
                 if jspaces:
                     space = max(0, space - min(jspaces) + pad) # TODO: why max 0?
                 jspace[i] = space
@@ -1140,23 +1154,24 @@ class GeometrySolver(object):
                 if not hasattr(spanlabel, '_orig_transform'):
                     spanlabel._orig_transform = spanlabel.get_transform()
                     spanlabel._orig_position = spanlabel.get_position()
-                if not b: # toggle off, done before tight layout
+                if not b:  # toggle off, done before tight layout
                     spanlabel.set_transform(spanlabel._orig_transform)
                     spanlabel.set_position(spanlabel._orig_position)
                     for axis in axises:
                         axis.label.set_visible(True)
-                else: # toggle on, done after tight layout
+                else:  # toggle on, done after tight layout
                     if x == 'x':
                         position = (c, 1)
                         transform = mtransforms.blended_transform_factory(
-                                self.transFigure, mtransforms.IdentityTransform())
+                            self.transFigure, mtransforms.IdentityTransform())
                     else:
                         position = (1, c)
                         transform = mtransforms.blended_transform_factory(
-                                mtransforms.IdentityTransform(), self.transFigure)
+                            mtransforms.IdentityTransform(), self.transFigure)
                     for axis in axises:
                         axis.label.set_visible((axis is spanaxis))
-                    spanlabel.update({'position':position, 'transform':transform})
+                    spanlabel.update(
+                        {'position': position, 'transform': transform})
 
     def _align_suplabels(self, renderer):
         """Adjust the position of row and column labels, and align figure
@@ -1176,7 +1191,7 @@ class GeometrySolver(object):
             axs = self._get_align_axes(s)
             axs = [ax._reassign_suplabel(s) for ax in axs]
             labels = [getattr(ax, '_' + s + 'label') for ax in axs]
-            coords = [None]*len(axs)
+            coords = [None] * len(axs)
             if s == 't' and suptitle_on:
                 supaxs = axs
             with _hide_labels(*labels):
@@ -1202,16 +1217,19 @@ class GeometrySolver(object):
                         c = (c[0] if s in 'lr' else c[1])
                         icoords.append(c)
                     # Offset, and offset a bit extra for left/right labels
-                    # See: https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
+                    # See:
+                    # https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
                     fontsize = label.get_fontsize()
                     if s in 'lr':
                         scale1, scale2 = 0.6, width
                     else:
                         scale1, scale2 = 0.3, height
                     if s in 'lb':
-                        coords[i] = min(icoords) - (scale1*fontsize/72)/scale2
+                        coords[i] = min(icoords) - (
+                            scale1 * fontsize / 72) / scale2
                     else:
-                        coords[i] = max(icoords) + (scale1*fontsize/72)/scale2
+                        coords[i] = max(icoords) + (
+                            scale1 * fontsize / 72) / scale2
                 # Assign coords
                 coords = [i for i in coords if i is not None]
                 if coords:
@@ -1231,9 +1249,9 @@ class GeometrySolver(object):
                 _, y = self.transFigure.inverted().transform((0, bbox.ymax))
                 ys.append(y)
             x, _ = self._get_align_coord('t', supaxs)
-            y = max(ys) + (0.3*suptitle.get_fontsize()/72)/height
-            kw = {'x':x, 'y':y, 'ha':'center', 'va':'bottom',
-                  'transform':self.transFigure}
+            y = max(ys) + (0.3 * suptitle.get_fontsize() / 72) / height
+            kw = {'x': x, 'y': y, 'ha': 'center', 'va': 'bottom',
+                  'transform': self.transFigure}
             suptitle.update(kw)
 
     @property
@@ -1506,17 +1524,18 @@ class Figure(mfigure.Figure):
         if self._include_panels:
             axs = [iax for ax in axs for iax in ax._iter_panels(extra)]
         ranges = np.array([ax._range_gridspec(x) for ax in axs])
-        min_, max_ = ranges[:,0].min(), ranges[:,1].max()
-        axlo = axs[np.where(ranges[:,0] == min_)[0][0]]
-        axhi = axs[np.where(ranges[:,1] == max_)[0][0]]
+        min_, max_ = ranges[:, 0].min(), ranges[:, 1].max()
+        axlo = axs[np.where(ranges[:, 0] == min_)[0][0]]
+        axhi = axs[np.where(ranges[:, 1] == max_)[0][0]]
         lobox = axlo.get_subplotspec().get_position(self)
         hibox = axhi.get_subplotspec().get_position(self)
         if x == 'x':
-            pos = (lobox.x0 + hibox.x1)/2
+            pos = (lobox.x0 + hibox.x1) / 2
         else:
-            pos = (lobox.y1 + hibox.y0)/2 # 'lo' is actually on top, highest up in gridspec
+            # 'lo' is actually on top, highest up in gridspec
+            pos = (lobox.y1 + hibox.y0) / 2
         # Return axis suitable for spanning position
-        spanax = axs[(np.argmin(ranges[:,0]) + np.argmax(ranges[:,1]))//2]
+        spanax = axs[(np.argmin(ranges[:, 0]) + np.argmax(ranges[:, 1])) // 2]
         spanax = spanax._panel_parent or spanax
         return pos, spanax
 
@@ -1535,7 +1554,7 @@ class Figure(mfigure.Figure):
         if not axs:
             return []
         ranges = np.array([ax._range_gridspec(x) for ax in axs])
-        min_, max_ = ranges[:,0].min(), ranges[:,1].max()
+        min_, max_ = ranges[:, 0].min(), ranges[:, 1].max()
         edge = (min_ if s in 'lt' else max_)
         # Return axes on edge sorted by order of appearance
         axs = [ax for ax in self._mainaxes if ax._range_gridspec(x)[idx] == edge]
@@ -1684,14 +1703,16 @@ class Figure(mfigure.Figure):
         # Get main axes on the edge
         axs = self._get_align_axes(s)
         if not axs:
-            return # occurs if called while adding axes
+            return  # occurs if called while adding axes
 
         # Update label text for axes on the edge
-        if labels is None or isinstance(labels, str): # common during testing
-            labels = [labels]*len(axs)
+        if labels is None or isinstance(labels, str):  # common during testing
+            labels = [labels] * len(axs)
         if len(labels) != len(axs):
-            raise ValueError(f'Got {len(labels)} {s}labels, but there are {len(axs)} axes along that side.')
-        for ax,label in zip(axs,labels):
+            raise ValueError(
+                f'Got {len(labels)} {s}labels, but there are {len(axs)} axes '
+                'along that side.')
+        for ax, label in zip(axs, labels):
             obj = getattr(ax, '_' + s + 'label')
             if label is not None and obj.get_text() != label:
                 obj.set_text(label)
@@ -1835,9 +1856,9 @@ class Figure(mfigure.Figure):
         return ax
 
     def colorbar(self, *args,
-        loc='r', width=None, space=None,
-        row=None, col=None, rows=None, cols=None, span=None,
-        **kwargs):
+                 loc='r', width=None, space=None,
+                 row=None, col=None, rows=None, cols=None, span=None,
+                 **kwargs):
         """
         Draw a colorbar along the left, right, bottom, or top side
         of the figure, centered between the leftmost and rightmost (or
@@ -1932,9 +1953,9 @@ class Figure(mfigure.Figure):
         return self._spany
 
     def legend(self, *args,
-        loc='r', width=None, space=None,
-        row=None, col=None, rows=None, cols=None, span=None,
-        **kwargs):
+               loc='r', width=None, space=None,
+               row=None, col=None, rows=None, cols=None, span=None,
+               **kwargs):
         """
         Draw a legend along the left, right, bottom, or top side of the
         figure, centered between the leftmost and rightmost (or
@@ -1967,9 +1988,9 @@ class Figure(mfigure.Figure):
             all rows and columns.
         space : float or str, optional
             The space between the main subplot grid and the legend, or the
-            space between successively stacked colorbars. Units are interpreted by
-            `~proplot.utils.units`. By default, this is adjusted automatically
-            in the "tight layout" calculation, or is
+            space between successively stacked colorbars. Units are interpreted
+            by `~proplot.utils.units`. By default, this is adjusted
+            automatically in the "tight layout" calculation, or is
             :rc:`subplots.panelspace` if "tight layout" is turned off.
         *args, **kwargs
             Passed to `~proplot.axes.Axes.legend`.
@@ -2139,21 +2160,23 @@ def _axes_dict(naxs, value, kw=False, default=None):
     # First build up dictionary
     # 1) 'string' or {1:'string1', (2,3):'string2'}
     if not kw:
-        if np.iterable(value) and not isinstance(value, (str,dict)):
-            value = {num+1: item for num,item in enumerate(value)}
+        if np.iterable(value) and not isinstance(value, (str, dict)):
+            value = {num + 1: item for num, item in enumerate(value)}
         elif not isinstance(value, dict):
-            value = {range(1, naxs+1): value}
+            value = {range(1, naxs + 1): value}
     # 2) {'prop':value} or {1:{'prop':value1}, (2,3):{'prop':value2}}
     else:
-        nested = [isinstance(value,dict) for value in value.values()]
-        if not any(nested): # any([]) == False
-            value = {range(1, naxs+1): value.copy()}
+        nested = [isinstance(value, dict) for value in value.values()]
+        if not any(nested):  # any([]) == False
+            value = {range(1, naxs + 1): value.copy()}
         elif not all(nested):
-            raise ValueError('Pass either of dictionary of key value pairs or a dictionary of dictionaries of key value pairs.')
+            raise ValueError(
+                'Pass either of dictionary of key value pairs or '
+                'a dictionary of dictionaries of key value pairs.')
     # Then *unfurl* keys that contain multiple axes numbers, i.e. are meant
     # to indicate properties for multiple axes at once
     kwargs = {}
-    for nums,item in value.items():
+    for nums, item in value.items():
         nums = np.atleast_1d(nums)
         for num in nums.flat:
             if not kw:
@@ -2161,7 +2184,7 @@ def _axes_dict(naxs, value, kw=False, default=None):
             else:
                 kwargs[num] = item.copy()
     # Fill with default values
-    for num in range(1, naxs+1):
+    for num in range(1, naxs + 1):
         if num not in kwargs:
             if kw:
                 kwargs[num] = {}
@@ -2279,28 +2302,38 @@ def subplots(array=None, ncols=1, nrows=1, ref=1, order='C',
     # NOTE: White lie that spacing params are passed to figure, but since
     # we initialize the gridspec here, just apply them to the gridspec.
     # Build array
-    if order not in ('C','F'): # better error message
-        raise ValueError(f'Invalid order {order!r}. Choose from "C" (row-major, default) and "F" (column-major).')
+    if order not in ('C', 'F'):  # better error message
+        raise ValueError(
+            f'Invalid order {order!r}. Choose from "C" (row-major, default) '
+            f'and "F" (column-major).')
     if array is None:
-        array = np.arange(1,nrows*ncols+1)[...,None]
+        array = np.arange(1, nrows * ncols + 1)[..., None]
         array = array.reshape((nrows, ncols), order=order)
     # Standardize array
     try:
-        array = np.array(array, dtype=int) # enforce array type
+        array = np.array(array, dtype=int)  # enforce array type
         if array.ndim == 1:
-            array = array[None,:] if order == 'C' else array[:,None] # interpret as single row or column
+            # interpret as single row or column
+            array = array[None, :] if order == 'C' else array[:, None]
         elif array.ndim != 2:
             raise ValueError
-        array[array == None] = 0 # use zero for placeholder
-    except (TypeError,ValueError):
-        raise ValueError(f'Invalid subplot array {array!r}. Must be 1D or 2D array of integers.')
+        array[array == None] = 0  # use zero for placeholder  # noqa
+    except (TypeError, ValueError):
+        raise ValueError(
+            f'Invalid subplot array {array!r}. '
+            'Must be 1D or 2D array of integers.')
     # Get other props
     nums = np.unique(array[array != 0])
     naxs = len(nums)
-    if {*nums.flat} != {*range(1, naxs+1)}:
-        raise ValueError(f'Invalid subplot array {array!r}. Numbers must span integers 1 to naxs (i.e. cannot skip over numbers), with 0 representing empty spaces.')
+    if {*nums.flat} != {*range(1, naxs + 1)}:
+        raise ValueError(
+            f'Invalid subplot array {array!r}. Numbers must span integers '
+            '1 to naxs (i.e. cannot skip over numbers), with 0 representing '
+            'empty spaces.')
     if ref not in nums:
-        raise ValueError(f'Invalid reference number {ref!r}. For array {array!r}, must be one of {nums}.')
+        raise ValueError(
+            f'Invalid reference number {ref!r}. For array {array!r}, must be '
+            'one of {nums}.')
     nrows, ncols = array.shape
     # Get axes ranges from array
     axids = [np.where(array == i) for i in np.sort(np.unique(array)) if i > 0] # 0 stands for empty
@@ -2309,16 +2342,17 @@ def subplots(array=None, ncols=1, nrows=1, ref=1, order='C',
 
     # Get basemap.Basemap or cartopy.crs.Projection instances for map
     proj = _notNone(projection, proj, None, names=('projection', 'proj'))
-    proj_kw = _notNone(projection_kw, proj_kw, {}, names=('projection_kw', 'proj_kw'))
-    proj    = _axes_dict(naxs, proj, kw=False, default='xy')
+    proj_kw = _notNone(projection_kw, proj_kw, {},
+                       names=('projection_kw', 'proj_kw'))
+    proj = _axes_dict(naxs, proj, kw=False, default='xy')
     proj_kw = _axes_dict(naxs, proj_kw, kw=True)
     basemap = _axes_dict(naxs, basemap, kw=False, default=False)
 
     # Standardized user input ratios
     wratios = np.atleast_1d(_notNone(width_ratios, wratios, 1,
-        names=('width_ratios', 'wratios')))
+                                     names=('width_ratios', 'wratios')))
     hratios = np.atleast_1d(_notNone(height_ratios, hratios, 1,
-        names=('height_ratios', 'hratios')))
+                                     names=('height_ratios', 'hratios')))
     if len(wratios) == 1:
         wratios = np.repeat(wratios, (ncols,))
     if len(hratios) == 1:
@@ -2338,12 +2372,12 @@ def subplots(array=None, ncols=1, nrows=1, ref=1, order='C',
         wratios=wratios, hratios=hratios)
 
     # Draw main subplots
-    axs = naxs*[None] # list of axes
+    axs = naxs * [None]  # list of axes
     for idx in range(naxs):
         # Get figure gridspec ranges
         num = idx + 1
-        x0, x1 = xrange[idx,0], xrange[idx,1]
-        y0, y1 = yrange[idx,0], yrange[idx,1]
+        x0, x1 = xrange[idx, 0], xrange[idx, 1]
+        y0, y1 = yrange[idx, 0], yrange[idx, 1]
         # Draw subplot
         ss = gs[y0:y1+1, x0:x1+1]
         axs[idx] = fig.add_subplot(ss, number=num,
@@ -2353,4 +2387,3 @@ def subplots(array=None, ncols=1, nrows=1, ref=1, order='C',
     # Return figure and axes
     n = (ncols if order == 'C' else nrows)
     return fig, axes_grid(axs, n=n, order=order)
-
