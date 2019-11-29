@@ -91,20 +91,35 @@ Preparing pull requests
    If you need some help with git, follow the
    `quick start guide <https://git.wiki.kernel.org/index.php/QuickStart>`__.
 
+#. Install `pre-commit <https://pre-commit.com>`_ and its hook on the ``proplot`` repo
+
+   .. code-block:: bash
+
+      pip install --user pre-commit
+      pre-commit install
+
+   Afterwards ``pre-commit`` will run whenever you commit. https://pre-commit.com/
+   is a framework for managing and maintaining multi-language pre-commit hooks to
+   ensure code-style and code formatting is consistent.
+
+   You can now edit your local working copy as necessary. Please follow
+   PEP-8 naming conventions. When committing, ``pre-commit`` will modify the
+   files as needed, or will generally be clear about what you need to do to
+   pass the commit test.
+
 #. If you intend to make changes / add examples to the ipython notebooks,
    you need to install and configure
    `nbstripout <https://github.com/kynan/nbstripout>`__ with
 
    .. code-block:: bash
 
-      cd proplot
-      pip install nbstripout
+      pip install --user nbstripout
       git config --local include.path ../.gitconfig
 
    This strips notebook cell output when files are staged, which reduces the
    repo storage size and lets us use
    `nbsphinx <https://nbsphinx.readthedocs.io/en/0.4.3/>`__
-   to test each ``git push``, since ``nbsphinx`` must then re-run every cell.
+   to test each ``git push``.
 
    The ``git config`` command associates the filters declared in
    ``proplot/.gitattributes`` with the operations described in ``proplot/.gitconfig``
@@ -118,7 +133,8 @@ Preparing pull requests
       pip install -e .
 
    This way when you ``import proplot``, your
-   local copy is used. Make sure matplotlib is already installed.
+   local copy is used. You can print ``proplot.__file__`` to verify this.
+   Make sure matplotlib is already installed.
 
 #. Break your edits up into reasonably sized commits.
 
@@ -140,11 +156,11 @@ Preparing pull requests
 
    - The entry should be entered as:
 
-      .. code-block::
+     .. code-block::
 
          <description> (:pr:`<PR number>`) `<author name>`_
 
-    where ``<description>`` is the description of the PR related to the change, ``<PR number>`` is the pull request number, and ``<author name>`` is your first and last name.
+     where ``<description>`` is the description of the PR related to the change, ``<PR number>`` is the pull request number, and ``<author name>`` is your first and last name.
 
    - Add yourself to list of authors at the end of ``CHANGELOG.rst`` file if not there yet, in alphabetical order.
 
