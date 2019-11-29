@@ -16,4 +16,4 @@ repos:
     rev: v2.2.3
     hooks:
     - id: flake8
-      args: ["--max-line-length=88", "--exclude=__init__.py"]
+      args: ["--ignore=W503"]

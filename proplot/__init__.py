@@ -7,21 +7,21 @@ import warnings as _warnings
 import pkg_resources as _pkg
 from .utils import _benchmark
 with _benchmark('total time'):
-    from .utils import *
+    from .utils import *  # noqa
     with _benchmark('styletools'):
-        from .styletools import *
+        from .styletools import *  # noqa
     with _benchmark('rctools'):
-        from .rctools import *
+        from .rctools import *  # noqa
     with _benchmark('axistools'):
-        from .axistools import *
+        from .axistools import *  # noqa
     with _benchmark('wrappers'):
-        from .wrappers import *
+        from .wrappers import *  # noqa
     with _benchmark('projs'):
-        from .projs import *
+        from .projs import *  # noqa
     with _benchmark('axes'):
-        from .axes import *
+        from .axes import *  # noqa
     with _benchmark('subplots'):
-        from .subplots import *
+        from .subplots import *  # noqa
 
 
 def _warning_proplot(message, category, filename, lineno, line=None):
