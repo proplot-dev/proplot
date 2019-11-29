@@ -1914,7 +1914,7 @@ def subplots(
             array = array[None, :] if order == 'C' else array[:, None]
         elif array.ndim != 2:
             raise ValueError
-        array[array is None] = 0  # use zero for placeholder
+        array[array == None] = 0  # use zero for placeholder  # noqa
     except (TypeError, ValueError):
         raise ValueError(
             f'Invalid subplot array {array!r}. '
@@ -2073,11 +2073,11 @@ def subplots(
     # Default spaces between axes
     wratios, hratios = [*wratios], [*hratios]  # copies
     wspace, hspace = np.array(wspace), np.array(hspace)  # also copies!
-    wspace[wspace is None] = (
+    wspace[wspace == None] = (  # noqa
         units(rc['subplots.innerspace']) if sharey == 3 else
         units(rc['subplots.ylabspace']) - units(rc['subplots.titlespace'])
         if sharey in (1, 2) else units(rc['subplots.ylabspace']))
-    hspace[hspace is None] = (
+    hspace[hspace == None] = (  # noqa
         units(rc['subplots.titlespace']) + units(rc['subplots.innerspace'])
         if sharex == 3 else units(rc['subplots.xlabspace'])
         if sharex in (1, 2) else units(rc['subplots.titlespace'])
