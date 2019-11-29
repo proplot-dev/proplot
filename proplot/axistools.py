@@ -1345,10 +1345,12 @@ class InverseTransform(mtransforms.Transform):
         return self.transform(a)
 
 
+#: The registered scale names and their associated
+#: `~matplotlib.scale.ScaleBase` classes. See `Scale` for a table.
 scales = mscale._scale_mapping
-"""The registered scale names and their associated
-`~matplotlib.scale.ScaleBase` classes. See `Scale` for a table."""
 
+#: Mapping of strings to `~matplotlib.ticker.Locator` classes. See
+#: `Locator` for a table."""
 locators = {
     'none': mticker.NullLocator,
     'null': mticker.NullLocator,
@@ -1372,11 +1374,11 @@ locators = {
     'month': mdates.MonthLocator,
     'year': mdates.YearLocator,
 }
-"""Mapping of strings to `~matplotlib.ticker.Locator` classes. See
-`Locator` for a table."""
 if hasattr(mpolar, 'ThetaLocator'):
     locators['theta'] = mpolar.ThetaLocator
 
+#: Mapping of strings to `~matplotlib.ticker.Formatter` classes. See
+#: `Formatter` for a table.
 formatters = {  # note default LogFormatter uses ugly e+00 notation
     'auto': AutoFormatter,
     'frac': FracFormatter,
@@ -1396,16 +1398,13 @@ formatters = {  # note default LogFormatter uses ugly e+00 notation
     'percent': mticker.PercentFormatter,
     'index': mticker.IndexFormatter,
 }
-"""Mapping of strings to `~matplotlib.ticker.Formatter` classes. See
-`Formatter` for a table."""
 if hasattr(mdates, 'ConciseDateFormatter'):
     formatters['concise'] = mdates.ConciseDateFormatter
 if hasattr(mpolar, 'ThetaFormatter'):
     formatters['theta'] = mpolar.ThetaFormatter
 
-# Monkey patch
-# Force scale_factory to accept ScaleBase instances, so that set_xscale and
-# set_yscale can accept scales returned by the Scale constructor
+# Monkey patch. Force scale_factory to accept ScaleBase instances, so that
+# set_xscale and set_yscale can accept scales returned by the Scale constructor
 if mscale.scale_factory is not _scale_factory:
     mscale.scale_factory = _scale_factory
 

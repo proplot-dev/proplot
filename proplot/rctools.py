@@ -130,15 +130,12 @@ RC_CATEGORIES = {
         (RC_CUSTOMNAMES, RC_PARAMNAMES) for name in names)
 }
 
-# Unit conversion
-# See: https://matplotlib.org/users/customizing.html, all props matching
-# the below strings use the units 'points', and my special categories are
-# inches!
-
 
 def _convert_units(key, value):
     """Converts certain keys to the units "points". If "key" is passed, tests
     that key against possible keys that accept physical units."""
+    # See: https://matplotlib.org/users/customizing.html, all props matching
+    # the strings use the units 'points', and special categories are inches!
     # WARNING: Must keep colorbar and subplots units alive, so when user
     # requests em units, values change with respect to font size. The points
     # thing is a conveniene feature so not as important for them.
@@ -846,11 +843,10 @@ def autosave_setup(autosave=None):
 
 
 # Call setup functions and declare rc object
-# WARNING: Must be instantiated after ipython notebook setup! The default
-# backend may change some rc settings!
+# WARNING: Must be instantiated after ipython notebook setup!
+#: Instance of `rc_configurator`. This is used to change global settings.
+#: See :ref:`Configuring proplot` for details.
 rc = rc_configurator()
-"""Instance of `rc_configurator`. This is used to change global settings.
-See :ref:`Configuring proplot` for details."""
 backend_setup()
 autoreload_setup()
 autosave_setup()

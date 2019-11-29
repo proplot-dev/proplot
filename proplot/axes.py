@@ -1747,8 +1747,8 @@ class XYAxes(Axes):
     Axes subclass for ordinary 2D cartesian coordinates. Adds several new
     methods and overrides existing ones.
     """
+    #: The registered projection name.
     name = 'xy'
-    """The registered projection name."""
 
     def __init__(self, *args, **kwargs):
         """
@@ -2655,8 +2655,8 @@ class XYAxes(Axes):
 class PolarAxes(Axes, mproj.PolarAxes):
     """Intermediate class, mixes `ProjAxes` with
     `~matplotlib.projections.polar.PolarAxes`."""
+    #: The registered projection name.
     name = 'polar'
-    """The registered projection name."""
 
     def __init__(self, *args, **kwargs):
         """
@@ -3164,8 +3164,8 @@ class GeoAxes(ProjAxes, GeoAxes):
     <https://scitools.org.uk/cartopy/docs/latest/gallery/always_circular_stereo.html>`__
     around polar azimuthal, stereographic, and Gnomonic projections bounded at
     the equator by default."""  # noqa
+    #: The registered projection name.
     name = 'geo'
-    """The registered projection name."""
     _n_points = 100  # number of points for drawing circle map boundary
 
     def __init__(self, *args, map_projection=None, **kwargs):
@@ -3504,8 +3504,8 @@ class BasemapAxes(ProjAxes):
     the `map_projection` attribute, but this is all abstracted away. You can
     use `~matplotlib.axes.Axes` methods like `~matplotlib.axes.Axes.plot` and
     `~matplotlib.axes.Axes.contour` with your raw longitude-latitude data."""
+    #: The registered projection name.
     name = 'basemap'
-    """The registered projection name."""
     _proj_non_rectangular = (
         'ortho', 'geos', 'nsper',
         'moll', 'hammer', 'robin',

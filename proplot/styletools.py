@@ -3068,41 +3068,6 @@ def register_fonts():
     fonts[:] = sorted((*fonts_system, *fonts_proplot))
 
 
-cmaps = []  # track *downloaded* colormaps, user can then check this list
-"""List of new registered colormap names."""
-cycles = []  # track *all* color cycles
-"""List of registered color cycle names."""
-_colordict_unfiltered = {}  # downloaded colors categorized by filename
-colordict = {}  # limit to 'sufficiently unique' color names
-"""Registered color names by category."""
-fonts_proplot = []
-"""Names of fonts added by ProPlot."""
-fonts_system = []
-"""Names of fonts provided by matplotlib or your operating system."""
-fonts = []
-"""All registered font names."""
-
-register_colors()
-register_cmaps()
-register_cycles()
-register_fonts()
-
-# Dictionary of normalizers; note BinNorm is inaccessible for users
-normalizers = {
-    'none': mcolors.NoNorm,
-    'null': mcolors.NoNorm,
-    'zero': MidpointNorm,
-    'midpoint': MidpointNorm,
-    'segments': LinearSegmentedNorm,
-    'segmented': LinearSegmentedNorm,
-    'log': mcolors.LogNorm,
-    'linear': mcolors.Normalize,
-    'power': mcolors.PowerNorm,
-    'symlog': mcolors.SymLogNorm,
-}
-"""Dictionary of possible normalizers. See `Norm` for a table."""
-
-
 def show_channels(*args, N=100, rgb=True, saturation=True,
                   minhue=0, maxsat=1000, axwidth=None, width=100):
     """
@@ -3584,6 +3549,8 @@ def show_fonts(fonts=None, size=12):
     """Displays table of the fonts installed by ProPlot or in the user-supplied
     `fonts` list. Use `size` to change the fontsize for fonts shown in the
     figure."""
+    # letters = 'Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr ' \
+    #           'Ss Tt Uu Vv Ww Xx Yy Zz'
     from . import subplots
     fonts = ('DejaVu Sans', *fonts_proplot)
     math = r'(0) + {1} - [2] * <3> / 4,0 $\geq\gg$ 5.0 $\leq\ll$ ~6 ' \
@@ -3594,8 +3561,6 @@ def show_fonts(fonts=None, size=12):
             r'$\Phi\phi$ $\Psi\psi$ $\Omega\omega$ !?&#%'
     letters = 'the quick brown fox jumps over a lazy dog\n' \
               'THE QUICK BROWN FOX JUMPS OVER A LAZY DOG'
-    # letters = 'Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr ' \
-    #           'Ss Tt Uu Vv Ww Xx Yy Zz'
     for weight in ('normal',):
         f, axs = subplots(ncols=1, nrows=len(fonts), space=0,
                           axwidth=4.5, axheight=5.5 * size / 72)
@@ -3609,3 +3574,43 @@ def show_fonts(fonts=None, size=12):
                     fontfamily=font, fontsize=size,
                     weight=weight, ha='left', va='center')
     return f
+
+
+#: List of new registered colormap names.
+cmaps = []  # track *downloaded* colormaps
+
+#: List of registered color cycle names.
+cycles = []  # track *all* color cycles
+
+#: Registered color names by category.
+colordict = {}  # limit to 'sufficiently unique' color names
+_colordict_unfiltered = {}  # downloaded colors categorized by filename
+
+#: Names of fonts added by ProPlot.
+fonts_proplot = []
+
+#: Names of fonts provided by matplotlib or your operating system.
+fonts_system = []
+
+#: All registered font names.
+fonts = []
+
+# Call driver funcs
+register_colors()
+register_cmaps()
+register_cycles()
+register_fonts()
+
+#: Dictionary of possible normalizers. See `Norm` for a table.
+normalizers = {
+    'none': mcolors.NoNorm,
+    'null': mcolors.NoNorm,
+    'zero': MidpointNorm,
+    'midpoint': MidpointNorm,
+    'segments': LinearSegmentedNorm,
+    'segmented': LinearSegmentedNorm,
+    'log': mcolors.LogNorm,
+    'linear': mcolors.Normalize,
+    'power': mcolors.PowerNorm,
+    'symlog': mcolors.SymLogNorm,
+}

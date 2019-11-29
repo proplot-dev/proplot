@@ -171,8 +171,8 @@ class Hammer(_WarpedRectangularProjection):
     """The `Hammer <https://en.wikipedia.org/wiki/Hammer_projection>`__
     projection."""
     __name__ = 'hammer'
+    #: Registered projection name.
     name = 'hammer'
-    """Registered projection name."""
 
     def __init__(self, central_longitude=0, globe=None):  # , threshold=1e2):
         proj4_params = {'proj': 'hammer', 'lon_0': central_longitude}
@@ -188,8 +188,8 @@ class Aitoff(_WarpedRectangularProjection):
     """The `Aitoff <https://en.wikipedia.org/wiki/Aitoff_projection>`__
     projection."""
     __name__ = 'aitoff'
+    #: Registered projection name.
     name = 'aitoff'
-    """Registered projection name."""
 
     def __init__(self, central_longitude=0, globe=None):  # , threshold=1e2):
         proj4_params = {'proj': 'aitoff', 'lon_0': central_longitude}
@@ -205,8 +205,8 @@ class KavrayskiyVII(_WarpedRectangularProjection):
     """The `Kavrayskiy VII
     <https://en.wikipedia.org/wiki/Kavrayskiy_VII_projection>`__ projection."""
     __name__ = 'kavrayskiyVII'
+    #: Registered projection name.
     name = 'kavrayskiyVII'
-    """Registered projection name."""
 
     def __init__(self, central_longitude=0, globe=None):
         proj4_params = {'proj': 'kav7', 'lon_0': central_longitude}
@@ -222,8 +222,8 @@ class WinkelTripel(_WarpedRectangularProjection):
     """The `Winkel tripel (Winkel III)
     <https://en.wikipedia.org/wiki/Winkel_tripel_projection>`__ projection."""
     __name__ = 'winkeltripel'
+    #: Registered projection name.
     name = 'winkeltripel'
-    """Registered projection name."""
 
     def __init__(self, central_longitude=0, globe=None):
         proj4_params = {'proj': 'wintri', 'lon_0': central_longitude}
@@ -238,7 +238,6 @@ class WinkelTripel(_WarpedRectangularProjection):
 
 class NorthPolarAzimuthalEquidistant(AzimuthalEquidistant):
     """Analogous to `~cartopy.crs.NorthPolarStereo`."""
-
     def __init__(self, central_longitude=0.0, globe=None):
         super().__init__(central_latitude=90,
                          central_longitude=central_longitude, globe=globe)
@@ -246,7 +245,6 @@ class NorthPolarAzimuthalEquidistant(AzimuthalEquidistant):
 
 class SouthPolarAzimuthalEquidistant(AzimuthalEquidistant):
     """Analogous to `~cartopy.crs.SouthPolarStereo`."""
-
     def __init__(self, central_longitude=0.0, globe=None):
         super().__init__(central_latitude=-90,
                          central_longitude=central_longitude, globe=globe)
@@ -254,7 +252,6 @@ class SouthPolarAzimuthalEquidistant(AzimuthalEquidistant):
 
 class NorthPolarLambertAzimuthalEqualArea(LambertAzimuthalEqualArea):
     """Analogous to `~cartopy.crs.NorthPolarStereo`."""
-
     def __init__(self, central_longitude=0.0, globe=None):
         super().__init__(central_latitude=90,
                          central_longitude=central_longitude, globe=globe)
@@ -262,7 +259,6 @@ class NorthPolarLambertAzimuthalEqualArea(LambertAzimuthalEqualArea):
 
 class SouthPolarLambertAzimuthalEqualArea(LambertAzimuthalEqualArea):
     """Analogous to `~cartopy.crs.SouthPolarStereo`."""
-
     def __init__(self, central_longitude=0.0, globe=None):
         super().__init__(central_latitude=-90,
                          central_longitude=central_longitude, globe=globe)
@@ -270,7 +266,6 @@ class SouthPolarLambertAzimuthalEqualArea(LambertAzimuthalEqualArea):
 
 class NorthPolarGnomonic(Gnomonic):
     """Analogous to `~cartopy.crs.SouthPolarStereo`."""
-
     def __init__(self, central_longitude=0.0, globe=None):
         super().__init__(central_latitude=90,
                          central_longitude=central_longitude, globe=globe)
@@ -278,7 +273,6 @@ class NorthPolarGnomonic(Gnomonic):
 
 class SouthPolarGnomonic(Gnomonic):
     """Analogous to `~cartopy.crs.SouthPolarStereo`."""
-
     def __init__(self, central_longitude=0.0, globe=None):
         super().__init__(central_latitude=-90,
                          central_longitude=central_longitude, globe=globe)
@@ -296,9 +290,9 @@ CARTOPY_CRS_TRANSLATE = {  # add to this
     'lat_max': 'max_latitude',
 }
 
-# Documented constants
-# Note either llcrn/urcrnr args (all 4) can be specified, or width
-# and height can be specified
+#: Default keyword args for `~mpl_toolkits.basemap.Basemap` projections.
+#: `~mpl_toolkits.basemap` will raise an error if you don't provide them,
+#: so ProPlot imposes some sensible default behavior.
 basemap_rc = {
     'eck4': {'lon_0': 0},
     'geos': {'lon_0': 0},
@@ -329,13 +323,9 @@ basemap_rc = {
     'omerc': {'lat_0': 0, 'lon_0': 0, 'lat_1': -10, 'lat_2': 10,
               'lon_1': 0, 'lon_2': 0, 'width': 10000e3, 'height': 10000e3},
 }
-"""Default keyword args for `~mpl_toolkits.basemap.Basemap` projections.
-`~mpl_toolkits.basemap` will raise an error if you don't provide them,
-so ProPlot imposes some sensible default behavior."""
 
+#: Mapping of "projection names" to cartopy `~cartopy.crs.Projection` classes.
 cartopy_projs = {}
-"""Mapping of "projection names" to cartopy `~cartopy.crs.Projection`
-classes."""
 if _cartopy_installed:
     # Custom ones, these are always present
     import cartopy.crs as ccrs  # verify package is available
