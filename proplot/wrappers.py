@@ -2453,7 +2453,10 @@ def legend_wrapper(
             legs[0].set_frame_on(True)  # easy!
         else:
             # Get coordinates
-            renderer = self.figure.canvas.get_renderer()
+            if hasattr(self.figure.canvas, 'get_renderer'):
+                renderer = self.figure.canvas.get_renderer()
+            else:
+                renderer = self.figure._cachedRenderer
             bboxs = [leg.get_window_extent(renderer).transformed(
                 self.transAxes.inverted()) for leg in legs]
             xmin, xmax = min(bbox.xmin for bbox in bboxs), max(

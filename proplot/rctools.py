@@ -791,10 +791,9 @@ def backend_setup(backend=None, fmt=None):
     # Configure inline backend no matter what type of session this is
     # Should be silently ignored for terminal ipython sessions
     ipython.magic("config InlineBackend.figure_formats = ['" + fmt + "']")
-    # no notebook-specific overrides
-    ipython.magic('config InlineBackend.rc = {}')
+    ipython.magic('config InlineBackend.rc = {}')  # no notebook overrides
     ipython.magic('config InlineBackend.close_figures = True')  # memory issues
-    # use ProPlot tight layout
+    # Use ProPlot tight layout
     ipython.magic(
         "config InlineBackend.print_figure_kwargs = {'bbox_inches':None}")
 
@@ -842,11 +841,11 @@ def autosave_setup(autosave=None):
             pass
 
 
-# Call setup functions and declare rc object
-# WARNING: Must be instantiated after ipython notebook setup!
 #: Instance of `rc_configurator`. This is used to change global settings.
 #: See :ref:`Configuring proplot` for details.
 rc = rc_configurator()
+
+# Call setup functions
 backend_setup()
 autoreload_setup()
 autosave_setup()
