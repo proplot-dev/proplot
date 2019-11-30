@@ -25,7 +25,7 @@ No more boilerplate
 
    <h3>Problem</h3>
 
-Power users often need to change lots of plot settings all at once. In matplotlib, this requires a bunch of one-liner setters and getters, like `~matplotlib.axes.Axes.set_title`. 
+Power users often need to change lots of plot settings all at once. In matplotlib, this requires a bunch of one-liner setters and getters, like `~matplotlib.axes.Axes.set_title`.
 
 This workflow is verbose and often confusing. It can be unclear whether settings can be changed from a `~matplotlib.figure.Figure` setter, an `~matplotlib.axes.Axes` setter, an `~matplotlib.axis.XAxis` or `~matplotlib.axis.YAxis` setter, or a miscellaneous bulk function like `~matplotlib.axes.Axes.tick_params`.
 
@@ -72,7 +72,11 @@ Matplotlib and cartopy introduce a bunch of classes with verbose names like `~ma
 
 *Other* parts of the matplotlib API were designed with this in mind.
 `Native axes projections <https://matplotlib.org/3.1.1/api/projections_api.html>`__,
-`axis scale classes <https://matplotlib.org/3.1.0/gallery/scales/scales.html>`__, and `colormap instances <https://matplotlib.org/3.1.1/gallery/color/colormap_reference.html>`__ are referenced with "registered" string names,
+`axis scale classes <https://matplotlib.org/3.1.0/gallery/scales/scales.html>`__,
+`box style classes <https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.patches.FancyBboxPatch.html?highlight=boxstyle>`__, `arrow style classes <https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.patches.FancyArrowPatch.html?highlight=arrowstyle>`__,
+`arc style classes <https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.patches.ConnectionStyle.html?highlight=class%20name%20attrs>`__, and
+`backends <https://matplotlib.org/faq/usage_faq.html#what-is-a-backend>`__
+are referenced with "registered" string names,
 as are `basemap projection types <https://matplotlib.org/basemap/users/mapsetup.html>`__.
 If these are already "registered", why not "register" everything else?
 
@@ -180,7 +184,7 @@ individual subplots and along contiguous subplots on the edge of the figure:
 * Outer colorbars and legends don't mess up the subplot layout or subplot aspect ratios, since `~proplot.subplots.FlexibleGridSpec` permits variable spacing between subplot rows and columns. This is critical e.g. if you have a colorbar between columns 1 and 2 but nothing between columns 2 and 3.
 * `~proplot.subplots.Figure` and `~proplot.axes.Axes` colorbar widths are specified in *physical* units rather than relative units. This makes colorbar thickness independent of figure size and easier to get just right.
 
-The colorbar and legend commands also add several new features, like colorbars-from-lines and centerd-row legends. And to make `~proplot.axes.Axes` `~proplot.axes.Axes.colorbar` consistent with `~proplot.axes.Axes` `~proplot.axes.Axes.legend`, you can also now draw *inset* colorbars. See :ref:`Colorbars and legends` for details.
+The colorbar and legend commands also add several new features, like colorbars-from-lines and centered-row legends. And to make `~proplot.axes.Axes` `~proplot.axes.Axes.colorbar` consistent with `~proplot.axes.Axes` `~proplot.axes.Axes.legend`, you can also now draw *inset* colorbars. See :ref:`Colorbars and legends` for details.
 
 The axes container class
 ========================
@@ -334,7 +338,7 @@ the "blue marble". But once these are added to cartopy, ProPlot may remove the `
 
 ..
   This is the right decision: Cartopy is integrated more closely with the matplotlib API
-  and is more amenable to further development. 
+  and is more amenable to further development.
 
 Colormaps and property cycles
 =============================

@@ -2612,6 +2612,7 @@ def legend_wrapper(
         for obj in leg.get_texts():
             if isinstance(obj, martist.Artist):
                 obj.update(kw_text)
+
     # Append attributes and return, and set clip property!!! This is critical
     # for tight bounding box calcs!
     for leg in legs:
