@@ -1,9 +1,10 @@
-/* Toggle light and dark theme */
-/* See: https://dev.to/ananyaneogi/create-a-dark-light-mode-switch-with-css-variables-34l8 */
-/* CSS files from: https://github.com/richleland/pygments-css */
-/* Toggle functions and event handler */
-/* Best light themes: pastie, friendly, murhpy */
-/* Best dark themes: monokai, paraiso-dark */
+/* Toggle light and dark theme
+ * See: https://dev.to/ananyaneogi/create-a-dark-light-mode-switch-with-css-variables-34l8
+ * CSS files from: https://github.com/richleland/pygments-css
+ * Toggle functions and event handler
+ * Best light themes: pastie, friendly, murhpy
+ * Best dark themes: monokai, paraiso-dark
+ */
 var regex = /(.*)\/.*(\.css$)/i
 const toggleSwitch = document.getElementById('lightdark-checkbox');
 const pygmentsLink = document.getElementById('pygments-style');

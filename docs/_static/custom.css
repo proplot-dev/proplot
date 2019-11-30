@@ -1,5 +1,5 @@
 /* This file contains edits to the RTD theme CSS style
- * sheets. The latter requires a _templates/layout.html file.
+ * sheets. Requires a _templates/layout.html file.
  * https://learn.shayhowe.com/advanced-html-css/complex-selectors/
  * - item is tag e.g. <item></item>
  * - #item is id e.g. <p id="item"></p>
@@ -424,4 +424,3 @@ a:visited,
 #lightdark-label:hover input:checked + div.btn-neutral:before {
   content: "Light mode";
 }
-

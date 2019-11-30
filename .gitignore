@@ -13,8 +13,10 @@ dist
 docs/api
 docs/_build
 
+# Folder of notebooks for testing and bugfixing
+local
+
 # Notebook stuff
-**/tests/*.ipynb
 .ipynb_checkpoints
 
 # Python extras
