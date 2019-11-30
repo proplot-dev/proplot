@@ -29,6 +29,7 @@ install:
   - which python
   - pip install .
   - python setup.py install --user
+  - pip install flake8
 
 script:
   - flake8 proplot --ignore=W503
