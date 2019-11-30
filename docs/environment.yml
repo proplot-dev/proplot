@@ -16,7 +16,6 @@ dependencies:
   - sphinx
   - ipython
   - ipykernel
-  - jupyter
   - pip:
     - lxml
     - pyyaml

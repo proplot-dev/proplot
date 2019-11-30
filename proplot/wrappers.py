@@ -106,8 +106,10 @@ class _CenteredLegend(martist.Artist):
     def __str__(self):
         return 'CenteredLegend'
 
-
-    def __init__(self, pairs, loc=None, **kwargs):
+    def __init__(
+            self, pairs, loc=None, title=None, markerfirst=None,
+            frameon=None, framealpha=None, fancybox=None, shadow=None,
+            **kwargs):
         """
         Parameters
         ----------
@@ -134,6 +136,9 @@ class _CenteredLegend(martist.Artist):
         # Determine space we want sub-legend to occupy as fraction of height
         # NOTE: Empirical testing shows spacing fudge factor necessary to
         # exactly replicate the spacing of standard aligned legends.
+        legs = []
+        ymin, ymax = None, None
+        width, height = self.figure.get_size_inches()
         fontsize = kwargs.get('fontsize', None) or rc['legend.fontsize']
         spacing = kwargs.get('labelspacing', None) or rc['legend.labelspacing']
         interval = 1 / len(pairs)  # split up axes
@@ -166,7 +171,7 @@ class _CenteredLegend(martist.Artist):
             legs.append(leg)
 
         # Store legend and add frame
-        self.leg = legs
+        self.legs = legs
         if not frameon:
             return
         if len(legs) == 1:
@@ -174,30 +179,33 @@ class _CenteredLegend(martist.Artist):
             return
 
         # Draw legend frame encompassing centered rows
-        facecolor = _notNone(facecolor, rcParams['legend.facecolor'])
+        edgecolor = _notNone(
+            kwargs.get('edgecolor', None), rc['legend.edgecolor'])
+        facecolor = _notNone(
+            kwargs.get('facecolor', None), rc['legend.facecolor'])
         if facecolor == 'inherit':
-            facecolor = rcParams['axes.facecolor']
-        self.legendPatch = FancyBboxPatch(
+            facecolor = rc['axes.facecolor']
+        patch = mpatches.FancyBboxPatch(
             xy=(0.0, 0.0), width=1.0, height=1.0,
             facecolor=facecolor,
             edgecolor=edgecolor,
             mutation_scale=fontsize,
             transform=self.transAxes,
-            snap=True
-            )
+            snap=True)
+        self.legendPatch = patch
 
         # Box style
         if fancybox is None:
-            fancybox = rcParams['legend.fancybox']
+            fancybox = rc['legend.fancybox']
         if fancybox:
-            self.legendPatch.set_boxstyle('round', pad=0, rounding_size=0.2)
+            patch.set_boxstyle('round', pad=0, rounding_size=0.2)
         else:
-            self.legendPatch.set_boxstyle('square', pad=0)
-        self._set_artist_props(self.legendPatch)
+            patch.set_boxstyle('square', pad=0)
+        self._set_artist_props(patch)
         self._drawFrame = frameon
 
         # Initialize with null renderer
-        self._init_legend_box(handles, labels, markerfirst)
+        self._init_legend_box(*pairs, markerfirst)
 
         # If shadow is activated use framealpha if not
         # explicitly passed. See Issue 8943
@@ -205,7 +213,7 @@ class _CenteredLegend(martist.Artist):
             if shadow:
                 self.get_frame().set_alpha(1)
             else:
-                self.get_frame().set_alpha(rcParams['legend.framealpha'])
+                self.get_frame().set_alpha(rc['legend.framealpha'])
         else:
             self.get_frame().set_alpha(framealpha)
 
@@ -214,21 +222,19 @@ class _CenteredLegend(martist.Artist):
         else:
             patch.set_boxstyle('square', pad=0)
         patch.set_clip_on(False)
-        patch.update(outline)
+        # patch.update(outline)
         self.add_artist(patch)
         # Add shadow
         # TODO: This does not work, figure out
         if kwargs.get('shadow', rc['legend.shadow']):
             shadow = mpatches.Shadow(patch, 20, -20)
             self.add_artist(shadow)
-        # Add patch to list
-        legs = (patch, *legs)
 
-
-    def draw(renderer):
+    def draw(self, renderer):
         """
         Draw the legend and the patch.
         """
+        legs = self.legs
         for leg in legs:
             leg.draw(renderer)
 
@@ -250,7 +256,7 @@ class _CenteredLegend(martist.Artist):
 
         if self._drawFrame:
             if self.shadow:
-                shadow = Shadow(self.legendPatch, 2, -2)
+                shadow = mpatches.Shadow(self.legendPatch, 2, -2)
                 shadow.draw(renderer)
 
             self.legendPatch.draw(renderer)
@@ -2502,7 +2508,7 @@ def legend_wrapper(
         ncol = _notNone(ncol, 3)
         if order == 'C':
             fpairs = []
-            split = [pairs[i * ncol:(i + 1) * ncol] # split into rows
+            split = [pairs[i * ncol:(i + 1) * ncol]  # split into rows
                      for i in range(len(pairs) // ncol + 1)]
             # Max possible row count, and columns in final row
             nrowsmax, nfinalrow = len(split), len(split[-1])
