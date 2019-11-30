@@ -26,7 +26,7 @@ Documentation
 =============
 The documentation is `published on readthedocs <https://proplot.readthedocs.io>`__.
 
-.. |build-status| image:: https://img.shields.io/travis/lukelbd/proplot.svg?style=flat
+.. |build-status| image:: https://travis-ci.com/lukelbd/proplot.svg?branch=master
    :alt: build status
    :target: https://travis-ci.org/lukelbd/proplot
 
@@ -83,4 +83,3 @@ The documentation is `published on readthedocs <https://proplot.readthedocs.io>`
    Docstrings formatted according to:
    numpy guide:      https://numpydoc.readthedocs.io/en/latest/format.html
    matplotlib guide: https://matplotlib.org/devel/documenting_mpl.html
-
