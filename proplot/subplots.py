@@ -16,7 +16,7 @@ import matplotlib.gridspec as mgridspec
 try:
     from matplotlib.backends.backend_macosx import FigureCanvasMac
 except ImportError:
-    FigureCanvasMac = type(None) # standin null type
+    FigureCanvasMac = type(None)  # standin null type
 from matplotlib import docstring
 from .rctools import rc
 from .utils import _notNone, _counter, units
@@ -46,9 +46,9 @@ JOURNAL_SPECS = {
     'agu2': ('190mm', '115mm'),
     'agu3': ('95mm', '230mm'),
     'agu4': ('190mm', '230mm'),
-    'aaas1': '5.5cm', # AAAS (e.g., Science) 1 column
-    'aaas2': '12cm', # AAAS 2 column
-    }
+    'aaas1': '5.5cm',  # AAAS (e.g., Science) 1 column
+    'aaas2': '12cm',  # AAAS 2 column
+}
 # Table that goes in the subplots docstring
 # Must be indented one space as this is embedded in parameter description
 journal_doc = """
@@ -69,7 +69,7 @@ journal_doc = """
     ``'aaas1'``  1-column              `American Association for the Advancement of Science <https://www.sciencemag.org/authors/instructions-preparing-initial-manuscript>`__
     ``'aaas2'``  2-column              ”
     ===========  ====================  ==========================================================================================================================================================
-"""
+"""  # noqa
 docstring.interpd.update(journal_doc=journal_doc)
 
 
@@ -1725,23 +1725,25 @@ def _axes_dict(naxs, value, kw=False, default=None):
             + ', '.join(repr(i) for i in sorted(kwargs.keys())) + '.')
     return kwargs
 
+
 @docstring.dedent_interpd
-def subplots(array=None, ncols=1, nrows=1,
-    ref=1, order='C',
-    aspect=1, figsize=None,
-    width=None,  height=None, axwidth=None, axheight=None, journal=None,
-    hspace=None, wspace=None, space=None,
-    hratios=None, wratios=None,
-    width_ratios=None, height_ratios=None,
-    flush=None, wflush=None, hflush=None,
-    left=None, bottom=None, right=None, top=None,
-    tight=None, pad=None, axpad=None, panelpad=None,
-    span=None, spanx=None, spany=None,
-    align=None, alignx=None, aligny=None,
-    share=None, sharex=None, sharey=None,
-    basemap=False, proj=None, projection=None, proj_kw=None, projection_kw=None,
-    autoformat=True, includepanels=False,
-    ):
+def subplots(
+        array=None, ncols=1, nrows=1,
+        ref=1, order='C',
+        aspect=1, figsize=None,
+        width=None, height=None, axwidth=None, axheight=None, journal=None,
+        hspace=None, wspace=None, space=None,
+        hratios=None, wratios=None,
+        width_ratios=None, height_ratios=None,
+        flush=None, wflush=None, hflush=None,
+        left=None, bottom=None, right=None, top=None,
+        tight=None, pad=None, axpad=None, panelpad=None,
+        span=None, spanx=None, spany=None,
+        align=None, alignx=None, aligny=None,
+        share=None, sharex=None, sharey=None,
+        basemap=False, proj=None, projection=None,
+        proj_kw=None, projection_kw=None,
+        autoformat=True, includepanels=False):
     """
     Analogous to `matplotlib.pyplot.subplots`, creates a figure with a single
     axes or arbitrary grids of axes, any of which can be map projections.

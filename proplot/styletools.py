@@ -756,6 +756,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
     r"""
     New base class for all `~matplotlib.colors.LinearSegmentedColormap`\ s.
     """
+
     def __str__(self):
         return type(self).__name__ + f'(name={self.name!r})'
 
@@ -1238,6 +1239,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
     r"""
     New base class for all `~matplotlib.colors.ListedColormap`\ s.
     """
+
     def __str__(self):
         return f'ListedColormap(name={self.name!r})'
 
@@ -2524,6 +2526,7 @@ class LinearSegmentedNorm(mcolors.Normalize):
     Can be used by passing ``norm='segmented'`` or ``norm='segments'`` to any
     command accepting ``cmap``. The default midpoint is zero.
     """
+
     def __init__(self, levels, vmin=None, vmax=None, **kwargs):
         """
         Parameters

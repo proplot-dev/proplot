@@ -27,7 +27,8 @@ try:
     from cartopy.crs import PlateCarree
 except ModuleNotFoundError:
     PlateCarree = object
-__all__ = [] # just hidden helper methods here!
+__all__ = []  # just hidden helper methods here!
+
 
 def _load_objects():
     """Delay loading expensive modules. We just want to detect if *input
@@ -289,6 +290,7 @@ def standardize_1d(self, func, *args, **kwargs):
     # cycle_changer is also applied so it can strip 'x' input.
     return func(self, x, *ys, *args, **kwargs)
 
+
 # TODO: Do we need to strip leading/trailing newlines?
 standardize_1d_args = """
 *args : (x,) or (x,y)
@@ -310,13 +312,12 @@ autoformat : bool, optional
 docstring.interpd.update(standardize_1d_args=standardize_1d_args)
 docstring.interpd.update(standardize_1d_kwargs=standardize_1d_kwargs)
 
-#-----------------------------------------------------------------------------#
-# 2D dataset standardization and automatic formatting
-#-----------------------------------------------------------------------------#
 # NOTE: Why are projection grid fixes in standardize_2d, and not in their
 # own wrappers? Because grid fixes must come *after* automatic formatting,
 # which means we'd have to apply these wrappers separately on XYAxes,
 # BasemapAxes, GeoAxes, and PolarAxes. Would be super redundant.
+
+
 def _interp_poles(y, Z):
     """Adds data points on the poles as the average of highest
     latitude data."""
@@ -617,14 +618,16 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
     # Finally return result
     return func(self, x, y, *Zs, **kwargs)
 
+
 standardize_2d_args = """
 *args : (Z1,...) or (x,y,Z1,...)
     Positional args are standardized as follows.
 
     * If *x* and *y* or coordinates were not
       provided, and a `~pandas.DataFrame` or `~xarray.DataArray` is passed, we
-      try to infer them from the metadata. Otherwise, ``np.arange(0, data.shape[0])``
-      and ``np.arange(0, data.shape[1])`` are used.
+      try to infer them from the metadata. Otherwise,
+      ``np.arange(0, data.shape[0])`` and ``np.arange(0, data.shape[1])``
+      are used.
     * For ``pcolor`` and ``pcolormesh``, coordinate *edges* are calculated
       if *centers* were provided. For all other methods, coordinate *centers*
       are calculated if *edges* were provided.
@@ -656,9 +659,7 @@ autoformat : bool, optional
 docstring.interpd.update(standardize_2d_args=standardize_2d_args)
 docstring.interpd.update(standardize_2d_kwargs=standardize_2d_kwargs)
 
-#------------------------------------------------------------------------------#
-# Add errorbars during function call
-#------------------------------------------------------------------------------#
+
 def _errorbar_values(data, idata, bardata=None, barrange=None, barstd=False):
     """Returns values that can be passed to the `~matplotlib.axes.Axes.errorbar`
     `xerr` and `yerr` keyword args."""
@@ -680,16 +681,18 @@ def _errorbar_values(data, idata, bardata=None, barrange=None, barstd=False):
     err[0, :] *= -1  # array now represents error bar sizes
     return err
 
-def add_errorbars(self, func, *args,
-    medians=False, means=False,
-    boxes=None, bars=None,
-    boxdata=None, bardata=None,
-    boxstd=False, barstd=False,
-    boxmarker=True, boxmarkercolor='white',
-    boxrange=(25, 75), barrange=(5, 95), boxcolor=None, barcolor=None,
-    boxlw=None, barlw=None, capsize=None,
-    boxzorder=3, barzorder=3,
-    **kwargs):
+
+def add_errorbars(
+        self, func, *args,
+        medians=False, means=False,
+        boxes=None, bars=None,
+        boxdata=None, bardata=None,
+        boxstd=False, barstd=False,
+        boxmarker=True, boxmarkercolor='white',
+        boxrange=(25, 75), barrange=(5, 95), boxcolor=None, barcolor=None,
+        boxlw=None, barlw=None, capsize=None,
+        boxzorder=3, barzorder=3,
+        **kwargs):
     # Function
     name = func.__name__
     x, y, *args = args
@@ -770,6 +773,7 @@ def add_errorbars(self, func, *args,
             'markeredgecolor': barcolor, 'markeredgewidth': barlw})
     return obj
 
+
 # TODO: mix standardize_1d args with errorbars args
 add_errorbars_args = """
 *args : (x,) or (x,y)
@@ -841,17 +845,15 @@ edgecolor : float, optional
 docstring.interpd.update(add_errorbars_args=add_errorbars_args)
 docstring.interpd.update(add_errorbars_kwargs=add_errorbars_kwargs)
 
-#------------------------------------------------------------------------------#
-# Colormaps and color cycles
-#------------------------------------------------------------------------------#
+
 def cycle_changer(self, func, *args,
-    cycle=None, cycle_kw=None,
-    markers=None, linestyles=None,
-    label=None, labels=None, values=None,
-    legend=None, legend_kw=None,
-    colorbar=None, colorbar_kw=None,
-    panel_kw=None,
-    **kwargs):
+                  cycle=None, cycle_kw=None,
+                  markers=None, linestyles=None,
+                  label=None, labels=None, values=None,
+                  legend=None, legend_kw=None,
+                  colorbar=None, colorbar_kw=None,
+                  panel_kw=None,
+                  **kwargs):
     # See the `matplotlib source
     # <https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_base.py>`_.
     # The `set_prop_cycle` command modifies underlying
@@ -1066,7 +1068,8 @@ def cycle_changer(self, func, *args,
         # always singleton, because these methods accept the whole 2D object
         return objs[0]
     else:
-        return objs[0] if is1d else (*objs,) # sensible default behavior
+        return objs[0] if is1d else (*objs,)  # sensible default behavior
+
 
 cycle_changer_kwargs = """
 cycle : cycle-spec, optional
@@ -1105,16 +1108,18 @@ panel_kw : dict-like, optional
 """
 docstring.interpd.update(cycle_changer_kwargs=cycle_changer_kwargs)
 
-def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
-    extend='neither', norm=None, norm_kw=None,
-    N=None, levels=None, values=None, centers=None, vmin=None, vmax=None,
-    locator=None, symmetric=False, locator_kw=None,
-    edgefix=None, labels=False, labels_kw=None, fmt=None, precision=2,
-    colorbar=False, colorbar_kw=None, panel_kw=None,
-    lw=None, linewidth=None, linewidths=None,
-    ls=None, linestyle=None, linestyles=None,
-    color=None, colors=None, edgecolor=None, edgecolors=None,
-    **kwargs):
+
+def cmap_changer(
+        self, func, *args, cmap=None, cmap_kw=None,
+        extend='neither', norm=None, norm_kw=None,
+        N=None, levels=None, values=None, centers=None, vmin=None, vmax=None,
+        locator=None, symmetric=False, locator_kw=None,
+        edgefix=None, labels=False, labels_kw=None, fmt=None, precision=2,
+        colorbar=False, colorbar_kw=None, panel_kw=None,
+        lw=None, linewidth=None, linewidths=None,
+        ls=None, linestyle=None, linestyles=None,
+        color=None, colors=None, edgecolor=None, edgecolors=None,
+        **kwargs):
     # Wraps methods that take a ``cmap`` argument (%(methods)s),
     # adds several new keyword args and features.
     # Uses the `~proplot.styletools.BinNorm` normalizer to bin data into
@@ -1122,15 +1127,15 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
     # The `~proplot.styletools.BinNorm` normalizer, used with all colormap
     # plots, makes sure that your "levels" always span the full range of colors
     # in the colormap, whether you are extending max, min, neither, or both. By
-    # default, when you select `extend` not ``'both'``, matplotlib seems to just
+    # default, when you select `extend` not ``'both'``, matplotlib seems to
     # cut off the most intense colors (reserved for coloring "out of bounds"
     # data), even though they are not being used.
 
     # This could also be done by limiting the number of colors in the colormap
     # lookup table by selecting a smaller ``N`` (see
     # `~matplotlib.colors.LinearSegmentedColormap`).  But I prefer the approach
-    # of always building colormaps with hi-res lookup tables, and leaving the job
-    # of normalizing data values to colormap locations to the
+    # of always building colormaps with hi-res lookup tables, and leaving the
+    # job of normalizing data values to colormap locations to the
     # `~matplotlib.colors.Normalize` object.
     # No mutable defaults
     cmap_kw = cmap_kw or {}
@@ -1456,6 +1461,7 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
         self.colorbar(obj, **colorbar_kw)
     return obj
 
+
 cmap_changer_kwargs = """
 cmap : colormap spec, optional
     The colormap specifer, passed to the `~proplot.styletools.Colormap`
@@ -1518,9 +1524,9 @@ labels : bool, optional
     white otherwise (see the `~proplot.styletools` documentation).
 labels_kw : dict-like, optional
     Ignored if `labels` is ``False``. Extra keyword args for the labels.
-    For `~matplotlib.axes.Axes.contour`, passed to `~matplotlib.axes.Axes.clabel`.
-    For `~matplotlib.axes.Axes.pcolor` or `~matplotlib.axes.Axes.pcolormesh`,
-    passed to `~matplotlib.axes.Axes.text`.
+    For `~matplotlib.axes.Axes.contour`, passed to
+    `~matplotlib.axes.Axes.clabel`. For `~matplotlib.axes.Axes.pcolor` or
+    `~matplotlib.axes.Axes.pcolormesh`, passed to `~matplotlib.axes.Axes.text`.
 fmt : format-spec, optional
     Passed to the `~proplot.styletools.Norm` constructor, used to format
     number labels. You can also use the `precision` keyword arg.
@@ -1553,16 +1559,14 @@ color, colors, edgecolor, edgecolors
 """
 docstring.interpd.update(cmap_changer_kwargs=cmap_changer_kwargs)
 
-#------------------------------------------------------------------------------#
-# Legends and colorbars
-#------------------------------------------------------------------------------#
-def legend_wrapper(self,
-    handles=None, labels=None, ncol=None, ncols=None,
-    center=None, order='C', loc=None, label=None, title=None,
-    fontsize=None, fontweight=None, fontcolor=None,
-    color=None, marker=None, lw=None, linewidth=None,
-    dashes=None, linestyle=None, markersize=None, frameon=None, frame=None,
-    **kwargs):
+
+def legend_wrapper(
+        self, handles=None, labels=None, ncol=None, ncols=None,
+        center=None, order='C', loc=None, label=None, title=None,
+        fontsize=None, fontweight=None, fontcolor=None,
+        color=None, marker=None, lw=None, linewidth=None,
+        dashes=None, linestyle=None, markersize=None, frameon=None, frame=None,
+        **kwargs):
     # First get legend settings and interpret kwargs.
     if order not in ('F', 'C'):
         raise ValueError(
@@ -1852,6 +1856,7 @@ def legend_wrapper(self,
         leg.set_clip_on(False)
     return legs[0] if len(legs) == 1 else (*legs,)
 
+
 legend_kwargs = """
 handles : list of `~matplotlib.artist.Artist`, optional
     List of artists instances, or list of lists of artist instances (see
@@ -1907,26 +1912,28 @@ color, lw, linewidth, marker, linestyle, dashes, markersize : property-spec, opt
     include `facecolor`, `edgecolor`, and `alpha`, because
     `~matplotlib.axes.Axes.legend` uses these keyword args to modify the
     frame properties.
-"""
-docstring.interpd.update(legend_args="")
+"""  # noqa
+docstring.interpd.update(legend_args='')
 docstring.interpd.update(legend_kwargs=legend_kwargs)
 
-def colorbar_wrapper(self,
-    mappable, values=None,
-    extend=None, extendsize=None,
-    title=None, label=None,
-    grid=None, tickminor=None,
-    tickloc=None, ticklocation=None,
-    locator=None, ticks=None, maxn=None, maxn_minor=None,
-    minorlocator=None, minorticks=None, locator_kw=None, minorlocator_kw=None,
-    formatter=None, ticklabels=None, formatter_kw=None,
-    norm=None, norm_kw=None, # normalizer to use when passing colors/lines
-    orientation='horizontal',
-    edgecolor=None, linewidth=None,
-    labelsize=None, labelweight=None, labelcolor=None,
-    ticklabelsize=None, ticklabelweight=None, ticklabelcolor=None,
-    fixticks=False,
-    **kwargs):
+
+def colorbar_wrapper(
+        self, mappable, values=None,
+        extend=None, extendsize=None,
+        title=None, label=None,
+        grid=None, tickminor=None,
+        tickloc=None, ticklocation=None,
+        locator=None, ticks=None, maxn=None, maxn_minor=None,
+        minorlocator=None, minorticks=None,
+        locator_kw=None, minorlocator_kw=None,
+        formatter=None, ticklabels=None, formatter_kw=None,
+        norm=None, norm_kw=None,  # normalizer to use when passing colors/lines
+        orientation='horizontal',
+        edgecolor=None, linewidth=None,
+        labelsize=None, labelweight=None, labelcolor=None,
+        ticklabelsize=None, ticklabelweight=None, ticklabelcolor=None,
+        fixticks=False,
+        **kwargs):
     # Developer notes
     # * Colorbar axes must be of type `matplotlib.axes.Axes`,
     #   not `~proplot.axes.Axes`, because colorbar uses some internal methods
@@ -2294,6 +2301,7 @@ def colorbar_wrapper(self,
         cb.solids.set_edgecolor('face')
     return cb
 
+
 colorbar_args = """
 mappable : mappable, list of plot handles, list of color-spec, or colormap-spec
     There are four options here:
@@ -2399,10 +2407,7 @@ orientation : {'horizontal', 'vertical'}, optional
 docstring.interpd.update(colorbar_args=colorbar_args)
 docstring.interpd.update(colorbar_kwargs=colorbar_kwargs)
 
-#------------------------------------------------------------------------------#
-# Create decorators from wrapper functions
-#------------------------------------------------------------------------------#
-# Basemap object caller decorator
+
 def _redirect(func):
     """Docorator that calls the basemap version of the function of the
     same name. This must be applied as innermost decorator, which means it must
@@ -2410,7 +2415,6 @@ def _redirect(func):
     name = func.__name__
     @functools.wraps(func)
     def _wrapper(self, *args, **kwargs):
-        """"""
         if getattr(self, 'name', '') == 'basemap':
             return getattr(self.projection, name)(*args, ax=self, **kwargs)
         else:
@@ -2426,7 +2430,6 @@ def _norecurse(func):
     func._has_recurred = False
     @functools.wraps(func)
     def _wrapper(self, *args, **kwargs):
-        """"""
         if func._has_recurred:
             # Return the *original* version of the matplotlib method
             func._has_recurred = False
@@ -2437,6 +2440,7 @@ def _norecurse(func):
             result = func(self, *args, **kwargs)
         func._has_recurred = False  # cleanup, in case recursion never occurred
         return result
+    _wrapper.__doc__ = None
     return _wrapper
 
 
@@ -2452,7 +2456,6 @@ def _wrapper_decorator(driver):
     cartopy_methods = ('get_extent', 'set_extent')
 
     def decorator(func):
-        """"""
         # Define wrapper
         @functools.wraps(func)
         def _wrapper(self, *args, **kwargs):
@@ -2487,11 +2490,11 @@ def _wrapper_decorator(driver):
 
 # Auto generated decorators. Each wrapper internally calls
 # func(self, ...) somewhere.
-_add_errorbars         = _wrapper_decorator(add_errorbars)
-_default_latlon        = _wrapper_decorator(default_latlon)
-_default_crs           = _wrapper_decorator(default_crs)
-_default_transform     = _wrapper_decorator(default_transform)
-_cmap_changer          = _wrapper_decorator(cmap_changer)
-_cycle_changer         = _wrapper_decorator(cycle_changer)
-_standardize_1d        = _wrapper_decorator(standardize_1d)
-_standardize_2d        = _wrapper_decorator(standardize_2d)
+_add_errorbars = _wrapper_decorator(add_errorbars)
+_default_latlon = _wrapper_decorator(default_latlon)
+_default_crs = _wrapper_decorator(default_crs)
+_default_transform = _wrapper_decorator(default_transform)
+_cmap_changer = _wrapper_decorator(cmap_changer)
+_cycle_changer = _wrapper_decorator(cycle_changer)
+_standardize_1d = _wrapper_decorator(standardize_1d)
+_standardize_2d = _wrapper_decorator(standardize_2d)

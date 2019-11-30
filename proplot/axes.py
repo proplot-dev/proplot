@@ -2,6 +2,7 @@
 """
 The axes classes used for all ProPlot figures.
 """
+import re
 import numpy as np
 import inspect
 import warnings
@@ -79,35 +80,37 @@ SIDE_TRANSLATE = {
     'r': 'right',
     'b': 'bottom',
     't': 'top',
-    }
+}
 LOC_TRANSLATE = {
-    None:    None,
+    None: None,
     'inset': 'best',
-    'i':     'best',
-    0:       'best',
-    1:       'upper right',
-    2:       'upper left',
-    3:       'lower left',
-    4:       'lower right',
-    5:       'center left',
-    6:       'center right',
-    7:       'lower center',
-    8:       'upper center',
-    9:       'center',
-    'l':     'left',
-    'r':     'right',
-    'b':     'bottom',
-    't':     'top',
-    'c':     'center',
-    'ur':    'upper right',
-    'ul':    'upper left',
-    'll':    'lower left',
-    'lr':    'lower right',
-    'cr':    'center right',
-    'cl':    'center left',
-    'uc':    'upper center',
-    'lc':    'lower center',
-    }
+    'i': 'best',
+    0: 'best',
+    1: 'upper right',
+    2: 'upper left',
+    3: 'lower left',
+    4: 'lower right',
+    5: 'center left',
+    6: 'center right',
+    7: 'lower center',
+    8: 'upper center',
+    9: 'center',
+    'l': 'left',
+    'r': 'right',
+    'b': 'bottom',
+    't': 'top',
+    'c': 'center',
+    'ur': 'upper right',
+    'ul': 'upper left',
+    'll': 'lower left',
+    'lr': 'lower right',
+    'cr': 'center right',
+    'cl': 'center left',
+    'uc': 'upper center',
+    'lc': 'lower center',
+}
+
+
 def _get_transform(self, transform):
     """Translates user input transform. Also used in an axes method."""
     if isinstance(transform, mtransforms.Transform):
@@ -125,6 +128,8 @@ def _get_transform(self, transform):
 # NOTE: Originally had idea to use numpydoc.docscrape.NumpyDocString to
 # interpolate docstrings but *enormous* number of assupmtions would go into
 # this. And simple is better than complex.
+
+
 def _concatenate_docstrings(func):
     """Concatenates docstrings from a matplotlib axes method with a ProPlot
     axes method. Requires that proplot documentation has no other parameters,
@@ -134,15 +139,15 @@ def _concatenate_docstrings(func):
     name = func.__name__
     orig = getattr(maxes.Axes, name)
     odoc = inspect.getdoc(orig)
-    if not odoc: # should never happen
+    if not odoc:  # should never happen
         return func
 
     # Prepend summary and potentially bail
     # TODO: Does this break anything on sphinx website?
-    fdoc = inspect.getdoc(func) or '' # also dedents
-    summary = odoc[:re.search('\.( | *\n|\Z)', odoc).start() + 1]
+    fdoc = inspect.getdoc(func) or ''  # also dedents
+    summary = odoc[:re.search(r'\.( | *\n|\Z)', odoc).start() + 1]
     fdoc = f'{summary}\n\n{fdoc}'
-    if rc.get('docstring.hardcopy'): # True when running sphinx
+    if rc.get('docstring.hardcopy'):  # True when running sphinx
         func.__doc__ = fdoc
         return func
 
@@ -174,6 +179,7 @@ matplotlib.axes.Axes.{name} documentation
 
     # Return
     return func
+
 
 def _abc(i):
     """Function for a-b-c labeling, returns a...z...aa...zz...aaa...zzz."""
@@ -780,8 +786,7 @@ class Axes(maxes.Axes):
             positioned inside the axes. This can help them stand out on top
             of artists plotted inside the axes. Defaults are
             :rc:`abc.border` and :rc:`title.border`
-        ltitle, rtitle, ultitle, uctitle, urtitle, lltitle, lctitle, lrtitle \
-: str, optional
+        ltitle, rtitle, ultitle, uctitle, urtitle, lltitle, lctitle, lrtitle : str, optional
             Axes titles in particular positions. This lets you specify multiple
             "titles" for each subplots. See the `abcloc` keyword.
         top : bool, optional
@@ -793,8 +798,7 @@ class Axes(maxes.Axes):
         llabels, tlabels, rlabels, blabels : list of str, optional
             Aliases for `leftlabels`, `toplabels`, `rightlabels`,
             `bottomlabels`.
-        leftlabels, toplabels, rightlabels, bottomlabels : list of str, \
-optional
+        leftlabels, toplabels, rightlabels, bottomlabels : list of str, optional
             The subplot row and column labels. If list, length must match
             the number of subplots on the left, top, right, or bottom edges
             of the figure.
@@ -819,7 +823,7 @@ optional
         :py:obj:`XYAxes.format`,
         :py:obj:`ProjAxes.format`,
         :py:obj:`PolarAxes.format`,
-        """
+        """  # noqa
         # Figure patch (for some reason needs to be re-asserted even if
         # declared before figure is drawn)
         kw = rc.fill({'facecolor': 'figure.facecolor'})
@@ -960,9 +964,9 @@ optional
     @_concatenate_docstrings
     @docstring.dedent_interpd
     def bar(self, x=None, height=None, width=0.8, bottom=None, *, left=None,
-        vert=None, orientation='vertical', stacked=False,
-        lw=None, linewidth=0.7, edgecolor='k',
-        **kwargs):
+            vert=None, orientation='vertical', stacked=False,
+            lw=None, linewidth=0.7, edgecolor='k',
+            **kwargs):
         """
         Permits bar stacking and bar grouping.
 
@@ -970,16 +974,18 @@ optional
         ----------
         %(standardize_1d_args)s
         x, height, width, bottom : float or list of float, optional
-            The dimensions of the bars. If the *x* coordinates are not provided,
-            they are set to ``np.arange(0, len(height))``.
+            The dimensions of the bars. If the *x* coordinates are not
+            provided, they are set to ``np.arange(0, len(height))``.
         orientation : {'vertical', 'horizontal'}, optional
             The orientation of the bars.
         vert : bool, optional
-            Alternative to the `orientation` keyword arg. If ``False``, horizontal
-            bars are drawn. This is for consistency with `~matplotlib.axes.Axes.boxplot`
-            and `~matplotlib.axes.Axes.violinplot`.
+            Alternative to the `orientation` keyword arg. If ``False``,
+            horizontal bars are drawn. This is for consistency with
+            `~matplotlib.axes.Axes.boxplot` and
+            `~matplotlib.axes.Axes.violinplot`.
         stacked : bool, optional
-            Whether to stack columns of input data, or plot the bars side-by-side.
+            Whether to stack columns of input data, or plot the bars
+            side-by-side.
         edgecolor : color-spec, optional
             The edge color for the bar patches.
         lw, linewidth : float, optional
@@ -994,11 +1000,12 @@ optional
             Passed to `~matplotlib.axes.Axes.bar`.
         """
         # Barh converts y-->bottom, left-->x, width-->height, height-->width.
-        # Convert back to (x, bottom, width, height) so we can pass stuff through
-        # cycle_changer.
-        # NOTE: You *must* do juggling of barh keyword order --> bar keyword order
-        # --> barh keyword order, because horizontal hist passes arguments to bar
-        # directly and will not use a 'barh' method with overridden argument order!
+        # Convert back to (x, bottom, width, height) so we can pass stuff
+        # through cycle_changer.
+        # NOTE: You *must* do juggling of barh keyword order --> bar keyword
+        # order --> barh keyword order, because horizontal hist passes
+        # arguments to bar directly and will not use a 'barh' method with
+        # overridden argument order!
         if vert is not None:
             orientation = ('vertical' if vert else 'horizontal')
         if orientation == 'horizontal':
@@ -1006,27 +1013,31 @@ optional
             width, height = height, width
 
         # Parse args
-        # TODO: Stacked feature is implemented in `cycle_changer`, but makes more
-        # sense do document here; figure out way to move it here?
+        # TODO: Stacked feature is implemented in `cycle_changer`, but makes
+        # more sense do document here; figure out way to move it here?
         if left is not None:
-            warnings.warn(f'The "left" keyword with bar() is deprecated. Use "x" instead.')
+            warnings.warn(
+                'The "left" keyword with bar() is deprecated. '
+                'Use "x" instead.')
             x = left
         if x is None and height is None:
-            raise ValueError(f'bar() requires at least 1 positional argument, got 0.')
+            raise ValueError(
+                f'bar() requires at least 1 positional argument, got 0.')
         elif height is None:
             x, height = None, x
 
         # Call func
         # TODO: This *must* also be wrapped by cycle_changer, which ultimately
-        # permutes back the x/bottom args for horizontal bars! Need to clean this up.
+        # permutes back the x/bottom args for horizontal bars! Need to clean
+        # this up.
         lw = _notNone(lw, linewidth, None, names=('lw', 'linewidth'))
         bar = _standardize_1d(_add_errorbars(_cycle_changer(
             maxes.Axes.bar
-            )))
+        )))
         return bar(self, x, height, width=width, bottom=bottom,
-            linewidth=lw, edgecolor=edgecolor,
-            stacked=stacked, orientation=orientation,
-            **kwargs)
+                   linewidth=lw, edgecolor=edgecolor,
+                   stacked=stacked, orientation=orientation,
+                   **kwargs)
 
     @_concatenate_docstrings
     @docstring.dedent_interpd
@@ -1034,7 +1045,8 @@ optional
         """Usage is same as `bar`."""
         kwargs.setdefault('orientation', 'horizontal')
         if y is None and width is None:
-            raise ValueError(f'barh() requires at least 1 positional argument, got 0.')
+            raise ValueError(
+                f'barh() requires at least 1 positional argument, got 0.')
         return self.bar(x=left, height=height, width=width, bottom=y, **kwargs)
 
     def boxes(self, *args, **kwargs):
@@ -1043,17 +1055,18 @@ optional
 
     @_concatenate_docstrings
     @docstring.dedent_interpd
-    def boxplot(self, *args,
-        color='k', fill=True, fillcolor=None, fillalpha=0.7,
-        lw=None, linewidth=0.7, orientation=None,
-        marker=None, markersize=None,
-        boxcolor=None, boxlw=None,
-        capcolor=None, caplw=None,
-        meancolor=None, meanlw=None,
-        mediancolor=None, medianlw=None,
-        whiskercolor=None, whiskerlw=None,
-        fliercolor=None, flierlw=None,
-        **kwargs):
+    def boxplot(
+            self, *args,
+            color='k', fill=True, fillcolor=None, fillalpha=0.7,
+            lw=None, linewidth=0.7, orientation=None,
+            marker=None, markersize=None,
+            boxcolor=None, boxlw=None,
+            capcolor=None, caplw=None,
+            meancolor=None, meanlw=None,
+            mediancolor=None, medianlw=None,
+            whiskercolor=None, whiskerlw=None,
+            fliercolor=None, flierlw=None,
+            **kwargs):
         """
         Adds convenient keyword args. Fills the objects with a cycle color
         by default.
@@ -1066,7 +1079,8 @@ optional
         fill : bool, optional
             Whether to fill the box with a color.
         fillcolor : color-spec, optional
-            The fill color for the boxes. Default is the next color cycler color.
+            The fill color for the boxes. Default is the next color
+            cycler color.
         fillalpha : float, optional
             The opacity of the boxes. Default is ``1``.
         lw, linewidth : float, optional
@@ -1078,11 +1092,12 @@ optional
         markersize : float, optional
             Marker size for the 'fliers', i.e. outliers.
         boxcolor, capcolor, meancolor, mediancolor, whiskercolor : color-spec, optional
-            The color of various boxplot components. These are shorthands so you
-            don't have to pass e.g. a ``boxprops`` dictionary.
+            The color of various boxplot components. These are
+            shorthands so you don't have to pass e.g. a ``boxprops``
+            dictionary.
         boxlw, caplw, meanlw, medianlw, whiskerlw : float, optional
-            The line width of various boxplot components. These are shorthands so you
-            don't have to pass e.g. a ``boxprops`` dictionary.
+            The line width of various boxplot components. These are shorthands
+            so you don't have to pass e.g. a ``boxprops`` dictionary.
         %(standardize_1d_kwargs)s
         %(cycle_changer_kwargs)s
 
@@ -1090,7 +1105,7 @@ optional
         ----------------
         **kwargs
             Passed to `~matplotlib.axes.Axes.boxplot`.
-        """
+        """  # noqa
         # Call function
         if len(args) > 2:
             raise ValueError(f'Expected 1-2 positional args, got {len(args)}.')
@@ -1098,10 +1113,12 @@ optional
             if orientation == 'horizontal':
                 kwargs['vert'] = False
             elif orientation != 'vertical':
-                raise ValueError('Orientation must be "horizontal" or "vertical", got {orientation!r}.')
+                raise ValueError(
+                    'Orientation must be "horizontal" or "vertical", '
+                    'got {orientation!r}.')
         boxplot = _standardize_1d(_cycle_changer(
             maxes.Axes.boxplot
-            ))
+        ))
         obj = boxplot(self, *args, **kwargs)
         if not args:
             return obj
@@ -1112,15 +1129,15 @@ optional
         if fillcolor is None:
             cycler = next(self._get_lines.prop_cycler)
             fillcolor = cycler.get('color', None)
-        for key,icolor,ilw in (
-            ('boxes',boxcolor,boxlw),
-            ('caps',capcolor,caplw),
-            ('whiskers',whiskercolor,whiskerlw),
-            ('means',meancolor,meanlw),
-            ('medians',mediancolor,medianlw),
-            ('fliers',fliercolor,flierlw),
-            ):
-            if key not in obj: # possible if not rendered
+        for key, icolor, ilw in (
+            ('boxes', boxcolor, boxlw),
+            ('caps', capcolor, caplw),
+            ('whiskers', whiskercolor, whiskerlw),
+            ('means', meancolor, meanlw),
+            ('medians', mediancolor, medianlw),
+            ('fliers', fliercolor, flierlw),
+        ):
+            if key not in obj:  # possible if not rendered
                 continue
             artists = obj[key]
             ilw = _notNone(ilw, lw)
@@ -1133,7 +1150,9 @@ optional
                     artist.set_linewidth(ilw)
                     artist.set_markeredgewidth(ilw)
                 if key == 'boxes' and fill:
-                    patch = mpatches.PathPatch(artist.get_path(), color=fillcolor, alpha=fillalpha, linewidth=0)
+                    patch = mpatches.PathPatch(
+                        artist.get_path(),
+                        color=fillcolor, alpha=fillalpha, linewidth=0)
                     self.add_artist(patch)
                 if key == 'fliers':
                     if marker is not None:
@@ -1372,8 +1391,8 @@ optional
         super().draw(renderer, *args, **kwargs)
 
     def _fill_between_apply(self, *args, betweenx=False,
-        negcolor='blue', poscolor='red', negpos=False,
-        **kwargs):
+                            negcolor='blue', poscolor='red', negpos=False,
+                            **kwargs):
         """Parse args and call function."""
         # Allow common keyword usage
         x = 'y' if betweenx else 'x'
@@ -1389,12 +1408,12 @@ optional
             if kwargs.get('stacked', False):
                 args = (*args, 0)
             else:
-                args = (args[0], 0, args[1]) # default behavior
+                args = (args[0], 0, args[1])  # default behavior
         if len(args) != 3:
             raise ValueError(f'Expected 2-3 positional args, got {len(args)}.')
-        fill_between  = _standardize_1d(_cycle_changer(
+        fill_between = _standardize_1d(_cycle_changer(
             maxes.Axes.fill_between
-            ))
+        ))
         if not negpos:
             obj = fill_between(self, *args, **kwargs)
             return obj
@@ -1402,11 +1421,14 @@ optional
         # Get zero points
         objs = []
         kwargs.setdefault('interpolate', True)
-        y1, y2 = np.atleast_1d(args[-2]).squeeze(), np.atleast_1d(args[-1]).squeeze()
+        y1, y2 = np.atleast_1d(
+            args[-2]).squeeze(), np.atleast_1d(args[-1]).squeeze()
         if y1.ndim > 1 or y2.ndim > 1:
-            raise ValueError(f'When "negpos" is True, y must be 1-dimensional.')
+            raise ValueError(
+                f'When "negpos" is True, y must be 1-dimensional.')
         if kwargs.get('where', None) is not None:
-            raise ValueError('When "negpos" is True, you cannot set the "where" keyword.')
+            raise ValueError(
+                'When "negpos" is True, you cannot set the "where" keyword.')
         for i in range(2):
             kw = {**kwargs}
             kw.setdefault('color', negcolor if i == 0 else poscolor)
@@ -1430,16 +1452,17 @@ optional
             If `y2` is ``None``, this indicates whether to "stack" successive
             columns of the `y1` array.
         negpos : bool, optional
-            Whether to shade where `y2` is greater than `y1` with the color `poscolor`,
-            and where `y1` is greater than `y2` with the color `negcolor`. For
-            example, to shade positive values red and negtive blue, use
-            ``ax.fill_between(x, 0, y)``.
+            Whether to shade where `y2` is greater than `y1` with the color
+            `poscolor`, and where `y1` is greater than `y2` with the color
+            `negcolor`. For example, to shade positive values red and negtive
+            blue, use ``ax.fill_between(x, 0, y)``.
         negcolor, poscolor : color-spec, optional
-            Colors to use for the negative and positive values. Ignored if `negpos`
-            is ``False``.
+            Colors to use for the negative and positive values. Ignored if
+            `negpos` is ``False``.
         where : ndarray, optional
             Boolean ndarray mask for points you want to shade. See
-            `this matplotlib example <https://matplotlib.org/3.1.0/gallery/pyplots/whats_new_98_4_fill_between.html#sphx-glr-gallery-pyplots-whats-new-98-4-fill-between-py>`__.
+            `this matplotlib example
+            <https://matplotlib.org/3.1.0/gallery/pyplots/whats_new_98_4_fill_between.html#sphx-glr-gallery-pyplots-whats-new-98-4-fill-between-py>`__.
         %(standardize_1d_kwargs)s
         %(cycle_changer_kwargs)s
 
@@ -1447,7 +1470,7 @@ optional
         ----------------
         **kwargs
             Passed to `~matplotlib.axes.Axes.fill_between`.
-        """
+        """  # noqa
         return self._fill_between_apply(*args, betweenx=False, **kwargs)
 
     @_concatenate_docstrings
@@ -1504,7 +1527,7 @@ optional
         kwargs.setdefault('linewidth', 0)
         hist = _standardize_1d(_cycle_changer(
             maxes.Axes.hist
-            ))
+        ))
         return hist(self, x, bins=bins, **kwargs)
 
     def inset_axes(self, bounds, *, transform=None, zorder=5,
@@ -1517,8 +1540,7 @@ optional
         ----------
         bounds : list of float
             The bounds for the inset axes, listed as ``(x, y, width, height)``.
-        transform : {'data', 'axes', 'figure'} or \
-`~matplotlib.transforms.Transform`, optional
+        transform : {'data', 'axes', 'figure'} or `~matplotlib.transforms.Transform`, optional
             The transform used to interpret `bounds`. Can be a
             `~matplotlib.transforms.Transform` object or a string representing
             the `~matplotlib.axes.Axes.transData`,
@@ -1540,7 +1562,7 @@ optional
         ----------------
         **kwargs
             Passed to `XYAxes`.
-        """
+        """  # noqa
         # Carbon copy with my custom axes
         if not transform:
             transform = self.transAxes
@@ -1677,7 +1699,7 @@ optional
             loc = loc.tolist()
 
         # Generate panel
-        if loc in ('left','right','top','bottom'):
+        if loc in ('left', 'right', 'top', 'bottom'):
             ax = self.panel_axes(loc, width=width, space=space, filled=True)
             return ax.legend(*args, loc='_fill', **kwargs)
 
@@ -1692,7 +1714,10 @@ optional
             self._panel_filled = True
             # Try to make handles and stuff flush against the axes edge
             kwargs.setdefault('borderaxespad', 0)
-            frameon = _notNone(kwargs.get('frame', None), kwargs.get('frameon', None), rc['legend.frameon'])
+            frameon = _notNone(
+                kwargs.get(
+                    'frame', None), kwargs.get(
+                    'frameon', None), rc['legend.frameon'])
             if not frameon:
                 kwargs.setdefault('borderpad', 0)
             # Apply legend location
@@ -1761,26 +1786,30 @@ optional
         **kwargs
             `~matplotlib.lines.Line2D` properties.
         """
-        if len(args) > 3: # e.g. with fmt string
+        if len(args) > 3:  # e.g. with fmt string
             raise ValueError(f'Expected 1-3 positional args, got {len(args)}.')
         if cmap is not None:
             return self.cmapline(*args, cmap=cmap, values=values, **kwargs)
         # Apply various wrappers
         plot = _standardize_1d(_add_errorbars(_cycle_changer(
             _redirect(maxes.Axes.plot)
-            )))
+        )))
         return plot(self, *args, values=values, **kwargs)
 
     @_concatenate_docstrings
     @docstring.dedent_interpd
-    def scatter(self, *args,
-        s=None, size=None, markersize=None,
-        c=None, color=None, markercolor=None,
-        smin=None, smax=None,
-        cmap=None, cmap_kw=None, vmin=None, vmax=None, norm=None, norm_kw=None,
-        lw=None, linewidth=None, linewidths=None, markeredgewidth=None, markeredgewidths=None,
-        edgecolor=None, edgecolors=None, markeredgecolor=None, markeredgecolors=None,
-        **kwargs):
+    def scatter(
+            self, *args,
+            s=None, size=None, markersize=None,
+            c=None, color=None, markercolor=None,
+            smin=None, smax=None,
+            cmap=None, cmap_kw=None,
+            vmin=None, vmax=None, norm=None, norm_kw=None,
+            lw=None, linewidth=None, linewidths=None,
+            markeredgewidth=None, markeredgewidths=None,
+            edgecolor=None, edgecolors=None,
+            markeredgecolor=None, markeredgecolors=None,
+            **kwargs):
         """
         Adds optional keyword args more consistent with the
         `~matplotlib.axes.Axes.plot` keywords.
@@ -1791,8 +1820,9 @@ optional
         s, size, markersize : float or list of float, optional
             Aliases for the marker size.
         smin, smax : float, optional
-            Used to scale the `s` array. These are the minimum and maximum marker
-            sizes. Defaults are the minimum and maximum of the `s` array.
+            Used to scale the `s` array. These are the minimum and maximum
+            marker sizes. Defaults are the minimum and maximum of the `s`
+            array.
         c, color, markercolor : color-spec or list thereof, or array, optional
             Aliases for the marker fill color. If just an array of values, the
             colors will be generated by passing the values through the `norm`
@@ -1805,7 +1835,8 @@ optional
         vmin, vmax : float, optional
             Used to generate a `norm` for scaling the `c` array. These are the
             values corresponding to the leftmost and rightmost colors in the
-            colormap. Defaults are the minimum and maximum values of the `c` array.
+            colormap. Defaults are the minimum and maximum values of the
+            `c` array.
         norm : normalizer spec, optional
             The colormap normalizer, passed to the `~proplot.styletools.Norm`
             constructor.
@@ -1823,7 +1854,7 @@ optional
         ----------------
         **kwargs
             Passed to `~matplotlib.axes.Axes.scatter`.
-        """
+        """  # noqa
         # Manage input arguments
         # NOTE: Parse 1D must come before this
         nargs = len(args)
@@ -1844,10 +1875,20 @@ optional
             norm = styletools.Norm(norm, N=None, **norm_kw)
 
         # Apply some aliases for keyword arguments
-        c = _notNone(c, color, markercolor, None, names=('c', 'color', 'markercolor'))
-        s = _notNone(s, size, markersize, None, names=('s', 'size', 'markersize'))
-        lw = _notNone(lw, linewidth, linewidths, markeredgewidth, markeredgewidths, None, names=('lw', 'linewidth', 'linewidths', 'markeredgewidth', 'markeredgewidths'))
-        ec = _notNone(edgecolor, edgecolors, markeredgecolor, markeredgecolors, None, names=('edgecolor', 'edgecolors', 'markeredgecolor', 'markeredgecolors'))
+        c = _notNone(
+            c, color, markercolor, None, names=(
+                'c', 'color', 'markercolor'))
+        s = _notNone(
+            s, size, markersize, None, names=(
+                's', 'size', 'markersize'))
+        lw = _notNone(
+            lw, linewidth, linewidths, markeredgewidth, markeredgewidths, None,
+            names=('lw', 'linewidth', 'linewidths',
+                   'markeredgewidth', 'markeredgewidths'))
+        ec = _notNone(
+            edgecolor, edgecolors, markeredgecolor, markeredgecolors, None,
+            names=('edgecolor', 'edgecolors', 'markeredgecolor',
+                   'markeredgecolors'))
 
         # Scale s array
         if np.iterable(s):
@@ -1856,21 +1897,22 @@ optional
                 smin = smin_true
             if smax is None:
                 smax = smax_true
-            s = smin + (smax - smin)*(np.array(s) - smin_true)/(smax_true - smin_true)
+            s = smin + (smax - smin) * (
+                np.array(s) - smin_true) / (smax_true - smin_true)
         scatter = _standardize_1d(_add_errorbars(_cycle_changer(
             _redirect(maxes.Axes.scatter)
-            )))
+        )))
         return scatter(self, *args, c=c, s=s,
-            cmap=cmap, vmin=vmin, vmax=vmax,
-            norm=norm, linewidths=lw, edgecolors=ec,
-            **kwargs)
+                       cmap=cmap, vmin=vmin, vmax=vmax,
+                       norm=norm, linewidths=lw, edgecolors=ec,
+                       **kwargs)
 
     @_concatenate_docstrings
     def text(self,
-        x=0, y=0, text='', transform='data',
-        fontfamily=None, fontname=None, fontsize=None, size=None,
-        border=False, bordercolor='w', invert=False, lw=None, linewidth=2,
-        **kwargs):
+             x=0, y=0, text='', transform='data',
+             fontfamily=None, fontname=None, fontsize=None, size=None,
+             border=False, bordercolor='w', invert=False, lw=None, linewidth=2,
+             **kwargs):
         """
         Enables specifying `tranform` with a string name and
         adds feature for drawing borders around text.
@@ -1883,9 +1925,10 @@ optional
             The text string.
         transform : {'data', 'axes', 'figure'} or `~matplotlib.transforms.Transform`, optional
             The transform used to interpret `x` and `y`. Can be a
-            `~matplotlib.transforms.Transform` object or a string representing the
-            `~matplotlib.axes.Axes.transData`, `~matplotlib.axes.Axes.transAxes`,
-            or `~matplotlib.figure.Figure.transFigure` transforms. Default is
+            `~matplotlib.transforms.Transform` object or a string representing
+            the `~matplotlib.axes.Axes.transData`,
+            `~matplotlib.axes.Axes.transAxes`, or
+            `~matplotlib.figure.Figure.transFigure` transforms. Default is
             ``'data'``, i.e. the text is positioned in data coordinates.
         size, fontsize : float or str, optional
             The font size. If float, units are inches. If string, units are
@@ -1906,7 +1949,7 @@ optional
         ----------------
         **kwargs
             Passed to `~matplotlib.text.Text`.
-        """
+        """  # noqa
         # Default transform by string name
         if not transform:
             transform = self.transData
@@ -1914,44 +1957,56 @@ optional
             transform = _get_transform(self, transform)
 
         # More flexible keyword args and more helpful warning if invalid font
-        fontname = _notNone(fontfamily, fontname, None, names=('fontfamily', 'fontname'))
+        fontname = _notNone(
+            fontfamily, fontname, None, names=(
+                'fontfamily', 'fontname'))
         if fontname is not None:
-            if not isinstance(fontname, str) and np.iterable(fontname) and len(fontname) == 1:
+            if not isinstance(fontname, str) and np.iterable(
+                    fontname) and len(fontname) == 1:
                 fontname = fontname[0]
             if fontname in styletools.fonts:
                 kwargs['fontfamily'] = fontname
             else:
-                warnings.warn(f'Font {fontname!r} unavailable. Available fonts are {", ".join(styletools.fonts)}.')
+                warnings.warn(
+                    f'Font {fontname!r} unavailable. Available fonts are: '
+                    ', '.join(map(repr, styletools.fonts)) + '.')
         size = _notNone(fontsize, size, None, names=('fontsize', 'size'))
         if size is not None:
             kwargs['fontsize'] = utils.units(size, 'pt')
-        kwargs.setdefault('color', rc.get('text.color')) # text.color is ignored sometimes unless we apply this
+        # text.color is ignored sometimes unless we apply this
+        kwargs.setdefault('color', rc.get('text.color'))
 
         # Draw text and optionally add border
-        obj = super().text( x, y, text, transform=transform, **kwargs)
+        obj = super().text(x, y, text, transform=transform, **kwargs)
         if border:
             linewidth = lw or linewidth
             facecolor, bgcolor = kwargs['color'], bordercolor
             if invert:
                 facecolor, bgcolor = bgcolor, facecolor
-            kwargs = {'linewidth':linewidth, 'foreground':bgcolor, 'joinstyle':'miter'}
+            kwargs = {
+                'linewidth': linewidth,
+                'foreground': bgcolor,
+                'joinstyle': 'miter'}
             obj.update({
-                'color':facecolor, 'zorder':100,
-                'path_effects': [mpatheffects.Stroke(**kwargs), mpatheffects.Normal()]
-                })
+                'color': facecolor, 'zorder': 100,
+                'path_effects': [
+                    mpatheffects.Stroke(**kwargs), mpatheffects.Normal()]
+            })
         return obj
 
     @_concatenate_docstrings
     @docstring.dedent_interpd
-    def violinplot(self, *args,
-        lw=None, linewidth=0.7, fillcolor=None, edgecolor='k', fillalpha=0.7, orientation=None,
-        **kwargs):
+    def violinplot(
+            self, *args,
+            lw=None, linewidth=0.7, fillcolor=None,
+            edgecolor='k', fillalpha=0.7, orientation=None,
+            **kwargs):
         """
         Adds convenient keyword args.
         Makes the style shown in right plot of `this matplotlib example
         <https://matplotlib.org/3.1.0/gallery/statistics/customized_violin.html>`__
-        the default. It is also no longer possible to show minima and maxima with
-        whiskers, because this is redundant.
+        the default. It is also no longer possible to show minima and maxima
+        with whiskers, because this is redundant.
 
         Parameters
         ----------
@@ -1977,7 +2032,7 @@ optional
         ----------------
         **kwargs
             Passed to `~matplotlib.axes.Axes.violinplot`.
-        """
+        """  # noqa
         # Orientation and checks
         if len(args) > 2:
             raise ValueError(f'Expected 1-2 positional args, got {len(args)}.')
@@ -1985,7 +2040,9 @@ optional
             if orientation == 'horizontal':
                 kwargs['vert'] = False
             elif orientation != 'vertical':
-                raise ValueError('Orientation must be "horizontal" or "vertical", got {orientation!r}.')
+                raise ValueError(
+                    'Orientation must be "horizontal" or "vertical", '
+                    'got {orientation!r}.')
 
         # Sanitize input
         lw = _notNone(lw, linewidth, None, names=('lw', 'linewidth'))
@@ -1998,10 +2055,10 @@ optional
         kwargs.setdefault('capsize', 0)
         violinplot = _standardize_1d(_cycle_changer(
             maxes.Axes.violinplot
-            ))
+        ))
         obj = violinplot(self, *args,
-            showmeans=False, showmedians=False, showextrema=False,
-            edgecolor=edgecolor, lw=lw, **kwargs)
+                         showmeans=False, showmedians=False, showextrema=False,
+                         edgecolor=edgecolor, lw=lw, **kwargs)
         if not args:
             return obj
 
@@ -2028,8 +2085,7 @@ optional
 
         This is actually a collection of lines, added as a
         `~matplotlib.collections.LineCollection` instance. See
-        `this matplotlib example \
-<https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line>`__.
+        `this matplotlib example <https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line>`__.
 
         Parameters
         ----------
@@ -2047,7 +2103,7 @@ optional
             between the `values` coordinates. The number corresponds to the
             number of additional color levels between the line joints
             and the halfway points between line joints.
-        """
+        """  # noqa
         # First error check
         # WARNING: So far this only works for 1D *x* and *y* coordinates.
         # Cannot draw multiple colormap lines at once
@@ -3606,8 +3662,7 @@ class ProjAxes(Axes):
                `~mpl_toolkits.basemap.Basemap.drawmeridians` and
                `~mpl_toolkits.basemap.Basemap.drawparallels` methods.
 
-        land, ocean, coast, rivers, lakes, borders, innerborders : bool, \
-optional
+        land, ocean, coast, rivers, lakes, borders, innerborders : bool, optional
             Toggles various geographic features. These are actually the
             :rcraw:`land`, :rcraw:`ocean`, :rcraw:`coast`, :rcraw:`rivers`,
             :rcraw:`lakes`, :rcraw:`borders`, and :rcraw:`innerborders`
@@ -3624,7 +3679,7 @@ optional
         See also
         --------
         :py:obj:`Axes.format`, :py:obj:`Axes.context`
-        """
+        """  # noqa
         # Parse alternative keyword args
         # TODO: Why isn't default latmax 80 respected sometimes?
         context, kwargs = self.context(**kwargs)
@@ -3773,10 +3828,6 @@ optional
     angle_spectrum = _disable(Axes.angle_spectrum)
     phase_spectrum = _disable(Axes.phase_spectrum)
     magnitude_spectrum = _disable(Axes.magnitude_spectrum)
-
-# Cartopy takes advantage of documented feature where any class with method
-# named _as_mpl_axes can be passed as 'projection' object.
-# Feature documented here: https://matplotlib.org/devel/add_new_projection.html
 
 
 class GeoAxes(ProjAxes, GeoAxes):
@@ -4066,22 +4117,18 @@ class GeoAxes(ProjAxes, GeoAxes):
     # TODO: Remove this duplication of Axes! Can do this when we implement
     # all wrappers as decorators.
     if GeoAxes is not object:
-        text = _text_wrapper(
-            GeoAxes.text
-        )
-        # Wrapped by standardize method
-        plot = _default_transform(_plot_wrapper(_standardize_1d(
+        plot = _default_transform(_standardize_1d(
             _add_errorbars(_cycle_changer(GeoAxes.plot))
-        )))
-        scatter = _default_transform(_scatter_wrapper(_standardize_1d(
+        ))
+        scatter = _default_transform(_standardize_1d(
             _add_errorbars(_cycle_changer(GeoAxes.scatter))
-        )))
-        fill_between = _fill_between_wrapper(_standardize_1d(_cycle_changer(
+        ))
+        fill_between = _standardize_1d(_cycle_changer(
             GeoAxes.fill_between
-        )))
-        fill_betweenx = _fill_betweenx_wrapper(_standardize_1d(_cycle_changer(
+        ))
+        fill_betweenx = _standardize_1d(_cycle_changer(
             GeoAxes.fill_betweenx
-        )))
+        ))
         contour = _default_transform(_standardize_2d(_cmap_changer(
             GeoAxes.contour
         )))
@@ -4319,12 +4366,12 @@ class BasemapAxes(ProjAxes):
         self._map_projection = map_projection
 
     # Wrapped methods
-    plot = _norecurse(_default_latlon(_plot_wrapper(_standardize_1d(
+    plot = _norecurse(_default_latlon(_standardize_1d(
         _add_errorbars(_cycle_changer(_redirect(maxes.Axes.plot)))
-    ))))
-    scatter = _norecurse(_default_latlon(_scatter_wrapper(_standardize_1d(
+    )))
+    scatter = _norecurse(_default_latlon(_standardize_1d(
         _add_errorbars(_cycle_changer(_redirect(maxes.Axes.scatter)))
-    ))))
+    )))
     contour = _norecurse(_default_latlon(_standardize_2d(_cmap_changer(
         _redirect(maxes.Axes.contour)
     ))))
