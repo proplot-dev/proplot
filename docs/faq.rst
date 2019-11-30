@@ -8,23 +8,28 @@ What makes this matplotlib wrapper different?
 There is already a great matplotlib wrapper called `seaborn <https://seaborn.pydata.org/>`__. Also, `pandas <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.plot.html>`__ and `xarray <http://xarray.pydata.org/en/stable/plotting.html>`__ both offer convenient matplotlib plotting commands. How does ProPlot compare against these tools?
 
 * ProPlot, seaborn, pandas, and xarray all offer tools for generating rigid, simple, nice-looking plots from data stored in `~pandas.DataFrame`\ s and `~xarray.DataArray`\ s (ProPlot tries to apply labels from these objects, just like pandas and xarray).
-* Unlike seaborn, pandas, and xarray, ProPlot works for arbitrarily complex subplot grids, and ProPlot provides tools that *encourage* heavy customization by its users.
-* ProPlot is integrated with *cartopy* and *basemap*. You will find plotting geophysical data in ProPlot to be much, much simpler than working with cartopy and basemap directly.
+* Unlike seaborn, pandas, and xarray, ProPlot *also* works for arbitrarily complex subplot grids, and ProPlot provides tools for heavily customizing plots.
+* ProPlot is integrated with *cartopy* and *basemap*. You will find plotting geophysical data in ProPlot to be much more concise than working with cartopy and basemap directly.
 * ProPlot *expands upon* the seaborn tools for working with color and global settings. For example, see `~proplot.styletools.Colormap`, `~proplot.styletools.PerceptuallyUniformColormap`, and `~proplot.rctools.rc_configurator`.
-* ProPlot is built *right into the matplotlib API*, thanks to special subclasses of the `~matplotlib.figure.Figure` and `~matplotlib.axes.Axes` classes, while seaborn, pandas, and xarray are meant to be used separately from the matplotlib API. This massively reduces the learning curve for new ProPlot users.
+* ProPlot *expands upon* matplotlib by fixing various quirks, developing a more sophisticated automatic layout algorithm, simplifying the process of drawing outer colorbars and legends, and much more.
+* ProPlot is *built right into the matplotlib API*, thanks to special subclasses of the `~matplotlib.figure.Figure` and `~matplotlib.axes.Axes` classes, while seaborn, pandas, and xarray are meant to be used separately from the matplotlib API.
 
 In a nutshell, ProPlot is intended to *unify the convenience of seaborn, pandas, and xarray plotting with the power and customizability of the underlying matplotlib API*.
 
-.. So while ProPlot includes similar tools, the scope and goals are largely different.
-.. Indeed, parts of ProPlot were inspired by these projects -- in particular, ``rctools.py`` and ``colortools.py`` are modeled after seaborn. However the goals and scope of ProPlot are largely different:
+..
+  So while ProPlot includes similar tools, the scope and goals are largely different.
+  Indeed, parts of ProPlot were inspired by these projects -- in particular, ``rctools.py`` and ``colortools.py`` are modeled after seaborn. However the goals and scope of ProPlot are largely different:
 
 Why didn't you add to matplotlib directly?
 ==========================================
 
-Since ProPlot is built right into the matplotlib API, you might be wondering why we didn't contribute to the matplotlib project directly. The main answer is *speed* and *autonomy*, but there are a few practical limitations:
+Since ProPlot is built right into the matplotlib API, you might be wondering why we didn't contribute to the matplotlib project directly.
 
 * Certain features directly conflict with matplotlib. For example, ProPlot's tight layout algorithm conflicts with matplotlib's `tight layout <https://matplotlib.org/tutorials/intermediate/tight_layout_guide.html>`__ by permitting *fluid figure dimensions*, and the `~proplot.subplots.FlexibleGridSpec` class permits *variable spacing* between rows and columns and uses *physical units* rather than figure-relative and axes-relative units.
-* Other features may be too redundant. For example, `~proplot.axes.Axes.format` is convenient, but the same tasks can be accomplished with existing axes and axis "setter" methods. Also, some of the functionality of `~proplot.subplots.subplots` can be replicated with `axes_grid1 <https://matplotlib.org/mpl_toolkits/axes_grid1/index.html>`__. Following `TOOWTDI <https://wiki.python.org/moin/TOOWTDI>`__ philosophy, these features should probably not be integrated.
+* Certain features are arguably be too redundant. For example, `~proplot.axes.Axes.format` is convenient, but the same tasks can be accomplished with existing axes and axis "setter" methods. Also, some of the functionality of `~proplot.subplots.subplots` can be replicated with `axes_grid1 <https://matplotlib.org/mpl_toolkits/axes_grid1/index.html>`__. Following `TOOWTDI <https://wiki.python.org/moin/TOOWTDI>`__ philosophy, these features should probably not be integrated.
+
+..
+   * ProPlot design choices are made with the academic scientist working with ipython notebooks in mind, while matplotlib has a much more diverse base of hundreds of thousands of users. Matplotlib developers have to focus on support and API consistency, while ProPlot can make more dramatic improvements.
 
 Nevertheless, if any core matplotlib think that some of ProPlot's features should be added to matplotlib, please contact core developer `Luke Davis <https://github.com/lukelbd>`__ and let him know!
 
@@ -48,5 +53,3 @@ inline backend.
 .. [2] `Raster graphics <https://en.wikipedia.org/wiki/Raster_graphics>`__ use pixels and are *not* infinitely scalable. They tend to be faster to display and easier to view, but they are discouraged by most academic publishers. PNG and JPG are the most common formats.
 
 .. users to enlarge their figure dimensions and font sizes so that content inside of the inline figure is visible -- but when saving the figures for publication, it generally has to be shrunk back down!
-
-
