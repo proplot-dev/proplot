@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-Tools for converting between various colorspaces. Adapted from
-`seaborn <https://github.com/mwaskom/seaborn/blob/master/seaborn/external/husl.py>`__
-and `hsluv-python <https://github.com/hsluv/hsluv-python/blob/master/hsluv.py>`__.
+Tools for converting between various colorspaces. Adapted from `seaborn
+<https://github.com/mwaskom/seaborn/blob/master/seaborn/external/husl.py>`__
+and `hsluv-python
+<https://github.com/hsluv/hsluv-python/blob/master/hsluv.py>`__.
 For more info on colorspaces see the
-`CIULUV specification <https://en.wikipedia.org/wiki/CIELUV>`__,
-the `CIE 1931 colorspace <https://en.wikipedia.org/wiki/CIE_1931_color_space>`__,
+`CIULUV specification <https://en.wikipedia.org/wiki/CIELUV>`__, the
+`CIE 1931 colorspace <https://en.wikipedia.org/wiki/CIE_1931_color_space>`__,
 the `HCL colorspace <https://en.wikipedia.org/wiki/HCL_color_space>`__,
 and the `HSLuv system <http://www.hsluv.org/implementations/>`__.
 
