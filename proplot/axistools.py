@@ -860,7 +860,7 @@ class InvertedPowerTransform(mtransforms.Transform):
 
 
 class ExpScale(_ScaleBase, mscale.ScaleBase):
-    """
+    r"""
     "Exponential scale" that performs either of two transformations. When
     `inverse` is ``False`` (the default), performs the transformation
 
@@ -1114,9 +1114,10 @@ class InvertedCutoffTransform(mtransforms.Transform):
 
 class MercatorLatitudeScale(_ScaleBase, mscale.ScaleBase):
     r"""
-    Axis scale that transforms values as with latitude in the `Mercator projection
-    <http://en.wikipedia.org/wiki/Mercator_projection>`__. Adapted from `this
-    example <https://matplotlib.org/examples/api/custom_scale_example.html>`__.
+    Axis scale that transforms coordinates as with latitude in the `Mercator
+    projection <http://en.wikipedia.org/wiki/Mercator_projection>`__. Adapted
+    from `this matplotlib example
+    <https://matplotlib.org/examples/api/custom_scale_example.html>`__.
 
     The scale function is as follows.
 

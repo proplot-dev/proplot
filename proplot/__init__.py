@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 # Import everything into the top-level module namespace
-#------------------------------------------------------------------------------#
 # Monkey patch warnings format for warnings issued by ProPlot, make sure to
 # detect if this is just a matplotlib warning traced back to ProPlot code by
 # testing whether the warned line contains "warnings.warn"
 # See: https://stackoverflow.com/a/2187390/4970632
-# For internal warning call signature: https://docs.python.org/3/library/warnings.html#warnings.showwarning
-# For default warning source code see: https://github.com/python/cpython/blob/master/Lib/warnings.py
+# For internal warning call signature:
+# https://docs.python.org/3/library/warnings.html#warnings.showwarning
+# For default warning source code see:
+# https://github.com/python/cpython/blob/master/Lib/warnings.py
+import os as _os
 import warnings as _warnings
 import pkg_resources as _pkg
 from .utils import _benchmark
@@ -68,31 +70,9 @@ for _rc_sub in ('cmaps', 'cycles', 'colors', 'fonts'):
     if not _os.path.isdir(_rc_sub):
         _os.mkdir(_rc_sub)
 
-# Import stuff in reverse dependency order
-# Make sure to load styletools early so we can try to update TTFPATH before
-# the fontManager is loaded by other modules (requiring a rebuild)
-from .utils import _benchmark
-with _benchmark('total time'):
-    from .utils import *
-    with _benchmark('styletools'):
-        from .styletools import *
-    with _benchmark('rctools'):
-        from .rctools import *
-    with _benchmark('axistools'):
-        from .axistools import *
-    with _benchmark('wrappers'):
-        from .wrappers import *
-    with _benchmark('projs'):
-        from .projs import *
-    with _benchmark('axes'):
-        from .axes import *
-    with _benchmark('subplots'):
-        from .subplots import *
-
 # SCM versioning
 name = 'proplot'
 try:
     version = __version__ = _pkg.get_distribution(__name__).version
 except _pkg.DistributionNotFound:
     version = __version__ = 'unknown'
-

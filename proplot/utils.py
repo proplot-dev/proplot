@@ -14,22 +14,24 @@ try:
 except ImportError:  # graceful fallback if IceCream isn't installed
     ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
 __all__ = ['arange', 'edges', 'edges2d', 'units']
+NUMBER = re.compile('^([-+]?[0-9._]+([eE][-+]?[0-9_]+)?)(.*)$')
 BENCHMARK = False  # change this to turn on benchmarking
 
-NUMBER = re.compile('^([-+]?[0-9._]+([eE][-+]?[0-9_]+)?)(.*)$')
-BENCHMARK = False
 
 class _benchmark(object):
     """Context object that can be used to time import statements."""
+
     def __init__(self, message):
         self.message = message
 
     def __enter__(self):
         if BENCHMARK:
             self.time = time.clock()
+
     def __exit__(self, *args):
         if BENCHMARK:
             print(f'{self.message}: {time.clock() - self.time}s')
+
 
 def _timer(func):
     """Decorator that prints the time a function takes to execute.
@@ -56,11 +58,14 @@ def _counter(func):
         if BENCHMARK:
             decorator.time += (time.clock() - t)
             decorator.count += 1
-            print(f'  {func.__name__}() cumulative time: {decorator.time}s ({decorator.count} calls)')
+            print(
+                f'  {func.__name__}() cumulative time: '
+                f'{decorator.time}s ({decorator.count} calls)')
         return res
     decorator.time = 0
     decorator.count = 0  # initialize
     return decorator
+
 
 def _notNone(*args, names=None):
     """Return the first non-``None`` value. This is used with keyword arg
@@ -87,10 +92,10 @@ def _notNone(*args, names=None):
                 if name:
                     kwargs[name] = arg
         if len(kwargs) > 1:
-            warnings.warn(f'Got conflicting or duplicate keyword args: {kwargs}. Using the first one.')
+            warnings.warn(
+                f'Got conflicting or duplicate keyword args: {kwargs}. '
+                'Using the first one.')
         return first
-
-# Accessible for user
 
 
 def arange(min_, *args):
@@ -123,6 +128,7 @@ def arange(min_, *args):
         max_ += step / 2
     return np.arange(min_, max_, step)
 
+
 def edges(Z, axis=-1):
     """
     Calculate the approximate "edge" values along an arbitrary axis, given
@@ -147,11 +153,12 @@ def edges(Z, axis=-1):
     """
     Z = np.swapaxes(Z, axis, -1)
     Z = np.concatenate((
-        Z[...,:1]  - (Z[...,1] - Z[...,0])/2,
-        (Z[...,1:] + Z[...,:-1])/2,
-        Z[...,-1:] + (Z[...,-1] - Z[...,-2])/2,
-        ), axis=-1)
+        Z[..., :1] - (Z[..., 1] - Z[..., 0]) / 2,
+        (Z[..., 1:] + Z[..., :-1]) / 2,
+        Z[..., -1:] + (Z[..., -1] - Z[..., -2]) / 2,
+    ), axis=-1)
     return np.swapaxes(Z, axis, -1)
+
 
 def edges2d(Z):
     """
@@ -170,22 +177,23 @@ def edges2d(Z):
     """
     Z = np.asarray(Z)
     ny, nx = Z.shape
-    Zb = np.zeros((ny+1, nx+1))
+    Zb = np.zeros((ny + 1, nx + 1))
 
     # Inner
-    Zb[1:-1, 1:-1] = 0.25 * (Z[1:, 1:] + Z[:-1, 1:] +
-                             Z[1:, :-1] + Z[:-1, :-1])
+    Zb[1:-1, 1:-1] = 0.25 * (Z[1:, 1:] + Z[:-1, 1:]
+                             + Z[1:, :-1] + Z[:-1, :-1])
     # Lower and upper
-    Zb[0] += edges(1.5*Z[0] - 0.5*Z[1])
-    Zb[-1] += edges(1.5*Z[-1] - 0.5*Z[-2])
+    Zb[0] += edges(1.5 * Z[0] - 0.5 * Z[1])
+    Zb[-1] += edges(1.5 * Z[-1] - 0.5 * Z[-2])
 
     # Left and right
-    Zb[:, 0] += edges(1.5*Z[:, 0] - 0.5*Z[:, 1])
-    Zb[:, -1] += edges(1.5*Z[:, -1] - 0.5*Z[:, -2])
+    Zb[:, 0] += edges(1.5 * Z[:, 0] - 0.5 * Z[:, 1])
+    Zb[:, -1] += edges(1.5 * Z[:, -1] - 0.5 * Z[:, -2])
 
     # Corners
     Zb[[0, 0, -1, -1], [0, -1, -1, 0]] *= 0.5
     return Zb
+
 
 def units(value, units='in', axes=None, figure=None, width=True):
     """
@@ -232,12 +240,12 @@ def units(value, units='in', axes=None, figure=None, width=True):
     width : bool, optional
         Whether to use the width or height for the axes and figure relative
         coordinates.
-    """
+    """  # noqa
     # Font unit scales
     # NOTE: Delay font_manager import, because want to avoid rebuilding font
     # cache, which means import must come after TTFPATH added to environ
     # by styletools.register_fonts()!
-    small = rcParams['font.size'] # must be absolute
+    small = rcParams['font.size']  # must be absolute
     large = rcParams['axes.titlesize']
     if isinstance(large, str):
         import matplotlib.font_manager as mfonts
@@ -248,36 +256,41 @@ def units(value, units='in', axes=None, figure=None, width=True):
     # Scales for converting physical units to inches
     unit_dict = {
         'in': 1.0,
-        'm':  39.37,
+        'm': 39.37,
         'ft': 12.0,
         'cm': 0.3937,
         'mm': 0.03937,
-        'pt': 1/72.0,
-        'pc': 1/6.0,
-        'em': small/72.0,
-        'en': 0.5*small/72.0,
-        'Em': large/72.0,
-        'En': 0.5*large/72.0,
+        'pt': 1 / 72.0,
+        'pc': 1 / 6.0,
+        'em': small / 72.0,
+        'en': 0.5 * small / 72.0,
+        'Em': large / 72.0,
+        'En': 0.5 * large / 72.0,
         'ly': 3.725e+17,
-        }
+    }
     # Scales for converting display units to inches
     # WARNING: In ipython shell these take the value 'figure'
     if not isinstance(rcParams['figure.dpi'], str):
-        unit_dict['px'] = 1/rcParams['figure.dpi'] # once generated by backend
+        # once generated by backend
+        unit_dict['px'] = 1 / rcParams['figure.dpi']
     if not isinstance(rcParams['savefig.dpi'], str):
-        unit_dict['pp'] = 1/rcParams['savefig.dpi'] # once 'printed' i.e. saved
+        # once 'printed' i.e. saved
+        unit_dict['pp'] = 1 / rcParams['savefig.dpi']
     # Scales relative to axes and figure objects
-    if axes is not None and hasattr(axes, 'get_size_inches'): # proplot axes
-        unit_dict['ax'] = axes.get_size_inches()[1-int(width)]
+    if axes is not None and hasattr(axes, 'get_size_inches'):  # proplot axes
+        unit_dict['ax'] = axes.get_size_inches()[1 - int(width)]
     if figure is None:
         figure = getattr(axes, 'figure', None)
-    if figure is not None and hasattr(figure, 'get_size_inches'): # proplot axes
-        unit_dict['fig'] = fig.get_size_inches()[1-int(width)]
+    if figure is not None and hasattr(
+            figure, 'get_size_inches'):  # proplot axes
+        unit_dict['fig'] = figure.get_size_inches()[1 - int(width)]
     # Scale for converting inches to arbitrary other unit
     try:
         scale = unit_dict[units]
     except KeyError:
-        raise ValueError(f'Invalid destination units {units!r}. Valid units are {", ".join(map(repr, unit_dict.keys()))}.')
+        raise ValueError(
+            f'Invalid destination units {units!r}. Valid units are '
+            ', '.join(map(repr, unit_dict.keys())) + '.')
 
     # Convert units for each value in list
     result = []
@@ -287,15 +300,22 @@ def units(value, units='in', axes=None, figure=None, width=True):
             result.append(val)
             continue
         elif not isinstance(val, str):
-            raise ValueError(f'Size spec must be string or number or list thereof. Got {value!r}.')
+            raise ValueError(
+                f'Size spec must be string or number or list thereof. '
+                'Got {value!r}.')
         regex = NUMBER.match(val)
         if not regex:
-            raise ValueError(f'Invalid size spec {val!r}. Valid units are {", ".join(map(repr, unit_dict.keys()))}.')
-        number, _, units = regex.groups() # second group is exponential
+            raise ValueError(
+                f'Invalid size spec {val!r}. Valid units are '
+                ', '.join(map(repr, unit_dict.keys())) + '.')
+        number, _, units = regex.groups()  # second group is exponential
         try:
-            result.append(float(number) * (unit_dict[units]/scale if units else 1))
+            result.append(
+                float(number) * (unit_dict[units] / scale if units else 1))
         except (KeyError, ValueError):
-            raise ValueError(f'Invalid size spec {val!r}. Valid units are {", ".join(map(repr, unit_dict.keys()))}.')
+            raise ValueError(
+                f'Invalid size spec {val!r}. Valid units are '
+                ', '.join(map(repr, unit_dict.keys())) + '.')
     if singleton:
         result = result[0]
     return result

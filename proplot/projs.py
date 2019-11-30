@@ -10,7 +10,6 @@ string name aliases, just like `~mpl_toolkits.basemap`.
 # if version.parse(cartopy.__version__) < version.parse("0.13"):
 # raise RuntimeError('Require cartopy version >=0.13.') # adds
 # set_boundary method
-import numpy as np
 import warnings
 __all__ = [
     'Proj',
@@ -22,11 +21,13 @@ __all__ = [
 ]
 try:
     from mpl_toolkits.basemap import Basemap
-except:
+except BaseException:
     Basemap = object
 try:
-    from cartopy.crs import (CRS, _WarpedRectangularProjection,
-        LambertAzimuthalEqualArea, AzimuthalEquidistant, Gnomonic)
+    from cartopy.crs import (
+        CRS, _WarpedRectangularProjection,
+        LambertAzimuthalEqualArea, AzimuthalEquidistant, Gnomonic
+    )
 except ModuleNotFoundError:
     CRS = object
     _WarpedRectangularProjection = object
@@ -131,13 +132,16 @@ def Proj(name, basemap=False, **kwargs):
     See also
     --------
     `~proplot.axes.GeoAxes`, `~proplot.axes.BasemapAxes`
-    """
+    """  # noqa
     # Class instances
     if ((CRS is not object and isinstance(name, CRS))
-        or (Basemap is not object and isinstance(name, Basemap))):
+            or (Basemap is not object and isinstance(name, Basemap))):
         proj = name
     elif not isinstance(proj, str):
-        raise ValueError(f'Unexpected Proj() argument {proj!r}. Must be name, mpl_toolkits.basemap.Basemap instance, or cartopy.crs.CRS instance.')
+        raise ValueError(
+            f'Unexpected Proj() argument {proj!r}. '
+            'Must be name, mpl_toolkits.basemap.Basemap instance, '
+            'or cartopy.crs.CRS instance.')
     # Basemap
     if basemap:
         import mpl_toolkits.basemap as mbasemap
@@ -156,11 +160,11 @@ def Proj(name, basemap=False, **kwargs):
         proj = mbasemap.Basemap(projection=name, resolution=reso, **kwproj)
     # Cartopy
     else:
-        import cartopy.crs as _ # noqa
+        import cartopy.crs as _  # noqa
         kwargs = {
             CARTOPY_CRS_TRANSLATE.get(key, key): value
-            for key,value in kwargs.items()
-            }
+            for key, value in kwargs.items()
+        }
         crs = cartopy_projs.get(name, None)
         if name == 'geos':  # fix common mistake
             kwargs.pop('central_latitude', None)
@@ -169,46 +173,62 @@ def Proj(name, basemap=False, **kwargs):
                 f'"boundinglat" must be passed to the ax.format() command '
                 'for cartopy axes.')
         if crs is None:
-            raise ValueError(f'Unknown projection {name!r}. Options are: {", ".join(map(repr, cartopy_projs.keys()))}.')
+            raise ValueError(
+                f'Unknown projection {name!r}. Options are: '
+                ', '.join(map(repr, cartopy_projs.keys())) + '.')
         proj = crs(**kwargs)
     return proj
 
 # New cartopy projections
+
+
 class NorthPolarAzimuthalEquidistant(AzimuthalEquidistant):
     """Analogous to `~cartopy.crs.NorthPolarStereo`."""
+
     def __init__(self, central_longitude=0.0, globe=None):
         super().__init__(central_latitude=90,
-                central_longitude=central_longitude, globe=globe)
+                         central_longitude=central_longitude, globe=globe)
+
 
 class SouthPolarAzimuthalEquidistant(AzimuthalEquidistant):
     """Analogous to `~cartopy.crs.SouthPolarStereo`."""
+
     def __init__(self, central_longitude=0.0, globe=None):
         super().__init__(central_latitude=-90,
-                central_longitude=central_longitude, globe=globe)
+                         central_longitude=central_longitude, globe=globe)
+
 
 class NorthPolarLambertAzimuthalEqualArea(LambertAzimuthalEqualArea):
     """Analogous to `~cartopy.crs.NorthPolarStereo`."""
+
     def __init__(self, central_longitude=0.0, globe=None):
         super().__init__(central_latitude=90,
-                central_longitude=central_longitude, globe=globe)
+                         central_longitude=central_longitude, globe=globe)
+
 
 class SouthPolarLambertAzimuthalEqualArea(LambertAzimuthalEqualArea):
     """Analogous to `~cartopy.crs.SouthPolarStereo`."""
+
     def __init__(self, central_longitude=0.0, globe=None):
         super().__init__(central_latitude=-90,
-                central_longitude=central_longitude, globe=globe)
+                         central_longitude=central_longitude, globe=globe)
+
 
 class NorthPolarGnomonic(Gnomonic):
     """Analogous to `~cartopy.crs.SouthPolarStereo`."""
+
     def __init__(self, central_longitude=0.0, globe=None):
         super().__init__(central_latitude=90,
-                central_longitude=central_longitude, globe=globe)
+                         central_longitude=central_longitude, globe=globe)
+
 
 class SouthPolarGnomonic(Gnomonic):
     """Analogous to `~cartopy.crs.SouthPolarStereo`."""
+
     def __init__(self, central_longitude=0.0, globe=None):
         super().__init__(central_latitude=-90,
-                central_longitude=central_longitude, globe=globe)
+                         central_longitude=central_longitude, globe=globe)
+
 
 class Aitoff(_WarpedRectangularProjection):
     """The `Aitoff <https://en.wikipedia.org/wiki/Aitoff_projection>`__
@@ -216,8 +236,9 @@ class Aitoff(_WarpedRectangularProjection):
     __name__ = 'aitoff'
     name = 'aitoff'
     """Registered projection name."""
-    def __init__(self, central_longitude=0, globe=None): #, threshold=1e2):
-        proj4_params = {'proj':'aitoff', 'lon_0':central_longitude}
+
+    def __init__(self, central_longitude=0, globe=None):  # , threshold=1e2):
+        proj4_params = {'proj': 'aitoff', 'lon_0': central_longitude}
         super().__init__(proj4_params, central_longitude, globe=globe)
 
     @property
@@ -225,14 +246,16 @@ class Aitoff(_WarpedRectangularProjection):
         """Projection resolution."""
         return 1e4
 
+
 class Hammer(_WarpedRectangularProjection):
     """The `Hammer <https://en.wikipedia.org/wiki/Hammer_projection>`__
     projection."""
     __name__ = 'hammer'
     name = 'hammer'
     """Registered projection name."""
-    def __init__(self, central_longitude=0, globe=None): #, threshold=1e2):
-        proj4_params = {'proj':'hammer', 'lon_0':central_longitude}
+
+    def __init__(self, central_longitude=0, globe=None):  # , threshold=1e2):
+        proj4_params = {'proj': 'hammer', 'lon_0': central_longitude}
         super().__init__(proj4_params, central_longitude, globe=globe)
 
     @property
@@ -274,6 +297,7 @@ class WinkelTripel(_WarpedRectangularProjection):
     def threshold(self):
         """Projection resolution."""
         return 1e4
+
 
 # Hidden constants
 BASEMAP_TRANSLATE = {
@@ -323,7 +347,6 @@ basemap_rc = {
 
 #: Mapping of "projection names" to cartopy `~cartopy.crs.Projection` classes.
 cartopy_projs = {}
-"""Mapping of "projection names" to cartopy `~cartopy.crs.Projection` classes."""
 if CRS is not object:
     # Custom ones, these are always present
     import cartopy.crs as ccrs  # verify package is available

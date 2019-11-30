@@ -4,7 +4,8 @@ Utilities for configuring matplotlib and ProPlot global settings.
 See :ref:`Configuring proplot` for details.
 """
 # TODO: Add 'style' option that overrides .proplotrc
-# Adapted from seaborn; see: https://github.com/mwaskom/seaborn/blob/master/seaborn/rcmod.py
+# Adapted from seaborn; see:
+# https://github.com/mwaskom/seaborn/blob/master/seaborn/rcmod.py
 from . import utils
 from .utils import _counter, _timer, _benchmark
 import re
@@ -28,173 +29,173 @@ __all__ = [
 
 # Initialize
 defaultParamsShort = {
-    'nbsetup':      True,
-    'format':       'retina',
-    'autosave':     30,
-    'autoreload':   2,
-    'abc':          False,
-    'share':        3,
-    'align':        False,
-    'span':         True,
-    'tight':        True,
-    'fontname':     'Helvetica Neue',
-    'cmap':         'fire',
-    'lut':          256,
-    'cycle':        'colorblind',
-    'rgbcycle':     False,
-    'color':        'k',
-    'alpha':        1,
-    'facecolor':    'w',
-    'small':        8,
-    'large':        9,
-    'linewidth':    0.6,
-    'margin':       0.0,
-    'grid':         True,
-    'gridminor':    False,
-    'ticklen':      4.0,
-    'tickdir':      'out',
-    'tickpad':      2.0,
-    'tickratio':    0.8,
+    'nbsetup': True,
+    'format': 'retina',
+    'autosave': 30,
+    'autoreload': 2,
+    'abc': False,
+    'share': 3,
+    'align': False,
+    'span': True,
+    'tight': True,
+    'fontname': 'Helvetica Neue',
+    'cmap': 'fire',
+    'lut': 256,
+    'cycle': 'colorblind',
+    'rgbcycle': False,
+    'color': 'k',
+    'alpha': 1,
+    'facecolor': 'w',
+    'small': 8,
+    'large': 9,
+    'linewidth': 0.6,
+    'margin': 0.0,
+    'grid': True,
+    'gridminor': False,
+    'ticklen': 4.0,
+    'tickdir': 'out',
+    'tickpad': 2.0,
+    'tickratio': 0.8,
     'ticklenratio': 0.5,
-    'tickminor':    True,
-    'gridratio':    0.5,
-    'reso':         'lo',
-    'geogrid':      True,
-    'land':         False,
-    'ocean':        False,
-    'coast':        False,
-    'rivers':       False,
-    'lakes':        False,
-    'borders':      False,
+    'tickminor': True,
+    'gridratio': 0.5,
+    'reso': 'lo',
+    'geogrid': True,
+    'land': False,
+    'ocean': False,
+    'coast': False,
+    'rivers': False,
+    'lakes': False,
+    'borders': False,
     'innerborders': False,
-    }
+}
 defaultParamsLong = {
-    'title.loc':                   'c', # centered above the axes
-    'title.pad':                   3.0, # copy
-    'abc.loc':                     'l', # left side above the axes
-    'abc.style':                   'a',
-    'abc.size':                    None, # = large
-    'abc.color':                   'k',
-    'abc.weight':                  'bold',
-    'abc.border':                  True,
-    'abc.linewidth':               1.5,
-    'tick.labelsize':              None, # = small
-    'tick.labelcolor':             None, # = color
-    'tick.labelweight':            'normal',
-    'title.size':                  None, # = large
-    'title.color':                 'k',
-    'title.weight':                'normal',
-    'title.border':                True,
-    'title.linewidth':             1.5,
-    'suptitle.size':               None, # = large
-    'suptitle.color':              'k',
-    'suptitle.weight':             'bold',
-    'leftlabel.size':              None, # = large
-    'leftlabel.weight':            'bold',
-    'leftlabel.color':             'k',
-    'toplabel.size':               None, # = large
-    'toplabel.weight':             'bold',
-    'toplabel.color':              'k',
-    'rightlabel.size':             None, # = large
-    'rightlabel.weight':           'bold',
-    'rightlabel.color':            'k',
-    'bottomlabel.size':            None, # = large
-    'bottomlabel.weight':          'bold',
-    'bottomlabel.color':           'k',
-    'image.edgefix':               True,
-    'image.levels':                11,
-    'axes.facealpha':              None, # if empty, depends on 'savefig.transparent' setting
-    'axes.formatter.zerotrim':     True,
+    'title.loc': 'c',  # centered above the axes
+    'title.pad': 3.0,  # copy
+    'abc.loc': 'l',  # left side above the axes
+    'abc.style': 'a',
+    'abc.size': None,  # = large
+    'abc.color': 'k',
+    'abc.weight': 'bold',
+    'abc.border': True,
+    'abc.linewidth': 1.5,
+    'tick.labelsize': None,  # = small
+    'tick.labelcolor': None,  # = color
+    'tick.labelweight': 'normal',
+    'title.size': None,  # = large
+    'title.color': 'k',
+    'title.weight': 'normal',
+    'title.border': True,
+    'title.linewidth': 1.5,
+    'suptitle.size': None,  # = large
+    'suptitle.color': 'k',
+    'suptitle.weight': 'bold',
+    'leftlabel.size': None,  # = large
+    'leftlabel.weight': 'bold',
+    'leftlabel.color': 'k',
+    'toplabel.size': None,  # = large
+    'toplabel.weight': 'bold',
+    'toplabel.color': 'k',
+    'rightlabel.size': None,  # = large
+    'rightlabel.weight': 'bold',
+    'rightlabel.color': 'k',
+    'bottomlabel.size': None,  # = large
+    'bottomlabel.weight': 'bold',
+    'bottomlabel.color': 'k',
+    'image.edgefix': True,
+    'image.levels': 11,
+    'axes.facealpha': None,  # if empty, depends on 'savefig.transparent'
+    'axes.formatter.zerotrim': True,
     'axes.formatter.timerotation': 90,
-    'axes.gridminor':              True,
-    'axes.geogrid':                True,
-    'gridminor.alpha':             None, # = grid.alpha
-    'gridminor.color':             None, # = grid.color
-    'gridminor.linestyle':         None, # = grid.linewidth
-    'gridminor.linewidth':         None, # = grid.linewidth x gridratio
-    'geogrid.labels':              False,
-    'geogrid.labelsize':           None, # = small
-    'geogrid.latmax':              90,
-    'geogrid.lonstep':             30,
-    'geogrid.latstep':             20,
-    'geogrid.alpha':               0.5,
-    'geogrid.color':               'k',
-    'geogrid.linewidth':           1.0,
-    'geogrid.linestyle':           ':                                                         ',
-    'geoaxes.linewidth':           None, # = linewidth
-    'geoaxes.facecolor':           None, # = facecolor
-    'geoaxes.facealpha':           None, # = alpha
-    'geoaxes.edgecolor':           None, # = color
-    'land.color':                  'k',
-    'ocean.color':                 'w',
-    'lakes.color':                 'w',
-    'coast.color':                 'k',
-    'coast.linewidth':             0.6,
-    'borders.color':               'k',
-    'borders.linewidth':           0.6,
-    'innerborders.color':          'k',
-    'innerborders.linewidth':      0.6,
-    'rivers.color':                'k',
-    'rivers.linewidth':            0.6,
-    'colorbar.loc':                'right',
-    'colorbar.grid':               False,
-    'colorbar.frameon':            True,
-    'colorbar.framealpha':         0.8,
-    'colorbar.insetpad':           '0.5em',
-    'colorbar.extend':             '1.3em',
-    'colorbar.insetextend':        '1em',
-    'colorbar.length':             1,
-    'colorbar.insetlength':        '8em',
-    'colorbar.width':              '1.5em',
-    'colorbar.insetwidth':         '1.2em',
-    'subplots.axwidth':            '18em',
-    'subplots.panelwidth':         '4em',
-    'subplots.pad':                '0.5em',
-    'subplots.axpad':              '1em',
-    'subplots.panelpad':           '0.5em',
-    }
+    'axes.gridminor': True,
+    'axes.geogrid': True,
+    'gridminor.alpha': None,  # = grid.alpha
+    'gridminor.color': None,  # = grid.color
+    'gridminor.linestyle': None,  # = grid.linewidth
+    'gridminor.linewidth': None,  # = grid.linewidth x gridratio
+    'geogrid.labels': False,
+    'geogrid.labelsize': None,  # = small
+    'geogrid.latmax': 90,
+    'geogrid.lonstep': 30,
+    'geogrid.latstep': 20,
+    'geogrid.alpha': 0.5,
+    'geogrid.color': 'k',
+    'geogrid.linewidth': 1.0,
+    'geogrid.linestyle': ':',
+    'geoaxes.linewidth': None,  # = linewidth
+    'geoaxes.facecolor': None,  # = facecolor
+    'geoaxes.facealpha': None,  # = alpha
+    'geoaxes.edgecolor': None,  # = color
+    'land.color': 'k',
+    'ocean.color': 'w',
+    'lakes.color': 'w',
+    'coast.color': 'k',
+    'coast.linewidth': 0.6,
+    'borders.color': 'k',
+    'borders.linewidth': 0.6,
+    'innerborders.color': 'k',
+    'innerborders.linewidth': 0.6,
+    'rivers.color': 'k',
+    'rivers.linewidth': 0.6,
+    'colorbar.loc': 'right',
+    'colorbar.grid': False,
+    'colorbar.frameon': True,
+    'colorbar.framealpha': 0.8,
+    'colorbar.insetpad': '0.5em',
+    'colorbar.extend': '1.3em',
+    'colorbar.insetextend': '1em',
+    'colorbar.length': 1,
+    'colorbar.insetlength': '8em',
+    'colorbar.width': '1.5em',
+    'colorbar.insetwidth': '1.2em',
+    'subplots.axwidth': '18em',
+    'subplots.panelwidth': '4em',
+    'subplots.pad': '0.5em',
+    'subplots.axpad': '1em',
+    'subplots.panelpad': '0.5em',
+}
 defaultParams = {
-    'axes.titleweight':        'normal',
-    'axes.xmargin':            0.0,
-    'axes.ymargin':            0.0,
-    'axes.grid':               True,
-    'axes.labelpad':           3.0,
-    'axes.titlepad':           3.0,
-    'figure.dpi':              90,
-    'figure.facecolor':        '#f2f2f2',
-    'figure.autolayout':       False,
-    'figure.titleweight':      'bold',
+    'axes.titleweight': 'normal',
+    'axes.xmargin': 0.0,
+    'axes.ymargin': 0.0,
+    'axes.grid': True,
+    'axes.labelpad': 3.0,
+    'axes.titlepad': 3.0,
+    'figure.dpi': 90,
+    'figure.facecolor': '#f2f2f2',
+    'figure.autolayout': False,
+    'figure.titleweight': 'bold',
     'figure.max_open_warning': 0,
-    'grid.color':              'k',
-    'grid.alpha':              0.1,
-    'grid.linewidth':          0.6,
-    'grid.linestyle':          '-',
-    'hatch.color':             'k',
-    'hatch.linewidth':         0.6,
-    'legend.frameon':          True,
-    'legend.framealpha':       0.8,
-    'legend.fancybox':         False,
-    'legend.labelspacing':     0.5,
-    'legend.handletextpad':    0.5,
-    'legend.handlelength':     1.5,
-    'legend.columnspacing':    1.0,
-    'legend.borderpad':        0.5,
-    'legend.borderaxespad':    0,
-    'lines.linewidth':         1.3,
-    'lines.markersize':        3.0,
-    'mathtext.bf':             'sans:bold',
-    'mathtext.it':             'sans:it',
-    'mathtext.default':        'regular',
-    'savefig.directory':       '',
-    'savefig.dpi':             300,
-    'savefig.facecolor':       'white',
-    'savefig.transparent':     True,
-    'savefig.format':          'pdf',
-    'savefig.bbox':            'standard',
-    'savefig.pad_inches':      0.0,
-    'xtick.minor.visible':     True,
-    'ytick.minor.visible':     True,
-    }
+    'grid.color': 'k',
+    'grid.alpha': 0.1,
+    'grid.linewidth': 0.6,
+    'grid.linestyle': '-',
+    'hatch.color': 'k',
+    'hatch.linewidth': 0.6,
+    'legend.frameon': True,
+    'legend.framealpha': 0.8,
+    'legend.fancybox': False,
+    'legend.labelspacing': 0.5,
+    'legend.handletextpad': 0.5,
+    'legend.handlelength': 1.5,
+    'legend.columnspacing': 1.0,
+    'legend.borderpad': 0.5,
+    'legend.borderaxespad': 0,
+    'lines.linewidth': 1.3,
+    'lines.markersize': 3.0,
+    'mathtext.bf': 'sans:bold',
+    'mathtext.it': 'sans:it',
+    'mathtext.default': 'regular',
+    'savefig.directory': '',
+    'savefig.dpi': 300,
+    'savefig.facecolor': 'white',
+    'savefig.transparent': True,
+    'savefig.format': 'pdf',
+    'savefig.bbox': 'standard',
+    'savefig.pad_inches': 0.0,
+    'xtick.minor.visible': True,
+    'ytick.minor.visible': True,
+}
 rcParamsShort = {}
 rcParamsLong = {}
 
@@ -204,7 +205,7 @@ if not os.path.isfile(_rc_file):
     def _tabulate(rcdict):
         string = ''
         maxlen = max(map(len, rcdict))
-        for key,value in rcdict.items():
+        for key, value in rcdict.items():
             value = '' if value is None else repr(value)
             space = ' ' * (maxlen - len(key) + 1) * int(bool(value))
             string += f'#  {key}:{space}{value}\n'
@@ -229,46 +230,59 @@ if not os.path.isfile(_rc_file):
 # "Global" settings and the lower-level settings they change
 # NOTE: This whole section, declaring dictionaries and sets, takes 1ms
 RC_CHILDREN = {
-    'fontname':  ('font.family',),
-    'cmap':      ('image.cmap',),
-    'lut':       ('image.lut',),
-    'alpha':     ('axes.facealpha', 'geoaxes.facealpha'), # this is a custom setting
+    'fontname': ('font.family',),
+    'cmap': ('image.cmap',),
+    'lut': ('image.lut',),
+    'alpha': ('axes.facealpha', 'geoaxes.facealpha'),
     'facecolor': ('axes.facecolor', 'geoaxes.facecolor'),
-    'color':     ('axes.edgecolor', 'geoaxes.edgecolor', 'axes.labelcolor', 'tick.labelcolor', 'hatch.color', 'xtick.color', 'ytick.color'), # change the 'color' of an axes
-    'small':     ('font.size', 'tick.labelsize', 'xtick.labelsize', 'ytick.labelsize', 'axes.labelsize', 'legend.fontsize', 'geogrid.labelsize'), # the 'small' fonts
-    'large':     ('abc.size', 'figure.titlesize', 'axes.titlesize', 'suptitle.size', 'title.size', 'leftlabel.size', 'toplabel.size', 'rightlabel.size', 'bottomlabel.size'), # the 'large' fonts
-    'linewidth': ('axes.linewidth', 'geoaxes.linewidth', 'hatch.linewidth', 'xtick.major.width', 'ytick.major.width'),
-    'margin':    ('axes.xmargin', 'axes.ymargin'),
-    'grid':      ('axes.grid',),
+    'color': ('axes.edgecolor', 'geoaxes.edgecolor', 'axes.labelcolor',
+              'tick.labelcolor', 'hatch.color', 'xtick.color', 'ytick.color'),
+    'small': ('font.size', 'tick.labelsize',
+              'xtick.labelsize', 'ytick.labelsize', 'axes.labelsize',
+              'legend.fontsize', 'geogrid.labelsize'),
+    'large': ('abc.size', 'figure.titlesize', 'axes.titlesize',
+              'suptitle.size', 'title.size', 'leftlabel.size', 'toplabel.size',
+              'rightlabel.size', 'bottomlabel.size'),  # the 'large' fonts
+    'linewidth': ('axes.linewidth', 'geoaxes.linewidth', 'hatch.linewidth',
+                  'xtick.major.width', 'ytick.major.width'),
+    'margin': ('axes.xmargin', 'axes.ymargin'),
+    'grid': ('axes.grid',),
     'gridminor': ('axes.gridminor',),
-    'geogrid':   ('axes.geogrid',),
-    'ticklen':   ('xtick.major.size', 'ytick.major.size'),
-    'tickdir':   ('xtick.direction', 'ytick.direction'),
+    'geogrid': ('axes.geogrid',),
+    'ticklen': ('xtick.major.size', 'ytick.major.size'),
+    'tickdir': ('xtick.direction', 'ytick.direction'),
     'tickminor': ('xtick.minor.visible', 'ytick.minor.visible'),
-    'tickpad':   ('xtick.major.pad', 'xtick.minor.pad', 'ytick.major.pad', 'ytick.minor.pad'),
+    'tickpad': ('xtick.major.pad', 'xtick.minor.pad',
+                'ytick.major.pad', 'ytick.minor.pad'),
     'title.pad': ('axes.titlepad',),
-    }
+}
 # Used by Axes.format, allows user to pass rc settings as keyword args,
 # way less verbose. For example, landcolor='b' vs. rc_kw={'land.color':'b'}.
-RC_NODOTS = { # useful for passing these as kwargs
+RC_NODOTS = {  # useful for passing these as kwargs
     name.replace('.', ''): name for names
     in (rcParams, rcParamsLong) for name in names
-    }
+}
 # Categories for returning dict of subcategory properties
 RC_CATEGORIES = {
-    *(re.sub('\.[^.]*$', '', name) for names in (rcParams, rcParamsLong) for name in names),
-    *(re.sub('\..*$', '', name) for names in (rcParams, rcParamsLong) for name in names)
-    }
+    *(re.sub(r'\.[^.]*$', '', name)
+        for names in (rcParams, rcParamsLong) for name in names),
+    *(re.sub(r'\..*$', '', name)
+        for names in (rcParams, rcParamsLong) for name in names)
+}
 
 # Helper funcs
+
+
 def _to_points(key, value):
     """Convert certain rc keys to the units "points"."""
     # See: https://matplotlib.org/users/customizing.html, all props matching
     # the below strings use the units 'points', and custom categories are in
-    if (isinstance(value,str) and key.split('.')[0] not in ('colorbar','subplots')
-        and re.match('^.*(width|space|size|pad|len|small|large)$', key)):
+    if (isinstance(value, str)
+            and key.split('.')[0] not in ('colorbar', 'subplots')
+            and re.match('^.*(width|space|size|pad|len|small|large)$', key)):
         value = utils.units(value, 'pt')
     return value
+
 
 def _get_config_paths():
     """Return a list of configuration file paths."""
@@ -290,12 +304,13 @@ def _get_config_paths():
         paths.insert(0, ipath)
     return paths
 
+
 def _get_synced_params(key, value):
     """Return dictionaries for updating the `rcParamsShort`, `rcParamsLong`,
     and `rcParams` properties associted with this key."""
-    kw = {} # builtin properties that global setting applies to
-    kw_long = {} # custom properties that global setting applies to
-    kw_short = {} # short name properties
+    kw = {}  # builtin properties that global setting applies to
+    kw_long = {}  # custom properties that global setting applies to
+    kw_short = {}  # short name properties
     if '.' not in key and key not in rcParamsShort:
         key = RC_NODOTS.get(key, key)
     # Skip full name keys
@@ -310,18 +325,27 @@ def _get_synced_params(key, value):
         try:
             colors = mcm.cmap_d[cycle].colors
         except (KeyError, AttributeError):
-            cycles = sorted(name for name,cmap in mcm.cmap_d.items() if isinstance(cmap, mcolors.ListedColormap))
-            raise ValueError(f'Invalid cycle name {cycle!r}. Options are: {", ".join(map(repr, cycles))}')
+            cycles = sorted(
+                name for name,
+                cmap in mcm.cmap_d.items() if isinstance(
+                    cmap,
+                    mcolors.ListedColormap))
+            raise ValueError(
+                f'Invalid cycle name {cycle!r}. Options are: '
+                ', '.join(map(repr, cycles)) + '.')
         if rgbcycle and cycle.lower() == 'colorblind':
             regcolors = colors + [(0.1, 0.1, 0.1)]
-        elif mcolors.to_rgb('r') != (1.0,0.0,0.0): # reset
-            regcolors = [(0.0, 0.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.75, 0.75, 0.0), (0.75, 0.75, 0.0), (0.0, 0.75, 0.75), (0.0, 0.0, 0.0)]
+        elif mcolors.to_rgb('r') != (1.0, 0.0, 0.0):  # reset
+            regcolors = [
+                (0.0, 0.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0),
+                (0.75, 0.75, 0.0), (0.75, 0.75, 0.0), (0.0, 0.75, 0.75),
+                (0.0, 0.0, 0.0)]
         else:
-            regcolors = [] # no reset necessary
-        for code,color in zip('brgmyck', regcolors):
+            regcolors = []  # no reset necessary
+        for code, color in zip('brgmyck', regcolors):
             rgb = mcolors.to_rgb(color)
             mcolors.colorConverter.colors[code] = rgb
-            mcolors.colorConverter.cache[code]  = rgb
+            mcolors.colorConverter.cache[code] = rgb
         kw['patch.facecolor'] = colors[0]
         kw['axes.prop_cycle'] = cycler.cycler('color', colors)
 
@@ -339,8 +363,8 @@ def _get_synced_params(key, value):
         else:
             ticklen = rcParamsShort['ticklen']
             ratio = value
-        kw['xtick.minor.size'] = ticklen*ratio
-        kw['ytick.minor.size'] = ticklen*ratio
+        kw['xtick.minor.size'] = ticklen * ratio
+        kw['ytick.minor.size'] = ticklen * ratio
 
     # Spine width/major-minor tick width ratio
     elif key in ('linewidth', 'tickratio'):
@@ -350,8 +374,8 @@ def _get_synced_params(key, value):
         else:
             tickwidth = rcParamsShort['linewidth']
             ratio = value
-        kw['xtick.minor.width'] = tickwidth*ratio
-        kw['ytick.minor.width'] = tickwidth*ratio
+        kw['xtick.minor.width'] = tickwidth * ratio
+        kw['ytick.minor.width'] = tickwidth * ratio
 
     # Gridline width
     elif key in ('grid.linewidth', 'gridratio'):
@@ -361,7 +385,7 @@ def _get_synced_params(key, value):
         else:
             gridwidth = rcParams['grid.linewidth']
             ratio = value
-        kw_long['gridminor.linewidth'] = gridwidth*ratio
+        kw_long['gridminor.linewidth'] = gridwidth * ratio
 
     # Gridline toggling, complicated because of the clunky way this is
     # implemented in matplotlib. There should be a gridminor setting!
@@ -372,13 +396,15 @@ def _get_synced_params(key, value):
         if not value:
             # Gridlines are already off, or they are on for the particular
             # ones that we want to turn off. Instruct to turn both off.
-            if not ovalue or (key == 'grid' and owhich == 'major') or (key == 'gridminor' and owhich == 'minor'):
-                which = 'both' # disable both sides
-            # Gridlines are currently on for major and minor ticks, so we instruct
-            # to turn on gridlines for the one we *don't* want off
-            elif owhich == 'both': # and ovalue is True, as we already tested
+            if not ovalue or (key == 'grid' and owhich == 'major') or (
+                    key == 'gridminor' and owhich == 'minor'):
+                which = 'both'  # disable both sides
+            # Gridlines are currently on for major and minor ticks, so we
+            # instruct to turn on gridlines for the one we *don't* want off
+            elif owhich == 'both':  # and ovalue is True, as we already tested
+                # if gridminor=False, enable major, and vice versa
                 value = True
-                which = 'major' if key == 'gridminor' else 'minor' # if gridminor=False, enable major, and vice versa
+                which = 'major' if key == 'gridminor' else 'minor'
             # Gridlines are on for the ones that we *didn't* instruct to turn
             # off, and off for the ones we do want to turn off. This just
             # re-asserts the ones that are already on.
@@ -389,7 +415,8 @@ def _get_synced_params(key, value):
         else:
             # Gridlines are already both on, or they are off only for the ones
             # that we want to turn on. Turn on gridlines for both.
-            if owhich == 'both' or (key == 'grid' and owhich == 'minor') or (key == 'gridminor' and owhich == 'major'):
+            if owhich == 'both' or (key == 'grid' and owhich == 'minor') or (
+                    key == 'gridminor' and owhich == 'major'):
                 which = 'both'
             # Gridlines are off for both, or off for the ones that we
             # don't want to turn on. We can just turn on these ones.
@@ -415,9 +442,7 @@ def _get_synced_params(key, value):
             kw[name] = value
     return kw_short, kw_long, kw
 
-#-----------------------------------------------------------------------------#
-# Main class
-#-----------------------------------------------------------------------------#
+
 def _sanitize_key(key):
     """Convert the key to a palatable value."""
     if not isinstance(key, str):
@@ -436,22 +461,27 @@ class rc_configurator(object):
     ``~/.proplotrc`` file. See the `~proplot.rctools` documentation for
     details.
     """
+
     def __contains__(self, key):
         return key in rcParamsShort or key in rcParamsLong or key in rcParams
+
     def __iter__(self):
         for key in sorted((*rcParamsShort, *rcParamsLong, *rcParams)):
             yield key
+
     def __repr__(self):
         rcdict = type('rc', (dict,), {})(rcParamsShort)
         string = type(rcParams).__repr__(rcdict)
-        indent = ' ' * 4 # indent is rc({
-        return string.strip('})') + f'\n{indent}... (rcParams) ...\n{indent}}})'
-    def __str__(self): # encapsulate params in temporary class whose name is used by rcParams.__str__
+        indent = ' ' * 4  # indent is rc({
+        return string.strip(
+            '})') + f'\n{indent}... (rcParams) ...\n{indent}}})'
+
+    def __str__(self):  # encapsulate params in temporary class
         rcdict = type('rc', (dict,), {})(rcParamsShort)
         string = type(rcParams).__str__(rcdict)
         return string + '\n... (rcParams) ...'
 
-    @_counter # about 0.05s
+    @_counter  # about 0.05s
     def __init__(self, local=True):
         """
         Parameters
@@ -471,7 +501,7 @@ class rc_configurator(object):
         rcParamsShort.clear()
         rcParamsShort.update(defaultParamsShort)
         for rcdict in (rcParamsShort, rcParamsLong):
-            for key,value in rcdict.items():
+            for key, value in rcdict.items():
                 _, rc_long, rc = _get_synced_params(key, value)
                 rcParamsLong.update(rc_long)
                 rcParams.update(rc)
@@ -479,7 +509,7 @@ class rc_configurator(object):
         # Update from files
         if not local:
             return
-        for i,file in enumerate(_get_config_paths()):
+        for i, file in enumerate(_get_config_paths()):
             if not os.path.exists(file):
                 continue
             with open(file) as f:
@@ -488,7 +518,7 @@ class rc_configurator(object):
                 except yaml.YAMLError as err:
                     print('{file!r} has invalid YAML syntax.')
                     raise err
-            for key,value in (data or {}).items():
+            for key, value in (data or {}).items():
                 try:
                     self[key] = value
                 except KeyError:
@@ -496,12 +526,16 @@ class rc_configurator(object):
 
     def __enter__(self):
         """Apply settings from the most recent context block."""
-        *_, kwargs, cache, restore = self._context[-1] # missing arg is previous mode
+        if not self._context:
+            raise RuntimeError(
+                f'rc context must be initialized with rc.context().')
+        *_, kwargs, cache, restore = self._context[-1]
+
         def _update(rcdict, newdict):
-            for key,value in newdict.items():
+            for key, value in newdict.items():
                 restore[key] = rcdict[key]
                 rcdict[key] = cache[key] = value
-        for key,value in kwargs.items():
+        for key, value in kwargs.items():
             rc_short, rc_long, rc = _get_synced_params(key, value)
             _update(rcParamsShort, rc_short)
             _update(rcParamsLong, rc_long)
@@ -509,8 +543,11 @@ class rc_configurator(object):
 
     def __exit__(self, *args):
         """Restore settings from the most recent context block."""
+        if not self._context:
+            raise RuntimeError(
+                f'rc context must be initialized with rc.context().')
         *_, restore = self._context[-1]
-        for key,value in restore.items():
+        for key, value in restore.items():
             self[key] = value
         del self._context[-1]
 
@@ -528,7 +565,8 @@ class rc_configurator(object):
         return self[attr]
 
     def __getitem__(self, key):
-        """Return the relevant `rcParams <https://matplotlib.org/users/customizing.html>`__,
+        """Return the relevant `rcParams
+        <https://matplotlib.org/users/customizing.html>`__,
         :ref:`rcParamsLong`, and :ref:`rcParamsShort` setting."""
         key = _sanitize_key(key)
         for kw in (rcParamsShort, rcParamsLong, rcParams):
@@ -543,7 +581,8 @@ class rc_configurator(object):
         self[attr] = value
 
     def __setitem__(self, key, value):
-        """Modify the relevant `rcParams <https://matplotlib.org/users/customizing.html>`__,
+        """Modify the relevant `rcParams
+        <https://matplotlib.org/users/customizing.html>`__,
         :ref:`rcParamsLong`, and :ref:`rcParamsShort` setting(s)."""
         rc_short, rc_long, rc = _get_synced_params(key, value)
         rcParamsShort.update(rc_short)
@@ -560,7 +599,7 @@ class rc_configurator(object):
         if mode == 0:
             rcdicts = (*caches, rcParamsShort, rcParamsLong, rcParams)
         elif mode == 1:
-            rcdicts = (*caches, rcParamsShort, rcParamsLong) # custom only!
+            rcdicts = (*caches, rcParamsShort, rcParamsLong)  # custom only!
         elif mode == 2:
             rcdicts = (*caches,)
         else:
@@ -592,7 +631,9 @@ class rc_configurator(object):
             See `~rc_configurator.context`.
         """
         if cat not in RC_CATEGORIES:
-            raise ValueError(f'Invalid rc category {cat!r}. Valid categories are {", ".join(map(repr, RC_CATEGORIES))}.')
+            raise ValueError(
+                f'Invalid rc category {cat!r}. Valid categories are '
+                ', '.join(map(repr, RC_CATEGORIES)) + '.')
         kw = {}
         mode = 0 if not context else None
         for rcdict in (rcParamsLong, rcParams):
@@ -635,10 +676,12 @@ class rc_configurator(object):
             "with as" block when called with ``context=True``. The options are
             as follows.
 
-            0. All settings (`rcParams <https://matplotlib.org/users/customizing.html>`__,
+            0. All settings (`rcParams
+               <https://matplotlib.org/users/customizing.html>`__,
                :ref:`rcParamsLong`, and :ref:`rcParamsShort`) are returned,
                whether or not `~rc_configurator.context` has changed them.
-            1. Unchanged `rcParams <https://matplotlib.org/users/customizing.html>`__
+            1. Unchanged `rcParams
+               <https://matplotlib.org/users/customizing.html>`__
                return ``None``. :ref:`rcParamsLong` and :ref:`rcParamsShort`
                are returned whether or not `~rc_configurator.context` has
                changed them.  This is used in the `~proplot.axes.Axes.__init__`
@@ -717,7 +760,7 @@ class rc_configurator(object):
         """
         kw = {}
         mode = 0 if not context else None
-        for key,value in props.items():
+        for key, value in props.items():
             item = self._get_item(value, mode)
             if item is not None:
                 kw[key] = item
