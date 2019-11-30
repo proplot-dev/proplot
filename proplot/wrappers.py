@@ -29,34 +29,53 @@ except ModuleNotFoundError:
     PlateCarree = object
 __all__ = [] # just hidden helper methods here!
 
-# Xarray and pandas integration
-ndarray = np.ndarray
 def _load_objects():
     """Delay loading expensive modules. We just want to detect if *input
     arrays* belong to these types -- and if this is the case, it means the
     module has already been imported! So, we only try loading these classes
     within autoformat calls. This saves >~500ms of import time."""
-    global DataArray, DataFrame, Series, Index
+    global DataArray, DataFrame, Series, Index, ndarray
+    ndarray = np.ndarray
     DataArray = getattr(sys.modules.get('xarray', None), 'DataArray', ndarray)
     DataFrame = getattr(sys.modules.get('pandas', None), 'DataFrame', ndarray)
     Series = getattr(sys.modules.get('pandas', None), 'Series', ndarray)
     Index = getattr(sys.modules.get('pandas', None), 'Index', ndarray)
+
+
 _load_objects()
 
 # Keywords for styling cmap overridden plots
 STYLE_ARGS_TRANSLATE = {
-    'contour':    {'colors':'colors', 'linewidths':'linewidths', 'linestyles':'linestyles'},
-    'hexbin':     {'colors':'edgecolors', 'linewidths':'linewidths'},
-    'tricontour': {'colors':'colors', 'linewidths':'linewidths', 'linestyles':'linestyles'},
-    'parametric': {'colors':'color',  'linewidths':'linewidth', 'linestyles':'linestyle'},
-    'pcolor':     {'colors':'edgecolors', 'linewidths':'linewidth', 'linestyles':'linestyle'},
-    'tripcolor':  {'colors':'edgecolors', 'linewidths':'linewidth', 'linestyles':'linestyle'},
-    'pcolormesh': {'colors':'edgecolors', 'linewidths':'linewidth', 'linestyles':'linestyle'},
-    }
+    'contour': {
+        'colors': 'colors',
+        'linewidths': 'linewidths',
+        'linestyles': 'linestyles'},
+    'hexbin': {
+        'colors': 'edgecolors',
+        'linewidths': 'linewidths'},
+    'tricontour': {
+        'colors': 'colors',
+        'linewidths': 'linewidths',
+        'linestyles': 'linestyles'},
+    'parametric': {
+        'colors': 'color',
+        'linewidths': 'linewidth',
+        'linestyles': 'linestyle'},
+    'pcolor': {
+        'colors': 'edgecolors',
+        'linewidths': 'linewidth',
+        'linestyles': 'linestyle'},
+    'tripcolor': {
+        'colors': 'edgecolors',
+        'linewidths': 'linewidth',
+        'linestyles': 'linestyle'},
+    'pcolormesh': {
+        'colors': 'edgecolors',
+        'linewidths': 'linewidth',
+        'linestyles': 'linestyle'},
+}
 
-#------------------------------------------------------------------------------#
-# Alter default behavior
-#------------------------------------------------------------------------------#
+
 def default_latlon(self, func, *args, latlon=True, **kwargs):
     """
     Wraps %(methods)s for `~proplot.axes.BasemapAxes`.
@@ -66,6 +85,7 @@ def default_latlon(self, func, *args, latlon=True, **kwargs):
     instead of map projection coordinates. Now, this is the default.
     """
     return func(self, *args, latlon=latlon, **kwargs)
+
 
 def default_transform(self, func, *args, transform=None, **kwargs):
     """
@@ -84,6 +104,7 @@ def default_transform(self, func, *args, transform=None, **kwargs):
     result = func(self, *args, transform=transform, **kwargs)
     return result
 
+
 def default_crs(self, func, *args, crs=None, **kwargs):
     """
     Wraps %(methods)s for `~proplot.axes.GeoAxes` and fixes a
@@ -101,29 +122,31 @@ def default_crs(self, func, *args, crs=None, **kwargs):
         crs = PlateCarree()
     try:
         result = func(self, *args, crs=crs, **kwargs)
-    except TypeError as err: # duplicate keyword args, i.e. crs is positional
+    except TypeError as err:  # duplicate keyword args, i.e. crs is positional
         if not args:
             raise err
         result = func(self, *args[:-1], crs=args[-1], **kwargs)
     # Fix extent, so axes tight bounding box gets correct box!
-    # From this issue: https://github.com/SciTools/cartopy/issues/1207#issuecomment-439975083
+    # From this issue:
+    # https://github.com/SciTools/cartopy/issues/1207#issuecomment-439975083
     if name == 'set_extent':
         clipped_path = self.outline_patch.orig_path.clip_to_bbox(self.viewLim)
         self.outline_patch._path = clipped_path
         self.background_patch._path = clipped_path
     return result
 
-#------------------------------------------------------------------------------#
-# 1D dataset standardization and automatic formatting
-#------------------------------------------------------------------------------#
+
 def _to_iloc(data):
-    """Get indexible attribute of array, so we can perform axis wise operations."""
+    """Get indexible attribute of array, so we can perform axis
+    wise operations."""
     return getattr(data, 'iloc', data)
+
 
 def _to_array(data):
     """Convert to ndarray cleanly."""
     data = getattr(data, 'values', data)
     return np.array(data)
+
 
 def _atleast_array(data):
     """Converts list of lists to array."""
@@ -134,8 +157,10 @@ def _atleast_array(data):
         data = np.atleast_1d(data)
     return data
 
+
 def _auto_label(data, axis=None, units=True):
-    """Gets data and label for pandas or xarray objects or their coordinates."""
+    """Gets data and label for pandas or xarray objects or
+    their coordinates."""
     label = ''
     _load_objects()
     if isinstance(data, ndarray):
@@ -162,9 +187,12 @@ def _auto_label(data, axis=None, units=True):
         elif axis == 1 and isinstance(data, DataFrame):
             data = data.columns
         elif axis is not None:
-            data = np.arange(len(data)) # e.g. for Index
-        label = getattr(data, 'name', '') or '' # DataFrame has no native name attribute but user can add one: https://github.com/pandas-dev/pandas/issues/447
+            data = np.arange(len(data))  # e.g. for Index
+        # DataFrame has no native name attribute but user can add one:
+        # https://github.com/pandas-dev/pandas/issues/447
+        label = getattr(data, 'name', '') or ''
     return data, str(label).strip()
+
 
 def standardize_1d(self, func, *args, **kwargs):
     # Sanitize input
@@ -176,8 +204,8 @@ def standardize_1d(self, func, *args, **kwargs):
     elif len(args) == 1:
         x = None
         y, *args = args
-    elif len(args) in (2,3,4):
-        x, y, *args = args # same
+    elif len(args) in (2, 3, 4):
+        x, y, *args = args  # same
     else:
         raise ValueError(f'Too many arguments passed to {name}. Max is 4.')
     vert = kwargs.get('vert', None)
@@ -195,16 +223,18 @@ def standardize_1d(self, func, *args, **kwargs):
     ys = [_atleast_array(y) for y in ys]
 
     # Auto x coords
-    y = ys[0] # test the first y input
+    y = ys[0]  # test the first y input
     if x is None:
-        axis = 1 if (name in ('hist','boxplot','violinplot') or any(kwargs.get(s, None) for s in ('means','medians'))) else 0
+        axis = 1 if (name in ('hist', 'boxplot', 'violinplot') or any(
+            kwargs.get(s, None) for s in ('means', 'medians'))) else 0
         x, _ = _auto_label(y, axis=axis)
     x = _atleast_array(x)
     if x.ndim != 1:
-        raise ValueError(f'x coordinates must be 1-dimensional, but got {x.ndim}.')
+        raise ValueError(
+            f'x coordinates must be 1-dimensional, but got {x.ndim}.')
 
     # Auto formatting
-    xi = None # index version of 'x'
+    xi = None  # index version of 'x'
     if not hasattr(self, 'projection'):
         # First handle string-type x-coordinates
         kw = {}
@@ -219,14 +249,15 @@ def standardize_1d(self, func, *args, **kwargs):
                 kwargs['labels'] = x
             elif name == 'violinplot':
                 kwargs['positions'] = xi
-        if name in ('boxplot','violinplot'):
+        if name in ('boxplot', 'violinplot'):
             kwargs['positions'] = xi
         # Next handle labels if 'autoformat' is on
         if self.figure._auto_format:
             # Ylabel
             y, label = _auto_label(y)
             if label:
-                iaxis = xaxis if name in ('hist',) else yaxis # for histogram, this indicates x coordinate
+                # for histogram, this indicates x coordinate
+                iaxis = xaxis if name in ('hist',) else yaxis
                 kw[iaxis + 'label'] = label
             # Xlabel
             x, label = _auto_label(x)
@@ -241,8 +272,8 @@ def standardize_1d(self, func, *args, **kwargs):
     # Standardize args
     if xi is not None:
         x = xi
-    if name in ('boxplot','violinplot'):
-        ys = [_to_array(yi) for yi in ys] # store naked array
+    if name in ('boxplot', 'violinplot'):
+        ys = [_to_array(yi) for yi in ys]  # store naked array
 
     # Basemap shift x coordiantes without shifting y, we fix this!
     if getattr(self, 'name', '') == 'basemap' and kwargs.get('latlon', None):
@@ -287,22 +318,24 @@ docstring.interpd.update(standardize_1d_kwargs=standardize_1d_kwargs)
 # which means we'd have to apply these wrappers separately on XYAxes,
 # BasemapAxes, GeoAxes, and PolarAxes. Would be super redundant.
 def _interp_poles(y, Z):
-    """Adds data points on the poles as the average of highest latitude data."""
+    """Adds data points on the poles as the average of highest
+    latitude data."""
     # Get means
     with np.errstate(all='ignore'):
-        p1 = Z[0,:].mean() # pole 1, make sure is not 0D DataArray!
-        p2 = Z[-1,:].mean() # pole 2
+        p1 = Z[0, :].mean()  # pole 1, make sure is not 0D DataArray!
+        p2 = Z[-1, :].mean()  # pole 2
     if hasattr(p1, 'item'):
-        p1 = np.asscalar(p1) # happens with DataArrays
+        p1 = np.asscalar(p1)  # happens with DataArrays
     if hasattr(p2, 'item'):
         p2 = np.asscalar(p2)
     # Concatenate
-    ps = (-90,90) if (y[0] < y[-1]) else (90,-90)
-    Z1 = np.repeat(p1, Z.shape[1])[None,:]
-    Z2 = np.repeat(p2, Z.shape[1])[None,:]
+    ps = (-90, 90) if (y[0] < y[-1]) else (90, -90)
+    Z1 = np.repeat(p1, Z.shape[1])[None, :]
+    Z2 = np.repeat(p2, Z.shape[1])[None, :]
     y = ma.concatenate((ps[:1], y, ps[1:]))
     Z = ma.concatenate((Z1, Z, Z2), axis=0)
     return y, Z
+
 
 def _standardize_latlon(x, y):
     """Ensures monotonic longitudes and makes `~numpy.ndarray` copies so the
@@ -312,7 +345,7 @@ def _standardize_latlon(x, y):
         x = ma.array(x)
     if y.ndim == 1:
         y = ma.array(y)
-    if x.ndim != 1 or all(x < x[0]): # skip monotonic backwards data
+    if x.ndim != 1 or all(x < x[0]):  # skip monotonic backwards data
         return x, y
     # Enforce monotonic longitudes
     lon1 = x[0]
@@ -323,6 +356,7 @@ def _standardize_latlon(x, y):
         x[filter_] += 360
     return x, y
 
+
 def _enforce_bounds(x, y, xmin, xmax):
     """Ensures data for basemap plots is restricted between the minimum and
     maximum longitude of the projection. Input is the ``x`` and ``y``
@@ -331,23 +365,24 @@ def _enforce_bounds(x, y, xmin, xmax):
         return x, y
     # Roll in same direction if some points on right-edge extend
     # more than 360 above min longitude; *they* should be on left side
-    lonroll = np.where(x > xmin + 360)[0] # tuple of ids
-    if lonroll.size: # non-empty
-        roll = x.size - lonroll.min() # e.g. if 10 lons, xmax id is 9, we want to roll once
+    lonroll = np.where(x > xmin + 360)[0]  # tuple of ids
+    if lonroll.size:  # non-empty
+        roll = x.size - lonroll.min()
         x = np.roll(x, roll)
         y = np.roll(y, roll, axis=-1)
-        x[:roll] -= 360 # make monotonic
+        x[:roll] -= 360  # make monotonic
 
     # Set NaN where data not in range xmin, xmax. Must be done
     # for regional smaller projections or get weird side-effects due
     # to having valid data way outside of the map boundaries
     y = y.copy()
-    if x.size-1 == y.shape[-1]: # test western/eastern grid cell edges
+    if x.size - 1 == y.shape[-1]:  # test western/eastern grid cell edges
         y[..., (x[1:] < xmin) | (x[:-1] > xmax)] = np.nan
-    elif x.size == y.shape[-1]: # test the centers and pad by one for safety
+    elif x.size == y.shape[-1]:  # test the centers and pad by one for safety
         where = np.where((x < xmin) | (x > xmax))[0]
         y[..., where[1:-1]] = np.nan
     return x, y
+
 
 def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
     # Sanitize input
@@ -369,32 +404,37 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
             raise ValueError(f'Z must be 2-dimensional, got shape {Z.shape}.')
         Zs.append(Z)
     if not all(Zs[0].shape == Z.shape for Z in Zs):
-        raise ValueError(f'Zs must be same shape, got shapes {[Z.shape for Z in Zs]}.')
+        raise ValueError(
+            f'Zs must be same shape, got shapes {[Z.shape for Z in Zs]}.')
 
     # Retrieve coordinates
     if x is None and y is None:
         Z = Zs[0]
-        if order == 'C': # TODO: check order stuff works
+        if order == 'C':  # TODO: check order stuff works
             idx, idy = 1, 0
         else:
             idx, idy = 0, 1
         if isinstance(Z, ndarray):
             x = np.arange(Z.shape[idx])
             y = np.arange(Z.shape[idy])
-        elif isinstance(Z, DataArray): # DataArray
+        elif isinstance(Z, DataArray):  # DataArray
             x = Z.coords[Z.dims[idx]]
             y = Z.coords[Z.dims[idy]]
-        else: # DataFrame; never Series or Index because these are 1D
+        else:  # DataFrame; never Series or Index because these are 1D
             x = Z.index
             y = Z.columns
 
     # Check coordinates
     x, y = _atleast_array(x), _atleast_array(y)
     if x.ndim != y.ndim:
-        raise ValueError(f'x coordinates are {x.ndim}-dimensional, but y coordinates are {y.ndim}-dimensional.')
-    for s,array in zip(('x','y'), (x,y)):
-        if array.ndim not in (1,2):
-            raise ValueError(f'{s} coordinates are {array.ndim}-dimensional, but must be 1 or 2-dimensional.')
+        raise ValueError(
+            f'x coordinates are {x.ndim}-dimensional, '
+            f'but y coordinates are {y.ndim}-dimensional.')
+    for s, array in zip(('x', 'y'), (x, y)):
+        if array.ndim not in (1, 2):
+            raise ValueError(
+                f'{s} coordinates are {array.ndim}-dimensional, '
+                f'but must be 1 or 2-dimensional.')
 
     # Auto formatting
     kw = {}
@@ -413,11 +453,12 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
             kw['yminorlocator'] = mticker.NullLocator()
         # Handle labels if 'autoformat' is on
         if self.figure._auto_format:
-            for key,xy in zip(('xlabel','ylabel'), (x,y)):
+            for key, xy in zip(('xlabel', 'ylabel'), (x, y)):
                 _, label = _auto_label(xy)
                 if label:
                     kw[key] = label
-                if len(xy) > 1 and all(isinstance(xy, Number) for xy in xy[:2]) and xy[1] < xy[0]:
+                if len(xy) > 1 and all(isinstance(xy, Number)
+                                       for xy in xy[:2]) and xy[1] < xy[0]:
                     kw[key[0] + 'reverse'] = True
     if xi is not None:
         x = xi
@@ -438,27 +479,34 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
         xlen, ylen = x.shape[-1], y.shape[0]
         for Z in Zs:
             if Z.ndim != 2:
-                raise ValueError(f'Input arrays must be 2D, instead got shape {Z.shape}.')
+                raise ValueError(
+                    f'Input arrays must be 2D, instead got shape {Z.shape}.')
             elif Z.shape[1] == xlen and Z.shape[0] == ylen:
-                if all(z.ndim == 1 and z.size > 1 and z.dtype != 'object' for z in (x,y)):
+                if all(z.ndim == 1 and z.size > 1
+                       and z.dtype != 'object' for z in (x, y)):
                     x = utils.edges(x)
                     y = utils.edges(y)
                 else:
-                    if (x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1 and
-                            x.dtype != 'object'):
+                    if (x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1
+                            and x.dtype != 'object'):
                         x = utils.edges2d(x)
-                    if (y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1 and
-                            y.dtype != 'object'):
+                    if (y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1
+                            and y.dtype != 'object'):
                         y = utils.edges2d(y)
-            elif Z.shape[1] != xlen-1 or Z.shape[0] != ylen-1:
-                raise ValueError(f'Input shapes x {x.shape} and y {y.shape} must match Z centers {Z.shape} or Z borders {tuple(i+1 for i in Z.shape)}.')
+            elif Z.shape[1] != xlen - 1 or Z.shape[0] != ylen - 1:
+                raise ValueError(
+                    f'Input shapes x {x.shape} and y {y.shape} must match '
+                    f'Z centers {Z.shape} or '
+                    f'Z borders {tuple(i+1 for i in Z.shape)}.')
         # Optionally re-order
         # TODO: Double check this
         if order == 'F':
-            x, y = x.T, y.T # in case they are 2-dimensional
+            x, y = x.T, y.T  # in case they are 2-dimensional
             Zs = (Z.T for Z in Zs)
         elif order != 'C':
-            raise ValueError(f'Invalid order {order!r}. Choose from "C" (row-major, default) and "F" (column-major).')
+            raise ValueError(
+                f'Invalid order {order!r}. Choose from '
+                '"C" (row-major, default) and "F" (column-major).')
 
     # Enforce centers
     else:
@@ -467,33 +515,40 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
         xlen, ylen = x.shape[-1], y.shape[0]
         for Z in Zs:
             if Z.ndim != 2:
-                raise ValueError(f'Input arrays must be 2D, instead got shape {Z.shape}.')
-            elif Z.shape[1] == xlen-1 and Z.shape[0] == ylen-1:
-                if all(z.ndim == 1 and z.size > 1 and z.dtype != 'object' for z in (x,y)):
-                    x = (x[1:] + x[:-1])/2
-                    y = (y[1:] + y[:-1])/2
+                raise ValueError(
+                    f'Input arrays must be 2D, instead got shape {Z.shape}.')
+            elif Z.shape[1] == xlen - 1 and Z.shape[0] == ylen - 1:
+                if all(z.ndim == 1 and z.size > 1
+                        and z.dtype != 'object' for z in (x, y)):
+                    x = (x[1:] + x[:-1]) / 2
+                    y = (y[1:] + y[:-1]) / 2
                 else:
-                    if (x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1 and
-                            x.dtype != 'object'):
-                        x = 0.25 * (x[:-1, :-1] + x[:-1, 1:] +
-                                    x[1:, :-1] + x[1:, 1:])
-                    if (y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1 and
-                            y.dtype != 'object'):
-                        y = 0.25 * (y[:-1, :-1] + y[:-1, 1:] +
-                                    y[1:, :-1] + y[1:, 1:])
+                    if (x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1
+                            and x.dtype != 'object'):
+                        x = 0.25 * (x[:-1, :-1] + x[:-1, 1:]
+                                    + x[1:, :-1] + x[1:, 1:])
+                    if (y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1
+                            and y.dtype != 'object'):
+                        y = 0.25 * (y[:-1, :-1] + y[:-1, 1:]
+                                    + y[1:, :-1] + y[1:, 1:])
             elif Z.shape[1] != xlen or Z.shape[0] != ylen:
-                raise ValueError(f'Input shapes x {x.shape} and y {y.shape} must match Z centers {Z.shape} or Z borders {tuple(i+1 for i in Z.shape)}.')
+                raise ValueError(
+                    f'Input shapes x {x.shape} and y {y.shape} '
+                    f'must match Z centers {Z.shape} '
+                    f'or Z borders {tuple(i+1 for i in Z.shape)}.')
         # Optionally re-order
         # TODO: Double check this
         if order == 'F':
-            x, y = x.T, y.T # in case they are 2-dimensional
+            x, y = x.T, y.T  # in case they are 2-dimensional
             Zs = (Z.T for Z in Zs)
         elif order != 'C':
-            raise ValueError(f'Invalid order {order!r}. Choose from "C" (row-major, default) and "F" (column-major).')
+            raise ValueError(
+                f'Invalid order {order!r}. Choose from '
+                '"C" (row-major, default) and "F" (column-major).')
 
     # Cartopy projection axes
-    if (getattr(self, 'name', '') == 'geo' and
-        isinstance(kwargs.get('transform', None), PlateCarree)):
+    if (getattr(self, 'name', '') == 'geo'
+            and isinstance(kwargs.get('transform', None), PlateCarree)):
         x, y = _standardize_latlon(x, y)
         ix, iZs = x, []
         for Z in Zs:
@@ -505,7 +560,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
                 # cartopy can plot across map edges.
                 if (x[0] % 360) != ((x[-1] + 360) % 360):
                     ix = ma.concatenate((x, [x[0] + 360]))
-                    Z = ma.concatenate((Z, Z[:,:1]), axis=1)
+                    Z = ma.concatenate((Z, Z[:, :1]), axis=1)
             iZs.append(Z)
         x, Zs = ix, iZs
 
@@ -528,26 +583,28 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
                 # Fix seams at map boundary; 3 scenarios here:
                 # Have edges (e.g. for pcolor), and they fit perfectly against
                 # basemap seams. Does not augment size.
-                if ix[0] == xmin and ix.size-1 == Z.shape[1]:
-                    pass # do nothing
+                if ix[0] == xmin and ix.size - 1 == Z.shape[1]:
+                    pass  # do nothing
                 # Have edges (e.g. for pcolor), and the projection edge is
                 # in-between grid cell boundaries. Augments size by 1.
-                elif ix.size-1 == Z.shape[1]: # just add grid cell
+                elif ix.size - 1 == Z.shape[1]:  # just add grid cell
                     ix = ma.append(xmin, ix)
                     ix[-1] = xmin + 360
-                    Z = ma.concatenate((Z[:,-1:], Z), axis=1)
+                    Z = ma.concatenate((Z[:, -1:], Z), axis=1)
                 # Have centers (e.g. for contourf), and we need to interpolate
                 # to left/right edges of the map boundary. Augments size by 2.
                 elif ix.size == Z.shape[1]:
-                    xi = np.array([ix[-1], ix[0] + 360]) # x
+                    xi = np.array([ix[-1], ix[0] + 360])  # x
                     if xi[0] != xi[1]:
-                        Zq = ma.concatenate((Z[:,-1:], Z[:,:1]), axis=1)
+                        Zq = ma.concatenate((Z[:, -1:], Z[:, :1]), axis=1)
                         xq = xmin + 360
-                        Zq = (Zq[:,:1]*(xi[1]-xq) + Zq[:,1:]*(xq-xi[0]))/(xi[1]-xi[0])
+                        Zq = (Zq[:, :1] * (xi[1] - xq) + Zq[:, 1:]
+                              * (xq - xi[0])) / (xi[1] - xi[0])
                         ix = ma.concatenate(([xmin], ix, [xmin + 360]))
                         Z = ma.concatenate((Zq, Z, Zq), axis=1)
                 else:
-                    raise ValueError('Unexpected shape of longitude, latitude, data arrays.')
+                    raise ValueError(
+                        'Unexpected shape of longitude/latitude/data arrays.')
             iZs.append(Z)
         x, Zs = ix, iZs
 
@@ -608,15 +665,19 @@ def _errorbar_values(data, idata, bardata=None, barrange=None, barstd=False):
     if bardata is not None:
         err = np.array(bardata)
         if err.ndim == 1:
-            err = err[:,None]
-        if err.ndim != 2 or err.shape[0] != 2 or err.shape[1] != idata.shape[-1]:
-            raise ValueError(f'bardata must have shape (2, {idata.shape[-1]}), but got {err.shape}.')
+            err = err[:, None]
+        if err.ndim != 2 or err.shape[0] != 2 \
+                or err.shape[1] != idata.shape[-1]:
+            raise ValueError(
+                f'bardata must have shape (2, {idata.shape[-1]}), '
+                f'but got {err.shape}.')
     elif barstd:
-        err = np.array(idata) + np.std(data, axis=0)[None,:] * np.array(barrange)[:,None]
+        err = np.array(idata) + np.std(
+            data, axis=0)[None, :] * np.array(barrange)[:, None]
     else:
         err = np.percentile(data, barrange, axis=0)
     err = err - np.array(idata)
-    err[0,:] *= -1 # array now represents error bar sizes
+    err[0, :] *= -1  # array now represents error bar sizes
     return err
 
 def add_errorbars(self, func, *args,
@@ -638,7 +699,8 @@ def add_errorbars(self, func, *args,
     if bardata is not None:
         boxes = _notNone(boxes, True)
     if boxdata is not None or bardata is not None:
-        bars = _notNone(bars, False) # e.g. if boxdata passed but bardata not passed, use bars=False
+        # e.g. if boxdata passed but bardata not passed, use bars=False
+        bars = _notNone(bars, False)
         boxes = _notNone(boxes, False)
 
     # Get means or medians for plotting
@@ -647,7 +709,9 @@ def add_errorbars(self, func, *args,
         bars = _notNone(bars, True)
         boxes = _notNone(boxes, True)
         if y.ndim != 2:
-            raise ValueError(f'Need 2D data array for means=True or medians=True, got {y.ndim}D array.')
+            raise ValueError(
+                f'Need 2D data array for means=True or medians=True, '
+                f'got {y.ndim}D array.')
         if means:
             iy = np.mean(y, axis=0)
         elif medians:
@@ -659,9 +723,9 @@ def add_errorbars(self, func, *args,
     get = kwargs.pop if name != 'bar' else kwargs.get
     edgecolor = _notNone(get('edgecolor', None), 'k')
     if name == 'violinplot':
-        xy = (x, y) # full data
+        xy = (x, y)  # full data
     else:
-        xy = (x, iy) # just the stats
+        xy = (x, iy)  # just the stats
     obj = func(self, *xy, *args, **kwargs)
     if not boxes and not bars:
         return obj
@@ -672,35 +736,38 @@ def add_errorbars(self, func, *args,
     else:
         orientation = kwargs.get('orientation', 'vertical')
     if orientation == 'horizontal':
-        axis = 'x' # xerr
-        xy = (iy,x)
+        axis = 'x'  # xerr
+        xy = (iy, x)
     else:
-        axis = 'y' # yerr
-        xy = (x,iy)
+        axis = 'y'  # yerr
+        xy = (x, iy)
 
     # Defaults settings
     barlw = _notNone(barlw, lw)
-    boxlw = _notNone(boxlw, 4*barlw)
+    boxlw = _notNone(boxlw, 4 * barlw)
     capsize = _notNone(capsize, 3)
     barcolor = _notNone(barcolor, edgecolor)
     boxcolor = _notNone(boxcolor, edgecolor)
 
     # Draw boxes and bars
     if boxes:
-        default = (-1,1) if barstd else (25,75)
+        default = (-1, 1) if barstd else (25, 75)
         boxrange = _notNone(boxrange, default)
         err = _errorbar_values(y, iy, boxdata, boxrange, boxstd)
         if boxmarker:
-            self.scatter(*xy, marker='o', color=boxmarkercolor, s=boxlw, zorder=5)
-        self.errorbar(*xy, **{axis+'err': err, 'capsize':0, 'zorder':boxzorder,
-            'color':boxcolor, 'linestyle':'none', 'linewidth':boxlw})
-    if bars: # note it is now impossible to make thin bar width different from cap width!
-        default = (-3,3) if barstd else (0,100)
+            self.scatter(*xy, marker='o', color=boxmarkercolor,
+                         s=boxlw, zorder=5)
+        self.errorbar(*xy, **{
+            axis + 'err': err, 'capsize': 0, 'zorder': boxzorder,
+            'color': boxcolor, 'linestyle': 'none', 'linewidth': boxlw})
+    if bars:  # now impossible to make thin bar width different from cap width!
+        default = (-3, 3) if barstd else (0, 100)
         barrange = _notNone(barrange, default)
         err = _errorbar_values(y, iy, bardata, barrange, barstd)
-        self.errorbar(*xy, **{axis+'err': err, 'capsize':capsize, 'zorder':barzorder,
-            'color':barcolor, 'linewidth':barlw, 'linestyle':'none',
-            'markeredgecolor':barcolor, 'markeredgewidth':barlw})
+        self.errorbar(*xy, **{
+            axis + 'err': err, 'capsize': capsize, 'zorder': barzorder,
+            'color': barcolor, 'linewidth': barlw, 'linestyle': 'none',
+            'markeredgecolor': barcolor, 'markeredgewidth': barlw})
     return obj
 
 # TODO: mix standardize_1d args with errorbars args
@@ -796,8 +863,8 @@ def cycle_changer(self, func, *args,
     panel_kw = panel_kw or {}
 
     # Test input
-    # NOTE: Requires standardize_1d wrapper before reaching this. Also note that
-    # the 'x' coordinates are sometimes ignored below.
+    # NOTE: Requires standardize_1d wrapper before reaching this. Also note
+    # that the 'x' coordinates are sometimes ignored below.
     name = func.__name__
     if not args:
         return func(self, *args, **kwargs)
@@ -818,11 +885,12 @@ def cycle_changer(self, func, *args,
     # NOTE: The _get_lines cycler is an *itertools cycler*. Has no length, so
     # we must cycle over it with next(). We try calling next() the same number
     # of times as the length of user input cycle. If the input cycle *is* in
-    # fact the same, below does not reset the color position, cycles us to start!
+    # fact the same, below does not reset the color position, cycles us to
+    # start!
     if cycle is not None or cycle_kw:
         # Get the new cycler
         cycle_args = () if cycle is None else (cycle,)
-        if not is1d and y.shape[1] > 1: # default samples count
+        if not is1d and y.shape[1] > 1:  # default samples count
             cycle_kw.setdefault('samples', y.shape[1])
         cycle = styletools.Cycle(*cycle_args, **cycle_kw)
         # Get the original property cycle
@@ -831,16 +899,16 @@ def cycle_changer(self, func, *args,
         i = 0
         by_key = {}
         cycle_orig = self._get_lines.prop_cycler
-        for i in range(len(cycle)): # use the cycler object length as a guess
+        for i in range(len(cycle)):  # use the cycler object length as a guess
             prop = next(cycle_orig)
-            for key,value in prop.items():
+            for key, value in prop.items():
                 if key not in by_key:
-                    by_key[key] = {*()} # set
+                    by_key[key] = {*()}  # set
                 by_key[key].add(value)
         # Reset property cycler if it differs
-        reset = ({*by_key} != {*cycle.by_key()}) # reset if keys are different
-        if not reset: # test individual entries
-            for key,value in cycle.by_key().items():
+        reset = ({*by_key} != {*cycle.by_key()})  # reset if keys are different
+        if not reset:  # test individual entries
+            for key, value in cycle.by_key().items():
                 if by_key[key] != {*value}:
                     reset = True
                     break
@@ -851,30 +919,31 @@ def cycle_changer(self, func, *args,
     # NOTE: By default matplotlib uses _get_patches_for_fill.get_next_color
     # for scatter properties! So we simultaneously iterate through the
     # _get_lines property cycler and apply them.
-    apply = {*()} # which keys to apply from property cycler
+    apply = {*()}  # which keys to apply from property cycler
     if name == 'scatter':
         # Figure out which props should be updated
-        keys = {*self._get_lines._prop_keys} - {'color','linestyle','dashes'} # color already applied, linestyle ignored
-        for key,prop in (
-            ('markersize','s'),
-            ('linewidth','linewidths'),
-            ('markeredgewidth','linewidths'),
-            ('markeredgecolor','edgecolors'),
-            ('alpha','alpha'),
-            ('marker','marker'),
-            ):
-            prop = kwargs.get(prop,None)
+        keys = {*self._get_lines._prop_keys} - {'color', 'linestyle', 'dashes'}
+        for key, prop in (
+            ('markersize', 's'),
+            ('linewidth', 'linewidths'),
+            ('markeredgewidth', 'linewidths'),
+            ('markeredgecolor', 'edgecolors'),
+            ('alpha', 'alpha'),
+            ('marker', 'marker'),
+        ):
+            prop = kwargs.get(prop, None)
             if key in keys and prop is None:
                 apply.add(key)
 
     # Plot susccessive columns
     # WARNING: Most methods that accept 2D arrays use columns of data, but when
-    # pandas DataFrame passed to hist, boxplot, or violinplot, rows of data assumed!
-    # This is fixed in parse_1d by converting to values.
+    # pandas DataFrame passed to hist, boxplot, or violinplot, rows of data
+    # assumed! This is fixed in parse_1d by converting to values.
     objs = []
     ncols = 1
-    label_leg = None # for colorbar or legend
-    labels = _notNone(values, labels, label, None, names=('values', 'labels', 'label'))
+    label_leg = None  # for colorbar or legend
+    labels = _notNone(values, labels, label, None,
+                      names=('values', 'labels', 'label'))
     stacked = kwargs.pop('stacked', False)
     if name in ('pie', 'boxplot', 'violinplot'):
         if labels is not None:
@@ -882,63 +951,72 @@ def cycle_changer(self, func, *args,
     else:
         ncols = (1 if is1d else y.shape[1])
         if labels is None or isinstance(labels, str):
-            labels = [labels]*ncols
+            labels = [labels] * ncols
     if name in ('bar',):
-        width = kwargs.pop('width', 0.8) # for bar plots; 0.8 is matplotlib default
-        kwargs['height' if barh else 'width'] = width if stacked else width/ncols
+        # for bar plots; 0.8 is matplotlib default
+        width = kwargs.pop('width', 0.8)
+        kwargs['height' if barh else 'width'] = (
+            width if stacked else width / ncols)
     for i in range(ncols):
         # Prop cycle properties
-        kw = {**kwargs} # copy
+        kw = {**kwargs}  # copy
         if apply:
             props = next(self._get_lines.prop_cycler)
             for key in apply:
                 value = props[key]
-                if key in ('size','markersize'):
+                if key in ('size', 'markersize'):
                     key = 's'
-                elif key in ('linewidth','markeredgewidth'): # translate
+                elif key in ('linewidth', 'markeredgewidth'):  # translate
                     key = 'linewidths'
                 elif key == 'markeredgecolor':
                     key = 'edgecolors'
                 kw[key] = value
         # Get x coordinates
-        ix, iy = x, ys[0] # samples
+        ix, iy = x, ys[0]  # samples
         if name in ('pie',):
-            kw['labels'] = _notNone(labels, ix) # TODO: move to pie wrapper?
-        if name in ('bar',): # adjust
+            kw['labels'] = _notNone(labels, ix)  # TODO: move to pie wrapper?
+        if name in ('bar',):  # adjust
             if not stacked:
-                ix = x + (i - ncols/2 + 0.5)*width/ncols
+                ix = x + (i - ncols / 2 + 0.5) * width / ncols
             elif stacked and not is1d:
                 key = 'x' if barh else 'bottom'
-                kw[key] = _to_iloc(iy)[:,:i].sum(axis=1) # sum of empty slice will be zero
+                # sum of empty slice will be zero
+                kw[key] = _to_iloc(iy)[:, :i].sum(axis=1)
         # Get y coordinates and labels
-        if name in ('pie','boxplot','violinplot'):
-            iys = (iy,) # only ever have one y value, and cannot have legend labels
+        if name in ('pie', 'boxplot', 'violinplot'):
+            iys = (iy,)  # only ever have one y value, cannot have legend labs
         else:
             # The coordinates
             if stacked and 'fill_between' in name:
-                iys = tuple(iy if is1d else _to_iloc(iy)[:,:j].sum(axis=1) for j in (i,i+1))
+                iys = tuple(iy if is1d else _to_iloc(
+                    iy)[:, :j].sum(axis=1) for j in (i, i + 1))
             else:
-                iys = tuple(iy if is1d else _to_iloc(iy)[:,i] for iy in ys)
+                iys = tuple(iy if is1d else _to_iloc(iy)[:, i] for iy in ys)
             # Possible legend labels
             if len(labels) != ncols:
-                raise ValueError(f'Got {ncols} columns in data array, but {len(labels)} labels.')
+                raise ValueError(
+                    f'Got {ncols} columns in data array, '
+                    f'but {len(labels)} labels.')
             label = labels[i]
-            values, label_leg = _auto_label(iy, axis=1) # _auto_label(iy) # e.g. a pd.Series name
+            # _auto_label(iy) # e.g. a pd.Series name
+            values, label_leg = _auto_label(iy, axis=1)
             if label_leg and label is None:
                 label = _to_array(values)[i]
             if label is not None:
                 kw['label'] = label
         # Call with correct args
         xy = ()
-        if barh: # special, use kwargs only!
-            kw.update({'bottom':ix, 'width':iys[0]})
-            kw.setdefault('x', kwargs.get('bottom', 0)) # must always be provided
-        elif name in ('pie','hist','boxplot','violinplot'): # no x-coordinate
+        if barh:  # special, use kwargs only!
+            kw.update({'bottom': ix, 'width': iys[0]})
+            # must always be provided
+            kw.setdefault('x', kwargs.get('bottom', 0))
+        elif name in ('pie', 'hist', 'boxplot', 'violinplot'):
             xy = (*iys,)
-        else: # has x-coordinates, and maybe more than one y
+        else:  # has x-coordinates, and maybe more than one y
             xy = (ix, *iys)
         obj = func(self, *xy, *args, **kw)
-        if isinstance(obj, (list,tuple)) and len(obj) == 1: # plot always returns list or tuple
+        # plot always returns list or tuple
+        if isinstance(obj, (list, tuple)) and len(obj) == 1:
             obj = obj[0]
         objs.append(obj)
 
@@ -948,7 +1026,9 @@ def cycle_changer(self, func, *args,
         panel_kw.setdefault('mode', 'colorbar')
         loc = self._loc_translate(colorbar, **panel_kw)
         if not isinstance(loc, str):
-            raise ValueError(f'Invalid on-the-fly location {loc!r}. Must be a preset location. See Axes.colorbar')
+            raise ValueError(
+                f'Invalid on-the-fly location {loc!r}. '
+                'Must be a preset location. See Axes.colorbar')
         if loc not in self._auto_colorbar:
             self._auto_colorbar[loc] = ([], {})
         self._auto_colorbar[loc][0].extend(objs)
@@ -963,7 +1043,9 @@ def cycle_changer(self, func, *args,
         panel_kw.setdefault('mode', 'legend')
         loc = self._loc_translate(legend, **panel_kw)
         if not isinstance(loc, str):
-            raise ValueError(f'Invalid on-the-fly location {loc!r}. Must be a preset location. See Axes.legend')
+            raise ValueError(
+                f'Invalid on-the-fly location {loc!r}. '
+                'Must be a preset location. See Axes.legend')
         if loc not in self._auto_legend:
             self._auto_legend[loc] = ([], {})
         self._auto_legend[loc][0].extend(objs)
@@ -979,9 +1061,10 @@ def cycle_changer(self, func, *args,
     # returns singleton unless we have bulk drawn bar plots! Other matplotlib
     # methods call these internally!
     if name == 'plot':
-        return (*objs,) # always return tuple of objects
+        return (*objs,)  # always return tuple of objects
     elif name in ('boxplot', 'violinplot'):
-        return objs[0] # always singleton, because these methods accept the whole 2D object
+        # always singleton, because these methods accept the whole 2D object
+        return objs[0]
     else:
         return objs[0] if is1d else (*objs,) # sensible default behavior
 
@@ -1063,33 +1146,53 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
     name = func.__name__
     if not args:
         return func(self, *args, **kwargs)
-    vmin = _notNone(vmin, norm_kw.pop('vmin', None), None, names=('vmin', 'norm_kw={"vmin":value}'))
-    vmax = _notNone(vmax, norm_kw.pop('vmax', None), None, names=('vmax', 'norm_kw={"vmax":value}'))
-    levels = _notNone(N, levels, norm_kw.pop('levels', None), rc['image.levels'], names=('N', 'levels', 'norm_kw={"levels":value}'))
-    values = _notNone(values, centers, None, names=('values', 'centers'))
-    colors = _notNone(color, colors, edgecolor, edgecolors, None, names=('color', 'colors', 'edgecolor', 'edgecolors'))
-    linewidths = _notNone(lw, linewidth, linewidths, None, names=('lw', 'linewidth', 'linewidths'))
-    linestyles = _notNone(ls, linestyle, linestyles, None, names=('ls', 'linestyle', 'linestyles'))
+    vmin = _notNone(
+        vmin, norm_kw.pop('vmin', None), None,
+        names=('vmin', 'norm_kw={"vmin":value}'))
+    vmax = _notNone(
+        vmax, norm_kw.pop('vmax', None), None,
+        names=('vmax', 'norm_kw={"vmax":value}'))
+    levels = _notNone(
+        N, levels, norm_kw.pop('levels', None), rc['image.levels'],
+        names=('N', 'levels', 'norm_kw={"levels":value}'))
+    values = _notNone(
+        values, centers, None,
+        names=('values', 'centers'))
+    colors = _notNone(
+        color, colors, edgecolor, edgecolors, None,
+        names=('color', 'colors', 'edgecolor', 'edgecolors'))
+    linewidths = _notNone(
+        lw, linewidth, linewidths, None,
+        names=('lw', 'linewidth', 'linewidths'))
+    linestyles = _notNone(
+        ls, linestyle, linestyles, None,
+        names=('ls', 'linestyle', 'linestyles'))
     style_kw = STYLE_ARGS_TRANSLATE.get(name, {})
     edgefix = _notNone(edgefix, rc['image.edgefix'])
-    for key,value in (('colors',colors), ('linewidths',linewidths), ('linestyles',linestyles)):
+    for key, value in (
+            ('colors', colors),
+            ('linewidths', linewidths),
+            ('linestyles', linestyles)):
         if value is None:
             continue
-        elif 'contourf' in name: # special case, we re-draw our own contours
+        elif 'contourf' in name:  # special case, we re-draw our own contours
             continue
         if key in style_kw:
-            edgefix = False # override!
+            edgefix = False  # override!
             kwargs[style_kw[key]] = value
         else:
-            raise ValueError(f'Unknown keyword arg {key!r} for function {name!r}.')
+            raise ValueError(
+                f'Unknown keyword arg {key!r} for function {name!r}.')
     # Check input
-    for key,val in (('levels',levels),('values',values)):
+    for key, val in (('levels', levels), ('values', values)):
         if not np.iterable(val):
             continue
         if 'contour' in name and 'contourf' not in name:
             continue
         if len(val) < 2 or any(np.diff(val) <= 0):
-            raise ValueError(f'{key!r} must be monotonically increasing and at least length 2, got {val}.')
+            raise ValueError(
+                f'{key!r} must be monotonically increasing and '
+                f'at least length 2, got {val}.')
 
     # Get level edges from level centers
     if values is not None:
@@ -1101,11 +1204,11 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
             # utile.edges works only for evenly spaced values arrays.
             # We solve for: (x1 + x2)/2 = y --> x2 = 2*y - x1
             # with arbitrary starting point x1.
-            if norm is None or norm in ('segments','segmented'):
-                levels = [values[0] - (values[1] - values[0])/2]
-                for i,val in enumerate(values):
-                    levels.append(2*val - levels[-1])
-                if any(np.diff(levels) <= 0): # algorithm failed, default to this
+            if norm is None or norm in ('segments', 'segmented'):
+                levels = [values[0] - (values[1] - values[0]) / 2]
+                for i, val in enumerate(values):
+                    levels.append(2 * val - levels[-1])
+                if any(np.diff(levels) <= 0):  # algorithm failed
                     levels = utils.edges(values)
             # Generate levels by finding in-between points in the
             # normalized numeric space
@@ -1115,7 +1218,9 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
             if name in ('parametric',):
                 kwargs['values'] = values
         else:
-            raise ValueError(f'Unexpected input values={values!r}. Must be integer or list of numbers.')
+            raise ValueError(
+                f'Unexpected input values={values!r}. '
+                'Must be integer or list of numbers.')
 
     # Data limits used for normalizer
     Z = ma.masked_invalid(args[-1], copy=False)
@@ -1127,14 +1232,17 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
             zmin, zmax = 0, 1
 
     # Input colormap, for methods that accept a colormap and normalizer
-    if not ('contour' in name and 'contourf' not in name): # contour, tricontour, i.e. not a method where cmap is optional
+    # contour, tricontour, i.e. not a method where cmap is optional
+    if not ('contour' in name and 'contourf' not in name):
         cmap = _notNone(cmap, rc['image.cmap'])
     if cmap is not None:
         # Get colormap object
         cmap = styletools.Colormap(cmap, **cmap_kw)
         cyclic = getattr(cmap, '_cyclic', False)
         if cyclic and extend != 'neither':
-            warnings.warn(f'Cyclic colormap requires extend="neither". Overriding user input extend={extend!r}.')
+            warnings.warn(
+                f'Cyclic colormap requires extend="neither". '
+                'Overriding user input extend={extend!r}.')
             extend = 'neither'
         kwargs['cmap'] = cmap
 
@@ -1146,7 +1254,7 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
                     norm = 'linear'
                 else:
                     diff = np.diff(levels)
-                    eps = diff.mean()/1e3
+                    eps = diff.mean() / 1e3
                     if (np.abs(np.diff(diff)) >= eps).any():
                         norm = 'segmented'
                         norm_kw.setdefault('levels', levels)
@@ -1182,88 +1290,92 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
             try:
                 levels = locator.tick_values(vmin, vmax)
             except RuntimeError:
-                levels = np.linspace(vmin, vmax, N) # TODO: orig used N+1
+                levels = np.linspace(vmin, vmax, N)  # TODO: orig used N+1
             # Trim excess levels the locator may have supplied
             if not locator_kw.get('symmetric', None):
-                i0, i1 = 0, len(levels) # defaults
+                i0, i1 = 0, len(levels)  # defaults
                 under, = np.where(levels < vmin)
                 if len(under):
                     i0 = under[-1]
                     if hardmin or extend in ('min', 'both'):
-                        i0 += 1 # permit out-of-bounds data
+                        i0 += 1  # permit out-of-bounds data
                 over, = np.where(levels > vmax)
                 if len(over):
                     i1 = over[0] + 1 if len(over) else len(levels)
                     if hardmax or extend in ('max', 'both'):
-                        i1 -= 1 # permit out-of-bounds data
+                        i1 -= 1  # permit out-of-bounds data
                 if i1 - i0 < 3:
-                    i0, i1 = 0, len(levels) # revert
+                    i0, i1 = 0, len(levels)  # revert
                 levels = levels[i0:i1]
             # Special consideration if not enough levels
-            nn = N//len(levels) # how many times more levels did we want than what we got?
+            # how many times more levels did we want than what we got?
+            nn = N // len(levels)
             if nn >= 2:
                 olevels = norm(levels)
                 nlevels = []
-                for i in range(len(levels)-1):
-                    l1, l2 = olevels[i], olevels[i+1]
-                    nlevels.extend(np.linspace(l1, l2, nn+1)[:-1])
+                for i in range(len(levels) - 1):
+                    l1, l2 = olevels[i], olevels[i + 1]
+                    nlevels.extend(np.linspace(l1, l2, nn + 1)[:-1])
                 nlevels.append(olevels[-1])
                 levels = norm.inverse(nlevels)
 
     # Norm settings
-    # Generate BinNorm, and update child norm object with vmin and vmax from levels
+    # Generate BinNorm and update child norm object with vmin/vmax from levels
     # This is important for the colorbar setting tick locations properly!
     if norm is not None:
         if levels is not None:
             norm.vmin, norm.vmax = min(levels), max(levels)
         if levels is not None:
-            bin_kw = {'extend':extend}
+            bin_kw = {'extend': extend}
             if cyclic:
-                bin_kw.update({'step':0.5, 'extend':'both'})
+                bin_kw.update({'step': 0.5, 'extend': 'both'})
             norm = styletools.BinNorm(norm=norm, levels=levels, **bin_kw)
         kwargs['norm'] = norm
 
     # Call function
-    if 'contour' in name: # contour, contourf, tricontour, tricontourf
+    if 'contour' in name:  # contour, contourf, tricontour, tricontourf
         kwargs.update({'levels': levels, 'extend': extend})
     obj = func(self, *args, **kwargs)
-    obj.extend = extend # for colorbar to determine 'extend' property
+    obj.extend = extend  # for colorbar to determine 'extend' property
     if values is not None:
-        obj.values = values # preferred tick locations
+        obj.values = values  # preferred tick locations
     if levels is not None:
-        obj.levels = levels # for colorbar to determine tick locations
+        obj.levels = levels  # for colorbar to determine tick locations
     if locator is not None and not isinstance(locator, mticker.MaxNLocator):
-        obj.locator = locator # for colorbar to determine tick locations; if maxn is the locator, let colorbar infer tick locations from 'levels'
+        obj.locator = locator  # for colorbar to determine tick locations
 
     # Call again for contourf plots with edges
     if 'contourf' in name and (linewidths is not None or colors is not None
-            or linestyles is not None):
+                               or linestyles is not None):
         colors = _notNone(colors, 'k')
         cobj = self.contour(*args, levels=levels, linewidths=linewidths,
-                linestyles=linestyles, colors=colors)
+                            linestyles=linestyles, colors=colors)
 
     # Apply labels
     # TODO: Add quiverkey to this!
     if labels:
         # Formatting for labels
-        # Respect if 'fmt' was passed in labels_kw instead of as a main argument
+        # Respect if 'fmt' was passed in labels_kw instead of as a main
+        # argument
         fmt = _notNone(labels_kw.pop('fmt', None), fmt, 'simple')
         fmt = axistools.Formatter(fmt, precision=precision)
         # Use clabel method
         if 'contour' in name:
             if 'contourf' in name:
-                lums = [styletools.to_xyz(cmap(norm(level)), 'hcl')[2] for level in levels]
+                lums = [styletools.to_xyz(cmap(norm(level)), 'hcl')[
+                    2] for level in levels]
                 colors = ['w' if lum < 50 else 'k' for lum in lums]
                 cobj = self.contour(*args, levels=levels, linewidths=0)
             else:
                 cobj = obj
                 colors = None
             text_kw = {}
-            for key in (*labels_kw,): # allow dict to change size during iteration
+            for key in (
+                    *labels_kw,):  # allow dict to change size during iteration
                 if key not in (
                     'levels', 'fontsize', 'colors', 'inline', 'inline_spacing',
                     'manual', 'rightside_up', 'use_clabeltext',
-                    ):
+                ):
                     text_kw[key] = labels_kw.pop(key)
             labels_kw.setdefault('colors', colors)
             labels_kw.setdefault('inline_spacing', 3)
@@ -1274,24 +1386,26 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
         # Label each box manually
         # See: https://stackoverflow.com/a/20998634/4970632
         elif 'pcolor' in name:
-            obj.update_scalarmappable() # populates the _facecolors attribute, initially filled with just a single color
-            labels_kw_ = {'size':rc['small'], 'ha':'center', 'va':'center'}
+            # populates the _facecolors attribute, initially filled with just a
+            # single color
+            obj.update_scalarmappable()
+            labels_kw_ = {'size': rc['small'], 'ha': 'center', 'va': 'center'}
             labels_kw_.update(labels_kw)
             array = obj.get_array()
             paths = obj.get_paths()
             colors = np.asarray(obj.get_facecolors())
             edgecolors = np.asarray(obj.get_edgecolors())
-            if len(colors) == 1: # weird flex but okay
+            if len(colors) == 1:  # weird flex but okay
                 colors = np.repeat(colors, len(array), axis=0)
             if len(edgecolors) == 1:
                 edgecolors = np.repeat(edgecolors, len(array), axis=0)
-            for i,(color,path,num) in enumerate(zip(colors,paths,array)):
+            for i, (color, path, num) in enumerate(zip(colors, paths, array)):
                 if not np.isfinite(num):
-                    edgecolors[i,:] = 0
+                    edgecolors[i, :] = 0
                     continue
                 bbox = path.get_extents()
-                x = (bbox.xmin + bbox.xmax)/2
-                y = (bbox.ymin + bbox.ymax)/2
+                x = (bbox.xmin + bbox.xmax) / 2
+                y = (bbox.ymin + bbox.ymax) / 2
                 if 'color' not in labels_kw:
                     _, _, lum = styletools.to_xyz(color, 'hcl')
                     if lum < 50:
@@ -1313,11 +1427,11 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
         cmap = obj.get_cmap()
         if not cmap._isinit:
             cmap._init()
-        if edgefix and all(cmap._lut[:-1,3] == 1):
-            if 'pcolor' in name: # 'pcolor', 'pcolormesh', 'tripcolor'
+        if edgefix and all(cmap._lut[:-1, 3] == 1):
+            if 'pcolor' in name:  # 'pcolor', 'pcolormesh', 'tripcolor'
                 obj.set_edgecolor('face')
                 obj.set_linewidth(0.4)
-            elif 'contourf' in name: # 'contourf', 'tricontourf'
+            elif 'contourf' in name:  # 'contourf', 'tricontourf'
                 for contour in obj.collections:
                     contour.set_edgecolor('face')
                     contour.set_linewidth(0.4)
@@ -1328,9 +1442,11 @@ def cmap_changer(self, func, *args, cmap=None, cmap_kw=None,
         panel_kw.setdefault('mode', 'colorbar')
         loc = self._loc_translate(colorbar, **panel_kw)
         if not isinstance(loc, str):
-            raise ValueError(f'Invalid on-the-fly location {loc!r}. Must be a preset location. See Axes.colorbar.')
+            raise ValueError(
+                f'Invalid on-the-fly location {loc!r}. '
+                f'Must be a preset location. See Axes.colorbar.')
         if 'label' not in colorbar_kw and self.figure._auto_format:
-            _, label = _auto_label(args[-1]) # last one is data, we assume
+            _, label = _auto_label(args[-1])  # last one is data, we assume
             if label:
                 colorbar_kw.setdefault('label', label)
         if name in ('parametric',) and values is not None:
@@ -1448,11 +1564,15 @@ def legend_wrapper(self,
     dashes=None, linestyle=None, markersize=None, frameon=None, frame=None,
     **kwargs):
     # First get legend settings and interpret kwargs.
-    if order not in ('F','C'):
-        raise ValueError(f'Invalid order {order!r}. Choose from "C" (row-major, default) and "F" (column-major).')
-    ncol = _notNone(ncols, ncol, None, names=('ncols', 'ncol')) # may still be None, wait till later
+    if order not in ('F', 'C'):
+        raise ValueError(
+            f'Invalid order {order!r}. Choose from '
+            '"C" (row-major, default) and "F" (column-major).')
+    # may still be None, wait till later
+    ncol = _notNone(ncols, ncol, None, names=('ncols', 'ncol'))
     title = _notNone(label, title, None, names=('label', 'title'))
-    frameon = _notNone(frame, frameon, rc['legend.frameon'], names=('frame', 'frameon'))
+    frameon = _notNone(
+        frame, frameon, rc['legend.frameon'], names=('frame', 'frameon'))
     if title is not None:
         kwargs['title'] = title
     if frameon is not None:
@@ -1471,73 +1591,95 @@ def legend_wrapper(self,
     # just fine, _parse_legend_args seems overkill.
     if handles is None:
         if self._filled:
-            raise ValueError('You must pass a handles list for panel axes "filled" with a legend.')
+            raise ValueError(
+                'You must pass a handles list for panel axes '
+                '"filled" with a legend.')
         else:
-            handles, labels_default = self.get_legend_handles_labels() # ignores artists with labels '_nolegend_'
+            # ignores artists with labels '_nolegend_'
+            handles, labels_default = self.get_legend_handles_labels()
             if labels is None:
                 labels = labels_default
             if not handles:
-                raise ValueError('No labeled artists found. To generate a legend without providing the artists explicitly, pass label="label" in your plotting commands.')
-    if not np.iterable(handles): # e.g. a mappable object
+                raise ValueError(
+                    'No labeled artists found. To generate a legend without '
+                    'providing the artists explicitly, pass label="label" in '
+                    'your plotting commands.')
+    if not np.iterable(handles):  # e.g. a mappable object
         handles = [handles]
-    if labels is not None and (not np.iterable(labels) or isinstance(labels, str)):
+    if labels is not None and (not np.iterable(
+            labels) or isinstance(labels, str)):
         labels = [labels]
 
     # Legend entry for colormap or scatterplot object
     # TODO: Idea is we pass a scatter plot or contourf or whatever, and legend
-    # is generating by drawing patch rectangles or markers with different colors.
-    if any(not hasattr(handle, 'get_facecolor') and hasattr(handle, 'get_cmap') for handle in handles) and len(handles) > 1:
-        raise ValueError(f'Handles must be objects with get_facecolor attributes or a single mappable object from which we can draw colors.')
+    # is generating by drawing patch rectangles or markers with different
+    # colors.
+    if any(not hasattr(handle, 'get_facecolor') and hasattr(handle, 'get_cmap')
+           for handle in handles) and len(handles) > 1:
+        raise ValueError(
+            f'Handles must be objects with get_facecolor attributes or '
+            'a single mappable object from which we can draw colors.')
 
     # Build pairs of handles and labels
     # This allows alternative workflow where user specifies labels when
     # creating the legend.
     pairs = []
-    list_of_lists = (not hasattr(handles[0], 'get_label')) # e.g. not including BarContainer
+    # e.g. not including BarContainer
+    list_of_lists = (not hasattr(handles[0], 'get_label'))
     if labels is None:
         for handle in handles:
             if list_of_lists:
                 ipairs = []
                 for ihandle in handle:
                     if not hasattr(ihandle, 'get_label'):
-                        raise ValueError(f'Object {ihandle} must have a "get_label" attribute.')
+                        raise ValueError(
+                            f'Object {ihandle} must have "get_label" method.')
                     ipairs.append((ihandle, ihandle.get_label()))
                 pairs.append(ipairs)
             else:
                 if not hasattr(handle, 'get_label'):
-                    raise ValueError(f'Object {handle} must have a "get_label" attribute.')
+                    raise ValueError(
+                        f'Object {handle} must have "get_label" method.')
                 pairs.append((handle, handle.get_label()))
     else:
         if len(labels) != len(handles):
-            raise ValueError(f'Got {len(labels)} labels, but {len(handles)} handles.')
-        for label,handle in zip(labels,handles):
+            raise ValueError(
+                f'Got {len(labels)} labels, but {len(handles)} handles.')
+        for label, handle in zip(labels, handles):
             if list_of_lists:
                 ipairs = []
                 if not np.iterable(label) or isinstance(label, str):
-                    raise ValueError(f'Got list of lists of handles, but just list of labels.')
+                    raise ValueError(
+                        f'Got list of lists of handles, but list of labels.')
                 elif len(label) != len(handle):
-                    raise ValueError(f'Got {len(label)} labels in sublist, but {len(handle)} handles.')
-                for ilabel,ihandle in zip(label,handle):
+                    raise ValueError(
+                        f'Got {len(label)} labels in sublist, '
+                        f'but {len(handle)} handles.')
+                for ilabel, ihandle in zip(label, handle):
                     ipairs.append((ihandle, ilabel))
                 pairs.append(ipairs)
             else:
                 if not isinstance(label, str) and np.iterable(label):
-                    raise ValueError(f'Got list of lists of labels, but just list of handles.')
+                    raise ValueError(
+                        f'Got list of lists of labels, but list of handles.')
                 pairs.append((handle, label))
 
     # Manage pairs in context of 'center' option
-    if center is None: # automatically guess
+    if center is None:  # automatically guess
         center = list_of_lists
     elif center and list_of_lists and ncol is not None:
-        warnings.warn('Detected list of *lists* of legend handles. Ignoring user input property "ncol".')
-    elif not center and list_of_lists: # standardize format based on input
-        list_of_lists = False # no longer is list of lists
+        warnings.warn(
+            'Detected list of *lists* of legend handles. '
+            'Ignoring user input property "ncol".')
+    elif not center and list_of_lists:  # standardize format based on input
+        list_of_lists = False  # no longer is list of lists
         pairs = [pair for ipairs in pairs for pair in ipairs]
     elif center and not list_of_lists:
         list_of_lists = True
         ncol = _notNone(ncol, 3)
-        pairs = [pairs[i*ncol:(i+1)*ncol] for i in range(len(pairs))] # to list of iterables
-    if list_of_lists: # remove empty lists, pops up in some examples
+        pairs = [pairs[i * ncol:(i + 1) * ncol]
+                 for i in range(len(pairs))]  # to list of iterables
+    if list_of_lists:  # remove empty lists, pops up in some examples
         pairs = [ipairs for ipairs in pairs if ipairs]
 
     # Now draw legend(s)
@@ -1552,10 +1694,14 @@ def legend_wrapper(self,
         ncol = _notNone(ncol, 3)
         if order == 'C':
             fpairs = []
-            split = [pairs[i*ncol:(i+1)*ncol] for i in range(len(pairs)//ncol+1)] # split into rows
-            nrowsmax, nfinalrow = len(split), len(split[-1]) # max possible row count, and columns in final row
-            nrows = [nrowsmax]*nfinalrow + [nrowsmax-1]*(ncol-nfinalrow)
-            for col,nrow in enumerate(nrows): # iterate through cols
+            # split into rows
+            split = [pairs[i * ncol:(i + 1) * ncol]
+                     for i in range(len(pairs) // ncol + 1)]
+            # max possible row count, and columns in final row
+            nrowsmax, nfinalrow = len(split), len(split[-1])
+            nrows = [nrowsmax] * nfinalrow + \
+                [nrowsmax - 1] * (ncol - nfinalrow)
+            for col, nrow in enumerate(nrows):  # iterate through cols
                 fpairs.extend(split[row][col] for row in range(nrow))
             pairs = fpairs
         # Make legend object
@@ -1566,83 +1712,93 @@ def legend_wrapper(self,
     else:
         # Message when overriding some properties
         overridden = []
-        kwargs.pop('frameon', None) # then add back later!
+        kwargs.pop('frameon', None)  # then add back later!
         for override in ('bbox_transform', 'bbox_to_anchor'):
             prop = kwargs.pop(override, None)
             if prop is not None:
                 overridden.append(override)
         if overridden:
-            warnings.warn(f'For centered-row legends, must override user input properties "' + '", "'.join(prop for prop in overridden) + '".')
+            warnings.warn(f'For centered-row legends, must override '
+                          'user input properties '
+                          ', '.join(map(repr, overridden)) + '.')
         # Determine space we want sub-legend to occupy as fraction of height
-        # NOTE: Empirical testing shows spacing fudge factor necessary to exactly
-        # replicate the spacing of standard aligned legends.
+        # NOTE: Empirical testing shows spacing fudge factor necessary to
+        # exactly replicate the spacing of standard aligned legends.
         fontsize = kwargs.get('fontsize', None) or rc['legend.fontsize']
-        spacing  = kwargs.get('labelspacing', None) or rc['legend.labelspacing']
-        interval = 1/len(pairs) # split up axes
-        interval = (((1 + spacing*0.85)*fontsize)/72)/height
+        spacing = kwargs.get('labelspacing', None) or rc['legend.labelspacing']
+        interval = 1 / len(pairs)  # split up axes
+        interval = (((1 + spacing * 0.85) * fontsize) / 72) / height
         # Iterate and draw
         # NOTE: We confine possible bounding box in *y*-direction, but do not
         # confine it in *x*-direction. Matplotlib will automatically move
         # left-to-right if you request this.
         ymin, ymax = None, None
         if order == 'F':
-            raise NotImplementedError(f'When center=True, ProPlot vertically stacks successive single-row legends. Column-major (order="F") ordering is un-supported.')
+            raise NotImplementedError(
+                f'When center=True, ProPlot vertically stacks successive '
+                'single-row legends. Column-major (order="F") ordering '
+                'is un-supported.')
         loc = _notNone(loc, 'upper center')
         if not isinstance(loc, str):
-            raise ValueError(f'Invalid location {loc!r} for legend with center=True. Must be a location *string*.')
+            raise ValueError(
+                f'Invalid location {loc!r} for legend with center=True. '
+                'Must be a location *string*.')
         elif loc == 'best':
-            warnings.warn('For centered-row legends, cannot use "best" location. Defaulting to "upper center".')
-        for i,ipairs in enumerate(pairs):
+            warnings.warn(
+                'For centered-row legends, cannot use "best" location. '
+                'Defaulting to "upper center".')
+        for i, ipairs in enumerate(pairs):
             if i == 1:
                 kwargs.pop('title', None)
             if i >= 1 and title is not None:
-                i += 1 # extra space!
+                i += 1  # extra space!
             # Legend position
             if 'upper' in loc:
-                y1 = 1 - (i+1)*interval
-                y2 = 1 - i*interval
+                y1 = 1 - (i + 1) * interval
+                y2 = 1 - i * interval
             elif 'lower' in loc:
-                y1 = (len(pairs) + i - 2)*interval
-                y2 = (len(pairs) + i - 1)*interval
-            else: # center
-                y1 = 0.5 + interval*len(pairs)/2 - (i+1)*interval
-                y2 = 0.5 + interval*len(pairs)/2 - i*interval
+                y1 = (len(pairs) + i - 2) * interval
+                y2 = (len(pairs) + i - 1) * interval
+            else:  # center
+                y1 = 0.5 + interval * len(pairs) / 2 - (i + 1) * interval
+                y2 = 0.5 + interval * len(pairs) / 2 - i * interval
             ymin = min(y1, _notNone(ymin, y1))
             ymax = max(y2, _notNone(ymax, y2))
             # Draw legend
             bbox = mtransforms.Bbox([[0, y1], [1, y2]])
-            leg = mlegend.Legend(self, *zip(*ipairs), loc=loc, ncol=len(ipairs),
-                bbox_transform=self.transAxes, bbox_to_anchor=bbox, frameon=False,
-                **kwargs) # _format_legend is overriding original legend Method
+            leg = mlegend.Legend(
+                self, *zip(*ipairs), loc=loc, ncol=len(ipairs),
+                bbox_transform=self.transAxes, bbox_to_anchor=bbox,
+                frameon=False, **kwargs)
             legs.append(leg)
 
     # Add legends manually so matplotlib does not remove old ones
     # Also apply override settings
     kw_handle = {}
     outline = rc.fill({
-        'linewidth':'axes.linewidth',
-        'edgecolor':'axes.edgecolor',
-        'facecolor':'axes.facecolor',
-        'alpha':'legend.framealpha',
-        }, cache=False)
+        'linewidth': 'axes.linewidth',
+        'edgecolor': 'axes.edgecolor',
+        'facecolor': 'axes.facecolor',
+        'alpha': 'legend.framealpha',
+    }, cache=False)
     for key in (*outline,):
         if key != 'linewidth':
             if kwargs.get(key, None):
                 outline.pop(key, None)
-    for key,value in (
-        ('color',color),
-        ('marker',marker),
-        ('linewidth',lw),
-        ('linewidth',linewidth),
-        ('markersize',markersize),
-        ('linestyle',linestyle),
-        ('dashes',dashes),
-        ):
+    for key, value in (
+        ('color', color),
+        ('marker', marker),
+        ('linewidth', lw),
+        ('linewidth', linewidth),
+        ('markersize', markersize),
+        ('linestyle', linestyle),
+        ('dashes', dashes),
+    ):
         if value is not None:
             kw_handle[key] = value
     for leg in legs:
         self.add_artist(leg)
-        leg.legendPatch.update(outline) # or get_frame()
+        leg.legendPatch.update(outline)  # or get_frame()
         for obj in leg.legendHandles:
             if isinstance(obj, martist.Artist):
                 obj.update(kw_handle)
@@ -1659,19 +1815,23 @@ def legend_wrapper(self,
     # _legend_box attribute, which is accessed by get_window_extent.
     if center and frameon:
         if len(legs) == 1:
-            legs[0].set_frame_on(True) # easy!
+            legs[0].set_frame_on(True)  # easy!
         else:
             # Get coordinates
             renderer = self.figure.canvas.get_renderer()
-            bboxs = [leg.get_window_extent(renderer).transformed(self.transAxes.inverted()) for leg in legs]
-            xmin, xmax = min(bbox.xmin for bbox in bboxs), max(bbox.xmax for bbox in bboxs)
-            ymin, ymax = min(bbox.ymin for bbox in bboxs), max(bbox.ymax for bbox in bboxs)
-            fontsize = (fontsize/72)/width # axes relative units
+            bboxs = [leg.get_window_extent(renderer).transformed(
+                self.transAxes.inverted()) for leg in legs]
+            xmin, xmax = min(bbox.xmin for bbox in bboxs), max(
+                bbox.xmax for bbox in bboxs)
+            ymin, ymax = min(bbox.ymin for bbox in bboxs), max(
+                bbox.ymax for bbox in bboxs)
+            fontsize = (fontsize / 72) / width  # axes relative units
             fontsize = renderer.points_to_pixels(fontsize)
             # Draw and format patch
-            patch = mpatches.FancyBboxPatch((xmin,ymin), xmax-xmin, ymax-ymin,
-                    snap=True, zorder=4.5,
-                    mutation_scale=fontsize, transform=self.transAxes) # fontsize defined in if statement
+            patch = mpatches.FancyBboxPatch(
+                (xmin, ymin), xmax - xmin, ymax - ymin,
+                snap=True, zorder=4.5,
+                mutation_scale=fontsize, transform=self.transAxes)
             if kwargs.get('fancybox', rc['legend.fancybox']):
                 patch.set_boxstyle('round', pad=0, rounding_size=0.2)
             else:
@@ -1775,10 +1935,10 @@ def colorbar_wrapper(self,
     #   passing levels and norm object to a mappable; fixed by passing
     #   vmin/vmax instead of levels.
     #   (see: https://stackoverflow.com/q/40116968/4970632).
-    # * Problem is, often want levels instead of vmin/vmax, while simultaneously
+    # * Problem is often want levels instead of vmin/vmax, while simultaneously
     #   using a Normalize (for example) to determine colors between the levels
-    #   (see: https://stackoverflow.com/q/42723538/4970632). Workaround is to
-    #   make sure locators are in vmin/vmax range exclusively; cannot match/exceed values.
+    #   (see: https://stackoverflow.com/q/42723538/4970632). Workaround makes
+    #   sure locators are in vmin/vmax range exclusively; cannot match values.
     # No mutable defaults
     locator_kw = locator_kw or {}
     minorlocator_kw = minorlocator_kw or {}
@@ -1787,9 +1947,12 @@ def colorbar_wrapper(self,
     # Parse flexible input
     label = _notNone(title, label, None, names=('title', 'label'))
     locator = _notNone(ticks, locator, None, names=('ticks', 'locator'))
-    formatter = _notNone(ticklabels, formatter, 'auto', names=('ticklabels', 'formatter'))
-    minorlocator = _notNone(minorticks, minorlocator, None, names=('minorticks', 'minorlocator'))
-    ticklocation = _notNone(tickloc, ticklocation, None, names=('tickloc', 'ticklocation'))
+    formatter = _notNone(ticklabels, formatter, 'auto',
+                         names=('ticklabels', 'formatter'))
+    minorlocator = _notNone(minorticks, minorlocator,
+                            None, names=('minorticks', 'minorlocator'))
+    ticklocation = _notNone(tickloc, ticklocation, None,
+                            names=('tickloc', 'ticklocation'))
 
     # Colorbar kwargs
     # WARNING: PathCollection scatter objects have an extend method!
@@ -1800,10 +1963,10 @@ def colorbar_wrapper(self,
         else:
             extend = 'neither'
     kwargs.update({
-        'cax':self, 'use_gridspec':True,
-        'orientation':orientation,
-        'extend':extend,
-        'spacing':'uniform'})
+        'cax': self, 'use_gridspec': True,
+        'orientation': orientation,
+        'extend': extend,
+        'spacing': 'uniform'})
     kwargs.setdefault('drawedges', grid)
 
     # Text property keyword args
@@ -1824,28 +1987,32 @@ def colorbar_wrapper(self,
 
     # Special case where auto colorbar is generated from 1D methods, a list is
     # always passed but some 1D methods (scatter) do have colormaps.
-    if np.iterable(mappable) and len(mappable) == 1 and hasattr(mappable[0], 'get_cmap'):
+    if np.iterable(mappable) and len(
+            mappable) == 1 and hasattr(mappable[0], 'get_cmap'):
         mappable = mappable[0]
 
-    # Test if we were given a mappable, or iterable of stuff; note Container and
-    # PolyCollection matplotlib classes are iterable.
+    # Test if we were given a mappable, or iterable of stuff; note Container
+    # and PolyCollection matplotlib classes are iterable.
     cmap = None
     tick_all = (values is not None)
-    if not isinstance(mappable, martist.Artist) and not isinstance(mappable, mcontour.ContourSet):
+    if not isinstance(mappable, martist.Artist) and not isinstance(
+            mappable, mcontour.ContourSet):
         # Object for testing
         obj = mappable[0] if np.iterable(mappable) else mappable
         try:
-            obj = obj[0] # e.g. for BarContainer, which is not numpy.iterable
-        except (TypeError,KeyError):
+            obj = obj[0]  # e.g. for BarContainer, which is not numpy.iterable
+        except (TypeError, KeyError):
             pass
         # List of handles
-        if (hasattr(obj, 'get_color') or hasattr(obj, 'get_facecolor')): # simplest approach
+        if (hasattr(obj, 'get_color') or hasattr(
+                obj, 'get_facecolor')):  # simplest approach
             # Make colormap
             colors = []
             for obj in mappable:
                 if np.iterable(obj):
                     obj = obj[0]
-                color = getattr(obj, 'get_color', None) or getattr(obj, 'get_facecolor')
+                color = getattr(obj, 'get_color', None) or getattr(
+                    obj, 'get_facecolor')
                 colors.append(color())
             cmap = styletools.Colormap(colors, listmode='listed')
             # Infer values
@@ -1862,14 +2029,19 @@ def colorbar_wrapper(self,
             if values is None:
                 values = np.arange(0, len(mappable))
             tick_all = True
-        # Any colormap spec, including a list of colors, colormap name, or colormap instance
+        # Any colormap spec, including a list of colors, colormap name, or
+        # colormap instance
         else:
             try:
                 cmap = styletools.Colormap(mappable, listmode='listed')
             except Exception:
-                raise ValueError(f'Input mappable must be a matplotlib artist, list of objects, list of colors, or colormap. Got {mappable}.')
+                raise ValueError(
+                    'Input mappable must be a matplotlib artist, '
+                    'list of objects, list of colors, or colormap. '
+                    f'Got {mappable!r}.')
             if values is None:
-                if np.iterable(mappable) and not isinstance(mappable, str): # e.g. list of colors
+                if np.iterable(mappable) and not isinstance(
+                        mappable, str):  # e.g. list of colors
                     values = np.linspace(0, 1, len(mappable))
                 else:
                     values = np.linspace(0, 1, cmap.N)
@@ -1879,13 +2051,15 @@ def colorbar_wrapper(self,
     # axes. Call on self.axes, which is child if child axes, self otherwise.
     if cmap is not None:
         if np.iterable(mappable) and len(values) != len(mappable):
-            raise ValueError(f'Passed {len(values)} values, but only {len(mappable)} objects or colors.')
+            raise ValueError(
+                f'Passed {len(values)} values, but only {len(mappable)} '
+                f'objects or colors.')
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            mappable = self.axes.contourf([0,0], [0,0],
-                ma.array([[0,0],[0,0]], mask=True),
+            mappable = self.axes.contourf(
+                [0, 0], [0, 0], ma.array([[0, 0], [0, 0]], mask=True),
                 cmap=cmap, extend='neither', values=np.array(values),
-                norm=norm, norm_kw=norm_kw) # workaround
+                norm=norm, norm_kw=norm_kw)  # workaround
 
     # Try to get tick locations from *levels* or from *values* rather than
     # random points along the axis. If values were provided as keyword arg,
@@ -1899,26 +2073,28 @@ def colorbar_wrapper(self,
             locator = getattr(mappable, attr, None)
             if locator is not None:
                 break
-        if locator is None: # i.e. no attributes found
+        if locator is None:  # i.e. no attributes found
             if isinstance(getattr(mappable, 'norm', None), mcolors.LogNorm):
                 locator = 'log'
             else:
                 locator = 'auto'
-        elif not isinstance(locator, mticker.Locator): # i.e. was a 'values' or 'levels' attribute
+        # i.e. was a 'values' or 'levels' attribute
+        elif not isinstance(locator, mticker.Locator):
             # Get default maxn, try to allot 2em squares per label maybe?
             # NOTE: Cannot use Axes.get_size_inches because this is a
             # native matplotlib axes
             width, height = self.figure.get_size_inches()
             if orientation == 'horizontal':
-                scale = 3 # em squares alotted for labels
-                length = width*abs(self.get_position().width)
+                scale = 3  # em squares alotted for labels
+                length = width * abs(self.get_position().width)
                 fontsize = kw_ticklabels.get('size', rc.get('xtick.labelsize'))
             else:
                 scale = 1
-                length = height*abs(self.get_position().height)
+                length = height * abs(self.get_position().height)
                 fontsize = kw_ticklabels.get('size', rc.get('ytick.labelsize'))
-            maxn = _notNone(maxn, int(length/(scale*fontsize/72)))
-            maxn_minor = _notNone(maxn_minor, int(length/(0.5*fontsize/72)))
+            maxn = _notNone(maxn, int(length / (scale * fontsize / 72)))
+            maxn_minor = _notNone(maxn_minor, int(
+                length / (0.5 * fontsize / 72)))
             # Get locator
             if tickminor and minorlocator is None:
                 step = 1 + len(locator) // max(1, maxn_minor)
@@ -1936,7 +2112,7 @@ def colorbar_wrapper(self,
             if isinstance(locator, mticker.LogLocator):
                 minorlocator = 'log'
                 minorlocator_kw = {**minorlocator_kw}
-                minorlocator_kw.setdefault('subs', np.arange(1,10))
+                minorlocator_kw.setdefault('subs', np.arange(1, 10))
             else:
                 minorlocator = 'auto'
         minorlocator = axistools.Locator(minorlocator, **minorlocator_kw)
@@ -1945,31 +2121,33 @@ def colorbar_wrapper(self,
 
     # Get tick formatters and locators
     jvalues = None
-    normfix = False # whether we need to modify the norm object
+    normfix = False  # whether we need to modify the norm object
     locators = []
-    for ilocator in (locator,minorlocator):
+    for ilocator in (locator, minorlocator):
         if isinstance(locator, mticker.NullLocator):
             locators.append(locator)
             continue
-        # Modify ticks to work around mysterious error, and to prevent annoyance
-        # where minor ticks extend beyond extendsize.
-        ivalues = np.array(ilocator.tick_values(mappable.norm.vmin, mappable.norm.vmax)) # get the current values
+        # Modify ticks to work around mysterious error, and to prevent
+        # annoyance where minor ticks extend beyond extendsize.
+        ivalues = np.array(ilocator.tick_values(
+            mappable.norm.vmin, mappable.norm.vmax))  # get the current values
         min_ = np.where(ivalues >= mappable.norm.vmin)[0]
         max_ = np.where(ivalues <= mappable.norm.vmax)[0]
         if len(min_) == 0 or len(max_) == 0:
             locators.append(axistools.Locator('null'))
             continue
         min_, max_ = min_[0], max_[-1]
-        ivalues = ivalues[min_:max_+1]
+        ivalues = ivalues[min_:max_ + 1]
         if ivalues[0] == mappable.norm.vmin:
             normfix = True
         # Prevent major/minor overlaps where one is slightly shifted left/right
         # Consider floating point weirdness too
         if jvalues is not None:
             eps = 1e-10
-            ivalues = [v for v in ivalues if not any(o+eps >= v >= o-eps for o in jvalues)]
-        locators.append(axistools.Locator(ivalues)) # fixed locator object
-        jvalues = ivalues # record as new variable
+            ivalues = [v for v in ivalues if not any(
+                o + eps >= v >= o - eps for o in jvalues)]
+        locators.append(axistools.Locator(ivalues))  # fixed locator object
+        jvalues = ivalues  # record as new variable
 
     # Fix the norm object; get weird error without this block
     # * The error is triggered when a *major* tick sits exactly on vmin, but
@@ -1977,8 +2155,8 @@ def colorbar_wrapper(self,
     #   minor locator was set to NullLocator; very weird. Happens when we call
     #   get_ticklabels(which='both') below. Can be prevented by just calling
     #   which='major'. Minor ticklabels are never drawn anyway.
-    # * We can eliminate the normfix below, but that actually causes an annoying
-    #   warning to be printed (related to same issue I guess). So we keep this.
+    # * We can eliminate the normfix below, but that actually causes an
+    #   annoying warning to be printed (related to same issue I guess).
     #   The culprit for all of this seems to be the colorbar API line:
     #        z = np.take(y, i0) + (xn - np.take(b, i0)) * dy / db
     #   Also strange that minorticks extending *below* the minimum
@@ -1987,11 +2165,13 @@ def colorbar_wrapper(self,
     #   datatype is float; otherwise division will be truncated and bottom
     #   level will still lie on same location, so error will occur
     if normfix:
-        mappable.norm.vmin -= (mappable.norm.vmax-mappable.norm.vmin)*1e-4
+        mappable.norm.vmin -= (mappable.norm.vmax - mappable.norm.vmin) * 1e-4
     if hasattr(mappable.norm, 'levels'):
-        mappable.norm.levels = np.atleast_1d(mappable.norm.levels).astype(np.float)
+        mappable.norm.levels = np.atleast_1d(
+            mappable.norm.levels).astype(np.float)
         if normfix:
-            mappable.norm.levels[0] -= np.diff(mappable.norm.levels[:2])[0]*1e-4
+            mappable.norm.levels[0] -= np.diff(
+                mappable.norm.levels[:2])[0] * 1e-4
 
     # Final settings
     # NOTE: The only way to avoid bugs seems to be to pass the major formatter
@@ -2000,17 +2180,17 @@ def colorbar_wrapper(self,
     width, height = self.figure.get_size_inches()
     formatter = axistools.Formatter(formatter, **formatter_kw)
     if orientation == 'horizontal':
-        scale = width*abs(self.get_position().width)
+        scale = width * abs(self.get_position().width)
     else:
-        scale = height*abs(self.get_position().height)
+        scale = height * abs(self.get_position().height)
     extendsize = utils.units(_notNone(extendsize, rc['colorbar.extend']))
-    extendsize = extendsize/(scale - 2*extendsize)
+    extendsize = extendsize / (scale - 2 * extendsize)
     kwargs.update({
-        'ticks':locators[0],
-        'format':formatter,
-        'ticklocation':ticklocation,
-        'extendfrac':extendsize
-        })
+        'ticks': locators[0],
+        'format': formatter,
+        'ticklocation': ticklocation,
+        'extendfrac': extendsize
+    })
 
     # Draw the colorbar
     try:
@@ -2025,18 +2205,20 @@ def colorbar_wrapper(self,
         axis = self.yaxis
 
     # The minor locators and formatters
-    # WARNING: Inexplicably, for hexbin, axis lims *are* original, un-normalized
-    # data values, and maybe in other situations too? We detect this by checking
-    # for impossible normalized axis limits (normalized lims are from
-    # 0-extendfrac to 1+extendfrac).
+    # WARNING: Inexplicably, for hexbin, axis lims *are* original,
+    # un-normalized data values, and maybe in other situations too? We detect
+    # this by checking for impossible normalized axis limits (normalized lims
+    # are from 0-extendfrac to 1+extendfrac).
     lim = axis.get_view_interval()
     vals = []
-    normed = (lim[0] >= -2*kwargs['extendfrac']) and (lim[1] <= 1 + 2*kwargs['extendfrac'])
+    normed = (lim[0] >= -2 * kwargs['extendfrac']) \
+        and (lim[1] <= 1 + 2 * kwargs['extendfrac'])
     for ilocator in locators:
-        ivals = np.array(ilocator.tick_values(mappable.norm.vmin, mappable.norm.vmax))
+        ivals = np.array(ilocator.tick_values(
+            mappable.norm.vmin, mappable.norm.vmax))
         if normed:
             if isinstance(mappable.norm, styletools.BinNorm):
-                ivals = mappable.norm._norm(ivals) # use *child* normalizer
+                ivals = mappable.norm._norm(ivals)  # use *child* normalizer
             else:
                 ivals = mappable.norm(ivals)
             ivals = [tick for tick in ivals if 0 <= tick <= 1]
@@ -2044,44 +2226,41 @@ def colorbar_wrapper(self,
     if fixticks:
         axis.set_ticks(vals[0], minor=False)
     axis.set_ticks(vals[1], minor=True)
-    axis.set_minor_formatter(mticker.NullFormatter()) # to make sure
+    axis.set_minor_formatter(mticker.NullFormatter())  # to make sure
 
     # Outline
     kw_outline = {
         'edgecolor': _notNone(edgecolor, rc['axes.edgecolor']),
         'linewidth': _notNone(linewidth, rc['axes.linewidth']),
-        }
+    }
     if cb.outline is not None:
         cb.outline.update(kw_outline)
     if cb.dividers is not None:
         cb.dividers.update(kw_outline)
 
     # Fix alpha-blending issues.
-    # Cannot set edgecolor to 'face' if alpha non-zero
-    # because blending will occur, will get colored lines instead of white ones;
-    # need to perform manual alpha blending.
+    # Cannot set edgecolor to 'face' if alpha non-zero because blending will
+    # occur, will get colored lines instead of white ones. Need manual blending
     # NOTE: For some reason cb solids uses listed colormap with always 1.0
     # alpha, then alpha is applied after.
     # See: https://stackoverflow.com/a/35672224/4970632
-    # alpha = None
-    # if cb.solids: # for e.g. contours with colormap, colorbar will just be lines
-    #     alpha = cb.solids.get_alpha()
-    # if alpha is not None and alpha < 1:
     cmap = cb.cmap
     if not cmap._isinit:
         cmap._init()
-    if any(cmap._lut[:-1,3] < 1):
-        warnings.warn(f'Using manual alpha-blending for {cmap.name!r} colorbar solids.')
+    if any(cmap._lut[:-1, 3] < 1):
+        warnings.warn(
+            f'Using manual alpha-blending for {cmap.name!r} colorbar solids.')
         # Generate "secret" copy of the colormap!
         lut = cmap._lut.copy()
         cmap = mcolors.Colormap('_colorbar_fix', N=cmap.N)
         cmap._isinit = True
-        cmap._init = (lambda : None)
+        cmap._init = (lambda: None)
         # Manually fill lookup table with alpha-blended RGB colors!
         for i in range(lut.shape[0] - 1):
-            alpha = lut[i,3]
-            lut[i,:3] =  (1 - alpha)*1 + alpha*lut[i,:3] # blend with *white*
-            lut[i,3] = 1
+            alpha = lut[i, 3]
+            lut[i, :3] = (1 - alpha) * 1 + alpha * \
+                lut[i, :3]  # blend with *white*
+            lut[i, 3] = 1
         cmap._lut = lut
         # Update colorbar
         cb.cmap = cmap
@@ -2098,7 +2277,7 @@ def colorbar_wrapper(self,
 
     # Ticks
     xy = axis.axis_name
-    for which in ('minor','major'):
+    for which in ('minor', 'major'):
         kw = rc.category(xy + 'tick.' + which)
         kw.pop('visible', None)
         if edgecolor:
@@ -2239,7 +2418,7 @@ def _redirect(func):
     _wrapper.__doc__ = None
     return _wrapper
 
-# Basemap recursion fix decorator
+
 def _norecurse(func):
     """Decorator to prevent recursion in basemap method overrides.
     See `this post https://stackoverflow.com/a/37675810/4970632`__."""
@@ -2256,11 +2435,11 @@ def _norecurse(func):
             # Return the version we have wrapped
             func._has_recurred = True
             result = func(self, *args, **kwargs)
-        func._has_recurred = False # cleanup, in case recursion never occurred
+        func._has_recurred = False  # cleanup, in case recursion never occurred
         return result
     return _wrapper
 
-# Fancy decorator generator
+
 def _wrapper_decorator(driver):
     """Generates generic wrapper decorators and dynamically modifies docstring
     to list the methods wrapped by this function. Also sets __doc__ to None so
@@ -2271,6 +2450,7 @@ def _wrapper_decorator(driver):
     driver._methods_wrapped = []
     proplot_methods = ('parametric', 'heatmap', 'area', 'areax')
     cartopy_methods = ('get_extent', 'set_extent')
+
     def decorator(func):
         """"""
         # Define wrapper
@@ -2297,12 +2477,13 @@ def _wrapper_decorator(driver):
                 methods.append(link)
                 string = (
                     ', '.join(methods[:-1])
-                    + ',' * int(len(methods)>2) # Oxford comma bitches
-                    + ' and ' * int(len(methods)>1)
+                    + ',' * int(len(methods) > 2)  # Oxford comma bitches
+                    + ' and ' * int(len(methods) > 1)
                     + methods[-1])
                 driver.__doc__ = docstring % {'methods': string}
         return _wrapper
     return decorator
+
 
 # Auto generated decorators. Each wrapper internally calls
 # func(self, ...) somewhere.
