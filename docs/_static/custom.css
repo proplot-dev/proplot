@@ -29,11 +29,11 @@
   --link-hover-color: #0079ff;
   --link-visited-color: #452bb0;
   --code-border-color: #e0e0e0;
-  --main-bg-color: #fcfcfc;
-  --code-bg-color: #ffffff;
   --menu-border-color: #909090;
   --search-border-color: #aaa;
   --search-shadow-color: #ddd;
+  --main-bg-color: #fcfcfc;
+  --code-bg-color: #ffffff;
   --empty-bg-color: #f4f4f4;
   --l1-bg-color: #e9e9e9;
   --l2-bg-color: #dcdcdc;
@@ -240,67 +240,20 @@ a:visited,
   font-weight: normal;
 }
 
-/* Hide expansion button when not on current item */
-.wy-menu li.toctree-l1:not(.current) a span.toctree-expand,
-.wy-menu li.toctree-l2:not(.current) a span.toctree-expand,
-.wy-menu li.toctree-l3:not(.current) a span.toctree-expand,
-.wy-menu li.toctree-l1:not(.current) a:hover span.toctree-expand,
-.wy-menu li.toctree-l2:not(.current) a:hover span.toctree-expand,
-.wy-menu li.toctree-l3:not(.current) a:hover span.toctree-expand {
-  display: none;
-}
-
-/* Make logo flush in box */
-/* Also remove bottom margins because TOC caption padding is enough */
-.wy-side-nav-search .wy-dropdown>a img.logo,
-.wy-side-nav-search>a img.logo,
-.wy-side-nav-search .wy-dropdown>a,
-.wy-side-nav-search>a {
-  padding: 0;
-}
-.wy-side-nav-search input[type=text] {
+/* Versions panel colors */
+.rst-versions .rst-current-version .fa {
   color: var(--main-color);
-  border: 1px solid var(--search-border-color);
-  background-color: var(--main-bg-color);
-  box-shadow: inset 0 1px 3px var(--main-bg-color);
-  /* border-color: var(--search-border-color); */
 }
-.wy-side-nav-search {
-  border-color: var(--search-border-color) ;
-  box-shadow-color: var(--search-shadow-color) ;
-  background-color: var(--main-color);
-  margin-bottom: 0;
-  padding-bottom: 0;
+.rst-versions .rst-current-version {
+  color: var(--code-color);
+  background-color: var(--l5-bg-color);
 }
-
-/* Current item outline color */
-.wy-menu li.toctree-l1.current:has(ul) {
-  border-top: solid 1px var(--l3-bg-color);
-  border-bottom: solid 1px var(--l3-bg-color);
+.rst-versions .rst-other-versions {
+  color: var(--call-color);
+  background-color: var(--l3-bg-color);
 }
-.wy-menu li.toctree-l2.current:has(ul) {
-  border-top: solid 1px var(--l4-bg-color);
-  border-bottom: solid 1px var(--l4-bg-color);
-}
-.wy-menu li.toctree-l3.current:has(ul) {
-  border-top: solid 1px var(--l5-bg-color);
-  border-bottom: solid 1px var(--l5-bg-color);
-}
-.wy-menu li.toctree-l4.current:has(ul) {
-  border-top: solid 1px var(--l6-bg-color);
-  border-bottom: solid 1px var(--l6-bg-color);
-}
-.wy-menu li.toctree-l5.current:has(ul) {
-  border-top: solid 1px var(--l7-bg-color);
-  border-bottom: solid 1px var(--l7-bg-color);
-}
-.wy-menu li.toctree-l1.current>a,
-.wy-menu li.toctree-l2.current>a,
-.wy-menu li.toctree-l3.current>a,
-.wy-menu li.toctree-l4.current>a,
-.wy-menu li.toctree-l5.current>a {
-  border-top: 0;
-  border-bottom: 0;
+.rst-versions .rst-other-versions dd a {
+  color: var(--main-color);
 }
 
 /* Sidebar text color, includes text-logo color for mobile */
@@ -357,6 +310,61 @@ a:visited,
 .wy-menu li.toctree-l4.current li.toctree-l5>a {
   background: var(--l5-bg-color);
   border-right: 0;
+}
+
+/* Sidebar current item outline color */
+.wy-menu li.toctree-l1.current>a {
+  border-top: solid 1px var(--l3-bg-color);
+  border-bottom: solid 1px var(--l3-bg-color);
+}
+.wy-menu li.toctree-l2.current>a {
+  border-top: solid 1px var(--l4-bg-color);
+  border-bottom: solid 1px var(--l4-bg-color);
+}
+.wy-menu li.toctree-l3.current>a {
+  border-top: solid 1px var(--l5-bg-color);
+  border-bottom: solid 1px var(--l5-bg-color);
+}
+.wy-menu li.toctree-l4.current>a {
+  border-top: solid 1px var(--l6-bg-color);
+  border-bottom: solid 1px var(--l6-bg-color);
+}
+.wy-menu li.toctree-l5.current>a {
+  border-top: solid 1px var(--l7-bg-color);
+  border-bottom: solid 1px var(--l7-bg-color);
+}
+
+/* Hide sidebar expansion button when not on current item */
+.wy-menu li.toctree-l1:not(.current) a span.toctree-expand,
+.wy-menu li.toctree-l2:not(.current) a span.toctree-expand,
+.wy-menu li.toctree-l3:not(.current) a span.toctree-expand,
+.wy-menu li.toctree-l1:not(.current) a:hover span.toctree-expand,
+.wy-menu li.toctree-l2:not(.current) a:hover span.toctree-expand,
+.wy-menu li.toctree-l3:not(.current) a:hover span.toctree-expand {
+  display: none;
+}
+
+/* Sidebar logo flush in box */
+/* Also remove bottom margins because TOC caption padding is enough */
+.wy-side-nav-search .wy-dropdown>a img.logo,
+.wy-side-nav-search>a img.logo,
+.wy-side-nav-search .wy-dropdown>a,
+.wy-side-nav-search>a {
+  padding: 0;
+}
+.wy-side-nav-search input[type=text] {
+  color: var(--main-color);
+  border: 1px solid var(--search-border-color);
+  background-color: var(--main-bg-color);
+  box-shadow: inset 0 1px 3px var(--main-bg-color);
+  /* border-color: var(--search-border-color); */
+}
+.wy-side-nav-search {
+  border-color: var(--search-border-color) ;
+  box-shadow-color: var(--search-shadow-color) ;
+  background-color: var(--main-color);
+  margin-bottom: 0;
+  padding-bottom: 0;
 }
 
 /* Next and previous buttons */

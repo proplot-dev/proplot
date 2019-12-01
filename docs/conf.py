@@ -44,14 +44,13 @@ author = 'Luke L. B. Davis'
 
 # The short X.Y version
 version = ''
+
 # The full version, including alpha/beta/rc tags
 release = ''
-
 
 # -- General configuration ---------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
-#
 # needs_sphinx = '1.0'
 
 # Add any Sphinx extension module names here, as strings. They can be
@@ -224,7 +223,6 @@ html_static_path = ['_static']
 # defined by theme itself.  Builtin themes are using these templates by
 # default: ``['localtoc.html', 'relations.html', 'sourcelink.html',
 # 'searchbox.html']``.
-#
 # html_sidebars = {}
 
 # The name of an image file (within the static path) to use as favicon of the
@@ -244,19 +242,15 @@ htmlhelp_basename = 'proplotdoc'
 
 latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
-    #
     # 'papersize': 'letterpaper',
 
     # The font size ('10pt', '11pt' or '12pt').
-    #
     # 'pointsize': '10pt',
 
     # Additional stuff for the LaTeX preamble.
-    #
     # 'preamble': '',
 
     # Latex figure (float) alignment
-    #
     # 'figure_align': 'htbp',
 }
 
