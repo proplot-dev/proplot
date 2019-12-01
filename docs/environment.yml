@@ -5,7 +5,7 @@ name: proplot-dev
 channels:
   - conda-forge
 dependencies:
-  - pip
+  - python>=3.6
   - numpy
   - xarray
   - pandas
@@ -16,7 +16,9 @@ dependencies:
   - sphinx
   - ipython
   - ipykernel
+  - pip
   - pip:
+    - ..
     - lxml
     - pyyaml
     - sphinx_rtd_theme

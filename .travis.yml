@@ -23,13 +23,10 @@ before_install:
 install:
   - conda env create -n proplot-dev --file docs/environment.yml
   - source activate proplot-dev
-  - conda install pip
+  - pip install flake8
   - conda list
   - which conda
   - which python
-  - pip install .
-  - python setup.py install --user
-  - pip install flake8
 
 script:
   - flake8 proplot --ignore=W503
