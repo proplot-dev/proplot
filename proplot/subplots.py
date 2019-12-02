@@ -481,50 +481,16 @@ def _canvas_preprocess(canvas, method):
     (modifying renderers inplace is non-trivial -- see the MacOSX and
     SVG renderers __init__ methods). Note that MacOSX currently `cannot be
     resized <https://github.com/matplotlib/matplotlib/issues/15131>`__."""
-    # NOTE: The final _align_labels call is necessary because the
-    # figure-relative coordinates used to specify label positions become
-    # *out of date* after the resize by _adjust_tight_layout -- however
-    # _adjust_tight_layout will leave enough "space" for the repositioned
-    # labels. The only reason things look ok in ipython notebooks without
-    # the second _align_labels call is because the inline backend calls
-    # draw() *twice*, once from *pyplot* post_execute FigureCanvas.draw()
-    # and once from *ipython pylabtools* FigureCanvas.print_figure()
-    # NOTE: *Critical* that the renderer is (1) initialized with the
-    # correct figure size or (2) changed in-place during the draw.
-    # * Vector graphic renderers are *impossible* to modify inplace.
-    #   SVGRenderer and PDFRenderer both query get_size_inches() before
-    #   calling draw then never check again. Workaround is to have
-    #   get_size_inches() update the size with the default RendererAgg
-    #   or cached renderer before continuing (use _get_renderer copied
-    #   from matplotlib tight_layout.py now in utils.py). If former is
-    #   used may result in *slight* inconsistencies, but this has been
-    #   happening for entire development of proplot and haven't noticed.
-    # * Raster graphic renderers generally use query the bbox directly
-    #   (agg) or use FigureCanvasBase.get_width_height() (others). There
-    #   is a workaround where we can force generation of a *new* renderer
-    #   by calling FigureCanvasAgg.get_renderer() after the dimensions
-    #   have changed since preceding call. But this does not fix Cairo
-    #   or MacOSX backends.
-    # * Adding to the problem is the *manager* and sometimes the *canvas*
-    #   have their own sizes! The manager is updated whenever you call
-    #   set_size_inches(), and canvas size is not hardcoded *except* for
-    #   the MacOSX renderer it seems... but perhaps not.
-    # The above leaves us with three options. We go with the *third*
-    # because it is by far the most robust / easiest to implement.
-    # * Override get_size_inches(), apply a monkey patch to
-    #   canvas.get_width_height() whenever fig.set_canvas() is called, and
-    #   exploit the FigureCanvasAgg implementation... but this leaves us
-    #   vulnerable if future developers decided to bypass the getters!
-    # * Implement bbox and bbox_inches as *properties* that are
-    #   automatically updated if the figure is stale. Good for stability
-    #   and portability but hard to avoid recursion! Could just turn on
-    #   auto draw *once* when stale turned to True but then maybe the user
-    #   hasn't finished adding stuff to the figure!
-    # * Override canvas.draw() *and* canvas.print_figure() by adding an
-    #   instance-level monkey patch to canvases sent to set_canvas(). Then
-    #   for the macosx backend special case can resize it by calling
-    #   canvas.__init__(width, height). Renderer is always updated from
-    #   these methods with the current dimensions!
+    # NOTE: This is by far the most robust approach. Renderer must be (1)
+    # initialized with the correct figure size or (2) changed inplace during
+    # draw, but vector graphic renderers *cannot* be changed inplace.
+    # Options include (1) monkey patch canvas.get_width_height, overriding
+    # figure.get_size_inches, and exploit the FigureCanvasAgg.get_renderer()
+    # implementation (because FigureCanvasAgg queries the bbox directly
+    # rather than using get_width_height() so requires a workaround), or (2)
+    # override bbox and bbox_inches as *properties*, but these are really
+    # complicated, dangerous, and result in unnecessary extra draws. The
+    # below is by far the best approach.
     def _preprocess(self, *args, **kwargs):
         fig = self.figure  # update even if not stale! needed after saves
         renderer = fig._get_renderer()  # any renderer will do for now
@@ -1660,7 +1626,8 @@ class Figure(mfigure.Figure):
         # Set the canvas and add monkey patches to the instance-level
         # `~matplotlib.backend_bases.FigureCanvasBase.draw` and
         # `~matplotlib.backend_bases.FigureCanvasBase.print_figure`
-        # methods. See `_canvas_preprocess` for details."""
+        # methods. The latter is called by save() and by the inline backend.
+        # See `_canvas_preprocess` for details."""
         if hasattr(canvas, '_draw'):
             canvas._draw = _canvas_preprocess(canvas, '_draw')
         canvas.draw = _canvas_preprocess(canvas, 'draw')
