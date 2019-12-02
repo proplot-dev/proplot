@@ -1010,8 +1010,8 @@ def fill_between_wrapper(self, func, *args, **kwargs):
         Colors to use for the negative and positive values. Ignored if `negpos`
         is ``False``.
     where : ndarray, optional
-        Boolean ndarray mask for points you want to shade. See `this example
-        <https://matplotlib.org/3.1.0/gallery/pyplots/whats_new_98_4_fill_between.html#sphx-glr-gallery-pyplots-whats-new-98-4-fill-between-py>`__.
+        Boolean ndarray mask for points you want to shade. See `this example \
+<https://matplotlib.org/3.1.0/gallery/pyplots/whats_new_98_4_fill_between.html#sphx-glr-gallery-pyplots-whats-new-98-4-fill-between-py>`__.
     **kwargs
         Passed to `~matplotlib.axes.Axes.fill_between`.
     """  # noqa
@@ -1205,8 +1205,8 @@ def violinplot_wrapper(
         **kwargs):
     """
     Wraps %(methods)s, adds convenient keyword args.
-    Makes the style shown in right plot of `this matplotlib example
-    <https://matplotlib.org/3.1.0/gallery/statistics/customized_violin.html>`__
+    Makes the style shown in right plot of `this matplotlib example \
+<https://matplotlib.org/3.1.0/gallery/statistics/customized_violin.html>`__
     the default. It is also no longer possible to show minima and maxima with
     whiskers, because this is redundant.
 
@@ -1439,8 +1439,8 @@ def cycle_changer(
 
     Notes
     -----
-    See the `matplotlib source
-    <https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_base.py>`_.
+    See the `matplotlib source \
+<https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_base.py>`_.
     The `set_prop_cycle` command modifies underlying
     `_get_lines` and `_get_patches_for_fill`.
     """
@@ -1723,10 +1723,10 @@ def cmap_changer(
         Toggle this to make automatically generated levels symmetric
         about zero.
     edgefix : bool, optional
-        Whether to fix the the `white-lines-between-filled-contours
-        <https://stackoverflow.com/q/8263769/4970632>`__
-        and `white-lines-between-pcolor-rectangles
-        <https://stackoverflow.com/q/27092991/4970632>`__
+        Whether to fix the the `white-lines-between-filled-contours \
+<https://stackoverflow.com/q/8263769/4970632>`__
+        and `white-lines-between-pcolor-rectangles \
+<https://stackoverflow.com/q/27092991/4970632>`__
         issues. This slows down figure rendering by a bit. Default is
         :rc:`image.edgefix`.
     labels : bool, optional

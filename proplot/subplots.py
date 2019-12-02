@@ -689,10 +689,9 @@ def _canvas_preprocess(canvas, method):
     """Return a pre-processer that can be used to override instance-level
     canvas draw() and print_figure() methdos. This applies tight layout and
     aspect ratio-conserving adjustments and aligns labels. Required so that
-    the canvas methods instantiate renderers with the correct dimensions
-    (modifying renderers inplace is non-trivial -- see the MacOSX and
-    SVG renderers __init__ methods). Note that MacOSX currently `cannot be
-    resized <https://github.com/matplotlib/matplotlib/issues/15131>`__."""
+    the canvas methods instantiate renderers with the correct dimensions.
+    Note that MacOSX currently `cannot be resized \
+<https://github.com/matplotlib/matplotlib/issues/15131>`__."""
     # NOTE: This is by far the most robust approach. Renderer must be (1)
     # initialized with the correct figure size or (2) changed inplace during
     # draw, but vector graphic renderers *cannot* be changed inplace.

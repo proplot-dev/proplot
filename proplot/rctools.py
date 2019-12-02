@@ -908,8 +908,8 @@ def backend_setup(backend=None, fmt=None):
 
 def autoreload_setup(autoreload=None):
     """
-    Set up the `autoreload
-    <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html>`__
+    Set up the `autoreload \
+<https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html>`__
     utility for ipython sessions.
 
     Parameters
@@ -929,8 +929,8 @@ def autoreload_setup(autoreload=None):
 
 def autosave_setup(autosave=None):
     """
-    Set up the `autosave
-    <https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__
+    Set up the `autosave \
+<https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__
     utility for ipython notebook sessions.
 
     Parameters

@@ -1438,8 +1438,8 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
             Default is :rc:`image.lut`.
         space : {'hcl', 'hsl', 'hpl'}, optional
             The hue, saturation, luminance-style colorspace to use for
-            interpreting the channels. See `this page
-            <http://www.hsluv.org/comparison/>`_ for a description.
+            interpreting the channels. See
+            `this page <http://www.hsluv.org/comparison/>`_ for a description.
         clip : bool, optional
             Whether to "clip" impossible colors, i.e. truncate HCL colors
             with RGB channels with values >1, or mask them out as gray.
@@ -2209,12 +2209,12 @@ def Cycle(
         the `~cycler.Cycler` instance. If the lists have unequal length, they
         will be filled to match the length of the longest list.  See
         `~matplotlib.axes.Axes.set_prop_cycle` for more info on cyclers.
-        Also see the `line style reference
-        <https://matplotlib.org/gallery/lines_bars_and_markers/line_styles_reference.html>`__,
-        `marker reference
-        <https://matplotlib.org/3.1.0/gallery/lines_bars_and_markers/marker_reference.html>`__,
-        and the `custom dashes reference
-        <https://matplotlib.org/3.1.0/gallery/lines_bars_and_markers/line_demo_dash_control.html>`__.
+        Also see the `line style reference \
+<https://matplotlib.org/gallery/lines_bars_and_markers/line_styles_reference.html>`__,
+        the `marker reference \
+<https://matplotlib.org/3.1.0/gallery/lines_bars_and_markers/marker_reference.html>`__,
+        and the `custom dashes reference \
+<https://matplotlib.org/3.1.0/gallery/lines_bars_and_markers/line_demo_dash_control.html>`__.
     save : bool, optional
         Whether to save the `ListedColormap` associated with this cycle.
         See `ListedColormap.save`.
@@ -2345,8 +2345,8 @@ def Norm(norm, levels=None, **kwargs):
         the `vmin` and `vmax` arguments for `MidpointNorm`.
     **kwargs
         Passed to the `~matplotlib.colors.Normalize` initializer.
-        See `this tutorial
-        <https://matplotlib.org/tutorials/colors/colormapnorms.html>`_
+        See `this tutorial \
+<https://matplotlib.org/tutorials/colors/colormapnorms.html>`__
         for more info.
 
     Returns
