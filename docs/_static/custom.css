@@ -245,7 +245,7 @@ a:visited,
   color: var(--main-color);
 }
 .rst-versions .rst-current-version {
-  color: var(--code-color);
+  color: var(--call-color);
   background-color: var(--l3-bg-color);
 }
 .rst-versions .rst-other-versions {

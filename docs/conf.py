@@ -81,9 +81,16 @@ extlinks = {
     'pr': ('https://github.com/lukelbd/proplot/pull/%s', 'GH#'),
 }
 
-# Give *lots* of time for cell execution! The projection tables
-# in particular are massive.
+# Give *lots* of time for cell execution!
+# Note nbsphinx compiles *all* notebooks in docs unless excluded
 nbsphinx_timeout = 120
+
+# Set InlineBackend params, maybe nbsphinx skips ones in rctools.py
+# Not necessary because rctools.py configures the backend
+# nbsphinx_execute_arguments = [
+#     "--InlineBackend.figure_formats={'svg'}",
+#     "--InlineBackend.rc={'figure.dpi': 100}",
+# ]
 
 # Do not run doctest tests, these are just to show syntax and expected
 # output may be graphical
@@ -164,13 +171,10 @@ language = None
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-# This pattern also affects html_static_path and html_extra_path .
-# WARNING: Must add 'include' files or will get duplicate label warnings.
-# WARNING: Must add files containing showcase examples
 exclude_patterns = [
-    '_templates', '_themes', 'showcase',
-    'sphinxext', 'automodapi',
-    'trash', '.DS_Store', '**.ipynb_checkpoints'
+    '_templates', '_themes', 'sphinxext',
+    '.DS_Store', '**.ipynb_checkpoints',
+    # '[0-9a-eg-su-z]*.ipynb', # only run [figures|tight].ipynb for debugging
 ]
 
 # The name of the Pygments (syntax highlighting) style to use.
