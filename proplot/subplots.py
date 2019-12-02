@@ -526,18 +526,17 @@ def _canvas_preprocess(canvas, method):
     #   canvas.__init__(width, height). Renderer is always updated from
     #   these methods with the current dimensions!
     def _preprocess(self, *args, **kwargs):
-        fig = self.figure
-        if fig.stale:
-            renderer = fig._get_renderer()  # any renderer will do for now
-            for ax in fig._iter_axes():
-                ax._draw_auto_legends_colorbars()  # may insert panels
-            fig._adjust_aspect()
-            fig._align_axislabels(False)  # get proper label offset only
-            fig._align_labels(renderer)  # position labels and suptitle
-            if fig._auto_tight_layout:
-                fig._adjust_tight_layout(renderer)
-            fig._align_axislabels(True)  # slide spanning labels across
-            fig._align_labels(renderer)  # update figure-relative coordinates!
+        fig = self.figure  # update even if not stale! needed after saves
+        renderer = fig._get_renderer()  # any renderer will do for now
+        for ax in fig._iter_axes():
+            ax._draw_auto_legends_colorbars()  # may insert panels
+        fig._adjust_aspect()
+        fig._align_axislabels(False)  # get proper label offset only
+        fig._align_labels(renderer)  # position labels and suptitle
+        if fig._auto_tight_layout:
+            fig._adjust_tight_layout(renderer)
+        fig._align_axislabels(True)  # slide spanning labels across
+        fig._align_labels(renderer)  # update figure-relative coordinates!
         return getattr(type(self), method)(self, *args, **kwargs)
     return _preprocess.__get__(canvas)  # ...I don't get it either
 
