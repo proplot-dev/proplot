@@ -40,6 +40,8 @@
   --l3-bg-color: #d0d0d0;
   --l4-bg-color: #c3c3c3;
   --l5-bg-color: #b6b6b6;
+  --l6-bg-color: #a9a9a9;
+  --l7-bg-color: #9c9c9c;
   --block-bg-color: #f0f0f0;
   --accent-bg-color: #d0d0d0;
 }
@@ -65,6 +67,8 @@
   --l3-bg-color: #595959;
   --l4-bg-color: #666666;
   --l5-bg-color: #737373;
+  --l6-bg-color: #808080;
+  --l7-bg-color: #8c8c8c;
   --block-bg-color: #3a3a3a;
   --accent-bg-color: #606060;
 }
