@@ -18,8 +18,7 @@ BENCHMARK = False  # change this to turn on benchmarking
 
 
 class _benchmark(object):
-    """Timer object that can be used to time things."""
-
+    """Timer object that can be used to benchmark tasks."""
     def __init__(self, message):
         self.message = message
 
@@ -77,8 +76,6 @@ def _counter(func):
     decorator.count = 0  # initialize
     return decorator
 
-# Important private helper func
-
 
 def _notNone(*args, names=None):
     """Returns the first non-``None`` value, used with keyword arg aliases and
@@ -109,8 +106,6 @@ def _notNone(*args, names=None):
                 f'Got conflicting or duplicate keyword args, '
                 f'using the first one: {kwargs}')
         return first
-
-# Accessible for user
 
 
 def arange(min_, *args):
