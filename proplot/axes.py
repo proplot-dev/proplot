@@ -1384,8 +1384,8 @@ class Axes(maxes.Axes):
         parametric coordinate ``values`` using the input colormap ``cmap``.
         Invoked when you pass ``cmap`` to `~matplotlib.axes.Axes.plot`.
         Returns a `~matplotlib.collections.LineCollection` instance. See
-        `this matplotlib example
-        <https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line.html>`__.
+        `this matplotlib example \
+<https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line.html>`__.
 
         Parameters
         ----------

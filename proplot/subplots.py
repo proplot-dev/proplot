@@ -120,8 +120,8 @@ spanx, spany, span : bool or {0, 1}, optional
     for a 3-row, 3-column figure, with ``sharey > 1`` and ``spany=1``,
     your figure will have 1 ylabel instead of 9.
 alignx, aligny, align : bool or {0, 1}, optional
-    Default is ``False``. Whether to `align axis labels
-    <https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/align_labels_demo.html>`__
+    Default is ``False``. Whether to `align axis labels \
+<https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/align_labels_demo.html>`__
     for the *x* axis, *y* axis, or both axes. Only has an effect when
     `spanx`, `spany`, or `span` are ``False``.
 includepanels : bool, optional

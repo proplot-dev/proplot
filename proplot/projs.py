@@ -50,8 +50,8 @@ def Proj(name, basemap=False, **kwargs):
         PROJ.4 projection name shorthands, like in basemap.
 
         The following table lists the valid projection name shorthands, their
-        full names (with links to the relevant `PROJ.4 documentation
-        <https://proj4.org/operations/projections/index.html>`__),
+        full names (with links to the relevant `PROJ.4 documentation \
+<https://proj4.org/operations/projections/index.html>`__),
         and whether they are available in the cartopy and basemap packages.
 
         ``(added)`` indicates a projection class that ProPlot has "added"
@@ -265,8 +265,8 @@ class Hammer(_WarpedRectangularProjection):
 
 
 class KavrayskiyVII(_WarpedRectangularProjection):
-    """The `Kavrayskiy VII
-    <https://en.wikipedia.org/wiki/Kavrayskiy_VII_projection>`__ projection."""
+    """The `Kavrayskiy VII \
+<https://en.wikipedia.org/wiki/Kavrayskiy_VII_projection>`__ projection."""
     __name__ = 'kavrayskiyVII'
     #: Registered projection name.
     name = 'kavrayskiyVII'
@@ -282,8 +282,8 @@ class KavrayskiyVII(_WarpedRectangularProjection):
 
 
 class WinkelTripel(_WarpedRectangularProjection):
-    """The `Winkel tripel (Winkel III)
-    <https://en.wikipedia.org/wiki/Winkel_tripel_projection>`__ projection."""
+    """The `Winkel tripel (Winkel III) \
+<https://en.wikipedia.org/wiki/Winkel_tripel_projection>`__ projection."""
     __name__ = 'winkeltripel'
     #: Registered projection name.
     name = 'winkeltripel'

@@ -2974,8 +2974,8 @@ def register_colors(nmax=np.inf):
 def register_fonts():
     """Add fonts packaged with ProPlot or saved to the ``~/.proplot/fonts``
     folder, if they are not already added. Detects ``.ttf`` and ``.otf`` files
-    -- see `this link
-    <https://gree2.github.io/python/2015/04/27/python-change-matplotlib-font-on-mac>`__
+    -- see `this link \
+<https://gree2.github.io/python/2015/04/27/python-change-matplotlib-font-on-mac>`__
     for a guide on converting various other font file types to ``.ttf`` and
     ``.otf`` for use with matplotlib."""  # noqa
     # Add proplot path to TTFLIST and rebuild cache
@@ -3089,8 +3089,8 @@ def show_channels(
         maxsat=500, width=100, axwidth=1.7):
     """
     Visualize how the input colormap(s) vary with respect to the hue, chroma,
-    and luminance channels. Adapted from `this example
-    <https://matplotlib.org/3.1.0/tutorials/colors/colormaps.html#lightness-of-matplotlib-colormaps>`__.
+    and luminance channels. Adapted from `this example \
+<https://matplotlib.org/3.1.0/tutorials/colors/colormaps.html#lightness-of-matplotlib-colormaps>`__.
 
     Parameters
     ----------
@@ -3413,8 +3413,8 @@ def show_colors(nhues=17, minsat=0.2):
 def show_cmaps(*args, N=None, unknown='User', **kwargs):
     """
     Generate a table of the registered colormaps or the input colormaps.
-    Adapted from `this example
-    <http://matplotlib.org/examples/color/colormaps_reference.html>`__.
+    Adapted from `this example \
+<http://matplotlib.org/examples/color/colormaps_reference.html>`__.
 
     Parameters
     ----------

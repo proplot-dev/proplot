@@ -454,12 +454,12 @@ def _sanitize_key(key):
 
 class rc_configurator(object):
     """
-    Magical abstract class for managing matplotlib `rcParams
-    <https://matplotlib.org/users/customizing.html>`__ and additional
-    ProPlot :ref:`rcParamsLong` and :ref:`rcParamsShort` settings. When
-    initialized, this loads defaults settings plus any user overrides in the
-    ``~/.proplotrc`` file. See the `~proplot.rctools` documentation for
-    details.
+    Magical abstract class for managing matplotlib
+    `rcParams <https://matplotlib.org/users/customizing.html>`__
+    and additional ProPlot :ref:`rcParamsLong` and :ref:`rcParamsShort`
+    settings. When initialized, this loads defaults settings plus any user
+    overrides in the ``~/.proplotrc`` file. See the `~proplot.rctools`
+    documentation for details.
     """
 
     def __contains__(self, key):
@@ -565,9 +565,9 @@ class rc_configurator(object):
         return self[attr]
 
     def __getitem__(self, key):
-        """Return the relevant `rcParams
-        <https://matplotlib.org/users/customizing.html>`__,
-        :ref:`rcParamsLong`, and :ref:`rcParamsShort` setting."""
+        """Return an `rcParams \
+<https://matplotlib.org/users/customizing.html>`__,
+        :ref:`rcParamsLong`, or :ref:`rcParamsShort` setting."""
         key = _sanitize_key(key)
         for kw in (rcParamsShort, rcParamsLong, rcParams):
             try:
@@ -581,8 +581,8 @@ class rc_configurator(object):
         self[attr] = value
 
     def __setitem__(self, key, value):
-        """Modify the relevant `rcParams
-        <https://matplotlib.org/users/customizing.html>`__,
+        """Modify an `rcParams \
+<https://matplotlib.org/users/customizing.html>`__,
         :ref:`rcParamsLong`, and :ref:`rcParamsShort` setting(s)."""
         rc_short, rc_long, rc = _get_synced_params(key, value)
         rcParamsShort.update(rc_short)
@@ -676,12 +676,12 @@ class rc_configurator(object):
             "with as" block when called with ``context=True``. The options are
             as follows.
 
-            0. All settings (`rcParams
-               <https://matplotlib.org/users/customizing.html>`__,
+            0. All settings (`rcParams \
+<https://matplotlib.org/users/customizing.html>`__,
                :ref:`rcParamsLong`, and :ref:`rcParamsShort`) are returned,
                whether or not `~rc_configurator.context` has changed them.
-            1. Unchanged `rcParams
-               <https://matplotlib.org/users/customizing.html>`__
+            1. Unchanged `rcParams \
+<https://matplotlib.org/users/customizing.html>`__
                return ``None``. :ref:`rcParamsLong` and :ref:`rcParamsShort`
                are returned whether or not `~rc_configurator.context` has
                changed them.  This is used in the `~proplot.axes.Axes.__init__`
