@@ -135,7 +135,7 @@ def Locator(locator, *args, **kwargs):
 
 
 def Formatter(formatter, *args, date=False, **kwargs):
-    r"""
+    """
     Returns a `~matplotlib.ticker.Formatter` instance, used to interpret the
     `xformatter`, `xformatter_kw`, `yformatter`, and `yformatter_kw` arguments
     when passed to `~proplot.axes.XYAxes.format`, and the `formatter`
@@ -191,7 +191,7 @@ def Formatter(formatter, *args, date=False, **kwargs):
         ``'fixed'``             `~matplotlib.ticker.FixedFormatter`             List of strings
         ``'index'``             `~matplotlib.ticker.IndexFormatter`             List of strings corresponding to non-negative integer positions along the axis
         ``'theta'``             `~matplotlib.projections.polar.ThetaFormatter`  Formats radians as degrees, with a degree symbol
-        ``'pi'``                `FracFormatter` preset                          Fractions of :math:`\pi`
+        ``'pi'``                `FracFormatter` preset                          Fractions of :math:`\\pi`
         ``'e'``                 `FracFormatter` preset                          Fractions of *e*
         ``'deg'``               `SimpleFormatter` preset                        Trailing degree symbol
         ``'deglon'``            `SimpleFormatter` preset                        Trailing degree symbol and cardinal "WE" indicator
@@ -1117,23 +1117,22 @@ class InvertedCutoffTransform(mtransforms.Transform):
 
 
 class MercatorLatitudeScale(_ScaleBase, mscale.ScaleBase):
-    r"""
+    """
     Scales axis as with latitude in the `Mercator projection \
 <http://en.wikipedia.org/wiki/Mercator_projection>`__.
     Adapted from `this example \
 <https://matplotlib.org/examples/api/custom_scale_example.html>`__.
-
     The scale function is as follows.
 
     .. math::
 
-        y = \ln(\tan(\pi x/180) + \sec(\pi x/180))
+        y = \\ln(\\tan(\\pi x/180) + \\sec(\\pi x/180))
 
     The inverse scale function is as follows.
 
     .. math::
 
-        x = 180\arctan(\sinh(y))/\pi
+        x = 180\\arctan(\\sinh(y))/\\pi
 
     """
     name = 'mercator'
