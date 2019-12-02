@@ -246,15 +246,15 @@ a:visited,
 
 /* Versions panel colors */
 .rst-versions .rst-current-version {
-  padding: 0.4045em;  /* match padding for list items */
-  color: var(--call-color);
+  padding: 0.66em;  /* match padding for list items */
+  color: var(--l7-bg-color);
   background-color: var(--l3-bg-color);
 }
 .rst-versions .rst-current-version .fa {
   color: var(--main-color);
 }
 .rst-versions .rst-other-versions {
-  color: var(--call-color);
+  color: var(--l7-bg-color);
   background-color: var(--l3-bg-color);
 }
 .rst-versions .rst-other-versions dd a {
