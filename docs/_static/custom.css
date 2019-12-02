@@ -248,7 +248,7 @@ a:visited,
 
 /* Versions panel colors */
 nav.wy-nav-side {
-  padding: 0 !important;
+  padding-bottom: 2.4em !important;
 }
 .rst-versions .rst-current-version {
   padding: 0.66em;  /* match padding for list items */
