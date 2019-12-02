@@ -247,17 +247,25 @@ a:visited,
 }
 
 /* Versions panel colors */
+nav.wy-nav-side {
+  padding: 0 !important;
+}
 .rst-versions .rst-current-version {
   padding: 0.66em;  /* match padding for list items */
   color: var(--versions-color);
   background-color: var(--l3-bg-color);
-}
-.rst-versions .rst-current-version .fa {
-  color: var(--main-color);
+  border-top: solid 1px var(--l5-bg-color);
+  border-bottom: solid 1px var(--l5-bg-color);
 }
 .rst-versions .rst-other-versions {
   color: var(--versions-color);
   background-color: var(--l3-bg-color);
+}
+.rst-versions .rst-other-versions hr {
+  color: var(--versions-color);
+}
+.rst-versions .rst-current-version .fa {
+  color: var(--main-color);
 }
 .rst-versions .rst-other-versions dd a {
   color: var(--main-color);
