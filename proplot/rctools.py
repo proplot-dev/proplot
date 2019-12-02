@@ -881,17 +881,20 @@ def backend_setup(backend=None, fmt=None):
         backend = 'auto'
 
     # For notebooks
+    rc._init = False
+    ibackend = ('inline' if backend == 'auto' else backend)
     try:
-        ibackend = ('inline' if backend == 'auto' else backend)
         ipython.magic('matplotlib ' + ibackend)
         rc.reset()
-    # For terminals
-    # KeyError is evidently a subclass of the UnknownBackup exception
-    except KeyError as err:
+    # For terminals (UnknownBackend is subclass of KeyError)
+    except KeyError:
         if backend != 'auto':
-            raise err
-        ipython.magic('matplotlib qt')  # use any available Qt backend
-        rc.reset()
+            warnings.warn(f'Failed to import {backend!r} backend.')
+        try:
+            ipython.magic('matplotlib qt')  # use any available Qt backend
+            rc.reset()
+        except KeyError:  # should be impossible; pyplot needs Qt!
+            warnings.warn('Failed to import \'qt\' backend.')
 
     # Configure inline backend no matter what type of session this is
     # Should be silently ignored for terminal ipython sessions

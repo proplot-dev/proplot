@@ -1,24 +1,19 @@
 .. image:: https://github.com/lukelbd/proplot/blob/master/docs/_static/logo_long.png?raw=true
    :width: 1000px
 
-|build-status| |coverage| |docs| |license| |gitter| |pr-welcome|
+|build-status| |docs| |license| |gitter| |pr-welcome|
 
 A comprehensive, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful, publication-quality graphics.
 
 Installation
 ============
 
-To install ProPlot:
+To install or upgrade ProPlot:
 
 .. code-block:: bash
 
-   pip install proplot
+   pip install -U proplot
 
-To upgrade to the latest version:
-
-.. code-block:: bash
-
-   pip install --upgrade proplot
 
 ProPlot's only hard dependency is `matplotlib <https://matplotlib.org/>`__. The *soft* dependencies are `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`__, `basemap <https://matplotlib.org/basemap/index.html>`__, `xarray <http://xarray.pydata.org>`__, and `pandas <https://pandas.pydata.org>`__. See the documentation for details.
 
@@ -26,13 +21,9 @@ Documentation
 =============
 The documentation is `published on readthedocs <https://proplot.readthedocs.io>`__.
 
-.. |build-status| image:: https://img.shields.io/travis/lukelbd/proplot.svg?style=flat
+.. |build-status| image:: https://travis-ci.com/lukelbd/proplot.svg?branch=master
    :alt: build status
    :target: https://travis-ci.org/lukelbd/proplot
-
-.. |coverage| image:: https://codecov.io/gh/lukelbd/proplot.org/branch/master/graph/badge.svg
-   :alt: coverage
-   :target: https://codecov.io/gh/lukelbd/proplot.org
 
 .. |license| image:: https://img.shields.io/github/license/lukelbd/proplot.svg
    :alt: license
@@ -49,6 +40,11 @@ The documentation is `published on readthedocs <https://proplot.readthedocs.io>`
 .. |pr-welcome| image:: https://img.shields.io/badge/PR-Welcome-%23FF8300.svg?
    :alt: PR welcome
    :target: https://git-scm.com/book/en/v2/GitHub-Contributing-to-a-Project
+
+..
+   |coverage| image:: https://codecov.io/gh/lukelbd/proplot.org/branch/master/graph/badge.svg
+   :alt: coverage
+   :target: https://codecov.io/gh/lukelbd/proplot.org
 
 ..
    |quality| image:: https://api.codacy.com/project/badge/Grade/931d7467c69c40fbb1e97a11d092f9cd
@@ -83,4 +79,3 @@ The documentation is `published on readthedocs <https://proplot.readthedocs.io>`
    Docstrings formatted according to:
    numpy guide:      https://numpydoc.readthedocs.io/en/latest/format.html
    matplotlib guide: https://matplotlib.org/devel/documenting_mpl.html
-

@@ -179,7 +179,7 @@ class Axes(maxes.Axes):
         self._tpanels = []
         self._lpanels = []
         self._rpanels = []
-        self._tight_bbox = None  # bounding boxes are saved
+        self._tightbbox = None  # bounding boxes are saved
         self._panel_side = None
         self._panel_share = False  # True when "filled" with cbar/legend
         self._panel_parent = None
@@ -402,16 +402,17 @@ class Axes(maxes.Axes):
             return row1, row2
 
     def _range_tightbbox(self, x):
-        """Return the tight bounding box span, including twin axes and panels
-        which are not considered real children and so aren't ordinarily
-        included in the tight bounding box calculation.
-        `~proplot.axes.Axes.get_tightbbox` caches tight bounding boxes when
+        """Return the tight bounding box span from the cached bounding box.
+        `~proplot.axes.Axes.get_tightbbox` caches bounding boxes when
         `~Figure.get_tightbbox` is called."""
         # TODO: Better testing for axes visibility
+        bbox = self._tightbbox
+        if bbox is None:
+            return np.nan, np.nan
         if x == 'x':
-            return self._tight_bbox.xmin, self._tight_bbox.xmax
+            return bbox.xmin, bbox.xmax
         else:
-            return self._tight_bbox.ymin, self._tight_bbox.ymax
+            return bbox.ymin, bbox.ymax
 
     def _reassign_suplabel(self, side):
         """Re-assign the column and row labels to the relevant panel if
@@ -1211,7 +1212,7 @@ class Axes(maxes.Axes):
         """
         self._reassign_title()
         bbox = super().get_tightbbox(renderer, *args, **kwargs)
-        self._tight_bbox = bbox
+        self._tightbbox = bbox
         return bbox
 
     def heatmap(self, *args, **kwargs):
