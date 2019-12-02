@@ -22,8 +22,8 @@ Internals
 - Include `flake8` in Travis CI testing (:commit:`8743b857`).
 - Enforce source code PEP8 compliance (:commit:`78da51a7`).
 - Use pre-commit for all future commits (:commit:`e14f6809`).
-- Implement automatic layout stuff on canvas monkey patches so it's
-  robust to different backends (:commit:`67221d10`).
+- Implement tight layout stuff with canvas monkey patches (:commit:`67221d10`).
+  This is more robust to different backends.
 
 Documentation
 -------------
@@ -32,7 +32,7 @@ Documentation
 ProPlot v0.1.2 (2019-11-27)
 ===========================
 
-The very first version!
+The first version released on `PyPi <https://pypi.org/project/proplot/>`__.
 
 .. _`Luke Davis`: https://github.com/lukelbd
 .. _`Riley X. Brady`: https://github.com/bradyrx

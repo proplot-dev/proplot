@@ -157,11 +157,13 @@ def Formatter(formatter, *args, date=False, **kwargs):
 
         1. If string contains ``'%'`` and `date` is ``False``, ticks will be
            formatted using the C-notation ``string % number`` method. See
-           `this page <https://docs.python.org/3/library/stdtypes.html#printf-style-string-formatting>`__
+           `this page \
+<https://docs.python.org/3/library/stdtypes.html#printf-style-string-formatting>`__
            for a review.
         2. If string contains ``'%'`` and `date` is ``True``, datetime
            ``string % number`` formatting is used. See
-           `this page <https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes>`__
+           `this page \
+<https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes>`__
            for a review.
         3. If string contains ``{x}`` or ``{x:...}``, ticks will be
            formatted by calling ``string.format(x=number)``.
@@ -1010,10 +1012,9 @@ class CutoffScale(_ScaleBase, mscale.ScaleBase):
 
         Todo
         ----
-        Create method for drawing those diagonal "cutoff" strokes with
-        whitespace between. See `this post
-        <https://stackoverflow.com/a/5669301/4970632>`__
-        for a multi-axis solution and for this class-based solution.
+        Add method for drawing diagonal "cutoff" strokes. See
+        `this post <https://stackoverflow.com/a/5669301/4970632>`__
+        for class-based and multi-axis solutions.
         """
         # Note the space between 1-9 in Paul's answer is because actual
         # cutoffs were 0.1 away (and tick locations are 0.2 apart).
@@ -1117,9 +1118,10 @@ class InvertedCutoffTransform(mtransforms.Transform):
 
 class MercatorLatitudeScale(_ScaleBase, mscale.ScaleBase):
     r"""
-    Scales axis as with latitude in the `Mercator projection
-    <http://en.wikipedia.org/wiki/Mercator_projection>`__. Adapted from `this
-    example <https://matplotlib.org/examples/api/custom_scale_example.html>`__.
+    Scales axis as with latitude in the `Mercator projection \
+<http://en.wikipedia.org/wiki/Mercator_projection>`__.
+    Adapted from `this example \
+<https://matplotlib.org/examples/api/custom_scale_example.html>`__.
 
     The scale function is as follows.
 

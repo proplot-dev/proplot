@@ -500,10 +500,9 @@ def _canvas_preprocess(canvas, method):
     """Return a pre-processer that can be used to override instance-level
     canvas draw() and print_figure() methdos. This applies tight layout and
     aspect ratio-conserving adjustments and aligns labels. Required so that
-    the canvas methods instantiate renderers with the correct dimensions
-    (modifying renderers inplace is non-trivial -- see the MacOSX and
-    SVG renderers __init__ methods). Note that MacOSX currently `cannot be
-    resized <https://github.com/matplotlib/matplotlib/issues/15131>`__."""
+    the canvas methods instantiate renderers with the correct dimensions.
+    Note that MacOSX currently `cannot be resized \
+<https://github.com/matplotlib/matplotlib/issues/15131>`__."""
     # NOTE: This is by far the most robust approach. Renderer must be (1)
     # initialized with the correct figure size or (2) changed inplace during
     # draw, but vector graphic renderers *cannot* be changed inplace.
@@ -1851,8 +1850,8 @@ def subplots(
         for a 3-row, 3-column figure, with ``sharey > 1`` and ``spany=1``,
         your figure will have 1 ylabel instead of 9.
     alignx, aligny, align : bool or {0, 1}, optional
-        Default is ``False``. Whether to `align axis labels
-        <https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/align_labels_demo.html>`__
+        Default is ``False``. Whether to `align axis labels \
+<https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/align_labels_demo.html>`__
         for the *x* axis, *y* axis, or both axes. Only has an effect when
         `spanx`, `spany`, or `span` are ``False``.
     proj, projection : str or dict-like, optional

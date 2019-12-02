@@ -45,8 +45,8 @@ def Proj(name, basemap=False, **kwargs):
         The projection name. Like basemap, we use the PROJ.4 shorthands.
 
         The following table lists the valid projection names, their full names
-        (with links to the relevant `PROJ.4 documentation
-        <https://proj4.org/operations/projections/index.html>`__),
+        (with links to the relevant `PROJ.4 documentation \
+<https://proj4.org/operations/projections/index.html>`__),
         and whether they are available in the cartopy and basemap packages.
 
         ``(added)`` indicates a projection class that ProPlot has "added"

@@ -32,8 +32,8 @@ class _benchmark(object):
 
 def _logger(func):
     """A decorator that logs the activity of the script (it actually just
-    prints it, but it could be logging!). See `this link
-    <https://stackoverflow.com/a/1594484/4970632>`__."""
+    prints it, but it could be logging!). See `this link \
+<https://stackoverflow.com/a/1594484/4970632>`__."""
     @functools.wraps(func)
     def decorator(*args, **kwargs):
         res = func(*args, **kwargs)
@@ -59,8 +59,8 @@ def _timer(func):
 
 def _counter(func):
     """A decorator that counts and prints the cumulative time a function
-    has benn running. See `this link
-    <https://stackoverflow.com/a/1594484/4970632>`__."""
+    has benn running. See `this link \
+<https://stackoverflow.com/a/1594484/4970632>`__."""
     @functools.wraps(func)
     def decorator(*args, **kwargs):
         if BENCHMARK:
@@ -212,8 +212,8 @@ def units(value, numeric='in'):
     """
     Flexible units -- this function is used internally all over ProPlot, so
     that you don't have to use "inches" or "points" for all sizing arguments.
-    See `this link
-    <http://iamvdo.me/en/blog/css-font-metrics-line-height-and-vertical-align#lets-talk-about-font-size-first>`_
+    See `this link \
+<http://iamvdo.me/en/blog/css-font-metrics-line-height-and-vertical-align#lets-talk-about-font-size-first>`_
     for info on the em square units.
 
     Parameters

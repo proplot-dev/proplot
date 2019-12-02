@@ -3,17 +3,13 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v2.2.3
     hooks:
+    - id: no-commit-to-branch
     - id: double-quote-string-fixer
-    - id: trailing-whitespace
-    - id: end-of-file-fixer
     - id: check-docstring-first
+    - id: check-merge-conflict
     - id: check-yaml
     - id: debug-statements
-    - id: check-merge-conflict
-    - id: no-commit-to-branch
-
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.2.3
-    hooks:
+    - id: end-of-file-fixer
+    - id: trailing-whitespace
     - id: flake8
       args: ["--ignore=W503"]
