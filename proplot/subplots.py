@@ -1123,8 +1123,8 @@ class Figure(mfigure.Figure):
         self.set_size_inches(figsize)
 
     def _align_axislabels(self, b=True):
-        """Aligns spanning *x* and *y* axis labels, accounting for figure
-        margins and axes and figure panels."""
+        """Align spanning *x* and *y* axis labels in the perpendicular
+        direction and, if `b` is ``True``, the parallel direction."""
         # TODO: Ensure this is robust to complex panels and shared axes
         # NOTE: Need to turn off aligned labels before _adjust_tight_layout
         # call, so cannot put this inside Axes draw
@@ -1184,8 +1184,8 @@ class Figure(mfigure.Figure):
                         {'position': position, 'transform': transform})
 
     def _align_suplabels(self, renderer):
-        """Adjusts position of row and column labels, and aligns figure
-        super title accounting for figure marins and axes and figure panels."""
+        """Adjusts position of row and column labels, and aligns figure super
+        title accounting for figure margins and axes and figure panels."""
         # Offset using tight bounding boxes
         # TODO: Super labels fail with popup backend!! Fix this
         # NOTE: Must use get_tightbbox so (1) this will work if tight layout
@@ -1575,6 +1575,19 @@ class Figure(mfigure.Figure):
         """Before drawing the figure, applies "tight layout" and aspect
         ratio-conserving adjustments, and aligns row and column labels."""
         # Renderer fixes
+        # NOTE: After #50 this workflow will be considerably less redundant.
+        # Stacked items, like labels, colorbars, and legends, will be offset
+        # from one another and from their parent subplot(s) automatically,
+        # will only be included in Axes.get_tightbbox() calls when a flag
+        # is passed, and will only contribute to the perpendicular direction
+        # (e.g. left labels contribute only to the left-extent of the bbox).
+        # NOTE: The final _align_suplabels call is necessary because the
+        # figure-relative coordinates used to specify label positions become
+        # *out of date* after the resize by _adjust_tight_layout -- however
+        # _adjust_tight_layout will leave enough "space" for the repositioned
+        # labels. The only reason things look ok in ipython notebooks without
+        # the second _align_suplabels call is because the inline backend calls
+        # draw() *twice*.
         # WARNING: Vector graphic renderers are another ballgame, *impossible*
         # to consistently apply successive figure size changes. SVGRenderer
         # and PDFRenderer both query the size in inches before calling draw,
@@ -1603,6 +1616,7 @@ class Figure(mfigure.Figure):
         if self._auto_tight_layout:
             self._adjust_tight_layout(renderer)
         self._align_axislabels(True)
+        self._align_suplabels(renderer)
         canvas = getattr(self, 'canvas', None)
         if (hasattr(canvas, 'get_renderer')
                 and not isinstance(canvas, FigureCanvasMac)):

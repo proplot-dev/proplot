@@ -29,17 +29,19 @@
   --link-hover-color: #0079ff;
   --link-visited-color: #452bb0;
   --code-border-color: #e0e0e0;
-  --main-bg-color: #fcfcfc;
-  --code-bg-color: #ffffff;
   --menu-border-color: #909090;
   --search-border-color: #aaa;
   --search-shadow-color: #ddd;
+  --main-bg-color: #fcfcfc;
+  --code-bg-color: #ffffff;
   --empty-bg-color: #f4f4f4;
   --l1-bg-color: #e9e9e9;
   --l2-bg-color: #dcdcdc;
   --l3-bg-color: #d0d0d0;
   --l4-bg-color: #c3c3c3;
   --l5-bg-color: #b6b6b6;
+  --l6-bg-color: #a9a9a9;
+  --l7-bg-color: #9c9c9c;
   --block-bg-color: #f0f0f0;
   --accent-bg-color: #d0d0d0;
 }
@@ -65,6 +67,8 @@
   --l3-bg-color: #595959;
   --l4-bg-color: #666666;
   --l5-bg-color: #737373;
+  --l6-bg-color: #808080;
+  --l7-bg-color: #8c8c8c;
   --block-bg-color: #3a3a3a;
   --accent-bg-color: #606060;
 }
@@ -240,67 +244,20 @@ a:visited,
   font-weight: normal;
 }
 
-/* Hide expansion button when not on current item */
-.wy-menu li.toctree-l1:not(.current) a span.toctree-expand,
-.wy-menu li.toctree-l2:not(.current) a span.toctree-expand,
-.wy-menu li.toctree-l3:not(.current) a span.toctree-expand,
-.wy-menu li.toctree-l1:not(.current) a:hover span.toctree-expand,
-.wy-menu li.toctree-l2:not(.current) a:hover span.toctree-expand,
-.wy-menu li.toctree-l3:not(.current) a:hover span.toctree-expand {
-  display: none;
-}
-
-/* Make logo flush in box */
-/* Also remove bottom margins because TOC caption padding is enough */
-.wy-side-nav-search .wy-dropdown>a img.logo,
-.wy-side-nav-search>a img.logo,
-.wy-side-nav-search .wy-dropdown>a,
-.wy-side-nav-search>a {
-  padding: 0;
-}
-.wy-side-nav-search input[type=text] {
+/* Versions panel colors */
+.rst-versions .rst-current-version .fa {
   color: var(--main-color);
-  border: 1px solid var(--search-border-color);
-  background-color: var(--main-bg-color);
-  box-shadow: inset 0 1px 3px var(--main-bg-color);
-  /* border-color: var(--search-border-color); */
 }
-.wy-side-nav-search {
-  border-color: var(--search-border-color) ;
-  box-shadow-color: var(--search-shadow-color) ;
-  background-color: var(--main-color);
-  margin-bottom: 0;
-  padding-bottom: 0;
+.rst-versions .rst-current-version {
+  color: var(--call-color);
+  background-color: var(--l3-bg-color);
 }
-
-/* Current item outline color */
-.wy-menu li.toctree-l1.current:has(ul) {
-  border-top: solid 1px var(--l3-bg-color);
-  border-bottom: solid 1px var(--l3-bg-color);
+.rst-versions .rst-other-versions {
+  color: var(--call-color);
+  background-color: var(--l3-bg-color);
 }
-.wy-menu li.toctree-l2.current:has(ul) {
-  border-top: solid 1px var(--l4-bg-color);
-  border-bottom: solid 1px var(--l4-bg-color);
-}
-.wy-menu li.toctree-l3.current:has(ul) {
-  border-top: solid 1px var(--l5-bg-color);
-  border-bottom: solid 1px var(--l5-bg-color);
-}
-.wy-menu li.toctree-l4.current:has(ul) {
-  border-top: solid 1px var(--l6-bg-color);
-  border-bottom: solid 1px var(--l6-bg-color);
-}
-.wy-menu li.toctree-l5.current:has(ul) {
-  border-top: solid 1px var(--l7-bg-color);
-  border-bottom: solid 1px var(--l7-bg-color);
-}
-.wy-menu li.toctree-l1.current>a,
-.wy-menu li.toctree-l2.current>a,
-.wy-menu li.toctree-l3.current>a,
-.wy-menu li.toctree-l4.current>a,
-.wy-menu li.toctree-l5.current>a {
-  border-top: 0;
-  border-bottom: 0;
+.rst-versions .rst-other-versions dd a {
+  color: var(--main-color);
 }
 
 /* Sidebar text color, includes text-logo color for mobile */
@@ -357,6 +314,61 @@ a:visited,
 .wy-menu li.toctree-l4.current li.toctree-l5>a {
   background: var(--l5-bg-color);
   border-right: 0;
+}
+
+/* Sidebar current item outline color */
+.wy-menu li.toctree-l1.current>a {
+  border-top: solid 1px var(--l3-bg-color);
+  border-bottom: solid 1px var(--l3-bg-color);
+}
+.wy-menu li.toctree-l2.current>a {
+  border-top: solid 1px var(--l4-bg-color);
+  border-bottom: solid 1px var(--l4-bg-color);
+}
+.wy-menu li.toctree-l3.current>a {
+  border-top: solid 1px var(--l5-bg-color);
+  border-bottom: solid 1px var(--l5-bg-color);
+}
+.wy-menu li.toctree-l4.current>a {
+  border-top: solid 1px var(--l6-bg-color);
+  border-bottom: solid 1px var(--l6-bg-color);
+}
+.wy-menu li.toctree-l5.current>a {
+  border-top: solid 1px var(--l7-bg-color);
+  border-bottom: solid 1px var(--l7-bg-color);
+}
+
+/* Hide sidebar expansion button when not on current item */
+.wy-menu li.toctree-l1:not(.current) a span.toctree-expand,
+.wy-menu li.toctree-l2:not(.current) a span.toctree-expand,
+.wy-menu li.toctree-l3:not(.current) a span.toctree-expand,
+.wy-menu li.toctree-l1:not(.current) a:hover span.toctree-expand,
+.wy-menu li.toctree-l2:not(.current) a:hover span.toctree-expand,
+.wy-menu li.toctree-l3:not(.current) a:hover span.toctree-expand {
+  display: none;
+}
+
+/* Sidebar logo flush in box */
+/* Also remove bottom margins because TOC caption padding is enough */
+.wy-side-nav-search .wy-dropdown>a img.logo,
+.wy-side-nav-search>a img.logo,
+.wy-side-nav-search .wy-dropdown>a,
+.wy-side-nav-search>a {
+  padding: 0;
+}
+.wy-side-nav-search input[type=text] {
+  color: var(--main-color);
+  border: 1px solid var(--search-border-color);
+  box-shadow: inset 0 1px 3px var(--main-bg-color);
+  background-color: var(--main-bg-color);
+  /* border-color: var(--search-border-color); */
+}
+.wy-side-nav-search {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-color: var(--search-border-color);
+  background-color: var(--l1-bg-color);
+  /* box-shadow-color: var(--search-shadow-color); */
 }
 
 /* Next and previous buttons */
