@@ -272,12 +272,12 @@ class rc_configurator(object):
 
     @_counter  # about 0.05s
     def __init__(self):
-        """Magical abstract class for managing matplotlib `rcParams
-        <https://matplotlib.org/users/customizing.html>`__ settings, ProPlot
-        :ref:`rcParamsCustom` settings, and :ref:`rcParamsShort` "global"
-        settings. When initialized, this loads defaults settings plus any user
-        overrides in the ``~/.proplotrc`` file. See :ref:`Configuring proplot`
-        for details."""
+        """Magical abstract class for managing matplotlib `rcParams \
+<https://matplotlib.org/users/customizing.html>`__
+        settings, ProPlot :ref:`rcParamsCustom` settings, and
+        :ref:`rcParamsShort` "global" settings. This starts with the
+        default settings plus user ``.proplotrc`` overrides.
+        See :ref:`Configuring proplot` for details."""
         # Set the default style. Note that after first figure made, backend
         # is 'sticky', never changes! See:
         # https://stackoverflow.com/a/48322150/4970632
@@ -343,8 +343,7 @@ class rc_configurator(object):
         self._cache_restore = {}
 
     def __getitem__(self, key):
-        """Returns
-        `rcParams <https://matplotlib.org/users/customizing.html>`__,
+        """Get `rcParams <https://matplotlib.org/users/customizing.html>`__,
         :ref:`rcParamsCustom`, and :ref:`rcParamsShort` settings. If we are in
         a `~rc_configurator.context` block, may return ``None`` if the setting
         is not cached (i.e. if it was not changed by the user)."""
@@ -384,7 +383,7 @@ class rc_configurator(object):
             return None
 
     def __setitem__(self, key, value):
-        """Sets `rcParams <https://matplotlib.org/users/customizing.html>`__,
+        """Set `rcParams <https://matplotlib.org/users/customizing.html>`__,
         :ref:`rcParamsCustom`, and :ref:`rcParamsShort` settings."""
         # Check whether we are in context block
         # NOTE: Do not add key to cache until we are sure it is a valid key
@@ -563,17 +562,17 @@ class rc_configurator(object):
             automatically set to ``0`` -- other input is ignored. Internally,
             ProPlot uses all of the three available modes.
 
-            0. All settings (`rcParams
-               <https://matplotlib.org/users/customizing.html>`__,
+            0. All settings (`rcParams \
+<https://matplotlib.org/users/customizing.html>`__,
                :ref:`rcParamsCustom`, and :ref:`rcParamsShort`) are returned,
                whether or not `~rc_configurator.context` has changed them.
-            1. Unchanged `rcParams
-               <https://matplotlib.org/users/customizing.html>`__
+            1. Unchanged `rcParams \
+<https://matplotlib.org/users/customizing.html>`__
                return ``None``. :ref:`rcParamsCustom` and :ref:`rcParamsShort`
                are returned whether or not `~rc_configurator.context` has
-               changed them.  This is used in the `~proplot.axes.Axes.__init__`
-               call to `~proplot.axes.Axes.format`. When a setting lookup
-               returns ``None``, `~proplot.axes.Axes.format` does not apply it.
+               changed them.  This is used in the ``__init__`` call to
+               `~proplot.axes.Axes.format`. When a setting lookup returns
+               ``None``, `~proplot.axes.Axes.format` does not apply it.
             2. All unchanged settings return ``None``. This is used during user
                calls to `~proplot.axes.Axes.format`.
 
@@ -802,8 +801,8 @@ def backend_setup(backend=None, fmt=None):
 
 def autoreload_setup(autoreload=None):
     """
-    Set up the `autoreload
-    <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html>`__
+    Set up the `autoreload \
+<https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html>`__
     utility for ipython sessions.
 
     Parameters
@@ -823,8 +822,8 @@ def autoreload_setup(autoreload=None):
 
 def autosave_setup(autosave=None):
     """
-    Set up the `autosave
-    <https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__
+    Set up the `autosave \
+<https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__
     utility for ipython notebook sessions.
 
     Parameters

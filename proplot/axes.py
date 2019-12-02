@@ -2105,8 +2105,8 @@ class XYAxes(Axes):
 
         Note
         ----
-        If you plot something with a `datetime64
-        <https://docs.scipy.org/doc/numpy/reference/arrays.datetime.html>`__,
+        If you plot something with a `datetime64 \
+<https://docs.scipy.org/doc/numpy/reference/arrays.datetime.html>`__,
         `pandas.Timestamp`, `pandas.DatetimeIndex`, `datetime.date`,
         `datetime.time`, or `datetime.datetime` array as the *x* or *y* axis
         coordinate, the axis ticks and tick labels will be automatically
@@ -2907,8 +2907,8 @@ optional
 def _circle_path(N=100):
     """Return a circle `~matplotlib.path.Path` used as the outline
     for polar stereographic, azimuthal equidistant, and Lambert
-    conformal projections. This was developed from `this cartopy example
-    <https://scitools.org.uk/cartopy/docs/v0.15/examples/always_circular_stereo.html>`__."""  # noqa
+    conformal projections. This was developed from `this cartopy example \
+<https://scitools.org.uk/cartopy/docs/v0.15/examples/always_circular_stereo.html>`__."""  # noqa
     theta = np.linspace(0, 2 * np.pi, N)
     center, radius = [0.5, 0.5], 0.5
     verts = np.vstack([np.sin(theta), np.cos(theta)]).T
@@ -3163,11 +3163,11 @@ optional
 
 
 class GeoAxes(ProjAxes, GeoAxes):
-    """Axes subclass for plotting `cartopy
-    <https://scitools.org.uk/cartopy/docs/latest/>`__ projections. Initializes
-    the `cartopy.crs.Projection` instance, enforces `global extent
-    <https://stackoverflow.com/a/48956844/4970632>`__
-    for most projections by default, and draws `circular boundaries
+    """Axes subclass for plotting `cartopy \
+<https://scitools.org.uk/cartopy/docs/latest/>`__ projections. Initializes
+    the `cartopy.crs.Projection` instance, enforces `global extent \
+<https://stackoverflow.com/a/48956844/4970632>`__
+    for most projections by default, and draws `circular boundaries \
 <https://scitools.org.uk/cartopy/docs/latest/gallery/always_circular_stereo.html>`__
     around polar azimuthal, stereographic, and Gnomonic projections bounded at
     the equator by default."""  # noqa
