@@ -129,12 +129,17 @@ Matplotlib has a `tight layout <https://matplotlib.org/tutorials/intermediate/ti
 
    <h3>Solution</h3>
 
-In ProPlot, you can specify the physical dimensions of *subplots* instead of the figure by passing `axwidth`, `axheight`, and/or `aspect` to `~proplot.subplots.Figure`. The default behavior is ``aspect=1`` and ``axwidth=2`` (inches). Figure dimensions are then automatically calculated to accommodate the subplot geometry and the spacing adjustments.
+In ProPlot, you can specify the physical dimensions of a *reference subplot* instead of the figure by passing `axwidth`, `axheight`, and/or `aspect` to `~proplot.subplots.Figure`. The default behavior is ``aspect=1`` and ``axwidth=2`` (inches). If the `aspect ratio mode <https://matplotlib.org/2.0.2/examples/pylab_examples/equal_aspect_ratio.html>`__ for the reference subplot is set to ``'equal'``, as with :ref:`Geographic and polar plots` and `~matplotlib.axes.Axes.imshow` plots, the existing aspect will be used instead of the input `aspect`. Figure dimensions are calculated to accommodate subplot geometry and tight layout spacing as follows:
+
+* When you specify `axwidth` or `axheight`, the figure width and height are calculated automatically.
+* When you specify `width`, the figure height is calculated automatically.
+* When you specify `height`, the figure width is calculated automatically.
+* When you specify `width` and `height` or `figsize`, the figure dimensions are fixed.
 
 ..
    Several matplotlib backends require figure dimensions to be fixed. When `~proplot.subplots.Figure.draw` changes the figure dimensions, this can "surprise" the backend and cause unexpected behavior. ProPlot fixes this issue for the static inline backend and the Qt popup backend. However, this issue is unfixable the "notebook" inline backend, the "macosx" popup backend, and possibly other untested backends.
 
-ProPlot also applies a new tight layout algorithm to figures *by default*. This algorithm is simpler and more accurate because:
+By default, ProPlot also uses a custom tight layout algorithm that automatically determines the `left`, `right`, `bottom`, `top`, `wspace`, and `hspace` `~matplotlib.gridspec.GridSepc` parameters. This algorithm is simpler and more accurate because:
 
 #. The new `~proplot.subplots.FlexibleGridSpec` class permits variable spacing between rows and columns. It turns out this is *critical* for putting :ref:`Colorbars and legends` on the outside of subplots.
 #. Figures are restricted to have only *one* `~proplot.subplots.FlexibleGridSpec` per figure. This is done by requiring users to draw all of their subplots at once with `~proplot.subplots.subplots`, and it *considerably* simplifies the algorithm (see :pr:`50` for details).
@@ -389,6 +394,44 @@ It is clear that the task discretizing colormap colors should be left to the **n
 In ProPlot, all colormap visualizations are automatically discretized with the `~proplot.styletools.BinNorm` class. This reads the `extend` property passed to your plotting command and chooses colormap indices so that your colorbar levels *always* traverse the full range of colormap colors.
 
 `~proplot.styletools.BinNorm` also applies arbitrary continuous normalizer requested by the user, e.g. `~matplotlib.colors.Normalize` or `~matplotlib.colors.LogNorm`, before discretization. Think of `~proplot.styletools.BinNorm` as a "meta-normalizer" -- other normalizers perform the continuous transformation step, while this performs the discretization step.
+
+Bulk global settings
+====================
+.. raw:: html
+
+   <h3>Problem</h3>
+
+In matplotlib, there are several `~matplotlib.rcParams` that you often
+want to set *all at once*, like the tick lengths and spine colors.
+It is also often desirable to change these settings for *individual subplots*
+or *individual blocks of code* rather than globally.
+
+.. raw:: html
+
+   <h3>Solution</h3>
+
+In ProPlot, you can use the `~proplot.rctools.rc` object to
+change lots of settings at once with convenient shorthands.
+This is meant to replace matplotlib's `~matplotlib.rcParams`.
+dictionary. Settings can be changed with ``plot.rc.key = value``, ``plot.rc[key] = value``,
+``plot.rc.update(...)``, with the `~proplot.axes.Axes.format` method, or with the
+`~proplot.rctools.rc_configurator.context` method.
+
+For details, see :ref:`Configuring proplot`.
+The most notable bulk settings are described below.
+
+=============  =============================================  ===========================================================================================================================================================================
+Key            Description                                    Children
+=============  =============================================  ===========================================================================================================================================================================
+``color``      The color for axes bounds, ticks, and labels.  ``axes.edgecolor``, ``geoaxes.edgecolor``, ``axes.labelcolor``, ``tick.labelcolor``, ``hatch.color``, ``xtick.color``, ``ytick.color``
+``linewidth``  The width of axes bounds and ticks.            ``axes.linewidth``, ``geoaxes.linewidth``, ``hatch.linewidth``, ``xtick.major.width``, ``ytick.major.width``
+``small``      Font size for "small" labels.                  ``font.size``, ``tick.labelsize``, ``xtick.labelsize``, ``ytick.labelsize``, ``axes.labelsize``, ``legend.fontsize``, ``geogrid.labelsize``
+``large``      Font size for "large" labels.                  ``abc.size``, ``figure.titlesize``, ``axes.titlesize``, ``suptitle.size``, ``title.size``, ``leftlabel.size``, ``toplabel.size``, ``rightlabel.size``, ``bottomlabel.size``
+``tickpad``    Padding between ticks and labels.              ``xtick.major.pad``, ``xtick.minor.pad``, ``ytick.major.pad``, ``ytick.minor.pad``
+``tickdir``    Tick direction.                                ``xtick.direction``, ``ytick.direction``
+``ticklen``    Tick length.                                   ``xtick.major.size``, ``ytick.major.size``, ``ytick.minor.size * tickratio``, ``xtick.minor.size * tickratio``
+``tickratio``  Ratio between major and minor tick lengths.    ``xtick.major.size``, ``ytick.major.size``, ``ytick.minor.size * tickratio``, ``xtick.minor.size * tickratio``
+=============  =============================================  ===========================================================================================================================================================================
 
 Working with fonts
 ==================
