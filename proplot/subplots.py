@@ -1585,11 +1585,17 @@ class Figure(mfigure.Figure):
         #    renderer, but then '_renderer' was initialized with wrong width
         #    and height, which causes bugs. And _renderer was generated with
         #    cython code so not sure how to update the object manually.
+        # print(type(renderer).__name__)
+        # if type(renderer).__name__ == 'RendererAgg':
+        #     return  # skip
+        print('draw!', self.stale)
+        print('1', self.get_size_inches(), renderer)
         for ax in self._iter_axes():
             ax._draw_auto_legends_colorbars()
         self._adjust_aspect()
         self._align_axislabels(False)
         self._align_suplabels(renderer)
+        print('2', self.get_size_inches(), renderer)
         if self._auto_tight_layout:
             self._adjust_tight_layout(renderer)
         self._align_axislabels(True)
@@ -1599,7 +1605,11 @@ class Figure(mfigure.Figure):
                 and not isinstance(canvas, FigureCanvasMac)):
             renderer = canvas.get_renderer()
             canvas.renderer = renderer
-        return super().draw(renderer)
+        print('3', self.get_size_inches(), renderer)
+        super().draw(renderer)
+        self.stale = False
+        print('done draw!')
+        return
 
     def savefig(self, filename, **kwargs):
         """
