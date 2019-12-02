@@ -777,27 +777,6 @@ def _get_space(key, share=0, pad=None):
     return space
 
 
-class _setstate(object):
-    """Temporarily modify attribute(s) for an arbitrary object."""
-    def __init__(self, obj, **kwargs):
-        self._obj = obj
-        self._kwargs = kwargs
-        self._kwargs_orig = {
-            key: getattr(obj, key) for key in kwargs if hasattr(obj, key)
-        }
-
-    def __enter__(self):
-        for key, value in self._kwargs.items():
-            setattr(self._obj, key, value)
-
-    def __exit__(self, *args):
-        for key in self._kwargs.keys():
-            if key in self._kwargs_orig:
-                setattr(self._obj, key, self._kwargs_orig[key])
-            else:
-                delattr(self._obj, key)
-
-
 class _hidelabels(object):
     """Hide objects temporarily so they are ignored by the tight bounding box
     algorithm."""
@@ -1836,13 +1815,11 @@ class Figure(mfigure.Figure):
         else:
             canvas = self.canvas
             if canvas and hasattr(canvas, 'get_renderer'):
-                with _setstate(self, stale=False):  # suppress bbox redraw!
-                    renderer = canvas.get_renderer()
+                renderer = canvas.get_renderer()
             else:
                 from matplotlib.backends.backend_agg import FigureCanvasAgg
-                with _setstate(self, stale=False):  # suppress bbox redraw!
-                    canvas = FigureCanvasAgg(self)
-                    renderer = canvas.get_renderer()
+                canvas = FigureCanvasAgg(self)
+                renderer = canvas.get_renderer()
         return renderer
 
     def _update_figtitle(self, title, **kwargs):
