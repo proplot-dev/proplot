@@ -681,10 +681,11 @@ class SymmetricalLogScale(_ScaleBase, mscale.SymmetricalLogScale):
             Default minor tick locations are on these multiples of each power
             of the base. For example, ``subs=[1,2,5]`` draws ticks on 1, 2, 5,
             10, 20, 50, 100, 200, 500, etc.
-        basex, basey, linthreshx, linthreshy, linscalex, linscaley, subsx, subsy
+        basex, basey, linthreshx, linthreshy, linscalex, linscaley, \
+subsx, subsy
             Aliases for the above keywords. These used to be conditional
             on the *name* of the axis...... yikes.
-        """  # noqa
+        """
         kwargs = _parse_logscale_args(kwargs,
                                       'base', 'linthresh', 'linscale', 'subs')
         super().__init__(axis, **kwargs)
@@ -723,10 +724,11 @@ class FuncScale(_ScaleBase, mscale.ScaleBase):
         major_locator, minor_locator : `~matplotlib.ticker.Locator`, optional
             The default major and minor locator. By default these are the same
             as `~matplotlib.scale.LinearScale`.
-        major_formatter, minor_formatter : `~matplotlib.ticker.Formatter`, optional
+        major_formatter, minor_formatter : `~matplotlib.ticker.Formatter`, \
+optional
             The default major and minor formatter. By default these are the
             same as `~matplotlib.scale.LinearScale`.
-        """  # noqa
+        """
         if np.iterable(functions) and len(functions) == 2 and all(
                 callable(ifunction) for ifunction in functions):
             forward, inverse = functions

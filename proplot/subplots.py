@@ -13,10 +13,6 @@ import matplotlib.pyplot as plt
 import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
 import matplotlib.gridspec as mgridspec
-try:
-    from matplotlib.backends.backend_macosx import FigureCanvasMac
-except ImportError:
-    FigureCanvasMac = type(None)  # standin null type
 from .rctools import rc
 from .utils import _notNone, _counter, units
 from . import projs, axes
@@ -366,10 +362,10 @@ class FlexibleGridSpec(mgridspec.GridSpec):
                 return key, key
         raise IndexError(f'Invalid index: {key} with size {size}.')
 
-    def _spaces_as_ratios(self,
-                          hspace=None, wspace=None,  # spacing between axes
-                          height_ratios=None, width_ratios=None,
-                          **kwargs):
+    def _spaces_as_ratios(
+            self, hspace=None, wspace=None,  # spacing between axes
+            height_ratios=None, width_ratios=None,
+            **kwargs):
         """For keyword arg usage, see `FlexibleGridSpec`."""
         # Parse flexible input
         nrows, ncols = self.get_active_geometry()
@@ -477,9 +473,78 @@ class FlexibleGridSpec(mgridspec.GridSpec):
         fig.stale = True
 
 
-def _panels_kwargs(side,
-                   share=None, width=None, space=None,
-                   filled=False, figure=False):
+def _canvas_preprocess(canvas, method):
+    """Return a pre-processer that can be used to override instance-level
+    canvas draw() and print_figure() methdos. This applies tight layout and
+    aspect ratio-conserving adjustments and aligns labels. Required so that
+    the canvas methods instantiate renderers with the correct dimensions
+    (modifying renderers inplace is non-trivial -- see the MacOSX and
+    SVG renderers __init__ methods). Note that MacOSX currently `cannot be
+    resized <https://github.com/matplotlib/matplotlib/issues/15131>`__."""
+    # NOTE: The final _align_labels call is necessary because the
+    # figure-relative coordinates used to specify label positions become
+    # *out of date* after the resize by _adjust_tight_layout -- however
+    # _adjust_tight_layout will leave enough "space" for the repositioned
+    # labels. The only reason things look ok in ipython notebooks without
+    # the second _align_labels call is because the inline backend calls
+    # draw() *twice*, once from *pyplot* post_execute FigureCanvas.draw()
+    # and once from *ipython pylabtools* FigureCanvas.print_figure()
+    # NOTE: *Critical* that the renderer is (1) initialized with the
+    # correct figure size or (2) changed in-place during the draw.
+    # * Vector graphic renderers are *impossible* to modify inplace.
+    #   SVGRenderer and PDFRenderer both query get_size_inches() before
+    #   calling draw then never check again. Workaround is to have
+    #   get_size_inches() update the size with the default RendererAgg
+    #   or cached renderer before continuing (use _get_renderer copied
+    #   from matplotlib tight_layout.py now in utils.py). If former is
+    #   used may result in *slight* inconsistencies, but this has been
+    #   happening for entire development of proplot and haven't noticed.
+    # * Raster graphic renderers generally use query the bbox directly
+    #   (agg) or use FigureCanvasBase.get_width_height() (others). There
+    #   is a workaround where we can force generation of a *new* renderer
+    #   by calling FigureCanvasAgg.get_renderer() after the dimensions
+    #   have changed since preceding call. But this does not fix Cairo
+    #   or MacOSX backends.
+    # * Adding to the problem is the *manager* and sometimes the *canvas*
+    #   have their own sizes! The manager is updated whenever you call
+    #   set_size_inches(), and canvas size is not hardcoded *except* for
+    #   the MacOSX renderer it seems... but perhaps not.
+    # The above leaves us with three options. We go with the *third*
+    # because it is by far the most robust / easiest to implement.
+    # * Override get_size_inches(), apply a monkey patch to
+    #   canvas.get_width_height() whenever fig.set_canvas() is called, and
+    #   exploit the FigureCanvasAgg implementation... but this leaves us
+    #   vulnerable if future developers decided to bypass the getters!
+    # * Implement bbox and bbox_inches as *properties* that are
+    #   automatically updated if the figure is stale. Good for stability
+    #   and portability but hard to avoid recursion! Could just turn on
+    #   auto draw *once* when stale turned to True but then maybe the user
+    #   hasn't finished adding stuff to the figure!
+    # * Override canvas.draw() *and* canvas.print_figure() by adding an
+    #   instance-level monkey patch to canvases sent to set_canvas(). Then
+    #   for the macosx backend special case can resize it by calling
+    #   canvas.__init__(width, height). Renderer is always updated from
+    #   these methods with the current dimensions!
+    def _preprocess(self, *args, **kwargs):
+        fig = self.figure
+        if fig.stale:
+            renderer = fig._get_renderer()  # any renderer will do for now
+            for ax in fig._iter_axes():
+                ax._draw_auto_legends_colorbars()  # may insert panels
+            fig._adjust_aspect()
+            fig._align_axislabels(False)  # get proper label offset only
+            fig._align_labels(renderer)  # position labels and suptitle
+            if fig._auto_tight_layout:
+                fig._adjust_tight_layout(renderer)
+            fig._align_axislabels(True)  # slide spanning labels across
+            fig._align_labels(renderer)  # update figure-relative coordinates!
+        return getattr(type(self), method)(self, *args, **kwargs)
+    return _preprocess.__get__(canvas)  # ...I don't get it either
+
+
+def _panels_kwargs(
+        side, share=None, width=None, space=None,
+        filled=False, figure=False):
     """Converts global keywords like `space` and `width` to side-local
     keywords like `lspace` and `lwidth`, and applies default settings."""
     # Return values
@@ -503,7 +568,7 @@ def _panels_kwargs(side,
 
 
 def _subplots_geometry(**kwargs):
-    """Saves arguments passed to `subplots`, calculates gridspec settings and
+    """Save arguments passed to `subplots`, calculates gridspec settings and
     figure size necessary for requested geometry, and returns keyword args
     necessary to reconstruct and modify this configuration. Note that
     `wspace`, `hspace`, `left`, `right`, `top`, and `bottom` always have fixed
@@ -1085,8 +1150,8 @@ class Figure(mfigure.Figure):
                     # Put these axes into unique groups. Store groups as
                     # (left axes, right axes) or (bottom axes, top axes) pairs.
                     ax1, ax2 = axs[idx1], axs[idx2]
-                    if x != 'x':
-                        ax1, ax2 = ax2, ax1  # yrange is top-to-bottom, so make this bottom-to-top  # noqa
+                    if x != 'x':  # order bottom-to-top
+                        ax1, ax2 = ax2, ax1
                     newgroup = True
                     for (group1, group2) in groups:
                         if ax1 in group1 or ax2 in group2:
@@ -1180,7 +1245,7 @@ class Figure(mfigure.Figure):
                     spanlabel.update(
                         {'position': position, 'transform': transform})
 
-    def _align_suplabels(self, renderer):
+    def _align_labels(self, renderer):
         """Adjusts position of row and column labels, and aligns figure super
         title accounting for figure margins and axes and figure panels."""
         # Offset using tight bounding boxes
@@ -1411,31 +1476,38 @@ class Figure(mfigure.Figure):
         ranges = [ax._range_gridspec(y)[0] for ax in axs]
         return [ax for _, ax in sorted(zip(ranges, axs)) if ax.get_visible()]
 
-    def _get_renderer(fig):
+    def _get_renderer(self):
         """Get a renderer at all costs, even if it means generating a brand
         new one! Used for updating the figure bounding box when it is accessed
         and calculating centered-row legend bounding boxes. This is copied
         from tight_layout.py in matplotlib."""
-        if fig._cachedRenderer:
-            renderer = fig._cachedRenderer
+        if self._cachedRenderer:
+            renderer = self._cachedRenderer
         else:
-            canvas = fig.canvas
+            canvas = self.canvas
             if canvas and hasattr(canvas, 'get_renderer'):
-                with _setstate(fig, stale=False):  # suppress bbox redraw!
+                with _setstate(self, stale=False):  # suppress bbox redraw!
                     renderer = canvas.get_renderer()
             else:
                 from matplotlib.backends.backend_agg import FigureCanvasAgg
-                with _setstate(fig, stale=False):  # suppress bbox redraw!
-                    canvas = FigureCanvasAgg(fig)
+                with _setstate(self, stale=False):  # suppress bbox redraw!
+                    canvas = FigureCanvasAgg(self)
                     renderer = canvas.get_renderer()
         return renderer
 
     def _unlock(self):
-        """Prevents warning message when adding subplots one-by-one, used
+        """Prevent warning message when adding subplots one-by-one. Used
         internally."""
         return _unlocker(self)
 
-    def _update_suplabels(self, ax, side, labels, **kwargs):
+    def _update_figtitle(self, title, **kwargs):
+        """Assign figure "super title"."""
+        if title is not None and self._suptitle.get_text() != title:
+            self._suptitle.set_text(title)
+        if kwargs:
+            self._suptitle.update(kwargs)
+
+    def _update_labels(self, ax, side, labels, **kwargs):
         """Assigns side labels, updates label settings."""
         s = side[0]
         if s not in 'lrbt':
@@ -1459,13 +1531,6 @@ class Figure(mfigure.Figure):
                 obj.set_text(label)
             if kwargs:
                 obj.update(kwargs)
-
-    def _update_suptitle(self, title, **kwargs):
-        """Assign figure "super title"."""
-        if title is not None and self._suptitle.get_text() != title:
-            self._suptitle.set_text(title)
-        if kwargs:
-            self._suptitle.update(kwargs)
 
     def add_subplot(self, *args, **kwargs):
         """Issues warning for new users that try to call
@@ -1586,156 +1651,26 @@ class Figure(mfigure.Figure):
                                         row=row, col=col, rows=rows, cols=cols)
             return ax.legend(*args, loc='_fill', **kwargs)
 
-    @_counter
-    def draw(self, renderer):
-        """Before drawing the figure, applies "tight layout" and aspect
-        ratio-conserving adjustments, and aligns row and column labels."""
-        # Renderer fixes
-        # NOTE: After #50 this workflow will be considerably less redundant.
-        # Stacked items, like labels, colorbars, and legends, will be offset
-        # from one another and from their parent subplot(s) automatically,
-        # will only be included in Axes.get_tightbbox() calls when a flag
-        # is passed, and will only contribute to the perpendicular direction
-        # (e.g. left labels contribute only to the left-extent of the bbox).
-        # NOTE: The final _align_suplabels call is necessary because the
-        # figure-relative coordinates used to specify label positions become
-        # *out of date* after the resize by _adjust_tight_layout -- however
-        # _adjust_tight_layout will leave enough "space" for the repositioned
-        # labels. The only reason things look ok in ipython notebooks without
-        # the second _align_suplabels call is because the inline backend calls
-        # draw() *twice*, because it gets called by the *pyplot* post_execute
-        # ipython hook and the *ipython* pylabtools figure formatter.
-        # NOTE: *Critical* that the renderer is (1) initialized with the
-        # correct figure size or (2) changed in-place during the draw.
-        # * Vector graphic renderers are *impossible* to modify inplace.
-        #   SVGRenderer and PDFRenderer both query get_size_inches() before
-        #   calling draw then never check again. Workaround is to have
-        #   get_size_inches() update the size with the default RendererAgg
-        #   or cached renderer before continuing (use _get_renderer copied
-        #   from matplotlib tight_layout.py now in utils.py). If former is
-        #   used may result in *slight* inconsistencies, but this has been
-        #   happening for entire development of proplot and haven't noticed.
-        # * Raster graphic renderers generally use query the bbox directly
-        #   (agg) or use FigureCanvasBase.get_width_height() (others). There
-        #   is a workaround where we can force generation of a *new* renderer
-        #   by calling FigureCanvasAgg.get_renderer() after the dimensions
-        #   have changed since preceding call. But this does not fix Cairo
-        #   or MacOSX backends.
-        # * Adding to the problem is the *manager* and sometimes the *canvas*
-        #   have their own sizes! The manager is updated whenever you call
-        #   set_size_inches(), and canvas size is not hardcoded *except* for
-        #   the MacOSX renderer it seems... but perhaps not.
-        # The above leaves us with three options. We go with the *third* but
-        # are *very* careful about unnecessary redraws.
-        # * Override get_size_inches(), apply a monkey patch to
-        #   canvas.get_width_height() whenever fig.set_canvas() is called, and
-        #   exploit the FigureCanvasAgg implementation... but this leaves us
-        #   vulnerable if future developers decided to bypass the getters!
-        # * Implement bbox and bbox_inches as *properties* that are
-        #   automatically updated if the figure is stale. Good for stability
-        #   and portability but hard to avoid recursion! Could just turn on
-        #   auto draw *once* when stale turned to True but then maybe the user
-        #   hasn't finished adding stuff to the figure!
-        # * Override canvas.draw() by adding an instance-level monkey patch to
-        #   canvases sent to set_canvas(). Then for the macosx backend special
-        #   case can resize it by calling canvas.__init__(width, height). But
-        #   then still have to deal with renderer being initialized *before*
-        #   canvas.
-
-        # Debugging
-        # if type(renderer).__name__ == 'RendererAgg':
-        #     return  # reproduces bug for SVG graphics on RTD build
-        # from inspect import getframeinfo, stack
-        # print('draw!', *(getframeinfo(stack()[i][0])
-        #                  for i in range(9,2,-1)), sep='\n')
-
-        # Post processing steps
-        for ax in self._iter_axes():
-            ax._draw_auto_legends_colorbars()
-        self._adjust_aspect()
-        self._align_axislabels(False)
-        self._align_suplabels(renderer)
-        if self._auto_tight_layout:
-            self._adjust_tight_layout(renderer)
-        self._align_axislabels(True)
-        self._align_suplabels(renderer)
-        canvas = getattr(self, 'canvas', None)
-        if (hasattr(canvas, 'get_renderer')
-                and not isinstance(canvas, FigureCanvasMac)):
-            renderer = canvas.get_renderer()
-            canvas.renderer = renderer
-        super().draw(renderer)
-
     def savefig(self, filename, **kwargs):
-        """
-        Save the figure. Applies tight layout and aspect ratio-conserving
-        adjustments and correctly aligns labels before saving.
+        # Automatically expand user because why in gods name does
+        # matplotlib not already do this. Undocumented because do not
+        # want to overwrite matplotlib docstirng.
+        super().savefig(os.path.expanduser(filename), **kwargs)
 
-        Parameters
-        ----------
-        filename : str
-            The file path. User directories are automatically
-            expanded, e.g. ``fig.save('~/plots/plot.png')``.
-        **kwargs
-            Passed to `~matplotlib.figure.Figure.savefig`.
-        """
-        filename = os.path.expanduser(filename)
-        canvas = getattr(self, 'canvas', None)
-        if hasattr(canvas, 'get_renderer'):
-            print(self.canvas, 'update first!')
-            renderer = canvas.get_renderer()
-            canvas.renderer = renderer
-            for ax in self._iter_axes():
-                ax._draw_auto_legends_colorbars()
-            self._adjust_aspect()
-            self._align_axislabels(False)
-            self._align_suplabels(renderer)
-            if self._auto_tight_layout:
-                self._adjust_tight_layout(renderer)
-            self._align_axislabels(True)
-        else:
-            warnings.warn(
-                'Renderer unknown, could not adjust layout before saving.')
-        print('done pre-processing!')
-        super().savefig(filename, **kwargs)
-        print('done saving!')
-
-    @property
-    def bbox(self):
-        """The figure bounding box in pixels."""
-        # Only proceed if figure is initialized
-        if self.stale and not getattr(self, '_no_autodraw', False):
-            # from inspect import getframeinfo, stack
-            # print('bbox!', *(getframeinfo(stack()[i][0])
-            #                  for i in range(4,0,-1)), '', '', sep='\n')
-            with _setstate(self, _no_autodraw=True):
-                self.draw(self._get_renderer())
-            self.stale = True  # persist the stale setting
-        return self._bbox
-
-    @bbox.setter
-    def bbox(self, bbox):
-        self._bbox = bbox
-
-    @property
-    def bbox_inches(self):
-        """The figure bounding box in pixels."""
-        if self.stale and not getattr(self, '_no_autodraw', False):
-            # from inspect import getframeinfo, stack
-            # print('bbox_inches!', *(getframeinfo(stack()[i][0])
-            #                        for i in range(4,0,-1)), '', '', sep='\n')
-            with _setstate(self, _no_autodraw=True):
-                self.draw(self._get_renderer())
-            self.stale = True  # persist the stale setting
-        return self._bbox_inches
-
-    @bbox_inches.setter
-    def bbox_inches(self, bbox):
-        self._bbox_inches = bbox
+    def set_canvas(self, canvas):
+        # Set the canvas and add monkey patches to the instance-level
+        # `~matplotlib.backend_bases.FigureCanvasBase.draw` and
+        # `~matplotlib.backend_bases.FigureCanvasBase.print_figure`
+        # methods. See `_canvas_preprocess` for details."""
+        if hasattr(canvas, '_draw'):
+            canvas._draw = _canvas_preprocess(canvas, '_draw')
+        canvas.draw = _canvas_preprocess(canvas, 'draw')
+        canvas.print_figure = _canvas_preprocess(canvas, 'print_figure')
+        super().set_canvas(canvas)
 
     save = savefig
-    """Alias for `~Figure.savefig`, because calling ``fig.savefig``
-    is sort of redundant."""
+    """Alias for `~Figure.savefig` because ``fig.savefig`` is redundant. Also
+    automatically expands user paths e.g. the tilde ``'~'``."""
 
     def _iter_axes(self):
         """Iterates over all axes and panels in the figure belonging to the

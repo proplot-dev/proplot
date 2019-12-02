@@ -1699,10 +1699,11 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         ----------
         name : str
             The colormap name. Default is ``self.name + '_updated'``.
-        segmentdata, N, alpha, clip, cyclic, gamma, gamma1, gamma2, space : optional
+        segmentdata, N, alpha, clip, cyclic, gamma, gamma1, gamma2, space : \
+optional
             See `PerceptuallyUniformColormap`. If not provided,
             these are copied from the current colormap.
-        """  # noqa
+        """
         if name is None:
             name = self.name + '_updated'
         if segmentdata is None:
@@ -2182,9 +2183,12 @@ def Cycle(
         the `~cycler.Cycler` instance. If the lists have unequal length, they
         will be filled to match the length of the longest list.  See
         `~matplotlib.axes.Axes.set_prop_cycle` for more info on cyclers.
-        Also see the `line style reference <https://matplotlib.org/gallery/lines_bars_and_markers/line_styles_reference.html>`__,
-        `marker reference <https://matplotlib.org/3.1.0/gallery/lines_bars_and_markers/marker_reference.html>`__,
-        and the `custom dashes reference <https://matplotlib.org/3.1.0/gallery/lines_bars_and_markers/line_demo_dash_control.html>`__.
+        Also see the `line style reference
+        <https://matplotlib.org/gallery/lines_bars_and_markers/line_styles_reference.html>`__,
+        `marker reference
+        <https://matplotlib.org/3.1.0/gallery/lines_bars_and_markers/marker_reference.html>`__,
+        and the `custom dashes reference
+        <https://matplotlib.org/3.1.0/gallery/lines_bars_and_markers/line_demo_dash_control.html>`__.
     save : bool, optional
         Whether to save the `ListedColormap` associated with this cycle.
         See `ListedColormap.save`.
@@ -3040,8 +3044,10 @@ def register_fonts():
     # realized could dump all of the Gotham-Name.ttf files instead of
     # GothamName files, and got Helvetica bug due to unrecognized 'thin' font
     # style overwriting normal one.
-    # print(*[font for font in mfonts.fontManager.ttflist if 'HelveticaNeue' in font.fname], sep='\n')  # noqa
-    # print(*[font.fname for font in mfonts.fontManager.ttflist if 'HelveticaNeue' in font.fname], sep='\n')  # noqa
+    # print(*[font for font in mfonts.fontManager.ttflist
+    #         if 'HelveticaNeue' in font.fname], sep='\n')
+    # print(*[font.fname for font in mfonts.fontManager.ttflist
+    #         if 'HelveticaNeue' in font.fname], sep='\n')
     paths = ':'.join(_get_data_paths('fonts'))
     if 'TTFPATH' not in os.environ:
         os.environ['TTFPATH'] = paths
