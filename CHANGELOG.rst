@@ -22,6 +22,8 @@ Internals
 - Include `flake8` in Travis CI testing (:commit:`8743b857`).
 - Enforce source code PEP8 compliance (:commit:`78da51a7`).
 - Use pre-commit for all future commits (:commit:`e14f6809`).
+- Implement automatic layout stuff on canvas monkey patches so it's
+  robust to different backends (:commit:`67221d10`).
 
 Documentation
 -------------
