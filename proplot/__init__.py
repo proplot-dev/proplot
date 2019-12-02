@@ -35,10 +35,10 @@ def _warning_proplot(message, category, filename, lineno, line=None):
     Format for warnings issued by ProPlot. If this is
     just a matplotlib warning traced back to ProPlot code the *default*
     warning format is used.
-    See the `internal warning call signature
-    <https://docs.python.org/3/library/warnings.html#warnings.showwarning>`__
-    and the `default warning source code
-    <https://github.com/python/cpython/blob/master/Lib/warnings.py>`__.
+    See the `internal warning call signature \
+<https://docs.python.org/3/library/warnings.html#warnings.showwarning>`__
+    and the `default warning source code \
+<https://github.com/python/cpython/blob/master/Lib/warnings.py>`__.
     """
     if line is None:
         try:
