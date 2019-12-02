@@ -13,7 +13,7 @@
 
 import os
 import sys
-import matplotlib # load local matplotlibrc and set up docstring settings
+import matplotlib # load matplotlibrc and set up docstring settings  # noqa
 from pygments.formatters import HtmlFormatter
 from pygments.styles import get_all_styles
 
@@ -175,7 +175,7 @@ language = None
 exclude_patterns = [
     '_templates', '_themes', 'sphinxext',
     '.DS_Store', '**.ipynb_checkpoints',
-    # '[0-9a-eg-su-z]*.ipynb', # only run [figures|tight].ipynb for debugging
+    # '[0-9a-eg-su-z]*.ipynb',  # only run [figures|tight].ipynb for debugging
 ]
 
 # The name of the Pygments (syntax highlighting) style to use.

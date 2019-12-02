@@ -77,24 +77,6 @@ STYLE_ARGS_TRANSLATE = {
 }
 
 
-def _get_renderer(fig):
-    """Get renderer for calculating the legend bounding box for centered-row
-    legends. This is copied from tight_layout.py in matplotlib."""
-    # NOTE: This will be removed when #74 is done
-    if fig._cachedRenderer:
-        renderer = fig._cachedRenderer
-    else:
-        canvas = fig.canvas
-        if canvas and hasattr(canvas, 'get_renderer'):
-            renderer = canvas.get_renderer()
-        else:
-            warnings.warn('Falling back to Agg renderer.')
-            from matplotlib.backends.backend_agg import FigureCanvasAgg
-            canvas = FigureCanvasAgg(fig)
-            renderer = canvas.get_renderer()
-    return renderer
-
-
 def default_latlon(self, func, *args, latlon=True, **kwargs):
     """
     Wraps %(methods)s for `~proplot.axes.BasemapAxes`.
@@ -1840,7 +1822,7 @@ def legend_wrapper(
             legs[0].set_frame_on(True)  # easy!
         else:
             # Get coordinates
-            renderer = _get_renderer(self.figure)
+            renderer = self.figure._get_renderer()
             bboxs = [leg.get_window_extent(renderer).transformed(
                 self.transAxes.inverted()) for leg in legs]
             xmin, xmax = min(bbox.xmin for bbox in bboxs), max(

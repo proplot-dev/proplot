@@ -22,8 +22,9 @@
 :root {
   --dark-color: #404040; /* for toggle button */
   --light-color: #f0f0f0; /* for toggle button */
-  --call-color: #606060;
   --main-color: #404040;
+  --call-color: #606060;
+  --versions-color: #808080;
   --code-color: #e65820;
   --link-color: #2d6ab0;
   --link-hover-color: #0079ff;
@@ -49,8 +50,9 @@
 /* Dark mode variables */
 /* See: https://dev.to/ananyaneogi/create-a-dark-light-mode-switch-with-css-variables-34l8 */
 [data-theme="dark"] {
-  --call-color: #d0d0d0;
   --main-color: #fcfcfc;
+  --call-color: #d0d0d0;
+  --versions-color: #b0b0b0;
   --code-color: #ff8f4f;
   --link-color: #69acff;
   --link-hover-color: #549aeb;
@@ -245,15 +247,16 @@ a:visited,
 }
 
 /* Versions panel colors */
+.rst-versions .rst-current-version {
+  padding: 0.66em;  /* match padding for list items */
+  color: var(--l7-bg-color);
+  background-color: var(--l3-bg-color);
+}
 .rst-versions .rst-current-version .fa {
   color: var(--main-color);
 }
-.rst-versions .rst-current-version {
-  color: var(--call-color);
-  background-color: var(--l3-bg-color);
-}
 .rst-versions .rst-other-versions {
-  color: var(--call-color);
+  color: var(--l7-bg-color);
   background-color: var(--l3-bg-color);
 }
 .rst-versions .rst-other-versions dd a {
