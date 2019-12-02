@@ -1357,7 +1357,8 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
 
     def updated(self, colors=None, name=None, N=None, *, alpha=None):
         """
-        Creates copy of the colormap.
+        Return a new colormap with relevant properties copied from this one
+        if they were not provided as keyword arguments.
 
         Parameters
         ----------
@@ -1532,76 +1533,6 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         """Return a new colormap with *N* entries."""
         return self.updated(N=N)
 
-    def set_gamma(self, gamma=None, gamma1=None, gamma2=None):
-        """
-        Modify the gamma value(s) and refresh the lookup table.
-
-        Parameters
-        ----------
-        gamma : float, optional
-            Sets `gamma1` and `gamma2` to this identical value.
-        gamma1 : float, optional
-            If >1, makes low saturation colors more prominent. If <1,
-            makes high saturation colors more prominent. Similar to the
-            `HCLWizard <http://hclwizard.org:64230/hclwizard/>`_ option.
-            See `make_mapping_array` for details.
-        gamma2 : float, optional
-            If >1, makes high luminance colors more prominent. If <1,
-            makes low luminance colors more prominent. Similar to the
-            `HCLWizard <http://hclwizard.org:64230/hclwizard/>`_ option.
-            See `make_mapping_array` for details.
-        """
-        gamma1 = _notNone(gamma1, gamma)
-        gamma2 = _notNone(gamma2, gamma)
-        if gamma1 is not None:
-            self._gamma1 = gamma1
-        if gamma2 is not None:
-            self._gamma2 = gamma2
-        self._init()
-
-    def updated(self, name=None, segmentdata=None, N=None, *,
-                alpha=None, gamma=None, cyclic=None,
-                clip=None, gamma1=None, gamma2=None, space=None,
-                ):
-        """
-        Returns a new colormap, with relevant properties copied from this one
-        if they were not provided as keyword arguments.
-
-        Parameters
-        ----------
-        name : str
-            The colormap name. Default is ``self.name + '_updated'``.
-        segmentdata, N, alpha, clip, cyclic, gamma, gamma1, gamma2, space : optional
-            See `PerceptuallyUniformColormap`. If not provided,
-            these are copied from the current colormap.
-        """  # noqa
-        if name is None:
-            name = self.name + '_updated'
-        if segmentdata is None:
-            segmentdata = self._segmentdata
-        if space is None:
-            space = self._space
-        if clip is None:
-            clip = self._clip
-        if gamma is not None:
-            gamma1 = gamma2 = gamma
-        if gamma1 is None:
-            gamma1 = self._gamma1
-        if gamma2 is None:
-            gamma2 = self._gamma2
-        if cyclic is None:
-            cyclic = self._cyclic
-        if N is None:
-            N = self.N
-        cmap = PerceptuallyUniformColormap(
-            name, segmentdata, N,
-            alpha=alpha, clip=clip, cyclic=cyclic,
-            gamma1=gamma1, gamma2=gamma2, space=space)
-        cmap._rgba_bad = self._rgba_bad
-        cmap._rgba_under = self._rgba_under
-        cmap._rgba_over = self._rgba_over
-        return cmap
-
     @staticmethod
     def from_color(name, color, fade=None, space='hsl', **kwargs):
         """
@@ -1755,6 +1686,77 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         for key, values in zip(keys, zip(*colors)):
             cdict[key] = _make_segmentdata_array(values, coords, ratios)
         return PerceptuallyUniformColormap(name, cdict, **kwargs)
+
+    def set_gamma(self, gamma=None, gamma1=None, gamma2=None):
+        """
+        Modify the gamma value(s) and refresh the lookup table.
+
+        Parameters
+        ----------
+        gamma : float, optional
+            Sets `gamma1` and `gamma2` to this identical value.
+        gamma1 : float, optional
+            If >1, makes low saturation colors more prominent. If <1,
+            makes high saturation colors more prominent. Similar to the
+            `HCLWizard <http://hclwizard.org:64230/hclwizard/>`_ option.
+            See `make_mapping_array` for details.
+        gamma2 : float, optional
+            If >1, makes high luminance colors more prominent. If <1,
+            makes low luminance colors more prominent. Similar to the
+            `HCLWizard <http://hclwizard.org:64230/hclwizard/>`_ option.
+            See `make_mapping_array` for details.
+        """
+        gamma1 = _notNone(gamma1, gamma)
+        gamma2 = _notNone(gamma2, gamma)
+        if gamma1 is not None:
+            self._gamma1 = gamma1
+        if gamma2 is not None:
+            self._gamma2 = gamma2
+        self._init()
+
+    def updated(
+            self, name=None, segmentdata=None, N=None, *,
+            alpha=None, gamma=None, cyclic=None,
+            clip=None, gamma1=None, gamma2=None, space=None):
+        """
+        Return a new colormap with relevant properties copied from this one
+        if they were not provided as keyword arguments.
+
+        Parameters
+        ----------
+        name : str
+            The colormap name. Default is ``self.name + '_updated'``.
+        segmentdata, N, alpha, clip, cyclic, gamma, gamma1, gamma2, space : \
+optional
+            See `PerceptuallyUniformColormap`. If not provided,
+            these are copied from the current colormap.
+        """
+        if name is None:
+            name = self.name + '_updated'
+        if segmentdata is None:
+            segmentdata = self._segmentdata
+        if space is None:
+            space = self._space
+        if clip is None:
+            clip = self._clip
+        if gamma is not None:
+            gamma1 = gamma2 = gamma
+        if gamma1 is None:
+            gamma1 = self._gamma1
+        if gamma2 is None:
+            gamma2 = self._gamma2
+        if cyclic is None:
+            cyclic = self._cyclic
+        if N is None:
+            N = self.N
+        cmap = PerceptuallyUniformColormap(
+            name, segmentdata, N,
+            alpha=alpha, clip=clip, cyclic=cyclic,
+            gamma1=gamma1, gamma2=gamma2, space=space)
+        cmap._rgba_bad = self._rgba_bad
+        cmap._rgba_under = self._rgba_under
+        cmap._rgba_over = self._rgba_over
+        return cmap
 
 
 class CmapDict(dict):
@@ -2207,9 +2209,12 @@ def Cycle(
         the `~cycler.Cycler` instance. If the lists have unequal length, they
         will be filled to match the length of the longest list.  See
         `~matplotlib.axes.Axes.set_prop_cycle` for more info on cyclers.
-        Also see the `line style reference <https://matplotlib.org/gallery/lines_bars_and_markers/line_styles_reference.html>`__,
-        `marker reference <https://matplotlib.org/3.1.0/gallery/lines_bars_and_markers/marker_reference.html>`__,
-        and the `custom dashes reference <https://matplotlib.org/3.1.0/gallery/lines_bars_and_markers/line_demo_dash_control.html>`__.
+        Also see the `line style reference
+        <https://matplotlib.org/gallery/lines_bars_and_markers/line_styles_reference.html>`__,
+        `marker reference
+        <https://matplotlib.org/3.1.0/gallery/lines_bars_and_markers/marker_reference.html>`__,
+        and the `custom dashes reference
+        <https://matplotlib.org/3.1.0/gallery/lines_bars_and_markers/line_demo_dash_control.html>`__.
     save : bool, optional
         Whether to save the `ListedColormap` associated with this cycle.
         See `ListedColormap.save`.
@@ -3009,8 +3014,10 @@ def register_fonts():
     # realized could dump all of the Gotham-Name.ttf files instead of
     # GothamName files, and got Helvetica bug due to unrecognized 'thin' font
     # style overwriting normal one.
-    # print(*[font for font in mfonts.fontManager.ttflist if 'HelveticaNeue' in font.fname], sep='\n')  # noqa
-    # print(*[font.fname for font in mfonts.fontManager.ttflist if 'HelveticaNeue' in font.fname], sep='\n')  # noqa
+    # print(*[font for font in mfonts.fontManager.ttflist
+    #         if 'HelveticaNeue' in font.fname], sep='\n')
+    # print(*[font.fname for font in mfonts.fontManager.ttflist
+    #         if 'HelveticaNeue' in font.fname], sep='\n')
     paths = ':'.join(_get_data_paths('fonts'))
     if 'TTFPATH' not in os.environ:
         os.environ['TTFPATH'] = paths

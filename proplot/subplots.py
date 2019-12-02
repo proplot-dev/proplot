@@ -15,10 +15,6 @@ import matplotlib.transforms as mtransforms
 import matplotlib.gridspec as mgridspec
 import matplotlib.pyplot as plt
 from numbers import Integral
-try:
-    from matplotlib.backends.backend_macosx import FigureCanvasMac
-except ImportError:
-    FigureCanvasMac = type(None)  # standin null type
 from . import projs, axes
 from .rctools import rc
 from .utils import _notNone, _counter, units
@@ -166,6 +162,12 @@ journal : str, optional
     Passed to `matplotlib.figure.Figure`.
 """  # noqa
 docstring.interpd.update(figure_doc=_figure_doc)
+_gridspec_doc = """
+Apply the `GridSpec` to the figure or generate a new `GridSpec`
+instance with the positional and keyword arguments. For example,
+``fig.set_gridspec(GridSpec(1, 1, left=0.1))`` and
+``fig.set_gridspec(1, 1, left=0.1)`` are both valid.
+"""  # hunk for identically named methods
 
 
 def close(*args, **kwargs):
@@ -677,35 +679,49 @@ class GridSpec(mgridspec.GridSpec):
             figure.stale = True
 
 
-_gridspec_doc = """
-Apply the `GridSpec` to the figure or generate a new `GridSpec`
-instance with the positional and keyword arguments. For example,
-``fig.set_gridspec(GridSpec(1, 1, left=0.1))`` and
-``fig.set_gridspec(1, 1, left=0.1)`` are both valid.
-"""
-_save_doc = """
-Save the figure to `filename` after performing the post-processing steps
-described in `~Figure.draw`.
-
-Parameters
-----------
-filename : str
-    The file path. User directories are automatically
-    expanded, e.g. ``fig.save('~/plots/plot.png')``.
-**kwargs
-    Passed to `~matplotlib.figure.Figure.savefig`.
-"""
-
-
 def _approx_equal(num1, num2, digits=10):
     """Test the equality of two floating point numbers out to `N` digits."""
     hi, lo = 10**digits, 10**-digits
     return round(num1 * hi) * lo == round(num2 * hi) * lo
 
 
-def _get_panelargs(side,
-                   share=None, width=None, space=None,
-                   filled=False, figure=False):
+def _canvas_preprocess(canvas, method):
+    """Return a pre-processer that can be used to override instance-level
+    canvas draw() and print_figure() methdos. This applies tight layout and
+    aspect ratio-conserving adjustments and aligns labels. Required so that
+    the canvas methods instantiate renderers with the correct dimensions
+    (modifying renderers inplace is non-trivial -- see the MacOSX and
+    SVG renderers __init__ methods). Note that MacOSX currently `cannot be
+    resized <https://github.com/matplotlib/matplotlib/issues/15131>`__."""
+    # NOTE: This is by far the most robust approach. Renderer must be (1)
+    # initialized with the correct figure size or (2) changed inplace during
+    # draw, but vector graphic renderers *cannot* be changed inplace.
+    # Options include (1) monkey patch canvas.get_width_height, overriding
+    # figure.get_size_inches, and exploit the FigureCanvasAgg.get_renderer()
+    # implementation (because FigureCanvasAgg queries the bbox directly
+    # rather than using get_width_height() so requires a workaround), or (2)
+    # override bbox and bbox_inches as *properties*, but these are really
+    # complicated, dangerous, and result in unnecessary extra draws. The
+    # below is by far the best approach.
+    def _preprocess(self, *args, **kwargs):
+        fig = self.figure  # update even if not stale! needed after saves
+        renderer = fig._get_renderer()  # any renderer will do for now
+        for ax in fig._iter_axes():
+            ax._draw_auto_legends_colorbars()  # may insert panels
+        fig._adjust_aspect()
+        fig._align_axislabels(False)  # get proper label offset only
+        fig._align_labels(renderer)  # position labels and suptitle
+        if fig._auto_tight_layout:
+            fig._adjust_tight_layout(renderer)
+        fig._align_axislabels(True)  # slide spanning labels across
+        fig._align_labels(renderer)  # update figure-relative coordinates!
+        return getattr(type(self), method)(self, *args, **kwargs)
+    return _preprocess.__get__(canvas)  # ...I don't get it either
+
+
+def _get_panelargs(
+        side, share=None, width=None, space=None,
+        filled=False, figure=False):
     """Return default properties for new axes and figure panels."""
     s = side[0]
     if s not in 'lrbt':
@@ -761,11 +777,30 @@ def _get_space(key, share=0, pad=None):
     return space
 
 
-class _hide_labels(object):
-    """Hides objects temporarily so they are ignored by the tight bounding
-    box algorithm."""
-    # TODO: Remove this by overriding the tight bounding box calculation
+class _setstate(object):
+    """Temporarily modify attribute(s) for an arbitrary object."""
+    def __init__(self, obj, **kwargs):
+        self._obj = obj
+        self._kwargs = kwargs
+        self._kwargs_orig = {
+            key: getattr(obj, key) for key in kwargs if hasattr(obj, key)
+        }
 
+    def __enter__(self):
+        for key, value in self._kwargs.items():
+            setattr(self._obj, key, value)
+
+    def __exit__(self, *args):
+        for key in self._kwargs.keys():
+            if key in self._kwargs_orig:
+                setattr(self._obj, key, self._kwargs_orig[key])
+            else:
+                delattr(self._obj, key)
+
+
+class _hidelabels(object):
+    """Hide objects temporarily so they are ignored by the tight bounding box
+    algorithm."""
     def __init__(self, *args):
         self._labels = args
 
@@ -1140,8 +1175,8 @@ class GeometrySolver(object):
                     # Put these axes into unique groups. Store groups as
                     # (left axes, right axes) or (bottom axes, top axes) pairs.
                     ax1, ax2 = axs[idx1], axs[idx2]
-                    if x != 'x':
-                        ax1, ax2 = ax2, ax1  # yrange is top-to-bottom, so make this bottom-to-top  # noqa
+                    if x != 'x':  # order bottom-to-top
+                        ax1, ax2 = ax2, ax1
                     newgroup = True
                     for (group1, group2) in groups:
                         if ax1 in group1 or ax2 in group2:
@@ -1237,10 +1272,9 @@ class GeometrySolver(object):
                     spanlabel.update(
                         {'position': position, 'transform': transform})
 
-    def _align_suplabels(self, renderer):
-        """Adjust the position of row and column labels, and align figure
-        super title accounting for figure margins and axes and
-        figure panels."""
+    def _align_labels(self, renderer):
+        """Adjust the position of row and column labels, and align figure super
+        title accounting for figure margins and axes and figure panels."""
         # Offset using tight bounding boxes
         # TODO: Super labels fail with popup backend!! Fix this
         # NOTE: Must use get_tightbbox so (1) this will work if tight layout
@@ -1259,7 +1293,7 @@ class GeometrySolver(object):
             coords = [None] * len(axs)
             if s == 't' and suptitle_on:
                 supaxs = axs
-            with _hide_labels(*labels):
+            with _hidelabels(*labels):
                 for i, (ax, label) in enumerate(zip(axs, labels)):
                     label_on = label.get_text().strip()
                     if not label_on:
@@ -1792,8 +1826,34 @@ class Figure(mfigure.Figure):
             if pax is not None:  # apply to panel?
                 getattr(pax, x + 'axis').label.update(kwargs)
 
-    def _update_suplabels(self, ax, side, labels, **kwargs):
-        """Assign side labels and update label settings. The labels are
+    def _get_renderer(self):
+        """Get a renderer at all costs, even if it means generating a brand
+        new one! Used for updating the figure bounding box when it is accessed
+        and calculating centered-row legend bounding boxes. This is copied
+        from tight_layout.py in matplotlib."""
+        if self._cachedRenderer:
+            renderer = self._cachedRenderer
+        else:
+            canvas = self.canvas
+            if canvas and hasattr(canvas, 'get_renderer'):
+                with _setstate(self, stale=False):  # suppress bbox redraw!
+                    renderer = canvas.get_renderer()
+            else:
+                from matplotlib.backends.backend_agg import FigureCanvasAgg
+                with _setstate(self, stale=False):  # suppress bbox redraw!
+                    canvas = FigureCanvasAgg(self)
+                    renderer = canvas.get_renderer()
+        return renderer
+
+    def _update_figtitle(self, title, **kwargs):
+        """Assign figure "super title"."""
+        if title is not None and self._suptitle.get_text() != title:
+            self._suptitle.set_text(title)
+        if kwargs:
+            self._suptitle.update(kwargs)
+
+    def _update_labels(self, ax, side, labels, **kwargs):
+        """Assign side labels and updates label settings. The labels are
         aligned down the line by geometry_configurators."""
         s = side[0]
         if s not in 'lrbt':
@@ -1817,13 +1877,6 @@ class Figure(mfigure.Figure):
                 obj.set_text(label)
             if kwargs:
                 obj.update(kwargs)
-
-    def _update_suptitle(self, title, **kwargs):
-        """Assign the figure "super title"."""
-        if title is not None and self._suptitle.get_text() != title:
-            self._suptitle.set_text(title)
-        if kwargs:
-            self._suptitle.update(kwargs)
 
     def add_gridspec(self, *args, **kwargs):
         """This docstring is replaced below."""
@@ -2131,86 +2184,28 @@ class Figure(mfigure.Figure):
                                     row=row, col=col, rows=rows, cols=cols)
         return ax.legend(*args, loc='_fill', **kwargs)
 
-    @_counter
-    def draw(self, renderer):
-        """Draw the figure and apply various post-processing steps: Scale the
-        figure dimensions to account for axes; align row, column, and axis
-        labels; and optionally apply "tight layout" gridspec adjustments."""
-        # Renderer fixes
-        # NOTE: After #50 this workflow will be considerably less redundant.
-        # Stacked items, like labels, colorbars, and legends, will be offset
-        # from one another and from their parent subplot(s) automatically,
-        # will only be included in Axes.get_tightbbox() calls when a flag
-        # is passed, and will only contribute to the perpendicular direction
-        # (e.g. left labels contribute only to the left-extent of the bbox).
-        # NOTE: The final _align_suplabels call is necessary because the
-        # figure-relative coordinates used to specify label positions become
-        # *out of date* after the resize by _adjust_tight_layout -- however
-        # _adjust_tight_layout will leave enough "space" for the repositioned
-        # labels. The only reason things look ok in ipython notebooks without
-        # the second _align_suplabels call is because the inline backend calls
-        # draw() *twice*.
-        # WARNING: Vector graphic renderers are another ballgame, *impossible*
-        # to consistently apply successive figure size changes. SVGRenderer
-        # and PDFRenderer both query the size in inches before calling draw,
-        # and cannot modify PDFPage or SVG renderer props inplace, so idea was
-        # to override get_size_inches. But when get_size_inches is called, the
-        # canvas has no renderer, so cannot apply tight layout yet!
-        # WARNING: Raster graphic renderers are fixable, but *critical* that
-        # draw() is invoked with the same renderer FigureCanvasAgg.print_png()
-        # uses to render the image. Since print_png() calls get_renderer()
-        # after draw(), and get_renderer() returns a new renderer if it detects
-        # renderer dims and figure dims are out of sync, need to fix this!
-        # 1. We use 'get_renderer' to update 'canvas.renderer' with the new
-        #    figure width and height, then use that renderer for rest of draw
-        #    This repair *breaks* just the *macosx* popup backend and not the
-        #    qt backend! So for now just employ simple exception if this is
-        #    macosx backend.
-        # 2. Could also set '_lastKey' on canvas and 'width' and 'height' on
-        #    renderer, but then '_renderer' was initialized with wrong width
-        #    and height, which causes bugs. And _renderer was generated with
-        #    cython code so not sure how to update the object manually.
-        for ax in self._iter_axes():
-            ax._draw_auto_legends_colorbars()
-        self._fill_gridspecpars()
-        self._adjust_aspect()
-        self._align_axislabels(False)
-        self._align_suplabels(renderer)
-        if self._auto_tight_layout:
-            self._adjust_tight_layout(renderer)
-        self._align_axislabels(True)
-        self._align_suplabels(renderer)
-        canvas = getattr(self, 'canvas', None)
-        if (hasattr(canvas, 'get_renderer')
-                and not isinstance(canvas, FigureCanvasMac)):
-            renderer = canvas.get_renderer()
-            canvas.renderer = renderer
-        return super().draw(renderer)
+    def savefig(self, filename, **kwargs):
+        # Automatically expand user because why in gods name does
+        # matplotlib not already do this. Undocumented because do not
+        # want to overwrite matplotlib docstirng.
+        super().savefig(os.path.expanduser(filename), **kwargs)
 
     def save(self, filename, **kwargs):
-        """This docstring is replaced below."""
-        filename = os.path.expanduser(filename)
-        canvas = getattr(self, 'canvas', None)
-        if hasattr(canvas, 'get_renderer'):
-            renderer = canvas.get_renderer()
-            canvas.renderer = renderer
-            for ax in self._iter_axes():
-                ax._draw_auto_legends_colorbars()
-            self._fill_gridspecpars()
-            self._adjust_aspect()
-            self._align_axislabels(False)
-            self._align_suplabels(renderer)
-            if self._auto_tight_layout:
-                self._adjust_tight_layout(renderer)
-            self._align_axislabels(True)
-        else:
-            warnings.warn(
-                'Renderer is unknown, cannot adjust layout before saving.')
-        super().savefig(filename, **kwargs)
+        # Alias for `~Figure.savefig` because ``fig.savefig`` is redundant.
+        # Also automatically expand user paths e.g. the tilde ``'~'``.
+        return self.savefig(filename, **kwargs)
 
-    def savefig(self, filename, **kwargs):
-        """This docstring is replaced below."""
-        return self.save(filename, **kwargs)
+    def set_canvas(self, canvas):
+        # Set the canvas and add monkey patches to the instance-level
+        # `~matplotlib.backend_bases.FigureCanvasBase.draw` and
+        # `~matplotlib.backend_bases.FigureCanvasBase.print_figure`
+        # methods. The latter is called by save() and by the inline backend.
+        # See `_canvas_preprocess` for details."""
+        if hasattr(canvas, '_draw'):
+            canvas._draw = _canvas_preprocess(canvas, '_draw')
+        canvas.draw = _canvas_preprocess(canvas, 'draw')
+        canvas.print_figure = _canvas_preprocess(canvas, 'print_figure')
+        super().set_canvas(canvas)
 
     def set_alignx(self, value):
         """Set the *x* axis label alignment mode."""
@@ -2303,8 +2298,6 @@ class Figure(mfigure.Figure):
         self._ref = ref
 
     # Add documentation
-    save.__doc__ = _save_doc
-    savefig.__doc__ = _save_doc
     add_gridspec.__doc__ = _gridspec_doc
     set_gridspec.__doc__ = _gridspec_doc
 

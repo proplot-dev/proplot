@@ -20,7 +20,6 @@ BENCHMARK = False  # change this to turn on benchmarking
 
 class _benchmark(object):
     """Context object that can be used to time import statements."""
-
     def __init__(self, message):
         self.message = message
 

@@ -760,7 +760,7 @@ class Axes(maxes.Axes):
             'fontfamily': 'font.family'
         }, context=True)
         if suptitle or kw:
-            fig._update_suptitle(suptitle, **kw)
+            fig._update_figtitle(suptitle, **kw)
         # Labels
         llabels = _notNone(
             rowlabels, leftlabels, llabels, None,
@@ -784,7 +784,7 @@ class Axes(maxes.Axes):
                 'fontfamily': 'font.family'
             }, context=True)
             if labels or kw:
-                fig._update_suplabels(self, side, labels, **kw)
+                fig._update_labels(self, side, labels, **kw)
 
         # A-b-c labels
         titles_dict = self._titles_dict
@@ -1482,10 +1482,11 @@ class Axes(maxes.Axes):
         """Alias for `~matplotlib.axes.Axes.violinplot`."""
         return self.violinplot(*args, **kwargs)
 
+    #: Alias for `~Axes.panel_axes`.
     panel = panel_axes
-    """Alias for `~Axes.panel_axes`."""
+
+    #: Alias for `~Axes.inset_axes`.
     inset = inset_axes
-    """Alias for `~Axes.inset_axes`."""
 
     @property
     def number(self):
@@ -2049,11 +2050,13 @@ class XYAxes(Axes):
         xscale_kw, yscale_kw : dict-like, optional
             The *x* and *y* axis scale settings. Passed to
             `~proplot.axistools.Scale`.
-        xspineloc, yspineloc : {'both', 'bottom', 'top', 'left', 'right', 'neither', 'center', 'zero'}, optional
+        xspineloc, yspineloc : {'both', 'bottom', 'top', 'left', 'right', \
+'neither', 'center', 'zero'}, optional
             The *x* and *y* axis spine locations.
         xloc, yloc : optional
             Aliases for `xspineloc`, `yspineloc`.
-        xtickloc, ytickloc : {'both', 'bottom', 'top', 'left', 'right', 'neither'}, optional
+        xtickloc, ytickloc : {'both', 'bottom', 'top', 'left', 'right', \
+'neither'}, optional
             Which *x* and *y* axis spines should have major and minor tick
             marks.
         xtickminor, ytickminor : bool, optional
@@ -2145,7 +2148,8 @@ class XYAxes(Axes):
 
         Note
         ----
-        If you plot something with a `datetime64 <https://docs.scipy.org/doc/numpy/reference/arrays.datetime.html>`__,
+        If you plot something with a `datetime64
+        <https://docs.scipy.org/doc/numpy/reference/arrays.datetime.html>`__,
         `pandas.Timestamp`, `pandas.DatetimeIndex`, `datetime.date`,
         `datetime.time`, or `datetime.datetime` array as the *x* or *y* axis
         coordinate, the axis ticks and tick labels will be automatically
@@ -2154,7 +2158,7 @@ class XYAxes(Axes):
         See also
         --------
         :py:obj:`Axes.format`, :py:obj:`Axes.context`
-        """  # noqa
+        """
         rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
         with rc.context(rc_kw, mode=rc_mode):
             # Background basics
@@ -2755,7 +2759,8 @@ class PolarAxes(Axes, mproj.PolarAxes):
             The radial origin.
         theta0 : {'N', 'NW', 'W', 'SW', 'S', 'SE', 'E', 'NE'}
             The zero azimuth location.
-        thetadir : {-1, 1, 'clockwise', 'anticlockwise', 'counterclockwise'}, optional
+        thetadir : {-1, 1, 'clockwise', 'anticlockwise', 'counterclockwise'}, \
+optional
             The positive azimuth direction. Clockwise corresponds to ``-1``
             and anticlockwise corresponds to ``-1``. Default is ``-1``.
         thetamin, thetamax : float, optional
@@ -2803,7 +2808,7 @@ class PolarAxes(Axes, mproj.PolarAxes):
         See also
         --------
         :py:obj:`Axes.format`, :py:obj:`Axes.context`
-        """  # noqa
+        """
         rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
         with rc.context(rc_kw, mode=rc_mode):
             # Not mutable default args
@@ -3232,7 +3237,7 @@ class GeoAxes(ProjAxes, GeoAxes):
     the `cartopy.crs.Projection` instance, enforces `global extent
     <https://stackoverflow.com/a/48956844/4970632>`__
     for most projections by default, and draws `circular boundaries
-    <https://scitools.org.uk/cartopy/docs/latest/gallery/always_circular_stereo.html>`__
+<https://scitools.org.uk/cartopy/docs/latest/gallery/always_circular_stereo.html>`__
     around polar azimuthal, stereographic, and Gnomonic projections bounded at
     the equator by default."""  # noqa
     #: The registered projection name.
