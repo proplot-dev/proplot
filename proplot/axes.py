@@ -1464,8 +1464,8 @@ class Axes(maxes.Axes):
             `negpos` is ``False``.
         where : ndarray, optional
             Boolean ndarray mask for points you want to shade. See
-            `this matplotlib example
-            <https://matplotlib.org/3.1.0/gallery/pyplots/whats_new_98_4_fill_between.html#sphx-glr-gallery-pyplots-whats-new-98-4-fill-between-py>`__.
+            `this matplotlib example \
+<https://matplotlib.org/3.1.0/gallery/pyplots/whats_new_98_4_fill_between.html#sphx-glr-gallery-pyplots-whats-new-98-4-fill-between-py>`__.
         %(standardize_1d_kwargs)s
         %(cycle_changer_kwargs)s
 
@@ -2006,8 +2006,8 @@ class Axes(maxes.Axes):
             **kwargs):
         """
         Adds convenient keyword args.
-        Makes the style shown in right plot of `this matplotlib example
-        <https://matplotlib.org/3.1.0/gallery/statistics/customized_violin.html>`__
+        Makes the style shown in right plot of `this matplotlib example \
+<https://matplotlib.org/3.1.0/gallery/statistics/customized_violin.html>`__
         the default. It is also no longer possible to show minima and maxima
         with whiskers, because this is redundant.
 
@@ -2088,7 +2088,8 @@ class Axes(maxes.Axes):
 
         This is actually a collection of lines, added as a
         `~matplotlib.collections.LineCollection` instance. See
-        `this matplotlib example <https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line>`__.
+        `this matplotlib example \
+<https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line>`__.
 
         Parameters
         ----------
@@ -2106,7 +2107,7 @@ class Axes(maxes.Axes):
             between the `values` coordinates. The number corresponds to the
             number of additional color levels between the line joints
             and the halfway points between line joints.
-        """  # noqa
+        """
         # First error check
         # WARNING: So far this only works for 1D *x* and *y* coordinates.
         # Cannot draw multiple colormap lines at once

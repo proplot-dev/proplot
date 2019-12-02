@@ -1509,10 +1509,10 @@ locator_kw : dict-like, optional
 symmetric : bool, optional
     Toggle this to make automatically generated levels symmetric about zero.
 edgefix : bool, optional
-    Whether to fix the the `white-lines-between-filled-contours
-    <https://stackoverflow.com/q/8263769/4970632>`__
-    and `white-lines-between-pcolor-rectangles
-    <https://stackoverflow.com/q/27092991/4970632>`__
+    Whether to fix the the `white-lines-between-filled-contours \
+<https://stackoverflow.com/q/8263769/4970632>`__
+    and `white-lines-between-pcolor-rectangles \
+<https://stackoverflow.com/q/27092991/4970632>`__
     issues. This slows down figure rendering by a bit. Default is
     :rc:`image.edgefix`.
 labels : bool, optional
