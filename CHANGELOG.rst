@@ -15,7 +15,7 @@ ProPlot v1.0.0 (2020-##-##)
 This will be published when some major refactoring tasks are completed.
 See :pr:`45`, :pr:`46`, and :pr:`50`.
 
-ProPlot v0.2.0 (2019-12-02)
+ProPlot v0.2.X (2019-12-02)
 ===========================
 Features
 --------
@@ -45,7 +45,7 @@ Internals
   first. May be overkill for `~matplotlib.figure.Figure.savefig` but critical for
   correctly displaying already-drawn notebook figures.
 
-ProPlot v0.1.3 (2019-12-01)
+ProPlot v0.1.X (2019-12-01)
 ===========================
 Internals
 ---------
@@ -59,7 +59,7 @@ Documentation
 -------------
 - Various `RTD bugfixes <https://github.com/readthedocs/readthedocs.org/issues/6412>`__ (e.g. :commit:`37633a4c`).
 
-ProPlot v0.1.2 (2019-11-27)
+ProPlot v0.0.0 (2019-11-27)
 ===========================
 
 The first version released on `PyPi <https://pypi.org/project/proplot/>`__.
