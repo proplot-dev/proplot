@@ -19,30 +19,28 @@ ProPlot v0.2.0 (2019-12-02)
 ===========================
 Features
 --------
-- Support manual resizing for all backends, including ``osx`` and ``qt``.
+- Support manual resizing for all backends, including ``osx`` and ``qt`` (:commit:`3a622887`).
 
 Bug fixes
 ---------
 - Disable automatic resizing for the ``nbAgg`` interactive inline backend. Found no
-  suitable workaround.
-- Remove several `~matplotlib.rcParams` settings from the default ``.proplotrc``.
-  ``savefig.dpi`` and ``savefig.transparent`` were affecting the ``nbAgg``
-  interactive inline backend.
+  suitable workaround (:commit:`3a622887`).
 
 Deprecated
 ----------
 - Remove the ``nbsetup`` rc setting in favor of separate ``autosave``, ``autoreload``,
   and ``matplotlib`` settings for triggering the respective ``%`` magic commands.
-  (``nbsetup`` is still accepted but no longer documented).
+  (:commit:`3a622887`; ``nbsetup`` is still accepted but no longer documented).
 - Rename the ``format`` rc setting in favor of the ``inlinefmt`` setting
-  (``format`` is still accepted but no longer documented).
+  (:commit:`3a622887`; ``format`` is still accepted but no longer documented).
 - Rename ``FlexibleGridSpec`` and ``FlexibleSubplotSpec`` to ``GridSpec``
-  and ``SubplotSpec`` (until :pr:`50` is merged it is impossible
+  and ``SubplotSpec`` (:commit:`3a622887`; until :pr:`50` is merged it is impossible
   to use these manually, so this won't bother anyone).
 
 Internals
 ---------
 - Rename ``rcParamsCustom`` to ``rcParamsLong`` (this is inaccessible to the user).
+- Organize the ``rc`` documentation and the default ``.proplotrc`` file.
 - When calling ``fig.canvas.print_figure()`` on a stale figure, call ``fig.canvas.draw()``
   first. May be overkill for `~matplotlib.figure.Figure.savefig` but critical for
   correctly displaying already-drawn notebook figures.

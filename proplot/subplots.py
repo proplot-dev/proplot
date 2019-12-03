@@ -1648,6 +1648,7 @@ class Figure(mfigure.Figure):
         figsize_trunc = (int(self.bbox.width) / self.dpi,
                          int(self.bbox.height) / self.dpi)
         if manual and figsize != figsize_true and figsize != figsize_trunc:
+            print('lock!', figsize, figsize_true, figsize_trunc)
             self._subplots_kw.update(width=width, height=height)
         super().set_size_inches(width, height, forward=forward)
 

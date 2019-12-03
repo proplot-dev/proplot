@@ -157,5 +157,6 @@ savefig.directory:
 savefig.dpi:          300
 savefig.format:       pdf
 savefig.pad_inches:   0.0
+savefig.transparent:  True
 xtick.minor.visible:  True
 ytick.minor.visible:  True
