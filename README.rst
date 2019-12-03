@@ -5,6 +5,10 @@
 
 A comprehensive, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful, publication-quality graphics.
 
+Documentation
+=============
+The documentation is `published on readthedocs <https://proplot.readthedocs.io>`__.
+
 Installation
 ============
 
@@ -17,9 +21,6 @@ To install or upgrade ProPlot:
 
 ProPlot's only hard dependency is `matplotlib <https://matplotlib.org/>`__. The *soft* dependencies are `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`__, `basemap <https://matplotlib.org/basemap/index.html>`__, `xarray <http://xarray.pydata.org>`__, and `pandas <https://pandas.pydata.org>`__. See the documentation for details.
 
-Documentation
-=============
-The documentation is `published on readthedocs <https://proplot.readthedocs.io>`__.
 
 .. |build-status| image:: https://travis-ci.com/lukelbd/proplot.svg?branch=master
    :alt: build status
@@ -69,12 +70,3 @@ The documentation is `published on readthedocs <https://proplot.readthedocs.io>`
    |issues| image:: https://img.shields.io/github/issues/lukelbd/proplot.svg
    :alt: issues
    :target: https://github.com/lukelbd/issues
-
-..
-   Sphinx is used following this guide (less traditional approach):
-   https://daler.github.io/sphinxdoc-test/includeme.html
-
-..
-   Docstrings formatted according to:
-   numpy guide:      https://numpydoc.readthedocs.io/en/latest/format.html
-   matplotlib guide: https://matplotlib.org/devel/documenting_mpl.html
