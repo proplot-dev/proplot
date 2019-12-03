@@ -33,9 +33,9 @@ The documentation is `published on readthedocs <https://proplot.readthedocs.io>`
    :alt: docs
    :target: https://proplot.readthedocs.io/en/latest/?badge=latest
 
-.. |pypi| image:: https://badge.fury.io/py/proplot.svg
+.. |pypi| image:: https://img.shields.io/pypi/v/proplot?color=83%20197%2052
    :alt: pypi
-   :target: https://badge.fury.io/py/proplot
+   :target: https://pypi.org/project/proplot/
 
 .. |gitter| image:: https://badges.gitter.im/gitterHQ/gitter.svg
    :alt: gitter
@@ -59,11 +59,6 @@ The documentation is `published on readthedocs <https://proplot.readthedocs.io>`
    |hits| image:: http://hits.dwyl.io/lukelbd/lukelbd/proplot.svg
    :alt: hits
    :target: http://hits.dwyl.io/lukelbd/lukelbd/proplot
-
-..
-   |pypi| image:: http://img.shields.io/pypi/v/proplot.svg?text=version
-    :target: https://pypi.org/project/proplot/
-    :alt: Latest release
 
 ..
    |contributions| image:: https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat
