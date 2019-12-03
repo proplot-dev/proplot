@@ -26,8 +26,8 @@ except ModuleNotFoundError:
     def get_ipython():
         return None
 __all__ = [
-    'rc', 'rc_configurator', 'autosave_setup',
-    'autoreload_setup', 'matplotlib_setup'
+    'rc', 'rc_configurator', 'ipython_autosave',
+    'ipython_autoreload', 'ipython_matplotlib'
 ]
 
 # Initialize
@@ -530,11 +530,11 @@ class rc_configurator(object):
         if key == 'title.pad':
             key = 'axes.titlepad'
         if key == 'matplotlib':
-            matplotlib_setup(value)
+            ipython_matplotlib(value)
         if key == 'autosave':
-            autosave_setup(value)
+            ipython_autosave(value)
         if key == 'autoreload':
-            autoreload_setup(value)
+            ipython_autoreload(value)
         if key == 'rgbcycle':  # if must re-apply cycler afterward
             cache[key] = value
             rcParamsShort[key] = value
@@ -876,7 +876,7 @@ class rc_configurator(object):
 
 
 @_timer
-def matplotlib_setup(backend=None, fmt=None):
+def ipython_matplotlib(backend=None, fmt=None):
     """
     Set up the `matplotlib backend \
 <https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__
@@ -947,7 +947,7 @@ def matplotlib_setup(backend=None, fmt=None):
         'config InlineBackend.print_figure_kwargs = {"bbox_inches":None}')
 
 
-def autoreload_setup(autoreload=None):
+def ipython_autoreload(autoreload=None):
     """
     Set up the `ipython autoreload utility \
 <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html>`__
@@ -975,7 +975,7 @@ def autoreload_setup(autoreload=None):
     ipython.magic('autoreload ' + str(autoreload))
 
 
-def autosave_setup(autosave=None):
+def ipython_autosave(autosave=None):
     """
     Set up the `ipython autosave utility \
 <https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__
@@ -1009,6 +1009,6 @@ def autosave_setup(autosave=None):
 rc = rc_configurator()
 
 # Call setup functions
-matplotlib_setup()
-autoreload_setup()
-autosave_setup()
+ipython_matplotlib()
+ipython_autoreload()
+ipython_autosave()
