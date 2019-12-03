@@ -1,7 +1,7 @@
 .. image:: https://github.com/lukelbd/proplot/blob/master/docs/_static/logo_long.png?raw=true
    :width: 1000px
 
-|build-status| |docs| |license| |gitter| |pr-welcome|
+|build-status| |docs| |pypi| |license| |gitter| |pr-welcome|
 
 A comprehensive, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful, publication-quality graphics.
 
@@ -32,6 +32,10 @@ The documentation is `published on readthedocs <https://proplot.readthedocs.io>`
 .. |docs| image:: https://readthedocs.org/projects/proplot/badge/?version=latest
    :alt: docs
    :target: https://proplot.readthedocs.io/en/latest/?badge=latest
+
+.. |pypi| image:: https://badge.fury.io/py/proplot.svg
+   :alt: pypi
+   :target: https://badge.fury.io/py/proplot
 
 .. |gitter| image:: https://badges.gitter.im/gitterHQ/gitter.svg
    :alt: gitter

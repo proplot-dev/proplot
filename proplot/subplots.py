@@ -17,7 +17,8 @@ from .rctools import rc
 from .utils import _notNone, _counter, units
 from . import projs, axes
 __all__ = [
-    'axes_grid', 'close', 'show', 'subplots', 'Figure', 'FlexibleGridSpec',
+    'axes_grid', 'close', 'show', 'subplots', 'Figure',
+    'GridSpec', 'SubplotSpec',
 ]
 
 # Translation
@@ -234,12 +235,11 @@ class axes_grid(list):
         raise AttributeError(f'Found mixed types for attribute {attr!r}.')
 
 
-class FlexibleSubplotSpec(mgridspec.SubplotSpec):
+class SubplotSpec(mgridspec.SubplotSpec):
     """
     Adds two helper methods to `~matplotlib.gridspec.SubplotSpec` that return
     the geometry *excluding* rows and columns allocated for spaces.
     """
-
     def get_active_geometry(self):
         """Returns the number of rows, number of columns, and 1D subplot
         location indices, ignoring rows and columns allocated for spaces."""
@@ -264,7 +264,7 @@ class FlexibleSubplotSpec(mgridspec.SubplotSpec):
             nrows // 2, ncols // 2, row1 // 2, row2 // 2, col1 // 2, col2 // 2)
 
 
-class FlexibleGridSpec(mgridspec.GridSpec):
+class GridSpec(mgridspec.GridSpec):
     """
     `~matplotlib.gridspec.GridSpec` generalization that allows for grids with
     *variable spacing* between successive rows and columns of axes.
@@ -276,7 +276,6 @@ class FlexibleGridSpec(mgridspec.GridSpec):
     These "spaces" are then allowed to vary in width using the builtin
     `width_ratios` and `height_ratios` properties.
     """
-
     def __init__(self, figure, nrows=1, ncols=1, **kwargs):
         """
         Parameters
@@ -290,7 +289,7 @@ class FlexibleGridSpec(mgridspec.GridSpec):
             The vertical and horizontal spacing between rows and columns of
             subplots, respectively. In `~proplot.subplots.subplots`, ``wspace``
             and ``hspace`` are in physical units. When calling
-            `FlexibleGridSpec` directly, values are scaled relative to
+            `GridSpec` directly, values are scaled relative to
             the average subplot height or width.
 
             If float, the spacing is identical between all rows and columns. If
@@ -337,7 +336,7 @@ class FlexibleGridSpec(mgridspec.GridSpec):
             num1, num2 = np.ravel_multi_index((num1, num2), (nrows, ncols))
         num1 = self._positem(num1)
         num2 = self._positem(num2)
-        return FlexibleSubplotSpec(self, num1, num2)
+        return SubplotSpec(self, num1, num2)
 
     @staticmethod
     def _positem(size):
@@ -366,7 +365,7 @@ class FlexibleGridSpec(mgridspec.GridSpec):
             self, hspace=None, wspace=None,  # spacing between axes
             height_ratios=None, width_ratios=None,
             **kwargs):
-        """For keyword arg usage, see `FlexibleGridSpec`."""
+        """For keyword arg usage, see `GridSpec`."""
         # Parse flexible input
         nrows, ncols = self.get_active_geometry()
         hratios = np.atleast_1d(_notNone(height_ratios, 1))
@@ -434,7 +433,7 @@ class FlexibleGridSpec(mgridspec.GridSpec):
 
     def get_active_geometry(self):
         """Returns the number of active rows and columns, i.e. the rows and
-        columns that aren't skipped by `~FlexibleGridSpec.__getitem__`."""
+        columns that aren't skipped by `~GridSpec.__getitem__`."""
         return self._nrows_active, self._ncols_active
 
     def update(self, **kwargs):
@@ -491,18 +490,28 @@ def _canvas_preprocess(canvas, method):
     # complicated, dangerous, and result in unnecessary extra draws. The
     # below is by far the best approach.
     def _preprocess(self, *args, **kwargs):
+        if method == 'draw_idle' and self._is_idle_drawing:
+            return  # copied from source code
         fig = self.figure  # update even if not stale! needed after saves
+        if fig.stale and method == 'print_figure':
+            # Needed for displaying already-drawn inline figures, for
+            # some reason tight layout algorithm gets it wrong otherwise.
+            # Concerned that draw_idle() might wait until after
+            # print_figure() is done, so we use draw().
+            self.draw()
         renderer = fig._get_renderer()  # any renderer will do for now
         for ax in fig._iter_axes():
             ax._draw_auto_legends_colorbars()  # may insert panels
-        fig._adjust_aspect()
-        fig._align_axislabels(False)  # get proper label offset only
-        fig._align_labels(renderer)  # position labels and suptitle
-        if fig._auto_tight_layout:
-            fig._adjust_tight_layout(renderer)
+        if rc['backend'] != 'nbAgg':
+            fig._adjust_aspect()  # resizes figure
+            if fig._auto_tight_layout:
+                fig._align_axislabels(False)  # get proper label offset only
+                fig._align_labels(renderer)  # position labels and suptitle
+                fig._adjust_tight_layout(renderer)
         fig._align_axislabels(True)  # slide spanning labels across
         fig._align_labels(renderer)  # update figure-relative coordinates!
-        return getattr(type(self), method)(self, *args, **kwargs)
+        res = getattr(type(self), method)(self, *args, **kwargs)
+        return res
     return _preprocess.__get__(canvas)  # ...I don't get it either
 
 
@@ -814,7 +823,7 @@ class Figure(mfigure.Figure):
         self._tpanels = []
         self._lpanels = []
         self._rpanels = []
-        gridspec = FlexibleGridSpec(self, **(gridspec_kw or {}))
+        gridspec = GridSpec(self, **(gridspec_kw or {}))
         nrows, ncols = gridspec.get_active_geometry()
         self._barray = np.empty((0, ncols), dtype=bool)
         self._tarray = np.empty((0, ncols), dtype=bool)
@@ -998,7 +1007,6 @@ class Figure(mfigure.Figure):
             else:
                 pass  # matplotlib issues warning, forces aspect == 'auto'
         # Apply aspect
-        # Account for floating point errors
         if aspect is not None:
             aspect = round(aspect * 1e10) * 1e-10
             subplots_kw = self._subplots_kw
@@ -1006,7 +1014,7 @@ class Figure(mfigure.Figure):
             if aspect != aspect_prev:
                 subplots_kw['aspect'] = aspect
                 figsize, gridspec_kw, _ = _subplots_geometry(**subplots_kw)
-                self.set_size_inches(figsize)
+                self.set_size_inches(figsize, manual=False)
                 self._gridspec_main.update(**gridspec_kw)
 
     def _adjust_tight_layout(self, renderer):
@@ -1124,7 +1132,7 @@ class Figure(mfigure.Figure):
         })
         figsize, gridspec_kw, _ = _subplots_geometry(**subplots_kw)
         self._gridspec_main.update(**gridspec_kw)
-        self.set_size_inches(figsize)
+        self.set_size_inches(figsize, manual=False)
 
     def _align_axislabels(self, b=True):
         """Align spanning *x* and *y* axis labels in the perpendicular
@@ -1324,13 +1332,13 @@ class Figure(mfigure.Figure):
 
         # Update figure
         figsize, gridspec_kw, _ = _subplots_geometry(**subplots_kw)
-        self.set_size_inches(figsize)
+        self.set_size_inches(figsize, manual=False)
         if exists:
             gridspec = self._gridspec_main
             gridspec.update(**gridspec_kw)
         else:
             # New gridspec
-            gridspec = FlexibleGridSpec(self, **gridspec_kw)
+            gridspec = GridSpec(self, **gridspec_kw)
             self._gridspec_main = gridspec
             # Reassign subplotspecs to all axes and update positions
             # May seem inefficient but it literally just assigns a hidden,
@@ -1591,27 +1599,57 @@ class Figure(mfigure.Figure):
                                         row=row, col=col, rows=rows, cols=cols)
             return ax.legend(*args, loc='_fill', **kwargs)
 
+    def save(self, filename, **kwargs):
+        # Alias for `~Figure.savefig` because ``fig.savefig`` is redundant.
+        # Also automatically expands user paths e.g. the tilde ``'~'``.
+        return self.savefig(filename, **kwargs)
+
     def savefig(self, filename, **kwargs):
         # Automatically expand user because why in gods name does
         # matplotlib not already do this. Undocumented because do not
-        # want to overwrite matplotlib docstirng.
+        # want to overwrite matplotlib docstring.
         super().savefig(os.path.expanduser(filename), **kwargs)
 
     def set_canvas(self, canvas):
         # Set the canvas and add monkey patches to the instance-level
-        # `~matplotlib.backend_bases.FigureCanvasBase.draw` and
+        # `~matplotlib.backend_bases.FigureCanvasBase.draw_idle` and
         # `~matplotlib.backend_bases.FigureCanvasBase.print_figure`
         # methods. The latter is called by save() and by the inline backend.
         # See `_canvas_preprocess` for details."""
-        if hasattr(canvas, '_draw'):
-            canvas._draw = _canvas_preprocess(canvas, '_draw')
-        canvas.draw = _canvas_preprocess(canvas, 'draw')
+        # NOTE: Use draw_idle() rather than draw() becuase latter is not
+        # always called! For example, MacOSX uses _draw() and nbAgg does
+        # not call draw() *or* _draw()! Not sure how it works actually.
+        # Should be same because we piggyback draw() which *itself* defers
+        # the event. Just make sure to check _is_idle_drawing!
+        canvas.draw_idle = _canvas_preprocess(canvas, 'draw_idle')
         canvas.print_figure = _canvas_preprocess(canvas, 'print_figure')
         super().set_canvas(canvas)
 
-    save = savefig
-    """Alias for `~Figure.savefig` because ``fig.savefig`` is redundant. Also
-    automatically expands user paths e.g. the tilde ``'~'``."""
+    def set_size_inches(self, w, h=None, forward=True, manual=True):
+        # Set the figure size and, if this is being called manually or from
+        # an interactive backend, override the geometry tracker so users can
+        # use interactive backends. See #76. Undocumented because this is
+        # only relevant internally.
+        # NOTE: Bitmap renderers use int(Figure.bbox.[width|height]) which
+        # rounds to whole pixels. So when renderer resizes the figure
+        # internally there may be roundoff error! Always compare to *both*
+        # Figure.get_size_inches() and the truncated bbox dimensions times dpi.
+        # Comparison is critical because most renderers call set_size_inches()
+        # before any resizing interaction!
+        if h is None:
+            width, height = w
+        else:
+            width, height = w, h
+        if not all(np.isfinite(_) for _ in (width, height)):
+            raise ValueError('Figure size must be finite, not '
+                             f'({width}, {height}).')
+        figsize = (width, height)
+        figsize_true = tuple(self.get_size_inches())
+        figsize_trunc = (int(self.bbox.width) / self.dpi,
+                         int(self.bbox.height) / self.dpi)
+        if manual and figsize != figsize_true and figsize != figsize_trunc:
+            self._subplots_kw.update(width=width, height=height)
+        super().set_size_inches(width, height, forward=forward)
 
     def _iter_axes(self):
         """Iterates over all axes and panels in the figure belonging to the
@@ -1780,12 +1818,12 @@ def subplots(
     hratios, wratios
         Aliases for `height_ratios`, `width_ratios`.
     width_ratios, height_ratios : float or list thereof, optional
-        Passed to `FlexibleGridSpec`. The width
+        Passed to `GridSpec`, denotes the width
         and height ratios for the subplot grid. Length of `width_ratios`
         must match the number of rows, and length of `height_ratios` must
         match the number of columns.
     wspace, hspace, space : float or str or list thereof, optional
-        Passed to `FlexibleGridSpec`, denotes the
+        Passed to `GridSpec`, denotes the
         spacing between grid columns, rows, and both, respectively. If float
         or string, expanded into lists of length ``ncols-1`` (for `wspace`)
         or length ``nrows-1`` (for `hspace`).
@@ -1794,7 +1832,7 @@ def subplots(
         the list. By default, these are determined by the "tight
         layout" algorithm.
     left, right, top, bottom : float or str, optional
-        Passed to `FlexibleGridSpec`, denote the width of padding between the
+        Passed to `GridSpec`, denotes the width of padding between the
         subplots and the figure edge. Units are interpreted by
         `~proplot.utils.units`. By default, these are determined by the
         "tight layout" algorithm.

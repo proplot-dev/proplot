@@ -4,5 +4,5 @@
 # Tested SVG vs. PNG and speeds are comparable!
 small: 9
 large: 10
-format: svg
-nbsetup: True
+inlinefmt: svg
+matplotlib: 'auto'

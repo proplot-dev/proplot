@@ -141,20 +141,20 @@ In ProPlot, you can specify the physical dimensions of a *reference subplot* ins
 
 By default, ProPlot also uses a custom tight layout algorithm that automatically determines the `left`, `right`, `bottom`, `top`, `wspace`, and `hspace` `~matplotlib.gridspec.GridSepc` parameters. This algorithm is simpler and more accurate because:
 
-#. The new `~proplot.subplots.FlexibleGridSpec` class permits variable spacing between rows and columns. It turns out this is *critical* for putting :ref:`Colorbars and legends` on the outside of subplots.
-#. Figures are restricted to have only *one* `~proplot.subplots.FlexibleGridSpec` per figure. This is done by requiring users to draw all of their subplots at once with `~proplot.subplots.subplots`, and it *considerably* simplifies the algorithm (see :pr:`50` for details).
+#. The new `~proplot.subplots.GridSpec` class permits variable spacing between rows and columns. It turns out this is *critical* for putting :ref:`Colorbars and legends` on the outside of subplots.
+#. Figures are restricted to have only *one* `~proplot.subplots.GridSpec` per figure. This is done by requiring users to draw all of their subplots at once with `~proplot.subplots.subplots`, and it *considerably* simplifies the algorithm (see :pr:`50` for details).
 
 See :ref:`Figure tight layout` for details.
 
 ..
-   #. The `~proplot.subplots.FlexibleGridSpec` spacing parameters are specified in physical units instead of figure-relative units.
+   #. The `~proplot.subplots.GridSpec` spacing parameters are specified in physical units instead of figure-relative units.
 
 ..
-   The `~matplotlib.gridspec.FlexibleGridSpec` class is useful for creating figures with complex subplot geometry.
+   The `~matplotlib.gridspec.GridSpec` class is useful for creating figures with complex subplot geometry.
 ..
    Users want to control axes positions with gridspecs.
 ..
-   * Matplotlib permits arbitrarily many `~matplotlib.gridspec.FlexibleGridSpec`\ s per figure. This greatly complicates the tight layout algorithm for little evident gain.
+   * Matplotlib permits arbitrarily many `~matplotlib.gridspec.GridSpec`\ s per figure. This greatly complicates the tight layout algorithm for little evident gain.
 ..
    ProPlot introduces a marginal limitation (see discussion in :pr:`50`) but *considerably* simplifies the tight layout algorithm.
 
@@ -186,7 +186,7 @@ individual subplots and along contiguous subplots on the edge of the figure:
 
 * Passing ``loc='l'``, ``loc='r'``, ``loc='b'``, or ``loc='t'`` to `~proplot.axes.Axes` `~proplot.axes.Axes.colorbar` or `~proplot.axes.Axes` `~proplot.axes.Axes.legend` draws the colorbar or legend along the outside of the axes.
 * Passing ``loc='l'``, ``loc='r'``, ``loc='b'``, or ``loc='t'`` to `~proplot.subplots.Figure` `~proplot.subplots.Figure.colorbar` and `~proplot.subplots.Figure.legend` draws the colorbar or legend along the edge of the figure, centered relative to the *subplot grid* rather than figure coordinates.
-* Outer colorbars and legends don't mess up the subplot layout or subplot aspect ratios, since `~proplot.subplots.FlexibleGridSpec` permits variable spacing between subplot rows and columns. This is critical e.g. if you have a colorbar between columns 1 and 2 but nothing between columns 2 and 3.
+* Outer colorbars and legends don't mess up the subplot layout or subplot aspect ratios, since `~proplot.subplots.GridSpec` permits variable spacing between subplot rows and columns. This is critical e.g. if you have a colorbar between columns 1 and 2 but nothing between columns 2 and 3.
 * `~proplot.subplots.Figure` and `~proplot.axes.Axes` colorbar widths are specified in *physical* units rather than relative units. This makes colorbar thickness independent of figure size and easier to get just right.
 
 The colorbar and legend commands also add several new features, like colorbars-from-lines and centered-row legends. And to make `~proplot.axes.Axes` `~proplot.axes.Axes.colorbar` consistent with `~proplot.axes.Axes` `~proplot.axes.Axes.legend`, you can also now draw *inset* colorbars. See :ref:`Colorbars and legends` for details.
@@ -431,6 +431,7 @@ Key            Description                                    Children
 ``tickdir``    Tick direction.                                ``xtick.direction``, ``ytick.direction``
 ``ticklen``    Tick length.                                   ``xtick.major.size``, ``ytick.major.size``, ``ytick.minor.size * tickratio``, ``xtick.minor.size * tickratio``
 ``tickratio``  Ratio between major and minor tick lengths.    ``xtick.major.size``, ``ytick.major.size``, ``ytick.minor.size * tickratio``, ``xtick.minor.size * tickratio``
+``margin``     Margin width when limits not explicitly set.    ``axes.xmargin``, ``axes.ymargin``
 =============  =============================================  ===========================================================================================================================================================================
 
 Working with fonts
