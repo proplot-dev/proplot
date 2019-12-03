@@ -1643,12 +1643,12 @@ class Figure(mfigure.Figure):
         if not all(np.isfinite(_) for _ in (width, height)):
             raise ValueError('Figure size must be finite, not '
                              f'({width}, {height}).')
-        figsize = (width, height)
-        figsize_true = tuple(self.get_size_inches())
-        figsize_trunc = (int(self.bbox.width) / self.dpi,
-                         int(self.bbox.height) / self.dpi)
-        if manual and figsize != figsize_true and figsize != figsize_trunc:
-            print('lock!', figsize, figsize_true, figsize_trunc)
+        width_true, height_true = self.get_size_inches()
+        width_trunc = int(self.bbox.width) / self.dpi
+        height_trunc = int(self.bbox.height) / self.dpi
+        if (manual  # have actually seen (width_true, heigh_trunc)!
+                and width not in (width_true, width_trunc)
+                and height not in (height_true, height_trunc)):
             self._subplots_kw.update(width=width, height=height)
         super().set_size_inches(width, height, forward=forward)
 
