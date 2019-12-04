@@ -208,18 +208,95 @@ In matplotlib, `~matplotlib.pyplot.subplots` returns a 2D `~numpy.ndarray`, a 1D
    <h3>Solution</h3>
 
 In ProPlot, `~proplot.subplots.subplots` returns an `~proplot.subplots.axes_grid` container filled with axes objects. This container lets you call arbitrary methods on arbitrary subplots all at once, which can be useful when you want to style your subplots identically (e.g. ``axs.format(tickminor=False)``).
+See :ref:`Creating figures` for details.
 
-The `~proplot.subplots.axes_grid` container also
+The `~proplot.subplots.axes_grid` class also
 unifies the behavior of the three possible `matplotlib.pyplot.subplots` return values:
 
-* `~proplot.subplots.axes_grid` is a `list` subclass that behaves like a scalar when it contains just one element.
-* `~proplot.subplots.axes_grid` supports row-major or column-major 1D indexing, e.g. ``axs[0]``. The order can be changed by passing ``order='F'`` or ``order='C'`` to `~proplot.subplots.subplots`.
-* `~proplot.subplots.axes_grid` permits 2D indexing, e.g. ``axs[1,0]``. Since `~proplot.subplots.subplots` can generate figures with arbitrarily complex subplot geometry, this 2D indexing is useful only when the arrangement happens to be a clean 2D matrix.
-
-See :ref:`Creating figures` for details.
+* `~proplot.subplots.axes_grid` permits 2d indexing, e.g. ``axs[1,0]``. Since `~proplot.subplots.subplots` can generate figures with arbitrarily complex subplot geometry, this 2d indexing is useful only when the arrangement happens to be a clean 2d matrix.
+* Since `~proplot.subplots.axes_grid` is a `list` subclass, it also supports 1d indexing, e.g. ``axs[1]``. The default order can be switched from row-major to column-major by passing ``order='F'`` to `~proplot.subplots.subplots`.
+* `~proplot.subplots.axes_grid` behaves like a scalar when it contains just one element. So if you just made a single axes with ``f, axs = plot.subplots()``, calling ``axs[0].command`` is equivalent to ``axs.command``.
 
 ..
    This goes with ProPlot's theme of preserving the object-oriented spirit, but making things easier for users.
+
+New and improved plotting methods
+=================================
+
+.. raw:: html
+
+   <h3>Problem</h3>
+
+Certain plotting tasks are quite difficult to accomplish
+with the default matplotlib API. The `seaborn`, `xarray`, and `pandas`
+packages offer improvements, but it would be nice
+to have this functionality build right into matplotlib.
+There is also room for improvement that none of these packages
+address.
+
+..
+   Matplotlib also has some finicky plotting issues
+   that normally requires
+..
+   For example, when you pass coordinate *centers* to `~matplotlib.axes.Axes.pcolor` and `~matplotlib.axes.Axes.pcolormesh`, they are interpreted as *edges* and the last column and row of your data matrix is ignored. Also, to add labels to `~matplotlib.axes.Axes.contour` and `~matplotlib.axes.Axes.contourf`, you need to call a dedicated `~matplotlib.axes.Axes.clabel` method instead of just using a keyword argument.
+
+
+.. raw:: html
+
+   <h3>Solution</h3>
+
+
+The ProPlot `~proplot.axes.Axes` class
+overrides various plotting methods to make
+your life easier.
+ProPlot also provides
+*constistent behavior* when
+switching between different commands, for
+example `~matplotlib.axes.Axes.plot` and `~matplotlib.axes.Axes.scatter`
+or `~matplotlib.axes.Axes.contourf` and `~matplotlib.axes.Axes.pcolormesh`.
+
+..
+   ProPlot also uses wrappers to *unify* the behavior of various
+   plotting methods.
+
+* All positional arguments for "1d" plotting methods are standardized by `~proplot.wrappers.standardize_1d`. All positional arguments for "2d" plotting methods are standardized by `~proplot.wrappers.standardize_2d`. See :ref:`1d plotting` and :ref:`2d plotting` for details.
+* Just like `~proplot.axes.Axes.format`, certain keyword arguments for 1d and 2d plotting commands are passed through :ref:`Constructor functions`.
+
+      * All 1d plotting methods accept a `cycle` keyword argument interpreted by `~proplot.styletools.Cycle`. See :ref:`Color cycles` for details.
+      * All 2d plotting methods accept a `cmap` keyword argument interpreted by `~proplot.styletools.Colormap` and a `norm` keyword argument interpreted by `~proplot.styletools.Norm`. See :ref:`Colormaps` for details.
+
+* All 2d plotting methods now accept a `labels` keyword argument. This is used to draw contour labels or grid box labels on heatmap plots. See :ref:`2d plotting` for details.
+* ProPlot fixes the irritating `white-lines-between-filled-contours <https://stackoverflow.com/q/8263769/4970632>`__, `white-lines-between-pcolor-patches <https://stackoverflow.com/q/27092991/4970632>`__, and `white-lines-between-colorbar-patches <https://stackoverflow.com/q/15003353/4970632>`__ observed when saving vector graphics.
+* Matplotlib requires coordinate *centers* for contour plots and *edges* for pcolor plots. If you pass *centers* to pcolor, matplotlib treats them as *edges* and silently trims one row/column of your data. ProPlot changes this behavior:
+
+    * If edges are passed to `~matplotlib.axes.Axes.contour` or `~matplotlib.axes.Axes.contourf`, centers are *calculated* from the edges
+    * If centers are passed to `~matplotlib.axes.Axes.pcolor` or `~matplotlib.axes.Axes.pcolormesh`, edges are *estimated* from the centers.
+
+
+ProPlot also duplicates various `seaborn`, `xarray`, and `pandas` features
+using *new* axes methods and by overriding *old* axes
+methods.
+
+=====================================  ====  =============================================================================================================================================================================================
+Plotting method                        New?  Description
+=====================================  ====  =============================================================================================================================================================================================
+`~proplot.axes.Axes.area`              ✓     Alias for `~matplotlib.axes.Axes.fill_between`.
+`~proplot.axes.Axes.areax`             ✓     Alias for `~matplotlib.axes.Axes.fill_betweenx`.
+`~proplot.axes.Axes.parametric`        ✓     Draws *parametric* line plots, where the parametric coordinate is denoted with colormap colors.
+`~matplotlib.axes.Axes.bar`            ✗     Now accepts 2D arrays, *stacks* or *groups* successive columns. Soon will be able to use different colors for positive/negative data.
+`~matplotlib.axes.Axes.barh`           ✗     As with `~matplotlib.axes.Axes.bar`, but for horizontal bars.
+`~matplotlib.axes.Axes.fill_between`   ✗     Now accepts 2D arrays, *stacks* or *overlays* successive columns. Also can use different colors for positive/negative data.
+`~matplotlib.axes.Axes.fill_betweenx`  ✗     As with `~matplotlib.axes.Axes.fill_between`, but for horizontal fills.
+`~proplot.axes.Axes.heatmap`           ✓     Invokes `~matplotlib.axes.Axes.pcolormesh` and puts ticks at the center of each box.
+`~matplotlib.axes.Axes.contour`        ✗     Add contour labels by passing ``labels=True``, interpolate to global coverage for `~proplot.axes.ProjAxes` by passing ``globe=True``.
+`~matplotlib.axes.Axes.contourf`       ✗     As with `~matplotlib.axes.Axes.contour`. Labels are colored black or white according to the filled contour's luminance.
+`~matplotlib.axes.Axes.pcolor`         ✗     Add gridbox labels by passing ``labels=True``, interpolate to global coverage by passing ``globe=True``.  Labels are colored black or white according to the underlying box's luminance.
+`~matplotlib.axes.Axes.pcolormesh`     ✗     As with `~matplotlib.axes.Axes.pcolor`.
+=====================================  ====  =============================================================================================================================================================================================
+
+
+..
+   * `~proplot.axes.Axes.area` plots can be assigned different colors for negative and positive values. This will also be added to `~matplotlib.axes.Axes.bar` soon.
 
 Xarray and pandas integration
 =============================
@@ -240,66 +317,12 @@ This approach is not ideal -- plotting methods should be invoked on the `~proplo
 
 ProPlot *reproduces* most of the `xarray.DataArray.plot`, `pandas.DataFrame.plot`, and `pandas.Series.plot` features on the `~proplot.axes.Axes` methods themselves!
 
-Axis tick labels, axis labels, subplot titles, and colorbar and legend labels are automatically applied
-when a `~xarray.DataArray`, `~pandas.DataFrame`, or `~pandas.Series` is passed through
-a plotting method instead of a `~numpy.ndarray`.
-This is accomplished by passing positional arguments through the
-`~proplot.wrappers.standardize_1d` and `~proplot.wrappers.standardize_2d`
-wrappers. See :ref:`1d plotting` and :ref:`2d plotting` for details.
-
-Various plotting improvements
-=============================
-
-.. raw:: html
-
-   <h3>Problem</h3>
-
-Certain plotting tasks are quite difficult to accomplish
-with the default matplotlib API. The `seaborn`, `xarray`, and `pandas`
-packages offer improvements, but it would be nice
-to have this functionality build right into matplotlib.
-
-Matplotlib also has some finicky plotting issues. For example, when you pass coordinate *centers* to `~matplotlib.axes.Axes.pcolor` and `~matplotlib.axes.Axes.pcolormesh`, they are interpreted as *edges* and the last column and row of your data matrix is ignored. Also, to add labels to `~matplotlib.axes.Axes.contour` and `~matplotlib.axes.Axes.contourf`, you need to call a dedicated `~matplotlib.axes.Axes.clabel` method instead of just using a keyword argument.
-
-.. raw:: html
-
-   <h3>Solutions</h3>
-
-The ProPlot `~proplot.axes.Axes` class
-wraps various plotting methods to duplicate
-certain `seaborn`, `xarray`, and `pandas` features,
-and includes several brand new features.
-
-=====================================  ====  =============================================================================================================================================================================================
-Plotting method                        New?  Description
-=====================================  ====  =============================================================================================================================================================================================
-`~proplot.axes.Axes.area`              ✓     Alias for `~matplotlib.axes.Axes.fill_between`.
-`~proplot.axes.Axes.areax`             ✓     Alias for `~matplotlib.axes.Axes.fill_betweenx`.
-`~proplot.axes.Axes.parametric`        ✓     Draws *parametric* line plots, where the parametric coordinate is denoted with colormap colors.
-`~matplotlib.axes.Axes.bar`            ✗     Now accepts 2D arrays, *stacks* or *groups* successive columns. Soon will be able to use different colors for positive/negative data.
-`~matplotlib.axes.Axes.barh`           ✗     As with `~matplotlib.axes.Axes.bar`, but for horizontal bars.
-`~matplotlib.axes.Axes.fill_between`   ✗     Now accepts 2D arrays, *stacks* or *overlays* successive columns. Also can use different colors for positive/negative data.
-`~matplotlib.axes.Axes.fill_betweenx`  ✗     As with `~matplotlib.axes.Axes.fill_between`, but for horizontal fills.
-`~proplot.axes.Axes.heatmap`           ✓     Invokes `~matplotlib.axes.Axes.pcolormesh` and puts ticks at the center of each box.
-`~matplotlib.axes.Axes.contour`        ✗     Add contour labels by passing ``labels=True``, interpolate to global coverage for `~proplot.axes.ProjAxes` by passing ``globe=True``.
-`~matplotlib.axes.Axes.contourf`       ✗     As with `~matplotlib.axes.Axes.contour`. Labels are colored black or white according to the filled contour's luminance.
-`~matplotlib.axes.Axes.pcolor`         ✗     Add gridbox labels by passing ``labels=True``, interpolate to global coverage by passing ``globe=True``.  Labels are colored black or white according to the underlying box's luminance.
-`~matplotlib.axes.Axes.pcolormesh`     ✗     As with `~matplotlib.axes.Axes.pcolor`.
-=====================================  ====  =============================================================================================================================================================================================
-
-There are also some features applied in *bulk*
-to various plotting methods:
-
-* All 1d plotting methods accept a `cycle` keyword argument interpreted by `~proplot.styletools.Cycle`. See :ref:`Color cycles` for details.
-* All 2d plotting methods accept a `cmap` keyword argument interpreted by `~proplot.styletools.Colormap`. See :ref:`Colormaps` for details.
-* 1d coordinate vectors passed to 2d plotting methods can be graticule *edges* or *centers*. When edges are passed to `~matplotlib.axes.Axes.contour` or `~matplotlib.axes.Axes.contourf`, centers are calculated from the edges. When centers are passed to `~matplotlib.axes.Axes.pcolor` or `~matplotlib.axes.Axes.pcolormesh`, *edges* are estimated from the centers.
-* ProPlot fixes the annoying `white-lines-between-filled-contours <https://stackoverflow.com/q/8263769/4970632>`__, `white-lines-between-pcolor-rectangles <https://stackoverflow.com/q/27092991/4970632>`__, and `white-lines-between-colorbar-levels <https://stackoverflow.com/q/15003353/4970632>`__ issues for `~matplotlib.axes.Axes.contourf` plots, `~matplotlib.axes.Axes.imshow` plots, and `~proplot.subplots.Figure` and `~proplot.axes.Axes` colorbars.
-
-See :ref:`1d plotting` and :ref:`2d plotting`
-for details.
-
-..
-   * `~proplot.axes.Axes.area` plots can be assigned different colors for negative and positive values. This will also be added to `~matplotlib.axes.Axes.bar` soon.
+When passing an `xarray.DataArray`, `pandas.DataFrame`, or `pandas.Series` through any
+plotting method instead of a `numpy.ndarray`, the
+axis tick labels, axis labels, subplot titles, and colorbar and legend labels are
+automatically updated. This can be disabled by passing
+``autoformat`` to the plotting method or to `~proplot.subplots.subplots`.
+See :ref:`1d plotting` and :ref:`2d plotting` for details.
 
 Cartopy and basemap integration
 ===============================
@@ -377,7 +400,7 @@ Smarter colormap normalization
 
    <h3>Problem</h3>
 
-In matplotlib, when ``extend='min'``, ``extend='max'``, or ``extend='neither'`` is passed to `~matplotlib.figure.Figure.colorbar` , colormap colors reserved for "out-of-bounds" values are truncated.
+In matplotlib, when ``extend='min'``, ``extend='max'``, or ``extend='neither'`` is passed to `~matplotlib.figure.Figure.colorbar` , the colormap colors reserved for "out-of-bounds" values are truncated.
 
 The problem is that matplotlib discretizes colormaps by generating a low-resolution lookup table (see `~matplotlib.colors.LinearSegmentedColormap` for details).
 This approach cannot be fine-tuned and creates an unnecessary copy of the colormap.

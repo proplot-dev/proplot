@@ -56,6 +56,8 @@ def _load_objects():
 _load_objects()
 
 # Keywords for styling cmap overridden plots
+# TODO: Deprecate this when #45 merged! Pcolor *already* accepts lw,
+# linewidth, *and* linewidths!
 STYLE_ARGS_TRANSLATE = {
     'contour': {
         'colors': 'colors',
@@ -1947,7 +1949,6 @@ def cmap_changer(
             elif isinstance(norm, mcolors.LogNorm):
                 locator = mticker.LogLocator(**locator_kw)
             else:
-                locator_kw = {**locator_kw}
                 locator_kw.setdefault('symmetric', symmetric)
                 locator = mticker.MaxNLocator(N, min_n_ticks=1, **locator_kw)
             # Get locations
