@@ -17,7 +17,7 @@ from .rctools import rc
 from .utils import _notNone, _counter, units
 from . import projs, axes
 __all__ = [
-    'axes_grid', 'close', 'show', 'subplots', 'Figure',
+    'subplot_grid', 'close', 'show', 'subplots', 'Figure',
     'GridSpec', 'SubplotSpec',
 ]
 
@@ -62,12 +62,12 @@ def show():
     plt.show()
 
 
-class axes_grid(list):
+class subplot_grid(list):
     """List subclass and pseudo-2D array that is used as a container for the
     list of axes returned by `subplots`, lists of figure panels, and lists of
     stacked axes panels. The shape of the array is stored in the ``shape``
-    attribute. See the `~axes_grid.__getattr__` and `~axes_grid.__getitem__`
-    methods for details."""
+    attribute. See the `~subplot_grid.__getattr__` and
+    `~subplot_grid.__getitem__` methods for details."""
 
     def __init__(self, objs, n=1, order='C'):
         """
@@ -93,15 +93,15 @@ class axes_grid(list):
         self.shape = (len(self) // n, n)[::(1 if order == 'C' else -1)]
 
     def __repr__(self):
-        return 'axes_grid([' + ', '.join(str(ax) for ax in self) + '])'
+        return 'subplot_grid([' + ', '.join(str(ax) for ax in self) + '])'
 
     def __setitem__(self, key, value):
         """Pseudo immutability. Raises error."""
-        raise LookupError('axes_grid is immutable.')
+        raise LookupError('subplot_grid is immutable.')
 
     def __getitem__(self, key):
         """If an integer is passed, the item is returned, and if a slice is
-        passed, an `axes_grid` of the items is returned. You can also use 2D
+        passed, an `subplot_grid` of the items is returned. You can also use 2D
         indexing, and the corresponding axes in the axes grid will be chosen.
 
         Example
@@ -154,9 +154,9 @@ class axes_grid(list):
             # Get index pairs and get objects
             # Note that in double for loop, right loop varies fastest, so
             # e.g. axs[:,:] delvers (0,0), (0,1), ..., (0,N), (1,0), ...
-            # Remember for order == 'F', axes_grid was sent a list unfurled in
-            # column-major order, so we replicate row-major indexing syntax by
-            # reversing the order of the keys.
+            # Remember for order == 'F', subplot_grid was sent a list unfurled
+            # in column-major order, so we replicate row-major indexing syntax
+            # by reversing the order of the keys.
             objs = []
             if self._order == 'C':
                 idxs = [key0 * self._n + key1 for key0 in keys[0]
@@ -173,7 +173,7 @@ class axes_grid(list):
 
         # Return
         if axlist:
-            return axes_grid(objs)
+            return subplot_grid(objs)
         else:
             return objs
 
@@ -182,7 +182,7 @@ class axes_grid(list):
         If the attribute is *callable*, returns a dummy function that loops
         through each identically named method, calls them in succession, and
         returns a tuple of the results. This lets you call arbitrary methods
-        on multiple axes at once! If the `axes_grid` has length ``1``,
+        on multiple axes at once! If the `subplot_grid` has length ``1``,
         just returns the single result. If the attribute is *not callable*,
         returns a tuple of attributes for every object in the list.
 
@@ -221,7 +221,7 @@ class axes_grid(list):
                 elif all(res is None for res in ret):
                     return None
                 elif all(isinstance(res, axes.Axes) for res in ret):
-                    return axes_grid(ret, n=self._n, order=self._order)
+                    return subplot_grid(ret, n=self._n, order=self._order)
                 else:
                     return ret
             try:
@@ -814,7 +814,7 @@ class Figure(mfigure.Figure):
         self._auto_format = autoformat
         self._auto_tight_layout = _notNone(tight, rc['tight'])
         self._include_panels = includepanels
-        self._order = order  # used for configuring panel axes_grids
+        self._order = order  # used for configuring panel subplot_grids
         self._ref_num = ref
         self._axes_main = []
         self._subplots_orig_kw = subplots_orig_kw
@@ -1924,8 +1924,8 @@ def subplots(
     -------
     f : `Figure`
         The figure instance.
-    axs : `axes_grid`
-        A special list of axes instances. See `axes_grid`.
+    axs : `subplot_grid`
+        A special list of axes instances. See `subplot_grid`.
     """  # noqa
     rc._getitem_mode = 0
     # Build array
@@ -2149,6 +2149,12 @@ def subplots(
                 main=True,
                 **axes_kw[num])
 
+    # Shared axes setup
+    # TODO: Figure out how to defer this to drawtime in #50
+    # For some reason just adding _share_setup() to draw() doesn't work
+    for ax in axs:
+        ax._share_setup()
+
     # Return figure and axes
     n = (ncols if order == 'C' else nrows)
-    return fig, axes_grid(axs, n=n, order=order)
+    return fig, subplot_grid(axs, n=n, order=order)

@@ -23,11 +23,13 @@ Features
 
 Bug fixes
 ---------
+- Fix shared *x* and *y* axis bugs.
 - Disable automatic resizing for the ``nbAgg`` interactive inline backend. Found no
   suitable workaround (:commit:`3a622887`).
 
 Deprecated
 ----------
+- Rename `~proplot.subplots.axes_grid` to `~proplot.subplots.subplot_grid`.
 - Remove the ``nbsetup`` rc setting in favor of separate ``autosave``, ``autoreload``,
   and ``matplotlib`` settings for triggering the respective ``%`` magic commands.
   (:commit:`3a622887`; ``nbsetup`` is still accepted but no longer documented).
@@ -44,6 +46,10 @@ Internals
 - When calling ``fig.canvas.print_figure()`` on a stale figure, call ``fig.canvas.draw()``
   first. May be overkill for `~matplotlib.figure.Figure.savefig` but critical for
   correctly displaying already-drawn notebook figures.
+
+Documentation
+-------------
+- Make notebook examples PEP8 compliant. Much more readable now.
 
 ProPlot v0.1.X (2019-12-01)
 ===========================

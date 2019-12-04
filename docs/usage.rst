@@ -50,8 +50,8 @@ It creates an instance of ProPlot's
 `~proplot.subplots.Figure` class
 populated with instances of ProPlot's
 `~proplot.axes.Axes` classes.
-See :ref:`Creating figures`
-and :ref:`Figure tight layout` for details.
+See :ref:`The basics`
+and :ref:`Working with subplots` for details.
 
 Each `~proplot.axes.Axes` returned by `~proplot.subplots.subplots`
 belongs to one of the following three child classes:
@@ -69,7 +69,7 @@ Figure and axes methods
 The `~proplot.subplots.Figure` and `~proplot.axes.Axes` subclasses
 include several *brand new* methods and add to the functionality of several *existing* methods.
 
-* The new `~proplot.axes.Axes.format` method is used to fine-tune various axes settings.  Its behavior depends on whether the axes is an `~proplot.axes.XYAxes`, `~proplot.axes.PolarAxes`, or `~proplot.axes.ProjAxes`. Think of this as a dedicated `~matplotlib.artist.Artist.update` method for axes artists. See :ref:`Customizing figures` for details.
+* The new `~proplot.axes.Axes.format` method is used to fine-tune various axes settings.  Its behavior depends on whether the axes is an `~proplot.axes.XYAxes`, `~proplot.axes.PolarAxes`, or `~proplot.axes.ProjAxes`. Think of this as a dedicated `~matplotlib.artist.Artist.update` method for axes artists. See :ref:`The format command` for details.
 * The `~proplot.subplots.Figure` `~proplot.subplots.Figure.colorbar` and `~proplot.subplots.Figure.legend` and `~proplot.axes.Axes` `~proplot.axes.Axes.colorbar` and `~proplot.axes.Axes.legend` commands are used to add colorbars and legends *inside* of subplots, along the *outside edge* of subplots, and along the *edge of the figure*. They considerably simplify the process of drawing colorbars and legends. See :ref:`Colorbars and legends` for details.
 * ProPlot adds a huge variety of features for working with `~matplotlib.axes.Axes.contour` plots, `~matplotlib.axes.Axes.pcolor` plots, `~matplotlib.axes.Axes.plot` lines, `~proplot.axes.Axes.heatmap` plots, `~matplotlib.axes.Axes.errorbar` bars, `~matplotlib.axes.Axes.bar` plots, `~proplot.axes.Axes.area` plots, and `~proplot.axes.Axes.parametric` plots. See :ref:`1d plotting` and :ref:`2d plotting` for details.
 

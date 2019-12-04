@@ -193,8 +193,7 @@ class Axes(maxes.Axes):
         self._aligny_on = aligny
         self._sharex_level = sharex
         self._sharey_level = sharey
-        self._share_setup()
-        self.format(mode=1)  # mode == 1 applies the rcExtraParams
+        self.format(mode=1)  # mode == 1 applies the rcShortParams
 
     def _draw_auto_legends_colorbars(self):
         """Generate automatic legends and colorbars. Wrapper funcs
@@ -1481,7 +1480,7 @@ optional
     @property
     def number(self):
         """The axes number, controls a-b-c label order and order of
-        appearence in the `~proplot.subplots.axes_grid` returned by
+        appearence in the `~proplot.subplots.subplot_grid` returned by
         `~proplot.subplots.subplots`."""
         return self._number
 
@@ -1925,7 +1924,7 @@ class XYAxes(Axes):
         # Builtin sharing features
         if level > 0:
             self._sharex = sharex
-        if level > 1 and sharex not in self._shared_x_axes:
+        if level > 1:
             self._shared_x_axes.join(self, sharex)
 
     def _sharey_setup(self, sharey, level):
@@ -1938,7 +1937,7 @@ class XYAxes(Axes):
         # Builtin features
         if level > 0:
             self._sharey = sharey
-        if level > 1 and sharey not in self._shared_y_axes:
+        if level > 1:
             self._shared_y_axes.join(self, sharey)
 
     def format(

@@ -23,9 +23,8 @@ A comprehensive, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper fo
    :maxdepth: 1
    :caption: User Guide
 
-   figures
-   customizing
-   tight
+   basics
+   layout
    colorbars_legends
    colormaps
    cycles

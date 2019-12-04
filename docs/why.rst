@@ -144,7 +144,7 @@ By default, ProPlot also uses a custom tight layout algorithm that automatically
 #. The new `~proplot.subplots.GridSpec` class permits variable spacing between rows and columns. It turns out this is *critical* for putting :ref:`Colorbars and legends` on the outside of subplots.
 #. Figures are restricted to have only *one* `~proplot.subplots.GridSpec` per figure. This is done by requiring users to draw all of their subplots at once with `~proplot.subplots.subplots`, and it *considerably* simplifies the algorithm (see :pr:`50` for details).
 
-See :ref:`Figure tight layout` for details.
+See :ref:`Working with subplots` for details.
 
 ..
    #. The `~proplot.subplots.GridSpec` spacing parameters are specified in physical units instead of figure-relative units.
@@ -207,15 +207,15 @@ In matplotlib, `~matplotlib.pyplot.subplots` returns a 2D `~numpy.ndarray`, a 1D
 
    <h3>Solution</h3>
 
-In ProPlot, `~proplot.subplots.subplots` returns an `~proplot.subplots.axes_grid` container filled with axes objects. This container lets you call arbitrary methods on arbitrary subplots all at once, which can be useful when you want to style your subplots identically (e.g. ``axs.format(tickminor=False)``).
-See :ref:`Creating figures` for details.
+In ProPlot, `~proplot.subplots.subplots` returns an `~proplot.subplots.subplot_grid` container filled with axes objects. This container lets you call arbitrary methods on arbitrary subplots all at once, which can be useful when you want to style your subplots identically (e.g. ``axs.format(tickminor=False)``).
+See :ref:`The basics` for details.
 
-The `~proplot.subplots.axes_grid` class also
+The `~proplot.subplots.subplot_grid` class also
 unifies the behavior of the three possible `matplotlib.pyplot.subplots` return values:
 
-* `~proplot.subplots.axes_grid` permits 2d indexing, e.g. ``axs[1,0]``. Since `~proplot.subplots.subplots` can generate figures with arbitrarily complex subplot geometry, this 2d indexing is useful only when the arrangement happens to be a clean 2d matrix.
-* Since `~proplot.subplots.axes_grid` is a `list` subclass, it also supports 1d indexing, e.g. ``axs[1]``. The default order can be switched from row-major to column-major by passing ``order='F'`` to `~proplot.subplots.subplots`.
-* `~proplot.subplots.axes_grid` behaves like a scalar when it contains just one element. So if you just made a single axes with ``f, axs = plot.subplots()``, calling ``axs[0].command`` is equivalent to ``axs.command``.
+* `~proplot.subplots.subplot_grid` permits 2d indexing, e.g. ``axs[1,0]``. Since `~proplot.subplots.subplots` can generate figures with arbitrarily complex subplot geometry, this 2d indexing is useful only when the arrangement happens to be a clean 2d matrix.
+* Since `~proplot.subplots.subplot_grid` is a `list` subclass, it also supports 1d indexing, e.g. ``axs[1]``. The default order can be switched from row-major to column-major by passing ``order='F'`` to `~proplot.subplots.subplots`.
+* `~proplot.subplots.subplot_grid` behaves like a scalar when it contains just one element. So if you just made a single axes with ``f, axs = plot.subplots()``, calling ``axs[0].command`` is equivalent to ``axs.command``.
 
 ..
    This goes with ProPlot's theme of preserving the object-oriented spirit, but making things easier for users.
