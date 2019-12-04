@@ -267,9 +267,9 @@ nav.wy-nav-side {
   background-color: var(--l3-bg-color);
 }
 .rst-versions .rst-other-versions hr {
-  color: var(--versions-color);
-  border-top-color: var(--versions-color);
-  border-bottom-color: var(--versions-color);
+  color: var(--l5-bg-color);
+  border-top-color: var(--l5-bg-color);
+  border-bottom-color: var(--l5-bg-color);
 }
 .rst-versions .rst-current-version .fa {
   color: var(--main-color);
