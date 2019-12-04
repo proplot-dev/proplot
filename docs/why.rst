@@ -249,17 +249,21 @@ address.
 The ProPlot `~proplot.axes.Axes` class
 overrides various plotting methods to make
 your life easier.
-ProPlot also provides
-*constistent behavior* when
-switching between different commands, for
-example `~matplotlib.axes.Axes.plot` and `~matplotlib.axes.Axes.scatter`
-or `~matplotlib.axes.Axes.contourf` and `~matplotlib.axes.Axes.pcolormesh`.
+
+..
+  ProPlot also provides
+  *constistent behavior* when
+  switching between different commands, for
+  example `~matplotlib.axes.Axes.plot` and `~matplotlib.axes.Axes.scatter`
+  or `~matplotlib.axes.Axes.contourf` and `~matplotlib.axes.Axes.pcolormesh`.
 
 ..
    ProPlot also uses wrappers to *unify* the behavior of various
    plotting methods.
 
-* All positional arguments for "1d" plotting methods are standardized by `~proplot.wrappers.standardize_1d`. All positional arguments for "2d" plotting methods are standardized by `~proplot.wrappers.standardize_2d`. See :ref:`1d plotting` and :ref:`2d plotting` for details.
+..
+  All positional arguments for "1d" plotting methods are standardized by `~proplot.wrappers.standardize_1d`. All positional arguments for "2d" plotting methods are standardized by `~proplot.wrappers.standardize_2d`. See :ref:`1d plotting` and :ref:`2d plotting` for details.
+
 * Just like `~proplot.axes.Axes.format`, certain keyword arguments for 1d and 2d plotting commands are passed through :ref:`Constructor functions`.
 
       * All 1d plotting methods accept a `cycle` keyword argument interpreted by `~proplot.styletools.Cycle`. See :ref:`Color cycles` for details.
@@ -356,7 +360,6 @@ overrides various plotting methods:
 * ``globe=True`` can be passed to any 2D plotting command to enforce *global* coverage over the poles and across the longitude boundaries.
 
 See :ref:`Geographic and polar plots` for details.
-
 Note that active development on basemap will `halt after 2020 <https://matplotlib.org/basemap/users/intro.html#cartopy-new-management-and-eol-announcement>`__.
 For now, cartopy is
 `missing several features <https://matplotlib.org/basemap/api/basemap_api.html#module-mpl_toolkits.basemap>`__
@@ -457,25 +460,6 @@ Key            Description                                    Children
 ``margin``     Margin width when limits not explicitly set.    ``axes.xmargin``, ``axes.ymargin``
 =============  =============================================  ===========================================================================================================================================================================
 
-Working with fonts
-==================
-.. raw:: html
-
-   <h3>Problem</h3>
-
-In matplotlib, the default font is DejaVu Sans. In this developer's humble opinion, DejaVu Sans is fugly AF. It is also really tricky to work with custom fonts in matplotlib.
-
-..
-   This font is not very aesthetically pleasing.
-
-.. raw:: html
-
-   <h3>Solution</h3>
-
-ProPlot comes packaged with several additional fonts. The new default font is Helvetica. Albeit somewhat overused, this is a tried and tested, aesthetically pleasing sans serif font.
-
-ProPlot adds fonts to matplotlib by making use of a completely undocumented feature: the ``$TTFPATH`` environment variable (matplotlib adds ``.ttf`` and ``.otf`` font files from folders listed in ``$TTFPATH``). You can also use *your own* font files by dropping them in ``~/.proplot/fonts``.
-
 Physical units engine
 =====================
 .. raw:: html
@@ -511,6 +495,25 @@ passed to `~proplot.rctools.rc` from arbitrary physical units
 to *points* -- for example, :rcraw:`linewidth`, :rcraw:`ticklen`,
 :rcraw:`axes.titlesize`, and :rcraw:`axes.titlepad`.
 See :ref:`Configuring proplot` for details.
+
+Working with fonts
+==================
+.. raw:: html
+
+   <h3>Problem</h3>
+
+In matplotlib, the default font is DejaVu Sans. In this developer's humble opinion, DejaVu Sans is fugly AF. It is also really tricky to work with custom fonts in matplotlib.
+
+..
+   This font is not very aesthetically pleasing.
+
+.. raw:: html
+
+   <h3>Solution</h3>
+
+ProPlot comes packaged with several additional fonts. The new default font is Helvetica. Albeit somewhat overused, this is a tried and tested, aesthetically pleasing sans serif font.
+
+ProPlot adds fonts to matplotlib by making use of a completely undocumented feature: the ``$TTFPATH`` environment variable (matplotlib adds ``.ttf`` and ``.otf`` font files from folders listed in ``$TTFPATH``). You can also use *your own* font files by dropping them in ``~/.proplot/fonts``.
 
 ..
    ...and much more!
