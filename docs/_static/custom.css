@@ -246,9 +246,14 @@ a:visited,
   font-weight: normal;
 }
 
-/* Versions panel colors */
+/* RTD versions box colors */
+/* Also make entire sidebar scrollable but add empty space to the bottom
+ * of the colling region, rather than truncating the scrollable space */
 nav.wy-nav-side {
-  padding-bottom: 2.4em !important;
+  padding-bottom: 0em !important;
+}
+.wy-menu-vertical {
+  margin-bottom: 3.5em !important;
 }
 .rst-versions .rst-current-version {
   padding: 0.66em;  /* match padding for list items */
@@ -263,6 +268,8 @@ nav.wy-nav-side {
 }
 .rst-versions .rst-other-versions hr {
   color: var(--versions-color);
+  border-top-color: var(--versions-color);
+  border-bottom-color: var(--versions-color);
 }
 .rst-versions .rst-current-version .fa {
   color: var(--main-color);
