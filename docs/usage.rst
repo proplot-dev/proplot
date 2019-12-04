@@ -51,7 +51,7 @@ It creates an instance of ProPlot's
 populated with instances of ProPlot's
 `~proplot.axes.Axes` classes.
 See :ref:`The basics`
-and :ref:`Working with subplots` for details.
+and :ref:`Subplots features` for details.
 
 Each `~proplot.axes.Axes` returned by `~proplot.subplots.subplots`
 belongs to one of the following three child classes:

@@ -24,7 +24,7 @@ A comprehensive, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper fo
    :caption: User Guide
 
    basics
-   layout
+   subplots
    colorbars_legends
    colormaps
    cycles

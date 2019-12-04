@@ -23,13 +23,13 @@ Features
 
 Bug fixes
 ---------
-- Fix shared *x* and *y* axis bugs.
+- Fix shared *x* and *y* axis bugs (:commit:`ac14e9dd`).
 - Disable automatic resizing for the ``nbAgg`` interactive inline backend. Found no
   suitable workaround (:commit:`3a622887`).
 
 Deprecated
 ----------
-- Rename `~proplot.subplots.axes_grid` to `~proplot.subplots.subplot_grid`.
+- Rename `~proplot.subplots.axes_grid` to `~proplot.subplots.subplot_grid` (:commit:`ac14e9dd`).
 - Remove the ``nbsetup`` rc setting in favor of separate ``autosave``, ``autoreload``,
   and ``matplotlib`` settings for triggering the respective ``%`` magic commands.
   (:commit:`3a622887`; ``nbsetup`` is still accepted but no longer documented).
