@@ -96,14 +96,14 @@ The below table lists the constructor functions and the keyword arguments that
 use them.
 
 ==============================  ============================================================  =============================================================  =================================================================================================================================================================================================
-Function                        Returns                                                       Interpreted by                                                 Keyword argument(s)
+Function                        Returns                                                       Used by                                                        Keyword argument(s)
 ==============================  ============================================================  =============================================================  =================================================================================================================================================================================================
 `~proplot.axistools.Locator`    Axis `~matplotlib.ticker.Locator`                             `~proplot.axes.Axes.format` and `~proplot.axes.Axes.colorbar`  ``locator=``, ``xlocator=``, ``ylocator=``, ``minorlocator=``, ``xminorlocator=``, ``yminorlocator=``, ``ticks=``, ``xticks=``, ``yticks=``, ``minorticks=``, ``xminorticks=``, ``yminorticks=``
 `~proplot.axistools.Formatter`  Axis `~matplotlib.ticker.Formatter`                           `~proplot.axes.Axes.format` and `~proplot.axes.Axes.colorbar`  ``formatter=``, ``xformatter=``, ``yformatter=``, ``ticklabels=``, ``xticklabels=``, ``yticklabels=``
 `~proplot.axistools.Scale`      Axis `~matplotlib.scale.ScaleBase`                            `~proplot.axes.Axes.format`                                    ``xscale=``, ``yscale=``
-`~proplot.styletools.Colormap`  `~matplotlib.colors.Colormap` instance                        Various plotting methods                                       ``cmap=``
-`~proplot.styletools.Cycle`     Property `~cycler.Cycler`                                     Various plotting methods                                       ``cycle=``
-`~proplot.styletools.Norm`      `~matplotlib.colors.Normalize` instance                       Various plotting methods                                       ``norm=``
+`~proplot.styletools.Cycle`     Property `~cycler.Cycler`                                     1d plotting methods                                            ``cycle=``
+`~proplot.styletools.Colormap`  `~matplotlib.colors.Colormap` instance                        2d plotting methods                                            ``cmap=``
+`~proplot.styletools.Norm`      `~matplotlib.colors.Normalize` instance                       2d plotting methods                                            ``norm=``
 `~proplot.projs.Proj`           `~cartopy.crs.Projection` or `~mpl_toolkits.basemap.Basemap`  `~proplot.subplots.subplots`                                   ``proj=``
 ==============================  ============================================================  =============================================================  =================================================================================================================================================================================================
 
