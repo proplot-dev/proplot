@@ -14,6 +14,7 @@ try:
 except ImportError:  # graceful fallback if IceCream isn't installed
     ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
 __all__ = ['arange', 'edges', 'edges2d', 'units']
+NUMBER = re.compile('^([-+]?[0-9._]+([eE][-+]?[0-9_]+)?)(.*)$')
 BENCHMARK = False  # change this to turn on benchmarking
 
 
@@ -209,55 +210,56 @@ def edges2d(z):
     return zzb
 
 
-def units(value, numeric='in'):
+def units(value, units='in', axes=None, figure=None, width=True):
     """
-    Flexible units -- this function is used internally all over ProPlot, so
-    that you don't have to use "inches" or "points" for all sizing arguments.
-    See `this link \
-<http://iamvdo.me/en/blog/css-font-metrics-line-height-and-vertical-align#lets-talk-about-font-size-first>`_
-    for info on the em square units.
+    Convert values and lists of values between arbitrary physical units. This
+    is used internally all over ProPlot, permitting flexible units for various
+    keyword arguments.
 
     Parameters
     ----------
     value : float or str or list thereof
-        A size "unit" or *list thereof*. If numeric, assumed unit is `numeric`.
-        If string, we look for the format ``'123.456unit'``, where the
-        number is the value and ``'unit'`` is one of the following.
+        A size specifier or *list thereof*. If numeric, nothing is done.
+        If string, it is converted to `units` units. The string should look
+        like ``'123.456unit'``, where the number is the magnitude and
+        ``'unit'`` is one of the following.
 
-        ======  =====================================================
-        Unit    Description
-        ======  =====================================================
-        ``m``   Meters
-        ``cm``  Centimeters
-        ``mm``  Millimeters
-        ``ft``  Feet
-        ``in``  Inches
-        ``pt``  Points (1/72 inches)
-        ``px``  Pixels on screen, uses dpi of :rcraw:`figure.dpi`
-        ``pp``  Pixels once printed, uses dpi of :rcraw:`savefig.dpi`
-        ``em``  Em-square for :rcraw:`font.size`
-        ``ex``  Ex-square for :rcraw:`font.size`
-        ``Em``  Em-square for :rcraw:`axes.titlesize`
-        ``Ex``  Ex-square for :rcraw:`axes.titlesize`
-        ======  =====================================================
+        =========  =========================================================================================
+        Key        Description
+        =========  =========================================================================================
+        ``'m'``    Meters
+        ``'cm'``   Centimeters
+        ``'mm'``   Millimeters
+        ``'ft'``   Feet
+        ``'in'``   Inches
+        ``'pt'``   `Points <https://en.wikipedia.org/wiki/Point_(typography)>`__ (1/72 inches)
+        ``'pc'``   `Pica <https://en.wikipedia.org/wiki/Pica_(typography)>`__ (1/6 inches)
+        ``'px'``   Pixels on screen, uses dpi of :rcraw:`figure.dpi`
+        ``'pp'``   Pixels once printed, uses dpi of :rcraw:`savefig.dpi`
+        ``'em'``   `Em square <https://en.wikipedia.org/wiki/Em_(typography)>`__ for :rcraw:`font.size`
+        ``'en'``   `En square <https://en.wikipedia.org/wiki/En_(typography)>`__ for :rcraw:`font.size`
+        ``'Em'``   `Em square <https://en.wikipedia.org/wiki/Em_(typography)>`__ for :rcraw:`axes.titlesize`
+        ``'En'``   `En square <https://en.wikipedia.org/wiki/En_(typography)>`__ for :rcraw:`axes.titlesize`
+        ``'ax'``   Axes relative units. Not always available.
+        ``'fig'``  Figure relative units. Not always available.
+        ``'ly'``   Light years ;)
+        =========  =========================================================================================
 
-    numeric : str, optional
-        The assumed unit for numeric arguments, and the output unit. Default
-        is inches, i.e. ``'in'``.
+    units : str, optional
+        The destination units. Default is inches, i.e. ``'in'``.
+    axes : `~matplotlib.axes.Axes`, optional
+        The axes to use for scaling units that look like ``0.1ax``.
+    figure : `~matplotlib.figure.Figure`, optional
+        The figure to use for scaling units that look like ``0.1fig``. If
+        ``None`` we try to get the figure from ``axes.figure``.
+    width : bool, optional
+        Whether to use the width or height for the axes and figure relative
+        coordinates.
     """  # noqa
-    # Loop through arbitrary list, or return None if input was None (this
-    # is the exception).
-    if not np.iterable(value) or isinstance(value, str):
-        singleton = True
-        values = (value,)
-    else:
-        singleton = False
-        values = value
-
     # Font unit scales
     # NOTE: Delay font_manager import, because want to avoid rebuilding font
-    # cache, which means import must come after TTFPATH added to environ,
-    # i.e. inside styletools.register_fonts()!
+    # cache, which means import must come after TTFPATH added to environ
+    # by styletools.register_fonts()!
     small = rcParams['font.size']  # must be absolute
     large = rcParams['axes.titlesize']
     if isinstance(large, str):
@@ -266,7 +268,7 @@ def units(value, numeric='in'):
         scale = mfonts.font_scalings.get(large, 1)
         large = small * scale
 
-    # Dict of possible units
+    # Scales for converting physical units to inches
     unit_dict = {
         'in': 1.0,
         'm': 39.37,
@@ -274,43 +276,61 @@ def units(value, numeric='in'):
         'cm': 0.3937,
         'mm': 0.03937,
         'pt': 1 / 72.0,
+        'pc': 1 / 6.0,
         'em': small / 72.0,
-        'ex': 0.5 * small / 72.0,  # more or less; see URL
-        'Em': large / 72.0,  # for large text
-        'Ex': 0.5 * large / 72.0,
+        'en': 0.5 * small / 72.0,
+        'Em': large / 72.0,
+        'En': 0.5 * large / 72.0,
+        'ly': 3.725e+17,
     }
-    # Display units
+    # Scales for converting display units to inches
     # WARNING: In ipython shell these take the value 'figure'
     if not isinstance(rcParams['figure.dpi'], str):
-        unit_dict['px'] = 1 / rcParams['figure.dpi']  # on screen
+        # once generated by backend
+        unit_dict['px'] = 1 / rcParams['figure.dpi']
     if not isinstance(rcParams['savefig.dpi'], str):
-        # once 'printed', i.e. saved
+        # once 'printed' i.e. saved
         unit_dict['pp'] = 1 / rcParams['savefig.dpi']
-
-    # Iterate
+    # Scales relative to axes and figure objects
+    if axes is not None and hasattr(axes, 'get_size_inches'):  # proplot axes
+        unit_dict['ax'] = axes.get_size_inches()[1 - int(width)]
+    if figure is None:
+        figure = getattr(axes, 'figure', None)
+    if figure is not None and hasattr(
+            figure, 'get_size_inches'):  # proplot axes
+        unit_dict['fig'] = figure.get_size_inches()[1 - int(width)]
+    # Scale for converting inches to arbitrary other unit
     try:
-        scale = unit_dict[numeric]
+        scale = unit_dict[units]
     except KeyError:
         raise ValueError(
-            f'Invalid numeric unit {numeric!r}. Valid units are '
-            f', '.join(map(repr, unit_dict.keys())) + '.')
+            f'Invalid destination units {units!r}. Valid units are '
+            + ', '.join(map(repr, unit_dict.keys())) + '.')
+
+    # Convert units for each value in list
     result = []
-    for value in values:
-        if value is None or isinstance(value, Number):
-            result.append(value)
+    singleton = (not np.iterable(value) or isinstance(value, str))
+    for val in ((value,) if singleton else value):
+        if val is None or isinstance(val, Number):
+            result.append(val)
             continue
-        elif not isinstance(value, str):
+        elif not isinstance(val, str):
             raise ValueError(
-                f'Size spec must be string or number or list thereof, '
-                f'received {values}.')
-        regex = re.match('^([-+]?[0-9.]*)(.*)$', value)
-        num, unit = regex.groups()
+                f'Size spec must be string or number or list thereof. '
+                'Got {value!r}.')
+        regex = NUMBER.match(val)
+        if not regex:
+            raise ValueError(
+                f'Invalid size spec {val!r}. Valid units are '
+                + ', '.join(map(repr, unit_dict.keys())) + '.')
+        number, _, units = regex.groups()  # second group is exponential
         try:
-            result.append(float(num) * unit_dict[unit] / scale)
+            result.append(
+                float(number) * (unit_dict[units] / scale if units else 1))
         except (KeyError, ValueError):
             raise ValueError(
-                f'Invalid size spec {value}. Valid units are '
-                ', '.join(map(repr, unit_dict.keys())) + '.')
+                f'Invalid size spec {val!r}. Valid units are '
+                + ', '.join(map(repr, unit_dict.keys())) + '.')
     if singleton:
         result = result[0]
     return result
