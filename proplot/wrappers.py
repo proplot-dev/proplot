@@ -886,13 +886,15 @@ def scatter_wrapper(
         constructor.
     norm_kw : dict, optional
         Passed to `~proplot.styletools.Norm`.
-    lw, linewidth, linewidths, markeredgewidth, markeredgewidths : float or list thereof, optional
+    lw, linewidth, linewidths, markeredgewidth, markeredgewidths : \
+float or list thereof, optional
         Aliases for the marker edge width.
-    edgecolors, markeredgecolor, markeredgecolors : color-spec or list thereof, optional
+    edgecolors, markeredgecolor, markeredgecolors : \
+color-spec or list thereof, optional
         Aliases for the marker edge color.
     **kwargs
         Passed to `~matplotlib.axes.Axes.scatter`.
-    """  # noqa
+    """
     # Manage input arguments
     # NOTE: Parse 1D must come before this
     nargs = len(args)
@@ -1140,13 +1142,14 @@ def boxplot_wrapper(
         Marker style for the 'fliers', i.e. outliers.
     markersize : float, optional
         Marker size for the 'fliers', i.e. outliers.
-    boxcolor, capcolor, meancolor, mediancolor, whiskercolor : color-spec, optional
+    boxcolor, capcolor, meancolor, mediancolor, whiskercolor : \
+color-spec, optional
         The color of various boxplot components. These are shorthands so you
         don't have to pass e.g. a ``boxprops`` dictionary.
     boxlw, caplw, meanlw, medianlw, whiskerlw : float, optional
         The line width of various boxplot components. These are shorthands so
         you don't have to pass e.g. a ``boxprops`` dictionary.
-    """  # noqa
+    """
     # Call function
     if len(args) > 2:
         raise ValueError(f'Expected 1-2 positional args, got {len(args)}.')
@@ -1304,7 +1307,8 @@ def text_wrapper(
         The *x* and *y* coordinates for the text.
     text : str
         The text string.
-    transform : {'data', 'axes', 'figure'} or `~matplotlib.transforms.Transform`, optional
+    transform : {'data', 'axes', 'figure'} or \
+`~matplotlib.transforms.Transform`, optional
         The transform used to interpret `x` and `y`. Can be a
         `~matplotlib.transforms.Transform` object or a string representing the
         `~matplotlib.axes.Axes.transData`, `~matplotlib.axes.Axes.transAxes`,
@@ -1329,7 +1333,7 @@ def text_wrapper(
     ----------------
     **kwargs
         Passed to `~matplotlib.text.Text` instantiator.
-    """  # noqa
+    """
     # Default transform by string name
     if not transform:
         transform = self.transData
@@ -1891,15 +1895,6 @@ def cmap_changer(
                 f'Unexpected input values={values!r}. '
                 'Must be integer or list of numbers.')
 
-    # Data limits used for normalizer
-    Z = ma.masked_invalid(args[-1], copy=False)
-    if Z.size == 0:
-        zmin, zmax = 0, 1
-    else:
-        zmin, zmax = float(Z.min()), float(Z.max())
-        if zmin == zmax or ma.is_masked(zmin) or ma.is_masked(zmax):
-            zmin, zmax = 0, 1
-
     # Input colormap, for methods that accept a colormap and normalizer
     # contour, tricontour, i.e. not a method where cmap is optional
     if not ('contour' in name and 'contourf' not in name):
@@ -1948,13 +1943,22 @@ def cmap_changer(
                 locator = axistools.Locator(locator, **locator_kw)
             elif isinstance(norm, mcolors.LogNorm):
                 locator = mticker.LogLocator(**locator_kw)
+            elif isinstance(norm, getattr(mcolors, 'SymLogNorm', type(None))):
+                locator = mticker.SymmetricalLogLocator(**locator_kw)
             else:
                 locator_kw.setdefault('symmetric', symmetric)
                 locator = mticker.MaxNLocator(N, min_n_ticks=1, **locator_kw)
             # Get locations
-            hardmin, hardmax = (vmin is not None), (vmax is not None)
-            vmin = _notNone(vmin, zmin)
-            vmax = _notNone(vmax, zmax)
+            automin = (vmin is None)
+            automax = (vmax is None)
+            if automin or automax:
+                Z = ma.masked_invalid(args[-1], copy=False)
+                if automin:
+                    vmin = float(Z.min())
+                if automax:
+                    vmax = float(Z.max())
+                if vmin == vmax or ma.is_masked(vmin) or ma.is_masked(vmax):
+                    vmin, vmax = 0, 1
             try:
                 levels = locator.tick_values(vmin, vmax)
             except RuntimeError:
@@ -1965,12 +1969,12 @@ def cmap_changer(
                 under, = np.where(levels < vmin)
                 if len(under):
                     i0 = under[-1]
-                    if hardmin or extend in ('min', 'both'):
+                    if not automin or extend in ('min', 'both'):
                         i0 += 1  # permit out-of-bounds data
                 over, = np.where(levels > vmax)
                 if len(over):
                     i1 = over[0] + 1 if len(over) else len(levels)
-                    if hardmax or extend in ('max', 'both'):
+                    if not automax or extend in ('max', 'both'):
                         i1 -= 1  # permit out-of-bounds data
                 if i1 - i0 < 3:
                     i0, i1 = 0, len(levels)  # revert
@@ -2166,9 +2170,9 @@ def legend_wrapper(
     loc : int or str, optional
         The legend location. The following location keys are valid.
 
-        ==================  ==========================================================
+        ==================  ================================================
         Location            Valid keys
-        ==================  ==========================================================
+        ==================  ================================================
         "best" possible     ``0``, ``'best'``, ``'b'``, ``'i'``, ``'inset'``
         upper right         ``1``, ``'upper right'``, ``'ur'``
         upper left          ``2``, ``'upper left'``, ``'ul'``
@@ -2179,14 +2183,15 @@ def legend_wrapper(
         lower center        ``7``, ``'lower center'``, ``'lc'``
         upper center        ``8``, ``'upper center'``, ``'uc'``
         center              ``9``, ``'center'``, ``'c'``
-        ==================  ==========================================================
+        ==================  ================================================
 
     label, title : str, optional
         The legend title. The `label` keyword is also accepted, for consistency
         with `colorbar`.
     fontsize, fontweight, fontcolor : optional
         The font size, weight, and color for legend text.
-    color, lw, linewidth, marker, linestyle, dashes, markersize : property-spec, optional
+    color, lw, linewidth, marker, linestyle, dashes, markersize : \
+property-spec, optional
         Properties used to override the legend handles. For example, if you
         want a legend that describes variations in line style ignoring
         variations in color, you might want to use ``color='k'``. For now this
@@ -2198,7 +2203,7 @@ def legend_wrapper(
     ----------------
     **kwargs
         Passed to `~matplotlib.axes.Axes.legend`.
-    """  # noqa
+    """
     # First get legend settings and interpret kwargs.
     if order not in ('F', 'C'):
         raise ValueError(
@@ -2504,7 +2509,6 @@ def colorbar_wrapper(
         edgecolor=None, linewidth=None,
         labelsize=None, labelweight=None, labelcolor=None,
         ticklabelsize=None, ticklabelweight=None, ticklabelcolor=None,
-        fixticks=False,
         **kwargs):
     """
     Wraps `~proplot.axes.Axes` `~proplot.axes.Axes.colorbar` and
@@ -2513,7 +2517,8 @@ def colorbar_wrapper(
 
     Parameters
     ----------
-    mappable : mappable, list of plot handles, list of color-spec, or colormap-spec
+    mappable : mappable, list of plot handles, list of color-spec, \
+or colormap-spec
         There are four options here:
 
         1. A mappable object. Basically, any object with a ``get_cmap`` method,
@@ -2562,9 +2567,11 @@ def colorbar_wrapper(
         Whether to draw "gridlines" between each level of the colorbar.
         Default is :rc:`colorbar.grid`.
     tickminor : bool, optional
-        Whether to put minor ticks on the colorbar. Default is ``False``.
+        Whether to add minor ticks to the colorbar with
+        `~matplotlib.colorbar.ColorbarBase.minorticks_on`. Default is
+        ``False``.
     locator, ticks : locator spec, optional
-        Used to determine the colorbar tick mark positions. Passed to the
+        Used to determine the colorbar tick positions. Passed to the
         `~proplot.axistools.Locator` constructor.
     maxn : int, optional
         Used if `locator` is ``None``. Determines the maximum number of levels
@@ -2577,9 +2584,9 @@ def colorbar_wrapper(
     locator_kw : dict-like, optional
         The locator settings. Passed to `~proplot.axistools.Locator`.
     minorlocator, minorticks
-        As with `locator`, but for the minor tick marks.
+        As with `locator`, but for the minor ticks.
     minorlocator_kw
-        As for `locator_kw`, but for the minor locator.
+        As for `locator_kw`, but for the minor ticks.
     formatter, ticklabels : formatter spec, optional
         The tick label format. Passed to the `~proplot.axistools.Formatter`
         constructor.
@@ -2590,7 +2597,7 @@ def colorbar_wrapper(
         for converting `values` to colormap colors. Passed to the
         `~proplot.styletools.Norm` constructor. As an example, if your
         values are logarithmically spaced but you want the level boundaries
-        to appear halfway in-between the colorbar tick marks, try
+        to appear halfway in-between the colorbar ticks, try
         ``norm='log'``.
     norm_kw : dict-like, optional
         The normalizer settings. Passed to `~proplot.styletools.Norm`.
@@ -2600,16 +2607,6 @@ def colorbar_wrapper(
         The font size, weight, and color for colorbar label text.
     ticklabelsize, ticklabelweight, ticklabelcolor : optional
         The font size, weight, and color for colorbar tick labels.
-    fixticks : bool, optional
-        For complicated normalizers (e.g. `~matplotlib.colors.LogNorm`), the
-        colorbar minor and major ticks can appear misaligned. When `fixticks`
-        is ``True``, this misalignment is fixed. Default is ``False``.
-
-        This will give incorrect positions when the colormap index does not
-        appear to vary "linearly" from left-to-right across the colorbar (for
-        example, when the leftmost colormap colors seem to be "pulled" to the
-        right farther than normal). In this case, you should stick with
-        ``fixticks=False``.
     orientation : {'horizontal', 'vertical'}, optional
         The colorbar orientation. You should not have to explicitly set this.
 
@@ -2617,7 +2614,7 @@ def colorbar_wrapper(
     ----------------
     **kwargs
         Passed to `~matplotlib.figure.Figure.colorbar`.
-    """  # noqa
+    """
     # Developer notes
     # * Colorbar axes must be of type `matplotlib.axes.Axes`,
     #   not `~proplot.axes.Axes`, because colorbar uses some internal methods
@@ -2654,7 +2651,8 @@ def colorbar_wrapper(
         else:
             extend = 'neither'
     kwargs.update({
-        'cax': self, 'use_gridspec': True,
+        'cax': self,
+        'use_gridspec': True,
         'orientation': orientation,
         'extend': extend,
         'spacing': 'uniform'})
@@ -2793,83 +2791,10 @@ def colorbar_wrapper(
             step = 1 + len(locator) // max(1, maxn)
             locator = locator[::step]
 
-    # Locator object
-    locator = axistools.Locator(locator, **locator_kw)
-    # Minor ticks
-    if minorlocator is not None:
-        tickminor = True
-    if tickminor:
-        if minorlocator is None:
-            if isinstance(locator, mticker.LogLocator):
-                minorlocator = 'log'
-                minorlocator_kw = {**minorlocator_kw}
-                minorlocator_kw.setdefault('subs', np.arange(1, 10))
-            else:
-                minorlocator = 'auto'
-        minorlocator = axistools.Locator(minorlocator, **minorlocator_kw)
-    else:
-        minorlocator = axistools.Locator('null')
-
-    # Get tick formatters and locators
-    jvalues = None
-    normfix = False  # whether we need to modify the norm object
-    locators = []
-    for ilocator in (locator, minorlocator):
-        if isinstance(locator, mticker.NullLocator):
-            locators.append(locator)
-            continue
-        # Modify ticks to work around mysterious error, and to prevent
-        # annoyance where minor ticks extend beyond extendsize.
-        ivalues = np.array(ilocator.tick_values(
-            mappable.norm.vmin, mappable.norm.vmax))  # get the current values
-        min_ = np.where(ivalues >= mappable.norm.vmin)[0]
-        max_ = np.where(ivalues <= mappable.norm.vmax)[0]
-        if len(min_) == 0 or len(max_) == 0:
-            locators.append(axistools.Locator('null'))
-            continue
-        min_, max_ = min_[0], max_[-1]
-        ivalues = ivalues[min_:max_ + 1]
-        if ivalues[0] == mappable.norm.vmin:
-            normfix = True
-        # Prevent major/minor overlaps where one is slightly shifted left/right
-        # Consider floating point weirdness too
-        if jvalues is not None:
-            eps = 1e-10
-            ivalues = [v for v in ivalues if not any(
-                o + eps >= v >= o - eps for o in jvalues)]
-        locators.append(axistools.Locator(ivalues))  # fixed locator object
-        jvalues = ivalues  # record as new variable
-
-    # Fix the norm object; get weird error without this block
-    # * The error is triggered when a *major* tick sits exactly on vmin, but
-    #   the actual error is due to processing of *minor* ticks, even if the
-    #   minor locator was set to NullLocator; very weird. Happens when we call
-    #   get_ticklabels(which='both') below. Can be prevented by just calling
-    #   which='major'. Minor ticklabels are never drawn anyway.
-    # * We can eliminate the normfix below, but that actually causes an
-    #   annoying warning to be printed (related to same issue I guess).
-    #   The culprit for all of this seems to be the colorbar API line:
-    #        z = np.take(y, i0) + (xn - np.take(b, i0)) * dy / db
-    #   Also strange that minorticks extending *below* the minimum
-    #   don't raise the error. It is only when they are exactly on the minimum.
-    # * When changing the levels attribute, need to make sure the levels
-    #   datatype is float; otherwise division will be truncated and bottom
-    #   level will still lie on same location, so error will occur
-    if normfix:
-        mappable.norm.vmin -= (mappable.norm.vmax - mappable.norm.vmin) * 1e-4
-    if hasattr(mappable.norm, 'levels'):
-        mappable.norm.levels = np.atleast_1d(
-            mappable.norm.levels).astype(np.float)
-        if normfix:
-            mappable.norm.levels[0] -= np.diff(
-                mappable.norm.levels[:2])[0] * 1e-4
-
     # Final settings
-    # NOTE: The only way to avoid bugs seems to be to pass the major formatter
-    # and locator to colorbar commmand directly, but edit the minor locators
-    # and formatters manually; set_locator methods are completely ignored.
-    width, height = self.figure.get_size_inches()
+    locator = axistools.Locator(locator, **locator_kw)
     formatter = axistools.Formatter(formatter, **formatter_kw)
+    width, height = self.figure.get_size_inches()
     if orientation == 'horizontal':
         scale = width * abs(self.get_position().width)
     else:
@@ -2877,47 +2802,45 @@ def colorbar_wrapper(
     extendsize = utils.units(_notNone(extendsize, rc['colorbar.extend']))
     extendsize = extendsize / (scale - 2 * extendsize)
     kwargs.update({
-        'ticks': locators[0],
+        'ticks': locator,
         'format': formatter,
         'ticklocation': ticklocation,
         'extendfrac': extendsize
     })
 
     # Draw the colorbar
+    # NOTE: self._use_auto_colorbar_locator() is never True because
+    # we use the custom BinNorm normalizer. Colorbar._ticks() always called.
     try:
         self.figure._locked = False
         cb = self.figure.colorbar(mappable, **kwargs)
     except Exception as err:
         self.figure._locked = True
         raise err
-    if orientation == 'horizontal':
-        axis = self.xaxis
-    else:
-        axis = self.yaxis
+    axis = self.xaxis if orientation == 'horizontal' else self.yaxis
 
-    # The minor locators and formatters
-    # WARNING: Inexplicably, for hexbin, axis lims *are* original,
-    # un-normalized data values, and maybe in other situations too? We detect
-    # this by checking for impossible normalized axis limits (normalized lims
-    # are from 0-extendfrac to 1+extendfrac).
-    lim = axis.get_view_interval()
-    vals = []
-    normed = (lim[0] >= -2 * kwargs['extendfrac']) \
-        and (lim[1] <= 1 + 2 * kwargs['extendfrac'])
-    for ilocator in locators:
-        ivals = np.array(ilocator.tick_values(
-            mappable.norm.vmin, mappable.norm.vmax))
-        if normed:
-            if isinstance(mappable.norm, styletools.BinNorm):
-                ivals = mappable.norm._norm(ivals)  # use *child* normalizer
-            else:
-                ivals = mappable.norm(ivals)
-            ivals = [tick for tick in ivals if 0 <= tick <= 1]
-        vals.append(ivals)
-    if fixticks:
-        axis.set_ticks(vals[0], minor=False)
-    axis.set_ticks(vals[1], minor=True)
-    axis.set_minor_formatter(mticker.NullFormatter())  # to make sure
+    # The minor locator
+    # TODO: Document the improved minor locator functionality!
+    if tickminor and minorlocator is None:
+        if isinstance(locator, mticker.LogLocator):
+            minorlocator = 'log'
+            minorlocator_kw.setdefault('subs', np.arange(1, 10))
+        elif isinstance(locator, mticker.SymmetricalLogLocator):
+            minorlocator = 'symlog'
+            minorlocator_kw.setdefault('subs', np.arange(1, 10))
+    if tickminor and minorlocator is None:
+        cb.minorticks_on()
+    elif minorlocator is None:
+        cb.minorticks_off()
+    elif not hasattr(cb, '_ticker'):
+        warnings.warn(
+            f'Matplotlib colorbar API has changed, cannot use minor ticks.')
+    else:
+        # Private API is the only way!
+        minorlocator = axistools.Locator(minorlocator, **minorlocator_kw)
+        ticks, *_ = cb._ticker(minorlocator, mticker.NullFormatter())
+        axis.set_ticks(ticks, minor=True)
+        axis.set_ticklabels([], minor=True)
 
     # Outline
     kw_outline = {

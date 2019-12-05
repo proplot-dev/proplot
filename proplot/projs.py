@@ -160,8 +160,8 @@ def Proj(name, basemap=False, **kwargs):
                 'for cartopy axes.')
         if crs is None:
             raise ValueError(
-                f'Unknown projection "{name}". Options are: '
-                ', '.join(map(repr, cartopy_projs.keys())))
+                f'Unknown projection {name!r}. Options are: '
+                + ', '.join(map(repr, cartopy_projs.keys())))
         proj = crs(**kwargs)
         aspect = (np.diff(proj.x_limits) / np.diff(proj.y_limits))[0]
     return proj, aspect

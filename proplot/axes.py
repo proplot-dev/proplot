@@ -2313,7 +2313,7 @@ class XYAxes(Axes):
                                 raise ValueError(
                                     f'Invalid {x} spine location {spineloc!r}.'
                                     f' Options are '
-                                    ', '.join(map(
+                                    + ', '.join(map(
                                         repr, (*sides, 'both', 'neither')
                                     )) + '.'
                                 )

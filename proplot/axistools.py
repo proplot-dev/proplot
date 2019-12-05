@@ -122,7 +122,7 @@ def Locator(locator, *args, **kwargs):
         if locator not in locators:
             raise ValueError(
                 f'Unknown locator {locator!r}. Options are '
-                ', '.join(map(repr, locators.keys())) + '.')
+                + ', '.join(map(repr, locators.keys())) + '.')
         locator = locators[locator](*args, **kwargs)
     elif isinstance(locator, Number):  # scalar variable
         locator = mticker.MultipleLocator(locator, *args, **kwargs)
@@ -256,7 +256,7 @@ def Formatter(formatter, *args, date=False, **kwargs):
             if formatter not in formatters:
                 raise ValueError(
                     f'Unknown formatter {formatter!r}. Options are '
-                    ', '.join(map(repr, formatters.keys())) + '.')
+                    + ', '.join(map(repr, formatters.keys())) + '.')
             formatter = formatters[formatter](*args, **kwargs)
     elif callable(formatter):
         formatter = mticker.FuncFormatter(formatter, *args, **kwargs)
@@ -337,7 +337,7 @@ def Scale(scale, *args, **kwargs):
     else:
         raise ValueError(
             f'Unknown scale or preset {scale!r}. Options are '
-            ', '.join(map(repr, list(scales) + list(SCALE_PRESETS))) + '.')
+            + ', '.join(map(repr, list(scales) + list(SCALE_PRESETS))) + '.')
     axis = _dummy_axis()
     return scale(axis, *args, **kwargs)
 
@@ -518,7 +518,7 @@ def _scale_factory(scale, axis, *args, **kwargs):
         if scale not in scales:
             raise ValueError(
                 f'Unknown scale {scale!r}. Options are '
-                ', '.join(map(repr, scales.keys())) + '.')
+                + ', '.join(map(repr, scales.keys())) + '.')
         return scales[scale](axis, *args, **kwargs)
 
 

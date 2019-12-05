@@ -403,7 +403,7 @@ def to_rgb(color, space='rgb', cycle=None, alpha=False):
                 ) if isinstance(cmap, ListedColormap))
                 raise ValueError(
                     f'Invalid cycle {cycle!r}. Options are: '
-                    ', '.join(map(repr, cycles)) + '.')
+                    + ', '.join(map(repr, cycles)) + '.')
         elif cycle is None:
             cycle = rcParams['axes.prop_cycle'].by_key()
             if 'color' not in cycle:
@@ -445,7 +445,7 @@ def to_rgb(color, space='rgb', cycle=None, alpha=False):
     elif space == 'hcl':
         color = colormath.hcl_to_rgb(*color)
     else:
-        raise ValueError('Invalid color "{color}" for colorspace "{space}".')
+        raise ValueError('Invalid color {color!r} for colorspace {space!r}.')
 
     # Return RGB or RGBA
     if alpha:
@@ -2064,7 +2064,7 @@ def Colormap(*args, name=None, listmode='perceptual',
                 colors = [to_rgb(color, cycle=cycle, alpha=True)
                           for color in cmap]
             except (ValueError, TypeError):
-                pass  # raise error later on
+                raise ValueError(f'Invalid color(s) in list {cmap!r}.')
             if listmode == 'listed':
                 cmap = ListedColormap(colors, tmp)
             elif listmode == 'linear':
@@ -2079,7 +2079,7 @@ def Colormap(*args, name=None, listmode='perceptual',
             try:
                 color = to_rgb(cmap, cycle=cycle, alpha=True)
             except (ValueError, TypeError):
-                msg = f'Invalid cmap, cycle, or color "{cmap}".'
+                msg = f'Invalid cmap, cycle, or color {cmap!r}.'
                 if isinstance(cmap, str):
                     msg += (
                         '\nValid cmap and cycle names: '
@@ -2266,7 +2266,7 @@ def Cycle(
                     isinstance(item, Number) for item in samples):
                 samples = np.array(samples)
             else:
-                raise ValueError(f'Invalid samples "{samples}".')
+                raise ValueError(f'Invalid samples {samples!r}.')
             N = len(samples)
             colors = cmap(samples)
 
@@ -2336,7 +2336,7 @@ def Norm(norm, levels=None, **kwargs):
         if norm_out is None:
             raise ValueError(
                 f'Unknown normalizer {norm!r}. Options are '
-                ', '.join(map(repr, normalizers.keys())) + '.')
+                + ', '.join(map(repr, normalizers.keys())) + '.')
         # Instantiate class
         if norm_out is LinearSegmentedNorm:
             if not np.iterable(levels):
@@ -2727,7 +2727,7 @@ def _load_cmap_cycle(filename, cmap=False):
         try:
             xmldoc = etree.parse(filename)
         except IOError:
-            warnings.warn(f'Failed to load "{filename}".')
+            warnings.warn(f'Failed to load {filename!r}.')
             return None, None
         x, data = [], []
         for s in xmldoc.getroot().findall('.//Point'):
@@ -3180,9 +3180,9 @@ def show_channels(*args, N=100, rgb=True, saturation=True,
             ax.scatter(x, y, c=x, cmap=cmap, s=width, linewidths=0)
             ax.format(title=label, ylim=ylim, ylocator=ylocator)
     # Formatting
-    suptitle = ', '.join(f'"{cmap.name}"' for cmap in cmaps[:-1]) + (
+    suptitle = ', '.join(repr(cmap.name) for cmap in cmaps[:-1]) + (
         ', and ' if len(cmaps) > 2 else ' and ' if len(cmaps) == 2 else ' '
-    ) + f'"{cmaps[-1].name}" colormap' + ('s' if len(cmaps) > 1 else '')
+    ) + f'{repr(cmaps[-1].name)} colormap' + ('s' if len(cmaps) > 1 else '')
     axs.format(
         xlocator=0.25, xformatter='null',
         suptitle=f'{suptitle} by channel', ylim=None, ytickminor=False,
