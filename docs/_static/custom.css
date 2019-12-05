@@ -25,6 +25,7 @@
   --main-color: #404040;
   --call-color: #606060;
   --versions-color: #808080;
+  --highlight-color: #f1c40f;
   --code-color: #e65820;
   --link-color: #2d6ab0;
   --link-hover-color: #0079ff;
@@ -55,6 +56,7 @@
   --versions-color: #b0b0b0;
   --code-color: #ff8f4f;
   --link-color: #69acff;
+  --highlight-color: #b27600;
   --link-hover-color: #549aeb;
   --link-visited-color: #c194ff;
   --code-border-color: #707070;
@@ -235,6 +237,12 @@ a:visited,
 .rst-content a:visited code.xref.docutils.literal,
 .rst-content a:visited tt.xref.docutils.literal {
   color: var(--link-visited-color);
+}
+
+/* Highlighting padding */
+.rst-content .highlighted {
+  padding: 0;
+  background-color: var(--highlight-color);
 }
 
 /* Code color, dl:not(.docutils) needed to match specificity */
