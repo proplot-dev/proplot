@@ -128,19 +128,19 @@ def arange(min_, *args):
     # All input is integer
     if all(isinstance(val, Integral) for val in (min_, max_, step)):
         min_, max_, step = np.int64(min_), np.int64(max_), np.int64(step)
-        max_ += 1
+        max_ += np.sign(step) * 1
     # Input is float or mixed, cast to float64
     # Don't use np.nextafter with np.finfo(np.dtype(np.float64)).max, because
     # round-off errors from continually adding step to min mess this up
     else:
         min_, max_, step = np.float64(min_), np.float64(max_), np.float64(step)
-        max_ += step / 2
+        max_ += np.sign(step) * (step / 2)
     return np.arange(min_, max_, step)
 
 
 def edges(array, axis=-1):
     """
-    Calculates approximate "edge" values given "center" values. This is used
+    Calculate approximate "edge" values given "center" values. This is used
     internally to calculate graitule edges when you supply centers to
     `~matplotlib.axes.Axes.pcolor` or `~matplotlib.axes.Axes.pcolormesh`, and
     in a few other places.
@@ -152,7 +152,7 @@ def edges(array, axis=-1):
         increasing or decreasing along `axis`.
     axis : int, optional
         The axis along which "edges" are calculated. The size of this axis
-        will be augmented by one.
+        will be increased by one.
 
     Returns
     -------
@@ -164,9 +164,9 @@ def edges(array, axis=-1):
     array = np.swapaxes(array, axis, -1)
     # Next operate
     array = np.concatenate((
-        array[..., :1] - (array[..., 1] - array[..., 0]) / 2,
+        array[..., :1] - (array[..., 1:2] - array[..., :1]) / 2,
         (array[..., 1:] + array[..., :-1]) / 2,
-        array[..., -1:] + (array[..., -1] - array[..., -2]) / 2,
+        array[..., -1:] + (array[..., -1:] - array[..., -2:-1]) / 2,
     ), axis=-1)
     # Permute back and return
     array = np.swapaxes(array, axis, -1)
@@ -175,13 +175,15 @@ def edges(array, axis=-1):
 
 def edges2d(z):
     """
-    Like :func:`edges` but for 2D arrays.
-    The size of both axes are increased of one.
+    Like `edges` but for 2d arrays.
+    The size of both axes are increased by one. This is used
+    internally to calculate graitule edges when you supply centers to
+    `~matplotlib.axes.Axes.pcolor` or `~matplotlib.axes.Axes.pcolormesh`,
 
     Parameters
     ----------
     array : array-like
-        Two-dimensional array.
+        2d array.
 
     Returns
     -------
