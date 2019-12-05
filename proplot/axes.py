@@ -3161,10 +3161,6 @@ optional
     phase_spectrum = _disable(Axes.phase_spectrum)
     magnitude_spectrum = _disable(Axes.magnitude_spectrum)
 
-# Cartopy takes advantage of documented feature where any class with method
-# named _as_mpl_axes can be passed as 'projection' object.
-# Feature documented here: https://matplotlib.org/devel/add_new_projection.html
-
 
 class GeoAxes(ProjAxes, GeoAxes):
     """Axes subclass for plotting `cartopy \
@@ -3337,13 +3333,13 @@ class GeoAxes(ProjAxes, GeoAxes):
         if not isinstance(self.projection, (ccrs.Mercator, ccrs.PlateCarree)):
             if latarray is not None and any(latarray):
                 warnings.warn(
-                    f'Cannot add gridline labels on cartopy {self.projection} '
-                    'projection.')
+                    'Cannot add gridline labels to cartopy '
+                    f'{type(self.projection).__name__} projection.')
                 latarray = [0] * 4
             if lonarray is not None and any(lonarray):
                 warnings.warn(
-                    f'Cannot add gridline labels on cartopy {self.projection} '
-                    'projection.')
+                    'Cannot add gridline labels to cartopy '
+                    f'{type(self.projection).__name__} projection.')
                 lonarray = [0] * 4
         if latarray is not None:
             gl.ylabels_left = latarray[0]

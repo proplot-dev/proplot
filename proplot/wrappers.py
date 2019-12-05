@@ -2827,7 +2827,10 @@ or colormap-spec
         cb.minorticks_off()
     elif not hasattr(cb, '_ticker'):
         warnings.warn(
-            f'Matplotlib colorbar API has changed, cannot use minor ticks.')
+            'Matplotlib colorbar API has changed. '
+            'Cannot use custom minor tick locator.')
+        if tickminor:
+            cb.minorticks_on()
     else:
         # Private API is the only way!
         minorlocator = axistools.Locator(minorlocator, **minorlocator_kw)
