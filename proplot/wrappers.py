@@ -497,6 +497,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
         y = yi
     # Handle figure titles
     if self.figure._auto_format:
+        _, colorbar_label = _auto_label(Zs[0], units=True)
         _, title = _auto_label(Zs[0], units=False)
         if title:
             kw['title'] = title
@@ -646,7 +647,11 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
         kwargs['latlon'] = False
 
     # Finally return result
-    return func(self, x, y, *Zs, **kwargs)
+    # WARNING: Must apply default colorbar label *here* in case metadata
+    # was stripped by globe=True.
+    colorbar_kw = kwargs.get('colorbar_kw', None) or {}
+    colorbar_kw.setdefault('label', colorbar_label)
+    return func(self, x, y, *Zs, colorbar_kw=colorbar_kw, **kwargs)
 
 
 def _errorbar_values(data, idata, bardata=None, barrange=None, barstd=False):
@@ -1592,7 +1597,6 @@ def cycle_changer(
                     f'Got {ncols} columns in data array, '
                     f'but {len(labels)} labels.')
             label = labels[i]
-            # _auto_label(iy) # e.g. a pd.Series name
             values, label_leg = _auto_label(iy, axis=1)
             if label_leg and label is None:
                 label = _to_array(values)[i]

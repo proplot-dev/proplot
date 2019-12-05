@@ -315,7 +315,7 @@ class Axes(maxes.Axes):
     def _loc_translate(loc, **kwargs):
         """Translates location string `loc` into a standardized form."""
         if loc is True:
-            loc = None
+            loc = 'r'  # for on-the-fly colorbars and legends
         elif isinstance(loc, (str, Integral)):
             loc = LOC_TRANSLATE.get(loc, loc)
         return loc
@@ -3045,7 +3045,6 @@ optional
                     lonlines = utils.arange(lon_0 - 180, lon_0 + 180, lonlines)
                     lonlines = lonlines.astype(np.float64)
                     lonlines[-1] -= 1e-10  # make sure appears on *right*
-                lonlines = np.arange(-180, 180, 30)
                 lonlines = [*lonlines]
 
             # Latitudes gridlines, draw from -latmax to latmax unless result
