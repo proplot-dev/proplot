@@ -129,17 +129,19 @@ Matplotlib has a `tight layout <https://matplotlib.org/tutorials/intermediate/ti
 
    <h3>Solution</h3>
 
-In ProPlot, you can specify the physical dimensions of a *reference subplot* instead of the figure by passing `axwidth`, `axheight`, and/or `aspect` to `~proplot.subplots.Figure`. The default behavior is ``aspect=1`` and ``axwidth=2`` (inches). If the `aspect ratio mode <https://matplotlib.org/2.0.2/examples/pylab_examples/equal_aspect_ratio.html>`__ for the reference subplot is set to ``'equal'``, as with :ref:`Geographic and polar plots` and `~matplotlib.axes.Axes.imshow` plots, the existing aspect will be used instead of the input `aspect`. Figure dimensions are calculated to accommodate subplot geometry and tight layout spacing as follows:
+In ProPlot, you can specify the physical dimensions of a *reference subplot* instead of the figure by passing `axwidth`, `axheight`, and/or `aspect` to `~proplot.subplots.Figure`. The default behavior is ``aspect=1`` and ``axwidth=2`` (inches). If the `aspect ratio mode <https://matplotlib.org/2.0.2/examples/pylab_examples/equal_aspect_ratio.html>`__ for the reference subplot is set to ``'equal'``, as with :ref:`Geographic and polar plots` and `~matplotlib.axes.Axes.imshow` plots, the existing aspect will be used instead.
 
-* When you specify `axwidth` or `axheight`, the figure width and height are calculated automatically.
-* When you specify `width`, the figure height is calculated automatically.
-* When you specify `height`, the figure width is calculated automatically.
-* When you specify `width` and `height` or `figsize`, the figure dimensions are fixed.
+Figure dimensions are calculated to accommodate subplot geometry and tight layout spacing as follows:
+
+* If `axwidth` or `axheight` are used, the figure width and height are calculated automatically.
+* If `width` is used, the figure height is calculated automatically.
+* If `height` is used, the figure width is calculated automatically.
+* If `width` *and* `height` or `figsize` is used, the figure dimensions are fixed.
 
 ..
    Several matplotlib backends require figure dimensions to be fixed. When `~proplot.subplots.Figure.draw` changes the figure dimensions, this can "surprise" the backend and cause unexpected behavior. ProPlot fixes this issue for the static inline backend and the Qt popup backend. However, this issue is unfixable the "notebook" inline backend, the "macosx" popup backend, and possibly other untested backends.
 
-By default, ProPlot also uses a custom tight layout algorithm that automatically determines the `left`, `right`, `bottom`, `top`, `wspace`, and `hspace` `~matplotlib.gridspec.GridSepc` parameters. This algorithm is simpler and more accurate because:
+By default, ProPlot also uses a custom tight layout algorithm that automatically determines the `left`, `right`, `bottom`, `top`, `wspace`, and `hspace` `~matplotlib.gridspec.GridSpec` parameters. This algorithm is simpler and more precise because:
 
 #. The new `~proplot.subplots.GridSpec` class permits variable spacing between rows and columns. It turns out this is *critical* for putting :ref:`Colorbars and legends` on the outside of subplots.
 #. Figures are restricted to have only *one* `~proplot.subplots.GridSpec` per figure. This is done by requiring users to draw all of their subplots at once with `~proplot.subplots.subplots`, and it *considerably* simplifies the algorithm (see :pr:`50` for details).
