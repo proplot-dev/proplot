@@ -27,7 +27,7 @@ Bug fixes
 - Disable automatic resizing for the ``nbAgg`` interactive inline backend. Found no
   suitable workaround (:commit:`3a622887`).
 - Fix issue where customized super title settings are overridden when
-  new axes are created.
+  new axes are created (:commit:`35cb21f2`)
 
 Deprecated
 ----------
@@ -51,7 +51,8 @@ Internals
 
 Documentation
 -------------
-- Make notebook examples PEP8 compliant. Much more readable now.
+- Make notebook examples PEP8 compliant (:commit:`97f5ffd4`). Much more readable now.
+- Clean up documentation (:commit:`35cb21f2`).
 
 ProPlot v0.1.X (2019-12-01)
 ===========================
