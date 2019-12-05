@@ -649,7 +649,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
     # Finally return result
     # WARNING: Must apply default colorbar label *here* in case metadata
     # was stripped by globe=True.
-    colorbar_kw = kwargs.get('colorbar_kw', None) or {}
+    colorbar_kw = kwargs.pop('colorbar_kw', None) or {}
     colorbar_kw.setdefault('label', colorbar_label)
     return func(self, x, y, *Zs, colorbar_kw=colorbar_kw, **kwargs)
 

@@ -23,6 +23,9 @@ Features
 
 Bug fixes
 ---------
+- Fix issue with overlapping gridlines (:commit:`8960ebdc`).
+- Fix issue where auto colorbar labels are not applied when ``globe=True`` (:commit:`ecb3c899`)
+- More sensible zorder for gridlines (:commit:`90d94e55`).
 - Fix shared *x* and *y* axis bugs (:commit:`ac14e9dd`).
 - Disable automatic resizing for the ``nbAgg`` interactive inline backend. Found no
   suitable workaround (:commit:`3a622887`).
