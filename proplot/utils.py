@@ -178,7 +178,7 @@ def edges2d(z):
     Like `edges` but for 2d arrays.
     The size of both axes are increased by one. This is used
     internally to calculate graitule edges when you supply centers to
-    `~matplotlib.axes.Axes.pcolor` or `~matplotlib.axes.Axes.pcolormesh`,
+    `~matplotlib.axes.Axes.pcolor` or `~matplotlib.axes.Axes.pcolormesh`.
 
     Parameters
     ----------

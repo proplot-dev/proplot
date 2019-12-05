@@ -740,19 +740,24 @@ optional
             self._title_pad = pad
 
         # Super title
-        # NOTE: These are actually *figure-wide* settings, but that line seems
-        # to get blurred -- where we have shared axes, spanning labels, and
+        # NOTE: These are actually *figure-wide* settings, but that line
+        # gets blurred where we have shared axes, spanning labels, and
         # whatnot. May result in redundant assignments if formatting more than
         # one axes, but operations are fast so some redundancy is nbd.
+        # NOTE: Below workaround prevents changed *figure-wide* settings
+        # from getting overwritten when user makes a new axes.
         fig = self.figure
         suptitle = _notNone(figtitle, suptitle, None,
                             names=('figtitle', 'suptitle'))
-        kw = rc.fill({
-            'fontsize': 'suptitle.size',
-            'weight': 'suptitle.weight',
-            'color': 'suptitle.color',
-            'fontfamily': 'font.family'
-        })
+        if len(fig._axes_main) > 1 and rc._getitem_mode == 1:
+            kw = {}
+        else:
+            kw = rc.fill({
+                'fontsize': 'suptitle.size',
+                'weight': 'suptitle.weight',
+                'color': 'suptitle.color',
+                'fontfamily': 'font.family'
+            })
         if suptitle or kw:
             fig._update_figtitle(suptitle, **kw)
         # Labels

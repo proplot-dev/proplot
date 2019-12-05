@@ -23,10 +23,11 @@ Features
 
 Bug fixes
 ---------
-- Fix minor `~proplot.utils.arange` and `~proplot.utils.edges` bugs (:commit:`aaa479fc`).
 - Fix shared *x* and *y* axis bugs (:commit:`ac14e9dd`).
 - Disable automatic resizing for the ``nbAgg`` interactive inline backend. Found no
   suitable workaround (:commit:`3a622887`).
+- Fix issue where customized super title settings are overridden when
+  new axes are created.
 
 Deprecated
 ----------
