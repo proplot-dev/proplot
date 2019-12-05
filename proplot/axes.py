@@ -1062,7 +1062,7 @@ optional
                 xmin, ymin, width, height = fbounds
                 patch = mpatches.Rectangle(
                     (xmin, ymin), width, height,
-                    snap=True, zorder=4.5, transform=self.transAxes)
+                    snap=True, zorder=4, transform=self.transAxes)
                 # Update patch props
                 alpha = _notNone(alpha, rc['colorbar.framealpha'])
                 linewidth = _notNone(linewidth, rc['axes.linewidth'])
@@ -1221,7 +1221,7 @@ optional
         )
         return obj
 
-    def inset_axes(self, bounds, *, transform=None, zorder=5,
+    def inset_axes(self, bounds, *, transform=None, zorder=4,
                    zoom=True, zoom_kw=None, **kwargs):
         """
         Like the builtin `~matplotlib.axes.Axes.inset_axes` method, but
@@ -1240,8 +1240,10 @@ optional
             or `~matplotlib.figure.Figure.transFigure` transforms. Default is
             ``'axes'``, i.e. `bounds` is in axes-relative coordinates.
         zorder : float, optional
-            The zorder of the axes, should be greater than the zorder of
-            elements in the parent axes. Default is ``5``.
+            The `zorder \
+<https://matplotlib.org/3.1.1/gallery/misc/zorder_demo.html>`__
+            of the axes, should be greater than the zorder of
+            elements in the parent axes. Default is ``4``.
         zoom : bool, optional
             Whether to draw lines indicating the inset zoom using
             `~Axes.indicate_inset_zoom`. The lines will automatically
@@ -3032,9 +3034,12 @@ optional
             # Longitude gridlines, draw relative to projection prime meridian
             # NOTE: Always generate gridlines array on first format call
             # because rc setting will be not None
-            # NOTE: Cartopy seems to need longitude lines to fall within
-            # -180 and 180. Also if they are not circular, latitude lines will
-            # not extend across entire sphere.
+            # NOTE: Cartopy needs monotonic levels for drawing gridlines or
+            # will get *overlapping* lines in places. But cartopy *also*
+            # needs labels between -180 and 180 for global plots even if
+            # longitude is shifted because GridLiner._axes_domain gets it
+            # wrong. For now use choose to allow overlapping gridlines as
+            # workaround. See #78.
             if isinstance(self, GeoAxes):
                 lon_0 = self.projection.proj4_params.get('lon_0', 0)
             else:
@@ -3224,7 +3229,7 @@ class GeoAxes(ProjAxes, GeoAxes):
         # Initial gridliner object, which ProPlot passively modifies
         # TODO: Flexible formatter?
         if not self._gridliners:
-            gl = self.gridlines(zorder=5, draw_labels=False)
+            gl = self.gridlines(zorder=2.5)  # below text only
             gl.xlines = False
             gl.ylines = False
             try:
@@ -3310,7 +3315,6 @@ class GeoAxes(ProjAxes, GeoAxes):
         })  # cached changes
         gl.collection_kwargs.update(kw)
         # Grid locations
-        # TODO: Check eps
         eps = 1e-10
         if lonlines is not None:
             if len(lonlines) == 0:
