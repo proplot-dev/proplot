@@ -2822,13 +2822,6 @@ or colormap-spec
     # The minor locator
     # TODO: Document the improved minor locator functionality!
     if tickminor and minorlocator is None:
-        if isinstance(locator, mticker.LogLocator):
-            minorlocator = 'log'
-            minorlocator_kw.setdefault('subs', np.arange(1, 10))
-        elif isinstance(locator, mticker.SymmetricalLogLocator):
-            minorlocator = 'symlog'
-            minorlocator_kw.setdefault('subs', np.arange(1, 10))
-    if tickminor and minorlocator is None:
         cb.minorticks_on()
     elif minorlocator is None:
         cb.minorticks_off()
