@@ -3049,10 +3049,15 @@ optional
             if lonlines is not None:
                 if not np.iterable(lonlines):
                     lonlines = utils.arange(lon_0 - 180, lon_0 + 180, lonlines)
-                lonlines = (np.array(lonlines) + 180) % 360 - 180
-                if lonlines[0] == lonlines[-1]:
-                    lonlines[-1] += 360
+                    lonlines = lonlines.astype(np.float64)
+                    lonlines[-1] -= 1e-10  # make sure appears on *right*
+                print(lonlines)
+                lonlines = np.arange(-180, 180, 30)
+                # lonlines = (np.array(lonlines) + 180) % 360 - 180
+                # if lonlines[0] == lonlines[-1]:
+                #     lonlines[-1] += 360
                 lonlines = [*lonlines]
+                # lonlines[-1] -= eps
 
             # Latitudes gridlines, draw from -latmax to latmax unless result
             # would be asymmetrical across equator
@@ -3167,6 +3172,33 @@ optional
     magnitude_spectrum = _disable(Axes.magnitude_spectrum)
 
 
+def _add_gridline_label(self, value, axis, upper_end):
+    """Gridliner method monkey patch. Always print number in range
+    (180W, 180E)."""
+    # Have 3 choices (see Issue #78):
+    # 1. lonlines go from -180 to 180, but get double 180 labels at dateline
+    # 2. lonlines go from -180 to e.g. 150, but no lines from 150 to dateline
+    # 3. lonlines go from lon_0 - 180 to lon_0 + 180 mod 360, but results
+    #    in non-monotonic array causing double gridlines east of dateline
+    # 4. lonlines go from lon_0 - 180 to lon_0 + 180 monotonic, but prevents
+    #    labels from being drawn outside of range (-180, 180)
+    # These monkey patches choose #4 and permit labels being drawn
+    # outside of (-180 180)
+    if axis == 'x':
+        value = (value + 180) % 360 - 180
+    return type(self)._add_gridline_label(self, value, axis, upper_end)
+
+
+def _axes_domain(self, *args, **kwargs):
+    """Gridliner method monkey patch. Filter valid label coordinates to values
+    between lon_0 - 180 and lon_0 + 180."""
+    # See _add_gridline_label for detials
+    lon_0 = self.axes.projection.proj4_params.get('lon_0', 0)
+    x_range, y_range = type(self)._axes_domain(self, *args, **kwargs)
+    x_range = np.asarray(x_range) + lon_0
+    return x_range, y_range
+
+
 class GeoAxes(ProjAxes, GeoAxes):
     """Axes subclass for plotting `cartopy \
 <https://scitools.org.uk/cartopy/docs/latest/>`__ projections. Initializes
@@ -3221,15 +3253,17 @@ class GeoAxes(ProjAxes, GeoAxes):
 
     def _format_apply(self, patch_kw, lonlim, latlim, boundinglat,
                       lonlines, latlines, latmax, lonarray, latarray):
-        """Applies formatting to cartopy axes."""
-        # Imports
+        """Apply formatting to cartopy axes."""
         import cartopy.feature as cfeature
         import cartopy.crs as ccrs
         from cartopy.mpl import gridliner
+
         # Initial gridliner object, which ProPlot passively modifies
         # TODO: Flexible formatter?
         if not self._gridliners:
             gl = self.gridlines(zorder=2.5)  # below text only
+            gl._axes_domain = _axes_domain.__get__(gl)  # apply monkey patches
+            gl._add_gridline_label = _add_gridline_label.__get__(gl)
             gl.xlines = False
             gl.ylines = False
             try:
@@ -3275,7 +3309,7 @@ class GeoAxes(ProjAxes, GeoAxes):
             if boundinglat is not None and boundinglat != self._boundinglat:
                 eps = 1e-10  # bug with full -180, 180 range when lon_0 != 0
                 lat0 = (90 if north else -90)
-                lon0 = self.projection.proj4_params['lon_0']
+                lon0 = self.projection.proj4_params.get('lon_0', 0)
                 extent = [lon0 - 180 + eps,
                           lon0 + 180 - eps, boundinglat, lat0]
                 self.set_extent(extent, crs=ccrs.PlateCarree())

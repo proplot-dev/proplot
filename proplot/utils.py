@@ -159,10 +159,10 @@ def edges(array, axis=-1):
     `~numpy.ndarray`
         Array of "edge" coordinates.
     """
-    # First permute
-    array = np.array(array)
+    # Permute axes
+    array = np.asarray(array)
     array = np.swapaxes(array, axis, -1)
-    # Next operate
+    # Get edges
     array = np.concatenate((
         array[..., :1] - (array[..., 1:2] - array[..., :1]) / 2,
         (array[..., 1:] + array[..., :-1]) / 2,
@@ -182,8 +182,8 @@ def edges2d(z):
 
     Parameters
     ----------
-    array : array-like
-        2d array.
+    z : array-like
+        A 2d array.
 
     Returns
     -------
@@ -191,20 +191,19 @@ def edges2d(z):
         Array of "edge" coordinates.
     """
     z = np.asarray(z)
+    if z.ndim != 2:
+        raise ValueError(f'Input must be a 2d array, but got {z.ndim}d.')
     ny, nx = z.shape
     zzb = np.zeros((ny + 1, nx + 1))
-
     # Inner
-    zzb[1:-1, 1:-1] = 0.25 * (z[1:, 1:] + z[:-1, 1:]
-                              + z[1:, :-1] + z[:-1, :-1])
+    zzb[1:-1, 1:-1] = 0.25 * (
+        z[1:, 1:] + z[:-1, 1:] + z[1:, :-1] + z[:-1, :-1])
     # Lower and upper
     zzb[0] += edges(1.5 * z[0] - 0.5 * z[1])
     zzb[-1] += edges(1.5 * z[-1] - 0.5 * z[-2])
-
     # Left and right
     zzb[:, 0] += edges(1.5 * z[:, 0] - 0.5 * z[:, 1])
     zzb[:, -1] += edges(1.5 * z[:, -1] - 0.5 * z[:, -2])
-
     # Corners
     zzb[[0, 0, -1, -1], [0, -1, -1, 0]] *= 0.5
     return zzb
@@ -269,14 +268,12 @@ def units(value, numeric='in'):
 
     # Dict of possible units
     unit_dict = {
-        # Physical units
-        'in': 1.0,  # already in inches
+        'in': 1.0,
         'm': 39.37,
         'ft': 12.0,
         'cm': 0.3937,
         'mm': 0.03937,
         'pt': 1 / 72.0,
-        # Font units
         'em': small / 72.0,
         'ex': 0.5 * small / 72.0,  # more or less; see URL
         'Em': large / 72.0,  # for large text
