@@ -3034,12 +3034,6 @@ optional
             # Longitude gridlines, draw relative to projection prime meridian
             # NOTE: Always generate gridlines array on first format call
             # because rc setting will be not None
-            # NOTE: Cartopy needs monotonic levels for drawing gridlines or
-            # will get *overlapping* lines in places. But cartopy *also*
-            # needs labels between -180 and 180 for global plots even if
-            # longitude is shifted because GridLiner._axes_domain gets it
-            # wrong. For now use choose to allow overlapping gridlines as
-            # workaround. See #78.
             if isinstance(self, GeoAxes):
                 lon_0 = self.projection.proj4_params.get('lon_0', 0)
             else:
@@ -3051,13 +3045,8 @@ optional
                     lonlines = utils.arange(lon_0 - 180, lon_0 + 180, lonlines)
                     lonlines = lonlines.astype(np.float64)
                     lonlines[-1] -= 1e-10  # make sure appears on *right*
-                print(lonlines)
                 lonlines = np.arange(-180, 180, 30)
-                # lonlines = (np.array(lonlines) + 180) % 360 - 180
-                # if lonlines[0] == lonlines[-1]:
-                #     lonlines[-1] += 360
                 lonlines = [*lonlines]
-                # lonlines[-1] -= eps
 
             # Latitudes gridlines, draw from -latmax to latmax unless result
             # would be asymmetrical across equator
