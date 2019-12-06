@@ -20,14 +20,19 @@ ProPlot v0.2.3 (2019-12-05)
 Bug fixes
 ---------
 - Fix issue with overlapping gridlines (:commit:`8960ebdc`).
-- Fix issue where auto colorbar labels are not applied when ``globe=True`` (:commit:`ecb3c899`)
+- Fix issue where auto colorbar labels are not applied when ``globe=True`` (:commit:`ecb3c899`).
 - More sensible zorder for gridlines (:commit:`90d94e55`).
 - Fix issue where customized super title settings are overridden when
-  new axes are created (:commit:`35cb21f2`)
+  new axes are created (:commit:`35cb21f2`).
 
 Documentation
 -------------
 - Organize ipython notebook documentation (:commit:`35cb21f2`).
+
+Internals
+---------
+- Major cleanup of the `~proplot.wrappers.colorbar_wrapper` source code, handle
+  minor ticks using the builtin matplotlib API just like major ticks (:commit:`b9976220`).
 
 ProPlot v0.2.2 (2019-12-04)
 ===========================
@@ -89,7 +94,7 @@ Internals
 - Enforce source code PEP8 compliance (:commit:`78da51a7`).
 - Use pre-commit for all future commits (:commit:`e14f6809`).
 - Implement tight layout stuff with canvas monkey patches (:commit:`67221d10`).
-  This is more robust to different backends.
+  ProPlot now works for arbitrary backends, not just inline and qt.
 
 Documentation
 -------------

@@ -26,12 +26,12 @@ Why didn't you add to matplotlib directly?
 Since ProPlot is built right into the matplotlib API, you might be wondering why we didn't contribute to the matplotlib project directly.
 
 * Certain features directly conflict with matplotlib. For example, ProPlot's tight layout algorithm conflicts with matplotlib's `tight layout <https://matplotlib.org/tutorials/intermediate/tight_layout_guide.html>`__ by permitting *fluid figure dimensions*, and the new `~proplot.subplots.GridSpec` class permits *variable spacing* between rows and columns and uses *physical units* rather than figure-relative and axes-relative units.
-* Certain features are arguably be too redundant. For example, `~proplot.axes.Axes.format` is convenient, but the same tasks can be accomplished with existing axes and axis "setter" methods. Also, some of the functionality of `~proplot.subplots.subplots` can be replicated with `axes_grid1 <https://matplotlib.org/mpl_toolkits/axes_grid1/index.html>`__. Following `TOOWTDI <https://wiki.python.org/moin/TOOWTDI>`__ philosophy, these features should probably not be integrated.
+* Certain features are arguably too redundant. For example, `~proplot.axes.Axes.format` is convenient, but the same tasks can be accomplished with existing axes and axis "setter" methods. Also, some of the functionality of `~proplot.subplots.subplots` can be replicated with `axes_grid1 <https://matplotlib.org/mpl_toolkits/axes_grid1/index.html>`__. Following `TOOWTDI <https://wiki.python.org/moin/TOOWTDI>`__ philosophy, these features should probably not be integrated.
 
 ..
    * ProPlot design choices are made with the academic scientist working with ipython notebooks in mind, while matplotlib has a much more diverse base of hundreds of thousands of users. Matplotlib developers have to focus on support and API consistency, while ProPlot can make more dramatic improvements.
 
-Nevertheless, if any core matplotlib think that some of ProPlot's features should be added to matplotlib, please contact core developer `Luke Davis <https://github.com/lukelbd>`__ and let him know!
+Nevertheless, if any core matplotlib think that some of ProPlot's features should be added to matplotlib, please contact `Luke Davis <https://github.com/lukelbd>`__ and let him know!
 
 Why do my inline figures look different?
 ========================================
@@ -44,7 +44,7 @@ ProPlot helps you get your figure sizes *correct* for embedding
 them as vector graphics inside publications.
 It uses a slightly smaller default font size, calculates the default figure
 size from the number of subplot rows and columns, and
-adds the ``journal`` keyword argument to `~proplot.subplots.Figure` which can
+adds the `journal` keyword argument to `~proplot.subplots.Figure` which can
 be used to employ figure dimensions from a particular journal standard.
 To keep the inline figures legible, ProPlot also employs a *higher quality* default
 inline backend.
