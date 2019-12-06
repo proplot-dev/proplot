@@ -245,6 +245,11 @@ a:visited,
   background-color: var(--highlight-color);
 }
 
+/* Hide Edit on Github */
+.wy-breadcrumbs li.wy-breadcrumbs-aside a {
+  display: None;
+}
+
 /* Code color, dl:not(.docutils) needed to match specificity */
 .rst-content code.literal,
 .rst-content tt.literal,
