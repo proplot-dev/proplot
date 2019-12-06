@@ -14,8 +14,21 @@ try:
 except ImportError:  # graceful fallback if IceCream isn't installed
     ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
 __all__ = ['arange', 'edges', 'edges2d', 'units']
-NUMBER = re.compile('^([-+]?[0-9._]+([eE][-+]?[0-9_]+)?)(.*)$')
 BENCHMARK = False  # change this to turn on benchmarking
+NUMBER = re.compile('^([-+]?[0-9._]+([eE][-+]?[0-9_]+)?)(.*)$')
+
+
+class _benchmark(object):
+    """Context object for benchmarking arbitrary blocks of code."""
+    def __init__(self, message):
+        self.message = message
+
+    def __enter__(self):
+        self.time = time.clock()
+
+    def __exit__(self, *args):
+        if BENCHMARK:
+            print(f'{self.message}: {time.clock() - self.time}s')
 
 
 class _setstate(object):
@@ -37,19 +50,6 @@ class _setstate(object):
                 setattr(self._obj, key, self._kwargs_orig[key])
             else:
                 delattr(self._obj, key)
-
-
-class _benchmark(object):
-    """Context object for benchmarking arbitrary blocks of code."""
-    def __init__(self, message):
-        self.message = message
-
-    def __enter__(self):
-        self.time = time.clock()
-
-    def __exit__(self, *args):
-        if BENCHMARK:
-            print(f'{self.message}: {time.clock() - self.time}s')
 
 
 def _logger(func):
