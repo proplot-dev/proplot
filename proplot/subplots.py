@@ -776,21 +776,6 @@ def _get_space(key, share=0, pad=None):
     return space
 
 
-class _hidelabels(object):
-    """Hide objects temporarily so they are ignored by the tight bounding box
-    algorithm."""
-    def __init__(self, *args):
-        self._labels = args
-
-    def __enter__(self):
-        for label in self._labels:
-            label.set_visible(False)
-
-    def __exit__(self, *args):
-        for label in self._labels:
-            label.set_visible(True)
-
-
 class EdgeStack(object):
     """
     Container for groups of `~matplotlib.artist.Artist` objects stacked
@@ -1271,51 +1256,54 @@ class GeometrySolver(object):
             coords = [None] * len(axs)
             if s == 't' and suptitle_on:
                 supaxs = axs
-            with _hidelabels(*labels):
-                for i, (ax, label) in enumerate(zip(axs, labels)):
-                    label_on = label.get_text().strip()
-                    if not label_on:
-                        continue
-                    # Get coord from tight bounding box
-                    # Include twin axes and panels along the same side
-                    extra = ('bt' if s in 'lr' else 'lr')
-                    icoords = []
-                    for iax in ax._iter_panels(extra):
-                        bbox = iax.get_tightbbox(renderer)
-                        if s == 'l':
-                            jcoords = (bbox.xmin, 0)
-                        elif s == 'r':
-                            jcoords = (bbox.xmax, 0)
-                        elif s == 't':
-                            jcoords = (0, bbox.ymax)
-                        else:
-                            jcoords = (0, bbox.ymin)
-                        c = self.transFigure.inverted().transform(jcoords)
-                        c = (c[0] if s in 'lr' else c[1])
-                        icoords.append(c)
-                    # Offset, and offset a bit extra for left/right labels
-                    # See:
-                    # https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
-                    fontsize = label.get_fontsize()
-                    if s in 'lr':
-                        scale1, scale2 = 0.6, width
+
+            # Position labels
+            # TODO: No more _hidelabels here! Must determine positions
+            # with EdgeStack instead of with axes tightbbox algorithm!
+            for i, (ax, label) in enumerate(zip(axs, labels)):
+                label_on = label.get_text().strip()
+                if not label_on:
+                    continue
+                # Get coord from tight bounding box
+                # Include twin axes and panels along the same side
+                extra = ('bt' if s in 'lr' else 'lr')
+                icoords = []
+                for iax in ax._iter_panels(extra):
+                    bbox = iax.get_tightbbox(renderer)
+                    if s == 'l':
+                        jcoords = (bbox.xmin, 0)
+                    elif s == 'r':
+                        jcoords = (bbox.xmax, 0)
+                    elif s == 't':
+                        jcoords = (0, bbox.ymax)
                     else:
-                        scale1, scale2 = 0.3, height
-                    if s in 'lb':
-                        coords[i] = min(icoords) - (
-                            scale1 * fontsize / 72) / scale2
-                    else:
-                        coords[i] = max(icoords) + (
-                            scale1 * fontsize / 72) / scale2
-                # Assign coords
-                coords = [i for i in coords if i is not None]
-                if coords:
-                    if s in 'lb':
-                        c = min(coords)
-                    else:
-                        c = max(coords)
-                    for label in labels:
-                        label.update({x: c})
+                        jcoords = (0, bbox.ymin)
+                    c = self.transFigure.inverted().transform(jcoords)
+                    c = (c[0] if s in 'lr' else c[1])
+                    icoords.append(c)
+                # Offset, and offset a bit extra for left/right labels
+                # See:
+                # https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
+                fontsize = label.get_fontsize()
+                if s in 'lr':
+                    scale1, scale2 = 0.6, width
+                else:
+                    scale1, scale2 = 0.3, height
+                if s in 'lb':
+                    coords[i] = min(icoords) - (
+                        scale1 * fontsize / 72) / scale2
+                else:
+                    coords[i] = max(icoords) + (
+                        scale1 * fontsize / 72) / scale2
+            # Assign coords
+            coords = [i for i in coords if i is not None]
+            if coords:
+                if s in 'lb':
+                    c = min(coords)
+                else:
+                    c = max(coords)
+                for label in labels:
+                    label.update({x: c})
 
         # Update super title position
         # If no axes on the top row are visible, do not try to align!
