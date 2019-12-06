@@ -315,20 +315,28 @@ When you pass the array-like `xarray.DataArray`, `pandas.DataFrame`, and `pandas
 the dedicated `xarray.DataArray.plot`, `pandas.DataFrame.plot`, and `pandas.Series.plot`
 tools instead.
 
-This approach is not ideal -- plotting methods should be invoked on the `~proplot.axes.Axes`, not on the data container! It also requires learning a slightly different syntax, and tends to encourage using the `~matplotlib.pyplot` API rather than the object-oriented API.
+This approach is fine for quick plots, but not ideal.
+It requires learning a slightly different syntax from matplotlib, and tends to encourage using the `~matplotlib.pyplot` API rather than the object-oriented API.
+These tools also introduce features that you *wish* you could access
+directly in matplotlib, without having to use special data containers and
+an entirely separate API.
 
 .. raw:: html
 
    <h3>Solution</h3>
 
-ProPlot *reproduces* most of the `xarray.DataArray.plot`, `pandas.DataFrame.plot`, and `pandas.Series.plot` features on the `~proplot.axes.Axes` methods themselves!
+ProPlot *reproduces* most of the `xarray.DataArray.plot`, `pandas.DataFrame.plot`, and `pandas.Series.plot` features on the `~proplot.axes.Axes` plotting methods themselves.
 
-When passing an `xarray.DataArray`, `pandas.DataFrame`, or `pandas.Series` through any
-plotting method instead of a `numpy.ndarray`, the
-axis tick labels, axis labels, subplot titles, and colorbar and legend labels are
-automatically updated. This can be disabled by passing
-``autoformat`` to the plotting method or to `~proplot.subplots.subplots`.
-See :ref:`1d plotting` and :ref:`2d plotting` for details.
+Passing an `xarray.DataArray`, `pandas.DataFrame`, or `pandas.Series` through
+any plotting method automatically updates the
+axis tick labels, axis labels, subplot titles, and colorbar and legend labels
+from the metadata.  This can be disabled by passing
+``autoformat=False`` to the plotting method or to `~proplot.subplots.subplots`.
+
+Also, as described in :ref:`New and improved plotting`, ProPlot implements certain
+features like grouped bar plost, layered area plots, heatmap plots,
+and on-the-fly colorbars and legends from the
+`xarray` and `pandas` APIs directly on the `~proplot.axes.Axes` class.
 
 Cartopy and basemap integration
 ===============================
