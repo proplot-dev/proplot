@@ -47,17 +47,17 @@ JOURNAL_SPECS = {
 
 
 def close(*args, **kwargs):
-    """Call `matplotlib.pyplot.close`. This is included so you don't have
-    to import `~matplotlib.pyplot`."""
+    """Pass the input arguments to `matplotlib.pyplot.close`. This is included
+    so you don't have to import `~matplotlib.pyplot`."""
     plt.close(*args, **kwargs)
 
 
 def show():
     """Call `matplotlib.pyplot.show`. This is included so you don't have
     to import `~matplotlib.pyplot`. Note this command should *not be
-    necessary* if you are working in an iPython notebook and
-    :rcraw:`nbsetup` is set to ``True`` -- when you create a figure in a cell,
-    it will be automatically displayed."""
+    necessary* if you are working an iPython session and :rcraw:`matplotlib`
+    is non-empty -- when you create a new figure, it will be automatically
+    displayed."""
     plt.show()
 
 
@@ -473,7 +473,7 @@ class GridSpec(mgridspec.GridSpec):
 
 def _canvas_preprocess(canvas, method):
     """Return a pre-processer that can be used to override instance-level
-    canvas draw() and print_figure() methdos. This applies tight layout and
+    canvas draw() and print_figure() methods. This applies tight layout and
     aspect ratio-conserving adjustments and aligns labels. Required so that
     the canvas methods instantiate renderers with the correct dimensions.
     Note that MacOSX currently `cannot be resized \
@@ -486,8 +486,7 @@ def _canvas_preprocess(canvas, method):
     # implementation (because FigureCanvasAgg queries the bbox directly
     # rather than using get_width_height() so requires a workaround), or (2)
     # override bbox and bbox_inches as *properties*, but these are really
-    # complicated, dangerous, and result in unnecessary extra draws. The
-    # below is by far the best approach.
+    # complicated, dangerous, and result in unnecessary extra draws.
     def _preprocess(self, *args, **kwargs):
         if method == 'draw_idle' and self._is_idle_drawing:
             return  # copied from source code

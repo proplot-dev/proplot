@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """
-Plotting wrappers applied to various `~proplot.axes.Axes` plotting methods.
-In a future version these features will be integrated more closely with the
-individual plotting methods and documented on the plotting methods themselves,
-but for now they are documented separately.
+Wrapper functions applied to various `~proplot.axes.Axes` plotting methods.
+In a future version these features will be documented on the individual
+plotting methods, but for now they are documented separately.
 """
 import sys
 import numpy as np
