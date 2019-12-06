@@ -113,7 +113,6 @@ def _warn_proplot(message):
     warning. Do not want to affect warnings emitted by other modules."""
     with _setstate(warnings, formatwarning=_format_warning):
         warnings.warn(message)
-    warnings.formatwarning = _format_warning
 
 
 def _notNone(*args, names=None):

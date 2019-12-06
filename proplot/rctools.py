@@ -920,7 +920,7 @@ def ipython_matplotlib(backend=None, fmt=None):
     # For terminals (UnknownBackend is subclass of KeyError)
     except KeyError:
         if backend != 'auto':
-            _warn_proplot(f'"%matplotlib {backend!r}" failed.')
+            _warn_proplot(f'{"%matplotlib " + backend!r} failed.')
         try:
             ipython.magic('matplotlib qt')  # use any available Qt backend
             rc.reset()
