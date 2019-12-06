@@ -41,7 +41,6 @@ Making figures in ProPlot always begins with a call to the
 
 .. code-block:: python
 
-   import proplot as plot
    f, axs = plot.subplots(...)
 
 `~proplot.subplots.subplots` is modeled after
