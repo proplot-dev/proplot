@@ -40,7 +40,8 @@ def _warning_proplot(message, category, filename, lineno, line=None):
             line = linecache.getline(filename, lineno)
         except ModuleNotFoundError:
             pass
-    if 'proplot' in filename and line is not None and 'warnings' in line:
+    dirname = _os.path.basename(_os.path.dirname(filename))
+    if dirname == 'proplot' and line is not None and 'warnings' in line:
         string = f'{filename}:{lineno}: ProPlotWarning: {message}'
     else:
         string = f'{filename}:{lineno}: {category.__name__}: {message}'
