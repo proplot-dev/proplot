@@ -330,8 +330,8 @@ axis tick labels, axis labels, subplot titles, and colorbar and legend labels
 from the metadata.  This can be disabled by passing
 ``autoformat=False`` to the plotting method or to `~proplot.subplots.subplots`.
 
-Also, as described in :ref:`New and improved plotting methods`, ProPlot implements certain
-features like grouped bar plost, layered area plots, heatmap plots,
+And as described in :ref:`New and improved plotting methods`, ProPlot implements certain
+features like grouped bar plots, layered area plots, heatmap plots,
 and on-the-fly colorbars and legends from the
 `xarray` and `pandas` APIs directly on the `~proplot.axes.Axes` class.
 
