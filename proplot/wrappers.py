@@ -9,9 +9,8 @@ import sys
 import numpy as np
 import numpy.ma as ma
 import functools
-import warnings
-from . import utils, styletools, axistools
-from .utils import _notNone
+from . import styletools, axistools
+from .utils import _warn_proplot, _notNone, edges, edges2d, units
 import matplotlib.axes as maxes
 import matplotlib.contour as mcontour
 import matplotlib.ticker as mticker
@@ -516,15 +515,15 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
             elif Z.shape[1] == xlen and Z.shape[0] == ylen:
                 if all(z.ndim == 1 and z.size > 1
                        and z.dtype != 'object' for z in (x, y)):
-                    x = utils.edges(x)
-                    y = utils.edges(y)
+                    x = edges(x)
+                    y = edges(y)
                 else:
                     if (x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1
                             and x.dtype != 'object'):
-                        x = utils.edges2d(x)
+                        x = edges2d(x)
                     if (y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1
                             and y.dtype != 'object'):
-                        y = utils.edges2d(y)
+                        y = edges2d(y)
             elif Z.shape[1] != xlen - 1 or Z.shape[0] != ylen - 1:
                 raise ValueError(
                     f'Input shapes x {x.shape} and y {y.shape} must match '
@@ -1092,7 +1091,7 @@ def bar_wrapper(
     # TODO: Stacked feature is implemented in `cycle_changer`, but makes more
     # sense do document here; figure out way to move it here?
     if left is not None:
-        warnings.warn(
+        _warn_proplot(
             f'The "left" keyword with bar() is deprecated. Use "x" instead.')
         x = left
     if x is None and height is None:
@@ -1252,7 +1251,7 @@ def violinplot_wrapper(
     # Sanitize input
     lw = _notNone(lw, linewidth, None, names=('lw', 'linewidth'))
     if kwargs.pop('showextrema', None):
-        warnings.warn(f'Ignoring showextrema=True.')
+        _warn_proplot(f'Ignoring showextrema=True.')
     if 'showmeans' in kwargs:
         kwargs.setdefault('means', kwargs.pop('showmeans'))
     if 'showmedians' in kwargs:
@@ -1356,12 +1355,12 @@ def text_wrapper(
         if fontname in styletools.fonts:
             kwargs['fontfamily'] = fontname
         else:
-            warnings.warn(
+            _warn_proplot(
                 f'Font {fontname!r} unavailable. Available fonts are '
                 ', '.join(map(repr, styletools.fonts)) + '.')
     size = _notNone(fontsize, size, None, names=('fontsize', 'size'))
     if size is not None:
-        kwargs['fontsize'] = utils.units(size, 'pt')
+        kwargs['fontsize'] = units(size, 'pt')
     # text.color is ignored sometimes unless we apply this
     kwargs.setdefault('color', rc.get('text.color'))
     obj = func(self, x, y, text, transform=transform, **kwargs)
@@ -1886,12 +1885,12 @@ def cmap_changer(
                 for i, val in enumerate(values):
                     levels.append(2 * val - levels[-1])
                 if any(np.diff(levels) <= 0):  # algorithm failed
-                    levels = utils.edges(values)
+                    levels = edges(values)
             # Generate levels by finding in-between points in the
             # normalized numeric space
             else:
                 inorm = styletools.Norm(norm, **norm_kw)
-                levels = inorm.inverse(utils.edges(inorm(values)))
+                levels = inorm.inverse(edges(inorm(values)))
             if name in ('parametric',):
                 kwargs['values'] = values
         else:
@@ -1908,7 +1907,7 @@ def cmap_changer(
         cmap = styletools.Colormap(cmap, **cmap_kw)
         cyclic = getattr(cmap, '_cyclic', False)
         if cyclic and extend != 'neither':
-            warnings.warn(
+            _warn_proplot(
                 f'Cyclic colormap requires extend="neither". '
                 'Overriding user input extend={extend!r}.')
             extend = 'neither'
@@ -2313,7 +2312,7 @@ property-spec, optional
     if center is None:  # automatically guess
         center = list_of_lists
     elif center and list_of_lists and ncol is not None:
-        warnings.warn(
+        _warn_proplot(
             'Detected list of *lists* of legend handles. '
             'Ignoring user input property "ncol".')
     elif not center and list_of_lists:  # standardize format based on input
@@ -2363,7 +2362,7 @@ property-spec, optional
             if prop is not None:
                 overridden.append(override)
         if overridden:
-            warnings.warn(f'For centered-row legends, must override '
+            _warn_proplot(f'For centered-row legends, must override '
                           'user input properties '
                           ', '.join(map(repr, overridden)) + '.')
         # Determine space we want sub-legend to occupy as fraction of height
@@ -2389,7 +2388,7 @@ property-spec, optional
                 f'Invalid location {loc!r} for legend with center=True. '
                 'Must be a location *string*.')
         elif loc == 'best':
-            warnings.warn(
+            _warn_proplot(
                 'For centered-row legends, cannot use "best" location. '
                 'Defaulting to "upper center".')
         for i, ipairs in enumerate(pairs):
@@ -2747,6 +2746,7 @@ or colormap-spec
             raise ValueError(
                 f'Passed {len(values)} values, but only {len(mappable)} '
                 f'objects or colors.')
+        import warnings
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             mappable = self.axes.contourf(
@@ -2803,7 +2803,7 @@ or colormap-spec
         scale = width * abs(self.get_position().width)
     else:
         scale = height * abs(self.get_position().height)
-    extendsize = utils.units(_notNone(extendsize, rc['colorbar.extend']))
+    extendsize = units(_notNone(extendsize, rc['colorbar.extend']))
     extendsize = extendsize / (scale - 2 * extendsize)
     kwargs.update({
         'ticks': locator,
@@ -2830,7 +2830,7 @@ or colormap-spec
     elif minorlocator is None:
         cb.minorticks_off()
     elif not hasattr(cb, '_ticker'):
-        warnings.warn(
+        _warn_proplot(
             'Matplotlib colorbar API has changed. '
             'Cannot use custom minor tick locator.')
         if tickminor:
@@ -2862,7 +2862,7 @@ or colormap-spec
     if not cmap._isinit:
         cmap._init()
     if any(cmap._lut[:-1, 3] < 1):
-        warnings.warn(
+        _warn_proplot(
             f'Using manual alpha-blending for {cmap.name!r} colorbar solids.')
         # Generate "secret" copy of the colormap!
         lut = cmap._lut.copy()

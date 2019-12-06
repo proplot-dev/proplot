@@ -7,13 +7,11 @@ See :ref:`Configuring proplot` for details.
 # new settings! Much of this script was adapted from seaborn; see:
 # https://github.com/mwaskom/seaborn/blob/master/seaborn/rcmod.py
 from matplotlib import rcParams as rcParams
-from . import utils
-from .utils import _counter, _timer, _benchmark
+from .utils import _warn_proplot, _counter, _timer, _benchmark, units
 import re
 import os
 import yaml
 import cycler
-import warnings
 import numpy as np
 import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
@@ -261,7 +259,7 @@ def _convert_units(key, value):
     if (isinstance(value, str)
             and key.split('.')[0] not in ('colorbar', 'subplots')
             and re.match('^.*(width|space|size|pad|len|small|large)$', key)):
-        value = utils.units(value, 'pt')
+        value = units(value, 'pt')
     return value
 
 
@@ -922,7 +920,7 @@ def ipython_matplotlib(backend=None, fmt=None):
     # For terminals (UnknownBackend is subclass of KeyError)
     except KeyError:
         if backend != 'auto':
-            warnings.warn(f'"%matplotlib {backend!r}" failed.')
+            _warn_proplot(f'"%matplotlib {backend!r}" failed.')
         try:
             ipython.magic('matplotlib qt')  # use any available Qt backend
             rc.reset()

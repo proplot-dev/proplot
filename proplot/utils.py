@@ -18,8 +18,29 @@ NUMBER = re.compile('^([-+]?[0-9._]+([eE][-+]?[0-9_]+)?)(.*)$')
 BENCHMARK = False  # change this to turn on benchmarking
 
 
+class _setstate(object):
+    """Temporarily modify attribute(s) for an arbitrary object."""
+    def __init__(self, obj, **kwargs):
+        self._obj = obj
+        self._kwargs = kwargs
+        self._kwargs_orig = {
+            key: getattr(obj, key) for key in kwargs if hasattr(obj, key)
+        }
+
+    def __enter__(self):
+        for key, value in self._kwargs.items():
+            setattr(self._obj, key, value)
+
+    def __exit__(self, *args):
+        for key in self._kwargs.keys():
+            if key in self._kwargs_orig:
+                setattr(self._obj, key, self._kwargs_orig[key])
+            else:
+                delattr(self._obj, key)
+
+
 class _benchmark(object):
-    """Timer object that can be used to benchmark tasks."""
+    """Context object for benchmarking arbitrary blocks of code."""
     def __init__(self, message):
         self.message = message
 
@@ -78,6 +99,23 @@ def _counter(func):
     return decorator
 
 
+def _format_warning(message, category, filename, lineno, line=None):
+    """Simple format for warnings issued by ProPlot. See the
+    `internal warning call signature \
+<https://docs.python.org/3/library/warnings.html#warnings.showwarning>`__
+    and the `default warning source code \
+<https://github.com/python/cpython/blob/master/Lib/warnings.py>`__."""
+    return f'{filename}:{lineno}: ProPlotWarning: {message}\n'  # needs newline
+
+
+def _warn_proplot(message):
+    """*Temporarily* apply the `_format_warning` monkey patch and emit the
+    warning. Do not want to affect warnings emitted by other modules."""
+    with _setstate(warnings, formatwarning=_format_warning):
+        warnings.warn(message)
+    warnings.formatwarning = _format_warning
+
+
 def _notNone(*args, names=None):
     """Returns the first non-``None`` value, used with keyword arg aliases and
     for setting default values. Ugly name but clear purpose. Pass the `names`
@@ -103,7 +141,7 @@ def _notNone(*args, names=None):
                 if name:
                     kwargs[name] = arg
         if len(kwargs) > 1:
-            warnings.warn(
+            _warn_proplot(
                 f'Got conflicting or duplicate keyword args, '
                 f'using the first one: {kwargs}')
         return first

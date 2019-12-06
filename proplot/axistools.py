@@ -5,13 +5,12 @@ classes. Includes constructor functions so that these classes can be selected
 with with a shorthand syntax.
 """
 import re
-from .utils import _notNone
+from .utils import _warn_proplot, _notNone
 from .rctools import rc
 from numbers import Number
 from fractions import Fraction
 import numpy as np
 import numpy.ma as ma
-import warnings
 import matplotlib.dates as mdates
 import matplotlib.projections.polar as mpolar
 import matplotlib.ticker as mticker
@@ -326,7 +325,7 @@ def Scale(scale, *args, **kwargs):
     # Get scale preset
     if scale in SCALE_PRESETS:
         if args or kwargs:
-            warnings.warn(
+            _warn_proplot(
                 f'Scale {scale!r} is a scale *preset*. Ignoring positional '
                 'argument(s): {args} and keyword argument(s): {kwargs}. ')
         scale, *args = SCALE_PRESETS[scale]
@@ -511,7 +510,7 @@ def _scale_factory(scale, axis, *args, **kwargs):
     instantiated."""
     if isinstance(scale, mscale.ScaleBase):
         if args or kwargs:
-            warnings.warn(f'Ignoring args {args} and keyword args {kwargs}.')
+            _warn_proplot(f'Ignoring args {args} and keyword args {kwargs}.')
         return scale  # do nothing
     else:
         scale = scale.lower()

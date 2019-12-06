@@ -21,9 +21,8 @@ import numpy as np
 import numpy.ma as ma
 import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
-import warnings
 from . import colormath
-from .utils import _notNone, _timer
+from .utils import _warn_proplot, _notNone, _timer
 __all__ = [
     'BinNorm', 'CmapDict', 'ColorCacheDict',
     'LinearSegmentedNorm', 'MidpointNorm', 'PerceptuallyUniformColormap',
@@ -527,9 +526,9 @@ def _clip_colors(colors, clip=True, gray=0.2):
     # message = 'Clipped' if clip else 'Invalid'
     # for i,name in enumerate('rgb'):
     #     if under[:,i].any():
-    #         warnings.warn(f'{message} {name!r} channel ( < 0).')
+    #         _warn_proplot(f'{message} {name!r} channel ( < 0).')
     #     if over[:,i].any():
-    #         warnings.warn(f'{message} {name!r} channel ( > 1).')
+    #         _warn_proplot(f'{message} {name!r} channel ( > 1).')
     return colors
 
 
@@ -561,7 +560,7 @@ def _make_segmentdata_array(values, coords=None, ratios=None):
     if coords is not None:
         coords = np.atleast_1d(coords)
         if ratios is not None:
-            warnings.warn(
+            _warn_proplot(
                 f'Segment coordinates were provided, ignoring '
                 f'ratios={ratios!r}.')
         if len(coords) != len(values) or coords[0] != 0 or coords[-1] != 1:
@@ -904,7 +903,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
                 gamma.extend(igamma)
             if all(callable_):
                 if any(igamma != gamma[0] for igamma in gamma[1:]):
-                    warnings.warn(
+                    _warn_proplot(
                         'Cannot use multiple segment gammas when '
                         'concatenating callable segments. Using the first '
                         f'gamma of {gamma[0]}.')
@@ -1110,7 +1109,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         if name is None:
             name = self.name + '_shifted'
         if not self._cyclic:
-            warnings.warn(
+            _warn_proplot(
                 f'Shifting non-cyclic colormap {self.name!r}. '
                 f'Use cmap.set_cyclic(True) to suppress this warning.')
             self._cyclic = True
@@ -1191,7 +1190,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             if np.iterable(gamma):
                 if callable(xyy):
                     if any(igamma != gamma[0] for igamma in gamma[1:]):
-                        warnings.warn(
+                        _warn_proplot(
                             'Cannot use multiple segment gammas when '
                             'truncating colormap. Using the first gamma '
                             f'of {gamma[0]}.')
@@ -2231,11 +2230,11 @@ def Cycle(
     if not args:
         props['color'] = ['k']  # ensures property cycler is non empty
         if kwargs:
-            warnings.warn(f'Ignoring Cycle() keyword arg(s) {kwargs}.')
+            _warn_proplot(f'Ignoring Cycle() keyword arg(s) {kwargs}.')
     # Merge cycler objects
     elif all(isinstance(arg, cycler.Cycler) for arg in args):
         if kwargs:
-            warnings.warn(f'Ignoring Cycle() keyword arg(s) {kwargs}.')
+            _warn_proplot(f'Ignoring Cycle() keyword arg(s) {kwargs}.')
         if len(args) == 1:
             return args[0]
         else:
@@ -2704,14 +2703,14 @@ def _load_cmap_cycle(filename, cmap=False):
         try:
             data = [[float(num) for num in line] for line in data]
         except ValueError:
-            warnings.warn(
+            _warn_proplot(
                 f'Failed to load {filename!r}. Expected a table of comma '
                 'or space-separated values.')
             return None, None
         # Build x-coordinates and standardize shape
         data = np.array(data)
         if data.shape[1] != len(ext):
-            warnings.warn(
+            _warn_proplot(
                 f'Failed to load {filename!r}. Got {data.shape[1]} columns, '
                 f'but expected {len(ext)}.')
             return None, None
@@ -2727,18 +2726,18 @@ def _load_cmap_cycle(filename, cmap=False):
         try:
             xmldoc = etree.parse(filename)
         except IOError:
-            warnings.warn(f'Failed to load {filename!r}.')
+            _warn_proplot(f'Failed to load {filename!r}.')
             return None, None
         x, data = [], []
         for s in xmldoc.getroot().findall('.//Point'):
             # Verify keys
             if any(key not in s.attrib for key in 'xrgb'):
-                warnings.warn(
+                _warn_proplot(
                     f'Failed to load {filename!r}. Missing an x, r, g, or b '
                     'specification inside one or more <Point> tags.')
                 return None, None
             if 'o' in s.attrib and 'a' in s.attrib:
-                warnings.warn(
+                _warn_proplot(
                     f'Failed to load {filename!r}. Contains '
                     'ambiguous opacity key.')
                 return None, None
@@ -2752,7 +2751,7 @@ def _load_cmap_cycle(filename, cmap=False):
             data.append(color)
         # Convert to array
         if not all(len(data[0]) == len(color) for color in data):
-            warnings.warn(
+            _warn_proplot(
                 f'File {filename!r} has some points with alpha channel '
                 'specified, some without.')
             return None, None
@@ -2763,14 +2762,14 @@ def _load_cmap_cycle(filename, cmap=False):
         string = open(filename).read()  # into single string
         data = re.findall('#[0-9a-fA-F]{6}', string)  # list of strings
         if len(data) < 2:
-            warnings.warn(
+            _warn_proplot(
                 f'Failed to load {filename!r}. Hex strings not found.')
             return None, None
         # Convert to array
         x = np.linspace(0, 1, len(data))
         data = [to_rgb(color) for color in data]
     else:
-        warnings.warn(
+        _warn_proplot(
             f'Colormap or cycle file {filename!r} has unknown extension.')
         return None, None
 
@@ -2779,7 +2778,7 @@ def _load_cmap_cycle(filename, cmap=False):
     # version of the colormap stored in that file.
     if isinstance(data, LinearSegmentedColormap):
         if not cmap:
-            warnings.warn(f'Failed to load {filename!r} as color cycle.')
+            _warn_proplot(f'Failed to load {filename!r} as color cycle.')
             return None, None
     else:
         x, data = np.array(x), np.array(data)

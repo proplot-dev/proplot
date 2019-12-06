@@ -3,7 +3,6 @@
 The axes classes used for all ProPlot figures.
 """
 import numpy as np
-import warnings
 import functools
 from numbers import Integral
 import matplotlib.projections as mproj
@@ -17,8 +16,8 @@ import matplotlib.patches as mpatches
 import matplotlib.gridspec as mgridspec
 import matplotlib.transforms as mtransforms
 import matplotlib.collections as mcollections
-from . import utils, projs, axistools
-from .utils import _notNone, units
+from . import projs, axistools
+from .utils import _warn_proplot, _notNone, units, arange, edges
 from .rctools import rc, RC_NODOTSNAMES
 from .wrappers import (
     _get_transform, _norecurse, _redirect,
@@ -788,7 +787,7 @@ optional
             abcstyle = rc['abc.style']  # changed or running format first time?
             if 'abcformat' in kwargs:  # super sophisticated deprecation system
                 abcstyle = kwargs.pop('abcformat')
-                warnings.warn(
+                _warn_proplot(
                     f'rc setting "abcformat" is deprecated. '
                     f'Please use "abcstyle".')
             if abcstyle and self.number is not None:
@@ -1004,7 +1003,7 @@ optional
             # Keyword args and add as child axes
             orient = kwargs.get('orientation', None)
             if orient is not None and orient != orientation:
-                warnings.warn(f'Overriding input orientation={orient!r}.')
+                _warn_proplot(f'Overriding input orientation={orient!r}.')
             ticklocation = kwargs.pop('tickloc', None) or ticklocation
             ticklocation = kwargs.pop('ticklocation', None) or ticklocation
             kwargs.update({'orientation': orientation,
@@ -1082,13 +1081,13 @@ optional
             # Default keyword args
             orient = kwargs.pop('orientation', None)
             if orient is not None and orient != 'horizontal':
-                warnings.warn(
+                _warn_proplot(
                     f'Orientation for inset colorbars must be horizontal, '
                     f'ignoring orient={orient!r}.')
             ticklocation = kwargs.pop('tickloc', None)
             ticklocation = kwargs.pop('ticklocation', None) or ticklocation
             if ticklocation is not None and ticklocation != 'bottom':
-                warnings.warn(
+                _warn_proplot(
                     f'Inset colorbars can only have ticks on the bottom.')
             kwargs.update({'orientation': 'horizontal',
                            'ticklocation': 'bottom'})
@@ -1438,7 +1437,7 @@ optional
                     vorig[j], vorig[j + 1], interp + 2)[idx].flat)
             x, y, values = np.array(x), np.array(y), np.array(values)
         coords = []
-        levels = utils.edges(values)
+        levels = edges(values)
         for j in range(y.shape[0]):
             # Get x/y coordinates and values for points to the 'left' and
             # 'right' of each joint
@@ -1704,7 +1703,7 @@ def _parse_dualxy_args(x, transform, transform_kw, kwargs):
     for key in (*kwargs.keys(),):
         value = kwargs.pop(key)
         if key[0] == x and key[1:] in dualxy_kwargs:
-            warnings.warn(
+            _warn_proplot(
                 f'dual{x}() keyword arg {key!r} is deprecated. '
                 f'Use {key[1:]!r} instead.')
             kwargs[key] = value
@@ -2345,9 +2344,9 @@ class XYAxes(Axes):
                         kw_ticks.pop('visible', None)  # invalid setting
                     if ticklen is not None:
                         if which == 'major':
-                            kw_ticks['size'] = utils.units(ticklen, 'pt')
+                            kw_ticks['size'] = units(ticklen, 'pt')
                         else:
-                            kw_ticks['size'] = utils.units(
+                            kw_ticks['size'] = units(
                                 ticklen, 'pt') * rc.get('ticklenratio')
                     # Grid style and toggling
                     if igrid is not None:
@@ -2499,7 +2498,7 @@ class XYAxes(Axes):
                     # Tick range
                     if tickrange is not None:
                         if formatter not in (None, 'auto'):
-                            warnings.warn(
+                            _warn_proplot(
                                 'The tickrange feature requires '
                                 'proplot.AutoFormatter formatter. Overriding '
                                 'input formatter.'
@@ -2762,13 +2761,13 @@ optional
             # Flexible input
             if rlim is not None:
                 if rmin is not None or rmax is not None:
-                    warnings.warn(
+                    _warn_proplot(
                         f'Conflicting keyword args rmin={rmin}, rmax={rmax}, '
                         f'and rlim={rlim}. Using "rlim".')
                 rmin, rmax = rlim
             if thetalim is not None:
                 if thetamin is not None or thetamax is not None:
-                    warnings.warn(
+                    _warn_proplot(
                         f'Conflicting keyword args thetamin={thetamin}, '
                         f'thetamax={thetamax}, and thetalim={thetalim}. '
                         f'Using "thetalim".')
@@ -3042,7 +3041,7 @@ optional
                     self.projection.lonmin / base) + 180  # central longitude
             if lonlines is not None:
                 if not np.iterable(lonlines):
-                    lonlines = utils.arange(lon_0 - 180, lon_0 + 180, lonlines)
+                    lonlines = arange(lon_0 - 180, lon_0 + 180, lonlines)
                     lonlines = lonlines.astype(np.float64)
                     lonlines[-1] -= 1e-10  # make sure appears on *right*
                 lonlines = [*lonlines]
@@ -3063,9 +3062,9 @@ optional
                 # Get tick locations
                 if not np.iterable(latlines):
                     if (ilatmax % latlines) == (-ilatmax % latlines):
-                        latlines = utils.arange(-ilatmax, ilatmax, latlines)
+                        latlines = arange(-ilatmax, ilatmax, latlines)
                     else:
-                        latlines = utils.arange(0, ilatmax, latlines)
+                        latlines = arange(0, ilatmax, latlines)
                         if latlines[-1] != ilatmax:
                             latlines = np.concatenate((latlines, [ilatmax]))
                         latlines = np.concatenate(
@@ -3228,7 +3227,7 @@ class GeoAxes(ProjAxes, GeoAxes):
         # Set extent and boundary extent for projections
         # The default bounding latitude is set in _format_apply
         # NOTE: set_global does not mess up non-global projections like OSNI
-        if isinstance(self.projection, (
+        if hasattr(self, 'set_boundary') and isinstance(self.projection, (
                 ccrs.NorthPolarStereo, ccrs.SouthPolarStereo,
                 projs.NorthPolarGnomonic, projs.SouthPolarGnomonic,
                 projs.NorthPolarAzimuthalEquidistant,
@@ -3284,7 +3283,7 @@ class GeoAxes(ProjAxes, GeoAxes):
             projs.SouthPolarLambertAzimuthalEqualArea))
         if north or south:
             if (lonlim is not None or latlim is not None):
-                warnings.warn(
+                _warn_proplot(
                     f'{proj!r} extent is controlled by "boundinglat", '
                     f'ignoring lonlim={lonlim!r} and latlim={latlim!r}.')
             if self._boundinglat is None:
@@ -3304,7 +3303,7 @@ class GeoAxes(ProjAxes, GeoAxes):
                 self._boundinglat = boundinglat
         else:
             if boundinglat is not None:
-                warnings.warn(
+                _warn_proplot(
                     f'{proj!r} extent is controlled by "lonlim" and "latlim", '
                     f'ignoring boundinglat={boundinglat!r}.')
             if lonlim is not None or latlim is not None:
@@ -3358,12 +3357,12 @@ class GeoAxes(ProjAxes, GeoAxes):
         # Issue warning instead of error!
         if not isinstance(self.projection, (ccrs.Mercator, ccrs.PlateCarree)):
             if latarray is not None and any(latarray):
-                warnings.warn(
+                _warn_proplot(
                     'Cannot add gridline labels to cartopy '
                     f'{type(self.projection).__name__} projection.')
                 latarray = [0] * 4
             if lonarray is not None and any(lonarray):
-                warnings.warn(
+                _warn_proplot(
                     'Cannot add gridline labels to cartopy '
                     f'{type(self.projection).__name__} projection.')
                 lonarray = [0] * 4
@@ -3588,7 +3587,7 @@ class BasemapAxes(ProjAxes):
         # Checks
         if (lonlim is not None or latlim is not None
                 or boundinglat is not None):
-            warnings.warn(f'Got lonlim={lonlim!r}, latlim={latlim!r}, '
+            _warn_proplot(f'Got lonlim={lonlim!r}, latlim={latlim!r}, '
                           f'boundinglat={boundinglat!r}, but you cannot "zoom '
                           'into" a basemap projection after creating it. '
                           'Pass proj_kw in your call to subplots '

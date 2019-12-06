@@ -8,13 +8,12 @@ pyplot-inspired functions for creating figures and related classes.
 import os
 import numpy as np
 import functools
-import warnings
 import matplotlib.pyplot as plt
 import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
 import matplotlib.gridspec as mgridspec
 from .rctools import rc
-from .utils import _notNone, _counter, units
+from .utils import _warn_proplot, _notNone, _counter, units
 from . import projs, axes
 __all__ = [
     'subplot_grid', 'close', 'show', 'subplots', 'Figure',
@@ -710,21 +709,8 @@ def _subplots_geometry(**kwargs):
     return (width, height), gridspec_kw, kwargs
 
 
-class _unlocker(object):
-    """Suppresses warning message when adding subplots, and cleanly resets
-    lock setting if exception raised."""
-    def __init__(self, fig):
-        self._fig = fig
-
-    def __enter__(self):
-        self._fig._locked = False
-
-    def __exit__(self, *args):
-        self._fig._locked = True
-
-
 class _hidelabels(object):
-    """Hides objects temporarily so they are ignored by the tight bounding box
+    """Hide objects temporarily so they are ignored by the tight bounding box
     algorithm."""
     def __init__(self, *args):
         self._labels = args
@@ -736,6 +722,19 @@ class _hidelabels(object):
     def __exit__(self, *args):
         for label in self._labels:
             label.set_visible(True)
+
+
+class _unlocker(object):
+    """Suppress warning message when adding subplots, and cleanly reset
+    lock setting if exception raised."""
+    def __init__(self, fig):
+        self._fig = fig
+
+    def __enter__(self):
+        self._fig._locked = False
+
+    def __exit__(self, *args):
+        self._fig._locked = True
 
 
 class Figure(mfigure.Figure):
@@ -801,7 +800,7 @@ class Figure(mfigure.Figure):
         # Initialize first, because need to provide fully initialized figure
         # as argument to gridspec, because matplotlib tight_layout does that
         if tight_layout or constrained_layout:
-            warnings.warn(
+            _warn_proplot(
                 f'Ignoring tight_layout={tight_layout} and '
                 f'contrained_layout={constrained_layout}. ProPlot uses its '
                 'own tight layout algorithm, activated by default or with '
@@ -1091,7 +1090,7 @@ class Figure(mfigure.Figure):
                     idx1, = np.where(filt & filt1)
                     idx2, = np.where(filt & filt2)
                     if idx1.size > 1 or idx2.size > 2:
-                        warnings.warn('This should never happen.')
+                        _warn_proplot('This should never happen.')
                         continue
                         # raise RuntimeError('This should never happen.')
                     elif not idx1.size or not idx2.size:
@@ -1164,7 +1163,7 @@ class Figure(mfigure.Figure):
                             # copied from source code, add to grouper
                             grp.join(axs[0], ax)
                     elif align:
-                        warnings.warn(
+                        _warn_proplot(
                             f'Aligning *x* and *y* axis labels required '
                             f'matplotlib >=3.1.0')
                 if not span:
@@ -1484,7 +1483,7 @@ class Figure(mfigure.Figure):
         """Issues warning for new users that try to call
         `~matplotlib.figure.Figure.add_subplot` manually."""
         if self._locked:
-            warnings.warn(
+            _warn_proplot(
                 'Using "fig.add_subplot()" with ProPlot figures may result in '
                 'unexpected behavior. Use "proplot.subplots()" instead.')
         ax = super().add_subplot(*args, **kwargs)
@@ -1979,7 +1978,7 @@ def subplots(
     alignx = _notNone(alignx, align)
     aligny = _notNone(aligny, align)
     if (spanx and alignx) or (spany and aligny):
-        warnings.warn(
+        _warn_proplot(
             f'The "alignx" and "aligny" args have no effect when '
             '"spanx" and "spany" are True.')
     alignx = _notNone(alignx, rc['align'])
@@ -2047,7 +2046,7 @@ def subplots(
     # Raise warning
     for name, value in zip(names, values):
         if value is not None:
-            warnings.warn(
+            _warn_proplot(
                 f'You specified both {spec} and {name}={value!r}. '
                 f'Ignoring {name!r}.')
 

@@ -6,12 +6,8 @@ Includes projection constructor function for generating
 with their `PROJ.4 <https://proj4.org/operations/projections/index.html>`__
 string name aliases, just like `~mpl_toolkits.basemap`.
 """
-# from packaging import version
-# if version.parse(cartopy.__version__) < version.parse("0.13"):
-# raise RuntimeError('Require cartopy version >=0.13.') # adds
-# set_boundary method
+from .utils import _warn_proplot
 import numpy as np
-import warnings
 __all__ = [
     'Proj',
     'basemap_rc', 'cartopy_projs',
@@ -387,6 +383,6 @@ if _cartopy_installed:
             continue
         cartopy_projs[_name] = _class
     if _unavail:
-        warnings.warn(
+        _warn_proplot(
             f'Cartopy projection(s) {", ".join(map(repr, _unavail))} are '
             f'unavailable. Consider updating to cartopy >= 0.17.0.')
