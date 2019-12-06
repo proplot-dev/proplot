@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 """
-New cartopy projection classes and related tools.
-Includes projection constructor function for generating
-`~mpl_toolkits.basemap.Basemap` and cartopy `~cartopy.crs.Projection` classes
-with their `PROJ.4 <https://proj4.org/operations/projections/index.html>`__
-string name aliases, just like `~mpl_toolkits.basemap`.
+New cartopy projection classes and a projection constructor function
+for generating `~mpl_toolkits.basemap.Basemap` and cartopy
+`~cartopy.crs.Projection` classes.
 """
 from .utils import _warn_proplot
 import numpy as np
@@ -38,10 +36,11 @@ def Proj(name, basemap=False, **kwargs):
     Parameters
     ----------
     name : str
-        The projection name. Like basemap, we use the PROJ.4 shorthands.
+        The projection name. Like basemap, we use the
+        `PROJ <https://proj.org>`__ shorthands.
 
         The following table lists the valid projection names, their full names
-        (with links to the relevant `PROJ.4 documentation \
+        (with links to the relevant `PROJ documentation \
 <https://proj4.org/operations/projections/index.html>`__),
         and whether they are available in the cartopy and basemap packages.
 
@@ -343,31 +342,31 @@ if _cartopy_installed:
     for _name, _class in {  # interpret string, create cartopy projection
             'aea': 'AlbersEqualArea',
             'aeqd': 'AzimuthalEquidistant',
-            'cyl': 'PlateCarree',  # only basemap name not matching PROJ.4
+            'cyl': 'PlateCarree',  # only basemap name not matching PROJ
             'eck1': 'EckertI',
             'eck2': 'EckertII',
             'eck3': 'EckertIII',
             'eck4': 'EckertIV',
             'eck5': 'EckertV',
             'eck6': 'EckertVI',
-            'eqc': 'PlateCarree',  # actual PROJ.4 name
+            'eqc': 'PlateCarree',  # actual PROJ name
             'eqdc': 'EquidistantConic',
             'eqearth': 'EqualEarth',  # better looking Robinson; not in basemap
-            'euro': 'EuroPP',  # Europe; not in basemap or PROJ.4
+            'euro': 'EuroPP',  # Europe; not in basemap or PROJ
             'geos': 'Geostationary',
             'gnom': 'Gnomonic',
             'igh': 'InterruptedGoodeHomolosine',  # not in basemap
             'laea': 'LambertAzimuthalEqualArea',
             'lcc': 'LambertConformal',
-            'lcyl': 'LambertCylindrical',  # not in basemap or PROJ.4
+            'lcyl': 'LambertCylindrical',  # not in basemap or PROJ
             'merc': 'Mercator',
             'mill': 'Miller',
             'moll': 'Mollweide',
-            'npstere': 'NorthPolarStereo',  # np/sp stuff not in PROJ.4
+            'npstere': 'NorthPolarStereo',  # np/sp stuff not in PROJ
             'nsper': 'NearsidePerspective',
             'ortho': 'Orthographic',
-            'osgb': 'OSGB',  # UK; not in basemap or PROJ.4
-            'osni': 'OSNI',  # Ireland; not in basemap or PROJ.4
+            'osgb': 'OSGB',  # UK; not in basemap or PROJ
+            'osni': 'OSNI',  # Ireland; not in basemap or PROJ
             'pcarree': 'PlateCarree',  # common alternate name
             'robin': 'Robinson',
             'rotpole': 'RotatedPole',

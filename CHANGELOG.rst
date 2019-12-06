@@ -15,7 +15,42 @@ ProPlot v1.0.0 (2020-##-##)
 This will be published when some major refactoring tasks are completed.
 See :pr:`45`, :pr:`46`, and :pr:`50`.
 
-ProPlot v0.2.X (2019-12-02)
+ProPlot v0.2.3 (2019-12-05)
+===========================
+Bug fixes
+---------
+- Fix issue with overlapping gridlines (:commit:`8960ebdc`).
+- Fix issue where auto colorbar labels are not applied when ``globe=True`` (:commit:`ecb3c899`)
+- More sensible zorder for gridlines (:commit:`90d94e55`).
+- Fix issue where customized super title settings are overridden when
+  new axes are created (:commit:`35cb21f2`)
+
+Documentation
+-------------
+- Organize ipython notebook documentation (:commit:`35cb21f2`).
+
+ProPlot v0.2.2 (2019-12-04)
+===========================
+Bug fixes
+---------
+- Fix shared *x* and *y* axis bugs (:commit:`ac14e9dd`).
+
+Deprecated
+----------
+- Rename `~proplot.subplots.axes_grid` to `~proplot.subplots.subplot_grid` (:commit:`ac14e9dd`).
+
+Documentation
+-------------
+- Make notebook examples PEP8 compliant (:commit:`97f5ffd4`). Much more readable now.
+
+ProPlot v0.2.1 (2019-12-02)
+===========================
+Deprecated
+----------
+- Rename `autoreload_setup`, `autosave_setup`, and `matplotlib_setup` to
+  `~proplot.rctools.ipython_autoreload`, `~proplot.rctools.ipython_autosave`, and `~proplot.rctools.ipython_matplotlib`, respectively (:commit:`84e80c1e`).
+
+ProPlot v0.2.0 (2019-12-02)
 ===========================
 Features
 --------
@@ -23,18 +58,11 @@ Features
 
 Bug fixes
 ---------
-- Fix issue with overlapping gridlines (:commit:`8960ebdc`).
-- Fix issue where auto colorbar labels are not applied when ``globe=True`` (:commit:`ecb3c899`)
-- More sensible zorder for gridlines (:commit:`90d94e55`).
-- Fix shared *x* and *y* axis bugs (:commit:`ac14e9dd`).
 - Disable automatic resizing for the ``nbAgg`` interactive inline backend. Found no
   suitable workaround (:commit:`3a622887`).
-- Fix issue where customized super title settings are overridden when
-  new axes are created (:commit:`35cb21f2`)
 
 Deprecated
 ----------
-- Rename `~proplot.subplots.axes_grid` to `~proplot.subplots.subplot_grid` (:commit:`ac14e9dd`).
 - Remove the ``nbsetup`` rc setting in favor of separate ``autosave``, ``autoreload``,
   and ``matplotlib`` settings for triggering the respective ``%`` magic commands.
   (:commit:`3a622887`; ``nbsetup`` is still accepted but no longer documented).
@@ -46,18 +74,14 @@ Deprecated
 
 Internals
 ---------
-- Rename ``rcParamsCustom`` to ``rcParamsLong`` (this is inaccessible to the user).
-- Organize the ``rc`` documentation and the default ``.proplotrc`` file.
+- Organize the ``rc`` documentation and the default ``.proplotrc`` file (:commit:`3a622887`).
+- Rename ``rcParamsCustom`` to ``rcParamsLong``
+  (:commit:`3a622887`; this is inaccessible to the user).
 - When calling ``fig.canvas.print_figure()`` on a stale figure, call ``fig.canvas.draw()``
   first. May be overkill for `~matplotlib.figure.Figure.savefig` but critical for
   correctly displaying already-drawn notebook figures.
 
-Documentation
--------------
-- Make notebook examples PEP8 compliant (:commit:`97f5ffd4`). Much more readable now.
-- Clean up documentation (:commit:`35cb21f2`).
-
-ProPlot v0.1.X (2019-12-01)
+ProPlot v0.1.0 (2019-12-01)
 ===========================
 Internals
 ---------
