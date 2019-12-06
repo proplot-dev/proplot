@@ -193,8 +193,8 @@ individual subplots and along contiguous subplots on the edge of the figure:
 
 The colorbar and legend commands also add several new features, like colorbars-from-lines and centered-row legends. And to make `~proplot.axes.Axes` `~proplot.axes.Axes.colorbar` consistent with `~proplot.axes.Axes` `~proplot.axes.Axes.legend`, you can also now draw *inset* colorbars. See :ref:`Colorbars and legends` for details.
 
-The axes container class
-========================
+The subplot container class
+===========================
 
 ..
    The `~matplotlib.pyplot.subplots` command is useful for generating a scaffolding of * axes all at once. This is generally faster than successive `~matplotlib.subplots.Figure.add_subplot` commands.
@@ -209,7 +209,7 @@ In matplotlib, `~matplotlib.pyplot.subplots` returns a 2D `~numpy.ndarray`, a 1D
 
    <h3>Solution</h3>
 
-In ProPlot, `~proplot.subplots.subplots` returns an `~proplot.subplots.subplot_grid` container filled with axes objects. This container lets you call arbitrary methods on arbitrary subplots all at once, which can be useful when you want to style your subplots identically (e.g. ``axs.format(tickminor=False)``).
+In ProPlot, `~proplot.subplots.subplots` returns a `~proplot.subplots.subplot_grid` filled with `~proplot.axes.Axes` instances. This container lets you call arbitrary methods on arbitrary subplots all at once, which can be useful when you want to style your subplots identically (e.g. ``axs.format(tickminor=False)``).
 See :ref:`The basics` for details.
 
 The `~proplot.subplots.subplot_grid` class also
