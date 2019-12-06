@@ -52,33 +52,6 @@ class _setstate(object):
                 delattr(self._obj, key)
 
 
-def _logger(func):
-    """A decorator that logs the activity of the script (it actually just
-    prints it, but it could be logging!). See `this link \
-<https://stackoverflow.com/a/1594484/4970632>`__."""
-    @functools.wraps(func)
-    def decorator(*args, **kwargs):
-        res = func(*args, **kwargs)
-        if BENCHMARK:
-            print(f'{func.__name__} called with: {args} {kwargs}')
-        return res
-    return decorator
-
-
-def _timer(func):
-    """A decorator that prints the time a function takes to execute. See
-    `this link <https://stackoverflow.com/a/1594484/4970632>`__."""
-    @functools.wraps(func)
-    def decorator(*args, **kwargs):
-        if BENCHMARK:
-            t = time.clock()
-        res = func(*args, **kwargs)
-        if BENCHMARK:
-            print(f'{func.__name__}() time: {time.clock()-t}s')
-        return res
-    return decorator
-
-
 def _counter(func):
     """A decorator that counts and prints the cumulative time a function
     has benn running. See `this link \
@@ -96,6 +69,20 @@ def _counter(func):
         return res
     decorator.time = 0
     decorator.count = 0  # initialize
+    return decorator
+
+
+def _timer(func):
+    """A decorator that prints the time a function takes to execute. See
+    `this link <https://stackoverflow.com/a/1594484/4970632>`__."""
+    @functools.wraps(func)
+    def decorator(*args, **kwargs):
+        if BENCHMARK:
+            t = time.clock()
+        res = func(*args, **kwargs)
+        if BENCHMARK:
+            print(f'{func.__name__}() time: {time.clock()-t}s')
+        return res
     return decorator
 
 
