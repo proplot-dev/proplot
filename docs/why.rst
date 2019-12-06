@@ -266,11 +266,8 @@ your life easier.
 ..
   All positional arguments for "1d" plotting methods are standardized by `~proplot.wrappers.standardize_1d`. All positional arguments for "2d" plotting methods are standardized by `~proplot.wrappers.standardize_2d`. See :ref:`1d plotting` and :ref:`2d plotting` for details.
 
-* Just like `~proplot.axes.Axes.format`, certain keyword arguments for 1d and 2d plotting commands are passed through :ref:`Constructor functions`.
-
-      * All 1d plotting methods accept a `cycle` keyword argument interpreted by `~proplot.styletools.Cycle`. See :ref:`Color cycles` for details.
-      * All 2d plotting methods accept a `cmap` keyword argument interpreted by `~proplot.styletools.Colormap` and a `norm` keyword argument interpreted by `~proplot.styletools.Norm`. See :ref:`Colormaps` for details.
-
+* All 1d plotting methods accept a `cycle` keyword argument interpreted by `~proplot.styletools.Cycle` and optional `legend` and `colorbar` keyword arguments for populating legends and colorbars at the specified location with the result of the plotting command.
+* All 2d plotting methods accept a `cmap` keyword argument interpreted by `~proplot.styletools.Colormap`, a `norm` keyword argument interpreted by `~proplot.styletools.Norm`, and an optional `colorbar` keyword argument for drawing on-the-fly colorbars with the resulting mappable.
 * All 2d plotting methods now accept a `labels` keyword argument. This is used to draw contour labels or grid box labels on heatmap plots. See :ref:`2d plotting` for details.
 * ProPlot fixes the irritating `white-lines-between-filled-contours <https://stackoverflow.com/q/8263769/4970632>`__, `white-lines-between-pcolor-patches <https://stackoverflow.com/q/27092991/4970632>`__, and `white-lines-between-colorbar-patches <https://stackoverflow.com/q/15003353/4970632>`__ observed when saving vector graphics.
 * Matplotlib requires coordinate *centers* for contour plots and *edges* for pcolor plots. If you pass *centers* to pcolor, matplotlib treats them as *edges* and silently trims one row/column of your data. ProPlot changes this behavior:
