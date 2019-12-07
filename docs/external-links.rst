@@ -23,28 +23,26 @@ imported and registered by ProPlot.
 #. `SciVisColor <https://sciviscolor.org/>`__ - Science-focused colormaps created by the viz team at UT Austin. Provides tools for *concatenating* colormaps, suitable for complex datasets with weird distributions.
 #. `Fabio Crameri <http://www.fabiocrameri.ch/colourmaps.php>`__ - Perceptually uniform colormaps for geosciences. These maps have very unusual and interesting color transitions.
 
-Tools for making new colormaps
-==============================
+Online tools for making new colormaps
+=====================================
 
 Use these resources to make colormaps from scratch.
 
-#. `Proplot API <https://proplot.readthedocs.io/en/latest/colors.html#making-your-own-colormaps>`__
+#. `Proplot API <https://proplot.readthedocs.io/en/latest/colormaps.html#Making-new-colormaps>`__
 #. `HCL Picker <http://tristen.ca/hcl-picker/#/hlc/6/1/15534C/E2E062>`__
 #. `Chroma.js <https://gka.github.io/palettes/>`__
 #. `HCL Wizard <http://hclwizard.org:64230/hclwizard/>`__
 #. `SciVisColor <https://sciviscolor.org/home/colormoves/>`__
 
-Tools for making new color cycles
-=================================
+Online tools for making new color cycles
+========================================
 
 Use these resources to make color cycles from scratch.
 
-#. `Proplot API <https://proplot.readthedocs.io/en/latest/colors.html#making-your-own-color-cycles>`__
+#. `Proplot API <https://proplot.readthedocs.io/en/latest/cycles.html#Making-new-color-cycles>`__
 #. `Color Cycle Picker <https://colorcyclepicker.mpetroff.net/>`__
 #. `i want hue <http://medialab.github.io/iwanthue/>`__
 #. `Coolors <https://coolors.co/>`__
 #. `Color Hunt <https://colorhunt.co/>`__
 #. `Color Drop <https://colordrop.io/>`__
 #. `Adobe Color <https://color.adobe.com/explore>`__
-
-

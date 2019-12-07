@@ -15,7 +15,7 @@ function lightToggle() {
 }
 function darkToggle() {
     document.documentElement.setAttribute('data-theme', 'dark');
-    pygmentsLink.href = pygmentsLink.href.replace(regex, '$1/monokai$2');
+    pygmentsLink.href = pygmentsLink.href.replace(regex, '$1/paraiso-dark$2');
     localStorage.setItem('theme', 'dark');
 }
 function switchTheme(e) {

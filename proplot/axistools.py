@@ -5,13 +5,12 @@ classes. Includes constructor functions so that these classes can be selected
 with with a shorthand syntax.
 """
 import re
-from .utils import _notNone
+from .utils import _warn_proplot, _notNone
 from .rctools import rc
 from numbers import Number
 from fractions import Fraction
 import numpy as np
 import numpy.ma as ma
-import warnings
 import matplotlib.dates as mdates
 import matplotlib.projections.polar as mpolar
 import matplotlib.ticker as mticker
@@ -122,7 +121,7 @@ def Locator(locator, *args, **kwargs):
         if locator not in locators:
             raise ValueError(
                 f'Unknown locator {locator!r}. Options are '
-                ', '.join(map(repr, locators.keys())) + '.')
+                + ', '.join(map(repr, locators.keys())) + '.')
         locator = locators[locator](*args, **kwargs)
     elif isinstance(locator, Number):  # scalar variable
         locator = mticker.MultipleLocator(locator, *args, **kwargs)
@@ -135,7 +134,7 @@ def Locator(locator, *args, **kwargs):
 
 
 def Formatter(formatter, *args, date=False, **kwargs):
-    r"""
+    """
     Returns a `~matplotlib.ticker.Formatter` instance, used to interpret the
     `xformatter`, `xformatter_kw`, `yformatter`, and `yformatter_kw` arguments
     when passed to `~proplot.axes.XYAxes.format`, and the `formatter`
@@ -191,7 +190,7 @@ def Formatter(formatter, *args, date=False, **kwargs):
         ``'fixed'``             `~matplotlib.ticker.FixedFormatter`             List of strings
         ``'index'``             `~matplotlib.ticker.IndexFormatter`             List of strings corresponding to non-negative integer positions along the axis
         ``'theta'``             `~matplotlib.projections.polar.ThetaFormatter`  Formats radians as degrees, with a degree symbol
-        ``'pi'``                `FracFormatter` preset                          Fractions of :math:`\pi`
+        ``'pi'``                `FracFormatter` preset                          Fractions of :math:`\\pi`
         ``'e'``                 `FracFormatter` preset                          Fractions of *e*
         ``'deg'``               `SimpleFormatter` preset                        Trailing degree symbol
         ``'deglon'``            `SimpleFormatter` preset                        Trailing degree symbol and cardinal "WE" indicator
@@ -256,7 +255,7 @@ def Formatter(formatter, *args, date=False, **kwargs):
             if formatter not in formatters:
                 raise ValueError(
                     f'Unknown formatter {formatter!r}. Options are '
-                    ', '.join(map(repr, formatters.keys())) + '.')
+                    + ', '.join(map(repr, formatters.keys())) + '.')
             formatter = formatters[formatter](*args, **kwargs)
     elif callable(formatter):
         formatter = mticker.FuncFormatter(formatter, *args, **kwargs)
@@ -326,7 +325,7 @@ def Scale(scale, *args, **kwargs):
     # Get scale preset
     if scale in SCALE_PRESETS:
         if args or kwargs:
-            warnings.warn(
+            _warn_proplot(
                 f'Scale {scale!r} is a scale *preset*. Ignoring positional '
                 'argument(s): {args} and keyword argument(s): {kwargs}. ')
         scale, *args = SCALE_PRESETS[scale]
@@ -337,7 +336,7 @@ def Scale(scale, *args, **kwargs):
     else:
         raise ValueError(
             f'Unknown scale or preset {scale!r}. Options are '
-            ', '.join(map(repr, list(scales) + list(SCALE_PRESETS))) + '.')
+            + ', '.join(map(repr, list(scales) + list(SCALE_PRESETS))) + '.')
     axis = _dummy_axis()
     return scale(axis, *args, **kwargs)
 
@@ -511,14 +510,14 @@ def _scale_factory(scale, axis, *args, **kwargs):
     instantiated."""
     if isinstance(scale, mscale.ScaleBase):
         if args or kwargs:
-            warnings.warn(f'Ignoring args {args} and keyword args {kwargs}.')
+            _warn_proplot(f'Ignoring args {args} and keyword args {kwargs}.')
         return scale  # do nothing
     else:
         scale = scale.lower()
         if scale not in scales:
             raise ValueError(
                 f'Unknown scale {scale!r}. Options are '
-                ', '.join(map(repr, scales.keys())) + '.')
+                + ', '.join(map(repr, scales.keys())) + '.')
         return scales[scale](axis, *args, **kwargs)
 
 
@@ -1117,23 +1116,22 @@ class InvertedCutoffTransform(mtransforms.Transform):
 
 
 class MercatorLatitudeScale(_ScaleBase, mscale.ScaleBase):
-    r"""
+    """
     Scales axis as with latitude in the `Mercator projection \
 <http://en.wikipedia.org/wiki/Mercator_projection>`__.
     Adapted from `this example \
 <https://matplotlib.org/examples/api/custom_scale_example.html>`__.
-
     The scale function is as follows.
 
     .. math::
 
-        y = \ln(\tan(\pi x/180) + \sec(\pi x/180))
+        y = \\ln(\\tan(\\pi x/180) + \\sec(\\pi x/180))
 
     The inverse scale function is as follows.
 
     .. math::
 
-        x = 180\arctan(\sinh(y))/\pi
+        x = 180\\arctan(\\sinh(y))/\\pi
 
     """
     name = 'mercator'
