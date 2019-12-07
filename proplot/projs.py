@@ -263,7 +263,6 @@ class Hammer(_WarpedRectangularProjection):
 class KavrayskiyVII(_WarpedRectangularProjection):
     """The `Kavrayskiy VII \
 <https://en.wikipedia.org/wiki/Kavrayskiy_VII_projection>`__ projection."""
-    __name__ = 'kavrayskiyVII'
     #: Registered projection name.
     name = 'kavrayskiyVII'
 
