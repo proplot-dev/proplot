@@ -15,6 +15,13 @@ ProPlot v1.0.0 (2020-##-##)
 This will be published when some major refactoring tasks are completed.
 See :pr:`45`, :pr:`46`, and :pr:`50`.
 
+ProPlot v0.2.4 (2019-12-07)
+===========================
+Deprecated
+----------
+- Rename `colordict` to `~proplot.styletools.colors`, clean up top-level variables,
+  clean up `~proplot.styletools.show_fonts`.
+
 ProPlot v0.2.3 (2019-12-05)
 ===========================
 Bug fixes

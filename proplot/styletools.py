@@ -27,9 +27,7 @@ __all__ = [
     'BinNorm', 'CmapDict', 'ColorCacheDict',
     'LinearSegmentedNorm', 'MidpointNorm', 'PerceptuallyUniformColormap',
     'Colormap', 'Cycle', 'Norm',
-    'cmaps', 'cycles', 'colordict',
-    'fonts', 'fonts_system', 'fonts_proplot',
-    'colors',
+    'cmaps', 'cycles', 'colors', 'fonts',
     'ListedColormap',
     'LinearSegmentedColormap',
     'make_mapping_array',
@@ -1732,12 +1730,9 @@ optional
 
 
 class CmapDict(dict):
-    """
-    Dictionary subclass used to replace the `matplotlib.cm.cmap_d`
+    """Dictionary subclass used to replace the `matplotlib.cm.cmap_d`
     colormap dictionary. See `~CmapDict.__getitem__` and
-    `~CmapDict.__setitem__` for details.
-    """
-
+    `~CmapDict.__setitem__` for details."""
     def __init__(self, kwargs):
         """
         Parameters
@@ -1750,7 +1745,9 @@ class CmapDict(dict):
                 raise KeyError(f'Invalid key {key}. Must be string.')
             if key[-2:] == '_r':  # do not need to store these!
                 continue
-            self[key] = value
+            self.__setitem__(key, value, sort=False)
+        for record in (cmaps, cycles):
+            record[:] = sorted(record)
 
     def __getitem__(self, key):
         """Retrieve the case-insensitive colormap name. If the name ends in
@@ -1771,7 +1768,7 @@ class CmapDict(dict):
                     f'Item {value!r} does not have reversed() method.')
         return value
 
-    def __setitem__(self, key, item):
+    def __setitem__(self, key, item, sort=True):
         """Stores the colormap under its lowercase name. If the colormap is
         a matplotlib `~matplotlib.colors.ListedColormap` or
         `~matplotlib.colors.LinearSegmentedColormap`, it is converted to the
@@ -1790,6 +1787,10 @@ class CmapDict(dict):
                 'matplotlib.colors.ListedColormap or '
                 'matplotlib.colors.LinearSegmentedColormap.')
         key = self._sanitize_key(key, mirror=False)
+        record = cycles if isinstance(item, ListedColormap) else cmaps
+        record.append(key)
+        if sort:
+            record[:] = sorted(record)
         return super().__setitem__(key, item)
 
     def __contains__(self, item):
@@ -1832,6 +1833,11 @@ class CmapDict(dict):
     def pop(self, key, *args):
         """Pops sanitized key name."""
         key = self._sanitize_key(key, mirror=True)
+        for record in (cmaps, cycles):
+            try:
+                record.remove(key)
+            except ValueError:
+                pass
         return super().pop(key, *args)
 
     def update(self, *args, **kwargs):
@@ -1847,7 +1853,6 @@ class CmapDict(dict):
 
 class _ColorMappingOverride(mcolors._ColorMapping):
     """Mapping whose cache attribute is a `ColorCacheDict` dictionary."""
-
     def __init__(self, mapping):
         super().__init__(mapping)
         self.cache = ColorCacheDict({})
@@ -1858,7 +1863,6 @@ class ColorCacheDict(dict):
     users to draw colors from *named colormaps and color cycles* for any
     plotting command that accepts a `color` keyword arg.
     See `~ColorCacheDict.__getitem__` for details."""
-
     def __getitem__(self, key):
         """
         Allows user to select colors from arbitrary named colormaps and
@@ -1902,16 +1906,6 @@ class ColorCacheDict(dict):
                 rgba = mcolors.to_rgba(rgb, alpha)
                 return rgba
         return super().__getitem__((rgb, alpha))
-
-
-# Apply monkey patches to top level modules
-if not isinstance(mcm.cmap_d, CmapDict):
-    mcm.cmap_d = CmapDict(mcm.cmap_d)
-if not isinstance(mcolors._colors_full_map, _ColorMappingOverride):
-    _map = _ColorMappingOverride(mcolors._colors_full_map)
-    mcolors._colors_full_map = _map
-    mcolors.colorConverter.cache = _map.cache  # re-instantiate
-    mcolors.colorConverter.colors = _map  # re-instantiate
 
 
 def colors(*args, **kwargs):
@@ -2025,8 +2019,8 @@ def Colormap(*args, name=None, listmode='perceptual',
         raise ValueError(
             f'Invalid listmode={listmode!r}. Options are '
             '"listed", "linear", and "perceptual".')
-    cmaps = []
     tmp = '_no_name'
+    cmaps = []
     for i, cmap in enumerate(args):
         # First load data
         # TODO: Document how 'listmode' also affects loaded files
@@ -2825,14 +2819,15 @@ def register_cmaps():
     # stored as ListedColormaps.
     for name in CMAPS_CATEGORIES['Matplotlib Originals']:
         cmap = mcm.cmap_d.get(name, None)
-        if cmap and isinstance(cmap, ListedColormap):
+        if isinstance(cmap, ListedColormap):
+            mcm.cmap_d.pop(name)
             mcm.cmap_d[name] = LinearSegmentedColormap.from_list(
                 name, cmap.colors)
 
     # Misc tasks
+    # to be consistent with registered color names (also 'Murica)
     cmap = mcm.cmap_d.pop('Greys', None)
     if cmap is not None:
-        # to be consistent with registered color names (also 'Murica)
         mcm.cmap_d['Grays'] = cmap
     for name in ('Spectral',):
         mcm.cmap_d[name] = mcm.cmap_d[name].reversed(
@@ -2842,13 +2837,6 @@ def register_cmaps():
     for name in CMAPS_DELETE:
         mcm.cmap_d.pop(name, None)
 
-    # Fill initial user-accessible cmap list with the colormaps we will keep
-    cmaps.clear()
-    cmaps[:] = [
-        name for name, cmap in mcm.cmap_d.items()
-        if not isinstance(cmap, ListedColormap)
-    ]
-
     # Add colormaps from ProPlot and user directories
     for path in _get_data_paths('cmaps'):
         for filename in sorted(glob.glob(os.path.join(path, '*'))):
@@ -2856,15 +2844,11 @@ def register_cmaps():
             if name is None:
                 continue
             mcm.cmap_d[name] = cmap
-            cmaps.append(name)
     # Add cyclic attribute
     for name, cmap in mcm.cmap_d.items():
         # add hidden attribute used by BinNorm
         cmap._cyclic = (name.lower() in (
             'twilight', 'twilight_shifted', 'phase', 'graycycle'))
-
-    # Sort
-    cmaps[:] = sorted(cmaps)
 
 
 @_timer
@@ -2879,9 +2863,6 @@ def register_cycles():
     This is called on import. Use `show_cycles` to generate a table of the
     registered cycles. For valid file formats, see `register_cmaps`.
     """
-    # Empty out user-accessible cycle list
-    cycles.clear()
-
     # Remove gross cycles, change the names of some others
     for name in CYCLES_DELETE:
         mcm.cmap_d.pop(name, None)
@@ -2889,26 +2870,21 @@ def register_cycles():
         cycle = mcm.cmap_d.pop(name1, None)
         if cycle:
             mcm.cmap_d[name2] = cycle
-            cycles.append(name2)
 
     # Read cycles from directories
-    icycles = {}
+    cycles_load = {}
     for path in _get_data_paths('cycles'):
         for filename in sorted(glob.glob(os.path.join(path, '*'))):
             name, data = _load_cmap_cycle(filename, cmap=False)
             if name is None:
                 continue
-            icycles[name] = data
+            cycles_load[name] = data
 
     # Register cycles as ListedColormaps
-    for name, colors in {**CYCLES_PRESET, **icycles}.items():
+    for name, colors in {**CYCLES_PRESET, **cycles_load}.items():
         cmap = ListedColormap(colors, name=name)
         cmap.colors = [to_rgb(color, alpha=True) for color in cmap.colors]
         mcm.cmap_d[name] = cmap
-        cycles.append(name)
-
-    # Sort
-    cycles[:] = sorted([*cycles, 'Set2', 'Set3'], key=lambda s: s.lower())
 
 
 @_timer
@@ -2927,15 +2903,14 @@ def register_colors(nmax=np.inf):
     # Reset native colors dictionary and add some default groups
     # Add in CSS4 so no surprises for user, but we will not encourage this
     # usage and will omit CSS4 colors from the demo table.
-    scale = (360, 100, 100)
     base = {}
-    colordict.clear()
+    colors.clear()
     base.update(mcolors.BASE_COLORS)
     base.update(BASE_COLORS_FULL)
     mcolors.colorConverter.colors.clear()  # clean out!
     mcolors.colorConverter.cache.clear()  # clean out!
     for name, dict_ in (('base', base), ('css', mcolors.CSS4_COLORS)):
-        colordict.update({name: dict_})
+        colors.update({name: dict_})
 
     # Load colors from file and get their HCL values
     # TODO: Cleanup!
@@ -2956,13 +2931,13 @@ def register_colors(nmax=np.inf):
             # Immediately add all open colors
             if cat == 'open':
                 dict_ = {name: color for name, color in data}
-                colordict.update({'open': dict_})
+                colors.update({'open': dict_})
                 continue
             # Remaining dicts are filtered and their names are sanitized
             i = 0
             dict_ = {}
             ihcls = []
-            colordict[cat] = {}  # just initialize this one
+            colors[cat] = {}  # just initialize this one
             for name, color in data:  # is list of name, color tuples
                 if i >= nmax:  # e.g. for xkcd colors
                     break
@@ -2975,11 +2950,12 @@ def register_colors(nmax=np.inf):
                 ihcls.append(to_xyz(color, space=FILTER_SPACE))
                 dict_[name] = color  # save the color
                 i += 1
-            _colordict_unfiltered[cat] = dict_
+            _colors_unfiltered[cat] = dict_
             hcls = np.concatenate((hcls, ihcls), axis=0)
 
     # Remove colors that are 'too similar' by rounding to the nearest n units
     # WARNING: Unique axis argument requires numpy version >=1.13
+    scale = (360, 100, 100)
     if hcls.size > 0:
         hcls = hcls / np.array(scale)
         hcls = np.round(hcls / FILTER_THRESH).astype(np.int64)
@@ -2992,10 +2968,10 @@ def register_colors(nmax=np.inf):
             if name not in FILTER_ADD and idx not in idxs:
                 deleted += 1
             else:
-                colordict[cat][name] = _colordict_unfiltered[cat][name]
+                colors[cat][name] = _colors_unfiltered[cat][name]
 
     # Update the color converter
-    for _, kw in colordict.items():
+    for _, kw in colors.items():
         mcolors.colorConverter.colors.update(kw)
 
 
@@ -3062,21 +3038,21 @@ def register_fonts():
         mfonts._rebuild()
 
     # Populate font lists
-    fonts_system[:] = sorted({
-        font.name for font in mfonts.fontManager.ttflist
-        if not any(path in font.fname for path in paths.split(':'))
-    })
-    fonts_proplot[:] = sorted({
+    fonts_proplot = sorted({
         font.name for font in mfonts.fontManager.ttflist
         if any(path in font.fname for path in paths.split(':'))
     })
-    fonts[:] = sorted((*fonts_system, *fonts_proplot))
+    fonts_system = sorted({
+        font.name for font in mfonts.fontManager.ttflist
+        if not any(path in font.fname for path in paths.split(':'))
+    })
+    fonts[:] = [*fonts_proplot, *fonts_system]
 
 
 def show_channels(*args, N=100, rgb=True, saturation=True,
                   minhue=0, maxsat=1000, axwidth=None, width=100):
     """
-    Shows how arbitrary colormap(s) vary with respect to the hue, chroma,
+    Show how arbitrary colormap(s) vary with respect to the hue, chroma,
     luminance, HSL saturation, and HPL saturation channels, and optionally
     the red, blue and green channels. Adapted from `this example \
 <https://matplotlib.org/3.1.0/tutorials/colors/colormaps.html#lightness-of-matplotlib-colormaps>`__.
@@ -3196,7 +3172,7 @@ def show_channels(*args, N=100, rgb=True, saturation=True,
 
 def show_colorspaces(luminance=None, saturation=None, hue=None, axwidth=2):
     """
-    Generates hue-saturation, hue-luminance, and luminance-saturation
+    Generate hue-saturation, hue-luminance, and luminance-saturation
     cross-sections for the HCL, HSLuv, and HPLuv colorspaces.
 
     Parameters
@@ -3279,7 +3255,7 @@ def show_colorspaces(luminance=None, saturation=None, hue=None, axwidth=2):
 
 def show_colors(nbreak=17, minsat=0.2):
     """
-    Visualizes the registered color names in two figures. Adapted from
+    Visualize the registered color names in two figures. Adapted from
     `this example <https://matplotlib.org/examples/color/named_colors.html>`_.
 
     Parameters
@@ -3305,10 +3281,10 @@ def show_colors(nbreak=17, minsat=0.2):
         if open_colors:
             group = ['open']
         else:
-            group = [name for name in colordict if name not in ('css', 'open')]
+            group = [name for name in colors if name not in ('css', 'open')]
         icolors = {}
         for name in group:
-            icolors.update(colordict[name])  # add category dictionary
+            icolors.update(colors[name])  # add category dictionary
 
         # Group colors together by discrete range of hue, then sort by value
         # For opencolors this is not necessary
@@ -3406,7 +3382,7 @@ def show_colors(nbreak=17, minsat=0.2):
 
 def show_cmaps(*args, N=256, length=4.0, width=0.2, unknown='User'):
     """
-    Visualizes all registered colormaps, or the list of colormap names if
+    Visualize all registered colormaps, or the list of colormap names if
     positional arguments are passed. Adapted from `this example \
 <http://matplotlib.org/examples/color/colormaps_reference.html>`__.
 
@@ -3498,7 +3474,7 @@ def show_cmaps(*args, N=256, length=4.0, width=0.2, unknown='User'):
 
 def show_cycles(*args, axwidth=1.5):
     """
-    Visualizes all registered color cycles, or the list of cycle names if
+    Visualize all registered color cycles, or the list of cycle names if
     positional arguments are passed.
 
     Parameters
@@ -3550,14 +3526,29 @@ def show_cycles(*args, axwidth=1.5):
     return fig
 
 
-def show_fonts(fonts=None, size=12):
-    """Displays table of the fonts installed by ProPlot or in the user-supplied
-    `fonts` list. Use `size` to change the fontsize for fonts shown in the
-    figure."""
-    # letters = 'Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr ' \
-    #           'Ss Tt Uu Vv Ww Xx Yy Zz'
+def show_fonts(*args, size=12):
+    """
+    Visualize the available fonts.
+
+    Parameters
+    ----------
+    *args
+        The font names. If empty, the fonts added by ProPlot or by the user
+        from ``~/.proplot/fonts`` are shown. The matplotlib default, DejaVu
+        Sans, is always shown at the top.
+    size : float, optional
+        The font size in points.
+    """
     from . import subplots
-    fonts = ('DejaVu Sans', *fonts_proplot)
+    if not args:
+        import matplotlib.font_manager as mfonts
+        args = sorted({
+            font.name for font in mfonts.fontManager.ttflist
+            if any(path in font.fname for path in _get_data_paths('fonts'))
+        })
+
+    # Text
+    weight = 'normal'
     math = r'(0) + {1} - [2] * <3> / 4,0 $\geq\gg$ 5.0 $\leq\ll$ ~6 ' \
            r'$\times$ 7 $\equiv$ 8 $\approx$ 9 $\propto$'
     greek = r'$\alpha\beta$ $\Gamma\gamma$ $\Delta\delta$ ' \
@@ -3566,39 +3557,48 @@ def show_fonts(fonts=None, size=12):
             r'$\Phi\phi$ $\Psi\psi$ $\Omega\omega$ !?&#%'
     letters = 'the quick brown fox jumps over a lazy dog\n' \
               'THE QUICK BROWN FOX JUMPS OVER A LAZY DOG'
-    for weight in ('normal',):
-        f, axs = subplots(ncols=1, nrows=len(fonts), space=0,
-                          axwidth=4.5, axheight=5.5 * size / 72)
-        axs.format(xloc='neither', yloc='neither',
-                   xlocator='null', ylocator='null', alpha=0)
-        axs[0].format(title='Fonts demo', titlesize=size,
-                      titleloc='l', titleweight='bold')
-        for i, ax in enumerate(axs):
-            font = fonts[i]
-            ax.text(0, 0.5, f'{font}: {letters}\n{math}\n{greek}',
-                    fontfamily=font, fontsize=size,
-                    weight=weight, ha='left', va='center')
+    # letters = 'Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr ' \
+    #           'Ss Tt Uu Vv Ww Xx Yy Zz'
+
+    # Create figure
+    fonts = ('DejaVu Sans', *args)
+    f, axs = subplots(ncols=1, nrows=len(fonts), space=0,
+                      axwidth=4.5, axheight=5.5 * size / 72)
+    axs.format(xloc='neither', yloc='neither',
+               xlocator='null', ylocator='null', alpha=0)
+    axs[0].format(title='Fonts demo', titlesize=size,
+                  titleloc='l', titleweight='bold')
+    for i, ax in enumerate(axs):
+        font = fonts[i]
+        ax.text(0, 0.5, f'{font}: {letters}\n{math}\n{greek}',
+                fontfamily=font, fontsize=size,
+                weight=weight, ha='left', va='center')
     return f
 
 
-#: List of new registered colormap names.
+#: List of registered colormap names.
 cmaps = []  # track *downloaded* colormaps
 
 #: List of registered color cycle names.
 cycles = []  # track *all* color cycles
 
 #: Registered color names by category.
-colordict = {}  # limit to 'sufficiently unique' color names
-_colordict_unfiltered = {}  # downloaded colors categorized by filename
+colors = {}  # 'sufficiently unique' color names  # noqa
 
-#: Names of fonts added by ProPlot.
-fonts_proplot = []
+#: All color names by category
+_colors_unfiltered = {}
 
-#: Names of fonts provided by matplotlib or your operating system.
-fonts_system = []
-
-#: All registered font names.
+#: Registered font names.
 fonts = []
+
+# Apply monkey patches to top level modules
+if not isinstance(mcm.cmap_d, CmapDict):
+    mcm.cmap_d = CmapDict(mcm.cmap_d)
+if not isinstance(mcolors._colors_full_map, _ColorMappingOverride):
+    _map = _ColorMappingOverride(mcolors._colors_full_map)
+    mcolors._colors_full_map = _map
+    mcolors.colorConverter.cache = _map.cache  # re-instantiate
+    mcolors.colorConverter.colors = _map  # re-instantiate
 
 # Call driver funcs
 register_colors()
