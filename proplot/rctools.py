@@ -3,16 +3,15 @@
 Utilities for configuring matplotlib and ProPlot global settings.
 See :ref:`Configuring proplot` for details.
 """
-# TODO: Add 'style' option that overrides .proplotrc
-# Adapted from seaborn; see:
+# NOTE: Make sure to add to docs/configuration.rst when updating or adding
+# new settings! Much of this script was adapted from seaborn; see:
 # https://github.com/mwaskom/seaborn/blob/master/seaborn/rcmod.py
-from . import utils
-from .utils import _counter, _timer, _benchmark
+from .utils import _warn_proplot, _counter, _timer, _benchmark, units
 import re
 import os
 import yaml
 import cycler
-import warnings
+import numpy as np
 import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
 from matplotlib import style, rcParams
@@ -23,8 +22,8 @@ except ModuleNotFoundError:
     def get_ipython():
         return None
 __all__ = [
-    'rc', 'rc_configurator', 'autosave_setup',
-    'autoreload_setup', 'backend_setup'
+    'rc', 'rc_configurator', 'ipython_autosave',
+    'ipython_autoreload', 'ipython_matplotlib'
 ]
 
 # Initialize
@@ -230,47 +229,214 @@ if not os.path.isfile(_rc_file):
 # "Global" settings and the lower-level settings they change
 # NOTE: This whole section, declaring dictionaries and sets, takes 1ms
 RC_CHILDREN = {
-    'fontname': ('font.family',),
-    'cmap': ('image.cmap',),
-    'lut': ('image.lut',),
-    'alpha': ('axes.facealpha', 'geoaxes.facealpha'),
-    'facecolor': ('axes.facecolor', 'geoaxes.facecolor'),
-    'color': ('axes.edgecolor', 'geoaxes.edgecolor', 'axes.labelcolor',
-              'tick.labelcolor', 'hatch.color', 'xtick.color', 'ytick.color'),
-    'small': ('font.size', 'tick.labelsize',
-              'xtick.labelsize', 'ytick.labelsize', 'axes.labelsize',
-              'legend.fontsize', 'geogrid.labelsize'),
-    'large': ('abc.size', 'figure.titlesize', 'axes.titlesize',
-              'suptitle.size', 'title.size', 'leftlabel.size', 'toplabel.size',
-              'rightlabel.size', 'bottomlabel.size'),  # the 'large' fonts
-    'linewidth': ('axes.linewidth', 'geoaxes.linewidth', 'hatch.linewidth',
-                  'xtick.major.width', 'ytick.major.width'),
-    'margin': ('axes.xmargin', 'axes.ymargin'),
-    'grid': ('axes.grid',),
-    'gridminor': ('axes.gridminor',),
-    'geogrid': ('axes.geogrid',),
-    'ticklen': ('xtick.major.size', 'ytick.major.size'),
-    'tickdir': ('xtick.direction', 'ytick.direction'),
-    'tickminor': ('xtick.minor.visible', 'ytick.minor.visible'),
-    'tickpad': ('xtick.major.pad', 'xtick.minor.pad',
-                'ytick.major.pad', 'ytick.minor.pad'),
-    'title.pad': ('axes.titlepad',),
+    'fontname': (
+        'font.family',
+    ),
+    'cmap': (
+        'image.cmap',
+    ),
+    'lut': (
+        'image.lut',
+    ),
+    'alpha': (  # this is a custom setting
+        'axes.alpha',
+    ),
+    'facecolor': (
+        'axes.facecolor', 'geoaxes.facecolor'
+    ),
+    'color': (  # change the 'color' of an axes
+        'axes.edgecolor', 'geoaxes.edgecolor', 'axes.labelcolor',
+        'tick.labelcolor', 'hatch.color', 'xtick.color', 'ytick.color'
+    ),
+    'small': (  # the 'small' fonts
+        'font.size', 'tick.labelsize', 'xtick.labelsize', 'ytick.labelsize',
+        'axes.labelsize', 'legend.fontsize', 'geogrid.labelsize'
+    ),
+    'large': (  # the 'large' fonts
+        'abc.size', 'figure.titlesize',
+        'axes.titlesize', 'suptitle.size', 'title.size',
+        'leftlabel.size', 'toplabel.size',
+        'rightlabel.size', 'bottomlabel.size'
+    ),
+    'linewidth': (
+        'axes.linewidth', 'geoaxes.linewidth', 'hatch.linewidth',
+        'xtick.major.width', 'ytick.major.width'
+    ),
+    'margin': (
+        'axes.xmargin', 'axes.ymargin'
+    ),
+    'grid': (
+        'axes.grid',
+    ),
+    'gridminor': (
+        'axes.gridminor',
+    ),
+    'geogrid': (
+        'axes.geogrid',
+    ),
+    'ticklen': (
+        'xtick.major.size', 'ytick.major.size'
+    ),
+    'tickdir': (
+        'xtick.direction', 'ytick.direction'
+    ),
+    'labelpad': (
+        'axes.labelpad',
+    ),
+    'titlepad': (
+        'axes.titlepad',
+    ),
+    'tickpad': (
+        'xtick.major.pad', 'xtick.minor.pad',
+        'ytick.major.pad', 'ytick.minor.pad'
+    ),
+}
+
+# Names of the new settings
+RC_PARAMNAMES = {*rcParams.keys()}
+RC_SHORTNAMES = {
+    'abc',
+    'align',
+    'alpha',
+    'autoreload',
+    'autosave',
+    'borders',
+    'cmap',
+    'coast',
+    'color',
+    'cycle',
+    'facecolor',
+    'fontname',
+    'geogrid',
+    'grid',
+    'gridminor',
+    'gridratio',
+    'inlinefmt',
+    'innerborders',
+    'lakes',
+    'land',
+    'large',
+    'linewidth',
+    'lut',
+    'margin',
+    'matplotlib',
+    'ocean',
+    'reso',
+    'rgbcycle',
+    'rivers',
+    'share',
+    'small',
+    'span',
+    'tickdir',
+    'ticklen',
+    'ticklenratio',
+    'tickpad',
+    'tickratio',
+    'tight',
+}
+RC_LONGNAMES = {
+    'abc.border',
+    'abc.color',
+    'abc.linewidth',
+    'abc.loc',
+    'abc.size',
+    'abc.style',
+    'abc.weight',
+    'axes.alpha',
+    'axes.formatter.timerotation',
+    'axes.formatter.zerotrim',
+    'axes.geogrid',
+    'axes.gridminor',
+    'borders.color',
+    'borders.linewidth',
+    'bottomlabel.color',
+    'bottomlabel.size',
+    'bottomlabel.weight',
+    'coast.color',
+    'coast.linewidth',
+    'colorbar.axespad',
+    'colorbar.extend',
+    'colorbar.framealpha',
+    'colorbar.frameon',
+    'colorbar.grid',
+    'colorbar.insetextend',
+    'colorbar.insetlength',
+    'colorbar.insetwidth',
+    'colorbar.length',
+    'colorbar.loc',
+    'colorbar.width',
+    'geoaxes.edgecolor',
+    'geoaxes.facecolor',
+    'geoaxes.linewidth',
+    'geogrid.alpha',
+    'geogrid.color',
+    'geogrid.labels',
+    'geogrid.labelsize',
+    'geogrid.latmax',
+    'geogrid.latstep',
+    'geogrid.linestyle',
+    'geogrid.linewidth',
+    'geogrid.lonstep',
+    'gridminor.alpha',
+    'gridminor.color',
+    'gridminor.linestyle',
+    'gridminor.linewidth',
+    'image.edgefix',
+    'image.levels',
+    'innerborders.color',
+    'innerborders.linewidth',
+    'lakes.color',
+    'land.color',
+    'leftlabel.color',
+    'leftlabel.size',
+    'leftlabel.weight',
+    'ocean.color',
+    'rightlabel.color',
+    'rightlabel.size',
+    'rightlabel.weight',
+    'rivers.color',
+    'rivers.linewidth',
+    'subplots.axpad',
+    'subplots.axwidth',
+    'subplots.innerspace',
+    'subplots.pad',
+    'subplots.panelpad',
+    'subplots.panelspace',
+    'subplots.panelwidth',
+    'subplots.titlespace',
+    'subplots.xlabspace',
+    'subplots.ylabspace',
+    'suptitle.color',
+    'suptitle.size',
+    'suptitle.weight',
+    'tick.labelcolor',
+    'tick.labelsize',
+    'tick.labelweight',
+    'title.border',
+    'title.color',
+    'title.linewidth',
+    'title.loc',
+    'title.pad',
+    'title.size',
+    'title.weight',
+    'toplabel.color',
+    'toplabel.size',
+    'toplabel.weight',
 }
 # Used by Axes.format, allows user to pass rc settings as keyword args,
 # way less verbose. For example, landcolor='b' vs. rc_kw={'land.color':'b'}.
-RC_NODOTS = {  # useful for passing these as kwargs
-    name.replace('.', ''): name for names
-    in (rcParams, rcParamsLong) for name in names
+RC_NODOTSNAMES = {  # useful for passing these as kwargs
+    name.replace('.', ''): name for names in
+    (RC_LONGNAMES, RC_PARAMNAMES, RC_SHORTNAMES)
+    for name in names
 }
 # Categories for returning dict of subcategory properties
 RC_CATEGORIES = {
-    *(re.sub(r'\.[^.]*$', '', name)
-        for names in (rcParams, rcParamsLong) for name in names),
-    *(re.sub(r'\..*$', '', name)
-        for names in (rcParams, rcParamsLong) for name in names)
+    *(re.sub(r'\.[^.]*$', '', name) for names in
+        (RC_LONGNAMES, RC_PARAMNAMES) for name in names),
+    *(re.sub(r'\..*$', '', name) for names in
+        (RC_LONGNAMES, RC_PARAMNAMES) for name in names)
 }
-
-# Helper funcs
 
 
 def _to_points(key, value):
@@ -280,7 +446,7 @@ def _to_points(key, value):
     if (isinstance(value, str)
             and key.split('.')[0] not in ('colorbar', 'subplots')
             and re.match('^.*(width|space|size|pad|len|small|large)$', key)):
-        value = utils.units(value, 'pt')
+        value = units(value, 'pt')
     return value
 
 
@@ -307,12 +473,12 @@ def _get_config_paths():
 
 def _get_synced_params(key, value):
     """Return dictionaries for updating the `rcParamsShort`, `rcParamsLong`,
-    and `rcParams` properties associted with this key."""
+    and `rcParams` properties associated with this key."""
     kw = {}  # builtin properties that global setting applies to
     kw_long = {}  # custom properties that global setting applies to
     kw_short = {}  # short name properties
     if '.' not in key and key not in rcParamsShort:
-        key = RC_NODOTS.get(key, key)
+        key = RC_NODOTSNAMES.get(key, key)
     # Skip full name keys
     if '.' in key:
         pass
@@ -448,7 +614,7 @@ def _sanitize_key(key):
     if not isinstance(key, str):
         raise KeyError(f'Invalid key {key!r}. Must be string.')
     if '.' not in key and key not in rcParamsShort:
-        key = RC_NODOTS.get(key, key)
+        key = RC_NODOTSNAMES.get(key, key)
     return key.lower()
 
 
@@ -461,7 +627,6 @@ class rc_configurator(object):
     overrides in the ``~/.proplotrc`` file. See the `~proplot.rctools`
     documentation for details.
     """
-
     def __contains__(self, key):
         return key in rcParamsShort or key in rcParamsLong or key in rcParams
 
@@ -846,39 +1011,42 @@ class rc_configurator(object):
 
 
 @_timer
-def backend_setup(backend=None, fmt=None):
+def ipython_matplotlib(backend=None, fmt=None):
     """
-    Set up the matplotlib backend for your iPython workspace.
+    Set up the `matplotlib backend \
+<https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__
+    for ipython sessions and apply the following ``%config InlineBackend``
+    magic commands.
+
+    .. code-block:: ipython
+
+        %config InlineBackend.figure_formats = fmt
+        %config InlineBackend.rc = {}  # never override my rc settings!
+        %config InlineBackend.close_figures = True  # memory issues
+        %config InlineBackend.print_figure_kwargs = {'bbox_inches': None}  \
+# we use our own tight layout algorithm
+
+    This must be called *before drawing any figures*! For some ipython
+    sessions (e.g. terminals) the backend can only be changed by adding
+    ``matplotlib: backend`` to your ``.proplotrc`` file.
+    See :ref:`Configuring proplot` for details.
 
     Parameters
     ----------
     backend : str, optional
-        The backend name. Leave this empty or use ``'auto'`` to revert to the
-        ProPlot defaults.
-    fmt : str, optional
-        The inline backend file format. Valid formats include ``'jpg'``,
+        The backend name. Use ``'auto'`` to apply ``%matplotlib inline`` for
+        notebooks and ``%matplotlib qt`` for all other sessions.
+    fmt : str or list of str, optional
+        The inline backend file format(s). Valid formats include ``'jpg'``,
         ``'png'``, ``'svg'``, ``'pdf'``, and ``'retina'``. This is ignored
         for non-inline backends.
-    """
+    """  # noqa
     # Initialize with default 'inline' settings
     # Reset rc object afterwards
-    # TODO: Change nbsetup --> autobackend in add-subplot branch
-    fmt = fmt or rcParamsShort['format']
     ipython = get_ipython()
-    backend = backend or (
-        'auto' if rcParamsShort.get(
-            'autobackend', rcParamsShort.get('nbsetup', True)
-        ) else None) or rcParams['backend']
+    backend = backend or rcParamsShort['matplotlib']
     if ipython is None or backend is None:
         return
-    if backend[:2] == 'nb' or backend in ('MacOSX',):
-        warnings.warn(
-            f'Using ProPlot with the {backend!r} backend may result in '
-            'unexpected behavior due to automatic figure resizing. '
-            'Try using %matplotlib inline or %matplotlib qt, or just '
-            'import proplot before specifying the backend and one of these '
-            'will be automatically loaded.')
-        backend = 'auto'
 
     # For notebooks
     rc._init = False
@@ -889,28 +1057,43 @@ def backend_setup(backend=None, fmt=None):
     # For terminals (UnknownBackend is subclass of KeyError)
     except KeyError:
         if backend != 'auto':
-            warnings.warn(f'Failed to import {backend!r} backend.')
+            _warn_proplot(f'{"%matplotlib " + backend!r} failed.')
         try:
             ipython.magic('matplotlib qt')  # use any available Qt backend
             rc.reset()
-        except KeyError:  # should be impossible; pyplot needs Qt!
-            warnings.warn('Failed to import \'qt\' backend.')
+        except KeyError:
+            pass  # should be impossible, matplotlib needs Qt!
 
     # Configure inline backend no matter what type of session this is
     # Should be silently ignored for terminal ipython sessions
-    ipython.magic("config InlineBackend.figure_formats = ['" + fmt + "']")
+    fmt = fmt or rcParamsShort['inlinefmt']
+    if isinstance(fmt, str):
+        fmt = [fmt]
+    elif np.iterable(fmt):
+        fmt = list(fmt)
+    else:
+        raise ValueError(
+            f'Invalid inline backend format {fmt!r}. '
+            'Must be string or list thereof.')
+    ipython.magic(f'config InlineBackend.figure_formats = {fmt!r}')
     ipython.magic('config InlineBackend.rc = {}')  # no notebook overrides
     ipython.magic('config InlineBackend.close_figures = True')  # memory issues
-    # Use ProPlot tight layout
-    ipython.magic(
-        "config InlineBackend.print_figure_kwargs = {'bbox_inches':None}")
+    ipython.magic(  # use proplot tight layout
+        'config InlineBackend.print_figure_kwargs = {"bbox_inches":None}')
 
 
-def autoreload_setup(autoreload=None):
+def ipython_autoreload(autoreload=None):
     """
-    Set up the `autoreload \
+    Set up the `ipython autoreload utility \
 <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html>`__
-    utility for ipython sessions.
+    by running the following ipython magic.
+
+    .. code-block:: ipython
+
+        %autoreload autoreload
+
+    This is called on import by default. Add ``autoreload:`` to your
+    ``.proplotrc`` to disable. See :ref:`Configuring proplot` for details.
 
     Parameters
     ----------
@@ -927,11 +1110,18 @@ def autoreload_setup(autoreload=None):
     ipython.magic('autoreload ' + str(autoreload))
 
 
-def autosave_setup(autosave=None):
+def ipython_autosave(autosave=None):
     """
-    Set up the `autosave \
+    Set up the `ipython autosave utility \
 <https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__
-    utility for ipython notebook sessions.
+    by running the following ipython magic.
+
+    .. code-block:: ipython
+
+        %autosave autosave
+
+    This is called on import by default. Add ``autosave:`` to your
+    ``.proplotrc`` to disable. See :ref:`Configuring proplot` for details.
 
     Parameters
     ----------
@@ -954,6 +1144,6 @@ def autosave_setup(autosave=None):
 rc = rc_configurator()
 
 # Call setup functions
-backend_setup()
-autoreload_setup()
-autosave_setup()
+ipython_matplotlib()
+ipython_autoreload()
+ipython_autosave()

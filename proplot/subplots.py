@@ -8,8 +8,8 @@ pyplot-inspired functions for creating figures and related classes.
 import os
 import numpy as np
 import functools
-import warnings
 from matplotlib import docstring
+import matplotlib.artist as martist
 import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
 import matplotlib.gridspec as mgridspec
@@ -17,16 +17,11 @@ import matplotlib.pyplot as plt
 from numbers import Integral
 from . import projs, axes
 from .rctools import rc
-from .utils import _notNone, _counter, units
+from .utils import _warn_proplot, _notNone, _counter, units
 __all__ = [
-    'axes_grid', 'close',
-    'EdgeStack',
-    'figure',
-    'Figure',
-    'GeometrySolver',
-    'GridSpec',
-    'show', 'subplots',
-    'SubplotSpec',
+    'subplot_grid', 'close', 'show', 'subplots',
+    'EdgeStack', 'Figure', 'GeometrySolver',
+    'GridSpec', 'SubplotSpec',
 ]
 
 # Translation
@@ -171,26 +166,26 @@ instance with the positional and keyword arguments. For example,
 
 
 def close(*args, **kwargs):
-    """Call `matplotlib.pyplot.close`. This is included so you don't have
-    to import `~matplotlib.pyplot`."""
+    """Pass the input arguments to `matplotlib.pyplot.close`. This is included
+    so you don't have to import `~matplotlib.pyplot`."""
     plt.close(*args, **kwargs)
 
 
 def show():
     """Call `matplotlib.pyplot.show`. This is included so you don't have
     to import `~matplotlib.pyplot`. Note this command should *not be
-    necessary* if you are working in an iPython notebook and
-    :rcraw:`nbsetup` is set to ``True`` -- when you create a figure in a cell,
-    it will be automatically displayed."""
+    necessary* if you are working in an iPython session and :rcraw:`matplotlib`
+    is non-empty -- when you create a new figure, it will be automatically
+    displayed."""
     plt.show()
 
 
-class axes_grid(list):
+class subplot_grid(list):
     """List subclass and pseudo-2D array that is used as a container for the
     list of axes returned by `subplots`, lists of figure panels, and lists of
     stacked axes panels. The shape of the array is stored in the ``shape``
-    attribute. See the `~axes_grid.__getattr__` and `~axes_grid.__getitem__`
-    methods for details."""
+    attribute. See the `~subplot_grid.__getattr__` and
+    `~subplot_grid.__getitem__` methods for details."""
 
     def __init__(self, objs, n=1, order='C'):
         """
@@ -216,16 +211,17 @@ class axes_grid(list):
         self.shape = (len(self) // n, n)[::(1 if order == 'C' else -1)]
 
     def __repr__(self):
-        return 'axes_grid([' + ', '.join(str(ax) for ax in self) + '])'
+        return 'subplot_grid([' + ', '.join(str(ax) for ax in self) + '])'
 
     def __setitem__(self, key, value):
         """Pseudo immutability. Raises error."""
-        raise LookupError('axes_grid is immutable.')
+        raise LookupError('subplot_grid is immutable.')
 
     def __getitem__(self, key):
         """If an integer is passed, the item is returned. If a slice is passed,
-        an `axes_grid` of the items is returned. You can also use 2D indexing,
-        and the corresponding axes in the axes grid will be chosen.
+        a `subplot_grid` of the items is returned. You can also use 2D
+        indexing, and the corresponding axes in the `subplot_grid` will be
+        chosen.
 
         Example
         -------
@@ -277,9 +273,9 @@ class axes_grid(list):
             # Get index pairs and get objects
             # Note that in double for loop, right loop varies fastest, so
             # e.g. axs[:,:] delvers (0,0), (0,1), ..., (0,N), (1,0), ...
-            # Remember for order == 'F', axes_grid was sent a list unfurled in
-            # column-major order, so we replicate row-major indexing syntax by
-            # reversing the order of the keys.
+            # Remember for order == 'F', subplot_grid was sent a list unfurled
+            # in column-major order, so we replicate row-major indexing syntax
+            # by reversing the order of the keys.
             objs = []
             if self._order == 'C':
                 idxs = [key0 * self._n + key1 for key0 in keys[0]
@@ -296,7 +292,7 @@ class axes_grid(list):
 
         # Return
         if axlist:
-            return axes_grid(objs)
+            return subplot_grid(objs)
         else:
             return objs
 
@@ -305,12 +301,9 @@ class axes_grid(list):
         If the attribute is *callable*, return a dummy function that loops
         through each identically named method, calls them in succession, and
         returns a tuple of the results. This lets you call arbitrary methods
-        on multiple axes at once! If the `axes_grid` has length ``1``, the
-        single result is returned.
-
-        If the attribute is *not callable*, return a tuple of identically
-        named attributes for every object in the list. If the `axes_grid` has
-        length ``1``, the single value is returned.
+        on multiple axes at once! If the `subplot_grid` has length ``1``, the
+        single result is returned. If the attribute is *not callable*,
+        returns a tuple of attributes for every object in the list.
 
         Example
         -------
@@ -347,7 +340,7 @@ class axes_grid(list):
                 elif all(res is None for res in ret):
                     return None
                 elif all(isinstance(res, axes.Axes) for res in ret):
-                    return axes_grid(ret, n=self._n, order=self._order)
+                    return subplot_grid(ret, n=self._n, order=self._order)
                 else:
                     return ret
             try:
@@ -361,6 +354,8 @@ class axes_grid(list):
         raise AttributeError(f'Found mixed types for attribute {attr!r}.')
 
     # TODO: Implement these
+    # TODO: Consider getting rid of __getattr__ override because it is
+    # too much of a mind fuck for new users?
     # def colorbar(self, loc=None):
     #     """Draws a colorbar that spans axes in the selected range."""
     #     for ax in self:
@@ -382,7 +377,6 @@ class SubplotSpec(mgridspec.SubplotSpec):
     Matplotlib `~matplotlib.gridspec.SubplotSpec` subclass that adds
     a helpful `__repr__` method. Otherwise is identical.
     """
-
     def __repr__(self):
         nrows, ncols, row1, row2, col1, col2 = self.get_rows_columns()
         return f'SubplotSpec({nrows}, {ncols}; {row1}:{row2}, {col1}:{col2})'
@@ -647,7 +641,7 @@ class GridSpec(mgridspec.GridSpec):
             width_ratios=None, height_ratios=None):
         """
         Update the gridspec with arbitrary initialization keyword arguments
-        then *apply* those updates for every figure using this gridspec.
+        then *apply* those updates to every figure using this gridspec.
 
         The default `~matplotlib.gridspec.GridSpec.update` tries to update
         positions for axes on all active figures -- but this can fail after
@@ -687,7 +681,7 @@ def _approx_equal(num1, num2, digits=10):
 
 def _canvas_preprocess(canvas, method):
     """Return a pre-processer that can be used to override instance-level
-    canvas draw() and print_figure() methdos. This applies tight layout and
+    canvas draw() and print_figure() methods. This applies tight layout and
     aspect ratio-conserving adjustments and aligns labels. Required so that
     the canvas methods instantiate renderers with the correct dimensions.
     Note that MacOSX currently `cannot be resized \
@@ -700,21 +694,30 @@ def _canvas_preprocess(canvas, method):
     # implementation (because FigureCanvasAgg queries the bbox directly
     # rather than using get_width_height() so requires a workaround), or (2)
     # override bbox and bbox_inches as *properties*, but these are really
-    # complicated, dangerous, and result in unnecessary extra draws. The
-    # below is by far the best approach.
+    # complicated, dangerous, and result in unnecessary extra draws.
     def _preprocess(self, *args, **kwargs):
+        if method == 'draw_idle' and self._is_idle_drawing:
+            return  # copied from source code
         fig = self.figure  # update even if not stale! needed after saves
+        if fig.stale and method == 'print_figure':
+            # Needed for displaying already-drawn inline figures, for
+            # some reason tight layout algorithm gets it wrong otherwise.
+            # Concerned that draw_idle() might wait until after
+            # print_figure() is done, so we use draw().
+            self.draw()
         renderer = fig._get_renderer()  # any renderer will do for now
         for ax in fig._iter_axes():
             ax._draw_auto_legends_colorbars()  # may insert panels
-        fig._adjust_aspect()
-        fig._align_axislabels(False)  # get proper label offset only
-        fig._align_labels(renderer)  # position labels and suptitle
-        if fig._auto_tight_layout:
-            fig._adjust_tight_layout(renderer)
+        if rc['backend'] != 'nbAgg':
+            fig._adjust_aspect()  # resizes figure
+            if fig._auto_tight_layout:
+                fig._align_axislabels(False)  # get proper label offset only
+                fig._align_labels(renderer)  # position labels and suptitle
+                fig._adjust_tight_layout(renderer)
         fig._align_axislabels(True)  # slide spanning labels across
         fig._align_labels(renderer)  # update figure-relative coordinates!
-        return getattr(type(self), method)(self, *args, **kwargs)
+        res = getattr(type(self), method)(self, *args, **kwargs)
+        return res
     return _preprocess.__get__(canvas)  # ...I don't get it either
 
 
@@ -782,8 +785,9 @@ class EdgeStack(object):
     along the edge of a subplot. Calculates bounding box coordiantes for
     objects in the stack.
     """
-    # def __init__(self, *args):
-    #     if not all(isinstance(arg, martist.Artst), args)
+    def __init__(self, *args):
+        if not all(isinstance(arg, martist.Artst) for arg in args):
+            raise ValueError(f'Arguments must be artists.')
 
 
 class GeometrySolver(object):
@@ -994,7 +998,7 @@ class GeometrySolver(object):
             wratios[idx] = ratio
 
         # Update figure size and gridspec
-        self.set_size_inches((width, height))
+        self.set_size_inches((width, height), manual=True)
         if self._gridspec:
             self._gridspec.update(
                 ncols=ncols, nrows=nrows,
@@ -1041,7 +1045,7 @@ class GeometrySolver(object):
         # Get renderer if not passed
         canvas = getattr(fig, 'canvas', None)
         if not hasattr(canvas, 'get_renderer'):
-            warnings.warn(
+            _warn_proplot(
                 f'Figure canvas has no get_renderer() method, '
                 f'cannot calculate positions.')
         renderer = canvas.get_renderer()
@@ -1067,7 +1071,9 @@ class GeometrySolver(object):
             else:
                 pass  # matplotlib issues warning, forces aspect == 'auto'
         # Apply aspect
-        # Account for floating point errors by rounding to 10 digits
+        # aspect = round(aspect * 1e10) * 1e-10
+        # subplots_kw = self._subplots_kw
+        # aspect_prev = round(subplots_kw['aspect'] * 1e10) * 1e-10
         if aspect is not None and not _approx_equal(aspect, self.aspect):
             self.aspect = aspect
             self._update_gridspec()
@@ -1129,7 +1135,7 @@ class GeometrySolver(object):
                     idx1, = np.where(filt & filt1)
                     idx2, = np.where(filt & filt2)
                     if idx1.size > 1 or idx2.size > 2:
-                        warnings.warn('This should never happen.')
+                        _warn_proplot('This should never happen.')
                         continue
                         # raise RuntimeError('This should never happen.')
                     elif not idx1.size or not idx2.size:
@@ -1180,7 +1186,7 @@ class GeometrySolver(object):
         spanx, spany = self._spanx, self._spany
         alignx, aligny = self._alignx, self._aligny
         if ((spanx or alignx) and grpx) or ((spany or aligny) and grpy):
-            warnings.warn(
+            _warn_proplot(
                 'Aligning *x* and *y* axis labels requires '
                 'matplotlib >=3.1.0')
             return
@@ -1203,9 +1209,15 @@ class GeometrySolver(object):
                 # Adjust axis label offsets
                 axises = [getattr(ax, x + 'axis') for ax in axs]
                 tracker.update(axises)
-                for ax in axs[1:]:
-                    # copied from source code, add to grouper
-                    grp.join(axs[0], ax)
+                if span or align:
+                    if grp is not None:
+                        for ax in axs[1:]:
+                            # copied from source code, add to grouper
+                            grp.join(axs[0], ax)
+                    elif align:
+                        _warn_proplot(
+                            f'Aligning *x* and *y* axis labels required '
+                            f'matplotlib >=3.1.0')
                 if not span:
                     continue
 
@@ -1358,7 +1370,7 @@ class Figure(mfigure.Figure):
         """
         # Initialize first
         if tight_layout or constrained_layout:
-            warnings.warn(
+            _warn_proplot(
                 f'Ignoring tight_layout={tight_layout} and '
                 f'contrained_layout={constrained_layout}. ProPlot uses '
                 'its own tight layout algorithm, activated by default or '
@@ -1371,9 +1383,9 @@ class Figure(mfigure.Figure):
         spanx = _notNone(spanx, span, 0 if sharex == 0 else None, rc['span'])
         spany = _notNone(spany, span, 0 if sharey == 0 else None, rc['span'])
         if spanx and (alignx or align):
-            warnings.warn(f'"alignx" has no effect when spanx=True.')
+            _warn_proplot(f'"alignx" has no effect when spanx=True.')
         if spany and (aligny or align):
-            warnings.warn(f'"aligny" has no effect when spany=True.')
+            _warn_proplot(f'"aligny" has no effect when spany=True.')
         alignx = _notNone(alignx, align, rc['align'])
         aligny = _notNone(aligny, align, rc['align'])
         self.set_alignx(alignx)
@@ -1406,7 +1418,7 @@ class Figure(mfigure.Figure):
             spec = ', '.join(spec)
         for name, value in zip(names, values):
             if value is not None:
-                warnings.warn(
+                _warn_proplot(
                     f'You specified both {spec} and {name}={value!r}. '
                     f'Ignoring {name!r}.')
 
@@ -1529,8 +1541,7 @@ class Figure(mfigure.Figure):
                         f'Invalid keyword arg {key!r} '
                         f'for figure panel on side {side!r}.')
             span = _notNone(
-                span, row, rows, None, names=(
-                    'span', 'row', 'rows'))
+                span, row, rows, None, names=('span', 'row', 'rows'))
         else:
             for key, value in (('row', row), ('rows', rows)):
                 if value is not None:
@@ -1538,8 +1549,7 @@ class Figure(mfigure.Figure):
                         f'Invalid keyword arg {key!r} '
                         f'for figure panel on side {side!r}.')
             span = _notNone(
-                span, col, cols, None, names=(
-                    'span', 'col', 'cols'))
+                span, col, cols, None, names=('span', 'col', 'cols'))
 
         # Get props
         array = getattr(self, '_' + s + 'array')
@@ -1903,11 +1913,11 @@ class Figure(mfigure.Figure):
                     'three-digit number, not {args[0]!r}.')
             args = tuple(map(int, str(args[0])))
         if sharex is not None:
-            warnings.warn(
+            _warn_proplot(
                 f'Ignoring sharex={sharex!r}. To toggle axes sharing, '
                 'just pass sharex=num to figure() or subplots().')
         if sharey is not None:
-            warnings.warn(
+            _warn_proplot(
                 f'Ignoring sharey={sharey!r}. To toggle axes sharing, '
                 'just pass sharey=num to figure() or subplots().')
 
@@ -1985,7 +1995,7 @@ class Figure(mfigure.Figure):
         if proj not in ('cartesian', 'polar'):
             map_projection = projs.Proj(proj, basemap=basemap, **proj_kw)
             if 'map_projection' in kwargs:
-                warnings.warn(
+                _warn_proplot(
                     f'Ignoring input "map_projection" '
                     f'{kwargs["map_projection"]!r}.')
             kwargs['map_projection'] = map_projection
@@ -2148,26 +2158,29 @@ class Figure(mfigure.Figure):
                                     row=row, col=col, rows=rows, cols=cols)
         return ax.legend(*args, loc='_fill', **kwargs)
 
+    def save(self, filename, **kwargs):
+        # Alias for `~Figure.savefig` because ``fig.savefig`` is redundant.
+        # Also automatically expands user paths e.g. the tilde ``'~'``.
+        return self.savefig(filename, **kwargs)
+
     def savefig(self, filename, **kwargs):
         # Automatically expand user because why in gods name does
         # matplotlib not already do this. Undocumented because do not
-        # want to overwrite matplotlib docstirng.
+        # want to overwrite matplotlib docstring.
         super().savefig(os.path.expanduser(filename), **kwargs)
-
-    def save(self, filename, **kwargs):
-        # Alias for `~Figure.savefig` because ``fig.savefig`` is redundant.
-        # Also automatically expand user paths e.g. the tilde ``'~'``.
-        return self.savefig(filename, **kwargs)
 
     def set_canvas(self, canvas):
         # Set the canvas and add monkey patches to the instance-level
-        # `~matplotlib.backend_bases.FigureCanvasBase.draw` and
+        # `~matplotlib.backend_bases.FigureCanvasBase.draw_idle` and
         # `~matplotlib.backend_bases.FigureCanvasBase.print_figure`
         # methods. The latter is called by save() and by the inline backend.
         # See `_canvas_preprocess` for details."""
-        if hasattr(canvas, '_draw'):
-            canvas._draw = _canvas_preprocess(canvas, '_draw')
-        canvas.draw = _canvas_preprocess(canvas, 'draw')
+        # NOTE: Use draw_idle() rather than draw() becuase latter is not
+        # always called! For example, MacOSX uses _draw() and nbAgg does
+        # not call draw() *or* _draw()! Not sure how it works actually.
+        # Should be same because we piggyback draw() which *itself* defers
+        # the event. Just make sure to check _is_idle_drawing!
+        canvas.draw_idle = _canvas_preprocess(canvas, 'draw_idle')
         canvas.print_figure = _canvas_preprocess(canvas, 'print_figure')
         super().set_canvas(canvas)
 
@@ -2260,6 +2273,33 @@ class Figure(mfigure.Figure):
                 f'Invalid axes number {ref!r}. Must be integer >=1.')
         self.stale = True
         self._ref = ref
+
+    def set_size_inches(self, w, h=None, forward=True, manual=True):
+        # Set the figure size and, if this is being called manually or from
+        # an interactive backend, override the geometry tracker so users can
+        # use interactive backends. See #76. Undocumented because this is
+        # only relevant internally.
+        # NOTE: Bitmap renderers use int(Figure.bbox.[width|height]) which
+        # rounds to whole pixels. So when renderer resizes the figure
+        # internally there may be roundoff error! Always compare to *both*
+        # Figure.get_size_inches() and the truncated bbox dimensions times dpi.
+        # Comparison is critical because most renderers call set_size_inches()
+        # before any resizing interaction!
+        if h is None:
+            width, height = w
+        else:
+            width, height = w, h
+        if not all(np.isfinite(_) for _ in (width, height)):
+            raise ValueError('Figure size must be finite, not '
+                             f'({width}, {height}).')
+        width_true, height_true = self.get_size_inches()
+        width_trunc = int(self.bbox.width) / self.dpi
+        height_trunc = int(self.bbox.height) / self.dpi
+        if (manual  # have actually seen (width_true, heigh_trunc)!
+                and width not in (width_true, width_trunc)
+                and height not in (height_true, height_trunc)):
+            self._subplots_kw.update(width=width, height=height)
+        super().set_size_inches(width, height, forward=forward)
 
     # Add documentation
     add_gridspec.__doc__ = _gridspec_doc
@@ -2414,11 +2454,9 @@ def subplots(
     -------
     f : `Figure`
         The figure instance.
-    axs : `axes_grid`
-        A special list of axes instances. See `axes_grid`.
-    """
-    # NOTE: White lie that spacing params are passed to figure, but since
-    # we initialize the gridspec here, just apply them to the gridspec.
+    axs : `subplot_grid`
+        A special list of axes instances. See `subplot_grid`.
+    """  # noqa
     # Build array
     if order not in ('C', 'F'):  # better error message
         raise ValueError(
@@ -2454,10 +2492,7 @@ def subplots(
             'one of {nums}.')
     nrows, ncols = array.shape
     # Get axes ranges from array
-    axids = [
-        np.where(
-            array == i) for i in np.sort(
-            np.unique(array)) if i > 0]  # 0 stands for empty
+    axids = [np.where(array == i) for i in np.sort(np.unique(array)) if i > 0]
     xrange = np.array([[x.min(), x.max()] for _, x in axids])
     yrange = np.array([[y.min(), y.max()]
                        for y, _ in axids])  # range accounting for panels
@@ -2489,9 +2524,10 @@ def subplots(
     # NOTE: This time we initialize the *gridspec* with user input values
     # TODO: Repair _update_gridspec so it works!
     fig = plt.figure(FigureClass=Figure, ref=ref, **kwargs)
-    gs = fig._update_gridspec(nrows=nrows, ncols=ncols,
-                              left=left, right=right, bottom=bottom, top=top,
-                              wratios=wratios, hratios=hratios)
+    gs = fig._update_gridspec(
+        nrows=nrows, ncols=ncols,
+        left=left, right=right, bottom=bottom, top=top,
+        wratios=wratios, hratios=hratios)
 
     # Draw main subplots
     axs = naxs * [None]  # list of axes
@@ -2506,6 +2542,12 @@ def subplots(
             ss, number=num, main=True,
             proj=proj[num], basemap=basemap[num], proj_kw=proj_kw[num])
 
+    # Shared axes setup
+    # TODO: Figure out how to defer this to drawtime in #50
+    # For some reason just adding _share_setup() to draw() doesn't work
+    for ax in axs:
+        ax._share_setup()
+
     # Return figure and axes
     n = (ncols if order == 'C' else nrows)
-    return fig, axes_grid(axs, n=n, order=order)
+    return fig, subplot_grid(axs, n=n, order=order)

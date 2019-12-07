@@ -16,10 +16,11 @@ except ImportError:  # graceful fallback if IceCream isn't installed
 __all__ = ['arange', 'edges', 'edges2d', 'units']
 NUMBER = re.compile('^([-+]?[0-9._]+([eE][-+]?[0-9_]+)?)(.*)$')
 BENCHMARK = False  # change this to turn on benchmarking
+NUMBER = re.compile('^([-+]?[0-9._]+([eE][-+]?[0-9_]+)?)(.*)$')
 
 
 class _benchmark(object):
-    """Context object that can be used to time import statements."""
+    """Context object for timing arbitrary blocks of code."""
     def __init__(self, message):
         self.message = message
 
@@ -30,6 +31,47 @@ class _benchmark(object):
     def __exit__(self, *args):
         if BENCHMARK:
             print(f'{self.message}: {time.clock() - self.time}s')
+
+
+class _setstate(object):
+    """Temporarily modify attribute(s) for an arbitrary object."""
+    def __init__(self, obj, **kwargs):
+        self._obj = obj
+        self._kwargs = kwargs
+        self._kwargs_orig = {
+            key: getattr(obj, key) for key in kwargs if hasattr(obj, key)
+        }
+
+    def __enter__(self):
+        for key, value in self._kwargs.items():
+            setattr(self._obj, key, value)
+
+    def __exit__(self, *args):
+        for key in self._kwargs.keys():
+            if key in self._kwargs_orig:
+                setattr(self._obj, key, self._kwargs_orig[key])
+            else:
+                delattr(self._obj, key)
+
+
+def _counter(func):
+    """A decorator that counts and prints the cumulative time a function
+    has benn running. See `this link \
+<https://stackoverflow.com/a/1594484/4970632>`__."""
+    @functools.wraps(func)
+    def decorator(*args, **kwargs):
+        if BENCHMARK:
+            t = time.clock()
+        res = func(*args, **kwargs)
+        if BENCHMARK:
+            decorator.time += (time.clock() - t)
+            decorator.count += 1
+            print(f'{func.__name__}() cumulative time: {decorator.time}s '
+                  f'({decorator.count} calls)')
+        return res
+    decorator.time = 0
+    decorator.count = 0  # initialize
+    return decorator
 
 
 def _timer(func):
@@ -46,24 +88,20 @@ def _timer(func):
     return decorator
 
 
-def _counter(func):
-    """Decorator that counts and prints the cumulative time a function
-    has been running. See: https://stackoverflow.com/a/1594484/4970632"""
-    @functools.wraps(func)
-    def decorator(*args, **kwargs):
-        if BENCHMARK:
-            t = time.clock()
-        res = func(*args, **kwargs)
-        if BENCHMARK:
-            decorator.time += (time.clock() - t)
-            decorator.count += 1
-            print(
-                f'  {func.__name__}() cumulative time: '
-                f'{decorator.time}s ({decorator.count} calls)')
-        return res
-    decorator.time = 0
-    decorator.count = 0  # initialize
-    return decorator
+def _format_warning(message, category, filename, lineno, line=None):
+    """Simple format for warnings issued by ProPlot. See the
+    `internal warning call signature \
+<https://docs.python.org/3/library/warnings.html#warnings.showwarning>`__
+    and the `default warning source code \
+<https://github.com/python/cpython/blob/master/Lib/warnings.py>`__."""
+    return f'{filename}:{lineno}: ProPlotWarning: {message}\n'  # needs newline
+
+
+def _warn_proplot(message):
+    """*Temporarily* apply the `_format_warning` monkey patch and emit the
+    warning. Do not want to affect warnings emitted by other modules."""
+    with _setstate(warnings, formatwarning=_format_warning):
+        warnings.warn(message)
 
 
 def _notNone(*args, names=None):
@@ -118,13 +156,13 @@ def arange(min_, *args):
     # All input is integer
     if all(isinstance(val, Integral) for val in (min_, max_, step)):
         min_, max_, step = np.int64(min_), np.int64(max_), np.int64(step)
-        max_ += 1
+        max_ += np.sign(step) * 1
     # Input is float or mixed, cast to float64
     # Don't use np.nextafter with np.finfo(np.dtype(np.float64)).max, because
     # round-off errors from continually adding step to min mess this up
     else:
         min_, max_, step = np.float64(min_), np.float64(max_), np.float64(step)
-        max_ += step / 2
+        max_ += np.sign(step) * (step / 2)
     return np.arange(min_, max_, step)
 
 
@@ -143,7 +181,7 @@ def edges(Z, axis=-1):
         Array of any shape or size.
     axis : int, optional
         The axis along which "edges" are calculated. The size of this axis
-        will be augmented by one.
+        will be increased by one.
 
     Returns
     -------
@@ -162,12 +200,14 @@ def edges(Z, axis=-1):
 def edges2d(Z):
     """
     Like `edges` but for 2d arrays.
-    The size of both axes are increased by one.
+    The size of both axes are increased by one. This is used
+    internally to calculate graitule edges when you supply centers to
+    `~matplotlib.axes.Axes.pcolor` or `~matplotlib.axes.Axes.pcolormesh`.
 
     Parameters
     ----------
     Z : array-like
-        2-dimensional array.
+        A 2d array.
 
     Returns
     -------
@@ -175,20 +215,19 @@ def edges2d(Z):
         Array of "edge" coordinates.
     """
     Z = np.asarray(Z)
+    if Z.ndim != 2:
+        raise ValueError(f'Input must be a 2d array, but got {Z.ndim}d.')
     ny, nx = Z.shape
     Zb = np.zeros((ny + 1, nx + 1))
-
     # Inner
-    Zb[1:-1, 1:-1] = 0.25 * (Z[1:, 1:] + Z[:-1, 1:]
-                             + Z[1:, :-1] + Z[:-1, :-1])
+    Zb[1:-1, 1:-1] = 0.25 * (
+        Z[1:, 1:] + Z[:-1, 1:] + Z[1:, :-1] + Z[:-1, :-1])
     # Lower and upper
     Zb[0] += edges(1.5 * Z[0] - 0.5 * Z[1])
     Zb[-1] += edges(1.5 * Z[-1] - 0.5 * Z[-2])
-
     # Left and right
     Zb[:, 0] += edges(1.5 * Z[:, 0] - 0.5 * Z[:, 1])
     Zb[:, -1] += edges(1.5 * Z[:, -1] - 0.5 * Z[:, -2])
-
     # Corners
     Zb[[0, 0, -1, -1], [0, -1, -1, 0]] *= 0.5
     return Zb
@@ -289,7 +328,7 @@ def units(value, units='in', axes=None, figure=None, width=True):
     except KeyError:
         raise ValueError(
             f'Invalid destination units {units!r}. Valid units are '
-            ', '.join(map(repr, unit_dict.keys())) + '.')
+            + ', '.join(map(repr, unit_dict.keys())) + '.')
 
     # Convert units for each value in list
     result = []
@@ -301,12 +340,12 @@ def units(value, units='in', axes=None, figure=None, width=True):
         elif not isinstance(val, str):
             raise ValueError(
                 f'Size spec must be string or number or list thereof. '
-                'Got {value!r}.')
+                f'Got {value!r}.')
         regex = NUMBER.match(val)
         if not regex:
             raise ValueError(
                 f'Invalid size spec {val!r}. Valid units are '
-                ', '.join(map(repr, unit_dict.keys())) + '.')
+                + ', '.join(map(repr, unit_dict.keys())) + '.')
         number, _, units = regex.groups()  # second group is exponential
         try:
             result.append(
@@ -314,7 +353,7 @@ def units(value, units='in', axes=None, figure=None, width=True):
         except (KeyError, ValueError):
             raise ValueError(
                 f'Invalid size spec {val!r}. Valid units are '
-                ', '.join(map(repr, unit_dict.keys())) + '.')
+                + ', '.join(map(repr, unit_dict.keys())) + '.')
     if singleton:
         result = result[0]
     return result

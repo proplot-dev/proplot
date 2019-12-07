@@ -1,9 +1,13 @@
 .. image:: https://github.com/lukelbd/proplot/blob/master/docs/_static/logo_long.png?raw=true
    :width: 1000px
 
-|build-status| |docs| |license| |gitter| |pr-welcome|
+|build-status| |docs| |pypi| |license| |gitter| |pr-welcome|
 
 A comprehensive, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful, publication-quality graphics.
+
+Documentation
+=============
+The documentation is `published on readthedocs <https://proplot.readthedocs.io>`__.
 
 Installation
 ============
@@ -15,11 +19,12 @@ To install or upgrade ProPlot:
    pip install -U proplot
 
 
+If you previously used ``pip install git+https://github.com/lukelbd/proplot.git``
+to install a development version of proplot,
+please run ``pip uninstall`` first.
+
 ProPlot's only hard dependency is `matplotlib <https://matplotlib.org/>`__. The *soft* dependencies are `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`__, `basemap <https://matplotlib.org/basemap/index.html>`__, `xarray <http://xarray.pydata.org>`__, and `pandas <https://pandas.pydata.org>`__. See the documentation for details.
 
-Documentation
-=============
-The documentation is `published on readthedocs <https://proplot.readthedocs.io>`__.
 
 .. |build-status| image:: https://travis-ci.com/lukelbd/proplot.svg?branch=master
    :alt: build status
@@ -32,6 +37,10 @@ The documentation is `published on readthedocs <https://proplot.readthedocs.io>`
 .. |docs| image:: https://readthedocs.org/projects/proplot/badge/?version=latest
    :alt: docs
    :target: https://proplot.readthedocs.io/en/latest/?badge=latest
+
+.. |pypi| image:: https://img.shields.io/pypi/v/proplot?color=83%20197%2052
+   :alt: pypi
+   :target: https://pypi.org/project/proplot/
 
 .. |gitter| image:: https://badges.gitter.im/gitterHQ/gitter.svg
    :alt: gitter
@@ -57,11 +66,6 @@ The documentation is `published on readthedocs <https://proplot.readthedocs.io>`
    :target: http://hits.dwyl.io/lukelbd/lukelbd/proplot
 
 ..
-   |pypi| image:: http://img.shields.io/pypi/v/proplot.svg?text=version
-    :target: https://pypi.org/project/proplot/
-    :alt: Latest release
-
-..
    |contributions| image:: https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat
    :alt: contributions
    :target: https://github.com/lukelbd/issues
@@ -70,12 +74,3 @@ The documentation is `published on readthedocs <https://proplot.readthedocs.io>`
    |issues| image:: https://img.shields.io/github/issues/lukelbd/proplot.svg
    :alt: issues
    :target: https://github.com/lukelbd/issues
-
-..
-   Sphinx is used following this guide (less traditional approach):
-   https://daler.github.io/sphinxdoc-test/includeme.html
-
-..
-   Docstrings formatted according to:
-   numpy guide:      https://numpydoc.readthedocs.io/en/latest/format.html
-   matplotlib guide: https://matplotlib.org/devel/documenting_mpl.html

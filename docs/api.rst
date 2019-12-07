@@ -44,10 +44,10 @@ Projection tools
 
 .. automodule:: proplot.projs
 
-.. rubric:: Classes
+.. rubric:: Variables
 
 .. automodsumm:: proplot.projs
-   :classes-only:
+   :variables-only:
    :toctree: api
 
 .. rubric:: Functions
@@ -56,10 +56,10 @@ Projection tools
    :functions-only:
    :toctree: api
 
-.. rubric:: Variables
+.. rubric:: Classes
 
 .. automodsumm:: proplot.projs
-   :variables-only:
+   :classes-only:
    :toctree: api
 
 Axis tools
@@ -67,11 +67,11 @@ Axis tools
 
 .. automodule:: proplot.axistools
 
-.. rubric:: Classes
+.. rubric:: Variables
 
 .. automodsumm:: proplot.axistools
    :toctree: api
-   :classes-only:
+   :variables-only:
 
 .. rubric:: Functions
 
@@ -79,21 +79,21 @@ Axis tools
    :toctree: api
    :functions-only:
 
-.. rubric:: Variables
+.. rubric:: Classes
 
 .. automodsumm:: proplot.axistools
    :toctree: api
-   :variables-only:
+   :classes-only:
 
 Color and font tools
 ====================
 
 .. automodule:: proplot.styletools
 
-.. rubric:: Classes
+.. rubric:: Variables
 
 .. automodsumm:: proplot.styletools
-   :classes-only:
+   :variables-only:
    :toctree: api
 
 .. rubric:: Functions
@@ -102,10 +102,10 @@ Color and font tools
    :functions-only:
    :toctree: api
 
-.. rubric:: Variables
+.. rubric:: Classes
 
 .. automodsumm:: proplot.styletools
-   :variables-only:
+   :classes-only:
    :toctree: api
 
 Rc configuration tools
@@ -124,4 +124,3 @@ Miscellaneous tools
 .. automodsumm:: proplot.utils
    :functions-only:
    :toctree: api
-

@@ -25,6 +25,7 @@
   --main-color: #404040;
   --call-color: #606060;
   --versions-color: #808080;
+  --highlight-color: #f1c40f;
   --code-color: #e65820;
   --link-color: #2d6ab0;
   --link-hover-color: #0079ff;
@@ -55,6 +56,7 @@
   --versions-color: #b0b0b0;
   --code-color: #ff8f4f;
   --link-color: #69acff;
+  --highlight-color: #b27600;
   --link-hover-color: #549aeb;
   --link-visited-color: #c194ff;
   --code-border-color: #707070;
@@ -237,6 +239,17 @@ a:visited,
   color: var(--link-visited-color);
 }
 
+/* Highlighting padding */
+.rst-content .highlighted {
+  padding: 0;
+  background-color: var(--highlight-color);
+}
+
+/* Hide Edit on Github */
+.wy-breadcrumbs li.wy-breadcrumbs-aside a {
+  display: None;
+}
+
 /* Code color, dl:not(.docutils) needed to match specificity */
 .rst-content code.literal,
 .rst-content tt.literal,
@@ -246,9 +259,14 @@ a:visited,
   font-weight: normal;
 }
 
-/* Versions panel colors */
+/* RTD versions box colors */
+/* Also make entire sidebar scrollable but add empty space to the bottom
+ * of the colling region, rather than truncating the scrollable space */
+nav.wy-nav-side .ethical-rtd {
+  margin-bottom: 3em !important;  /* padding below ad or below sidebar */
+}
 nav.wy-nav-side {
-  padding: 0 !important;
+  padding-bottom: 0em !important;  /* entire sidebar is always scrollable */
 }
 .rst-versions .rst-current-version {
   padding: 0.66em;  /* match padding for list items */
@@ -262,7 +280,9 @@ nav.wy-nav-side {
   background-color: var(--l3-bg-color);
 }
 .rst-versions .rst-other-versions hr {
-  color: var(--versions-color);
+  color: var(--l5-bg-color);
+  border-top-color: var(--l5-bg-color);
+  border-bottom-color: var(--l5-bg-color);
 }
 .rst-versions .rst-current-version .fa {
   color: var(--main-color);
