@@ -1,0 +1,16 @@
+{% extends "!breadcrumbs.html" %}
+<!--
+  Put dark mode toggle inside breadcrumbs header
+  See layout.html for details
+  Name class btn-neutral so it inherits properties of other RTD buttons
+-->
+{% block breadcrumbs %}
+  <li id="lightdark-li">
+    <label for="lightdark-checkbox" id="lightdark-label">
+      <input type="checkbox" id="lightdark-checkbox"/>
+      <div class="btn-neutral"></div>
+    </label>
+  </li>
+  {{ super() }}
+{% endblock %}
+

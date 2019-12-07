@@ -1,0 +1,26 @@
+# Hard requirements for notebook examples and documentation build
+# Proplot itself just needs matplotlib
+# NOTE: PyQt5 is needed by pyplot, RTD server *happens* to already have it
+# but creating local environment will fail.
+name: proplot-dev
+channels:
+  - conda-forge
+dependencies:
+  - python>=3.6
+  - numpy
+  - xarray
+  - pandas
+  - matplotlib
+  - cartopy
+  - basemap
+  - pandoc
+  - ipykernel
+  - pip
+  - pip:
+    - ..
+    - lxml
+    - pyyaml
+    - pyqt5
+    - nbsphinx
+    - sphinx_rtd_theme
+    - git+https://github.com/lukelbd/sphinx-automodapi@v0.6.proplot-mods

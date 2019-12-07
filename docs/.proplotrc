@@ -1,0 +1,8 @@
+# Overrides for sphinx
+# SVG because quality of examples is highest priority
+# Larger font sizes than local configuration for visibility
+# Tested SVG vs. PNG and speeds are comparable!
+small: 9
+large: 10
+inlinefmt: svg
+matplotlib: 'auto'

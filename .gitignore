@@ -6,16 +6,23 @@
 # PyPi stuff
 build
 dist
+.eggs
 *.egg-info
 
-# Builds made during testing
+# Local docs builds
 docs/api
 docs/_build
 
-# Deleted
-trash
-notebooks
-garbage
+# Subfolders in data directories
+**/cmaps/**
+**/cycles/**
+**/fonts/**
+
+# Folder of notebooks for testing and bugfixing
+local
+
+# Notebook stuff
+.ipynb_checkpoints
 
 # Python extras
 *.log
@@ -23,14 +30,12 @@ garbage
 .*.pyc
 __pycache__
 
-# Notebooks
-# NOTE: For now ignore, contributors just need RST files to build docs and
-# have personal control over quickstart.
-*.ipynb
-.ipynb_checkpoints
-
 # OS files
 .DS_Store
 .DS_Store?
 ._*
 .Trashes
+
+# Old files
+trash
+garbage

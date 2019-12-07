@@ -1,0 +1,469 @@
+/* This file contains edits to the RTD theme CSS style
+ * sheets. Requires a _templates/layout.html file.
+ * https://learn.shayhowe.com/advanced-html-css/complex-selectors/
+ * - item is tag e.g. <item></item>
+ * - #item is id e.g. <p id="item"></p>
+ * - .item is class e.g. <p class="item"></p>
+ * - item[key] or item[key=*] filters tags e.g. <item key="key"></item>
+ * - .item1.item2 {} matches tag belonging to *both* classes/ids
+ * - .item1 .item2 {} matches where item2 is *descendent* of item tag/class/id
+ * - .item1, .item2 {} matches tag belonging to *either* tag/class/id
+ * - item1:key {} matches "pseudo-class" e.g. item1:hover or "pseudo-element" e..g item1:first-line
+ * - item1 + item2 matches item2 *immediately following* item1, but not inside
+ * - default blue for header and links: 2f81b7
+ * - better blue used before: 2d6ab0
+ * Alabaster scroll sidebar: https://stackoverflow.com/a/57040610/4970632
+ * Rtd edits: https://stackoverflow.com/a/48281750/4970632
+ * Note we only use !important where RTD uses !important
+ * Otherwise just try to match specificity of RTD selectors
+ */
+
+/* Default light mode variables */
+:root {
+  --dark-color: #404040; /* for toggle button */
+  --light-color: #f0f0f0; /* for toggle button */
+  --main-color: #404040;
+  --call-color: #606060;
+  --versions-color: #808080;
+  --highlight-color: #f1c40f;
+  --code-color: #e65820;
+  --link-color: #2d6ab0;
+  --link-hover-color: #0079ff;
+  --link-visited-color: #452bb0;
+  --code-border-color: #e0e0e0;
+  --menu-border-color: #909090;
+  --search-border-color: #aaa;
+  --search-shadow-color: #ddd;
+  --main-bg-color: #fcfcfc;
+  --code-bg-color: #ffffff;
+  --empty-bg-color: #f4f4f4;
+  --l1-bg-color: #e9e9e9;
+  --l2-bg-color: #dcdcdc;
+  --l3-bg-color: #d0d0d0;
+  --l4-bg-color: #c3c3c3;
+  --l5-bg-color: #b6b6b6;
+  --l6-bg-color: #a9a9a9;
+  --l7-bg-color: #9c9c9c;
+  --block-bg-color: #f0f0f0;
+  --accent-bg-color: #d0d0d0;
+}
+
+/* Dark mode variables */
+/* See: https://dev.to/ananyaneogi/create-a-dark-light-mode-switch-with-css-variables-34l8 */
+[data-theme="dark"] {
+  --main-color: #fcfcfc;
+  --call-color: #d0d0d0;
+  --versions-color: #b0b0b0;
+  --code-color: #ff8f4f;
+  --link-color: #69acff;
+  --highlight-color: #b27600;
+  --link-hover-color: #549aeb;
+  --link-visited-color: #c194ff;
+  --code-border-color: #707070;
+  --menu-border-color: #909090;
+  --search-border-color: #555;
+  --search-shadow-color: #444;
+  --main-bg-color: #303030;
+  --code-bg-color: #3a3a3a;
+  --empty-bg-color: #363636;
+  --l1-bg-color: #404040;
+  --l2-bg-color: #4c4c4c;
+  --l3-bg-color: #595959;
+  --l4-bg-color: #666666;
+  --l5-bg-color: #737373;
+  --l6-bg-color: #808080;
+  --l7-bg-color: #8c8c8c;
+  --block-bg-color: #3a3a3a;
+  --accent-bg-color: #606060;
+}
+
+/* RST content background color */
+body.scroll-up,
+body.scroll-down,
+.wy-nav-content {
+  background: var(--main-bg-color);
+}
+
+/* Horizontal rules */
+hr {
+  color: var(--code-border-color);
+}
+
+/* Code background color */
+code,
+.rst-content tt,
+.rst-content code {
+  border: solid 1px var(--code-border-color);
+  background: var(--code-bg-color);
+}
+
+/* For literal code blocks, do not inherit main text color */
+/* Need !important because nbshpinx hardcodes <style> into HTML */
+/* Can also use this to sync code-block and nbinput backgrounds but probably
+ * better if they have different colors. */
+.rst-content div:not(.stderr)>div[class^='highlight'],
+.rst-content div.nbinput>div.input_area,
+.rst-content pre.literal-block {
+  color: var(--main-color) !important;
+  border-radius: 0 !important;
+  border-color: var(--code-border-color) !important;
+  background-color: var(--code-bg-color) !important;
+}
+.rst-content div.nboutput>div.output_area:not(.stderr) {
+  padding-left: 0;
+}
+.rst-content div.nboutput>div.output_area:not(.stderr)>div.highlight {
+  color: var(--main-color) !important;
+  background-color: var(--main-bg-color) !important;
+}
+.rst-content div.nboutput>div.output_area.stderr>div.highlight {
+  color: #444 !important;
+}
+.rst-content div.nboutput>div.output_area.stderr {
+  background-color: #fdd !important;
+}
+
+/* Notebook prompt colors */
+.rst-content div.nbinput>div.prompt>div.highlight,
+.rst-content div.nboutput>div.prompt>div.highlight {
+  background-color: var(--main-bg-color) !important;
+}
+.rst-content div.nbinput>div.prompt>div.highlight>pre {
+  color: var(--link-color) !important;
+}
+.rst-content div.nboutput>div.prompt>div.highlight>pre {
+  color: var(--code-color) !important;
+}
+
+/* Grayscale Parameters and Returns headers */
+.rst-content dl:not(.docutils) .field-list>dt {
+  font-weight: bold;
+  font-size: 16px; /* todo make relative */
+  color: var(--main-color);
+  background: var(--block-bg-color);
+  border-left-color: var(--accent-bg-color);
+}
+/* No accent, decided against this because they need extra prominence */
+/* .rst-content dl:not(.docutils) .field-list>dt {
+ *   padding: 0;
+ *   border: 0;
+ *   background: transparent;
+ *   font-weight: bold;
+ *   font-size: 16px;
+ *   color: var(--main-color);
+ * } */
+
+/* Call signature headers to grayscale */
+body,
+.rst-content dl:not(.docutils) dt .headerlink,
+.rst-content dl:not(.docutils) dt .property,
+.rst-content dl:not(.docutils) dt .descname,
+.rst-content dl:not(.docutils) dt .descclassname {
+  color: var(--main-color);
+}
+.rst-content dl:not(.docutils) dt {
+  color: var(--call-color);
+  background: var(--block-bg-color);
+  border-top-color: var(--accent-bg-color);
+}
+
+/* "Admonition" blocks, i.e. note, todo, etc. */
+.rst-content .admonition,
+.rst-content dl:not(.docutils) .admonition {
+  background: var(--block-bg-color);
+}
+.rst-content .admonition>.admonition-title,
+.rst-content dl:not(.docutils) .admonition>.admonition-title {
+  color: var(--main-color); /* title text is same as block bg */
+  background: var(--accent-bg-color);
+}
+
+/* Remove bottom margin for paragraph elements in tables */
+.wy-table thead p,
+.rst-content table p,
+.rst-content table.docutils thead p,
+.rst-content table.field-list thead p {
+  margin-bottom: 0 !important;
+}
+
+/* Table rows */
+.wy-table-odd td,
+.wy-table-striped tr:nth-child(2n-1) td,
+.rst-content table.docutils:not(.field-list) tr:nth-child(2n-1) td {
+  background: var(--block-bg-color);
+}
+.wy-table-even td,
+.wy-table-striped tr:nth-child(2n) td,
+.rst-content table.docutils:not(.field-list) tr:nth-child(2n) td {
+  background: var(--main-bg-color);
+}
+
+/* Table borders */
+.wy-table-bordered-all,
+.rst-content table.docutils,
+.wy-table-bordered-all td,
+.rst-content table.docutils td {
+  border: 1px solid var(--accent-bg-color);
+  /* border-color: var(--accent-bg-color); */
+}
+
+/* Table heads */
+.wy-table thead,
+.rst-content table.docutils thead,
+.rst-content table.field-list thead {
+  color: var(--main-color);
+  background: var(--main-bg-color);
+}
+
+/* Parameter color */
+.rst-content code.xref.docutils.literal,
+.rst-content tt.xref.docutils.literal {
+  color: var(--main-color);
+  font-weight: bold;
+}
+
+/* Hyperlink and API link color */
+a,
+.rst-content a code.xref.docutils.literal,
+.rst-content a tt.xref.docutils.literal {
+  color: var(--link-color);
+}
+a:hover,
+.rst-content a:hover code.xref.docutils.literal,
+.rst-content a:hover tt.xref.docutils.literal {
+  color: var(--link-hover-color);
+}
+a:visited,
+.rst-content a:visited code.xref.docutils.literal,
+.rst-content a:visited tt.xref.docutils.literal {
+  color: var(--link-visited-color);
+}
+
+/* Highlighting padding */
+.rst-content .highlighted {
+  padding: 0;
+  background-color: var(--highlight-color);
+}
+
+/* Hide Edit on Github */
+.wy-breadcrumbs li.wy-breadcrumbs-aside a {
+  display: None;
+}
+
+/* Code color, dl:not(.docutils) needed to match specificity */
+.rst-content code.literal,
+.rst-content tt.literal,
+.rst-content dl:not(.docutils) code.literal,
+.rst-content dl:not(.docutils) tt.literal {
+  color: var(--code-color);
+  font-weight: normal;
+}
+
+/* RTD versions box colors */
+/* Also make entire sidebar scrollable but add empty space to the bottom
+ * of the colling region, rather than truncating the scrollable space */
+nav.wy-nav-side .ethical-rtd {
+  margin-bottom: 3em !important;  /* padding below ad or below sidebar */
+}
+nav.wy-nav-side {
+  padding-bottom: 0em !important;  /* entire sidebar is always scrollable */
+}
+.rst-versions .rst-current-version {
+  padding: 0.66em;  /* match padding for list items */
+  color: var(--versions-color);
+  background-color: var(--l3-bg-color);
+  border-top: solid 1px var(--l5-bg-color);
+  border-bottom: solid 1px var(--l5-bg-color);
+}
+.rst-versions .rst-other-versions {
+  color: var(--versions-color);
+  background-color: var(--l3-bg-color);
+}
+.rst-versions .rst-other-versions hr {
+  color: var(--l5-bg-color);
+  border-top-color: var(--l5-bg-color);
+  border-bottom-color: var(--l5-bg-color);
+}
+.rst-versions .rst-current-version .fa {
+  color: var(--main-color);
+}
+.rst-versions .rst-other-versions dd a {
+  color: var(--main-color);
+}
+
+/* Sidebar text color, includes text-logo color for mobile */
+/* and expansion buttons. Matches specificity of RTD sheet */
+.wy-menu p.caption,
+.wy-menu li.toctree-l1 a,
+.wy-menu li.toctree-l2 a,
+.wy-menu li.toctree-l3 a,
+.wy-menu li.toctree-l4 a,
+.wy-menu li.toctree-l1 a span.toctree-expand,
+.wy-menu li.toctree-l2 a span.toctree-expand,
+.wy-menu li.toctree-l3 a span.toctree-expand,
+.wy-menu li.toctree-l1 a:hover span.toctree-expand,
+.wy-menu li.toctree-l2 a:hover span.toctree-expand,
+.wy-menu li.toctree-l3 a:hover span.toctree-expand,
+.wy-nav-top .fa-bars {
+  color: var(--main-color);
+}
+
+/* Sidebar and background colors, the .wy-body-for-nav is rubber band scroll */
+.wy-body-for-nav,
+.wy-nav-content-wrap {
+  background: var(--empty-bg-color);
+}
+.wy-nav-side,
+.wy-nav-top,
+.wy-side-nav-search {
+  background: var(--l1-bg-color);
+  border-right: 0;
+}
+
+/* Sidebar level colors */
+/* Matches specificity of RTD sheet */
+.wy-menu li.toctree-l1>a:hover,
+.wy-menu li.toctree-l1.current>a,
+.wy-menu li.toctree-l1.current li.toctree-l2>a {
+  background: var(--l2-bg-color);
+  border-right: 0;
+}
+.wy-menu li.toctree-l1.current li.toctree-l2>a:hover,
+.wy-menu li.toctree-l1.current li.toctree-l2.current>a,
+.wy-menu li.toctree-l2.current li.toctree-l3>a {
+  background: var(--l3-bg-color);
+  border-right: 0;
+}
+.wy-menu li.toctree-l2.current li.toctree-l3>a:hover,
+.wy-menu li.toctree-l2.current li.toctree-l3.current>a,
+.wy-menu li.toctree-l3.current li.toctree-l4>a {
+  background: var(--l4-bg-color);
+  border-right: 0;
+}
+.wy-menu li.toctree-l3.current li.toctree-l4>a:hover,
+.wy-menu li.toctree-l3.current li.toctree-l4.current>a,
+.wy-menu li.toctree-l4.current li.toctree-l5>a {
+  background: var(--l5-bg-color);
+  border-right: 0;
+}
+
+/* Sidebar current item outline color */
+.wy-menu li.toctree-l1.current>a {
+  border-top: solid 1px var(--l3-bg-color);
+  border-bottom: solid 1px var(--l3-bg-color);
+}
+.wy-menu li.toctree-l2.current>a {
+  border-top: solid 1px var(--l4-bg-color);
+  border-bottom: solid 1px var(--l4-bg-color);
+}
+.wy-menu li.toctree-l3.current>a {
+  border-top: solid 1px var(--l5-bg-color);
+  border-bottom: solid 1px var(--l5-bg-color);
+}
+.wy-menu li.toctree-l4.current>a {
+  border-top: solid 1px var(--l6-bg-color);
+  border-bottom: solid 1px var(--l6-bg-color);
+}
+.wy-menu li.toctree-l5.current>a {
+  border-top: solid 1px var(--l7-bg-color);
+  border-bottom: solid 1px var(--l7-bg-color);
+}
+
+/* Hide sidebar expansion button when not on current item */
+.wy-menu li.toctree-l1:not(.current) a span.toctree-expand,
+.wy-menu li.toctree-l2:not(.current) a span.toctree-expand,
+.wy-menu li.toctree-l3:not(.current) a span.toctree-expand,
+.wy-menu li.toctree-l1:not(.current) a:hover span.toctree-expand,
+.wy-menu li.toctree-l2:not(.current) a:hover span.toctree-expand,
+.wy-menu li.toctree-l3:not(.current) a:hover span.toctree-expand {
+  display: none;
+}
+
+/* Sidebar logo flush in box */
+/* Also remove bottom margins because TOC caption padding is enough */
+.wy-side-nav-search .wy-dropdown>a img.logo,
+.wy-side-nav-search>a img.logo,
+.wy-side-nav-search .wy-dropdown>a,
+.wy-side-nav-search>a {
+  padding: 0;
+}
+.wy-side-nav-search input[type=text] {
+  color: var(--main-color);
+  border: 1px solid var(--search-border-color);
+  box-shadow: inset 0 1px 3px var(--main-bg-color);
+  background-color: var(--main-bg-color);
+  /* border-color: var(--search-border-color); */
+}
+.wy-side-nav-search {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-color: var(--search-border-color);
+  background-color: var(--l1-bg-color);
+  /* box-shadow-color: var(--search-shadow-color); */
+}
+
+/* Next and previous buttons */
+.btn {
+  border: 1px solid var(--block-color);
+  transition: all 0.1s linear;
+  box-shadow: none;
+  -moz-box-shadow: none;
+  -webkit-box-shadow: none;
+}
+.btn-neutral,
+.btn-neutral:hover,
+.btn-neutral:visited {
+  color: var(--main-color) !important;
+}
+.btn-neutral {
+  background-color: var(--block-bg-color) !important;
+}
+.btn-neutral:hover {
+  background-color: var(--accent-bg-color) !important;
+}
+
+/* Dark mode toggle switcher */
+/* See: https://dev.to/ananyaneogi/create-a-dark-light-mode-switch-with-css-variables-34l8 */
+/* Color changes cannot be in :before tag or they won't apply to padding */
+#lightdark-li {
+  float: right;
+}
+#lightdark-label {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  font-size: 100%;
+}
+#lightdark-label input {
+  display: none; /* hides the check box */
+}
+#lightdark-label div.btn-neutral {
+  padding: 0;
+  margin-left: 5px;
+  border-width: 5px;
+  border-style: solid;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.1s linear;
+  overflow: hidden;
+}
+#lightdark-label:hover div.btn-neutral,
+#lightdark-label input:checked + div.btn-neutral {
+  color: var(--light-color) !important;
+  border-color: var(--dark-color) !important;
+  background-color: var(--dark-color) !important;
+}
+#lightdark-label div.btn-neutral,
+#lightdark-label:hover input:checked + div.btn-neutral {
+  color: var(--dark-color) !important;
+  border-color: var(--light-color) !important;
+  background-color: var(--light-color) !important;
+}
+#lightdark-label:hover div.btn-neutral:before,
+#lightdark-label input:checked + div.btn-neutral:before {
+  content: "Dark mode";
+}
+#lightdark-label div.btn-neutral:before,
+#lightdark-label:hover input:checked + div.btn-neutral:before {
+  content: "Light mode";
+}

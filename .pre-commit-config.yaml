@@ -1,0 +1,15 @@
+# See: https://pre-commit.com/hooks.html
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.2.3
+    hooks:
+    - id: no-commit-to-branch
+    - id: double-quote-string-fixer
+    - id: check-docstring-first
+    - id: check-merge-conflict
+    - id: check-yaml
+    - id: debug-statements
+    - id: end-of-file-fixer
+    - id: trailing-whitespace
+    - id: flake8
+      args: ["--ignore=W503"]

@@ -1,0 +1,35 @@
+# Travis Continuos Integration
+# Currently only tests notebook files
+# Based on http://conda.pydata.org/docs/travis.html
+# Not sure why pip install . is necessary since conf.py adds it
+# to the the path. Maybe nbsphinx executes in separate environment.
+sudo: false # use container based build
+language: python
+notifications:
+  email: false
+
+python:
+  - "3.6"
+
+before_install:
+  - wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no --set show_channel_urls true
+  - conda update -q conda
+  - conda info -a
+
+install:
+  - conda env create -n proplot-dev --file docs/environment.yml
+  - source activate proplot-dev
+  - pip install flake8
+  - conda list
+  - which conda
+  - which python
+
+script:
+  - flake8 proplot --ignore=W503
+  - pushd docs
+  - make html
+  - popd
