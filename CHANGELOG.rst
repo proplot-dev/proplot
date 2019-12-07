@@ -1,20 +1,127 @@
+..
+  Valid subsections:
+  - Deprecated
+  - Features
+  - Bug fixes
+  - Internals
+  - Documentation
+
 =================
 Changelog history
 =================
 
-ProPlot v1.0 (2020-##-##)
-=========================
+ProPlot v1.0.0 (2020-##-##)
+===========================
 This will be published when some major refactoring tasks are completed.
 See :pr:`45`, :pr:`46`, and :pr:`50`.
 
+ProPlot v0.2.4 (2019-12-07)
+===========================
+Deprecated
+----------
+- Rename `ColorCacheDict` to `~proplot.styletools.ColorDict` (:commit:`aee7d1be`).
+- Rename `colors` to `~proplot.styletools.Colors` (:commit:`aee7d1be`)
+- Remove `fonts_system` and `fonts_proplot`, rename `colordict` to
+  `~proplot.styletools.colors`, make top-level variables
+  more robust (:commit:`861583f8`).
 
-ProPlot v0.1 (2019-11-27)
-=========================
+Documentation
+-------------
+- Params table for `~proplot.styletools.show_fonts` (:commit:`861583f8`).
 
-The very first version! Published after merging
-:pr:`47` which added automatic Travis testing
-and significantly improved the documentation. `Luke Davis`_.
+Internals
+---------
+- Improvements to `~proplot.styletools.register_colors`.
+
+ProPlot v0.2.3 (2019-12-05)
+===========================
+Bug fixes
+---------
+- Fix issue with overlapping gridlines (:commit:`8960ebdc`).
+- Fix issue where auto colorbar labels are not applied when ``globe=True`` (:commit:`ecb3c899`).
+- More sensible zorder for gridlines (:commit:`90d94e55`).
+- Fix issue where customized super title settings are overridden when
+  new axes are created (:commit:`35cb21f2`).
+
+Documentation
+-------------
+- Organize ipython notebook documentation (:commit:`35cb21f2`).
+
+Internals
+---------
+- Major cleanup of the `~proplot.wrappers.colorbar_wrapper` source code, handle
+  minor ticks using the builtin matplotlib API just like major ticks (:commit:`b9976220`).
+
+ProPlot v0.2.2 (2019-12-04)
+===========================
+Bug fixes
+---------
+- Fix shared *x* and *y* axis bugs (:commit:`ac14e9dd`).
+
+Deprecated
+----------
+- Rename `~proplot.subplots.axes_grid` to `~proplot.subplots.subplot_grid` (:commit:`ac14e9dd`).
+
+Documentation
+-------------
+- Make notebook examples PEP8 compliant (:commit:`97f5ffd4`). Much more readable now.
+
+ProPlot v0.2.1 (2019-12-02)
+===========================
+Deprecated
+----------
+- Rename `autoreload_setup`, `autosave_setup`, and `matplotlib_setup` to
+  `~proplot.rctools.ipython_autoreload`, `~proplot.rctools.ipython_autosave`, and `~proplot.rctools.ipython_matplotlib`, respectively (:commit:`84e80c1e`).
+
+ProPlot v0.2.0 (2019-12-02)
+===========================
+Features
+--------
+- Support manual resizing for all backends, including ``osx`` and ``qt`` (:commit:`3a622887`).
+
+Bug fixes
+---------
+- Disable automatic resizing for the ``nbAgg`` interactive inline backend. Found no
+  suitable workaround (:commit:`3a622887`).
+
+Deprecated
+----------
+- Remove the ``nbsetup`` rc setting in favor of separate ``autosave``, ``autoreload``,
+  and ``matplotlib`` settings for triggering the respective ``%`` magic commands.
+  (:commit:`3a622887`; ``nbsetup`` is still accepted but no longer documented).
+- Rename the ``format`` rc setting in favor of the ``inlinefmt`` setting
+  (:commit:`3a622887`; ``format`` is still accepted but no longer documented).
+- Rename ``FlexibleGridSpec`` and ``FlexibleSubplotSpec`` to ``GridSpec``
+  and ``SubplotSpec`` (:commit:`3a622887`; until :pr:`50` is merged it is impossible
+  to use these manually, so this won't bother anyone).
+
+Internals
+---------
+- Organize the ``rc`` documentation and the default ``.proplotrc`` file (:commit:`3a622887`).
+- Rename ``rcParamsCustom`` to ``rcParamsLong``
+  (:commit:`3a622887`; this is inaccessible to the user).
+- When calling ``fig.canvas.print_figure()`` on a stale figure, call ``fig.canvas.draw()``
+  first. May be overkill for `~matplotlib.figure.Figure.savefig` but critical for
+  correctly displaying already-drawn notebook figures.
+
+ProPlot v0.1.0 (2019-12-01)
+===========================
+Internals
+---------
+- Include `flake8` in Travis CI testing (:commit:`8743b857`).
+- Enforce source code PEP8 compliance (:commit:`78da51a7`).
+- Use pre-commit for all future commits (:commit:`e14f6809`).
+- Implement tight layout stuff with canvas monkey patches (:commit:`67221d10`).
+  ProPlot now works for arbitrary backends, not just inline and qt.
+
+Documentation
+-------------
+- Various `RTD bugfixes <https://github.com/readthedocs/readthedocs.org/issues/6412>`__ (e.g. :commit:`37633a4c`).
+
+ProPlot v0.0.0 (2019-11-27)
+===========================
+
+The first version released on `PyPi <https://pypi.org/project/proplot/>`__.
 
 .. _`Luke Davis`: https://github.com/lukelbd
 .. _`Riley X. Brady`: https://github.com/bradyrx
-

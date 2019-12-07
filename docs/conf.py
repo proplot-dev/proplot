@@ -18,9 +18,23 @@ from pygments.styles import get_all_styles
 
 # Sphinx-automodapi requires proplot on path
 sys.path.insert(0, os.path.abspath('..'))
-# Then add path for local 'sphinxext' extensions
-# Not sure when abspath is required
+
+# Add docs folder to PATH for local 'sphinxext' extensions
 sys.path.append(os.path.abspath('.'))
+
+# Hack to get basemap to work
+# See: https://github.com/readthedocs/readthedocs.org/issues/5339
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+if on_rtd:
+    os.environ['PROJ_LIB'] = (
+        '{}/{}/share/proj'.format(
+            os.environ['CONDA_ENVS_PATH'], os.environ['CONDA_DEFAULT_ENV']
+        )
+    )
+else:
+    os.environ['PROJ_LIB'] = '{}/share/proj'.format(
+        os.environ['CONDA_PREFIX']
+    )
 
 # -- Project information -----------------------------------------------------
 
@@ -30,34 +44,34 @@ author = 'Luke L. B. Davis'
 
 # The short X.Y version
 version = ''
+
 # The full version, including alpha/beta/rc tags
 release = ''
-
 
 # -- General configuration ---------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
-#
 # needs_sphinx = '1.0'
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
+# For plot_directiev:
 extensions = [
-    # 'matplotlib.sphinxext.plot_directive',  # see: https://matplotlib.org/sampledoc/extensions.html
+    # 'matplotlib.sphinxext.plot_directive', # see: https://matplotlib.org/sampledoc/extensions.html  # noqa
     'IPython.sphinxext.ipython_console_highlighting',
     'IPython.sphinxext.ipython_directive',  # for ipython highlighting
-    'sphinx.ext.autodoc',           # include documentation from docstrings
-    'sphinx.ext.doctest',           # >>> examples
-    'sphinx.ext.extlinks',          # for :pr:, :issue:, :commit:
+    'sphinx.ext.autodoc',  # include documentation from docstrings
+    'sphinx.ext.doctest',  # >>> examples
+    'sphinx.ext.extlinks',  # for :pr:, :issue:, :commit:
     'sphinx.ext.autosectionlabel',  # use :ref:`Heading` for any heading
-    'sphinx.ext.todo',              # Todo headers and todo:: directives
-    'sphinx.ext.mathjax',           # LaTeX style math
-    'sphinx.ext.viewcode',          # view code links
-    'sphinx.ext.autosummary',       # autosummary directive
-    'sphinx.ext.napoleon',          # for NumPy style docstrings, instead of reStructred Text
-    'sphinx.ext.intersphinx',       # external links
-    'sphinxext.custom_roles',       # local extension
-    'sphinx_automodapi.automodapi', # see: https://github.com/lukelbd/sphinx-automodapi/tree/proplot-mods
+    'sphinx.ext.todo',  # Todo headers and todo:: directives
+    'sphinx.ext.mathjax',  # LaTeX style math
+    'sphinx.ext.viewcode',  # view code links
+    'sphinx.ext.autosummary',  # autosummary directive
+    'sphinx.ext.napoleon',  # for NumPy style docstrings
+    'sphinx.ext.intersphinx',  # external links
+    'sphinxext.custom_roles',  # local extension
+    'sphinx_automodapi.automodapi',  # see: https://github.com/lukelbd/sphinx-automodapi/tree/proplot-mods # noqa
     'nbsphinx',
     ]
 
@@ -67,9 +81,16 @@ extlinks = {
     'pr': ('https://github.com/lukelbd/proplot/pull/%s', 'GH#'),
 }
 
-# Give *lots* of time for cell execution! The projection tables
-# in particular are massive.
+# Give *lots* of time for cell execution!
+# Note nbsphinx compiles *all* notebooks in docs unless excluded
 nbsphinx_timeout = 120
+
+# Set InlineBackend params, maybe nbsphinx skips ones in rctools.py
+# Not necessary because rctools.py configures the backend
+# nbsphinx_execute_arguments = [
+#     "--InlineBackend.figure_formats={'svg'}",
+#     "--InlineBackend.rc={'figure.dpi': 100}",
+# ]
 
 # Do not run doctest tests, these are just to show syntax and expected
 # output may be graphical
@@ -79,12 +100,12 @@ doctest_test_doctest_blocks = ''
 # This way don't have to call sphinx-autogen manually
 autosummary_generate = True
 
-# Use automodapi tool, created by astropy people
-# See: https://sphinx-automodapi.readthedocs.io/en/latest/automodapi.html#overview
+# Use automodapi tool, created by astropy people. See:
+# https://sphinx-automodapi.readthedocs.io/en/latest/automodapi.html#overview
 # Normally have to *enumerate* function names manually. This will document
 # them automatically. Just be careful, if you use from x import *, to exclude
 # them in the automodapi:: directive
-automodapi_toctreedirnm = 'api' # create much better URL for the page
+automodapi_toctreedirnm = 'api'  # create much better URL for the page
 automodsumm_inherited_members = False
 
 # Logo
@@ -101,21 +122,21 @@ autoclass_content = 'both'
 
 # Set up mapping for other projects' docs
 intersphinx_mapping = {
-                       'cycler': ('https://matplotlib.org/cycler/', None),
-                       'matplotlib': ('https://matplotlib.org', None),
-                       'sphinx': ('http://www.sphinx-doc.org/en/stable', None),
-                       'python': ('https://docs.python.org/3', None),
-                       'numpy': ('https://docs.scipy.org/doc/numpy', None),
-                       'scipy': ('https://docs.scipy.org/doc/scipy/reference', None),
-                       'xarray': ('http://xarray.pydata.org/en/stable', None),
-                       'cartopy': ('https://scitools.org.uk/cartopy/docs/latest', None),
-                       'basemap': ('https://matplotlib.org/basemap', None),
-                       'pandas': ('https://pandas.pydata.org/pandas-docs/stable', None),
-                       }
+    'cycler': ('https://matplotlib.org/cycler/', None),
+    'matplotlib': ('https://matplotlib.org', None),
+    'sphinx': ('http://www.sphinx-doc.org/en/stable', None),
+    'python': ('https://docs.python.org/3', None),
+    'numpy': ('https://docs.scipy.org/doc/numpy', None),
+    'scipy': ('https://docs.scipy.org/doc/scipy/reference', None),
+    'xarray': ('http://xarray.pydata.org/en/stable', None),
+    'cartopy': ('https://scitools.org.uk/cartopy/docs/latest', None),
+    'basemap': ('https://matplotlib.org/basemap', None),
+    'pandas': ('https://pandas.pydata.org/pandas-docs/stable', None),
+}
 
 # If true, the current module name will be prepended to all description
 # unit titles (such as .. function::).
-add_module_names = False # confusing, because I use submodules for *organization*
+add_module_names = False  # proplot imports everything in top-level namespace
 
 # Napoleon options
 # See: http://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html
@@ -125,7 +146,7 @@ napoleon_use_keyword = False
 napoleon_use_rtype = False
 napoleon_numpy_docstring = True
 napoleon_google_docstring = False
-napoleon_include_init_with_doc = False # move init doc to 'class' doc
+napoleon_include_init_with_doc = False  # move init doc to 'class' doc
 
 # Fix duplicate class member documentation from autosummary + numpydoc
 # See: https://github.com/phn/pytpm/issues/3#issuecomment-12133978
@@ -150,14 +171,11 @@ language = None
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-# This pattern also affects html_static_path and html_extra_path .
-# WARNING: Must add 'include' files or will get duplicate label warnings.
-# WARNING: Must add files containing showcase examples
 exclude_patterns = [
-    '_templates', '_themes', 'showcase',
-    'sphinxext', 'automodapi',
-    'trash', '.DS_Store', '**.ipynb_checkpoints'
-    ]
+    '_templates', '_themes', 'sphinxext',
+    '.DS_Store', '**.ipynb_checkpoints',
+    # '[0-9a-eg-su-z]*.ipynb',  # only run [figures|tight].ipynb for debugging
+]
 
 # The name of the Pygments (syntax highlighting) style to use.
 # The light-dark theme toggler overloads this, but set default anyway
@@ -177,7 +195,9 @@ for style in get_all_styles():
         f.write(HtmlFormatter(style=style).get_style_defs('.highlight'))
 
 # Role
-default_role = 'py:obj' # default family is py, but can also set default role so don't need :func:`name`, :module:`name`, etc.
+# default family is py, but can also set default role so don't need
+# :func:`name`, :module:`name`, etc.
+default_role = 'py:obj'
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -193,66 +213,8 @@ html_theme_options = {
     'display_version': False,
     'collapse_navigation': True,
     'navigation_depth': 4,
-    'prev_next_buttons_location': 'bottom', # top and bottom
-    }
-
-# Matplotlib theme, ugly
-# html_theme = "sphinxdoc" # like matplotlib
-
-# Beautiful but sidebar is not locked
-# import sphinx_modern_theme
-# html_theme = 'sphinx_modern_theme'
-# pygments_style = 'default'
-# html_theme_path = [
-#     sphinx_modern_theme.get_html_theme_path(),
-# ]
-
-# Simple but insufficient
-# Tried: https://stackoverflow.com/a/57040610/4970632
-# But items disappear after adding html_sidebars dictionary
-# html_theme = 'alabaster'
-# html_logo = None # or get 2 logos! need to specify in dictionary so text does not appear
-# html_theme_options = {
-#     'logo': 'logo_square.png',
-#     'logo_name': False,
-#     'description': 'A matplotlib wrapper for making beautiful, publication-quality graphics.',
-#     'page_width': '90%',
-#     'fixed_sidebar': True,
-#     'show_relbars': True,
-#     'sidebar_collapse': True,
-#     'sidebar_width': '20%',
-#     'caption_font_size': 'x-large',
-#     'sidebar_link_underscore': 'transparent',
-#     }
-
-# Clean but no margins, no full TOC, no box around tables
-# To modify see: For guzzle theme: https://github.com/guzzle/guzzle_sphinx_theme/issues/22
-# import guzzle_sphinx_theme
-# html_theme_path = guzzle_sphinx_theme.html_theme_path()
-# html_theme = 'guzzle_sphinx_theme'
-# extensions.append("guzzle_sphinx_theme")
-# html_theme_options = {
-#     # Set the name of the project to appear in the sidebar
-#     # "project_nav_name": "Project Name",
-#     'navigation_depth': 4,
-# }
-
-# Readthedocs clones
-# import rtcat_sphinx_theme
-# html_theme = "rtcat_sphinx_theme"
-# html_theme_path = [rtcat_sphinx_theme.get_html_theme_path()]
-# import sphinx_pdj_theme
-# html_theme = 'sphinx_pdj_theme'
-# htm_theme_path = [sphinx_pdj_theme.get_html_theme_path()]
-
-# Custom theme in the future?
-# html_theme = 'custom'
-# html_theme_path = ['_themes']
-
-# Theme options are theme-specific and customize the look and feel of a theme
-# further.  For a list of options available for each theme, see the
-# documentation.
-# html_theme_options = {}
+    'prev_next_buttons_location': 'bottom',  # top and bottom
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -261,12 +223,10 @@ html_static_path = ['_static']
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
-#
 # The default sidebars (for documents that don't match any pattern) are
 # defined by theme itself.  Builtin themes are using these templates by
 # default: ``['localtoc.html', 'relations.html', 'sourcelink.html',
 # 'searchbox.html']``.
-#
 # html_sidebars = {}
 
 # The name of an image file (within the static path) to use as favicon of the
@@ -286,19 +246,15 @@ htmlhelp_basename = 'proplotdoc'
 
 latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
-    #
     # 'papersize': 'letterpaper',
 
     # The font size ('10pt', '11pt' or '12pt').
-    #
     # 'pointsize': '10pt',
 
     # Additional stuff for the LaTeX preamble.
-    #
     # 'preamble': '',
 
     # Latex figure (float) alignment
-    #
     # 'figure_align': 'htbp',
 }
 

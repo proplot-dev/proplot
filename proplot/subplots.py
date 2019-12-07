@@ -8,20 +8,16 @@ pyplot-inspired functions for creating figures and related classes.
 import os
 import numpy as np
 import functools
-import warnings
 import matplotlib.pyplot as plt
 import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
 import matplotlib.gridspec as mgridspec
-try:
-    from matplotlib.backends.backend_macosx import FigureCanvasMac
-except ImportError:
-    FigureCanvasMac = type(None)  # standin null type
 from .rctools import rc
-from .utils import _notNone, _counter, units
+from .utils import _warn_proplot, _notNone, _counter, units
 from . import projs, axes
 __all__ = [
-    'axes_grid', 'close', 'show', 'subplots', 'Figure', 'FlexibleGridSpec',
+    'subplot_grid', 'close', 'show', 'subplots', 'Figure',
+    'GridSpec', 'SubplotSpec',
 ]
 
 # Translation
@@ -51,26 +47,26 @@ JOURNAL_SPECS = {
 
 
 def close(*args, **kwargs):
-    """Call `matplotlib.pyplot.close`. This is included so you don't have
-    to import `~matplotlib.pyplot`."""
+    """Pass the input arguments to `matplotlib.pyplot.close`. This is included
+    so you don't have to import `~matplotlib.pyplot`."""
     plt.close(*args, **kwargs)
 
 
 def show():
     """Call `matplotlib.pyplot.show`. This is included so you don't have
     to import `~matplotlib.pyplot`. Note this command should *not be
-    necessary* if you are working in an iPython notebook and
-    :rcraw:`nbsetup` is set to ``True`` -- when you create a figure in a cell,
-    it will be automatically displayed."""
+    necessary* if you are working in an iPython session and :rcraw:`matplotlib`
+    is non-empty -- when you create a new figure, it will be automatically
+    displayed."""
     plt.show()
 
 
-class axes_grid(list):
+class subplot_grid(list):
     """List subclass and pseudo-2D array that is used as a container for the
     list of axes returned by `subplots`, lists of figure panels, and lists of
     stacked axes panels. The shape of the array is stored in the ``shape``
-    attribute. See the `~axes_grid.__getattr__` and `~axes_grid.__getitem__`
-    methods for details."""
+    attribute. See the `~subplot_grid.__getattr__` and
+    `~subplot_grid.__getitem__` methods for details."""
 
     def __init__(self, objs, n=1, order='C'):
         """
@@ -96,15 +92,15 @@ class axes_grid(list):
         self.shape = (len(self) // n, n)[::(1 if order == 'C' else -1)]
 
     def __repr__(self):
-        return 'axes_grid([' + ', '.join(str(ax) for ax in self) + '])'
+        return 'subplot_grid([' + ', '.join(str(ax) for ax in self) + '])'
 
     def __setitem__(self, key, value):
         """Pseudo immutability. Raises error."""
-        raise LookupError('axes_grid is immutable.')
+        raise LookupError('subplot_grid is immutable.')
 
     def __getitem__(self, key):
         """If an integer is passed, the item is returned, and if a slice is
-        passed, an `axes_grid` of the items is returned. You can also use 2D
+        passed, an `subplot_grid` of the items is returned. You can also use 2D
         indexing, and the corresponding axes in the axes grid will be chosen.
 
         Example
@@ -157,9 +153,9 @@ class axes_grid(list):
             # Get index pairs and get objects
             # Note that in double for loop, right loop varies fastest, so
             # e.g. axs[:,:] delvers (0,0), (0,1), ..., (0,N), (1,0), ...
-            # Remember for order == 'F', axes_grid was sent a list unfurled in
-            # column-major order, so we replicate row-major indexing syntax by
-            # reversing the order of the keys.
+            # Remember for order == 'F', subplot_grid was sent a list unfurled
+            # in column-major order, so we replicate row-major indexing syntax
+            # by reversing the order of the keys.
             objs = []
             if self._order == 'C':
                 idxs = [key0 * self._n + key1 for key0 in keys[0]
@@ -176,7 +172,7 @@ class axes_grid(list):
 
         # Return
         if axlist:
-            return axes_grid(objs)
+            return subplot_grid(objs)
         else:
             return objs
 
@@ -185,7 +181,7 @@ class axes_grid(list):
         If the attribute is *callable*, returns a dummy function that loops
         through each identically named method, calls them in succession, and
         returns a tuple of the results. This lets you call arbitrary methods
-        on multiple axes at once! If the `axes_grid` has length ``1``,
+        on multiple axes at once! If the `subplot_grid` has length ``1``,
         just returns the single result. If the attribute is *not callable*,
         returns a tuple of attributes for every object in the list.
 
@@ -224,7 +220,7 @@ class axes_grid(list):
                 elif all(res is None for res in ret):
                     return None
                 elif all(isinstance(res, axes.Axes) for res in ret):
-                    return axes_grid(ret, n=self._n, order=self._order)
+                    return subplot_grid(ret, n=self._n, order=self._order)
                 else:
                     return ret
             try:
@@ -238,12 +234,11 @@ class axes_grid(list):
         raise AttributeError(f'Found mixed types for attribute {attr!r}.')
 
 
-class FlexibleSubplotSpec(mgridspec.SubplotSpec):
+class SubplotSpec(mgridspec.SubplotSpec):
     """
     Adds two helper methods to `~matplotlib.gridspec.SubplotSpec` that return
     the geometry *excluding* rows and columns allocated for spaces.
     """
-
     def get_active_geometry(self):
         """Returns the number of rows, number of columns, and 1D subplot
         location indices, ignoring rows and columns allocated for spaces."""
@@ -268,7 +263,7 @@ class FlexibleSubplotSpec(mgridspec.SubplotSpec):
             nrows // 2, ncols // 2, row1 // 2, row2 // 2, col1 // 2, col2 // 2)
 
 
-class FlexibleGridSpec(mgridspec.GridSpec):
+class GridSpec(mgridspec.GridSpec):
     """
     `~matplotlib.gridspec.GridSpec` generalization that allows for grids with
     *variable spacing* between successive rows and columns of axes.
@@ -280,7 +275,6 @@ class FlexibleGridSpec(mgridspec.GridSpec):
     These "spaces" are then allowed to vary in width using the builtin
     `width_ratios` and `height_ratios` properties.
     """
-
     def __init__(self, figure, nrows=1, ncols=1, **kwargs):
         """
         Parameters
@@ -294,7 +288,7 @@ class FlexibleGridSpec(mgridspec.GridSpec):
             The vertical and horizontal spacing between rows and columns of
             subplots, respectively. In `~proplot.subplots.subplots`, ``wspace``
             and ``hspace`` are in physical units. When calling
-            `FlexibleGridSpec` directly, values are scaled relative to
+            `GridSpec` directly, values are scaled relative to
             the average subplot height or width.
 
             If float, the spacing is identical between all rows and columns. If
@@ -341,7 +335,7 @@ class FlexibleGridSpec(mgridspec.GridSpec):
             num1, num2 = np.ravel_multi_index((num1, num2), (nrows, ncols))
         num1 = self._positem(num1)
         num2 = self._positem(num2)
-        return FlexibleSubplotSpec(self, num1, num2)
+        return SubplotSpec(self, num1, num2)
 
     @staticmethod
     def _positem(size):
@@ -366,11 +360,11 @@ class FlexibleGridSpec(mgridspec.GridSpec):
                 return key, key
         raise IndexError(f'Invalid index: {key} with size {size}.')
 
-    def _spaces_as_ratios(self,
-                          hspace=None, wspace=None,  # spacing between axes
-                          height_ratios=None, width_ratios=None,
-                          **kwargs):
-        """For keyword arg usage, see `FlexibleGridSpec`."""
+    def _spaces_as_ratios(
+            self, hspace=None, wspace=None,  # spacing between axes
+            height_ratios=None, width_ratios=None,
+            **kwargs):
+        """For keyword arg usage, see `GridSpec`."""
         # Parse flexible input
         nrows, ncols = self.get_active_geometry()
         hratios = np.atleast_1d(_notNone(height_ratios, 1))
@@ -438,7 +432,7 @@ class FlexibleGridSpec(mgridspec.GridSpec):
 
     def get_active_geometry(self):
         """Returns the number of active rows and columns, i.e. the rows and
-        columns that aren't skipped by `~FlexibleGridSpec.__getitem__`."""
+        columns that aren't skipped by `~GridSpec.__getitem__`."""
         return self._nrows_active, self._ncols_active
 
     def update(self, **kwargs):
@@ -477,9 +471,51 @@ class FlexibleGridSpec(mgridspec.GridSpec):
         fig.stale = True
 
 
-def _panels_kwargs(side,
-                   share=None, width=None, space=None,
-                   filled=False, figure=False):
+def _canvas_preprocess(canvas, method):
+    """Return a pre-processer that can be used to override instance-level
+    canvas draw() and print_figure() methods. This applies tight layout and
+    aspect ratio-conserving adjustments and aligns labels. Required so that
+    the canvas methods instantiate renderers with the correct dimensions.
+    Note that MacOSX currently `cannot be resized \
+<https://github.com/matplotlib/matplotlib/issues/15131>`__."""
+    # NOTE: This is by far the most robust approach. Renderer must be (1)
+    # initialized with the correct figure size or (2) changed inplace during
+    # draw, but vector graphic renderers *cannot* be changed inplace.
+    # Options include (1) monkey patch canvas.get_width_height, overriding
+    # figure.get_size_inches, and exploit the FigureCanvasAgg.get_renderer()
+    # implementation (because FigureCanvasAgg queries the bbox directly
+    # rather than using get_width_height() so requires a workaround), or (2)
+    # override bbox and bbox_inches as *properties*, but these are really
+    # complicated, dangerous, and result in unnecessary extra draws.
+    def _preprocess(self, *args, **kwargs):
+        if method == 'draw_idle' and self._is_idle_drawing:
+            return  # copied from source code
+        fig = self.figure  # update even if not stale! needed after saves
+        if fig.stale and method == 'print_figure':
+            # Needed for displaying already-drawn inline figures, for
+            # some reason tight layout algorithm gets it wrong otherwise.
+            # Concerned that draw_idle() might wait until after
+            # print_figure() is done, so we use draw().
+            self.draw()
+        renderer = fig._get_renderer()  # any renderer will do for now
+        for ax in fig._iter_axes():
+            ax._draw_auto_legends_colorbars()  # may insert panels
+        if rc['backend'] != 'nbAgg':
+            fig._adjust_aspect()  # resizes figure
+            if fig._auto_tight_layout:
+                fig._align_axislabels(False)  # get proper label offset only
+                fig._align_labels(renderer)  # position labels and suptitle
+                fig._adjust_tight_layout(renderer)
+        fig._align_axislabels(True)  # slide spanning labels across
+        fig._align_labels(renderer)  # update figure-relative coordinates!
+        res = getattr(type(self), method)(self, *args, **kwargs)
+        return res
+    return _preprocess.__get__(canvas)  # ...I don't get it either
+
+
+def _panels_kwargs(
+        side, share=None, width=None, space=None,
+        filled=False, figure=False):
     """Converts global keywords like `space` and `width` to side-local
     keywords like `lspace` and `lwidth`, and applies default settings."""
     # Return values
@@ -503,7 +539,7 @@ def _panels_kwargs(side,
 
 
 def _subplots_geometry(**kwargs):
-    """Saves arguments passed to `subplots`, calculates gridspec settings and
+    """Save arguments passed to `subplots`, calculates gridspec settings and
     figure size necessary for requested geometry, and returns keyword args
     necessary to reconstruct and modify this configuration. Note that
     `wspace`, `hspace`, `left`, `right`, `top`, and `bottom` always have fixed
@@ -672,24 +708,9 @@ def _subplots_geometry(**kwargs):
     return (width, height), gridspec_kw, kwargs
 
 
-class _unlocker(object):
-    """Suppresses warning message when adding subplots, and cleanly resets
-    lock setting if exception raised."""
-
-    def __init__(self, fig):
-        self._fig = fig
-
-    def __enter__(self):
-        self._fig._locked = False
-
-    def __exit__(self, *args):
-        self._fig._locked = True
-
-
 class _hidelabels(object):
-    """Hides objects temporarily so they are ignored by the tight bounding box
+    """Hide objects temporarily so they are ignored by the tight bounding box
     algorithm."""
-
     def __init__(self, *args):
         self._labels = args
 
@@ -700,6 +721,19 @@ class _hidelabels(object):
     def __exit__(self, *args):
         for label in self._labels:
             label.set_visible(True)
+
+
+class _unlocker(object):
+    """Suppress warning message when adding subplots, and cleanly reset
+    lock setting if exception raised."""
+    def __init__(self, fig):
+        self._fig = fig
+
+    def __enter__(self):
+        self._fig._locked = False
+
+    def __exit__(self, *args):
+        self._fig._locked = True
 
 
 class Figure(mfigure.Figure):
@@ -765,7 +799,7 @@ class Figure(mfigure.Figure):
         # Initialize first, because need to provide fully initialized figure
         # as argument to gridspec, because matplotlib tight_layout does that
         if tight_layout or constrained_layout:
-            warnings.warn(
+            _warn_proplot(
                 f'Ignoring tight_layout={tight_layout} and '
                 f'contrained_layout={constrained_layout}. ProPlot uses its '
                 'own tight layout algorithm, activated by default or with '
@@ -778,7 +812,7 @@ class Figure(mfigure.Figure):
         self._auto_format = autoformat
         self._auto_tight_layout = _notNone(tight, rc['tight'])
         self._include_panels = includepanels
-        self._order = order  # used for configuring panel axes_grids
+        self._order = order  # used for configuring panel subplot_grids
         self._ref_num = ref
         self._axes_main = []
         self._subplots_orig_kw = subplots_orig_kw
@@ -787,7 +821,7 @@ class Figure(mfigure.Figure):
         self._tpanels = []
         self._lpanels = []
         self._rpanels = []
-        gridspec = FlexibleGridSpec(self, **(gridspec_kw or {}))
+        gridspec = GridSpec(self, **(gridspec_kw or {}))
         nrows, ncols = gridspec.get_active_geometry()
         self._barray = np.empty((0, ncols), dtype=bool)
         self._tarray = np.empty((0, ncols), dtype=bool)
@@ -971,7 +1005,6 @@ class Figure(mfigure.Figure):
             else:
                 pass  # matplotlib issues warning, forces aspect == 'auto'
         # Apply aspect
-        # Account for floating point errors
         if aspect is not None:
             aspect = round(aspect * 1e10) * 1e-10
             subplots_kw = self._subplots_kw
@@ -979,7 +1012,7 @@ class Figure(mfigure.Figure):
             if aspect != aspect_prev:
                 subplots_kw['aspect'] = aspect
                 figsize, gridspec_kw, _ = _subplots_geometry(**subplots_kw)
-                self.set_size_inches(figsize)
+                self.set_size_inches(figsize, manual=False)
                 self._gridspec_main.update(**gridspec_kw)
 
     def _adjust_tight_layout(self, renderer):
@@ -1056,7 +1089,7 @@ class Figure(mfigure.Figure):
                     idx1, = np.where(filt & filt1)
                     idx2, = np.where(filt & filt2)
                     if idx1.size > 1 or idx2.size > 2:
-                        warnings.warn('This should never happen.')
+                        _warn_proplot('This should never happen.')
                         continue
                         # raise RuntimeError('This should never happen.')
                     elif not idx1.size or not idx2.size:
@@ -1065,8 +1098,8 @@ class Figure(mfigure.Figure):
                     # Put these axes into unique groups. Store groups as
                     # (left axes, right axes) or (bottom axes, top axes) pairs.
                     ax1, ax2 = axs[idx1], axs[idx2]
-                    if x != 'x':
-                        ax1, ax2 = ax2, ax1  # yrange is top-to-bottom, so make this bottom-to-top  # noqa
+                    if x != 'x':  # order bottom-to-top
+                        ax1, ax2 = ax2, ax1
                     newgroup = True
                     for (group1, group2) in groups:
                         if ax1 in group1 or ax2 in group2:
@@ -1097,11 +1130,11 @@ class Figure(mfigure.Figure):
         })
         figsize, gridspec_kw, _ = _subplots_geometry(**subplots_kw)
         self._gridspec_main.update(**gridspec_kw)
-        self.set_size_inches(figsize)
+        self.set_size_inches(figsize, manual=False)
 
     def _align_axislabels(self, b=True):
-        """Aligns spanning *x* and *y* axis labels, accounting for figure
-        margins and axes and figure panels."""
+        """Align spanning *x* and *y* axis labels in the perpendicular
+        direction and, if `b` is ``True``, the parallel direction."""
         # TODO: Ensure this is robust to complex panels and shared axes
         # NOTE: Need to turn off aligned labels before _adjust_tight_layout
         # call, so cannot put this inside Axes draw
@@ -1129,7 +1162,7 @@ class Figure(mfigure.Figure):
                             # copied from source code, add to grouper
                             grp.join(axs[0], ax)
                     elif align:
-                        warnings.warn(
+                        _warn_proplot(
                             f'Aligning *x* and *y* axis labels required '
                             f'matplotlib >=3.1.0')
                 if not span:
@@ -1160,9 +1193,9 @@ class Figure(mfigure.Figure):
                     spanlabel.update(
                         {'position': position, 'transform': transform})
 
-    def _align_suplabels(self, renderer):
-        """Adjusts position of row and column labels, and aligns figure
-        super title accounting for figure marins and axes and figure panels."""
+    def _align_labels(self, renderer):
+        """Adjusts position of row and column labels, and aligns figure super
+        title accounting for figure margins and axes and figure panels."""
         # Offset using tight bounding boxes
         # TODO: Super labels fail with popup backend!! Fix this
         # NOTE: Must use get_tightbbox so (1) this will work if tight layout
@@ -1297,13 +1330,13 @@ class Figure(mfigure.Figure):
 
         # Update figure
         figsize, gridspec_kw, _ = _subplots_geometry(**subplots_kw)
-        self.set_size_inches(figsize)
+        self.set_size_inches(figsize, manual=False)
         if exists:
             gridspec = self._gridspec_main
             gridspec.update(**gridspec_kw)
         else:
             # New gridspec
-            gridspec = FlexibleGridSpec(self, **gridspec_kw)
+            gridspec = GridSpec(self, **gridspec_kw)
             self._gridspec_main = gridspec
             # Reassign subplotspecs to all axes and update positions
             # May seem inefficient but it literally just assigns a hidden,
@@ -1391,12 +1424,36 @@ class Figure(mfigure.Figure):
         ranges = [ax._range_gridspec(y)[0] for ax in axs]
         return [ax for _, ax in sorted(zip(ranges, axs)) if ax.get_visible()]
 
+    def _get_renderer(self):
+        """Get a renderer at all costs, even if it means generating a brand
+        new one! Used for updating the figure bounding box when it is accessed
+        and calculating centered-row legend bounding boxes. This is copied
+        from tight_layout.py in matplotlib."""
+        if self._cachedRenderer:
+            renderer = self._cachedRenderer
+        else:
+            canvas = self.canvas
+            if canvas and hasattr(canvas, 'get_renderer'):
+                renderer = canvas.get_renderer()
+            else:
+                from matplotlib.backends.backend_agg import FigureCanvasAgg
+                canvas = FigureCanvasAgg(self)
+                renderer = canvas.get_renderer()
+        return renderer
+
     def _unlock(self):
-        """Prevents warning message when adding subplots one-by-one, used
+        """Prevent warning message when adding subplots one-by-one. Used
         internally."""
         return _unlocker(self)
 
-    def _update_suplabels(self, ax, side, labels, **kwargs):
+    def _update_figtitle(self, title, **kwargs):
+        """Assign figure "super title"."""
+        if title is not None and self._suptitle.get_text() != title:
+            self._suptitle.set_text(title)
+        if kwargs:
+            self._suptitle.update(kwargs)
+
+    def _update_labels(self, ax, side, labels, **kwargs):
         """Assigns side labels, updates label settings."""
         s = side[0]
         if s not in 'lrbt':
@@ -1421,18 +1478,11 @@ class Figure(mfigure.Figure):
             if kwargs:
                 obj.update(kwargs)
 
-    def _update_suptitle(self, title, **kwargs):
-        """Assign figure "super title"."""
-        if title is not None and self._suptitle.get_text() != title:
-            self._suptitle.set_text(title)
-        if kwargs:
-            self._suptitle.update(kwargs)
-
     def add_subplot(self, *args, **kwargs):
         """Issues warning for new users that try to call
         `~matplotlib.figure.Figure.add_subplot` manually."""
         if self._locked:
-            warnings.warn(
+            _warn_proplot(
                 'Using "fig.add_subplot()" with ProPlot figures may result in '
                 'unexpected behavior. Use "proplot.subplots()" instead.')
         ax = super().add_subplot(*args, **kwargs)
@@ -1547,80 +1597,58 @@ class Figure(mfigure.Figure):
                                         row=row, col=col, rows=rows, cols=cols)
             return ax.legend(*args, loc='_fill', **kwargs)
 
-    @_counter
-    def draw(self, renderer):
-        """Before drawing the figure, applies "tight layout" and aspect
-        ratio-conserving adjustments, and aligns row and column labels."""
-        # Renderer fixes
-        # WARNING: Vector graphic renderers are another ballgame, *impossible*
-        # to consistently apply successive figure size changes. SVGRenderer
-        # and PDFRenderer both query the size in inches before calling draw,
-        # and cannot modify PDFPage or SVG renderer props inplace, so idea was
-        # to override get_size_inches. But when get_size_inches is called, the
-        # canvas has no renderer, so cannot apply tight layout yet!
-        # WARNING: Raster graphic renderers are fixable, but *critical* that
-        # draw() is invoked with the same renderer FigureCanvasAgg.print_png()
-        # uses to render the image. Since print_png() calls get_renderer()
-        # after draw(), and get_renderer() returns a new renderer if it detects
-        # renderer dims and figure dims are out of sync, need to fix this!
-        # 1. We use 'get_renderer' to update 'canvas.renderer' with the new
-        #    figure width and height, then use that renderer for rest of draw
-        #    This repair *breaks* just the *macosx* popup backend and not the
-        #    qt backend! So for now just employ simple exception if this is
-        #    macosx backend.
-        # 2. Could also set '_lastKey' on canvas and 'width' and 'height' on
-        #    renderer, but then '_renderer' was initialized with wrong width
-        #    and height, which causes bugs. And _renderer was generated with
-        #    cython code so not sure how to update the object manually.
-        for ax in self._iter_axes():
-            ax._draw_auto_legends_colorbars()
-        self._adjust_aspect()
-        self._align_axislabels(False)
-        self._align_suplabels(renderer)
-        if self._auto_tight_layout:
-            self._adjust_tight_layout(renderer)
-        self._align_axislabels(True)
-        canvas = getattr(self, 'canvas', None)
-        if (hasattr(canvas, 'get_renderer')
-                and not isinstance(canvas, FigureCanvasMac)):
-            renderer = canvas.get_renderer()
-            canvas.renderer = renderer
-        return super().draw(renderer)
+    def save(self, filename, **kwargs):
+        # Alias for `~Figure.savefig` because ``fig.savefig`` is redundant.
+        # Also automatically expands user paths e.g. the tilde ``'~'``.
+        return self.savefig(filename, **kwargs)
 
     def savefig(self, filename, **kwargs):
-        """
-        Before saving the figure, applies "tight layout" and aspect
-        ratio-conserving adjustments, and aligns row and column labels.
+        # Automatically expand user because why in gods name does
+        # matplotlib not already do this. Undocumented because do not
+        # want to overwrite matplotlib docstring.
+        super().savefig(os.path.expanduser(filename), **kwargs)
 
-        Parameters
-        ----------
-        filename : str
-            The file path. User directories are automatically
-            expanded, e.g. ``fig.save('~/plots/plot.png')``.
-        **kwargs
-            Passed to `~matplotlib.figure.Figure.savefig`.
-        """
-        filename = os.path.expanduser(filename)
-        canvas = getattr(self, 'canvas', None)
-        if hasattr(canvas, 'get_renderer'):
-            renderer = canvas.get_renderer()
-            canvas.renderer = renderer
-            for ax in self._iter_axes():
-                ax._draw_auto_legends_colorbars()
-            self._adjust_aspect()
-            self._align_axislabels(False)
-            self._align_suplabels(renderer)
-            if self._auto_tight_layout:
-                self._adjust_tight_layout(renderer)
-            self._align_axislabels(True)
+    def set_canvas(self, canvas):
+        # Set the canvas and add monkey patches to the instance-level
+        # `~matplotlib.backend_bases.FigureCanvasBase.draw_idle` and
+        # `~matplotlib.backend_bases.FigureCanvasBase.print_figure`
+        # methods. The latter is called by save() and by the inline backend.
+        # See `_canvas_preprocess` for details."""
+        # NOTE: Use draw_idle() rather than draw() becuase latter is not
+        # always called! For example, MacOSX uses _draw() and nbAgg does
+        # not call draw() *or* _draw()! Not sure how it works actually.
+        # Should be same because we piggyback draw() which *itself* defers
+        # the event. Just make sure to check _is_idle_drawing!
+        canvas.draw_idle = _canvas_preprocess(canvas, 'draw_idle')
+        canvas.print_figure = _canvas_preprocess(canvas, 'print_figure')
+        super().set_canvas(canvas)
+
+    def set_size_inches(self, w, h=None, forward=True, manual=True):
+        # Set the figure size and, if this is being called manually or from
+        # an interactive backend, override the geometry tracker so users can
+        # use interactive backends. See #76. Undocumented because this is
+        # only relevant internally.
+        # NOTE: Bitmap renderers use int(Figure.bbox.[width|height]) which
+        # rounds to whole pixels. So when renderer resizes the figure
+        # internally there may be roundoff error! Always compare to *both*
+        # Figure.get_size_inches() and the truncated bbox dimensions times dpi.
+        # Comparison is critical because most renderers call set_size_inches()
+        # before any resizing interaction!
+        if h is None:
+            width, height = w
         else:
-            warnings.warn(
-                'Renderer unknown, could not adjust layout before saving.')
-        super().savefig(filename, **kwargs)
-
-    save = savefig
-    """Alias for `~Figure.savefig`, because calling ``fig.savefig``
-    is sort of redundant."""
+            width, height = w, h
+        if not all(np.isfinite(_) for _ in (width, height)):
+            raise ValueError('Figure size must be finite, not '
+                             f'({width}, {height}).')
+        width_true, height_true = self.get_size_inches()
+        width_trunc = int(self.bbox.width) / self.dpi
+        height_trunc = int(self.bbox.height) / self.dpi
+        if (manual  # have actually seen (width_true, heigh_trunc)!
+                and width not in (width_true, width_trunc)
+                and height not in (height_true, height_trunc)):
+            self._subplots_kw.update(width=width, height=height)
+        super().set_size_inches(width, height, forward=forward)
 
     def _iter_axes(self):
         """Iterates over all axes and panels in the figure belonging to the
@@ -1789,12 +1817,12 @@ def subplots(
     hratios, wratios
         Aliases for `height_ratios`, `width_ratios`.
     width_ratios, height_ratios : float or list thereof, optional
-        Passed to `FlexibleGridSpec`. The width
+        Passed to `GridSpec`, denotes the width
         and height ratios for the subplot grid. Length of `width_ratios`
         must match the number of rows, and length of `height_ratios` must
         match the number of columns.
     wspace, hspace, space : float or str or list thereof, optional
-        Passed to `FlexibleGridSpec`, denotes the
+        Passed to `GridSpec`, denotes the
         spacing between grid columns, rows, and both, respectively. If float
         or string, expanded into lists of length ``ncols-1`` (for `wspace`)
         or length ``nrows-1`` (for `hspace`).
@@ -1803,7 +1831,7 @@ def subplots(
         the list. By default, these are determined by the "tight
         layout" algorithm.
     left, right, top, bottom : float or str, optional
-        Passed to `FlexibleGridSpec`, denote the width of padding between the
+        Passed to `GridSpec`, denotes the width of padding between the
         subplots and the figure edge. Units are interpreted by
         `~proplot.utils.units`. By default, these are determined by the
         "tight layout" algorithm.
@@ -1834,8 +1862,8 @@ def subplots(
         for a 3-row, 3-column figure, with ``sharey > 1`` and ``spany=1``,
         your figure will have 1 ylabel instead of 9.
     alignx, aligny, align : bool or {0, 1}, optional
-        Default is ``False``. Whether to `align axis labels
-        <https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/align_labels_demo.html>`__
+        Default is ``False``. Whether to `align axis labels \
+<https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/align_labels_demo.html>`__
         for the *x* axis, *y* axis, or both axes. Only has an effect when
         `spanx`, `spany`, or `span` are ``False``.
     proj, projection : str or dict-like, optional
@@ -1894,8 +1922,8 @@ def subplots(
     -------
     f : `Figure`
         The figure instance.
-    axs : `axes_grid`
-        A special list of axes instances. See `axes_grid`.
+    axs : `subplot_grid`
+        A special list of axes instances. See `subplot_grid`.
     """  # noqa
     rc._getitem_mode = 0
     # Build array
@@ -1949,7 +1977,7 @@ def subplots(
     alignx = _notNone(alignx, align)
     aligny = _notNone(aligny, align)
     if (spanx and alignx) or (spany and aligny):
-        warnings.warn(
+        _warn_proplot(
             f'The "alignx" and "aligny" args have no effect when '
             '"spanx" and "spany" are True.')
     alignx = _notNone(alignx, rc['align'])
@@ -2017,7 +2045,7 @@ def subplots(
     # Raise warning
     for name, value in zip(names, values):
         if value is not None:
-            warnings.warn(
+            _warn_proplot(
                 f'You specified both {spec} and {name}={value!r}. '
                 f'Ignoring {name!r}.')
 
@@ -2119,6 +2147,12 @@ def subplots(
                 main=True,
                 **axes_kw[num])
 
+    # Shared axes setup
+    # TODO: Figure out how to defer this to drawtime in #50
+    # For some reason just adding _share_setup() to draw() doesn't work
+    for ax in axs:
+        ax._share_setup()
+
     # Return figure and axes
     n = (ncols if order == 'C' else nrows)
-    return fig, axes_grid(axs, n=n, order=order)
+    return fig, subplot_grid(axs, n=n, order=order)

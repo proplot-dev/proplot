@@ -11,7 +11,7 @@ the following three categories.
 
 1. Builtin matplotlib `rcParams <https://matplotlib.org/users/customizing.html>`__
    settings. These have the format ``x.y`` or ``x.y.z``.
-2. ProPlot :ref:`rcParamsCustom` settings. These also have the format ``x.y``
+2. ProPlot :ref:`rcParamsLong` settings. These also have the format ``x.y``
    (see below).
 3. ProPlot :ref:`rcParamsShort` settings. These have no dots (see below).
 
@@ -41,51 +41,56 @@ ProPlot settings at once, as shorthands for settings with longer names, or
 for special options. For example, :rcraw:`ticklen` changes the tick length for
 the *x* and *y* axes in one go.
 
-================  ====================================================================================================================================================================================================================================
+================  ==============================================================================================================================================================================================================================================
 Key               Description
-================  ====================================================================================================================================================================================================================================
-``nbsetup``       Whether to run `~proplot.rctools.nb_setup` on import. Can only be changed from the ``~/.proplotrc`` file.
-``format``        The inline backend figure format, one of ``retina``, ``png``, ``jpeg``, ``pdf``, or ``svg``. Can only be changed from the ``~/.proplotrc`` file.
-``autosave``      If not empty or ``0`` and :rcraw:`nbsetup` is ``True``, passed to `%autosave <https://www.webucator.com/blog/2016/03/change-default-autosave-interval-in-ipython-notebook/>`__. Can only be changed from the ``~/.proplotrc`` file.
-``autoreload``    If not empty or ``0`` and :rcraw:`nbsetup` is ``True``, passed to `%autoreload <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html#magic-autoreload>`__. Can only be changed from the ``~/.proplotrc`` file.
-``abc``           Boolean, indicates whether to draw a-b-c labels by default.
-``tight``         Boolean, indicates whether to auto-adjust figure bounds and subplot spacings.
-``share``         The axis sharing level, one of ``0``, ``1``, ``2``, or ``3``. See `~proplot.subplots.subplots` for details.
+================  ==============================================================================================================================================================================================================================================
+``abc``           Boolean, whether to draw a-b-c labels by default.
 ``align``         Whether to align axis labels during draw. See `aligning labels <https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/align_labels_demo.html>`__.
-``span``          Boolean, toggles spanning axis labels. See `~proplot.subplots.subplots` for details.
-``fontname``      Name of font used for all text in the figure. The default is Helvetica Neue. See `~proplot.fonttools` for details.
-``cmap``          The default colormap.
-``lut``           The number of colors to put in the colormap lookup table.
-``cycle``         The default color cycle name, used e.g. for lines.
-``rgbcycle``      If ``True``, and ``colorblind`` is the current cycle, this registers the ``colorblind`` colors as ``'r'``, ``'b'``, ``'g'``, etc., like in `seaborn <https://seaborn.pydata.org/tutorial/color_palettes.html>`__.
-``color``         The color of axis spines, tick marks, tick labels, and labels.
 ``alpha``         The opacity of the background axes patch.
+``autoreload``    If not empty or ``0``, passed to `%autoreload <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html#magic-autoreload>`__.
+``autosave``      If not empty or ``0``, passed to `%autosave <https://www.webucator.com/blog/2016/03/change-default-autosave-interval-in-ipython-notebook/>`__.
+``borders``       Boolean, toggles country border lines on and off.
+``cmap``          The default colormap.
+``coast``         Boolean, toggles coastline lines on and off.
+``color``         The color of axis spines, tick marks, tick labels, and labels.
+``cycle``         The default color cycle name, used e.g. for lines.
 ``facecolor``     The color of the background axes patch.
-``small``         Font size for legend text, tick labels, axis labels, and text generated with `~matplotlib.axes.Axes.text`.
-``large``         Font size for titles, "super" titles, and a-b-c subplot labels.
-``linewidth``     Thickness of axes spines and major tick lines.
-``margin``        The margin of space between axes edges and objects plotted inside the axes, if ``xlim`` and ``ylim`` are unset.
-``ticklen``       Length of major ticks in points.
-``tickdir``       Major and minor tick direction. Must be one of ``out``, ``in``, or ``inout``.
-``tickpad``       Padding between ticks and tick labels in points.
+``fontname``      Name of font used for all text in the figure. The default is Helvetica Neue. See `~proplot.fonttools` for details.
+``geogrid``       Boolean, toggles meridian and parallel gridlines on and off.
 ``grid``          Boolean, toggles major grid lines on and off.
 ``gridminor``     Boolean, toggles minor grid lines on and off.
-``tickratio``     Ratio of minor tickline width to major tickline width.
 ``gridratio``     Ratio of minor gridline width to major gridline width.
-``ticklenratio``  Ratio of minor tickline length to major tickline length.
-``reso``          Resolution of geographic features, one of ``'lo'``, ``'med'``, or ``'hi'``
-``geogrid``       Boolean, toggles meridian and parallel gridlines on and off.
-``land``          Boolean, toggles land patches on and off.
-``ocean``         Boolean, toggles ocean patches on and off.
-``lakes``         Boolean, toggles lake patches on and off.
-``coast``         Boolean, toggles coastline lines on and off.
-``borders``       Boolean, toggles country border lines on and off.
+``inlinefmt``     The inline backend figure format or list thereof. Valid formats include ``'svg'``, ``'pdf'``, ``'retina'``, ``'png'``, and ``jpeg``.
 ``innerborders``  Boolean, toggles internal border lines on and off, e.g. for states and provinces.
+``lakes``         Boolean, toggles lake patches on and off.
+``land``          Boolean, toggles land patches on and off.
+``large``         Font size for titles, "super" titles, and a-b-c subplot labels.
+``linewidth``     Thickness of axes spines and major tick lines.
+``lut``           The number of colors to put in the colormap lookup table.
+``margin``        The margin of space between axes edges and objects plotted inside the axes, if ``xlim`` and ``ylim`` are unset.
+``matplotlib``    If not empty, passed to `%matplotlib <https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__. If ``'auto'`` (the default) uses ``'inline'`` for notebooks and ``'osx'`` or ``'qt'`` for other ipython sessions.
+``ocean``         Boolean, toggles ocean patches on and off.
+``reso``          Resolution of geographic features, one of ``'lo'``, ``'med'``, or ``'hi'``
+``rgbcycle``      If ``True``, and ``colorblind`` is the current cycle, this registers the ``colorblind`` colors as ``'r'``, ``'b'``, ``'g'``, etc., like in `seaborn <https://seaborn.pydata.org/tutorial/color_palettes.html>`__.
 ``rivers``        Boolean, toggles river lines on and off.
-================  ====================================================================================================================================================================================================================================
+``share``         The axis sharing level, one of ``0``, ``1``, ``2``, or ``3``. See `~proplot.subplots.subplots` for details.
+``small``         Font size for legend text, tick labels, axis labels, and text generated with `~matplotlib.axes.Axes.text`.
+``span``          Boolean, toggles spanning axis labels. See `~proplot.subplots.subplots` for details.
+``tickdir``       Major and minor tick direction. Must be one of ``out``, ``in``, or ``inout``.
+``ticklen``       Length of major ticks in points.
+``ticklenratio``  Ratio of minor tickline length to major tickline length.
+``tickpad``       Padding between ticks and tick labels in points.
+``titlepad``      Padding between the axes and the title, alias for :rcraw:`axes.titlepad`.
+``tickratio``     Ratio of minor tickline width to major tickline width.
+``tight``         Boolean, indicates whether to auto-adjust figure bounds and subplot spacings.
+================  ==============================================================================================================================================================================================================================================
 
-rcParamsCustom
---------------
+rcParamsLong
+------------
+These are **longer, specific** setting names
+used to customize things not covered by
+`~matplotlib.rcParams`.
+
 The ``subplots`` category controls the default layout for figures
 and axes. The ``abc``, ``title``, and ``tick`` categories control
 a-b-c label, title, and axis tick label settings. The
@@ -95,7 +100,6 @@ categories control figure title and edge label settings.
 There are two new additions to the ``image`` category, and the new
 ``colorbar`` category controls *inset* and *outer*
 `~proplot.axes.Axes.colorbar` properties.
-
 The new ``gridminor`` category controls minor gridline settings,
 and the new ``geogrid`` category controls meridian and parallel line settings
 for `~proplot.axes.ProjAxes`. For both ``gridminor`` and ``geogrid``, if
@@ -180,4 +184,3 @@ is shown below. The syntax is roughly the same as that used for
 
 .. include:: ../proplot/.proplotrc
    :literal:
-
