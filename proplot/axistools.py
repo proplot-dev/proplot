@@ -1031,6 +1031,11 @@ class CutoffTransform(mtransforms.Transform):
         return InvertedCutoffTransform(self._scale, self._lower, self._upper)
 
     def transform(self, a):
+        scales = self.scales
+        threshs = self.threshs
+        distances = scales * np.diff(threshs)
+        idxs = np.searchsorted(threshs, a)  # array of indices
+        aa = threshs[0] + np.sum(distances[idxs - 1]) + (a - threshs[idxs]) * scale[idxs]
         a = np.array(a)  # very numpy array
         aa = a.copy()
         scale = self._scale
