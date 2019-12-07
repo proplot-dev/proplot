@@ -19,8 +19,8 @@ ProPlot v0.2.4 (2019-12-07)
 ===========================
 Deprecated
 ----------
-- Rename `ColorCacheDict` to `~proplot.styletools.ColorDict`.
-- Rename `colors` to `~proplot.styletools.Colors`.
+- Rename `ColorCacheDict` to `~proplot.styletools.ColorDict` (:commit:`aee7d1be`).
+- Rename `colors` to `~proplot.styletools.Colors` (:commit:`aee7d1be`)
 - Remove `fonts_system` and `fonts_proplot`, rename `colordict` to
   `~proplot.styletools.colors`, make top-level variables
   more robust (:commit:`861583f8`).
