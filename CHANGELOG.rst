@@ -19,12 +19,19 @@ ProPlot v0.2.4 (2019-12-07)
 ===========================
 Deprecated
 ----------
-- Rename `colordict` to `~proplot.styletools.colors`, remove `fonts_system` and
-  `fonts_proplot`, make top-level variables more robust (:commit:`861583f8`).
+- Rename `ColorCacheDict` to `~proplot.styletools.ColorDict`.
+- Rename `colors` to `~proplot.styletools.Colors`.
+- Remove `fonts_system` and `fonts_proplot`, rename `colordict` to
+  `~proplot.styletools.colors`, make top-level variables
+  more robust (:commit:`861583f8`).
 
 Documentation
 -------------
 - Params table for `~proplot.styletools.show_fonts` (:commit:`861583f8`).
+
+Internals
+---------
+- Improvements to `~proplot.styletools.register_colors`.
 
 ProPlot v0.2.3 (2019-12-05)
 ===========================

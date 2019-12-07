@@ -24,17 +24,18 @@ import matplotlib.cm as mcm
 from . import colormath
 from .utils import _warn_proplot, _notNone, _timer
 __all__ = [
-    'BinNorm', 'CmapDict', 'ColorCacheDict',
-    'LinearSegmentedNorm', 'MidpointNorm', 'PerceptuallyUniformColormap',
-    'Colormap', 'Cycle', 'Norm',
-    'cmaps', 'cycles', 'colors', 'fonts',
-    'ListedColormap',
+    'BinNorm', 'CmapDict', 'ColorDict',
+    'LinearSegmentedNorm',
     'LinearSegmentedColormap',
+    'ListedColormap',
+    'MidpointNorm', 'PerceptuallyUniformColormap',
+    'cmaps', 'colors', 'cycles', 'fonts',
     'make_mapping_array',
     'register_cmaps', 'register_colors', 'register_cycles', 'register_fonts',
     'saturate', 'shade', 'show_cmaps', 'show_channels',
     'show_colors', 'show_colorspaces', 'show_cycles', 'show_fonts',
     'to_rgb', 'to_xyz',
+    'Colormap', 'Colors', 'Cycle', 'Norm',
 ]
 
 # Colormap stuff
@@ -370,7 +371,7 @@ def to_rgb(color, space='rgb', cycle=None, alpha=False):
     color : str or length-3 list
         The color specification. Can be a tuple of channel values for the
         `space` colorspace, a hex string, a registered color name, a cycle
-        color, or a colormap color (see `ColorCacheDict`).
+        color, or a colormap color (see `ColorDict`).
 
         If `space` is ``'rgb'``, this is a tuple of RGB values, and any
         channels are larger than ``2``, the channels are assumed to be on
@@ -1749,6 +1750,15 @@ class CmapDict(dict):
         for record in (cmaps, cycles):
             record[:] = sorted(record)
 
+    def __delitem__(self, key):
+        """Delete the item from the list records."""
+        super().__delitem__(self, key)
+        for record in (cmaps, cycles):
+            try:
+                record.remove(key)
+            except ValueError:
+                pass
+
     def __getitem__(self, key):
         """Retrieve the case-insensitive colormap name. If the name ends in
         ``'_r'``, returns the result of ``cmap.reversed()`` for the colormap
@@ -1852,17 +1862,17 @@ class CmapDict(dict):
 
 
 class _ColorMappingOverride(mcolors._ColorMapping):
-    """Mapping whose cache attribute is a `ColorCacheDict` dictionary."""
+    """Mapping whose cache attribute is a `ColorDict` dictionary."""
     def __init__(self, mapping):
         super().__init__(mapping)
-        self.cache = ColorCacheDict({})
+        self.cache = ColorDict({})
 
 
-class ColorCacheDict(dict):
+class ColorDict(dict):
     """This class overrides the builtin matplotlib color cache, allowing
     users to draw colors from *named colormaps and color cycles* for any
     plotting command that accepts a `color` keyword arg.
-    See `~ColorCacheDict.__getitem__` for details."""
+    See `~ColorDict.__getitem__` for details."""
     def __getitem__(self, key):
         """
         Allows user to select colors from arbitrary named colormaps and
@@ -1908,7 +1918,7 @@ class ColorCacheDict(dict):
         return super().__getitem__((rgb, alpha))
 
 
-def colors(*args, **kwargs):
+def Colors(*args, **kwargs):
     """Identical to `Cycle`, but returns a list of colors instead of
     a `~cycler.Cycler` object."""
     cycle = Cycle(*args, **kwargs)
@@ -2383,9 +2393,7 @@ class BinNorm(mcolors.BoundaryNorm):
        is determined with `numpy.searchsorted`, and its corresponding
        colormap coordinate is selected using this index.
 
-    The input parameters are as follows.
     """
-
     def __init__(self, levels, norm=None, clip=False,
                  step=1.0, extend='neither'):
         """
@@ -2903,76 +2911,70 @@ def register_colors(nmax=np.inf):
     # Reset native colors dictionary and add some default groups
     # Add in CSS4 so no surprises for user, but we will not encourage this
     # usage and will omit CSS4 colors from the demo table.
-    base = {}
     colors.clear()
+    base = {}
     base.update(mcolors.BASE_COLORS)
     base.update(BASE_COLORS_FULL)
     mcolors.colorConverter.colors.clear()  # clean out!
     mcolors.colorConverter.cache.clear()  # clean out!
     for name, dict_ in (('base', base), ('css', mcolors.CSS4_COLORS)):
-        colors.update({name: dict_})
+        mcolors.colorConverter.colors.update(dict_)
+        colors[name] = sorted(dict_)
 
     # Load colors from file and get their HCL values
-    # TODO: Cleanup!
+    dicts = {}
     seen = {*base}  # never overwrite base names, e.g. 'blue' and 'b'!
-    hcls = np.empty((0, 3))
-    pairs = []
+    hcls = []
+    data = []
     for path in _get_data_paths('colors'):
         # prefer xkcd
         for file in sorted(glob.glob(os.path.join(path, '*.txt')))[::-1]:
             cat, _ = os.path.splitext(os.path.basename(file))
             with open(file, 'r') as f:
-                data = [tuple(item.strip() for item in line.split(':'))
-                        for line in f.readlines() if line.strip()]
-            if not all(len(pair) == 2 for pair in data):
+                pairs = [tuple(item.strip() for item in line.split(':'))
+                         for line in f.readlines() if line.strip()]
+            if not all(len(pair) == 2 for pair in pairs):
                 raise RuntimeError(
                     f'Invalid color names file {file!r}. '
                     f'Every line must be formatted as "name: color".')
-            # Immediately add all open colors
+
+            # Add all open colors
             if cat == 'open':
-                dict_ = {name: color for name, color in data}
-                colors.update({'open': dict_})
+                dict_ = {name: color for name, color in pairs}
+                mcolors.colorConverter.colors.update(dict_)
+                colors['open'] = sorted(dict_)
                 continue
-            # Remaining dicts are filtered and their names are sanitized
-            i = 0
-            dict_ = {}
-            ihcls = []
-            colors[cat] = {}  # just initialize this one
-            for name, color in data:  # is list of name, color tuples
-                if i >= nmax:  # e.g. for xkcd colors
+
+            # Filter remaining colors to unique ones
+            j = 0
+            if cat not in dicts:
+                dicts[cat] = {}
+            for name, color in pairs:  # is list of name, color tuples
+                j += 1
+                if j > nmax:  # e.g. for xkcd colors
                     break
                 for regex, sub in FILTER_TRANSLATIONS:
                     name = regex.sub(sub, name)
                 if name in seen or FILTER_BAD.search(name):
                     continue
                 seen.add(name)
-                pairs.append((cat, name))  # save the category name pair
-                ihcls.append(to_xyz(color, space=FILTER_SPACE))
-                dict_[name] = color  # save the color
-                i += 1
-            _colors_unfiltered[cat] = dict_
-            hcls = np.concatenate((hcls, ihcls), axis=0)
+                hcls.append(to_xyz(color, space=FILTER_SPACE))
+                data.append((cat, name, color))  # category name pair
 
     # Remove colors that are 'too similar' by rounding to the nearest n units
     # WARNING: Unique axis argument requires numpy version >=1.13
-    scale = (360, 100, 100)
+    hcls = np.array(hcls)
     if hcls.size > 0:
-        hcls = hcls / np.array(scale)
+        hcls = hcls / np.array([360, 100, 100])
         hcls = np.round(hcls / FILTER_THRESH).astype(np.int64)
-        deleted = 0
-        _, idxs, _ = np.unique(hcls,
-                               return_index=True,
-                               return_counts=True,
-                               axis=0)  # get unique rows
-        for idx, (cat, name) in enumerate(pairs):
-            if name not in FILTER_ADD and idx not in idxs:
-                deleted += 1
-            else:
-                colors[cat][name] = _colors_unfiltered[cat][name]
-
-    # Update the color converter
-    for _, kw in colors.items():
-        mcolors.colorConverter.colors.update(kw)
+        _, idxs, _ = np.unique(
+            hcls, return_index=True, return_counts=True, axis=0)
+        for idx, (cat, name, color) in enumerate(data):
+            if name in FILTER_ADD or idx in idxs:
+                dicts[cat][name] = color
+        for cat, dict_ in dicts.items():
+            mcolors.colorConverter.colors.update(dict_)
+            colors[cat] = sorted(dict_)
 
 
 @_timer
@@ -3279,12 +3281,13 @@ def show_colors(nbreak=17, minsat=0.2):
     for open_colors in (True, False):
         scale = (360, 100, 100)
         if open_colors:
-            group = ['open']
+            cats = ['open']
         else:
-            group = [name for name in colors if name not in ('css', 'open')]
-        icolors = {}
-        for name in group:
-            icolors.update(colors[name])  # add category dictionary
+            cats = [name for name in colors if name not in ('css', 'open')]
+        data = {}
+        for cat in cats:
+            for color in colors[cat]:
+                data[color] = mcolors.colorConverter.colors[color]
 
         # Group colors together by discrete range of hue, then sort by value
         # For opencolors this is not necessary
@@ -3314,7 +3317,7 @@ def show_colors(nbreak=17, minsat=0.2):
                             value,
                             FILTER_SPACE),
                         scale)]
-                for key, value in icolors.items()
+                for key, value in data.items()
             }
             # Separate into columns and roughly sort by brightness in columns
             # group in blocks of 20 hues
@@ -3372,7 +3375,7 @@ def show_colors(nbreak=17, minsat=0.2):
                 xi_text = wsep * (col + 0.25 * swatch + 0.03 * swatch)
                 ax.text(xi_text, y, name, ha='left', va='center')
                 ax.hlines(y_line, xi_line, xf_line,
-                          color=icolors[name], lw=hsep * 0.6)
+                          color=data[name], lw=hsep * 0.6)
         # Apply formatting
         ax.format(xlim=(0, X), ylim=(0, Y))
         ax.set_axis_off()
@@ -3582,11 +3585,8 @@ cmaps = []  # track *downloaded* colormaps
 #: List of registered color cycle names.
 cycles = []  # track *all* color cycles
 
-#: Registered color names by category.
-colors = {}  # 'sufficiently unique' color names  # noqa
-
-#: All color names by category
-_colors_unfiltered = {}
+#: Lists of registered color names by category.
+colors = {}
 
 #: Registered font names.
 fonts = []
