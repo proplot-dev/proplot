@@ -248,8 +248,8 @@ class Aitoff(_WarpedRectangularProjection):
 
 
 class KavrayskiyVII(_WarpedRectangularProjection):
-    """The `Kavrayskiy VII
-    <https://en.wikipedia.org/wiki/Kavrayskiy_VII_projection>`__ projection."""
+    """The `Kavrayskiy VII \
+<https://en.wikipedia.org/wiki/Kavrayskiy_VII_projection>`__ projection."""
     #: Registered projection name.
     name = 'kavrayskiyVII'
 
@@ -281,8 +281,8 @@ class KavrayskiyVII(_WarpedRectangularProjection):
 
 
 class WinkelTripel(_WarpedRectangularProjection):
-    """The `Winkel tripel (Winkel III)
-    <https://en.wikipedia.org/wiki/Winkel_tripel_projection>`__ projection."""
+    """The `Winkel tripel (Winkel III) \
+<https://en.wikipedia.org/wiki/Winkel_tripel_projection>`__ projection."""
     #: Registered projection name.
     name = 'winkeltripel'
 
