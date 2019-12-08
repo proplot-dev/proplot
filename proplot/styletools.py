@@ -1962,10 +1962,10 @@ def Colormap(
         save=False, save_kw=None,
         **kwargs):
     """
-    Generate a new colormap, retrieve a registered colormap, or merge and
-    manipulate colormap(s) in a variety of ways. This is used to interpret
-    the `cmap` and `cmap_kw` arguments when passed to any plotting method
-    wrapped by `~proplot.wrappers.cmap_changer`.
+    Generate or retrieve colormaps and optionally merge and manipulate
+    them in a variety of ways. Used to interpret the `cmap` and `cmap_kw`
+    arguments when passed to any plotting method wrapped by
+    `~proplot.wrappers.cmap_changer`.
 
     Parameters
     ----------
@@ -2173,10 +2173,10 @@ def Cycle(
         save=False, save_kw=None,
         **kwargs):
     """
-    Function for generating and merging `~cycler.Cycler` instances in a
-    variety of ways; used to interpret the `cycle` and `cycle_kw` arguments
-    when passed to any plotting method wrapped by
-    `~proplot.wrappers.cycle_wrapper`.
+    Generate and merge `~cycler.Cycler` instances in a variety of ways.
+    Used to interpret the `cycle` and `cycle_kw` arguments when passed to
+    any plotting method wrapped by
+    `~proplot.wrappers.cycle_changer`.
 
     If you just want a list of colors instead of a `~cycler.Cycler` instance,
     use the `colors` function. If you want a `~cycler.Cycler` instance that
@@ -2331,8 +2331,8 @@ def Cycle(
 
 def Norm(norm, levels=None, **kwargs):
     """
-    Return an arbitrary `~matplotlib.colors.Normalize` instance. This is
-    used to interpret the `norm` and `norm_kw` arguments when passed to any
+    Return an arbitrary `~matplotlib.colors.Normalize` instance.
+    Used to interpret the `norm` and `norm_kw` arguments when passed to any
     plotting method wrapped by `~proplot.wrappers.cmap_changer`.
 
     Parameters
