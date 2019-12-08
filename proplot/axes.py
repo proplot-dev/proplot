@@ -1601,7 +1601,7 @@ dualxy_kwargs = (
     'label', 'locator', 'formatter', 'ticks', 'ticklabels',
     'minorlocator', 'minorticks', 'tickminor',
     'ticklen', 'tickrange', 'tickdir', 'ticklabeldir', 'tickrotation',
-    'bounds', 'margin', 'color', 'grid', 'gridminor', 'gridcolor',
+    'bounds', 'margin', 'color', 'grid', 'gridminor',
 )
 
 dualxy_descrip = """
@@ -1709,6 +1709,8 @@ def _parse_dualxy_args(x, transform, transform_kw, kwargs):
             kwargs[key] = value
         elif key in dualxy_kwargs:
             kwargs[x + key] = value
+        elif key in RC_NODOTSNAMES:
+            kwargs[key] = value
         else:
             kwargs_bad[key] = value
         if kwargs_bad:
