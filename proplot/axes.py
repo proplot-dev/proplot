@@ -2561,6 +2561,7 @@ class XYAxes(Axes):
         self._altx_overrides()
         ax._altx_overrides()
         self.add_child_axes(ax)
+        self.figure._axstack.remove(ax)  # or gets drawn twice!
         return ax
 
     def alty(self):
@@ -2578,6 +2579,7 @@ class XYAxes(Axes):
         self._alty_overrides()
         ax._alty_overrides()
         self.add_child_axes(ax)
+        self.figure._axstack.remove(ax)  # or gets drawn twice!
         return ax
 
     def dualx(self, transform, transform_kw=None, **kwargs):
