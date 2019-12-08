@@ -133,7 +133,7 @@ def Locator(locator, *args, **kwargs):
     return locator
 
 
-def Formatter(formatter, *args, date=False, **kwargs):
+def Formatter(formatter, *args, date=False, index=False, **kwargs):
     """
     Returns a `~matplotlib.ticker.Formatter` instance, used to interpret the
     `xformatter`, `xformatter_kw`, `yformatter`, and `yformatter_kw` arguments
@@ -147,7 +147,9 @@ def Formatter(formatter, *args, date=False, **kwargs):
         If `~matplotlib.ticker.Formatter`, the object is returned.
 
         If list of strings, ticks are labeled with these strings. Returns a
-        `~matplotlib.ticker.FixedFormatter` instance.
+        `~matplotlib.ticker.FixedFormatter` instance when `index` is ``False``
+        and an `~matplotlib.ticker.IndexFormatter` instance when `index` is
+        ``True``.
 
         If function, labels will be generated using this function. Returns a
         `~matplotlib.ticker.FuncFormatter` instance.
@@ -202,6 +204,9 @@ def Formatter(formatter, *args, date=False, **kwargs):
     date : bool, optional
         Toggles the behavior when `formatter` contains a ``'%'`` sign (see
         above).
+    index : bool, optional
+        Controls the behavior when `formatter` is a list of strings (see
+        above).
     *args, **kwargs
         Passed to the `~matplotlib.ticker.Formatter` class.
 
@@ -215,7 +220,7 @@ def Formatter(formatter, *args, date=False, **kwargs):
     # Pull out extra args
     if np.iterable(formatter) and not isinstance(formatter, str) and not all(
             isinstance(item, str) for item in formatter):
-        formatter, args = formatter[0], [*formatter[1:], *args]
+        formatter, args = formatter[0], (*formatter[1:], *args)
     # Get the formatter
     if isinstance(formatter, str):  # assumption is list of strings
         # Format strings
@@ -260,7 +265,10 @@ def Formatter(formatter, *args, date=False, **kwargs):
     elif callable(formatter):
         formatter = mticker.FuncFormatter(formatter, *args, **kwargs)
     elif np.iterable(formatter):  # list of strings on the major ticks
-        formatter = mticker.FixedFormatter(formatter)
+        if index:
+            formatter = mticker.IndexFormatter(formatter)
+        else:
+            formatter = mticker.FixedFormatter(formatter)
     else:
         raise ValueError(f'Invalid formatter {formatter!r}.')
     return formatter
