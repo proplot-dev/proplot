@@ -1163,26 +1163,37 @@ class CutoffTransform(mtransforms.Transform):
     has_inverse = True
     is_separable = True
 
-    def __init__(self, threshs, scales):
+    def __init__(self, threshs, scales, zero_scale_dists=None):
+        # The zero_scale_dists array is used to fill in distances where scales
+        # are zero. Used for inverting transorms with discrete jumps.
         super().__init__()
+        if len(threshs) != len(scales):
+            raise ValueError(f'Got {len(threshs)} but {len(scales)} scales.')
         if any(np.diff(threshs) <= 0):
             raise ValueError(f'Thresholds must be monotonically increasing.')
-        if any(np.asarray(scales) < 0):
-            raise ValueError(f'Scales must be greater than or equal to zero.')
+        if scales[-1] == np.inf:
+            raise ValueError(f'Final scale cannot be numpy.inf.')
+        if any(np.asarray(scales) < 0) or (
+                any(np.asarray(scales) == 0) and zero_scale_dists is None):
+            raise ValueError(f'Scales must be greater than zero.')
         self._threshs = threshs
         self._scales = scales
         with np.errstate(divide='ignore'):
-            self._dists = np.concatenate((
+            dists = np.concatenate((
                 threshs[:1], np.diff(threshs) / scales[:-1]))
+            if zero_scale_dists is not None:
+                dists[np.asarray(scales) == 0] = zero_scale_dists
+            self._dists = dists
 
     def inverted(self):
         # Use same algorithm for inversion!
-        scales = self._scales
-        dists = self._dists
-        threshs = np.cumsum(dists)  # thresholds in transformed space
+        threshs = np.cumsum(self._dists)  # thresholds in transformed space
         with np.errstate(divide='ignore'):
-            scales = 1 / np.array(scales)  # new scales are just inverse
-        return CutoffTransform(threshs, scales)
+            scales = 1 / np.asarray(self._scales)  # new scales are inverse
+        zero_scale_dists = np.diff(self._threshs)[
+            np.array(self._scales)[:-1] == np.inf]
+        return CutoffTransform(threshs, scales,
+                               zero_scale_dists=zero_scale_dists)
 
     def transform(self, a):
         a = np.atleast_1d(a)
