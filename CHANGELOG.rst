@@ -15,7 +15,7 @@ ProPlot v1.0.0 (2020-##-##)
 This will be published when some major refactoring tasks are completed.
 See :pr:`45`, :pr:`46`, and :pr:`50`.
 
-ProPlot v0.3.0 (2020-01-XX)
+ProPlot v0.3.0 (2020-01-##)
 ===========================
 .. rubric:: Deprecated
 
@@ -23,6 +23,8 @@ ProPlot v0.3.0 (2020-01-XX)
   ``subplots.xlabspace``, and ``subplots.ylabspace`` spacing arguments,
   automatically calculate default non-tight spacing using `~proplot.subplots._get_space`
   based on current tick lengths, label sizes, etc.
+- Rename `basemap_defaults` to `~proplot.projs.basemap_kwargs` and `cartopy_projs`
+  to `~proplot.projs.cartopy_names` (:commit:`431a06ce`).
 
 .. rubric:: Features
 
