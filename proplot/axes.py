@@ -1586,7 +1586,7 @@ _twin_kwargs = (
     'label', 'locator', 'formatter', 'ticks', 'ticklabels',
     'minorlocator', 'minorticks', 'tickminor',
     'ticklen', 'tickrange', 'tickdir', 'ticklabeldir', 'tickrotation',
-    'bounds', 'margin', 'color', 'linewidth', 'grid', 'gridminor',
+    'bounds', 'margin', 'color', 'linewidth', 'grid', 'gridminor', 'gridcolor',
 )
 
 _dual_doc = """
@@ -1990,6 +1990,8 @@ class XYAxes(Axes):
             xbounds=None, ybounds=None,
             xmargin=None, ymargin=None,
             xcolor=None, ycolor=None,
+            xlinewidth=None, ylinewidth=None,
+            xgridcolor=None, ygridcolor=None,
             xticklen=None, yticklen=None,
             xlabel_kw=None, ylabel_kw=None,
             xscale_kw=None, yscale_kw=None,
@@ -2106,6 +2108,10 @@ class XYAxes(Axes):
         xlinewidth, ylinewidth : color-spec, optional
             Line width for the *x* and *y* axis spines and major ticks.
             Default is :rc:`linewidth`. Use e.g. ``ax.format(linewidth=2)``
+            to set for both axes.
+        xgridcolor, ygridcolor : color-spec, optional
+            Color for the *x* and *y* axis major and minor gridlines.
+            Default is :rc:`grid.color`. Use e.g. ``ax.format(gridcolor='r')``
             to set for both axes.
         xticklen, yticklen : float or str, optional
             Tick lengths for the *x* and *y* axis. Units are interpreted by
@@ -2253,7 +2259,8 @@ class XYAxes(Axes):
             for (
                 x, axis,
                 label, color,
-                linewidth, ticklen,
+                linewidth, gridcolor,
+                ticklen,
                 margin, bounds,
                 tickloc, spineloc,
                 ticklabelloc, labelloc,
@@ -2269,7 +2276,8 @@ class XYAxes(Axes):
             ) in zip(
                 ('x', 'y'), (self.xaxis, self.yaxis),
                 (xlabel, ylabel), (xcolor, ycolor),
-                (xlinewidth, ylinewidth), (xticklen, yticklen),
+                (xlinewidth, ylinewidth), (xgridcolor, ygridcolor),
+                (xticklen, yticklen),
                 (xmargin, ymargin), (xbounds, ybounds),
                 (xtickloc, ytickloc), (xspineloc, yspineloc),
                 (xticklabelloc, yticklabelloc), (xlabelloc, ylabelloc),
@@ -2400,6 +2408,8 @@ class XYAxes(Axes):
                             key: value for key, value in kw_major.items()
                             if key not in kw_grid})
                     # Changed rc settings
+                    if gridcolor is not None:
+                        kw['grid_color'] = gridcolor
                     axis.set_tick_params(which=which, **kw_grid, **kw_ticks)
 
                 # Tick and ticklabel properties that apply to major and minor
