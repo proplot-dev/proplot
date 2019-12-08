@@ -20,7 +20,7 @@ except ModuleNotFoundError:
 
 __all__ = [
     'Proj',
-    'basemap_defaults', 'cartopy_projs',
+    'basemap_kwargs', 'cartopy_names',
     'Aitoff', 'Hammer', 'KavrayskiyVII',
     'NorthPolarAzimuthalEquidistant',
     'NorthPolarGnomonic',
@@ -146,7 +146,7 @@ def Proj(name, basemap=False, **kwargs):
     if basemap:
         import mpl_toolkits.basemap as mbasemap
         name = BASEMAP_TRANSLATE.get(name, name)
-        kwproj = basemap_defaults.get(name, {})
+        kwproj = basemap_kwargs.get(name, {})
         kwproj.update(kwargs)
         kwproj.setdefault('fix_aspect', True)
         if name[:2] in ('np', 'sp'):
@@ -165,7 +165,7 @@ def Proj(name, basemap=False, **kwargs):
         import cartopy.crs as _  # noqa
         kwargs = {CARTOPY_CRS_TRANSLATE.get(
             key, key): value for key, value in kwargs.items()}
-        crs = cartopy_projs.get(name, None)
+        crs = cartopy_names.get(name, None)
         if name == 'geos':  # fix common mistake
             kwargs.pop('central_latitude', None)
         if 'boundinglat' in kwargs:
@@ -175,7 +175,7 @@ def Proj(name, basemap=False, **kwargs):
         if crs is None:
             raise ValueError(
                 f'Unknown projection {name!r}. Options are: '
-                + ', '.join(map(repr, cartopy_projs.keys())))
+                + ', '.join(map(repr, cartopy_names.keys())))
         proj = crs(**kwargs)
         aspect = (np.diff(proj.x_limits) / np.diff(proj.y_limits))[0]
     return proj, aspect
@@ -377,7 +377,7 @@ CARTOPY_CRS_TRANSLATE = {  # add to this
 #: Default keyword args for `~mpl_toolkits.basemap.Basemap` projections.
 #: `~mpl_toolkits.basemap` will raise an error if you don't provide them,
 #: so ProPlot imposes some sensible default behavior.
-basemap_defaults = {
+basemap_kwargs = {
     'eck4': {'lon_0': 0},
     'geos': {'lon_0': 0},
     'hammer': {'lon_0': 0},
@@ -409,11 +409,11 @@ basemap_defaults = {
 }
 
 #: Mapping of "projection names" to cartopy `~cartopy.crs.Projection` classes.
-cartopy_projs = {}
+cartopy_names = {}
 if _cartopy_installed:
     # Custom ones, these are always present
     import cartopy.crs as ccrs  # verify package is available
-    cartopy_projs = {  # interpret string, create cartopy projection
+    cartopy_names = {  # interpret string, create cartopy projection
         'aitoff': Aitoff,
         'hammer': Hammer,
         'kav7': KavrayskiyVII,
@@ -469,7 +469,7 @@ if _cartopy_installed:
         if _class is None:
             _unavail.append(_name)
             continue
-        cartopy_projs[_name] = _class
+        cartopy_names[_name] = _class
     if _unavail:
         _warn_proplot(
             f'Cartopy projection(s) {", ".join(map(repr, _unavail))} are '
