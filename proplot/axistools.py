@@ -303,7 +303,7 @@ def Scale(scale, *args, **kwargs):
         ``'mercator'``     `MercatorLatitudeScale`          Mercator latitude function (in degrees)
         ``'exp'``          `ExpScale`                       Arbitrary exponential function
         ``'power'``        `PowerScale`                     Arbitrary power function
-        ``'cutoff'``       `CutoffScale`                    Arbitrary linear transformations
+        ``'cutoff'``       `CutoffScale`                    Arbitrary piecewise linear transformations
         ``'quadratic'``    `PowerScale` (preset)            Quadratic function
         ``'cubic'``        `PowerScale` (preset)            Cubic function
         ``'quartic'``      `PowerScale` (preset)            Cubic function
@@ -1124,9 +1124,10 @@ class InvertedSineLatitudeTransform(mtransforms.Transform):
 
 class CutoffScale(_ScaleBase, mscale.ScaleBase):
     """
-    Axis scale with arbitrary successive thresholds between which are
-    discrete jumps, "accelerations", or "decelerations". Adapted from `this \
-stackoverflow post <https://stackoverflow.com/a/5669301/4970632>`__.
+    Axis scale composed of arbitrary piecewise linear transformations.
+    The axis can undergo discrete jumps, "accelerations", or "decelerations"
+    between successive thresholds. Adapted from
+    `this stackoverflow post <https://stackoverflow.com/a/5669301/4970632>`__.
     """
     name = 'cutoff'
     """The registered scale name."""
@@ -1151,9 +1152,9 @@ stackoverflow post <https://stackoverflow.com/a/5669301/4970632>`__.
 
         >>> import proplot as plot
         ... import numpy as np
-        ... thresh = plot.CutoffScale(10, 2)  # go "twice as fast" after 10
-        ... skip = plot.CutoffScale(10, 0.5, 20)  # zoom in between 10 and 20
-        ... jump = plot.CutoffScale(10, np.inf, 20)  # jump from 10 to 20
+        ... scale = plot.CutoffScale(10, 2)  # go "twice as fast" after 10
+        ... scale = plot.CutoffScale(10, 0.5, 20)  # zoom in between 10 and 20
+        ... scale = plot.CutoffScale(10, np.inf, 20)  # jump from 10 to 20
 
         """
         super().__init__()
