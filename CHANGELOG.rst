@@ -15,7 +15,7 @@ ProPlot v1.0.0 (2020-##-##)
 This will be published when some major refactoring tasks are completed.
 See :pr:`45`, :pr:`46`, and :pr:`50`.
 
-ProPlot v0.3.0 (2019-01-XX)
+ProPlot v0.3.0 (2020-01-XX)
 ===========================
 Features
 --------
@@ -54,7 +54,7 @@ Internals
   with a default ``.proplotrc`` file, change the auto-generated user ``.proplotrc``
   (:pr:`50`).
 
-ProPlot v0.2.6 (2019-12-XX)
+ProPlot v0.2.6 (2019-12-08)
 ===========================
 Bug fixes
 ---------
