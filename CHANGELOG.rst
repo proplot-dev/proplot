@@ -36,6 +36,13 @@ Bug fixes
 ---------
 - Fix `~proplot.rctools.rc_configurator.context` fatal bug (:issue:`80`).
 
+Deprecated
+----------
+- Remove ``subplots.innerspace``, ``subplots.titlespace``,
+  ``subplots.xlabspace``, and ``subplots.ylabspace`` spacing arguments,
+  automatically calculate default non-tight spacing using `~proplot.subplots._get_space`
+  based on current tick lengths, label sizes, etc.
+
 Internals
 ---------
 - Handle all projection keyword arguments in `~proplot.subplots.Figure.add_subplot`
