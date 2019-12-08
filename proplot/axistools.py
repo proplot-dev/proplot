@@ -1182,7 +1182,7 @@ class CutoffTransform(mtransforms.Transform):
             dists = np.concatenate((
                 threshs[:1], np.diff(threshs) / scales[:-1]))
             if zero_scale_dists is not None:
-                dists[np.asarray(scales) == 0] = zero_scale_dists
+                dists[np.asarray(scales[:-1]) == 0] = zero_scale_dists
             self._dists = dists
 
     def inverted(self):
@@ -1190,8 +1190,7 @@ class CutoffTransform(mtransforms.Transform):
         threshs = np.cumsum(self._dists)  # thresholds in transformed space
         with np.errstate(divide='ignore'):
             scales = 1 / np.asarray(self._scales)  # new scales are inverse
-        zero_scale_dists = np.diff(self._threshs)[
-            np.array(self._scales)[:-1] == np.inf]
+        zero_scale_dists = np.diff(self._threshs)[scales[:-1] == 0]
         return CutoffTransform(threshs, scales,
                                zero_scale_dists=zero_scale_dists)
 
