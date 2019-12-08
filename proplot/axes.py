@@ -1991,7 +1991,6 @@ class XYAxes(Axes):
             xmargin=None, ymargin=None,
             xcolor=None, ycolor=None,
             xticklen=None, yticklen=None,
-            xlinewidth=None, ylinewidth=None,
             xlabel_kw=None, ylabel_kw=None,
             xscale_kw=None, yscale_kw=None,
             xlocator_kw=None, ylocator_kw=None,

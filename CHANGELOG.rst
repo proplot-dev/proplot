@@ -15,6 +15,38 @@ ProPlot v1.0.0 (2020-##-##)
 This will be published when some major refactoring tasks are completed.
 See :pr:`45`, :pr:`46`, and :pr:`50`.
 
+ProPlot v0.3.0 (2019-01-XX)
+===========================
+Features
+--------
+- Users can now use `~proplot.subplots.figure` with `~proplot.subplots.Figure.add_subplot`
+  *or* `~proplot.subplots.subplots` (:pr:`50`). This is a major improvement!
+- `~proplot.subplots.GridSpec` now accepts physical units, rather than having
+  `~proplot.subplots.subplots` handle the units (:pr:`50`).
+- Add `xlinewidth`, `ylinewidth`, `xgridcolor`, `ygridcolor` keyword
+  args to `~proplot.axes.XYAxes.format` (:pr:`50`).
+- Allow "hanging" twin *x* and *y* axes as members of the `~proplot.subplots.EdgeStack`
+  container. Arbitrarily many siblings are now permitted.
+- Use `~proplot.subplots.GeometrySolver` for calculating various automatic layout
+  stuff instead of having 1000 hidden `~proplot.subplots.Figure` methods (:pr:`50`).
+- Use `~proplot.subplots.EdgeStack` class for handling
+  stacks of colorbars, legends, and text (:pr:`50`).
+
+Bug fixes
+---------
+- Fix `~proplot.rctools.rc_configurator.context` fatal bug (:issue:`80`).
+
+Internals
+---------
+- Handle all projection keyword arguments in `~proplot.subplots.Figure.add_subplot`
+  instead of `~proplot.subplots.subplots` (:pr:`50`).
+- Panels, colorbars, and legends are now members of `~proplot.subplots.EdgeStack`
+  stacks rather than getting inserted directly into
+  the main `~proplot.subplots.GridSpec` (:pr:`50`).
+- Define `~proplot.rctools.rc` default values with inline dictionaries rather than
+  with a default ``.proplotrc`` file, change the auto-generated user ``.proplotrc``
+  (:pr:`50`).
+
 ProPlot v0.2.6 (2019-12-XX)
 ===========================
 Bug fixes
