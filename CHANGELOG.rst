@@ -31,6 +31,10 @@ Features
   stuff instead of having 1000 hidden `~proplot.subplots.Figure` methods (:pr:`50`).
 - Use `~proplot.subplots.EdgeStack` class for handling
   stacks of colorbars, legends, and text (:pr:`50`).
+- `~proplot.rctools.rc` `~proplot.rctools.rc_configurator.__getitem__` always
+  returns the setting; "caching" can only be used *explicitly* by passing ``cache=True`` to
+  `~proplot.rctools.rc_configurator.get`, `~proplot.rctools.rc_configurator.fill`, and
+  `~proplot.rctools.rc_configurator.category` (:pr:`50`).
 
 Bug fixes
 ---------
