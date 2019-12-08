@@ -31,7 +31,7 @@ Since ProPlot is built right into the matplotlib API, you might be wondering why
 ..
    * ProPlot design choices are made with the academic scientist working with ipython notebooks in mind, while matplotlib has a much more diverse base of hundreds of thousands of users. Matplotlib developers have to focus on support and API consistency, while ProPlot can make more dramatic improvements.
 
-Nevertheless, if any core matplotlib think that some of ProPlot's features should be added to matplotlib, please contact `Luke Davis <https://github.com/lukelbd>`__ and let him know!
+Nevertheless, if any core matplotlib developers think that some of ProPlot's features should be added to matplotlib, please contact `Luke Davis <https://github.com/lukelbd>`__ and let him know!
 
 Why do my inline figures look different?
 ========================================
