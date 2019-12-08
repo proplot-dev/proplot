@@ -21,17 +21,13 @@ and describes how ProPlot addresses them.
 No more boilerplate
 ===================
 
-.. raw:: html
-
-   <h3>Problem</h3>
+.. rubric:: Problem
 
 Power users often need to change lots of plot settings all at once. In matplotlib, this requires a bunch of one-liner setters and getters, like `~matplotlib.axes.Axes.set_title`.
 
 This workflow is verbose and often confusing. It can be unclear whether settings can be changed from a `~matplotlib.figure.Figure` setter, an `~matplotlib.axes.Axes` setter, an `~matplotlib.axis.XAxis` or `~matplotlib.axis.YAxis` setter, or a miscellaneous bulk function like `~matplotlib.axes.Axes.tick_params`.
 
-.. raw:: html
-
-   <h3>Solution</h3>
+.. rubric:: Solution
 
 ProPlot introduces the `~proplot.axes.Axes.format` method for changing arbitrary settings **in bulk**.
 Think of this as an improved version of the `~matplotlib.artist.Artist` `~matplotlib.artist.Artist.update` method.
@@ -63,9 +59,7 @@ This massively reduces the amount of code needed to create highly customized fig
 
 Constructor functions
 =====================
-.. raw:: html
-
-   <h3>Problem</h3>
+.. rubric:: Problem
 
 Matplotlib and cartopy introduce a bunch of classes with verbose names like `~matplotlib.ticker.MultipleLocator`, `~matplotlib.ticker.FormatStrFormatter`, and
 `~cartopy.crs.LambertAzimuthalEqualArea`. Since plotting code has a half life of about 30 seconds, typing out all of these extra class names and import statements can be a *major* drag.
@@ -80,9 +74,7 @@ are referenced with "registered" string names,
 as are `basemap projection types <https://matplotlib.org/basemap/users/mapsetup.html>`__.
 If these are already "registered", why not "register" everything else?
 
-.. raw:: html
-
-   <h3>Solution</h3>
+.. rubric:: Solution
 
 In ProPlot, tick locators, tick formatters, axis scales, cartopy projections, colormaps, and property cyclers are all "registered". This is done by creating several **constructor functions** and passing various keyword argument *through* the constructor functions.
 This may seem "unpythonic" but it is absolutely invaluable when making plots.
@@ -114,9 +106,7 @@ applied by ProPlot.
 Automatic dimensions and spacing
 ================================
 
-.. raw:: html
-
-   <h3>Problem</h3>
+.. rubric:: Problem
 
 Matplotlib plots tend to require lots of "tweaking" when you have more than one subplot in the figure. This is partly because you must specify the physical dimensions of the figure, while the dimensions of the *individual subplots* are more important:
 
@@ -125,9 +115,7 @@ Matplotlib plots tend to require lots of "tweaking" when you have more than one 
 
 Matplotlib has a `tight layout <https://matplotlib.org/tutorials/intermediate/tight_layout_guide.html>`__ algorithm to keep you from having to "tweak" the spacing, but the algorithm cannot apply different amounts of spacing between different subplot row and column boundaries. This is a silly limitation that often results in unnecessary whitespace, and can be a major problem when you want to put e.g. a legend on the outside of a subplot.
 
-.. raw:: html
-
-   <h3>Solution</h3>
+.. rubric:: Solution
 
 In ProPlot, you can specify the physical dimensions of a *reference subplot* instead of the figure by passing `axwidth`, `axheight`, and/or `aspect` to `~proplot.subplots.Figure`. The default behavior is ``aspect=1`` and ``axwidth=2`` (inches). If the `aspect ratio mode <https://matplotlib.org/2.0.2/examples/pylab_examples/equal_aspect_ratio.html>`__ for the reference subplot is set to ``'equal'``, as with :ref:`Geographic and polar plots` and `~matplotlib.axes.Axes.imshow` plots, the existing aspect will be used instead.
 
@@ -163,9 +151,7 @@ See :ref:`Subplots features` for details.
 Outer colorbars and legends
 ===========================
 
-.. raw:: html
-
-   <h3>Problem</h3>
+.. rubric:: Problem
 
 In matplotlib, it is difficult to draw `~matplotlib.figure.Figure.colorbar`\ s and
 `~matplotlib.axes.Axes.legend`\ s on the outside of subplots. It is very easy to mess up the subplot aspect ratios and the colorbar widths. It is even *more* difficult to draw `~matplotlib.figure.Figure.colorbar`\ s and `~matplotlib.figure.Figure.legend`\ s that reference more than one subplot:
@@ -179,9 +165,7 @@ In matplotlib, it is difficult to draw `~matplotlib.figure.Figure.colorbar`\ s a
 ..
    Drawing colorbars and legends is pretty clumsy in matplotlib -- especially when trying to draw them outside of the figure. They can be too narrow, too wide, and mess up your subplot aspect ratios.
 
-.. raw:: html
-
-   <h3>Solution</h3>
+.. rubric:: Solution
 
 ProPlot introduces a *brand new engine* for drawing colorbars and legends along the outside of
 individual subplots and along contiguous subplots on the edge of the figure:
@@ -199,25 +183,23 @@ The subplot container class
 ..
    The `~matplotlib.pyplot.subplots` command is useful for generating a scaffolding of * axes all at once. This is generally faster than successive `~matplotlib.subplots.Figure.add_subplot` commands.
 
-.. raw:: html
-
-   <h3>Problem</h3>
+.. rubric:: Problem
 
 In matplotlib, `~matplotlib.pyplot.subplots` returns a 2D `~numpy.ndarray`, a 1D `~numpy.ndarray`, or the axes itself. This inconsistent behavior can be confusing.
 
-.. raw:: html
+.. rubric:: Solution
 
-   <h3>Solution</h3>
-
-In ProPlot, `~proplot.subplots.subplots` returns a `~proplot.subplots.subplot_grid` filled with `~proplot.axes.Axes` instances. This container lets you call arbitrary methods on arbitrary subplots all at once, which can be useful when you want to style your subplots identically (e.g. ``axs.format(tickminor=False)``).
-See :ref:`The basics` for details.
-
+In ProPlot, `~proplot.subplots.subplots` returns a `~proplot.subplots.subplot_grid`
+filled with `~proplot.axes.Axes` instances.
+This container lets you call arbitrary methods on arbitrary subplots all at once, which can be useful when you want to style your subplots identically (e.g. ``axs.format(tickminor=False)``).
 The `~proplot.subplots.subplot_grid` class also
 unifies the behavior of the three possible `matplotlib.pyplot.subplots` return values:
 
 * `~proplot.subplots.subplot_grid` permits 2d indexing, e.g. ``axs[1,0]``. Since `~proplot.subplots.subplots` can generate figures with arbitrarily complex subplot geometry, this 2d indexing is useful only when the arrangement happens to be a clean 2d matrix.
 * Since `~proplot.subplots.subplot_grid` is a `list` subclass, it also supports 1d indexing, e.g. ``axs[1]``. The default order can be switched from row-major to column-major by passing ``order='F'`` to `~proplot.subplots.subplots`.
-* `~proplot.subplots.subplot_grid` behaves like a scalar when it contains just one element. So if you just made a single axes with ``f, axs = plot.subplots()``, calling ``axs[0].command`` is equivalent to ``axs.command``.
+* `~proplot.subplots.subplot_grid` behaves like a scalar when it is singleton. So if you just made a single axes with ``f, axs = plot.subplots()``, calling ``axs[0].command`` is equivalent to ``axs.command``.
+
+See :ref:`The basics` for details.
 
 ..
    This goes with ProPlot's theme of preserving the object-oriented spirit, but making things easier for users.
@@ -225,9 +207,7 @@ unifies the behavior of the three possible `matplotlib.pyplot.subplots` return v
 New and improved plotting methods
 =================================
 
-.. raw:: html
-
-   <h3>Problem</h3>
+.. rubric:: Problem
 
 Certain plotting tasks are quite difficult to accomplish
 with the default matplotlib API. The `seaborn`, `xarray`, and `pandas`
@@ -243,14 +223,28 @@ address.
    For example, when you pass coordinate *centers* to `~matplotlib.axes.Axes.pcolor` and `~matplotlib.axes.Axes.pcolormesh`, they are interpreted as *edges* and the last column and row of your data matrix is ignored. Also, to add labels to `~matplotlib.axes.Axes.contour` and `~matplotlib.axes.Axes.contourf`, you need to call a dedicated `~matplotlib.axes.Axes.clabel` method instead of just using a keyword argument.
 
 
-.. raw:: html
-
-   <h3>Solution</h3>
+.. rubric:: Solution
 
 
-The ProPlot `~proplot.axes.Axes` class
-overrides various plotting methods to make
-your life easier.
+ProPlot adds various
+`seaborn`, `xarray`, and `pandas` features
+to the `~proplot.axes.Axes` plotting methods
+along with several *brand new* features designed to
+make your life easier.
+
+* The new `~proplot.axes.Axes.area` and `~proplot.axes.Axes.areax` methods call `~matplotlib.axes.Axes.fill_between` and `~matplotlib.axes.Axes.fill_betweenx`.  The new `~proplot.axes.Axes.heatmap` method invokes `~matplotlib.axes.Axes.pcolormesh` and draws ticks at the center of each box.
+* The new `~proplot.axes.Axes.parametric` method draws *parametric* line plots, where the parametric coordinate is denoted with colormap colors.
+* `~matplotlib.axes.Axes.bar` and `~matplotlib.axes.Axes.barh` accept 2D arrays and *stack* or *group* successive columns. Soon you will be able to use different colors for positive/negative bars.
+* `~matplotlib.axes.Axes.fill_between` and `~matplotlib.axes.Axes.fill_betweenx` now accept 2D arrays and *stack* or *overlay* successive columns. You can also use different colors for positive/negative data.
+* All :ref:`1d plotting` methods accept a `cycle` keyword argument interpreted by `~proplot.styletools.Cycle` and optional `legend` and `colorbar` keyword arguments for populating legends and colorbars at the specified location with the result of the plotting command. See :ref:`Color cycles` and :ref:`Colorbars and legends`.
+* All :ref:`2d plotting` methods accept a `cmap` keyword argument interpreted by `~proplot.styletools.Colormap`, a `norm` keyword argument interpreted by `~proplot.styletools.Norm`, and an optional `colorbar` keyword argument for drawing on-the-fly colorbars with the resulting mappable. See :ref:`Colormaps` and :ref:`Colorbars and legends`.
+* All :ref:`2d plotting` methods accept a `labels` keyword argument. This is used to draw contour labels or grid box labels on heatmap plots. Labels are colored black or white according to the luminance of the underlying filled contour or grid box color. See :ref:`2d plotting` for details.
+* You can pass ``globe=True`` to all :ref:`2d plotting` methods on `~proplot.axes.ProjAxes` to enforce global coverage for your data array. This interpolates to both *poles* and adds a *cyclic longitude* point.
+* ProPlot fixes the irritating `white-lines-between-filled-contours <https://stackoverflow.com/q/8263769/4970632>`__, `white-lines-between-pcolor-patches <https://stackoverflow.com/q/27092991/4970632>`__, and `white-lines-between-colorbar-patches <https://stackoverflow.com/q/15003353/4970632>`__ vector graphic issues.
+* Matplotlib requires coordinate *centers* for contour plots and *edges* for pcolor plots. If you pass *centers* to pcolor, matplotlib treats them as *edges* and silently trims one row/column of your data. ProPlot changes this behavior:
+
+    * If edges are passed to `~matplotlib.axes.Axes.contour` or `~matplotlib.axes.Axes.contourf`, centers are *calculated* from the edges
+    * If centers are passed to `~matplotlib.axes.Axes.pcolor` or `~matplotlib.axes.Axes.pcolormesh`, edges are *estimated* from the centers.
 
 ..
   ProPlot also provides
@@ -266,47 +260,10 @@ your life easier.
 ..
   All positional arguments for "1d" plotting methods are standardized by `~proplot.wrappers.standardize_1d`. All positional arguments for "2d" plotting methods are standardized by `~proplot.wrappers.standardize_2d`. See :ref:`1d plotting` and :ref:`2d plotting` for details.
 
-* All 1d plotting methods accept a `cycle` keyword argument interpreted by `~proplot.styletools.Cycle` and optional `legend` and `colorbar` keyword arguments for populating legends and colorbars at the specified location with the result of the plotting command. See :ref:`Color cycles` and :ref:`Colorbars and legends`.
-* All 2d plotting methods accept a `cmap` keyword argument interpreted by `~proplot.styletools.Colormap`, a `norm` keyword argument interpreted by `~proplot.styletools.Norm`, and an optional `colorbar` keyword argument for drawing on-the-fly colorbars with the resulting mappable. See :ref:`Colormaps` and :ref:`Colorbars and legends`.
-* All 2d plotting methods now accept a `labels` keyword argument. This is used to draw contour labels or grid box labels on heatmap plots. See :ref:`2d plotting` for details.
-* ProPlot fixes the irritating `white-lines-between-filled-contours <https://stackoverflow.com/q/8263769/4970632>`__, `white-lines-between-pcolor-patches <https://stackoverflow.com/q/27092991/4970632>`__, and `white-lines-between-colorbar-patches <https://stackoverflow.com/q/15003353/4970632>`__ observed when saving vector graphics.
-* Matplotlib requires coordinate *centers* for contour plots and *edges* for pcolor plots. If you pass *centers* to pcolor, matplotlib treats them as *edges* and silently trims one row/column of your data. ProPlot changes this behavior:
-
-    * If edges are passed to `~matplotlib.axes.Axes.contour` or `~matplotlib.axes.Axes.contourf`, centers are *calculated* from the edges
-    * If centers are passed to `~matplotlib.axes.Axes.pcolor` or `~matplotlib.axes.Axes.pcolormesh`, edges are *estimated* from the centers.
-
-
-ProPlot also duplicates various `seaborn`, `xarray`, and `pandas` features
-using *new* axes methods and by overriding *old* axes
-methods. These changes are described in the following table.
-
-=====================================  ====  =============================================================================================================================================================================================
-Plotting method                        New?  Description
-=====================================  ====  =============================================================================================================================================================================================
-`~proplot.axes.Axes.area`              ✓     Alias for `~matplotlib.axes.Axes.fill_between`.
-`~proplot.axes.Axes.areax`             ✓     Alias for `~matplotlib.axes.Axes.fill_betweenx`.
-`~proplot.axes.Axes.parametric`        ✓     Draws *parametric* line plots, where the parametric coordinate is denoted with colormap colors.
-`~matplotlib.axes.Axes.bar`            ✗     Now accepts 2D arrays, *stacks* or *groups* successive columns. Soon will be able to use different colors for positive/negative data.
-`~matplotlib.axes.Axes.barh`           ✗     As with `~matplotlib.axes.Axes.bar`, but for horizontal bars.
-`~matplotlib.axes.Axes.fill_between`   ✗     Now accepts 2D arrays, *stacks* or *overlays* successive columns. Also can use different colors for positive/negative data.
-`~matplotlib.axes.Axes.fill_betweenx`  ✗     As with `~matplotlib.axes.Axes.fill_between`, but for horizontal fills.
-`~proplot.axes.Axes.heatmap`           ✓     Invokes `~matplotlib.axes.Axes.pcolormesh` and puts ticks at the center of each box.
-`~matplotlib.axes.Axes.contour`        ✗     Add contour labels by passing ``labels=True``, interpolate to global coverage for `~proplot.axes.ProjAxes` by passing ``globe=True``.
-`~matplotlib.axes.Axes.contourf`       ✗     As with `~matplotlib.axes.Axes.contour`. Labels are colored black or white according to the filled contour's luminance.
-`~matplotlib.axes.Axes.pcolor`         ✗     Add gridbox labels by passing ``labels=True``, interpolate to global coverage by passing ``globe=True``.  Labels are colored black or white according to the underlying box's luminance.
-`~matplotlib.axes.Axes.pcolormesh`     ✗     As with `~matplotlib.axes.Axes.pcolor`.
-=====================================  ====  =============================================================================================================================================================================================
-
-
-..
-   * `~proplot.axes.Axes.area` plots can be assigned different colors for negative and positive values. This will also be added to `~matplotlib.axes.Axes.bar` soon.
-
 Xarray and pandas integration
 =============================
 
-.. raw:: html
-
-   <h3>Problem</h3>
+.. rubric:: Problem
 
 When you pass the array-like `xarray.DataArray`, `pandas.DataFrame`, and `pandas.Series` containers to matplotlib plotting commands, the metadata is ignored. To create plots that are automatically labeled with this metadata, you must use
 the dedicated `xarray.DataArray.plot`, `pandas.DataFrame.plot`, and `pandas.Series.plot`
@@ -318,9 +275,7 @@ These tools also introduce features that would be useful additions to matplotlib
 in their *own* right, without requiring special data containers and
 an entirely separate API.
 
-.. raw:: html
-
-   <h3>Solution</h3>
+.. rubric:: Solution
 
 ProPlot *reproduces* most of the `xarray.DataArray.plot`, `pandas.DataFrame.plot`, and `pandas.Series.plot` features on the `~proplot.axes.Axes` plotting methods themselves.
 
@@ -338,9 +293,7 @@ and on-the-fly colorbars and legends from the
 Cartopy and basemap integration
 ===============================
 
-.. raw:: html
-
-   <h3>Problem</h3>
+.. rubric:: Problem
 
 There are two widely-used engines
 for plotting geophysical data with matplotlib: `cartopy` and `~mpl_toolkits.basemap`.
@@ -352,9 +305,7 @@ Also, `cartopy` and `~mpl_toolkits.basemap` plotting commands assume
 choice is very frustrating, since geophysical data are usually stored in
 longitude-latitude or "Plate Carrée" coordinates.
 
-.. raw:: html
-
-   <h3>Solution</h3>
+.. rubric:: Solution
 
 ProPlot integrates various `cartopy` and `~mpl_toolkits.basemap` features
 into the `~proplot.axes.ProjAxes` `~proplot.axes.ProjAxes.format` method.
@@ -381,9 +332,7 @@ the "blue marble". But once these are added to cartopy, ProPlot may remove the `
 Colormaps and property cycles
 =============================
 
-.. raw:: html
-
-   <h3>Problem</h3>
+.. rubric:: Problem
 
 In matplotlib, colormaps are implemented with the `~matplotlib.colors.ListedColormap` and `~matplotlib.colors.LinearSegmentedColormap` classes.
 They are hard to edit and hard to create from scratch.
@@ -391,9 +340,7 @@ They are hard to edit and hard to create from scratch.
 ..
    Colormap identification is also suboptimal, since the names are case-sensitive, and reversed versions of each colormap are not guaranteed to exist.
 
-.. raw:: html
-
-   <h3>Solution</h3>
+.. rubric:: Solution
 
 In ProPlot, it is easy to manipulate colormaps and property cycles:
 
@@ -406,9 +353,7 @@ Importing ProPlot also makes colormap names *case-insensitive* and *reviersible*
 
 Smarter colormap normalization
 ==============================
-.. raw:: html
-
-   <h3>Problem</h3>
+.. rubric:: Problem
 
 In matplotlib, when ``extend='min'``, ``extend='max'``, or ``extend='neither'`` is passed to `~matplotlib.figure.Figure.colorbar` , the colormap colors reserved for "out-of-bounds" values are truncated.
 
@@ -420,9 +365,7 @@ This approach cannot be fine-tuned and creates an unnecessary copy of the colorm
 
 It is clear that the task discretizing colormap colors should be left to the **normalizer**, not the colormap itself. Matplotlib provides `~matplotlib.colors.BoundaryNorm` for this purpose, but it is seldom used and its features are limited.
 
-.. raw:: html
-
-   <h3>Solution</h3>
+.. rubric:: Solution
 
 In ProPlot, all colormap visualizations are automatically discretized with the `~proplot.styletools.BinNorm` class. This reads the `extend` property passed to your plotting command and chooses colormap indices so that your colorbar levels *always* traverse the full range of colormap colors.
 
@@ -430,18 +373,14 @@ In ProPlot, all colormap visualizations are automatically discretized with the `
 
 Bulk global settings
 ====================
-.. raw:: html
-
-   <h3>Problem</h3>
+.. rubric:: Problem
 
 In matplotlib, there are several `~matplotlib.rcParams` that you often
 want to set *all at once*, like the tick lengths and spine colors.
 It is also often desirable to change these settings for *individual subplots*
 or *individual blocks of code* rather than globally.
 
-.. raw:: html
-
-   <h3>Solution</h3>
+.. rubric:: Solution
 
 In ProPlot, you can use the `~proplot.rctools.rc` object to
 change lots of settings at once with convenient shorthands.
@@ -469,9 +408,7 @@ Key            Description                                    Children
 
 Physical units engine
 =====================
-.. raw:: html
-
-   <h3>Problem</h3>
+.. rubric:: Problem
 
 Matplotlib requires users to use
 *inches* for the figure size `figsize`. This must be confusing for users outside
@@ -483,9 +420,7 @@ for the column and row spacing `wspace` and `hspace`.
 Relative units tend to require "tinkering" with meaningless numbers until you find the
 right one... and then if your figure size changes, you have to adjust them again.
 
-.. raw:: html
-
-   <h3>Solution</h3>
+.. rubric:: Solution
 
 ProPlot introduces the physical units engine `~proplot.utils.units`
 for interpreting `figsize`, `width`, `height`, `axwidth`, `axheight`,
@@ -505,18 +440,14 @@ See :ref:`Configuring proplot` for details.
 
 Working with fonts
 ==================
-.. raw:: html
-
-   <h3>Problem</h3>
+.. rubric:: Problem
 
 In matplotlib, the default font is DejaVu Sans. In this developer's humble opinion, DejaVu Sans is fugly AF. It is also really tricky to work with custom fonts in matplotlib.
 
 ..
    This font is not very aesthetically pleasing.
 
-.. raw:: html
-
-   <h3>Solution</h3>
+.. rubric:: Solution
 
 ProPlot comes packaged with several additional fonts. The new default font is Helvetica. Albeit somewhat overused, this is a tried and tested, aesthetically pleasing sans serif font.
 
