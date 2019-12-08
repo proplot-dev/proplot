@@ -828,13 +828,10 @@ class PowerTransform(mtransforms.Transform):
     def inverted(self):
         return InvertedPowerTransform(self._power, self.minpos)
 
-    def transform(self, a):
+    def transform_non_affine(self, a):
         aa = np.array(a)
         aa[aa <= self.minpos] = self.minpos  # necessary
         return np.power(np.array(a), self._power)
-
-    def transform_non_affine(self, a):
-        return self.transform(a)
 
 
 class InvertedPowerTransform(mtransforms.Transform):
@@ -851,13 +848,10 @@ class InvertedPowerTransform(mtransforms.Transform):
     def inverted(self):
         return PowerTransform(self._power, self.minpos)
 
-    def transform(self, a):
+    def transform_non_affine(self, a):
         aa = np.array(a)
         aa[aa <= self.minpos] = self.minpos  # necessary
         return np.power(np.array(a), 1 / self._power)
-
-    def transform_non_affine(self, a):
-        return self.transform(a)
 
 
 class ExpScale(_ScaleBase, mscale.ScaleBase):
@@ -929,11 +923,8 @@ class ExpTransform(mtransforms.Transform):
     def inverted(self):
         return InvertedExpTransform(self._a, self._b, self._c, self.minpos)
 
-    def transform(self, a):
-        return self._c * np.power(self._a, self._b * np.array(a))
-
     def transform_non_affine(self, a):
-        return self.transform(a)
+        return self._c * np.power(self._a, self._b * np.array(a))
 
 
 class InvertedExpTransform(mtransforms.Transform):
@@ -952,13 +943,10 @@ class InvertedExpTransform(mtransforms.Transform):
     def inverted(self):
         return ExpTransform(self._a, self._b, self._c, self.minpos)
 
-    def transform(self, a):
+    def transform_non_affine(self, a):
         aa = np.array(a)
         aa[aa <= self.minpos] = self.minpos  # necessary
         return np.log(aa / self._c) / (self._b * np.log(self._a))
-
-    def transform_non_affine(self, a):
-        return self.transform(a)
 
 
 class MercatorLatitudeScale(_ScaleBase, mscale.ScaleBase):
@@ -1203,7 +1191,7 @@ class CutoffTransform(mtransforms.Transform):
         return CutoffTransform(threshs, scales,
                                zero_scale_dists=zero_scale_dists)
 
-    def transform(self, a):
+    def transform_non_affine(self, a):
         a = np.atleast_1d(a)
         threshs = self._threshs
         scales = self._scales
@@ -1215,9 +1203,6 @@ class CutoffTransform(mtransforms.Transform):
                 dists[:i].sum() + (ai - threshs[i - 1]) / scales[i - 1]
                 for i, ai in zip(idxs, a)
             ])
-
-    def transform_non_affine(self, a):
-        return self.transform(a)
 
 
 class InverseScale(_ScaleBase, mscale.ScaleBase):
@@ -1262,15 +1247,12 @@ class InverseTransform(mtransforms.Transform):
     def inverted(self):
         return InverseTransform()
 
-    def transform(self, a):
+    def transform_non_affine(self, a):
         a = np.array(a)
         # f = np.abs(a) <= self.minpos # attempt for negative-friendly
         # aa[f] = np.sign(a[f])*self.minpos
         with np.errstate(divide='ignore', invalid='ignore'):
             return 1.0 / a
-
-    def transform_non_affine(self, a):
-        return self.transform(a)
 
 
 #: The registered scale names and their associated
