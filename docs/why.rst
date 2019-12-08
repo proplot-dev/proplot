@@ -118,8 +118,7 @@ Matplotlib has a `tight layout <https://matplotlib.org/tutorials/intermediate/ti
 .. rubric:: Solution
 
 In ProPlot, you can specify the physical dimensions of a *reference subplot* instead of the figure by passing `axwidth`, `axheight`, and/or `aspect` to `~proplot.subplots.Figure`. The default behavior is ``aspect=1`` and ``axwidth=2`` (inches). If the `aspect ratio mode <https://matplotlib.org/2.0.2/examples/pylab_examples/equal_aspect_ratio.html>`__ for the reference subplot is set to ``'equal'``, as with :ref:`Geographic and polar plots` and `~matplotlib.axes.Axes.imshow` plots, the existing aspect will be used instead.
-
-Figure dimensions are calculated to accommodate subplot geometry and tight layout spacing as follows:
+Figure dimensions are constrained as follows:
 
 * If `axwidth` or `axheight` are used, the figure width and height are calculated automatically.
 * If `width` is used, the figure height is calculated automatically.
@@ -239,7 +238,6 @@ make your life easier.
 * All :ref:`1d plotting` methods accept a `cycle` keyword argument interpreted by `~proplot.styletools.Cycle` and optional `legend` and `colorbar` keyword arguments for populating legends and colorbars at the specified location with the result of the plotting command. See :ref:`Color cycles` and :ref:`Colorbars and legends`.
 * All :ref:`2d plotting` methods accept a `cmap` keyword argument interpreted by `~proplot.styletools.Colormap`, a `norm` keyword argument interpreted by `~proplot.styletools.Norm`, and an optional `colorbar` keyword argument for drawing on-the-fly colorbars with the resulting mappable. See :ref:`Colormaps` and :ref:`Colorbars and legends`.
 * All :ref:`2d plotting` methods accept a `labels` keyword argument. This is used to draw contour labels or grid box labels on heatmap plots. Labels are colored black or white according to the luminance of the underlying filled contour or grid box color. See :ref:`2d plotting` for details.
-* You can pass ``globe=True`` to all :ref:`2d plotting` methods on `~proplot.axes.ProjAxes` to enforce global coverage for your data array. This interpolates to both *poles* and adds a *cyclic longitude* point.
 * ProPlot fixes the irritating `white-lines-between-filled-contours <https://stackoverflow.com/q/8263769/4970632>`__, `white-lines-between-pcolor-patches <https://stackoverflow.com/q/27092991/4970632>`__, and `white-lines-between-colorbar-patches <https://stackoverflow.com/q/15003353/4970632>`__ vector graphic issues.
 * Matplotlib requires coordinate *centers* for contour plots and *edges* for pcolor plots. If you pass *centers* to pcolor, matplotlib treats them as *edges* and silently trims one row/column of your data. ProPlot changes this behavior:
 
@@ -278,14 +276,13 @@ an entirely separate API.
 .. rubric:: Solution
 
 ProPlot *reproduces* most of the `xarray.DataArray.plot`, `pandas.DataFrame.plot`, and `pandas.Series.plot` features on the `~proplot.axes.Axes` plotting methods themselves.
-
 Passing an `xarray.DataArray`, `pandas.DataFrame`, or `pandas.Series` through
 any plotting method automatically updates the
 axis tick labels, axis labels, subplot titles, and colorbar and legend labels
 from the metadata.  This can be disabled by passing
 ``autoformat=False`` to the plotting method or to `~proplot.subplots.subplots`.
 
-And as described in :ref:`New and improved plotting methods`, ProPlot implements certain
+Also, as described in :ref:`New and improved plotting methods`, ProPlot implements certain
 features like grouped bar plots, layered area plots, heatmap plots,
 and on-the-fly colorbars and legends from the
 `xarray` and `pandas` APIs directly on the `~proplot.axes.Axes` class.
@@ -355,15 +352,13 @@ Smarter colormap normalization
 ==============================
 .. rubric:: Problem
 
-In matplotlib, when ``extend='min'``, ``extend='max'``, or ``extend='neither'`` is passed to `~matplotlib.figure.Figure.colorbar` , the colormap colors reserved for "out-of-bounds" values are truncated.
-
-The problem is that matplotlib discretizes colormaps by generating a low-resolution lookup table (see `~matplotlib.colors.LinearSegmentedColormap` for details).
+In matplotlib, when ``extend='min'``, ``extend='max'``, or ``extend='neither'`` is passed to `~matplotlib.figure.Figure.colorbar` , the colormap colors reserved for "out-of-bounds" values are truncated. The problem is that matplotlib discretizes colormaps by generating a low-resolution lookup table (see `~matplotlib.colors.LinearSegmentedColormap` for details).
 This approach cannot be fine-tuned and creates an unnecessary copy of the colormap.
 
 ..
    and prevents you from using the resulting colormap for plots with different numbers of levels.
 
-It is clear that the task discretizing colormap colors should be left to the **normalizer**, not the colormap itself. Matplotlib provides `~matplotlib.colors.BoundaryNorm` for this purpose, but it is seldom used and its features are limited.
+It is clear that the task discretizing colormap colors should be left to the *normalizer*, not the colormap itself. Matplotlib provides `~matplotlib.colors.BoundaryNorm` for this purpose, but it is seldom used and its features are limited.
 
 .. rubric:: Solution
 
@@ -442,16 +437,16 @@ Working with fonts
 ==================
 .. rubric:: Problem
 
-In matplotlib, the default font is DejaVu Sans. In this developer's humble opinion, DejaVu Sans is fugly AF. It is also really tricky to work with custom fonts in matplotlib.
+In matplotlib, the default font is DejaVu Sans. In this developer's humble opinion, DejaVu Sans is fugly AF. It is also really tricky to add custom fonts to matplotlib.
 
 ..
    This font is not very aesthetically pleasing.
 
 .. rubric:: Solution
 
-ProPlot comes packaged with several additional fonts. The new default font is Helvetica. Albeit somewhat overused, this is a tried and tested, aesthetically pleasing sans serif font.
+ProPlot comes packaged with several additional fonts. The new default font is Helvetica; albeit somewhat overused, this is a tried and tested, aesthetically pleasing sans serif font.
 
-ProPlot adds fonts to matplotlib by making use of a completely undocumented feature: the ``$TTFPATH`` environment variable (matplotlib adds ``.ttf`` and ``.otf`` font files from folders listed in ``$TTFPATH``). You can also use *your own* font files by dropping them in ``~/.proplot/fonts``.
+Matplotlib adds font files from paths listed in the ``$TTFPATH`` environment variable (surprisingly, this feature is undocumented!), so ProPlot populates this variable. This also permits using *your own* font files by dropping them in the ``~/.proplot/fonts`` folder.
 
 ..
    ...and much more!
