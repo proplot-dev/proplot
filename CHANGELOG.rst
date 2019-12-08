@@ -19,7 +19,7 @@ ProPlot v0.2.6 (2019-12-XX)
 ===========================
 Bug fixes
 ---------
-- Fix issue where twin axes are drawn *twice*.
+- Fix issue where twin axes are drawn *twice* (:commit:`56145122`).
 
 
 ProPlot v0.2.5 (2019-12-07)

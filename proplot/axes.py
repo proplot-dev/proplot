@@ -2547,10 +2547,8 @@ class XYAxes(Axes):
         # Cannot wrap twiny() because we want to use XYAxes, not
         # matplotlib Axes. Instead use hidden method _make_twin_axes.
         # See https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_subplots.py  # noqa
-        if self._altx_child:
-            raise RuntimeError('No more than *two* twin axes!')
-        if self._altx_parent:
-            raise RuntimeError('This *is* a twin axes!')
+        if self._altx_child or self._altx_parent:
+            raise RuntimeError('No more than *two* twin axes are allowed.')
         with self.figure._unlock():
             ax = self._make_twin_axes(sharey=self, projection='xy')
         # shared axes must have matching autoscale
@@ -2560,15 +2558,13 @@ class XYAxes(Axes):
         ax._altx_parent = self
         self._altx_overrides()
         ax._altx_overrides()
-        self.add_child_axes(ax)
+        self.add_child_axes(ax)  # to facilitate tight layout
         self.figure._axstack.remove(ax)  # or gets drawn twice!
         return ax
 
     def alty(self):
-        if self._alty_child:
-            raise RuntimeError('No more than *two* twin axes!')
-        if self._alty_parent:
-            raise RuntimeError('This *is* a twin axes!')
+        if self._alty_child or self._alty_parent:
+            raise RuntimeError('No more than *two* twin axes are allowed.')
         with self.figure._unlock():
             ax = self._make_twin_axes(sharex=self, projection='xy')
         # shared axes must have matching autoscale
@@ -2578,7 +2574,7 @@ class XYAxes(Axes):
         ax._alty_parent = self
         self._alty_overrides()
         ax._alty_overrides()
-        self.add_child_axes(ax)
+        self.add_child_axes(ax)  # to facilitate tight layout
         self.figure._axstack.remove(ax)  # or gets drawn twice!
         return ax
 
