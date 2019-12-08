@@ -2388,14 +2388,6 @@ def Norm(norm, levels=None, **kwargs):
         raise ValueError(f'Unknown norm {norm_out!r}.')
     return norm_out
 
-# ------------------------------------------------------------------------------
-# Meta-normalizer class for discrete levels
-# ------------------------------------------------------------------------------
-# See this post: https://stackoverflow.com/a/48614231/4970632
-# WARNING: Many methods in ColorBarBase tests for class membership, crucially
-# including _process_values(), which if it doesn't detect BoundaryNorm will
-# end up trying to infer boundaries from inverse() method. So make it parent.
-
 
 class BinNorm(mcolors.BoundaryNorm):
     """
@@ -2429,6 +2421,10 @@ class BinNorm(mcolors.BoundaryNorm):
        is determined with `numpy.searchsorted`, and its corresponding
        colormap coordinate is selected using this index.
     """
+    # See this post: https://stackoverflow.com/a/48614231/4970632
+    # WARNING: Must be child of BoundaryNorm. Many methods in ColorBarBase
+    # test for class membership, crucially including _process_values(), which
+    # if it doesn't detect BoundaryNorm will try to use BinNorm.inverse().
     def __init__(self, levels, norm=None, clip=False,
                  step=1.0, extend='neither'):
         """
