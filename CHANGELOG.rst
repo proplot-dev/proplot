@@ -24,7 +24,7 @@ ProPlot v0.3.0 (2020-01-##)
   automatically calculate default non-tight spacing using `~proplot.subplots._get_space`
   based on current tick lengths, label sizes, etc.
 - Rename `basemap_defaults` to `~proplot.projs.basemap_kwargs` and `cartopy_projs`
-  to `~proplot.projs.cartopy_names`.
+  to `~proplot.projs.cartopy_names` (:commit:`431a06ce`).
 
 .. rubric:: Features
 
