@@ -954,93 +954,6 @@ class InvertedExpTransform(mtransforms.Transform):
         return self.transform(a)
 
 
-class CutoffScale(_ScaleBase, mscale.ScaleBase):
-    """
-    Axis scale with arbitrary successive thresholds between which are
-    discrete jumps, "accelerations", or "decelerations". Adapted from `this \
-stackoverflow post <https://stackoverflow.com/a/5669301/4970632>`__.
-    """
-    name = 'cutoff'
-    """The registered scale name."""
-
-    def __init__(self, *args, **kwargs):
-        """
-        Parameters
-        ----------
-        *args : (thresh_1, scale_1, ..., thresh_N, [scale_N]), optional
-            Sequence of thresholds and scales. If the final scale is omitted
-            (i.e. you passed an odd number of args) it is set to ``1``.
-
-            * If ``scale_i < 1``, the axis is decelerated from ``thresh_i`` to
-              ``thresh_i+1`` or, if ``i == N``, everywhere above ``thresh_i``.
-            * If ``scale_i > 1``, the axis is accelerated from ``thresh_i`` to
-              ``thresh_i+1`` or, if ``i == N``, everywhere above ``thresh_i``.
-            * If ``scale_i == np.inf``, the axis *discretely jumps* from
-              ``thresh_i`` to ``thresh_i+1``.
-
-        Example
-        -------
-
-        >>> import proplot as plot
-        ... import numpy as np
-        ... thresh = plot.CutoffScale(10, 2)  # go "twice as fast" after 10
-        ... skip = plot.CutoffScale(10, 0.5, 20)  # zoom in between 10 and 20
-        ... jump = plot.CutoffScale(10, np.inf, 20)  # jump from 10 to 20
-
-        """
-        super().__init__()
-        args = list(args)
-        if len(args) % 2 == 1:
-            args.append(1)
-        threshs = args[::2]
-        scales = args[1::2]
-        self._transform = CutoffTransform(threshs, scales)
-
-
-class CutoffTransform(mtransforms.Transform):
-    input_dims = 1
-    output_dims = 1
-    has_inverse = True
-    is_separable = True
-
-    def __init__(self, threshs, scales):
-        super().__init__()
-        if any(np.diff(threshs) <= 0):
-            raise ValueError(f'Thresholds must be monotonically increasing.')
-        if any(np.asarray(scales) < 0):
-            raise ValueError(f'Scales must be greater than or equal to zero.')
-        self._threshs = threshs
-        self._scales = scales
-        with np.errstate(divide='ignore'):
-            self._dists = np.concatenate((
-                threshs[:1], np.diff(threshs) / scales[:-1]))
-
-    def inverted(self):
-        # Use same algorithm for inversion!
-        scales = self._scales
-        dists = self._dists
-        threshs = np.cumsum(dists)  # thresholds in transformed space
-        with np.errstate(divide='ignore'):
-            scales = 1 / np.array(scales)  # new scales are just inverse
-        return CutoffTransform(threshs, scales)
-
-    def transform(self, a):
-        a = np.atleast_1d(a)
-        threshs = self._threshs
-        scales = self._scales
-        dists = self._dists
-        idxs = np.searchsorted(threshs, a)  # array of indices
-        with np.errstate(divide='ignore'):
-            return np.array([
-                ai if i == 0 else
-                dists[:i].sum() + (ai - threshs[i - 1]) / scales[i - 1]
-                for i, ai in zip(idxs, a)
-            ])
-
-    def transform_non_affine(self, a):
-        return self.transform(a)
-
-
 class MercatorLatitudeScale(_ScaleBase, mscale.ScaleBase):
     """
     Scales axis as with latitude in the `Mercator projection \
@@ -1199,6 +1112,93 @@ class InvertedSineLatitudeTransform(mtransforms.Transform):
         # NOTE: Using ma.arcsin below caused super weird errors, dun do that
         aa = a.copy()
         return np.rad2deg(np.arcsin(aa))
+
+
+class CutoffScale(_ScaleBase, mscale.ScaleBase):
+    """
+    Axis scale with arbitrary successive thresholds between which are
+    discrete jumps, "accelerations", or "decelerations". Adapted from `this \
+stackoverflow post <https://stackoverflow.com/a/5669301/4970632>`__.
+    """
+    name = 'cutoff'
+    """The registered scale name."""
+
+    def __init__(self, *args, **kwargs):
+        """
+        Parameters
+        ----------
+        *args : (thresh_1, scale_1, ..., thresh_N, [scale_N]), optional
+            Sequence of thresholds and scales. If the final scale is omitted
+            (i.e. you passed an odd number of args) it is set to ``1``.
+
+            * If ``scale_i < 1``, the axis is decelerated from ``thresh_i`` to
+              ``thresh_i+1`` or, if ``i == N``, everywhere above ``thresh_i``.
+            * If ``scale_i > 1``, the axis is accelerated from ``thresh_i`` to
+              ``thresh_i+1`` or, if ``i == N``, everywhere above ``thresh_i``.
+            * If ``scale_i == np.inf``, the axis *discretely jumps* from
+              ``thresh_i`` to ``thresh_i+1``.
+
+        Example
+        -------
+
+        >>> import proplot as plot
+        ... import numpy as np
+        ... thresh = plot.CutoffScale(10, 2)  # go "twice as fast" after 10
+        ... skip = plot.CutoffScale(10, 0.5, 20)  # zoom in between 10 and 20
+        ... jump = plot.CutoffScale(10, np.inf, 20)  # jump from 10 to 20
+
+        """
+        super().__init__()
+        args = list(args)
+        if len(args) % 2 == 1:
+            args.append(1)
+        threshs = args[::2]
+        scales = args[1::2]
+        self._transform = CutoffTransform(threshs, scales)
+
+
+class CutoffTransform(mtransforms.Transform):
+    input_dims = 1
+    output_dims = 1
+    has_inverse = True
+    is_separable = True
+
+    def __init__(self, threshs, scales):
+        super().__init__()
+        if any(np.diff(threshs) <= 0):
+            raise ValueError(f'Thresholds must be monotonically increasing.')
+        if any(np.asarray(scales) < 0):
+            raise ValueError(f'Scales must be greater than or equal to zero.')
+        self._threshs = threshs
+        self._scales = scales
+        with np.errstate(divide='ignore'):
+            self._dists = np.concatenate((
+                threshs[:1], np.diff(threshs) / scales[:-1]))
+
+    def inverted(self):
+        # Use same algorithm for inversion!
+        scales = self._scales
+        dists = self._dists
+        threshs = np.cumsum(dists)  # thresholds in transformed space
+        with np.errstate(divide='ignore'):
+            scales = 1 / np.array(scales)  # new scales are just inverse
+        return CutoffTransform(threshs, scales)
+
+    def transform(self, a):
+        a = np.atleast_1d(a)
+        threshs = self._threshs
+        scales = self._scales
+        dists = self._dists
+        idxs = np.searchsorted(threshs, a)  # array of indices
+        with np.errstate(divide='ignore'):
+            return np.array([
+                ai if i == 0 else
+                dists[:i].sum() + (ai - threshs[i - 1]) / scales[i - 1]
+                for i, ai in zip(idxs, a)
+            ])
+
+    def transform_non_affine(self, a):
+        return self.transform(a)
 
 
 class InverseScale(_ScaleBase, mscale.ScaleBase):
