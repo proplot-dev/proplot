@@ -1160,43 +1160,48 @@ class CutoffTransform(mtransforms.Transform):
     has_inverse = True
     is_separable = True
 
-    def __init__(self, threshs, scales, zero_scale_dists=None):
-        # The zero_scale_dists array is used to fill in distances where scales
-        # are zero. Used for inverting transorms with discrete jumps.
+    def __init__(self, threshs, scales, zero_dists=None):
+        # The zero_dists array is used to fill in distances where scales and
+        # threshold steps are zero. Used for inverting discrete transorms.
         super().__init__()
-        if len(threshs) != len(scales):
+        dists = np.diff(threshs)
+        scales = np.asarray(scales)
+        threshs = np.asarray(threshs)
+        if len(scales) != len(threshs):
             raise ValueError(f'Got {len(threshs)} but {len(scales)} scales.')
-        if any(np.diff(threshs) <= 0):
-            raise ValueError(f'Thresholds must be monotonically increasing.')
-        if scales[-1] == np.inf:
-            raise ValueError(f'Final scale cannot be numpy.inf.')
-        if any(np.asarray(scales) < 0) or (
-                any(np.asarray(scales) == 0) and zero_scale_dists is None):
-            raise ValueError(f'Scales must be greater than zero.')
-        self._threshs = threshs
+        if any(scales < 0):
+            raise ValueError('Scales must be non negative.')
+        if scales[-1] in (0, np.inf):
+            raise ValueError('Final scale must be finite.')
+        if any(dists < 0):
+            raise ValueError('Thresholds must be monotonically increasing.')
+        if any((dists == 0) | (scales == 0)) and (
+                any((dists == 0) != (scales == 0)) or zero_dists is None):
+            raise ValueError(
+                'Got zero scales and distances in different places or '
+                'zero_dists is None.')
         self._scales = scales
-        with np.errstate(divide='ignore'):
-            dists = np.concatenate((
-                threshs[:1], np.diff(threshs) / scales[:-1]))
-            if zero_scale_dists is not None:
-                dists[np.asarray(scales[:-1]) == 0] = zero_scale_dists
+        self._threshs = threshs
+        with np.errstate(divide='ignore', invalid='ignore'):
+            dists = np.concatenate((threshs[:1], dists / scales[:-1]))
+            if zero_dists is not None:
+                dists[scales[:-1] == 0] = zero_dists
             self._dists = dists
 
     def inverted(self):
         # Use same algorithm for inversion!
         threshs = np.cumsum(self._dists)  # thresholds in transformed space
         with np.errstate(divide='ignore', invalid='ignore'):
-            scales = 1 / np.asarray(self._scales)  # new scales are inverse
-        zero_scale_dists = np.diff(self._threshs)[scales[:-1] == 0]
-        return CutoffTransform(threshs, scales,
-                               zero_scale_dists=zero_scale_dists)
+            scales = 1 / self._scales  # new scales are inverse
+        zero_dists = np.diff(self._threshs)[scales[:-1] == 0]
+        return CutoffTransform(threshs, scales, zero_dists=zero_dists)
 
     def transform_non_affine(self, a):
         # Cannot do list comprehension because this method sometimes
         # received non-1d arrays
-        threshs = self._threshs
-        scales = self._scales
         dists = self._dists
+        scales = self._scales
+        threshs = self._threshs
         aa = np.array(a)  # copy
         with np.errstate(divide='ignore', invalid='ignore'):
             for i, ai in np.ndenumerate(a):
