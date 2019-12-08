@@ -1586,7 +1586,7 @@ _twin_kwargs = (
     'label', 'locator', 'formatter', 'ticks', 'ticklabels',
     'minorlocator', 'minorticks', 'tickminor',
     'ticklen', 'tickrange', 'tickdir', 'ticklabeldir', 'tickrotation',
-    'bounds', 'margin', 'color', 'linewidth', 'grid', 'gridminor', 'gridcolor',
+    'bounds', 'margin', 'color', 'linewidth', 'grid', 'gridminor',
 )
 
 _dual_doc = """
@@ -1683,6 +1683,8 @@ def _parse_alt(x, kwargs):
             _warn_proplot(
                 f'Twin axis keyword arg {key!r} is deprecated. '
                 f'Use {key[1:]!r} instead.')
+            kw_out[key] = value
+        elif key in RC_NODOTSNAMES:
             kw_out[key] = value
         else:
             kw_bad[key] = value
@@ -2578,44 +2580,44 @@ class XYAxes(Axes):
             super().format(**kwargs)
 
     def altx(self, **kwargs):
-        """This docstring is replaced below."""
+        """Docstring is replaced below."""
         # Cannot wrap twiny() because we want to use XYAxes, not
         # matplotlib Axes. Instead use hidden method _make_twin_axes.
-        # See: https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_subplots.py  # noqa
-        if self._altx_child:
-            raise RuntimeError('No more than *two* twin axes!')
-        if self._altx_parent:
-            raise RuntimeError('This *is* a twin axes!')
+        # See https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_subplots.py  # noqa
+        if self._altx_child or self._altx_parent:
+            raise RuntimeError('No more than *two* twin axes are allowed.')
         ax = self._make_twin_axes(sharey=self, projection='xy')
+        # shared axes must have matching autoscale
         ax.set_autoscaley_on(self.get_autoscaley_on())
         ax.grid(False)
         self._altx_child = ax
         ax._altx_parent = self
         self._altx_overrides()
         ax._altx_overrides()
-        self.add_child_axes(ax)
+        self.add_child_axes(ax)  # to facilitate tight layout
+        self.figure._axstack.remove(ax)  # or gets drawn twice!
         ax.format(**_parse_alt('x', kwargs))
         return ax
 
     def alty(self, **kwargs):
-        """This docstring is replaced below."""
-        if self._alty_child:
-            raise RuntimeError('No more than *two* twin axes!')
-        if self._alty_parent:
-            raise RuntimeError('This *is* a twin axes!')
+        """Docstring is replaced below."""
+        if self._alty_child or self._alty_parent:
+            raise RuntimeError('No more than *two* twin axes are allowed.')
         ax = self._make_twin_axes(sharex=self, projection='xy')
+        # shared axes must have matching autoscale
         ax.set_autoscalex_on(self.get_autoscalex_on())
         ax.grid(False)
         self._alty_child = ax
         ax._alty_parent = self
         self._alty_overrides()
         ax._alty_overrides()
-        self.add_child_axes(ax)
+        self.add_child_axes(ax)  # to facilitate tight layout
+        self.figure._axstack.remove(ax)  # or gets drawn twice!
         ax.format(**_parse_alt('y', kwargs))
         return ax
 
     def dualx(self, transform, transform_kw=None, **kwargs):
-        """This docstring is replaced below."""
+        """Docstring is replaced below."""
         # The axis scale is used to transform units on the left axis, linearly
         # spaced, to units on the right axis... so the right scale must scale
         # its data with the *inverse* of this transform. We do this below.
@@ -2631,7 +2633,7 @@ class XYAxes(Axes):
         return self.altx(**kwargs)
 
     def dualy(self, transform, transform_kw=None, **kwargs):
-        """This docstring is replaced below."""
+        """Docstring is replaced below."""
         funcscale_funcs, funcscale_kw = _parse_transform(
             transform, transform_kw)
         self._dualy_data = (funcscale_funcs, funcscale_kw)
@@ -2665,11 +2667,11 @@ class XYAxes(Axes):
         return super().get_tightbbox(renderer, *args, **kwargs)
 
     def twinx(self):
-        """This docstring is replaced below."""
+        """Docstring is replaced below."""
         return self.alty()
 
     def twiny(self):
-        """This docstring is replaced below."""
+        """Docstring is replaced below."""
         return self.altx()
 
     # Add documentation

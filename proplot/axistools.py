@@ -133,7 +133,7 @@ def Locator(locator, *args, **kwargs):
     return locator
 
 
-def Formatter(formatter, *args, date=False, **kwargs):
+def Formatter(formatter, *args, date=False, index=False, **kwargs):
     r"""
     Return a `~matplotlib.ticker.Formatter` instance. This function is used to
     interpret the `xformatter`, `xformatter_kw`, `yformatter`, and
@@ -148,7 +148,9 @@ def Formatter(formatter, *args, date=False, **kwargs):
         If `~matplotlib.ticker.Formatter`, the object is returned.
 
         If list of strings, ticks are labeled with these strings. Returns a
-        `~matplotlib.ticker.FixedFormatter` instance.
+        `~matplotlib.ticker.FixedFormatter` instance when `index` is ``False``
+        and an `~matplotlib.ticker.IndexFormatter` instance when `index` is
+        ``True``.
 
         If function, labels will be generated using this function. Returns a
         `~matplotlib.ticker.FuncFormatter` instance.
@@ -203,6 +205,9 @@ def Formatter(formatter, *args, date=False, **kwargs):
     date : bool, optional
         Toggles the behavior when `formatter` contains a ``'%'`` sign (see
         above).
+    index : bool, optional
+        Controls the behavior when `formatter` is a list of strings (see
+        above).
     *args, **kwargs
         Passed to the `~matplotlib.ticker.Formatter` class.
 
@@ -216,7 +221,7 @@ def Formatter(formatter, *args, date=False, **kwargs):
     # Pull out extra args
     if np.iterable(formatter) and not isinstance(formatter, str) and not all(
             isinstance(item, str) for item in formatter):
-        formatter, args = formatter[0], [*formatter[1:], *args]
+        formatter, args = formatter[0], (*formatter[1:], *args)
     # Get the formatter
     if isinstance(formatter, str):  # assumption is list of strings
         # Format strings
@@ -261,7 +266,10 @@ def Formatter(formatter, *args, date=False, **kwargs):
     elif callable(formatter):
         formatter = mticker.FuncFormatter(formatter, *args, **kwargs)
     elif np.iterable(formatter):  # list of strings on the major ticks
-        formatter = mticker.FixedFormatter(formatter)
+        if index:
+            formatter = mticker.IndexFormatter(formatter)
+        else:
+            formatter = mticker.FixedFormatter(formatter)
     else:
         raise ValueError(f'Invalid formatter {formatter!r}.')
     return formatter
@@ -1163,26 +1171,36 @@ class CutoffTransform(mtransforms.Transform):
     has_inverse = True
     is_separable = True
 
-    def __init__(self, threshs, scales):
+    def __init__(self, threshs, scales, zero_scale_dists=None):
+        # The zero_scale_dists array is used to fill in distances where scales
+        # are zero. Used for inverting transorms with discrete jumps.
         super().__init__()
+        if len(threshs) != len(scales):
+            raise ValueError(f'Got {len(threshs)} but {len(scales)} scales.')
         if any(np.diff(threshs) <= 0):
             raise ValueError(f'Thresholds must be monotonically increasing.')
-        if any(np.asarray(scales) < 0):
-            raise ValueError(f'Scales must be greater than or equal to zero.')
+        if scales[-1] == np.inf:
+            raise ValueError(f'Final scale cannot be numpy.inf.')
+        if any(np.asarray(scales) < 0) or (
+                any(np.asarray(scales) == 0) and zero_scale_dists is None):
+            raise ValueError(f'Scales must be greater than zero.')
         self._threshs = threshs
         self._scales = scales
         with np.errstate(divide='ignore'):
-            self._dists = np.concatenate((
+            dists = np.concatenate((
                 threshs[:1], np.diff(threshs) / scales[:-1]))
+            if zero_scale_dists is not None:
+                dists[np.asarray(scales[:-1]) == 0] = zero_scale_dists
+            self._dists = dists
 
     def inverted(self):
         # Use same algorithm for inversion!
-        scales = self._scales
-        dists = self._dists
-        threshs = np.cumsum(dists)  # thresholds in transformed space
+        threshs = np.cumsum(self._dists)  # thresholds in transformed space
         with np.errstate(divide='ignore'):
-            scales = 1 / np.array(scales)  # new scales are just inverse
-        return CutoffTransform(threshs, scales)
+            scales = 1 / np.asarray(self._scales)  # new scales are inverse
+        zero_scale_dists = np.diff(self._threshs)[scales[:-1] == 0]
+        return CutoffTransform(threshs, scales,
+                               zero_scale_dists=zero_scale_dists)
 
     def transform(self, a):
         a = np.atleast_1d(a)
