@@ -28,170 +28,171 @@ __all__ = [
 
 # Initialize
 defaultParamsShort = {
-    'nbsetup': True,
-    'format': 'retina',
-    'autosave': 30,
-    'autoreload': 2,
     'abc': False,
-    'share': 3,
     'align': False,
-    'span': True,
-    'tight': True,
-    'fontname': 'Helvetica Neue',
-    'cmap': 'fire',
-    'lut': 256,
-    'cycle': 'colorblind',
-    'rgbcycle': False,
-    'color': 'k',
     'alpha': 1,
+    'autoreload': 2,
+    'autosave': 30,
+    'borders': False,
+    'cmap': 'fire',
+    'coast': False,
+    'color': 'k',
+    'cycle': 'colorblind',
     'facecolor': 'w',
-    'small': 8,
-    'large': 9,
-    'linewidth': 0.6,
-    'margin': 0.0,
+    'fontname': 'Helvetica Neue',
+    'inlinefmt': 'retina',
+    'geogrid': True,
     'grid': True,
     'gridminor': False,
-    'ticklen': 4.0,
+    'gridratio': 0.5,
+    'innerborders': False,
+    'lakes': False,
+    'land': False,
+    'large': 9,
+    'linewidth': 0.6,
+    'lut': 256,
+    'margin': 0.0,
+    'matplotlib': 'auto',
+    'nbsetup': True,
+    'ocean': False,
+    'reso': 'lo',
+    'rgbcycle': False,
+    'rivers': False,
+    'share': 3,
+    'small': 8,
+    'span': True,
     'tickdir': 'out',
-    'tickpad': 2.0,
-    'tickratio': 0.8,
+    'ticklen': 4.0,
     'ticklenratio': 0.5,
     'tickminor': True,
-    'gridratio': 0.5,
-    'reso': 'lo',
-    'geogrid': True,
-    'land': False,
-    'ocean': False,
-    'coast': False,
-    'rivers': False,
-    'lakes': False,
-    'borders': False,
-    'innerborders': False,
+    'tickpad': 2.0,
+    'tickratio': 0.8,
+    'tight': True,
 }
 defaultParamsLong = {
-    'title.loc': 'c',  # centered above the axes
-    'title.pad': 3.0,  # copy
-    'abc.loc': 'l',  # left side above the axes
-    'abc.style': 'a',
-    'abc.size': None,  # = large
-    'abc.color': 'k',
-    'abc.weight': 'bold',
     'abc.border': True,
+    'abc.color': 'k',
     'abc.linewidth': 1.5,
-    'tick.labelsize': None,  # = small
-    'tick.labelcolor': None,  # = color
-    'tick.labelweight': 'normal',
-    'title.size': None,  # = large
-    'title.color': 'k',
-    'title.weight': 'normal',
-    'title.border': True,
-    'title.linewidth': 1.5,
-    'suptitle.size': None,  # = large
-    'suptitle.color': 'k',
-    'suptitle.weight': 'bold',
-    'leftlabel.size': None,  # = large
-    'leftlabel.weight': 'bold',
-    'leftlabel.color': 'k',
-    'toplabel.size': None,  # = large
-    'toplabel.weight': 'bold',
-    'toplabel.color': 'k',
-    'rightlabel.size': None,  # = large
-    'rightlabel.weight': 'bold',
-    'rightlabel.color': 'k',
+    'abc.loc': 'l',  # left side above the axes
+    'abc.size': None,  # = large
+    'abc.style': 'a',
+    'abc.weight': 'bold',
+    'axes.facealpha': None,  # if empty, depends on 'savefig.transparent'
+    'axes.formatter.timerotation': 90,
+    'axes.formatter.zerotrim': True,
+    'axes.geogrid': True,
+    'axes.gridminor': True,
+    'borders.color': 'k',
+    'borders.linewidth': 0.6,
+    'bottomlabel.color': 'k',
     'bottomlabel.size': None,  # = large
     'bottomlabel.weight': 'bold',
-    'bottomlabel.color': 'k',
-    'image.edgefix': True,
-    'image.levels': 11,
-    'axes.facealpha': None,  # if empty, depends on 'savefig.transparent'
-    'axes.formatter.zerotrim': True,
-    'axes.formatter.timerotation': 90,
-    'axes.gridminor': True,
-    'axes.geogrid': True,
+    'coast.color': 'k',
+    'coast.linewidth': 0.6,
+    'colorbar.extend': '1.3em',
+    'colorbar.framealpha': 0.8,
+    'colorbar.frameon': True,
+    'colorbar.grid': False,
+    'colorbar.insetextend': '1em',
+    'colorbar.insetlength': '8em',
+    'colorbar.insetpad': '0.5em',
+    'colorbar.insetwidth': '1.2em',
+    'colorbar.length': 1,
+    'colorbar.loc': 'right',
+    'colorbar.width': '1.5em',
+    'geoaxes.edgecolor': None,  # = color
+    'geoaxes.facealpha': None,  # = alpha
+    'geoaxes.facecolor': None,  # = facecolor
+    'geoaxes.linewidth': None,  # = linewidth
+    'geogrid.alpha': 0.5,
+    'geogrid.color': 'k',
+    'geogrid.labels': False,
+    'geogrid.labelsize': None,  # = small
+    'geogrid.latmax': 90,
+    'geogrid.latstep': 20,
+    'geogrid.linestyle': ':',
+    'geogrid.linewidth': 1.0,
+    'geogrid.lonstep': 30,
     'gridminor.alpha': None,  # = grid.alpha
     'gridminor.color': None,  # = grid.color
     'gridminor.linestyle': None,  # = grid.linewidth
     'gridminor.linewidth': None,  # = grid.linewidth x gridratio
-    'geogrid.labels': False,
-    'geogrid.labelsize': None,  # = small
-    'geogrid.latmax': 90,
-    'geogrid.lonstep': 30,
-    'geogrid.latstep': 20,
-    'geogrid.alpha': 0.5,
-    'geogrid.color': 'k',
-    'geogrid.linewidth': 1.0,
-    'geogrid.linestyle': ':',
-    'geoaxes.linewidth': None,  # = linewidth
-    'geoaxes.facecolor': None,  # = facecolor
-    'geoaxes.facealpha': None,  # = alpha
-    'geoaxes.edgecolor': None,  # = color
-    'land.color': 'k',
-    'ocean.color': 'w',
-    'lakes.color': 'w',
-    'coast.color': 'k',
-    'coast.linewidth': 0.6,
-    'borders.color': 'k',
-    'borders.linewidth': 0.6,
+    'image.edgefix': True,
+    'image.levels': 11,
     'innerborders.color': 'k',
     'innerborders.linewidth': 0.6,
+    'lakes.color': 'w',
+    'land.color': 'k',
+    'leftlabel.color': 'k',
+    'leftlabel.size': None,  # = large
+    'leftlabel.weight': 'bold',
+    'ocean.color': 'w',
+    'rightlabel.color': 'k',
+    'rightlabel.size': None,  # = large
+    'rightlabel.weight': 'bold',
     'rivers.color': 'k',
     'rivers.linewidth': 0.6,
-    'colorbar.loc': 'right',
-    'colorbar.grid': False,
-    'colorbar.frameon': True,
-    'colorbar.framealpha': 0.8,
-    'colorbar.insetpad': '0.5em',
-    'colorbar.extend': '1.3em',
-    'colorbar.insetextend': '1em',
-    'colorbar.length': 1,
-    'colorbar.insetlength': '8em',
-    'colorbar.width': '1.5em',
-    'colorbar.insetwidth': '1.2em',
-    'subplots.axwidth': '18em',
-    'subplots.panelwidth': '4em',
-    'subplots.pad': '0.5em',
     'subplots.axpad': '1em',
+    'subplots.axwidth': '18em',
+    'subplots.pad': '0.5em',
     'subplots.panelpad': '0.5em',
+    'subplots.panelwidth': '4em',
+    'suptitle.color': 'k',
+    'suptitle.size': None,  # = large
+    'suptitle.weight': 'bold',
+    'tick.labelcolor': None,  # = color
+    'tick.labelsize': None,  # = small
+    'tick.labelweight': 'normal',
+    'title.border': True,
+    'title.color': 'k',
+    'title.linewidth': 1.5,
+    'title.loc': 'c',  # centered above the axes
+    'title.pad': 3.0,  # copy
+    'title.size': None,  # = large
+    'title.weight': 'normal',
+    'toplabel.color': 'k',
+    'toplabel.size': None,  # = large
+    'toplabel.weight': 'bold',
 }
 defaultParams = {
-    'axes.titleweight': 'normal',
-    'axes.xmargin': 0.0,
-    'axes.ymargin': 0.0,
     'axes.grid': True,
     'axes.labelpad': 3.0,
     'axes.titlepad': 3.0,
+    'axes.titleweight': 'normal',
+    'axes.xmargin': 0.0,
+    'axes.ymargin': 0.0,
+    'figure.autolayout': False,
     'figure.dpi': 90,
     'figure.facecolor': '#f2f2f2',
-    'figure.autolayout': False,
-    'figure.titleweight': 'bold',
     'figure.max_open_warning': 0,
-    'grid.color': 'k',
+    'figure.titleweight': 'bold',
     'grid.alpha': 0.1,
-    'grid.linewidth': 0.6,
+    'grid.color': 'k',
     'grid.linestyle': '-',
+    'grid.linewidth': 0.6,
     'hatch.color': 'k',
     'hatch.linewidth': 0.6,
-    'legend.frameon': True,
-    'legend.framealpha': 0.8,
-    'legend.fancybox': False,
-    'legend.labelspacing': 0.5,
-    'legend.handletextpad': 0.5,
-    'legend.handlelength': 1.5,
-    'legend.columnspacing': 1.0,
-    'legend.borderpad': 0.5,
     'legend.borderaxespad': 0,
+    'legend.borderpad': 0.5,
+    'legend.columnspacing': 1.0,
+    'legend.fancybox': False,
+    'legend.framealpha': 0.8,
+    'legend.frameon': True,
+    'legend.handlelength': 1.5,
+    'legend.handletextpad': 0.5,
+    'legend.labelspacing': 0.5,
     'lines.linewidth': 1.3,
     'lines.markersize': 3.0,
     'mathtext.bf': 'sans:bold',
-    'mathtext.it': 'sans:it',
     'mathtext.default': 'regular',
+    'mathtext.it': 'sans:it',
+    'savefig.bbox': 'standard',
     'savefig.directory': '',
     'savefig.dpi': 300,
     'savefig.facecolor': 'white',
-    'savefig.transparent': True,
     'savefig.format': 'pdf',
-    'savefig.bbox': 'standard',
     'savefig.pad_inches': 0.0,
+    'savefig.transparent': True,
     'xtick.minor.visible': True,
     'ytick.minor.visible': True,
 }
@@ -239,7 +240,7 @@ RC_CHILDREN = {
         'image.lut',
     ),
     'alpha': (  # this is a custom setting
-        'axes.alpha',
+        'axes.facealpha',
     ),
     'facecolor': (
         'axes.facecolor', 'geoaxes.facecolor'
@@ -727,7 +728,10 @@ class rc_configurator(object):
     def __getattr__(self, attr):
         """Pass the attribute to `~rc_configurator.__getitem__` and return
         the result."""
-        return self[attr]
+        if attr[:1] == '_':
+            return super().__getattr__(attr)
+        else:
+            return self[attr]
 
     def __getitem__(self, key):
         """Return an `rcParams \
@@ -1049,7 +1053,6 @@ def ipython_matplotlib(backend=None, fmt=None):
         return
 
     # For notebooks
-    rc._init = False
     ibackend = ('inline' if backend == 'auto' else backend)
     try:
         ipython.magic('matplotlib ' + ibackend)
