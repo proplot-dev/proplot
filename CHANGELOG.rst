@@ -15,6 +15,14 @@ ProPlot v1.0.0 (2020-##-##)
 This will be published when some major refactoring tasks are completed.
 See :pr:`45`, :pr:`46`, and :pr:`50`.
 
+ProPlot v0.2.5 (2019-12-07)
+===========================
+Features
+--------
+- Much better `~proplot.axistools.CutoffScale` algorithm, permit arbitrary
+  cutoffs (:pr:`83`).
+
+
 ProPlot v0.2.4 (2019-12-07)
 ===========================
 Deprecated
