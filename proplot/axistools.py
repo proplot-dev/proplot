@@ -1192,17 +1192,19 @@ class CutoffTransform(mtransforms.Transform):
                                zero_scale_dists=zero_scale_dists)
 
     def transform_non_affine(self, a):
-        a = np.atleast_1d(a)
+        # Cannot do list comprehension because this method sometimes
+        # received non-1d arrays
         threshs = self._threshs
         scales = self._scales
         dists = self._dists
-        idxs = np.searchsorted(threshs, a)  # array of indices
+        aa = np.array(a)  # copy
         with np.errstate(divide='ignore', invalid='ignore'):
-            return np.array([
-                ai if i == 0 else
-                dists[:i].sum() + (ai - threshs[i - 1]) / scales[i - 1]
-                for i, ai in zip(idxs, a)
-            ])
+            for i, ai in np.ndenumerate(a):
+                j = np.searchsorted(threshs, ai)
+                if j > 0:
+                    aa[i] = dists[:j].sum() + (
+                        ai - threshs[j - 1]) / scales[j - 1]
+        return aa
 
 
 class InverseScale(_ScaleBase, mscale.ScaleBase):
