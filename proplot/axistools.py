@@ -969,7 +969,7 @@ stackoverflow post <https://stackoverflow.com/a/5669301/4970632>`__.
         ----------
         *args : (thresh_1, scale_1, ..., thresh_N, [scale_N]), optional
             Sequence of thresholds and scales. If the final scale is omitted
-            (i.e. you passed an odd number of arguments) it is set to ``1``.
+            (i.e. you passed an odd number of args) it is set to ``1``.
 
             * If ``scale_i < 1``, the axis is decelerated from ``thresh_i`` to
               ``thresh_i+1`` or, if ``i == N``, everywhere above ``thresh_i``.
@@ -982,8 +982,9 @@ stackoverflow post <https://stackoverflow.com/a/5669301/4970632>`__.
         -------
 
         >>> import proplot as plot
+        ... import numpy as np
         ... thresh = plot.CutoffScale(10, 2)  # go "twice as fast" after 10
-        ... skip = plot.CutoffScale(10, 0.5, 20)  # "zoom in" between 10 and 20
+        ... skip = plot.CutoffScale(10, 0.5, 20)  # zoom in between 10 and 20
         ... jump = plot.CutoffScale(10, np.inf, 20)  # jump from 10 to 20
 
         """
@@ -1032,7 +1033,7 @@ class CutoffTransform(mtransforms.Transform):
         with np.errstate(divide='ignore'):
             return np.array([
                 ai if i == 0 else
-                np.sum((*dists[:i], (ai - threshs[i - 1]) / scales[i - 1]))
+                dists[:i].sum() + (ai - threshs[i - 1]) / scales[i - 1]
                 for i, ai in zip(idxs, a)
             ])
 
