@@ -964,7 +964,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         """
         Return a version of the colormap with the center "punched out".
         This is great for making the transition from "negative" to "positive"
-        in a diverging colormap is more distinct.
+        in a diverging colormap more distinct.
 
         Parameters
         ----------
@@ -2804,9 +2804,7 @@ def register_cmaps():
     filenames -- for example, ``name.xyz`` will be registered as ``'name'``.
 
     This is called on import. Use `show_cmaps` to generate a table of the
-    registered colormaps
-
-    Valid extensions are listed in the below table.
+    registered colormaps. Valid extensions are described in the below table.
 
     =====================  =============================================================================================================================================================================================================
     Extension              Description
