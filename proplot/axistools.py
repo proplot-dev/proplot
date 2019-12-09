@@ -436,17 +436,17 @@ class AutoFormatter(mticker.ScalarFormatter):
             # Try to fix non-zero values formatted as zero
             if self._zerotrim and '.' in string:
                 string = string.rstrip('0').rstrip('.')
-            if string == '-0' or string == '\N{MINUS SIGN}0':
+            string = string.replace('-', '\N{MINUS SIGN}')
+            if string == '\N{MINUS SIGN}0':
                 string = '0'
             if i == 0 and string == '0' and x != 0:
-                # Hard limit of 10 sigfigs
+                # Hard limit of MAX_DIGITS sigfigs
                 string = ('{:.%df}' % min(
                     abs(np.log10(x) // 1), MAX_DIGITS)).format(x)
                 continue
             break
         # Prefix and suffix
         sign = ''
-        string = string.replace('-', '\N{MINUS SIGN}')
         if string and string[0] == '\N{MINUS SIGN}':
             sign, string = string[0], string[1:]
         if tail:
