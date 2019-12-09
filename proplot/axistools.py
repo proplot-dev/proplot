@@ -30,7 +30,7 @@ __all__ = [
     'SymmetricalLogScale',
 ]
 
-# Scale preset names and positional args
+MAX_DIGITS = 32  # do not draw 1000 digits when LogScale limits include zero!
 SCALE_PRESETS = {
     'quadratic': ('power', 2,),
     'cubic': ('power', 3,),
@@ -195,11 +195,11 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
         ``'theta'``             `~matplotlib.projections.polar.ThetaFormatter`  Formats radians as degrees, with a degree symbol
         ``'pi'``                `FracFormatter` preset                          Fractions of :math:`\\pi`
         ``'e'``                 `FracFormatter` preset                          Fractions of *e*
-        ``'deg'``               `SimpleFormatter` preset                        Trailing degree symbol
-        ``'deglon'``            `SimpleFormatter` preset                        Trailing degree symbol and cardinal "WE" indicator
-        ``'deglat'``            `SimpleFormatter` preset                        Trailing degree symbol and cardinal "SN" indicator
-        ``'lon'``               `SimpleFormatter` preset                        Cardinal "WE" indicator
-        ``'lat'``               `SimpleFormatter` preset                        Cardinal "SN" indicator
+        ``'deg'``               `AutoFormatter` preset                          Trailing degree symbol
+        ``'deglon'``            `AutoFormatter` preset                          Trailing degree symbol and cardinal "WE" indicator
+        ``'deglat'``            `AutoFormatter` preset                          Trailing degree symbol and cardinal "SN" indicator
+        ``'lon'``               `AutoFormatter` preset                          Cardinal "WE" indicator
+        ``'lat'``               `AutoFormatter` preset                          Cardinal "SN" indicator
         ======================  ==============================================  ===================================================================================================================================
 
     date : bool, optional
@@ -256,7 +256,7 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
                     negpos = 'WE'
                 kwargs.setdefault('suffix', suffix)
                 kwargs.setdefault('negpos', negpos)
-                formatter = 'simple'
+                formatter = 'auto'
             # Lookup
             if formatter not in formatters:
                 raise ValueError(
@@ -349,6 +349,15 @@ def Scale(scale, *args, **kwargs):
     return scale(*args, **kwargs)
 
 
+def _zerofix(x, string, precision=6):
+    """
+    Try to fix non-zero tick labels formatted as ``'0'``.
+    """
+    if string.rstrip('0').rstrip('.') == '0' and x != 0:
+        string = ('{:.%df}' % precision).format(x)
+    return string
+
+
 class AutoFormatter(mticker.ScalarFormatter):
     """
     The new default formatter, a simple wrapper around
@@ -360,35 +369,43 @@ class AutoFormatter(mticker.ScalarFormatter):
        are labelled.
     3. Allows user to add arbitrary prefix or suffix to every
        tick label string.
-
     """
-
     def __init__(self, *args,
                  zerotrim=None, precision=None, tickrange=None,
-                 prefix=None, suffix=None, **kwargs):
+                 prefix=None, suffix=None, negpos=None, **kwargs):
         """
         Parameters
         ----------
         zerotrim : bool, optional
             Whether to trim trailing zeros.
             Default is :rc:`axes.formatter.zerotrim`.
-        precision : float, optional
-            The maximum number of digits after the decimal point.
         tickrange : (float, float), optional
             Range within which major tick marks are labelled.
         prefix, suffix : str, optional
-            Optional prefix and suffix for all strings.
+            Prefix and suffix for all strings.
+        negpos : str, optional
+            Length-2 string indicating the suffix for "negative" and "positive"
+            numbers, meant to replace the minus sign. This is useful for
+            indicating cardinal geographic coordinates.
         *args, **kwargs
-            Passed to `matplotlib.ticker.ScalarFormatter`.
+            Passed to `~matplotlib.ticker.ScalarFormatter`.
+
+        Warning
+        -------
+        The matplotlib `~matplotlib.ticker.ScalarFormatter` determines the
+        number of significant digits based on the axis limits, and therefore
+        may *truncate* digits while formatting ticks on highly non-linear
+        axis scales like `~proplot.axistools.LogScale`. We try to correct
+        this behavior with a patch.
         """
-        tickrange = tickrange or (-np.inf, np.inf)
         super().__init__(*args, **kwargs)
         zerotrim = _notNone(zerotrim, rc['axes.formatter.zerotrim'])
-        self._maxprecision = precision
+        tickrange = tickrange or (-np.inf, np.inf)
         self._zerotrim = zerotrim
         self._tickrange = tickrange
         self._prefix = prefix or ''
         self._suffix = suffix or ''
+        self._negpos = negpos or ''
 
     def __call__(self, x, pos=None):
         """
@@ -406,72 +423,62 @@ class AutoFormatter(mticker.ScalarFormatter):
         tickrange = self._tickrange
         if (x + eps) < tickrange[0] or (x - eps) > tickrange[1]:
             return ''  # avoid some ticks
-        # Normal formatting
+        # Negative positive handling
+        if not self._negpos:
+            tail = ''
+        elif x > 0:
+            tail = self._negpos[1]
+        else:
+            x *= -1
+            tail = self._negpos[0]
+        # Format the string
         string = super().__call__(x, pos)
-        if self._maxprecision is not None and '.' in string:
-            head, tail = string.split('.')
-            string = head + '.' + tail[:self._maxprecision]
-        if self._zerotrim and '.' in string:
-            string = string.rstrip('0').rstrip('.')
-        if string == '-0' or string == '\N{MINUS SIGN}0':
-            string = '0'
+        for i in range(2):
+            # Try to fix non-zero values formatted as zero
+            if self._zerotrim and '.' in string:
+                string = string.rstrip('0').rstrip('.')
+            string = string.replace('-', '\N{MINUS SIGN}')
+            if string == '\N{MINUS SIGN}0':
+                string = '0'
+            if i == 0 and string == '0' and x != 0:
+                # Hard limit of MAX_DIGITS sigfigs
+                string = ('{:.%df}' % min(
+                    abs(np.log10(x) // 1), MAX_DIGITS)).format(x)
+                continue
+            break
         # Prefix and suffix
         sign = ''
-        string = string.replace('-', '\N{MINUS SIGN}')
         if string and string[0] == '\N{MINUS SIGN}':
             sign, string = string[0], string[1:]
-        return sign + self._prefix + string + self._suffix
+        if tail:
+            sign = ''
+        return sign + self._prefix + string + self._suffix + tail
 
 
-def SimpleFormatter(*args, precision=6,
-                    prefix=None, suffix=None, negpos=None, zerotrim=True,
-                    **kwargs):
+def SimpleFormatter(*args, precision=6, zerotrim=True, **kwargs):
     """
-    Return a formatter function that replicates the features of
-    `AutoFormatter` with a `~matplotlib.ticker.FuncFormatter` instance. This
-    is suitable for arbitrary number formatting that is not necessarily
-    associated with any `~matplotlib.axis.Axis` instance, e.g. labelling
-    contours.
+    Return a `~matplotlib.ticker.FuncFormatter` instance that replicates the
+    `zerotrim` feature from `AutoFormatter`. This is more suitable for
+    arbitrary number formatting not necessarily associated with any
+    `~matplotlib.axis.Axis` instance, e.g. labeling contours.
 
     Parameters
     ----------
     precision : int, optional
-        Maximum number of digits after the decimal point.
-    prefix, suffix : str, optional
-        Optional prefix and suffix for all strings.
-    negpos : str, optional
-        Length-2 string that indicates suffix for "negative" and "positive"
-        numbers, meant to replace the minus sign. This is useful for
-        indicating cardinal geographic coordinates.
+        The maximum number of digits after the decimal point.
     zerotrim : bool, optional
         Whether to trim trailing zeros.
         Default is :rc:`axes.formatter.zerotrim`.
     """
-    prefix = prefix or ''
-    suffix = suffix or ''
     zerotrim = _notNone(zerotrim, rc['axes.formatter.zerotrim'])
 
     def f(x, pos):
-        # Apply suffix if not on equator/prime meridian
-        if not negpos:
-            tail = ''
-        elif x > 0:
-            tail = negpos[1]
-        else:
-            x *= -1
-            tail = negpos[0]
-        # Finally use default formatter
         string = ('{:.%df}' % precision).format(x)
         if zerotrim and '.' in string:
             string = string.rstrip('0').rstrip('.')
         if string == '-0' or string == '\N{MINUS SIGN}0':
             string = '0'
-        # Prefix and suffix
-        sign = ''
-        string = string.replace('-', '\N{MINUS SIGN}')
-        if string and string[0] == '\N{MINUS SIGN}':
-            sign, string = string[0], string[1:]
-        return sign + prefix + string + suffix + tail
+        return string.replace('-', '\N{MINUS SIGN}')
     return mticker.FuncFormatter(f)
 
 

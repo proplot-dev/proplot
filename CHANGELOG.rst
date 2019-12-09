@@ -60,6 +60,23 @@ ProPlot v0.3.0 (2020-01-##)
   with a default ``.proplotrc`` file, change the auto-generated user ``.proplotrc``
   (:pr:`50`).
 
+ProPlot v0.2.6 (2019-12-09)
+===========================
+
+.. rubric:: Bug fixes
+
+- Fix issue where `~proplot.styletools.AutoFormatter` logarithmic scale
+  points are incorrect (:commit:`9b164733`).
+
+.. rubric:: Internals
+
+- Remove `prefix`, `suffix`, and `negpos` keyword args from
+  `~proplot.styletools.SimpleFormatter`, remove `precision` keyword arg from
+  `~proplot.styletools.AutoFormatter` (:commit:`8520e363`).
+- Make ``'deglat'``, ``'deglon'``, ``'lat'``, ``'lon'``, and ``'deg'`` instances
+  of `~proplot.styletools.AutoFormatter` instead of `~proplot.styletools.SimpleFormatter`
+  (:commit:`8520e363`). The latter should just be used for contours.
+
 ProPlot v0.2.6 (2019-12-08)
 ===========================
 .. rubric:: Bug fixes
