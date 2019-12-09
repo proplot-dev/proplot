@@ -1,7 +1,7 @@
 .. image:: https://github.com/lukelbd/proplot/blob/master/docs/_static/logo_long.png?raw=true
    :width: 1000px
 
-|build-status| |docs| |pypi| |license| |gitter| |pr-welcome|
+|build-status| |docs| |pypi| |code-style| |pr-welcome| |license| |gitter|
 
 A comprehensive, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful, publication-quality graphics.
 
@@ -26,6 +26,10 @@ please run ``pip uninstall`` first.
 ProPlot's only hard dependency is `matplotlib <https://matplotlib.org/>`__. The *soft* dependencies are `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`__, `basemap <https://matplotlib.org/basemap/index.html>`__, `xarray <http://xarray.pydata.org>`__, and `pandas <https://pandas.pydata.org>`__. See the documentation for details.
 
 
+.. |code-style| image:: https://img.shields.io/badge/code%20style-pep8-green.svg
+   :alt: pep8
+   :target: https://www.python.org/dev/peps/pep-0008/
+
 .. |build-status| image:: https://travis-ci.com/lukelbd/proplot.svg?branch=master
    :alt: build status
    :target: https://travis-ci.org/lukelbd/proplot
@@ -38,6 +42,10 @@ ProPlot's only hard dependency is `matplotlib <https://matplotlib.org/>`__. The 
    :alt: docs
    :target: https://proplot.readthedocs.io/en/latest/?badge=latest
 
+.. |pr-welcome| image:: https://img.shields.io/badge/PR-Welcome-green.svg?
+   :alt: PR welcome
+   :target: https://git-scm.com/book/en/v2/GitHub-Contributing-to-a-Project
+
 .. |pypi| image:: https://img.shields.io/pypi/v/proplot?color=83%20197%2052
    :alt: pypi
    :target: https://pypi.org/project/proplot/
@@ -45,10 +53,6 @@ ProPlot's only hard dependency is `matplotlib <https://matplotlib.org/>`__. The 
 .. |gitter| image:: https://badges.gitter.im/gitterHQ/gitter.svg
    :alt: gitter
    :target: https://gitter.im/pro-plot/community
-
-.. |pr-welcome| image:: https://img.shields.io/badge/PR-Welcome-%23FF8300.svg?
-   :alt: PR welcome
-   :target: https://git-scm.com/book/en/v2/GitHub-Contributing-to-a-Project
 
 ..
    |coverage| image:: https://codecov.io/gh/lukelbd/proplot.org/branch/master/graph/badge.svg
