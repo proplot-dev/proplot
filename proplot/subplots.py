@@ -34,19 +34,21 @@ SIDE_TRANSLATE = {
 
 # Dimensions of figures for common journals
 JOURNAL_SPECS = {
-    'pnas1': '8.7cm',
-    'pnas2': '11.4cm',
-    'pnas3': '17.8cm',
-    'ams1': 3.2,  # spec is in inches
-    'ams2': 4.5,
-    'ams3': 5.5,
-    'ams4': 6.5,
+    'aaas1': '5.5cm',
+    'aaas2': '12cm',
     'agu1': ('95mm', '115mm'),
     'agu2': ('190mm', '115mm'),
     'agu3': ('95mm', '230mm'),
     'agu4': ('190mm', '230mm'),
-    'aaas1': '5.5cm',  # AAAS (e.g., Science) 1 column
-    'aaas2': '12cm',  # AAAS 2 column
+    'ams1': 3.2,
+    'ams2': 4.5,
+    'ams3': 5.5,
+    'ams4': 6.5,
+    'nat1': '89mm',
+    'nat2': '183mm',
+    'pnas1': '8.7cm',
+    'pnas2': '11.4cm',
+    'pnas3': '17.8cm',
 }
 
 # Documentation
@@ -137,21 +139,25 @@ journal : str, optional
     String name corresponding to an academic journal standard that is used
     to control the figure width (and height, if specified). See below table.
 
-    ===========  ====================  ==============================================================================================================================
+    ===========  ====================  ==========================================================================================================================================================
     Key          Size description      Organization
-    ===========  ====================  ==============================================================================================================================
-    ``'pnas1'``  1-column              `PNAS <http://www.pnas.org/page/authors/submission>`__
-    ``'pnas2'``  2-column              ”
-    ``'pnas3'``  landscape page        ”
-    ``'ams1'``   1-column              `AMS <https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/>`__
-    ``'ams2'``   small 2-column        ”
-    ``'ams3'``   medium 2-column       ”
-    ``'ams4'``   full 2-column         ”
-    ``'agu1'``   1-column              `AGU <https://publications.agu.org/author-resource-center/figures-faq/>`__
+    ===========  ====================  ==========================================================================================================================================================
+    ``'aaas1'``  1-column              `American Association for the Advancement of Science <https://www.sciencemag.org/authors/instructions-preparing-initial-manuscript>`__ (e.g. *Science*)
+    ``'aaas2'``  2-column              ”
+    ``'agu1'``   1-column              `American Geophysical Union <https://publications.agu.org/author-resource-center/figures-faq/>`__
     ``'agu2'``   2-column              ”
     ``'agu3'``   full height 1-column  ”
     ``'agu4'``   full height 2-column  ”
-    ===========  ====================  ==============================================================================================================================
+    ``'ams1'``   1-column              `American Meteorological Society <https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/>`__
+    ``'ams2'``   small 2-column        ”
+    ``'ams3'``   medium 2-column       ”
+    ``'ams4'``   full 2-column         ”
+    ``'nat1'``   1-column              `Nature Research <https://www.nature.com/nature/for-authors/formatting-guide>`__
+    ``'nat2'``   2-column              ”
+    ``'pnas1'``  1-column              `Proceedings of the National Academy of Sciences <http://www.pnas.org/page/authors/submission>`__
+    ``'pnas2'``  2-column              ”
+    ``'pnas3'``  landscape page        ”
+    ===========  ====================  ==========================================================================================================================================================
 
 **kwargs
     Passed to `matplotlib.figure.Figure`.

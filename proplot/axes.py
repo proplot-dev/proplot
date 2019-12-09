@@ -1275,7 +1275,7 @@ class Axes(maxes.Axes):
         return ax
 
     def indicate_inset_zoom(self, alpha=None,
-                            lw=None, linewidth=None,
+                            lw=None, linewidth=None, zorder=3.5,
                             color=None, edgecolor=None, **kwargs):
         """
         Draw lines indicating the zoom range of the inset axes. This is similar
@@ -1292,6 +1292,11 @@ class Axes(maxes.Axes):
             The width of the zoom lines and box outline in points.
         color, edgecolor : color-spec, optional
             The color of the zoom lines and box outline.
+        zorder : float, optional
+            The `zorder \
+<https://matplotlib.org/3.1.1/gallery/misc/zorder_demo.html>`__
+            of the axes, should be greater than the zorder of
+            elements in the parent axes. Default is ``3.5``.
         **kwargs
             Passed to `~matplotlib.axes.Axes.indicate_inset`.
         """
@@ -1312,7 +1317,7 @@ class Axes(maxes.Axes):
         # Call indicate_inset
         rectpatch, connects = parent.indicate_inset(
             rect, self, linewidth=linewidth, edgecolor=edgecolor, alpha=alpha,
-            **kwargs)
+            zorder=zorder, **kwargs)
 
         # Update zoom or adopt properties from old one
         if self._inset_zoom_data:
