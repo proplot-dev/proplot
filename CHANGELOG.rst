@@ -68,6 +68,9 @@ ProPlot v0.2.6 (2019-12-09)
 - Fix issue where `~proplot.styletools.AutoFormatter` logarithmic scale
   points are incorrect (:commit:`9b164733`).
 
+.. rubric:: Documentation
+- Improve :ref:`Configuring proplot` documentation.
+
 .. rubric:: Internals
 
 - Remove `prefix`, `suffix`, and `negpos` keyword args from
