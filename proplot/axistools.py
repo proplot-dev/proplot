@@ -359,9 +359,7 @@ class AutoFormatter(mticker.ScalarFormatter):
        are labelled.
     3. Allows user to add arbitrary prefix or suffix to every
        tick label string.
-
     """
-
     def __init__(self, *args,
                  zerotrim=None, precision=None, tickrange=None,
                  prefix=None, suffix=None, **kwargs):
@@ -407,6 +405,8 @@ class AutoFormatter(mticker.ScalarFormatter):
             return ''  # avoid some ticks
         # Normal formatting
         string = super().__call__(x, pos)
+        if string == '0' and x != 0:  # weird LogScale issue
+            string = ('{:.%df}' % (self._maxprecision or 6)).format(x)
         if self._maxprecision is not None and '.' in string:
             head, tail = string.split('.')
             string = head + '.' + tail[:self._maxprecision]
@@ -419,6 +419,8 @@ class AutoFormatter(mticker.ScalarFormatter):
         string = string.replace('-', '\N{MINUS SIGN}')
         if string and string[0] == '\N{MINUS SIGN}':
             sign, string = string[0], string[1:]
+        # if 0 < x < 1:
+        #     print(x, repr(string))
         return sign + self._prefix + string + self._suffix
 
 
