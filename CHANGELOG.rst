@@ -72,11 +72,10 @@ ProPlot v0.2.6 (2019-12-09)
 
 - Remove `prefix`, `suffix`, and `negpos` keyword args from
   `~proplot.styletools.SimpleFormatter`, remove `precision` keyword arg from
-  `~proplot.styletools.AutoFormatter` (it automatically figures out the
-  necessary precision!).
+  `~proplot.styletools.AutoFormatter` (:commit:`8520e363`).
 - Make ``'deglat'``, ``'deglon'``, ``'lat'``, ``'lon'``, and ``'deg'`` instances
-  of `~proplot.styletools.AutoFormatter` instead of `~proplot.styletools.SimpleFormatter`.
-  The latter should just be used for contours.
+  of `~proplot.styletools.AutoFormatter` instead of `~proplot.styletools.SimpleFormatter`
+  (:commit:`8520e363`). The latter should just be used for contours.
 
 ProPlot v0.2.6 (2019-12-08)
 ===========================
