@@ -864,7 +864,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         """
         Return a version of the colormap with the center "punched out".
         This is great for making the transition from "negative" to "positive"
-        in a diverging colormap is more distinct.
+        in a diverging colormap more distinct.
 
         Parameters
         ----------
