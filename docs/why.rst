@@ -18,20 +18,28 @@ and describes how ProPlot addresses them.
    To start using these new features, see
    see :ref:`Usage overview` and the User Guide.
 
-No more boilerplate
-===================
+Less typing, more plotting
+==========================
 
 .. rubric:: Problem
 
 Power users often need to change lots of plot settings all at once. In matplotlib, this requires a bunch of one-liner setters and getters, like `~matplotlib.axes.Axes.set_title`.
 
-This workflow is verbose and often confusing. It can be unclear whether settings can be changed from a `~matplotlib.figure.Figure` setter, an `~matplotlib.axes.Axes` setter, an `~matplotlib.axis.XAxis` or `~matplotlib.axis.YAxis` setter, or a miscellaneous bulk function like `~matplotlib.axes.Axes.tick_params`.
+This workflow is quite verbose -- it tends to require "boilerplate code" that gets
+copied and pasted a hundred times to do anything remotely complicated.
+It can also be confusing -- it is often unclear whether settings are applied from an `~matplotlib.axes.Axes` setter, an `~matplotlib.axis.XAxis` or `~matplotlib.axis.YAxis` setter, a miscellaneous bulk function like `~matplotlib.axes.Axes.tick_params`, or if they even
+have an explicit setter.
+
+..
+   This is perhaps one reason why many users prefer the `~matplotlib.pyplot` API to the object-oriented API (see :ref:`Using ProPlot`).
 
 .. rubric:: Solution
 
-ProPlot introduces the `~proplot.axes.Axes.format` method for changing arbitrary settings **in bulk**.
-Think of this as an improved version of the `~matplotlib.artist.Artist` `~matplotlib.artist.Artist.update` method.
-This massively reduces the amount of code needed to create highly customized figures. For example, it is trivial to see that
+ProPlot introduces the `~proplot.axes.Axes.format` method for changing arbitrary settings *in bulk*. Think of this as an expanded and thoroughly documented version of the
+`~matplotlib.artist.Artist` `~matplotlib.artist.Artist.update` method.
+This significantly reduces the amount of code needed to create highly customized figures.
+
+As an example, it is trivial to see that
 
 .. code-block:: python
 
@@ -57,19 +65,19 @@ This massively reduces the amount of code needed to create highly customized fig
    ax.set_ylabel('y axis', color='gray')
 
 
-Constructor functions
-=====================
+Class constructor functions
+===========================
 .. rubric:: Problem
 
 Matplotlib and cartopy introduce a bunch of classes with verbose names like `~matplotlib.ticker.MultipleLocator`, `~matplotlib.ticker.FormatStrFormatter`, and
 `~cartopy.crs.LambertAzimuthalEqualArea`. Since plotting code has a half life of about 30 seconds, typing out all of these extra class names and import statements can be a *major* drag.
 
-*Other* parts of the matplotlib API were designed with this in mind.
-`Native axes projections <https://matplotlib.org/3.1.1/api/projections_api.html>`__,
-`axis scale classes <https://matplotlib.org/3.1.0/gallery/scales/scales.html>`__,
-`box style classes <https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.patches.FancyBboxPatch.html?highlight=boxstyle>`__, `arrow style classes <https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.patches.FancyArrowPatch.html?highlight=arrowstyle>`__,
-`arc style classes <https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.patches.ConnectionStyle.html?highlight=class%20name%20attrs>`__, and
-`backends <https://matplotlib.org/faq/usage_faq.html#what-is-a-backend>`__
+Certain parts of the matplotlib API were designed with this in mind.
+`Backend classes <https://matplotlib.org/faq/usage_faq.html#what-is-a-backend>`__,
+`native axes projections <https://matplotlib.org/3.1.1/api/projections_api.html>`__,
+`axis scales <https://matplotlib.org/3.1.0/gallery/scales/scales.html>`__,
+`box style classes <https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.patches.FancyBboxPatch.html?highlight=boxstyle>`__, `arrow style classes <https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.patches.FancyArrowPatch.html?highlight=arrowstyle>`__, and
+`arc style classes <https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.patches.ConnectionStyle.html?highlight=class%20name%20attrs>`__
 are referenced with "registered" string names,
 as are `basemap projection types <https://matplotlib.org/basemap/users/mapsetup.html>`__.
 If these are already "registered", why not "register" everything else?
@@ -77,12 +85,13 @@ If these are already "registered", why not "register" everything else?
 .. rubric:: Solution
 
 In ProPlot, tick locators, tick formatters, axis scales, cartopy projections, colormaps, and property cyclers are all "registered". This is done by creating several **constructor functions** and passing various keyword argument *through* the constructor functions.
-This may seem "unpythonic" but it is absolutely invaluable when making plots.
+This may seem "unpythonic" but it is absolutely invaluable when writing
+plotting code.
 
-The constructor functions also accept *other* types of input: For
+Each constructor function accepts various *other* input types for your convenience. For
 example, scalar numbers passed to `~proplot.axistools.Locator` returns
 a `~matplotlib.ticker.MultipleLocator` instance, lists of strings passed
-to `~proplot.axistools.Formatter` returns a `~matplotlib.ticker.FixedFormatter` instance, and `~proplot.styletools.Colormap` and `~proplot.styletools.Cycle` accept all kinds of input. And if an instance of the corresponding class is passed to any constructor function, it is simply returned. See :ref:`X and Y axis settings`, :ref:`Colormaps`, and :ref:`Color cycles` for details.
+to `~proplot.axistools.Formatter` returns a `~matplotlib.ticker.FixedFormatter` instance, and `~proplot.styletools.Colormap` and `~proplot.styletools.Cycle` accept colormap names, individual colors, and lists of colors. When a *class instance* is passed to the relevant constructor function, it is simply returned. See :ref:`X and Y axis settings`, :ref:`Colormaps`, and :ref:`Color cycles` for details.
 
 The below table lists the constructor functions and the keyword arguments that
 use them.
