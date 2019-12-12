@@ -8,6 +8,7 @@ pyplot-inspired functions for creating figures and related classes.
 import os
 import numpy as np
 import functools
+import inspect
 import matplotlib.pyplot as plt
 import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
@@ -65,11 +66,9 @@ def show():
 
 class subplot_grid(list):
     """List subclass and pseudo-2D array that is used as a container for the
-    list of axes returned by `subplots`, lists of figure panels, and lists of
-    stacked axes panels. The shape of the array is stored in the ``shape``
-    attribute. See the `~subplot_grid.__getattr__` and
+    list of axes returned by `subplots`. The shape of the array is stored
+    in the ``shape`` attribute. See the `~subplot_grid.__getattr__` and
     `~subplot_grid.__getitem__` methods for details."""
-
     def __init__(self, objs, n=1, order='C'):
         """
         Parameters
@@ -225,11 +224,7 @@ class subplot_grid(list):
                     return subplot_grid(ret, n=self._n, order=self._order)
                 else:
                     return ret
-            try:
-                orig = getattr(super(axes.Axes, self[0]), attr)
-                _iterator.__doc__ = orig.__doc__
-            except AttributeError:
-                pass
+            _iterator.__doc__ = inspect.getdoc(objs[0])
             return _iterator
 
         # Mixed

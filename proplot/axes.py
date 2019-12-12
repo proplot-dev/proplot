@@ -1377,15 +1377,10 @@ optional
                    cmap=None, norm=None,
                    interp=0, **kwargs):
         """
+        Draw a line whose color changes as a function of the parametric
+        coordinate ``values`` using the input colormap ``cmap``.
         Invoked when you pass the `cmap` keyword argument to
-        `~matplotlib.axes.Axes.plot`. Draws a "colormap line",
-        i.e. a line whose color changes as a function of the parametric
-        coordinate ``values``. using the input colormap ``cmap``.
-
-        This is actually a collection of lines, added as a
-        `~matplotlib.collections.LineCollection` instance. See
-        `this matplotlib example \
-<https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line>`__.
+        `~matplotlib.axes.Axes.plot`.
 
         Parameters
         ----------
@@ -1403,6 +1398,12 @@ optional
             between the `values` coordinates. The number corresponds to the
             number of additional color levels between the line joints
             and the halfway points between line joints.
+
+        Returns
+        -------
+        `~matplotlib.collections.LineCollection`
+            The parametric line. See `this matplotlib example \
+<https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line>`__.
         """
         # First error check
         # WARNING: So far this only works for 1D *x* and *y* coordinates.
