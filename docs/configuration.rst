@@ -110,64 +110,88 @@ Finally, the ``geoaxes``, ``land``, ``ocean``, ``rivers``, ``lakes``,
 `~proplot.axes.ProjAxes` settings. These are used when the boolean
 toggles for the corresponding :ref:`rcParamsShort` settings are turned on.
 
-===================================================================  =========================================================================================================================================================================================================================================================
-Key(s)                                                               Description
-===================================================================  =========================================================================================================================================================================================================================================================
-``abc.style``                                                        a-b-c label style. For options, see `~proplot.axes.Axes.format`.
-``abc.loc``                                                          a-b-c label position. For options, see `~proplot.axes.Axes.format`.
-``abc.border``                                                       Boolean, indicates whether to draw a white border around a-b-c labels inside an axes.
-``abc.linewidth``                                                    Width of the white border around a-b-c labels.
-``abc.color``, ``abc.size``, ``abc.weight``                          Font color, size, and weight for a-b-c labels.
-``axes.formatter.zerotrim``                                          Boolean, indicates whether trailing decimal zeros are trimmed on tick labels.
-``axes.formatter.timerotation``                                      Float, indicates the default *x* axis tick label rotation for datetime tick labels.
-``borders.color``, ``borders.linewidth``                             Line color and linewidth for country border lines.
-``bottomlabel.color``, ``bottomlabel.size``, ``bottomlabel.weight``  Font color, size, and weight for column labels on the bottom of the figure.
-``colorbar.loc``                                                     Inset colorbar location, options are listed in `~proplot.axes.Axes.colorbar`.
-``colorbar.grid``                                                    Boolean, indicates whether to draw borders between each level of the colorbar.
-``colorbar.frameon``                                                 Boolean, indicates whether to draw a frame behind inset colorbars.
-``colorbar.framealpha``                                              Opacity for inset colorbar frames.
-``colorbar.length``                                                  Length of outer colorbars.
-``colorbar.insetlength``                                             Length of inset colorbars. Units are interpreted by `~proplot.utils.units`.
-``colorbar.width``                                                   Width of outer colorbars. Units are interpreted by `~proplot.utils.units`.
-``colorbar.insetwidth``                                              Width of inset colorbars. Units are interpreted by `~proplot.utils.units`.
-``colorbar.axespad``                                                 Padding between axes edge and inset colorbars. Units are interpreted by `~proplot.utils.units`.
-``colorbar.extend``                                                  Length of rectangular or triangular "extensions" for panel colorbars. Units are interpreted by `~proplot.utils.units`.
-``colorbar.insetextend``                                             Length of rectangular or triangular "extensions" for inset colorbars. Units are interpreted by `~proplot.utils.units`.
-``geoaxes.facecolor``, ``geoaxes.edgecolor``, ``geoaxes.linewidth``  Face color, edge color, and edge width for the map outline patch.
-``geogrid.labels``                                                   Boolean, indicates whether to label the parallels and meridians.
-``geogrid.labelsize``                                                Font size for latitude and longitude labels. Inherits from ``small``.
-``geogrid.latmax``                                                   Absolute latitude in degrees, poleward of which meridian gridlines are cut off.
-``geogrid.lonstep``, ``geogrid.latstep``                             Interval for meridian and parallel gridlines, in degrees.
-``gridminor.linewidth``, ``geogrid.linewidth``                       The line width.
-``gridminor.linestyle``, ``geogrid.linestyle``                       The line style.
-``gridminor.alpha``, ``geogrid.alpha``                               The line transparency.
-``gridminor.color``, ``geogrid.color``                               The line color.
-``image.levels``                                                     Default number of levels for ``pcolormesh`` and ``contourf`` plots.
-``image.edgefix``                                                    Whether to fix the `white-lines-between-filled-contours <https://stackoverflow.com/q/8263769/4970632>`__ and `white-lines-between-pcolor-rectangles <https://stackoverflow.com/q/27092991/4970632>`__ issues. This slows down figure rendering a bit.
-``innerborders.color``, ``innerborders.linewidth``                   Line color and linewidth for internal border lines.
-``land.color``, ``ocean.color``, ``lakes.color``                     Face color for land, ocean, and lake patches.
-``leftlabel.color``, ``leftlabel.size``, ``leftlabel.weight``        Font color, size, and weight for row labels on the left-hand side.
-``rightlabel.color``, ``rightlabel.size``, ``rightlabel.weight``     Font color, size, and weight for row labels on the right-hand side.
-``rivers.color``, ``rivers.linewidth``                               Line color and linewidth for river lines.
-``subplots.axwidth``                                                 Default width of each axes. Units are interpreted by `~proplot.utils.units`.
-``subplots.panelwidth``                                              Width of side panels. Units are interpreted by `~proplot.utils.units`.
-``subplots.pad``                                                     Padding around figure edge. Units are interpreted by `~proplot.utils.units`.
-``subplots.axpad``                                                   Padding between adjacent subplots. Units are interpreted by `~proplot.utils.units`.
-``subplots.panelpad``                                                Padding between subplots and panels, and between stacked panels. Units are interpreted by `~proplot.utils.units`.
-``subplots.titlespace``                                              Vertical space for titles. Units are interpreted by `~proplot.utils.units`.
-``subplots.ylabspace``                                               Horizontal space between subplots allotted for *y*-labels. Units are interpreted by `~proplot.utils.units`.
-``subplots.xlabspace``                                               Vertical space between subplots allotted for *x*-labels. Units are interpreted by `~proplot.utils.units`.
-``subplots.innerspace``                                              Space between subplots allotted for tick marks. Units are interpreted by `~proplot.utils.units`.
-``subplots.panelspace``                                              Purely empty space between main axes and side panels. Units are interpreted by `~proplot.utils.units`.
-``suptitle.color``, ``suptitle.size``, ``suptitle.weight``           Font color, size, and weight for the figure title.
-``tick.labelcolor``, ``tick.labelsize``, ``tick.labelweight``        Font color, size, and weight for axis tick labels. These mirror the ``axes.labelcolor``, ``axes.labelsize``, and ``axes.labelweight`` `~matplotlib.rcParams` settings used for axes labels.
-``title.loc``                                                        Title position. For options, see `~proplot.axes.Axes.format`.
-``title.border``                                                     Boolean, indicates whether to draw a white border around titles inside an axes.
-``title.linewidth``                                                  Width of the white border around titles.
-``title.pad``                                                        Alias for ``axes.titlepad``, the title offset in arbitrary units
-``title.color``, ``title.size``, ``title.weight``                    Font color, size, and weight for subplot titles.
-``toplabel.color``, ``toplabel.size``, ``toplabel.weight``           Font color, size, and weight for column labels on the top of the figure.
-===================================================================  =========================================================================================================================================================================================================================================================
+===============================  =========================================================================================================================================================================================================================================================
+Key(s)                           Description
+===============================  =========================================================================================================================================================================================================================================================
+``abc.style``                    a-b-c label style. For options, see `~proplot.axes.Axes.format`.
+``abc.loc``                      a-b-c label position. For options, see `~proplot.axes.Axes.format`.
+``abc.border``                   Boolean, indicates whether to draw a white border around a-b-c labels inside an axes.
+``abc.linewidth``                Width of the white border around a-b-c labels.
+``abc.color``                    a-b-c label color.
+``abc.size``                     a-b-c label font size.
+``abc.weight``                   a-b-c label font weight.
+``axes.formatter.zerotrim``      Boolean, indicates whether trailing decimal zeros are trimmed on tick labels.
+``axes.formatter.timerotation``  Float, indicates the default *x* axis tick label rotation for datetime tick labels.
+``borders.color``                Line color for country borders.
+``borders.linewidth``            Line width for country borders.
+``bottomlabel.color``            Font color for column labels on the bottom of the figure.
+``bottomlabel.size``             Font size for column labels on the bottom of the figure.
+``bottomlabel.weight``           Font weight for column labels on the bottom of the figure.
+``colorbar.loc``                 Inset colorbar location, options are listed in `~proplot.axes.Axes.colorbar`.
+``colorbar.grid``                Boolean, indicates whether to draw borders between each level of the colorbar.
+``colorbar.frameon``             Boolean, indicates whether to draw a frame behind inset colorbars.
+``colorbar.framealpha``          Opacity for inset colorbar frames.
+``colorbar.length``              Length of outer colorbars.
+``colorbar.insetlength``         Length of inset colorbars. Units are interpreted by `~proplot.utils.units`.
+``colorbar.width``               Width of outer colorbars. Units are interpreted by `~proplot.utils.units`.
+``colorbar.insetwidth``          Width of inset colorbars. Units are interpreted by `~proplot.utils.units`.
+``colorbar.axespad``             Padding between axes edge and inset colorbars. Units are interpreted by `~proplot.utils.units`.
+``colorbar.extend``              Length of rectangular or triangular "extensions" for panel colorbars. Units are interpreted by `~proplot.utils.units`.
+``colorbar.insetextend``         Length of rectangular or triangular "extensions" for inset colorbars. Units are interpreted by `~proplot.utils.units`.
+``geoaxes.facecolor``            Face color for the map outline patch.
+``geoaxes.edgecolor``            Edge color for the map outline patch.
+``geoaxes.linewidth``            Edge width for the map outline patch.
+``geogrid.labels``               Boolean, indicates whether to label the parallels and meridians.
+``geogrid.labelsize``            Font size for latitude and longitude labels. Inherits from ``small``.
+``geogrid.latmax``               Absolute latitude in degrees, poleward of which meridian gridlines are cut off.
+``geogrid.lonstep``              Default interval for meridian gridlines in degrees.
+``geogrid.latstep``              Default interval for parallel gridlines in degrees.
+``gridminor.linewidth``          Minor gridline width.
+``gridminor.linestyle``          Minor gridline style.
+``gridminor.alpha``              Minor gridline transparency.
+``gridminor.color``              Minor gridline color.
+``image.levels``                 Default number of levels for ``pcolormesh`` and ``contourf`` plots.
+``image.edgefix``                Whether to fix the `white-lines-between-filled-contours <https://stackoverflow.com/q/8263769/4970632>`__ and `white-lines-between-pcolor-rectangles <https://stackoverflow.com/q/27092991/4970632>`__ issues. This slows down figure rendering a bit.
+``innerborders.color``           Line color for internal border lines.
+``innerborders.linewidth``       Line width for internal border lines.
+``land.color``                   Face color for land patches.
+``lakes.color``                  Face color for lake patches.
+``leftlabel.color``              Font color for row labels on the left-hand side.
+``leftlabel.size``               Font size for row labels on the left-hand side.
+``leftlabel.weight``             Font weight for row labels on the left-hand side.
+``ocean.color``                  Face color for ocean patches.
+``rightlabel.color``             Font color for row labels on the right-hand side.
+``rightlabel.size``              Font size for row labels on the right-hand side.
+``rightlabel.weight``            Font weight for row labels on the right-hand side.
+``rivers.color``                 Line color for river lines.
+``rivers.linewidth``             Line width for river lines.
+``subplots.axwidth``             Default width of each axes. Units are interpreted by `~proplot.utils.units`.
+``subplots.panelwidth``          Width of side panels. Units are interpreted by `~proplot.utils.units`.
+``subplots.pad``                 Padding around figure edge. Units are interpreted by `~proplot.utils.units`.
+``subplots.axpad``               Padding between adjacent subplots. Units are interpreted by `~proplot.utils.units`.
+``subplots.panelpad``            Padding between subplots and panels, and between stacked panels. Units are interpreted by `~proplot.utils.units`.
+``subplots.titlespace``          Vertical space for titles. Units are interpreted by `~proplot.utils.units`.
+``subplots.ylabspace``           Horizontal space between subplots allotted for *y*-labels. Units are interpreted by `~proplot.utils.units`.
+``subplots.xlabspace``           Vertical space between subplots allotted for *x*-labels. Units are interpreted by `~proplot.utils.units`.
+``subplots.innerspace``          Space between subplots allotted for tick marks. Units are interpreted by `~proplot.utils.units`.
+``subplots.panelspace``          Purely empty space between main axes and side panels. Units are interpreted by `~proplot.utils.units`.
+``suptitle.color``               Figure title color.
+``suptitle.size``                Figure title font size.
+``suptitle.weight``              Figure title font weight.
+``tick.color``                   Axis tick label color. Mirrors the *axis* label :rcraw:`axes.labelcolor` setting.
+``tick.size``                    Axis tick label font size. Mirrors the *axis* label :rcraw:`axes.labelsize` setting.
+``tick.weight``                  Axis tick label font weight. Mirrors the *axis* label :rcraw:`axes.labelweight` setting.
+``title.loc``                    Title position. For options, see `~proplot.axes.Axes.format`.
+``title.border``                 Boolean, indicates whether to draw a white border around titles inside an axes.
+``title.linewidth``              Width of the white border around titles.
+``title.pad``                    The title offset in arbitrary units. Alias for :rcraw:`axes.titlepad`.
+``title.color``                  Axes title color.
+``title.size``                   Axes title font size.
+``title.weight``                 Axes title font weight.
+``toplabel.color``               Font color for column labels on the top of the figure.
+``toplabel.size``                Font size for column labels on the top of the figure.
+``toplabel.weight``              Font weight for column labels on the top of the figure.
+===============================  =========================================================================================================================================================================================================================================================
 
 proplotrc file
 --------------

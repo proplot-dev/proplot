@@ -779,7 +779,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             raise ValueError(
                 'Cannot merge PerceptuallyUniformColormaps that use '
                 'different colorspaces: '
-                ', '.join(map(repr, spaces)) + '.')
+                + ', '.join(map(repr, spaces)) + '.')
         N = kwargs.pop('N', None)
         N = N or len(cmaps) * rcParams['image.lut']
         if name is None:
@@ -2121,9 +2121,9 @@ def Colormap(
                 if isinstance(cmap, str):
                     msg += (
                         f'\nValid cmap and cycle names: '
-                        ', '.join(map(repr, sorted(mcm.cmap_d))) + '.'
+                        + ', '.join(map(repr, sorted(mcm.cmap_d))) + '.'
                         f'\nValid color names: '
-                        ', '.join(map(repr, sorted(
+                        + ', '.join(map(repr, sorted(
                             mcolors.colorConverter.colors))) + '.')
                 raise ValueError(msg)
             cmap = PerceptuallyUniformColormap.from_color(tmp, color, fade)
@@ -2210,7 +2210,7 @@ def Cycle(
         colors of the ``'538'`` color cycle.
 
         For `~matplotlib.colors.LinearSegmentedColormap`\ s, this is either
-        a list of sample coordinates used to draw colors from the map, or an
+        a *list of sample coordinates used to draw colors from the map, or an
         integer number of colors to draw. If the latter, the sample coordinates
         are ``np.linspace(0, 1, N)``. For example, ``Cycle('Reds', 5)``
         divides the ``'Reds'`` colormap into five evenly spaced colors.
@@ -2326,7 +2326,9 @@ def Cycle(
         if len(value) < nprops:
             value[:] = [value[i % len(value)] for i in range(
                 nprops)]  # make loop double back
-    return cycler.cycler(**props)
+    cycle = cycler.cycler(**props)
+    cycle.name = name
+    return cycle
 
 
 def Norm(norm, levels=None, **kwargs):
@@ -3457,7 +3459,7 @@ def show_cycles(*args, **kwargs):
     """
     # Get the list of cycles
     if args:
-        names = [Colormap(cmap, listmode='listed').name for cmap in args]
+        names = [cmap.name for cmap in args]
     else:
         names = [name for name in mcm.cmap_d.keys() if
                  isinstance(mcm.cmap_d[name], ListedColormap)

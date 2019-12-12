@@ -424,7 +424,7 @@ class AutoFormatter(mticker.ScalarFormatter):
         if (x + eps) < tickrange[0] or (x - eps) > tickrange[1]:
             return ''  # avoid some ticks
         # Negative positive handling
-        if not self._negpos:
+        if not self._negpos or x == 0:
             tail = ''
         elif x > 0:
             tail = self._negpos[1]
@@ -450,8 +450,6 @@ class AutoFormatter(mticker.ScalarFormatter):
         sign = ''
         if string and string[0] == '\N{MINUS SIGN}':
             sign, string = string[0], string[1:]
-        if tail:
-            sign = ''
         return sign + self._prefix + string + self._suffix + tail
 
 
