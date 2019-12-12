@@ -831,7 +831,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             raise ValueError(
                 'Cannot merge PerceptuallyUniformColormaps that use '
                 'different colorspaces: '
-                ', '.join(map(repr, spaces)) + '.')
+                + ', '.join(map(repr, spaces)) + '.')
         N = kwargs.pop('N', None)
         N = N or len(cmaps) * rcParams['image.lut']
         if name is None:
@@ -2086,9 +2086,10 @@ def Colormap(*args, name=None, listmode='perceptual',
                 if isinstance(cmap, str):
                     msg += (
                         '\nValid cmap and cycle names: '
-                        ', '.join(sorted(mcm.cmap_d)) + '.'
+                        + ', '.join(sorted(mcm.cmap_d)) + '.'
                         '\nValid color names: '
-                        ', '.join(sorted(mcolors.colorConverter.colors)) + '.')
+                        + ', '.join(sorted(mcolors.colorConverter.colors))
+                        + '.')
                 raise ValueError(msg)
             cmap = PerceptuallyUniformColormap.from_color(tmp, color, fade)
             if ireverse:
@@ -2174,7 +2175,7 @@ def Cycle(
         colors of the ``'538'`` color cycle.
 
         For `~matplotlib.colors.LinearSegmentedColormap`\ s, this is either
-        a list of sample coordinates used to draw colors from the map, or an
+        a *list of sample coordinates used to draw colors from the map, or an
         integer number of colors to draw. If the latter, the sample coordinates
         are ``np.linspace(0, 1, samples)``. For example, ``Cycle('Reds', 5)``
         divides the ``'Reds'`` colormap into five evenly spaced colors.
@@ -2290,7 +2291,9 @@ def Cycle(
         if len(value) < nprops:
             value[:] = [value[i % len(value)] for i in range(
                 nprops)]  # make loop double back
-    return cycler.cycler(**props)
+    cycle = cycler.cycler(**props)
+    cycle.name = name
+    return cycle
 
 
 def Norm(norm, levels=None, **kwargs):
@@ -3490,7 +3493,9 @@ def show_cycles(*args, axwidth=1.5):
     """
     # Get the list of cycles
     if args:
-        icycles = [colors(cycle) for cycle in args]
+        icycles = {
+            getattr(cycle, 'name', '_no_name'): Colors(cycle)
+            for cycle in args}
     else:
         # use global cycles variable
         icycles = {key: mcm.cmap_d[key].colors for key in cycles}
