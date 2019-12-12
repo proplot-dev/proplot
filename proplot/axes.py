@@ -1964,7 +1964,7 @@ class XYAxes(Axes):
             xtickdir=None, ytickdir=None,
             xgrid=None, ygrid=None,
             xgridminor=None, ygridminor=None,
-            xtickminor=True, ytickminor=True,
+            xtickminor=None, ytickminor=None,
             xticklabeldir=None, yticklabeldir=None,
             xtickrange=None, ytickrange=None,
             xreverse=None, yreverse=None,
@@ -1997,9 +1997,7 @@ class XYAxes(Axes):
         Parameters
         ----------
         aspect : {'auto', 'equal'}, optional
-            The aspect ratio mode. If ``'auto'``, the aspect ratio is
-            determined from the *x* and *y* axis limits, and ProPlot adjusts
-            the subplot layout to remove excessive whitespace.
+            The aspect ratio mode.
         xlabel, ylabel : str, optional
             The *x* and *y* axis labels. Applied with
             `~matplotlib.axes.Axes.set_xlabel`
