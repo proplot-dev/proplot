@@ -72,8 +72,9 @@ ProPlot v0.2.8 (2019-12-09)
 
 .. rubric:: Bug fixes
 
-- Add brute force workaround for saving colormaps with *callable* segmentdata.
-- Save the ``cyclic`` and ``gamma`` attributes in JSON files too.
+- Add brute force workaround for saving colormaps with
+  *callable* segmentdata (:commit:`8201a806`).
+- Save the ``cyclic`` and ``gamma`` attributes in JSON files too (:commit:`8201a806`).
 
 ProPlot v0.2.7 (2019-12-09)
 ===========================
