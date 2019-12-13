@@ -1140,7 +1140,8 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         # Decompose shift into two truncations followed by concatenation
         cmap_left = self.truncated(shift, 1)
         cmap_right = self.truncated(0, shift)
-        return cmap_left.concatenate(cmap_right, name=name)
+        return cmap_left.concatenate(
+            cmap_right, ratios=(1 - shift, shift), name=name)
 
     def truncated(self, left=None, right=None, name=None, **kwargs):
         """
