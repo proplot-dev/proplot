@@ -1371,12 +1371,10 @@ class Axes(maxes.Axes):
                    cmap=None, norm=None,
                    interp=0, **kwargs):
         """
-        Draw a "colormap line" whose color changes as a function of the
-        parametric coordinate ``values`` using the input colormap ``cmap``.
-        Invoked when you pass ``cmap`` to `~matplotlib.axes.Axes.plot`.
-        Returns a `~matplotlib.collections.LineCollection` instance. See
-        `this matplotlib example \
-<https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line.html>`__.
+        Draw a line whose color changes as a function of the parametric
+        coordinate ``values`` using the input colormap ``cmap``.
+        Invoked when you pass the `cmap` keyword argument to
+        `~matplotlib.axes.Axes.plot`.
 
         Parameters
         ----------
@@ -1394,7 +1392,13 @@ class Axes(maxes.Axes):
             between the `values` coordinates. The number corresponds to the
             number of additional color levels between the line joints
             and the halfway points between line joints.
-        """  # noqa
+
+        Returns
+        -------
+        `~matplotlib.collections.LineCollection`
+            The parametric line. See `this matplotlib example \
+<https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line>`__.
+        """
         # First error check
         # WARNING: So far this only works for 1D *x* and *y* coordinates.
         # Cannot draw multiple colormap lines at once
@@ -1978,7 +1982,7 @@ class XYAxes(Axes):
             xtickdir=None, ytickdir=None,
             xgrid=None, ygrid=None,
             xgridminor=None, ygridminor=None,
-            xtickminor=True, ytickminor=True,
+            xtickminor=None, ytickminor=None,
             xticklabeldir=None, yticklabeldir=None,
             xtickrange=None, ytickrange=None,
             xreverse=None, yreverse=None,
@@ -2013,9 +2017,7 @@ class XYAxes(Axes):
         Parameters
         ----------
         aspect : {'auto', 'equal'}, optional
-            The aspect ratio mode. If ``'auto'``, the aspect ratio is
-            determined from the *x* and *y* axis limits, and ProPlot adjusts
-            the subplot layout to remove excessive whitespace.
+            The aspect ratio mode.
         xlabel, ylabel : str, optional
             The *x* and *y* axis labels. Applied with
             `~matplotlib.axes.Axes.set_xlabel`

@@ -69,6 +69,7 @@ ProPlot v0.2.7 (2019-12-09)
   points are incorrect (:commit:`9b164733`).
 
 .. rubric:: Documentation
+
 - Improve :ref:`Configuring proplot` documentation (:commit:`9d50719b`).
 
 .. rubric:: Internals
