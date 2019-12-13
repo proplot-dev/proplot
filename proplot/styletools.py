@@ -64,11 +64,7 @@ CMAPS_CATEGORIES = {
         'Sunrise', 'Sunset',
     ),
     'ProPlot diverging': (
-        'NegPos', 'Div', 'DryWet', 'Moisture',
-    ),
-    # Nice diverging maps
-    'Miscellaneous diverging': (
-        'ColdHot', 'CoolWarm', 'BR',
+        'Div', 'NegPos', 'DryWet',
     ),
     # cmOcean
     'cmOcean sequential': (
@@ -88,6 +84,10 @@ CMAPS_CATEGORIES = {
     'ColorBrewer2.0 diverging': (
         'Spectral', 'PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGY',
         'RdBu', 'RdYlBu', 'RdYlGn',
+    ),
+    # Nice diverging maps
+    'Other diverging': (
+        'ColdHot', 'CoolWarm', 'BR',
     ),
     # SciVisColor
     'SciVisColor blues': (
