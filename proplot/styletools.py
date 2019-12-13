@@ -199,7 +199,7 @@ BASE_COLORS = {
 }
 
 
-def _get_channel(color, channel, space='hsl'):
+def _get_channel(color, channel, space='hcl'):
     """
     Get the hue, saturation, or luminance channel value from the input color.
     The color name `color` can optionally be a string with the format
@@ -212,7 +212,7 @@ def _get_channel(color, channel, space='hsl'):
         The color. Sanitized with `to_rgb`.
     channel : {'hue', 'chroma', 'saturation', 'luminance'}
         The HCL channel to be retrieved.
-    space : {'rgb', 'hsv', 'hpl', 'hsl', 'hcl'}, optional
+    space : {'hcl', 'hpl', 'hsl', 'hsv', 'rgb'}, optional
         The colorspace for the corresponding channel value.
 
     Returns
@@ -305,7 +305,7 @@ def to_rgb(color, space='rgb', cycle=None, alpha=False):
         If `space` is ``'rgb'``, this is a tuple of RGB values, and any
         channels are larger than ``2``, the channels are assumed to be on
         a ``0`` to ``255`` scale and are therefore divided by ``255``.
-    space : {'rgb', 'hsv', 'hpl', 'hsl', 'hcl'}, optional
+    space : {'rgb', 'hsv', 'hsl', 'hpl', 'hcl'}, optional
         The colorspace for the input channel values. Ignored unless `color` is
         an container of numbers.
     cycle : str or list, optional
@@ -390,7 +390,7 @@ def to_xyz(color, space='hcl', alpha=False):
     ----------
     color : color-spec
         The color. Sanitized with `to_rgb`.
-    space : {'rgb', 'hsv', 'hpl', 'hsl', 'hcl'}, optional
+    space : {'hcl', 'hpl', 'hsl', 'hsv', 'rgb'}, optional
         The colorspace for the output channel values.
     alpha : bool, optional
         Whether to preserve the opacity channel, if it exists. Default
@@ -1445,7 +1445,7 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         N : int, optional
             Number of points in the colormap lookup table.
             Default is :rc:`image.lut`.
-        space : {'hcl', 'hsl', 'hpl'}, optional
+        space : {'hsl', 'hpl', 'hcl'}, optional
             The hue, saturation, luminance-style colorspace to use for
             interpreting the channels. See
             `this page <http://www.hsluv.org/comparison/>`__ for a description.
@@ -1553,7 +1553,7 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         name : str, optional
             The colormap name.
         color : color-spec
-            Color RGB tuple, hex string, or named color string.
+            RGB tuple, hex string, or named color string.
         fade : float or color-spec, optional
             If float, this is the luminance channel strength on the left-hand
             side of the colormap (default is ``100``), and the saturation
@@ -1562,7 +1562,7 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
             If RGB tuple, hex string, or named color string, the luminance and
             saturation (but *not* the hue) from this color are used for the
             left-hand side of the colormap.
-        space : {'hcl', 'hsl', 'hpl'}, optional
+        space : {'hsl', 'hpl', 'hcl'}, optional
             The colorspace in which the luminance is varied.
 
         Other parameters
