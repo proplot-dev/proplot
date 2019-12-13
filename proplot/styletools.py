@@ -21,8 +21,8 @@ import numpy as np
 import numpy.ma as ma
 import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
-from . import colormath
 from .utils import _warn_proplot, _notNone, _timer
+from .external import hsluv
 __all__ = [
     'BinNorm', 'CmapDict', 'ColorDict',
     'LinearSegmentedNorm',
@@ -329,10 +329,10 @@ def shade(color, scale=1):
         The new RGB tuple.
     """
     *color, alpha = to_rgb(color, alpha=True)
-    color = [*colormath.rgb_to_hsl(*color)]
+    color = [*hsluv.rgb_to_hsl(*color)]
     # multiply luminance by this value
     color[2] = max(0, min(color[2] * scale, 100))
-    color = [*colormath.hsl_to_rgb(*color)]
+    color = [*hsluv.hsl_to_rgb(*color)]
     return (*color, alpha)
 
 
@@ -353,10 +353,10 @@ def saturate(color, scale=0.5):
         The new RGB tuple.
     """
     *color, alpha = to_rgb(color, alpha=True)
-    color = [*colormath.rgb_to_hsl(*color)]
+    color = [*hsluv.rgb_to_hsl(*color)]
     # multiply luminance by this value
     color[1] = max(0, min(color[1] * scale, 100))
-    color = [*colormath.hsl_to_rgb(*color)]
+    color = [*hsluv.hsl_to_rgb(*color)]
     return (*color, alpha)
 
 
@@ -435,13 +435,13 @@ def to_rgb(color, space='rgb', cycle=None, alpha=False):
         except (ValueError, TypeError):
             raise ValueError(f'Invalid RGB argument {color!r}.')
     elif space == 'hsv':
-        color = colormath.hsl_to_rgb(*color)
+        color = hsluv.hsl_to_rgb(*color)
     elif space == 'hpl':
-        color = colormath.hpluv_to_rgb(*color)
+        color = hsluv.hpluv_to_rgb(*color)
     elif space == 'hsl':
-        color = colormath.hsluv_to_rgb(*color)
+        color = hsluv.hsluv_to_rgb(*color)
     elif space == 'hcl':
-        color = colormath.hcl_to_rgb(*color)
+        color = hsluv.hcl_to_rgb(*color)
     else:
         raise ValueError('Invalid color {color!r} for colorspace {space!r}.')
 
@@ -479,13 +479,13 @@ def to_xyz(color, space='hcl', alpha=False):
     if space == 'rgb':
         pass
     elif space == 'hsv':
-        color = colormath.rgb_to_hsl(*color)  # rgb_to_hsv would also work
+        color = hsluv.rgb_to_hsl(*color)  # rgb_to_hsv would also work
     elif space == 'hpl':
-        color = colormath.rgb_to_hpluv(*color)
+        color = hsluv.rgb_to_hpluv(*color)
     elif space == 'hsl':
-        color = colormath.rgb_to_hsluv(*color)
+        color = hsluv.rgb_to_hsluv(*color)
     elif space == 'hcl':
-        color = colormath.rgb_to_hcl(*color)
+        color = hsluv.rgb_to_hcl(*color)
     else:
         raise ValueError(f'Invalid colorspace {space}.')
     if alpha:
@@ -1427,7 +1427,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
 class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
     """Similar to `~matplotlib.colors.LinearSegmentedColormap`, but instead
     of varying the RGB channels, we vary hue, saturation, and luminance in
-    either the HCL colorspace or the HSLuv or HPLuv scalings of HCL."""
+    either the HCL colorspace or the HSL or HPL scalings of HCL."""
     @docstring.dedent_interpd
     def __init__(
             self, name, segmentdata, N=None, space=None, clip=True,
@@ -1457,7 +1457,7 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         space : {'hcl', 'hsl', 'hpl'}, optional
             The hue, saturation, luminance-style colorspace to use for
             interpreting the channels. See
-            `this page <http://www.hsluv.org/comparison/>`_ for a description.
+            `this page <http://www.hsluv.org/comparison/>`__ for a description.
         clip : bool, optional
             Whether to "clip" impossible colors, i.e. truncate HCL colors
             with RGB channels with values >1, or mask them out as gray.
@@ -3195,19 +3195,19 @@ def show_channels(*args, N=100, rgb=True, saturation=True,
 def show_colorspaces(luminance=None, saturation=None, hue=None, axwidth=2):
     """
     Generate hue-saturation, hue-luminance, and luminance-saturation
-    cross-sections for the HCL, HSLuv, and HPLuv colorspaces.
+    cross-sections for the HCL, HSL, and HPL colorspaces.
 
     Parameters
     ----------
     luminance : float, optional
-        If passed, chroma-saturation cross-sections are drawn for this
-        luminance.  Must be between ``0` and ``100``. Default is ``50``.
+        If passed, saturation-hue cross-sections are drawn for
+        this luminance. Must be between ``0` and ``100``. Default is ``50``.
     saturation : float, optional
-        If passed, luminance-hue cross-sections are drawn for this saturation.
-        Must be between ``0` and ``100``.
+        If passed, luminance-hue cross-sections are drawn for this
+        saturation. Must be between ``0` and ``100``.
     hue : float, optional
-        If passed, luminance-saturation cross-sections are drawn for this hue.
-        Must be between ``0` and ``360``.
+        If passed, luminance-saturation cross-sections
+        are drawn for this hue. Must be between ``0` and ``360``.
     axwidth : str or float, optional
         Average width of each subplot. Units are interpreted by
         `~proplot.utils.units`.
@@ -3219,7 +3219,6 @@ def show_colorspaces(luminance=None, saturation=None, hue=None, axwidth=2):
     """
     # Get colorspace properties
     hues = np.linspace(0, 360, 361)
-    # use 120 instead of 121, prevents annoying rough edge on HSL plot
     sats = np.linspace(0, 120, 120)
     lums = np.linspace(0, 99.99, 101)
     if luminance is None and saturation is None and hue is None:
