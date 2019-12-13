@@ -256,12 +256,12 @@ gamma_doc = """
 gamma1 : float, optional
     If >1, makes low saturation colors more prominent. If <1,
     makes high saturation colors more prominent. Similar to the
-    `HCLWizard <http://hclwizard.org:64230/hclwizard/>`_ option.
+    `HCLWizard <http://hclwizard.org:64230/hclwizard/>`__ option.
     See `make_mapping_array` for details.
 gamma2 : float, optional
     If >1, makes high luminance colors more prominent. If <1,
     makes low luminance colors more prominent. Similar to the
-    `HCLWizard <http://hclwizard.org:64230/hclwizard/>`_ option.
+    `HCLWizard <http://hclwizard.org:64230/hclwizard/>`__ option.
     See `make_mapping_array` for details.
 gamma : float, optional
     Use this to identically set `gamma1` and `gamma2` at once.
@@ -611,6 +611,16 @@ def make_mapping_array(N, data, gamma=1.0, inverse=False):
         :math:`w_i` ranges from 0 to 1 between rows ``i`` and ``i+1``.
         If `gamma` is float, it applies to every transition. Otherwise,
         its length must equal ``data.shape[0]-1``.
+
+        This is like the `gamma` used with matplotlib's
+        `~matplotlib.colors.makeMappingArray`, except it controls the
+        weighting for transitions *between* each segment data coordinate rather
+        than the coordinates themselves. This makes more sense for
+        `PerceptuallyUniformColormap`\\ s because they usually consist of just
+        one linear transition for *sequential* colormaps and two linear
+        transitions for *diverging* colormaps -- and in the latter case, it
+        is often desirable to modify both "halves" of the colormap in the
+        same way.
     inverse : bool, optional
         If ``True``, :math:`w_i^{\gamma_i}` is replaced with
         :math:`1 - (1 - w_i)^{\gamma_i}` -- that is, when `gamma` is greater
@@ -698,7 +708,6 @@ def make_mapping_array(N, data, gamma=1.0, inverse=False):
 
 class _Colormap():
     """Mixin class used to add some helper methods."""
-
     def _get_data(self, ext):
         """
         Returns a string containing the colormap colors for saving.
@@ -1048,13 +1057,29 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         # Save channel segment data in json file
         _, ext = os.path.splitext(filename)
         if ext[1:] == 'json':
+            # Sanitize segmentdata values
+            # Convert np.float to builtin float, np.array to list of lists,
+            # and callable to list of lists. We tried encoding func.__code__
+            # with base64 and marshal instead, but when cmap.concatenate()
+            # embeds functions as keyword arguments, this seems to make it
+            # *impossible* to load back up the function with FunctionType
+            # (error message: arg 5 (closure) must be tuple). Instead use
+            # this brute force workaround.
             data = {}
             for key, value in self._segmentdata.items():
-                # from np.float to builtin float, and to list of lists
-                data[key] = np.array(value).astype(float).tolist()
+                if callable(value):
+                    x = np.linspace(0, 1, 256)  # just save the transitions
+                    y = np.array([value(_) for _ in x]).squeeze()
+                    value = np.vstack((x, y, y)).T
+                data[key] = np.asarray(value).astype(float).tolist()
+            # Add critical attributes to the dictionary
+            keys = ()
             if isinstance(self, PerceptuallyUniformColormap):
-                for key in ('space', 'gamma1', 'gamma2'):
-                    data[key] = getattr(self, '_' + key)
+                keys = ('cyclic', 'gamma1', 'gamma2', 'space')
+            elif isinstance(self, LinearSegmentedColormap):
+                keys = ('cyclic', 'gamma')
+            for key in keys:
+                data[key] = getattr(self, '_' + key)
             with open(filename, 'w') as file:
                 json.dump(data, file, indent=4)
         # Save lookup table colors
@@ -2681,12 +2706,12 @@ def _load_cmap_cycle(filename, cmap=False):
     if ext == 'json':
         with open(filename, 'r') as f:
             data = json.load(f)
+        kw = {}
+        for key in ('cyclic', 'gamma', 'gamma1', 'gamma2', 'space'):
+            kw[key] = data.pop(key, None)
         if 'red' in data:
             data = LinearSegmentedColormap(name, data, N=N)
         else:
-            kw = {}
-            for key in ('space', 'gamma1', 'gamma2'):
-                kw[key] = data.pop(key, None)
             data = PerceptuallyUniformColormap(name, data, N=N, **kw)
         if name[-2:] == '_r':
             data = data.reversed(name[:-2])
