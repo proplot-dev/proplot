@@ -16,13 +16,13 @@ import glob
 import cycler
 from xml.etree import ElementTree
 from numbers import Number, Integral
-from matplotlib import rcParams
+from matplotlib import docstring, rcParams
 import numpy as np
 import numpy.ma as ma
 import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
-from . import colormath
 from .utils import _warn_proplot, _notNone, _timer
+from .external import hsluv
 __all__ = [
     'BinNorm', 'CmapDict', 'ColorDict',
     'LinearSegmentedNorm',
@@ -45,16 +45,16 @@ CMAPS_TABLE = {
         'Grays', 'Mono', 'GrayCycle',
     ),
     # Builtin
-    'Matplotlib Originals': (
+    'Matplotlib originals': (
         'viridis', 'plasma', 'inferno', 'magma', 'cividis',
         'twilight', 'twilight_shifted',
     ),
     # seaborn
-    'Seaborn Originals': (
+    'Seaborn originals': (
         'Rocket', 'Mako', 'IceFire', 'Vlag',
     ),
     # PerceptuallyUniformColormap
-    'ProPlot Sequential': (
+    'ProPlot sequential': (
         'Fire',
         'Stellar',
         'Boreal',
@@ -63,50 +63,50 @@ CMAPS_TABLE = {
         'Glacial',
         'Sunrise', 'Sunset',
     ),
-    'ProPlot Diverging': (
-        'NegPos', 'Div', 'DryWet', 'Moisture',
-    ),
-    # Nice diverging maps
-    'Other Diverging': (
-        'ColdHot', 'CoolWarm', 'BR',
+    'ProPlot diverging': (
+        'Div', 'NegPos', 'DryWet',
     ),
     # cmOcean
-    'cmOcean Sequential': (
+    'cmOcean sequential': (
         'Oxy', 'Thermal', 'Dense', 'Ice', 'Haline',
         'Deep', 'Algae', 'Tempo', 'Speed', 'Turbid', 'Solar', 'Matter',
         'Amp', 'Phase',
     ),
-    'cmOcean Diverging': (
+    'cmOcean diverging': (
         'Balance', 'Delta', 'Curl',
     ),
     # ColorBrewer
-    'ColorBrewer2.0 Sequential': (
+    'ColorBrewer2.0 sequential': (
         'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
         'YlOrBr', 'YlOrRd', 'OrRd', 'PuRd', 'RdPu', 'BuPu',
         'PuBu', 'PuBuGn', 'BuGn', 'GnBu', 'YlGnBu', 'YlGn'
     ),
-    'ColorBrewer2.0 Diverging': (
+    'ColorBrewer2.0 diverging': (
         'Spectral', 'PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGY',
         'RdBu', 'RdYlBu', 'RdYlGn',
     ),
+    # Nice diverging maps
+    'Other diverging': (
+        'ColdHot', 'CoolWarm', 'BR',
+    ),
     # SciVisColor
-    'SciVisColor Blues': (
+    'SciVisColor blues': (
         'Blue0', 'Blue1', 'Blue2', 'Blue3', 'Blue4', 'Blue5',
         'Blue6', 'Blue7', 'Blue8', 'Blue9', 'Blue10', 'Blue11',
     ),
-    'SciVisColor Greens': (
+    'SciVisColor greens': (
         'Green1', 'Green2', 'Green3', 'Green4', 'Green5',
         'Green6', 'Green7', 'Green8',
     ),
-    'SciVisColor Oranges': (
+    'SciVisColor oranges': (
         'Orange1', 'Orange2', 'Orange3', 'Orange4', 'Orange5',
         'Orange6', 'Orange7', 'Orange8',
     ),
-    'SciVisColor Browns': (
+    'SciVisColor browns': (
         'Brown1', 'Brown2', 'Brown3', 'Brown4', 'Brown5',
         'Brown6', 'Brown7', 'Brown8', 'Brown9',
     ),
-    'SciVisColor Reds/Purples': (
+    'SciVisColor reds and purples': (
         'RedPurple1', 'RedPurple2', 'RedPurple3', 'RedPurple4',
         'RedPurple5', 'RedPurple6', 'RedPurple7', 'RedPurple8',
     ),
@@ -199,16 +199,6 @@ BASE_COLORS = {
 }
 
 
-def _get_space(space):
-    """Return a sanitized version of the colorspace name."""
-    space = space.lower()
-    if space in ('hpluv', 'hsluv'):
-        space = space[:3]
-    if space not in ('rgb', 'hsv', 'hpl', 'hsl', 'hcl'):
-        raise ValueError(f'Unknown colorspace {space!r}.')
-    return space
-
-
 def _get_channel(color, channel, space='hsl'):
     """
     Get the hue, saturation, or luminance channel value from the input color.
@@ -268,10 +258,10 @@ def shade(color, scale=1):
         The new RGB tuple.
     """
     *color, alpha = to_rgb(color, alpha=True)
-    color = [*colormath.rgb_to_hsl(*color)]
+    color = [*hsluv.rgb_to_hsl(*color)]
     # multiply luminance by this value
     color[2] = max(0, min(color[2] * scale, 100))
-    color = [*colormath.hsl_to_rgb(*color)]
+    color = [*hsluv.hsl_to_rgb(*color)]
     return (*color, alpha)
 
 
@@ -292,10 +282,10 @@ def saturate(color, scale=0.5):
         The new RGB tuple.
     """
     *color, alpha = to_rgb(color, alpha=True)
-    color = [*colormath.rgb_to_hsl(*color)]
+    color = [*hsluv.rgb_to_hsl(*color)]
     # multiply luminance by this value
     color[1] = max(0, min(color[1] * scale, 100))
-    color = [*colormath.hsl_to_rgb(*color)]
+    color = [*hsluv.hsl_to_rgb(*color)]
     return (*color, alpha)
 
 
@@ -374,13 +364,13 @@ def to_rgb(color, space='rgb', cycle=None, alpha=False):
         except (ValueError, TypeError):
             raise ValueError(f'Invalid RGB argument {color!r}.')
     elif space == 'hsv':
-        color = colormath.hsl_to_rgb(*color)
+        color = hsluv.hsl_to_rgb(*color)
     elif space == 'hpl':
-        color = colormath.hpluv_to_rgb(*color)
+        color = hsluv.hpluv_to_rgb(*color)
     elif space == 'hsl':
-        color = colormath.hsluv_to_rgb(*color)
+        color = hsluv.hsluv_to_rgb(*color)
     elif space == 'hcl':
-        color = colormath.hcl_to_rgb(*color)
+        color = hsluv.hcl_to_rgb(*color)
     else:
         raise ValueError('Invalid color {color!r} for colorspace {space!r}.')
 
@@ -418,13 +408,13 @@ def to_xyz(color, space='hcl', alpha=False):
     if space == 'rgb':
         pass
     elif space == 'hsv':
-        color = colormath.rgb_to_hsl(*color)  # rgb_to_hsv would also work
+        color = hsluv.rgb_to_hsl(*color)  # rgb_to_hsv would also work
     elif space == 'hpl':
-        color = colormath.rgb_to_hpluv(*color)
+        color = hsluv.rgb_to_hpluv(*color)
     elif space == 'hsl':
-        color = colormath.rgb_to_hsluv(*color)
+        color = hsluv.rgb_to_hsluv(*color)
     elif space == 'hcl':
-        color = colormath.rgb_to_hcl(*color)
+        color = hsluv.rgb_to_hcl(*color)
     else:
         raise ValueError(f'Invalid colorspace {space}.')
     if alpha:
@@ -550,6 +540,16 @@ def make_mapping_array(N, data, gamma=1.0, inverse=False):
         :math:`w_i` ranges from 0 to 1 between rows ``i`` and ``i+1``.
         If `gamma` is float, it applies to every transition. Otherwise,
         its length must equal ``data.shape[0]-1``.
+
+        This is like the `gamma` used with matplotlib's
+        `~matplotlib.colors.makeMappingArray`, except it controls the
+        weighting for transitions *between* each segment data coordinate rather
+        than the coordinates themselves. This makes more sense for
+        `PerceptuallyUniformColormap`\\ s because they usually consist of just
+        one linear transition for *sequential* colormaps and two linear
+        transitions for *diverging* colormaps -- and in the latter case, it
+        is often desirable to modify both "halves" of the colormap in the
+        same way.
     inverse : bool, optional
         If ``True``, :math:`w_i^{\gamma_i}` is replaced with
         :math:`1 - (1 - w_i)^{\gamma_i}` -- that is, when `gamma` is greater
@@ -637,7 +637,6 @@ def make_mapping_array(N, data, gamma=1.0, inverse=False):
 
 class _Colormap():
     """Mixin class used to add some helper methods."""
-
     def _get_data(self, ext):
         """
         Return a string containing the colormap colors for saving.
@@ -824,8 +823,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
                     datas[i][-1, 2] = datas[i + 1][0, 2]
                     datas[i + 1] = datas[i + 1][1:, :]
                 xyy = np.concatenate(datas, axis=0)
-                # avoid floating point errors
-                xyy[:, 0] = xyy[:, 0] / xyy[:, 0].max(axis=0)
+                xyy[:, 0] = xyy[:, 0] / xyy[:, 0].max(axis=0)  # fix fp errors
             else:
                 raise ValueError(
                     'Mixed callable and non-callable colormap values.')
@@ -954,13 +952,29 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         # Save channel segment data in json file
         _, ext = os.path.splitext(filename)
         if ext[1:] == 'json':
+            # Sanitize segmentdata values
+            # Convert np.float to builtin float, np.array to list of lists,
+            # and callable to list of lists. We tried encoding func.__code__
+            # with base64 and marshal instead, but when cmap.concatenate()
+            # embeds functions as keyword arguments, this seems to make it
+            # *impossible* to load back up the function with FunctionType
+            # (error message: arg 5 (closure) must be tuple). Instead use
+            # this brute force workaround.
             data = {}
             for key, value in self._segmentdata.items():
-                # from np.float to builtin float, and to list of lists
-                data[key] = np.array(value).astype(float).tolist()
+                if callable(value):
+                    x = np.linspace(0, 1, 256)  # just save the transitions
+                    y = np.array([value(_) for _ in x]).squeeze()
+                    value = np.vstack((x, y, y)).T
+                data[key] = np.asarray(value).astype(float).tolist()
+            # Add critical attributes to the dictionary
+            keys = ()
             if isinstance(self, PerceptuallyUniformColormap):
-                for key in ('space', 'gamma1', 'gamma2'):
-                    data[key] = getattr(self, '_' + key)
+                keys = ('cyclic', 'gamma1', 'gamma2', 'space')
+            elif isinstance(self, LinearSegmentedColormap):
+                keys = ('cyclic', 'gamma')
+            for key in keys:
+                data[key] = getattr(self, '_' + key)
             with open(filename, 'w') as file:
                 json.dump(data, file, indent=4)
         # Save lookup table colors
@@ -1060,27 +1074,26 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             # the lambda function it gets overwritten in the loop! Must embed
             # the old callable in the new one as a default keyword arg.
             if callable(xyy):
-                def ixyy(x, func=xyy):
+                def xyy(x, func=xyy):
                     return func(left + x * (right - left))
             # Slice
             # l is the first point where x > 0 or x > left, should be >= 1
             # r is the last point where r < 1 or r < right
             else:
-                xyy = np.array(xyy)
+                xyy = np.asarray(xyy)
                 x = xyy[:, 0]
                 l = np.searchsorted(x, left)  # first x value > left  # noqa
                 r = np.searchsorted(x, right) - 1  # last x value < right
-                ixyy = xyy[l:r + 1, :].copy()
+                xc = xyy[l:r + 1, :].copy()
                 xl = xyy[l - 1, 1:] + (left - x[l - 1]) * (
                     (xyy[l, 1:] - xyy[l - 1, 1:]) / (x[l] - x[l - 1])
                 )
-                ixyy = np.vstack(((left, *xl), ixyy))
                 xr = xyy[r, 1:] + (right - x[r]) * (
                     (xyy[r + 1, 1:] - xyy[r, 1:]) / (x[r + 1] - x[r])
                 )
-                ixyy = np.vstack((ixyy, (right, *xr)))
-                ixyy[:, 0] = (ixyy[:, 0] - left) / (right - left)
-            segmentdata[key] = ixyy
+                xyy = np.vstack(((left, *xl), xc, (right, *xr)))
+                xyy[:, 0] = (xyy[:, 0] - left) / (right - left)
+            segmentdata[key] = xyy
             # Retain the corresponding gamma *segments*
             if key == 'saturation':
                 ikey = 'gamma1'
@@ -1404,15 +1417,13 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
 
 class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
     """Similar to `~matplotlib.colors.LinearSegmentedColormap`, but instead
-    of varying the RGB channels, the hue, saturation, and luminance channels
-    are varied across the HCL colorspace or the HSLuv or HPLuv scalings of
-    HCL."""
-
-    def __init__(self,
-                 name, segmentdata, N=None, space=None, clip=True,
-                 gamma=None, gamma1=None, gamma2=None,
-                 **kwargs,
-                 ):
+    of varying the RGB channels, we vary hue, saturation, and luminance in
+    either the HCL colorspace or the HSL or HPL scalings of HCL."""
+    @docstring.dedent_interpd
+    def __init__(
+            self, name, segmentdata, N=None, space=None, clip=True,
+            gamma=None, gamma1=None, gamma2=None,
+            **kwargs):
         """
         Parameters
         ----------
@@ -1437,7 +1448,7 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         space : {'hcl', 'hsl', 'hpl'}, optional
             The hue, saturation, luminance-style colorspace to use for
             interpreting the channels. See
-            `this page <http://www.hsluv.org/comparison/>`_ for a description.
+            `this page <http://www.hsluv.org/comparison/>`__ for a description.
         clip : bool, optional
             Whether to "clip" impossible colors, i.e. truncate HCL colors
             with RGB channels with values >1, or mask them out as gray.
@@ -2716,12 +2727,12 @@ def _from_file(filename, listed=False):
     if ext == 'json':
         with open(filename, 'r') as f:
             data = json.load(f)
+        kw = {}
+        for key in ('cyclic', 'gamma', 'gamma1', 'gamma2', 'space'):
+            kw[key] = data.pop(key, None)
         if 'red' in data:
             cmap = LinearSegmentedColormap(name, data, N=N)
         else:
-            kw = {}
-            for key in ('space', 'gamma1', 'gamma2'):
-                kw[key] = data.pop(key, None)
             cmap = PerceptuallyUniformColormap(name, data, N=N, **kw)
         if name[-2:] == '_r':
             cmap = cmap.reversed(name[:-2])
@@ -3190,19 +3201,19 @@ def show_channels(
 def show_colorspaces(luminance=None, saturation=None, hue=None, axwidth=2):
     """
     Generate hue-saturation, hue-luminance, and luminance-saturation
-    cross-sections for the HCL, HSLuv, and HPLuv colorspaces.
+    cross-sections for the HCL, HSL, and HPL colorspaces.
 
     Parameters
     ----------
     luminance : float, optional
-        If passed, chroma-saturation cross-sections are drawn for this
-        luminance.  Must be between ``0` and ``100``. Default is ``50``.
+        If passed, saturation-hue cross-sections are drawn for
+        this luminance. Must be between ``0` and ``100``. Default is ``50``.
     saturation : float, optional
-        If passed, luminance-hue cross-sections are drawn for this saturation.
-        Must be between ``0` and ``100``.
+        If passed, luminance-hue cross-sections are drawn for this
+        saturation. Must be between ``0` and ``100``.
     hue : float, optional
-        If passed, luminance-saturation cross-sections are drawn for this hue.
-        Must be between ``0` and ``360``.
+        If passed, luminance-saturation cross-sections
+        are drawn for this hue. Must be between ``0` and ``360``.
     axwidth : str or float, optional
         Average width of each subplot. Units are interpreted by
         `~proplot.utils.units`.
@@ -3214,7 +3225,6 @@ def show_colorspaces(luminance=None, saturation=None, hue=None, axwidth=2):
     """
     # Get colorspace properties
     hues = np.linspace(0, 360, 361)
-    # use 120 instead of 121, prevents annoying rough edge on HSL plot
     sats = np.linspace(0, 120, 120)
     lums = np.linspace(0, 99.99, 101)
     if luminance is None and saturation is None and hue is None:
@@ -3522,7 +3532,7 @@ def show_fonts(*args, size=12):
 mcm.cmap_d['Grays'] = mcm.cmap_d.pop('Greys', None)  # 'Murica (and consistency with registered colors)  # noqa
 mcm.cmap_d['Spectral'] = mcm.cmap_d['Spectral'].reversed(
     name='Spectral')  # make spectral go from 'cold' to 'hot'
-for _name in CMAPS_TABLE['Matplotlib Originals']:  # initialize as empty lists
+for _name in CMAPS_TABLE['Matplotlib originals']:  # initialize as empty lists
     _cmap = mcm.cmap_d.get(_name, None)
     if _cmap and isinstance(_cmap, mcolors.ListedColormap):
         mcm.cmap_d[_name] = LinearSegmentedColormap.from_list(

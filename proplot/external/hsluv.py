@@ -16,10 +16,10 @@ Provided by matplotlib:
 * `~matplotlib.colors.rgb_to_hsv`
 * `~matplotlib.colors.hsv_to_rgb`
 
-Brand new conversion tools:
+New conversion tools:
 
-* `rgb_to_hsl` (same as `rgb_to_hsv`)
-* `hsl_to_rgb` (same as `hsv_to_rgb`)
+* `rgb_to_hsl` (same as `~matplotlib.colors.rgb_to_hsv`)
+* `hsl_to_rgb` (same as `~matplotlib.colors.hsv_to_rgb`)
 * `hcl_to_rgb`
 * `rgb_to_hcl`
 * `hsluv_to_rgb`
