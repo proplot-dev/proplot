@@ -45,16 +45,16 @@ CMAPS_CATEGORIES = {
         'Grays', 'Mono', 'GrayCycle',
     ),
     # Builtin
-    'Matplotlib Originals': (
+    'Matplotlib originals': (
         'viridis', 'plasma', 'inferno', 'magma', 'cividis',
         'twilight', 'twilight_shifted',
     ),
     # seaborn
-    'Seaborn Originals': (
+    'Seaborn originals': (
         'Rocket', 'Mako', 'IceFire', 'Vlag',
     ),
     # PerceptuallyUniformColormap
-    'ProPlot Sequential': (
+    'ProPlot sequential': (
         'Fire',
         'Stellar',
         'Boreal',
@@ -63,50 +63,50 @@ CMAPS_CATEGORIES = {
         'Glacial',
         'Sunrise', 'Sunset',
     ),
-    'ProPlot Diverging': (
+    'ProPlot diverging': (
         'NegPos', 'Div', 'DryWet', 'Moisture',
     ),
     # Nice diverging maps
-    'Miscellaneous Diverging': (
+    'Miscellaneous diverging': (
         'ColdHot', 'CoolWarm', 'BR',
     ),
     # cmOcean
-    'cmOcean Sequential': (
+    'cmOcean sequential': (
         'Oxy', 'Thermal', 'Dense', 'Ice', 'Haline',
         'Deep', 'Algae', 'Tempo', 'Speed', 'Turbid', 'Solar', 'Matter',
         'Amp', 'Phase',
     ),
-    'cmOcean Diverging': (
+    'cmOcean diverging': (
         'Balance', 'Delta', 'Curl',
     ),
     # ColorBrewer
-    'ColorBrewer2.0 Sequential': (
+    'ColorBrewer2.0 sequential': (
         'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
         'YlOrBr', 'YlOrRd', 'OrRd', 'PuRd', 'RdPu', 'BuPu',
         'PuBu', 'PuBuGn', 'BuGn', 'GnBu', 'YlGnBu', 'YlGn'
     ),
-    'ColorBrewer2.0 Diverging': (
+    'ColorBrewer2.0 diverging': (
         'Spectral', 'PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGY',
         'RdBu', 'RdYlBu', 'RdYlGn',
     ),
     # SciVisColor
-    'SciVisColor Blues': (
+    'SciVisColor blues': (
         'Blue0', 'Blue1', 'Blue2', 'Blue3', 'Blue4', 'Blue5',
         'Blue6', 'Blue7', 'Blue8', 'Blue9', 'Blue10', 'Blue11',
     ),
-    'SciVisColor Greens': (
+    'SciVisColor greens': (
         'Green1', 'Green2', 'Green3', 'Green4', 'Green5',
         'Green6', 'Green7', 'Green8',
     ),
-    'SciVisColor Oranges': (
+    'SciVisColor oranges': (
         'Orange1', 'Orange2', 'Orange3', 'Orange4', 'Orange5',
         'Orange6', 'Orange7', 'Orange8',
     ),
-    'SciVisColor Browns': (
+    'SciVisColor browns': (
         'Brown1', 'Brown2', 'Brown3', 'Brown4', 'Brown5',
         'Brown6', 'Brown7', 'Brown8', 'Brown9',
     ),
-    'SciVisColor Reds/Purples': (
+    'SciVisColor reds and purples': (
         'RedPurple1', 'RedPurple2', 'RedPurple3', 'RedPurple4',
         'RedPurple5', 'RedPurple6', 'RedPurple7', 'RedPurple8',
     ),
@@ -876,8 +876,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
                     datas[i][-1, 2] = datas[i + 1][0, 2]
                     datas[i + 1] = datas[i + 1][1:, :]
                 xyy = np.concatenate(datas, axis=0)
-                # avoid floating point errors
-                xyy[:, 0] = xyy[:, 0] / xyy[:, 0].max(axis=0)
+                xyy[:, 0] = xyy[:, 0] / xyy[:, 0].max(axis=0)  # fix fp errors
             else:
                 raise ValueError(
                     'Mixed callable and non-callable colormap values.')
@@ -1155,27 +1154,26 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             # the lambda function it gets overwritten in the loop! Must embed
             # the old callable in the new one as a default keyword arg.
             if callable(xyy):
-                def ixyy(x, func=xyy):
+                def xyy(x, func=xyy):
                     return func(left + x * (right - left))
             # Slice
             # l is the first point where x > 0 or x > left, should be >= 1
             # r is the last point where r < 1 or r < right
             else:
-                xyy = np.array(xyy)
+                xyy = np.asarray(xyy)
                 x = xyy[:, 0]
                 l = np.searchsorted(x, left)  # first x value > left  # noqa
                 r = np.searchsorted(x, right) - 1  # last x value < right
-                ixyy = xyy[l:r + 1, :].copy()
+                xc = xyy[l:r + 1, :].copy()
                 xl = xyy[l - 1, 1:] + (left - x[l - 1]) * (
                     (xyy[l, 1:] - xyy[l - 1, 1:]) / (x[l] - x[l - 1])
                 )
-                ixyy = np.vstack(((left, *xl), ixyy))
                 xr = xyy[r, 1:] + (right - x[r]) * (
                     (xyy[r + 1, 1:] - xyy[r, 1:]) / (x[r + 1] - x[r])
                 )
-                ixyy = np.vstack((ixyy, (right, *xr)))
-                ixyy[:, 0] = (ixyy[:, 0] - left) / (right - left)
-            segmentdata[key] = ixyy
+                xyy = np.vstack(((left, *xl), xc, (right, *xr)))
+                xyy[:, 0] = (xyy[:, 0] - left) / (right - left)
+            segmentdata[key] = xyy
             # Retain the corresponding gamma *segments*
             if key == 'saturation':
                 ikey = 'gamma1'
@@ -2822,7 +2820,7 @@ def register_cmaps():
     # Turn original matplotlib maps from ListedColormaps
     # to LinearSegmentedColormaps. It makes zero sense to me that they are
     # stored as ListedColormaps.
-    for name in CMAPS_CATEGORIES['Matplotlib Originals']:
+    for name in CMAPS_CATEGORIES['Matplotlib originals']:
         cmap = mcm.cmap_d.get(name, None)
         if isinstance(cmap, ListedColormap):
             mcm.cmap_d.pop(name)
