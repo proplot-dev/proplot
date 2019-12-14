@@ -60,7 +60,7 @@ ProPlot v0.3.0 (2020-01-##)
   with a default ``.proplotrc`` file, change the auto-generated user ``.proplotrc``
   (:pr:`50`).
 
-ProPlot v0.2.8 (2019-12-09)
+ProPlot v0.2.8 (2019-12-##)
 ===========================
 .. rubric:: Deprecated
 
@@ -74,6 +74,8 @@ ProPlot v0.2.8 (2019-12-09)
 
 - Add brute force workaround for saving colormaps with
   *callable* segmentdata (:commit:`8201a806`).
+- Fix `~proplot.styletools.LinearSegmentedColormap.shifted` when `shift` is
+  not ``180`` (forgot to apply correct `ratios`).
 - Save the ``cyclic`` and ``gamma`` attributes in JSON files too (:commit:`8201a806`).
 
 ProPlot v0.2.7 (2019-12-09)

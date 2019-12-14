@@ -1134,7 +1134,8 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         if not self._cyclic:
             _warn_proplot(
                 f'Shifting non-cyclic colormap {self.name!r}. '
-                f'Use cmap.set_cyclic(True) to suppress this warning.')
+                f'Use cmap.set_cyclic(True) or Colormap(..., cyclic=True) to '
+                'suppress this warning.')
             self._cyclic = True
 
         # Decompose shift into two truncations followed by concatenation
@@ -1768,8 +1769,6 @@ class CmapDict(dict):
         for key, value in kwargs.items():
             if not isinstance(key, str):
                 raise KeyError(f'Invalid key {key}. Must be string.')
-            if key[-2:] == '_r':  # do not need to store these!
-                continue
             self.__setitem__(key, value, sort=False)
         for record in (cmaps, cycles):
             record[:] = sorted(record)
@@ -1784,38 +1783,54 @@ class CmapDict(dict):
                 pass
 
     def __getitem__(self, key):
-        """Retrieve the case-insensitive colormap name. If the name ends in
-        ``'_r'``, returns the result of ``cmap.reversed()`` for the colormap
-        with name ``key[:-2]``. Also returns reversed diverging colormaps
-        when their "reversed name" is requested -- for example, ``'BuRd'`` is
-        equivalent to ``'RdBu_r'``."""
+        """Retrieve the colormap associated with the sanitized key name. The
+        key name is case insensitive. If it ends in ``'_r'``, the result of
+        ``cmap.reversed()`` is returned for the colormap registered under
+        the name ``cmap[:-2]``. If it ends in ``'_shifted'``, the result of
+        ``cmap.shifted(180)`` is returned for the colormap registered under
+        the name ``cmap[:-8]``. Reversed diverging colormaps can be requested
+        with their "reversed" name -- for example, ``'BuRd'`` is equivalent
+        to ``'RdBu_r'``."""
         key = self._sanitize_key(key, mirror=True)
+        shift = (key[-8:] == '_shifted')
+        if shift:
+            key = key[:-8]
         reverse = (key[-2:] == '_r')
         if reverse:
             key = key[:-2]
         value = super().__getitem__(key)  # may raise keyerror
+        if shift:
+            if hasattr(value, 'shifted'):
+                value = value.shifted(180)
+            else:
+                raise KeyError(
+                    f'Item of type {type(value).__name__!r} '
+                    'does not have shifted() method.')
         if reverse:
             if hasattr(value, 'reversed'):
                 value = value.reversed()
             else:
                 raise KeyError(
-                    f'Item {value!r} does not have reversed() method.')
+                    f'Item of type {type(value).__name__!r} '
+                    'does not have reversed() method.')
         return value
 
     def __setitem__(self, key, item, sort=True):
-        """Stores the colormap under its lowercase name. If the colormap is
+        """Store the colormap under its lowercase name. If the colormap is
         a matplotlib `~matplotlib.colors.ListedColormap` or
         `~matplotlib.colors.LinearSegmentedColormap`, it is converted to the
         ProPlot `ListedColormap` or `LinearSegmentedColormap` subclass."""
-        if isinstance(item, mcolors.LinearSegmentedColormap) and (
-                not isinstance(item, LinearSegmentedColormap)):
+        if isinstance(item, (ListedColormap, LinearSegmentedColormap)):
+            pass
+        elif isinstance(item, mcolors.LinearSegmentedColormap):
             item = LinearSegmentedColormap(
                 item.name, item._segmentdata, item.N, item._gamma)
-        elif isinstance(item, mcolors.ListedColormap) and not isinstance(
-                item, ListedColormap):
+        elif isinstance(item, mcolors.ListedColormap):
             item = ListedColormap(
                 item.colors, item.name, item.N)
-        elif not isinstance(item, (ListedColormap, LinearSegmentedColormap)):
+        elif item is None:
+            return
+        else:
             raise ValueError(
                 f'Invalid colormap {item}. Must be instance of '
                 'matplotlib.colors.ListedColormap or '
@@ -1828,21 +1843,20 @@ class CmapDict(dict):
         return super().__setitem__(key, item)
 
     def __contains__(self, item):
-        """Tests membership for sanitized key name."""
-        try:  # by default __contains__ uses object.__getitem__
+        """Test for membership using the sanitized colormap name."""
+        try:  # by default __contains__ ignores __getitem__ overrides
             self.__getitem__(item)
             return True
         except KeyError:
             return False
 
     def _sanitize_key(self, key, mirror=True):
-        """Sanitizes key name."""
+        """Return the sanitized colormap name."""
         if not isinstance(key, str):
             raise KeyError(f'Invalid key {key!r}. Key must be a string.')
         key = key.lower()
         reverse = False
         if key[-2:] == '_r':
-            key = key[:-2]
             reverse = True
         if mirror and not super().__contains__(key):  # search for mirrored key
             key_mirror = key
@@ -1860,12 +1874,12 @@ class CmapDict(dict):
         return key
 
     def get(self, key, *args):
-        """Retrieves sanitized key name."""
+        """Retrieve the sanitized colormap name."""
         key = self._sanitize_key(key, mirror=True)
         return super().get(key, *args)
 
     def pop(self, key, *args):
-        """Pops sanitized key name."""
+        """Pop the sanitized colormap name."""
         key = self._sanitize_key(key, mirror=True)
         for record in (cmaps, cycles):
             try:
@@ -1875,7 +1889,7 @@ class CmapDict(dict):
         return super().pop(key, *args)
 
     def update(self, *args, **kwargs):
-        """Replicates dictionary update with sanitized key names."""
+        """Update the dictionary with sanitized colormap names."""
         if len(args) == 1:
             kwargs.update(args[0])
         elif len(args) > 1:
@@ -2847,11 +2861,13 @@ def register_cmaps():
     # to LinearSegmentedColormaps. It makes zero sense to me that they are
     # stored as ListedColormaps.
     for name in CMAPS_CATEGORIES['Matplotlib originals']:
-        cmap = mcm.cmap_d.get(name, None)
-        if isinstance(cmap, ListedColormap):
-            mcm.cmap_d.pop(name)
-            mcm.cmap_d[name] = LinearSegmentedColormap.from_list(
-                name, cmap.colors)
+        if name == 'twilight_shifted':  # CmapDict does this automatically
+            mcm.cmap_d.pop(name, None)
+        else:
+            cmap = mcm.cmap_d.get(name, None)
+            if isinstance(cmap, ListedColormap):
+                mcm.cmap_d[name] = LinearSegmentedColormap.from_list(
+                    name, cmap.colors, cyclic=(name == 'twilight'))
 
     # Misc tasks
     # to be consistent with registered color names (also 'Murica)
@@ -3615,7 +3631,9 @@ fonts = []
 
 # Apply monkey patches to top level modules
 if not isinstance(mcm.cmap_d, CmapDict):
-    mcm.cmap_d = CmapDict(mcm.cmap_d)
+    _dict = {
+        key: value for key, value in mcm.cmap_d.items() if key[-2:] != '_r'}
+    mcm.cmap_d = CmapDict(_dict)
 if not isinstance(mcolors._colors_full_map, _ColorMappingOverride):
     _map = _ColorMappingOverride(mcolors._colors_full_map)
     mcolors._colors_full_map = _map
