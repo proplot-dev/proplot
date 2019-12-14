@@ -355,7 +355,7 @@ In ProPlot, it is easy to manipulate colormaps and property cycles:
 * The new `~proplot.styletools.ListedColormap` and `~proplot.styletools.LinearSegmentedColormap` classes include several new methods, e.g. `~proplot.styletools.LinearSegmentedColormap.save` and `~proplot.styletools.LinearSegmentedColormap.concatenate`, and have a much nicer REPL representation.
 * The `~proplot.styletools.PerceptuallyUniformColormap` class is used to make :ref:`Perceptually uniform colormaps`. These have smooth, aesthetically pleasing color transitions represent your data *accurately*.
 
-Importing ProPlot also makes colormap names *case-insensitive* and *reviersible* by appending ``'_r'`` tot he colormap name. This is powered by the `~proplot.styletools.CmapDict` dictionary, which replaces matplotlib's native colormap database.
+Importing ProPlot also makes all colormap names *case-insensitive*, and colormaps can be *reversed* or *cyclically shifted* by 180 degrees simply by appending ``'_r'`` or ``'_shifted'`` to the colormap name. This is powered by the `~proplot.styletools.CmapDict` dictionary, which replaces matplotlib's native colormap database.
 
 Smarter colormap normalization
 ==============================

@@ -60,7 +60,7 @@ ProPlot v0.3.0 (2020-01-##)
   with a default ``.proplotrc`` file, change the auto-generated user ``.proplotrc``
   (:pr:`50`).
 
-ProPlot v0.2.8 (2019-12-09)
+ProPlot v0.2.8 (2019-12-##)
 ===========================
 .. rubric:: Deprecated
 
@@ -69,12 +69,20 @@ ProPlot v0.2.8 (2019-12-09)
 .. rubric:: Features
 
 - New ``'DryWet'`` colormap is colorblind friendly (:commit:`0280e266`).
+- Permit shifting arbitrary colormaps by ``180`` degrees by appending the
+  name with ``'_shifted'``, just like ``'_r'`` (:commit:`e2e2b2c7`).
 
 .. rubric:: Bug fixes
 
 - Add brute force workaround for saving colormaps with
   *callable* segmentdata (:commit:`8201a806`).
+- Fix `~proplot.styletools.LinearSegmentedColormap.shifted` when `shift` is
+  not ``180`` (:commit:`e2e2b2c7`).
 - Save the ``cyclic`` and ``gamma`` attributes in JSON files too (:commit:`8201a806`).
+
+.. rubric:: Documentation
+
+- Cleanup notebooks, especially the colormaps demo (e.g. :commit:`952d4cb3`).
 
 ProPlot v0.2.7 (2019-12-09)
 ===========================

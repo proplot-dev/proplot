@@ -1029,13 +1029,15 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         if not self._cyclic:
             _warn_proplot(
                 f'Shifting non-cyclic colormap {self.name!r}. '
-                f'Use cmap.set_cyclic(True) to suppress this warning.')
+                f'Use cmap.set_cyclic(True) or Colormap(..., cyclic=True) to '
+                'suppress this warning.')
             self._cyclic = True
 
         # Decompose shift into two truncations followed by concatenation
         cmap_left = self.truncated(shift, 1)
         cmap_right = self.truncated(0, shift)
-        return cmap_left.concatenate(cmap_right, name=name)
+        return cmap_left.concatenate(
+            cmap_right, ratios=(1 - shift, shift), name=name)
 
     def truncated(self, left=None, right=None, name=None, **kwargs):
         """
@@ -1782,8 +1784,6 @@ class CmapDict(dict):
         for key, value in kwargs.items():
             if not isinstance(key, str):
                 raise KeyError(f'Invalid key {key}. Must be string.')
-            if key[-2:] == '_r':  # do not need to store these!
-                continue
             self.__setitem__(key, value, sort=False)
         for record in (cmaps, cycles):
             record[:] = sorted(record)
@@ -1801,20 +1801,33 @@ class CmapDict(dict):
         """Retrieve the colormap associated with the sanitized key name. The
         key name is case insensitive. If it ends in ``'_r'``, the result of
         ``cmap.reversed()`` is returned for the colormap registered under
-        the name ``key[:-2]``. Reversed diverging colormaps can be requested
+        the name ``key[:-2]``. If it ends in ``'_shifted'``, the result of
+        ``cmap.shifted(180)`` is returned for the colormap registered under
+        the name ``cmap[:-8]``. Reversed diverging colormaps can be requested
         with their "reversed" name -- for example, ``'BuRd'`` is equivalent
         to ``'RdBu_r'``."""
         key = self._sanitize_key(key, mirror=True)
+        shift = (key[-8:] == '_shifted')
+        if shift:
+            key = key[:-8]
         reverse = (key[-2:] == '_r')
         if reverse:
             key = key[:-2]
         value = super().__getitem__(key)  # may raise keyerror
+        if shift:
+            if hasattr(value, 'shifted'):
+                value = value.shifted(180)
+            else:
+                raise KeyError(
+                    f'Item of type {type(value).__name__!r} '
+                    'does not have shifted() method.')
         if reverse:
             if hasattr(value, 'reversed'):
                 value = value.reversed()
             else:
                 raise KeyError(
-                    f'Item {value!r} does not have reversed() method.')
+                    f'Item of type {type(value).__name__!r} '
+                    'does not have reversed() method.')
         return value
 
     def __setitem__(self, key, item, sort=True):
@@ -1859,7 +1872,6 @@ class CmapDict(dict):
         key = key.lower()
         reverse = False
         if key[-2:] == '_r':
-            key = key[:-2]
             reverse = True
         if mirror and not super().__contains__(key):  # search for mirrored key
             key_mirror = key
@@ -3533,10 +3545,13 @@ mcm.cmap_d['Grays'] = mcm.cmap_d.pop('Greys', None)  # 'Murica (and consistency 
 mcm.cmap_d['Spectral'] = mcm.cmap_d['Spectral'].reversed(
     name='Spectral')  # make spectral go from 'cold' to 'hot'
 for _name in CMAPS_TABLE['Matplotlib originals']:  # initialize as empty lists
-    _cmap = mcm.cmap_d.get(_name, None)
-    if _cmap and isinstance(_cmap, mcolors.ListedColormap):
-        mcm.cmap_d[_name] = LinearSegmentedColormap.from_list(
-            _name, _cmap.colors, cyclic=('twilight' in _name))
+    if _name == 'twilight_shifted':
+        mcm.cmap_d.pop(_name, None)
+    else:
+        _cmap = mcm.cmap_d.get(_name, None)
+        if _cmap and isinstance(_cmap, mcolors.ListedColormap):
+            mcm.cmap_d[_name] = LinearSegmentedColormap.from_list(
+                _name, _cmap.colors, cyclic=('twilight' in _name))
 for _cat in ('MATLAB', 'GNUplot', 'GIST', 'Other'):
     for _name in CMAPS_TABLE[_cat]:
         mcm.cmap_d.pop(_name, None)
@@ -3564,7 +3579,9 @@ fonts = []
 
 # Apply monkey patches to top level modules
 if not isinstance(mcm.cmap_d, CmapDict):
-    mcm.cmap_d = CmapDict(mcm.cmap_d)
+    _dict = {
+        key: value for key, value in mcm.cmap_d.items() if key[-2:] != '_r'}
+    mcm.cmap_d = CmapDict(_dict)
 if not isinstance(mcolors._colors_full_map, _ColorMappingOverride):
     _map = _ColorMappingOverride(mcolors._colors_full_map)
     mcolors._colors_full_map = _map
