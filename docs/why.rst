@@ -23,12 +23,9 @@ Less typing, more plotting
 
 .. rubric:: Problem
 
-Power users often need to change lots of plot settings all at once. In matplotlib, this requires a bunch of one-liner setters and getters, like `~matplotlib.axes.Axes.set_title`.
+Power users often need to change lots of plot settings all at once. In matplotlib, this requires a series of one-liner setters and getters, like `~matplotlib.axes.Axes.set_title`, `~matplotlib.axes.Axes.set_xlabel`, and `~matplotlib.axes.Axes.set_ylabel`.
 
-This workflow is quite verbose -- it tends to require "boilerplate code" that gets
-copied and pasted a hundred times to do anything remotely complicated.
-It can also be confusing -- it is often unclear whether settings are applied from an `~matplotlib.axes.Axes` setter, an `~matplotlib.axis.XAxis` or `~matplotlib.axis.YAxis` setter, a miscellaneous bulk function like `~matplotlib.axes.Axes.tick_params`, or if they even
-have an explicit setter.
+This workflow is quite verbose -- it tends to require "boilerplate code" that gets copied and pasted a hundred times. It can also be confusing -- it is often unclear whether properties are applied from an `~matplotlib.axes.Axes` setter (e.g. `~matplotlib.axes.Axes.set_xlabel` and `~matplotlib.axes.Axes.set_xticks`), an `~matplotlib.axis.XAxis` or `~matplotlib.axis.YAxis` setter (e.g. `~matplotlib.axis.Axis.set_major_locator` and `~maplotlib.axis.Axis.set_major_formatter`), a `~matplotlib.spines.Spine` setter (e.g. `~matplotlib.spines.Spine.set_bounds`), a random "bulk" setter (e.g. `~matplotlib.axes.Axes.tick_params`), or whether they require tinkering with several different objects. Also, one often needs to *loop through* lists of subplots to apply identical settings to each subplot.
 
 ..
    This is perhaps one reason why many users prefer the `~matplotlib.pyplot` API to the object-oriented API (see :ref:`Using ProPlot`).
@@ -37,6 +34,9 @@ have an explicit setter.
 
 ProPlot introduces the `~proplot.axes.Axes.format` method for changing arbitrary settings *in bulk*. Think of this as an expanded and thoroughly documented version of the
 `~matplotlib.artist.Artist` `~matplotlib.artist.Artist.update` method.
+For even more efficiency,
+:ref:`The subplot container class` can be used to identically apply
+settings to several subplots at once.
 This significantly reduces the amount of code needed to create highly customized figures.
 
 As an example, it is trivial to see that
@@ -44,9 +44,9 @@ As an example, it is trivial to see that
 .. code-block:: python
 
    import proplot as plot
-   f, ax = plot.subplots()
-   ax.format(linewidth=1, color='gray')
-   ax.format(xticks=20, xtickminor=True, xlabel='x axis', ylabel='y axis')
+   f, axs = plot.subplots(ncols=2)
+   axs.format(linewidth=1, color='gray')
+   axs.format(xticks=20, xtickminor=True, xlabel='x axis', ylabel='y axis')
 
 ...is much more succinct than
 
@@ -57,12 +57,13 @@ As an example, it is trivial to see that
    from matplotlib import rcParams
    rcParams['axes.linewidth'] = 1
    rcParams['axes.color'] = 'gray'
-   fig, ax = plt.subplots()
-   ax.xaxis.set_major_locator(mticker.MultipleLocator(10))
-   ax.tick_params(width=1, color='gray', labelcolor='gray')
-   ax.tick_params(axis='x', which='minor', bottom=True)
-   ax.set_xlabel('x axis', color='gray')
-   ax.set_ylabel('y axis', color='gray')
+   fig, axs = plt.subplots(ncols=2)
+   for ax in axs:
+      ax.xaxis.set_major_locator(mticker.MultipleLocator(10))
+      ax.tick_params(width=1, color='gray', labelcolor='gray')
+      ax.tick_params(axis='x', which='minor', bottom=True)
+      ax.set_xlabel('x axis', color='gray')
+      ax.set_ylabel('y axis', color='gray')
 
 
 Class constructor functions
