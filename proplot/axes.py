@@ -1595,7 +1595,7 @@ class Axes(maxes.Axes):
         return ax
 
     def indicate_inset_zoom(self, alpha=None,
-                            lw=None, linewidth=None,
+                            lw=None, linewidth=None, zorder=3.5,
                             color=None, edgecolor=None, **kwargs):
         """
         Called automatically when using `~Axes.inset` with ``zoom=True``.
@@ -1612,6 +1612,11 @@ class Axes(maxes.Axes):
             The width of the zoom lines and box outline in points.
         color, edgecolor : color-spec, optional
             The color of the zoom lines and box outline.
+        zorder : float, optional
+            The `zorder \
+<https://matplotlib.org/3.1.1/gallery/misc/zorder_demo.html>`__
+            of the axes, should be greater than the zorder of
+            elements in the parent axes. Default is ``3.5``.
         **kwargs
             Passed to `~matplotlib.axes.Axes.indicate_inset`.
         """
@@ -1632,7 +1637,7 @@ class Axes(maxes.Axes):
         # Call indicate_inset
         rectpatch, connects = parent.indicate_inset(
             rect, self, linewidth=linewidth, edgecolor=edgecolor, alpha=alpha,
-            **kwargs)
+            zorder=zorder, **kwargs)
 
         # Update zoom or adopt properties from old one
         if self._inset_zoom_data:
@@ -2086,15 +2091,10 @@ class Axes(maxes.Axes):
                    cmap=None, norm=None,
                    interp=0, **kwargs):
         """
+        Draw a line whose color changes as a function of the parametric
+        coordinate ``values`` using the input colormap ``cmap``.
         Invoked when you pass the `cmap` keyword argument to
-        `~matplotlib.axes.Axes.plot`. Draws a "colormap line",
-        i.e. a line whose color changes as a function of the parametric
-        coordinate ``values``. using the input colormap ``cmap``.
-
-        This is actually a collection of lines, added as a
-        `~matplotlib.collections.LineCollection` instance. See
-        `this matplotlib example \
-<https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line>`__.
+        `~matplotlib.axes.Axes.plot`.
 
         Parameters
         ----------
@@ -2112,6 +2112,12 @@ class Axes(maxes.Axes):
             between the `values` coordinates. The number corresponds to the
             number of additional color levels between the line joints
             and the halfway points between line joints.
+
+        Returns
+        -------
+        `~matplotlib.collections.LineCollection`
+            The parametric line. See `this matplotlib example \
+<https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line>`__.
         """
         # First error check
         # WARNING: So far this only works for 1D *x* and *y* coordinates.
@@ -2282,7 +2288,7 @@ dualxy_kwargs = (
     'label', 'locator', 'formatter', 'ticks', 'ticklabels',
     'minorlocator', 'minorticks', 'tickminor',
     'ticklen', 'tickrange', 'tickdir', 'ticklabeldir', 'tickrotation',
-    'bounds', 'margin', 'color', 'grid', 'gridminor', 'gridcolor',
+    'bounds', 'margin', 'color', 'grid', 'gridminor',
 )
 
 dualxy_descrip = """
@@ -2390,6 +2396,8 @@ def _parse_dualxy_args(x, transform, transform_kw, kwargs):
             kwargs[key] = value
         elif key in dualxy_kwargs:
             kwargs[x + key] = value
+        elif key in RC_NODOTSNAMES:
+            kwargs[key] = value
         else:
             kwargs_bad[key] = value
         if kwargs_bad:
@@ -2638,7 +2646,7 @@ class XYAxes(Axes):
             xtickdir=None, ytickdir=None,
             xgrid=None, ygrid=None,
             xgridminor=None, ygridminor=None,
-            xtickminor=True, ytickminor=True,
+            xtickminor=None, ytickminor=None,
             xticklabeldir=None, yticklabeldir=None,
             xtickrange=None, ytickrange=None,
             xreverse=None, yreverse=None,
@@ -2656,7 +2664,6 @@ class XYAxes(Axes):
             xmargin=None, ymargin=None,
             xcolor=None, ycolor=None,
             xticklen=None, yticklen=None,
-            xlinewidth=None, ylinewidth=None,
             xlabel_kw=None, ylabel_kw=None,
             xscale_kw=None, yscale_kw=None,
             xlocator_kw=None, ylocator_kw=None,
@@ -2672,9 +2679,7 @@ class XYAxes(Axes):
         Parameters
         ----------
         aspect : {'auto', 'equal'}, optional
-            The aspect ratio mode. If ``'auto'``, the aspect ratio is
-            determined from the *x* and *y* axis limits, and ProPlot adjusts
-            the subplot layout to remove excessive whitespace.
+            The aspect ratio mode.
         xlabel, ylabel : str, optional
             The *x* and *y* axis labels. Applied with
             `~matplotlib.axes.Axes.set_xlabel`
@@ -3226,10 +3231,8 @@ class XYAxes(Axes):
         # Cannot wrap twiny() because we want to use XYAxes, not
         # matplotlib Axes. Instead use hidden method _make_twin_axes.
         # See https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_subplots.py  # noqa
-        if self._altx_child:
-            raise RuntimeError('No more than *two* twin axes!')
-        if self._altx_parent:
-            raise RuntimeError('This *is* a twin axes!')
+        if self._altx_child or self._altx_parent:
+            raise RuntimeError('No more than *two* twin axes are allowed.')
         with self.figure._unlock():
             ax = self._make_twin_axes(sharey=self, projection='xy')
         # shared axes must have matching autoscale
@@ -3239,14 +3242,13 @@ class XYAxes(Axes):
         ax._altx_parent = self
         self._altx_overrides()
         ax._altx_overrides()
-        self.add_child_axes(ax)
+        self.add_child_axes(ax)  # to facilitate tight layout
+        self.figure._axstack.remove(ax)  # or gets drawn twice!
         return ax
 
     def alty(self):
-        if self._alty_child:
-            raise RuntimeError('No more than *two* twin axes!')
-        if self._alty_parent:
-            raise RuntimeError('This *is* a twin axes!')
+        if self._alty_child or self._alty_parent:
+            raise RuntimeError('No more than *two* twin axes are allowed.')
         with self.figure._unlock():
             ax = self._make_twin_axes(sharex=self, projection='xy')
         # shared axes must have matching autoscale
@@ -3256,7 +3258,8 @@ class XYAxes(Axes):
         ax._alty_parent = self
         self._alty_overrides()
         ax._alty_overrides()
-        self.add_child_axes(ax)
+        self.add_child_axes(ax)  # to facilitate tight layout
+        self.figure._axstack.remove(ax)  # or gets drawn twice!
         return ax
 
     def dualx(self, transform, transform_kw=None, **kwargs):

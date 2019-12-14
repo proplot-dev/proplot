@@ -30,7 +30,7 @@ __all__ = [
     'SymmetricalLogScale',
 ]
 
-# Scale preset names and positional args
+MAX_DIGITS = 32  # do not draw 1000 digits when LogScale limits include zero!
 SCALE_PRESETS = {
     'quadratic': ('power', 2,),
     'cubic': ('power', 3,),
@@ -133,7 +133,7 @@ def Locator(locator, *args, **kwargs):
     return locator
 
 
-def Formatter(formatter, *args, date=False, **kwargs):
+def Formatter(formatter, *args, date=False, index=False, **kwargs):
     """
     Returns a `~matplotlib.ticker.Formatter` instance, used to interpret the
     `xformatter`, `xformatter_kw`, `yformatter`, and `yformatter_kw` arguments
@@ -147,7 +147,9 @@ def Formatter(formatter, *args, date=False, **kwargs):
         If `~matplotlib.ticker.Formatter`, the object is returned.
 
         If list of strings, ticks are labeled with these strings. Returns a
-        `~matplotlib.ticker.FixedFormatter` instance.
+        `~matplotlib.ticker.FixedFormatter` instance when `index` is ``False``
+        and an `~matplotlib.ticker.IndexFormatter` instance when `index` is
+        ``True``.
 
         If function, labels will be generated using this function. Returns a
         `~matplotlib.ticker.FuncFormatter` instance.
@@ -192,15 +194,18 @@ def Formatter(formatter, *args, date=False, **kwargs):
         ``'theta'``             `~matplotlib.projections.polar.ThetaFormatter`  Formats radians as degrees, with a degree symbol
         ``'pi'``                `FracFormatter` preset                          Fractions of :math:`\\pi`
         ``'e'``                 `FracFormatter` preset                          Fractions of *e*
-        ``'deg'``               `SimpleFormatter` preset                        Trailing degree symbol
-        ``'deglon'``            `SimpleFormatter` preset                        Trailing degree symbol and cardinal "WE" indicator
-        ``'deglat'``            `SimpleFormatter` preset                        Trailing degree symbol and cardinal "SN" indicator
-        ``'lon'``               `SimpleFormatter` preset                        Cardinal "WE" indicator
-        ``'lat'``               `SimpleFormatter` preset                        Cardinal "SN" indicator
+        ``'deg'``               `AutoFormatter` preset                          Trailing degree symbol
+        ``'deglon'``            `AutoFormatter` preset                          Trailing degree symbol and cardinal "WE" indicator
+        ``'deglat'``            `AutoFormatter` preset                          Trailing degree symbol and cardinal "SN" indicator
+        ``'lon'``               `AutoFormatter` preset                          Cardinal "WE" indicator
+        ``'lat'``               `AutoFormatter` preset                          Cardinal "SN" indicator
         ======================  ==============================================  ===================================================================================================================================
 
     date : bool, optional
         Toggles the behavior when `formatter` contains a ``'%'`` sign (see
+        above).
+    index : bool, optional
+        Controls the behavior when `formatter` is a list of strings (see
         above).
     *args, **kwargs
         Passed to the `~matplotlib.ticker.Formatter` class.
@@ -215,7 +220,7 @@ def Formatter(formatter, *args, date=False, **kwargs):
     # Pull out extra args
     if np.iterable(formatter) and not isinstance(formatter, str) and not all(
             isinstance(item, str) for item in formatter):
-        formatter, args = formatter[0], [*formatter[1:], *args]
+        formatter, args = formatter[0], (*formatter[1:], *args)
     # Get the formatter
     if isinstance(formatter, str):  # assumption is list of strings
         # Format strings
@@ -250,7 +255,7 @@ def Formatter(formatter, *args, date=False, **kwargs):
                     negpos = 'WE'
                 kwargs.setdefault('suffix', suffix)
                 kwargs.setdefault('negpos', negpos)
-                formatter = 'simple'
+                formatter = 'auto'
             # Lookup
             if formatter not in formatters:
                 raise ValueError(
@@ -260,7 +265,10 @@ def Formatter(formatter, *args, date=False, **kwargs):
     elif callable(formatter):
         formatter = mticker.FuncFormatter(formatter, *args, **kwargs)
     elif np.iterable(formatter):  # list of strings on the major ticks
-        formatter = mticker.FixedFormatter(formatter)
+        if index:
+            formatter = mticker.IndexFormatter(formatter)
+        else:
+            formatter = mticker.FixedFormatter(formatter)
     else:
         raise ValueError(f'Invalid formatter {formatter!r}.')
     return formatter
@@ -295,7 +303,7 @@ def Scale(scale, *args, **kwargs):
         ``'mercator'``     `MercatorLatitudeScale`          Mercator latitude function (in degrees)
         ``'exp'``          `ExpScale`                       Arbitrary exponential function
         ``'power'``        `PowerScale`                     Arbitrary power function
-        ``'cutoff'``       `CutoffScale`                    Arbitrary linear transformations
+        ``'cutoff'``       `CutoffScale`                    Arbitrary piecewise linear transformations
         ``'quadratic'``    `PowerScale` (preset)            Quadratic function
         ``'cubic'``        `PowerScale` (preset)            Cubic function
         ``'quartic'``      `PowerScale` (preset)            Cubic function
@@ -337,8 +345,16 @@ def Scale(scale, *args, **kwargs):
         raise ValueError(
             f'Unknown scale or preset {scale!r}. Options are '
             + ', '.join(map(repr, list(scales) + list(SCALE_PRESETS))) + '.')
-    axis = _dummy_axis()
-    return scale(axis, *args, **kwargs)
+    return scale(*args, **kwargs)
+
+
+def _zerofix(x, string, precision=6):
+    """
+    Try to fix non-zero tick labels formatted as ``'0'``.
+    """
+    if string.rstrip('0').rstrip('.') == '0' and x != 0:
+        string = ('{:.%df}' % precision).format(x)
+    return string
 
 
 class AutoFormatter(mticker.ScalarFormatter):
@@ -352,35 +368,43 @@ class AutoFormatter(mticker.ScalarFormatter):
        are labelled.
     3. Allows user to add arbitrary prefix or suffix to every
        tick label string.
-
     """
-
     def __init__(self, *args,
                  zerotrim=None, precision=None, tickrange=None,
-                 prefix=None, suffix=None, **kwargs):
+                 prefix=None, suffix=None, negpos=None, **kwargs):
         """
         Parameters
         ----------
         zerotrim : bool, optional
             Whether to trim trailing zeros.
             Default is :rc:`axes.formatter.zerotrim`.
-        precision : float, optional
-            The maximum number of digits after the decimal point.
         tickrange : (float, float), optional
             Range within which major tick marks are labelled.
         prefix, suffix : str, optional
-            Optional prefix and suffix for all strings.
+            Prefix and suffix for all strings.
+        negpos : str, optional
+            Length-2 string indicating the suffix for "negative" and "positive"
+            numbers, meant to replace the minus sign. This is useful for
+            indicating cardinal geographic coordinates.
         *args, **kwargs
-            Passed to `matplotlib.ticker.ScalarFormatter`.
+            Passed to `~matplotlib.ticker.ScalarFormatter`.
+
+        Warning
+        -------
+        The matplotlib `~matplotlib.ticker.ScalarFormatter` determines the
+        number of significant digits based on the axis limits, and therefore
+        may *truncate* digits while formatting ticks on highly non-linear
+        axis scales like `~proplot.axistools.LogScale`. We try to correct
+        this behavior with a patch.
         """
         tickrange = tickrange or (-np.inf, np.inf)
         super().__init__(*args, **kwargs)
         zerotrim = _notNone(zerotrim, rc.get('axes.formatter.zerotrim'))
-        self._maxprecision = precision
         self._zerotrim = zerotrim
         self._tickrange = tickrange
         self._prefix = prefix or ''
         self._suffix = suffix or ''
+        self._negpos = negpos or ''
 
     def __call__(self, x, pos=None):
         """
@@ -398,71 +422,60 @@ class AutoFormatter(mticker.ScalarFormatter):
         tickrange = self._tickrange
         if (x + eps) < tickrange[0] or (x - eps) > tickrange[1]:
             return ''  # avoid some ticks
-        # Normal formatting
+        # Negative positive handling
+        if not self._negpos or x == 0:
+            tail = ''
+        elif x > 0:
+            tail = self._negpos[1]
+        else:
+            x *= -1
+            tail = self._negpos[0]
+        # Format the string
         string = super().__call__(x, pos)
-        if self._maxprecision is not None and '.' in string:
-            head, tail = string.split('.')
-            string = head + '.' + tail[:self._maxprecision]
-        if self._zerotrim and '.' in string:
-            string = string.rstrip('0').rstrip('.')
-        if string == '-0' or string == '\N{MINUS SIGN}0':
-            string = '0'
+        for i in range(2):
+            # Try to fix non-zero values formatted as zero
+            if self._zerotrim and '.' in string:
+                string = string.rstrip('0').rstrip('.')
+            string = string.replace('-', '\N{MINUS SIGN}')
+            if string == '\N{MINUS SIGN}0':
+                string = '0'
+            if i == 0 and string == '0' and x != 0:
+                # Hard limit of MAX_DIGITS sigfigs
+                string = ('{:.%df}' % min(
+                    abs(np.log10(x) // 1), MAX_DIGITS)).format(x)
+                continue
+            break
         # Prefix and suffix
         sign = ''
-        string = string.replace('-', '\N{MINUS SIGN}')
         if string and string[0] == '\N{MINUS SIGN}':
             sign, string = string[0], string[1:]
-        return sign + self._prefix + string + self._suffix
+        return sign + self._prefix + string + self._suffix + tail
 
 
-def SimpleFormatter(*args, precision=6,
-                    prefix=None, suffix=None, negpos=None, zerotrim=True,
-                    **kwargs):
+def SimpleFormatter(*args, precision=6, zerotrim=True, **kwargs):
     """
-    Replicates features of `AutoFormatter`, but as a simpler
+    Replicates the `zerotrim` feature from `AutoFormatter`, but as a simpler
     `~matplotlib.ticker.FuncFormatter` instance. This is more suitable for
     arbitrary number formatting not necessarily associated with any
-    `~matplotlib.axis.Axis` instance, e.g. labelling contours.
+    `~matplotlib.axis.Axis` instance, e.g. labeling contours.
 
     Parameters
     ----------
     precision : int, optional
-        Maximum number of digits after the decimal point.
-    prefix, suffix : str, optional
-        Optional prefix and suffix for all strings.
-    negpos : str, optional
-        Length-2 string that indicates suffix for "negative" and "positive"
-        numbers, meant to replace the minus sign. This is useful for
-        indicating cardinal geographic coordinates.
+        The maximum number of digits after the decimal point.
     zerotrim : bool, optional
         Whether to trim trailing zeros.
         Default is :rc:`axes.formatter.zerotrim`.
     """
-    prefix = prefix or ''
-    suffix = suffix or ''
     zerotrim = _notNone(zerotrim, rc['axes.formatter.zerotrim'])
 
     def f(x, pos):
-        # Apply suffix if not on equator/prime meridian
-        if not negpos:
-            tail = ''
-        elif x > 0:
-            tail = negpos[1]
-        else:
-            x *= -1
-            tail = negpos[0]
-        # Finally use default formatter
         string = ('{:.%df}' % precision).format(x)
         if zerotrim and '.' in string:
             string = string.rstrip('0').rstrip('.')
         if string == '-0' or string == '\N{MINUS SIGN}0':
             string = '0'
-        # Prefix and suffix
-        sign = ''
-        string = string.replace('-', '\N{MINUS SIGN}')
-        if string and string[0] == '\N{MINUS SIGN}':
-            sign, string = string[0], string[1:]
-        return sign + prefix + string + suffix + tail
+        return string.replace('-', '\N{MINUS SIGN}')
     return mticker.FuncFormatter(f)
 
 
@@ -518,7 +531,7 @@ def _scale_factory(scale, axis, *args, **kwargs):
             raise ValueError(
                 f'Unknown scale {scale!r}. Options are '
                 + ', '.join(map(repr, scales.keys())) + '.')
-        return scales[scale](axis, *args, **kwargs)
+        return scales[scale](*args, **kwargs)
 
 
 def _parse_logscale_args(kwargs, *keys):
@@ -531,23 +544,21 @@ def _parse_logscale_args(kwargs, *keys):
             kwargs.pop(key + 'y', None),
             None, names=(key, key + 'x', key + 'y'),
         )
-        if value is not None:  # _dummy_axis axis_name is 'x'
+        if value is not None:  # dummy axis_name is 'x'
             kwargs[key + 'x'] = value
     return kwargs
 
 
-class _dummy_axis(object):
-    """Dummy axis used to initialize scales."""
-    # See notes in source code for `~matplotlib.scale.ScaleBase`. All scales
-    # accept 'axis' for backwards-compatibility reasons, but it is *virtually
-    # unused* except to check for the `axis_name` attribute in log scales to
-    # interpret input keyword args!
-    # TODO: Submit matplotlib pull request! How has no one fixed this already!
-    axis_name = 'x'
-
-
 class _ScaleBase(object):
-    """Mixin scale class that standardizes required methods."""
+    """Mixin scale class that standardizes the
+    `~matplotlib.scale.ScaleBase.set_default_locators_and_formatters`
+    and `~matplotlib.scale.ScaleBase.get_transform` methods.
+    Also overrides `__init__` so you no longer have to instantiate scales
+    with an `~matplotlib.axis.Axis` instance."""
+    def __init__(self, *args, **kwargs):
+        # Pass a dummy axis to the superclass
+        axis = type('Axis', (object,), {'axis_name': 'x'})()
+        return super().__init__(axis, *args, **kwargs)
 
     def set_default_locators_and_formatters(self, axis, only_if_default=False):
         """
@@ -628,7 +639,7 @@ class LogScale(_ScaleBase, mscale.LogScale):
     name = 'log'
     """The registered scale name."""
 
-    def __init__(self, axis, **kwargs):
+    def __init__(self, **kwargs):
         """
         Parameters
         ----------
@@ -643,10 +654,10 @@ class LogScale(_ScaleBase, mscale.LogScale):
             10, 20, 50, etc.
         basex, basey, nonposx, nonposy, subsx, subsy
             Aliases for the above keywords. These used to be conditional
-            on the *name* of the axis...... yikes.
+            on the *name* of the axis.
         """
         kwargs = _parse_logscale_args(kwargs, 'base', 'nonpos', 'subs')
-        super().__init__(axis, **kwargs)
+        super().__init__(**kwargs)
         # self._major_formatter = Formatter('log')
         self._major_locator = Locator('log', base=self.base)
         self._minor_locator = Locator('log', base=self.base, subs=self.subs)
@@ -661,7 +672,7 @@ class SymmetricalLogScale(_ScaleBase, mscale.SymmetricalLogScale):
     name = 'symlog'
     """The registered scale name."""
 
-    def __init__(self, axis, **kwargs):
+    def __init__(self, **kwargs):
         """
         Parameters
         ----------
@@ -685,11 +696,11 @@ class SymmetricalLogScale(_ScaleBase, mscale.SymmetricalLogScale):
         basex, basey, linthreshx, linthreshy, linscalex, linscaley, \
 subsx, subsy
             Aliases for the above keywords. These used to be conditional
-            on the *name* of the axis...... yikes.
+            on the *name* of the axis.
         """
         kwargs = _parse_logscale_args(kwargs,
                                       'base', 'linthresh', 'linscale', 'subs')
-        super().__init__(axis, **kwargs)
+        super().__init__(**kwargs)
         # Note the symlog locator gets base and linthresh from the transform
         # self._major_formatter = Formatter('symlog'))
         self._major_locator = Locator('symlog', transform=self.get_transform())
@@ -707,15 +718,13 @@ class FuncScale(_ScaleBase, mscale.ScaleBase):
     name = 'function'
     """The registered scale name."""
 
-    def __init__(self, axis, functions, transform=None, scale=None,
+    def __init__(self, functions, transform=None, scale=None,
                  major_locator=None, minor_locator=None,
                  major_formatter=None, minor_formatter=None,
                  ):
         """
         Parameters
         ----------
-        axis : `~matplotlib.axis.Axis`
-            The axis, required for compatibility reasons.
         functions : (function, function) or `~matplotlib.scale.ScaleBase`
             Length-2 tuple of forward and inverse functions, or another
             `~matplotlib.scale.ScaleBase` from which the functions are drawn.
@@ -757,8 +766,6 @@ optional
 
 
 class FuncTransform(mtransforms.Transform):
-    # Arbitrary forward and inverse transform
-    # Mostly copied from matplotlib
     input_dims = 1
     output_dims = 1
     is_separable = True
@@ -791,13 +798,10 @@ class PowerScale(_ScaleBase, mscale.ScaleBase):
     name = 'power'
     """The registered scale name."""
 
-    def __init__(self, axis,
-                 power=1, inverse=False, *, minpos=1e-300, **kwargs):
+    def __init__(self, power=1, inverse=False, *, minpos=1e-300, **kwargs):
         """
         Parameters
         ----------
-        axis : `~matplotlib.axis.Axis`
-            The axis, required for compatibility reasons.
         power : float, optional
             The power :math:`c` to which :math:`x` is raised.
         inverse : bool, optional
@@ -806,7 +810,7 @@ class PowerScale(_ScaleBase, mscale.ScaleBase):
         minpos : float, optional
             The minimum permissible value, used to truncate negative values.
         """
-        super().__init__(axis)
+        super().__init__()
         if not inverse:
             self._transform = PowerTransform(power, minpos)
         else:
@@ -831,13 +835,10 @@ class PowerTransform(mtransforms.Transform):
     def inverted(self):
         return InvertedPowerTransform(self._power, self.minpos)
 
-    def transform(self, a):
+    def transform_non_affine(self, a):
         aa = np.array(a)
         aa[aa <= self.minpos] = self.minpos  # necessary
         return np.power(np.array(a), self._power)
-
-    def transform_non_affine(self, a):
-        return self.transform(a)
 
 
 class InvertedPowerTransform(mtransforms.Transform):
@@ -854,13 +855,10 @@ class InvertedPowerTransform(mtransforms.Transform):
     def inverted(self):
         return PowerTransform(self._power, self.minpos)
 
-    def transform(self, a):
+    def transform_non_affine(self, a):
         aa = np.array(a)
         aa[aa <= self.minpos] = self.minpos  # necessary
         return np.power(np.array(a), 1 / self._power)
-
-    def transform_non_affine(self, a):
-        return self.transform(a)
 
 
 class ExpScale(_ScaleBase, mscale.ScaleBase):
@@ -887,14 +885,11 @@ class ExpScale(_ScaleBase, mscale.ScaleBase):
     """The registered scale name."""
 
     def __init__(
-            self, axis,
-            a=np.e, b=1, c=1, inverse=False, minpos=1e-300,
+            self, a=np.e, b=1, c=1, inverse=False, minpos=1e-300,
             **kwargs):
         """
         Parameters
         ----------
-        axis : `~matplotlib.axis.Axis`
-            The axis, required for compatibility reasons.
         a : float, optional
             The base of the exponential, i.e. the :math:`a` in :math:`Ca^{bx}`.
         b : float, optional
@@ -908,7 +903,7 @@ class ExpScale(_ScaleBase, mscale.ScaleBase):
             If ``True``, the "forward" direction performs the inverse
             operation.
         """
-        super().__init__(axis)
+        super().__init__()
         if not inverse:
             self._transform = ExpTransform(a, b, c, minpos)
         else:
@@ -920,7 +915,6 @@ class ExpScale(_ScaleBase, mscale.ScaleBase):
 
 
 class ExpTransform(mtransforms.Transform):
-    # Arbitrary exponential function
     input_dims = 1
     output_dims = 1
     has_inverse = True
@@ -936,15 +930,11 @@ class ExpTransform(mtransforms.Transform):
     def inverted(self):
         return InvertedExpTransform(self._a, self._b, self._c, self.minpos)
 
-    def transform(self, a):
-        return self._c * np.power(self._a, self._b * np.array(a))
-
     def transform_non_affine(self, a):
-        return self.transform(a)
+        return self._c * np.power(self._a, self._b * np.array(a))
 
 
 class InvertedExpTransform(mtransforms.Transform):
-    # Inverse exponential transform
     input_dims = 1
     output_dims = 1
     has_inverse = True
@@ -960,159 +950,10 @@ class InvertedExpTransform(mtransforms.Transform):
     def inverted(self):
         return ExpTransform(self._a, self._b, self._c, self.minpos)
 
-    def transform(self, a):
+    def transform_non_affine(self, a):
         aa = np.array(a)
         aa[aa <= self.minpos] = self.minpos  # necessary
         return np.log(aa / self._c) / (self._b * np.log(self._a))
-
-    def transform_non_affine(self, a):
-        return self.transform(a)
-
-
-class CutoffScale(_ScaleBase, mscale.ScaleBase):
-    """Axis scale with arbitrary cutoffs that "accelerate" parts of the
-    axis, "decelerate" parts of the axes, or discretely jumps between
-    numbers.
-
-    If `upper` is not provided, you have the following two possibilities.
-
-    1. If `scale` is greater than 1, the axis is "accelerated" to the right
-       of `lower`.
-    2. If `scale` is less than 1, the axis is "decelerated" to the right
-       of `lower`.
-
-    If `upper` is provided, you have the following three possibilities.
-
-    1. If `scale` is `numpy.inf`, this puts a cliff between `lower` and
-       `upper`. The axis discretely jumps from `lower` to `upper`.
-    2. If `scale` is greater than 1, the axis is "accelerated" between `lower`
-       and `upper`.
-    3. If `scale` is less than 1, the axis is "decelerated" between `lower`
-       and `upper`.
-    """
-    name = 'cutoff'
-    """The registered scale name."""
-
-    def __init__(self, axis, scale, lower, upper=None, **kwargs):
-        """
-        Parameters
-        ----------
-        axis : `~matplotlib.axis.Axis`
-            The matplotlib axis. Required for compatibility reasons.
-        scale : float
-            Value satisfying ``0 < scale <= numpy.inf``. If `scale` is
-            greater than ``1``, values to the right of `lower`, or
-            between `lower` and `upper`, are "accelerated". Otherwise, values
-            are "decelerated". Infinity represents a discrete jump.
-        lower : float
-            The first cutoff point.
-        upper : float, optional
-            The second cutoff point (optional, see above).
-
-        Todo
-        ----
-        Add method for drawing diagonal "cutoff" strokes. See
-        `this post <https://stackoverflow.com/a/5669301/4970632>`__
-        for class-based and multi-axis solutions.
-        """
-        # Note the space between 1-9 in Paul's answer is because actual
-        # cutoffs were 0.1 away (and tick locations are 0.2 apart).
-        if scale < 0:
-            raise ValueError('Scale must be a positive float.')
-        if upper is None and scale == np.inf:
-            raise ValueError(
-                'For a discrete jump, need both lower and upper bounds. '
-                'You just provided lower bounds.')
-        super().__init__(axis)
-        self._transform = CutoffTransform(scale, lower, upper)
-
-
-class CutoffTransform(mtransforms.Transform):
-    # Create transform object
-    input_dims = 1
-    output_dims = 1
-    has_inverse = True
-    is_separable = True
-
-    def __init__(self, scale, lower, upper=None):
-        super().__init__()
-        self._scale = scale
-        self._lower = lower
-        self._upper = upper
-
-    def inverted(self):
-        return InvertedCutoffTransform(self._scale, self._lower, self._upper)
-
-    def transform(self, a):
-        a = np.array(a)  # very numpy array
-        aa = a.copy()
-        scale = self._scale
-        lower = self._lower
-        upper = self._upper
-        if upper is None:  # just scale between 2 segments
-            m = (a > lower)
-            aa[m] = a[m] - (a[m] - lower) * (1 - 1 / scale)
-        elif lower is None:
-            m = (a < upper)
-            aa[m] = a[m] - (upper - a[m]) * (1 - 1 / scale)
-        else:
-            m1 = (a > lower)
-            m2 = (a > upper)
-            m3 = (a > lower) & (a < upper)
-            if scale == np.inf:
-                aa[m1] = a[m1] - (upper - lower)
-                aa[m3] = lower
-            else:
-                aa[m2] = a[m2] - (upper - lower) * (1 - 1 / scale)
-                aa[m3] = a[m3] - (a[m3] - lower) * (1 - 1 / scale)
-        return aa
-
-    def transform_non_affine(self, a):
-        return self.transform(a)
-
-
-class InvertedCutoffTransform(mtransforms.Transform):
-    # Inverse of cutoff transform
-    input_dims = 1
-    output_dims = 1
-    has_inverse = True
-    is_separable = True
-
-    def __init__(self, scale, lower, upper=None):
-        super().__init__()
-        self._scale = scale
-        self._lower = lower
-        self._upper = upper
-
-    def inverted(self):
-        return CutoffTransform(self._scale, self._lower, self._upper)
-
-    def transform(self, a):
-        a = np.array(a)
-        aa = a.copy()
-        scale = self._scale
-        lower = self._lower
-        upper = self._upper
-        if upper is None:
-            m = (a > lower)
-            aa[m] = a[m] + (a[m] - lower) * (1 - 1 / scale)
-        elif lower is None:
-            m = (a < upper)
-            aa[m] = a[m] + (upper - a[m]) * (1 - 1 / scale)
-        else:
-            n = (upper - lower) * (1 - 1 / scale)
-            m1 = (a > lower)
-            m2 = (a > upper - n)
-            m3 = (a > lower) & (a < (upper - n))
-            if scale == np.inf:
-                aa[m1] = a[m1] + (upper - lower)
-            else:
-                aa[m2] = a[m2] + n
-                aa[m3] = a[m3] + (a[m3] - lower) * (1 - 1 / scale)
-        return aa
-
-    def transform_non_affine(self, a):
-        return self.transform(a)
 
 
 class MercatorLatitudeScale(_ScaleBase, mscale.ScaleBase):
@@ -1137,17 +978,15 @@ class MercatorLatitudeScale(_ScaleBase, mscale.ScaleBase):
     name = 'mercator'
     """The registered scale name."""
 
-    def __init__(self, axis, *, thresh=85.0):
+    def __init__(self, thresh=85.0):
         """
         Parameters
         ----------
-        axis : `~matplotlib.axis.Axis`
-            The matplotlib axis. Required for compatibility reasons.
         thresh : float, optional
             Threshold between 0 and 90, used to constrain axis limits between
             ``-thresh`` and ``+thresh``.
         """
-        super().__init__(axis)
+        super().__init__()
         if thresh >= 90.0:
             raise ValueError('Threshold "thresh" must be <=90.')
         self._thresh = thresh
@@ -1162,7 +1001,6 @@ class MercatorLatitudeScale(_ScaleBase, mscale.ScaleBase):
 
 
 class MercatorLatitudeTransform(mtransforms.Transform):
-    # Default attributes
     input_dims = 1
     output_dims = 1
     is_separable = True
@@ -1187,7 +1025,6 @@ class MercatorLatitudeTransform(mtransforms.Transform):
 
 
 class InvertedMercatorLatitudeTransform(mtransforms.Transform):
-    # As above, but for the inverse transform
     input_dims = 1
     output_dims = 1
     is_separable = True
@@ -1224,14 +1061,8 @@ class SineLatitudeScale(_ScaleBase, mscale.ScaleBase):
     name = 'sine'
     """The registered scale name."""
 
-    def __init__(self, axis):
-        """
-        Parameters
-        ----------
-        axis : `~matplotlib.axis.Axis`
-            The matplotlib axis. Required for compatibility reasons.
-        """
-        super().__init__(axis)
+    def __init__(self):
+        super().__init__()
         self._transform = SineLatitudeTransform()
         self._major_formatter = Formatter('deg')
         self._smart_bounds = True
@@ -1243,14 +1074,12 @@ class SineLatitudeScale(_ScaleBase, mscale.ScaleBase):
 
 
 class SineLatitudeTransform(mtransforms.Transform):
-    # Default attributes
     input_dims = 1
     output_dims = 1
     is_separable = True
     has_inverse = True
 
     def __init__(self):
-        # Initialize, declare attribute
         super().__init__()
 
     def inverted(self):
@@ -1269,7 +1098,6 @@ class SineLatitudeTransform(mtransforms.Transform):
 
 
 class InvertedSineLatitudeTransform(mtransforms.Transform):
-    # Inverse of SineLatitudeTransform
     input_dims = 1
     output_dims = 1
     is_separable = True
@@ -1288,6 +1116,108 @@ class InvertedSineLatitudeTransform(mtransforms.Transform):
         return np.rad2deg(np.arcsin(aa))
 
 
+class CutoffScale(_ScaleBase, mscale.ScaleBase):
+    """
+    Axis scale composed of arbitrary piecewise linear transformations.
+    The axis can undergo discrete jumps, "accelerations", or "decelerations"
+    between successive thresholds. Adapted from
+    `this stackoverflow post <https://stackoverflow.com/a/5669301/4970632>`__.
+    """
+    name = 'cutoff'
+    """The registered scale name."""
+
+    def __init__(self, *args, **kwargs):
+        """
+        Parameters
+        ----------
+        *args : (thresh_1, scale_1, ..., thresh_N, [scale_N]), optional
+            Sequence of thresholds and scales. If the final scale is omitted
+            (i.e. you passed an odd number of args) it is set to ``1``.
+
+            * If ``scale_i < 1``, the axis is decelerated from ``thresh_i`` to
+              ``thresh_i+1`` or, if ``i == N``, everywhere above ``thresh_i``.
+            * If ``scale_i > 1``, the axis is accelerated from ``thresh_i`` to
+              ``thresh_i+1`` or, if ``i == N``, everywhere above ``thresh_i``.
+            * If ``scale_i == np.inf``, the axis *discretely jumps* from
+              ``thresh_i`` to ``thresh_i+1``.
+
+        Example
+        -------
+
+        >>> import proplot as plot
+        ... import numpy as np
+        ... scale = plot.CutoffScale(10, 2)  # go "twice as fast" after 10
+        ... scale = plot.CutoffScale(10, 0.5, 20)  # zoom in between 10 and 20
+        ... scale = plot.CutoffScale(10, np.inf, 20)  # jump from 10 to 20
+
+        """
+        super().__init__()
+        args = list(args)
+        if len(args) % 2 == 1:
+            args.append(1)
+        threshs = args[::2]
+        scales = args[1::2]
+        self._transform = CutoffTransform(threshs, scales)
+
+
+class CutoffTransform(mtransforms.Transform):
+    input_dims = 1
+    output_dims = 1
+    has_inverse = True
+    is_separable = True
+
+    def __init__(self, threshs, scales, zero_dists=None):
+        # The zero_dists array is used to fill in distances where scales and
+        # threshold steps are zero. Used for inverting discrete transorms.
+        super().__init__()
+        dists = np.diff(threshs)
+        scales = np.asarray(scales)
+        threshs = np.asarray(threshs)
+        if len(scales) != len(threshs):
+            raise ValueError(f'Got {len(threshs)} but {len(scales)} scales.')
+        if any(scales < 0):
+            raise ValueError('Scales must be non negative.')
+        if scales[-1] in (0, np.inf):
+            raise ValueError('Final scale must be finite.')
+        if any(dists < 0):
+            raise ValueError('Thresholds must be monotonically increasing.')
+        if any((dists == 0) | (scales == 0)) and (
+                any((dists == 0) != (scales == 0)) or zero_dists is None):
+            raise ValueError(
+                'Got zero scales and distances in different places or '
+                'zero_dists is None.')
+        self._scales = scales
+        self._threshs = threshs
+        with np.errstate(divide='ignore', invalid='ignore'):
+            dists = np.concatenate((threshs[:1], dists / scales[:-1]))
+            if zero_dists is not None:
+                dists[scales[:-1] == 0] = zero_dists
+            self._dists = dists
+
+    def inverted(self):
+        # Use same algorithm for inversion!
+        threshs = np.cumsum(self._dists)  # thresholds in transformed space
+        with np.errstate(divide='ignore', invalid='ignore'):
+            scales = 1 / self._scales  # new scales are inverse
+        zero_dists = np.diff(self._threshs)[scales[:-1] == 0]
+        return CutoffTransform(threshs, scales, zero_dists=zero_dists)
+
+    def transform_non_affine(self, a):
+        # Cannot do list comprehension because this method sometimes
+        # received non-1d arrays
+        dists = self._dists
+        scales = self._scales
+        threshs = self._threshs
+        aa = np.array(a)  # copy
+        with np.errstate(divide='ignore', invalid='ignore'):
+            for i, ai in np.ndenumerate(a):
+                j = np.searchsorted(threshs, ai)
+                if j > 0:
+                    aa[i] = dists[:j].sum() + (
+                        ai - threshs[j - 1]) / scales[j - 1]
+        return aa
+
+
 class InverseScale(_ScaleBase, mscale.ScaleBase):
     r"""
     Scales axis to be linear in the *inverse* of *x*. The scale
@@ -1304,14 +1234,8 @@ class InverseScale(_ScaleBase, mscale.ScaleBase):
     name = 'inverse'
     """The registered scale name."""
 
-    def __init__(self, axis, **kwargs):
-        """
-        Parameters
-        ----------
-        axis : `~matplotlib.axis.Axis`
-            The matplotlib axis. Required for compatibility reasons.
-        """
-        super().__init__(axis)
+    def __init__(self, **kwargs):
+        super().__init__()
         self._transform = InverseTransform()
         self._major_locator = Locator('log', base=10, subs=(1, 2, 5))
         self._minor_locator = Locator('log', base=10, subs='auto')
@@ -1336,15 +1260,12 @@ class InverseTransform(mtransforms.Transform):
     def inverted(self):
         return InverseTransform()
 
-    def transform(self, a):
+    def transform_non_affine(self, a):
         a = np.array(a)
         # f = np.abs(a) <= self.minpos # attempt for negative-friendly
         # aa[f] = np.sign(a[f])*self.minpos
         with np.errstate(divide='ignore', invalid='ignore'):
             return 1.0 / a
-
-    def transform_non_affine(self, a):
-        return self.transform(a)
 
 
 #: The registered scale names and their associated

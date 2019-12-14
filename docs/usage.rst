@@ -14,12 +14,12 @@ Background
 ==========
 
 ProPlot is an object-oriented matplotlib wrapper. The "wrapper" part means that
-ProPlot's features are largely a **superset** of matplotlib.
+ProPlot's features are largely a *superset* of matplotlib.
 You can use your favorite plotting commands like
 `~matplotlib.axes.Axes.plot`, `~matplotlib.axes.Axes.scatter`, `~matplotlib.axes.Axes.contour`, and `~matplotlib.axes.Axes.pcolor` like you always have.
-The "object-oriented" part means that ProPlot's features are implemented with **subclasses** of the `~matplotlib.figure.Figure` and `~matplotlib.axes.Axes` classes.
+The "object-oriented" part means that ProPlot's features are implemented with *subclasses* of the `~matplotlib.figure.Figure` and `~matplotlib.axes.Axes` classes.
 
-If you tend to use `~matplotlib.pyplot` and are not familiar with figure and axes **classes**, check out `this guide from the matplotlib documentation <https://matplotlib.org/api/api_overview.html#the-pyplot-api>`__. Working with objects directly tends to be more clear and concise than `~matplotlib.pyplot`, makes things easier when working with multiple figures and axes, and is certainly more "`pythonic <https://www.python.org/dev/peps/pep-0020/>`__". Therefore, although some ProPlot features may still work, we do not officially support the `~matplotlib.pyplot` API.
+If you tend to use `~matplotlib.pyplot` and are not familiar with figure and axes *classes*, check out `this guide from the matplotlib documentation <https://matplotlib.org/api/api_overview.html#the-pyplot-api>`__. Working with objects directly tends to be more clear and concise than `~matplotlib.pyplot`, makes things easier when working with multiple figures and axes, and is certainly more "`pythonic <https://www.python.org/dev/peps/pep-0020/>`__". Therefore, although some ProPlot features may still work, we do not officially support the `~matplotlib.pyplot` API.
 
 
 Importing proplot
