@@ -3632,7 +3632,8 @@ fonts = []
 # Apply monkey patches to top level modules
 if not isinstance(mcm.cmap_d, CmapDict):
     _dict = {
-        key: value for key, value in mcm.cmap_d.items() if key[-2:] != '_r'}
+        key: value for key, value in mcm.cmap_d.items() if key[-2:] != '_r'
+    }
     mcm.cmap_d = CmapDict(_dict)
 if not isinstance(mcolors._colors_full_map, _ColorMappingOverride):
     _map = _ColorMappingOverride(mcolors._colors_full_map)
