@@ -2867,6 +2867,7 @@ def register_cmaps():
         else:
             cmap = mcm.cmap_d.get(name, None)
             if isinstance(cmap, ListedColormap):
+                mcm.cmap_d.pop(name, None)
                 mcm.cmap_d[name] = LinearSegmentedColormap.from_list(
                     name, cmap.colors, cyclic=(name == 'twilight'))
 
