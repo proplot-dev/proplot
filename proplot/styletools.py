@@ -1857,6 +1857,7 @@ class CmapDict(dict):
         key = key.lower()
         reverse = False
         if key[-2:] == '_r':
+            key = key[:-2]
             reverse = True
         if mirror and not super().__contains__(key):  # search for mirrored key
             key_mirror = key
