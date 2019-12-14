@@ -1872,6 +1872,7 @@ class CmapDict(dict):
         key = key.lower()
         reverse = False
         if key[-2:] == '_r':
+            key = key[:-2]
             reverse = True
         if mirror and not super().__contains__(key):  # search for mirrored key
             key_mirror = key
@@ -3550,6 +3551,7 @@ for _name in CMAPS_TABLE['Matplotlib originals']:  # initialize as empty lists
     else:
         _cmap = mcm.cmap_d.get(_name, None)
         if _cmap and isinstance(_cmap, mcolors.ListedColormap):
+            mcm.cmap_d.pop(_name, None)  # removes the map from cycles list!
             mcm.cmap_d[_name] = LinearSegmentedColormap.from_list(
                 _name, _cmap.colors, cyclic=('twilight' in _name))
 for _cat in ('MATLAB', 'GNUplot', 'GIST', 'Other'):
@@ -3580,7 +3582,8 @@ fonts = []
 # Apply monkey patches to top level modules
 if not isinstance(mcm.cmap_d, CmapDict):
     _dict = {
-        key: value for key, value in mcm.cmap_d.items() if key[-2:] != '_r'}
+        key: value for key, value in mcm.cmap_d.items() if key[-2:] != '_r'
+    }
     mcm.cmap_d = CmapDict(_dict)
 if not isinstance(mcolors._colors_full_map, _ColorMappingOverride):
     _map = _ColorMappingOverride(mcolors._colors_full_map)
