@@ -23,9 +23,9 @@ Less typing, more plotting
 
 .. rubric:: Problem
 
-Power users often need to change lots of plot settings all at once. In matplotlib, this requires a series of one-liner setters and getters, like `~matplotlib.axes.Axes.set_title`, `~matplotlib.axes.Axes.set_xlabel`, and `~matplotlib.axes.Axes.set_ylabel`.
+Power users often need to change lots of plot settings all at once. In matplotlib, this requires calling a series of one-liner setter methods.
 
-This workflow is quite verbose -- it tends to require "boilerplate code" that gets copied and pasted a hundred times. It can also be confusing -- it is often unclear whether properties are applied from an `~matplotlib.axes.Axes` setter (e.g. `~matplotlib.axes.Axes.set_xlabel` and `~matplotlib.axes.Axes.set_xticks`), an `~matplotlib.axis.XAxis` or `~matplotlib.axis.YAxis` setter (e.g. `~matplotlib.axis.Axis.set_major_locator` and `~maplotlib.axis.Axis.set_major_formatter`), a `~matplotlib.spines.Spine` setter (e.g. `~matplotlib.spines.Spine.set_bounds`), a random "bulk" setter (e.g. `~matplotlib.axes.Axes.tick_params`), or whether they require tinkering with several different objects. Also, one often needs to *loop through* lists of subplots to apply identical settings to each subplot.
+This workflow is quite verbose -- it tends to require "boilerplate code" that gets copied and pasted a hundred times. It can also be confusing -- it is often unclear whether properties are applied from an `~matplotlib.axes.Axes` setter (e.g. `~matplotlib.axes.Axes.set_title`, `~matplotlib.axes.Axes.set_xlabel` and `~matplotlib.axes.Axes.set_xticks`), an `~matplotlib.axis.XAxis` or `~matplotlib.axis.YAxis` setter (e.g. `~matplotlib.axis.Axis.set_major_locator` and `~matplotlib.axis.Axis.set_major_formatter`), a `~matplotlib.spines.Spine` setter (e.g. `~matplotlib.spines.Spine.set_bounds`), a random "bulk" setter (e.g. `~matplotlib.axes.Axes.tick_params`), or whether they require tinkering with several different objects. Also, one often needs to *loop through* lists of subplots to apply identical settings to each subplot.
 
 ..
    This is perhaps one reason why many users prefer the `~matplotlib.pyplot` API to the object-oriented API (see :ref:`Using ProPlot`).
@@ -34,11 +34,16 @@ This workflow is quite verbose -- it tends to require "boilerplate code" that ge
 
 ProPlot introduces the `~proplot.axes.Axes.format` method for changing arbitrary settings *in bulk*. Think of this as an expanded and thoroughly documented version of the
 `~matplotlib.artist.Artist` `~matplotlib.artist.Artist.update` method.
-For even more efficiency,
+For even more efficiency, `~proplot.axes.Axes.format` can
+be used to locally apply various `rcParams <https://matplotlib.org/3.1.1/tutorials/introductory/customizing.html>`__ and :ref:`Bulk global settings` to particular axes,
 :ref:`The subplot container class` can be used to identically apply
-settings to several subplots at once.
-This significantly reduces the amount of code needed to create highly customized figures.
+settings to several axes at once, and :ref:`Class constructor functions`
+are used by `~proplot.axes.Axes.format` (and in several other places)
+to concisely generate complex, verbose class instances like `~matplotlib.ticker.Locator`\ s
+and `~matplotlib.ticker.Formatter`\ s.
 
+Together, these features significantly reduce
+the amount of code needed to create highly customized figures.
 As an example, it is trivial to see that
 
 .. code-block:: python
@@ -64,6 +69,7 @@ As an example, it is trivial to see that
       ax.tick_params(axis='x', which='minor', bottom=True)
       ax.set_xlabel('x axis', color='gray')
       ax.set_ylabel('y axis', color='gray')
+   plt.style.use('default')  # restore
 
 
 Class constructor functions
