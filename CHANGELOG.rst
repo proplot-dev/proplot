@@ -64,7 +64,8 @@ ProPlot v0.3.1 (2019-12-XX)
 ===========================
 .. rubric:: Bug fixes
 
-- Repair issue with latest versions of matplotlib where ``%matplotlib inline``
+- Fix issue where custom fonts were not synced.
+- Fix issue with latest versions of matplotlib where ``%matplotlib inline``
   fails *silently* so the backend is not instantiated (:commit:`cc39dc56`).
 
 ProPlot v0.3.0 (2019-12-15)

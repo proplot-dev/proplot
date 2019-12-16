@@ -14,9 +14,9 @@ docs/api
 docs/_build
 
 # Subfolders in data directories
-**/cmaps/**
-**/cycles/**
-**/fonts/**
+**/cmaps/*/
+**/cycles/*/
+**/fonts/*/
 
 # Folder of notebooks for testing and bugfixing
 local
