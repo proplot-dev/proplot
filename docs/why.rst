@@ -178,8 +178,10 @@ Eliminating redundancies
 
 .. rubric:: Problem
 
-For many of us, single-subplot figures are a rarity. Unfortunately, when drawing
-multiple-subplot figures, it is easy to end up with *redundant* figure elements:
+For many of us, figures with just one subplot are a rarity. We tend to need multiple
+subplots for comparing different datasets and illustrating complex concepts.
+Unfortunately, it is easy to end up with *redundant* figure elements
+when drawing multiple subplots; namely:
 
 * Repeated axis tick labels.
 * Repeated axis labels.
@@ -198,7 +200,7 @@ We tackle this issue using
 :ref:`Shared and spanning labels` and :ref:`Figure and colorbar legends`.
 
 * By default, axis tick labels and axis labels are *shared* between subplots in the same `~matplotlib.gridspec.GridSpec` row or column. This is controlled by the new `sharex`, `sharey`, `spanx`, and `spany` `~proplot.subplots.subplots` keyword args.
-* The new `~proplot.subplots.Figure` `~proplot.subplots.Figure.colorbar` and `~proplot.subplots.Figure.legend` methods make it much easier to draw colorbars and legends intended to reference more than one subplot. See :ref:`Outer colorbars and legends` for more info.
+* The new `~proplot.subplots.Figure` `~proplot.subplots.Figure.colorbar` and `~proplot.subplots.Figure.legend` methods make it easy to draw colorbars and legends intended to reference more than one subplot. See the next section for details.
 
 Outer colorbars and legends
 ===========================
@@ -231,7 +233,7 @@ and :ref:`Figure colorbars and legends`
 * Since `~proplot.subplots.GridSpec` permits variable spacing between subplot rows and columns, "outer" colorbars and legends do not mess up subplot spacing or add extra whitespace. This is critical e.g. if you have a colorbar between columns 1 and 2 but nothing between columns 2 and 3.
 * `~proplot.subplots.Figure` and `~proplot.axes.Axes` colorbar widths are specified in *physical* units rather than relative units. This makes colorbar thickness independent of subplot size and easier to get just right.
 
-There are also several :ref:`New colorbar features` and :ref:`New legend features`. See :ref:`Colorbars and legends` for details.
+There are also several :ref:`New colorbar features` and :ref:`New legend features`.
 
 The subplot container class
 ===========================
@@ -252,10 +254,10 @@ The `~proplot.subplots.subplot_grid` class also
 unifies the behavior of the three possible `matplotlib.pyplot.subplots` return values:
 
 * `~proplot.subplots.subplot_grid` permits 2d indexing, e.g. ``axs[1,0]``. Since `~proplot.subplots.subplots` can generate figures with arbitrarily complex subplot geometry, this 2d indexing is useful only when the arrangement happens to be a clean 2d matrix.
-* Since `~proplot.subplots.subplot_grid` is a `list` subclass, it also supports 1d indexing, e.g. ``axs[1]``. The default order can be switched from row-major to column-major by passing ``order='F'`` to `~proplot.subplots.subplots`.
-* `~proplot.subplots.subplot_grid` behaves like a scalar when it is singleton. So if you just made a single axes with ``f, axs = plot.subplots()``, calling ``axs[0].command`` is equivalent to ``axs.command``.
+* `~proplot.subplots.subplot_grid` also permits 1d indexing, e.g. ``axs[0]``, since it is a `list` subclass. The default order can be switched from row-major to column-major by passing ``order='F'`` to `~proplot.subplots.subplots`.
+* When it is singleton, `~proplot.subplots.subplot_grid` behaves like a scalar. So when you make a single axes with ``f, axs = plot.subplots()``, ``axs[0].method(...)`` is equivalent to ``axs.method(...)``.
 
-See :ref:`The basics` for details.
+See :ref:`Subplot grids` for details.
 
 ..
    This goes with ProPlot's theme of preserving the object-oriented spirit, but making things easier for users.
@@ -331,7 +333,7 @@ an entirely separate API.
 .. rubric:: Solution
 
 ProPlot *reproduces* most of the `xarray.DataArray.plot`, `pandas.DataFrame.plot`, and `pandas.Series.plot` features on the `~proplot.axes.Axes` plotting methods themselves.
-Passing an `xarray.DataArray`, `pandas.DataFrame`, or `pandas.Series` through
+Passing an `~xarray.DataArray`, `~pandas.DataFrame`, or `~pandas.Series` through
 any plotting method automatically updates the
 axis tick labels, axis labels, subplot titles, and colorbar and legend labels
 from the metadata.  This can be disabled by passing
@@ -398,8 +400,8 @@ They are hard to edit and hard to create from scratch.
 In ProPlot, it is easy to manipulate colormaps and property cycles:
 
 * The `~proplot.styletools.Colormap` constructor function can be used to slice and merge existing colormaps and/or generate brand new ones.
-* The `~proplot.styletools.Cycle` constructor function can be used to make *color cycles* from *colormaps*! These cycles can be applied by passing the `cycle` keyword argument to plotting commands or changing the :rcraw:`cycle` setting. See :ref:`Color cycles` for details.
-* The new `~proplot.styletools.ListedColormap` and `~proplot.styletools.LinearSegmentedColormap` classes include several new methods, e.g. `~proplot.styletools.LinearSegmentedColormap.save` and `~proplot.styletools.LinearSegmentedColormap.concatenate`, and have a much nicer REPL representation.
+* The `~proplot.styletools.Cycle` constructor function can be used to make *color cycles* from *colormaps*! Color cycles can be applied to plots in a variety of ways; see :ref:`Color cycles` for details.
+* The new `~proplot.styletools.ListedColormap` and `~proplot.styletools.LinearSegmentedColormap` classes include several convenient methods and have a much nicer REPL string representation.
 * The `~proplot.styletools.PerceptuallyUniformColormap` class is used to make :ref:`Perceptually uniform colormaps`. These have smooth, aesthetically pleasing color transitions represent your data *accurately*.
 
 Importing ProPlot also makes all colormap names *case-insensitive*, and colormaps can be *reversed* or *cyclically shifted* by 180 degrees simply by appending ``'_r'`` or ``'_shifted'`` to the colormap name. This is powered by the `~proplot.styletools.CmapDict` dictionary, which replaces matplotlib's native colormap database.
@@ -409,12 +411,8 @@ Smarter colormap normalization
 .. rubric:: Problem
 
 In matplotlib, when ``extend='min'``, ``extend='max'``, or ``extend='neither'`` is passed to `~matplotlib.figure.Figure.colorbar` , the colormap colors reserved for "out-of-bounds" values are truncated. The problem is that matplotlib discretizes colormaps by generating a low-resolution lookup table (see `~matplotlib.colors.LinearSegmentedColormap` for details).
-This approach cannot be fine-tuned and creates an extra copy of the colormap.
-
-..
-   and prevents you from using the resulting colormap for plots with different numbers of levels.
-
-Ideally, the task discretizing colormap colors should be left to the *normalizer*, not the colormap itself. Matplotlib provides `~matplotlib.colors.BoundaryNorm` for this purpose, but it is seldom used and its features are limited.
+This approach cannot be fine-tuned and creates an extra copy of the colormap --
+ideally, the task discretizing colormap colors should be left to the *normalizer*. Matplotlib provides `~matplotlib.colors.BoundaryNorm` for this purpose, but it is seldom used and its features are limited.
 
 .. rubric:: Solution
 
