@@ -903,16 +903,14 @@ def ipython_matplotlib(backend=None, fmt=None):
         ``'png'``, ``'svg'``, ``'pdf'``, and ``'retina'``. This is ignored
         for non-inline backends.
     """  # noqa
-    # Initialize with default 'inline' settings
-    # Reset rc object afterwards
+    # Bail out
     ipython = get_ipython()
     backend = backend or rcParamsShort['matplotlib']
     if ipython is None or backend is None:
         return
 
-    # For notebooks
-    # WARNING: Latest version of matplotlib does not raise error when
-    # https://stackoverflow.com/a/22424821/4970632
+    # Default behavior dependent on type of ipython session
+    # See: https://stackoverflow.com/a/22424821/4970632
     rc._init = False
     ibackend = backend
     if backend == 'auto':

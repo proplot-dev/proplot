@@ -253,17 +253,14 @@ FONTS_SANS = [
     'Avenir',
     'Bitstream Vera',  # matplotlib
     'DejaVu Sans',  # matplotlib
-    'Fira Sans',
     'Frutiger',
     'Futura',
     'Gill Sans',
     'Helvetica Neue',
     'Helvetica',
-    'Lato',
     'Lucida Grande',
     'Myriad Pro',
     'Optima',
-    'PT Sans',
     'Tahoma',
     'Trebuchet MS',
     'Univers',
@@ -3575,7 +3572,6 @@ def show_fonts(*args, size=12):
         })
 
     # Text
-    weight = 'normal'
     math = r'(0) + {1} - [2] * <3> / 4,0 $\geq\gg$ 5.0 $\leq\ll$ ~6 ' \
            r'$\times$ 7 $\equiv$ 8 $\approx$ 9 $\propto$'
     greek = r'$\alpha\beta$ $\Gamma\gamma$ $\Delta\delta$ ' \
@@ -3596,7 +3592,7 @@ def show_fonts(*args, size=12):
         font = args[i]
         ax.text(0, 0.5, f'{font}:\n{letters}\n{math}\n{greek}',
                 fontfamily=font, fontsize=size,
-                weight=weight, ha='left', va='center')
+                weight='normal', ha='left', va='center')
     return f
 
 
