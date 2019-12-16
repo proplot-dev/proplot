@@ -129,7 +129,7 @@ Matplotlib plots tend to require lots of "tweaking" when you have more than one 
 #. The subplot aspect ratio is usually more relevant than the figure aspect ratio, e.g. for map projections.
 #. The subplot width and height control the evident thickness of text and other content plotted inside the axes.
 
-Matplotlib has a `tight layout <https://matplotlib.org/tutorials/intermediate/tight_layout_guide.html>`__ algorithm to keep you from having to "tweak" the spacing, but the algorithm cannot apply different amounts of spacing between different subplot row and column boundaries. This is a silly limitation that often results in unnecessary whitespace, and can be a major problem when you want to put e.g. a legend on the outside of a subplot.
+Matplotlib has a `tight layout <https://matplotlib.org/tutorials/intermediate/tight_layout_guide.html>`__ algorithm to keep you from having to "tweak" the spacing, but the algorithm cannot apply different amounts of spacing between different subplot row and column boundaries. This limitation often results in unnecessary whitespace, and can be a major problem when you want to put e.g. a legend on the outside of a subplot.
 
 .. rubric:: Solution
 
