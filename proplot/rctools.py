@@ -1009,8 +1009,9 @@ def use_font(font=None):
     Parameters
     ----------
     font : str, optional
-        If ``'auto'``, we search for ``'Helvetica Neue'``, followed by
-        ``'Helvetica'``, ``'Arial'``, and finally ``'DejaVu Sans'``.
+        The font name. Default is :rc:`fontname`. If ``'auto'``, ProPlot
+        tries to use (in order of priority) ``'Helvetica Neue'``,
+        ``'Helvetica'``, ``'Arial'``, or ``'DejaVu Sans'``.
     """
     font = font or rcParamsShort['fontname']
     if font == 'auto':
@@ -1018,8 +1019,7 @@ def use_font(font=None):
         font = 'DejaVu Sans'
         fonts = sorted({font.name for font in mfonts.fontManager.ttflist})
         for nicefont in (
-            'Helvetica Neue', 'Helvetica', 'Arial',
-            'DejaVu Sans', 'Bitstream Vera',
+            'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans',
         ):
             if nicefont in fonts:
                 font = nicefont
