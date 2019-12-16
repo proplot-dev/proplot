@@ -60,7 +60,7 @@ ProPlot v0.3.0 (2020-01-##)
   with a default ``.proplotrc`` file, change the auto-generated user ``.proplotrc``
   (:pr:`50`).
 
-ProPlot v0.2.8 (2019-12-15)
+ProPlot v0.3.0 (2019-12-15)
 ===========================
 .. rubric:: Deprecated
 
