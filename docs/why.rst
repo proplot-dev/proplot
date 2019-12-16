@@ -11,7 +11,7 @@ plotting tasks can be cumbersome or repetitive for its heaviest users:
 * Users who make plots nearly every day.
 
 ProPlot's core mission is to provide a smoother plotting experience
-for matplotlib's heaviest users.
+for heavy matplotlib users.
 We do this by expanding upon the object-oriented matplotlib API.
 ProPlot makes changes that would be hard to justify or difficult
 to incorporate into matplotlib itself, owing to design choices and backwards
@@ -45,9 +45,9 @@ This workflow is quite verbose -- it tends to require "boilerplate code" that ge
 ProPlot introduces the `~proplot.axes.Axes.format` method for changing arbitrary settings *in bulk*. Think of this as an expanded and thoroughly documented version of the
 `~matplotlib.artist.Artist` `~matplotlib.artist.Artist.update` method.
 For even more efficiency, `~proplot.axes.Axes.format` can
-be used to locally apply various `rcParams <https://matplotlib.org/3.1.1/tutorials/introductory/customizing.html>`__ and :ref:`Bulk global settings` to particular axes,
+be used to locally apply various `rcParams <https://matplotlib.org/3.1.1/tutorials/introductory/customizing.html>`__ and :ref:`Bulk global settings` to particular axes;
 :ref:`The subplot container class` can be used to identically apply
-settings to several axes at once, and :ref:`Class constructor functions`
+settings to several axes at once; and :ref:`Class constructor functions`
 are used by `~proplot.axes.Axes.format` (and in several other places)
 to concisely generate complex, verbose class instances like `~matplotlib.ticker.Locator`\ s
 and `~matplotlib.ticker.Formatter`\ s.
@@ -195,12 +195,13 @@ tends to require a fair amount of extra work.
 
 .. rubric:: Solution
 
-ProPlot wages war on redundancies to help you make clear, concise figures.
+ProPlot seeks to eliminate redundant elements
+to help you make clear, concise figures.
 We tackle this issue using
-:ref:`Shared and spanning labels` and :ref:`Figure and colorbar legends`.
+:ref:`Shared and spanning labels` and :ref:`Figure colorbars and legends`.
 
-* By default, axis tick labels and axis labels are *shared* between subplots in the same `~matplotlib.gridspec.GridSpec` row or column. This is controlled by the new `sharex`, `sharey`, `spanx`, and `spany` `~proplot.subplots.subplots` keyword args.
-* The new `~proplot.subplots.Figure` `~proplot.subplots.Figure.colorbar` and `~proplot.subplots.Figure.legend` methods make it easy to draw colorbars and legends intended to reference more than one subplot. See the next section for details.
+* By default, axis tick labels and axis labels are *shared* between subplots in the same row or column. This is controlled by the `sharex`, `sharey`, `spanx`, and `spany` `~proplot.subplots.subplots` keyword args.
+* The new `~proplot.subplots.Figure` `~proplot.subplots.Figure.colorbar` and `~proplot.subplots.Figure.legend` methods make it easy to draw colorbars and legends intended to reference more than one subplot. For details, see the next section.
 
 Outer colorbars and legends
 ===========================
