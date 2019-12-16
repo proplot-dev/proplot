@@ -93,8 +93,8 @@ Parts of the matplotlib API were actually designed with this in mind.
 `Backend classes <https://matplotlib.org/faq/usage_faq.html#what-is-a-backend>`__,
 `native axes projections <https://matplotlib.org/3.1.1/api/projections_api.html>`__,
 `axis scales <https://matplotlib.org/3.1.0/gallery/scales/scales.html>`__,
-`box style classes <https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.patches.FancyBboxPatch.html?highlight=boxstyle>`__, `arrow style classes <https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.patches.FancyArrowPatch.html?highlight=arrowstyle>`__, and
-`arc style classes <https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.patches.ConnectionStyle.html?highlight=class%20name%20attrs>`__
+`box styles <https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.patches.FancyBboxPatch.html?highlight=boxstyle>`__, `arrow styles <https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.patches.FancyArrowPatch.html?highlight=arrowstyle>`__, and
+`arc styles <https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.patches.ConnectionStyle.html?highlight=class%20name%20attrs>`__
 are referenced with "registered" string names,
 as are `basemap projection types <https://matplotlib.org/basemap/users/mapsetup.html>`__.
 So, why not "register" everything else?
@@ -146,20 +146,20 @@ Matplotlib has a `tight layout <https://matplotlib.org/tutorials/intermediate/ti
 In ProPlot, you can specify the physical dimensions of a *reference subplot* instead of the figure by passing `axwidth`, `axheight`, and/or `aspect` to `~proplot.subplots.Figure`. The default behavior is ``aspect=1`` and ``axwidth=2`` (inches). If the `aspect ratio mode <https://matplotlib.org/2.0.2/examples/pylab_examples/equal_aspect_ratio.html>`__ for the reference subplot is set to ``'equal'``, as with :ref:`Geographic and polar plots` and `~matplotlib.axes.Axes.imshow` plots, the existing aspect will be used instead.
 Figure dimensions are constrained as follows:
 
-* If `axwidth` or `axheight` are used, the figure width and height are calculated automatically.
-* If `width` is used, the figure height is calculated automatically.
-* If `height` is used, the figure width is calculated automatically.
-* If `width` *and* `height` or `figsize` is used, the figure dimensions are fixed.
+* When `axwidth` or `axheight` are specified, the figure width and height are calculated automatically.
+* When `width` is specified, the figure height is calculated automatically.
+* When `height` is specified, the figure width is calculated automatically.
+* When `width` *and* `height` or `figsize` is specified, the figure dimensions are fixed.
 
 ..
    Several matplotlib backends require figure dimensions to be fixed. When `~proplot.subplots.Figure.draw` changes the figure dimensions, this can "surprise" the backend and cause unexpected behavior. ProPlot fixes this issue for the static inline backend and the Qt popup backend. However, this issue is unfixable the "notebook" inline backend, the "macosx" popup backend, and possibly other untested backends.
 
 ProPlot also uses a custom tight layout algorithm that automatically determines the `left`, `right`, `bottom`, `top`, `wspace`, and `hspace` `~matplotlib.gridspec.GridSpec` parameters. This algorithm is simpler because:
 
-#. The new `~proplot.subplots.GridSpec` class permits variable spacing between rows and columns. It turns out this is critical for putting :ref:`Colorbars and legends` on the outside of subplots.
-#. Figures are restricted to have only *one* `~proplot.subplots.GridSpec` per figure. This is done by requiring users to draw all of their subplots at once with `~proplot.subplots.subplots` (see :pr:`50`).
+* The new `~proplot.subplots.GridSpec` class permits variable spacing between rows and columns. It turns out this is critical for putting :ref:`Colorbars and legends` on the outside of subplots.
+* Figures are restricted to have only *one* `~proplot.subplots.GridSpec` per figure. This is done by requiring users to draw all of their subplots at once with `~proplot.subplots.subplots` (see :pr:`50`).
 
-See :ref:`Subplots features` for details.
+See :ref:`Automatic layout` for details.
 
 ..
    #. The `~proplot.subplots.GridSpec` spacing parameters are specified in physical units instead of figure-relative units.
@@ -366,9 +366,9 @@ This lets you apply all kinds of geographic plot settings, like coastlines, cont
 `~proplot.axes.ProjAxes` also
 overrides various plotting methods:
 
-* ``transform=ccrs.PlateCarree()`` is the new default for all `~proplot.axes.GeoAxes` plotting methods.
-* ``latlon=True`` is the new default for all `~proplot.axes.BasemapAxes` plotting methods.
-* ``globe=True`` can be passed to any 2D plotting command to enforce *global* coverage over the poles and across the longitude boundaries.
+* The new default for all `~proplot.axes.GeoAxes` plotting methods is ``transform=ccrs.PlateCarree()``.
+* The new default for all `~proplot.axes.BasemapAxes` plotting methods is ``latlon=True``.
+* *Global* coverage over the poles and across the matrix longitude boundaries can be enforced by passing ``globe=True`` to any 2d plotting command, e.g. `~matplotlib.axes.Axes.pcolormesh` and `~matplotlib.axes.Axes.contourf`.
 
 See :ref:`Geographic and polar plots` for details.
 Note that active development on basemap will `halt after 2020 <https://matplotlib.org/basemap/users/intro.html#cartopy-new-management-and-eol-announcement>`__.
