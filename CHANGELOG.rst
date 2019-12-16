@@ -15,7 +15,7 @@ ProPlot v1.0.0 (2020-##-##)
 This will be published when some major refactoring tasks are completed.
 See :pr:`45`, :pr:`46`, and :pr:`50`.
 
-ProPlot v0.3.0 (2020-01-##)
+ProPlot v0.4.0 (2020-01-##)
 ===========================
 .. rubric:: Deprecated
 
@@ -60,7 +60,7 @@ ProPlot v0.3.0 (2020-01-##)
   with a default ``.proplotrc`` file, change the auto-generated user ``.proplotrc``
   (:pr:`50`).
 
-ProPlot v0.3.1 (2019-12-XX)
+ProPlot v0.3.1 (2019-12-16)
 ===========================
 .. rubric:: Bug fixes
 
@@ -85,6 +85,8 @@ ProPlot v0.3.0 (2019-12-15)
 
 - Add brute force workaround for saving colormaps with
   *callable* segmentdata (:commit:`8201a806`).
+- Fix issue with latest versions of matplotlib where ``%matplotlib inline``
+  fails *silently* so the backend is not instantiated (:commit:`cc39dc56`).
 - Fix `~proplot.styletools.LinearSegmentedColormap.shifted` when `shift` is
   not ``180`` (:commit:`e2e2b2c7`).
 - Save the ``cyclic`` and ``gamma`` attributes in JSON files too (:commit:`8201a806`).
