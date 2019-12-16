@@ -144,10 +144,10 @@ Figure dimensions are constrained as follows:
 ..
    Several matplotlib backends require figure dimensions to be fixed. When `~proplot.subplots.Figure.draw` changes the figure dimensions, this can "surprise" the backend and cause unexpected behavior. ProPlot fixes this issue for the static inline backend and the Qt popup backend. However, this issue is unfixable the "notebook" inline backend, the "macosx" popup backend, and possibly other untested backends.
 
-By default, ProPlot also uses a custom tight layout algorithm that automatically determines the `left`, `right`, `bottom`, `top`, `wspace`, and `hspace` `~matplotlib.gridspec.GridSpec` parameters. This algorithm is simpler and more precise because:
+ProPlot also uses a custom tight layout algorithm that automatically determines the `left`, `right`, `bottom`, `top`, `wspace`, and `hspace` `~matplotlib.gridspec.GridSpec` parameters. This algorithm is simpler because:
 
-#. The new `~proplot.subplots.GridSpec` class permits variable spacing between rows and columns. It turns out this is *critical* for putting :ref:`Colorbars and legends` on the outside of subplots.
-#. Figures are restricted to have only *one* `~proplot.subplots.GridSpec` per figure. This is done by requiring users to draw all of their subplots at once with `~proplot.subplots.subplots`, and it *considerably* simplifies the algorithm (see :pr:`50` for details).
+#. The new `~proplot.subplots.GridSpec` class permits variable spacing between rows and columns. It turns out this is critical for putting :ref:`Colorbars and legends` on the outside of subplots.
+#. Figures are restricted to have only *one* `~proplot.subplots.GridSpec` per figure. This is done by requiring users to draw all of their subplots at once with `~proplot.subplots.subplots` (see :pr:`50`).
 
 See :ref:`Subplots features` for details.
 
