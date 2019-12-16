@@ -2,11 +2,19 @@
 Why ProPlot?
 ============
 
-ProPlot's core mission
-is to improve upon the parts of matplotlib that
-tend to be cumbersome or repetitive
-for power users.
-This page enumerates the stickiest of these limitations
+Matplotlib is a wonderful and incredibly powerful plotting package used
+by academics and data scientists far and wide. But certain parts of the matplotlib
+API can be cumbersome or repetitive for "power users":
+
+* Users who need to make very rich, complex figures.
+* Users who want to finely tune their annotations and plot aesthetics.
+* Users who don't even perform *that* much customization, but they make plots nearly every day.
+
+Unfortunately, many of these issues are difficult to resolve owing
+to design choices and backwards compatibility considerations.
+As an independent matplotlib wrapper, ProPlot's core mission
+is to tackle these issues and provide "power users" with a smoother
+plotting experience. This page enumerates the stickiest of these limitations
 and describes how ProPlot addresses them.
 
 ..
@@ -200,7 +208,7 @@ The subplot container class
 
 .. rubric:: Problem
 
-In matplotlib, `~matplotlib.pyplot.subplots` returns a 2D `~numpy.ndarray`, a 1D `~numpy.ndarray`, or the axes itself. This inconsistent behavior can be confusing.
+In matplotlib, `~matplotlib.pyplot.subplots` returns a 2D `~numpy.ndarray`, a 1D `~numpy.ndarray`, or the axes itself.
 
 .. rubric:: Solution
 
@@ -228,8 +236,8 @@ Certain plotting tasks are quite difficult to accomplish
 with the default matplotlib API. The `seaborn`, `xarray`, and `pandas`
 packages offer improvements, but it would be nice
 to have this functionality build right into matplotlib.
-There is also room for improvement that none of these packages
-address.
+There is also room for improvement of the native matplotlib plotting methods
+that none of these packages address.
 
 ..
    Matplotlib also has some finicky plotting issues
@@ -283,7 +291,7 @@ When you pass the array-like `xarray.DataArray`, `pandas.DataFrame`, and `pandas
 the dedicated `xarray.DataArray.plot`, `pandas.DataFrame.plot`, and `pandas.Series.plot`
 tools instead.
 
-This approach is fine for quick plots, but not ideal.
+This approach is fine for quick plots, but not ideal for complex ones.
 It requires learning a different syntax from matplotlib, and tends to encourage using the `~matplotlib.pyplot` API rather than the object-oriented API.
 These tools also introduce features that would be useful additions to matplotlib
 in their *own* right, without requiring special data containers and
@@ -310,8 +318,9 @@ Cartopy and basemap integration
 
 There are two widely-used engines
 for plotting geophysical data with matplotlib: `cartopy` and `~mpl_toolkits.basemap`.
-Using cartopy tends to be quite verbose and involve lots of boilerplate code,
-while basemap is outdated and requires you to use plotting commands on a separate `~mpl_toolkits.basemap.Basemap` object.
+Using cartopy tends to be verbose and involve boilerplate code,
+while using basemap requires you to use plotting commands on a
+separate `~mpl_toolkits.basemap.Basemap` object rather than an axes object.
 
 Also, `cartopy` and `~mpl_toolkits.basemap` plotting commands assume
 *map projection coordinates* unless specified otherwise. For most of us, this
@@ -369,12 +378,12 @@ Smarter colormap normalization
 .. rubric:: Problem
 
 In matplotlib, when ``extend='min'``, ``extend='max'``, or ``extend='neither'`` is passed to `~matplotlib.figure.Figure.colorbar` , the colormap colors reserved for "out-of-bounds" values are truncated. The problem is that matplotlib discretizes colormaps by generating a low-resolution lookup table (see `~matplotlib.colors.LinearSegmentedColormap` for details).
-This approach cannot be fine-tuned and creates an unnecessary copy of the colormap.
+This approach cannot be fine-tuned and creates an extra copy of the colormap.
 
 ..
    and prevents you from using the resulting colormap for plots with different numbers of levels.
 
-It is clear that the task discretizing colormap colors should be left to the *normalizer*, not the colormap itself. Matplotlib provides `~matplotlib.colors.BoundaryNorm` for this purpose, but it is seldom used and its features are limited.
+Ideally, the task discretizing colormap colors should be left to the *normalizer*, not the colormap itself. Matplotlib provides `~matplotlib.colors.BoundaryNorm` for this purpose, but it is seldom used and its features are limited.
 
 .. rubric:: Solution
 
@@ -422,14 +431,15 @@ Physical units engine
 .. rubric:: Problem
 
 Matplotlib requires users to use
-*inches* for the figure size `figsize`. This must be confusing for users outside
+inches for the figure size `figsize`. This may be confusing for users outside
 of the U.S.
 
 Matplotlib also uses figure-relative units for the margins
 `left`, `right`, `bottom`, and `top`, and axes-relative units
 for the column and row spacing `wspace` and `hspace`.
-Relative units tend to require "tinkering" with meaningless numbers until you find the
-right one... and then if your figure size changes, you have to adjust them again.
+Relative units tend to require "tinkering" with numbers until you find the
+right one. And since they are *relative*, if you decide to change your
+figure size or add a subplot, they will have to be readjusted.
 
 .. rubric:: Solution
 
@@ -456,7 +466,7 @@ The .proplot folder
 
 In matplotlib, it can be difficult to design your
 own colormaps and color cycles, and there is no builtin
-way to *save* them for future use. It is also quite
+way to *save* them for future use. It is also
 difficult to get matplotlib to use custom ``.ttc``, ``.ttf``,
 and ``.otf`` font files, which may be desirable when you are
 working on Linux servers with limited font selections.
