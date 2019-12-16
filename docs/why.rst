@@ -173,16 +173,45 @@ See :ref:`Subplots features` for details.
 ..
    ProPlot introduces a marginal limitation (see discussion in :pr:`50`) but *considerably* simplifies the tight layout algorithm.
 
+Eliminating redundancies
+========================
+
+.. rubric:: Problem
+
+For many of us, single-subplot figures are a rarity. Unfortunately, when drawing
+multiple-subplot figures, it is easy to end up with *redundant* figure elements:
+
+* Repeated axis tick labels.
+* Repeated axis labels.
+* Repeated colorbars.
+* Repeated legends.
+
+These sorts of redundancies are extremely common even in publications, where
+they waste valuable page space. They arise because this is the path of least
+resistance for the default API -- removing redundancies
+tends to require a fair amount of extra work.
+
+.. rubric:: Solution
+
+ProPlot wages war on redundancies to help you make clear, concise figures.
+We tackle this issue using
+:ref:`Shared and spanning labels` and :ref:`Figure and colorbar legends`.
+
+* By default, axis tick labels and axis labels are *shared* between subplots in the same `~matplotlib.gridspec.GridSpec` row or column. This is controlled by the new `sharex`, `sharey`, `spanx`, and `spany` `~proplot.subplots.subplots` keyword args.
+* The new `~proplot.subplots.Figure` `~proplot.subplots.Figure.colorbar` and `~proplot.subplots.Figure.legend` methods make it much easier to draw colorbars and legends intended to reference more than one subplot. See :ref:`Outer colorbars and legends` for more info.
+
 Outer colorbars and legends
 ===========================
 
 .. rubric:: Problem
 
 In matplotlib, it is difficult to draw `~matplotlib.figure.Figure.colorbar`\ s and
-`~matplotlib.axes.Axes.legend`\ s on the outside of subplots. It is very easy to mess up the subplot aspect ratios and the colorbar widths. It is even *more* difficult to draw `~matplotlib.figure.Figure.colorbar`\ s and `~matplotlib.figure.Figure.legend`\ s that reference more than one subplot:
+`~matplotlib.axes.Axes.legend`\ s on the outside of subplots. By default, colorbars "steal" space from their parent subplot, which can mess up subplot aspect ratios. And since colorbar widths are specified in *axes relative* coordinates, they often look "too skinny" or "too fat" after the first draw.
 
-* Matplotlib has no capacity for drawing colorbar axes that span multiple plots -- you have to create the axes yourself. This requires so much tinkering that most users just add identical colorbars to every single subplot!
-* Legends that span multiple plots tend to require *manual* positioning and tinkering with the `~matplotlib.gridspec.GridSpec` spacing, just like legends placed outside of individual subplots.
+As with axis labels, it is even more difficult to draw `~matplotlib.figure.Figure.colorbar`\ s and `~matplotlib.figure.Figure.legend`\ s intended to reference more than one subplot:
+
+* To make colorbars that span multiple plots, you have to supply `~matplotlib.figure.Figure.colorbar` with a `cax` you drew yourself. This requires so much tinkering that most users just add identical colorbars to every single subplot!
+* To draw legends outside of subplots, e.g. as a reference to *more than one* subplot, you usually need to position the legend manually and adjust various `~matplotlib.gridspec.GridSpec` spacing properties.
 
 ..
    The matplotlib example for `~matplotlib.figure.Figure` legends is `not pretty <https://matplotlib.org/3.1.1/gallery/text_labels_and_annotations/figlegend_demo.html>`__.
@@ -192,15 +221,17 @@ In matplotlib, it is difficult to draw `~matplotlib.figure.Figure.colorbar`\ s a
 
 .. rubric:: Solution
 
-ProPlot introduces a *brand new engine* for drawing colorbars and legends along the outside of
-individual subplots and along contiguous subplots on the edge of the figure:
+ProPlot introduces a brand new framework for drawing :ref:`Axes colorbars and legends`
+(colorbars and legends inside or along the outside edge of a subplot)
+and :ref:`Figure colorbars and legends`
+(colorbars and legends sapnning contiguous subplots along the edge of the figure):
 
-* Passing ``loc='l'``, ``loc='r'``, ``loc='b'``, or ``loc='t'`` to `~proplot.axes.Axes` `~proplot.axes.Axes.colorbar` or `~proplot.axes.Axes` `~proplot.axes.Axes.legend` draws the colorbar or legend along the outside of the axes.
-* Passing ``loc='l'``, ``loc='r'``, ``loc='b'``, or ``loc='t'`` to `~proplot.subplots.Figure` `~proplot.subplots.Figure.colorbar` and `~proplot.subplots.Figure.legend` draws the colorbar or legend along the edge of the figure, centered relative to the *subplot grid* rather than figure coordinates.
-* Outer colorbars and legends don't mess up the subplot layout or subplot aspect ratios, since `~proplot.subplots.GridSpec` permits variable spacing between subplot rows and columns. This is critical e.g. if you have a colorbar between columns 1 and 2 but nothing between columns 2 and 3.
-* `~proplot.subplots.Figure` and `~proplot.axes.Axes` colorbar widths are specified in *physical* units rather than relative units. This makes colorbar thickness independent of figure size and easier to get just right.
+* Passing an "outer" location to `~proplot.axes.Axes` `~proplot.axes.Axes.colorbar` or `~proplot.axes.Axes` `~proplot.axes.Axes.legend` (e.g. ``loc='l'`` or ``loc='left'``) draws the colorbar or legend along the outside of the axes. Passing an "inner" location (e.g. ``loc='ur'`` or ``loc='upper right'``) draws an *inset* colorbar or legend. And yes, that's right, you can now draw inset colorbars!
+* To draw a colorbar or legend along the edge of the figure, use `~proplot.subplots.Figure` `~proplot.subplots.Figure.colorbar` and `~proplot.subplots.Figure.legend`. The `col`, `row`, and `span` keyword args control which `~matplotlib.gridspec.GridSpec` rows and columns are spanned by the colorbar or legend.
+* Since `~proplot.subplots.GridSpec` permits variable spacing between subplot rows and columns, "outer" colorbars and legends do not mess up subplot spacing or add extra whitespace. This is critical e.g. if you have a colorbar between columns 1 and 2 but nothing between columns 2 and 3.
+* `~proplot.subplots.Figure` and `~proplot.axes.Axes` colorbar widths are specified in *physical* units rather than relative units. This makes colorbar thickness independent of subplot size and easier to get just right.
 
-The colorbar and legend commands also add several new features, like colorbars-from-lines and centered-row legends. And to make `~proplot.axes.Axes` `~proplot.axes.Axes.colorbar` consistent with `~proplot.axes.Axes` `~proplot.axes.Axes.legend`, you can also now draw *inset* colorbars. See :ref:`Colorbars and legends` for details.
+There are also several :ref:`New colorbar features` and :ref:`New legend features`. See :ref:`Colorbars and legends` for details.
 
 The subplot container class
 ===========================
@@ -257,18 +288,16 @@ to the `~proplot.axes.Axes` plotting methods
 along with several *brand new* features designed to
 make your life easier.
 
-* The new `~proplot.axes.Axes.area` and `~proplot.axes.Axes.areax` methods call `~matplotlib.axes.Axes.fill_between` and `~matplotlib.axes.Axes.fill_betweenx`.  The new `~proplot.axes.Axes.heatmap` method invokes `~matplotlib.axes.Axes.pcolormesh` and draws ticks at the center of each box.
-* The new `~proplot.axes.Axes.parametric` method draws *parametric* line plots, where the parametric coordinate is denoted with colormap colors.
-* `~matplotlib.axes.Axes.bar` and `~matplotlib.axes.Axes.barh` accept 2D arrays and *stack* or *group* successive columns. Soon you will be able to use different colors for positive/negative bars.
-* `~matplotlib.axes.Axes.fill_between` and `~matplotlib.axes.Axes.fill_betweenx` now accept 2D arrays and *stack* or *overlay* successive columns. You can also use different colors for positive/negative data.
+* The new `~proplot.axes.Axes.area` and `~proplot.axes.Axes.areax` methods call `~matplotlib.axes.Axes.fill_between` and `~matplotlib.axes.Axes.fill_betweenx`. These methods now accept 2D arrays and *stack* or *overlay* successive columns, and a `negpos` keyword argument that can be used to assign separate colors for negative and positive data.
+* The new `~proplot.axes.Axes.parametric` method draws *parametric* line plots, where the parametric coordinate is denoted with a colorbar rather than text annotations. This is much cleaner and more aesthetically pleasing than the conventional approach.
+* The new `~proplot.axes.Axes.heatmap` method invokes `~matplotlib.axes.Axes.pcolormesh` and draws ticks at the center of each box. This is more convenient for things like covariance matrices.
+* The `~matplotlib.axes.Axes.bar` and `~matplotlib.axes.Axes.barh` methods accept 2D arrays and *stack* or *group* successive columns. Just like `~matplotlib.axes.Axes.fill_between` and `~matplotlib.axes.Axes.fill_betweenx`, you will be able to use different colors for positive/negative bars.
+* All :ref:`1d plotting` can be used to draw :ref:`On-the-fly error bars` using the `means`, `medians`, `boxdata`, and `bardata` keyword arguments. You no longer have to work with `~matplotlib.axes.Axes.add_errobar` method directly.
 * All :ref:`1d plotting` methods accept a `cycle` keyword argument interpreted by `~proplot.styletools.Cycle` and optional `legend` and `colorbar` keyword arguments for populating legends and colorbars at the specified location with the result of the plotting command. See :ref:`Color cycles` and :ref:`Colorbars and legends`.
 * All :ref:`2d plotting` methods accept a `cmap` keyword argument interpreted by `~proplot.styletools.Colormap`, a `norm` keyword argument interpreted by `~proplot.styletools.Norm`, and an optional `colorbar` keyword argument for drawing on-the-fly colorbars with the resulting mappable. See :ref:`Colormaps` and :ref:`Colorbars and legends`.
 * All :ref:`2d plotting` methods accept a `labels` keyword argument. This is used to draw contour labels or grid box labels on heatmap plots. Labels are colored black or white according to the luminance of the underlying filled contour or grid box color. See :ref:`2d plotting` for details.
 * ProPlot fixes the irritating `white-lines-between-filled-contours <https://stackoverflow.com/q/8263769/4970632>`__, `white-lines-between-pcolor-patches <https://stackoverflow.com/q/27092991/4970632>`__, and `white-lines-between-colorbar-patches <https://stackoverflow.com/q/15003353/4970632>`__ vector graphic issues.
-* Matplotlib requires coordinate *centers* for contour plots and *edges* for pcolor plots. If you pass *centers* to pcolor, matplotlib treats them as *edges* and silently trims one row/column of your data. ProPlot changes this behavior:
-
-    * If edges are passed to `~matplotlib.axes.Axes.contour` or `~matplotlib.axes.Axes.contourf`, centers are *calculated* from the edges
-    * If centers are passed to `~matplotlib.axes.Axes.pcolor` or `~matplotlib.axes.Axes.pcolormesh`, edges are *estimated* from the centers.
+* Matplotlib requires coordinate *centers* for contour plots and *edges* for pcolor plots. If you pass *centers* to pcolor, matplotlib treats them as *edges* and silently trims one row/column of your data. Most people don't realize this! ProPlot changes this behavior: If edges are passed to `~matplotlib.axes.Axes.contour` or `~matplotlib.axes.Axes.contourf`, centers are *calculated* from the edges; if centers are passed to `~matplotlib.axes.Axes.pcolor` or `~matplotlib.axes.Axes.pcolormesh`, edges are *estimated* from the centers.
 
 ..
   ProPlot also provides
