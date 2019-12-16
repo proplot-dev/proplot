@@ -22,7 +22,7 @@ else:
     long_description = ''
 
 setup(
-    url='https://lukelbd.github.io/proplot',
+    url='https://proplot.readthedocs.io',
     name='proplot',
     author='Luke Davis',
     author_email='lukelbd@gmail.com',
