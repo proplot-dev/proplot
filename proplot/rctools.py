@@ -911,20 +911,21 @@ def ipython_matplotlib(backend=None, fmt=None):
         return
 
     # For notebooks
+    # WARNING: Latest version of matplotlib does not raise error when
+    # https://stackoverflow.com/a/22424821/4970632
     rc._init = False
-    ibackend = ('inline' if backend == 'auto' else backend)
+    ibackend = backend
+    if backend == 'auto':
+        if 'IPKernelApp' in getattr(get_ipython(), 'config', ''):
+            ibackend = 'inline'
+        else:
+            ibackend = 'qt'
     try:
         ipython.magic('matplotlib ' + ibackend)
         rc.reset()
-    # For terminals (UnknownBackend is subclass of KeyError)
     except KeyError:
         if backend != 'auto':
             _warn_proplot(f'{"%matplotlib " + backend!r} failed.')
-        try:
-            ipython.magic('matplotlib qt')  # use any available Qt backend
-            rc.reset()
-        except KeyError:
-            pass  # should be impossible, matplotlib needs Qt!
 
     # Configure inline backend no matter what type of session this is
     # Should be silently ignored for terminal ipython sessions
@@ -1037,4 +1038,4 @@ rc = rc_configurator()
 ipython_matplotlib()
 ipython_autoreload()
 ipython_autosave()
-use_font()
+# use_font()

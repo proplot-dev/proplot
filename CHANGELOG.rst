@@ -60,6 +60,13 @@ ProPlot v0.3.0 (2020-01-##)
   with a default ``.proplotrc`` file, change the auto-generated user ``.proplotrc``
   (:pr:`50`).
 
+ProPlot v0.3.1 (2019-12-XX)
+===========================
+.. rubric:: Bug fixes
+
+- Repair issue with latest versions of matplotlib where ``%matplotlib inline``
+  fails *silently* so the backend is not instantiated.
+
 ProPlot v0.3.0 (2019-12-15)
 ===========================
 .. rubric:: Deprecated
