@@ -473,9 +473,9 @@ cycles to these folders simply by passing ``save=True`` to
 To *manually* load from these folders, e.g. if you have added
 files to these folders but you do not want to restart your
 ipython session, simply call
-`~proplot.styletools.regsiter_cmaps`,
-`~proplot.styletools.regsiter_cycles`, and
-`~proplot.styletools.regsiter_fonts`.
+`~proplot.styletools.register_cmaps`,
+`~proplot.styletools.register_cycles`, and
+`~proplot.styletools.register_fonts`.
 
 ..
    As mentioned above,
