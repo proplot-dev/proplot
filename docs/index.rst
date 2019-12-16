@@ -17,7 +17,6 @@ A comprehensive, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper fo
    install
    why
    usage
-   faq
 
 .. toctree::
    :maxdepth: 1
