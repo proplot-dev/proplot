@@ -12,7 +12,7 @@ coast:        False
 color:        k
 cycle:        colorblind
 facecolor:    w
-fontname:     'Helvetica Neue'
+fontname:     auto
 geogrid:      True
 grid:         True
 gridminor:    False
@@ -151,7 +151,6 @@ legend.fancybox:      False
 legend.handletextpad: 0.5
 lines.linewidth:      1.3
 lines.markersize:     3.0
-mathtext.default:     regular
 savefig.bbox:         standard
 savefig.directory:
 savefig.dpi:          300

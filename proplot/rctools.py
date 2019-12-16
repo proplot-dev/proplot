@@ -7,7 +7,7 @@ See :ref:`Configuring proplot` for details.
 # new settings! Much of this script was adapted from seaborn; see:
 # https://github.com/mwaskom/seaborn/blob/master/seaborn/rcmod.py
 from matplotlib import rcParams as rcParams
-from .utils import _warn_proplot, _counter, _timer, _benchmark, units
+from .utils import _warn_proplot, _counter, _benchmark, units
 import re
 import os
 import yaml
@@ -25,7 +25,8 @@ except ModuleNotFoundError:
         return None
 __all__ = [
     'rc', 'rc_configurator', 'ipython_autosave',
-    'ipython_autoreload', 'ipython_matplotlib'
+    'ipython_autoreload', 'ipython_matplotlib',
+    'use_font',
 ]
 
 # Initialize
@@ -35,9 +36,6 @@ rcParamsLong = {}
 # "Global" settings and the lower-level settings they change
 # NOTE: This whole section, declaring dictionaries and sets, takes 1ms
 RC_CHILDREN = {
-    'fontname': (
-        'font.family',
-    ),
     'cmap': (
         'image.cmap',
     ),
@@ -533,6 +531,8 @@ class rc_configurator(object):
             ipython_autosave(value)
         if key == 'autoreload':
             ipython_autoreload(value)
+        if key == 'fontname':
+            use_font(value)
         if key == 'rgbcycle':  # if must re-apply cycler afterward
             cache[key] = value
             rcParamsShort[key] = value
@@ -873,7 +873,6 @@ class rc_configurator(object):
             return self.__init__()
 
 
-@_timer
 def ipython_matplotlib(backend=None, fmt=None):
     """
     Set up the `matplotlib backend \
@@ -1002,11 +1001,40 @@ def ipython_autosave(autosave=None):
             pass
 
 
+def use_font(font=None):
+    """
+    Set the default font and ensure that the font used for TeX-style math
+    is the same as the regular font by applying
+    ``rcParams['mathtext.default'] = 'regular'``.
+
+    Parameters
+    ----------
+    font : str, optional
+        If ``'auto'``, we search for ``'Helvetica Neue'``, followed by
+        ``'Helvetica'``, ``'Arial'``, and finally ``'DejaVu Sans'``.
+    """
+    font = font or rcParamsShort['fontname']
+    if font == 'auto':
+        import matplotlib.font_manager as mfonts
+        font = 'DejaVu Sans'
+        fonts = sorted({font.name for font in mfonts.fontManager.ttflist})
+        for nicefont in (
+            'Helvetica Neue', 'Helvetica', 'Arial',
+            'DejaVu Sans', 'Bitstream Vera',
+        ):
+            if nicefont in fonts:
+                font = nicefont
+                break
+    rcParams['font.family'] = font
+    rcParams['mathtext.default'] = 'regular'
+
+
 #: Instance of `rc_configurator`. This is used to change global settings.
 #: See :ref:`Configuring proplot` for details.
 rc = rc_configurator()
 
 # Call setup functions
+use_font()
 ipython_matplotlib()
 ipython_autoreload()
 ipython_autosave()
