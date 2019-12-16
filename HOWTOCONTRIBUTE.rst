@@ -152,17 +152,15 @@ Preparing pull requests
             coverage run --source proplot -m py.test
          This command will run tests via the ``pytest`` tool against Python 3.7.
 
-#. Create a new changelog entry in ``CHANGELOG.rst``:
+#. Create a new changelog entry in ``CHANGELOG.rst``. The entry should be entered as:
 
-   - The entry should be entered as:
+   .. code-block::
 
-     .. code-block::
+      <description> (:pr:`<PR number>`) `<author name>`_
 
-         <description> (:pr:`<PR number>`) `<author name>`_
+   where ``<description>`` is the description of the PR related to the change, ``<PR number>`` is the pull request number, and ``<author name>`` is your first and last name. Add yourself to list of authors at the end of ``CHANGELOG.rst`` if not there, in alphabetical order.
 
-     where ``<description>`` is the description of the PR related to the change, ``<PR number>`` is the pull request number, and ``<author name>`` is your first and last name.
-
-   - Add yourself to list of authors at the end of ``CHANGELOG.rst`` file if not there yet, in alphabetical order.
+   Make sure to add the changelog entry under one of the valid ``.. rubric:: <heading>`` headings listed at the top of ``CHANGELOG.rst``.
 
 #. Finally, submit a pull request through the GitHub website using this data:
 
@@ -178,3 +176,54 @@ Note that you can create the Pull Request while you're working on this. The PR w
 as you add more commits. ProPlot developers and contributors can then review your code
 and offer suggestions.
 
+
+Release procedure
+=================
+
+ProPlot follows semantic versioning, e.g. v1.0.0. A major version causes incompatible
+API changes, a minor version adds functionality, and a patch covers bug fixes.
+
+For now, `Luke <https://github.com/lukelbd>`__ is the only one who can publish releases on PyPi, but this will change in the future. Releases should be carried out as follows:
+
+
+#. Create a new branch ``release-vX.Y.Z`` with the version for the release. In this branch, update ``CHANGELOG.rst``, and make sure all new changes are reflected in the documentation.
+
+   .. code-block:: bash
+
+      git add CHANGELOG.rst
+      git commit -m "Changelog updates"
+
+
+#. Open a new pull request for this branch targeting ``master``.
+
+#. After all tests pass and the pull request has been approved, merge into ``master``.
+
+#. Get the latest version of the master branch:
+
+   .. code-block:: bash
+
+      git checkout master
+      git pull
+
+#. Tag the current commit and push to github:
+
+   .. code-block:: bash
+
+      git tag -a vX.Y.Z -m "Version X.Y.Z"
+      git push origin master --tags
+
+#. Build and publish release on PyPI:
+
+   .. code-block:: bash
+
+      # Remove previous build products and build the package
+      rm -r dist build *.egg-info
+      python setup.py sdist bdist_wheel --universal
+      # Check the source and upload to the test repository
+      twine check dist/*
+      twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+      # Go to https://test.pypi.org/project/proplot/ and make sure everything looks ok
+      # Then make sure the package is installable
+      pip install --index-url https://test.pypi.org/simple/ proplot
+      # Register and push to pypi
+      twine upload dist/*
