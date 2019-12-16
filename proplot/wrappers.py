@@ -1356,7 +1356,7 @@ def text_wrapper(
         else:
             _warn_proplot(
                 f'Font {fontname!r} unavailable. Available fonts are '
-                ', '.join(map(repr, styletools.fonts)) + '.')
+                + ', '.join(map(repr, styletools.fonts)) + '.')
     size = _notNone(fontsize, size, None, names=('fontsize', 'size'))
     if size is not None:
         kwargs['fontsize'] = units(size, 'pt')

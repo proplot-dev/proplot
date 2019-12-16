@@ -26,11 +26,11 @@ class _benchmark(object):
 
     def __enter__(self):
         if BENCHMARK:
-            self.time = time.clock()
+            self.time = time.perf_counter()
 
     def __exit__(self, *args):
         if BENCHMARK:
-            print(f'{self.message}: {time.clock() - self.time}s')
+            print(f'{self.message}: {time.perf_counter() - self.time}s')
 
 
 class _setstate(object):
@@ -61,10 +61,10 @@ def _counter(func):
     @functools.wraps(func)
     def decorator(*args, **kwargs):
         if BENCHMARK:
-            t = time.clock()
+            t = time.perf_counter()
         res = func(*args, **kwargs)
         if BENCHMARK:
-            decorator.time += (time.clock() - t)
+            decorator.time += (time.perf_counter() - t)
             decorator.count += 1
             print(f'{func.__name__}() cumulative time: {decorator.time}s '
                   f'({decorator.count} calls)')
@@ -80,10 +80,10 @@ def _timer(func):
     @functools.wraps(func)
     def decorator(*args, **kwargs):
         if BENCHMARK:
-            t = time.clock()
+            t = time.perf_counter()
         res = func(*args, **kwargs)
         if BENCHMARK:
-            print(f'  {func.__name__}() time: {time.clock()-t}s')
+            print(f'{func.__name__}() time: {time.perf_counter()-t}s')
         return res
     return decorator
 

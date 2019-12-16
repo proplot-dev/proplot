@@ -23,12 +23,9 @@ Less typing, more plotting
 
 .. rubric:: Problem
 
-Power users often need to change lots of plot settings all at once. In matplotlib, this requires a bunch of one-liner setters and getters, like `~matplotlib.axes.Axes.set_title`.
+Power users often need to change lots of plot settings all at once. In matplotlib, this requires calling a series of one-liner setter methods.
 
-This workflow is quite verbose -- it tends to require "boilerplate code" that gets
-copied and pasted a hundred times to do anything remotely complicated.
-It can also be confusing -- it is often unclear whether settings are applied from an `~matplotlib.axes.Axes` setter, an `~matplotlib.axis.XAxis` or `~matplotlib.axis.YAxis` setter, a miscellaneous bulk function like `~matplotlib.axes.Axes.tick_params`, or if they even
-have an explicit setter.
+This workflow is quite verbose -- it tends to require "boilerplate code" that gets copied and pasted a hundred times. It can also be confusing -- it is often unclear whether properties are applied from an `~matplotlib.axes.Axes` setter (e.g. `~matplotlib.axes.Axes.set_title`, `~matplotlib.axes.Axes.set_xlabel` and `~matplotlib.axes.Axes.set_xticks`), an `~matplotlib.axis.XAxis` or `~matplotlib.axis.YAxis` setter (e.g. `~matplotlib.axis.Axis.set_major_locator` and `~matplotlib.axis.Axis.set_major_formatter`), a `~matplotlib.spines.Spine` setter (e.g. `~matplotlib.spines.Spine.set_bounds`), a random "bulk" setter (e.g. `~matplotlib.axes.Axes.tick_params`), or whether they require tinkering with several different objects. Also, one often needs to *loop through* lists of subplots to apply identical settings to each subplot.
 
 ..
    This is perhaps one reason why many users prefer the `~matplotlib.pyplot` API to the object-oriented API (see :ref:`Using ProPlot`).
@@ -37,16 +34,24 @@ have an explicit setter.
 
 ProPlot introduces the `~proplot.axes.Axes.format` method for changing arbitrary settings *in bulk*. Think of this as an expanded and thoroughly documented version of the
 `~matplotlib.artist.Artist` `~matplotlib.artist.Artist.update` method.
-This significantly reduces the amount of code needed to create highly customized figures.
+For even more efficiency, `~proplot.axes.Axes.format` can
+be used to locally apply various `rcParams <https://matplotlib.org/3.1.1/tutorials/introductory/customizing.html>`__ and :ref:`Bulk global settings` to particular axes,
+:ref:`The subplot container class` can be used to identically apply
+settings to several axes at once, and :ref:`Class constructor functions`
+are used by `~proplot.axes.Axes.format` (and in several other places)
+to concisely generate complex, verbose class instances like `~matplotlib.ticker.Locator`\ s
+and `~matplotlib.ticker.Formatter`\ s.
 
+Together, these features significantly reduce
+the amount of code needed to create highly customized figures.
 As an example, it is trivial to see that
 
 .. code-block:: python
 
    import proplot as plot
-   f, ax = plot.subplots()
-   ax.format(linewidth=1, color='gray')
-   ax.format(xticks=20, xtickminor=True, xlabel='x axis', ylabel='y axis')
+   f, axs = plot.subplots(ncols=2)
+   axs.format(linewidth=1, color='gray')
+   axs.format(xticks=20, xtickminor=True, xlabel='x axis', ylabel='y axis')
 
 ...is much more succinct than
 
@@ -57,12 +62,14 @@ As an example, it is trivial to see that
    from matplotlib import rcParams
    rcParams['axes.linewidth'] = 1
    rcParams['axes.color'] = 'gray'
-   fig, ax = plt.subplots()
-   ax.xaxis.set_major_locator(mticker.MultipleLocator(10))
-   ax.tick_params(width=1, color='gray', labelcolor='gray')
-   ax.tick_params(axis='x', which='minor', bottom=True)
-   ax.set_xlabel('x axis', color='gray')
-   ax.set_ylabel('y axis', color='gray')
+   fig, axs = plt.subplots(ncols=2)
+   for ax in axs:
+      ax.xaxis.set_major_locator(mticker.MultipleLocator(10))
+      ax.tick_params(width=1, color='gray', labelcolor='gray')
+      ax.tick_params(axis='x', which='minor', bottom=True)
+      ax.set_xlabel('x axis', color='gray')
+      ax.set_ylabel('y axis', color='gray')
+   plt.style.use('default')  # restore
 
 
 Class constructor functions
@@ -442,20 +449,38 @@ to *points* -- for example, :rcraw:`linewidth`, :rcraw:`ticklen`,
 :rcraw:`axes.titlesize`, and :rcraw:`axes.titlepad`.
 See :ref:`Configuring proplot` for details.
 
-Working with fonts
-==================
+
+The .proplot folder
+===================
 .. rubric:: Problem
 
-In matplotlib, the default font is DejaVu Sans. In this developer's humble opinion, DejaVu Sans is fugly AF. It is also really tricky to add custom fonts to matplotlib.
+In matplotlib, it can be difficult to design your
+own colormaps and color cycles, and there is no builtin
+way to *save* them for future use. It is also quite
+difficult to get matplotlib to use custom ``.ttc``, ``.ttf``,
+and ``.otf`` font files, which may be desirable when you are
+working on Linux servers with limited font selections.
 
-..
-   This font is not very aesthetically pleasing.
 
 .. rubric:: Solution
 
-ProPlot comes packaged with several additional fonts. The new default font is Helvetica; albeit somewhat overused, this is a tried and tested, aesthetically pleasing sans serif font.
+ProPlot automatically adds colormaps, color cycles, and font files
+saved in the ``.proplot/cmaps``,  ``.proplot/cycles``, and ``.proplot/fonts``
+folders in your home directory.
+You can save colormaps and color
+cycles to these folders simply by passing ``save=True`` to
+`~proplot.styletools.Colormap` and `~proplot.styletools.Cycle`.
+To *manually* load from these folders, e.g. if you have added
+files to these folders but you do not want to restart your
+ipython session, simply call
+`~proplot.styletools.register_cmaps`,
+`~proplot.styletools.register_cycles`, and
+`~proplot.styletools.register_fonts`.
 
-Matplotlib adds font files from paths listed in the ``$TTFPATH`` environment variable (surprisingly, this feature is undocumented!), so ProPlot populates this variable. This also permits using *your own* font files by dropping them in the ``~/.proplot/fonts`` folder.
+..
+   As mentioned above,
+   ProPlot introduces the `~proplot.styletools.Colormap` and  `~proplot.styletools.Cycle`.
+   functions for designing your own colormaps and color cycles.
 
 ..
    ...and much more!

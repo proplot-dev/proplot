@@ -149,20 +149,16 @@ CMAPS_DIVERGING = tuple(
     ))
 
 # Named color filter props
-FILTER_SPACE_NAME = 'hcl'  # color "distinctness" defined with this cspace
-FILTER_SPACE_THRESH = 0.10  # bigger number equals fewer colors
-FILTER_IGNORE = re.compile('(' + '|'.join((
-    'shit', 'poop', 'poo', 'pee', 'piss', 'puke',
-    'vomit', 'snot', 'booger', 'bile', 'diarrhea',
-)) + ')')  # filter these out, let's try to be professional here...
-FILTER_OVERRIDE = (
-    'charcoal', 'sky blue', 'eggshell', 'sea blue',
-    'coral', 'aqua', 'tomato red', 'brick red', 'crimson',
-    'red orange', 'yellow orange', 'yellow green', 'blue green',
-    'blue violet', 'red violet',
-)  # common names that should always be included
-FILTER_TRANS = tuple((re.compile(regex), sub) for regex, sub in (
-    ('/', ' '), ("'s", ''),
+COLORS_SPACE = 'hcl'  # color "distincness" is defined with this space
+COLORS_THRESH = 0.10  # bigger number equals fewer colors
+COLORS_TRANSLATIONS = tuple((re.compile(regex), sub) for regex, sub in (
+    ('/', ' '),
+    ('\'s', ''),
+    (r'\s?majesty', ''),  # purple mountains majesty is too long
+    ('reddish', 'red'),  # remove 'ish'
+    ('purplish', 'purple'),
+    ('bluish', 'blue'),
+    (r'ish\b', ''),
     ('grey', 'gray'),
     ('pinky', 'pink'),
     ('greeny', 'green'),
@@ -172,22 +168,26 @@ FILTER_TRANS = tuple((re.compile(regex), sub) for regex, sub in (
     ('yellowy', 'yellow'),
     ('robin egg', 'robins egg'),
     ('egg blue', 'egg'),
-    (r'reddish', 'red'),
-    (r'purplish', 'purple'),
-    (r'bluish', 'blue'),
-    (r'ish\b', ''),
     ('bluegray', 'blue gray'),
     ('grayblue', 'gray blue'),
-    ('lightblue', 'light blue')
+    ('lightblue', 'light blue'),
 ))  # prevent registering similar-sounding names
-
-# Named color stuff
-OPEN_COLORS = (
+COLORS_IGNORE = re.compile('(' + '|'.join((
+    'shit', 'poop', 'poo', 'pee', 'piss', 'puke', 'vomit', 'snot',
+    'booger', 'bile', 'diarrhea',
+)) + ')')  # filter these out, let's try to be professional here...
+COLORS_INCLUDE = (
+    'charcoal', 'sky blue', 'eggshell', 'sea blue', 'coral', 'aqua',
+    'tomato red', 'brick red', 'crimson',
+    'red orange', 'yellow orange', 'yellow green', 'blue green',
+    'blue violet', 'red violet',
+)  # common names that should always be included
+COLORS_OPEN = (
     'red', 'pink', 'grape', 'violet',
     'indigo', 'blue', 'cyan', 'teal',
     'green', 'lime', 'yellow', 'orange', 'gray'
 )
-BASE_COLORS = {
+COLORS_BASE = {
     'blue': (0, 0, 1),
     'green': (0, 0.5, 0),
     'red': (1, 0, 0),
@@ -197,6 +197,28 @@ BASE_COLORS = {
     'black': (0, 0, 0),
     'white': (1, 1, 1),
 }
+
+# *Proprietary* sans serif fonts that may or may not be on user system
+# plus the fonts installed by matplotlib
+# NOTE: Add to this as needed!
+FONTS_SANS = [
+    'Arial',
+    'Avenir',
+    'Bitstream Vera',  # matplotlib
+    'DejaVu Sans',  # matplotlib
+    'Frutiger',
+    'Futura',
+    'Gill Sans',
+    'Helvetica Neue',
+    'Helvetica',
+    'Lucida Grande',
+    'Myriad Pro',
+    'Optima',
+    'Tahoma',
+    'Trebuchet MS',
+    'Univers',
+    'Verdana',
+]
 
 
 def _get_channel(color, channel, space='hcl'):
@@ -2913,7 +2935,7 @@ def register_colors(nmax=np.inf):
     colors.clear()
     base = {}
     base.update(mcolors.BASE_COLORS)
-    base.update(BASE_COLORS)  # full names
+    base.update(COLORS_BASE)  # full names
     mcolors.colorConverter.colors.clear()  # clean out!
     mcolors.colorConverter.cache.clear()  # clean out!
     for name, dict_ in (('base', base), ('css', mcolors.CSS4_COLORS)):
@@ -2951,12 +2973,12 @@ def register_colors(nmax=np.inf):
                 j += 1
                 if j > nmax:  # e.g. for xkcd colors
                     break
-                for regex, sub in FILTER_TRANS:
+                for regex, sub in COLORS_TRANSLATIONS:
                     name = regex.sub(sub, name)
-                if name in seen or FILTER_IGNORE.search(name):
+                if name in seen or COLORS_IGNORE.search(name):
                     continue
                 seen.add(name)
-                hcls.append(to_xyz(color, space=FILTER_SPACE_NAME))
+                hcls.append(to_xyz(color, space=COLORS_SPACE))
                 data.append((cat, name, color))  # category name pair
 
     # Remove colors that are 'too similar' by rounding to the nearest n units
@@ -2964,11 +2986,11 @@ def register_colors(nmax=np.inf):
     hcls = np.array(hcls)
     if hcls.size > 0:
         hcls = hcls / np.array([360, 100, 100])
-        hcls = np.round(hcls / FILTER_SPACE_THRESH).astype(np.int64)
+        hcls = np.round(hcls / COLORS_THRESH).astype(np.int64)
         _, idxs, _ = np.unique(
             hcls, return_index=True, return_counts=True, axis=0)
         for idx, (cat, name, color) in enumerate(data):
-            if name in FILTER_OVERRIDE or idx in idxs:
+            if name in COLORS_INCLUDE or idx in idxs:
                 dicts[cat][name] = color
         for cat, dict_ in dicts.items():
             mcolors.colorConverter.colors.update(dict_)
@@ -2982,47 +3004,18 @@ def register_fonts():
     -- see `this link \
 <https://gree2.github.io/python/2015/04/27/python-change-matplotlib-font-on-mac>`__
     for a guide on converting various other font file types to ``.ttf`` and
-    ``.otf`` for use with matplotlib."""  # noqa
-    # Add proplot path to TTFLIST and rebuild cache
-    # NOTE: Delay font_manager import, because want to avoid rebuilding font
-    # cache, which means import must come after TTFPATH added to environ!
-    # Helvetica:
-    # https://olgabotvinnik.com/blog/2012-11-15-how-to-set-helvetica-as-the-default-sans-serif-font-in/ # noqa
-    # Valid styles:
-    # https://matplotlib.org/api/font_manager_api.html for valid weights, styles, etc. # noqa
-    # Classic fonts:
-    # https://www.lifewire.com/classic-sans-serif-fonts-clean-appearance-1077406 # noqa
-    # For downloading fonts: https://www.cufonfonts.com
-    # Notes on getting ttf files on Mac
-    # * Location in /System/Library/Font, /Library/Fonts, or ~/Library/Fonts
-    # * To break down .dfont files, use fondu (homebrew download).
-    #   To break down .ttc files, use dfontsplitter:
-    #   https://peter.upfold.org.uk/projects/dfontsplitter
-    #   To break down .bdf files made by fondu, use mkttf:
-    #   https://github.com/Tblue/mkttf (requires FontForge and PoTrace)
-    # * Install new fonts with "brew cask install font-<name-of-font>" after
-    #   "brew tap caskroom/fonts". They appear in ~/Library/Fonts. See:
-    #   https://github.com/Homebrew/homebrew-cask-fonts
-    # * The .otf files work in addition to .ttf files. You can verify this by
-    #   looking at plot.fonts_files_os -- it includes .otf files.
-    # Notes on default files packaged in font directory:
-    # * Location will be something like:
-    #   /lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf
-    # * 'STIX' fonts allow different LaTeX-like math modes e.g. blackboard
-    #   bold and caligraphy. See:
-    #   https://matplotlib.org/gallery/text_labels_and_annotations/stix_fonts_demo.html  # noqa
-    # * The 'cm'-prefix fonts seem to provide additional mathematical symbols
-    #   like integrals, and italized math-mode fonts.
-    # * We also have 'pdfcorefonts' in this directory, but I think since these
-    #   are afm matplotlib can't use them? Don't know.
-    # WARNING: Check out ttflist whenever adding new ttf files! For example,
-    # realized could dump all of the Gotham-Name.ttf files instead of
-    # GothamName files, and got Helvetica bug due to unrecognized 'thin' font
-    # style overwriting normal one.
-    # print(*[font for font in mfonts.fontManager.ttflist
-    #         if 'HelveticaNeue' in font.fname], sep='\n')
-    # print(*[font.fname for font in mfonts.fontManager.ttflist
-    #         if 'HelveticaNeue' in font.fname], sep='\n')
+    ``.otf`` for use with matplotlib."""
+    # Add proplot path to TTFLIST and rebuild cache *only if necessary*
+    # * Nice gallery of sans-serif fonts:
+    #   https://www.lifewire.com/classic-sans-serif-fonts-clean-appearance-1077406 # noqa
+    # * Sources for downloading more fonts:
+    #   https://fonts.google.com/?category=Sans+Serif
+    #   https://www.cufonfonts.com
+    # WARNING: If you include a font file with an unrecognized style,
+    # matplotlib may use that font instead of the 'normal' one! Valid styles:
+    # 'ultralight', 'light', 'normal', 'regular', 'book', 'medium', 'roman',
+    # 'semibold', 'demibold', 'demi', 'bold', 'heavy', 'extra bold', 'black'
+    # https://matplotlib.org/api/font_manager_api.html
     paths = ':'.join(_get_data_paths('fonts'))
     if 'TTFPATH' not in os.environ:
         os.environ['TTFPATH'] = paths
@@ -3293,7 +3286,7 @@ def show_colorspaces(luminance=None, saturation=None, hue=None, axwidth=2):
     return fig
 
 
-def show_colors(nhues=17, minsat=0.2):
+def show_colors(nhues=17, minsat=20):
     """
     Generate tables of the registered color names. Adapted from
     `this example <https://matplotlib.org/examples/color/named_colors.html>`__.
@@ -3304,7 +3297,7 @@ def show_colors(nhues=17, minsat=0.2):
         The number of breaks between hues for grouping "like colors" in the
         color table.
     minsat : float, optional
-        The threshold saturation, between ``0`` and ``1``, for designating
+        The threshold saturation, between ``0`` and ``100``, for designating
         "gray colors" in the color table.
 
     Returns
@@ -3312,101 +3305,96 @@ def show_colors(nhues=17, minsat=0.2):
     figs : list of `~proplot.subplots.Figure`
         The figure.
     """
-    # Get colors explicitly defined in colorConverter, or the default
-    # components of that map
+    # Test used to "categories" colors
+    breakpoints = np.linspace(0, 360, nhues)
+    def _color_filter(i, hcl):  # noqa: E306
+        gray = hcl[1] <= minsat
+        if i == 0:
+            return gray
+        color = breakpoints[i - 1] <= hcl[0] < breakpoints[i]
+        if i == nhues - 1:
+            color = color or color == breakpoints[i]  # endpoint inclusive
+        return not gray and color
+
+    # Draw figures for different groups of colors
     figs = []
     from . import subplots
-    for open_colors in (True, False):
-        scale = (360, 100, 100)
-        if open_colors:
-            cats = ['open']
-        else:
-            cats = [name for name in colors if name not in ('css', 'open')]
+    for cats in (
+            ('open',),
+            tuple(name for name in colors if name not in ('css', 'open'))
+    ):
+        # Dictionary of colors for that category
         data = {}
         for cat in cats:
             for color in colors[cat]:
                 data[color] = mcolors.colorConverter.colors[color]
 
-        # Group opencolor names together
-        # names = [
-        #     [name + str(i) for i in range(nrows)] for name in OPEN_COLORS]
-        if open_colors:
+        # Group colors together by discrete range of hue, then sort by value
+        # For opencolors this is not necessary
+        if cats == ('open',):
             wscale = 0.5
             swatch = 1.5
-            nrows, ncols = 10, 13
-            names = np.reshape([*data.keys()], (ncols, nrows))
-            names = np.array(names, order='C')
-            names.resize(((ncols + 1) // 2, nrows * 2))  # fill in with blanks
-        # Group colors together by discrete range of hue, then sort by value
-        else:
-            # Transform to HCL space
-            ncols = 4
-            wscale = 1
-            swatch = 1
-            colors_hcl = {
-                key: [c / s for c,
-                      s in zip(to_xyz(value, FILTER_SPACE_NAME), scale)]
-                for key, value in data.items()
-            }
-            # Separate into columns and roughly sort by brightness in these
-            # columns
-            names = []  # initialize
-            hues = np.linspace(0, 1, nhues)  # group in blocks of 20 hues
-            sat_test = (lambda x: x < minsat)  # test saturation for 'grays'
-            for i in range(nhues):
-                # 'Grays' column
-                if i == 0:
-                    hue_colors = [
-                        (name, hcl) for name, hcl in colors_hcl.items()
-                        if sat_test(hcl[1])
-                    ]
-                # Nth color column
-                else:
-                    b1, b2 = hues[i - 1], hues[i]
-                    hue_test = (
-                        (lambda x: b1 <= x <= b2) if b2 is hues[-1]
-                        else (lambda x: b1 <= x < b2)
-                    )
-                    hue_colors = [
-                        (name, hcl) for name, hcl
-                        in colors_hcl.items() if hue_test(hcl[0])
-                        and not sat_test(hcl[1])
-                    ]  # grays have separate category
-                # Get indices to build sorted list, then append sorted list
-                idx_sorted = np.argsort([pair[1][2] for pair in hue_colors])
-                names.append([hue_colors[i][0] for i in idx_sorted])
-            # Concatenate the columns rather than plot single column for
-            # each hue, so get nice grid
-            names = [i for sublist in names for i in sublist]
-            nrows = len(names) // ncols + 1
-            names = np.array(names, order='C')
-            names.resize((ncols, nrows))  # fill in with blanks
+            nrows, ncols = 10, len(COLORS_OPEN)  # rows and columns
+            names = np.array([
+                [name + str(i) for i in range(nrows)]
+                for name in COLORS_OPEN
+            ])
+            nrows = nrows * 2
+            ncols = (ncols + 1) // 2
+            names.resize((ncols, nrows))
 
-        # Create plot by iterating over columns
+        # Get colors in perceptally uniform space, then group based on hue
+        # thresholds
+        else:
+            ncols = 4
+            wscale = 0.8
+            swatch = 1.2
+            hclpairs = [
+                (name, to_xyz(color, COLORS_SPACE))
+                for name, color in data.items()
+            ]
+            hclpairs = [
+                sorted(
+                    [pair for pair in hclpairs if _color_filter(i, pair[1])],
+                    key=lambda x: x[1][2]
+                )
+                for i in range(nhues)
+            ]
+            names = np.array([
+                name for ipairs in hclpairs for name, _ in ipairs
+            ])
+            nrows = len(names) // ncols + 1
+            names.resize((ncols, nrows))
+
+        # Draw swatches as lines
         fig, ax = subplots(
-            width=8 * wscale * (ncols / 4), height=5 * (nrows / 40),
+            width=8 * wscale * (ncols / 4),
+            height=5 * (nrows / 40),
             left=0, right=0, top=0, bottom=0, tight=False
         )
-        # size in *dots*; make these axes units
-        X, Y = fig.get_dpi() * fig.get_size_inches()
-        # height and width of row/column in *dots*
-        hsep, wsep = Y / (nrows + 1), X / ncols
-        for col, huelist in enumerate(names):
-            for row, name in enumerate(
-                    huelist):  # list of colors in hue category
-                if not name:  # empty slot
+        X, Y = fig.get_dpi() * fig.get_size_inches()  # size in dots
+        hsep, wsep = Y / (nrows + 1), X / ncols  # height and width in dots
+        for col, inames in enumerate(names):
+            for row, name in enumerate(inames):
+                if not name:
                     continue
                 y = Y - hsep * (row + 1)
-                y_line = y + hsep * 0.1
-                xi_line = wsep * (col + 0.05)
-                xf_line = wsep * (col + 0.25 * swatch)
-                xi_text = wsep * (col + 0.25 * swatch + 0.03 * swatch)
-                ax.text(xi_text, y, name, ha='left', va='center')
-                ax.hlines(y_line, xi_line, xf_line,
-                          color=data[name], lw=hsep * 0.6)
+                xi = wsep * (col + 0.05)
+                xf = wsep * (col + 0.25 * swatch)
+                yline = y + hsep * 0.1
+                xtext = wsep * (col + 0.25 * swatch + 0.03 * swatch)
+                ax.text(xtext, y, name, ha='left', va='center')
+                ax.plot(
+                    [xi, xf], [yline, yline],
+                    color=data[name], lw=hsep * 0.6,
+                    solid_capstyle='butt',  # do not stick out
+                )
+
         # Apply formatting
-        ax.format(xlim=(0, X), ylim=(0, Y))
-        ax.set_axis_off()
+        ax.format(
+            xlim=(0, X), ylim=(0, Y),
+            grid=False, yloc='neither', xloc='neither'
+        )
         figs.append(fig)
     return figs
 
@@ -3495,14 +3483,14 @@ def show_cycles(*args, **kwargs):
 
 def show_fonts(*args, size=12):
     """
-    Generate a table of the fonts registered by ProPlot or the input fonts.
+    Generate a table of font families.
 
     Parameters
     ----------
     *args
-        The font names. If empty, the fonts added by ProPlot or by the user
-        from ``~/.proplot/fonts`` are shown. The matplotlib default, DejaVu
-        Sans, is always shown at the top.
+        The font family names. If none are provided, the available sans-serif
+        fonts, the fonts in your ``.proplot/fonts`` folder, and the fonts
+        provided by ProPlot are shown.
     size : float, optional
         The font size in points.
     """
@@ -3511,11 +3499,11 @@ def show_fonts(*args, size=12):
         import matplotlib.font_manager as mfonts
         args = sorted({
             font.name for font in mfonts.fontManager.ttflist
-            if any(path in font.fname for path in _get_data_paths('fonts'))
+            if font.name in FONTS_SANS
+            or any(path in font.fname for path in _get_data_paths('fonts'))
         })
 
     # Text
-    weight = 'normal'
     math = r'(0) + {1} - [2] * <3> / 4,0 $\geq\gg$ 5.0 $\leq\ll$ ~6 ' \
            r'$\times$ 7 $\equiv$ 8 $\approx$ 9 $\propto$'
     greek = r'$\alpha\beta$ $\Gamma\gamma$ $\Delta\delta$ ' \
@@ -3526,18 +3514,17 @@ def show_fonts(*args, size=12):
               'THE QUICK BROWN FOX JUMPS OVER A LAZY DOG'
 
     # Create figure
-    fonts = ('DejaVu Sans', *args)
-    f, axs = subplots(ncols=1, nrows=len(fonts), space=0,
-                      axwidth=4.5, axheight=5.5 * size / 72)
+    f, axs = subplots(ncols=1, nrows=len(args), space=0,
+                      axwidth=4.5, axheight=6.5 * size / 72)
     axs.format(xloc='neither', yloc='neither',
                xlocator='null', ylocator='null', alpha=0)
     axs[0].format(title='Fonts demo', titlesize=size,
                   titleloc='l', titleweight='bold')
     for i, ax in enumerate(axs):
-        font = fonts[i]
-        ax.text(0, 0.5, f'{font}: {letters}\n{math}\n{greek}',
+        font = args[i]
+        ax.text(0, 0.5, f'{font}:\n{letters}\n{math}\n{greek}',
                 fontfamily=font, fontsize=size,
-                weight=weight, ha='left', va='center')
+                weight='normal', ha='left', va='center')
     return f
 
 

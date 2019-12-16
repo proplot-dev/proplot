@@ -6,7 +6,6 @@ See :ref:`Configuring proplot` for details.
 # NOTE: Make sure to add to docs/configuration.rst when updating or adding
 # new settings! Much of this script was adapted from seaborn; see:
 # https://github.com/mwaskom/seaborn/blob/master/seaborn/rcmod.py
-from .utils import _warn_proplot, _counter, _timer, _benchmark, units
 import re
 import os
 import yaml
@@ -21,9 +20,11 @@ try:
 except ModuleNotFoundError:
     def get_ipython():
         return None
+from .utils import _warn_proplot, _counter, _benchmark, units
 __all__ = [
     'rc', 'rc_configurator', 'ipython_autosave',
-    'ipython_autoreload', 'ipython_matplotlib'
+    'ipython_autoreload', 'ipython_matplotlib',
+    'use_font',
 ]
 
 # Initialize
@@ -39,7 +40,7 @@ defaultParamsShort = {
     'color': 'k',
     'cycle': 'colorblind',
     'facecolor': 'w',
-    'fontname': 'Helvetica Neue',
+    'fontname': 'auto',
     'inlinefmt': 'retina',
     'geogrid': True,
     'grid': True,
@@ -230,9 +231,6 @@ if not os.path.isfile(_rc_file):
 # "Global" settings and the lower-level settings they change
 # NOTE: This whole section, declaring dictionaries and sets, takes 1ms
 RC_CHILDREN = {
-    'fontname': (
-        'font.family',
-    ),
     'cmap': (
         'image.cmap',
     ),
@@ -1014,7 +1012,6 @@ class rc_configurator(object):
             yield self[key]
 
 
-@_timer
 def ipython_matplotlib(backend=None, fmt=None):
     """
     Set up the `matplotlib backend \
@@ -1045,27 +1042,27 @@ def ipython_matplotlib(backend=None, fmt=None):
         ``'png'``, ``'svg'``, ``'pdf'``, and ``'retina'``. This is ignored
         for non-inline backends.
     """  # noqa
-    # Initialize with default 'inline' settings
-    # Reset rc object afterwards
+    # Bail out
     ipython = get_ipython()
     backend = backend or rcParamsShort['matplotlib']
     if ipython is None or backend is None:
         return
 
-    # For notebooks
-    ibackend = ('inline' if backend == 'auto' else backend)
+    # Default behavior dependent on type of ipython session
+    # See: https://stackoverflow.com/a/22424821/4970632
+    rc._init = False
+    ibackend = backend
+    if backend == 'auto':
+        if 'IPKernelApp' in getattr(get_ipython(), 'config', ''):
+            ibackend = 'inline'
+        else:
+            ibackend = 'qt'
     try:
         ipython.magic('matplotlib ' + ibackend)
         rc.reset()
-    # For terminals (UnknownBackend is subclass of KeyError)
     except KeyError:
         if backend != 'auto':
             _warn_proplot(f'{"%matplotlib " + backend!r} failed.')
-        try:
-            ipython.magic('matplotlib qt')  # use any available Qt backend
-            rc.reset()
-        except KeyError:
-            pass  # should be impossible, matplotlib needs Qt!
 
     # Configure inline backend no matter what type of session this is
     # Should be silently ignored for terminal ipython sessions
@@ -1142,6 +1139,34 @@ def ipython_autosave(autosave=None):
             pass
 
 
+def use_font(font=None):
+    """
+    Set the default font and ensure that the font used for TeX-style math
+    is the same as the regular font by applying
+    ``rcParams['mathtext.default'] = 'regular'``.
+
+    Parameters
+    ----------
+    font : str, optional
+        If ``'auto'``, we search for ``'Helvetica Neue'``, followed by
+        ``'Helvetica'``, ``'Arial'``, and finally ``'DejaVu Sans'``.
+    """
+    font = font or rcParamsShort['fontname']
+    if font == 'auto':
+        import matplotlib.font_manager as mfonts
+        font = 'DejaVu Sans'
+        fonts = sorted({font.name for font in mfonts.fontManager.ttflist})
+        for nicefont in (
+            'Helvetica Neue', 'Helvetica', 'Arial',
+            'DejaVu Sans', 'Bitstream Vera',
+        ):
+            if nicefont in fonts:
+                font = nicefont
+                break
+    rcParams['font.family'] = font
+    rcParams['mathtext.default'] = 'regular'
+
+
 #: Instance of `rc_configurator`. This is used to change global settings.
 #: See :ref:`Configuring proplot` for details.
 rc = rc_configurator()
@@ -1150,3 +1175,4 @@ rc = rc_configurator()
 ipython_matplotlib()
 ipython_autoreload()
 ipython_autosave()
+# use_font()

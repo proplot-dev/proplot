@@ -15,7 +15,7 @@ ProPlot v1.0.0 (2020-##-##)
 This will be published when some major refactoring tasks are completed.
 See :pr:`45`, :pr:`46`, and :pr:`50`.
 
-ProPlot v0.3.0 (2020-01-##)
+ProPlot v0.4.0 (2020-01-##)
 ===========================
 .. rubric:: Deprecated
 
@@ -60,7 +60,15 @@ ProPlot v0.3.0 (2020-01-##)
   with a default ``.proplotrc`` file, change the auto-generated user ``.proplotrc``
   (:pr:`50`).
 
-ProPlot v0.2.8 (2019-12-##)
+ProPlot v0.3.1 (2019-12-16)
+===========================
+.. rubric:: Bug fixes
+
+- Fix issue where custom fonts were not synced (:commit:`a1b47b4c`).
+- Fix issue with latest versions of matplotlib where ``%matplotlib inline``
+  fails *silently* so the backend is not instantiated (:commit:`cc39dc56`).
+
+ProPlot v0.3.0 (2019-12-15)
 ===========================
 .. rubric:: Deprecated
 
@@ -68,6 +76,7 @@ ProPlot v0.2.8 (2019-12-##)
 
 .. rubric:: Features
 
+- Add `~proplot.styletools.use_font`, only sync Google Fonts fonts (:pr:`87`).
 - New ``'DryWet'`` colormap is colorblind friendly (:commit:`0280e266`).
 - Permit shifting arbitrary colormaps by ``180`` degrees by appending the
   name with ``'_shifted'``, just like ``'_r'`` (:commit:`e2e2b2c7`).
@@ -76,6 +85,8 @@ ProPlot v0.2.8 (2019-12-##)
 
 - Add brute force workaround for saving colormaps with
   *callable* segmentdata (:commit:`8201a806`).
+- Fix issue with latest versions of matplotlib where ``%matplotlib inline``
+  fails *silently* so the backend is not instantiated (:commit:`cc39dc56`).
 - Fix `~proplot.styletools.LinearSegmentedColormap.shifted` when `shift` is
   not ``180`` (:commit:`e2e2b2c7`).
 - Save the ``cyclic`` and ``gamma`` attributes in JSON files too (:commit:`8201a806`).
@@ -83,6 +94,10 @@ ProPlot v0.2.8 (2019-12-##)
 .. rubric:: Documentation
 
 - Cleanup notebooks, especially the colormaps demo (e.g. :commit:`952d4cb3`).
+
+.. rubric:: Internals
+
+- Change `~time.clock` to `~time.perf_counter` (:pr:`86`).
 
 ProPlot v0.2.7 (2019-12-09)
 ===========================
