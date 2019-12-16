@@ -483,8 +483,8 @@ Matplotlib uses DejaVu Sans by default because
 DejaVu Sans is open source and can be *included* in the matplotlib distribution.
 However Helvetica and Arial are much more mature, respected,
 and (in this developer's humble opinion)
-aesthetically pleasing. Thus, ProPlot trades aesthetics for consistency
-(i.e. the default font now depends on your machine).
+aesthetically pleasing. Thus, ProPlot trades aesthetics for consistency --
+the default font now depends on your machine.
 The examples on this website use DejaVu Sans
 because Helvetica and Arial are both unavailable on
 the `RTD server <https://readthedocs.org>`__.
