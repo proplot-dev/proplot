@@ -5,22 +5,22 @@
 import os as _os
 import pkg_resources as _pkg
 from .utils import _benchmark
+from .utils import *  # noqa: F401 F403
 with _benchmark('total time'):
-    from .utils import *  # noqa
     with _benchmark('styletools'):
-        from .styletools import *  # noqa
+        from .styletools import *  # noqa: F401 F403
     with _benchmark('rctools'):
-        from .rctools import *  # noqa
+        from .rctools import *  # noqa: F401 F403
     with _benchmark('axistools'):
-        from .axistools import *  # noqa
+        from .axistools import *  # noqa: F401 F403
     with _benchmark('wrappers'):
-        from .wrappers import *  # noqa
+        from .wrappers import *  # noqa: F401 F403
     with _benchmark('projs'):
-        from .projs import *  # noqa
+        from .projs import *  # noqa: F401 F403
     with _benchmark('axes'):
-        from .axes import *  # noqa
+        from .axes import *  # noqa: F401 F403
     with _benchmark('subplots'):
-        from .subplots import *  # noqa
+        from .subplots import *  # noqa: F401 F403
 
 
 # Initialize customization folders

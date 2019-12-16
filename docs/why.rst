@@ -449,20 +449,38 @@ to *points* -- for example, :rcraw:`linewidth`, :rcraw:`ticklen`,
 :rcraw:`axes.titlesize`, and :rcraw:`axes.titlepad`.
 See :ref:`Configuring proplot` for details.
 
-Working with fonts
-==================
+
+The .proplot folder
+===================
 .. rubric:: Problem
 
-In matplotlib, the default font is DejaVu Sans. In this developer's humble opinion, DejaVu Sans is fugly AF. It is also really tricky to add custom fonts to matplotlib.
+In matplotlib, it can be difficult to design your
+own colormaps and color cycles, and there is no builtin
+way to *save* them for future use. It is also quite
+difficult to get matplotlib to use custom ``.ttc``, ``.ttf``,
+and ``.otf`` font files, which may be desirable when you are
+working on Linux servers with limited font selections.
 
-..
-   This font is not very aesthetically pleasing.
 
 .. rubric:: Solution
 
-ProPlot comes packaged with several additional fonts. The new default font is Helvetica; albeit somewhat overused, this is a tried and tested, aesthetically pleasing sans serif font.
+ProPlot automatically adds colormaps, color cycles, and font files
+saved in the ``.proplot/cmaps``,  ``.proplot/cycles``, and ``.proplot/fonts``
+folders in your home directory.
+You can save colormaps and color
+cycles to these folders simply by passing ``save=True`` to
+`~proplot.styletools.Colormap` and `~proplot.styletools.Cycle`.
+To *manually* load from these folders, e.g. if you have added
+files to these folders but you do not want to restart your
+ipython session, simply call
+`~proplot.styletools.regsiter_cmaps`,
+`~proplot.styletools.regsiter_cycles`, and
+`~proplot.styletools.regsiter_fonts`.
 
-Matplotlib adds font files from paths listed in the ``$TTFPATH`` environment variable (surprisingly, this feature is undocumented!), so ProPlot populates this variable. This also permits using *your own* font files by dropping them in the ``~/.proplot/fonts`` folder.
+..
+   As mentioned above,
+   ProPlot introduces the `~proplot.styletools.Colormap` and  `~proplot.styletools.Cycle`.
+   functions for designing your own colormaps and color cycles.
 
 ..
    ...and much more!

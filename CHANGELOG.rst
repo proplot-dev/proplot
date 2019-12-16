@@ -60,7 +60,7 @@ ProPlot v0.3.0 (2020-01-##)
   with a default ``.proplotrc`` file, change the auto-generated user ``.proplotrc``
   (:pr:`50`).
 
-ProPlot v0.2.8 (2019-12-##)
+ProPlot v0.2.8 (2019-12-15)
 ===========================
 .. rubric:: Deprecated
 
@@ -68,6 +68,7 @@ ProPlot v0.2.8 (2019-12-##)
 
 .. rubric:: Features
 
+- Change the default fonts (:pr:`50`).
 - New ``'DryWet'`` colormap is colorblind friendly (:commit:`0280e266`).
 - Permit shifting arbitrary colormaps by ``180`` degrees by appending the
   name with ``'_shifted'``, just like ``'_r'`` (:commit:`e2e2b2c7`).
