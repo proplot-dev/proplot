@@ -11,8 +11,8 @@ plotting tasks in matplotlib can be cumbersome or repetitive for its heaviest us
 * Users who make plots nearly every day.
 
 ProPlot's core mission is to
-provide users with a smoother plotting experience.
-We do this by expanding upon the object-oriented API.
+provide heavy users of matplotlib with a smoother plotting experience.
+We do this by expanding upon the object-oriented matplotlib API.
 ProPlot makes changes that would be hard to justify or difficult
 to incorporate into matplotlib itself, owing to design choices and backwards
 compatibility considerations.
