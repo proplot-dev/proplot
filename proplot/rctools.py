@@ -1034,7 +1034,7 @@ def use_font(font=None):
 rc = rc_configurator()
 
 # Call setup functions
-use_font()
 ipython_matplotlib()
 ipython_autoreload()
 ipython_autosave()
+use_font()
