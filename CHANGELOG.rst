@@ -68,7 +68,7 @@ ProPlot v0.2.8 (2019-12-15)
 
 .. rubric:: Features
 
-- Change the default fonts (:pr:`50`).
+- Add `~proplot.styletools.use_font`, only sync Google Fonts fonts (:pr:`87`).
 - New ``'DryWet'`` colormap is colorblind friendly (:commit:`0280e266`).
 - Permit shifting arbitrary colormaps by ``180`` degrees by appending the
   name with ``'_shifted'``, just like ``'_r'`` (:commit:`e2e2b2c7`).
@@ -84,6 +84,10 @@ ProPlot v0.2.8 (2019-12-15)
 .. rubric:: Documentation
 
 - Cleanup notebooks, especially the colormaps demo (e.g. :commit:`952d4cb3`).
+
+.. rubric:: Internals
+
+- Change `~time.clock` to `~time.perf_counter` (:pr:`86`).
 
 ProPlot v0.2.7 (2019-12-09)
 ===========================
