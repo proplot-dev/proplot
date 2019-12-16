@@ -4,7 +4,7 @@ Why ProPlot?
 
 Matplotlib is a wonderful, extremely powerful plotting package used
 by academics and data scientists far and wide. However, certain
-plotting tasks can be cumbersome or repetitive for "power users":
+plotting tasks in matplotlib can be cumbersome or repetitive for "power users":
 
 * Users who need to make very rich, complex figures.
 * Users who want to finely tune their figure annotations and aesthetics.
@@ -90,7 +90,7 @@ Class constructor functions
 Matplotlib and cartopy introduce a bunch of classes with verbose names like `~matplotlib.ticker.MultipleLocator`, `~matplotlib.ticker.FormatStrFormatter`, and
 `~cartopy.crs.LambertAzimuthalEqualArea`. Since plotting code has a half life of about 30 seconds, typing out all of these extra class names and import statements can be a *major* drag.
 
-Certain parts of the matplotlib API were designed with this in mind.
+Parts of the matplotlib API were actually designed with this in mind.
 `Backend classes <https://matplotlib.org/faq/usage_faq.html#what-is-a-backend>`__,
 `native axes projections <https://matplotlib.org/3.1.1/api/projections_api.html>`__,
 `axis scales <https://matplotlib.org/3.1.0/gallery/scales/scales.html>`__,
@@ -98,7 +98,7 @@ Certain parts of the matplotlib API were designed with this in mind.
 `arc style classes <https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.patches.ConnectionStyle.html?highlight=class%20name%20attrs>`__
 are referenced with "registered" string names,
 as are `basemap projection types <https://matplotlib.org/basemap/users/mapsetup.html>`__.
-If these are already "registered", why not "register" everything else?
+So, why not "register" everything else?
 
 .. rubric:: Solution
 
