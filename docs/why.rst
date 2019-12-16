@@ -10,15 +10,15 @@ plotting tasks can be cumbersome or repetitive for "power users":
 * Users who want to finely tune their figure annotations and aesthetics.
 * Users who make plots nearly every day.
 
-Many of these issues would be difficult to resolve
-in matplotlib itself owing to design choices or backwards compatibility
-considerations.
-As an independent wrapper, ProPlot's core mission is to
-provide users with a smoother plotting experience.
-Rather than developing an entirely separate API, ProPlot *expands* upon
-the matplotlib API and follows its object-oriented framework.
-This page enumerates the stickiest limitations for "power users"
-and describes how ProPlot addresses them.
+ProPlot's core mission is to
+provide "power users" with a smoother plotting experience.
+We do this by *expanding* upon the matplotlib API and following
+its object-oriented framework.
+ProPlot makes changes that would be hard to justify or difficult
+to incorporate into matplotlib itself, owing to design choices and backwards
+compatibility considerations.
+This page enumerates these changes and explains how they
+address limitations of the matplotlib API.
 
 ..
    This page is not comprehensive --
@@ -34,9 +34,9 @@ Less typing, more plotting
 
 .. rubric:: Problem
 
-Power users often need to change lots of plot settings all at once. In matplotlib, this requires calling a series of one-liner setter methods.
+Matplotlib users often need to change lots of plot settings all at once. With the default API, this requires calling a series of one-liner setter methods.
 
-This workflow is quite verbose -- it tends to require "boilerplate code" that gets copied and pasted a hundred times. It can also be confusing -- it is often unclear whether properties are applied from an `~matplotlib.axes.Axes` setter (e.g. `~matplotlib.axes.Axes.set_title`, `~matplotlib.axes.Axes.set_xlabel` and `~matplotlib.axes.Axes.set_xticks`), an `~matplotlib.axis.XAxis` or `~matplotlib.axis.YAxis` setter (e.g. `~matplotlib.axis.Axis.set_major_locator` and `~matplotlib.axis.Axis.set_major_formatter`), a `~matplotlib.spines.Spine` setter (e.g. `~matplotlib.spines.Spine.set_bounds`), a random "bulk" setter (e.g. `~matplotlib.axes.Axes.tick_params`), or whether they require tinkering with several different objects. Also, one often needs to *loop through* lists of subplots to apply identical settings to each subplot.
+This workflow is quite verbose -- it tends to require "boilerplate code" that gets copied and pasted a hundred times. It can also be confusing -- it is often unclear whether properties are applied from an `~matplotlib.axes.Axes` setter (e.g. `~matplotlib.axes.Axes.set_title`, `~matplotlib.axes.Axes.set_xlabel` and `~matplotlib.axes.Axes.set_xticks`), an `~matplotlib.axis.XAxis` or `~matplotlib.axis.YAxis` setter (e.g. `~matplotlib.axis.Axis.set_major_locator` and `~matplotlib.axis.Axis.set_major_formatter`), a `~matplotlib.spines.Spine` setter (e.g. `~matplotlib.spines.Spine.set_bounds`), a miscellaneous "bulk" setter (e.g. `~matplotlib.axes.Axes.tick_params`), or whether they require tinkering with several different objects. Also, one often needs to *loop through* lists of subplots to apply identical settings to each subplot.
 
 ..
    This is perhaps one reason why many users prefer the `~matplotlib.pyplot` API to the object-oriented API (see :ref:`Using ProPlot`).
