@@ -243,7 +243,7 @@ The subplot container class
 
 .. rubric:: Problem
 
-In matplotlib, `~matplotlib.pyplot.subplots` returns a 2D `~numpy.ndarray`, a 1D `~numpy.ndarray`, or the axes itself.
+In matplotlib, `~matplotlib.pyplot.subplots` returns a 2d `~numpy.ndarray` for figures with more than one column and row, a 1d `~numpy.ndarray` for single-row or single-column figures, or just an `~matplotlib.axes.Axes` instance for single-subplot figures.
 
 .. rubric:: Solution
 
