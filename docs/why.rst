@@ -4,14 +4,14 @@ Why ProPlot?
 
 Matplotlib is an extremely powerful plotting package used
 by academics, engineers, and data scientists far and wide. However, certain
-plotting tasks in matplotlib can be cumbersome or repetitive for its heaviest users:
+plotting tasks can be cumbersome or repetitive for its heaviest users:
 
 * Users who need to make very rich, complex figures.
 * Users who want to finely tune their figure annotations and aesthetics.
 * Users who make plots nearly every day.
 
-ProPlot's core mission is to
-provide heavy users of matplotlib with a smoother plotting experience.
+ProPlot's core mission is to provide a smoother plotting experience
+for matplotlib's heaviest users.
 We do this by expanding upon the object-oriented matplotlib API.
 ProPlot makes changes that would be hard to justify or difficult
 to incorporate into matplotlib itself, owing to design choices and backwards
