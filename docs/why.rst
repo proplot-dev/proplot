@@ -411,15 +411,19 @@ Smarter colormap normalization
 ==============================
 .. rubric:: Problem
 
-In matplotlib, when ``extend='min'``, ``extend='max'``, or ``extend='neither'`` is passed to `~matplotlib.figure.Figure.colorbar` , the colormap colors reserved for "out-of-bounds" values are truncated. The problem is that matplotlib discretizes colormaps by generating a low-resolution lookup table (see `~matplotlib.colors.LinearSegmentedColormap` for details).
-This approach cannot be fine-tuned and creates an extra copy of the colormap --
-ideally, the task discretizing colormap colors should be left to the *normalizer*. Matplotlib provides `~matplotlib.colors.BoundaryNorm` for this purpose, but it is seldom used and its features are limited.
+In matplotlib, when ``extend='min'``, ``extend='max'``, or ``extend='neither'`` is passed to `~matplotlib.figure.Figure.colorbar` , the colormap colors reserved for "out-of-bounds" values are truncated. This can be irritating for plots with very few colormap levels, which are often more desirable (see :ref:`Discrete colormap levels`).
+
+The problem is that matplotlib "discretizes" colormaps by generating low-resolution lookup tables (see `~matplotlib.colors.LinearSegmentedColormap`).
+While straightforward,
+this approach has limitations and results in unnecessary
+plot-specific copies of the colormap.
+Ideally, the task of discretizing colormap colors should be left to the *normalizer*; matplotlib provides `~matplotlib.colors.BoundaryNorm` for this purpose, but it is seldom used and its features are limited.
 
 .. rubric:: Solution
 
-In ProPlot, all colormap visualizations are automatically discretized with the `~proplot.styletools.BinNorm` class. This reads the `extend` property passed to your plotting command and chooses colormap indices so that your colorbar levels *always* traverse the full range of colormap colors.
+In ProPlot, all colormaps retain a high-resolution lookup table and the `~proplot.styletools.BinNorm` class is applied to every plot. `~proplot.styletools.BinNorm` restricts your plot to a *subset* of lookup table colors matching the number of requested levels. It chooses indices such that the colorbar levels *always* traverse the full range of colors, no matter the `extend` setting, and makes sure the end colors on *cyclic* colormaps are distinct.
 
-`~proplot.styletools.BinNorm` also applies arbitrary continuous normalizer requested by the user, e.g. `~matplotlib.colors.Normalize` or `~matplotlib.colors.LogNorm`, before discretization. Think of `~proplot.styletools.BinNorm` as a "meta-normalizer" -- other normalizers perform the continuous transformation step, while this performs the discretization step.
+Also, before discretization, `~proplot.styletools.BinNorm` passes values through the *continuous* normalizer requested by the user with the `norm` keyword argument (e.g. `~matplotlib.colors.LogNorm` or `~proplot.styletools.MidpointNorm`). You can thus think of `~proplot.styletools.BinNorm` as a "meta-normalizer": `~proplot.styletools.BinNorm` simply discretizes the result of any arbitrary continuous transformation.
 
 Bulk global settings
 ====================
