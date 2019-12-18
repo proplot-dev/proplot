@@ -20,7 +20,7 @@ API, and so on. You can submit these as
 Please make sure to explain in detail how the feature should work and keep the scope as
 narrow as possible. This will make it easier to implement in small pull requests.
 
-If you are feeling inspired, feel free to submit a pull request.
+If you are feeling inspired, feel free to add the feature yourself!
 
 
 Report bugs
@@ -29,11 +29,11 @@ Report bugs
 Bugs should be reported in the `issue tracker <https://github.com/lukelbd/proplot/issues>`__
 with the label "bug". When reporting a bug, please include:
 
-* Your operating system name and version.
-* Your python, proplot, and matplotlib versions. If the bug also involves cartopy or basemap, please include these versions as well.
-* Detailed steps to reproduce the bug.
+* Your operating system name and version, your python version, and your proplot and matplotlib versions.
+* If the bug also involves cartopy or basemap, please include these versions as well.
+* An example that can be copied and pasted to reproduce the bug.
 
-If you can figure out how to fix the bug yourself, feel free to submit a pull request.
+If you can figure out how to fix the bug, feel free to submit a pull request.
 
 Write tests
 ===========
