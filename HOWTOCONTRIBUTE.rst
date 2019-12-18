@@ -35,12 +35,12 @@ with the label "bug". When reporting a bug, please include:
 
 If you can figure out how to fix the bug yourself, feel free to submit a pull request.
 
-Test scripts
-============
+Write tests
+===========
 
-Many packages include "tests" consisting of ``.py`` scripts in a ``tests`` folder
-that are automatically run by
-the `Travis Continuous Integration <https://travis-ci.com>`__ service. Currently, we do
+Many packages include ``.py`` scripts in a ``tests`` folder
+and have the `Travis Continuous Integration <https://travis-ci.com>`__ service
+automatically run them. Currently, we do
 not use the ``tests`` folder -- we just have Travis run the ``.ipynb`` notebook
 examples in the ``docs`` folder (see `.travis.yml`).
 However, this is a *major* item on our to-do list!
