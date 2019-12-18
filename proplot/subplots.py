@@ -65,32 +65,31 @@ def show():
 
 
 class subplot_grid(list):
-    """List subclass and pseudo-2D array that is used as a container for the
-    list of axes returned by `subplots`. The shape of the array is stored
-    in the ``shape`` attribute. See the `~subplot_grid.__getattr__` and
-    `~subplot_grid.__getitem__` methods for details."""
+    """List subclass and pseudo-2d array that is used as a container for the
+    list of axes returned by `subplots`. See `~subplot_grid.__getattr__`
+    and `~subplot_grid.__getitem__` for details."""
     def __init__(self, objs, n=1, order='C'):
         """
         Parameters
         ----------
         objs : list-like
-            1D iterable of `~proplot.axes.Axes` instances.
+            1d iterable of `~proplot.axes.Axes` instances.
         n : int, optional
             The length of the fastest-moving dimension, i.e. the number of
             columns when `order` is ``'C'``, and the number of rows when
-            `order` is ``'F'``. Used to treat lists as pseudo-2D arrays.
+            `order` is ``'F'``. Used to treat lists as pseudo-2d arrays.
         order : {'C', 'F'}, optional
-            Whether 1D indexing returns results in row-major (C-style) or
+            Whether 1d indexing returns results in row-major (C-style) or
             column-major (Fortran-style) order, respectively. Used to treat
-            lists as pseudo-2D arrays.
+            lists as pseudo-2d arrays.
         """
         if not all(isinstance(obj, axes.Axes) for obj in objs):
             raise ValueError(
                 f'Axes grid must be filled with Axes instances, got {objs!r}.')
+        super().__init__(objs)
         self._n = n
         self._order = order
-        super().__init__(objs)
-        self.shape = (len(self) // n, n)[::(1 if order == 'C' else -1)]
+        self._shape = (len(self) // n, n)[::(1 if order == 'C' else -1)]
 
     def __repr__(self):
         return 'subplot_grid([' + ', '.join(str(ax) for ax in self) + '])'
@@ -101,7 +100,7 @@ class subplot_grid(list):
 
     def __getitem__(self, key):
         """If an integer is passed, the item is returned, and if a slice is
-        passed, an `subplot_grid` of the items is returned. You can also use 2D
+        passed, an `subplot_grid` of the items is returned. You can also use 2d
         indexing, and the corresponding axes in the axes grid will be chosen.
 
         Example
@@ -115,7 +114,7 @@ class subplot_grid(list):
         ... axs[:,0] # the subplots in the first column
 
         """
-        # Allow 2D specification
+        # Allow 2d specification
         if isinstance(key, tuple) and len(key) == 1:
             key = key[0]
         # do not expand single slice to list of integers or we get recursion!
@@ -230,6 +229,13 @@ class subplot_grid(list):
         # Mixed
         raise AttributeError(f'Found mixed types for attribute {attr!r}.')
 
+    @property
+    def shape(self):
+        """The "shape" of the subplot grid. For complex subplot grids, where
+        subplots may span contiguous rows and columns, this "shape" may be
+        incorrect. In such cases, 1d indexing should always be used."""
+        return self._shape
+
 
 class SubplotSpec(mgridspec.SubplotSpec):
     """
@@ -237,7 +243,7 @@ class SubplotSpec(mgridspec.SubplotSpec):
     the geometry *excluding* rows and columns allocated for spaces.
     """
     def get_active_geometry(self):
-        """Returns the number of rows, number of columns, and 1D subplot
+        """Returns the number of rows, number of columns, and 1d subplot
         location indices, ignoring rows and columns allocated for spaces."""
         nrows, ncols, row1, row2, col1, col2 = self.get_active_rows_columns()
         num1 = row1 * ncols + col1
@@ -1752,7 +1758,7 @@ def subplots(
 
     Parameters
     ----------
-    array : 2D array-like of int, optional
+    array : 2d array-like of int, optional
         Array specifying complex grid of subplots. Think of
         this array as a "picture" of your figure. For example, the array
         ``[[1, 1], [2, 3]]`` creates one long subplot in the top row, two
@@ -1947,7 +1953,7 @@ def subplots(
     except (TypeError, ValueError):
         raise ValueError(
             f'Invalid subplot array {array!r}. '
-            'Must be 1D or 2D array of integers.')
+            'Must be 1d or 2d array of integers.')
     # Get other props
     nums = np.unique(array[array != 0])
     naxs = len(nums)
