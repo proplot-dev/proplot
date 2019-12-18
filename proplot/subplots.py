@@ -1845,8 +1845,7 @@ def subplots(
 
     sharex, sharey, share : {3, 2, 1, 0}, optional
         The "axis sharing level" for the *x* axis, *y* axis, or both axes.
-        Default is ``3``. This can considerably redundancy in your figure.
-        The options are as follows:
+        Default is ``3``. The options are as follows:
 
         0. No axis sharing. Also sets the default `spanx` and `spany` values
            to ``False``.
@@ -1858,21 +1857,21 @@ def subplots(
         3. As in 2, but only show the *axis tick labels* on the
            leftmost column (*y*) or bottommost row (*x*) of subplots.
 
-    spanx, spany, span : bool or {0, 1}, optional
-        Default is ``False`` if `sharex`, `sharey`, or `share` are ``0``,
-        ``True`` otherwise. Toggles "spanning" axis labels for the *x* axis,
-        *y* axis, or both axes. When ``True``, a single, centered axis label
+    spanx, spany, span : bool or {1, 0}, optional
+        Toggles "spanning" axis labels for the *x* axis, *y* axis, or both
+        axes. Default is ``False`` if `sharex`, `sharey`, or `share` are ``0``,
+        ``True`` otherwise.  When ``True``, a single, centered axis label
         is used for all axes with bottom and left edges in the same row or
-        column.  This can considerably redundancy in your figure.
+        column.
 
-        "Spanning" labels integrate with "shared" axes. For example,
-        for a 3-row, 3-column figure, with ``sharey > 1`` and ``spany=1``,
-        your figure will have 1 ylabel instead of 9.
+        Note that "spanning" labels are integrated with "shared" axes. For
+        example, for a 3-row, 3-column figure, with ``sharey > 1`` and
+        ``spany=1``, your figure will have 1 ylabel instead of 9.
     alignx, aligny, align : bool or {0, 1}, optional
-        Default is ``False``. Whether to `align axis labels \
+        Whether to `align axis labels \
 <https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/align_labels_demo.html>`__
         for the *x* axis, *y* axis, or both axes. Only has an effect when
-        `spanx`, `spany`, or `span` are ``False``.
+        `spanx`, `spany`, or `span` are ``False``. Default is ``False``.
     proj, projection : str or dict-like, optional
         The map projection name. The argument is interpreted as follows.
 
