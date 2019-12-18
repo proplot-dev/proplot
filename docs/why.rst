@@ -44,8 +44,8 @@ This workflow is quite verbose -- it tends to require "boilerplate code" that ge
 
 ProPlot introduces the `~proplot.axes.Axes.format` method for changing arbitrary settings *in bulk*. Think of this as an expanded and thoroughly documented version of the
 `~matplotlib.artist.Artist` `~matplotlib.artist.Artist.update` method.
-The `~proplot.axes.Axes.format` method can
-also be used to update :ref:`Bulk global setings` and various :ref:`other rc settings <Changing rc settings>` for a particular subplot, and to concisely work with verbose classes using various :ref:`Class constructor functions`. Further, :ref:`The subplot container class` can be used to invoke `~proplot.axes.Axes.format` on several subplots at once.
+`~proplot.axes.Axes.format` can
+also be used to update :ref:`Bulk global settings` and various :ref:`other rc settings <Changing rc settings>` for a particular subplot, and to concisely work with verbose classes using the :ref:`Class constructor functions`. Further, :ref:`The subplot container class` can be used to invoke `~proplot.axes.Axes.format` on several subplots at once.
 
 Together, these features significantly reduce
 the amount of code needed to create highly customized figures.
