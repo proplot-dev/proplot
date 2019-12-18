@@ -2236,10 +2236,11 @@ def Cycle(
         colors of the ``'538'`` color cycle.
 
         For `~matplotlib.colors.LinearSegmentedColormap`\ s, this is either
-        a *list of sample coordinates used to draw colors from the map, or an
-        integer number of colors to draw. If the latter, the sample coordinates
-        are ``np.linspace(0, 1, samples)``. For example, ``Cycle('Reds', 5)``
-        divides the ``'Reds'`` colormap into five evenly spaced colors.
+        a *list of sample coordinates* used to draw colors from the map, or an
+        *integer number of colors* to draw. If the latter, the sample
+        coordinates are ``np.linspace(0, 1, samples)``. For example,
+        ``Cycle('Reds', 5)`` divides the ``'Reds'`` colormap into five evenly
+        spaced colors.
     name : str, optional
         Name of the resulting `~matplotlib.colors.ListedColormap` used to
         register the color cycle. Default name is ``'no_name'``.
