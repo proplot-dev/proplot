@@ -55,20 +55,18 @@ Write documentation
 Documentation can always be improved. For minor changes, you can edit docstrings and documentation files directly in the GitHub web interface without using a local copy.
 
 * The docstrings are written in `reStructuredText <http://docutils.sourceforge.net/docs/user/rst/quickref.html>`__ with `numpydoc <https://numpydoc.readthedocs.io/en/latest/>`__ style headers. They are embedded in the :ref:`API reference` section using a `fork of sphinx-automodapi <https://github.com/lukelbd/sphinx-automodapi>`__. Other sections are written using ``.rst`` and ``.ipynb`` notebook files in the ``docs`` folder. The notebooks are embedded in the User Guide using `nbsphinx <https://nbsphinx.readthedocs.io/en/0.5.0/>`__.
-* Please include links to the API reference whenever discussing particular functions or classes. To make this easier, the `default ReST role <https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-default_role>`__ is ``'py:obj'``. For example, if you are discussing the `~proplot.axes.Axes.format` method, please write "``\`~proplot.axes.Axes.format\```" rather than "``format``". ProPlot also uses `intersphinx <http://www.sphinx-doc.org/en/stable/ext/intersphinx.html>`__ so you can add links to external packages, e.g. matplotlib.
+* The `default ReST role <https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-default_role>`__ is ``py:obj``. Please include ``py:obj`` links whenever discussing particular functions or classes -- for example, if you are discussing the `~proplot.axes.Axes.format` method, please write "```~proplot.axes.Axes.format```" rather than "``format``". ProPlot also uses `intersphinx <http://www.sphinx-doc.org/en/stable/ext/intersphinx.html>`__ so you can link to external packages like matplotlib and cartopy.
 * When editing the ``.ipynb`` notebook files, make sure to put your example descriptions inside reStructedText cells, not markdown cells. This lets us add sphinx directives and API links to the descriptions. See `this guide <https://nbsphinx.readthedocs.io/en/0.4.3/raw-cells.html#Usage>`__ for how to convert cells to ReST.
 
-.. note::
+To build the documentation locally, use the following commands:
 
-    To build the documentation locally, use the following commands:
+.. code:: bash
 
-    .. code:: bash
+   cd docs
+   conda env update -f environment.yml
+   make html
 
-        cd docs
-        conda env update -f environment.yml
-        make html
-
-    The built documentation should be available in the ``docs/_build/html``.
+The built documentation should be available in ``docs/_build/html``.
 
 Preparing pull requests
 =======================
