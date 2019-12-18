@@ -2,70 +2,70 @@
 Contribution guide
 ==================
 
-Contributions are highly welcomed and appreciated.  Every little help counts,
-so do not hesitate! You can make a high impact on ProPlot just by using it and
+Contributions are highly welcomed and appreciated.  Every little bit helps,
+so please do not hesitate! You can make a high impact on ProPlot just by using it and
 reporting `issues <https://github.com/lukelbd/proplot/issues>`__.
 
 The following sections cover some general guidelines
 regarding development in ProPlot for maintainers and contributors.
-Nothing here is set in stone and can't be changed.
 Feel free to suggest improvements or changes in the workflow.
 
 Feature requests and feedback
 =============================
 
-We are eager to hear about your requests for new features and any suggestions about the
-API, infrastructure, and so on. Feel free to submit these as
-`issues <https://github.com/lukelbd/proplot/issues/new>`__ with the label "feature."
-
+We are eager to hear your requests for new features, suggestions regarding the current
+API, and so on. You can submit these as
+`issues <https://github.com/lukelbd/proplot/issues/new>`__ with the label
+"feature."
 Please make sure to explain in detail how the feature should work and keep the scope as
-narrow as possible. This will make it easier to implement in small PRs.
+narrow as possible. This will make it easier to implement in small pull requests.
+
+If you are feeling inspired, feel free to submit a pull request.
 
 
 Report bugs
 ===========
 
-Report bugs for ProPlot in the `issue tracker <https://github.com/lukelbd/proplot/issues>`__
-with the label "bug".
-
-If you are reporting a bug, please include:
+Bugs should be reported in the `issue tracker <https://github.com/lukelbd/proplot/issues>`__
+with the label "bug". When reporting a bug, please include:
 
 * Your operating system name and version.
-* Any details about your local setup that might be helpful in troubleshooting,
-  specifically the Python interpreter version, installed libraries, and ProPlot
-  version.
+* Your python, proplot, and matplotlib versions. If the bug also involves cartopy or basemap, please include these versions as well.
 * Detailed steps to reproduce the bug.
 
-If you can write a demonstration test that currently fails but *should* pass,
-that is a very useful commit to make as well, even if you cannot fix the bug itself.
+If you can figure out how to fix the bug yourself, feel free to submit a pull request.
 
+Test scripts
+============
 
-Fix bugs
-========
+Many packages include "tests" consisting of ``.py`` scripts in a ``tests`` folder
+that are automatically run by
+the `Travis Continuous Integration <https://travis-ci.com>`__ service. Currently, we do
+not use the ``tests`` folder -- we just have Travis run the ``.ipynb`` notebook
+examples in the ``docs`` folder (see `.travis.yml`).
+However, this is a *major* item on our to-do list!
 
-Look through the `GitHub issues for bugs <https://github.com/lukelbd/proplot/labels/bug>`__.
+If you can think of a useful test for ProPlot, feel free to submit a pull request.
+Your test will be used in the future.
 
-Talk to developers to find out how you can fix specific bugs.
 
 Write documentation
 ===================
 
-ProPlot could always use better documentation. For small changes, you can edit documentation files directly in the GitHub web interface,
-without using a local copy.
+Documentation can always be improved. For minor changes, you can edit docstrings and documentation files directly in the GitHub web interface without using a local copy.
 
-* The documentation is written in reStructuredText with `numpydoc <https://numpydoc.readthedocs.io/en/latest/>`__ style headers.
-* The `default ReST role <https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-default_role>`__ is ``'py:obj'``. This is meant to encourage populating docstrings with links to the API reference. ProPlot uses `intersphinx <http://www.sphinx-doc.org/en/stable/ext/intersphinx.html>`__, so you can also link to sphinx documentation from other projects, e.g. matplotlib. In general, you should compress your links with a tilde, e.g. ``~path.to.function``.
-* When editing the ipython notebooks found in ``docs``, make sure to put your example descriptions inside reStructedText cells, not markdown cells. This lets us populate the descriptions with sphinx links. See `this guide <https://nbsphinx.readthedocs.io/en/0.4.3/raw-cells.html#Usage>`__ for how to convert cells to ReST.
-
-Some helpful ReST guides are located `here <http://docutils.sourceforge.net/docs/user/rst/quickref.html>`__ and `here <https://github.com/ralsina/rst-cheatsheet/blob/master/rst-cheatsheet.rst>`__.
+* The docstrings are written in `reStructuredText <http://docutils.sourceforge.net/docs/user/rst/quickref.html>`__ with `numpydoc <https://numpydoc.readthedocs.io/en/latest/>`__ style headers. They are embedded in the :ref:`API reference` section using a `fork of sphinx-automodapi <https://github.com/lukelbd/sphinx-automodapi>`__. Other sections are written using ``.rst`` and ``.ipynb`` notebook files in the ``docs`` folder. The notebooks are embedded in the User Guide using `nbsphinx <https://nbsphinx.readthedocs.io/en/0.5.0/>`__.
+* Please include links to the API reference whenever discussing particular functions or classes. To make this easier, the `default ReST role <https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-default_role>`__ is ``'py:obj'``. For example, if you are discussing the `~proplot.axes.Axes.format` method, please write "``\`~proplot.axes.Axes.format\```" rather than "``format``". ProPlot also uses `intersphinx <http://www.sphinx-doc.org/en/stable/ext/intersphinx.html>`__ so you can add links to external packages, e.g. matplotlib.
+* When editing the ``.ipynb`` notebook files, make sure to put your example descriptions inside reStructedText cells, not markdown cells. This lets us add sphinx directives and API links to the descriptions. See `this guide <https://nbsphinx.readthedocs.io/en/0.4.3/raw-cells.html#Usage>`__ for how to convert cells to ReST.
 
 .. note::
+
     To build the documentation locally, use the following commands:
 
     .. code:: bash
 
         cd docs
-        pip install requirements.txt
+        conda env update -f environment.yml
         make html
 
     The built documentation should be available in the ``docs/_build/html``.
@@ -75,8 +75,8 @@ Preparing pull requests
 
 #. Fork the
    `proplot GitHub repository <https://github.com/lukelbd/proplot>`__.  It's
-   fine to use ProPlot as your fork repository name because it will live
-   under your user.
+   fine to keep "proplot" as the fork repository name because it will live
+   under your account.
 
 #. Clone your fork locally using `git <https://git-scm.com/>`__, connect your repository
    to the upstream (main project), and create a branch:
@@ -86,12 +86,23 @@ Preparing pull requests
       git clone git@github.com:YOUR_GITHUB_USERNAME/proplot.git
       cd proplot
       git remote add upstream git@github.com:lukelbd/proplot.git
-      git checkout -b your-bugfix-feature-branch-name master
+      git checkout -b your-branch-name master
 
    If you need some help with git, follow the
    `quick start guide <https://git.wiki.kernel.org/index.php/QuickStart>`__.
 
-#. Install `pre-commit <https://pre-commit.com>`_ and its hook on the ``proplot`` repo
+#. Make an editable install of ProPlot by running:
+
+   .. code-block:: bash
+
+      pip install -e .
+
+   This way when you ``import proplot``, the
+   local copy is used, rather than the stable version you
+   downloaded from PyPi. You can print ``proplot.__file__`` to verify the
+   correct version has been imported.
+
+#. Install `pre-commit <https://pre-commit.com>`__ and its hook on the ``proplot`` repo
 
    .. code-block:: bash
 
@@ -102,41 +113,35 @@ Preparing pull requests
    is a framework for managing and maintaining multi-language pre-commit hooks to
    ensure code-style and code formatting is consistent.
 
-   You can now edit your local working copy as necessary. Please follow
-   PEP-8 naming conventions. When committing, ``pre-commit`` will modify the
-   files as needed, or will generally be clear about what you need to do to
-   pass the commit test.
-
-#. If you intend to make changes / add examples to the ipython notebooks,
+#. If you intend to make changes or add examples to the ipython notebooks,
    you need to install and configure
-   `nbstripout <https://github.com/kynan/nbstripout>`__ with
+   `nbstripout <https://github.com/kynan/nbstripout>`__:
 
    .. code-block:: bash
 
       pip install --user nbstripout
       git config --local include.path ../.gitconfig
 
-   This strips notebook cell output when files are staged, which reduces the
-   repo storage size and lets us use
-   `nbsphinx <https://nbsphinx.readthedocs.io/en/0.4.3/>`__
-   to test each ``git push``.
+   This adds the ``proplot/.gitconfig`` file (which is not recognized by git)
+   to the local ``proplot/.git/config`` configuration file, which
+   defines the filters declared in ``proplot/.gitattributes``. It is necessary
+   because git cannot sync repository-specific configuration files.
 
-   The ``git config`` command associates the filters declared in
-   ``proplot/.gitattributes`` with the operations described in ``proplot/.gitconfig``
-   by adding them to the *recognized* local configuration file
-   ``proplot/.git/config``.
+   After this is done, cell output will be "invisible" to git; the version control
+   system only ever "sees" the content written in each cell.
+   This makes
+   ``git diff``\ s much more legible, significantly reduces the repo size, and
+   lets us test notebook examples using
+   `nbsphinx <https://nbsphinx.readthedocs.io/en/0.4.3/>`__.
 
-#. Make an editable install of ProPlot by running:
+#. You can now edit your local working copy as necessary. Please follow
+   the `PEP-8 style guide <https://www.python.org/dev/peps/pep-0008/>`__.
+   When committing, ``nbstripout`` will ignore changes to notebook cell output
+   and ``pre-commit`` will modify the files as needed, or will generally be clear
+   about what you need to do to pass the pre-commit test.
 
-   .. code-block:: bash
+   Please break your edits up into reasonably sized commits:
 
-      pip install -e .
-
-   This way when you ``import proplot``, your
-   local copy is used. You can print ``proplot.__file__`` to verify this.
-   Make sure matplotlib is already installed.
-
-#. Break your edits up into reasonably sized commits.
 
    .. code-block:: bash
 
@@ -172,7 +177,7 @@ Preparing pull requests
       base-fork: lukelbd/proplot
       base: master
 
-Note that you can create the Pull Request while you're working on this. The PR will update
+Note that you can create the pull request while you're working on this. The PR will update
 as you add more commits. ProPlot developers and contributors can then review your code
 and offer suggestions.
 
@@ -180,10 +185,10 @@ and offer suggestions.
 Release procedure
 =================
 
-ProPlot follows semantic versioning, e.g. v1.0.0. A major version causes incompatible
-API changes, a minor version adds functionality, and a patch covers bug fixes.
+ProPlot follows semantic versioning, e.g. ``vX.Y.Z``. A major version (``X``) causes incompatible
+API changes, a minor version (``Y``) adds functionality, and a patch (``Z``) covers bug fixes.
 
-For now, `Luke <https://github.com/lukelbd>`__ is the only one who can publish releases on PyPi, but this will change in the future. Releases should be carried out as follows:
+For now, `Luke Davis <https://github.com/lukelbd>`__ is the only one who can publish releases on PyPi, but this will change in the future. Releases should be carried out as follows:
 
 
 #. Create a new branch ``release-vX.Y.Z`` with the version for the release. In this branch, update ``CHANGELOG.rst``, and make sure all new changes are reflected in the documentation.
