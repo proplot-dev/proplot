@@ -507,7 +507,7 @@ def _canvas_preprocess(canvas, method):
             fig._adjust_aspect()  # resizes figure
             if fig._auto_tight_layout:
                 fig._align_axislabels(False)  # get proper label offset only
-                fig._align_labels(renderer)  # position labels and suptitle
+                fig._align_labels(renderer)   # position labels and suptitle
                 fig._adjust_tight_layout(renderer)
         fig._align_axislabels(True)  # slide spanning labels across
         fig._align_labels(renderer)  # update figure-relative coordinates!
