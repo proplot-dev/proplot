@@ -65,12 +65,12 @@ ProPlot v0.3.2 (2020-##-##)
 .. rubric:: Bug fixes
 
 - Fix `~proplot.rctools.rc_configurator.context` bug (:issue:`80` and :pr:`91`).
-- Improvements to fonts API.
+- Improvements to fonts API (:pr:`93`).
 
 .. rubric:: Documentation
 
 - Imperative mood for docstring summaries (:pr:`92`).
-
+- Fix `~proplot.show_cycles` bug (:pr:`90`) and show cycles using colorbars rather than lines.
 
 ProPlot v0.3.1 (2019-12-16)
 ===========================
