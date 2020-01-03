@@ -15,7 +15,7 @@ ProPlot v1.0.0 (2020-##-##)
 This will be published when some major refactoring tasks are completed.
 See :pr:`45`, :pr:`46`, and :pr:`50`.
 
-ProPlot v0.4.0 (2020-01-##)
+ProPlot v0.4.0 (2020-##-##)
 ===========================
 .. rubric:: Deprecated
 
@@ -59,6 +59,18 @@ ProPlot v0.4.0 (2020-01-##)
 - Define `~proplot.rctools.rc` default values with inline dictionaries rather than
   with a default ``.proplotrc`` file, change the auto-generated user ``.proplotrc``
   (:pr:`50`).
+
+ProPlot v0.3.2 (2020-##-##)
+===========================
+.. rubric:: Bug fixes
+
+- Fix `~proplot.rctools.rc_configurator.context` bug (:issue:`80` and :pr:`91`).
+- Improvements to fonts API.
+
+.. rubric:: Documentation
+
+- Imperative mood for docstring summaries (:pr:`92`).
+
 
 ProPlot v0.3.1 (2019-12-16)
 ===========================
