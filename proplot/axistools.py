@@ -1249,23 +1249,28 @@ class CutoffScale(_ScaleBase, mscale.ScaleBase):
         Parameters
         ----------
         *args : (thresh_1, scale_1, ..., thresh_N, [scale_N]), optional
-            Sequence of thresholds and scales. If the final scale is omitted
-            (i.e. you passed an odd number of args) it is set to ``1``.
+            Sequence of "thresholds" and "scales". If the final scale is
+            omitted (i.e. you passed an odd number of arguments) it is set
+            to ``1``. Each ``scale_i`` in the sequence can be interpreted
+            as follows:
 
             * If ``scale_i < 1``, the axis is decelerated from ``thresh_i`` to
-              ``thresh_i+1`` or, if ``i == N``, everywhere above ``thresh_i``.
+              ``thresh_i+1``. For ``scale_N``, the axis is decelerated
+              everywhere above ``thresh_N``.
             * If ``scale_i > 1``, the axis is accelerated from ``thresh_i`` to
-              ``thresh_i+1`` or, if ``i == N``, everywhere above ``thresh_i``.
-            * If ``scale_i == np.inf``, the axis *discretely jumps* from
-              ``thresh_i`` to ``thresh_i+1``.
+              ``thresh_i+1``. For ``scale_N``, the axis is accelerated
+              everywhere above ``thresh_N``.
+            * If ``scale_i == numpy.inf``, the axis *discretely jumps* from
+              ``thresh_i`` to ``thresh_i+1``. The final scale ``scale_N``
+              *cannot* be ``numpy.inf``.
 
         Example
         -------
 
         >>> import proplot as plot
         ... import numpy as np
-        ... scale = plot.CutoffScale(10, 2)  # go "twice as fast" after 10
-        ... scale = plot.CutoffScale(10, 0.5, 20)  # zoom in between 10 and 20
+        ... scale = plot.CutoffScale(10, 0.5)  # move slower above 10
+        ... scale = plot.CutoffScale(10, 2, 20)  # zoom out between 10 and 20
         ... scale = plot.CutoffScale(10, np.inf, 20)  # jump from 10 to 20
 
         """
