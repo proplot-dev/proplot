@@ -2988,9 +2988,15 @@ def register_colors(nmax=np.inf):
     seen = {*base}  # never overwrite base names, e.g. 'blue' and 'b'!
     hcls = []
     data = []
-    for path in _get_data_paths('colors'):
-        # prefer xkcd
-        for file in sorted(glob.glob(os.path.join(path, '*.txt')))[::-1]:
+    for i, path in enumerate(_get_data_paths('colors')):
+        if i == 0:
+            paths = [  # be explicit because categories matter!
+                os.path.join(path, base)
+                for base in ('xkcd.txt', 'crayola.txt', 'open.txt')
+            ]
+        else:
+            paths = sorted(glob.glob(os.path.join(path, '*.txt')))
+        for file in paths:
             cat, _ = os.path.splitext(os.path.basename(file))
             with open(file, 'r') as f:
                 pairs = [tuple(item.strip() for item in line.split(':'))
@@ -3000,14 +3006,14 @@ def register_colors(nmax=np.inf):
                     f'Invalid color names file {file!r}. '
                     f'Every line must be formatted as "name: color".')
 
-            # Add all open colors
-            if cat == 'open':
+            # Categories for which we add *all* colors
+            if cat == 'open' or i == 1:
                 dict_ = {name: color for name, color in pairs}
                 mcolors.colorConverter.colors.update(dict_)
-                colors['open'] = sorted(dict_)
+                colors[cat] = sorted(dict_)
                 continue
 
-            # Filter remaining colors to unique ones
+            # Filter remaining colors to *unique* colors
             j = 0
             if cat not in dicts:
                 dicts[cat] = {}
