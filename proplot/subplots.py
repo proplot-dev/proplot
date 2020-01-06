@@ -1754,13 +1754,12 @@ def subplots(
         width_ratios=None, height_ratios=None,
         flush=None, wflush=None, hflush=None,
         left=None, bottom=None, right=None, top=None,
-        tight=None, pad=None, axpad=None, panelpad=None,
         span=None, spanx=None, spany=None,
         align=None, alignx=None, aligny=None,
         share=None, sharex=None, sharey=None,
         basemap=False, proj=None, projection=None,
         proj_kw=None, projection_kw=None,
-        autoformat=True, includepanels=False):
+        **kwargs):
     """
     Analogous to `matplotlib.pyplot.subplots`, creates a figure with a single
     axes or arbitrary grids of axes, any of which can be map projections.
@@ -1915,23 +1914,8 @@ def subplots(
 
     Other parameters
     ----------------
-    tight : bool, optional
-        Toggles automatic tight layout adjustments. Default is
-        :rc:`tight`.
-
-        If you manually specify a spacing, it will be used
-        to override the tight layout spacing -- for example, with ``left=0.1``,
-        the left margin is set to 0.1 inches wide, while the remaining margin
-        widths are calculated automatically.
-    pad, axpad, panelpad : float or str, optional
-        Padding for automatic tight layout adjustments. See `Figure` for
-        details.
-    includepanels : bool, optional
-        Whether to include panels when calculating the position of certain
-        spanning labels. See `Figure` for details.
-    autoformat : bool, optional
-        Whether to automatically format axes when special datasets are
-        passed to plotting commands. See `Figure` for details.
+    **kwargs
+        Passed to `Figure`.
 
     Returns
     -------
@@ -2138,11 +2122,11 @@ def subplots(
         wpanels=[''] * ncols, hpanels=[''] * nrows,
     )
     fig = plt.figure(
-        FigureClass=Figure, tight=tight, figsize=figsize, ref=ref,
-        pad=pad, axpad=axpad, panelpad=panelpad, autoformat=autoformat,
-        includepanels=includepanels,
-        subplots_orig_kw=subplots_orig_kw, subplots_kw=subplots_kw,
-        gridspec_kw=gridspec_kw)
+        FigureClass=Figure, figsize=figsize, ref=ref,
+        gridspec_kw=gridspec_kw, subplots_kw=subplots_kw,
+        subplots_orig_kw=subplots_orig_kw,
+        **kwargs
+    )
     gridspec = fig._gridspec_main
 
     # Draw main subplots
