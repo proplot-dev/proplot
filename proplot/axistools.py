@@ -112,9 +112,12 @@ def Locator(locator, *args, **kwargs):
     # Get the locator
     if isinstance(locator, str):  # dictionary lookup
         # Shorthands and defaults
-        if locator == 'logminor':
-            locator = 'log'
-            kwargs.setdefault('subs', np.arange(10))
+        if locator in ('logminor', 'logitminor', 'symlogminor'):
+            locator, _ = locator.split('minor')
+            if locator == 'logit':
+                kwargs.setdefault('minor', True)
+            else:
+                kwargs.setdefault('subs', np.arange(1, 10))
         elif locator == 'index':
             args = args or (1,)
             if len(args) == 1:
@@ -546,6 +549,8 @@ def _parse_logscale_args(kwargs, *keys):
             kwargs.pop(key + 'y', None),
             None, names=(key, key + 'x', key + 'y'),
         )
+        if key == 'subs' and value is None:
+            value = np.arange(1, 10)
         if value is not None:  # dummy axis_name is 'x'
             kwargs[key + 'x'] = value
     return kwargs
@@ -560,7 +565,12 @@ class _ScaleBase(object):
     def __init__(self, *args, **kwargs):
         # Pass a dummy axis to the superclass
         axis = type('Axis', (object,), {'axis_name': 'x'})()
-        return super().__init__(axis, *args, **kwargs)
+        super().__init__(axis, *args, **kwargs)
+        self._default_smart_bounds = None
+        self._default_major_locator = None
+        self._default_minor_locator = None
+        self._default_major_formatter = None
+        self._default_minor_formatter = None
 
     def set_default_locators_and_formatters(self, axis, only_if_default=False):
         """
@@ -577,41 +587,41 @@ class _ScaleBase(object):
             want to avoid overwriting user customization when the scale
             is changed.
         """
-        # * We assert isDefault settings, because matplotlib does this in
-        #   axis._set_scale but sometimes we need to bypass this method!
-        # * Minor locator can be "non default" even when user has not changed
-        #   it, due to "turning minor ticks" on and off, so always apply
-        #   default if it is currently AutoMinorLocator.
-        if getattr(self, '_smart_bounds', None):
-            axis.set_smart_bounds(True)  # unnecessary?
+        # Apply isDefault because matplotlib does this in axis._set_scale
+        # but sometimes we need to bypass this method! Minor locator can be
+        # "non default" even when user has not changed it, due to "turning
+        # minor ticks" on and off, so set as 'default' if AutoMinorLocator.
+        if self._default_smart_bounds is not None:
+            axis.set_smart_bounds(self._default_smart_bounds)
         if not only_if_default or axis.isDefault_majloc:
             axis.set_major_locator(
-                getattr(self, '_major_locator', None) or Locator('auto')
+                self._default_major_locator or Locator('auto')
             )
             axis.isDefault_majloc = True
         if not only_if_default or axis.isDefault_majfmt:
             axis.set_major_formatter(
-                getattr(self, '_major_formatter', None) or Formatter('auto')
+                self._default_major_formatter or Formatter('auto')
             )
             axis.isDefault_majfmt = True
         if (not only_if_default or axis.isDefault_minloc or isinstance(
                 axis.get_minor_locator(), mticker.AutoMinorLocator)):
             name = axis.axis_name if axis.axis_name in 'xy' else 'x'
-            minor = 'minor' if rc.get(name + 'tick.minor.visible') else 'null'
             axis.set_minor_locator(
-                getattr(self, '_minor_locator', None) or Locator(minor)
+                self._default_minor_locator or Locator(
+                    'minor' if rc.get(name + 'tick.minor.visible') else 'null'
+                )
             )
             axis.isDefault_minloc = True
         if (not only_if_default or axis.isDefault_minfmt or isinstance(
                 axis.get_minor_formatter(), mticker.NullFormatter)):
             axis.set_minor_formatter(
-                getattr(self, '_minor_formatter', None) or Formatter('null')
+                self._default_minor_formatter or Formatter('null')
             )
             axis.isDefault_minfmt = True
 
     def get_transform(self):
-        """Returns the scale transform."""
-        return getattr(self, '_transform', mtransforms.IdentityTransform())
+        """Return the scale transform."""
+        return self._transform
 
 
 class LinearScale(_ScaleBase, mscale.LinearScale):
@@ -621,6 +631,11 @@ class LinearScale(_ScaleBase, mscale.LinearScale):
     """
     name = 'linear'
     """The registered scale name."""
+    def __init__(self, **kwargs):
+        """
+        """
+        super().__init__(**kwargs)
+        self._transform = mtransforms.IdentityTransform()
 
 
 class LogitScale(_ScaleBase, mscale.LogitScale):
@@ -630,6 +645,19 @@ class LogitScale(_ScaleBase, mscale.LogitScale):
     """
     name = 'logit'
     """The registered scale name."""
+
+    def __init__(self, **kwargs):
+        """
+        Parameters
+        ----------
+        nonpos : {'mask', 'clip'}
+          Values outside of (0, 1) can be masked as invalid, or clipped to a
+          number very close to 0 or 1.
+        """
+        super().__init__(**kwargs)
+        # self._default_major_formatter = Formatter('logit')
+        self._default_major_locator = Locator('logit')
+        self._default_minor_locator = Locator('logit', minor=True)
 
 
 class LogScale(_ScaleBase, mscale.LogScale):
@@ -651,18 +679,20 @@ class LogScale(_ScaleBase, mscale.LogScale):
             Non-positive values in *x* or *y* can be masked as
             invalid, or clipped to a very small positive number.
         subs : list of int, optional
-            Default tick locations are on these multiples of each power
+            Default *minor* tick locations are on these multiples of each power
             of the base. For example, ``subs=(1,2,5)`` draws ticks on 1, 2, 5,
-            10, 20, 50, etc.
+            10, 20, 50, etc. The default is ``subs=numpy.arange(1, 10)``.
         basex, basey, nonposx, nonposy, subsx, subsy
             Aliases for the above keywords. These used to be conditional
             on the *name* of the axis.
         """
         kwargs = _parse_logscale_args(kwargs, 'base', 'nonpos', 'subs')
         super().__init__(**kwargs)
-        # self._major_formatter = Formatter('log')
-        self._major_locator = Locator('log', base=self.base)
-        self._minor_locator = Locator('log', base=self.base, subs=self.subs)
+        # self._default_major_formatter = Formatter('log')
+        self._default_major_locator = Locator(
+            'log', base=self.base)
+        self._default_minor_locator = Locator(
+            'log', base=self.base, subs=self.subs)
 
 
 class SymmetricalLogScale(_ScaleBase, mscale.SymmetricalLogScale):
@@ -692,22 +722,24 @@ class SymmetricalLogScale(_ScaleBase, mscale.SymmetricalLogScale):
             for the positive and negative halves of the linear range will be
             equal to one decade in the logarithmic range.
         subs : sequence of int, optional
-            Default minor tick locations are on these multiples of each power
-            of the base. For example, ``subs=[1,2,5]`` draws ticks on 1, 2, 5,
-            10, 20, 50, 100, 200, 500, etc.
+            Default *minor* tick locations are on these multiples of each power
+            of the base. For example, ``subs=(1, 2, 5)`` draws ticks on 1, 2,
+            5, 10, 20, 50, 100, 200, 500, etc. The default is
+            ``subs=numpy.arange(1, 10)``.
         basex, basey, linthreshx, linthreshy, linscalex, linscaley, \
 subsx, subsy
             Aliases for the above keywords. These used to be conditional
             on the *name* of the axis.
         """
-        kwargs = _parse_logscale_args(kwargs,
-                                      'base', 'linthresh', 'linscale', 'subs')
-        super().__init__(**kwargs)
         # Note the symlog locator gets base and linthresh from the transform
-        # self._major_formatter = Formatter('symlog'))
-        self._major_locator = Locator('symlog', transform=self.get_transform())
-        self._minor_locator = Locator('symlog', transform=self.get_transform(),
-                                      subs=self.subs)
+        kwargs = _parse_logscale_args(
+            kwargs, 'base', 'linthresh', 'linscale', 'subs')
+        super().__init__(**kwargs)
+        # self._default_major_formatter = Formatter('symlog'))
+        self._default_major_locator = Locator(
+            'symlog', transform=self.get_transform())
+        self._default_minor_locator = Locator(
+            'symlog', transform=self.get_transform(), subs=self.subs)
 
 
 class FuncScale(_ScaleBase, mscale.ScaleBase):
@@ -723,6 +755,7 @@ class FuncScale(_ScaleBase, mscale.ScaleBase):
     def __init__(self, functions, transform=None, scale=None,
                  major_locator=None, minor_locator=None,
                  major_formatter=None, minor_formatter=None,
+                 smart_bounds=None,
                  ):
         """
         Parameters
@@ -740,7 +773,13 @@ class FuncScale(_ScaleBase, mscale.ScaleBase):
 optional
             The default major and minor formatter. By default these are the
             same as `~matplotlib.scale.LinearScale`.
+        smart_bounds : bool, optional
+            Whether "smart bounds" are enabled by default. If not ``None``,
+            this is passed to `~matplotlib.axis.Axis.set_smart_bounds` when
+            `~matplotlib.scale.ScaleBase.set_default_locators_and_formatters`
+            is called.
         """
+        super().__init__()
         if np.iterable(functions) and len(functions) == 2 and all(
                 callable(ifunction) for ifunction in functions):
             forward, inverse = functions
@@ -757,14 +796,16 @@ optional
                     f'transform {transform!r} must be a Transform instance, '
                     f'not {type(transform)!r}.')
         self._transform = functransform
-        if major_locator:
-            self._major_locator = major_locator
-        if minor_locator:
-            self._minor_locator = minor_locator
-        if major_formatter:
-            self._major_formatter = major_formatter
-        if minor_formatter:
-            self._minor_formatter = minor_formatter
+        if smart_bounds is not None:
+            self._default_smart_bounds = smart_bounds
+        if major_locator is not None:
+            self._default_major_locator = major_locator
+        if minor_locator is not None:
+            self._default_minor_locator = minor_locator
+        if major_formatter is not None:
+            self._default_major_formatter = major_formatter
+        if minor_formatter is not None:
+            self._default_minor_formatter = minor_formatter
 
 
 class FuncTransform(mtransforms.Transform):
@@ -993,8 +1034,8 @@ class MercatorLatitudeScale(_ScaleBase, mscale.ScaleBase):
             raise ValueError('Threshold "thresh" must be <=90.')
         self._thresh = thresh
         self._transform = MercatorLatitudeTransform(thresh)
-        self._major_formatter = Formatter('deg')
-        self._smart_bounds = True
+        self._default_major_formatter = Formatter('deg')
+        self._default_smart_bounds = True
 
     def limit_range_for_scale(self, vmin, vmax, minpos):
         """Returns the range *vmin* and *vmax* limited to some range within
@@ -1066,8 +1107,8 @@ class SineLatitudeScale(_ScaleBase, mscale.ScaleBase):
     def __init__(self):
         super().__init__()
         self._transform = SineLatitudeTransform()
-        self._major_formatter = Formatter('deg')
-        self._smart_bounds = True
+        self._default_major_formatter = Formatter('deg')
+        self._default_smart_bounds = True
 
     def limit_range_for_scale(self, vmin, vmax, minpos):
         """Returns the range *vmin* and *vmax* limited to some range within
@@ -1239,10 +1280,12 @@ class InverseScale(_ScaleBase, mscale.ScaleBase):
     def __init__(self, **kwargs):
         super().__init__()
         self._transform = InverseTransform()
-        self._major_locator = Locator('log', base=10, subs=(1, 2, 5))
-        self._minor_locator = Locator('log', base=10, subs='auto')
-        self._smart_bounds = True
-        # self._minor_formatter = Fromatter('log')
+        # self._default_major_formatter = Fromatter('log')
+        self._default_major_locator = Locator(
+            'log', base=10)
+        self._default_minor_locator = Locator(
+            'log', base=10, subs=np.arange(1, 10))
+        self._default_smart_bounds = True
 
     def limit_range_for_scale(self, vmin, vmax, minpos):
         """Returns the range *vmin* and *vmax* limited to positive numbers."""
