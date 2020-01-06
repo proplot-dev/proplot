@@ -1603,11 +1603,13 @@ optional
     )
 
 
+# TODO: More systematic approach?
 dualxy_kwargs = (
     'label', 'locator', 'formatter', 'ticks', 'ticklabels',
     'minorlocator', 'minorticks', 'tickminor',
     'ticklen', 'tickrange', 'tickdir', 'ticklabeldir', 'tickrotation',
     'bounds', 'margin', 'color', 'grid', 'gridminor',
+    'locator_kw', 'formatter_kw', 'minorlocator_kw', 'label_kw',
 )
 
 dualxy_descrip = """
@@ -1616,38 +1618,20 @@ coordinates in *alternate units*.
 
 Parameters
 ----------
-forward : function, optional
-    Function used to transform units from the original axis to the
-    secondary axis. Should take 1 value and perform a *forward
-    linear transformation*. For example, to convert Kelvin to Celsius,
-    use ``ax.dual%(x)s(lambda x: x - 273.15)``. To convert kilometers to
-    meters, use ``ax.dual%(x)s(lambda x: x*1e3)``.
-inverse : function, optional
-    Function used to transform units from the secondary axis back to
-    the original axis. If `forward` was a non-linear function, you
-    *must* provide this, or the transformation will be incorrect!
-
-    For example, to apply the square, use
-    ``ax.dual%(x)s(lambda x: x**2, lambda x: x**0.5)``.
-scale : scale-spec, optional
-    The axis scale from which forward and inverse transformations
-    are inferred. Passed to `~proplot.axistools.Scale`.
-
-    For example, to apply the inverse, use ``ax.dual%(x)s('inverse')``;
-    To apply the base-10 exponential function, use
-    ``ax.dual%(x)s(('exp', 10, 1, 10))``
-    or ``ax.dual%(x)s(plot.Scale('exp', 10))``.
-scale_kw : dict-like, optional
-    Ignored if `scale` is ``None``. Passed to
-    `~proplot.axistools.Scale`.
+arg : function, (function, function), or `~matplotlib.scale.ScaleBase`
+    Used to transform units from the parent axis to the secondary axis.
+    This can be a `~proplot.axistools.FuncScale` itself or a function,
+    (function, function) tuple, or `~matplotlib.scale.ScaleBase` instance used
+    to *generate* a `~proplot.axistools.FuncScale` (see
+    `~proplot.axistools.FuncScale` for details).
 %(args)s : optional
-    Prepended with ``'y'`` and passed to `Axes.format`.
+    Prepended with ``'%(x)s'`` and passed to `Axes.format`.
 """
 
 altxy_descrip = """
 Alias and more intuitive name for `~XYAxes.twin%(y)s`.
-The matplotlib `~matplotlib.axes.Axes.twiny` function
-generates two *x* axes with a shared ("twin") *y* axis.
+The matplotlib `~matplotlib.axes.Axes.twin%(y)s` function
+generates two *%(x)s* axes with a shared ("twin") *%(y)s* axis.
 Enforces the following settings.
 
 * Places the old *%(x)s* axis on the %(x1)s and the new *%(x)s* axis
