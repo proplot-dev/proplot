@@ -7,7 +7,6 @@ repos:
     - id: double-quote-string-fixer
     - id: check-docstring-first
     - id: check-merge-conflict
-    - id: check-yaml
     - id: end-of-file-fixer
     - id: trailing-whitespace
     - id: flake8
