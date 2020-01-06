@@ -6,31 +6,276 @@ See :ref:`Configuring proplot` for details.
 # NOTE: Make sure to add to docs/configuration.rst when updating or adding
 # new settings! Much of this script was adapted from seaborn; see:
 # https://github.com/mwaskom/seaborn/blob/master/seaborn/rcmod.py
-from matplotlib import rcParams as rcParams
-from .utils import _warn_proplot, _counter, _benchmark, units
 import re
 import os
 import yaml
-import cycler
 import numpy as np
-import matplotlib.colors as mcolors
-import matplotlib.cm as mcm
-with _benchmark('pyplot'):
-    import matplotlib.pyplot as plt
+# import cycler
+# import matplotlib.colors as mcolors
+# import matplotlib.cm as mcm
+from matplotlib import style, rcParams
 try:
     import IPython
-    get_ipython = IPython.get_ipython
+    from IPython import get_ipython
 except ModuleNotFoundError:
     def get_ipython():
         return None
+from .utils import _warn_proplot, _counter, _benchmark, units
+
+# Disable mathtext "missing glyph" warnings
+import matplotlib.mathtext  # noqa
+import logging
+logger = logging.getLogger('matplotlib.mathtext')
+logger.setLevel(logging.ERROR)  # suppress warnings!
+
 __all__ = [
     'rc', 'rc_configurator', 'ipython_autosave',
     'ipython_autoreload', 'ipython_matplotlib',
 ]
 
 # Initialize
+defaultParamsShort = {
+    'abc': False,
+    'align': False,
+    'alpha': 1,
+    'autoreload': 2,
+    'autosave': 30,
+    'borders': False,
+    'cmap': 'fire',
+    'coast': False,
+    'color': 'k',
+    'cycle': 'colorblind',
+    'facecolor': 'w',
+    'fontname': 'sans-serif',
+    'inlinefmt': 'retina',
+    'geogrid': True,
+    'grid': True,
+    'gridminor': False,
+    'gridratio': 0.5,
+    'innerborders': False,
+    'lakes': False,
+    'land': False,
+    'large': 9,
+    'linewidth': 0.6,
+    'lut': 256,
+    'margin': 0.0,
+    'matplotlib': 'auto',
+    'nbsetup': True,
+    'ocean': False,
+    'reso': 'lo',
+    'rgbcycle': False,
+    'rivers': False,
+    'share': 3,
+    'small': 8,
+    'span': True,
+    'tickdir': 'out',
+    'ticklen': 4.0,
+    'ticklenratio': 0.5,
+    'tickminor': True,
+    'tickpad': 2.0,
+    'tickratio': 0.8,
+    'tight': True,
+}
+defaultParamsLong = {
+    'abc.border': True,
+    'abc.color': 'k',
+    'abc.linewidth': 1.5,
+    'abc.loc': 'l',  # left side above the axes
+    'abc.size': None,  # = large
+    'abc.style': 'a',
+    'abc.weight': 'bold',
+    'axes.facealpha': None,  # if empty, depends on 'savefig.transparent'
+    'axes.formatter.timerotation': 90,
+    'axes.formatter.zerotrim': True,
+    'axes.geogrid': True,
+    'axes.gridminor': True,
+    'borders.color': 'k',
+    'borders.linewidth': 0.6,
+    'bottomlabel.color': 'k',
+    'bottomlabel.size': None,  # = large
+    'bottomlabel.weight': 'bold',
+    'coast.color': 'k',
+    'coast.linewidth': 0.6,
+    'colorbar.extend': '1.3em',
+    'colorbar.framealpha': 0.8,
+    'colorbar.frameon': True,
+    'colorbar.grid': False,
+    'colorbar.insetextend': '1em',
+    'colorbar.insetlength': '8em',
+    'colorbar.insetpad': '0.5em',
+    'colorbar.insetwidth': '1.2em',
+    'colorbar.length': 1,
+    'colorbar.loc': 'right',
+    'colorbar.width': '1.5em',
+    'geoaxes.edgecolor': None,  # = color
+    'geoaxes.facealpha': None,  # = alpha
+    'geoaxes.facecolor': None,  # = facecolor
+    'geoaxes.linewidth': None,  # = linewidth
+    'geogrid.alpha': 0.5,
+    'geogrid.color': 'k',
+    'geogrid.labels': False,
+    'geogrid.labelsize': None,  # = small
+    'geogrid.latmax': 90,
+    'geogrid.latstep': 20,
+    'geogrid.linestyle': ':',
+    'geogrid.linewidth': 1.0,
+    'geogrid.lonstep': 30,
+    'gridminor.alpha': None,  # = grid.alpha
+    'gridminor.color': None,  # = grid.color
+    'gridminor.linestyle': None,  # = grid.linewidth
+    'gridminor.linewidth': None,  # = grid.linewidth x gridratio
+    'image.edgefix': True,
+    'image.levels': 11,
+    'innerborders.color': 'k',
+    'innerborders.linewidth': 0.6,
+    'lakes.color': 'w',
+    'land.color': 'k',
+    'leftlabel.color': 'k',
+    'leftlabel.size': None,  # = large
+    'leftlabel.weight': 'bold',
+    'ocean.color': 'w',
+    'rightlabel.color': 'k',
+    'rightlabel.size': None,  # = large
+    'rightlabel.weight': 'bold',
+    'rivers.color': 'k',
+    'rivers.linewidth': 0.6,
+    'subplots.axpad': '1em',
+    'subplots.axwidth': '18em',
+    'subplots.pad': '0.5em',
+    'subplots.panelpad': '0.5em',
+    'subplots.panelwidth': '4em',
+    'suptitle.color': 'k',
+    'suptitle.size': None,  # = large
+    'suptitle.weight': 'bold',
+    'tick.labelcolor': None,  # = color
+    'tick.labelsize': None,  # = small
+    'tick.labelweight': 'normal',
+    'title.border': True,
+    'title.color': 'k',
+    'title.linewidth': 1.5,
+    'title.loc': 'c',  # centered above the axes
+    'title.pad': 3.0,  # copy
+    'title.size': None,  # = large
+    'title.weight': 'normal',
+    'toplabel.color': 'k',
+    'toplabel.size': None,  # = large
+    'toplabel.weight': 'bold',
+}
+defaultParams = {
+    'axes.grid': True,
+    'axes.labelpad': 3.0,
+    'axes.titlepad': 3.0,
+    'axes.titleweight': 'normal',
+    'axes.xmargin': 0.0,
+    'axes.ymargin': 0.0,
+    'figure.autolayout': False,
+    'figure.dpi': 90,
+    'figure.facecolor': '#f2f2f2',
+    'figure.max_open_warning': 0,
+    'figure.titleweight': 'bold',
+    'font.serif': (
+        'New Century Schoolbook',
+        'Century Schoolbook L',
+        'Utopia',
+        'ITC Bookman',
+        'Bookman',
+        'Nimbus Roman No9 L',
+        'Times New Roman',
+        'Times',
+        'Palatino',
+        'Charter',
+        'Computer Modern Roman',
+        'DejaVu Serif',
+        'Bitstream Vera Serif',
+        'serif',
+    ),
+    'font.sans-serif': (
+        'Helvetica',
+        'Arial',
+        'Lucida Grande',
+        'Verdana',
+        'Geneva',
+        'Lucid',
+        'Avant Garde',
+        'TeX Gyre Heros',
+        'DejaVu Sans',
+        'Bitstream Vera Sans',
+        'Computer Modern Sans Serif',
+        'sans-serif',
+    ),
+    'font.monospace': (
+        'Andale Mono',
+        'Nimbus Mono L',
+        'Courier New',
+        'Courier',
+        'Fixed',
+        'Terminal',
+        'Computer Modern Typewriter',
+        'DejaVu Sans Mono',
+        'Bitstream Vera Sans Mono',
+        'monospace',
+    ),
+    'grid.alpha': 0.1,
+    'grid.color': 'k',
+    'grid.linestyle': '-',
+    'grid.linewidth': 0.6,
+    'hatch.color': 'k',
+    'hatch.linewidth': 0.6,
+    'legend.borderaxespad': 0,
+    'legend.borderpad': 0.5,
+    'legend.columnspacing': 1.0,
+    'legend.fancybox': False,
+    'legend.framealpha': 0.8,
+    'legend.frameon': True,
+    'legend.handlelength': 1.5,
+    'legend.handletextpad': 0.5,
+    'legend.labelspacing': 0.5,
+    'lines.linewidth': 1.3,
+    'lines.markersize': 3.0,
+    'mathtext.fontset': 'custom',
+    'mathtext.default': 'regular',
+    'savefig.bbox': 'standard',
+    'savefig.directory': '',
+    'savefig.dpi': 300,
+    'savefig.facecolor': 'white',
+    'savefig.format': 'pdf',
+    'savefig.pad_inches': 0.0,
+    'savefig.transparent': True,
+    'text.usetex': False,
+    'xtick.minor.visible': True,
+    'ytick.minor.visible': True,
+
+}
 rcParamsShort = {}
 rcParamsLong = {}
+
+# Initialize user file
+_rc_file = os.path.join(os.path.expanduser('~'), '.proplotrc')
+if not os.path.isfile(_rc_file):
+    def _tabulate(rcdict):
+        string = ''
+        maxlen = max(map(len, rcdict))
+        for key, value in rcdict.items():
+            value = '' if value is None else repr(value)
+            space = ' ' * (maxlen - len(key) + 1) * int(bool(value))
+            string += f'#  {key}:{space}{value}\n'
+        return string.strip()
+    with open(_rc_file, 'x') as f:
+        f.write(f"""
+#------------------------------------------------------
+# Use this file to customize settings
+# For descriptions of each key name see:
+# https://proplot.readthedocs.io/en/latest/rctools.html
+#------------------------------------------------------
+# ProPlot short name settings
+{_tabulate(defaultParamsShort)}
+#
+# ProPlot long name settings
+{_tabulate(defaultParamsLong)}
+#
+# Matplotlib settings
+{_tabulate(defaultParams)}
+""".strip())
 
 # "Global" settings and the lower-level settings they change
 # NOTE: This whole section, declaring dictionaries and sets, takes 1ms
@@ -41,27 +286,24 @@ RC_CHILDREN = {
     'lut': (
         'image.lut',
     ),
-    'alpha': (
-        'axes.alpha',
-    ),  # this is a custom setting
+    'alpha': (  # this is a custom setting
+        'axes.facealpha',
+    ),
     'facecolor': (
         'axes.facecolor', 'geoaxes.facecolor'
     ),
     'fontname': (
         'font.family',
     ),
-    # change the 'color' of an axes
-    'color': (
+    'color': (  # change the 'color' of an axes
         'axes.edgecolor', 'geoaxes.edgecolor', 'axes.labelcolor',
         'tick.labelcolor', 'hatch.color', 'xtick.color', 'ytick.color'
     ),
-    # the 'small' fonts
-    'small': (
+    'small': (  # the 'small' fonts
         'font.size', 'tick.labelsize', 'xtick.labelsize', 'ytick.labelsize',
         'axes.labelsize', 'legend.fontsize', 'geogrid.labelsize'
     ),
-    # the 'large' fonts
-    'large': (
+    'large': (  # the 'large' fonts
         'abc.size', 'figure.titlesize',
         'axes.titlesize', 'suptitle.size', 'title.size',
         'leftlabel.size', 'toplabel.size',
@@ -249,13 +491,9 @@ RC_CATEGORIES = {
 
 
 def _convert_units(key, value):
-    """Converts certain keys to the units "points". If "key" is passed, tests
-    that key against possible keys that accept physical units."""
+    """Convert certain rc keys to the units "points"."""
     # See: https://matplotlib.org/users/customizing.html, all props matching
-    # the strings use the units 'points', and special categories are inches!
-    # WARNING: Must keep colorbar and subplots units alive, so when user
-    # requests em units, values change with respect to font size. The points
-    # thing is a conveniene feature so not as important for them.
+    # the below strings use the units 'points', except custom categories!
     if (isinstance(value, str)
             and key.split('.')[0] not in ('colorbar', 'subplots')
             and re.match('^.*(width|space|size|pad|len|small|large)$', key)):
@@ -263,38 +501,10 @@ def _convert_units(key, value):
     return value
 
 
-def _set_cycler(name):
-    """Sets the default color cycler."""
-    # Draw from dictionary
-    try:
-        colors = mcm.cmap_d[name].colors
-    except (KeyError, AttributeError):
-        cycles = sorted(name for name, cmap in mcm.cmap_d.items()
-                        if isinstance(cmap, mcolors.ListedColormap))
-        raise ValueError(
-            f'Invalid cycle name {name!r}. Options are: {", ".join(cycles)}')
-    # Apply color name definitions
-    if rcParamsShort['rgbcycle'] and name.lower() == 'colorblind':
-        regcolors = colors + [(0.1, 0.1, 0.1)]
-    elif mcolors.to_rgb('r') != (1.0, 0.0, 0.0):  # reset
-        regcolors = [
-            (0.0, 0.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0),
-            (0.75, 0.75, 0.0), (0.75, 0.75, 0.0), (0.0, 0.75, 0.75),
-            (0.0, 0.0, 0.0)]
-    else:
-        regcolors = []  # no reset necessary
-    for code, color in zip('brgmyck', regcolors):
-        rgb = mcolors.to_rgb(color)
-        mcolors.colorConverter.colors[code] = rgb
-        mcolors.colorConverter.cache[code] = rgb
-    # Pass to cycle constructor
-    rcParams['patch.facecolor'] = colors[0]
-    rcParams['axes.prop_cycle'] = cycler.cycler('color', colors)
-
-
 def _get_config_paths():
-    """Return configuration file paths in reverse order of precedence."""
-    # Get paths
+    """Return a list of configuration file paths in reverse order of
+    precedence."""
+    # Local configuration
     idir = os.getcwd()
     paths = []
     while idir:  # not empty string
@@ -310,11 +520,6 @@ def _get_config_paths():
     ipath = os.path.join(os.path.expanduser('~'), '.proplotrc')
     if os.path.exists(ipath) and ipath not in paths:
         paths.insert(0, ipath)
-    # Global configuration
-    ipath = os.path.join(os.path.dirname(__file__), '.proplotrc')
-    if ipath in paths:
-        paths.remove(ipath)
-    paths.insert(0, ipath)
     return paths
 
 
@@ -388,78 +593,35 @@ class rc_configurator(object):
                 RC_PARAMNAMES or key in RC_NODOTSNAMES)  # biggest lists last
 
     @_counter  # about 0.05s
-    def __init__(self):
-        """Magical abstract class for managing matplotlib `rcParams \
-<https://matplotlib.org/users/customizing.html>`__
-        settings, ProPlot :ref:`rcParamsLong` settings, and
-        :ref:`rcParamsShort` "global" settings. This starts with the
-        default settings plus user ``.proplotrc`` overrides.
-        See :ref:`Configuring proplot` for details."""
-        # Set the default style. Note that after first figure made, backend
-        # is 'sticky', never changes! See:
-        # https://stackoverflow.com/a/48322150/4970632
-        plt.style.use('default')
+    def __init__(self, local=True):
+        """
+        Parameters
+        ----------
+        local : bool, optional
+            Whether to load overrides from local and user ``.proplotrc``
+            file(s). Default is ``True``.
+        """
+        # Attributes and style
+        object.__setattr__(self, '_context', [])
+        with _benchmark('  use'):
+            style.use('default')
 
-        # Prefer more widely used fonts
-        # NOTE: Without 'mathtext.fontset' = 'custom', 'fallback_to_cm' is
-        # always carried out! The default 'mathtext.fontset' = 'dejavusans'
-        # creates a DejaVuFonts class which is evidently a misnomer, *always*
-        # falls back to CM and tries to use *active* font rather than DejaVu.
-        # NOTE: This will be put in rcParamsDefaults dictionary when #50
-        # is merged! For now do not add to .proplotrc.
-        import matplotlib.mathtext as _  # noqa
-        import logging
-        logger = logging.getLogger('matplotlib.mathtext')
-        logger.setLevel(logging.ERROR)  # suppress warnings!
-        rcParams['mathtext.fontset'] = 'custom'
-        rcParams['mathtext.default'] = 'regular'
-        rcParams['text.usetex'] = False
-        rcParams['font.serif'] = (
-            'New Century Schoolbook',
-            'Century Schoolbook L',
-            'Utopia',
-            'ITC Bookman',
-            'Bookman',
-            'Nimbus Roman No9 L',
-            'Times New Roman',
-            'Times',
-            'Palatino',
-            'Charter'
-            'Computer Modern Roman',
-            'DejaVu Serif',
-            'Bitstream Vera Serif',
-            'serif',
-        )
-        rcParams['font.sans-serif'] = (
-            'Helvetica',
-            'Arial',
-            'Lucida Grande',
-            'Verdana',
-            'Geneva',
-            'Lucid',
-            'Avant Garde',
-            'TeX Gyre Heros',
-            'DejaVu Sans',
-            'Bitstream Vera Sans',
-            'Computer Modern Sans Serif',
-            'sans-serif'
-        )
-        rcParams['font.monospace'] = (
-            'Andale Mono',
-            'Nimbus Mono L',
-            'Courier New',
-            'Courier',
-            'Fixed',
-            'Terminal',
-            'Computer Modern Typewriter',
-            'DejaVu Sans Mono',
-            'Bitstream Vera Sans Mono',
-            'monospace'
-        )
+        # Update from defaults
+        rcParams.update(defaultParams)
+        rcParamsLong.clear()
+        rcParamsLong.update(defaultParamsLong)
+        rcParamsShort.clear()
+        rcParamsShort.update(defaultParamsShort)
+        for rcdict in (rcParamsShort, rcParamsLong):
+            for key, value in rcdict.items():
+                _, rc_long, rc = _get_synced_params(key, value)
+                rcParamsLong.update(rc_long)
+                rcParams.update(rc)
 
-        # Load the defaults from file
+        # Update from files
+        if not local:
+            return
         for i, file in enumerate(_get_config_paths()):
-            # Load
             if not os.path.exists(file):
                 continue
             with open(file) as f:
