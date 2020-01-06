@@ -66,32 +66,34 @@ def Locator(locator, *args, **kwargs):
 
         If string, a dictionary lookup is performed (see below table).
 
-        ======================  ============================================  =========================================================================================
-        Key                     Class                                         Description
-        ======================  ============================================  =========================================================================================
-        ``'null'``, ``'none'``  `~matplotlib.ticker.NullLocator`              No ticks
-        ``'auto'``              `~matplotlib.ticker.AutoLocator`              Major ticks at sensible locations
-        ``'minor'``             `~matplotlib.ticker.AutoMinorLocator`         Minor ticks at sensible locations
-        ``'date'``              `~matplotlib.dates.AutoDateLocator`           Default tick locations for datetime axes
-        ``'log'``               `~matplotlib.ticker.LogLocator` preset        For log-scale axes, ticks on each power of the base
-        ``'logminor'``          `~matplotlib.ticker.LogLocator` preset        For log-scale axes, ticks on the 1st through 9th multiples of each power of the base
-        ``'maxn'``              `~matplotlib.ticker.MaxNLocator`              No more than ``N`` ticks at sensible locations
-        ``'linear'``            `~matplotlib.ticker.LinearLocator`            Exactly ``N`` ticks encompassing the axis limits, spaced as ``numpy.linspace(lo, hi, N)``
-        ``'multiple'``          `~matplotlib.ticker.MultipleLocator`          Ticks every ``N`` step away from zero
-        ``'fixed'``             `~matplotlib.ticker.FixedLocator`             Ticks at these exact locations
-        ``'index'``             `~matplotlib.ticker.IndexLocator`             Ticks on the non-negative integers
-        ``'symlog'``            `~matplotlib.ticker.SymmetricalLogLocator`    Ticks for symmetrical log-scale axes
-        ``'logit'``             `~matplotlib.ticker.LogitLocator`             Ticks for logit-scale axes
-        ``'theta'``             `~matplotlib.projections.polar.ThetaLocator`  Like the base locator but default locations are every `numpy.pi`/8 radians
-        ``'year'``              `~matplotlib.dates.YearLocator`               Ticks every ``N`` years
-        ``'month'``             `~matplotlib.dates.MonthLocator`              Ticks every ``N`` months
-        ``'weekday'``           `~matplotlib.dates.WeekdayLocator`            Ticks every ``N`` weekdays
-        ``'day'``               `~matplotlib.dates.DayLocator`                Ticks every ``N`` days
-        ``'hour'``              `~matplotlib.dates.HourLocator`               Ticks every ``N`` hours
-        ``'minute'``            `~matplotlib.dates.MinuteLocator`             Ticks every ``N`` minutes
-        ``'second'``            `~matplotlib.dates.SecondLocator`             Ticks every ``N`` seconds
-        ``'microsecond'``       `~matplotlib.dates.MicrosecondLocator`        Ticks every ``N`` microseconds
-        ======================  ============================================  =========================================================================================
+        ======================  =================================================  ================================================================================================
+        Key                     Class                                              Description
+        ======================  =================================================  ================================================================================================
+        ``'null'``, ``'none'``  `~matplotlib.ticker.NullLocator`                   No ticks
+        ``'auto'``              `~matplotlib.ticker.AutoLocator`                   Major ticks at sensible locations
+        ``'minor'``             `~matplotlib.ticker.AutoMinorLocator`              Minor ticks at sensible locations
+        ``'date'``              `~matplotlib.dates.AutoDateLocator`                Default tick locations for datetime axes
+        ``'fixed'``             `~matplotlib.ticker.FixedLocator`                  Ticks at these exact locations
+        ``'index'``             `~matplotlib.ticker.IndexLocator`                  Ticks on the non-negative integers
+        ``'linear'``            `~matplotlib.ticker.LinearLocator`                 Exactly ``N`` ticks encompassing the axis limits, spaced as ``numpy.linspace(lo, hi, N)``
+        ``'log'``               `~matplotlib.ticker.LogLocator`                    Ticks for log-scale axes
+        ``'logminor'``          `~matplotlib.ticker.LogLocator` preset             Ticks for log-scale axes on the 1st through 9th multiples of each power of the base
+        ``'logit'``             `~matplotlib.ticker.LogitLocator`                  Ticks for logit-scale axes
+        ``'logitminor'``        `~matplotlib.ticker.LogitLocator` preset           Ticks for logit-scale axes with ``minor=True`` passed to `~matplotlib.ticker.LogitLocator`
+        ``'maxn'``              `~matplotlib.ticker.MaxNLocator`                   No more than ``N`` ticks at sensible locations
+        ``'multiple'``          `~matplotlib.ticker.MultipleLocator`               Ticks every ``N`` step away from zero
+        ``'symlog'``            `~matplotlib.ticker.SymmetricalLogLocator`         Ticks for symmetrical log-scale axes
+        ``'symlogminor'``       `~matplotlib.ticker.SymmetricalLogLocator` preset  Ticks for symmetrical log-scale axes on the 1st through 9th multiples of each power of the base
+        ``'theta'``             `~matplotlib.projections.polar.ThetaLocator`       Like the base locator but default locations are every `numpy.pi`/8 radians
+        ``'year'``              `~matplotlib.dates.YearLocator`                    Ticks every ``N`` years
+        ``'month'``             `~matplotlib.dates.MonthLocator`                   Ticks every ``N`` months
+        ``'weekday'``           `~matplotlib.dates.WeekdayLocator`                 Ticks every ``N`` weekdays
+        ``'day'``               `~matplotlib.dates.DayLocator`                     Ticks every ``N`` days
+        ``'hour'``              `~matplotlib.dates.HourLocator`                    Ticks every ``N`` hours
+        ``'minute'``            `~matplotlib.dates.MinuteLocator`                  Ticks every ``N`` minutes
+        ``'second'``            `~matplotlib.dates.SecondLocator`                  Ticks every ``N`` seconds
+        ``'microsecond'``       `~matplotlib.dates.MicrosecondLocator`             Ticks every ``N`` microseconds
+        ======================  =================================================  ================================================================================================
 
     *args, **kwargs
         Passed to the `~matplotlib.ticker.Locator` class.
@@ -179,26 +181,26 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
         ``'simple'``            `SimpleFormatter`                               New default tick labels for e.g. contour labels
         ``'frac'``              `FracFormatter`                                 Rational fractions
         ``'date'``              `~matplotlib.dates.AutoDateFormatter`           Default tick labels for datetime axes
-        ``'datestr'``           `~matplotlib.dates.DateFormatter`               Date formatting with C-style ``string % format`` notation
         ``'concise'``           `~matplotlib.dates.ConciseDateFormatter`        More concise date labels introduced in `matplotlib 3.1 <https://matplotlib.org/3.1.0/users/whats_new.html#concisedateformatter>`__
+        ``'datestr'``           `~matplotlib.dates.DateFormatter`               Date formatting with C-style ``string % format`` notation
+        ``'eng'``               `~matplotlib.ticker.EngFormatter`               Engineering notation
+        ``'fixed'``             `~matplotlib.ticker.FixedFormatter`             List of strings
+        ``'formatstr'``         `~matplotlib.ticker.FormatStrFormatter`         From C-style ``string % format`` notation
+        ``'index'``             `~matplotlib.ticker.IndexFormatter`             List of strings corresponding to non-negative integer positions along the axis
+        ``'log'``, ``'sci'``    `~matplotlib.ticker.LogFormatterSciNotation`    For log-scale axes with scientific notation
+        ``'logit'``             `~matplotlib.ticker.LogitFormatter`             For logistic-scale axes
+        ``'math'``              `~matplotlib.ticker.LogFormatterMathtext`       For log-scale axes with math text
+        ``'percent'``           `~matplotlib.ticker.PercentFormatter`           Trailing percent sign
         ``'scalar'``            `~matplotlib.ticker.ScalarFormatter`            Old default tick labels for axes
         ``'strmethod'``         `~matplotlib.ticker.StrMethodFormatter`         From the ``string.format`` method
-        ``'formatstr'``         `~matplotlib.ticker.FormatStrFormatter`         From C-style ``string % format`` notation
-        ``'log'``, ``'sci'``    `~matplotlib.ticker.LogFormatterSciNotation`    For log-scale axes with scientific notation
-        ``'math'``              `~matplotlib.ticker.LogFormatterMathtext`       For log-scale axes with math text
-        ``'logit'``             `~matplotlib.ticker.LogitFormatter`             For logistic-scale axes
-        ``'eng'``               `~matplotlib.ticker.EngFormatter`               Engineering notation
-        ``'percent'``           `~matplotlib.ticker.PercentFormatter`           Trailing percent sign
-        ``'fixed'``             `~matplotlib.ticker.FixedFormatter`             List of strings
-        ``'index'``             `~matplotlib.ticker.IndexFormatter`             List of strings corresponding to non-negative integer positions along the axis
         ``'theta'``             `~matplotlib.projections.polar.ThetaFormatter`  Formats radians as degrees, with a degree symbol
-        ``'pi'``                `FracFormatter` preset                          Fractions of :math:`\\pi`
         ``'e'``                 `FracFormatter` preset                          Fractions of *e*
+        ``'pi'``                `FracFormatter` preset                          Fractions of :math:`\\pi`
         ``'deg'``               `AutoFormatter` preset                          Trailing degree symbol
-        ``'deglon'``            `AutoFormatter` preset                          Trailing degree symbol and cardinal "WE" indicator
         ``'deglat'``            `AutoFormatter` preset                          Trailing degree symbol and cardinal "SN" indicator
-        ``'lon'``               `AutoFormatter` preset                          Cardinal "WE" indicator
+        ``'deglon'``            `AutoFormatter` preset                          Trailing degree symbol and cardinal "WE" indicator
         ``'lat'``               `AutoFormatter` preset                          Cardinal "SN" indicator
+        ``'lon'``               `AutoFormatter` preset                          Cardinal "WE" indicator
         ======================  ==============================================  ===================================================================================================================================
 
     date : bool, optional
@@ -290,30 +292,30 @@ def Scale(scale, *args, **kwargs):
         first element, the subsequent items are passed to the scale class as
         positional arguments.
 
-        =================  ===============================  =======================================================================
-        Key                Class                            Description
-        =================  ===============================  =======================================================================
-        ``'linear'``       `~matplotlib.scale.LinearScale`  Linear
-        ``'log'``          `LogScale`                       Logarithmic
-        ``'symlog'``       `SymmetricalLogScale`            Logarithmic beyond finite space around zero
-        ``'logit'``        `~matplotlib.scale.LogitScale`   Logistic
-        ``'inverse'``      `InverseScale`                   Inverse
-        ``'function'``     `FuncScale`                      Scale from arbitrary forward and backwards functions
-        ``'sine'``         `SineLatitudeScale`              Sine function (in degrees)
-        ``'mercator'``     `MercatorLatitudeScale`          Mercator latitude function (in degrees)
-        ``'exp'``          `ExpScale`                       Arbitrary exponential function
-        ``'power'``        `PowerScale`                     Arbitrary power function
-        ``'cutoff'``       `CutoffScale`                    Arbitrary piecewise linear transformations
-        ``'quadratic'``    `PowerScale` (preset)            Quadratic function
-        ``'cubic'``        `PowerScale` (preset)            Cubic function
-        ``'quartic'``      `PowerScale` (preset)            Cubic function
-        ``'pressure'``     `ExpScale` (preset)              Height (in km) expressed linear in pressure
-        ``'height'``       `ExpScale` (preset)              Pressure (in hPa) expressed linear in height
-        ``'db'``           `ExpScale` (preset)              Ratio expressed as `decibels <https://en.wikipedia.org/wiki/Decibel>`__
-        ``'np'``           `ExpScale` (preset)              Ratio expressed as `nepers <https://en.wikipedia.org/wiki/Neper>`__
-        ``'idb'``          `ExpScale` (preset)              `Decibels <https://en.wikipedia.org/wiki/Decibel>`__ expressed as ratio
-        ``'inp'``          `ExpScale` (preset)              `Nepers <https://en.wikipedia.org/wiki/Neper>`__ expressed as ratio
-        =================  ===============================  =======================================================================
+        =================  =======================  =======================================================================
+        Key                Class                    Description
+        =================  =======================  =======================================================================
+        ``'linear'``       `LinearScale`            Linear
+        ``'log'``          `LogScale`               Logarithmic
+        ``'symlog'``       `SymmetricalLogScale`    Logarithmic beyond finite space around zero
+        ``'logit'``        `LogitScale`             Logistic
+        ``'inverse'``      `InverseScale`           Inverse
+        ``'function'``     `FuncScale`              Scale from arbitrary forward and backwards functions
+        ``'sine'``         `SineLatitudeScale`      Sine function (in degrees)
+        ``'mercator'``     `MercatorLatitudeScale`  Mercator latitude function (in degrees)
+        ``'exp'``          `ExpScale`               Arbitrary exponential function
+        ``'power'``        `PowerScale`             Arbitrary power function
+        ``'cutoff'``       `CutoffScale`            Arbitrary piecewise linear transformations
+        ``'quadratic'``    `PowerScale` (preset)    Quadratic function
+        ``'cubic'``        `PowerScale` (preset)    Cubic function
+        ``'quartic'``      `PowerScale` (preset)    Cubic function
+        ``'db'``           `ExpScale` (preset)      Ratio expressed as `decibels <https://en.wikipedia.org/wiki/Decibel>`__
+        ``'np'``           `ExpScale` (preset)      Ratio expressed as `nepers <https://en.wikipedia.org/wiki/Neper>`__
+        ``'idb'``          `ExpScale` (preset)      `Decibels <https://en.wikipedia.org/wiki/Decibel>`__ expressed as ratio
+        ``'inp'``          `ExpScale` (preset)      `Nepers <https://en.wikipedia.org/wiki/Neper>`__ expressed as ratio
+        ``'pressure'``     `ExpScale` (preset)      Height (in km) expressed linear in pressure
+        ``'height'``       `ExpScale` (preset)      Pressure (in hPa) expressed linear in height
+        =================  =======================  =======================================================================
 
     *args, **kwargs
         Passed to the `~matplotlib.scale.ScaleBase` class.
