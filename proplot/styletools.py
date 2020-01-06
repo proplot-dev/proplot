@@ -3061,24 +3061,50 @@ def register_fonts():
     #   https://www.cufonfonts.com
     # WARNING: If you include a font file with an unrecognized style,
     # matplotlib may use that font instead of the 'normal' one! Valid styles:
-#   'ultralight', 'light', 'normal', 'regular', 'book', 'medium', 'roman',
-#   'semibold', 'demibold', 'demi', 'bold', 'heavy', 'extra bold', 'black'
-#   https://matplotlib.org/api/font_manager_api.html
-    paths = ':'.join(_get_data_paths('fonts'))
+    # 'ultralight', 'light', 'normal', 'regular', 'book', 'medium', 'roman',
+    # 'semibold', 'demibold', 'demi', 'bold', 'heavy', 'extra bold', 'black'
+    # https://matplotlib.org/api/font_manager_api.html
+    # For macOS the only fonts with 'Thin' in one of the .ttf file names
+    # are Helvetica Neue and .SF NS Display Condensed. Never try to use these!
+    paths = ':'.join(_get_data_paths('fonts')[::-1])  # user paths come first
     if 'TTFPATH' not in os.environ:
         os.environ['TTFPATH'] = paths
     elif paths not in os.environ['TTFPATH']:
         os.environ['TTFPATH'] += (':' + paths)
 
-    # Load font manager and rebuild only if necessary!
-    # Font cache rebuild can be >50% of total import time, ~1s!!!
+    # Detect user-input .ttc fonts
     import matplotlib.font_manager as mfonts
-    files_loaded = {font.fname for font in mfonts.fontManager.ttflist}
-    files_ttfpath = {*mfonts.findSystemFonts(paths.split(':'))}
-    if not (files_ttfpath <= files_loaded):
-        mfonts._rebuild()
+    fnames_proplot = {*mfonts.findSystemFonts(paths.split(':'))}
+    fnames_proplot_ttc = {
+        file for file in fnames_proplot if os.path.splitext(file)[1] == '.ttc'
+    }
+    if fnames_proplot_ttc:
+        _warn_proplot(
+            'Ignoring the following .ttc fonts because they cannot be '
+            'saved into PDF or EPS files (see matplotlib issue #3135): '
+            + ', '.join(map(repr, sorted(fnames_proplot_ttc)))
+            + '. Please consider expanding them into separate .ttf files.'
+        )
 
-    # Populate font lists
+    # Rebuild font cache only if necessary! Can be >50% of total import time!
+    fnames_all = {font.fname for font in mfonts.fontManager.ttflist}
+    fnames_proplot -= fnames_proplot_ttc
+    if not fnames_all >= fnames_proplot:
+        if hasattr(mfonts.fontManager, 'addfont'):
+            for fname in fnames_proplot:
+                mfonts.fontManager.addfont(fname)
+            mfonts.json_dump(mfonts.fontManager, mfonts._fmcache)
+        else:
+            _warn_proplot('Rebuilding font manager.')
+            mfonts._rebuild()
+
+    # Remove ttc files *after* rebuild
+    mfonts.fontManager.ttflist = [
+        font for font in mfonts.fontManager.ttflist
+        if os.path.splitext(font.fname)[1] != '.ttc'
+    ]
+
+    # Populate font name lists, with proplot fonts *first*
     fonts_proplot = sorted({
         font.name for font in mfonts.fontManager.ttflist
         if any(path in font.fname for path in paths.split(':'))
