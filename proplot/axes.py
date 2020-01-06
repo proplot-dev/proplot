@@ -979,7 +979,7 @@ optional
                     height_ratios=((1 - length) / 2, length, (1 - length) / 2),
                 )
                 subplotspec = gridspec[1]
-            with self.figure._unlock():
+            with self.figure._authorize_add_subplot():
                 ax = self.figure.add_subplot(subplotspec, projection=None)
             if ax is self:
                 raise ValueError(f'Uh oh.')
@@ -2537,7 +2537,7 @@ class XYAxes(Axes):
         # See https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_subplots.py  # noqa
         if self._altx_child or self._altx_parent:
             raise RuntimeError('No more than *two* twin axes are allowed.')
-        with self.figure._unlock():
+        with self.figure._authorize_add_subplot():
             ax = self._make_twin_axes(sharey=self, projection='xy')
         ax.set_autoscaley_on(self.get_autoscaley_on())
         ax.grid(False)
@@ -2552,7 +2552,7 @@ class XYAxes(Axes):
     def alty(self):
         if self._alty_child or self._alty_parent:
             raise RuntimeError('No more than *two* twin axes are allowed.')
-        with self.figure._unlock():
+        with self.figure._authorize_add_subplot():
             ax = self._make_twin_axes(sharex=self, projection='xy')
         ax.set_autoscalex_on(self.get_autoscalex_on())
         ax.grid(False)

@@ -14,7 +14,7 @@ import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
 import matplotlib.gridspec as mgridspec
 from .rctools import rc
-from .utils import _warn_proplot, _notNone, _counter, units
+from .utils import _warn_proplot, _notNone, _counter, _setstate, units
 from . import projs, axes
 __all__ = [
     'subplot_grid', 'close', 'show', 'subplots', 'Figure',
@@ -726,19 +726,6 @@ class _hidelabels(object):
             label.set_visible(True)
 
 
-class _unlocker(object):
-    """Suppress warning message when adding subplots, and cleanly reset
-    lock setting if exception raised."""
-    def __init__(self, fig):
-        self._fig = fig
-
-    def __enter__(self):
-        self._fig._locked = False
-
-    def __exit__(self, *args):
-        self._fig._locked = True
-
-
 class Figure(mfigure.Figure):
     """The `~matplotlib.figure.Figure` class returned by `subplots`. At
     draw-time, an improved tight layout algorithm is employed, and
@@ -816,8 +803,10 @@ class Figure(mfigure.Figure):
                 f'contrained_layout={constrained_layout}. ProPlot uses its '
                 'own tight layout algorithm, activated by default or with '
                 'tight=True.')
+        self._authorized_add_subplot = False
+        self._is_preprocessing = False
+        self._is_resizing = False
         super().__init__(**kwargs)
-        self._locked = False
         self._pad = units(_notNone(pad, rc['subplots.pad']))
         self._axpad = units(_notNone(axpad, rc['subplots.axpad']))
         self._panelpad = units(_notNone(panelpad, rc['subplots.panelpad']))
@@ -880,7 +869,7 @@ class Figure(mfigure.Figure):
                 idx2 += 1
 
         # Draw and setup panel
-        with self._unlock():
+        with self._authorize_add_subplot():
             pax = self.add_subplot(
                 gridspec[idx1, idx2],
                 sharex=ax._sharex_level, sharey=ax._sharey_level,
@@ -989,7 +978,7 @@ class Figure(mfigure.Figure):
             side, iratio, width, space, space_orig, figure=True)
 
         # Draw and setup panel
-        with self._unlock():
+        with self._authorize_add_subplot():
             pax = self.add_subplot(gridspec[idx1, idx2],
                                    projection='xy')
         getattr(self, '_' + s + 'panels').append(pax)
@@ -1286,6 +1275,86 @@ class Figure(mfigure.Figure):
                   'transform': self.transFigure}
             suptitle.update(kw)
 
+    def _authorize_add_subplot(self):
+        """Prevent warning message when adding subplots one-by-one. Used
+        internally."""
+        return _setstate(self, _authorized_add_subplot=True)
+
+    def _context_resizing(self):
+        """Ensure backend calls to `~matplotlib.figure.Figure.set_size_inches`
+        during pre-processing are not interpreted as *manual* resizing."""
+        return _setstate(self, _is_resizing=True)
+
+    def _context_preprocessing(self):
+        """Prevent re-running pre-processing steps due to draws triggered
+        by figure resizes during pre-processing."""
+        return _setstate(self, _is_preprocessing=True)
+
+    def _get_align_coord(self, side, axs):
+        """Returns figure coordinate for spanning labels and super title. The
+        `x` can be ``'x'`` or ``'y'``."""
+        # Get position in figure relative coordinates
+        s = side[0]
+        x = ('y' if s in 'lr' else 'x')
+        extra = ('tb' if s in 'lr' else 'lr')
+        if self._include_panels:
+            axs = [iax for ax in axs for iax in ax._iter_panels(extra)]
+        ranges = np.array([ax._range_gridspec(x) for ax in axs])
+        min_, max_ = ranges[:, 0].min(), ranges[:, 1].max()
+        axlo = axs[np.where(ranges[:, 0] == min_)[0][0]]
+        axhi = axs[np.where(ranges[:, 1] == max_)[0][0]]
+        lobox = axlo.get_subplotspec().get_position(self)
+        hibox = axhi.get_subplotspec().get_position(self)
+        if x == 'x':
+            pos = (lobox.x0 + hibox.x1) / 2
+        else:
+            # 'lo' is actually on top, highest up in gridspec
+            pos = (lobox.y1 + hibox.y0) / 2
+        # Return axis suitable for spanning position
+        spanax = axs[(np.argmin(ranges[:, 0]) + np.argmax(ranges[:, 1])) // 2]
+        spanax = spanax._panel_parent or spanax
+        return pos, spanax
+
+    def _get_align_axes(self, side):
+        """Returns main axes along the left, right, bottom, or top sides
+        of the figure."""
+        # Initial stuff
+        s = side[0]
+        idx = (0 if s in 'lt' else 1)
+        if s in 'lr':
+            x, y = 'x', 'y'
+        else:
+            x, y = 'y', 'x'
+        # Get edge index
+        axs = self._axes_main
+        if not axs:
+            return []
+        ranges = np.array([ax._range_gridspec(x) for ax in axs])
+        min_, max_ = ranges[:, 0].min(), ranges[:, 1].max()
+        edge = (min_ if s in 'lt' else max_)
+        # Return axes on edge sorted by order of appearance
+        axs = [ax for ax in self._axes_main if ax._range_gridspec(x)[
+            idx] == edge]
+        ranges = [ax._range_gridspec(y)[0] for ax in axs]
+        return [ax for _, ax in sorted(zip(ranges, axs)) if ax.get_visible()]
+
+    def _get_renderer(self):
+        """Get a renderer at all costs, even if it means generating a brand
+        new one! Used for updating the figure bounding box when it is accessed
+        and calculating centered-row legend bounding boxes. This is copied
+        from tight_layout.py in matplotlib."""
+        if self._cachedRenderer:
+            renderer = self._cachedRenderer
+        else:
+            canvas = self.canvas
+            if canvas and hasattr(canvas, 'get_renderer'):
+                renderer = canvas.get_renderer()
+            else:
+                from matplotlib.backends.backend_agg import FigureCanvasAgg
+                canvas = FigureCanvasAgg(self)
+                renderer = canvas.get_renderer()
+        return renderer
+
     def _insert_row_column(
             self, side, idx,
             ratio, space, space_orig, figure=False):
@@ -1388,76 +1457,6 @@ class Figure(mfigure.Figure):
 
         return gridspec
 
-    def _get_align_coord(self, side, axs):
-        """Returns figure coordinate for spanning labels and super title. The
-        `x` can be ``'x'`` or ``'y'``."""
-        # Get position in figure relative coordinates
-        s = side[0]
-        x = ('y' if s in 'lr' else 'x')
-        extra = ('tb' if s in 'lr' else 'lr')
-        if self._include_panels:
-            axs = [iax for ax in axs for iax in ax._iter_panels(extra)]
-        ranges = np.array([ax._range_gridspec(x) for ax in axs])
-        min_, max_ = ranges[:, 0].min(), ranges[:, 1].max()
-        axlo = axs[np.where(ranges[:, 0] == min_)[0][0]]
-        axhi = axs[np.where(ranges[:, 1] == max_)[0][0]]
-        lobox = axlo.get_subplotspec().get_position(self)
-        hibox = axhi.get_subplotspec().get_position(self)
-        if x == 'x':
-            pos = (lobox.x0 + hibox.x1) / 2
-        else:
-            # 'lo' is actually on top, highest up in gridspec
-            pos = (lobox.y1 + hibox.y0) / 2
-        # Return axis suitable for spanning position
-        spanax = axs[(np.argmin(ranges[:, 0]) + np.argmax(ranges[:, 1])) // 2]
-        spanax = spanax._panel_parent or spanax
-        return pos, spanax
-
-    def _get_align_axes(self, side):
-        """Returns main axes along the left, right, bottom, or top sides
-        of the figure."""
-        # Initial stuff
-        s = side[0]
-        idx = (0 if s in 'lt' else 1)
-        if s in 'lr':
-            x, y = 'x', 'y'
-        else:
-            x, y = 'y', 'x'
-        # Get edge index
-        axs = self._axes_main
-        if not axs:
-            return []
-        ranges = np.array([ax._range_gridspec(x) for ax in axs])
-        min_, max_ = ranges[:, 0].min(), ranges[:, 1].max()
-        edge = (min_ if s in 'lt' else max_)
-        # Return axes on edge sorted by order of appearance
-        axs = [ax for ax in self._axes_main if ax._range_gridspec(x)[
-            idx] == edge]
-        ranges = [ax._range_gridspec(y)[0] for ax in axs]
-        return [ax for _, ax in sorted(zip(ranges, axs)) if ax.get_visible()]
-
-    def _get_renderer(self):
-        """Get a renderer at all costs, even if it means generating a brand
-        new one! Used for updating the figure bounding box when it is accessed
-        and calculating centered-row legend bounding boxes. This is copied
-        from tight_layout.py in matplotlib."""
-        if self._cachedRenderer:
-            renderer = self._cachedRenderer
-        else:
-            canvas = self.canvas
-            if canvas and hasattr(canvas, 'get_renderer'):
-                renderer = canvas.get_renderer()
-            else:
-                from matplotlib.backends.backend_agg import FigureCanvasAgg
-                canvas = FigureCanvasAgg(self)
-                renderer = canvas.get_renderer()
-        return renderer
-
-    def _unlock(self):
-        """Prevent warning message when adding subplots one-by-one. Used
-        internally."""
-        return _unlocker(self)
-
     def _update_figtitle(self, title, **kwargs):
         """Assign figure "super title"."""
         if title is not None and self._suptitle.get_text() != title:
@@ -1493,10 +1492,11 @@ class Figure(mfigure.Figure):
     def add_subplot(self, *args, **kwargs):
         """Issues warning for new users that try to call
         `~matplotlib.figure.Figure.add_subplot` manually."""
-        if self._locked:
+        if not self._authorized_add_subplot:
             _warn_proplot(
                 'Using "fig.add_subplot()" with ProPlot figures may result in '
-                'unexpected behavior. Use "proplot.subplots()" instead.')
+                'unexpected behavior. Please use "proplot.subplots()" instead.'
+            )
         ax = super().add_subplot(*args, **kwargs)
         return ax
 
@@ -2138,7 +2138,7 @@ def subplots(
         y0, y1 = yrange[idx, 0], yrange[idx, 1]
         # Draw subplot
         subplotspec = gridspec[y0:y1 + 1, x0:x1 + 1]
-        with fig._unlock():
+        with fig._authorize_add_subplot():
             axs[idx] = fig.add_subplot(
                 subplotspec, number=num,
                 spanx=spanx, spany=spany, alignx=alignx, aligny=aligny,
