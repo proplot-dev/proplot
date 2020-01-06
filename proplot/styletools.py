@@ -250,15 +250,18 @@ COLORS_BASE = {
 # NOTE: Add to this as needed!
 FONTS_SANS = [
     'Arial',
+    'Avant Garde',
     'Avenir',
     'Bitstream Vera',  # matplotlib
+    'Computer Modern Sans Serif',
     'DejaVu Sans',  # matplotlib
     'Frutiger',
     'Futura',
+    'Geneva',
     'Gill Sans',
-    'Helvetica Neue',
     'Helvetica',
     'Lucida Grande',
+    'Lucid',
     'Myriad Pro',
     'Optima',
     'Tahoma',
@@ -2716,17 +2719,14 @@ class MidpointNorm(mcolors.Normalize):
 
 
 def _get_data_paths(dirname):
-    """Returns configuration file paths."""
-    # Home configuration
-    paths = []
-    ipath = os.path.join(os.path.expanduser('~'), '.proplot', dirname)
-    if os.path.exists(ipath) and ipath not in paths:
-        paths.insert(0, ipath)
-    # Global configuration
-    ipath = os.path.join(os.path.dirname(__file__), dirname)
-    if ipath not in paths:
-        paths.insert(0, ipath)
-    return paths
+    """Return data folder paths in reverse order of precedence."""
+    # When loading colormaps, cycles, and colors, files in the latter
+    # directories overwrite files in the former directories. When loading
+    # fonts, the resulting paths need to be *reversed*.
+    return [
+        os.path.join(os.path.dirname(__file__), dirname),
+        os.path.join(os.path.expanduser('~'), '.proplot', dirname)
+    ]
 
 
 def _load_cmap_cycle(filename, cmap=False):
@@ -2988,9 +2988,15 @@ def register_colors(nmax=np.inf):
     seen = {*base}  # never overwrite base names, e.g. 'blue' and 'b'!
     hcls = []
     data = []
-    for path in _get_data_paths('colors'):
-        # prefer xkcd
-        for file in sorted(glob.glob(os.path.join(path, '*.txt')))[::-1]:
+    for i, path in enumerate(_get_data_paths('colors')):
+        if i == 0:
+            paths = [  # be explicit because categories matter!
+                os.path.join(path, base)
+                for base in ('xkcd.txt', 'crayola.txt', 'open.txt')
+            ]
+        else:
+            paths = sorted(glob.glob(os.path.join(path, '*.txt')))
+        for file in paths:
             cat, _ = os.path.splitext(os.path.basename(file))
             with open(file, 'r') as f:
                 pairs = [tuple(item.strip() for item in line.split(':'))
@@ -3000,14 +3006,14 @@ def register_colors(nmax=np.inf):
                     f'Invalid color names file {file!r}. '
                     f'Every line must be formatted as "name: color".')
 
-            # Add all open colors
-            if cat == 'open':
+            # Categories for which we add *all* colors
+            if cat == 'open' or i == 1:
                 dict_ = {name: color for name, color in pairs}
                 mcolors.colorConverter.colors.update(dict_)
-                colors['open'] = sorted(dict_)
+                colors[cat] = sorted(dict_)
                 continue
 
-            # Filter remaining colors to unique ones
+            # Filter remaining colors to *unique* colors
             j = 0
             if cat not in dicts:
                 dicts[cat] = {}
@@ -3055,24 +3061,50 @@ def register_fonts():
     #   https://www.cufonfonts.com
     # WARNING: If you include a font file with an unrecognized style,
     # matplotlib may use that font instead of the 'normal' one! Valid styles:
-#   'ultralight', 'light', 'normal', 'regular', 'book', 'medium', 'roman',
-#   'semibold', 'demibold', 'demi', 'bold', 'heavy', 'extra bold', 'black'
-#   https://matplotlib.org/api/font_manager_api.html
-    paths = ':'.join(_get_data_paths('fonts'))
+    # 'ultralight', 'light', 'normal', 'regular', 'book', 'medium', 'roman',
+    # 'semibold', 'demibold', 'demi', 'bold', 'heavy', 'extra bold', 'black'
+    # https://matplotlib.org/api/font_manager_api.html
+    # For macOS the only fonts with 'Thin' in one of the .ttf file names
+    # are Helvetica Neue and .SF NS Display Condensed. Never try to use these!
+    paths = ':'.join(_get_data_paths('fonts')[::-1])  # user paths come first
     if 'TTFPATH' not in os.environ:
         os.environ['TTFPATH'] = paths
     elif paths not in os.environ['TTFPATH']:
         os.environ['TTFPATH'] += (':' + paths)
 
-    # Load font manager and rebuild only if necessary!
-    # Font cache rebuild can be >50% of total import time, ~1s!!!
+    # Detect user-input .ttc fonts
     import matplotlib.font_manager as mfonts
-    files_loaded = {font.fname for font in mfonts.fontManager.ttflist}
-    files_ttfpath = {*mfonts.findSystemFonts(paths.split(':'))}
-    if not (files_ttfpath <= files_loaded):
-        mfonts._rebuild()
+    fnames_proplot = {*mfonts.findSystemFonts(paths.split(':'))}
+    fnames_proplot_ttc = {
+        file for file in fnames_proplot if os.path.splitext(file)[1] == '.ttc'
+    }
+    if fnames_proplot_ttc:
+        _warn_proplot(
+            'Ignoring the following .ttc fonts because they cannot be '
+            'saved into PDF or EPS files (see matplotlib issue #3135): '
+            + ', '.join(map(repr, sorted(fnames_proplot_ttc)))
+            + '. Please consider expanding them into separate .ttf files.'
+        )
 
-    # Populate font lists
+    # Rebuild font cache only if necessary! Can be >50% of total import time!
+    fnames_all = {font.fname for font in mfonts.fontManager.ttflist}
+    fnames_proplot -= fnames_proplot_ttc
+    if not fnames_all >= fnames_proplot:
+        if hasattr(mfonts.fontManager, 'addfont'):
+            for fname in fnames_proplot:
+                mfonts.fontManager.addfont(fname)
+            mfonts.json_dump(mfonts.fontManager, mfonts._fmcache)
+        else:
+            _warn_proplot('Rebuilding font manager.')
+            mfonts._rebuild()
+
+    # Remove ttc files *after* rebuild
+    mfonts.fontManager.ttflist = [
+        font for font in mfonts.fontManager.ttflist
+        if os.path.splitext(font.fname)[1] != '.ttc'
+    ]
+
+    # Populate font name lists, with proplot fonts *first*
     fonts_proplot = sorted({
         font.name for font in mfonts.fontManager.ttflist
         if any(path in font.fname for path in paths.split(':'))
@@ -3550,9 +3582,10 @@ def show_cycles(*args, axwidth=1.5):
     return fig
 
 
-def show_fonts(*args, size=12):
+def show_fonts(*args, size=12, text=None):
     """
-    Visualize font families.
+    Visualize the available sans-serif fonts. If a glyph is unavailable,
+    it is replaced by the "¤" dummy character.
 
     Parameters
     ----------
@@ -3562,36 +3595,46 @@ def show_fonts(*args, size=12):
         provided by ProPlot are shown.
     size : float, optional
         The font size in points.
+    text : str, optional
+        The sample text. The default sample text includes the Latin letters,
+        Greek letters, Arabic numerals, and some mathematical symbols.
     """
     from . import subplots
     if not args:
         import matplotlib.font_manager as mfonts
         args = sorted({
             font.name for font in mfonts.fontManager.ttflist
-            if font.name in FONTS_SANS
-            or any(path in font.fname for path in _get_data_paths('fonts'))
+            if font.name[:1] != '.' and (
+                font.name in FONTS_SANS
+                or any(path in font.fname for path in _get_data_paths('fonts'))
+            )
         })
 
     # Text
-    math = r'(0) + {1} - [2] * <3> / 4,0 $\geq\gg$ 5.0 $\leq\ll$ ~6 ' \
-           r'$\times$ 7 $\equiv$ 8 $\approx$ 9 $\propto$'
-    greek = r'$\alpha\beta$ $\Gamma\gamma$ $\Delta\delta$ ' \
+    if text is None:
+        text = 'the quick brown fox jumps over a lazy dog' '\n' \
+            'THE QUICK BROWN FOX JUMPS OVER A LAZY DOG' '\n' \
+            '(0) + {1\N{DEGREE SIGN}} \N{MINUS SIGN} [2*] - <3> / 4,0 ' \
+            r'$\geq\gg$ 5.0 $\leq\ll$ ~6 $\times$ 7 ' \
+            r'$\equiv$ 8 $\approx$ 9 $\propto$' '\n' \
+            r'$\alpha\beta$ $\Gamma\gamma$ $\Delta\delta$ ' \
             r'$\epsilon\zeta\eta$ $\Theta\theta$ $\kappa\mu\nu$ ' \
             r'$\Lambda\lambda$ $\Pi\pi$ $\xi\rho\tau\chi$ $\Sigma\sigma$ ' \
             r'$\Phi\phi$ $\Psi\psi$ $\Omega\omega$ !?&#%'
-    letters = 'the quick brown fox jumps over a lazy dog\n' \
-              'THE QUICK BROWN FOX JUMPS OVER A LAZY DOG'
 
     # Create figure
-    f, axs = subplots(ncols=1, nrows=len(args), space=0,
-                      axwidth=4.5, axheight=6.5 * size / 72)
+    f, axs = subplots(
+        ncols=1, nrows=len(args), space=0,
+        axwidth=4.5, axheight=(text.count('\n') + 3.5) * size / 72,
+        fallback_to_cm=False
+    )
     axs.format(xloc='neither', yloc='neither',
                xlocator='null', ylocator='null', alpha=0)
     axs[0].format(title='Fonts demo', titlesize=size,
                   titleloc='l', titleweight='bold')
     for i, ax in enumerate(axs):
         font = args[i]
-        ax.text(0, 0.5, f'{font}:\n{letters}\n{math}\n{greek}',
+        ax.text(0, 0.5, f'{font}:\n{text}',
                 fontfamily=font, fontsize=size,
                 weight='normal', ha='left', va='center')
     return f
