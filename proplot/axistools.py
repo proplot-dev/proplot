@@ -292,9 +292,12 @@ def Scale(scale, *args, **kwargs):
         If `~matplotlib.scale.ScaleBase`, the object is returned.
 
         If string, this is the registered scale name or scale "preset" (see
-        below table). If an iterable is passed with the scale name as the
-        first element, the subsequent items are passed to the scale class as
-        positional arguments.
+        below table).
+
+        If list or tuple and the first element is a string, the subsequent
+        items are passed to the scale class as positional arguments. For
+        example, ``ax.format(xscale=('power', 2))`` applies the ``'quadratic'``
+        scale to the *x* axis.
 
         =================  =======================  =======================================================================
         Key                Class                    Description
@@ -329,6 +332,10 @@ def Scale(scale, *args, **kwargs):
     `~matplotlib.scale.ScaleBase`
         The scale instance.
     """  # noqa
+    # NOTE: Why not try to interpret FuncScale arguments, like when lists
+    # of numbers are passed to Locator? Because FuncScale *itself* accepts
+    # ScaleBase classes as arguments... but constructor functions cannot
+    # do anything but return the class instance upon receiving one.
     if isinstance(scale, mscale.ScaleBase):
         return scale
     # Pull out extra args
