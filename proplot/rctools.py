@@ -10,9 +10,9 @@ import re
 import os
 import yaml
 import numpy as np
-# import cycler
-# import matplotlib.colors as mcolors
-# import matplotlib.cm as mcm
+import cycler
+import matplotlib.colors as mcolors
+import matplotlib.cm as mcm
 from matplotlib import style, rcParams
 try:
     import IPython
@@ -490,7 +490,7 @@ RC_CATEGORIES = {
 }
 
 
-def _convert_units(key, value):
+def _to_points(key, value):
     """Convert certain rc keys to the units "points"."""
     # See: https://matplotlib.org/users/customizing.html, all props matching
     # the below strings use the units 'points', except custom categories!
@@ -523,71 +523,173 @@ def _get_config_paths():
     return paths
 
 
-def _get_synced_params(key=None, value=None):
-    """Returns dictionaries for updating "child" properties in
-    `rcParams` and `rcParamsLong` with global property."""
+def _get_synced_params(key, value):
+    """Return dictionaries for updating the `rcParamsShort`, `rcParamsLong`,
+    and `rcParams` properties associated with this key."""
     kw = {}  # builtin properties that global setting applies to
-    kw_custom = {}  # custom properties that global setting applies to
-    if key is not None and value is not None:
-        items = [(key, value)]
+    kw_long = {}  # custom properties that global setting applies to
+    kw_short = {}  # short name properties
+    if '.' not in key and key not in rcParamsShort:
+        key = RC_NODOTSNAMES.get(key, key)
+
+    # Skip full name keys
+    if '.' in key:
+        pass
+
+    # Special ipython settings
+    # TODO: Put this inside __setitem__?
+    elif key == 'matplotlib':
+        ipython_matplotlib(value)
+    elif key == 'autosave':
+        ipython_autosave(value)
+    elif key == 'autoreload':
+        ipython_autoreload(value)
+
+    # Cycler
+    elif key in ('cycle', 'rgbcycle'):
+        if key == 'rgbcycle':
+            cycle, rgbcycle = rcParamsShort['cycle'], value
+        else:
+            cycle, rgbcycle = value, rcParamsShort['rgbcycle']
+        try:
+            colors = mcm.cmap_d[cycle].colors
+        except (KeyError, AttributeError):
+            cycles = sorted(
+                name for name,
+                cmap in mcm.cmap_d.items() if isinstance(
+                    cmap,
+                    mcolors.ListedColormap))
+            raise ValueError(
+                f'Invalid cycle name {cycle!r}. Options are: '
+                ', '.join(map(repr, cycles)) + '.')
+        if rgbcycle and cycle.lower() == 'colorblind':
+            regcolors = colors + [(0.1, 0.1, 0.1)]
+        elif mcolors.to_rgb('r') != (1.0, 0.0, 0.0):  # reset
+            regcolors = [
+                (0.0, 0.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0),
+                (0.75, 0.75, 0.0), (0.75, 0.75, 0.0), (0.0, 0.75, 0.75),
+                (0.0, 0.0, 0.0)]
+        else:
+            regcolors = []  # no reset necessary
+        for code, color in zip('brgmyck', regcolors):
+            rgb = mcolors.to_rgb(color)
+            mcolors.colorConverter.colors[code] = rgb
+            mcolors.colorConverter.cache[code] = rgb
+        kw['patch.facecolor'] = colors[0]
+        kw['axes.prop_cycle'] = cycler.cycler('color', colors)
+
+    # Zero linewidth almost always means zero tick length
+    elif key == 'linewidth' and _to_points(key, value) == 0:
+        _, ikw_long, ikw = _get_synced_params('ticklen', 0)
+        kw.update(ikw)
+        kw_long.update(ikw_long)
+
+    # Tick length/major-minor tick length ratio
+    elif key in ('ticklen', 'ticklenratio'):
+        if key == 'ticklen':
+            ticklen = _to_points(key, value)
+            ratio = rcParamsShort['ticklenratio']
+        else:
+            ticklen = rcParamsShort['ticklen']
+            ratio = value
+        kw['xtick.minor.size'] = ticklen * ratio
+        kw['ytick.minor.size'] = ticklen * ratio
+
+    # Spine width/major-minor tick width ratio
+    elif key in ('linewidth', 'tickratio'):
+        if key == 'linewidth':
+            tickwidth = _to_points(key, value)
+            ratio = rcParamsShort['tickratio']
+        else:
+            tickwidth = rcParamsShort['linewidth']
+            ratio = value
+        kw['xtick.minor.width'] = tickwidth * ratio
+        kw['ytick.minor.width'] = tickwidth * ratio
+
+    # Gridline width
+    elif key in ('grid.linewidth', 'gridratio'):
+        if key == 'grid.linewidth':
+            gridwidth = _to_points(key, value)
+            ratio = rcParamsShort['gridratio']
+        else:
+            gridwidth = rcParams['grid.linewidth']
+            ratio = value
+        kw_long['gridminor.linewidth'] = gridwidth * ratio
+
+    # Gridline toggling, complicated because of the clunky way this is
+    # implemented in matplotlib. There should be a gridminor setting!
+    elif key in ('grid', 'gridminor'):
+        ovalue = rcParams['axes.grid']
+        owhich = rcParams['axes.grid.which']
+        # Instruction is to turn off gridlines
+        if not value:
+            # Gridlines are already off, or they are on for the particular
+            # ones that we want to turn off. Instruct to turn both off.
+            if not ovalue or (key == 'grid' and owhich == 'major') or (
+                    key == 'gridminor' and owhich == 'minor'):
+                which = 'both'  # disable both sides
+            # Gridlines are currently on for major and minor ticks, so we
+            # instruct to turn on gridlines for the one we *don't* want off
+            elif owhich == 'both':  # and ovalue is True, as we already tested
+                # if gridminor=False, enable major, and vice versa
+                value = True
+                which = 'major' if key == 'gridminor' else 'minor'
+            # Gridlines are on for the ones that we *didn't* instruct to turn
+            # off, and off for the ones we do want to turn off. This just
+            # re-asserts the ones that are already on.
+            else:
+                value = True
+                which = owhich
+        # Instruction is to turn on gridlines
+        else:
+            # Gridlines are already both on, or they are off only for the ones
+            # that we want to turn on. Turn on gridlines for both.
+            if owhich == 'both' or (key == 'grid' and owhich == 'minor') or (
+                    key == 'gridminor' and owhich == 'major'):
+                which = 'both'
+            # Gridlines are off for both, or off for the ones that we
+            # don't want to turn on. We can just turn on these ones.
+            else:
+                which = owhich
+        kw['axes.grid'] = value
+        kw['axes.grid.which'] = which
+
+    # Now update linked settings
+    value = _to_points(key, value)
+    if key in rcParamsShort:
+        kw_short[key] = value
+    elif key in rcParamsLong:
+        kw_long[key] = value
+    elif key in rcParams:
+        kw[key] = value
     else:
-        items = rcParamsShort.items()
-    for key, value in items:
-        # Tick length/major-minor tick length ratio
-        if key in ('ticklen', 'ticklenratio'):
-            if key == 'ticklen':
-                ticklen = _convert_units(key, value)
-                ratio = rcParamsShort['ticklenratio']
-            else:
-                ticklen = rcParamsShort['ticklen']
-                ratio = value
-            kw['xtick.minor.size'] = ticklen * ratio
-            kw['ytick.minor.size'] = ticklen * ratio
-        # Spine width/major-minor tick width ratio
-        elif key in ('linewidth', 'tickratio'):
-            if key == 'linewidth':
-                tickwidth = _convert_units(key, value)
-                ratio = rcParamsShort['tickratio']
-            else:
-                tickwidth = rcParamsShort['linewidth']
-                ratio = value
-            kw['xtick.minor.width'] = tickwidth * ratio
-            kw['ytick.minor.width'] = tickwidth * ratio
-        # Grid line
-        elif key in ('grid.linewidth', 'gridratio'):
-            if key == 'grid.linewidth':
-                gridwidth = _convert_units(key, value)
-                ratio = rcParamsShort['gridratio']
-            else:
-                gridwidth = rcParams['grid.linewidth']
-                ratio = value
-            kw_custom['gridminor.linewidth'] = gridwidth * ratio
-        # Now update linked settings
-        val = None
-        for name in RC_CHILDREN.get(key, ()):
-            val = _convert_units(key, value)
-            if name in rcParamsLong:
-                kw_custom[name] = val
-            else:
-                kw[name] = val
-        if key == 'linewidth' and val == 0:
-            ikw, ikw_custom = _get_synced_params('ticklen', 0)
-            kw.update(ikw)
-            kw_custom.update(ikw_custom)
-    return kw, kw_custom
+        raise KeyError(f'Invalid key {key!r}.')
+    for name in RC_CHILDREN.get(key, ()):
+        if name in rcParamsLong:
+            kw_long[name] = value
+        else:
+            kw[name] = value
+    return kw_short, kw_long, kw
+
+
+def _sanitize_key(key):
+    """Convert the key to a palatable value."""
+    if not isinstance(key, str):
+        raise KeyError(f'Invalid key {key!r}. Must be string.')
+    if '.' not in key and key not in rcParamsShort:
+        key = RC_NODOTSNAMES.get(key, key)
+    return key.lower()
 
 
 class rc_configurator(object):
-    _public_api = (
-        'get', 'fill', 'category', 'reset', 'context', 'update'
-    )  # getattr and setattr will not look for these items
-
-    def __str__(self):
-        return type(rcParams).__str__(rcParamsShort)  # just show globals
-
-    def __repr__(self):
-        return type(rcParams).__repr__(rcParamsShort)
-
+    """
+    Magical abstract class for managing matplotlib
+    `rcParams <https://matplotlib.org/users/customizing.html>`__
+    and additional ProPlot :ref:`rcParamsLong` and :ref:`rcParamsShort`
+    settings. When initialized, this loads defaults settings plus any user
+    overrides in the ``~/.proplotrc`` file. See the `~proplot.rctools`
+    documentation for details.
+    """
     def __contains__(self, key):
         return (key in RC_SHORTNAMES or key in RC_LONGNAMES or key in
                 RC_PARAMNAMES or key in RC_NODOTSNAMES)  # biggest lists last
@@ -630,262 +732,112 @@ class rc_configurator(object):
                 except yaml.YAMLError as err:
                     print('{file!r} has invalid YAML syntax.')
                     raise err
-            # Special duplicate keys
-            if data is None:
-                continue
-            # Deprecated nbsetup
-            # No warning for now, just keep it undocumented
-            format = data.pop('format', None)
-            if format is not None:
-                data['inlinefmt'] = format
-            nbsetup = data.pop('nbsetup', None)
-            if nbsetup is not None and not nbsetup:
-                data['matplotlib'] = None
-                data['autoreload'] = None
-                data['autosave'] = None
-            # Add keys to dictionaries
-            gkeys, ckeys = {*()}, {*()}
-            for key, value in data.items():
-                if key in RC_SHORTNAMES:
-                    rcParamsShort[key] = value
-                    if i == 0:
-                        gkeys.add(key)
-                elif key in RC_LONGNAMES:
-                    value = _convert_units(key, value)
-                    rcParamsLong[key] = value
-                    if i == 0:
-                        ckeys.add(key)
-                elif key in RC_PARAMNAMES:
-                    value = _convert_units(key, value)
-                    rcParams[key] = value
-                else:
+            for key, value in (data or {}).items():
+                try:
+                    self[key] = value
+                except KeyError:
                     raise RuntimeError(f'{file!r} has invalid key {key!r}.')
-            # Make sure we did not miss anything
-            if i == 0:
-                if gkeys != RC_SHORTNAMES:
-                    raise RuntimeError(
-                        f'{file!r} has incomplete or invalid global keys '
-                        f'{RC_SHORTNAMES - gkeys}.')
-                if ckeys != RC_LONGNAMES:
-                    raise RuntimeError(
-                        f'{file!r} has incomplete or invalid custom keys '
-                        f'{RC_LONGNAMES - ckeys}.')
 
-        # Apply *global settings* to children settings
-        rcParams['axes.titlepad'] = rcParamsLong['title.pad']
-        _set_cycler(rcParamsShort['cycle'])
-        rc, rc_new = _get_synced_params()
-        for key, value in rc.items():
-            rcParams[key] = value
-        for key, value in rc_new.items():
-            rcParamsLong[key] = value
+    def __enter__(self):
+        """Apply settings from the most recent context block."""
+        if not self._context:
+            raise RuntimeError(
+                f'rc context must be initialized with rc.context().')
+        *_, kwargs, cache, restore = self._context[-1]
 
-        # Caching stuff
-        self._init = True
-        self._getitem_mode = 0
-        self._context = {}
-        self._cache = {}
-        self._cache_orig = {}
-        self._cache_restore = {}
+        def _update(rcdict, newdict):
+            for key, value in newdict.items():
+                restore[key] = rcdict[key]
+                rcdict[key] = cache[key] = value
+        for key, value in kwargs.items():
+            rc_short, rc_long, rc = _get_synced_params(key, value)
+            _update(rcParamsShort, rc_short)
+            _update(rcParamsLong, rc_long)
+            _update(rcParams, rc)
+
+    def __exit__(self, *args):
+        """Restore settings from the most recent context block."""
+        if not self._context:
+            raise RuntimeError(
+                f'rc context must be initialized with rc.context().')
+        *_, restore = self._context[-1]
+        for key, value in restore.items():
+            self[key] = value
+        del self._context[-1]
+
+    def __delitem__(self, *args):
+        """Raise an error. This enforces pseudo-immutability."""
+        raise RuntimeError('rc settings cannot be deleted.')
+
+    def __delattr__(self, *args):
+        """Raise an error. This enforces pseudo-immutability."""
+        raise RuntimeError('rc settings cannot be deleted.')
+
+    def __getattr__(self, attr):
+        """Pass the attribute to `~rc_configurator.__getitem__` and return
+        the result."""
+        if attr[:1] == '_':
+            return super().__getattr__(attr)
+        else:
+            return self[attr]
 
     def __getitem__(self, key):
-        """Get `rcParams <https://matplotlib.org/users/customizing.html>`__,
-        :ref:`rcParamsLong`, and :ref:`rcParamsShort` settings. If we are in
-        a `~rc_configurator.context` block, may return ``None`` if the setting
-        is not cached (i.e. if it was not changed by the user)."""
-        # Can get a whole bunch of different things
-        # Get full dictionary e.g. for rc[None]
-        if not key:
-            return {**rcParams, **rcParamsLong}
-
-        # Standardize
-        # NOTE: If key is invalid, raise error down the line.
-        if '.' not in key and key not in rcParamsShort:
-            key = RC_NODOTSNAMES.get(key, key)
-
-        # Allow for special time-saving modes where we *ignore rcParams*
-        # or even *ignore rcParamsLong*.
-        mode = self._getitem_mode
-        if mode == 0:
-            kws = (self._cache, rcParamsShort, rcParamsLong, rcParams)
-        elif mode == 1:
-            kws = (self._cache, rcParamsShort, rcParamsLong)  # custom only!
-        elif mode == 2:
-            kws = (self._cache,)  # changed only!
-        else:
-            raise KeyError(f'Invalid caching mode {mode!r}.')
-
-        # Get individual property. Will successively index a few different
-        # dicts. Try to return the value
-        for kw in kws:
+        """Return an `rcParams \
+<https://matplotlib.org/users/customizing.html>`__,
+        :ref:`rcParamsLong`, or :ref:`rcParamsShort` setting."""
+        key = _sanitize_key(key)
+        for kw in (rcParamsShort, rcParamsLong, rcParams):
             try:
                 return kw[key]
             except KeyError:
                 continue
-        # If we were in one of the exclusive modes, return None
+        raise KeyError(f'Invalid property name {key!r}.')
+
+    def __setattr__(self, attr, value):
+        """Pass the attribute and value to `~rc_configurator.__setitem__`."""
+        self[attr] = value
+
+    def __setitem__(self, key, value):
+        """Modify an `rcParams \
+<https://matplotlib.org/users/customizing.html>`__,
+        :ref:`rcParamsLong`, and :ref:`rcParamsShort` setting(s)."""
+        rc_short, rc_long, rc = _get_synced_params(key, value)
+        rcParamsShort.update(rc_short)
+        rcParamsLong.update(rc_long)
+        rcParams.update(rc)
+
+    def _get_item(self, key, mode=None):
+        """As with `~rc_configurator.__getitem__` but the search is limited
+        based on the context mode and ``None`` is returned if the key is not
+        found in the dictionaries."""
+        if mode is None:
+            mode = min((context[0] for context in self._context), default=0)
+        caches = (context[2] for context in self._context)
         if mode == 0:
-            raise KeyError(f'Invalid prop name {key!r}.')
+            rcdicts = (*caches, rcParamsShort, rcParamsLong, rcParams)
+        elif mode == 1:
+            rcdicts = (*caches, rcParamsShort, rcParamsLong)  # custom only!
+        elif mode == 2:
+            rcdicts = (*caches,)
+        else:
+            raise KeyError(f'Invalid caching mode {mode!r}.')
+        for rcdict in rcdicts:
+            if not rcdict:
+                continue
+            try:
+                return rcdict[key]
+            except KeyError:
+                continue
+        if mode == 0:
+            raise KeyError(f'Invalid property name {key!r}.')
         else:
             return None
 
-    def __setitem__(self, key, value):
-        """Set `rcParams <https://matplotlib.org/users/customizing.html>`__,
-        :ref:`rcParamsLong`, and :ref:`rcParamsShort` settings."""
-        # Check whether we are in context block
-        # NOTE: Do not add key to cache until we are sure it is a valid key
-        cache = self._cache
-        context = bool(self._context)  # test if context dict is non-empty
-        if context:
-            restore = self._cache_restore
 
-        # Standardize
-        # NOTE: If key is invalid, raise error down the line.
-        if '.' not in key and key not in rcParamsShort:
-            key = RC_NODOTSNAMES.get(key, key)
 
-        # Special keys
-        if key == 'title.pad':
-            key = 'axes.titlepad'
-        if key == 'matplotlib':
-            ipython_matplotlib(value)
-        if key == 'autosave':
-            ipython_autosave(value)
-        if key == 'autoreload':
-            ipython_autoreload(value)
-        if key == 'rgbcycle':  # if must re-apply cycler afterward
-            cache[key] = value
-            rcParamsShort[key] = value
-            key, value = 'cycle', rcParamsShort['cycle']
 
-        # Set the default cycler
-        if key == 'cycle':
-            cache[key] = value
-            if context:
-                restore[key] = rcParamsShort[key]
-                restore['axes.prop_cycle'] = rcParams['axes.prop_cycle']
-                restore['patch.facecolor'] = rcParams['patch.facecolor']
-            _set_cycler(value)
 
-        # Gridline toggling, complicated because of the clunky way this is
-        # implemented in matplotlib. There should be a gridminor setting!
-        elif key in ('grid', 'gridminor'):
-            cache[key] = value
-            ovalue = rcParams['axes.grid']
-            owhich = rcParams['axes.grid.which']
-            if context:
-                restore[key] = rcParamsShort[key]
-                restore['axes.grid'] = ovalue
-                restore['axes.grid.which'] = owhich
-            # Instruction is to turn off gridlines
-            if not value:
-                # Gridlines are already off, or they are on for the particular
-                # ones that we want to turn off. Instruct to turn both off.
-                if not ovalue or (key == 'grid' and owhich == 'major') or (
-                        key == 'gridminor' and owhich == 'minor'):
-                    which = 'both'  # disable both sides
-                # Gridlines are currently on for major and minor ticks, so we
-                # instruct to turn on gridlines for the one we *don't* want off
-                elif owhich == 'both':  # and ovalue is True
-                    value = True
-                    # if gridminor=False, enable major, and vice versa
-                    which = 'major' if key == 'gridminor' else 'minor'
-                # Gridlines are on for the ones that we *didn't* instruct to
-                # turn off, and off for the ones we do want to turn off. This
-                # just re-asserts the ones that are already on.
-                else:
-                    value = True
-                    which = owhich
-            # Instruction is to turn on gridlines
-            else:
-                # Gridlines are already both on, or they are off only for the
-                # ones that we want to turn on. Turn on gridlines for both.
-                if owhich == 'both' or (key == 'grid' and owhich == 'minor') \
-                        or (key == 'gridminor' and owhich == 'major'):
-                    which = 'both'
-                # Gridlines are off for both, or off for the ones that we
-                # don't want to turn on. We can just turn on these ones.
-                else:
-                    which = owhich
-            cache.update({'axes.grid': value, 'axes.grid.which': which})
-            rcParams.update({'axes.grid': value, 'axes.grid.which': which})
 
-        # Ordinary settings
-        elif key in rcParamsShort:
-            # Update global setting
-            cache[key] = value
-            if context:
-                restore[key] = rcParamsShort[key]
-            rcParamsShort[key] = value
-            # Update children of setting
-            rc, rc_new = _get_synced_params(key, value)
-            cache.update(rc)
-            cache.update(rc_new)
-            if context:
-                restore.update({key: rcParams[key] for key in rc})
-                restore.update({key: rcParamsLong[key] for key in rc_new})
-            rcParams.update(rc)
-            rcParamsLong.update(rc_new)
-        # Update normal settings
-        elif key in RC_LONGNAMES:
-            value = _convert_units(key, value)
-            cache[key] = value
-            if context:
-                restore[key] = rcParamsLong[key]
-            rcParamsLong[key] = value
-        elif key in RC_PARAMNAMES:
-            value = _convert_units(key, value)
-            cache[key] = value
-            if context:
-                restore[key] = rcParams[key]
-            rcParams[key] = value  # rcParams dict has key validation
-        else:
-            raise KeyError(f'Invalid key {key!r}.')
-        self._init = False  # we are no longer in initial state
-
-    # Attributes same as items
-    def __getattr__(self, attr):
-        """Invoke `~rc_configurator.__getitem__` so that ``rc.key``
-        is identical to ``rc[key]``."""
-        if attr[:1] == '_':
-            return object.__getattr__(self, attr)
-        else:
-            return self[attr]
-
-    def __setattr__(self, attr, value):
-        """Invoke `~rc_configurator.__setitem__` so that ``rc.key = value``
-        is identical to ``rc[key] = value``."""
-        if attr[:1] == '_':
-            object.__setattr__(self, attr, value)
-        else:
-            self[attr] = value
-
-    # Immutability
-    def __delitem__(self, *args):
-        """Pseudo-immutability."""
-        raise RuntimeError('rc settings cannot be deleted.')
-
-    def __delattr__(self, *args):
-        """Pseudo-immutability."""
-        raise RuntimeError('rc settings cannot be deleted.')
-
-    # Context tools
-    def __enter__(self):
-        """Apply settings from configurator cache."""
-        self._cache_orig = rc._cache.copy()
-        self._cache_restore = {}  # shouldn't be necessary but just in case
-        self._cache = {}
-        for key, value in self._context.items():
-            self[key] = value  # applies linked and individual settings
-
-    def __exit__(self, *args):
-        """Restore configurator cache to initial state."""
-        self._context = {}
-        self._getitem_mode = 0
-        for key, value in self._cache_restore.items():
-            self[key] = value
-        self._cache = self._cache_orig
-        self._cache_restore = {}
-        self._cache_orig = {}
 
     def context(self, *args, mode=0, **kwargs):
         """
