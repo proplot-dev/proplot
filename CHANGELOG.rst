@@ -15,7 +15,7 @@ ProPlot v1.0.0 (2020-##-##)
 This will be published when some major refactoring tasks are completed.
 See :pr:`45`, :pr:`46`, and :pr:`50`.
 
-ProPlot v0.4.0 (2020-##-##)
+ProPlot v0.5.0 (2020-##-##)
 ===========================
 .. rubric:: Deprecated
 
@@ -60,17 +60,31 @@ ProPlot v0.4.0 (2020-##-##)
   with a default ``.proplotrc`` file, change the auto-generated user ``.proplotrc``
   (:pr:`50`).
 
-ProPlot v0.3.2 (2020-##-##)
+ProPlot v0.4.0 (2020-##-##)
 ===========================
+.. rubric:: Deprecated
+
+- Remove redundant `~proplot.rctools.use_fonts`, use ``rcParams['sans-serif']``
+  precedence instead (:pr:`95`).
+- `~proplot.axes.Axes.dualx` and `~proplot.axes.Axes.dualx` no longer accept "scale-spec" arguments, must be a function, two functions, or an axis scale instance (:pr:`96`).
+
+.. rubric:: Features
+
+- Add Fira Math as DejaVu Sans-alternative (:pr:`95`). Has complete set of math characters.
+- Add TeX Gyre Heros as Helvetica-alternative (:pr:`95`). This is the new open-source default font.
+- Add `~proplot.subplots.Figure` ``fallback_to_cm`` kwarg. This is used by `~proplot.styletools.show_fonts` to show dummy glyphs to clearly illustrate when fonts are missing characters, but preserve graceful fallback for end user.
+
 .. rubric:: Bug fixes
 
 - Fix `~proplot.rctools.rc_configurator.context` bug (:issue:`80` and :pr:`91`).
-- Improvements to fonts API (:pr:`93`).
+- Fix issues with `~proplot.axes.Axes.dualx` and `~proplot.axes.Axes.dualy` with non-linear parent scales (:pr:`96`).
+- Ignore TTC fonts because they cannot be saved in EPS/PDF figures (:issue:`94` and :pr:`95`).
+- Do not try to use Helvetica Neue because "thin" font style is read as regular (:issue:`94` and :pr:`95`).
 
 .. rubric:: Documentation
 
 - Imperative mood for docstring summaries (:pr:`92`).
-- Fix `~proplot.show_cycles` bug (:pr:`90`) and show cycles using colorbars rather than lines.
+- Fix `~proplot.styletools.show_cycles` bug (:pr:`90`) and show cycles using colorbars rather than lines.
 
 ProPlot v0.3.1 (2019-12-16)
 ===========================

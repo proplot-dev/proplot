@@ -3625,7 +3625,7 @@ def show_fonts(*args, size=12, text=None):
     # Create figure
     f, axs = subplots(
         ncols=1, nrows=len(args), space=0,
-        axwidth=4.5, axheight=(text.count('\n') + 3.5) * size / 72,
+        axwidth=4.5, axheight=1.2 * (text.count('\n') + 2.5) * size / 72,
         fallback_to_cm=False
     )
     axs.format(xloc='neither', yloc='neither',
