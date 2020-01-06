@@ -12,7 +12,7 @@ coast:        False
 color:        k
 cycle:        colorblind
 facecolor:    w
-fontname:     auto
+fontname:     "sans-serif"
 geogrid:      True
 grid:         True
 gridminor:    False

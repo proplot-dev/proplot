@@ -8,7 +8,6 @@ from numbers import Integral
 import matplotlib.projections as mproj
 import matplotlib.axes as maxes
 import matplotlib.dates as mdates
-import matplotlib.scale as mscale
 import matplotlib.text as mtext
 import matplotlib.path as mpath
 import matplotlib.ticker as mticker
@@ -139,15 +138,15 @@ class Axes(maxes.Axes):
         :py:obj:`PolarAxes`,
         :py:obj:`ProjAxes`
         """
-        # Call parent
         super().__init__(*args, **kwargs)
+        # Ensure isDefault_minloc enabled at start, needed for dual axes
+        self.xaxis.isDefault_minloc = self.yaxis.isDefault_minloc = True
         # Properties
         self._number = number  # for abc numbering
         self._abc_loc = None
         self._abc_text = None
         self._titles_dict = {}  # title text objects and their locations
         self._title_loc = None  # location of main title
-        # so we can copy to top panel
         self._title_pad = rc.get('axes.titlepad')
         self._title_above_panel = True  # TODO: add rc prop?
         # Children and related properties
@@ -980,7 +979,7 @@ optional
                     height_ratios=((1 - length) / 2, length, (1 - length) / 2),
                 )
                 subplotspec = gridspec[1]
-            with self.figure._unlock():
+            with self.figure._authorize_add_subplot():
                 ax = self.figure.add_subplot(subplotspec, projection=None)
             if ax is self:
                 raise ValueError(f'Uh oh.')
@@ -1191,8 +1190,9 @@ optional
     def get_size_inches(self):
         """Returns the width and the height of the axes in inches."""
         width, height = self.figure.get_size_inches()
-        width = width * abs(self.get_position().width)
-        height = height * abs(self.get_position().height)
+        bbox = self.get_position()
+        width = width * abs(bbox.width)
+        height = height * abs(bbox.height)
         return width, height
 
     def get_tightbbox(self, renderer, *args, **kwargs):
@@ -1466,10 +1466,13 @@ optional
         # Create LineCollection and update with values
         hs = mcollections.LineCollection(
             np.array(coords), cmap=cmap, norm=norm,
-            linestyles='-', capstyle='butt', joinstyle='miter')
+            linestyles='-', capstyle='butt', joinstyle='miter'
+        )
         hs.set_array(np.array(values))
-        hs.update({key: value for key, value in kwargs.items()
-                   if key not in ('color',)})
+        hs.update({
+            key: value for key, value in kwargs.items()
+            if key not in ('color',)
+        })
 
         # Add collection, with some custom attributes
         self.add_collection(hs)
@@ -1603,11 +1606,13 @@ optional
     )
 
 
+# TODO: More systematic approach?
 dualxy_kwargs = (
     'label', 'locator', 'formatter', 'ticks', 'ticklabels',
     'minorlocator', 'minorticks', 'tickminor',
     'ticklen', 'tickrange', 'tickdir', 'ticklabeldir', 'tickrotation',
     'bounds', 'margin', 'color', 'grid', 'gridminor',
+    'locator_kw', 'formatter_kw', 'minorlocator_kw', 'label_kw',
 )
 
 dualxy_descrip = """
@@ -1616,38 +1621,20 @@ coordinates in *alternate units*.
 
 Parameters
 ----------
-forward : function, optional
-    Function used to transform units from the original axis to the
-    secondary axis. Should take 1 value and perform a *forward
-    linear transformation*. For example, to convert Kelvin to Celsius,
-    use ``ax.dual%(x)s(lambda x: x - 273.15)``. To convert kilometers to
-    meters, use ``ax.dual%(x)s(lambda x: x*1e3)``.
-inverse : function, optional
-    Function used to transform units from the secondary axis back to
-    the original axis. If `forward` was a non-linear function, you
-    *must* provide this, or the transformation will be incorrect!
-
-    For example, to apply the square, use
-    ``ax.dual%(x)s(lambda x: x**2, lambda x: x**0.5)``.
-scale : scale-spec, optional
-    The axis scale from which forward and inverse transformations
-    are inferred. Passed to `~proplot.axistools.Scale`.
-
-    For example, to apply the inverse, use ``ax.dual%(x)s('inverse')``;
-    To apply the base-10 exponential function, use
-    ``ax.dual%(x)s(('exp', 10, 1, 10))``
-    or ``ax.dual%(x)s(plot.Scale('exp', 10))``.
-scale_kw : dict-like, optional
-    Ignored if `scale` is ``None``. Passed to
-    `~proplot.axistools.Scale`.
+arg : function, (function, function), or `~matplotlib.scale.ScaleBase`
+    Used to transform units from the parent axis to the secondary axis.
+    This can be a `~proplot.axistools.FuncScale` itself or a function,
+    (function, function) tuple, or `~matplotlib.scale.ScaleBase` instance used
+    to *generate* a `~proplot.axistools.FuncScale` (see
+    `~proplot.axistools.FuncScale` for details).
 %(args)s : optional
-    Prepended with ``'y'`` and passed to `Axes.format`.
+    Prepended with ``'%(x)s'`` and passed to `Axes.format`.
 """
 
 altxy_descrip = """
 Alias and more intuitive name for `~XYAxes.twin%(y)s`.
-The matplotlib `~matplotlib.axes.Axes.twiny` function
-generates two *x* axes with a shared ("twin") *y* axis.
+The matplotlib `~matplotlib.axes.Axes.twin%(y)s` function
+generates two *%(x)s* axes with a shared ("twin") *%(y)s* axis.
 Enforces the following settings.
 
 * Places the old *%(x)s* axis on the %(x1)s and the new *%(x)s* axis
@@ -1675,43 +1662,17 @@ Enforces the following settings.
 """
 
 
-def _parse_dualxy_args(x, transform, transform_kw, kwargs):
-    """Interprets the dualx and dualy transform and various keyword
-    arguments. Returns a list of forward transform, inverse transform, and
-    overrides for default locators and formatters."""
-    # Transform using input functions
-    # TODO: Also support transforms? Probably not -- transforms are a huge
-    # group that include ND and non-invertable transformations, but transforms
-    # used for axis scales are subset of invertible 1D functions
-    funcscale_kw = {}
-    transform_kw = transform_kw or {}
-    if isinstance(transform, (str, mscale.ScaleBase)) or transform_kw:
-        transform = transform or 'linear'
-        scale = axistools.Scale(transform, **transform_kw)
-        transform = scale.get_transform()
-        funcscale_funcs = (transform.transform, transform.inverted().transform)
-        for key in ('major_locator', 'minor_locator',
-                    'major_formatter', 'minor_formatter'):
-            default = getattr(scale, '_' + key, None)
-            if default:
-                funcscale_kw[key] = default
-    elif (np.iterable(transform) and len(transform) == 2
-          and all(callable(itransform) for itransform in transform)):
-        funcscale_funcs = transform
-    elif callable(transform):
-        funcscale_funcs = (transform, lambda x: x)
-    else:
-        raise ValueError(
-            f'Invalid transform {transform!r}. '
-            'Must be function, tuple of two functions, or scale name.')
-    # Parse keyword args intended for format() command
+def _parse_dualxy_args(x, kwargs):
+    """Detect `~XYAxes.format` arguments with the leading ``x`` or ``y``
+    removed. Translate to valid `~XYAxes.format` arguments."""
     kwargs_bad = {}
     for key in (*kwargs.keys(),):
         value = kwargs.pop(key)
         if key[0] == x and key[1:] in dualxy_kwargs:
             _warn_proplot(
                 f'dual{x}() keyword arg {key!r} is deprecated. '
-                f'Use {key[1:]!r} instead.')
+                f'Use {key[1:]!r} instead.'
+            )
             kwargs[key] = value
         elif key in dualxy_kwargs:
             kwargs[x + key] = value
@@ -1721,8 +1682,9 @@ def _parse_dualxy_args(x, transform, transform_kw, kwargs):
             kwargs_bad[key] = value
         if kwargs_bad:
             raise TypeError(
-                f'dual{x}() got unexpected keyword argument(s): {kwargs_bad}')
-    return funcscale_funcs, funcscale_kw, kwargs
+                f'dual{x}() got unexpected keyword argument(s): {kwargs_bad}'
+            )
+    return kwargs
 
 
 def _rcloc_to_stringloc(x, string):  # figures out string location
@@ -1782,8 +1744,10 @@ class XYAxes(Axes):
         self.yaxis.isDefault_majfmt = True
         # Custom attributes
         self._datex_rotated = False  # whether manual rotation has been applied
-        self._dualy_data = None  # for scaling units on opposite side of ax
-        self._dualx_data = None
+        self._dualy_arg = None  # for scaling units on opposite side of ax
+        self._dualx_arg = None
+        self._dualy_cache = None  # prevent excess _dualy_overrides calls
+        self._dualx_cache = None
 
     def _altx_overrides(self):
         """Applies alternate *x* axis overrides."""
@@ -1840,75 +1804,55 @@ class XYAxes(Axes):
         self._datex_rotated = True  # do not need to apply more than once
 
     def _dualx_overrides(self):
-        """Locks child "dual" *x* axis limits to the parent."""
-        # Why did I copy and paste the dualx/dualy code you ask? Copy
-        # pasting is bad, but so are a bunch of ugly getattr(attr)() calls
-        data = self._dualx_data
-        if data is None:
+        """Lock child "dual" *x* axis limits to the parent."""
+        # NOTE: We set the scale using private API to bypass application of
+        # set_default_locators_and_formatters: only_if_default=True is critical
+        # to prevent overriding user settings! We also bypass autoscale_view
+        # because we set limits manually, and bypass child.stale = True
+        # because that is done in call to set_xlim() below.
+        arg = self._dualx_arg
+        if arg is None:
             return
-        funcscale_funcs, funcscale_kw = data
-        # Build the FuncScale
-        # Sometimes we do *not* want to apply default locator and formatter
-        # overrides, in case user has manually changed them! Also, sometimes
-        # we want to borrow method that sets default from the scale from which
-        # forward and inverse funcs were drawn, instead of from FuncScale.
+        scale = self.xaxis._scale
+        olim = self.get_xlim()
+        if (scale, *olim) == self._dualx_cache:
+            return
         child = self._altx_child
-        scale_parent = self.xaxis._scale
-        scale_func = axistools.Scale(
-            'function', funcscale_funcs[::-1],
-            scale_parent.get_transform(),
-            **funcscale_kw
+        funcscale = axistools.Scale(
+            'function', arg, invert=True, parent_scale=scale,
         )
-        scale_defaults = scale_func if isinstance(
-            scale_parent, mscale.LinearScale) else scale_parent
-        try:
-            scale_defaults.set_default_locators_and_formatters(
-                child.xaxis, only_if_default=True,
-            )
-        except TypeError:
-            pass  # do nothing if axis has native matplotlib scale
-        child.xaxis._scale = scale_func
+        child.xaxis._scale = funcscale
         child._update_transScale()
-        child.stale = True
-        child.autoscale_view(scaley=False)
-        # Transform axis limits
-        # If the transform flipped the limits, when we set axis limits, it
-        # will get flipped again! So reverse the flip
-        lim = self.get_xlim()
-        nlim = list(map(funcscale_funcs[0], np.array(lim)))
-        if np.sign(np.diff(lim)) != np.sign(np.diff(nlim)):
-            nlim = nlim[::-1]
-        child.set_xlim(nlim)
+        funcscale.set_default_locators_and_formatters(
+            child.xaxis, only_if_default=True)
+        nlim = list(map(funcscale.functions[1], np.array(olim)))
+        if np.sign(np.diff(olim)) != np.sign(np.diff(nlim)):
+            nlim = nlim[::-1]  # if function flips limits, so will set_xlim!
+        child.set_xlim(nlim, emit=False)
+        self._dualx_cache = (scale, *olim)
 
     def _dualy_overrides(self):
-        """Locks child "dual" *y* axis limits to the parent."""
-        data = self._dualy_data
-        if data is None:
+        """Lock child "dual" *y* axis limits to the parent."""
+        arg = self._dualy_arg
+        if arg is None:
             return
-        funcscale_funcs, funcscale_kw = data
+        scale = self.yaxis._scale
+        olim = self.get_ylim()
+        if (scale, *olim) == self._dualy_cache:
+            return
         child = self._alty_child
-        scale_parent = self.yaxis._scale
-        scale_func = axistools.Scale(
-            'function', funcscale_funcs[::-1], scale_parent.get_transform(),
-            **funcscale_kw
+        funcscale = axistools.Scale(
+            'function', arg, invert=True, parent_scale=scale,
         )
-        scale_defaults = scale_func if isinstance(
-            scale_parent, mscale.LinearScale) else scale_parent
-        try:
-            scale_defaults.set_default_locators_and_formatters(
-                child.xaxis, only_if_default=True,
-            )
-        except TypeError:
-            pass
-        child.yaxis._scale = scale_func
+        child.yaxis._scale = funcscale
         child._update_transScale()
-        child.stale = True
-        child.autoscale_view(scalex=False)
-        lim = self.get_ylim()
-        nlim = list(map(funcscale_funcs[0], np.array(lim)))
-        if np.sign(np.diff(lim)) != np.sign(np.diff(nlim)):
+        funcscale.set_default_locators_and_formatters(
+            child.yaxis, only_if_default=True)
+        nlim = list(map(funcscale.functions[1], np.array(olim)))
+        if np.sign(np.diff(olim)) != np.sign(np.diff(nlim)):
             nlim = nlim[::-1]
-        child.set_ylim(nlim)
+        child.set_ylim(nlim, emit=False)
+        self._dualy_cache = (scale, *olim)
 
     def _hide_labels(self):
         """Function called at drawtime that enforces "shared" axis and
@@ -1924,8 +1868,7 @@ class XYAxes(Axes):
                     axis.label.set_visible(False)
                 if level > 2:
                     axis.set_major_formatter(mticker.NullFormatter())
-            # Enforce no minor ticks labels
-            # TODO: Document this?
+            # Enforce no minor ticks labels. TODO: Document?
             axis.set_minor_formatter(mticker.NullFormatter())
 
     def _sharex_setup(self, sharex, level):
@@ -1998,7 +1941,8 @@ class XYAxes(Axes):
         Parameters
         ----------
         aspect : {'auto', 'equal'}, optional
-            The aspect ratio mode.
+            The aspect ratio mode. See `~matplotlib.axes.Axes.set_aspect`
+            for details.
         xlabel, ylabel : str, optional
             The *x* and *y* axis labels. Applied with
             `~matplotlib.axes.Axes.set_xlabel`
@@ -2150,6 +2094,7 @@ class XYAxes(Axes):
             yformatter_kw = yformatter_kw or {}
             xminorlocator_kw = xminorlocator_kw or {}
             yminorlocator_kw = yminorlocator_kw or {}
+
             # Flexible keyword args, declare defaults
             xmargin = _notNone(xmargin, rc['axes.xmargin'])
             ymargin = _notNone(ymargin, rc['axes.ymargin'])
@@ -2157,18 +2102,31 @@ class XYAxes(Axes):
             ytickdir = _notNone(ytickdir, rc['ytick.direction'])
             xtickminor = _notNone(xtickminor, rc['xtick.minor.visible'])
             ytickminor = _notNone(ytickminor, rc['ytick.minor.visible'])
-            xformatter = _notNone(xticklabels, xformatter,
-                                  None, names=('xticklabels', 'xformatter'))
-            yformatter = _notNone(yticklabels, yformatter,
-                                  None, names=('yticklabels', 'yformatter'))
-            xlocator = _notNone(xticks, xlocator, None,
-                                names=('xticks', 'xlocator'))
-            ylocator = _notNone(yticks, ylocator, None,
-                                names=('yticks', 'ylocator'))
-            xminorlocator = _notNone(xminorticks, xminorlocator, None, names=(
-                'xminorticks', 'xminorlocator'))
-            yminorlocator = _notNone(yminorticks, yminorlocator, None, names=(
-                'yminorticks', 'yminorlocator'))
+            xformatter = _notNone(
+                xticklabels, xformatter, None,
+                names=('xticklabels', 'xformatter')
+            )
+            yformatter = _notNone(
+                yticklabels, yformatter, None,
+                names=('yticklabels', 'yformatter')
+            )
+            xlocator = _notNone(
+                xticks, xlocator, None,
+                names=('xticks', 'xlocator')
+            )
+            ylocator = _notNone(
+                yticks, ylocator, None,
+                names=('yticks', 'ylocator')
+            )
+            xminorlocator = _notNone(
+                xminorticks, xminorlocator, None,
+                names=('xminorticks', 'xminorlocator')
+            )
+            yminorlocator = _notNone(
+                yminorticks, yminorlocator, None,
+                names=('yminorticks', 'yminorlocator')
+            )
+
             # Grid defaults are more complicated
             axis = rc.get('axes.grid.axis')  # always need this property
             grid, which = rc['axes.grid'], rc['axes.grid.which']
@@ -2177,18 +2135,22 @@ class XYAxes(Axes):
                     grid = rc.get('axes.grid')
                 elif which is None:
                     which = rc.get('axes.grid.which')
-                xgrid = _notNone(xgrid,
-                                 grid and axis in ('x', 'both')
-                                 and which in ('major', 'both'))
-                ygrid = _notNone(ygrid,
-                                 grid and axis in ('y', 'both')
-                                 and which in ('major', 'both'))
-                xgridminor = _notNone(xgridminor, grid
-                                      and axis in ('x', 'both')
-                                      and which in ('minor', 'both'))
-                ygridminor = _notNone(ygridminor, grid
-                                      and axis in ('y', 'both')
-                                      and which in ('minor', 'both'))
+                xgrid = _notNone(
+                    xgrid, grid and axis in ('x', 'both')
+                    and which in ('major', 'both')
+                )
+                ygrid = _notNone(
+                    ygrid, grid and axis in ('y', 'both')
+                    and which in ('major', 'both')
+                )
+                xgridminor = _notNone(
+                    xgridminor, grid and axis in ('x', 'both')
+                    and which in ('minor', 'both')
+                )
+                ygridminor = _notNone(
+                    ygridminor, grid and axis in ('y', 'both')
+                    and which in ('minor', 'both')
+                )
 
             # Sensible defaults for spine, tick, tick label, and label locs
             # NOTE: Allow tick labels to be present without ticks! User may
@@ -2230,7 +2192,7 @@ class XYAxes(Axes):
                 tickloc, spineloc,
                 ticklabelloc, labelloc,
                 grid, gridminor,
-                tickminor, tickminorlocator,
+                tickminor, minorlocator,
                 lim, reverse, scale,
                 locator, tickrange,
                 formatter, tickdir,
@@ -2479,27 +2441,48 @@ class XYAxes(Axes):
                     self._update_axislabels(x, **kw)
 
                 # Major and minor locator
-                # WARNING: MultipleLocator fails sometimes, notably when doing
-                # boxplot. Tick labels moved to left and are incorrect.
+                # NOTE: Parts of API (dualxy) rely on minor tick toggling
+                # preserving the isDefault_minloc setting. In future should
+                # override the default matplotlib API minorticks_on!
+                # NOTE: Unlike matplotlib API when "turning on" minor ticks
+                # we *always* use the scale default, thanks to scale classes
+                # refactoring with _ScaleBase. See Axes.minorticks_on.
                 if locator is not None:
                     locator = axistools.Locator(locator, **locator_kw)
                     axis.set_major_locator(locator)
                     if isinstance(locator, mticker.IndexLocator):
                         tickminor = False  # 'index' minor ticks make no sense
-                if not tickminor and tickminorlocator is None:
+                if tickminor or minorlocator:
+                    isdefault = minorlocator is None
+                    if isdefault:
+                        minorlocator = getattr(
+                            axis._scale, '_default_minor_locator', None
+                        )
+                        if not minorlocator:
+                            minorlocator = axistools.Locator('minor')
+                    else:
+                        minorlocator = axistools.Locator(
+                            minorlocator, **minorlocator_kw
+                        )
+                    axis.set_minor_locator(minorlocator)
+                    axis.isDefault_minloc = isdefault
+                elif tickminor is not None and not tickminor:
+                    # NOTE: Generally if you *enable* minor ticks on a dual
+                    # axis, want to allow FuncScale updates to change the
+                    # minor tick locators. If you *disable* minor ticks, do
+                    # not want FuncScale applications to turn them on. So we
+                    # allow below to set isDefault_minloc to False.
                     axis.set_minor_locator(axistools.Locator('null'))
-                elif tickminorlocator is not None:
-                    axis.set_minor_locator(axistools.Locator(
-                        tickminorlocator, **minorlocator_kw))
 
                 # Major formatter
-                # NOTE: Only reliable way to disable ticks labels and then
-                # restore them is by messing with the formatter, *not* setting
-                # labelleft=False, labelright=False, etc.
+                # NOTE: The only reliable way to disable ticks labels and then
+                # restore them is by messing with the *formatter*, rather than
+                # setting labelleft=False, labelright=False, etc.
                 if (formatter is not None or tickrange is not None) and not (
-                        isinstance(axis.get_major_formatter(),
-                                   mticker.NullFormatter)
-                        and getattr(self, '_share' + x)):
+                    isinstance(
+                        axis.get_major_formatter(), mticker.NullFormatter
+                    ) and getattr(self, '_share' + x)
+                ):
                     # Tick range
                     if tickrange is not None:
                         if formatter not in (None, 'auto'):
@@ -2524,10 +2507,12 @@ class XYAxes(Axes):
                 #   locators into fixed version.
                 # * Most locators take no arguments in __call__, and some do
                 #   not have tick_values method, so we just call them.
-                if (bounds is not None
+                if (
+                    bounds is not None
                     or fixticks
                     or isinstance(formatter, mticker.FixedFormatter)
-                        or axis.get_scale() == 'cutoff'):
+                    or axis.get_scale() == 'cutoff'
+                ):
                     if bounds is None:
                         bounds = getattr(self, 'get_' + x + 'lim')()
                     locator = axistools.Locator([
@@ -2546,15 +2531,15 @@ class XYAxes(Axes):
                 self.set_aspect(aspect)
             super().format(**kwargs)
 
-    def altx(self, *args, **kwargs):
+    def altx(self):
+        # TODO: Accept format **kwargs? Is this already in #50?
         # Cannot wrap twiny() because we want to use XYAxes, not
         # matplotlib Axes. Instead use hidden method _make_twin_axes.
         # See https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_subplots.py  # noqa
         if self._altx_child or self._altx_parent:
             raise RuntimeError('No more than *two* twin axes are allowed.')
-        with self.figure._unlock():
+        with self.figure._authorize_add_subplot():
             ax = self._make_twin_axes(sharey=self, projection='xy')
-        # shared axes must have matching autoscale
         ax.set_autoscaley_on(self.get_autoscaley_on())
         ax.grid(False)
         self._altx_child = ax
@@ -2568,9 +2553,8 @@ class XYAxes(Axes):
     def alty(self):
         if self._alty_child or self._alty_parent:
             raise RuntimeError('No more than *two* twin axes are allowed.')
-        with self.figure._unlock():
+        with self.figure._authorize_add_subplot():
             ax = self._make_twin_axes(sharex=self, projection='xy')
-        # shared axes must have matching autoscale
         ax.set_autoscalex_on(self.get_autoscalex_on())
         ax.grid(False)
         self._alty_child = ax
@@ -2581,32 +2565,21 @@ class XYAxes(Axes):
         self.figure._axstack.remove(ax)  # or gets drawn twice!
         return ax
 
-    def dualx(self, transform, transform_kw=None, **kwargs):
-        # The axis scale is used to transform units on the left axis, linearly
-        # spaced, to units on the right axis... so the right scale must scale
-        # its data with the *inverse* of this transform. We do this below.
-        # NOTE: Matplotlib 3.1 has a 'secondary axis' feature. This one is
-        # simpler, because it does not implement the function transform as
-        # an axis scale (meaning user just has to supply the forward
-        # transformation, not the backwards one), and does not invent a new
-        # class with a bunch of complicated setters.
+    def dualx(self, arg, **kwargs):
+        # NOTE: Matplotlib 3.1 has a 'secondary axis' feature. For the time
+        # being, our version is more robust (see FuncScale) and simpler, since
+        # we do not create an entirely separate _SecondaryAxis class.
         ax = self.altx()
-        funcscale_funcs, funcscale_kw, kwargs = _parse_dualxy_args(
-            'x', transform, transform_kw, kwargs
-        )
-        self._dualx_data = (funcscale_funcs, funcscale_kw)
+        self._dualx_arg = arg
         self._dualx_overrides()
-        ax.format(**kwargs)
+        ax.format(**_parse_dualxy_args('x', kwargs))
         return ax
 
-    def dualy(self, transform, transform_kw=None, **kwargs):
+    def dualy(self, arg, **kwargs):
         ax = self.alty()
-        funcscale_funcs, funcscale_kw, kwargs = _parse_dualxy_args(
-            'y', transform, transform_kw, kwargs
-        )
-        self._dualy_data = (funcscale_funcs, funcscale_kw)
+        self._dualy_arg = arg
         self._dualy_overrides()
-        ax.format(**kwargs)
+        ax.format(**_parse_dualxy_args('y', kwargs))
         return ax
 
     def draw(self, renderer=None, *args, **kwargs):

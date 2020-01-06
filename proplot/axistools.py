@@ -9,6 +9,7 @@ from .utils import _warn_proplot, _notNone
 from .rctools import rc
 from numbers import Number
 from fractions import Fraction
+import copy
 import numpy as np
 import numpy.ma as ma
 import matplotlib.dates as mdates
@@ -66,32 +67,34 @@ def Locator(locator, *args, **kwargs):
 
         If string, a dictionary lookup is performed (see below table).
 
-        ======================  ============================================  =========================================================================================
-        Key                     Class                                         Description
-        ======================  ============================================  =========================================================================================
-        ``'null'``, ``'none'``  `~matplotlib.ticker.NullLocator`              No ticks
-        ``'auto'``              `~matplotlib.ticker.AutoLocator`              Major ticks at sensible locations
-        ``'minor'``             `~matplotlib.ticker.AutoMinorLocator`         Minor ticks at sensible locations
-        ``'date'``              `~matplotlib.dates.AutoDateLocator`           Default tick locations for datetime axes
-        ``'log'``               `~matplotlib.ticker.LogLocator` preset        For log-scale axes, ticks on each power of the base
-        ``'logminor'``          `~matplotlib.ticker.LogLocator` preset        For log-scale axes, ticks on the 1st through 9th multiples of each power of the base
-        ``'maxn'``              `~matplotlib.ticker.MaxNLocator`              No more than ``N`` ticks at sensible locations
-        ``'linear'``            `~matplotlib.ticker.LinearLocator`            Exactly ``N`` ticks encompassing the axis limits, spaced as ``numpy.linspace(lo, hi, N)``
-        ``'multiple'``          `~matplotlib.ticker.MultipleLocator`          Ticks every ``N`` step away from zero
-        ``'fixed'``             `~matplotlib.ticker.FixedLocator`             Ticks at these exact locations
-        ``'index'``             `~matplotlib.ticker.IndexLocator`             Ticks on the non-negative integers
-        ``'symlog'``            `~matplotlib.ticker.SymmetricalLogLocator`    Ticks for symmetrical log-scale axes
-        ``'logit'``             `~matplotlib.ticker.LogitLocator`             Ticks for logit-scale axes
-        ``'theta'``             `~matplotlib.projections.polar.ThetaLocator`  Like the base locator but default locations are every `numpy.pi`/8 radians
-        ``'year'``              `~matplotlib.dates.YearLocator`               Ticks every ``N`` years
-        ``'month'``             `~matplotlib.dates.MonthLocator`              Ticks every ``N`` months
-        ``'weekday'``           `~matplotlib.dates.WeekdayLocator`            Ticks every ``N`` weekdays
-        ``'day'``               `~matplotlib.dates.DayLocator`                Ticks every ``N`` days
-        ``'hour'``              `~matplotlib.dates.HourLocator`               Ticks every ``N`` hours
-        ``'minute'``            `~matplotlib.dates.MinuteLocator`             Ticks every ``N`` minutes
-        ``'second'``            `~matplotlib.dates.SecondLocator`             Ticks every ``N`` seconds
-        ``'microsecond'``       `~matplotlib.dates.MicrosecondLocator`        Ticks every ``N`` microseconds
-        ======================  ============================================  =========================================================================================
+        ======================  =================================================  ================================================================================================
+        Key                     Class                                              Description
+        ======================  =================================================  ================================================================================================
+        ``'null'``, ``'none'``  `~matplotlib.ticker.NullLocator`                   No ticks
+        ``'auto'``              `~matplotlib.ticker.AutoLocator`                   Major ticks at sensible locations
+        ``'minor'``             `~matplotlib.ticker.AutoMinorLocator`              Minor ticks at sensible locations
+        ``'date'``              `~matplotlib.dates.AutoDateLocator`                Default tick locations for datetime axes
+        ``'fixed'``             `~matplotlib.ticker.FixedLocator`                  Ticks at these exact locations
+        ``'index'``             `~matplotlib.ticker.IndexLocator`                  Ticks on the non-negative integers
+        ``'linear'``            `~matplotlib.ticker.LinearLocator`                 Exactly ``N`` ticks encompassing the axis limits, spaced as ``numpy.linspace(lo, hi, N)``
+        ``'log'``               `~matplotlib.ticker.LogLocator`                    Ticks for log-scale axes
+        ``'logminor'``          `~matplotlib.ticker.LogLocator` preset             Ticks for log-scale axes on the 1st through 9th multiples of each power of the base
+        ``'logit'``             `~matplotlib.ticker.LogitLocator`                  Ticks for logit-scale axes
+        ``'logitminor'``        `~matplotlib.ticker.LogitLocator` preset           Ticks for logit-scale axes with ``minor=True`` passed to `~matplotlib.ticker.LogitLocator`
+        ``'maxn'``              `~matplotlib.ticker.MaxNLocator`                   No more than ``N`` ticks at sensible locations
+        ``'multiple'``          `~matplotlib.ticker.MultipleLocator`               Ticks every ``N`` step away from zero
+        ``'symlog'``            `~matplotlib.ticker.SymmetricalLogLocator`         Ticks for symmetrical log-scale axes
+        ``'symlogminor'``       `~matplotlib.ticker.SymmetricalLogLocator` preset  Ticks for symmetrical log-scale axes on the 1st through 9th multiples of each power of the base
+        ``'theta'``             `~matplotlib.projections.polar.ThetaLocator`       Like the base locator but default locations are every `numpy.pi`/8 radians
+        ``'year'``              `~matplotlib.dates.YearLocator`                    Ticks every ``N`` years
+        ``'month'``             `~matplotlib.dates.MonthLocator`                   Ticks every ``N`` months
+        ``'weekday'``           `~matplotlib.dates.WeekdayLocator`                 Ticks every ``N`` weekdays
+        ``'day'``               `~matplotlib.dates.DayLocator`                     Ticks every ``N`` days
+        ``'hour'``              `~matplotlib.dates.HourLocator`                    Ticks every ``N`` hours
+        ``'minute'``            `~matplotlib.dates.MinuteLocator`                  Ticks every ``N`` minutes
+        ``'second'``            `~matplotlib.dates.SecondLocator`                  Ticks every ``N`` seconds
+        ``'microsecond'``       `~matplotlib.dates.MicrosecondLocator`             Ticks every ``N`` microseconds
+        ======================  =================================================  ================================================================================================
 
     *args, **kwargs
         Passed to the `~matplotlib.ticker.Locator` class.
@@ -110,9 +113,12 @@ def Locator(locator, *args, **kwargs):
     # Get the locator
     if isinstance(locator, str):  # dictionary lookup
         # Shorthands and defaults
-        if locator == 'logminor':
-            locator = 'log'
-            kwargs.setdefault('subs', np.arange(10))
+        if locator in ('logminor', 'logitminor', 'symlogminor'):
+            locator, _ = locator.split('minor')
+            if locator == 'logit':
+                kwargs.setdefault('minor', True)
+            else:
+                kwargs.setdefault('subs', np.arange(1, 10))
         elif locator == 'index':
             args = args or (1,)
             if len(args) == 1:
@@ -179,26 +185,26 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
         ``'simple'``            `SimpleFormatter`                               New default tick labels for e.g. contour labels
         ``'frac'``              `FracFormatter`                                 Rational fractions
         ``'date'``              `~matplotlib.dates.AutoDateFormatter`           Default tick labels for datetime axes
-        ``'datestr'``           `~matplotlib.dates.DateFormatter`               Date formatting with C-style ``string % format`` notation
         ``'concise'``           `~matplotlib.dates.ConciseDateFormatter`        More concise date labels introduced in `matplotlib 3.1 <https://matplotlib.org/3.1.0/users/whats_new.html#concisedateformatter>`__
+        ``'datestr'``           `~matplotlib.dates.DateFormatter`               Date formatting with C-style ``string % format`` notation
+        ``'eng'``               `~matplotlib.ticker.EngFormatter`               Engineering notation
+        ``'fixed'``             `~matplotlib.ticker.FixedFormatter`             List of strings
+        ``'formatstr'``         `~matplotlib.ticker.FormatStrFormatter`         From C-style ``string % format`` notation
+        ``'index'``             `~matplotlib.ticker.IndexFormatter`             List of strings corresponding to non-negative integer positions along the axis
+        ``'log'``, ``'sci'``    `~matplotlib.ticker.LogFormatterSciNotation`    For log-scale axes with scientific notation
+        ``'logit'``             `~matplotlib.ticker.LogitFormatter`             For logistic-scale axes
+        ``'math'``              `~matplotlib.ticker.LogFormatterMathtext`       For log-scale axes with math text
+        ``'percent'``           `~matplotlib.ticker.PercentFormatter`           Trailing percent sign
         ``'scalar'``            `~matplotlib.ticker.ScalarFormatter`            Old default tick labels for axes
         ``'strmethod'``         `~matplotlib.ticker.StrMethodFormatter`         From the ``string.format`` method
-        ``'formatstr'``         `~matplotlib.ticker.FormatStrFormatter`         From C-style ``string % format`` notation
-        ``'log'``, ``'sci'``    `~matplotlib.ticker.LogFormatterSciNotation`    For log-scale axes with scientific notation
-        ``'math'``              `~matplotlib.ticker.LogFormatterMathtext`       For log-scale axes with math text
-        ``'logit'``             `~matplotlib.ticker.LogitFormatter`             For logistic-scale axes
-        ``'eng'``               `~matplotlib.ticker.EngFormatter`               Engineering notation
-        ``'percent'``           `~matplotlib.ticker.PercentFormatter`           Trailing percent sign
-        ``'fixed'``             `~matplotlib.ticker.FixedFormatter`             List of strings
-        ``'index'``             `~matplotlib.ticker.IndexFormatter`             List of strings corresponding to non-negative integer positions along the axis
         ``'theta'``             `~matplotlib.projections.polar.ThetaFormatter`  Formats radians as degrees, with a degree symbol
-        ``'pi'``                `FracFormatter` preset                          Fractions of :math:`\\pi`
         ``'e'``                 `FracFormatter` preset                          Fractions of *e*
+        ``'pi'``                `FracFormatter` preset                          Fractions of :math:`\\pi`
         ``'deg'``               `AutoFormatter` preset                          Trailing degree symbol
-        ``'deglon'``            `AutoFormatter` preset                          Trailing degree symbol and cardinal "WE" indicator
         ``'deglat'``            `AutoFormatter` preset                          Trailing degree symbol and cardinal "SN" indicator
-        ``'lon'``               `AutoFormatter` preset                          Cardinal "WE" indicator
+        ``'deglon'``            `AutoFormatter` preset                          Trailing degree symbol and cardinal "WE" indicator
         ``'lat'``               `AutoFormatter` preset                          Cardinal "SN" indicator
+        ``'lon'``               `AutoFormatter` preset                          Cardinal "WE" indicator
         ======================  ==============================================  ===================================================================================================================================
 
     date : bool, optional
@@ -286,34 +292,37 @@ def Scale(scale, *args, **kwargs):
         If `~matplotlib.scale.ScaleBase`, the object is returned.
 
         If string, this is the registered scale name or scale "preset" (see
-        below table). If an iterable is passed with the scale name as the
-        first element, the subsequent items are passed to the scale class as
-        positional arguments.
+        below table).
 
-        =================  ===============================  =======================================================================
-        Key                Class                            Description
-        =================  ===============================  =======================================================================
-        ``'linear'``       `~matplotlib.scale.LinearScale`  Linear
-        ``'log'``          `LogScale`                       Logarithmic
-        ``'symlog'``       `SymmetricalLogScale`            Logarithmic beyond finite space around zero
-        ``'logit'``        `~matplotlib.scale.LogitScale`   Logistic
-        ``'inverse'``      `InverseScale`                   Inverse
-        ``'function'``     `FuncScale`                      Scale from arbitrary forward and backwards functions
-        ``'sine'``         `SineLatitudeScale`              Sine function (in degrees)
-        ``'mercator'``     `MercatorLatitudeScale`          Mercator latitude function (in degrees)
-        ``'exp'``          `ExpScale`                       Arbitrary exponential function
-        ``'power'``        `PowerScale`                     Arbitrary power function
-        ``'cutoff'``       `CutoffScale`                    Arbitrary piecewise linear transformations
-        ``'quadratic'``    `PowerScale` (preset)            Quadratic function
-        ``'cubic'``        `PowerScale` (preset)            Cubic function
-        ``'quartic'``      `PowerScale` (preset)            Cubic function
-        ``'pressure'``     `ExpScale` (preset)              Height (in km) expressed linear in pressure
-        ``'height'``       `ExpScale` (preset)              Pressure (in hPa) expressed linear in height
-        ``'db'``           `ExpScale` (preset)              Ratio expressed as `decibels <https://en.wikipedia.org/wiki/Decibel>`__
-        ``'np'``           `ExpScale` (preset)              Ratio expressed as `nepers <https://en.wikipedia.org/wiki/Neper>`__
-        ``'idb'``          `ExpScale` (preset)              `Decibels <https://en.wikipedia.org/wiki/Decibel>`__ expressed as ratio
-        ``'inp'``          `ExpScale` (preset)              `Nepers <https://en.wikipedia.org/wiki/Neper>`__ expressed as ratio
-        =================  ===============================  =======================================================================
+        If list or tuple and the first element is a string, the subsequent
+        items are passed to the scale class as positional arguments. For
+        example, ``ax.format(xscale=('power', 2))`` applies the ``'quadratic'``
+        scale to the *x* axis.
+
+        =================  =======================  =======================================================================
+        Key                Class                    Description
+        =================  =======================  =======================================================================
+        ``'linear'``       `LinearScale`            Linear
+        ``'log'``          `LogScale`               Logarithmic
+        ``'symlog'``       `SymmetricalLogScale`    Logarithmic beyond finite space around zero
+        ``'logit'``        `LogitScale`             Logistic
+        ``'inverse'``      `InverseScale`           Inverse
+        ``'function'``     `FuncScale`              Scale from arbitrary forward and backwards functions
+        ``'sine'``         `SineLatitudeScale`      Sine function (in degrees)
+        ``'mercator'``     `MercatorLatitudeScale`  Mercator latitude function (in degrees)
+        ``'exp'``          `ExpScale`               Arbitrary exponential function
+        ``'power'``        `PowerScale`             Arbitrary power function
+        ``'cutoff'``       `CutoffScale`            Arbitrary piecewise linear transformations
+        ``'quadratic'``    `PowerScale` (preset)    Quadratic function
+        ``'cubic'``        `PowerScale` (preset)    Cubic function
+        ``'quartic'``      `PowerScale` (preset)    Cubic function
+        ``'db'``           `ExpScale` (preset)      Ratio expressed as `decibels <https://en.wikipedia.org/wiki/Decibel>`__
+        ``'np'``           `ExpScale` (preset)      Ratio expressed as `nepers <https://en.wikipedia.org/wiki/Neper>`__
+        ``'idb'``          `ExpScale` (preset)      `Decibels <https://en.wikipedia.org/wiki/Decibel>`__ expressed as ratio
+        ``'inp'``          `ExpScale` (preset)      `Nepers <https://en.wikipedia.org/wiki/Neper>`__ expressed as ratio
+        ``'pressure'``     `ExpScale` (preset)      Height (in km) expressed linear in pressure
+        ``'height'``       `ExpScale` (preset)      Pressure (in hPa) expressed linear in height
+        =================  =======================  =======================================================================
 
     *args, **kwargs
         Passed to the `~matplotlib.scale.ScaleBase` class.
@@ -323,6 +332,10 @@ def Scale(scale, *args, **kwargs):
     `~matplotlib.scale.ScaleBase`
         The scale instance.
     """  # noqa
+    # NOTE: Why not try to interpret FuncScale arguments, like when lists
+    # of numbers are passed to Locator? Because FuncScale *itself* accepts
+    # ScaleBase classes as arguments... but constructor functions cannot
+    # do anything but return the class instance upon receiving one.
     if isinstance(scale, mscale.ScaleBase):
         return scale
     # Pull out extra args
@@ -544,6 +557,14 @@ def _parse_logscale_args(kwargs, *keys):
             kwargs.pop(key + 'y', None),
             None, names=(key, key + 'x', key + 'y'),
         )
+        if key == 'linthresh' and value is None:
+            # NOTE: If linthresh is *exactly* on a power of the base, can
+            # end up with additional log-locator step inside the threshold,
+            # e.g. major ticks on -10, -1, -0.1, 0.1, 1, 10 for linthresh of
+            # 1. Adding slight offset to *desired* linthresh prevents this.
+            value = 1 + 1e-10
+        if key == 'subs' and value is None:
+            value = np.arange(1, 10)
         if value is not None:  # dummy axis_name is 'x'
             kwargs[key + 'x'] = value
     return kwargs
@@ -558,7 +579,12 @@ class _ScaleBase(object):
     def __init__(self, *args, **kwargs):
         # Pass a dummy axis to the superclass
         axis = type('Axis', (object,), {'axis_name': 'x'})()
-        return super().__init__(axis, *args, **kwargs)
+        super().__init__(axis, *args, **kwargs)
+        self._default_smart_bounds = None
+        self._default_major_locator = None
+        self._default_minor_locator = None
+        self._default_major_formatter = None
+        self._default_minor_formatter = None
 
     def set_default_locators_and_formatters(self, axis, only_if_default=False):
         """
@@ -575,41 +601,39 @@ class _ScaleBase(object):
             want to avoid overwriting user customization when the scale
             is changed.
         """
-        # * We assert isDefault settings, because matplotlib does this in
-        #   axis._set_scale but sometimes we need to bypass this method!
-        # * Minor locator can be "non default" even when user has not changed
-        #   it, due to "turning minor ticks" on and off, so always apply
-        #   default if it is currently AutoMinorLocator.
-        if getattr(self, '_smart_bounds', None):
-            axis.set_smart_bounds(True)  # unnecessary?
+        # Apply isDefault because matplotlib does this in axis._set_scale
+        # but sometimes we need to bypass this method! Minor locator can be
+        # "non default" even when user has not changed it, due to "turning
+        # minor ticks" on and off, so set as 'default' if AutoMinorLocator.
+        if self._default_smart_bounds is not None:
+            axis.set_smart_bounds(self._default_smart_bounds)
         if not only_if_default or axis.isDefault_majloc:
             axis.set_major_locator(
-                getattr(self, '_major_locator', None) or Locator('auto')
+                self._default_major_locator or Locator('auto')
             )
             axis.isDefault_majloc = True
         if not only_if_default or axis.isDefault_majfmt:
             axis.set_major_formatter(
-                getattr(self, '_major_formatter', None) or Formatter('auto')
+                self._default_major_formatter or Formatter('auto')
             )
             axis.isDefault_majfmt = True
-        if (not only_if_default or axis.isDefault_minloc or isinstance(
-                axis.get_minor_locator(), mticker.AutoMinorLocator)):
+        if not only_if_default or axis.isDefault_minloc:
             name = axis.axis_name if axis.axis_name in 'xy' else 'x'
-            minor = 'minor' if rc.get(name + 'tick.minor.visible') else 'null'
             axis.set_minor_locator(
-                getattr(self, '_minor_locator', None) or Locator(minor)
+                self._default_minor_locator or Locator(
+                    'minor' if rc.get(name + 'tick.minor.visible') else 'null'
+                )
             )
             axis.isDefault_minloc = True
-        if (not only_if_default or axis.isDefault_minfmt or isinstance(
-                axis.get_minor_formatter(), mticker.NullFormatter)):
+        if not only_if_default or axis.isDefault_minfmt:
             axis.set_minor_formatter(
-                getattr(self, '_minor_formatter', None) or Formatter('null')
+                self._default_minor_formatter or Formatter('null')
             )
             axis.isDefault_minfmt = True
 
     def get_transform(self):
-        """Returns the scale transform."""
-        return getattr(self, '_transform', mtransforms.IdentityTransform())
+        """Return the scale transform."""
+        return self._transform
 
 
 class LinearScale(_ScaleBase, mscale.LinearScale):
@@ -619,6 +643,11 @@ class LinearScale(_ScaleBase, mscale.LinearScale):
     """
     name = 'linear'
     """The registered scale name."""
+    def __init__(self, **kwargs):
+        """
+        """
+        super().__init__(**kwargs)
+        self._transform = mtransforms.IdentityTransform()
 
 
 class LogitScale(_ScaleBase, mscale.LogitScale):
@@ -628,6 +657,19 @@ class LogitScale(_ScaleBase, mscale.LogitScale):
     """
     name = 'logit'
     """The registered scale name."""
+
+    def __init__(self, **kwargs):
+        """
+        Parameters
+        ----------
+        nonpos : {'mask', 'clip'}
+          Values outside of (0, 1) can be masked as invalid, or clipped to a
+          number very close to 0 or 1.
+        """
+        super().__init__(**kwargs)
+        # self._default_major_formatter = Formatter('logit')
+        self._default_major_locator = Locator('logit')
+        self._default_minor_locator = Locator('logit', minor=True)
 
 
 class LogScale(_ScaleBase, mscale.LogScale):
@@ -649,18 +691,20 @@ class LogScale(_ScaleBase, mscale.LogScale):
             Non-positive values in *x* or *y* can be masked as
             invalid, or clipped to a very small positive number.
         subs : list of int, optional
-            Default tick locations are on these multiples of each power
+            Default *minor* tick locations are on these multiples of each power
             of the base. For example, ``subs=(1,2,5)`` draws ticks on 1, 2, 5,
-            10, 20, 50, etc.
+            10, 20, 50, etc. The default is ``subs=numpy.arange(1, 10)``.
         basex, basey, nonposx, nonposy, subsx, subsy
             Aliases for the above keywords. These used to be conditional
             on the *name* of the axis.
         """
         kwargs = _parse_logscale_args(kwargs, 'base', 'nonpos', 'subs')
         super().__init__(**kwargs)
-        # self._major_formatter = Formatter('log')
-        self._major_locator = Locator('log', base=self.base)
-        self._minor_locator = Locator('log', base=self.base, subs=self.subs)
+        # self._default_major_formatter = Formatter('log')
+        self._default_major_locator = Locator(
+            'log', base=self.base)
+        self._default_minor_locator = Locator(
+            'log', base=self.base, subs=self.subs)
 
 
 class SymmetricalLogScale(_ScaleBase, mscale.SymmetricalLogScale):
@@ -690,79 +734,164 @@ class SymmetricalLogScale(_ScaleBase, mscale.SymmetricalLogScale):
             for the positive and negative halves of the linear range will be
             equal to one decade in the logarithmic range.
         subs : sequence of int, optional
-            Default minor tick locations are on these multiples of each power
-            of the base. For example, ``subs=[1,2,5]`` draws ticks on 1, 2, 5,
-            10, 20, 50, 100, 200, 500, etc.
+            Default *minor* tick locations are on these multiples of each power
+            of the base. For example, ``subs=(1, 2, 5)`` draws ticks on 1, 2,
+            5, 10, 20, 50, 100, 200, 500, etc. The default is
+            ``subs=numpy.arange(1, 10)``.
         basex, basey, linthreshx, linthreshy, linscalex, linscaley, \
 subsx, subsy
             Aliases for the above keywords. These used to be conditional
             on the *name* of the axis.
         """
-        kwargs = _parse_logscale_args(kwargs,
-                                      'base', 'linthresh', 'linscale', 'subs')
-        super().__init__(**kwargs)
         # Note the symlog locator gets base and linthresh from the transform
-        # self._major_formatter = Formatter('symlog'))
-        self._major_locator = Locator('symlog', transform=self.get_transform())
-        self._minor_locator = Locator('symlog', transform=self.get_transform(),
-                                      subs=self.subs)
+        kwargs = _parse_logscale_args(
+            kwargs, 'base', 'linthresh', 'linscale', 'subs')
+        super().__init__(**kwargs)
+        # self._default_major_formatter = Formatter('symlog'))
+        self._default_major_locator = Locator(
+            'symlog', transform=self.get_transform())
+        self._default_minor_locator = Locator(
+            'symlog', transform=self.get_transform(), subs=self.subs)
 
 
 class FuncScale(_ScaleBase, mscale.ScaleBase):
     """
-    Arbitrary scale with user-supplied forward and inverse functions and
-    arbitrary additional transform applied thereafter. Input is a tuple
-    of functions and, optionally, a `~matplotlib.transforms.Transform` or
-    `~matplotlib.scale.ScaleBase` instance.
+    An axis scale comprised of arbitrary forward and inverse transformations.
     """
     name = 'function'
     """The registered scale name."""
 
-    def __init__(self, functions, transform=None, scale=None,
+    def __init__(self, arg, invert=False, parent_scale=None,
                  major_locator=None, minor_locator=None,
                  major_formatter=None, minor_formatter=None,
+                 smart_bounds=None,
                  ):
         """
         Parameters
         ----------
-        functions : (function, function) or `~matplotlib.scale.ScaleBase`
-            Length-2 tuple of forward and inverse functions, or another
-            `~matplotlib.scale.ScaleBase` from which the functions are drawn.
-        transform : `~matplotlib.transforms.Transform`, optional
-            Additional transform applied after the forward function
-            and before the inverse function.
+        arg : function, (function, function), or \
+`~matplotlib.scale.ScaleBase`
+            The transform used to translate units from the parent axis to
+            the secondary axis. Input can be as follows:
+
+            * A single function that accepts a number and returns some
+              transformation of that number. If you do not provide the
+              inverse, the function must be
+              `linear <https://en.wikipedia.org/wiki/Linear_function>`__ or \
+`involutory <https://en.wikipedia.org/wiki/Involution_(mathematics)>`__.
+              For example, to convert Kelvin to Celsius, use
+              ``ax.dual%(x)s(lambda x: x - 273.15)``. To convert kilometers
+              to meters, use ``ax.dual%(x)s(lambda x: x*1e3)``.
+            * A 2-tuple of such functions. The second function must be the
+              *inverse* of the first. For example, to apply the square, use
+              ``ax.dual%(x)s((lambda x: x**2, lambda x: x**0.5))``.
+              Again, if the first function is linear or involutory, you do
+              not need to provide the second!
+            * A `~matplotlib.scale.ScaleBase` instance, e.g. a scale returned
+              by the `~proplot.axistools.Scale` constructor function. The
+              forward transformation, inverse transformation, and default axis
+              locators and formatters are borrowed from the resulting scale
+              class.  For example, to apply the inverse, use
+              ``ax.dual%(x)s(plot.Scale('inverse'))``.
+              To apply the base-10 exponential function, use
+              ``ax.dual%(x)s(plot.Scale('exp', 10))``.
+
+        invert : bool, optional
+            If ``True``, the forward and inverse functions are *swapped*.
+            Used when drawing dual axes.
+        parent_scale : `~matplotlib.scale.ScaleBase`
+            The axis scale of the "parent" axis. Its forward transform is
+            applied to the `FuncTransform`. Used when drawing dual axes.
         major_locator, minor_locator : `~matplotlib.ticker.Locator`, optional
-            The default major and minor locator. By default these are the same
-            as `~matplotlib.scale.LinearScale`.
+            The default major and minor locator. By default these are
+            borrowed from `transform`. If `transform` is not an axis scale,
+            they are the same as `~matplotlib.scale.LinearScale`.
         major_formatter, minor_formatter : `~matplotlib.ticker.Formatter`, \
 optional
-            The default major and minor formatter. By default these are the
-            same as `~matplotlib.scale.LinearScale`.
+            The default major and minor formatter. By default these are
+            borrowed from `transform`. If `transform` is not an axis scale,
+            they are the same as `~matplotlib.scale.LinearScale`.
+        smart_bounds : bool, optional
+            Whether "smart bounds" are enabled by default. If not ``None``,
+            this is passed to `~matplotlib.axis.Axis.set_smart_bounds` when
+            `~matplotlib.scale.ScaleBase.set_default_locators_and_formatters`
+            is called. By default these are borrowed from `transform`.
         """
-        if np.iterable(functions) and len(functions) == 2 and all(
-                callable(ifunction) for ifunction in functions):
-            forward, inverse = functions
+        # NOTE: We permit *arbitrary* parent axis scales. If the parent is
+        # non-linear, we use *its* default locators and formatters. Assumption
+        # is this is a log scale and the child is maybe some multiple or offset
+        # of that scale. If the parent axis scale is linear, use the funcscale
+        # defaults, which can inherit defaults.
+        super().__init__()
+        if callable(arg):
+            forward = inverse = arg
+        elif np.iterable(arg) and len(arg) == 2 and all(map(callable, arg)):
+            forward, inverse = arg
+        elif isinstance(arg, mscale.ScaleBase):
+            trans = arg.get_transform()
+            forward = trans.transform
+            inverse = trans.inverted().transform
         else:
             raise ValueError(
-                f'scale needs length-2 list of forward and inverse '
-                f'functions, not {functions!r}.')
+                'Input should be a function, 2-tuple of forward and '
+                'and inverse functions, or a matplotlib.scale.ScaleBase '
+                f'instance, not {arg!r}.'
+            )
+
+        # Create the FuncTransform or composite transform used for this class
+        # May need to invert functions for dualx() and dualy()
+        if invert:
+            forward, inverse = inverse, forward
         functransform = FuncTransform(forward, inverse)
-        if transform is not None:
-            if isinstance(transform, mtransforms.Transform):
-                functransform = functransform + transform
-            else:
-                raise ValueError(
-                    f'transform {transform!r} must be a Transform instance, '
-                    f'not {type(transform)!r}.')
+
+        # Manage the "parent" axis scale
+        # NOTE: Makes sense to use the "inverse" function here because this is
+        # a transformation from some *other* axis to this one, not vice versa.
+        if isinstance(parent_scale, mscale.ScaleBase):
+            if isinstance(parent_scale, mscale.SymmetricalLogScale):
+                kwargs = {
+                    key: getattr(parent_scale, key)
+                    for key in ('base', 'linthresh', 'linscale', 'subs')
+                }
+                kwargs['linthresh'] = inverse(kwargs['linthresh'])
+                parent_scale = SymmetricalLogScale(**kwargs)
+            elif isinstance(parent_scale, CutoffScale):
+                args = list(parent_scale.args)  # copy
+                for i in range(0, len(args), 2):
+                    args[i] = inverse(args[i])
+                parent_scale = CutoffScale(*args)
+            functransform = parent_scale.get_transform() + functransform
+        elif parent_scale is not None:
+            raise ValueError(
+                f'parent_scale {parent_scale!r} must be a ScaleBase instance, '
+                f'not {type(parent_scale)!r}.'
+            )
+
+        # Transform and default stuff
+        self.functions = (forward, inverse)
         self._transform = functransform
-        if major_locator:
-            self._major_locator = major_locator
-        if minor_locator:
-            self._minor_locator = minor_locator
-        if major_formatter:
-            self._major_formatter = major_formatter
-        if minor_formatter:
-            self._minor_formatter = minor_formatter
+        self._default_smart_bounds = smart_bounds
+        self._default_major_locator = major_locator
+        self._default_minor_locator = minor_locator
+        self._default_major_formatter = major_formatter
+        self._default_minor_formatter = minor_formatter
+
+        # Try to borrow locators and formatters
+        # WARNING: Using the same locator on multiple axes can evidently
+        # have unintended side effects! Matplotlib bug. So we make copies.
+        for scale in (arg, parent_scale):
+            if not isinstance(scale, _ScaleBase):
+                continue
+            if isinstance(scale, mscale.LinearScale):
+                continue
+            for key in (
+                'smart_bounds', 'major_locator', 'minor_locator',
+                'major_formatter', 'minor_formatter'
+            ):
+                key = '_default_' + key
+                attr = getattr(scale, key)
+                if getattr(self, key) is None and attr is not None:
+                    setattr(self, key, copy.copy(attr))
 
 
 class FuncTransform(mtransforms.Transform):
@@ -991,8 +1120,8 @@ class MercatorLatitudeScale(_ScaleBase, mscale.ScaleBase):
             raise ValueError('Threshold "thresh" must be <=90.')
         self._thresh = thresh
         self._transform = MercatorLatitudeTransform(thresh)
-        self._major_formatter = Formatter('deg')
-        self._smart_bounds = True
+        self._default_major_formatter = Formatter('deg')
+        self._default_smart_bounds = True
 
     def limit_range_for_scale(self, vmin, vmax, minpos):
         """Returns the range *vmin* and *vmax* limited to some range within
@@ -1064,8 +1193,8 @@ class SineLatitudeScale(_ScaleBase, mscale.ScaleBase):
     def __init__(self):
         super().__init__()
         self._transform = SineLatitudeTransform()
-        self._major_formatter = Formatter('deg')
-        self._smart_bounds = True
+        self._default_major_formatter = Formatter('deg')
+        self._default_smart_bounds = True
 
     def limit_range_for_scale(self, vmin, vmax, minpos):
         """Returns the range *vmin* and *vmax* limited to some range within
@@ -1131,23 +1260,28 @@ class CutoffScale(_ScaleBase, mscale.ScaleBase):
         Parameters
         ----------
         *args : (thresh_1, scale_1, ..., thresh_N, [scale_N]), optional
-            Sequence of thresholds and scales. If the final scale is omitted
-            (i.e. you passed an odd number of args) it is set to ``1``.
+            Sequence of "thresholds" and "scales". If the final scale is
+            omitted (i.e. you passed an odd number of arguments) it is set
+            to ``1``. Each ``scale_i`` in the sequence can be interpreted
+            as follows:
 
             * If ``scale_i < 1``, the axis is decelerated from ``thresh_i`` to
-              ``thresh_i+1`` or, if ``i == N``, everywhere above ``thresh_i``.
+              ``thresh_i+1``. For ``scale_N``, the axis is decelerated
+              everywhere above ``thresh_N``.
             * If ``scale_i > 1``, the axis is accelerated from ``thresh_i`` to
-              ``thresh_i+1`` or, if ``i == N``, everywhere above ``thresh_i``.
-            * If ``scale_i == np.inf``, the axis *discretely jumps* from
-              ``thresh_i`` to ``thresh_i+1``.
+              ``thresh_i+1``. For ``scale_N``, the axis is accelerated
+              everywhere above ``thresh_N``.
+            * If ``scale_i == numpy.inf``, the axis *discretely jumps* from
+              ``thresh_i`` to ``thresh_i+1``. The final scale ``scale_N``
+              *cannot* be ``numpy.inf``.
 
         Example
         -------
 
         >>> import proplot as plot
         ... import numpy as np
-        ... scale = plot.CutoffScale(10, 2)  # go "twice as fast" after 10
-        ... scale = plot.CutoffScale(10, 0.5, 20)  # zoom in between 10 and 20
+        ... scale = plot.CutoffScale(10, 0.5)  # move slower above 10
+        ... scale = plot.CutoffScale(10, 2, 20)  # zoom out between 10 and 20
         ... scale = plot.CutoffScale(10, np.inf, 20)  # jump from 10 to 20
 
         """
@@ -1155,9 +1289,10 @@ class CutoffScale(_ScaleBase, mscale.ScaleBase):
         args = list(args)
         if len(args) % 2 == 1:
             args.append(1)
-        threshs = args[::2]
-        scales = args[1::2]
-        self._transform = CutoffTransform(threshs, scales)
+        self.args = args
+        self.threshs = args[::2]
+        self.scales = args[1::2]
+        self._transform = CutoffTransform(self.threshs, self.scales)
 
 
 class CutoffTransform(mtransforms.Transform):
@@ -1237,10 +1372,12 @@ class InverseScale(_ScaleBase, mscale.ScaleBase):
     def __init__(self, **kwargs):
         super().__init__()
         self._transform = InverseTransform()
-        self._major_locator = Locator('log', base=10, subs=(1, 2, 5))
-        self._minor_locator = Locator('log', base=10, subs='auto')
-        self._smart_bounds = True
-        # self._minor_formatter = Fromatter('log')
+        # self._default_major_formatter = Fromatter('log')
+        self._default_major_locator = Locator(
+            'log', base=10)
+        self._default_minor_locator = Locator(
+            'log', base=10, subs=np.arange(1, 10))
+        self._default_smart_bounds = True
 
     def limit_range_for_scale(self, vmin, vmax, minpos):
         """Returns the range *vmin* and *vmax* limited to positive numbers."""

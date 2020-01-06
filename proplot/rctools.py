@@ -26,7 +26,6 @@ except ModuleNotFoundError:
 __all__ = [
     'rc', 'rc_configurator', 'ipython_autosave',
     'ipython_autoreload', 'ipython_matplotlib',
-    'use_font',
 ]
 
 # Initialize
@@ -47,6 +46,9 @@ RC_CHILDREN = {
     ),  # this is a custom setting
     'facecolor': (
         'axes.facecolor', 'geoaxes.facecolor'
+    ),
+    'fontname': (
+        'font.family',
     ),
     # change the 'color' of an axes
     'color': (
@@ -291,7 +293,7 @@ def _set_cycler(name):
 
 
 def _get_config_paths():
-    """Returns configuration file paths."""
+    """Return configuration file paths in reverse order of precedence."""
     # Get paths
     idir = os.getcwd()
     paths = []
@@ -299,8 +301,8 @@ def _get_config_paths():
         ipath = os.path.join(idir, '.proplotrc')
         if os.path.exists(ipath):
             paths.append(ipath)
-        ndir, _ = os.path.split(idir)
-        if ndir == idir:
+        ndir = os.path.dirname(idir)
+        if ndir == idir:  # root
             break
         idir = ndir
     paths = paths[::-1]  # sort from decreasing to increasing importantce
@@ -397,6 +399,63 @@ class rc_configurator(object):
         # is 'sticky', never changes! See:
         # https://stackoverflow.com/a/48322150/4970632
         plt.style.use('default')
+
+        # Prefer more widely used fonts
+        # NOTE: Without 'mathtext.fontset' = 'custom', 'fallback_to_cm' is
+        # always carried out! The default 'mathtext.fontset' = 'dejavusans'
+        # creates a DejaVuFonts class which is evidently a misnomer, *always*
+        # falls back to CM and tries to use *active* font rather than DejaVu.
+        # NOTE: This will be put in rcParamsDefaults dictionary when #50
+        # is merged! For now do not add to .proplotrc.
+        import matplotlib.mathtext as _  # noqa
+        import logging
+        logger = logging.getLogger('matplotlib.mathtext')
+        logger.setLevel(logging.ERROR)  # suppress warnings!
+        rcParams['mathtext.fontset'] = 'custom'
+        rcParams['mathtext.default'] = 'regular'
+        rcParams['text.usetex'] = False
+        rcParams['font.serif'] = (
+            'New Century Schoolbook',
+            'Century Schoolbook L',
+            'Utopia',
+            'ITC Bookman',
+            'Bookman',
+            'Nimbus Roman No9 L',
+            'Times New Roman',
+            'Times',
+            'Palatino',
+            'Charter'
+            'Computer Modern Roman',
+            'DejaVu Serif',
+            'Bitstream Vera Serif',
+            'serif',
+        )
+        rcParams['font.sans-serif'] = (
+            'Helvetica',
+            'Arial',
+            'Lucida Grande',
+            'Verdana',
+            'Geneva',
+            'Lucid',
+            'Avant Garde',
+            'TeX Gyre Heros',
+            'DejaVu Sans',
+            'Bitstream Vera Sans',
+            'Computer Modern Sans Serif',
+            'sans-serif'
+        )
+        rcParams['font.monospace'] = (
+            'Andale Mono',
+            'Nimbus Mono L',
+            'Courier New',
+            'Courier',
+            'Fixed',
+            'Terminal',
+            'Computer Modern Typewriter',
+            'DejaVu Sans Mono',
+            'Bitstream Vera Sans Mono',
+            'monospace'
+        )
 
         # Load the defaults from file
         for i, file in enumerate(_get_config_paths()):
@@ -531,8 +590,6 @@ class rc_configurator(object):
             ipython_autosave(value)
         if key == 'autoreload':
             ipython_autoreload(value)
-        if key == 'fontname':
-            use_font(value)
         if key == 'rgbcycle':  # if must re-apply cycler afterward
             cache[key] = value
             rcParamsShort[key] = value
@@ -896,8 +953,14 @@ def ipython_matplotlib(backend=None, fmt=None):
     Parameters
     ----------
     backend : str, optional
-        The backend name. Use ``'auto'`` to apply ``%matplotlib inline`` for
-        notebooks and ``%matplotlib qt`` for all other sessions.
+        The backend name. The default is ``'auto'``, which applies
+        ``%matplotlib inline`` for notebooks and ``%matplotlib qt`` for
+        all other sessions.
+
+        Note that when using the qt backend on macOS, you may want to prevent
+        "tabbed" figure windows by navigating to Settings...Dock and changing
+        "Prefer tabs when opening documents" to "Manually" (see \
+`Issue #13164 <https://github.com/matplotlib/matplotlib/issues/13164>`__).
     fmt : str or list of str, optional
         The inline backend file format(s). Valid formats include ``'jpg'``,
         ``'png'``, ``'svg'``, ``'pdf'``, and ``'retina'``. This is ignored
@@ -939,8 +1002,9 @@ def ipython_matplotlib(backend=None, fmt=None):
     ipython.magic(f'config InlineBackend.figure_formats = {fmt!r}')
     ipython.magic('config InlineBackend.rc = {}')  # no notebook overrides
     ipython.magic('config InlineBackend.close_figures = True')  # memory issues
-    ipython.magic(  # use proplot tight layout
-        'config InlineBackend.print_figure_kwargs = {"bbox_inches":None}')
+    ipython.magic(  # use ProPlot tight layout instead
+        'config InlineBackend.print_figure_kwargs = {"bbox_inches":None}'
+    )
 
 
 def ipython_autoreload(autoreload=None):
@@ -1000,34 +1064,6 @@ def ipython_autosave(autosave=None):
             pass
 
 
-def use_font(font=None):
-    """
-    Set the default font and ensure that the font used for TeX-style math
-    is the same as the regular font by applying
-    ``rcParams['mathtext.default'] = 'regular'``.
-
-    Parameters
-    ----------
-    font : str, optional
-        The font name. Default is :rc:`fontname`. If ``'auto'``, ProPlot
-        tries to use (in order of priority) ``'Helvetica Neue'``,
-        ``'Helvetica'``, ``'Arial'``, or ``'DejaVu Sans'``.
-    """
-    font = font or rcParamsShort['fontname']
-    if font == 'auto':
-        import matplotlib.font_manager as mfonts
-        font = 'DejaVu Sans'
-        fonts = sorted({font.name for font in mfonts.fontManager.ttflist})
-        for nicefont in (
-            'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans',
-        ):
-            if nicefont in fonts:
-                font = nicefont
-                break
-    rcParams['font.family'] = font
-    rcParams['mathtext.default'] = 'regular'
-
-
 #: Instance of `rc_configurator`. This is used to change global settings.
 #: See :ref:`Configuring proplot` for details.
 rc = rc_configurator()
@@ -1036,4 +1072,3 @@ rc = rc_configurator()
 ipython_matplotlib()
 ipython_autoreload()
 ipython_autosave()
-use_font()

@@ -14,7 +14,7 @@ import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
 import matplotlib.gridspec as mgridspec
 from .rctools import rc
-from .utils import _warn_proplot, _notNone, _counter, units
+from .utils import _warn_proplot, _notNone, _counter, _setstate, units
 from . import projs, axes
 __all__ = [
     'subplot_grid', 'close', 'show', 'subplots', 'Figure',
@@ -456,8 +456,15 @@ class GridSpec(mgridspec.GridSpec):
         self.set_height_ratios(hratios)
 
         # Validate args
-        kwargs.pop('ncols', None)
-        kwargs.pop('nrows', None)
+        nrows = kwargs.pop('nrows', None)
+        ncols = kwargs.pop('ncols', None)
+        nrows_current, ncols_current = self.get_active_geometry()
+        if (nrows is not None and nrows != nrows_current) or (
+                ncols is not None and ncols != ncols_current):
+            raise ValueError(
+                f'Input geometry {(nrows, ncols)} does not match '
+                f'current geometry {(nrows_current, ncols_current)}.'
+            )
         self.left = kwargs.pop('left', None)
         self.right = kwargs.pop('right', None)
         self.bottom = kwargs.pop('bottom', None)
@@ -476,8 +483,8 @@ class GridSpec(mgridspec.GridSpec):
 
 def _canvas_preprocess(canvas, method):
     """Return a pre-processer that can be used to override instance-level
-    canvas draw() and print_figure() methods. This applies tight layout and
-    aspect ratio-conserving adjustments and aligns labels. Required so that
+    canvas draw_idle() and print_figure() methods. This applies tight layout
+    and aspect ratio-conserving adjustments and aligns labels. Required so that
     the canvas methods instantiate renderers with the correct dimensions.
     Note that MacOSX currently `cannot be resized \
 <https://github.com/matplotlib/matplotlib/issues/15131>`__."""
@@ -491,28 +498,38 @@ def _canvas_preprocess(canvas, method):
     # override bbox and bbox_inches as *properties*, but these are really
     # complicated, dangerous, and result in unnecessary extra draws.
     def _preprocess(self, *args, **kwargs):
-        if method == 'draw_idle' and self._is_idle_drawing:
-            return  # copied from source code
         fig = self.figure  # update even if not stale! needed after saves
-        if fig.stale and method == 'print_figure':
-            # Needed for displaying already-drawn inline figures, for
-            # some reason tight layout algorithm gets it wrong otherwise.
-            # Concerned that draw_idle() might wait until after
-            # print_figure() is done, so we use draw().
+        if method == 'draw_idle' and (
+            self._is_idle_drawing  # standard
+            or getattr(self, '_draw_pending', None)  # pyqt5
+        ):
+            # For now we override 'draw' and '_draw' rather than 'draw_idle'
+            # but may change mind in the future. This breakout condition is
+            # copied from the matplotlib source.
+            return
+        if method == 'print_figure':
+            # When re-generating inline figures, the tight layout algorithm
+            # can get figure size *or* spacing wrong unless we force additional
+            # draw! Seems to have no adverse effects when calling savefig.
             self.draw()
-        renderer = fig._get_renderer()  # any renderer will do for now
-        for ax in fig._iter_axes():
-            ax._draw_auto_legends_colorbars()  # may insert panels
-        if rc['backend'] != 'nbAgg':
-            fig._adjust_aspect()  # resizes figure
-            if fig._auto_tight_layout:
-                fig._align_axislabels(False)  # get proper label offset only
-                fig._align_labels(renderer)  # position labels and suptitle
-                fig._adjust_tight_layout(renderer)
-        fig._align_axislabels(True)  # slide spanning labels across
-        fig._align_labels(renderer)  # update figure-relative coordinates!
-        res = getattr(type(self), method)(self, *args, **kwargs)
-        return res
+        if fig._is_preprocessing:
+            return
+        with fig._context_preprocessing():
+            renderer = fig._get_renderer()  # any renderer will do for now
+            for ax in fig._iter_axes():
+                ax._draw_auto_legends_colorbars()  # may insert panels
+            resize = rc['backend'] != 'nbAgg'
+            if resize:
+                fig._adjust_aspect()  # resizes figure
+            if fig._auto_tight:
+                fig._adjust_tight_layout(renderer, resize=resize)
+            fig._align_axislabels(True)
+            fig._align_labels(renderer)
+            fallback = _notNone(
+                fig._fallback_to_cm, rc['mathtext.fallback_to_cm']
+            )
+            with rc.context({'mathtext.fallback_to_cm': fallback}):
+                return getattr(type(self), method)(self, *args, **kwargs)
     return _preprocess.__get__(canvas)  # ...I don't get it either
 
 
@@ -714,6 +731,7 @@ def _subplots_geometry(**kwargs):
 class _hidelabels(object):
     """Hide objects temporarily so they are ignored by the tight bounding box
     algorithm."""
+    # NOTE: This will be removed when labels are implemented with AxesStack!
     def __init__(self, *args):
         self._labels = args
 
@@ -726,19 +744,6 @@ class _hidelabels(object):
             label.set_visible(True)
 
 
-class _unlocker(object):
-    """Suppress warning message when adding subplots, and cleanly reset
-    lock setting if exception raised."""
-    def __init__(self, fig):
-        self._fig = fig
-
-    def __enter__(self):
-        self._fig._locked = False
-
-    def __exit__(self, *args):
-        self._fig._locked = True
-
-
 class Figure(mfigure.Figure):
     """The `~matplotlib.figure.Figure` class returned by `subplots`. At
     draw-time, an improved tight layout algorithm is employed, and
@@ -748,18 +753,24 @@ class Figure(mfigure.Figure):
 
     def __init__(self,
                  tight=None,
-                 pad=None, axpad=None, panelpad=None, includepanels=False,
+                 ref=1, pad=None, axpad=None, panelpad=None,
+                 includepanels=False,
                  autoformat=True,
-                 ref=1, order='C',  # documented in subplots but needed here
-                 subplots_kw=None, gridspec_kw=None, subplots_orig_kw=None,
-                 tight_layout=None, constrained_layout=None,
+                 gridspec_kw=None, subplots_kw=None, subplots_orig_kw=None,
+                 fallback_to_cm=None,
                  **kwargs):
         """
         Parameters
         ----------
         tight : bool, optional
-            Toggles automatic tight layout adjustments. Default is
-            :rc:`tight`.
+            Toggles automatic tight layout adjustments. Default is :rc:`tight`.
+            If you manually specified a spacing in the call to `subplots`, it
+            will be used to override the tight layout spacing. For example,
+            with ``left=0.1``, the left margin is set to 0.1 inches wide,
+            while the remaining margin widths are calculated automatically.
+        ref : int, optional
+            The reference subplot number. See `subplots` for details. Default
+            is ``1``.
         pad : float or str, optional
             Padding around edge of figure. Units are interpreted by
             `~proplot.utils.units`. Default is :rc:`subplots.pad`.
@@ -781,6 +792,11 @@ class Figure(mfigure.Figure):
             labels when a `~pandas.Series`, `~pandas.DataFrame` or
             `~xarray.DataArray` with relevant metadata is passed to a plotting
             command.
+        fallback_to_cm : bool, optional
+            Whether to replace unavailable glyphs with a glyph from Computer
+            Modern or the "¤" dummy character. See `mathtext \
+<https://matplotlib.org/3.1.1/tutorials/text/mathtext.html#custom-fonts>`__
+            for details.
         gridspec_kw, subplots_kw, subplots_orig_kw
             Keywords used for initializing the main gridspec, for initializing
             the figure, and original spacing keyword args used for initializing
@@ -788,10 +804,6 @@ class Figure(mfigure.Figure):
 
         Other parameters
         ----------------
-        ref, order
-            Documented in `subplots`.
-        tight_layout, constrained_layout
-            Ignored, because ProPlot uses its own tight layout algorithm.
         **kwargs
             Passed to `matplotlib.figure.Figure`.
 
@@ -801,21 +813,25 @@ class Figure(mfigure.Figure):
         """
         # Initialize first, because need to provide fully initialized figure
         # as argument to gridspec, because matplotlib tight_layout does that
+        tight_layout = kwargs.pop('tight_layout', None)
+        constrained_layout = kwargs.pop('constrained_layout', None)
         if tight_layout or constrained_layout:
             _warn_proplot(
                 f'Ignoring tight_layout={tight_layout} and '
                 f'contrained_layout={constrained_layout}. ProPlot uses its '
                 'own tight layout algorithm, activated by default or with '
                 'tight=True.')
+        self._authorized_add_subplot = False
+        self._is_preprocessing = False
+        self._is_resizing = False
         super().__init__(**kwargs)
-        self._locked = False
         self._pad = units(_notNone(pad, rc['subplots.pad']))
         self._axpad = units(_notNone(axpad, rc['subplots.axpad']))
         self._panelpad = units(_notNone(panelpad, rc['subplots.panelpad']))
         self._auto_format = autoformat
-        self._auto_tight_layout = _notNone(tight, rc['tight'])
+        self._auto_tight = _notNone(tight, rc['tight'])
         self._include_panels = includepanels
-        self._order = order  # used for configuring panel subplot_grids
+        self._fallback_to_cm = fallback_to_cm
         self._ref_num = ref
         self._axes_main = []
         self._subplots_orig_kw = subplots_orig_kw
@@ -871,7 +887,7 @@ class Figure(mfigure.Figure):
                 idx2 += 1
 
         # Draw and setup panel
-        with self._unlock():
+        with self._authorize_add_subplot():
             pax = self.add_subplot(
                 gridspec[idx1, idx2],
                 sharex=ax._sharex_level, sharey=ax._sharey_level,
@@ -980,7 +996,7 @@ class Figure(mfigure.Figure):
             side, iratio, width, space, space_orig, figure=True)
 
         # Draw and setup panel
-        with self._unlock():
+        with self._authorize_add_subplot():
             pax = self.add_subplot(gridspec[idx1, idx2],
                                    projection='xy')
         getattr(self, '_' + s + 'panels').append(pax)
@@ -998,44 +1014,51 @@ class Figure(mfigure.Figure):
             return
         ax = self._axes_main[self._ref_num - 1]
         mode = ax.get_aspect()
-        aspect = None
-        if mode == 'equal':
-            xscale, yscale = ax.get_xscale(), ax.get_yscale()
-            if xscale == 'linear' and yscale == 'linear':
-                aspect = 1.0 / ax.get_data_ratio()
-            elif xscale == 'log' and yscale == 'log':
-                aspect = 1.0 / ax.get_data_ratio_log()
-            else:
-                pass  # matplotlib issues warning, forces aspect == 'auto'
-        # Apply aspect
-        if aspect is not None:
-            aspect = round(aspect * 1e10) * 1e-10
-            subplots_kw = self._subplots_kw
-            aspect_prev = round(subplots_kw['aspect'] * 1e10) * 1e-10
-            if aspect != aspect_prev:
-                subplots_kw['aspect'] = aspect
-                figsize, gridspec_kw, _ = _subplots_geometry(**subplots_kw)
-                self.set_size_inches(figsize, manual=False)
-                self._gridspec_main.update(**gridspec_kw)
+        if mode != 'equal':
+            return
 
-    def _adjust_tight_layout(self, renderer):
+        # Compare to current aspect
+        subplots_kw = self._subplots_kw
+        xscale, yscale = ax.get_xscale(), ax.get_yscale()
+        if xscale == 'linear' and yscale == 'linear':
+            aspect = 1.0 / ax.get_data_ratio()
+        elif xscale == 'log' and yscale == 'log':
+            aspect = 1.0 / ax.get_data_ratio_log()
+        else:
+            pass  # matplotlib issues warning, forces aspect == 'auto'
+        aspect = round(aspect * 1e10) * 1e-10
+        aspect_prev = round(subplots_kw['aspect'] * 1e10) * 1e-10
+        if aspect == aspect_prev:
+            return
+
+        # Apply new aspect
+        subplots_kw['aspect'] = aspect
+        figsize, gridspec_kw, _ = _subplots_geometry(**subplots_kw)
+        self.set_size_inches(figsize, auto=True)
+        self._gridspec_main.update(**gridspec_kw)
+
+    def _adjust_tight_layout(self, renderer, resize=True):
         """Applies tight layout scaling that permits flexible figure
         dimensions and preserves panel widths and subplot aspect ratios.
         The `renderer` should be a `~matplotlib.backend_bases.RendererBase`
         instance."""
         # Initial stuff
         axs = self._iter_axes()
-        obox = self.bbox_inches  # original bbox
-        bbox = self.get_tightbbox(renderer)
-        gridspec = self._gridspec_main
         subplots_kw = self._subplots_kw
         subplots_orig_kw = self._subplots_orig_kw  # tight layout overrides
         if not axs or not subplots_kw or not subplots_orig_kw:
             return
 
+        # Temporarily disable spanning labels and get correct
+        # positions for labels and suptitle
+        self._align_axislabels(False)
+        self._align_labels(renderer)
+
         # Tight box *around* figure
         # Get bounds from old bounding box
         pad = self._pad
+        obox = self.bbox_inches  # original bbox
+        bbox = self.get_tightbbox(renderer)
         left = bbox.xmin
         bottom = bbox.ymin
         right = obox.xmax - bbox.xmax
@@ -1053,6 +1076,7 @@ class Figure(mfigure.Figure):
         # Get arrays storing gridspec spacing args
         axpad = self._axpad
         panelpad = self._panelpad
+        gridspec = self._gridspec_main
         nrows, ncols = gridspec.get_active_geometry()
         wspace, hspace = subplots_kw['wspace'], subplots_kw['hspace']
         wspace_orig = subplots_orig_kw['wspace']
@@ -1127,13 +1151,20 @@ class Figure(mfigure.Figure):
                 jspace[i] = space
             spaces.append(jspace)
 
-        # Apply new spaces
+        # Update geometry solver kwargs
         subplots_kw.update({
             'wspace': spaces[0], 'hspace': spaces[1],
         })
+        if not resize:
+            width, height = self.get_size_inches()
+            subplots_kw = subplots_kw.copy()
+            subplots_kw.update(width=width, height=height)
+
+        # Apply new spacing
         figsize, gridspec_kw, _ = _subplots_geometry(**subplots_kw)
+        if resize:
+            self.set_size_inches(figsize, auto=True)
         self._gridspec_main.update(**gridspec_kw)
-        self.set_size_inches(figsize, manual=False)
 
     def _align_axislabels(self, b=True):
         """Align spanning *x* and *y* axis labels in the perpendicular
@@ -1277,107 +1308,20 @@ class Figure(mfigure.Figure):
                   'transform': self.transFigure}
             suptitle.update(kw)
 
-    def _insert_row_column(
-            self, side, idx,
-            ratio, space, space_orig, figure=False):
-        """Helper function that "overwrites" the main figure gridspec to make
-        room for a panel. The `side` is the panel side, the `idx` is the
-        slot you want the panel to occupy, and the remaining args are the
-        panel widths and spacings."""
-        # Constants and stuff
-        # Insert spaces to the left of right panels or to the right of
-        # left panels. And note that since .insert() pushes everything in
-        # that column to the right, actually must insert 1 slot farther to
-        # the right when inserting left panels/spaces
-        s = side[0]
-        if s not in 'lrbt':
-            raise ValueError(f'Invalid side {side}.')
-        idx_space = idx - 1 * bool(s in 'br')
-        idx_offset = 1 * bool(s in 'tl')
-        if s in 'lr':
-            w, ncols = 'w', 'ncols'
-        else:
-            w, ncols = 'h', 'nrows'
+    def _authorize_add_subplot(self):
+        """Prevent warning message when adding subplots one-by-one. Used
+        internally."""
+        return _setstate(self, _authorized_add_subplot=True)
 
-        # Load arrays and test if we need to insert
-        subplots_kw = self._subplots_kw
-        subplots_orig_kw = self._subplots_orig_kw
-        panels = subplots_kw[w + 'panels']
-        ratios = subplots_kw[w + 'ratios']
-        spaces = subplots_kw[w + 'space']
-        spaces_orig = subplots_orig_kw[w + 'space']
+    def _context_resizing(self):
+        """Ensure backend calls to `~matplotlib.figure.Figure.set_size_inches`
+        during pre-processing are not interpreted as *manual* resizing."""
+        return _setstate(self, _is_resizing=True)
 
-        # Slot already exists
-        entry = ('f' if figure else s)
-        exists = (idx not in (-1, len(panels)) and panels[idx] == entry)
-        if exists:  # already exists!
-            if spaces_orig[idx_space] is None:
-                spaces_orig[idx_space] = units(space_orig)
-            spaces[idx_space] = _notNone(spaces_orig[idx_space], space)
-        # Make room for new panel slot
-        else:
-            # Modify basic geometry
-            idx += idx_offset
-            idx_space += idx_offset
-            subplots_kw[ncols] += 1
-            # Original space, ratio array, space array, panel toggles
-            spaces_orig.insert(idx_space, space_orig)
-            spaces.insert(idx_space, space)
-            ratios.insert(idx, ratio)
-            panels.insert(idx, entry)
-            # Reference ax location array
-            # TODO: For now do not need to increment, but need to double
-            # check algorithm for fixing axes aspect!
-            # ref = subplots_kw[x + 'ref']
-            # ref[:] = [val + 1 if val >= idx else val for val in ref]
-
-        # Update figure
-        figsize, gridspec_kw, _ = _subplots_geometry(**subplots_kw)
-        self.set_size_inches(figsize, manual=False)
-        if exists:
-            gridspec = self._gridspec_main
-            gridspec.update(**gridspec_kw)
-        else:
-            # New gridspec
-            gridspec = GridSpec(self, **gridspec_kw)
-            self._gridspec_main = gridspec
-            # Reassign subplotspecs to all axes and update positions
-            # May seem inefficient but it literally just assigns a hidden,
-            # attribute, and the creation time for subpltospecs is tiny
-            axs = [iax for ax in self._iter_axes()
-                   for iax in (ax, *ax.child_axes)]
-            for ax in axs:
-                # Get old index
-                # NOTE: Endpoints are inclusive, not exclusive!
-                if not hasattr(ax, 'get_subplotspec'):
-                    continue
-                if s in 'lr':
-                    inserts = (None, None, idx, idx)
-                else:
-                    inserts = (idx, idx, None, None)
-                subplotspec = ax.get_subplotspec()
-                igridspec = subplotspec.get_gridspec()
-                topmost = subplotspec.get_topmost_subplotspec()
-                # Apply new subplotspec!
-                _, _, *coords = topmost.get_active_rows_columns()
-                for i in range(4):
-                    # if inserts[i] is not None and coords[i] >= inserts[i]:
-                    if inserts[i] is not None and coords[i] >= inserts[i]:
-                        coords[i] += 1
-                (row1, row2, col1, col2) = coords
-                subplotspec_new = gridspec[row1:row2 + 1, col1:col2 + 1]
-                if topmost is subplotspec:
-                    ax.set_subplotspec(subplotspec_new)
-                elif topmost is igridspec._subplot_spec:
-                    igridspec._subplot_spec = subplotspec_new
-                else:
-                    raise ValueError(
-                        f'Unexpected GridSpecFromSubplotSpec nesting.')
-                # Update parent or child position
-                ax.update_params()
-                ax.set_position(ax.figbox)
-
-        return gridspec
+    def _context_preprocessing(self):
+        """Prevent re-running pre-processing steps due to draws triggered
+        by figure resizes during pre-processing."""
+        return _setstate(self, _is_preprocessing=True)
 
     def _get_align_coord(self, side, axs):
         """Returns figure coordinate for spanning labels and super title. The
@@ -1444,10 +1388,107 @@ class Figure(mfigure.Figure):
                 renderer = canvas.get_renderer()
         return renderer
 
-    def _unlock(self):
-        """Prevent warning message when adding subplots one-by-one. Used
-        internally."""
-        return _unlocker(self)
+    def _insert_row_column(
+            self, side, idx,
+            ratio, space, space_orig, figure=False):
+        """Helper function that "overwrites" the main figure gridspec to make
+        room for a panel. The `side` is the panel side, the `idx` is the
+        slot you want the panel to occupy, and the remaining args are the
+        panel widths and spacings."""
+        # Constants and stuff
+        # Insert spaces to the left of right panels or to the right of
+        # left panels. And note that since .insert() pushes everything in
+        # that column to the right, actually must insert 1 slot farther to
+        # the right when inserting left panels/spaces
+        s = side[0]
+        if s not in 'lrbt':
+            raise ValueError(f'Invalid side {side}.')
+        idx_space = idx - 1 * bool(s in 'br')
+        idx_offset = 1 * bool(s in 'tl')
+        if s in 'lr':
+            w, ncols = 'w', 'ncols'
+        else:
+            w, ncols = 'h', 'nrows'
+
+        # Load arrays and test if we need to insert
+        subplots_kw = self._subplots_kw
+        subplots_orig_kw = self._subplots_orig_kw
+        panels = subplots_kw[w + 'panels']
+        ratios = subplots_kw[w + 'ratios']
+        spaces = subplots_kw[w + 'space']
+        spaces_orig = subplots_orig_kw[w + 'space']
+
+        # Slot already exists
+        entry = ('f' if figure else s)
+        exists = (idx not in (-1, len(panels)) and panels[idx] == entry)
+        if exists:  # already exists!
+            if spaces_orig[idx_space] is None:
+                spaces_orig[idx_space] = units(space_orig)
+            spaces[idx_space] = _notNone(spaces_orig[idx_space], space)
+        # Make room for new panel slot
+        else:
+            # Modify basic geometry
+            idx += idx_offset
+            idx_space += idx_offset
+            subplots_kw[ncols] += 1
+            # Original space, ratio array, space array, panel toggles
+            spaces_orig.insert(idx_space, space_orig)
+            spaces.insert(idx_space, space)
+            ratios.insert(idx, ratio)
+            panels.insert(idx, entry)
+            # Reference ax location array
+            # TODO: For now do not need to increment, but need to double
+            # check algorithm for fixing axes aspect!
+            # ref = subplots_kw[x + 'ref']
+            # ref[:] = [val + 1 if val >= idx else val for val in ref]
+
+        # Update figure
+        figsize, gridspec_kw, _ = _subplots_geometry(**subplots_kw)
+        self.set_size_inches(figsize, auto=True)
+        if exists:
+            gridspec = self._gridspec_main
+            gridspec.update(**gridspec_kw)
+        else:
+            # New gridspec
+            gridspec = GridSpec(self, **gridspec_kw)
+            self._gridspec_main = gridspec
+            # Reassign subplotspecs to all axes and update positions
+            # May seem inefficient but it literally just assigns a hidden,
+            # attribute, and the creation time for subpltospecs is tiny
+            axs = [iax for ax in self._iter_axes()
+                   for iax in (ax, *ax.child_axes)]
+            for ax in axs:
+                # Get old index
+                # NOTE: Endpoints are inclusive, not exclusive!
+                if not hasattr(ax, 'get_subplotspec'):
+                    continue
+                if s in 'lr':
+                    inserts = (None, None, idx, idx)
+                else:
+                    inserts = (idx, idx, None, None)
+                subplotspec = ax.get_subplotspec()
+                igridspec = subplotspec.get_gridspec()
+                topmost = subplotspec.get_topmost_subplotspec()
+                # Apply new subplotspec!
+                _, _, *coords = topmost.get_active_rows_columns()
+                for i in range(4):
+                    # if inserts[i] is not None and coords[i] >= inserts[i]:
+                    if inserts[i] is not None and coords[i] >= inserts[i]:
+                        coords[i] += 1
+                (row1, row2, col1, col2) = coords
+                subplotspec_new = gridspec[row1:row2 + 1, col1:col2 + 1]
+                if topmost is subplotspec:
+                    ax.set_subplotspec(subplotspec_new)
+                elif topmost is igridspec._subplot_spec:
+                    igridspec._subplot_spec = subplotspec_new
+                else:
+                    raise ValueError(
+                        f'Unexpected GridSpecFromSubplotSpec nesting.')
+                # Update parent or child position
+                ax.update_params()
+                ax.set_position(ax.figbox)
+
+        return gridspec
 
     def _update_figtitle(self, title, **kwargs):
         """Assign figure "super title"."""
@@ -1484,10 +1525,11 @@ class Figure(mfigure.Figure):
     def add_subplot(self, *args, **kwargs):
         """Issues warning for new users that try to call
         `~matplotlib.figure.Figure.add_subplot` manually."""
-        if self._locked:
+        if not self._authorized_add_subplot:
             _warn_proplot(
                 'Using "fig.add_subplot()" with ProPlot figures may result in '
-                'unexpected behavior. Use "proplot.subplots()" instead.')
+                'unexpected behavior. Please use "proplot.subplots()" instead.'
+            )
         ax = super().add_subplot(*args, **kwargs)
         return ax
 
@@ -1547,6 +1589,23 @@ class Figure(mfigure.Figure):
                 loc, space=space, width=width, span=span,
                 row=row, col=col, rows=rows, cols=cols)
             return ax.colorbar(*args, loc='_fill', **kwargs)
+
+    def draw(self, renderer):
+        # Certain backends *still* have issues with the tight layout
+        # algorithm e.g. due to opening windows in *tabs*. Have not found way
+        # to intervene in the FigureCanvas. For this reason we *also* apply
+        # the algorithm inside Figure.draw in the same way that matplotlib
+        # applies its tight layout algorithm. So far we just do this for Qt*
+        # and MacOSX; corrections are generally *small* but notable!
+        if not self.get_visible():
+            return
+        if self._auto_tight and (
+            rc['backend'] == 'MacOSX' or rc['backend'][:2] == 'Qt'
+        ):
+            self._adjust_tight_layout(renderer, resize=False)
+            self._align_axislabels(True)  # if spaces changed need to realign
+            self._align_labels(renderer)
+        return super().draw(renderer)
 
     def legend(self, *args,
                loc='r', width=None, space=None,
@@ -1617,16 +1676,17 @@ class Figure(mfigure.Figure):
         # `~matplotlib.backend_bases.FigureCanvasBase.print_figure`
         # methods. The latter is called by save() and by the inline backend.
         # See `_canvas_preprocess` for details."""
-        # NOTE: Use draw_idle() rather than draw() becuase latter is not
-        # always called! For example, MacOSX uses _draw() and nbAgg does
-        # not call draw() *or* _draw()! Not sure how it works actually.
-        # Should be same because we piggyback draw() which *itself* defers
-        # the event. Just make sure to check _is_idle_drawing!
-        canvas.draw_idle = _canvas_preprocess(canvas, 'draw_idle')
+        # NOTE: Cannot use draw_idle() because it causes complications for qt5
+        # backend (wrong figure size). Even though usage is less consistent we
+        # *must* use draw() and _draw() instead.
+        if hasattr(canvas, '_draw'):
+            canvas._draw = _canvas_preprocess(canvas, '_draw')
+        else:
+            canvas.draw = _canvas_preprocess(canvas, 'draw')
         canvas.print_figure = _canvas_preprocess(canvas, 'print_figure')
         super().set_canvas(canvas)
 
-    def set_size_inches(self, w, h=None, forward=True, manual=True):
+    def set_size_inches(self, w, h=None, forward=True, auto=False):
         # Set the figure size and, if this is being called manually or from
         # an interactive backend, override the geometry tracker so users can
         # use interactive backends. See #76. Undocumented because this is
@@ -1647,11 +1707,19 @@ class Figure(mfigure.Figure):
         width_true, height_true = self.get_size_inches()
         width_trunc = int(self.bbox.width) / self.dpi
         height_trunc = int(self.bbox.height) / self.dpi
-        if (manual  # have actually seen (width_true, heigh_trunc)!
-                and width not in (width_true, width_trunc)
-                and height not in (height_true, height_trunc)):
-            self._subplots_kw.update(width=width, height=height)
-        super().set_size_inches(width, height, forward=forward)
+        if auto:
+            with self._context_resizing():
+                super().set_size_inches(width, height, forward=forward)
+        else:
+            if (  # can have internal resizing not associated with any draws
+                (width not in (width_true, width_trunc)
+                 or height not in (height_true, height_trunc))
+                and not self._is_resizing
+                and not self.canvas._is_idle_drawing  # standard
+                and not getattr(self.canvas, '_draw_pending', None)  # pyqt5
+            ):
+                self._subplots_kw.update(width=width, height=height)
+            super().set_size_inches(width, height, forward=forward)
 
     def _iter_axes(self):
         """Iterates over all axes and panels in the figure belonging to the
@@ -1745,13 +1813,12 @@ def subplots(
         width_ratios=None, height_ratios=None,
         flush=None, wflush=None, hflush=None,
         left=None, bottom=None, right=None, top=None,
-        tight=None, pad=None, axpad=None, panelpad=None,
         span=None, spanx=None, spany=None,
         align=None, alignx=None, aligny=None,
         share=None, sharex=None, sharey=None,
         basemap=False, proj=None, projection=None,
         proj_kw=None, projection_kw=None,
-        autoformat=True, includepanels=False):
+        **kwargs):
     """
     Analogous to `matplotlib.pyplot.subplots`, creates a figure with a single
     axes or arbitrary grids of axes, any of which can be map projections.
@@ -1906,23 +1973,8 @@ def subplots(
 
     Other parameters
     ----------------
-    tight : bool, optional
-        Toggles automatic tight layout adjustments. Default is
-        :rc:`tight`.
-
-        If you manually specify a spacing, it will be used
-        to override the tight layout spacing -- for example, with ``left=0.1``,
-        the left margin is set to 0.1 inches wide, while the remaining margin
-        widths are calculated automatically.
-    pad, axpad, panelpad : float or str, optional
-        Padding for automatic tight layout adjustments. See `Figure` for
-        details.
-    includepanels : bool, optional
-        Whether to include panels when calculating the position of certain
-        spanning labels. See `Figure` for details.
-    autoformat : bool, optional
-        Whether to automatically format axes when special datasets are
-        passed to plotting commands. See `Figure` for details.
+    **kwargs
+        Passed to `Figure`.
 
     Returns
     -------
@@ -2129,11 +2181,11 @@ def subplots(
         wpanels=[''] * ncols, hpanels=[''] * nrows,
     )
     fig = plt.figure(
-        FigureClass=Figure, tight=tight, figsize=figsize, ref=ref,
-        pad=pad, axpad=axpad, panelpad=panelpad, autoformat=autoformat,
-        includepanels=includepanels,
-        subplots_orig_kw=subplots_orig_kw, subplots_kw=subplots_kw,
-        gridspec_kw=gridspec_kw)
+        FigureClass=Figure, figsize=figsize, ref=ref,
+        gridspec_kw=gridspec_kw, subplots_kw=subplots_kw,
+        subplots_orig_kw=subplots_orig_kw,
+        **kwargs
+    )
     gridspec = fig._gridspec_main
 
     # Draw main subplots
@@ -2145,7 +2197,7 @@ def subplots(
         y0, y1 = yrange[idx, 0], yrange[idx, 1]
         # Draw subplot
         subplotspec = gridspec[y0:y1 + 1, x0:x1 + 1]
-        with fig._unlock():
+        with fig._authorize_add_subplot():
             axs[idx] = fig.add_subplot(
                 subplotspec, number=num,
                 spanx=spanx, spany=spany, alignx=alignx, aligny=aligny,
