@@ -855,6 +855,11 @@ optional
                 }
                 kwargs['linthresh'] = inverse(kwargs['linthresh'])
                 parent_scale = SymmetricalLogScale(**kwargs)
+            elif isinstance(parent_scale, CutoffScale):
+                args = list(parent_scale.args)  # copy
+                for i in range(0, len(args), 2):
+                    args[i] = inverse(args[i])
+                parent_scale = CutoffScale(*args)
             functransform = parent_scale.get_transform() + functransform
         elif parent_scale is not None:
             raise ValueError(
@@ -1284,9 +1289,10 @@ class CutoffScale(_ScaleBase, mscale.ScaleBase):
         args = list(args)
         if len(args) % 2 == 1:
             args.append(1)
-        threshs = args[::2]
-        scales = args[1::2]
-        self._transform = CutoffTransform(threshs, scales)
+        self.args = args
+        self.threshs = args[::2]
+        self.scales = args[1::2]
+        self._transform = CutoffTransform(self.threshs, self.scales)
 
 
 class CutoffTransform(mtransforms.Transform):
