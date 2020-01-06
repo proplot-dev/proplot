@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 from numbers import Integral
 from . import projs, axes
 from .rctools import rc
-from .utils import _warn_proplot, _notNone, _counter, units
+from .utils import _warn_proplot, _notNone, _counter, _setstate, units
 __all__ = [
     'subplot_grid', 'close', 'show', 'subplots',
     'EdgeStack', 'Figure', 'GeometrySolver',
@@ -676,8 +676,8 @@ def _approx_equal(num1, num2, digits=10):
 
 def _canvas_preprocess(canvas, method):
     """Return a pre-processer that can be used to override instance-level
-    canvas draw() and print_figure() methods. This applies tight layout and
-    aspect ratio-conserving adjustments and aligns labels. Required so that
+    canvas draw_idle() and print_figure() methods. This applies tight layout
+    and aspect ratio-conserving adjustments and aligns labels. Required so that
     the canvas methods instantiate renderers with the correct dimensions.
     Note that MacOSX currently `cannot be resized \
 <https://github.com/matplotlib/matplotlib/issues/15131>`__."""
@@ -691,28 +691,30 @@ def _canvas_preprocess(canvas, method):
     # override bbox and bbox_inches as *properties*, but these are really
     # complicated, dangerous, and result in unnecessary extra draws.
     def _preprocess(self, *args, **kwargs):
-        if method == 'draw_idle' and self._is_idle_drawing:
-            return  # copied from source code
         fig = self.figure  # update even if not stale! needed after saves
-        if fig.stale and method == 'print_figure':
-            # Needed for displaying already-drawn inline figures, for
-            # some reason tight layout algorithm gets it wrong otherwise.
-            # Concerned that draw_idle() might wait until after
-            # print_figure() is done, so we use draw().
+        if method == 'print_figure':
+            # When re-generating inline figures, the tight layout algorithm
+            # can get figure size *or* spacing wrong unless we force additional
+            # draw! Seems to have no adverse effects when calling savefig.
             self.draw()
-        renderer = fig._get_renderer()  # any renderer will do for now
-        for ax in fig._iter_axes():
-            ax._draw_auto_legends_colorbars()  # may insert panels
-        if rc['backend'] != 'nbAgg':
-            fig._adjust_aspect()  # resizes figure
-            if fig._auto_tight_layout:
-                fig._align_axislabels(False)  # get proper label offset only
-                fig._align_labels(renderer)   # position labels and suptitle
-                fig._adjust_tight_layout(renderer)
-        fig._align_axislabels(True)  # slide spanning labels across
-        fig._align_labels(renderer)  # update figure-relative coordinates!
-        res = getattr(type(self), method)(self, *args, **kwargs)
-        return res
+        if fig._is_preprocessing:
+            return
+        with fig._context_preprocessing():
+            renderer = fig._get_renderer()  # any renderer will do for now
+            for ax in fig._iter_axes():
+                ax._draw_auto_legends_colorbars()  # may insert panels
+            resize = rc['backend'] != 'nbAgg'
+            if resize:
+                fig._adjust_aspect()  # resizes figure
+            if fig._auto_tight:
+                fig._adjust_tight_layout(renderer, resize=resize)
+            fig._align_axislabels(True)
+            fig._align_labels(renderer)
+            fallback = _notNone(
+                fig._fallback_to_cm, rc['mathtext.fallback_to_cm']
+            )
+            with rc.context({'mathtext.fallback_to_cm': fallback}):
+                return getattr(type(self), method)(self, *args, **kwargs)
     return _preprocess.__get__(canvas)  # ...I don't get it either
 
 
@@ -1038,13 +1040,7 @@ class GeometrySolver(object):
             fig._update_gridspec()
 
         # Get renderer if not passed
-        canvas = getattr(fig, 'canvas', None)
-        if not hasattr(canvas, 'get_renderer'):
-            _warn_proplot(
-                f'Figure canvas has no get_renderer() method, '
-                f'cannot calculate positions.')
-        renderer = canvas.get_renderer()
-        canvas.renderer = renderer
+        renderer = fig._get_renderer()  # noqa TODO: finish
 
     def _adjust_aspect(self):
         """Adjust average aspect ratio used for gridspec calculations. This
@@ -1056,25 +1052,24 @@ class GeometrySolver(object):
         if not ax:
             return
         mode = ax.get_aspect()
-        aspect = None
-        if mode == 'equal':
-            xscale, yscale = ax.get_xscale(), ax.get_yscale()
-            if xscale == 'linear' and yscale == 'linear':
-                aspect = 1.0 / ax.get_data_ratio()
-            elif xscale == 'log' and yscale == 'log':
-                aspect = 1.0 / ax.get_data_ratio_log()
-            else:
-                pass  # matplotlib issues warning, forces aspect == 'auto'
-        # Apply aspect
-        # aspect = round(aspect * 1e10) * 1e-10
-        # subplots_kw = self._subplots_kw
-        # aspect_prev = round(subplots_kw['aspect'] * 1e10) * 1e-10
-        if aspect is not None and not _approx_equal(aspect, self.aspect):
-            self.aspect = aspect
-            self._update_gridspec()
+        if mode != 'equal':
+            return
 
-    def _adjust_tight_layout(self, renderer):
-        """Apply tight layout scaling that permits flexible figure
+        # Compare to current aspect
+        xscale, yscale = ax.get_xscale(), ax.get_yscale()
+        if xscale == 'linear' and yscale == 'linear':
+            aspect = 1.0 / ax.get_data_ratio()
+        elif xscale == 'log' and yscale == 'log':
+            aspect = 1.0 / ax.get_data_ratio_log()
+        else:
+            pass  # matplotlib issues warning, forces aspect == 'auto'
+        if _approx_equal(aspect, self.aspect):
+            return
+        self.aspect = aspect
+        self._update_gridspec()
+
+    def _adjust_tight_layout(self, renderer, resize=True):
+        """Applies tight layout scaling that permits flexible figure
         dimensions and preserves panel widths and subplot aspect ratios.
         The `renderer` should be a `~matplotlib.backend_bases.RendererBase`
         instance."""
@@ -1083,12 +1078,18 @@ class GeometrySolver(object):
         gridspec = self._gridspec
         if not axs or not gridspec:
             return
+
+        # Positions for labels and suptitle
+        self._align_axislabels(False)
+        self._align_labels(renderer)
+        nrows, ncols = gridspec.get_geometry()
+
+        # Boxes and padding
         bbox = self.get_tightbbox(renderer)
         bbox_orig = self.bbox_inches  # original bbox
         pad = self._pad
         axpad = self._axpad
         panelpad = self._panelpad
-        nrows, ncols = gridspec.get_geometry()
 
         # Tight box *around* figure permitting user overrides
         left, right, bottom, top, wspace, hspace = self._gridspecpars
@@ -1351,20 +1352,17 @@ class Figure(mfigure.Figure):
                  align=None, alignx=None, aligny=None,
                  includepanels=False, autoformat=True, ref=1,
                  fallback_to_cm=False,
-                 tight_layout=None, constrained_layout=None,
                  **kwargs):
         """
         Parameters
         ----------
         %(figure_doc)s
-
-        Other parameters
-        ----------------
-        tight_layout, constrained_layout
-            Ignored, because ProPlot uses its own tight layout algorithm.
-            A warning will be issued if these are set to ``True``.
         """
         # Initialize first
+        self._is_preprocessing = False
+        self._is_resizing = False
+        tight_layout = kwargs.pop('tight_layout', None)
+        constrained_layout = kwargs.pop('constrained_layout', None)
         if tight_layout or constrained_layout:
             _warn_proplot(
                 f'Ignoring tight_layout={tight_layout} and '
@@ -1462,6 +1460,16 @@ class Figure(mfigure.Figure):
         self.ref = ref
         self.suptitle('')  # add _suptitle attribute
 
+    def _context_resizing(self):
+        """Ensure backend calls to `~matplotlib.figure.Figure.set_size_inches`
+        during pre-processing are not interpreted as *manual* resizing."""
+        return _setstate(self, _is_resizing=True)
+
+    def _context_preprocessing(self):
+        """Prevent re-running pre-processing steps due to draws triggered
+        by figure resizes during pre-processing."""
+        return _setstate(self, _is_preprocessing=True)
+
     @_counter
     def _add_axes_panel(self, ax, side, filled=False, **kwargs):
         """Add axes panels. This powers `~proplot.axes.panel_axes`."""
@@ -1517,9 +1525,10 @@ class Figure(mfigure.Figure):
             axis.set_label_position(side)
         return pax
 
-    def _add_figure_panel(self, side,
-                          span=None, row=None, col=None, rows=None, cols=None,
-                          **kwargs):
+    def _add_figure_panel(
+            self, side,
+            span=None, row=None, col=None, rows=None, cols=None,
+            **kwargs):
         """Add figure panels. This powers `Figure.colorbar` and
         `Figure.legend`."""
         # Interpret args and enforce sensible keyword args
@@ -2172,12 +2181,13 @@ class Figure(mfigure.Figure):
         # `~matplotlib.backend_bases.FigureCanvasBase.print_figure`
         # methods. The latter is called by save() and by the inline backend.
         # See `_canvas_preprocess` for details."""
-        # NOTE: Use draw_idle() rather than draw() becuase latter is not
-        # always called! For example, MacOSX uses _draw() and nbAgg does
-        # not call draw() *or* _draw()! Not sure how it works actually.
-        # Should be same because we piggyback draw() which *itself* defers
-        # the event. Just make sure to check _is_idle_drawing!
-        canvas.draw_idle = _canvas_preprocess(canvas, 'draw_idle')
+        # NOTE: Cannot use draw_idle() because it causes *major* complications
+        # for qt5 backend. Even though usage is less consistent we *must*
+        # use draw() and _draw().
+        if hasattr(canvas, '_draw'):
+            canvas._draw = _canvas_preprocess(canvas, '_draw')
+        else:
+            canvas.draw = _canvas_preprocess(canvas, 'draw')
         canvas.print_figure = _canvas_preprocess(canvas, 'print_figure')
         super().set_canvas(canvas)
 
@@ -2271,7 +2281,7 @@ class Figure(mfigure.Figure):
         self.stale = True
         self._ref = ref
 
-    def set_size_inches(self, w, h=None, forward=True, manual=True):
+    def set_size_inches(self, w, h=None, forward=True, auto=True):
         # Set the figure size and, if this is being called manually or from
         # an interactive backend, override the geometry tracker so users can
         # use interactive backends. See #76. Undocumented because this is
@@ -2292,11 +2302,19 @@ class Figure(mfigure.Figure):
         width_true, height_true = self.get_size_inches()
         width_trunc = int(self.bbox.width) / self.dpi
         height_trunc = int(self.bbox.height) / self.dpi
-        if (manual  # have actually seen (width_true, heigh_trunc)!
-                and width not in (width_true, width_trunc)
-                and height not in (height_true, height_trunc)):
-            self._subplots_kw.update(width=width, height=height)
-        super().set_size_inches(width, height, forward=forward)
+        if auto:
+            with self._context_resizing():
+                super().set_size_inches(width, height, forward=forward)
+        else:
+            if (  # can have internal resizing not associated with any draws
+                (width not in (width_true, width_trunc)
+                 or height not in (height_true, height_trunc))
+                and not self._is_resizing
+                and not self.canvas._is_idle_drawing  # standard
+                and not getattr(self.canvas, '_draw_pending', None)  # pyqt5
+            ):
+                self._subplots_kw.update(width=width, height=height)
+            super().set_size_inches(width, height, forward=forward)
 
     # Add documentation
     add_gridspec.__doc__ = _gridspec_doc

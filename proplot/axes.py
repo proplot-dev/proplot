@@ -1186,8 +1186,9 @@ class Axes(maxes.Axes):
         """Return the width and the height of the axes in inches. Similar
         to `~matplotlib.Figure.get_size_inches`."""
         width, height = self.figure.get_size_inches()
-        width = width * abs(self.get_position().width)
-        height = height * abs(self.get_position().height)
+        bbox = self.get_position()
+        width = width * abs(bbox.width)
+        height = height * abs(bbox.height)
         return width, height
 
     def get_tightbbox(self, renderer, *args, **kwargs):

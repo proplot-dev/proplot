@@ -1100,8 +1100,14 @@ def ipython_matplotlib(backend=None, fmt=None):
     Parameters
     ----------
     backend : str, optional
-        The backend name. Use ``'auto'`` to apply ``%matplotlib inline`` for
-        notebooks and ``%matplotlib qt`` for all other sessions.
+        The backend name. The default is ``'auto'``, which applies
+        ``%matplotlib inline`` for notebooks and ``%matplotlib qt`` for
+        all other sessions.
+
+        Note that when using the qt backend on macOS, you may want to prevent
+        "tabbed" figure windows by navigating to Settings...Dock and changing
+        "Prefer tabs when opening documents" to "Manually" (see \
+`Issue #13164 <https://github.com/matplotlib/matplotlib/issues/13164>`__).
     fmt : str or list of str, optional
         The inline backend file format(s). Valid formats include ``'jpg'``,
         ``'png'``, ``'svg'``, ``'pdf'``, and ``'retina'``. This is ignored
@@ -1143,8 +1149,9 @@ def ipython_matplotlib(backend=None, fmt=None):
     ipython.magic(f'config InlineBackend.figure_formats = {fmt!r}')
     ipython.magic('config InlineBackend.rc = {}')  # no notebook overrides
     ipython.magic('config InlineBackend.close_figures = True')  # memory issues
-    ipython.magic(  # use proplot tight layout
-        'config InlineBackend.print_figure_kwargs = {"bbox_inches":None}')
+    ipython.magic(  # use ProPlot tight layout instead
+        'config InlineBackend.print_figure_kwargs = {"bbox_inches":None}'
+    )
 
 
 def ipython_autoreload(autoreload=None):
