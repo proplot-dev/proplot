@@ -3582,9 +3582,10 @@ def show_cycles(*args, axwidth=1.5):
     return fig
 
 
-def show_fonts(*args, size=12):
+def show_fonts(*args, size=12, text=None):
     """
-    Visualize font families.
+    Visualize the available sans-serif fonts. If a glyph is unavailable,
+    it is replaced by the "¤" dummy character.
 
     Parameters
     ----------
@@ -3594,36 +3595,44 @@ def show_fonts(*args, size=12):
         provided by ProPlot are shown.
     size : float, optional
         The font size in points.
+    text : str, optional
+        The sample text. The default sample text includes the Latin letters,
+        Greek letters, Arabic numerals, and some mathematical symbols.
     """
     from . import subplots
     if not args:
         import matplotlib.font_manager as mfonts
         args = sorted({
             font.name for font in mfonts.fontManager.ttflist
-            if font.name in FONTS_SANS
-            or any(path in font.fname for path in _get_data_paths('fonts'))
+            if font.name[:1] != '.' and (
+                font.name in FONTS_SANS
+                or any(path in font.fname for path in _get_data_paths('fonts'))
+            )
         })
 
     # Text
-    math = r'(0) + {1} - [2] * <3> / 4,0 $\geq\gg$ 5.0 $\leq\ll$ ~6 ' \
-           r'$\times$ 7 $\equiv$ 8 $\approx$ 9 $\propto$'
-    greek = r'$\alpha\beta$ $\Gamma\gamma$ $\Delta\delta$ ' \
+    if text is None:
+        text = 'the quick brown fox jumps over a lazy dog' '\n' \
+            'THE QUICK BROWN FOX JUMPS OVER A LAZY DOG' '\n' \
+            '(0) + {1\N{DEGREE SIGN}} \N{MINUS SIGN} [2*] - <3> / 4,0 ' \
+            r'$\geq\gg$ 5.0 $\leq\ll$ ~6 $\times$ 7 ' \
+            r'$\equiv$ 8 $\approx$ 9 $\propto$' '\n' \
+            r'$\alpha\beta$ $\Gamma\gamma$ $\Delta\delta$ ' \
             r'$\epsilon\zeta\eta$ $\Theta\theta$ $\kappa\mu\nu$ ' \
             r'$\Lambda\lambda$ $\Pi\pi$ $\xi\rho\tau\chi$ $\Sigma\sigma$ ' \
             r'$\Phi\phi$ $\Psi\psi$ $\Omega\omega$ !?&#%'
-    letters = 'the quick brown fox jumps over a lazy dog\n' \
-              'THE QUICK BROWN FOX JUMPS OVER A LAZY DOG'
 
     # Create figure
     f, axs = subplots(ncols=1, nrows=len(args), space=0,
-                      axwidth=4.5, axheight=6.5 * size / 72)
+                      axwidth=4.5, axheight=6.5 * size / 72,
+                      fallback_to_cm=False)
     axs.format(xloc='neither', yloc='neither',
                xlocator='null', ylocator='null', alpha=0)
     axs[0].format(title='Fonts demo', titlesize=size,
                   titleloc='l', titleweight='bold')
     for i, ax in enumerate(axs):
         font = args[i]
-        ax.text(0, 0.5, f'{font}:\n{letters}\n{math}\n{greek}',
+        ax.text(0, 0.5, f'{font}:\n{text}',
                 fontfamily=font, fontsize=size,
                 weight='normal', ha='left', va='center')
     return f
