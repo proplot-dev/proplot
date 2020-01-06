@@ -2719,17 +2719,14 @@ class MidpointNorm(mcolors.Normalize):
 
 
 def _get_data_paths(dirname):
-    """Returns configuration file paths."""
-    # Home configuration
-    paths = []
-    ipath = os.path.join(os.path.expanduser('~'), '.proplot', dirname)
-    if os.path.exists(ipath) and ipath not in paths:
-        paths.insert(0, ipath)
-    # Global configuration
-    ipath = os.path.join(os.path.dirname(__file__), dirname)
-    if ipath not in paths:
-        paths.insert(0, ipath)
-    return paths
+    """Return data folder paths in reverse order of precedence."""
+    # When loading colormaps, cycles, and colors, files in the latter
+    # directories overwrite files in the former directories. When loading
+    # fonts, the resulting paths need to be *reversed*.
+    return [
+        os.path.join(os.path.dirname(__file__), dirname),
+        os.path.join(os.path.expanduser('~'), '.proplot', dirname)
+    ]
 
 
 def _load_cmap_cycle(filename, cmap=False):
