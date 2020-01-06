@@ -438,7 +438,7 @@ class rc_configurator(object):
             'Geneva',
             'Lucid',
             'Avant Garde',
-            'TeX Gyre Sans',
+            'TeX Gyre Heros',
             'DejaVu Sans',
             'Bitstream Vera Sans',
             'Computer Modern Sans Serif',
