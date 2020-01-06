@@ -866,32 +866,33 @@ class rc_configurator(object):
 
     def context(self, *args, mode=0, **kwargs):
         """
-        Temporarily modifies settings in a ``with...as`` block,
-        used by ProPlot internally but may also be useful for power users.
+        Temporarily modify the rc settings in a "with as" block.
 
-        This function was invented to prevent successive calls to
+        This is used by ProPlot internally but may also be useful for power
+        users. It was invented to prevent successive calls to
         `~proplot.axes.Axes.format` from constantly looking up and
         re-applying unchanged settings. Testing showed that these gratuitous
         `rcParams <https://matplotlib.org/users/customizing.html>`__
         lookups and artist updates increased runtime by seconds, even for
-        relatively simple plots.
+        relatively simple plots. It also resulted in overwriting previous
+        rc changes with the default values upon subsequent calls to
+        `~proplot.axes.Axes.format`.
 
         Parameters
         ----------
         *args
-            Dictionaries of setting names and values.
+            Dictionaries of `rc` names and values.
         **kwargs
-            Setting names and values passed as keyword arguments.
+            `rc` names and values passed as keyword arguments. If the
+            name has dots, simply omit them.
 
         Other parameters
         ----------------
         mode : {0,1,2}, optional
-            The `~rc_configurator.__getitem__` mode.
-            Dictates the behavior of the `rc` object within a ``with...as``
-            block when settings are requested with e.g. :rcraw:`setting`. If
-            you are using `~rc_configurator.context` manually, the `mode` is
-            automatically set to ``0`` -- other input is ignored. Internally,
-            ProPlot uses all of the three available modes.
+            The context mode. Dictates the behavior of `~rc_configurator.get`,
+            `~rc_configurator.fill`, and `~rc_configurator.category` within a
+            "with as" block when called with ``context=True``. The options are
+            as follows.
 
             0. All settings (`rcParams \
 <https://matplotlib.org/users/customizing.html>`__,
@@ -901,29 +902,37 @@ class rc_configurator(object):
 <https://matplotlib.org/users/customizing.html>`__
                return ``None``. :ref:`rcParamsLong` and :ref:`rcParamsShort`
                are returned whether or not `~rc_configurator.context` has
-               changed them.  This is used in the ``__init__`` call to
-               `~proplot.axes.Axes.format`. When a setting lookup returns
+               changed them.  This is used in the `~proplot.axes.Axes.__init__`
+               call to `~proplot.axes.Axes.format`. When a lookup returns
                ``None``, `~proplot.axes.Axes.format` does not apply it.
             2. All unchanged settings return ``None``. This is used during user
                calls to `~proplot.axes.Axes.format`.
 
         Example
         -------
+        The below applies settings to axes in a specific figure using
+        `~rc_configurator.context`.
 
         >>> import proplot as plot
         >>> with plot.rc.context(linewidth=2, ticklen=5):
         ...     f, ax = plot.subplots()
         ...     ax.plot(data)
 
+        By contrast, the below applies settings to a specific axes using
+        `~proplot.axes.Axes.format`.
+
+        >>> import proplot as plot
+        >>> f, ax = plot.subplots()
+        >>> ax.format(linewidth=2, ticklen=5)
+
         """
         if mode not in range(3):
-            raise ValueError(f'Invalid _getitem_mode {mode}.')
+            raise ValueError(f'Invalid mode {mode!r}.')
         for arg in args:
             if not isinstance(arg, dict):
-                raise ValueError('Non-dictionary argument.')
+                raise ValueError('Non-dictionary argument {arg!r}.')
             kwargs.update(arg)
-        self._context = kwargs  # could be empty
-        self._getitem_mode = mode
+        self._context.append((mode, kwargs, {}, {}))
         return self
 
     def dict(self):
@@ -993,20 +1002,22 @@ class rc_configurator(object):
 
     def update(self, *args, **kwargs):
         """
-        Bulk updates settings, usage is similar to python `dict` objects.
+        Update multiple settings at once.
 
         Parameters
         ----------
         *args : str, dict, or (str, dict)
-            Positional arguments can be a dictionary of `rc` settings and/or
-            a "category" string name. If a category name is passed, all
-            settings in the dictionary (if it was passed) and all keyword arg
-            names (if they were passed) are prepended with the string
-            ``cat + '.'``. For example,
-            ``rc.update('axes', labelsize=20, titlesize=20)``
-            changes the ``axes.labelsize`` and ``axes.titlesize`` properties.
+            The first argument can optionally be a "category" string name,
+            in which case all other setting names passed to this function are
+            prepended with the string ``cat + '.'``. For example,
+            ``rc.update('axes', labelsize=20, titlesize=20)`` changes the
+            :rcraw:`axes.labelsize` and :rcraw:`axes.titlesize` properties.
+
+            The first or second argument can also be a dictionary of `rc`
+            names and values.
         **kwargs
-            `rc` settings passed as keyword args.
+            `rc` names and values passed as keyword arguments. If the
+            name has dots, simply omit them.
         """
         # Parse args
         kw = {}
