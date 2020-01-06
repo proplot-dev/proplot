@@ -204,12 +204,17 @@ Outer colorbars and legends
 .. rubric:: Problem
 
 In matplotlib, it is difficult to draw `~matplotlib.figure.Figure.colorbar`\ s and
-`~matplotlib.axes.Axes.legend`\ s on the outside of subplots. By default, colorbars "steal" space from their parent subplot, which can mess up subplot aspect ratios. And since colorbar widths are specified in *axes relative* coordinates, they often look "too skinny" or "too fat" after the first draw.
+`~matplotlib.axes.Axes.legend`\ s intended to reference more than one subplot or
+along the outside of subplots:
 
-As with axis labels, it is even more difficult to draw `~matplotlib.figure.Figure.colorbar`\ s and `~matplotlib.figure.Figure.legend`\ s intended to reference more than one subplot:
+* To draw legends outside of subplots, you usually need to position the legend manually and adjust various `~matplotlib.gridspec.GridSpec` spacing properties to make *room* for the legend.
+* To make colorbars that span multiple subplots, you have to supply `~matplotlib.figure.Figure.colorbar` with a `cax` you drew yourself. This requires so much tinkering that most users just add identical colorbars to every single subplot!
 
-* To make colorbars that span multiple plots, you have to supply `~matplotlib.figure.Figure.colorbar` with a `cax` you drew yourself. This requires so much tinkering that most users just add identical colorbars to every single subplot!
-* To draw legends outside of subplots, e.g. as a reference to *more than one* subplot, you usually need to position the legend manually and adjust various `~matplotlib.gridspec.GridSpec` spacing properties.
+Furthermore, drawing colorbars with ``fig.colorbar(..., ax=ax)`` tends to mess up subplot aspect ratios since the space allocated for the colorbar is "stolen" from the parent axes.
+
+..
+   And since colorbar widths are specified in *axes relative* coordinates, they often look "too skinny" or "too fat" after the first draw.
+
 
 ..
    The matplotlib example for `~matplotlib.figure.Figure` legends is `not pretty <https://matplotlib.org/3.1.1/gallery/text_labels_and_annotations/figlegend_demo.html>`__.
