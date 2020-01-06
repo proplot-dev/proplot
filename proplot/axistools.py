@@ -557,6 +557,12 @@ def _parse_logscale_args(kwargs, *keys):
             kwargs.pop(key + 'y', None),
             None, names=(key, key + 'x', key + 'y'),
         )
+        if key == 'linthresh' and value is None:
+            # NOTE: If linthresh is *exactly* on a power of the base, can
+            # end up with additional log-locator step inside the threshold,
+            # e.g. major ticks on -10, -1, -0.1, 0.1, 1, 10 for linthresh of
+            # 1. Adding slight offset to *desired* linthresh prevents this.
+            value = 1 + 1e-10
         if key == 'subs' and value is None:
             value = np.arange(1, 10)
         if value is not None:  # dummy axis_name is 'x'
