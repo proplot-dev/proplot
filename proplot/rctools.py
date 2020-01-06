@@ -691,8 +691,23 @@ class rc_configurator(object):
     documentation for details.
     """
     def __contains__(self, key):
-        return (key in RC_SHORTNAMES or key in RC_LONGNAMES or key in
-                RC_PARAMNAMES or key in RC_NODOTSNAMES)  # biggest lists last
+        return key in rcParamsShort or key in rcParamsLong or key in rcParams
+
+    def __iter__(self):
+        for key in sorted((*rcParamsShort, *rcParamsLong, *rcParams)):
+            yield key
+
+    def __repr__(self):
+        rcdict = type('rc', (dict,), {})(rcParamsShort)
+        string = type(rcParams).__repr__(rcdict)
+        indent = ' ' * 4  # indent is rc({
+        return string.strip(
+            '})') + f'\n{indent}... (rcParams) ...\n{indent}}})'
+
+    def __str__(self):  # encapsulate params in temporary class
+        rcdict = type('rc', (dict,), {})(rcParamsShort)
+        string = type(rcParams).__str__(rcdict)
+        return string + '\n... (rcParams) ...'
 
     @_counter  # about 0.05s
     def __init__(self, local=True):
@@ -862,7 +877,6 @@ class rc_configurator(object):
                     continue
                 kw[key] = value
         return kw
-
 
     def context(self, *args, mode=0, **kwargs):
         """
