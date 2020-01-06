@@ -1,1 +1,0 @@
-.. include:: ../HOWTORELEASE.rst

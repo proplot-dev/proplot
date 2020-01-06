@@ -60,52 +60,53 @@ width, height : float or str, optional
     The figure width and height. Units are interpreted by
     `~proplot.utils.units`.
 axwidth, axheight : float or str, optional
-    Sets the average width, height of your axes. Units are interpreted by
+    The width and height of the `ref` axes. Units are interpreted by
     `~proplot.utils.units`. Default is :rc:`subplots.axwidth`.
-
     These arguments are convenient where you don't care about the figure
     dimensions and just want your axes to have enough "room".
 aspect : float or length-2 list of floats, optional
-    The (average) axes aspect ratio, in numeric form (width divided by
-    height) or as (width, height) tuple. If you do not provide
-    the `hratios` or `wratios` keyword args, all axes will have
-    identical aspect ratios.
+    The aspect ratio of the `ref` axes as a ``width/height`` number or a
+    ``(width, height)`` tuple. If you do not provide the `hratios` or
+    `wratios` keyword args, this will control the aspect ratio of *all* axes.
+ref : int, optional
+    The reference axes number. The `axwidth`, `axheight`, and `aspect` keyword
+    args are applied to this axes and conserved during tight layout adjustment.
 tight : bool, optional
     Toggles whether the gridspec spaces `left`, `right`, `bottom`,
     `top`, `wspace`, and `hspace` are determined automatically to
     make room for labels and plotted content. Default is :rc:`tight`.
-left, right, top, bottom, wspace, hspace : float or str, optional
-    The spacing parameters passed to `GridSpec`. If `tight` is ``True``
-    and you pass any of these, the tight layout algorithm will be
-    ignored for that particular spacing. See the following examples.
-
-    * With ``plot.figure(left='3em')``, the left margin is
-        fixed but the other margins are variable.
-    * With ``plot.subplots(ncols=3, wspace=0)``, the space between
-        columns is fixed at zero, but between rows is variable.
-    * With ``plot.subplots(ncols=3, wspace=(0, None))``, the space
-        between the first and second columns is fixed, but the space
-        between the second and third columns is variable.
 pad, axpad, panelpad : float or str, optional
     Padding around the edge of the figure, between subplots in adjacent
     rows and columns, and between subplots and axes panels or between
     "stacked" panels. Units are interpreted by `~proplot.utils.units`.
     Defaults are :rc:`subplots.pad`, :rc:`subplots.axpad`, and
     :rc:`subplots.panelpad`.
+left, right, top, bottom, wspace, hspace : float or str, optional
+    The spacing parameters passed to `GridSpec`. If `tight` is ``True``
+    and you pass any of these, the tight layout algorithm will be
+    ignored for that particular spacing. See the following examples.
+
+    * With ``plot.figure(left='3em')``, the left margin is
+      fixed but the other margins are variable.
+    * With ``plot.subplots(ncols=3, wspace=0)``, the space between
+      columns is fixed at zero, but between rows is variable.
+    * With ``plot.subplots(ncols=3, wspace=(0, None))``, the space
+      between the first and second columns is fixed, but the space
+      between the second and third columns is variable.
 sharex, sharey, share : {3, 2, 1, 0}, optional
     The "axis sharing level" for the *x* axis, *y* axis, or both axes.
     Default is ``3``. This can considerably reduce redundancy in your
     figure. Options are as follows.
 
     0. No axis sharing. Also sets the default `spanx` and `spany`
-        values to ``False``.
+       values to ``False``.
     1. Only draw *axis label* on the leftmost column (*y*) or
-        bottommost row (*x*) of subplots. Axis tick labels
-        still appear on every subplot.
+       bottommost row (*x*) of subplots. Axis tick labels
+       still appear on every subplot.
     2. As in 1, but forces the axis limits to be identical. Axis
-        tick labels still appear on every subplot.
+       tick labels still appear on every subplot.
     3. As in 2, but only show the *axis tick labels* on the
-        leftmost column (*y*) or bottommost row (*x*) of subplots.
+       leftmost column (*y*) or bottommost row (*x*) of subplots.
 
 spanx, spany, span : bool or {0, 1}, optional
     Toggles "spanning" axis labels for the *x* axis, *y* axis, or both
@@ -132,10 +133,11 @@ autoformat : bool, optional
     labels when a `~pandas.Series`, `~pandas.DataFrame` or
     `~xarray.DataArray` with relevant metadata is passed to a plotting
     command.
-ref : int, optional
-    The reference axes number. The `axwidth`, `axheight`, and `aspect`
-    keyword args are applied to this axes, and aspect ratio is conserved
-    for this axes in tight layout adjustment.
+fallback_to_cm : bool, optional
+    Whether to replace unavailable glyphs with a glyph from Computer
+    Modern or the "¤" dummy character. See `mathtext \
+<https://matplotlib.org/3.1.1/tutorials/text/mathtext.html#custom-fonts>`__
+    for details.
 journal : str, optional
     String name corresponding to an academic journal standard that is used
     to control the figure width (and height, if specified). See below table.
@@ -188,32 +190,31 @@ def show():
 
 
 class subplot_grid(list):
-    """List subclass and pseudo-2D array that is used as a container for the
-    list of axes returned by `subplots`. The shape of the array is stored
-    in the ``shape`` attribute. See the `~subplot_grid.__getattr__` and
-    `~subplot_grid.__getitem__` methods for details."""
+    """List subclass and pseudo-2d array that is used as a container for the
+    list of axes returned by `subplots`. See `~subplot_grid.__getattr__`
+    and `~subplot_grid.__getitem__` for details."""
     def __init__(self, objs, n=1, order='C'):
         """
         Parameters
         ----------
         objs : list-like
-            1D iterable of `~proplot.axes.Axes` instances.
+            1d iterable of `~proplot.axes.Axes` instances.
         n : int, optional
             The length of the fastest-moving dimension, i.e. the number of
             columns when `order` is ``'C'``, and the number of rows when
-            `order` is ``'F'``. Used to treat lists as pseudo-2D arrays.
+            `order` is ``'F'``. Used to treat lists as pseudo-2d arrays.
         order : {'C', 'F'}, optional
-            Whether 1D indexing returns results in row-major (C-style) or
+            Whether 1d indexing returns results in row-major (C-style) or
             column-major (Fortran-style) order, respectively. Used to treat
-            lists as pseudo-2D arrays.
+            lists as pseudo-2d arrays.
         """
         if not all(isinstance(obj, axes.Axes) for obj in objs):
             raise ValueError(
                 f'Axes grid must be filled with Axes instances, got {objs!r}.')
+        super().__init__(objs)
         self._n = n
         self._order = order
-        super().__init__(objs)
-        self.shape = (len(self) // n, n)[::(1 if order == 'C' else -1)]
+        self._shape = (len(self) // n, n)[::(1 if order == 'C' else -1)]
 
     def __repr__(self):
         return 'subplot_grid([' + ', '.join(str(ax) for ax in self) + '])'
@@ -239,7 +240,7 @@ class subplot_grid(list):
         ... axs[:,0] # the subplots in the first column
 
         """
-        # Allow 2D specification
+        # Allow 2d specification
         if isinstance(key, tuple) and len(key) == 1:
             key = key[0]
         # do not expand single slice to list of integers or we get recursion!
@@ -320,6 +321,10 @@ class subplot_grid(list):
         ... paxs.format(...) # calls "format" on all panels
 
         """
+        # TODO: Consider getting rid of __getattr__ override because it is
+        # too much of a mind fuck for new users? Could just have bulk format
+        # function and colorbar, legend, and text functions for drawing
+        # spanning content.
         if not self:
             raise AttributeError(
                 f'Invalid attribute {attr!r}, axes grid {self!r} is empty.')
@@ -354,23 +359,12 @@ class subplot_grid(list):
         # Mixed
         raise AttributeError(f'Found mixed types for attribute {attr!r}.')
 
-    # TODO: Implement these
-    # TODO: Consider getting rid of __getattr__ override because it is
-    # too much of a mind fuck for new users?
-    # def colorbar(self, loc=None):
-    #     """Draws a colorbar that spans axes in the selected range."""
-    #     for ax in self:
-    #         pass
-    #
-    # def legend(self, loc=None):
-    #     """Draws a legend that spans axes in the selected range."""
-    #     for ax in self:
-    #         pass
-    #
-    # def text(self, loc=None):
-    #     """Draws text that spans axes in the selected range."""
-    #     for ax in self:
-    #         pass
+    @property
+    def shape(self):
+        """The "shape" of the subplot grid. For complex subplot grids, where
+        subplots may span contiguous rows and columns, this "shape" may be
+        incorrect. In such cases, 1d indexing should always be used."""
+        return self._shape
 
 
 class SubplotSpec(mgridspec.SubplotSpec):
@@ -713,7 +707,7 @@ def _canvas_preprocess(canvas, method):
             fig._adjust_aspect()  # resizes figure
             if fig._auto_tight_layout:
                 fig._align_axislabels(False)  # get proper label offset only
-                fig._align_labels(renderer)  # position labels and suptitle
+                fig._align_labels(renderer)   # position labels and suptitle
                 fig._adjust_tight_layout(renderer)
         fig._align_axislabels(True)  # slide spanning labels across
         fig._align_labels(renderer)  # update figure-relative coordinates!
@@ -1356,6 +1350,7 @@ class Figure(mfigure.Figure):
                  span=None, spanx=None, spany=None,
                  align=None, alignx=None, aligny=None,
                  includepanels=False, autoformat=True, ref=1,
+                 fallback_to_cm=False,
                  tight_layout=None, constrained_layout=None,
                  **kwargs):
         """
@@ -1450,6 +1445,7 @@ class Figure(mfigure.Figure):
         self._panelpad = units(_notNone(panelpad, rc['subplots.panelpad']))
         self._auto_format = autoformat
         self._auto_tight_layout = _notNone(tight, rc['tight'])
+        self._fallback_to_cm = fallback_to_cm
         self._include_panels = includepanels
         self._mainaxes = []
         self._bpanels = []
@@ -2397,7 +2393,7 @@ def subplots(
 
     Parameters
     ----------
-    array : 2D array-like of int, optional
+    array : 2d array-like of int, optional
         Array specifying complex grid of subplots. Think of
         this array as a "picture" of your figure. For example, the array
         ``[[1, 1], [2, 3]]`` creates one long subplot in the top row, two
@@ -2478,7 +2474,7 @@ def subplots(
     except (TypeError, ValueError):
         raise ValueError(
             f'Invalid subplot array {array!r}. '
-            'Must be 1D or 2D array of integers.')
+            'Must be 1d or 2d array of integers.')
     # Get other props
     nums = np.unique(array[array != 0])
     naxs = len(nums)

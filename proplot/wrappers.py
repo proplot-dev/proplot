@@ -1351,7 +1351,7 @@ def text_wrapper(
         if not isinstance(fontname, str) and np.iterable(
                 fontname) and len(fontname) == 1:
             fontname = fontname[0]
-        if fontname in styletools.fonts:
+        if fontname.lower() in list(map(str.lower, styletools.fonts)):
             kwargs['fontfamily'] = fontname
         else:
             _warn_proplot(

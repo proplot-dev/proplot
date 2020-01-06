@@ -5,25 +5,36 @@
 
 A comprehensive, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful, publication-quality graphics.
 
-Documentation
-=============
-The documentation is `published on readthedocs <https://proplot.readthedocs.io>`__.
-
 Installation
 ============
 
-To install or upgrade ProPlot:
+ProPlot can be installed with `pip <https://pypi.org>`__ or `conda <https://anaconda-project.readthedocs.io/en/latest/>`__:
 
 .. code-block:: bash
 
-   pip install -U proplot
+   pip install proplot
+
+.. code-block:: bash
+
+   conda install -c conda-forge proplot
+
+An existing installation of ProPlot can be upgraded to the latest version with:
+
+.. code-block:: bash
+
+   pip install --upgrade proplot
+
+.. code-block:: bash
+
+   conda upgrade proplot
 
 
-If you previously used ``pip install git+https://github.com/lukelbd/proplot.git``
-to install a development version of proplot,
-please run ``pip uninstall`` first.
+If you used ``pip install git+https://github.com/lukelbd/proplot.git`` to install ProPlot before it was released on PyPi, you may need to run ``pip uninstall proplot`` before upgrading.
+To install a development version of ProPlot, you can use this same method, or clone the repository and run ``pip install --upgrade .`` inside the ``proplot`` folder.
 
-ProPlot's only hard dependency is `matplotlib <https://matplotlib.org/>`__. The *soft* dependencies are `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`__, `basemap <https://matplotlib.org/basemap/index.html>`__, `xarray <http://xarray.pydata.org>`__, and `pandas <https://pandas.pydata.org>`__. See the documentation for details.
+Documentation
+=============
+The documentation is `published on readthedocs <https://proplot.readthedocs.io>`__.
 
 
 .. |code-style| image:: https://img.shields.io/badge/code%20style-pep8-green.svg

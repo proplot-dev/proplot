@@ -21,10 +21,16 @@ except ModuleNotFoundError:
     def get_ipython():
         return None
 from .utils import _warn_proplot, _counter, _benchmark, units
+
+# Disable mathtext "missing glyph" warnings
+import matplotlib.mathtext # noqa
+import logging
+logger = logging.getLogger('matplotlib.mathtext')
+logger.setLevel(logging.ERROR)  # suppress warnings!
+
 __all__ = [
     'rc', 'rc_configurator', 'ipython_autosave',
     'ipython_autoreload', 'ipython_matplotlib',
-    'use_font',
 ]
 
 # Initialize
@@ -40,7 +46,7 @@ defaultParamsShort = {
     'color': 'k',
     'cycle': 'colorblind',
     'facecolor': 'w',
-    'fontname': 'auto',
+    'fontname': 'sans-serif',
     'inlinefmt': 'retina',
     'geogrid': True,
     'grid': True,
@@ -167,6 +173,48 @@ defaultParams = {
     'figure.facecolor': '#f2f2f2',
     'figure.max_open_warning': 0,
     'figure.titleweight': 'bold',
+    'font.serif': (
+        'New Century Schoolbook',
+        'Century Schoolbook L',
+        'Utopia',
+        'ITC Bookman',
+        'Bookman',
+        'Nimbus Roman No9 L',
+        'Times New Roman',
+        'Times',
+        'Palatino',
+        'Charter',
+        'Computer Modern Roman',
+        'DejaVu Serif',
+        'Bitstream Vera Serif',
+        'serif',
+    ),
+    'font.sans-serif': (
+        'Helvetica',
+        'Arial',
+        'Lucida Grande',
+        'Verdana',
+        'Geneva',
+        'Lucid',
+        'Avant Garde',
+        'TeX Gyre Sans',
+        'DejaVu Sans',
+        'Bitstream Vera Sans',
+        'Computer Modern Sans Serif',
+        'sans-serif',
+    ),
+    'font.monospace': (
+        'Andale Mono',
+        'Nimbus Mono L',
+        'Courier New',
+        'Courier',
+        'Fixed',
+        'Terminal',
+        'Computer Modern Typewriter',
+        'DejaVu Sans Mono',
+        'Bitstream Vera Sans Mono',
+        'monospace',
+    ),
     'grid.alpha': 0.1,
     'grid.color': 'k',
     'grid.linestyle': '-',
@@ -184,9 +232,8 @@ defaultParams = {
     'legend.labelspacing': 0.5,
     'lines.linewidth': 1.3,
     'lines.markersize': 3.0,
-    'mathtext.bf': 'sans:bold',
+    'mathtext.fontset': 'custom',
     'mathtext.default': 'regular',
-    'mathtext.it': 'sans:it',
     'savefig.bbox': 'standard',
     'savefig.directory': '',
     'savefig.dpi': 300,
@@ -194,8 +241,10 @@ defaultParams = {
     'savefig.format': 'pdf',
     'savefig.pad_inches': 0.0,
     'savefig.transparent': True,
+    'text.usetex': False,
     'xtick.minor.visible': True,
     'ytick.minor.visible': True,
+
 }
 rcParamsShort = {}
 rcParamsLong = {}
@@ -242,6 +291,9 @@ RC_CHILDREN = {
     ),
     'facecolor': (
         'axes.facecolor', 'geoaxes.facecolor'
+    ),
+    'fontname': (
+        'font.family',
     ),
     'color': (  # change the 'color' of an axes
         'axes.edgecolor', 'geoaxes.edgecolor', 'axes.labelcolor',
@@ -450,7 +502,8 @@ def _to_points(key, value):
 
 
 def _get_config_paths():
-    """Return a list of configuration file paths."""
+    """Return a list of configuration file paths in reverse order of
+    precedence."""
     # Local configuration
     idir = os.getcwd()
     paths = []
@@ -458,8 +511,8 @@ def _get_config_paths():
         ipath = os.path.join(idir, '.proplotrc')
         if os.path.exists(ipath):
             paths.append(ipath)
-        ndir, _ = os.path.split(idir)
-        if ndir == idir:
+        ndir = os.path.dirname(idir)
+        if ndir == idir:  # root
             break
         idir = ndir
     paths = paths[::-1]  # sort from decreasing to increasing importantce
@@ -478,9 +531,20 @@ def _get_synced_params(key, value):
     kw_short = {}  # short name properties
     if '.' not in key and key not in rcParamsShort:
         key = RC_NODOTSNAMES.get(key, key)
+
     # Skip full name keys
     if '.' in key:
         pass
+
+    # Special ipython settings
+    # TODO: Put this inside __setitem__?
+    elif key == 'matplotlib':
+        ipython_matplotlib(value)
+    elif key == 'autosave':
+        ipython_autosave(value)
+    elif key == 'autoreload':
+        ipython_autoreload(value)
+
     # Cycler
     elif key in ('cycle', 'rgbcycle'):
         if key == 'rgbcycle':
@@ -660,6 +724,7 @@ class rc_configurator(object):
             style.use('default')
 
         # Update from defaults
+        rcParams.update(defaultParams)
         rcParamsLong.clear()
         rcParamsLong.update(defaultParamsLong)
         rcParamsShort.clear()
@@ -1139,34 +1204,6 @@ def ipython_autosave(autosave=None):
             pass
 
 
-def use_font(font=None):
-    """
-    Set the default font and ensure that the font used for TeX-style math
-    is the same as the regular font by applying
-    ``rcParams['mathtext.default'] = 'regular'``.
-
-    Parameters
-    ----------
-    font : str, optional
-        If ``'auto'``, we search for ``'Helvetica Neue'``, followed by
-        ``'Helvetica'``, ``'Arial'``, and finally ``'DejaVu Sans'``.
-    """
-    font = font or rcParamsShort['fontname']
-    if font == 'auto':
-        import matplotlib.font_manager as mfonts
-        font = 'DejaVu Sans'
-        fonts = sorted({font.name for font in mfonts.fontManager.ttflist})
-        for nicefont in (
-            'Helvetica Neue', 'Helvetica', 'Arial',
-            'DejaVu Sans', 'Bitstream Vera',
-        ):
-            if nicefont in fonts:
-                font = nicefont
-                break
-    rcParams['font.family'] = font
-    rcParams['mathtext.default'] = 'regular'
-
-
 #: Instance of `rc_configurator`. This is used to change global settings.
 #: See :ref:`Configuring proplot` for details.
 rc = rc_configurator()
@@ -1175,4 +1212,3 @@ rc = rc_configurator()
 ipython_matplotlib()
 ipython_autoreload()
 ipython_autosave()
-# use_font()

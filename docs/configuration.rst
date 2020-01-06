@@ -193,8 +193,8 @@ Key(s)                           Description
 ``toplabel.weight``              Font weight for column labels on the top of the figure.
 ===============================  =========================================================================================================================================================================================================================================================
 
-proplotrc file
---------------
+The .proplotrc file
+-------------------
 
 To modify the global settings, edit your
 ``~/.proplotrc`` file. To modify settings for a particular project,
