@@ -8,7 +8,6 @@ from numbers import Integral
 import matplotlib.projections as mproj
 import matplotlib.axes as maxes
 import matplotlib.dates as mdates
-import matplotlib.scale as mscale
 import matplotlib.text as mtext
 import matplotlib.path as mpath
 import matplotlib.ticker as mticker
@@ -139,15 +138,15 @@ class Axes(maxes.Axes):
         :py:obj:`PolarAxes`,
         :py:obj:`ProjAxes`
         """
-        # Call parent
         super().__init__(*args, **kwargs)
+        # Ensure isDefault_minloc enabled at start, needed for dual axes
+        self.xaxis.isDefault_minloc = self.yaxis.isDefault_minloc = True
         # Properties
         self._number = number  # for abc numbering
         self._abc_loc = None
         self._abc_text = None
         self._titles_dict = {}  # title text objects and their locations
         self._title_loc = None  # location of main title
-        # so we can copy to top panel
         self._title_pad = rc.get('axes.titlepad')
         self._title_above_panel = True  # TODO: add rc prop?
         # Children and related properties
@@ -1741,8 +1740,10 @@ class XYAxes(Axes):
         self.yaxis.isDefault_majfmt = True
         # Custom attributes
         self._datex_rotated = False  # whether manual rotation has been applied
-        self._dualy_data = None  # for scaling units on opposite side of ax
-        self._dualx_data = None
+        self._dualy_arg = None  # for scaling units on opposite side of ax
+        self._dualx_arg = None
+        self._dualy_cache = None  # prevent excess _dualy_overrides calls
+        self._dualx_cache = None
 
     def _altx_overrides(self):
         """Applies alternate *x* axis overrides."""
@@ -1799,75 +1800,55 @@ class XYAxes(Axes):
         self._datex_rotated = True  # do not need to apply more than once
 
     def _dualx_overrides(self):
-        """Locks child "dual" *x* axis limits to the parent."""
-        # Why did I copy and paste the dualx/dualy code you ask? Copy
-        # pasting is bad, but so are a bunch of ugly getattr(attr)() calls
-        data = self._dualx_data
-        if data is None:
+        """Lock child "dual" *x* axis limits to the parent."""
+        # NOTE: We set the scale using private API to bypass application of
+        # set_default_locators_and_formatters: only_if_default=True is critical
+        # to prevent overriding user settings! We also bypass autoscale_view
+        # because we set limits manually, and bypass child.stale = True
+        # because that is done in call to set_xlim() below.
+        arg = self._dualx_arg
+        if arg is None:
             return
-        funcscale_funcs, funcscale_kw = data
-        # Build the FuncScale
-        # Sometimes we do *not* want to apply default locator and formatter
-        # overrides, in case user has manually changed them! Also, sometimes
-        # we want to borrow method that sets default from the scale from which
-        # forward and inverse funcs were drawn, instead of from FuncScale.
+        scale = self.xaxis._scale
+        olim = self.get_xlim()
+        if (scale, *olim) == self._dualx_cache:
+            return
         child = self._altx_child
-        scale_parent = self.xaxis._scale
-        scale_func = axistools.Scale(
-            'function', funcscale_funcs[::-1],
-            scale_parent.get_transform(),
-            **funcscale_kw
+        funcscale = axistools.Scale(
+            'function', arg, invert=True, parent_scale=scale,
         )
-        scale_defaults = scale_func if isinstance(
-            scale_parent, mscale.LinearScale) else scale_parent
-        try:
-            scale_defaults.set_default_locators_and_formatters(
-                child.xaxis, only_if_default=True,
-            )
-        except TypeError:
-            pass  # do nothing if axis has native matplotlib scale
-        child.xaxis._scale = scale_func
+        child.xaxis._scale = funcscale
         child._update_transScale()
-        child.stale = True
-        child.autoscale_view(scaley=False)
-        # Transform axis limits
-        # If the transform flipped the limits, when we set axis limits, it
-        # will get flipped again! So reverse the flip
-        lim = self.get_xlim()
-        nlim = list(map(funcscale_funcs[0], np.array(lim)))
-        if np.sign(np.diff(lim)) != np.sign(np.diff(nlim)):
-            nlim = nlim[::-1]
-        child.set_xlim(nlim)
+        funcscale.set_default_locators_and_formatters(
+            child.xaxis, only_if_default=True)
+        nlim = list(map(funcscale.functions[1], np.array(olim)))
+        if np.sign(np.diff(olim)) != np.sign(np.diff(nlim)):
+            nlim = nlim[::-1]  # if function flips limits, so will set_xlim!
+        child.set_xlim(nlim, emit=False)
+        self._dualx_cache = (scale, *olim)
 
     def _dualy_overrides(self):
-        """Locks child "dual" *y* axis limits to the parent."""
-        data = self._dualy_data
-        if data is None:
+        """Lock child "dual" *y* axis limits to the parent."""
+        arg = self._dualy_arg
+        if arg is None:
             return
-        funcscale_funcs, funcscale_kw = data
+        scale = self.yaxis._scale
+        olim = self.get_ylim()
+        if (scale, *olim) == self._dualy_cache:
+            return
         child = self._alty_child
-        scale_parent = self.yaxis._scale
-        scale_func = axistools.Scale(
-            'function', funcscale_funcs[::-1], scale_parent.get_transform(),
-            **funcscale_kw
+        funcscale = axistools.Scale(
+            'function', arg, invert=True, parent_scale=scale,
         )
-        scale_defaults = scale_func if isinstance(
-            scale_parent, mscale.LinearScale) else scale_parent
-        try:
-            scale_defaults.set_default_locators_and_formatters(
-                child.xaxis, only_if_default=True,
-            )
-        except TypeError:
-            pass
-        child.yaxis._scale = scale_func
+        child.yaxis._scale = funcscale
         child._update_transScale()
-        child.stale = True
-        child.autoscale_view(scalex=False)
-        lim = self.get_ylim()
-        nlim = list(map(funcscale_funcs[0], np.array(lim)))
-        if np.sign(np.diff(lim)) != np.sign(np.diff(nlim)):
+        funcscale.set_default_locators_and_formatters(
+            child.yaxis, only_if_default=True)
+        nlim = list(map(funcscale.functions[1], np.array(olim)))
+        if np.sign(np.diff(olim)) != np.sign(np.diff(nlim)):
             nlim = nlim[::-1]
-        child.set_ylim(nlim)
+        child.set_ylim(nlim, emit=False)
+        self._dualy_cache = (scale, *olim)
 
     def _hide_labels(self):
         """Function called at drawtime that enforces "shared" axis and
@@ -1883,8 +1864,7 @@ class XYAxes(Axes):
                     axis.label.set_visible(False)
                 if level > 2:
                     axis.set_major_formatter(mticker.NullFormatter())
-            # Enforce no minor ticks labels
-            # TODO: Document this?
+            # Enforce no minor ticks labels. TODO: Document?
             axis.set_minor_formatter(mticker.NullFormatter())
 
     def _sharex_setup(self, sharex, level):
@@ -2505,7 +2485,8 @@ class XYAxes(Axes):
                 self.set_aspect(aspect)
             super().format(**kwargs)
 
-    def altx(self, *args, **kwargs):
+    def altx(self):
+        # TODO: Accept format **kwargs? Is this already in #50?
         # Cannot wrap twiny() because we want to use XYAxes, not
         # matplotlib Axes. Instead use hidden method _make_twin_axes.
         # See https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_subplots.py  # noqa
