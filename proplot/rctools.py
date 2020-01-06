@@ -23,7 +23,7 @@ except ModuleNotFoundError:
 from .utils import _warn_proplot, _counter, _benchmark, units
 
 # Disable mathtext "missing glyph" warnings
-import matplotlib.mathtext # noqa
+import matplotlib.mathtext  # noqa
 import logging
 logger = logging.getLogger('matplotlib.mathtext')
 logger.setLevel(logging.ERROR)  # suppress warnings!
