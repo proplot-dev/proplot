@@ -1659,43 +1659,17 @@ Enforces the following settings.
 """
 
 
-def _parse_dualxy_args(x, transform, transform_kw, kwargs):
-    """Interprets the dualx and dualy transform and various keyword
-    arguments. Returns a list of forward transform, inverse transform, and
-    overrides for default locators and formatters."""
-    # Transform using input functions
-    # TODO: Also support transforms? Probably not -- transforms are a huge
-    # group that include ND and non-invertable transformations, but transforms
-    # used for axis scales are subset of invertible 1D functions
-    funcscale_kw = {}
-    transform_kw = transform_kw or {}
-    if isinstance(transform, (str, mscale.ScaleBase)) or transform_kw:
-        transform = transform or 'linear'
-        scale = axistools.Scale(transform, **transform_kw)
-        transform = scale.get_transform()
-        funcscale_funcs = (transform.transform, transform.inverted().transform)
-        for key in ('major_locator', 'minor_locator',
-                    'major_formatter', 'minor_formatter'):
-            default = getattr(scale, '_' + key, None)
-            if default:
-                funcscale_kw[key] = default
-    elif (np.iterable(transform) and len(transform) == 2
-          and all(callable(itransform) for itransform in transform)):
-        funcscale_funcs = transform
-    elif callable(transform):
-        funcscale_funcs = (transform, lambda x: x)
-    else:
-        raise ValueError(
-            f'Invalid transform {transform!r}. '
-            'Must be function, tuple of two functions, or scale name.')
-    # Parse keyword args intended for format() command
+def _parse_dualxy_args(x, kwargs):
+    """Detect `~XYAxes.format` arguments with the leading ``x`` or ``y``
+    removed. Translate to valid `~XYAxes.format` arguments."""
     kwargs_bad = {}
     for key in (*kwargs.keys(),):
         value = kwargs.pop(key)
         if key[0] == x and key[1:] in dualxy_kwargs:
             _warn_proplot(
                 f'dual{x}() keyword arg {key!r} is deprecated. '
-                f'Use {key[1:]!r} instead.')
+                f'Use {key[1:]!r} instead.'
+            )
             kwargs[key] = value
         elif key in dualxy_kwargs:
             kwargs[x + key] = value
@@ -1705,8 +1679,9 @@ def _parse_dualxy_args(x, transform, transform_kw, kwargs):
             kwargs_bad[key] = value
         if kwargs_bad:
             raise TypeError(
-                f'dual{x}() got unexpected keyword argument(s): {kwargs_bad}')
-    return funcscale_funcs, funcscale_kw, kwargs
+                f'dual{x}() got unexpected keyword argument(s): {kwargs_bad}'
+            )
+    return kwargs
 
 
 def _rcloc_to_stringloc(x, string):  # figures out string location
@@ -2538,7 +2513,6 @@ class XYAxes(Axes):
             raise RuntimeError('No more than *two* twin axes are allowed.')
         with self.figure._unlock():
             ax = self._make_twin_axes(sharey=self, projection='xy')
-        # shared axes must have matching autoscale
         ax.set_autoscaley_on(self.get_autoscaley_on())
         ax.grid(False)
         self._altx_child = ax
@@ -2554,7 +2528,6 @@ class XYAxes(Axes):
             raise RuntimeError('No more than *two* twin axes are allowed.')
         with self.figure._unlock():
             ax = self._make_twin_axes(sharex=self, projection='xy')
-        # shared axes must have matching autoscale
         ax.set_autoscalex_on(self.get_autoscalex_on())
         ax.grid(False)
         self._alty_child = ax
@@ -2565,32 +2538,21 @@ class XYAxes(Axes):
         self.figure._axstack.remove(ax)  # or gets drawn twice!
         return ax
 
-    def dualx(self, transform, transform_kw=None, **kwargs):
-        # The axis scale is used to transform units on the left axis, linearly
-        # spaced, to units on the right axis... so the right scale must scale
-        # its data with the *inverse* of this transform. We do this below.
-        # NOTE: Matplotlib 3.1 has a 'secondary axis' feature. This one is
-        # simpler, because it does not implement the function transform as
-        # an axis scale (meaning user just has to supply the forward
-        # transformation, not the backwards one), and does not invent a new
-        # class with a bunch of complicated setters.
+    def dualx(self, arg, **kwargs):
+        # NOTE: Matplotlib 3.1 has a 'secondary axis' feature. For the time
+        # being, our version is more robust (see FuncScale) and simpler, since
+        # we do not create an entirely separate _SecondaryAxis class.
         ax = self.altx()
-        funcscale_funcs, funcscale_kw, kwargs = _parse_dualxy_args(
-            'x', transform, transform_kw, kwargs
-        )
-        self._dualx_data = (funcscale_funcs, funcscale_kw)
+        self._dualx_arg = arg
         self._dualx_overrides()
-        ax.format(**kwargs)
+        ax.format(**_parse_dualxy_args('x', kwargs))
         return ax
 
-    def dualy(self, transform, transform_kw=None, **kwargs):
+    def dualy(self, arg, **kwargs):
         ax = self.alty()
-        funcscale_funcs, funcscale_kw, kwargs = _parse_dualxy_args(
-            'y', transform, transform_kw, kwargs
-        )
-        self._dualy_data = (funcscale_funcs, funcscale_kw)
+        self._dualy_arg = arg
         self._dualy_overrides()
-        ax.format(**kwargs)
+        ax.format(**_parse_dualxy_args('y', kwargs))
         return ax
 
     def draw(self, renderer=None, *args, **kwargs):
