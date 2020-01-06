@@ -499,6 +499,14 @@ def _canvas_preprocess(canvas, method):
     # complicated, dangerous, and result in unnecessary extra draws.
     def _preprocess(self, *args, **kwargs):
         fig = self.figure  # update even if not stale! needed after saves
+        if method == 'draw_idle' and (
+            self._is_idle_drawing  # standard
+            or getattr(self, '_draw_pending', None)  # pyqt5
+        ):
+            # For now we override 'draw' and '_draw' rather than 'draw_idle'
+            # but may change mind in the future. This breakout condition is
+            # copied from the matplotlib source.
+            return
         if method == 'print_figure':
             # When re-generating inline figures, the tight layout algorithm
             # can get figure size *or* spacing wrong unless we force additional
@@ -1582,6 +1590,23 @@ class Figure(mfigure.Figure):
                 row=row, col=col, rows=rows, cols=cols)
             return ax.colorbar(*args, loc='_fill', **kwargs)
 
+    def draw(self, renderer):
+        # Certain backends *still* have issues with the tight layout
+        # algorithm e.g. due to opening windows in *tabs*. Have not found way
+        # to intervene in the FigureCanvas. For this reason we *also* apply
+        # the algorithm inside Figure.draw in the same way that matplotlib
+        # applies its tight layout algorithm. So far we just do this for Qt*
+        # and MacOSX; corrections are generally *small* but notable!
+        if not self.get_visible():
+            return
+        if self._auto_tight and (
+            rc['backend'] == 'MacOSX' or rc['backend'][:2] == 'Qt'
+        ):
+            self._adjust_tight_layout(renderer, resize=False)
+            self._align_axislabels(True)  # if spaces changed need to realign
+            self._align_labels(renderer)
+        return super().draw(renderer)
+
     def legend(self, *args,
                loc='r', width=None, space=None,
                row=None, col=None, rows=None, cols=None, span=None,
@@ -1651,9 +1676,9 @@ class Figure(mfigure.Figure):
         # `~matplotlib.backend_bases.FigureCanvasBase.print_figure`
         # methods. The latter is called by save() and by the inline backend.
         # See `_canvas_preprocess` for details."""
-        # NOTE: Cannot use draw_idle() because it causes *major* complications
-        # for qt5 backend. Even though usage is less consistent we *must*
-        # use draw() and _draw().
+        # NOTE: Cannot use draw_idle() because it causes complications for qt5
+        # backend (wrong figure size). Even though usage is less consistent we
+        # *must* use draw() and _draw() instead.
         if hasattr(canvas, '_draw'):
             canvas._draw = _canvas_preprocess(canvas, '_draw')
         else:
