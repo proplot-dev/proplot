@@ -748,18 +748,24 @@ class Figure(mfigure.Figure):
 
     def __init__(self,
                  tight=None,
-                 pad=None, axpad=None, panelpad=None, includepanels=False,
+                 ref=1, pad=None, axpad=None, panelpad=None,
+                 includepanels=False,
                  autoformat=True,
-                 ref=1, order='C',  # documented in subplots but needed here
-                 subplots_kw=None, gridspec_kw=None, subplots_orig_kw=None,
-                 tight_layout=None, constrained_layout=None,
+                 gridspec_kw=None, subplots_kw=None, subplots_orig_kw=None,
+                 fallback_to_cm=None,
                  **kwargs):
         """
         Parameters
         ----------
         tight : bool, optional
-            Toggles automatic tight layout adjustments. Default is
-            :rc:`tight`.
+            Toggles automatic tight layout adjustments. Default is :rc:`tight`.
+            If you manually specified a spacing in the call to `subplots`, it
+            will be used to override the tight layout spacing. For example,
+            with ``left=0.1``, the left margin is set to 0.1 inches wide,
+            while the remaining margin widths are calculated automatically.
+        ref : int, optional
+            The reference subplot number. See `subplots` for details. Default
+            is ``1``.
         pad : float or str, optional
             Padding around edge of figure. Units are interpreted by
             `~proplot.utils.units`. Default is :rc:`subplots.pad`.
@@ -781,6 +787,11 @@ class Figure(mfigure.Figure):
             labels when a `~pandas.Series`, `~pandas.DataFrame` or
             `~xarray.DataArray` with relevant metadata is passed to a plotting
             command.
+        fallback_to_cm : bool, optional
+            Whether to replace unavailable glyphs with a glyph from Computer
+            Modern or the "¤" dummy character. See `mathtext \
+<https://matplotlib.org/3.1.1/tutorials/text/mathtext.html#custom-fonts>`__
+            for details.
         gridspec_kw, subplots_kw, subplots_orig_kw
             Keywords used for initializing the main gridspec, for initializing
             the figure, and original spacing keyword args used for initializing
@@ -788,10 +799,6 @@ class Figure(mfigure.Figure):
 
         Other parameters
         ----------------
-        ref, order
-            Documented in `subplots`.
-        tight_layout, constrained_layout
-            Ignored, because ProPlot uses its own tight layout algorithm.
         **kwargs
             Passed to `matplotlib.figure.Figure`.
 
@@ -801,6 +808,8 @@ class Figure(mfigure.Figure):
         """
         # Initialize first, because need to provide fully initialized figure
         # as argument to gridspec, because matplotlib tight_layout does that
+        tight_layout = kwargs.pop('tight_layout', None)
+        constrained_layout = kwargs.pop('constrained_layout', None)
         if tight_layout or constrained_layout:
             _warn_proplot(
                 f'Ignoring tight_layout={tight_layout} and '
@@ -815,7 +824,7 @@ class Figure(mfigure.Figure):
         self._auto_format = autoformat
         self._auto_tight_layout = _notNone(tight, rc['tight'])
         self._include_panels = includepanels
-        self._order = order  # used for configuring panel subplot_grids
+        self._fallback_to_cm = fallback_to_cm
         self._ref_num = ref
         self._axes_main = []
         self._subplots_orig_kw = subplots_orig_kw
