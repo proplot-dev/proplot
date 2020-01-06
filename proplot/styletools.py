@@ -250,15 +250,18 @@ COLORS_BASE = {
 # NOTE: Add to this as needed!
 FONTS_SANS = [
     'Arial',
+    'Avant Garde',
     'Avenir',
     'Bitstream Vera',  # matplotlib
+    'Computer Modern Sans Serif',
     'DejaVu Sans',  # matplotlib
     'Frutiger',
     'Futura',
+    'Geneva',
     'Gill Sans',
-    'Helvetica Neue',
     'Helvetica',
     'Lucida Grande',
+    'Lucid',
     'Myriad Pro',
     'Optima',
     'Tahoma',
