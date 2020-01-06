@@ -66,6 +66,7 @@ ProPlot v0.4.0 (2020-##-##)
 
 - Remove redundant `~proplot.rctools.use_fonts`, use ``rcParams['sans-serif']``
   precedence instead (:pr:`95`).
+- `~proplot.axes.Axes.dualx` and `~proplot.axes.Axes.dualx` no longer accept "scale-spec" arguments, must be a function, two functions, or an axis scale instance (:pr:`96`).
 
 .. rubric:: Features
 
@@ -76,6 +77,7 @@ ProPlot v0.4.0 (2020-##-##)
 .. rubric:: Bug fixes
 
 - Fix `~proplot.rctools.rc_configurator.context` bug (:issue:`80` and :pr:`91`).
+- Fix issues with `~proplot.axes.Axes.dualx` and `~proplot.axes.Axes.dualy` with non-linear parent scales (:pr:`96`).
 - Ignore TTC fonts because they cannot be saved in EPS/PDF figures (:issue:`94` and :pr:`95`).
 - Do not try to use Helvetica Neue because "thin" font style is read as regular (:issue:`94` and :pr:`95`).
 
