@@ -833,10 +833,35 @@ class rc_configurator(object):
         else:
             return None
 
+    def category(self, cat, *, context=False):
+        """
+        Return a dictionary of settings beginning with the substring
+        ``cat + '.'``.
 
-
-
-
+        Parameters
+        ----------
+        cat : str, optional
+            The `rc` settings category.
+        context : bool, optional
+            If ``True``, then each category setting that is not found in the
+            context mode dictionaries is omitted from the output dictionary.
+            See `~rc_configurator.context`.
+        """
+        if cat not in RC_CATEGORIES:
+            raise ValueError(
+                f'Invalid rc category {cat!r}. Valid categories are '
+                ', '.join(map(repr, RC_CATEGORIES)) + '.')
+        kw = {}
+        mode = 0 if not context else None
+        for rcdict in (rcParamsLong, rcParams):
+            for key in rcdict:
+                if not re.search(f'^{cat}[.][^.]+$', key):
+                    continue
+                value = self._get_item(key, mode)
+                if value is None:
+                    continue
+                kw[key] = value
+        return kw
 
 
     def context(self, *args, mode=0, **kwargs):
@@ -901,100 +926,70 @@ class rc_configurator(object):
         self._getitem_mode = mode
         return self
 
-    # Other tools
-    def get(self, key, cache=False):
+    def dict(self):
         """
-        Returns a setting.
+        Return a raw dictionary of all settings.
+        """
+        output = {}
+        for key in sorted((*rcParamsShort, *rcParamsLong, *rcParams)):
+            output[key] = self[key]
+        return output
+
+    def get(self, key, *, context=False):
+        """
+        Return a single setting.
 
         Parameters
         ----------
         key : str
             The setting name.
-        cache : bool, optional
-            If ``False``, the `~rc_configurator.__getitem__` mode is
-            temporarily set to ``0`` (see `~rc_configurator.context`).
+        context : bool, optional
+            If ``True``, then ``None`` is returned if the setting is not found
+            in the context mode dictionaries. See `~rc_configurator.context`.
         """
-        if not cache:
-            orig = self._getitem_mode
-            self._getitem_mode = 0
-        item = self[key]
-        if not cache:
-            self._getitem_mode = orig
-        return item
+        mode = 0 if not context else None
+        return self._get_item(key, mode)
 
-    def fill(self, props, cache=True):
+    def fill(self, props, *, context=False):
         """
-        Returns a dictionary filled with `rc` settings, used internally to
-        build dictionaries for updating `~matplotlib.artist.Artist` instances.
+        Return a dictionary filled with settings whose names match the
+        string values in the input dictionary.
 
         Parameters
         ----------
         props : dict-like
-            Dictionary whose values are names of `rc` settings. The values
+            Dictionary whose values are names of settings. The values
             are replaced with the corresponding property only if
             `~rc_configurator.__getitem__` does not return ``None``. Otherwise,
             that key, value pair is omitted from the output dictionary.
-        cache : bool, optional
-            If ``False``, the `~rc_configurator.__getitem__` mode is
-            temporarily set to ``0`` (see `~rc_configurator.context`).
-            Otherwise, if an `rc` lookup returns ``None``, the setting is
-            omitted from the output dictionary.
+        context : bool, optional
+            If ``True``, then each setting that is not found in the
+            context mode dictionaries is omitted from the output dictionary.
+            See `~rc_configurator.context`.
         """
-        if not cache:
-            orig = self._getitem_mode
-            self._getitem_mode = 0
-        props_out = {}
+        kw = {}
+        mode = 0 if not context else None
         for key, value in props.items():
-            item = self[value]
+            item = self._get_item(value, mode)
             if item is not None:
-                props_out[key] = item
-        if not cache:
-            self._getitem_mode = orig
-        return props_out
+                kw[key] = item
+        return kw
 
-    def category(self, cat, cache=True):
+    def items(self):
         """
-        Returns a dictionary of settings belonging to the indicated category,
-        i.e. settings beginning with the substring ``cat + '.'``.
-
-        Parameters
-        ----------
-        cat : str, optional
-            The `rc` settings category.
-        cache : bool, optional
-            If ``False``, the `~rc_configurator.__getitem__` mode is
-            temporarily set to ``0`` (see `~rc_configurator.context`).
+        Return an iterator that loops over all setting names and values.
+        Same as `dict.items`.
         """
-        # Check
-        if cat not in RC_CATEGORIES:
-            raise ValueError(
-                f'RC category {cat!r} does not exist. Valid categories are '
-                f', '.join(map(repr, RC_CATEGORIES)) + '.')
-        if not cache:
-            mode = 0
-        else:
-            mode = self._getitem_mode
+        for key in self:
+            yield key, self[key]
 
-        # Allow for special time-saving modes where we *ignore rcParams*
-        # or even *ignore rcParamsLong*.
-        if mode == 0:
-            kws = (self._cache, rcParamsShort, rcParamsLong, rcParams)
-        elif mode == 1:
-            kws = (self._cache, rcParamsShort, rcParamsLong)
-        elif mode == 2:
-            kws = (self._cache, rcParamsShort)
-        else:
-            raise KeyError(f'Invalid caching mode {mode}.')
-
-        # Return params dictionary
-        params = {}
-        for kw in kws:
-            for category, value in kw.items():
-                if re.search(rf'^{cat}\.', category):
-                    subcategory = re.sub(rf'^{cat}\.', '', category)
-                    if subcategory and '.' not in subcategory:
-                        params[subcategory] = value
-        return params
+    def keys(self):
+        """
+        Return an iterator that loops over all setting names.
+        Same as `dict.items`.
+        """
+        for key in self:
+            yield key
 
     def update(self, *args, **kwargs):
         """
@@ -1037,11 +1032,24 @@ class rc_configurator(object):
         for key, value in kw.items():
             self[prefix + key] = value
 
-    def reset(self):
-        """Restores settings to the initial state -- ProPlot defaults, plus
-        any user overrides in the ``~/.proplotrc`` file."""
-        if not self._init:  # save resources if rc is unchanged!
-            return self.__init__()
+    def reset(self, **kwargs):
+        """
+        Reset the configurator to its initial state.
+
+        Parameters
+        ----------
+        **kwargs
+            Passed to `rc_configurator`.
+        """
+        self.__init__(**kwargs)
+
+    def values(self):
+        """
+        Return an iterator that loops over all setting values.
+        Same as `dict.values`.
+        """
+        for key in self:
+            yield self[key]
 
 
 def ipython_matplotlib(backend=None, fmt=None):
