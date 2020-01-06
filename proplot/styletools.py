@@ -3623,9 +3623,11 @@ def show_fonts(*args, size=12, text=None):
             r'$\Phi\phi$ $\Psi\psi$ $\Omega\omega$ !?&#%'
 
     # Create figure
-    f, axs = subplots(ncols=1, nrows=len(args), space=0,
-                      axwidth=4.5, axheight=6.5 * size / 72,
-                      fallback_to_cm=False)
+    f, axs = subplots(
+        ncols=1, nrows=len(args), space=0,
+        axwidth=4.5, axheight=(text.count('\n') + 3.5) * size / 72,
+        fallback_to_cm=False
+    )
     axs.format(xloc='neither', yloc='neither',
                xlocator='null', ylocator='null', alpha=0)
     axs[0].format(title='Fonts demo', titlesize=size,
