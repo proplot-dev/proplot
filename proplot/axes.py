@@ -1465,10 +1465,13 @@ optional
         # Create LineCollection and update with values
         hs = mcollections.LineCollection(
             np.array(coords), cmap=cmap, norm=norm,
-            linestyles='-', capstyle='butt', joinstyle='miter')
+            linestyles='-', capstyle='butt', joinstyle='miter'
+        )
         hs.set_array(np.array(values))
-        hs.update({key: value for key, value in kwargs.items()
-                   if key not in ('color',)})
+        hs.update({
+            key: value for key, value in kwargs.items()
+            if key not in ('color',)
+        })
 
         # Add collection, with some custom attributes
         self.add_collection(hs)
@@ -1937,7 +1940,8 @@ class XYAxes(Axes):
         Parameters
         ----------
         aspect : {'auto', 'equal'}, optional
-            The aspect ratio mode.
+            The aspect ratio mode. See `~matplotlib.axes.Axes.set_aspect`
+            for details.
         xlabel, ylabel : str, optional
             The *x* and *y* axis labels. Applied with
             `~matplotlib.axes.Axes.set_xlabel`
@@ -2089,6 +2093,7 @@ class XYAxes(Axes):
             yformatter_kw = yformatter_kw or {}
             xminorlocator_kw = xminorlocator_kw or {}
             yminorlocator_kw = yminorlocator_kw or {}
+
             # Flexible keyword args, declare defaults
             xmargin = _notNone(xmargin, rc['axes.xmargin'])
             ymargin = _notNone(ymargin, rc['axes.ymargin'])
@@ -2096,18 +2101,31 @@ class XYAxes(Axes):
             ytickdir = _notNone(ytickdir, rc['ytick.direction'])
             xtickminor = _notNone(xtickminor, rc['xtick.minor.visible'])
             ytickminor = _notNone(ytickminor, rc['ytick.minor.visible'])
-            xformatter = _notNone(xticklabels, xformatter,
-                                  None, names=('xticklabels', 'xformatter'))
-            yformatter = _notNone(yticklabels, yformatter,
-                                  None, names=('yticklabels', 'yformatter'))
-            xlocator = _notNone(xticks, xlocator, None,
-                                names=('xticks', 'xlocator'))
-            ylocator = _notNone(yticks, ylocator, None,
-                                names=('yticks', 'ylocator'))
-            xminorlocator = _notNone(xminorticks, xminorlocator, None, names=(
-                'xminorticks', 'xminorlocator'))
-            yminorlocator = _notNone(yminorticks, yminorlocator, None, names=(
-                'yminorticks', 'yminorlocator'))
+            xformatter = _notNone(
+                xticklabels, xformatter, None,
+                names=('xticklabels', 'xformatter')
+            )
+            yformatter = _notNone(
+                yticklabels, yformatter, None,
+                names=('yticklabels', 'yformatter')
+            )
+            xlocator = _notNone(
+                xticks, xlocator, None,
+                names=('xticks', 'xlocator')
+            )
+            ylocator = _notNone(
+                yticks, ylocator, None,
+                names=('yticks', 'ylocator')
+            )
+            xminorlocator = _notNone(
+                xminorticks, xminorlocator, None,
+                names=('xminorticks', 'xminorlocator')
+            )
+            yminorlocator = _notNone(
+                yminorticks, yminorlocator, None,
+                names=('yminorticks', 'yminorlocator')
+            )
+
             # Grid defaults are more complicated
             axis = rc.get('axes.grid.axis')  # always need this property
             grid, which = rc['axes.grid'], rc['axes.grid.which']
@@ -2116,18 +2134,22 @@ class XYAxes(Axes):
                     grid = rc.get('axes.grid')
                 elif which is None:
                     which = rc.get('axes.grid.which')
-                xgrid = _notNone(xgrid,
-                                 grid and axis in ('x', 'both')
-                                 and which in ('major', 'both'))
-                ygrid = _notNone(ygrid,
-                                 grid and axis in ('y', 'both')
-                                 and which in ('major', 'both'))
-                xgridminor = _notNone(xgridminor, grid
-                                      and axis in ('x', 'both')
-                                      and which in ('minor', 'both'))
-                ygridminor = _notNone(ygridminor, grid
-                                      and axis in ('y', 'both')
-                                      and which in ('minor', 'both'))
+                xgrid = _notNone(
+                    xgrid, grid and axis in ('x', 'both')
+                    and which in ('major', 'both')
+                )
+                ygrid = _notNone(
+                    ygrid, grid and axis in ('y', 'both')
+                    and which in ('major', 'both')
+                )
+                xgridminor = _notNone(
+                    xgridminor, grid and axis in ('x', 'both')
+                    and which in ('minor', 'both')
+                )
+                ygridminor = _notNone(
+                    ygridminor, grid and axis in ('y', 'both')
+                    and which in ('minor', 'both')
+                )
 
             # Sensible defaults for spine, tick, tick label, and label locs
             # NOTE: Allow tick labels to be present without ticks! User may
@@ -2169,7 +2191,7 @@ class XYAxes(Axes):
                 tickloc, spineloc,
                 ticklabelloc, labelloc,
                 grid, gridminor,
-                tickminor, tickminorlocator,
+                tickminor, minorlocator,
                 lim, reverse, scale,
                 locator, tickrange,
                 formatter, tickdir,
@@ -2418,27 +2440,48 @@ class XYAxes(Axes):
                     self._update_axislabels(x, **kw)
 
                 # Major and minor locator
-                # WARNING: MultipleLocator fails sometimes, notably when doing
-                # boxplot. Tick labels moved to left and are incorrect.
+                # NOTE: Parts of API (dualxy) rely on minor tick toggling
+                # preserving the isDefault_minloc setting. In future should
+                # override the default matplotlib API minorticks_on!
+                # NOTE: Unlike matplotlib API when "turning on" minor ticks
+                # we *always* use the scale default, thanks to scale classes
+                # refactoring with _ScaleBase. See Axes.minorticks_on.
                 if locator is not None:
                     locator = axistools.Locator(locator, **locator_kw)
                     axis.set_major_locator(locator)
                     if isinstance(locator, mticker.IndexLocator):
                         tickminor = False  # 'index' minor ticks make no sense
-                if not tickminor and tickminorlocator is None:
+                if tickminor or minorlocator:
+                    isdefault = minorlocator is None
+                    if isdefault:
+                        minorlocator = getattr(
+                            axis._scale, '_default_minor_locator', None
+                        )
+                        if not minorlocator:
+                            minorlocator = axistools.Locator('minor')
+                    else:
+                        minorlocator = axistools.Locator(
+                            minorlocator, **minorlocator_kw
+                        )
+                    axis.set_minor_locator(minorlocator)
+                    axis.isDefault_minloc = isdefault
+                elif tickminor is not None and not tickminor:
+                    # NOTE: Generally if you *enable* minor ticks on a dual
+                    # axis, want to allow FuncScale updates to change the
+                    # minor tick locators. If you *disable* minor ticks, do
+                    # not want FuncScale applications to turn them on. So we
+                    # allow below to set isDefault_minloc to False.
                     axis.set_minor_locator(axistools.Locator('null'))
-                elif tickminorlocator is not None:
-                    axis.set_minor_locator(axistools.Locator(
-                        tickminorlocator, **minorlocator_kw))
 
                 # Major formatter
-                # NOTE: Only reliable way to disable ticks labels and then
-                # restore them is by messing with the formatter, *not* setting
-                # labelleft=False, labelright=False, etc.
+                # NOTE: The only reliable way to disable ticks labels and then
+                # restore them is by messing with the *formatter*, rather than
+                # setting labelleft=False, labelright=False, etc.
                 if (formatter is not None or tickrange is not None) and not (
-                        isinstance(axis.get_major_formatter(),
-                                   mticker.NullFormatter)
-                        and getattr(self, '_share' + x)):
+                    isinstance(
+                        axis.get_major_formatter(), mticker.NullFormatter
+                    ) and getattr(self, '_share' + x)
+                ):
                     # Tick range
                     if tickrange is not None:
                         if formatter not in (None, 'auto'):
@@ -2463,10 +2506,12 @@ class XYAxes(Axes):
                 #   locators into fixed version.
                 # * Most locators take no arguments in __call__, and some do
                 #   not have tick_values method, so we just call them.
-                if (bounds is not None
+                if (
+                    bounds is not None
                     or fixticks
                     or isinstance(formatter, mticker.FixedFormatter)
-                        or axis.get_scale() == 'cutoff'):
+                    or axis.get_scale() == 'cutoff'
+                ):
                     if bounds is None:
                         bounds = getattr(self, 'get_' + x + 'lim')()
                     locator = axistools.Locator([
