@@ -43,7 +43,7 @@ ProPlot v0.5.0 (2020-##-##)
   stacks rather than getting inserted directly into
   the main `~proplot.subplots.GridSpec` (:pr:`50`).
 
-ProPlot v0.4.0 (2020-##-##)
+ProPlot v0.4.0 (2020-01-07)
 ===========================
 .. rubric:: Deprecated
 
@@ -65,7 +65,8 @@ ProPlot v0.4.0 (2020-##-##)
 - Add `~proplot.styletools.LinearSegmentedColormap.from_file` static methods (:pr:`98`).
   You can now load files by passing a name to `~proplot.styletools.Colormap`.
 - Add Fira Math as DejaVu Sans-alternative (:pr:`95`). Has complete set of math characters.
-- Add TeX Gyre Heros as Helvetica-alternative (:pr:`95`). This is the new open-source default font.
+- Add TeX Gyre Heros as Helvetica-alternative (:pr:`95`). This is the new open-source
+  default font.
 - Add `xlinewidth`, `ylinewidth`, `xgridcolor`, `ygridcolor` keyword
   args to `~proplot.axes.XYAxes.format` (:pr:`95`).
 - Add getters and setters for various `~proplot.subplots.Figure` settings like ``share[x|y]``,
@@ -73,6 +74,9 @@ ProPlot v0.4.0 (2020-##-##)
 - Add `~proplot.subplots.Figure` ``fallback_to_cm`` kwarg. This is used by
   `~proplot.styletools.show_fonts` to show dummy glyphs to clearly illustrate when fonts are
   missing characters, but preserve graceful fallback for end user.
+- Improve `~proplot.projs.Proj` constructor function. It now accepts
+  `~cartopy.crs.Projection` and `~mpl_toolkits.basemap.Basemap` instances, just like other
+  constructor functions, and returns only the projection instance (:pr:`92`).
 - `~proplot.rctools.rc` `~proplot.rctools.rc_configurator.__getitem__` always
   returns the setting. To get context block-restricted settings, you must explicitly pass
   ``context=True`` to `~proplot.rctools.rc_configurator.get`, `~proplot.rctools.rc_configurator.fill`,
@@ -87,7 +91,7 @@ ProPlot v0.4.0 (2020-##-##)
 
 .. rubric:: Documentation
 
-- Imperative mood for docstring summaries (:pr:`92`).
+- Use the imperative mood for docstring summaries (:pr:`92`).
 - Fix `~proplot.styletools.show_cycles` bug (:pr:`90`) and show cycles using colorbars
   rather than lines (:pr:`98`).
 
