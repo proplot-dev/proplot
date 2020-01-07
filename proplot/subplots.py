@@ -591,31 +591,6 @@ def _get_space(key, share=0, pad=None):
     return space
 
 
-def _get_panelargs(
-        side, share=None, width=None, space=None,
-        filled=False, figure=False):
-    """Converts global keywords like `space` and `width` to side-local
-    keywords like `lspace` and `lwidth`, and applies default settings."""
-    # Return values
-    # NOTE: Make default legend width same as default colorbar width, in
-    # case user draws legend and colorbar panel in same row or column!
-    s = side[0]
-    if s not in 'lrbt':
-        raise ValueError(f'Invalid panel spec {side!r}.')
-    space_orig = units(space)
-    if filled:
-        default = rc['colorbar.width']
-    else:
-        default = rc['subplots.panelwidth']
-    share = _notNone(share, (not filled))
-    width = units(_notNone(width, default))
-    space = _notNone(units(space), units(rc['subplots.' + (
-        'panel' if share and not figure
-        else 'xlab' if s == 'b' else 'ylab' if s == 'l'
-        else 'inner' if figure else 'panel') + 'space']))
-    return share, width, space, space_orig
-
-
 def _subplots_geometry(**kwargs):
     """Save arguments passed to `subplots`, calculates gridspec settings and
     figure size necessary for requested geometry, and returns keyword args
@@ -919,8 +894,9 @@ class Figure(mfigure.Figure):
             raise ValueError(f'Invalid side {side!r}.')
         ax = ax._panel_parent or ax  # redirect to main axes
         side = SIDE_TRANSLATE[s]
-        share, width, space, space_orig = _panels_kwargs(
-            s, filled=filled, figure=False, **kwargs)
+        share, width, space, space_orig = _get_panelargs(
+            s, filled=filled, figure=False, **kwargs
+        )
 
         # Get gridspec and subplotspec indices
         subplotspec = ax.get_subplotspec()
@@ -975,8 +951,9 @@ class Figure(mfigure.Figure):
         if s not in 'lrbt':
             raise ValueError(f'Invalid side {side!r}.')
         side = SIDE_TRANSLATE[s]
-        _, width, space, space_orig = _panels_kwargs(
-            s, filled=True, figure=True, **kwargs)
+        _, width, space, space_orig = _get_panelargs(
+            s, filled=True, figure=True, **kwargs
+        )
         if s in 'lr':
             for key, value in (('col', col), ('cols', cols)):
                 if value is not None:
