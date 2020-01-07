@@ -138,7 +138,7 @@ Matplotlib has a `tight layout <https://matplotlib.org/tutorials/intermediate/ti
 
 .. rubric:: Solution
 
-In ProPlot, you can specify the physical dimensions of a *reference subplot* instead of the figure by passing `axwidth`, `axheight`, and/or `aspect` to `~proplot.subplots.Figure`. The default behavior is ``aspect=1`` and ``axwidth=2`` (inches). If the `aspect ratio mode <https://matplotlib.org/2.0.2/examples/pylab_examples/equal_aspect_ratio.html>`__ for the reference subplot is set to ``'equal'``, as with :ref:`Geographic and polar plots` and `~matplotlib.axes.Axes.imshow` plots, the existing aspect will be used instead.
+In ProPlot, you can specify the physical dimensions of a *reference subplot* instead of the figure by passing `axwidth`, `axheight`, and/or `aspect` to `~proplot.subplots.Figure`. The default behavior is ``aspect=1`` and ``axwidth=2`` (inches). If the `aspect ratio mode <https://matplotlib.org/2.0.2/examples/pylab_examples/equal_aspect_ratio.html>`__ for the reference subplot is set to ``'equal'``, as with :ref:`Geographic and polar plots` and `~matplotlib.axes.Axes.imshow` plots, the *imposed* aspect ratio will be used instead.
 Figure dimensions are constrained as follows:
 
 * When `axwidth` or `axheight` are specified, the figure width and height are calculated automatically.
@@ -204,12 +204,17 @@ Outer colorbars and legends
 .. rubric:: Problem
 
 In matplotlib, it is difficult to draw `~matplotlib.figure.Figure.colorbar`\ s and
-`~matplotlib.axes.Axes.legend`\ s on the outside of subplots. By default, colorbars "steal" space from their parent subplot, which can mess up subplot aspect ratios. And since colorbar widths are specified in *axes relative* coordinates, they often look "too skinny" or "too fat" after the first draw.
+`~matplotlib.axes.Axes.legend`\ s intended to reference more than one subplot or
+along the outside of subplots:
 
-As with axis labels, it is even more difficult to draw `~matplotlib.figure.Figure.colorbar`\ s and `~matplotlib.figure.Figure.legend`\ s intended to reference more than one subplot:
+* To draw legends outside of subplots, you usually need to position the legend manually and adjust various `~matplotlib.gridspec.GridSpec` spacing properties to make *room* for the legend.
+* To make colorbars that span multiple subplots, you have to supply `~matplotlib.figure.Figure.colorbar` with a `cax` you drew yourself. This requires so much tinkering that most users just add identical colorbars to every single subplot!
 
-* To make colorbars that span multiple plots, you have to supply `~matplotlib.figure.Figure.colorbar` with a `cax` you drew yourself. This requires so much tinkering that most users just add identical colorbars to every single subplot!
-* To draw legends outside of subplots, e.g. as a reference to *more than one* subplot, you usually need to position the legend manually and adjust various `~matplotlib.gridspec.GridSpec` spacing properties.
+Furthermore, drawing colorbars with ``fig.colorbar(..., ax=ax)`` tends to mess up subplot aspect ratios since the space allocated for the colorbar is "stolen" from the parent axes.
+
+..
+   And since colorbar widths are specified in *axes relative* coordinates, they often look "too skinny" or "too fat" after the first draw.
+
 
 ..
    The matplotlib example for `~matplotlib.figure.Figure` legends is `not pretty <https://matplotlib.org/3.1.1/gallery/text_labels_and_annotations/figlegend_demo.html>`__.
@@ -515,18 +520,6 @@ ipython session, simply call
 `~proplot.styletools.register_cmaps`,
 `~proplot.styletools.register_cycles`, and
 `~proplot.styletools.register_fonts`.
-
-ProPlot also changes the default font to Helvetica or Arial if they are
-available (see `~proplot.rctools.use_font`).
-Matplotlib uses DejaVu Sans by default because
-DejaVu Sans is open source and can be *included* in the matplotlib distribution.
-However Helvetica and Arial are much more mature, respected,
-and (in this developer's humble opinion)
-aesthetically pleasing. Thus, ProPlot trades aesthetics for consistency --
-the default font now depends on your machine.
-The examples on this website use DejaVu Sans
-because Helvetica and Arial are both unavailable on
-the `RTD server <https://readthedocs.org>`__.
 
 ..
    As mentioned above,

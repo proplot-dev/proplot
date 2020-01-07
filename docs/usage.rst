@@ -32,7 +32,9 @@ We recommend importing ProPlot as follows:
    import proplot as plot
 
 This differentiates ProPlot from the usual ``plt`` abbreviation used for the `~matplotlib.pyplot` module.
-Importing proplot immediately adds a bunch of new colormaps, property cyclers, color names, and fonts to matplotlib. See :ref:`Colormaps`, :ref:`Color cycles`, and :ref:`Colors and fonts` for details.
+Importing ProPlot immediately adds several new colormaps, property cyclers, color names, and fonts to matplotlib. See :ref:`Colormaps`, :ref:`Color cycles`, and :ref:`Colors and fonts` for details.
+
+Importing ProPlot also configures your IPython environment by setting up the matplotlib backend and enabling the autoreload and autosave extensions (this feature can be disabled). See `~proplot.rctools.ipython_matplotlib`, `~proplot.rctools.ipython_autoreload`, and `~proplot.rctools.ipython_autosave` for details.
 
 Figure and axes classes
 =======================
