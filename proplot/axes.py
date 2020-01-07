@@ -345,10 +345,13 @@ class Axes(maxes.Axes):
         if loc in (None, True):
             loc = default
         elif isinstance(loc, (str, Integral)):
-            try:
-                loc = LOC_TRANSLATE[loc]
-            except KeyError:
-                raise KeyError(f'Invalid location {loc!r}.')
+            if loc in LOC_TRANSLATE.values():  # full name
+                pass
+            else:
+                try:
+                    loc = LOC_TRANSLATE[loc]
+                except KeyError:
+                    raise KeyError(f'Invalid location {loc!r}.')
         elif np.iterable(loc) and len(loc) == 2 and all(
                 isinstance(l, Number) for l in loc):
             loc = np.array(loc)
