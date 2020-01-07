@@ -1388,7 +1388,6 @@ def cycle_changer(
         label=None, labels=None, values=None,
         legend=None, legend_kw=None,
         colorbar=None, colorbar_kw=None,
-        panel_kw=None,
         **kwargs):
     """
     Wraps methods that use the property cycler (%(methods)s),
@@ -1432,10 +1431,6 @@ def cycle_changer(
     colorbar_kw : dict-like, optional
         Ignored if `colorbar` is ``None``. Extra keyword args for our call
         to `~proplot.axes.Axes.colorbar`.
-    panel_kw : dict-like, optional
-        Dictionary of keyword arguments passed to
-        `~proplot.axes.Axes.panel`, if you are generating an
-        on-the-fly panel.
 
     Other parameters
     ----------------
@@ -1457,7 +1452,6 @@ def cycle_changer(
     cycle_kw = cycle_kw or {}
     legend_kw = legend_kw or {}
     colorbar_kw = colorbar_kw or {}
-    panel_kw = panel_kw or {}
 
     # Test input
     # NOTE: Requires standardize_1d wrapper before reaching this. Also note
@@ -1619,12 +1613,12 @@ def cycle_changer(
     # Add colorbar and/or legend
     if colorbar:
         # Add handles
-        panel_kw.setdefault('mode', 'colorbar')
-        loc = self._loc_translate(colorbar, **panel_kw)
+        loc = self._loc_translate(colorbar)
         if not isinstance(loc, str):
             raise ValueError(
                 f'Invalid on-the-fly location {loc!r}. '
-                'Must be a preset location. See Axes.colorbar')
+                'Must be a preset location. See Axes.colorbar'
+            )
         if loc not in self._auto_colorbar:
             self._auto_colorbar[loc] = ([], {})
         self._auto_colorbar[loc][0].extend(objs)
@@ -1636,12 +1630,12 @@ def cycle_changer(
         self._auto_colorbar[loc][1].update(colorbar_kw)
     if legend:
         # Add handles
-        panel_kw.setdefault('mode', 'legend')
-        loc = self._loc_translate(legend, **panel_kw)
+        loc = self._loc_translate(legend)
         if not isinstance(loc, str):
             raise ValueError(
                 f'Invalid on-the-fly location {loc!r}. '
-                'Must be a preset location. See Axes.legend')
+                'Must be a preset location. See Axes.legend'
+            )
         if loc not in self._auto_legend:
             self._auto_legend[loc] = ([], {})
         self._auto_legend[loc][0].extend(objs)
@@ -1671,7 +1665,7 @@ def cmap_changer(
         N=None, levels=None, values=None, centers=None, vmin=None, vmax=None,
         locator=None, symmetric=False, locator_kw=None,
         edgefix=None, labels=False, labels_kw=None, fmt=None, precision=2,
-        colorbar=False, colorbar_kw=None, panel_kw=None,
+        colorbar=False, colorbar_kw=None,
         lw=None, linewidth=None, linewidths=None,
         ls=None, linestyle=None, linestyles=None,
         color=None, colors=None, edgecolor=None, edgecolors=None,
@@ -1766,10 +1760,6 @@ def cmap_changer(
     colorbar_kw : dict-like, optional
         Ignored if `colorbar` is ``None``. Extra keyword args for our call
         to `~proplot.axes.Axes.colorbar`.
-    panel_kw : dict-like, optional
-        Dictionary of keyword arguments passed to
-        `~proplot.axes.Axes.panel`, if you are generating an
-        on-the-fly panel.
 
     Other parameters
     ----------------
@@ -1813,7 +1803,6 @@ def cmap_changer(
     locator_kw = locator_kw or {}
     labels_kw = labels_kw or {}
     colorbar_kw = colorbar_kw or {}
-    panel_kw = panel_kw or {}
 
     # Parse args
     # Disable edgefix=True for certain keyword combos e.g. if user wants
@@ -2113,8 +2102,7 @@ def cmap_changer(
 
     # Add colorbar
     if colorbar:
-        panel_kw.setdefault('mode', 'colorbar')
-        loc = self._loc_translate(colorbar, **panel_kw)
+        loc = self._loc_translate(colorbar)
         if not isinstance(loc, str):
             raise ValueError(
                 f'Invalid on-the-fly location {loc!r}. '
