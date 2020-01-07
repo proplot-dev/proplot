@@ -996,7 +996,6 @@ class Figure(mfigure.Figure):
         with self._authorize_add_subplot():
             pax = self.add_subplot(
                 gridspec[idx1, idx2],
-                sharex=ax._sharex_level, sharey=ax._sharey_level,
                 projection='xy',
             )
         getattr(ax, '_' + s + 'panels').append(pax)
