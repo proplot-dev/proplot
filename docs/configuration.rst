@@ -170,11 +170,6 @@ Key(s)                           Description
 ``subplots.pad``                 Padding around figure edge. Units are interpreted by `~proplot.utils.units`.
 ``subplots.axpad``               Padding between adjacent subplots. Units are interpreted by `~proplot.utils.units`.
 ``subplots.panelpad``            Padding between subplots and panels, and between stacked panels. Units are interpreted by `~proplot.utils.units`.
-``subplots.titlespace``          Vertical space for titles. Units are interpreted by `~proplot.utils.units`.
-``subplots.ylabspace``           Horizontal space between subplots allotted for *y*-labels. Units are interpreted by `~proplot.utils.units`.
-``subplots.xlabspace``           Vertical space between subplots allotted for *x*-labels. Units are interpreted by `~proplot.utils.units`.
-``subplots.innerspace``          Space between subplots allotted for tick marks. Units are interpreted by `~proplot.utils.units`.
-``subplots.panelspace``          Purely empty space between main axes and side panels. Units are interpreted by `~proplot.utils.units`.
 ``suptitle.color``               Figure title color.
 ``suptitle.size``                Figure title font size.
 ``suptitle.weight``              Figure title font weight.
@@ -193,8 +188,8 @@ Key(s)                           Description
 ``toplabel.weight``              Font weight for column labels on the top of the figure.
 ===============================  =========================================================================================================================================================================================================================================================
 
-proplotrc file
---------------
+The .proplotrc file
+-------------------
 
 To modify the global settings, edit your
 ``~/.proplotrc`` file. To modify settings for a particular project,

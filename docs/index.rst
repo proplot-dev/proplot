@@ -8,7 +8,9 @@
 ProPlot
 =======
 
-A comprehensive, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful, publication-quality graphics. The Github page is `here <https://github.com/lukelbd/proplot>`__.
+A comprehensive, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful, publication-quality graphics. This project is published `on GitHub <https://github.com/lukelbd/proplot>`__.
+
+Please note that due to my day job as a graduate student, `certain feature additions <https://github.com/lukelbd/proplot/pulls?q=is%3Aopen+is%3Apr>`__ will be delayed to the summer of 2020. In the meantime, if you are interested in contributing to ProPlot, please see the :ref:`contribution guide <Contribution guide>`. Any amount of help is welcome!
 
 .. toctree::
    :maxdepth: 1
@@ -17,7 +19,6 @@ A comprehensive, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper fo
    install
    why
    usage
-   faq
 
 .. toctree::
    :maxdepth: 1
@@ -43,7 +44,6 @@ A comprehensive, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper fo
    api
    changelog
    contributions
-   release
    external-links
    authors
 

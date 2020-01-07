@@ -15,14 +15,10 @@ ProPlot v1.0.0 (2020-##-##)
 This will be published when some major refactoring tasks are completed.
 See :pr:`45`, :pr:`46`, and :pr:`50`.
 
-ProPlot v0.3.0 (2020-01-##)
+ProPlot v0.5.0 (2020-##-##)
 ===========================
 .. rubric:: Deprecated
 
-- Remove ``subplots.innerspace``, ``subplots.titlespace``,
-  ``subplots.xlabspace``, and ``subplots.ylabspace`` spacing arguments,
-  automatically calculate default non-tight spacing using `~proplot.subplots._get_space`
-  based on current tick lengths, label sizes, etc.
 - Rename `basemap_defaults` to `~proplot.projs.basemap_kwargs` and `cartopy_projs`
   to `~proplot.projs.cartopy_names` (:commit:`431a06ce`).
 
@@ -32,22 +28,12 @@ ProPlot v0.3.0 (2020-01-##)
   *or* `~proplot.subplots.subplots` (:pr:`50`). This is a major improvement!
 - `~proplot.subplots.GridSpec` now accepts physical units, rather than having
   `~proplot.subplots.subplots` handle the units (:pr:`50`).
-- Add `xlinewidth`, `ylinewidth`, `xgridcolor`, `ygridcolor` keyword
-  args to `~proplot.axes.XYAxes.format` (:pr:`50`).
 - Allow "hanging" twin *x* and *y* axes as members of the `~proplot.subplots.EdgeStack`
   container. Arbitrarily many siblings are now permitted.
 - Use `~proplot.subplots.GeometrySolver` for calculating various automatic layout
   stuff instead of having 1000 hidden `~proplot.subplots.Figure` methods (:pr:`50`).
 - Use `~proplot.subplots.EdgeStack` class for handling
   stacks of colorbars, legends, and text (:pr:`50`).
-- `~proplot.rctools.rc` `~proplot.rctools.rc_configurator.__getitem__` always
-  returns the setting; "caching" can only be used *explicitly* by passing ``cache=True`` to
-  `~proplot.rctools.rc_configurator.get`, `~proplot.rctools.rc_configurator.fill`, and
-  `~proplot.rctools.rc_configurator.category` (:pr:`50`).
-
-.. rubric:: Bug fixes
-
-- Fix `~proplot.rctools.rc_configurator.context` fatal bug (:issue:`80`).
 
 .. rubric:: Internals
 
@@ -56,11 +42,64 @@ ProPlot v0.3.0 (2020-01-##)
 - Panels, colorbars, and legends are now members of `~proplot.subplots.EdgeStack`
   stacks rather than getting inserted directly into
   the main `~proplot.subplots.GridSpec` (:pr:`50`).
+
+ProPlot v0.4.0 (2020-##-##)
+===========================
+.. rubric:: Deprecated
+
+- Remove redundant `~proplot.rctools.use_fonts`, use ``rcParams['sans-serif']``
+  precedence instead (:pr:`95`).
+- `~proplot.axes.Axes.dualx` and `~proplot.axes.Axes.dualx` no longer accept "scale-spec" arguments.
+  Must be a function, two functions, or an axis scale instance (:pr:`96`).
+- Remove ``subplots.innerspace``, ``subplots.titlespace``,
+  ``subplots.xlabspace``, and ``subplots.ylabspace`` spacing arguments,
+  automatically calculate default non-tight spacing using `~proplot.subplots._get_space`
+  based on current tick lengths, label sizes, etc.
+
+.. rubric:: Features
+
+- Add Fira Math as DejaVu Sans-alternative (:pr:`95`). Has complete set of math characters.
+- Add TeX Gyre Heros as Helvetica-alternative (:pr:`95`). This is the new open-source default font.
+- Add `xlinewidth`, `ylinewidth`, `xgridcolor`, `ygridcolor` keyword
+  args to `~proplot.axes.XYAxes.format` (:pr:`95`).
+- Add `~proplot.subplots.Figure` ``fallback_to_cm`` kwarg. This is used by
+  `~proplot.styletools.show_fonts` to show dummy glyphs to clearly illustrate when fonts are
+  missing characters, but preserve graceful fallback for end user.
+- `~proplot.rctools.rc` `~proplot.rctools.rc_configurator.__getitem__` always
+  returns the setting. To get context block-restricted settings, you must explicitly pass
+  ``context=True`` to `~proplot.rctools.rc_configurator.get`, `~proplot.rctools.rc_configurator.fill`,
+  or `~proplot.rctools.rc_configurator.category` (:pr:`91`).
+
+.. rubric:: Bug fixes
+
+- Fix `~proplot.rctools.rc_configurator.context` bug (:issue:`80` and :pr:`91`).
+- Fix issues with `~proplot.axes.Axes.dualx` and `~proplot.axes.Axes.dualy` with non-linear parent scales (:pr:`96`).
+- Ignore TTC fonts because they cannot be saved in EPS/PDF figures (:issue:`94` and :pr:`95`).
+- Do not try to use Helvetica Neue because "thin" font style is read as regular (:issue:`94` and :pr:`95`).
+
+.. rubric:: Documentation
+
+- Imperative mood for docstring summaries (:pr:`92`).
+- Fix `~proplot.styletools.show_cycles` bug (:pr:`90`) and show cycles using colorbars
+  rather than lines.
+
+.. rubric:: Internals
+
 - Define `~proplot.rctools.rc` default values with inline dictionaries rather than
   with a default ``.proplotrc`` file, change the auto-generated user ``.proplotrc``
-  (:pr:`50`).
+  (:pr:`91`).
+- Remove useless `panel_kw` keyword arg from `~proplot.wrappers.legend_wrapper` and
+  `~proplot.wrappers.colorbar_wrapper` (:pr:`91`).
 
-ProPlot v0.2.8 (2019-12-##)
+ProPlot v0.3.1 (2019-12-16)
+===========================
+.. rubric:: Bug fixes
+
+- Fix issue where custom fonts were not synced (:commit:`a1b47b4c`).
+- Fix issue with latest versions of matplotlib where ``%matplotlib inline``
+  fails *silently* so the backend is not instantiated (:commit:`cc39dc56`).
+
+ProPlot v0.3.0 (2019-12-15)
 ===========================
 .. rubric:: Deprecated
 
@@ -68,6 +107,7 @@ ProPlot v0.2.8 (2019-12-##)
 
 .. rubric:: Features
 
+- Add `~proplot.styletools.use_font`, only sync Google Fonts fonts (:pr:`87`).
 - New ``'DryWet'`` colormap is colorblind friendly (:commit:`0280e266`).
 - Permit shifting arbitrary colormaps by ``180`` degrees by appending the
   name with ``'_shifted'``, just like ``'_r'`` (:commit:`e2e2b2c7`).
@@ -76,6 +116,8 @@ ProPlot v0.2.8 (2019-12-##)
 
 - Add brute force workaround for saving colormaps with
   *callable* segmentdata (:commit:`8201a806`).
+- Fix issue with latest versions of matplotlib where ``%matplotlib inline``
+  fails *silently* so the backend is not instantiated (:commit:`cc39dc56`).
 - Fix `~proplot.styletools.LinearSegmentedColormap.shifted` when `shift` is
   not ``180`` (:commit:`e2e2b2c7`).
 - Save the ``cyclic`` and ``gamma`` attributes in JSON files too (:commit:`8201a806`).
@@ -83,6 +125,10 @@ ProPlot v0.2.8 (2019-12-##)
 .. rubric:: Documentation
 
 - Cleanup notebooks, especially the colormaps demo (e.g. :commit:`952d4cb3`).
+
+.. rubric:: Internals
+
+- Change `~time.clock` to `~time.perf_counter` (:pr:`86`).
 
 ProPlot v0.2.7 (2019-12-09)
 ===========================
