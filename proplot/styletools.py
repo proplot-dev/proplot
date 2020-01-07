@@ -2848,8 +2848,11 @@ def _from_file(filename, listed=False, warn_on_failure=False):
         # NOTE: This appears to be biggest import time bottleneck! Increases
         # time from 0.05s to 0.2s, with numpy loadtxt or with this regex thing.
         delim = re.compile(r'[,\s]+')
-        data = [delim.split(line.strip())
-                for line in open(filename).readlines() if line.strip()]
+        data = [
+            delim.split(line.strip())
+            for line in open(filename).readlines()
+            if line.strip() and line.strip()[0] != '#'
+        ]
         try:
             data = [[float(num) for num in line] for line in data]
         except ValueError:
