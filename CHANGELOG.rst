@@ -56,9 +56,6 @@ ProPlot v0.5.0 (2020-##-##)
 - Panels, colorbars, and legends are now members of `~proplot.subplots.EdgeStack`
   stacks rather than getting inserted directly into
   the main `~proplot.subplots.GridSpec` (:pr:`50`).
-- Define `~proplot.rctools.rc` default values with inline dictionaries rather than
-  with a default ``.proplotrc`` file, change the auto-generated user ``.proplotrc``
-  (:pr:`50`).
 
 ProPlot v0.4.0 (2020-##-##)
 ===========================
@@ -70,9 +67,13 @@ ProPlot v0.4.0 (2020-##-##)
 
 .. rubric:: Features
 
+- Add `~proplot.styletools.LinearSegmentedColormap.from_file` static methods (:pr:`98`).
+  You can now load files by passing a name to `~proplot.styletools.Colormap`.
 - Add Fira Math as DejaVu Sans-alternative (:pr:`95`). Has complete set of math characters.
 - Add TeX Gyre Heros as Helvetica-alternative (:pr:`95`). This is the new open-source default font.
-- Add `~proplot.subplots.Figure` ``fallback_to_cm`` kwarg. This is used by `~proplot.styletools.show_fonts` to show dummy glyphs to clearly illustrate when fonts are missing characters, but preserve graceful fallback for end user.
+- Add `~proplot.subplots.Figure` ``fallback_to_cm`` kwarg. This is used by
+  `~proplot.styletools.show_fonts` to show dummy glyphs to clearly illustrate when fonts are
+  missing characters, but preserve graceful fallback for end user.
 
 .. rubric:: Bug fixes
 
@@ -83,8 +84,13 @@ ProPlot v0.4.0 (2020-##-##)
 
 .. rubric:: Documentation
 
-- Imperative mood for docstring summaries (:pr:`92`).
+- Use imperative mood for docstring summaries (:pr:`92`).
 - Fix `~proplot.styletools.show_cycles` bug (:pr:`90`) and show cycles using colorbars rather than lines.
+.. rubric:: Internals
+
+- Define `~proplot.rctools.rc` default values with inline dictionaries rather than
+  with a default ``.proplotrc`` file, change the auto-generated user ``.proplotrc``
+  (:pr:`50`).
 
 ProPlot v0.3.1 (2019-12-16)
 ===========================
