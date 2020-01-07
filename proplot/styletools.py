@@ -2152,13 +2152,12 @@ def Colormap(
         # TODO: Document how 'listmode' also affects loaded files
         if isinstance(cmap, str):
             if '.' in cmap:
-                isfile = os.path.isfile(os.path.expanduser(cmap))
-                if isfile:
+                if os.path.isfile(os.path.expanduser(cmap)):
                     if listmode == 'listed':
                         cmap = ListedColormap.from_file(cmap)
                     else:
                         cmap = LinearSegmentedColormap.from_file(cmap)
-                if not isfile or not cmap:
+                else:
                     raise FileNotFoundError(
                         f'Colormap or cycle file {cmap!r} not found '
                         'or failed to load.'
