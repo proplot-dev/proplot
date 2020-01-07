@@ -16,7 +16,7 @@ import glob
 import cycler
 from xml.etree import ElementTree
 from numbers import Number, Integral
-from matplotlib import docstring, rcParams
+from matplotlib import rcParams
 import numpy as np
 import numpy.ma as ma
 import matplotlib.colors as mcolors
@@ -666,7 +666,7 @@ def make_mapping_array(N, data, gamma=1.0, inverse=False):
     return lut
 
 
-class _Colormap():
+class _Colormap(object):
     """Mixin class used to add some helper methods."""
     def _get_data(self, ext):
         """
@@ -1192,7 +1192,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         return cmap
 
     @staticmethod
-    def from_file(path):
+    def from_file(path, warn_on_failure=False):
         """
         Load colormap from a file.
         Valid file extensions are described in the below table.
@@ -1211,8 +1211,11 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         ----------
         path : str
             The file path.
+        warn_on_failure : bool, optional
+            If ``True``, issue a warning when loading fails rather than
+            raising an error.
         """  # noqa
-        return _from_file(path, listed=False)
+        return _from_file(path, listed=False, warn_on_failure=warn_on_failure)
 
     @staticmethod
     def from_list(name, colors, ratios=None, **kwargs):
@@ -1436,7 +1439,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         return cmap
 
     @staticmethod
-    def from_file(path):
+    def from_file(path, warn_on_failure=False):
         """
         Load color cycle from a file.
         Valid file extensions are described in the below table.
@@ -1455,15 +1458,17 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         ----------
         path : str
             The file path.
+        warn_on_failure : bool, optional
+            If ``True``, issue a warning when loading fails rather than
+            raising an error.
         """  # noqa
-        return _from_file(path, listed=True)
+        return _from_file(path, listed=True, warn_on_failure=warn_on_failure)
 
 
 class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
     """Similar to `~matplotlib.colors.LinearSegmentedColormap`, but instead
     of varying the RGB channels, we vary hue, saturation, and luminance in
     either the HCL colorspace or the HSL or HPL scalings of HCL."""
-    @docstring.dedent_interpd
     def __init__(
         self, name, segmentdata, N=None, space=None, clip=True,
         gamma=None, gamma1=None, gamma2=None,
@@ -1527,7 +1532,7 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         ...     'hue': [[0, 'red', 'red'], [1, 'blue', 'blue']],
         ...     'saturation': [[0, 100, 100], [1, 100, 100]],
         ...     'luminance': [[0, 100, 100], [1, 20, 20]],
-        ...     }
+        ... }
         >>> cmap = plot.PerceptuallyUniformColormap(data)
         """
         # Checks
@@ -2153,7 +2158,8 @@ def Colormap(
                         cmap = LinearSegmentedColormap.from_file(cmap)
                 else:
                     raise FileNotFoundError(
-                        f'Colormap or cycle file {cmap!r} not found.'
+                        f'Colormap or cycle file {cmap!r} not found '
+                        'or failed to load.'
                     )
             else:
                 try:
@@ -2202,7 +2208,9 @@ def Colormap(
                         + ', '.join(map(repr, sorted(mcm.cmap_d))) + '.'
                         f'\nValid color names: '
                         + ', '.join(map(repr, sorted(
-                            mcolors.colorConverter.colors))) + '.')
+                            mcolors.colorConverter.colors))
+                        ) + '.'
+                    )
                 raise ValueError(msg)
             cmap = PerceptuallyUniformColormap.from_color(tmp, color, fade)
             if ireverse:
@@ -2345,8 +2353,7 @@ def Cycle(
                 )
             nprops = max(nprops, len(value))
             props[key] = [*value]  # ensure mutable list
-    # If args is non-empty, means we want color cycle; otherwise is always
-    # black
+    # If args is non-empty, means we want color cycle; otherwise is black
     if not args:
         props['color'] = ['k']  # ensures property cycler is non empty
         if kwargs:
@@ -2398,14 +2405,17 @@ def Cycle(
 
         # Add to property dict
         nprops = max(nprops, len(colors))
-        props['color'] = [tuple(color) if not isinstance(color, str) else color
-                          for color in cmap.colors]  # save the tupled version!
+        props['color'] = [
+            tuple(color) if not isinstance(color, str) else color
+            for color in cmap.colors
+        ]  # save the tupled version!
 
     # Build cycler, make sure lengths are the same
     for key, value in props.items():
         if len(value) < nprops:
-            value[:] = [value[i % len(value)] for i in range(
-                nprops)]  # make loop double back
+            value[:] = [
+                value[i % len(value)] for i in range(nprops)
+            ]  # make loop double back
     cycle = cycler.cycler(**props)
     cycle.name = name
     return cycle
@@ -2788,11 +2798,19 @@ def _get_data_paths(dirname):
     ]
 
 
-def _from_file(filename, listed=False):
+def _from_file(filename, listed=False, warn_on_failure=False):
     """Read generalized colormap and color cycle files."""
     filename = os.path.expanduser(filename)
     if os.path.isdir(filename):  # no warning
         return
+
+    # Warn if loading failed during `register_cmaps` or `register_cycles`
+    # but raise error if user tries to load a file.
+    def _warn_or_raise(msg):
+        if warn_on_failure:
+            _warn_proplot(msg)
+        else:
+            raise RuntimeError(msg)
 
     # Directly read segmentdata json file
     # NOTE: This is special case! Immediately return name and cmap
@@ -2824,19 +2842,19 @@ def _from_file(filename, listed=False):
         try:
             data = [[float(num) for num in line] for line in data]
         except ValueError:
-            _warn_proplot(
+            _warn_or_raise(
                 f'Failed to load {filename!r}. Expected a table of comma '
                 'or space-separated values.'
             )
-            return None, None
+            return
         # Build x-coordinates and standardize shape
         data = np.array(data)
         if data.shape[1] != len(ext):
-            _warn_proplot(
+            _warn_or_raise(
                 f'Failed to load {filename!r}. Got {data.shape[1]} columns, '
                 f'but expected {len(ext)}.'
             )
-            return None, None
+            return
         if ext[0] != 'x':  # i.e. no x-coordinates specified explicitly
             x = np.linspace(0, 1, data.shape[0])
         else:
@@ -2849,13 +2867,15 @@ def _from_file(filename, listed=False):
         try:
             doc = ElementTree.parse(filename)
         except IOError:
-            _warn_proplot(f'Failed to load {filename!r}.')
+            _warn_or_raise(
+                f'Failed to load {filename!r}.'
+            )
             return
         x, data = [], []
         for s in doc.getroot().findall('.//Point'):
             # Verify keys
             if any(key not in s.attrib for key in 'xrgb'):
-                _warn_proplot(
+                _warn_or_raise(
                     f'Failed to load {filename!r}. Missing an x, r, g, or b '
                     'specification inside one or more <Point> tags.'
                 )
@@ -2869,9 +2889,9 @@ def _from_file(filename, listed=False):
             x.append(float(s.attrib['x']))
             data.append(color)
         # Convert to array
-        if not all(len(data[0]) == len(color) and len(
-                color) in (3, 4) for color in data):
-            _warn_proplot(
+        if not all(len(data[0]) == len(color)
+                   and len(color) in (3, 4) for color in data):
+            _warn_or_raise(
                 f'Failed to load {filename!r}. Unexpected number of channels '
                 'or mixed channels across <Point> tags.'
             )
@@ -2883,7 +2903,7 @@ def _from_file(filename, listed=False):
         string = open(filename).read()  # into single string
         data = re.findall('#[0-9a-fA-F]{6}', string)  # list of strings
         if len(data) < 2:
-            _warn_proplot(
+            _warn_or_raise(
                 f'Failed to load {filename!r}. Hex strings not found.'
             )
             return
@@ -2891,7 +2911,7 @@ def _from_file(filename, listed=False):
         x = np.linspace(0, 1, len(data))
         data = [to_rgb(color) for color in data]
     else:
-        _warn_proplot(
+        _warn_or_raise(
             f'Colormap or cycle file {filename!r} has unknown extension.'
         )
         return
@@ -2932,7 +2952,9 @@ def register_cmaps():
     """
     for i, path in enumerate(_get_data_paths('cmaps')):
         for filename in sorted(glob.glob(os.path.join(path, '*'))):
-            cmap = LinearSegmentedColormap.from_file(filename)
+            cmap = LinearSegmentedColormap.from_file(
+                filename, warn_on_failure=True
+            )
             if not cmap:
                 continue
             if i == 0 and cmap.name.lower() in ('phase', 'graycycle'):
@@ -2954,7 +2976,9 @@ def register_cycles():
     """
     for path in _get_data_paths('cycles'):
         for filename in sorted(glob.glob(os.path.join(path, '*'))):
-            cmap = ListedColormap.from_file(filename)
+            cmap = ListedColormap.from_file(
+                filename, warn_on_failure=True
+            )
             if not cmap:
                 continue
             if isinstance(cmap, LinearSegmentedColormap):
@@ -2998,15 +3022,18 @@ def register_colors(nmax=np.inf):
         if i == 0:
             paths = [  # be explicit because categories matter!
                 os.path.join(path, base)
-                for base in ('xkcd.txt', 'crayola.txt', 'open.txt')
+                for base in ('xkcd.txt', 'crayola.txt', 'opencolor.txt')
             ]
         else:
             paths = sorted(glob.glob(os.path.join(path, '*.txt')))
         for file in paths:
             cat, _ = os.path.splitext(os.path.basename(file))
             with open(file, 'r') as f:
-                pairs = [tuple(item.strip() for item in line.split(':'))
-                         for line in f.readlines() if line.strip()]
+                pairs = [
+                    tuple(item.strip() for item in line.split(':'))
+                    for line in f.readlines()
+                    if line.strip() and line.strip()[0] != '#'
+                ]
             if not all(len(pair) == 2 for pair in pairs):
                 raise RuntimeError(
                     f'Invalid color names file {file!r}. '
@@ -3014,7 +3041,7 @@ def register_colors(nmax=np.inf):
                 )
 
             # Categories for which we add *all* colors
-            if cat == 'open' or i == 1:
+            if cat == 'opencolor' or i == 1:
                 dict_ = {name: color for name, color in pairs}
                 mcolors.colorConverter.colors.update(dict_)
                 colors[cat] = sorted(dict_)
@@ -3406,8 +3433,8 @@ def show_colors(nhues=17, minsat=20):
     figs = []
     from . import subplots
     for cats in (
-            ('open',),
-            tuple(name for name in colors if name not in ('css', 'open'))
+            ('opencolor',),
+            tuple(name for name in colors if name not in ('css', 'opencolor'))
     ):
         # Dictionary of colors for that category
         data = {}
@@ -3417,7 +3444,7 @@ def show_colors(nhues=17, minsat=20):
 
         # Group colors together by discrete range of hue, then sort by value
         # For opencolors this is not necessary
-        if cats == ('open',):
+        if cats == ('opencolor',):
             wscale = 0.5
             swatch = 1.5
             nrows, ncols = 10, len(COLORS_OPEN)  # rows and columns
@@ -3518,14 +3545,15 @@ def show_cmaps(*args, N=None, unknown='User', **kwargs):
     if args:
         names = [Colormap(cmap, N=N).name for cmap in args]
     else:
-        names = [name for name in mcm.cmap_d.keys() if
-                 isinstance(mcm.cmap_d[name], LinearSegmentedColormap)
-                 ]
+        names = [
+            name for name in mcm.cmap_d.keys() if
+            isinstance(mcm.cmap_d[name], LinearSegmentedColormap)
+        ]
 
     # Get dictionary of registered colormaps and their categories
     cmapdict = {}
     names_all = list(map(str.lower, names))
-    names_known = sum(CMAPS_TABLE.values(), [])
+    names_known = sum(map(list, CMAPS_TABLE.values()), [])
     cmapdict[unknown] = [name for name in names if name not in names_known]
     for cat, names in CMAPS_TABLE.items():
         cmapdict[cat] = [name for name in names if name.lower() in names_all]
@@ -3558,9 +3586,10 @@ def show_cycles(*args, **kwargs):
     if args:
         names = [cmap.name for cmap in args]
     else:
-        names = [name for name in mcm.cmap_d.keys() if
-                 isinstance(mcm.cmap_d[name], ListedColormap)
-                 ]
+        names = [
+            name for name in mcm.cmap_d.keys() if
+            isinstance(mcm.cmap_d[name], ListedColormap)
+        ]
 
     # Return figure of colorbars
     cmapdict = {'Color cycles': names}
