@@ -551,7 +551,7 @@ def _get_panelargs(
     width = units(width)
     if space is None:
         key = ('wspace' if s in 'lr' else 'hspace')
-        pad = (rc['axpad'] if figure else rc['panelpad'])
+        pad = (rc['subplots.axpad'] if figure else rc['subplots.panelpad'])
         space = _get_space(key, share, pad=pad)
     return share, width, space, space_user
 
@@ -2192,10 +2192,11 @@ def subplots(
     right = _notNone(right, _get_space('right'))
     bottom = _notNone(bottom, _get_space('bottom'))
     top = _notNone(top, _get_space('top'))
-    wratios, hratios = [*wratios], [*hratios]  # copies
     wspace, hspace = np.array(wspace), np.array(hspace)  # also copies!
     wspace[wspace == None] = _get_space('wspace', sharex)  # noqa
     hspace[hspace == None] = _get_space('hspace', sharey)  # noqa
+    wratios, hratios = list(wratios), list(hratios)
+    wspace, hspace = list(wspace), list(hspace)
 
     # Parse arguments, fix dimensions in light of desired aspect ratio
     figsize, gridspec_kw, subplots_kw = _subplots_geometry(

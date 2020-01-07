@@ -851,7 +851,7 @@ class rc_configurator(object):
         else:
             return None
 
-    def category(self, cat, *, context=False):
+    def category(self, cat, *, trimcat=True, context=False):
         """
         Return a dictionary of settings beginning with the substring
         ``cat + '.'``.
@@ -859,7 +859,10 @@ class rc_configurator(object):
         Parameters
         ----------
         cat : str, optional
-            The `rc` settings category.
+            The `rc` setting category.
+        trimcat : bool, optional
+            Whether to trim ``cat`` from the key names in the output
+            dictionary. Default is ``True``.
         context : bool, optional
             If ``True``, then each category setting that is not found in the
             context mode dictionaries is omitted from the output dictionary.
@@ -868,16 +871,19 @@ class rc_configurator(object):
         if cat not in RC_CATEGORIES:
             raise ValueError(
                 f'Invalid rc category {cat!r}. Valid categories are '
-                ', '.join(map(repr, RC_CATEGORIES)) + '.')
+                ', '.join(map(repr, RC_CATEGORIES)) + '.'
+            )
         kw = {}
         mode = 0 if not context else None
         for rcdict in (rcParamsLong, rcParams):
             for key in rcdict:
-                if not re.search(f'^{cat}[.][^.]+$', key):
+                if not re.match(fr'\A{cat}\.[^.]+\Z', key):
                     continue
                 value = self._get_item(key, mode)
                 if value is None:
                     continue
+                if trimcat:
+                    key = re.sub(fr'\A{cat}\.', '', key)
                 kw[key] = value
         return kw
 
