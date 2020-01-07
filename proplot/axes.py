@@ -87,12 +87,11 @@ def _abc(i):
 
 
 def _disable_decorator(msg):
-    """
-    Generate decorators that disable methods. Also sets __doc__ to None so
-    that ProPlot fork of automodapi doesn't add these methods to the website
-    documentation. Users can still call help(ax.method) because python looks
-    for superclass method docstrings if a docstring is empty.
-    """
+    """Return a decorator that disables methods with message `msg`. The
+    docstring is set to ``None`` so the ProPlot fork of automodapi doesn't add
+    these methods to the website documentation. Users can still call
+    help(ax.method) because python looks for superclass method docstrings if a
+    docstring is empty."""
     def decorator(func):
         @functools.wraps(func)
         def _wrapper(self, *args, **kwargs):
@@ -197,7 +196,7 @@ class Axes(maxes.Axes):
         self._auto_colorbar = {}
 
     def _get_side_axes(self, side):
-        """Returns axes whose left, right, top, or bottom side abutts
+        """Return the axes whose left, right, top, or bottom sides abutt
         against the same row or column as this axes."""
         s = side[0]
         if s not in 'lrbt':
@@ -215,10 +214,9 @@ class Axes(maxes.Axes):
             return axs
 
     def _get_extent_axes(self, x):
-        """Returns axes whose horizontal or vertical extent in the main
+        """Return the axes whose horizontal or vertical extent in the main
         gridspec matches the horizontal or vertical extend of this axes.
-        Also sorts the list so the leftmost or bottommost axes is at the
-        start of the list."""
+        The lefmost or bottommost axes are at the start of the list."""
         if not hasattr(self, 'get_subplotspec'):
             return [self]
         y = ('y' if x == 'x' else 'x')
@@ -375,8 +373,9 @@ class Axes(maxes.Axes):
             return bbox.ymin, bbox.ymax
 
     def _reassign_suplabel(self, side):
-        """Re-assigns the column and row labels to panel axes, if they exist.
-        This is called by `~proplot.subplots.Figure._align_suplabel`."""
+        """Re-assign the column and row labels to the relevant panel if
+        present. This is called by `~proplot.subplots.Figure._align_suplabel`.
+        """
         # Place column and row labels on panels instead of axes -- works when
         # this is called on the main axes *or* on the relevant panel itself
         # TODO: Mixed figure panels with super labels? How does that work?
@@ -404,9 +403,10 @@ class Axes(maxes.Axes):
         return pax
 
     def _reassign_title(self):
-        """Re-assigns title to the first upper panel if present. We cannot
-        simply add upper panel as child axes, because then title will be offset
-        but still belong to main axes, which messes up tight bounding box."""
+        """Re-assign the title to the first upper panel if present. We cannot
+        simply add the upper panel as a child axes, because then the title will
+        be offset but still belong to main axes, which messes up the tight
+        bounding box."""
         # Reassign title from main axes to top panel -- works when this is
         # called on the main axes *or* on the top panel itself. This is
         # critical for bounding box calcs; not always clear whether draw() and
@@ -584,7 +584,8 @@ class Axes(maxes.Axes):
                 getattr(pax, x + 'axis').label.update(kwargs)
 
     def _update_title(self, obj, **kwargs):
-        """Redraws title if updating with input keyword args failed."""
+        """Redraw the title if updating with the input keyword arguments
+        failed."""
         # Try to just return updated object, redraw may be necessary
         # WARNING: Making text instances invisible seems to mess up tight
         # bounding box calculations and cause other issues. Just reset text.
@@ -1177,12 +1178,13 @@ optional
         return legend_wrapper(self, *args, loc=loc, **kwargs)
 
     def draw(self, renderer=None, *args, **kwargs):
-        """Adds post-processing steps before axes is drawn."""
+        """Perform post-processing steps then draw the axes."""
         self._reassign_title()
         super().draw(renderer, *args, **kwargs)
 
     def get_size_inches(self):
-        """Returns the width and the height of the axes in inches."""
+        """Return the width and the height of the axes in inches. Similar
+        to `~matplotlib.Figure.get_size_inches`."""
         width, height = self.figure.get_size_inches()
         bbox = self.get_position()
         width = width * abs(bbox.width)
@@ -1190,17 +1192,18 @@ optional
         return width, height
 
     def get_tightbbox(self, renderer, *args, **kwargs):
-        """Adds post-processing steps before tight bounding box is
-        calculated, and stores the bounding box as an attribute."""
+        """Perform post-processing steps, return the tight bounding box
+        surrounding axes artists, and cache the bounding box as an attribute.
+        """
         self._reassign_title()
         bbox = super().get_tightbbox(renderer, *args, **kwargs)
         self._tightbbox = bbox
         return bbox
 
     def heatmap(self, *args, **kwargs):
-        """Calls `~matplotlib.axes.Axes.pcolormesh` and applies default formatting
-        that is suitable for heatmaps: no gridlines, no minor ticks, and major
-        ticks at the center of each grid box."""
+        """Pass all arguments to `~matplotlib.axes.Axes.pcolormesh` then apply
+        settings that are suitable for heatmaps: no gridlines, no minor ticks,
+        and major ticks at the center of each grid box."""
         obj = self.pcolormesh(*args, **kwargs)
         xlocator, ylocator = None, None
         if hasattr(obj, '_coordinates'):
@@ -1219,8 +1222,8 @@ optional
         zoom=True, zoom_kw=None, **kwargs
     ):
         """
-        Like the builtin `~matplotlib.axes.Axes.inset_axes` method, but
-        draws an inset `XYAxes` axes and adds some options.
+        Return an inset `CartesianAxes`. This is similar to the builtin
+        `~matplotlib.axes.Axes.inset_axes` but includes some extra options.
 
         Parameters
         ----------
@@ -1281,11 +1284,11 @@ optional
         color=None, edgecolor=None, **kwargs
     ):
         """
-        Called automatically when using `~Axes.inset` with ``zoom=True``.
-        Like `~matplotlib.axes.Axes.indicate_inset_zoom`, but *refreshes* the
-        lines at draw-time.
-
-        This method is called from the *inset* axes, not the parent axes.
+        Draw lines indicating the zoom range of the inset axes. This is similar
+        to the builtin `~matplotlib.axes.Axes.indicate_inset_zoom` except
+        lines are *refreshed* at draw-time. This is also called automatically
+        when ``zoom=True`` is passed to `~Axes.inset_axes`. Note this method
+        must be called from the *inset* axes and not the parent axes.
 
         Parameters
         ----------
@@ -1343,7 +1346,7 @@ optional
 
     def panel_axes(self, side, **kwargs):
         """
-        Returns a panel drawn along the edge of an axes.
+        Return a panel axes drawn along the edge of this axes.
 
         Parameters
         ----------
@@ -1795,7 +1798,7 @@ class XYAxes(Axes):
             self.patch.set_visible(False)
 
     def _datex_rotate(self):
-        """Applies default rotation to datetime axis coordinates."""
+        """Apply default rotation to datetime axis coordinates."""
         # NOTE: Rotation is done *before* horizontal/vertical alignment,
         # cannot change alignment with set_tick_params. Must apply to text
         # objects. fig.autofmt_date calls subplots_adjust, so cannot use it.
@@ -1811,7 +1814,7 @@ class XYAxes(Axes):
         self._datex_rotated = True  # do not need to apply more than once
 
     def _dualx_overrides(self):
-        """Lock child "dual" *x* axis limits to the parent."""
+        """Lock the child "dual" *x* axis limits to the parent."""
         # NOTE: We set the scale using private API to bypass application of
         # set_default_locators_and_formatters: only_if_default=True is critical
         # to prevent overriding user settings! We also bypass autoscale_view
@@ -1839,7 +1842,7 @@ class XYAxes(Axes):
         self._dualx_cache = (scale, *olim)
 
     def _dualy_overrides(self):
-        """Lock child "dual" *y* axis limits to the parent."""
+        """Lock the child "dual" *y* axis limits to the parent."""
         arg = self._dualy_arg
         if arg is None:
             return
@@ -1862,9 +1865,9 @@ class XYAxes(Axes):
         self._dualy_cache = (scale, *olim)
 
     def _hide_labels(self):
-        """Function called at drawtime that enforces "shared" axis and
-        tick labels. If this is not called at drawtime, "shared" labels can
-        be inadvertantly turned off e.g. when the axis scale is changed."""
+        """Enforce the "shared" axis labels and axis tick labels. If this is
+        not called at drawtime, "shared" labels can be inadvertantly turned
+        off e.g. when the axis scale is changed."""
         for x in 'xy':
             # "Shared" axis and tick labels
             axis = getattr(self, x + 'axis')
@@ -2206,10 +2209,12 @@ class XYAxes(Axes):
             # NOTE: Allow tick labels to be present without ticks! User may
             # want this sometimes! Same goes for spines!
             xspineloc = _notNone(
-                xloc, xspineloc, None, names=('xloc', 'xspineloc')
+                xloc, xspineloc, None,
+                names=('xloc', 'xspineloc')
             )
             yspineloc = _notNone(
-                yloc, yspineloc, None, names=('yloc', 'yspineloc')
+                yloc, yspineloc, None,
+                names=('yloc', 'yspineloc')
             )
             xtickloc = _notNone(
                 xtickloc, xspineloc, _parse_rcloc('x', 'xtick')
@@ -2646,7 +2651,7 @@ class XYAxes(Axes):
         return ax
 
     def draw(self, renderer=None, *args, **kwargs):
-        """Adds post-processing steps before axes is drawn."""
+        """Perform post-processing steps then draw the axes."""
         # NOTE: This mimics matplotlib API, which calls identical
         # post-processing steps in both draw() and get_tightbbox()
         self._hide_labels()
@@ -2660,8 +2665,7 @@ class XYAxes(Axes):
         super().draw(renderer, *args, **kwargs)
 
     def get_tightbbox(self, renderer, *args, **kwargs):
-        """Adds post-processing steps before tight bounding box is
-        calculated."""
+        """Perform post-processing steps then return the tight bounding box."""
         self._hide_labels()
         self._altx_overrides()
         self._alty_overrides()
@@ -3514,8 +3518,7 @@ class GeoAxes(ProjAxes, GeoAxes):
         pass
 
     def get_tightbbox(self, renderer, *args, **kwargs):
-        """Draw gridliner objects so tight bounding box algorithm will
-        incorporate gridliner labels."""
+        """Draw the gridliner objects then return the tight bounding box."""
         self._hide_labels()
         if self.get_autoscale_on() and self.ignore_existing_data_limits:
             self.autoscale_view()
@@ -3585,8 +3588,6 @@ class GeoAxes(ProjAxes, GeoAxes):
         barbs = _default_transform(_standardize_2d(_cmap_changer(
             GeoAxes.barbs
         )))
-
-        # Wrapped only by cmap wrapper
         tripcolor = _default_transform(_cmap_changer(
             GeoAxes.tripcolor
         ))

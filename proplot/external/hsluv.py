@@ -168,7 +168,6 @@ def max_chroma(L, H):
             C = (L * (top - 1.05122 * t) / (bottom + 0.17266 * sinH * t))
             if C > 0.0 and C < result:
                 result = C
-    # print('maxima', result)
     return result
 
 
