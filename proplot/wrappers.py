@@ -258,7 +258,8 @@ def standardize_1d(self, func, *args, **kwargs):
     x = _atleast_array(x)
     if x.ndim != 1:
         raise ValueError(
-            f'x coordinates must be 1-dimensional, but got {x.ndim}.')
+            f'x coordinates must be 1-dimensional, but got {x.ndim}.'
+        )
 
     # Auto formatting
     xi = None  # index version of 'x'
@@ -434,7 +435,8 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
         Zs.append(Z)
     if not all(Zs[0].shape == Z.shape for Z in Zs):
         raise ValueError(
-            f'Zs must be same shape, got shapes {[Z.shape for Z in Zs]}.')
+            f'Zs must be same shape, got shapes {[Z.shape for Z in Zs]}.'
+        )
 
     # Retrieve coordinates
     if x is None and y is None:
@@ -458,12 +460,14 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
     if x.ndim != y.ndim:
         raise ValueError(
             f'x coordinates are {x.ndim}-dimensional, '
-            f'but y coordinates are {y.ndim}-dimensional.')
+            f'but y coordinates are {y.ndim}-dimensional.'
+        )
     for s, array in zip(('x', 'y'), (x, y)):
         if array.ndim not in (1, 2):
             raise ValueError(
                 f'{s} coordinates are {array.ndim}-dimensional, '
-                f'but must be 1 or 2-dimensional.')
+                f'but must be 1 or 2-dimensional.'
+            )
 
     # Auto formatting
     kw = {}
@@ -510,7 +514,8 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
         for Z in Zs:
             if Z.ndim != 2:
                 raise ValueError(
-                    f'Input arrays must be 2D, instead got shape {Z.shape}.')
+                    f'Input arrays must be 2D, instead got shape {Z.shape}.'
+                )
             elif Z.shape[1] == xlen and Z.shape[0] == ylen:
                 if all(z.ndim == 1 and z.size > 1
                        and z.dtype != 'object' for z in (x, y)):
@@ -527,7 +532,8 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
                 raise ValueError(
                     f'Input shapes x {x.shape} and y {y.shape} must match '
                     f'Z centers {Z.shape} or '
-                    f'Z borders {tuple(i+1 for i in Z.shape)}.')
+                    f'Z borders {tuple(i+1 for i in Z.shape)}.'
+                )
         # Optionally re-order
         # TODO: Double check this
         if order == 'F':
@@ -536,7 +542,8 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
         elif order != 'C':
             raise ValueError(
                 f'Invalid order {order!r}. Choose from '
-                '"C" (row-major, default) and "F" (column-major).')
+                '"C" (row-major, default) and "F" (column-major).'
+            )
 
     # Enforce centers
     else:
@@ -546,7 +553,8 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
         for Z in Zs:
             if Z.ndim != 2:
                 raise ValueError(
-                    f'Input arrays must be 2D, instead got shape {Z.shape}.')
+                    f'Input arrays must be 2D, instead got shape {Z.shape}.'
+                )
             elif Z.shape[1] == xlen - 1 and Z.shape[0] == ylen - 1:
                 if all(z.ndim == 1 and z.size > 1
                         and z.dtype != 'object' for z in (x, y)):
@@ -565,7 +573,8 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
                 raise ValueError(
                     f'Input shapes x {x.shape} and y {y.shape} '
                     f'must match Z centers {Z.shape} '
-                    f'or Z borders {tuple(i+1 for i in Z.shape)}.')
+                    f'or Z borders {tuple(i+1 for i in Z.shape)}.'
+                )
         # Optionally re-order
         # TODO: Double check this
         if order == 'F':
@@ -574,7 +583,8 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
         elif order != 'C':
             raise ValueError(
                 f'Invalid order {order!r}. Choose from '
-                '"C" (row-major, default) and "F" (column-major).')
+                '"C" (row-major, default) and "F" (column-major).'
+            )
 
     # Cartopy projection axes
     if (getattr(self, 'name', '') == 'geo'
@@ -634,7 +644,8 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
                         Z = ma.concatenate((Zq, Z, Zq), axis=1)
                 else:
                     raise ValueError(
-                        'Unexpected shape of longitude/latitude/data arrays.')
+                        'Unexpected shape of longitude/latitude/data arrays.'
+                    )
             iZs.append(Z)
         x, Zs = ix, iZs
 
@@ -663,7 +674,8 @@ def _errorbar_values(data, idata, bardata=None, barrange=None, barstd=False):
                 or err.shape[1] != idata.shape[-1]:
             raise ValueError(
                 f'bardata must have shape (2, {idata.shape[-1]}), '
-                f'but got {err.shape}.')
+                f'but got {err.shape}.'
+            )
     elif barstd:
         err = np.array(idata) + np.std(
             data, axis=0)[None, :] * np.array(barrange)[:, None]
@@ -675,16 +687,17 @@ def _errorbar_values(data, idata, bardata=None, barrange=None, barstd=False):
 
 
 def add_errorbars(
-        self, func, *args,
-        medians=False, means=False,
-        boxes=None, bars=None,
-        boxdata=None, bardata=None,
-        boxstd=False, barstd=False,
-        boxmarker=True, boxmarkercolor='white',
-        boxrange=(25, 75), barrange=(5, 95), boxcolor=None, barcolor=None,
-        boxlw=None, barlw=None, capsize=None,
-        boxzorder=3, barzorder=3,
-        **kwargs):
+    self, func, *args,
+    medians=False, means=False,
+    boxes=None, bars=None,
+    boxdata=None, bardata=None,
+    boxstd=False, barstd=False,
+    boxmarker=True, boxmarkercolor='white',
+    boxrange=(25, 75), barrange=(5, 95), boxcolor=None, barcolor=None,
+    boxlw=None, barlw=None, capsize=None,
+    boxzorder=3, barzorder=3,
+    **kwargs
+):
     """
     Wraps %(methods)s, adds support for drawing error bars. Includes
     options for interpreting columns of data as ranges, representing the mean
@@ -765,7 +778,8 @@ def add_errorbars(
         if y.ndim != 2:
             raise ValueError(
                 f'Need 2D data array for means=True or medians=True, '
-                f'got {y.ndim}D array.')
+                f'got {y.ndim}D array.'
+            )
         if means:
             iy = np.mean(y, axis=0)
         elif medians:
@@ -850,16 +864,17 @@ def plot_wrapper(self, func, *args, cmap=None, values=None, **kwargs):
 
 
 def scatter_wrapper(
-        self, func, *args,
-        s=None, size=None, markersize=None,
-        c=None, color=None, markercolor=None,
-        smin=None, smax=None,
-        cmap=None, cmap_kw=None, vmin=None, vmax=None, norm=None, norm_kw=None,
-        lw=None, linewidth=None, linewidths=None,
-        markeredgewidth=None, markeredgewidths=None,
-        edgecolor=None, edgecolors=None,
-        markeredgecolor=None, markeredgecolors=None,
-        **kwargs):
+    self, func, *args,
+    s=None, size=None, markersize=None,
+    c=None, color=None, markercolor=None,
+    smin=None, smax=None,
+    cmap=None, cmap_kw=None, vmin=None, vmax=None, norm=None, norm_kw=None,
+    lw=None, linewidth=None, linewidths=None,
+    markeredgewidth=None, markeredgewidths=None,
+    edgecolor=None, edgecolors=None,
+    markeredgecolor=None, markeredgecolors=None,
+    **kwargs
+):
     """
     Wraps `~matplotlib.axes.Axes.scatter`, adds optional keyword args
     more consistent with the `~matplotlib.axes.Axes.plot` keywords.
@@ -949,9 +964,11 @@ color-spec or list thereof, optional
                 **kwargs)
 
 
-def _fill_between_apply(self, func, *args,
-                        negcolor='blue', poscolor='red', negpos=False,
-                        **kwargs):
+def _fill_between_apply(
+    self, func, *args,
+    negcolor='blue', poscolor='red', negpos=False,
+    **kwargs
+):
     """Parse args and call function."""
     # Allow common keyword usage
     x = 'y' if 'x' in func.__name__ else 'y'
@@ -983,7 +1000,8 @@ def _fill_between_apply(self, func, *args,
         raise ValueError(f'When "negpos" is True, y must be 1-dimensional.')
     if kwargs.get('where', None) is not None:
         raise ValueError(
-            'When "negpos" is True, you cannot set the "where" keyword.')
+            'When "negpos" is True, you cannot set the "where" keyword.'
+        )
     for i in range(2):
         kw = {**kwargs}
         kw.setdefault('color', negcolor if i == 0 else poscolor)
@@ -1038,21 +1056,24 @@ def hist_wrapper(self, func, x, bins=None, **kwargs):
     return func(self, x, bins=bins, **kwargs)
 
 
-def barh_wrapper(self, func, y=None, width=None,
-                 height=0.8, left=None, **kwargs):
+def barh_wrapper(
+    self, func, y=None, width=None, height=0.8, left=None, **kwargs
+):
     """Wraps %(methods)s, usage is same as `bar_wrapper`."""
     kwargs.setdefault('orientation', 'horizontal')
     if y is None and width is None:
         raise ValueError(
-            f'barh() requires at least 1 positional argument, got 0.')
+            f'barh() requires at least 1 positional argument, got 0.'
+        )
     return self.bar(x=left, height=height, width=width, bottom=y, **kwargs)
 
 
 def bar_wrapper(
-        self, func, x=None, height=None, width=0.8, bottom=None, *, left=None,
-        vert=None, orientation='vertical', stacked=False,
-        lw=None, linewidth=0.7, edgecolor='k',
-        **kwargs):
+    self, func, x=None, height=None, width=0.8, bottom=None, *, left=None,
+    vert=None, orientation='vertical', stacked=False,
+    lw=None, linewidth=0.7, edgecolor='k',
+    **kwargs
+):
     """
     Wraps %(methods)s, permits bar stacking and bar grouping.
 
@@ -1091,11 +1112,13 @@ def bar_wrapper(
     # sense do document here; figure out way to move it here?
     if left is not None:
         _warn_proplot(
-            f'The "left" keyword with bar() is deprecated. Use "x" instead.')
+            f'The "left" keyword with bar() is deprecated. Use "x" instead.'
+        )
         x = left
     if x is None and height is None:
         raise ValueError(
-            f'bar() requires at least 1 positional argument, got 0.')
+            f'bar() requires at least 1 positional argument, got 0.'
+        )
     elif height is None:
         x, height = None, x
 
@@ -1110,17 +1133,18 @@ def bar_wrapper(
 
 
 def boxplot_wrapper(
-        self, func, *args,
-        color='k', fill=True, fillcolor=None, fillalpha=0.7,
-        lw=None, linewidth=0.7, orientation=None,
-        marker=None, markersize=None,
-        boxcolor=None, boxlw=None,
-        capcolor=None, caplw=None,
-        meancolor=None, meanlw=None,
-        mediancolor=None, medianlw=None,
-        whiskercolor=None, whiskerlw=None,
-        fliercolor=None, flierlw=None,
-        **kwargs):
+    self, func, *args,
+    color='k', fill=True, fillcolor=None, fillalpha=0.7,
+    lw=None, linewidth=0.7, orientation=None,
+    marker=None, markersize=None,
+    boxcolor=None, boxlw=None,
+    capcolor=None, caplw=None,
+    meancolor=None, meanlw=None,
+    mediancolor=None, medianlw=None,
+    whiskercolor=None, whiskerlw=None,
+    fliercolor=None, flierlw=None,
+    **kwargs
+):
     """
     Wraps %(methods)s, adds convenient keyword args.
     Fills the objects with a cycle color by default.
@@ -1162,7 +1186,8 @@ color-spec, optional
         elif orientation != 'vertical':
             raise ValueError(
                 'Orientation must be "horizontal" or "vertical", '
-                f'got {orientation!r}.')
+                f'got {orientation!r}.'
+            )
     obj = func(self, *args, **kwargs)
     if not args:
         return obj
@@ -1207,10 +1232,11 @@ color-spec, optional
 
 
 def violinplot_wrapper(
-        self, func, *args,
-        lw=None, linewidth=0.7, fillcolor=None, edgecolor='k',
-        fillalpha=0.7, orientation=None,
-        **kwargs):
+    self, func, *args,
+    lw=None, linewidth=0.7, fillcolor=None, edgecolor='k',
+    fillalpha=0.7, orientation=None,
+    **kwargs
+):
     """
     Wraps %(methods)s, adds convenient keyword args.
     Makes the style shown in right plot of `this matplotlib example \
@@ -1245,7 +1271,8 @@ def violinplot_wrapper(
         elif orientation != 'vertical':
             raise ValueError(
                 'Orientation must be "horizontal" or "vertical", '
-                f'got {orientation!r}.')
+                f'got {orientation!r}.'
+            )
 
     # Sanitize input
     lw = _notNone(lw, linewidth, None, names=('lw', 'linewidth'))
@@ -1295,11 +1322,12 @@ def _get_transform(self, transform):
 
 
 def text_wrapper(
-        self, func,
-        x=0, y=0, text='', transform='data',
-        fontfamily=None, fontname=None, fontsize=None, size=None,
-        border=False, bordercolor='w', invert=False, lw=None, linewidth=2,
-        **kwargs):
+    self, func,
+    x=0, y=0, text='', transform='data',
+    fontfamily=None, fontname=None, fontsize=None, size=None,
+    border=False, bordercolor='w', invert=False, lw=None, linewidth=2,
+    **kwargs
+):
     """
     Wraps %(methods)s, and enables specifying `tranform` with a string name and
     adds feature for drawing borders around text.
@@ -1356,7 +1384,8 @@ def text_wrapper(
         else:
             _warn_proplot(
                 f'Font {fontname!r} unavailable. Available fonts are '
-                + ', '.join(map(repr, styletools.fonts)) + '.')
+                + ', '.join(map(repr, styletools.fonts)) + '.'
+            )
     size = _notNone(fontsize, size, None, names=('fontsize', 'size'))
     if size is not None:
         kwargs['fontsize'] = units(size, 'pt')
@@ -1382,13 +1411,14 @@ def text_wrapper(
 
 
 def cycle_changer(
-        self, func, *args,
-        cycle=None, cycle_kw=None,
-        markers=None, linestyles=None,
-        label=None, labels=None, values=None,
-        legend=None, legend_kw=None,
-        colorbar=None, colorbar_kw=None,
-        **kwargs):
+    self, func, *args,
+    cycle=None, cycle_kw=None,
+    markers=None, linestyles=None,
+    label=None, labels=None, values=None,
+    legend=None, legend_kw=None,
+    colorbar=None, colorbar_kw=None,
+    **kwargs
+):
     """
     Wraps methods that use the property cycler (%(methods)s),
     adds features for controlling colors in the property cycler and drawing
@@ -1587,7 +1617,8 @@ def cycle_changer(
             if len(labels) != ncols:
                 raise ValueError(
                     f'Got {ncols} columns in data array, '
-                    f'but {len(labels)} labels.')
+                    f'but {len(labels)} labels.'
+                )
             label = labels[i]
             values, label_leg = _auto_label(iy, axis=1)
             if label_leg and label is None:
@@ -1660,16 +1691,17 @@ def cycle_changer(
 
 
 def cmap_changer(
-        self, func, *args, cmap=None, cmap_kw=None,
-        extend='neither', norm=None, norm_kw=None,
-        N=None, levels=None, values=None, centers=None, vmin=None, vmax=None,
-        locator=None, symmetric=False, locator_kw=None,
-        edgefix=None, labels=False, labels_kw=None, fmt=None, precision=2,
-        colorbar=False, colorbar_kw=None,
-        lw=None, linewidth=None, linewidths=None,
-        ls=None, linestyle=None, linestyles=None,
-        color=None, colors=None, edgecolor=None, edgecolors=None,
-        **kwargs):
+    self, func, *args, cmap=None, cmap_kw=None,
+    extend='neither', norm=None, norm_kw=None,
+    N=None, levels=None, values=None, centers=None, vmin=None, vmax=None,
+    locator=None, symmetric=False, locator_kw=None,
+    edgefix=None, labels=False, labels_kw=None, fmt=None, precision=2,
+    colorbar=False, colorbar_kw=None,
+    lw=None, linewidth=None, linewidths=None,
+    ls=None, linestyle=None, linestyles=None,
+    color=None, colors=None, edgecolor=None, edgecolors=None,
+    **kwargs
+):
     """
     Wraps methods that take a `cmap` argument (%(methods)s),
     adds several new keyword args and features.
@@ -1846,7 +1878,8 @@ def cmap_changer(
             kwargs[style_kw[key]] = value
         else:
             raise ValueError(
-                f'Unknown keyword arg {key!r} for function {name!r}.')
+                f'Unknown keyword arg {key!r} for function {name!r}.'
+            )
     # Check input
     for key, val in (('levels', levels), ('values', values)):
         if not np.iterable(val):
@@ -1856,7 +1889,8 @@ def cmap_changer(
         if len(val) < 2 or any(np.diff(val) <= 0):
             raise ValueError(
                 f'{key!r} must be monotonically increasing and '
-                f'at least length 2, got {val}.')
+                f'at least length 2, got {val}.'
+            )
 
     # Get level edges from level centers
     if values is not None:
@@ -1884,7 +1918,8 @@ def cmap_changer(
         else:
             raise ValueError(
                 f'Unexpected input values={values!r}. '
-                'Must be integer or list of numbers.')
+                'Must be integer or list of numbers.'
+            )
 
     # Input colormap, for methods that accept a colormap and normalizer
     # contour, tricontour, i.e. not a method where cmap is optional
@@ -1897,7 +1932,8 @@ def cmap_changer(
         if cyclic and extend != 'neither':
             _warn_proplot(
                 f'Cyclic colormap requires extend="neither". '
-                'Overriding user input extend={extend!r}.')
+                'Overriding user input extend={extend!r}.'
+            )
             extend = 'neither'
         kwargs['cmap'] = cmap
 
@@ -2106,7 +2142,8 @@ def cmap_changer(
         if not isinstance(loc, str):
             raise ValueError(
                 f'Invalid on-the-fly location {loc!r}. '
-                f'Must be a preset location. See Axes.colorbar.')
+                f'Must be a preset location. See Axes.colorbar.'
+            )
         if 'label' not in colorbar_kw and self.figure._auto_format:
             _, label = _auto_label(args[-1])  # last one is data, we assume
             if label:
@@ -2120,12 +2157,13 @@ def cmap_changer(
 
 
 def legend_wrapper(
-        self, handles=None, labels=None, ncol=None, ncols=None,
-        center=None, order='C', loc=None, label=None, title=None,
-        fontsize=None, fontweight=None, fontcolor=None,
-        color=None, marker=None, lw=None, linewidth=None,
-        dashes=None, linestyle=None, markersize=None, frameon=None, frame=None,
-        **kwargs):
+    self, handles=None, labels=None, ncol=None, ncols=None,
+    center=None, order='C', loc=None, label=None, title=None,
+    fontsize=None, fontweight=None, fontcolor=None,
+    color=None, marker=None, lw=None, linewidth=None,
+    dashes=None, linestyle=None, markersize=None, frameon=None, frame=None,
+    **kwargs
+):
     """
     Wraps `~proplot.axes.Axes` `~proplot.axes.Axes.legend` and
     `~proplot.subplots.Figure` `~proplot.subplots.Figure.legend`, adds some
@@ -2198,7 +2236,8 @@ property-spec, optional
     if order not in ('F', 'C'):
         raise ValueError(
             f'Invalid order {order!r}. Choose from '
-            '"C" (row-major, default) and "F" (column-major).')
+            '"C" (row-major, default) and "F" (column-major).'
+        )
     # may still be None, wait till later
     ncol = _notNone(ncols, ncol, None, names=('ncols', 'ncol'))
     title = _notNone(label, title, None, names=('label', 'title'))
@@ -2224,7 +2263,8 @@ property-spec, optional
         if self._filled:
             raise ValueError(
                 'You must pass a handles list for panel axes '
-                '"filled" with a legend.')
+                '"filled" with a legend.'
+            )
         else:
             # ignores artists with labels '_nolegend_'
             handles, labels_default = self.get_legend_handles_labels()
@@ -2234,7 +2274,8 @@ property-spec, optional
                 raise ValueError(
                     'No labeled artists found. To generate a legend without '
                     'providing the artists explicitly, pass label="label" in '
-                    'your plotting commands.')
+                    'your plotting commands.'
+                )
     if not np.iterable(handles):  # e.g. a mappable object
         handles = [handles]
     if labels is not None and (not np.iterable(
@@ -2249,7 +2290,8 @@ property-spec, optional
            for handle in handles) and len(handles) > 1:
         raise ValueError(
             f'Handles must be objects with get_facecolor attributes or '
-            'a single mappable object from which we can draw colors.')
+            'a single mappable object from which we can draw colors.'
+        )
 
     # Build pairs of handles and labels
     # This allows alternative workflow where user specifies labels when
@@ -2264,35 +2306,41 @@ property-spec, optional
                 for ihandle in handle:
                     if not hasattr(ihandle, 'get_label'):
                         raise ValueError(
-                            f'Object {ihandle} must have "get_label" method.')
+                            f'Object {ihandle} must have "get_label" method.'
+                        )
                     ipairs.append((ihandle, ihandle.get_label()))
                 pairs.append(ipairs)
             else:
                 if not hasattr(handle, 'get_label'):
                     raise ValueError(
-                        f'Object {handle} must have "get_label" method.')
+                        f'Object {handle} must have "get_label" method.'
+                    )
                 pairs.append((handle, handle.get_label()))
     else:
         if len(labels) != len(handles):
             raise ValueError(
-                f'Got {len(labels)} labels, but {len(handles)} handles.')
+                f'Got {len(labels)} labels, but {len(handles)} handles.'
+            )
         for label, handle in zip(labels, handles):
             if list_of_lists:
                 ipairs = []
                 if not np.iterable(label) or isinstance(label, str):
                     raise ValueError(
-                        f'Got list of lists of handles, but list of labels.')
+                        f'Got list of lists of handles, but list of labels.'
+                    )
                 elif len(label) != len(handle):
                     raise ValueError(
                         f'Got {len(label)} labels in sublist, '
-                        f'but {len(handle)} handles.')
+                        f'but {len(handle)} handles.'
+                    )
                 for ilabel, ihandle in zip(label, handle):
                     ipairs.append((ihandle, ilabel))
                 pairs.append(ipairs)
             else:
                 if not isinstance(label, str) and np.iterable(label):
                     raise ValueError(
-                        f'Got list of lists of labels, but list of handles.')
+                        f'Got list of lists of labels, but list of handles.'
+                    )
                 pairs.append((handle, label))
 
     # Manage pairs in context of 'center' option
@@ -2301,7 +2349,8 @@ property-spec, optional
     elif center and list_of_lists and ncol is not None:
         _warn_proplot(
             'Detected list of *lists* of legend handles. '
-            'Ignoring user input property "ncol".')
+            'Ignoring user input property "ncol".'
+        )
     elif not center and list_of_lists:  # standardize format based on input
         list_of_lists = False  # no longer is list of lists
         pairs = [pair for ipairs in pairs for pair in ipairs]
@@ -2349,9 +2398,11 @@ property-spec, optional
             if prop is not None:
                 overridden.append(override)
         if overridden:
-            _warn_proplot(f'For centered-row legends, must override '
-                          'user input properties '
-                          ', '.join(map(repr, overridden)) + '.')
+            _warn_proplot(
+                f'For centered-row legends, must override '
+                'user input properties '
+                + ', '.join(map(repr, overridden)) + '.'
+            )
         # Determine space we want sub-legend to occupy as fraction of height
         # NOTE: Empirical testing shows spacing fudge factor necessary to
         # exactly replicate the spacing of standard aligned legends.
@@ -2368,16 +2419,19 @@ property-spec, optional
             raise NotImplementedError(
                 f'When center=True, ProPlot vertically stacks successive '
                 'single-row legends. Column-major (order="F") ordering '
-                'is un-supported.')
+                'is un-supported.'
+            )
         loc = _notNone(loc, 'upper center')
         if not isinstance(loc, str):
             raise ValueError(
                 f'Invalid location {loc!r} for legend with center=True. '
-                'Must be a location *string*.')
+                'Must be a location *string*.'
+            )
         elif loc == 'best':
             _warn_proplot(
                 'For centered-row legends, cannot use "best" location. '
-                'Defaulting to "upper center".')
+                'Using "upper center" instead.'
+            )
         for i, ipairs in enumerate(pairs):
             if i == 1:
                 kwargs.pop('title', None)
@@ -2485,21 +2539,22 @@ property-spec, optional
 
 
 def colorbar_wrapper(
-        self, mappable, values=None,
-        extend=None, extendsize=None,
-        title=None, label=None,
-        grid=None, tickminor=None,
-        tickloc=None, ticklocation=None,
-        locator=None, ticks=None, maxn=None, maxn_minor=None,
-        minorlocator=None, minorticks=None,
-        locator_kw=None, minorlocator_kw=None,
-        formatter=None, ticklabels=None, formatter_kw=None,
-        norm=None, norm_kw=None,  # normalizer to use when passing colors/lines
-        orientation='horizontal',
-        edgecolor=None, linewidth=None,
-        labelsize=None, labelweight=None, labelcolor=None,
-        ticklabelsize=None, ticklabelweight=None, ticklabelcolor=None,
-        **kwargs):
+    self, mappable, values=None,
+    extend=None, extendsize=None,
+    title=None, label=None,
+    grid=None, tickminor=None,
+    tickloc=None, ticklocation=None,
+    locator=None, ticks=None, maxn=None, maxn_minor=None,
+    minorlocator=None, minorticks=None,
+    locator_kw=None, minorlocator_kw=None,
+    formatter=None, ticklabels=None, formatter_kw=None,
+    norm=None, norm_kw=None,  # normalizer to use when passing colors/lines
+    orientation='horizontal',
+    edgecolor=None, linewidth=None,
+    labelsize=None, labelweight=None, labelcolor=None,
+    ticklabelsize=None, ticklabelweight=None, ticklabelcolor=None,
+    **kwargs
+):
     """
     Wraps `~proplot.axes.Axes` `~proplot.axes.Axes.colorbar` and
     `~proplot.subplots.Figure` `~proplot.subplots.Figure.colorbar`, adds some
@@ -2625,12 +2680,18 @@ or colormap-spec
     # Parse flexible input
     label = _notNone(title, label, None, names=('title', 'label'))
     locator = _notNone(ticks, locator, None, names=('ticks', 'locator'))
-    formatter = _notNone(ticklabels, formatter, 'auto',
-                         names=('ticklabels', 'formatter'))
-    minorlocator = _notNone(minorticks, minorlocator,
-                            None, names=('minorticks', 'minorlocator'))
-    ticklocation = _notNone(tickloc, ticklocation, None,
-                            names=('tickloc', 'ticklocation'))
+    formatter = _notNone(
+        ticklabels, formatter, 'auto',
+        names=('ticklabels', 'formatter')
+    )
+    minorlocator = _notNone(
+        minorticks, minorlocator, None,
+        names=('minorticks', 'minorlocator')
+    )
+    ticklocation = _notNone(
+        tickloc, ticklocation, None,
+        names=('tickloc', 'ticklocation')
+    )
 
     # Colorbar kwargs
     # WARNING: PathCollection scatter objects have an extend method!
@@ -2717,7 +2778,8 @@ or colormap-spec
                 raise ValueError(
                     'Input mappable must be a matplotlib artist, '
                     'list of objects, list of colors, or colormap. '
-                    f'Got {mappable!r}.')
+                    f'Got {mappable!r}.'
+                )
             if values is None:
                 if np.iterable(mappable) and not isinstance(
                         mappable, str):  # e.g. list of colors
@@ -2732,7 +2794,8 @@ or colormap-spec
         if np.iterable(mappable) and len(values) != len(mappable):
             raise ValueError(
                 f'Passed {len(values)} values, but only {len(mappable)} '
-                f'objects or colors.')
+                f'objects or colors.'
+            )
         import warnings
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
@@ -2819,7 +2882,8 @@ or colormap-spec
     elif not hasattr(cb, '_ticker'):
         _warn_proplot(
             'Matplotlib colorbar API has changed. '
-            'Cannot use custom minor tick locator.')
+            'Cannot use custom minor tick locator.'
+        )
         if tickminor:
             cb.minorticks_on()
     else:
@@ -2850,7 +2914,8 @@ or colormap-spec
         cmap._init()
     if any(cmap._lut[:-1, 3] < 1):
         _warn_proplot(
-            f'Using manual alpha-blending for {cmap.name!r} colorbar solids.')
+            f'Using manual alpha-blending for {cmap.name!r} colorbar solids.'
+        )
         # Generate "secret" copy of the colormap!
         lut = cmap._lut.copy()
         cmap = mcolors.Colormap('_colorbar_fix', N=cmap.N)
@@ -2885,6 +2950,7 @@ or colormap-spec
             kw['color'] = edgecolor
         if linewidth:
             kw['width'] = linewidth
+        print('hi!', kw)
         axis.set_tick_params(which=which, **kw)
     axis.set_ticks_position(ticklocation)
 

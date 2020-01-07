@@ -473,7 +473,8 @@ class Axes(maxes.Axes):
                 'Level can be 0 (share nothing), '
                 '1 (do not share limits, just hide axis labels), '
                 '2 (share limits, but do not hide tick labels), or '
-                '3 (share limits and hide tick labels). Got {level}.')
+                '3 (share limits and hide tick labels). Got {level}.'
+            )
         # enforce, e.g. if doing panel sharing
         self._sharex_level = max(self._sharex_level, level)
         self._share_short_axis(sharex, 'l', level)
@@ -488,7 +489,8 @@ class Axes(maxes.Axes):
                 'Level can be 0 (share nothing), '
                 '1 (do not share limits, just hide axis labels), '
                 '2 (share limits, but do not hide tick labels), or '
-                '3 (share limits and hide tick labels). Got {level}.')
+                '3 (share limits and hide tick labels). Got {level}.'
+            )
         self._sharey_level = max(self._sharey_level, level)
         self._share_short_axis(sharey, 'b', level)
         self._share_short_axis(sharey, 't', level)
@@ -780,13 +782,15 @@ optional
                 abcstyle = kwargs.pop('abcformat')
                 _warn_proplot(
                     f'rc setting "abcformat" is deprecated. '
-                    f'Please use "abcstyle".')
+                    f'Please use "abcstyle".'
+                )
             if abcstyle and self.number is not None:
                 if not isinstance(abcstyle, str) or (
                         abcstyle.count('a') != 1 and abcstyle.count('A') != 1):
                     raise ValueError(
                         f'Invalid abcstyle {abcstyle!r}. '
-                        'Must include letter "a" or "A".')
+                        'Must include letter "a" or "A".'
+                    )
                 abcedges = abcstyle.split('a' if 'a' in abcstyle else 'A')
                 text = abcedges[0] + _abc(self.number - 1) + abcedges[-1]
                 if 'A' in abcstyle:
@@ -829,7 +833,8 @@ optional
         for ikey, ititle in kwargs.items():
             if not ikey[-5:] == 'title':
                 raise TypeError(
-                    f'format() got an unexpected keyword argument {ikey!r}.')
+                    f'format() got an unexpected keyword argument {ikey!r}.'
+                )
             iloc, iobj, ikw = self._get_title_props(loc=ikey[:-5])
             if ititle is not None:
                 ikw['text'] = ititle
@@ -864,10 +869,12 @@ optional
         """Alias for `~matplotlib.axes.Axes.boxplot`."""
         return self.boxplot(*args, **kwargs)
 
-    def colorbar(self, *args, loc=None, pad=None,
-                 length=None, width=None, space=None, frame=None, frameon=None,
-                 alpha=None, linewidth=None, edgecolor=None, facecolor=None,
-                 **kwargs):
+    def colorbar(
+        self, *args, loc=None, pad=None,
+        length=None, width=None, space=None, frame=None, frameon=None,
+        alpha=None, linewidth=None, edgecolor=None, facecolor=None,
+        **kwargs
+    ):
         """
         Add an *inset* colorbar or *outer* colorbar along the outside edge of
         the axes. See `~proplot.wrappers.colorbar_wrapper` for details.
@@ -926,7 +933,8 @@ optional
         """
         # TODO: add option to pad inset away from axes edge!
         kwargs.update({'edgecolor': edgecolor, 'linewidth': linewidth})
-        loc = self._loc_translate(loc, rc['colorbar.loc'])
+        if loc != '_fill':
+            loc = self._loc_translate(loc, rc['colorbar.loc'])
         if not isinstance(loc, str):  # e.g. 2-tuple or ndarray
             raise ValueError(f'Invalid colorbar location {loc!r}.')
         if loc == 'best':  # white lie
@@ -956,7 +964,8 @@ optional
             if length <= 0 or length > 1:
                 raise ValueError(
                     f'Panel colorbar length must satisfy 0 < length <= 1, '
-                    f'got length={length!r}.')
+                    f'got length={length!r}.'
+                )
             if side in ('bottom', 'top'):
                 gridspec = mgridspec.GridSpecFromSubplotSpec(
                     nrows=1, ncols=3, wspace=0,
@@ -974,7 +983,7 @@ optional
             with self.figure._authorize_add_subplot():
                 ax = self.figure.add_subplot(subplotspec, projection=None)
             if ax is self:
-                raise ValueError(f'Uh oh.')
+                raise ValueError  # should never happen
             self.add_child_axes(ax)
 
             # Location
@@ -1078,12 +1087,14 @@ optional
             if orient is not None and orient != 'horizontal':
                 _warn_proplot(
                     f'Orientation for inset colorbars must be horizontal, '
-                    f'ignoring orient={orient!r}.')
+                    f'ignoring orient={orient!r}.'
+                )
             ticklocation = kwargs.pop('tickloc', None)
             ticklocation = kwargs.pop('ticklocation', None) or ticklocation
             if ticklocation is not None and ticklocation != 'bottom':
                 _warn_proplot(
-                    f'Inset colorbars can only have ticks on the bottom.')
+                    f'Inset colorbars can only have ticks on the bottom.'
+                )
             kwargs.update({'orientation': 'horizontal',
                            'ticklocation': 'bottom'})
             kwargs.setdefault('maxn', 5)
@@ -1138,7 +1149,8 @@ optional
         *args, **kwargs
             Passed to `~proplot.wrappers.legend_wrapper`.
         """
-        loc = self._loc_translate(loc, rc['legend.loc'])
+        if loc != '_fill':
+            loc = self._loc_translate(loc, rc['legend.loc'])
         if isinstance(loc, np.ndarray):
             loc = loc.tolist()
 
@@ -1216,8 +1228,10 @@ optional
         )
         return obj
 
-    def inset_axes(self, bounds, *, transform=None, zorder=4,
-                   zoom=True, zoom_kw=None, **kwargs):
+    def inset_axes(
+        self, bounds, *, transform=None, zorder=4,
+        zoom=True, zoom_kw=None, **kwargs
+    ):
         """
         Like the builtin `~matplotlib.axes.Axes.inset_axes` method, but
         draws an inset `XYAxes` axes and adds some options.
@@ -1275,9 +1289,11 @@ optional
             ax.indicate_inset_zoom(**zoom_kw)
         return ax
 
-    def indicate_inset_zoom(self, alpha=None,
-                            lw=None, linewidth=None, zorder=3.5,
-                            color=None, edgecolor=None, **kwargs):
+    def indicate_inset_zoom(
+        self, alpha=None,
+        lw=None, linewidth=None, zorder=3.5,
+        color=None, edgecolor=None, **kwargs
+    ):
         """
         Called automatically when using `~Axes.inset` with ``zoom=True``.
         Like `~matplotlib.axes.Axes.indicate_inset_zoom`, but *refreshes* the
@@ -1369,9 +1385,11 @@ optional
 
     @_standardize_1d
     @_cmap_changer
-    def parametric(self, *args, values=None,
-                   cmap=None, norm=None,
-                   interp=0, **kwargs):
+    def parametric(
+        self, *args, values=None,
+        cmap=None, norm=None,
+        interp=0, **kwargs
+    ):
         """
         Draw a line whose color changes as a function of the parametric
         coordinate ``values`` using the input colormap ``cmap``.
@@ -1415,11 +1433,13 @@ optional
         if x.ndim != 1 or y.ndim != 1 or values.ndim != 1:
             raise ValueError(
                 f'x ({x.ndim}d), y ({y.ndim}d), and values ({values.ndim}d)'
-                ' must be 1-dimensional.')
+                ' must be 1-dimensional.'
+            )
         if len(x) != len(y) or len(x) != len(values) or len(y) != len(values):
             raise ValueError(
                 f'{len(x)} xs, {len(y)} ys, but {len(values)} '
-                ' colormap values.')
+                ' colormap values.'
+            )
 
         # Interpolate values to allow for smooth gradations between values
         # (bins=False) or color switchover halfway between points (bins=True)
@@ -1497,7 +1517,7 @@ optional
 
     @number.setter
     def number(self, num):
-        if not isinstance(num, Integral) or num < 1:
+        if num is not None and (not isinstance(num, Integral) or num < 1):
             raise ValueError(f'Invalid number {num!r}. Must be integer >=1.')
         self._number = num
 
@@ -1885,43 +1905,44 @@ class XYAxes(Axes):
             self._shared_y_axes.join(self, sharey)
 
     def format(
-            self, *,
-            aspect=None,
-            xloc=None, yloc=None,
-            xspineloc=None, yspineloc=None,
-            xtickloc=None, ytickloc=None, fixticks=False,
-            xlabelloc=None, ylabelloc=None,
-            xticklabelloc=None, yticklabelloc=None,
-            xtickdir=None, ytickdir=None,
-            xgrid=None, ygrid=None,
-            xgridminor=None, ygridminor=None,
-            xtickminor=None, ytickminor=None,
-            xticklabeldir=None, yticklabeldir=None,
-            xtickrange=None, ytickrange=None,
-            xreverse=None, yreverse=None,
-            xlabel=None, ylabel=None,
-            xlim=None, ylim=None,
-            xscale=None, yscale=None,
-            xrotation=None, yrotation=None,
-            xformatter=None, yformatter=None,
-            xticklabels=None, yticklabels=None,
-            xticks=None, xminorticks=None,
-            xlocator=None, xminorlocator=None,
-            yticks=None, yminorticks=None,
-            ylocator=None, yminorlocator=None,
-            xbounds=None, ybounds=None,
-            xmargin=None, ymargin=None,
-            xcolor=None, ycolor=None,
-            xlinewidth=None, ylinewidth=None,
-            xgridcolor=None, ygridcolor=None,
-            xticklen=None, yticklen=None,
-            xlabel_kw=None, ylabel_kw=None,
-            xscale_kw=None, yscale_kw=None,
-            xlocator_kw=None, ylocator_kw=None,
-            xformatter_kw=None, yformatter_kw=None,
-            xminorlocator_kw=None, yminorlocator_kw=None,
-            patch_kw=None,
-            **kwargs):
+        self, *,
+        aspect=None,
+        xloc=None, yloc=None,
+        xspineloc=None, yspineloc=None,
+        xtickloc=None, ytickloc=None, fixticks=False,
+        xlabelloc=None, ylabelloc=None,
+        xticklabelloc=None, yticklabelloc=None,
+        xtickdir=None, ytickdir=None,
+        xgrid=None, ygrid=None,
+        xgridminor=None, ygridminor=None,
+        xtickminor=None, ytickminor=None,
+        xticklabeldir=None, yticklabeldir=None,
+        xtickrange=None, ytickrange=None,
+        xreverse=None, yreverse=None,
+        xlabel=None, ylabel=None,
+        xlim=None, ylim=None,
+        xscale=None, yscale=None,
+        xrotation=None, yrotation=None,
+        xformatter=None, yformatter=None,
+        xticklabels=None, yticklabels=None,
+        xticks=None, xminorticks=None,
+        xlocator=None, xminorlocator=None,
+        yticks=None, yminorticks=None,
+        ylocator=None, yminorlocator=None,
+        xbounds=None, ybounds=None,
+        xmargin=None, ymargin=None,
+        xcolor=None, ycolor=None,
+        xlinewidth=None, ylinewidth=None,
+        xgridcolor=None, ygridcolor=None,
+        xticklen=None, yticklen=None,
+        xlabel_kw=None, ylabel_kw=None,
+        xscale_kw=None, yscale_kw=None,
+        xlocator_kw=None, ylocator_kw=None,
+        xformatter_kw=None, yformatter_kw=None,
+        xminorlocator_kw=None, yminorlocator_kw=None,
+        patch_kw=None,
+        **kwargs
+    ):
         """
         Modify the *x* and *y* axis labels, tick locations, tick labels,
         axis scales, spine settings, and more. Unknown keyword arguments
@@ -2682,17 +2703,19 @@ class PolarAxes(Axes, mproj.PolarAxes):
         for axis in (self.xaxis, self.yaxis):
             axis.set_tick_params(which='both', size=0)
 
-    def format(self, *args,
-               r0=None, theta0=None, thetadir=None,
-               thetamin=None, thetamax=None, thetalim=None,
-               rmin=None, rmax=None, rlim=None,
-               rlabelpos=None, rscale=None, rborder=None,
-               thetalocator=None, rlocator=None, thetalines=None, rlines=None,
-               thetaformatter=None, rformatter=None,
-               thetalabels=None, rlabels=None,
-               thetalocator_kw=None, rlocator_kw=None,
-               thetaformatter_kw=None, rformatter_kw=None,
-               **kwargs):
+    def format(
+        self, *args,
+        r0=None, theta0=None, thetadir=None,
+        thetamin=None, thetamax=None, thetalim=None,
+        rmin=None, rmax=None, rlim=None,
+        rlabelpos=None, rscale=None, rborder=None,
+        thetalocator=None, rlocator=None, thetalines=None, rlines=None,
+        thetaformatter=None, rformatter=None,
+        thetalabels=None, rlabels=None,
+        thetalocator_kw=None, rlocator_kw=None,
+        thetaformatter_kw=None, rformatter_kw=None,
+        **kwargs
+    ):
         """
         Modify radial gridline locations, gridline labels, limits, and more.
         Unknown keyword arguments are passed to `Axes.format` and
@@ -2767,14 +2790,16 @@ optional
                 if rmin is not None or rmax is not None:
                     _warn_proplot(
                         f'Conflicting keyword args rmin={rmin}, rmax={rmax}, '
-                        f'and rlim={rlim}. Using "rlim".')
+                        f'and rlim={rlim}. Using "rlim".'
+                    )
                 rmin, rmax = rlim
             if thetalim is not None:
                 if thetamin is not None or thetamax is not None:
                     _warn_proplot(
                         f'Conflicting keyword args thetamin={thetamin}, '
                         f'thetamax={thetamax}, and thetalim={thetalim}. '
-                        f'Using "thetalim".')
+                        f'Using "thetalim".'
+                    )
                 thetamin, thetamax = thetalim
             thetalocator = _notNone(
                 thetalines, thetalocator, None,
@@ -2949,13 +2974,14 @@ class ProjAxes(Axes):
         self._latlines_labels = None
         super().__init__(*args, **kwargs)
 
-    def format(self, *,
-               lonlim=None, latlim=None, boundinglat=None, grid=None,
-               lonlines=None, lonlocator=None,
-               latlines=None, latlocator=None, latmax=None,
-               labels=None, latlabels=None, lonlabels=None,
-               patch_kw=None, **kwargs,
-               ):
+    def format(
+        self, *,
+        lonlim=None, latlim=None, boundinglat=None, grid=None,
+        lonlines=None, lonlocator=None,
+        latlines=None, latlocator=None, latmax=None,
+        labels=None, latlabels=None, lonlabels=None,
+        patch_kw=None, **kwargs,
+    ):
         """
         Modify the meridian and parallel labels, longitude and latitude map
         limits, geographic features, and more. Unknown keyword arguments are
@@ -3229,7 +3255,8 @@ class GeoAxes(ProjAxes, GeoAxes):
         import cartopy.crs as ccrs
         if not isinstance(map_projection, ccrs.Projection):
             raise ValueError(
-                'GeoAxes requires map_projection=cartopy.crs.Projection.')
+                'GeoAxes requires map_projection=cartopy.crs.Projection.'
+            )
         super().__init__(*args, map_projection=map_projection, **kwargs)
 
         # Zero out ticks so gridlines are not offset
@@ -3250,8 +3277,10 @@ class GeoAxes(ProjAxes, GeoAxes):
         else:
             self.set_global()
 
-    def _format_apply(self, patch_kw, lonlim, latlim, boundinglat,
-                      lonlines, latlines, latmax, lonarray, latarray):
+    def _format_apply(
+        self, patch_kw, lonlim, latlim, boundinglat,
+        lonlines, latlines, latmax, lonarray, latarray
+    ):
         """Apply formatting to cartopy axes."""
         import cartopy.feature as cfeature
         import cartopy.crs as ccrs
@@ -3297,7 +3326,8 @@ class GeoAxes(ProjAxes, GeoAxes):
             if (lonlim is not None or latlim is not None):
                 _warn_proplot(
                     f'{proj!r} extent is controlled by "boundinglat", '
-                    f'ignoring lonlim={lonlim!r} and latlim={latlim!r}.')
+                    f'ignoring lonlim={lonlim!r} and latlim={latlim!r}.'
+                )
             if self._boundinglat is None:
                 if isinstance(self.projection, projs.NorthPolarGnomonic):
                     boundinglat = 30
@@ -3317,7 +3347,8 @@ class GeoAxes(ProjAxes, GeoAxes):
             if boundinglat is not None:
                 _warn_proplot(
                     f'{proj!r} extent is controlled by "lonlim" and "latlim", '
-                    f'ignoring boundinglat={boundinglat!r}.')
+                    f'ignoring boundinglat={boundinglat!r}.'
+                )
             if lonlim is not None or latlim is not None:
                 lonlim = lonlim or [None, None]
                 latlim = latlim or [None, None]
@@ -3371,12 +3402,14 @@ class GeoAxes(ProjAxes, GeoAxes):
             if latarray is not None and any(latarray):
                 _warn_proplot(
                     'Cannot add gridline labels to cartopy '
-                    f'{type(self.projection).__name__} projection.')
+                    f'{type(self.projection).__name__} projection.'
+                )
                 latarray = [0] * 4
             if lonarray is not None and any(lonarray):
                 _warn_proplot(
                     'Cannot add gridline labels to cartopy '
-                    f'{type(self.projection).__name__} projection.')
+                    f'{type(self.projection).__name__} projection.'
+                )
                 lonarray = [0] * 4
         if latarray is not None:
             gl.ylabels_left = latarray[0]
@@ -3595,26 +3628,30 @@ class BasemapAxes(ProjAxes):
         import mpl_toolkits.basemap as mbasemap  # verify package is available
         if not isinstance(map_projection, mbasemap.Basemap):
             raise ValueError(
-                'BasemapAxes requires map_projection=basemap.Basemap')
+                'BasemapAxes requires map_projection=basemap.Basemap'
+            )
         self._map_projection = map_projection
         self._map_boundary = None
         self._has_recurred = False  # use this to override plotting methods
         super().__init__(*args, **kwargs)
 
-    def _format_apply(self, patch_kw, lonlim, latlim, boundinglat,
-                      lonlines, latlines, latmax, lonarray, latarray):
+    def _format_apply(
+        self, patch_kw, lonlim, latlim, boundinglat,
+        lonlines, latlines, latmax, lonarray, latarray
+    ):
         """Apply changes to the basemap axes."""
         # Checks
         if (lonlim is not None or latlim is not None
                 or boundinglat is not None):
-            _warn_proplot(f'Got lonlim={lonlim!r}, latlim={latlim!r}, '
-                          f'boundinglat={boundinglat!r}, but you cannot "zoom '
-                          'into" a basemap projection after creating it. '
-                          'Pass proj_kw in your call to subplots '
-                          'with any of the following basemap keywords: '
-                          "'boundinglat', 'llcrnrlon', 'llcrnrlat', "
-                          "'urcrnrlon', 'urcrnrlat', 'llcrnrx', 'llcrnry', "
-                          "'urcrnrx', 'urcrnry', 'width', or 'height'.")
+            _warn_proplot(
+                f'Got lonlim={lonlim!r}, latlim={latlim!r}, '
+                f'boundinglat={boundinglat!r}, but you cannot "zoom into" a '
+                'basemap projection after creating it. Pass proj_kw in your '
+                'call to subplots with any of the following basemap keywords: '
+                "'boundinglat', 'llcrnrlon', 'llcrnrlat', "
+                "'urcrnrlon', 'urcrnrlat', 'llcrnrx', 'llcrnry', "
+                "'urcrnrx', 'urcrnry', 'width', or 'height'."
+            )
 
         # Map boundary
         # * First have to *manually replace* the old boundary by just

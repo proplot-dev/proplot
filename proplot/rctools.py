@@ -448,14 +448,9 @@ RC_LONGNAMES = {
     'rivers.linewidth',
     'subplots.axpad',
     'subplots.axwidth',
-    'subplots.innerspace',
     'subplots.pad',
     'subplots.panelpad',
-    'subplots.panelspace',
     'subplots.panelwidth',
-    'subplots.titlespace',
-    'subplots.xlabspace',
-    'subplots.ylabspace',
     'suptitle.color',
     'suptitle.size',
     'suptitle.weight',
@@ -551,7 +546,8 @@ def _get_synced_params(key, value):
                     mcolors.ListedColormap))
             raise ValueError(
                 f'Invalid cycle name {cycle!r}. Options are: '
-                ', '.join(map(repr, cycles)) + '.')
+                ', '.join(map(repr, cycles)) + '.'
+            )
         if rgbcycle and cycle.lower() == 'colorblind':
             regcolors = colors + [(0.1, 0.1, 0.1)]
         elif mcolors.to_rgb('r') != (1.0, 0.0, 0.0):  # reset
@@ -751,7 +747,8 @@ class rc_configurator(object):
         """Apply settings from the most recent context block."""
         if not self._context:
             raise RuntimeError(
-                f'rc context must be initialized with rc.context().')
+                f'rc object must be initialized with rc.context().'
+            )
         *_, kwargs, cache, restore = self._context[-1]
 
         def _update(rcdict, newdict):
@@ -768,7 +765,8 @@ class rc_configurator(object):
         """Restore settings from the most recent context block."""
         if not self._context:
             raise RuntimeError(
-                f'rc context must be initialized with rc.context().')
+                f'rc object must be initialized with rc.context().'
+            )
         *_, restore = self._context[-1]
         for key, value in restore.items():
             rc_short, rc_long, rc = _get_synced_params(key, value)
@@ -990,10 +988,7 @@ class rc_configurator(object):
         Parameters
         ----------
         props : dict-like
-            Dictionary whose values are names of settings. The values
-            are replaced with the corresponding property only if
-            `~rc_configurator.__getitem__` does not return ``None``. Otherwise,
-            that key, value pair is omitted from the output dictionary.
+            Dictionary whose values are `rc` setting names.
         context : bool, optional
             If ``True``, then each setting that is not found in the
             context mode dictionaries is omitted from the output dictionary.
@@ -1152,7 +1147,8 @@ def ipython_matplotlib(backend=None, fmt=None):
     else:
         raise ValueError(
             f'Invalid inline backend format {fmt!r}. '
-            'Must be string or list thereof.')
+            'Must be string or list thereof.'
+        )
     ipython.magic(f'config InlineBackend.figure_formats = {fmt!r}')
     ipython.magic('config InlineBackend.rc = {}')  # no notebook overrides
     ipython.magic('config InlineBackend.close_figures = True')  # memory issues
