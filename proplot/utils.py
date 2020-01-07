@@ -4,9 +4,9 @@ Simple tools used in various places across this package.
 """
 import re
 import time
-import numpy as np
 import functools
 import warnings
+import numpy as np
 from matplotlib import rcParams
 from numbers import Number, Integral
 try:
@@ -19,12 +19,13 @@ NUMBER = re.compile('^([-+]?[0-9._]+([eE][-+]?[0-9_]+)?)(.*)$')
 
 
 class _benchmark(object):
-    """Context object for benchmarking arbitrary blocks of code."""
+    """Context object for timing arbitrary blocks of code."""
     def __init__(self, message):
         self.message = message
 
     def __enter__(self):
-        self.time = time.perf_counter()
+        if BENCHMARK:
+            self.time = time.perf_counter()
 
     def __exit__(self, *args):
         if BENCHMARK:
@@ -73,8 +74,8 @@ def _counter(func):
 
 
 def _timer(func):
-    """A decorator that prints the time a function takes to execute. See
-    `this link <https://stackoverflow.com/a/1594484/4970632>`__."""
+    """Decorator that prints the time a function takes to execute.
+    See: https://stackoverflow.com/a/1594484/4970632"""
     @functools.wraps(func)
     def decorator(*args, **kwargs):
         if BENCHMARK:
@@ -103,10 +104,10 @@ def _warn_proplot(message):
 
 
 def _notNone(*args, names=None):
-    """Returns the first non-``None`` value, used with keyword arg aliases and
-    for setting default values. Ugly name but clear purpose. Pass the `names`
-    keyword arg to issue warning if multiple args were passed. Must be list
-    of non-empty strings."""
+    """Return the first non-``None`` value. This is used with keyword arg
+    aliases and for setting default values. Ugly name but clear purpose. Pass
+    the `names` keyword arg to issue warning if multiple args were passed. Must
+    be list of non-empty strings."""
     if names is None:
         for arg in args:
             if arg is not None:
@@ -128,17 +129,18 @@ def _notNone(*args, names=None):
                 if name:
                     kwargs[name] = arg
         if len(kwargs) > 1:
-            _warn_proplot(
-                f'Got conflicting or duplicate keyword args, '
-                f'using the first one: {kwargs}'
+            warnings.warn(
+                f'Got conflicting or duplicate keyword args: {kwargs}. '
+                'Using the first one.'
             )
         return first
 
 
 def arange(min_, *args):
-    """Identical to `numpy.arange`, but with inclusive endpoints. For
+    """Identical to `numpy.arange` but with inclusive endpoints. For
     example, ``plot.arange(2,4)`` returns ``np.array([2,3,4])`` instead
-    of ``np.array([2,3])``."""
+    of ``np.array([2,3])``. This command is useful for generating lists of
+    tick locations or colorbar level boundaries."""
     # Optional arguments just like np.arange
     if len(args) == 0:
         max_ = min_
@@ -165,16 +167,18 @@ def arange(min_, *args):
     return np.arange(min_, max_, step)
 
 
-def edges(array, axis=-1):
+def edges(Z, axis=-1):
     """
-    Calculate approximate "edge" values given "center" values. This is used
-    internally to calculate graitule edges when you supply centers to
-    `~matplotlib.axes.Axes.pcolor` or `~matplotlib.axes.Axes.pcolormesh`, and
-    in a few other places.
+    Calculate the approximate "edge" values along an arbitrary axis, given
+    "center" values. This is used internally to calculate graticule edges when
+    you supply centers to `~matplotlib.axes.Axes.pcolor` or
+    `~matplotlib.axes.Axes.pcolormesh` and to calculate colormap levels
+    when you supply centers to any method wrapped by
+    `~proplot.wrappers.cmap_changer`.
 
     Parameters
     ----------
-    array : array-like
+    Z : array-like
         Array of any shape or size. Generally, should be monotonically
         increasing or decreasing along `axis`.
     axis : int, optional
@@ -186,21 +190,16 @@ def edges(array, axis=-1):
     `~numpy.ndarray`
         Array of "edge" coordinates.
     """
-    # Permute axes
-    array = np.asarray(array)
-    array = np.swapaxes(array, axis, -1)
-    # Get edges
-    array = np.concatenate((
-        array[..., :1] - (array[..., 1:2] - array[..., :1]) / 2,
-        (array[..., 1:] + array[..., :-1]) / 2,
-        array[..., -1:] + (array[..., -1:] - array[..., -2:-1]) / 2,
+    Z = np.swapaxes(Z, axis, -1)
+    Z = np.concatenate((
+        Z[..., :1] - (Z[..., 1] - Z[..., 0]) / 2,
+        (Z[..., 1:] + Z[..., :-1]) / 2,
+        Z[..., -1:] + (Z[..., -1] - Z[..., -2]) / 2,
     ), axis=-1)
-    # Permute back and return
-    array = np.swapaxes(array, axis, -1)
-    return array
+    return np.swapaxes(Z, axis, -1)
 
 
-def edges2d(z):
+def edges2d(Z):
     """
     Like `edges` but for 2d arrays.
     The size of both axes are increased by one. This is used
@@ -209,7 +208,7 @@ def edges2d(z):
 
     Parameters
     ----------
-    z : array-like
+    Z : array-like
         A 2d array.
 
     Returns
@@ -217,23 +216,24 @@ def edges2d(z):
     `~numpy.ndarray`
         Array of "edge" coordinates.
     """
-    z = np.asarray(z)
-    if z.ndim != 2:
-        raise ValueError(f'Input must be a 2d array, but got {z.ndim}d.')
-    ny, nx = z.shape
-    zzb = np.zeros((ny + 1, nx + 1))
+    Z = np.asarray(Z)
+    if Z.ndim != 2:
+        raise ValueError(f'Input must be a 2d array, but got {Z.ndim}d.')
+    ny, nx = Z.shape
+    Zb = np.zeros((ny + 1, nx + 1))
     # Inner
-    zzb[1:-1, 1:-1] = 0.25 * (
-        z[1:, 1:] + z[:-1, 1:] + z[1:, :-1] + z[:-1, :-1])
+    Zb[1:-1, 1:-1] = 0.25 * (
+        Z[1:, 1:] + Z[:-1, 1:] + Z[1:, :-1] + Z[:-1, :-1]
+    )
     # Lower and upper
-    zzb[0] += edges(1.5 * z[0] - 0.5 * z[1])
-    zzb[-1] += edges(1.5 * z[-1] - 0.5 * z[-2])
+    Zb[0] += edges(1.5 * Z[0] - 0.5 * Z[1])
+    Zb[-1] += edges(1.5 * Z[-1] - 0.5 * Z[-2])
     # Left and right
-    zzb[:, 0] += edges(1.5 * z[:, 0] - 0.5 * z[:, 1])
-    zzb[:, -1] += edges(1.5 * z[:, -1] - 0.5 * z[:, -2])
+    Zb[:, 0] += edges(1.5 * Z[:, 0] - 0.5 * Z[:, 1])
+    Zb[:, -1] += edges(1.5 * Z[:, -1] - 0.5 * Z[:, -2])
     # Corners
-    zzb[[0, 0, -1, -1], [0, -1, -1, 0]] *= 0.5
-    return zzb
+    Zb[[0, 0, -1, -1], [0, -1, -1, 0]] *= 0.5
+    return Zb
 
 
 def units(value, units='in', axes=None, figure=None, width=True):
@@ -344,7 +344,7 @@ def units(value, units='in', axes=None, figure=None, width=True):
         elif not isinstance(val, str):
             raise ValueError(
                 f'Size spec must be string or number or list thereof. '
-                'Got {value!r}.'
+                f'Got {value!r}.'
             )
         regex = NUMBER.match(val)
         if not regex:
