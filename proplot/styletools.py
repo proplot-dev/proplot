@@ -146,7 +146,7 @@ CMAPS_TABLE = {
     ),
     'Other': (
         'binary', 'bwr', 'brg',  # appear to be custom matplotlib
-        'cubehelix', 'wistia', 'CMRmap',  # individually released
+        'cubehelix', 'Wistia', 'CMRmap',  # individually released
         'seismic', 'terrain', 'nipy_spectral',  # origin ambiguous
         'tab10', 'tab20', 'tab20b', 'tab20c',  # merged colormap cycles
     )
@@ -3193,9 +3193,13 @@ def _draw_bars(names, *, source, unknown='User', length=4.0, width=0.2):
     cmapdict = {}
     names_all = list(map(str.lower, names))
     names_known = list(map(str.lower, sum(map(list, source.values()), [])))
-    cmapdict[unknown] = [name for name in names if name not in names_known]
+    names_unknown = [name for name in names if name not in names_known]
+    if names_unknown:
+        cmapdict[unknown] = names_unknown
     for cat, names in source.items():
-        cmapdict[cat] = [name for name in names if name.lower() in names_all]
+        names_cat = [name for name in names if name.lower() in names_all]
+        if names_cat:
+            cmapdict[cat] = names_cat
 
     # Draw figure
     from . import subplots
@@ -3209,8 +3213,6 @@ def _draw_bars(names, *, source, unknown='User', length=4.0, width=0.2):
     a = np.linspace(0, 1, 257).reshape(1, -1)
     a = np.vstack((a, a))
     for cat, names in cmapdict.items():
-        if not names:
-            continue
         nheads += 1
         for imap, name in enumerate(names):
             iax += 1
@@ -3695,9 +3697,10 @@ def show_fonts(*args, size=12, text=None):
 
 
 # Apply custom changes
-mcm.cmap_d['Grays'] = mcm.cmap_d.pop('Greys', None)  # 'Murica (and consistency with registered colors)  # noqa
-mcm.cmap_d['Spectral'] = mcm.cmap_d['Spectral'].reversed(
-    name='Spectral')  # make spectral go from 'cold' to 'hot'
+if 'Greys' in mcm.cmap_d:  # 'Murica (and consistency with registered colors)
+    mcm.cmap_d['Grays'] = mcm.cmap_d.pop('Greys')
+if 'Spectral' in mcm.cmap_d:  # make spectral go from 'cold' to 'hot'
+    mcm.cmap_d['Spectral'] = mcm.cmap_d['Spectral'].reversed(name='Spectral')
 for _name in CMAPS_TABLE['Matplotlib originals']:  # initialize as empty lists
     if _name == 'twilight_shifted':
         mcm.cmap_d.pop(_name, None)
