@@ -894,54 +894,6 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         # Return copy
         return self.updated(name=name, segmentdata=segmentdata, **kwargs)
 
-    @staticmethod
-    def from_list(name, colors, ratios=None, **kwargs):
-        """
-        Make a `LinearSegmentedColormap` from a list of colors.
-
-        Parameters
-        ----------
-        name : str
-            The colormap name.
-        colors : list of color-spec or (float, color-spec) tuples, optional
-            If list of RGB[A] tuples or color strings, the colormap transitions
-            evenly from ``colors[0]`` at the left-hand side to
-            ``colors[-1]`` at the right-hand side.
-
-            If list of (float, color-spec) tuples, the float values are the
-            coordinate of each transition and must range from 0 to 1. This
-            can be used to divide  the colormap range unevenly.
-        ratios : list of float, optional
-            Relative extents of each color transition. Must have length
-            ``len(colors) - 1``. Larger numbers indicate a slower
-            transition, smaller numbers indicate a faster transition.
-
-        Other parameters
-        ----------------
-        **kwargs
-            Passed to `LinearSegmentedColormap`.
-
-        Returns
-        -------
-        `LinearSegmentedColormap`
-            The colormap.
-        """
-        # Get coordinates
-        coords = None
-        if not np.iterable(colors):
-            raise ValueError(f'Colors must be iterable, got colors={colors!r}')
-        if (np.iterable(colors[0]) and len(colors[0]) == 2
-                and not isinstance(colors[0], str)):
-            coords, colors = zip(*colors)
-        colors = [to_rgb(color, alpha=True) for color in colors]
-
-        # Build segmentdata
-        keys = ('red', 'green', 'blue', 'alpha')
-        cdict = {}
-        for key, values in zip(keys, zip(*colors)):
-            cdict[key] = _make_segmentdata_array(values, coords, ratios)
-        return LinearSegmentedColormap(name, cdict, **kwargs)
-
     def punched(self, cut=None, name=None, **kwargs):
         """
         Return a version of the colormap with the center "punched out".
@@ -1238,6 +1190,77 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         cmap._rgba_over = self._rgba_over
         return cmap
 
+    @staticmethod
+    def from_file(path):
+        """
+        Load colormap from a file.
+        Valid file extensions are described in the below table.
+
+        =====================  =============================================================================================================================================================================================================
+        Extension              Description
+        =====================  =============================================================================================================================================================================================================
+        ``.hex``               List of HEX strings in any format (comma-separated, separate lines, with double quotes... anything goes).'ColorBlind10':
+        ``.xml``               XML files with ``<Point .../>`` entries specifying ``x``, ``r``, ``g``, ``b``, and optionally, ``a`` values, where ``x`` is the colormap coordinate and the rest are the RGB and opacity (or "alpha") values.
+        ``.rgb``               3-column table delimited by commas or consecutive spaces, each column indicating red, blue and green color values.
+        ``.xrgb``              As with ``.rgb``, but with 4 columns. The first column indicates the colormap coordinate.
+        ``.rgba``, ``.xrgba``  As with ``.rgb``, ``.xrgb``, but with a trailing opacity (or "alpha") column.
+        =====================  =============================================================================================================================================================================================================
+
+        Parameters
+        ----------
+        path : str
+            The file path.
+        """  # noqa
+        return _from_file(path, listed=False)
+
+    @staticmethod
+    def from_list(name, colors, ratios=None, **kwargs):
+        """
+        Make a `LinearSegmentedColormap` from a list of colors.
+
+        Parameters
+        ----------
+        name : str
+            The colormap name.
+        colors : list of color-spec or (float, color-spec) tuples, optional
+            If list of RGB[A] tuples or color strings, the colormap transitions
+            evenly from ``colors[0]`` at the left-hand side to
+            ``colors[-1]`` at the right-hand side.
+
+            If list of (float, color-spec) tuples, the float values are the
+            coordinate of each transition and must range from 0 to 1. This
+            can be used to divide  the colormap range unevenly.
+        ratios : list of float, optional
+            Relative extents of each color transition. Must have length
+            ``len(colors) - 1``. Larger numbers indicate a slower
+            transition, smaller numbers indicate a faster transition.
+
+        Other parameters
+        ----------------
+        **kwargs
+            Passed to `LinearSegmentedColormap`.
+
+        Returns
+        -------
+        `LinearSegmentedColormap`
+            The colormap.
+        """
+        # Get coordinates
+        coords = None
+        if not np.iterable(colors):
+            raise ValueError(f'Colors must be iterable, got colors={colors!r}')
+        if (np.iterable(colors[0]) and len(colors[0]) == 2
+                and not isinstance(colors[0], str)):
+            coords, colors = zip(*colors)
+        colors = [to_rgb(color, alpha=True) for color in colors]
+
+        # Build segmentdata
+        keys = ('red', 'green', 'blue', 'alpha')
+        cdict = {}
+        for key, values in zip(keys, zip(*colors)):
+            cdict[key] = _make_segmentdata_array(values, coords, ratios)
+        return LinearSegmentedColormap(name, cdict, **kwargs)
+
 
 class ListedColormap(mcolors.ListedColormap, _Colormap):
     r"""
@@ -1409,6 +1432,29 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         cmap._rgba_under = self._rgba_under
         cmap._rgba_over = self._rgba_over
         return cmap
+
+    @staticmethod
+    def from_file(path):
+        """
+        Load color cycle from a file.
+        Valid file extensions are described in the below table.
+
+        =====================  =============================================================================================================================================================================================================
+        Extension              Description
+        =====================  =============================================================================================================================================================================================================
+        ``.hex``               List of HEX strings in any format (comma-separated, separate lines, with double quotes... anything goes).'ColorBlind10':
+        ``.xml``               XML files with ``<Point .../>`` entries specifying ``x``, ``r``, ``g``, ``b``, and optionally, ``a`` values, where ``x`` is the colormap coordinate and the rest are the RGB and opacity (or "alpha") values.
+        ``.rgb``               3-column table delimited by commas or consecutive spaces, each column indicating red, blue and green color values.
+        ``.xrgb``              As with ``.rgb``, but with 4 columns. The first column indicates the colormap coordinate.
+        ``.rgba``, ``.xrgba``  As with ``.rgb``, ``.xrgb``, but with a trailing opacity (or "alpha") column.
+        =====================  =============================================================================================================================================================================================================
+
+        Parameters
+        ----------
+        path : str
+            The file path.
+        """  # noqa
+        return _from_file(path, listed=True)
 
 
 class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
@@ -2098,12 +2144,16 @@ def Colormap(
         # TODO: Document how 'listmode' also affects loaded files
         if isinstance(cmap, str):
             if '.' in cmap:
-                if os.path.isfile(os.path.expanduser(cmap)):
-                    tmp, cmap = _load_cmap_cycle(
-                        cmap, cmap=(listmode != 'listed'))
-                else:
+                isfile = os.path.isfile(os.path.expanduser(cmap))
+                if isfile:
+                    if listmode == 'listed':
+                        cmap = ListedColormap.from_file(cmap)
+                    else:
+                        cmap = LinearSegmentedColormap.from_file(cmap)
+                if not isfile or not cmap:
                     raise FileNotFoundError(
-                        f'Colormap or cycle file {cmap!r} not found.'
+                        f'Colormap or cycle file {cmap!r} not found '
+                        'or failed to load.'
                     )
             else:
                 try:
@@ -2742,19 +2792,18 @@ def _get_data_paths(dirname):
     ]
 
 
-def _load_cmap_cycle(filename, cmap=False):
-    """
-    Helper function that reads generalized colormap and color cycle files.
-    """
-    N = rcParams['image.lut']  # query this when register function is called
+def _from_file(filename, listed=False):
+    """Read generalized colormap and color cycle files."""
     filename = os.path.expanduser(filename)
     if os.path.isdir(filename):  # no warning
-        return None, None
+        return
 
     # Directly read segmentdata json file
     # NOTE: This is special case! Immediately return name and cmap
+    N = rcParams['image.lut']
     name, ext = os.path.splitext(os.path.basename(filename))
     ext = ext[1:]
+    cmap = None
     if ext == 'json':
         with open(filename, 'r') as f:
             data = json.load(f)
@@ -2762,11 +2811,11 @@ def _load_cmap_cycle(filename, cmap=False):
         for key in ('cyclic', 'gamma', 'gamma1', 'gamma2', 'space'):
             kw[key] = data.pop(key, None)
         if 'red' in data:
-            data = LinearSegmentedColormap(name, data, N=N)
+            cmap = LinearSegmentedColormap(name, data, N=N)
         else:
-            data = PerceptuallyUniformColormap(name, data, N=N, **kw)
+            cmap = PerceptuallyUniformColormap(name, data, N=N, **kw)
         if name[-2:] == '_r':
-            data = data.reversed(name[:-2])
+            cmap = cmap.reversed(name[:-2])
 
     # Read .rgb, .rgba, .xrgb, and .xrgba files
     elif ext in ('txt', 'rgb', 'xrgb', 'rgba', 'xrgba'):
@@ -2781,14 +2830,16 @@ def _load_cmap_cycle(filename, cmap=False):
         except ValueError:
             _warn_proplot(
                 f'Failed to load {filename!r}. Expected a table of comma '
-                'or space-separated values.')
+                'or space-separated values.'
+            )
             return None, None
         # Build x-coordinates and standardize shape
         data = np.array(data)
         if data.shape[1] != len(ext):
             _warn_proplot(
                 f'Failed to load {filename!r}. Got {data.shape[1]} columns, '
-                f'but expected {len(ext)}.')
+                f'but expected {len(ext)}.'
+            )
             return None, None
         if ext[0] != 'x':  # i.e. no x-coordinates specified explicitly
             x = np.linspace(0, 1, data.shape[0])
@@ -2803,20 +2854,16 @@ def _load_cmap_cycle(filename, cmap=False):
             doc = ElementTree.parse(filename)
         except IOError:
             _warn_proplot(f'Failed to load {filename!r}.')
-            return None, None
+            return
         x, data = [], []
         for s in doc.getroot().findall('.//Point'):
             # Verify keys
             if any(key not in s.attrib for key in 'xrgb'):
                 _warn_proplot(
                     f'Failed to load {filename!r}. Missing an x, r, g, or b '
-                    'specification inside one or more <Point> tags.')
-                return None, None
-            if 'o' in s.attrib and 'a' in s.attrib:
-                _warn_proplot(
-                    f'Failed to load {filename!r}. Contains '
-                    'ambiguous opacity key.')
-                return None, None
+                    'specification inside one or more <Point> tags.'
+                )
+                return
             # Get data
             color = []
             for key in 'rgbao':  # o for opacity
@@ -2826,11 +2873,13 @@ def _load_cmap_cycle(filename, cmap=False):
             x.append(float(s.attrib['x']))
             data.append(color)
         # Convert to array
-        if not all(len(data[0]) == len(color) for color in data):
+        if not all(len(data[0]) == len(color)
+                   and len(color) in (3, 4) for color in data):
             _warn_proplot(
-                f'File {filename!r} has some points with alpha channel '
-                'specified, some without.')
-            return None, None
+                f'Failed to load {filename!r}. Unexpected number of channels '
+                'or mixed channels across <Point> tags.'
+            )
+            return
 
     # Read hex strings
     elif ext == 'hex':
@@ -2839,24 +2888,22 @@ def _load_cmap_cycle(filename, cmap=False):
         data = re.findall('#[0-9a-fA-F]{6}', string)  # list of strings
         if len(data) < 2:
             _warn_proplot(
-                f'Failed to load {filename!r}. Hex strings not found.')
-            return None, None
+                f'Failed to load {filename!r}. Hex strings not found.'
+            )
+            return
         # Convert to array
         x = np.linspace(0, 1, len(data))
         data = [to_rgb(color) for color in data]
     else:
         _warn_proplot(
-            f'Colormap or cycle file {filename!r} has unknown extension.')
-        return None, None
+            f'Colormap or cycle file {filename!r} has unknown extension.'
+        )
+        return
 
     # Standardize and reverse if necessary to cmap
     # TODO: Document the fact that filenames ending in _r return a reversed
     # version of the colormap stored in that file.
-    if isinstance(data, LinearSegmentedColormap):
-        if not cmap:
-            _warn_proplot(f'Failed to load {filename!r} as color cycle.')
-            return None, None
-    else:
+    if not cmap:
         x, data = np.array(x), np.array(data)
         # for some reason, some aren't in 0-1 range
         x = (x - x.min()) / (x.max() - x.min())
@@ -2866,12 +2913,14 @@ def _load_cmap_cycle(filename, cmap=False):
             name = name[:-2]
             data = data[::-1, :]
             x = 1 - x[::-1]
-        if cmap:
+        if listed:
+            cmap = ListedColormap(data, name, N=len(data))
+        else:
             data = [(x, color) for x, color in zip(x, data)]
-            data = LinearSegmentedColormap.from_list(name, data, N=N)
+            cmap = LinearSegmentedColormap.from_list(name, data, N=N)
 
     # Return colormap or data
-    return name, data
+    return cmap
 
 
 @_timer
