@@ -2465,7 +2465,7 @@ property-spec, optional
         'edgecolor': 'axes.edgecolor',
         'facecolor': 'axes.facecolor',
         'alpha': 'legend.framealpha',
-    }, cache=False)
+    })
     for key in (*outline,):
         if key != 'linewidth':
             if kwargs.get(key, None):
@@ -2950,7 +2950,6 @@ or colormap-spec
             kw['color'] = edgecolor
         if linewidth:
             kw['width'] = linewidth
-        print('hi!', kw)
         axis.set_tick_params(which=which, **kw)
     axis.set_ticks_position(ticklocation)
 
