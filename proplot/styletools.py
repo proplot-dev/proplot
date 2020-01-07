@@ -1835,17 +1835,23 @@ class CmapDict(dict):
             if not isinstance(key, str):
                 raise KeyError(f'Invalid key {key}. Must be string.')
             self.__setitem__(key, value, sort=False)
-        for record in (cmaps, cycles):
-            record[:] = sorted(record)
+        try:
+            for record in (cmaps, cycles):
+                record[:] = sorted(record)
+        except NameError:
+            pass
 
     def __delitem__(self, key):
         """Delete the item from the list records."""
         super().__delitem__(self, key)
-        for record in (cmaps, cycles):
-            try:
-                record.remove(key)
-            except ValueError:
-                pass
+        try:
+            for record in (cmaps, cycles):
+                try:
+                    record.remove(key)
+                except ValueError:
+                    pass
+        except NameError:
+            pass
 
     def __getitem__(self, key):
         """Retrieve the colormap associated with the sanitized key name. The
@@ -1904,10 +1910,13 @@ class CmapDict(dict):
                 'matplotlib.colors.LinearSegmentedColormap.'
             )
         key = self._sanitize_key(key, mirror=False)
-        record = cycles if isinstance(item, ListedColormap) else cmaps
-        record.append(key)
-        if sort:
-            record[:] = sorted(record)
+        try:
+            record = cycles if isinstance(item, ListedColormap) else cmaps
+            record.append(key)
+            if sort:
+                record[:] = sorted(record)
+        except NameError:
+            pass
         return super().__setitem__(key, item)
 
     def __contains__(self, item):
@@ -1950,11 +1959,14 @@ class CmapDict(dict):
     def pop(self, key, *args):
         """Pop the sanitized colormap name."""
         key = self._sanitize_key(key, mirror=True)
-        for record in (cmaps, cycles):
-            try:
-                record.remove(key)
-            except ValueError:
-                pass
+        try:
+            for record in (cmaps, cycles):
+                try:
+                    record.remove(key)
+                except ValueError:
+                    pass
+        except NameError:
+            pass
         return super().pop(key, *args)
 
     def update(self, *args, **kwargs):
