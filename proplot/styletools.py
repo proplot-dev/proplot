@@ -2865,97 +2865,45 @@ def _load_cmap_cycle(filename, cmap=False):
 @_timer
 def register_cmaps():
     """
-    Add colormaps packaged with ProPlot or saved to the ``~/.proplot/cmaps``
-    folder. This is called on import. Maps are registered according to their
-    filenames -- for example, ``name.xyz`` will be registered as ``'name'``.
+    Register colormaps packaged with ProPlot or saved to the
+    ``~/.proplot/cmaps`` folder. This is called on import. Maps are registered
+    according to their filenames -- for example, ``name.xyz`` will be
+    registered as ``'name'``.
 
-    This is called on import. Use `show_cmaps` to generate a table of the
-    registered colormaps. Valid extensions are described in the below table.
-
-    =====================  =============================================================================================================================================================================================================
-    Extension              Description
-    =====================  =============================================================================================================================================================================================================
-    ``.hex``               List of HEX strings in any format (comma-separated, separate lines, with double quotes... anything goes).
-    ``.xml``               XML files with ``<Point .../>`` entries specifying ``x``, ``r``, ``g``, ``b``, and optionally, ``a`` values, where ``x`` is the colormap coordinate and the rest are the RGB and opacity (or "alpha") values.
-    ``.rgb``               3-column table delimited by commas or consecutive spaces, each column indicating red, blue and green color values.
-    ``.xrgb``              As with ``.rgb``, but with 4 columns. The first column indicates the colormap coordinate.
-    ``.rgba``, ``.xrgba``  As with ``.rgb``, ``.xrgb``, but with a trailing opacity (or "alpha") column.
-    =====================  =============================================================================================================================================================================================================
-    """  # noqa
-    # Turn original matplotlib maps from ListedColormaps
-    # to LinearSegmentedColormaps. It makes zero sense to me that they are
-    # stored as ListedColormaps.
-    for name in CMAPS_CATEGORIES['Matplotlib originals']:
-        if name == 'twilight_shifted':  # CmapDict does this automatically
-            mcm.cmap_d.pop(name, None)
-        else:
-            cmap = mcm.cmap_d.get(name, None)
-            if isinstance(cmap, ListedColormap):
-                mcm.cmap_d.pop(name, None)
-                mcm.cmap_d[name] = LinearSegmentedColormap.from_list(
-                    name, cmap.colors, cyclic=(name == 'twilight'))
-
-    # Misc tasks
-    # to be consistent with registered color names (also 'Murica)
-    cmap = mcm.cmap_d.pop('Greys', None)
-    if cmap is not None:
-        mcm.cmap_d['Grays'] = cmap
-    for name in ('Spectral',):
-        mcm.cmap_d[name] = mcm.cmap_d[name].reversed(
-            name=name)  # make spectral go from 'cold' to 'hot'
-
-    # Remove gross cmaps (strong-arm user into using the better ones)
-    for name in CMAPS_DELETE:
-        mcm.cmap_d.pop(name, None)
-
-    # Add colormaps from ProPlot and user directories
-    for path in _get_data_paths('cmaps'):
+    For a table of valid extensions, see `LinearSegmentedColormap.from_file`.
+    To visualize the registered colormaps, use `show_cmaps`.
+    """
+    for i, path in enumerate(_get_data_paths('cmaps')):
         for filename in sorted(glob.glob(os.path.join(path, '*'))):
-            name, cmap = _load_cmap_cycle(filename, cmap=True)
-            if name is None:
+            cmap = LinearSegmentedColormap.from_file(filename)
+            if not cmap:
                 continue
-            mcm.cmap_d[name] = cmap
-    # Add cyclic attribute
-    for name, cmap in mcm.cmap_d.items():
-        # add hidden attribute used by BinNorm
-        cmap._cyclic = (name.lower() in (
-            'twilight', 'twilight_shifted', 'phase', 'graycycle'))
+            if i == 0 and cmap.name.lower() in ('phase', 'graycycle'):
+                cmap._cyclic = True
+            mcm.cmap_d[cmap.name] = cmap
 
 
 @_timer
 def register_cycles():
     """
-    Add color cycles packaged with ProPlot or saved to the
+    Register color cycles packaged with ProPlot or saved to the
     ``~/.proplot/cycles`` folder. This is called on import. Cycles are
     registered according to their filenames -- for example, ``name.hex`` will
     be registered under the name ``'name'`` as a
     `~matplotlib.colors.ListedColormap` map (see `Cycle` for details).
 
-    This is called on import. Use `show_cycles` to generate a table of the
-    registered cycles. For valid file formats, see `register_cmaps`.
+    For a table of valid extensions, see `ListedColormap.from_file`.
+    To visualize the registered colormaps, use `show_cmaps`.
     """
-    # Remove gross cycles, change the names of some others
-    for name in CYCLES_DELETE:
-        mcm.cmap_d.pop(name, None)
-    for (name1, name2) in CYCLES_RENAME:
-        cycle = mcm.cmap_d.pop(name1, None)
-        if cycle:
-            mcm.cmap_d[name2] = cycle
-
-    # Read cycles from directories
-    cycles_load = {}
     for path in _get_data_paths('cycles'):
         for filename in sorted(glob.glob(os.path.join(path, '*'))):
-            name, data = _load_cmap_cycle(filename, cmap=False)
-            if name is None:
+            cmap = ListedColormap.from_file(filename)
+            if not cmap:
                 continue
-            cycles_load[name] = data
-
-    # Register cycles as ListedColormaps
-    for name, colors in {**CYCLES_PRESET, **cycles_load}.items():
-        cmap = ListedColormap(colors, name=name)
-        cmap.colors = [to_rgb(color, alpha=True) for color in cmap.colors]
-        mcm.cmap_d[name] = cmap
+            if isinstance(cmap, LinearSegmentedColormap):
+                cmap = ListedColormap(colors(cmap), name=cmap.name)
+            mcm.cmap_d[cmap.name] = cmap
+            cycles.append(cmap.name)
 
 
 @_timer
@@ -2977,7 +2925,7 @@ def register_colors(nmax=np.inf):
     colors.clear()
     base = {}
     base.update(mcolors.BASE_COLORS)
-    base.update(COLORS_BASE)
+    base.update(COLORS_BASE)  # full names
     mcolors.colorConverter.colors.clear()  # clean out!
     mcolors.colorConverter.cache.clear()  # clean out!
     for name, dict_ in (('base', base), ('css', mcolors.CSS4_COLORS)):
@@ -3005,7 +2953,8 @@ def register_colors(nmax=np.inf):
             if not all(len(pair) == 2 for pair in pairs):
                 raise RuntimeError(
                     f'Invalid color names file {file!r}. '
-                    f'Every line must be formatted as "name: color".')
+                    f'Every line must be formatted as "name: color".'
+                )
 
             # Categories for which we add *all* colors
             if cat == 'open' or i == 1:
@@ -3048,9 +2997,9 @@ def register_colors(nmax=np.inf):
 
 @_timer
 def register_fonts():
-    """Adds fonts packaged with ProPlot or saved to the ``~/.proplot/fonts``
-    folder. Also deletes the font cache, which may cause delays.
-    Detects ``.ttf`` and ``.otf`` files -- see `this link \
+    """Add fonts packaged with ProPlot or saved to the ``~/.proplot/fonts``
+    folder, if they are not already added. Detects ``.ttf`` and ``.otf`` files
+    -- see `this link \
 <https://gree2.github.io/python/2015/04/27/python-change-matplotlib-font-on-mac>`__
     for a guide on converting various other font file types to ``.ttf`` and
     ``.otf`` for use with matplotlib."""
@@ -3620,6 +3569,32 @@ def show_fonts(*args, size=12, text=None):
                 weight='normal', ha='left', va='center')
     return f
 
+
+# Apply custom changes
+mcm.cmap_d['Grays'] = mcm.cmap_d.pop('Greys', None)  # 'Murica (and consistency with registered colors)  # noqa
+mcm.cmap_d['Spectral'] = mcm.cmap_d['Spectral'].reversed(
+    name='Spectral')  # make spectral go from 'cold' to 'hot'
+for _name in CMAPS_TABLE['Matplotlib originals']:  # initialize as empty lists
+    if _name == 'twilight_shifted':
+        mcm.cmap_d.pop(_name, None)
+    else:
+        _cmap = mcm.cmap_d.get(_name, None)
+        if _cmap and isinstance(_cmap, mcolors.ListedColormap):
+            mcm.cmap_d.pop(_name, None)  # removes the map from cycles list!
+            mcm.cmap_d[_name] = LinearSegmentedColormap.from_list(
+                _name, _cmap.colors, cyclic=('twilight' in _name))
+for _cat in ('MATLAB', 'GNUplot', 'GIST', 'Other'):
+    for _name in CMAPS_TABLE[_cat]:
+        mcm.cmap_d.pop(_name, None)
+
+# Initialize customization folders and files
+_rc_folder = os.path.join(os.path.expanduser('~'), '.proplot')
+if not os.path.isdir(_rc_folder):
+    os.mkdir(_rc_folder)
+for _rc_sub in ('cmaps', 'cycles', 'colors', 'fonts'):
+    _rc_sub = os.path.join(_rc_folder, _rc_sub)
+    if not os.path.isdir(_rc_sub):
+        os.mkdir(_rc_sub)
 
 #: List of registered colormap names.
 cmaps = []  # track *downloaded* colormaps
