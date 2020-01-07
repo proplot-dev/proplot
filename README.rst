@@ -8,26 +8,19 @@ A comprehensive, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper fo
 Installation
 ============
 
-ProPlot can be installed with `pip <https://pypi.org>`__ or `conda <https://anaconda-project.readthedocs.io/en/latest/>`__:
+ProPlot is published on `PyPi <https://pypi.org/project/proplot/>`__ and `conda-forge <https://conda-forge.org>`__. It can be installed with ``pip`` or ``conda`` as follows:
 
 .. code-block:: bash
 
    pip install proplot
-
-.. code-block:: bash
-
    conda install -c conda-forge proplot
 
-An existing installation of ProPlot can be upgraded to the latest version with:
+Likewise, an existing installation of ProPlot can be upgraded to the latest version with:
 
 .. code-block:: bash
 
    pip install --upgrade proplot
-
-.. code-block:: bash
-
    conda upgrade proplot
-
 
 If you used ``pip install git+https://github.com/lukelbd/proplot.git`` to install ProPlot before it was released on PyPi, you may need to run ``pip uninstall proplot`` before upgrading.
 To install a development version of ProPlot, you can use this same method, or clone the repository and run ``pip install --upgrade .`` inside the ``proplot`` folder.

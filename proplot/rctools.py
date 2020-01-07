@@ -9,8 +9,8 @@ See :ref:`Configuring proplot` for details.
 import re
 import os
 import yaml
-import cycler
 import numpy as np
+import cycler
 import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
 from matplotlib import style, rcParams
@@ -55,7 +55,7 @@ defaultParamsShort = {
     'innerborders': False,
     'lakes': False,
     'land': False,
-    'large': 9,
+    'large': 10,
     'linewidth': 0.6,
     'lut': 256,
     'margin': 0.0,
@@ -66,7 +66,7 @@ defaultParamsShort = {
     'rgbcycle': False,
     'rivers': False,
     'share': 3,
-    'small': 8,
+    'small': 9,
     'span': True,
     'tickdir': 'out',
     'ticklen': 4.0,
@@ -169,7 +169,6 @@ defaultParams = {
     'axes.xmargin': 0.0,
     'axes.ymargin': 0.0,
     'figure.autolayout': False,
-    'figure.dpi': 90,
     'figure.facecolor': '#f2f2f2',
     'figure.max_open_warning': 0,
     'figure.titleweight': 'bold',
@@ -449,14 +448,9 @@ RC_LONGNAMES = {
     'rivers.linewidth',
     'subplots.axpad',
     'subplots.axwidth',
-    'subplots.innerspace',
     'subplots.pad',
     'subplots.panelpad',
-    'subplots.panelspace',
     'subplots.panelwidth',
-    'subplots.titlespace',
-    'subplots.xlabspace',
-    'subplots.ylabspace',
     'suptitle.color',
     'suptitle.size',
     'suptitle.weight',
@@ -493,7 +487,7 @@ RC_CATEGORIES = {
 def _to_points(key, value):
     """Convert certain rc keys to the units "points"."""
     # See: https://matplotlib.org/users/customizing.html, all props matching
-    # the below strings use the units 'points', and custom categories are in
+    # the below strings use the units 'points', except custom categories!
     if (isinstance(value, str)
             and key.split('.')[0] not in ('colorbar', 'subplots')
             and re.match('^.*(width|space|size|pad|len|small|large)$', key)):
@@ -536,15 +530,6 @@ def _get_synced_params(key, value):
     if '.' in key:
         pass
 
-    # Special ipython settings
-    # TODO: Put this inside __setitem__?
-    elif key == 'matplotlib':
-        ipython_matplotlib(value)
-    elif key == 'autosave':
-        ipython_autosave(value)
-    elif key == 'autoreload':
-        ipython_autoreload(value)
-
     # Cycler
     elif key in ('cycle', 'rgbcycle'):
         if key == 'rgbcycle':
@@ -561,7 +546,8 @@ def _get_synced_params(key, value):
                     mcolors.ListedColormap))
             raise ValueError(
                 f'Invalid cycle name {cycle!r}. Options are: '
-                ', '.join(map(repr, cycles)) + '.')
+                ', '.join(map(repr, cycles)) + '.'
+            )
         if rgbcycle and cycle.lower() == 'colorblind':
             regcolors = colors + [(0.1, 0.1, 0.1)]
         elif mcolors.to_rgb('r') != (1.0, 0.0, 0.0):  # reset
@@ -749,15 +735,20 @@ class rc_configurator(object):
                     raise err
             for key, value in (data or {}).items():
                 try:
-                    self[key] = value
+                    rc_short, rc_long, rc = _get_synced_params(key, value)
                 except KeyError:
                     raise RuntimeError(f'{file!r} has invalid key {key!r}.')
+                else:
+                    rcParamsShort.update(rc_short)
+                    rcParamsLong.update(rc_long)
+                    rcParams.update(rc)
 
     def __enter__(self):
         """Apply settings from the most recent context block."""
         if not self._context:
             raise RuntimeError(
-                f'rc context must be initialized with rc.context().')
+                f'rc object must be initialized with rc.context().'
+            )
         *_, kwargs, cache, restore = self._context[-1]
 
         def _update(rcdict, newdict):
@@ -774,10 +765,14 @@ class rc_configurator(object):
         """Restore settings from the most recent context block."""
         if not self._context:
             raise RuntimeError(
-                f'rc context must be initialized with rc.context().')
+                f'rc object must be initialized with rc.context().'
+            )
         *_, restore = self._context[-1]
         for key, value in restore.items():
-            self[key] = value
+            rc_short, rc_long, rc = _get_synced_params(key, value)
+            rcParamsShort.update(rc_short)
+            rcParamsLong.update(rc_long)
+            rcParams.update(rc)
         del self._context[-1]
 
     def __delitem__(self, *args):
@@ -814,8 +809,14 @@ class rc_configurator(object):
 
     def __setitem__(self, key, value):
         """Modify an `rcParams \
-<https://matplotlib.org/users/customizing.html>`__,
+<https://matplotlibcorg/users/customizing.html>`__,
         :ref:`rcParamsLong`, and :ref:`rcParamsShort` setting(s)."""
+        if key == 'matplotlib':
+            return ipython_matplotlib(value)
+        elif key == 'autosave':
+            return ipython_autosave(value)
+        elif key == 'autoreload':
+            return ipython_autoreload(value)
         rc_short, rc_long, rc = _get_synced_params(key, value)
         rcParamsShort.update(rc_short)
         rcParamsLong.update(rc_long)
@@ -848,7 +849,7 @@ class rc_configurator(object):
         else:
             return None
 
-    def category(self, cat, *, context=False):
+    def category(self, cat, *, trimcat=True, context=False):
         """
         Return a dictionary of settings beginning with the substring
         ``cat + '.'``.
@@ -856,7 +857,10 @@ class rc_configurator(object):
         Parameters
         ----------
         cat : str, optional
-            The `rc` settings category.
+            The `rc` setting category.
+        trimcat : bool, optional
+            Whether to trim ``cat`` from the key names in the output
+            dictionary. Default is ``True``.
         context : bool, optional
             If ``True``, then each category setting that is not found in the
             context mode dictionaries is omitted from the output dictionary.
@@ -865,16 +869,19 @@ class rc_configurator(object):
         if cat not in RC_CATEGORIES:
             raise ValueError(
                 f'Invalid rc category {cat!r}. Valid categories are '
-                ', '.join(map(repr, RC_CATEGORIES)) + '.')
+                ', '.join(map(repr, RC_CATEGORIES)) + '.'
+            )
         kw = {}
         mode = 0 if not context else None
         for rcdict in (rcParamsLong, rcParams):
             for key in rcdict:
-                if not re.search(f'^{cat}[.][^.]+$', key):
+                if not re.match(fr'\A{cat}\.[^.]+\Z', key):
                     continue
                 value = self._get_item(key, mode)
                 if value is None:
                     continue
+                if trimcat:
+                    key = re.sub(fr'\A{cat}\.', '', key)
                 kw[key] = value
         return kw
 
@@ -981,10 +988,7 @@ class rc_configurator(object):
         Parameters
         ----------
         props : dict-like
-            Dictionary whose values are names of settings. The values
-            are replaced with the corresponding property only if
-            `~rc_configurator.__getitem__` does not return ``None``. Otherwise,
-            that key, value pair is omitted from the output dictionary.
+            Dictionary whose values are `rc` setting names.
         context : bool, optional
             If ``True``, then each setting that is not found in the
             context mode dictionaries is omitted from the output dictionary.
@@ -1016,21 +1020,19 @@ class rc_configurator(object):
 
     def update(self, *args, **kwargs):
         """
-        Update multiple settings at once.
+        Update several settings at once with a dictionary and/or
+        keyword arguments.
 
         Parameters
         ----------
-        *args : str, dict, or (str, dict)
-            The first argument can optionally be a "category" string name,
-            in which case all other setting names passed to this function are
-            prepended with the string ``cat + '.'``. For example,
+        *args : str, dict, or (str, dict), optional
+            A dictionary containing `rc` keys and values. You can also
+            pass a "category" name as the first argument, in which case all
+            settings are prepended with ``'category.'``. For example,
             ``rc.update('axes', labelsize=20, titlesize=20)`` changes the
             :rcraw:`axes.labelsize` and :rcraw:`axes.titlesize` properties.
-
-            The first or second argument can also be a dictionary of `rc`
-            names and values.
-        **kwargs
-            `rc` names and values passed as keyword arguments. If the
+        **kwargs, optional
+            `rc` keys and values passed as keyword arguments. If the
             name has dots, simply omit them.
         """
         # Parse args
@@ -1038,10 +1040,10 @@ class rc_configurator(object):
         prefix = ''
         if len(args) > 2:
             raise ValueError(
-                'Accepts 1-2 positional arguments. Use plot.rc.update(kw) '
-                'to update a bunch of names, or plot.rc.update(category, kw) '
-                'to update subcategories belonging to single category '
-                'e.g. axes. Keyword args are added to the kw dict.')
+                f'rc.update() accepts 1-2 arguments, got {len(args)}. Usage '
+                'is rc.update(kw), rc.update(category, kw), '
+                'rc.update(**kwargs), or rc.update(category, **kwargs).'
+            )
         elif len(args) == 2:
             prefix = args[0]
             kw = args[1]
@@ -1121,7 +1123,6 @@ def ipython_matplotlib(backend=None, fmt=None):
 
     # Default behavior dependent on type of ipython session
     # See: https://stackoverflow.com/a/22424821/4970632
-    rc._init = False
     ibackend = backend
     if backend == 'auto':
         if 'IPKernelApp' in getattr(get_ipython(), 'config', ''):
@@ -1130,7 +1131,8 @@ def ipython_matplotlib(backend=None, fmt=None):
             ibackend = 'qt'
     try:
         ipython.magic('matplotlib ' + ibackend)
-        rc.reset()
+        if 'rc' in globals():  # should always be True, but just in case
+            rc.reset()
     except KeyError:
         if backend != 'auto':
             _warn_proplot(f'{"%matplotlib " + backend!r} failed.')
@@ -1145,7 +1147,8 @@ def ipython_matplotlib(backend=None, fmt=None):
     else:
         raise ValueError(
             f'Invalid inline backend format {fmt!r}. '
-            'Must be string or list thereof.')
+            'Must be string or list thereof.'
+        )
     ipython.magic(f'config InlineBackend.figure_formats = {fmt!r}')
     ipython.magic('config InlineBackend.rc = {}')  # no notebook overrides
     ipython.magic('config InlineBackend.close_figures = True')  # memory issues
@@ -1215,7 +1218,9 @@ def ipython_autosave(autosave=None):
 #: See :ref:`Configuring proplot` for details.
 rc = rc_configurator()
 
-# Call setup functions
+# Manually call setup functions after rc has been instantiated
+# We cannot call these inside rc.__init__ because ipython_matplotlib may
+# need to reset the configurator to overwrite backend-imposed settings!
 ipython_matplotlib()
 ipython_autoreload()
 ipython_autosave()

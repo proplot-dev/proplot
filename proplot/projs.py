@@ -7,7 +7,7 @@ for generating `~mpl_toolkits.basemap.Basemap` and cartopy
 from .utils import _warn_proplot
 try:
     from mpl_toolkits.basemap import Basemap
-except BaseException:
+except ImportError:
     Basemap = object
 try:
     from cartopy.crs import (
@@ -183,11 +183,13 @@ def Proj(name, basemap=False, **kwargs):
         if 'boundinglat' in kwargs:
             raise ValueError(
                 f'"boundinglat" must be passed to the ax.format() command '
-                'for cartopy axes.')
+                'for cartopy axes.'
+            )
         if crs is None:
             raise ValueError(
                 f'Unknown projection {name!r}. Options are: '
-                + ', '.join(map(repr, cartopy_names.keys())) + '.')
+                + ', '.join(map(repr, cartopy_names.keys())) + '.'
+            )
         proj = crs(**kwargs)
     return proj
 
@@ -208,8 +210,10 @@ class Aitoff(_WarpedRectangularProjection):
         a = globe.semimajor_axis or WGS84_SEMIMAJOR_AXIS
         b = globe.semiminor_axis or a
         if b != a or globe.ellipse is not None:
-            _warn_proplot(f'The {self.name!r} projection does not handle '
-                          'elliptical globes.')
+            _warn_proplot(
+                f'The {self.name!r} projection does not handle '
+                'elliptical globes.'
+            )
 
         proj4_params = {'proj': 'hammer', 'lon_0': central_longitude}
         super().__init__(proj4_params, central_longitude,
@@ -241,8 +245,10 @@ class Hammer(_WarpedRectangularProjection):
         a = globe.semimajor_axis or WGS84_SEMIMAJOR_AXIS
         b = globe.semiminor_axis or a
         if b != a or globe.ellipse is not None:
-            _warn_proplot(f'The {self.name!r} projection does not handle '
-                          'elliptical globes.')
+            _warn_proplot(
+                f'The {self.name!r} projection does not handle '
+                'elliptical globes.'
+            )
 
         proj4_params = {'proj': 'aitoff', 'lon_0': central_longitude}
         super().__init__(proj4_params, central_longitude,
@@ -274,8 +280,10 @@ class KavrayskiyVII(_WarpedRectangularProjection):
         a = globe.semimajor_axis or WGS84_SEMIMAJOR_AXIS
         b = globe.semiminor_axis or a
         if b != a or globe.ellipse is not None:
-            _warn_proplot(f'The {self.name!r} projection does not handle '
-                          'elliptical globes.')
+            _warn_proplot(
+                f'The {self.name!r} projection does not handle '
+                'elliptical globes.'
+            )
 
         proj4_params = {'proj': 'kav7', 'lon_0': central_longitude}
         super().__init__(proj4_params, central_longitude,
@@ -307,8 +315,10 @@ class WinkelTripel(_WarpedRectangularProjection):
         a = globe.semimajor_axis or WGS84_SEMIMAJOR_AXIS
         b = globe.semiminor_axis or a
         if b != a or globe.ellipse is not None:
-            _warn_proplot(f'The {self.name!r} projection does not handle '
-                          'elliptical globes.')
+            _warn_proplot(
+                f'The {self.name!r} projection does not handle '
+                'elliptical globes.'
+            )
 
         proj4_params = {'proj': 'wintri', 'lon_0': central_longitude}
         super().__init__(proj4_params, central_longitude,
@@ -483,4 +493,5 @@ if CRS is not object:
     if _unavail:
         _warn_proplot(
             f'Cartopy projection(s) {", ".join(map(repr, _unavail))} are '
-            f'unavailable. Consider updating to cartopy >= 0.17.0.')
+            f'unavailable. Consider updating to cartopy >= 0.17.0.'
+        )

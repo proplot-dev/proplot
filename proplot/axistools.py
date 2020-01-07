@@ -127,7 +127,8 @@ def Locator(locator, *args, **kwargs):
         if locator not in locators:
             raise ValueError(
                 f'Unknown locator {locator!r}. Options are '
-                + ', '.join(map(repr, locators.keys())) + '.')
+                + ', '.join(map(repr, locators.keys())) + '.'
+            )
         locator = locators[locator](*args, **kwargs)
     elif isinstance(locator, Number):  # scalar variable
         locator = mticker.MultipleLocator(locator, *args, **kwargs)
@@ -267,7 +268,8 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
             if formatter not in formatters:
                 raise ValueError(
                     f'Unknown formatter {formatter!r}. Options are '
-                    + ', '.join(map(repr, formatters.keys())) + '.')
+                    + ', '.join(map(repr, formatters.keys())) + '.'
+                )
             formatter = formatters[formatter](*args, **kwargs)
     elif callable(formatter):
         formatter = mticker.FuncFormatter(formatter, *args, **kwargs)
@@ -349,7 +351,8 @@ def Scale(scale, *args, **kwargs):
         if args or kwargs:
             _warn_proplot(
                 f'Scale {scale!r} is a scale *preset*. Ignoring positional '
-                'argument(s): {args} and keyword argument(s): {kwargs}. ')
+                'argument(s): {args} and keyword argument(s): {kwargs}. '
+            )
         scale, *args = SCALE_PRESETS[scale]
     # Get scale
     scale = scale.lower()
@@ -358,7 +361,8 @@ def Scale(scale, *args, **kwargs):
     else:
         raise ValueError(
             f'Unknown scale or preset {scale!r}. Options are '
-            + ', '.join(map(repr, list(scales) + list(SCALE_PRESETS))) + '.')
+            + ', '.join(map(repr, list(scales) + list(SCALE_PRESETS))) + '.'
+        )
     return scale(*args, **kwargs)
 
 
@@ -383,9 +387,11 @@ class AutoFormatter(mticker.ScalarFormatter):
     3. Allows user to add arbitrary prefix or suffix to every
        tick label string.
     """
-    def __init__(self, *args,
-                 zerotrim=None, precision=None, tickrange=None,
-                 prefix=None, suffix=None, negpos=None, **kwargs):
+    def __init__(
+        self, *args,
+        zerotrim=None, precision=None, tickrange=None,
+        prefix=None, suffix=None, negpos=None, **kwargs
+    ):
         """
         Parameters
         ----------
@@ -413,7 +419,6 @@ class AutoFormatter(mticker.ScalarFormatter):
         """
         super().__init__(*args, **kwargs)
         zerotrim = _notNone(zerotrim, rc['axes.formatter.zerotrim'])
-        tickrange = tickrange or (-np.inf, np.inf)
         self._zerotrim = zerotrim
         self._tickrange = tickrange
         self._prefix = prefix or ''
@@ -541,7 +546,8 @@ def _scale_factory(scale, axis, *args, **kwargs):
         if scale not in scales:
             raise ValueError(
                 f'Unknown scale {scale!r}. Options are '
-                + ', '.join(map(repr, scales.keys())) + '.')
+                + ', '.join(map(repr, scales.keys())) + '.'
+            )
         return scales[scale](*args, **kwargs)
 
 
@@ -619,7 +625,7 @@ class _ScaleBase(object):
             name = axis.axis_name if axis.axis_name in 'xy' else 'x'
             axis.set_minor_locator(
                 self._default_minor_locator or Locator(
-                    'minor' if rc.get(name + 'tick.minor.visible') else 'null'
+                    'minor' if rc[name + 'tick.minor.visible'] else 'null'
                 )
             )
             axis.isDefault_minloc = True
@@ -759,11 +765,12 @@ class FuncScale(_ScaleBase, mscale.ScaleBase):
     name = 'function'
     """The registered scale name."""
 
-    def __init__(self, arg, invert=False, parent_scale=None,
-                 major_locator=None, minor_locator=None,
-                 major_formatter=None, minor_formatter=None,
-                 smart_bounds=None,
-                 ):
+    def __init__(
+        self, arg, invert=False, parent_scale=None,
+        major_locator=None, minor_locator=None,
+        major_formatter=None, minor_formatter=None,
+        smart_bounds=None,
+    ):
         """
         Parameters
         ----------
@@ -1012,8 +1019,8 @@ class ExpScale(_ScaleBase, mscale.ScaleBase):
     """The registered scale name."""
 
     def __init__(
-            self, a=np.e, b=1, c=1, inverse=False, minpos=1e-300,
-            **kwargs):
+        self, a=np.e, b=1, c=1, inverse=False, minpos=1e-300, **kwargs
+    ):
         """
         Parameters
         ----------
@@ -1319,7 +1326,8 @@ class CutoffTransform(mtransforms.Transform):
                 any((dists == 0) != (scales == 0)) or zero_dists is None):
             raise ValueError(
                 'Got zero scales and distances in different places or '
-                'zero_dists is None.')
+                'zero_dists is None.'
+            )
         self._scales = scales
         self._threshs = threshs
         with np.errstate(divide='ignore', invalid='ignore'):
