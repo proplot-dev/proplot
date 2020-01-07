@@ -191,30 +191,18 @@ def _parse_format(mode=2, rc_kw=None, **kwargs):
 class Axes(maxes.Axes):
     """Lowest-level axes subclass. Handles titles and axis
     sharing. Adds several new methods and overrides existing ones."""
-
-    def __init__(self, *args, number=None,
-                 sharex=0, sharey=0,
-                 spanx=None, spany=None, alignx=None, aligny=None,
-                 main=False,
-                 **kwargs):
+    def __init__(self, *args, number=None, main=False, **kwargs):
         """
         Parameters
         ----------
         number : int
-            The subplot number, used for a-b-c labelling (see
-            `~Axes.format`).
-        sharex, sharey : {3, 2, 1, 0}, optional
-            The "axis sharing level" for the *x* axis, *y* axis, or both
-            axes. See `~proplot.subplots.subplots` for details.
-        spanx, spany : bool, optional
-            Boolean toggle for whether spanning labels are enabled for the
-            *x* and *y* axes. See `~proplot.subplots.subplots` for details.
-        alignx, aligny : bool, optional
-            Boolean toggle for whether aligned axis labels are enabled for the
-            *x* and *y* axes. See `~proplot.subplots.subplots` for details.
+            The subplot number, used for a-b-c labeling. See `~Axes.format`
+            for details. Note the first axes is ``1``, not ``0``.
         main : bool, optional
             Used internally, indicates whether this is a "main axes" rather
             than a twin, panel, or inset axes.
+        *args, **kwargs
+            Passed to `~matplotlib.axes.Axes`.
 
         See also
         --------
@@ -227,7 +215,6 @@ class Axes(maxes.Axes):
         # Ensure isDefault_minloc enabled at start, needed for dual axes
         self.xaxis.isDefault_minloc = self.yaxis.isDefault_minloc = True
         # Properties
-        self.number = number
         self._abc_loc = None
         self._abc_text = None
         self._titles_dict = {}  # dictionary of titles and locs
@@ -252,8 +239,6 @@ class Axes(maxes.Axes):
         self._altx_parent = None
         self._auto_colorbar = {}  # stores handles and kwargs for auto colorbar
         self._auto_legend = {}
-        # Text labels
-        # TODO: Add text labels as panels instead of as axes children?
         coltransform = mtransforms.blended_transform_factory(
             self.transAxes, self.figure.transFigure)
         rowtransform = mtransforms.blended_transform_factory(
@@ -266,15 +251,10 @@ class Axes(maxes.Axes):
             0.5, 0.05, '', va='top', ha='center', transform=coltransform)
         self._tlabel = self.text(
             0.5, 0.95, '', va='bottom', ha='center', transform=coltransform)
-        # Shared and spanning axes
+        self._share_setup()
+        self.number = number  # for abc numbering
         if main:
             self.figure._axes_main.append(self)
-        self._spanx_on = spanx
-        self._spany_on = spany
-        self._alignx_on = alignx
-        self._aligny_on = aligny
-        self._sharex_level = sharex
-        self._sharey_level = sharey
         self.format(mode=1)  # mode == 1 applies the rcShortParams
 
     def _draw_auto_legends_colorbars(self):
@@ -432,7 +412,7 @@ class Axes(maxes.Axes):
         return loc
 
     def _make_inset_locator(self, bounds, trans):
-        """Helper function, copied from private matplotlib version."""
+        """Return a locator that determines inset axes bounds."""
         def inset_locator(ax, renderer):
             bbox = mtransforms.Bbox.from_bounds(*bounds)
             bb = mtransforms.TransformedBbox(bbox, trans)
@@ -442,22 +422,22 @@ class Axes(maxes.Axes):
         return inset_locator
 
     def _range_gridspec(self, x):
-        """Gets the column or row range for the axes."""
-        subplotspec = self.get_subplotspec()
+        """Return the column or row gridspec range for the axes."""
+        if not hasattr(self, 'get_subplotspec'):
+            raise RuntimeError(f'Axes is not a subplot.')
+        ss = self.get_subplotspec()
         if x == 'x':
-            _, _, _, _, col1, col2 = subplotspec.get_active_rows_columns()
+            _, _, _, _, col1, col2 = ss.get_active_rows_columns()
             return col1, col2
         else:
-            _, _, row1, row2, _, _ = subplotspec.get_active_rows_columns()
+            _, _, row1, row2, _, _ = ss.get_active_rows_columns()
             return row1, row2
 
     def _range_tightbbox(self, x):
-        """Gets span of tight bounding box, including twin axes and panels
-        which are not considered real children and so aren't ordinarily
-        included in the tight bounding box calc.
-        `~proplot.axes.Axes.get_tightbbox` caches tight bounding boxes when
+        """Return the tight bounding box span from the cached bounding box.
+        `~proplot.axes.Axes.get_tightbbox` caches bounding boxes when
         `~Figure.get_tightbbox` is called."""
-        # TODO: Better resting for axes visibility
+        # TODO: Better testing for axes visibility
         bbox = self._tightbbox
         if bbox is None:
             return np.nan, np.nan
@@ -538,47 +518,54 @@ class Axes(maxes.Axes):
             pad = tax.xaxis.get_tick_padding()
         tax._set_title_offset_trans(self._title_pad + pad)
 
-    def _sharex_setup(self, sharex, level):
-        """Sets up panel axis sharing."""
+    def _sharex_setup(self, sharex, level=None):
+        """Configure x-axis sharing for panels. Main axis sharing is done in
+        `~CartesianAxes._sharex_setup`."""
+        if level is None:
+            level = self.figure._sharex
         if level not in range(4):
             raise ValueError(
-                'Level can be 0 (share nothing), '
-                '1 (do not share limits, just hide axis labels), '
-                '2 (share limits, but do not hide tick labels), or '
-                '3 (share limits and hide tick labels). Got {level}.'
+                'Invalid sharing level sharex={value!r}. '
+                'Axis sharing level can be 0 (share nothing), '
+                '1 (hide axis labels), '
+                '2 (share limits and hide axis labels), or '
+                '3 (share limits and hide axis and tick labels).'
             )
-        # enforce, e.g. if doing panel sharing
-        self._sharex_level = max(self._sharex_level, level)
         self._share_short_axis(sharex, 'l', level)
         self._share_short_axis(sharex, 'r', level)
         self._share_long_axis(sharex, 'b', level)
         self._share_long_axis(sharex, 't', level)
 
-    def _sharey_setup(self, sharey, level):
-        """Sets up panel axis sharing."""
+    def _sharey_setup(self, sharey, level=None):
+        """Configure y-axis sharing for panels. Main axis sharing is done in
+        `~CartesianAxes._sharey_setup`."""
+        if level is None:
+            level = self.figure._sharey
         if level not in range(4):
             raise ValueError(
-                'Level can be 0 (share nothing), '
-                '1 (do not share limits, just hide axis labels), '
-                '2 (share limits, but do not hide tick labels), or '
-                '3 (share limits and hide tick labels). Got {level}.'
+                'Invalid sharing level sharey={value!r}. '
+                'Axis sharing level can be 0 (share nothing), '
+                '1 (hide axis labels), '
+                '2 (share limits and hide axis labels), or '
+                '3 (share limits and hide axis and tick labels).'
             )
-        self._sharey_level = max(self._sharey_level, level)
         self._share_short_axis(sharey, 'b', level)
         self._share_short_axis(sharey, 't', level)
         self._share_long_axis(sharey, 'l', level)
         self._share_long_axis(sharey, 'r', level)
 
     def _share_setup(self):
-        """Applies axis sharing for axes that share the same horizontal or
-        vertical extent, and for their panels."""
+        """Automatically configure axis sharing based on the horizontal and
+        vertical extent of subplots in the figure gridspec."""
         # Panel axes sharing, between main subplot and its panels
-        # Top and bottom
         def shared(paxs):
             return [
-                pax for pax in paxs if not pax._panel_filled
-                and pax._panel_share]
+                pax for pax in paxs
+                if not pax._panel_filled and pax._panel_share
+            ]
+
         if not self._panel_side:  # this is a main axes
+            # Top and bottom
             bottom = self
             paxs = shared(self._bpanels)
             if paxs:
@@ -601,16 +588,15 @@ class Axes(maxes.Axes):
                 iax._sharey_setup(left, 3)
 
         # Main axes, sometimes overrides panel axes sharing
-        # TODO: This can get very repetitive, but probably minimal impact
-        # on performance?
+        # TODO: This can get very repetitive, but probably minimal impact?
         # Share x axes
         parent, *children = self._get_extent_axes('x')
         for child in children:
-            child._sharex_setup(parent, parent._sharex_level)
+            child._sharex_setup(parent)
         # Share y axes
         parent, *children = self._get_extent_axes('y')
         for child in children:
-            child._sharey_setup(parent, parent._sharey_level)
+            child._sharey_setup(parent)
 
     def _share_short_axis(self, share, side, level):
         """Share the "short" axes of panels along a main subplot with panels
@@ -659,7 +645,7 @@ class Axes(maxes.Axes):
 
         # Apply to spanning axes and their panels
         axs = [ax]
-        if getattr(ax, '_span' + x + '_on'):
+        if getattr(ax.figure, '_span' + x):
             s = axis.get_label_position()[0]
             if s in 'lb':
                 axs = ax._get_side_axes(s)
@@ -2270,16 +2256,16 @@ class Axes(maxes.Axes):
 
 
 # TODO: More systematic approach?
-dualxy_kwargs = (
+_twin_kwargs = (
     'label', 'locator', 'formatter', 'ticks', 'ticklabels',
     'minorlocator', 'minorticks', 'tickminor',
     'ticklen', 'tickrange', 'tickdir', 'ticklabeldir', 'tickrotation',
-    'bounds', 'margin', 'color', 'grid', 'gridminor',
+    'bounds', 'margin', 'color', 'linewidth', 'grid', 'gridminor', 'gridcolor',
     'locator_kw', 'formatter_kw', 'minorlocator_kw', 'label_kw',
 )
 
-dualxy_descrip = """
-Makes a secondary *%(x)s* axis for denoting equivalent *%(x)s*
+_dual_doc = """
+Return a secondary *%(x)s* axis for denoting equivalent *%(x)s*
 coordinates in *alternate units*.
 
 Parameters
@@ -2294,11 +2280,43 @@ arg : function, (function, function), or `~matplotlib.scale.ScaleBase`
     Prepended with ``'%(x)s'`` and passed to `Axes.format`.
 """
 
-altxy_descrip = """
-Alias and more intuitive name for `~XYAxes.twin%(y)s`.
-The matplotlib `~matplotlib.axes.Axes.twin%(y)s` function
-generates two *%(x)s* axes with a shared ("twin") *%(y)s* axis.
-Enforces the following settings.
+_alt_doc = """
+Return an axes in the same location as this one but whose %(x)s axis is on
+the %(x2)s. This is an alias and more intuitive name for
+`~CartesianAxes.twin%(y)s`, which generates two *%(x)s* axes with
+a shared ("twin") *%(y)s* axes.
+
+Parameters
+----------
+%(args)s : optional
+    Prepended with ``'%(x)s'`` and passed to `Axes.format`.
+
+Note
+----
+This function enforces the following settngs.
+
+* Places the old *%(x)s* axis on the %(x1)s and the new *%(x)s* axis
+  on the %(x2)s.
+* Makes the old %(x2)s spine invisible and the new %(x1)s, %(y1)s,
+  and %(y2)s spines invisible.
+* Adjusts the *%(x)s* axis tick, tick label, and axis label positions
+  according to the visible spine positions.
+* Locks the old and new *%(y)s* axis limits and scales, and makes the new
+  %(y)s axis labels invisible.
+
+"""
+
+_twin_doc = """
+Mimics the builtin `~matplotlib.axes.Axes.twin%(y)s` method.
+
+Parameters
+----------
+%(args)s : optional
+    Prepended with ``'%(x)s'`` and passed to `Axes.format`.
+
+Note
+----
+This function enforces the following settngs.
 
 * Places the old *%(x)s* axis on the %(x1)s and the new *%(x)s* axis
   on the %(x2)s.
@@ -2310,44 +2328,26 @@ Enforces the following settings.
   %(y)s axis labels invisible.
 """
 
-twinxy_descrip = """
-Mimics matplotlib's `~matplotlib.axes.Axes.twin%(y)s`.
-Enforces the following settings.
 
-* Places the old *%(x)s* axis on the %(x1)s and the new *%(x)s* axis
-  on the %(x2)s.
-* Makes the old %(x2)s spine invisible and the new %(x1)s, %(y1)s,
-  and %(y2)s spines invisible.
-* Adjusts the *%(x)s* axis tick, tick label, and axis label positions
-  according to the visible spine positions.
-* Locks the old and new *%(y)s* axis limits and scales, and makes the new
-  %(y)s axis labels invisible.
-"""
-
-
-def _parse_dualxy_args(x, kwargs):
-    """Detect `~XYAxes.format` arguments with the leading ``x`` or ``y``
-    removed. Translate to valid `~XYAxes.format` arguments."""
-    kwargs_bad = {}
-    for key in (*kwargs.keys(),):
-        value = kwargs.pop(key)
-        if key[0] == x and key[1:] in dualxy_kwargs:
+def _parse_alt(x, kwargs):
+    """Interpret keyword args passed to all "twin axis" methods so they
+    can be passed to Axes.format."""
+    kw_bad, kw_out = {}, {}
+    for key, value in kwargs.items():
+        if key in _twin_kwargs:
+            kw_out[x + key] = value
+        elif key[0] == x and key[1:] in _twin_kwargs:
             _warn_proplot(
-                f'dual{x}() keyword arg {key!r} is deprecated. '
-                f'Use {key[1:]!r} instead.'
-            )
-            kwargs[key] = value
-        elif key in dualxy_kwargs:
-            kwargs[x + key] = value
+                f'Twin axis keyword arg {key!r} is deprecated. '
+                f'Use {key[1:]!r} instead.')
+            kw_out[key] = value
         elif key in RC_NODOTSNAMES:
-            kwargs[key] = value
+            kw_out[key] = value
         else:
-            kwargs_bad[key] = value
-        if kwargs_bad:
-            raise TypeError(
-                f'dual{x}() got unexpected keyword argument(s): {kwargs_bad}'
-            )
-    return kwargs
+            kw_bad[key] = value
+    if kw_bad:
+        raise TypeError(f'Unexpected keyword argument(s): {kw_bad!r}')
+    return kw_out
 
 
 def _parse_rcloc(x, string):  # figures out string location
@@ -2410,7 +2410,7 @@ class XYAxes(Axes):
         self._dualx_cache = None
 
     def _altx_overrides(self):
-        """Applies alternate *x* axis overrides."""
+        """Apply alternate *x* axis overrides."""
         # Unlike matplotlib API, we strong arm user into certain twin axes
         # settings... doesn't really make sense to have twin axes without this
         if self._altx_child is not None:  # altx was called on this axes
@@ -2430,7 +2430,7 @@ class XYAxes(Axes):
             self.patch.set_visible(False)
 
     def _alty_overrides(self):
-        """Applies alternate *y* axis overrides."""
+        """Apply alternate *y* axis overrides."""
         if self._alty_child is not None:
             self._shared_x_axes.join(self, self._alty_child)
             self.spines['right'].set_visible(False)
@@ -2523,7 +2523,7 @@ class XYAxes(Axes):
             axis = getattr(self, x + 'axis')
             share = getattr(self, '_share' + x)
             if share is not None:
-                level = getattr(self, '_share' + x + '_level')
+                level = getattr(self.figure, '_share' + x)
                 if level > 0:
                     axis.label.set_visible(False)
                 if level > 2:
@@ -2531,10 +2531,25 @@ class XYAxes(Axes):
             # Enforce no minor ticks labels. TODO: Document?
             axis.set_minor_formatter(mticker.NullFormatter())
 
-    def _sharex_setup(self, sharex, level):
-        """Sets up shared axes. The input is the 'parent' axes, from which
-        this one will draw its properties."""
+    def _make_twin_axes(self, *args, **kwargs):
+        """Return a twin of this axes. This is used for twinx and twiny and was
+        copied from matplotlib in case the private API changes."""
+        # Typically, SubplotBase._make_twin_axes is called instead of this.
+        # There is also an override in axes_grid1/axes_divider.py.
+        if 'sharex' in kwargs and 'sharey' in kwargs:
+            raise ValueError('Twinned Axes may share only one axis.')
+        ax2 = self.figure.add_axes(self.get_position(True), *args, **kwargs)
+        self.set_adjustable('datalim')
+        ax2.set_adjustable('datalim')
+        self._twinned_axes.join(self, ax2)
+        return ax2
+
+    def _sharex_setup(self, sharex, level=None):
+        """Configure shared axes accounting for panels. The input is the
+        'parent' axes, from which this one will draw its properties."""
         # Call Axes method
+        if level is None:
+            level = self.figure._sharex
         super()._sharex_setup(sharex, level)  # sets up panels
         if sharex in (None, self) or not isinstance(sharex, XYAxes):
             return
@@ -2544,10 +2559,12 @@ class XYAxes(Axes):
         if level > 1:
             self._shared_x_axes.join(self, sharex)
 
-    def _sharey_setup(self, sharey, level):
-        """Sets up shared axes. The input is the 'parent' axes, from which
-        this one will draw its properties."""
+    def _sharey_setup(self, sharey, level=None):
+        """Configure shared axes accounting for panels. The input is the
+        'parent' axes, from which this one will draw its properties."""
         # Call Axes method
+        if level is None:
+            level = self.figure._sharey
         super()._sharey_setup(sharey, level)
         if sharey in (None, self) or not isinstance(sharey, XYAxes):
             return
@@ -3227,8 +3244,8 @@ class XYAxes(Axes):
                 self.set_aspect(aspect)
             super().format(**kwargs)
 
-    def altx(self):
-        # TODO: Accept format **kwargs? Is this already in #50?
+    def altx(self, **kwargs):
+        """Docstring is replaced below."""
         # Cannot wrap twiny() because we want to use XYAxes, not
         # matplotlib Axes. Instead use hidden method _make_twin_axes.
         # See https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_subplots.py  # noqa
@@ -3244,9 +3261,11 @@ class XYAxes(Axes):
         ax._altx_overrides()
         self.add_child_axes(ax)  # to facilitate tight layout
         self.figure._axstack.remove(ax)  # or gets drawn twice!
+        ax.format(**_parse_alt('x', kwargs))
         return ax
 
-    def alty(self):
+    def alty(self, **kwargs):
+        """Docstring is replaced below."""
         if self._alty_child or self._alty_parent:
             raise RuntimeError('No more than *two* twin axes are allowed.')
         with self.figure._authorize_add_subplot():
@@ -3259,23 +3278,24 @@ class XYAxes(Axes):
         ax._alty_overrides()
         self.add_child_axes(ax)  # to facilitate tight layout
         self.figure._axstack.remove(ax)  # or gets drawn twice!
+        ax.format(**_parse_alt('y', kwargs))
         return ax
 
     def dualx(self, arg, **kwargs):
+        """Docstring is replaced below."""
         # NOTE: Matplotlib 3.1 has a 'secondary axis' feature. For the time
         # being, our version is more robust (see FuncScale) and simpler, since
         # we do not create an entirely separate _SecondaryAxis class.
-        ax = self.altx()
+        ax = self.altx(**kwargs)
         self._dualx_arg = arg
         self._dualx_overrides()
-        ax.format(**_parse_dualxy_args('x', kwargs))
         return ax
 
     def dualy(self, arg, **kwargs):
-        ax = self.alty()
+        """Docstring is replaced below."""
+        ax = self.alty(**kwargs)
         self._dualy_arg = arg
         self._dualy_overrides()
-        ax.format(**_parse_dualxy_args('y', kwargs))
         return ax
 
     def draw(self, renderer=None, *args, **kwargs):
@@ -3306,32 +3326,39 @@ class XYAxes(Axes):
         return super().get_tightbbox(renderer, *args, **kwargs)
 
     def twinx(self):
+        """Docstring is replaced below."""
         return self.alty()
 
     def twiny(self):
+        """Docstring is replaced below."""
         return self.altx()
 
-    altx.__doc__ = altxy_descrip % {
+    # Add documentation
+    altx.__doc__ = _alt_doc % {
         'x': 'x', 'x1': 'bottom', 'x2': 'top',
         'y': 'y', 'y1': 'left', 'y2': 'right',
+        'args': ', '.join(_twin_kwargs),
     }
-    alty.__doc__ = altxy_descrip % {
+    alty.__doc__ = _alt_doc % {
         'x': 'y', 'x1': 'left', 'x2': 'right',
         'y': 'x', 'y1': 'bottom', 'y2': 'top',
+        'args': ', '.join(_twin_kwargs),
     }
-    dualx.__doc__ = dualxy_descrip % {
-        'x': 'x', 'args': ', '.join(dualxy_kwargs)
-    }
-    dualy.__doc__ = dualxy_descrip % {
-        'x': 'y', 'args': ', '.join(dualxy_kwargs)
-    }
-    twinx.__doc__ = twinxy_descrip % {
+    twinx.__doc__ = _twin_doc % {
         'x': 'y', 'x1': 'left', 'x2': 'right',
         'y': 'x', 'y1': 'bottom', 'y2': 'top',
+        'args': ', '.join(_twin_kwargs),
     }
-    twiny.__doc__ = twinxy_descrip % {
+    twiny.__doc__ = _twin_doc % {
         'x': 'x', 'x1': 'bottom', 'x2': 'top',
         'y': 'y', 'y1': 'left', 'y2': 'right',
+        'args': ', '.join(_twin_kwargs),
+    }
+    dualx.__doc__ = _dual_doc % {
+        'x': 'x', 'args': ', '.join(_twin_kwargs)
+    }
+    dualy.__doc__ = _dual_doc % {
+        'x': 'y', 'args': ', '.join(_twin_kwargs)
     }
 
 

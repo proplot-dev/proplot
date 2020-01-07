@@ -55,6 +55,8 @@ ProPlot v0.4.0 (2020-##-##)
   precedence instead (:pr:`95`).
 - `~proplot.axes.Axes.dualx` and `~proplot.axes.Axes.dualx` no longer accept "scale-spec" arguments.
   Must be a function, two functions, or an axis scale instance (:pr:`96`).
+- Remove `~proplot.axes.Axes` ``share[x|y]``, ``span[x|y]``, and ``align[x|y]`` kwargs (:pr:`99`).
+  These settings are now always figure-wide.
 - Rename `~proplot.styletools.Cycle` ``samples`` to ``N``, rename
   `~proplot.styletools.show_colors` ``nbreak`` to ``nhues`` (:pr:`98`).
 
@@ -66,6 +68,8 @@ ProPlot v0.4.0 (2020-##-##)
 - Add TeX Gyre Heros as Helvetica-alternative (:pr:`95`). This is the new open-source default font.
 - Add `xlinewidth`, `ylinewidth`, `xgridcolor`, `ygridcolor` keyword
   args to `~proplot.axes.XYAxes.format` (:pr:`95`).
+- Add getters and setters for various `~proplot.subplots.Figure` settings like ``share[x|y]``,
+  ``span[x|y]``, and ``align[x|y]`` (:pr:`99`).
 - Add `~proplot.subplots.Figure` ``fallback_to_cm`` kwarg. This is used by
   `~proplot.styletools.show_fonts` to show dummy glyphs to clearly illustrate when fonts are
   missing characters, but preserve graceful fallback for end user.
