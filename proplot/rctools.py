@@ -1121,7 +1121,6 @@ def ipython_matplotlib(backend=None, fmt=None):
 
     # Default behavior dependent on type of ipython session
     # See: https://stackoverflow.com/a/22424821/4970632
-    rc._init = False
     ibackend = backend
     if backend == 'auto':
         if 'IPKernelApp' in getattr(get_ipython(), 'config', ''):
