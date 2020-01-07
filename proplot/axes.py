@@ -1617,16 +1617,16 @@ optional
 
 
 # TODO: More systematic approach?
-dualxy_kwargs = (
+_twin_kwargs = (
     'label', 'locator', 'formatter', 'ticks', 'ticklabels',
     'minorlocator', 'minorticks', 'tickminor',
     'ticklen', 'tickrange', 'tickdir', 'ticklabeldir', 'tickrotation',
-    'bounds', 'margin', 'color', 'grid', 'gridminor',
+    'bounds', 'margin', 'color', 'linewidth', 'grid', 'gridminor', 'gridcolor',
     'locator_kw', 'formatter_kw', 'minorlocator_kw', 'label_kw',
 )
 
-dualxy_descrip = """
-Makes a secondary *%(x)s* axis for denoting equivalent *%(x)s*
+_dual_doc = """
+Return a secondary *%(x)s* axis for denoting equivalent *%(x)s*
 coordinates in *alternate units*.
 
 Parameters
@@ -1641,11 +1641,43 @@ arg : function, (function, function), or `~matplotlib.scale.ScaleBase`
     Prepended with ``'%(x)s'`` and passed to `Axes.format`.
 """
 
-altxy_descrip = """
-Alias and more intuitive name for `~XYAxes.twin%(y)s`.
-The matplotlib `~matplotlib.axes.Axes.twin%(y)s` function
-generates two *%(x)s* axes with a shared ("twin") *%(y)s* axis.
-Enforces the following settings.
+_alt_doc = """
+Return an axes in the same location as this one but whose %(x)s axis is on
+the %(x2)s. This is an alias and more intuitive name for
+`~CartesianAxes.twin%(y)s`, which generates two *%(x)s* axes with
+a shared ("twin") *%(y)s* axes.
+
+Parameters
+----------
+%(args)s : optional
+    Prepended with ``'%(x)s'`` and passed to `Axes.format`.
+
+Note
+----
+This function enforces the following settngs.
+
+* Places the old *%(x)s* axis on the %(x1)s and the new *%(x)s* axis
+  on the %(x2)s.
+* Makes the old %(x2)s spine invisible and the new %(x1)s, %(y1)s,
+  and %(y2)s spines invisible.
+* Adjusts the *%(x)s* axis tick, tick label, and axis label positions
+  according to the visible spine positions.
+* Locks the old and new *%(y)s* axis limits and scales, and makes the new
+  %(y)s axis labels invisible.
+
+"""
+
+_twin_doc = """
+Mimics the builtin `~matplotlib.axes.Axes.twin%(y)s` method.
+
+Parameters
+----------
+%(args)s : optional
+    Prepended with ``'%(x)s'`` and passed to `Axes.format`.
+
+Note
+----
+This function enforces the following settngs.
 
 * Places the old *%(x)s* axis on the %(x1)s and the new *%(x)s* axis
   on the %(x2)s.
@@ -1657,43 +1689,25 @@ Enforces the following settings.
   %(y)s axis labels invisible.
 """
 
-twinxy_descrip = """
-Mimics matplotlib's `~matplotlib.axes.Axes.twin%(y)s`.
-Enforces the following settings.
 
-* Places the old *%(x)s* axis on the %(x1)s and the new *%(x)s* axis
-  on the %(x2)s.
-* Makes the old %(x2)s spine invisible and the new %(x1)s, %(y1)s,
-  and %(y2)s spines invisible.
-* Adjusts the *%(x)s* axis tick, tick label, and axis label positions
-  according to the visible spine positions.
-* Locks the old and new *%(y)s* axis limits and scales, and makes the new
-  %(y)s axis labels invisible.
-"""
-
-
-def _parse_dualxy_args(x, kwargs):
-    """Detect `~XYAxes.format` arguments with the leading ``x`` or ``y``
-    removed. Translate to valid `~XYAxes.format` arguments."""
-    kwargs_bad = {}
-    for key in (*kwargs.keys(),):
-        value = kwargs.pop(key)
-        if key[0] == x and key[1:] in dualxy_kwargs:
+def _parse_alt(x, kwargs):
+    """Interpret keyword args passed to all "twin axis" methods so they
+    can be passed to Axes.format."""
+    kw_bad, kw_out = {}, {}
+    for key, value in kwargs.items():
+        if key in _twin_kwargs:
+            kw_out[x + key] = value
+        elif key[0] == x and key[1:] in _twin_kwargs:
             _warn_proplot(
-                f'dual{x}() keyword arg {key!r} is deprecated. '
-                f'Use {key[1:]!r} instead.'
-            )
-            kwargs[key] = value
-        elif key in dualxy_kwargs:
-            kwargs[x + key] = value
+                f'Twin axis keyword arg {key!r} is deprecated. '
+                f'Use {key[1:]!r} instead.')
+            kw_out[key] = value
         elif key in RC_NODOTSNAMES:
-            kwargs[key] = value
+            kw_out[key] = value
         else:
-            kwargs_bad[key] = value
-        if kwargs_bad:
-            raise TypeError(
-                f'dual{x}() got unexpected keyword argument(s): {kwargs_bad}'
-            )
+            kw_bad[key] = value
+    if kw_bad:
+        raise TypeError(f'Unexpected keyword argument(s): {kw_bad!r}')
     return kwargs
 
 
@@ -1757,7 +1771,7 @@ class XYAxes(Axes):
         self._dualx_cache = None
 
     def _altx_overrides(self):
-        """Applies alternate *x* axis overrides."""
+        """Apply alternate *x* axis overrides."""
         # Unlike matplotlib API, we strong arm user into certain twin axes
         # settings... doesn't really make sense to have twin axes without this
         if self._altx_child is not None:  # altx was called on this axes
@@ -1777,7 +1791,7 @@ class XYAxes(Axes):
             self.patch.set_visible(False)
 
     def _alty_overrides(self):
-        """Applies alternate *y* axis overrides."""
+        """Apply alternate *y* axis overrides."""
         if self._alty_child is not None:
             self._shared_x_axes.join(self, self._alty_child)
             self.spines['right'].set_visible(False)
@@ -1877,6 +1891,19 @@ class XYAxes(Axes):
                     axis.set_major_formatter(mticker.NullFormatter())
             # Enforce no minor ticks labels. TODO: Document?
             axis.set_minor_formatter(mticker.NullFormatter())
+
+    def _make_twin_axes(self, *args, **kwargs):
+        """Return a twin of this axes. This is used for twinx and twiny and was
+        copied from matplotlib in case the private API changes."""
+        # Typically, SubplotBase._make_twin_axes is called instead of this.
+        # There is also an override in axes_grid1/axes_divider.py.
+        if 'sharex' in kwargs and 'sharey' in kwargs:
+            raise ValueError('Twinned Axes may share only one axis.')
+        ax2 = self.figure.add_axes(self.get_position(True), *args, **kwargs)
+        self.set_adjustable('datalim')
+        ax2.set_adjustable('datalim')
+        self._twinned_axes.join(self, ax2)
+        return ax2
 
     def _sharex_setup(self, sharex, level):
         """Sets up shared axes. The input is the 'parent' axes, from which
@@ -2574,8 +2601,8 @@ class XYAxes(Axes):
                 self.set_aspect(aspect)
             super().format(**kwargs)
 
-    def altx(self):
-        # TODO: Accept format **kwargs? Is this already in #50?
+    def altx(self, **kwargs):
+        """Docstring is replaced below."""
         # Cannot wrap twiny() because we want to use XYAxes, not
         # matplotlib Axes. Instead use hidden method _make_twin_axes.
         # See https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_subplots.py  # noqa
@@ -2591,9 +2618,11 @@ class XYAxes(Axes):
         ax._altx_overrides()
         self.add_child_axes(ax)  # to facilitate tight layout
         self.figure._axstack.remove(ax)  # or gets drawn twice!
+        ax.format(**_parse_alt('x', kwargs))
         return ax
 
-    def alty(self):
+    def alty(self, **kwargs):
+        """Docstring is replaced below."""
         if self._alty_child or self._alty_parent:
             raise RuntimeError('No more than *two* twin axes are allowed.')
         with self.figure._authorize_add_subplot():
@@ -2606,23 +2635,26 @@ class XYAxes(Axes):
         ax._alty_overrides()
         self.add_child_axes(ax)  # to facilitate tight layout
         self.figure._axstack.remove(ax)  # or gets drawn twice!
+        ax.format(**_parse_alt('y', kwargs))
         return ax
 
     def dualx(self, arg, **kwargs):
+        """Docstring is replaced below."""
         # NOTE: Matplotlib 3.1 has a 'secondary axis' feature. For the time
         # being, our version is more robust (see FuncScale) and simpler, since
         # we do not create an entirely separate _SecondaryAxis class.
         ax = self.altx()
         self._dualx_arg = arg
         self._dualx_overrides()
-        ax.format(**_parse_dualxy_args('x', kwargs))
+        ax.format(**kwargs)
         return ax
 
     def dualy(self, arg, **kwargs):
+        """Docstring is replaced below."""
         ax = self.alty()
         self._dualy_arg = arg
         self._dualy_overrides()
-        ax.format(**_parse_dualxy_args('y', kwargs))
+        ax.format(**kwargs)
         return ax
 
     def draw(self, renderer=None, *args, **kwargs):
@@ -2653,32 +2685,39 @@ class XYAxes(Axes):
         return super().get_tightbbox(renderer, *args, **kwargs)
 
     def twinx(self):
+        """Docstring is replaced below."""
         return self.alty()
 
     def twiny(self):
+        """Docstring is replaced below."""
         return self.altx()
 
-    altx.__doc__ = altxy_descrip % {
+    # Add documentation
+    altx.__doc__ = _alt_doc % {
         'x': 'x', 'x1': 'bottom', 'x2': 'top',
         'y': 'y', 'y1': 'left', 'y2': 'right',
+        'args': ', '.join(_twin_kwargs),
     }
-    alty.__doc__ = altxy_descrip % {
+    alty.__doc__ = _alt_doc % {
         'x': 'y', 'x1': 'left', 'x2': 'right',
         'y': 'x', 'y1': 'bottom', 'y2': 'top',
+        'args': ', '.join(_twin_kwargs),
     }
-    dualx.__doc__ = dualxy_descrip % {
-        'x': 'x', 'args': ', '.join(dualxy_kwargs)
-    }
-    dualy.__doc__ = dualxy_descrip % {
-        'x': 'y', 'args': ', '.join(dualxy_kwargs)
-    }
-    twinx.__doc__ = twinxy_descrip % {
+    twinx.__doc__ = _twin_doc % {
         'x': 'y', 'x1': 'left', 'x2': 'right',
         'y': 'x', 'y1': 'bottom', 'y2': 'top',
+        'args': ', '.join(_twin_kwargs),
     }
-    twiny.__doc__ = twinxy_descrip % {
+    twiny.__doc__ = _twin_doc % {
         'x': 'x', 'x1': 'bottom', 'x2': 'top',
         'y': 'y', 'y1': 'left', 'y2': 'right',
+        'args': ', '.join(_twin_kwargs),
+    }
+    dualx.__doc__ = _dual_doc % {
+        'x': 'x', 'args': ', '.join(_twin_kwargs)
+    }
+    dualy.__doc__ = _dual_doc % {
+        'x': 'y', 'args': ', '.join(_twin_kwargs)
     }
 
 
