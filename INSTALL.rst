@@ -1,7 +1,7 @@
 Installation
 ============
 
-ProPlot can be installed with `pip <https://pypi.org>`__ or `conda <https://anaconda-project.readthedocs.io/en/latest/>`__:
+ProPlot is published on `PyPi <https://pypi.org/project/proplot/>`__ and `conda-forge <https://conda-forge.org>`__. It can be installed with ``pip`` or ``conda`` as follows:
 
 .. code-block:: bash
 
