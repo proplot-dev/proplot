@@ -2144,8 +2144,6 @@ def Colormap(
         raise ValueError(
             f'Invalid listmode={listmode!r}. Options are: '
             "'listed', 'linear', 'perceptual'."
-            f'Invalid listmode={listmode!r}. Options are '
-            '"listed", "linear", and "perceptual".'
         )
     tmp = '_no_name'
     cmaps = []

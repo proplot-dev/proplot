@@ -32,22 +32,6 @@ for _rc_sub in ('cmaps', 'cycles', 'colors', 'fonts'):
     if not _os.path.isdir(_rc_sub):
         _os.mkdir(_rc_sub)
 
-# Initialize customization file
-_rc_file = _os.path.join(_os.path.expanduser('~'), '.proplotrc')
-_rc_file_default = _os.path.join(_os.path.dirname(__file__), '.proplotrc')
-if not _os.path.isfile(_rc_file):
-    with open(_rc_file_default) as f:
-        lines = ''.join(
-            '#   ' + line if line.strip() and line[0] != '#' else line
-            for line in f.readlines()
-        )
-    with open(_rc_file, 'x') as f:
-        f.write(
-            '# User default settings\n'
-            '# See https://proplot.readthedocs.io/en/latest/rctools.html\n'
-            + lines
-        )
-
 # SCM versioning
 name = 'proplot'
 try:
