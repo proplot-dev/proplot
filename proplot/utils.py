@@ -16,7 +16,6 @@ except ImportError:  # graceful fallback if IceCream isn't installed
 __all__ = ['arange', 'edges', 'edges2d', 'units']
 NUMBER = re.compile('^([-+]?[0-9._]+([eE][-+]?[0-9_]+)?)(.*)$')
 BENCHMARK = False  # change this to turn on benchmarking
-NUMBER = re.compile('^([-+]?[0-9._]+([eE][-+]?[0-9_]+)?)(.*)$')
 
 
 class _benchmark(object):
@@ -180,7 +179,8 @@ def edges(Z, axis=-1):
     Parameters
     ----------
     Z : array-like
-        Array of any shape or size.
+        Array of any shape or size. Generally, should be monotonically
+        increasing or decreasing along `axis`.
     axis : int, optional
         The axis along which "edges" are calculated. The size of this axis
         will be increased by one.
@@ -190,6 +190,7 @@ def edges(Z, axis=-1):
     `~numpy.ndarray`
         Array of "edge" coordinates.
     """
+    Z = np.asarray(Z)
     Z = np.swapaxes(Z, axis, -1)
     Z = np.concatenate((
         Z[..., :1] - (Z[..., 1] - Z[..., 0]) / 2,
@@ -223,7 +224,8 @@ def edges2d(Z):
     Zb = np.zeros((ny + 1, nx + 1))
     # Inner
     Zb[1:-1, 1:-1] = 0.25 * (
-        Z[1:, 1:] + Z[:-1, 1:] + Z[1:, :-1] + Z[:-1, :-1])
+        Z[1:, 1:] + Z[:-1, 1:] + Z[1:, :-1] + Z[:-1, :-1]
+    )
     # Lower and upper
     Zb[0] += edges(1.5 * Z[0] - 0.5 * Z[1])
     Zb[-1] += edges(1.5 * Z[-1] - 0.5 * Z[-2])

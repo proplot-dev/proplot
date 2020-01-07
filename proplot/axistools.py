@@ -642,7 +642,7 @@ class _ScaleBase(object):
 
 class LinearScale(_ScaleBase, mscale.LinearScale):
     """
-    As with `~matplotlib.scale.LinearScale`. `AutoFormatter` is the new
+    As with `~matplotlib.scale.LinearScale` but with `AutoFormatter` as the
     default major formatter.
     """
     name = 'linear'
@@ -656,7 +656,7 @@ class LinearScale(_ScaleBase, mscale.LinearScale):
 
 class LogitScale(_ScaleBase, mscale.LogitScale):
     """
-    As with `~matplotlib.scale.LogitScale`. `AutoFormatter` is the new
+    As with `~matplotlib.scale.LogitScale` but with `AutoFormatter` as the
     default major formatter.
     """
     name = 'logit'
@@ -678,8 +678,8 @@ class LogitScale(_ScaleBase, mscale.LogitScale):
 
 class LogScale(_ScaleBase, mscale.LogScale):
     """
-    As with `~matplotlib.scale.LogScale`. `AutoFormatter` is the new
-    default major formatter. Separate "``x``" and "``y``" versions of each
+    As with `~matplotlib.scale.LogScale` but with `AutoFormatter` as the
+    default major formatter. Also, "``x``" and "``y``" versions of each
     keyword argument are no longer required.
     """
     name = 'log'
@@ -714,7 +714,7 @@ class LogScale(_ScaleBase, mscale.LogScale):
 class SymmetricalLogScale(_ScaleBase, mscale.SymmetricalLogScale):
     """
     As with `~matplotlib.scale.SymmetricLogScale`. `AutoFormatter` is the new
-    default major formatter. Separate "``x``" and "``y``" versions of each
+    default major formatter. Also, "``x``" and "``y``" versions of each
     keyword argument are no longer required.
     """
     name = 'symlog'
@@ -1096,13 +1096,13 @@ class MercatorLatitudeScale(_ScaleBase, mscale.ScaleBase):
 projection <http://en.wikipedia.org/wiki/Mercator_projection>`__.
     Adapted from `this matplotlib example \
 <https://matplotlib.org/examples/api/custom_scale_example.html>`__.
-    The scale function is as follows.
+    The scale function is as follows:
 
     .. math::
 
         y = \\ln(\\tan(\\pi x/180) + \\sec(\\pi x/180))
 
-    The inverse scale function is as follows.
+    The inverse scale function is as follows:
 
     .. math::
 
@@ -1181,13 +1181,13 @@ class SineLatitudeScale(_ScaleBase, mscale.ScaleBase):
     r"""
     Axis scale that is linear in the *sine* of *x*. The axis limits are
     constrained to fall between ``-90`` and ``+90`` degrees. The scale
-    function is as follows.
+    function is as follows:
 
     .. math::
 
         y = \sin(\pi x/180)
 
-    The inverse scale function is as follows.
+    The inverse scale function is as follows:
 
     .. math::
 
@@ -1363,7 +1363,7 @@ class CutoffTransform(mtransforms.Transform):
 class InverseScale(_ScaleBase, mscale.ScaleBase):
     r"""
     Axis scale that is linear in the *inverse* of *x*. The forward and inverse
-    scale functions are as follows.
+    scale functions are as follows:
 
     .. math::
 
