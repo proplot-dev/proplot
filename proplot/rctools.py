@@ -169,7 +169,6 @@ defaultParams = {
     'axes.xmargin': 0.0,
     'axes.ymargin': 0.0,
     'figure.autolayout': False,
-    'figure.dpi': 90,
     'figure.facecolor': '#f2f2f2',
     'figure.max_open_warning': 0,
     'figure.titleweight': 'bold',
