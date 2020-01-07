@@ -1175,6 +1175,7 @@ class Figure(mfigure.Figure):
         bottom = bbox.ymin
         right = obox.xmax - bbox.xmax
         top = obox.ymax - bbox.ymax
+
         # Apply new bounds, permitting user overrides
         # TODO: Account for bounding box NaNs?
         for key, offset in zip(
@@ -1190,9 +1191,11 @@ class Figure(mfigure.Figure):
         panelpad = self._panelpad
         gridspec = self._gridspec_main
         nrows, ncols = gridspec.get_active_geometry()
-        wspace, hspace = subplots_kw['wspace'], subplots_kw['hspace']
+        wspace = subplots_kw['wspace']
+        hspace = subplots_kw['hspace']
         wspace_orig = subplots_orig_kw['wspace']
         hspace_orig = subplots_orig_kw['hspace']
+
         # Get new subplot spacings, axes panel spacing, figure panel spacing
         spaces = []
         for (w, x, y, nacross, ispace, ispace_orig) in zip(
@@ -1256,7 +1259,6 @@ class Figure(mfigure.Figure):
                     x2 = min(ax._range_tightbbox(x)[0] for ax in group2)
                     jspaces.append((x2 - x1) / self.dpi)
                 if jspaces:
-                    # TODO: why max 0?
                     space = max(0, space - min(jspaces) + pad)
                     space = _notNone(space_orig, space)  # user input overwrite
                 jspace[i] = space
@@ -1288,10 +1290,9 @@ class Figure(mfigure.Figure):
             if not isinstance(ax, axes.XYAxes):
                 continue
             for x, axis in zip('xy', (ax.xaxis, ax.yaxis)):
-                # top or bottom, left or right
                 s = axis.get_label_position()[0]
-                span = getattr(ax, '_span' + x + '_on')
-                align = getattr(ax, '_align' + x + '_on')
+                span = getattr(self, '_span' + x)
+                align = getattr(self, '_align' + x)
                 if s not in 'bl' or axis in tracker:
                     continue
                 axs = ax._get_side_axes(s)
@@ -1336,8 +1337,9 @@ class Figure(mfigure.Figure):
                             mtransforms.IdentityTransform(), self.transFigure)
                     for axis in axises:
                         axis.label.set_visible((axis is spanaxis))
-                    spanlabel.update(
-                        {'position': position, 'transform': transform})
+                    spanlabel.update({
+                        'position': position, 'transform': transform
+                    })
 
     def _align_labels(self, renderer):
         """Adjusts position of row and column labels, and aligns figure super
@@ -2046,11 +2048,7 @@ def subplots(
     hspace=None, wspace=None, space=None,
     hratios=None, wratios=None,
     width_ratios=None, height_ratios=None,
-    flush=None, wflush=None, hflush=None,
     left=None, bottom=None, right=None, top=None,
-    span=None, spanx=None, spany=None,
-    align=None, alignx=None, aligny=None,
-    share=None, sharex=None, sharey=None,
     basemap=False, proj=None, projection=None,
     proj_kw=None, projection_kw=None,
     **kwargs

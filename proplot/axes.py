@@ -355,10 +355,10 @@ class Axes(maxes.Axes):
             raise RuntimeError(f'Axes is not a subplot.')
         ss = self.get_subplotspec()
         if x == 'x':
-            _, _, _, _, col1, col2 = ss.get_rows_columns()
+            _, _, _, _, col1, col2 = ss.get_active_rows_columns()
             return col1, col2
         else:
-            _, _, row1, row2, _, _ = ss.get_rows_columns()
+            _, _, row1, row2, _, _ = ss.get_active_rows_columns()
             return row1, row2
 
     def _range_tightbbox(self, x):
@@ -573,7 +573,7 @@ class Axes(maxes.Axes):
 
         # Apply to spanning axes and their panels
         axs = [ax]
-        if getattr(ax, '_span' + x + '_on'):
+        if getattr(ax.figure, '_span' + x):
             s = axis.get_label_position()[0]
             if s in 'lb':
                 axs = ax._get_side_axes(s)
@@ -1870,7 +1870,7 @@ class XYAxes(Axes):
             axis = getattr(self, x + 'axis')
             share = getattr(self, '_share' + x)
             if share is not None:
-                level = getattr(self, '_share' + x + '_level')
+                level = getattr(self.figure, '_share' + x)
                 if level > 0:
                     axis.label.set_visible(False)
                 if level > 2:
