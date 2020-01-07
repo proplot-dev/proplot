@@ -19,10 +19,6 @@ ProPlot v0.5.0 (2020-##-##)
 ===========================
 .. rubric:: Deprecated
 
-- Remove ``subplots.innerspace``, ``subplots.titlespace``,
-  ``subplots.xlabspace``, and ``subplots.ylabspace`` spacing arguments,
-  automatically calculate default non-tight spacing using `~proplot.subplots._get_space`
-  based on current tick lengths, label sizes, etc.
 - Rename `basemap_defaults` to `~proplot.projs.basemap_kwargs` and `cartopy_projs`
   to `~proplot.projs.cartopy_names` (:commit:`431a06ce`).
 
@@ -53,7 +49,12 @@ ProPlot v0.4.0 (2020-##-##)
 
 - Remove redundant `~proplot.rctools.use_fonts`, use ``rcParams['sans-serif']``
   precedence instead (:pr:`95`).
-- `~proplot.axes.Axes.dualx` and `~proplot.axes.Axes.dualx` no longer accept "scale-spec" arguments, must be a function, two functions, or an axis scale instance (:pr:`96`).
+- `~proplot.axes.Axes.dualx` and `~proplot.axes.Axes.dualx` no longer accept "scale-spec" arguments.
+  Must be a function, two functions, or an axis scale instance (:pr:`96`).
+- Remove ``subplots.innerspace``, ``subplots.titlespace``,
+  ``subplots.xlabspace``, and ``subplots.ylabspace`` spacing arguments,
+  automatically calculate default non-tight spacing using `~proplot.subplots._get_space`
+  based on current tick lengths, label sizes, etc.
 
 .. rubric:: Features
 
