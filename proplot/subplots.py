@@ -802,11 +802,12 @@ class Figure(mfigure.Figure):
 
     def __init__(
         self, tight=None,
-        ref=1, pad=None, axpad=None, panelpad=None,
-        includepanels=False,
-        autoformat=True,
+        ref=1, pad=None, axpad=None, panelpad=None, includepanels=False,
+        span=None, spanx=None, spany=None,
+        align=None, alignx=None, aligny=None,
+        share=None, sharex=None, sharey=None,
+        autoformat=True, fallback_to_cm=None,
         gridspec_kw=None, subplots_kw=None, subplots_orig_kw=None,
-        fallback_to_cm=None,
         **kwargs
     ):
         """
@@ -836,6 +837,36 @@ class Figure(mfigure.Figure):
             Whether to include panels when centering *x* axis labels,
             *y* axis labels, and figure "super titles" along the edge of the
             subplot grid. Default is ``False``.
+        sharex, sharey, share : {3, 2, 1, 0}, optional
+            The "axis sharing level" for the *x* axis, *y* axis, or both axes.
+            Default is ``3``. This can considerably reduce redundancy in your
+            figure. Options are as follows.
+
+            0. No axis sharing. Also sets the default `spanx` and `spany`
+               values to ``False``.
+            1. Only draw *axis label* on the leftmost column (*y*) or
+               bottommost row (*x*) of subplots. Axis tick labels
+               still appear on every subplot.
+            2. As in 1, but forces the axis limits to be identical. Axis
+               tick labels still appear on every subplot.
+            3. As in 2, but only show the *axis tick labels* on the
+               leftmost column (*y*) or bottommost row (*x*) of subplots.
+
+        spanx, spany, span : bool or {0, 1}, optional
+            Toggles "spanning" axis labels for the *x* axis, *y* axis, or both
+            axes.  Default is ``False`` if `sharex`, `sharey`, or `share` are
+            ``0``, ``True`` otherwise. When ``True``, a single, centered axis
+            label is used for all axes with bottom and left edges in the same
+            row or column.  This can considerably redundancy in your figure.
+
+            "Spanning" labels integrate with "shared" axes. For example,
+            for a 3-row, 3-column figure, with ``sharey > 1`` and ``spany=1``,
+            your figure will have 1 ylabel instead of 9.
+        alignx, aligny, align : bool or {0, 1}, optional
+            Default is ``False``. Whether to `align axis labels \
+<https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/align_labels_demo.html>`__
+            for the *x* axis, *y* axis, or both axes. Only has an effect when
+            `spanx`, `spany`, or `span` are ``False``.
         autoformat : bool, optional
             Whether to automatically configure *x* axis labels, *y* axis
             labels, axis formatters, axes titles, colorbar labels, and legend
@@ -860,9 +891,7 @@ class Figure(mfigure.Figure):
         See also
         --------
         `~matplotlib.figure.Figure`
-        """
-        # Initialize first, because need to provide fully initialized figure
-        # as argument to gridspec, because matplotlib tight_layout does that
+        """  # noqa
         tight_layout = kwargs.pop('tight_layout', None)
         constrained_layout = kwargs.pop('constrained_layout', None)
         if tight_layout or constrained_layout:
@@ -872,10 +901,36 @@ class Figure(mfigure.Figure):
                 'own tight layout algorithm, activated by default or with '
                 'tight=True.'
             )
+
+        # Initialize first, because need to provide fully initialized figure
+        # as argument to gridspec, because matplotlib tight_layout does that
         self._authorized_add_subplot = False
         self._is_preprocessing = False
         self._is_resizing = False
         super().__init__(**kwargs)
+
+        # Axes sharing and spanning settings
+        sharex = _notNone(sharex, share, rc['share'])
+        sharey = _notNone(sharey, share, rc['share'])
+        spanx = _notNone(spanx, span, 0 if sharex == 0 else None, rc['span'])
+        spany = _notNone(spany, span, 0 if sharey == 0 else None, rc['span'])
+        if spanx and (alignx or align):
+            _warn_proplot(f'"alignx" has no effect when spanx=True.')
+        if spany and (aligny or align):
+            _warn_proplot(f'"aligny" has no effect when spany=True.')
+        alignx = _notNone(alignx, align, rc['align'])
+        aligny = _notNone(aligny, align, rc['align'])
+        self.set_alignx(alignx)
+        self.set_aligny(aligny)
+        self.set_sharex(sharex)
+        self.set_sharey(sharey)
+        self.set_spanx(spanx)
+        self.set_spany(spany)
+
+        # Various other attributes
+        gridspec_kw = gridspec_kw or {}
+        gridspec = GridSpec(self, **gridspec_kw)
+        nrows, ncols = gridspec.get_active_geometry()
         self._pad = units(_notNone(pad, rc['subplots.pad']))
         self._axpad = units(_notNone(axpad, rc['subplots.axpad']))
         self._panelpad = units(_notNone(panelpad, rc['subplots.panelpad']))
@@ -891,8 +946,6 @@ class Figure(mfigure.Figure):
         self._tpanels = []
         self._lpanels = []
         self._rpanels = []
-        gridspec = GridSpec(self, **(gridspec_kw or {}))
-        nrows, ncols = gridspec.get_active_geometry()
         self._barray = np.empty((0, ncols), dtype=bool)
         self._tarray = np.empty((0, ncols), dtype=bool)
         self._larray = np.empty((0, nrows), dtype=bool)
@@ -2092,36 +2145,6 @@ def subplots(
         subplots and the figure edge. Units are interpreted by
         `~proplot.utils.units`. By default, these are determined by the
         "tight layout" algorithm.
-
-    sharex, sharey, share : {3, 2, 1, 0}, optional
-        The "axis sharing level" for the *x* axis, *y* axis, or both axes.
-        Default is ``3``. The options are as follows:
-
-        0. No axis sharing. Also sets the default `spanx` and `spany` values
-           to ``False``.
-        1. Only draw *axis label* on the leftmost column (*y*) or
-           bottommost row (*x*) of subplots. Axis tick labels
-           still appear on every subplot.
-        2. As in 1, but forces the axis limits to be identical. Axis
-           tick labels still appear on every subplot.
-        3. As in 2, but only show the *axis tick labels* on the
-           leftmost column (*y*) or bottommost row (*x*) of subplots.
-
-    spanx, spany, span : bool or {1, 0}, optional
-        Toggles "spanning" axis labels for the *x* axis, *y* axis, or both
-        axes. Default is ``False`` if `sharex`, `sharey`, or `share` are ``0``,
-        ``True`` otherwise.  When ``True``, a single, centered axis label
-        is used for all axes with bottom and left edges in the same row or
-        column.
-
-        Note that "spanning" labels are integrated with "shared" axes. For
-        example, for a 3-row, 3-column figure, with ``sharey > 1`` and
-        ``spany=1``, your figure will have 1 ylabel instead of 9.
-    alignx, aligny, align : bool or {0, 1}, optional
-        Whether to `align axis labels \
-<https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/align_labels_demo.html>`__
-        for the *x* axis, *y* axis, or both axes. Only has an effect when
-        `spanx`, `spany`, or `span` are ``False``. Default is ``False``.
     proj, projection : str or dict-like, optional
         The map projection name. The argument is interpreted as follows.
 
@@ -2207,36 +2230,12 @@ def subplots(
         )
     nrows, ncols = array.shape
 
-    # Figure out rows and columns "spanned" by each axes in list, for
-    # axis sharing and axis label spanning settings
-    sharex = int(_notNone(sharex, share, rc['share']))
-    sharey = int(_notNone(sharey, share, rc['share']))
-    if sharex not in range(4) or sharey not in range(4):
-        raise ValueError(
-            f'Axis sharing level can be 0 (no sharing), '
-            '1 (sharing, but keep all tick labels), '
-            '2 (sharing, keep one set of tick labels), '
-            'or 3 (sharing, keep one axis label and one set of tick labels)'
-            'Got sharex={sharex} and sharey={sharey}.'
-        )
-    spanx = _notNone(spanx, span, 0 if sharex == 0 else None, rc['span'])
-    spany = _notNone(spany, span, 0 if sharey == 0 else None, rc['span'])
-    alignx = _notNone(alignx, align)
-    aligny = _notNone(aligny, align)
-    if (spanx and alignx) or (spany and aligny):
-        _warn_proplot(
-            f'The "alignx" and "aligny" args have no effect when '
-            '"spanx" and "spany" are True.'
-        )
-    alignx = _notNone(alignx, rc['align'])
-    aligny = _notNone(alignx, rc['align'])
     # Get some axes properties, where locations are sorted by axes id.
     # NOTE: These ranges are endpoint exclusive, like a slice object!
     axids = [np.where(array == i) for i in np.sort(
         np.unique(array)) if i > 0]  # 0 stands for empty
     xrange = np.array([[x.min(), x.max()] for _, x in axids])
-    yrange = np.array([[y.min(), y.max()]
-                       for y, _ in axids])  # range accounting for panels
+    yrange = np.array([[y.min(), y.max()] for y, _ in axids])
     xref = xrange[ref - 1, :]  # range for reference axes
     yref = yrange[ref - 1, :]
 
@@ -2345,6 +2344,9 @@ def subplots(
     }
 
     # Apply default spaces
+    share = kwargs.get('share', None)
+    sharex = _notNone(kwargs.get('sharex', None), share, rc['share'])
+    sharey = _notNone(kwargs.get('sharey', None), share, rc['share'])
     left = _notNone(left, _get_space('left'))
     right = _notNone(right, _get_space('right'))
     bottom = _notNone(bottom, _get_space('bottom'))
@@ -2383,11 +2385,9 @@ def subplots(
         subplotspec = gridspec[y0:y1 + 1, x0:x1 + 1]
         with fig._authorize_add_subplot():
             axs[idx] = fig.add_subplot(
-                subplotspec, number=num,
-                spanx=spanx, spany=spany, alignx=alignx, aligny=aligny,
-                sharex=sharex, sharey=sharey,
-                main=True,
-                **axes_kw[num])
+                subplotspec, number=num, main=True,
+                **axes_kw[num]
+            )
 
     # Shared axes setup
     # TODO: Figure out how to defer this to drawtime in #50
