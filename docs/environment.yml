@@ -18,7 +18,6 @@ dependencies:
   - pip
   - pip:
     - ..
-    - lxml
     - pyyaml
     - pyqt5
     - nbsphinx

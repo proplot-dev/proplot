@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
 Tools for registering and visualizing colormaps, color cycles, color string
-names, and fonts. Defines new colormap classes, new colormap normalizer
+names, and fonts. New colormap classes, new colormap normalizer
 classes, and new constructor functions for generating instances of these
-classes. Includes related utilities for manipulating colors. See
+classes. Related utilities for manipulating colors. See
 :ref:`Colormaps`, :ref:`Color cycles`, and :ref:`Colors and fonts`
 for details.
 """
@@ -14,7 +14,7 @@ import re
 import json
 import glob
 import cycler
-from lxml import etree
+from xml.etree import ElementTree
 from numbers import Number, Integral
 from matplotlib import docstring, rcParams
 import numpy as np
@@ -2787,12 +2787,12 @@ def _load_cmap_cycle(filename, cmap=False):
     # https://sciviscolor.org/matlab-matplotlib-pv44/
     elif ext == 'xml':
         try:
-            xmldoc = etree.parse(filename)
+            doc = ElementTree.parse(filename)
         except IOError:
             _warn_proplot(f'Failed to load {filename!r}.')
             return None, None
         x, data = [], []
-        for s in xmldoc.getroot().findall('.//Point'):
+        for s in doc.getroot().findall('.//Point'):
             # Verify keys
             if any(key not in s.attrib for key in 'xrgb'):
                 _warn_proplot(
