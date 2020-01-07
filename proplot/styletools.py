@@ -666,7 +666,7 @@ def make_mapping_array(N, data, gamma=1.0, inverse=False):
     return lut
 
 
-class _Colormap():
+class _Colormap(object):
     """Mixin class used to add some helper methods."""
     def _get_data(self, ext):
         """
@@ -1191,7 +1191,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         return cmap
 
     @staticmethod
-    def from_file(path):
+    def from_file(path, warn_on_failure=False):
         """
         Load colormap from a file.
         Valid file extensions are described in the below table.
@@ -1210,8 +1210,11 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         ----------
         path : str
             The file path.
+        warn_on_failure : bool, optional
+            If ``True``, issue a warning when loading fails rather than
+            raising an error.
         """  # noqa
-        return _from_file(path, listed=False)
+        return _from_file(path, listed=False, warn_on_failure=warn_on_failure)
 
     @staticmethod
     def from_list(name, colors, ratios=None, **kwargs):
@@ -1434,7 +1437,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         return cmap
 
     @staticmethod
-    def from_file(path):
+    def from_file(path, warn_on_failure=False):
         """
         Load color cycle from a file.
         Valid file extensions are described in the below table.
@@ -1453,8 +1456,11 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         ----------
         path : str
             The file path.
+        warn_on_failure : bool, optional
+            If ``True``, issue a warning when loading fails rather than
+            raising an error.
         """  # noqa
-        return _from_file(path, listed=True)
+        return _from_file(path, listed=True, warn_on_failure=warn_on_failure)
 
 
 class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
@@ -2792,11 +2798,19 @@ def _get_data_paths(dirname):
     ]
 
 
-def _from_file(filename, listed=False):
+def _from_file(filename, listed=False, warn_on_failure=False):
     """Read generalized colormap and color cycle files."""
     filename = os.path.expanduser(filename)
     if os.path.isdir(filename):  # no warning
         return
+
+    # Warn if loading failed during `register_cmaps` or `register_cycles`
+    # but raise error if user tries to load a file.
+    def _warn_or_raise(msg):
+        if warn_on_failure:
+            _warn_proplot(msg)
+        else:
+            raise RuntimeError(msg)
 
     # Directly read segmentdata json file
     # NOTE: This is special case! Immediately return name and cmap
@@ -2828,19 +2842,19 @@ def _from_file(filename, listed=False):
         try:
             data = [[float(num) for num in line] for line in data]
         except ValueError:
-            _warn_proplot(
+            _warn_or_raise(
                 f'Failed to load {filename!r}. Expected a table of comma '
                 'or space-separated values.'
             )
-            return None, None
+            return
         # Build x-coordinates and standardize shape
         data = np.array(data)
         if data.shape[1] != len(ext):
-            _warn_proplot(
+            _warn_or_raise(
                 f'Failed to load {filename!r}. Got {data.shape[1]} columns, '
                 f'but expected {len(ext)}.'
             )
-            return None, None
+            return
         if ext[0] != 'x':  # i.e. no x-coordinates specified explicitly
             x = np.linspace(0, 1, data.shape[0])
         else:
@@ -2853,13 +2867,15 @@ def _from_file(filename, listed=False):
         try:
             doc = ElementTree.parse(filename)
         except IOError:
-            _warn_proplot(f'Failed to load {filename!r}.')
+            _warn_or_raise(
+                f'Failed to load {filename!r}.'
+            )
             return
         x, data = [], []
         for s in doc.getroot().findall('.//Point'):
             # Verify keys
             if any(key not in s.attrib for key in 'xrgb'):
-                _warn_proplot(
+                _warn_or_raise(
                     f'Failed to load {filename!r}. Missing an x, r, g, or b '
                     'specification inside one or more <Point> tags.'
                 )
@@ -2875,7 +2891,7 @@ def _from_file(filename, listed=False):
         # Convert to array
         if not all(len(data[0]) == len(color)
                    and len(color) in (3, 4) for color in data):
-            _warn_proplot(
+            _warn_or_raise(
                 f'Failed to load {filename!r}. Unexpected number of channels '
                 'or mixed channels across <Point> tags.'
             )
@@ -2887,7 +2903,7 @@ def _from_file(filename, listed=False):
         string = open(filename).read()  # into single string
         data = re.findall('#[0-9a-fA-F]{6}', string)  # list of strings
         if len(data) < 2:
-            _warn_proplot(
+            _warn_or_raise(
                 f'Failed to load {filename!r}. Hex strings not found.'
             )
             return
@@ -2895,7 +2911,7 @@ def _from_file(filename, listed=False):
         x = np.linspace(0, 1, len(data))
         data = [to_rgb(color) for color in data]
     else:
-        _warn_proplot(
+        _warn_or_raise(
             f'Colormap or cycle file {filename!r} has unknown extension.'
         )
         return
@@ -2936,7 +2952,9 @@ def register_cmaps():
     """
     for i, path in enumerate(_get_data_paths('cmaps')):
         for filename in sorted(glob.glob(os.path.join(path, '*'))):
-            cmap = LinearSegmentedColormap.from_file(filename)
+            cmap = LinearSegmentedColormap.from_file(
+                filename, warn_on_failure=True
+            )
             if not cmap:
                 continue
             if i == 0 and cmap.name.lower() in ('phase', 'graycycle'):
@@ -2958,7 +2976,9 @@ def register_cycles():
     """
     for path in _get_data_paths('cycles'):
         for filename in sorted(glob.glob(os.path.join(path, '*'))):
-            cmap = ListedColormap.from_file(filename)
+            cmap = ListedColormap.from_file(
+                filename, warn_on_failure=True
+            )
             if not cmap:
                 continue
             if isinstance(cmap, LinearSegmentedColormap):
