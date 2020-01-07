@@ -24,11 +24,11 @@ class _benchmark(object):
         self.message = message
 
     def __enter__(self):
-        self.time = time.clock()
+        self.time = time.perf_counter()
 
     def __exit__(self, *args):
         if BENCHMARK:
-            print(f'{self.message}: {time.clock() - self.time}s')
+            print(f'{self.message}: {time.perf_counter() - self.time}s')
 
 
 class _setstate(object):
@@ -59,10 +59,10 @@ def _counter(func):
     @functools.wraps(func)
     def decorator(*args, **kwargs):
         if BENCHMARK:
-            t = time.clock()
+            t = time.perf_counter()
         res = func(*args, **kwargs)
         if BENCHMARK:
-            decorator.time += (time.clock() - t)
+            decorator.time += (time.perf_counter() - t)
             decorator.count += 1
             print(f'{func.__name__}() cumulative time: {decorator.time}s '
                   f'({decorator.count} calls)')
@@ -78,10 +78,10 @@ def _timer(func):
     @functools.wraps(func)
     def decorator(*args, **kwargs):
         if BENCHMARK:
-            t = time.clock()
+            t = time.perf_counter()
         res = func(*args, **kwargs)
         if BENCHMARK:
-            print(f'{func.__name__}() time: {time.clock()-t}s')
+            print(f'{func.__name__}() time: {time.perf_counter()-t}s')
         return res
     return decorator
 
@@ -118,7 +118,8 @@ def _notNone(*args, names=None):
         if len(names) != len(args) - 1:
             raise ValueError(
                 f'Need {len(args)+1} names for {len(args)} args, '
-                f'but got {len(names)} names.')
+                f'but got {len(names)} names.'
+            )
         names = [*names, '']
         for name, arg in zip(names, args):
             if arg is not None:
@@ -129,7 +130,8 @@ def _notNone(*args, names=None):
         if len(kwargs) > 1:
             _warn_proplot(
                 f'Got conflicting or duplicate keyword args, '
-                f'using the first one: {kwargs}')
+                f'using the first one: {kwargs}'
+            )
         return first
 
 
@@ -329,7 +331,8 @@ def units(value, units='in', axes=None, figure=None, width=True):
     except KeyError:
         raise ValueError(
             f'Invalid destination units {units!r}. Valid units are '
-            + ', '.join(map(repr, unit_dict.keys())) + '.')
+            + ', '.join(map(repr, unit_dict.keys())) + '.'
+        )
 
     # Convert units for each value in list
     result = []
@@ -341,12 +344,14 @@ def units(value, units='in', axes=None, figure=None, width=True):
         elif not isinstance(val, str):
             raise ValueError(
                 f'Size spec must be string or number or list thereof. '
-                'Got {value!r}.')
+                'Got {value!r}.'
+            )
         regex = NUMBER.match(val)
         if not regex:
             raise ValueError(
                 f'Invalid size spec {val!r}. Valid units are '
-                + ', '.join(map(repr, unit_dict.keys())) + '.')
+                + ', '.join(map(repr, unit_dict.keys())) + '.'
+            )
         number, _, units = regex.groups()  # second group is exponential
         try:
             result.append(
@@ -354,7 +359,8 @@ def units(value, units='in', axes=None, figure=None, width=True):
         except (KeyError, ValueError):
             raise ValueError(
                 f'Invalid size spec {val!r}. Valid units are '
-                + ', '.join(map(repr, unit_dict.keys())) + '.')
+                + ', '.join(map(repr, unit_dict.keys())) + '.'
+            )
     if singleton:
         result = result[0]
     return result
