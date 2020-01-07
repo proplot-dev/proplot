@@ -190,6 +190,7 @@ def edges(Z, axis=-1):
     `~numpy.ndarray`
         Array of "edge" coordinates.
     """
+    Z = np.asarray(Z)
     Z = np.swapaxes(Z, axis, -1)
     Z = np.concatenate((
         Z[..., :1] - (Z[..., 1] - Z[..., 0]) / 2,
