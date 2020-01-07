@@ -61,7 +61,9 @@ ProPlot v0.4.0 (2020-##-##)
 - Add TeX Gyre Heros as Helvetica-alternative (:pr:`95`). This is the new open-source default font.
 - Add `xlinewidth`, `ylinewidth`, `xgridcolor`, `ygridcolor` keyword
   args to `~proplot.axes.XYAxes.format` (:pr:`95`).
-- Add `~proplot.subplots.Figure` ``fallback_to_cm`` kwarg. This is used by `~proplot.styletools.show_fonts` to show dummy glyphs to clearly illustrate when fonts are missing characters, but preserve graceful fallback for end user.
+- Add `~proplot.subplots.Figure` ``fallback_to_cm`` kwarg. This is used by
+  `~proplot.styletools.show_fonts` to show dummy glyphs to clearly illustrate when fonts are
+  missing characters, but preserve graceful fallback for end user.
 - `~proplot.rctools.rc` `~proplot.rctools.rc_configurator.__getitem__` always
   returns the setting. To get context block-restricted settings, you must explicitly pass
   ``context=True`` to `~proplot.rctools.rc_configurator.get`, `~proplot.rctools.rc_configurator.fill`,
@@ -77,13 +79,16 @@ ProPlot v0.4.0 (2020-##-##)
 .. rubric:: Documentation
 
 - Imperative mood for docstring summaries (:pr:`92`).
-- Fix `~proplot.styletools.show_cycles` bug (:pr:`90`) and show cycles using colorbars rather than lines.
+- Fix `~proplot.styletools.show_cycles` bug (:pr:`90`) and show cycles using colorbars
+  rather than lines.
 
 .. rubric:: Internals
 
 - Define `~proplot.rctools.rc` default values with inline dictionaries rather than
   with a default ``.proplotrc`` file, change the auto-generated user ``.proplotrc``
   (:pr:`91`).
+- Remove useless `panel_kw` keyword arg from `~proplot.wrappers.legend_wrapper` and
+  `~proplot.wrappers.colorbar_wrapper` (:pr:`91`).
 
 ProPlot v0.3.1 (2019-12-16)
 ===========================
