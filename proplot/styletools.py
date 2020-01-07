@@ -3555,7 +3555,7 @@ def show_cmaps(*args, N=None, unknown='User', **kwargs):
     # Get dictionary of registered colormaps and their categories
     cmapdict = {}
     names_all = list(map(str.lower, names))
-    names_known = sum(CMAPS_TABLE.values(), [])
+    names_known = sum(map(list, CMAPS_TABLE.values()), [])
     cmapdict[unknown] = [name for name in names if name not in names_known]
     for cat, names in CMAPS_TABLE.items():
         cmapdict[cat] = [name for name in names if name.lower() in names_all]
