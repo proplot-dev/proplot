@@ -1361,7 +1361,7 @@ def text_wrapper(
     if size is not None:
         kwargs['fontsize'] = units(size, 'pt')
     # text.color is ignored sometimes unless we apply this
-    kwargs.setdefault('color', rc.get('text.color'))
+    kwargs.setdefault('color', rc['text.color'])
     obj = func(self, x, y, text, transform=transform, **kwargs)
 
     # Optionally draw border around text
@@ -2779,11 +2779,11 @@ or colormap-spec
             if orientation == 'horizontal':
                 scale = 3  # em squares alotted for labels
                 length = width * abs(self.get_position().width)
-                fontsize = kw_ticklabels.get('size', rc.get('xtick.labelsize'))
+                fontsize = kw_ticklabels.get('size', rc['xtick.labelsize'])
             else:
                 scale = 1
                 length = height * abs(self.get_position().height)
-                fontsize = kw_ticklabels.get('size', rc.get('ytick.labelsize'))
+                fontsize = kw_ticklabels.get('size', rc['ytick.labelsize'])
             maxn = _notNone(maxn, int(length / (scale * fontsize / 72)))
             maxn_minor = _notNone(maxn_minor, int(
                 length / (0.5 * fontsize / 72)))
