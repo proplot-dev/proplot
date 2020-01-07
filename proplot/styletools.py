@@ -3022,15 +3022,18 @@ def register_colors(nmax=np.inf):
         if i == 0:
             paths = [  # be explicit because categories matter!
                 os.path.join(path, base)
-                for base in ('xkcd.txt', 'crayola.txt', 'open.txt')
+                for base in ('xkcd.txt', 'crayola.txt', 'opencolor.txt')
             ]
         else:
             paths = sorted(glob.glob(os.path.join(path, '*.txt')))
         for file in paths:
             cat, _ = os.path.splitext(os.path.basename(file))
             with open(file, 'r') as f:
-                pairs = [tuple(item.strip() for item in line.split(':'))
-                         for line in f.readlines() if line.strip()]
+                pairs = [
+                    tuple(item.strip() for item in line.split(':'))
+                    for line in f.readlines()
+                    if line.strip() and line.strip()[0] != '#'
+                ]
             if not all(len(pair) == 2 for pair in pairs):
                 raise RuntimeError(
                     f'Invalid color names file {file!r}. '
@@ -3038,7 +3041,7 @@ def register_colors(nmax=np.inf):
                 )
 
             # Categories for which we add *all* colors
-            if cat == 'open' or i == 1:
+            if cat == 'opencolor' or i == 1:
                 dict_ = {name: color for name, color in pairs}
                 mcolors.colorConverter.colors.update(dict_)
                 colors[cat] = sorted(dict_)
@@ -3430,8 +3433,8 @@ def show_colors(nhues=17, minsat=20):
     figs = []
     from . import subplots
     for cats in (
-            ('open',),
-            tuple(name for name in colors if name not in ('css', 'open'))
+            ('opencolor',),
+            tuple(name for name in colors if name not in ('css', 'opencolor'))
     ):
         # Dictionary of colors for that category
         data = {}
@@ -3441,7 +3444,7 @@ def show_colors(nhues=17, minsat=20):
 
         # Group colors together by discrete range of hue, then sort by value
         # For opencolors this is not necessary
-        if cats == ('open',):
+        if cats == ('opencolor',):
             wscale = 0.5
             swatch = 1.5
             nrows, ncols = 10, len(COLORS_OPEN)  # rows and columns
