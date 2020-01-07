@@ -4,7 +4,7 @@ The axes classes used for all ProPlot figures.
 """
 import numpy as np
 import functools
-from numbers import Integral
+from numbers import Integral, Number
 import matplotlib.projections as mproj
 import matplotlib.axes as maxes
 import matplotlib.dates as mdates
@@ -43,8 +43,13 @@ __all__ = [
 
 # Translator for inset colorbars and legends
 ABC_STRING = 'abcdefghijklmnopqrstuvwxyz'
+SIDE_TRANSLATE = {
+    'l': 'left',
+    'r': 'right',
+    'b': 'bottom',
+    't': 'top',
+}
 LOC_TRANSLATE = {
-    None: None,
     'inset': 'best',
     'i': 'best',
     0: 'best',
@@ -70,12 +75,6 @@ LOC_TRANSLATE = {
     'cl': 'center left',
     'uc': 'upper center',
     'lc': 'lower center',
-}
-SIDE_TRANSLATE = {
-    'l': 'left',
-    'r': 'right',
-    'b': 'bottom',
-    't': 'top',
 }
 
 
@@ -242,80 +241,94 @@ class Axes(maxes.Axes):
             return [pax, *axs]
 
     def _get_title_props(self, abc=False, loc=None):
-        """Returns standardized location name, position keyword arguments, and
-        setting keyword arguments for the relevant title or a-b-c label at
+        """Return the standardized location name, position keyword arguments,
+        and setting keyword arguments for the relevant title or a-b-c label at
         location `loc`."""
-        # Props
-        # NOTE: Sometimes we load all properties from rc object, sometimes
-        # just changed ones. This is important if e.g. user calls in two
-        # lines ax.format(titleweight='bold') then ax.format(title='text'),
-        # don't want to override custom setting with rc default setting.
-        def props(cache):
-            return rc.fill({
-                'fontsize': f'{prefix}.size',
-                'weight': f'{prefix}.weight',
-                'color': f'{prefix}.color',
-                'border': f'{prefix}.border',
-                'linewidth': f'{prefix}.linewidth',
-                'fontfamily': 'font.family',
-            }, cache=cache)
-
         # Location string and position coordinates
-        cache = True
+        context = True
         prefix = 'abc' if abc else 'title'
-        loc = _notNone(loc, rc[f'{prefix}.loc'])
-        iloc = getattr(self, '_' + ('abc' if abc else 'title') + '_loc')  # old
+        loc = _notNone(loc, rc.get(f'{prefix}.loc', context=True))
+        loc_prev = getattr(
+            self, '_' + ('abc' if abc else 'title')
+            + '_loc')  # old
         if loc is None:
-            loc = iloc
-        elif iloc is not None and loc != iloc:
-            cache = False
+            loc = loc_prev
+        elif loc_prev is not None and loc != loc_prev:
+            context = False
+        try:
+            loc = self._loc_translate(loc)
+        except KeyError:
+            raise ValueError(f'Invalid title or abc loc {loc!r}.')
+        else:
+            if loc in ('top', 'bottom', 'best') or not isinstance(loc, str):
+                raise ValueError(f'Invalid title or abc loc {loc!r}.')
 
-        # Above axes
-        loc = LOC_TRANSLATE.get(loc, loc)
-        if loc in ('top', 'bottom'):
-            raise ValueError(f'Invalid title location {loc!r}.')
-        elif loc in ('left', 'right', 'center'):
-            kw = props(cache)
-            kw.pop('border', None)  # no border for titles outside axes
-            kw.pop('linewidth', None)
+        # Existing object
+        if loc in ('left', 'right', 'center'):
             if loc == 'center':
                 obj = self.title
             else:
                 obj = getattr(self, '_' + loc + '_title')
-        # Inside axes
         elif loc in self._titles_dict:
-            kw = props(cache)
             obj = self._titles_dict[loc]
+        # New object
         else:
-            kw = props(False)
+            context = False
             width, height = self.get_size_inches()
             if loc in ('upper center', 'lower center'):
                 x, ha = 0.5, 'center'
             elif loc in ('upper left', 'lower left'):
-                xpad = rc.get('axes.titlepad') / (72 * width)
+                xpad = rc['axes.titlepad'] / (72 * width)
                 x, ha = 1.5 * xpad, 'left'
             elif loc in ('upper right', 'lower right'):
-                xpad = rc.get('axes.titlepad') / (72 * width)
+                xpad = rc['axes.titlepad'] / (72 * width)
                 x, ha = 1 - 1.5 * xpad, 'right'
             else:
-                raise ValueError(f'Invalid title or abc "loc" {loc}.')
+                raise RuntimeError  # should be impossible
             if loc in ('upper left', 'upper right', 'upper center'):
-                ypad = rc.get('axes.titlepad') / (72 * height)
+                ypad = rc['axes.titlepad'] / (72 * height)
                 y, va = 1 - 1.5 * ypad, 'top'
             elif loc in ('lower left', 'lower right', 'lower center'):
-                ypad = rc.get('axes.titlepad') / (72 * height)
+                ypad = rc['axes.titlepad'] / (72 * height)
                 y, va = 1.5 * ypad, 'bottom'
+            else:
+                raise RuntimeError  # should be impossible
             obj = self.text(x, y, '', ha=ha, va=va, transform=self.transAxes)
             obj.set_transform(self.transAxes)
+
+        # Return location, object, and settings
+        # NOTE: Sometimes we load all properties from rc object, sometimes
+        # just changed ones. This is important if e.g. user calls in two
+        # lines ax.format(titleweight='bold') then ax.format(title='text')
+        kw = rc.fill({
+            'fontsize': f'{prefix}.size',
+            'weight': f'{prefix}.weight',
+            'color': f'{prefix}.color',
+            'border': f'{prefix}.border',
+            'linewidth': f'{prefix}.linewidth',
+            'fontfamily': 'font.family',
+        }, context=context)
+        if loc in ('left', 'right', 'center'):
+            kw.pop('border', None)
+            kw.pop('linewidth', None)
         return loc, obj, kw
 
     @staticmethod
-    def _loc_translate(loc, **kwargs):
-        """Translates location string `loc` into a standardized form."""
-        if loc is True:
-            loc = 'r'  # for on-the-fly colorbars and legends
+    def _loc_translate(loc, default=None):
+        """Return the location string `loc` translated into a standardized
+        form."""
+        if loc in (None, True):
+            loc = default
         elif isinstance(loc, (str, Integral)):
-            loc = LOC_TRANSLATE.get(loc, loc)
+            try:
+                loc = LOC_TRANSLATE[loc]
+            except KeyError:
+                raise KeyError(f'Invalid location {loc!r}.')
+        elif np.iterable(loc) and len(loc) == 2 and all(
+                isinstance(l, Number) for l in loc):
+            loc = np.array(loc)
+        else:
+            raise KeyError(f'Invalid location {loc!r}.')
         return loc
 
     def _make_inset_locator(self, bounds, trans):
@@ -877,8 +890,8 @@ optional
                  alpha=None, linewidth=None, edgecolor=None, facecolor=None,
                  **kwargs):
         """
-        Adds colorbar as an *inset* or along the outside edge of the axes.
-        See `~proplot.wrappers.colorbar_wrapper` for details.
+        Add an *inset* colorbar or *outer* colorbar along the outside edge of
+        the axes. See `~proplot.wrappers.colorbar_wrapper` for details.
 
         Parameters
         ----------
@@ -903,7 +916,7 @@ optional
         pad : float or str, optional
             The space between the axes edge and the colorbar. For inset
             colorbars only. Units are interpreted by `~proplot.utils.units`.
-            Default is :rc:`colorbar.axespad`.
+            Default is :rc:`colorbar.insetpad`.
         length : float or str, optional
             The colorbar length. For outer colorbars, units are relative to the
             axes width or height. Default is :rc:`colorbar.length`. For inset
@@ -911,17 +924,19 @@ optional
             is :rc:`colorbar.insetlength`.
         width : float or str, optional
             The colorbar width. Units are interpreted by
-            `~proplot.utils.units`. Default is :rc:`colorbar.width` or
+            `~proplot.utils.units`.  For outer colorbars, default is
+            :rc:`colorbar.width`. For inset colorbars, default is
             :rc:`colorbar.insetwidth`.
         space : float or str, optional
-            The space between the colorbar and the main axes. For outer
-            colorbars only. Units are interpreted by `~proplot.utils.units`.
+            For outer colorbars only. The space between the colorbar and the
+            main axes. Units are interpreted by `~proplot.utils.units`.
             When :rcraw:`tight` is ``True``, this is adjusted automatically.
-            Otherwise, defaut is :rc:`subplots.panelspace`.
+            When :rcraw:`tight` is ``False``, the default is
+            :rc:`subplots.panelspace`.
         frame, frameon : bool, optional
-            Whether to draw a frame around inset colorbars, just like
-            `~matplotlib.axes.Axes.legend`.
-            Default is :rc:`colorbar.frameon`.
+            For inset colorbars, indicates whether to draw a "frame", just
+            like `~matplotlib.axes.Axes.legend`. Default is
+            :rc:`colorbar.frameon`.
         alpha, linewidth, edgecolor, facecolor : optional
             Transparency, edge width, edge color, and face color for the frame
             around the inset colorbar. Default is
@@ -933,12 +948,11 @@ optional
         """
         # TODO: add option to pad inset away from axes edge!
         kwargs.update({'edgecolor': edgecolor, 'linewidth': linewidth})
-        loc = _notNone(loc, rc['colorbar.loc'])
-        loc = self._loc_translate(loc)
-        if loc == 'best':  # a white lie
-            loc = 'lower right'
+        loc = self._loc_translate(loc, rc['colorbar.loc'])
         if not isinstance(loc, str):  # e.g. 2-tuple or ndarray
             raise ValueError(f'Invalid colorbar location {loc!r}.')
+        if loc == 'best':  # white lie
+            loc = 'lower right'
 
         # Generate panel
         if loc in ('left', 'right', 'top', 'bottom'):
@@ -1014,12 +1028,16 @@ optional
             cbwidth, cblength = width, length
             width, height = self.get_size_inches()
             extend = units(_notNone(
-                kwargs.get('extendsize', None), rc['colorbar.insetextend']))
+                kwargs.get('extendsize', None),
+                rc['colorbar.insetextend']
+            ))
             cbwidth = units(_notNone(
-                cbwidth, rc['colorbar.insetwidth'])) / height
+                cbwidth, rc['colorbar.insetwidth']
+            )) / height
             cblength = units(_notNone(
-                cblength, rc['colorbar.insetlength'])) / width
-            pad = units(_notNone(pad, rc['colorbar.axespad']))
+                cblength, rc['colorbar.insetlength']
+            )) / width
+            pad = units(_notNone(pad, rc['colorbar.insetpad']))
             xpad, ypad = pad / width, pad / height
 
             # Get location in axes-relative coordinates
@@ -1056,18 +1074,19 @@ optional
                 frame, frameon, rc['colorbar.frameon'],
                 names=('frame', 'frameon'))
             if frameon:
-                # Make patch object
                 xmin, ymin, width, height = fbounds
                 patch = mpatches.Rectangle(
                     (xmin, ymin), width, height,
                     snap=True, zorder=4, transform=self.transAxes)
-                # Update patch props
                 alpha = _notNone(alpha, rc['colorbar.framealpha'])
                 linewidth = _notNone(linewidth, rc['axes.linewidth'])
                 edgecolor = _notNone(edgecolor, rc['axes.edgecolor'])
                 facecolor = _notNone(facecolor, rc['axes.facecolor'])
-                patch.update({'alpha': alpha, 'linewidth': linewidth,
-                              'edgecolor': edgecolor, 'facecolor': facecolor})
+                patch.update({
+                    'alpha': alpha,
+                    'linewidth': linewidth,
+                    'edgecolor': edgecolor,
+                    'facecolor': facecolor})
                 self.add_artist(patch)
 
             # Make axes
@@ -1098,7 +1117,7 @@ optional
 
     def legend(self, *args, loc=None, width=None, space=None, **kwargs):
         """
-        Adds an *inset* legend or *outer* legend along the edge of the axes.
+        Add an *inset* legend or *outer* legend along the edge of the axes.
         See `~proplot.wrappers.legend_wrapper` for details.
 
         Parameters
@@ -1128,21 +1147,21 @@ optional
             ==================  =======================================
 
         width : float or str, optional
-            The space allocated for outer legends. This does nothing
-            if :rcraw:`tight` is ``True``. Units are interpreted by
+            For outer legends only. The space allocated for the legend box.
+            Ignored if :rcraw:`tight` is ``True``. Units are interpreted by
             `~proplot.utils.units`.
         space : float or str, optional
-            The space between the axes and the legend for outer legends.
-            Units are interpreted by `~proplot.utils.units`.
+            For outer legends only. The space between the axes and the legend
+            box.  Units are interpreted by `~proplot.utils.units`.
             When :rcraw:`tight` is ``True``, this is adjusted automatically.
-            Otherwise, defaut is :rc:`subplots.panelspace`.
+            When :rcraw:`tight` is ``False``, this is adjusted automatically.
 
         Other parameters
         ----------------
         *args, **kwargs
             Passed to `~proplot.wrappers.legend_wrapper`.
         """
-        loc = self._loc_translate(loc, width=width, space=space)
+        loc = self._loc_translate(loc, rc['legend.loc'])
         if isinstance(loc, np.ndarray):
             loc = loc.tolist()
 
