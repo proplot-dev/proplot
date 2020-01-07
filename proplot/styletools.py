@@ -39,6 +39,26 @@ __all__ = [
 ]
 
 # Colormap stuff
+CYCLES_TABLE = {
+    'Matplotlib originals': (
+        'default', 'classic',
+    ),
+    'Matplotlib stylesheets': (
+        'colorblind', 'colorblind10', 'ggplot', 'bmh', 'solarized', '538',
+    ),
+    'ColorBrewer2.0 qualitative': (
+        'Accent', 'Dark2',
+        'Paired', 'Pastel1', 'Pastel2',
+        'Set1', 'Set2', 'Set3',
+    ),
+    'Other qualitative': (
+        'FlatUI', 'Qual1', 'Qual2', 'Viz',
+    ),
+    'ProPlot originals': (
+        'Cool', 'Warm', 'Hot',
+        'Floral', 'Contrast', 'Sharp',
+    ),
+}
 CMAPS_TABLE = {
     # Assorted origin, but these belong together
     'Grayscale': (
@@ -3164,12 +3184,20 @@ def register_fonts():
     fonts[:] = [*fonts_proplot, *fonts_system]
 
 
-def _draw_bars(cmapdict, length=4.0, width=0.2):
+def _draw_bars(names, *, source, unknown='User', length=4.0, width=0.2):
     """
     Draw colorbars for "colormaps" and "color cycles". This is called by
     `show_cycles` and `show_cmaps`.
     """
-    # Figure
+    # Categorize the input names
+    cmapdict = {}
+    names_all = list(map(str.lower, names))
+    names_known = list(map(str.lower, sum(map(list, source.values()), [])))
+    cmapdict[unknown] = [name for name in names if name not in names_known]
+    for cat, names in source.items():
+        cmapdict[cat] = [name for name in names if name.lower() in names_all]
+
+    # Draw figure
     from . import subplots
     naxs = len(cmapdict) + sum(map(len, cmapdict.values()))
     fig, axs = subplots(
@@ -3526,10 +3554,10 @@ def show_colors(nhues=17, minsat=20):
     return figs
 
 
-def show_cmaps(*args, N=None, unknown='User', **kwargs):
+def show_cmaps(*args, N=None, **kwargs):
     """
-    Generate a table of the registered colormaps or the input colormaps.
-    Adapted from `this example \
+    Generate a table of the registered colormaps or the input colormaps
+    categorized by source. Adapted from `this example \
 <http://matplotlib.org/examples/color/colormaps_reference.html>`__.
 
     Parameters
@@ -3564,26 +3592,24 @@ def show_cmaps(*args, N=None, unknown='User', **kwargs):
             isinstance(mcm.cmap_d[name], LinearSegmentedColormap)
         ]
 
-    # Get dictionary of registered colormaps and their categories
-    cmapdict = {}
-    names_all = list(map(str.lower, names))
-    names_known = sum(map(list, CMAPS_TABLE.values()), [])
-    cmapdict[unknown] = [name for name in names if name not in names_known]
-    for cat, names in CMAPS_TABLE.items():
-        cmapdict[cat] = [name for name in names if name.lower() in names_all]
-
     # Return figure of colorbars
-    return _draw_bars(cmapdict, **kwargs)
+    kwargs.setdefault('source', CMAPS_TABLE)
+    return _draw_bars(names, **kwargs)
 
 
 def show_cycles(*args, **kwargs):
     """
-    Generate a table of registered color cycles or the input color cycles.
+    Generate a table of registered color cycles or the input color cycles
+    categorized by source. Adapted from `this example \
+<http://matplotlib.org/examples/color/colormaps_reference.html>`__.
 
     Parameters
     ----------
     *args : colormap-spec, optional
         Cycle names or objects.
+    unknown : str, optional
+        Category name for cycles that are unknown to ProPlot. The
+        default is ``'User'``.
     length : float or str, optional
         The length of the colorbars. Units are interpreted by
         `~proplot.utils.units`.
@@ -3606,8 +3632,8 @@ def show_cycles(*args, **kwargs):
         ]
 
     # Return figure of colorbars
-    cmapdict = {'Color cycles': names}
-    return _draw_bars(cmapdict, **kwargs)
+    kwargs.setdefault('source', CYCLES_TABLE)
+    return _draw_bars(names, **kwargs)
 
 
 def show_fonts(*args, size=12, text=None):
