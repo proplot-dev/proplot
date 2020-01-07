@@ -2999,8 +2999,8 @@ def _norecurse(func):
 
 
 def _wrapper_decorator(driver):
-    """Generates generic wrapper decorators and dynamically modifies docstring
-    to list the methods wrapped by this function. Also sets __doc__ to None so
+    """Generate generic wrapper decorator and dynamically modify the docstring
+    to list methods wrapped by this function. Also set `__doc__` to ``None`` so
     that ProPlot fork of automodapi doesn't add these methods to the website
     documentation. Users can still call help(ax.method) because python looks
     for superclass method docstrings if a docstring is empty."""
