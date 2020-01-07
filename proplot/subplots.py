@@ -1983,7 +1983,6 @@ def subplots(
     axs : `subplot_grid`
         A special list of axes instances. See `subplot_grid`.
     """  # noqa
-    rc._getitem_mode = 0
     # Build array
     if order not in ('C', 'F'):  # better error message
         raise ValueError(
