@@ -32,22 +32,12 @@ ProPlot v0.5.0 (2020-##-##)
   *or* `~proplot.subplots.subplots` (:pr:`50`). This is a major improvement!
 - `~proplot.subplots.GridSpec` now accepts physical units, rather than having
   `~proplot.subplots.subplots` handle the units (:pr:`50`).
-- Add `xlinewidth`, `ylinewidth`, `xgridcolor`, `ygridcolor` keyword
-  args to `~proplot.axes.XYAxes.format` (:pr:`50`).
 - Allow "hanging" twin *x* and *y* axes as members of the `~proplot.subplots.EdgeStack`
   container. Arbitrarily many siblings are now permitted.
 - Use `~proplot.subplots.GeometrySolver` for calculating various automatic layout
   stuff instead of having 1000 hidden `~proplot.subplots.Figure` methods (:pr:`50`).
 - Use `~proplot.subplots.EdgeStack` class for handling
   stacks of colorbars, legends, and text (:pr:`50`).
-- `~proplot.rctools.rc` `~proplot.rctools.rc_configurator.__getitem__` always
-  returns the setting; "caching" can only be used *explicitly* by passing ``cache=True`` to
-  `~proplot.rctools.rc_configurator.get`, `~proplot.rctools.rc_configurator.fill`, and
-  `~proplot.rctools.rc_configurator.category` (:pr:`50`).
-
-.. rubric:: Bug fixes
-
-- Fix `~proplot.rctools.rc_configurator.context` fatal bug (:issue:`80`).
 
 .. rubric:: Internals
 
@@ -56,9 +46,6 @@ ProPlot v0.5.0 (2020-##-##)
 - Panels, colorbars, and legends are now members of `~proplot.subplots.EdgeStack`
   stacks rather than getting inserted directly into
   the main `~proplot.subplots.GridSpec` (:pr:`50`).
-- Define `~proplot.rctools.rc` default values with inline dictionaries rather than
-  with a default ``.proplotrc`` file, change the auto-generated user ``.proplotrc``
-  (:pr:`50`).
 
 ProPlot v0.4.0 (2020-##-##)
 ===========================
@@ -72,7 +59,13 @@ ProPlot v0.4.0 (2020-##-##)
 
 - Add Fira Math as DejaVu Sans-alternative (:pr:`95`). Has complete set of math characters.
 - Add TeX Gyre Heros as Helvetica-alternative (:pr:`95`). This is the new open-source default font.
+- Add `xlinewidth`, `ylinewidth`, `xgridcolor`, `ygridcolor` keyword
+  args to `~proplot.axes.XYAxes.format` (:pr:`95`).
 - Add `~proplot.subplots.Figure` ``fallback_to_cm`` kwarg. This is used by `~proplot.styletools.show_fonts` to show dummy glyphs to clearly illustrate when fonts are missing characters, but preserve graceful fallback for end user.
+- `~proplot.rctools.rc` `~proplot.rctools.rc_configurator.__getitem__` always
+  returns the setting. To get context block-restricted settings, you must explicitly pass
+  ``context=True`` to `~proplot.rctools.rc_configurator.get`, `~proplot.rctools.rc_configurator.fill`,
+  or `~proplot.rctools.rc_configurator.category` (:pr:`91`).
 
 .. rubric:: Bug fixes
 
@@ -85,6 +78,12 @@ ProPlot v0.4.0 (2020-##-##)
 
 - Imperative mood for docstring summaries (:pr:`92`).
 - Fix `~proplot.styletools.show_cycles` bug (:pr:`90`) and show cycles using colorbars rather than lines.
+
+.. rubric:: Internals
+
+- Define `~proplot.rctools.rc` default values with inline dictionaries rather than
+  with a default ``.proplotrc`` file, change the auto-generated user ``.proplotrc``
+  (:pr:`91`).
 
 ProPlot v0.3.1 (2019-12-16)
 ===========================
