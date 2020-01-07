@@ -1606,7 +1606,7 @@ class Figure(mfigure.Figure):
             The space between the main subplot grid and the colorbar, or the
             space between successively stacked colorbars. Units are interpreted
             by `~proplot.utils.units`. By default, this is determined by
-            the "tight layout" algorithm, or is :rc:`subplots.panelspace`
+            the "tight layout" algorithm, or is :rc:`subplots.panelpad`
             if "tight layout" is off.
         width : float or str, optional
             The colorbar width. Units are interpreted by
@@ -1681,17 +1681,19 @@ class Figure(mfigure.Figure):
             space between successively stacked colorbars. Units are interpreted
             by `~proplot.utils.units`. By default, this is adjusted
             automatically in the "tight layout" calculation, or is
-            :rc:`subplots.panelspace` if "tight layout" is turned off.
+            :rc:`subplots.panelpad` if "tight layout" is turned off.
         *args, **kwargs
             Passed to `~proplot.axes.Axes.legend`.
         """
         if 'ax' in kwargs:
-            return kwargs.pop('ax').legend(*args,
-                                           space=space, width=width, **kwargs)
+            return kwargs.pop('ax').legend(
+                *args, space=space, width=width, **kwargs
+            )
         else:
-            ax = self._add_figure_panel(loc,
-                                        space=space, width=width, span=span,
-                                        row=row, col=col, rows=rows, cols=cols)
+            ax = self._add_figure_panel(
+                loc, space=space, width=width, span=span,
+                row=row, col=col, rows=rows, cols=cols
+            )
             return ax.legend(*args, loc='_fill', **kwargs)
 
     def save(self, filename, **kwargs):

@@ -907,7 +907,7 @@ optional
             For outer colorbars only. The space between the colorbar and the
             main axes. Units are interpreted by `~proplot.utils.units`.
             When :rcraw:`tight` is ``True``, this is adjusted automatically.
-            Otherwise, the default is :rc:`subplots.panelspace`.
+            Otherwise, the default is :rc:`subplots.panelpad`.
         frame, frameon : bool, optional
             For inset colorbars, indicates whether to draw a "frame", just
             like `~matplotlib.axes.Axes.legend`. Default is
@@ -1128,7 +1128,7 @@ optional
             For outer legends only. The space between the axes and the legend
             box. Units are interpreted by `~proplot.utils.units`.
             When :rcraw:`tight` is ``True``, this is adjusted automatically.
-            Otherwise, the default is :rc:`subplots.panelspace`.
+            Otherwise, the default is :rc:`subplots.panelpad`.
 
         Other parameters
         ----------------
@@ -1350,7 +1350,7 @@ optional
         space : float or str or list thereof, optional
             Empty space between the main subplot and the panel.
             When :rcraw:`tight` is ``True``, this is adjusted automatically.
-            Otherwise, the default is :rc:`subplots.panelspace`.
+            Otherwise, the default is :rc:`subplots.panelpad`.
         share : bool, optional
             Whether to enable axis sharing between the *x* and *y* axes of the
             main subplot and the panel long axes for each panel in the stack.
