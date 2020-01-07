@@ -47,17 +47,21 @@ ProPlot v0.4.0 (2020-##-##)
 ===========================
 .. rubric:: Deprecated
 
-- Remove redundant `~proplot.rctools.use_fonts`, use ``rcParams['sans-serif']``
-  precedence instead (:pr:`95`).
-- `~proplot.axes.Axes.dualx` and `~proplot.axes.Axes.dualx` no longer accept "scale-spec" arguments.
-  Must be a function, two functions, or an axis scale instance (:pr:`96`).
 - Remove ``subplots.innerspace``, ``subplots.titlespace``,
   ``subplots.xlabspace``, and ``subplots.ylabspace`` spacing arguments,
   automatically calculate default non-tight spacing using `~proplot.subplots._get_space`
   based on current tick lengths, label sizes, etc.
+- Remove redundant `~proplot.rctools.use_fonts`, use ``rcParams['sans-serif']``
+  precedence instead (:pr:`95`).
+- `~proplot.axes.Axes.dualx` and `~proplot.axes.Axes.dualx` no longer accept "scale-spec" arguments.
+  Must be a function, two functions, or an axis scale instance (:pr:`96`).
+- Rename `~proplot.styletools.Cycle` ``samples`` to ``N``, rename
+  `~proplot.styletools.show_colors` ``nbreak`` to ``nhues`` (:pr:`98`).
 
 .. rubric:: Features
 
+- Add `~proplot.styletools.LinearSegmentedColormap.from_file` static methods (:pr:`98`).
+  You can now load files by passing a name to `~proplot.styletools.Colormap`.
 - Add Fira Math as DejaVu Sans-alternative (:pr:`95`). Has complete set of math characters.
 - Add TeX Gyre Heros as Helvetica-alternative (:pr:`95`). This is the new open-source default font.
 - Add `xlinewidth`, `ylinewidth`, `xgridcolor`, `ygridcolor` keyword
@@ -81,7 +85,7 @@ ProPlot v0.4.0 (2020-##-##)
 
 - Imperative mood for docstring summaries (:pr:`92`).
 - Fix `~proplot.styletools.show_cycles` bug (:pr:`90`) and show cycles using colorbars
-  rather than lines.
+  rather than lines (:pr:`98`).
 
 .. rubric:: Internals
 

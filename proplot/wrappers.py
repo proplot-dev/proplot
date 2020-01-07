@@ -905,7 +905,7 @@ def cycle_changer(self, func, *args,
         # Get the new cycler
         cycle_args = () if cycle is None else (cycle,)
         if not is1d and y.shape[1] > 1:  # default samples count
-            cycle_kw.setdefault('samples', y.shape[1])
+            cycle_kw.setdefault('N', y.shape[1])
         cycle = styletools.Cycle(*cycle_args, **cycle_kw)
         # Get the original property cycle
         # NOTE: Matplotlib saves itertools.cycle(cycler), not the original
@@ -918,6 +918,8 @@ def cycle_changer(self, func, *args,
             for key, value in prop.items():
                 if key not in by_key:
                     by_key[key] = {*()}  # set
+                if isinstance(value, (list, np.ndarray)):
+                    value = tuple(value)
                 by_key[key].add(value)
         # Reset property cycler if it differs
         reset = ({*by_key} != {*cycle.by_key()})  # reset if keys are different
