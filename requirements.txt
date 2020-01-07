@@ -1,4 +1,4 @@
 # Hard requirements
-# TODO: Remove lxml after #50 merged
+# TODO: Remove pyyaml and copy matplotlib's manual parsing approach?
 matplotlib
-lxml
+pyyaml

@@ -5,22 +5,22 @@
 import os as _os
 import pkg_resources as _pkg
 from .utils import _benchmark
+from .utils import *  # noqa: F401 F403
 with _benchmark('total time'):
-    from .utils import *  # noqa
     with _benchmark('styletools'):
-        from .styletools import *  # noqa
+        from .styletools import *  # noqa: F401 F403
     with _benchmark('rctools'):
-        from .rctools import *  # noqa
+        from .rctools import *  # noqa: F401 F403
     with _benchmark('axistools'):
-        from .axistools import *  # noqa
+        from .axistools import *  # noqa: F401 F403
     with _benchmark('wrappers'):
-        from .wrappers import *  # noqa
+        from .wrappers import *  # noqa: F401 F403
     with _benchmark('projs'):
-        from .projs import *  # noqa
+        from .projs import *  # noqa: F401 F403
     with _benchmark('axes'):
-        from .axes import *  # noqa
+        from .axes import *  # noqa: F401 F403
     with _benchmark('subplots'):
-        from .subplots import *  # noqa
+        from .subplots import *  # noqa: F401 F403
 
 
 # Initialize customization folders
@@ -31,22 +31,6 @@ for _rc_sub in ('cmaps', 'cycles', 'colors', 'fonts'):
     _rc_sub = _os.path.join(_rc_folder, _rc_sub)
     if not _os.path.isdir(_rc_sub):
         _os.mkdir(_rc_sub)
-
-# Initialize customization file
-_rc_file = _os.path.join(_os.path.expanduser('~'), '.proplotrc')
-_rc_file_default = _os.path.join(_os.path.dirname(__file__), '.proplotrc')
-if not _os.path.isfile(_rc_file):
-    with open(_rc_file_default) as f:
-        lines = ''.join(
-            '#   ' + line if line.strip() and line[0] != '#' else line
-            for line in f.readlines()
-        )
-    with open(_rc_file, 'x') as f:
-        f.write(
-            '# User default settings\n'
-            '# See https://proplot.readthedocs.io/en/latest/rctools.html\n'
-            + lines
-        )
 
 # SCM versioning
 name = 'proplot'

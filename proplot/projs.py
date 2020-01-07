@@ -5,22 +5,25 @@ for generating `~mpl_toolkits.basemap.Basemap` and cartopy
 `~cartopy.crs.Projection` classes.
 """
 from .utils import _warn_proplot
-import numpy as np
+try:
+    from mpl_toolkits.basemap import Basemap
+except ImportError:
+    Basemap = object
 try:
     from cartopy.crs import (
-        _WarpedRectangularProjection,
-        LambertAzimuthalEqualArea, AzimuthalEquidistant, Gnomonic)
-    _cartopy_installed = True
+        CRS, _WarpedRectangularProjection,
+        LambertAzimuthalEqualArea, AzimuthalEquidistant, Gnomonic
+    )
 except ModuleNotFoundError:
+    CRS = object
     _WarpedRectangularProjection = object
     LambertAzimuthalEqualArea = object
     AzimuthalEquidistant = object
     Gnomonic = object
-    _cartopy_installed = False
 
 __all__ = [
     'Proj',
-    'basemap_defaults', 'cartopy_projs',
+    'basemap_kwargs', 'cartopy_names',
     'Aitoff', 'Hammer', 'KavrayskiyVII',
     'NorthPolarAzimuthalEquidistant',
     'NorthPolarGnomonic',
@@ -54,16 +57,18 @@ def Proj(name, basemap=False, **kwargs):
 
     Parameters
     ----------
-    name : str
-        The projection name. Like basemap, we use the
-        `PROJ <https://proj.org>`__ shorthands.
+    name : str, `~mpl_toolkits.basemap.Basemap`, or `cartopy.crs.Projection`
+        The projection name or projection class instance. If the latter, it
+        is simply returned. If the former, it must correspond to one of the
+        `PROJ <https://proj.org>`__ projection name shorthands, like in
+        basemap.
 
-        The following table lists the valid projection names, their full names
-        (with links to the relevant `PROJ documentation \
+        The following table lists the valid projection name shorthands, their
+        full names (with links to the relevant `PROJ documentation \
 <https://proj4.org/operations/projections/index.html>`__),
         and whether they are available in the cartopy and basemap packages.
 
-        ``(added)`` indicates a projection class that ProPlot has "added"
+        (added) indicates a projection class that ProPlot has "added"
         to cartopy using the cartopy API.
 
         =============  ============================================================================================  =========  =======
@@ -123,8 +128,8 @@ def Proj(name, basemap=False, **kwargs):
         =============  ============================================================================================  =========  =======
 
     basemap : bool, optional
-        Whether to use the basemap or cartopy package. Default is
-        ``False``.
+        Whether to use the basemap package as opposed to the cartopy package.
+        Default is ``False``.
     **kwargs
         Passed to the `~mpl_toolkits.basemap.Basemap` or
         cartopy `~cartopy.crs.Projection` class.
@@ -133,20 +138,26 @@ def Proj(name, basemap=False, **kwargs):
     -------
     proj : `~mpl_toolkits.basemap.Basemap` or `~cartopy.crs.Projection`
         The projection instance.
-    aspect : float
-        The map projection aspect ratio. This may change if user zooms
-        into a projection, but returning an initial guess helps avoid
-        unnecessarily calculations down the line.
 
     See also
     --------
     `~proplot.axes.GeoAxes`, `~proplot.axes.BasemapAxes`
     """  # noqa
+    # Class instances
+    if ((CRS is not object and isinstance(name, CRS))
+            or (Basemap is not object and isinstance(name, Basemap))):
+        proj = name
+    elif not isinstance(name, str):
+        raise ValueError(
+            f'Unexpected Proj() argument {name!r}. '
+            'Must be name, mpl_toolkits.basemap.Basemap instance, '
+            'or cartopy.crs.CRS instance.'
+        )
     # Basemap
-    if basemap:
+    elif basemap:
         import mpl_toolkits.basemap as mbasemap
         name = BASEMAP_TRANSLATE.get(name, name)
-        kwproj = basemap_defaults.get(name, {})
+        kwproj = basemap_kwargs.get(name, {})
         kwproj.update(kwargs)
         kwproj.setdefault('fix_aspect', True)
         if name[:2] in ('np', 'sp'):
@@ -158,60 +169,26 @@ def Proj(name, basemap=False, **kwargs):
         reso = kwproj.pop('resolution', None) or kwproj.pop(
             'reso', None) or 'c'
         proj = mbasemap.Basemap(projection=name, resolution=reso, **kwproj)
-        aspect = (proj.urcrnrx - proj.llcrnrx) / \
-                 (proj.urcrnry - proj.llcrnry)
     # Cartopy
     else:
         import cartopy.crs as _  # noqa
         kwargs = {CARTOPY_CRS_TRANSLATE.get(
             key, key): value for key, value in kwargs.items()}
-        crs = cartopy_projs.get(name, None)
+        crs = cartopy_names.get(name, None)
         if name == 'geos':  # fix common mistake
             kwargs.pop('central_latitude', None)
         if 'boundinglat' in kwargs:
             raise ValueError(
                 f'"boundinglat" must be passed to the ax.format() command '
-                'for cartopy axes.')
+                'for cartopy axes.'
+            )
         if crs is None:
             raise ValueError(
                 f'Unknown projection {name!r}. Options are: '
-                + ', '.join(map(repr, cartopy_projs.keys())))
+                + ', '.join(map(repr, cartopy_names.keys())) + '.'
+            )
         proj = crs(**kwargs)
-        aspect = (np.diff(proj.x_limits) / np.diff(proj.y_limits))[0]
-    return proj, aspect
-
-
-class Hammer(_WarpedRectangularProjection):
-    """The `Hammer <https://en.wikipedia.org/wiki/Hammer_projection>`__
-    projection."""
-    #: Registered projection name.
-    name = 'hammer'
-
-    def __init__(self, central_longitude=0, globe=None,
-                 false_easting=None, false_northing=None):
-        from cartopy._crs import Globe
-        from cartopy.crs import WGS84_SEMIMAJOR_AXIS
-        if globe is None:
-            globe = Globe(semimajor_axis=WGS84_SEMIMAJOR_AXIS, ellipse=None)
-
-        a = globe.semimajor_axis or WGS84_SEMIMAJOR_AXIS
-        b = globe.semiminor_axis or a
-        if b != a or globe.ellipse is not None:
-            _warn_proplot(f'The {self.name!r} projection does not handle '
-                          'elliptical globes.')
-
-        proj4_params = {'proj': 'hammer', 'lon_0': central_longitude}
-        super().__init__(proj4_params, central_longitude,
-                         false_easting=false_easting,
-                         false_northing=false_northing,
-                         globe=globe)
-
-    @property
-    def threshold(self):  # how finely to interpolate line data, etc.
-        return 1e5
-
-    __init__.__doc__ = _proj_doc
-    threshold.__doc__ = _reso_doc
+    return proj
 
 
 class Aitoff(_WarpedRectangularProjection):
@@ -230,14 +207,55 @@ class Aitoff(_WarpedRectangularProjection):
         a = globe.semimajor_axis or WGS84_SEMIMAJOR_AXIS
         b = globe.semiminor_axis or a
         if b != a or globe.ellipse is not None:
-            _warn_proplot(f'The {self.name!r} projection does not handle '
-                          'elliptical globes.')
+            _warn_proplot(
+                f'The {self.name!r} projection does not handle '
+                'elliptical globes.'
+            )
 
         proj4_params = {'proj': 'aitoff', 'lon_0': central_longitude}
-        super().__init__(proj4_params, central_longitude,
-                         false_easting=false_easting,
-                         false_northing=false_northing,
-                         globe=globe)
+        super().__init__(
+            proj4_params, central_longitude,
+            false_easting=false_easting,
+            false_northing=false_northing,
+            globe=globe
+        )
+
+    @property
+    def threshold(self):  # how finely to interpolate line data, etc.
+        return 1e5
+
+    __init__.__doc__ = _proj_doc
+    threshold.__doc__ = _reso_doc
+
+
+class Hammer(_WarpedRectangularProjection):
+    """The `Hammer <https://en.wikipedia.org/wiki/Hammer_projection>`__
+    projection."""
+    #: Registered projection name.
+    name = 'hammer'
+
+    def __init__(self, central_longitude=0, globe=None,
+                 false_easting=None, false_northing=None):
+        from cartopy._crs import Globe
+        from cartopy.crs import WGS84_SEMIMAJOR_AXIS
+        if globe is None:
+            globe = Globe(semimajor_axis=WGS84_SEMIMAJOR_AXIS, ellipse=None)
+
+        a = globe.semimajor_axis or WGS84_SEMIMAJOR_AXIS
+        b = globe.semiminor_axis or a
+        if b != a or globe.ellipse is not None:
+            _warn_proplot(
+                f'The {self.name!r} projection does not handle '
+                'elliptical globes.'
+            )
+
+        proj4_params = {'proj': 'hammer', 'lon_0': central_longitude}
+        super().__init__(
+            proj4_params, central_longitude,
+            false_easting=false_easting,
+            false_northing=false_northing,
+            globe=globe
+        )
 
     @property
     def threshold(self):  # how finely to interpolate line data, etc.
@@ -263,8 +281,10 @@ class KavrayskiyVII(_WarpedRectangularProjection):
         a = globe.semimajor_axis or WGS84_SEMIMAJOR_AXIS
         b = globe.semiminor_axis or a
         if b != a or globe.ellipse is not None:
-            _warn_proplot(f'The {self.name!r} projection does not handle '
-                          'elliptical globes.')
+            _warn_proplot(
+                f'The {self.name!r} projection does not handle '
+                'elliptical globes.'
+            )
 
         proj4_params = {'proj': 'kav7', 'lon_0': central_longitude}
         super().__init__(proj4_params, central_longitude,
@@ -296,8 +316,10 @@ class WinkelTripel(_WarpedRectangularProjection):
         a = globe.semimajor_axis or WGS84_SEMIMAJOR_AXIS
         b = globe.semiminor_axis or a
         if b != a or globe.ellipse is not None:
-            _warn_proplot(f'The {self.name!r} projection does not handle '
-                          'elliptical globes.')
+            _warn_proplot(
+                f'The {self.name!r} projection does not handle '
+                'elliptical globes.'
+            )
 
         proj4_params = {'proj': 'wintri', 'lon_0': central_longitude}
         super().__init__(proj4_params, central_longitude,
@@ -316,49 +338,60 @@ class WinkelTripel(_WarpedRectangularProjection):
 class NorthPolarAzimuthalEquidistant(AzimuthalEquidistant):
     """Analogous to `~cartopy.crs.NorthPolarStereo`."""
     def __init__(self, central_longitude=0.0, globe=None):
-        super().__init__(central_latitude=90,
-                         central_longitude=central_longitude, globe=globe)
+        super().__init__(
+            central_latitude=90,
+            central_longitude=central_longitude, globe=globe
+        )
     __init__.__doc__ = _proj_doc
 
 
 class SouthPolarAzimuthalEquidistant(AzimuthalEquidistant):
     """Analogous to `~cartopy.crs.SouthPolarStereo`."""
     def __init__(self, central_longitude=0.0, globe=None):
-        super().__init__(central_latitude=-90,
-                         central_longitude=central_longitude, globe=globe)
+        super().__init__(
+            central_latitude=-90,
+            central_longitude=central_longitude, globe=globe
+        )
     __init__.__doc__ = _proj_doc
 
 
 class NorthPolarLambertAzimuthalEqualArea(LambertAzimuthalEqualArea):
     """Analogous to `~cartopy.crs.NorthPolarStereo`."""
     def __init__(self, central_longitude=0.0, globe=None):
-        super().__init__(central_latitude=90,
-                         central_longitude=central_longitude, globe=globe)
-
+        super().__init__(
+            central_latitude=90,
+            central_longitude=central_longitude, globe=globe
+        )
     __init__.__doc__ = _proj_doc
 
 
 class SouthPolarLambertAzimuthalEqualArea(LambertAzimuthalEqualArea):
     """Analogous to `~cartopy.crs.SouthPolarStereo`."""
     def __init__(self, central_longitude=0.0, globe=None):
-        super().__init__(central_latitude=-90,
-                         central_longitude=central_longitude, globe=globe)
+        super().__init__(
+            central_latitude=-90,
+            central_longitude=central_longitude, globe=globe
+        )
     __init__.__doc__ = _proj_doc
 
 
 class NorthPolarGnomonic(Gnomonic):
     """Analogous to `~cartopy.crs.SouthPolarStereo`."""
     def __init__(self, central_longitude=0.0, globe=None):
-        super().__init__(central_latitude=90,
-                         central_longitude=central_longitude, globe=globe)
+        super().__init__(
+            central_latitude=90,
+            central_longitude=central_longitude, globe=globe
+        )
     __init__.__doc__ = _proj_doc
 
 
 class SouthPolarGnomonic(Gnomonic):
     """Analogous to `~cartopy.crs.SouthPolarStereo`."""
     def __init__(self, central_longitude=0.0, globe=None):
-        super().__init__(central_latitude=-90,
-                         central_longitude=central_longitude, globe=globe)
+        super().__init__(
+            central_latitude=-90,
+            central_longitude=central_longitude, globe=globe
+        )
     __init__.__doc__ = _proj_doc
 
 
@@ -377,7 +410,7 @@ CARTOPY_CRS_TRANSLATE = {  # add to this
 #: Default keyword args for `~mpl_toolkits.basemap.Basemap` projections.
 #: `~mpl_toolkits.basemap` will raise an error if you don't provide them,
 #: so ProPlot imposes some sensible default behavior.
-basemap_defaults = {
+basemap_kwargs = {
     'eck4': {'lon_0': 0},
     'geos': {'lon_0': 0},
     'hammer': {'lon_0': 0},
@@ -409,11 +442,11 @@ basemap_defaults = {
 }
 
 #: Mapping of "projection names" to cartopy `~cartopy.crs.Projection` classes.
-cartopy_projs = {}
-if _cartopy_installed:
+cartopy_names = {}
+if CRS is not object:
     # Custom ones, these are always present
     import cartopy.crs as ccrs  # verify package is available
-    cartopy_projs = {  # interpret string, create cartopy projection
+    cartopy_names = {  # interpret string, create cartopy projection
         'aitoff': Aitoff,
         'hammer': Hammer,
         'kav7': KavrayskiyVII,
@@ -469,8 +502,9 @@ if _cartopy_installed:
         if _class is None:
             _unavail.append(_name)
             continue
-        cartopy_projs[_name] = _class
+        cartopy_names[_name] = _class
     if _unavail:
         _warn_proplot(
             f'Cartopy projection(s) {", ".join(map(repr, _unavail))} are '
-            f'unavailable. Consider updating to cartopy >= 0.17.0.')
+            f'unavailable. Consider updating to cartopy >= 0.17.0.'
+        )

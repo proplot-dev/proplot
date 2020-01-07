@@ -2,7 +2,7 @@ from docutils import nodes
 from os.path import sep
 from proplot import rc
 
-# Adapted from matplotlib
+
 def get_nodes(rawtext, text, inliner):
     rctext = (f"rc['{text}']" if '.' in text else f'rc.{text}')
     rendered = nodes.Text(rctext)
@@ -10,14 +10,15 @@ def get_nodes(rawtext, text, inliner):
     relsource = source.split('/docs/', 1)
     if len(relsource) == 1:
         return []
-    levels = relsource[1].count('/') # distance to 'docs' folder
+    levels = relsource[1].count('/')  # distance to 'docs' folder
     refuri = (
         '../' * levels
         + f'en/latest/configuration.html?highlight={text}#'
-        + ('rcparams' if '.' in text else 'rcparamscustom')
-        )
+        + ('rcparamslong' if '.' in text else 'rcparamsshort')
+    )
     ref = nodes.reference(rawtext, rendered, refuri=refuri)
     return [nodes.literal('', '', ref)]
+
 
 def rc_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
     node_list = get_nodes(rawtext, text, inliner)
@@ -26,8 +27,10 @@ def rc_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
         node_list.append(nodes.literal('', '', nodes.Text(repr(rc[text]))))
     return node_list, []
 
+
 def rc_role_raw(name, rawtext, text, lineno, inliner, options={}, content=[]):
     return get_nodes(rawtext, text, inliner), []
+
 
 def setup(app):
     app.add_role('rc', rc_role)

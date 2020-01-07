@@ -22,7 +22,7 @@ else:
     long_description = ''
 
 setup(
-    url='https://lukelbd.github.io/proplot',
+    url='https://proplot.readthedocs.io',
     name='proplot',
     author='Luke Davis',
     author_email='lukelbd@gmail.com',
@@ -31,7 +31,7 @@ setup(
     python_requires='>=3.6.0',
     project_urls={
         'Bug Tracker': 'https://github.com/lukelbd/proplot/issues',
-        'Documentation': 'https://lukelbd.github.io/proplot',
+        'Documentation': 'https://proplot.readthedocs.io',
         'Source Code': 'https://github.com/lukelbd/proplot'
     },
     packages=['proplot'],
