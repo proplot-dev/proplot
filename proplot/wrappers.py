@@ -1525,6 +1525,8 @@ def cycle_changer(
             for key, value in prop.items():
                 if key not in by_key:
                     by_key[key] = {*()}  # set
+                if isinstance(value, (list, np.ndarray)):
+                    value = tuple(value)
                 by_key[key].add(value)
         # Reset property cycler if it differs
         reset = ({*by_key} != {*cycle.by_key()})  # reset if keys are different

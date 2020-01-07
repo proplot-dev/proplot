@@ -2355,8 +2355,7 @@ def Cycle(
                 )
             nprops = max(nprops, len(value))
             props[key] = [*value]  # ensure mutable list
-    # If args is non-empty, means we want color cycle; otherwise is always
-    # black
+    # If args is non-empty, means we want color cycle; otherwise is black
     if not args:
         props['color'] = ['k']  # ensures property cycler is non empty
         if kwargs:
@@ -2416,8 +2415,9 @@ def Cycle(
     # Build cycler, make sure lengths are the same
     for key, value in props.items():
         if len(value) < nprops:
-            value[:] = [value[i % len(value)] for i in range(
-                nprops)]  # make loop double back
+            value[:] = [
+                value[i % len(value)] for i in range(nprops)
+            ]  # make loop double back
     cycle = cycler.cycler(**props)
     cycle.name = name
     return cycle
