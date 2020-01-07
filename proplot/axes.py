@@ -3684,7 +3684,7 @@ class BasemapAxes(ProjAxes):
             p.set_clip_on(False)  # so edges denoting boundary aren't cut off
             self._map_boundary = p
         else:
-            self.patch.update(edgecolor='none', **kw_face)
+            self.patch.update({**kw_face, 'edgecolor': 'none'})
             for spine in self.spines.values():
                 spine.update(kw_edge)
 
@@ -3718,7 +3718,8 @@ class BasemapAxes(ProjAxes):
             latlines = _notNone(latlines, self._latlines_values)
             latarray = _notNone(latarray, self._latlines_labels, [0] * 4)
             p = self.projection.drawparallels(
-                latlines, latmax=ilatmax, labels=latarray, ax=self)
+                latlines, latmax=ilatmax, labels=latarray, ax=self
+            )
             for pi in p.values():  # returns dict, where each one is tuple
                 # Tried passing clip_on to the below, but it does nothing
                 # Must set for lines created after the fact
@@ -3739,7 +3740,8 @@ class BasemapAxes(ProjAxes):
             lonlines = _notNone(lonlines, self._lonlines_values)
             lonarray = _notNone(lonarray, self._lonlines_labels, [0] * 4)
             p = self.projection.drawmeridians(
-                lonlines, latmax=ilatmax, labels=lonarray, ax=self)
+                lonlines, latmax=ilatmax, labels=lonarray, ax=self,
+            )
             for pi in p.values():
                 for obj in [i for j in pi for i in j]:
                     if isinstance(obj, mtext.Text):
