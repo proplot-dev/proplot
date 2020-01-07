@@ -533,7 +533,65 @@ def _canvas_preprocess(canvas, method):
     return _preprocess.__get__(canvas)  # ...I don't get it either
 
 
-def _panels_kwargs(
+def _get_panelargs(
+        side, share=None, width=None, space=None,
+        filled=False, figure=False):
+    """Return default properties for new axes and figure panels."""
+    s = side[0]
+    if s not in 'lrbt':
+        raise ValueError(f'Invalid panel spec {side!r}.')
+    space = space_user = units(space)
+    if share is None:
+        share = (not filled)
+    if width is None:
+        if filled:
+            width = rc['colorbar.width']
+        else:
+            width = rc['subplots.panelwidth']
+    width = units(width)
+    if space is None:
+        key = ('wspace' if s in 'lr' else 'hspace')
+        pad = (rc['axpad'] if figure else rc['panelpad'])
+        space = _get_space(key, share, pad=pad)
+    return share, width, space, space_user
+
+
+def _get_space(key, share=0, pad=None):
+    """Return suitable default spacing given a shared axes setting."""
+    if key == 'left':
+        space = units(_notNone(pad, rc['subplots.pad'])) + (
+            rc['ytick.major.size'] + rc['ytick.labelsize']
+            + rc['ytick.major.pad'] + rc['axes.labelsize']) / 72
+    elif key == 'right':
+        space = units(_notNone(pad, rc['subplots.pad']))
+    elif key == 'bottom':
+        space = units(_notNone(pad, rc['subplots.pad'])) + (
+            rc['xtick.major.size'] + rc['xtick.labelsize']
+            + rc['xtick.major.pad'] + rc['axes.labelsize']) / 72
+    elif key == 'top':
+        space = units(_notNone(pad, rc['subplots.pad'])) + (
+            rc['axes.titlepad'] + rc['axes.titlesize']) / 72
+    elif key == 'wspace':
+        space = (units(_notNone(pad, rc['subplots.axpad']))
+                 + rc['ytick.major.size'] / 72)
+        if share < 3:
+            space += (rc['ytick.labelsize'] + rc['ytick.major.pad']) / 72
+        if share < 1:
+            space += rc['axes.labelsize'] / 72
+    elif key == 'hspace':
+        space = units(_notNone(pad, rc['subplots.axpad'])) + (
+            rc['axes.titlepad'] + rc['axes.titlesize']
+            + rc['xtick.major.size']) / 72
+        if share < 3:
+            space += (rc['xtick.labelsize'] + rc['xtick.major.pad']) / 72
+        if share < 0:
+            space += rc['axes.labelsize'] / 72
+    else:
+        raise KeyError(f'Invalid space key {key!r}.')
+    return space
+
+
+def _get_panelargs(
         side, share=None, width=None, space=None,
         filled=False, figure=False):
     """Converts global keywords like `space` and `width` to side-local
