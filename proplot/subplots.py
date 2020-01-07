@@ -101,9 +101,10 @@ class subplot_grid(list):
         raise LookupError('subplot_grid is immutable.')
 
     def __getitem__(self, key):
-        """If an integer is passed, the item is returned, and if a slice is
-        passed, an `subplot_grid` of the items is returned. You can also use 2d
-        indexing, and the corresponding axes in the axes grid will be chosen.
+        """If an integer is passed, the item is returned. If a slice is passed,
+        a `subplot_grid` of the items is returned. You can also use 2D
+        indexing, and the corresponding axes in the `subplot_grid` will be
+        chosen.
 
         Example
         -------
@@ -180,11 +181,11 @@ class subplot_grid(list):
 
     def __getattr__(self, attr):
         """
-        If the attribute is *callable*, returns a dummy function that loops
+        If the attribute is *callable*, return a dummy function that loops
         through each identically named method, calls them in succession, and
         returns a tuple of the results. This lets you call arbitrary methods
-        on multiple axes at once! If the `subplot_grid` has length ``1``,
-        just returns the single result. If the attribute is *not callable*,
+        on multiple axes at once! If the `subplot_grid` has length ``1``, the
+        single result is returned. If the attribute is *not callable*,
         returns a tuple of attributes for every object in the list.
 
         Example
@@ -242,9 +243,13 @@ class subplot_grid(list):
 
 class SubplotSpec(mgridspec.SubplotSpec):
     """
-    Adds two helper methods to `~matplotlib.gridspec.SubplotSpec` that return
-    the geometry *excluding* rows and columns allocated for spaces.
+    Matplotlib `~matplotlib.gridspec.SubplotSpec` subclass that adds
+    some helpful methods.
     """
+    def __repr__(self):
+        nrows, ncols, row1, row2, col1, col2 = self.get_rows_columns()
+        return f'SubplotSpec({nrows}, {ncols}; {row1}:{row2}, {col1}:{col2})'
+
     def get_active_geometry(self):
         """Returns the number of rows, number of columns, and 1d subplot
         location indices, ignoring rows and columns allocated for spaces."""
@@ -271,9 +276,8 @@ class SubplotSpec(mgridspec.SubplotSpec):
 
 class GridSpec(mgridspec.GridSpec):
     """
-    `~matplotlib.gridspec.GridSpec` generalization that allows for grids with
-    *variable spacing* between successive rows and columns of axes.
-
+    Matplotlib `~matplotlib.gridspec.GridSpec` subclass that allows for grids
+    with variable spacing between successive rows and columns of axes.
     Accomplishes this by actually drawing ``nrows*2 + 1`` and ``ncols*2 + 1``
     `~matplotlib.gridspec.GridSpec` rows and columns, setting `wspace`
     and `hspace` to ``0``, and masking out every other row and column
@@ -281,6 +285,10 @@ class GridSpec(mgridspec.GridSpec):
     These "spaces" are then allowed to vary in width using the builtin
     `width_ratios` and `height_ratios` properties.
     """
+    def __repr__(self):  # do not show width and height ratios
+        nrows, ncols = self.get_geometry()
+        return f'GridSpec({nrows}, {ncols})'
+
     def __init__(self, figure, nrows=1, ncols=1, **kwargs):
         """
         Parameters
@@ -446,15 +454,17 @@ class GridSpec(mgridspec.GridSpec):
 
     def update(self, **kwargs):
         """
-        Updates the width ratios, height ratios, gridspec margins, and spacing
-        allocated between subplot rows and columns.
-
+        Update the gridspec with arbitrary initialization keyword arguments
+        then *apply* those updates to every figure using this gridspec.
         The default `~matplotlib.gridspec.GridSpec.update` tries to update
         positions for axes on all active figures -- but this can fail after
         successive figure edits if it has been removed from the figure
-        manager. So, we explicitly require that the gridspec is dedicated to
-        a particular `~matplotlib.figure.Figure` instance, and just edit axes
-        positions for axes on that instance.
+        manager. ProPlot insists one gridspec per figure.
+
+        Parameters
+        ----------
+        **kwargs
+            Valid initialization keyword arguments. See `GridSpec`.
         """
         # Convert spaces to ratios
         wratios, hratios, kwargs = self._spaces_as_ratios(**kwargs)
@@ -1341,7 +1351,7 @@ class Figure(mfigure.Figure):
                     })
 
     def _align_labels(self, renderer):
-        """Adjusts position of row and column labels, and aligns figure super
+        """Adjust the position of row and column labels, and align figure super
         title accounting for figure margins and axes and figure panels."""
         # Offset using tight bounding boxes
         # TODO: Super labels fail with popup backend!! Fix this
@@ -1656,7 +1666,7 @@ class Figure(mfigure.Figure):
         **kwargs
     ):
         """
-        Draws a colorbar along the left, right, bottom, or top side
+        Draw a colorbar along the left, right, bottom, or top side
         of the figure, centered between the leftmost and rightmost (or
         topmost and bottommost) main axes.
 
@@ -1773,7 +1783,7 @@ class Figure(mfigure.Figure):
         **kwargs
     ):
         """
-        Draws a legend along the left, right, bottom, or top side of the
+        Draw a legend along the left, right, bottom, or top side of the
         figure, centered between the leftmost and rightmost (or
         topmost and bottommost) main axes.
 
@@ -2032,8 +2042,8 @@ def _axes_dict(naxs, value, kw=False, default=None):
     # Verify numbers
     if {*range(1, naxs + 1)} != {*kwargs.keys()}:
         raise ValueError(
-            f'Have {naxs} axes, but {value} has properties for axes '
-            + ', '.join(repr(i) for i in sorted(kwargs.keys())) + '.'
+            f'Have {naxs} axes, but {value!r} has properties for axes '
+            + ', '.join(map(repr, sorted(kwargs))) + '.'
         )
     return kwargs
 
@@ -2053,8 +2063,9 @@ def subplots(
     **kwargs
 ):
     """
-    Analogous to `matplotlib.pyplot.subplots`, creates a figure with a single
-    axes or arbitrary grids of axes, any of which can be map projections.
+    Create a figure with a single axes or arbitrary grid of axes, analogous
+    to `matplotlib.pyplot.subplots`. The axes can have arbitrary map
+    projections.
 
     Parameters
     ----------
