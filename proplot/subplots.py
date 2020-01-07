@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
 import matplotlib.gridspec as mgridspec
+from numbers import Integral
 from .rctools import rc
 from .utils import _warn_proplot, _notNone, _counter, _setstate, units
 from . import projs, axes
@@ -1642,16 +1643,57 @@ class Figure(mfigure.Figure):
         *args, **kwargs
             Passed to `~proplot.axes.Axes.colorbar`.
         """
-        if 'cax' in kwargs:
-            return super().colorbar(*args, **kwargs)
-        elif 'ax' in kwargs:
-            return kwargs.pop('ax').colorbar(
-                *args, space=space, width=width, **kwargs)
-        else:
-            ax = self._add_figure_panel(
-                loc, space=space, width=width, span=span,
-                row=row, col=col, rows=rows, cols=cols)
-            return ax.colorbar(*args, loc='_fill', **kwargs)
+        ax = kwargs.pop('ax', None)
+        cax = kwargs.pop('cax', None)
+        # Fill this axes
+        if cax is not None:
+            return super().colorbar(*args, cax=cax, **kwargs)
+        # Generate axes panel
+        elif ax is not None:
+            return ax.colorbar(*args, space=space, width=width, **kwargs)
+        # Generate figure panel
+        ax = self._add_figure_panel(
+            loc, space=space, width=width, span=span,
+            row=row, col=col, rows=rows, cols=cols
+        )
+        return ax.colorbar(*args, loc='_fill', **kwargs)
+
+    def get_alignx(self):
+        """Return the *x* axis label alignment mode."""
+        return self._alignx
+
+    def get_aligny(self):
+        """Return the *y* axis label alignment mode."""
+        return self._aligny
+
+    def get_gridspec(self):
+        """Return the single `GridSpec` instance associated with this figure.
+        If the `GridSpec` has not yet been initialized, returns ``None``."""
+        return self._gridspec
+
+    def get_ref_axes(self):
+        """Return the reference axes associated with the reference axes
+        number `Figure.ref`."""
+        for ax in self._mainaxes:
+            if ax.number == self.ref:
+                return ax
+        return None  # no error
+
+    def get_sharex(self):
+        """Return the *x* axis sharing level."""
+        return self._sharex
+
+    def get_sharey(self):
+        """Return the *y* axis sharing level."""
+        return self._sharey
+
+    def get_spanx(self):
+        """Return the *x* axis label spanning mode."""
+        return self._spanx
+
+    def get_spany(self):
+        """Return the *y* axis label spanning mode."""
+        return self._spany
 
     def draw(self, renderer):
         # Certain backends *still* have issues with the tight layout
@@ -1715,16 +1757,16 @@ class Figure(mfigure.Figure):
         *args, **kwargs
             Passed to `~proplot.axes.Axes.legend`.
         """
-        if 'ax' in kwargs:
-            return kwargs.pop('ax').legend(
-                *args, space=space, width=width, **kwargs
-            )
-        else:
-            ax = self._add_figure_panel(
-                loc, space=space, width=width, span=span,
-                row=row, col=col, rows=rows, cols=cols
-            )
-            return ax.legend(*args, loc='_fill', **kwargs)
+        ax = kwargs.pop('ax', None)
+        # Generate axes panel
+        if ax is not None:
+            return ax.legend(*args, space=space, width=width, **kwargs)
+        # Generate figure panel
+        ax = self._add_figure_panel(
+            loc, space=space, width=width, span=span,
+            row=row, col=col, rows=rows, cols=cols
+        )
+        return ax.legend(*args, loc='_fill', **kwargs)
 
     def save(self, filename, **kwargs):
         # Alias for `~Figure.savefig` because ``fig.savefig`` is redundant.
@@ -1752,6 +1794,75 @@ class Figure(mfigure.Figure):
             canvas.draw = _canvas_preprocess(canvas, 'draw')
         canvas.print_figure = _canvas_preprocess(canvas, 'print_figure')
         super().set_canvas(canvas)
+
+    def set_alignx(self, value):
+        """Set the *x* axis label alignment mode."""
+        self.stale = True
+        self._alignx = bool(value)
+
+    def set_aligny(self, value):
+        """Set the *y* axis label alignment mode."""
+        self.stale = True
+        self._aligny = bool(value)
+
+    def set_sharex(self, value):
+        """Set the *x* axis sharing level."""
+        value = int(value)
+        if value not in range(4):
+            raise ValueError(
+                'Invalid sharing level sharex={value!r}. '
+                'Axis sharing level can be 0 (share nothing), '
+                '1 (hide axis labels), '
+                '2 (share limits and hide axis labels), or '
+                '3 (share limits and hide axis and tick labels).'
+            )
+        self.stale = True
+        self._sharex = value
+
+    def set_sharey(self, value):
+        """Set the *y* axis sharing level."""
+        value = int(value)
+        if value not in range(4):
+            raise ValueError(
+                'Invalid sharing level sharey={value!r}. '
+                'Axis sharing level can be 0 (share nothing), '
+                '1 (hide axis labels), '
+                '2 (share limits and hide axis labels), or '
+                '3 (share limits and hide axis and tick labels).'
+            )
+        self.stale = True
+        self._sharey = value
+
+    def set_spanx(self, value):
+        """Set the *x* axis label spanning mode."""
+        self.stale = True
+        self._spanx = bool(value)
+
+    def set_spany(self, value):
+        """Set the *y* axis label spanning mode."""
+        self.stale = True
+        self._spany = bool(value)
+
+    @property
+    def gridspec(self):
+        """The single `GridSpec` instance used for all subplots
+        in the figure."""
+        return self._gridspec_main
+
+    @property
+    def ref(self):
+        """The reference axes number. The `axwidth`, `axheight`, and `aspect`
+        `subplots` and `figure` arguments are applied to this axes, and aspect
+        ratio is conserved for this axes in tight layout adjustment."""
+        return self._ref
+
+    @ref.setter
+    def ref(self, ref):
+        if not isinstance(ref, Integral) or ref < 1:
+            raise ValueError(
+                f'Invalid axes number {ref!r}. Must be integer >=1.')
+        self.stale = True
+        self._ref = ref
 
     def set_size_inches(self, w, h=None, forward=True, auto=False):
         # Set the figure size and, if this is being called manually or from

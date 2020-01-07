@@ -453,10 +453,11 @@ class Axes(maxes.Axes):
             level = self.figure._sharex
         if level not in range(4):
             raise ValueError(
+                'Invalid sharing level sharex={value!r}. '
                 'Axis sharing level can be 0 (share nothing), '
                 '1 (hide axis labels), '
                 '2 (share limits and hide axis labels), or '
-                '3 (share limits and hide axis and tick labels). Got {level}.'
+                '3 (share limits and hide axis and tick labels).'
             )
         self._share_short_axis(sharex, 'l', level)
         self._share_short_axis(sharex, 'r', level)
@@ -470,10 +471,11 @@ class Axes(maxes.Axes):
             level = self.figure._sharey
         if level not in range(4):
             raise ValueError(
+                'Invalid sharing level sharey={value!r}. '
                 'Axis sharing level can be 0 (share nothing), '
                 '1 (hide axis labels), '
                 '2 (share limits and hide axis labels), or '
-                '3 (share limits and hide axis and tick labels). Got {level}.'
+                '3 (share limits and hide axis and tick labels).'
             )
         self._share_short_axis(sharey, 'b', level)
         self._share_short_axis(sharey, 't', level)
