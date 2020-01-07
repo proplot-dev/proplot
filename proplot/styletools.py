@@ -131,15 +131,6 @@ CMAPS_TABLE = {
         'tab10', 'tab20', 'tab20b', 'tab20c',  # merged colormap cycles
     )
 }
-CMAPS_DELETE = (
-    'binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink',
-    'spring', 'summer', 'autumn', 'winter', 'cool', 'wistia',
-    'afmhot', 'gist_heat', 'copper',
-    'seismic', 'bwr', 'brg',
-    'flag', 'prism', 'ocean', 'gist_earth', 'terrain', 'gist_stern',
-    'gnuplot', 'gnuplot2', 'cmrmap', 'hsv', 'hot', 'rainbow',
-    'gist_rainbow', 'jet', 'nipy_spectral', 'gist_ncar', 'cubehelix',
-)
 CMAPS_DIVERGING = tuple(
     (key1.lower(), key2.lower()) for key1, key2 in (
         ('PiYG', 'GYPi'),
@@ -157,47 +148,8 @@ CMAPS_DIVERGING = tuple(
         ('DryWet', 'WetDry')
     ))
 
-# Color cycle stuff
-CYCLES_PRESET = {
-    # Default matplotlib v2
-    'default': [
-        '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
-        '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'],
-    # From stylesheets
-    '538': [
-        '#008fd5', '#fc4f30', '#e5ae38', '#6d904f', '#8b8b8b', '#810f7c'],
-    'ggplot': [
-        '#E24A33', '#348ABD', '#988ED5', '#777777', '#FBC15E', '#8EBA42',
-        '#FFB5B8'],
-    # The two nice-looking seaborn color cycles
-    'ColorBlind': [
-        '#0072B2', '#D55E00', '#009E73', '#CC79A7', '#F0E442', '#56B4E9'],
-    # versions with more colors
-    'ColorBlind10': [
-        '#0173B2', '#DE8F05', '#029E73', '#D55E00', '#CC78BC', '#CA9161',
-        '#FBAFE4', '#949494', '#ECE133', '#56B4E9'],
-    # Created with iwanthue and coolers
-    'FlatUI': [
-        '#3498db', '#e74c3c', '#95a5a6', '#34495e', '#2ecc71', '#9b59b6'],
-    'Warm': [
-        (51, 92, 103), (158, 42, 43), (255, 243, 176),
-        (224, 159, 62), (84, 11, 14)],
-    'Cool': ['#6C464F', '#9E768F', '#9FA4C4', '#B3CDD1', '#C7F0BD'],
-    'Sharp': ['#007EA7', '#D81159', '#B3CDD1', '#FFBC42', '#0496FF'],
-    'Hot': ['#0D3B66', '#F95738', '#F4D35E', '#FAF0CA', '#EE964B'],
-    'Contrast': ['#2B4162', '#FA9F42', '#E0E0E2', '#A21817', '#0B6E4F'],
-    'Floral': ['#23395B', '#D81E5B', '#FFFD98', '#B9E3C6', '#59C9A5'],
-}
-CYCLES_DELETE = (
-    'tab10', 'tab20', 'tab20b', 'tab20c',
-    'paired', 'pastel1', 'pastel2', 'dark2',
-)  # unappealing cycles, and cycles that are just merged monochrome colormaps
-CYCLES_RENAME = (
-    ('Accent', 'Set1'),
-)  # rename existing cycles
-
 # Named color filter props
-COLORS_SPACE = 'hcl'  # dist 'distinct-ness' of colors using this colorspace
+COLORS_SPACE = 'hcl'  # color "distincness" is defined with this space
 COLORS_THRESH = 0.10  # bigger number equals fewer colors
 COLORS_TRANSLATIONS = tuple((re.compile(regex), sub) for regex, sub in (
     ('/', ' '),
