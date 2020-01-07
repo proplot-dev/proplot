@@ -6,19 +6,13 @@ ProPlot can be installed with `pip <https://pypi.org>`__ or `conda <https://anac
 .. code-block:: bash
 
    pip install proplot
-
-.. code-block:: bash
-
    conda install -c conda-forge proplot
 
-An existing installation of ProPlot can be upgraded to the latest version with:
+Likewise, an existing installation of ProPlot can be upgraded to the latest version with:
 
 .. code-block:: bash
 
    pip install --upgrade proplot
-
-.. code-block:: bash
-
    conda upgrade proplot
 
 

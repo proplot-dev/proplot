@@ -13,21 +13,14 @@ ProPlot can be installed with `pip <https://pypi.org>`__ or `conda <https://anac
 .. code-block:: bash
 
    pip install proplot
-
-.. code-block:: bash
-
    conda install -c conda-forge proplot
 
-An existing installation of ProPlot can be upgraded to the latest version with:
+Likewise, an existing installation of ProPlot can be upgraded to the latest version with:
 
 .. code-block:: bash
 
    pip install --upgrade proplot
-
-.. code-block:: bash
-
    conda upgrade proplot
-
 
 If you used ``pip install git+https://github.com/lukelbd/proplot.git`` to install ProPlot before it was released on PyPi, you may need to run ``pip uninstall proplot`` before upgrading.
 To install a development version of ProPlot, you can use this same method, or clone the repository and run ``pip install --upgrade .`` inside the ``proplot`` folder.
