@@ -2185,25 +2185,15 @@ def subplots(
         'wspace': wspace, 'hspace': hspace,
     }
 
-    # Default border spaces
-    left = _notNone(left, units(rc['subplots.ylabspace']))
-    right = _notNone(right, units(rc['subplots.innerspace']))
-    top = _notNone(top, units(rc['subplots.titlespace']))
-    bottom = _notNone(bottom, units(rc['subplots.xlabspace']))
-    # Default spaces between axes
+    # Apply default spaces
+    left = _notNone(left, _get_space('left'))
+    right = _notNone(right, _get_space('right'))
+    bottom = _notNone(bottom, _get_space('bottom'))
+    top = _notNone(top, _get_space('top'))
     wratios, hratios = [*wratios], [*hratios]  # copies
     wspace, hspace = np.array(wspace), np.array(hspace)  # also copies!
-    wspace[wspace == None] = (  # noqa
-        units(rc['subplots.innerspace']) if sharey == 3 else
-        units(rc['subplots.ylabspace']) - units(rc['subplots.titlespace'])
-        if sharey in (1, 2) else units(rc['subplots.ylabspace']))
-    hspace[hspace == None] = (  # noqa
-        units(rc['subplots.titlespace']) + units(rc['subplots.innerspace'])
-        if sharex == 3 else units(rc['subplots.xlabspace'])
-        if sharex in (1, 2) else units(rc['subplots.titlespace'])
-        + units(rc['subplots.xlabspace'])
-    )
-    wspace, hspace = wspace.tolist(), hspace.tolist()
+    wspace[wspace == None] = _get_space('wspace', sharex)  # noqa
+    hspace[hspace == None] = _get_space('hspace', sharey)  # noqa
 
     # Parse arguments, fix dimensions in light of desired aspect ratio
     figsize, gridspec_kw, subplots_kw = _subplots_geometry(
