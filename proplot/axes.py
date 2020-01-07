@@ -1891,10 +1891,12 @@ class XYAxes(Axes):
         self._twinned_axes.join(self, ax2)
         return ax2
 
-    def _sharex_setup(self, sharex, level):
-        """Sets up shared axes. The input is the 'parent' axes, from which
-        this one will draw its properties."""
+    def _sharex_setup(self, sharex, level=None):
+        """Configure shared axes accounting for panels. The input is the
+        'parent' axes, from which this one will draw its properties."""
         # Call Axes method
+        if level is None:
+            level = self.figure._sharex
         super()._sharex_setup(sharex, level)  # sets up panels
         if sharex in (None, self) or not isinstance(sharex, XYAxes):
             return
@@ -1904,10 +1906,12 @@ class XYAxes(Axes):
         if level > 1:
             self._shared_x_axes.join(self, sharex)
 
-    def _sharey_setup(self, sharey, level):
-        """Sets up shared axes. The input is the 'parent' axes, from which
-        this one will draw its properties."""
+    def _sharey_setup(self, sharey, level=None):
+        """Configure shared axes accounting for panels. The input is the
+        'parent' axes, from which this one will draw its properties."""
         # Call Axes method
+        if level is None:
+            level = self.figure._sharey
         super()._sharey_setup(sharey, level)
         if sharey in (None, self) or not isinstance(sharey, XYAxes):
             return
