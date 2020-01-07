@@ -118,7 +118,6 @@ def _parse_format(mode=2, rc_kw=None, **kwargs):
 class Axes(maxes.Axes):
     """Lowest-level axes subclass. Handles titles and axis
     sharing. Adds several new methods and overrides existing ones."""
-
     def __init__(self, *args, number=None, **kwargs):
         """
         Parameters
@@ -451,10 +450,11 @@ class Axes(maxes.Axes):
             level = self.figure._sharex
         if level not in range(4):
             raise ValueError(
-                'Axis sharing level can be 0 (no sharing), '
-                '1 (sharing, but keep all labels), '
-                '2 (sharing, only keep one set of tick labels), '
-                'or 3 (sharing, only keep one axis label).'
+                'Invalid sharing level sharex={value!r}. '
+                'Axis sharing level can be 0 (share nothing), '
+                '1 (hide axis labels), '
+                '2 (share limits and hide axis labels), or '
+                '3 (share limits and hide axis and tick labels).'
             )
         self._share_short_axis(sharex, 'l', level)
         self._share_short_axis(sharex, 'r', level)
@@ -468,10 +468,11 @@ class Axes(maxes.Axes):
             level = self.figure._sharey
         if level not in range(4):
             raise ValueError(
-                'Axis sharing level can be 0 (no sharing), '
-                '1 (sharing, but keep all labels), '
-                '2 (sharing, only keep one set of tick labels), '
-                'or 3 (sharing, only keep one axis label).'
+                'Invalid sharing level sharey={value!r}. '
+                'Axis sharing level can be 0 (share nothing), '
+                '1 (hide axis labels), '
+                '2 (share limits and hide axis labels), or '
+                '3 (share limits and hide axis and tick labels).'
             )
         self._share_short_axis(sharey, 'b', level)
         self._share_short_axis(sharey, 't', level)
@@ -483,8 +484,10 @@ class Axes(maxes.Axes):
         vertical extent of subplots in the figure gridspec."""
         # Panel axes sharing, between main subplot and its panels
         def shared(paxs):
-            return [pax for pax in paxs
-                    if not pax._panel_filled and pax._panel_share]
+            return [
+                pax for pax in paxs
+                if not pax._panel_filled and pax._panel_share
+            ]
 
         if not self._panel_side:  # this is a main axes
             # Top and bottom
@@ -567,7 +570,7 @@ class Axes(maxes.Axes):
 
         # Apply to spanning axes and their panels
         axs = [ax]
-        if getattr(ax, '_span' + x + '_on'):
+        if getattr(ax.figure, '_span' + x):
             s = axis.get_label_position()[0]
             if s in 'lb':
                 axs = ax._get_side_axes(s)
@@ -1681,7 +1684,7 @@ def _parse_alt(x, kwargs):
             kw_bad[key] = value
     if kw_bad:
         raise TypeError(f'Unexpected keyword argument(s): {kw_bad!r}')
-    return kwargs
+    return kw_out
 
 
 def _parse_rcloc(x, string):  # figures out string location
@@ -1857,7 +1860,7 @@ class XYAxes(Axes):
             axis = getattr(self, x + 'axis')
             share = getattr(self, '_share' + x)
             if share is not None:
-                level = getattr(self, '_share' + x + '_level')
+                level = getattr(self.figure, '_share' + x)
                 if level > 0:
                     axis.label.set_visible(False)
                 if level > 2:
@@ -1878,10 +1881,12 @@ class XYAxes(Axes):
         self._twinned_axes.join(self, ax2)
         return ax2
 
-    def _sharex_setup(self, sharex, level):
+    def _sharex_setup(self, sharex, level=None):
         """Configure shared axes accounting for panels. The input is the
         'parent' axes, from which this one will draw its properties."""
         # Call Axes method
+        if level is None:
+            level = self.figure._sharex
         super()._sharex_setup(sharex, level)  # sets up panels
         if sharex in (None, self) or not isinstance(sharex, XYAxes):
             return
@@ -1891,10 +1896,12 @@ class XYAxes(Axes):
         if level > 1:
             self._shared_x_axes.join(self, sharex)
 
-    def _sharey_setup(self, sharey, level):
+    def _sharey_setup(self, sharey, level=None):
         """Configure shared axes accounting for panels. The input is the
         'parent' axes, from which this one will draw its properties."""
         # Call Axes method
+        if level is None:
+            level = self.figure._sharey
         super()._sharey_setup(sharey, level)
         if sharey in (None, self) or not isinstance(sharey, XYAxes):
             return
@@ -2615,18 +2622,16 @@ class XYAxes(Axes):
         # NOTE: Matplotlib 3.1 has a 'secondary axis' feature. For the time
         # being, our version is more robust (see FuncScale) and simpler, since
         # we do not create an entirely separate _SecondaryAxis class.
-        ax = self.altx()
+        ax = self.altx(**kwargs)
         self._dualx_arg = arg
         self._dualx_overrides()
-        ax.format(**kwargs)
         return ax
 
     def dualy(self, arg, **kwargs):
         """Docstring is replaced below."""
-        ax = self.alty()
+        ax = self.alty(**kwargs)
         self._dualy_arg = arg
         self._dualy_overrides()
-        ax.format(**kwargs)
         return ax
 
     def draw(self, renderer=None, *args, **kwargs):

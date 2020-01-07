@@ -16,9 +16,9 @@ import matplotlib.transforms as mtransforms
 import matplotlib.gridspec as mgridspec
 import matplotlib.pyplot as plt
 from numbers import Integral
-from . import projs, axes
 from .rctools import rc
 from .utils import _warn_proplot, _notNone, _counter, _setstate, units
+from . import projs, axes
 __all__ = [
     'subplot_grid', 'close', 'show', 'subplots',
     'EdgeStack', 'Figure', 'GeometrySolver',
@@ -871,7 +871,6 @@ class GeometrySolver(object):
         # Indicate we are initialized
         self._isinit = True
 
-    #     """Resizes the figure based on current spacing values."""
     # def _update_gridspec(self, nrows=None, ncols=None, array=None, **kwargs):
     def resize(self):
         """Determine the figure size necessary to preserve physical
@@ -1114,7 +1113,8 @@ class GeometrySolver(object):
         # Get new subplot spacings, axes panel spacing, figure panel spacing
         spaces = []
         for (w, x, y, nacross, ispace) in zip(
-                'wh', 'xy', 'yx', (nrows, ncols), (wspace, hspace)):
+            'wh', 'xy', 'yx', (nrows, ncols), (wspace, hspace)
+        ):
             # Determine which rows and columns correspond to panels
             panels = getattr(self, '_' + w + 'panels')
             jspace = [*ispace]
@@ -1172,8 +1172,7 @@ class GeometrySolver(object):
                     x2 = min(ax._range_tightbbox(x)[0] for ax in group2)
                     jspaces.append((x2 - x1) / self.dpi)
                 if jspaces:
-                    space = max(
-                        0, space - min(jspaces) + pad)  # TODO: why max 0?
+                    space = max(0, space - min(jspaces) + pad)
                 jspace[i] = space
             spaces.append(jspace)
 
@@ -1253,8 +1252,9 @@ class GeometrySolver(object):
                             mtransforms.IdentityTransform(), self.transFigure)
                     for axis in axises:
                         axis.label.set_visible((axis is spanaxis))
-                    spanlabel.update(
-                        {'position': position, 'transform': transform})
+                    spanlabel.update({
+                        'position': position, 'transform': transform
+                    })
 
     def _align_labels(self, renderer):
         """Adjust the position of row and column labels, and align figure super
@@ -2004,21 +2004,20 @@ class Figure(mfigure.Figure):
         # map_projection = obj entry, and maybe hide the Proj constructor as
         # an argument processing utility?
         proj = _notNone(
-            proj,
-            projection,
-            'cartesian',
-            names=(
-                'proj',
-                'projection'))
+            proj, projection, 'cartesian',
+            names=('proj', 'projection')
+        )
         proj_kw = _notNone(
-            proj_kw, projection_kw, {}, names=(
-                'proj_kw', 'projection_kw'))
+            proj_kw, projection_kw, {},
+            names=('proj_kw', 'projection_kw')
+        )
         if proj not in ('cartesian', 'polar'):
             map_projection = projs.Proj(proj, basemap=basemap, **proj_kw)
             if 'map_projection' in kwargs:
                 _warn_proplot(
                     f'Ignoring input "map_projection" '
-                    f'{kwargs["map_projection"]!r}.')
+                    f'{kwargs["map_projection"]!r}.'
+                )
             kwargs['map_projection'] = map_projection
             proj = 'basemap' if basemap else 'cartopy'
 
@@ -2086,9 +2085,10 @@ class Figure(mfigure.Figure):
         elif ax is not None:
             return ax.colorbar(*args, space=space, width=width, **kwargs)
         # Generate figure panel
-        ax = self._add_figure_panel(loc,
-                                    space=space, width=width, span=span,
-                                    row=row, col=col, rows=rows, cols=cols)
+        ax = self._add_figure_panel(
+            loc, space=space, width=width, span=span,
+            row=row, col=col, rows=rows, cols=cols
+        )
         return ax.colorbar(*args, loc='_fill', **kwargs)
 
     def get_alignx(self):
@@ -2267,10 +2267,11 @@ class Figure(mfigure.Figure):
         if value not in range(4):
             raise ValueError(
                 'Invalid sharing level sharex={value!r}. '
-                'Axis sharing level can be 0 (no sharing), '
-                '1 (sharing, but keep all labels), '
-                '2 (sharing, only keep one set of tick labels), '
-                'or 3 (sharing, only keep one axis label).')
+                'Axis sharing level can be 0 (share nothing), '
+                '1 (hide axis labels), '
+                '2 (share limits and hide axis labels), or '
+                '3 (share limits and hide axis and tick labels).'
+            )
         self.stale = True
         self._sharex = value
 
@@ -2280,10 +2281,11 @@ class Figure(mfigure.Figure):
         if value not in range(4):
             raise ValueError(
                 'Invalid sharing level sharey={value!r}. '
-                'Axis sharing level can be 0 (no sharing), '
-                '1 (sharing, but keep all labels), '
-                '2 (sharing, only keep one set of tick labels), '
-                'or 3 (sharing, only keep one axis label).')
+                'Axis sharing level can be 0 (share nothing), '
+                '1 (hide axis labels), '
+                '2 (share limits and hide axis labels), or '
+                '3 (share limits and hide axis and tick labels).'
+            )
         self.stale = True
         self._sharey = value
 
@@ -2318,7 +2320,7 @@ class Figure(mfigure.Figure):
         self.stale = True
         self._ref = ref
 
-    def set_size_inches(self, w, h=None, forward=True, auto=True):
+    def set_size_inches(self, w, h=None, forward=True, auto=False):
         # Set the figure size and, if this is being called manually or from
         # an interactive backend, override the geometry tracker so users can
         # use interactive backends. See #76. Undocumented because this is
@@ -2556,8 +2558,7 @@ def subplots(
     # Get axes ranges from array
     axids = [np.where(array == i) for i in np.sort(np.unique(array)) if i > 0]
     xrange = np.array([[x.min(), x.max()] for _, x in axids])
-    yrange = np.array([[y.min(), y.max()]
-                       for y, _ in axids])  # range accounting for panels
+    yrange = np.array([[y.min(), y.max()] for y, _ in axids])
 
     # Get basemap.Basemap or cartopy.crs.Projection instances for map
     proj = _notNone(projection, proj, None, names=('projection', 'proj'))
@@ -2603,7 +2604,8 @@ def subplots(
         ss = gs[y0:y1 + 1, x0:x1 + 1]
         axs[idx] = fig.add_subplot(
             ss, number=num, main=True,
-            proj=proj[num], basemap=basemap[num], proj_kw=proj_kw[num])
+            proj=proj[num], basemap=basemap[num], proj_kw=proj_kw[num]
+        )
 
     # Shared axes setup
     # TODO: Figure out how to defer this to drawtime in #50
