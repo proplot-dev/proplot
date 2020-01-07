@@ -39,7 +39,7 @@ __all__ = [
 ]
 
 # Colormap stuff
-CMAPS_CATEGORIES = {
+CMAPS_TABLE = {
     # Assorted origin, but these belong together
     'Grayscale': (
         'Grays', 'Mono', 'GrayCycle',
@@ -124,11 +124,12 @@ CMAPS_CATEGORIES = {
         'gist_earth', 'gist_gray', 'gist_heat', 'gist_ncar',
         'gist_rainbow', 'gist_stern', 'gist_yarg',
     ),
-    'Miscellaneous': (
+    'Other': (
         'binary', 'bwr', 'brg',  # appear to be custom matplotlib
         'cubehelix', 'wistia', 'CMRmap',  # individually released
         'seismic', 'terrain', 'nipy_spectral',  # origin ambiguous
-    ),
+        'tab10', 'tab20', 'tab20b', 'tab20c',  # merged colormap cycles
+    )
 }
 CMAPS_DELETE = (
     'binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink',
@@ -3116,8 +3117,54 @@ def register_fonts():
     fonts[:] = [*fonts_proplot, *fonts_system]
 
 
-def show_channels(*args, N=100, rgb=True, saturation=True,
-                  minhue=0, maxsat=1000, axwidth=None, width=100):
+def _draw_bars(cmapdict, length=4.0, width=0.2):
+    """
+    Draw colorbars for "colormaps" and "color cycles". This is called by
+    `show_cycles` and `show_cmaps`.
+    """
+    # Figure
+    from . import subplots
+    naxs = len(cmapdict) + sum(map(len, cmapdict.values()))
+    fig, axs = subplots(
+        nrows=naxs, axwidth=length, axheight=width,
+        share=0, hspace=0.03,
+    )
+    iax = -1
+    nheads = nbars = 0  # for deciding which axes to plot in
+    a = np.linspace(0, 1, 257).reshape(1, -1)
+    a = np.vstack((a, a))
+    for cat, names in cmapdict.items():
+        if not names:
+            continue
+        nheads += 1
+        for imap, name in enumerate(names):
+            iax += 1
+            if imap + nheads + nbars > naxs:
+                break
+            ax = axs[iax]
+            if imap == 0:  # allocate this axes for title
+                iax += 1
+                ax.set_visible(False)
+                ax = axs[iax]
+            cmap = mcm.cmap_d[name]
+            ax.imshow(
+                a, cmap=name, origin='lower', aspect='auto',
+                levels=cmap.N
+            )
+            ax.format(
+                ylabel=name,
+                ylabel_kw={'rotation': 0, 'ha': 'right', 'va': 'center'},
+                xticks='none', yticks='none',  # no ticks
+                xloc='neither', yloc='neither',  # no spines
+                title=(cat if imap == 0 else None)
+            )
+        nbars += len(names)
+
+
+def show_channels(
+    *args, N=100, rgb=True, saturation=True, minhue=0,
+    maxsat=500, width=100, axwidth=1.7
+):
     """
     Show how arbitrary colormap(s) vary with respect to the hue, chroma,
     luminance, HSL saturation, and HPL saturation channels, and optionally
@@ -3149,12 +3196,12 @@ def show_channels(*args, N=100, rgb=True, saturation=True,
     Returns
     -------
     `~proplot.subplots.Figure`
-        The figure instance.
-    """  # noqa
+        The figure.
+    """
     # Figure and plot
     from . import subplots
     if not args:
-        args = (rcParams['image.cmap'],)
+        raise ValueError(f'At least one positional argument required.')
     array = [[1, 1, 2, 2, 3, 3]]
     labels = ('Hue', 'Chroma', 'Luminance')
     if saturation:
@@ -3165,7 +3212,7 @@ def show_channels(*args, N=100, rgb=True, saturation=True,
         labels += ('Red', 'Green', 'Blue')
     fig, axs = subplots(
         array=array, span=False, share=1,
-        aspect=1, axwidth=axwidth, axpad='1em',
+        axwidth=axwidth, axpad='1em',
     )
     # Iterate through colormaps
     mc, ms, mp = 0, 0, 0
@@ -3260,7 +3307,7 @@ def show_colorspaces(luminance=None, saturation=None, hue=None, axwidth=2):
     Returns
     -------
     `~proplot.subplots.Figure`
-        The figure instance.
+        The figure.
     """
     # Get colorspace properties
     hues = np.linspace(0, 360, 361)
@@ -3319,14 +3366,14 @@ def show_colorspaces(luminance=None, saturation=None, hue=None, axwidth=2):
     return fig
 
 
-def show_colors(nbreak=17, minsat=20):
+def show_colors(nhues=17, minsat=20):
     """
-    Visualize the registered color names in two figures. Adapted from
-    `this example <https://matplotlib.org/examples/color/named_colors.html>`_.
+    Generate tables of the registered color names. Adapted from
+    `this example <https://matplotlib.org/examples/color/named_colors.html>`__.
 
     Parameters
     ----------
-    nbreak : int, optional
+    nhues : int, optional
         The number of breaks between hues for grouping "like colors" in the
         color table.
     minsat : float, optional
@@ -3336,16 +3383,16 @@ def show_colors(nbreak=17, minsat=20):
     Returns
     -------
     figs : list of `~proplot.subplots.Figure`
-        The figure instances.
+        The figure.
     """
     # Test used to "categories" colors
-    breakpoints = np.linspace(0, 360, nbreak)
+    breakpoints = np.linspace(0, 360, nhues)
     def _color_filter(i, hcl):  # noqa: E306
         gray = hcl[1] <= minsat
         if i == 0:
             return gray
         color = breakpoints[i - 1] <= hcl[0] < breakpoints[i]
-        if i == nbreak - 1:
+        if i == nhues - 1:
             color = color or color == breakpoints[i]  # endpoint inclusive
         return not gray and color
 
@@ -3375,8 +3422,6 @@ def show_colors(nbreak=17, minsat=20):
             nrows = nrows * 2
             ncols = (ncols + 1) // 2
             names.resize((ncols, nrows))
-            names = names.tolist()
-            # names = names.reshape((ncols, nrows)).tolist()
 
         # Get colors in perceptally uniform space, then group based on hue
         # thresholds
@@ -3393,7 +3438,7 @@ def show_colors(nbreak=17, minsat=20):
                     [pair for pair in hclpairs if _color_filter(i, pair[1])],
                     key=lambda x: x[1][2]
                 )
-                for i in range(nbreak)
+                for i in range(nhues)
             ]
             names = np.array([
                 name for ipairs in hclpairs for name, _ in ipairs
@@ -3434,158 +3479,94 @@ def show_colors(nbreak=17, minsat=20):
     return figs
 
 
-def show_cmaps(*args, N=256, length=4.0, width=0.2, unknown='User'):
+def show_cmaps(*args, N=None, unknown='User', **kwargs):
     """
-    Visualize all registered colormaps, or the list of colormap names if
-    positional arguments are passed. Adapted from `this example \
+    Generate a table of the registered colormaps or the input colormaps.
+    Adapted from `this example \
 <http://matplotlib.org/examples/color/colormaps_reference.html>`__.
 
     Parameters
     ----------
     *args : colormap-spec, optional
-        Positional arguments are colormap names or objects. Default is
-        all of the registered colormaps.
+        Colormap names or objects.
     N : int, optional
-        The number of levels in each colorbar.
-    length : float or str, optional
-        The length of each colorbar. Units are interpreted by
-        `~proplot.utils.units`.
-    width : float or str, optional
-        The width of each colorbar. Units are interpreted by
-        `~proplot.utils.units`.
+        The number of levels in each colorbar. Default is
+        :rc:`image.lut`.
     unknown : str, optional
         Category name for colormaps that are unknown to ProPlot. The
         default is ``'User'``.
+    length : float or str, optional
+        The length of the colorbars. Units are interpreted by
+        `~proplot.utils.units`.
+    width : float or str, optional
+        The width of the colorbars. Units are interpreted by
+        `~proplot.utils.units`.
 
     Returns
     -------
     `~proplot.subplots.Figure`
-        The figure instance.
+        The figure.
     """
     # Have colormaps separated into categories
+    N = _notNone(N, rcParams['image.lut'])
     if args:
-        imaps = [Colormap(cmap, N=N).name for cmap in args]
+        names = [Colormap(cmap, N=N).name for cmap in args]
     else:
-        imaps = [
-            name for name in mcm.cmap_d.keys() if name not in ('vega', 'greys')
-            and name[0] != '_'
-            and isinstance(mcm.cmap_d[name], LinearSegmentedColormap)
+        names = [
+            name for name in mcm.cmap_d.keys() if
+            isinstance(mcm.cmap_d[name], LinearSegmentedColormap)
         ]
 
     # Get dictionary of registered colormaps and their categories
-    imaps = [name.lower() for name in imaps]
-    cats = {cat: names for cat, names in CMAPS_CATEGORIES.items()}
-    cats_plot = {cat: [name for name in names if name.lower() in imaps]
-                 for cat, names in cats.items()}
-    # Distinguish known from unknown (i.e. user) maps, add as a new category
-    imaps_known = [name.lower() for cat, names in cats.items()
-                   for name in names if name.lower() in imaps]
-    imaps_unknown = [name for name in imaps if name not in imaps_known]
-    # Remove categories with no known maps and put user at start
-    cats_plot = {unknown: imaps_unknown, **cats_plot}
-    cats_plot = {cat: maps for cat, maps in cats_plot.items() if maps}
+    cmapdict = {}
+    names_all = list(map(str.lower, names))
+    names_known = sum(CMAPS_TABLE.values(), [])
+    cmapdict[unknown] = [name for name in names if name not in names_known]
+    for cat, names in CMAPS_TABLE.items():
+        cmapdict[cat] = [name for name in names if name.lower() in names_all]
 
-    # Figure
-    from . import subplots
-    naxs = len(imaps_known) + len(imaps_unknown) + len(cats_plot)
-    fig, axs = subplots(
-        nrows=naxs, axwidth=length, axheight=width,
-        share=0, hspace=0.03,
-    )
-    iax = -1
-    ntitles = nplots = 0  # for deciding which axes to plot in
-    a = np.linspace(0, 1, 257).reshape(1, -1)
-    a = np.vstack((a, a))
-    for cat, names in cats_plot.items():
-        # Space for title
-        if not names:
-            continue
-        ntitles += 1
-        for imap, name in enumerate(names):
-            # Draw colorbar
-            iax += 1
-            if imap + ntitles + nplots > naxs:
-                break
-            ax = axs[iax]
-            if imap == 0:  # allocate this axes for title
-                iax += 1
-                ax.set_visible(False)
-                ax = axs[iax]
-            if name not in mcm.cmap_d or name.lower(
-            ) not in imaps:  # i.e. the expected builtin colormap is missing
-                ax.set_visible(False)  # empty space
-                continue
-            ax.imshow(a, cmap=name, origin='lower', aspect='auto', levels=N)
-            ax.format(ylabel=name,
-                      ylabel_kw={'rotation': 0, 'ha': 'right', 'va': 'center'},
-                      xticks='none', yticks='none',  # no ticks
-                      xloc='neither', yloc='neither',  # no spines
-                      title=(cat if imap == 0 else None))
-        # Space for plots
-        nplots += len(names)
-    return fig
+    # Return figure of colorbars
+    return _draw_bars(cmapdict, **kwargs)
 
 
-def show_cycles(*args, axwidth=1.5):
+def show_cycles(*args, **kwargs):
     """
-    Visualize all registered color cycles, or the list of cycle names if
-    positional arguments are passed.
+    Generate a table of registered color cycles or the input color cycles.
 
     Parameters
     ----------
     *args : colormap-spec, optional
-        Positional arguments are cycle names or objects. Default is
-        all of the registered colormaps.
-    axwidth : str or float, optional
-        Average width of each subplot. Units are interpreted by
+        Cycle names or objects.
+    length : float or str, optional
+        The length of the colorbars. Units are interpreted by
+        `~proplot.utils.units`.
+    width : float or str, optional
+        The width of the colorbars. Units are interpreted by
         `~proplot.utils.units`.
 
     Returns
     -------
     `~proplot.subplots.Figure`
-        The figure instance.
+        The figure.
     """
     # Get the list of cycles
     if args:
-        icycles = {
-            getattr(cycle, 'name', '_no_name'): Colors(cycle)
-            for cycle in args}
+        names = [cmap.name for cmap in args]
     else:
-        # use global cycles variable
-        icycles = {key: mcm.cmap_d[key].colors for key in cycles}
-    nrows = len(icycles) // 3 + len(icycles) % 3
+        names = [
+            name for name in mcm.cmap_d.keys() if
+            isinstance(mcm.cmap_d[name], ListedColormap)
+        ]
 
-    # Create plot
-    from . import subplots
-    state = np.random.RandomState(51423)
-    fig, axs = subplots(
-        ncols=3, nrows=nrows, aspect=1, axwidth=axwidth,
-        sharey=False, sharex=False, axpad=0.05
-    )
-    for i, (ax, (key, cycle)) in enumerate(zip(axs, icycles.items())):
-        key = key.lower()
-        array = state.rand(20, len(cycle)) - 0.5
-        array = array[:, :1] + array.cumsum(axis=0) + np.arange(0, len(cycle))
-        for j, color in enumerate(cycle):
-            l, = ax.plot(array[:, j], lw=5, ls='-', color=color)
-            # make first lines have big zorder
-            l.set_zorder(10 + len(cycle) - j)
-        title = f'{key}: {len(cycle)} colors'
-        ax.set_title(title)
-        ax.grid(True)
-        for axis in 'xy':
-            ax.tick_params(axis=axis,
-                           which='both', labelbottom=False, labelleft=False,
-                           bottom=False, top=False, left=False, right=False)
-    if axs[i + 1:]:
-        axs[i + 1:].set_visible(False)
-    return fig
+    # Return figure of colorbars
+    cmapdict = {'Color cycles': names}
+    return _draw_bars(cmapdict, **kwargs)
 
 
 def show_fonts(*args, size=12, text=None):
     """
-    Visualize the available sans-serif fonts. If a glyph is unavailable,
-    it is replaced by the "¤" dummy character.
+    Generate a table of fonts. If a glyph for a particular font is unavailable,
+    it is replaced with the "¤" dummy character.
 
     Parameters
     ----------
