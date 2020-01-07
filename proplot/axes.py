@@ -155,7 +155,7 @@ class Axes(maxes.Axes):
         # Ensure isDefault_minloc enabled at start, needed for dual axes
         self.xaxis.isDefault_minloc = self.yaxis.isDefault_minloc = True
         # Properties
-        self._number = number  # for abc numbering
+        self.number = number
         self._abc_loc = None
         self._abc_text = None
         self._titles_dict = {}  # dictionary of titles and locs
@@ -325,6 +325,18 @@ class Axes(maxes.Axes):
             kw.pop('border', None)
             kw.pop('linewidth', None)
         return loc, obj, kw
+
+    def _iter_panels(self, sides='lrbt'):
+        """Return a list of axes and child panel axes."""
+        axs = [self] if self.get_visible() else []
+        if not ({*sides} <= {*'lrbt'}):
+            raise ValueError(f'Invalid sides {sides!r}.')
+        for s in sides:
+            for ax in getattr(self, '_' + s + 'panels'):
+                if not ax or not ax.get_visible():
+                    continue
+                axs.append(ax)
+        return axs
 
     @staticmethod
     def _loc_translate(loc, default=None):
@@ -603,64 +615,6 @@ class Axes(maxes.Axes):
         x = _notNone(kwargs.pop('x', x), pos[0])
         y = _notNone(kwargs.pop('y', y), pos[1])
         return self.text(x, y, text, **kwextra)
-
-    def context(self, *, mode=2, rc_kw=None, **kwargs):
-        """
-        For internal use. Sets up temporary `~proplot.rctools.rc` settings by
-        returning the result of `~proplot.rctools.rc_configurator.context`.
-
-        Parameters
-        ----------
-        rc_kw : dict, optional
-            A dictionary containing "rc" configuration settings that will
-            be applied to this axes. Temporarily updates the
-            `~proplot.rctools.rc` object.
-        **kwargs
-            Any of three options:
-
-            * A keyword arg for `Axes.format`, `XYAxes.format`,
-              or `ProjAxes.format`.
-            * A global "rc" keyword arg, like ``linewidth`` or ``color``.
-            * A standard "rc" keyword arg **with the dots omitted**,
-              like ``landcolor`` instead of ``land.color``.
-
-            The latter two options update the `~proplot.rctools.rc`
-            object, just like `rc_kw`.
-
-        Other parameters
-        ----------------
-        mode : int, optional
-            The "getitem mode". This is used under-the-hood -- you shouldn't
-            have to use it directly. Determines whether queries to the
-            `~proplot.rctools.rc` object will ignore
-            `rcParams <https://matplotlib.org/users/customizing.html>`__.
-            This can help prevent a massive number of unnecessary lookups
-            when the settings haven't been changed by the user.
-            See `~proplot.rctools.rc_configurator` for details.
-
-        Returns
-        -------
-        `~proplot.rctools.rc_configurator`
-            The `proplot.rctools.rc` object primed for use in a "with"
-            statement.
-        dict
-            Dictionary of keyword arguments that are not `~proplot.rctools.rc`
-            properties, to be passed to the ``format`` methods.
-        """
-        # Figure out which kwargs are valid rc settings
-        # TODO: Support for 'small', 'large', etc. font
-        kw = {}  # for format
-        rc_kw = rc_kw or {}
-        for key, value in kwargs.items():
-            key_fixed = RC_NODOTSNAMES.get(key, None)
-            if key_fixed is None:
-                kw[key] = value
-            else:
-                rc_kw[key_fixed] = value
-        rc._getitem_mode = 0  # might still be non-zero if had error
-        # Return "context object", which is just the configurator itself
-        # primed for use in a "with" statement
-        return rc.context(rc_kw, mode=mode), kw
 
     def format(
             self, *, title=None, top=None,
@@ -953,8 +907,7 @@ optional
             For outer colorbars only. The space between the colorbar and the
             main axes. Units are interpreted by `~proplot.utils.units`.
             When :rcraw:`tight` is ``True``, this is adjusted automatically.
-            When :rcraw:`tight` is ``False``, the default is
-            :rc:`subplots.panelspace`.
+            Otherwise, the default is :rc:`subplots.panelspace`.
         frame, frameon : bool, optional
             For inset colorbars, indicates whether to draw a "frame", just
             like `~matplotlib.axes.Axes.legend`. Default is
@@ -1175,8 +1128,7 @@ optional
             For outer legends only. The space between the axes and the legend
             box. Units are interpreted by `~proplot.utils.units`.
             When :rcraw:`tight` is ``True``, this is adjusted automatically.
-            When :rcraw:`tight` is ``False``, the default is
-            :rc:`subplots.panelspace`.
+            Otherwise, the default is :rc:`subplots.panelspace`.
 
         Other parameters
         ----------------
@@ -1398,7 +1350,7 @@ optional
         space : float or str or list thereof, optional
             Empty space between the main subplot and the panel.
             When :rcraw:`tight` is ``True``, this is adjusted automatically.
-            Otherwise, defaut is :rc:`subplots.panelspace`.
+            Otherwise, the default is :rc:`subplots.panelspace`.
         share : bool, optional
             Whether to enable axis sharing between the *x* and *y* axes of the
             main subplot and the panel long axes for each panel in the stack.
@@ -1535,22 +1487,16 @@ optional
 
     @property
     def number(self):
-        """The axes number, controls a-b-c label order and order of
-        appearence in the `~proplot.subplots.subplot_grid` returned by
+        """The axes number. This controls the order of a-b-c labels and the
+        order of appearence in the `~proplot.subplots.subplot_grid` returned by
         `~proplot.subplots.subplots`."""
         return self._number
 
-    def _iter_panels(self, sides='lrbt'):
-        """Iterates over axes and child panel axes."""
-        axs = [self] if self.get_visible() else []
-        if not ({*sides} <= {*'lrbt'}):
-            raise ValueError(f'Invalid sides {sides!r}.')
-        for s in sides:
-            for ax in getattr(self, '_' + s + 'panels'):
-                if not ax or not ax.get_visible():
-                    continue
-                axs.append(ax)
-        return axs
+    @number.setter
+    def number(self, num):
+        if not isinstance(num, Integral) or num < 1:
+            raise ValueError(f'Invalid number {num!r}. Must be integer >=1.')
+        self._number = num
 
     # Wrapped by special functions
     # Also support redirecting to Basemap methods
