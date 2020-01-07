@@ -90,7 +90,6 @@ STYLE_ARGS_TRANSLATE = {
 def default_latlon(self, func, *args, latlon=True, **kwargs):
     """
     Wraps %(methods)s for `~proplot.axes.BasemapAxes`.
-
     With the default `~mpl_toolkits.basemap` API, you need to pass
     ``latlon=True`` if your data coordinates are longitude and latitude
     instead of map projection coordinates. Now, this is the default.
@@ -101,7 +100,6 @@ def default_latlon(self, func, *args, latlon=True, **kwargs):
 def default_transform(self, func, *args, transform=None, **kwargs):
     """
     Wraps %(methods)s for `~proplot.axes.GeoAxes`.
-
     With the default `~cartopy.mpl.geoaxes.GeoAxes` API, you need to pass
     ``transform=cartopy.crs.PlateCarree()`` if your data coordinates are
     longitude and latitude instead of map projection coordinates. Now,
