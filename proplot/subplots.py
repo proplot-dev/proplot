@@ -2249,21 +2249,19 @@ def subplots(
         # Custom Basemap and Cartopy axes
         else:
             package = 'basemap' if basemap[num] else 'geo'
-            obj = projs.Proj(
+            m = projs.Proj(
                 name, basemap=basemap[num], **proj_kw[num]
             )
             if num == ref:
                 if basemap[num]:
                     aspect = (
-                        (proj.urcrnrx - proj.llcrnrx)
-                        / (proj.urcrnry - proj.llcrnry)
+                        (m.urcrnrx - m.llcrnrx) / (m.urcrnry - m.llcrnry)
                     )
                 else:
                     aspect = (
-                        np.diff(proj.x_limits)
-                        / np.diff(proj.y_limits)
+                        np.diff(m.x_limits) / np.diff(m.y_limits)
                     )[0]
-            axes_kw[num].update({'projection': package, 'map_projection': obj})
+            axes_kw[num].update({'projection': package, 'map_projection': m})
 
     # Figure and/or axes dimensions
     names, values = (), ()

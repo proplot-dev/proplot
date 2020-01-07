@@ -147,9 +147,9 @@ def Proj(name, basemap=False, **kwargs):
     if ((CRS is not object and isinstance(name, CRS))
             or (Basemap is not object and isinstance(name, Basemap))):
         proj = name
-    elif not isinstance(proj, str):
+    elif not isinstance(name, str):
         raise ValueError(
-            f'Unexpected Proj() argument {proj!r}. '
+            f'Unexpected Proj() argument {name!r}. '
             'Must be name, mpl_toolkits.basemap.Basemap instance, '
             'or cartopy.crs.CRS instance.'
         )
