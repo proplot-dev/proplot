@@ -39,6 +39,26 @@ __all__ = [
 ]
 
 # Colormap stuff
+CYCLES_TABLE = {
+    'Matplotlib originals': (
+        'default', 'classic',
+    ),
+    'Matplotlib stylesheets': (
+        'colorblind', 'colorblind10', 'ggplot', 'bmh', 'solarized', '538',
+    ),
+    'ColorBrewer2.0 qualitative': (
+        'Accent', 'Dark2',
+        'Paired', 'Pastel1', 'Pastel2',
+        'Set1', 'Set2', 'Set3',
+    ),
+    'Other qualitative': (
+        'FlatUI', 'Qual1', 'Qual2', 'Viz',
+    ),
+    'ProPlot originals': (
+        'Cool', 'Warm', 'Hot',
+        'Floral', 'Contrast', 'Sharp',
+    ),
+}
 CMAPS_TABLE = {
     # Assorted origin, but these belong together
     'Grayscale': (
@@ -126,7 +146,7 @@ CMAPS_TABLE = {
     ),
     'Other': (
         'binary', 'bwr', 'brg',  # appear to be custom matplotlib
-        'cubehelix', 'wistia', 'CMRmap',  # individually released
+        'cubehelix', 'Wistia', 'CMRmap',  # individually released
         'seismic', 'terrain', 'nipy_spectral',  # origin ambiguous
         'tab10', 'tab20', 'tab20b', 'tab20c',  # merged colormap cycles
     )
@@ -1836,17 +1856,23 @@ class CmapDict(dict):
             if not isinstance(key, str):
                 raise KeyError(f'Invalid key {key}. Must be string.')
             self.__setitem__(key, value, sort=False)
-        for record in (cmaps, cycles):
-            record[:] = sorted(record)
+        try:
+            for record in (cmaps, cycles):
+                record[:] = sorted(record)
+        except NameError:
+            pass
 
     def __delitem__(self, key):
         """Delete the item from the list records."""
         super().__delitem__(self, key)
-        for record in (cmaps, cycles):
-            try:
-                record.remove(key)
-            except ValueError:
-                pass
+        try:
+            for record in (cmaps, cycles):
+                try:
+                    record.remove(key)
+                except ValueError:
+                    pass
+        except NameError:
+            pass
 
     def __getitem__(self, key):
         """Retrieve the colormap associated with the sanitized key name. The
@@ -1905,10 +1931,13 @@ class CmapDict(dict):
                 'matplotlib.colors.LinearSegmentedColormap.'
             )
         key = self._sanitize_key(key, mirror=False)
-        record = cycles if isinstance(item, ListedColormap) else cmaps
-        record.append(key)
-        if sort:
-            record[:] = sorted(record)
+        try:
+            record = cycles if isinstance(item, ListedColormap) else cmaps
+            record.append(key)
+            if sort:
+                record[:] = sorted(record)
+        except NameError:
+            pass
         return super().__setitem__(key, item)
 
     def __contains__(self, item):
@@ -1951,11 +1980,14 @@ class CmapDict(dict):
     def pop(self, key, *args):
         """Pop the sanitized colormap name."""
         key = self._sanitize_key(key, mirror=True)
-        for record in (cmaps, cycles):
-            try:
-                record.remove(key)
-            except ValueError:
-                pass
+        try:
+            for record in (cmaps, cycles):
+                try:
+                    record.remove(key)
+                except ValueError:
+                    pass
+        except NameError:
+            pass
         return super().pop(key, *args)
 
     def update(self, *args, **kwargs):
@@ -2837,8 +2869,11 @@ def _from_file(filename, listed=False, warn_on_failure=False):
         # NOTE: This appears to be biggest import time bottleneck! Increases
         # time from 0.05s to 0.2s, with numpy loadtxt or with this regex thing.
         delim = re.compile(r'[,\s]+')
-        data = [delim.split(line.strip())
-                for line in open(filename).readlines() if line.strip()]
+        data = [
+            delim.split(line.strip())
+            for line in open(filename).readlines()
+            if line.strip() and line.strip()[0] != '#'
+        ]
         try:
             data = [[float(num) for num in line] for line in data]
         except ValueError:
@@ -3150,12 +3185,24 @@ def register_fonts():
     fonts[:] = [*fonts_proplot, *fonts_system]
 
 
-def _draw_bars(cmapdict, length=4.0, width=0.2):
+def _draw_bars(names, *, source, unknown='User', length=4.0, width=0.2):
     """
     Draw colorbars for "colormaps" and "color cycles". This is called by
     `show_cycles` and `show_cmaps`.
     """
-    # Figure
+    # Categorize the input names
+    cmapdict = {}
+    names_all = list(map(str.lower, names))
+    names_known = list(map(str.lower, sum(map(list, source.values()), [])))
+    names_unknown = [name for name in names if name not in names_known]
+    if names_unknown:
+        cmapdict[unknown] = names_unknown
+    for cat, names in source.items():
+        names_cat = [name for name in names if name.lower() in names_all]
+        if names_cat:
+            cmapdict[cat] = names_cat
+
+    # Draw figure
     from . import subplots
     naxs = len(cmapdict) + sum(map(len, cmapdict.values()))
     fig, axs = subplots(
@@ -3167,8 +3214,6 @@ def _draw_bars(cmapdict, length=4.0, width=0.2):
     a = np.linspace(0, 1, 257).reshape(1, -1)
     a = np.vstack((a, a))
     for cat, names in cmapdict.items():
-        if not names:
-            continue
         nheads += 1
         for imap, name in enumerate(names):
             iax += 1
@@ -3512,10 +3557,10 @@ def show_colors(nhues=17, minsat=20):
     return figs
 
 
-def show_cmaps(*args, N=None, unknown='User', **kwargs):
+def show_cmaps(*args, N=None, **kwargs):
     """
-    Generate a table of the registered colormaps or the input colormaps.
-    Adapted from `this example \
+    Generate a table of the registered colormaps or the input colormaps
+    categorized by source. Adapted from `this example \
 <http://matplotlib.org/examples/color/colormaps_reference.html>`__.
 
     Parameters
@@ -3550,26 +3595,24 @@ def show_cmaps(*args, N=None, unknown='User', **kwargs):
             isinstance(mcm.cmap_d[name], LinearSegmentedColormap)
         ]
 
-    # Get dictionary of registered colormaps and their categories
-    cmapdict = {}
-    names_all = list(map(str.lower, names))
-    names_known = sum(map(list, CMAPS_TABLE.values()), [])
-    cmapdict[unknown] = [name for name in names if name not in names_known]
-    for cat, names in CMAPS_TABLE.items():
-        cmapdict[cat] = [name for name in names if name.lower() in names_all]
-
     # Return figure of colorbars
-    return _draw_bars(cmapdict, **kwargs)
+    kwargs.setdefault('source', CMAPS_TABLE)
+    return _draw_bars(names, **kwargs)
 
 
 def show_cycles(*args, **kwargs):
     """
-    Generate a table of registered color cycles or the input color cycles.
+    Generate a table of registered color cycles or the input color cycles
+    categorized by source. Adapted from `this example \
+<http://matplotlib.org/examples/color/colormaps_reference.html>`__.
 
     Parameters
     ----------
     *args : colormap-spec, optional
         Cycle names or objects.
+    unknown : str, optional
+        Category name for cycles that are unknown to ProPlot. The
+        default is ``'User'``.
     length : float or str, optional
         The length of the colorbars. Units are interpreted by
         `~proplot.utils.units`.
@@ -3592,8 +3635,8 @@ def show_cycles(*args, **kwargs):
         ]
 
     # Return figure of colorbars
-    cmapdict = {'Color cycles': names}
-    return _draw_bars(cmapdict, **kwargs)
+    kwargs.setdefault('source', CYCLES_TABLE)
+    return _draw_bars(names, **kwargs)
 
 
 def show_fonts(*args, size=12, text=None):
@@ -3655,9 +3698,10 @@ def show_fonts(*args, size=12, text=None):
 
 
 # Apply custom changes
-mcm.cmap_d['Grays'] = mcm.cmap_d.pop('Greys', None)  # 'Murica (and consistency with registered colors)  # noqa
-mcm.cmap_d['Spectral'] = mcm.cmap_d['Spectral'].reversed(
-    name='Spectral')  # make spectral go from 'cold' to 'hot'
+if 'Greys' in mcm.cmap_d:  # 'Murica (and consistency with registered colors)
+    mcm.cmap_d['Grays'] = mcm.cmap_d.pop('Greys')
+if 'Spectral' in mcm.cmap_d:  # make spectral go from 'cold' to 'hot'
+    mcm.cmap_d['Spectral'] = mcm.cmap_d['Spectral'].reversed(name='Spectral')
 for _name in CMAPS_TABLE['Matplotlib originals']:  # initialize as empty lists
     if _name == 'twilight_shifted':
         mcm.cmap_d.pop(_name, None)
