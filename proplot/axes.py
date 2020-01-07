@@ -119,30 +119,18 @@ def _parse_format(mode=2, rc_kw=None, **kwargs):
 class Axes(maxes.Axes):
     """Lowest-level axes subclass. Handles titles and axis
     sharing. Adds several new methods and overrides existing ones."""
-
-    def __init__(self, *args, number=None,
-                 sharex=0, sharey=0,
-                 spanx=None, spany=None, alignx=None, aligny=None,
-                 main=False,
-                 **kwargs):
+    def __init__(self, *args, number=None, main=False, **kwargs):
         """
         Parameters
         ----------
         number : int
-            The subplot number, used for a-b-c labelling (see
-            `~Axes.format`).
-        sharex, sharey : {3, 2, 1, 0}, optional
-            The "axis sharing level" for the *x* axis, *y* axis, or both
-            axes. See `~proplot.subplots.subplots` for details.
-        spanx, spany : bool, optional
-            Boolean toggle for whether spanning labels are enabled for the
-            *x* and *y* axes. See `~proplot.subplots.subplots` for details.
-        alignx, aligny : bool, optional
-            Boolean toggle for whether aligned axis labels are enabled for the
-            *x* and *y* axes. See `~proplot.subplots.subplots` for details.
+            The subplot number, used for a-b-c labeling. See `~Axes.format`
+            for details. Note the first axes is ``1``, not ``0``.
         main : bool, optional
             Used internally, indicates whether this is a "main axes" rather
             than a twin, panel, or inset axes.
+        *args, **kwargs
+            Passed to `~matplotlib.axes.Axes`.
 
         See also
         --------
@@ -155,7 +143,6 @@ class Axes(maxes.Axes):
         # Ensure isDefault_minloc enabled at start, needed for dual axes
         self.xaxis.isDefault_minloc = self.yaxis.isDefault_minloc = True
         # Properties
-        self.number = number
         self._abc_loc = None
         self._abc_text = None
         self._titles_dict = {}  # dictionary of titles and locs
@@ -180,8 +167,6 @@ class Axes(maxes.Axes):
         self._altx_parent = None
         self._auto_colorbar = {}  # stores handles and kwargs for auto colorbar
         self._auto_legend = {}
-        # Text labels
-        # TODO: Add text labels as panels instead of as axes children?
         coltransform = mtransforms.blended_transform_factory(
             self.transAxes, self.figure.transFigure)
         rowtransform = mtransforms.blended_transform_factory(
@@ -194,15 +179,10 @@ class Axes(maxes.Axes):
             0.5, 0.05, '', va='top', ha='center', transform=coltransform)
         self._tlabel = self.text(
             0.5, 0.95, '', va='bottom', ha='center', transform=coltransform)
-        # Shared and spanning axes
+        self._share_setup()
+        self.number = number  # for abc numbering
         if main:
             self.figure._axes_main.append(self)
-        self._spanx_on = spanx
-        self._spany_on = spany
-        self._alignx_on = alignx
-        self._aligny_on = aligny
-        self._sharex_level = sharex
-        self._sharey_level = sharey
         self.format(mode=1)  # mode == 1 applies the rcShortParams
 
     def _draw_auto_legends_colorbars(self):
@@ -360,7 +340,7 @@ class Axes(maxes.Axes):
         return loc
 
     def _make_inset_locator(self, bounds, trans):
-        """Helper function, copied from private matplotlib version."""
+        """Return a locator that determines inset axes bounds."""
         def inset_locator(ax, renderer):
             bbox = mtransforms.Bbox.from_bounds(*bounds)
             bb = mtransforms.TransformedBbox(bbox, trans)
@@ -370,22 +350,22 @@ class Axes(maxes.Axes):
         return inset_locator
 
     def _range_gridspec(self, x):
-        """Gets the column or row range for the axes."""
-        subplotspec = self.get_subplotspec()
+        """Return the column or row gridspec range for the axes."""
+        if not hasattr(self, 'get_subplotspec'):
+            raise RuntimeError(f'Axes is not a subplot.')
+        ss = self.get_subplotspec()
         if x == 'x':
-            _, _, _, _, col1, col2 = subplotspec.get_active_rows_columns()
+            _, _, _, _, col1, col2 = ss.get_rows_columns()
             return col1, col2
         else:
-            _, _, row1, row2, _, _ = subplotspec.get_active_rows_columns()
+            _, _, row1, row2, _, _ = ss.get_rows_columns()
             return row1, row2
 
     def _range_tightbbox(self, x):
-        """Gets span of tight bounding box, including twin axes and panels
-        which are not considered real children and so aren't ordinarily
-        included in the tight bounding box calc.
-        `~proplot.axes.Axes.get_tightbbox` caches tight bounding boxes when
+        """Return the tight bounding box span from the cached bounding box.
+        `~proplot.axes.Axes.get_tightbbox` caches bounding boxes when
         `~Figure.get_tightbbox` is called."""
-        # TODO: Better resting for axes visibility
+        # TODO: Better testing for axes visibility
         bbox = self._tightbbox
         if bbox is None:
             return np.nan, np.nan
@@ -466,47 +446,52 @@ class Axes(maxes.Axes):
             pad = tax.xaxis.get_tick_padding()
         tax._set_title_offset_trans(self._title_pad + pad)
 
-    def _sharex_setup(self, sharex, level):
-        """Sets up panel axis sharing."""
+    def _sharex_setup(self, sharex, level=None):
+        """Configure x-axis sharing for panels. Main axis sharing is done in
+        `~CartesianAxes._sharex_setup`."""
+        if level is None:
+            level = self.figure._sharex
         if level not in range(4):
             raise ValueError(
-                'Level can be 0 (share nothing), '
-                '1 (do not share limits, just hide axis labels), '
-                '2 (share limits, but do not hide tick labels), or '
-                '3 (share limits and hide tick labels). Got {level}.'
+                'Axis sharing level can be 0 (share nothing), '
+                '1 (hide axis labels), '
+                '2 (share limits and hide axis labels), or '
+                '3 (share limits and hide axis and tick labels). Got {level}.'
             )
-        # enforce, e.g. if doing panel sharing
-        self._sharex_level = max(self._sharex_level, level)
         self._share_short_axis(sharex, 'l', level)
         self._share_short_axis(sharex, 'r', level)
         self._share_long_axis(sharex, 'b', level)
         self._share_long_axis(sharex, 't', level)
 
-    def _sharey_setup(self, sharey, level):
-        """Sets up panel axis sharing."""
+    def _sharey_setup(self, sharey, level=None):
+        """Configure y-axis sharing for panels. Main axis sharing is done in
+        `~CartesianAxes._sharey_setup`."""
+        if level is None:
+            level = self.figure._sharey
         if level not in range(4):
             raise ValueError(
-                'Level can be 0 (share nothing), '
-                '1 (do not share limits, just hide axis labels), '
-                '2 (share limits, but do not hide tick labels), or '
-                '3 (share limits and hide tick labels). Got {level}.'
+                'Axis sharing level can be 0 (share nothing), '
+                '1 (hide axis labels), '
+                '2 (share limits and hide axis labels), or '
+                '3 (share limits and hide axis and tick labels). Got {level}.'
             )
-        self._sharey_level = max(self._sharey_level, level)
         self._share_short_axis(sharey, 'b', level)
         self._share_short_axis(sharey, 't', level)
         self._share_long_axis(sharey, 'l', level)
         self._share_long_axis(sharey, 'r', level)
 
     def _share_setup(self):
-        """Applies axis sharing for axes that share the same horizontal or
-        vertical extent, and for their panels."""
+        """Automatically configure axis sharing based on the horizontal and
+        vertical extent of subplots in the figure gridspec."""
         # Panel axes sharing, between main subplot and its panels
-        # Top and bottom
         def shared(paxs):
             return [
-                pax for pax in paxs if not pax._panel_filled
-                and pax._panel_share]
+                pax for pax in paxs
+                if not pax._panel_filled and pax._panel_share
+            ]
+
         if not self._panel_side:  # this is a main axes
+            # Top and bottom
             bottom = self
             paxs = shared(self._bpanels)
             if paxs:
@@ -529,16 +514,15 @@ class Axes(maxes.Axes):
                 iax._sharey_setup(left, 3)
 
         # Main axes, sometimes overrides panel axes sharing
-        # TODO: This can get very repetitive, but probably minimal impact
-        # on performance?
+        # TODO: This can get very repetitive, but probably minimal impact?
         # Share x axes
         parent, *children = self._get_extent_axes('x')
         for child in children:
-            child._sharex_setup(parent, parent._sharex_level)
+            child._sharex_setup(parent)
         # Share y axes
         parent, *children = self._get_extent_axes('y')
         for child in children:
-            child._sharey_setup(parent, parent._sharey_level)
+            child._sharey_setup(parent)
 
     def _share_short_axis(self, share, side, level):
         """Share the "short" axes of panels along a main subplot with panels
