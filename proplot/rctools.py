@@ -536,15 +536,6 @@ def _get_synced_params(key, value):
     if '.' in key:
         pass
 
-    # Special ipython settings
-    # TODO: Put this inside __setitem__?
-    elif key == 'matplotlib':
-        ipython_matplotlib(value)
-    elif key == 'autosave':
-        ipython_autosave(value)
-    elif key == 'autoreload':
-        ipython_autoreload(value)
-
     # Cycler
     elif key in ('cycle', 'rgbcycle'):
         if key == 'rgbcycle':
@@ -749,9 +740,13 @@ class rc_configurator(object):
                     raise err
             for key, value in (data or {}).items():
                 try:
-                    self[key] = value
+                    rc_short, rc_long, rc = _get_synced_params(key, value)
                 except KeyError:
                     raise RuntimeError(f'{file!r} has invalid key {key!r}.')
+                else:
+                    rcParamsShort.update(rc_short)
+                    rcParamsLong.update(rc_long)
+                    rcParams.update(rc)
 
     def __enter__(self):
         """Apply settings from the most recent context block."""
@@ -777,7 +772,10 @@ class rc_configurator(object):
                 f'rc context must be initialized with rc.context().')
         *_, restore = self._context[-1]
         for key, value in restore.items():
-            self[key] = value
+            rc_short, rc_long, rc = _get_synced_params(key, value)
+            rcParamsShort.update(rc_short)
+            rcParamsLong.update(rc_long)
+            rcParams.update(rc)
         del self._context[-1]
 
     def __delitem__(self, *args):
@@ -814,8 +812,14 @@ class rc_configurator(object):
 
     def __setitem__(self, key, value):
         """Modify an `rcParams \
-<https://matplotlib.org/users/customizing.html>`__,
+<https://matplotlibcorg/users/customizing.html>`__,
         :ref:`rcParamsLong`, and :ref:`rcParamsShort` setting(s)."""
+        if key == 'matplotlib':
+            return ipython_matplotlib(value)
+        elif key == 'autosave':
+            return ipython_autosave(value)
+        elif key == 'autoreload':
+            return ipython_autoreload(value)
         rc_short, rc_long, rc = _get_synced_params(key, value)
         rcParamsShort.update(rc_short)
         rcParamsLong.update(rc_long)
@@ -1016,21 +1020,19 @@ class rc_configurator(object):
 
     def update(self, *args, **kwargs):
         """
-        Update multiple settings at once.
+        Update several settings at once with a dictionary and/or
+        keyword arguments.
 
         Parameters
         ----------
-        *args : str, dict, or (str, dict)
-            The first argument can optionally be a "category" string name,
-            in which case all other setting names passed to this function are
-            prepended with the string ``cat + '.'``. For example,
+        *args : str, dict, or (str, dict), optional
+            A dictionary containing `rc` keys and values. You can also
+            pass a "category" name as the first argument, in which case all
+            settings are prepended with ``'category.'``. For example,
             ``rc.update('axes', labelsize=20, titlesize=20)`` changes the
             :rcraw:`axes.labelsize` and :rcraw:`axes.titlesize` properties.
-
-            The first or second argument can also be a dictionary of `rc`
-            names and values.
-        **kwargs
-            `rc` names and values passed as keyword arguments. If the
+        **kwargs, optional
+            `rc` keys and values passed as keyword arguments. If the
             name has dots, simply omit them.
         """
         # Parse args
@@ -1038,10 +1040,10 @@ class rc_configurator(object):
         prefix = ''
         if len(args) > 2:
             raise ValueError(
-                'Accepts 1-2 positional arguments. Use plot.rc.update(kw) '
-                'to update a bunch of names, or plot.rc.update(category, kw) '
-                'to update subcategories belonging to single category '
-                'e.g. axes. Keyword args are added to the kw dict.')
+                f'rc.update() accepts 1-2 arguments, got {len(args)}. Usage '
+                'is rc.update(kw), rc.update(category, kw), '
+                'rc.update(**kwargs), or rc.update(category, **kwargs).'
+            )
         elif len(args) == 2:
             prefix = args[0]
             kw = args[1]
@@ -1129,7 +1131,8 @@ def ipython_matplotlib(backend=None, fmt=None):
             ibackend = 'qt'
     try:
         ipython.magic('matplotlib ' + ibackend)
-        rc.reset()
+        if 'rc' in globals():  # should always be True, but just in case
+            rc.reset()
     except KeyError:
         if backend != 'auto':
             _warn_proplot(f'{"%matplotlib " + backend!r} failed.')
@@ -1214,7 +1217,9 @@ def ipython_autosave(autosave=None):
 #: See :ref:`Configuring proplot` for details.
 rc = rc_configurator()
 
-# Call setup functions
+# Manually call setup functions after rc has been instantiated
+# We cannot call these inside rc.__init__ because ipython_matplotlib may
+# need to reset the configurator to overwrite backend-imposed settings!
 ipython_matplotlib()
 ipython_autoreload()
 ipython_autosave()
