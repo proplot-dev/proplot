@@ -1694,7 +1694,7 @@ def _parse_alt(x, kwargs):
             kw_bad[key] = value
     if kw_bad:
         raise TypeError(f'Unexpected keyword argument(s): {kw_bad!r}')
-    return kwargs
+    return kw_out
 
 
 def _parse_rcloc(x, string):  # figures out string location
