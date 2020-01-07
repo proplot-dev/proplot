@@ -2633,18 +2633,16 @@ class XYAxes(Axes):
         # NOTE: Matplotlib 3.1 has a 'secondary axis' feature. For the time
         # being, our version is more robust (see FuncScale) and simpler, since
         # we do not create an entirely separate _SecondaryAxis class.
-        ax = self.altx()
+        ax = self.altx(**kwargs)
         self._dualx_arg = arg
         self._dualx_overrides()
-        ax.format(**kwargs)
         return ax
 
     def dualy(self, arg, **kwargs):
         """Docstring is replaced below."""
-        ax = self.alty()
+        ax = self.alty(**kwargs)
         self._dualy_arg = arg
         self._dualy_overrides()
-        ax.format(**kwargs)
         return ax
 
     def draw(self, renderer=None, *args, **kwargs):
