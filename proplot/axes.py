@@ -17,7 +17,7 @@ import matplotlib.transforms as mtransforms
 import matplotlib.collections as mcollections
 from . import projs, axistools
 from .utils import _warn_proplot, _notNone, units, arange, edges
-from .rctools import rc, RC_NODOTSNAMES
+from .rctools import rc, _rc_nodots
 from .wrappers import (
     _get_transform, _norecurse, _redirect,
     _add_errorbars, _bar_wrapper, _barh_wrapper, _boxplot_wrapper,
@@ -107,7 +107,7 @@ def _parse_format(mode=2, rc_kw=None, **kwargs):
     kw = {}
     rc_kw = rc_kw or {}
     for key, value in kwargs.items():
-        key_fixed = RC_NODOTSNAMES.get(key, None)
+        key_fixed = _rc_nodots.get(key, None)
         if key_fixed is None:
             kw[key] = value
         else:
@@ -1691,7 +1691,7 @@ def _parse_alt(x, kwargs):
                 f'Twin axis keyword arg {key!r} is deprecated. '
                 f'Use {key[1:]!r} instead.')
             kw_out[key] = value
-        elif key in RC_NODOTSNAMES:
+        elif key in _rc_nodots:
             kw_out[key] = value
         else:
             kw_bad[key] = value
