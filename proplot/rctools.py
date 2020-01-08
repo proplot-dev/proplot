@@ -8,7 +8,6 @@ See :ref:`Configuring proplot` for details.
 # https://github.com/mwaskom/seaborn/blob/master/seaborn/rcmod.py
 import re
 import os
-import yaml
 import numpy as np
 import cycler
 import matplotlib.colors as mcolors
@@ -667,6 +666,69 @@ def _sanitize_key(key):
     return key.lower()
 
 
+def _update_from_file(file):
+    """
+    Apply updates from a file. This is largely copied from matplotlib.
+
+    Parameters
+    ----------
+    file : str
+        The path.
+    """
+    cnt = 0
+    file = os.path.expanduser(file)
+    added = set()
+    with open(file, 'r') as fd:
+        for line in fd:
+            # Read file
+            cnt += 1
+            stripped = line.split('#', 1)[0].strip()
+            if not stripped:
+                continue
+            pair = stripped.split(':', 1)
+            if len(pair) != 2:
+                _warn_proplot(
+                    f'Illegal line #{cnt} in file {file!r}:\n{line!r}"'
+                )
+                continue
+            key, value = pair
+            key = key.strip()
+            value = value.strip()
+            if key in added:
+                _warn_proplot(
+                    f'Duplicate key {key!r} on line #{cnt} in file {file!r}.'
+                )
+            added.add(key)
+
+            # *Very primitive* type conversion system. Just check proplot
+            # settings (they are all simple/scalar) and leave rcParams alone.
+            # TODO: Add built-in validation by making special RcParamsLong
+            # and RcParamsShort classes just like matplotlib RcParams
+            if key in rcParamsShort or key in rcParamsLong:
+                if not value:
+                    value = None  # older proplot versions supported this
+                elif value in ('True', 'False', 'None'):
+                    value = eval(value)  # rare case where eval is o.k.
+                else:
+                    try:
+                        # int-float distinction does not matter in python3
+                        value = float(value)
+                    except ValueError:
+                        pass
+
+            # Add to dictionaries
+            try:
+                rc_short, rc_long, rc = _get_synced_params(key, value)
+            except KeyError:
+                _warn_proplot(
+                    f'Invalid key {key!r} on line #{cnt} in file {file!r}.'
+                )
+            else:
+                rcParamsShort.update(rc_short)
+                rcParamsLong.update(rc_long)
+                rcParams.update(rc)
+
+
 class rc_configurator(object):
     """
     Magical abstract class for managing matplotlib
@@ -727,21 +789,7 @@ class rc_configurator(object):
         for i, file in enumerate(_get_config_paths()):
             if not os.path.exists(file):
                 continue
-            with open(file) as f:
-                try:
-                    data = yaml.safe_load(f)
-                except yaml.YAMLError as err:
-                    print('{file!r} has invalid YAML syntax.')
-                    raise err
-            for key, value in (data or {}).items():
-                try:
-                    rc_short, rc_long, rc = _get_synced_params(key, value)
-                except KeyError:
-                    raise RuntimeError(f'{file!r} has invalid key {key!r}.')
-                else:
-                    rcParamsShort.update(rc_short)
-                    rcParamsLong.update(rc_long)
-                    rcParams.update(rc)
+            _update_from_file(file)
 
     def __enter__(self):
         """Apply settings from the most recent context block."""

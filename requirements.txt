@@ -1,4 +1,2 @@
-# Hard requirements
-# TODO: Remove pyyaml and copy matplotlib's manual parsing approach?
+# Just matplotlib :)
 matplotlib
-pyyaml
