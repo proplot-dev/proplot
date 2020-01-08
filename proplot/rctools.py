@@ -328,9 +328,11 @@ _rc_children = {
 # Mapping of settings without "dots" to their full names. This lets us pass
 # all settings as kwargs, e.g. ax.format(landcolor='b') instead of the much
 # more verbose ax.format(rc_kw={'land.color':'b'}).
+# WARNING: rcParamsShort has to be in here because Axes.format() only checks
+# _rc_nodots to filter out the rc kwargs!
 _rc_nodots = {
     name.replace('.', ''): name
-    for names in (defaultParamsLong, rcParams)
+    for names in (defaultParamsShort, defaultParamsLong, rcParams)
     for name in names.keys()
 }
 
