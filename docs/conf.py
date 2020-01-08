@@ -13,10 +13,11 @@
 
 import os
 import sys
+from proplot.rctools import _write_defaults
 from pygments.formatters import HtmlFormatter
 from pygments.styles import get_all_styles
 
-# Sphinx-automodapi requires proplot on path
+# Add proplot to path for sphinx-automodapi
 sys.path.insert(0, os.path.abspath('..'))
 
 # Add docs folder to PATH for local 'sphinxext' extensions
@@ -193,6 +194,9 @@ for style in get_all_styles():
         continue
     with open(path, 'w') as f:
         f.write(HtmlFormatter(style=style).get_style_defs('.highlight'))
+
+# Create sample .proplotrc file
+_write_defaults(os.path.join('_static', 'proplotrc'), comment=False)
 
 # Role
 # default family is py, but can also set default role so don't need

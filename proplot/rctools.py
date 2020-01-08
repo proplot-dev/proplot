@@ -12,6 +12,7 @@ import numpy as np
 import cycler
 import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
+from numbers import Number
 from matplotlib import style, rcParams
 try:
     import IPython
@@ -276,8 +277,7 @@ if not os.path.isfile(_rc_file):
 """.strip())
 
 # "Global" settings and the lower-level settings they change
-# NOTE: This whole section, declaring dictionaries and sets, takes 1ms
-RC_CHILDREN = {
+_rc_children = {
     'cmap': (
         'image.cmap',
     ),
@@ -727,6 +727,85 @@ def _update_from_file(file):
                 rcParamsShort.update(rc_short)
                 rcParamsLong.update(rc_long)
                 rcParams.update(rc)
+
+
+def _write_defaults(filename, comment=True, overwrite=False):
+    """
+    Save a file to the specified path containing the default `rc` settings.
+
+    Parameters
+    ----------
+    filename : str
+        The path.
+    comment : bool, optional
+        Whether to "comment out" each setting.
+    overwrite : bool, optional
+        Whether to overwrite existing files.
+    """
+    def _tabulate(rcdict):
+        string = ''
+        prefix = '# ' if comment else ''
+        maxlen = max(map(len, rcdict))
+        NoneType = type(None)
+        for key, value in rcdict.items():
+            if isinstance(value, cycler.Cycler):  # special case!
+                value = repr(value)
+            elif isinstance(value, (str, Number, NoneType)):
+                value = str(value)
+            elif isinstance(value, (list, tuple)) and all(
+                isinstance(val, (str, Number)) for val in value
+            ):
+                value = ', '.join(str(val) for val in value)
+            else:
+                raise ValueError(
+                    f'Failed to write rc setting {key} = {value!r}. '
+                    'Must be string, number, or list or tuple thereof, '
+                    'or None or a cycler.'
+                )
+            space = ' ' * (maxlen - len(key) + 1)
+            string += f'{prefix}{key}:{space}{value}\n'
+        return string.strip()
+
+    # Fill empty defaultParamsLong values with rcDefaultParamsShort
+    # They are only allowed to be None in the *default dictionaries* because
+    # they are immediately overwritten. However if users try to set them as
+    # None in a .proplotrc file, may trigger error down the line.
+    rc_parents = {
+        child: parent
+        for parent, children in _rc_children.items()
+        for child in children
+    }
+    defaultParamsLong_filled = defaultParamsLong.copy()
+    for key, value in defaultParamsLong.items():
+        if value is None:
+            try:
+                defaultParamsLong_filled[key] = rc_parents[key]
+            except KeyError:
+                raise RuntimeError(
+                    f'rcParamsLong param {key!r} has default value of None '
+                    'but has no rcParmsShort parent!'
+                )
+
+            value = defaultParamsShort
+
+    with open(filename, 'w') as f:
+        f.write(f"""
+#---------------------------------------------------------------------
+# Use this file to change the default proplot and matplotlib settings
+# The syntax is mostly the same as for matplotlibrc files
+# For descriptions of each setting see:
+# https://proplot.readthedocs.io/en/latest/rctools.html
+# https://matplotlib.org/3.1.1/tutorials/introductory/customizing.html
+#---------------------------------------------------------------------
+# ProPlot short name settings
+{_tabulate(defaultParamsShort)}
+
+# ProPlot long name settings
+{_tabulate(defaultParamsLong_filled)}
+
+# Matplotlib settings
+{_tabulate(defaultParams)}
+""".strip())
 
 
 class rc_configurator(object):
@@ -1261,6 +1340,11 @@ def ipython_autosave(autosave=None):
         except IPython.core.error.UsageError:
             pass
 
+
+# Write defaults
+_user_rc_file = os.path.join(os.path.expanduser('~'), '.proplotrc')
+if not os.path.exists(_user_rc_file):
+    _write_defaults(_user_rc_file)
 
 #: Instance of `rc_configurator`. This is used to change global settings.
 #: See :ref:`Configuring proplot` for details.
