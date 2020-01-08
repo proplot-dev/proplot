@@ -257,7 +257,7 @@ _rc_children = {
         'image.lut',
     ),
     'alpha': (  # this is a custom setting
-        'axes.facealpha',
+        'axes.facealpha', 'geoaxes.facealpha',
     ),
     'facecolor': (
         'axes.facecolor', 'geoaxes.facecolor'
