@@ -7,7 +7,7 @@ Overview
 A special object named `~proplot.rctools.rc`, belonging to the
 `~proplot.rctools.rc_configurator` class, is created on import.
 This is your one-stop shop for changing global settings belonging to any of
-the following three categories.
+the following three categories:
 
 1. Builtin matplotlib `rcParams <https://matplotlib.org/users/customizing.html>`__
    settings. These have the format ``x.y`` or ``x.y.z``.
@@ -15,7 +15,7 @@ the following three categories.
    (see below).
 3. ProPlot :ref:`rcParamsShort` settings. These have no dots (see below).
 
-You can change settings with the `~proplot.rctools.rc` object as follows.
+You can change settings with the `~proplot.rctools.rc` object as follows:
 
 * ``plot.rc.name = value``
 * ``plot.rc['name'] = value``
@@ -23,7 +23,7 @@ You can change settings with the `~proplot.rctools.rc` object as follows.
 * ``plot.rc.update({'name1':value1, 'name2':value2})``
 
 To temporarily change settings on a particular axes, use either of the
-following.
+following:
 
 * ``ax.format(name=value)``
 * ``ax.format(rc_kw={'name':value})``
@@ -102,8 +102,8 @@ There are two new additions to the ``image`` category, and the new
 `~proplot.axes.Axes.colorbar` properties.
 The new ``gridminor`` category controls minor gridline settings,
 and the new ``geogrid`` category controls meridian and parallel line settings
-for `~proplot.axes.ProjAxes`. For both ``gridminor`` and ``geogrid``, if
-a property is empty, the corresponding property from ``grid`` is used.
+for `~proplot.axes.ProjAxes`. Note that when a ``grid`` property is changed,
+it also changed the corresponding ``gridminor`` property.
 
 Finally, the ``geoaxes``, ``land``, ``ocean``, ``rivers``, ``lakes``,
 ``borders``, and ``innerborders`` categories control various
@@ -195,11 +195,9 @@ To modify the global settings, edit your
 ``~/.proplotrc`` file. To modify settings for a particular project,
 create a ``.proplotrc`` file in the same directory as your ipython
 notebook, or in an arbitrary parent directory.
+As an example, a ``.proplotrc`` file containing the default settings
+is shown below. The syntax is mostly the same as the syntax used for
+`matplotlibrc files <https://matplotlib.org/3.1.1/tutorials/introductory/customizing.html#customizing-with-matplotlibrc-files>`__.
 
-As an example, the default ``.proplotrc`` file
-is shown below. The syntax is roughly the same as that used for
-``matplotlibrc`` files, although ``.proplotrc`` strictly adheres to
-`YAML <https://en.wikipedia.org/wiki/YAML>`__.
-
-.. include:: ../proplot/.proplotrc
+.. include:: _static/proplotrc
    :literal:
