@@ -653,14 +653,19 @@ def _write_defaults(filename, comment=True, overwrite=False):
     for key, value in defaultParamsLong.items():
         if value is None:
             try:
-                defaultParamsLong_filled[key] = rc_parents[key]
+                parent = rc_parents[key]
             except KeyError:
                 raise RuntimeError(
                     f'rcParamsLong param {key!r} has default value of None '
                     'but has no rcParmsShort parent!'
                 )
-
-            value = defaultParamsShort
+            if parent in defaultParamsShort:
+                value = defaultParamsShort[parent]
+            elif parent in defaultParams:
+                value = defaultParams[parent]
+            else:
+                value = rcParams[parent]
+            defaultParamsLong_filled[key] = value
 
     with open(filename, 'w') as f:
         f.write(f"""
@@ -668,7 +673,7 @@ def _write_defaults(filename, comment=True, overwrite=False):
 # Use this file to change the default proplot and matplotlib settings
 # The syntax is mostly the same as for matplotlibrc files
 # For descriptions of each setting see:
-# https://proplot.readthedocs.io/en/latest/rctools.html
+# https://proplot.readthedocs.io/en/latest/configuration.html
 # https://matplotlib.org/3.1.1/tutorials/introductory/customizing.html
 #---------------------------------------------------------------------
 # ProPlot short name settings
