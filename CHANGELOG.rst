@@ -38,10 +38,41 @@ ProPlot v0.5.0 (2020-##-##)
   stacks rather than getting inserted directly into
   the main `~proplot.subplots.GridSpec` (:pr:`50`).
 
+ProPlot v0.4.1 (2020-01-08)
+===========================
+.. rubric:: Deprecation
+
+- Change the default ``.proplotrc`` format from YAML to the ``.matplotlibrc``
+  syntax (:pr:`101`).
+
+.. rubric:: Features
+
+- Comments (lines starting with ``#``) are now permitted in all RGB and HEX style
+  colormap and cycle files (:pr:`100`).
+- Break down `~proplot.styletools.show_cycles` bars into categories, just
+  like `~proplot.styletools.show_cmaps` (:pr:`100`).
+
+.. rubric:: Bug fixes
+
+- Fix issue where `~proplot.styletools.show_cmaps` and `~proplot.styletools.show_cycles`
+  draw empty axes (:pr:`100`).
+- Add back the :ref:`default .proplorc file <The .proplotrc file>` to docs (:pr:`101`).
+  To do this, ``conf.py`` auto-generates a file in ``_static``.
+
+.. rubric:: Internals
+
+- Add ``geogrid.color/linewidth/etc`` and ``gridminor.color/linewidth/etc`` props
+  as *children* of ``grid.color/linewidth/etc`` (:pr:`101`).
+- Various `~proplot.rctools.rc_configurator` improvements, remove outdated
+  global variables (:pr:`101`).
+- Better error handling when loading colormap/cycle files, and calls to
+  `~proplot.styletools.Colormap` and `~proplot.styletools.Cycle` now raise errors while
+  calls to `~proplot.styletools.register_cmaps` and `~proplot.styletools.register_cycles`
+  still issue warnings (:pr:`100`).
+
 ProPlot v0.4.0 (2020-01-07)
 ===========================
 .. rubric:: Deprecated
-
 
 - Rename `basemap_defaults` to `~proplot.projs.basemap_kwargs` and `cartopy_projs`
   to `~proplot.projs.cartopy_names` (:commit:`431a06ce`).

@@ -141,7 +141,7 @@ def Locator(locator, *args, **kwargs):
 
 
 def Formatter(formatter, *args, date=False, index=False, **kwargs):
-    r"""
+    """
     Return a `~matplotlib.ticker.Formatter` instance. This function is used to
     interpret the `xformatter`, `xformatter_kw`, `yformatter`, and
     `yformatter_kw` arguments when passed to
@@ -1092,12 +1092,12 @@ class InvertedExpTransform(mtransforms.Transform):
 
 
 class MercatorLatitudeScale(_ScaleBase, mscale.ScaleBase):
-    r"""
+    """
     Axis scale that transforms coordinates as with latitude in the `Mercator \
 projection <http://en.wikipedia.org/wiki/Mercator_projection>`__.
     Adapted from `this matplotlib example \
 <https://matplotlib.org/examples/api/custom_scale_example.html>`__.
-    The scale function is as follows:
+    """r""""The scale function is as follows:
 
     .. math::
 

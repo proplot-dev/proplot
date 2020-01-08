@@ -8,18 +8,18 @@ See :ref:`Configuring proplot` for details.
 # https://github.com/mwaskom/seaborn/blob/master/seaborn/rcmod.py
 import re
 import os
-import yaml
 import numpy as np
 import cycler
 import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
+from numbers import Number
 from matplotlib import style, rcParams
 try:
     import IPython
     from IPython import get_ipython
 except ModuleNotFoundError:
     def get_ipython():
-        return None
+        return
 from .utils import _warn_proplot, _counter, _benchmark, units
 
 # Disable mathtext "missing glyph" warnings
@@ -33,7 +33,11 @@ __all__ = [
     'ipython_autoreload', 'ipython_matplotlib',
 ]
 
-# Initialize
+# Dictionaries used to track custom proplot settings
+rcParamsShort = {}
+rcParamsLong = {}
+
+# Dictionaries containing default settings
 defaultParamsShort = {
     'abc': False,
     'align': False,
@@ -60,7 +64,6 @@ defaultParamsShort = {
     'lut': 256,
     'margin': 0.0,
     'matplotlib': 'auto',
-    'nbsetup': True,
     'ocean': False,
     'reso': 'lo',
     'rgbcycle': False,
@@ -243,42 +246,10 @@ defaultParams = {
     'text.usetex': False,
     'xtick.minor.visible': True,
     'ytick.minor.visible': True,
-
 }
-rcParamsShort = {}
-rcParamsLong = {}
-
-# Initialize user file
-_rc_file = os.path.join(os.path.expanduser('~'), '.proplotrc')
-if not os.path.isfile(_rc_file):
-    def _tabulate(rcdict):
-        string = ''
-        maxlen = max(map(len, rcdict))
-        for key, value in rcdict.items():
-            value = '' if value is None else repr(value)
-            space = ' ' * (maxlen - len(key) + 1) * int(bool(value))
-            string += f'#  {key}:{space}{value}\n'
-        return string.strip()
-    with open(_rc_file, 'x') as f:
-        f.write(f"""
-#------------------------------------------------------
-# Use this file to customize settings
-# For descriptions of each key name see:
-# https://proplot.readthedocs.io/en/latest/rctools.html
-#------------------------------------------------------
-# ProPlot short name settings
-{_tabulate(defaultParamsShort)}
-#
-# ProPlot long name settings
-{_tabulate(defaultParamsLong)}
-#
-# Matplotlib settings
-{_tabulate(defaultParams)}
-""".strip())
 
 # "Global" settings and the lower-level settings they change
-# NOTE: This whole section, declaring dictionaries and sets, takes 1ms
-RC_CHILDREN = {
+_rc_children = {
     'cmap': (
         'image.cmap',
     ),
@@ -286,7 +257,7 @@ RC_CHILDREN = {
         'image.lut',
     ),
     'alpha': (  # this is a custom setting
-        'axes.facealpha',
+        'axes.facealpha', 'geoaxes.facealpha',
     ),
     'facecolor': (
         'axes.facecolor', 'geoaxes.facecolor'
@@ -340,159 +311,44 @@ RC_CHILDREN = {
         'xtick.major.pad', 'xtick.minor.pad',
         'ytick.major.pad', 'ytick.minor.pad'
     ),
+    'grid.color': (
+        'gridminor.color',
+    ),
+    'grid.linewidth': (
+        'gridminor.linewidth',
+    ),
+    'grid.linestyle': (
+        'gridminor.linestyle',
+    ),
+    'grid.alpha': (
+        'gridminor.alpha',
+    ),
 }
 
-# Names of the new settings
-RC_PARAMNAMES = {*rcParams.keys()}
-RC_SHORTNAMES = {
-    'abc',
-    'align',
-    'alpha',
-    'autoreload',
-    'autosave',
-    'borders',
-    'cmap',
-    'coast',
-    'color',
-    'cycle',
-    'facecolor',
-    'fontname',
-    'geogrid',
-    'grid',
-    'gridminor',
-    'gridratio',
-    'inlinefmt',
-    'innerborders',
-    'lakes',
-    'land',
-    'large',
-    'linewidth',
-    'lut',
-    'margin',
-    'matplotlib',
-    'ocean',
-    'reso',
-    'rgbcycle',
-    'rivers',
-    'share',
-    'small',
-    'span',
-    'tickdir',
-    'ticklen',
-    'ticklenratio',
-    'tickpad',
-    'tickratio',
-    'tight',
-}
-RC_LONGNAMES = {
-    'abc.border',
-    'abc.color',
-    'abc.linewidth',
-    'abc.loc',
-    'abc.size',
-    'abc.style',
-    'abc.weight',
-    'axes.alpha',
-    'axes.formatter.timerotation',
-    'axes.formatter.zerotrim',
-    'axes.geogrid',
-    'axes.gridminor',
-    'borders.color',
-    'borders.linewidth',
-    'bottomlabel.color',
-    'bottomlabel.size',
-    'bottomlabel.weight',
-    'coast.color',
-    'coast.linewidth',
-    'colorbar.axespad',
-    'colorbar.extend',
-    'colorbar.framealpha',
-    'colorbar.frameon',
-    'colorbar.grid',
-    'colorbar.insetextend',
-    'colorbar.insetlength',
-    'colorbar.insetwidth',
-    'colorbar.length',
-    'colorbar.loc',
-    'colorbar.width',
-    'geoaxes.edgecolor',
-    'geoaxes.facecolor',
-    'geoaxes.linewidth',
-    'geogrid.alpha',
-    'geogrid.color',
-    'geogrid.labels',
-    'geogrid.labelsize',
-    'geogrid.latmax',
-    'geogrid.latstep',
-    'geogrid.linestyle',
-    'geogrid.linewidth',
-    'geogrid.lonstep',
-    'gridminor.alpha',
-    'gridminor.color',
-    'gridminor.linestyle',
-    'gridminor.linewidth',
-    'image.edgefix',
-    'image.levels',
-    'innerborders.color',
-    'innerborders.linewidth',
-    'lakes.color',
-    'land.color',
-    'leftlabel.color',
-    'leftlabel.size',
-    'leftlabel.weight',
-    'ocean.color',
-    'rightlabel.color',
-    'rightlabel.size',
-    'rightlabel.weight',
-    'rivers.color',
-    'rivers.linewidth',
-    'subplots.axpad',
-    'subplots.axwidth',
-    'subplots.pad',
-    'subplots.panelpad',
-    'subplots.panelwidth',
-    'suptitle.color',
-    'suptitle.size',
-    'suptitle.weight',
-    'tick.labelcolor',
-    'tick.labelsize',
-    'tick.labelweight',
-    'title.border',
-    'title.color',
-    'title.linewidth',
-    'title.loc',
-    'title.pad',
-    'title.size',
-    'title.weight',
-    'toplabel.color',
-    'toplabel.size',
-    'toplabel.weight',
-}
-# Used by Axes.format, allows user to pass rc settings as keyword args,
-# way less verbose. For example, landcolor='b' vs. rc_kw={'land.color':'b'}.
-RC_NODOTSNAMES = {  # useful for passing these as kwargs
-    name.replace('.', ''): name for names in
-    (RC_LONGNAMES, RC_PARAMNAMES, RC_SHORTNAMES)
-    for name in names
-}
-# Categories for returning dict of subcategory properties
-RC_CATEGORIES = {
-    *(re.sub(r'\.[^.]*$', '', name) for names in
-        (RC_LONGNAMES, RC_PARAMNAMES) for name in names),
-    *(re.sub(r'\..*$', '', name) for names in
-        (RC_LONGNAMES, RC_PARAMNAMES) for name in names)
+# Mapping of settings without "dots" to their full names. This lets us pass
+# all settings as kwargs, e.g. ax.format(landcolor='b') instead of the much
+# more verbose ax.format(rc_kw={'land.color':'b'}).
+# WARNING: rcParamsShort has to be in here because Axes.format() only checks
+# _rc_nodots to filter out the rc kwargs!
+_rc_nodots = {
+    name.replace('.', ''): name
+    for names in (defaultParamsShort, defaultParamsLong, rcParams)
+    for name in names.keys()
 }
 
-
-def _to_points(key, value):
-    """Convert certain rc keys to the units "points"."""
-    # See: https://matplotlib.org/users/customizing.html, all props matching
-    # the below strings use the units 'points', except custom categories!
-    if (isinstance(value, str)
-            and key.split('.')[0] not in ('colorbar', 'subplots')
-            and re.match('^.*(width|space|size|pad|len|small|large)$', key)):
-        value = units(value, 'pt')
-    return value
+# Category names, used for returning dicts of subcategory properties
+_rc_categories = {
+    *(
+        re.sub(r'\.[^.]*$', '', name)
+        for names in (defaultParamsLong, rcParams)
+        for name in names.keys()
+    ),
+    *(
+        re.sub(r'\..*$', '', name)
+        for names in (defaultParamsLong, rcParams)
+        for name in names.keys()
+    )
+}
 
 
 def _get_config_paths():
@@ -523,10 +379,9 @@ def _get_synced_params(key, value):
     kw = {}  # builtin properties that global setting applies to
     kw_long = {}  # custom properties that global setting applies to
     kw_short = {}  # short name properties
-    if '.' not in key and key not in rcParamsShort:
-        key = RC_NODOTSNAMES.get(key, key)
 
     # Skip full name keys
+    key = _sanitize_key(key)
     if '.' in key:
         pass
 
@@ -540,10 +395,9 @@ def _get_synced_params(key, value):
             colors = mcm.cmap_d[cycle].colors
         except (KeyError, AttributeError):
             cycles = sorted(
-                name for name,
-                cmap in mcm.cmap_d.items() if isinstance(
-                    cmap,
-                    mcolors.ListedColormap))
+                name for name, cmap in mcm.cmap_d.items()
+                if isinstance(cmap, mcolors.ListedColormap)
+            )
             raise ValueError(
                 f'Invalid cycle name {cycle!r}. Options are: '
                 ', '.join(map(repr, cycles)) + '.'
@@ -552,9 +406,14 @@ def _get_synced_params(key, value):
             regcolors = colors + [(0.1, 0.1, 0.1)]
         elif mcolors.to_rgb('r') != (1.0, 0.0, 0.0):  # reset
             regcolors = [
-                (0.0, 0.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0),
-                (0.75, 0.75, 0.0), (0.75, 0.75, 0.0), (0.0, 0.75, 0.75),
-                (0.0, 0.0, 0.0)]
+                (0.0, 0.0, 1.0),
+                (1.0, 0.0, 0.0),
+                (0.0, 1.0, 0.0),
+                (0.75, 0.75, 0.0),
+                (0.75, 0.75, 0.0),
+                (0.0, 0.75, 0.75),
+                (0.0, 0.0, 0.0)
+            ]
         else:
             regcolors = []  # no reset necessary
         for code, color in zip('brgmyck', regcolors):
@@ -650,7 +509,7 @@ def _get_synced_params(key, value):
         kw[key] = value
     else:
         raise KeyError(f'Invalid key {key!r}.')
-    for name in RC_CHILDREN.get(key, ()):
+    for name in _rc_children.get(key, ()):
         if name in rcParamsLong:
             kw_long[name] = value
         else:
@@ -659,12 +518,168 @@ def _get_synced_params(key, value):
 
 
 def _sanitize_key(key):
-    """Convert the key to a palatable value."""
+    """Ensure string and convert keys with omitted dots."""
     if not isinstance(key, str):
         raise KeyError(f'Invalid key {key!r}. Must be string.')
-    if '.' not in key and key not in rcParamsShort:
-        key = RC_NODOTSNAMES.get(key, key)
+    if '.' not in key and key not in rcParamsShort:  # speedup
+        key = _rc_nodots.get(key, key)
     return key.lower()
+
+
+def _to_points(key, value):
+    """Convert certain rc keys to the units "points"."""
+    # TODO: Incorporate into more sophisticated validation system
+    # See: https://matplotlib.org/users/customizing.html, all props matching
+    # the below strings use the units 'points', except custom categories!
+    if (
+        isinstance(value, str)
+        and key.split('.')[0] not in ('colorbar', 'subplots')
+        and re.match('^.*(width|space|size|pad|len|small|large)$', key)
+    ):
+        value = units(value, 'pt')
+    return value
+
+
+def _update_from_file(file):
+    """
+    Apply updates from a file. This is largely copied from matplotlib.
+
+    Parameters
+    ----------
+    file : str
+        The path.
+    """
+    cnt = 0
+    file = os.path.expanduser(file)
+    added = set()
+    with open(file, 'r') as fd:
+        for line in fd:
+            # Read file
+            cnt += 1
+            stripped = line.split('#', 1)[0].strip()
+            if not stripped:
+                continue
+            pair = stripped.split(':', 1)
+            if len(pair) != 2:
+                _warn_proplot(
+                    f'Illegal line #{cnt} in file {file!r}:\n{line!r}"'
+                )
+                continue
+            key, value = pair
+            key = key.strip()
+            value = value.strip()
+            if key in added:
+                _warn_proplot(
+                    f'Duplicate key {key!r} on line #{cnt} in file {file!r}.'
+                )
+            added.add(key)
+
+            # *Very primitive* type conversion system. Just check proplot
+            # settings (they are all simple/scalar) and leave rcParams alone.
+            # TODO: Add built-in validation by making special RcParamsLong
+            # and RcParamsShort classes just like matplotlib RcParams
+            if key in rcParamsShort or key in rcParamsLong:
+                if not value:
+                    value = None  # older proplot versions supported this
+                elif value in ('True', 'False', 'None'):
+                    value = eval(value)  # rare case where eval is o.k.
+                else:
+                    try:
+                        # int-float distinction does not matter in python3
+                        value = float(value)
+                    except ValueError:
+                        pass
+
+            # Add to dictionaries
+            try:
+                rc_short, rc_long, rc = _get_synced_params(key, value)
+            except KeyError:
+                _warn_proplot(
+                    f'Invalid key {key!r} on line #{cnt} in file {file!r}.'
+                )
+            else:
+                rcParamsShort.update(rc_short)
+                rcParamsLong.update(rc_long)
+                rcParams.update(rc)
+
+
+def _write_defaults(filename, comment=True, overwrite=False):
+    """
+    Save a file to the specified path containing the default `rc` settings.
+
+    Parameters
+    ----------
+    filename : str
+        The path.
+    comment : bool, optional
+        Whether to "comment out" each setting.
+    overwrite : bool, optional
+        Whether to overwrite existing files.
+    """
+    def _tabulate(rcdict):
+        string = ''
+        prefix = '# ' if comment else ''
+        maxlen = max(map(len, rcdict))
+        NoneType = type(None)
+        for key, value in rcdict.items():
+            if isinstance(value, cycler.Cycler):  # special case!
+                value = repr(value)
+            elif isinstance(value, (str, Number, NoneType)):
+                value = str(value)
+            elif isinstance(value, (list, tuple)) and all(
+                isinstance(val, (str, Number)) for val in value
+            ):
+                value = ', '.join(str(val) for val in value)
+            else:
+                raise ValueError(
+                    f'Failed to write rc setting {key} = {value!r}. '
+                    'Must be string, number, or list or tuple thereof, '
+                    'or None or a cycler.'
+                )
+            space = ' ' * (maxlen - len(key) + 1)
+            string += f'{prefix}{key}:{space}{value}\n'
+        return string.strip()
+
+    # Fill empty defaultParamsLong values with rcDefaultParamsShort
+    # They are only allowed to be None in the *default dictionaries* because
+    # they are immediately overwritten. However if users try to set them as
+    # None in a .proplotrc file, may trigger error down the line.
+    rc_parents = {
+        child: parent
+        for parent, children in _rc_children.items()
+        for child in children
+    }
+    defaultParamsLong_filled = defaultParamsLong.copy()
+    for key, value in defaultParamsLong.items():
+        if value is None:
+            try:
+                defaultParamsLong_filled[key] = rc_parents[key]
+            except KeyError:
+                raise RuntimeError(
+                    f'rcParamsLong param {key!r} has default value of None '
+                    'but has no rcParmsShort parent!'
+                )
+
+            value = defaultParamsShort
+
+    with open(filename, 'w') as f:
+        f.write(f"""
+#---------------------------------------------------------------------
+# Use this file to change the default proplot and matplotlib settings
+# The syntax is mostly the same as for matplotlibrc files
+# For descriptions of each setting see:
+# https://proplot.readthedocs.io/en/latest/rctools.html
+# https://matplotlib.org/3.1.1/tutorials/introductory/customizing.html
+#---------------------------------------------------------------------
+# ProPlot short name settings
+{_tabulate(defaultParamsShort)}
+
+# ProPlot long name settings
+{_tabulate(defaultParamsLong_filled)}
+
+# Matplotlib settings
+{_tabulate(defaultParams)}
+""".strip())
 
 
 class rc_configurator(object):
@@ -727,21 +742,7 @@ class rc_configurator(object):
         for i, file in enumerate(_get_config_paths()):
             if not os.path.exists(file):
                 continue
-            with open(file) as f:
-                try:
-                    data = yaml.safe_load(f)
-                except yaml.YAMLError as err:
-                    print('{file!r} has invalid YAML syntax.')
-                    raise err
-            for key, value in (data or {}).items():
-                try:
-                    rc_short, rc_long, rc = _get_synced_params(key, value)
-                except KeyError:
-                    raise RuntimeError(f'{file!r} has invalid key {key!r}.')
-                else:
-                    rcParamsShort.update(rc_short)
-                    rcParamsLong.update(rc_long)
-                    rcParams.update(rc)
+            _update_from_file(file)
 
     def __enter__(self):
         """Apply settings from the most recent context block."""
@@ -801,7 +802,7 @@ class rc_configurator(object):
                 return kw[key]
             except KeyError:
                 continue
-        raise KeyError(f'Invalid property name {key!r}.')
+        raise KeyError(f'Invalid setting name {key!r}.')
 
     def __setattr__(self, attr, value):
         """Pass the attribute and value to `~rc_configurator.__setitem__`."""
@@ -845,9 +846,9 @@ class rc_configurator(object):
             except KeyError:
                 continue
         if mode == 0:
-            raise KeyError(f'Invalid property name {key!r}.')
+            raise KeyError(f'Invalid setting name {key!r}.')
         else:
-            return None
+            return
 
     def category(self, cat, *, trimcat=True, context=False):
         """
@@ -866,10 +867,10 @@ class rc_configurator(object):
             context mode dictionaries is omitted from the output dictionary.
             See `~rc_configurator.context`.
         """
-        if cat not in RC_CATEGORIES:
+        if cat not in _rc_categories:
             raise ValueError(
                 f'Invalid rc category {cat!r}. Valid categories are '
-                ', '.join(map(repr, RC_CATEGORIES)) + '.'
+                ', '.join(map(repr, _rc_categories)) + '.'
             )
         kw = {}
         mode = 0 if not context else None
@@ -1213,6 +1214,11 @@ def ipython_autosave(autosave=None):
         except IPython.core.error.UsageError:
             pass
 
+
+# Write defaults
+_user_rc_file = os.path.join(os.path.expanduser('~'), '.proplotrc')
+if not os.path.exists(_user_rc_file):
+    _write_defaults(_user_rc_file)
 
 #: Instance of `rc_configurator`. This is used to change global settings.
 #: See :ref:`Configuring proplot` for details.

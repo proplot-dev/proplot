@@ -2062,7 +2062,7 @@ class ColorDict(dict):
 
 def Colors(*args, **kwargs):
     """Pass all arguments to `Cycle` and return the list of colors from
-    the cycler object."""
+    the resulting `~cycler.Cycler` object."""
     cycle = Cycle(*args, **kwargs)
     return [dict_['color'] for dict_ in cycle]
 
@@ -2182,16 +2182,10 @@ def Colormap(
         # TODO: Document how 'listmode' also affects loaded files
         if isinstance(cmap, str):
             if '.' in cmap:
-                if os.path.isfile(os.path.expanduser(cmap)):
-                    if listmode == 'listed':
-                        cmap = ListedColormap.from_file(cmap)
-                    else:
-                        cmap = LinearSegmentedColormap.from_file(cmap)
+                if listmode == 'listed':
+                    cmap = ListedColormap.from_file(cmap)
                 else:
-                    raise FileNotFoundError(
-                        f'Colormap or cycle file {cmap!r} not found '
-                        'or failed to load.'
-                    )
+                    cmap = LinearSegmentedColormap.from_file(cmap)
             else:
                 try:
                     cmap = mcm.cmap_d[cmap]
@@ -2837,21 +2831,30 @@ def _from_file(filename, listed=False, warn_on_failure=False):
 
     # Warn if loading failed during `register_cmaps` or `register_cycles`
     # but raise error if user tries to load a file.
-    def _warn_or_raise(msg):
+    def _warn_or_raise(msg, error=RuntimeError):
         if warn_on_failure:
             _warn_proplot(msg)
         else:
-            raise RuntimeError(msg)
+            raise error(msg)
 
     # Directly read segmentdata json file
     # NOTE: This is special case! Immediately return name and cmap
+    if not os.path.exists(filename):
+        _warn_or_raise(f'File {filename!r} not found.', FileNotFoundError)
+        return
     N = rcParams['image.lut']
     name, ext = os.path.splitext(os.path.basename(filename))
     ext = ext[1:]
     cmap = None
     if ext == 'json':
-        with open(filename, 'r') as f:
-            data = json.load(f)
+        try:
+            with open(filename, 'r') as f:
+                data = json.load(f)
+        except json.JSONDecodeError:
+            _warn_or_raise(
+                f'Failed to load {filename!r}.', json.JSONDecodeError
+            )
+            return
         kw = {}
         for key in ('cyclic', 'gamma', 'gamma1', 'gamma2', 'space'):
             kw[key] = data.pop(key, None)
@@ -2900,9 +2903,10 @@ def _from_file(filename, listed=False, warn_on_failure=False):
     elif ext == 'xml':
         try:
             doc = ElementTree.parse(filename)
-        except IOError:
+        except ElementTree.ParseError:
             _warn_or_raise(
-                f'Failed to load {filename!r}.'
+                f'Failed to load {filename!r}. Parsing error.',
+                ElementTree.ParseError
             )
             return
         x, data = [], []
@@ -3724,10 +3728,10 @@ for _rc_sub in ('cmaps', 'cycles', 'colors', 'fonts'):
         os.mkdir(_rc_sub)
 
 #: List of registered colormap names.
-cmaps = []  # track *downloaded* colormaps
+cmaps = []
 
 #: List of registered color cycle names.
-cycles = []  # track *all* color cycles
+cycles = []
 
 #: Lists of registered color names by category.
 colors = {}
