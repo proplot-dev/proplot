@@ -19,7 +19,7 @@ try:
     from IPython import get_ipython
 except ModuleNotFoundError:
     def get_ipython():
-        return None
+        return
 from .utils import _warn_proplot, _counter, _benchmark, units
 
 # Disable mathtext "missing glyph" warnings
@@ -33,7 +33,11 @@ __all__ = [
     'ipython_autoreload', 'ipython_matplotlib',
 ]
 
-# Initialize
+# Dictionaries used to track custom proplot settings
+rcParamsShort = {}
+rcParamsLong = {}
+
+# Dictionaries containing default settings
 defaultParamsShort = {
     'abc': False,
     'align': False,
@@ -242,38 +246,7 @@ defaultParams = {
     'text.usetex': False,
     'xtick.minor.visible': True,
     'ytick.minor.visible': True,
-
 }
-rcParamsShort = {}
-rcParamsLong = {}
-
-# Initialize user file
-_rc_file = os.path.join(os.path.expanduser('~'), '.proplotrc')
-if not os.path.isfile(_rc_file):
-    def _tabulate(rcdict):
-        string = ''
-        maxlen = max(map(len, rcdict))
-        for key, value in rcdict.items():
-            value = '' if value is None else repr(value)
-            space = ' ' * (maxlen - len(key) + 1) * int(bool(value))
-            string += f'#  {key}:{space}{value}\n'
-        return string.strip()
-    with open(_rc_file, 'x') as f:
-        f.write(f"""
-#------------------------------------------------------
-# Use this file to customize settings
-# For descriptions of each key name see:
-# https://proplot.readthedocs.io/en/latest/rctools.html
-#------------------------------------------------------
-# ProPlot short name settings
-{_tabulate(defaultParamsShort)}
-#
-# ProPlot long name settings
-{_tabulate(defaultParamsLong)}
-#
-# Matplotlib settings
-{_tabulate(defaultParams)}
-""".strip())
 
 # "Global" settings and the lower-level settings they change
 _rc_children = {
@@ -338,159 +311,42 @@ _rc_children = {
         'xtick.major.pad', 'xtick.minor.pad',
         'ytick.major.pad', 'ytick.minor.pad'
     ),
+    'grid.color': (
+        'gridminor.color',
+    ),
+    'grid.linewidth': (
+        'gridminor.linewidth',
+    ),
+    'grid.linestyle': (
+        'gridminor.linestyle',
+    ),
+    'grid.alpha': (
+        'gridminor.alpha',
+    ),
 }
 
-# Names of the new settings
-RC_PARAMNAMES = {*rcParams.keys()}
-RC_SHORTNAMES = {
-    'abc',
-    'align',
-    'alpha',
-    'autoreload',
-    'autosave',
-    'borders',
-    'cmap',
-    'coast',
-    'color',
-    'cycle',
-    'facecolor',
-    'fontname',
-    'geogrid',
-    'grid',
-    'gridminor',
-    'gridratio',
-    'inlinefmt',
-    'innerborders',
-    'lakes',
-    'land',
-    'large',
-    'linewidth',
-    'lut',
-    'margin',
-    'matplotlib',
-    'ocean',
-    'reso',
-    'rgbcycle',
-    'rivers',
-    'share',
-    'small',
-    'span',
-    'tickdir',
-    'ticklen',
-    'ticklenratio',
-    'tickpad',
-    'tickratio',
-    'tight',
-}
-RC_LONGNAMES = {
-    'abc.border',
-    'abc.color',
-    'abc.linewidth',
-    'abc.loc',
-    'abc.size',
-    'abc.style',
-    'abc.weight',
-    'axes.alpha',
-    'axes.formatter.timerotation',
-    'axes.formatter.zerotrim',
-    'axes.geogrid',
-    'axes.gridminor',
-    'borders.color',
-    'borders.linewidth',
-    'bottomlabel.color',
-    'bottomlabel.size',
-    'bottomlabel.weight',
-    'coast.color',
-    'coast.linewidth',
-    'colorbar.axespad',
-    'colorbar.extend',
-    'colorbar.framealpha',
-    'colorbar.frameon',
-    'colorbar.grid',
-    'colorbar.insetextend',
-    'colorbar.insetlength',
-    'colorbar.insetwidth',
-    'colorbar.length',
-    'colorbar.loc',
-    'colorbar.width',
-    'geoaxes.edgecolor',
-    'geoaxes.facecolor',
-    'geoaxes.linewidth',
-    'geogrid.alpha',
-    'geogrid.color',
-    'geogrid.labels',
-    'geogrid.labelsize',
-    'geogrid.latmax',
-    'geogrid.latstep',
-    'geogrid.linestyle',
-    'geogrid.linewidth',
-    'geogrid.lonstep',
-    'gridminor.alpha',
-    'gridminor.color',
-    'gridminor.linestyle',
-    'gridminor.linewidth',
-    'image.edgefix',
-    'image.levels',
-    'innerborders.color',
-    'innerborders.linewidth',
-    'lakes.color',
-    'land.color',
-    'leftlabel.color',
-    'leftlabel.size',
-    'leftlabel.weight',
-    'ocean.color',
-    'rightlabel.color',
-    'rightlabel.size',
-    'rightlabel.weight',
-    'rivers.color',
-    'rivers.linewidth',
-    'subplots.axpad',
-    'subplots.axwidth',
-    'subplots.pad',
-    'subplots.panelpad',
-    'subplots.panelwidth',
-    'suptitle.color',
-    'suptitle.size',
-    'suptitle.weight',
-    'tick.labelcolor',
-    'tick.labelsize',
-    'tick.labelweight',
-    'title.border',
-    'title.color',
-    'title.linewidth',
-    'title.loc',
-    'title.pad',
-    'title.size',
-    'title.weight',
-    'toplabel.color',
-    'toplabel.size',
-    'toplabel.weight',
-}
-# Used by Axes.format, allows user to pass rc settings as keyword args,
-# way less verbose. For example, landcolor='b' vs. rc_kw={'land.color':'b'}.
-RC_NODOTSNAMES = {  # useful for passing these as kwargs
-    name.replace('.', ''): name for names in
-    (RC_LONGNAMES, RC_PARAMNAMES, RC_SHORTNAMES)
-    for name in names
-}
-# Categories for returning dict of subcategory properties
-RC_CATEGORIES = {
-    *(re.sub(r'\.[^.]*$', '', name) for names in
-        (RC_LONGNAMES, RC_PARAMNAMES) for name in names),
-    *(re.sub(r'\..*$', '', name) for names in
-        (RC_LONGNAMES, RC_PARAMNAMES) for name in names)
+# Mapping of settings without "dots" to their full names. This lets us pass
+# all settings as kwargs, e.g. ax.format(landcolor='b') instead of the much
+# more verbose ax.format(rc_kw={'land.color':'b'}).
+_rc_nodots = {
+    name.replace('.', ''): name
+    for names in (defaultParamsLong, rcParams)
+    for name in names.keys()
 }
 
-
-def _to_points(key, value):
-    """Convert certain rc keys to the units "points"."""
-    # See: https://matplotlib.org/users/customizing.html, all props matching
-    # the below strings use the units 'points', except custom categories!
-    if (isinstance(value, str)
-            and key.split('.')[0] not in ('colorbar', 'subplots')
-            and re.match('^.*(width|space|size|pad|len|small|large)$', key)):
-        value = units(value, 'pt')
-    return value
+# Category names, used for returning dicts of subcategory properties
+_rc_categories = {
+    *(
+        re.sub(r'\.[^.]*$', '', name)
+        for names in (defaultParamsLong, rcParams)
+        for name in names.keys()
+    ),
+    *(
+        re.sub(r'\..*$', '', name)
+        for names in (defaultParamsLong, rcParams)
+        for name in names.keys()
+    )
+}
 
 
 def _get_config_paths():
@@ -521,10 +377,9 @@ def _get_synced_params(key, value):
     kw = {}  # builtin properties that global setting applies to
     kw_long = {}  # custom properties that global setting applies to
     kw_short = {}  # short name properties
-    if '.' not in key and key not in rcParamsShort:
-        key = RC_NODOTSNAMES.get(key, key)
 
     # Skip full name keys
+    key = _sanitize_key(key)
     if '.' in key:
         pass
 
@@ -538,10 +393,9 @@ def _get_synced_params(key, value):
             colors = mcm.cmap_d[cycle].colors
         except (KeyError, AttributeError):
             cycles = sorted(
-                name for name,
-                cmap in mcm.cmap_d.items() if isinstance(
-                    cmap,
-                    mcolors.ListedColormap))
+                name for name, cmap in mcm.cmap_d.items()
+                if isinstance(cmap, mcolors.ListedColormap)
+            )
             raise ValueError(
                 f'Invalid cycle name {cycle!r}. Options are: '
                 ', '.join(map(repr, cycles)) + '.'
@@ -550,9 +404,14 @@ def _get_synced_params(key, value):
             regcolors = colors + [(0.1, 0.1, 0.1)]
         elif mcolors.to_rgb('r') != (1.0, 0.0, 0.0):  # reset
             regcolors = [
-                (0.0, 0.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0),
-                (0.75, 0.75, 0.0), (0.75, 0.75, 0.0), (0.0, 0.75, 0.75),
-                (0.0, 0.0, 0.0)]
+                (0.0, 0.0, 1.0),
+                (1.0, 0.0, 0.0),
+                (0.0, 1.0, 0.0),
+                (0.75, 0.75, 0.0),
+                (0.75, 0.75, 0.0),
+                (0.0, 0.75, 0.75),
+                (0.0, 0.0, 0.0)
+            ]
         else:
             regcolors = []  # no reset necessary
         for code, color in zip('brgmyck', regcolors):
@@ -648,7 +507,7 @@ def _get_synced_params(key, value):
         kw[key] = value
     else:
         raise KeyError(f'Invalid key {key!r}.')
-    for name in RC_CHILDREN.get(key, ()):
+    for name in _rc_children.get(key, ()):
         if name in rcParamsLong:
             kw_long[name] = value
         else:
@@ -657,12 +516,26 @@ def _get_synced_params(key, value):
 
 
 def _sanitize_key(key):
-    """Convert the key to a palatable value."""
+    """Ensure string and convert keys with omitted dots."""
     if not isinstance(key, str):
         raise KeyError(f'Invalid key {key!r}. Must be string.')
-    if '.' not in key and key not in rcParamsShort:
-        key = RC_NODOTSNAMES.get(key, key)
+    if '.' not in key and key not in rcParamsShort:  # speedup
+        key = _rc_nodots.get(key, key)
     return key.lower()
+
+
+def _to_points(key, value):
+    """Convert certain rc keys to the units "points"."""
+    # TODO: Incorporate into more sophisticated validation system
+    # See: https://matplotlib.org/users/customizing.html, all props matching
+    # the below strings use the units 'points', except custom categories!
+    if (
+        isinstance(value, str)
+        and key.split('.')[0] not in ('colorbar', 'subplots')
+        and re.match('^.*(width|space|size|pad|len|small|large)$', key)
+    ):
+        value = units(value, 'pt')
+    return value
 
 
 def _update_from_file(file):
@@ -927,7 +800,7 @@ class rc_configurator(object):
                 return kw[key]
             except KeyError:
                 continue
-        raise KeyError(f'Invalid property name {key!r}.')
+        raise KeyError(f'Invalid setting name {key!r}.')
 
     def __setattr__(self, attr, value):
         """Pass the attribute and value to `~rc_configurator.__setitem__`."""
@@ -971,9 +844,9 @@ class rc_configurator(object):
             except KeyError:
                 continue
         if mode == 0:
-            raise KeyError(f'Invalid property name {key!r}.')
+            raise KeyError(f'Invalid setting name {key!r}.')
         else:
-            return None
+            return
 
     def category(self, cat, *, trimcat=True, context=False):
         """
@@ -992,10 +865,10 @@ class rc_configurator(object):
             context mode dictionaries is omitted from the output dictionary.
             See `~rc_configurator.context`.
         """
-        if cat not in RC_CATEGORIES:
+        if cat not in _rc_categories:
             raise ValueError(
                 f'Invalid rc category {cat!r}. Valid categories are '
-                ', '.join(map(repr, RC_CATEGORIES)) + '.'
+                ', '.join(map(repr, _rc_categories)) + '.'
             )
         kw = {}
         mode = 0 if not context else None
