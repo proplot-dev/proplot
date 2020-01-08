@@ -60,7 +60,6 @@ defaultParamsShort = {
     'lut': 256,
     'margin': 0.0,
     'matplotlib': 'auto',
-    'nbsetup': True,
     'ocean': False,
     'reso': 'lo',
     'rgbcycle': False,
