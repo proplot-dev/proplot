@@ -2383,14 +2383,9 @@ class XYAxes(Axes):
                     if which == 'major':
                         kw_grid = rc.fill(_grid_dict('grid'), context=True)
                     else:
-                        kw_major = kw_grid
                         kw_grid = rc.fill(
                             _grid_dict('gridminor'), context=True
                         )
-                        kw_grid.update({
-                            key: value for key, value in kw_major.items()
-                            if key not in kw_grid
-                        })
                     # Changed rc settings
                     if gridcolor is not None:
                         kw['grid_color'] = gridcolor
