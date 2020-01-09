@@ -3647,7 +3647,7 @@ def show_cycles(*args, **kwargs):
     return _draw_bars(names, **kwargs)
 
 
-def show_fonts(*args, size=12, text=None):
+def show_fonts(*args, family=None, text=None, size=12):
     """
     Generate a table of fonts. If a glyph for a particular font is unavailable,
     it is replaced with the "¤" dummy character.
@@ -3655,37 +3655,54 @@ def show_fonts(*args, size=12, text=None):
     Parameters
     ----------
     *args
-        The font family names. If none are provided, the available sans-serif
-        fonts, the fonts in your ``.proplot/fonts`` folder, and the fonts
-        provided by ProPlot are shown.
-    size : float, optional
-        The font size in points.
+        The font name(s). If none are provided and the `family` keyword
+        argument was not provided, the *available* :rc:`font.sans-serif` fonts
+        and the fonts in your ``.proplot/fonts`` folder are shown.
+    family : {'serif', 'sans-serif', 'monospace', 'cursive', 'fantasy'}, \
+optional
+        If provided, the *available* fonts in the corresponding families
+        are shown. The fonts belonging to these families are listed under the
+        :rc:`font.serif`, :rc:`font.sans-serif`, :rc:`font.monospace`,
+        :rc:`font.cursive`, and :rc:`font.fantasy` settings.
     text : str, optional
         The sample text. The default sample text includes the Latin letters,
-        Greek letters, Arabic numerals, and some mathematical symbols.
+        Greek letters, Arabic numerals, and some simple mathematical symbols.
+    size : float, optional
+        The font size in points.
     """
     from . import subplots
-    if not args:
-        import matplotlib.font_manager as mfonts
+    import matplotlib.font_manager as mfonts
+    if not args and family is None:
         args = sorted({
             font.name for font in mfonts.fontManager.ttflist
-            if font.name[:1] != '.' and (
-                font.name in FONTS_SANS
-                or any(path in font.fname for path in _get_data_paths('fonts'))
-            )
+            if font.name in rcParams['font.sans-serif']
+            or any(path in font.fname for path in _get_data_paths('fonts'))
         })
+    elif family is not None:
+        options = ('serif', 'sans-serif', 'monospace', 'cursive', 'fantasy')
+        if family not in options:
+            raise ValueError(
+                f'Invalid family {family!r}. Options are: '
+                + ', '.join(map(repr, options)) + '.'
+            )
+        args.append(sorted({
+            font.name for font in mfonts.fontManager.ttflist
+            if font.name in rcParams['font.' + family]
+        }))
 
     # Text
     if text is None:
-        text = 'the quick brown fox jumps over a lazy dog' '\n' \
-            'THE QUICK BROWN FOX JUMPS OVER A LAZY DOG' '\n' \
-            '(0) + {1\N{DEGREE SIGN}} \N{MINUS SIGN} [2*] - <3> / 4,0 ' \
-            r'$\geq\gg$ 5.0 $\leq\ll$ ~6 $\times$ 7 ' \
-            r'$\equiv$ 8 $\approx$ 9 $\propto$' '\n' \
-            r'$\alpha\beta$ $\Gamma\gamma$ $\Delta\delta$ ' \
-            r'$\epsilon\zeta\eta$ $\Theta\theta$ $\kappa\mu\nu$ ' \
-            r'$\Lambda\lambda$ $\Pi\pi$ $\xi\rho\tau\chi$ $\Sigma\sigma$ ' \
+        text = (
+            'the quick brown fox jumps over a lazy dog' '\n'
+            'THE QUICK BROWN FOX JUMPS OVER A LAZY DOG' '\n'
+            '(0) + {1\N{DEGREE SIGN}} \N{MINUS SIGN} [2*] - <3> / 4,0 '
+            r'$\geq\gg$ 5.0 $\leq\ll$ ~6 $\times$ 7 '
+            r'$\equiv$ 8 $\approx$ 9 $\propto$' '\n'
+            r'$\alpha\beta$ $\Gamma\gamma$ $\Delta\delta$ '
+            r'$\epsilon\zeta\eta$ $\Theta\theta$ $\kappa\mu\nu$ '
+            r'$\Lambda\lambda$ $\Pi\pi$ $\xi\rho\tau\chi$ $\Sigma\sigma$ '
             r'$\Phi\phi$ $\Psi\psi$ $\Omega\omega$ !?&#%'
+        )
 
     # Create figure
     f, axs = subplots(
