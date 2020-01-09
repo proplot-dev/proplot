@@ -3420,10 +3420,12 @@ def show_colorspaces(luminance=None, saturation=None, hue=None, axwidth=2):
                 else:
                     rgba[k, j, :3] = rgb_jk
         ax.imshow(rgba, origin='lower', aspect='auto')
-        ax.format(xlabel=xlabel, ylabel=ylabel, suptitle=suptitle,
-                  grid=False, xtickminor=False, ytickminor=False,
-                  xlocator=xloc, ylocator=yloc, facecolor='k',
-                  title=space.upper(), titleweight='bold')
+        ax.format(
+            xlabel=xlabel, ylabel=ylabel, suptitle=suptitle,
+            grid=False, xtickminor=False, ytickminor=False,
+            xlocator=xloc, ylocator=yloc, facecolor='k',
+            title=space.upper(), titleweight='bold'
+        )
     return fig
 
 
@@ -3705,10 +3707,10 @@ def show_fonts(*args, family=None, text=None, size=12):
         axwidth=4.5, axheight=1.2 * (text.count('\n') + 2.5) * size / 72,
         fallback_to_cm=False
     )
-    axs.format(xloc='neither', yloc='neither',
-               xlocator='null', ylocator='null', alpha=0)
-    axs[0].format(title='Fonts demo', titlesize=size,
-                  titleloc='l', titleweight='bold')
+    axs.format(
+        xloc='neither', yloc='neither',
+        xlocator='null', ylocator='null', alpha=0
+    )
     for i, ax in enumerate(axs):
         font = args[i]
         ax.text(0, 0.5, f'{font}:\n{text}',
