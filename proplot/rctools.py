@@ -201,12 +201,10 @@ defaultParams = {
     ),
     'font.sans-serif': (
         'TeX Gyre Heros',  # Helvetica lookalike
-        'TeX Gyre Adventor',  # Avant Garde lookalike
         'DejaVu Sans',
         'Bitstream Vera Sans',
         'Computer Modern Sans Serif',
         'Arial',
-        'Avant Garde',
         'Avenir',
         'Fira Math',
         'Frutiger',
@@ -250,6 +248,8 @@ defaultParams = {
         'cursive'
     ),
     'font.fantasy': (
+        'TeX Gyre Adventor',  # Avant Garde lookalike
+        'Avant Garde',
         'Charcoal',
         'Chicago',
         'Comic Sans MS',
