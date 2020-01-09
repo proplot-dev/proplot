@@ -223,31 +223,6 @@ COLORS_BASE = {
     'white': (1, 1, 1),
 }
 
-# *Proprietary* sans serif fonts that may or may not be on user system
-# plus the fonts installed by matplotlib
-# NOTE: Add to this as needed!
-FONTS_SANS = [
-    'Arial',
-    'Avant Garde',
-    'Avenir',
-    'Bitstream Vera',  # matplotlib
-    'Computer Modern Sans Serif',
-    'DejaVu Sans',  # matplotlib
-    'Frutiger',
-    'Futura',
-    'Geneva',
-    'Gill Sans',
-    'Helvetica',
-    'Lucida Grande',
-    'Lucid',
-    'Myriad Pro',
-    'Optima',
-    'Tahoma',
-    'Trebuchet MS',
-    'Univers',
-    'Verdana',
-]
-
 
 def _get_channel(color, channel, space='hcl'):
     """
