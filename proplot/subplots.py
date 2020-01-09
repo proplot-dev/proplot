@@ -15,8 +15,13 @@ import matplotlib.transforms as mtransforms
 import matplotlib.gridspec as mgridspec
 from numbers import Integral
 from .rctools import rc
-from .utils import _warn_proplot, _notNone, _counter, _setstate, units
+from .utils import _warn_proplot, _notNone, _counter, _setstate, units  # noqa
 from . import projs, axes
+try:  # use this for debugging instead of print()!
+    from icecream import ic
+except ImportError:  # graceful fallback if IceCream isn't installed
+    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
+
 __all__ = [
     'subplot_grid', 'close', 'show', 'subplots', 'Figure',
     'GridSpec', 'SubplotSpec',

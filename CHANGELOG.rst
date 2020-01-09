@@ -38,6 +38,20 @@ ProPlot v0.5.0 (2020-##-##)
   stacks rather than getting inserted directly into
   the main `~proplot.subplots.GridSpec` (:pr:`50`).
 
+ProPlot v0.4.2 (2020-01-09)
+===========================
+.. rubric:: Features
+
+- Add ``family`` keyword arg to `~proplot.styletools.show_fonts` (:pr:`106`).
+- Package the `TeX Gyre <http://www.gust.org.pl/projects/e-foundry/tex-gyre>`__
+  font series with ProPlot (:pr:`106`). Remove a couple other fonts.
+- Put the TeX Gyre fonts at the head of the serif, sans-serif, monospace,
+  cursive, and fantasy ``rcParams`` font family lists (:issue:`104`, :pr:`106`).
+
+.. rubric:: Bug fixes
+
+- Fix issues with Fira Math weights unrecognized by matplotlib (:pr:`106`).
+
 ProPlot v0.4.1 (2020-01-08)
 ===========================
 .. rubric:: Deprecation

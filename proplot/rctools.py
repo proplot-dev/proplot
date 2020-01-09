@@ -14,6 +14,10 @@ import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
 from numbers import Number
 from matplotlib import style, rcParams
+try:  # use this for debugging instead of print()!
+    from icecream import ic
+except ImportError:  # graceful fallback if IceCream isn't installed
+    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
 try:
     import IPython
     from IPython import get_ipython
@@ -176,46 +180,86 @@ defaultParams = {
     'figure.max_open_warning': 0,
     'figure.titleweight': 'bold',
     'font.serif': (
-        'New Century Schoolbook',
-        'Century Schoolbook L',
-        'Utopia',
-        'ITC Bookman',
-        'Bookman',
-        'Nimbus Roman No9 L',
-        'Times New Roman',
-        'Times',
-        'Palatino',
-        'Charter',
-        'Computer Modern Roman',
+        'TeX Gyre Schola',  # Century lookalike
+        'TeX Gyre Bonum',  # Bookman lookalike
+        'TeX Gyre Termes',  # Times New Roman lookalike
+        'TeX Gyre Pagella',  # Palatino lookalike
         'DejaVu Serif',
         'Bitstream Vera Serif',
-        'serif',
+        'Computer Modern Roman',
+        'Bookman',
+        'Century Schoolbook L',
+        'Charter',
+        'ITC Bookman',
+        'New Century Schoolbook',
+        'Nimbus Roman No9 L',
+        'Palatino',
+        'Times New Roman',
+        'Times',
+        'Utopia',
+        'serif'
     ),
     'font.sans-serif': (
-        'Helvetica',
-        'Arial',
-        'Lucida Grande',
-        'Verdana',
-        'Geneva',
-        'Lucid',
-        'Avant Garde',
-        'TeX Gyre Heros',
+        'TeX Gyre Heros',  # Helvetica lookalike
         'DejaVu Sans',
         'Bitstream Vera Sans',
         'Computer Modern Sans Serif',
-        'sans-serif',
+        'Arial',
+        'Avenir',
+        'Fira Math',
+        'Frutiger',
+        'Geneva',
+        'Gill Sans',
+        'Helvetica',
+        'Lucid',
+        'Lucida Grande',
+        'Myriad Pro',
+        'Noto Sans',
+        'Roboto',
+        'Source Sans Pro',
+        'Tahoma',
+        'Trebuchet MS',
+        'Ubuntu',
+        'Univers',
+        'Verdana',
+        'sans-serif'
     ),
     'font.monospace': (
+        'TeX Gyre Cursor',  # Courier lookalike
+        'DejaVu Sans Mono',
+        'Bitstream Vera Sans Mono',
+        'Computer Modern Typewriter',
         'Andale Mono',
-        'Nimbus Mono L',
         'Courier New',
         'Courier',
         'Fixed',
+        'Nimbus Mono L',
         'Terminal',
-        'Computer Modern Typewriter',
-        'DejaVu Sans Mono',
-        'Bitstream Vera Sans Mono',
-        'monospace',
+        'monospace'
+    ),
+    'font.cursive': (
+        'TeX Gyre Chorus',  # Chancery lookalike
+        'Apple Chancery',
+        'Felipa',
+        'Sand',
+        'Script MT',
+        'Textile',
+        'Zapf Chancery',
+        'cursive'
+    ),
+    'font.fantasy': (
+        'TeX Gyre Adventor',  # Avant Garde lookalike
+        'Avant Garde',
+        'Charcoal',
+        'Chicago',
+        'Comic Sans MS',
+        'Futura',
+        'Humor Sans',
+        'Impact',
+        'Optima',
+        'Western',
+        'xkcd',
+        'fantasy'
     ),
     'grid.alpha': 0.1,
     'grid.color': 'k',

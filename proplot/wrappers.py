@@ -21,10 +21,15 @@ import matplotlib.artist as martist
 import matplotlib.legend as mlegend
 from numbers import Number
 from .rctools import rc
+try:  # use this for debugging instead of print()!
+    from icecream import ic
+except ImportError:  # graceful fallback if IceCream isn't installed
+    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
 try:
     from cartopy.crs import PlateCarree
 except ModuleNotFoundError:
     PlateCarree = object
+
 __all__ = [
     'add_errorbars', 'bar_wrapper', 'barh_wrapper', 'boxplot_wrapper',
     'default_crs', 'default_latlon', 'default_transform',

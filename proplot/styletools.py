@@ -23,6 +23,11 @@ import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
 from .utils import _warn_proplot, _notNone, _timer
 from .external import hsluv
+try:  # use this for debugging instead of print()!
+    from icecream import ic
+except ImportError:  # graceful fallback if IceCream isn't installed
+    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
+
 __all__ = [
     'BinNorm', 'CmapDict', 'ColorDict',
     'LinearSegmentedNorm',
@@ -217,31 +222,6 @@ COLORS_BASE = {
     'black': (0, 0, 0),
     'white': (1, 1, 1),
 }
-
-# *Proprietary* sans serif fonts that may or may not be on user system
-# plus the fonts installed by matplotlib
-# NOTE: Add to this as needed!
-FONTS_SANS = [
-    'Arial',
-    'Avant Garde',
-    'Avenir',
-    'Bitstream Vera',  # matplotlib
-    'Computer Modern Sans Serif',
-    'DejaVu Sans',  # matplotlib
-    'Frutiger',
-    'Futura',
-    'Geneva',
-    'Gill Sans',
-    'Helvetica',
-    'Lucida Grande',
-    'Lucid',
-    'Myriad Pro',
-    'Optima',
-    'Tahoma',
-    'Trebuchet MS',
-    'Univers',
-    'Verdana',
-]
 
 
 def _get_channel(color, channel, space='hcl'):
@@ -3162,12 +3142,12 @@ def register_fonts():
     fnames_all = {font.fname for font in mfonts.fontManager.ttflist}
     fnames_proplot -= fnames_proplot_ttc
     if not fnames_all >= fnames_proplot:
+        _warn_proplot('Rebuilding font cache.')
         if hasattr(mfonts.fontManager, 'addfont'):
             for fname in fnames_proplot:
                 mfonts.fontManager.addfont(fname)
             mfonts.json_dump(mfonts.fontManager, mfonts._fmcache)
         else:
-            _warn_proplot('Rebuilding font manager.')
             mfonts._rebuild()
 
     # Remove ttc files *after* rebuild
@@ -3440,10 +3420,12 @@ def show_colorspaces(luminance=None, saturation=None, hue=None, axwidth=2):
                 else:
                     rgba[k, j, :3] = rgb_jk
         ax.imshow(rgba, origin='lower', aspect='auto')
-        ax.format(xlabel=xlabel, ylabel=ylabel, suptitle=suptitle,
-                  grid=False, xtickminor=False, ytickminor=False,
-                  xlocator=xloc, ylocator=yloc, facecolor='k',
-                  title=space.upper(), titleweight='bold')
+        ax.format(
+            xlabel=xlabel, ylabel=ylabel, suptitle=suptitle,
+            grid=False, xtickminor=False, ytickminor=False,
+            xlocator=xloc, ylocator=yloc, facecolor='k',
+            title=space.upper(), titleweight='bold'
+        )
     return fig
 
 
@@ -3642,7 +3624,7 @@ def show_cycles(*args, **kwargs):
     return _draw_bars(names, **kwargs)
 
 
-def show_fonts(*args, size=12, text=None):
+def show_fonts(*args, family=None, text=None, size=12):
     """
     Generate a table of fonts. If a glyph for a particular font is unavailable,
     it is replaced with the "¤" dummy character.
@@ -3650,37 +3632,76 @@ def show_fonts(*args, size=12, text=None):
     Parameters
     ----------
     *args
-        The font family names. If none are provided, the available sans-serif
-        fonts, the fonts in your ``.proplot/fonts`` folder, and the fonts
-        provided by ProPlot are shown.
-    size : float, optional
-        The font size in points.
+        The font name(s). If none are provided and the `family` keyword
+        argument was not provided, the *available* :rc:`font.sans-serif` fonts
+        and the fonts in your ``.proplot/fonts`` folder are shown.
+    family : {'serif', 'sans-serif', 'monospace', 'cursive', 'fantasy', \
+'tex-gyre'}, optional
+        If provided, the *available* fonts in the corresponding families
+        are shown. The fonts belonging to these families are listed under the
+        :rc:`font.serif`, :rc:`font.sans-serif`, :rc:`font.monospace`,
+        :rc:`font.cursive`, and :rc:`font.fantasy` settings. The special
+        family ``'tex-gyre'`` draws the `TeX Gyre \
+<http://www.gust.org.pl/projects/e-foundry/tex-gyre>`__ fonts.
     text : str, optional
         The sample text. The default sample text includes the Latin letters,
-        Greek letters, Arabic numerals, and some mathematical symbols.
+        Greek letters, Arabic numerals, and some simple mathematical symbols.
+    size : float, optional
+        The font size in points.
     """
     from . import subplots
-    if not args:
-        import matplotlib.font_manager as mfonts
+    import matplotlib.font_manager as mfonts
+    if not args and family is None:
+        # User fonts and sans-serif fonts. Note all proplot sans-serif fonts
+        # are added to 'font.sans-serif' by default
         args = sorted({
             font.name for font in mfonts.fontManager.ttflist
-            if font.name[:1] != '.' and (
-                font.name in FONTS_SANS
-                or any(path in font.fname for path in _get_data_paths('fonts'))
-            )
+            if font.name in rcParams['font.sans-serif']
+            or _get_data_paths('fonts')[1] == os.path.dirname(font.fname)
         })
+    elif family is not None:
+        options = (
+            'serif', 'sans-serif', 'monospace', 'cursive', 'fantasy',
+            'tex-gyre',
+        )
+        if family not in options:
+            raise ValueError(
+                f'Invalid family {family!r}. Options are: '
+                + ', '.join(map(repr, options)) + '.'
+            )
+        if family == 'tex-gyre':
+            family_fonts = (
+                'TeX Gyre Adventor',
+                'TeX Gyre Bonum',
+                'TeX Gyre Cursor',
+                'TeX Gyre Chorus',
+                'TeX Gyre Heros',
+                'TeX Gyre Pagella',
+                'TeX Gyre Schola',
+                'TeX Gyre Termes',
+            )
+        else:
+            family_fonts = rcParams['font.' + family]
+        args = (
+            *args, *sorted({
+                font.name for font in mfonts.fontManager.ttflist
+                if font.name in family_fonts
+            })
+        )
 
     # Text
     if text is None:
-        text = 'the quick brown fox jumps over a lazy dog' '\n' \
-            'THE QUICK BROWN FOX JUMPS OVER A LAZY DOG' '\n' \
-            '(0) + {1\N{DEGREE SIGN}} \N{MINUS SIGN} [2*] - <3> / 4,0 ' \
-            r'$\geq\gg$ 5.0 $\leq\ll$ ~6 $\times$ 7 ' \
-            r'$\equiv$ 8 $\approx$ 9 $\propto$' '\n' \
-            r'$\alpha\beta$ $\Gamma\gamma$ $\Delta\delta$ ' \
-            r'$\epsilon\zeta\eta$ $\Theta\theta$ $\kappa\mu\nu$ ' \
-            r'$\Lambda\lambda$ $\Pi\pi$ $\xi\rho\tau\chi$ $\Sigma\sigma$ ' \
+        text = (
+            'the quick brown fox jumps over a lazy dog' '\n'
+            'THE QUICK BROWN FOX JUMPS OVER A LAZY DOG' '\n'
+            '(0) + {1\N{DEGREE SIGN}} \N{MINUS SIGN} [2*] - <3> / 4,0 '
+            r'$\geq\gg$ 5.0 $\leq\ll$ ~6 $\times$ 7 '
+            r'$\equiv$ 8 $\approx$ 9 $\propto$' '\n'
+            r'$\alpha\beta$ $\Gamma\gamma$ $\Delta\delta$ '
+            r'$\epsilon\zeta\eta$ $\Theta\theta$ $\kappa\mu\nu$ '
+            r'$\Lambda\lambda$ $\Pi\pi$ $\xi\rho\tau\chi$ $\Sigma\sigma$ '
             r'$\Phi\phi$ $\Psi\psi$ $\Omega\omega$ !?&#%'
+        )
 
     # Create figure
     f, axs = subplots(
@@ -3688,10 +3709,10 @@ def show_fonts(*args, size=12, text=None):
         axwidth=4.5, axheight=1.2 * (text.count('\n') + 2.5) * size / 72,
         fallback_to_cm=False
     )
-    axs.format(xloc='neither', yloc='neither',
-               xlocator='null', ylocator='null', alpha=0)
-    axs[0].format(title='Fonts demo', titlesize=size,
-                  titleloc='l', titleweight='bold')
+    axs.format(
+        xloc='neither', yloc='neither',
+        xlocator='null', ylocator='null', alpha=0
+    )
     for i, ax in enumerate(axs):
         font = args[i]
         ax.text(0, 0.5, f'{font}:\n{text}',
