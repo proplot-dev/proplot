@@ -181,6 +181,7 @@ defaultParams = {
     'figure.titleweight': 'bold',
     'font.serif': (
         'TeX Gyre Schola',  # Century lookalike
+        'TeX Gyre Bonum',  # Bookman lookalike
         'TeX Gyre Termes',  # Times New Roman lookalike
         'TeX Gyre Pagella',  # Palatino lookalike
         'DejaVu Serif',
@@ -200,6 +201,7 @@ defaultParams = {
     ),
     'font.sans-serif': (
         'TeX Gyre Heros',  # Helvetica lookalike
+        'TeX Gyre Adventor',  # Avant Garde lookalike
         'DejaVu Sans',
         'Bitstream Vera Sans',
         'Computer Modern Sans Serif',
