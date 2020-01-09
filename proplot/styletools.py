@@ -3639,8 +3639,8 @@ def show_fonts(*args, family=None, text=None, size=12):
         are shown. The fonts belonging to these families are listed under the
         :rc:`font.serif`, :rc:`font.sans-serif`, :rc:`font.monospace`,
         :rc:`font.cursive`, and :rc:`font.fantasy` settings. The special
-        family ``'tex-gyre'`` draws the `TeX Gyre fonts \
-<http://www.gust.org.pl/projects/e-foundry/tex-gyre>`__.
+        family ``'tex-gyre'`` draws the `TeX Gyre \
+<http://www.gust.org.pl/projects/e-foundry/tex-gyre>`__ fonts.
     text : str, optional
         The sample text. The default sample text includes the Latin letters,
         Greek letters, Arabic numerals, and some simple mathematical symbols.
