@@ -334,8 +334,8 @@ def to_rgb(color, space='rgb', cycle=None, alpha=False):
         The colorspace for the input channel values. Ignored unless `color` is
         an container of numbers.
     cycle : str or list, optional
-        The registered color cycle name. Default is :rc:`cycle`. Ignored unless
-        `color` is a color cycle string, e.g. ``'C0'``, ``'C1'``, ...
+        The registered color cycle name used to interpret colors that
+        look like ``'C0'``, ``'C1'``, etc. Default is :rc:`cycle`.
     alpha : bool, optional
         Whether to preserve the opacity channel, if it exists. Default
         is ``False``.
@@ -3633,14 +3633,14 @@ def show_fonts(*args, family=None, text=None, size=12):
     ----------
     *args
         The font name(s). If none are provided and the `family` keyword
-        argument was not provided, the *available* :rc:`font.sans-serif` fonts
-        and the fonts in your ``.proplot/fonts`` folder are shown.
+        argument was not provided, the *available* :rcraw:`font.sans-serif`
+        fonts and the fonts in your ``.proplot/fonts`` folder are shown.
     family : {'serif', 'sans-serif', 'monospace', 'cursive', 'fantasy', \
 'tex-gyre'}, optional
         If provided, the *available* fonts in the corresponding families
         are shown. The fonts belonging to these families are listed under the
-        :rc:`font.serif`, :rc:`font.sans-serif`, :rc:`font.monospace`,
-        :rc:`font.cursive`, and :rc:`font.fantasy` settings. The special
+        :rcraw:`font.serif`, :rcraw:`font.sans-serif`, :rcraw:`font.monospace`,
+        :rcraw:`font.cursive`, and :rcraw:`font.fantasy` settings. The special
         family ``'tex-gyre'`` draws the `TeX Gyre \
 <http://www.gust.org.pl/projects/e-foundry/tex-gyre>`__ fonts.
     text : str, optional
@@ -3715,9 +3715,11 @@ def show_fonts(*args, family=None, text=None, size=12):
     )
     for i, ax in enumerate(axs):
         font = args[i]
-        ax.text(0, 0.5, f'{font}:\n{text}',
-                fontfamily=font, fontsize=size,
-                weight='normal', ha='left', va='center')
+        ax.text(
+            0, 0.5, f'{font}:\n{text}',
+            fontfamily=font, fontsize=size,
+            weight='normal', ha='left', va='center'
+        )
     return f
 
 
@@ -3726,20 +3728,21 @@ if 'Greys' in mcm.cmap_d:  # 'Murica (and consistency with registered colors)
     mcm.cmap_d['Grays'] = mcm.cmap_d.pop('Greys')
 if 'Spectral' in mcm.cmap_d:  # make spectral go from 'cold' to 'hot'
     mcm.cmap_d['Spectral'] = mcm.cmap_d['Spectral'].reversed(name='Spectral')
-for _name in CMAPS_TABLE['Matplotlib originals']:  # initialize as empty lists
-    if _name == 'twilight_shifted':
+for _name in CMAPS_TABLE['Matplotlib originals']:
+    if _name == 'twilight_shifted':  # we can generate shifted maps on the fly
         mcm.cmap_d.pop(_name, None)
-    else:
+    else:  # convert ListedColormaps to LinearSegmentedColormaps
         _cmap = mcm.cmap_d.get(_name, None)
         if _cmap and isinstance(_cmap, mcolors.ListedColormap):
-            mcm.cmap_d.pop(_name, None)  # removes the map from cycles list!
+            mcm.cmap_d.pop(_name, None)
             mcm.cmap_d[_name] = LinearSegmentedColormap.from_list(
-                _name, _cmap.colors, cyclic=('twilight' in _name))
+                _name, _cmap.colors, cyclic=('twilight' in _name)
+            )
 for _cat in ('MATLAB', 'GNUplot', 'GIST', 'Other'):
     for _name in CMAPS_TABLE[_cat]:
         mcm.cmap_d.pop(_name, None)
 
-# Initialize customization folders and files
+# Initialize customization folders
 _rc_folder = os.path.join(os.path.expanduser('~'), '.proplot')
 if not os.path.isdir(_rc_folder):
     os.mkdir(_rc_folder)
@@ -3747,18 +3750,6 @@ for _rc_sub in ('cmaps', 'cycles', 'colors', 'fonts'):
     _rc_sub = os.path.join(_rc_folder, _rc_sub)
     if not os.path.isdir(_rc_sub):
         os.mkdir(_rc_sub)
-
-#: List of registered colormap names.
-cmaps = []
-
-#: List of registered color cycle names.
-cycles = []
-
-#: Lists of registered color names by category.
-colors = {}
-
-#: Registered font names.
-fonts = []
 
 # Apply monkey patches to top level modules
 if not isinstance(mcm.cmap_d, CmapDict):
@@ -3771,6 +3762,18 @@ if not isinstance(mcolors._colors_full_map, _ColorMappingOverride):
     mcolors._colors_full_map = _map
     mcolors.colorConverter.cache = _map.cache  # re-instantiate
     mcolors.colorConverter.colors = _map  # re-instantiate
+
+#: List of registered colormap names.
+cmaps = []
+
+#: List of registered color cycle names.
+cycles = []
+
+#: Lists of registered color names by category.
+colors = {}
+
+#: Registered font names.
+fonts = []
 
 # Call driver funcs
 register_colors()
