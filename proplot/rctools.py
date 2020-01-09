@@ -14,6 +14,10 @@ import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
 from numbers import Number
 from matplotlib import style, rcParams
+try:  # use this for debugging instead of print()!
+    from icecream import ic
+except ImportError:  # graceful fallback if IceCream isn't installed
+    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
 try:
     import IPython
     from IPython import get_ipython

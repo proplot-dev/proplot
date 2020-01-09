@@ -23,6 +23,11 @@ import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
 from .utils import _warn_proplot, _notNone, _timer
 from .external import hsluv
+try:  # use this for debugging instead of print()!
+    from icecream import ic
+except ImportError:  # graceful fallback if IceCream isn't installed
+    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
+
 __all__ = [
     'BinNorm', 'CmapDict', 'ColorDict',
     'LinearSegmentedNorm',

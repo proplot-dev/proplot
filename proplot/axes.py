@@ -32,6 +32,10 @@ try:
     from cartopy.mpl.geoaxes import GeoAxes
 except ModuleNotFoundError:
     GeoAxes = object
+try:  # use this for debugging instead of print()!
+    from icecream import ic
+except ImportError:  # graceful fallback if IceCream isn't installed
+    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
 
 __all__ = [
     'Axes',
