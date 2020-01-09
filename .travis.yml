@@ -13,13 +13,14 @@ python:
 
 before_install:
   - |
-       set -e
-       MODIFIED_FILES=$(git diff --name-only "$TRAVIS_COMMIT_RANGE")
-       if ! echo "$MODIFIED_FILES" | grep -qvE '(.md)|(.rst)|(.yml)|(.html)'
-       then
-         echo "Only doc files were updated, not running the CI."
-         exit
-       fi
+        MODIFIED_FILES=$(git diff --name-only "$TRAVIS_COMMIT_RANGE" 2>/dev/null)
+        if [ $? -eq 0 ]; then
+          if ! echo "$MODIFIED_FILES" | grep -qvE '(.md)|(.rst)|(.yml)|(.html)'
+          then
+            echo "Only doc files were updated, not running the CI."
+            exit
+          fi
+        fi
   - wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
