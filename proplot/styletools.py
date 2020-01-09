@@ -3633,12 +3633,14 @@ def show_fonts(*args, family=None, text=None, size=12):
         The font name(s). If none are provided and the `family` keyword
         argument was not provided, the *available* :rc:`font.sans-serif` fonts
         and the fonts in your ``.proplot/fonts`` folder are shown.
-    family : {'serif', 'sans-serif', 'monospace', 'cursive', 'fantasy'}, \
-optional
+    family : {'serif', 'sans-serif', 'monospace', 'cursive', 'fantasy', \
+'tex-gyre'}, optional
         If provided, the *available* fonts in the corresponding families
         are shown. The fonts belonging to these families are listed under the
         :rc:`font.serif`, :rc:`font.sans-serif`, :rc:`font.monospace`,
-        :rc:`font.cursive`, and :rc:`font.fantasy` settings.
+        :rc:`font.cursive`, and :rc:`font.fantasy` settings. The special
+        family ``'tex-gyre'`` draws the `TeX Gyre fonts \
+<http://www.gust.org.pl/projects/e-foundry/tex-gyre>`__.
     text : str, optional
         The sample text. The default sample text includes the Latin letters,
         Greek letters, Arabic numerals, and some simple mathematical symbols.
@@ -3654,15 +3656,31 @@ optional
             or any(path in font.fname for path in _get_data_paths('fonts'))
         })
     elif family is not None:
-        options = ('serif', 'sans-serif', 'monospace', 'cursive', 'fantasy')
+        options = (
+            'serif', 'sans-serif', 'monospace', 'cursive', 'fantasy',
+            'tex-gyre',
+        )
         if family not in options:
             raise ValueError(
                 f'Invalid family {family!r}. Options are: '
                 + ', '.join(map(repr, options)) + '.'
             )
+        if family == 'tex-gyre':
+            family_fonts = (
+                'TeX Gyre Adventor',
+                'TeX Gyre Bonum',
+                'TeX Gyre Cursor',
+                'TeX Gyre Chorus',
+                'TeX Gyre Heros',
+                'TeX Gyre Pagella',
+                'TeX Gyre Schola',
+                'TeX Gyre Termes',
+            )
+        else:
+            family_fonts = rcParams['font.' + family]
         args.append(sorted({
             font.name for font in mfonts.fontManager.ttflist
-            if font.name in rcParams['font.' + family]
+            if font.name in family_fonts
         }))
 
     # Text
