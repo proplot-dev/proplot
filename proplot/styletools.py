@@ -3650,10 +3650,12 @@ def show_fonts(*args, family=None, text=None, size=12):
     from . import subplots
     import matplotlib.font_manager as mfonts
     if not args and family is None:
+        # User fonts and sans-serif fonts. Note all proplot sans-serif fonts
+        # are added to 'font.sans-serif' by default
         args = sorted({
             font.name for font in mfonts.fontManager.ttflist
             if font.name in rcParams['font.sans-serif']
-            or any(path in font.fname for path in _get_data_paths('fonts'))
+            or _get_data_paths('fonts')[1] in font.fname
         })
     elif family is not None:
         options = (
