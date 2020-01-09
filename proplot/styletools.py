@@ -3657,7 +3657,7 @@ def show_fonts(*args, family=None, text=None, size=12):
         args = sorted({
             font.name for font in mfonts.fontManager.ttflist
             if font.name in rcParams['font.sans-serif']
-            or _get_data_paths('fonts')[1] in font.fname
+            or _get_data_paths('fonts')[1] == os.path.dirname(font.fname)
         })
     elif family is not None:
         options = (
@@ -3682,10 +3682,12 @@ def show_fonts(*args, family=None, text=None, size=12):
             )
         else:
             family_fonts = rcParams['font.' + family]
-        args.append(sorted({
-            font.name for font in mfonts.fontManager.ttflist
-            if font.name in family_fonts
-        }))
+        args = (
+            *args, *sorted({
+                font.name for font in mfonts.fontManager.ttflist
+                if font.name in family_fonts
+            })
+        )
 
     # Text
     if text is None:
