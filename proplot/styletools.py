@@ -3142,12 +3142,12 @@ def register_fonts():
     fnames_all = {font.fname for font in mfonts.fontManager.ttflist}
     fnames_proplot -= fnames_proplot_ttc
     if not fnames_all >= fnames_proplot:
+        _warn_proplot('Rebuilding font cache.')
         if hasattr(mfonts.fontManager, 'addfont'):
             for fname in fnames_proplot:
                 mfonts.fontManager.addfont(fname)
             mfonts.json_dump(mfonts.fontManager, mfonts._fmcache)
         else:
-            _warn_proplot('Rebuilding font manager.')
             mfonts._rebuild()
 
     # Remove ttc files *after* rebuild
