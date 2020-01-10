@@ -21,7 +21,7 @@ import numpy as np
 import numpy.ma as ma
 import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
-from .utils import _warn_proplot, _notNone, _timer
+from .cbook import _notNone, _timer, _warn_proplot
 from .external import hsluv
 try:  # use this for debugging instead of print()!
     from icecream import ic
@@ -3047,16 +3047,25 @@ def register_colors(nmax=np.inf):
         for file in paths:
             cat, _ = os.path.splitext(os.path.basename(file))
             with open(file, 'r') as f:
-                pairs = [
-                    tuple(item.strip() for item in line.split(':'))
-                    for line in f.readlines()
-                    if line.strip() and line.strip()[0] != '#'
-                ]
-            if not all(len(pair) == 2 for pair in pairs):
-                raise RuntimeError(
-                    f'Invalid color names file {file!r}. '
-                    f'Every line must be formatted as "name: color".'
+                cnt = 0
+                hex = re.compile(
+                    r'\A#(?:[0-9a-fA-F]{3}){1,2}\Z'  # ?: prevents capture
                 )
+                pairs = []
+                for line in f.readlines():
+                    cnt += 1
+                    stripped = line.strip()
+                    if not stripped or stripped[0] == '#':
+                        continue
+                    pair = tuple(item.strip() for item in line.split(':'))
+                    if len(pair) != 2 or not hex.match(pair[1]):
+                        _warn_proplot(
+                            f'Illegal line #{cnt} in file {file!r}:\n'
+                            f'{line!r}\n'
+                            f'Lines must be formatted as "name: hexcolor".'
+                        )
+                        continue
+                    pairs.append(pair)
 
             # Categories for which we add *all* colors
             if cat == 'opencolor' or i == 1:
