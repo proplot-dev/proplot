@@ -3205,7 +3205,7 @@ def _draw_bars(names, *, source, unknown='User', length=4.0, width=0.2):
                 iax += 1
                 ax.set_visible(False)
                 ax = axs[iax]
-            ax.colorbar(
+            ax.colorbar(  # TODO: support this in public API
                 mcm.cmap_d[name], loc='_fill',
                 orientation='horizontal', locator='null', linewidth=0
             )
