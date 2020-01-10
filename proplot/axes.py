@@ -978,6 +978,15 @@ optional
             self.add_child_axes(ax)
 
             # Location
+            # NOTE: May change loc='_fill' to 'fill' so users can manually
+            # fill axes but maintain proplot colorbar() features. For now
+            # this is just used internally by show_cmaps() and show_cycles()
+            if side is None:  # manual
+                orientation = kwargs.pop('orientation', None)
+                if orientation == 'vertical':
+                    side = 'left'
+                else:
+                    side = 'bottom'
             if side in ('bottom', 'top'):
                 outside, inside = 'bottom', 'top'
                 if side == 'top':
@@ -992,13 +1001,21 @@ optional
                 orientation = 'vertical'
 
             # Keyword args and add as child axes
-            orient = kwargs.get('orientation', None)
-            if orient is not None and orient != orientation:
-                _warn_proplot(f'Overriding input orientation={orient!r}.')
-            ticklocation = kwargs.pop('tickloc', None) or ticklocation
-            ticklocation = kwargs.pop('ticklocation', None) or ticklocation
-            kwargs.update({'orientation': orientation,
-                           'ticklocation': ticklocation})
+            orientation_user = kwargs.get('orientation', None)
+            if orientation_user and orientation_user != orientation:
+                _warn_proplot(
+                    f'Overriding input orientation={orientation_user!r}.'
+                )
+            ticklocation = _notNone(
+                kwargs.pop('ticklocation', None),
+                kwargs.pop('tickloc', None),
+                ticklocation,
+                names=('ticklocation', 'tickloc')
+            )
+            kwargs.update({
+                'orientation': orientation,
+                'ticklocation': ticklocation
+            })
 
         # Inset colorbar
         else:
