@@ -3194,8 +3194,6 @@ def _draw_bars(names, *, source, unknown='User', length=4.0, width=0.2):
     )
     iax = -1
     nheads = nbars = 0  # for deciding which axes to plot in
-    a = np.linspace(0, 1, 257).reshape(1, -1)
-    a = np.vstack((a, a))
     for cat, names in cmapdict.items():
         nheads += 1
         for imap, name in enumerate(names):
@@ -3207,18 +3205,16 @@ def _draw_bars(names, *, source, unknown='User', length=4.0, width=0.2):
                 iax += 1
                 ax.set_visible(False)
                 ax = axs[iax]
-            cmap = mcm.cmap_d[name]
-            ax.imshow(
-                a, cmap=name, origin='lower', aspect='auto',
-                levels=cmap.N
+            ax.colorbar(
+                mcm.cmap_d[name], loc='_fill',
+                orientation='horizontal', locator='null', linewidth=0
             )
-            ax.format(
-                ylabel=name,
-                ylabel_kw={'rotation': 0, 'ha': 'right', 'va': 'center'},
-                xticks='none', yticks='none',  # no ticks
-                xloc='neither', yloc='neither',  # no spines
-                title=(cat if imap == 0 else None)
+            ax.text(
+                0 - (rcParams['axes.labelpad'] / 72) / length, 0.45, name,
+                ha='right', va='center', transform='axes',
             )
+            if imap == 0:
+                ax.set_title(cat)
         nbars += len(names)
 
 
