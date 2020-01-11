@@ -1397,8 +1397,9 @@ optional
     @_cmap_changer
     def parametric(
         self, *args, values=None,
-        cmap=None, norm=None,
-        interp=0, **kwargs
+        cmap=None, norm=None, interp=0,
+        scalex=True, scaley=True,
+        **kwargs
     ):
         """
         Draw a line whose color changes as a function of the parametric
@@ -1422,6 +1423,15 @@ optional
             between the `values` coordinates. The number corresponds to the
             number of additional color levels between the line joints
             and the halfway points between line joints.
+        scalex, scaley : bool, optional
+            These parameters determine if the view limits are adapted to
+            the data limits. The values are passed on to
+            `~matplotlib.axes.Axes.autoscale_view`.
+
+        Other parameters
+        ----------------
+        **kwargs
+            Valid `~matplotlib.collections.LineCollection` properties.
 
         Returns
         -------
@@ -1500,10 +1510,9 @@ optional
             if key not in ('color',)
         })
 
-        # Add collection, with some custom attributes
+        # Add collection with some custom attributes
         self.add_collection(hs)
-        if self.get_autoscale_on() and self.ignore_existing_data_limits:
-            self.autoscale_view()  # data limits not updated otherwise
+        self.autoscale_view(scalex=scalex, scaley=scaley)
         hs.values = values
         hs.levels = levels  # needed for other functions some
         return hs
