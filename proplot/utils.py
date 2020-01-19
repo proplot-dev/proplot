@@ -9,13 +9,15 @@ import warnings
 import numpy as np
 from matplotlib import rcParams
 from numbers import Number, Integral
-try:
+try:  # use this for debugging instead of print()!
     from icecream import ic
 except ImportError:  # graceful fallback if IceCream isn't installed
     ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
+
 __all__ = ['arange', 'edges', 'edges2d', 'units']
-NUMBER = re.compile('^([-+]?[0-9._]+([eE][-+]?[0-9_]+)?)(.*)$')
+
 BENCHMARK = False  # change this to turn on benchmarking
+NUMBER = re.compile('^([-+]?[0-9._]+([eE][-+]?[0-9_]+)?)(.*)$')
 
 
 class _benchmark(object):

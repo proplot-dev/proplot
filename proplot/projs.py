@@ -5,6 +5,10 @@ for generating `~mpl_toolkits.basemap.Basemap` and cartopy
 `~cartopy.crs.Projection` classes.
 """
 from .utils import _warn_proplot
+try:  # use this for debugging instead of print()!
+    from icecream import ic
+except ImportError:  # graceful fallback if IceCream isn't installed
+    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
 try:
     from mpl_toolkits.basemap import Basemap
 except ImportError:

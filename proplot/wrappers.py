@@ -21,10 +21,15 @@ import matplotlib.artist as martist
 import matplotlib.legend as mlegend
 from numbers import Number
 from .rctools import rc
+try:  # use this for debugging instead of print()!
+    from icecream import ic
+except ImportError:  # graceful fallback if IceCream isn't installed
+    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
 try:
     from cartopy.crs import PlateCarree
 except ModuleNotFoundError:
     PlateCarree = object
+
 __all__ = [
     'add_errorbars', 'bar_wrapper', 'barh_wrapper', 'boxplot_wrapper',
     'default_crs', 'default_latlon', 'default_transform',
@@ -2583,7 +2588,7 @@ or colormap-spec
         4. A `~matplotlib.colors.Colormap` instance. In this case, a colorbar
            will be drawn using this colormap and with levels determined by
            `values`. If `values` is ``None``, it is set to
-           ``np.linspace(0, 1, cmap._N)``.
+           ``np.linspace(0, 1, cmap.N)``.
 
     values : list of float, optional
         Ignored if `mappable` is a mappable object. This maps each color or
@@ -2744,8 +2749,7 @@ or colormap-spec
         except (TypeError, KeyError):
             pass
         # List of handles
-        if (hasattr(obj, 'get_color') or hasattr(
-                obj, 'get_facecolor')):  # simplest approach
+        if hasattr(obj, 'get_color') or hasattr(obj, 'get_facecolor'):
             # Make colormap
             colors = []
             for obj in mappable:
@@ -2771,21 +2775,20 @@ or colormap-spec
             tick_all = True
         # Any colormap spec, including a list of colors, colormap name, or
         # colormap instance
-        else:
-            try:
-                cmap = styletools.Colormap(mappable, listmode='listed')
-            except Exception:
-                raise ValueError(
-                    'Input mappable must be a matplotlib artist, '
-                    'list of objects, list of colors, or colormap. '
-                    f'Got {mappable!r}.'
-                )
+        elif isinstance(mappable, mcolors.Colormap):
+            cmap = mappable
             if values is None:
                 if np.iterable(mappable) and not isinstance(
                         mappable, str):  # e.g. list of colors
                     values = np.linspace(0, 1, len(mappable))
                 else:
                     values = np.linspace(0, 1, cmap.N)
+        else:
+            raise ValueError(
+                'Input mappable must be a matplotlib artist, '
+                'list of objects, list of colors, or colormap. '
+                f'Got {mappable!r}.'
+            )
 
     # Build new ad hoc mappable object from handles
     # NOTE: Need to use wrapped contourf but this might be native matplotlib

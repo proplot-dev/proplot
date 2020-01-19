@@ -17,6 +17,11 @@ import matplotlib.projections.polar as mpolar
 import matplotlib.ticker as mticker
 import matplotlib.scale as mscale
 import matplotlib.transforms as mtransforms
+try:  # use this for debugging instead of print()!
+    from icecream import ic
+except ImportError:  # graceful fallback if IceCream isn't installed
+    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
+
 __all__ = [
     'formatters', 'locators', 'scales',
     'Formatter', 'Locator', 'Scale',
@@ -141,7 +146,7 @@ def Locator(locator, *args, **kwargs):
 
 
 def Formatter(formatter, *args, date=False, index=False, **kwargs):
-    r"""
+    """
     Return a `~matplotlib.ticker.Formatter` instance. This function is used to
     interpret the `xformatter`, `xformatter_kw`, `yformatter`, and
     `yformatter_kw` arguments when passed to
@@ -1091,12 +1096,12 @@ class InvertedExpTransform(mtransforms.Transform):
 
 
 class MercatorLatitudeScale(_ScaleBase, mscale.ScaleBase):
-    r"""
+    """
     Axis scale that transforms coordinates as with latitude in the `Mercator \
 projection <http://en.wikipedia.org/wiki/Mercator_projection>`__.
     Adapted from `this matplotlib example \
 <https://matplotlib.org/examples/api/custom_scale_example.html>`__.
-    The scale function is as follows:
+    """r""""The scale function is as follows:
 
     .. math::
 

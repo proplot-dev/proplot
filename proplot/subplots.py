@@ -17,8 +17,13 @@ import matplotlib.gridspec as mgridspec
 import matplotlib.pyplot as plt
 from numbers import Integral
 from .rctools import rc
-from .utils import _warn_proplot, _notNone, _counter, _setstate, units
+from .utils import _warn_proplot, _notNone, _counter, _setstate, units  # noqa
 from . import projs, axes
+try:  # use this for debugging instead of print()!
+    from icecream import ic
+except ImportError:  # graceful fallback if IceCream isn't installed
+    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
+
 __all__ = [
     'subplot_grid', 'close', 'show', 'subplots',
     'EdgeStack', 'Figure', 'GeometrySolver',
@@ -1077,7 +1082,7 @@ class GeometrySolver(object):
             aspect = 1.0 / ax.get_data_ratio_log()
         else:
             pass  # matplotlib issues warning, forces aspect == 'auto'
-        if _approx_equal(aspect, self.aspect):
+        if np.isclose(aspect, self.aspect):
             return
         self.aspect = aspect
         self._update_gridspec()
@@ -2216,14 +2221,15 @@ class Figure(mfigure.Figure):
     def set_size_inches(self, w, h=None, forward=True, auto=False):
         # Set the figure size and, if this is being called manually or from
         # an interactive backend, override the geometry tracker so users can
-        # use interactive backends. See #76. Undocumented because this is
-        # only relevant internally.
-        # NOTE: Bitmap renderers use int(Figure.bbox.[width|height]) which
-        # rounds to whole pixels. So when renderer resizes the figure
-        # internally there may be roundoff error! Always compare to *both*
-        # Figure.get_size_inches() and the truncated bbox dimensions times dpi.
-        # Comparison is critical because most renderers call set_size_inches()
-        # before any resizing interaction!
+        # use interactive backends. If figure size is unchaged we *do not*
+        # update the geometry tracker (figure backends often do this when
+        # the figure is being initialized). See #76. Undocumented because this
+        # is only relevant internally.
+        # NOTE: Bitmap renderers calculate the figure size in inches from
+        # int(Figure.bbox.[width|height]) which rounds to whole pixels. When
+        # renderer calls set_size_inches, size may be effectively the same, but
+        # slightly changed due to roundoff error! Therefore, always compare to
+        # *both* get_size_inches() and the truncated bbox dimensions times dpi.
         if h is None:
             width, height = w
         else:
@@ -2239,9 +2245,11 @@ class Figure(mfigure.Figure):
             with self._context_resizing():
                 super().set_size_inches(width, height, forward=forward)
         else:
-            if (  # can have internal resizing not associated with any draws
-                (width not in (width_true, width_trunc)
-                 or height not in (height_true, height_trunc))
+            if (  # internal resizing not associated with any draws
+                (
+                    width not in (width_true, width_trunc)
+                    or height not in (height_true, height_trunc)
+                )
                 and not self._is_resizing
                 and not self.canvas._is_idle_drawing  # standard
                 and not getattr(self.canvas, '_draw_pending', None)  # pyqt5

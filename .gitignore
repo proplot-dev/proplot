@@ -3,6 +3,9 @@
 .vimsession
 .*.sw[a-z]
 
+# Ignore auto-generated files
+proplotrc
+
 # PyPi stuff
 build
 dist
