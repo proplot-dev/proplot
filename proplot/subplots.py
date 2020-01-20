@@ -9,10 +9,11 @@ import os
 import numpy as np
 import functools
 import inspect
-import matplotlib.pyplot as plt
+from matplotlib import docstring
 import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
 import matplotlib.gridspec as mgridspec
+import matplotlib.pyplot as plt
 from numbers import Integral
 from .rctools import rc
 from .utils import _warn_proplot, _notNone, _counter, _setstate, units  # noqa
@@ -53,6 +54,127 @@ JOURNAL_SPECS = {
     'pnas2': '11.4cm',
     'pnas3': '17.8cm',
 }
+
+# Documentation
+_figure_doc = """
+figsize : length-2 tuple, optional
+    Tuple specifying the figure ``(width, height)``.
+width, height : float or str, optional
+    The figure width and height. Units are interpreted by
+    `~proplot.utils.units`.
+axwidth, axheight : float or str, optional
+    The width and height of the `ref` axes. Units are interpreted by
+    `~proplot.utils.units`. Default is :rc:`subplots.axwidth`.
+    These arguments are convenient where you don't care about the figure
+    dimensions and just want your axes to have enough "room".
+aspect : float or length-2 list of floats, optional
+    The aspect ratio of the `ref` axes as a ``width/height`` number or a
+    ``(width, height)`` tuple. If you do not provide the `hratios` or
+    `wratios` keyword args, this will control the aspect ratio of *all* axes.
+ref : int, optional
+    The reference axes number. The `axwidth`, `axheight`, and `aspect` keyword
+    args are applied to this axes and conserved during tight layout adjustment.
+tight : bool, optional
+    Toggles whether the gridspec spaces `left`, `right`, `bottom`,
+    `top`, `wspace`, and `hspace` are determined automatically to
+    make room for labels and plotted content. Default is :rc:`tight`.
+pad, axpad, panelpad : float or str, optional
+    Padding around the edge of the figure, between subplots in adjacent
+    rows and columns, and between subplots and axes panels or between
+    "stacked" panels. Units are interpreted by `~proplot.utils.units`.
+    Defaults are :rc:`subplots.pad`, :rc:`subplots.axpad`, and
+    :rc:`subplots.panelpad`.
+left, right, top, bottom, wspace, hspace : float or str, optional
+    The spacing parameters passed to `GridSpec`. If `tight` is ``True``
+    and you pass any of these, the tight layout algorithm will be
+    ignored for that particular spacing. See the following examples.
+
+    * With ``plot.figure(left='3em')``, the left margin is
+      fixed but the other margins are variable.
+    * With ``plot.subplots(ncols=3, wspace=0)``, the space between
+      columns is fixed at zero, but between rows is variable.
+    * With ``plot.subplots(ncols=3, wspace=(0, None))``, the space
+      between the first and second columns is fixed, but the space
+      between the second and third columns is variable.
+sharex, sharey, share : {3, 2, 1, 0}, optional
+    The "axis sharing level" for the *x* axis, *y* axis, or both axes.
+    Default is ``3``. This can considerably reduce redundancy in your
+    figure. Options are as follows.
+
+    0. No axis sharing. Also sets the default `spanx` and `spany`
+       values to ``False``.
+    1. Only draw *axis label* on the leftmost column (*y*) or
+       bottommost row (*x*) of subplots. Axis tick labels
+       still appear on every subplot.
+    2. As in 1, but forces the axis limits to be identical. Axis
+       tick labels still appear on every subplot.
+    3. As in 2, but only show the *axis tick labels* on the
+       leftmost column (*y*) or bottommost row (*x*) of subplots.
+
+spanx, spany, span : bool or {0, 1}, optional
+    Toggles "spanning" axis labels for the *x* axis, *y* axis, or both
+    axes.  Default is ``False`` if `sharex`, `sharey`, or `share` are
+    ``0``, ``True`` otherwise. When ``True``, a single, centered axis
+    label is used for all axes with bottom and left edges in the same
+    row or column.  This can considerably redundancy in your figure.
+
+    "Spanning" labels integrate with "shared" axes. For example,
+    for a 3-row, 3-column figure, with ``sharey > 1`` and ``spany=1``,
+    your figure will have 1 ylabel instead of 9.
+alignx, aligny, align : bool or {0, 1}, optional
+    Default is ``False``. Whether to `align axis labels \
+<https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/align_labels_demo.html>`__
+    for the *x* axis, *y* axis, or both axes. Only has an effect when
+    `spanx`, `spany`, or `span` are ``False``.
+includepanels : bool, optional
+    Whether to include panels when centering *x* axis labels,
+    *y* axis labels, and figure "super titles" along the edge of the
+    subplot grid. Default is ``False``.
+autoformat : bool, optional
+    Whether to automatically configure *x* axis labels, *y* axis
+    labels, axis formatters, axes titles, colorbar labels, and legend
+    labels when a `~pandas.Series`, `~pandas.DataFrame` or
+    `~xarray.DataArray` with relevant metadata is passed to a plotting
+    command.
+fallback_to_cm : bool, optional
+    Whether to replace unavailable glyphs with a glyph from Computer
+    Modern or the "¤" dummy character. See `mathtext \
+<https://matplotlib.org/3.1.1/tutorials/text/mathtext.html#custom-fonts>`__
+    for details.
+journal : str, optional
+    String name corresponding to an academic journal standard that is used
+    to control the figure width (and height, if specified). See below table.
+
+    ===========  ====================  ==========================================================================================================================================================
+    Key          Size description      Organization
+    ===========  ====================  ==========================================================================================================================================================
+    ``'aaas1'``  1-column              `American Association for the Advancement of Science <https://www.sciencemag.org/authors/instructions-preparing-initial-manuscript>`__ (e.g. *Science*)
+    ``'aaas2'``  2-column              ”
+    ``'agu1'``   1-column              `American Geophysical Union <https://publications.agu.org/author-resource-center/figures-faq/>`__
+    ``'agu2'``   2-column              ”
+    ``'agu3'``   full height 1-column  ”
+    ``'agu4'``   full height 2-column  ”
+    ``'ams1'``   1-column              `American Meteorological Society <https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/>`__
+    ``'ams2'``   small 2-column        ”
+    ``'ams3'``   medium 2-column       ”
+    ``'ams4'``   full 2-column         ”
+    ``'nat1'``   1-column              `Nature Research <https://www.nature.com/nature/for-authors/formatting-guide>`__
+    ``'nat2'``   2-column              ”
+    ``'pnas1'``  1-column              `Proceedings of the National Academy of Sciences <http://www.pnas.org/page/authors/submission>`__
+    ``'pnas2'``  2-column              ”
+    ``'pnas3'``  landscape page        ”
+    ===========  ====================  ==========================================================================================================================================================
+
+**kwargs
+    Passed to `matplotlib.figure.Figure`.
+"""  # noqa
+docstring.interpd.update(figure_doc=_figure_doc)
+_gridspec_doc = """
+Apply the `GridSpec` to the figure or generate a new `GridSpec`
+instance with the positional and keyword arguments. For example,
+``fig.set_gridspec(GridSpec(1, 1, left=0.1))`` and
+``fig.set_gridspec(1, 1, left=0.1)`` are both valid.
+"""  # hunk for identically named methods
 
 
 def close(*args, **kwargs):
@@ -807,343 +929,42 @@ class _hidelabels(object):
         for label in self._labels:
             label.set_visible(True)
 
-
-class Figure(mfigure.Figure):
-    """The `~matplotlib.figure.Figure` class returned by `subplots`. At
-    draw-time, an improved tight layout algorithm is employed, and
-    the space around the figure edge, between subplots, and between
-    panels is changed to accommodate subplot content. Figure dimensions
-    may be automatically scaled to preserve subplot aspect ratios."""
-    def __init__(
-        self, tight=None,
-        ref=1, pad=None, axpad=None, panelpad=None, includepanels=False,
-        span=None, spanx=None, spany=None,
-        align=None, alignx=None, aligny=None,
-        share=None, sharex=None, sharey=None,
-        autoformat=True, fallback_to_cm=None,
-        gridspec_kw=None, subplots_kw=None, subplots_orig_kw=None,
-        **kwargs
-    ):
+class GeometrySolver(object):
+    """
+    ProPlot's answer to the matplotlib `~matplotlib.figure.SubplotParams`
+    class. When `tight` is ``False``, this object is filled with sensible
+    default spacing params dependent on the axis sharing settings. When
+    `tight` is ``True``, this object is filled with spaces empirically
+    determined with the tight layout algorithm.
+    """
+    def __init__(self, figure):
         """
         Parameters
         ----------
-        tight : bool, optional
-            Toggles automatic tight layout adjustments. Default is :rc:`tight`.
-            If you manually specified a spacing in the call to `subplots`, it
-            will be used to override the tight layout spacing. For example,
-            with ``left=0.1``, the left margin is set to 0.1 inches wide,
-            while the remaining margin widths are calculated automatically.
-        ref : int, optional
-            The reference subplot number. See `subplots` for details. Default
-            is ``1``.
-        pad : float or str, optional
-            Padding around edge of figure. Units are interpreted by
-            `~proplot.utils.units`. Default is :rc:`subplots.pad`.
-        axpad : float or str, optional
-            Padding between subplots in adjacent columns and rows. Units are
-            interpreted by `~proplot.utils.units`. Default is
-            :rc:`subplots.axpad`.
-        panelpad : float or str, optional
-            Padding between subplots and axes panels, and between "stacked"
-            panels. Units are interpreted by `~proplot.utils.units`. Default is
-            :rc:`subplots.panelpad`.
-        includepanels : bool, optional
-            Whether to include panels when centering *x* axis labels,
-            *y* axis labels, and figure "super titles" along the edge of the
-            subplot grid. Default is ``False``.
-        sharex, sharey, share : {3, 2, 1, 0}, optional
-            The "axis sharing level" for the *x* axis, *y* axis, or both axes.
-            Default is ``3``. This can considerably reduce redundancy in your
-            figure. Options are as follows.
-
-            0. No axis sharing. Also sets the default `spanx` and `spany`
-               values to ``False``.
-            1. Only draw *axis label* on the leftmost column (*y*) or
-               bottommost row (*x*) of subplots. Axis tick labels
-               still appear on every subplot.
-            2. As in 1, but forces the axis limits to be identical. Axis
-               tick labels still appear on every subplot.
-            3. As in 2, but only show the *axis tick labels* on the
-               leftmost column (*y*) or bottommost row (*x*) of subplots.
-
-        spanx, spany, span : bool or {0, 1}, optional
-            Toggles "spanning" axis labels for the *x* axis, *y* axis, or both
-            axes.  Default is ``False`` if `sharex`, `sharey`, or `share` are
-            ``0``, ``True`` otherwise. When ``True``, a single, centered axis
-            label is used for all axes with bottom and left edges in the same
-            row or column.  This can considerably redundancy in your figure.
-
-            "Spanning" labels integrate with "shared" axes. For example,
-            for a 3-row, 3-column figure, with ``sharey > 1`` and ``spany=1``,
-            your figure will have 1 ylabel instead of 9.
-        alignx, aligny, align : bool or {0, 1}, optional
-            Default is ``False``. Whether to `align axis labels \
-<https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/align_labels_demo.html>`__
-            for the *x* axis, *y* axis, or both axes. Only has an effect when
-            `spanx`, `spany`, or `span` are ``False``.
-        autoformat : bool, optional
-            Whether to automatically configure *x* axis labels, *y* axis
-            labels, axis formatters, axes titles, colorbar labels, and legend
-            labels when a `~pandas.Series`, `~pandas.DataFrame` or
-            `~xarray.DataArray` with relevant metadata is passed to a plotting
-            command.
-        fallback_to_cm : bool, optional
-            Whether to replace unavailable glyphs with a glyph from Computer
-            Modern or the "¤" dummy character. See `mathtext \
-<https://matplotlib.org/3.1.1/tutorials/text/mathtext.html#custom-fonts>`__
-            for details.
-        gridspec_kw, subplots_kw, subplots_orig_kw
-            Keywords used for initializing the main gridspec, for initializing
-            the figure, and original spacing keyword args used for initializing
-            the figure that override tight layout spacing.
-
-        Other parameters
-        ----------------
-        **kwargs
-            Passed to `matplotlib.figure.Figure`.
-
-        See also
-        --------
-        `~matplotlib.figure.Figure`
-        """  # noqa
-        tight_layout = kwargs.pop('tight_layout', None)
-        constrained_layout = kwargs.pop('constrained_layout', None)
-        if tight_layout or constrained_layout:
-            _warn_proplot(
-                f'Ignoring tight_layout={tight_layout} and '
-                f'contrained_layout={constrained_layout}. ProPlot uses its '
-                'own tight layout algorithm, activated by default or with '
-                'tight=True.'
-            )
-
-        # Initialize first, because need to provide fully initialized figure
-        # as argument to gridspec, because matplotlib tight_layout does that
-        self._authorized_add_subplot = False
-        self._is_preprocessing = False
-        self._is_resizing = False
-        super().__init__(**kwargs)
-
-        # Axes sharing and spanning settings
-        sharex = _notNone(sharex, share, rc['share'])
-        sharey = _notNone(sharey, share, rc['share'])
-        spanx = _notNone(spanx, span, 0 if sharex == 0 else None, rc['span'])
-        spany = _notNone(spany, span, 0 if sharey == 0 else None, rc['span'])
-        if spanx and (alignx or align):
-            _warn_proplot(f'"alignx" has no effect when spanx=True.')
-        if spany and (aligny or align):
-            _warn_proplot(f'"aligny" has no effect when spany=True.')
-        alignx = _notNone(alignx, align, rc['align'])
-        aligny = _notNone(aligny, align, rc['align'])
-        self.set_alignx(alignx)
-        self.set_aligny(aligny)
-        self.set_sharex(sharex)
-        self.set_sharey(sharey)
-        self.set_spanx(spanx)
-        self.set_spany(spany)
-
-        # Various other attributes
-        gridspec_kw = gridspec_kw or {}
-        gridspec = GridSpec(self, **gridspec_kw)
-        nrows, ncols = gridspec.get_active_geometry()
-        self._pad = units(_notNone(pad, rc['subplots.pad']))
-        self._axpad = units(_notNone(axpad, rc['subplots.axpad']))
-        self._panelpad = units(_notNone(panelpad, rc['subplots.panelpad']))
-        self._auto_format = autoformat
-        self._auto_tight = _notNone(tight, rc['tight'])
-        self._include_panels = includepanels
-        self._fallback_to_cm = fallback_to_cm
-        self._ref_num = ref
-        self._axes_main = []
-        self._subplots_orig_kw = subplots_orig_kw
-        self._subplots_kw = subplots_kw
-        self._bpanels = []
-        self._tpanels = []
-        self._lpanels = []
-        self._rpanels = []
-        self._barray = np.empty((0, ncols), dtype=bool)
-        self._tarray = np.empty((0, ncols), dtype=bool)
-        self._larray = np.empty((0, nrows), dtype=bool)
-        self._rarray = np.empty((0, nrows), dtype=bool)
-        self._gridspec_main = gridspec
-        self.suptitle('')  # add _suptitle attribute
-
-    @_counter
-    def _add_axes_panel(self, ax, side, filled=False, **kwargs):
-        """Hidden method that powers `~proplot.axes.panel_axes`."""
-        # Interpret args
-        # NOTE: Axis sharing not implemented for figure panels, 99% of the
-        # time this is just used as construct for adding global colorbars and
-        # legends, really not worth implementing axis sharing
-        s = side[0]
-        if s not in 'lrbt':
-            raise ValueError(f'Invalid side {side!r}.')
-        ax = ax._panel_parent or ax  # redirect to main axes
-        side = SIDE_TRANSLATE[s]
-        share, width, space, space_orig = _get_panelargs(
-            s, filled=filled, figure=False, **kwargs
-        )
-
-        # Get gridspec and subplotspec indices
-        subplotspec = ax.get_subplotspec()
-        *_, row1, row2, col1, col2 = subplotspec.get_active_rows_columns()
-        pgrid = getattr(ax, '_' + s + 'panels')
-        offset = (len(pgrid) * bool(pgrid)) + 1
-        if s in 'lr':
-            iratio = (col1 - offset if s == 'l' else col2 + offset)
-            idx1 = slice(row1, row2 + 1)
-            idx2 = iratio
-        else:
-            iratio = (row1 - offset if s == 't' else row2 + offset)
-            idx1 = iratio
-            idx2 = slice(col1, col2 + 1)
-        gridspec_prev = self._gridspec_main
-        gridspec = self._insert_row_column(
-            side, iratio, width, space, space_orig, figure=False
-        )
-        if gridspec is not gridspec_prev:
-            if s == 't':
-                idx1 += 1
-            elif s == 'l':
-                idx2 += 1
-
-        # Draw and setup panel
-        with self._authorize_add_subplot():
-            pax = self.add_subplot(
-                gridspec[idx1, idx2],
-                projection='xy',
-            )
-        getattr(ax, '_' + s + 'panels').append(pax)
-        pax._panel_side = side
-        pax._panel_share = share
-        pax._panel_parent = ax
-
-        # Axis sharing and axis setup only for non-legend or colorbar axes
-        if not filled:
-            ax._share_setup()
-            axis = (pax.yaxis if side in ('left', 'right') else pax.xaxis)
-            # sets tick and tick label positions intelligently
-            getattr(axis, 'tick_' + side)()
-            axis.set_label_position(side)
-
-        return pax
-
-    def _add_figure_panel(
-        self, side, span=None, row=None, col=None, rows=None, cols=None,
-        **kwargs
-    ):
-        """Add a figure panel. Also modifies the panel attribute stored
-        on the figure to include these panels."""
-        # Interpret args and enforce sensible keyword args
-        s = side[0]
-        if s not in 'lrbt':
-            raise ValueError(f'Invalid side {side!r}.')
-        side = SIDE_TRANSLATE[s]
-        _, width, space, space_orig = _get_panelargs(
-            s, filled=True, figure=True, **kwargs
-        )
-        if s in 'lr':
-            for key, value in (('col', col), ('cols', cols)):
-                if value is not None:
-                    raise ValueError(
-                        f'Invalid keyword arg {key!r} for figure panel '
-                        f'on side {side!r}.'
-                    )
-            span = _notNone(span, row, rows, None,
-                            names=('span', 'row', 'rows'))
-        else:
-            for key, value in (('row', row), ('rows', rows)):
-                if value is not None:
-                    raise ValueError(
-                        f'Invalid keyword arg {key!r} for figure panel '
-                        f'on side {side!r}.'
-                    )
-            span = _notNone(span, col, cols, None,
-                            names=('span', 'col', 'cols'))
-
-        # Get props
-        subplots_kw = self._subplots_kw
-        if s in 'lr':
-            panels, nacross = subplots_kw['hpanels'], subplots_kw['ncols']
-        else:
-            panels, nacross = subplots_kw['wpanels'], subplots_kw['nrows']
-        array = getattr(self, '_' + s + 'array')
-        npanels, nalong = array.shape
-
-        # Check span array
-        span = _notNone(span, (1, nalong))
-        if not np.iterable(span) or len(span) == 1:
-            span = 2 * np.atleast_1d(span).tolist()
-        if len(span) != 2:
-            raise ValueError(f'Invalid span {span!r}.')
-        if span[0] < 1 or span[1] > nalong:
+        figure : `Figure`
+            The figure instance associated with this geometry configuration.
+        """
+        if not isinstance(figure, Figure):
             raise ValueError(
-                f'Invalid coordinates in span={span!r}. Coordinates '
-                f'must satisfy 1 <= c <= {nalong}.'
-            )
-        start, stop = span[0] - 1, span[1]  # zero-indexed
-
-        # See if there is room for panel in current figure panels
-        # The 'array' is an array of boolean values, where each row corresponds
-        # to another figure panel, moving toward the outside, and boolean
-        # True indicates the slot has been filled
-        iratio = (-1 if s in 'lt' else nacross)  # default vals
-        for i in range(npanels):
-            if not any(array[i, start:stop]):
-                array[i, start:stop] = True
-                if s in 'lt':  # descending array moves us closer to 0
-                    # npanels=1, i=0 --> iratio=0
-                    # npanels=2, i=0 --> iratio=1
-                    # npanels=2, i=1 --> iratio=0
-                    iratio = npanels - 1 - i
-                else:  # descending array moves us closer to nacross-1
-                    # npanels=1, i=0 --> iratio=nacross-1
-                    # npanels=2, i=0 --> iratio=nacross-2
-                    # npanels=2, i=1 --> iratio=nacross-1
-                    iratio = nacross - (npanels - i)
-                break
-        if iratio in (-1, nacross):  # add to array
-            iarray = np.zeros((1, nalong), dtype=bool)
-            iarray[0, start:stop] = True
-            array = np.concatenate((array, iarray), axis=0)
-            setattr(self, '_' + s + 'array', array)
-
-        # Get gridspec and subplotspec indices
-        idxs, = np.where(np.array(panels) == '')
-        if len(idxs) != nalong:
-            raise RuntimeError
-        if s in 'lr':
-            idx1 = slice(idxs[start], idxs[stop - 1] + 1)
-            idx2 = max(iratio, 0)
-        else:
-            idx1 = max(iratio, 0)
-            idx2 = slice(idxs[start], idxs[stop - 1] + 1)
-        gridspec = self._insert_row_column(
-            side, iratio, width, space, space_orig, figure=True)
-
-        # Draw and setup panel
-        with self._authorize_add_subplot():
-            pax = self.add_subplot(gridspec[idx1, idx2],
-                                   projection='xy')
-        getattr(self, '_' + s + 'panels').append(pax)
-        pax._panel_side = side
-        pax._panel_share = False
-        pax._panel_parent = None
-        return pax
+                f'GeometrySolver() accepts only proplot.subplots.Figure '
+                f'instances, you passed {type(figure)}.')
+        self._figure = figure
+        self._isinit = False
 
     def _adjust_aspect(self):
         """Adjust the average aspect ratio used for gridspec calculations.
         This fixes grids with identically fixed aspect ratios, e.g.
         identically zoomed-in cartopy projections and imshow images."""
         # Get aspect ratio
-        if not self._axes_main:
+        figure = self.figure
+        ax = figure.get_ref_axes()
+        if not ax:
             return
-        ax = self._axes_main[self._ref_num - 1]
         mode = ax.get_aspect()
         if mode != 'equal':
             return
 
         # Compare to current aspect
-        subplots_kw = self._subplots_kw
         xscale, yscale = ax.get_xscale(), ax.get_yscale()
         if xscale == 'linear' and yscale == 'linear':
             aspect = 1.0 / ax.get_data_ratio()
@@ -1151,72 +972,50 @@ class Figure(mfigure.Figure):
             aspect = 1.0 / ax.get_data_ratio_log()
         else:
             pass  # matplotlib issues warning, forces aspect == 'auto'
-        if np.isclose(aspect, subplots_kw['aspect']):
+        if np.isclose(aspect, self.aspect):
             return
-
-        # Apply new aspect
-        subplots_kw['aspect'] = aspect
-        figsize, gridspec_kw, _ = _subplots_geometry(**subplots_kw)
-        self.set_size_inches(figsize, auto=True)
-        self._gridspec_main.update(**gridspec_kw)
+        self.aspect = aspect
+        self.solve()
 
     def _adjust_tight_layout(self, renderer, resize=True):
         """Apply tight layout scaling that permits flexible figure
         dimensions and preserves panel widths and subplot aspect ratios."""
         # Initial stuff
         axs = self._iter_axes()
-        subplots_kw = self._subplots_kw
-        subplots_orig_kw = self._subplots_orig_kw  # tight layout overrides
-        if not axs or not subplots_kw or not subplots_orig_kw:
+        gridspec = self._gridspec
+        if not axs or not gridspec:
             return
 
-        # Temporarily disable spanning labels and get correct
-        # positions for labels and suptitle
+        # Positions for labels and suptitle
         self._align_axislabels(False)
         self._align_labels(renderer)
+        nrows, ncols = gridspec.get_geometry()
 
-        # Tight box *around* figure
-        # Get bounds from old bounding box
-        pad = self._pad
-        obox = self.bbox_inches  # original bbox
+        # Boxes and padding
         bbox = self.get_tightbbox(renderer)
-        left = bbox.xmin
-        bottom = bbox.ymin
-        right = obox.xmax - bbox.xmax
-        top = obox.ymax - bbox.ymax
-
-        # Apply new bounds, permitting user overrides
-        # TODO: Account for bounding box NaNs?
-        for key, offset in zip(
-            ('left', 'right', 'top', 'bottom'),
-            (left, right, top, bottom)
-        ):
-            previous = subplots_orig_kw[key]
-            current = subplots_kw[key]
-            subplots_kw[key] = _notNone(previous, current - offset + pad)
-
-        # Get arrays storing gridspec spacing args
+        bbox_orig = self.bbox_inches  # original bbox
+        pad = self._pad
         axpad = self._axpad
         panelpad = self._panelpad
-        gridspec = self._gridspec_main
-        nrows, ncols = gridspec.get_active_geometry()
-        wspace = subplots_kw['wspace']
-        hspace = subplots_kw['hspace']
-        wspace_orig = subplots_orig_kw['wspace']
-        hspace_orig = subplots_orig_kw['hspace']
+
+        # Tight box *around* figure permitting user overrides
+        left, right, bottom, top, wspace, hspace = self._gridspecpars
+        left = left - bbox.xmin + pad
+        right = right - bbox.ymin + pad
+        bottom = bottom - (bbox_orig.xmax - bbox.xmax) + pad
+        top = top - (bbox_orig.ymax - bbox.ymax) + pad
 
         # Get new subplot spacings, axes panel spacing, figure panel spacing
         spaces = []
-        for (w, x, y, nacross, ispace, ispace_orig) in zip(
-            'wh', 'xy', 'yx', (nrows, ncols),
-            (wspace, hspace), (wspace_orig, hspace_orig),
+        for (w, x, y, nacross, ispace) in zip(
+            'wh', 'xy', 'yx', (nrows, ncols), (wspace, hspace)
         ):
             # Determine which rows and columns correspond to panels
-            panels = subplots_kw[w + 'panels']
+            panels = getattr(self, '_' + w + 'panels')
             jspace = [*ispace]
             ralong = np.array([ax._range_gridspec(x) for ax in axs])
             racross = np.array([ax._range_gridspec(y) for ax in axs])
-            for i, (space, space_orig) in enumerate(zip(ispace, ispace_orig)):
+            for i, space in enumerate(ispace):
                 # Figure out whether this is a normal space, or a
                 # panel stack space/axes panel space
                 pad = axpad
@@ -1269,49 +1068,50 @@ class Figure(mfigure.Figure):
                     jspaces.append((x2 - x1) / self.dpi)
                 if jspaces:
                     space = max(0, space - min(jspaces) + pad)
-                    space = _notNone(space_orig, space)  # user input overwrite
                 jspace[i] = space
             spaces.append(jspace)
 
-        # Update geometry solver kwargs
-        subplots_kw.update({
-            'wspace': spaces[0], 'hspace': spaces[1],
-        })
-        if not resize:
-            width, height = self.get_size_inches()
-            subplots_kw = subplots_kw.copy()
-            subplots_kw.update(width=width, height=height)
-
-        # Apply new spacing
-        figsize, gridspec_kw, _ = _subplots_geometry(**subplots_kw)
-        if resize:
-            self.set_size_inches(figsize, auto=True)
-        self._gridspec_main.update(**gridspec_kw)
+        # Update gridspec params list
+        # NOTE: This is where users can override calculated tight bounds
+        self._fill_gridspecpars(left, right, bottom, top, *spaces)
+        self.solve()
 
     def _align_axislabels(self, b=True):
-        """Align spanning *x* and *y* axis labels in the perpendicular
-        direction and, if `b` is ``True``, the parallel direction."""
-        # TODO: Ensure this is robust to complex panels and shared axes
-        # NOTE: Need to turn off aligned labels before _adjust_tight_layout
-        # call, so cannot put this inside Axes draw
-        tracker = {*()}
-        for ax in self._axes_main:
-            if not isinstance(ax, axes.XYAxes):
-                continue
-            for x, axis in zip('xy', (ax.xaxis, ax.yaxis)):
+        """Align spanning *x* and *y* axis labels, accounting for figure
+        margins and axes and figure panels."""
+        # TODO: Ensure this is robust to complex panels and shared axes.
+        # NOTE: Aligned labels have to be turned off before
+        # _adjust_tight_layout call, so this cannot be inside Axes draw
+        tracker = set()
+        grpx = getattr(self, '_align_xlabel_grp', None)
+        grpy = getattr(self, '_align_ylabel_grp', None)
+        spanx, spany = self._spanx, self._spany
+        alignx, aligny = self._alignx, self._aligny
+        if ((spanx or alignx) and grpx) or ((spany or aligny) and grpy):
+            _warn_proplot(
+                'Aligning *x* and *y* axis labels requires '
+                'matplotlib >=3.1.0')
+            return
+        for ax in self._mainaxes:
+            for x, axis, span, align, grp in zip(
+                    'xy', (ax.xaxis, ax.yaxis), (spanx, spany),
+                    (alignx, aligny), (grpx, grpy)):
+                # Settings
+                if (not span and not align) or not isinstance(
+                        ax, axes.XYAxes) or axis in tracker:
+                    continue
+                # top or bottom, left or right
                 s = axis.get_label_position()[0]
-                span = getattr(self, '_span' + x)
-                align = getattr(self, '_align' + x)
-                if s not in 'bl' or axis in tracker:
+                if s not in 'bl':
                     continue
                 axs = ax._get_side_axes(s)
                 for _ in range(2):
                     axs = [getattr(ax, '_share' + x) or ax for ax in axs]
-                # Align axis label offsets
+
+                # Adjust axis label offsets
                 axises = [getattr(ax, x + 'axis') for ax in axs]
                 tracker.update(axises)
                 if span or align:
-                    grp = getattr(self, '_align_' + x + 'label_grp', None)
                     if grp is not None:
                         for ax in axs[1:]:
                             # copied from source code, add to grouper
@@ -1323,7 +1123,8 @@ class Figure(mfigure.Figure):
                         )
                 if not span:
                     continue
-                # Get spanning label position
+
+                # Adjust axis label centering
                 c, spanax = self._get_align_coord(s, axs)
                 spanaxis = getattr(spanax, x + 'axis')
                 spanlabel = spanaxis.label
@@ -1371,51 +1172,54 @@ class Figure(mfigure.Figure):
             coords = [None] * len(axs)
             if s == 't' and suptitle_on:
                 supaxs = axs
-            with _hidelabels(*labels):
-                for i, (ax, label) in enumerate(zip(axs, labels)):
-                    label_on = label.get_text().strip()
-                    if not label_on:
-                        continue
-                    # Get coord from tight bounding box
-                    # Include twin axes and panels along the same side
-                    extra = ('bt' if s in 'lr' else 'lr')
-                    icoords = []
-                    for iax in ax._iter_panels(extra):
-                        bbox = iax.get_tightbbox(renderer)
-                        if s == 'l':
-                            jcoords = (bbox.xmin, 0)
-                        elif s == 'r':
-                            jcoords = (bbox.xmax, 0)
-                        elif s == 't':
-                            jcoords = (0, bbox.ymax)
-                        else:
-                            jcoords = (0, bbox.ymin)
-                        c = self.transFigure.inverted().transform(jcoords)
-                        c = (c[0] if s in 'lr' else c[1])
-                        icoords.append(c)
-                    # Offset, and offset a bit extra for left/right labels
-                    # See:
-                    # https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
-                    fontsize = label.get_fontsize()
-                    if s in 'lr':
-                        scale1, scale2 = 0.6, width
+
+            # Position labels
+            # TODO: No more _hidelabels here! Must determine positions
+            # with EdgeStack instead of with axes tightbbox algorithm!
+            for i, (ax, label) in enumerate(zip(axs, labels)):
+                label_on = label.get_text().strip()
+                if not label_on:
+                    continue
+                # Get coord from tight bounding box
+                # Include twin axes and panels along the same side
+                extra = ('bt' if s in 'lr' else 'lr')
+                icoords = []
+                for iax in ax._iter_panels(extra):
+                    bbox = iax.get_tightbbox(renderer)
+                    if s == 'l':
+                        jcoords = (bbox.xmin, 0)
+                    elif s == 'r':
+                        jcoords = (bbox.xmax, 0)
+                    elif s == 't':
+                        jcoords = (0, bbox.ymax)
                     else:
-                        scale1, scale2 = 0.3, height
-                    if s in 'lb':
-                        coords[i] = min(icoords) - (
-                            scale1 * fontsize / 72) / scale2
-                    else:
-                        coords[i] = max(icoords) + (
-                            scale1 * fontsize / 72) / scale2
-                # Assign coords
-                coords = [i for i in coords if i is not None]
-                if coords:
-                    if s in 'lb':
-                        c = min(coords)
-                    else:
-                        c = max(coords)
-                    for label in labels:
-                        label.update({x: c})
+                        jcoords = (0, bbox.ymin)
+                    c = self.transFigure.inverted().transform(jcoords)
+                    c = (c[0] if s in 'lr' else c[1])
+                    icoords.append(c)
+                # Offset, and offset a bit extra for left/right labels
+                # See:
+                # https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
+                fontsize = label.get_fontsize()
+                if s in 'lr':
+                    scale1, scale2 = 0.6, width
+                else:
+                    scale1, scale2 = 0.3, height
+                if s in 'lb':
+                    coords[i] = min(icoords) - (
+                        scale1 * fontsize / 72) / scale2
+                else:
+                    coords[i] = max(icoords) + (
+                        scale1 * fontsize / 72) / scale2
+            # Assign coords
+            coords = [i for i in coords if i is not None]
+            if coords:
+                if s in 'lb':
+                    c = min(coords)
+                else:
+                    c = max(coords)
+                for label in labels:
+                    label.update({x: c})
 
         # Update super title position
         # If no axes on the top row are visible, do not try to align!
@@ -1431,10 +1235,358 @@ class Figure(mfigure.Figure):
                   'transform': self.transFigure}
             suptitle.update(kw)
 
-    def _authorize_add_subplot(self):
-        """Prevent warning message when adding subplots one-by-one. Used
-        internally."""
-        return _setstate(self, _authorized_add_subplot=True)
+    def _init(self):
+        """Fill the spacing parameters with defaults."""
+        # Get settings
+        # NOTE: This gets called (1) when gridspec assigned to a figure and
+        # (2) when gridspec.update() is called. This roughly matches the
+        # matplotlib behavior -- changes to the gridspec are not applied to
+        # figures until update() is explicitly called.
+        # NOTE: Kind of redundant to inherit spacing params from gridspec
+        # when get_grid_positions() ignores spacing params that were explicitly
+        # set on the gridspec anyway. But necessary for tight layout calcs
+        # because we need to compare how far apart subplot content *currently*
+        # is with the *current* spacing values used to position them, then
+        # adjust those spacing values as necessary.
+        # NOTE: Think of this as the intersection between figure spacing params
+        # and gridspec params, both of which might not have been specified.
+        # TODO: In insert_row_column, we can just borrow spacing values
+        # directly from the existing gridspec.
+        fig = self.figure
+        gs = self._gridspec
+        if gs is None:
+            raise RuntimeError(
+                f'GridSpec is not present. Cannot initialize GeometrySolver.')
+
+        # Add spacing params to the object for label alignment calculations
+        # Note that gridspec wspace and hspace are already sanitized
+        ncols, nrows = gs.get_geometry()
+        self.ncols, self.nrows = ncols, nrows
+        self.left = _notNone(gs.left, _get_space('left'))
+        self.right = _notNone(gs.right, _get_space('right'))
+        self.bottom = _notNone(gs.bottom, _get_space('bottom'))
+        self.top = _notNone(gs.top, _get_space('top'))
+        wspace = np.repeat(_get_space('wspace', fig._sharex), ncols - 1)
+        hspace = np.repeat(_get_space('hspace', fig._sharey), nrows - 1)
+        self.wspace = _notNone(gs.wspace, wspace)
+        self.hspace = _notNone(gs.hspace, hspace)
+        self.wratios = gs.get_width_ratios()
+        self.hratios = gs.get_height_ratios()
+
+        # Add panel string toggles (contains '' for subplots, 'lrbt' for axes
+        # panels, and 'f' for figure panels) and figure panel array trakcers
+        self.barray = np.empty((0, ncols), dtype=bool)
+        self.tarray = np.empty((0, ncols), dtype=bool)
+        self.larray = np.empty((0, nrows), dtype=bool)
+        self.rarray = np.empty((0, nrows), dtype=bool)
+        self.wpanels = [''] * ncols
+        self.hpanels = [''] * nrows
+
+        # Indicate we are initialized
+        self._isinit = True
+
+    # def resize(self):
+    def solve(self, nrows=None, ncols=None, array=None, **kwargs):
+        """Determine the figure size necessary to preserve physical
+        gridspec spacing and the widths of special *panel* slots in the
+        gridspec object."""
+        # Pull out various properties
+        nrows, ncols = self.nrows, self.ncols
+        width, height = self.width, self.height
+        axwidth, axheight = self.axwidth, self.axheight
+        left, right = self.left, self.right
+        bottom, top = self.bottom, self.top
+        wspace, hspace = self.wspace, self.hspace
+        wratios, hratios = self.wratios, self.hratios
+        wpanels, hpanels = self.wpanels, self.hpanels
+
+        # Horizontal spacing indices
+        # map(func, wpanels[idx + 1:]).index(True) - 1]
+        wmask = np.array([not s for s in wpanels])
+        wratios_main = np.array(wratios)[wmask]
+        wratios_panels = np.array(wratios)[~wmask]
+        wspace_main = [
+            wspace[idx + next(i for i,
+                              p in enumerate(wpanels[idx + 1:]) if p == 'r')]
+            for idx in np.where(wmask)[0][:-1]
+        ]
+        # Vertical spacing indices
+        hmask = np.array([not s for s in hpanels])
+        hratios_main = np.array(hratios)[hmask]
+        hratios_panels = np.array(hratios)[~hmask]
+        hspace_main = [
+            hspace[idx + next(i for i,
+                              p in enumerate(hpanels[idx + 1:]) if p == 'b')]
+            for idx in np.where(hmask)[0][:-1]
+        ]
+
+        # Try to use ratios and spaces spanned by reference axes
+        # NOTE: In old version we automatically resized when figure was
+        # created using the reference axes *slot* inferred from the subplots
+        # array. In new version we just *try* to use the reference axes, but
+        # if it does not exist, use the average width and height for a single
+        # cell of the gridspec rather than a particular axes.
+        # gs = self._gridspec
+        ax = self.get_ref_axes()
+        if ax is None:
+            rwspace = 0
+            rhspace = 0
+            rwratio = 1
+            rhratio = 1
+        else:
+            _, _, y1, y2, x1, x2 = ax.get_subplotspec().get_rows_columns()
+            dx, dy = x2 - x1 + 1, y2 - y1 + 1
+            nrows_main = len(hratios_main)
+            ncols_main = len(wratios_main)
+            rwspace = sum(wspace_main[x1:x2])
+            rhspace = sum(hspace_main[y1:y2])
+            rwratio = (
+                ncols_main * sum(wratios_main[x1:x2 + 1])
+            ) / (dx * sum(wratios_main))
+            rhratio = (
+                nrows_main * sum(hratios_main[y1:y2 + 1])
+            ) / (dy * sum(hratios_main))
+            if rwratio == 0 or rhratio == 0:
+                raise RuntimeError(
+                    f'Something went wrong, got wratio={rwratio!r} '
+                    f'and hratio={rhratio!r} for reference axes.')
+            aspect = self.aspect
+
+        # Determine figure and axes dims from input in width or height dim.
+        # For e.g. common use case [[1,1,2,2],[0,3,3,0]], make sure we still
+        # scale the reference axes like square even though takes two columns
+        # of gridspec!
+        auto_width = (width is None and height is not None)
+        auto_height = (height is None and width is not None)
+        if width is None and height is None:  # get stuff directly from axes
+            if axwidth is None and axheight is None:
+                axwidth = units(rc['subplots.axwidth'])
+            if axheight is not None:
+                auto_width = True
+                axheight_all = (
+                    nrows_main * (axheight - rhspace)) / (dy * rhratio)
+                height = axheight_all + top + bottom + \
+                    sum(hspace) + sum(hratios_panels)
+            if axwidth is not None:
+                auto_height = True
+                axwidth_all = (ncols_main * (axwidth - rwspace)
+                               ) / (dx * rwratio)
+                width = axwidth_all + left + right + \
+                    sum(wspace) + sum(wratios_panels)
+            if axwidth is not None and axheight is not None:
+                auto_width = auto_height = False
+        else:
+            if height is not None:
+                axheight_all = height - top - bottom - \
+                    sum(hspace) - sum(hratios_panels)
+                axheight = (axheight_all * dy * rhratio) / nrows_main + rhspace
+            if width is not None:
+                axwidth_all = width - left - right - \
+                    sum(wspace) - sum(wratios_panels)
+                axwidth = (axwidth_all * dx * rwratio) / ncols_main + rwspace
+
+        # Automatically figure dim that was not specified above
+        if auto_height:
+            axheight = axwidth / aspect
+            axheight_all = (nrows_main * (axheight - rhspace)) / (dy * rhratio)
+            height = axheight_all + top + bottom + \
+                sum(hspace) + sum(hratios_panels)
+        elif auto_width:
+            axwidth = axheight * aspect
+            axwidth_all = (ncols_main * (axwidth - rwspace)) / (dx * rwratio)
+            width = axwidth_all + left + right + \
+                sum(wspace) + sum(wratios_panels)
+        if axwidth_all < 0:
+            raise ValueError(
+                'Not enough room for axes '
+                f'(would have width {axwidth_all}). '
+                'Try using tight=False, increasing figure width, or '
+                "decreasing 'left', 'right', or 'wspace' spaces.")
+        if axheight_all < 0:
+            raise ValueError(
+                'Not enough room for axes '
+                f'(would have height {axheight_all}). '
+                'Try using tight=False, increasing figure height, or '
+                "decreasing 'top', 'bottom', or 'hspace' spaces.")
+
+        # Reconstruct the ratios array with physical units for subplot slots
+        # The panel slots are unchanged because panels have fixed widths
+        wratios_main = axwidth_all * np.array(wratios_main) / sum(wratios_main)
+        hratios_main = axheight_all * \
+            np.array(hratios_main) / sum(hratios_main)
+        for idx, ratio in zip(np.where(hmask)[0], hratios_main):
+            hratios[idx] = ratio
+        for idx, ratio in zip(np.where(wmask)[0], wratios_main):
+            wratios[idx] = ratio
+
+        # Update figure size and gridspec
+        self.set_size_inches((width, height), manual=True)
+        if self._gridspec:
+            self._gridspec.update(
+                ncols=ncols, nrows=nrows,
+                wspace=wspace, hspace=hspace,
+                width_ratios=wratios, height_ratios=hratios,
+                left=left, bottom=bottom, right=right, top=top,
+            )
+        else:
+            self._gridspec = GridSpec(
+                ncols=ncols, nrows=nrows,
+                wspace=wspace, hspace=hspace,
+                width_ratios=wratios, height_ratios=hratios,
+                left=left, bottom=bottom, right=right, top=top,
+            )
+        return self._gridspec
+
+    def update(self, renderer=None):
+        """Update the default values in case the spacing has changed."""
+        # TODO: This will replace the various _adjust functions and
+        # carry out what is currently in the _preprocess and draw funcs
+        fig = self.figure
+        gs = fig.gridspec
+        if gs is None:
+            raise ValueError(
+                'GridSpec has not been initialized yet. '
+                'Cannot update GeometrySolver.'
+            )
+
+        # Get renderer if not passed
+        renderer = fig._get_renderer()  # noqa TODO: finish
+
+    @property
+    def figure(self):
+        """The `Figure` instance associated with this geometry configuration.
+        This cannot be modified."""
+        return self._figure
+
+
+class Figure(mfigure.Figure):
+    """The `~matplotlib.figure.Figure` class returned by `subplots`. At
+    draw-time, an improved tight layout algorithm is employed, and
+    the space around the figure edge, between subplots, and between
+    panels is changed to accommodate subplot content. Figure dimensions
+    may be automatically scaled to preserve subplot aspect ratios."""
+    @docstring.dedent_interpd
+    def __init__(
+        self,
+        figsize=None, width=None, height=None, journal=None,
+        axwidth=None, axheight=None, aspect=1,
+        tight=None, pad=None, axpad=None, panelpad=None,
+        left=None, right=None, bottom=None, top=None,
+        wspace=None, hspace=None,
+        share=None, sharex=None, sharey=None,
+        span=None, spanx=None, spany=None,
+        align=None, alignx=None, aligny=None,
+        includepanels=False, autoformat=True, ref=1,
+        fallback_to_cm=False,
+        **kwargs
+    ):
+        """
+        Parameters
+        ----------
+        %(figure_doc)s
+        """
+        # Initialize first
+        self._is_preprocessing = False
+        self._is_resizing = False
+        tight_layout = kwargs.pop('tight_layout', None)
+        constrained_layout = kwargs.pop('constrained_layout', None)
+        if tight_layout or constrained_layout:
+            _warn_proplot(
+                f'Ignoring tight_layout={tight_layout} and '
+                f'contrained_layout={constrained_layout}. ProPlot uses '
+                'its own tight layout algorithm, activated by default or '
+                'with tight=True.')
+        super().__init__(**kwargs)
+
+        # Axes sharing and spanning settings
+        sharex = _notNone(sharex, share, rc['share'])
+        sharey = _notNone(sharey, share, rc['share'])
+        spanx = _notNone(spanx, span, 0 if sharex == 0 else None, rc['span'])
+        spany = _notNone(spany, span, 0 if sharey == 0 else None, rc['span'])
+        if spanx and (alignx or align):
+            _warn_proplot(f'"alignx" has no effect when spanx=True.')
+        if spany and (aligny or align):
+            _warn_proplot(f'"aligny" has no effect when spany=True.')
+        alignx = _notNone(alignx, align, rc['align'])
+        aligny = _notNone(aligny, align, rc['align'])
+        self.set_alignx(alignx)
+        self.set_aligny(aligny)
+        self.set_sharex(sharex)
+        self.set_sharey(sharey)
+        self.set_spanx(spanx)
+        self.set_spany(spany)
+
+        # Issue warnings for conflicting dimension specifications
+        if journal is not None:
+            names = ('axwidth', 'axheight', 'width', 'height')
+            values = (axwidth, axheight, width, height)
+            figsize = _journal_figsize(journal)
+            spec = f'journal={journal!r}'
+            width, height = figsize
+        elif figsize is not None:
+            names = ('axwidth', 'axheight', 'width', 'height')
+            values = (axwidth, axheight, width, height)
+            spec = f'figsize={figsize!r}'
+            width, height = figsize
+        elif width is not None or height is not None:
+            names = ('axwidth', 'axheight')
+            values = (axwidth, axheight)
+            spec = []
+            if width is not None:
+                spec.append(f'width={width!r}')
+            if height is not None:
+                spec.append(f'height={height!r}')
+            spec = ', '.join(spec)
+        for name, value in zip(names, values):
+            if value is not None:
+                _warn_proplot(
+                    f'You specified both {spec} and {name}={value!r}. '
+                    f'Ignoring {name!r}.')
+
+        # Various constants and hidden settings
+        # self._gridspecpars = (None,) * 6
+        # self._gridspecpars_user = (
+        #   units(left), units(bottom), units(right), units(top),
+        #   units(wspace), units(hspace))
+        # self._dimensions = (units(width), units(height),
+        #   units(axwidth), units(axheight), aspect)
+        if np.iterable(aspect):
+            aspect = aspect[0] / aspect[1]
+        self._solver = GeometrySolver(
+            width, height, axwidth, axheight, aspect
+        )
+        self._gridspecpars = (
+            units(left),
+            units(bottom),
+            units(right),
+            units(top),
+            units(wspace),
+            units(hspace))
+        if any(np.iterable(space) for space in self._gridspecpars_user):
+            raise ValueError(
+                'Invalid spacing parameter. '
+                'Must be scalar when passed to Figure().')
+        self._pad = units(_notNone(pad, rc['subplots.pad']))
+        self._axpad = units(_notNone(axpad, rc['subplots.axpad']))
+        self._panelpad = units(_notNone(panelpad, rc['subplots.panelpad']))
+        self._auto_format = autoformat
+        self._auto_tight_layout = _notNone(tight, rc['tight'])
+        self._fallback_to_cm = fallback_to_cm
+        self._include_panels = includepanels
+        self._mainaxes = []
+        self._bpanels = []
+        self._tpanels = []
+        self._lpanels = []
+        self._rpanels = []
+        self._gridspec = None
+        self._barray = None
+        self._tarray = None
+        self._larray = None
+        self._rarray = None
+        self._wpanels = None
+        self._hpanels = None
+        self.ref = ref
+        self.suptitle('')  # add _suptitle attribute
 
     def _context_resizing(self):
         """Ensure backend calls to `~matplotlib.figure.Figure.set_size_inches`
@@ -1446,9 +1598,164 @@ class Figure(mfigure.Figure):
         by figure resizes during pre-processing."""
         return _setstate(self, _is_preprocessing=True)
 
+    @_counter
+    def _add_axes_panel(self, ax, side, filled=False, **kwargs):
+        """Add axes panels. This powers `~proplot.axes.panel_axes`."""
+        # Interpret args
+        # NOTE: Axis sharing not implemented for figure panels, 99% of the
+        # time this is just used as construct for adding global colorbars and
+        # legends, really not worth implementing axis sharing
+        s = side[0]
+        if s not in 'lrbt':
+            raise ValueError(f'Invalid side {side!r}.')
+        if not self._gridspec:  # needed for wpanels, hpanels, etc.
+            raise RuntimeError(f'Gridspec is not set.')
+        ax = ax._panel_parent or ax  # redirect to main axes
+        side = SIDE_TRANSLATE[s]
+        share, width, space, space_orig = _get_panelargs(
+            s, filled=filled, figure=False, **kwargs)
+
+        # Get gridspec and subplotspec indices
+        ss = ax.get_subplotspec()
+        nrows, ncols, row1, row2, col1, col2 = ss.get_rows_columns()
+        pgrid = getattr(ax, '_' + s + 'panels')
+        offset = (len(pgrid) * bool(pgrid)) + 1
+        if s in 'lr':
+            iratio = (col1 - offset if s == 'l' else col2 + offset)
+            idx1 = slice(row1, row2 + 1)
+            idx2 = iratio
+        else:
+            iratio = (row1 - offset if s == 't' else row2 + offset)
+            idx1 = iratio
+            idx2 = slice(col1, col2 + 1)
+        gridspec_prev = self._gridspec
+        gs = self._insert_row_column(side, iratio,
+                                     width, space, space_orig, figure=False,
+                                     )
+        if gs is not gridspec_prev:
+            if s == 't':
+                idx1 += 1
+            elif s == 'l':
+                idx2 += 1
+
+        # Draw and setup panel
+        pax = self.add_subplot(gs[idx1, idx2],
+                               main=False, projection='cartesian')
+        getattr(ax, '_' + s + 'panels').append(pax)
+        pax._panel_side = side
+        pax._panel_share = share
+        pax._panel_parent = ax
+        if not filled:  # axis sharing and setup
+            ax._share_setup()
+            axis = (pax.yaxis if side in ('left', 'right') else pax.xaxis)
+            # sets tick and tick label positions intelligently
+            getattr(axis, 'tick_' + side)()
+            axis.set_label_position(side)
+        return pax
+
+    def _add_figure_panel(
+        self, side,
+        span=None, row=None, col=None, rows=None, cols=None,
+        **kwargs
+    ):
+        """Add figure panels. This powers `Figure.colorbar` and
+        `Figure.legend`."""
+        # Interpret args and enforce sensible keyword args
+        s = side[0]
+        if s not in 'lrbt':
+            raise ValueError(f'Invalid side {side!r}.')
+        if not self._gridspec:  # needed for wpanels, hpanels, etc.
+            raise RuntimeError(f'Gridspec is not set.')
+        side = SIDE_TRANSLATE[s]
+        _, width, space, space_orig = _get_panelargs(
+            s, filled=True, figure=True, **kwargs)
+        if s in 'lr':
+            for key, value in (('col', col), ('cols', cols)):
+                if value is not None:
+                    raise ValueError(
+                        f'Invalid keyword arg {key!r} '
+                        f'for figure panel on side {side!r}.')
+            span = _notNone(
+                span, row, rows, None, names=('span', 'row', 'rows'))
+        else:
+            for key, value in (('row', row), ('rows', rows)):
+                if value is not None:
+                    raise ValueError(
+                        f'Invalid keyword arg {key!r} '
+                        f'for figure panel on side {side!r}.')
+            span = _notNone(
+                span, col, cols, None, names=('span', 'col', 'cols'))
+
+        # Get props
+        array = getattr(self, '_' + s + 'array')
+        if s in 'lr':
+            panels, nacross = self._wpanels, self._ncols
+        else:
+            panels, nacross = self._hpanels, self._nrows
+        npanels, nalong = array.shape
+
+        # Check span array
+        span = _notNone(span, (1, nalong))
+        if not np.iterable(span) or len(span) == 1:
+            span = 2 * np.atleast_1d(span).tolist()
+        if len(span) != 2:
+            raise ValueError(f'Invalid span {span!r}.')
+        if span[0] < 1 or span[1] > nalong:
+            raise ValueError(
+                f'Invalid coordinates in span={span!r}. '
+                f'Coordinates must satisfy 1 <= c <= {nalong}.')
+        start, stop = span[0] - 1, span[1]  # zero-indexed
+
+        # See if there is room for panel in current figure panels
+        # The 'array' is an array of boolean values, where each row corresponds
+        # to another figure panel, moving toward the outside, and boolean
+        # True indicates the slot has been filled
+        iratio = (-1 if s in 'lt' else nacross)  # default vals
+        for i in range(npanels):
+            if not any(array[i, start:stop]):
+                array[i, start:stop] = True
+                if s in 'lt':  # descending array moves us closer to 0
+                    # npanels=1, i=0 --> iratio=0
+                    # npanels=2, i=0 --> iratio=1
+                    # npanels=2, i=1 --> iratio=0
+                    iratio = npanels - 1 - i
+                else:  # descending array moves us closer to nacross-1
+                    # npanels=1, i=0 --> iratio=nacross-1
+                    # npanels=2, i=0 --> iratio=nacross-2
+                    # npanels=2, i=1 --> iratio=nacross-1
+                    iratio = nacross - (npanels - i)
+                break
+        if iratio in (-1, nacross):  # add to array
+            iarray = np.zeros((1, nalong), dtype=bool)
+            iarray[0, start:stop] = True
+            array = np.concatenate((array, iarray), axis=0)
+            setattr(self, '_' + s + 'array', array)
+
+        # Get gridspec and subplotspec indices
+        idxs, = np.where(np.array(panels) == '')
+        if len(idxs) != nalong:
+            raise RuntimeError('Wut?')
+        if s in 'lr':
+            idx1 = slice(idxs[start], idxs[stop - 1] + 1)
+            idx2 = max(iratio, 0)
+        else:
+            idx1 = max(iratio, 0)
+            idx2 = slice(idxs[start], idxs[stop - 1] + 1)
+        gridspec = self._insert_row_column(
+            side, iratio, width, space, space_orig, figure=True)
+
+        # Draw and setup panel
+        pax = self.add_subplot(gridspec[idx1, idx2],
+                               main=False, projection='cartesian')
+        getattr(self, '_' + s + 'panels').append(pax)
+        pax._panel_side = side
+        pax._panel_share = False
+        pax._panel_parent = None
+        return pax
+
     def _get_align_coord(self, side, axs):
-        """Return the figure coordinate for spanning labels or super titles.
-        The `x` can be ``'x'`` or ``'y'``."""
+        """Return the figure coordinate for spanning labels and super titles.
+        """
         # Get position in figure relative coordinates
         s = side[0]
         x = ('y' if s in 'lr' else 'x')
@@ -1482,17 +1789,154 @@ class Figure(mfigure.Figure):
         else:
             x, y = 'y', 'x'
         # Get edge index
-        axs = self._axes_main
+        axs = self._mainaxes
         if not axs:
             return []
         ranges = np.array([ax._range_gridspec(x) for ax in axs])
         min_, max_ = ranges[:, 0].min(), ranges[:, 1].max()
         edge = (min_ if s in 'lt' else max_)
         # Return axes on edge sorted by order of appearance
-        axs = [ax for ax in self._axes_main if ax._range_gridspec(x)[
+        axs = [ax for ax in self._mainaxes if ax._range_gridspec(x)[
             idx] == edge]
-        ranges = [ax._range_gridspec(y)[0] for ax in axs]
-        return [ax for _, ax in sorted(zip(ranges, axs)) if ax.get_visible()]
+        ord = [ax._range_gridspec(y)[0] for ax in axs]
+        return [ax for _, ax in sorted(zip(ord, axs)) if ax.get_visible()]
+
+    def _insert_row_column(
+        self, side, idx,
+        ratio, space, space_orig, figure=False,
+    ):
+        """"Overwrite" the main figure gridspec to make room for a panel. The
+        `side` is the panel side, the `idx` is the slot the panel will occupy,
+        and the remaining args are the panel widths and spacings."""
+        # # Constants and stuff
+        # # TODO: This is completely broken, must fix
+        # # Insert spaces to the left of right panels or to the right of
+        # # left panels. And note that since .insert() pushes everything in
+        # # that column to the right, actually must insert 1 slot farther to
+        # # the right when inserting left panels/spaces
+        # s = side[0]
+        # if s not in 'lrbt':
+        #     raise ValueError(f'Invalid side {side}.')
+        # idx_space = idx - 1*bool(s in 'br')
+        # idx_offset = 1*bool(s in 'tl')
+        # if s in 'lr':
+        #     sidx, ridx, pidx, ncols = -6, -4, -2, 'ncols'
+        # else:
+        #     sidx, ridx, pidx, ncols = -5, -3, -1, 'nrows'
+        #
+        # # Load arrays and test if we need to insert
+        # gridspecpars, gridspecpars_user = self._fill_gridspecpars()
+        # ratios = gridspecpars[ridx]
+        # panels = gridspecpars[pidx]
+        # # space = gridspecpars[sidx]
+        # # space_user = gridspecpars_user[sidx]
+        # # Test if panel slot already exists
+        # slot_name = ('f' if figure else s)
+        # slot_new = (idx in (-1, len(panels)) or panels[idx] == slot_name)
+        # if slot_new: # already exists!
+        #     idx += idx_offset
+        #     idx_space += idx_offset
+        #     setattr(self, '_' + ncols, getattr(self, '_' + ncols) + 1)
+        #     spaces_orig.insert(idx_space, space_orig)
+        #     spaces.insert(idx_space, space)
+        #     ratios.insert(idx, ratio)
+        #     panels.insert(idx, slot_name)
+        # else:
+        #     if spaces_orig[idx_space] is None:
+        #         spaces_orig[idx_space] = units(space_orig)
+        #     spaces[idx_space] = _notNone(spaces_orig[idx_space], space)
+        #
+        # # Update geometry
+        # if slot_new:
+        #     self._gridspec = GridSpec(nrows, ncols)
+        #     self._gridspec.remove_figure(self)
+        # gs = self._solver.solve() # also sets self._gridspec
+        #
+        # # Reassign subplotspecs to all axes and update positions
+        # # May seem inefficient but it literally just assigns a hidden,
+        # # attribute, and the creation time for subpltospecs is tiny
+        # if slot_new:
+        #     axs = [
+        #         iax for ax in self._iter_axes() for iax
+        #         in (ax, *ax.child_axes)]
+        #     for ax in axs:
+        #         # Get old index
+        #         # NOTE: Endpoints are inclusive, not exclusive!
+        #         if not hasattr(ax, 'get_subplotspec'):
+        #             continue
+        #         if s in 'lr':
+        #             inserts = (None, None, idx, idx)
+        #         else:
+        #             inserts = (idx, idx, None, None)
+        #         ss = ax.get_subplotspec()
+        #         igs = ss.get_gridspec()
+        #         tss = ss.get_topmost_subplotspec()
+        #         # Apply new subplotspec!
+        #         nrows, ncols, *coords = tss.get_rows_columns()
+        #         for i in range(4):
+        #             if inserts[i] is not None and coords[i] >= inserts[i]:
+        #                 coords[i] += 1
+        #         row1, row2, col1, col2 = coords
+        #         ssnew = gs[row1:row2+1, col1:col2+1]
+        #         if tss is ss:
+        #             ax.set_subplotspec(ssnew)
+        #         elif tss is igs._subplot_spec:
+        #             igs._subplot_spec = ssnew
+        #         else:
+        #             raise RuntimeError(
+        #                 f'Found unexpected GridSpecFromSubplotSpec nesting.'
+        #             )
+        #         # Update parent or child position
+        #         ax.update_params()
+        #         ax.set_position(ax.figbox)
+        # return gs, slot_new
+
+    def _iter_axes(self):
+        """Return a list of all axes and panels in the figure belonging to the
+        `~proplot.axes.Axes` class, excluding inset and twin axes."""
+        axs = []
+        for ax in (*self._mainaxes, *self._lpanels, *self._rpanels,
+                   *self._bpanels, *self._tpanels):
+            if not ax or not ax.get_visible():
+                continue
+            axs.append(ax)
+        for ax in axs:
+            for s in 'lrbt':
+                for iax in getattr(ax, '_' + s + 'panels'):
+                    if not iax or not iax.get_visible():
+                        continue
+                    axs.append(iax)
+        return axs
+
+    def _update_axislabels(self, axis=None, **kwargs):
+        """Apply axis labels to the relevant shared axis. If spanning
+        labels are toggled, keep the labels synced for all subplots in the
+        same row or column. Label positions will be adjusted at draw-time
+        with _align_axislabels."""
+        x = axis.axis_name
+        if x not in 'xy':
+            return
+        # Update label on this axes
+        axis.label.update(kwargs)
+        kwargs.pop('color', None)
+
+        # Defer to parent (main) axes if possible, then get the axes
+        # shared by that parent
+        ax = axis.axes
+        ax = ax._panel_parent or ax
+        ax = getattr(ax, '_share' + x) or ax
+
+        # Apply to spanning axes and their panels
+        axs = [ax]
+        if getattr(self, '_span' + x):
+            s = axis.get_label_position()[0]
+            if s in 'lb':
+                axs = ax._get_side_axes(s)
+        for ax in axs:
+            getattr(ax, x + 'axis').label.update(kwargs)  # apply to main axes
+            pax = getattr(ax, '_share' + x)
+            if pax is not None:  # apply to panel?
+                getattr(pax, x + 'axis').label.update(kwargs)
 
     def _get_renderer(self):
         """Get a renderer at all costs, even if it means generating a brand
@@ -1511,109 +1955,6 @@ class Figure(mfigure.Figure):
                 renderer = canvas.get_renderer()
         return renderer
 
-    def _insert_row_column(
-        self, side, idx,
-        ratio, space, space_orig, figure=False,
-    ):
-        """"Overwrite" the main figure gridspec to make room for a panel. The
-        `side` is the panel side, the `idx` is the slot you want the panel
-        to occupy, and the remaining args are the panel widths and spacings."""
-        # Constants and stuff
-        # Insert spaces to the left of right panels or to the right of
-        # left panels. And note that since .insert() pushes everything in
-        # that column to the right, actually must insert 1 slot farther to
-        # the right when inserting left panels/spaces
-        s = side[0]
-        if s not in 'lrbt':
-            raise ValueError(f'Invalid side {side}.')
-        idx_space = idx - 1 * bool(s in 'br')
-        idx_offset = 1 * bool(s in 'tl')
-        if s in 'lr':
-            w, ncols = 'w', 'ncols'
-        else:
-            w, ncols = 'h', 'nrows'
-
-        # Load arrays and test if we need to insert
-        subplots_kw = self._subplots_kw
-        subplots_orig_kw = self._subplots_orig_kw
-        panels = subplots_kw[w + 'panels']
-        ratios = subplots_kw[w + 'ratios']
-        spaces = subplots_kw[w + 'space']
-        spaces_orig = subplots_orig_kw[w + 'space']
-
-        # Slot already exists
-        entry = ('f' if figure else s)
-        exists = (idx not in (-1, len(panels)) and panels[idx] == entry)
-        if exists:  # already exists!
-            if spaces_orig[idx_space] is None:
-                spaces_orig[idx_space] = units(space_orig)
-            spaces[idx_space] = _notNone(spaces_orig[idx_space], space)
-        # Make room for new panel slot
-        else:
-            # Modify basic geometry
-            idx += idx_offset
-            idx_space += idx_offset
-            subplots_kw[ncols] += 1
-            # Original space, ratio array, space array, panel toggles
-            spaces_orig.insert(idx_space, space_orig)
-            spaces.insert(idx_space, space)
-            ratios.insert(idx, ratio)
-            panels.insert(idx, entry)
-            # Reference ax location array
-            # TODO: For now do not need to increment, but need to double
-            # check algorithm for fixing axes aspect!
-            # ref = subplots_kw[x + 'ref']
-            # ref[:] = [val + 1 if val >= idx else val for val in ref]
-
-        # Update figure
-        figsize, gridspec_kw, _ = _subplots_geometry(**subplots_kw)
-        self.set_size_inches(figsize, auto=True)
-        if exists:
-            gridspec = self._gridspec_main
-            gridspec.update(**gridspec_kw)
-        else:
-            # New gridspec
-            gridspec = GridSpec(self, **gridspec_kw)
-            self._gridspec_main = gridspec
-            # Reassign subplotspecs to all axes and update positions
-            # May seem inefficient but it literally just assigns a hidden,
-            # attribute, and the creation time for subpltospecs is tiny
-            axs = [iax for ax in self._iter_axes()
-                   for iax in (ax, *ax.child_axes)]
-            for ax in axs:
-                # Get old index
-                # NOTE: Endpoints are inclusive, not exclusive!
-                if not hasattr(ax, 'get_subplotspec'):
-                    continue
-                if s in 'lr':
-                    inserts = (None, None, idx, idx)
-                else:
-                    inserts = (idx, idx, None, None)
-                subplotspec = ax.get_subplotspec()
-                igridspec = subplotspec.get_gridspec()
-                topmost = subplotspec.get_topmost_subplotspec()
-                # Apply new subplotspec!
-                _, _, *coords = topmost.get_active_rows_columns()
-                for i in range(4):
-                    # if inserts[i] is not None and coords[i] >= inserts[i]:
-                    if inserts[i] is not None and coords[i] >= inserts[i]:
-                        coords[i] += 1
-                (row1, row2, col1, col2) = coords
-                subplotspec_new = gridspec[row1:row2 + 1, col1:col2 + 1]
-                if topmost is subplotspec:
-                    ax.set_subplotspec(subplotspec_new)
-                elif topmost is igridspec._subplot_spec:
-                    igridspec._subplot_spec = subplotspec_new
-                else:
-                    raise ValueError(
-                        f'Unexpected GridSpecFromSubplotSpec nesting.'
-                    )
-                # Update parent or child position
-                ax.update_params()
-                ax.set_position(ax.figbox)
-
-        return gridspec
-
     def _update_figtitle(self, title, **kwargs):
         """Assign the figure "super title" and update settings."""
         if title is not None and self._suptitle.get_text() != title:
@@ -1622,7 +1963,8 @@ class Figure(mfigure.Figure):
             self._suptitle.update(kwargs)
 
     def _update_labels(self, ax, side, labels, **kwargs):
-        """Assign the side labels and update settings."""
+        """Assign side labels and updates label settings. The labels are
+        aligned down the line by geometry_configurator."""
         s = side[0]
         if s not in 'lrbt':
             raise ValueError(f'Invalid label side {side!r}.')
@@ -1646,6 +1988,10 @@ class Figure(mfigure.Figure):
                 obj.set_text(label)
             if kwargs:
                 obj.update(kwargs)
+
+    def add_gridspec(self, *args, **kwargs):
+        """This docstring is replaced below."""
+        return self.set_gridspec(*args, **kwargs)
 
     def add_subplot(self, *args, **kwargs):
         """Issues warning for new users that try to call
@@ -1892,6 +2238,31 @@ class Figure(mfigure.Figure):
         self.stale = True
         self._aligny = bool(value)
 
+    def set_gridspec(self, *args, **kwargs):
+        """This docstring is replaced below."""
+        # Create and apply the gridspec
+        if self._gridspec is not None:
+            raise RuntimeError(
+                'The gridspec has already been declared and multiple '
+                'GridSpecs are not allowed. Call '
+                'Figure.get_gridspec() to retrieve it.'
+            )
+        if len(args) == 1 and isinstance(args[0], GridSpec):
+            gs = args[0]
+        elif len(args) == 1 and isinstance(args[0], mgridspec.GridSpec):
+            raise ValueError(
+                'The gridspec must be a ProPlot GridSpec. Matplotlib '
+                'gridspecs are not allowed.'
+            )
+        else:
+            gs = GridSpec(*args, **kwargs)
+        gs.add_figure(self)
+        ncols, nrows = gs.get_geometry()
+        self._gridspec = gs
+        self._solver._init()
+        self.stale = True
+        return gs
+
     def set_sharex(self, value):
         """Set the *x* axis sharing level."""
         value = int(value)
@@ -1934,7 +2305,7 @@ class Figure(mfigure.Figure):
     def gridspec(self):
         """The single `GridSpec` instance used for all subplots
         in the figure."""
-        return self._gridspec_main
+        return self._gridspec
 
     @property
     def ref(self):
@@ -1951,41 +2322,9 @@ class Figure(mfigure.Figure):
         self.stale = True
         self._ref = ref
 
-    def _iter_axes(self):
-        """Iterates over all axes and panels in the figure belonging to the
-        `~proplot.axes.Axes` class. Excludes inset and twin axes."""
-        axs = []
-        for ax in (*self._axes_main, *self._lpanels, *self._rpanels,
-                   *self._bpanels, *self._tpanels):
-            if not ax or not ax.get_visible():
-                continue
-            axs.append(ax)
-        for ax in axs:
-            for s in 'lrbt':
-                for iax in getattr(ax, '_' + s + 'panels'):
-                    if not iax or not iax.get_visible():
-                        continue
-                    axs.append(iax)
-        return axs
-
-
-def _journals(journal):
-    """Return the width and height corresponding to the given journal."""
-    # Get dimensions for figure from common journals.
-    value = JOURNAL_SPECS.get(journal, None)
-    if value is None:
-        raise ValueError(
-            f'Unknown journal figure size specifier {journal!r}. '
-            'Current options are: '
-            + ', '.join(map(repr, JOURNAL_SPECS.keys()))
-        )
-    # Return width, and optionally also the height
-    width, height = None, None
-    try:
-        width, height = value
-    except (TypeError, ValueError):
-        width = value
-    return width, height
+    # Add documentation
+    add_gridspec.__doc__ = _gridspec_doc
+    set_gridspec.__doc__ = _gridspec_doc
 
 
 def _axes_dict(naxs, value, kw=False, default=None):
@@ -2034,6 +2373,22 @@ def _axes_dict(naxs, value, kw=False, default=None):
         )
     return kwargs
 
+
+def _journal_figsize(journal):
+    """Return the dimensions associated with this journal string."""
+    # Get dimensions for figure from common journals.
+    value = JOURNAL_SPECS.get(journal, None)
+    if value is None:
+        raise ValueError(
+            f'Unknown journal figure size specifier {journal!r}. Options are: '
+            ', '.join(map(repr, JOURNAL_SPECS.keys())) + '.')
+    # Return width, and optionally also the height
+    width, height = None, None
+    try:
+        width, height = value
+    except (TypeError, ValueError):
+        width = value
+    return width, height
 
 def subplots(
     array=None, ncols=1, nrows=1,
