@@ -10,6 +10,7 @@ import numpy as np
 import functools
 import inspect
 from matplotlib import docstring
+import matplotlib.artist as martist
 import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
 import matplotlib.gridspec as mgridspec
@@ -735,199 +736,16 @@ def _get_space(key, share=0, pad=None):
     return space
 
 
-def _subplots_geometry(**kwargs):
-    """Save arguments passed to `subplots`, calculates gridspec settings and
-    figure size necessary for requested geometry, and returns keyword args
-    necessary to reconstruct and modify this configuration. Note that
-    `wspace`, `hspace`, `left`, `right`, `top`, and `bottom` always have fixed
-    physical units, then we scale figure width, figure height, and width
-    and height ratios to accommodate spaces."""
-    # Dimensions and geometry
-    nrows, ncols = kwargs['nrows'], kwargs['ncols']
-    aspect, xref, yref = kwargs['aspect'], kwargs['xref'], kwargs['yref']
-    width, height = kwargs['width'], kwargs['height']
-    axwidth, axheight = kwargs['axwidth'], kwargs['axheight']
-    # Gridspec settings
-    wspace, hspace = kwargs['wspace'], kwargs['hspace']
-    wratios, hratios = kwargs['wratios'], kwargs['hratios']
-    left, bottom = kwargs['left'], kwargs['bottom']
-    right, top = kwargs['right'], kwargs['top']
-    # Panel string toggles, lists containing empty strings '' (indicating a
-    # main axes), or one of 'l', 'r', 'b', 't' (indicating axes panels) or
-    # 'f' (indicating figure panels)
-    wpanels, hpanels = kwargs['wpanels'], kwargs['hpanels']
-
-    # Checks, important now that we modify gridspec geometry
-    if len(hratios) != nrows:
-        raise ValueError(
-            f'Expected {nrows} width ratios for {nrows} rows, '
-            f'got {len(hratios)}.'
-        )
-    if len(wratios) != ncols:
-        raise ValueError(
-            f'Expected {ncols} width ratios for {ncols} columns, '
-            f'got {len(wratios)}.'
-        )
-    if len(hspace) != nrows - 1:
-        raise ValueError(
-            f'Expected {nrows - 1} hspaces for {nrows} rows, '
-            f'got {len(hspace)}.'
-        )
-    if len(wspace) != ncols - 1:
-        raise ValueError(
-            f'Expected {ncols - 1} wspaces for {ncols} columns, '
-            f'got {len(wspace)}.'
-        )
-    if len(hpanels) != nrows:
-        raise ValueError(
-            f'Expected {nrows} hpanel toggles for {nrows} rows, '
-            f'got {len(hpanels)}.'
-        )
-    if len(wpanels) != ncols:
-        raise ValueError(
-            f'Expected {ncols} wpanel toggles for {ncols} columns, '
-            f'got {len(wpanels)}.'
-        )
-
-    # Get indices corresponding to main axes or main axes space slots
-    idxs_ratios, idxs_space = [], []
-    for panels in (hpanels, wpanels):
-        # Ratio indices
-        mask = np.array([bool(s) for s in panels])
-        ratio_idxs, = np.where(~mask)
-        idxs_ratios.append(ratio_idxs)
-        # Space indices
-        space_idxs = []
-        for idx in ratio_idxs[:-1]:  # exclude last axes slot
-            offset = 1
-            while panels[idx + offset] not in 'rbf':  # main space next to this
-                offset += 1
-            space_idxs.append(idx + offset - 1)
-        idxs_space.append(space_idxs)
-    # Separate the panel and axes ratios
-    hratios_main = [hratios[idx] for idx in idxs_ratios[0]]
-    wratios_main = [wratios[idx] for idx in idxs_ratios[1]]
-    hratios_panels = [ratio for idx, ratio in enumerate(
-        hratios) if idx not in idxs_ratios[0]]
-    wratios_panels = [ratio for idx, ratio in enumerate(
-        wratios) if idx not in idxs_ratios[1]]
-    hspace_main = [hspace[idx] for idx in idxs_space[0]]
-    wspace_main = [wspace[idx] for idx in idxs_space[1]]
-    # Reduced geometry
-    nrows_main = len(hratios_main)
-    ncols_main = len(wratios_main)
-
-    # Get reference properties, account for panel slots in space and ratios
-    # TODO: Shouldn't panel space be included in these calculations?
-    (x1, x2), (y1, y2) = xref, yref
-    dx, dy = x2 - x1 + 1, y2 - y1 + 1
-    rwspace = sum(wspace_main[x1:x2])
-    rhspace = sum(hspace_main[y1:y2])
-    rwratio = (
-        ncols_main * sum(wratios_main[x1:x2 + 1])) / (dx * sum(wratios_main))
-    rhratio = (
-        nrows_main * sum(hratios_main[y1:y2 + 1])) / (dy * sum(hratios_main))
-    if rwratio == 0 or rhratio == 0:
-        raise RuntimeError(
-            f'Something went wrong, got wratio={rwratio!r} '
-            f'and hratio={rhratio!r} for reference axes.'
-        )
-    if np.iterable(aspect):
-        aspect = aspect[0] / aspect[1]
-
-    # Determine figure and axes dims from input in width or height dimenion.
-    # For e.g. common use case [[1,1,2,2],[0,3,3,0]], make sure we still scale
-    # the reference axes like square even though takes two columns of gridspec!
-    auto_width = (width is None and height is not None)
-    auto_height = (height is None and width is not None)
-    if width is None and height is None:  # get stuff directly from axes
-        if axwidth is None and axheight is None:
-            axwidth = units(rc['subplots.axwidth'])
-        if axheight is not None:
-            auto_width = True
-            axheight_all = (nrows_main * (axheight - rhspace)) / (dy * rhratio)
-            height = axheight_all + top + bottom + \
-                sum(hspace) + sum(hratios_panels)
-        if axwidth is not None:
-            auto_height = True
-            axwidth_all = (ncols_main * (axwidth - rwspace)) / (dx * rwratio)
-            width = axwidth_all + left + right + \
-                sum(wspace) + sum(wratios_panels)
-        if axwidth is not None and axheight is not None:
-            auto_width = auto_height = False
-    else:
-        if height is not None:
-            axheight_all = height - top - bottom - \
-                sum(hspace) - sum(hratios_panels)
-            axheight = (axheight_all * dy * rhratio) / nrows_main + rhspace
-        if width is not None:
-            axwidth_all = width - left - right - \
-                sum(wspace) - sum(wratios_panels)
-            axwidth = (axwidth_all * dx * rwratio) / ncols_main + rwspace
-
-    # Automatically figure dim that was not specified above
-    if auto_height:
-        axheight = axwidth / aspect
-        axheight_all = (nrows_main * (axheight - rhspace)) / (dy * rhratio)
-        height = axheight_all + top + bottom + \
-            sum(hspace) + sum(hratios_panels)
-    elif auto_width:
-        axwidth = axheight * aspect
-        axwidth_all = (ncols_main * (axwidth - rwspace)) / (dx * rwratio)
-        width = axwidth_all + left + right + sum(wspace) + sum(wratios_panels)
-    if axwidth_all < 0:
-        raise ValueError(
-            f'Not enough room for axes (would have width {axwidth_all}). '
-            'Try using tight=False, increasing figure width, or decreasing '
-            "'left', 'right', or 'wspace' spaces."
-        )
-    if axheight_all < 0:
-        raise ValueError(
-            f'Not enough room for axes (would have height {axheight_all}). '
-            'Try using tight=False, increasing figure height, or decreasing '
-            "'top', 'bottom', or 'hspace' spaces."
-        )
-
-    # Reconstruct the ratios array with physical units for subplot slots
-    # The panel slots are unchanged because panels have fixed widths
-    wratios_main = axwidth_all * np.array(wratios_main) / sum(wratios_main)
-    hratios_main = axheight_all * np.array(hratios_main) / sum(hratios_main)
-    for idx, ratio in zip(idxs_ratios[0], hratios_main):
-        hratios[idx] = ratio
-    for idx, ratio in zip(idxs_ratios[1], wratios_main):
-        wratios[idx] = ratio
-
-    # Convert margins to figure-relative coordinates
-    left = left / width
-    bottom = bottom / height
-    right = 1 - right / width
-    top = 1 - top / height
-
-    # Return gridspec keyword args
-    gridspec_kw = {
-        'ncols': ncols, 'nrows': nrows,
-        'wspace': wspace, 'hspace': hspace,
-        'width_ratios': wratios, 'height_ratios': hratios,
-        'left': left, 'bottom': bottom, 'right': right, 'top': top,
-    }
-
-    return (width, height), gridspec_kw, kwargs
-
-
-class _hidelabels(object):
-    """Hide objects temporarily so they are ignored by the tight bounding box
-    algorithm."""
-    # NOTE: This will be removed when labels are implemented with AxesStack!
+class EdgeStack(object):
+    """
+    Container for groups of `~matplotlib.artist.Artist` objects stacked
+    along the edge of a subplot. Calculates bounding box coordiantes for
+    objects in the stack.
+    """
     def __init__(self, *args):
-        self._labels = args
+        if not all(isinstance(arg, martist.Artst) for arg in args):
+            raise ValueError(f'Arguments must be artists.')
 
-    def __enter__(self):
-        for label in self._labels:
-            label.set_visible(False)
-
-    def __exit__(self, *args):
-        for label in self._labels:
-            label.set_visible(True)
 
 class GeometrySolver(object):
     """
