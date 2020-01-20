@@ -1,3 +1,5 @@
+# Crayola crayon colors
+# https://en.wikipedia.org/wiki/List_of_Crayola_crayon_colors
 almond:                   #efdecd
 antique brass:            #cd9575
 apricot:                  #fdd9b5

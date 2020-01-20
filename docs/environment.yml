@@ -18,7 +18,6 @@ dependencies:
   - pip
   - pip:
     - ..
-    - pyyaml
     - pyqt5
     - nbsphinx
     - sphinx_rtd_theme

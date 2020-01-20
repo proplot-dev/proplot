@@ -23,6 +23,11 @@ import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
 from .utils import _warn_proplot, _notNone, _timer
 from .external import hsluv
+try:  # use this for debugging instead of print()!
+    from icecream import ic
+except ImportError:  # graceful fallback if IceCream isn't installed
+    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
+
 __all__ = [
     'BinNorm', 'CmapDict', 'ColorDict',
     'LinearSegmentedNorm',
@@ -218,31 +223,6 @@ COLORS_BASE = {
     'white': (1, 1, 1),
 }
 
-# *Proprietary* sans serif fonts that may or may not be on user system
-# plus the fonts installed by matplotlib
-# NOTE: Add to this as needed!
-FONTS_SANS = [
-    'Arial',
-    'Avant Garde',
-    'Avenir',
-    'Bitstream Vera',  # matplotlib
-    'Computer Modern Sans Serif',
-    'DejaVu Sans',  # matplotlib
-    'Frutiger',
-    'Futura',
-    'Geneva',
-    'Gill Sans',
-    'Helvetica',
-    'Lucida Grande',
-    'Lucid',
-    'Myriad Pro',
-    'Optima',
-    'Tahoma',
-    'Trebuchet MS',
-    'Univers',
-    'Verdana',
-]
-
 
 def _get_channel(color, channel, space='hcl'):
     """
@@ -354,8 +334,8 @@ def to_rgb(color, space='rgb', cycle=None, alpha=False):
         The colorspace for the input channel values. Ignored unless `color` is
         an container of numbers.
     cycle : str or list, optional
-        The registered color cycle name. Default is :rc:`cycle`. Ignored unless
-        `color` is a color cycle string, e.g. ``'C0'``, ``'C1'``, ...
+        The registered color cycle name used to interpret colors that
+        look like ``'C0'``, ``'C1'``, etc. Default is :rc:`cycle`.
     alpha : bool, optional
         Whether to preserve the opacity channel, if it exists. Default
         is ``False``.
@@ -2062,7 +2042,7 @@ class ColorDict(dict):
 
 def Colors(*args, **kwargs):
     """Pass all arguments to `Cycle` and return the list of colors from
-    the cycler object."""
+    the resulting `~cycler.Cycler` object."""
     cycle = Cycle(*args, **kwargs)
     return [dict_['color'] for dict_ in cycle]
 
@@ -2182,16 +2162,10 @@ def Colormap(
         # TODO: Document how 'listmode' also affects loaded files
         if isinstance(cmap, str):
             if '.' in cmap:
-                if os.path.isfile(os.path.expanduser(cmap)):
-                    if listmode == 'listed':
-                        cmap = ListedColormap.from_file(cmap)
-                    else:
-                        cmap = LinearSegmentedColormap.from_file(cmap)
+                if listmode == 'listed':
+                    cmap = ListedColormap.from_file(cmap)
                 else:
-                    raise FileNotFoundError(
-                        f'Colormap or cycle file {cmap!r} not found '
-                        'or failed to load.'
-                    )
+                    cmap = LinearSegmentedColormap.from_file(cmap)
             else:
                 try:
                     cmap = mcm.cmap_d[cmap]
@@ -2837,21 +2811,30 @@ def _from_file(filename, listed=False, warn_on_failure=False):
 
     # Warn if loading failed during `register_cmaps` or `register_cycles`
     # but raise error if user tries to load a file.
-    def _warn_or_raise(msg):
+    def _warn_or_raise(msg, error=RuntimeError):
         if warn_on_failure:
             _warn_proplot(msg)
         else:
-            raise RuntimeError(msg)
+            raise error(msg)
 
     # Directly read segmentdata json file
     # NOTE: This is special case! Immediately return name and cmap
+    if not os.path.exists(filename):
+        _warn_or_raise(f'File {filename!r} not found.', FileNotFoundError)
+        return
     N = rcParams['image.lut']
     name, ext = os.path.splitext(os.path.basename(filename))
     ext = ext[1:]
     cmap = None
     if ext == 'json':
-        with open(filename, 'r') as f:
-            data = json.load(f)
+        try:
+            with open(filename, 'r') as f:
+                data = json.load(f)
+        except json.JSONDecodeError:
+            _warn_or_raise(
+                f'Failed to load {filename!r}.', json.JSONDecodeError
+            )
+            return
         kw = {}
         for key in ('cyclic', 'gamma', 'gamma1', 'gamma2', 'space'):
             kw[key] = data.pop(key, None)
@@ -2900,9 +2883,10 @@ def _from_file(filename, listed=False, warn_on_failure=False):
     elif ext == 'xml':
         try:
             doc = ElementTree.parse(filename)
-        except IOError:
+        except ElementTree.ParseError:
             _warn_or_raise(
-                f'Failed to load {filename!r}.'
+                f'Failed to load {filename!r}. Parsing error.',
+                ElementTree.ParseError
             )
             return
         x, data = [], []
@@ -3063,16 +3047,25 @@ def register_colors(nmax=np.inf):
         for file in paths:
             cat, _ = os.path.splitext(os.path.basename(file))
             with open(file, 'r') as f:
-                pairs = [
-                    tuple(item.strip() for item in line.split(':'))
-                    for line in f.readlines()
-                    if line.strip() and line.strip()[0] != '#'
-                ]
-            if not all(len(pair) == 2 for pair in pairs):
-                raise RuntimeError(
-                    f'Invalid color names file {file!r}. '
-                    f'Every line must be formatted as "name: color".'
+                cnt = 0
+                hex = re.compile(
+                    r'\A#(?:[0-9a-fA-F]{3}){1,2}\Z'  # ?: prevents capture
                 )
+                pairs = []
+                for line in f.readlines():
+                    cnt += 1
+                    stripped = line.strip()
+                    if not stripped or stripped[0] == '#':
+                        continue
+                    pair = tuple(item.strip() for item in line.split(':'))
+                    if len(pair) != 2 or not hex.match(pair[1]):
+                        _warn_proplot(
+                            f'Illegal line #{cnt} in file {file!r}:\n'
+                            f'{line!r}\n'
+                            f'Lines must be formatted as "name: hexcolor".'
+                        )
+                        continue
+                    pairs.append(pair)
 
             # Categories for which we add *all* colors
             if cat == 'opencolor' or i == 1:
@@ -3158,12 +3151,12 @@ def register_fonts():
     fnames_all = {font.fname for font in mfonts.fontManager.ttflist}
     fnames_proplot -= fnames_proplot_ttc
     if not fnames_all >= fnames_proplot:
+        _warn_proplot('Rebuilding font cache.')
         if hasattr(mfonts.fontManager, 'addfont'):
             for fname in fnames_proplot:
                 mfonts.fontManager.addfont(fname)
             mfonts.json_dump(mfonts.fontManager, mfonts._fmcache)
         else:
-            _warn_proplot('Rebuilding font manager.')
             mfonts._rebuild()
 
     # Remove ttc files *after* rebuild
@@ -3210,8 +3203,6 @@ def _draw_bars(names, *, source, unknown='User', length=4.0, width=0.2):
     )
     iax = -1
     nheads = nbars = 0  # for deciding which axes to plot in
-    a = np.linspace(0, 1, 257).reshape(1, -1)
-    a = np.vstack((a, a))
     for cat, names in cmapdict.items():
         nheads += 1
         for imap, name in enumerate(names):
@@ -3223,18 +3214,16 @@ def _draw_bars(names, *, source, unknown='User', length=4.0, width=0.2):
                 iax += 1
                 ax.set_visible(False)
                 ax = axs[iax]
-            cmap = mcm.cmap_d[name]
-            ax.imshow(
-                a, cmap=name, origin='lower', aspect='auto',
-                levels=cmap.N
+            ax.colorbar(  # TODO: support this in public API
+                mcm.cmap_d[name], loc='_fill',
+                orientation='horizontal', locator='null', linewidth=0
             )
-            ax.format(
-                ylabel=name,
-                ylabel_kw={'rotation': 0, 'ha': 'right', 'va': 'center'},
-                xticks='none', yticks='none',  # no ticks
-                xloc='neither', yloc='neither',  # no spines
-                title=(cat if imap == 0 else None)
+            ax.text(
+                0 - (rcParams['axes.labelpad'] / 72) / length, 0.45, name,
+                ha='right', va='center', transform='axes',
             )
+            if imap == 0:
+                ax.set_title(cat)
         nbars += len(names)
 
 
@@ -3436,10 +3425,12 @@ def show_colorspaces(luminance=None, saturation=None, hue=None, axwidth=2):
                 else:
                     rgba[k, j, :3] = rgb_jk
         ax.imshow(rgba, origin='lower', aspect='auto')
-        ax.format(xlabel=xlabel, ylabel=ylabel, suptitle=suptitle,
-                  grid=False, xtickminor=False, ytickminor=False,
-                  xlocator=xloc, ylocator=yloc, facecolor='k',
-                  title=space.upper(), titleweight='bold')
+        ax.format(
+            xlabel=xlabel, ylabel=ylabel, suptitle=suptitle,
+            grid=False, xtickminor=False, ytickminor=False,
+            xlocator=xloc, ylocator=yloc, facecolor='k',
+            title=space.upper(), titleweight='bold'
+        )
     return fig
 
 
@@ -3638,7 +3629,7 @@ def show_cycles(*args, **kwargs):
     return _draw_bars(names, **kwargs)
 
 
-def show_fonts(*args, size=12, text=None):
+def show_fonts(*args, family=None, text=None, size=12):
     """
     Generate a table of fonts. If a glyph for a particular font is unavailable,
     it is replaced with the "¤" dummy character.
@@ -3646,37 +3637,76 @@ def show_fonts(*args, size=12, text=None):
     Parameters
     ----------
     *args
-        The font family names. If none are provided, the available sans-serif
-        fonts, the fonts in your ``.proplot/fonts`` folder, and the fonts
-        provided by ProPlot are shown.
-    size : float, optional
-        The font size in points.
+        The font name(s). If none are provided and the `family` keyword
+        argument was not provided, the *available* :rcraw:`font.sans-serif`
+        fonts and the fonts in your ``.proplot/fonts`` folder are shown.
+    family : {'serif', 'sans-serif', 'monospace', 'cursive', 'fantasy', \
+'tex-gyre'}, optional
+        If provided, the *available* fonts in the corresponding families
+        are shown. The fonts belonging to these families are listed under the
+        :rcraw:`font.serif`, :rcraw:`font.sans-serif`, :rcraw:`font.monospace`,
+        :rcraw:`font.cursive`, and :rcraw:`font.fantasy` settings. The special
+        family ``'tex-gyre'`` draws the `TeX Gyre \
+<http://www.gust.org.pl/projects/e-foundry/tex-gyre>`__ fonts.
     text : str, optional
         The sample text. The default sample text includes the Latin letters,
-        Greek letters, Arabic numerals, and some mathematical symbols.
+        Greek letters, Arabic numerals, and some simple mathematical symbols.
+    size : float, optional
+        The font size in points.
     """
     from . import subplots
-    if not args:
-        import matplotlib.font_manager as mfonts
+    import matplotlib.font_manager as mfonts
+    if not args and family is None:
+        # User fonts and sans-serif fonts. Note all proplot sans-serif fonts
+        # are added to 'font.sans-serif' by default
         args = sorted({
             font.name for font in mfonts.fontManager.ttflist
-            if font.name[:1] != '.' and (
-                font.name in FONTS_SANS
-                or any(path in font.fname for path in _get_data_paths('fonts'))
-            )
+            if font.name in rcParams['font.sans-serif']
+            or _get_data_paths('fonts')[1] == os.path.dirname(font.fname)
         })
+    elif family is not None:
+        options = (
+            'serif', 'sans-serif', 'monospace', 'cursive', 'fantasy',
+            'tex-gyre',
+        )
+        if family not in options:
+            raise ValueError(
+                f'Invalid family {family!r}. Options are: '
+                + ', '.join(map(repr, options)) + '.'
+            )
+        if family == 'tex-gyre':
+            family_fonts = (
+                'TeX Gyre Adventor',
+                'TeX Gyre Bonum',
+                'TeX Gyre Cursor',
+                'TeX Gyre Chorus',
+                'TeX Gyre Heros',
+                'TeX Gyre Pagella',
+                'TeX Gyre Schola',
+                'TeX Gyre Termes',
+            )
+        else:
+            family_fonts = rcParams['font.' + family]
+        args = (
+            *args, *sorted({
+                font.name for font in mfonts.fontManager.ttflist
+                if font.name in family_fonts
+            })
+        )
 
     # Text
     if text is None:
-        text = 'the quick brown fox jumps over a lazy dog' '\n' \
-            'THE QUICK BROWN FOX JUMPS OVER A LAZY DOG' '\n' \
-            '(0) + {1\N{DEGREE SIGN}} \N{MINUS SIGN} [2*] - <3> / 4,0 ' \
-            r'$\geq\gg$ 5.0 $\leq\ll$ ~6 $\times$ 7 ' \
-            r'$\equiv$ 8 $\approx$ 9 $\propto$' '\n' \
-            r'$\alpha\beta$ $\Gamma\gamma$ $\Delta\delta$ ' \
-            r'$\epsilon\zeta\eta$ $\Theta\theta$ $\kappa\mu\nu$ ' \
-            r'$\Lambda\lambda$ $\Pi\pi$ $\xi\rho\tau\chi$ $\Sigma\sigma$ ' \
+        text = (
+            'the quick brown fox jumps over a lazy dog' '\n'
+            'THE QUICK BROWN FOX JUMPS OVER A LAZY DOG' '\n'
+            '(0) + {1\N{DEGREE SIGN}} \N{MINUS SIGN} [2*] - <3> / 4,0 '
+            r'$\geq\gg$ 5.0 $\leq\ll$ ~6 $\times$ 7 '
+            r'$\equiv$ 8 $\approx$ 9 $\propto$' '\n'
+            r'$\alpha\beta$ $\Gamma\gamma$ $\Delta\delta$ '
+            r'$\epsilon\zeta\eta$ $\Theta\theta$ $\kappa\mu\nu$ '
+            r'$\Lambda\lambda$ $\Pi\pi$ $\xi\rho\tau\chi$ $\Sigma\sigma$ '
             r'$\Phi\phi$ $\Psi\psi$ $\Omega\omega$ !?&#%'
+        )
 
     # Create figure
     f, axs = subplots(
@@ -3684,15 +3714,17 @@ def show_fonts(*args, size=12, text=None):
         axwidth=4.5, axheight=1.2 * (text.count('\n') + 2.5) * size / 72,
         fallback_to_cm=False
     )
-    axs.format(xloc='neither', yloc='neither',
-               xlocator='null', ylocator='null', alpha=0)
-    axs[0].format(title='Fonts demo', titlesize=size,
-                  titleloc='l', titleweight='bold')
+    axs.format(
+        xloc='neither', yloc='neither',
+        xlocator='null', ylocator='null', alpha=0
+    )
     for i, ax in enumerate(axs):
         font = args[i]
-        ax.text(0, 0.5, f'{font}:\n{text}',
-                fontfamily=font, fontsize=size,
-                weight='normal', ha='left', va='center')
+        ax.text(
+            0, 0.5, f'{font}:\n{text}',
+            fontfamily=font, fontsize=size,
+            weight='normal', ha='left', va='center'
+        )
     return f
 
 
@@ -3701,20 +3733,21 @@ if 'Greys' in mcm.cmap_d:  # 'Murica (and consistency with registered colors)
     mcm.cmap_d['Grays'] = mcm.cmap_d.pop('Greys')
 if 'Spectral' in mcm.cmap_d:  # make spectral go from 'cold' to 'hot'
     mcm.cmap_d['Spectral'] = mcm.cmap_d['Spectral'].reversed(name='Spectral')
-for _name in CMAPS_TABLE['Matplotlib originals']:  # initialize as empty lists
-    if _name == 'twilight_shifted':
+for _name in CMAPS_TABLE['Matplotlib originals']:
+    if _name == 'twilight_shifted':  # we can generate shifted maps on the fly
         mcm.cmap_d.pop(_name, None)
-    else:
+    else:  # convert ListedColormaps to LinearSegmentedColormaps
         _cmap = mcm.cmap_d.get(_name, None)
         if _cmap and isinstance(_cmap, mcolors.ListedColormap):
-            mcm.cmap_d.pop(_name, None)  # removes the map from cycles list!
+            mcm.cmap_d.pop(_name, None)
             mcm.cmap_d[_name] = LinearSegmentedColormap.from_list(
-                _name, _cmap.colors, cyclic=('twilight' in _name))
+                _name, _cmap.colors, cyclic=('twilight' in _name)
+            )
 for _cat in ('MATLAB', 'GNUplot', 'GIST', 'Other'):
     for _name in CMAPS_TABLE[_cat]:
         mcm.cmap_d.pop(_name, None)
 
-# Initialize customization folders and files
+# Initialize customization folders
 _rc_folder = os.path.join(os.path.expanduser('~'), '.proplot')
 if not os.path.isdir(_rc_folder):
     os.mkdir(_rc_folder)
@@ -3722,18 +3755,6 @@ for _rc_sub in ('cmaps', 'cycles', 'colors', 'fonts'):
     _rc_sub = os.path.join(_rc_folder, _rc_sub)
     if not os.path.isdir(_rc_sub):
         os.mkdir(_rc_sub)
-
-#: List of registered colormap names.
-cmaps = []  # track *downloaded* colormaps
-
-#: List of registered color cycle names.
-cycles = []  # track *all* color cycles
-
-#: Lists of registered color names by category.
-colors = {}
-
-#: Registered font names.
-fonts = []
 
 # Apply monkey patches to top level modules
 if not isinstance(mcm.cmap_d, CmapDict):
@@ -3746,6 +3767,18 @@ if not isinstance(mcolors._colors_full_map, _ColorMappingOverride):
     mcolors._colors_full_map = _map
     mcolors.colorConverter.cache = _map.cache  # re-instantiate
     mcolors.colorConverter.colors = _map  # re-instantiate
+
+#: List of registered colormap names.
+cmaps = []
+
+#: List of registered color cycle names.
+cycles = []
+
+#: Lists of registered color names by category.
+colors = {}
+
+#: Registered font names.
+fonts = []
 
 # Call driver funcs
 register_colors()
