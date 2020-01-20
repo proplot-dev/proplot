@@ -10,6 +10,7 @@ import numpy.ma as ma
 import functools
 from . import axistools, styletools
 from .utils import _warn_proplot, _notNone, edges, edges2d, units
+from matplotlib import docstring
 import matplotlib.axes as maxes
 import matplotlib.contour as mcontour
 import matplotlib.ticker as mticker
@@ -198,22 +199,6 @@ def _auto_label(data, axis=None, units=True):
 
 
 def standardize_1d(self, func, *args, **kwargs):
-    """
-    Wraps %(methods)s, standardizes acceptable positional args and optionally
-    modifies the x axis label, y axis label, title, and axis ticks
-    if a `~xarray.DataArray`, `~pandas.DataFrame`, or `~pandas.Series` is
-    passed.
-
-    Positional args are standardized as follows.
-
-    * If a 2D array is passed, the corresponding plot command is called for
-      each column of data (except for ``boxplot`` and ``violinplot``, in which
-      case each column is interpreted as a distribution).
-    * If *x* and *y* or *latitude* and *longitude* coordinates were not
-      provided, and a `~pandas.DataFrame` or `~xarray.DataArray`, we
-      try to infer them from the metadata. Otherwise,
-      ``np.arange(0, data.shape[0])`` is used.
-   """
     # Sanitize input
     # TODO: Add exceptions for methods other than 'hist'?
     name = func.__name__
@@ -310,6 +295,28 @@ def standardize_1d(self, func, *args, **kwargs):
     return func(self, x, *ys, *args, **kwargs)
 
 
+# TODO: Do we need to strip leading/trailing newlines?
+standardize_1d_args = """
+*args : (x,) or (x,y)
+    Positional args are standardized as follows.
+
+    * If a 2D array is passed, the corresponding plot command is called for
+      each column of data.
+    * If *x* and *y* or *latitude* and *longitude* coordinates were not
+      provided, and a `~pandas.DataFrame` or `~xarray.DataArray`, we
+      try to infer them from the metadata. Otherwise,
+      ``np.arange(0, data.shape[0])`` is used.
+"""
+standardize_1d_kwargs = """
+autoformat : bool, optional
+    Whether to modify the x axis label, y axis label, title, and axis ticks
+    if ``x`` or ``y`` is a `~xarray.DataArray`, `~pandas.DataFrame`, or
+    `~pandas.Series`. Default is the figure-wide autoformat setting.
+"""
+docstring.interpd.update(standardize_1d_args=standardize_1d_args)
+docstring.interpd.update(standardize_1d_kwargs=standardize_1d_kwargs)
+
+
 def _interp_poles(y, Z):
     """Adds data points on the poles as the average of highest
     latitude data."""
@@ -378,35 +385,6 @@ def _enforce_bounds(x, y, xmin, xmax):
 
 
 def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
-    """
-    Wraps %(methods)s, standardizes acceptable positional args and optionally
-    modifies the x axis label, y axis label, title, and axis ticks if the
-    a `~xarray.DataArray`, `~pandas.DataFrame`, or `~pandas.Series` is passed.
-
-    Positional args are standardized as follows.
-
-    * If *x* and *y* or *latitude* and *longitude* coordinates were not
-      provided, and a `~pandas.DataFrame` or `~xarray.DataArray` is passed, we
-      try to infer them from the metadata. Otherwise,
-      ``np.arange(0, data.shape[0])`` and ``np.arange(0, data.shape[1])``
-      are used.
-    * For ``pcolor`` and ``pcolormesh``, coordinate *edges* are calculated
-      if *centers* were provided. For all other methods, coordinate *centers*
-      are calculated if *edges* were provided.
-
-    For `~proplot.axes.GeoAxes` and `~proplot.axes.BasemapAxes`, the
-    `globe` keyword arg is added, suitable for plotting datasets with global
-    coverage. Passing ``globe=True`` does the following.
-
-    1. "Interpolates" input data to the North and South poles.
-    2. Makes meridional coverage "circular", i.e. the last longitude coordinate
-       equals the first longitude coordinate plus 360\N{DEGREE SIGN}.
-
-    For `~proplot.axes.BasemapAxes`, 1D longitude vectors are also cycled to
-    fit within the map edges. For example, if the projection central longitude
-    is 90\N{DEGREE SIGN}, the data is shifted so that it spans
-    -90\N{DEGREE SIGN} to 270\N{DEGREE SIGN}.
-    """
     # Sanitize input
     name = func.__name__
     _load_objects()
@@ -655,6 +633,47 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
     return func(self, x, y, *Zs, colorbar_kw=colorbar_kw, **kwargs)
 
 
+standardize_2d_args = """
+*args : (Z1,...) or (x,y,Z1,...)
+    Positional args are standardized as follows.
+
+    * If *x* and *y* or coordinates were not
+      provided, and a `~pandas.DataFrame` or `~xarray.DataArray` is passed, we
+      try to infer them from the metadata. Otherwise,
+      ``np.arange(0, data.shape[0])`` and ``np.arange(0, data.shape[1])``
+      are used.
+    * For ``pcolor`` and ``pcolormesh``, coordinate *edges* are calculated
+      if *centers* were provided. For all other methods, coordinate *centers*
+      are calculated if *edges* were provided.
+"""
+standardize_2d_kwargs = """
+globe : bool, optional
+    Valid for `~proplot.axes.CartopyAxes` and `~proplot.axes.BasemapAxes`.
+    When ``globe=True``, "global data coverage" is enforced as follows.
+
+    1. Input data is interpolated to the North and South poles. That is, 1D
+       vectors containing the mean values from the highest and lowest latitude
+       band in the dataset (e.g. -89\N{DEGREE SIGN} and 89\N{DEGREE SIGN}) are
+       appended to the dataset and given the coordinates -90\N{DEGREE SIGN}
+       and 90\N{DEGREE SIGN}. This prevents "holes" over your poles.
+    2. Meridional coverage is made "circular". That is, a 1D vector is appended
+       to the end of the dataset with longitude coordinate equal to the initial
+       longitude coordinate plus 360\N{DEGREE SIGN}. This prevents empty
+       sectors on the edge of your projection.
+
+    For `~proplot.axes.BasemapAxes`, 1D longitude vectors are also cycled to
+    fit within the map edges. For example, if the projection central longitude
+    is 90\N{DEGREE SIGN}, the data is shifted so that it spans
+    -90\N{DEGREE SIGN} to 270\N{DEGREE SIGN}.
+autoformat : bool, optional
+    Whether to modify the x axis label, y axis label, title, and axis ticks
+    if ``x`` or ``y`` is a `~xarray.DataArray`, `~pandas.DataFrame`, or
+    `~pandas.Series`. Default is the figure-wide autoformat setting.
+"""
+docstring.interpd.update(standardize_2d_args=standardize_2d_args)
+docstring.interpd.update(standardize_2d_kwargs=standardize_2d_kwargs)
+
+
 def _errorbar_values(data, idata, bardata=None, barrange=None, barstd=False):
     """Returns values that can be passed to the `~matplotlib.axes.Axes.errorbar`
     `xerr` and `yerr` keyword args."""
@@ -690,66 +709,6 @@ def add_errorbars(
     boxzorder=3, barzorder=3,
     **kwargs
 ):
-    """
-    Wraps %(methods)s, adds support for drawing error bars. Includes
-    options for interpreting columns of data as ranges, representing the mean
-    or median of each column with lines, points, or bars, and drawing error
-    bars representing percentile ranges or standard deviation multiples for
-    the data in each column.
-
-    Parameters
-    ----------
-    *args
-        The input data.
-    bars : bool, optional
-        Toggles *thin* error bars with optional "whiskers" (i.e. caps). Default
-        is ``True`` when `means` is ``True``, `medians` is ``True``, or
-        `bardata` is not ``None``.
-    boxes : bool, optional
-        Toggles *thick* boxplot-like error bars with a marker inside
-        representing the mean or median. Default is ``True`` when `means` is
-        ``True``, `medians` is ``True``, or `boxdata` is not ``None``.
-    means : bool, optional
-        Whether to plot the means of each column in the input data.
-    medians : bool, optional
-        Whether to plot the medians of each column in the input data.
-    bardata, boxdata : 2xN ndarray, optional
-        Arrays that manually specify the thin and thick error bar coordinates.
-        The first row contains lower bounds, and the second row contains
-        upper bounds. Columns correspond to points in the dataset.
-    barstd, boxstd : bool, optional
-        Whether `barrange` and `boxrange` refer to multiples of the standard
-        deviation, or percentile ranges. Default is ``False``.
-    barrange : (float, float), optional
-        Percentile ranges or standard deviation multiples for drawing thin
-        error bars. The defaults are ``(-3,3)`` (i.e. +/-3 standard deviations)
-        when `barstd` is ``True``, and ``(0,100)`` (i.e. the full data range)
-        when `barstd` is ``False``.
-    boxrange : (float, float), optional
-        Percentile ranges or standard deviation multiples for drawing thick
-        error bars. The defaults are ``(-1,1)`` (i.e. +/-1 standard deviation)
-        when `boxstd` is ``True``, and ``(25,75)`` (i.e. the middle 50th
-        percentile) when `boxstd` is ``False``.
-    barcolor, boxcolor : color-spec, optional
-        Colors for the thick and thin error bars. Default is ``'k'``.
-    barlw, boxlw : float, optional
-        Line widths for the thin and thick error bars, in points. Default
-        `barlw` is ``0.7`` and default `boxlw` is ``4*barlw``.
-    boxmarker : bool, optional
-        Whether to draw a small marker in the middle of the box denoting
-        the mean or median position. Ignored if `boxes` is ``False``.
-        Default is ``True``.
-    boxmarkercolor : color-spec, optional
-        Color for the `boxmarker` marker. Default is ``'w'``.
-    capsize : float, optional
-        The cap size for thin error bars, in points.
-    barzorder, boxzorder : float, optional
-        The "zorder" for the thin and thick error bars.
-    lw, linewidth : float, optional
-        If passed, this is used for the default `barlw`.
-    edgecolor : float, optional
-        If passed, this is used for the default `barcolor` and `boxcolor`.
-    """
     name = func.__name__
     x, y, *args = args
     # Sensible defaults
@@ -831,6 +790,78 @@ def add_errorbars(
     return obj
 
 
+# TODO: mix standardize_1d args with errorbars args
+add_errorbars_args = """
+*args : (x,) or (x,y)
+    Positional args are standardized as follows.
+
+    * If a 2D array is passed and `means` and `medians` are both ``False``,
+      the corresponding plot command is called for each column of data .
+    * If *x* and *y* coordinates were not
+      provided, and a `~pandas.DataFrame` or `~xarray.DataArray`, we
+      try to infer them from the metadata. Otherwise,
+      ``np.arange(0, data.shape[0])`` is used.
+
+    Wraps %(methods)s, adds support for drawing error bars. Includes
+    options for interpreting columns of data as ranges, representing the mean
+    or median of each column with lines, points, or bars, and drawing error
+    bars representing percentile ranges or standard deviation multiples for
+    the data in each column.
+"""
+add_errorbars_kwargs = """
+bars : bool, optional
+    Toggles *thin* error bars with optional "whiskers" (i.e. caps). Default
+    is ``True`` when `means` is ``True``, `medians` is ``True``, or
+    `bardata` is not ``None``.
+boxes : bool, optional
+    Toggles *thick* boxplot-like error bars with a marker inside
+    representing the mean or median. Default is ``True`` when `means` is
+    ``True``, `medians` is ``True``, or `boxdata` is not ``None``.
+means : bool, optional
+    Whether to plot the means of each column in the input data.
+medians : bool, optional
+    Whether to plot the medians of each column in the input data.
+bardata, boxdata : 2xN ndarray, optional
+    Arrays that manually specify the thin and thick error bar coordinates.
+    The first row contains lower bounds, and the second row contains
+    upper bounds. Columns correspond to points in the dataset.
+barstd, boxstd : bool, optional
+    Whether `barrange` and `boxrange` refer to multiples of the standard
+    deviation, or percentile ranges. Default is ``False``.
+barrange : (float, float), optional
+    Percentile ranges or standard deviation multiples for drawing thin
+    error bars. The defaults are ``(-3,3)`` (i.e. +/-3 standard deviations)
+    when `barstd` is ``True``, and ``(0,100)`` (i.e. the full data range)
+    when `barstd` is ``False``.
+boxrange : (float, float), optional
+    Percentile ranges or standard deviation multiples for drawing thick
+    error bars. The defaults are ``(-1,1)`` (i.e. +/-1 standard deviation)
+    when `boxstd` is ``True``, and ``(25,75)`` (i.e. the middle 50th
+    percentile) when `boxstd` is ``False``.
+barcolor, boxcolor : color-spec, optional
+    Colors for the thick and thin error bars. Default is ``'k'``.
+barlw, boxlw : float, optional
+    Line widths for the thin and thick error bars, in points. Default
+    `barlw` is ``0.7`` and default `boxlw` is ``4*barlw``.
+boxmarker : bool, optional
+    Whether to draw a small marker in the middle of the box denoting
+    the mean or median position. Ignored if `boxes` is ``False``.
+    Default is ``True``.
+boxmarkercolor : color-spec, optional
+    Color for the `boxmarker` marker. Default is ``'w'``.
+capsize : float, optional
+    The cap size for thin error bars, in points.
+barzorder, boxzorder : float, optional
+    The "zorder" for the thin and thick error bars.
+lw, linewidth : float, optional
+    If passed, this is used for the default `barlw`.
+edgecolor : float, optional
+    If passed, this is used for the default `barcolor` and `boxcolor`.
+"""
+docstring.interpd.update(add_errorbars_args=add_errorbars_args)
+docstring.interpd.update(add_errorbars_kwargs=add_errorbars_kwargs)
+
+
 def cycle_changer(
     self, func, *args,
     cycle=None, cycle_kw=None,
@@ -840,65 +871,10 @@ def cycle_changer(
     colorbar=None, colorbar_kw=None,
     **kwargs
 ):
-    """
-    Wraps methods that use the property cycler (%(methods)s),
-    adds features for controlling colors in the property cycler and drawing
-    legends or colorbars in one go.
-
-    This wrapper also *standardizes acceptable input* -- these methods now all
-    accept 2D arrays holding columns of data, and *x*-coordinates are always
-    optional. Note this alters the behavior of `~matplotlib.axes.Axes.boxplot`
-    and `~matplotlib.axes.Axes.violinplot`, which now compile statistics on
-    *columns* of data instead of *rows*.
-
-    Parameters
-    ----------
-    cycle : cycle-spec, optional
-        The cycle specifer, passed to the `~proplot.styletools.Cycle`
-        constructor. If the returned list of colors is unchanged from the
-        current axes color cycler, the axes cycle will **not** be reset to the
-        first position.
-    cycle_kw : dict-like, optional
-        Passed to `~proplot.styletools.Cycle`.
-    label : float or str, optional
-        The legend label to be used for this plotted element.
-    labels, values : list of float or list of str, optional
-        Used with 2D input arrays. The legend labels or colorbar coordinates
-        for each column in the array. Can be numeric or string, and must match
-        the number of columns in the 2D array.
-    legend : bool, int, or str, optional
-        If not ``None``, this is a location specifying where to draw an *inset*
-        or *panel* legend from the resulting handle(s). If ``True``, the
-        default location is used. Valid locations are described in
-        `~proplot.axes.Axes.legend`.
-    legend_kw : dict-like, optional
-        Ignored if `legend` is ``None``. Extra keyword args for our call
-        to `~proplot.axes.Axes.legend`.
-    colorbar : bool, int, or str, optional
-        If not ``None``, this is a location specifying where to draw an *inset*
-        or *panel* colorbar from the resulting handle(s). If ``True``, the
-        default location is used. Valid locations are described in
-        `~proplot.axes.Axes.colorbar`.
-    colorbar_kw : dict-like, optional
-        Ignored if `colorbar` is ``None``. Extra keyword args for our call
-        to `~proplot.axes.Axes.colorbar`.
-
-    Other parameters
-    ----------------
-    *args, **kwargs
-        Passed to the matplotlib plotting method.
-
-    See also
-    --------
-    `~proplot.styletools.Cycle`, `~proplot.styletools.colors`
-
-    Notes
-    -----
-    See the `matplotlib source \
-<https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_base.py>`_.
-    The `set_prop_cycle` command modifies underlying
-    `_get_lines` and `_get_patches_for_fill`.
-    """
+    # See the `matplotlib source
+    # <https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_base.py>`_.
+    # The `set_prop_cycle` command modifies underlying
+    # `_get_lines` and `_get_patches_for_fill`.
     # No mutable defaults
     cycle_kw = cycle_kw or {}
     legend_kw = legend_kw or {}
@@ -1113,6 +1089,40 @@ def cycle_changer(
         return objs[0] if is1d else (*objs,)  # sensible default behavior
 
 
+cycle_changer_kwargs = """
+cycle : cycle-spec, optional
+    The cycle specifer, passed to the `~proplot.styletools.Cycle`
+    constructor. If the returned list of colors is unchanged from the
+    current axes color cycler, the axes cycle will **not** be reset to the
+    first position.
+cycle_kw : dict-like, optional
+    Passed to `~proplot.styletools.Cycle`.
+label : float or str, optional
+    The legend label to be used for this plotted element.
+labels, values : list of float or list of str, optional
+    Used with 2D input arrays. The legend labels or colorbar coordinates
+    for each column in the array. Can be numeric or string, and must match
+    the number of columns in the 2D array.
+legend : bool, int, or str, optional
+    If not ``None``, this is a location specifying where to draw an *inset*
+    or *panel* legend from the resulting handle(s). If ``True``, the
+    default location is used. Valid locations are described in
+    `~proplot.axes.Axes.legend`.
+legend_kw : dict-like, optional
+    Ignored if `legend` is ``None``. Extra keyword args for our call
+    to `~proplot.axes.Axes.legend`.
+colorbar : bool, int, or str, optional
+    If not ``None``, this is a location specifying where to draw an *inset*
+    or *panel* colorbar from the resulting handle(s). If ``True``, the
+    default location is used. Valid locations are described in
+    `~proplot.axes.Axes.colorbar`.
+colorbar_kw : dict-like, optional
+    Ignored if `colorbar` is ``None``. Extra keyword args for our call
+    to `~proplot.axes.Axes.colorbar`.
+"""
+docstring.interpd.update(cycle_changer_kwargs=cycle_changer_kwargs)
+
+
 def cmap_changer(
     self, func, *args, cmap=None, cmap_kw=None,
     extend='neither', norm=None, norm_kw=None,
@@ -1125,133 +1135,23 @@ def cmap_changer(
     color=None, colors=None, edgecolor=None, edgecolors=None,
     **kwargs
 ):
-    """
-    Wraps methods that take a `cmap` argument (%(methods)s),
-    adds several new keyword args and features.
-    Uses the `~proplot.styletools.BinNorm` normalizer to bin data into
-    discrete color levels (see notes).
+    # Wraps methods that take a ``cmap`` argument (%(methods)s),
+    # adds several new keyword args and features.
+    # Uses the `~proplot.styletools.BinNorm` normalizer to bin data into
+    # discrete color levels (see notes).
+    # The `~proplot.styletools.BinNorm` normalizer, used with all colormap
+    # plots, makes sure that your "levels" always span the full range of colors
+    # in the colormap, whether you are extending max, min, neither, or both. By
+    # default, when you select `extend` not ``'both'``, matplotlib seems to
+    # cut off the most intense colors (reserved for coloring "out of bounds"
+    # data), even though they are not being used.
 
-    Parameters
-    ----------
-    cmap : colormap spec, optional
-        The colormap specifer, passed to the `~proplot.styletools.Colormap`
-        constructor.
-    cmap_kw : dict-like, optional
-        Passed to `~proplot.styletools.Colormap`.
-    norm : normalizer spec, optional
-        The colormap normalizer, used to warp data before passing it
-        to `~proplot.styletools.BinNorm`. This is passed to the
-        `~proplot.styletools.Norm` constructor.
-    norm_kw : dict-like, optional
-        Passed to `~proplot.styletools.Norm`.
-    extend : {'neither', 'min', 'max', 'both'}, optional
-        Where to assign unique colors to out-of-bounds data and draw
-        "extensions" (triangles, by default) on the colorbar.
-    levels, N : int or list of float, optional
-        The number of level edges, or a list of level edges. If the former,
-        `locator` is used to generate this many levels at "nice" intervals.
-        Default is :rc:`image.levels`.
-
-        Since this function also wraps `~matplotlib.axes.Axes.pcolor` and
-        `~matplotlib.axes.Axes.pcolormesh`, this means they now
-        accept the `levels` keyword arg. You can now discretize your
-        colors in a ``pcolor`` plot just like with ``contourf``.
-    values, centers : int or list of float, optional
-        The number of level centers, or a list of level centers. If provided,
-        levels are inferred using `~proplot.utils.edges`. This will override
-        any `levels` input.
-    vmin, vmax : float, optional
-        Used to determine level locations if `levels` is an integer. Actual
-        levels may not fall exactly on `vmin` and `vmax`, but the minimum
-        level will be no smaller than `vmin` and the maximum level will be
-        no larger than `vmax`.
-
-        If `vmin` or `vmax` is not provided, the minimum and maximum data
-        values are used.
-    locator : locator-spec, optional
-        The locator used to determine level locations if `levels` or `values`
-        is an integer and `vmin` and `vmax` were not provided. Passed to the
-        `~proplot.axistools.Locator` constructor. Default is
-        `~matplotlib.ticker.MaxNLocator` with ``levels`` or ``values+1``
-        integer levels.
-    locator_kw : dict-like, optional
-        Passed to `~proplot.axistools.Locator`.
-    symmetric : bool, optional
-        Toggle this to make automatically generated levels symmetric
-        about zero.
-    edgefix : bool, optional
-        Whether to fix the the `white-lines-between-filled-contours \
-<https://stackoverflow.com/q/8263769/4970632>`__
-        and `white-lines-between-pcolor-rectangles \
-<https://stackoverflow.com/q/27092991/4970632>`__
-        issues. This slows down figure rendering by a bit. Default is
-        :rc:`image.edgefix`.
-    labels : bool, optional
-        For `~matplotlib.axes.Axes.contour`, whether to add contour labels
-        with `~matplotlib.axes.Axes.clabel`. For `~matplotlib.axes.Axes.pcolor`
-        or `~matplotlib.axes.Axes.pcolormesh`, whether to add labels to the
-        center of grid boxes. In the latter case, the text will be black
-        when the luminance of the underlying grid box color is >50%%, and
-        white otherwise (see the `~proplot.styletools` documentation).
-    labels_kw : dict-like, optional
-        Ignored if `labels` is ``False``. Extra keyword args for the labels.
-        For `~matplotlib.axes.Axes.contour`, passed to
-        `~matplotlib.axes.Axes.clabel`.  For `~matplotlib.axes.Axes.pcolor`
-        or `~matplotlib.axes.Axes.pcolormesh`, passed to
-        `~matplotlib.axes.Axes.text`.
-    fmt : format-spec, optional
-        Passed to the `~proplot.styletools.Norm` constructor, used to format
-        number labels. You can also use the `precision` keyword arg.
-    precision : int, optional
-        Maximum number of decimal places for the number labels.
-        Number labels are generated with the
-        `~proplot.axistools.SimpleFormatter` formatter, which allows us to
-        limit the precision.
-    colorbar : bool, int, or str, optional
-        If not ``None``, this is a location specifying where to draw an *inset*
-        or *panel* colorbar from the resulting mappable. If ``True``, the
-        default location is used. Valid locations are described in
-        `~proplot.axes.Axes.colorbar`.
-    colorbar_kw : dict-like, optional
-        Ignored if `colorbar` is ``None``. Extra keyword args for our call
-        to `~proplot.axes.Axes.colorbar`.
-
-    Other parameters
-    ----------------
-    lw, linewidth, linewidths
-        The width of `~matplotlib.axes.Axes.contour` lines and
-        `~proplot.axes.Axes.parametric` lines. Also the width of lines
-        *between* `~matplotlib.axes.Axes.pcolor` boxes,
-        `~matplotlib.axes.Axes.pcolormesh` boxes, and
-        `~matplotlib.axes.Axes.contourf` filled contours.
-    ls, linestyle, linestyles
-        As above, but for the line style.
-    color, colors, edgecolor, edgecolors
-        As above, but for the line color.
-    *args, **kwargs
-        Passed to the matplotlib plotting method.
-
-    Notes
-    -----
-    The `~proplot.styletools.BinNorm` normalizer, used with all colormap
-    plots, makes sure that your "levels" always span the full range of colors
-    in the colormap, whether you are extending max, min, neither, or both. By
-    default, when you select `extend` not ``'both'``, matplotlib seems to just
-    cut off the most intense colors (reserved for coloring "out of bounds"
-    data), even though they are not being used.
-
-    This could also be done by limiting the number of colors in the colormap
-    lookup table by selecting a smaller ``N`` (see
-    `~matplotlib.colors.LinearSegmentedColormap`).  But I prefer the approach
-    of always building colormaps with hi-res lookup tables, and leaving the job
-    of normalizing data values to colormap locations to the
-    `~matplotlib.colors.Normalize` object.
-
-    See also
-    --------
-    `~proplot.styletools.Colormap`, `~proplot.styletools.Norm`,
-    `~proplot.styletools.BinNorm`
-    """
+    # This could also be done by limiting the number of colors in the colormap
+    # lookup table by selecting a smaller ``N`` (see
+    # `~matplotlib.colors.LinearSegmentedColormap`).  But I prefer the approach
+    # of always building colormaps with hi-res lookup tables, and leaving the
+    # job of normalizing data values to colormap locations to the
+    # `~matplotlib.colors.Normalize` object.
     # No mutable defaults
     cmap_kw = cmap_kw or {}
     norm_kw = norm_kw or {}
@@ -1577,6 +1477,100 @@ def cmap_changer(
             colorbar_kw.setdefault('loc', loc)
         self.colorbar(obj, **colorbar_kw)
     return obj
+
+
+cmap_changer_kwargs = """
+cmap : colormap spec, optional
+    The colormap specifer, passed to the `~proplot.styletools.Colormap`
+    constructor.
+cmap_kw : dict-like, optional
+    Passed to `~proplot.styletools.Colormap`.
+norm : normalizer spec, optional
+    The colormap normalizer, used to warp data before passing it
+    to `~proplot.styletools.BinNorm`. This is passed to the
+    `~proplot.styletools.Norm` constructor.
+norm_kw : dict-like, optional
+    Passed to `~proplot.styletools.Norm`.
+extend : {'neither', 'min', 'max', 'both'}, optional
+    Where to assign unique colors to out-of-bounds data and draw
+    "extensions" (triangles, by default) on the colorbar.
+levels, N : int or list of float, optional
+    The number of level edges, or a list of level edges. If the former,
+    `locator` is used to generate this many levels at "nice" intervals.
+    Default is :rc:`image.levels`.
+
+    Since this function also wraps `~matplotlib.axes.Axes.pcolor` and
+    `~matplotlib.axes.Axes.pcolormesh`, this means they now
+    accept the `levels` keyword arg. You can now discretize your
+    colors in a ``pcolor`` plot just like with ``contourf``.
+values, centers : int or list of float, optional
+    The number of level centers, or a list of level centers. If provided,
+    levels are inferred using `~proplot.utils.edges`. This will override
+    any `levels` input.
+vmin, vmax : float, optional
+    Used to determine level locations if `levels` is an integer. Actual
+    levels may not fall exactly on `vmin` and `vmax`, but the minimum
+    level will be no smaller than `vmin` and the maximum level will be
+    no larger than `vmax`.
+
+    If `vmin` or `vmax` is not provided, the minimum and maximum data
+    values are used.
+locator : locator-spec, optional
+    The locator used to determine level locations if `levels` or `values`
+    is an integer and `vmin` and `vmax` were not provided. Passed to the
+    `~proplot.axistools.Locator` constructor. Default is
+    `~matplotlib.ticker.MaxNLocator` with ``levels`` or ``values+1``
+    integer levels.
+locator_kw : dict-like, optional
+    Passed to `~proplot.axistools.Locator`.
+symmetric : bool, optional
+    Toggle this to make automatically generated levels symmetric about zero.
+edgefix : bool, optional
+    Whether to fix the the `white-lines-between-filled-contours \
+<https://stackoverflow.com/q/8263769/4970632>`__
+    and `white-lines-between-pcolor-rectangles \
+<https://stackoverflow.com/q/27092991/4970632>`__
+    issues. This slows down figure rendering by a bit. Default is
+    :rc:`image.edgefix`.
+labels : bool, optional
+    For `~matplotlib.axes.Axes.contour`, whether to add contour labels
+    with `~matplotlib.axes.Axes.clabel`. For `~matplotlib.axes.Axes.pcolor`
+    or `~matplotlib.axes.Axes.pcolormesh`, whether to add labels to the
+    center of grid boxes. In the latter case, the text will be black
+    when the luminance of the underlying grid box color is >50%%, and
+    white otherwise (see the `~proplot.styletools` documentation).
+labels_kw : dict-like, optional
+    Ignored if `labels` is ``False``. Extra keyword args for the labels.
+    For `~matplotlib.axes.Axes.contour`, passed to
+    `~matplotlib.axes.Axes.clabel`. For `~matplotlib.axes.Axes.pcolor` or
+    `~matplotlib.axes.Axes.pcolormesh`, passed to `~matplotlib.axes.Axes.text`.
+fmt : format-spec, optional
+    Passed to the `~proplot.styletools.Norm` constructor, used to format
+    number labels. You can also use the `precision` keyword arg.
+precision : int, optional
+    Maximum number of decimal places for the number labels.
+    Number labels are generated with the `~proplot.axistools.SimpleFormatter`
+    formatter, which allows us to limit the precision.
+colorbar : bool, int, or str, optional
+    If not ``None``, this is a location specifying where to draw an *inset*
+    or *panel* colorbar from the resulting mappable. If ``True``, the
+    default location is used. Valid locations are described in
+    `~proplot.axes.Axes.colorbar`.
+colorbar_kw : dict-like, optional
+    Ignored if `colorbar` is ``None``. Extra keyword args for our call
+    to `~proplot.axes.Axes.colorbar`.
+lw, linewidth, linewidths
+    The width of `~matplotlib.axes.Axes.contour` lines and
+    `~proplot.axes.Axes.cmapline` lines. Also the width of lines
+    *between* `~matplotlib.axes.Axes.pcolor` boxes,
+    `~matplotlib.axes.Axes.pcolormesh` boxes, and
+    `~matplotlib.axes.Axes.contourf` filled contours.
+ls, linestyle, linestyles
+    As with `lw`, but for the line style.
+color, colors, edgecolor, edgecolors
+    As with `lw`, but for the line color.
+"""
+docstring.interpd.update(cmap_changer_kwargs=cmap_changer_kwargs)
 
 
 def legend_wrapper(
@@ -1959,6 +1953,66 @@ property-spec, optional
     for leg in legs:
         leg.set_clip_on(False)
     return legs[0] if len(legs) == 1 else (*legs,)
+
+
+legend_kwargs = """
+handles : list of `~matplotlib.artist.Artist`, optional
+    List of artists instances, or list of lists of artist instances (see
+    the `center` keyword). If ``None``, the artists are retrieved with
+    `~matplotlib.axes.Axes.get_legend_handles_labels`.
+labels : list of str, optional
+    Matching list of string labels, or list of lists of string labels (see
+    the `center` keywod). If ``None``, the labels are retrieved by calling
+    `~matplotlib.artist.Artist.get_label` on each `~matplotlib.artist.Artist`
+    in `handles`.
+ncol, ncols : int, optional
+    The number of columns. `ncols` is an alias, added
+    for consistency with `~matplotlib.pyplot.subplots`.
+order : {'C', 'F'}, optional
+    Whether legend handles are drawn in row-major (``'C'``) or column-major
+    (``'F'``) order. Analagous to `numpy.array` ordering. For some reason
+    ``'F'`` was the original matplotlib default. Default is ``'C'``.
+center : bool, optional
+    Whether to center each legend row individually. If ``True``, we
+    actually draw successive single-row legends stacked on top of each
+    other.
+
+    If ``None``, we infer this setting from `handles`. Default is ``True``
+    if `handles` is a list of lists; each sublist is used as a *row*
+    in the legend. Otherwise, default is ``False``.
+loc : int or str, optional
+    The legend location. The following location keys are valid.
+
+    ==================  ==========================================================
+    Location            Valid keys
+    ==================  ==========================================================
+    "best" possible     ``0``, ``'best'``, ``'b'``, ``'i'``, ``'inset'``
+    upper right         ``1``, ``'upper right'``, ``'ur'``
+    upper left          ``2``, ``'upper left'``, ``'ul'``
+    lower left          ``3``, ``'lower left'``, ``'ll'``
+    lower right         ``4``, ``'lower right'``, ``'lr'``
+    center left         ``5``, ``'center left'``, ``'cl'``
+    center right        ``6``, ``'center right'``, ``'cr'``
+    lower center        ``7``, ``'lower center'``, ``'lc'``
+    upper center        ``8``, ``'upper center'``, ``'uc'``
+    center              ``9``, ``'center'``, ``'c'``
+    ==================  ==========================================================
+
+label, title : str, optional
+    The legend title. The `label` keyword is also accepted, for consistency
+    with `colorbar`.
+fontsize, fontweight, fontcolor : optional
+    The font size, weight, and color for legend text.
+color, lw, linewidth, marker, linestyle, dashes, markersize : property-spec, optional
+    Properties used to override the legend handles. For example, if you
+    want a legend that describes variations in line style ignoring variations
+    in color, you might want to use ``color='k'``. For now this does not
+    include `facecolor`, `edgecolor`, and `alpha`, because
+    `~matplotlib.axes.Axes.legend` uses these keyword args to modify the
+    frame properties.
+"""  # noqa
+docstring.interpd.update(legend_args='')
+docstring.interpd.update(legend_kwargs=legend_kwargs)
 
 
 def colorbar_wrapper(
@@ -2380,6 +2434,112 @@ or colormap-spec
         cb.solids.set_linewidth(0.4)
         cb.solids.set_edgecolor('face')
     return cb
+
+
+colorbar_args = """
+mappable : mappable, list of plot handles, list of color-spec, or colormap-spec
+    There are four options here:
+
+    1. A mappable object. Basically, any object with a ``get_cmap`` method,
+       like the objects returned by `~matplotlib.axes.Axes.contourf` and
+       `~matplotlib.axes.Axes.pcolormesh`.
+    2. A list of "plot handles". Basically, any object with a ``get_color``
+       method, like `~matplotlib.lines.Line2D` instances. A colormap will
+       be generated from the colors of these objects, and colorbar levels
+       will be selected using `values`.  If `values` is ``None``, we try
+       to infer them by converting the handle labels returned by
+       `~matplotlib.artist.Artist.get_label` to `float`. Otherwise, it is
+       set to ``np.linspace(0, 1, len(mappable))``.
+    3. A list of hex strings, color string names, or RGB tuples. A colormap
+       will be generated from these colors, and colorbar levels will be
+       selected using `values`. If `values` is ``None``, it is set to
+       ``np.linspace(0, 1, len(mappable))``.
+    4. A `~matplotlib.colors.Colormap` instance. In this case, a colorbar
+       will be drawn using this colormap and with levels determined by
+       `values`. If `values` is ``None``, it is set to
+       ``np.linspace(0, 1, cmap._N)``.
+"""
+colorbar_kwargs = """
+values : list of float, optional
+    Ignored if `mappable` is a mappable object. This maps each color or
+    plot handle in the `mappable` list to numeric values, from which a
+    colormap and normalizer are constructed.
+extend : {None, 'neither', 'both', 'min', 'max'}, optional
+    Direction for drawing colorbar "extensions" (i.e. references to
+    out-of-bounds data with a unique color). These are triangles by
+    default. If ``None``, we try to use the ``extend`` attribute on the
+    mappable object. If the attribute is unavailable, we use ``'neither'``.
+extendsize : float or str, optional
+    The length of the colorbar "extensions" in *physical units*.
+    If float, units are inches. If string, units are interpreted
+    by `~proplot.utils.units`. Default is :rc:`colorbar.insetextend`
+    for inset colorbars and :rc:`colorbar.extend` for outer colorbars.
+
+    This is handy if you have multiple colorbars in one figure.
+    With the matplotlib API, it is really hard to get triangle
+    sizes to match, because the `extendsize` units are *relative*.
+tickloc, ticklocation : {'bottom', 'top', 'left', 'right'}, optional
+    Where to draw tick marks on the colorbar.
+label, title : str, optional
+    The colorbar label. The `title` keyword is also accepted for
+    consistency with `legend`.
+grid : bool, optional
+    Whether to draw "gridlines" between each level of the colorbar.
+    Default is :rc:`colorbar.grid`.
+tickminor : bool, optional
+    Whether to put minor ticks on the colorbar. Default is ``False``.
+locator, ticks : locator spec, optional
+    Used to determine the colorbar tick mark positions. Passed to the
+    `~proplot.axistools.Locator` constructor.
+maxn : int, optional
+    Used if `locator` is ``None``. Determines the maximum number of levels
+    that are ticked. Default depends on the colorbar length relative
+    to the font size. The keyword name "maxn" is meant to mimic
+    the `~matplotlib.ticker.MaxNLocator` class name.
+maxn_minor : int, optional
+    As with `maxn`, but for minor tick positions. Default depends
+    on the colorbar length.
+locator_kw : dict-like, optional
+    The locator settings. Passed to `~proplot.axistools.Locator`.
+minorlocator, minorticks
+    As with `locator`, but for the minor tick marks.
+minorlocator_kw
+    As for `locator_kw`, but for the minor locator.
+formatter, ticklabels : formatter spec, optional
+    The tick label format. Passed to the `~proplot.axistools.Formatter`
+    constructor.
+formatter_kw : dict-like, optional
+    The formatter settings. Passed to `~proplot.axistools.Formatter`.
+norm : normalizer spec, optional
+    Ignored if `values` is ``None``. The normalizer
+    for converting `values` to colormap colors. Passed to the
+    `~proplot.styletools.Norm` constructor. As an example, if your
+    values are logarithmically spaced but you want the level boundaries
+    to appear halfway in-between the colorbar tick marks, try
+    ``norm='log'``.
+norm_kw : dict-like, optional
+    The normalizer settings. Passed to `~proplot.styletools.Norm`.
+edgecolor, linewidth : optional
+    The edge color and line width for the colorbar outline.
+labelsize, labelweight, labelcolor : optional
+    The font size, weight, and color for colorbar label text.
+ticklabelsize, ticklabelweight, ticklabelcolor : optional
+    The font size, weight, and color for colorbar tick labels.
+fixticks : bool, optional
+    For complicated normalizers (e.g. `~matplotlib.colors.LogNorm`), the
+    colorbar minor and major ticks can appear misaligned. When `fixticks`
+    is ``True``, this misalignment is fixed. Default is ``False``.
+
+    This will give incorrect positions when the colormap index does not
+    appear to vary "linearly" from left-to-right across the colorbar (for
+    example, when the leftmost colormap colors seem to be "pulled" to the
+    right farther than normal). In this case, you should stick with
+    ``fixticks=False``.
+orientation : {'horizontal', 'vertical'}, optional
+    The colorbar orientation. You should not have to explicitly set this.
+"""
+docstring.interpd.update(colorbar_args=colorbar_args)
+docstring.interpd.update(colorbar_kwargs=colorbar_kwargs)
 
 
 def _redirect(func):
