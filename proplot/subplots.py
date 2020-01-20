@@ -2535,6 +2535,22 @@ def _journal_figsize(journal):
     return width, height
 
 
+# TODO: Figure out how to save subplots keyword args!
+@docstring.dedent_interpd
+def figure(**kwargs):
+    """
+    Analogous to `matplotlib.pyplot.figure`, create an empty figure meant
+    to be filled with axes using `Figure.add_subplot`.
+
+    Parameters
+    ----------
+    %(figure_doc)s
+    **kwargs
+        Passed to `Figure`.
+    """
+    return plt.figure(FigureClass=Figure, **kwargs)
+
+
 def subplots(
     array=None, ncols=1, nrows=1, ref=1, order='C',
     left=None, right=None, bottom=None, top=None, wspace=None, hspace=None,
