@@ -372,34 +372,11 @@ class subplot_grid(list):
 class SubplotSpec(mgridspec.SubplotSpec):
     """
     Matplotlib `~matplotlib.gridspec.SubplotSpec` subclass that adds
-    some helpful methods.
+    a helpful `__repr__` method. Otherwise is identical.
     """
     def __repr__(self):
         nrows, ncols, row1, row2, col1, col2 = self.get_rows_columns()
         return f'SubplotSpec({nrows}, {ncols}; {row1}:{row2}, {col1}:{col2})'
-
-    def get_active_geometry(self):
-        """Returns the number of rows, number of columns, and 1d subplot
-        location indices, ignoring rows and columns allocated for spaces."""
-        nrows, ncols, row1, row2, col1, col2 = self.get_active_rows_columns()
-        num1 = row1 * ncols + col1
-        num2 = row2 * ncols + col2
-        return nrows, ncols, num1, num2
-
-    def get_active_rows_columns(self):
-        """Returns the number of rows, number of columns, first subplot row,
-        last subplot row, first subplot column, and last subplot column,
-        ignoring rows and columns allocated for spaces."""
-        gridspec = self.get_gridspec()
-        nrows, ncols = gridspec.get_geometry()
-        row1, col1 = divmod(self.num1, ncols)
-        if self.num2 is not None:
-            row2, col2 = divmod(self.num2, ncols)
-        else:
-            row2 = row1
-            col2 = col1
-        return (
-            nrows // 2, ncols // 2, row1 // 2, row2 // 2, col1 // 2, col2 // 2)
 
 
 class GridSpec(mgridspec.GridSpec):
@@ -505,7 +482,8 @@ class GridSpec(mgridspec.GridSpec):
         if not isinstance(figure, Figure):
             raise ValueError(
                 f'add_figure() accepts only ProPlot Figure instances, '
-                f'you passed {type(figure)}.')
+                f'you passed {type(figure)}.'
+            )
         self._figures.add(figure)
 
     def get_grid_positions(self, figure, raw=False):
