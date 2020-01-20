@@ -1187,8 +1187,9 @@ def ipython_matplotlib(backend=None, fmt=None):
         if backend != 'auto':
             _warn_proplot(f'{"%matplotlib " + backend!r} failed.')
 
-    # Configure inline backend no matter what type of session this is
-    # Should be silently ignored for terminal ipython sessions
+    # Configure inline backend
+    if ibackend != 'inline':
+        return
     fmt = fmt or rcParamsShort['inlinefmt']
     if isinstance(fmt, str):
         fmt = [fmt]
@@ -1199,11 +1200,11 @@ def ipython_matplotlib(backend=None, fmt=None):
             f'Invalid inline backend format {fmt!r}. '
             'Must be string or list thereof.'
         )
-    ipython.magic(f'config InlineBackend.figure_formats = {fmt!r}')
+    ipython.magic('config InlineBackend.figure_formats = ' + repr(fmt))
     ipython.magic('config InlineBackend.rc = {}')  # no notebook overrides
     ipython.magic('config InlineBackend.close_figures = True')  # memory issues
     ipython.magic(  # use ProPlot tight layout instead
-        'config InlineBackend.print_figure_kwargs = {"bbox_inches":None}'
+        'config InlineBackend.print_figure_kwargs = {"bbox_inches": None}'
     )
 
 
