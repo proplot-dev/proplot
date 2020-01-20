@@ -1,3 +1,5 @@
+# XKCD color survey colors
+# https://blog.xkcd.com/2010/05/03/color-survey-results/
 purple:                     #7e1e9c
 green:                      #15b01a
 blue:                       #0343df

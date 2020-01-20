@@ -21,7 +21,7 @@ import matplotlib.collections as mcollections
 import matplotlib.patheffects as mpatheffects
 from . import projs, axistools, styletools
 from .utils import _warn_proplot, _notNone, units, arange, edges
-from .rctools import rc, RC_NODOTSNAMES
+from .rctools import rc, _rc_nodots
 from .wrappers import (
     _norecurse, _redirect,
     _add_errorbars,
@@ -34,6 +34,10 @@ try:
     from cartopy.mpl.geoaxes import GeoAxes
 except ModuleNotFoundError:
     GeoAxes = object
+try:  # use this for debugging instead of print()!
+    from icecream import ic
+except ImportError:  # graceful fallback if IceCream isn't installed
+    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
 
 __all__ = [
     'Axes',
@@ -179,7 +183,7 @@ def _parse_format(mode=2, rc_kw=None, **kwargs):
     kw = {}
     rc_kw = rc_kw or {}
     for key, value in kwargs.items():
-        key_fixed = RC_NODOTSNAMES.get(key, None)
+        key_fixed = _rc_nodots.get(key, None)
         if key_fixed is None:
             kw[key] = value
         else:
@@ -1241,6 +1245,15 @@ class Axes(maxes.Axes):
             self.add_child_axes(ax)
 
             # Location
+            # NOTE: May change loc='_fill' to 'fill' so users can manually
+            # fill axes but maintain proplot colorbar() features. For now
+            # this is just used internally by show_cmaps() and show_cycles()
+            if side is None:  # manual
+                orientation = kwargs.pop('orientation', None)
+                if orientation == 'vertical':
+                    side = 'left'
+                else:
+                    side = 'bottom'
             if side in ('bottom', 'top'):
                 outside, inside = 'bottom', 'top'
                 if side == 'top':
@@ -1255,13 +1268,21 @@ class Axes(maxes.Axes):
                 orientation = 'vertical'
 
             # Keyword args and add as child axes
-            orient = kwargs.get('orientation', None)
-            if orient is not None and orient != orientation:
-                _warn_proplot(f'Overriding input orientation={orient!r}.')
-            ticklocation = kwargs.pop('tickloc', None) or ticklocation
-            ticklocation = kwargs.pop('ticklocation', None) or ticklocation
-            kwargs.update({'orientation': orientation,
-                           'ticklocation': ticklocation})
+            orientation_user = kwargs.get('orientation', None)
+            if orientation_user and orientation_user != orientation:
+                _warn_proplot(
+                    f'Overriding input orientation={orientation_user!r}.'
+                )
+            ticklocation = _notNone(
+                kwargs.pop('ticklocation', None),
+                kwargs.pop('tickloc', None),
+                ticklocation,
+                names=('ticklocation', 'tickloc')
+            )
+            kwargs.update({
+                'orientation': orientation,
+                'ticklocation': ticklocation
+            })
 
         # Inset colorbar
         else:
@@ -2062,8 +2083,9 @@ class Axes(maxes.Axes):
     @_cmap_changer
     def parametric(
         self, *args, values=None,
-        cmap=None, norm=None,
-        interp=0, **kwargs
+        cmap=None, norm=None, interp=0,
+        scalex=True, scaley=True,
+        **kwargs
     ):
         """
         Draw a line whose color changes as a function of the parametric
@@ -2087,6 +2109,15 @@ class Axes(maxes.Axes):
             between the `values` coordinates. The number corresponds to the
             number of additional color levels between the line joints
             and the halfway points between line joints.
+        scalex, scaley : bool, optional
+            These parameters determine if the view limits are adapted to
+            the data limits. The values are passed on to
+            `~matplotlib.axes.Axes.autoscale_view`.
+
+        Other parameters
+        ----------------
+        **kwargs
+            Valid `~matplotlib.collections.LineCollection` properties.
 
         Returns
         -------
@@ -2165,10 +2196,9 @@ class Axes(maxes.Axes):
             if key not in ('color',)
         })
 
-        # Add collection, with some custom attributes
+        # Add collection with some custom attributes
         self.add_collection(hs)
-        if self.get_autoscale_on() and self.ignore_existing_data_limits:
-            self.autoscale_view()  # data limits not updated otherwise
+        self.autoscale_view(scalex=scalex, scaley=scaley)
         hs.values = values
         hs.levels = levels  # needed for other functions some
         return hs
@@ -2344,7 +2374,7 @@ def _parse_alt(x, kwargs):
                 f'Twin axis keyword arg {key!r} is deprecated. '
                 f'Use {key[1:]!r} instead.')
             kw_out[key] = value
-        elif key in RC_NODOTSNAMES:
+        elif key in _rc_nodots:
             kw_out[key] = value
         else:
             kw_bad[key] = value
@@ -3036,14 +3066,9 @@ class XYAxes(Axes):
                     if which == 'major':
                         kw_grid = rc.fill(_grid_dict('grid'), context=True)
                     else:
-                        kw_major = kw_grid
                         kw_grid = rc.fill(
                             _grid_dict('gridminor'), context=True
                         )
-                        kw_grid.update({
-                            key: value for key, value in kw_major.items()
-                            if key not in kw_grid
-                        })
                     # Changed rc settings
                     if gridcolor is not None:
                         kw['grid_color'] = gridcolor
