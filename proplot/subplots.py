@@ -1993,15 +1993,159 @@ class Figure(mfigure.Figure):
         """This docstring is replaced below."""
         return self.set_gridspec(*args, **kwargs)
 
-    def add_subplot(self, *args, **kwargs):
-        """Issues warning for new users that try to call
-        `~matplotlib.figure.Figure.add_subplot` manually."""
-        if not self._authorized_add_subplot:
+    def add_subplot(
+        self, *args,
+        proj=None, projection=None, basemap=False,
+        proj_kw=None, projection_kw=None, main=True, number=None,
+        sharex=None, sharey=None,
+        **kwargs
+    ):
+        """
+        Add a subplot to the figure.
+
+        Parameters
+        ----------
+        *args
+            There are three options here. See the matplotlib
+            `~matplotlib.figure.add_subplot` documentation for details.
+
+            * A `SubplotSpec` instance. Must be a child of the "main"
+              gridspec, and must be a ProPlot `SubplotSpec` instead of a native
+              matplotlib `~matplotlib.gridspec.SubplotSpec`.
+            * A 3-digit integer, e.g. ``121``. Geometry must be equivalent to
+              or divide the "main" gridspec geometry.
+            * A tuple indicating (nrows, ncols, index). Geometry must be
+              equivalent to or divide the "main" gridspec geometry.
+        proj, projection : str, `~mpl_toolkits.basemap.Basemap`, or `~cartopy.crs.CRS`, optional
+            A registered matplotlib projection name, a basemap or cartopy
+            map projection name, a `~mpl_toolkits.basemap.Basemap` instance, or
+            a `~cartpoy.crs.CRS` instance. Passed to `~proplot.projs.Proj`. See
+            `~proplot.projs.Proj` for a table of map projection names.
+        proj_kw, projection_kw : dict-like, optional
+            Dictionary of keyword args for the projection class. Passed to
+            `~proplot.projs.Proj`.
+        main : bool, optional
+            Used internally. Indicates whether this is a "main axes" rather
+            than a twin, panel, or inset axes. Default is ``True``.
+        number : int, optional
+            The subplot number, used for a-b-c labeling. See `~Axes.format`
+            for details. Note the first axes is ``1``, not ``0``. Ignored if
+            `main` is ``False``.
+
+        Other parameters
+        ----------------
+        **kwargs
+            Passed to `~matplotlib.figure.Figure.add_subplot`. This can also
+            include axes properties.
+        sharex, sharey
+            Ignored. ProPlot toggles axes sharing for the entire figure and
+            calculates which axes should be shared based on their gridspec
+            positions. See `Figure` for details.
+        """  # noqa
+        # Copied from matplotlib add_subplot
+        if not len(args):
+            args = (1, 1, 1)
+        if len(args) == 1 and isinstance(args[0], Integral):
+            if not 100 <= args[0] <= 999:
+                raise ValueError(
+                    'Integer subplot specification must be a '
+                    'three-digit number, not {args[0]!r}.')
+            args = tuple(map(int, str(args[0])))
+        if sharex is not None:
             _warn_proplot(
-                'Using "fig.add_subplot()" with ProPlot figures may result in '
-                'unexpected behavior. Please use "proplot.subplots()" instead.'
-            )
-        ax = super().add_subplot(*args, **kwargs)
+                f'Ignoring sharex={sharex!r}. To toggle axes sharing, '
+                'just pass sharex=num to figure() or subplots().')
+        if sharey is not None:
+            _warn_proplot(
+                f'Ignoring sharey={sharey!r}. To toggle axes sharing, '
+                'just pass sharey=num to figure() or subplots().')
+
+        # Copied from SubplotBase __init__
+        # Interpret positional args
+        gs = self._gridspec
+        ss = None
+        if len(args) == 1:
+            if isinstance(args[0], SubplotSpec):
+                ss = args[0]
+            elif isinstance(args[0], mgridspec.SubplotSpec):
+                raise ValueError(
+                    f'Invalid subplotspec {args[0]!r}. '
+                    'Figure.add_subplot() only accepts SubplotSpecs generated '
+                    'by the ProPlot GridSpec class.')
+            else:
+                try:
+                    s = str(int(args[0]))
+                    nrows, ncols, num = map(int, s)
+                except ValueError:
+                    raise ValueError(
+                        f'Single argument to subplot must be a 3-digit '
+                        'integer, not {args[0]!r}.')
+        elif len(args) == 3:
+            nrows, ncols, num = args
+        else:
+            raise ValueError(f'Illegal argument(s) to add_subplot: {args!r}')
+
+        # Initialize gridspec and subplotspec
+        # Also enforce constant geometry
+        if ss is None:
+            nrows, ncols = int(nrows), int(ncols)
+            if isinstance(num, tuple) and len(num) == 2:
+                num = [int(n) for n in num]
+            else:
+                if num < 1 or num > nrows * ncols:
+                    raise ValueError(
+                        f'num must be 1 <= num <= {nrows*ncols}, not {num}')
+            if not isinstance(num, tuple):
+                num = (num, num)
+            if gs is None:
+                self._solver.solve(nrows=nrows, ncols=ncols)
+                gs = self._gridspec
+            elif (nrows, ncols) != gs.get_geometry():
+                raise ValueError(
+                    f'Input arguments {args!r} conflict with existing '
+                    'gridspec geometry of {nrows} rows, {ncols} columns.'
+                )
+            ss = gs[(num[0] - 1):num[1]]
+        else:
+            if gs is None:
+                nrows, ncols, *_ = ss.get_geometry()
+                gs = ss.get_gridspec()
+                self._solver.solve(nrows=nrows, ncols=ncols)
+            elif ss.get_gridspec() is not gs:  # covers geometry discrepancies
+                raise ValueError(
+                    f'Invalid subplotspec {args[0]!r}. '
+                    'Figure.add_subplot() only accepts SubplotSpec objects '
+                    'whose parent is the main gridspec.'
+                )
+        gs.add_figure(self)
+
+        # Impose projection
+        # TODO: Have Proj return all unused keyword args, with a
+        # map_projection = obj entry, and maybe hide the Proj constructor as
+        # an argument processing utility?
+        proj = _notNone(
+            proj, projection, 'cartesian',
+            names=('proj', 'projection')
+        )
+        proj_kw = _notNone(
+            proj_kw, projection_kw, {},
+            names=('proj_kw', 'projection_kw')
+        )
+        if proj not in ('cartesian', 'polar'):
+            map_projection = projs.Proj(proj, basemap=basemap, **proj_kw)
+            if 'map_projection' in kwargs:
+                _warn_proplot(
+                    f'Ignoring input "map_projection" '
+                    f'{kwargs["map_projection"]!r}.'
+                )
+            kwargs['map_projection'] = map_projection
+            proj = 'basemap' if basemap else 'cartopy'
+
+        # Return subplot
+        ax = super().add_subplot(ss, projection=proj, number=number, **kwargs)
+        if main:
+            ax.number = _notNone(number, len(self._mainaxes) + 1)
+            self._mainaxes.append(ax)
         return ax
 
     def colorbar(
@@ -2390,19 +2534,13 @@ def _journal_figsize(journal):
         width = value
     return width, height
 
+
 def subplots(
-    array=None, ncols=1, nrows=1,
-    ref=1, order='C',
-    aspect=1, figsize=None,
-    width=None, height=None, journal=None,
-    axwidth=None, axheight=None,
-    hspace=None, wspace=None, space=None,
-    hratios=None, wratios=None,
-    width_ratios=None, height_ratios=None,
-    left=None, bottom=None, right=None, top=None,
-    basemap=False, proj=None, projection=None,
-    proj_kw=None, projection_kw=None,
-    **kwargs
+    array=None, ncols=1, nrows=1, ref=1, order='C',
+    left=None, right=None, bottom=None, top=None, wspace=None, hspace=None,
+    hratios=None, wratios=None, width_ratios=None, height_ratios=None,
+    proj=None, projection=None, proj_kw=None, projection_kw=None,
+    basemap=False, **kwargs
 ):
     """
     Create a figure with a single subplot or arbitrary grids of subplots,
@@ -2429,108 +2567,41 @@ def subplots(
         (``'F'``) order. Analogous to `numpy.array` ordering. This controls
         the order axes appear in the `axs` list, and the order of subplot
         a-b-c labeling (see `~proplot.axes.Axes.format`).
-    figsize : length-2 tuple, optional
-        Tuple specifying the figure `(width, height)`.
-    width, height : float or str, optional
-        The figure width and height. Units are interpreted by
-        `~proplot.utils.units`.
-    journal : str, optional
-        String name corresponding to an academic journal standard that is used
-        to control the figure width (and height, if specified). See below
-        table.
-
-        ===========  ====================  ==========================================================================================================================================================
-        Key          Size description      Organization
-        ===========  ====================  ==========================================================================================================================================================
-        ``'aaas1'``  1-column              `American Association for the Advancement of Science <https://www.sciencemag.org/authors/instructions-preparing-initial-manuscript>`__ (e.g. *Science*)
-        ``'aaas2'``  2-column              ”
-        ``'agu1'``   1-column              `American Geophysical Union <https://publications.agu.org/author-resource-center/figures-faq/>`__
-        ``'agu2'``   2-column              ”
-        ``'agu3'``   full height 1-column  ”
-        ``'agu4'``   full height 2-column  ”
-        ``'ams1'``   1-column              `American Meteorological Society <https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/>`__
-        ``'ams2'``   small 2-column        ”
-        ``'ams3'``   medium 2-column       ”
-        ``'ams4'``   full 2-column         ”
-        ``'nat1'``   1-column              `Nature Research <https://www.nature.com/nature/for-authors/formatting-guide>`__
-        ``'nat2'``   2-column              ”
-        ``'pnas1'``  1-column              `Proceedings of the National Academy of Sciences <http://www.pnas.org/page/authors/submission>`__
-        ``'pnas2'``  2-column              ”
-        ``'pnas3'``  landscape page        ”
-        ===========  ====================  ==========================================================================================================================================================
-
-    ref : int, optional
-        The reference axes number. The `axwidth`, `axheight`, and `aspect`
-        keyword args are applied to this axes, and aspect ratio is conserved
-        for this axes in tight layout adjustment.
-    axwidth, axheight : float or str, optional
-        Sets the average width, height of your axes. Units are interpreted by
-        `~proplot.utils.units`. Default is :rc:`subplots.axwidth`.
-
-        These arguments are convenient where you don't care about the figure
-        dimensions and just want your axes to have enough "room".
-    aspect : float or length-2 list of floats, optional
-        The (average) axes aspect ratio, in numeric form (width divided by
-        height) or as (width, height) tuple. If you do not provide
-        the `hratios` or `wratios` keyword args, all axes will have
-        identical aspect ratios.
-    hratios, wratios
-        Aliases for `height_ratios`, `width_ratios`.
-    width_ratios, height_ratios : float or list thereof, optional
-        Passed to `GridSpec`, denotes the width
-        and height ratios for the subplot grid. Length of `width_ratios`
-        must match the number of rows, and length of `height_ratios` must
-        match the number of columns.
-    wspace, hspace, space : float or str or list thereof, optional
-        Passed to `GridSpec`, denotes the
-        spacing between grid columns, rows, and both, respectively. If float
-        or string, expanded into lists of length ``ncols-1`` (for `wspace`)
-        or length ``nrows-1`` (for `hspace`).
-
-        Units are interpreted by `~proplot.utils.units` for each element of
-        the list. By default, these are determined by the "tight
-        layout" algorithm.
-    left, right, top, bottom : float or str, optional
-        Passed to `GridSpec`, denotes the width of padding between the
-        subplots and the figure edge. Units are interpreted by
-        `~proplot.utils.units`. By default, these are determined by the
-        "tight layout" algorithm.
     proj, projection : str or dict-like, optional
-        The map projection name. The argument is interpreted as follows.
+        The map projection name(s), passed to `~proplot.projs.Proj`. The
+        argument is interpreted as follows.
 
-        * If string, this projection is used for all subplots. For valid
-          names, see the `~proplot.projs.Proj` documentation.
-        * If list of string, these are the projections to use for each
-          subplot in their `array` order.
-        * If dict-like, keys are integers or tuple integers that indicate
-          the projection to use for each subplot. If a key is not provided,
-          that subplot will be a `~proplot.axes.XYAxes`. For example,
-          in a 4-subplot figure, ``proj={2:'merc', (3,4):'stere'}``
-          draws a Cartesian axes for the first subplot, a Mercator
-          projection for the second subplot, and a Stereographic projection
-          for the second and third subplots.
+        * If string, this projection is used for all subplots. See
+          `~proplot.projs.Proj` for a table of map projection names.
+        * If list of strings, these projections are used for each
+          subplot in the order specified by `array` or `order`.
+        * If dict-like, the keys are integers or tuples of integers
+          corresponding to subplot numbers, and the values are strings
+          indicating the projection. If a key is not provided, the subplot
+          will be `~proplot.axes.CartesianAxes`.
 
+        For example, with ``ncols=4`` and ``proj={2:'merc', (3,4):'cyl'}``,
+        the first subplot is a normal axes, the second is a Mercator
+        projection, and the third and fourth are cylindrical projections.
     proj_kw, projection_kw : dict-like, optional
-        Keyword arguments passed to `~mpl_toolkits.basemap.Basemap` or
-        cartopy `~cartopy.crs.Projection` classes on instantiation.
-        If dictionary of properties, applies globally. If *dictionary of
-        dictionaries* of properties, applies to specific subplots, as
-        with `proj`.
-
-        For example, with ``ncols=2`` and
-        ``proj_kw={1:{'lon_0':0}, 2:{'lon_0':180}}``, the projection in
-        the left subplot is centered on the prime meridian, and the projection
-        in the right subplot is centered on the international dateline.
+        Dictionary of keyword args for the projection class. Passed to
+        `~proplot.projs.Proj`. Can be set for specific subplots just like
+        `proj`. For example, with ``ncols=2`` and
+        ``proj_kw={1:dict(lon_0=0), 2:dict(lon_0=180)}``, the left subplot is
+        centered on the prime meridian and the right subplot is centered on
+        the international dateline.
     basemap : bool or dict-like, optional
-        Whether to use `~mpl_toolkits.basemap.Basemap` or
-        `~cartopy.crs.Projection` for map projections. Default is ``False``.
-        If boolean, applies to all subplots. If dictionary, values apply to
-        specific subplots, as with `proj`.
+        Whether to use basemap or cartopy for map projections. Default is
+        ``False``. Can be set for specific subplots just like `proj`.
+        For example, with ``basemap={1:False, 2:True}``, the left subplot is
+        a cartopy projection and the right subplot is a basemap projection.
 
     Other parameters
     ----------------
-    **kwargs
-        Passed to `Figure`.
+    %(figure_doc)s
+    hratios, wratios, height_ratios, width_ratios
+        Passed to `GridSpec`. These describe the ratios between successive
+        rows and columns of the subplot grid.
 
     Returns
     -------
@@ -2579,15 +2650,10 @@ def subplots(
             'one of {nums}.'
         )
     nrows, ncols = array.shape
-
-    # Get some axes properties, where locations are sorted by axes id.
-    # NOTE: These ranges are endpoint exclusive, like a slice object!
-    axids = [np.where(array == i) for i in np.sort(
-        np.unique(array)) if i > 0]  # 0 stands for empty
+    # Get axes ranges from array
+    axids = [np.where(array == i) for i in np.sort(np.unique(array)) if i > 0]
     xrange = np.array([[x.min(), x.max()] for _, x in axids])
     yrange = np.array([[y.min(), y.max()] for y, _ in axids])
-    xref = xrange[ref - 1, :]  # range for reference axes
-    yref = yrange[ref - 1, :]
 
     # Get basemap.Basemap or cartopy.crs.Projection instances for map
     proj = _notNone(projection, proj, None, names=('projection', 'proj'))
@@ -2596,93 +2662,16 @@ def subplots(
     proj = _axes_dict(naxs, proj, kw=False, default='xy')
     proj_kw = _axes_dict(naxs, proj_kw, kw=True)
     basemap = _axes_dict(naxs, basemap, kw=False, default=False)
-    axes_kw = {num: {}
-               for num in range(1, naxs + 1)}  # stores add_subplot arguments
-    for num, name in proj.items():
-        # The default is XYAxes
-        if name is None or name == 'xy':
-            axes_kw[num]['projection'] = 'xy'
-        # Builtin matplotlib polar axes, just use my overridden version
-        elif name == 'polar':
-            axes_kw[num]['projection'] = 'polar'
-            if num == ref:
-                aspect = 1
-        # Custom Basemap and Cartopy axes
-        else:
-            package = 'basemap' if basemap[num] else 'geo'
-            m = projs.Proj(
-                name, basemap=basemap[num], **proj_kw[num]
-            )
-            if num == ref:
-                if basemap[num]:
-                    aspect = (
-                        (m.urcrnrx - m.llcrnrx) / (m.urcrnry - m.llcrnry)
-                    )
-                else:
-                    aspect = (
-                        np.diff(m.x_limits) / np.diff(m.y_limits)
-                    )[0]
-            axes_kw[num].update({'projection': package, 'map_projection': m})
 
-    # Figure and/or axes dimensions
-    names, values = (), ()
-    if journal:
-        # if user passed width=<string > , will use that journal size
-        figsize = _journals(journal)
-        spec = f'journal={journal!r}'
-        names = ('axwidth', 'axheight', 'width')
-        values = (axwidth, axheight, width)
-        width, height = figsize
-    elif figsize:
-        spec = f'figsize={figsize!r}'
-        names = ('axwidth', 'axheight', 'width', 'height')
-        values = (axwidth, axheight, width, height)
-        width, height = figsize
-    elif width is not None or height is not None:
-        spec = []
-        if width is not None:
-            spec.append(f'width={width!r}')
-        if height is not None:
-            spec.append(f'height={height!r}')
-        spec = ', '.join(spec)
-        names = ('axwidth', 'axheight')
-        values = (axwidth, axheight)
-    # Raise warning
-    for name, value in zip(names, values):
-        if value is not None:
-            _warn_proplot(
-                f'You specified both {spec} and {name}={value!r}. '
-                f'Ignoring {name!r}.'
-            )
-
-    # Standardized dimensions
-    width, height = units(width), units(height)
-    axwidth, axheight = units(axwidth), units(axheight)
-    # Standardized user input border spaces
-    left, right = units(left), units(right)
-    bottom, top = units(bottom), units(top)
-    # Standardized user input spaces
-    wspace = np.atleast_1d(units(_notNone(wspace, space)))
-    hspace = np.atleast_1d(units(_notNone(hspace, space)))
-    if len(wspace) == 1:
-        wspace = np.repeat(wspace, (ncols - 1,))
-    if len(wspace) != ncols - 1:
-        raise ValueError(
-            f'Require {ncols-1} width spacings for {ncols} columns, '
-            'got {len(wspace)}.'
-        )
-    if len(hspace) == 1:
-        hspace = np.repeat(hspace, (nrows - 1,))
-    if len(hspace) != nrows - 1:
-        raise ValueError(
-            f'Require {nrows-1} height spacings for {nrows} rows, '
-            'got {len(hspace)}.'
-        )
     # Standardized user input ratios
-    wratios = np.atleast_1d(_notNone(width_ratios, wratios, 1,
-                                     names=('width_ratios', 'wratios')))
-    hratios = np.atleast_1d(_notNone(height_ratios, hratios, 1,
-                                     names=('height_ratios', 'hratios')))
+    wratios = np.atleast_1d(_notNone(
+        width_ratios, wratios, 1,
+        names=('width_ratios', 'wratios')
+    ))
+    hratios = np.atleast_1d(_notNone(
+        height_ratios, hratios, 1,
+        names=('height_ratios', 'hratios')
+    ))
     if len(wratios) == 1:
         wratios = np.repeat(wratios, (ncols,))
     if len(hratios) == 1:
@@ -2691,46 +2680,17 @@ def subplots(
         raise ValueError(f'Got {ncols} columns, but {len(wratios)} wratios.')
     if len(hratios) != nrows:
         raise ValueError(f'Got {nrows} rows, but {len(hratios)} hratios.')
+    wratios, hratios = wratios.tolist(), hratios.tolist()  # also makes copy
 
-    # Fill subplots_orig_kw with user input values
-    # NOTE: 'Ratios' are only fixed for panel axes, but we store entire array
-    wspace, hspace = wspace.tolist(), hspace.tolist()
-    wratios, hratios = wratios.tolist(), hratios.tolist()
-    subplots_orig_kw = {
-        'left': left, 'right': right, 'top': top, 'bottom': bottom,
-        'wspace': wspace, 'hspace': hspace,
-    }
-
-    # Apply default spaces
-    share = kwargs.get('share', None)
-    sharex = _notNone(kwargs.get('sharex', None), share, rc['share'])
-    sharey = _notNone(kwargs.get('sharey', None), share, rc['share'])
-    left = _notNone(left, _get_space('left'))
-    right = _notNone(right, _get_space('right'))
-    bottom = _notNone(bottom, _get_space('bottom'))
-    top = _notNone(top, _get_space('top'))
-    wspace, hspace = np.array(wspace), np.array(hspace)  # also copies!
-    wspace[wspace == None] = _get_space('wspace', sharex)  # noqa
-    hspace[hspace == None] = _get_space('hspace', sharey)  # noqa
-    wratios, hratios = list(wratios), list(hratios)
-    wspace, hspace = list(wspace), list(hspace)
-
-    # Parse arguments, fix dimensions in light of desired aspect ratio
-    figsize, gridspec_kw, subplots_kw = _subplots_geometry(
+    # Generate figure and gridspec
+    # NOTE: This time we initialize the *gridspec* with user input values
+    # TODO: Repair solve() so it works!
+    fig = plt.figure(FigureClass=Figure, ref=ref, **kwargs)
+    gs = fig._solver.solve(
         nrows=nrows, ncols=ncols,
-        aspect=aspect, xref=xref, yref=yref,
         left=left, right=right, bottom=bottom, top=top,
-        width=width, height=height, axwidth=axwidth, axheight=axheight,
-        wratios=wratios, hratios=hratios, wspace=wspace, hspace=hspace,
-        wpanels=[''] * ncols, hpanels=[''] * nrows,
+        wratios=wratios, hratios=hratios
     )
-    fig = plt.figure(
-        FigureClass=Figure, figsize=figsize, ref=ref,
-        gridspec_kw=gridspec_kw, subplots_kw=subplots_kw,
-        subplots_orig_kw=subplots_orig_kw,
-        **kwargs
-    )
-    gridspec = fig._gridspec_main
 
     # Draw main subplots
     axs = naxs * [None]  # list of axes
@@ -2740,12 +2700,11 @@ def subplots(
         x0, x1 = xrange[idx, 0], xrange[idx, 1]
         y0, y1 = yrange[idx, 0], yrange[idx, 1]
         # Draw subplot
-        subplotspec = gridspec[y0:y1 + 1, x0:x1 + 1]
-        with fig._authorize_add_subplot():
-            axs[idx] = fig.add_subplot(
-                subplotspec, number=num, main=True,
-                **axes_kw[num]
-            )
+        ss = gs[y0:y1 + 1, x0:x1 + 1]
+        axs[idx] = fig.add_subplot(
+            ss, number=num, main=True,
+            proj=proj[num], basemap=basemap[num], proj_kw=proj_kw[num]
+        )
 
     # Shared axes setup
     # TODO: Figure out how to defer this to drawtime in #50
