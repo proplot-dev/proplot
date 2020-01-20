@@ -2,7 +2,9 @@
 """
 The axes classes used for all ProPlot figures.
 """
+import re
 import numpy as np
+import inspect
 import functools
 from numbers import Integral, Number
 import matplotlib.projections as mproj
@@ -80,6 +82,61 @@ LOC_TRANSLATE = {
     'uc': 'upper center',
     'lc': 'lower center',
 }
+
+
+# Concatenates docstrings and obfuscates call signature
+# NOTE: Originally had idea to use numpydoc.docscrape.NumpyDocString to
+# interpolate docstrings but *enormous* number of assupmtions would go into
+# this. And simple is better than complex.
+def _concatenate_docstrings(func):
+    """Concatenates docstrings from a matplotlib axes method with a ProPlot
+    axes method. Requires that proplot documentation has no other parameters,
+    notes, or examples sections."""
+    # Get matplotlib axes func
+    # If current func has no docstring just blindly copy matplotlib one
+    name = func.__name__
+    orig = getattr(maxes.Axes, name)
+    odoc = inspect.getdoc(orig)
+    if not odoc:  # should never happen
+        return func
+
+    # Prepend summary and potentially bail
+    # TODO: Does this break anything on sphinx website?
+    fdoc = inspect.getdoc(func) or ''  # also dedents
+    summary = odoc[:re.search(r'\.( | *\n|\Z)', odoc).start() + 1]
+    fdoc = f'{summary}\n\n{fdoc}'
+    if rc.get('docstring.hardcopy'):  # True when running sphinx
+        func.__doc__ = fdoc
+        return func
+
+    # Obfuscate signature by converting to *args **kwargs. Note this does
+    # not change behavior of function! Copy parameters from a dummy function
+    # because I'm too lazy to figure out inspect.Parameters API
+    # See: https://stackoverflow.com/a/33112180/4970632
+    def _dummy(*args, **kwargs):
+        pass
+    dsig = inspect.signature(_dummy)
+    fsig = inspect.signature(func)
+    func.__signature__ = (
+        fsig.replace(parameters=tuple(dsig.parameters.values())))
+
+    # Concatenate docstrings and copy summary
+    # Make sure different sections are very visible
+    doc = f"""
+==========================={"="*len(name)}
+proplot.Axes.{name} documentation
+==========================={"="*len(name)}
+{fdoc}
+
+==================================={"="*len(name)}
+matplotlib.axes.Axes.{name} documentation
+==================================={"="*len(name)}
+{odoc}
+"""
+    func.__doc__ = doc
+
+    # Return
+    return func
 
 
 def _abc(i):
