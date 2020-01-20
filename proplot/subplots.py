@@ -25,7 +25,8 @@ except ImportError:  # graceful fallback if IceCream isn't installed
     ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
 
 __all__ = [
-    'subplot_grid', 'close', 'show', 'subplots', 'Figure',
+    'subplot_grid', 'close', 'figure', 'show', 'subplots',
+    'EdgeStack', 'Figure', 'GeometrySolver',
     'GridSpec', 'SubplotSpec',
 ]
 
@@ -326,6 +327,10 @@ class subplot_grid(list):
         ... paxs.format(...) # calls "format" on all panels
 
         """
+        # TODO: Consider getting rid of __getattr__ override because it is
+        # too much of a mind fuck for new users? Could just have bulk format
+        # function and colorbar, legend, and text functions for drawing
+        # spanning content.
         if not self:
             raise AttributeError(
                 f'Invalid attribute {attr!r}, axes grid {self!r} is empty.'
