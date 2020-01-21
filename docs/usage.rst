@@ -34,8 +34,6 @@ We recommend importing ProPlot as follows:
 This differentiates ProPlot from the usual ``plt`` abbreviation used for the `~matplotlib.pyplot` module.
 Importing ProPlot immediately adds several new colormaps, property cyclers, color names, and fonts to matplotlib. See :ref:`Colormaps`, :ref:`Color cycles`, and :ref:`Colors and fonts` for details.
 
-Importing ProPlot also configures your IPython environment by setting up the matplotlib backend and enabling the autoreload and autosave extensions (this feature can be disabled). See `~proplot.rctools.ipython_matplotlib`, `~proplot.rctools.ipython_autoreload`, and `~proplot.rctools.ipython_autosave` for details.
-
 Figure and axes classes
 =======================
 Making figures in ProPlot always begins with a call to the
@@ -95,4 +93,4 @@ of the `~proplot.subplots.Figure` and `~proplot.axes.Axes` subclasses.
 * The `~proplot.styletools.show_cmaps`, `~proplot.styletools.show_cycles`, `~proplot.styletools.show_colors`, `~proplot.styletools.show_fonts`, `~proplot.styletools.show_channels`, and `~~proplot.styletools.show_colorspaces` functions are used to visualize your color scheme and font options and inspect individual colormaps.
 * The `~proplot.styletools.Norm` constructor function generates colormap normalizers from shorthand names. The new `~proplot.styletools.LinearSegmentedNorm` normalizer scales colors evenly w.r.t. index for arbitrarily spaced monotonic levels, and the new `~proplot.styletools.BinNorm` meta-normalizer is used to discretized colormap colors. See :ref:`2d plotting` for details.
 * The `~proplot.axistools.Locator`, `~proplot.axistools.Formatter`, and `~proplot.axistools.Scale` constructor functions, used to generate class instances from variable input types. These are used to interpret keyword arguments passed to `~proplot.axes.Axes.format` and `~proplot.subplots.Figure.colorbar`. See :ref:`X and Y axis settings` for details.
-* The `~proplot.rctools.rc` object, an instance of `~proplot.rctools.rc_configurator`, is used for modifying *individual* global settings, changing settings in *bulk*, and temporarily changing settings in *context blocks*. You can also control settings with a ``~/.proplotrc`` file. See :ref:`Configuring proplot` for details.
+* The `~proplot.rctools.rc` object, an instance of `~proplot.rctools.rc_configurator`, is used for modifying *individual* global settings, changing settings in *bulk*, and temporarily changing settings in *context blocks*. It also sets up the inline plotting backend, so that your inline figures look the same as your saved figures. See :ref:`Configuring proplot` for details.

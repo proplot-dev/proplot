@@ -47,8 +47,6 @@ Key               Description
 ``abc``           Boolean, whether to draw a-b-c labels by default.
 ``align``         Whether to align axis labels during draw. See `aligning labels <https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/align_labels_demo.html>`__.
 ``alpha``         The opacity of the background axes patch.
-``autoreload``    If not empty or ``0``, passed to `%autoreload <https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html#magic-autoreload>`__.
-``autosave``      If not empty or ``0``, passed to `%autosave <https://www.webucator.com/blog/2016/03/change-default-autosave-interval-in-ipython-notebook/>`__.
 ``borders``       Boolean, toggles country border lines on and off.
 ``cmap``          The default colormap.
 ``coast``         Boolean, toggles coastline lines on and off.
@@ -68,7 +66,6 @@ Key               Description
 ``linewidth``     Thickness of axes spines and major tick lines.
 ``lut``           The number of colors to put in the colormap lookup table.
 ``margin``        The margin of space between axes edges and objects plotted inside the axes, if ``xlim`` and ``ylim`` are unset.
-``matplotlib``    If not empty, passed to `%matplotlib <https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__. If ``'auto'`` (the default) uses ``'inline'`` for notebooks and ``'osx'`` or ``'qt'`` for other ipython sessions.
 ``ocean``         Boolean, toggles ocean patches on and off.
 ``reso``          Resolution of geographic features, one of ``'lo'``, ``'med'``, or ``'hi'``
 ``rgbcycle``      If ``True``, and ``colorblind`` is the current cycle, this registers the ``colorblind`` colors as ``'r'``, ``'b'``, ``'g'``, etc., like in `seaborn <https://seaborn.pydata.org/tutorial/color_palettes.html>`__.
