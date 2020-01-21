@@ -32,7 +32,7 @@ logger = logging.getLogger('matplotlib.mathtext')
 logger.setLevel(logging.ERROR)  # suppress warnings!
 
 __all__ = [
-    'rc', 'rc_configurator', 'inline_backend_config',
+    'rc', 'rc_configurator', 'inline_backend_fmt',
 ]
 
 # Dictionaries used to track custom proplot settings
@@ -426,7 +426,7 @@ def _get_synced_params(key, value):
 
     # Backend
     elif key == 'inlinefmt':
-        inline_backend_config(value)
+        inline_backend_fmt(value)
 
     # Cycler
     elif key in ('cycle', 'rgbcycle'):
@@ -1127,7 +1127,7 @@ class rc_configurator(object):
             yield self[key]
 
 
-def inline_backend_config(fmt=None):
+def inline_backend_fmt(fmt=None):
     """
     Set up the `ipython inline backend \
 <https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__
