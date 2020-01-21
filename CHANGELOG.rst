@@ -12,31 +12,69 @@ Changelog history
 
 ProPlot v1.0.0 (2020-##-##)
 ===========================
-This will be published when some major refactoring tasks are completed.
-See :pr:`45`, :pr:`46`, and :pr:`50`.
+This will be published when some major refactoring tasks are completed,
+and deprecation warnings will be removed. See :pr:`89`, :pr:`109`, :pr:`110`,
+and :pr:`111`.
 
 ProPlot v0.5.0 (2020-##-##)
 ===========================
+.. rubric:: Deprecated
+
+- `~proplot.axes.Axes.format` functions have been deprecated in favor of the
+  axes-artist `~matplotlib.artist.Artist.set` override (:pr:`89`).
+
 .. rubric:: Features
 
-- Users can now use `~proplot.subplots.figure` with `~proplot.subplots.Figure.add_subplot`
-  *or* `~proplot.subplots.subplots` (:pr:`50`). This is a major improvement!
+- All features are now implemented with individual *setters*, like in matplotlib,
+  but we still encourage using the bulk ``set`` method through documentation
+  examples and by populating the ``set`` docstring (so valid arguments are no
+  longer implicit).
+- Users can now use `~proplot.subplots.figure` with
+  `~proplot.subplots.Figure.add_subplot`
+  *or* `~proplot.subplots.subplots` (:pr:`110`). This is a major improvement!
 - `~proplot.subplots.GridSpec` now accepts physical units, rather than having
-  `~proplot.subplots.subplots` handle the units (:pr:`50`).
+  `~proplot.subplots.subplots` handle the units (:pr:`110`).
 - Allow "hanging" twin *x* and *y* axes as members of the `~proplot.subplots.EdgeStack`
   container. Arbitrarily many siblings are now permitted.
 - Use `~proplot.subplots.GeometrySolver` for calculating various automatic layout
-  stuff instead of having 1000 hidden `~proplot.subplots.Figure` methods (:pr:`50`).
+  stuff instead of having 1000 hidden `~proplot.subplots.Figure` methods (:pr:`110`).
 - Use `~proplot.subplots.EdgeStack` class for handling
-  stacks of colorbars, legends, and text (:pr:`50`).
+  stacks of colorbars, legends, and text (:pr:`110`).
 
 .. rubric:: Internals
 
+- Assignments to `~proplot.rctools.rc_configurator` are now validated, and the
+  configurator is now a monkey patch of `~matplotlib.rcParams` (:pr:`109`).
+- Plotting wrapper features (e.g. `~proplot.wrappers.standardize_1d`) are now
+  implemented and documented on the individual methods themselves
+  (e.g. `~proplot.axes.Axes.plot`; :pr:`111`).
+  This is much easier for new users.
 - Handle all projection keyword arguments in `~proplot.subplots.Figure.add_subplot`
-  instead of `~proplot.subplots.subplots` (:pr:`50`).
+  instead of `~proplot.subplots.subplots` (:pr:`110`).
 - Panels, colorbars, and legends are now members of `~proplot.subplots.EdgeStack`
   stacks rather than getting inserted directly into
-  the main `~proplot.subplots.GridSpec` (:pr:`50`).
+  the main `~proplot.subplots.GridSpec` (:pr:`110`).
+
+ProPlot v0.4.3 (2020-01-21)
+===========================
+.. rubric:: Deprecated
+
+- Remove `~proplot.rctools.ipython_autoreload`,
+  `~proplot.rctools.ipython_autosave`, and `~proplot.rctools.ipython_matplotlib`
+  (:issue:`112`, :pr:`113`). Move inline backend configuration to a hidden
+  method that gets called whenever the ``rc_configurator`` is initalized.
+
+.. rubric:: Features
+
+- Permit comments at the head of colormap and color files (:commit:`0ffc1d15`).
+- Make `~proplot.axes.Axes.parametric` match ``plot`` autoscaling behavior
+  (:commit:`ecdcba82`).
+
+.. rubric:: Internals
+
+- Use `~proplot.axes.Axes.colorbar` instead of `~matplotlib.axes.Axes.imshow`
+  for `~proplot.styletools.show_cmaps` and `~proplot.styletools.show_cycles`
+  displays (:pr:`107`).
 
 ProPlot v0.4.2 (2020-01-09)
 ===========================
@@ -290,7 +328,7 @@ ProPlot v0.2.0 (2019-12-02)
 - Rename the ``format`` rc setting in favor of the ``inlinefmt`` setting
   (:commit:`3a622887`; ``format`` is still accepted but no longer documented).
 - Rename ``FlexibleGridSpec`` and ``FlexibleSubplotSpec`` to ``GridSpec``
-  and ``SubplotSpec`` (:commit:`3a622887`; until :pr:`50` is merged it is impossible
+  and ``SubplotSpec`` (:commit:`3a622887`; until :pr:`110` is merged it is impossible
   to use these manually, so this won't bother anyone).
 
 .. rubric:: Features
