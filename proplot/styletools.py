@@ -761,10 +761,10 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             self.set_alpha(alpha)
 
     def _resample(self, N):
-        """Returns a resampled copy of the colormap."""
-        return self.updated(self, N=N)
+        """Return a resampled copy of the colormap with the same name."""
+        return self.updated(name=self.name, N=N)
 
-    def concatenate(self, *args, ratios=1, name=None, **kwargs):
+    def concatenate(self, *args, ratios=1, name=None, N=None, **kwargs):
         """
         Return the concatenation of this colormap with the
         input colormaps.
@@ -784,7 +784,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             The colormap name. Default is
             ``'_'.join(cmap.name for cmap in args)``.
         N : int, optional
-            Number of points in the colormap lookup table.
+            The number of points in the colormap lookup table.
             Default is :rc:`image.lut` times ``len(args)``.
         **kwargs
             Passed to `LinearSegmentedColormap.updated`
@@ -813,7 +813,6 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
                 'different colorspaces: '
                 + ', '.join(map(repr, spaces)) + '.'
             )
-        N = kwargs.pop('N', None)
         N = N or len(cmaps) * rcParams['image.lut']
         if name is None:
             name = '_'.join(cmap.name for cmap in cmaps)
@@ -824,7 +823,6 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         ratios = ratios or 1
         if isinstance(ratios, Number):
             ratios = [1] * len(cmaps)
-        # so if 4 cmaps, will be 1/4
         ratios = np.array(ratios) / np.sum(ratios)
         x0 = np.concatenate([[0], np.cumsum(ratios)])  # coordinates for edges
         xw = x0[1:] - x0[:-1]  # widths between edges
@@ -1183,8 +1181,10 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             cyclic = self._cyclic
         if N is None:
             N = self.N
-        cmap = LinearSegmentedColormap(name, segmentdata, N,
-                                       alpha=alpha, gamma=gamma, cyclic=cyclic)
+        cmap = LinearSegmentedColormap(
+            name, segmentdata, N,
+            alpha=alpha, gamma=gamma, cyclic=cyclic
+        )
         cmap._rgba_bad = self._rgba_bad
         cmap._rgba_under = self._rgba_under
         cmap._rgba_over = self._rgba_over
@@ -1589,8 +1589,8 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         self._lut[:, :3] = _clip_colors(self._lut[:, :3], self._clip)
 
     def _resample(self, N):
-        """Return a new colormap with *N* entries."""
-        return self.updated(N=N)
+        """Return a resampled copy of the colormap with the same name."""
+        return self.updated(name=self.name, N=N)
 
     @staticmethod
     def from_color(name, color, fade=None, space='hsl', **kwargs):
@@ -2229,10 +2229,13 @@ def Colormap(
         cmaps.append(cmap)
 
     # Merge the result of this arbitrary user input
+    N = kwargs.pop('N', None)
     if len(cmaps) > 1:  # more than one map?
-        cmap = cmaps[0].concatenate(*cmaps[1:], **kwargs)
+        cmap = cmaps[0].concatenate(*cmaps[1:], N=N, **kwargs)
     elif kwargs:  # modify any props?
         cmap = cmaps[0].updated(**kwargs)
+    elif N:
+        cmap = cmap._resample(N)
 
     # Cut the center and roate the colormap
     if cut is not None:
@@ -3177,7 +3180,7 @@ def register_fonts():
     fonts[:] = [*fonts_proplot, *fonts_system]
 
 
-def _draw_bars(names, *, source, unknown='User', length=4.0, width=0.2):
+def _draw_bars(names, *, source, unknown='User', length=4.0, width=0.2, N=None):
     """
     Draw colorbars for "colormaps" and "color cycles". This is called by
     `show_cycles` and `show_cmaps`.
@@ -3214,6 +3217,9 @@ def _draw_bars(names, *, source, unknown='User', length=4.0, width=0.2):
                 iax += 1
                 ax.set_visible(False)
                 ax = axs[iax]
+            cmap = mcm.cmap_d[name]
+            if N is not None:
+                cmap = cmap._resample(N)
             ax.colorbar(  # TODO: support this in public API
                 mcm.cmap_d[name], loc='_fill',
                 orientation='horizontal', locator='null', linewidth=0
