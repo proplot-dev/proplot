@@ -3186,8 +3186,8 @@ def _draw_bars(names, *, source, unknown='User', length=4.0, width=0.2):
     cmapdict = {}
     names_all = list(map(str.lower, names))
     names_known = list(map(str.lower, sum(map(list, source.values()), [])))
-    names_unknown = [name for name in names if name not in names_known]
-    if names_unknown:
+    names_unknown = [name for name in names_all if name not in names_known]
+    if unknown and names_unknown:
         cmapdict[unknown] = names_unknown
     for cat, names in source.items():
         names_cat = [name for name in names if name.lower() in names_all]
@@ -3562,7 +3562,8 @@ def show_cmaps(*args, N=None, **kwargs):
         :rc:`image.lut`.
     unknown : str, optional
         Category name for colormaps that are unknown to ProPlot. The
-        default is ``'User'``.
+        default is ``'User'``. Set this to ``False`` to hide
+        unknown colormaps.
     length : float or str, optional
         The length of the colorbars. Units are interpreted by
         `~proplot.utils.units`.
@@ -3602,7 +3603,8 @@ def show_cycles(*args, **kwargs):
         Cycle names or objects.
     unknown : str, optional
         Category name for cycles that are unknown to ProPlot. The
-        default is ``'User'``.
+        default is ``'User'``. Set this to ``False`` to hide
+        unknown colormaps.
     length : float or str, optional
         The length of the colorbars. Units are interpreted by
         `~proplot.utils.units`.
