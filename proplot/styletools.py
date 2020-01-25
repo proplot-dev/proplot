@@ -3180,7 +3180,9 @@ def register_fonts():
     fonts[:] = [*fonts_proplot, *fonts_system]
 
 
-def _draw_bars(names, *, source, unknown='User', length=4.0, width=0.2, N=None):
+def _draw_bars(
+    names, *, source, unknown='User', length=4.0, width=0.2, N=None
+):
     """
     Draw colorbars for "colormaps" and "color cycles". This is called by
     `show_cycles` and `show_cmaps`.
