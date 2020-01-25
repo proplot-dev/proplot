@@ -3764,16 +3764,14 @@ if 'Greys' in mcm.cmap_d:  # 'Murica (and consistency with registered colors)
     mcm.cmap_d['Grays'] = mcm.cmap_d.pop('Greys')
 if 'Spectral' in mcm.cmap_d:  # make spectral go from 'cold' to 'hot'
     mcm.cmap_d['Spectral'] = mcm.cmap_d['Spectral'].reversed(name='Spectral')
-for _name in CMAPS_TABLE['Matplotlib originals']:
-    if _name == 'twilight_shifted':  # we can generate shifted maps on the fly
+mcm.cmap_d.pop('twilight_shifted', None)  # we auto-generate this
+for _name in ('viridis', 'plasma', 'inferno', 'magma', 'cividis', 'twilight'):
+    _cmap = mcm.cmap_d.get(_name, None)
+    if _cmap and isinstance(_cmap, mcolors.ListedColormap):
         mcm.cmap_d.pop(_name, None)
-    else:  # convert ListedColormaps to LinearSegmentedColormaps
-        _cmap = mcm.cmap_d.get(_name, None)
-        if _cmap and isinstance(_cmap, mcolors.ListedColormap):
-            mcm.cmap_d.pop(_name, None)
-            mcm.cmap_d[_name] = LinearSegmentedColormap.from_list(
-                _name, _cmap.colors, cyclic=('twilight' in _name)
-            )
+        mcm.cmap_d[_name] = LinearSegmentedColormap.from_list(
+            _name, _cmap.colors, cyclic=('twilight' in _name)
+        )
 for _cat in ('MATLAB', 'GNUplot', 'GIST', 'Other'):
     for _name in CMAPS_TABLE[_cat]:
         mcm.cmap_d.pop(_name, None)
