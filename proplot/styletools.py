@@ -115,12 +115,13 @@ CMAPS_TABLE = {
     ),
     # Fabio Crameri
     'Scientific colour-maps sequential': (
+        'batlow', 'oleron',
         'devon', 'davos', 'oslo', 'lapaz', 'acton',
         'lajolla', 'bilbao', 'tokyo', 'turku', 'bamako', 'nuuk',
         'hawaii', 'buda', 'imola',
     ),
     'Scientific colour-maps diverging': (
-        'broc', 'cork', 'vik', 'berlin', 'lisbon', 'tofino',
+        'roma', 'broc', 'cork', 'vik', 'berlin', 'lisbon', 'tofino',
     ),
     'Scientific colour-maps cyclic': (
         'brocO', 'corkO', 'romaO', 'vikO',
