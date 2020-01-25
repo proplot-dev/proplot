@@ -114,16 +114,16 @@ CMAPS_TABLE = {
         'Phase',
     ),
     # Fabio Crameri
-    'Scientific colour-maps sequential': (
+    'Scientific colour maps sequential': (
         'batlow', 'oleron',
         'devon', 'davos', 'oslo', 'lapaz', 'acton',
         'lajolla', 'bilbao', 'tokyo', 'turku', 'bamako', 'nuuk',
         'hawaii', 'buda', 'imola',
     ),
-    'Scientific colour-maps diverging': (
+    'Scientific colour maps diverging': (
         'roma', 'broc', 'cork', 'vik', 'berlin', 'lisbon', 'tofino',
     ),
-    'Scientific colour-maps cyclic': (
+    'Scientific colour maps cyclic': (
         'brocO', 'corkO', 'romaO', 'vikO',
     ),
     # ColorBrewer
