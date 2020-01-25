@@ -691,13 +691,14 @@ optional
         ----
         The `abc`, `abcstyle`, `abcloc`, and `titleloc` keyword arguments
         are actually rc configuration settings that are temporarily
-        changed by the call to `~Axes.context`. They are documented here
-        because it is extremely common to change them with `~Axes.format`.
-        They also appear in the tables in the `~proplot.rctools` documention.
+        changed by the call to `~proplot.rctools.rc_configurator.context`.
+        They are documented here because it is very common to change
+        them with `~Axes.format`. They also appear in the tables in the
+        `~proplot.rctools` documention.
 
         See also
         --------
-        :py:obj:`Axes.context`,
+        :py:obj:`~proplot.rctools.rc_configurator.context`
         :py:obj:`XYAxes.format`,
         :py:obj:`ProjAxes.format`,
         :py:obj:`PolarAxes.format`,
@@ -1996,7 +1997,8 @@ class XYAxes(Axes):
         """
         Modify the *x* and *y* axis labels, tick locations, tick labels,
         axis scales, spine settings, and more. Unknown keyword arguments
-        are passed to `Axes.format` and `Axes.context`.
+        are passed to `Axes.format` and
+        `~proplot.rctools.rc_configurator.context`.
 
         Parameters
         ----------
@@ -2142,7 +2144,7 @@ class XYAxes(Axes):
 
         See also
         --------
-        :py:obj:`Axes.format`, :py:obj:`Axes.context`
+        :py:obj:`Axes.format`, :py:obj:`~rctools.rc_configurator.context`
         """
         rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
         with rc.context(rc_kw, mode=rc_mode):
@@ -2775,8 +2777,9 @@ class PolarAxes(Axes, mproj.PolarAxes):
         """
         Modify radial gridline locations, gridline labels, limits, and more.
         Unknown keyword arguments are passed to `Axes.format` and
-        `Axes.context`. All ``theta`` arguments are specified in *degrees*, not
-        radians. The below parameters are specific to `PolarAxes`.
+        `~rctools.rc_configurator.context`. All ``theta`` arguments are
+        specified in *degrees*, not radians. The below parameters are specific
+        to `PolarAxes`.
 
         Parameters
         ----------
@@ -2832,7 +2835,8 @@ optional
 
         See also
         --------
-        :py:obj:`Axes.format`, :py:obj:`Axes.context`
+        :py:obj:`Axes.format`,
+        :py:obj:`~proplot.rctools.rc_configurator.context`
         """
         rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
         with rc.context(rc_kw, mode=rc_mode):
@@ -3041,7 +3045,8 @@ class ProjAxes(Axes):
         """
         Modify the meridian and parallel labels, longitude and latitude map
         limits, geographic features, and more. Unknown keyword arguments are
-        passed to `Axes.format` and `Axes.context`.
+        passed to `Axes.format` and
+        `~proplot.rctools.rc_configurator.context`.
 
         Parameters
         ----------
@@ -3085,8 +3090,8 @@ optional
             Toggles various geographic features. These are actually the
             :rcraw:`land`, :rcraw:`ocean`, :rcraw:`coast`, :rcraw:`rivers`,
             :rcraw:`lakes`, :rcraw:`borders`, and :rcraw:`innerborders`
-            settings passed to `~proplot.axes.Axes.context`. The style can
-            be modified by passing additional settings, e.g.
+            settings passed to `~proplot.rctools.rc_configurator.context`.
+            The style can be modified by passing additional settings, e.g.
             :rcraw:`landcolor`.
         patch_kw : dict-like, optional
             Keyword arguments used to update the background patch object. You
@@ -3103,7 +3108,7 @@ optional
 
         See also
         --------
-        :py:obj:`Axes.format`, :py:obj:`Axes.context`
+        :py:obj:`Axes.format`, `~proplot.rctools.rc_configurator.context`
         """
         rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
         with rc.context(rc_kw, mode=rc_mode):
