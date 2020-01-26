@@ -67,16 +67,21 @@ CYCLES_TABLE = {
 CMAPS_TABLE = {
     # Assorted origin, but these belong together
     'Grayscale': (
-        'Grays', 'Mono', 'GrayCycle',
+        'Grays', 'Mono', 'GrayC', 'GrayCycle',
     ),
     # Builtin
-    'Matplotlib originals': (
+    'Matplotlib sequential': (
         'viridis', 'plasma', 'inferno', 'magma', 'cividis',
-        'twilight', 'twilight_shifted',
     ),
-    # seaborn
-    'Seaborn originals': (
-        'Rocket', 'Mako', 'IceFire', 'Vlag',
+    'Matplotlib cyclic': (
+        'twilight',
+    ),
+    # Seaborn
+    'Seaborn sequential': (
+        'Rocket', 'Mako',
+    ),
+    'Seaborn diverging': (
+        'IceFire', 'Vlag',
     ),
     # PerceptuallyUniformColormap
     'ProPlot sequential': (
@@ -86,19 +91,40 @@ CMAPS_TABLE = {
         'Marine',
         'Dusk',
         'Glacial',
-        'Sunrise', 'Sunset',
+        'Sunrise',
+        'Sunset',
     ),
     'ProPlot diverging': (
         'Div', 'NegPos', 'DryWet',
+    ),
+    # Nice diverging maps
+    'Other diverging': (
+        'ColdHot', 'CoolWarm', 'BR',
     ),
     # cmOcean
     'cmOcean sequential': (
         'Oxy', 'Thermal', 'Dense', 'Ice', 'Haline',
         'Deep', 'Algae', 'Tempo', 'Speed', 'Turbid', 'Solar', 'Matter',
-        'Amp', 'Phase',
+        'Amp',
     ),
     'cmOcean diverging': (
         'Balance', 'Delta', 'Curl',
+    ),
+    'cmOcean cyclic': (
+        'Phase',
+    ),
+    # Fabio Crameri
+    'Scientific colour maps sequential': (
+        'batlow', 'oleron',
+        'devon', 'davos', 'oslo', 'lapaz', 'acton',
+        'lajolla', 'bilbao', 'tokyo', 'turku', 'bamako', 'nuuk',
+        'hawaii', 'buda', 'imola',
+    ),
+    'Scientific colour maps diverging': (
+        'roma', 'broc', 'cork', 'vik', 'berlin', 'lisbon', 'tofino',
+    ),
+    'Scientific colour maps cyclic': (
+        'brocO', 'corkO', 'romaO', 'vikO',
     ),
     # ColorBrewer
     'ColorBrewer2.0 sequential': (
@@ -109,10 +135,6 @@ CMAPS_TABLE = {
     'ColorBrewer2.0 diverging': (
         'Spectral', 'PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGY',
         'RdBu', 'RdYlBu', 'RdYlGn',
-    ),
-    # Nice diverging maps
-    'Other diverging': (
-        'ColdHot', 'CoolWarm', 'BR',
     ),
     # SciVisColor
     'SciVisColor blues': (
@@ -3743,16 +3765,14 @@ if 'Greys' in mcm.cmap_d:  # 'Murica (and consistency with registered colors)
     mcm.cmap_d['Grays'] = mcm.cmap_d.pop('Greys')
 if 'Spectral' in mcm.cmap_d:  # make spectral go from 'cold' to 'hot'
     mcm.cmap_d['Spectral'] = mcm.cmap_d['Spectral'].reversed(name='Spectral')
-for _name in CMAPS_TABLE['Matplotlib originals']:
-    if _name == 'twilight_shifted':  # we can generate shifted maps on the fly
+mcm.cmap_d.pop('twilight_shifted', None)  # we auto-generate this
+for _name in ('viridis', 'plasma', 'inferno', 'magma', 'cividis', 'twilight'):
+    _cmap = mcm.cmap_d.get(_name, None)
+    if _cmap and isinstance(_cmap, mcolors.ListedColormap):
         mcm.cmap_d.pop(_name, None)
-    else:  # convert ListedColormaps to LinearSegmentedColormaps
-        _cmap = mcm.cmap_d.get(_name, None)
-        if _cmap and isinstance(_cmap, mcolors.ListedColormap):
-            mcm.cmap_d.pop(_name, None)
-            mcm.cmap_d[_name] = LinearSegmentedColormap.from_list(
-                _name, _cmap.colors, cyclic=('twilight' in _name)
-            )
+        mcm.cmap_d[_name] = LinearSegmentedColormap.from_list(
+            _name, _cmap.colors, cyclic=('twilight' in _name)
+        )
 for _cat in ('MATLAB', 'GNUplot', 'GIST', 'Other'):
     for _name in CMAPS_TABLE[_cat]:
         mcm.cmap_d.pop(_name, None)
