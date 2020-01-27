@@ -55,6 +55,29 @@ ProPlot v0.5.0 (2020-##-##)
   stacks rather than getting inserted directly into
   the main `~proplot.subplots.GridSpec` (:pr:`110`).
 
+ProPlot v0.4.4 (2020-##-##)
+===========================
+.. rubric:: Features
+
+- Add back `Fabio Crameri's scientific colour maps <http://www.fabiocrameri.ch/colourmaps.php>`__ (:pr:`#116`).
+- Permit hiding "unknown" colormaps and color cycles in the
+  `~proplot.styletools.show_cmaps` and `~proplot.styletools.show_cycles`
+  tables (:commit:`cb206f19`).
+
+.. rubric:: Bug fixes
+
+- Fix issue where `~proplot.styletools.show_cmaps`
+  and `~proplot.styletools.show_cycles` colormap names were messed up
+  (:commit:`13045599`)
+- Fix bug where `~proplot.wrappers.colorbar_wrapper` would no longer
+  accept lists of colors (:commit:`e5f11591`).
+
+.. rubric:: Internals
+
+- Improve ``GrayCycle`` colormap, is now much shorter and built from reflected
+  Fabio ``GrayC`` colormaps (:commit:`5b2c7eb7`).
+
+
 ProPlot v0.4.3 (2020-01-21)
 ===========================
 .. rubric:: Deprecated
