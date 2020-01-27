@@ -2752,7 +2752,6 @@ or colormap-spec
     # Test if we were given a mappable, or iterable of stuff; note Container
     # and PolyCollection matplotlib classes are iterable.
     cmap = None
-    tick_all = values is not None
     if not isinstance(mappable, (martist.Artist, mcontour.ContourSet)):
         # Any colormap spec, including a list of colors, colormap name, or
         # colormap instance.
@@ -2798,7 +2797,6 @@ or colormap-spec
                     values.append(val)
             if values is None:
                 values = np.arange(len(colors))
-            tick_all = True
 
         else:
             raise ValueError(
@@ -2829,7 +2827,7 @@ or colormap-spec
     # random points along the axis. If values were provided as keyword arg,
     # this is colorbar from lines/colors, and we label *all* values by default.
     # TODO: Handle more of the log locator stuff here instead of cmap_changer?
-    if tick_all and locator is None:
+    if values is not None and locator is None:
         locator = values
         tickminor = False
     if locator is None:
