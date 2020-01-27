@@ -11,6 +11,7 @@ import functools
 from . import styletools, axistools
 from .utils import _warn_proplot, _notNone, edges, edges2d, units
 import matplotlib.axes as maxes
+import matplotlib.container as mcontainer
 import matplotlib.contour as mcontour
 import matplotlib.ticker as mticker
 import matplotlib.transforms as mtransforms
@@ -2731,35 +2732,58 @@ or colormap-spec
         kw_ticklabels['color'] = ticklabelcolor
 
     # Special case where auto colorbar is generated from 1D methods, a list is
-    # always passed but some 1D methods (scatter) do have colormaps.
-    if np.iterable(mappable) and len(
-            mappable) == 1 and hasattr(mappable[0], 'get_cmap'):
+    # always passed, but some 1D methods (scatter) do have colormaps.
+    if (
+        np.iterable(mappable)
+        and len(mappable) == 1
+        and hasattr(mappable[0], 'get_cmap')
+    ):
         mappable = mappable[0]
+
+    # For container objects, we just assume color is the same for every item.
+    # Works for ErrorbarContainer, StemContainer, BarContainer.
+    if (
+        np.iterable(mappable)
+        and len(mappable) > 0
+        and all(isinstance(obj, mcontainer.Container) for obj in mappable)
+    ):
+        mappable = [obj[0] for obj in mappable]
 
     # Test if we were given a mappable, or iterable of stuff; note Container
     # and PolyCollection matplotlib classes are iterable.
     cmap = None
-    tick_all = (values is not None)
-    if not isinstance(mappable, martist.Artist) and not isinstance(
-            mappable, mcontour.ContourSet):
-        # Object for testing
-        obj = mappable[0] if np.iterable(mappable) else mappable
-        try:
-            obj = obj[0]  # e.g. for BarContainer, which is not numpy.iterable
-        except (TypeError, KeyError):
-            pass
-        # List of handles
-        if hasattr(obj, 'get_color') or hasattr(obj, 'get_facecolor'):
-            # Make colormap
+    tick_all = values is not None
+    if not isinstance(mappable, (martist.Artist, mcontour.ContourSet)):
+        # Any colormap spec, including a list of colors, colormap name, or
+        # colormap instance.
+        if isinstance(mappable, mcolors.Colormap):
+            cmap = mappable
+            values = np.arange(cmap.N)
+
+        # List of colors
+        elif np.iterable(mappable) and all(
+            isinstance(obj, str) or (np.iterable(obj) and len(obj) in (3, 4))
+            for obj in mappable
+        ):
+            colors = list(mappable)
+            cmap = mcolors.ListedColormap(colors, '_no_name')
+            values = np.arange(len(colors))
+
+        # List of artists
+        elif np.iterable(mappable) and all(
+            hasattr(obj, 'get_color') or hasattr(obj, 'get_facecolor')
+            for obj in mappable
+        ):
+            # Generate colormap from colors
             colors = []
             for obj in mappable:
-                if np.iterable(obj):
-                    obj = obj[0]
-                color = getattr(obj, 'get_color', None) or getattr(
-                    obj, 'get_facecolor')
-                colors.append(color())
-            cmap = styletools.Colormap(colors, listmode='listed')
-            # Infer values
+                if hasattr(obj, 'get_color'):
+                    color = obj.get_color()
+                else:
+                    color = obj.get_facecolor()
+                colors.append(color)
+            cmap = mcolors.ListedColormap(colors, '_no_name')
+            # Try to infer values from labels
             if values is None:
                 values = []
                 for obj in mappable:
@@ -2771,18 +2795,9 @@ or colormap-spec
                         break
                     values.append(val)
             if values is None:
-                values = np.arange(0, len(mappable))
+                values = np.arange(len(colors))
             tick_all = True
-        # Any colormap spec, including a list of colors, colormap name, or
-        # colormap instance
-        elif isinstance(mappable, mcolors.Colormap):
-            cmap = mappable
-            if values is None:
-                if np.iterable(mappable) and not isinstance(
-                        mappable, str):  # e.g. list of colors
-                    values = np.linspace(0, 1, len(mappable))
-                else:
-                    values = np.linspace(0, 1, cmap.N)
+
         else:
             raise ValueError(
                 'Input mappable must be a matplotlib artist, '
@@ -2790,9 +2805,9 @@ or colormap-spec
                 f'Got {mappable!r}.'
             )
 
-    # Build new ad hoc mappable object from handles
-    # NOTE: Need to use wrapped contourf but this might be native matplotlib
-    # axes. Call on self.axes, which is child if child axes, self otherwise.
+    # Build new ad hoc mappable object from colors
+    # NOTE: Need to use *wrapped* contourf but this might be native matplotlib
+    # axes. Call on self.axes, which is parent if child axes, self otherwise.
     if cmap is not None:
         if np.iterable(mappable) and len(values) != len(mappable):
             raise ValueError(
@@ -2805,7 +2820,8 @@ or colormap-spec
             mappable = self.axes.contourf(
                 [0, 0], [0, 0], ma.array([[0, 0], [0, 0]], mask=True),
                 cmap=cmap, extend='neither', values=np.array(values),
-                norm=norm, norm_kw=norm_kw)  # workaround
+                norm=norm, norm_kw=norm_kw
+            )  # workaround
 
     # Try to get tick locations from *levels* or from *values* rather than
     # random points along the axis. If values were provided as keyword arg,
