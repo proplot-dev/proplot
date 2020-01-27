@@ -782,10 +782,6 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         if alpha is not None:
             self.set_alpha(alpha)
 
-    def _resample(self, N):
-        """Return a resampled copy of the colormap with the same name."""
-        return self.updated(name=self.name, N=N)
-
     def concatenate(self, *args, ratios=1, name=None, N=None, **kwargs):
         """
         Return the concatenation of this colormap with the
@@ -1610,10 +1606,6 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
             self._lut[i, :3] = to_rgb(self._lut[i, :3], self._space)
         self._lut[:, :3] = _clip_colors(self._lut[:, :3], self._clip)
 
-    def _resample(self, N):
-        """Return a resampled copy of the colormap with the same name."""
-        return self.updated(name=self.name, N=N)
-
     @staticmethod
     def from_color(name, color, fade=None, space='hsl', **kwargs):
         """
@@ -2251,13 +2243,10 @@ def Colormap(
         cmaps.append(cmap)
 
     # Merge the result of this arbitrary user input
-    N = kwargs.pop('N', None)
     if len(cmaps) > 1:  # more than one map?
-        cmap = cmaps[0].concatenate(*cmaps[1:], N=N, **kwargs)
+        cmap = cmaps[0].concatenate(*cmaps[1:], **kwargs)
     elif kwargs:  # modify any props?
         cmap = cmaps[0].updated(**kwargs)
-    elif N:
-        cmap = cmap._resample(N)
 
     # Cut the center and roate the colormap
     if cut is not None:
@@ -3243,9 +3232,9 @@ def _draw_bars(
                 ax = axs[iax]
             cmap = mcm.cmap_d[name]
             if N is not None:
-                cmap = cmap._resample(N)
+                cmap = cmap.updated(N=N)
             ax.colorbar(  # TODO: support this in public API
-                mcm.cmap_d[name], loc='_fill',
+                cmap, loc='_fill',
                 orientation='horizontal', locator='null', linewidth=0
             )
             ax.text(
@@ -3577,7 +3566,7 @@ def show_colors(nhues=17, minsat=20):
     return figs
 
 
-def show_cmaps(*args, N=None, **kwargs):
+def show_cmaps(*args, **kwargs):
     """
     Generate a table of the registered colormaps or the input colormaps
     categorized by source. Adapted from `this example \
@@ -3607,9 +3596,8 @@ def show_cmaps(*args, N=None, **kwargs):
         The figure.
     """
     # Have colormaps separated into categories
-    N = _notNone(N, rcParams['image.lut'])
     if args:
-        names = [Colormap(cmap, N=N).name for cmap in args]
+        names = [Colormap(cmap).name for cmap in args]
     else:
         names = [
             name for name in mcm.cmap_d.keys() if
