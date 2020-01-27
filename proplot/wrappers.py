@@ -2758,7 +2758,8 @@ or colormap-spec
         # colormap instance.
         if isinstance(mappable, mcolors.Colormap):
             cmap = mappable
-            values = np.arange(cmap.N)
+            if values is None:
+                values = np.arange(cmap.N)
 
         # List of colors
         elif np.iterable(mappable) and all(
@@ -2767,7 +2768,8 @@ or colormap-spec
         ):
             colors = list(mappable)
             cmap = mcolors.ListedColormap(colors, '_no_name')
-            values = np.arange(len(colors))
+            if values is None:
+                values = np.arange(len(colors))
 
         # List of artists
         elif np.iterable(mappable) and all(
