@@ -2544,7 +2544,7 @@ class BinNorm(mcolors.BoundaryNorm):
     # if it doesn't detect BoundaryNorm will try to use BinNorm.inverse().
     def __init__(
         self, levels, norm=None, clip=False,
-        step=1.0, extend='neither'
+        step=1.0, extend=None,
     ):
         """
         Parameters
@@ -2563,7 +2563,10 @@ class BinNorm(mcolors.BoundaryNorm):
             option, `BinNorm` ensures colors always extend through the
             extreme end colors.
         clip : bool, optional
-            A `~matplotlib.colors.Normalize` option.
+            Whether to clip values falling outside of the level bins. This
+            only has an effect on lower colors when extend is
+            ``'min'`` or ``'both'``, and on upper colors when extend is
+            ``'max'`` or ``'both'``.
 
         Note
         ----
@@ -2571,38 +2574,28 @@ class BinNorm(mcolors.BoundaryNorm):
         ``extend='min'``, the center will get messed up. But that is very
         strange usage anyway... so please just don't do that :)
         """
-        # Declare boundaries, vmin, vmax in True coordinates.
-        # Notes:
-        # * Idea is that we bin data into len(levels) discrete x-coordinates,
-        #   and optionally make out-of-bounds colors the same or different
-        # * Don't need to call parent __init__, this is own implementation
-        #   Do need it to subclass BoundaryNorm, so ColorbarBase will detect it
-        # See BoundaryNorm:
-        # https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/colors.py
+        # NOTE: This must be a subclass BoundaryNorm, so ColorbarBase will
+        # detect it... even though we completely override it.
+        # Check input levels
         levels = np.atleast_1d(levels)
-        if levels.size <= 1:
+        if levels.ndim != 1:
+            raise ValueError('Levels must be 1-dimensional.')
+        elif levels.size < 2:
             raise ValueError('Need at least two levels.')
         elif ((levels[1:] - levels[:-1]) <= 0).any():
             raise ValueError(
-                f'Levels {levels} passed to Normalize() must be '
-                'monotonically increasing.'
+                f'Levels {levels!r} must be monotonically increasing.'
             )
-        if extend not in ('both', 'min', 'max', 'neither'):
+        # Check input extend
+        extend = extend or 'neither'
+        extends = ('both', 'min', 'max', 'neither')
+        if extend not in extends:
             raise ValueError(
-                f'Unknown extend option {extend!r}. Choose from '
-                '"min", "max", "both", "neither".'
+                f'Unknown extend option {extend!r}. Options are: '
+                + ', '.join(map(repr, extends)) + '.'
             )
-
-        # Determine color ids for levels, i.e. position in 0-1 space
-        # Length of these ids should be N + 1 -- that is, N - 1 colors
-        # for values in-between levels, plus 2 colors for out-of-bounds.
-        # * For same out-of-bounds colors, looks like [0, 0, ..., 1, 1]
-        # * For unique out-of-bounds colors, looks like [0, X, ..., 1 - X, 1]
-        #   where the offset X equals step/len(levels).
-        # First get coordinates
+        # Check input normalizer
         if not norm:
-            # WARNING: Normalization to 0-1 must always take place first,
-            # required by colorbar_factory ticks manager.
             norm = mcolors.Normalize()
         elif not isinstance(norm, mcolors.Normalize):
             raise ValueError(
@@ -2614,58 +2607,88 @@ class BinNorm(mcolors.BoundaryNorm):
                 f'Normalizer cannot be an instance of '
                 'matplotlib.colors.BoundaryNorm.'
             )
+
+        # Get color coordinates corresponding to each bin
         x_b = norm(levels)
+        if isinstance(x_b, ma.core.MaskedArray):
+            x_b = x_b.filled(np.nan)
+        mask = np.isfinite(x_b)
+        if mask.sum() < 2:
+            raise ValueError(
+                f'Normalizer {norm!r} converted {levels!r} to {x_b!r}, '
+                'but we need at least *2* valid levels to continue.'
+            )
+        x_b = x_b[mask]
         x_m = (x_b[1:] + x_b[:-1]) / 2  # get level centers after norm scaling
         y = (x_m - x_m.min()) / (x_m.max() - x_m.min())
-        if isinstance(y, ma.core.MaskedArray):
-            y = y.filled(np.nan)
-        y = y[np.isfinite(y)]
-        # Account for out of bounds colors
-        # WARNING: For some reason must clip manually for LogNorm, or
-        # end up with unpredictable fill value, weird "out-of-bounds" colors
+
+        # Get extra 2 color coordinates for out-of-bounds colors
+        # For *same* out-of-bounds colors, looks like [0, 0, ..., 1, 1]
+        # For *unique* out-of-bounds colors, looks like [0, X, ..., 1 - X, 1]
         offset = 0
         scale = 1
-        eps = step / (y.size - 1)
-        # eps = step/levels.size
-        if extend in ('min', 'both'):
-            offset = eps
-            scale -= eps
-        if extend in ('max', 'both'):
-            scale -= eps
-        # insert '0' (arg 3) before index '0' (arg 2)
+        if extend == 'max':
+            scale = 1 - step / y.size
+        elif extend == 'min':
+            offset = step / y.size
+            scale = 1 - offset
+        elif extend == 'both':
+            offset = step / (y.size + 1)
+            scale = 1 - 2 * offset
         y = np.concatenate(([0], offset + scale * y, [1]))
-        self._norm = norm
-        self._x_b = x_b
-        self._y = y
-        if isinstance(norm, mcolors.LogNorm):
-            self._norm_clip = (5e-249, None)
-        else:
-            self._norm_clip = None
 
-        # Add builtin properties
-        # NOTE: Are vmin/vmax even used?
+        # Builtin properties
+        # NOTE: With extend='min' the minimimum in-bounds and out-of-bounds
+        # colors are the same so clip=True will have no effect. Same goes
+        # for extend='max' with maximum colors.
+        self.N = levels.size
+        self.clip = clip
         self.boundaries = levels
         self.vmin = levels.min()
         self.vmax = levels.max()
-        self.clip = clip
-        self.N = levels.size
 
-    def __call__(self, xq, clip=None):
-        """Normalize data values to 0-1."""
+        # Extra properties
+        # WARNING: For some reason must clip manually for LogNorm, or
+        # end up with unpredictable fill value, weird "out-of-bounds" colors
+        self._norm = norm
+        self._x_b = x_b
+        self._y = y
+        self._bmin = self.vmin + (levels[1] - levels[0]) / 2
+        self._bmax = self.vmax - (levels[-1] - levels[-2]) / 2
+        if isinstance(norm, mcolors.LogNorm):
+            self._clip_norm = (5e-249, None)
+        else:
+            self._clip_norm = None
+
+    def __call__(self, value, clip=None):
+        """
+        Normalize data values to 0-1.
+
+        Parameters
+        ----------
+        value : numeric
+            The data to be normalized.
+        clip : bool, optional
+            Whether to clip values falling outside of the level bins.
+            Default is ``self.clip``.
+        """
         # Follow example of LinearSegmentedNorm, but perform no interpolation,
         # just use searchsorted to bin the data.
-        norm_clip = self._norm_clip
-        if norm_clip:
-            xq = np.clip(xq, *norm_clip)
-        xq = self._norm(xq)
-        # which x-bin does each point in xq belong to?
+        clip_norm = self._clip_norm
+        if clip_norm:  # special extra clipping due to normalizer
+            value = np.clip(value, *clip_norm)
+        if clip is None:  # builtin clipping
+            clip = self.clip
+        if clip:  # note that np.clip can handle masked arrays
+            value = np.clip(value, self._bmin, self._bmax)
+        xq = self._norm(value)
         yq = self._y[np.searchsorted(self._x_b, xq)]
         mask = ma.getmaskarray(xq)
         return ma.array(yq, mask=mask)
 
-    def inverse(self, yq):
+    def inverse(self, value):  # noqa: U100
         """Raise an error. Inversion after discretization is impossible."""
-        raise RuntimeError('BinNorm is not invertible.')
+        raise ValueError('BinNorm is not invertible.')
 
 
 class LinearSegmentedNorm(mcolors.Normalize):
@@ -2674,70 +2697,85 @@ class LinearSegmentedNorm(mcolors.Normalize):
     are non-linearly spaced. The normalized value is linear with respect to
     its average index in the `levels` vector, allowing uniform color
     transitions across arbitrarily spaced monotonically increasing values.
-
-    It accomplishes this following the example of the
-    `~matplotlib.colors.LinearSegmentedColormap` source code, by performing
-    efficient, vectorized linear interpolation between the provided boundary
-    levels.
-
-    Can be used by passing ``norm='segmented'`` or ``norm='segments'`` to any
-    command accepting ``cmap``. The default midpoint is zero.
+    Can be explicitly used by passing ``norm='segmented'`` to any command
+    accepting ``cmap``.
     """
-    def __init__(self, levels, vmin=None, vmax=None, **kwargs):
+    def __init__(self, levels, vmin=None, vmax=None, clip=False):
         """
         Parameters
         ----------
         levels : list of float
             The discrete data levels.
         vmin, vmax : None
-            Ignored, because `vmin` and `vmax` are set to the minimum and
+            Ignored. `vmin` and `vmax` are set to the minimum and
             maximum of `levels`.
-        **kwargs
-            Passed to `~matplotlib.colors.Normalize`.
+        clip : bool, optional
+            Whether to clip values falling outside of the minimum and
+            maximum levels.
         """
         levels = np.atleast_1d(levels)
-        if levels.size <= 1:
+        if levels.size < 2:
             raise ValueError('Need at least two levels.')
         elif ((levels[1:] - levels[:-1]) <= 0).any():
             raise ValueError(
-                f'Levels {levels} passed to LinearSegmentedNorm must be '
-                'monotonically increasing.'
+                f'Levels {levels!r} must be monotonically increasing.'
             )
         vmin, vmax = levels.min(), levels.max()
-        super().__init__(vmin, vmax, **kwargs)  # second level superclass
+        super().__init__(vmin, vmax, clip=clip)  # second level superclass
         self._x = levels
         self._y = np.linspace(0, 1, len(levels))
 
-    def __call__(self, xq, clip=None):
-        """Normalize the data values to 0-1. Inverse
-        of `~LinearSegmentedNorm.inverse`."""
+    def __call__(self, value, clip=None):
+        """
+        Normalize the data values to 0-1. Inverse
+        of `~LinearSegmentedNorm.inverse`.
+
+        Parameters
+        ----------
+        value : numeric
+            The data to be normalized.
+        clip : bool, optional
+            Whether to clip values falling outside of the minimum and
+            maximum levels. Default is ``self.clip``.
+        """
         # Follow example of make_mapping_array for efficient, vectorized
         # linear interpolation across multiple segments.
         # * Normal test puts values at a[i] if a[i-1] < v <= a[i]; for
         #   left-most data, satisfy a[0] <= v <= a[1]
         # * searchsorted gives where xq[i] must be inserted so it is larger
         #   than x[ind[i]-1] but smaller than x[ind[i]]
+        if clip is None:  # builtin clipping
+            clip = self.clip
+        if clip:  # note that np.clip can handle masked arrays
+            value = np.clip(value, self.vmin, self.vmax)
         x = self._x  # from arbitrarily spaced monotonic levels
         y = self._y  # to linear range 0-1
-        xq = np.atleast_1d(xq)
-        ind = np.searchsorted(x, xq)
-        ind[ind == 0] = 1
-        ind[ind == len(x)] = len(x) - 1
-        distance = (xq - x[ind - 1]) / (x[ind] - x[ind - 1])
-        yq = distance * (y[ind] - y[ind - 1]) + y[ind - 1]
+        xq = np.atleast_1d(value)
+        idx = np.searchsorted(x, xq)
+        idx[idx == 0] = 1
+        idx[idx == len(x)] = len(x) - 1
+        distance = (xq - x[idx - 1]) / (x[idx] - x[idx - 1])
+        yq = distance * (y[idx] - y[idx - 1]) + y[idx - 1]
         mask = ma.getmaskarray(xq)
         return ma.array(yq, mask=mask)
 
-    def inverse(self, yq):
-        """Inverse operation of `~LinearSegmentedNorm.__call__`."""
+    def inverse(self, value):
+        """
+        Inverse operation of `~LinearSegmentedNorm.__call__`.
+
+        Parameters
+        ----------
+        value : numeric
+            The data to be un-normalized.
+        """
         x = self._x
         y = self._y
-        yq = np.atleast_1d(yq)
-        ind = np.searchsorted(y, yq)
-        ind[ind == 0] = 1
-        ind[ind == len(y)] = len(y) - 1
-        distance = (yq - y[ind - 1]) / (y[ind] - y[ind - 1])
-        xq = distance * (x[ind] - x[ind - 1]) + x[ind - 1]
+        yq = np.atleast_1d(value)
+        idx = np.searchsorted(y, yq)
+        idx[idx == 0] = 1
+        idx[idx == len(y)] = len(y) - 1
+        distance = (yq - y[idx - 1]) / (y[idx] - y[idx - 1])
+        xq = distance * (x[idx] - x[idx - 1]) + x[idx - 1]
         mask = ma.getmaskarray(yq)
         return ma.array(xq, mask=mask)
 
@@ -2746,60 +2784,74 @@ class MidpointNorm(mcolors.Normalize):
     """
     Ensures a "midpoint" always lies at the central colormap color.
     Can be used by passing ``norm='midpoint'`` to any command accepting
-    ``cmap``. The default midpoint is zero.
+    ``cmap``.
     """
-
-    def __init__(self, midpoint=0, vmin=None, vmax=None, clip=None):
+    def __init__(self, midpoint=0, vmin=-1, vmax=1, clip=None):
         """
         Parameters
         ----------
         midpoint : float, optional
-            The midpoint, or the data value corresponding to the normalized
-            value ``0.5`` -- halfway down the colormap.
-        vmin, vmax, clip
-            The minimum and maximum data values, and the clipping setting.
-            Passed to `~matplotlib.colors.Normalize`.
+            The midpoint, i.e. the data value corresponding to the position
+            in the middle of the colormap. The default is ``0``.
+        vmin, vmax : float, optional
+            The minimum and maximum data values. The defaults are ``-1``
+            and ``1``, respectively.
+        clip : bool, optional
+            Whether to clip values falling outside of `vmin` and `vmax`.
         """
         # Bigger numbers are too one-sided
         super().__init__(vmin, vmax, clip)
         self._midpoint = midpoint
-
-    def __call__(self, xq, clip=None):
-        """Normalize data values to 0-1. Inverse of `~MidpointNorm.inverse`."""
-        # Get middle point in 0-1 coords, and value
-        # Notes:
-        # * Look up these three values in case vmin/vmax changed; this is
-        #   a more general normalizer than the others. Others are 'parent'
-        #   normalizers, meant to be static more or less.
-        # * searchsorted gives where xq[i] must be inserted so it is larger
-        #   than x[ind[i]-1] but smaller than x[ind[i]]
-        #   x, y = [self.vmin, self._midpoint, self.vmax], [0, 0.5, 1]
         if self.vmin >= self._midpoint or self.vmax <= self._midpoint:
             raise ValueError(
                 f'Midpoint {self._midpoint} outside of vmin {self.vmin} '
                 f'and vmax {self.vmax}.'
             )
+
+    def __call__(self, value, clip=None):
+        """
+        Normalize data values to 0-1.
+
+        Parameters
+        ----------
+        value : numeric
+            The data to be normalized.
+        clip : bool, optional
+            Whether to clip values falling outside of `vmin` and `vmax`.
+            Default is ``self.clip``.
+        """
+        # Get middle point in normalized coords
+        if clip is None:  # builtin clipping
+            clip = self.clip
+        if clip:  # note that np.clip can handle masked arrays
+            value = np.clip(value, self.vmin, self.vmax)
         x = np.array([self.vmin, self._midpoint, self.vmax])
         y = np.array([0, 0.5, 1])
-        xq = np.atleast_1d(xq)
-        ind = np.searchsorted(x, xq)
-        ind[ind == 0] = 1  # in this case will get normed value <0
-        # in this case, will get normed value >0
-        ind[ind == len(x)] = len(x) - 1
-        distance = (xq - x[ind - 1]) / (x[ind] - x[ind - 1])
-        yq = distance * (y[ind] - y[ind - 1]) + y[ind - 1]
+        xq = np.atleast_1d(value)
+        idx = np.searchsorted(x, xq)
+        idx[idx == 0] = 1  # get normed value <0
+        idx[idx == len(x)] = len(x) - 1  # get normed value >0
+        distance = (xq - x[idx - 1]) / (x[idx] - x[idx - 1])
+        yq = distance * (y[idx] - y[idx - 1]) + y[idx - 1]
         mask = ma.getmaskarray(xq)
         return ma.array(yq, mask=mask)
 
-    def inverse(self, yq, clip=None):
-        """Inverse operation of `~MidpointNorm.__call__`."""
+    def inverse(self, value):
+        """
+        Inverse operation of `~MidpointNorm.__call__`.
+
+        Parameters
+        ----------
+        value : numeric
+            The data to be un-normalized.
+        """
         # Invert the above
         # x, y = [self.vmin, self._midpoint, self.vmax], [0, 0.5, 1]
         # return ma.masked_array(np.interp(yq, y, x))
         # Performs inverse operation of __call__
         x = np.array([self.vmin, self._midpoint, self.vmax])
         y = np.array([0, 0.5, 1])
-        yq = np.atleast_1d(yq)
+        yq = np.atleast_1d(value)
         ind = np.searchsorted(y, yq)
         ind[ind == 0] = 1
         ind[ind == len(y)] = len(y) - 1
