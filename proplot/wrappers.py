@@ -1650,7 +1650,7 @@ def cycle_changer(
     # Add colorbar and/or legend
     if colorbar:
         # Add handles
-        loc = self._loc_translate(colorbar)
+        loc = self._loc_translate(colorbar, rc['colorbar.loc'])
         if not isinstance(loc, str):
             raise ValueError(
                 f'Invalid on-the-fly location {loc!r}. '
@@ -1667,7 +1667,7 @@ def cycle_changer(
         self._auto_colorbar[loc][1].update(colorbar_kw)
     if legend:
         # Add handles
-        loc = self._loc_translate(legend)
+        loc = self._loc_translate(legend, rc['legend.loc'])
         if not isinstance(loc, str):
             raise ValueError(
                 f'Invalid on-the-fly location {loc!r}. '
@@ -2144,7 +2144,7 @@ def cmap_changer(
 
     # Add colorbar
     if colorbar:
-        loc = self._loc_translate(colorbar)
+        loc = self._loc_translate(colorbar, rc['colorbar.loc'])
         if not isinstance(loc, str):
             raise ValueError(
                 f'Invalid on-the-fly location {loc!r}. '
