@@ -648,7 +648,7 @@ def _update_from_file(file):
                 rcParams.update(rc)
 
 
-def _write_defaults(filename, comment=True, overwrite=False):
+def _write_defaults(filename, comment=True):
     """
     Save a file to the specified path containing the default `rc` settings.
 
@@ -658,8 +658,6 @@ def _write_defaults(filename, comment=True, overwrite=False):
         The path.
     comment : bool, optional
         Whether to "comment out" each setting.
-    overwrite : bool, optional
-        Whether to overwrite existing files.
     """
     def _tabulate(rcdict):
         string = ''
@@ -815,7 +813,7 @@ class rc_configurator(object):
             _update(rcParamsLong, rc_long)
             _update(rcParams, rc)
 
-    def __exit__(self, *args):
+    def __exit__(self, *args):  # noqa: U100
         """Restore settings from the most recent context block."""
         if not self._context:
             raise RuntimeError(
@@ -829,11 +827,11 @@ class rc_configurator(object):
             rcParams.update(rc)
         del self._context[-1]
 
-    def __delitem__(self, *args):
+    def __delitem__(self, item):  # noqa: 100
         """Raise an error. This enforces pseudo-immutability."""
         raise RuntimeError('rc settings cannot be deleted.')
 
-    def __delattr__(self, *args):
+    def __delattr__(self, item):  # noqa: 100
         """Raise an error. This enforces pseudo-immutability."""
         raise RuntimeError('rc settings cannot be deleted.')
 

@@ -944,7 +944,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         right_center = 0.5 + cut / 2
         cmap_left = self.truncated(0, left_center)
         cmap_right = self.truncated(right_center, 1)
-        return cmap_left.concatenate(cmap_right, name=name)
+        return cmap_left.concatenate(cmap_right, name=name, **kwargs)
 
     def reversed(self, name=None, **kwargs):
         """
@@ -1090,7 +1090,8 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         cmap_left = self.truncated(shift, 1)
         cmap_right = self.truncated(0, shift)
         return cmap_left.concatenate(
-            cmap_right, ratios=(1 - shift, shift), name=name)
+            cmap_right, ratios=(1 - shift, shift), name=name, **kwargs
+        )
 
     def truncated(self, left=None, right=None, name=None, **kwargs):
         """
@@ -1325,6 +1326,8 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         N : int, optional
             The number of colors in the colormap lookup table. Default is
             the number of colors in the concatenated lists.
+        **kwargs
+            Passed to `~ListedColormap.updated`.
         """
         if not args:
             raise ValueError(
@@ -1338,7 +1341,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         if name is None:
             name = '_'.join(cmap.name for cmap in cmaps)
         colors = [color for cmap in cmaps for color in cmap.colors]
-        return self.updated(colors, name, N or len(colors))
+        return self.updated(colors, name, N or len(colors), **kwargs)
 
     def save(self, path=None):
         """
@@ -2456,8 +2459,8 @@ def Norm(norm, levels=None, **kwargs):
         Key(s)                           Class
         ===============================  ===============================
         ``'midpoint'``, ``'zero'``       `MidpointNorm`
-        ``'segments'``, ``'segmented'``  `LinearSegmentedNorm`
-        ``'none'``, ``'null'``           `~matplotlib.colors.NoNorm`
+        ``'segmented'``, ``'segments'``  `LinearSegmentedNorm`
+        ``'null'``, ``'none'``           `~matplotlib.colors.NoNorm`
         ``'linear'``                     `~matplotlib.colors.Normalize`
         ``'log'``                        `~matplotlib.colors.LogNorm`
         ``'power'``                      `~matplotlib.colors.PowerNorm`
@@ -2516,7 +2519,7 @@ class BinNorm(mcolors.BoundaryNorm):
        If it is ``None``, they are not changed. Possible normalizers include
        `~matplotlib.colors.LogNorm`, which makes color transitions linear in
        the logarithm of the value, or `LinearSegmentedNorm`, which makes
-       color transitions linear in the **index** of the level array.
+       color transitions linear in the *index* of the level array.
     2. Possible colormap coordinates, corresponding to bins delimited by the
        normalized `levels` array, are calculated.  In this case, the bin
        centers are simply ``[1.5, 4.5, 7.5, 10.5, 13.5]``, which gives us
@@ -2528,7 +2531,7 @@ class BinNorm(mcolors.BoundaryNorm):
        color as the nearest in-bounds values. For `extend` equal to ``'both'``,
        the bins are ``[0, 0.16, 0.33, 0.5, 0.66, 0.83, 1]`` --
        out-of-bounds values are given distinct colors. This makes sure your
-       colorbar always shows the **full range of colors** in the colormap.
+       colorbar always shows the *full range of colors* in the colormap.
     4. Whenever `BinNorm.__call__` is invoked, the input value normalized by
        `norm` is compared against the normalized `levels` array. Its bin index
        is determined with `numpy.searchsorted`, and its corresponding

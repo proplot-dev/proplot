@@ -101,8 +101,8 @@ class subplot_grid(list):
     def __repr__(self):
         return 'subplot_grid([' + ', '.join(str(ax) for ax in self) + '])'
 
-    def __setitem__(self, key, value):
-        """Pseudo immutability. Raises error."""
+    def __setitem__(self, key, value):  # noqa: U100
+        """Raise an error. This enforces pseudo immutability."""
         raise LookupError('subplot_grid is immutable.')
 
     def __getitem__(self, key):
@@ -803,7 +803,7 @@ class _hidelabels(object):
         for label in self._labels:
             label.set_visible(False)
 
-    def __exit__(self, *args):
+    def __exit__(self, *args):  # noqa: U100
         for label in self._labels:
             label.set_visible(True)
 

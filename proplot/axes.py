@@ -3338,11 +3338,12 @@ class GeoAxes(ProjAxes, GeoAxes):
         else:
             self.set_global()
 
-    def _format_apply(
+    def _format_apply(  # noqa: U100
         self, patch_kw, lonlim, latlim, boundinglat,
         lonlines, latlines, latmax, lonarray, latarray
     ):
         """Apply formatting to cartopy axes."""
+        # NOTE: Cartopy seems to handle latmax automatically.
         import cartopy.feature as cfeature
         import cartopy.crs as ccrs
         from cartopy.mpl import gridliner
@@ -3400,8 +3401,10 @@ class GeoAxes(ProjAxes, GeoAxes):
                 eps = 1e-10  # bug with full -180, 180 range when lon_0 != 0
                 lat0 = (90 if north else -90)
                 lon0 = self.projection.proj4_params.get('lon_0', 0)
-                extent = [lon0 - 180 + eps,
-                          lon0 + 180 - eps, boundinglat, lat0]
+                extent = [
+                    lon0 - 180 + eps, lon0 + 180 - eps,
+                    boundinglat, lat0
+                ]
                 self.set_extent(extent, crs=ccrs.PlateCarree())
                 self._boundinglat = boundinglat
         else:

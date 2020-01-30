@@ -1060,7 +1060,7 @@ def hist_wrapper(self, func, x, bins=None, **kwargs):
     return func(self, x, bins=bins, **kwargs)
 
 
-def barh_wrapper(
+def barh_wrapper(  # noqa: U100
     self, func, y=None, width=None, height=0.8, left=None, **kwargs
 ):
     """Wraps %(methods)s, usage is same as `bar_wrapper`."""
@@ -1403,8 +1403,10 @@ def text_wrapper(
         facecolor, bgcolor = kwargs['color'], bordercolor
         if invert:
             facecolor, bgcolor = bgcolor, facecolor
-        kwargs = {'linewidth': linewidth,
-                  'foreground': bgcolor, 'joinstyle': 'miter'}
+        kwargs = {
+            'linewidth': linewidth,
+            'foreground': bgcolor, 'joinstyle': 'miter'
+        }
         obj.update({
             'color': facecolor,
             'zorder': 100,
@@ -1417,7 +1419,6 @@ def text_wrapper(
 def cycle_changer(
     self, func, *args,
     cycle=None, cycle_kw=None,
-    markers=None, linestyles=None,
     label=None, labels=None, values=None,
     legend=None, legend_kw=None,
     colorbar=None, colorbar_kw=None,

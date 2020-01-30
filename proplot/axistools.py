@@ -394,7 +394,7 @@ class AutoFormatter(mticker.ScalarFormatter):
     """
     def __init__(
         self, *args,
-        zerotrim=None, precision=None, tickrange=None,
+        zerotrim=None, tickrange=None,
         prefix=None, suffix=None, negpos=None, **kwargs
     ):
         """
@@ -477,7 +477,7 @@ class AutoFormatter(mticker.ScalarFormatter):
         return sign + self._prefix + string + self._suffix + tail
 
 
-def SimpleFormatter(*args, precision=6, zerotrim=True, **kwargs):
+def SimpleFormatter(precision=6, zerotrim=True):
     """
     Return a `~matplotlib.ticker.FuncFormatter` instance that replicates the
     `zerotrim` feature from `AutoFormatter`. This is more suitable for
@@ -540,7 +540,7 @@ def FracFormatter(symbol='', number=1):
     return mticker.FuncFormatter(f)
 
 
-def _scale_factory(scale, axis, *args, **kwargs):
+def _scale_factory(scale, axis, *args, **kwargs):  # noqa: U100
     """If `scale` is a `~matplotlib.scale.ScaleBase` instance, do nothing. If
     it is a registered scale name, look up and instantiate that scale."""
     if isinstance(scale, mscale.ScaleBase):
@@ -938,7 +938,7 @@ class PowerScale(_ScaleBase, mscale.ScaleBase):
     name = 'power'
     """The registered scale name."""
 
-    def __init__(self, power=1, inverse=False, *, minpos=1e-300, **kwargs):
+    def __init__(self, power=1, inverse=False, *, minpos=1e-300):
         """
         Parameters
         ----------
@@ -1025,7 +1025,7 @@ class ExpScale(_ScaleBase, mscale.ScaleBase):
     """The registered scale name."""
 
     def __init__(
-        self, a=np.e, b=1, c=1, inverse=False, minpos=1e-300, **kwargs
+        self, a=np.e, b=1, c=1, inverse=False, minpos=1e-300,
     ):
         """
         Parameters
@@ -1134,7 +1134,7 @@ projection <http://en.wikipedia.org/wiki/Mercator_projection>`__.
         self._default_major_formatter = Formatter('deg')
         self._default_smart_bounds = True
 
-    def limit_range_for_scale(self, vmin, vmax, minpos):
+    def limit_range_for_scale(self, vmin, vmax, minpos):  # noqa: U100
         """Return *vmin* and *vmax* limited to some range within
         +/-90 degrees (exclusive)."""
         return max(vmin, -self._thresh), min(vmax, self._thresh)
@@ -1208,7 +1208,7 @@ class SineLatitudeScale(_ScaleBase, mscale.ScaleBase):
         self._default_major_formatter = Formatter('deg')
         self._default_smart_bounds = True
 
-    def limit_range_for_scale(self, vmin, vmax, minpos):
+    def limit_range_for_scale(self, vmin, vmax, minpos):  # noqa: U100
         """Return *vmin* and *vmax* limited to some range within
         +/-90 degrees (inclusive)."""
         return max(vmin, -90), min(vmax, 90)
@@ -1267,7 +1267,7 @@ class CutoffScale(_ScaleBase, mscale.ScaleBase):
     name = 'cutoff'
     """The registered scale name."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args):
         """
         Parameters
         ----------
@@ -1382,7 +1382,7 @@ class InverseScale(_ScaleBase, mscale.ScaleBase):
     name = 'inverse'
     """The registered scale name."""
 
-    def __init__(self, **kwargs):
+    def __init__(self):
         super().__init__()
         self._transform = InverseTransform()
         # self._default_major_formatter = Fromatter('log')
