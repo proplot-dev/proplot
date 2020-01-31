@@ -3299,6 +3299,7 @@ def _draw_bars(
             if imap == 0:
                 ax.set_title(cat)
         nbars += len(names)
+    return fig
 
 
 def show_channels(
@@ -3784,7 +3785,7 @@ def show_fonts(*args, family=None, text=None, size=12):
         )
 
     # Create figure
-    f, axs = subplots(
+    fig, axs = subplots(
         ncols=1, nrows=len(args), space=0,
         axwidth=4.5, axheight=1.2 * (text.count('\n') + 2.5) * size / 72,
         fallback_to_cm=False
@@ -3800,7 +3801,7 @@ def show_fonts(*args, family=None, text=None, size=12):
             fontfamily=font, fontsize=size,
             weight='normal', ha='left', va='center'
         )
-    return f
+    return fig
 
 
 # Apply custom changes
