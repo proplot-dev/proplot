@@ -3705,7 +3705,10 @@ def show_cycles(*args, **kwargs):
     return _draw_bars(names, **kwargs)
 
 
-def show_fonts(*args, family=None, text=None, size=12):
+def show_fonts(
+    *args, family=None, text=None,
+    size=12, weight='normal', style='normal', stretch='normal',
+):
     """
     Generate a table of fonts. If a glyph for a particular font is unavailable,
     it is replaced with the "¤" dummy character.
@@ -3729,6 +3732,12 @@ def show_fonts(*args, family=None, text=None, size=12):
         Greek letters, Arabic numerals, and some simple mathematical symbols.
     size : float, optional
         The font size in points.
+    weight : weight-spec, optional
+        The font weight.
+    style : style-spec, optional
+        The font style.
+    stretch : stretch-spec, optional
+        The font stretch.
     """
     from . import subplots
     import matplotlib.font_manager as mfonts
@@ -3799,7 +3808,8 @@ def show_fonts(*args, family=None, text=None, size=12):
         ax.text(
             0, 0.5, f'{font}:\n{text}',
             fontfamily=font, fontsize=size,
-            weight='normal', ha='left', va='center'
+            stretch=stretch, style=style, weight=weight,
+            ha='left', va='center'
         )
     return fig
 
