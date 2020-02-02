@@ -452,7 +452,7 @@ class Axes(maxes.Axes):
 
     def _sharex_setup(self, sharex, level=None):
         """Configure x-axis sharing for panels. Main axis sharing is done in
-        `~CartesianAxes._sharex_setup`."""
+        `~XYAxes._sharex_setup`."""
         if level is None:
             level = self.figure._sharex
         if level not in range(4):
@@ -470,7 +470,7 @@ class Axes(maxes.Axes):
 
     def _sharey_setup(self, sharey, level=None):
         """Configure y-axis sharing for panels. Main axis sharing is done in
-        `~CartesianAxes._sharey_setup`."""
+        `~XYAxes._sharey_setup`."""
         if level is None:
             level = self.figure._sharey
         if level not in range(4):
@@ -621,8 +621,8 @@ class Axes(maxes.Axes):
             **kwargs):
         """
         Modify the axes title(s), the a-b-c label, row and column labels, and
-        the figure title. Called by `CartesianAxes.format`,
-        `ProjectionAxes.format`, and `PolarAxes.format`.
+        the figure title. Called by `XYAxes.format`,
+        `ProjAxes.format`, and `PolarAxes.format`.
 
         Parameters
         ----------
@@ -698,10 +698,10 @@ optional
 
         See also
         --------
-        :py:obj:`~proplot.rctools.rc_configurator.context`
-        :py:obj:`XYAxes.format`,
-        :py:obj:`ProjAxes.format`,
-        :py:obj:`PolarAxes.format`,
+        `~proplot.rctools.rc_configurator.context`,
+        `XYAxes.format`,
+        `ProjAxes.format`,
+        `PolarAxes.format`
         """
         # Figure patch (for some reason needs to be re-asserted even if
         # declared before figure is drawn)
@@ -1244,7 +1244,7 @@ optional
         zoom=True, zoom_kw=None, **kwargs
     ):
         """
-        Return an inset `CartesianAxes`. This is similar to the builtin
+        Return an inset `XYAxes`. This is similar to the builtin
         `~matplotlib.axes.Axes.inset_axes` but includes some extra options.
 
         Parameters
@@ -1664,7 +1664,7 @@ arg : function, (function, function), or `~matplotlib.scale.ScaleBase`
 _alt_doc = """
 Return an axes in the same location as this one but whose %(x)s axis is on
 the %(x2)s. This is an alias and more intuitive name for
-`~CartesianAxes.twin%(y)s`, which generates two *%(x)s* axes with
+`~XYAxes.twin%(y)s`, which generates two *%(x)s* axes with
 a shared ("twin") *%(y)s* axes.
 
 Parameters
@@ -2144,7 +2144,7 @@ class XYAxes(Axes):
 
         See also
         --------
-        :py:obj:`Axes.format`, :py:obj:`~rctools.rc_configurator.context`
+        `Axes.format`, `~rctools.rc_configurator.context`
         """
         rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
         with rc.context(rc_kw, mode=rc_mode):
@@ -2835,8 +2835,8 @@ optional
 
         See also
         --------
-        :py:obj:`Axes.format`,
-        :py:obj:`~proplot.rctools.rc_configurator.context`
+        `Axes.format`,
+        `~proplot.rctools.rc_configurator.context`
         """
         rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
         with rc.context(rc_kw, mode=rc_mode):
