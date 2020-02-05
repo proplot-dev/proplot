@@ -2578,14 +2578,20 @@ class BinNorm(mcolors.BoundaryNorm):
         # detect it... even though we completely override it.
         # Check input levels
         levels = np.atleast_1d(levels)
+        diffs = np.sign(np.diff(levels))
+        self._descending = False
         if levels.ndim != 1:
             raise ValueError('Levels must be 1-dimensional.')
         elif levels.size < 2:
             raise ValueError('Need at least two levels.')
-        elif ((levels[1:] - levels[:-1]) <= 0).any():
+        elif all(diffs == -1):
+            self._descending = True
+            levels = levels[::-1]
+        elif not all(diffs == 1):
             raise ValueError(
                 f'Levels {levels!r} must be monotonically increasing.'
             )
+
         # Check input extend
         extend = extend or 'neither'
         extends = ('both', 'min', 'max', 'neither')
@@ -2594,6 +2600,7 @@ class BinNorm(mcolors.BoundaryNorm):
                 f'Unknown extend option {extend!r}. Options are: '
                 + ', '.join(map(repr, extends)) + '.'
             )
+
         # Check input normalizer
         if not norm:
             norm = mcolors.Normalize()
@@ -2608,7 +2615,8 @@ class BinNorm(mcolors.BoundaryNorm):
                 'matplotlib.colors.BoundaryNorm.'
             )
 
-        # Get color coordinates corresponding to each bin
+        # Normalize the level boundaries and get color coordinates
+        # corresponding to each bin.
         x_b = norm(levels)
         if isinstance(x_b, ma.core.MaskedArray):
             x_b = x_b.filled(np.nan)
@@ -2683,6 +2691,8 @@ class BinNorm(mcolors.BoundaryNorm):
             value = np.clip(value, self._bmin, self._bmax)
         xq = self._norm(value)
         yq = self._y[np.searchsorted(self._x_b, xq)]
+        if self._descending:
+            yq = 1 - yq
         mask = ma.getmaskarray(xq)
         return ma.array(yq, mask=mask)
 
@@ -2714,16 +2724,25 @@ class LinearSegmentedNorm(mcolors.Normalize):
             maximum levels.
         """
         levels = np.atleast_1d(levels)
-        if levels.size < 2:
+        diffs = np.sign(np.diff(levels))
+        y = np.linspace(0, 1, len(levels))
+        self._descending = False
+        if levels.ndim != 1:
+            raise ValueError('Levels must be 1-dimensional.')
+        elif levels.size < 2:
             raise ValueError('Need at least two levels.')
-        elif ((levels[1:] - levels[:-1]) <= 0).any():
+        elif all(diffs == -1):
+            self._descending = True
+            levels = levels[::-1]
+            y = y[::-1]
+        elif not all(diffs == 1):
             raise ValueError(
                 f'Levels {levels!r} must be monotonically increasing.'
             )
         vmin, vmax = levels.min(), levels.max()
         super().__init__(vmin, vmax, clip=clip)  # second level superclass
         self._x = levels
-        self._y = np.linspace(0, 1, len(levels))
+        self._y = y
 
     def __call__(self, value, clip=None):
         """
@@ -2756,6 +2775,8 @@ class LinearSegmentedNorm(mcolors.Normalize):
         idx[idx == len(x)] = len(x) - 1
         distance = (xq - x[idx - 1]) / (x[idx] - x[idx - 1])
         yq = distance * (y[idx] - y[idx - 1]) + y[idx - 1]
+        if self._descending:
+            yq = 1 - yq
         mask = ma.getmaskarray(xq)
         return ma.array(yq, mask=mask)
 
