@@ -1893,9 +1893,11 @@ def cmap_changer(
             continue
         if 'contour' in name and 'contourf' not in name:
             continue
-        if len(val) < 2 or any(np.diff(val) <= 0):
+        if len(val) < 2 or any(
+            np.sign(np.diff(val)) != np.sign(val[1] - val[0])
+        ):
             raise ValueError(
-                f'{key!r} must be monotonically increasing and '
+                f'{key!r} must be monotonically increasing or decreasing and '
                 f'at least length 2, got {val}.'
             )
 
@@ -1951,7 +1953,7 @@ def cmap_changer(
                 if not np.iterable(levels) or len(levels) == 1:
                     norm = 'linear'
                 else:
-                    diff = np.diff(levels)
+                    diff = np.abs(np.diff(levels))  # permit descending
                     eps = diff.mean() / 1e3
                     if (np.abs(np.diff(diff)) >= eps).any():
                         norm = 'segmented'
@@ -2285,8 +2287,9 @@ property-spec, optional
                 )
     if not np.iterable(handles):  # e.g. a mappable object
         handles = [handles]
-    if labels is not None and (not np.iterable(
-            labels) or isinstance(labels, str)):
+    if labels is not None and (
+        not np.iterable(labels) or isinstance(labels, str)
+    ):
         labels = [labels]
 
     # Legend entry for colormap or scatterplot object
@@ -2647,10 +2650,7 @@ or colormap-spec
     norm : normalizer spec, optional
         Ignored if `values` is ``None``. The normalizer
         for converting `values` to colormap colors. Passed to the
-        `~proplot.styletools.Norm` constructor. As an example, if your
-        values are logarithmically spaced but you want the level boundaries
-        to appear halfway in-between the colorbar ticks, try
-        ``norm='log'``.
+        `~proplot.styletools.Norm` constructor.
     norm_kw : dict-like, optional
         The normalizer settings. Passed to `~proplot.styletools.Norm`.
     edgecolor, linewidth : optional
@@ -2713,7 +2713,8 @@ or colormap-spec
         'use_gridspec': True,
         'orientation': orientation,
         'extend': extend,
-        'spacing': 'uniform'})
+        'spacing': 'uniform'
+    })
     kwargs.setdefault('drawedges', grid)
 
     # Text property keyword args
@@ -2828,6 +2829,7 @@ or colormap-spec
     # random points along the axis. If values were provided as keyword arg,
     # this is colorbar from lines/colors, and we label *all* values by default.
     # TODO: Handle more of the log locator stuff here instead of cmap_changer?
+    norm = getattr(mappable, 'norm', None)
     if values is not None and locator is None:
         locator = values
         tickminor = False
@@ -2837,7 +2839,7 @@ or colormap-spec
             if locator is not None:
                 break
         if locator is None:  # i.e. no attributes found
-            if isinstance(getattr(mappable, 'norm', None), mcolors.LogNorm):
+            if isinstance(norm, mcolors.LogNorm):
                 locator = 'log'
             else:
                 locator = 'auto'
@@ -2972,6 +2974,11 @@ or colormap-spec
             kw['width'] = linewidth
         axis.set_tick_params(which=which, **kw)
     axis.set_ticks_position(ticklocation)
+
+    # Invert the axis if BinNorm
+    # TODO: When is norm *not* BinNorm? Should be pretty much always.
+    if isinstance(norm, styletools.BinNorm):
+        axis.set_inverted(norm._descending)
 
     # *Never* rasterize because it causes misalignment with border lines
     if cb.solids:
