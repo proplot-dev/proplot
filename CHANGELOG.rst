@@ -60,6 +60,8 @@ ProPlot v0.4.4 (2020-##-##)
 .. rubric:: Features
 
 - Add back `Fabio Crameri's scientific colour maps <http://www.fabiocrameri.ch/colourmaps.php>`__ (:pr:`116`).
+- Permit *descending* `~proplot.styletools.BinNorm` and `~proplot.styletools.LinearSegmentedNorm`
+  levels (:pr:`119`).
 - Permit overriding the font weight, style, and stretch in the
   `~proplot.styletools.show_fonts` table (:commit:`e8b9ee38`).
 - Permit hiding "unknown" colormaps and color cycles in the
