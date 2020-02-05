@@ -613,12 +613,13 @@ class Axes(maxes.Axes):
         return self.text(x, y, text, **kwextra)
 
     def format(
-            self, *, title=None, top=None,
-            figtitle=None, suptitle=None, rowlabels=None, collabels=None,
-            leftlabels=None, rightlabels=None,
-            toplabels=None, bottomlabels=None,
-            llabels=None, rlabels=None, tlabels=None, blabels=None,
-            **kwargs):
+        self, *, title=None, top=None,
+        figtitle=None, suptitle=None, rowlabels=None, collabels=None,
+        leftlabels=None, rightlabels=None,
+        toplabels=None, bottomlabels=None,
+        llabels=None, rlabels=None, tlabels=None, blabels=None,
+        **kwargs
+    ):
         """
         Modify the axes title(s), the a-b-c label, row and column labels, and
         the figure title. Called by `XYAxes.format`,
