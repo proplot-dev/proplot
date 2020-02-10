@@ -147,6 +147,7 @@ class Axes(maxes.Axes):
         self._titles_dict = {}  # dictionary of titles and locs
         self._title_loc = None  # location of main title
         self._title_pad = rc['axes.titlepad']  # format() can overwrite
+        self._title_pad_active = None
         self._above_top_panels = True  # TODO: add rc prop?
         self._bottom_panels = []
         self._top_panels = []
@@ -403,7 +404,7 @@ class Axes(maxes.Axes):
             pobj.set_text(text)
         return pax
 
-    def _reassign_titles(self):
+    def _reassign_title(self):
         """Re-assign the title to the first upper panel if present. We cannot
         simply add the upper panel as a child axes, because then the title will
         be offset but still belong to main axes, which messes up the tight
@@ -432,27 +433,6 @@ class Axes(maxes.Axes):
                     kw[key] = getattr(obj, 'get_' + key)()
                 tobj.update(kw)
                 obj.set_text('')
-
-        # Push title above tick marks -- this is known matplotlib problem,
-        # but especially annoying with top panels!
-        # TODO: Make sure this is robust. Seems 'default' is returned usually
-        # when tick label sides is actually *both*. Also makes sure axis is
-        # visible; if not, this is a filled cbar/legend, no padding needed
-        pad = 0
-        pos = tax.xaxis.get_ticks_position()
-        fmt = tax.xaxis.get_major_formatter()
-        if (
-            pos == 'default'
-            or (pos == 'top' and isinstance(fmt, mticker.NullFormatter))
-            or (
-                pos == 'unknown'
-                and tax._panel_side == 'top'
-                and isinstance(fmt, mticker.NullFormatter)
-                and tax.xaxis.get_visible()
-            )
-        ):
-            pad = tax.xaxis.get_tick_padding()
-        tax._set_title_offset_trans(self._title_pad + pad)
 
     def _sharex_setup(self, sharex, level=None):
         """Configure x-axis sharing for panels. Main axis sharing is done in
@@ -622,52 +602,36 @@ class Axes(maxes.Axes):
                 y = 1.5 * pad
             obj.set_position((x, y))
 
-        # Builtin title positioning
-        # NOTE: We disable manual positioning here
-        ymax = -10
-        for loc in ('left', 'center', 'right'):
-            title = self._get_title(loc)
-            x, y0 = title.get_position()
-            y = 1
-            title.set_position((x, 1.0))
-            axs = self._twinned_axes.get_siblings(self)
-            for ax in self.child_axes:
-                if ax is not None:
-                    locator = ax.get_axes_locator()
-                    if locator:
-                        pos = locator(self, renderer)
-                        ax.apply_aspect(pos)
-                    else:
-                        ax.apply_aspect()
-                    axs.append(ax)
-            top = 0
-            for ax in axs:
-                if (
-                    ax.xaxis.get_label_position() == 'top'
-                    or ax.xaxis.get_ticks_position() in ('top', 'unknown')
-                ):
-                    bbox = ax.xaxis.get_tightbbox(renderer)
-                else:
-                    bbox = ax.get_window_extent(renderer)
-                if bbox:
-                    top = max(top, bbox.ymax)
-            if title.get_window_extent(renderer).ymin < top:
-                y = self.transAxes.inverted().transform((0, top))[1]
-                title.set_position((x, y))
-                # Empirically, this doesn't always get the min to top,
-                # so we need to adjust again.
-                if title.get_window_extent(renderer).ymin < top:
-                    _, y = self.transAxes.inverted().transform(
-                        (0, 2 * top - title.get_window_extent(renderer).ymin)
-                    )
-                    title.set_position((x, y))
-            ymax = max(y, ymax)
+        # Push title above tick marks, since builtin algorithm used to offset
+        # the title seems to ignore them. This is known matplotlib problem but
+        # especially annoying with top panels.
+        # TODO: Make sure this is robust. Seems 'default' is returned usually
+        # when tick label sides is actually *both*. Also makes sure axis is
+        # visible; if not, this is a filled cbar/legend, no padding needed
+        pad = self._title_pad
+        pos = self.xaxis.get_ticks_position()
+        fmt = self.xaxis.get_major_formatter()
+        if (
+            pos == 'default'
+            or (pos == 'top' and isinstance(fmt, mticker.NullFormatter))
+            or (
+                pos == 'unknown'
+                and self._panel_side == 'top'
+                and isinstance(fmt, mticker.NullFormatter)
+                and self.xaxis.get_visible()
+            )
+        ):
+            pad += self.xaxis.get_tick_padding()
+        pad_active = self._title_pad_active
+        if pad_active is None or not np.isclose(pad_active, pad):
+            # Avoid doing this on every draw in case it is expensive to change
+            # the title Text transforms every time.
+            self._title_pad_active = pad
+            self._set_title_offset_trans(pad)
 
-        # Now line up all the titles at the highest baseline
-        for loc in ('left', 'center', 'right'):
-            title = self._get_title(loc)
-            x, y0 = title.get_position()
-            title.set_position((x, ymax))
+        # Adjust the title positions with builtin algorithm and match
+        # the a-b-c text to the relevant position.
+        super()._update_title_position(renderer)
         if self._abc_loc in ('left', 'center', 'right'):
             title = self._get_title(self._abc_loc)
             self._abc_label.set_position(title.get_position())
@@ -1283,7 +1247,7 @@ optional
 
     def draw(self, renderer=None, *args, **kwargs):
         """Perform post-processing steps then draw the axes."""
-        self._reassign_titles()
+        self._reassign_title()
         super().draw(renderer, *args, **kwargs)
 
     def get_size_inches(self):
@@ -1299,7 +1263,7 @@ optional
         """Perform post-processing steps, return the tight bounding box
         surrounding axes artists, and cache the bounding box as an attribute.
         """
-        self._reassign_titles()
+        self._reassign_title()
         bbox = super().get_tightbbox(renderer, *args, **kwargs)
         self._tightbbox = bbox
         return bbox
@@ -2718,7 +2682,7 @@ class XYAxes(Axes):
             super().format(**kwargs)
 
     def altx(self, **kwargs):
-        """Docstring is replaced below."""
+        """This docstring is replaced below."""
         # Cannot wrap twiny() because we want to use XYAxes, not
         # matplotlib Axes. Instead use hidden method _make_twin_axes.
         # See https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_subplots.py  # noqa
@@ -2738,7 +2702,7 @@ class XYAxes(Axes):
         return ax
 
     def alty(self, **kwargs):
-        """Docstring is replaced below."""
+        """This docstring is replaced below."""
         if self._alty_child or self._alty_parent:
             raise RuntimeError('No more than *two* twin axes are allowed.')
         with self.figure._authorize_add_subplot():
@@ -2755,7 +2719,7 @@ class XYAxes(Axes):
         return ax
 
     def dualx(self, arg, **kwargs):
-        """Docstring is replaced below."""
+        """This docstring is replaced below."""
         # NOTE: Matplotlib 3.1 has a 'secondary axis' feature. For the time
         # being, our version is more robust (see FuncScale) and simpler, since
         # we do not create an entirely separate _SecondaryAxis class.
@@ -2765,7 +2729,7 @@ class XYAxes(Axes):
         return ax
 
     def dualy(self, arg, **kwargs):
-        """Docstring is replaced below."""
+        """This docstring is replaced below."""
         ax = self.alty(**kwargs)
         self._dualy_arg = arg
         self._dualy_overrides()
@@ -2798,11 +2762,11 @@ class XYAxes(Axes):
         return super().get_tightbbox(renderer, *args, **kwargs)
 
     def twinx(self):
-        """Docstring is replaced below."""
+        """This docstring is replaced below."""
         return self.alty()
 
     def twiny(self):
-        """Docstring is replaced below."""
+        """This docstring is replaced below."""
         return self.altx()
 
     # Add documentation
