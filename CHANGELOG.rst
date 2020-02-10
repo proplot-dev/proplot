@@ -92,6 +92,8 @@ ProPlot v0.5.0 (2020-##-##)
   (:commit:`98209e87`).
 - Fix issue where user `values` passed to `~proplot.wrappers.colorbar_wrapper`
   were sometimes ignored (:commit:`fd4f8d5f`).
+- Prevent formatting rightmost meridian label as ``1e-10``
+  on cartopy map projections (:commit:`37fdd1eb]`).
 - Redirect to the "default" location
   when using ``legend=True`` and ``colorbar=True`` to generate on-the-fly legends
   and colorbars (:commit:`c2c5c58d`). This feature was accidentally removed.
@@ -342,8 +344,10 @@ ProPlot v0.2.3 (2019-12-05)
 ===========================
 .. rubric:: Bug fixes
 
-- Fix issue with overlapping gridlines (:commit:`8960ebdc`).
-- Fix issue where auto colorbar labels are not applied when ``globe=True`` (:commit:`ecb3c899`).
+- Fix issue with overlapping gridlines using monkey patches on gridliner
+  instances (:commit:`8960ebdc`).
+- Fix issue where auto colorbar labels are not applied when
+  ``globe=True`` (:commit:`ecb3c899`).
 - More sensible zorder for gridlines (:commit:`90d94e55`).
 - Fix issue where customized super title settings are overridden when
   new axes are created (:commit:`35cb21f2`).
