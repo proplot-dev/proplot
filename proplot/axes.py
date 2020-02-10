@@ -771,7 +771,16 @@ optional
         # A-b-c labels
         titles_dict = self._titles_dict
         if not self._panel_side:
-            # Location and text
+            # Properties
+            kw = rc.fill({
+                'fontsize': 'abc.size',
+                'weight': 'abc.weight',
+                'color': 'abc.color',
+                'border': 'abc.border',
+                'borderwidth': 'abc.borderwidth',
+                'fontfamily': 'font.family',
+            }, context=True)
+            # Label format
             abcstyle = rc.get('abc.style', context=True)  # 1st run, or changed
             if abcstyle and self.number is not None:
                 if not isinstance(abcstyle, str) or (
@@ -808,17 +817,14 @@ optional
         # Tricky because we have to reconcile two workflows:
         # 1. title='name' and titleloc='position'
         # 2. ltitle='name', rtitle='name', etc., arbitrarily many titles
-        # First update existing titles
-        # NOTE: _update_title should never return new objects unless called
-        # with *inner* titles... *outer* titles will just refresh, so we
-        # don't need to re-assign the attributes or anything.
-        loc, obj, kw = self._get_title_props()
-        if kw:
-            for iloc, iobj in titles_dict.items():
-                if iloc is self._abc_loc:
-                    continue
-                titles_dict[iloc] = self._update_title(iobj, **kw)
-
+        kw = rc.fill({
+            'fontsize': 'title.size',
+            'weight': 'title.weight',
+            'color': 'title.color',
+            'border': 'title.border',
+            'borderwidth': 'title.borderwidth',
+            'fontfamily': 'font.family',
+        }, context=True)
         # Workflow 2, want this to come first so workflow 1 gets priority
         for iloc, ititle in zip(
             ('l', 'r', 'c', 'ul', 'uc', 'ur', 'll', 'lc', 'lr'),

@@ -80,8 +80,8 @@ defaultParamsShort = {
 }
 defaultParamsLong = {
     'abc.border': True,
+    'abc.borderwidth': 1.5,
     'abc.color': 'k',
-    'abc.linewidth': 1.5,
     'abc.loc': 'l',  # left side above the axes
     'abc.size': None,  # = large
     'abc.style': 'a',
@@ -153,8 +153,8 @@ defaultParamsLong = {
     'tick.labelsize': None,  # = small
     'tick.labelweight': 'normal',
     'title.border': True,
+    'title.borderwidth': 1.5,
     'title.color': 'k',
-    'title.linewidth': 1.5,
     'title.loc': 'c',  # centered above the axes
     'title.pad': 3.0,  # copy
     'title.size': None,  # = large

@@ -113,7 +113,7 @@ Key(s)                           Description
 ``abc.style``                    a-b-c label style. For options, see `~proplot.axes.Axes.format`.
 ``abc.loc``                      a-b-c label position. For options, see `~proplot.axes.Axes.format`.
 ``abc.border``                   Boolean, indicates whether to draw a white border around a-b-c labels inside an axes.
-``abc.linewidth``                Width of the white border around a-b-c labels.
+``abc.borderwidth``              Width of the white border around a-b-c labels.
 ``abc.color``                    a-b-c label color.
 ``abc.size``                     a-b-c label font size.
 ``abc.weight``                   a-b-c label font weight.
@@ -175,7 +175,7 @@ Key(s)                           Description
 ``tick.weight``                  Axis tick label font weight. Mirrors the *axis* label :rcraw:`axes.labelweight` setting.
 ``title.loc``                    Title position. For options, see `~proplot.axes.Axes.format`.
 ``title.border``                 Boolean, indicates whether to draw a white border around titles inside an axes.
-``title.linewidth``              Width of the white border around titles.
+``title.borderwidth``            Width of the white border around titles.
 ``title.pad``                    The title offset in arbitrary units. Alias for :rcraw:`axes.titlepad`.
 ``title.color``                  Axes title color.
 ``title.size``                   Axes title font size.
