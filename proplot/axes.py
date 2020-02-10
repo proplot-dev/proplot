@@ -3037,7 +3037,8 @@ optional
 
     # Disabled methods suitable only for cartesian axes
     _disable = _disable_decorator(
-        'Invalid plotting method {!r} for polar axes.')
+        'Invalid plotting method {!r} for polar axes.'
+    )
     twinx = _disable(Axes.twinx)
     twiny = _disable(Axes.twiny)
     matshow = _disable(Axes.matshow)
@@ -3203,7 +3204,8 @@ optional
             else:
                 base = 5
                 lon_0 = base * round(
-                    self.projection.lonmin / base) + 180  # central longitude
+                    self.projection.lonmin / base
+                ) + 180  # central longitude
             if lonlines is not None:
                 if not np.iterable(lonlines):
                     lonlines = arange(lon_0 - 180, lon_0 + 180, lonlines)
@@ -3298,13 +3300,16 @@ optional
 
             # Apply formatting to basemap or cartpoy axes
             patch_kw = patch_kw or {}
-            self._format_apply(patch_kw, lonlim, latlim, boundinglat,
-                               lonlines, latlines, latmax, lonarray, latarray)
+            self._format_apply(
+                patch_kw, lonlim, latlim, boundinglat,
+                lonlines, latlines, latmax, lonarray, latarray
+            )
             super().format(**kwargs)
 
     # Disabled methods suitable only for cartesian axes
     _disable = _disable_decorator(
-        'Invalid plotting method {!r} for map projection axes.')
+        'Invalid plotting method {!r} for map projection axes.'
+    )
     bar = _disable(Axes.bar)
     barh = _disable(Axes.barh)
     twinx = _disable(Axes.twinx)
@@ -3454,11 +3459,13 @@ class GeoAxes(ProjAxes, GeoAxes):
         north = isinstance(self.projection, (
             ccrs.NorthPolarStereo, projs.NorthPolarGnomonic,
             projs.NorthPolarAzimuthalEquidistant,
-            projs.NorthPolarLambertAzimuthalEqualArea))
+            projs.NorthPolarLambertAzimuthalEqualArea
+        ))
         south = isinstance(self.projection, (
             ccrs.SouthPolarStereo, projs.SouthPolarGnomonic,
             projs.SouthPolarAzimuthalEquidistant,
-            projs.SouthPolarLambertAzimuthalEqualArea))
+            projs.SouthPolarLambertAzimuthalEqualArea
+        ))
         if north or south:
             if (lonlim is not None or latlim is not None):
                 _warn_proplot(
