@@ -93,6 +93,36 @@ STYLE_ARGS_TRANSLATE = {
 }
 
 
+def _is_number(data):
+    """Test whether input is numeric array rather than datetime or strings."""
+    return len(data) and np.issubdtype(_to_array(data).dtype, np.number)
+
+
+def _is_string(data):
+    """Test whether input is array of strings."""
+    return len(data) and isinstance(_to_array(data).flat[0], str)
+
+
+def _to_array(data):
+    """Convert to ndarray cleanly."""
+    return np.asarray(getattr(data, 'values', data))
+
+
+def _to_arraylike(data):
+    """Converts list of lists to array."""
+    _load_objects()
+    if not isinstance(data, (ndarray, DataArray, DataFrame, Series, Index)):
+        data = np.array(data)
+    if not np.iterable(data):
+        data = np.atleast_1d(data)
+    return data
+
+
+def _to_iloc(data):
+    """Indexible attribute of array."""
+    return getattr(data, 'iloc', data)
+
+
 def default_latlon(self, func, *args, latlon=True, **kwargs):
     """
     Wraps %(methods)s for `~proplot.axes.BasemapAxes`.
@@ -151,29 +181,7 @@ def default_crs(self, func, *args, crs=None, **kwargs):
     return result
 
 
-def _to_iloc(data):
-    """Get indexible attribute of array, so we can perform axis
-    wise operations."""
-    return getattr(data, 'iloc', data)
-
-
-def _to_array(data):
-    """Convert to ndarray cleanly."""
-    data = getattr(data, 'values', data)
-    return np.array(data)
-
-
-def _atleast_array(data):
-    """Converts list of lists to array."""
-    _load_objects()
-    if not isinstance(data, (ndarray, DataArray, DataFrame, Series, Index)):
-        data = np.array(data)
-    if not np.iterable(data):
-        data = np.atleast_1d(data)
-    return data
-
-
-def _auto_label(data, axis=None, units=True):
+def _standard_label(data, axis=None, units=True):
     """Gets data and label for pandas or xarray objects or
     their coordinates."""
     label = ''
@@ -251,15 +259,15 @@ def standardize_1d(self, func, *args, **kwargs):
         ys, args = (y, args[0]), args[1:]
     else:
         ys = (y,)
-    ys = [_atleast_array(y) for y in ys]
+    ys = [_to_arraylike(y) for y in ys]
 
     # Auto x coords
     y = ys[0]  # test the first y input
     if x is None:
         axis = 1 if (name in ('hist', 'boxplot', 'violinplot') or any(
             kwargs.get(s, None) for s in ('means', 'medians'))) else 0
-        x, _ = _auto_label(y, axis=axis)
-    x = _atleast_array(x)
+        x, _ = _standard_label(y, axis=axis)
+    x = _to_arraylike(x)
     if x.ndim != 1:
         raise ValueError(
             f'x coordinates must be 1-dimensional, but got {x.ndim}.'
@@ -270,13 +278,13 @@ def standardize_1d(self, func, *args, **kwargs):
     if not hasattr(self, 'projection'):
         # First handle string-type x-coordinates
         kw = {}
-        xaxis = 'y' if (orientation == 'horizontal') else 'x'
-        yaxis = 'x' if xaxis == 'y' else 'y'
-        if _to_array(x).dtype == 'object':
+        xax = 'y' if orientation == 'horizontal' else 'x'
+        yax = 'x' if xax == 'y' else 'y'
+        if _is_string(x):
             xi = np.arange(len(x))
-            kw[xaxis + 'locator'] = mticker.FixedLocator(xi)
-            kw[xaxis + 'formatter'] = mticker.IndexFormatter(x)
-            kw[xaxis + 'minorlocator'] = mticker.NullLocator()
+            kw[xax + 'locator'] = mticker.FixedLocator(xi)
+            kw[xax + 'formatter'] = mticker.IndexFormatter(x)
+            kw[xax + 'minorlocator'] = mticker.NullLocator()
             if name == 'boxplot':
                 kwargs['labels'] = x
             elif name == 'violinplot':
@@ -286,17 +294,17 @@ def standardize_1d(self, func, *args, **kwargs):
         # Next handle labels if 'autoformat' is on
         if self.figure._auto_format:
             # Ylabel
-            y, label = _auto_label(y)
+            y, label = _standard_label(y)
             if label:
                 # for histogram, this indicates x coordinate
-                iaxis = xaxis if name in ('hist',) else yaxis
+                iaxis = xax if name in ('hist',) else yax
                 kw[iaxis + 'label'] = label
             # Xlabel
-            x, label = _auto_label(x)
+            x, label = _standard_label(x)
             if label and name not in ('hist',):
-                kw[xaxis + 'label'] = label
+                kw[xax + 'label'] = label
             if name != 'scatter' and len(x) > 1 and xi is None and x[1] < x[0]:
-                kw[xaxis + 'reverse'] = True
+                kw[xax + 'reverse'] = True
         # Appply
         if kw:
             self.format(**kw)
@@ -433,7 +441,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
     # Ensure DataArray, DataFrame or ndarray
     Zs = []
     for Z in args:
-        Z = _atleast_array(Z)
+        Z = _to_arraylike(Z)
         if Z.ndim != 2:
             raise ValueError(f'Z must be 2-dimensional, got shape {Z.shape}.')
         Zs.append(Z)
@@ -460,7 +468,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
             y = Z.columns
 
     # Check coordinates
-    x, y = _atleast_array(x), _atleast_array(y)
+    x, y = _to_arraylike(x), _to_arraylike(y)
     if x.ndim != y.ndim:
         raise ValueError(
             f'x coordinates are {x.ndim}-dimensional, '
@@ -478,12 +486,12 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
     xi, yi = None, None
     if not hasattr(self, 'projection'):
         # First handle string-type x and y-coordinates
-        if _to_array(x).dtype == 'object':
+        if _is_string(x):
             xi = np.arange(len(x))
             kw['xlocator'] = mticker.FixedLocator(xi)
             kw['xformatter'] = mticker.IndexFormatter(x)
             kw['xminorlocator'] = mticker.NullLocator()
-        if _to_array(y).dtype == 'object':
+        if _is_string(x):
             yi = np.arange(len(y))
             kw['ylocator'] = mticker.FixedLocator(yi)
             kw['yformatter'] = mticker.IndexFormatter(y)
@@ -491,7 +499,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
         # Handle labels if 'autoformat' is on
         if self.figure._auto_format:
             for key, xy in zip(('xlabel', 'ylabel'), (x, y)):
-                _, label = _auto_label(xy)
+                _, label = _standard_label(xy)
                 if label:
                     kw[key] = label
                 if len(xy) > 1 and all(isinstance(xy, Number)
@@ -503,8 +511,8 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
         y = yi
     # Handle figure titles
     if self.figure._auto_format:
-        _, colorbar_label = _auto_label(Zs[0], units=True)
-        _, title = _auto_label(Zs[0], units=False)
+        _, colorbar_label = _standard_label(Zs[0], units=True)
+        _, title = _standard_label(Zs[0], units=False)
         if title:
             kw['title'] = title
         if kw:
@@ -521,16 +529,22 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
                     f'Input arrays must be 2D, instead got shape {Z.shape}.'
                 )
             elif Z.shape[1] == xlen and Z.shape[0] == ylen:
-                if all(z.ndim == 1 and z.size > 1
-                       and z.dtype != 'object' for z in (x, y)):
+                if all(
+                    z.ndim == 1 and z.size > 1
+                    and _is_number(z) for z in (x, y)
+                ):
                     x = edges(x)
                     y = edges(y)
                 else:
-                    if (x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1
-                            and x.dtype != 'object'):
+                    if (
+                        x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1
+                        and _is_number(x)
+                    ):
                         x = edges2d(x)
-                    if (y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1
-                            and y.dtype != 'object'):
+                    if (
+                        y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1
+                        and _is_number(y)
+                    ):
                         y = edges2d(y)
             elif Z.shape[1] != xlen - 1 or Z.shape[0] != ylen - 1:
                 raise ValueError(
@@ -560,19 +574,27 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
                     f'Input arrays must be 2D, instead got shape {Z.shape}.'
                 )
             elif Z.shape[1] == xlen - 1 and Z.shape[0] == ylen - 1:
-                if all(z.ndim == 1 and z.size > 1
-                        and z.dtype != 'object' for z in (x, y)):
+                if all(
+                    z.ndim == 1 and z.size > 1
+                    and _is_number(z) for z in (x, y)
+                ):
                     x = (x[1:] + x[:-1]) / 2
                     y = (y[1:] + y[:-1]) / 2
                 else:
-                    if (x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1
-                            and x.dtype != 'object'):
-                        x = 0.25 * (x[:-1, :-1] + x[:-1, 1:]
-                                    + x[1:, :-1] + x[1:, 1:])
-                    if (y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1
-                            and y.dtype != 'object'):
-                        y = 0.25 * (y[:-1, :-1] + y[:-1, 1:]
-                                    + y[1:, :-1] + y[1:, 1:])
+                    if (
+                        x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1
+                        and _is_number(x)
+                    ):
+                        x = 0.25 * (
+                            x[:-1, :-1] + x[:-1, 1:] + x[1:, :-1] + x[1:, 1:]
+                        )
+                    if (
+                        y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1
+                        and _is_number(y)
+                    ):
+                        y = 0.25 * (
+                            y[:-1, :-1] + y[:-1, 1:] + y[1:, :-1] + y[1:, 1:]
+                        )
             elif Z.shape[1] != xlen or Z.shape[0] != ylen:
                 raise ValueError(
                     f'Input shapes x {x.shape} and y {y.shape} '
@@ -642,8 +664,9 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
                     if xi[0] != xi[1]:
                         Zq = ma.concatenate((Z[:, -1:], Z[:, :1]), axis=1)
                         xq = xmin + 360
-                        Zq = (Zq[:, :1] * (xi[1] - xq) + Zq[:, 1:]
-                              * (xq - xi[0])) / (xi[1] - xi[0])
+                        Zq = (
+                            Zq[:, :1] * (xi[1] - xq) + Zq[:, 1:] * (xq - xi[0])
+                        ) / (xi[1] - xi[0])
                         ix = ma.concatenate(([xmin], ix, [xmin + 360]))
                         Z = ma.concatenate((Zq, Z, Zq), axis=1)
                 else:
@@ -681,8 +704,8 @@ def _errorbar_values(data, idata, bardata=None, barrange=None, barstd=False):
                 f'but got {err.shape}.'
             )
     elif barstd:
-        err = np.array(idata) + np.std(
-            data, axis=0)[None, :] * np.array(barrange)[:, None]
+        err = np.array(idata) + \
+            np.std(data, axis=0)[None, :] * np.array(barrange)[:, None]
     else:
         err = np.percentile(data, barrange, axis=0)
     err = err - np.array(idata)
@@ -827,11 +850,14 @@ def add_errorbars(
         boxrange = _notNone(boxrange, default)
         err = _errorbar_values(y, iy, boxdata, boxrange, boxstd)
         if boxmarker:
-            self.scatter(*xy, marker='o', color=boxmarkercolor,
-                         s=boxlw, zorder=5)
+            self.scatter(
+                *xy, marker='o', color=boxmarkercolor,
+                s=boxlw, zorder=5
+            )
         self.errorbar(*xy, **{
             axis + 'err': err, 'capsize': 0, 'zorder': boxzorder,
-            'color': boxcolor, 'linestyle': 'none', 'linewidth': boxlw})
+            'color': boxcolor, 'linestyle': 'none', 'linewidth': boxlw
+        })
     if bars:  # now impossible to make thin bar width different from cap width!
         default = (-3, 3) if barstd else (0, 100)
         barrange = _notNone(barrange, default)
@@ -839,7 +865,8 @@ def add_errorbars(
         self.errorbar(*xy, **{
             axis + 'err': err, 'capsize': capsize, 'zorder': barzorder,
             'color': barcolor, 'linewidth': barlw, 'linestyle': 'none',
-            'markeredgecolor': barcolor, 'markeredgewidth': barlw})
+            'markeredgecolor': barcolor, 'markeredgewidth': barlw
+        })
     return obj
 
 
@@ -946,12 +973,14 @@ color-spec or list thereof, optional
         names=(
             'lw', 'linewidth', 'linewidths',
             'markeredgewidth', 'markeredgewidths'
-        ))
+        ),
+    )
     ec = _notNone(
         edgecolor, edgecolors, markeredgecolor, markeredgecolors, None,
         names=(
             'edgecolor', 'edgecolors', 'markeredgecolor', 'markeredgecolors'
-        ))
+        ),
+    )
 
     # Scale s array
     if np.iterable(s):
@@ -962,10 +991,12 @@ color-spec or list thereof, optional
             smax = smax_true
         s = smin + (smax - smin) * (np.array(s) - smin_true) / \
             (smax_true - smin_true)
-    return func(self, *args, c=c, s=s,
-                cmap=cmap, vmin=vmin, vmax=vmax,
-                norm=norm, linewidths=lw, edgecolors=ec,
-                **kwargs)
+    return func(
+        self, *args, c=c, s=s,
+        cmap=cmap, vmin=vmin, vmax=vmax,
+        norm=norm, linewidths=lw, edgecolors=ec,
+        **kwargs
+    )
 
 
 def _fill_between_apply(
@@ -1130,10 +1161,12 @@ def bar_wrapper(
     # TODO: This *must* also be wrapped by cycle_changer, which ultimately
     # permutes back the x/bottom args for horizontal bars! Need to clean up.
     lw = _notNone(lw, linewidth, None, names=('lw', 'linewidth'))
-    return func(self, x, height, width=width, bottom=bottom,
-                linewidth=lw, edgecolor=edgecolor,
-                stacked=stacked, orientation=orientation,
-                **kwargs)
+    return func(
+        self, x, height, width=width, bottom=bottom,
+        linewidth=lw, edgecolor=edgecolor,
+        stacked=stacked, orientation=orientation,
+        **kwargs
+    )
 
 
 def boxplot_wrapper(
@@ -1287,9 +1320,11 @@ def violinplot_wrapper(
     if 'showmedians' in kwargs:
         kwargs.setdefault('medians', kwargs.pop('showmedians'))
     kwargs.setdefault('capsize', 0)
-    obj = func(self, *args,
-               showmeans=False, showmedians=False, showextrema=False,
-               edgecolor=edgecolor, lw=lw, **kwargs)
+    obj = func(
+        self, *args,
+        showmeans=False, showmedians=False, showextrema=False,
+        edgecolor=edgecolor, lw=lw, **kwargs
+    )
     if not args:
         return obj
 
@@ -1648,7 +1683,7 @@ def cycle_changer(
                     f'but {len(labels)} labels.'
                 )
             label = labels[i]
-            values, label_leg = _auto_label(iy, axis=1)
+            values, label_leg = _standard_label(iy, axis=1)
             if label_leg and label is None:
                 label = _to_array(values)[i]
             if label is not None:
@@ -2160,7 +2195,7 @@ def cmap_changer(
     if colorbar:
         loc = self._loc_translate(colorbar, 'colorbar', allow_manual=False)
         if 'label' not in colorbar_kw and self.figure._auto_format:
-            _, label = _auto_label(args[-1])  # last one is data, we assume
+            _, label = _standard_label(args[-1])  # last one is data, we assume
             if label:
                 colorbar_kw.setdefault('label', label)
         if name in ('parametric',) and values is not None:
