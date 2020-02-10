@@ -375,24 +375,24 @@ class Axes(maxes.Axes):
         # critical for bounding box calcs; not always clear whether draw() and
         # get_tightbbox() are called on the main axes or panel first
         if self._panel_side == 'top' and self._panel_parent:
-            ax, taxs = self._panel_parent, [self]
+            ax = self._panel_parent
         else:
-            ax, taxs = self, self._tpanels
-        if not taxs or not ax._title_above_panel:
+            ax = self
+        taxs = ax._top_panels
+        if not taxs or not ax._include_top_panels:
             tax = ax
         else:
             tax = taxs[0]
             tax._title_pad = ax._title_pad
-            for loc, obj in ax._titles_dict.items():
-                if not obj.get_text() or loc not in (
-                        'left', 'center', 'right'):
-                    continue
+            for loc in ('abc', 'left', 'center', 'right'):
                 kw = {}
-                loc, tobj, _ = tax._get_title_props(loc=loc)
+                obj = ax._get_title(loc)
+                if not obj.get_text():
+                    continue
+                tobj = tax._get_title(loc)
                 for key in ('text', 'color', 'fontproperties'):  # add to this?
                     kw[key] = getattr(obj, 'get_' + key)()
                 tobj.update(kw)
-                tax._titles_dict[loc] = tobj
                 obj.set_text('')
 
         # Push title above tick marks -- this is known matplotlib problem,
@@ -402,10 +402,17 @@ class Axes(maxes.Axes):
         # visible; if not, this is a filled cbar/legend, no padding needed
         pad = 0
         pos = tax.xaxis.get_ticks_position()
-        labs = tax.xaxis.get_ticklabels()
-        if pos == 'default' or (pos == 'top' and not len(labs)) or (
-                pos == 'unknown' and tax._panel_side == 'top'
-                and not len(labs) and tax.xaxis.get_visible()):
+        fmt = tax.xaxis.get_major_formatter()
+        if (
+            pos == 'default'
+            or (pos == 'top' and isinstance(fmt, mticker.NullFormatter))
+            or (
+                pos == 'unknown'
+                and tax._panel_side == 'top'
+                and isinstance(fmt, mticker.NullFormatter)
+                and tax.xaxis.get_visible()
+            )
+        ):
             pad = tax.xaxis.get_tick_padding()
         tax._set_title_offset_trans(self._title_pad + pad)
 
@@ -544,32 +551,92 @@ class Axes(maxes.Axes):
             getattr(ax, x + 'axis').label.update(kwargs)  # apply to main axes
             pax = getattr(ax, '_share' + x)
             if pax is not None:  # apply to panel?
-                getattr(pax, x + 'axis').label.update(kwargs)
+                axis = getattr(pax, x + 'axis')
+                axis.label.update(kwargs)
 
-    def _update_title(self, obj, **kwargs):
-        """Redraw the title if updating with the input keyword arguments
-        failed."""
-        # Try to just return updated object, redraw may be necessary
-        # WARNING: Making text instances invisible seems to mess up tight
-        # bounding box calculations and cause other issues. Just reset text.
-        keys = ('border', 'lw', 'linewidth', 'bordercolor', 'invert')
-        kwextra = {key: value for key, value in kwargs.items() if key in keys}
-        kwargs = {key: value for key,
-                  value in kwargs.items() if key not in keys}
-        obj.update(kwargs)
-        if kwextra:
-            obj.set_text('')
-        else:
-            return obj
-        # Get properties from old object
-        for key in ('ha', 'va', 'color', 'transform', 'fontproperties'):
-            kwextra[key] = getattr(obj, 'get_' + key)()  # copy over attrs
-        text = kwargs.pop('text', obj.get_text())
-        x, y = kwargs.pop('position', (None, None))
-        pos = obj.get_position()
-        x = _notNone(kwargs.pop('x', x), pos[0])
-        y = _notNone(kwargs.pop('y', y), pos[1])
-        return self.text(x, y, text, **kwextra)
+    def _update_title_position(self, renderer):
+        """Update the position of proplot inset titles and builtin
+        matplotlib titles."""
+        # Custom inset titles
+        width, height = self.get_size_inches()
+        for loc in (
+            'abc',
+            'upper left', 'upper right', 'upper center',
+            'lower left', 'lower right', 'lower center',
+        ):
+            obj = self._get_title(loc)
+            if loc == 'abc':
+                loc = self._abc_loc
+                if loc in ('left', 'right', 'center'):
+                    continue
+            if loc in ('upper center', 'lower center'):
+                x = 0.5
+            elif loc in ('upper left', 'lower left'):
+                pad = rc['axes.titlepad'] / (72 * width)
+                x = 1.5 * pad
+            elif loc in ('upper right', 'lower right'):
+                pad = rc['axes.titlepad'] / (72 * width)
+                x = 1 - 1.5 * pad
+            if loc in ('upper left', 'upper right', 'upper center'):
+                pad = rc['axes.titlepad'] / (72 * height)
+                y = 1 - 1.5 * pad
+            elif loc in ('lower left', 'lower right', 'lower center'):
+                pad = rc['axes.titlepad'] / (72 * height)
+                y = 1.5 * pad
+            obj.set_position((x, y))
+
+        # Builtin title positioning
+        # NOTE: We disable manual positioning here
+        ymax = -10
+        for loc in ('left', 'center', 'right'):
+            title = self._get_title(loc)
+            x, y0 = title.get_position()
+            y = 1
+            title.set_position((x, 1.0))
+            axs = self._twinned_axes.get_siblings(self)
+            for ax in self.child_axes:
+                if ax is not None:
+                    locator = ax.get_axes_locator()
+                    if locator:
+                        pos = locator(self, renderer)
+                        ax.apply_aspect(pos)
+                    else:
+                        ax.apply_aspect()
+                    axs.append(ax)
+            top = 0
+            for ax in axs:
+                if (
+                    ax.xaxis.get_label_position() == 'top'
+                    or ax.xaxis.get_ticks_position() in ('top', 'unknown')
+                ):
+                    bbox = ax.xaxis.get_tightbbox(renderer)
+                else:
+                    bbox = ax.get_window_extent(renderer)
+                if bbox:
+                    top = max(top, bbox.ymax)
+            if title.get_window_extent(renderer).ymin < top:
+                y = self.transAxes.inverted().transform((0, top))[1]
+                title.set_position((x, y))
+                # Empirically, this doesn't always get the min to top,
+                # so we need to adjust again.
+                if title.get_window_extent(renderer).ymin < top:
+                    _, y = self.transAxes.inverted().transform(
+                        (0, 2 * top - title.get_window_extent(renderer).ymin)
+                    )
+                    title.set_position((x, y))
+            ymax = max(y, ymax)
+
+        # Now line up all the titles at the highest baseline
+        for loc in ('left', 'center', 'right'):
+            title = self._get_title(loc)
+            x, y0 = title.get_position()
+            title.set_position((x, ymax))
+        if self._abc_loc in ('left', 'center', 'right'):
+            title = self._get_title(self._abc_loc)
+            self._abc_label.set_position(title.get_position())
+            self._abc_label.set_transform(
+                self.transAxes + self.titleOffsetTrans
+            )
 
     def format(
         self, *, title=None, top=None,
@@ -1124,7 +1191,7 @@ optional
             Passed to `~proplot.wrappers.legend_wrapper`.
         """
         if loc != '_fill':
-            loc = self._loc_translate(loc, rc['legend.loc'])
+            loc = self._loc_translate(loc, 'legend')
         if isinstance(loc, np.ndarray):
             loc = loc.tolist()
 
@@ -1357,6 +1424,7 @@ optional
         `~proplot.axes.Axes`
             The panel axes.
         """
+        side = self._loc_translate(side, 'panel')
         return self.figure._add_axes_panel(self, side, **kwargs)
 
     @_standardize_1d

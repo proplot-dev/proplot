@@ -1325,11 +1325,36 @@ def _get_transform(self, transform):
         raise ValueError(f'Unknown transform {transform!r}.')
 
 
+def _update_text(self, props):
+    """Monkey patch that adds pseudo "border" properties to text objects
+    without wrapping the entire class. We override update to facilitate
+    updating inset titles."""
+    props = props.copy()  # shallow copy
+    border = props.pop('border', None)
+    bordercolor = props.pop('bordercolor', 'w')
+    borderinvert = props.pop('borderinvert', False)
+    borderwidth = props.pop('borderwidth', 2)
+    if border:
+        facecolor, bgcolor = self.get_color(), bordercolor
+        if borderinvert:
+            facecolor, bgcolor = bgcolor, facecolor
+        kwargs = {
+            'linewidth': borderwidth,
+            'foreground': bgcolor,
+            'joinstyle': 'miter'
+        }
+        self.update({
+            'color': facecolor,
+            'path_effects':
+                [mpatheffects.Stroke(**kwargs), mpatheffects.Normal()]
+        })
+    return type(self).update(self, props)
+
 def text_wrapper(
     self, func,
     x=0, y=0, text='', transform='data',
     fontfamily=None, fontname=None, fontsize=None, size=None,
-    border=False, bordercolor='w', invert=False, lw=None, linewidth=2,
+    border=False, bordercolor='w', borderwidth=2, borderinvert=False,
     **kwargs
 ):
     """
@@ -1356,13 +1381,12 @@ def text_wrapper(
         Aliases for the ``fontfamily`` `~matplotlib.text.Text` property.
     border : bool, optional
         Whether to draw border around text.
+    borderwidth : float, optional
+        The width of the text border. Default is ``2`` points.
     bordercolor : color-spec, optional
-        The color of the border. Default is ``'w'``.
-    invert : bool, optional
-        If ``False``, ``'color'`` is used for the text and ``bordercolor``
-        for the border. If ``True``, this is inverted.
-    lw, linewidth : float, optional
-        Ignored if `border` is ``False``. The width of the text border.
+        The color of the text border. Default is ``'w'``.
+    borderinvert : bool, optional
+        If ``True``, the text and border colors are swapped.
 
     Other parameters
     ----------------
@@ -1375,13 +1399,16 @@ def text_wrapper(
     else:
         transform = _get_transform(self, transform)
 
-    # More flexible keyword args and more helpful warning if invalid font
-    # is specified
-    fontname = _notNone(fontfamily, fontname, None,
-                        names=('fontfamily', 'fontname'))
+    # Helpful warning if invalid font is specified
+    fontname = _notNone(
+        fontfamily, fontname, None, names=('fontfamily', 'fontname')
+    )
     if fontname is not None:
-        if not isinstance(fontname, str) and np.iterable(
-                fontname) and len(fontname) == 1:
+        if (
+            not isinstance(fontname, str)
+            and np.iterable(fontname)
+            and len(fontname) == 1
+        ):
             fontname = fontname[0]
         if fontname.lower() in list(map(str.lower, styletools.fonts)):
             kwargs['fontfamily'] = fontname
@@ -1390,29 +1417,22 @@ def text_wrapper(
                 f'Font {fontname!r} unavailable. Available fonts are '
                 + ', '.join(map(repr, styletools.fonts)) + '.'
             )
-    size = _notNone(fontsize, size, None, names=('fontsize', 'size'))
+
+    # Units support for font sizes
+    # TODO: Document this feature
+    # TODO: Why only support this here, and not in arbitrary places throughout
+    # rest of matplotlib API? Units engine needs better implementation.
+    size = _notNone(size, fontsize, None, names=('size', 'fontsize'))
     if size is not None:
         kwargs['fontsize'] = units(size, 'pt')
-    # text.color is ignored sometimes unless we apply this
-    kwargs.setdefault('color', rc['text.color'])
     obj = func(self, x, y, text, transform=transform, **kwargs)
-
-    # Optionally draw border around text
-    if border:
-        linewidth = lw or linewidth
-        facecolor, bgcolor = kwargs['color'], bordercolor
-        if invert:
-            facecolor, bgcolor = bgcolor, facecolor
-        kwargs = {
-            'linewidth': linewidth,
-            'foreground': bgcolor, 'joinstyle': 'miter'
-        }
-        obj.update({
-            'color': facecolor,
-            'zorder': 100,
-            'path_effects':
-                [mpatheffects.Stroke(**kwargs), mpatheffects.Normal()]
-        })
+    obj.update = _update_text.__get__(obj)
+    obj.update({
+        'border': border,
+        'bordercolor': bordercolor,
+        'borderinvert': borderinvert,
+        'borderwidth': borderwidth,
+    })
     return obj
 
 
