@@ -16,12 +16,16 @@ This will be published when some major refactoring tasks are completed,
 and deprecation warnings will be removed. See :pr:`89`, :pr:`109`, :pr:`110`,
 and :pr:`111`.
 
-ProPlot v0.5.0 (2020-##-##)
+ProPlot v0.6.0 (2020-##-##)
 ===========================
 .. rubric:: Deprecated
 
-- `~proplot.axes.Axes.format` functions have been deprecated in favor of the
+- Deprecate `~proplot.axes.Axes.format` functions in favor of the
   axes-artist `~matplotlib.artist.Artist.set` override (:pr:`89`).
+- Rename `width` and `height` `~proplot.subplots.subplots` keyword args to `figwidth` and `figheight` (:pr:`###`).
+- Rename `aspect`, `axwidth`, and `axheight` keyword args to `refaspect`, `refwidth`, and `refheight` (:pr:`###`).
+- Rename :rcraw:`subplots.pad` and :rcraw:`subplots.axpad` to
+  :rcraw:`subplots.edgepad` and :rcraw:`subplots.subplotpad` (:pr:`###`).
 
 .. rubric:: Features
 
@@ -55,11 +59,17 @@ ProPlot v0.5.0 (2020-##-##)
   stacks rather than getting inserted directly into
   the main `~proplot.subplots.GridSpec` (:pr:`110`).
 
-ProPlot v0.4.4 (2020-##-##)
+ProPlot v0.5.0 (2020-##-##)
 ===========================
+.. rubric:: Deprecated
+
+- Remove `abcformat` from `~proplot.axes.Axes.format` (:commit:`2f295e18`).
+
 .. rubric:: Features
 
 - Add back `Fabio Crameri's scientific colour maps <http://www.fabiocrameri.ch/colourmaps.php>`__ (:pr:`116`).
+- Permit both e.g. `locator` and `xlocator` as keyword arguments to
+  `~proplot.axes.Axes.altx`, etc. (:issue:`57fab860`).
 - Permit *descending* `~proplot.styletools.BinNorm` and `~proplot.styletools.LinearSegmentedNorm`
   levels (:pr:`119`).
 - Permit overriding the font weight, style, and stretch in the
@@ -170,10 +180,11 @@ ProPlot v0.4.0 (2020-01-07)
   based on current tick lengths, label sizes, etc.
 - Remove redundant `~proplot.rctools.use_fonts`, use ``rcParams['sans-serif']``
   precedence instead (:pr:`95`).
-- `~proplot.axes.Axes.dualx` and `~proplot.axes.Axes.dualy` no longer accept "scale-spec" arguments.
+- `~proplot.axes.Axes.dualx` and `~proplot.axes.Axes.dualy` no longer accept
+  "scale-spec" arguments.
   Must be a function, two functions, or an axis scale instance (:pr:`96`).
-- Remove `~proplot.axes.Axes` ``share[x|y]``, ``span[x|y]``, and ``align[x|y]`` kwargs
-  (:pr:`99`).
+- Remove `~proplot.axes.Axes` ``share[x|y]``, ``span[x|y]``, and ``align[x|y]``
+  kwargs (:pr:`99`).
   These settings are now always figure-wide.
 - Rename `~proplot.styletools.Cycle` ``samples`` to ``N``, rename
   `~proplot.styletools.show_colors` ``nbreak`` to ``nhues`` (:pr:`98`).
@@ -186,8 +197,12 @@ ProPlot v0.4.0 (2020-01-07)
   Add Fira Math as DejaVu Sans-alternative; has complete set of math characters (:pr:`95`).
 - Add `xlinewidth`, `ylinewidth`, `xgridcolor`, `ygridcolor` keyword
   args to `~proplot.axes.XYAxes.format` (:pr:`95`).
-- Add getters and setters for various `~proplot.subplots.Figure` settings like ``share[x|y]``,
-  ``span[x|y]``, and ``align[x|y]`` (:pr:`99`).
+- Add getters and setters for various `~proplot.subplots.Figure` settings
+  like ``share[x|y]``, ``span[x|y]``, and ``align[x|y]`` (:pr:`99`).
+- Let `~proplot.axes.Axes.twinx`, `~proplot.axes.Axes.twiny`,
+  `~proplot.axes.Axes.altx`, and `~proplot.axes.Axes.alty` accept
+  `~proplot.axes.XYAxes.format` keyword args just like
+  `~proplot.axes.Axes.dualx` and `~proplot.axes.Axes.dualy` (:pr:`99`).
 - Add `~proplot.subplots.Figure` ``fallback_to_cm`` kwarg. This is used by
   `~proplot.styletools.show_fonts` to show dummy glyphs to clearly illustrate when fonts are
   missing characters, but preserve graceful fallback for end user.
@@ -202,7 +217,8 @@ ProPlot v0.4.0 (2020-01-07)
 .. rubric:: Bug fixes
 
 - Fix `~proplot.rctools.rc_configurator.context` bug (:issue:`80` and :pr:`91`).
-- Fix issues with `~proplot.axes.Axes.dualx` and `~proplot.axes.Axes.dualy` with non-linear parent scales (:pr:`96`).
+- Fix issues with `~proplot.axes.Axes.dualx` and `~proplot.axes.Axes.dualy`
+  with non-linear parent scales (:pr:`96`).
 - Ignore TTC fonts because they cannot be saved in EPS/PDF figures (:issue:`94` and :pr:`95`).
 - Do not try to use Helvetica Neue because "thin" font style is read as regular (:issue:`94` and :pr:`95`).
 
