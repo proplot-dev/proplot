@@ -2717,27 +2717,35 @@ class XYAxes(Axes):
         'x': 'x', 'x1': 'bottom', 'x2': 'top',
         'y': 'y', 'y1': 'left', 'y2': 'right',
         'args': ', '.join(_twin_kwargs),
+        'xargs': ', '.join('x' + key for key in _twin_kwargs),
     }
     alty.__doc__ = _alt_doc % {
         'x': 'y', 'x1': 'left', 'x2': 'right',
         'y': 'x', 'y1': 'bottom', 'y2': 'top',
         'args': ', '.join(_twin_kwargs),
+        'xargs': ', '.join('y' + key for key in _twin_kwargs),
     }
     twinx.__doc__ = _twin_doc % {
         'x': 'y', 'x1': 'left', 'x2': 'right',
         'y': 'x', 'y1': 'bottom', 'y2': 'top',
         'args': ', '.join(_twin_kwargs),
+        'xargs': ', '.join('y' + key for key in _twin_kwargs),
     }
     twiny.__doc__ = _twin_doc % {
         'x': 'x', 'x1': 'bottom', 'x2': 'top',
         'y': 'y', 'y1': 'left', 'y2': 'right',
         'args': ', '.join(_twin_kwargs),
+        'xargs': ', '.join('x' + key for key in _twin_kwargs),
     }
     dualx.__doc__ = _dual_doc % {
-        'x': 'x', 'args': ', '.join(_twin_kwargs)
+        'x': 'x',
+        'args': ', '.join(_twin_kwargs),
+        'xargs': ', '.join('x' + key for key in _twin_kwargs),
     }
     dualy.__doc__ = _dual_doc % {
-        'x': 'y', 'args': ', '.join(_twin_kwargs)
+        'x': 'y',
+        'args': ', '.join(_twin_kwargs),
+        'xargs': ', '.join('y' + key for key in _twin_kwargs),
     }
 
 
