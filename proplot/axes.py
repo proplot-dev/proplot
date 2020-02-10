@@ -182,16 +182,16 @@ class Axes(maxes.Axes):
             self.figure.transFigure, self.transAxes
         )
         self._left_label = self.text(
-            0, 0, '', va='center', ha='right', transform=rowtransform
+            0, 0.5, '', va='center', ha='right', transform=rowtransform
         )
         self._right_label = self.text(
-            0, 0, '', va='center', ha='left', transform=rowtransform
+            0, 0.5, '', va='center', ha='left', transform=rowtransform
         )
         self._bottom_label = self.text(
-            0, 0, '', va='top', ha='center', transform=coltransform
+            0.5, 0, '', va='top', ha='center', transform=coltransform
         )
         self._top_label = self.text(
-            0, 0, '', va='bottom', ha='center', transform=coltransform
+            0.5, 0, '', va='bottom', ha='center', transform=coltransform
         )
 
         # Axes inset title labels
