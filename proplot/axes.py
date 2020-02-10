@@ -3208,7 +3208,16 @@ optional
                 if not np.iterable(lonlines):
                     lonlines = arange(lon_0 - 180, lon_0 + 180, lonlines)
                     lonlines = lonlines.astype(np.float64)
-                    lonlines[-1] -= 1e-10  # make sure appears on *right*
+                    if lonlines[-1] % 360 > 0:
+                        # Make sure the label appears on *right*, not on
+                        # top of the leftmost label.
+                        lonlines[-1] -= 1e-10
+                    else:
+                        # Formatter formats label as 1e-10... so there is
+                        # simply no way to put label on right. Just shift this
+                        # location off the map edge so parallels still extend
+                        # all the way to the edge, but label disappears.
+                        lonlines[-1] += 1e-10
                 lonlines = [*lonlines]
 
             # Latitudes gridlines, draw from -latmax to latmax unless result
