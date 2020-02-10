@@ -615,10 +615,11 @@ class Axes(maxes.Axes):
     def format(
         self, *, title=None, top=None,
         figtitle=None, suptitle=None, rowlabels=None, collabels=None,
-        leftlabels=None, rightlabels=None,
-        toplabels=None, bottomlabels=None,
+        leftlabels=None, rightlabels=None, toplabels=None, bottomlabels=None,
         llabels=None, rlabels=None, tlabels=None, blabels=None,
-        **kwargs
+        ltitle=None, ctitle=None, rtitle=None,
+        ultitle=None, uctitle=None, urtitle=None,
+        lltitle=None, lctitle=None, lrtitle=None,
     ):
         """
         Modify the axes title(s), the a-b-c label, row and column labels, and
@@ -663,10 +664,10 @@ class Axes(maxes.Axes):
             positioned inside the axes. This can help them stand out on top
             of artists plotted inside the axes. Defaults are
             :rc:`abc.border` and :rc:`title.border`
-        ltitle, rtitle, ultitle, uctitle, urtitle, lltitle, lctitle, lrtitle \
-: str, optional
-            Axes titles in particular positions. This lets you specify multiple
-            "titles" for each subplots. See the `abcloc` keyword.
+        ltitle, ctitle, rtitle, ultitle, uctitle, urtitle, lltitle, lctitle, \
+lrtitle : str, optional
+            Axes titles in specific positions (see `abcloc`). This lets you
+            specify multiple title-like labels for a single subplot.
         top : bool, optional
             Whether to try to put title and a-b-c label above the top subplot
             panel (if it exists), or to always put them on the main subplot.
@@ -691,8 +692,9 @@ optional
         Note
         ----
         The `abc`, `abcstyle`, `abcloc`, and `titleloc` keyword arguments
-        are actually rc configuration settings that are temporarily
-        changed by the call to `~proplot.rctools.rc_configurator.context`.
+        are actually :ref:`configuration settings <Configuring proplot>`
+        that are temporarily changed by the call to
+        `~proplot.rctools.rc_configurator.context`.
         They are documented here because it is very common to change
         them with `~Axes.format`. They also appear in the tables in the
         `~proplot.rctools` documention.
@@ -771,12 +773,6 @@ optional
         if not self._panel_side:
             # Location and text
             abcstyle = rc.get('abc.style', context=True)  # 1st run, or changed
-            if 'abcformat' in kwargs:  # super sophisticated deprecation system
-                abcstyle = kwargs.pop('abcformat')
-                _warn_proplot(
-                    f'rc setting "abcformat" is deprecated. '
-                    f'Please use "abcstyle".'
-                )
             if abcstyle and self.number is not None:
                 if not isinstance(abcstyle, str) or (
                         abcstyle.count('a') != 1 and abcstyle.count('A') != 1):
@@ -822,17 +818,21 @@ optional
                 if iloc is self._abc_loc:
                     continue
                 titles_dict[iloc] = self._update_title(iobj, **kw)
+
         # Workflow 2, want this to come first so workflow 1 gets priority
-        for ikey, ititle in kwargs.items():
-            if not ikey[-5:] == 'title':
-                raise TypeError(
-                    f'format() got an unexpected keyword argument {ikey!r}.'
-                )
-            iloc, iobj, ikw = self._get_title_props(loc=ikey[:-5])
+        for iloc, ititle in zip(
+            ('l', 'r', 'c', 'ul', 'uc', 'ur', 'll', 'lc', 'lr'),
+            (
+                ltitle, rtitle, ctitle,
+                ultitle, uctitle, urtitle, lltitle, lctitle, lrtitle
+            ),
+        ):
+            iloc, iobj, ikw = self._get_title_props(loc=iloc)
             if ititle is not None:
                 ikw['text'] = ititle
             if ikw:
                 titles_dict[iloc] = self._update_title(iobj, **ikw)
+
         # Workflow 1, make sure that if user calls ax.format(title='Title')
         # *then* ax.format(titleloc='left') it copies over the text.
         iloc = self._title_loc
