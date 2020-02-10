@@ -64,6 +64,9 @@ ProPlot v0.5.0 (2020-##-##)
 .. rubric:: Deprecated
 
 - Remove `abcformat` from `~proplot.axes.Axes.format` (:commit:`2f295e18`).
+- Rename `abc.linewidth` and `title.linewidth` to ``borderwidth`` (:commit:`54eb4bee`).
+- Rename `~proplot.wrappers.text_wrapper` `linewidth` and `invert` to
+  `borderwidth` and `borderinvert` (:commit:`54eb4bee`).
 
 .. rubric:: Features
 
@@ -97,6 +100,10 @@ ProPlot v0.5.0 (2020-##-##)
 .. rubric:: Internals
 
 - Remove various unused keyword arguments (:commit:`33654a42`).
+- Major improvements to the API controlling axes titles and a-b-c labels
+  (:commit:`1ef7e65e`).
+- Always use full names ``left``, ``right``, ``top``, and ``bottom`` instead of ``l``, ``r``,
+  ``b``, and ``t``, for clarity (:commit:`1ef7e65e`).
 - Improve ``GrayCycle`` colormap, is now much shorter and built from reflected
   Fabio ``GrayC`` colormaps (:commit:`5b2c7eb7`).
 
