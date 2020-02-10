@@ -1350,6 +1350,7 @@ def _update_text(self, props):
         })
     return type(self).update(self, props)
 
+
 def text_wrapper(
     self, func,
     x=0, y=0, text='', transform='data',
