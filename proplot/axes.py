@@ -642,8 +642,8 @@ class Axes(maxes.Axes):
             :rc:`abc.style`.
         abcloc, titleloc : str, optional
             Strings indicating the location for the a-b-c label and
-            main title. The following locations keys are valid. Defaults are
-            :rc:`abc.loc` and :rc:`title.loc`.
+            main title. The following locations keys are valid (defaults are
+            :rc:`abc.loc` and :rc:`title.loc`):
 
             ========================  ============================
             Location                  Valid keys
@@ -876,7 +876,7 @@ optional
         ----------
         loc : str, optional
             The colorbar location. Default is :rc:`colorbar.loc`. The
-            following location keys are valid.
+            following location keys are valid:
 
             ==================  ==================================
             Location            Valid keys
@@ -925,6 +925,7 @@ optional
             Passed to `~proplot.wrappers.colorbar_wrapper`.
         """
         # TODO: add option to pad inset away from axes edge!
+        # TODO: get "best" colorbar location from legend algorithm.
         kwargs.update({'edgecolor': edgecolor, 'linewidth': linewidth})
         if loc != '_fill':
             loc = self._loc_translate(loc, rc['colorbar.loc'])
@@ -1121,17 +1122,15 @@ optional
         Parameters
         ----------
         loc : int or str, optional
-            The legend location or panel location. The following location keys
-            are valid. Note that if a panel does not exist, it will be
-            generated on-the-fly.
+            The legend location. The following location keys are valid:
 
             ==================  =======================================
             Location            Valid keys
             ==================  =======================================
-            left panel          ``'left'``, ``'l'``
-            right panel         ``'right'``, ``'r'``
-            bottom panel        ``'bottom'``, ``'b'``
-            top panel           ``'top'``, ``'t'``
+            outer left          ``'left'``, ``'l'``
+            outer right         ``'right'``, ``'r'``
+            outer bottom        ``'bottom'``, ``'b'``
+            outer top           ``'top'``, ``'t'``
             "best" inset        ``'best'``, ``'inset'``, ``'i'``, ``0``
             upper right inset   ``'upper right'``, ``'ur'``, ``1``
             upper left inset    ``'upper left'``, ``'ul'``, ``2``
@@ -1675,7 +1674,7 @@ Parameters
 
 Note
 ----
-This function enforces the following settngs.
+This function enforces the following settings:
 
 * Places the old *%(x)s* axis on the %(x1)s and the new *%(x)s* axis
   on the %(x2)s.
@@ -1693,12 +1692,14 @@ Mimics the builtin `~matplotlib.axes.Axes.twin%(y)s` method.
 
 Parameters
 ----------
+%(xargs)s : optional
+    Passed to `Axes.format`.
 %(args)s : optional
     Prepended with ``'%(x)s'`` and passed to `Axes.format`.
 
 Note
 ----
-This function enforces the following settngs.
+This function enforces the following settings:
 
 * Places the old *%(x)s* axis on the %(x1)s and the new *%(x)s* axis
   on the %(x2)s.
@@ -1719,9 +1720,9 @@ def _parse_alt(x, kwargs):
         if key in _twin_kwargs:
             kw_out[x + key] = value
         elif key[0] == x and key[1:] in _twin_kwargs:
-            _warn_proplot(
-                f'Twin axis keyword arg {key!r} is deprecated. '
-                f'Use {key[1:]!r} instead.')
+            # NOTE: We permit both e.g. 'locator' and 'xlocator' because
+            # while is more elegant and consistent with e.g. colorbar() syntax
+            # but latter is more consistent and easier to use when refactoring.
             kw_out[key] = value
         elif key in _rc_nodots:
             kw_out[key] = value

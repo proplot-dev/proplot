@@ -1138,19 +1138,24 @@ class Figure(mfigure.Figure):
         if not self._axes_main:
             return
         ax = self._axes_main[self._ref_num - 1]
-        mode = ax.get_aspect()
-        if mode != 'equal':
-            return
+        curaspect = ax.get_aspect()
+        if isinstance(curaspect, str):
+            if curaspect == 'auto':
+                return
+            elif curaspect != 'equal':
+                raise RuntimeError(f'Unknown aspect ratio mode {curaspect!r}.')
 
         # Compare to current aspect
         subplots_kw = self._subplots_kw
         xscale, yscale = ax.get_xscale(), ax.get_yscale()
-        if xscale == 'linear' and yscale == 'linear':
+        if not isinstance(curaspect, str):
+            aspect = curaspect
+        elif xscale == 'linear' and yscale == 'linear':
             aspect = 1.0 / ax.get_data_ratio()
         elif xscale == 'log' and yscale == 'log':
             aspect = 1.0 / ax.get_data_ratio_log()
         else:
-            pass  # matplotlib issues warning, forces aspect == 'auto'
+            return  # matplotlib should have issued warning
         if np.isclose(aspect, subplots_kw['aspect']):
             return
 
@@ -1219,13 +1224,17 @@ class Figure(mfigure.Figure):
             for i, (space, space_orig) in enumerate(zip(ispace, ispace_orig)):
                 # Figure out whether this is a normal space, or a
                 # panel stack space/axes panel space
-                pad = axpad
-                if (panels[i] in ('l', 't')
-                        and panels[i + 1] in ('l', 't', '')
-                        or panels[i] in ('', 'r', 'b')
-                        and panels[i + 1] in ('r', 'b')
-                        or panels[i] == 'f' and panels[i + 1] == 'f'):
+                if (
+                    panels[i] in ('l', 't')
+                    and panels[i + 1] in ('l', 't', '')
+                    or panels[i] in ('', 'r', 'b')
+                    and panels[i + 1] in ('r', 'b')
+                    or panels[i] == 'f' and panels[i + 1] == 'f'
+                ):
                     pad = panelpad
+                else:
+                    pad = axpad
+
                 # Find axes that abutt aginst this space on each row
                 groups = []
                 # i.e. right/bottom edge abutts against this space
@@ -1403,10 +1412,12 @@ class Figure(mfigure.Figure):
                         scale1, scale2 = 0.3, height
                     if s in 'lb':
                         coords[i] = min(icoords) - (
-                            scale1 * fontsize / 72) / scale2
+                            scale1 * fontsize / 72
+                        ) / scale2
                     else:
                         coords[i] = max(icoords) + (
-                            scale1 * fontsize / 72) / scale2
+                            scale1 * fontsize / 72
+                        ) / scale2
                 # Assign coords
                 coords = [i for i in coords if i is not None]
                 if coords:
@@ -1427,8 +1438,11 @@ class Figure(mfigure.Figure):
                 ys.append(y)
             x, _ = self._get_align_coord('t', supaxs)
             y = max(ys) + (0.3 * suptitle.get_fontsize() / 72) / height
-            kw = {'x': x, 'y': y, 'ha': 'center', 'va': 'bottom',
-                  'transform': self.transFigure}
+            kw = {
+                'x': x, 'y': y,
+                'ha': 'center', 'va': 'bottom',
+                'transform': self.transFigure
+            }
             suptitle.update(kw)
 
     def _authorize_add_subplot(self):
@@ -2236,8 +2250,9 @@ def subplots(
 
     # Get basemap.Basemap or cartopy.crs.Projection instances for map
     proj = _notNone(projection, proj, None, names=('projection', 'proj'))
-    proj_kw = _notNone(projection_kw, proj_kw, {},
-                       names=('projection_kw', 'proj_kw'))
+    proj_kw = _notNone(
+        projection_kw, proj_kw, {}, names=('projection_kw', 'proj_kw')
+    )
     proj = _axes_dict(naxs, proj, kw=False, default='xy')
     proj_kw = _axes_dict(naxs, proj_kw, kw=True)
     basemap = _axes_dict(naxs, basemap, kw=False, default=False)
@@ -2324,10 +2339,12 @@ def subplots(
             'got {len(hspace)}.'
         )
     # Standardized user input ratios
-    wratios = np.atleast_1d(_notNone(width_ratios, wratios, 1,
-                                     names=('width_ratios', 'wratios')))
-    hratios = np.atleast_1d(_notNone(height_ratios, hratios, 1,
-                                     names=('height_ratios', 'hratios')))
+    wratios = np.atleast_1d(_notNone(
+        width_ratios, wratios, 1, names=('width_ratios', 'wratios')
+    ))
+    hratios = np.atleast_1d(_notNone(
+        height_ratios, hratios, 1, names=('height_ratios', 'hratios')
+    ))
     if len(wratios) == 1:
         wratios = np.repeat(wratios, (ncols,))
     if len(hratios) == 1:

@@ -1502,7 +1502,7 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
             Mapping containing the keys ``'hue'``, ``'saturation'``, and
             ``'luminance'``. The key values can be callable functions that
             return channel values given a colormap index, or lists containing
-            any of the following channel specifiers.
+            any of the following channel specifiers:
 
             1. Numbers, within the range 0-360 for hue and 0-100 for
                saturation and luminance.

@@ -2205,7 +2205,7 @@ def legend_wrapper(
         if `handles` is a list of lists; each sublist is used as a *row*
         in the legend. Otherwise, default is ``False``.
     loc : int or str, optional
-        The legend location. The following location keys are valid.
+        The legend location. The following location keys are valid:
 
         ==================  ================================================
         Location            Valid keys
