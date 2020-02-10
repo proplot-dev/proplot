@@ -585,14 +585,16 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
                         x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1
                         and _is_number(x)
                     ):
-                        x = 0.25 * (x[:-1, :-1] + x[:-1, 1:]
-                                    + x[1:, :-1] + x[1:, 1:])
+                        x = 0.25 * (
+                            x[:-1, :-1] + x[:-1, 1:] + x[1:, :-1] + x[1:, 1:]
+                        )
                     if (
                         y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1
                         and _is_number(y)
                     ):
-                        y = 0.25 * (y[:-1, :-1] + y[:-1, 1:]
-                                    + y[1:, :-1] + y[1:, 1:])
+                        y = 0.25 * (
+                            y[:-1, :-1] + y[:-1, 1:] + y[1:, :-1] + y[1:, 1:]
+                        )
             elif Z.shape[1] != xlen or Z.shape[0] != ylen:
                 raise ValueError(
                     f'Input shapes x {x.shape} and y {y.shape} '
@@ -662,8 +664,9 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
                     if xi[0] != xi[1]:
                         Zq = ma.concatenate((Z[:, -1:], Z[:, :1]), axis=1)
                         xq = xmin + 360
-                        Zq = (Zq[:, :1] * (xi[1] - xq) + Zq[:, 1:]
-                              * (xq - xi[0])) / (xi[1] - xi[0])
+                        Zq = (
+                            Zq[:, :1] * (xi[1] - xq) + Zq[:, 1:] * (xq - xi[0])
+                        ) / (xi[1] - xi[0])
                         ix = ma.concatenate(([xmin], ix, [xmin + 360]))
                         Z = ma.concatenate((Zq, Z, Zq), axis=1)
                 else:
@@ -701,8 +704,8 @@ def _errorbar_values(data, idata, bardata=None, barrange=None, barstd=False):
                 f'but got {err.shape}.'
             )
     elif barstd:
-        err = np.array(idata) + np.std(
-            data, axis=0)[None, :] * np.array(barrange)[:, None]
+        err = np.array(idata) + \
+            np.std(data, axis=0)[None, :] * np.array(barrange)[:, None]
     else:
         err = np.percentile(data, barrange, axis=0)
     err = err - np.array(idata)
@@ -847,11 +850,14 @@ def add_errorbars(
         boxrange = _notNone(boxrange, default)
         err = _errorbar_values(y, iy, boxdata, boxrange, boxstd)
         if boxmarker:
-            self.scatter(*xy, marker='o', color=boxmarkercolor,
-                         s=boxlw, zorder=5)
+            self.scatter(
+                *xy, marker='o', color=boxmarkercolor,
+                s=boxlw, zorder=5
+            )
         self.errorbar(*xy, **{
             axis + 'err': err, 'capsize': 0, 'zorder': boxzorder,
-            'color': boxcolor, 'linestyle': 'none', 'linewidth': boxlw})
+            'color': boxcolor, 'linestyle': 'none', 'linewidth': boxlw
+        })
     if bars:  # now impossible to make thin bar width different from cap width!
         default = (-3, 3) if barstd else (0, 100)
         barrange = _notNone(barrange, default)
@@ -859,7 +865,8 @@ def add_errorbars(
         self.errorbar(*xy, **{
             axis + 'err': err, 'capsize': capsize, 'zorder': barzorder,
             'color': barcolor, 'linewidth': barlw, 'linestyle': 'none',
-            'markeredgecolor': barcolor, 'markeredgewidth': barlw})
+            'markeredgecolor': barcolor, 'markeredgewidth': barlw
+        })
     return obj
 
 
@@ -966,12 +973,14 @@ color-spec or list thereof, optional
         names=(
             'lw', 'linewidth', 'linewidths',
             'markeredgewidth', 'markeredgewidths'
-        ))
+        ),
+    )
     ec = _notNone(
         edgecolor, edgecolors, markeredgecolor, markeredgecolors, None,
         names=(
             'edgecolor', 'edgecolors', 'markeredgecolor', 'markeredgecolors'
-        ))
+        ),
+    )
 
     # Scale s array
     if np.iterable(s):
@@ -982,10 +991,12 @@ color-spec or list thereof, optional
             smax = smax_true
         s = smin + (smax - smin) * (np.array(s) - smin_true) / \
             (smax_true - smin_true)
-    return func(self, *args, c=c, s=s,
-                cmap=cmap, vmin=vmin, vmax=vmax,
-                norm=norm, linewidths=lw, edgecolors=ec,
-                **kwargs)
+    return func(
+        self, *args, c=c, s=s,
+        cmap=cmap, vmin=vmin, vmax=vmax,
+        norm=norm, linewidths=lw, edgecolors=ec,
+        **kwargs
+    )
 
 
 def _fill_between_apply(
@@ -1150,10 +1161,12 @@ def bar_wrapper(
     # TODO: This *must* also be wrapped by cycle_changer, which ultimately
     # permutes back the x/bottom args for horizontal bars! Need to clean up.
     lw = _notNone(lw, linewidth, None, names=('lw', 'linewidth'))
-    return func(self, x, height, width=width, bottom=bottom,
-                linewidth=lw, edgecolor=edgecolor,
-                stacked=stacked, orientation=orientation,
-                **kwargs)
+    return func(
+        self, x, height, width=width, bottom=bottom,
+        linewidth=lw, edgecolor=edgecolor,
+        stacked=stacked, orientation=orientation,
+        **kwargs
+    )
 
 
 def boxplot_wrapper(
@@ -1307,9 +1320,11 @@ def violinplot_wrapper(
     if 'showmedians' in kwargs:
         kwargs.setdefault('medians', kwargs.pop('showmedians'))
     kwargs.setdefault('capsize', 0)
-    obj = func(self, *args,
-               showmeans=False, showmedians=False, showextrema=False,
-               edgecolor=edgecolor, lw=lw, **kwargs)
+    obj = func(
+        self, *args,
+        showmeans=False, showmedians=False, showextrema=False,
+        edgecolor=edgecolor, lw=lw, **kwargs
+    )
     if not args:
         return obj
 

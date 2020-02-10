@@ -1890,8 +1890,10 @@ class XYAxes(Axes):
         # NOTE: Rotation is done *before* horizontal/vertical alignment,
         # cannot change alignment with set_tick_params. Must apply to text
         # objects. fig.autofmt_date calls subplots_adjust, so cannot use it.
-        if (not isinstance(self.xaxis.converter, mdates.DateConverter)
-                or self._datex_rotated):
+        if (
+            not isinstance(self.xaxis.converter, mdates.DateConverter)
+            or self._datex_rotated
+        ):
             return
         rotation = rc['axes.formatter.timerotation']
         kw = {'rotation': rotation}
@@ -2649,7 +2651,8 @@ class XYAxes(Axes):
                         locator = axis.get_major_locator()
                         formatter_kw.setdefault('locator', locator)
                     formatter = axistools.Formatter(
-                        formatter, date=date, **formatter_kw)
+                        formatter, date=date, **formatter_kw
+                    )
                     axis.set_major_formatter(formatter)
 
                 # Ensure no out-of-bounds ticks; set_smart_bounds() can fail
