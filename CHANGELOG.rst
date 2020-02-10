@@ -64,6 +64,7 @@ ProPlot v0.5.0 (2020-##-##)
 .. rubric:: Deprecated
 
 - Remove `abcformat` from `~proplot.axes.Axes.format` (:commit:`2f295e18`).
+- Rename `top` to `includepanels` in `~proplot.axes.Axes.format` (:commit:`22e4d865`).
 - Rename `abc.linewidth` and `title.linewidth` to ``borderwidth`` (:commit:`54eb4bee`).
 - Rename `~proplot.wrappers.text_wrapper` `linewidth` and `invert` to
   `borderwidth` and `borderinvert` (:commit:`54eb4bee`).
