@@ -1651,12 +1651,7 @@ def cycle_changer(
     # Add colorbar and/or legend
     if colorbar:
         # Add handles
-        loc = self._loc_translate(colorbar, rc['colorbar.loc'])
-        if not isinstance(loc, str):
-            raise ValueError(
-                f'Invalid on-the-fly location {loc!r}. '
-                'Must be a preset location. See Axes.colorbar'
-            )
+        loc = self._loc_translate(colorbar, 'colorbar', allow_manual=False)
         if loc not in self._auto_colorbar:
             self._auto_colorbar[loc] = ([], {})
         self._auto_colorbar[loc][0].extend(objs)
@@ -1668,12 +1663,7 @@ def cycle_changer(
         self._auto_colorbar[loc][1].update(colorbar_kw)
     if legend:
         # Add handles
-        loc = self._loc_translate(legend, rc['legend.loc'])
-        if not isinstance(loc, str):
-            raise ValueError(
-                f'Invalid on-the-fly location {loc!r}. '
-                'Must be a preset location. See Axes.legend'
-            )
+        loc = self._loc_translate(legend, 'legend', allow_manual=False)
         if loc not in self._auto_legend:
             self._auto_legend[loc] = ([], {})
         self._auto_legend[loc][0].extend(objs)
@@ -2147,12 +2137,7 @@ def cmap_changer(
 
     # Add colorbar
     if colorbar:
-        loc = self._loc_translate(colorbar, rc['colorbar.loc'])
-        if not isinstance(loc, str):
-            raise ValueError(
-                f'Invalid on-the-fly location {loc!r}. '
-                f'Must be a preset location. See Axes.colorbar.'
-            )
+        loc = self._loc_translate(colorbar, 'colorbar', allow_manual=False)
         if 'label' not in colorbar_kw and self.figure._auto_format:
             _, label = _auto_label(args[-1])  # last one is data, we assume
             if label:

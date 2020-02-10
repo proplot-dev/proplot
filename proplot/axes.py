@@ -47,12 +47,6 @@ __all__ = [
 
 # Translator for inset colorbars and legends
 ABC_STRING = 'abcdefghijklmnopqrstuvwxyz'
-SIDE_TRANSLATE = {
-    'l': 'left',
-    'r': 'right',
-    'b': 'bottom',
-    't': 'top',
-}
 LOC_TRANSLATE = {
     'inset': 'best',
     'i': 'best',
@@ -199,24 +193,6 @@ class Axes(maxes.Axes):
         self._auto_legend = {}
         self._auto_colorbar = {}
 
-    def _get_side_axes(self, side):
-        """Return the axes whose left, right, top, or bottom sides abutt
-        against the same row or column as this axes."""
-        s = side[0]
-        if s not in 'lrbt':
-            raise ValueError(f'Invalid side {side!r}.')
-        if not hasattr(self, 'get_subplotspec'):
-            return [self]
-        x = ('x' if s in 'lr' else 'y')
-        idx = (0 if s in 'lt' else 1)  # which side of range to test
-        coord = self._range_gridspec(x)[idx]  # side for a particular axes
-        axs = [ax for ax in self.figure._axes_main
-               if ax._range_gridspec(x)[idx] == coord]
-        if not axs:
-            return [self]
-        else:
-            return axs
-
     def _get_extent_axes(self, x):
         """Return the axes whose horizontal or vertical extent in the main
         gridspec matches the horizontal or vertical extend of this axes.
@@ -235,78 +211,31 @@ class Axes(maxes.Axes):
             pax = axs.pop(argfunc([ax._range_gridspec(y)[idx] for ax in axs]))
             return [pax, *axs]
 
-    def _get_title_props(self, abc=False, loc=None):
-        """Return the standardized location name, position keyword arguments,
-        and setting keyword arguments for the relevant title or a-b-c label at
-        location `loc`."""
-        # Location string and position coordinates
-        context = True
-        prefix = 'abc' if abc else 'title'
-        loc = _notNone(loc, rc.get(f'{prefix}.loc', context=True))
-        loc_prev = getattr(
-            self, '_' + ('abc' if abc else 'title')
-            + '_loc')  # old
-        if loc is None:
-            loc = loc_prev
-        elif loc_prev is not None and loc != loc_prev:
-            context = False
-        try:
-            loc = self._loc_translate(loc)
-        except KeyError:
-            raise ValueError(f'Invalid title or abc loc {loc!r}.')
+    def _get_side_axes(self, side):
+        """Return the axes whose left, right, top, or bottom sides abutt
+        against the same row or column as this axes."""
+        if side not in ('left', 'right', 'bottom', 'top'):
+            raise ValueError(f'Invalid side {side!r}.')
+        if not hasattr(self, 'get_subplotspec'):
+            return [self]
+        x = 'x' if side in ('left', 'right') else 'y'
+        idx = 0 if side in ('left', 'top') else 1  # which side to test
+        coord = self._range_gridspec(x)[idx]  # side for a particular axes
+        axs = [
+            ax for ax in self.figure._axes_main
+            if ax._range_gridspec(x)[idx] == coord
+        ]
+        if not axs:
+            return [self]
         else:
-            if loc in ('top', 'bottom', 'best') or not isinstance(loc, str):
-                raise ValueError(f'Invalid title or abc loc {loc!r}.')
+            return axs
 
-        # Existing object
-        if loc in ('left', 'right', 'center'):
-            if loc == 'center':
-                obj = self.title
-            else:
-                obj = getattr(self, '_' + loc + '_title')
-        elif loc in self._titles_dict:
-            obj = self._titles_dict[loc]
-        # New object
+    def _get_title(self, loc):
+        """Get the title at the corresponding location."""
+        if loc == 'abc':
+            return self._abc_label
         else:
-            context = False
-            width, height = self.get_size_inches()
-            if loc in ('upper center', 'lower center'):
-                x, ha = 0.5, 'center'
-            elif loc in ('upper left', 'lower left'):
-                xpad = rc['axes.titlepad'] / (72 * width)
-                x, ha = 1.5 * xpad, 'left'
-            elif loc in ('upper right', 'lower right'):
-                xpad = rc['axes.titlepad'] / (72 * width)
-                x, ha = 1 - 1.5 * xpad, 'right'
-            else:
-                raise RuntimeError  # should be impossible
-            if loc in ('upper left', 'upper right', 'upper center'):
-                ypad = rc['axes.titlepad'] / (72 * height)
-                y, va = 1 - 1.5 * ypad, 'top'
-            elif loc in ('lower left', 'lower right', 'lower center'):
-                ypad = rc['axes.titlepad'] / (72 * height)
-                y, va = 1.5 * ypad, 'bottom'
-            else:
-                raise RuntimeError  # should be impossible
-            obj = self.text(x, y, '', ha=ha, va=va, transform=self.transAxes)
-            obj.set_transform(self.transAxes)
-
-        # Return location, object, and settings
-        # NOTE: Sometimes we load all properties from rc object, sometimes
-        # just changed ones. This is important if e.g. user calls in two
-        # lines ax.format(titleweight='bold') then ax.format(title='text')
-        kw = rc.fill({
-            'fontsize': f'{prefix}.size',
-            'weight': f'{prefix}.weight',
-            'color': f'{prefix}.color',
-            'border': f'{prefix}.border',
-            'linewidth': f'{prefix}.linewidth',
-            'fontfamily': 'font.family',
-        }, context=context)
-        if loc in ('left', 'right', 'center'):
-            kw.pop('border', None)
-            kw.pop('linewidth', None)
-        return loc, obj, kw
+            return getattr(self, '_' + loc.replace(' ', '_') + '_title')
 
     def _iter_panels(self, sides='lrbt'):
         """Return a list of axes and child panel axes."""
@@ -320,25 +249,55 @@ class Axes(maxes.Axes):
                 axs.append(ax)
         return axs
 
-    @staticmethod
-    def _loc_translate(loc, default=None):
+    def _loc_translate(self, loc, mode=None, allow_manual=True):
         """Return the location string `loc` translated into a standardized
         form."""
+        if mode == 'legend':
+            valid = tuple(LOC_TRANSLATE.values())
+        elif mode == 'panel':
+            valid = ('left', 'right', 'top', 'bottom')
+        elif mode == 'colorbar':
+            valid = (
+                'best', 'left', 'right', 'top', 'bottom',
+                'upper left', 'upper right', 'lower left', 'lower right',
+            )
+        elif mode in ('abc', 'title'):
+            valid = (
+                'left', 'center', 'right',
+                'upper left', 'upper center', 'upper right',
+                'lower left', 'lower center', 'lower right',
+            )
+        else:
+            raise ValueError(f'Invalid mode {mode!r}.')
+        loc_translate = {
+            key: value for key, value in LOC_TRANSLATE.items()
+            if value in valid
+        }
         if loc in (None, True):
-            loc = default
+            context = mode in ('abc', 'title')
+            loc = rc.get(mode + '.loc', context=context)
+            if loc is not None:
+                loc = self._loc_translate(loc, mode)
         elif isinstance(loc, (str, Integral)):
-            if loc in LOC_TRANSLATE.values():  # full name
+            if loc in loc_translate.values():  # full name
                 pass
             else:
                 try:
-                    loc = LOC_TRANSLATE[loc]
+                    loc = loc_translate[loc]
                 except KeyError:
-                    raise KeyError(f'Invalid location {loc!r}.')
-        elif np.iterable(loc) and len(loc) == 2 and all(
-                isinstance(l, Number) for l in loc):
+                    raise KeyError(f'Invalid {mode} location {loc!r}.')
+        elif (
+            allow_manual
+            and mode == 'legend'
+            and np.iterable(loc)
+            and len(loc) == 2
+            and all(isinstance(l, Number) for l in loc)
+        ):
             loc = np.array(loc)
         else:
-            raise KeyError(f'Invalid location {loc!r}.')
+            raise KeyError(f'Invalid {mode} location {loc!r}.')
+        if mode == 'colorbar' and loc == 'best':  # white lie
+            loc = 'lower right'
         return loc
 
     def _make_inset_locator(self, bounds, trans):
