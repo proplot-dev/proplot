@@ -147,7 +147,7 @@ class Axes(maxes.Axes):
         self._titles_dict = {}  # dictionary of titles and locs
         self._title_loc = None  # location of main title
         self._title_pad = rc['axes.titlepad']  # format() can overwrite
-        self._include_top_panels = True  # TODO: add rc prop?
+        self._above_top_panels = True  # TODO: add rc prop?
         self._bottom_panels = []
         self._top_panels = []
         self._left_panels = []
@@ -417,7 +417,7 @@ class Axes(maxes.Axes):
         else:
             ax = self
         taxs = ax._top_panels
-        if not taxs or not ax._include_top_panels:
+        if not taxs or not ax._above_top_panels:
             tax = ax
         else:
             tax = taxs[0]
@@ -676,7 +676,7 @@ class Axes(maxes.Axes):
             )
 
     def format(
-        self, *, title=None, includepanels=None,
+        self, *, title=None, abovetop=None,
         figtitle=None, suptitle=None, rowlabels=None, collabels=None,
         leftlabels=None, rightlabels=None, toplabels=None, bottomlabels=None,
         llabels=None, rlabels=None, tlabels=None, blabels=None,
@@ -727,7 +727,7 @@ class Axes(maxes.Axes):
             positioned inside the axes. This can help them stand out on top
             of artists plotted inside the axes. Defaults are
             :rc:`abc.border` and :rc:`title.border`
-        includepanels : bool, optional
+        abovetop : bool, optional
             Whether to try to put the title and a-b-c label above the top panel
             (if it exists), or to always put them above the main subplot.
             Default is ``True``.
@@ -773,8 +773,8 @@ optional
         # declared before figure is drawn)
         kw = rc.fill({'facecolor': 'figure.facecolor'}, context=True)
         self.figure.patch.update(kw)
-        if includepanels is not None:
-            self._include_top_panels = includepanels
+        if abovetop is not None:
+            self._above_top_panels = abovetop
         pad = rc.get('axes.titlepad', context=True)
         if pad is not None:
             self._set_title_offset_trans(pad)
