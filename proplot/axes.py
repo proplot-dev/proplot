@@ -639,7 +639,7 @@ class Axes(maxes.Axes):
             )
 
     def format(
-        self, *, title=None, top=None,
+        self, *, title=None, includepanels=None,
         figtitle=None, suptitle=None, rowlabels=None, collabels=None,
         leftlabels=None, rightlabels=None, toplabels=None, bottomlabels=None,
         llabels=None, rlabels=None, tlabels=None, blabels=None,
@@ -736,8 +736,8 @@ optional
         # declared before figure is drawn)
         kw = rc.fill({'facecolor': 'figure.facecolor'}, context=True)
         self.figure.patch.update(kw)
-        if top is not None:
-            self._title_above_panel = top
+        if includepanels is not None:
+            self._include_top_panels = includepanels
         pad = rc.get('axes.titlepad', context=True)
         if pad is not None:
             self._set_title_offset_trans(pad)
