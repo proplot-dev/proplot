@@ -3290,7 +3290,7 @@ def _draw_bars(
     from . import subplots
     naxs = len(cmapdict) + sum(map(len, cmapdict.values()))
     fig, axs = subplots(
-        nrows=naxs, axwidth=length, axheight=width,
+        nrows=naxs, refwidth=length, refheight=width,
         share=0, hspace=0.03,
     )
     iax = -1
@@ -3325,7 +3325,7 @@ def _draw_bars(
 
 def show_channels(
     *args, N=100, rgb=True, saturation=True, minhue=0,
-    maxsat=500, width=100, axwidth=1.7
+    maxsat=500, width=100, refwidth=1.7
 ):
     """
     Show how arbitrary colormap(s) vary with respect to the hue, chroma,
@@ -3352,7 +3352,7 @@ def show_channels(
         The maximum saturation. Use this to truncate large saturation values.
     width : int, optional
         The width of each colormap line in points.
-    axwidth : int or str, optional
+    refwidth : int or str, optional
         The width of each subplot. Passed to `~proplot.subplots.subplots`.
 
     Returns
@@ -3374,7 +3374,7 @@ def show_channels(
         labels += ('Red', 'Green', 'Blue')
     fig, axs = subplots(
         array=array, span=False, share=1,
-        axwidth=axwidth, axpad='1em',
+        refwidth=refwidth, subplotpad='1em',
     )
     # Iterate through colormaps
     mc, ms, mp = 0, 0, 0
@@ -3446,7 +3446,7 @@ def show_channels(
     return fig
 
 
-def show_colorspaces(luminance=None, saturation=None, hue=None, axwidth=2):
+def show_colorspaces(luminance=None, saturation=None, hue=None, refwidth=2):
     """
     Generate hue-saturation, hue-luminance, and luminance-saturation
     cross-sections for the HCL, HSL, and HPL colorspaces.
@@ -3462,7 +3462,7 @@ def show_colorspaces(luminance=None, saturation=None, hue=None, axwidth=2):
     hue : float, optional
         If passed, luminance-saturation cross-sections
         are drawn for this hue. Must be between ``0` and ``360``.
-    axwidth : str or float, optional
+    refwidth : str or float, optional
         Average width of each subplot. Units are interpreted by
         `~proplot.utils.units`.
 
@@ -3509,7 +3509,7 @@ def show_colorspaces(luminance=None, saturation=None, hue=None, axwidth=2):
     # Note we invert the x-y ordering for imshow
     from . import subplots
     fig, axs = subplots(
-        ncols=3, share=0, axwidth=axwidth, aspect=1, axpad=0.05
+        ncols=3, share=0, refwidth=refwidth, aspect=1, subplotpad=0.05
     )
     for ax, space in zip(axs, ('hcl', 'hsl', 'hpl')):
         rgba = np.ones((*hsl.shape[:2][::-1], 4))  # RGBA
@@ -3817,7 +3817,7 @@ def show_fonts(
     # Create figure
     fig, axs = subplots(
         ncols=1, nrows=len(args), space=0,
-        axwidth=4.5, axheight=1.2 * (text.count('\n') + 2.5) * size / 72,
+        refwidth=4.5, refheight=1.2 * (text.count('\n') + 2.5) * size / 72,
         fallback_to_cm=False
     )
     axs.format(
