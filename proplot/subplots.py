@@ -613,9 +613,10 @@ def _subplots_geometry(**kwargs):
     and height ratios to accommodate spaces."""
     # Dimensions and geometry
     nrows, ncols = kwargs['nrows'], kwargs['ncols']
-    aspect, xref, yref = kwargs['aspect'], kwargs['xref'], kwargs['yref']
-    width, height = kwargs['width'], kwargs['height']
-    axwidth, axheight = kwargs['axwidth'], kwargs['axheight']
+    refxrange, refyrange = kwargs['refxrange'], kwargs['refyrange']
+    figwidth, figheight = kwargs['figwidth'], kwargs['figheight']
+    refaspect = kwargs['refaspect']
+    refwidth, refheight = kwargs['refwidth'], kwargs['refheight']
     # Gridspec settings
     wspace, hspace = kwargs['wspace'], kwargs['hspace']
     wratios, hratios = kwargs['wratios'], kwargs['hratios']
@@ -692,7 +693,7 @@ def _subplots_geometry(**kwargs):
 
     # Get reference properties, account for panel slots in space and ratios
     # TODO: Shouldn't panel space be included in these calculations?
-    (x1, x2), (y1, y2) = xref, yref
+    (x1, x2), (y1, y2) = refxrange, refyrange
     dx, dy = x2 - x1 + 1, y2 - y1 + 1
     rwspace = sum(wspace_main[x1:x2])
     rhspace = sum(hspace_main[y1:y2])
@@ -705,76 +706,76 @@ def _subplots_geometry(**kwargs):
             f'Something went wrong, got wratio={rwratio!r} '
             f'and hratio={rhratio!r} for reference axes.'
         )
-    if np.iterable(aspect):
-        aspect = aspect[0] / aspect[1]
+    if np.iterable(refaspect):
+        refaspect = refaspect[0] / refaspect[1]
 
     # Determine figure and axes dims from input in width or height dimenion.
     # For e.g. common use case [[1,1,2,2],[0,3,3,0]], make sure we still scale
     # the reference axes like square even though takes two columns of gridspec!
-    auto_width = (width is None and height is not None)
-    auto_height = (height is None and width is not None)
-    if width is None and height is None:  # get stuff directly from axes
-        if axwidth is None and axheight is None:
-            axwidth = units(rc['subplots.axwidth'])
-        if axheight is not None:
+    auto_width = (figwidth is None and figheight is not None)
+    auto_height = (figheight is None and figwidth is not None)
+    if figwidth is None and figheight is None:  # get stuff directly from axes
+        if refwidth is None and refheight is None:
+            refwidth = units(rc['subplots.refwidth'])
+        if refheight is not None:
             auto_width = True
-            axheight_all = (nrows_main * (axheight - rhspace)) / (dy * rhratio)
-            height = axheight_all + top + bottom + \
+            axheights = (nrows_main * (refheight - rhspace)) / (dy * rhratio)
+            figheight = axheights + top + bottom + \
                 sum(hspace) + sum(hratios_panels)
-        if axwidth is not None:
+        if refwidth is not None:
             auto_height = True
-            axwidth_all = (ncols_main * (axwidth - rwspace)) / (dx * rwratio)
-            width = axwidth_all + left + right + \
+            axwidths = (ncols_main * (refwidth - rwspace)) / (dx * rwratio)
+            figwidth = axwidths + left + right + \
                 sum(wspace) + sum(wratios_panels)
-        if axwidth is not None and axheight is not None:
+        if refwidth is not None and refheight is not None:
             auto_width = auto_height = False
     else:
-        if height is not None:
-            axheight_all = height - top - bottom - \
+        if figheight is not None:
+            axheights = figheight - top - bottom - \
                 sum(hspace) - sum(hratios_panels)
-            axheight = (axheight_all * dy * rhratio) / nrows_main + rhspace
-        if width is not None:
-            axwidth_all = width - left - right - \
+            refheight = (axheights * dy * rhratio) / nrows_main + rhspace
+        if figwidth is not None:
+            axwidths = figwidth - left - right - \
                 sum(wspace) - sum(wratios_panels)
-            axwidth = (axwidth_all * dx * rwratio) / ncols_main + rwspace
+            refwidth = (axwidths * dx * rwratio) / ncols_main + rwspace
 
     # Automatically figure dim that was not specified above
     if auto_height:
-        axheight = axwidth / aspect
-        axheight_all = (nrows_main * (axheight - rhspace)) / (dy * rhratio)
-        height = axheight_all + top + bottom + \
+        refheight = refwidth / refaspect
+        axheights = (nrows_main * (refheight - rhspace)) / (dy * rhratio)
+        figheight = axheights + top + bottom + \
             sum(hspace) + sum(hratios_panels)
     elif auto_width:
-        axwidth = axheight * aspect
-        axwidth_all = (ncols_main * (axwidth - rwspace)) / (dx * rwratio)
-        width = axwidth_all + left + right + sum(wspace) + sum(wratios_panels)
-    if axwidth_all < 0:
+        refwidth = refheight * refaspect
+        axwidths = (ncols_main * (refwidth - rwspace)) / (dx * rwratio)
+        figwidth = axwidths + left + right + sum(wspace) + sum(wratios_panels)
+    if axwidths < 0:
         raise ValueError(
-            f'Not enough room for axes (would have width {axwidth_all}). '
+            f'Not enough room for axes (would have width {axwidths}). '
             'Try using tight=False, increasing figure width, or decreasing '
             "'left', 'right', or 'wspace' spaces."
         )
-    if axheight_all < 0:
+    if axheights < 0:
         raise ValueError(
-            f'Not enough room for axes (would have height {axheight_all}). '
+            f'Not enough room for axes (would have height {axheights}). '
             'Try using tight=False, increasing figure height, or decreasing '
             "'top', 'bottom', or 'hspace' spaces."
         )
 
     # Reconstruct the ratios array with physical units for subplot slots
     # The panel slots are unchanged because panels have fixed widths
-    wratios_main = axwidth_all * np.array(wratios_main) / sum(wratios_main)
-    hratios_main = axheight_all * np.array(hratios_main) / sum(hratios_main)
+    wratios_main = axwidths * np.array(wratios_main) / sum(wratios_main)
+    hratios_main = axheights * np.array(hratios_main) / sum(hratios_main)
     for idx, ratio in zip(idxs_ratios[0], hratios_main):
         hratios[idx] = ratio
     for idx, ratio in zip(idxs_ratios[1], wratios_main):
         wratios[idx] = ratio
 
     # Convert margins to figure-relative coordinates
-    left = left / width
-    bottom = bottom / height
-    right = 1 - right / width
-    top = 1 - top / height
+    left = left / figwidth
+    bottom = bottom / figheight
+    right = 1 - right / figwidth
+    top = 1 - top / figheight
 
     # Return gridspec keyword args
     gridspec_kw = {
@@ -784,7 +785,7 @@ def _subplots_geometry(**kwargs):
         'left': left, 'bottom': bottom, 'right': right, 'top': top,
     }
 
-    return (width, height), gridspec_kw, kwargs
+    return (figwidth, figheight), gridspec_kw, kwargs
 
 
 class _hidelabels(object):
@@ -1143,18 +1144,18 @@ class Figure(mfigure.Figure):
         subplots_kw = self._subplots_kw
         xscale, yscale = ax.get_xscale(), ax.get_yscale()
         if not isinstance(curaspect, str):
-            aspect = curaspect
+            refaspect = curaspect
         elif xscale == 'linear' and yscale == 'linear':
-            aspect = 1.0 / ax.get_data_ratio()
+            refaspect = 1.0 / ax.get_data_ratio()
         elif xscale == 'log' and yscale == 'log':
-            aspect = 1.0 / ax.get_data_ratio_log()
+            refaspect = 1.0 / ax.get_data_ratio_log()
         else:
             return  # matplotlib should have issued warning
-        if np.isclose(aspect, subplots_kw['aspect']):
+        if np.isclose(refaspect, subplots_kw['refaspect']):
             return
 
         # Apply new aspect
-        subplots_kw['aspect'] = aspect
+        subplots_kw['refaspect'] = refaspect
         figsize, gridspec_kw, _ = _subplots_geometry(**subplots_kw)
         self.set_size_inches(figsize, auto=True)
         self._gridspec_main.update(**gridspec_kw)
@@ -1231,10 +1232,8 @@ class Figure(mfigure.Figure):
 
                 # Find axes that abutt aginst this space on each row
                 groups = []
-                # i.e. right/bottom edge abutts against this space
-                filt1 = ralong[:, 1] == i
-                # i.e. left/top edge abutts against this space
-                filt2 = ralong[:, 0] == i + 1
+                filt1 = ralong[:, 1] == i  # right/bottom edge?
+                filt2 = ralong[:, 0] == i + 1  # left/rop edge?
                 for j in range(nacross):  # e.g. each row
                     # Get indices
                     filt = (racross[:, 0] <= j) & (j <= racross[:, 1])
@@ -1262,7 +1261,8 @@ class Figure(mfigure.Figure):
                             break
                     if newgroup:
                         groups.append([{ax1}, {ax2}])  # form new group
-                # Get spaces
+
+                # Get spaces and apply user input override
                 # Layout is lspace, lspaces[0], rspaces[0], wspace, ...
                 # so panels spaces are located where i % 3 is 1 or 2
                 jspaces = []
@@ -1272,7 +1272,7 @@ class Figure(mfigure.Figure):
                     jspaces.append((x2 - x1) / self.dpi)
                 if jspaces:
                     space = max(0, space - min(jspaces) + pad)
-                    space = _notNone(space_orig, space)  # user input overwrite
+                    space = _notNone(space_orig, space)
                 jspace[i] = space
             spaces.append(jspace)
 
@@ -1310,6 +1310,7 @@ class Figure(mfigure.Figure):
                 axs = ax._get_side_axes(side)
                 for _ in range(2):
                     axs = [getattr(ax, '_share' + x) or ax for ax in axs]
+
                 # Align axis label offsets
                 axises = [getattr(ax, x + 'axis') for ax in axs]
                 tracker.update(axises)
@@ -1326,6 +1327,7 @@ class Figure(mfigure.Figure):
                         )
                 if not span:
                     continue
+
                 # Get spanning label position
                 c, spanax = self._get_align_coord(side, axs)
                 spanaxis = getattr(spanax, x + 'axis')
@@ -1953,9 +1955,10 @@ class Figure(mfigure.Figure):
 
     @property
     def ref(self):
-        """The reference axes number. The `axwidth`, `axheight`, and `aspect`
-        `subplots` and `figure` arguments are applied to this axes, and aspect
-        ratio is conserved for this axes in tight layout adjustment."""
+        """The reference axes number. The `refwidth`, `refheight`, and
+        `refaspect` `subplots` and `figure` arguments are applied to this axes,
+        and aspect ratio is conserved for this axes in tight layout adjustment.
+        """
         return self._ref
 
     @ref.setter
@@ -2056,9 +2059,8 @@ def _axes_dict(naxs, value, kw=False, default=None):
 def subplots(
     array=None, ncols=1, nrows=1,
     ref=1, order='C',
-    aspect=1, figsize=None,
-    width=None, height=None, journal=None,
-    axwidth=None, axheight=None,
+    figsize=None, figwidth=None, figheight=None, journal=None,
+    refaspect=1, refwidth=None, refheight=None,
     hspace=None, wspace=None, space=None,
     hratios=None, wratios=None,
     width_ratios=None, height_ratios=None,
@@ -2092,9 +2094,9 @@ def subplots(
         (``'F'``) order. Analogous to `numpy.array` ordering. This controls
         the order axes appear in the `axs` list, and the order of subplot
         a-b-c labeling (see `~proplot.axes.Axes.format`).
-    figsize : length-2 tuple, optional
-        Tuple specifying the figure `(width, height)`.
-    width, height : float or str, optional
+    figsize : (float, float), optional
+        A (width, height) tuple specifying the figure dimensions.
+    figwidth, figheight : float or str, optional
         The figure width and height. Units are interpreted by
         `~proplot.utils.units`.
     journal : str, optional
@@ -2123,20 +2125,17 @@ def subplots(
         ===========  ====================  ==========================================================================================================================================================
 
     ref : int, optional
-        The reference axes number. The `axwidth`, `axheight`, and `aspect`
-        keyword args are applied to this axes, and aspect ratio is conserved
-        for this axes in tight layout adjustment.
-    axwidth, axheight : float or str, optional
-        Sets the average width, height of your axes. Units are interpreted by
-        `~proplot.utils.units`. Default is :rc:`subplots.axwidth`.
-
-        These arguments are convenient where you don't care about the figure
-        dimensions and just want your axes to have enough "room".
-    aspect : float or length-2 list of floats, optional
-        The (average) axes aspect ratio, in numeric form (width divided by
-        height) or as (width, height) tuple. If you do not provide
-        the `hratios` or `wratios` keyword args, all axes will have
-        identical aspect ratios.
+        The reference subplot number. The `refwidth`, `refheight`, and
+        `refaspect` keyword args are applied to this axes, and aspect ratio is
+        conserved for this axes in tight layout adjustment.
+    refwidth, refheight : float or str, optional
+        The width and height of the reference subplot. Units are interpreted by
+        `~proplot.utils.units`. Default is :rc:`subplots.refwidth`. Ignored
+        if `width` or `height` is not ``None``.
+    refaspect : float or (float, float), optional
+        The aspect ratio of the reference subplot as a number, representing the
+        width divided by height, or as a (width, height) tuple. Ignored if both
+        `refwidth` and `refheight` or both `width` and `height` are specified.
     hratios, wratios
         Aliases for `height_ratios`, `width_ratios`.
     width_ratios, height_ratios : float or list thereof, optional
@@ -2202,6 +2201,34 @@ def subplots(
     axs : `subplot_grid`
         A special list of axes instances. See `subplot_grid`.
     """  # noqa
+    # Deprecated keyword args
+    # NOTE: We read these from kwargs so they are omitted from call signature
+    width = kwargs.pop('width', None)
+    height = kwargs.pop('height', None)
+    aspect = kwargs.pop('aspect', None)
+    axwidth = kwargs.pop('axwidth', None)
+    axheight = kwargs.pop('axheight', None)
+    warning = (
+        'The subplots() keyword arg {0!r} was renamed to {1!r} '
+        'in ProPlot version 0.5.0. Support for {0!r} will '
+        'be removed in version 1.0.0.'
+    )
+    if width is not None:
+        _warn_proplot(warning.format('width', 'figwidth'))
+        figwidth = width
+    if height is not None:
+        _warn_proplot(warning.format('height', 'figheight'))
+        figwidth = height
+    if aspect is not None:
+        _warn_proplot(warning.format('aspect', 'refaspect'))
+        refaspect = aspect
+    if axwidth is not None:
+        _warn_proplot(warning.format('axwidth', 'refwidth'))
+        refwidth = axwidth
+    if axheight is not None:
+        _warn_proplot(warning.format('axheight', 'refheight'))
+        refheight = axheight
+
     # Build array
     if order not in ('C', 'F'):  # better error message
         raise ValueError(
@@ -2211,6 +2238,7 @@ def subplots(
     if array is None:
         array = np.arange(1, nrows * ncols + 1)[..., None]
         array = array.reshape((nrows, ncols), order=order)
+
     # Standardize array
     try:
         array = np.array(array, dtype=int)  # enforce array type
@@ -2227,6 +2255,7 @@ def subplots(
             f'Invalid subplot array {array!r}. '
             'Must be 1d or 2d array of integers.'
         )
+
     # Get other props
     nums = np.unique(array[array != 0])
     naxs = len(nums)
@@ -2245,12 +2274,13 @@ def subplots(
 
     # Get some axes properties, where locations are sorted by axes id.
     # NOTE: These ranges are endpoint exclusive, like a slice object!
-    axids = [np.where(array == i) for i in np.sort(
-        np.unique(array)) if i > 0]  # 0 stands for empty
-    xrange = np.array([[x.min(), x.max()] for _, x in axids])
-    yrange = np.array([[y.min(), y.max()] for y, _ in axids])
-    xref = xrange[ref - 1, :]  # range for reference axes
-    yref = yrange[ref - 1, :]
+    axidxs = [
+        np.where(array == i) for i in np.sort(np.unique(array)) if i > 0
+    ]  # 0 stands for empty
+    xrange = np.array([[x.min(), x.max()] for _, x in axidxs])
+    yrange = np.array([[y.min(), y.max()] for y, _ in axidxs])
+    refxrange = xrange[ref - 1, :]  # range for reference axes
+    refyrange = yrange[ref - 1, :]
 
     # Get basemap.Basemap or cartopy.crs.Projection instances for map
     proj = _notNone(projection, proj, None, names=('projection', 'proj'))
@@ -2270,7 +2300,7 @@ def subplots(
         elif name == 'polar':
             axes_kw[num]['projection'] = 'polar'
             if num == ref:
-                aspect = 1
+                refaspect = 1
         # Custom Basemap and Cartopy axes
         else:
             package = 'basemap' if basemap[num] else 'geo'
@@ -2279,39 +2309,39 @@ def subplots(
             )
             if num == ref:
                 if basemap[num]:
-                    aspect = (
+                    refaspect = (
                         (m.urcrnrx - m.llcrnrx) / (m.urcrnry - m.llcrnry)
                     )
                 else:
-                    aspect = (
+                    refaspect = (
                         np.diff(m.x_limits) / np.diff(m.y_limits)
                     )[0]
             axes_kw[num].update({'projection': package, 'map_projection': m})
 
     # Figure and/or axes dimensions
+    # Issue warning when arguments are overridden
     names, values = (), ()
     if journal:
         # if user passed width=<string > , will use that journal size
         figsize = _journals(journal)
         spec = f'journal={journal!r}'
-        names = ('axwidth', 'axheight', 'width')
-        values = (axwidth, axheight, width)
-        width, height = figsize
+        names = ('refwidth', 'refheight', 'figwidth')
+        values = (refwidth, refheight, figwidth)
+        figwidth, figheight = figsize
     elif figsize:
         spec = f'figsize={figsize!r}'
-        names = ('axwidth', 'axheight', 'width', 'height')
-        values = (axwidth, axheight, width, height)
-        width, height = figsize
-    elif width is not None or height is not None:
+        names = ('refwidth', 'refheight', 'figwidth', 'figheight')
+        values = (refwidth, refheight, figwidth, figheight)
+        figwidth, figheight = figsize
+    elif figwidth is not None or figheight is not None:
         spec = []
-        if width is not None:
-            spec.append(f'width={width!r}')
-        if height is not None:
-            spec.append(f'height={height!r}')
+        if figwidth is not None:
+            spec.append(f'figwidth={figwidth!r}')
+        if figheight is not None:
+            spec.append(f'figheight={figheight!r}')
         spec = ', '.join(spec)
-        names = ('axwidth', 'axheight')
-        values = (axwidth, axheight)
-    # Raise warning
+        names = ('refwidth', 'refheight')
+        values = (refwidth, refheight)
     for name, value in zip(names, values):
         if value is not None:
             _warn_proplot(
@@ -2320,8 +2350,8 @@ def subplots(
             )
 
     # Standardized dimensions
-    width, height = units(width), units(height)
-    axwidth, axheight = units(axwidth), units(axheight)
+    figwidth, figheight = units(figwidth), units(figheight)
+    refwidth, refheight = units(refwidth), units(refheight)
     # Standardized user input border spaces
     left, right = units(left), units(right)
     bottom, top = units(bottom), units(top)
@@ -2384,9 +2414,10 @@ def subplots(
     # Parse arguments, fix dimensions in light of desired aspect ratio
     figsize, gridspec_kw, subplots_kw = _subplots_geometry(
         nrows=nrows, ncols=ncols,
-        aspect=aspect, xref=xref, yref=yref,
         left=left, right=right, bottom=bottom, top=top,
-        width=width, height=height, axwidth=axwidth, axheight=axheight,
+        figwidth=figwidth, figheight=figheight,
+        refaspect=refaspect, refxrange=refxrange, refyrange=refyrange,
+        refwidth=refwidth, refheight=refheight,
         wratios=wratios, hratios=hratios, wspace=wspace, hspace=hspace,
         wpanels=[''] * ncols, hpanels=[''] * nrows,
     )
