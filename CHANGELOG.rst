@@ -94,6 +94,8 @@ ProPlot v0.5.0 (2020-##-##)
   were sometimes ignored (:commit:`fd4f8d5f`).
 - Prevent formatting rightmost meridian label as ``1e-10``
   on cartopy map projections (:commit:`37fdd1eb]`).
+- Support CF-time axes by fixing bug in `~proplot.wrappers.standardize_1d`
+  and `~proplot.wrappers.standardize_2d` (:issue:`103`, :pr:`121`).
 - Redirect to the "default" location
   when using ``legend=True`` and ``colorbar=True`` to generate on-the-fly legends
   and colorbars (:commit:`c2c5c58d`). This feature was accidentally removed.
