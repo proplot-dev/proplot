@@ -30,14 +30,6 @@ __all__ = [
     'GridSpec', 'SubplotSpec',
 ]
 
-# Translation
-SIDE_TRANSLATE = {
-    'l': 'left',
-    'r': 'right',
-    'b': 'bottom',
-    't': 'top',
-}
-
 # Dimensions of figures for common journals
 JOURNAL_SPECS = {
     'aaas1': '5.5cm',
@@ -225,8 +217,8 @@ class subplot_grid(list):
     def __repr__(self):
         return 'subplot_grid([' + ', '.join(str(ax) for ax in self) + '])'
 
-    def __setitem__(self, key, value):
-        """Pseudo immutability. Raises error."""
+    def __setitem__(self, key, value):  # noqa: U100
+        """Raise an error. This enforces pseudo immutability."""
         raise LookupError('subplot_grid is immutable.')
 
     def __getitem__(self, key):
@@ -738,12 +730,11 @@ def _get_panelargs(
     filled=False, figure=False
 ):
     """Return default properties for new axes and figure panels."""
-    s = side[0]
-    if s not in 'lrbt':
-        raise ValueError(f'Invalid panel spec {side!r}.')
+    if side not in ('left', 'right', 'bottom', 'top'):
+        raise ValueError(f'Invalid panel location {side!r}.')
     space = space_user = units(space)
     if share is None:
-        share = (not filled)
+        share = not filled
     if width is None:
         if filled:
             width = rc['colorbar.width']
@@ -751,8 +742,8 @@ def _get_panelargs(
             width = rc['subplots.panelwidth']
     width = units(width)
     if space is None:
-        key = ('wspace' if s in 'lr' else 'hspace')
-        pad = (rc['subplots.axpad'] if figure else rc['subplots.panelpad'])
+        key = 'wspace' if side in ('left', 'right') else 'hspace'
+        pad = rc['subplots.axpad'] if figure else rc['subplots.panelpad']
         space = _get_space(key, share, pad=pad)
     return share, width, space, space_user
 
@@ -834,18 +825,23 @@ class GeometrySolver(object):
         ax = figure.get_ref_axes()
         if not ax:
             return
-        mode = ax.get_aspect()
-        if mode != 'equal':
-            return
+        curaspect = ax.get_aspect()
+        if isinstance(curaspect, str):
+            if curaspect == 'auto':
+                return
+            elif curaspect != 'equal':
+                raise RuntimeError(f'Unknown aspect ratio mode {curaspect!r}.')
 
         # Compare to current aspect
         xscale, yscale = ax.get_xscale(), ax.get_yscale()
-        if xscale == 'linear' and yscale == 'linear':
+        if not isinstance(curaspect, str):
+            aspect = curaspect
+        elif xscale == 'linear' and yscale == 'linear':
             aspect = 1.0 / ax.get_data_ratio()
         elif xscale == 'log' and yscale == 'log':
             aspect = 1.0 / ax.get_data_ratio_log()
         else:
-            pass  # matplotlib issues warning, forces aspect == 'auto'
+            return  # matplotlib should have issued warning
         if np.isclose(aspect, self.aspect):
             return
         self.aspect = aspect
@@ -892,13 +888,17 @@ class GeometrySolver(object):
             for i, space in enumerate(ispace):
                 # Figure out whether this is a normal space, or a
                 # panel stack space/axes panel space
-                pad = axpad
-                if (panels[i] in ('l', 't')
-                        and panels[i + 1] in ('l', 't', '')
-                        or panels[i] in ('', 'r', 'b')
-                        and panels[i + 1] in ('r', 'b')
-                        or panels[i] == 'f' and panels[i + 1] == 'f'):
+                if (
+                    panels[i] in ('l', 't')
+                    and panels[i + 1] in ('l', 't', '')
+                    or panels[i] in ('', 'r', 'b')
+                    and panels[i + 1] in ('r', 'b')
+                    or panels[i] == 'f' and panels[i + 1] == 'f'
+                ):
                     pad = panelpad
+                else:
+                    pad = axpad
+
                 # Find axes that abutt aginst this space on each row
                 groups = []
                 # i.e. right/bottom edge abutts against this space
@@ -964,21 +964,23 @@ class GeometrySolver(object):
         if ((spanx or alignx) and grpx) or ((spany or aligny) and grpy):
             _warn_proplot(
                 'Aligning *x* and *y* axis labels requires '
-                'matplotlib >=3.1.0')
+                'matplotlib >=3.1.0'
+            )
             return
         for ax in self._mainaxes:
             for x, axis, span, align, grp in zip(
-                    'xy', (ax.xaxis, ax.yaxis), (spanx, spany),
-                    (alignx, aligny), (grpx, grpy)):
+                'xy', (ax.xaxis, ax.yaxis), (spanx, spany),
+                (alignx, aligny), (grpx, grpy)
+            ):
                 # Settings
                 if (not span and not align) or not isinstance(
                         ax, axes.XYAxes) or axis in tracker:
                     continue
                 # top or bottom, left or right
-                s = axis.get_label_position()[0]
-                if s not in 'bl':
+                side = axis.get_label_position()
+                if side not in ('bottom', 'left'):
                     continue
-                axs = ax._get_side_axes(s)
+                axs = ax._get_side_axes(side)
                 for _ in range(2):
                     axs = [getattr(ax, '_share' + x) or ax for ax in axs]
 
@@ -999,7 +1001,7 @@ class GeometrySolver(object):
                     continue
 
                 # Adjust axis label centering
-                c, spanax = self._get_align_coord(s, axs)
+                c, spanax = self._get_align_coord(side, axs)
                 spanaxis = getattr(spanax, x + 'axis')
                 spanlabel = spanaxis.label
                 if not hasattr(spanlabel, '_orig_transform'):
@@ -1037,14 +1039,19 @@ class GeometrySolver(object):
         suptitle = self._suptitle
         suptitle_on = suptitle.get_text().strip()
         width, height = self.get_size_inches()
-        for s in 'lrbt':
+        for side in ('left', 'right', 'bottom', 'top'):
             # Get axes and offset the label to relevant panel
-            x = ('x' if s in 'lr' else 'y')
-            axs = self._get_align_axes(s)
-            axs = [ax._reassign_suplabel(s) for ax in axs]
-            labels = [getattr(ax, '_' + s + 'label') for ax in axs]
+            if side in ('left', 'right'):
+                x = 'x'
+                iter_panels = ('bottom', 'top')
+            else:
+                x = 'y'
+                iter_panels = ('left', 'right')
+            axs = self._get_align_axes(side)
+            axs = [ax._reassign_suplabel(side) for ax in axs]
+            labels = [getattr(ax, '_' + side + '_label') for ax in axs]
             coords = [None] * len(axs)
-            if s == 't' and suptitle_on:
+            if side == 'top' and suptitle_on:
                 supaxs = axs
 
             # Position labels
@@ -1056,30 +1063,29 @@ class GeometrySolver(object):
                     continue
                 # Get coord from tight bounding box
                 # Include twin axes and panels along the same side
-                extra = ('bt' if s in 'lr' else 'lr')
                 icoords = []
-                for iax in ax._iter_panels(extra):
+                for iax in ax._iter_panels(iter_panels):
                     bbox = iax.get_tightbbox(renderer)
-                    if s == 'l':
+                    if side == 'left':
                         jcoords = (bbox.xmin, 0)
-                    elif s == 'r':
+                    elif side == 'right':
                         jcoords = (bbox.xmax, 0)
-                    elif s == 't':
+                    elif side == 'top':
                         jcoords = (0, bbox.ymax)
                     else:
                         jcoords = (0, bbox.ymin)
                     c = self.transFigure.inverted().transform(jcoords)
-                    c = (c[0] if s in 'lr' else c[1])
+                    c = c[0] if side in ('left', 'right') else c[1]
                     icoords.append(c)
                 # Offset, and offset a bit extra for left/right labels
                 # See:
                 # https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
                 fontsize = label.get_fontsize()
-                if s in 'lr':
+                if side in ('left', 'right'):
                     scale1, scale2 = 0.6, width
                 else:
                     scale1, scale2 = 0.3, height
-                if s in 'lb':
+                if side in ('left', 'bottom'):
                     coords[i] = min(icoords) - (
                         scale1 * fontsize / 72) / scale2
                 else:
@@ -1088,7 +1094,7 @@ class GeometrySolver(object):
             # Assign coords
             coords = [i for i in coords if i is not None]
             if coords:
-                if s in 'lb':
+                if side in ('left', 'bottom'):
                     c = min(coords)
                 else:
                     c = max(coords)
@@ -1180,8 +1186,9 @@ class GeometrySolver(object):
         wratios_main = np.array(wratios)[wmask]
         wratios_panels = np.array(wratios)[~wmask]
         wspace_main = [
-            wspace[idx + next(i for i,
-                              p in enumerate(wpanels[idx + 1:]) if p == 'r')]
+            wspace[idx + next(
+                i for i, p in enumerate(wpanels[idx + 1:]) if p == 'r'
+            )]
             for idx in np.where(wmask)[0][:-1]
         ]
         # Vertical spacing indices
@@ -1189,8 +1196,9 @@ class GeometrySolver(object):
         hratios_main = np.array(hratios)[hmask]
         hratios_panels = np.array(hratios)[~hmask]
         hspace_main = [
-            hspace[idx + next(i for i,
-                              p in enumerate(hpanels[idx + 1:]) if p == 'b')]
+            hspace[idx + next(
+                i for i, p in enumerate(hpanels[idx + 1:]) if p == 'b'
+            )]
             for idx in np.where(hmask)[0][:-1]
         ]
 
@@ -1479,43 +1487,44 @@ class Figure(mfigure.Figure):
         # NOTE: Axis sharing not implemented for figure panels, 99% of the
         # time this is just used as construct for adding global colorbars and
         # legends, really not worth implementing axis sharing
-        s = side[0]
-        if s not in 'lrbt':
+        if side not in ('left', 'right', 'top', 'bottom'):
             raise ValueError(f'Invalid side {side!r}.')
         if not self._gridspec:  # needed for wpanels, hpanels, etc.
             raise RuntimeError(f'Gridspec is not set.')
         ax = ax._panel_parent or ax  # redirect to main axes
-        side = SIDE_TRANSLATE[s]
         share, width, space, space_orig = _get_panelargs(
-            s, filled=filled, figure=False, **kwargs)
+            side, filled=filled, figure=False, **kwargs
+        )
 
         # Get gridspec and subplotspec indices
         ss = ax.get_subplotspec()
         nrows, ncols, row1, row2, col1, col2 = ss.get_rows_columns()
-        pgrid = getattr(ax, '_' + s + 'panels')
+        pgrid = getattr(ax, '_' + side + '_panels')
         offset = (len(pgrid) * bool(pgrid)) + 1
-        if s in 'lr':
-            iratio = (col1 - offset if s == 'l' else col2 + offset)
+        if side in ('left', 'right'):
+            iratio = col1 - offset if side == 'left' else col2 + offset
             idx1 = slice(row1, row2 + 1)
             idx2 = iratio
         else:
-            iratio = (row1 - offset if s == 't' else row2 + offset)
+            iratio = row1 - offset if side == 'top' else row2 + offset
             idx1 = iratio
             idx2 = slice(col1, col2 + 1)
         gridspec_prev = self._gridspec
-        gs = self._insert_row_column(side, iratio,
-                                     width, space, space_orig, figure=False,
-                                     )
+        gs = self._insert_row_column(
+            side, iratio, width, space, space_orig, figure=False,
+        )
         if gs is not gridspec_prev:
-            if s == 't':
+            if side == 'top':
                 idx1 += 1
-            elif s == 'l':
+            elif side == 'left':
                 idx2 += 1
 
         # Draw and setup panel
-        pax = self.add_subplot(gs[idx1, idx2],
-                               main=False, projection='cartesian')
-        getattr(ax, '_' + s + 'panels').append(pax)
+        pax = self.add_subplot(
+            gs[idx1, idx2],
+            main=False, projection='cartesian'
+        )
+        pgrid.append(pax)
         pax._panel_side = side
         pax._panel_share = share
         pax._panel_parent = ax
@@ -1535,15 +1544,14 @@ class Figure(mfigure.Figure):
         """Add figure panels. This powers `Figure.colorbar` and
         `Figure.legend`."""
         # Interpret args and enforce sensible keyword args
-        s = side[0]
-        if s not in 'lrbt':
+        if side not in ('left', 'right', 'bottom', 'top'):
             raise ValueError(f'Invalid side {side!r}.')
         if not self._gridspec:  # needed for wpanels, hpanels, etc.
             raise RuntimeError(f'Gridspec is not set.')
-        side = SIDE_TRANSLATE[s]
         _, width, space, space_orig = _get_panelargs(
-            s, filled=True, figure=True, **kwargs)
-        if s in 'lr':
+            side, filled=True, figure=True, **kwargs
+        )
+        if side in ('left', 'right'):
             for key, value in (('col', col), ('cols', cols)):
                 if value is not None:
                     raise ValueError(
@@ -1561,8 +1569,8 @@ class Figure(mfigure.Figure):
                 span, col, cols, None, names=('span', 'col', 'cols'))
 
         # Get props
-        array = getattr(self, '_' + s + 'array')
-        if s in 'lr':
+        array = getattr(self, '_' + side + '_array')
+        if side in ('left', 'right'):
             panels, nacross = self._wpanels, self._ncols
         else:
             panels, nacross = self._hpanels, self._nrows
@@ -1584,11 +1592,11 @@ class Figure(mfigure.Figure):
         # The 'array' is an array of boolean values, where each row corresponds
         # to another figure panel, moving toward the outside, and boolean
         # True indicates the slot has been filled
-        iratio = (-1 if s in 'lt' else nacross)  # default vals
+        iratio = -1 if side in ('left', 'top') else nacross  # default vals
         for i in range(npanels):
             if not any(array[i, start:stop]):
                 array[i, start:stop] = True
-                if s in 'lt':  # descending array moves us closer to 0
+                if side in ('left', 'top'):  # descending moves us closer to 0
                     # npanels=1, i=0 --> iratio=0
                     # npanels=2, i=0 --> iratio=1
                     # npanels=2, i=1 --> iratio=0
@@ -1603,13 +1611,13 @@ class Figure(mfigure.Figure):
             iarray = np.zeros((1, nalong), dtype=bool)
             iarray[0, start:stop] = True
             array = np.concatenate((array, iarray), axis=0)
-            setattr(self, '_' + s + 'array', array)
+            setattr(self, '_' + side + '_array', array)
 
         # Get gridspec and subplotspec indices
         idxs, = np.where(np.array(panels) == '')
         if len(idxs) != nalong:
             raise RuntimeError('Wut?')
-        if s in 'lr':
+        if side in ('left', 'right'):
             idx1 = slice(idxs[start], idxs[stop - 1] + 1)
             idx2 = max(iratio, 0)
         else:
@@ -1621,7 +1629,7 @@ class Figure(mfigure.Figure):
         # Draw and setup panel
         pax = self.add_subplot(gridspec[idx1, idx2],
                                main=False, projection='cartesian')
-        getattr(self, '_' + s + 'panels').append(pax)
+        getattr(self, '_' + side + '_panels').append(pax)
         pax._panel_side = side
         pax._panel_share = False
         pax._panel_parent = None
@@ -1631,11 +1639,14 @@ class Figure(mfigure.Figure):
         """Return the figure coordinate for spanning labels and super titles.
         """
         # Get position in figure relative coordinates
-        s = side[0]
-        x = ('y' if s in 'lr' else 'x')
-        extra = ('tb' if s in 'lr' else 'lr')
+        if side in ('left', 'right'):
+            x = 'y'
+            iter_panels = ('top', 'bottom')
+        else:
+            x = 'x'
+            iter_panels = ('left', 'right')
         if self._include_panels:
-            axs = [iax for ax in axs for iax in ax._iter_panels(extra)]
+            axs = [iax for ax in axs for iax in ax._iter_panels(iter_panels)]
         ranges = np.array([ax._range_gridspec(x) for ax in axs])
         min_, max_ = ranges[:, 0].min(), ranges[:, 1].max()
         axlo = axs[np.where(ranges[:, 0] == min_)[0][0]]
@@ -1656,9 +1667,8 @@ class Figure(mfigure.Figure):
         """Return the main axes along the left, right, bottom, or top sides
         of the figure."""
         # Initial stuff
-        s = side[0]
-        idx = (0 if s in 'lt' else 1)
-        if s in 'lr':
+        idx = 0 if side in ('left', 'top') else 1
+        if side in ('left', 'right'):
             x, y = 'x', 'y'
         else:
             x, y = 'y', 'x'
@@ -1668,10 +1678,11 @@ class Figure(mfigure.Figure):
             return []
         ranges = np.array([ax._range_gridspec(x) for ax in axs])
         min_, max_ = ranges[:, 0].min(), ranges[:, 1].max()
-        edge = (min_ if s in 'lt' else max_)
+        edge = min_ if side in ('left', 'top') else max_
         # Return axes on edge sorted by order of appearance
-        axs = [ax for ax in self._mainaxes if ax._range_gridspec(x)[
-            idx] == edge]
+        axs = [
+            ax for ax in self._mainaxes if ax._range_gridspec(x)[idx] == edge
+        ]
         ord = [ax._range_gridspec(y)[0] for ax in axs]
         return [ax for _, ax in sorted(zip(ord, axs)) if ax.get_visible()]
 
@@ -1688,12 +1699,9 @@ class Figure(mfigure.Figure):
         # # left panels. And note that since .insert() pushes everything in
         # # that column to the right, actually must insert 1 slot farther to
         # # the right when inserting left panels/spaces
-        # s = side[0]
-        # if s not in 'lrbt':
-        #     raise ValueError(f'Invalid side {side}.')
-        # idx_space = idx - 1*bool(s in 'br')
-        # idx_offset = 1*bool(s in 'tl')
-        # if s in 'lr':
+        # idx_space = idx - 1*bool(side in ('bottom', 'right'))
+        # idx_offset = 1*bool(side in ('top', 'left'))
+        # if side in ('left', 'right')
         #     sidx, ridx, pidx, ncols = -6, -4, -2, 'ncols'
         # else:
         #     sidx, ridx, pidx, ncols = -5, -3, -1, 'nrows'
@@ -1705,7 +1713,7 @@ class Figure(mfigure.Figure):
         # # space = gridspecpars[sidx]
         # # space_user = gridspecpars_user[sidx]
         # # Test if panel slot already exists
-        # slot_name = ('f' if figure else s)
+        # slot_name = 'f' if figure else side[0]
         # slot_new = (idx in (-1, len(panels)) or panels[idx] == slot_name)
         # if slot_new: # already exists!
         #     idx += idx_offset
@@ -1738,7 +1746,7 @@ class Figure(mfigure.Figure):
         #         # NOTE: Endpoints are inclusive, not exclusive!
         #         if not hasattr(ax, 'get_subplotspec'):
         #             continue
-        #         if s in 'lr':
+        #         if side in ('left', 'right'):
         #             inserts = (None, None, idx, idx)
         #         else:
         #             inserts = (idx, idx, None, None)
@@ -1775,8 +1783,8 @@ class Figure(mfigure.Figure):
                 continue
             axs.append(ax)
         for ax in axs:
-            for s in 'lrbt':
-                for iax in getattr(ax, '_' + s + 'panels'):
+            for side in ('left', 'right', 'bottom', 'top'):
+                for iax in getattr(ax, '_' + side + '_panels'):
                     if not iax or not iax.get_visible():
                         continue
                     axs.append(iax)
@@ -1803,9 +1811,9 @@ class Figure(mfigure.Figure):
         # Apply to spanning axes and their panels
         axs = [ax]
         if getattr(self, '_span' + x):
-            s = axis.get_label_position()[0]
-            if s in 'lb':
-                axs = ax._get_side_axes(s)
+            side = axis.get_label_position()
+            if side in ('left', 'bottom'):
+                axs = ax._get_side_axes(side)
         for ax in axs:
             getattr(ax, x + 'axis').label.update(kwargs)  # apply to main axes
             pax = getattr(ax, '_share' + x)
@@ -1839,12 +1847,11 @@ class Figure(mfigure.Figure):
     def _update_labels(self, ax, side, labels, **kwargs):
         """Assign side labels and updates label settings. The labels are
         aligned down the line by geometry_configurator."""
-        s = side[0]
-        if s not in 'lrbt':
+        if side not in ('left', 'right', 'bottom', 'top'):
             raise ValueError(f'Invalid label side {side!r}.')
 
         # Get main axes on the edge
-        axs = self._get_align_axes(s)
+        axs = self._get_align_axes(side)
         if not axs:
             return  # occurs if called while adding axes
 
@@ -1853,11 +1860,11 @@ class Figure(mfigure.Figure):
             labels = [labels] * len(axs)
         if len(labels) != len(axs):
             raise ValueError(
-                f'Got {len(labels)} {s}labels, but there are {len(axs)} axes '
-                'along that side.'
+                f'Got {len(labels)} {side}labels, but there are '
+                f'{len(axs)} axes along that side.'
             )
         for ax, label in zip(axs, labels):
-            obj = getattr(ax, '_' + s + 'label')
+            obj = getattr(ax, '_' + side + '_label')
             if label is not None and obj.get_text() != label:
                 obj.set_text(label)
             if kwargs:
@@ -2079,6 +2086,7 @@ class Figure(mfigure.Figure):
         elif ax is not None:
             return ax.colorbar(*args, space=space, width=width, **kwargs)
         # Generate figure panel
+        loc = self._axes_main[0]._loc_translate(loc, 'panel')
         ax = self._add_figure_panel(
             loc, space=space, width=width, span=span,
             row=row, col=col, rows=rows, cols=cols
@@ -2176,6 +2184,7 @@ class Figure(mfigure.Figure):
         if ax is not None:
             return ax.legend(*args, space=space, width=width, **kwargs)
         # Generate figure panel
+        loc = self._axes_main[0]._loc_translate(loc, 'panel')
         ax = self._add_figure_panel(
             loc, space=space, width=width, span=span,
             row=row, col=col, rows=rows, cols=cols
@@ -2547,8 +2556,9 @@ def subplots(
 
     # Get basemap.Basemap or cartopy.crs.Projection instances for map
     proj = _notNone(projection, proj, None, names=('projection', 'proj'))
-    proj_kw = _notNone(projection_kw, proj_kw, {},
-                       names=('projection_kw', 'proj_kw'))
+    proj_kw = _notNone(
+        projection_kw, proj_kw, {}, names=('projection_kw', 'proj_kw')
+    )
     proj = _axes_dict(naxs, proj, kw=False, default='xy')
     proj_kw = _axes_dict(naxs, proj_kw, kw=True)
     basemap = _axes_dict(naxs, basemap, kw=False, default=False)
