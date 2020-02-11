@@ -82,7 +82,7 @@ ProPlot v0.5.0 (2020-02-10)
 
 - Add back `Fabio Crameri's scientific colour maps <http://www.fabiocrameri.ch/colourmaps.php>`__ (:pr:`116`).
 - Permit both e.g. `locator` and `xlocator` as keyword arguments to
-  `~proplot.axes.Axes.altx`, etc. (:issue:`57fab860`).
+  `~proplot.axes.Axes.altx`, etc. (:commit:`57fab860`).
 - Permit *descending* `~proplot.styletools.BinNorm` and `~proplot.styletools.LinearSegmentedNorm`
   levels (:pr:`119`).
 - Permit overriding the font weight, style, and stretch in the
