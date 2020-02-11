@@ -19,12 +19,11 @@ try:  # use this for debugging instead of print()!
 except ImportError:  # graceful fallback if IceCream isn't installed
     ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
 try:
-    import IPython
     from IPython import get_ipython
-except ModuleNotFoundError:
+except ImportError:
     def get_ipython():
         return
-from .utils import _warn_proplot, _counter, _benchmark, units
+from .utils import _warn_proplot, _counter, units
 
 # Disable mathtext "missing glyph" warnings
 import matplotlib.mathtext  # noqa
@@ -33,8 +32,7 @@ logger = logging.getLogger('matplotlib.mathtext')
 logger.setLevel(logging.ERROR)  # suppress warnings!
 
 __all__ = [
-    'rc', 'rc_configurator', 'ipython_autosave',
-    'ipython_autoreload', 'ipython_matplotlib',
+    'rc', 'rc_configurator', 'inline_backend_fmt',
 ]
 
 # Dictionaries used to track custom proplot settings
@@ -46,8 +44,6 @@ defaultParamsShort = {
     'abc': False,
     'align': False,
     'alpha': 1,
-    'autoreload': 2,
-    'autosave': 30,
     'borders': False,
     'cmap': 'fire',
     'coast': False,
@@ -67,7 +63,6 @@ defaultParamsShort = {
     'linewidth': 0.6,
     'lut': 256,
     'margin': 0.0,
-    'matplotlib': 'auto',
     'ocean': False,
     'reso': 'lo',
     'rgbcycle': False,
@@ -85,8 +80,8 @@ defaultParamsShort = {
 }
 defaultParamsLong = {
     'abc.border': True,
+    'abc.borderwidth': 1.5,
     'abc.color': 'k',
-    'abc.linewidth': 1.5,
     'abc.loc': 'l',  # left side above the axes
     'abc.size': None,  # = large
     'abc.style': 'a',
@@ -158,8 +153,8 @@ defaultParamsLong = {
     'tick.labelsize': None,  # = small
     'tick.labelweight': 'normal',
     'title.border': True,
+    'title.borderwidth': 1.5,
     'title.color': 'k',
-    'title.linewidth': 1.5,
     'title.loc': 'c',  # centered above the axes
     'title.pad': 3.0,  # copy
     'title.size': None,  # = large
@@ -429,6 +424,10 @@ def _get_synced_params(key, value):
     if '.' in key:
         pass
 
+    # Backend
+    elif key == 'inlinefmt':
+        inline_backend_fmt(value)
+
     # Cycler
     elif key in ('cycle', 'rgbcycle'):
         if key == 'rgbcycle':
@@ -543,7 +542,7 @@ def _get_synced_params(key, value):
         kw['axes.grid'] = value
         kw['axes.grid.which'] = which
 
-    # Now update linked settings
+    # Update setting in dictionary, detect invalid keys
     value = _to_points(key, value)
     if key in rcParamsShort:
         kw_short[key] = value
@@ -553,6 +552,8 @@ def _get_synced_params(key, value):
         kw[key] = value
     else:
         raise KeyError(f'Invalid key {key!r}.')
+
+    # Update linked settings
     for name in _rc_children.get(key, ()):
         if name in rcParamsLong:
             kw_long[name] = value
@@ -647,7 +648,7 @@ def _update_from_file(file):
                 rcParams.update(rc)
 
 
-def _write_defaults(filename, comment=True, overwrite=False):
+def _write_defaults(filename, comment=True):
     """
     Save a file to the specified path containing the default `rc` settings.
 
@@ -657,8 +658,6 @@ def _write_defaults(filename, comment=True, overwrite=False):
         The path.
     comment : bool, optional
         Whether to "comment out" each setting.
-    overwrite : bool, optional
-        Whether to overwrite existing files.
     """
     def _tabulate(rcdict):
         string = ''
@@ -736,9 +735,8 @@ class rc_configurator(object):
     Magical abstract class for managing matplotlib
     `rcParams <https://matplotlib.org/users/customizing.html>`__
     and additional ProPlot :ref:`rcParamsLong` and :ref:`rcParamsShort`
-    settings. When initialized, this loads defaults settings plus any user
-    overrides in the ``~/.proplotrc`` file. See the `~proplot.rctools`
-    documentation for details.
+    settings. This loads the default ProPlot settings and the
+    user ``.proplotrc`` overrides. See :ref:`Configuring proplot` for details.
     """
     def __contains__(self, key):
         return key in rcParamsShort or key in rcParamsLong or key in rcParams
@@ -768,10 +766,14 @@ class rc_configurator(object):
             Whether to load overrides from local and user ``.proplotrc``
             file(s). Default is ``True``.
         """
-        # Attributes and style
+        # Remove context objects
         object.__setattr__(self, '_context', [])
-        with _benchmark('  use'):
-            style.use('default')
+
+        # Set default style
+        # NOTE: Previously, style.use would trigger first pyplot import because
+        # rcParams.__getitem__['backend'] imports pyplot.switch_backend() so it
+        # can determine the default backend.
+        style.use('default')
 
         # Update from defaults
         rcParams.update(defaultParams)
@@ -811,7 +813,7 @@ class rc_configurator(object):
             _update(rcParamsLong, rc_long)
             _update(rcParams, rc)
 
-    def __exit__(self, *args):
+    def __exit__(self, *args):  # noqa: U100
         """Restore settings from the most recent context block."""
         if not self._context:
             raise RuntimeError(
@@ -825,11 +827,11 @@ class rc_configurator(object):
             rcParams.update(rc)
         del self._context[-1]
 
-    def __delitem__(self, *args):
+    def __delitem__(self, item):  # noqa: 100
         """Raise an error. This enforces pseudo-immutability."""
         raise RuntimeError('rc settings cannot be deleted.')
 
-    def __delattr__(self, *args):
+    def __delattr__(self, item):  # noqa: 100
         """Raise an error. This enforces pseudo-immutability."""
         raise RuntimeError('rc settings cannot be deleted.')
 
@@ -861,12 +863,6 @@ class rc_configurator(object):
         """Modify an `rcParams \
 <https://matplotlibcorg/users/customizing.html>`__,
         :ref:`rcParamsLong`, and :ref:`rcParamsShort` setting(s)."""
-        if key == 'matplotlib':
-            return ipython_matplotlib(value)
-        elif key == 'autosave':
-            return ipython_autosave(value)
-        elif key == 'autoreload':
-            return ipython_autoreload(value)
         rc_short, rc_long, rc = _get_synced_params(key, value)
         rcParamsShort.update(rc_short)
         rcParamsLong.update(rc_long)
@@ -1129,66 +1125,34 @@ class rc_configurator(object):
             yield self[key]
 
 
-def ipython_matplotlib(backend=None, fmt=None):
+def inline_backend_fmt(fmt=None):
     """
-    Set up the `matplotlib backend \
+    Set up the `ipython inline backend \
 <https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__
-    for ipython sessions and apply the following ``%config InlineBackend``
-    magic commands.
+    format and ensure that inline figures always look the same as saved
+    figures. This runs the following ipython magic commands:
 
     .. code-block:: ipython
 
-        %config InlineBackend.figure_formats = fmt
-        %config InlineBackend.rc = {}  # never override my rc settings!
+        %config InlineBackend.figure_formats = rc['inlinefmt']
+        %config InlineBackend.rc = {}  # never override the rc settings
         %config InlineBackend.close_figures = True  # memory issues
         %config InlineBackend.print_figure_kwargs = {'bbox_inches': None}  \
-# we use our own tight layout algorithm
+# not 'tight', because proplot has its own tight layout algorithm
 
-    This must be called *before drawing any figures*! For some ipython
-    sessions (e.g. terminals) the backend can only be changed by adding
-    ``matplotlib: backend`` to your ``.proplotrc`` file.
-    See :ref:`Configuring proplot` for details.
+    When the inline backend is inactive or unavailable, this has no effect.
 
     Parameters
     ----------
-    backend : str, optional
-        The backend name. The default is ``'auto'``, which applies
-        ``%matplotlib inline`` for notebooks and ``%matplotlib qt`` for
-        all other sessions.
-
-        Note that when using the qt backend on macOS, you may want to prevent
-        "tabbed" figure windows by navigating to Settings...Dock and changing
-        "Prefer tabs when opening documents" to "Manually" (see \
-`Issue #13164 <https://github.com/matplotlib/matplotlib/issues/13164>`__).
     fmt : str or list of str, optional
-        The inline backend file format(s). Valid formats include ``'jpg'``,
-        ``'png'``, ``'svg'``, ``'pdf'``, and ``'retina'``. This is ignored
-        for non-inline backends.
+        The inline backend file format(s). Default is :rc:`inlinefmt`.
+        Valid formats include ``'jpg'``, ``'png'``, ``'svg'``, ``'pdf'``,
+        and ``'retina'``.
     """  # noqa
-    # Bail out
+    # Note if inline backend is unavailable this will fail silently
     ipython = get_ipython()
-    backend = backend or rcParamsShort['matplotlib']
-    if ipython is None or backend is None:
+    if ipython is None:
         return
-
-    # Default behavior dependent on type of ipython session
-    # See: https://stackoverflow.com/a/22424821/4970632
-    ibackend = backend
-    if backend == 'auto':
-        if 'IPKernelApp' in getattr(get_ipython(), 'config', ''):
-            ibackend = 'inline'
-        else:
-            ibackend = 'qt'
-    try:
-        ipython.magic('matplotlib ' + ibackend)
-        if 'rc' in globals():  # should always be True, but just in case
-            rc.reset()
-    except KeyError:
-        if backend != 'auto':
-            _warn_proplot(f'{"%matplotlib " + backend!r} failed.')
-
-    # Configure inline backend no matter what type of session this is
-    # Should be silently ignored for terminal ipython sessions
     fmt = fmt or rcParamsShort['inlinefmt']
     if isinstance(fmt, str):
         fmt = [fmt]
@@ -1199,69 +1163,12 @@ def ipython_matplotlib(backend=None, fmt=None):
             f'Invalid inline backend format {fmt!r}. '
             'Must be string or list thereof.'
         )
-    ipython.magic(f'config InlineBackend.figure_formats = {fmt!r}')
+    ipython.magic('config InlineBackend.figure_formats = ' + repr(fmt))
     ipython.magic('config InlineBackend.rc = {}')  # no notebook overrides
-    ipython.magic('config InlineBackend.close_figures = True')  # memory issues
+    ipython.magic('config InlineBackend.close_figures = True')  # memory
     ipython.magic(  # use ProPlot tight layout instead
-        'config InlineBackend.print_figure_kwargs = {"bbox_inches":None}'
+        'config InlineBackend.print_figure_kwargs = {"bbox_inches": None}'
     )
-
-
-def ipython_autoreload(autoreload=None):
-    """
-    Set up the `ipython autoreload utility \
-<https://ipython.readthedocs.io/en/stable/config/extensions/autoreload.html>`__
-    by running the following ipython magic.
-
-    .. code-block:: ipython
-
-        %autoreload autoreload
-
-    This is called on import by default. Add ``autoreload:`` to your
-    ``.proplotrc`` to disable. See :ref:`Configuring proplot` for details.
-
-    Parameters
-    ----------
-    autoreload : float, optional
-        The autoreload level. Default is :rc:`autoreload`.
-    """  # noqa
-    ipython = get_ipython()
-    autoreload = autoreload or rcParamsShort['autoreload']
-    if ipython is None or autoreload is None:
-        return
-    if 'autoreload' not in ipython.magics_manager.magics['line']:
-        with IPython.utils.io.capture_output():  # capture annoying message
-            ipython.magic('load_ext autoreload')
-    ipython.magic('autoreload ' + str(autoreload))
-
-
-def ipython_autosave(autosave=None):
-    """
-    Set up the `ipython autosave utility \
-<https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__
-    by running the following ipython magic.
-
-    .. code-block:: ipython
-
-        %autosave autosave
-
-    This is called on import by default. Add ``autosave:`` to your
-    ``.proplotrc`` to disable. See :ref:`Configuring proplot` for details.
-
-    Parameters
-    ----------
-    autosave : float, optional
-        The autosave interval in seconds. Default is :rc:`autosave`.
-    """  # noqa
-    ipython = get_ipython()
-    autosave = autosave or rcParamsShort['autosave']
-    if ipython is None or autosave is None:
-        return
-    with IPython.utils.io.capture_output():  # capture annoying message
-        try:
-            ipython.magic('autosave ' + str(autosave))
-        except IPython.core.error.UsageError:
-            pass
 
 
 # Write defaults
@@ -1272,10 +1179,3 @@ if not os.path.exists(_user_rc_file):
 #: Instance of `rc_configurator`. This is used to change global settings.
 #: See :ref:`Configuring proplot` for details.
 rc = rc_configurator()
-
-# Manually call setup functions after rc has been instantiated
-# We cannot call these inside rc.__init__ because ipython_matplotlib may
-# need to reset the configurator to overwrite backend-imposed settings!
-ipython_matplotlib()
-ipython_autoreload()
-ipython_autosave()

@@ -3,7 +3,7 @@
 
 |build-status| |docs| |pypi| |code-style| |pr-welcome| |license| |gitter|
 
-A comprehensive, easy-to-use `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful, publication-quality graphics.
+A comprehensive `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful, publication-quality graphics.
 
 Installation
 ============

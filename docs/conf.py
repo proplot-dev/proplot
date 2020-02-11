@@ -81,7 +81,7 @@ extlinks = {
 
 # Give *lots* of time for cell execution!
 # Note nbsphinx compiles *all* notebooks in docs unless excluded
-nbsphinx_timeout = 120
+nbsphinx_timeout = 300
 
 # Set InlineBackend params, maybe nbsphinx skips ones in rctools.py
 # Not necessary because rctools.py configures the backend

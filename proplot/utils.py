@@ -29,7 +29,7 @@ class _benchmark(object):
         if BENCHMARK:
             self.time = time.perf_counter()
 
-    def __exit__(self, *args):
+    def __exit__(self, *args):  # noqa: U100
         if BENCHMARK:
             print(f'{self.message}: {time.perf_counter() - self.time}s')
 
@@ -47,7 +47,7 @@ class _setstate(object):
         for key, value in self._kwargs.items():
             setattr(self._obj, key, value)
 
-    def __exit__(self, *args):
+    def __exit__(self, *args):  # noqa: U100
         for key in self._kwargs.keys():
             if key in self._kwargs_orig:
                 setattr(self._obj, key, self._kwargs_orig[key])
@@ -89,7 +89,7 @@ def _timer(func):
     return decorator
 
 
-def _format_warning(message, category, filename, lineno, line=None):
+def _format_warning(message, category, filename, lineno, line=None):  # noqa: U100, E501
     """Simple format for warnings issued by ProPlot. See the
     `internal warning call signature \
 <https://docs.python.org/3/library/warnings.html#warnings.showwarning>`__

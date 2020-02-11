@@ -9,6 +9,8 @@ from .utils import *  # noqa: F401 F403
 with _benchmark('total time'):
     with _benchmark('styletools'):
         from .styletools import *  # noqa: F401 F403
+    with _benchmark('pyplot'):
+        import matplotlib.pyplot as _  # noqa; sets up the backend and ipython display hooks
     with _benchmark('rctools'):
         from .rctools import *  # noqa: F401 F403
     with _benchmark('axistools'):

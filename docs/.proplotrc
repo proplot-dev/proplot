@@ -5,5 +5,4 @@
 small: 9
 large: 10
 inlinefmt: svg
-matplotlib: auto
 docstring.hardcopy: True

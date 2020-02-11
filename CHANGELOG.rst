@@ -12,31 +12,127 @@ Changelog history
 
 ProPlot v1.0.0 (2020-##-##)
 ===========================
-This will be published when some major refactoring tasks are completed.
-See :pr:`45`, :pr:`46`, and :pr:`50`.
+This will be published when some major refactoring tasks are completed,
+and deprecation warnings will be removed. See :pr:`89`, :pr:`109`, :pr:`110`,
+and :pr:`111`.
 
-ProPlot v0.5.0 (2020-##-##)
+ProPlot v0.6.0 (2020-##-##)
 ===========================
+.. rubric:: Deprecated
+
+- Deprecate `~proplot.axes.Axes.format` functions in favor of the
+  axes-artist `~matplotlib.artist.Artist.set` override (:pr:`89`).
+- Rename `width` and `height` `~proplot.subplots.subplots` keyword args to `figwidth` and `figheight` (:pr:`###`).
+- Rename `aspect`, `axwidth`, and `axheight` keyword args to `refaspect`, `refwidth`, and `refheight` (:pr:`###`).
+- Rename :rcraw:`subplots.pad` and :rcraw:`subplots.axpad` to
+  :rcraw:`subplots.edgepad` and :rcraw:`subplots.subplotpad` (:pr:`###`).
+
 .. rubric:: Features
 
-- Users can now use `~proplot.subplots.figure` with `~proplot.subplots.Figure.add_subplot`
-  *or* `~proplot.subplots.subplots` (:pr:`50`). This is a major improvement!
+- All features are now implemented with individual *setters*, like in matplotlib,
+  but we still encourage using the bulk ``set`` method through documentation
+  examples and by populating the ``set`` docstring (so valid arguments are no
+  longer implicit).
+- Users can now use `~proplot.subplots.figure` with
+  `~proplot.subplots.Figure.add_subplot`
+  *or* `~proplot.subplots.subplots` (:pr:`110`). This is a major improvement!
 - `~proplot.subplots.GridSpec` now accepts physical units, rather than having
-  `~proplot.subplots.subplots` handle the units (:pr:`50`).
+  `~proplot.subplots.subplots` handle the units (:pr:`110`).
 - Allow "hanging" twin *x* and *y* axes as members of the `~proplot.subplots.EdgeStack`
   container. Arbitrarily many siblings are now permitted.
 - Use `~proplot.subplots.GeometrySolver` for calculating various automatic layout
-  stuff instead of having 1000 hidden `~proplot.subplots.Figure` methods (:pr:`50`).
+  stuff instead of having 1000 hidden `~proplot.subplots.Figure` methods (:pr:`110`).
 - Use `~proplot.subplots.EdgeStack` class for handling
-  stacks of colorbars, legends, and text (:pr:`50`).
+  stacks of colorbars, legends, and text (:pr:`110`).
 
 .. rubric:: Internals
 
+- Assignments to `~proplot.rctools.rc_configurator` are now validated, and the
+  configurator is now a monkey patch of `~matplotlib.rcParams` (:pr:`109`).
+- Plotting wrapper features (e.g. `~proplot.wrappers.standardize_1d`) are now
+  implemented and documented on the individual methods themselves
+  (e.g. `~proplot.axes.Axes.plot`; :pr:`111`).
+  This is much easier for new users.
 - Handle all projection keyword arguments in `~proplot.subplots.Figure.add_subplot`
-  instead of `~proplot.subplots.subplots` (:pr:`50`).
+  instead of `~proplot.subplots.subplots` (:pr:`110`).
 - Panels, colorbars, and legends are now members of `~proplot.subplots.EdgeStack`
   stacks rather than getting inserted directly into
-  the main `~proplot.subplots.GridSpec` (:pr:`50`).
+  the main `~proplot.subplots.GridSpec` (:pr:`110`).
+
+ProPlot v0.5.0 (2020-##-##)
+===========================
+.. rubric:: Deprecated
+
+- Remove `abcformat` from `~proplot.axes.Axes.format` (:commit:`2f295e18`).
+- Rename `top` to `abovetop` in `~proplot.axes.Axes.format` (:commit:`500dd381`).
+- Rename `abc.linewidth` and `title.linewidth` to ``borderwidth`` (:commit:`54eb4bee`).
+- Rename `~proplot.wrappers.text_wrapper` `linewidth` and `invert` to
+  `borderwidth` and `borderinvert` (:commit:`54eb4bee`).
+
+.. rubric:: Features
+
+- Add back `Fabio Crameri's scientific colour maps <http://www.fabiocrameri.ch/colourmaps.php>`__ (:pr:`116`).
+- Permit both e.g. `locator` and `xlocator` as keyword arguments to
+  `~proplot.axes.Axes.altx`, etc. (:issue:`57fab860`).
+- Permit *descending* `~proplot.styletools.BinNorm` and `~proplot.styletools.LinearSegmentedNorm`
+  levels (:pr:`119`).
+- Permit overriding the font weight, style, and stretch in the
+  `~proplot.styletools.show_fonts` table (:commit:`e8b9ee38`).
+- Permit hiding "unknown" colormaps and color cycles in the
+  `~proplot.styletools.show_cmaps` and `~proplot.styletools.show_cycles`
+  tables (:commit:`cb206f19`).
+
+.. rubric:: Bug fixes
+
+- Fix issue where `~proplot.styletools.show_cmaps`
+  and `~proplot.styletools.show_cycles` colormap names were messed up
+  (:commit:`13045599`)
+- Fix issue where `~proplot.styletools.show_cmaps`
+  and `~proplot.styletools.show_cycles` did not return figure instance
+  (:commit:`98209e87`).
+- Fix issue where user `values` passed to `~proplot.wrappers.colorbar_wrapper`
+  were sometimes ignored (:commit:`fd4f8d5f`).
+- Prevent formatting rightmost meridian label as ``1e-10``
+  on cartopy map projections (:commit:`37fdd1eb]`).
+- Support CF-time axes by fixing bug in `~proplot.wrappers.standardize_1d`
+  and `~proplot.wrappers.standardize_2d` (:issue:`103`, :pr:`121`).
+- Redirect to the "default" location
+  when using ``legend=True`` and ``colorbar=True`` to generate on-the-fly legends
+  and colorbars (:commit:`c2c5c58d`). This feature was accidentally removed.
+- Let `~proplot.wrappers.colorbar_wrapper`
+  accept lists of colors (:commit:`e5f11591`). This feature was accidentally removed.
+
+.. rubric:: Internals
+
+- Remove various unused keyword arguments (:commit:`33654a42`).
+- Major improvements to the API controlling axes titles and a-b-c labels
+  (:commit:`1ef7e65e`).
+- Always use full names ``left``, ``right``, ``top``, and ``bottom`` instead of ``l``, ``r``,
+  ``b``, and ``t``, for clarity (:commit:`1ef7e65e`).
+- Improve ``GrayCycle`` colormap, is now much shorter and built from reflected
+  Fabio ``GrayC`` colormaps (:commit:`5b2c7eb7`).
+
+
+ProPlot v0.4.3 (2020-01-21)
+===========================
+.. rubric:: Deprecated
+
+- Remove `~proplot.rctools.ipython_autoreload`,
+  `~proplot.rctools.ipython_autosave`, and `~proplot.rctools.ipython_matplotlib`
+  (:issue:`112`, :pr:`113`). Move inline backend configuration to a hidden
+  method that gets called whenever the ``rc_configurator`` is initalized.
+
+.. rubric:: Features
+
+- Permit comments at the head of colormap and color files (:commit:`0ffc1d15`).
+- Make `~proplot.axes.Axes.parametric` match ``plot`` autoscaling behavior
+  (:commit:`ecdcba82`).
+
+.. rubric:: Internals
+
+- Use `~proplot.axes.Axes.colorbar` instead of `~matplotlib.axes.Axes.imshow`
+  for `~proplot.styletools.show_cmaps` and `~proplot.styletools.show_cycles`
+  displays (:pr:`107`).
 
 ProPlot v0.4.2 (2020-01-09)
 ===========================
@@ -96,10 +192,11 @@ ProPlot v0.4.0 (2020-01-07)
   based on current tick lengths, label sizes, etc.
 - Remove redundant `~proplot.rctools.use_fonts`, use ``rcParams['sans-serif']``
   precedence instead (:pr:`95`).
-- `~proplot.axes.Axes.dualx` and `~proplot.axes.Axes.dualy` no longer accept "scale-spec" arguments.
+- `~proplot.axes.Axes.dualx` and `~proplot.axes.Axes.dualy` no longer accept
+  "scale-spec" arguments.
   Must be a function, two functions, or an axis scale instance (:pr:`96`).
-- Remove `~proplot.axes.Axes` ``share[x|y]``, ``span[x|y]``, and ``align[x|y]`` kwargs
-  (:pr:`99`).
+- Remove `~proplot.axes.Axes` ``share[x|y]``, ``span[x|y]``, and ``align[x|y]``
+  kwargs (:pr:`99`).
   These settings are now always figure-wide.
 - Rename `~proplot.styletools.Cycle` ``samples`` to ``N``, rename
   `~proplot.styletools.show_colors` ``nbreak`` to ``nhues`` (:pr:`98`).
@@ -112,8 +209,12 @@ ProPlot v0.4.0 (2020-01-07)
   Add Fira Math as DejaVu Sans-alternative; has complete set of math characters (:pr:`95`).
 - Add `xlinewidth`, `ylinewidth`, `xgridcolor`, `ygridcolor` keyword
   args to `~proplot.axes.XYAxes.format` (:pr:`95`).
-- Add getters and setters for various `~proplot.subplots.Figure` settings like ``share[x|y]``,
-  ``span[x|y]``, and ``align[x|y]`` (:pr:`99`).
+- Add getters and setters for various `~proplot.subplots.Figure` settings
+  like ``share[x|y]``, ``span[x|y]``, and ``align[x|y]`` (:pr:`99`).
+- Let `~proplot.axes.Axes.twinx`, `~proplot.axes.Axes.twiny`,
+  `~proplot.axes.Axes.altx`, and `~proplot.axes.Axes.alty` accept
+  `~proplot.axes.XYAxes.format` keyword args just like
+  `~proplot.axes.Axes.dualx` and `~proplot.axes.Axes.dualy` (:pr:`99`).
 - Add `~proplot.subplots.Figure` ``fallback_to_cm`` kwarg. This is used by
   `~proplot.styletools.show_fonts` to show dummy glyphs to clearly illustrate when fonts are
   missing characters, but preserve graceful fallback for end user.
@@ -128,7 +229,8 @@ ProPlot v0.4.0 (2020-01-07)
 .. rubric:: Bug fixes
 
 - Fix `~proplot.rctools.rc_configurator.context` bug (:issue:`80` and :pr:`91`).
-- Fix issues with `~proplot.axes.Axes.dualx` and `~proplot.axes.Axes.dualy` with non-linear parent scales (:pr:`96`).
+- Fix issues with `~proplot.axes.Axes.dualx` and `~proplot.axes.Axes.dualy`
+  with non-linear parent scales (:pr:`96`).
 - Ignore TTC fonts because they cannot be saved in EPS/PDF figures (:issue:`94` and :pr:`95`).
 - Do not try to use Helvetica Neue because "thin" font style is read as regular (:issue:`94` and :pr:`95`).
 
@@ -244,8 +346,10 @@ ProPlot v0.2.3 (2019-12-05)
 ===========================
 .. rubric:: Bug fixes
 
-- Fix issue with overlapping gridlines (:commit:`8960ebdc`).
-- Fix issue where auto colorbar labels are not applied when ``globe=True`` (:commit:`ecb3c899`).
+- Fix issue with overlapping gridlines using monkey patches on gridliner
+  instances (:commit:`8960ebdc`).
+- Fix issue where auto colorbar labels are not applied when
+  ``globe=True`` (:commit:`ecb3c899`).
 - More sensible zorder for gridlines (:commit:`90d94e55`).
 - Fix issue where customized super title settings are overridden when
   new axes are created (:commit:`35cb21f2`).
@@ -290,7 +394,7 @@ ProPlot v0.2.0 (2019-12-02)
 - Rename the ``format`` rc setting in favor of the ``inlinefmt`` setting
   (:commit:`3a622887`; ``format`` is still accepted but no longer documented).
 - Rename ``FlexibleGridSpec`` and ``FlexibleSubplotSpec`` to ``GridSpec``
-  and ``SubplotSpec`` (:commit:`3a622887`; until :pr:`50` is merged it is impossible
+  and ``SubplotSpec`` (:commit:`3a622887`; until :pr:`110` is merged it is impossible
   to use these manually, so this won't bother anyone).
 
 .. rubric:: Features

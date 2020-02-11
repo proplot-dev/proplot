@@ -12,6 +12,7 @@ from . import axistools, styletools
 from .utils import _warn_proplot, _notNone, edges, edges2d, units
 from matplotlib import docstring
 import matplotlib.axes as maxes
+import matplotlib.container as mcontainer
 import matplotlib.contour as mcontour
 import matplotlib.ticker as mticker
 import matplotlib.transforms as mtransforms
@@ -82,6 +83,36 @@ STYLE_ARGS_TRANSLATE = {
 }
 
 
+def _is_number(data):
+    """Test whether input is numeric array rather than datetime or strings."""
+    return len(data) and np.issubdtype(_to_array(data).dtype, np.number)
+
+
+def _is_string(data):
+    """Test whether input is array of strings."""
+    return len(data) and isinstance(_to_array(data).flat[0], str)
+
+
+def _to_array(data):
+    """Convert to ndarray cleanly."""
+    return np.asarray(getattr(data, 'values', data))
+
+
+def _to_arraylike(data):
+    """Converts list of lists to array."""
+    _load_objects()
+    if not isinstance(data, (ndarray, DataArray, DataFrame, Series, Index)):
+        data = np.array(data)
+    if not np.iterable(data):
+        data = np.atleast_1d(data)
+    return data
+
+
+def _to_iloc(data):
+    """Indexible attribute of array."""
+    return getattr(data, 'iloc', data)
+
+
 def default_latlon(self, func, *args, latlon=True, **kwargs):
     """
     Wraps %(methods)s for `~proplot.axes.BasemapAxes`.
@@ -140,29 +171,7 @@ def default_crs(self, func, *args, crs=None, **kwargs):
     return result
 
 
-def _to_iloc(data):
-    """Get indexible attribute of array, so we can perform axis
-    wise operations."""
-    return getattr(data, 'iloc', data)
-
-
-def _to_array(data):
-    """Convert to ndarray cleanly."""
-    data = getattr(data, 'values', data)
-    return np.array(data)
-
-
-def _atleast_array(data):
-    """Converts list of lists to array."""
-    _load_objects()
-    if not isinstance(data, (ndarray, DataArray, DataFrame, Series, Index)):
-        data = np.array(data)
-    if not np.iterable(data):
-        data = np.atleast_1d(data)
-    return data
-
-
-def _auto_label(data, axis=None, units=True):
+def _standard_label(data, axis=None, units=True):
     """Gets data and label for pandas or xarray objects or
     their coordinates."""
     label = ''
@@ -224,15 +233,15 @@ def standardize_1d(self, func, *args, **kwargs):
         ys, args = (y, args[0]), args[1:]
     else:
         ys = (y,)
-    ys = [_atleast_array(y) for y in ys]
+    ys = [_to_arraylike(y) for y in ys]
 
     # Auto x coords
     y = ys[0]  # test the first y input
     if x is None:
         axis = 1 if (name in ('hist', 'boxplot', 'violinplot') or any(
             kwargs.get(s, None) for s in ('means', 'medians'))) else 0
-        x, _ = _auto_label(y, axis=axis)
-    x = _atleast_array(x)
+        x, _ = _standard_label(y, axis=axis)
+    x = _to_arraylike(x)
     if x.ndim != 1:
         raise ValueError(
             f'x coordinates must be 1-dimensional, but got {x.ndim}.'
@@ -243,13 +252,13 @@ def standardize_1d(self, func, *args, **kwargs):
     if not hasattr(self, 'projection'):
         # First handle string-type x-coordinates
         kw = {}
-        xaxis = 'y' if (orientation == 'horizontal') else 'x'
-        yaxis = 'x' if xaxis == 'y' else 'y'
-        if _to_array(x).dtype == 'object':
+        xax = 'y' if orientation == 'horizontal' else 'x'
+        yax = 'x' if xax == 'y' else 'y'
+        if _is_string(x):
             xi = np.arange(len(x))
-            kw[xaxis + 'locator'] = mticker.FixedLocator(xi)
-            kw[xaxis + 'formatter'] = mticker.IndexFormatter(x)
-            kw[xaxis + 'minorlocator'] = mticker.NullLocator()
+            kw[xax + 'locator'] = mticker.FixedLocator(xi)
+            kw[xax + 'formatter'] = mticker.IndexFormatter(x)
+            kw[xax + 'minorlocator'] = mticker.NullLocator()
             if name == 'boxplot':
                 kwargs['labels'] = x
             elif name == 'violinplot':
@@ -259,17 +268,17 @@ def standardize_1d(self, func, *args, **kwargs):
         # Next handle labels if 'autoformat' is on
         if self.figure._auto_format:
             # Ylabel
-            y, label = _auto_label(y)
+            y, label = _standard_label(y)
             if label:
                 # for histogram, this indicates x coordinate
-                iaxis = xaxis if name in ('hist',) else yaxis
+                iaxis = xax if name in ('hist',) else yax
                 kw[iaxis + 'label'] = label
             # Xlabel
-            x, label = _auto_label(x)
+            x, label = _standard_label(x)
             if label and name not in ('hist',):
-                kw[xaxis + 'label'] = label
+                kw[xax + 'label'] = label
             if name != 'scatter' and len(x) > 1 and xi is None and x[1] < x[0]:
-                kw[xaxis + 'reverse'] = True
+                kw[xax + 'reverse'] = True
         # Appply
         if kw:
             self.format(**kw)
@@ -399,7 +408,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
     # Ensure DataArray, DataFrame or ndarray
     Zs = []
     for Z in args:
-        Z = _atleast_array(Z)
+        Z = _to_arraylike(Z)
         if Z.ndim != 2:
             raise ValueError(f'Z must be 2-dimensional, got shape {Z.shape}.')
         Zs.append(Z)
@@ -426,7 +435,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
             y = Z.columns
 
     # Check coordinates
-    x, y = _atleast_array(x), _atleast_array(y)
+    x, y = _to_arraylike(x), _to_arraylike(y)
     if x.ndim != y.ndim:
         raise ValueError(
             f'x coordinates are {x.ndim}-dimensional, '
@@ -444,12 +453,12 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
     xi, yi = None, None
     if not hasattr(self, 'projection'):
         # First handle string-type x and y-coordinates
-        if _to_array(x).dtype == 'object':
+        if _is_string(x):
             xi = np.arange(len(x))
             kw['xlocator'] = mticker.FixedLocator(xi)
             kw['xformatter'] = mticker.IndexFormatter(x)
             kw['xminorlocator'] = mticker.NullLocator()
-        if _to_array(y).dtype == 'object':
+        if _is_string(x):
             yi = np.arange(len(y))
             kw['ylocator'] = mticker.FixedLocator(yi)
             kw['yformatter'] = mticker.IndexFormatter(y)
@@ -457,7 +466,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
         # Handle labels if 'autoformat' is on
         if self.figure._auto_format:
             for key, xy in zip(('xlabel', 'ylabel'), (x, y)):
-                _, label = _auto_label(xy)
+                _, label = _standard_label(xy)
                 if label:
                     kw[key] = label
                 if len(xy) > 1 and all(isinstance(xy, Number)
@@ -469,8 +478,8 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
         y = yi
     # Handle figure titles
     if self.figure._auto_format:
-        _, colorbar_label = _auto_label(Zs[0], units=True)
-        _, title = _auto_label(Zs[0], units=False)
+        _, colorbar_label = _standard_label(Zs[0], units=True)
+        _, title = _standard_label(Zs[0], units=False)
         if title:
             kw['title'] = title
         if kw:
@@ -487,16 +496,22 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
                     f'Input arrays must be 2D, instead got shape {Z.shape}.'
                 )
             elif Z.shape[1] == xlen and Z.shape[0] == ylen:
-                if all(z.ndim == 1 and z.size > 1
-                       and z.dtype != 'object' for z in (x, y)):
+                if all(
+                    z.ndim == 1 and z.size > 1
+                    and _is_number(z) for z in (x, y)
+                ):
                     x = edges(x)
                     y = edges(y)
                 else:
-                    if (x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1
-                            and x.dtype != 'object'):
+                    if (
+                        x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1
+                        and _is_number(x)
+                    ):
                         x = edges2d(x)
-                    if (y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1
-                            and y.dtype != 'object'):
+                    if (
+                        y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1
+                        and _is_number(y)
+                    ):
                         y = edges2d(y)
             elif Z.shape[1] != xlen - 1 or Z.shape[0] != ylen - 1:
                 raise ValueError(
@@ -526,19 +541,27 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
                     f'Input arrays must be 2D, instead got shape {Z.shape}.'
                 )
             elif Z.shape[1] == xlen - 1 and Z.shape[0] == ylen - 1:
-                if all(z.ndim == 1 and z.size > 1
-                        and z.dtype != 'object' for z in (x, y)):
+                if all(
+                    z.ndim == 1 and z.size > 1
+                    and _is_number(z) for z in (x, y)
+                ):
                     x = (x[1:] + x[:-1]) / 2
                     y = (y[1:] + y[:-1]) / 2
                 else:
-                    if (x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1
-                            and x.dtype != 'object'):
-                        x = 0.25 * (x[:-1, :-1] + x[:-1, 1:]
-                                    + x[1:, :-1] + x[1:, 1:])
-                    if (y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1
-                            and y.dtype != 'object'):
-                        y = 0.25 * (y[:-1, :-1] + y[:-1, 1:]
-                                    + y[1:, :-1] + y[1:, 1:])
+                    if (
+                        x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1
+                        and _is_number(x)
+                    ):
+                        x = 0.25 * (
+                            x[:-1, :-1] + x[:-1, 1:] + x[1:, :-1] + x[1:, 1:]
+                        )
+                    if (
+                        y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1
+                        and _is_number(y)
+                    ):
+                        y = 0.25 * (
+                            y[:-1, :-1] + y[:-1, 1:] + y[1:, :-1] + y[1:, 1:]
+                        )
             elif Z.shape[1] != xlen or Z.shape[0] != ylen:
                 raise ValueError(
                     f'Input shapes x {x.shape} and y {y.shape} '
@@ -608,8 +631,9 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
                     if xi[0] != xi[1]:
                         Zq = ma.concatenate((Z[:, -1:], Z[:, :1]), axis=1)
                         xq = xmin + 360
-                        Zq = (Zq[:, :1] * (xi[1] - xq) + Zq[:, 1:]
-                              * (xq - xi[0])) / (xi[1] - xi[0])
+                        Zq = (
+                            Zq[:, :1] * (xi[1] - xq) + Zq[:, 1:] * (xq - xi[0])
+                        ) / (xi[1] - xi[0])
                         ix = ma.concatenate(([xmin], ix, [xmin + 360]))
                         Z = ma.concatenate((Zq, Z, Zq), axis=1)
                 else:
@@ -688,8 +712,8 @@ def _errorbar_values(data, idata, bardata=None, barrange=None, barstd=False):
                 f'but got {err.shape}.'
             )
     elif barstd:
-        err = np.array(idata) + np.std(
-            data, axis=0)[None, :] * np.array(barrange)[:, None]
+        err = np.array(idata) + \
+            np.std(data, axis=0)[None, :] * np.array(barrange)[:, None]
     else:
         err = np.percentile(data, barrange, axis=0)
     err = err - np.array(idata)
@@ -774,11 +798,14 @@ def add_errorbars(
         boxrange = _notNone(boxrange, default)
         err = _errorbar_values(y, iy, boxdata, boxrange, boxstd)
         if boxmarker:
-            self.scatter(*xy, marker='o', color=boxmarkercolor,
-                         s=boxlw, zorder=5)
+            self.scatter(
+                *xy, marker='o', color=boxmarkercolor,
+                s=boxlw, zorder=5
+            )
         self.errorbar(*xy, **{
             axis + 'err': err, 'capsize': 0, 'zorder': boxzorder,
-            'color': boxcolor, 'linestyle': 'none', 'linewidth': boxlw})
+            'color': boxcolor, 'linestyle': 'none', 'linewidth': boxlw
+        })
     if bars:  # now impossible to make thin bar width different from cap width!
         default = (-3, 3) if barstd else (0, 100)
         barrange = _notNone(barrange, default)
@@ -786,7 +813,8 @@ def add_errorbars(
         self.errorbar(*xy, **{
             axis + 'err': err, 'capsize': capsize, 'zorder': barzorder,
             'color': barcolor, 'linewidth': barlw, 'linestyle': 'none',
-            'markeredgecolor': barcolor, 'markeredgewidth': barlw})
+            'markeredgecolor': barcolor, 'markeredgewidth': barlw
+        })
     return obj
 
 
@@ -865,7 +893,6 @@ docstring.interpd.update(add_errorbars_kwargs=add_errorbars_kwargs)
 def cycle_changer(
     self, func, *args,
     cycle=None, cycle_kw=None,
-    markers=None, linestyles=None,
     label=None, labels=None, values=None,
     legend=None, legend_kw=None,
     colorbar=None, colorbar_kw=None,
@@ -1019,7 +1046,7 @@ def cycle_changer(
                     f'but {len(labels)} labels.'
                 )
             label = labels[i]
-            values, label_leg = _auto_label(iy, axis=1)
+            values, label_leg = _standard_label(iy, axis=1)
             if label_leg and label is None:
                 label = _to_array(values)[i]
             if label is not None:
@@ -1043,12 +1070,7 @@ def cycle_changer(
     # Add colorbar and/or legend
     if colorbar:
         # Add handles
-        loc = self._loc_translate(colorbar)
-        if not isinstance(loc, str):
-            raise ValueError(
-                f'Invalid on-the-fly location {loc!r}. '
-                'Must be a preset location. See Axes.colorbar'
-            )
+        loc = self._loc_translate(colorbar, 'colorbar', allow_manual=False)
         if loc not in self._auto_colorbar:
             self._auto_colorbar[loc] = ([], {})
         self._auto_colorbar[loc][0].extend(objs)
@@ -1060,12 +1082,7 @@ def cycle_changer(
         self._auto_colorbar[loc][1].update(colorbar_kw)
     if legend:
         # Add handles
-        loc = self._loc_translate(legend)
-        if not isinstance(loc, str):
-            raise ValueError(
-                f'Invalid on-the-fly location {loc!r}. '
-                'Must be a preset location. See Axes.legend'
-            )
+        loc = self._loc_translate(legend, 'legend', allow_manual=False)
         if loc not in self._auto_legend:
             self._auto_legend[loc] = ([], {})
         self._auto_legend[loc][0].extend(objs)
@@ -1209,9 +1226,11 @@ def cmap_changer(
             continue
         if 'contour' in name and 'contourf' not in name:
             continue
-        if len(val) < 2 or any(np.diff(val) <= 0):
+        if len(val) < 2 or any(
+            np.sign(np.diff(val)) != np.sign(val[1] - val[0])
+        ):
             raise ValueError(
-                f'{key!r} must be monotonically increasing and '
+                f'{key!r} must be monotonically increasing or decreasing and '
                 f'at least length 2, got {val}.'
             )
 
@@ -1267,7 +1286,7 @@ def cmap_changer(
                 if not np.iterable(levels) or len(levels) == 1:
                     norm = 'linear'
                 else:
-                    diff = np.diff(levels)
+                    diff = np.abs(np.diff(levels))  # permit descending
                     eps = diff.mean() / 1e3
                     if (np.abs(np.diff(diff)) >= eps).any():
                         norm = 'segmented'
@@ -1461,14 +1480,9 @@ def cmap_changer(
 
     # Add colorbar
     if colorbar:
-        loc = self._loc_translate(colorbar)
-        if not isinstance(loc, str):
-            raise ValueError(
-                f'Invalid on-the-fly location {loc!r}. '
-                f'Must be a preset location. See Axes.colorbar.'
-            )
+        loc = self._loc_translate(colorbar, 'colorbar', allow_manual=False)
         if 'label' not in colorbar_kw and self.figure._auto_format:
-            _, label = _auto_label(args[-1])  # last one is data, we assume
+            _, label = _standard_label(args[-1])  # last one is data, we assume
             if label:
                 colorbar_kw.setdefault('label', label)
         if name in ('parametric',) and values is not None:
@@ -1613,7 +1627,7 @@ def legend_wrapper(
         if `handles` is a list of lists; each sublist is used as a *row*
         in the legend. Otherwise, default is ``False``.
     loc : int or str, optional
-        The legend location. The following location keys are valid.
+        The legend location. The following location keys are valid:
 
         ==================  ================================================
         Location            Valid keys
@@ -1695,8 +1709,9 @@ property-spec, optional
                 )
     if not np.iterable(handles):  # e.g. a mappable object
         handles = [handles]
-    if labels is not None and (not np.iterable(
-            labels) or isinstance(labels, str)):
+    if labels is not None and (
+        not np.iterable(labels) or isinstance(labels, str)
+    ):
         labels = [labels]
 
     # Legend entry for colormap or scatterplot object
@@ -2117,10 +2132,7 @@ or colormap-spec
     norm : normalizer spec, optional
         Ignored if `values` is ``None``. The normalizer
         for converting `values` to colormap colors. Passed to the
-        `~proplot.styletools.Norm` constructor. As an example, if your
-        values are logarithmically spaced but you want the level boundaries
-        to appear halfway in-between the colorbar ticks, try
-        ``norm='log'``.
+        `~proplot.styletools.Norm` constructor.
     norm_kw : dict-like, optional
         The normalizer settings. Passed to `~proplot.styletools.Norm`.
     edgecolor, linewidth : optional
@@ -2183,7 +2195,8 @@ or colormap-spec
         'use_gridspec': True,
         'orientation': orientation,
         'extend': extend,
-        'spacing': 'uniform'})
+        'spacing': 'uniform'
+    })
     kwargs.setdefault('drawedges', grid)
 
     # Text property keyword args
@@ -2203,35 +2216,59 @@ or colormap-spec
         kw_ticklabels['color'] = ticklabelcolor
 
     # Special case where auto colorbar is generated from 1D methods, a list is
-    # always passed but some 1D methods (scatter) do have colormaps.
-    if np.iterable(mappable) and len(
-            mappable) == 1 and hasattr(mappable[0], 'get_cmap'):
+    # always passed, but some 1D methods (scatter) do have colormaps.
+    if (
+        np.iterable(mappable)
+        and len(mappable) == 1
+        and hasattr(mappable[0], 'get_cmap')
+    ):
         mappable = mappable[0]
+
+    # For container objects, we just assume color is the same for every item.
+    # Works for ErrorbarContainer, StemContainer, BarContainer.
+    if (
+        np.iterable(mappable)
+        and len(mappable) > 0
+        and all(isinstance(obj, mcontainer.Container) for obj in mappable)
+    ):
+        mappable = [obj[0] for obj in mappable]
 
     # Test if we were given a mappable, or iterable of stuff; note Container
     # and PolyCollection matplotlib classes are iterable.
     cmap = None
-    tick_all = (values is not None)
-    if not isinstance(mappable, martist.Artist) and not isinstance(
-            mappable, mcontour.ContourSet):
-        # Object for testing
-        obj = mappable[0] if np.iterable(mappable) else mappable
-        try:
-            obj = obj[0]  # e.g. for BarContainer, which is not numpy.iterable
-        except (TypeError, KeyError):
-            pass
-        # List of handles
-        if hasattr(obj, 'get_color') or hasattr(obj, 'get_facecolor'):
-            # Make colormap
+    if not isinstance(mappable, (martist.Artist, mcontour.ContourSet)):
+        # Any colormap spec, including a list of colors, colormap name, or
+        # colormap instance.
+        if isinstance(mappable, mcolors.Colormap):
+            cmap = mappable
+            if values is None:
+                values = np.arange(cmap.N)
+
+        # List of colors
+        elif np.iterable(mappable) and all(
+            isinstance(obj, str) or (np.iterable(obj) and len(obj) in (3, 4))
+            for obj in mappable
+        ):
+            colors = list(mappable)
+            cmap = mcolors.ListedColormap(colors, '_no_name')
+            if values is None:
+                values = np.arange(len(colors))
+
+        # List of artists
+        elif np.iterable(mappable) and all(
+            hasattr(obj, 'get_color') or hasattr(obj, 'get_facecolor')
+            for obj in mappable
+        ):
+            # Generate colormap from colors
             colors = []
             for obj in mappable:
-                if np.iterable(obj):
-                    obj = obj[0]
-                color = getattr(obj, 'get_color', None) or getattr(
-                    obj, 'get_facecolor')
-                colors.append(color())
-            cmap = styletools.Colormap(colors, listmode='listed')
-            # Infer values
+                if hasattr(obj, 'get_color'):
+                    color = obj.get_color()
+                else:
+                    color = obj.get_facecolor()
+                colors.append(color)
+            cmap = mcolors.ListedColormap(colors, '_no_name')
+            # Try to infer values from labels
             if values is None:
                 values = []
                 for obj in mappable:
@@ -2243,18 +2280,8 @@ or colormap-spec
                         break
                     values.append(val)
             if values is None:
-                values = np.arange(0, len(mappable))
-            tick_all = True
-        # Any colormap spec, including a list of colors, colormap name, or
-        # colormap instance
-        elif isinstance(mappable, mcolors.Colormap):
-            cmap = mappable
-            if values is None:
-                if np.iterable(mappable) and not isinstance(
-                        mappable, str):  # e.g. list of colors
-                    values = np.linspace(0, 1, len(mappable))
-                else:
-                    values = np.linspace(0, 1, cmap.N)
+                values = np.arange(len(colors))
+
         else:
             raise ValueError(
                 'Input mappable must be a matplotlib artist, '
@@ -2262,9 +2289,9 @@ or colormap-spec
                 f'Got {mappable!r}.'
             )
 
-    # Build new ad hoc mappable object from handles
-    # NOTE: Need to use wrapped contourf but this might be native matplotlib
-    # axes. Call on self.axes, which is child if child axes, self otherwise.
+    # Build new ad hoc mappable object from colors
+    # NOTE: Need to use *wrapped* contourf but this might be native matplotlib
+    # axes. Call on self.axes, which is parent if child axes, self otherwise.
     if cmap is not None:
         if np.iterable(mappable) and len(values) != len(mappable):
             raise ValueError(
@@ -2277,13 +2304,15 @@ or colormap-spec
             mappable = self.axes.contourf(
                 [0, 0], [0, 0], ma.array([[0, 0], [0, 0]], mask=True),
                 cmap=cmap, extend='neither', values=np.array(values),
-                norm=norm, norm_kw=norm_kw)  # workaround
+                norm=norm, norm_kw=norm_kw
+            )  # workaround
 
     # Try to get tick locations from *levels* or from *values* rather than
     # random points along the axis. If values were provided as keyword arg,
     # this is colorbar from lines/colors, and we label *all* values by default.
     # TODO: Handle more of the log locator stuff here instead of cmap_changer?
-    if tick_all and locator is None:
+    norm = getattr(mappable, 'norm', None)
+    if values is not None and locator is None:
         locator = values
         tickminor = False
     if locator is None:
@@ -2292,7 +2321,7 @@ or colormap-spec
             if locator is not None:
                 break
         if locator is None:  # i.e. no attributes found
-            if isinstance(getattr(mappable, 'norm', None), mcolors.LogNorm):
+            if isinstance(norm, mcolors.LogNorm):
                 locator = 'log'
             else:
                 locator = 'auto'
@@ -2427,6 +2456,11 @@ or colormap-spec
             kw['width'] = linewidth
         axis.set_tick_params(which=which, **kw)
     axis.set_ticks_position(ticklocation)
+
+    # Invert the axis if BinNorm
+    # TODO: When is norm *not* BinNorm? Should be pretty much always.
+    if isinstance(norm, styletools.BinNorm):
+        axis.set_inverted(norm._descending)
 
     # *Never* rasterize because it causes misalignment with border lines
     if cb.solids:

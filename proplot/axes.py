@@ -48,12 +48,6 @@ __all__ = [
 
 # Translator for inset colorbars and legends
 ABC_STRING = 'abcdefghijklmnopqrstuvwxyz'
-SIDE_TRANSLATE = {
-    'l': 'left',
-    'r': 'right',
-    'b': 'bottom',
-    't': 'top',
-}
 LOC_TRANSLATE = {
     'inset': 'best',
     'i': 'best',
@@ -213,19 +207,22 @@ class Axes(maxes.Axes):
         :py:obj:`ProjAxes`
         """
         super().__init__(*args, **kwargs)
+
         # Ensure isDefault_minloc enabled at start, needed for dual axes
         self.xaxis.isDefault_minloc = self.yaxis.isDefault_minloc = True
+
         # Properties
         self._abc_loc = None
         self._abc_text = None
         self._titles_dict = {}  # dictionary of titles and locs
         self._title_loc = None  # location of main title
         self._title_pad = rc['axes.titlepad']  # format() can overwrite
-        self._title_above_panel = True  # TODO: add rc prop?
-        self._bpanels = []
-        self._tpanels = []
-        self._lpanels = []
-        self._rpanels = []
+        self._title_pad_active = None
+        self._above_top_panels = True  # TODO: add rc prop?
+        self._bottom_panels = []
+        self._top_panels = []
+        self._left_panels = []
+        self._right_panels = []
         self._tightbbox = None  # bounding boxes are saved
         self._panel_side = None
         self._panel_share = False  # True when "filled" with cbar/legend
@@ -238,24 +235,62 @@ class Axes(maxes.Axes):
         self._altx_child = None
         self._alty_parent = None
         self._altx_parent = None
-        self._auto_colorbar = {}  # stores handles and kwargs for auto colorbar
-        self._auto_legend = {}
-        coltransform = mtransforms.blended_transform_factory(
-            self.transAxes, self.figure.transFigure)
-        rowtransform = mtransforms.blended_transform_factory(
-            self.figure.transFigure, self.transAxes)
-        self._llabel = self.text(
-            0.05, 0.5, '', va='center', ha='right', transform=rowtransform)
-        self._rlabel = self.text(
-            0.95, 0.5, '', va='center', ha='left', transform=rowtransform)
-        self._blabel = self.text(
-            0.5, 0.05, '', va='top', ha='center', transform=coltransform)
-        self._tlabel = self.text(
-            0.5, 0.95, '', va='bottom', ha='center', transform=coltransform)
-        self._share_setup()
         self.number = number  # for abc numbering
         if main:
             self.figure._axes_main.append(self)
+
+        # On-the-fly legends and colorbars
+        self._auto_colorbar = {}
+        self._auto_legend = {}
+
+        # Figure row and column labels
+        # NOTE: Most of these sit empty for most subplots
+        # TODO: Implement this with EdgeStack
+        coltransform = mtransforms.blended_transform_factory(
+            self.transAxes, self.figure.transFigure
+        )
+        rowtransform = mtransforms.blended_transform_factory(
+            self.figure.transFigure, self.transAxes
+        )
+        self._left_label = self.text(
+            0, 0.5, '', va='center', ha='right', transform=rowtransform
+        )
+        self._right_label = self.text(
+            0, 0.5, '', va='center', ha='left', transform=rowtransform
+        )
+        self._bottom_label = self.text(
+            0.5, 0, '', va='top', ha='center', transform=coltransform
+        )
+        self._top_label = self.text(
+            0.5, 0, '', va='bottom', ha='center', transform=coltransform
+        )
+
+        # Axes inset title labels
+        transform = self.transAxes
+        self._upper_left_title = self.text(
+            0, 0, '', va='top', ha='left', transform=transform,
+        )
+        self._upper_center_title = self.text(
+            0, 0, '', va='top', ha='center', transform=transform,
+        )
+        self._upper_right_title = self.text(
+            0, 0, '', va='top', ha='right', transform=transform,
+        )
+        self._lower_left_title = self.text(
+            0, 0, '', va='bottom', ha='left', transform=transform,
+        )
+        self._lower_center_title = self.text(
+            0, 0, '', va='bottom', ha='center', transform=transform,
+        )
+        self._lower_right_title = self.text(
+            0, 0, '', va='bottom', ha='right', transform=transform,
+        )
+
+        # Abc label
+        self._abc_label = self.text(0, 0, '', transform=transform)
+
+        # Automatic axis sharing and formatting
+        self._share_setup()
         self.format(mode=1)  # mode == 1 applies the rcShortParams
 
     def _draw_auto_legends_colorbars(self):
@@ -268,24 +303,6 @@ class Axes(maxes.Axes):
             self.legend(handles, **kwargs)
         self._auto_legend = {}
         self._auto_colorbar = {}
-
-    def _get_side_axes(self, side):
-        """Return the axes whose left, right, top, or bottom sides abutt
-        against the same row or column as this axes."""
-        s = side[0]
-        if s not in 'lrbt':
-            raise ValueError(f'Invalid side {side!r}.')
-        if not hasattr(self, 'get_subplotspec'):
-            return [self]
-        x = ('x' if s in 'lr' else 'y')
-        idx = (0 if s in 'lt' else 1)  # which side of range to test
-        coord = self._range_gridspec(x)[idx]  # side for a particular axes
-        axs = [ax for ax in self.figure._axes_main
-               if ax._range_gridspec(x)[idx] == coord]
-        if not axs:
-            return [self]
-        else:
-            return axs
 
     def _get_extent_axes(self, x):
         """Return the axes whose horizontal or vertical extent in the main
@@ -305,110 +322,93 @@ class Axes(maxes.Axes):
             pax = axs.pop(argfunc([ax._range_gridspec(y)[idx] for ax in axs]))
             return [pax, *axs]
 
-    def _get_title_props(self, abc=False, loc=None):
-        """Return the standardized location name, position keyword arguments,
-        and setting keyword arguments for the relevant title or a-b-c label at
-        location `loc`."""
-        # Location string and position coordinates
-        context = True
-        prefix = 'abc' if abc else 'title'
-        loc = _notNone(loc, rc.get(f'{prefix}.loc', context=True))
-        loc_prev = getattr(
-            self, '_' + ('abc' if abc else 'title')
-            + '_loc')  # old
-        if loc is None:
-            loc = loc_prev
-        elif loc_prev is not None and loc != loc_prev:
-            context = False
-        try:
-            loc = self._loc_translate(loc)
-        except KeyError:
-            raise ValueError(f'Invalid title or abc loc {loc!r}.')
+    def _get_side_axes(self, side):
+        """Return the axes whose left, right, top, or bottom sides abutt
+        against the same row or column as this axes."""
+        if side not in ('left', 'right', 'bottom', 'top'):
+            raise ValueError(f'Invalid side {side!r}.')
+        if not hasattr(self, 'get_subplotspec'):
+            return [self]
+        x = 'x' if side in ('left', 'right') else 'y'
+        idx = 0 if side in ('left', 'top') else 1  # which side to test
+        coord = self._range_gridspec(x)[idx]  # side for a particular axes
+        axs = [
+            ax for ax in self.figure._axes_main
+            if ax._range_gridspec(x)[idx] == coord
+        ]
+        if not axs:
+            return [self]
         else:
-            if loc in ('top', 'bottom', 'best') or not isinstance(loc, str):
-                raise ValueError(f'Invalid title or abc loc {loc!r}.')
+            return axs
 
-        # Existing object
-        if loc in ('left', 'right', 'center'):
-            if loc == 'center':
-                obj = self.title
-            else:
-                obj = getattr(self, '_' + loc + '_title')
-        elif loc in self._titles_dict:
-            obj = self._titles_dict[loc]
-        # New object
+    def _get_title(self, loc):
+        """Get the title at the corresponding location."""
+        if loc == 'abc':
+            return self._abc_label
         else:
-            context = False
-            width, height = self.get_size_inches()
-            if loc in ('upper center', 'lower center'):
-                x, ha = 0.5, 'center'
-            elif loc in ('upper left', 'lower left'):
-                xpad = rc['axes.titlepad'] / (72 * width)
-                x, ha = 1.5 * xpad, 'left'
-            elif loc in ('upper right', 'lower right'):
-                xpad = rc['axes.titlepad'] / (72 * width)
-                x, ha = 1 - 1.5 * xpad, 'right'
-            else:
-                raise RuntimeError  # should be impossible
-            if loc in ('upper left', 'upper right', 'upper center'):
-                ypad = rc['axes.titlepad'] / (72 * height)
-                y, va = 1 - 1.5 * ypad, 'top'
-            elif loc in ('lower left', 'lower right', 'lower center'):
-                ypad = rc['axes.titlepad'] / (72 * height)
-                y, va = 1.5 * ypad, 'bottom'
-            else:
-                raise RuntimeError  # should be impossible
-            obj = self.text(x, y, '', ha=ha, va=va, transform=self.transAxes)
-            obj.set_transform(self.transAxes)
+            return getattr(self, '_' + loc.replace(' ', '_') + '_title')
 
-        # Return location, object, and settings
-        # NOTE: Sometimes we load all properties from rc object, sometimes
-        # just changed ones. This is important if e.g. user calls in two
-        # lines ax.format(titleweight='bold') then ax.format(title='text')
-        kw = rc.fill({
-            'fontsize': f'{prefix}.size',
-            'weight': f'{prefix}.weight',
-            'color': f'{prefix}.color',
-            'border': f'{prefix}.border',
-            'linewidth': f'{prefix}.linewidth',
-            'fontfamily': 'font.family',
-        }, context=context)
-        if loc in ('left', 'right', 'center'):
-            kw.pop('border', None)
-            kw.pop('linewidth', None)
-        return loc, obj, kw
-
-    def _iter_panels(self, sides='lrbt'):
+    def _iter_panels(self, sides=('left', 'right', 'bottom', 'top')):
         """Return a list of axes and child panel axes."""
         axs = [self] if self.get_visible() else []
-        if not ({*sides} <= {*'lrbt'}):
+        if not set(sides) <= {'left', 'right', 'bottom', 'top'}:
             raise ValueError(f'Invalid sides {sides!r}.')
-        for s in sides:
-            for ax in getattr(self, '_' + s + 'panels'):
+        for side in sides:
+            for ax in getattr(self, '_' + side + '_panels'):
                 if not ax or not ax.get_visible():
                     continue
                 axs.append(ax)
         return axs
 
-    @staticmethod
-    def _loc_translate(loc, default=None):
+    def _loc_translate(self, loc, mode=None, allow_manual=True):
         """Return the location string `loc` translated into a standardized
         form."""
+        if mode == 'legend':
+            valid = tuple(LOC_TRANSLATE.values())
+        elif mode == 'panel':
+            valid = ('left', 'right', 'top', 'bottom')
+        elif mode == 'colorbar':
+            valid = (
+                'best', 'left', 'right', 'top', 'bottom',
+                'upper left', 'upper right', 'lower left', 'lower right',
+            )
+        elif mode in ('abc', 'title'):
+            valid = (
+                'left', 'center', 'right',
+                'upper left', 'upper center', 'upper right',
+                'lower left', 'lower center', 'lower right',
+            )
+        else:
+            raise ValueError(f'Invalid mode {mode!r}.')
+        loc_translate = {
+            key: value for key, value in LOC_TRANSLATE.items()
+            if value in valid
+        }
         if loc in (None, True):
-            loc = default
+            context = mode in ('abc', 'title')
+            loc = rc.get(mode + '.loc', context=context)
+            if loc is not None:
+                loc = self._loc_translate(loc, mode)
         elif isinstance(loc, (str, Integral)):
-            if loc in LOC_TRANSLATE.values():  # full name
+            if loc in loc_translate.values():  # full name
                 pass
             else:
                 try:
-                    loc = LOC_TRANSLATE[loc]
+                    loc = loc_translate[loc]
                 except KeyError:
-                    raise KeyError(f'Invalid location {loc!r}.')
-        elif np.iterable(loc) and len(loc) == 2 and all(
-                isinstance(l, Number) for l in loc):
+                    raise KeyError(f'Invalid {mode} location {loc!r}.')
+        elif (
+            allow_manual
+            and mode == 'legend'
+            and np.iterable(loc)
+            and len(loc) == 2
+            and all(isinstance(l, Number) for l in loc)
+        ):
             loc = np.array(loc)
         else:
-            raise KeyError(f'Invalid location {loc!r}.')
+            raise KeyError(f'Invalid {mode} location {loc!r}.')
+        if mode == 'colorbar' and loc == 'best':  # white lie
+            loc = 'lower right'
         return loc
 
     def _make_inset_locator(self, bounds, trans):
@@ -453,22 +453,20 @@ class Axes(maxes.Axes):
         # Place column and row labels on panels instead of axes -- works when
         # this is called on the main axes *or* on the relevant panel itself
         # TODO: Mixed figure panels with super labels? How does that work?
-        s = side[0]
-        side = SIDE_TRANSLATE[s]
-        if s == self._panel_side:
+        if side == self._panel_side:
             ax = self._panel_parent
         else:
             ax = self
-        paxs = getattr(ax, '_' + s + 'panels')
+        paxs = getattr(ax, '_' + side + '_panels')
         if not paxs:
             return ax
-        idx = (0 if s in 'lt' else -1)
+        idx = 0 if side in ('left', 'top') else -1
         pax = paxs[idx]
         kw = {}
-        obj = getattr(ax, '_' + s + 'label')
+        obj = getattr(ax, '_' + side + '_label')
         for key in ('color', 'fontproperties'):  # TODO: add to this?
             kw[key] = getattr(obj, 'get_' + key)()
-        pobj = getattr(pax, '_' + s + 'label')
+        pobj = getattr(pax, '_' + side + '_label')
         pobj.update(kw)
         text = obj.get_text()
         if text:
@@ -486,43 +484,29 @@ class Axes(maxes.Axes):
         # critical for bounding box calcs; not always clear whether draw() and
         # get_tightbbox() are called on the main axes or panel first
         if self._panel_side == 'top' and self._panel_parent:
-            ax, taxs = self._panel_parent, [self]
+            ax = self._panel_parent
         else:
-            ax, taxs = self, self._tpanels
-        if not taxs or not ax._title_above_panel:
+            ax = self
+        taxs = ax._top_panels
+        if not taxs or not ax._above_top_panels:
             tax = ax
         else:
             tax = taxs[0]
             tax._title_pad = ax._title_pad
-            for loc, obj in ax._titles_dict.items():
-                if not obj.get_text() or loc not in (
-                        'left', 'center', 'right'):
-                    continue
+            for loc in ('abc', 'left', 'center', 'right'):
                 kw = {}
-                loc, tobj, _ = tax._get_title_props(loc=loc)
+                obj = ax._get_title(loc)
+                if not obj.get_text():
+                    continue
+                tobj = tax._get_title(loc)
                 for key in ('text', 'color', 'fontproperties'):  # add to this?
                     kw[key] = getattr(obj, 'get_' + key)()
                 tobj.update(kw)
-                tax._titles_dict[loc] = tobj
                 obj.set_text('')
-
-        # Push title above tick marks -- this is known matplotlib problem,
-        # but especially annoying with top panels!
-        # TODO: Make sure this is robust. Seems 'default' is returned usually
-        # when tick label sides is actually *both*. Also makes sure axis is
-        # visible; if not, this is a filled cbar/legend, no padding needed
-        pad = 0
-        pos = tax.xaxis.get_ticks_position()
-        labs = tax.xaxis.get_ticklabels()
-        if pos == 'default' or (pos == 'top' and not len(labs)) or (
-                pos == 'unknown' and tax._panel_side == 'top'
-                and not len(labs) and tax.xaxis.get_visible()):
-            pad = tax.xaxis.get_tick_padding()
-        tax._set_title_offset_trans(self._title_pad + pad)
 
     def _sharex_setup(self, sharex, level=None):
         """Configure x-axis sharing for panels. Main axis sharing is done in
-        `~CartesianAxes._sharex_setup`."""
+        `~XYAxes._sharex_setup`."""
         if level is None:
             level = self.figure._sharex
         if level not in range(4):
@@ -533,14 +517,14 @@ class Axes(maxes.Axes):
                 '2 (share limits and hide axis labels), or '
                 '3 (share limits and hide axis and tick labels).'
             )
-        self._share_short_axis(sharex, 'l', level)
-        self._share_short_axis(sharex, 'r', level)
-        self._share_long_axis(sharex, 'b', level)
-        self._share_long_axis(sharex, 't', level)
+        self._share_short_axis(sharex, 'left', level)
+        self._share_short_axis(sharex, 'right', level)
+        self._share_long_axis(sharex, 'bottom', level)
+        self._share_long_axis(sharex, 'top', level)
 
     def _sharey_setup(self, sharey, level=None):
         """Configure y-axis sharing for panels. Main axis sharing is done in
-        `~CartesianAxes._sharey_setup`."""
+        `~XYAxes._sharey_setup`."""
         if level is None:
             level = self.figure._sharey
         if level not in range(4):
@@ -551,10 +535,10 @@ class Axes(maxes.Axes):
                 '2 (share limits and hide axis labels), or '
                 '3 (share limits and hide axis and tick labels).'
             )
-        self._share_short_axis(sharey, 'b', level)
-        self._share_short_axis(sharey, 't', level)
-        self._share_long_axis(sharey, 'l', level)
-        self._share_long_axis(sharey, 'r', level)
+        self._share_short_axis(sharey, 'bottom', level)
+        self._share_short_axis(sharey, 'top', level)
+        self._share_long_axis(sharey, 'left', level)
+        self._share_long_axis(sharey, 'right', level)
 
     def _share_setup(self):
         """Automatically configure axis sharing based on the horizontal and
@@ -569,23 +553,23 @@ class Axes(maxes.Axes):
         if not self._panel_side:  # this is a main axes
             # Top and bottom
             bottom = self
-            paxs = shared(self._bpanels)
+            paxs = shared(self._bottom_panels)
             if paxs:
                 bottom = paxs[-1]
                 for iax in (self, *paxs[:-1]):
                     # parent is *bottom-most* panel
                     iax._sharex_setup(bottom, 3)
-            paxs = shared(self._tpanels)
+            paxs = shared(self._top_panels)
             for iax in paxs:
                 iax._sharex_setup(bottom, 3)
             # Left and right
             left = self
-            paxs = shared(self._lpanels)
+            paxs = shared(self._left_panels)
             if paxs:
                 left = paxs[0]
                 for iax in (*paxs[1:], self):
                     iax._sharey_setup(left, 3)  # parent is *bottom-most* panel
-            paxs = shared(self._rpanels)
+            paxs = shared(self._right_panels)
             for iax in paxs:
                 iax._sharey_setup(left, 3)
 
@@ -605,10 +589,9 @@ class Axes(maxes.Axes):
         along an external subplot."""
         if share is None or self._panel_side:  # not None
             return
-        s = side[0]
-        axis = 'x' if s in 'lr' else 'y'
-        caxs = getattr(self, '_' + s + 'panels')
-        paxs = getattr(share, '_' + s + 'panels')
+        axis = 'x' if side in ('left', 'right') else 'y'
+        caxs = getattr(self, '_' + side + '_panels')
+        paxs = getattr(share, '_' + side + '_panels')
         caxs = [pax for pax in caxs if not pax._panel_filled]
         paxs = [pax for pax in paxs if not pax._panel_filled]
         for cax, pax in zip(caxs, paxs):  # may be uneven
@@ -621,14 +604,13 @@ class Axes(maxes.Axes):
         # sharing with main subplot, not other subplots
         if share is None or self._panel_side:
             return
-        s = side[0]
-        axis = 'x' if s in 'tb' else 'y'
-        paxs = getattr(self, '_' + s + 'panels')
+        axis = 'x' if side in ('top', 'bottom') else 'y'
+        paxs = getattr(self, '_' + side + '_panels')
         paxs = [pax for pax in paxs if not pax._panel_filled]
         for pax in paxs:
             getattr(pax, '_share' + axis + '_setup')(share, level)
 
-    def _update_axislabels(self, x='x', **kwargs):
+    def _update_axis_labels(self, x='x', **kwargs):
         """Apply axis labels to the relevant shared axis. If spanning
         labels are toggled this keeps the labels synced for all subplots in
         the same row or column. Label positions will be adjusted at draw-time
@@ -648,51 +630,98 @@ class Axes(maxes.Axes):
         # Apply to spanning axes and their panels
         axs = [ax]
         if getattr(ax.figure, '_span' + x):
-            s = axis.get_label_position()[0]
-            if s in 'lb':
-                axs = ax._get_side_axes(s)
+            side = axis.get_label_position()
+            if side in ('left', 'bottom'):
+                axs = ax._get_side_axes(side)
         for ax in axs:
-            getattr(ax, x + 'axis').label.update(kwargs)  # apply to main axes
+            axis = getattr(ax, x + 'axis')
+            axis.label.update(kwargs)  # apply to main axes
             pax = getattr(ax, '_share' + x)
             if pax is not None:  # apply to panel?
-                getattr(pax, x + 'axis').label.update(kwargs)
+                axis = getattr(pax, x + 'axis')
+                axis.label.update(kwargs)
 
-    def _update_title(self, obj, **kwargs):
-        """Redraw the title if updating with the input keyword arguments
-        failed."""
-        # Try to just return updated object, redraw may be necessary
-        # WARNING: Making text instances invisible seems to mess up tight
-        # bounding box calculations and cause other issues. Just reset text.
-        keys = ('border', 'lw', 'linewidth', 'bordercolor', 'invert')
-        kwextra = {key: value for key, value in kwargs.items() if key in keys}
-        kwargs = {key: value for key,
-                  value in kwargs.items() if key not in keys}
-        obj.update(kwargs)
-        if kwextra:
-            obj.set_text('')
-        else:
-            return obj
-        # Get properties from old object
-        for key in ('ha', 'va', 'color', 'transform', 'fontproperties'):
-            kwextra[key] = getattr(obj, 'get_' + key)()  # copy over attrs
-        text = kwargs.pop('text', obj.get_text())
-        x, y = kwargs.pop('position', (None, None))
-        pos = obj.get_position()
-        x = _notNone(kwargs.pop('x', x), pos[0])
-        y = _notNone(kwargs.pop('y', y), pos[1])
-        return self.text(x, y, text, **kwextra)
+    def _update_title_position(self, renderer):
+        """Update the position of proplot inset titles and builtin
+        matplotlib titles."""
+        # Custom inset titles
+        width, height = self.get_size_inches()
+        for loc in (
+            'abc',
+            'upper left', 'upper right', 'upper center',
+            'lower left', 'lower right', 'lower center',
+        ):
+            obj = self._get_title(loc)
+            if loc == 'abc':
+                loc = self._abc_loc
+                if loc in ('left', 'right', 'center'):
+                    continue
+            if loc in ('upper center', 'lower center'):
+                x = 0.5
+            elif loc in ('upper left', 'lower left'):
+                pad = rc['axes.titlepad'] / (72 * width)
+                x = 1.5 * pad
+            elif loc in ('upper right', 'lower right'):
+                pad = rc['axes.titlepad'] / (72 * width)
+                x = 1 - 1.5 * pad
+            if loc in ('upper left', 'upper right', 'upper center'):
+                pad = rc['axes.titlepad'] / (72 * height)
+                y = 1 - 1.5 * pad
+            elif loc in ('lower left', 'lower right', 'lower center'):
+                pad = rc['axes.titlepad'] / (72 * height)
+                y = 1.5 * pad
+            obj.set_position((x, y))
+
+        # Push title above tick marks, since builtin algorithm used to offset
+        # the title seems to ignore them. This is known matplotlib problem but
+        # especially annoying with top panels.
+        # TODO: Make sure this is robust. Seems 'default' is returned usually
+        # when tick label sides is actually *both*. Also makes sure axis is
+        # visible; if not, this is a filled cbar/legend, no padding needed
+        pad = self._title_pad
+        pos = self.xaxis.get_ticks_position()
+        fmt = self.xaxis.get_major_formatter()
+        if (
+            pos == 'default'
+            or (pos == 'top' and isinstance(fmt, mticker.NullFormatter))
+            or (
+                pos == 'unknown'
+                and self._panel_side == 'top'
+                and isinstance(fmt, mticker.NullFormatter)
+                and self.xaxis.get_visible()
+            )
+        ):
+            pad += self.xaxis.get_tick_padding()
+        pad_active = self._title_pad_active
+        if pad_active is None or not np.isclose(pad_active, pad):
+            # Avoid doing this on every draw in case it is expensive to change
+            # the title Text transforms every time.
+            self._title_pad_active = pad
+            self._set_title_offset_trans(pad)
+
+        # Adjust the title positions with builtin algorithm and match
+        # the a-b-c text to the relevant position.
+        super()._update_title_position(renderer)
+        if self._abc_loc in ('left', 'center', 'right'):
+            title = self._get_title(self._abc_loc)
+            self._abc_label.set_position(title.get_position())
+            self._abc_label.set_transform(
+                self.transAxes + self.titleOffsetTrans
+            )
 
     def format(
-            self, *, title=None, top=None,
-            figtitle=None, suptitle=None, rowlabels=None, collabels=None,
-            leftlabels=None, rightlabels=None,
-            toplabels=None, bottomlabels=None,
-            llabels=None, rlabels=None, tlabels=None, blabels=None,
-            **kwargs):
+        self, *, title=None, abovetop=None,
+        figtitle=None, suptitle=None, rowlabels=None, collabels=None,
+        leftlabels=None, rightlabels=None, toplabels=None, bottomlabels=None,
+        llabels=None, rlabels=None, tlabels=None, blabels=None,
+        ltitle=None, ctitle=None, rtitle=None,
+        ultitle=None, uctitle=None, urtitle=None,
+        lltitle=None, lctitle=None, lrtitle=None,
+    ):
         """
         Modify the axes title(s), the a-b-c label, row and column labels, and
-        the figure title. Called by `CartesianAxes.format`,
-        `ProjectionAxes.format`, and `PolarAxes.format`.
+        the figure title. Called by `XYAxes.format`,
+        `ProjAxes.format`, and `PolarAxes.format`.
 
         Parameters
         ----------
@@ -710,8 +739,8 @@ class Axes(maxes.Axes):
             :rc:`abc.style`.
         abcloc, titleloc : str, optional
             Strings indicating the location for the a-b-c label and
-            main title. The following locations keys are valid. Defaults are
-            :rc:`abc.loc` and :rc:`title.loc`.
+            main title. The following locations keys are valid (defaults are
+            :rc:`abc.loc` and :rc:`title.loc`):
 
             ========================  ============================
             Location                  Valid keys
@@ -732,24 +761,24 @@ class Axes(maxes.Axes):
             positioned inside the axes. This can help them stand out on top
             of artists plotted inside the axes. Defaults are
             :rc:`abc.border` and :rc:`title.border`
-        ltitle, rtitle, ultitle, uctitle, urtitle, lltitle, lctitle, lrtitle \
-: str, optional
-            Axes titles in particular positions. This lets you specify multiple
-            "titles" for each subplots. See the `abcloc` keyword.
-        top : bool, optional
-            Whether to try to put title and a-b-c label above the top subplot
-            panel (if it exists), or to always put them on the main subplot.
+        abovetop : bool, optional
+            Whether to try to put the title and a-b-c label above the top panel
+            (if it exists), or to always put them above the main subplot.
             Default is ``True``.
-        rowlabels, colllabels : list of str, optional
+        ltitle, ctitle, rtitle, ultitle, uctitle, urtitle, lltitle, lctitle, \
+lrtitle : str, optional
+            Axes titles in specific positions (see `abcloc`). This lets you
+            specify multiple title-like labels for a single subplot.
+        leftlabels, rightlabels, toplabels, bottomlabels : list of str, \
+optional
+            Labels for the subplots lying along the left, right, top, and
+            bottom edges of the figure. The length of each list must match
+            the number of subplots along the corresponding edge.
+        rowlabels, collabels : list of str, optional
             Aliases for `leftlabels`, `toplabels`.
-        llabels, tlabels, rlabels, blabels : list of str, optional
+        llabels, rlabels, tlabels, blabels : list of str, optional
             Aliases for `leftlabels`, `toplabels`, `rightlabels`,
             `bottomlabels`.
-        leftlabels, toplabels, rightlabels, bottomlabels : list of str, \
-optional
-            The subplot row and column labels. If list, length must match
-            the number of subplots on the left, top, right, or bottom edges
-            of the figure.
         figtitle, suptitle : str, optional
             The figure "super" title, centered between the left edge of
             the lefmost column of subplots and the right edge of the rightmost
@@ -760,24 +789,26 @@ optional
         Note
         ----
         The `abc`, `abcstyle`, `abcloc`, and `titleloc` keyword arguments
-        are actually rc configuration settings that are temporarily
-        changed by the call to `~Axes.context`. They are documented here
-        because it is extremely common to change them with `~Axes.format`.
-        They also appear in the tables in the `~proplot.rctools` documention.
+        are actually :ref:`configuration settings <Configuring proplot>`
+        that are temporarily changed by the call to
+        `~proplot.rctools.rc_configurator.context`.
+        They are documented here because it is very common to change
+        them with `~Axes.format`. They also appear in the tables in the
+        `~proplot.rctools` documention.
 
         See also
         --------
-        :py:obj:`Axes.context`,
-        :py:obj:`XYAxes.format`,
-        :py:obj:`ProjAxes.format`,
-        :py:obj:`PolarAxes.format`,
+        `~proplot.rctools.rc_configurator.context`,
+        `XYAxes.format`,
+        `ProjAxes.format`,
+        `PolarAxes.format`
         """
         # Figure patch (for some reason needs to be re-asserted even if
         # declared before figure is drawn)
         kw = rc.fill({'facecolor': 'figure.facecolor'}, context=True)
         self.figure.patch.update(kw)
-        if top is not None:
-            self._title_above_panel = top
+        if abovetop is not None:
+            self._above_top_panels = abovetop
         pad = rc.get('axes.titlepad', context=True)
         if pad is not None:
             self._set_title_offset_trans(pad)
@@ -805,6 +836,7 @@ optional
             }, context=True)
         if suptitle or kw:
             fig._update_figtitle(suptitle, **kw)
+
         # Labels
         llabels = _notNone(
             rowlabels, leftlabels, llabels, None,
@@ -823,8 +855,9 @@ optional
             names=('bottomlabels', 'blabels')
         )
         for side, labels in zip(
-                ('left', 'right', 'top', 'bottom'),
-                (llabels, rlabels, tlabels, blabels)):
+            ('left', 'right', 'top', 'bottom'),
+            (llabels, rlabels, tlabels, blabels)
+        ):
             kw = rc.fill({
                 'fontsize': side + 'label.size',
                 'weight': side + 'label.weight',
@@ -834,17 +867,28 @@ optional
             if labels or kw:
                 fig._update_labels(self, side, labels, **kw)
 
+        # Helper function
+        def sanitize_kw(kw, loc):
+            kw = kw.copy()
+            if loc in ('left', 'right', 'center'):
+                kw.pop('border', None)
+                kw.pop('borderwidth', None)
+            return kw
+
         # A-b-c labels
-        titles_dict = self._titles_dict
+        abc = False
         if not self._panel_side:
-            # Location and text
+            # Properties
+            kw = rc.fill({
+                'fontsize': 'abc.size',
+                'weight': 'abc.weight',
+                'color': 'abc.color',
+                'border': 'abc.border',
+                'borderwidth': 'abc.borderwidth',
+                'fontfamily': 'font.family',
+            }, context=True)
+            # Label format
             abcstyle = rc.get('abc.style', context=True)  # 1st run, or changed
-            if 'abcformat' in kwargs:  # super sophisticated deprecation system
-                abcstyle = kwargs.pop('abcformat')
-                _warn_proplot(
-                    f'rc setting "abcformat" is deprecated. '
-                    f'Please use "abcstyle".'
-                )
             if abcstyle and self.number is not None:
                 if not isinstance(abcstyle, str) or (
                         abcstyle.count('a') != 1 and abcstyle.count('A') != 1):
@@ -857,63 +901,71 @@ optional
                 if 'A' in abcstyle:
                     text = text.upper()
                 self._abc_text = text
-            # Apply new settings
-            # Also if a-b-c label was moved, remove previous one and update
-            # text on new one, in case self._abc_text has not changed.
-            loc, obj, kw = self._get_title_props(abc=True)
-            iloc = self._abc_loc
-            obj = self._update_title(obj, **kw)
-            titles_dict[loc] = obj
-            if iloc is not None and loc != iloc:
-                self.abc.set_text('')
-                obj.set_text(self._abc_text)
-            self.abc = obj
-            self._abc_loc = loc
-            # Toggle visibility
-            # NOTE: If abc is a matplotlib 'title' attribute, making it
-            # invisible messes stuff up. Just set text to empty.
+            # Apply text
+            obj = self._abc_label
             abc = rc.get('abc', context=True)
             if abc is not None:
                 obj.set_text(self._abc_text if bool(abc) else '')
+            # Apply new settings
+            loc = self._loc_translate(None, 'abc')
+            loc_prev = self._abc_loc
+            if loc is None:
+                loc = loc_prev
+            kw = sanitize_kw(kw, loc)
+            if loc_prev is None or loc != loc_prev:
+                obj_ref = self._get_title(loc)
+                obj.set_ha(obj_ref.get_ha())
+                obj.set_va(obj_ref.get_va())
+                obj.set_transform(obj_ref.get_transform())
+                obj.set_position(obj_ref.get_position())
+            obj.update(kw)
+            self._abc_loc = loc
 
         # Titles
         # Tricky because we have to reconcile two workflows:
         # 1. title='name' and titleloc='position'
         # 2. ltitle='name', rtitle='name', etc., arbitrarily many titles
-        # First update existing titles
-        # NOTE: _update_title should never return new objects unless called
-        # with *inner* titles... *outer* titles will just refresh, so we
-        # don't need to re-assign the attributes or anything.
-        loc, obj, kw = self._get_title_props()
-        if kw:
-            for iloc, iobj in titles_dict.items():
-                if iloc is self._abc_loc:
-                    continue
-                titles_dict[iloc] = self._update_title(iobj, **kw)
+        kw = rc.fill({
+            'fontsize': 'title.size',
+            'weight': 'title.weight',
+            'color': 'title.color',
+            'border': 'title.border',
+            'borderwidth': 'title.borderwidth',
+            'fontfamily': 'font.family',
+        }, context=True)
         # Workflow 2, want this to come first so workflow 1 gets priority
-        for ikey, ititle in kwargs.items():
-            if not ikey[-5:] == 'title':
-                raise TypeError(
-                    f'format() got an unexpected keyword argument {ikey!r}.'
-                )
-            iloc, iobj, ikw = self._get_title_props(loc=ikey[:-5])
+        for iloc, ititle in zip(
+            ('l', 'r', 'c', 'ul', 'uc', 'ur', 'll', 'lc', 'lr'),
+            (
+                ltitle, rtitle, ctitle,
+                ultitle, uctitle, urtitle, lltitle, lctitle, lrtitle
+            ),
+        ):
+            iloc = self._loc_translate(iloc, 'title')
+            ikw = sanitize_kw(kw, iloc)
+            iobj = self._get_title(iloc)
+            iobj.update(ikw)
             if ititle is not None:
-                ikw['text'] = ititle
-            if ikw:
-                titles_dict[iloc] = self._update_title(iobj, **ikw)
+                iobj.set_text(ititle)
+
         # Workflow 1, make sure that if user calls ax.format(title='Title')
         # *then* ax.format(titleloc='left') it copies over the text.
-        iloc = self._title_loc
-        if iloc is not None and loc != iloc:
-            iobj = titles_dict[iloc]
+        # Get current and previous location, prevent overwriting abc label
+        loc = self._loc_translate(None, 'title')
+        loc_prev = self._title_loc
+        if loc is None:  # never None first run
+            loc = loc_prev  # never None on subsequent runs
+        kw = sanitize_kw(kw, loc)
+        obj = self._get_title(loc)
+        if loc_prev is not None and loc != loc_prev:
+            obj_prev = self._get_title(loc_prev)
             if title is None:
-                title = iobj.get_text()
-            iobj.set_text('')
-        self._title_loc = loc  # assigns default loc on first run
+                title = obj_prev.get_text()
+            obj_prev.set_text('')
+        obj.update(kw)
         if title is not None:
-            kw['text'] = title
-        if kw:
-            titles_dict[loc] = self._update_title(obj, **kw)
+            obj.set_text(title)
+        self._title_loc = loc  # assigns default loc on first run
 
     def area(self, *args, **kwargs):
         """Alias for `~matplotlib.axes.Axes.fill_between`."""
@@ -1143,7 +1195,7 @@ optional
         %(colorbar_args)s
         loc : str, optional
             The colorbar location. Default is :rc:`colorbar.loc`. The
-            following location keys are valid.
+            following location keys are valid:
 
             ==================  ==================================
             Location            Valid keys
@@ -1191,13 +1243,10 @@ optional
         %(colorbar_kwargs)s
         """
         # TODO: add option to pad inset away from axes edge!
+        # TODO: get "best" colorbar location from legend algorithm.
         kwargs.update({'edgecolor': edgecolor, 'linewidth': linewidth})
         if loc != '_fill':
-            loc = self._loc_translate(loc, rc['colorbar.loc'])
-        if not isinstance(loc, str):  # e.g. 2-tuple or ndarray
-            raise ValueError(f'Invalid colorbar location {loc!r}.')
-        if loc == 'best':  # white lie
-            loc = 'lower right'
+            loc = self._loc_translate(loc, 'colorbar')
 
         # Generate panel
         if loc in ('left', 'right', 'top', 'bottom'):
@@ -1312,19 +1361,19 @@ optional
             xspace /= height  # space for labels
             if loc == 'upper right':
                 bounds = (1 - xpad - cblength, 1 - ypad - cbwidth)
-                fbounds = (1 - 2 * xpad - cblength,
-                           1 - 2 * ypad - cbwidth - xspace)
+                fbounds = (
+                    1 - 2 * xpad - cblength,
+                    1 - 2 * ypad - cbwidth - xspace
+                )
             elif loc == 'upper left':
                 bounds = (xpad, 1 - ypad - cbwidth)
                 fbounds = (0, 1 - 2 * ypad - cbwidth - xspace)
             elif loc == 'lower left':
                 bounds = (xpad, ypad + xspace)
                 fbounds = (0, 0)
-            elif loc == 'lower right':
+            else:
                 bounds = (1 - xpad - cblength, ypad + xspace)
                 fbounds = (1 - 2 * xpad - cblength, 0)
-            else:
-                raise ValueError(f'Invalid colorbar location {loc!r}.')
             bounds = (bounds[0], bounds[1], cblength, cbwidth)
             fbounds = (fbounds[0], fbounds[1],
                        2 * xpad + cblength, 2 * ypad + cbwidth + xspace)
@@ -1534,7 +1583,7 @@ optional
         zoom=True, zoom_kw=None, **kwargs
     ):
         """
-        Return an inset `CartesianAxes`. This is similar to the builtin
+        Return an inset `XYAxes`. This is similar to the builtin
         `~matplotlib.axes.Axes.inset_axes` but includes some extra options.
 
         Parameters
@@ -1666,17 +1715,15 @@ optional
         ----------
         %(legend_args)s
         loc : int or str, optional
-            The legend location or panel location. The following location keys
-            are valid. Note that if a panel does not exist, it will be
-            generated on-the-fly.
+            The legend location. The following location keys are valid:
 
             ==================  =======================================
             Location            Valid keys
             ==================  =======================================
-            left panel          ``'left'``, ``'l'``
-            right panel         ``'right'``, ``'r'``
-            bottom panel        ``'bottom'``, ``'b'``
-            top panel           ``'top'``, ``'t'``
+            outer left          ``'left'``, ``'l'``
+            outer right         ``'right'``, ``'r'``
+            outer bottom        ``'bottom'``, ``'b'``
+            outer top           ``'top'``, ``'t'``
             "best" inset        ``'best'``, ``'inset'``, ``'i'``, ``0``
             upper right inset   ``'upper right'``, ``'ur'``, ``1``
             upper left inset    ``'upper left'``, ``'ul'``, ``2``
@@ -1690,14 +1737,14 @@ optional
             ==================  =======================================
 
         width : float or str, optional
-            The space allocated for outer legends. This does nothing
-            if :rcraw:`tight` is ``True``. Units are interpreted by
-            `~proplot.utils.units`.
+            For outer legends only. The space allocated for the legend box.
+            This does nothing if :rcraw:`tight` is ``True``. Units are
+            interpreted by `~proplot.utils.units`.
         space : float or str, optional
-            The space between the axes and the legend for outer legends.
-            Units are interpreted by `~proplot.utils.units`.
+            For outer legends only. The space between the axes and the legend
+            box. Units are interpreted by `~proplot.utils.units`.
             When :rcraw:`tight` is ``True``, this is adjusted automatically.
-            Otherwise, defaut is :rc:`subplots.panelspace`.
+            Otherwise, the default is :rc:`subplots.panelpad`.
         %(legend_kwargs)s
 
         Other parameters
@@ -1705,7 +1752,8 @@ optional
         *args, **kwargs
             Passed to `~proplot.wrappers.legend_wrapper`.
         """
-        loc = self._loc_translate(loc, width=width, space=space)
+        if loc != '_fill':
+            loc = self._loc_translate(loc, 'legend')
         if isinstance(loc, np.ndarray):
             loc = loc.tolist()
 
@@ -1726,9 +1774,10 @@ optional
             # Try to make handles and stuff flush against the axes edge
             kwargs.setdefault('borderaxespad', 0)
             frameon = _notNone(
-                kwargs.get(
-                    'frame', None), kwargs.get(
-                    'frameon', None), rc['legend.frameon'])
+                kwargs.get('frame', None),
+                kwargs.get('frameon', None),
+                rc['legend.frameon']
+            )
             if not frameon:
                 kwargs.setdefault('borderpad', 0)
             # Apply legend location
@@ -1773,6 +1822,7 @@ optional
         `~proplot.axes.Axes`
             The panel axes.
         """
+        side = self._loc_translate(side, 'panel')
         return self.figure._add_axes_panel(self, side, **kwargs)
 
     @_concatenate_docstrings
@@ -2211,6 +2261,14 @@ optional
         """Alias for `~matplotlib.axes.Axes.violinplot`."""
         return self.violinplot(*args, **kwargs)
 
+    # For consistency with _left_title, _upper_left_title, etc.
+    _center_title = property(lambda self: self.title)
+
+    # ABC location
+    abc = property(lambda self: getattr(
+        self, '_' + self._abc_loc.replace(' ', '_') + '_title'
+    ))
+
     #: Alias for `~Axes.panel_axes`.
     panel = panel_axes
 
@@ -2320,7 +2378,7 @@ arg : function, (function, function), or `~matplotlib.scale.ScaleBase`
 _alt_doc = """
 Return an axes in the same location as this one but whose %(x)s axis is on
 the %(x2)s. This is an alias and more intuitive name for
-`~CartesianAxes.twin%(y)s`, which generates two *%(x)s* axes with
+`~XYAxes.twin%(y)s`, which generates two *%(x)s* axes with
 a shared ("twin") *%(y)s* axes.
 
 Parameters
@@ -2330,7 +2388,7 @@ Parameters
 
 Note
 ----
-This function enforces the following settngs.
+This function enforces the following settings:
 
 * Places the old *%(x)s* axis on the %(x1)s and the new *%(x)s* axis
   on the %(x2)s.
@@ -2348,12 +2406,14 @@ Mimics the builtin `~matplotlib.axes.Axes.twin%(y)s` method.
 
 Parameters
 ----------
+%(xargs)s : optional
+    Passed to `Axes.format`.
 %(args)s : optional
     Prepended with ``'%(x)s'`` and passed to `Axes.format`.
 
 Note
 ----
-This function enforces the following settngs.
+This function enforces the following settings:
 
 * Places the old *%(x)s* axis on the %(x1)s and the new *%(x)s* axis
   on the %(x2)s.
@@ -2374,9 +2434,9 @@ def _parse_alt(x, kwargs):
         if key in _twin_kwargs:
             kw_out[x + key] = value
         elif key[0] == x and key[1:] in _twin_kwargs:
-            _warn_proplot(
-                f'Twin axis keyword arg {key!r} is deprecated. '
-                f'Use {key[1:]!r} instead.')
+            # NOTE: We permit both e.g. 'locator' and 'xlocator' because
+            # while is more elegant and consistent with e.g. colorbar() syntax
+            # but latter is more consistent and easier to use when refactoring.
             kw_out[key] = value
         elif key in _rc_nodots:
             kw_out[key] = value
@@ -2489,8 +2549,10 @@ class XYAxes(Axes):
         # NOTE: Rotation is done *before* horizontal/vertical alignment,
         # cannot change alignment with set_tick_params. Must apply to text
         # objects. fig.autofmt_date calls subplots_adjust, so cannot use it.
-        if (not isinstance(self.xaxis.converter, mdates.DateConverter)
-                or self._datex_rotated):
+        if (
+            not isinstance(self.xaxis.converter, mdates.DateConverter)
+            or self._datex_rotated
+        ):
             return
         rotation = rc['axes.formatter.timerotation']
         kw = {'rotation': rotation}
@@ -2653,7 +2715,8 @@ class XYAxes(Axes):
         """
         Modify the *x* and *y* axis labels, tick locations, tick labels,
         axis scales, spine settings, and more. Unknown keyword arguments
-        are passed to `Axes.format` and `Axes.context`.
+        are passed to `Axes.format` and
+        `~proplot.rctools.rc_configurator.context`.
 
         Parameters
         ----------
@@ -2799,7 +2862,7 @@ class XYAxes(Axes):
 
         See also
         --------
-        :py:obj:`Axes.format`, :py:obj:`Axes.context`
+        `Axes.format`, `~rctools.rc_configurator.context`
         """
         rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
         with rc.context(rc_kw, mode=rc_mode):
@@ -3000,7 +3063,7 @@ class XYAxes(Axes):
                 if linewidth is not None:
                     kw['linewidth'] = linewidth
                 sides = ('bottom', 'top') if x == 'x' else ('left', 'right')
-                spines = [self.spines[s] for s in sides]
+                spines = [self.spines[side] for side in sides]
                 for spine, side in zip(spines, sides):
                     # Line properties
                     # Override if we're settings spine bounds
@@ -3065,10 +3128,11 @@ class XYAxes(Axes):
                             kw_ticks['size'] *= rc['ticklenratio']
                     # Grid style and toggling
                     if igrid is not None:
-                        # toggle with special global props
                         axis.grid(igrid, which=which)
                     if which == 'major':
-                        kw_grid = rc.fill(_grid_dict('grid'), context=True)
+                        kw_grid = rc.fill(
+                            _grid_dict('grid'), context=True
+                        )
                     else:
                         kw_grid = rc.fill(
                             _grid_dict('gridminor'), context=True
@@ -3185,7 +3249,7 @@ class XYAxes(Axes):
                     kw['color'] = color
                 kw.update(label_kw)
                 if kw:  # NOTE: initially keep spanning labels off
-                    self._update_axislabels(x, **kw)
+                    self._update_axis_labels(x, **kw)
 
                 # Major and minor locator
                 # NOTE: Parts of API (dualxy) rely on minor tick toggling
@@ -3246,7 +3310,8 @@ class XYAxes(Axes):
                         locator = axis.get_major_locator()
                         formatter_kw.setdefault('locator', locator)
                     formatter = axistools.Formatter(
-                        formatter, date=date, **formatter_kw)
+                        formatter, date=date, **formatter_kw
+                    )
                     axis.set_major_formatter(formatter)
 
                 # Ensure no out-of-bounds ticks; set_smart_bounds() can fail
@@ -3279,7 +3344,7 @@ class XYAxes(Axes):
             super().format(**kwargs)
 
     def altx(self, **kwargs):
-        """Docstring is replaced below."""
+        """This docstring is replaced below."""
         # Cannot wrap twiny() because we want to use XYAxes, not
         # matplotlib Axes. Instead use hidden method _make_twin_axes.
         # See https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_subplots.py  # noqa
@@ -3299,7 +3364,7 @@ class XYAxes(Axes):
         return ax
 
     def alty(self, **kwargs):
-        """Docstring is replaced below."""
+        """This docstring is replaced below."""
         if self._alty_child or self._alty_parent:
             raise RuntimeError('No more than *two* twin axes are allowed.')
         with self.figure._authorize_add_subplot():
@@ -3316,7 +3381,7 @@ class XYAxes(Axes):
         return ax
 
     def dualx(self, arg, **kwargs):
-        """Docstring is replaced below."""
+        """This docstring is replaced below."""
         # NOTE: Matplotlib 3.1 has a 'secondary axis' feature. For the time
         # being, our version is more robust (see FuncScale) and simpler, since
         # we do not create an entirely separate _SecondaryAxis class.
@@ -3326,7 +3391,7 @@ class XYAxes(Axes):
         return ax
 
     def dualy(self, arg, **kwargs):
-        """Docstring is replaced below."""
+        """This docstring is replaced below."""
         ax = self.alty(**kwargs)
         self._dualy_arg = arg
         self._dualy_overrides()
@@ -3359,11 +3424,11 @@ class XYAxes(Axes):
         return super().get_tightbbox(renderer, *args, **kwargs)
 
     def twinx(self):
-        """Docstring is replaced below."""
+        """This docstring is replaced below."""
         return self.alty()
 
     def twiny(self):
-        """Docstring is replaced below."""
+        """This docstring is replaced below."""
         return self.altx()
 
     # Add documentation
@@ -3371,27 +3436,35 @@ class XYAxes(Axes):
         'x': 'x', 'x1': 'bottom', 'x2': 'top',
         'y': 'y', 'y1': 'left', 'y2': 'right',
         'args': ', '.join(_twin_kwargs),
+        'xargs': ', '.join('x' + key for key in _twin_kwargs),
     }
     alty.__doc__ = _alt_doc % {
         'x': 'y', 'x1': 'left', 'x2': 'right',
         'y': 'x', 'y1': 'bottom', 'y2': 'top',
         'args': ', '.join(_twin_kwargs),
+        'xargs': ', '.join('y' + key for key in _twin_kwargs),
     }
     twinx.__doc__ = _twin_doc % {
         'x': 'y', 'x1': 'left', 'x2': 'right',
         'y': 'x', 'y1': 'bottom', 'y2': 'top',
         'args': ', '.join(_twin_kwargs),
+        'xargs': ', '.join('y' + key for key in _twin_kwargs),
     }
     twiny.__doc__ = _twin_doc % {
         'x': 'x', 'x1': 'bottom', 'x2': 'top',
         'y': 'y', 'y1': 'left', 'y2': 'right',
         'args': ', '.join(_twin_kwargs),
+        'xargs': ', '.join('x' + key for key in _twin_kwargs),
     }
     dualx.__doc__ = _dual_doc % {
-        'x': 'x', 'args': ', '.join(_twin_kwargs)
+        'x': 'x',
+        'args': ', '.join(_twin_kwargs),
+        'xargs': ', '.join('x' + key for key in _twin_kwargs),
     }
     dualy.__doc__ = _dual_doc % {
-        'x': 'y', 'args': ', '.join(_twin_kwargs)
+        'x': 'y',
+        'args': ', '.join(_twin_kwargs),
+        'xargs': ', '.join('y' + key for key in _twin_kwargs),
     }
 
 
@@ -3432,8 +3505,9 @@ class PolarAxes(Axes, mproj.PolarAxes):
         """
         Modify radial gridline locations, gridline labels, limits, and more.
         Unknown keyword arguments are passed to `Axes.format` and
-        `Axes.context`. All ``theta`` arguments are specified in *degrees*, not
-        radians. The below parameters are specific to `PolarAxes`.
+        `~rctools.rc_configurator.context`. All ``theta`` arguments are
+        specified in *degrees*, not radians. The below parameters are specific
+        to `PolarAxes`.
 
         Parameters
         ----------
@@ -3489,7 +3563,8 @@ optional
 
         See also
         --------
-        :py:obj:`Axes.format`, :py:obj:`Axes.context`
+        `Axes.format`,
+        `~proplot.rctools.rc_configurator.context`
         """
         rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
         with rc.context(rc_kw, mode=rc_mode):
@@ -3570,7 +3645,7 @@ optional
                     'color': 'axes.edgecolor',
                 }, context=True)
                 sides = ('inner', 'polar') if r == 'r' else ('start', 'end')
-                spines = [self.spines[s] for s in sides]
+                spines = [self.spines[side] for side in sides]
                 for spine, side in zip(spines, sides):
                     spine.update(kw)
 
@@ -3624,7 +3699,8 @@ optional
 
     # Disabled methods suitable only for cartesian axes
     _disable = _disable_decorator(
-        'Invalid plotting method {!r} for polar axes.')
+        'Invalid plotting method {!r} for polar axes.'
+    )
     twinx = _disable(Axes.twinx)
     twiny = _disable(Axes.twiny)
     matshow = _disable(Axes.matshow)
@@ -3698,7 +3774,8 @@ class ProjAxes(Axes):
         """
         Modify the meridian and parallel labels, longitude and latitude map
         limits, geographic features, and more. Unknown keyword arguments are
-        passed to `Axes.format` and `Axes.context`.
+        passed to `Axes.format` and
+        `~proplot.rctools.rc_configurator.context`.
 
         Parameters
         ----------
@@ -3742,8 +3819,8 @@ optional
             Toggles various geographic features. These are actually the
             :rcraw:`land`, :rcraw:`ocean`, :rcraw:`coast`, :rcraw:`rivers`,
             :rcraw:`lakes`, :rcraw:`borders`, and :rcraw:`innerborders`
-            settings passed to `~proplot.axes.Axes.context`. The style can
-            be modified by passing additional settings, e.g.
+            settings passed to `~proplot.rctools.rc_configurator.context`.
+            The style can be modified by passing additional settings, e.g.
             :rcraw:`landcolor`.
         patch_kw : dict-like, optional
             Keyword arguments used to update the background patch object. You
@@ -3760,7 +3837,7 @@ optional
 
         See also
         --------
-        :py:obj:`Axes.format`, :py:obj:`Axes.context`
+        :py:obj:`Axes.format`, `~proplot.rctools.rc_configurator.context`
         """
         rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
         with rc.context(rc_kw, mode=rc_mode):
@@ -3789,12 +3866,22 @@ optional
             else:
                 base = 5
                 lon_0 = base * round(
-                    self.projection.lonmin / base) + 180  # central longitude
+                    self.projection.lonmin / base
+                ) + 180  # central longitude
             if lonlines is not None:
                 if not np.iterable(lonlines):
                     lonlines = arange(lon_0 - 180, lon_0 + 180, lonlines)
                     lonlines = lonlines.astype(np.float64)
-                    lonlines[-1] -= 1e-10  # make sure appears on *right*
+                    if lonlines[-1] % 360 > 0:
+                        # Make sure the label appears on *right*, not on
+                        # top of the leftmost label.
+                        lonlines[-1] -= 1e-10
+                    else:
+                        # Formatter formats label as 1e-10... so there is
+                        # simply no way to put label on right. Just shift this
+                        # location off the map edge so parallels still extend
+                        # all the way to the edge, but label disappears.
+                        lonlines[-1] += 1e-10
                 lonlines = [*lonlines]
 
             # Latitudes gridlines, draw from -latmax to latmax unless result
@@ -3875,13 +3962,16 @@ optional
 
             # Apply formatting to basemap or cartpoy axes
             patch_kw = patch_kw or {}
-            self._format_apply(patch_kw, lonlim, latlim, boundinglat,
-                               lonlines, latlines, latmax, lonarray, latarray)
+            self._format_apply(
+                patch_kw, lonlim, latlim, boundinglat,
+                lonlines, latlines, latmax, lonarray, latarray
+            )
             super().format(**kwargs)
 
     # Disabled methods suitable only for cartesian axes
     _disable = _disable_decorator(
-        'Invalid plotting method {!r} for map projection axes.')
+        'Invalid plotting method {!r} for map projection axes.'
+    )
     bar = _disable(Axes.bar)
     barh = _disable(Axes.barh)
     twinx = _disable(Axes.twinx)
@@ -3990,11 +4080,12 @@ class GeoAxes(ProjAxes, GeoAxes):
         else:
             self.set_global()
 
-    def _format_apply(
+    def _format_apply(  # noqa: U100
         self, patch_kw, lonlim, latlim, boundinglat,
         lonlines, latlines, latmax, lonarray, latarray
     ):
         """Apply formatting to cartopy axes."""
+        # NOTE: Cartopy seems to handle latmax automatically.
         import cartopy.feature as cfeature
         import cartopy.crs as ccrs
         from cartopy.mpl import gridliner
@@ -4030,11 +4121,13 @@ class GeoAxes(ProjAxes, GeoAxes):
         north = isinstance(self.projection, (
             ccrs.NorthPolarStereo, projs.NorthPolarGnomonic,
             projs.NorthPolarAzimuthalEquidistant,
-            projs.NorthPolarLambertAzimuthalEqualArea))
+            projs.NorthPolarLambertAzimuthalEqualArea
+        ))
         south = isinstance(self.projection, (
             ccrs.SouthPolarStereo, projs.SouthPolarGnomonic,
             projs.SouthPolarAzimuthalEquidistant,
-            projs.SouthPolarLambertAzimuthalEqualArea))
+            projs.SouthPolarLambertAzimuthalEqualArea
+        ))
         if north or south:
             if (lonlim is not None or latlim is not None):
                 _warn_proplot(
@@ -4052,8 +4145,10 @@ class GeoAxes(ProjAxes, GeoAxes):
                 eps = 1e-10  # bug with full -180, 180 range when lon_0 != 0
                 lat0 = (90 if north else -90)
                 lon0 = self.projection.proj4_params.get('lon_0', 0)
-                extent = [lon0 - 180 + eps,
-                          lon0 + 180 - eps, boundinglat, lat0]
+                extent = [
+                    lon0 - 180 + eps, lon0 + 180 - eps,
+                    boundinglat, lat0
+                ]
                 self.set_extent(extent, crs=ccrs.PlateCarree())
                 self._boundinglat = boundinglat
         else:
