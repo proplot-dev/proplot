@@ -59,6 +59,15 @@ ProPlot v0.6.0 (2020-##-##)
   stacks rather than getting inserted directly into
   the main `~proplot.subplots.GridSpec` (:pr:`110`).
 
+ProPlot v0.5.1 (2020-##-##)
+===========================
+.. rubric:: Deprecated
+
+- Drop support for ``.xrgb`` and ``.xrgba`` files (:commit:`4fa72b0c`).
+  Not sure if any online sources produce these kinds of files.
+- Drop support for ``.rgba`` files, but optionally read 4th opacity column from ``.rgb``
+  and ``.txt`` files (:commit:`4fa72b0c`).
+
 ProPlot v0.5.0 (2020-02-10)
 ===========================
 .. rubric:: Deprecated
