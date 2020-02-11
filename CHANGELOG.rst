@@ -59,7 +59,7 @@ ProPlot v0.6.0 (2020-##-##)
   stacks rather than getting inserted directly into
   the main `~proplot.subplots.GridSpec` (:pr:`110`).
 
-ProPlot v0.5.0 (2020-##-##)
+ProPlot v0.5.0 (2020-02-10)
 ===========================
 .. rubric:: Deprecated
 
