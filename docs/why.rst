@@ -154,7 +154,7 @@ ProPlot also uses a custom tight layout algorithm that automatically determines 
 * The new `~proplot.subplots.GridSpec` class permits variable spacing between rows and columns. It turns out this is critical for putting :ref:`Colorbars and legends` on the outside of subplots.
 * Figures are restricted to have only *one* `~proplot.subplots.GridSpec` per figure. This is done by requiring users to draw all of their subplots at once with `~proplot.subplots.subplots` (see :pr:`50`).
 
-See :ref:`Automatic layout` for details.
+See :ref:`Automatic figure sizing` and :ref:`Automatic subplot spacing` for details.
 
 ..
    #. The `~proplot.subplots.GridSpec` spacing parameters are specified in physical units instead of figure-relative units.
