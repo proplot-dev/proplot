@@ -373,11 +373,14 @@ def to_rgb(color, space='rgb', cycle=None, alpha=False):
             try:
                 cycle = mcm.cmap_d[cycle].colors
             except (KeyError, AttributeError):
-                cycles = sorted(name for name, cmap in mcm.cmap_d.items(
-                ) if isinstance(cmap, ListedColormap))
+                cycles = sorted(
+                    name for name, cmap in mcm.cmap_d.items()
+                    if isinstance(cmap, ListedColormap)
+                )
                 raise ValueError(
                     f'Invalid cycle {cycle!r}. Options are: '
-                    + ', '.join(map(repr, cycles)) + '.')
+                    + ', '.join(map(repr, cycles)) + '.'
+                )
         elif cycle is None:
             cycle = rcParams['axes.prop_cycle'].by_key()
             if 'color' not in cycle:
@@ -688,18 +691,39 @@ def make_mapping_array(N, data, gamma=1.0, inverse=False):
     return lut
 
 
+_from_file_docstring = """
+Valid file extensions are as follows:
+
+==================  =====================================================================================================================================================================================================================
+Extension           Description
+==================  =====================================================================================================================================================================================================================
+``.hex``            List of HEX strings in any format (comma-separated, separate lines, with double quotes... anything goes).
+``.xml``            XML files with ``<Point .../>`` tags specifying ``x``, ``r``, ``g``, ``b``, and (optionally) ``o`` parameters, where ``x`` is the coordinate and the rest are the red, blue, green, and opacity channel values.
+``.rgb``, ``.txt``  3-4 column table of red, blue, green, and (optionally) opacity channel values, delimited by commas or spaces. If values larger than 1 are detected, they are assumed to be on the 0-255 scale and are divided by 255.
+==================  =====================================================================================================================================================================================================================
+
+Parameters
+----------
+path : str
+    The file path.
+warn_on_failure : bool, optional
+    If ``True``, issue a warning when loading fails rather than
+    raising an error.
+"""  # noqa
+
+
 class _Colormap(object):
     """Mixin class used to add some helper methods."""
-    def _get_data(self, ext):
+    def _get_data(self, ext, alpha=False):
         """
         Return a string containing the colormap colors for saving.
 
         Parameters
         ----------
-        ext : {'hex', 'txt', 'rgb', 'rgba'}
+        ext : {'hex', 'txt', 'rgb'}
             The filename extension.
-        colors : list of color-spec
-            The colors.
+        alpha : bool, optional
+            Whether to include an opacity column.
         """
         # Get lookup table colors and filter out bad ones
         if not self._isinit:
@@ -708,11 +732,12 @@ class _Colormap(object):
         # Get data string
         if ext == 'hex':
             data = ', '.join(mcolors.to_hex(color) for color in colors)
-        elif ext in ('txt', 'rgb', 'rgba'):
-            rgb = mcolors.to_rgba if ext == 'rgba' else mcolors.to_rgb
+        elif ext in ('txt', 'rgb'):
+            rgb = mcolors.to_rgba if alpha else mcolors.to_rgb
             data = [rgb(color) for color in colors]
-            data = '\n'.join(','.join(str(num) for num in line)
-                             for line in data)
+            data = '\n'.join(
+                ' '.join(f'{num:0.6f}' for num in line) for line in data
+            )
         else:
             raise ValueError(
                 f'Invalid extension {ext!r}. Options are: '
@@ -978,7 +1003,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
                 kwargs[key] = gamma[::-1]
         return self.updated(name, segmentdata, **kwargs)
 
-    def save(self, path=None):
+    def save(self, path=None, alpha=False):
         """
         Save the colormap data to a file.
 
@@ -995,12 +1020,16 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             =====================  ==========================================================
             ``.json`` (default)    JSON database of the channel segment data.
             ``.hex``               Comma-delimited list of HEX strings.
-            ``.rgb``, ``.txt``     3-column table of comma-delimited RGB values.
-            ``.rgba``              As with ``.rgb``, but with an opacity (or "alpha") column.
+            ``.rgb``, ``.txt``     3-4 column table of channel values.
             =====================  ==========================================================
+
+        alpha : bool, optional
+            Whether to include an opacity column for ``.rgb``
+            and ``.txt`` files.
         """  # noqa
         dirname = os.path.join('~', '.proplot', 'cmaps')
         filename = self._parse_path(path, dirname, 'json')
+
         # Save channel segment data in json file
         _, ext = os.path.splitext(filename)
         if ext[1:] == 'json':
@@ -1029,9 +1058,10 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
                 data[key] = getattr(self, '_' + key)
             with open(filename, 'w') as file:
                 json.dump(data, file, indent=4)
+
         # Save lookup table colors
         else:
-            data = self._get_data(ext[1:])
+            data = self._get_data(ext[1:], alpha=alpha)
             with open(filename, 'w') as f:
                 f.write(data)
         print(f'Saved colormap to {filename!r}.')
@@ -1211,28 +1241,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
     @staticmethod
     def from_file(path, warn_on_failure=False):
-        """
-        Load colormap from a file.
-        Valid file extensions are described in the below table.
-
-        =====================  =============================================================================================================================================================================================================
-        Extension              Description
-        =====================  =============================================================================================================================================================================================================
-        ``.hex``               List of HEX strings in any format (comma-separated, separate lines, with double quotes... anything goes).'ColorBlind10':
-        ``.xml``               XML files with ``<Point .../>`` entries specifying ``x``, ``r``, ``g``, ``b``, and optionally, ``a`` values, where ``x`` is the colormap coordinate and the rest are the RGB and opacity (or "alpha") values.
-        ``.rgb``               3-column table delimited by commas or consecutive spaces, each column indicating red, blue and green color values.
-        ``.xrgb``              As with ``.rgb``, but with 4 columns. The first column indicates the colormap coordinate.
-        ``.rgba``, ``.xrgba``  As with ``.rgb``, ``.xrgb``, but with a trailing opacity (or "alpha") column.
-        =====================  =============================================================================================================================================================================================================
-
-        Parameters
-        ----------
-        path : str
-            The file path.
-        warn_on_failure : bool, optional
-            If ``True``, issue a warning when loading fails rather than
-            raising an error.
-        """  # noqa
+        """Load colormap from a file."""
         return _from_file(path, listed=False, warn_on_failure=warn_on_failure)
 
     @staticmethod
@@ -1282,6 +1291,11 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         for key, values in zip(keys, zip(*colors)):
             cdict[key] = _make_segmentdata_array(values, coords, ratios)
         return LinearSegmentedColormap(name, cdict, **kwargs)
+
+    # Fix docstrings
+    # NOTE: Docstrings cannot be programatically altered in place e.g.
+    # with f-strings. Can only be modified a posteriori.
+    from_file.__func__.__doc__ += _from_file_docstring
 
 
 class ListedColormap(mcolors.ListedColormap, _Colormap):
@@ -1343,7 +1357,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         colors = [color for cmap in cmaps for color in cmap.colors]
         return self.updated(colors, name, N or len(colors), **kwargs)
 
-    def save(self, path=None):
+    def save(self, path=None, alpha=False):
         """
         Save the colormap data to a file.
 
@@ -1359,15 +1373,19 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
             Extension              Description
             =====================  ==========================================================
             ``.hex`` (default)     Comma-delimited list of HEX strings.
-            ``.rgb``, ``.txt``     3-column table of comma-delimited RGB values.
-            ``.rgba``              As with ``.rgb``, but with an opacity (or "alpha") column.
+            ``.rgb``, ``.txt``     3-4 column table of channel values.
             =====================  ==========================================================
+
+        alpha : bool, optional
+            Whether to include an opacity column for ``.rgb``
+            and ``.txt`` files.
         """  # noqa
         dirname = os.path.join('~', '.proplot', 'cmaps')
         filename = self._parse_path(path, dirname, 'hex')
+
         # Save lookup table colors
         _, ext = os.path.splitext(filename)
-        data = self._get_data(ext[1:])
+        data = self._get_data(ext[1:], alpha=alpha)
         with open(filename, 'w') as f:
             f.write(data)
         print(f'Saved colormap to {filename!r}.')
@@ -1459,29 +1477,13 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
 
     @staticmethod
     def from_file(path, warn_on_failure=False):
-        """
-        Load color cycle from a file.
-        Valid file extensions are described in the below table.
-
-        =====================  =============================================================================================================================================================================================================
-        Extension              Description
-        =====================  =============================================================================================================================================================================================================
-        ``.hex``               List of HEX strings in any format (comma-separated, separate lines, with double quotes... anything goes).'ColorBlind10':
-        ``.xml``               XML files with ``<Point .../>`` entries specifying ``x``, ``r``, ``g``, ``b``, and optionally, ``a`` values, where ``x`` is the colormap coordinate and the rest are the RGB and opacity (or "alpha") values.
-        ``.rgb``               3-column table delimited by commas or consecutive spaces, each column indicating red, blue and green color values.
-        ``.xrgb``              As with ``.rgb``, but with 4 columns. The first column indicates the colormap coordinate.
-        ``.rgba``, ``.xrgba``  As with ``.rgb``, ``.xrgb``, but with a trailing opacity (or "alpha") column.
-        =====================  =============================================================================================================================================================================================================
-
-        Parameters
-        ----------
-        path : str
-            The file path.
-        warn_on_failure : bool, optional
-            If ``True``, issue a warning when loading fails rather than
-            raising an error.
-        """  # noqa
+        """Load color cycle from a file."""
         return _from_file(path, listed=True, warn_on_failure=warn_on_failure)
+
+    # Fix docstrings
+    # NOTE: Docstrings cannot be programatically altered in place e.g.
+    # with f-strings. Can only be modified a posteriori.
+    from_file.__func__.__doc__ += _from_file_docstring
 
 
 class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
@@ -2935,8 +2937,8 @@ def _from_file(filename, listed=False, warn_on_failure=False):
         if name[-2:] == '_r':
             cmap = cmap.reversed(name[:-2])
 
-    # Read .rgb, .rgba, .xrgb, and .xrgba files
-    elif ext in ('txt', 'rgb', 'xrgb', 'rgba', 'xrgba'):
+    # Read .rgb and .rgba files
+    elif ext in ('txt', 'rgb'):
         # Load
         # NOTE: This appears to be biggest import time bottleneck! Increases
         # time from 0.05s to 0.2s, with numpy loadtxt or with this regex thing.
@@ -2956,10 +2958,10 @@ def _from_file(filename, listed=False, warn_on_failure=False):
             return
         # Build x-coordinates and standardize shape
         data = np.array(data)
-        if data.shape[1] != len(ext):
+        if data.shape[1] not in (3, 4):
             _warn_or_raise(
                 f'Failed to load {filename!r}. Got {data.shape[1]} columns, '
-                f'but expected {len(ext)}.'
+                f'but expected 3 or 4.'
             )
             return
         if ext[0] != 'x':  # i.e. no x-coordinates specified explicitly
@@ -2997,8 +2999,10 @@ def _from_file(filename, listed=False, warn_on_failure=False):
             x.append(float(s.attrib['x']))
             data.append(color)
         # Convert to array
-        if not all(len(data[0]) == len(color)
-                   and len(color) in (3, 4) for color in data):
+        if not all(
+            len(data[0]) == len(color) and len(color) in (3, 4)
+            for color in data
+        ):
             _warn_or_raise(
                 f'Failed to load {filename!r}. Unexpected number of channels '
                 'or mixed channels across <Point> tags.'
