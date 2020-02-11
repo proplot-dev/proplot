@@ -714,7 +714,7 @@ warn_on_failure : bool, optional
 
 class _Colormap(object):
     """Mixin class used to add some helper methods."""
-    def _get_data(self, ext, alpha=False):
+    def _get_data(self, ext, alpha=True):
         """
         Return a string containing the colormap colors for saving.
 
@@ -1003,7 +1003,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
                 kwargs[key] = gamma[::-1]
         return self.updated(name, segmentdata, **kwargs)
 
-    def save(self, path=None, alpha=False):
+    def save(self, path=None, alpha=True):
         """
         Save the colormap data to a file.
 
@@ -1357,7 +1357,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         colors = [color for cmap in cmaps for color in cmap.colors]
         return self.updated(colors, name, N or len(colors), **kwargs)
 
-    def save(self, path=None, alpha=False):
+    def save(self, path=None, alpha=True):
         """
         Save the colormap data to a file.
 
