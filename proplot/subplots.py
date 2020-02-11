@@ -564,7 +564,7 @@ def _get_panelargs(
     width = units(width)
     if space is None:
         key = 'wspace' if side in ('left', 'right') else 'hspace'
-        pad = rc['subplots.axpad'] if figure else rc['subplots.panelpad']
+        pad = rc['subplots.subplotpad'] if figure else rc['subplots.panelpad']
         space = _get_space(key, share, pad=pad)
     return share, width, space, space_user
 
@@ -572,29 +572,33 @@ def _get_panelargs(
 def _get_space(key, share=0, pad=None):
     """Return suitable default spacing given a shared axes setting."""
     if key == 'left':
-        space = units(_notNone(pad, rc['subplots.pad'])) + (
+        space = units(_notNone(pad, rc['subplots.edgepad'])) + (
             rc['ytick.major.size'] + rc['ytick.labelsize']
-            + rc['ytick.major.pad'] + rc['axes.labelsize']) / 72
+            + rc['ytick.major.pad'] + rc['axes.labelsize']
+        ) / 72
     elif key == 'right':
-        space = units(_notNone(pad, rc['subplots.pad']))
+        space = units(_notNone(pad, rc['subplots.edgepad']))
     elif key == 'bottom':
-        space = units(_notNone(pad, rc['subplots.pad'])) + (
+        space = units(_notNone(pad, rc['subplots.edgepad'])) + (
             rc['xtick.major.size'] + rc['xtick.labelsize']
-            + rc['xtick.major.pad'] + rc['axes.labelsize']) / 72
+            + rc['xtick.major.pad'] + rc['axes.labelsize']
+        ) / 72
     elif key == 'top':
-        space = units(_notNone(pad, rc['subplots.pad'])) + (
-            rc['axes.titlepad'] + rc['axes.titlesize']) / 72
+        space = units(_notNone(pad, rc['subplots.edgepad'])) + (
+            rc['axes.titlepad'] + rc['axes.titlesize']
+        ) / 72
     elif key == 'wspace':
-        space = (units(_notNone(pad, rc['subplots.axpad']))
-                 + rc['ytick.major.size'] / 72)
+        space = units(_notNone(pad, rc['subplots.subplotpad'])) + (
+            rc['ytick.major.size']
+        ) / 72
         if share < 3:
             space += (rc['ytick.labelsize'] + rc['ytick.major.pad']) / 72
         if share < 1:
             space += rc['axes.labelsize'] / 72
     elif key == 'hspace':
-        space = units(_notNone(pad, rc['subplots.axpad'])) + (
-            rc['axes.titlepad'] + rc['axes.titlesize']
-            + rc['xtick.major.size']) / 72
+        space = units(_notNone(pad, rc['subplots.subplotpad'])) + (
+            rc['axes.titlepad'] + rc['axes.titlesize'] + rc['xtick.major.size']
+        ) / 72
         if share < 3:
             space += (rc['xtick.labelsize'] + rc['xtick.major.pad']) / 72
         if share < 0:
@@ -812,7 +816,8 @@ class Figure(mfigure.Figure):
     may be automatically scaled to preserve subplot aspect ratios."""
     def __init__(
         self, tight=None,
-        ref=1, pad=None, axpad=None, panelpad=None, includepanels=False,
+        ref=1,
+        edgepad=None, subplotpad=None, panelpad=None, includepanels=False,
         span=None, spanx=None, spany=None,
         align=None, alignx=None, aligny=None,
         share=None, sharex=None, sharey=None,
@@ -832,13 +837,13 @@ class Figure(mfigure.Figure):
         ref : int, optional
             The reference subplot number. See `subplots` for details. Default
             is ``1``.
-        pad : float or str, optional
+        edgepad : float or str, optional
             Padding around edge of figure. Units are interpreted by
-            `~proplot.utils.units`. Default is :rc:`subplots.pad`.
-        axpad : float or str, optional
+            `~proplot.utils.units`. Default is :rc:`subplots.edgepad`.
+        subplotpad : float or str, optional
             Padding between subplots in adjacent columns and rows. Units are
             interpreted by `~proplot.utils.units`. Default is
-            :rc:`subplots.axpad`.
+            :rc:`subplots.subplotpad`.
         panelpad : float or str, optional
             Padding between subplots and axes panels, and between "stacked"
             panels. Units are interpreted by `~proplot.utils.units`. Default is
@@ -941,9 +946,13 @@ class Figure(mfigure.Figure):
         gridspec_kw = gridspec_kw or {}
         gridspec = GridSpec(self, **gridspec_kw)
         nrows, ncols = gridspec.get_active_geometry()
-        self._pad = units(_notNone(pad, rc['subplots.pad']))
-        self._axpad = units(_notNone(axpad, rc['subplots.axpad']))
-        self._panelpad = units(_notNone(panelpad, rc['subplots.panelpad']))
+        self._edgepad = units(_notNone(edgepad, rc['subplots.edgepad']))
+        self._panelpad = units(_notNone(
+            panelpad, rc['subplots.panelpad']
+        ))
+        self._subplotpad = units(_notNone(
+            subplotpad, rc['subplots.subplotpad']
+        ))
         self._auto_format = autoformat
         self._auto_tight = _notNone(tight, rc['tight'])
         self._include_panels = includepanels
@@ -1177,7 +1186,7 @@ class Figure(mfigure.Figure):
 
         # Tight box *around* figure
         # Get bounds from old bounding box
-        pad = self._pad
+        edgepad = self._edgepad
         obox = self.bbox_inches  # original bbox
         bbox = self.get_tightbbox(renderer)
         left = bbox.xmin
@@ -1193,10 +1202,10 @@ class Figure(mfigure.Figure):
         ):
             previous = subplots_orig_kw[key]
             current = subplots_kw[key]
-            subplots_kw[key] = _notNone(previous, current - offset + pad)
+            subplots_kw[key] = _notNone(previous, current - offset + edgepad)
 
         # Get arrays storing gridspec spacing args
-        axpad = self._axpad
+        subplotpad = self._subplotpad
         panelpad = self._panelpad
         gridspec = self._gridspec_main
         nrows, ncols = gridspec.get_active_geometry()
@@ -1228,7 +1237,7 @@ class Figure(mfigure.Figure):
                 ):
                     pad = panelpad
                 else:
-                    pad = axpad
+                    pad = subplotpad
 
                 # Find axes that abutt aginst this space on each row
                 groups = []
