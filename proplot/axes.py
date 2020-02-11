@@ -1246,13 +1246,12 @@ optional
         return legend_wrapper(self, *args, loc=loc, **kwargs)
 
     def draw(self, renderer=None, *args, **kwargs):
-        """Perform post-processing steps then draw the axes."""
+        # Perform extra post-processing steps
         self._reassign_title()
         super().draw(renderer, *args, **kwargs)
 
     def get_size_inches(self):
-        """Return the width and the height of the axes in inches. Similar
-        to `~matplotlib.Figure.get_size_inches`."""
+        # Return the width and height of the axes in inches.
         width, height = self.figure.get_size_inches()
         bbox = self.get_position()
         width = width * abs(bbox.width)
@@ -1260,9 +1259,8 @@ optional
         return width, height
 
     def get_tightbbox(self, renderer, *args, **kwargs):
-        """Perform post-processing steps, return the tight bounding box
-        surrounding axes artists, and cache the bounding box as an attribute.
-        """
+        # Perform extra post-processing steps and cache the bounding
+        # box as an attribute.
         self._reassign_title()
         bbox = super().get_tightbbox(renderer, *args, **kwargs)
         self._tightbbox = bbox
@@ -2739,7 +2737,7 @@ class XYAxes(Axes):
         return ax
 
     def draw(self, renderer=None, *args, **kwargs):
-        """Perform post-processing steps then draw the axes."""
+        # Perform extra post-processing steps
         # NOTE: This mimics matplotlib API, which calls identical
         # post-processing steps in both draw() and get_tightbbox()
         self._hide_labels()
@@ -2753,7 +2751,7 @@ class XYAxes(Axes):
         super().draw(renderer, *args, **kwargs)
 
     def get_tightbbox(self, renderer, *args, **kwargs):
-        """Perform post-processing steps then return the tight bounding box."""
+        # Perform extra post-processing steps
         self._hide_labels()
         self._altx_overrides()
         self._alty_overrides()
@@ -3636,7 +3634,8 @@ class GeoAxes(ProjAxes, GeoAxes):
         pass
 
     def get_tightbbox(self, renderer, *args, **kwargs):
-        """Draw the gridliner objects then return the tight bounding box."""
+        # Perform extra post-processing steps
+        # For now this just draws the gridliners
         self._hide_labels()
         if self.get_autoscale_on() and self.ignore_existing_data_limits:
             self.autoscale_view()
