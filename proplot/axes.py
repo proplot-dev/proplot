@@ -1722,6 +1722,8 @@ a shared ("twin") *%(y)s* axes.
 
 Parameters
 ----------
+%(xargs)s : optional
+    Passed to `Axes.format`.
 %(args)s : optional
     Prepended with ``'%(x)s'`` and passed to `Axes.format`.
 
@@ -2683,7 +2685,7 @@ class XYAxes(Axes):
             super().format(**kwargs)
 
     def altx(self, **kwargs):
-        """This docstring is replaced below."""
+        # Docstring is programatically assigned below
         # Cannot wrap twiny() because we want to use XYAxes, not
         # matplotlib Axes. Instead use hidden method _make_twin_axes.
         # See https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_subplots.py  # noqa
@@ -2703,7 +2705,7 @@ class XYAxes(Axes):
         return ax
 
     def alty(self, **kwargs):
-        """This docstring is replaced below."""
+        # Docstring is programatically assigned below
         if self._alty_child or self._alty_parent:
             raise RuntimeError('No more than *two* twin axes are allowed.')
         with self.figure._authorize_add_subplot():
@@ -2720,7 +2722,7 @@ class XYAxes(Axes):
         return ax
 
     def dualx(self, arg, **kwargs):
-        """This docstring is replaced below."""
+        # Docstring is programatically assigned below
         # NOTE: Matplotlib 3.1 has a 'secondary axis' feature. For the time
         # being, our version is more robust (see FuncScale) and simpler, since
         # we do not create an entirely separate _SecondaryAxis class.
@@ -2730,7 +2732,7 @@ class XYAxes(Axes):
         return ax
 
     def dualy(self, arg, **kwargs):
-        """This docstring is replaced below."""
+        # Docstring is programatically assigned below
         ax = self.alty(**kwargs)
         self._dualy_arg = arg
         self._dualy_overrides()
@@ -2763,14 +2765,15 @@ class XYAxes(Axes):
         return super().get_tightbbox(renderer, *args, **kwargs)
 
     def twinx(self):
-        """This docstring is replaced below."""
+        # Docstring is programatically assigned below
         return self.alty()
 
     def twiny(self):
-        """This docstring is replaced below."""
+        # Docstring is programatically assigned below
         return self.altx()
 
     # Add documentation
+    # NOTE: Why does this work without using method.__func__.__doc__?
     altx.__doc__ = _alt_doc % {
         'x': 'x', 'x1': 'bottom', 'x2': 'top',
         'y': 'y', 'y1': 'left', 'y2': 'right',
