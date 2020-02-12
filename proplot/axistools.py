@@ -371,12 +371,15 @@ def Scale(scale, *args, **kwargs):
     return scale(*args, **kwargs)
 
 
-def _zerofix(x, string, precision=6):
+def _sanitize(string, zerotrim=False):
     """
-    Try to fix non-zero tick labels formatted as ``'0'``.
+    Sanitize tick label strings.
     """
-    if string.rstrip('0').rstrip('.') == '0' and x != 0:
-        string = ('{:.%df}' % precision).format(x)
+    if zerotrim and '.' in string:
+        string = string.rstrip('0').rstrip('.')
+    string = string.replace('-', '\N{MINUS SIGN}')
+    if string == '\N{MINUS SIGN}0':
+        string = '0'
     return string
 
 
@@ -457,20 +460,12 @@ class AutoFormatter(mticker.ScalarFormatter):
             tail = self._negpos[0]
         # Format the string
         string = super().__call__(x, pos)
-        for i in range(2):
-            # Try to fix non-zero values formatted as zero
-            if self._zerotrim and '.' in string:
-                string = string.rstrip('0').rstrip('.')
-            string = string.replace('-', '\N{MINUS SIGN}')
-            if string == '\N{MINUS SIGN}0':
-                string = '0'
-            if i == 0 and string == '0' and x != 0:
-                # Hard limit of MAX_DIGITS sigfigs
-                string = (
-                    '{:.%df}' % min(abs(np.log10(abs(x))) // 1, MAX_DIGITS)
-                ).format(x)
-                continue
-            break
+        string = _sanitize(string, zerotrim=self._zerotrim)
+        if string == '0' and x != 0:
+            string = (
+                '{:.%df}' % min(abs(np.log10(abs(x))) // 1, MAX_DIGITS)
+            ).format(x)
+            string = _sanitize(string, zerotrim=self._zerotrim)
         # Prefix and suffix
         sign = ''
         if string and string[0] == '\N{MINUS SIGN}':
