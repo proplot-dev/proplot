@@ -2073,17 +2073,17 @@ def cmap_changer(
                 nlevels.append(olevels[-1])
                 levels = norm.inverse(nlevels)
 
-    # Norm settings
-    # Generate BinNorm and update child norm object with vmin/vmax from levels
+    # Generate BinNorm and update "child" norm with vmin and vmax from levels
     # This is important for the colorbar setting tick locations properly!
     if norm is not None:
-        if levels is not None:
-            norm.vmin, norm.vmax = min(levels), max(levels)
-        if levels is not None:
-            bin_kw = {'extend': extend}
-            if cyclic:
-                bin_kw.update({'step': 0.5, 'extend': 'both'})
-            norm = styletools.BinNorm(norm=norm, levels=levels, **bin_kw)
+        if not isinstance(norm, mcolors.BoundaryNorm):
+            if levels is not None:
+                norm.vmin, norm.vmax = min(levels), max(levels)
+            if levels is not None:
+                bin_kw = {'extend': extend}
+                if cyclic:
+                    bin_kw.update({'step': 0.5, 'extend': 'both'})
+                norm = styletools.BinNorm(norm=norm, levels=levels, **bin_kw)
         kwargs['norm'] = norm
 
     # Call function
@@ -2098,12 +2098,15 @@ def cmap_changer(
     if locator is not None and not isinstance(locator, mticker.MaxNLocator):
         obj.locator = locator  # for colorbar to determine tick locations
 
-    # Call again for contourf plots with edges
-    if 'contourf' in name and (linewidths is not None or colors is not None
-                               or linestyles is not None):
+    # Call again to add "edges" to contourf plots
+    if 'contourf' in name and any(
+        _ is not None for _ in (colors, linewidths, linestyles)
+    ):
         colors = _notNone(colors, 'k')
-        cobj = self.contour(*args, levels=levels, linewidths=linewidths,
-                            linestyles=linestyles, colors=colors)
+        self.contour(
+            *args, levels=levels, linewidths=linewidths,
+            linestyles=linestyles, colors=colors
+        )
 
     # Apply labels
     # TODO: Add quiverkey to this!
@@ -2124,8 +2127,7 @@ def cmap_changer(
                 cobj = obj
                 colors = None
             text_kw = {}
-            for key in (
-                    *labels_kw,):  # allow dict to change size during iteration
+            for key in (*labels_kw,):  # allow dict to change size
                 if key not in (
                     'levels', 'fontsize', 'colors', 'inline', 'inline_spacing',
                     'manual', 'rightside_up', 'use_clabeltext',
@@ -2950,7 +2952,8 @@ or colormap-spec
         if tickminor:
             cb.minorticks_on()
     else:
-        # Private API is the only way!
+        # Set the minor ticks just like matplotlib internally sets the
+        # major ticks. Private API is the only way!
         minorlocator = axistools.Locator(minorlocator, **minorlocator_kw)
         ticks, *_ = cb._ticker(minorlocator, mticker.NullFormatter())
         axis.set_ticks(ticks, minor=True)
