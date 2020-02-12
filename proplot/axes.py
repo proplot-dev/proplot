@@ -244,8 +244,10 @@ class Axes(maxes.Axes):
         idx = (0 if x == 'x' else 1)
         argfunc = (np.argmax if x == 'x' else np.argmin)
         irange = self._range_gridspec(x)
-        axs = [ax for ax in self.figure._axes_main
-               if ax._range_gridspec(x) == irange]
+        axs = [
+            ax for ax in self.figure._axes_main
+            if ax._range_gridspec(x) == irange
+        ]
         if not axs:
             return [self]
         else:
@@ -610,19 +612,17 @@ class Axes(maxes.Axes):
         # the title seems to ignore them. This is known matplotlib problem but
         # especially annoying with top panels.
         # TODO: Make sure this is robust. Seems 'default' is returned usually
-        # when tick label sides is actually *both*. Also makes sure axis is
-        # visible; if not, this is a filled cbar/legend, no padding needed
+        # when tick sides is actually *both*.
         pad = self._title_pad
         pos = self.xaxis.get_ticks_position()
         fmt = self.xaxis.get_major_formatter()
-        if (
+        if self.xaxis.get_visible() and (
             pos == 'default'
             or (pos == 'top' and isinstance(fmt, mticker.NullFormatter))
             or (
                 pos == 'unknown'
                 and self._panel_side == 'top'
                 and isinstance(fmt, mticker.NullFormatter)
-                and self.xaxis.get_visible()
             )
         ):
             pad += self.xaxis.get_tick_padding()
@@ -2447,8 +2447,10 @@ class XYAxes(Axes):
                         spine.set_bounds(*bounds)
                     spine.update(kw)
                 # Get available spines, needed for setting tick locations
-                spines = [side for side, spine in zip(
-                    sides, spines) if spine.get_visible()]
+                spines = [
+                    side for side, spine in zip(sides, spines)
+                    if spine.get_visible()
+                ]
 
                 # Helper func
                 def _grid_dict(grid):
@@ -2499,19 +2501,23 @@ class XYAxes(Axes):
                 # * Includes option to draw spines but not draw ticks on that
                 #   spine, e.g. on the left/right edges
                 kw = {}
-                translate = {None: None, 'both': sides,
-                             'neither': (), 'none': ()}
+                loc2sides = {
+                    None: None,
+                    'both': sides,
+                    'none': (),
+                    'neither': (),
+                }
                 if bounds is not None and tickloc not in sides:
                     tickloc = sides[0]  # override to just one side
-                ticklocs = translate.get(tickloc, (tickloc,))
+                ticklocs = loc2sides.get(tickloc, (tickloc,))
                 if ticklocs is not None:
-                    kw.update({side: (side in ticklocs) for side in sides})
+                    kw.update({side: side in ticklocs for side in sides})
                 kw.update({  # override
                     side: False for side in sides if side not in spines
                 })
                 # Tick label sides
                 # Will override to make sure only appear where ticks are
-                ticklabellocs = translate.get(ticklabelloc, (ticklabelloc,))
+                ticklabellocs = loc2sides.get(ticklabelloc, (ticklabelloc,))
                 if ticklabellocs is not None:
                     kw.update({
                         'label' + side: (side in ticklabellocs)
@@ -2519,14 +2525,16 @@ class XYAxes(Axes):
                     })
                 kw.update({  # override
                     'label' + side: False for side in sides
-                    if (side not in spines or (ticklocs is not None
-                                               and side not in ticklocs))
+                    if side not in spines
+                    or (ticklocs is not None and side not in ticklocs)
                 })  # override
                 # The axis label side
                 if labelloc is None:
                     if ticklocs is not None:
-                        options = [side for side in sides if (
-                            side in ticklocs and side in spines)]
+                        options = [
+                            side for side in sides
+                            if side in ticklocs and side in spines
+                        ]
                         if len(options) == 1:
                             labelloc = options[0]
                 elif labelloc not in sides:
