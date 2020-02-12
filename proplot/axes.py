@@ -356,11 +356,15 @@ class Axes(maxes.Axes):
         if not hasattr(self, 'get_subplotspec'):
             raise RuntimeError(f'Axes is not a subplot.')
         ss = self.get_subplotspec()
+        if hasattr(ss, 'get_active_rows_columns'):
+            func = ss.get_active_rows_columns
+        else:
+            func = ss.get_rows_columns
         if x == 'x':
-            _, _, _, _, col1, col2 = ss.get_active_rows_columns()
+            _, _, _, _, col1, col2 = func()
             return col1, col2
         else:
-            _, _, row1, row2, _, _ = ss.get_active_rows_columns()
+            _, _, row1, row2, _, _ = func()
             return row1, row2
 
     def _range_tightbbox(self, x):
@@ -996,8 +1000,7 @@ optional
             self.patch.set_alpha(0)
             self._panel_filled = True
 
-            # Draw colorbar with arbitrary length relative to full length
-            # of panel
+            # Get subplotspec for colorbar axes
             side = self._panel_side
             length = _notNone(length, rc['colorbar.length'])
             subplotspec = self.get_subplotspec()
@@ -1020,10 +1023,12 @@ optional
                     height_ratios=((1 - length) / 2, length, (1 - length) / 2),
                 )
                 subplotspec = gridspec[1]
+
+            # Draw colorbar axes
+            # NOTE: Make this an 'xy' projection so users can do hacky stuff
+            # like e.g. dualx/dualy axes.
             with self.figure._authorize_add_subplot():
-                ax = self.figure.add_subplot(subplotspec, projection=None)
-            if ax is self:
-                raise ValueError  # should never happen
+                ax = self.figure.add_subplot(subplotspec, projection='xy')
             self.add_child_axes(ax)
 
             # Location
