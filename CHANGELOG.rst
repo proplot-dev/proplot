@@ -68,6 +68,15 @@ ProPlot v0.5.1 (2020-##-##)
 - Drop support for ``.rgba`` files, but optionally read 4th opacity column from ``.rgb``
   and ``.txt`` files (:commit:`4fa72b0c`).
 
+.. rubric:: Bug fixes
+
+- Fix fatal `~proplot.axistools.AutoFormatter` bug that pops up in rare circumstances
+  with small negative numbers (:issue:`117`).
+
+.. rubric:: Internals
+
+- Colorbar axes are now instances of `~proplot.axes.XYAxes` (:commit:`fcfcb6a1`).
+
 ProPlot v0.5.0 (2020-02-10)
 ===========================
 .. rubric:: Deprecated
