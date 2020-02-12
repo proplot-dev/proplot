@@ -466,8 +466,9 @@ class AutoFormatter(mticker.ScalarFormatter):
                 string = '0'
             if i == 0 and string == '0' and x != 0:
                 # Hard limit of MAX_DIGITS sigfigs
-                string = ('{:.%df}' % min(
-                    abs(np.log10(x) // 1), MAX_DIGITS)).format(x)
+                string = (
+                    '{:.%df}' % min(abs(np.log10(abs(x))) // 1, MAX_DIGITS)
+                ).format(x)
                 continue
             break
         # Prefix and suffix
