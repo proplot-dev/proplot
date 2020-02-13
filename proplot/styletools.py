@@ -124,7 +124,7 @@ CMAPS_TABLE = {
         'roma', 'broc', 'cork', 'vik', 'berlin', 'lisbon', 'tofino',
     ),
     'Scientific colour maps cyclic': (
-        'brocO', 'corkO', 'romaO', 'vikO',
+        'romaO', 'brocO', 'corkO', 'vikO',
     ),
     # ColorBrewer
     'ColorBrewer2.0 sequential': (
@@ -945,7 +945,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         ----------
         cut : float, optional
             The proportion to cut from the center of the colormap.
-            For example, ``center=0.1`` cuts the central 10%%.
+            For example, ``center=0.1`` cuts the central 10%.
         name : str, optional
             The name of the new colormap. Default is
             ``self.name + '_punched'``.
@@ -3069,7 +3069,9 @@ def register_cmaps():
             )
             if not cmap:
                 continue
-            if i == 0 and cmap.name.lower() in ('phase', 'graycycle'):
+            if i == 0 and cmap.name.lower() in (
+                'phase', 'graycycle', 'romao', 'broco', 'corko', 'viko',
+            ):
                 cmap._cyclic = True
             mcm.cmap_d[cmap.name] = cmap
 
@@ -3850,7 +3852,7 @@ for _name in ('viridis', 'plasma', 'inferno', 'magma', 'cividis', 'twilight'):
     if _cmap and isinstance(_cmap, mcolors.ListedColormap):
         mcm.cmap_d.pop(_name, None)
         mcm.cmap_d[_name] = LinearSegmentedColormap.from_list(
-            _name, _cmap.colors, cyclic=('twilight' in _name)
+            _name, _cmap.colors, cyclic=(_name == 'twilight')
         )
 for _cat in ('MATLAB', 'GNUplot', 'GIST', 'Other'):
     for _name in CMAPS_TABLE[_cat]:
