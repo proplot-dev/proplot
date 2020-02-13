@@ -45,7 +45,7 @@ __all__ = [
 
 # Colormap stuff
 CYCLES_TABLE = {
-    'Matplotlib originals': (
+    'Matplotlib defaults': (
         'default', 'classic',
     ),
     'Matplotlib stylesheets': (
@@ -57,11 +57,7 @@ CYCLES_TABLE = {
         'Set1', 'Set2', 'Set3',
     ),
     'Other qualitative': (
-        'FlatUI', 'Qual1', 'Qual2', 'Viz',
-    ),
-    'ProPlot originals': (
-        'Cool', 'Warm', 'Hot',
-        'Floral', 'Contrast', 'Sharp',
+        'FlatUI', 'Qual1', 'Qual2',
     ),
 }
 CMAPS_TABLE = {
