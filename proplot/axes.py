@@ -553,29 +553,24 @@ class Axes(maxes.Axes):
         with figure._align_axislabels."""
         if x not in 'xy':
             return
+
         # Update label on this axes
         axis = getattr(self, x + 'axis')
         axis.label.update(kwargs)
         kwargs.pop('color', None)
 
-        # Defer to parent (main) axes if possible, then get the axes
-        # shared by that parent
-        ax = self._panel_parent or self
-        ax = getattr(ax, '_share' + x) or ax
-
-        # Apply to spanning axes and their panels
-        axs = [ax]
-        if getattr(ax.figure, '_span' + x):
+        # Get "shared axes" siblings
+        # TODO: Group spanning axes with a Grouper like shared axes?
+        axs = [self]
+        if getattr(self.figure, '_span' + x):
             side = axis.get_label_position()
             if side in ('left', 'bottom'):
-                axs = ax._get_side_axes(side)
+                axs = self._get_side_axes(side)
         for ax in axs:
-            axis = getattr(ax, x + 'axis')
-            axis.label.update(kwargs)  # apply to main axes
-            pax = getattr(ax, '_share' + x)
-            if pax is not None:  # apply to panel?
-                axis = getattr(pax, x + 'axis')
-                axis.label.update(kwargs)
+            iaxs = getattr(ax, '_shared_' + x + '_axes').get_siblings(ax)
+            for iax in iaxs:
+                axis = getattr(iax, x + 'axis')
+                axis.label.update(kwargs)  # apply to main axes
 
     def _update_title_position(self, renderer):
         """Update the position of proplot inset titles and builtin
