@@ -63,6 +63,7 @@ ProPlot v0.5.1 (2020-##-##)
 ===========================
 .. rubric:: Deprecated
 
+- Remove custom ProPlot cyclers, need to be more well thought out (:commit:`43f65d17`).
 - Drop support for ``.xrgb`` and ``.xrgba`` files (:commit:`4fa72b0c`).
   Not sure if any online sources produce these kinds of files.
 - Drop support for ``.rgba`` files, but optionally read 4th opacity column from ``.rgb``
@@ -70,6 +71,9 @@ ProPlot v0.5.1 (2020-##-##)
 
 .. rubric:: Bug fixes
 
+- Label cyclic Scientific colour maps as cyclic (:commit:`e10a3109`).
+- Fix v0.4.0 regression where panel sharing no longer works (:commit:`289e5538`).
+- Make axis label sharing more robust (:commit:`7b709db9`).
 - Fix fatal `~proplot.axistools.AutoFormatter` bug that pops up in rare circumstances
   with small negative numbers (:issue:`117`).
 
