@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
 import matplotlib.gridspec as mgridspec
+import matplotlib.axes as maxes
 from numbers import Integral
 from .rctools import rc
 from .utils import _warn_proplot, _notNone, _counter, _setstate, units  # noqa
@@ -489,6 +490,11 @@ class GridSpec(mgridspec.GridSpec):
         fig = self.figure
         fig.subplotpars.update(self.left, self.bottom, self.right, self.top)
         for ax in fig.axes:
+            if not isinstance(ax, maxes.SubplotBase):
+                continue
+            subplotspec = ax.get_subplotspec().get_topmost_subplotspec()
+            if subplotspec.get_gridspec() is not self:
+                continue
             ax.update_params()
             ax.set_position(ax.figbox)
         fig.stale = True
@@ -1014,8 +1020,7 @@ class Figure(mfigure.Figure):
         if not filled:
             ax._share_setup()
             axis = pax.yaxis if side in ('left', 'right') else pax.xaxis
-            # sets tick and tick label positions intelligently
-            getattr(axis, 'tick_' + side)()
+            getattr(axis, 'tick_' + side)()  # set tick and label positions
             axis.set_label_position(side)
 
         return pax
