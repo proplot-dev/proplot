@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """
-Wrapper functions applied to various `~proplot.axes.Axes` plotting methods.
-In a future version these features will be documented on the individual
-plotting methods, but for now they are documented separately.
+These "wrapper" functions are applied to various `~proplot.axes.Axes` plotting
+methods. When a function is "wrapped", it accepts the parameters that the
+"wrapper" function accepts. In a future version, these features will be
+documented on the individual plotting methods, but for now they are documented
+separately on the "wrappers".
 """
 import sys
 import numpy as np
@@ -125,21 +127,24 @@ def _to_iloc(data):
 
 def default_latlon(self, func, *args, latlon=True, **kwargs):
     """
+    Makes ``latlon=True`` the default for basemap plots.
     Wraps %(methods)s for `~proplot.axes.BasemapAxes`.
-    With the default `~mpl_toolkits.basemap` API, you need to pass
-    ``latlon=True`` if your data coordinates are longitude and latitude
-    instead of map projection coordinates. Now, this is the default.
+
+    This means you no longer have to pass ``latlon=True`` if your data
+    coordinates are longitude and latitude.
     """
     return func(self, *args, latlon=latlon, **kwargs)
 
 
 def default_transform(self, func, *args, transform=None, **kwargs):
     """
+    Makes ``transform=cartopy.crs.PlateCarree()`` the default
+    for cartopy plots.
     Wraps %(methods)s for `~proplot.axes.GeoAxes`.
-    With the default `~cartopy.mpl.geoaxes.GeoAxes` API, you need to pass
-    ``transform=cartopy.crs.PlateCarree()`` if your data coordinates are
-    longitude and latitude instead of map projection coordinates. Now,
-    this is the default.
+
+    This means you no longer have to
+    pass ``transform=cartopy.crs.PlateCarree()`` if your data
+    coordinates are longitude and latitude.
     """
     # Apply default transform
     # TODO: Do some cartopy methods reset backgroundpatch or outlinepatch?
@@ -152,14 +157,10 @@ def default_transform(self, func, *args, transform=None, **kwargs):
 
 def default_crs(self, func, *args, crs=None, **kwargs):
     """
-    Wraps %(methods)s for `~proplot.axes.GeoAxes` and fixes a
-    `~cartopy.mpl.geoaxes.GeoAxes.set_extent` bug associated with tight
-    bounding boxes.
-
-    With the default `~cartopy.mpl.geoaxes.GeoAxes` API, you need to pass
-    ``crs=cartopy.crs.PlateCarree()`` if your data coordinates are
-    longitude and latitude instead of map projection coordinates. Now,
-    this is the default.
+    Fixes the `~cartopy.mpl.geoaxes.GeoAxes.set_extent` bug associated with
+    tight bounding boxes and makes ``crs=cartopy.crs.PlateCarree()`` the
+    default for cartopy plots. Wraps %(methods)s
+    for `~proplot.axes.GeoAxes`.
     """
     # Apply default crs
     name = func.__name__
@@ -219,12 +220,12 @@ def _standard_label(data, axis=None, units=True):
 
 def standardize_1d(self, func, *args, **kwargs):
     """
-    Wraps %(methods)s, standardizes acceptable positional args and optionally
-    modifies the x axis label, y axis label, title, and axis ticks
-    if a `~xarray.DataArray`, `~pandas.DataFrame`, or `~pandas.Series` is
-    passed.
+    Interprets positional arguments for the "1d" plotting methods
+    %(methods)s. This also optionally modifies the x axis label, y axis label,
+    title, and axis ticks if a `~xarray.DataArray`, `~pandas.DataFrame`, or
+    `~pandas.Series` is passed.
 
-    Positional args are standardized as follows.
+    Positional arguments are standardized as follows:
 
     * If a 2D array is passed, the corresponding plot command is called for
       each column of data (except for ``boxplot`` and ``violinplot``, in which
@@ -399,11 +400,12 @@ def _enforce_bounds(x, y, xmin, xmax):
 
 def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
     """
-    Wraps %(methods)s, standardizes acceptable positional args and optionally
-    modifies the x axis label, y axis label, title, and axis ticks if the
-    a `~xarray.DataArray`, `~pandas.DataFrame`, or `~pandas.Series` is passed.
+    Interprets positional arguments for the "2d" plotting methods
+    %(methods)s. This also optionally modifies the x axis label, y axis label,
+    title, and axis ticks if a `~xarray.DataArray`, `~pandas.DataFrame`, or
+    `~pandas.Series` is passed.
 
-    Positional args are standardized as follows.
+    Positional arguments are standardized as follows:
 
     * If *x* and *y* or *latitude* and *longitude* coordinates were not
       provided, and a `~pandas.DataFrame` or `~xarray.DataArray` is passed, we
@@ -416,7 +418,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
 
     For `~proplot.axes.GeoAxes` and `~proplot.axes.BasemapAxes`, the
     `globe` keyword arg is added, suitable for plotting datasets with global
-    coverage. Passing ``globe=True`` does the following.
+    coverage. Passing ``globe=True`` does the following:
 
     1. "Interpolates" input data to the North and South poles.
     2. Makes meridional coverage "circular", i.e. the last longitude coordinate
@@ -726,11 +728,11 @@ def add_errorbars(
     **kwargs
 ):
     """
-    Wraps %(methods)s, adds support for drawing error bars. Includes
-    options for interpreting columns of data as ranges, representing the mean
-    or median of each column with lines, points, or bars, and drawing error
-    bars representing percentile ranges or standard deviation multiples for
-    the data in each column.
+    Adds support for drawing error bars to the "1d" plotting methods
+    %(methods)s. Includes options for interpreting columns of data as ranges,
+    representing the mean or median of each column with lines, points, or bars,
+    and drawing error bars representing percentile ranges or standard deviation
+    multiples for the data in each column.
 
     Parameters
     ----------
@@ -872,13 +874,12 @@ def add_errorbars(
 
 def plot_wrapper(self, func, *args, cmap=None, values=None, **kwargs):
     """
-    Wraps %(methods)s, draws a "colormap line" if the `cmap` argument was
-    passed. "Colormap lines" change color as a function of the parametric
-    coordinate `values` using the input colormap `cmap`.
+    Calls `~proplot.axes.Axes.parametric` if the `cmap` argument was supplied,
+    otherwise calls `~matplotlib.axes.Axes.plot`. Wraps %(methods)s.
 
     Parameters
     ----------
-    *args : (y,), (x,y), or (x,y,fmt)
+    *args : (y,), (x, y), or (x, y, fmt)
         Passed to `~matplotlib.axes.Axes.plot`.
     cmap, values : optional
         Passed to `~proplot.axes.Axes.parametric`.
@@ -907,8 +908,11 @@ def scatter_wrapper(
     **kwargs
 ):
     """
-    Wraps `~matplotlib.axes.Axes.scatter`, adds optional keyword args
-    more consistent with the `~matplotlib.axes.Axes.plot` keywords.
+    Adds keyword arguments to `~matplotlib.axes.Axes.scatter` that are more
+    consistent with the `~matplotlib.axes.Axes.plot` keyword arguments, and
+    interpret the `cmap` and `norm` keyword arguments with
+    `~proplot.styletools.Colormap` and `~proplot.styletools.Normalize` like
+    in `cmap_changer`. Wraps %(methods)s.
 
     Parameters
     ----------
@@ -964,10 +968,14 @@ color-spec or list thereof, optional
         norm = styletools.Norm(norm, **norm_kw)
 
     # Apply some aliases for keyword arguments
-    c = _notNone(c, color, markercolor, None,
-                 names=('c', 'color', 'markercolor'))
-    s = _notNone(s, size, markersize, None,
-                 names=('s', 'size', 'markersize'))
+    c = _notNone(
+        c, color, markercolor, None,
+        names=('c', 'color', 'markercolor')
+    )
+    s = _notNone(
+        s, size, markersize, None,
+        names=('s', 'size', 'markersize')
+    )
     lw = _notNone(
         lw, linewidth, linewidths, markeredgewidth, markeredgewidths, None,
         names=(
@@ -1048,8 +1056,9 @@ def _fill_between_apply(
 
 def fill_between_wrapper(self, func, *args, **kwargs):
     """
-    Wraps `~matplotlib.axes.Axes.fill_between`, also accessible via the
-    `~proplot.axes.Axes.area` alias.
+    Supports overlaying and stacking successive columns of data, and permits
+    using different colors for "negative" and "positive" regions.
+    Wraps `~matplotlib.axes.Axes.fill_between` and `~proplot.axes.Axes.area`.
 
     Parameters
     ----------
@@ -1079,14 +1088,16 @@ def fill_between_wrapper(self, func, *args, **kwargs):
 
 
 def fill_betweenx_wrapper(self, func, *args, **kwargs):
-    """Wraps %(methods)s, also accessible via the `~proplot.axes.Axes.areax`
-    alias. Usage is same as `fill_between_wrapper`."""
+    """Supports overlaying and stacking successive columns of data, and permits
+    using different colors for "negative" and "positive" regions.
+    Wraps `~matplotlib.axes.Axes.fillx_between` and `~proplot.axes.Axes.areax`.
+    Usage is same as `fill_between_wrapper`."""
     return _fill_between_apply(self, func, *args, **kwargs)
 
 
 def hist_wrapper(self, func, x, bins=None, **kwargs):
-    """Wraps %(methods)s, enforces that all arguments after `bins` are
-    keyword-only and sets the default patch linewidth to ``0``."""
+    """Enforces that all arguments after `bins` are keyword-only and sets the
+    default patch linewidth to ``0``. Wraps %(methods)s."""
     kwargs.setdefault('linewidth', 0)
     return func(self, x, bins=bins, **kwargs)
 
@@ -1094,7 +1105,8 @@ def hist_wrapper(self, func, x, bins=None, **kwargs):
 def barh_wrapper(  # noqa: U100
     self, func, y=None, width=None, height=0.8, left=None, **kwargs
 ):
-    """Wraps %(methods)s, usage is same as `bar_wrapper`."""
+    """Supports grouping and stacking successive columns of data, and changes
+    the default bar style. Wraps %(methods)s."""
     kwargs.setdefault('orientation', 'horizontal')
     if y is None and width is None:
         raise ValueError(
@@ -1110,7 +1122,8 @@ def bar_wrapper(
     **kwargs
 ):
     """
-    Wraps %(methods)s, permits bar stacking and bar grouping.
+    Supports grouping and stacking successive columns of data, and changes
+    the default bar style. Wraps %(methods)s.
 
     Parameters
     ----------
@@ -1183,8 +1196,8 @@ def boxplot_wrapper(
     **kwargs
 ):
     """
-    Wraps %(methods)s, adds convenient keyword args.
-    Fills the objects with a cycle color by default.
+    Adds convenient keyword arguments and changes the default boxplot style.
+    Wraps %(methods)s.
 
     Parameters
     ----------
@@ -1275,11 +1288,12 @@ def violinplot_wrapper(
     **kwargs
 ):
     """
-    Wraps %(methods)s, adds convenient keyword args.
-    Makes the style shown in right plot of `this matplotlib example \
-<https://matplotlib.org/3.1.0/gallery/statistics/customized_violin.html>`__
-    the default. It is also no longer possible to show minima and maxima with
-    whiskers, because this is redundant.
+    Adds convenient keyword arguments and changes the default violinplot style
+    to match `this matplotlib example \
+<https://matplotlib.org/3.1.0/gallery/statistics/customized_violin.html>`__.
+    It is also no longer possible to show minima and maxima with whiskers --
+    while this is useful for `~matplotlib.axes.Axes.boxplot`\\ s it is
+    redundant for `~matplotlib.axes.Axes.violinplot`\\ s. Wraps %(methods)s.
 
     Parameters
     ----------
