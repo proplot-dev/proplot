@@ -443,7 +443,7 @@ def _get_synced_params(key, value):
             )
             raise ValueError(
                 f'Invalid cycle name {cycle!r}. Options are: '
-                ', '.join(map(repr, cycles)) + '.'
+                + ', '.join(map(repr, cycles)) + '.'
             )
         if rgbcycle and cycle.lower() == 'colorblind':
             regcolors = colors + [(0.1, 0.1, 0.1)]

@@ -242,9 +242,9 @@ class Axes(maxes.Axes):
         The lefmost or bottommost axes are at the start of the list."""
         if not hasattr(self, 'get_subplotspec'):
             return [self]
-        y = ('y' if x == 'x' else 'x')
-        idx = (0 if x == 'x' else 1)
-        argfunc = (np.argmax if x == 'x' else np.argmin)
+        y = 'y' if x == 'x' else 'x'
+        idx = 0 if x == 'x' else 1
+        argfunc = np.argmax if x == 'x' else np.argmin
         irange = self._range_gridspec(x)
         axs = [
             ax for ax in self.figure._axes_main
@@ -556,17 +556,17 @@ class Axes(maxes.Axes):
         kwargs.pop('color', None)
 
         # Get "shared axes" siblings
-        # TODO: Group spanning axes with a Grouper like shared axes?
-        axs = [self]
-        if getattr(self.figure, '_span' + x):
+        # TODO: Share axis locators and formatters just like matplotlib shares
+        # axis limits and proplot shares axis labels.
+        ax, *_ = self._get_extent_axes(x)  # the leftmost/bottommost
+        axs = [ax]
+        if getattr(ax.figure, '_span' + x):
             side = axis.get_label_position()
             if side in ('left', 'bottom'):
-                axs = self._get_side_axes(side)
+                axs = ax._get_side_axes(side)
         for ax in axs:
-            iaxs = getattr(ax, '_shared_' + x + '_axes').get_siblings(ax)
-            for iax in iaxs:
-                axis = getattr(iax, x + 'axis')
-                axis.label.update(kwargs)  # apply to main axes
+            axis = getattr(ax, x + 'axis')
+            axis.label.update(kwargs)  # apply to main axes
 
     def _update_title_position(self, renderer):
         """Update the position of proplot inset titles and builtin
