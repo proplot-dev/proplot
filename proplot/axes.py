@@ -154,10 +154,12 @@ class Axes(maxes.Axes):
         self._left_panels = []
         self._right_panels = []
         self._tightbbox = None  # bounding boxes are saved
-        self._panel_side = None
-        self._panel_share = False  # True when "filled" with cbar/legend
         self._panel_parent = None
+        self._panel_side = None
+        self._panel_share = False
         self._panel_filled = False  # True when "filled" with cbar/legend
+        self._sharex_override = False
+        self._sharey_override = False
         self._inset_parent = None
         self._inset_zoom = False
         self._inset_zoom_data = None
@@ -396,9 +398,8 @@ class Axes(maxes.Axes):
         paxs = getattr(ax, '_' + side + '_panels')
         if not paxs:
             return ax
-        idx = 0 if side in ('left', 'top') else -1
-        pax = paxs[idx]
         kw = {}
+        pax = paxs[-1]  # outermost is always list in list
         obj = getattr(ax, '_' + side + '_label')
         for key in ('color', 'fontproperties'):  # TODO: add to this?
             kw[key] = getattr(obj, 'get_' + key)()
@@ -427,7 +428,7 @@ class Axes(maxes.Axes):
         if not taxs or not ax._above_top_panels:
             tax = ax
         else:
-            tax = taxs[0]
+            tax = taxs[-1]
             tax._title_pad = ax._title_pad
             for loc in ('abc', 'left', 'center', 'right'):
                 kw = {}
@@ -440,74 +441,69 @@ class Axes(maxes.Axes):
                 tobj.update(kw)
                 obj.set_text('')
 
-    def _sharex_setup(self, sharex, level=None):
+    def _sharex_setup(self, sharex):
         """Configure x-axis sharing for panels. Main axis sharing is done in
         `~XYAxes._sharex_setup`."""
-        if level is None:
-            level = self.figure._sharex
-        if level not in range(4):
-            raise ValueError(
-                'Invalid sharing level sharex={value!r}. '
-                'Axis sharing level can be 0 (share nothing), '
-                '1 (hide axis labels), '
-                '2 (share limits and hide axis labels), or '
-                '3 (share limits and hide axis and tick labels).'
-            )
-        self._share_short_axis(sharex, 'left', level)
-        self._share_short_axis(sharex, 'right', level)
-        self._share_long_axis(sharex, 'bottom', level)
-        self._share_long_axis(sharex, 'top', level)
+        self._share_short_axis(sharex, 'left')
+        self._share_short_axis(sharex, 'right')
+        self._share_long_axis(sharex, 'bottom')
+        self._share_long_axis(sharex, 'top')
 
-    def _sharey_setup(self, sharey, level=None):
+    def _sharey_setup(self, sharey):
         """Configure y-axis sharing for panels. Main axis sharing is done in
         `~XYAxes._sharey_setup`."""
-        if level is None:
-            level = self.figure._sharey
-        if level not in range(4):
-            raise ValueError(
-                'Invalid sharing level sharey={value!r}. '
-                'Axis sharing level can be 0 (share nothing), '
-                '1 (hide axis labels), '
-                '2 (share limits and hide axis labels), or '
-                '3 (share limits and hide axis and tick labels).'
-            )
-        self._share_short_axis(sharey, 'bottom', level)
-        self._share_short_axis(sharey, 'top', level)
-        self._share_long_axis(sharey, 'left', level)
-        self._share_long_axis(sharey, 'right', level)
+        self._share_short_axis(sharey, 'bottom')
+        self._share_short_axis(sharey, 'top')
+        self._share_long_axis(sharey, 'left')
+        self._share_long_axis(sharey, 'right')
 
     def _share_setup(self):
         """Automatically configure axis sharing based on the horizontal and
         vertical extent of subplots in the figure gridspec."""
         # Panel axes sharing, between main subplot and its panels
+        # NOTE: While _panel_share just means "include this panel" in the
+        # axis sharing between the main subplot and panel children,
+        # _sharex_override and _sharey_override say "override the sharing level
+        # for these axes, because they belong to a panel group", and may
+        # include the main subplot itself.
         def shared(paxs):
             return [
                 pax for pax in paxs
                 if not pax._panel_filled and pax._panel_share
             ]
 
+        # Internal axis sharing; share stacks of panels and the main
+        # axes with each other.
+        # NOTE: *This* block is why, even though share[xy] are figure-wide
+        # settings, we still need the axes-specific _share[xy]_override attr
         if not self._panel_side:  # this is a main axes
             # Top and bottom
             bottom = self
             paxs = shared(self._bottom_panels)
             if paxs:
                 bottom = paxs[-1]
+                bottom._sharex_override = False
                 for iax in (self, *paxs[:-1]):
-                    # parent is *bottom-most* panel
-                    iax._sharex_setup(bottom, 3)
+                    iax._sharex_override = True
+                    iax._sharex_setup(bottom)  # parent is bottom-most
             paxs = shared(self._top_panels)
             for iax in paxs:
-                iax._sharex_setup(bottom, 3)
+                iax._sharex_override = True
+                iax._sharex_setup(bottom)
             # Left and right
+            # NOTE: Order of panel lists is always inside-to-outside
             left = self
             paxs = shared(self._left_panels)
             if paxs:
-                left = paxs[0]
-                for iax in (*paxs[1:], self):
-                    iax._sharey_setup(left, 3)  # parent is *bottom-most* panel
+                left = paxs[-1]
+                left._sharey_override = False
+                for iax in (self, *paxs[:-1]):
+                    iax._sharey_override = True
+                    iax._sharey_setup(left)  # parent is left-most
             paxs = shared(self._right_panels)
             for iax in paxs:
-                iax._sharey_setup(left, 3)
+                iax._sharey_override = True
+                iax._sharey_setup(left)
 
         # Main axes, sometimes overrides panel axes sharing
         # TODO: This can get very repetitive, but probably minimal impact?
@@ -520,31 +516,31 @@ class Axes(maxes.Axes):
         for child in children:
             child._sharey_setup(parent)
 
-    def _share_short_axis(self, share, side, level):
-        """Share the "short" axes of panels along a main subplot with panels
-        along an external subplot."""
-        if share is None or self._panel_side:  # not None
-            return
+    def _share_short_axis(self, share, side):
+        """Share the "short" axes of panels belonging to this subplot
+        with panels belonging to an external subplot."""
+        if share is None or self._panel_side:
+            return  # if this is a panel
         axis = 'x' if side in ('left', 'right') else 'y'
         caxs = getattr(self, '_' + side + '_panels')
         paxs = getattr(share, '_' + side + '_panels')
         caxs = [pax for pax in caxs if not pax._panel_filled]
         paxs = [pax for pax in paxs if not pax._panel_filled]
         for cax, pax in zip(caxs, paxs):  # may be uneven
-            getattr(cax, '_share' + axis + '_setup')(pax, level)
+            getattr(cax, '_share' + axis + '_setup')(pax)
 
-    def _share_long_axis(self, share, side, level):
-        """Share the "long" axes of panels along a main subplot with the
-        axis from an external subplot."""
+    def _share_long_axis(self, share, side):
+        """Share the "long" axes of panels belonging to this subplot
+        with panels belonging to an external subplot."""
         # NOTE: We do not check _panel_share because that only controls
         # sharing with main subplot, not other subplots
         if share is None or self._panel_side:
-            return
+            return  # if this is a panel
         axis = 'x' if side in ('top', 'bottom') else 'y'
         paxs = getattr(self, '_' + side + '_panels')
         paxs = [pax for pax in paxs if not pax._panel_filled]
         for pax in paxs:
-            getattr(pax, '_share' + axis + '_setup')(share, level)
+            getattr(pax, '_share' + axis + '_setup')(share)
 
     def _update_axis_labels(self, x='x', **kwargs):
         """Apply axis labels to the relevant shared axis. If spanning
@@ -1963,7 +1959,10 @@ class XYAxes(Axes):
             axis = getattr(self, x + 'axis')
             share = getattr(self, '_share' + x)
             if share is not None:
-                level = getattr(self.figure, '_share' + x)
+                level = (
+                    3 if getattr(self, '_share' + x + '_override')
+                    else getattr(self.figure, '_share' + x)
+                )
                 if level > 0:
                     axis.label.set_visible(False)
                 if level > 2:
@@ -1984,13 +1983,21 @@ class XYAxes(Axes):
         self._twinned_axes.join(self, ax2)
         return ax2
 
-    def _sharex_setup(self, sharex, level=None):
+    def _sharex_setup(self, sharex):
         """Configure shared axes accounting for panels. The input is the
         'parent' axes, from which this one will draw its properties."""
-        # Call Axes method
-        if level is None:
-            level = self.figure._sharex
-        super()._sharex_setup(sharex, level)  # sets up panels
+        # Share panel across different subplots
+        super()._sharex_setup(sharex)
+        # Get sharing level
+        level = 3 if self._sharex_override else self.figure._sharex
+        if level not in range(4):
+            raise ValueError(
+                'Invalid sharing level sharex={value!r}. '
+                'Axis sharing level can be 0 (share nothing), '
+                '1 (hide axis labels), '
+                '2 (share limits and hide axis labels), or '
+                '3 (share limits and hide axis and tick labels).'
+            )
         if sharex in (None, self) or not isinstance(sharex, XYAxes):
             return
         # Builtin sharing features
@@ -1999,13 +2006,21 @@ class XYAxes(Axes):
         if level > 1:
             self._shared_x_axes.join(self, sharex)
 
-    def _sharey_setup(self, sharey, level=None):
+    def _sharey_setup(self, sharey):
         """Configure shared axes accounting for panels. The input is the
         'parent' axes, from which this one will draw its properties."""
-        # Call Axes method
-        if level is None:
-            level = self.figure._sharey
-        super()._sharey_setup(sharey, level)
+        # Share panel across different subplots
+        super()._sharey_setup(sharey)
+        # Get sharing level
+        level = 3 if self._sharey_override else self.figure._sharey
+        if level not in range(4):
+            raise ValueError(
+                'Invalid sharing level sharey={value!r}. '
+                'Axis sharing level can be 0 (share nothing), '
+                '1 (hide axis labels), '
+                '2 (share limits and hide axis labels), or '
+                '3 (share limits and hide axis and tick labels).'
+            )
         if sharey in (None, self) or not isinstance(sharey, XYAxes):
             return
         # Builtin features
