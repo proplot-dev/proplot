@@ -197,6 +197,7 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
         ``'eng'``               `~matplotlib.ticker.EngFormatter`               Engineering notation
         ``'fixed'``             `~matplotlib.ticker.FixedFormatter`             List of strings
         ``'formatstr'``         `~matplotlib.ticker.FormatStrFormatter`         From C-style ``string % format`` notation
+        ``'func'``              `~matplotlib.ticker.FuncFormatter`              Use an arbitrary function
         ``'index'``             `~matplotlib.ticker.IndexFormatter`             List of strings corresponding to non-negative integer positions along the axis
         ``'log'``, ``'sci'``    `~matplotlib.ticker.LogFormatterSciNotation`    For log-scale axes with scientific notation
         ``'logit'``             `~matplotlib.ticker.LogitFormatter`             For logistic-scale axes
@@ -232,7 +233,8 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
         return formatter
     # Pull out extra args
     if np.iterable(formatter) and not isinstance(formatter, str) and not all(
-            isinstance(item, str) for item in formatter):
+        isinstance(item, str) for item in formatter
+    ):
         formatter, args = formatter[0], (*formatter[1:], *args)
     # Get the formatter
     if isinstance(formatter, str):  # assumption is list of strings
@@ -1457,6 +1459,7 @@ formatters = {  # note default LogFormatter uses ugly e+00 notation
     'scalar': mticker.ScalarFormatter,
     'none': mticker.NullFormatter,
     'null': mticker.NullFormatter,
+    'func': mticker.FuncFormatter,
     'strmethod': mticker.StrMethodFormatter,
     'formatstr': mticker.FormatStrFormatter,
     'log': mticker.LogFormatterSciNotation,
