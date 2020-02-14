@@ -2090,22 +2090,38 @@ def subplots(
         creates one long subplot in the top row with two subplots in the bottom
         row separated by a space.
     ncols, nrows : int, optional
-        Number of columns, rows. Ignored if `array` is not ``None``.
+        Number of columns, rows. Ignored if `array` was passed.
         Use these arguments for simpler subplot grids.
     order : {'C', 'F'}, optional
         Whether subplots are numbered in column-major (``'C'``) or row-major
         (``'F'``) order. Analogous to `numpy.array` ordering. This controls
-        the order axes appear in the `axs` list, and the order of subplot
-        a-b-c labeling (see `~proplot.axes.Axes.format`).
+        the order that subplots appear in the `subplot_grid` returned by this
+        function, and the order of subplot a-b-c labels (see
+        `~proplot.axes.Axes.format`).
     figsize : length-2 tuple, optional
         Tuple specifying the figure `(width, height)`.
     width, height : float or str, optional
-        The figure width and height. Units are interpreted by
-        `~proplot.utils.units`.
+        The figure width and height. If you specify just one, the aspect
+        ratio `aspect` of the reference subplot `ref` will be preserved.
+    ref : int, optional
+        The reference subplot number. The `axwidth`, `axheight`, and `aspect`
+        keyword args are applied to this subplot, and the aspect ratio is
+        conserved for this subplot in the tight layout adjustment. If you
+        did not specify `width_ratios` and `height_ratios`, the `axwidth`,
+        `axheight`, and `aspect` settings will apply to *all* subplots --
+        not just the `ref` subplot.
+    axwidth, axheight : float or str, optional
+        The width, height of the reference subplot. Units are interpreted by
+        `~proplot.utils.units`. Default is :rc:`subplots.axwidth`. Ignored
+        if `width`, `height`, or `figsize` was passed.
+    aspect : float or length-2 list of floats, optional
+        The reference subplot aspect ratio, in numeric form (width divided by
+        height) or as a (width, height) tuple. Ignored if `width`, `height`,
+        or `figsize` was passed.
     journal : str, optional
         String name corresponding to an academic journal standard that is used
-        to control the figure width (and height, if specified). See below
-        table.
+        to control the figure width and, if specified, the height. See the
+        below table.
 
         ===========  ====================  ==========================================================================================================================================================
         Key          Size description      Organization
@@ -2127,28 +2143,13 @@ def subplots(
         ``'pnas3'``  landscape page        ”
         ===========  ====================  ==========================================================================================================================================================
 
-    ref : int, optional
-        The reference axes number. The `axwidth`, `axheight`, and `aspect`
-        keyword args are applied to this axes, and aspect ratio is conserved
-        for this axes in tight layout adjustment.
-    axwidth, axheight : float or str, optional
-        Sets the average width, height of your axes. Units are interpreted by
-        `~proplot.utils.units`. Default is :rc:`subplots.axwidth`.
-
-        These arguments are convenient where you don't care about the figure
-        dimensions and just want your axes to have enough "room".
-    aspect : float or length-2 list of floats, optional
-        The (average) axes aspect ratio, in numeric form (width divided by
-        height) or as (width, height) tuple. If you do not provide
-        the `hratios` or `wratios` keyword args, all axes will have
-        identical aspect ratios.
-    hratios, wratios
-        Aliases for `height_ratios`, `width_ratios`.
     width_ratios, height_ratios : float or list thereof, optional
         Passed to `GridSpec`, denotes the width
         and height ratios for the subplot grid. Length of `width_ratios`
         must match the number of rows, and length of `height_ratios` must
         match the number of columns.
+    wratios, hratios
+        Aliases for `height_ratios`, `width_ratios`.
     wspace, hspace, space : float or str or list thereof, optional
         Passed to `GridSpec`, denotes the
         spacing between grid columns, rows, and both, respectively. If float
