@@ -16,8 +16,11 @@ except ImportError:  # graceful fallback if IceCream isn't installed
 
 __all__ = ['arange', 'edges', 'edges2d', 'units']
 
-BENCHMARK = False  # change this to turn on benchmarking
-NUMBER = re.compile('^([-+]?[0-9._]+([eE][-+]?[0-9_]+)?)(.*)$')
+# Change this to turn on benchmarking
+BENCHMARK = False
+
+# Units regex
+NUMBER = re.compile('^([-+]?[0-9._]+(?:[eE][-+]?[0-9_]+)?)(.*)$')
 
 
 class _benchmark(object):
@@ -239,7 +242,7 @@ def edges2d(Z):
     return Zb
 
 
-def units(value, units='in', axes=None, figure=None, width=True):
+def units(value, dest='in', axes=None, figure=None, width=True):
     """
     Convert values and lists of values between arbitrary physical units. This
     is used internally all over ProPlot, permitting flexible units for various
@@ -249,7 +252,7 @@ def units(value, units='in', axes=None, figure=None, width=True):
     ----------
     value : float or str or list thereof
         A size specifier or *list thereof*. If numeric, nothing is done.
-        If string, it is converted to `units` units. The string should look
+        If string, it is converted to the units `dest`. The string should look
         like ``'123.456unit'``, where the number is the magnitude and
         ``'unit'`` is one of the following.
 
@@ -274,12 +277,12 @@ def units(value, units='in', axes=None, figure=None, width=True):
         ``'ly'``   Light years ;)
         =========  =========================================================================================
 
-    units : str, optional
+    dest : str, optional
         The destination units. Default is inches, i.e. ``'in'``.
     axes : `~matplotlib.axes.Axes`, optional
-        The axes to use for scaling units that look like ``0.1ax``.
+        The axes to use for scaling units that look like ``'0.1ax'``.
     figure : `~matplotlib.figure.Figure`, optional
-        The figure to use for scaling units that look like ``0.1fig``. If
+        The figure to use for scaling units that look like ``'0.1fig'``. If
         ``None`` we try to get the figure from ``axes.figure``.
     width : bool, optional
         Whether to use the width or height for the axes and figure relative
@@ -330,10 +333,10 @@ def units(value, units='in', axes=None, figure=None, width=True):
         unit_dict['fig'] = figure.get_size_inches()[1 - int(width)]
     # Scale for converting inches to arbitrary other unit
     try:
-        scale = unit_dict[units]
+        scale = unit_dict[dest]
     except KeyError:
         raise ValueError(
-            f'Invalid destination units {units!r}. Valid units are '
+            f'Invalid destination units {dest!r}. Valid units are '
             + ', '.join(map(repr, unit_dict.keys())) + '.'
         )
 
@@ -355,10 +358,11 @@ def units(value, units='in', axes=None, figure=None, width=True):
                 f'Invalid size spec {val!r}. Valid units are '
                 + ', '.join(map(repr, unit_dict.keys())) + '.'
             )
-        number, _, units = regex.groups()  # second group is exponential
+        number, units = regex.groups()  # second group is exponential
         try:
             result.append(
-                float(number) * (unit_dict[units] / scale if units else 1))
+                float(number) * (unit_dict[units] / scale if units else 1)
+            )
         except (KeyError, ValueError):
             raise ValueError(
                 f'Invalid size spec {val!r}. Valid units are '
