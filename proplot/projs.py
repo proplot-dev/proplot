@@ -196,8 +196,10 @@ def Proj(name, basemap=False, **kwargs):
 
 
 class Aitoff(_WarpedRectangularProjection):
-    """The `Aitoff <https://en.wikipedia.org/wiki/Aitoff_projection>`__
-    projection."""
+    """
+    The `Aitoff <https://en.wikipedia.org/wiki/Aitoff_projection>`__
+    projection.
+    """
     #: Registered projection name.
     name = 'aitoff'
 
@@ -233,8 +235,10 @@ class Aitoff(_WarpedRectangularProjection):
 
 
 class Hammer(_WarpedRectangularProjection):
-    """The `Hammer <https://en.wikipedia.org/wiki/Hammer_projection>`__
-    projection."""
+    """
+    The `Hammer <https://en.wikipedia.org/wiki/Hammer_projection>`__
+    projection.
+    """
     #: Registered projection name.
     name = 'hammer'
 
@@ -270,8 +274,10 @@ class Hammer(_WarpedRectangularProjection):
 
 
 class KavrayskiyVII(_WarpedRectangularProjection):
-    """The `Kavrayskiy VII \
-<https://en.wikipedia.org/wiki/Kavrayskiy_VII_projection>`__ projection."""
+    """
+    The `Kavrayskiy VII \
+<https://en.wikipedia.org/wiki/Kavrayskiy_VII_projection>`__ projection.
+    """
     #: Registered projection name.
     name = 'kavrayskiyVII'
 
@@ -305,8 +311,10 @@ class KavrayskiyVII(_WarpedRectangularProjection):
 
 
 class WinkelTripel(_WarpedRectangularProjection):
-    """The `Winkel tripel (Winkel III) \
-<https://en.wikipedia.org/wiki/Winkel_tripel_projection>`__ projection."""
+    """
+    The `Winkel tripel (Winkel III) \
+<https://en.wikipedia.org/wiki/Winkel_tripel_projection>`__ projection.
+    """
     #: Registered projection name.
     name = 'winkeltripel'
 
@@ -340,7 +348,9 @@ class WinkelTripel(_WarpedRectangularProjection):
 
 
 class NorthPolarAzimuthalEquidistant(AzimuthalEquidistant):
-    """Analogous to `~cartopy.crs.NorthPolarStereo`."""
+    """
+    Analogous to `~cartopy.crs.NorthPolarStereo`.
+    """
     def __init__(self, central_longitude=0.0, globe=None):
         super().__init__(
             central_latitude=90,
@@ -350,7 +360,9 @@ class NorthPolarAzimuthalEquidistant(AzimuthalEquidistant):
 
 
 class SouthPolarAzimuthalEquidistant(AzimuthalEquidistant):
-    """Analogous to `~cartopy.crs.SouthPolarStereo`."""
+    """
+    Analogous to `~cartopy.crs.SouthPolarStereo`.
+    """
     def __init__(self, central_longitude=0.0, globe=None):
         super().__init__(
             central_latitude=-90,
@@ -360,7 +372,9 @@ class SouthPolarAzimuthalEquidistant(AzimuthalEquidistant):
 
 
 class NorthPolarLambertAzimuthalEqualArea(LambertAzimuthalEqualArea):
-    """Analogous to `~cartopy.crs.NorthPolarStereo`."""
+    """
+    Analogous to `~cartopy.crs.NorthPolarStereo`.
+    """
     def __init__(self, central_longitude=0.0, globe=None):
         super().__init__(
             central_latitude=90,
@@ -370,7 +384,9 @@ class NorthPolarLambertAzimuthalEqualArea(LambertAzimuthalEqualArea):
 
 
 class SouthPolarLambertAzimuthalEqualArea(LambertAzimuthalEqualArea):
-    """Analogous to `~cartopy.crs.SouthPolarStereo`."""
+    """
+    Analogous to `~cartopy.crs.SouthPolarStereo`.
+    """
     def __init__(self, central_longitude=0.0, globe=None):
         super().__init__(
             central_latitude=-90,
@@ -380,7 +396,9 @@ class SouthPolarLambertAzimuthalEqualArea(LambertAzimuthalEqualArea):
 
 
 class NorthPolarGnomonic(Gnomonic):
-    """Analogous to `~cartopy.crs.SouthPolarStereo`."""
+    """
+    Analogous to `~cartopy.crs.SouthPolarStereo`.
+    """
     def __init__(self, central_longitude=0.0, globe=None):
         super().__init__(
             central_latitude=90,
@@ -390,7 +408,9 @@ class NorthPolarGnomonic(Gnomonic):
 
 
 class SouthPolarGnomonic(Gnomonic):
-    """Analogous to `~cartopy.crs.SouthPolarStereo`."""
+    """
+    Analogous to `~cartopy.crs.SouthPolarStereo`.
+    """
     def __init__(self, central_longitude=0.0, globe=None):
         super().__init__(
             central_latitude=-90,

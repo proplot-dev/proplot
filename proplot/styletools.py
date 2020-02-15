@@ -709,7 +709,9 @@ warn_on_failure : bool, optional
 
 
 class _Colormap(object):
-    """Mixin class used to add some helper methods."""
+    """
+    Mixin class used to add some helper methods.
+    """
     def _get_data(self, ext, alpha=True):
         """
         Return a string containing the colormap colors for saving.
@@ -1473,7 +1475,9 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
 
     @staticmethod
     def from_file(path, warn_on_failure=False):
-        """Load color cycle from a file."""
+        """
+        Load color cycle from a file.
+        """
         return _from_file(path, listed=True, warn_on_failure=warn_on_failure)
 
     # Fix docstrings
@@ -1483,9 +1487,11 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
 
 
 class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
-    """Similar to `~matplotlib.colors.LinearSegmentedColormap`, but instead
+    """
+    Similar to `~matplotlib.colors.LinearSegmentedColormap`, but instead
     of varying the RGB channels, we vary hue, saturation, and luminance in
-    either the HCL colorspace or the HSL or HPL scalings of HCL."""
+    either the HCL colorspace or the HSL or HPL scalings of HCL.
+    """
     def __init__(
         self, name, segmentdata, N=None, space=None, clip=True,
         gamma=None, gamma1=None, gamma2=None,
@@ -1582,8 +1588,10 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         self._clip = clip
 
     def _init(self):
-        """As with `~matplotlib.colors.LinearSegmentedColormap`, but convert
-        each value in the lookup table from ``self._space`` to RGB."""
+        """
+        As with `~matplotlib.colors.LinearSegmentedColormap`, but convert
+        each value in the lookup table from ``self._space`` to RGB.
+        """
         # First generate the lookup table
         channels = ('hue', 'saturation', 'luminance')
         # gamma weights *low chroma* and *high luminance*
@@ -1836,9 +1844,11 @@ optional
 
 
 class CmapDict(dict):
-    """Dictionary subclass used to replace the `matplotlib.cm.cmap_d`
+    """
+    Dictionary subclass used to replace the `matplotlib.cm.cmap_d`
     colormap dictionary. See `~CmapDict.__getitem__` and
-    `~CmapDict.__setitem__` for details."""
+    `~CmapDict.__setitem__` for details.
+    """
     def __init__(self, kwargs):
         """
         Parameters
@@ -1857,7 +1867,9 @@ class CmapDict(dict):
             pass
 
     def __delitem__(self, key):
-        """Delete the item from the list records."""
+        """
+        Delete the item from the list records.
+        """
         super().__delitem__(self, key)
         try:
             for record in (cmaps, cycles):
@@ -1869,14 +1881,17 @@ class CmapDict(dict):
             pass
 
     def __getitem__(self, key):
-        """Retrieve the colormap associated with the sanitized key name. The
-        key name is case insensitive. If it ends in ``'_r'``, the result of
-        ``cmap.reversed()`` is returned for the colormap registered under
-        the name ``key[:-2]``. If it ends in ``'_shifted'``, the result of
-        ``cmap.shifted(180)`` is returned for the colormap registered under
-        the name ``cmap[:-8]``. Reversed diverging colormaps can be requested
-        with their "reversed" name -- for example, ``'BuRd'`` is equivalent
-        to ``'RdBu_r'``."""
+        """
+        Retrieve the colormap associated with the sanitized key name. The
+        key name is case insensitive.
+
+        * If the key ends in ``'_r'``, the result of ``cmap.reversed()`` is
+          returned for the colormap registered under the name ``key[:-2]``.
+        * If it ends in ``'_shifted'``, the result of ``cmap.shifted(180)`` is
+          returned for the colormap registered under the name ``cmap[:-8]``.
+        * Reversed diverging colormaps can be requested with their "reversed"
+          name -- for example, ``'BuRd'`` is equivalent to ``'RdBu_r'``.
+        """
         key = self._sanitize_key(key, mirror=True)
         shift = (key[-8:] == '_shifted')
         if shift:
@@ -1904,10 +1919,12 @@ class CmapDict(dict):
         return value
 
     def __setitem__(self, key, item, sort=True):
-        """Store the colormap under its lowercase name. If the colormap is
+        """
+        Store the colormap under its lowercase name. If the colormap is
         a matplotlib `~matplotlib.colors.ListedColormap` or
         `~matplotlib.colors.LinearSegmentedColormap`, it is converted to the
-        ProPlot `ListedColormap` or `LinearSegmentedColormap` subclass."""
+        ProPlot `ListedColormap` or `LinearSegmentedColormap` subclass.
+        """
         if isinstance(item, (ListedColormap, LinearSegmentedColormap)):
             pass
         elif isinstance(item, mcolors.LinearSegmentedColormap):
@@ -1935,7 +1952,9 @@ class CmapDict(dict):
         return super().__setitem__(key, item)
 
     def __contains__(self, item):
-        """Test for membership using the sanitized colormap name."""
+        """
+        Test for membership using the sanitized colormap name.
+        """
         try:  # by default __contains__ ignores __getitem__ overrides
             self.__getitem__(item)
             return True
@@ -1943,7 +1962,9 @@ class CmapDict(dict):
             return False
 
     def _sanitize_key(self, key, mirror=True):
-        """Return the sanitized colormap name."""
+        """
+        Return the sanitized colormap name.
+        """
         if not isinstance(key, str):
             raise KeyError(f'Invalid key {key!r}. Key must be a string.')
         key = key.lower()
@@ -1967,12 +1988,16 @@ class CmapDict(dict):
         return key
 
     def get(self, key, *args):
-        """Retrieve the sanitized colormap name."""
+        """
+        Retrieve the sanitized colormap name.
+        """
         key = self._sanitize_key(key, mirror=True)
         return super().get(key, *args)
 
     def pop(self, key, *args):
-        """Pop the sanitized colormap name."""
+        """
+        Pop the sanitized colormap name.
+        """
         key = self._sanitize_key(key, mirror=True)
         try:
             for record in (cmaps, cycles):
@@ -1985,7 +2010,9 @@ class CmapDict(dict):
         return super().pop(key, *args)
 
     def update(self, *args, **kwargs):
-        """Update the dictionary with sanitized colormap names."""
+        """
+        Update the dictionary with sanitized colormap names.
+        """
         if len(args) == 1:
             kwargs.update(args[0])
         elif len(args) > 1:
@@ -1997,17 +2024,21 @@ class CmapDict(dict):
 
 
 class _ColorMappingOverride(mcolors._ColorMapping):
-    """Mapping whose cache attribute is a `ColorDict` dictionary."""
+    """
+    Mapping whose cache attribute is a `ColorDict` dictionary.
+    """
     def __init__(self, mapping):
         super().__init__(mapping)
         self.cache = ColorDict({})
 
 
 class ColorDict(dict):
-    """This class overrides the builtin matplotlib color cache, allowing
+    """
+    This class overrides the builtin matplotlib color cache, allowing
     users to draw colors from *named colormaps and color cycles* for any
     plotting command that accepts a `color` keyword arg.
-    See `~ColorDict.__getitem__` for details."""
+    See `~ColorDict.__getitem__` for details.
+    """
     def __getitem__(self, key):
         """
         Allows user to select colors from arbitrary named colormaps and
@@ -2056,8 +2087,10 @@ class ColorDict(dict):
 
 
 def Colors(*args, **kwargs):
-    """Pass all arguments to `Cycle` and return the list of colors from
-    the resulting `~cycler.Cycler` object."""
+    """
+    Pass all arguments to `Cycle` and return the list of colors from
+    the resulting `~cycler.Cycler` object.
+    """
     cycle = Cycle(*args, **kwargs)
     return [dict_['color'] for dict_ in cycle]
 
@@ -2695,7 +2728,9 @@ class BinNorm(mcolors.BoundaryNorm):
         return ma.array(yq, mask=mask)
 
     def inverse(self, value):  # noqa: U100
-        """Raise an error. Inversion after discretization is impossible."""
+        """
+        Raise an error. Inversion after discretization is impossible.
+        """
         raise ValueError('BinNorm is not invertible.')
 
 
@@ -2881,7 +2916,9 @@ class MidpointNorm(mcolors.Normalize):
 
 
 def _get_data_paths(dirname):
-    """Return data folder paths in reverse order of precedence."""
+    """
+    Return data folder paths in reverse order of precedence.
+    """
     # When loading colormaps, cycles, and colors, files in the latter
     # directories overwrite files in the former directories. When loading
     # fonts, the resulting paths need to be *reversed*.
@@ -2892,7 +2929,9 @@ def _get_data_paths(dirname):
 
 
 def _from_file(filename, listed=False, warn_on_failure=False):
-    """Read generalized colormap and color cycle files."""
+    """
+    Read generalized colormap and color cycle files.
+    """
     filename = os.path.expanduser(filename)
     if os.path.isdir(filename):  # no warning
         return
@@ -3200,12 +3239,14 @@ def register_colors(nmax=np.inf):
 
 @_timer
 def register_fonts():
-    """Add fonts packaged with ProPlot or saved to the ``~/.proplot/fonts``
+    """
+    Add fonts packaged with ProPlot or saved to the ``~/.proplot/fonts``
     folder, if they are not already added. Detects ``.ttf`` and ``.otf`` files
     -- see `this link \
 <https://gree2.github.io/python/2015/04/27/python-change-matplotlib-font-on-mac>`__
     for a guide on converting various other font file types to ``.ttf`` and
-    ``.otf`` for use with matplotlib."""
+    ``.otf`` for use with matplotlib.
+    """
     # Add proplot path to TTFLIST and rebuild cache *only if necessary*
     # * Nice gallery of sans-serif fonts:
     #   https://www.lifewire.com/classic-sans-serif-fonts-clean-appearance-1077406 # noqa

@@ -47,10 +47,12 @@ __all__ = [
 
 
 def _load_objects():
-    """Delay loading expensive modules. We just want to detect if *input
+    """
+    Delay loading expensive modules. We just want to detect if *input
     arrays* belong to these types -- and if this is the case, it means the
     module has already been imported! So, we only try loading these classes
-    within autoformat calls. This saves >~500ms of import time."""
+    within autoformat calls. This saves >~500ms of import time.
+    """
     global DataArray, DataFrame, Series, Index, ndarray
     ndarray = np.ndarray
     DataArray = getattr(sys.modules.get('xarray', None), 'DataArray', ndarray)
@@ -96,22 +98,30 @@ STYLE_ARGS_TRANSLATE = {
 
 
 def _is_number(data):
-    """Test whether input is numeric array rather than datetime or strings."""
+    """
+    Test whether input is numeric array rather than datetime or strings.
+    """
     return len(data) and np.issubdtype(_to_array(data).dtype, np.number)
 
 
 def _is_string(data):
-    """Test whether input is array of strings."""
+    """
+    Test whether input is array of strings.
+    """
     return len(data) and isinstance(_to_array(data).flat[0], str)
 
 
 def _to_array(data):
-    """Convert to ndarray cleanly."""
+    """
+    Convert to ndarray cleanly.
+    """
     return np.asarray(getattr(data, 'values', data))
 
 
 def _to_arraylike(data):
-    """Converts list of lists to array."""
+    """
+    Converts list of lists to array.
+    """
     _load_objects()
     if not isinstance(data, (ndarray, DataArray, DataFrame, Series, Index)):
         data = np.array(data)
@@ -121,7 +131,9 @@ def _to_arraylike(data):
 
 
 def _to_iloc(data):
-    """Indexible attribute of array."""
+    """
+    Indexible attribute of array.
+    """
     return getattr(data, 'iloc', data)
 
 
@@ -183,8 +195,9 @@ def default_crs(self, func, *args, crs=None, **kwargs):
 
 
 def _standard_label(data, axis=None, units=True):
-    """Gets data and label for pandas or xarray objects or
-    their coordinates."""
+    """
+    Get data and label for pandas or xarray objects or their coordinates.
+    """
     label = ''
     _load_objects()
     if isinstance(data, ndarray):
@@ -332,8 +345,9 @@ def standardize_1d(self, func, *args, **kwargs):
 
 
 def _interp_poles(y, Z):
-    """Adds data points on the poles as the average of highest
-    latitude data."""
+    """
+    Add data points on the poles as the average of highest latitude data.
+    """
     # Get means
     with np.errstate(all='ignore'):
         p1 = Z[0, :].mean()  # pole 1, make sure is not 0D DataArray!
@@ -352,8 +366,10 @@ def _interp_poles(y, Z):
 
 
 def _standardize_latlon(x, y):
-    """Ensures monotonic longitudes and makes `~numpy.ndarray` copies so the
-    contents can be modified. Ignores 2D coordinate arrays."""
+    """
+    Ensure longitudes are monotonic and make `~numpy.ndarray` copies so the
+    contents can be modified. Ignores 2D coordinate arrays.
+    """
     # Sanitization and bail if 2D
     if x.ndim == 1:
         x = ma.array(x)
@@ -372,9 +388,11 @@ def _standardize_latlon(x, y):
 
 
 def _enforce_bounds(x, y, xmin, xmax):
-    """Ensures data for basemap plots is restricted between the minimum and
+    """
+    Ensure data for basemap plots is restricted between the minimum and
     maximum longitude of the projection. Input is the ``x`` and ``y``
-    coordinates. The ``y`` coordinates are rolled along the rightmost axis."""
+    coordinates. The ``y`` coordinates are rolled along the rightmost axis.
+    """
     if x.ndim != 1:
         return x, y
     # Roll in same direction if some points on right-edge extend
@@ -693,8 +711,10 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
 
 
 def _errorbar_values(data, idata, bardata=None, barrange=None, barstd=False):
-    """Returns values that can be passed to the `~matplotlib.axes.Axes.errorbar`
-    `xerr` and `yerr` keyword args."""
+    """
+    Return values that can be passed to the `~matplotlib.axes.Axes.errorbar`
+    `xerr` and `yerr` keyword args.
+    """
     if bardata is not None:
         err = np.array(bardata)
         if err.ndim == 1:
@@ -1012,7 +1032,9 @@ def _fill_between_apply(
     negcolor='blue', poscolor='red', negpos=False,
     **kwargs
 ):
-    """Parse args and call function."""
+    """
+    Parse args and call function.
+    """
     # Allow common keyword usage
     x = 'y' if 'x' in func.__name__ else 'y'
     y = 'x' if x == 'y' else 'y'
@@ -1088,16 +1110,20 @@ def fill_between_wrapper(self, func, *args, **kwargs):
 
 
 def fill_betweenx_wrapper(self, func, *args, **kwargs):
-    """Supports overlaying and stacking successive columns of data, and permits
+    """
+    Supports overlaying and stacking successive columns of data, and permits
     using different colors for "negative" and "positive" regions.
     Wraps `~matplotlib.axes.Axes.fillx_between` and `~proplot.axes.Axes.areax`.
-    Usage is same as `fill_between_wrapper`."""
+    Usage is same as `fill_between_wrapper`.
+    """
     return _fill_between_apply(self, func, *args, **kwargs)
 
 
 def hist_wrapper(self, func, x, bins=None, **kwargs):
-    """Enforces that all arguments after `bins` are keyword-only and sets the
-    default patch linewidth to ``0``. Wraps %(methods)s."""
+    """
+    Enforces that all arguments after `bins` are keyword-only and sets the
+    default patch linewidth to ``0``. Wraps %(methods)s.
+    """
     kwargs.setdefault('linewidth', 0)
     return func(self, x, bins=bins, **kwargs)
 
@@ -1105,8 +1131,10 @@ def hist_wrapper(self, func, x, bins=None, **kwargs):
 def barh_wrapper(  # noqa: U100
     self, func, y=None, width=None, height=0.8, left=None, **kwargs
 ):
-    """Supports grouping and stacking successive columns of data, and changes
-    the default bar style. Wraps %(methods)s."""
+    """
+    Supports grouping and stacking successive columns of data, and changes
+    the default bar style. Wraps %(methods)s.
+    """
     kwargs.setdefault('orientation', 'horizontal')
     if y is None and width is None:
         raise ValueError(
@@ -1353,7 +1381,9 @@ def violinplot_wrapper(
 
 
 def _get_transform(self, transform):
-    """Translates user input transform. Also used in an axes method."""
+    """
+    Translates user input transform. Also used in an axes method.
+    """
     try:
         from cartopy.crs import CRS
     except ModuleNotFoundError:
@@ -1375,9 +1405,11 @@ def _get_transform(self, transform):
 
 
 def _update_text(self, props):
-    """Monkey patch that adds pseudo "border" properties to text objects
+    """
+    Monkey patch that adds pseudo "border" properties to text objects
     without wrapping the entire class. We override update to facilitate
-    updating inset titles."""
+    updating inset titles.
+    """
     props = props.copy()  # shallow copy
     border = props.pop('border', None)
     bordercolor = props.pop('bordercolor', 'w')
@@ -3047,9 +3079,11 @@ or colormap-spec
 
 
 def _redirect(func):
-    """Docorator that calls the basemap version of the function of the
+    """
+    Docorator that calls the basemap version of the function of the
     same name. This must be applied as innermost decorator, which means it must
-    be applied on the base axes class, not the basemap axes."""
+    be applied on the base axes class, not the basemap axes.
+    """
     name = func.__name__
     @functools.wraps(func)
     def _wrapper(self, *args, **kwargs):
@@ -3062,8 +3096,10 @@ def _redirect(func):
 
 
 def _norecurse(func):
-    """Decorator to prevent recursion in basemap method overrides.
-    See `this post https://stackoverflow.com/a/37675810/4970632`__."""
+    """
+    Decorator to prevent recursion in basemap method overrides.
+    See `this post https://stackoverflow.com/a/37675810/4970632`__.
+    """
     name = func.__name__
     func._has_recurred = False
     @functools.wraps(func)
@@ -3082,11 +3118,13 @@ def _norecurse(func):
 
 
 def _wrapper_decorator(driver):
-    """Generate generic wrapper decorator and dynamically modify the docstring
+    """
+    Generate generic wrapper decorator and dynamically modify the docstring
     to list methods wrapped by this function. Also set `__doc__` to ``None`` so
     that ProPlot fork of automodapi doesn't add these methods to the website
     documentation. Users can still call help(ax.method) because python looks
-    for superclass method docstrings if a docstring is empty."""
+    for superclass method docstrings if a docstring is empty.
+    """
     driver._docstring_orig = driver.__doc__ or ''
     driver._methods_wrapped = []
     proplot_methods = ('parametric', 'heatmap', 'area', 'areax')

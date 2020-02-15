@@ -24,7 +24,9 @@ NUMBER = re.compile('^([-+]?[0-9._]+(?:[eE][-+]?[0-9_]+)?)(.*)$')
 
 
 class _benchmark(object):
-    """Context object for timing arbitrary blocks of code."""
+    """
+    Context object for timing arbitrary blocks of code.
+    """
     def __init__(self, message):
         self.message = message
 
@@ -38,7 +40,9 @@ class _benchmark(object):
 
 
 class _setstate(object):
-    """Temporarily modify attribute(s) for an arbitrary object."""
+    """
+    Temporarily modify attribute(s) for an arbitrary object.
+    """
     def __init__(self, obj, **kwargs):
         self._obj = obj
         self._kwargs = kwargs
@@ -59,9 +63,11 @@ class _setstate(object):
 
 
 def _counter(func):
-    """A decorator that counts and prints the cumulative time a function
+    """
+    Decorator that counts and prints the cumulative time a function
     has benn running. See `this link \
-<https://stackoverflow.com/a/1594484/4970632>`__."""
+<https://stackoverflow.com/a/1594484/4970632>`__.
+"""
     @functools.wraps(func)
     def decorator(*args, **kwargs):
         if BENCHMARK:
@@ -79,8 +85,10 @@ def _counter(func):
 
 
 def _timer(func):
-    """Decorator that prints the time a function takes to execute.
-    See: https://stackoverflow.com/a/1594484/4970632"""
+    """
+    Decorator that prints the time a function takes to execute.
+    See: https://stackoverflow.com/a/1594484/4970632
+    """
     @functools.wraps(func)
     def decorator(*args, **kwargs):
         if BENCHMARK:
@@ -93,26 +101,32 @@ def _timer(func):
 
 
 def _format_warning(message, category, filename, lineno, line=None):  # noqa: U100, E501
-    """Simple format for warnings issued by ProPlot. See the
+    """
+    Simple format for warnings issued by ProPlot. See the
     `internal warning call signature \
 <https://docs.python.org/3/library/warnings.html#warnings.showwarning>`__
     and the `default warning source code \
-<https://github.com/python/cpython/blob/master/Lib/warnings.py>`__."""
+<https://github.com/python/cpython/blob/master/Lib/warnings.py>`__.
+"""
     return f'{filename}:{lineno}: ProPlotWarning: {message}\n'  # needs newline
 
 
 def _warn_proplot(message):
-    """*Temporarily* apply the `_format_warning` monkey patch and emit the
-    warning. Do not want to affect warnings emitted by other modules."""
+    """
+    *Temporarily* apply the `_format_warning` monkey patch and emit the
+    warning. Do not want to affect warnings emitted by other modules.
+    """
     with _setstate(warnings, formatwarning=_format_warning):
         warnings.warn(message)
 
 
 def _notNone(*args, names=None):
-    """Return the first non-``None`` value. This is used with keyword arg
+    """
+    Return the first non-``None`` value. This is used with keyword arg
     aliases and for setting default values. Ugly name but clear purpose. Pass
     the `names` keyword arg to issue warning if multiple args were passed. Must
-    be list of non-empty strings."""
+    be list of non-empty strings.
+    """
     if names is None:
         for arg in args:
             if arg is not None:
@@ -142,10 +156,12 @@ def _notNone(*args, names=None):
 
 
 def arange(min_, *args):
-    """Identical to `numpy.arange` but with inclusive endpoints. For
+    """
+    Identical to `numpy.arange` but with inclusive endpoints. For
     example, ``plot.arange(2,4)`` returns ``np.array([2,3,4])`` instead
     of ``np.array([2,3])``. This command is useful for generating lists of
-    tick locations or colorbar level boundaries."""
+    tick locations or colorbar level boundaries.
+    """
     # Optional arguments just like np.arange
     if len(args) == 0:
         max_ = min_

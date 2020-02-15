@@ -138,8 +138,7 @@ def Locator(locator, *args, **kwargs):
     elif isinstance(locator, Number):  # scalar variable
         locator = mticker.MultipleLocator(locator, *args, **kwargs)
     elif np.iterable(locator):
-        locator = mticker.FixedLocator(
-            np.sort(locator), *args, **kwargs)  # not necessary
+        locator = mticker.FixedLocator(np.sort(locator), *args, **kwargs)
     else:
         raise ValueError(f'Invalid locator {locator!r}.')
     return locator
@@ -539,8 +538,10 @@ def FracFormatter(symbol='', number=1):
 
 
 def _scale_factory(scale, axis, *args, **kwargs):  # noqa: U100
-    """If `scale` is a `~matplotlib.scale.ScaleBase` instance, do nothing. If
-    it is a registered scale name, look up and instantiate that scale."""
+    """
+    If `scale` is a `~matplotlib.scale.ScaleBase` instance, do nothing. If
+    it is a registered scale name, look up and instantiate that scale.
+    """
     if isinstance(scale, mscale.ScaleBase):
         if args or kwargs:
             _warn_proplot(f'Ignoring args {args} and keyword args {kwargs}.')
@@ -556,8 +557,10 @@ def _scale_factory(scale, axis, *args, **kwargs):  # noqa: U100
 
 
 def _parse_logscale_args(kwargs, *keys):
-    """Parse arguments for `LogScale` and `SymmetricalLogScale` that
-    inexplicably require ``x`` and ``y`` suffixes by default."""
+    """
+    Parse arguments for `LogScale` and `SymmetricalLogScale` that
+    inexplicably require ``x`` and ``y`` suffixes by default.
+    """
     for key in keys:
         value = _notNone(  # issues warning when multiple args passed!
             kwargs.pop(key, None),
@@ -579,11 +582,13 @@ def _parse_logscale_args(kwargs, *keys):
 
 
 class _ScaleBase(object):
-    """Mixin scale class that standardizes the
+    """
+    Mixin scale class that standardizes the
     `~matplotlib.scale.ScaleBase.set_default_locators_and_formatters`
     and `~matplotlib.scale.ScaleBase.get_transform` methods.
     Also overrides `__init__` so you no longer have to instantiate scales
-    with an `~matplotlib.axis.Axis` instance."""
+    with an `~matplotlib.axis.Axis` instance.
+    """
     def __init__(self, *args, **kwargs):
         # Pass a dummy axis to the superclass
         axis = type('Axis', (object,), {'axis_name': 'x'})()
@@ -640,7 +645,9 @@ class _ScaleBase(object):
             axis.isDefault_minfmt = True
 
     def get_transform(self):
-        """Return the scale transform."""
+        """
+        Return the scale transform.
+        """
         return self._transform
 
 
@@ -649,8 +656,9 @@ class LinearScale(_ScaleBase, mscale.LinearScale):
     As with `~matplotlib.scale.LinearScale` but with `AutoFormatter` as the
     default major formatter.
     """
+    #: The registered scale name
     name = 'linear'
-    """The registered scale name."""
+
     def __init__(self, **kwargs):
         """
         """
@@ -663,8 +671,8 @@ class LogitScale(_ScaleBase, mscale.LogitScale):
     As with `~matplotlib.scale.LogitScale` but with `AutoFormatter` as the
     default major formatter.
     """
+    #: The registered scale name
     name = 'logit'
-    """The registered scale name."""
 
     def __init__(self, **kwargs):
         """
@@ -686,8 +694,8 @@ class LogScale(_ScaleBase, mscale.LogScale):
     default major formatter. Also, "``x``" and "``y``" versions of each
     keyword argument are no longer required.
     """
+    #: The registered scale name
     name = 'log'
-    """The registered scale name."""
 
     def __init__(self, **kwargs):
         """
@@ -709,10 +717,10 @@ class LogScale(_ScaleBase, mscale.LogScale):
         kwargs = _parse_logscale_args(kwargs, 'base', 'nonpos', 'subs')
         super().__init__(**kwargs)
         # self._default_major_formatter = Formatter('log')
-        self._default_major_locator = Locator(
-            'log', base=self.base)
+        self._default_major_locator = Locator('log', base=self.base)
         self._default_minor_locator = Locator(
-            'log', base=self.base, subs=self.subs)
+            'log', base=self.base, subs=self.subs
+        )
 
 
 class SymmetricalLogScale(_ScaleBase, mscale.SymmetricalLogScale):
@@ -721,8 +729,8 @@ class SymmetricalLogScale(_ScaleBase, mscale.SymmetricalLogScale):
     default major formatter. Also, "``x``" and "``y``" versions of each
     keyword argument are no longer required.
     """
+    #: The registered scale name
     name = 'symlog'
-    """The registered scale name."""
 
     def __init__(self, **kwargs):
         """
@@ -757,17 +765,19 @@ subsx, subsy
         super().__init__(**kwargs)
         # self._default_major_formatter = Formatter('symlog'))
         self._default_major_locator = Locator(
-            'symlog', transform=self.get_transform())
+            'symlog', transform=self.get_transform()
+        )
         self._default_minor_locator = Locator(
-            'symlog', transform=self.get_transform(), subs=self.subs)
+            'symlog', transform=self.get_transform(), subs=self.subs
+        )
 
 
 class FuncScale(_ScaleBase, mscale.ScaleBase):
     """
     An axis scale comprised of arbitrary forward and inverse transformations.
     """
+    #: The registered scale name
     name = 'function'
-    """The registered scale name."""
 
     def __init__(
         self, arg, invert=False, parent_scale=None,
@@ -933,8 +943,8 @@ class PowerScale(_ScaleBase, mscale.ScaleBase):
         x^{c}
 
     """
+    #: The registered scale name
     name = 'power'
-    """The registered scale name."""
 
     def __init__(self, power=1, inverse=False, *, minpos=1e-300):
         """
@@ -955,7 +965,9 @@ class PowerScale(_ScaleBase, mscale.ScaleBase):
             self._transform = InvertedPowerTransform(power, minpos)
 
     def limit_range_for_scale(self, vmin, vmax, minpos):
-        """Returns the range *vmin* and *vmax* limited to positive numbers."""
+        """
+        Return the range *vmin* and *vmax* limited to positive numbers.
+        """
         return max(vmin, minpos), max(vmax, minpos)
 
 
@@ -1019,8 +1031,8 @@ class ExpScale(_ScaleBase, mscale.ScaleBase):
     which in appearence is equivalent to `LogScale` since it is just a linear
     transformation of the logarithm.
     """
+    #: The registered scale name
     name = 'exp'
-    """The registered scale name."""
 
     def __init__(
         self, a=np.e, b=1, c=1, inverse=False, minpos=1e-300,
@@ -1048,7 +1060,9 @@ class ExpScale(_ScaleBase, mscale.ScaleBase):
             self._transform = InvertedExpTransform(a, b, c, minpos)
 
     def limit_range_for_scale(self, vmin, vmax, minpos):
-        """Return *vmin* and *vmax* limited to positive numbers."""
+        """
+        Return the range *vmin* and *vmax* limited to positive numbers.
+        """
         return max(vmin, minpos), max(vmax, minpos)
 
 
@@ -1100,7 +1114,7 @@ class MercatorLatitudeScale(_ScaleBase, mscale.ScaleBase):
 projection <http://en.wikipedia.org/wiki/Mercator_projection>`__.
     Adapted from `this matplotlib example \
 <https://matplotlib.org/examples/api/custom_scale_example.html>`__.
-    """r""""The scale function is as follows:
+    """r"""The scale function is as follows:
 
     .. math::
 
@@ -1113,8 +1127,8 @@ projection <http://en.wikipedia.org/wiki/Mercator_projection>`__.
         x = 180\\arctan(\\sinh(y))/\\pi
 
     """
+    #: The registered scale name
     name = 'mercator'
-    """The registered scale name."""
 
     def __init__(self, thresh=85.0):
         """
@@ -1133,8 +1147,10 @@ projection <http://en.wikipedia.org/wiki/Mercator_projection>`__.
         self._default_smart_bounds = True
 
     def limit_range_for_scale(self, vmin, vmax, minpos):  # noqa: U100
-        """Return *vmin* and *vmax* limited to some range within
-        +/-90 degrees (exclusive)."""
+        """
+        Return the range *vmin* and *vmax* limited to within +/-90 degrees
+        (exclusive).
+        """
         return max(vmin, -self._thresh), min(vmax, self._thresh)
 
 
@@ -1197,8 +1213,8 @@ class SineLatitudeScale(_ScaleBase, mscale.ScaleBase):
 
         x = 180\arcsin(y)/\pi
     """
+    #: The registered scale name
     name = 'sine'
-    """The registered scale name."""
 
     def __init__(self):
         super().__init__()
@@ -1207,8 +1223,10 @@ class SineLatitudeScale(_ScaleBase, mscale.ScaleBase):
         self._default_smart_bounds = True
 
     def limit_range_for_scale(self, vmin, vmax, minpos):  # noqa: U100
-        """Return *vmin* and *vmax* limited to some range within
-        +/-90 degrees (inclusive)."""
+        """
+        Return the range *vmin* and *vmax* limited to within +/-90 degrees
+        (inclusive).
+        """
         return max(vmin, -90), min(vmax, 90)
 
 
@@ -1262,8 +1280,8 @@ class CutoffScale(_ScaleBase, mscale.ScaleBase):
     between successive thresholds. Adapted from
     `this stackoverflow post <https://stackoverflow.com/a/5669301/4970632>`__.
     """
+    #: The registered scale name
     name = 'cutoff'
-    """The registered scale name."""
 
     def __init__(self, *args):
         """
@@ -1359,8 +1377,9 @@ class CutoffTransform(mtransforms.Transform):
             for i, ai in np.ndenumerate(a):
                 j = np.searchsorted(threshs, ai)
                 if j > 0:
-                    aa[i] = dists[:j].sum() + (
-                        ai - threshs[j - 1]) / scales[j - 1]
+                    aa[i] = (
+                        dists[:j].sum() + (ai - threshs[j - 1]) / scales[j - 1]
+                    )
         return aa
 
 
@@ -1374,24 +1393,26 @@ class InverseScale(_ScaleBase, mscale.ScaleBase):
         y = x^{-1}
 
     """
-    # Unlike log-scale, we can't just warp the space between
-    # the axis limits -- have to actually change axis limits. Also this
-    # scale will invert and swap the limits you provide. Weird!
+    #: The registered scale name
     name = 'inverse'
-    """The registered scale name."""
 
     def __init__(self):
         super().__init__()
         self._transform = InverseTransform()
-        # self._default_major_formatter = Fromatter('log')
-        self._default_major_locator = Locator(
-            'log', base=10)
+        # self._default_major_formatter = Formatter('log')
+        self._default_major_locator = Locator('log', base=10)
         self._default_minor_locator = Locator(
-            'log', base=10, subs=np.arange(1, 10))
+            'log', base=10, subs=np.arange(1, 10)
+        )
         self._default_smart_bounds = True
 
     def limit_range_for_scale(self, vmin, vmax, minpos):
-        """Return *vmin* and *vmax* limited to positive numbers."""
+        """
+        Return the range *vmin* and *vmax* limited to positive numbers.
+        """
+        # Unlike log-scale, we can't just warp the space between
+        # the axis limits -- have to actually change axis limits. Also this
+        # scale will invert and swap the limits you provide. Weird!
         return max(vmin, minpos), max(vmax, minpos)
 
 

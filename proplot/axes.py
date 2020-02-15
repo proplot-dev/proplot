@@ -77,7 +77,9 @@ LOC_TRANSLATE = {
 
 
 def _abc(i):
-    """Function for a-b-c labeling, returns a...z...aa...zz...aaa...zzz."""
+    """
+    Return a...z...aa...zz...aaa...zzz.
+    """
     if i < 26:
         return ABC_STRING[i]
     else:
@@ -85,11 +87,13 @@ def _abc(i):
 
 
 def _disable_decorator(msg):
-    """Return a decorator that disables methods with message `msg`. The
+    """
+    Return a decorator that disables methods with message `msg`. The
     docstring is set to ``None`` so the ProPlot fork of automodapi doesn't add
     these methods to the website documentation. Users can still call
     help(ax.method) because python looks for superclass method docstrings if a
-    docstring is empty."""
+    docstring is empty.
+    """
     def decorator(func):
         @functools.wraps(func)
         def _wrapper(self, *args, **kwargs):
@@ -100,8 +104,10 @@ def _disable_decorator(msg):
 
 
 def _parse_format(mode=2, rc_kw=None, **kwargs):
-    """Separate `~proplot.rctools.rc` setting name value pairs from
-    `~Axes.format` keyword arguments."""
+    """
+    Separate `~proplot.rctools.rc` setting name value pairs from
+    `~Axes.format` keyword arguments.
+    """
     kw = {}
     rc_kw = rc_kw or {}
     for key, value in kwargs.items():
@@ -114,8 +120,10 @@ def _parse_format(mode=2, rc_kw=None, **kwargs):
 
 
 class Axes(maxes.Axes):
-    """Lowest-level axes subclass. Handles titles and axis
-    sharing. Adds several new methods and overrides existing ones."""
+    """
+    Lowest-level axes subclass. Handles titles and axis
+    sharing. Adds several new methods and overrides existing ones.
+    """
     def __init__(self, *args, number=None, main=False, **kwargs):
         """
         Parameters
@@ -226,9 +234,11 @@ class Axes(maxes.Axes):
         self.format(mode=1)  # mode == 1 applies the rcShortParams
 
     def _draw_auto_legends_colorbars(self):
-        """Generate automatic legends and colorbars. Wrapper funcs
+        """
+        Generate automatic legends and colorbars. Wrapper funcs
         let user add handles to location lists with successive calls to
-        make successive calls to plotting commands."""
+        make successive calls to plotting commands.
+        """
         for loc, (handles, kwargs) in self._auto_colorbar.items():
             self.colorbar(handles, **kwargs)
         for loc, (handles, kwargs) in self._auto_legend.items():
@@ -236,10 +246,12 @@ class Axes(maxes.Axes):
         self._auto_legend = {}
         self._auto_colorbar = {}
 
-    def _get_extent_axes(self, x):
-        """Return the axes whose horizontal or vertical extent in the main
+    def _get_extent_axes(self, x, panels=False):
+        """
+        Return the axes whose horizontal or vertical extent in the main
         gridspec matches the horizontal or vertical extend of this axes.
-        The lefmost or bottommost axes are at the start of the list."""
+        The lefmost or bottommost axes are at the start of the list.
+        """
         if not hasattr(self, 'get_subplotspec'):
             return [self]
         y = 'y' if x == 'x' else 'x'
@@ -256,9 +268,11 @@ class Axes(maxes.Axes):
             pax = axs.pop(argfunc([ax._range_gridspec(y)[idx] for ax in axs]))
             return [pax, *axs]
 
-    def _get_side_axes(self, side):
-        """Return the axes whose left, right, top, or bottom sides abutt
-        against the same row or column as this axes."""
+    def _get_side_axes(self, side, panels=False):
+        """
+        Return the axes whose left, right, top, or bottom sides abutt
+        against the same row or column as this axes.
+        """
         if side not in ('left', 'right', 'bottom', 'top'):
             raise ValueError(f'Invalid side {side!r}.')
         if not hasattr(self, 'get_subplotspec'):
@@ -276,14 +290,18 @@ class Axes(maxes.Axes):
             return axs
 
     def _get_title(self, loc):
-        """Get the title at the corresponding location."""
+        """
+        Get the title at the corresponding location.
+        """
         if loc == 'abc':
             return self._abc_label
         else:
             return getattr(self, '_' + loc.replace(' ', '_') + '_title')
 
     def _iter_panels(self, sides=('left', 'right', 'bottom', 'top')):
-        """Return a list of axes and child panel axes."""
+        """
+        Return a list of axes and child panel axes.
+        """
         axs = [self] if self.get_visible() else []
         if not set(sides) <= {'left', 'right', 'bottom', 'top'}:
             raise ValueError(f'Invalid sides {sides!r}.')
@@ -295,8 +313,10 @@ class Axes(maxes.Axes):
         return axs
 
     def _loc_translate(self, loc, mode=None, allow_manual=True):
-        """Return the location string `loc` translated into a standardized
-        form."""
+        """
+        Return the location string `loc` translated into a standardized
+        form.
+        """
         if mode == 'legend':
             valid = tuple(LOC_TRANSLATE.values())
         elif mode == 'panel':
@@ -346,7 +366,9 @@ class Axes(maxes.Axes):
         return loc
 
     def _make_inset_locator(self, bounds, trans):
-        """Return a locator that determines inset axes bounds."""
+        """
+        Return a locator that determines inset axes bounds.
+        """
         def inset_locator(ax, renderer):
             bbox = mtransforms.Bbox.from_bounds(*bounds)
             bb = mtransforms.TransformedBbox(bbox, trans)
@@ -356,7 +378,9 @@ class Axes(maxes.Axes):
         return inset_locator
 
     def _range_gridspec(self, x):
-        """Return the column or row gridspec range for the axes."""
+        """
+        Return the column or row gridspec range for the axes.
+        """
         if not hasattr(self, 'get_subplotspec'):
             raise RuntimeError(f'Axes is not a subplot.')
         ss = self.get_subplotspec()
@@ -372,9 +396,11 @@ class Axes(maxes.Axes):
             return row1, row2
 
     def _range_tightbbox(self, x):
-        """Return the tight bounding box span from the cached bounding box.
+        """
+        Return the tight bounding box span from the cached bounding box.
         `~proplot.axes.Axes.get_tightbbox` caches bounding boxes when
-        `~Figure.get_tightbbox` is called."""
+        `~Figure.get_tightbbox` is called.
+        """
         # TODO: Better testing for axes visibility
         bbox = self._tightbbox
         if bbox is None:
@@ -385,7 +411,8 @@ class Axes(maxes.Axes):
             return bbox.ymin, bbox.ymax
 
     def _reassign_suplabel(self, side):
-        """Re-assign the column and row labels to the relevant panel if
+        """
+        Re-assign the column and row labels to the relevant panel if
         present. This is called by `~proplot.subplots.Figure._align_suplabel`.
         """
         # Place column and row labels on panels instead of axes -- works when
@@ -412,10 +439,12 @@ class Axes(maxes.Axes):
         return pax
 
     def _reassign_title(self):
-        """Re-assign the title to the first upper panel if present. We cannot
+        """
+        Re-assign the title to the first upper panel if present. We cannot
         simply add the upper panel as a child axes, because then the title will
         be offset but still belong to main axes, which messes up the tight
-        bounding box."""
+        bounding box.
+        """
         # Reassign title from main axes to top panel -- works when this is
         # called on the main axes *or* on the top panel itself. This is
         # critical for bounding box calcs; not always clear whether draw() and
@@ -442,24 +471,30 @@ class Axes(maxes.Axes):
                 obj.set_text('')
 
     def _sharex_setup(self, sharex):
-        """Configure x-axis sharing for panels. Main axis sharing is done in
-        `~XYAxes._sharex_setup`."""
+        """
+        Configure x-axis sharing for panels. Main axis sharing is done in
+        `~XYAxes._sharex_setup`.
+        """
         self._share_short_axis(sharex, 'left')
         self._share_short_axis(sharex, 'right')
         self._share_long_axis(sharex, 'bottom')
         self._share_long_axis(sharex, 'top')
 
     def _sharey_setup(self, sharey):
-        """Configure y-axis sharing for panels. Main axis sharing is done in
-        `~XYAxes._sharey_setup`."""
+        """
+        Configure y-axis sharing for panels. Main axis sharing is done in
+        `~XYAxes._sharey_setup`.
+        """
         self._share_short_axis(sharey, 'bottom')
         self._share_short_axis(sharey, 'top')
         self._share_long_axis(sharey, 'left')
         self._share_long_axis(sharey, 'right')
 
     def _share_setup(self):
-        """Automatically configure axis sharing based on the horizontal and
-        vertical extent of subplots in the figure gridspec."""
+        """
+        Automatically configure axis sharing based on the horizontal and
+        vertical extent of subplots in the figure gridspec.
+        """
         # Panel axes sharing, between main subplot and its panels
         # NOTE: While _panel_share just means "include this panel" in the
         # axis sharing between the main subplot and panel children,
@@ -517,8 +552,10 @@ class Axes(maxes.Axes):
             child._sharey_setup(parent)
 
     def _share_short_axis(self, share, side):
-        """Share the "short" axes of panels belonging to this subplot
-        with panels belonging to an external subplot."""
+        """
+        Share the "short" axes of panels belonging to this subplot
+        with panels belonging to an external subplot.
+        """
         if share is None or self._panel_side:
             return  # if this is a panel
         axis = 'x' if side in ('left', 'right') else 'y'
@@ -530,8 +567,10 @@ class Axes(maxes.Axes):
             getattr(cax, '_share' + axis + '_setup')(pax)
 
     def _share_long_axis(self, share, side):
-        """Share the "long" axes of panels belonging to this subplot
-        with panels belonging to an external subplot."""
+        """
+        Share the "long" axes of panels belonging to this subplot
+        with panels belonging to an external subplot.
+        """
         # NOTE: We do not check _panel_share because that only controls
         # sharing with main subplot, not other subplots
         if share is None or self._panel_side:
@@ -543,10 +582,12 @@ class Axes(maxes.Axes):
             getattr(pax, '_share' + axis + '_setup')(share)
 
     def _update_axis_labels(self, x='x', **kwargs):
-        """Apply axis labels to the relevant shared axis. If spanning
+        """
+        Apply axis labels to the relevant shared axis. If spanning
         labels are toggled this keeps the labels synced for all subplots in
         the same row or column. Label positions will be adjusted at draw-time
-        with figure._align_axislabels."""
+        with figure._align_axislabels.
+        """
         if x not in 'xy':
             return
 
@@ -569,8 +610,10 @@ class Axes(maxes.Axes):
             axis.label.update(kwargs)  # apply to main axes
 
     def _update_title_position(self, renderer):
-        """Update the position of proplot inset titles and builtin
-        matplotlib titles."""
+        """
+        Update the position of proplot inset titles and builtin matplotlib
+        titles.
+        """
         # Custom inset titles
         width, height = self.get_size_inches()
         for loc in (
@@ -893,18 +936,24 @@ optional
         self._title_loc = loc  # assigns default loc on first run
 
     def area(self, *args, **kwargs):
-        """Alias for `~matplotlib.axes.Axes.fill_between`."""
+        """
+        Alias for `~matplotlib.axes.Axes.fill_between`.
+        """
         # NOTE: *Cannot* assign area = axes.Axes.fill_between because the
         # wrapper won't be applied and for some reason it messes up
         # automodsumm, which tries to put the matplotlib docstring on website
         return self.fill_between(*args, **kwargs)
 
     def areax(self, *args, **kwargs):
-        """Alias for `~matplotlib.axes.Axes.fill_betweenx`."""
+        """
+        Alias for `~matplotlib.axes.Axes.fill_betweenx`.
+        """
         return self.fill_betweenx(*args, **kwargs)
 
     def boxes(self, *args, **kwargs):
-        """Alias for `~matplotlib.axes.Axes.boxplot`."""
+        """
+        Alias for `~matplotlib.axes.Axes.boxplot`.
+        """
         return self.boxplot(*args, **kwargs)
 
     def colorbar(
@@ -1263,9 +1312,11 @@ optional
         return bbox
 
     def heatmap(self, *args, **kwargs):
-        """Pass all arguments to `~matplotlib.axes.Axes.pcolormesh` then apply
+        """
+        Pass all arguments to `~matplotlib.axes.Axes.pcolormesh` then apply
         settings that are suitable for heatmaps: no gridlines, no minor ticks,
-        and major ticks at the center of each grid box."""
+        and major ticks at the center of each grid box.
+        """
         obj = self.pcolormesh(*args, **kwargs)
         xlocator, ylocator = None, None
         if hasattr(obj, '_coordinates'):
@@ -1560,7 +1611,9 @@ optional
         return hs
 
     def violins(self, *args, **kwargs):
-        """Alias for `~matplotlib.axes.Axes.violinplot`."""
+        """
+        Alias for `~matplotlib.axes.Axes.violinplot`.
+        """
         return self.violinplot(*args, **kwargs)
 
     # For consistency with _left_title, _upper_left_title, etc.
@@ -1579,9 +1632,11 @@ optional
 
     @property
     def number(self):
-        """The axes number. This controls the order of a-b-c labels and the
+        """
+        The axes number. This controls the order of a-b-c labels and the
         order of appearence in the `~proplot.subplots.subplot_grid` returned by
-        `~proplot.subplots.subplots`."""
+        `~proplot.subplots.subplots`.
+        """
         return self._number
 
     @number.setter
@@ -1764,8 +1819,10 @@ This function enforces the following settings:
 
 
 def _parse_alt(x, kwargs):
-    """Interpret keyword args passed to all "twin axis" methods so they
-    can be passed to Axes.format."""
+    """
+    Interpret keyword args passed to all "twin axis" methods so they
+    can be passed to Axes.format.
+    """
     kw_bad, kw_out = {}, {}
     for key, value in kwargs.items():
         if key in _twin_kwargs:
@@ -1785,8 +1842,10 @@ def _parse_alt(x, kwargs):
 
 
 def _parse_rcloc(x, string):  # figures out string location
-    """Convert the *boolean* "left", "right", "top", and "bottom" rc settings
-    to a location string. Returns ``None`` if settings are unchanged."""
+    """
+    Convert the *boolean* "left", "right", "top", and "bottom" rc settings
+    to a location string. Returns ``None`` if settings are unchanged.
+    """
     if x == 'x':
         top = rc.get(f'{string}.top', context=True)
         bottom = rc.get(f'{string}.bottom', context=True)
@@ -1844,7 +1903,9 @@ class XYAxes(Axes):
         self._dualx_cache = None
 
     def _altx_overrides(self):
-        """Apply alternate *x* axis overrides."""
+        """
+        Apply alternate *x* axis overrides.
+        """
         # Unlike matplotlib API, we strong arm user into certain twin axes
         # settings... doesn't really make sense to have twin axes without this
         if self._altx_child is not None:  # altx was called on this axes
@@ -1864,7 +1925,9 @@ class XYAxes(Axes):
             self.patch.set_visible(False)
 
     def _alty_overrides(self):
-        """Apply alternate *y* axis overrides."""
+        """
+        Apply alternate *y* axis overrides.
+        """
         if self._alty_child is not None:
             self._shared_x_axes.join(self, self._alty_child)
             self.spines['right'].set_visible(False)
@@ -1882,7 +1945,9 @@ class XYAxes(Axes):
             self.patch.set_visible(False)
 
     def _datex_rotate(self):
-        """Apply default rotation to datetime axis coordinates."""
+        """
+        Apply default rotation to datetime axis coordinates.
+        """
         # NOTE: Rotation is done *before* horizontal/vertical alignment,
         # cannot change alignment with set_tick_params. Must apply to text
         # objects. fig.autofmt_date calls subplots_adjust, so cannot use it.
@@ -1900,7 +1965,9 @@ class XYAxes(Axes):
         self._datex_rotated = True  # do not need to apply more than once
 
     def _dualx_overrides(self):
-        """Lock the child "dual" *x* axis limits to the parent."""
+        """
+        Lock the child "dual" *x* axis limits to the parent.
+        """
         # NOTE: We set the scale using private API to bypass application of
         # set_default_locators_and_formatters: only_if_default=True is critical
         # to prevent overriding user settings! We also bypass autoscale_view
@@ -1928,7 +1995,9 @@ class XYAxes(Axes):
         self._dualx_cache = (scale, *olim)
 
     def _dualy_overrides(self):
-        """Lock the child "dual" *y* axis limits to the parent."""
+        """
+        Lock the child "dual" *y* axis limits to the parent.
+        """
         arg = self._dualy_arg
         if arg is None:
             return
@@ -1951,9 +2020,11 @@ class XYAxes(Axes):
         self._dualy_cache = (scale, *olim)
 
     def _hide_labels(self):
-        """Enforce the "shared" axis labels and axis tick labels. If this is
+        """
+        Enforce the "shared" axis labels and axis tick labels. If this is
         not called at drawtime, "shared" labels can be inadvertantly turned
-        off e.g. when the axis scale is changed."""
+        off e.g. when the axis scale is changed.
+        """
         for x in 'xy':
             # "Shared" axis and tick labels
             axis = getattr(self, x + 'axis')
@@ -1971,8 +2042,10 @@ class XYAxes(Axes):
             axis.set_minor_formatter(mticker.NullFormatter())
 
     def _make_twin_axes(self, *args, **kwargs):
-        """Return a twin of this axes. This is used for twinx and twiny and was
-        copied from matplotlib in case the private API changes."""
+        """
+        Return a twin of this axes. This is used for twinx and twiny and was
+        copied from matplotlib in case the private API changes.
+        """
         # Typically, SubplotBase._make_twin_axes is called instead of this.
         # There is also an override in axes_grid1/axes_divider.py.
         if 'sharex' in kwargs and 'sharey' in kwargs:
@@ -1984,8 +2057,10 @@ class XYAxes(Axes):
         return ax2
 
     def _sharex_setup(self, sharex):
-        """Configure shared axes accounting for panels. The input is the
-        'parent' axes, from which this one will draw its properties."""
+        """
+        Configure shared axes accounting for panels. The input is the
+        'parent' axes, from which this one will draw its properties.
+        """
         # Share panel across different subplots
         super()._sharex_setup(sharex)
         # Get sharing level
@@ -2007,8 +2082,10 @@ class XYAxes(Axes):
             self._shared_x_axes.join(self, sharex)
 
     def _sharey_setup(self, sharey):
-        """Configure shared axes accounting for panels. The input is the
-        'parent' axes, from which this one will draw its properties."""
+        """
+        Configure shared axes accounting for panels. The input is the
+        'parent' axes, from which this one will draw its properties.
+        """
         # Share panel across different subplots
         super()._sharey_setup(sharey)
         # Get sharing level
@@ -2834,8 +2911,10 @@ class XYAxes(Axes):
 
 
 class PolarAxes(Axes, mproj.PolarAxes):
-    """Intermediate class, mixes `ProjAxes` with
-    `~matplotlib.projections.polar.PolarAxes`."""
+    """
+    Intermediate class, mixes `ProjAxes` with
+    `~matplotlib.projections.polar.PolarAxes`.
+    """
     #: The registered projection name.
     name = 'polar'
 
@@ -3093,10 +3172,12 @@ optional
 
 
 def _circle_path(N=100):
-    """Return a circle `~matplotlib.path.Path` used as the outline
+    """
+    Return a circle `~matplotlib.path.Path` used as the outline
     for polar stereographic, azimuthal equidistant, and Lambert
     conformal projections. This was developed from `this cartopy example \
-<https://scitools.org.uk/cartopy/docs/v0.15/examples/always_circular_stereo.html>`__."""  # noqa
+<https://scitools.org.uk/cartopy/docs/v0.15/examples/always_circular_stereo.html>`__.
+    """  # noqa
     theta = np.linspace(0, 2 * np.pi, N)
     center, radius = [0.5, 0.5], 0.5
     verts = np.vstack([np.sin(theta), np.cos(theta)]).T
@@ -3104,12 +3185,12 @@ def _circle_path(N=100):
 
 
 class ProjAxes(Axes):
-    """Intermediate class, shared by `GeoAxes` and
-    `BasemapAxes`. Disables methods that are inappropriate for map
-    projections and adds `ProjAxes.format`, so that arguments
-    passed to `Axes.format` are identical for `GeoAxes`
-    and `BasemapAxes`."""
-
+    """
+    Intermediate class shared by `GeoAxes` and `BasemapAxes`. Disables
+    methods that are inappropriate for map projections and adds
+    `ProjAxes.format`, so that arguments passed to `Axes.format` are identical
+    for the cartopy and basemap backends.
+    """
     def __init__(self, *args, **kwargs):
         """
         See also
@@ -3366,8 +3447,9 @@ optional
 
 
 def _add_gridline_label(self, value, axis, upper_end):
-    """Gridliner method monkey patch. Always print number in range
-    (180W, 180E)."""
+    """
+    Gridliner method monkey patch. Always print number in range (180W, 180E).
+    """
     # Have 3 choices (see Issue #78):
     # 1. lonlines go from -180 to 180, but get double 180 labels at dateline
     # 2. lonlines go from -180 to e.g. 150, but no lines from 150 to dateline
@@ -3383,8 +3465,10 @@ def _add_gridline_label(self, value, axis, upper_end):
 
 
 def _axes_domain(self, *args, **kwargs):
-    """Gridliner method monkey patch. Filter valid label coordinates to values
-    between lon_0 - 180 and lon_0 + 180."""
+    """
+    Gridliner method monkey patch. Filter valid label coordinates to values
+    between lon_0 - 180 and lon_0 + 180.
+    """
     # See _add_gridline_label for detials
     lon_0 = self.axes.projection.proj4_params.get('lon_0', 0)
     x_range, y_range = type(self)._axes_domain(self, *args, **kwargs)
@@ -3393,14 +3477,16 @@ def _axes_domain(self, *args, **kwargs):
 
 
 class GeoAxes(ProjAxes, GeoAxes):
-    """Axes subclass for plotting `cartopy \
+    """
+    Axes subclass for plotting `cartopy \
 <https://scitools.org.uk/cartopy/docs/latest/>`__ projections. Initializes
     the `cartopy.crs.Projection` instance, enforces `global extent \
 <https://stackoverflow.com/a/48956844/4970632>`__
     for most projections by default, and draws `circular boundaries \
 <https://scitools.org.uk/cartopy/docs/latest/gallery/always_circular_stereo.html>`__
     around polar azimuthal, stereographic, and Gnomonic projections bounded at
-    the equator by default."""  # noqa
+    the equator by default.
+    """  # noqa
     #: The registered projection name.
     name = 'geo'
     _n_points = 100  # number of points for drawing circle map boundary
@@ -3449,7 +3535,9 @@ class GeoAxes(ProjAxes, GeoAxes):
         self, patch_kw, lonlim, latlim, boundinglat,
         lonlines, latlines, latmax, lonarray, latarray
     ):
-        """Apply formatting to cartopy axes."""
+        """
+        Apply formatting to cartopy axes.
+        """
         # NOTE: Cartopy seems to handle latmax automatically.
         import cartopy.feature as cfeature
         import cartopy.crs as ccrs
@@ -3655,8 +3743,10 @@ class GeoAxes(ProjAxes, GeoAxes):
         self.outline_patch.update(kw_edge)
 
     def _hide_labels(self):
-        """No-op for now. In future this will hide meridian and parallel
-        labels for rectangular projections."""
+        """
+        No-op for now. In future this will hide meridian and parallel
+        labels for rectangular projections.
+        """
         pass
 
     def get_tightbbox(self, renderer, *args, **kwargs):
@@ -3682,7 +3772,9 @@ class GeoAxes(ProjAxes, GeoAxes):
     # Projection property
     @property
     def projection(self):
-        """The `~cartopy.crs.Projection` instance associated with this axes."""
+        """
+        The `~cartopy.crs.Projection` instance associated with this axes.
+        """
         return self._map_projection
 
     @projection.setter
@@ -3755,11 +3847,13 @@ class GeoAxes(ProjAxes, GeoAxes):
 
 
 class BasemapAxes(ProjAxes):
-    """Axes subclass for plotting `~mpl_toolkits.basemap` projections. The
+    """
+    Axes subclass for plotting `~mpl_toolkits.basemap` projections. The
     `~mpl_toolkits.basemap.Basemap` projection instance is added as
     the `map_projection` attribute, but this is all abstracted away -- you can
     use `~matplotlib.axes.Axes` methods like `~matplotlib.axes.Axes.plot` and
-    `~matplotlib.axes.Axes.contour` with your raw longitude-latitude data."""
+    `~matplotlib.axes.Axes.contour` with your raw longitude-latitude data.
+    """
     #: The registered projection name.
     name = 'basemap'
     _proj_non_rectangular = (
@@ -3810,7 +3904,9 @@ class BasemapAxes(ProjAxes):
         self, patch_kw, lonlim, latlim, boundinglat,
         lonlines, latlines, latmax, lonarray, latarray
     ):
-        """Apply changes to the basemap axes."""
+        """
+        Apply changes to the basemap axes.
+        """
         # Checks
         if (lonlim is not None or latlim is not None
                 or boundinglat is not None):
@@ -3949,8 +4045,9 @@ class BasemapAxes(ProjAxes):
     # Projection property
     @property
     def projection(self):
-        """The `~mpl_toolkits.basemap.Basemap` instance associated with
-        this axes."""
+        """
+        The `~mpl_toolkits.basemap.Basemap` instance associated with this axes.
+        """
         return self._map_projection
 
     @projection.setter

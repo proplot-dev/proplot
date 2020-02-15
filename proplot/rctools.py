@@ -391,8 +391,10 @@ _rc_categories = {
 
 
 def _get_config_paths():
-    """Return a list of configuration file paths in reverse order of
-    precedence."""
+    """
+    Return a list of configuration file paths in reverse order of
+    precedence.
+    """
     # Local configuration
     idir = os.getcwd()
     paths = []
@@ -413,8 +415,10 @@ def _get_config_paths():
 
 
 def _get_synced_params(key, value):
-    """Return dictionaries for updating the `rcParamsShort`, `rcParamsLong`,
-    and `rcParams` properties associated with this key."""
+    """
+    Return dictionaries for updating the `rcParamsShort`, `rcParamsLong`,
+    and `rcParams` properties associated with this key.
+    """
     kw = {}  # builtin properties that global setting applies to
     kw_long = {}  # custom properties that global setting applies to
     kw_short = {}  # short name properties
@@ -563,7 +567,9 @@ def _get_synced_params(key, value):
 
 
 def _sanitize_key(key):
-    """Ensure string and convert keys with omitted dots."""
+    """
+    Ensure string and convert keys with omitted dots.
+    """
     if not isinstance(key, str):
         raise KeyError(f'Invalid key {key!r}. Must be string.')
     if '.' not in key and key not in rcParamsShort:  # speedup
@@ -572,7 +578,9 @@ def _sanitize_key(key):
 
 
 def _to_points(key, value):
-    """Convert certain rc keys to the units "points"."""
+    """
+    Convert certain rc keys to the units "points".
+    """
     # TODO: Incorporate into more sophisticated validation system
     # See: https://matplotlib.org/users/customizing.html, all props matching
     # the below strings use the units 'points', except custom categories!
@@ -796,7 +804,9 @@ class rc_configurator(object):
             _update_from_file(file)
 
     def __enter__(self):
-        """Apply settings from the most recent context block."""
+        """
+        Apply settings from the most recent context block.
+        """
         if not self._context:
             raise RuntimeError(
                 f'rc object must be initialized with rc.context().'
@@ -814,7 +824,9 @@ class rc_configurator(object):
             _update(rcParams, rc)
 
     def __exit__(self, *args):  # noqa: U100
-        """Restore settings from the most recent context block."""
+        """
+        Restore settings from the most recent context block.
+        """
         if not self._context:
             raise RuntimeError(
                 f'rc object must be initialized with rc.context().'
@@ -828,25 +840,32 @@ class rc_configurator(object):
         del self._context[-1]
 
     def __delitem__(self, item):  # noqa: 100
-        """Raise an error. This enforces pseudo-immutability."""
+        """
+        Raise an error. This enforces pseudo-immutability.
+        """
         raise RuntimeError('rc settings cannot be deleted.')
 
     def __delattr__(self, item):  # noqa: 100
-        """Raise an error. This enforces pseudo-immutability."""
+        """
+        Raise an error. This enforces pseudo-immutability.
+        """
         raise RuntimeError('rc settings cannot be deleted.')
 
     def __getattr__(self, attr):
-        """Pass the attribute to `~rc_configurator.__getitem__` and return
-        the result."""
+        """
+        Pass the attribute to `~rc_configurator.__getitem__` and return
+        the result.
+        """
         if attr[:1] == '_':
             return super().__getattr__(attr)
         else:
             return self[attr]
 
     def __getitem__(self, key):
-        """Return an `rcParams \
-<https://matplotlib.org/users/customizing.html>`__,
-        :ref:`rcParamsLong`, or :ref:`rcParamsShort` setting."""
+        """
+        Return an `rcParams <https://matplotlib.org/users/customizing.html>`__,
+        :ref:`rcParamsLong`, or :ref:`rcParamsShort` setting.
+        """
         key = _sanitize_key(key)
         for kw in (rcParamsShort, rcParamsLong, rcParams):
             try:
@@ -856,22 +875,27 @@ class rc_configurator(object):
         raise KeyError(f'Invalid setting name {key!r}.')
 
     def __setattr__(self, attr, value):
-        """Pass the attribute and value to `~rc_configurator.__setitem__`."""
+        """
+        Pass the attribute and value to `~rc_configurator.__setitem__`.
+        """
         self[attr] = value
 
     def __setitem__(self, key, value):
-        """Modify an `rcParams \
-<https://matplotlibcorg/users/customizing.html>`__,
-        :ref:`rcParamsLong`, and :ref:`rcParamsShort` setting(s)."""
+        """
+        Modify an `rcParams <https://matplotlibcorg/users/customizing.html>`__,
+        :ref:`rcParamsLong`, and :ref:`rcParamsShort` setting(s).
+        """
         rc_short, rc_long, rc = _get_synced_params(key, value)
         rcParamsShort.update(rc_short)
         rcParamsLong.update(rc_long)
         rcParams.update(rc)
 
     def _get_item(self, key, mode=None):
-        """As with `~rc_configurator.__getitem__` but the search is limited
+        """
+        As with `~rc_configurator.__getitem__` but the search is limited
         based on the context mode and ``None`` is returned if the key is not
-        found in the dictionaries."""
+        found in the dictionaries.
+        """
         if mode is None:
             mode = min((context[0] for context in self._context), default=0)
         caches = (context[2] for context in self._context)
