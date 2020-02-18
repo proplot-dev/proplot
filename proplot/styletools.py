@@ -3573,7 +3573,32 @@ def show_colorspaces(luminance=None, saturation=None, hue=None, axwidth=2):
     return fig
 
 
-def show_colors(nhues=17, minsat=20):
+def _color_filter(hcl, ihue, nhues, minsat):
+    """
+    Filter colors into categories.
+
+    Parameters
+    ----------
+    hcl : (name, hcl)
+        The data.
+    ihue : int
+        The hue column.
+    nhues : int
+        The total number of hues.
+    minsat : float
+        The minimum saturation used for the "grays" column.
+    """
+    breakpoints = np.linspace(0, 360, nhues)
+    gray = hcl[1] <= minsat
+    if ihue == 0:
+        return gray
+    color = breakpoints[ihue - 1] <= hcl[0] < breakpoints[ihue]
+    if ihue == nhues - 1:
+        color = color or color == breakpoints[ihue]  # endpoint inclusive
+    return not gray and color
+
+
+def show_colors(*, nhues=17, minsat=10, categories=None):
     """
     Generate tables of the registered color names. Adapted from
     `this example <https://matplotlib.org/examples/color/named_colors.html>`__.
@@ -3586,104 +3611,142 @@ def show_colors(nhues=17, minsat=20):
     minsat : float, optional
         The threshold saturation, between ``0`` and ``100``, for designating
         "gray colors" in the color table.
+    categories : list of str, optional
+        Category names to be shown in the table. By default, every
+        category is shown except for CSS colors.
 
     Returns
     -------
-    figs : list of `~proplot.subplots.Figure`
+    fig : `~proplot.subplots.Figure`
         The figure.
     """
-    # Test used to "categories" colors
-    breakpoints = np.linspace(0, 360, nhues)
-    def _color_filter(i, hcl):  # noqa: E306
-        gray = hcl[1] <= minsat
-        if i == 0:
-            return gray
-        color = breakpoints[i - 1] <= hcl[0] < breakpoints[i]
-        if i == nhues - 1:
-            color = color or color == breakpoints[i]  # endpoint inclusive
-        return not gray and color
+    # Get color categories
+    if categories is None:
+        categories = ['base', 'opencolor', 'xkcd']  # preserve order
+        for key in colors.keys():
+            if key not in categories:
+                categories.append(key)
+        if 'css' in categories:
+            categories.remove('css')
+    if any(cat not in colors for cat in categories):
+        raise ValueError(
+            f'Invalid categories {categories!r}. Options are: '
+            + ', '.join(map(repr, colors)) + '.'
+        )
 
-    # Draw figures for different groups of colors
-    figs = []
-    from . import subplots
-    for cats in (
-            ('opencolor',),
-            tuple(name for name in colors if name not in ('css', 'opencolor'))
-    ):
-        # Dictionary of colors for that category
-        data = {}
-        for cat in cats:
-            for color in colors[cat]:
-                data[color] = mcolors.colorConverter.colors[color]
+    # Divide colors into columns and rows
+    namess = {}
+    for cat in categories:
+        # Base colors
+        if cat == 'base':
+            names = np.array([
+                ['m', 'r', 'y', 'g', 'c', 'b', 'k', 'w'],
+                [
+                    'magenta', 'red', 'yellow', 'green',
+                    'cyan', 'blue', 'black', 'white'
+                ],
+            ]).T
 
         # Group colors together by discrete range of hue, then sort by value
         # For opencolors this is not necessary
-        if cats == ('opencolor',):
-            wscale = 0.5
-            swatch = 1.5
-            nrows, ncols = 10, len(COLORS_OPEN)  # rows and columns
+        elif cat == 'opencolor':
             names = np.array([
-                [name + str(i) for i in range(nrows)]
-                for name in COLORS_OPEN
+                [name + str(i) for i in range(10)]
+                for name in (
+                    'red', 'pink', 'grape', 'violet',
+                    'indigo', 'blue', 'cyan', 'teal',
+                    'green', 'lime', 'yellow', 'orange', 'gray'
+                )
             ])
-            nrows = nrows * 2
-            ncols = (ncols + 1) // 2
-            names.resize((ncols, nrows))
+            names.resize((7, 20))  # fills empty slots with empty string
 
         # Get colors in perceptally uniform space, then group based on hue
         # thresholds
         else:
-            ncols = 4
-            wscale = 0.8
-            swatch = 1.2
+            # Group colors
             hclpairs = [
-                (name, to_xyz(color, COLORS_SPACE))
-                for name, color in data.items()
+                (name, to_xyz(name, COLORS_SPACE))
+                for name in colors[cat]
             ]
             hclpairs = [
                 sorted(
-                    [pair for pair in hclpairs if _color_filter(i, pair[1])],
-                    key=lambda x: x[1][2]
+                    [
+                        pair for pair in hclpairs
+                        if _color_filter(pair[1], ihue, nhues, minsat)
+                    ],
+                    key=lambda x: x[1][2]  # sort by luminance
                 )
-                for i in range(nhues)
+                for ihue in range(nhues)
             ]
             names = np.array([
                 name for ipairs in hclpairs for name, _ in ipairs
             ])
+            ncols = 4
             nrows = len(names) // ncols + 1
-            names.resize((ncols, nrows))
+            names.resize((ncols, nrows))  # fill empty slots with empty string
+
+        # Add to list
+        namess[cat] = names
+
+    # Draw figures for different groups of colors
+    # NOTE: Aspect ratios should be number of columns divided by number
+    # of rows, times the aspect ratio of the slot for each swatch-name
+    # pair, which we set to 5.
+    from . import subplots
+    shape = tuple(namess.values())[0].shape  # sample *first* group
+    width = 6.5
+    ncols_max = max(names.shape[0] for names in namess.values())
+    aspect_axes = (width * 72) / (10 * shape[1])  # points
+    height_ratios = tuple(names.shape[1] for names in namess.values())
+    margin = 0.1
+    fig, axs = subplots(
+        nrows=len(categories),
+        width=width,
+        aspect=aspect_axes,
+        height_ratios=height_ratios,
+        left=margin, right=margin, bottom=margin,
+    )
+    title_dict = {
+        'css': 'CSS4 colors',
+        'base': 'Base colors',
+        'opencolor': 'Open color',
+        'xkcd': 'XKCD color survey',
+    }
+    for ax, (cat, names) in zip(axs, namess.items()):
+        # Format axes
+        ax.format(
+            title=title_dict.get(cat, cat),
+            titleweight='bold',
+            xlim=(0, ncols_max - 1),
+            ylim=(0, names.shape[1]),
+            grid=False, yloc='neither', xloc='neither',
+            alpha=0,
+        )
 
         # Draw swatches as lines
-        fig, ax = subplots(
-            width=8 * wscale * (ncols / 4),
-            height=5 * (nrows / 40),
-            left=0, right=0, top=0, bottom=0, tight=False
-        )
-        X, Y = fig.get_dpi() * fig.get_size_inches()  # size in dots
-        hsep, wsep = Y / (nrows + 1), X / ncols  # height and width in dots
+        lw = 8  # best to just use trial and error
+        swatch = 0.45  # percent of column reserved for swatch
+        ncols, nrows = names.shape
         for col, inames in enumerate(names):
             for row, name in enumerate(inames):
                 if not name:
                     continue
-                y = Y - hsep * (row + 1)
-                xi = wsep * (col + 0.05)
-                xf = wsep * (col + 0.25 * swatch)
-                yline = y + hsep * 0.1
-                xtext = wsep * (col + 0.25 * swatch + 0.03 * swatch)
-                ax.text(xtext, y, name, ha='left', va='center')
+                y = nrows - row - 1  # start at top
+                x1 = col * (ncols_max - 1) / ncols  # e.g. idx 3 --> idx 7
+                x2 = x1 + swatch  # portion of column
+                xtext = x1 + 1.1 * swatch
+                ax.text(
+                    xtext, y, name, ha='left', va='center',
+                    transform='data', clip_on=False,
+                )
                 ax.plot(
-                    [xi, xf], [yline, yline],
-                    color=data[name], lw=hsep * 0.6,
+                    [x1, x2], [y, y],
+                    color=name, lw=lw,
                     solid_capstyle='butt',  # do not stick out
+                    clip_on=False,
                 )
 
-        # Apply formatting
-        ax.format(
-            xlim=(0, X), ylim=(0, Y),
-            grid=False, yloc='neither', xloc='neither'
-        )
-        figs.append(fig)
-    return figs
+    return fig, axs
 
 
 def show_cmaps(*args, **kwargs):
