@@ -1170,7 +1170,10 @@ class Figure(mfigure.Figure):
 
         # Draw and setup panel
         with self._authorize_add_subplot():
-            pax = self.add_subplot(gridspec[idx1, idx2], projection='xy')
+            pax = self.add_subplot(
+                gridspec[idx1, idx2],
+                projection='xy'
+            )
         pgrid = getattr(self, '_' + side + '_panels')
         pgrid.append(pax)
         pax._panel_side = side
@@ -2110,19 +2113,9 @@ class Figure(mfigure.Figure):
             *self._left_panels, *self._right_panels,
             *self._bottom_panels, *self._top_panels
         ):
-            for iax in (
-                ax,
-                *ax._left_panels, *ax._right_panels,
-                *ax._bottom_panels, *ax._top_panels
-            ):
-                for jax in (
-                    (iax, *iax.child_axes) if children else (iax,)
-                ):
-                    if not jax.get_visible() or (
-                        not hidden and jax._panel_hidden
-                    ):
-                        continue
-                    yield jax
+            if not hidden and ax._panel_hidden:
+                continue  # ignore hidden panel and its colorbar/legend child
+            yield from ax._iter_axes(hidden=hidden, children=children)
 
 
 def _journals(journal):

@@ -1640,13 +1640,18 @@ optional
             raise ValueError(f'Invalid sides {panels!r}.')
         for iax in (
             self,
-            *(getattr(self, '_' + side + '_panels') for side in panels)
+            *(
+                jax for side in panels
+                for jax in getattr(self, '_' + side + '_panels')
+            )
         ):
+            if not hidden and iax._panel_hidden:
+                continue  # ignore hidden panel and its colorbar/legend child
             for jax in (
                 (iax, *iax.child_axes) if children else (iax,)
             ):
-                if not jax.get_visible() or (not hidden and jax._panel_hidden):
-                    continue
+                if not jax.get_visible():
+                    continue  # safey first
                 yield jax
 
     # For consistency with _left_title, _upper_left_title, etc.
