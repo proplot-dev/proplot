@@ -1096,16 +1096,19 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             the original colormap is returned.
         name : str, optional
             The name of the new colormap. Default is
-            ``self.name + '_shifted'``.
+            ``self.name + '_s'``.
+
+        Other parameters
+        ----------------
         **kwargs
-            Passed to `LinearSegmentedColormap.updated`
-            or `PerceptuallyUniformColormap.updated`.
+            Passed to `LinearSegmentedColormap.copy`
+            or `PerceptuallyUniformColormap.copy`.
         """
         shift = ((shift or 0) / 360) % 1
         if shift == 0:
             return self
         if name is None:
-            name = self.name + '_shifted'
+            name = self.name + '_s'
         if not self._cyclic:
             _warn_proplot(
                 f'Shifting non-cyclic colormap {self.name!r}. '
@@ -1413,12 +1416,12 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
             The number of places to shift, between ``-self.N`` and ``self.N``.
             If ``None``, the original colormap is returned.
         name : str, optional
-            The new colormap name. Default is ``self.name + '_shifted'``.
+            The new colormap name. Default is ``self.name + '_s'``.
         """
         if not shift:
             return self
         if name is None:
-            name = self.name + '_shifted'
+            name = self.name + '_s'
         shift = shift % len(self.colors)
         colors = [*self.colors]  # ensure list
         colors = colors[shift:] + colors[:shift]
@@ -1847,7 +1850,9 @@ class CmapDict(dict):
     """
     Dictionary subclass used to replace the `matplotlib.cm.cmap_d`
     colormap dictionary. See `~CmapDict.__getitem__` and
-    `~CmapDict.__setitem__` for details.
+    `~CmapDict.__setitem__` for details. This class also handles the
+    `colormaps` and `cycles` variables, meant to provide users with an
+    easily accessible list of all registered colormap and cycle names.
     """
     def __init__(self, kwargs):
         """
@@ -1857,28 +1862,16 @@ class CmapDict(dict):
             The source dictionary.
         """
         for key, value in kwargs.items():
-            if not isinstance(key, str):
-                raise KeyError(f'Invalid key {key}. Must be string.')
             self.__setitem__(key, value, sort=False)
-        try:
-            for record in (cmaps, cycles):
-                record[:] = sorted(record)
-        except NameError:
-            pass
+        self._record_update(kwargs, sort=True)
 
     def __delitem__(self, key):
         """
         Delete the item from the list records.
         """
+        key = self._sanitize_key(key)
+        self._record_delete(key)
         super().__delitem__(self, key)
-        try:
-            for record in (cmaps, cycles):
-                try:
-                    record.remove(key)
-                except ValueError:
-                    pass
-        except NameError:
-            pass
 
     def __getitem__(self, key):
         """
@@ -1887,16 +1880,16 @@ class CmapDict(dict):
 
         * If the key ends in ``'_r'``, the result of ``cmap.reversed()`` is
           returned for the colormap registered under the name ``key[:-2]``.
-        * If it ends in ``'_shifted'``, the result of ``cmap.shifted(180)`` is
+        * If it ends in ``'_s'``, the result of ``cmap.shifted(180)`` is
           returned for the colormap registered under the name ``cmap[:-8]``.
         * Reversed diverging colormaps can be requested with their "reversed"
           name -- for example, ``'BuRd'`` is equivalent to ``'RdBu_r'``.
         """
         key = self._sanitize_key(key, mirror=True)
-        shift = (key[-8:] == '_shifted')
+        shift = key[-2:] == '_s'
         if shift:
-            key = key[:-8]
-        reverse = (key[-2:] == '_r')
+            key = key[:-2]
+        reverse = key[-2:] == '_r'
         if reverse:
             key = key[:-2]
         value = super().__getitem__(key)  # may raise keyerror
@@ -1925,16 +1918,18 @@ class CmapDict(dict):
         `~matplotlib.colors.LinearSegmentedColormap`, it is converted to the
         ProPlot `ListedColormap` or `LinearSegmentedColormap` subclass.
         """
+        if not isinstance(key, str):
+            raise KeyError(f'Invalid key {key!r}. Must be string.')
         if isinstance(item, (ListedColormap, LinearSegmentedColormap)):
             pass
         elif isinstance(item, mcolors.LinearSegmentedColormap):
             item = LinearSegmentedColormap(
-                item.name, item._segmentdata, item.N, item._gamma)
+                item.name, item._segmentdata, item.N, item._gamma
+            )
         elif isinstance(item, mcolors.ListedColormap):
             item = ListedColormap(
-                item.colors, item.name, item.N)
-        elif item is None:
-            return
+                item.colors, item.name, item.N
+            )
         else:
             raise ValueError(
                 f'Invalid colormap {item}. Must be instance of '
@@ -1942,14 +1937,8 @@ class CmapDict(dict):
                 'matplotlib.colors.LinearSegmentedColormap.'
             )
         key = self._sanitize_key(key, mirror=False)
-        try:
-            record = cycles if isinstance(item, ListedColormap) else cmaps
-            record.append(key)
-            if sort:
-                record[:] = sorted(record)
-        except NameError:
-            pass
-        return super().__setitem__(key, item)
+        self._record_update({key: item}, sort=sort)
+        super().__setitem__(key, item)
 
     def __contains__(self, item):
         """
@@ -1961,17 +1950,51 @@ class CmapDict(dict):
         except KeyError:
             return False
 
+    @staticmethod
+    def _record_delete(key):
+        """
+        Remove the `colormaps` or `cycles` record.
+        """
+        try:
+            records = (cmaps, cycles)
+        except NameError:
+            pass
+        else:
+            for record in records:
+                try:
+                    record.remove(key)
+                except ValueError:
+                    pass
+
+    @staticmethod
+    def _record_update(kwargs, sort=False):
+        """
+        Update the `colormaps` or `cycles` record.
+        """
+        record = None
+        try:
+            cmaps, cycles
+        except NameError:
+            pass
+        else:
+            for key, item in kwargs.items():
+                record = cycles if isinstance(item, ListedColormap) else cmaps
+                record.append(key)
+            if sort:
+                record[:] = sorted(record)
+
     def _sanitize_key(self, key, mirror=True):
         """
-        Return the sanitized colormap name.
+        Return the sanitized colormap name. This is used for lookups *and*
+        assignments.
         """
         if not isinstance(key, str):
             raise KeyError(f'Invalid key {key!r}. Key must be a string.')
         key = key.lower()
-        reverse = False
-        if key[-2:] == '_r':
+        key = re.sub(r'\A(grays)(?:_r|_s)?\Z', 'greys', key)
+        reverse = key[-2:] == '_r'
+        if reverse:
             key = key[:-2]
-            reverse = True
         if mirror and not super().__contains__(key):  # search for mirrored key
             key_mirror = key
             for pair in CMAPS_DIVERGING:
@@ -1981,46 +2004,11 @@ class CmapDict(dict):
                 except (ValueError, KeyError):
                     continue
             if super().__contains__(key_mirror):
-                reverse = (not reverse)
+                reverse = not reverse
                 key = key_mirror
         if reverse:
             key = key + '_r'
         return key
-
-    def get(self, key, *args):
-        """
-        Retrieve the sanitized colormap name.
-        """
-        key = self._sanitize_key(key, mirror=True)
-        return super().get(key, *args)
-
-    def pop(self, key, *args):
-        """
-        Pop the sanitized colormap name.
-        """
-        key = self._sanitize_key(key, mirror=True)
-        try:
-            for record in (cmaps, cycles):
-                try:
-                    record.remove(key)
-                except ValueError:
-                    pass
-        except NameError:
-            pass
-        return super().pop(key, *args)
-
-    def update(self, *args, **kwargs):
-        """
-        Update the dictionary with sanitized colormap names.
-        """
-        if len(args) == 1:
-            kwargs.update(args[0])
-        elif len(args) > 1:
-            raise TypeError(
-                f'update() expected at most 1 arguments, got {len(args)}.'
-            )
-        for key, value in kwargs.items():
-            self[key] = value
 
 
 class _ColorMappingOverride(mcolors._ColorMapping):
@@ -2041,16 +2029,15 @@ class ColorDict(dict):
     """
     def __getitem__(self, key):
         """
-        Allows user to select colors from arbitrary named colormaps and
-        color cycles.
+        Permit selections from arbitrary named colormaps and color cycles:
 
         * For a smooth colormap, usage is e.g. ``color=('Blues', 0.8)``. The
           number is the colormap index, and must be between 0 and 1.
         * For a color cycle, usage is e.g. ``color=('colorblind', 2)``. The
           number is the list index.
 
-        These examples work with any
-        matplotlib command that accepts a `color` keyword arg.
+        These examples work with any matplotlib command that accepts a `color`
+        keyword arg.
         """
         # Matplotlib 'color' args are passed to to_rgba, which tries to read
         # directly from cache and if that fails, sanitizes input, which
@@ -2071,16 +2058,14 @@ class ColorDict(dict):
                             f'between 0 and {len(cmap.colors)-1}, '
                             f'got {rgb[1]}.'
                         )
-                    # draw color from the list of colors, using index
-                    rgb = cmap.colors[rgb[1]]
+                    rgb = cmap.colors[rgb[1]]  # draw from list of colors
                 else:
                     if not 0 <= rgb[1] <= 1:
                         raise ValueError(
                             f'Colormap sample for {rgb[0]!r} colormap must be '
                             f'between 0 and 1, got {rgb[1]}.'
                         )
-                    # interpolate color from colormap, using key in range 0-1
-                    rgb = cmap(rgb[1])
+                    rgb = cmap(rgb[1])  # get color selection
                 rgba = mcolors.to_rgba(rgb, alpha)
                 return rgba
         return super().__getitem__((rgb, alpha))
