@@ -192,6 +192,7 @@ CMAPS_DIVERGING = tuple(
     ))
 
 # Named color filter props
+COLORS_HEXPATTERN = r'#(?:[0-9a-fA-F]{3,4}){2}'  # 6-8 digit hex
 COLORS_SPACE = 'hcl'  # color "distincness" is defined with this space
 COLORS_THRESH = 0.10  # bigger number equals fewer colors
 COLORS_TRANSLATIONS = tuple((re.compile(regex), sub) for regex, sub in (
@@ -297,12 +298,11 @@ def shade(color, scale=1):
 
     Returns
     -------
-    color
-        The new RGB tuple.
+    color : 4-tuple
+        The new RGBA tuple.
     """
     *color, alpha = to_rgb(color, alpha=True)
     color = [*hsluv.rgb_to_hsl(*color)]
-    # multiply luminance by this value
     color[2] = max(0, min(color[2] * scale, 100))
     color = [*hsluv.hsl_to_rgb(*color)]
     return (*color, alpha)
@@ -321,12 +321,11 @@ def saturate(color, scale=0.5):
 
     Returns
     -------
-    color
-        The new RGB tuple.
+    color : 4-tuple
+        The new RGBA tuple.
     """
     *color, alpha = to_rgb(color, alpha=True)
     color = [*hsluv.rgb_to_hsl(*color)]
-    # multiply luminance by this value
     color[1] = max(0, min(color[1] * scale, 100))
     color = [*hsluv.hsl_to_rgb(*color)]
     return (*color, alpha)
@@ -360,8 +359,8 @@ def to_rgb(color, space='rgb', cycle=None, alpha=False):
 
     Returns
     -------
-    color
-        The RGB tuple.
+    color : 3-tuple or 4-tuple
+        The RGB[A] tuple.
     """
     # Convert color cycle strings
     if isinstance(color, str) and re.match('^C[0-9]$', color):
@@ -444,8 +443,9 @@ def to_xyz(color, space='hcl', alpha=False):
 
     Returns
     -------
-    color
-        Tuple of colorspace `space` channel values.
+    color : 3-tuple or 4-tuple
+        Tuple of colorspace `space` channel values with optional opacity
+        channel.
     """
     # Run tuple conversions
     # NOTE: Don't pass color tuple, because we may want to permit
@@ -488,13 +488,13 @@ def _clip_colors(colors, clip=True, gray=0.2):
     """
     # Clip colors
     colors = np.array(colors)
-    over = (colors > 1)
-    under = (colors < 0)
+    over = colors > 1
+    under = colors < 0
     if clip:
         colors[under] = 0
         colors[over] = 1
     else:
-        colors[(under | over)] = gray
+        colors[under | over] = gray
     # Message
     # NOTE: Never print warning because happens when using builtin maps
     # message = 'Clipped' if clip else 'Invalid'
@@ -673,7 +673,7 @@ def make_mapping_array(N, data, gamma=1.0, inverse=False):
             # by default want to weight toward a *lower* channel value
             ireverse = ((y0[ind[ui]] - y1[ind[ui] - 1]) < 0)
         if inverse:
-            ireverse = (not ireverse)
+            ireverse = not ireverse
         if ireverse:
             distance[ui:ui + ci] = 1 - (1 - distance[ui:ui + ci])**gamma
         else:
@@ -797,6 +797,9 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         alpha : float, optional
             The opacity for the entire colormap. Overrides the input
             segment data.
+
+        Other parameters
+        ----------------
         *args, **kwargs
             Passed to `~matplotlib.colors.LinearSegmentedColormap`.
         """
@@ -827,6 +830,9 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         N : int, optional
             The number of points in the colormap lookup table.
             Default is :rc:`image.lut` times ``len(args)``.
+
+        Other parameters
+        ----------------
         **kwargs
             Passed to `LinearSegmentedColormap.updated`
             or `PerceptuallyUniformColormap.updated`.
@@ -836,7 +842,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         `LinearSegmentedColormap`
             The colormap.
         """
-        # Try making a simple copy
+        # Parse input args
         if not args:
             raise ValueError(
                 f'Got zero positional args, you must provide at least one.'
@@ -1141,6 +1147,9 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         name : str, optional
             The name of the new colormap. Default is
             ``self.name + '_truncated'``.
+
+        Other parameters
+        ----------------
         **kwargs
             Passed to `LinearSegmentedColormap.updated`
             or `PerceptuallyUniformColormap.updated`.
@@ -1280,9 +1289,12 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         # Get coordinates
         coords = None
         if not np.iterable(colors):
-            raise ValueError(f'Colors must be iterable, got colors={colors!r}')
-        if (np.iterable(colors[0]) and len(colors[0]) == 2
-                and not isinstance(colors[0], str)):
+            raise TypeError('Colors must be iterable.')
+        if (
+            np.iterable(colors[0])
+            and len(colors[0]) == 2
+            and not isinstance(colors[0], str)
+        ):
             coords, colors = zip(*colors)
         colors = [to_rgb(color, alpha=True) for color in colors]
 
@@ -1320,6 +1332,9 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         alpha : float, optional
             The opacity for the entire colormap. Overrides the input
             colors.
+
+        Other parameters
+        ----------------
         *args, **kwargs
             Passed to `~matplotlib.colors.ListedColormap`.
         """
@@ -1341,6 +1356,9 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         N : int, optional
             The number of colors in the colormap lookup table. Default is
             the number of colors in the concatenated lists.
+
+        Other parameters
+        ----------------
         **kwargs
             Passed to `~ListedColormap.updated`.
         """
@@ -1381,7 +1399,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
             Whether to include an opacity column for ``.rgb``
             and ``.txt`` files.
         """  # noqa
-        dirname = os.path.join('~', '.proplot', 'cmaps')
+        dirname = os.path.join('~', '.proplot', 'cycles')
         filename = self._parse_path(path, dirname, 'hex')
 
         # Save lookup table colors
@@ -1544,6 +1562,9 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
             makes low luminance colors more prominent. Similar to the
             `HCLWizard <http://hclwizard.org:64230/hclwizard/>`_ option.
             See `make_mapping_array` for details.
+
+        Other parameters
+        ----------------
         **kwargs
             Passed to `LinearSegmentedColormap`.
 
@@ -1597,8 +1618,7 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         """
         # First generate the lookup table
         channels = ('hue', 'saturation', 'luminance')
-        # gamma weights *low chroma* and *high luminance*
-        inverses = (False, False, True)
+        inverses = (False, False, True)  # weight low chroma, high luminance
         gammas = (1.0, self._gamma1, self._gamma2)
         self._lut_hsl = np.ones((self.N + 3, 4), float)  # fill
         for i, (channel, gamma, inverse) in enumerate(
@@ -1609,10 +1629,12 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
             self._lut_hsl[:-3, 3] = make_mapping_array(
                 self.N, self._segmentdata['alpha'])
         self._lut_hsl[:-3, 0] %= 360
+
         # Make hues circular, set extremes i.e. copy HSL values
         self._lut = self._lut_hsl.copy()
         self._set_extremes()  # generally just used end values in segmentdata
         self._isinit = True
+
         # Now convert values to RGB and clip colors
         for i in range(self.N + 3):
             self._lut[i, :3] = to_rgb(self._lut[i, :3], self._space)
@@ -1662,7 +1684,8 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
             name, hue=hue, alpha=alpha, space=space,
             saturation=(saturation_fade, saturation),
             luminance=(luminance_fade, luminance),
-            **kwargs)
+            **kwargs
+        )
 
     @staticmethod
     def from_hsl(
@@ -1839,7 +1862,8 @@ optional
         cmap = PerceptuallyUniformColormap(
             name, segmentdata, N,
             alpha=alpha, clip=clip, cyclic=cyclic,
-            gamma1=gamma1, gamma2=gamma2, space=space)
+            gamma1=gamma1, gamma2=gamma2, space=space
+        )
         cmap._rgba_bad = self._rgba_bad
         cmap._rgba_under = self._rgba_under
         cmap._rgba_over = self._rgba_over
@@ -2044,8 +2068,10 @@ class ColorDict(dict):
         # raises error on receiving (colormap, idx) tuple. So we *have* to
         # override cache instead of color dict itself.
         rgb, alpha = key
-        if (not isinstance(rgb, str) and np.iterable(rgb) and len(rgb) == 2
-                and isinstance(rgb[1], Number) and isinstance(rgb[0], str)):
+        if (
+            not isinstance(rgb, str) and np.iterable(rgb) and len(rgb) == 2
+            and isinstance(rgb[1], Number) and isinstance(rgb[0], str)
+        ):
             try:
                 cmap = mcm.cmap_d[rgb[0]]
             except (TypeError, KeyError):
@@ -3037,7 +3063,7 @@ def _from_file(filename, listed=False, warn_on_failure=False):
     elif ext == 'hex':
         # Read arbitrary format
         string = open(filename).read()  # into single string
-        data = re.findall('#[0-9a-fA-F]{6}', string)  # list of strings
+        data = re.findall(COLORS_HEXPATTERN, string)
         if len(data) < 2:
             _warn_or_raise(
                 f'Failed to load {filename!r}. Hex strings not found.'
