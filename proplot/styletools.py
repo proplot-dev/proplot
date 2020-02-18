@@ -3311,7 +3311,8 @@ def register_fonts():
 
 
 def _draw_bars(
-    names, *, source, unknown='User', length=4.0, width=0.2, N=None
+    names, *, source, unknown='User', categories=None,
+    length=4.0, width=0.2, N=None
 ):
     """
     Draw colorbars for "colormaps" and "color cycles". This is called by
@@ -3328,6 +3329,18 @@ def _draw_bars(
         names_cat = [name for name in names if name.lower() in names_all]
         if names_cat:
             cmapdict[cat] = names_cat
+
+    # Filter out certain categories
+    if categories is None:
+        categories = source.keys() - {'MATLAB', 'GNUplot', 'GIST', 'Other'}
+    if any(cat not in source for cat in categories):
+        raise ValueError(
+            f'Invalid categories {categories!r}. Options are: '
+            + ', '.join(map(repr, source)) + '.'
+        )
+    for cat in (*cmapdict,):
+        if cat not in categories:
+            cmapdict.pop(cat)
 
     # Draw figure
     from . import subplots
@@ -3351,9 +3364,9 @@ def _draw_bars(
                 ax = axs[iax]
             cmap = mcm.cmap_d[name]
             if N is not None:
-                cmap = cmap.updated(N=N)
-            ax.colorbar(  # TODO: support this in public API
-                cmap, loc='_fill',
+                cmap = cmap.copy(N=N)
+            ax.colorbar(
+                cmap, loc='fill',
                 orientation='horizontal', locator='null', linewidth=0
             )
             ax.text(
@@ -3361,7 +3374,7 @@ def _draw_bars(
                 ha='right', va='center', transform='axes',
             )
             if imap == 0:
-                ax.set_title(cat)
+                ax.set_title(cat, weight='bold')
         nbars += len(names)
     return fig
 
@@ -3766,6 +3779,12 @@ def show_cmaps(*args, **kwargs):
         Category name for colormaps that are unknown to ProPlot. The
         default is ``'User'``. Set this to ``False`` to hide
         unknown colormaps.
+    categories : list of str, optional
+        Category names to be shown in the table. By default, every category
+        is shown except the ``'MATLAB'``, ``'GNUplot'``, ``'GIST'``,
+        and ``'Other'`` categories. Use of these colormaps is discouraged,
+        because they contain a variety of non-uniform colormaps (see
+        :ref:`Perceptually uniform colormaps` for details).
     length : float or str, optional
         The length of the colorbars. Units are interpreted by
         `~proplot.utils.units`.
@@ -3778,9 +3797,9 @@ def show_cmaps(*args, **kwargs):
     `~proplot.subplots.Figure`
         The figure.
     """
-    # Have colormaps separated into categories
+    # Get the list of colormaps
     if args:
-        names = [Colormap(cmap).name for cmap in args]
+        names = [Colormap(cmap, to_listed=True).name for cmap in args]
     else:
         names = [
             name for name in mcm.cmap_d.keys() if
@@ -3806,6 +3825,9 @@ def show_cycles(*args, **kwargs):
         Category name for cycles that are unknown to ProPlot. The
         default is ``'User'``. Set this to ``False`` to hide
         unknown colormaps.
+    categories : list of str, optional
+        Category names to be shown in the table. By default, every
+        category is shown.
     length : float or str, optional
         The length of the colorbars. Units are interpreted by
         `~proplot.utils.units`.
@@ -3820,7 +3842,7 @@ def show_cycles(*args, **kwargs):
     """
     # Get the list of cycles
     if args:
-        names = [cmap.name for cmap in args]
+        names = [Colormap(cmap).name for cmap in args]
     else:
         names = [
             name for name in mcm.cmap_d.keys() if
