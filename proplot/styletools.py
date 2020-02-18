@@ -3963,22 +3963,14 @@ def show_fonts(
     return fig
 
 
-# Apply custom changes
-if 'Greys' in mcm.cmap_d:  # 'Murica (and consistency with registered colors)
-    mcm.cmap_d['Grays'] = mcm.cmap_d.pop('Greys')
-if 'Spectral' in mcm.cmap_d:  # make spectral go from 'cold' to 'hot'
-    mcm.cmap_d['Spectral'] = mcm.cmap_d['Spectral'].reversed(name='Spectral')
-mcm.cmap_d.pop('twilight_shifted', None)  # we auto-generate this
+# Convert colormaps that *should* be LinearSegmented from Listed
 for _name in ('viridis', 'plasma', 'inferno', 'magma', 'cividis', 'twilight'):
     _cmap = mcm.cmap_d.get(_name, None)
     if _cmap and isinstance(_cmap, mcolors.ListedColormap):
-        mcm.cmap_d.pop(_name, None)
+        del mcm.cmap_d[_name]
         mcm.cmap_d[_name] = LinearSegmentedColormap.from_list(
             _name, _cmap.colors, cyclic=(_name == 'twilight')
         )
-for _cat in ('MATLAB', 'GNUplot', 'GIST', 'Other'):
-    for _name in CMAPS_TABLE[_cat]:
-        mcm.cmap_d.pop(_name, None)
 
 # Initialize customization folders
 _rc_folder = os.path.join(os.path.expanduser('~'), '.proplot')
@@ -3992,7 +3984,8 @@ for _rc_sub in ('cmaps', 'cycles', 'colors', 'fonts'):
 # Apply monkey patches to top level modules
 if not isinstance(mcm.cmap_d, CmapDict):
     _dict = {
-        key: value for key, value in mcm.cmap_d.items() if key[-2:] != '_r'
+        key: value for key, value in mcm.cmap_d.items()
+        if key[-2:] != '_r' and key[-8:] != '_shifted'
     }
     mcm.cmap_d = CmapDict(_dict)
 if not isinstance(mcolors._colors_full_map, _ColorMappingOverride):
