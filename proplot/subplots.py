@@ -1826,7 +1826,7 @@ class Figure(mfigure.Figure):
             loc, space=space, width=width, span=span,
             row=row, col=col, rows=rows, cols=cols
         )
-        return ax.colorbar(*args, loc='_fill', **kwargs)
+        return ax.colorbar(*args, loc='fill', **kwargs)
 
     def get_alignx(self):
         """
@@ -1939,7 +1939,7 @@ class Figure(mfigure.Figure):
             loc, space=space, width=width, span=span,
             row=row, col=col, rows=rows, cols=cols
         )
-        return ax.legend(*args, loc='_fill', **kwargs)
+        return ax.legend(*args, loc='fill', **kwargs)
 
     def save(self, filename, **kwargs):
         # Alias for `~Figure.savefig` because ``fig.savefig`` is redundant.

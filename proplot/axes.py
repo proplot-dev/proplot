@@ -976,19 +976,20 @@ optional
             The colorbar location. Default is :rc:`colorbar.loc`. The
             following location keys are valid:
 
-            ==================  ==================================
+            ==================  =======================================
             Location            Valid keys
-            ==================  ==================================
+            ==================  =======================================
             outer left          ``'left'``, ``'l'``
             outer right         ``'right'``, ``'r'``
             outer bottom        ``'bottom'``, ``'b'``
             outer top           ``'top'``, ``'t'``
-            default inset       ``'inset'``, ``'i'``, ``0``
+            default inset       ``'best'``, ``'inset'``, ``'i'``, ``0``
             upper right inset   ``'upper right'``, ``'ur'``, ``1``
             upper left inset    ``'upper left'``, ``'ul'``, ``2``
             lower left inset    ``'lower left'``, ``'ll'``, ``3``
             lower right inset   ``'lower right'``, ``'lr'``, ``4``
-            ==================  ==================================
+            "filled"            ``'fill'``
+            ==================  =======================================
 
         pad : float or str, optional
             The space between the axes edge and the colorbar. For inset
@@ -1028,17 +1029,17 @@ optional
         # TODO: add option to pad inset away from axes edge!
         # TODO: get "best" colorbar location from legend algorithm.
         kwargs.update({'edgecolor': edgecolor, 'linewidth': linewidth})
-        if loc != '_fill':
+        if loc != 'fill':
             loc = self._loc_translate(loc, 'colorbar')
 
         # Generate panel
         if loc in ('left', 'right', 'top', 'bottom'):
             ax = self.panel_axes(loc, width=width, space=space, filled=True)
-            return ax.colorbar(loc='_fill', *args, length=length, **kwargs)
+            return ax.colorbar(loc='fill', *args, length=length, **kwargs)
 
         # Filled colorbar
-        if loc == '_fill':
-            # Hide content and resize panel
+        if loc == 'fill':
+            # Hide content
             self._hide_panel()
 
             # Get subplotspec for colorbar axes
@@ -1234,6 +1235,7 @@ optional
             lower center inset  ``'lower center'``, ``'lc'``, ``7``
             upper center inset  ``'upper center'``, ``'uc'``, ``8``
             center inset        ``'center'``, ``'c'``, ``9``
+            "filled"            ``'fill'``
             ==================  =======================================
 
         width : float or str, optional
@@ -1251,7 +1253,7 @@ optional
         *args, **kwargs
             Passed to `~proplot.wrappers.legend_wrapper`.
         """
-        if loc != '_fill':
+        if loc != 'fill':
             loc = self._loc_translate(loc, 'legend')
         if isinstance(loc, np.ndarray):
             loc = loc.tolist()
@@ -1259,10 +1261,10 @@ optional
         # Generate panel
         if loc in ('left', 'right', 'top', 'bottom'):
             ax = self.panel_axes(loc, width=width, space=space, filled=True)
-            return ax.legend(*args, loc='_fill', **kwargs)
+            return ax.legend(*args, loc='fill', **kwargs)
 
         # Fill
-        if loc == '_fill':
+        if loc == 'fill':
             # Hide content
             self._hide_panel()
 
