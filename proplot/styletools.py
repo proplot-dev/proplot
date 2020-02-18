@@ -3365,7 +3365,7 @@ def _draw_bars(
             if imap == 0:
                 ax.set_title(cat, weight='bold')
         nbars += len(names)
-    return fig
+    return fig, axs
 
 
 def show_channels(
@@ -3485,13 +3485,14 @@ def show_channels(
     )
     # Colorbar on the bottom
     for cmap in cmaps:
-        fig.colorbar(cmap,
-                     loc='b', span=(2, 5),
-                     locator='null', label=cmap.name, labelweight='bold')
-    return fig
+        fig.colorbar(
+            cmap, loc='b', span=(2, 5),
+            locator='null', label=cmap.name, labelweight='bold'
+        )
+    return fig, axs
 
 
-def show_colorspaces(luminance=None, saturation=None, hue=None, axwidth=2):
+def show_colorspaces(*, luminance=None, saturation=None, hue=None, axwidth=2):
     """
     Generate hue-saturation, hue-luminance, and luminance-saturation
     cross-sections for the HCL, HSL, and HPL colorspaces.
@@ -3570,9 +3571,9 @@ def show_colorspaces(luminance=None, saturation=None, hue=None, axwidth=2):
             xlabel=xlabel, ylabel=ylabel, suptitle=suptitle,
             grid=False, xtickminor=False, ytickminor=False,
             xlocator=xloc, ylocator=yloc, facecolor='k',
-            title=space.upper(), titleweight='bold'
+            title=space.upper(),
         )
-    return fig
+    return fig, axs
 
 
 def _color_filter(hcl, ihue, nhues, minsat):
@@ -3949,7 +3950,7 @@ def show_fonts(
             stretch=stretch, style=style, weight=weight,
             ha='left', va='center'
         )
-    return fig
+    return fig, axs
 
 
 # Convert colormaps that *should* be LinearSegmented from Listed
