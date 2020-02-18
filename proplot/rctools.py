@@ -602,20 +602,18 @@ def _update_from_file(file):
     file : str
         The path.
     """
-    cnt = 0
     file = os.path.expanduser(file)
     added = set()
-    with open(file, 'r') as fd:
-        for line in fd:
+    with open(file, 'r') as f:
+        for cnt, line in enumerate(f):
             # Read file
-            cnt += 1
             stripped = line.split('#', 1)[0].strip()
             if not stripped:
                 continue
             pair = stripped.split(':', 1)
             if len(pair) != 2:
                 _warn_proplot(
-                    f'Illegal line #{cnt} in file {file!r}:\n{line!r}"'
+                    f'Illegal line #{cnt + 1} in file {file!r}:\n{line!r}"'
                 )
                 continue
             key, value = pair
@@ -623,7 +621,8 @@ def _update_from_file(file):
             value = value.strip()
             if key in added:
                 _warn_proplot(
-                    f'Duplicate key {key!r} on line #{cnt} in file {file!r}.'
+                    f'Duplicate key {key!r} on line #{cnt + 1} '
+                    f'in file {file!r}.'
                 )
             added.add(key)
 

@@ -2165,6 +2165,9 @@ def Colormap(
         Ignored if `save` is ``False``. Passed to the colormap save method,
         i.e. `LinearSegmentedColormap.save` or
         `ListedColormap.save`.
+
+    Other parameters
+    ----------------
     **kwargs
         Passed to `LinearSegmentedColormap.concatenate` or
         `ListedColormap.concatenate`. Each of these functions accepts
@@ -2176,7 +2179,7 @@ def Colormap(
         A `~matplotlib.colors.LinearSegmentedColormap` or
         `~matplotlib.colors.ListedColormap` instance.
     """
-    # Initial stuff
+    # Parse input args
     # TODO: Play with using "qualitative" colormaps in realistic examples,
     # how to make colormaps cyclic.
     if not args:
@@ -2459,7 +2462,7 @@ def Cycle(
     return cycle
 
 
-def Norm(norm, levels=None, **kwargs):
+def Norm(norm, *args, **kwargs):
     """
     Return an arbitrary `~matplotlib.colors.Normalize` instance.
     Used to interpret the `norm` and `norm_kw` arguments when passed to any
@@ -2468,8 +2471,14 @@ def Norm(norm, levels=None, **kwargs):
     Parameters
     ----------
     norm : str or `~matplotlib.colors.Normalize`
-        Key name for the normalizer. The recognized normalizer key names
-        are as follows.
+        The normalizer specification. If a `~matplotlib.colors.Normalize`
+        instance already, the input argument is simply returned. Otherwise,
+        `norm` should be a string corresponding to one of the "registered"
+        colormap normalizers (see below table).
+
+        If `norm` is a list or tuple and the first element is a "registered"
+        normalizer name, subsequent elements are passed to the normalizer class
+        as positional arguments.
 
         ===============================  ===============================
         Key(s)                           Class
@@ -2483,10 +2492,9 @@ def Norm(norm, levels=None, **kwargs):
         ``'symlog'``                     `~matplotlib.colors.SymLogNorm`
         ===============================  ===============================
 
-    levels : array-like, optional
-        Level *edges*, passed to `LinearSegmentedNorm` or used to determine
-        the `vmin` and `vmax` arguments for `MidpointNorm`.
-    **kwargs
+    Other parameters
+    ----------------
+    *args, **kwargs
         Passed to the `~matplotlib.colors.Normalize` initializer.
         See `this tutorial \
 <https://matplotlib.org/tutorials/colors/colormapnorms.html>`__
@@ -2499,26 +2507,22 @@ def Norm(norm, levels=None, **kwargs):
     """
     if isinstance(norm, mcolors.Normalize):
         return norm
-    if isinstance(norm, str):
-        # Get class
-        norm_out = normalizers.get(norm, None)
-        if norm_out is None:
-            raise ValueError(
-                f'Unknown normalizer {norm!r}. Options are: '
-                + ', '.join(map(repr, normalizers.keys())) + '.'
-            )
-        # Instantiate class
-        if norm_out is LinearSegmentedNorm:
-            if not np.iterable(levels):
-                raise ValueError(
-                    f'Need levels for normalizer {norm!r}. '
-                    f'Received levels={levels!r}.'
-                )
-            kwargs.update({'levels': levels})
-        norm_out = norm_out(**kwargs)  # initialize
-    else:
-        raise ValueError(f'Unknown norm {norm_out!r}.')
-    return norm_out
+
+    # Pull out extra args
+    if np.iterable(norm) and not isinstance(norm, str):
+        norm, args = norm[0], (*norm[1:], *args)
+    if not isinstance(norm, str):
+        raise ValueError(f'Invalid norm name {norm!r}. Must be string.')
+
+    # Get class
+    if norm not in normalizers:
+        raise ValueError(
+            f'Unknown normalizer {norm!r}. Options are: '
+            + ', '.join(map(repr, normalizers.keys())) + '.'
+        )
+    if norm == 'symlog' and not args and 'linthresh' not in kwargs:
+        kwargs['linthresh'] = 1  # special case, needs argument
+    return normalizers[norm](*args, **kwargs)
 
 
 class BinNorm(mcolors.BoundaryNorm):
@@ -2965,7 +2969,7 @@ def _from_file(filename, listed=False, warn_on_failure=False):
         delim = re.compile(r'[,\s]+')
         data = [
             delim.split(line.strip())
-            for line in open(filename).readlines()
+            for line in open(filename)
             if line.strip() and line.strip()[0] != '#'
         ]
         try:

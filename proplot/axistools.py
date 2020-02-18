@@ -62,15 +62,20 @@ def Locator(locator, *args, **kwargs):
     Parameters
     ----------
     locator : `~matplotlib.ticker.Locator`, str, float, or list of float
-        If `~matplotlib.ticker.Locator`, the object is returned.
+        The axis locator specification, interpreted as follows:
 
-        If number, specifies the *multiple* used to define tick separation.
-        Returns a `~matplotlib.ticker.MultipleLocator` instance.
+        * If a `~matplotlib.ticker.Locator` instance already, the input
+          argument is simply returned.
+        * If a list of numbers, these points are ticked. Returns a
+          `~matplotlib.ticker.FixedLocator`.
+        * If number, this specifies the *step size* between tick locations.
+          Returns a `~matplotlib.ticker.MultipleLocator`.
 
-        If list of numbers, these points are ticked. Returns a
-        `~matplotlib.ticker.FixedLocator` instance.
-
-        If string, a dictionary lookup is performed (see below table).
+        Otherwise, `locator` should be a string corresponding to one
+        of the "registered" locators (see below table). If `locator` is a
+        list or tuple and the first element is a "registered" locator name,
+        subsequent elements are passed to the locator class as positional
+        arguments.
 
         ======================  =================================================  ================================================================================================
         Key                     Class                                              Description
@@ -101,6 +106,8 @@ def Locator(locator, *args, **kwargs):
         ``'microsecond'``       `~matplotlib.dates.MicrosecondLocator`             Ticks every ``N`` microseconds
         ======================  =================================================  ================================================================================================
 
+    Other parameters
+    ----------------
     *args, **kwargs
         Passed to the `~matplotlib.ticker.Locator` class.
 
@@ -111,10 +118,13 @@ def Locator(locator, *args, **kwargs):
     """  # noqa
     if isinstance(locator, mticker.Locator):
         return locator
+
     # Pull out extra args
     if np.iterable(locator) and not isinstance(locator, str) and not all(
-            isinstance(num, Number) for num in locator):
+        isinstance(num, Number) for num in locator
+    ):
         locator, args = locator[0], (*locator[1:], *args)
+
     # Get the locator
     if isinstance(locator, str):  # dictionary lookup
         # Shorthands and defaults
@@ -156,32 +166,31 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
     Parameters
     ----------
     formatter : `~matplotlib.ticker.Formatter`, str, list of str, or function
-        If `~matplotlib.ticker.Formatter`, the object is returned.
+        The axis formatter specification, interpreted as follows:
 
-        If list of strings, ticks are labeled with these strings. Returns a
-        `~matplotlib.ticker.FixedFormatter` instance when `index` is ``False``
-        and an `~matplotlib.ticker.IndexFormatter` instance when `index` is
-        ``True``.
+        * If a `~matplotlib.ticker.Formatter` instance already, the input
+          argument is simply returned.
+        * If list of strings, the ticks are labeled with these strings. Returns
+          a `~matplotlib.ticker.FixedFormatter` if `index` is ``False`` or an
+          `~matplotlib.ticker.IndexFormatter` if `index` is ``True``.
+        * If a function, the labels will be generated using this function.
+          Returns a `~matplotlib.ticker.FuncFormatter`.
+        * If a string containing ``{x}`` or ``{x:...}``, ticks will be
+          formatted by calling ``string.format(x=number)``.
+        * If a string containing ``'%'`` and `date` is ``False``, ticks will be
+          formatted using the C-style ``string % number`` method. See
+          `this page <https://docs.python.org/3/library/stdtypes.html#printf-style-string-formatting>`__
+          for a review. Returns a `~matplotlib.ticker.FormatStrFormatter`.
+        * If a string containing ``'%'`` and `date` is ``True``, *datetime*
+          `string % number`` formatting is used. See
+          `this page <https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes>`__
+          for a review. Returns a `~matplotlib.ticker.DateFormatter`.
 
-        If function, labels will be generated using this function. Returns a
-        `~matplotlib.ticker.FuncFormatter` instance.
-
-        If string, there are 4 possibilities:
-
-        1. If string contains ``'%'`` and `date` is ``False``, ticks will be
-           formatted using the C-notation ``string % number`` method. See
-           `this page \
-<https://docs.python.org/3/library/stdtypes.html#printf-style-string-formatting>`__
-           for a review.
-        2. If string contains ``'%'`` and `date` is ``True``, datetime
-           ``string % number`` formatting is used. See
-           `this page \
-<https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes>`__
-           for a review.
-        3. If string contains ``{x}`` or ``{x:...}``, ticks will be
-           formatted by calling ``string.format(x=number)``.
-        4. In all other cases, a dictionary lookup is performed
-           (see below table).
+        Otherwise, `formatter` should be a string corresponding to one
+        of the "registered" formatters (see below table). If `formatter` is
+        a list or tuple and the first element is a "registered" formatter
+        name, subsequent elements are passed to the formatter class as
+        positional arguments.
 
         ======================  ==============================================  ===================================================================================================================================
         Key                     Class                                           Description
@@ -220,6 +229,9 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
     index : bool, optional
         Controls the behavior when `formatter` is a list of strings (see
         above).
+
+    Other parameters
+    ----------------
     *args, **kwargs
         Passed to the `~matplotlib.ticker.Formatter` class.
 
@@ -230,24 +242,31 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
     """  # noqa
     if isinstance(formatter, mticker.Formatter):  # formatter object
         return formatter
+
     # Pull out extra args
     if np.iterable(formatter) and not isinstance(formatter, str) and not all(
         isinstance(item, str) for item in formatter
     ):
         formatter, args = formatter[0], (*formatter[1:], *args)
+
     # Get the formatter
     if isinstance(formatter, str):  # assumption is list of strings
         # Format strings
-        if re.search(r'{x?(:.+)?}', formatter):
+        if re.search(r'{x(:.+)?}', formatter):
+            # string.format() formatting
             formatter = mticker.StrMethodFormatter(
-                formatter, *args, **kwargs)  # new-style .format() form
+                formatter, *args, **kwargs
+            )
         elif '%' in formatter:
+            # %-style formatting
             if date:
                 formatter = mdates.DateFormatter(
-                    formatter, *args, **kwargs)  # %-style, dates
+                    formatter, *args, **kwargs
+                )
             else:
                 formatter = mticker.FormatStrFormatter(
-                    formatter, *args, **kwargs)  # %-style, numbers
+                    formatter, *args, **kwargs
+                )
         else:
             # Fraction shorthands
             if formatter in ('pi', 'e'):
@@ -278,8 +297,10 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
                 )
             formatter = formatters[formatter](*args, **kwargs)
     elif callable(formatter):
+        # Function
         formatter = mticker.FuncFormatter(formatter, *args, **kwargs)
-    elif np.iterable(formatter):  # list of strings on the major ticks
+    elif np.iterable(formatter):
+        # List of strings
         if index:
             formatter = mticker.IndexFormatter(formatter)
         else:
@@ -297,16 +318,15 @@ def Scale(scale, *args, **kwargs):
 
     Parameters
     ----------
-    scale : `~matplotlib.scale.ScaleBase`, str, (str, ...), or class
-        If `~matplotlib.scale.ScaleBase`, the object is returned.
+    scale : `~matplotlib.scale.ScaleBase`, str, or (str, ...)
+        The axis scale specification. If a `~matplotlib.scale.ScaleBase`
+        instance already, the input argument is simply returned. Otherwise,
+        `scale` should be a string corresponding to one of the
+        "registered" axis scales or axis scale presets (see below table).
 
-        If string, this is the registered scale name or scale "preset" (see
-        below table).
-
-        If list or tuple and the first element is a string, the subsequent
-        items are passed to the scale class as positional arguments. For
-        example, ``ax.format(xscale=('power', 2))`` applies the ``'quadratic'``
-        scale to the *x* axis.
+        If `scale` is a list or tuple and the first element is a
+        "registered" scale name, subsequent elements are passed to the
+        scale class as positional arguments.
 
         =================  =======================  =======================================================================
         Key                Class                    Description
@@ -333,6 +353,8 @@ def Scale(scale, *args, **kwargs):
         ``'height'``       `ExpScale` (preset)      Pressure (in hPa) expressed linear in height
         =================  =======================  =======================================================================
 
+    Other parameters
+    ----------------
     *args, **kwargs
         Passed to the `~matplotlib.scale.ScaleBase` class.
 
@@ -347,11 +369,13 @@ def Scale(scale, *args, **kwargs):
     # do anything but return the class instance upon receiving one.
     if isinstance(scale, mscale.ScaleBase):
         return scale
+
     # Pull out extra args
     if np.iterable(scale) and not isinstance(scale, str):
         scale, args = scale[0], (*scale[1:], *args)
     if not isinstance(scale, str):
         raise ValueError(f'Invalid scale name {scale!r}. Must be string.')
+
     # Get scale preset
     if scale in SCALE_PRESETS:
         if args or kwargs:
@@ -360,6 +384,7 @@ def Scale(scale, *args, **kwargs):
                 'argument(s): {args} and keyword argument(s): {kwargs}. '
             )
         scale, *args = SCALE_PRESETS[scale]
+
     # Get scale
     scale = scale.lower()
     if scale in scales:
@@ -415,6 +440,9 @@ class AutoFormatter(mticker.ScalarFormatter):
             Length-2 string indicating the suffix for "negative" and "positive"
             numbers, meant to replace the minus sign. This is useful for
             indicating cardinal geographic coordinates.
+
+        Other parameters
+        ----------------
         *args, **kwargs
             Passed to `~matplotlib.ticker.ScalarFormatter`.
 
@@ -495,9 +523,10 @@ def SimpleFormatter(precision=6, zerotrim=True):
         string = ('{:.%df}' % precision).format(x)
         if zerotrim and '.' in string:
             string = string.rstrip('0').rstrip('.')
-        if string == '-0' or string == '\N{MINUS SIGN}0':
+        string = string.replace('-', '\N{MINUS SIGN}')
+        if string == '\N{MINUS SIGN}0':
             string = '0'
-        return string.replace('-', '\N{MINUS SIGN}')
+        return string
     return mticker.FuncFormatter(f)
 
 

@@ -134,6 +134,9 @@ def Proj(name, basemap=False, **kwargs):
     basemap : bool, optional
         Whether to use the basemap package as opposed to the cartopy package.
         Default is ``False``.
+
+    Other parameters
+    ----------------
     **kwargs
         Passed to the `~mpl_toolkits.basemap.Basemap` or
         cartopy `~cartopy.crs.Projection` class.
@@ -145,11 +148,13 @@ def Proj(name, basemap=False, **kwargs):
 
     See also
     --------
-    `~proplot.axes.GeoAxes`, `~proplot.axes.BasemapAxes`
+    ~proplot.axes.ProjAxes, ~proplot.axes.GeoAxes, ~proplot.axes.BasemapAxes
     """  # noqa
     # Class instances
-    if ((CRS is not object and isinstance(name, CRS))
-            or (Basemap is not object and isinstance(name, Basemap))):
+    if (
+        (CRS is not object and isinstance(name, CRS))
+        or (Basemap is not object and isinstance(name, Basemap))
+    ):
         proj = name
     elif not isinstance(name, str):
         raise ValueError(
@@ -157,6 +162,7 @@ def Proj(name, basemap=False, **kwargs):
             'Must be name, mpl_toolkits.basemap.Basemap instance, '
             'or cartopy.crs.CRS instance.'
         )
+
     # Basemap
     elif basemap:
         import mpl_toolkits.basemap as mbasemap
@@ -173,6 +179,7 @@ def Proj(name, basemap=False, **kwargs):
         reso = kwproj.pop('resolution', None) or kwproj.pop(
             'reso', None) or 'c'
         proj = mbasemap.Basemap(projection=name, resolution=reso, **kwproj)
+
     # Cartopy
     else:
         import cartopy.crs as _  # noqa
@@ -192,6 +199,7 @@ def Proj(name, basemap=False, **kwargs):
                 + ', '.join(map(repr, cartopy_names.keys())) + '.'
             )
         proj = crs(**kwargs)
+
     return proj
 
 
@@ -459,10 +467,14 @@ basemap_kwargs = {
     'splaea': {'lon_0': 0, 'boundinglat': -10},
     'spstere': {'lon_0': 0, 'boundinglat': -10},
     'tmerc': {'lon_0': 0, 'lat_0': 0, 'width': 10000e3, 'height': 10000e3},
-    'merc': {'llcrnrlat': -80, 'urcrnrlat': 84,
-             'llcrnrlon': -180, 'urcrnrlon': 180},
-    'omerc': {'lat_0': 0, 'lon_0': 0, 'lat_1': -10, 'lat_2': 10,
-              'lon_1': 0, 'lon_2': 0, 'width': 10000e3, 'height': 10000e3},
+    'merc': {
+        'llcrnrlat': -80, 'urcrnrlat': 84,
+        'llcrnrlon': -180, 'urcrnrlon': 180
+    },
+    'omerc': {
+        'lat_0': 0, 'lon_0': 0, 'lat_1': -10, 'lat_2': 10,
+        'lon_1': 0, 'lon_2': 0, 'width': 10000e3, 'height': 10000e3
+    },
 }
 
 #: Mapping of "projection names" to cartopy `~cartopy.crs.Projection` classes.
@@ -486,41 +498,41 @@ if CRS is not object:
     # we just print warning in that case.
     _unavail = []
     for _name, _class in {  # interpret string, create cartopy projection
-            'aea': 'AlbersEqualArea',
-            'aeqd': 'AzimuthalEquidistant',
-            'cyl': 'PlateCarree',  # only basemap name not matching PROJ
-            'eck1': 'EckertI',
-            'eck2': 'EckertII',
-            'eck3': 'EckertIII',
-            'eck4': 'EckertIV',
-            'eck5': 'EckertV',
-            'eck6': 'EckertVI',
-            'eqc': 'PlateCarree',  # actual PROJ name
-            'eqdc': 'EquidistantConic',
-            'eqearth': 'EqualEarth',  # better looking Robinson; not in basemap
-            'euro': 'EuroPP',  # Europe; not in basemap or PROJ
-            'geos': 'Geostationary',
-            'gnom': 'Gnomonic',
-            'igh': 'InterruptedGoodeHomolosine',  # not in basemap
-            'laea': 'LambertAzimuthalEqualArea',
-            'lcc': 'LambertConformal',
-            'lcyl': 'LambertCylindrical',  # not in basemap or PROJ
-            'merc': 'Mercator',
-            'mill': 'Miller',
-            'moll': 'Mollweide',
-            'npstere': 'NorthPolarStereo',  # np/sp stuff not in PROJ
-            'nsper': 'NearsidePerspective',
-            'ortho': 'Orthographic',
-            'osgb': 'OSGB',  # UK; not in basemap or PROJ
-            'osni': 'OSNI',  # Ireland; not in basemap or PROJ
-            'pcarree': 'PlateCarree',  # common alternate name
-            'robin': 'Robinson',
-            'rotpole': 'RotatedPole',
-            'sinu': 'Sinusoidal',
-            'spstere': 'SouthPolarStereo',
-            'stere': 'Stereographic',
-            'tmerc': 'TransverseMercator',
-            'utm': 'UTM',  # not in basemap
+        'aea': 'AlbersEqualArea',
+        'aeqd': 'AzimuthalEquidistant',
+        'cyl': 'PlateCarree',  # only basemap name not matching PROJ
+        'eck1': 'EckertI',
+        'eck2': 'EckertII',
+        'eck3': 'EckertIII',
+        'eck4': 'EckertIV',
+        'eck5': 'EckertV',
+        'eck6': 'EckertVI',
+        'eqc': 'PlateCarree',  # actual PROJ name
+        'eqdc': 'EquidistantConic',
+        'eqearth': 'EqualEarth',  # better looking Robinson; not in basemap
+        'euro': 'EuroPP',  # Europe; not in basemap or PROJ
+        'geos': 'Geostationary',
+        'gnom': 'Gnomonic',
+        'igh': 'InterruptedGoodeHomolosine',  # not in basemap
+        'laea': 'LambertAzimuthalEqualArea',
+        'lcc': 'LambertConformal',
+        'lcyl': 'LambertCylindrical',  # not in basemap or PROJ
+        'merc': 'Mercator',
+        'mill': 'Miller',
+        'moll': 'Mollweide',
+        'npstere': 'NorthPolarStereo',  # np/sp stuff not in PROJ
+        'nsper': 'NearsidePerspective',
+        'ortho': 'Orthographic',
+        'osgb': 'OSGB',  # UK; not in basemap or PROJ
+        'osni': 'OSNI',  # Ireland; not in basemap or PROJ
+        'pcarree': 'PlateCarree',  # common alternate name
+        'robin': 'Robinson',
+        'rotpole': 'RotatedPole',
+        'sinu': 'Sinusoidal',
+        'spstere': 'SouthPolarStereo',
+        'stere': 'Stereographic',
+        'tmerc': 'TransverseMercator',
+        'utm': 'UTM',  # not in basemap
     }.items():
         _class = getattr(ccrs, _class, None)
         if _class is None:

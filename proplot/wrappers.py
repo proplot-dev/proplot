@@ -1783,8 +1783,7 @@ def cycle_changer(
     if name == 'plot':
         return (*objs,)  # always return tuple of objects
     elif name in ('boxplot', 'violinplot'):
-        # always singleton, because these methods accept the whole 2D object
-        return objs[0]
+        return objs[0]  # always return singleton
     else:
         return objs[0] if is1d else (*objs,)  # sensible default behavior
 

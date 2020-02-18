@@ -134,15 +134,15 @@ class Axes(maxes.Axes):
         main : bool, optional
             Used internally, indicates whether this is a "main axes" rather
             than a twin, panel, or inset axes.
+
+        Other parameters
+        ----------------
         *args, **kwargs
             Passed to `~matplotlib.axes.Axes`.
 
         See also
         --------
-        :py:obj:`matplotlib.axes.Axes`,
-        :py:obj:`XYAxes`,
-        :py:obj:`PolarAxes`,
-        :py:obj:`ProjAxes`
+        matplotlib.axes.Axes, XYAxes, PolarAxes, ProjAxes
         """
         super().__init__(*args, **kwargs)
 
@@ -766,10 +766,8 @@ optional
 
         See also
         --------
-        `~proplot.rctools.rc_configurator.context`,
-        `XYAxes.format`,
-        `ProjAxes.format`,
-        `PolarAxes.format`
+        ~proplot.rctools.rc_configurator.context,
+        XYAxes.format, ProjAxes.format, PolarAxes.format
         """
         # Figure patch (for some reason needs to be re-asserted even if
         # declared before figure is drawn)
@@ -855,6 +853,7 @@ optional
                 'borderwidth': 'abc.borderwidth',
                 'fontfamily': 'font.family',
             }, context=True)
+
             # Label format
             abcstyle = rc.get('abc.style', context=True)  # 1st run, or changed
             if abcstyle and self.number is not None:
@@ -869,11 +868,13 @@ optional
                 if 'A' in abcstyle:
                     text = text.upper()
                 self._abc_text = text
+
             # Apply text
             obj = self._abc_label
             abc = rc.get('abc', context=True)
             if abc is not None:
                 obj.set_text(self._abc_text if bool(abc) else '')
+
             # Apply new settings
             loc = self._loc_translate(None, 'abc')
             loc_prev = self._abc_loc
@@ -1015,7 +1016,10 @@ optional
             :rc:`colorbar.framealpha`, :rc:`axes.linewidth`,
             :rc:`axes.edgecolor`, and :rc:`axes.facecolor`,
             respectively.
-        **kwargs
+
+        Other parameters
+        ----------------
+        *args, **kwargs
             Passed to `~proplot.wrappers.colorbar_wrapper`.
         """
         # TODO: add option to pad inset away from axes edge!
@@ -1416,6 +1420,9 @@ optional
 <https://matplotlib.org/3.1.1/gallery/misc/zorder_demo.html>`__
             of the axes, should be greater than the zorder of
             elements in the parent axes. Default is ``3.5``.
+
+        Other parameters
+        ----------------
         **kwargs
             Passed to `~matplotlib.axes.Axes.indicate_inset`.
         """
@@ -1618,11 +1625,6 @@ optional
 
     # For consistency with _left_title, _upper_left_title, etc.
     _center_title = property(lambda self: self.title)
-
-    # ABC location
-    abc = property(lambda self: getattr(
-        self, '_' + self._abc_loc.replace(' ', '_') + '_title'
-    ))
 
     #: Alias for `~Axes.panel_axes`.
     panel = panel_axes
@@ -1886,7 +1888,7 @@ class XYAxes(Axes):
         """
         See also
         --------
-        `~proplot.subplots.subplots`, `Axes`
+        ~proplot.subplots.subplots
         """
         # Impose default formatter
         super().__init__(*args, **kwargs)
@@ -2275,6 +2277,9 @@ class XYAxes(Axes):
             Keyword arguments used to update the background patch object. You
             can use this, for example, to set background hatching with
             ``patch_kw={'hatch':'xxx'}``.
+
+        Other parameters
+        ----------------
         rc_kw : dict, optional
             Dictionary containing `~proplot.rctools.rc` settings applied to
             this axes using `~proplot.rctools.rc_configurator.context`.
@@ -2284,6 +2289,10 @@ class XYAxes(Axes):
             axes `~proplot.rctools.rc` settings. For example,
             ``axestitlesize=15`` modifies the :rcraw:`axes.titlesize` setting.
 
+        See also
+        --------
+        Axes.format, ~rctools.rc_configurator.context
+
         Note
         ----
         If you plot something with a `datetime64 \
@@ -2292,10 +2301,6 @@ class XYAxes(Axes):
         `datetime.time`, or `datetime.datetime` array as the *x* or *y* axis
         coordinate, the axis ticks and tick labels will be automatically
         formatted as dates.
-
-        See also
-        --------
-        `Axes.format`, `~rctools.rc_configurator.context`
         """
         rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
         with rc.context(rc_kw, mode=rc_mode):
@@ -2704,6 +2709,14 @@ class XYAxes(Axes):
                     axis.set_major_locator(locator)
                     if isinstance(locator, mticker.IndexLocator):
                         tickminor = False  # 'index' minor ticks make no sense
+                if minorlocator in (True, False):
+                    _warn_proplot(
+                        f'You passed {x}minorticks={minorlocator}, but this '
+                        'argument is used to specify tick *locations*. If '
+                        'you just want to *toggle* minor ticks on and off, '
+                        f'please use {x}tickminor=True or {x}tickminor=False.'
+                    )
+                    minorlocator = None
                 if tickminor or minorlocator:
                     isdefault = minorlocator is None
                     if isdefault:
@@ -2922,7 +2935,7 @@ class PolarAxes(Axes, mproj.PolarAxes):
         """
         See also
         --------
-        `~proplot.subplots.subplots`, `Axes`
+        ~proplot.subplots.subplots
         """
         # Set tick length to zero so azimuthal labels are not too offset
         # Change default radial axis formatter but keep default theta one
@@ -2996,6 +3009,9 @@ optional
         thetaformatter_kw, rformatter_kw : dict-like, optional
             The azimuthal and radial label formatter settings. Passed to
             `~proplot.axistools.Formatter`.
+
+        Other parameters
+        ----------------
         rc_kw : dict, optional
             Dictionary containing `~proplot.rctools.rc` settings applied to
             this axes using `~proplot.rctools.rc_configurator.context`.
@@ -3007,8 +3023,7 @@ optional
 
         See also
         --------
-        `Axes.format`,
-        `~proplot.rctools.rc_configurator.context`
+        Axes.format, ~proplot.rctools.rc_configurator.context
         """
         rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
         with rc.context(rc_kw, mode=rc_mode):
@@ -3195,7 +3210,7 @@ class ProjAxes(Axes):
         """
         See also
         --------
-        `~proplot.subplots.subplots`, `Axes`, `GeoAxes`, `BasemapAxes`
+        ~proplot.subplots.subplots, GeoAxes, BasemapAxes
         """
         # Store props that let us dynamically and incrementally modify
         # line locations and settings like with Cartesian axes
@@ -3272,6 +3287,9 @@ optional
             Keyword arguments used to update the background patch object. You
             can use this, for example, to set background hatching with
             ``patch_kw={'hatch':'xxx'}``.
+
+        Other parameters
+        ----------------
         rc_kw : dict, optional
             Dictionary containing `~proplot.rctools.rc` settings applied to
             this axes using `~proplot.rctools.rc_configurator.context`.
@@ -3283,7 +3301,7 @@ optional
 
         See also
         --------
-        :py:obj:`Axes.format`, `~proplot.rctools.rc_configurator.context`
+        Axes.format, ~proplot.rctools.rc_configurator.context
         """
         rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
         with rc.context(rc_kw, mode=rc_mode):
@@ -3497,12 +3515,15 @@ class GeoAxes(ProjAxes, GeoAxes):
         ----------
         map_projection : `~cartopy.crs.Projection`
             The `~cartopy.crs.Projection` instance.
+
+        Other parameters
+        ----------------
         *args, **kwargs
             Passed to `~cartopy.mpl.geoaxes.GeoAxes`.
 
         See also
         --------
-        `~proplot.subplots.subplots`, `Axes`, `~proplot.projs.Proj`
+        ~proplot.subplots.subplots, ~proplot.projs.Proj
         """
         # GeoAxes initialization. Note that critical attributes like
         # outline_patch needed by _format_apply are added before it is called.
@@ -3871,12 +3892,15 @@ class BasemapAxes(ProjAxes):
         ----------
         map_projection : `~mpl_toolkits.basemap.Basemap`
             The `~mpl_toolkits.basemap.Basemap` instance.
-        **kwargs
+
+        Other parameters
+        ----------------
+        *args, **kwargs
             Passed to `Axes`.
 
         See also
         --------
-        `~proplot.subplots.subplots`, `Axes`, `~proplot.projs.Proj`
+        ~proplot.subplots.subplots, ~proplot.projs.Proj
         """
         # Map boundary notes
         # * Must set boundary before-hand, otherwise the set_axes_limits method

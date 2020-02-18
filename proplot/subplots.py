@@ -328,6 +328,9 @@ class GridSpec(mgridspec.GridSpec):
         left, right, top, bottom : float or str
             Passed to `~matplotlib.gridspec.GridSpec`, denotes the margin
             positions in figure-relative coordinates.
+
+        Other parameters
+        ----------------
         **kwargs
             Passed to `~matplotlib.gridspec.GridSpec`.
         """
@@ -948,10 +951,6 @@ class Figure(mfigure.Figure):
         ----------------
         **kwargs
             Passed to `matplotlib.figure.Figure`.
-
-        See also
-        --------
-        `~matplotlib.figure.Figure`
         """  # noqa
         tight_layout = kwargs.pop('tight_layout', None)
         constrained_layout = kwargs.pop('constrained_layout', None)
@@ -1442,11 +1441,14 @@ class Figure(mfigure.Figure):
             coords = [None] * len(axs)
             if side == 'top' and suptitle_on:
                 supaxs = axs
+
+            # Adjust the labels
             with _hidelabels(*labels):
                 for i, (ax, label) in enumerate(zip(axs, labels)):
                     label_on = label.get_text().strip()
                     if not label_on:
                         continue
+
                     # Get coord from tight bounding box
                     # Include twin axes and panels along the same side
                     icoords = []
@@ -1463,8 +1465,8 @@ class Figure(mfigure.Figure):
                         c = self.transFigure.inverted().transform(jcoords)
                         c = c[0] if side in ('left', 'right') else c[1]
                         icoords.append(c)
+
                     # Offset, and offset a bit extra for left/right labels
-                    # See:
                     # https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
                     fontsize = label.get_fontsize()
                     if side in ('left', 'right'):
@@ -1479,6 +1481,7 @@ class Figure(mfigure.Figure):
                         coords[i] = max(icoords) + (
                             scale1 * fontsize / 72
                         ) / scale2
+
                 # Assign coords
                 coords = [i for i in coords if i is not None]
                 if coords:
@@ -1639,6 +1642,7 @@ class Figure(mfigure.Figure):
             if spaces_orig[idx_space] is None:
                 spaces_orig[idx_space] = units(space_orig)
             spaces[idx_space] = _notNone(spaces_orig[idx_space], space)
+
         # Make room for new panel slot
         else:
             # Modify basic geometry
@@ -1660,12 +1664,14 @@ class Figure(mfigure.Figure):
         figsize, gridspec_kw, _ = _subplots_geometry(**subplots_kw)
         self.set_size_inches(figsize, auto=True)
         if exists:
+            # Use existing gridspec
             gridspec = self._gridspec_main
             gridspec.update(**gridspec_kw)
         else:
-            # New gridspec
+            # Make new gridspec
             gridspec = GridSpec(self, **gridspec_kw)
             self._gridspec_main = gridspec
+
             # Reassign subplotspecs to all axes and update positions
             # May seem inefficient but it literally just assigns a hidden,
             # attribute, and the creation time for subpltospecs is tiny
@@ -1683,13 +1689,13 @@ class Figure(mfigure.Figure):
                 subplotspec = ax.get_subplotspec()
                 igridspec = subplotspec.get_gridspec()
                 topmost = subplotspec.get_topmost_subplotspec()
-                # Apply new subplotspec!
+
+                # Apply new subplotspec
                 _, _, *coords = topmost.get_active_rows_columns()
                 for i in range(4):
-                    # if inserts[i] is not None and coords[i] >= inserts[i]:
                     if inserts[i] is not None and coords[i] >= inserts[i]:
                         coords[i] += 1
-                (row1, row2, col1, col2) = coords
+                row1, row2, col1, col2 = coords
                 subplotspec_new = gridspec[row1:row2 + 1, col1:col2 + 1]
                 if topmost is subplotspec:
                     ax.set_subplotspec(subplotspec_new)
@@ -1699,6 +1705,7 @@ class Figure(mfigure.Figure):
                     raise ValueError(
                         f'Unexpected GridSpecFromSubplotSpec nesting.'
                     )
+
                 # Update parent or child position
                 ax.update_params()
                 ax.set_position(ax.figbox)
@@ -1799,8 +1806,11 @@ class Figure(mfigure.Figure):
         width : float or str, optional
             The colorbar width. Units are interpreted by
             `~proplot.utils.units`. Default is :rc:`colorbar.width`.
+
+        Other parameters
+        ----------------
         *args, **kwargs
-            Passed to `~proplot.axes.Axes.colorbar`.
+            Passed to `~proplot.wrappers.colorbar_wrapper`.
         """
         ax = kwargs.pop('ax', None)
         cax = kwargs.pop('cax', None)
@@ -1913,8 +1923,11 @@ class Figure(mfigure.Figure):
             by `~proplot.utils.units`. By default, this is adjusted
             automatically in the "tight layout" calculation, or is
             :rc:`subplots.panelpad` if "tight layout" is turned off.
+
+        Other parameters
+        ----------------
         *args, **kwargs
-            Passed to `~proplot.axes.Axes.legend`.
+            Passed to `~proplot.wrappers.legend_wrapper`.
         """
         ax = kwargs.pop('ax', None)
         # Generate axes panel
@@ -1971,7 +1984,7 @@ class Figure(mfigure.Figure):
             width, height = w, h
         if not all(np.isfinite(_) for _ in (width, height)):
             raise ValueError(
-                'Figure size must be finite, not ({width}, {height}).'
+                f'Figure size must be finite, not ({width}, {height}).'
             )
         width_true, height_true = self.get_size_inches()
         width_trunc = int(self.bbox.width) / self.dpi
@@ -2073,7 +2086,8 @@ class Figure(mfigure.Figure):
     def ref(self, ref):
         if not isinstance(ref, Integral) or ref < 1:
             raise ValueError(
-                f'Invalid axes number {ref!r}. Must be integer >=1.')
+                f'Invalid axes number {ref!r}. Must be integer >=1.'
+            )
         self.stale = True
         self._ref = ref
 
@@ -2337,7 +2351,7 @@ def subplots(
             array = array[None, :] if order == 'C' else array[:, None]
         elif array.ndim != 2:
             raise ValueError(
-                'array must be 1-2 dimensional, but got {array.ndim} dims'
+                f'Array must be 1-2 dimensional, but got {array.ndim} dims.'
             )
         array[array == None] = 0  # use zero for placeholder  # noqa
     except (TypeError, ValueError):
@@ -2357,14 +2371,14 @@ def subplots(
     if ref not in nums:
         raise ValueError(
             f'Invalid reference number {ref!r}. For array {array!r}, must be '
-            'one of {nums}.'
+            f'one of {nums}.'
         )
     nrows, ncols = array.shape
 
     # Get some axes properties, where locations are sorted by axes id.
     # NOTE: These ranges are endpoint exclusive, like a slice object!
-    axids = [np.where(array == i) for i in np.sort(
-        np.unique(array)) if i > 0]  # 0 stands for empty
+    # NOTE: 0 stands for empty
+    axids = [np.where(array == i) for i in np.sort(np.unique(array)) if i > 0]
     xrange = np.array([[x.min(), x.max()] for _, x in axids])
     yrange = np.array([[y.min(), y.max()] for y, _ in axids])
     xref = xrange[ref - 1, :]  # range for reference axes
@@ -2378,8 +2392,7 @@ def subplots(
     proj = _axes_dict(naxs, proj, kw=False, default='xy')
     proj_kw = _axes_dict(naxs, proj_kw, kw=True)
     basemap = _axes_dict(naxs, basemap, kw=False, default=False)
-    axes_kw = {num: {}
-               for num in range(1, naxs + 1)}  # stores add_subplot arguments
+    axes_kw = {num: {} for num in range(1, naxs + 1)}  # store add_subplot args
     for num, name in proj.items():
         # The default is XYAxes
         if name is None or name == 'xy':
@@ -2538,5 +2551,5 @@ def subplots(
         ax._share_setup()
 
     # Return figure and axes
-    n = (ncols if order == 'C' else nrows)
+    n = ncols if order == 'C' else nrows
     return fig, subplot_grid(axs, n=n, order=order)
