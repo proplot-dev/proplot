@@ -574,7 +574,7 @@ def _canvas_preprocess(canvas, method):
             return
         with fig._context_preprocessing():
             renderer = fig._get_renderer()  # any renderer will do for now
-            for ax in fig._iter_axes():
+            for ax in fig._iter_axes(hidden=False, children=True):
                 ax._draw_auto_legends_colorbars()  # may insert panels
             resize = rc['backend'] != 'nbAgg'
             if resize:
@@ -1221,7 +1221,7 @@ class Figure(mfigure.Figure):
         dimensions and preserves panel widths and subplot aspect ratios.
         """
         # Initial stuff
-        axs = self._iter_axes()
+        axs = list(self._iter_axes(hidden=True, children=False))
         subplots_kw = self._subplots_kw
         subplots_orig_kw = self._subplots_orig_kw  # tight layout overrides
         if not axs or not subplots_kw or not subplots_orig_kw:
@@ -1431,10 +1431,10 @@ class Figure(mfigure.Figure):
             # Get axes and offset the label to relevant panel
             if side in ('left', 'right'):
                 x = 'x'
-                iter_panels = ('bottom', 'top')
+                panels = ('bottom', 'top')
             else:
                 x = 'y'
-                iter_panels = ('left', 'right')
+                panels = ('left', 'right')
             axs = self._get_align_axes(side)
             axs = [ax._reassign_suplabel(side) for ax in axs]
             labels = [getattr(ax, '_' + side + '_label') for ax in axs]
@@ -1452,7 +1452,7 @@ class Figure(mfigure.Figure):
                     # Get coord from tight bounding box
                     # Include twin axes and panels along the same side
                     icoords = []
-                    for iax in ax._iter_panels(iter_panels):
+                    for iax in ax._iter_axes(panels=panels, children=False):
                         bbox = iax.get_tightbbox(renderer)
                         if side == 'left':
                             jcoords = (bbox.xmin, 0)
@@ -1538,12 +1538,16 @@ class Figure(mfigure.Figure):
         # Get position in figure relative coordinates
         if side in ('left', 'right'):
             x = 'y'
-            iter_panels = ('top', 'bottom')
+            panels = ('top', 'bottom')
         else:
             x = 'x'
-            iter_panels = ('left', 'right')
+            panels = ('left', 'right')
         if self._include_panels:
-            axs = [iax for ax in axs for iax in ax._iter_panels(iter_panels)]
+            axs = [
+                iax
+                for ax in axs
+                for iax in ax._iter_axes(panels=panels, children=False)
+            ]
         ranges = np.array([ax._range_gridspec(x) for ax in axs])
         min_, max_ = ranges[:, 0].min(), ranges[:, 1].max()
         axlo = axs[np.where(ranges[:, 0] == min_)[0][0]]
@@ -1673,11 +1677,7 @@ class Figure(mfigure.Figure):
             self._gridspec_main = gridspec
 
             # Reassign subplotspecs to all axes and update positions
-            # May seem inefficient but it literally just assigns a hidden,
-            # attribute, and the creation time for subpltospecs is tiny
-            axs = [iax for ax in self._iter_axes()
-                   for iax in (ax, *ax.child_axes)]
-            for ax in axs:
+            for ax in self._iter_axes(hidden=True, children=True):
                 # Get old index
                 # NOTE: Endpoints are inclusive, not exclusive!
                 if not hasattr(ax, 'get_subplotspec'):
@@ -2091,27 +2091,38 @@ class Figure(mfigure.Figure):
         self.stale = True
         self._ref = ref
 
-    def _iter_axes(self):
+    def _iter_axes(self, hidden=False, children=False):
         """
-        Iterates over all axes and panels in the figure belonging to the
-        `~proplot.axes.Axes` class. Excludes inset and twin axes.
+        Iterate over all axes and panels in the figure belonging to the
+        `~proplot.axes.Axes` class. Exclude inset and twin axes.
+
+        Parameters
+        ----------
+        hidden : bool, optional
+            Include hidden panels? This is useful for tight layout
+            calculations.
+        children : bool, optional
+            Include child axes? This is useful for tight layout calculations.
+            Includes inset axes and, due to proplot change, "twin" axes.
         """
-        axs = []
         for ax in (
             *self._axes_main,
             *self._left_panels, *self._right_panels,
             *self._bottom_panels, *self._top_panels
         ):
-            if not ax or not ax.get_visible():
-                continue
-            axs.append(ax)
-        for ax in axs:
-            for side in ('left', 'right', 'bottom', 'top'):
-                for iax in getattr(ax, '_' + side + '_panels'):
-                    if not iax or not iax.get_visible():
+            for iax in (
+                ax,
+                *ax._left_panels, *ax._right_panels,
+                *ax._bottom_panels, *ax._top_panels
+            ):
+                for jax in (
+                    (iax, *iax.child_axes) if children else (iax,)
+                ):
+                    if not jax.get_visible() or (
+                        not hidden and jax._panel_hidden
+                    ):
                         continue
-                    axs.append(iax)
-        return axs
+                    yield jax
 
 
 def _journals(journal):

@@ -165,7 +165,7 @@ class Axes(maxes.Axes):
         self._panel_parent = None
         self._panel_side = None
         self._panel_share = False
-        self._panel_filled = False  # True when "filled" with cbar/legend
+        self._panel_hidden = False  # True when "filled" with cbar/legend
         self._sharex_override = False
         self._sharey_override = False
         self._inset_parent = None
@@ -258,10 +258,11 @@ class Axes(maxes.Axes):
         idx = 0 if x == 'x' else 1
         argfunc = np.argmax if x == 'x' else np.argmin
         irange = self._range_gridspec(x)
-        axs = [
-            ax for ax in self.figure._axes_main
-            if ax._range_gridspec(x) == irange
-        ]
+        if panels:
+            axs = self.figure._iter_axes(hidden=False, children=False)
+        else:
+            axs = self.figure._axes_main
+        axs = [ax for ax in axs if ax._range_gridspec(x) == irange]
         if not axs:
             return [self]
         else:
@@ -280,10 +281,11 @@ class Axes(maxes.Axes):
         x = 'x' if side in ('left', 'right') else 'y'
         idx = 0 if side in ('left', 'top') else 1  # which side to test
         coord = self._range_gridspec(x)[idx]  # side for a particular axes
-        axs = [
-            ax for ax in self.figure._axes_main
-            if ax._range_gridspec(x)[idx] == coord
-        ]
+        if panels:
+            axs = self.figure._iter_axes(hidden=False, children=False)
+        else:
+            axs = self.figure._axes_main
+        axs = [ax for ax in axs if ax._range_gridspec(x)[idx] == coord]
         if not axs:
             return [self]
         else:
@@ -298,19 +300,20 @@ class Axes(maxes.Axes):
         else:
             return getattr(self, '_' + loc.replace(' ', '_') + '_title')
 
-    def _iter_panels(self, sides=('left', 'right', 'bottom', 'top')):
+    def _hide_panel(self):
         """
-        Return a list of axes and child panel axes.
+        Hide axes contents but do *not* make the entire axes invisible. This
+        is used to fill "panels" surreptitiously added to the gridspec
+        for the purpose of drawing outer colorbars and legends.
         """
-        axs = [self] if self.get_visible() else []
-        if not set(sides) <= {'left', 'right', 'bottom', 'top'}:
-            raise ValueError(f'Invalid sides {sides!r}.')
-        for side in sides:
-            for ax in getattr(self, '_' + side + '_panels'):
-                if not ax or not ax.get_visible():
-                    continue
-                axs.append(ax)
-        return axs
+        # NOTE: Do not run self.clear in case we want to add a subplot title
+        # above a colorbar on a top panel (see _reassign_title).
+        for s in self.spines.values():
+            s.set_visible(False)
+        self.xaxis.set_visible(False)
+        self.yaxis.set_visible(False)
+        self.patch.set_alpha(0)
+        self._panel_hidden = True
 
     def _loc_translate(self, loc, mode=None, allow_manual=True):
         """
@@ -504,7 +507,7 @@ class Axes(maxes.Axes):
         def shared(paxs):
             return [
                 pax for pax in paxs
-                if not pax._panel_filled and pax._panel_share
+                if not pax._panel_hidden and pax._panel_share
             ]
 
         # Internal axis sharing; share stacks of panels and the main
@@ -561,8 +564,8 @@ class Axes(maxes.Axes):
         axis = 'x' if side in ('left', 'right') else 'y'
         caxs = getattr(self, '_' + side + '_panels')
         paxs = getattr(share, '_' + side + '_panels')
-        caxs = [pax for pax in caxs if not pax._panel_filled]
-        paxs = [pax for pax in paxs if not pax._panel_filled]
+        caxs = [pax for pax in caxs if not pax._panel_hidden]
+        paxs = [pax for pax in paxs if not pax._panel_hidden]
         for cax, pax in zip(caxs, paxs):  # may be uneven
             getattr(cax, '_share' + axis + '_setup')(pax)
 
@@ -577,7 +580,7 @@ class Axes(maxes.Axes):
             return  # if this is a panel
         axis = 'x' if side in ('top', 'bottom') else 'y'
         paxs = getattr(self, '_' + side + '_panels')
-        paxs = [pax for pax in paxs if not pax._panel_filled]
+        paxs = [pax for pax in paxs if not pax._panel_hidden]
         for pax in paxs:
             getattr(pax, '_share' + axis + '_setup')(share)
 
@@ -599,12 +602,12 @@ class Axes(maxes.Axes):
         # Get "shared axes" siblings
         # TODO: Share axis locators and formatters just like matplotlib shares
         # axis limits and proplot shares axis labels.
-        ax, *_ = self._get_extent_axes(x)  # the leftmost/bottommost
+        ax, *_ = self._get_extent_axes(x, panels=True)
         axs = [ax]
         if getattr(ax.figure, '_span' + x):
             side = axis.get_label_position()
             if side in ('left', 'bottom'):
-                axs = ax._get_side_axes(side)
+                axs = ax._get_side_axes(side, panels=True)
         for ax in axs:
             axis = getattr(ax, x + 'axis')
             axis.label.update(kwargs)  # apply to main axes
@@ -1036,13 +1039,7 @@ optional
         # Filled colorbar
         if loc == '_fill':
             # Hide content and resize panel
-            # NOTE: Do not run self.clear in case we want title above this
-            for s in self.spines.values():
-                s.set_visible(False)
-            self.xaxis.set_visible(False)
-            self.yaxis.set_visible(False)
-            self.patch.set_alpha(0)
-            self._panel_filled = True
+            self._hide_panel()
 
             # Get subplotspec for colorbar axes
             side = self._panel_side
@@ -1069,16 +1066,11 @@ optional
                 subplotspec = gridspec[1]
 
             # Draw colorbar axes
-            # NOTE: Make this an 'xy' projection so users can do hacky stuff
-            # like e.g. dualx/dualy axes.
             with self.figure._authorize_add_subplot():
                 ax = self.figure.add_subplot(subplotspec, projection='xy')
             self.add_child_axes(ax)
 
             # Location
-            # NOTE: May change loc='_fill' to 'fill' so users can manually
-            # fill axes but maintain proplot colorbar() features. For now
-            # this is just used internally by show_cmaps() and show_cycles()
             if side is None:  # manual
                 orientation = kwargs.pop('orientation', None)
                 if orientation == 'vertical':
@@ -1156,20 +1148,24 @@ optional
                 bounds = (1 - xpad - cblength, ypad + xspace)
                 fbounds = (1 - 2 * xpad - cblength, 0)
             bounds = (bounds[0], bounds[1], cblength, cbwidth)
-            fbounds = (fbounds[0], fbounds[1],
-                       2 * xpad + cblength, 2 * ypad + cbwidth + xspace)
+            fbounds = (
+                fbounds[0], fbounds[1],
+                2 * xpad + cblength, 2 * ypad + cbwidth + xspace
+            )
 
             # Make frame
             # NOTE: We do not allow shadow effects or fancy edges effect.
             # Also keep zorder same as with legend.
             frameon = _notNone(
                 frame, frameon, rc['colorbar.frameon'],
-                names=('frame', 'frameon'))
+                names=('frame', 'frameon')
+            )
             if frameon:
                 xmin, ymin, width, height = fbounds
                 patch = mpatches.Rectangle(
                     (xmin, ymin), width, height,
-                    snap=True, zorder=4, transform=self.transAxes)
+                    snap=True, zorder=4, transform=self.transAxes
+                )
                 alpha = _notNone(alpha, rc['colorbar.framealpha'])
                 linewidth = _notNone(linewidth, rc['axes.linewidth'])
                 edgecolor = _notNone(edgecolor, rc['axes.edgecolor'])
@@ -1178,7 +1174,8 @@ optional
                     'alpha': alpha,
                     'linewidth': linewidth,
                     'edgecolor': edgecolor,
-                    'facecolor': facecolor})
+                    'facecolor': facecolor
+                })
                 self.add_artist(patch)
 
             # Make axes
@@ -1201,8 +1198,9 @@ optional
                 _warn_proplot(
                     f'Inset colorbars can only have ticks on the bottom.'
                 )
-            kwargs.update({'orientation': 'horizontal',
-                           'ticklocation': 'bottom'})
+            kwargs.update({
+                'orientation': 'horizontal', 'ticklocation': 'bottom'
+            })
             kwargs.setdefault('maxn', 5)
             kwargs.setdefault('extendsize', extend)
 
@@ -1266,18 +1264,17 @@ optional
         # Fill
         if loc == '_fill':
             # Hide content
-            for s in self.spines.values():
-                s.set_visible(False)
-            self.xaxis.set_visible(False)
-            self.yaxis.set_visible(False)
-            self.patch.set_alpha(0)
-            self._panel_filled = True
+            self._hide_panel()
+
             # Try to make handles and stuff flush against the axes edge
             kwargs.setdefault('borderaxespad', 0)
-            frameon = _notNone(kwargs.get('frame', None), kwargs.get(
-                'frameon', None), rc['legend.frameon'])
+            frameon = _notNone(
+                kwargs.get('frame', None), kwargs.get('frameon', None),
+                rc['legend.frameon']
+            )
             if not frameon:
                 kwargs.setdefault('borderpad', 0)
+
             # Apply legend location
             side = self._panel_side
             if side == 'bottom':
@@ -1305,7 +1302,7 @@ optional
         bbox = self.get_position()
         width = width * abs(bbox.width)
         height = height * abs(bbox.height)
-        return width, height
+        return np.array([width, height])
 
     def get_tightbbox(self, renderer, *args, **kwargs):
         # Perform extra post-processing steps and cache the bounding
@@ -1622,6 +1619,33 @@ optional
         Alias for `~matplotlib.axes.Axes.violinplot`.
         """
         return self.violinplot(*args, **kwargs)
+
+    def _iter_axes(self, panels=None, hidden=False, children=False):
+        """
+        Return a list of axes and child panel axes.
+
+        Parameters
+        ----------
+        panels : tuple, optional
+            Tuple of panels to select.
+        hidden : bool, optional
+            Whether to include "hidden" panels.
+        children : bool, optional
+            Whether to include children.
+        """
+        panels = _notNone(panels, ('left', 'right', 'bottom', 'top'))
+        if not set(panels) <= {'left', 'right', 'bottom', 'top'}:
+            raise ValueError(f'Invalid sides {panels!r}.')
+        for iax in (
+            self,
+            *(getattr(self, '_' + side + '_panels') for side in panels)
+        ):
+            for jax in (
+                (iax, *iax.child_axes) if children else (iax,)
+            ):
+                if not jax.get_visible() or (not hidden and jax._panel_hidden):
+                    continue
+                yield jax
 
     # For consistency with _left_title, _upper_left_title, etc.
     _center_title = property(lambda self: self.title)
