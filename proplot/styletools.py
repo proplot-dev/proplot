@@ -134,7 +134,7 @@ CMAPS_TABLE = {
     ),
     # SciVisColor
     'SciVisColor blues': (
-        'Blue0', 'Blue1', 'Blue2', 'Blue3', 'Blue4', 'Blue5',
+        'Blue1', 'Blue2', 'Blue3', 'Blue4', 'Blue5',
         'Blue6', 'Blue7', 'Blue8', 'Blue9', 'Blue10', 'Blue11',
     ),
     'SciVisColor greens': (
