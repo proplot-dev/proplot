@@ -193,44 +193,14 @@ CMAPS_DIVERGING = tuple(
 
 # Named color filter props
 COLORS_HEXPATTERN = r'#(?:[0-9a-fA-F]{3,4}){2}'  # 6-8 digit hex
+COLORS_HCLTHRESH = 0.10  # bigger number equals fewer colors
 COLORS_SPACE = 'hcl'  # color "distincness" is defined with this space
-COLORS_THRESH = 0.10  # bigger number equals fewer colors
-COLORS_TRANSLATIONS = tuple((re.compile(regex), sub) for regex, sub in (
-    ('/', ' '),
-    ('\'s', ''),
-    (r'\s?majesty', ''),  # purple mountains majesty is too long
-    ('reddish', 'red'),  # remove 'ish'
-    ('purplish', 'purple'),
-    ('bluish', 'blue'),
-    (r'ish\b', ''),
-    ('grey', 'gray'),
-    ('pinky', 'pink'),
-    ('greeny', 'green'),
-    ('bluey', 'blue'),
-    ('purply', 'purple'),
-    ('purpley', 'purple'),
-    ('yellowy', 'yellow'),
-    ('robin egg', 'robins egg'),
-    ('egg blue', 'egg'),
-    ('bluegray', 'blue gray'),
-    ('grayblue', 'gray blue'),
-    ('lightblue', 'light blue'),
-))  # prevent registering similar-sounding names
-COLORS_IGNORE = re.compile('(' + '|'.join((
-    'shit', 'poop', 'poo', 'pee', 'piss', 'puke', 'vomit', 'snot',
-    'booger', 'bile', 'diarrhea',
-)) + ')')  # filter these out, let's try to be professional here...
-COLORS_INCLUDE = (
+COLORS_ADD = (
     'charcoal', 'sky blue', 'eggshell', 'sea blue', 'coral', 'aqua',
     'tomato red', 'brick red', 'crimson',
     'red orange', 'yellow orange', 'yellow green', 'blue green',
     'blue violet', 'red violet',
 )  # common names that should always be included
-COLORS_OPEN = (
-    'red', 'pink', 'grape', 'violet',
-    'indigo', 'blue', 'cyan', 'teal',
-    'green', 'lime', 'yellow', 'orange', 'gray'
-)
 COLORS_BASE = {
     'blue': (0, 0, 1),
     'green': (0, 0.5, 0),
@@ -240,7 +210,41 @@ COLORS_BASE = {
     'yellow': (0.75, 0.75, 0),
     'black': (0, 0, 0),
     'white': (1, 1, 1),
+    **mcolors.BASE_COLORS,  # shorthand names like 'r', 'g', etc.
 }
+COLORS_RMREGEX = re.compile(
+    '(' + '|'.join((
+        'shit', 'poop', 'poo', 'pee', 'piss', 'puke', 'vomit', 'snot',
+        'booger', 'bile', 'diarrhea',
+    )) + ')'
+)  # filter these out, let's try to be professional here...
+COLORS_SUBREGEXES = tuple(
+    (re.compile(regex), sub)
+    for regex, sub in (
+        ('/', ' '),
+        ('\'s', ''),
+        ('forrest', 'forest'),  # typo?
+        (r'\s?majesty', ''),  # purple mountains majesty is too long
+        ('reddish', 'red'),  # remove 'ish'
+        ('purplish', 'purple'),
+        ('bluish', 'blue'),
+        (r'ish\b', ''),
+        ('grey', 'gray'),
+        ('pinky', 'pink'),
+        ('greeny', 'green'),
+        ('bluey', 'blue'),
+        ('purply', 'purple'),
+        ('purpley', 'purple'),
+        ('yellowy', 'yellow'),
+        ('robin egg', 'robins egg'),
+        ('egg blue', 'egg'),
+        ('bluegray', 'blue gray'),
+        ('grayblue', 'gray blue'),
+        ('lightblue', 'light blue'),
+        ('yellowgreen', 'yellow green'),
+        ('yelloworange', 'yellow orange'),
+    )
+)  # prevent registering similar-sounding names
 
 
 def _get_channel(color, channel, space='hcl'):
@@ -3152,104 +3156,109 @@ def register_cycles():
 
 
 @_timer
-def register_colors(nmax=np.inf):
+def register_colors():
     """
     Add color names packaged with ProPlot or saved to the ``~/.proplot/colors``
-    folder. ProPlot loads the crowd-sourced XKCD color
-    name database, Crayola crayon color database, and any user input
-    files, then filters them to be "perceptually distinct" in the HCL
-    colorspace. Files must just have one line per color in the format
-    ``name : hex``. Whitespace is ignored.
+    folder. ProPlot loads the XKCD color survey database, colors from the
+    open-color project, and any user input files. The XKCD colors are filtered
+    to a subset that is "perceptually distinct" in the HCL colorspace. Files
+    must just have one line per color in the format ``name : hex``.
+    Whitespace is ignored.
 
     This is called on import. Use `show_colors` to generate a table of the
     resulting colors.
     """
-    # Reset native colors dictionary and add some default groups
-    # Add in CSS4 so no surprises for user, but we will not encourage this
-    # usage and will omit CSS4 colors from the demo table.
+    # Reset native colors dictionary
     colors.clear()
-    base = {}
-    base.update(mcolors.BASE_COLORS)
-    base.update(COLORS_BASE)  # full names
     mcolors.colorConverter.colors.clear()  # clean out!
     mcolors.colorConverter.cache.clear()  # clean out!
-    for name, dict_ in (('base', base), ('css', mcolors.CSS4_COLORS)):
+
+    # Add in CSS4 and 'base' colors, so no surprises for user
+    for name, dict_ in (('base', COLORS_BASE), ('css', mcolors.CSS4_COLORS)):
         mcolors.colorConverter.colors.update(dict_)
         colors[name] = sorted(dict_)
 
     # Load colors from file and get their HCL values
-    dicts = {}
-    seen = {*base}  # never overwrite base names, e.g. 'blue' and 'b'!
-    hcls = []
-    data = []
+    # NOTE: Colors that come *later* overwrite colors that come earlier.
+    hex = re.compile(rf'\A{COLORS_HEXPATTERN}\Z')  # match each string
+    mapping = {}  # key is *color name*, value is (category, hexstring)
     for i, path in enumerate(_get_data_paths('colors')):
-        if i == 0:
-            paths = [  # be explicit because categories matter!
-                os.path.join(path, base)
-                for base in ('xkcd.txt', 'crayola.txt', 'opencolor.txt')
-            ]
-        else:
-            paths = sorted(glob.glob(os.path.join(path, '*.txt')))
+        paths = sorted(glob.glob(os.path.join(path, '*.txt')))
         for file in paths:
-            cat, _ = os.path.splitext(os.path.basename(file))
+            # Read data
+            loaded = []
             with open(file, 'r') as f:
-                cnt = 0
-                hex = re.compile(
-                    r'\A#(?:[0-9a-fA-F]{3}){1,2}\Z'  # ?: prevents capture
-                )
-                pairs = []
-                for line in f.readlines():
-                    cnt += 1
+                for cnt, line in enumerate(f):
+                    # Load colors from file
                     stripped = line.strip()
                     if not stripped or stripped[0] == '#':
                         continue
-                    pair = tuple(item.strip() for item in line.split(':'))
+                    pair = tuple(
+                        item.strip().lower() for item in line.split(':')
+                    )
                     if len(pair) != 2 or not hex.match(pair[1]):
                         _warn_proplot(
-                            f'Illegal line #{cnt} in file {file!r}:\n'
+                            f'Illegal line #{cnt + 1} in file {file!r}:\n'
                             f'{line!r}\n'
                             f'Lines must be formatted as "name: hexcolor".'
                         )
                         continue
-                    pairs.append(pair)
+                    # Never overwrite "base" colors with xkcd colors.
+                    # Only overwrite with user colors.
+                    if i == 0 and pair[0] in COLORS_BASE:
+                        continue
+                    loaded.append(pair)
 
-            # Categories for which we add *all* colors
-            if cat == 'opencolor' or i == 1:
-                dict_ = {name: color for name, color in pairs}
-                mcolors.colorConverter.colors.update(dict_)
-                colors[cat] = sorted(dict_)
-                continue
+            # Add *all* colors
+            cat, _ = os.path.splitext(os.path.basename(file))
+            if i == 1 or cat != 'xkcd':
+                for name, color in loaded:
+                    mapping[name] = (cat, color)
 
-            # Filter remaining colors to *unique* colors
-            j = 0
-            if cat not in dicts:
-                dicts[cat] = {}
-            for name, color in pairs:  # is list of name, color tuples
-                j += 1
-                if j > nmax:  # e.g. for xkcd colors
-                    break
-                for regex, sub in COLORS_TRANSLATIONS:
-                    name = regex.sub(sub, name)
-                if name in seen or COLORS_IGNORE.search(name):
-                    continue
-                seen.add(name)
-                hcls.append(to_xyz(color, space=COLORS_SPACE))
-                data.append((cat, name, color))  # category name pair
+            # Ensure XKCD colors are "percetually distinct"
+            # NOTE: We do not filter colors *across categories*. The whole
+            # point of this is simply to make it easier for users to pick
+            # colors out of each color table; it doesn't matter if colors
+            # between *different* tables are similar.
+            else:
+                # Get HCL data
+                hcls = []
+                data = []
+                for name, color in loaded:
+                    for regex, sub in COLORS_SUBREGEXES:
+                        name = regex.sub(sub, name)  # sanitized name
+                    if COLORS_RMREGEX.search(name):
+                        continue  # removed "unpofessional" names
+                    if name in COLORS_ADD:
+                        mapping[name] = (cat, color)
+                        continue  # manually added particular names
+                    hcls.append(to_xyz(color, space=COLORS_SPACE))
+                    data.append((name, color))  # category name pair
 
-    # Remove colors that are 'too similar' by rounding to the nearest n units
-    # WARNING: Unique axis argument requires numpy version >=1.13
-    hcls = np.array(hcls)
-    if hcls.size > 0:
-        hcls = hcls / np.array([360, 100, 100])
-        hcls = np.round(hcls / COLORS_THRESH).astype(np.int64)
-        _, idxs, _ = np.unique(
-            hcls, return_index=True, return_counts=True, axis=0)
-        for idx, (cat, name, color) in enumerate(data):
-            if name in COLORS_INCLUDE or idx in idxs:
-                dicts[cat][name] = color
-        for cat, dict_ in dicts.items():
-            mcolors.colorConverter.colors.update(dict_)
-            colors[cat] = sorted(dict_)
+                # Remove colors that are 'too similar' by rounding to the
+                # nearest COLORS_HCLTHRESH in each channel and making sure at
+                # least *one* channel is distinct from the others.
+                # WARNING: Unique axis argument requires numpy version >=1.13
+                # NOTE: We override this for colors listed in COLORS_ADD.
+                hcls = np.array(hcls)
+                if hcls.size > 0:
+                    hcls = hcls / np.array([360, 100, 100])
+                    hcls = np.round(hcls / COLORS_HCLTHRESH).astype(np.int64)
+                    _, idxs, _ = np.unique(
+                        hcls, return_index=True, return_counts=True, axis=0
+                    )
+                    for idx, (name, color) in enumerate(data):
+                        if idx in idxs:
+                            mapping[name] = (cat, color)
+
+    # Finally register colors in the dictionary and add names
+    # to the 'colors' dictionary in the respective category
+    # NOTE: Some colors may have been overwritten
+    for name, (cat, color) in mapping.items():
+        mcolors.colorConverter.colors[name] = color
+        if cat not in colors:
+            colors[cat] = []
+        colors[cat].append(name)
 
 
 @_timer
