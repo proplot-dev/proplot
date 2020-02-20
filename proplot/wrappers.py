@@ -71,30 +71,38 @@ STYLE_ARGS_TRANSLATE = {
     'contour': {
         'colors': 'colors',
         'linewidths': 'linewidths',
-        'linestyles': 'linestyles'},
-    'hexbin': {
-        'colors': 'edgecolors',
-        'linewidths': 'linewidths'},
+        'linestyles': 'linestyles',
+    },
     'tricontour': {
         'colors': 'colors',
         'linewidths': 'linewidths',
-        'linestyles': 'linestyles'},
-    'parametric': {
-        'colors': 'color',
-        'linewidths': 'linewidth',
-        'linestyles': 'linestyle'},
+        'linestyles': 'linestyles',
+    },
     'pcolor': {
         'colors': 'edgecolors',
         'linewidths': 'linewidth',
-        'linestyles': 'linestyle'},
-    'tripcolor': {
-        'colors': 'edgecolors',
-        'linewidths': 'linewidth',
-        'linestyles': 'linestyle'},
+        'linestyles': 'linestyle',
+    },
     'pcolormesh': {
         'colors': 'edgecolors',
         'linewidths': 'linewidth',
-        'linestyles': 'linestyle'},
+        'linestyles': 'linestyle',
+    },
+    'tripcolor': {
+        'colors': 'edgecolors',
+        'linewidths': 'linewidth',
+        'linestyles': 'linestyle',
+    },
+    'parametric': {
+        'colors': 'color',
+        'linewidths': 'linewidth',
+        'linestyles': 'linestyle',
+    },
+    'hexbin': {
+        'colors': 'edgecolors',
+        'linewidths': 'linewidths',
+        'linestyles': 'linestyles',
+    },
 }
 
 
@@ -1612,7 +1620,7 @@ def cycle_changer(
     standardize_1d,
     ~proplot.styletools.Cycle, ~proplot.styletools.Colors
     """
-    # No mutable defaults
+    # Parse input
     cycle_kw = cycle_kw or {}
     legend_kw = legend_kw or {}
     colorbar_kw = colorbar_kw or {}
@@ -1623,7 +1631,7 @@ def cycle_changer(
     name = func.__name__
     if not args:
         return func(self, *args, **kwargs)
-    barh = (name == 'bar' and kwargs.get('orientation', None) == 'horizontal')
+    barh = name == 'bar' and kwargs.get('orientation', None) == 'horizontal'
     x, y, *args = args
     if len(args) >= 1 and 'fill_between' in name:
         ys = (y, args[0])
@@ -1639,15 +1647,15 @@ def cycle_changer(
     # wrap set_prop_cycle because would get messy and fragile.
     # NOTE: The _get_lines cycler is an *itertools cycler*. Has no length, so
     # we must cycle over it with next(). We try calling next() the same number
-    # of times as the length of user input cycle. If the input cycle *is* in
-    # fact the same, below does not reset the color position, cycles us to
-    # start!
+    # of times as the length of input cycle. If the input cycle *is* in fact
+    # the same, below does not reset the color position, cycles us to start!
     if cycle is not None or cycle_kw:
         # Get the new cycler
         cycle_args = () if cycle is None else (cycle,)
         if not is1d and y.shape[1] > 1:  # default samples count
             cycle_kw.setdefault('N', y.shape[1])
         cycle = styletools.Cycle(*cycle_args, **cycle_kw)
+
         # Get the original property cycle
         # NOTE: Matplotlib saves itertools.cycle(cycler), not the original
         # cycler object, so we must build up the keys again.
@@ -1662,8 +1670,9 @@ def cycle_changer(
                 if isinstance(value, (list, np.ndarray)):
                     value = tuple(value)
                 by_key[key].add(value)
+
         # Reset property cycler if it differs
-        reset = ({*by_key} != {*cycle.by_key()})  # reset if keys are different
+        reset = {*by_key} != {*cycle.by_key()}
         if not reset:  # test individual entries
             for key, value in cycle.by_key().items():
                 if by_key[key] != {*value}:
@@ -1692,30 +1701,34 @@ def cycle_changer(
             if key in keys and prop is None:
                 apply.add(key)
 
-    # Plot susccessive columns
+    # Handle legend labels and
     # WARNING: Most methods that accept 2d arrays use columns of data, but when
     # pandas DataFrame passed to hist, boxplot, or violinplot, rows of data
     # assumed! This is fixed in parse_1d by converting to values.
-    objs = []
     ncols = 1
-    label_leg = None  # for colorbar or legend
     labels = _notNone(
         values, labels, label, None,
         names=('values', 'labels', 'label')
     )
-    stacked = kwargs.pop('stacked', False)
     if name in ('pie', 'boxplot', 'violinplot'):
         if labels is not None:
             kwargs['labels'] = labels
     else:
-        ncols = (1 if is1d else y.shape[1])
+        ncols = 1 if is1d else y.shape[1]
         if labels is None or isinstance(labels, str):
             labels = [labels] * ncols
+
+    # Handle stacked bar plots
+    stacked = kwargs.pop('stacked', False)
     if name in ('bar',):
-        # for bar plots; 0.8 is matplotlib default
         width = kwargs.pop('width', 0.8)
         kwargs['height' if barh else 'width'] = (
-            width if stacked else width / ncols)
+            width if stacked else width / ncols
+        )
+
+    # Plot susccessive columns
+    objs = []
+    label_leg = None  # for colorbar or legend
     for i in range(ncols):
         # Prop cycle properties
         kw = {**kwargs}  # copy
@@ -1730,6 +1743,7 @@ def cycle_changer(
                 elif key == 'markeredgecolor':
                     key = 'edgecolors'
                 kw[key] = value
+
         # Get x coordinates
         ix, iy = x, ys[0]  # samples
         if name in ('pie',):
@@ -1739,8 +1753,8 @@ def cycle_changer(
                 ix = x + (i - ncols / 2 + 0.5) * width / ncols
             elif stacked and not is1d:
                 key = 'x' if barh else 'bottom'
-                # sum of empty slice will be zero
                 kw[key] = _to_iloc(iy)[:, :i].sum(axis=1)
+
         # Get y coordinates and labels
         if name in ('pie', 'boxplot', 'violinplot'):
             iys = (iy,)  # only ever have one y value, cannot have legend labs
@@ -1763,7 +1777,8 @@ def cycle_changer(
                 label = _to_array(values)[i]
             if label is not None:
                 kw['label'] = label
-        # Call with correct args
+
+        # Build coordinate arguments
         xy = ()
         if barh:  # special, use kwargs only!
             kw.update({'bottom': ix, 'width': iys[0]})
@@ -1772,12 +1787,14 @@ def cycle_changer(
             xy = (*iys,)
         else:  # has x-coordinates, and maybe more than one y
             xy = (ix, *iys)
+
+        # Call plotting function
         obj = func(self, *xy, *args, **kw)
         if isinstance(obj, (list, tuple)) and len(obj) == 1:
             obj = obj[0]
         objs.append(obj)
 
-    # Add colorbar and/or legend
+    # Add colorbar
     if colorbar:
         # Add handles
         loc = self._loc_translate(colorbar, 'colorbar', allow_manual=False)
@@ -1790,6 +1807,8 @@ def cycle_changer(
         if label_leg:
             colorbar_kw.setdefault('label', label_leg)
         self._auto_colorbar[loc][1].update(colorbar_kw)
+
+    # Add legend
     if legend:
         # Add handles
         loc = self._loc_translate(legend, 'legend', allow_manual=False)
@@ -1806,7 +1825,7 @@ def cycle_changer(
     # Return
     # WARNING: Make sure plot always returns tuple of objects, and bar always
     # returns singleton unless we have bulk drawn bar plots! Other matplotlib
-    # methods call these internally!
+    # methods call these internally and expect a certain output format!
     if name == 'plot':
         return (*objs,)  # always return tuple of objects
     elif name in ('boxplot', 'violinplot'):
@@ -1815,7 +1834,7 @@ def cycle_changer(
         return objs[0] if is1d else (*objs,)  # sensible default behavior
 
 
-def _get_binnorm(
+def _build_binnorm(
     data=None, levels=None, values=None,
     norm=None, norm_kw=None, locator=None, locator_kw=None,
     vmin=None, vmax=None, extend='neither', cyclic=False, symmetric=False
@@ -2095,7 +2114,11 @@ def cmap_changer(
     ls, linestyle, linestyles
         As above, but for the line style.
     color, colors, edgecolor, edgecolors
-        As above, but for the line color.
+        As above, but for the line color. For `~matplotlib.axes.Axes.contourf`
+        plots, if you provide `colors` without specifying the `linewidths`
+        or `linestyles`, this argument is used to manually specify the *fill
+        colors*. See the `~matplotlib.axes.Axes.contourf` documentation for
+        details.
     *args, **kwargs
         Passed to the matplotlib plotting method.
 
@@ -2108,18 +2131,18 @@ def cmap_changer(
     Notes
     -----
     The `~proplot.styletools.BinNorm` normalizer, used with all colormap
-    plots, makes sure that your "levels" always span the full range of colors
-    in the colormap, whether you are extending max, min, neither, or both. By
-    default, when you select `extend` not ``'both'``, matplotlib seems to just
-    cut off the most intense colors (reserved for coloring "out of bounds"
-    data), even though they are not being used.
+    plots, makes sure that your levels always span the full range of colors
+    in the colormap, whether `extend` is set to ``'min'``, ``'max'``,
+    ``'neither'``, or ``'both'``. By default, when `extend` is not ``'both'``,
+    matplotlib seems to just cut off the most intense colors (reserved for
+    coloring "out of bounds" data), even though they are not being used.
 
     This could also be done by limiting the number of colors in the colormap
     lookup table by selecting a smaller ``N`` (see
-    `~matplotlib.colors.LinearSegmentedColormap`).  But we prefer the approach
-    of always building colormaps with hi-res lookup tables, and leaving the job
-    of normalizing data values to colormap locations to the
-    `~matplotlib.colors.Normalize` object.
+    `~matplotlib.colors.LinearSegmentedColormap`). Instead, we prefer to
+    always build colormaps with high resolution lookup tables, and leave it
+    to the `~matplotlib.colors.Normalize` instance to handle discretization
+    of the color selections.
     """
     # Parse input args
     name = func.__name__
@@ -2159,44 +2182,6 @@ def cmap_changer(
         names=('values', 'centers')
     )
     edgefix = _notNone(edgefix, rc['image.edgefix'])
-    if name not in ('contour', 'tricontour') or colors is None:
-        cmap = _notNone(cmap, rc['image.cmap'])
-
-    # Translate cmap_changer-standardized keyword arguments back into the
-    # keyword arguments accepted by native matplotlib methods. Also disable
-    # edgefix if user want to customize the "edges".
-    style_kw = STYLE_ARGS_TRANSLATE.get(name, {})
-    for key, value in (
-        ('colors', colors),
-        ('linewidths', linewidths),
-        ('linestyles', linestyles)
-    ):
-        if value is None:
-            continue
-        elif 'contourf' in name:  # special case, we re-draw our own contours
-            continue
-        if key in style_kw:
-            edgefix = False  # override!
-            kwargs[style_kw[key]] = value
-        else:
-            raise ValueError(
-                f'Unknown keyword arg {key!r} for function {name!r}.'
-            )
-    if values is not None and name in ('parametric',):
-        kwargs['values'] = values
-
-    # Input colormap, for methods that accept a colormap and normalizer
-    # contour, tricontour, i.e. not a method where cmap is optional
-    if cmap is not None:
-        cmap = styletools.Colormap(cmap, **cmap_kw)
-        cyclic = getattr(cmap, '_cyclic', False)
-        if cyclic and extend != 'neither':
-            _warn_proplot(
-                f'Cyclic colormap requires extend="neither". '
-                'Overriding user input extend={extend!r}.'
-            )
-            extend = 'neither'
-        kwargs['cmap'] = cmap
 
     # Check input levels and values
     for key, val in (('levels', levels), ('values', values)):
@@ -2206,33 +2191,96 @@ def cmap_changer(
             np.sign(np.diff(val)) != np.sign(val[1] - val[0])
         ):
             raise ValueError(
-                f'{key!r} must be monotonically increasing or decreasing and '
-                f'at least length 2, got {val}.'
+                f'{key!r} must be monotonically increasing or decreasing '
+                f'and at least length 2, got {val}.'
             )
 
-    # Build normalizer and update keyworda args
-    if cmap is not None or name in ('hexbin',):
-        norm, ticks = _get_binnorm(
+    # Get colormap, but do not use cmap when 'colors' are passed to contour()
+    # or to contourf() -- the latter only when 'linewidths' and 'linestyles'
+    # are also *not* passed. This wrapper lets us add "edges" to contourf
+    # plots by calling contour() after contourf() if 'linewidths' or
+    # 'linestyles' are explicitly passed, but do not want to disable the
+    # native matplotlib feature for manually coloring filled contours.
+    # https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.axes.Axes.contourf
+    add_contours = (
+        name in ('contourf', 'tricontourf')
+        and (linewidths is not None or linestyles is not None)
+    )
+    no_cmap = colors is not None and (
+        name in ('contour', 'tricontour')
+        or name in ('contourf', 'tricontourf') and not add_contours
+    )
+    if no_cmap:
+        if cmap is not None:
+            _warn_proplot(
+                f'Ignoring input colormap cmap={cmap!r}, using input colors '
+                f'colors={colors!r} instead.'
+            )
+            cmap = None
+        if name in ('contourf', 'tricontourf'):
+            kwargs['colors'] = colors  # this was not done above
+            colors = None
+    else:
+        cmap = styletools.Colormap(_notNone(cmap, rc['image.cmap']), **cmap_kw)
+        kwargs['cmap'] = cmap
+        if getattr(cmap, '_cyclic', None) and extend != 'neither':
+            _warn_proplot(
+                f'Cyclic colormap requires extend="neither". '
+                f'Overriding user input extend={extend!r}.'
+            )
+            extend = 'neither'
+
+    # Translate standardized keyword arguments back into the keyword args
+    # accepted by native matplotlib methods. Also disable edgefix if user want
+    # to customize the "edges".
+    ignore = []
+    style_kw = STYLE_ARGS_TRANSLATE.get(name, None)
+    for key, value in (
+        ('colors', colors),
+        ('linewidths', linewidths),
+        ('linestyles', linestyles)
+    ):
+        if add_contours or value is None:
+            continue
+        if not style_kw:  # no known conversion table
+            ignore.append(key)
+            continue
+        edgefix = False  # disable edgefix when specifying borders!
+        kwargs[style_kw[key]] = value
+    if ignore:
+        _warn_proplot(
+            f'Ignoring keyword arguments for {name!r}: '
+            + ', '.join(map(repr, ignore)) + '.'
+        )
+
+    # Build colormap normalizer and update keyword args
+    # NOTE: Standard algorithm for obtaining default levels does not work
+    # for hexbin, because it colors *counts*, not data values!
+    ticks = None
+    if cmap is not None and name not in ('hexbin',):
+        norm, ticks = _build_binnorm(
             args[-1],  # sample data for getting suitable levels
             levels=levels, values=values,
             norm=norm, norm_kw=norm_kw,
             locator=locator, locator_kw=locator_kw,
             vmin=vmin, vmax=vmax, extend=extend,
-            cyclic=cyclic, symmetric=symmetric,
+            cyclic=getattr(cmap, '_cyclic', None),
+            symmetric=symmetric,
         )
         levels = norm.boundaries
     if norm is not None:
         kwargs['norm'] = norm
     if name in ('contour', 'contourf', 'tricontour', 'tricontourf'):
         kwargs.update({'levels': levels, 'extend': extend})
+    if name in ('parametric',):
+        kwargs['values'] = values
 
     # Call function, possibly twice to add 'edges' to contourf plot
     obj = func(self, *args, **kwargs)
     obj.extend = extend  # normally 'extend' is just for contour/contourf
-    obj.ticks = ticks  # a Locator or ndarray used for controlling ticks
-    if name == 'contourf' and any(
-        _ is not None for _ in (colors, linewidths, linestyles)
-    ):
+    if ticks is not None:
+        obj.ticks = ticks  # a Locator or ndarray used for controlling ticks
+    if add_contours:
         colors = _notNone(colors, 'k')
         self.contour(
             *args, levels=levels, linewidths=linewidths,
@@ -2243,12 +2291,10 @@ def cmap_changer(
     # TODO: Add quiverkey to this!
     if labels:
         # Formatting for labels
-        # Respect if 'fmt' was passed in labels_kw instead of as a main arg
         fmt = _notNone(labels_kw.pop('fmt', None), fmt, 'simple')
         fmt = axistools.Formatter(fmt, precision=precision)
 
         # Use clabel method
-        # TODO: Avoid using lienwidths=0?
         if name in ('contour', 'contourf', 'tricontour', 'tricontourf'):
             cobj = obj
             colors = None
@@ -2314,21 +2360,23 @@ def cmap_changer(
     # 0.4pt is thick enough to hide lines but thin enough to not add "dots" in
     # corner of pcolor plots. *Never* use this when colormap has opacity.
     # See: https://stackoverflow.com/q/15003353/4970632
-    if name in ('pcolor', 'pcolormesh', 'contourf', 'tricontourf'):
+    if edgefix and name in (
+        'pcolor', 'pcolormesh', 'tripcolor', 'contourf', 'tricontourf'
+    ):
         cmap = obj.get_cmap()
         if not cmap._isinit:
             cmap._init()
-        if edgefix and all(cmap._lut[:-1, 3] == 1):
-            if 'pcolor' in name:  # 'pcolor', 'pcolormesh', 'tripcolor'
+        if all(cmap._lut[:-1, 3] == 1):  # skip for cmaps with transparency
+            if name in ('pcolor', 'pcolormesh', 'tripcolor'):
                 obj.set_edgecolor('face')
                 obj.set_linewidth(0.4)
-            elif 'contourf' in name:  # 'contourf', 'tricontourf'
+            else:
                 for contour in obj.collections:
                     contour.set_edgecolor('face')
                     contour.set_linewidth(0.4)
                     contour.set_linestyle('-')
 
-    # Add colorbar
+    # Optionally add colorbar
     if colorbar:
         loc = self._loc_translate(colorbar, 'colorbar', allow_manual=False)
         if 'label' not in colorbar_kw and self.figure._auto_format:
@@ -3022,7 +3070,7 @@ or colormap-spec
                     f'Passed {len(values)} values, but only {len(mappable)} '
                     f'objects or colors.'
                 )
-            norm, *_ = _get_binnorm(
+            norm, *_ = _build_binnorm(
                 values=values, extend='neither',
                 norm=norm, norm_kw=norm_kw,
             )
@@ -3031,7 +3079,7 @@ or colormap-spec
     # Try to get tick locations from *levels* or from *values* rather than
     # random points along the axis.
     # NOTE: Do not necessarily want e.g. minor tick locations at logminor
-    # for LogNorm! In _get_binnorm we sometimes select evenly spaced levels
+    # for LogNorm! In _build_binnorm we sometimes select evenly spaced levels
     # in log-space *between* powers of 10, so logminor ticks would be
     # misaligned with levels.
     if locator is None:
