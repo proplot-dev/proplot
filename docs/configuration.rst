@@ -73,7 +73,7 @@ Key               Description
 ``share``         The axis sharing level, one of ``0``, ``1``, ``2``, or ``3``. See `~proplot.subplots.subplots` for details.
 ``small``         Font size for legend text, tick labels, axis labels, and text generated with `~matplotlib.axes.Axes.text`.
 ``span``          Boolean, toggles spanning axis labels. See `~proplot.subplots.subplots` for details.
-``tickdir``       Major and minor tick direction. Must be one of ``out``, ``in``, or ``inout``.
+``tickdir``       Major and minor tick direction. Must be one of ``'out'``, ``'in'``, or ``'inout'``.
 ``ticklen``       Length of major ticks in points.
 ``ticklenratio``  Ratio of minor tickline length to major tickline length.
 ``tickpad``       Padding between ticks and tick labels in points.

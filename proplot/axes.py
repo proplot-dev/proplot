@@ -3234,7 +3234,7 @@ class ProjAxes(Axes):
     """
     Intermediate class shared by `GeoAxes` and `BasemapAxes`. Disables
     methods that are inappropriate for map projections and adds
-    `ProjAxes.format`, so that arguments passed to `Axes.format` are identical
+    `ProjAxes.format`, so that arguments passed to ``format`` are identical
     for the cartopy and basemap backends.
     """
     def __init__(self, *args, **kwargs):
@@ -3300,9 +3300,9 @@ class ProjAxes(Axes):
             1. Boolean ``True``. Indicates left side for latitudes,
                bottom for longitudes.
             2. A string, e.g. ``'lr'`` or ``'bt'``.
-            3. A boolean ``(left,right)`` tuple for longitudes,
-               ``(bottom,top)`` for latitudes.
-            4. A boolean ``(left,right,bottom,top)`` tuple as in the
+            3. A boolean ``(left, right)`` tuple for longitudes,
+               ``(bottom, top)`` for latitudes.
+            4. A boolean ``(left, right, bottom, top)`` tuple, as in the
                `~mpl_toolkits.basemap.Basemap.drawmeridians` and
                `~mpl_toolkits.basemap.Basemap.drawparallels` methods.
 
@@ -3313,11 +3313,11 @@ optional
             :rcraw:`lakes`, :rcraw:`borders`, and :rcraw:`innerborders`
             settings passed to `~proplot.rctools.rc_configurator.context`.
             The style can be modified by passing additional settings, e.g.
-            :rcraw:`landcolor`.
+            ``ax.format(landcolor='g')``.
         patch_kw : dict-like, optional
             Keyword arguments used to update the background patch object. You
             can use this, for example, to set background hatching with
-            ``patch_kw={'hatch':'xxx'}``.
+            ``patch_kw={'hatch': 'xxx'}``.
 
         Other parameters
         ----------------
