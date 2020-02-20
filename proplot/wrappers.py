@@ -2507,117 +2507,68 @@ property-spec, optional
     if fontweight is not None:
         kw_text['weight'] = fontweight
 
-    # Automatically get labels and handles
-    # TODO: Use legend._parse_legend_args instead? This covers functionality
-    # just fine, _parse_legend_args seems overkill.
-    if handles is None:
-        if self._filled:
-            raise ValueError(
-                'You must pass a handles list for panel axes '
-                '"filled" with a legend.'
-            )
+    # Get axes for legend handle detection
+    # TODO: Update this when no longer use "filled panels" for outer legends
+    axs = [self]
+    if self._panel_hidden:
+        if self._panel_parent:  # axes panel
+            axs = list(self._iter_axes(hidden=False, children=True))
         else:
-            # ignores artists with labels '_nolegend_'
-            handles, labels_default = self.get_legend_handles_labels()
-            if labels is None:
-                labels = labels_default
-            if not handles:
-                raise ValueError(
-                    'No labeled artists found. To generate a legend without '
-                    'providing the artists explicitly, pass label="label" in '
-                    'your plotting commands.'
-                )
-    if not np.iterable(handles):  # e.g. a mappable object
-        handles = [handles]
-    if labels is not None and (
-        not np.iterable(labels) or isinstance(labels, str)
+            axs = list(self.figure._iter_axes(hidden=False, children=True))
+
+    # Handle list of lists (centered row legends)
+    list_of_lists = not any(hasattr(handle, 'get_label') for handle in handles)
+    if (
+        handles is not None and labels is not None
+        and len(handles) != len(labels)
     ):
-        labels = [labels]
-
-    # Legend entry for colormap or scatterplot object
-    # TODO: Idea is we pass a scatter plot or contourf or whatever, and legend
-    # is generating by drawing patch rectangles or markers with different
-    # colors.
-    if any(not hasattr(handle, 'get_facecolor') and hasattr(handle, 'get_cmap')
-           for handle in handles) and len(handles) > 1:
         raise ValueError(
-            f'Handles must be objects with get_facecolor attributes or '
-            'a single mappable object from which we can draw colors.'
+            f'Got {len(handles)} handles and {len(labels)} labels.'
         )
-
-    # Build pairs of handles and labels
-    # This allows alternative workflow where user specifies labels when
-    # creating the legend.
-    pairs = []
-    # e.g. not including BarContainer
-    list_of_lists = (not hasattr(handles[0], 'get_label'))
-    if labels is None:
-        for handle in handles:
-            if list_of_lists:
-                ipairs = []
-                for ihandle in handle:
-                    if not hasattr(ihandle, 'get_label'):
-                        raise ValueError(
-                            f'Object {ihandle} must have "get_label" method.'
-                        )
-                    ipairs.append((ihandle, ihandle.get_label()))
-                pairs.append(ipairs)
-            else:
-                if not hasattr(handle, 'get_label'):
-                    raise ValueError(
-                        f'Object {handle} must have "get_label" method.'
-                    )
-                pairs.append((handle, handle.get_label()))
-    else:
-        if len(labels) != len(handles):
+    if list_of_lists:
+        if any(not np.iterable(_) for _ in handles):
+            raise ValueError(f'Invalid handles={handles!r}.')
+        if not labels:
+            labels = [None] * len(handles)
+        elif not all(
+            np.iterable(_) and not isinstance(_, str) for _ in labels
+        ):
             raise ValueError(
-                f'Got {len(labels)} labels, but {len(handles)} handles.'
+                f'Invalid labels={labels!r} for handles={handles!r}.'
             )
-        for label, handle in zip(labels, handles):
-            if list_of_lists:
-                ipairs = []
-                if not np.iterable(label) or isinstance(label, str):
-                    raise ValueError(
-                        f'Got list of lists of handles, but list of labels.'
-                    )
-                elif len(label) != len(handle):
-                    raise ValueError(
-                        f'Got {len(label)} labels in sublist, '
-                        f'but {len(handle)} handles.'
-                    )
-                for ilabel, ihandle in zip(label, handle):
-                    ipairs.append((ihandle, ilabel))
-                pairs.append(ipairs)
-            else:
-                if not isinstance(label, str) and np.iterable(label):
-                    raise ValueError(
-                        f'Got list of lists of labels, but list of handles.'
-                    )
-                pairs.append((handle, label))
+
+    # Parse handles and legends with native matplotlib parser
+    if not list_of_lists:
+        handles, labels, *_ = mlegend._parse_legend_args(
+            axs, handles=handles, labels=labels,
+        )
+        pairs = list(zip(handles, labels))
+    else:
+        pairs = []
+        for ihandles, ilabels in zip(handles, labels):
+            ihandles, ilabels, *_ = mlegend._parse_legend_args(
+                axs, handles=ihandles, labels=ilabels,
+            )
+            pairs.append(list(zip(handles, labels)))
 
     # Manage pairs in context of 'center' option
-    if center is None:  # automatically guess
-        center = list_of_lists
-    elif center and list_of_lists and ncol is not None:
-        _warn_proplot(
-            'Detected list of *lists* of legend handles. '
-            'Ignoring user input property "ncol".'
-        )
-    elif not center and list_of_lists:  # standardize format based on input
+    center = _notNone(center, list_of_lists)
+    if not center and list_of_lists:  # standardize format based on input
         list_of_lists = False  # no longer is list of lists
         pairs = [pair for ipairs in pairs for pair in ipairs]
     elif center and not list_of_lists:
         list_of_lists = True
         ncol = _notNone(ncol, 3)
-        pairs = [pairs[i * ncol:(i + 1) * ncol]
-                 for i in range(len(pairs))]  # to list of iterables
+        pairs = [
+            pairs[i * ncol:(i + 1) * ncol] for i in range(len(pairs))
+        ]  # to list of iterables
+        ncol = None
     if list_of_lists:  # remove empty lists, pops up in some examples
         pairs = [ipairs for ipairs in pairs if ipairs]
 
-    # Now draw legend(s)
+    # Individual legend
     legs = []
     width, height = self.get_size_inches()
-    # Individual legend
     if not center:
         # Optionally change order
         # See: https://stackoverflow.com/q/10101141/4970632
@@ -2625,14 +2576,16 @@ property-spec, optional
         # N rows but 3-4 have N-1 rows.
         ncol = _notNone(ncol, 3)
         if order == 'C':
+            split = [  # split into rows
+                pairs[i * ncol:(i + 1) * ncol]
+                for i in range(len(pairs) // ncol + 1)
+            ]
+            nrowsmax = len(split)  # max possible row count
+            nfinalrow = len(split[-1])  # columns in final row
+            nrows = (
+                [nrowsmax] * nfinalrow + [nrowsmax - 1] * (ncol - nfinalrow)
+            )
             fpairs = []
-            # split into rows
-            split = [pairs[i * ncol:(i + 1) * ncol]
-                     for i in range(len(pairs) // ncol + 1)]
-            # max possible row count, and columns in final row
-            nrowsmax, nfinalrow = len(split), len(split[-1])
-            nrows = [nrowsmax] * nfinalrow + \
-                [nrowsmax - 1] * (ncol - nfinalrow)
             for col, nrow in enumerate(nrows):  # iterate through cols
                 fpairs.extend(split[row][col] for row in range(nrow))
             pairs = fpairs
