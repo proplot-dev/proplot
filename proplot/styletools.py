@@ -63,7 +63,7 @@ CYCLES_TABLE = {
 CMAPS_TABLE = {
     # Assorted origin, but these belong together
     'Grayscale': (
-        'Grays', 'Mono', 'GrayC', 'GrayCycle',
+        'Grays', 'Mono', 'MonoCycle',
     ),
     # Builtin
     'Matplotlib sequential': (
