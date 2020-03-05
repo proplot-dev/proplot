@@ -10,7 +10,7 @@ A "[Minimal, Complete and Verifiable Example](http://matthewrocklin.com/blog/wor
 
 ```python
 # your code here
-# ideally, we should be able to copy-paste this into python and exactly reproduce your bug
+# we should be able to copy-paste this into python and exactly reproduce your bug
 ```
 
 **Expected behavior**: [What you expected to happen]
@@ -20,7 +20,7 @@ A "[Minimal, Complete and Verifiable Example](http://matthewrocklin.com/blog/wor
 
 ### Equivalent steps in matplotlib
 
-Please make sure this is a bug related to a specific proplot feature -- not a matplotlib bug. If you're not sure, try to replicate your bug with the [native matplotlib API](https://matplotlib.org/3.1.1/api/index.html).
+Please make sure this bug is related to a specific proplot feature. If you're not sure, try to replicate it with the [native matplotlib API](https://matplotlib.org/3.1.1/api/index.html). Matplotlib bugs belong on the [matplotlib github page](https://github.com/matplotlib/matplotlib).
 
 ```python
 # your code here, if applicable
