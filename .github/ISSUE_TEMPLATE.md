@@ -1,8 +1,4 @@
-<!--
-Thanks for helping us make proplot a better package!
-If this is a bug report, please use the template provided below.
-If this is a feature request, you can delete the template text -- just try to be descriptive with your request.
--->
+<!-- Thanks for helping us make proplot a better package! If this is a bug report, please use the template provided below. If this is a feature request, you can delete the template text (just try to be descriptive with your request). -->
 
 ### Description
 
@@ -10,9 +6,7 @@ If this is a feature request, you can delete the template text -- just try to be
 
 ### Steps to reproduce
 
-<!---
 A "[Minimal, Complete and Verifiable Example](http://matthewrocklin.com/blog/work/2018/02/28/minimal-bug-reports)" will make it much easier for maintainers to help you.
--->
 
 ```python
 # your code here
@@ -24,13 +18,14 @@ A "[Minimal, Complete and Verifiable Example](http://matthewrocklin.com/blog/wor
 **Actual behavior**: [What actually happened]
 
 
-### Not a matplotlib bug?
+### Equivalent steps in matplotlib
 
-Please make sure this is a bug related to a specific proplot feature -- not a matplotlib bug. If you're not sure, try to replicate your bug with the [native matplotlib API](https://matplotlib.org/3.1.1/api/index.html) and paste your code below.
+Please make sure this is a bug related to a specific proplot feature -- not a matplotlib bug. If you're not sure, try to replicate your bug with the [native matplotlib API](https://matplotlib.org/3.1.1/api/index.html).
 
 ```python
 # your code here, if applicable
 ```
+
 
 ### Proplot version
 
