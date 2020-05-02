@@ -5,21 +5,21 @@ API reference
 Top-level functions
 ===================
 
-Primary functions used to interactively work with figures. Modeled after the
-`~matplotlib.pyplot` versions.
+.. automodule:: proplot.ui
 
-.. automodsumm:: proplot.subplots
-   :functions-only:
+.. automodsumm:: proplot.ui
+   :toctree: api
+   :skip: subplot_grid
+
+
+Figure class
+============
+
+.. automodule:: proplot.figure
+
+.. automodsumm:: proplot.figure
    :toctree: api
 
-Figure classes
-==============
-
-The figure class and a couple related classes.
-
-.. automodsumm:: proplot.subplots
-   :classes-only:
-   :toctree: api
 
 Axes classes
 ============
@@ -28,7 +28,25 @@ Axes classes
 
 .. automodsumm:: proplot.axes
    :toctree: api
-   :classes-only:
+   :skip: ProjAxes, XYAxes
+
+
+Constructor functions
+=====================
+
+.. automodule:: proplot.constructor
+
+.. automodsumm:: proplot.constructor
+   :toctree: api
+
+Configuration tools
+===================
+
+.. automodule:: proplot.config
+
+.. automodsumm:: proplot.config
+   :toctree: api
+
 
 Plotting wrappers
 =================
@@ -37,84 +55,62 @@ Plotting wrappers
 
 .. automodsumm:: proplot.wrappers
    :toctree: api
-   :functions-only:
 
-Projection tools
+
+Show functions
+==============
+
+.. automodule:: proplot.show
+
+.. automodsumm:: proplot.show
+   :toctree: api
+
+
+Colormaps and normalizers
+=========================
+
+.. automodule:: proplot.colors
+
+.. automodsumm:: proplot.colors
+   :toctree: api
+   :skip: BinNorm
+
+
+Locators and formatters
+=======================
+
+.. automodule:: proplot.ticker
+
+.. automodsumm:: proplot.ticker
+   :toctree: api
+
+
+Axis scale classes
+==================
+
+.. automodule:: proplot.scale
+
+.. automodsumm:: proplot.scale
+   :toctree: api
+
+
+Cartopy projections
+===================
+
+.. automodule:: proplot.crs
+
+.. automodsumm:: proplot.crs
+   :toctree: api
+
+
+Gridspec classes
 ================
 
-.. automodule:: proplot.projs
+.. automodule:: proplot.gridspec
 
-.. rubric:: Variables
-
-.. automodsumm:: proplot.projs
-   :variables-only:
+.. automodsumm:: proplot.gridspec
    :toctree: api
 
-.. rubric:: Functions
-
-.. automodsumm:: proplot.projs
-   :functions-only:
-   :toctree: api
-
-.. rubric:: Classes
-
-.. automodsumm:: proplot.projs
-   :classes-only:
-   :toctree: api
-
-Axis tools
-==========
-
-.. automodule:: proplot.axistools
-
-.. rubric:: Variables
-
-.. automodsumm:: proplot.axistools
-   :toctree: api
-   :variables-only:
-
-.. rubric:: Functions
-
-.. automodsumm:: proplot.axistools
-   :toctree: api
-   :functions-only:
-
-.. rubric:: Classes
-
-.. automodsumm:: proplot.axistools
-   :toctree: api
-   :classes-only:
-
-Color and font tools
-====================
-
-.. automodule:: proplot.styletools
-
-.. rubric:: Variables
-
-.. automodsumm:: proplot.styletools
-   :variables-only:
-   :toctree: api
-
-.. rubric:: Functions
-
-.. automodsumm:: proplot.styletools
-   :functions-only:
-   :toctree: api
-
-.. rubric:: Classes
-
-.. automodsumm:: proplot.styletools
-   :classes-only:
-   :toctree: api
-
-Rc configuration tools
-======================
-
-.. automodule:: proplot.rctools
-
-.. automodsumm:: proplot.rctools
-   :toctree: api
 
 Miscellaneous tools
 ===================
@@ -122,5 +118,5 @@ Miscellaneous tools
 .. automodule:: proplot.utils
 
 .. automodsumm:: proplot.utils
-   :functions-only:
    :toctree: api
+   :skip: shade, saturate

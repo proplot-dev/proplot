@@ -30,7 +30,7 @@ Please note that due to my day job as a graduate student, `certain feature addit
    colormaps
    cycles
    colors_fonts
-   projection
+   projections
    axis
    insets_panels
    1dplots
