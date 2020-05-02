@@ -1,38 +1,25 @@
 #!/usr/bin/env python3
-# Import everything into the top-level module namespace
-# Make sure to load styletools early so we can try to update TTFPATH before
-# the fontManager is loaded by other modules (requiring a rebuild)
-import os as _os
+"""
+A python package for making beautiful, publication-quality graphics.
+"""
+# For now import everything into the top-level module namespace
+# In the future we will not import the class names
 import pkg_resources as _pkg
-from .utils import _benchmark
+from .config import *  # noqa: F401 F403
+# from .internals import timers
+# with timers._benchmark('imports'):
 from .utils import *  # noqa: F401 F403
-with _benchmark('total time'):
-    with _benchmark('styletools'):
-        from .styletools import *  # noqa: F401 F403
-    with _benchmark('pyplot'):
-        import matplotlib.pyplot as _  # noqa; sets up the backend and ipython display hooks
-    with _benchmark('rctools'):
-        from .rctools import *  # noqa: F401 F403
-    with _benchmark('axistools'):
-        from .axistools import *  # noqa: F401 F403
-    with _benchmark('wrappers'):
-        from .wrappers import *  # noqa: F401 F403
-    with _benchmark('projs'):
-        from .projs import *  # noqa: F401 F403
-    with _benchmark('axes'):
-        from .axes import *  # noqa: F401 F403
-    with _benchmark('subplots'):
-        from .subplots import *  # noqa: F401 F403
-
-
-# Initialize customization folders
-_rc_folder = _os.path.join(_os.path.expanduser('~'), '.proplot')
-if not _os.path.isdir(_rc_folder):
-    _os.mkdir(_rc_folder)
-for _rc_sub in ('cmaps', 'cycles', 'colors', 'fonts'):
-    _rc_sub = _os.path.join(_rc_folder, _rc_sub)
-    if not _os.path.isdir(_rc_sub):
-        _os.mkdir(_rc_sub)
+from .crs import *  # noqa: F401 F403
+from .colors import *  # noqa: F401 F403
+from .ticker import *  # noqa: F401 F403
+# from .scale import *  # noqa: F401 F403
+from .gridspec import *  # noqa: F401 F403
+# from .constructor import *  # noqa: F401 F403
+from .wrappers import *  # noqa: F401 F403
+from .axes import *  # noqa: F401 F403
+# from .figure import *  # noqa: F401 F403
+from .ui import *  # noqa: F401 F403
+# from .show import *  # noqa: F401 F403
 
 # SCM versioning
 name = 'proplot'
