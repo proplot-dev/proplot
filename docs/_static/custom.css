@@ -84,213 +84,6 @@ body.scroll-down,
   background: var(--main-bg-color);
 }
 
-/* Horizontal rules */
-hr {
-  color: var(--code-border-color);
-}
-
-/* Code background color */
-code,
-.rst-content tt,
-.rst-content code {
-  border: solid 1px var(--code-border-color);
-  background: var(--code-bg-color);
-}
-
-/* For literal code blocks, do not inherit main text color */
-/* Need !important because nbshpinx hardcodes <style> into HTML */
-/* Can also use this to sync code-block and nbinput backgrounds but probably
- * better if they have different colors. */
-.rst-content div:not(.stderr)>div[class^='highlight'],
-.rst-content div.nbinput>div.input_area,
-.rst-content pre.literal-block {
-  color: var(--main-color) !important;
-  border-radius: 0 !important;
-  border-color: var(--code-border-color) !important;
-  background-color: var(--code-bg-color) !important;
-}
-.rst-content div.nboutput>div.output_area:not(.stderr) {
-  padding-left: 0;
-}
-.rst-content div.nboutput>div.output_area:not(.stderr)>div.highlight {
-  color: var(--main-color) !important;
-  background-color: var(--main-bg-color) !important;
-}
-.rst-content div.nboutput>div.output_area.stderr>div.highlight {
-  color: #444 !important;
-}
-.rst-content div.nboutput>div.output_area.stderr {
-  background-color: #fdd !important;
-}
-
-/* Notebook prompt colors */
-.rst-content div.nbinput>div.prompt>div.highlight,
-.rst-content div.nboutput>div.prompt>div.highlight {
-  background-color: var(--main-bg-color) !important;
-}
-.rst-content div.nbinput>div.prompt>div.highlight>pre {
-  color: var(--link-color) !important;
-}
-.rst-content div.nboutput>div.prompt>div.highlight>pre {
-  color: var(--code-color) !important;
-}
-
-/* Grayscale Parameters and Returns headers */
-.rst-content dl:not(.docutils) .field-list>dt {
-  font-weight: bold;
-  font-size: 16px; /* todo make relative */
-  color: var(--main-color);
-  background: var(--block-bg-color);
-  border-left-color: var(--accent-bg-color);
-}
-/* No accent, decided against this because they need extra prominence */
-/* .rst-content dl:not(.docutils) .field-list>dt {
- *   padding: 0;
- *   border: 0;
- *   background: transparent;
- *   font-weight: bold;
- *   font-size: 16px;
- *   color: var(--main-color);
- * } */
-
-/* Call signature headers to grayscale */
-body,
-.rst-content dl:not(.docutils) dt .headerlink,
-.rst-content dl:not(.docutils) dt .property,
-.rst-content dl:not(.docutils) dt .descname,
-.rst-content dl:not(.docutils) dt .descclassname {
-  color: var(--main-color);
-}
-.rst-content dl:not(.docutils) dt {
-  color: var(--call-color);
-  background: var(--block-bg-color);
-  border-top-color: var(--accent-bg-color);
-}
-
-/* "Admonition" blocks, i.e. note, todo, etc. */
-.rst-content .admonition,
-.rst-content dl:not(.docutils) .admonition {
-  background: var(--block-bg-color);
-}
-.rst-content .admonition>.admonition-title,
-.rst-content dl:not(.docutils) .admonition>.admonition-title {
-  color: var(--main-color); /* title text is same as block bg */
-  background: var(--accent-bg-color);
-}
-
-/* Remove bottom margin for paragraph elements in tables */
-.wy-table thead p,
-.rst-content table p,
-.rst-content table.docutils thead p,
-.rst-content table.field-list thead p {
-  margin-bottom: 0 !important;
-}
-
-/* Table rows */
-.wy-table-odd td,
-.wy-table-striped tr:nth-child(2n-1) td,
-.rst-content table.docutils:not(.field-list) tr:nth-child(2n-1) td {
-  background: var(--block-bg-color);
-}
-.wy-table-even td,
-.wy-table-striped tr:nth-child(2n) td,
-.rst-content table.docutils:not(.field-list) tr:nth-child(2n) td {
-  background: var(--main-bg-color);
-}
-
-/* Table borders */
-.wy-table-bordered-all,
-.rst-content table.docutils,
-.wy-table-bordered-all td,
-.rst-content table.docutils td {
-  border: 1px solid var(--accent-bg-color);
-  /* border-color: var(--accent-bg-color); */
-}
-
-/* Table heads */
-.wy-table thead,
-.rst-content table.docutils thead,
-.rst-content table.field-list thead {
-  color: var(--main-color);
-  background: var(--main-bg-color);
-}
-
-/* Parameter color */
-.rst-content code.xref.docutils.literal,
-.rst-content tt.xref.docutils.literal {
-  color: var(--main-color);
-  font-weight: bold;
-}
-
-/* Hyperlink and API link color */
-a,
-.rst-content a code.xref.docutils.literal,
-.rst-content a tt.xref.docutils.literal {
-  color: var(--link-color);
-}
-a:hover,
-.rst-content a:hover code.xref.docutils.literal,
-.rst-content a:hover tt.xref.docutils.literal {
-  color: var(--link-hover-color);
-}
-a:visited,
-.rst-content a:visited code.xref.docutils.literal,
-.rst-content a:visited tt.xref.docutils.literal {
-  color: var(--link-visited-color);
-}
-
-/* Highlighting padding */
-.rst-content .highlighted {
-  padding: 0;
-  background-color: var(--highlight-color);
-}
-
-/* Hide Edit on Github */
-.wy-breadcrumbs li.wy-breadcrumbs-aside a {
-  display: None;
-}
-
-/* Code color, dl:not(.docutils) needed to match specificity */
-.rst-content code.literal,
-.rst-content tt.literal,
-.rst-content dl:not(.docutils) code.literal,
-.rst-content dl:not(.docutils) tt.literal {
-  color: var(--code-color);
-  font-weight: normal;
-}
-
-/* RTD versions box colors */
-/* Also make entire sidebar scrollable but add empty space to the bottom
- * of the colling region, rather than truncating the scrollable space */
-nav.wy-nav-side .ethical-rtd {
-  margin-bottom: 3em !important;  /* padding below ad or below sidebar */
-}
-nav.wy-nav-side {
-  padding-bottom: 0em !important;  /* entire sidebar is always scrollable */
-}
-.rst-versions .rst-current-version {
-  padding: 0.66em;  /* match padding for list items */
-  color: var(--versions-color);
-  background-color: var(--l3-bg-color);
-  border-top: solid 1px var(--l5-bg-color);
-  border-bottom: solid 1px var(--l5-bg-color);
-}
-.rst-versions .rst-other-versions {
-  color: var(--versions-color);
-  background-color: var(--l3-bg-color);
-}
-.rst-versions .rst-other-versions hr {
-  color: var(--l5-bg-color);
-  border-top-color: var(--l5-bg-color);
-  border-bottom-color: var(--l5-bg-color);
-}
-.rst-versions .rst-current-version .fa {
-  color: var(--main-color);
-}
-.rst-versions .rst-other-versions dd a {
-  color: var(--main-color);
-}
-
 /* Sidebar text color, includes text-logo color for mobile */
 /* and expansion buttons. Matches specificity of RTD sheet */
 .wy-menu p.caption,
@@ -402,6 +195,204 @@ nav.wy-nav-side {
   /* box-shadow-color: var(--search-shadow-color); */
 }
 
+/* Code block color. dl:not(.docutils) needed to match specificity */
+code,
+.rst-content tt,
+.rst-content code {
+  border: solid 1px var(--code-border-color);
+  background: var(--code-bg-color);
+}
+.rst-content tt.literal,
+.rst-content code.literal,
+.rst-content dl:not(.docutils) code.literal,
+.rst-content dl:not(.docutils) tt.literal {
+  color: var(--code-color);
+  font-weight: normal;
+}
+
+/* Nbsphinx cells. Do not inherit main text color */
+/* Need !important because nbshpinx hardcodes <style> into HTML */
+/* Can also use this to sync code-block and nbinput backgrounds but probably
+ * better if they have different colors. */
+.rst-content div:not(.stderr)>div[class^='highlight'],
+.rst-content div.nbinput>div.input_area,
+.rst-content pre.literal-block {
+  color: var(--main-color) !important;
+  border-radius: 0 !important;
+  border-color: var(--code-border-color) !important;
+  background-color: var(--code-bg-color) !important;
+}
+.rst-content div.nboutput>div.output_area:not(.stderr) {
+  padding-left: 0;
+}
+.rst-content div.nboutput>div.output_area:not(.stderr)>div.highlight {
+  color: var(--main-color) !important;
+  background-color: var(--main-bg-color) !important;
+}
+.rst-content div.nboutput>div.output_area.stderr>div.highlight {
+  color: #444 !important;
+}
+.rst-content div.nboutput>div.output_area.stderr {
+  background-color: #fdd !important;
+}
+
+/* Nbsphinx prompt */
+.rst-content div.nbinput>div.prompt>div.highlight,
+.rst-content div.nboutput>div.prompt>div.highlight {
+  background-color: var(--main-bg-color) !important;
+}
+.rst-content div.nbinput>div.prompt>div.highlight>pre {
+  color: var(--link-color) !important;
+}
+.rst-content div.nboutput>div.prompt>div.highlight>pre {
+  color: var(--code-color) !important;
+}
+
+/* Parameters and Returns header colors */
+.rst-content dl:not(.docutils) .field-list>dt {
+  font-weight: bold;
+  font-size: 16px; /* todo make relative */
+  color: var(--main-color);
+  background: var(--block-bg-color);
+  border-left-color: var(--accent-bg-color);
+  /* padding: 0; */ /* remove accents, decided against this */
+  /* border: 0; */
+}
+
+/* Parameter table colors */
+.rst-content tt.xref.docutils.literal,
+.rst-content code.xref.docutils.literal {
+  color: var(--main-color);
+  font-weight: bold;
+}
+
+/* Call signature headers to grayscale */
+body,
+.rst-content dl:not(.docutils) dt .headerlink,
+.rst-content dl:not(.docutils) dt .property,
+.rst-content dl:not(.docutils) dt .descname,
+.rst-content dl:not(.docutils) dt .descclassname {
+  color: var(--main-color);
+}
+.rst-content dl:not(.docutils) dt {
+  color: var(--call-color);
+  background: var(--block-bg-color);
+  border-top-color: var(--accent-bg-color);
+}
+
+/* "Admonition" blocks, i.e. note, todo, etc. */
+.rst-content .admonition,
+.rst-content dl:not(.docutils) .admonition {
+  background: var(--block-bg-color);
+}
+.rst-content .admonition>.admonition-title,
+.rst-content dl:not(.docutils) .admonition>.admonition-title {
+  color: var(--main-color); /* title text is same as block bg */
+  background: var(--accent-bg-color);
+}
+
+/* Remove bottom margin for paragraph elements in tables */
+.wy-table thead p,
+.rst-content table p,
+.rst-content table.docutils thead p,
+.rst-content table.field-list thead p {
+  margin-bottom: 0 !important;
+}
+
+/* Table rows */
+.wy-table-odd td,
+.wy-table-striped tr:nth-child(2n-1) td,
+.rst-content table.docutils:not(.field-list) tr:nth-child(2n-1) td {
+  background: var(--block-bg-color);
+}
+.wy-table-even td,
+.wy-table-striped tr:nth-child(2n) td,
+.rst-content table.docutils:not(.field-list) tr:nth-child(2n) td {
+  background: var(--main-bg-color);
+}
+
+/* Table borders */
+.wy-table-bordered-all,
+.rst-content table.docutils,
+.wy-table-bordered-all td,
+.rst-content table.docutils td {
+  border: 1px solid var(--accent-bg-color);
+  /* border-color: var(--accent-bg-color); */
+}
+
+/* Table header color */
+.wy-table thead,
+.rst-content table.docutils thead,
+.rst-content table.field-list thead {
+  color: var(--main-color);
+  background: var(--main-bg-color);
+}
+
+/* Hyperlink and API link color */
+a,
+.rst-content a code.xref.docutils.literal,
+.rst-content a tt.xref.docutils.literal {
+  color: var(--link-color);
+}
+a:hover,
+.rst-content a:hover code.xref.docutils.literal,
+.rst-content a:hover tt.xref.docutils.literal {
+  color: var(--link-hover-color);
+}
+a:visited,
+.rst-content a:visited code.xref.docutils.literal,
+.rst-content a:visited tt.xref.docutils.literal {
+  color: var(--link-visited-color);
+}
+
+/* MathJax color */
+span[id*='MathJax-Span'] {
+  color: var(--main-color);
+}
+
+/* Search text highlighting color */
+.rst-content .highlighted {
+  padding: 0;
+  background-color: var(--highlight-color);
+}
+
+/* Horizontal rule colors */
+hr {
+  color: var(--code-border-color);
+}
+
+/* RTD versions box colors */
+/* Also make entire sidebar scrollable but add empty space to the bottom
+ * of the colling region, rather than truncating the scrollable space */
+nav.wy-nav-side .ethical-rtd {
+  margin-bottom: 3em !important;  /* padding below ad or below sidebar */
+}
+nav.wy-nav-side {
+  padding-bottom: 0em !important;  /* entire sidebar is always scrollable */
+}
+.rst-versions .rst-current-version {
+  padding: 0.66em;  /* match padding for list items */
+  color: var(--versions-color);
+  background-color: var(--l3-bg-color);
+  border-top: solid 1px var(--l5-bg-color);
+  border-bottom: solid 1px var(--l5-bg-color);
+}
+.rst-versions .rst-other-versions {
+  color: var(--versions-color);
+  background-color: var(--l3-bg-color);
+}
+.rst-versions .rst-other-versions hr {
+  color: var(--l5-bg-color);
+  border-top-color: var(--l5-bg-color);
+  border-bottom-color: var(--l5-bg-color);
+}
+.rst-versions .rst-current-version .fa {
+  color: var(--main-color);
+}
+.rst-versions .rst-other-versions dd a {
+  color: var(--main-color);
+}
+
 /* Next and previous buttons */
 .btn {
   border: 1px solid var(--block-color);
@@ -420,6 +411,11 @@ nav.wy-nav-side {
 }
 .btn-neutral:hover {
   background-color: var(--accent-bg-color) !important;
+}
+
+/* Hide Edit on Github block */
+.wy-breadcrumbs li.wy-breadcrumbs-aside a {
+  display: None;
 }
 
 /* Dark mode toggle switcher */
