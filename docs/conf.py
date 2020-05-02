@@ -83,8 +83,14 @@ extlinks = {
 # Note nbsphinx compiles *all* notebooks in docs unless excluded
 nbsphinx_timeout = 300
 
-# Set InlineBackend params, maybe nbsphinx skips ones in rctools.py
-# Not necessary because rctools.py configures the backend
+# Make nbsphinx detect jupytext
+import jupytext
+nbsphinx_custom_formats = {
+    '.py': lambda s: jupytext.reads(s, 'py:percent'),
+}
+
+# Set InlineBackend params in case nbsphinx skips ones in config.py
+# Not necessary because config.py configures the backend.
 # nbsphinx_execute_arguments = [
 #     "--InlineBackend.figure_formats={'svg'}",
 #     "--InlineBackend.rc={'figure.dpi': 100}",
@@ -172,7 +178,6 @@ language = None
 exclude_patterns = [
     '_templates', '_themes', 'sphinxext',
     '.DS_Store', '**.ipynb_checkpoints',
-    # '[0-9a-eg-su-z]*.ipynb',  # only run [figures|tight].ipynb for debugging
 ]
 
 # The name of the Pygments (syntax highlighting) style to use.
@@ -195,7 +200,7 @@ for style in get_all_styles():
         f.write(HtmlFormatter(style=style).get_style_defs('.highlight'))
 
 # Create sample .proplotrc file
-from proplot.rctools import _write_defaults  # noqa: E402
+from proplot.config import _write_defaults  # noqa: E402
 _write_defaults(os.path.join('_static', 'proplotrc'), comment=False)
 
 # Role

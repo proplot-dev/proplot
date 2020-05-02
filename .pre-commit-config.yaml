@@ -10,4 +10,4 @@ repos:
     - id: end-of-file-fixer
     - id: trailing-whitespace
     - id: flake8
-      args: ["--ignore=W503"]
+      args: ['--max-line-length=88', '--ignore=W503,E402']
