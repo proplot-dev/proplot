@@ -17,7 +17,7 @@ def get_nodes(rawtext, text, inliner):
     return [nodes.literal('', '', ref)]
 
 
-def rc_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
+def rc_role(name, rawtext, text, lineno, inliner, options={}, content=[]):  # noqa: U100
     node_list = get_nodes(rawtext, text, inliner)
     try:
         default = defaults._get_default_param(text)
@@ -29,7 +29,7 @@ def rc_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
     return node_list, []
 
 
-def rc_role_raw(name, rawtext, text, lineno, inliner, options={}, content=[]):
+def rc_role_raw(name, rawtext, text, lineno, inliner, options={}, content=[]):  # noqa: U100, E501
     return get_nodes(rawtext, text, inliner), []
 
 
