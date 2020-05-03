@@ -227,15 +227,15 @@ for globe in (False, True,):
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_geoformat:
 #
-# Customizing projections
-# -----------------------
+# Formatting projections
+# ----------------------
 #
 # `~proplot.axes.CartopyAxes` and `~proplot.axes.BasemapAxes` both derive
 # from `~proplot.axes.GeoAxes`, which provides a
 # `~proplot.axes.GeoAxes.format` method. `~proplot.axes.GeoAxes.format` can
 # be used to draw gridlines, add gridline labels, set gridline label
-# locations, modify the projection bounding box, and add and stylize
-# geographic features, like land masses, coastlines, and international
+# locations, modify the projection bounding box, and add and stylize common
+# geographic features like land masses, coastlines, and international
 # borders. This method also calls `format` on `~proplot.axes.Axes`, and so
 # can be used for subplot titles, a-b-c labels, and figure titles as before.
 
@@ -243,7 +243,7 @@ for globe in (False, True,):
 import proplot as plot
 fig, axs = plot.subplots(
     [[1, 1, 2], [3, 3, 3]],
-    axwidth=4, proj={1: 'robin', 2: 'ortho', 3: 'wintri'}
+    axwidth=4, proj={1: 'eqearth', 2: 'ortho', 3: 'wintri'}
 )
 axs.format(
     suptitle='Projection axes formatting demo',
@@ -254,20 +254,20 @@ axs.format(
 # Styling projections in different ways
 ax = axs[0]
 ax.format(
-    title='Robinson map', land=True, landcolor='navy', facecolor='pale blue',
+    title='Equal earth', land=True, landcolor='navy', facecolor='pale blue',
     coastcolor='gray5', borderscolor='gray5', innerborderscolor='gray5',
     geogridlinewidth=1, geogridcolor='gray5', geogridalpha=0.5,
     coast=True, innerborders=True, borders=True
 )
 ax = axs[1]
 ax.format(
-    title='Ortho map', reso='med', land=True, coast=True, latlines=10, lonlines=15,
+    title='Orthographic', reso='med', land=True, coast=True, latlines=10, lonlines=15,
     landcolor='mushroom', suptitle='Projection axes formatting demo',
     facecolor='petrol', coastcolor='charcoal', coastlinewidth=0.8, geogridlinewidth=1
 )
 ax = axs[2]
 ax.format(
-    land=True, facecolor='ocean blue', landcolor='bisque', title='Winkel tripel map',
+    land=True, facecolor='ocean blue', landcolor='bisque', title='Winkel tripel',
     lonlines=60, latlines=15
 )
 
