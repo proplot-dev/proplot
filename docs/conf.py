@@ -86,9 +86,8 @@ extlinks = {
 nbsphinx_timeout = 300
 
 # Make nbsphinx detect jupytext
-import jupytext
 nbsphinx_custom_formats = {
-    '.py': lambda s: jupytext.reads(s, 'py:percent'),
+    '.py': ['jupytext.reads', {'fmt': 'py:percent'}],
 }
 
 # Set InlineBackend params in case nbsphinx skips ones in config.py
@@ -178,8 +177,8 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 exclude_patterns = [
-    '_templates', '_themes', 'sphinxext',
-    '.DS_Store', '**.ipynb_checkpoints',
+    '.DS_Store', '_build', '_templates', '_themes', 'sphinxext',
+    'conf.py', '*.ipynb', '**.ipynb_checkpoints',
 ]
 
 # The name of the Pygments (syntax highlighting) style to use.
