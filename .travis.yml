@@ -38,7 +38,7 @@ install:
   - which python
 
 script:
-  - flake8 proplot --max-line-length=88 --ignore=W503,E402
+  - flake8 proplot docs --max-line-length=88 --ignore=W503,E402
   - pushd docs
   - make html
   - popd
