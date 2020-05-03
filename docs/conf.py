@@ -13,6 +13,7 @@
 
 import os
 import sys
+import datetime
 
 # Add proplot to path for sphinx-automodapi
 sys.path.insert(0, os.path.abspath('..'))
@@ -36,8 +37,9 @@ else:
 
 # -- Project information -----------------------------------------------------
 
+_today = datetime.datetime.today()
 project = 'ProPlot'
-copyright = '2019, Luke L. B. Davis'
+copyright = f'{_today.year}, Luke L. B. Davis'
 author = 'Luke L. B. Davis'
 
 # The short X.Y version
@@ -271,7 +273,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'proplot.tex', 'proplot Documentation',
+    (master_doc, 'proplot.tex', 'ProPlot Documentation',
      'Luke L. B. Davis', 'manual'),
 ]
 
@@ -281,7 +283,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'proplot', 'proplot Documentation',
+    (master_doc, 'proplot', 'ProPlot Documentation',
      [author], 1)
 ]
 

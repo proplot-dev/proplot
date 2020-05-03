@@ -8,10 +8,10 @@ or are directly used by ProPlot.
 
 Python packages
 ===============
-* `matplotlib <https://matplotlib.org>`__ - The venerable plotting package that we all know and love.
+* `matplotlib <https://matplotlib.org>`__ - The venerable plotting package we all know and love.
 * `xarray <http://xarray.pydata.org/en/stable/api.html>`__ - Package for working with annotated ND numpy arrays. If you haven't heard of it and you work with NetCDF files, it will change your life.
 * `pandas <https://pandas.pydata.org>`__ - Package that turns spreadsheets and tables into annotated 2D numpy arrays. Invaluable for certain types of data.
-* `seaborn <https://seaborn.pydata.org>`__ - A statistical data visualization package. It has some awesome features, but few people in my field use it because it is geared more toward statistical data than geophysical data.
+* `seaborn <https://seaborn.pydata.org>`__ - A statistical data visualization package. Seaborn is based on matplotlib, but consists mostly of an entirely separate plotting API. It is generally not suitable for plotting geophysical data.
 
 Downloadable colormaps
 ======================
