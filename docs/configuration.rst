@@ -1,42 +1,66 @@
-Configuring proplot
+.. _ug_config:
+
+Configuring ProPlot
 ===================
 
 Overview
 --------
 
-A special object named `~proplot.rctools.rc`, belonging to the
-`~proplot.rctools.rc_configurator` class, is created on import.
-This is your one-stop shop for changing global settings belonging to any of
-the following three categories:
+A special object named `~proplot.config.rc`, belonging to the
+`~proplot.config.rc_configurator` class, is created on import. This is your
+one-stop shop for changing global settings belonging to any of the following
+three categories:
 
-1. Builtin matplotlib `rcParams <https://matplotlib.org/users/customizing.html>`__
-   settings. These have the format ``x.y`` or ``x.y.z``.
-2. ProPlot :ref:`rcParamsLong` settings. These also have the format ``x.y``
-   (see below).
-3. ProPlot :ref:`rcParamsShort` settings. These have no dots (see below).
+1. `Matplotlib's builtin settings <https://matplotlib.org/users/customizing.html>`__.
+   These have the format ``x.y`` or ``x.y.z``.
+2. ProPlot's :ref:`added settings <rc_added>`. These also have the format
+   ``x.y`` (see below).
+3. ProPlot's :ref:`quick settings <rc_quick>`. These have no dots (see below).
 
-You can change settings with the `~proplot.rctools.rc` object as follows:
+You can change settings with the `~proplot.config.rc` object as follows:
 
-* ``plot.rc.name = value``
-* ``plot.rc['name'] = value``
-* ``plot.rc.update(name1=value1, name2=value2)``
-* ``plot.rc.update({'name1':value1, 'name2':value2})``
+.. code-block:: python
 
-To temporarily change settings on a particular axes, use either of the
-following:
+  import proplot as plot
+  plot.rc.name = value
+  plot.rc['name'] = value
+  plot.rc.update(name1=value1, name2=value2)
+  plot.rc.update({'name1': value1, 'name2': value2})
 
-* ``ax.format(name=value)``
-* ``ax.format(rc_kw={'name':value})``
+To apply settings to a particular axes, pass the setting
+to the `~proplot.axes.Axes.format` command using either
+of the following approaches:
 
-In all of these examples, if the setting name ``name`` contains
-any dots, you can simply **omit the dots**. For example, to change the
-:rcraw:`title.loc` property, use ``plot.rc.titleloc = value``,
-``plot.rc.update(titleloc=value)``, or ``ax.format(titleloc=value)``.
+.. code-block:: python
 
-rcParamsShort
--------------
+  import proplot as plot
+  fig, ax = plot.subplots()
+  ax.format(name1=value1, name2=value2)
+  ax.format(rc_kw={'name1': value1, 'name2': value2})
 
-These are **simple, short** names used to change multiple matplotlib and
+In all of these examples, if the setting name contains dots,
+you can simply omit the dots. For example, to change the
+:rcraw:`title.loc` property, use any of the following approaches:
+
+.. code-block:: python
+
+  import proplot as plot
+  # Apply globally
+  plot.rc.titleloc = value
+  plot.rc.update(titleloc=value)
+  # Apply locally
+  fig, ax = plot.subplots()
+  ax.format(titleloc=value)
+
+
+.. _rc_params: https://matplotlib.org/users/customizing.html
+
+.. _rc_quick:
+
+Quick settings
+--------------
+
+These are *short, simple* names used to change multiple matplotlib and
 ProPlot settings at once, as shorthands for settings with longer names, or
 for special options. For example, :rcraw:`ticklen` changes the tick length for
 the *x* and *y* axes in one go.
@@ -53,7 +77,7 @@ Key               Description
 ``color``         The color of axis spines, tick marks, tick labels, and labels.
 ``cycle``         The default color cycle name, used e.g. for lines.
 ``facecolor``     The color of the background axes patch.
-``fontname``      Name of font used for all text in the figure. The default is Helvetica Neue. See `~proplot.fonttools` for details.
+``fontname``      Name of font used for all text in the figure. The default is :ref:`TeX Gyre Heros <ug_fonts>`.
 ``geogrid``       Boolean, toggles meridian and parallel gridlines on and off.
 ``grid``          Boolean, toggles major grid lines on and off.
 ``gridminor``     Boolean, toggles minor grid lines on and off.
@@ -70,9 +94,9 @@ Key               Description
 ``reso``          Resolution of geographic features, one of ``'lo'``, ``'med'``, or ``'hi'``
 ``rgbcycle``      If ``True``, and ``colorblind`` is the current cycle, this registers the ``colorblind`` colors as ``'r'``, ``'b'``, ``'g'``, etc., like in `seaborn <https://seaborn.pydata.org/tutorial/color_palettes.html>`__.
 ``rivers``        Boolean, toggles river lines on and off.
-``share``         The axis sharing level, one of ``0``, ``1``, ``2``, or ``3``. See `~proplot.subplots.subplots` for details.
+``share``         The axis sharing level, one of ``0``, ``1``, ``2``, or ``3``. See `~proplot.ui.subplots` for details.
 ``small``         Font size for legend text, tick labels, axis labels, and text generated with `~matplotlib.axes.Axes.text`.
-``span``          Boolean, toggles spanning axis labels. See `~proplot.subplots.subplots` for details.
+``span``          Boolean, toggles spanning axis labels. See `~proplot.ui.subplots` for details.
 ``tickdir``       Major and minor tick direction. Must be one of ``'out'``, ``'in'``, or ``'inout'``.
 ``ticklen``       Length of major ticks in points.
 ``ticklenratio``  Ratio of minor tickline length to major tickline length.
@@ -82,30 +106,33 @@ Key               Description
 ``tight``         Boolean, indicates whether to auto-adjust figure bounds and subplot spacings.
 ================  ==============================================================================================================================================================================================================================================
 
-rcParamsLong
-------------
-These are **longer, specific** setting names
-used to customize things not covered by
-`~matplotlib.rcParams`.
+.. _rc_added:
 
-The ``subplots`` category controls the default layout for figures
-and axes. The ``abc``, ``title``, and ``tick`` categories control
-a-b-c label, title, and axis tick label settings. The
-``suptitle``, ``leftlabel``, ``toplabel``, ``rightlabel``, and ``bottomlabel``
-categories control figure title and edge label settings.
+Added settings
+--------------
+
+These are *detailed, descriptive* setting names used to customize things not
+covered by `matplotlib's builtin settings
+<https://matplotlib.org/users/customizing.html>`__.
+
+The ``subplots`` category controls the default layout for figures and axes.
+The ``abc``, ``title``, and ``tick`` categories control a-b-c label, title,
+and axis tick label settings. The ``suptitle``, ``leftlabel``, ``toplabel``,
+``rightlabel``, and ``bottomlabel`` categories control figure title and edge
+label settings.
 
 There are two new additions to the ``image`` category, and the new
 ``colorbar`` category controls *inset* and *outer*
-`~proplot.axes.Axes.colorbar` properties.
-The new ``gridminor`` category controls minor gridline settings,
-and the new ``geogrid`` category controls meridian and parallel line settings
-for `~proplot.axes.ProjAxes`. Note that when a ``grid`` property is changed,
-it also changed the corresponding ``gridminor`` property.
+`~proplot.axes.Axes.colorbar` properties.  The new ``gridminor`` category
+controls minor gridline settings, and the new ``geogrid`` category controls
+meridian and parallel line settings for `~proplot.axes.GeoAxes`. Note that
+when a ``grid`` property is changed, it also changed the corresponding
+``gridminor`` property.
 
 Finally, the ``geoaxes``, ``land``, ``ocean``, ``rivers``, ``lakes``,
 ``borders``, and ``innerborders`` categories control various
-`~proplot.axes.ProjAxes` settings. These are used when the boolean
-toggles for the corresponding :ref:`rcParamsShort` settings are turned on.
+`~proplot.axes.GeoAxes` settings. These are used when the boolean toggles for
+the corresponding :ref:`quick settings <rc_quick>` are turned on.
 
 ===============================  =========================================================================================================================================================================================================================================================
 Key(s)                           Description
@@ -188,12 +215,11 @@ Key(s)                           Description
 The .proplotrc file
 -------------------
 
-To modify the global settings, edit your
-``~/.proplotrc`` file. To modify settings for a particular project,
-create a ``.proplotrc`` file in the same directory as your ipython
-notebook, or in an arbitrary parent directory.
-As an example, a ``.proplotrc`` file containing the default settings
-is shown below. The syntax is mostly the same as the syntax used for
+To modify the global settings, edit your ``~/.proplotrc`` file. To modify
+settings for a particular project, create a ``.proplotrc`` file in the same
+directory as your ipython notebook, or in an arbitrary parent directory.  As
+an example, a ``.proplotrc`` file containing the default settings is shown
+below. The syntax is mostly the same as the syntax used for
 `matplotlibrc files <https://matplotlib.org/3.1.1/tutorials/introductory/customizing.html#customizing-with-matplotlibrc-files>`__.
 
 .. include:: _static/proplotrc
