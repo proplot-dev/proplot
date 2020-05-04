@@ -19,7 +19,8 @@ dependencies:
   - pip:
     - ..
     - pyqt5
-    - nbsphinx
     - jupytext
+    - nbsphinx
+    - sphinx-copybutton
     - sphinx_rtd_theme
     - git+https://github.com/lukelbd/sphinx-automodapi@v0.6.proplot-mods

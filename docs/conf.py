@@ -72,6 +72,7 @@ extensions = [
     'sphinx.ext.intersphinx',  # external links
     'sphinxext.custom_roles',  # local extension
     'sphinx_automodapi.automodapi',  # see: https://github.com/lukelbd/sphinx-automodapi/tree/proplot-mods # noqa
+    'sphinx_copybutton',
     'nbsphinx',
     ]
 

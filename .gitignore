@@ -16,10 +16,8 @@ dist
 docs/api
 docs/_build
 
-# Subfolders in data directories
-**/cmaps/*/
-**/cycles/*/
-**/fonts/*/
+# Subfolder used to consider new colormaps
+sources
 
 # Folder of notebooks for testing and bugfixing
 local
