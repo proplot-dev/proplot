@@ -44,8 +44,10 @@
 # arguments are passed to the `~proplot.constructor.Colormap` constructor
 # function, and the resulting colormap is used for the input data. For
 # example, to create and apply a monochromatic colormap, you can simply use
-# ``cmap='color name'``. The `~proplot.wrappers.cmap_changer` wrapper also
-# adds the `norm` and `norm_kw` arguments. These arguments are passed to the
+# ``cmap='color name'``.
+
+# The `~proplot.wrappers.cmap_changer` wrapper also
+# adds the `norm` and `norm_kw` arguments. They are passed to the
 # `~proplot.constructor.Norm` constructor function, and the resulting
 # normalizer is used for the input data. For more information on colormaps
 # and normalizers, see the :ref:`colormaps section <ug_cmaps>` and `this
@@ -60,8 +62,10 @@ state = np.random.RandomState(51423)
 data = 10 ** (0.25 * np.cumsum(state.rand(N, N), axis=0))
 with plot.rc.context({'lines.linewidth': 3}):
     fig, axs = plot.subplots(ncols=2, span=False)
-    axs.format(xlabel='xlabel', ylabel='ylabel',
-               suptitle='On-the-fly colormaps and normalizers')
+    axs.format(
+        xlabel='xlabel', ylabel='ylabel',
+        suptitle='On-the-fly colormaps and normalizers'
+    )
 
     # On-the-fly colormaps and normalizers
     axs[0].pcolormesh(data, cmap=['orange0', 'blood'], colorbar='b')

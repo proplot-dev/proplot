@@ -32,7 +32,8 @@
 #
 # .. code-block:: python
 #
-#   import proplot as plot fig, axs = plot.subplots(...)
+#   import proplot as plot
+#   fig, axs = plot.subplots(...)
 #
 # * Just like `matplotlib.pyplot.subplots`, you can use
 #   `~proplot.ui.subplots` without arguments to generate a single-axes subplot

@@ -294,13 +294,13 @@ axs.format(
 #
 # * To remove colors from the left or right ends of a colormap, pass `left`
 #   or `right` to `~proplot.constructor.Colormap`. This calls the
-#   `~proplot.colors.LinearSegmentedColormap.truncated` method, and can be
+#   `~proplot.colors.LinearSegmentedColormap.truncate` method, and can be
 #   useful when you want to use colormaps as :ref:`color cycles <ug_cycles>`
 #   and need to remove the "white" part so that your lines stand out against
 #   the background.
 # * To remove central colors from a diverging colormap, pass `cut` to
 #   `~proplot.constructor.Colormap`. This calls the
-#   `~proplot.colors.LinearSegmentedColormap.punched` method, and can be used
+#   `~proplot.colors.LinearSegmentedColormap.cut` method, and can be used
 #   to create a sharper cutoff between negative and positive values. This
 #   should generally be used *without* a central level.
 # * To rotate a cyclic colormap,  pass `shift` to

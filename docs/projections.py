@@ -28,7 +28,7 @@
 # To change the axes projection, pass ``proj='name'`` to
 # `~proplot.ui.subplots`. To use different projections for different
 # subplots, pass a dictionary of projection names with the subplot number as
-# the key -- for example, ``proj={1:'name'}``. The default "projection" is
+# the key -- for example, ``proj={1: 'name'}``. The default "projection" is
 # always `~proplot.axes.CartesianAxes`.
 
 
@@ -85,16 +85,19 @@ axs[2].format(
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_geo:
 #
-# Geographic projections
-# ----------------------
+# Cartographic projections
+# ------------------------
 #
-# To specify a geographic projection, pass ``proj='name'`` or e.g.
-# ``proj={1:'name'}`` to  `~proplot.ui.subplots` where ``'name'`` is any
-# valid `PROJ <https://proj.org>`__ projection name listed in the
-# `~proplot.constructor.Proj` table. This generates a
-# `~proplot.axes.CartopyAxes` or `~proplot.axes.BasemapAxes`, depending on
-# whether you passed ``basemap=True`` to `~proplot.ui.subplots`.
-#
+# To turn a subplot into a plottable cartographic projection, pass
+# ``proj='name'`` or e.g. ``proj={2: 'name'}`` (see the
+# :ref:`top of this document <ug_proj>`) to  `~proplot.ui.subplots`
+# where ``'name'`` is any valid :ref:`PROJ projection name <proj_included>`,
+# or supply `proj` with a cartopy `~cartopy.crs.Projection` or basemap
+# `~mpl_toolkits.basemap.Basemap` instance returned by the
+# `~proplot.constructor.Proj` constructor function. Depending on whether
+# you passed ``basemap=True`` to `~proplot.ui.subplots`, this generates a
+# `~proplot.axes.CartopyAxes` or `~proplot.axes.BasemapAxes`.
+
 # * `~proplot.axes.CartopyAxes` joins the cartopy
 #   `~cartopy.mpl.geoaxes.GeoAxes` class with the ProPlot
 #   `~matplotlib.axes.Axes` class and adds a `~proplot.axes.GeoAxes.format`
@@ -115,9 +118,9 @@ axs[2].format(
 # reference the `~mpl_toolkits.basemap.Basemap` instance -- ProPlot works
 # with the `~mpl_toolkits.basemap.Basemap` instance under the hood.
 #
-# To pass keyword args to `~mpl_toolkits.basemap.Basemap` and
-# `~cartopy.crs.Projection`, use the `proj_kw` dictionary. To make things a
-# bit more consistent, ProPlot lets you supply native `PROJ
+# To pass keyword args to basemap's `~mpl_toolkits.basemap.Basemap` and cartopy's
+# `~cartopy.crs.Projection` classes, use the `proj_kw` dictionary. To make things
+# a bit more consistent, ProPlot lets you supply native `PROJ
 # <https://proj.org>`__ keyword names to the cartopy
 # `~cartopy.crs.Projection` classes, e.g. `lon_0` instead of
 # `central_longitude`. ProPlot also lets you instantiate
@@ -243,7 +246,8 @@ for globe in (False, True,):
 import proplot as plot
 fig, axs = plot.subplots(
     [[1, 1, 2], [3, 3, 3]],
-    axwidth=4, proj={1: 'eqearth', 2: 'ortho', 3: 'wintri'}
+    axwidth=4, proj={1: 'eqearth', 2: 'ortho', 3: 'wintri'},
+    wratios=(1, 1, 1.2), hratios=(1, 1.2),
 )
 axs.format(
     suptitle='Projection axes formatting demo',
@@ -288,20 +292,19 @@ ax.format(
 #
 # To zoom into basemap projections, you can pass any of the `boundinglat`,
 # `llcrnrlon`, `llcrnrlat`, `urcrnrlon`, `urcrnrlat`, `llcrnrx`, `llcrnry`,
-# `urcrnrx`, `urcrnry`, `width`, or `height` keyword arguments to the
-# `~mpl_toolkits.basemap.Basemap` class using the `proj_kw`
-# `~proplot.ui.subplots` keyword argument. Basemap projections are fixed and
-# you cannot "zoom into" them after they have already been created.
+# `urcrnrx`, `urcrnry`, `width`, or `height` keyword arguments to
+# the `~proplot.constructor.Proj` constructor function either directly or via
+# the `proj_kw` `~proplot.ui.subplots` keyword argument. You can not zoom
+# into basemap projections after they have been created.
 
 # %%
 import proplot as plot
-fig, axs = plot.subplots(
-    nrows=2, axwidth=4.5,
-    proj='pcarree', basemap={1: False, 2: True},
-    proj_kw={2: {'llcrnrlon': -20, 'llcrnrlat': -10, 'urcrnrlon': 180, 'urcrnrlat': 50}}
-)
 
-# Ordinary projection
+# Plate Carrée map projection
+proj = plot.Proj(
+    'cyl', llcrnrlon=-20, llcrnrlat=-10, urcrnrlon=180, urcrnrlat=50, basemap=True,
+)
+fig, axs = plot.subplots(nrows=2, axwidth=4.5, proj=('cyl', proj))
 axs.format(
     land=True, labels=True, lonlines=20,
     latlines=20, suptitle='Zooming into projections'
@@ -312,13 +315,9 @@ axs[0].format(
 )
 axs[1].format(title='Basemap example')
 
-# Polar projection
-fig, axs = plot.subplots(
-    ncols=2, axwidth=2.2,
-    proj={1: 'splaea', 2: 'npaeqd'},
-    basemap={1: False, 2: True},
-    proj_kw={2: {'boundinglat': 60}}
-)
+# Pole-centered map projections
+proj = plot.Proj('npaeqd', boundinglat=60, basemap=True)
+fig, axs = plot.subplots(ncols=2, axwidth=2.2, proj=('splaea', proj))
 axs.format(
     land=True, latlines=10, latmax=80,
     suptitle='Zooming into polar projections'
@@ -326,15 +325,9 @@ axs.format(
 axs[0].format(boundinglat=-60, title='Cartopy example')
 axs[1].format(title='Basemap example')
 
-# Example from basemap website
-fig, axs = plot.subplots(
-    ncols=2, axwidth=2, proj='lcc',
-    basemap={1: False, 2: True},
-    proj_kw={
-        1: {'lon_0': 0},
-        2: {'lon_0': -100, 'lat_0': 45, 'width': 8e6, 'height': 8e6}
-    }
-)
+# Examples from basemap website
+proj = plot.Proj('lcc', lon_0=-100, lat_0=45, width=8e6, height=8e6, basemap=True)
+fig, axs = plot.subplots(ncols=2, axwidth=2.4, proj=('lcc', proj))
 axs.format(suptitle='Zooming into specific regions', land=True)
 axs[0].format(
     title='Cartopy example', land=True,
@@ -344,6 +337,8 @@ axs[1].format(title='Basemap example', land=True)
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
+# .. _proj_included:
+#
 # Included projections
 # --------------------
 #

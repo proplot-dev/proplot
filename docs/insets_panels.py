@@ -38,9 +38,10 @@
 # ``includepanels=True`` to `~proplot.figure.Figure`. Panels
 # :ref:`do not interfere with the tight layout algorithm <ug_tight>` and
 # :ref:`do not affect the subplot aspect ratios <ug_autosize>`.
-# In the first example, the panel distance from the main subplot is manually
-# set to ``space=0``. In the second example, it is adjusted automatically by
-# the tight layout algorithm.
+#
+# In the first example below, the panel distance from the main subplot is
+# manually set to ``space=0``. In the second example, it is adjusted automatically
+# by the tight layout algorithm.
 
 # %%
 import proplot as plot
