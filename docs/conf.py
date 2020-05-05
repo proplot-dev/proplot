@@ -60,6 +60,7 @@ extensions = [
     # 'matplotlib.sphinxext.plot_directive', # see: https://matplotlib.org/sampledoc/extensions.html  # noqa
     'IPython.sphinxext.ipython_console_highlighting',
     'IPython.sphinxext.ipython_directive',  # for ipython highlighting
+    'sphinx_automodapi.automodapi',  # see: https://github.com/lukelbd/sphinx-automodapi/tree/proplot-mods # noqa
     'sphinx.ext.autodoc',  # include documentation from docstrings
     'sphinx.ext.doctest',  # >>> examples
     'sphinx.ext.extlinks',  # for :pr:, :issue:, :commit:
@@ -71,7 +72,6 @@ extensions = [
     'sphinx.ext.napoleon',  # for NumPy style docstrings
     'sphinx.ext.intersphinx',  # external links
     'sphinxext.custom_roles',  # local extension
-    'sphinx_automodapi.automodapi',  # see: https://github.com/lukelbd/sphinx-automodapi/tree/proplot-mods # noqa
     'sphinx_copybutton',
     'nbsphinx',
     ]
@@ -81,6 +81,18 @@ extlinks = {
     'commit': ('https://github.com/lukelbd/proplot/commit/%s', '@'),
     'pr': ('https://github.com/lukelbd/proplot/pull/%s', 'GH#'),
 }
+
+# Copy button
+# Use selectors for nbsphinx input cells from custom.css
+# TODO: Fix this, doesn't work
+# copybutton_selector = ',\n'.join((
+#     'code',
+#     '.rst-content tt',
+#     '.rst-content code',
+#     ".rst-content div:not(.stderr)>div[class^='highlight']",
+#     '.rst-content div.nbinput>div.input_area',
+#     '.rst-content pre.literal-bloc',
+# ))
 
 # Give *lots* of time for cell execution!
 # Note nbsphinx compiles *all* notebooks in docs unless excluded
