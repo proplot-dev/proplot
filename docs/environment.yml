@@ -23,4 +23,4 @@ dependencies:
     - nbsphinx
     - sphinx-copybutton
     - sphinx_rtd_theme
-    - git+https://github.com/lukelbd/sphinx-automodapi@v0.6.proplot-mods
+    - git+https://github.com/lukelbd/sphinx-automodapi@v0.7.proplot-mods
