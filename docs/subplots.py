@@ -26,13 +26,11 @@
 # -----------------------
 #
 # By default, ProPlot automatically determines the suitable figure size given
-# the geometry of your subplot grid. ProPlot can also determine the suitable
-# figure *height* given a fixed figure width, and figure *width* given a
-# fixed figure height. The figure size is constrained by the physical size of
-# a *reference subplot*.
-#
-# This algorithm is controlled by a variety of `~proplot.ui.subplots`
-# keyword arguments:
+# the geometry of your subplot grid and the physical dimensions of a "reference"
+# subplot. ProPlot can also determine the suitable figure height given a fixed
+# figure width, and figure width given a fixed figure height (which can be
+# particularly useful when preparing publications). This algorithm is controlled by
+# a variety of `~proplot.ui.subplots` keyword arguments:
 #
 # * The `ref` parameter sets the reference subplot number (default is ``1``,
 #   i.e. the subplot in the upper left corner).
@@ -48,6 +46,10 @@
 #   *figure*. If one is specified, the other is calculated to satisfy `aspect`
 #   and the subplot spacing. If both are specified (or if the matplotlib
 #   `figsize` parameter is specified), `aspect` is ignored.
+# * The `journal` parameter constrains the physical dimensions of the figure
+#   so it meets the requirements for submission to a variety of academic
+#   journals -- for example, ``'nat1'`` for a single-column *Nature* figure.
+#   A table of valid `journal` arguments can be found at `~proplot.ui.subplots`.
 #
 # This algorithm also has the following notable properties:
 #
@@ -88,6 +90,9 @@ axs.imshow(colors)
 axs.format(
     suptitle='Auto figure sizing with grid of images'
 )
+
+# %%
+import proplot as plot
 
 # Change the reference subplot width
 suptitle = 'Effect of subplot width on figure size'
@@ -196,6 +201,7 @@ fig, axs = plot.subplots(
 
 # Formatting that stress-tests the algorithm
 axs.format(
+    xlim=(-1.2, 1.2), ylim=(-1.2, 1.2), xlocator=1, ylocator=1,
     suptitle='Tight layout with user overrides',
     rowlabels=['Row 1', 'Row 2', 'Row 3'],
     collabels=['Column 1', 'Column 2', 'Column 3', 'Column 4']

@@ -94,9 +94,10 @@ axs[2].format(
 # where ``'name'`` is any valid :ref:`PROJ projection name <proj_included>`,
 # or supply `proj` with a cartopy `~cartopy.crs.Projection` or basemap
 # `~mpl_toolkits.basemap.Basemap` instance returned by the
-# `~proplot.constructor.Proj` constructor function. Depending on whether
-# you passed ``basemap=True`` to `~proplot.ui.subplots`, this generates a
-# `~proplot.axes.CartopyAxes` or `~proplot.axes.BasemapAxes`.
+# `~proplot.constructor.Proj` constructor function. Cartopy is used by
+# default, but you can switch to basemap using ``basemap=True``.
+# When you request cartographic projections, `~proplot.ui.subplots` returns
+# instances of `~proplot.axes.CartopyAxes` or `~proplot.axes.BasemapAxes`.
 
 # * `~proplot.axes.CartopyAxes` joins the cartopy
 #   `~cartopy.mpl.geoaxes.GeoAxes` class with the ProPlot
@@ -109,8 +110,8 @@ axs[2].format(
 #   contourf, pcolor, pcolormesh, quiver, streamplot, and barb methods to
 #   identically named methods on the `~mpl_toolkits.basemap.Basemap` instance,
 #   and provides access to `~mpl_toolkits.basemap.Basemap` geographic plotting
-#   commands like `~mpl_toolkits.basemap.Basemap.fillcontinents` via the
-#   `~proplot.axes.GeoAxes.format` command.
+#   commands like `~mpl_toolkits.basemap.Basemap.fillcontinents` via
+#   `~proplot.axes.GeoAxes.format`.
 #
 # So with ProPlot, you no longer have to invoke verbose cartopy
 # `~cartopy.crs.Projection` classes like
@@ -129,27 +130,32 @@ axs[2].format(
 
 # %%
 import proplot as plot
-plot.rc.coastlinewidth = plot.rc.linewidth = 0.8
+plot.rc.update({
+    'geogrid.linewidth': 0.5,
+    'geogrid.linestyle': '-',
+    'geogrid.alpha': 0.2,
+})
 
 # Simple figure with just one projection
-fig, axs = plot.subplots(
-    ncols=2, axwidth=2.5,
-    proj='robin', proj_kw={'lon_0': 180}
-)
+# Option 1: Manually create a cartopy Projection
+# proj = plot.Proj('robin', lon_0=180)
+# fig, axs = plot.subplots(ncols=2, axwidth=2.5, proj=proj)
+# Option 2: Pass the name to 'proj' and keyword arguments to 'proj_kw'
+fig, axs = plot.subplots(ncols=2, axwidth=2.5, proj='robin', proj_kw={'lon_0': 180})
 axs.format(
     suptitle='Figure with single projection',
-    coast=True, latlines=30, lonlines=60
+    coast=True, latlines=30, lonlines=60,
 )
 
 # Complex figure with different projections
 fig, axs = plot.subplots(
     hratios=(1.5, 1, 1, 1, 1),
     basemap={
-        (1, 3, 5, 7, 9): False,
-        (2, 4, 6, 8, 10): True
+        (1, 3, 5, 7, 9): False,  # use cartopy in column 1
+        (2, 4, 6, 8, 10): True,  # use basemap in column 2
     },
     proj={
-        (1, 2): 'mill',
+        (1, 2): 'mill',  # different projection each row
         (3, 4): 'cyl',
         (5, 6): 'moll',
         (7, 8): 'sinu',
@@ -168,10 +174,10 @@ plot.rc.reset()
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_geoplot:
 #
-# Plotting geophysical data
-# -------------------------
+# Plotting geographic data
+# ------------------------
 #
-# The below example demonstrates how to plot geophysical data with ProPlot.
+# The below example demonstrates how to plot geographic data with ProPlot.
 # It is mostly the same as cartopy, but with some new features powered by the
 # `~proplot.wrappers.standardize_2d`, `~proplot.wrappers.default_transform`,
 # and `~proplot.wrappers.default_latlon` wrappers.
@@ -301,9 +307,7 @@ ax.format(
 import proplot as plot
 
 # Plate Carrée map projection
-proj = plot.Proj(
-    'cyl', llcrnrlon=-20, llcrnrlat=-10, urcrnrlon=180, urcrnrlat=50, basemap=True,
-)
+proj = plot.Proj('cyl', llcrnrlon=-20, llcrnrlat=-10, urcrnrlon=180, urcrnrlat=50, basemap=True)  # noqa: E501
 fig, axs = plot.subplots(nrows=2, axwidth=4.5, proj=('cyl', proj))
 axs.format(
     land=True, labels=True, lonlines=20,
@@ -327,7 +331,7 @@ axs[1].format(title='Basemap example')
 
 # Examples from basemap website
 proj = plot.Proj('lcc', lon_0=-100, lat_0=45, width=8e6, height=8e6, basemap=True)
-fig, axs = plot.subplots(ncols=2, axwidth=2.4, proj=('lcc', proj))
+fig, axs = plot.subplots(ncols=2, axwidth=2.4, proj=('lcc', proj), proj_kw={'lon_0': 0})
 axs.format(suptitle='Zooming into specific regions', land=True)
 axs[0].format(
     title='Cartopy example', land=True,

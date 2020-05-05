@@ -176,7 +176,9 @@ import proplot as plot
 import numpy as np
 fig, axs = plot.subplots(ncols=2, nrows=2, share=0, tight=True, axwidth=1.7)
 state = np.random.RandomState(51423)
-axs[0].plot(np.linspace(1, 10, 80), (state.rand(80, 5) - 0.5).cumsum(axis=0))
+x = np.linspace(1, 10, 80)
+y = (state.rand(80, 5) - 0.5).cumsum(axis=0)
+axs[0].plot(x, y, linewidth=1.5)
 axs.format(
     suptitle='Format command demo',
     abc=True, abcloc='ul', abcstyle='a.',
@@ -267,11 +269,11 @@ plot.rc.reset()
 # ------------------
 #
 # Instead of an `~numpy.ndarray` of axes, `~proplot.ui.subplots` returns a
-# special `~proplot.ui.SubplotsContainer` container. This container behaves
-# like a *python list*, but lets you call any arbitrary method on multiple
-# axes at once. It supports both 2D indexing (e.g. ``axs[0,1]``) and 1D
+# `~proplot.ui.SubplotsContainer` instance. This container behaves
+# like a python *list*, but lets you call any arbitrary method on multiple
+# axes at once. It supports both 2D indexing (e.g. ``axs[0, 1]``) and 1D
 # indexing (e.g. ``axs[2]``), and is row-major by default. Further, slicing a
-# subplot grid (e.g. ``axs[:,0]``) returns another subplot grid.
+# subplot container (e.g. ``axs[:, 0]``) returns another subplot container.
 #
 # In the below example, the `~proplot.ui.SubplotsContainer` returned by
 # `~proplot.ui.subplots` is used to call `~proplot.axes.Axes.format` on
@@ -289,8 +291,8 @@ axs.format(
 )
 
 # Various ways to select subplots in the subplot grid
-axs[:, 0].format(color='blue7', facecolor='gray3', linewidth=1)
-axs[0, :].format(color='red7', facecolor='gray3', linewidth=1)
+axs[:, 0].format(facecolor='blush', color='gray7', linewidth=1)
+axs[0, :].format(facecolor='sky blue', color='gray7', linewidth=1)
 axs[0].format(color='black', facecolor='gray5', linewidth=1.4)
 axs[1:, 1:].format(facecolor='gray1')
 for ax in axs[1:, 1:]:
