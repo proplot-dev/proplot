@@ -52,7 +52,6 @@ you can simply omit the dots. For example, to change the
   fig, ax = plot.subplots()
   ax.format(titleloc=value)
 
-
 .. _rc_params: https://matplotlib.org/users/customizing.html
 
 .. _rc_quick:
@@ -197,9 +196,9 @@ Key(s)                           Description
 ``suptitle.color``               Figure title color.
 ``suptitle.size``                Figure title font size.
 ``suptitle.weight``              Figure title font weight.
-``tick.color``                   Axis tick label color. Mirrors the *axis* label :rcraw:`axes.labelcolor` setting.
-``tick.size``                    Axis tick label font size. Mirrors the *axis* label :rcraw:`axes.labelsize` setting.
-``tick.weight``                  Axis tick label font weight. Mirrors the *axis* label :rcraw:`axes.labelweight` setting.
+``tick.labelcolor``              Axis tick label color. Mirrors the *axis* label :rcraw:`axes.labelcolor` setting.
+``tick.labelsize``               Axis tick label font size. Mirrors the *axis* label :rcraw:`axes.labelsize` setting.
+``tick.labelweight``             Axis tick label font weight. Mirrors the *axis* label :rcraw:`axes.labelweight` setting.
 ``title.loc``                    Title position. For options, see `~proplot.axes.Axes.format`.
 ``title.border``                 Boolean, indicates whether to draw a white border around titles inside an axes.
 ``title.borderwidth``            Width of the white border around titles.
