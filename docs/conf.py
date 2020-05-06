@@ -85,6 +85,7 @@ extlinks = {
 # Copy button
 # Use selectors for nbsphinx input cells from custom.css
 # TODO: Fix this, doesn't work
+copybutton_prompt_text = '>>>'
 # copybutton_selector = ',\n'.join((
 #     'code',
 #     '.rst-content tt',
@@ -110,8 +111,8 @@ nbsphinx_custom_formats = {
 #     "--InlineBackend.rc={'figure.dpi': 100}",
 # ]
 
-# Do not run doctest tests, these are just to show syntax and expected
-# output may be graphical
+# For now do not run doctest tests, these are just to show syntax
+# and expected output may be graphical
 doctest_test_doctest_blocks = ''
 
 # Generate stub pages whenever ::autosummary directive encountered

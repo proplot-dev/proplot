@@ -29,7 +29,8 @@ Please note that due to my day job as a graduate student, `certain feature addit
    colorbars_legends
    colormaps
    cycles
-   colors_fonts
+   colors
+   fonts
    projections
    axis
    insets_panels

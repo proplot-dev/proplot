@@ -115,7 +115,7 @@ axs.format(
 # Inset axes
 # ----------
 #
-# `Inset axes \
+# `Inset axes\
 # <https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/zoom_inset_axes.html>`__
 # can be generated with the `~proplot.axes.Axes.inset` or
 # `~proplot.axes.Axes.inset_axes` command. The resulting axes are instances

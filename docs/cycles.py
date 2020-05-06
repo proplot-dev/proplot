@@ -23,7 +23,7 @@
 # between these colors may not make sense. Color cycles are generally used
 # with bar plots, line plots, and other distinct plot elements. ProPlot uses
 # the `~proplot.colors.ListedColormap` class to *name* color cycles, then
-# applies them to plots by updating the `property cycler \
+# applies them to plots by updating the `property cycler\
 # <https://matplotlib.org/3.1.0/tutorials/intermediate/color_cycle.html>`__.
 # Color cycles can also be made by :ref:`sampling colormaps <ug_cycles_new>`.
 #

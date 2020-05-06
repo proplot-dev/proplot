@@ -56,7 +56,7 @@
 # * For very simple subplot grids (e.g. ``plot.subplots(ncols=2, nrows=3)``),
 #   `aspect`, `axwidth`, and `axheight` apply to every subplot in the figure --
 #   not just the reference subplot.
-# * When the reference subplot `aspect ratio \
+# * When the reference subplot `aspect ratio\
 #   <https://matplotlib.org/2.0.2/examples/pylab_examples/equal_aspect_ratio.html>`__
 #   has been manually overridden (e.g. with ``ax.set_aspect(1)``) or is set
 #   to ``'equal'`` (as with :ref:`map projections <ug_geo>` and

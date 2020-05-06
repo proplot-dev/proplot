@@ -96,6 +96,7 @@ Key               Description
 ``share``         The axis sharing level, one of ``0``, ``1``, ``2``, or ``3``. See `~proplot.ui.subplots` for details.
 ``small``         Font size for legend text, tick labels, axis labels, and text generated with `~matplotlib.axes.Axes.text`.
 ``span``          Boolean, toggles spanning axis labels. See `~proplot.ui.subplots` for details.
+``style``         The matplotlib `stylesheet <https://matplotlib.org/3.2.1/gallery/style_sheets/style_sheets_reference.html>`__ name. If ``None``, a custom proplot style is used.
 ``tickdir``       Major and minor tick direction. Must be one of ``'out'``, ``'in'``, or ``'inout'``.
 ``ticklen``       Length of major ticks in points.
 ``ticklenratio``  Ratio of minor tickline length to major tickline length.
@@ -211,15 +212,22 @@ Key(s)                           Description
 ``toplabel.weight``              Font weight for column labels on the top of the figure.
 ===============================  =========================================================================================================================================================================================================================================================
 
+.. _ug_proplotrc:
+
 The .proplotrc file
 -------------------
 
-To modify the global settings, edit your ``~/.proplotrc`` file. To modify
-settings for a particular project, create a ``.proplotrc`` file in the same
-directory as your ipython notebook, or in an arbitrary parent directory.  As
-an example, a ``.proplotrc`` file containing the default settings is shown
-below. The syntax is mostly the same as the syntax used for
-`matplotlibrc files <https://matplotlib.org/3.1.1/tutorials/introductory/customizing.html#customizing-with-matplotlibrc-files>`__.
+When you install ProPlot for the first time, a ``.proplotrc`` file is generated
+and placed in your home directory. This is just like the `matplotlibrc file\
+<https://matplotlib.org/3.1.1/tutorials/introductory/customizing.html#customizing-with-matplotlibrc-files>`__,
+but for changing both ProPlot *and* matplotlib settings. The syntax is basically
+the same as the ``matplotlibrc`` syntax.
+
+To change the default global settings, simply edit and uncomment the entries
+listed in this file. You can also change the settings for individual projects
+by placing a ``.proplotrc`` file in the same directory as your python scripts
+or jupyter notebooks, or in an arbitrary parent directory. As an example,
+a ``.proplotrc`` file containing the default settings is shown below.
 
 .. include:: _static/proplotrc
    :literal:

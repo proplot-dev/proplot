@@ -12,11 +12,10 @@ users who...
 * ...need to make new figures nearly every day.
 
 ProPlot's core mission is to provide a smoother plotting experience
-for matplotlib's heaviest users, with ease of use as the number one
-priority. We accomplish this by *expanding upon* the object-oriented
-matplotlib API. ProPlot makes changes that would be hard to justify
-or difficult to incorporate into matplotlib itself, owing to design
-choices and backwards compatibility considerations.
+for matplotlib's heaviest users. We accomplish this by *expanding upon*
+the object-oriented matplotlib API. ProPlot makes changes that would be
+hard to justify or difficult to incorporate into matplotlib itself, owing
+to differing design choices and backwards compatibility considerations.
 
 This page enumerates these changes and explains how they
 address the limitations of the matplotlib API.
@@ -143,9 +142,9 @@ Function                          Return type                                   
 `~proplot.constructor.Locator`    `~matplotlib.ticker.Locator`                                  `~proplot.axes.Axes.format` and `~proplot.axes.Axes.colorbar`  ``locator=``, ``xlocator=``, ``ylocator=``, ``minorlocator=``, ``xminorlocator=``, ``yminorlocator=``, ``ticks=``, ``xticks=``, ``yticks=``, ``minorticks=``, ``xminorticks=``, ``yminorticks=``
 `~proplot.constructor.Formatter`  `~matplotlib.ticker.Formatter`                                `~proplot.axes.Axes.format` and `~proplot.axes.Axes.colorbar`  ``formatter=``, ``xformatter=``, ``yformatter=``, ``ticklabels=``, ``xticklabels=``, ``yticklabels=``
 `~proplot.constructor.Scale`      `~matplotlib.scale.ScaleBase`                                 `~proplot.axes.Axes.format`                                    ``xscale=``, ``yscale=``
-`~proplot.constructor.Cycle`      `~cycler.Cycler`                                              :ref:`1d plotting methods <ug_1dplots>`                        ``cycle=``
-`~proplot.constructor.Colormap`   `~matplotlib.colors.Colormap`                                 :ref:`2d plotting methods <ug_2dplots>`                        ``cmap=``
-`~proplot.constructor.Norm`       `~matplotlib.colors.Normalize`                                :ref:`2d plotting methods <ug_2dplots>`                        ``norm=``
+`~proplot.constructor.Cycle`      `~cycler.Cycler`                                              :ref:`1D plotting methods <ug_1dplots>`                        ``cycle=``
+`~proplot.constructor.Colormap`   `~matplotlib.colors.Colormap`                                 :ref:`2D plotting methods <ug_2dplots>`                        ``cmap=``
+`~proplot.constructor.Norm`       `~matplotlib.colors.Normalize`                                :ref:`2D plotting methods <ug_2dplots>`                        ``norm=``
 `~proplot.constructor.Proj`       `~cartopy.crs.Projection` or `~mpl_toolkits.basemap.Basemap`  `~proplot.ui.subplots`                                         ``proj=``
 ================================  ============================================================  =============================================================  =================================================================================================================================================================================================
 
@@ -400,7 +399,7 @@ designed to make your life easier.
   version, just like `~matplotlib.axes.Axes.fill_between` and
   `~matplotlib.axes.Axes.fill_betweenx`, you will be able to use different
   colors for positive/negative bars.
-* All :ref:`1d plotting methods <ug_1dplots>` can be used to :ref:`add error
+* All :ref:`1D plotting methods <ug_1dplots>` can be used to :ref:`add error
   bars <ug_errorbars>` using various specialized keyword arguments. You no
   longer have to work with the `~matplotlib.axes.Axes.errorbar` method
   directly.  They also accept a
@@ -409,7 +408,7 @@ designed to make your life easier.
   :ref:`"colorbar" and "legend" keyword arguments <ug_cbars_axes>`
   for populating legends and colorbars at the specified location with the
   result of the plotting command.
-* All :ref:`2d plotting methods <ug_2dplots>` methods accept
+* All :ref:`2D plotting methods <ug_2dplots>` methods accept
   :ref:`"cmap" and "norm" keyword arguments <ug_cmap_changer>`
   interpreted by `~proplot.constructor.Colormap` and
   `~proplot.constructor.Norm`, along with an optional
@@ -431,21 +430,20 @@ designed to make your life easier.
   <https://stackoverflow.com/q/15003353/4970632>`__.
 
 ..
-  ProPlot also provides
-  *constistent behavior* when
-  switching between different commands, for
-  example `~matplotlib.axes.Axes.plot` and `~matplotlib.axes.Axes.scatter`
-  or `~matplotlib.axes.Axes.contourf` and `~matplotlib.axes.Axes.pcolormesh`.
+  ProPlot also provides *constistent behavior* when switching between
+  different commands, for example `~matplotlib.axes.Axes.plot` and
+  `~matplotlib.axes.Axes.scatter` or `~matplotlib.axes.Axes.contourf`
+  and `~matplotlib.axes.Axes.pcolormesh`.
 
 ..
    ProPlot also uses wrappers to *unify* the behavior of various
    plotting methods.
 
 ..
-  All positional arguments for "1d" plotting methods are standardized by
-  `~proplot.wrappers.standardize_1d`. All positional arguments for "2d"
+  All positional arguments for 1D plotting methods are standardized by
+  `~proplot.wrappers.standardize_1d`. All positional arguments for 2D
   plotting methods are standardized by `~proplot.wrappers.standardize_2d`.
-  See :ref:`1d plotting wrappers` and :ref:`2d plotting wrappers` for
+  See :ref:`1D plotting wrappers` and :ref:`2D plotting wrappers` for
   details.
 
 
@@ -519,7 +517,7 @@ boundaries, and meridian and parallel gridlines.
 * The new default for all `~proplot.axes.BasemapAxes` plotting methods is
   ``latlon=True``.
 * *Global* coverage over the poles and across the matrix longitude boundaries
-  can be enforced by passing ``globe=True`` to any 2d plotting command, e.g.
+  can be enforced by passing ``globe=True`` to any 2D plotting command, e.g.
   `~matplotlib.axes.Axes.pcolormesh` and `~matplotlib.axes.Axes.contourf`.
 
 See the :ref:`user guide <ug_proj>` for details.  Note that active
@@ -621,8 +619,8 @@ The subplot container class
 
 .. rubric:: Problem
 
-In matplotlib, `~matplotlib.pyplot.subplots` returns a 2d `~numpy.ndarray`
-for figures with more than one column and row, a 1d `~numpy.ndarray` for
+In matplotlib, `~matplotlib.pyplot.subplots` returns a 2D `~numpy.ndarray`
+for figures with more than one column and row, a 1D `~numpy.ndarray` for
 single-row or single-column figures, or just an `~matplotlib.axes.Axes`
 instance for single-subplot figures.
 
@@ -636,11 +634,11 @@ you want to style your subplots identically (e.g.
 also unifies the behavior of the three possible `matplotlib.pyplot.subplots`
 return values:
 
-* `~proplot.ui.SubplotsContainer` permits 2d indexing, e.g. ``axs[1,0]``.
+* `~proplot.ui.SubplotsContainer` permits 2D indexing, e.g. ``axs[1,0]``.
   Since `~proplot.ui.subplots` can generate figures with arbitrarily complex
-  subplot geometry, this 2d indexing is useful only when the arrangement
-  happens to be a clean 2d matrix.
-* `~proplot.ui.SubplotsContainer` also permits 1d indexing, e.g. ``axs[0]``.
+  subplot geometry, this 2D indexing is useful only when the arrangement
+  happens to be a clean 2D matrix.
+* `~proplot.ui.SubplotsContainer` also permits 1D indexing, e.g. ``axs[0]``.
   The default order can be switched from row-major to column-major by passing
   ``order='F'`` to `~proplot.ui.subplots`.
 * When it is singleton, `~proplot.ui.SubplotsContainer` behaves like a

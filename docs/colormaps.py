@@ -239,7 +239,7 @@ fig = plot.show_channels(
 # datasets with complex statistical distributions.
 #
 # In the below example, we create a new divering colormap and reconstruct the
-# colormap from `this SciVisColor example \
+# colormap from `this SciVisColor example\
 # <https://sciviscolor.org/wp-content/uploads/sites/14/2018/04/colormoves-icon-1.png>`__.
 # We also *save* the results for future use by passing ``save=True`` to
 # `~proplot.constructor.Colormap`.

@@ -88,15 +88,15 @@ axs[2].format(
 # Cartographic projections
 # ------------------------
 #
-# To turn a subplot into a plottable cartographic projection, pass
-# ``proj='name'`` or e.g. ``proj={2: 'name'}`` (see the
-# :ref:`top of this document <ug_proj>`) to  `~proplot.ui.subplots`
+# To turn a subplot into a plottable map projection, pass
+# ``proj='name'`` or e.g. ``proj={2: 'name'}``
+# (:ref:`see above <ug_proj>`) to  `~proplot.ui.subplots`
 # where ``'name'`` is any valid :ref:`PROJ projection name <proj_included>`,
 # or supply `proj` with a cartopy `~cartopy.crs.Projection` or basemap
 # `~mpl_toolkits.basemap.Basemap` instance returned by the
 # `~proplot.constructor.Proj` constructor function. Cartopy is used by
 # default, but you can switch to basemap using ``basemap=True``.
-# When you request cartographic projections, `~proplot.ui.subplots` returns
+# When you request map projections, `~proplot.ui.subplots` returns
 # instances of `~proplot.axes.CartopyAxes` or `~proplot.axes.BasemapAxes`.
 
 # * `~proplot.axes.CartopyAxes` joins the cartopy

@@ -46,6 +46,7 @@ Configuration tools
 
 .. automodsumm:: proplot.config
    :toctree: api
+   :skip: inline_backend_fmt
 
 
 Plotting wrappers

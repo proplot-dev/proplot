@@ -14,14 +14,12 @@
 # ---
 
 # %% [raw] raw_mimetype="text/restructuredtext"
-# .. _ug_colors_fonts:
 #
-# Colors and fonts
-# ================
+# Color names
+# ===========
 #
-# ProPlot registers several new color names and font families, and includes
-# tools for defining your own color names and adding your own font families.
-# These features are described below.
+# ProPlot registers several new color names and includes tools for defining
+# your own color names. These features are described below.
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -73,7 +71,7 @@ figs = plot.show_colors()
 import proplot as plot
 import numpy as np
 state = np.random.RandomState(51423)
-fig, axs = plot.subplots(nrows=2, aspect=2, axwidth=3, share=0)
+fig, axs = plot.subplots(nrows=2, aspect=2, axwidth=3.5, share=0)
 
 # Drawing from colormap
 ax = axs[0]
@@ -116,65 +114,4 @@ axs.format(
 # `~proplot.config.register_colors`. This command is also called on import.
 # Each file should contain lines that look like ``color: #xxyyzz`` where
 # ``color`` is the registered color name and ``#xxyyzz`` is the HEX color
-# value.
-
-
-# %% [raw] raw_mimetype="text/restructuredtext"
-# .. _ug_fonts:
-#
-# Included fonts
-# --------------
-#
-# ProPlot adds several open source fonts, including the
-# `TeX Gyre <http://www.gust.org.pl/projects/e-foundry/tex-gyre>`__ font
-# series, and introduces a `~proplot.show.show_fonts` command to compare
-# fonts. By default, this command displays the *sans-serif* fonts packaged
-# with ProPlot and available on your system (see `~matplotlib.font_manager`).
-# Generally speaking, sans-serif fonts are more appropriate for figures than
-# serif fonts.
-#
-# ProPlot also changes the default font to the Helvetica-lookalike
-# `TeX Gyre Heros <http://www.gust.org.pl/projects/e-foundry/tex-gyre/heros>`__.
-# Matplotlib uses `DejaVu Sans <https://dejavu-fonts.github.io>`__ in part
-# because it includes glyphs for a wider range of mathematical symbols (where
-# you see the “¤” dummy symbol in the below table, that character is
-# unavailable), but IMHO TeX Gyre Heros is much more aesthetically pleasing.
-# If your plot has lots of symbols, you may want to switch to DejaVu Sans or
-# `Fira Math <https://github.com/firamath/firamath>`__ (which is also
-# packaged with ProPlot).
-
-# %%
-import proplot as plot
-fig = plot.show_fonts()
-
-
-# %% [raw] raw_mimetype="text/restructuredtext"
-# .. _ug_fonts_user:
-#
-# Using your own fonts
-# --------------------
-#
-# You can register your own fonts by adding files to the ``~/.proplot/fonts``
-# directory and calling `~proplot.config.register_fonts`. This command is
-# also called on import. To change the default font, use the
-# `~proplot.config.rc` object or modify your ``~/.proplotrc``. See
-# the :ref:`configuration section <ug_config>` for details.
-#
-# Sometimes the font you would like to use *is* installed, but the font file
-# is not stored under the matplotlib-compatible ``.ttf``, ``.otf``, or
-# ``.afm`` formats. For example, several macOS fonts are unavailable because
-# they are stored as ``.dfont`` collections. Also, while matplotlib nominally
-# supports ``.ttc`` collections, ProPlot manually removes them because
-# figures with ``.ttc`` fonts
-# `cannot be saved as PDFs <https://github.com/matplotlib/matplotlib/issues/3135>`__.
-# You can get matplotlib to use these fonts by expanding the "collections"
-# into individual ``.ttf`` files with the
-# `DFontSplitter application <https://peter.upfold.org.uk/projects/dfontsplitter>`__,
-# then saving the files in-place or in the ``~/.proplot/fonts`` folder.
-#
-# To find font files, check the paths listed in ``OSXFontDirectories``,
-# ``X11FontDirectories``, ``MSUserFontDirectories``, and ``MSFontDirectories``
-# under the `~matplotlib.font_manager` module. Note that if the font in question has
-# a "thin" style, implied by file names with the word ``Thin``,
-# `a matplotlib bug <https://github.com/matplotlib/matplotlib/issues/8788>`__
-# may cause these styles to override the "normal" style.
+# value. Lines beginning with ``#`` are ignored as comments.

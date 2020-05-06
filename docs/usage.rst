@@ -95,7 +95,7 @@ several *existing* methods.
   `~proplot.axes.Axes.area`, `~matplotlib.axes.Axes.contour`,
   `~matplotlib.axes.Axes.pcolormesh`, `~proplot.axes.Axes.heatmap`, and
   `~proplot.axes.Axes.parametric` plotting methods by "wrapping" them. See
-  the :ref:`1d plotting <ug_1dplots>` and :ref:`2d plotting <ug_2dplots>`
+  the :ref:`1D plotting <ug_1dplots>` and :ref:`2D plotting <ug_2dplots>`
   sections for details.
 
 Integration with other packages
@@ -111,8 +111,8 @@ plotting packages.
   labels, and legend labels are automatically applied from the metadata. This
   works just like the native `xarray.DataArray.plot` and
   `pandas.DataFrame.plot` methods. A demonstration of this feature is given
-  in the sections on :ref:`1d plotting <ug_1dintegration>` and
-  :ref:`2d plotting <ug_2dintegration>`.
+  in the sections on :ref:`1D plotting <ug_1dintegration>` and
+  :ref:`2D plotting <ug_2dintegration>`.
 * The `~proplot.axes.GeoAxes` class uses the `cartopy` or
   `~mpl_toolkits.basemap` packages to :ref:`plot geophysical data <ug_geoplot>`,
   :ref:`add geographic features <ug_geoformat>`, and

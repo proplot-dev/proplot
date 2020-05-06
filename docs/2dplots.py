@@ -15,8 +15,8 @@
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_2dplots:
 #
-# 2d plotting wrappers
-# ====================
+# Plotting 2-dimensional data
+# ===========================
 #
 # ProPlot adds new features to various `~matplotlib.axes.Axes` plotting
 # methods using a set of wrapper functions. When a plotting method like
@@ -25,7 +25,7 @@
 # *superset* of the matplotlib API; if you want, you can use the plotting
 # methods exactly as you always have.
 #
-# This section documents the features added by wrapper functions to "2d"
+# This section documents the features added by wrapper functions to 2D
 # plotting commands like `~matplotlib.axes.Axes.contour`,
 # `~matplotlib.axes.Axes.contourf`, `~matplotlib.axes.Axes.pcolor`, and
 # `~matplotlib.axes.Axes.pcolormesh`.
@@ -40,7 +40,7 @@
 # It is often desirable to create ProPlot colormaps on-the-fly, without
 # explicitly using the `~proplot.constructor.Colormap` constructor function.
 # To enable this, the `~proplot.wrappers.cmap_changer` wrapper adds the
-# `cmap` and `cmap_kw` arguments to every "2d" plotting method. These
+# `cmap` and `cmap_kw` arguments to every 2D plotting method. These
 # arguments are passed to the `~proplot.constructor.Colormap` constructor
 # function, and the resulting colormap is used for the input data. For
 # example, to create and apply a monochromatic colormap, you can simply use
@@ -147,8 +147,8 @@ for ax, extend in zip(axs[1:], ('min', 'max', 'neither', 'both')):
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_norm:
 #
-# New colormap normalizers
-# ------------------------
+# New normalizers
+# ---------------
 #
 # ProPlot introduces the following useful new `~matplotlib.colors.Normalize`
 # classes:
@@ -213,7 +213,7 @@ for data, mode, fair in zip(
 # ----------------------
 #
 # The `~proplot.wrappers.standardize_2d` wrapper is used to standardize
-# positional arguments across all "2d" plotting methods.  Among other things,
+# positional arguments across all 2D plotting methods.  Among other things,
 # it guesses coordinate *edges* for `~matplotlib.axes.Axes.pcolor` and
 # `~matplotlib.axes.Axes.pcolormesh` plots when you supply coordinate
 # *centers*, and calculates coordinate *centers* for
@@ -255,7 +255,7 @@ with plot.rc.context({'image.cmap': 'Grays', 'image.levels': 21}):
 # Pandas and xarray integration
 # -----------------------------
 #
-# The `~proplot.wrappers.standardize_2d` wrapper also integrates "2d"
+# The `~proplot.wrappers.standardize_2d` wrapper also integrates 2D
 # plotting methods with pandas `~pandas.DataFrame`\ s and xarray
 # `~xarray.DataArray`\ s. When you pass a DataFrame or DataArray to any
 # plotting command, the x-axis label, y-axis label, legend label, colorbar
@@ -306,18 +306,18 @@ df.columns.name = 'time (days)'
 
 # %%
 import proplot as plot
-fig, axs = plot.subplots(nrows=2, axwidth=2.2, share=0)
+fig, axs = plot.subplots(nrows=2, axwidth=2.5, share=0)
 axs.format(collabels=['Automatic subplot formatting'])
 
 # Plot DataArray
 axs[0].contourf(
-    da, cmap='Greens', cmap_kw={'left': 0.05}, colorbar='l', lw=0.7, color='gray7'
+    da, cmap='RdPu', cmap_kw={'left': 0.05}, colorbar='l', lw=0.7, color='gray7'
 )
 axs[0].format(yreverse=True)
 
 # Plot DataFrame
 axs[1].contourf(
-    df, cmap='Blues', colorbar='r', linewidth=0.7, color='gray7'
+    df, cmap='YlOrRd', colorbar='r', linewidth=0.7, color='gray7'
 )
 axs[1].format(xtickminor=False)
 

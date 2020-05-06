@@ -15,8 +15,8 @@
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_1dplots:
 #
-# 1d plotting wrappers
-# ====================
+# Plotting 1-dimensional data
+# ===========================
 #
 # ProPlot adds new features to various `~matplotlib.axes.Axes` plotting
 # methods using a set of wrapper functions. When a plotting method like
@@ -25,7 +25,7 @@
 # *superset* of the matplotlib API -- if you want, you can use the plotting
 # methods exactly as you always have.
 #
-# This section documents the features added by wrapper functions to "1d"
+# This section documents the features added by wrapper functions to 1D
 # plotting commands like `~matplotlib.axes.Axes.plot`,
 # `~matplotlib.axes.Axes.scatter`, `~matplotlib.axes.Axes.bar`, and
 # `~matplotlib.axes.Axes.barh`.
@@ -40,7 +40,7 @@
 # It is often desirable to use different `property cycles
 # <https://matplotlib.org/tutorials/intermediate/color_cycle.html#sphx-glr-tutorials-intermediate-color-cycle-py>`__
 # for different axes or different plot elements. To enable this, the
-# `~proplot.wrappers.cycle_changer` adds the `cycle` and `cycle_kw` to the "1d"
+# `~proplot.wrappers.cycle_changer` adds the `cycle` and `cycle_kw` to the 1D
 # plotting methods. These arguments are passed to the
 # `~proplot.constructor.Cycle` constructor function, and the resulting property
 # cycle is used to style the input data. ProPlot iterates through property
@@ -77,10 +77,10 @@ with plot.rc.context({'lines.linewidth': 3}):
 # ----------------------
 #
 # The `~proplot.wrappers.standardize_1d` wrapper is used to standardize
-# positional arguments across all "1d" plotting methods.
+# positional arguments across all 1D plotting methods.
 # `~proplot.wrappers.standardize_1d` allows you to optionally omit *x*
 # coordinates, in which case they are inferred from the data. It also permits
-# passing 2d *y* coordinate arrays to any plotting method, in which case the
+# passing 2D *y* coordinate arrays to any plotting method, in which case the
 # plotting method is called for each column of the array.
 
 # %%
@@ -122,7 +122,7 @@ with plot.rc.context({'axes.prop_cycle': plot.Cycle('Grays', N=N, left=0.3)}):
 # Pandas and xarray integration
 # -----------------------------
 #
-# The `~proplot.wrappers.standardize_1d` wrapper integrates "1d" plotting
+# The `~proplot.wrappers.standardize_1d` wrapper integrates 1D plotting
 # methods with pandas `~pandas.DataFrame`\ s and xarray `~xarray.DataArray`\ s.
 # When you pass a DataFrame or DataArray to any plotting command, the x-axis
 # label, y-axis label, legend label, colorbar label, and/or title are
@@ -171,13 +171,11 @@ fig, axs = plot.subplots(ncols=2, axwidth=2.2, share=0)
 axs.format(suptitle='Automatic subplot formatting')
 
 # Plot DataArray
-color = plot.scale_luminance('light blue', 0.4)
-cycle = plot.Cycle(color, fade=90, space='hpl')
+cycle = plot.Cycle('dark blue', fade=90, space='hpl', N=da.shape[1])
 axs[0].scatter(da, cycle=cycle, lw=3, colorbar='ul', colorbar_kw={'locator': 20})
 
 # Plot Dataframe
-color = plot.scale_luminance('jade', 0.4)
-cycle = plot.Cycle(color, fade=90, space='hpl')
+cycle = plot.Cycle('dark green', fade=90, space='hpl', N=df.shape[1])
 axs[1].plot(df, cycle=cycle, lw=3, legend='uc')
 
 
@@ -229,9 +227,9 @@ ax.format(ylabel='column number', title='Bar plot', ygrid=False)
 # Showing a standard deviation range instead of percentile range
 ax = axs[1]
 ax.scatter(
-    data, color='k', marker='x', markersize=50, barcolor='gray5',
-    medians=True, barstd=True, barrange=(-1, 1), barzorder=0,
-    boxes=False, capsize=2
+    data, color='k', marker='_', markersize=50,
+    medians=True, barstd=True, boxes=False, capsize=2,
+    barcolor='gray6', barrange=(-1, 1), barzorder=0, barlw=1,
 )
 ax.format(title='Scatter plot')
 
@@ -240,8 +238,10 @@ ax = axs[2]
 boxdata = np.percentile(data, (25, 75), axis=0)
 bardata = np.percentile(data, (5, 95), axis=0)
 ax.plot(
-    data.mean(axis=0), boxes=False, marker='o', markersize=5,
-    edgecolor='k', color='cerulean', boxdata=boxdata, bardata=bardata
+    data.mean(axis=0), boxes=True,
+    edgecolor='k', color='gray9',
+    boxdata=boxdata, bardata=bardata, barzorder=0,
+    boxcolor='gray7', barcolor='gray7', boxmarker=False,
 )
 ax.format(title='Line plot')
 plot.rc.reset()
@@ -261,6 +261,19 @@ plot.rc.reset()
 # `pandas`. Also, `~matplotlib.axes.Axes.bar` and `~matplotlib.axes.Axes.barh`
 # now employ "default" *x* coordinates if you failed to provide them
 # explicitly, just like `~matplotlib.axes.Axes.plot`.
+#
+# To make filled "area" plots, use the new `~proplot.axes.Axes.area` and
+# `~proplot.axes.Axes.areax` methods. These are alises for
+# `~matplotlib.axes.Axes.fill_between` and
+# `~matplotlib.axes.Axes.fill_betweenx`, which are now wrapped by
+# `~proplot.wrappers.fill_between_wrapper` and
+# `~proplot.wrappers.fill_betweenx_wrapper`. You can now *stack* or *overlay*
+# columns of data by passing 2D arrays to `~proplot.axes.Axes.area` and
+# `~proplot.axes.Axes.areax`, just like in `pandas`. You can also now draw
+# area plots that *change color* when the fill boundaries cross each other by
+# passing ``negpos=True`` to `~matplotlib.axes.Axes.fill_between`. The most
+# common use case for this is highlighting negative and positive areas with
+# different colors, as shown below.
 
 # %%
 import proplot as plot
@@ -268,7 +281,7 @@ import numpy as np
 import pandas as pd
 plot.rc.titleloc = 'uc'
 plot.rc.margin = 0.05
-fig, axs = plot.subplots(nrows=2, aspect=2, axwidth=4, share=0, hratios=(3, 2))
+fig, axs = plot.subplots(nrows=2, aspect=2, axwidth=5, share=0, hratios=(3, 2))
 state = np.random.RandomState(51423)
 data = state.rand(5, 5).cumsum(axis=0).cumsum(axis=1)[:, ::-1]
 data = pd.DataFrame(
@@ -296,26 +309,6 @@ obj = ax.barh(
 ax.format(title='Stacked')
 axs.format(grid=False)
 plot.rc.reset()
-
-
-# %% [raw] raw_mimetype="text/restructuredtext"
-# .. _ug_area:
-#
-# Area plots
-# ----------
-#
-# To make filled "area" plots, use the new `~proplot.axes.Axes.area` and
-# `~proplot.axes.Axes.areax` methods. These are alises for
-# `~matplotlib.axes.Axes.fill_between` and
-# `~matplotlib.axes.Axes.fill_betweenx`, which are now wrapped by
-# `~proplot.wrappers.fill_between_wrapper` and
-# `~proplot.wrappers.fill_betweenx_wrapper`. You can now *stack* or *overlay*
-# columns of data by passing 2D arrays to `~proplot.axes.Axes.area` and
-# `~proplot.axes.Axes.areax`, just like in `pandas`. You can also now draw
-# area plots that *change color* when the fill boundaries cross each other by
-# passing ``negpos=True`` to `~matplotlib.axes.Axes.fill_between`. The most
-# common use case for this is highlighting negative and positive areas with
-# different colors, as shown below.
 
 # %%
 import proplot as plot
@@ -504,7 +497,7 @@ ax.format(title='Scatter plot with cmap')
 data = state.rand(2, 100)
 obj = ax.scatter(
     *data, color=data.sum(axis=0), size=state.rand(100), smin=3, smax=30,
-    marker='o', cmap='plum', colorbar='lr', vmin=0, vmax=2,
+    marker='o', cmap='dark red', colorbar='lr', vmin=0, vmax=2,
     colorbar_kw={'label': 'label', 'locator': 0.5}
 )
 axs.format(xlabel='xlabel', ylabel='ylabel')
