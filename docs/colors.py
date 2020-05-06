@@ -71,7 +71,7 @@ figs = plot.show_colors()
 import proplot as plot
 import numpy as np
 state = np.random.RandomState(51423)
-fig, axs = plot.subplots(nrows=2, aspect=2, axwidth=3.5, share=0)
+fig, axs = plot.subplots(nrows=2, aspect=1.5, axwidth=3.5, share=0)
 
 # Drawing from colormap
 ax = axs[0]

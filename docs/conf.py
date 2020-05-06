@@ -60,7 +60,6 @@ extensions = [
     # 'matplotlib.sphinxext.plot_directive', # see: https://matplotlib.org/sampledoc/extensions.html  # noqa
     'IPython.sphinxext.ipython_console_highlighting',
     'IPython.sphinxext.ipython_directive',  # for ipython highlighting
-    'sphinx_automodapi.automodapi',  # see: https://github.com/lukelbd/sphinx-automodapi/tree/proplot-mods # noqa
     'sphinx.ext.autodoc',  # include documentation from docstrings
     'sphinx.ext.doctest',  # >>> examples
     'sphinx.ext.extlinks',  # for :pr:, :issue:, :commit:
@@ -68,11 +67,12 @@ extensions = [
     'sphinx.ext.todo',  # Todo headers and todo:: directives
     'sphinx.ext.mathjax',  # LaTeX style math
     'sphinx.ext.viewcode',  # view code links
-    'sphinx.ext.autosummary',  # autosummary directive
     'sphinx.ext.napoleon',  # for NumPy style docstrings
     'sphinx.ext.intersphinx',  # external links
+    'sphinx.ext.autosummary',  # autosummary directive
     'sphinxext.custom_roles',  # local extension
     'sphinx_copybutton',
+    'sphinx_automodapi.automodapi',  # see: https://github.com/lukelbd/sphinx-automodapi/tree/proplot-mods # noqa
     'nbsphinx',
     ]
 
@@ -191,8 +191,9 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 exclude_patterns = [
-    '.DS_Store', '_build', '_templates', '_themes', 'sphinxext',
-    'conf.py', '*.ipynb', '**.ipynb_checkpoints',
+    '.DS_Store',
+    '_build', '_templates', '_themes',
+    'conf.py', 'sphinxext', '*.ipynb', '**.ipynb_checkpoints',
 ]
 
 # The name of the Pygments (syntax highlighting) style to use.
