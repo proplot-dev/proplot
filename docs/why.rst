@@ -258,8 +258,8 @@ elements when drawing multiple subplots, namely...
 * ...repeated legends.
 
 These sorts of redundancies are extremely common even in publications, where
-they waste valuable page space. They arise because this is the path of least
-resistance for the default API -- removing redundancies tends to require
+they waste valuable page space. They arise because this is often the path of
+least resistance for the default API -- removing redundancies tends to require
 extra work.
 
 .. rubric:: Solution
@@ -269,8 +269,8 @@ figures.  We tackle this issue using :ref:`shared and spanning axis labels
 <ug_share>` and :ref:`figure-spanning colorbars and legends
 <ug_cbars_figure>`.
 
-* By default, axis tick labels and axis labels are *shared* between subplots
-  in the same row or column. This is controlled by the `sharex`, `sharey`,
+* Axis tick labels and axis labels are *shared* between subplots in the
+  same row or column by default. This is controlled by the `sharex`, `sharey`,
   `spanx`, and `spany` `~proplot.ui.subplots` keyword args.
 * The new `~proplot.figure.Figure` `~proplot.figure.Figure.colorbar` and
   `~proplot.figure.Figure.legend` methods make it easy to draw colorbars and

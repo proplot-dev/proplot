@@ -32,10 +32,9 @@
 # to the `~proplot.axes.Axes.panel` or `~proplot.axes.Axes.panel_axes` methods.
 # The resulting axes are instances of `~proplot.axes.CartesianAxes`.
 #
-# To generate "stacked" panels, simply call `~proplot.axes.Axes.panel` or
-# `~proplot.axes.Axes.panel_axes` more than once. To include panels when
-# centering spanning axis labels and super titles, pass
-# ``includepanels=True`` to `~proplot.figure.Figure`. Panels
+# To generate "stacked" panels, simply call `~proplot.axes.Axes.panel` more
+# than once. To include panels when centering spanning axis labels and super
+# titles, pass ``includepanels=True`` to `~proplot.figure.Figure`. Panels
 # :ref:`do not interfere with the tight layout algorithm <ug_tight>` and
 # :ref:`do not affect the subplot aspect ratios <ug_autosize>`.
 #
@@ -95,7 +94,7 @@ fig, axs = plot.subplots(axwidth=1.5, nrows=2, ncols=2, share=0)
 
 # Panels do not interfere with subplot layout
 for ax, side in zip(axs, 'tlbr'):
-    ax.panel_axes(side, width='3em')
+    ax.panel(side, width='3em')
 axs.format(
     title='Title', suptitle='Complex arrangement of panels',
     collabels=['Column 1', 'Column 2'],

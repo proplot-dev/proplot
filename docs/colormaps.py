@@ -72,7 +72,7 @@
 
 # %%
 import proplot as plot
-fig = plot.show_cmaps()
+fig, axs = plot.show_cmaps()
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -118,10 +118,10 @@ fig = plot.show_cmaps()
 
 # %%
 import proplot as plot
-fig = plot.show_colorspaces(axwidth=1.6, luminance=50)
-fig = plot.show_colorspaces(axwidth=1.6, saturation=60)
-fig = plot.show_colorspaces(axwidth=1.6, hue=0)
-fig = plot.show_channels(
+fig, axs = plot.show_colorspaces(axwidth=1.6, luminance=50)
+fig, axs = plot.show_colorspaces(axwidth=1.6, saturation=60)
+fig, axs = plot.show_colorspaces(axwidth=1.6, hue=0)
+fig, axs = plot.show_channels(
     'magma', 'rocket', 'fire', 'dusk',
     axwidth=1.4, minhue=-180, maxsat=300, rgb=False
 )
@@ -216,8 +216,8 @@ cmap5 = m.cmap
 axs[4].format(title='From list of colors')
 
 # Test the channels
-fig = plot.show_channels(cmap1, cmap2, axwidth=1.4, rgb=False)
-fig = plot.show_channels(
+fig, axs = plot.show_channels(cmap1, cmap2, axwidth=1.4, rgb=False)
+fig, axs = plot.show_channels(
     cmap3, cmap4, cmap5, minhue=-180,
     axwidth=1.4, rgb=False
 )

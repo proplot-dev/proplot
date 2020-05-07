@@ -53,9 +53,9 @@
 #
 # This algorithm also has the following notable properties:
 #
-# * For very simple subplot grids (e.g. ``plot.subplots(ncols=2, nrows=3)``),
-#   `aspect`, `axwidth`, and `axheight` apply to every subplot in the figure --
-#   not just the reference subplot.
+# * For very simple subplot grids (i.e. subplots created with the `ncols` and
+#   `nrows` arguments), the arguments `aspect`, `axwidth`, and `axheight` apply
+#   to every subplot in the figure -- not just the reference subplot.
 # * When the reference subplot `aspect ratio\
 #   <https://matplotlib.org/2.0.2/examples/pylab_examples/equal_aspect_ratio.html>`__
 #   has been manually overridden (e.g. with ``ax.set_aspect(1)``) or is set
@@ -144,27 +144,27 @@ for ref in (1, 2):
 # Automatic subplot spacing
 # -------------------------
 #
-# By default, ProPlot applies a *tight layout* algorithm to every figure.
-# This algorithm automatically adjusts the space between subplot rows and
-# columns and the figure edge to accomadate labels. It can be disabled by
-# passing ``tight=False`` to `~proplot.ui.subplots`.
-#
+# In addition to automatic figure sizing, by default ProPlot applies a *tight layout*
+# algorithm to every figure. This algorithm automatically adjusts the space between
+# subplot rows and columns and the figure edge to accommodate labels.
+# It can be disabled by passing ``tight=False`` to `~proplot.ui.subplots`.
 # While matplotlib has `its own tight layout algorithm
 # <https://matplotlib.org/3.1.1/tutorials/intermediate/tight_layout_guide.html>`__,
-# ProPlot's algorithm permits variable spacing between subsequent subplot
-# rows and columns (see the new `~proplot.gridspec.GridSpec` class) and may
-# change the figure size (depending on the keyword arguments passed to
-# `~proplot.ui.subplots`).
+# ProPlot's algorithm may change the figure size to accommodate the correct spacing
+# and permits variable spacing between subsequent subplot rows and columns (see the
+# new `~proplot.gridspec.GridSpec` class for details).
 #
-# ProPlot's tight layout algorithm can also be easily overridden. When you
+# The tight layout algorithm can also be easily overridden. When you
 # pass a spacing argument like `left`, `right`, `top`, `bottom`, `wspace`, or
-# `hspace` to `~proplot.ui.subplots`, that value is always respected:
+# `hspace` to `~proplot.ui.subplots`, that value is always respected. For example:
 #
-# * With ``left='2em'``, the left margin is fixed but the right, bottom, and
-#   top margins are calculated automatically.
-# * With ``wspace=('3em', None)`` (and ``ncols=3``), the space between the
-#   first two columns is fixed, while the space between the second two columns
-#   is calculated automatically.
+# * ``left='2em'`` fixes the left margin, while the right, bottom, and
+#   top margins are determined automatically.
+# * ``wspace='1em'`` fixes the spaces between subplot columns, while the spaces
+#   between subplot rows are determined automatically.
+# * ``wspace=('3em', None)`` fixes the space between the first two columns of
+#   a three-column plot, while the space between the second two columns is
+#   determined automatically.
 #
 # The below examples demonstrate how the tight layout algorithm permits
 # variable spacing between subplot rows and columns.
@@ -201,7 +201,7 @@ fig, axs = plot.subplots(
 
 # Formatting that stress-tests the algorithm
 axs.format(
-    xlim=(-1.2, 1.2), ylim=(-1.2, 1.2), xlocator=1, ylocator=1,
+    xlim=(-1.5, 1.5), ylim=(-1.5, 1.5), xlocator=1, ylocator=1,
     suptitle='Tight layout with user overrides',
     rowlabels=['Row 1', 'Row 2', 'Row 3'],
     collabels=['Column 1', 'Column 2', 'Column 3', 'Column 4']
@@ -245,27 +245,29 @@ with plot.rc.context(small='12px', large='15px'):
         wspace=('10pt', '20pt'), right='10mm'
     )
     panel = axs[2].panel_axes('r', width='2em')
+    panel.format(xlim=(0, 1))
 axs.format(
     suptitle='Arguments with arbitrary units',
-    xlabel='x axis', ylabel='y axis'
+    xlabel='x axis', ylabel='y axis',
+    xlim=(0, 1), ylim=(0, 1),
 )
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_abc:
 #
-# Subplot a-b-c labels
+# A-b-c subplot labels
 # --------------------
 #
 # ProPlot can be used to add "a-b-c" labels to subplots. This is possible
-# because `~proplot.ui.subplots` assigns unique
-# `~proplot.axes.Axes.number`\ s to each subplot. If you passed an `array` to
+# because `~proplot.ui.subplots` assigns unique `~proplot.axes.Axes.number`\ s
+# to each subplot. If you :ref:`passed an array <ug_intro>` to
 # `~proplot.ui.subplots`, the subplot numbers correspond to the numbers in
-# the array. Otherwise, if you used the `ncols` and `nrows` keyword
-# arguments, the number order is row-major by default but can be switched to
-# column-major by passing ``order='C'`` to `~proplot.ui.subplots`. The number
-# order also determines the subplot order in the
-# `~proplot.ui.SubplotsContainer` returned by `~proplot.ui.subplots`.
+# the array. If you used the `ncols` and `nrows` keyword arguments, the number
+# order is row-major by default but can be switched to column-major by passing
+# ``order='C'`` to `~proplot.ui.subplots`. The number order also determines the
+# subplot order in the `~proplot.ui.SubplotsContainer` returned by
+# `~proplot.ui.subplots`.
 #
 # To turn on "a-b-c" labels, set :rcraw:`abc` to ``True`` or pass
 # ``abc=True`` to `~proplot.axes.Axes.format` (see
@@ -287,29 +289,33 @@ axs.format(
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_share:
 #
-# Shared and spanning labels
-# --------------------------
+# Axis sharing
+# ------------
 #
-# Matplotlib has an "axis sharing" feature that holds axis limits the same
-# for axes within a grid of subplots. But this has no effect on the axis
-# labels and tick labels, which can lead to lots of redundancies.
+# Redundant labels are a common problem for figures with lots of subplots. To
+# address this, `matplotlib.pyplot.subplots` includes `sharex` and `sharey`
+# keywords that permit sharing axis limits, ticks, and tick labels between like
+# rows and columns of subplots. However there is no convenient way to enable
+# axis sharing between complex grids of subplots, nor is there a way to share axis
+# labels between subplots in the same row or column.
 #
-# To help you eliminate these redundancies, ProPlot introduces four
-# axis-sharing options and a new spanning label option, controlled by the
-# `share`, `sharex`, `sharey`, `span`, `spanx`, and `spany`
-# `~proplot.ui.subplots` keyword args.
+# ProPlot expands upon this feature by introducing a new option for drawing
+# labels that "span" subplots in the same row or column, controlled by the
+# `spanx` and `spany` keywords, along with four axis-sharing "levels"
+# rather than just one, controlled with the `sharex` and `sharey` keywords:
 #
-# #. Level ``1`` hides inner *x* and *y* axis labels.
-# #. Level ``2`` is the same as ``1``, but the *x* and *y* axis limits are locked.
-# #. Level ``3`` is the same as ``2``, but the *x* and *y* tick labels are hidden.
+# * Level ``0`` disables axis sharing.
+# * Level ``1`` shares duplicate *x* and *y* axis labels, but nothing else.
+# * Level ``2`` is the same as ``1``, but the *x* and *y* axis limits, ticks,
+#   and scales are also shared.
+# * Level ``3`` is the same as ``2``, but the *x* and *y* tick labels are
+#   also shared.
 #
-# "Spanning labels" are centered *x* and *y* axis labels used for subplots
-# whose spines are on the same row or column. See the below example.
-#
-# Note that the the "shared" and "spanning" axes are determined automatically
-# based on the extent of each subplot in the `~proplot.gridspec.GridSpec`.
-# Since ProPlot uses just one `~proplot.gridspec.GridSpec` per figure, this
-# can be done with zero ambiguity.
+# These features are best illustrated by example (see below). Note that since
+# "shared" and "spanning" labels are determined automatically based on position of
+# each subplot in the `~proplot.gridspec.GridSpec`, these features work for
+# arbitrarily complex figures. Since ProPlot uses just one `~proplot.gridspec.GridSpec`
+# per figure, this can be done with zero ambiguity.
 
 # %%
 import proplot as plot
@@ -326,14 +332,14 @@ for scale in (1, 3, 7, 0.2):
 # Same plot with different sharing and spanning settings
 for share in (0, 1, 2, 3):
     fig, axs = plot.subplots(
-        ncols=4, aspect=1, axwidth=1.2,
+        ncols=4, aspect=1, axwidth=1.06,
         sharey=share, spanx=share // 2
     )
     for ax, data in zip(axs, datas):
         on = ['off', 'on'][share // 2]
         ax.plot(data, cycle=colors)
         ax.format(
-            suptitle=f'Axis-sharing level: {share}, spanning labels {on}',
+            suptitle=f'Sharing level {share}, spanning labels {on}',
             grid=False, xlabel='spanning', ylabel='shared'
         )
 

@@ -198,7 +198,7 @@ for data, mode, fair in zip(
     ('fair', 'unfair')
 ):
     for fair in ('fair', 'unfair'):
-        norm = plot.Norm('diverging', unfair=(fair == 'unfair'))
+        norm = plot.Norm('diverging', fair=(fair == 'fair'))
         ax = axs[i]
         m = ax.contourf(data, cmap=cmap, norm=norm)
         ax.colorbar(m, loc='b', locator=1)

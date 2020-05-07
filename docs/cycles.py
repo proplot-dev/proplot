@@ -46,7 +46,7 @@
 
 # %%
 import proplot as plot
-fig = plot.show_cycles()
+fig, axs = plot.show_cycles()
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"

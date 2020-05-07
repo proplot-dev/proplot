@@ -30,15 +30,13 @@
 #
 # ProPlot adds new color names from the `XKCD color survey
 # <https://blog.xkcd.com/2010/05/03/color-survey-results/>`__  and
-# the `"Open color" <https://github.com/yeun/open-color>`__ Github project.
-# This was inspired by `seaborn
-# <https://seaborn.pydata.org/tutorial/color_palettes.html>`__. Use
-# `~proplot.show.show_colors` to generate tables of these colors. Note that
-# the matplotlib's native `X11 named colors
+# the `Open Color <https://github.com/yeun/open-color>`__ UI design color
+# palettes. You can use `~proplot.show.show_colors` to generate a table of these
+# colors. Note that the matplotlib's native `X11 named colors
 # <https://matplotlib.org/examples/color/named_colors.html>`__ are still
-# registered, but we encourage using colors from the tables instead, and
-# some of the X11 color names may be overwritten by the XKCD names. We prefer
-# the XKCD color names because the selection is larger and the names are
+# registered, but some of the X11 color names may be overwritten by the XKCD names,
+# and we encourage choosing colors from the below tables instead. ProPlot
+# registers XKCD colors because the selection is larger and the names are
 # more likely to match your intuition for what a color "should" look like.
 #
 # To reduce the number of registered color names to a more manageable size,
@@ -50,7 +48,7 @@
 
 # %%
 import proplot as plot
-figs = plot.show_colors()
+fig, axs = plot.show_colors()
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"

@@ -18,7 +18,7 @@
 # Font selection
 # ==============
 #
-# ProPlot registers several new font families and includes tools for adding
+# ProPlot registers several new fonts and includes tools for adding
 # your own fonts. These features are described below.
 #
 #
@@ -38,13 +38,12 @@
 # is `DejaVu Sans <https://dejavu-fonts.github.io>`__, which comes packaged with
 # matplotlib.
 #
-# Matplotlib uses DejaVu Sans in part because it includes glyphs
-# for a wider range of mathematical symbols. However in your opinion, DejaVu Sans
-# not very aesthetically pleasing or particularly readable, and it is
-# seldom used outside of the matplotlib ecosystem.
-# To improve the font selection and make things consistent across different
-# workspaces, ProPlot comes packaged with the open-source
-# `TeX Gyre <http://www.gust.org.pl/projects/e-foundry/tex-gyre>`__ font series
+# Matplotlib uses DejaVu Sans in part because it includes glyphs for a very wide
+# range of symbols, especially mathematical symbols. However DejaVu Sans is seldom
+# used outside of matplotlib and (in our opinion) is not very aesthetically pleasing.
+# To improve the font selection while keeping things consistent across different
+# workstations, ProPlot comes packaged with the open-source
+# `TeX Gyre font series <https://ctan.org/pkg/tex-gyre?lang=en>`__
 # and adds them as the default entries for all of matplotlib's font famlies:
 #
 # * The `Century <https://en.wikipedia.org/wiki/Century_type_family>`__ lookalike
@@ -58,27 +57,26 @@
 # * The `Avant Garde <https://en.wikipedia.org/wiki/ITC_Avant_Garde>`__ lookalike
 #   :rcraw:`font.fantasy` = ``'TeX Gyre Adventor'``.
 #
-# Thus after importing ProPlot, even on sparse Linux servers with limited font
-# selection, the default font will be a more conventional and aesthetically
-# pleasing Helvetica lookalike. The new font priority lists for each font family
-# are shown in the :ref:`default proplotrc file <ug_proplotrc>`.
+# Thus after importing ProPlot, the default font will be the more conventional
+# and aesthetically pleasing Helvetica lookalike
+# `TeX Gyre Heros <https://ctan.org/pkg/tex-gyre-heros>`__. The new font priority
+# lists for each font family are shown in the
+# :ref:`default proplotrc file <ug_proplotrc>`.
 #
 # To compare different fonts, use the `~proplot.show.show_fonts` command. By
-# default, this displays the *sans-serif* fonts available on your system and
-# included with ProPlot. The default table on a sparse Linux server is shown
+# default, this displays the *sans serif* fonts available on your system and
+# packaged with ProPlot. The default table on a sparse Linux server is shown
 # below. The "¤" symbol appears where characters for a particular font are
-# unavailable. When you are actually making plots, "¤" will be filled with
-# the character from a fallback font.
-#
-# It should be noted that most of the TeX Gyre fonts have limited character
-# availability. If your plots contain lots of mathematical symbols,
-# you may want to switch the default :rcraw:`font.family` to DejaVu Sans, which
-# is packaged with matplotlib, or `Fira Math <https://github.com/firamath/firamath>`__,
-# which is also packaged with ProPlot.
+# unavailable (when making plots, "¤" is replaced with the character from
+# a fallback font). Since most TeX Gyre fonts have limited
+# character sets, if your plots contain lots of mathematical symbols,
+# you may want to set :rcraw:`font.family` to DejaVu Sans or
+# `Fira Math <https://github.com/firamath/firamath>`__, which is packaged
+# with ProPlot.
 
 # %%
 import proplot as plot
-fig = plot.show_fonts()
+fig, axs = plot.show_fonts()
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -94,14 +92,13 @@ fig = plot.show_fonts()
 # the :ref:`configuration section <ug_config>` for details.
 #
 # Sometimes the font you would like to use *is* installed, but the font file
-# is not stored under the matplotlib-compatible ``.ttf``, ``.otf``, or
-# ``.afm`` formats. For example, several macOS fonts are unavailable because
-# they are stored as ``.dfont`` collections. Also, while matplotlib nominally
-# supports ``.ttc`` collections, ProPlot manually removes them because
-# figures with ``.ttc`` fonts
+# is not stored under the matplotlib-compatible ``.ttf``, ``.otf``, or ``.afm``
+# formats. For example, several macOS fonts are unavailable because they are
+# stored as ``.dfont`` collections. Also, while matplotlib nominally supports
+# ``.ttc`` collections, ProPlot ignores them because figures with ``.ttc`` fonts
 # `cannot be saved as PDFs <https://github.com/matplotlib/matplotlib/issues/3135>`__.
-# You can get matplotlib to use these fonts by expanding the "collections"
-# into individual ``.ttf`` files with the
+# You can get matplotlib to use ``.dfont`` and ``.ttc`` collections by
+# expanding them into individual ``.ttf`` files with the
 # `DFontSplitter application <https://peter.upfold.org.uk/projects/dfontsplitter>`__,
 # then saving the files in-place or in the ``~/.proplot/fonts`` folder.
 #
