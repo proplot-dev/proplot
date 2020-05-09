@@ -37,7 +37,6 @@ __all__ = [
     'MidpointNorm', 'PerceptuallyUniformColormap',
     'cmaps', 'colors', 'cycles', 'fonts',
     'make_mapping_array',
-    'register_cmaps', 'register_colors', 'register_cycles', 'register_fonts',
     'Colormap', 'Colors', 'Cycle', 'Norm',
 ]
 
@@ -2969,113 +2968,123 @@ def register_cycles():
             cycles.append(cmap.name)
 
 
-@_timer
-def register_colors():
+@docstring.add_snippets
+def register_colors(user=True, default=False, space='hcl', margin=0.10):
     """
-    Add color names packaged with ProPlot or saved to the ``~/.proplot/colors``
-    folder. ProPlot loads the XKCD color survey database, colors from the
-    open-color project, and any user input files. The XKCD colors are filtered
-    to a subset that is "perceptually distinct" in the HCL colorspace. Files
-    must just have one line per color in the format ``name : hex``.
-    Whitespace is ignored.
+    Register the `open-color <https://yeun.github.io/open-color/>`_ colors,
+    XKCD `color survey <https://xkcd.com/color/rgb/>`_ colors, and colors
+    saved to the ``~/.proplot/colors`` folder. This is called on import.
+    The color survey colors are filtered to a subset that is "perceptually
+    distinct" in the HCL colorspace. The user color names are loaded from
+    ``.txt`` files saved in ``~/.proplot/colors``. Each file should contain
+    one line per color in the format ``name : hex``. Whitespace is ignored.
 
-    This is called on import. Use `show_colors` to generate a table of the
-    resulting colors.
+    To visualize the registered colors, use `~proplot.show.show_colors`.
+
+    Parameters
+    ----------
+    %(register_colors.params)s
+    space : {'hcl', 'hsl', 'hpl'}, optional
+        The colorspace used to detect "perceptually distinct" colors.
+    margin : float, optional
+        The margin by which a color's normalized hue, saturation, and
+        luminance channel values must differ from the normalized channel
+        values of the other colors to be deemed "perceptually distinct."
     """
     # Reset native colors dictionary
-    colors.clear()
     mcolors.colorConverter.colors.clear()  # clean out!
     mcolors.colorConverter.cache.clear()  # clean out!
 
-    # Add in CSS4 and 'base' colors, so no surprises for user
-    for name, dict_ in (('base', COLORS_BASE), ('css', mcolors.CSS4_COLORS)):
+    # Add in base colors and CSS4 colors so user has no surprises
+    for name, dict_ in (('base', BASE_COLORS), ('css', mcolors.CSS4_COLORS)):
         mcolors.colorConverter.colors.update(dict_)
-        colors[name] = sorted(dict_)
 
     # Load colors from file and get their HCL values
     # NOTE: Colors that come *later* overwrite colors that come earlier.
-    hex = re.compile(rf'\A{COLORS_HEXPATTERN}\Z')  # match each string
-    mapping = {}  # key is *color name*, value is (category, hexstring)
-    for i, path in enumerate(_get_data_paths('colors')):
-        paths = sorted(glob.glob(os.path.join(path, '*.txt')))
-        for file in paths:
-            # Read data
-            loaded = []
-            with open(file, 'r') as f:
-                for cnt, line in enumerate(f):
-                    # Load colors from file
-                    stripped = line.strip()
-                    if not stripped or stripped[0] == '#':
-                        continue
-                    pair = tuple(
-                        item.strip().lower() for item in line.split(':')
+    hex = re.compile(rf'\A{pcolors.HEX_PATTERN}\Z')  # match each string
+    for i, dirname, filename in _iter_data_paths('colors', user=user, default=default):
+        path = os.path.join(dirname, filename)
+        cat, ext = os.path.splitext(filename)
+        if ext != '.txt':
+            raise ValueError(
+                f'Unknown color data file extension ({path!r}). '
+                'All files in this folder should have extension .txt.'
+            )
+
+        # Read data
+        loaded = {}
+        with open(path, 'r') as fh:
+            for cnt, line in enumerate(fh):
+                # Load colors from file
+                stripped = line.strip()
+                if not stripped or stripped[0] == '#':
+                    continue
+                pair = tuple(
+                    item.strip().lower() for item in line.split(':')
+                )
+                if len(pair) != 2 or not hex.match(pair[1]):
+                    warnings._warn_proplot(
+                        f'Illegal line #{cnt + 1} in file {path!r}:\n'
+                        f'{line!r}\n'
+                        f'Lines must be formatted as "name: hexcolor".'
                     )
-                    if len(pair) != 2 or not hex.match(pair[1]):
-                        _warn_proplot(
-                            f'Illegal line #{cnt + 1} in file {file!r}:\n'
-                            f'{line!r}\n'
-                            f'Lines must be formatted as "name: hexcolor".'
-                        )
-                        continue
-                    # Never overwrite "base" colors with xkcd colors.
-                    # Only overwrite with user colors.
-                    if i == 0 and pair[0] in COLORS_BASE:
-                        continue
-                    loaded.append(pair)
+                    continue
+                # Never overwrite "base" colors with xkcd colors.
+                # Only overwrite with user colors.
+                name, color = pair
+                if i == 0 and name in BASE_COLORS:
+                    continue
+                loaded[name] = color
 
-            # Add *all* colors
-            cat, _ = os.path.splitext(os.path.basename(file))
-            if i == 1 or cat != 'xkcd':
-                for name, color in loaded:
-                    mapping[name] = (cat, color)
+        # Add every user color and every opencolor color and ensure XKCD
+        # colors are "perceptually distinct".
+        if i == 1:
+            mcolors.colorConverter.colors.update(loaded)
+        elif cat == 'opencolor':
+            mcolors.colorConverter.colors.update(loaded)
+            OPEN_COLORS.update(loaded)
+        elif cat == 'xkcd':
+            # Always add these colors, but make sure not to add other
+            # colors too close to them.
+            hcls = []
+            filtered = []
+            for name in ALWAYS_ADD:
+                color = loaded.pop(name, None)
+                if color is None:
+                    continue
+                if 'grey' in name:
+                    name = name.replace('grey', 'gray')
+                hcls.append(to_xyz(color, space=space))
+                filtered.append((name, color))
+                mcolors.colorConverter.colors[name] = color
+                XKCD_COLORS[name] = color
 
-            # Ensure XKCD colors are "percetually distinct"
-            # NOTE: We do not filter colors *across categories*. The whole
-            # point of this is simply to make it easier for users to pick
-            # colors out of each color table; it doesn't matter if colors
-            # between *different* tables are similar.
-            else:
-                # Get HCL data
-                hcls = []
-                data = []
-                for name, color in loaded:
-                    for regex, sub in COLORS_SUBREGEXES:
-                        name = regex.sub(sub, name)  # sanitized name
-                    if COLORS_RMREGEX.search(name):
-                        continue  # removed "unpofessional" names
-                    if name in COLORS_ADD:
-                        mapping[name] = (cat, color)
-                        continue  # manually added particular names
-                    hcls.append(to_xyz(color, space=COLORS_SPACE))
-                    data.append((name, color))  # category name pair
+            # Get locations of "perceptually distinct" colors
+            # WARNING: Unique axis argument requires numpy version >=1.13
+            for name, color in loaded.items():
+                for string, replace in TRANSLATE_COLORS:
+                    if string in name:
+                        name = name.replace(string, replace)
+                if any(string in name for string in ALWAYS_REMOVE):
+                    continue  # remove "unpofessional" names
+                hcls.append(to_xyz(color, space=space))
+                filtered.append((name, color))  # category name pair
+            hcls = np.asarray(hcls)
+            if not hcls.size:
+                continue
+            hcls = hcls / np.array([360, 100, 100])
+            hcls = np.round(hcls / margin).astype(np.int64)
+            _, idxs = np.unique(hcls, return_index=True, axis=0)
 
-                # Remove colors that are 'too similar' by rounding to the
-                # nearest COLORS_HCLTHRESH in each channel and making sure at
-                # least *one* channel is distinct from the others.
-                # WARNING: Unique axis argument requires numpy version >=1.13
-                # NOTE: We override this for colors listed in COLORS_ADD.
-                hcls = np.array(hcls)
-                if hcls.size > 0:
-                    hcls = hcls / np.array([360, 100, 100])
-                    hcls = np.round(hcls / COLORS_HCLTHRESH).astype(np.int64)
-                    _, idxs, _ = np.unique(
-                        hcls, return_index=True, return_counts=True, axis=0
-                    )
-                    for idx, (name, color) in enumerate(data):
-                        if idx in idxs:
-                            mapping[name] = (cat, color)
-
-    # Finally register colors in the dictionary and add names
-    # to the 'colors' dictionary in the respective category
-    # NOTE: Some colors may have been overwritten
-    for name, (cat, color) in mapping.items():
-        mcolors.colorConverter.colors[name] = color
-        if cat not in colors:
-            colors[cat] = []
-        colors[cat].append(name)
+            # Register "distinct" colors
+            for idx in idxs:
+                name, color = filtered[idx]
+                mcolors.colorConverter.colors[name] = color
+                XKCD_COLORS[name] = color
+        else:
+            raise ValueError(f'Unknown proplot color database {path!r}.')
 
 
-@_timer
 def register_fonts():
     """
     Add fonts packaged with ProPlot or saved to the ``~/.proplot/fonts``
@@ -3084,13 +3093,10 @@ def register_fonts():
 <https://gree2.github.io/python/2015/04/27/python-change-matplotlib-font-on-mac>`__
     for a guide on converting various other font file types to ``.ttf`` and
     ``.otf`` for use with matplotlib.
+
+    To visualize the registered fonts, use `~proplot.show.show_fonts`.
     """
-    # Add proplot path to TTFLIST and rebuild cache *only if necessary*
-    # * Nice gallery of sans-serif fonts:
-    #   https://www.lifewire.com/classic-sans-serif-fonts-clean-appearance-1077406 # noqa
-    # * Sources for downloading more fonts:
-    #   https://fonts.google.com/?category=Sans+Serif
-    #   https://www.cufonfonts.com
+    # Find proplot fonts
     # WARNING: If you include a font file with an unrecognized style,
     # matplotlib may use that font instead of the 'normal' one! Valid styles:
     # 'ultralight', 'light', 'normal', 'regular', 'book', 'medium', 'roman',
@@ -3098,20 +3104,16 @@ def register_fonts():
     # https://matplotlib.org/api/font_manager_api.html
     # For macOS the only fonts with 'Thin' in one of the .ttf file names
     # are Helvetica Neue and .SF NS Display Condensed. Never try to use these!
-    paths = ':'.join(_get_data_paths('fonts')[::-1])  # user paths come first
-    if 'TTFPATH' not in os.environ:
-        os.environ['TTFPATH'] = paths
-    elif paths not in os.environ['TTFPATH']:
-        os.environ['TTFPATH'] += (':' + paths)
-
-    # Detect user-input .ttc fonts
     import matplotlib.font_manager as mfonts
-    fnames_proplot = {*mfonts.findSystemFonts(paths.split(':'))}
+    paths_proplot = _get_data_paths('fonts', reverse=True)
+    fnames_proplot = set(mfonts.findSystemFonts(paths_proplot))
+
+    # Detect user-input ttc fonts and issue warning
     fnames_proplot_ttc = {
         file for file in fnames_proplot if os.path.splitext(file)[1] == '.ttc'
     }
     if fnames_proplot_ttc:
-        _warn_proplot(
+        warnings._warn_proplot(
             'Ignoring the following .ttc fonts because they cannot be '
             'saved into PDF or EPS files (see matplotlib issue #3135): '
             + ', '.join(map(repr, sorted(fnames_proplot_ttc)))
@@ -3122,12 +3124,23 @@ def register_fonts():
     fnames_all = {font.fname for font in mfonts.fontManager.ttflist}
     fnames_proplot -= fnames_proplot_ttc
     if not fnames_all >= fnames_proplot:
-        _warn_proplot('Rebuilding font cache.')
+        warnings._warn_proplot('Rebuilding font cache.')
         if hasattr(mfonts.fontManager, 'addfont'):
+            # New API lets us add font files manually
             for fname in fnames_proplot:
                 mfonts.fontManager.addfont(fname)
             mfonts.json_dump(mfonts.fontManager, mfonts._fmcache)
         else:
+            # Old API requires us to modify TTFPATH
+            # NOTE: Previously we tried to modify TTFPATH before importing
+            # font manager with hope that it would load proplot fonts on
+            # initialization. But 99% of the time font manager just imports
+            # the FontManager from cache, so this doesn't work.
+            paths = ':'.join(paths_proplot)
+            if 'TTFPATH' not in os.environ:
+                os.environ['TTFPATH'] = paths
+            elif paths not in os.environ['TTFPATH']:
+                os.environ['TTFPATH'] += ':' + paths
             mfonts._rebuild()
 
     # Remove ttc files *after* rebuild
