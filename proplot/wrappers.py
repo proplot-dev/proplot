@@ -21,6 +21,7 @@ import matplotlib.patheffects as mpatheffects
 import matplotlib.patches as mpatches
 import matplotlib.colors as mcolors
 import matplotlib.artist as martist
+from .utils import to_rgb
 import matplotlib.legend as mlegend
 import matplotlib.cm as mcm
 from .internals import warnings
@@ -2993,7 +2994,14 @@ or colormap-spec
                     color = obj.get_color()
                 else:
                     color = obj.get_facecolor()
-                colors.append(color)
+                if isinstance(color, np.ndarray):
+                    color = color.squeeze()  # e.g. scatter plot
+                    if color.ndim != 1:
+                        raise ValueError(
+                            'Cannot make colorbar from list of artists '
+                            f'with more than one color: {color!r}.'
+                        )
+                colors.append(to_rgb(color))
             cmap = mcolors.ListedColormap(colors, '_no_name')
 
             # Try to infer values from labels
