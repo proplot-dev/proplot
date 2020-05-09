@@ -34,14 +34,19 @@ def _rename_obj(old_name, new_obj, version=None):
     """
     new_name = new_obj.__name__
     version = 'a future version' if version is None else f'version {version}'
+    type_ = 'class' if isinstance(new_obj, type) else 'function'
 
     def obj(*args, **kwargs):
         _warn_proplot(
-            f'{old_name!r} is deprecated and will be removed in '
-            f'{version}. Please use {new_name!r} instead.'
+            f'{old_name!r} is deprecated and will be removed in {version}. '
+            f'Please use {new_name!r} instead.',
         )
-        return new_obj(*args, **kwargs)
+        return new_obj(*args, **kwargs)  # call function or instantiate class
     obj.__name__ = old_name
+    obj.__doc__ = f"""
+{type_.title()} {old_name!r} is deprecated and will be removed in {version}.
+Please use {new_name!r} instead.
+"""
     return obj
 
 
