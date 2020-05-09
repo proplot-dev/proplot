@@ -23,6 +23,7 @@ import matplotlib.colors as mcolors
 import matplotlib.artist as martist
 import matplotlib.legend as mlegend
 import matplotlib.cm as mcm
+from .internals import warnings
 from numbers import Number
 from .rctools import rc
 try:  # use this for debugging instead of print()!
@@ -41,7 +42,7 @@ __all__ = [
     'cycle_changer',
     'colorbar_wrapper',
     'fill_between_wrapper', 'fill_betweenx_wrapper', 'hist_wrapper',
-    'legend_wrapper', 'plot_wrapper', 'scatter_wrapper',
+    'legend_wrapper', 'scatter_wrapper',
     'standardize_1d', 'standardize_2d', 'text_wrapper',
     'violinplot_wrapper',
 ]
@@ -909,30 +910,24 @@ def add_errorbars(
     return obj
 
 
-def plot_wrapper(self, func, *args, cmap=None, values=None, **kwargs):
+def _plot_wrapper_deprecated(
+    self, func, *args, cmap=None, values=None, **kwargs
+):
     """
-    Calls `~proplot.axes.Axes.parametric` if the `cmap` argument was supplied,
-    otherwise calls `~matplotlib.axes.Axes.plot`. Wraps %(methods)s.
-
-    Parameters
-    ----------
-    *args : (y,), (x, y), or (x, y, fmt)
-        Passed to `~matplotlib.axes.Axes.plot`.
-    cmap, values : optional
-        Passed to `~proplot.axes.Axes.parametric`.
-
-    Other parameters
-    ----------------
-    **kwargs
-        `~matplotlib.lines.Line2D` properties.
+    Calls `~proplot.axes.Axes.parametric` in certain cases, but this behavior
+    is now deprecated.
     """
     if len(args) > 3:  # e.g. with fmt string
         raise ValueError(f'Expected 1-3 positional args, got {len(args)}.')
     if cmap is None:
-        lines = func(self, *args, values=values, **kwargs)
+        return func(self, *args, values=values, **kwargs)
     else:
-        lines = self.parametric(*args, cmap=cmap, values=values, **kwargs)
-    return lines
+        warnings._warn_proplot(
+            'Drawing "parametric" plots with ax.plot(..., cmap=cmap, values='
+            'values) is deprecated and will be removed in a future version. '
+            'Please use ax.parametric(..., cmap=cmap, values=values) instead.'
+        )
+        return self.parametric(*args, cmap=cmap, values=values, **kwargs)
 
 
 def scatter_wrapper(
@@ -3289,7 +3284,7 @@ _cycle_changer = _wrapper_decorator(cycle_changer)
 _fill_between_wrapper = _wrapper_decorator(fill_between_wrapper)
 _fill_betweenx_wrapper = _wrapper_decorator(fill_betweenx_wrapper)
 _hist_wrapper = _wrapper_decorator(hist_wrapper)
-_plot_wrapper = _wrapper_decorator(plot_wrapper)
+_plot_wrapper = _wrapper_decorator(_plot_wrapper_deprecated)
 _scatter_wrapper = _wrapper_decorator(scatter_wrapper)
 _standardize_1d = _wrapper_decorator(standardize_1d)
 _standardize_2d = _wrapper_decorator(standardize_2d)
