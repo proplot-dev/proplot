@@ -8,7 +8,8 @@ pyplot-inspired functions for creating figures and related classes.
 import os
 import numpy as np
 import functools
-from .internals import warnings
+from .internals import _not_none
+from . import warnings
 import inspect
 from . import axes as paxes
 from . import gridspec as pgridspec
@@ -17,8 +18,8 @@ import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
 from numbers import Integral
 from .rctools import rc
+from . import projs
 from .utils import _warn_proplot, _notNone, _counter, _setstate, units  # noqa
-from . import projs, axes
 try:  # use this for debugging instead of print()!
     from icecream import ic
 except ImportError:  # graceful fallback if IceCream isn't installed
@@ -111,12 +112,12 @@ def _canvas_preprocessor(canvas, method):
                     ax._draw_auto_legends_colorbars()  # may insert panels:
             resize = rc['backend'] != 'nbAgg'
             if resize:
-                fig._adjust_aspect()  # resizes figure
+                fig._update_geometry_from_aspect(resize=resize)  # resizes figure
             if fig._auto_tight:
-                fig._adjust_tight_layout(renderer, resize=resize)
-            fig._align_axislabels(True)
-            fig._align_labels(renderer)
-            fallback = _notNone(
+                fig._update_geometry_from_tight_layout(renderer, resize=resize)
+            fig._align_labels_axis(True)
+            fig._align_labels_figure(renderer)
+            fallback = _not_none(
                 fig._fallback_to_cm, rc['mathtext.fallback_to_cm']
             )
             with rc.context({'mathtext.fallback_to_cm': fallback}):
@@ -753,7 +754,7 @@ class Figure(mfigure.Figure):
         self.set_size_inches(figsize, auto=True)
         self._gridspec_main.update(**gridspec_kw)
 
-    def _adjust_tight_layout(self, renderer, resize=True):
+    def _update_geometry_from_tight_layout(self, renderer, resize=True):
         """
         Apply tight layout scaling that permits flexible figure
         dimensions and preserves panel widths and subplot aspect ratios.
@@ -767,8 +768,8 @@ class Figure(mfigure.Figure):
 
         # Temporarily disable spanning labels and get correct
         # positions for labels and suptitle
-        self._align_axislabels(False)
-        self._align_labels(renderer)
+        self._align_labels_axis(False)
+        self._align_labels_figure(renderer)
 
         # Tight box *around* figure
         # Get bounds from old bounding box
@@ -788,7 +789,7 @@ class Figure(mfigure.Figure):
         ):
             previous = subplots_orig_kw[key]
             current = subplots_kw[key]
-            subplots_kw[key] = _notNone(previous, current - offset + pad)
+            subplots_kw[key] = _not_none(previous, current - offset + pad)
 
         # Get arrays storing gridspec spacing args
         axpad = self._axpad
@@ -827,11 +828,10 @@ class Figure(mfigure.Figure):
 
                 # Find axes that abutt aginst this space on each row
                 groups = []
-                # i.e. right/bottom edge abutts against this space
-                filt1 = ralong[:, 1] == i
-                # i.e. left/top edge abutts against this space
-                filt2 = ralong[:, 0] == i + 1
+                filt1 = ralong[:, 1] == i  # i.e. right/bottom edge abutts against this
+                filt2 = ralong[:, 0] == i + 1  # i.e. left/top edge abutts against this
                 for j in range(nacross):  # e.g. each row
+
                     # Get indices
                     filt = (racross[:, 0] <= j) & (j <= racross[:, 1])
                     if sum(filt) < 2:  # no interface here
@@ -844,6 +844,7 @@ class Figure(mfigure.Figure):
                     elif not idx1.size or not idx2.size:
                         continue
                     idx1, idx2 = idx1[0], idx2[0]
+
                     # Put these axes into unique groups. Store groups as
                     # (left axes, right axes) or (bottom axes, top axes) pairs.
                     ax1, ax2 = axs[idx1], axs[idx2]
@@ -858,6 +859,7 @@ class Figure(mfigure.Figure):
                             break
                     if newgroup:
                         groups.append([{ax1}, {ax2}])  # form new group
+
                 # Get spaces
                 # Layout is lspace, lspaces[0], rspaces[0], wspace, ...
                 # so panels spaces are located where i % 3 is 1 or 2
@@ -868,7 +870,7 @@ class Figure(mfigure.Figure):
                     jspaces.append((x2 - x1) / self.dpi)
                 if jspaces:
                     space = max(0, space - min(jspaces) + pad)
-                    space = _notNone(space_orig, space)  # user input overwrite
+                    space = _not_none(space_orig, space)  # overwritten by user
                 jspace[i] = space
             spaces.append(jspace)
 
@@ -882,22 +884,23 @@ class Figure(mfigure.Figure):
             subplots_kw.update(width=width, height=height)
 
         # Apply new spacing
-        figsize, gridspec_kw, _ = _subplots_geometry(**subplots_kw)
+        figsize, gridspec_kw, _ = pgridspec._calc_geometry(**subplots_kw)
+        self._gridspec_main.update(**gridspec_kw)
         if resize:
             self.set_size_inches(figsize, auto=True)
-        self._gridspec_main.update(**gridspec_kw)
 
-    def _align_axislabels(self, b=True):
+    def _align_labels_axis(self, b=True):
         """
         Align spanning *x* and *y* axis labels in the perpendicular
         direction and, if `b` is ``True``, the parallel direction.
         """
         # TODO: Ensure this is robust to complex panels and shared axes
-        # NOTE: Need to turn off aligned labels before _adjust_tight_layout
+        # NOTE: Need to turn off aligned labels before
+        # _update_geometry_from_tight_layout
         # call, so cannot put this inside Axes draw
         tracker = {*()}
         for ax in self._axes_main:
-            if not isinstance(ax, axes.XYAxes):
+            if not isinstance(ax, paxes.CartesianAxes):
                 continue
             for x, axis in zip('xy', (ax.xaxis, ax.yaxis)):
                 side = axis.get_label_position()
@@ -908,6 +911,7 @@ class Figure(mfigure.Figure):
                 axs = ax._get_side_axes(side)
                 for _ in range(2):
                     axs = [getattr(ax, '_share' + x) or ax for ax in axs]
+
                 # Align axis label offsets
                 axises = [getattr(ax, x + 'axis') for ax in axs]
                 tracker.update(axises)
@@ -918,12 +922,13 @@ class Figure(mfigure.Figure):
                             # copied from source code, add to grouper
                             grp.join(axs[0], ax)
                     elif align:
-                        _warn_proplot(
+                        warnings._warn_proplot(
                             f'Aligning *x* and *y* axis labels required '
                             f'matplotlib >=3.1.0'
                         )
                 if not span:
                     continue
+
                 # Get spanning label position
                 c, spanax = self._get_align_coord(side, axs)
                 spanaxis = getattr(spanax, x + 'axis')
@@ -951,7 +956,7 @@ class Figure(mfigure.Figure):
                         'position': position, 'transform': transform
                     })
 
-    def _align_labels(self, renderer):
+    def _align_labels_figure(self, renderer):
         """
         Adjust the position of row and column labels, and align figure super
         title accounting for figure margins and axes and figure panels.
@@ -1414,9 +1419,9 @@ class Figure(mfigure.Figure):
         if self._auto_tight and (
             rc['backend'] == 'MacOSX' or rc['backend'][:2] == 'Qt'
         ):
-            self._adjust_tight_layout(renderer, resize=False)
-            self._align_axislabels(True)  # if spaces changed need to realign
-            self._align_labels(renderer)
+            self._update_geometry_from_tight_layout(renderer, resize=False)
+            self._align_labels_axis(True)  # if spaces changed need to realign
+            self._align_labels_figure(renderer)
         return super().draw(renderer)
 
     def legend(
