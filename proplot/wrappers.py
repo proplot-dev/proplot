@@ -2759,7 +2759,7 @@ def colorbar_wrapper(
     extend=None, extendsize=None,
     title=None, label=None,
     grid=None, tickminor=None,
-    tickloc=None, ticklocation=None,
+    reverse=False, tickloc=None, ticklocation=None,
     locator=None, ticks=None, maxn=None, maxn_minor=None,
     minorlocator=None, minorticks=None,
     locator_kw=None, minorlocator_kw=None,
@@ -2815,10 +2815,8 @@ or colormap-spec
         If float, units are inches. If string, units are interpreted
         by `~proplot.utils.units`. Default is :rc:`colorbar.insetextend`
         for inset colorbars and :rc:`colorbar.extend` for outer colorbars.
-
-        This is handy if you have multiple colorbars in one figure.
-        With the matplotlib API, it is really hard to get triangle
-        sizes to match, because the `extendsize` units are *relative*.
+    reverse : bool, optional
+        Whether to reverse the direction of the colorbar.
     tickloc, ticklocation : {'bottom', 'top', 'left', 'right'}, optional
         Where to draw tick marks on the colorbar.
     label, title : str, optional
@@ -3181,6 +3179,13 @@ or colormap-spec
         cb.solids.set_rasterized(False)
         cb.solids.set_linewidth(0.4)
         cb.solids.set_edgecolor('face')
+
+    # Invert the axis if descending DiscreteNorm
+    norm = mappable.norm
+    if getattr(norm, '_descending', None):
+        axis.set_inverted(True)
+    if reverse:  # potentially double reverse, although that would be weird...
+        axis.set_inverted(True)
     return cb
 
 
