@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Simple tools used in various places across this package.
+Various tools that may be useful while making plots.
 """
 import re
 import numpy as np
@@ -57,8 +57,8 @@ color : 3-tuple or 4-tuple
 def arange(min_, *args):
     """
     Identical to `numpy.arange` but with inclusive endpoints. For
-    example, ``plot.arange(2,4)`` returns ``np.array([2,3,4])`` instead
-    of ``np.array([2,3])``. This command is useful for generating lists of
+    example, ``plot.arange(2, 4)`` returns ``np.array([2, 3, 4])`` instead
+    of ``np.array([2, 3])``. This command is useful for generating lists of
     tick locations or colorbar level boundaries.
     """
     # Optional arguments just like np.arange
@@ -89,18 +89,17 @@ def arange(min_, *args):
 
 def edges(Z, axis=-1):
     """
-    Calculate the approximate "edge" values along an arbitrary axis, given
-    "center" values. This is used internally to calculate graticule edges when
+    Calculate the approximate "edge" values along an axis given "center"
+    values. This is used internally to calculate graticule edges when
     you supply centers to `~matplotlib.axes.Axes.pcolor` or
-    `~matplotlib.axes.Axes.pcolormesh` and to calculate colormap levels
-    when you supply centers to any method wrapped by
+    `~matplotlib.axes.Axes.pcolormesh`. It is also used to calculate colormap
+    level boundaries when you supply centers to plotting methods wrapped by
     `~proplot.wrappers.cmap_changer`.
 
     Parameters
     ----------
     Z : array-like
-        Array of any shape or size. Generally, should be monotonically
-        increasing or decreasing along `axis`.
+        Array of any shape or size.
     axis : int, optional
         The axis along which "edges" are calculated. The size of this axis
         will be increased by one.
@@ -109,22 +108,31 @@ def edges(Z, axis=-1):
     -------
     `~numpy.ndarray`
         Array of "edge" coordinates.
+
+    See also
+    --------
+    edges2d
     """
     Z = np.asarray(Z)
     Z = np.swapaxes(Z, axis, -1)
-    Z = np.concatenate((
-        Z[..., :1] - (Z[..., 1] - Z[..., 0]) / 2,
-        (Z[..., 1:] + Z[..., :-1]) / 2,
-        Z[..., -1:] + (Z[..., -1] - Z[..., -2]) / 2,
-    ), axis=-1)
-    return np.swapaxes(Z, axis, -1)
+    *nextra, nx = Z.shape
+    Zb = np.zeros((*nextra, nx + 1))
+
+    # Inner edges
+    Zb[..., 1:-1] = 0.5 * (Z[..., :-1] + Z[..., 1:])
+
+    # Left, right edges
+    Zb[..., 0] = 1.5 * Z[..., 0] - 0.5 * Z[..., 1]
+    Zb[..., -1] = 1.5 * Z[..., -1] - 0.5 * Z[..., -2]
+
+    return np.swapaxes(Zb, axis, -1)
 
 
 def edges2d(Z):
     """
-    Like `edges` but for 2d arrays.
-    The size of both axes are increased by one. This is used
-    internally to calculate graitule edges when you supply centers to
+    Calculate the approximate "edge" values given a 2d grid of "center"
+    values. The size of both axes are increased by one. This is used
+    internally to calculate graticule edges when you supply centers to
     `~matplotlib.axes.Axes.pcolor` or `~matplotlib.axes.Axes.pcolormesh`.
 
     Parameters
@@ -136,24 +144,29 @@ def edges2d(Z):
     -------
     `~numpy.ndarray`
         Array of "edge" coordinates.
+
+    See also
+    --------
+    edges
     """
     Z = np.asarray(Z)
     if Z.ndim != 2:
         raise ValueError(f'Input must be a 2d array, but got {Z.ndim}d.')
     ny, nx = Z.shape
     Zb = np.zeros((ny + 1, nx + 1))
-    # Inner
+
+    # Inner edges
     Zb[1:-1, 1:-1] = 0.25 * (
         Z[1:, 1:] + Z[:-1, 1:] + Z[1:, :-1] + Z[:-1, :-1]
     )
-    # Lower and upper
-    Zb[0] += edges(1.5 * Z[0] - 0.5 * Z[1])
-    Zb[-1] += edges(1.5 * Z[-1] - 0.5 * Z[-2])
-    # Left and right
+
+    # Left, right, top, bottom edges
+    Zb[0, :] += edges(1.5 * Z[0, :] - 0.5 * Z[1, :])
+    Zb[-1, :] += edges(1.5 * Z[-1, :] - 0.5 * Z[-2, :])
     Zb[:, 0] += edges(1.5 * Z[:, 0] - 0.5 * Z[:, 1])
     Zb[:, -1] += edges(1.5 * Z[:, -1] - 0.5 * Z[:, -2])
-    # Corners
-    Zb[[0, 0, -1, -1], [0, -1, -1, 0]] *= 0.5
+    Zb[[0, 0, -1, -1], [0, -1, -1, 0]] *= 0.5  # corner correction
+
     return Zb
 
 
@@ -472,26 +485,33 @@ def units(value, dest='in', axes=None, figure=None, width=True):
         like ``'123.456unit'``, where the number is the magnitude and
         ``'unit'`` is one of the following.
 
-        =========  =========================================================================================
+        =========  =====================================================
         Key        Description
-        =========  =========================================================================================
+        =========  =====================================================
         ``'m'``    Meters
+        ``'dm'``   Decimeters
         ``'cm'``   Centimeters
         ``'mm'``   Millimeters
+        ``'yd'``   Yards
         ``'ft'``   Feet
         ``'in'``   Inches
-        ``'pt'``   `Points <https://en.wikipedia.org/wiki/Point_(typography)>`__ (1/72 inches)
-        ``'pc'``   `Pica <https://en.wikipedia.org/wiki/Pica_(typography)>`__ (1/6 inches)
-        ``'px'``   Pixels on screen, uses dpi of :rcraw:`figure.dpi`
-        ``'pp'``   Pixels once printed, uses dpi of :rcraw:`savefig.dpi`
-        ``'em'``   `Em square <https://en.wikipedia.org/wiki/Em_(typography)>`__ for :rcraw:`font.size`
-        ``'en'``   `En square <https://en.wikipedia.org/wiki/En_(typography)>`__ for :rcraw:`font.size`
-        ``'Em'``   `Em square <https://en.wikipedia.org/wiki/Em_(typography)>`__ for :rcraw:`axes.titlesize`
-        ``'En'``   `En square <https://en.wikipedia.org/wiki/En_(typography)>`__ for :rcraw:`axes.titlesize`
-        ``'ax'``   Axes relative units. Not always available.
-        ``'fig'``  Figure relative units. Not always available.
+        ``'pt'``   `Points <pt_>`_ (1/72 inches)
+        ``'pc'``   `Pica <pc_>`_ (1/6 inches)
+        ``'px'``   Pixels on screen, using dpi of :rcraw:`figure.dpi`
+        ``'pp'``   Pixels once printed, using dpi of :rcraw:`savefig.dpi`
+        ``'em'``   `Em square <em_>`_ for :rcraw:`font.size`
+        ``'en'``   `En square <en_>`_ for :rcraw:`font.size`
+        ``'Em'``   `Em square <em_>`_ for :rcraw:`axes.titlesize`
+        ``'En'``   `En square <en_>`_ for :rcraw:`axes.titlesize`
+        ``'ax'``   Axes-relative units (not always available)
+        ``'fig'``  Figure-relative units (not always available)
         ``'ly'``   Light years ;)
-        =========  =========================================================================================
+        =========  =====================================================
+
+        .. _pt: https://en.wikipedia.org/wiki/Point_(typography)
+        .. _pc: https://en.wikipedia.org/wiki/Pica_(typography)
+        .. _em: https://en.wikipedia.org/wiki/Em_(typography)
+        .. _en: https://en.wikipedia.org/wiki/En_(typography)
 
     dest : str, optional
         The destination units. Default is inches, i.e. ``'in'``.
@@ -503,11 +523,11 @@ def units(value, dest='in', axes=None, figure=None, width=True):
     width : bool, optional
         Whether to use the width or height for the axes and figure relative
         coordinates.
-    """  # noqa
+    """
     # Font unit scales
     # NOTE: Delay font_manager import, because want to avoid rebuilding font
     # cache, which means import must come after TTFPATH added to environ
-    # by styletools.register_fonts()!
+    # by register_fonts()!
     small = rcParams['font.size']  # must be absolute
     large = rcParams['axes.titlesize']
     if isinstance(large, str):
@@ -517,20 +537,14 @@ def units(value, dest='in', axes=None, figure=None, width=True):
         large = small * scale
 
     # Scales for converting physical units to inches
-    unit_dict = {
-        'in': 1.0,
-        'm': 39.37,
-        'ft': 12.0,
-        'cm': 0.3937,
-        'mm': 0.03937,
-        'pt': 1 / 72.0,
-        'pc': 1 / 6.0,
+    unit_dict = UNIT_DICT.copy()
+    unit_dict.update({
         'em': small / 72.0,
         'en': 0.5 * small / 72.0,
         'Em': large / 72.0,
         'En': 0.5 * large / 72.0,
-        'ly': 3.725e+17,
-    }
+    })
+
     # Scales for converting display units to inches
     # WARNING: In ipython shell these take the value 'figure'
     if not isinstance(rcParams['figure.dpi'], str):
@@ -539,6 +553,7 @@ def units(value, dest='in', axes=None, figure=None, width=True):
     if not isinstance(rcParams['savefig.dpi'], str):
         # once 'printed' i.e. saved
         unit_dict['pp'] = 1 / rcParams['savefig.dpi']
+
     # Scales relative to axes and figure objects
     if axes is not None and hasattr(axes, 'get_size_inches'):  # proplot axes
         unit_dict['ax'] = axes.get_size_inches()[1 - int(width)]
@@ -547,6 +562,7 @@ def units(value, dest='in', axes=None, figure=None, width=True):
     if figure is not None and hasattr(
             figure, 'get_size_inches'):  # proplot axes
         unit_dict['fig'] = figure.get_size_inches()[1 - int(width)]
+
     # Scale for converting inches to arbitrary other unit
     try:
         scale = unit_dict[dest]
