@@ -2658,33 +2658,45 @@ class LinearSegmentedNorm(mcolors.Normalize):
         return ma.array(xq, mask=mask)
 
 
-class MidpointNorm(mcolors.Normalize):
+class DivergingNorm(mcolors.Normalize):
     """
-    Ensures a "midpoint" always lies at the central colormap color.
-    Can be used by passing ``norm='midpoint'`` to any command accepting
-    ``cmap``.
+    Normalizer that ensures some central data value lies at the central
+    colormap color.  The default central value is ``0``. Can be used by
+    passing ``norm='diverging'`` to any command accepting ``cmap``.
     """
-    def __init__(self, midpoint=0, vmin=-1, vmax=1, clip=None):
+    def __init__(
+        self, vcenter=0, vmin=None, vmax=None, fair=True, clip=None
+    ):
         """
         Parameters
         ----------
-        midpoint : float, optional
-            The midpoint, i.e. the data value corresponding to the position
-            in the middle of the colormap. The default is ``0``.
+        vcenter : float, optional
+            The data value corresponding to the central position of the
+            colormap. The default is ``0``.
         vmin, vmax : float, optional
-            The minimum and maximum data values. The defaults are ``-1``
-            and ``1``, respectively.
+            The minimum and maximum data values.
+        fair : bool, optional
+            If ``True`` (default), the speeds of the color gradations on
+            either side of the center point are equal, but colormap colors may
+            be omitted. If ``False``, all colormap colors are included, but
+            the color gradations on one side may be faster than the other side.
+            ``False`` should be used with great care, as it may result in
+            a misleading interpretation of your data.
         clip : bool, optional
             Whether to clip values falling outside of `vmin` and `vmax`.
         """
-        # Bigger numbers are too one-sided
+        # NOTE: This post is an excellent summary of matplotlib's DivergingNorm history:
+        # https://github.com/matplotlib/matplotlib/issues/15336#issuecomment-535291287
+        # NOTE: This is a stale PR that plans to implement the same features.
+        # https://github.com/matplotlib/matplotlib/pull/15333#issuecomment-537545430
+        # Since proplot is starting without matplotlib's baggage we can just implement
+        # DivergingNorm like they would prefer if they didn't have to worry about
+        # confusing users: single class, default "fair" scaling that can be turned off.
         super().__init__(vmin, vmax, clip)
-        self._midpoint = midpoint
-        if self.vmin >= self._midpoint or self.vmax <= self._midpoint:
-            raise ValueError(
-                f'Midpoint {self._midpoint} outside of vmin {self.vmin} '
-                f'and vmax {self.vmax}.'
-            )
+        self.vmin = vmin
+        self.vmax = vmax
+        self.vcenter = vcenter
+        self.fair = fair
 
     def __call__(self, value, clip=None):
         """
@@ -2698,25 +2710,48 @@ class MidpointNorm(mcolors.Normalize):
             Whether to clip values falling outside of `vmin` and `vmax`.
             Default is ``self.clip``.
         """
-        # Get middle point in normalized coords
+        xq, is_scalar = self.process_value(value)
+        self.autoscale_None(xq)  # sets self.vmin, self.vmax if None
         if clip is None:  # builtin clipping
             clip = self.clip
         if clip:  # note that np.clip can handle masked arrays
             value = np.clip(value, self.vmin, self.vmax)
-        x = np.array([self.vmin, self._midpoint, self.vmax])
-        y = np.array([0, 0.5, 1])
-        xq = np.atleast_1d(value)
-        idx = np.searchsorted(x, xq)
-        idx[idx == 0] = 1  # get normed value <0
-        idx[idx == len(x)] = len(x) - 1  # get normed value >0
-        distance = (xq - x[idx - 1]) / (x[idx] - x[idx - 1])
-        yq = distance * (y[idx] - y[idx - 1]) + y[idx - 1]
-        mask = ma.getmaskarray(xq)
-        return ma.array(yq, mask=mask)
+        if self.vmin > self.vmax:
+            raise ValueError('vmin must be less than or equal to vmax.')
+        elif self.vmin == self.vmax:
+            x = [self.vmin, self.vmax]
+            y = [0.0, 0.0]
+        elif self.vcenter >= self.vmax:
+            x = [self.vmin, self.vcenter]
+            y = [0.0, 0.5]
+        elif self.vcenter <= self.vmin:
+            x = [self.vcenter, self.vmax]
+            y = [0.5, 1.0]
+        elif not self.fair:
+            x = [self.vmin, self.vcenter, self.vmax]
+            y = [0, 0.5, 1.0]
+        else:
+            offset = max(
+                np.abs(self.vcenter - self.vmin),
+                np.abs(self.vmax - self.vcenter),
+            )
+            x = [self.vcenter - offset, self.vcenter + offset]
+            y = [0, 1.0]
+        yq = _interpolate_extrapolate(xq, x, y)
+        if is_scalar:
+            yq = np.atleast_1d(yq)[0]
+        return yq
 
-    def inverse(self, value):
+    def autoscale_None(self, z):
         """
-        Inverse operation of `~MidpointNorm.__call__`.
+        Get vmin and vmax, and then clip at vcenter
+        """
+        super().autoscale_None(z)
+        if self.vmin > self.vcenter:
+            self.vmin = self.vcenter
+        if self.vmax < self.vcenter:
+            self.vmax = self.vcenter
+
 
 class ColorDatabase(dict):
     """
