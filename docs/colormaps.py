@@ -42,7 +42,7 @@
 # `~proplot.colors.PerceptuallyUniformColormap` colormaps (see
 # :ref:`perceptually uniform colormaps <ug_perceptual>`) plus several
 # colormaps from other online data viz projects. Use
-# `~proplot.show.show_cmaps` to generate a table of registered maps. The
+# `~proplot.demos.show_cmaps` to generate a table of registered maps. The
 # figure is broken down into the following sections:
 #
 # * "User" colormaps, i.e. colormaps saved to your ``~/.proplot/cmaps``
@@ -103,9 +103,9 @@ fig, axs = plot.show_cmaps()
 #
 # The colorspace used by each `~proplot.colors.PerceptuallyUniformColormap`
 # is set with the `space` keyword arg. To plot arbitrary cross-sections of
-# these colorspaces, use `~proplot.show.show_colorspaces` (the black
+# these colorspaces, use `~proplot.demos.show_colorspaces` (the black
 # regions represent impossible colors). To see how colormaps vary with
-# respect to each channel, use `~proplot.show.show_channels`. Some examples
+# respect to each channel, use `~proplot.demos.show_channels`. Some examples
 # are shown below.
 #
 # In theory, "uniform" colormaps should have *straight* lines in hue, chroma,

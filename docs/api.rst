@@ -61,9 +61,9 @@ Plotting wrappers
 Show functions
 ==============
 
-.. automodule:: proplot.show
+.. automodule:: proplot.demos
 
-.. automodsumm:: proplot.show
+.. automodsumm:: proplot.demos
    :toctree: api
 
 

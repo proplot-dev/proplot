@@ -39,7 +39,7 @@
 # Included color cycles
 # ---------------------
 #
-# Use `~proplot.show.show_cycles` to generate a table of the color cycles
+# Use `~proplot.demos.show_cycles` to generate a table of the color cycles
 # registered by default and loaded from your ``~/.proplot/cycles`` folder.
 # You can make your own color cycles using the `~proplot.constructor.Cycle`
 # constructor function.

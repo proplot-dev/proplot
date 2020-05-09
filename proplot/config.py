@@ -1202,7 +1202,7 @@ def register_cmaps(user=True, default=False):
 
     %(register.ext_table)s
 
-    To visualize the registered colormaps, use `~proplot.show.show_cmaps`.
+    To visualize the registered colormaps, use `~proplot.demos.show_cmaps`.
 
     Parameters
     ----------
@@ -1230,7 +1230,7 @@ def register_cycles(user=True, default=False):
 
     %(register.ext_table)s
 
-    To visualize the registered color cycles, use `~proplot.show.show_cycles`.
+    To visualize the registered color cycles, use `~proplot.demos.show_cycles`.
 
     Parameters
     ----------
@@ -1255,7 +1255,7 @@ def register_colors(user=True, default=False, space='hcl', margin=0.10):
     ``.txt`` files saved in ``~/.proplot/colors``. Each file should contain
     one line per color in the format ``name : hex``. Whitespace is ignored.
 
-    To visualize the registered colors, use `~proplot.show.show_colors`.
+    To visualize the registered colors, use `~proplot.demos.show_colors`.
 
     Parameters
     ----------
@@ -1370,7 +1370,7 @@ def register_fonts():
     for a guide on converting various other font file types to ``.ttf`` and
     ``.otf`` for use with matplotlib.
 
-    To visualize the registered fonts, use `~proplot.show.show_fonts`.
+    To visualize the registered fonts, use `~proplot.demos.show_fonts`.
     """
     # Find proplot fonts
     # WARNING: If you include a font file with an unrecognized style,
