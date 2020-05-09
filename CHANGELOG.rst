@@ -157,6 +157,7 @@ There are quite a lot of deprecations for this release. Since this is
 
 .. rubric:: Bug fixes
 
+- Fix issue with colormaps with dots in name (:commit:`972956b1`).
 - Fix logarithmic scale argument parsing deprecation (:commit:`6ed7dbc5`).
 - Fix deprecation of direct access to ``matplotlib.cm.cmap_d``
   in matplotlib >=3.2.0 (:commit:`a69c16da`).
