@@ -79,7 +79,7 @@ class SubplotSpec(mgridspec.SubplotSpec):
 
     def get_active_geometry(self):
         """
-        Returns the number of rows, number of columns, and 1d subplot
+        Return the number of rows, number of columns, and 1d subplot
         location indices, ignoring rows and columns allocated for spaces.
         """
         nrows, ncols, row1, row2, col1, col2 = self.get_active_rows_columns()
@@ -89,7 +89,7 @@ class SubplotSpec(mgridspec.SubplotSpec):
 
     def get_active_rows_columns(self):
         """
-        Returns the number of rows, number of columns, first subplot row,
+        Return the number of rows, number of columns, first subplot row,
         last subplot row, first subplot column, and last subplot column,
         ignoring rows and columns allocated for spaces.
         """
@@ -102,7 +102,35 @@ class SubplotSpec(mgridspec.SubplotSpec):
             row2 = row1
             col2 = col1
         return (
-            nrows // 2, ncols // 2, row1 // 2, row2 // 2, col1 // 2, col2 // 2)
+            nrows // 2, ncols // 2, row1 // 2, row2 // 2, col1 // 2, col2 // 2
+        )
+
+    def get_geometry(self):
+        """
+        Return the number of rows, number of columns, and 1d subplot
+        location indices.
+        """
+        gridspec = self.get_gridspec()
+        rows, cols = gridspec.get_geometry()
+        return rows, cols, self.num1, self.num2
+
+    def get_rows_columns(self):
+        """
+        Return the number of rows, number of columns, first subplot row,
+        last subplot row, first subplot column, and last subplot column.
+        """
+        gridspec = self.get_gridspec()
+        nrows, ncols = gridspec.get_geometry()
+        row_start, col_start = divmod(self.num1, ncols)
+        row_stop, col_stop = divmod(self.num2, ncols)
+        return nrows, ncols, row_start, row_stop, col_start, col_stop
+
+    @classmethod
+    def _from_subplotspec(cls, subplotspec):
+        """
+        Translate a matplotlib subplotspec to proplot subplotspec.
+        """
+        return cls(subplotspec._gridspec, subplotspec.num1, subplotspec.num2)
 
 
 class GridSpec(mgridspec.GridSpec):
