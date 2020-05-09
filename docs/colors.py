@@ -31,7 +31,7 @@
 # ProPlot adds new color names from the `XKCD color survey
 # <https://blog.xkcd.com/2010/05/03/color-survey-results/>`__  and
 # the `Open Color <https://github.com/yeun/open-color>`__ UI design color
-# palettes. You can use `~proplot.show.show_colors` to generate a table of these
+# palettes. You can use `~proplot.demos.show_colors` to generate a table of these
 # colors. Note that the matplotlib's native `X11 named colors
 # <https://matplotlib.org/examples/color/named_colors.html>`__ are still
 # registered, but some of the X11 color names may be overwritten by the XKCD names,
@@ -43,7 +43,7 @@
 # ProPlot filters the available XKCD colors so that they are *sufficiently
 # distinct* in the :ref:`perceptually uniform colorspace <ug_perceptual>`.
 # This makes it a bit easier to pick out colors from the table generated with
-# `~proplot.show.show_colors`. Similar names were also cleaned up -- for
+# `~proplot.demos.show_colors`. Similar names were also cleaned up -- for
 # example, ``'reddish'`` and ``'reddy'`` are changed to ``'red'``.
 
 # %%

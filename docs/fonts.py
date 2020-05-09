@@ -63,7 +63,7 @@
 # lists for each font family are shown in the
 # :ref:`default proplotrc file <ug_proplotrc>`.
 #
-# To compare different fonts, use the `~proplot.show.show_fonts` command. By
+# To compare different fonts, use the `~proplot.demos.show_fonts` command. By
 # default, this displays the *sans serif* fonts available on your system and
 # packaged with ProPlot. The default table on a sparse Linux server is shown
 # below. The "¤" symbol appears where characters for a particular font are

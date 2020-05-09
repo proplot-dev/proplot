@@ -140,9 +140,9 @@ ProPlot includes several useful constructor functions and subclasses.
   colormap classes and add several methods. The new
   `~proplot.colors.PerceptuallyUniformColormap` class is used to make
   colormaps with :ref:`perceptually uniform transitions <ug_perceptual>`.
-* The `~proplot.show.show_cmaps`, `~proplot.show.show_cycles`,
-  `~proplot.show.show_colors`, `~proplot.show.show_fonts`,
-  `~proplot.show.show_channels`, and `~~proplot.show.show_colorspaces`
+* The `~proplot.demos.show_cmaps`, `~proplot.demos.show_cycles`,
+  `~proplot.demos.show_colors`, `~proplot.demos.show_fonts`,
+  `~proplot.demos.show_channels`, and `~proplot.demos.show_colorspaces`
   functions are used to visualize your :ref:`color scheme <ug_colors>`
   and :ref:`font options <ug_fonts>` and
   :ref:`inspect individual colormaps <ug_perceptual>`.

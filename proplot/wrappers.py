@@ -1910,7 +1910,7 @@ def _build_discrete_norm(
     minlength=2,
 ):
     """
-    Build a `~proplot.pcolors.DiscreteNorm` or `~proplot.pcolors.BoundaryNorm`
+    Build a `~proplot.colors.DiscreteNorm` or `~proplot.colors.BoundaryNorm`
     from the input arguments. This automatically calculates "nice" level
     boundaries if they were not provided.
 
@@ -2122,7 +2122,7 @@ def cmap_changer(
 ):
     """
     Adds several new keyword args and features for specifying the colormap,
-    levels, and normalizers. Uses the `~proplot.pcolors.DiscreteNorm`
+    levels, and normalizers. Uses the `~proplot.colors.DiscreteNorm`
     normalizer to bin data into discrete color levels (see notes).
 
     Note
@@ -2139,7 +2139,7 @@ def cmap_changer(
         Passed to `~proplot.constructor.Colormap`.
     norm : normalizer spec, optional
         The colormap normalizer, used to warp data before passing it
-        to `~proplot.pcolors.DiscreteNorm`. This is passed to the
+        to `~proplot.colors.DiscreteNorm`. This is passed to the
         `~proplot.constructor.Norm` constructor.
     norm_kw : dict-like, optional
         Passed to `~proplot.constructor.Norm`.
@@ -2240,11 +2240,11 @@ def cmap_changer(
     standardize_2d
     proplot.constructor.Colormap
     proplot.constructor.Norm
-    proplot.pcolors.DiscreteNorm
+    proplot.colors.DiscreteNorm
 
     Note
     ----
-    The `~proplot.pcolors.DiscreteNorm` normalizer, used with all colormap
+    The `~proplot.colors.DiscreteNorm` normalizer, used with all colormap
     plots, makes sure that your levels always span the full range of colors
     in the colormap, whether `extend` is set to ``'min'``, ``'max'``,
     ``'neither'``, or ``'both'``. By default, when `extend` is not ``'both'``,
