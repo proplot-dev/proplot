@@ -74,7 +74,7 @@ Colormaps and normalizers
 
 .. automodsumm:: proplot.colors
    :toctree: api
-   :skip: BinNorm
+   :skip: BinNorm, MidpointNorm, ColorDict, CmapDict
 
 
 Locators and formatters
