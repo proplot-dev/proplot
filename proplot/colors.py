@@ -2803,6 +2803,25 @@ class _ColorCache(dict):
                 return rgba
 
 
+def _get_cmap(name=None, lut=None):
+    """
+    Monkey patch for matplotlib `~matplotlib.get_cmap`. Permits case-insensitive
+    search of monkey-patched colormap database (which was broken in v3.2.0).
+    """
+    if name is None:
+        name = rcParams['image.cmap']
+    if isinstance(name, mcolors.Colormap):
+        return name
+    try:
+        cmap = _cmapdict[name]
+    except KeyError:
+        raise KeyError(
+            f'Invalid colormap name {name!r}. Valid names are: '
+            + ', '.join(map(repr, _cmapdict)) + '.'
+        )
+    if lut is not None:
+        cmap = cmap._resample(lut)
+    return cmap
 
 
 class ColormapDatabase(dict):
@@ -2940,6 +2959,8 @@ if not isinstance(mcolors._colors_full_map, ColorDatabase):
     mcolors.colorConverter.colors = _map
 
 # Replace colormap database with custom database
+if mcm.get_cmap is not _get_cmap:
+    mcm.get_cmap = _get_cmap
 if not isinstance(_cmapdict, ColormapDatabase):
     _cmapdict = {
         key: value for key, value in _cmapdict.items()
