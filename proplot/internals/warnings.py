@@ -3,6 +3,7 @@
 Custom warning style and deprecation functions.
 """
 import warnings
+import functools
 
 
 def _format_warning(message, category, filename, lineno, line=None):  # noqa: U100, E501
@@ -52,21 +53,22 @@ def _rename_kwargs(version=None, **kwargs_rename):
     version = 'a future version' if version is None else f'version {version}'
 
     def decorator(func_orig):
+        @functools.wraps(func_orig)
         def func(*args, **kwargs):
-            for key, value in kwargs_rename.items():
-                if key in kwargs:
-                    if value is None:
-                        del kwargs[key]
+            for key_old, key_new in kwargs_rename.items():
+                if key_old in kwargs:
+                    if key_new is None:
+                        del kwargs[key_old]
                         _warn_proplot(
-                            f'Ignoring keyword arg {key!r}. This argument '
+                            f'Ignoring keyword arg {key_old!r}. This argument '
                             'is deprecated. Using it will raise an error '
                             'in {version}.'
                         )
                     else:
-                        kwargs[value] = kwargs.pop(key)
+                        kwargs[key_new] = kwargs.pop(key_old)
                         _warn_proplot(
-                            f'Keyword arg {key!r} is deprecated and will be '
-                            f'removed in {version}. Please use {value!r} '
+                            f'Keyword arg {key_old!r} is deprecated and will be '
+                            f'removed in {version}. Please use {key_new!r} '
                             'instead.'
                         )
             return func_orig(*args, **kwargs)
