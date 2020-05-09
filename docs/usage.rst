@@ -2,95 +2,165 @@
 Using ProPlot
 =============
 
-..
-   This page gives a condensed overview of these features, along with features
-   outside of these classes.
-..
-   This page is meant as the starting point for new users. It is
-   populated with links to the :ref:`API reference` and User Guide.
-   For more in-depth descriptions, see :ref:`Why ProPlot?`.
+This page offers a condensed overview of ProPlot's features. It is populated
+with links to the :ref:`API reference` and :ref:`User Guide <ug_basics>`.
+For a more in-depth discussion, see :ref:`Why ProPlot?`
 
 Background
 ==========
 
-ProPlot is an object-oriented matplotlib wrapper. The "wrapper" part means that
-ProPlot's features are largely a *superset* of matplotlib.
-You can use your favorite plotting commands like
-`~matplotlib.axes.Axes.plot`, `~matplotlib.axes.Axes.scatter`, `~matplotlib.axes.Axes.contour`, and `~matplotlib.axes.Axes.pcolor` like you always have.
-The "object-oriented" part means that ProPlot's features are implemented with *subclasses* of the `~matplotlib.figure.Figure` and `~matplotlib.axes.Axes` classes.
+ProPlot is an object-oriented matplotlib wrapper. The "wrapper" part means
+that ProPlot's features are largely a *superset* of matplotlib.  You can use
+your favorite plotting commands like `~matplotlib.axes.Axes.plot`,
+`~matplotlib.axes.Axes.scatter`, `~matplotlib.axes.Axes.contour`, and
+`~matplotlib.axes.Axes.pcolor` like you always have.  The "object-oriented"
+part means that ProPlot's features are implemented with *subclasses* of the
+`~matplotlib.figure.Figure` and `~matplotlib.axes.Axes` classes.
 
-If you tend to use `~matplotlib.pyplot` and are not familiar with figure and axes *classes*, check out `this guide from the matplotlib documentation <https://matplotlib.org/api/api_overview.html#the-pyplot-api>`__. Working with objects directly tends to be more clear and concise than `~matplotlib.pyplot`, makes things easier when working with multiple figures and axes, and is certainly more "`pythonic <https://www.python.org/dev/peps/pep-0020/>`__". Therefore, although some ProPlot features may still work, we do not officially support the `~matplotlib.pyplot` API.
+If you tend to use `~matplotlib.pyplot` and are not familiar with figure and
+axes *classes*, check out `this guide
+<https://matplotlib.org/api/api_overview.html#the-pyplot-api>`__.
+from the matplotlib documentation. Working with objects directly tends to be
+more clear and concise than `~matplotlib.pyplot`, makes things easier when
+working with multiple figures and axes, and is certainly more
+"`pythonic <https://www.python.org/dev/peps/pep-0020/>`__". Therefore,
+although some ProPlot features may still work, we do not officially support
+the `~matplotlib.pyplot` API.
 
 
 Importing proplot
 =================
 
+Importing ProPlot immediately adds several
+new :ref:`colormaps <ug_cmaps>`, :ref:`property cycles <ug_cycles>`,
+:ref:`color names <ug_colors>`, and :ref:`fonts <ug_fonts>` to matplotlib.
+If you are only interested in these features, you may want to simply
+import ProPlot at the top of your script and do nothing else!
 We recommend importing ProPlot as follows:
 
 .. code-block:: python
 
    import proplot as plot
 
-This differentiates ProPlot from the usual ``plt`` abbreviation used for the `~matplotlib.pyplot` module.
-Importing ProPlot immediately adds several new colormaps, property cyclers, color names, and fonts to matplotlib. See :ref:`Colormaps`, :ref:`Color cycles`, and :ref:`Colors and fonts` for details.
+This differentiates ProPlot from the usual ``plt`` abbreviation reserved for
+the `~matplotlib.pyplot` module.
 
 Figure and axes classes
 =======================
-Making figures in ProPlot always begins with a call to the
-`~proplot.subplots.subplots` command:
+
+Creating plots with ProPlot always begins with a call to the
+`~proplot.ui.subplots` command:
 
 .. code-block:: python
 
-   f, axs = plot.subplots(...)
+   fig, axs = plot.subplots(...)
 
-`~proplot.subplots.subplots` is modeled after
-matplotlib's native `matplotlib.pyplot.subplots` command.
-It creates an instance of ProPlot's
-`~proplot.subplots.Figure` class
-populated with instances of ProPlot's
-`~proplot.axes.Axes` classes.
-See :ref:`The basics`
-and :ref:`Subplots features` for details.
+The `~proplot.ui.subplots` command is modeled after
+matplotlib's native `matplotlib.pyplot.subplots` command
+and is :ref:`packed with new features <ug_subplots>`.
 
-Each `~proplot.axes.Axes` returned by `~proplot.subplots.subplots`
-belongs to one of the following three child classes:
+Instead of native `matplotlib.figure.Figure` and `matplotlib.axes.Axes` classes,
+`~proplot.ui.subplots` :ref:`returns an instance <ug_basics>` of the
+`proplot.figure.Figure` subclass populated with instances of
+`proplot.axes.Axes` subclasses. Also, all ProPlot axes belong to one of the
+following three child classes:
 
-* `~proplot.axes.XYAxes`: For plotting simple data with *x* and *y* coordinates.
-* `~proplot.axes.ProjAxes`: For geographic plots with *longitude* and *latitude* coordinates.
-* `~proplot.axes.PolarAxes`: For polar plots with *radius* and *azimuth* coordinates.
+* `proplot.axes.CartesianAxes`: For plotting ordinary data with *x* and *y*
+  coordinates.
+* `proplot.axes.GeoAxes`: For geographic plots with *longitude* and
+  *latitude* coordinates.
+* `proplot.axes.PolarAxes`: For polar plots with *radius* and *azimuth*
+  coordinates.
 
-See :ref:`X and Y axis settings` for details on working with `~proplot.axes.XYAxes` and
-:ref:`Geographic and polar plots` for details on working with
-`~proplot.axes.ProjAxes` and `~proplot.axes.PolarAxes`.
+Most of ProPlot's features are added via the figure and axes subclasses.
+They include several brand new methods and add to the functionality of
+several *existing* methods.
 
-Figure and axes methods
-=======================
-The `~proplot.subplots.Figure` and `~proplot.axes.Axes` subclasses
-include several *brand new* methods and add to the functionality of several *existing* methods.
-
-* The new `~proplot.axes.Axes.format` method is used to fine-tune various axes settings.  Its behavior depends on whether the axes is an `~proplot.axes.XYAxes`, `~proplot.axes.PolarAxes`, or `~proplot.axes.ProjAxes`. Think of this as a dedicated `~matplotlib.artist.Artist.update` method for axes artists. See :ref:`Formatting subplots` and :ref:`Changing rc settings` for details.
-* The `~proplot.subplots.Figure` `~proplot.subplots.Figure.colorbar` and `~proplot.subplots.Figure.legend` and `~proplot.axes.Axes` `~proplot.axes.Axes.colorbar` and `~proplot.axes.Axes.legend` commands are used to add colorbars and legends *inside* of subplots, along the *outside edge* of subplots, and along the *edge of the figure*. They considerably simplify the process of drawing colorbars and legends. See :ref:`Colorbars and legends` for details.
-* ProPlot adds a huge variety of features for working with `~matplotlib.axes.Axes.contour` plots, `~matplotlib.axes.Axes.pcolor` plots, `~matplotlib.axes.Axes.plot` lines, `~proplot.axes.Axes.heatmap` plots, `~matplotlib.axes.Axes.errorbar` bars, `~matplotlib.axes.Axes.bar` plots, `~proplot.axes.Axes.area` plots, and `~proplot.axes.Axes.parametric` plots. See :ref:`1d plotting` and :ref:`2d plotting` for details.
+* The new `~proplot.axes.Axes.format` method is used to fine-tune various
+  axes settings.  Think of this as a dedicated
+  `~matplotlib.artist.Artist.update` method for axes artists. See
+  :ref:`formatting subplots <ug_format>` for a broad overview, along with the
+  individual sections on formatting :ref:`Cartesian plots <ug_xy_axis>`,
+  :ref:`polar plots <ug_polar>`, and :ref:`geographic projections
+  <ug_geoformat>`.
+* The `proplot.axes.Axes.colorbar` and `proplot.axes.Axes.legend` commands
+  are used to add colorbars and legends inside of subplots and along the
+  outside edge of subplots.  The `proplot.figure.Figure.colorbar` and
+  `proplot.figure.Figure.legend` commands are used to draw colorbars and
+  legends along the edge of an entire figure, centered between subplot
+  boundaries. These commands :ref:`considerably simplify <ug_cbars_legends>`
+  the process of drawing colorbars and legends.
+* ProPlot adds a huge variety of features for working with the
+  `~matplotlib.axes.Axes.plot`, `~matplotlib.axes.Axes.bar`,
+  `~proplot.axes.Axes.area`, `~matplotlib.axes.Axes.contour`,
+  `~matplotlib.axes.Axes.pcolormesh`, `~proplot.axes.Axes.heatmap`, and
+  `~proplot.axes.Axes.parametric` plotting methods by "wrapping" them. See
+  the :ref:`1D plotting <ug_1dplots>` and :ref:`2D plotting <ug_2dplots>`
+  sections for details.
 
 Integration with other packages
 ===============================
-ProPlot's features are integrated with the data containers
-introduced by `xarray` and `pandas` and the
-`cartopy` and `~mpl_toolkits.basemap` geographic
-plotting toolkits.
 
-* Axis labels, tick labels, titles, colorbar labels, and legend labels are automatically applied when you pass an `xarray.DataArray`, `pandas.DataFrame`, or `pandas.Series` object to any plotting command. This works just like the native `xarray.DataArray.plot` and `pandas.DataFrame.plot` methods. See :ref:`1d plotting` and :ref:`2d plotting` for details.
-* The `~proplot.projs.Proj` function lets you make arbitrary grids of basemap `~mpl_toolkits.basemap.Basemap` and cartopy `~cartopy.crs.Projection` projections. It is used to interpret the `proj` keyword arg passed to `~proplot.subplots.subplots`. The resulting axes are instances of `~proplot.axes.ProjAxes` with `~proplot.axes.ProjAxes.format` methods that can be used to add geographic features and custom meridian and parallel gridlines. See :ref:`Geographic and polar plots` for details.
+ProPlot includes *optional* integration features with four external
+packages: the `pandas` and `xarray` packages, used for working with annotated
+tables and arrays, and the `cartopy` and `~mpl_toolkits.basemap` cartographic
+plotting packages.
+
+* When you pass a `pandas.Series`, `pandas.DataFrame`, or `xarray.DataArray`
+  to any plotting command, the axis labels, tick labels, titles, colorbar
+  labels, and legend labels are automatically applied from the metadata. This
+  works just like the native `xarray.DataArray.plot` and
+  `pandas.DataFrame.plot` methods. A demonstration of this feature is given
+  in the sections on :ref:`1D plotting <ug_1dintegration>` and
+  :ref:`2D plotting <ug_2dintegration>`.
+* The `~proplot.axes.GeoAxes` class uses the `cartopy` or
+  `~mpl_toolkits.basemap` packages to :ref:`plot geophysical data <ug_geoplot>`,
+  :ref:`add geographic features <ug_geoformat>`, and
+  :ref:`format projections <ug_geoformat>`. This is a much simpler, smoother
+  interface than the original `cartopy` and `~mpl_toolkits.basemap`
+  interfaces. Figures can be filled with `~proplot.axes.GeoAxes` by using the
+  `proj` keyword argument with `~proplot.ui.subplots`.
+
+Since these features are optional, ProPlot can be used without installing
+any of these packages.
 
 New functions and classes
 =========================
-ProPlot includes several useful *constructor functions*
-and *subclasses* outside
-of the `~proplot.subplots.Figure` and `~proplot.axes.Axes` subclasses.
 
-* The `~proplot.styletools.Colormap` and `~proplot.styletools.Cycle` constructor functions can slice, merge, and modify colormaps and color cycles. See :ref:`Colormaps`, :ref:`Color cycles`, and :ref:`Colors and fonts` for details.
-* The `~proplot.styletools.LinearSegmentedColormap` and  `~proplot.styletools.ListedColormap` subclasses replace the default matplotlib colormap classes and add several methods. The new `~proplot.styletools.PerceptuallyUniformColormap` class is used to make colormaps with perceptually uniform transitions. See :ref:`Colormaps` for details.
-* The `~proplot.styletools.show_cmaps`, `~proplot.styletools.show_cycles`, `~proplot.styletools.show_colors`, `~proplot.styletools.show_fonts`, `~proplot.styletools.show_channels`, and `~~proplot.styletools.show_colorspaces` functions are used to visualize your color scheme and font options and inspect individual colormaps.
-* The `~proplot.styletools.Norm` constructor function generates colormap normalizers from shorthand names. The new `~proplot.styletools.LinearSegmentedNorm` normalizer scales colors evenly w.r.t. index for arbitrarily spaced monotonic levels, and the new `~proplot.styletools.BinNorm` meta-normalizer is used to discretized colormap colors. See :ref:`2d plotting` for details.
-* The `~proplot.axistools.Locator`, `~proplot.axistools.Formatter`, and `~proplot.axistools.Scale` constructor functions, used to generate class instances from variable input types. These are used to interpret keyword arguments passed to `~proplot.axes.Axes.format` and `~proplot.subplots.Figure.colorbar`. See :ref:`X and Y axis settings` for details.
-* The `~proplot.rctools.rc` object, an instance of `~proplot.rctools.rc_configurator`, is used for modifying *individual* global settings, changing settings in *bulk*, and temporarily changing settings in *context blocks*. It also sets up the inline plotting backend, so that your inline figures look the same as your saved figures. See :ref:`Configuring proplot` for details.
+Outside of the `~proplot.figure.Figure` and `~proplot.axes.Axes` subclasses,
+ProPlot includes several useful constructor functions and subclasses.
+
+* The `~proplot.constructor.Colormap` and `~proplot.constructor.Cycle`
+  constructor functions can be used to :ref:`slice <ug_cmaps_mod>`,
+  and :ref:`merge <ug_cmaps_merge>` existing colormaps and color
+  cycles. It can also :ref:`make new colormaps <ug_cmaps_new>`
+  and :ref:`color cycles <ug_cycles_new>` from scratch.
+* The `~proplot.colors.LinearSegmentedColormap` and
+  `~proplot.colors.ListedColormap` subclasses replace the default matplotlib
+  colormap classes and add several methods. The new
+  `~proplot.colors.PerceptuallyUniformColormap` class is used to make
+  colormaps with :ref:`perceptually uniform transitions <ug_perceptual>`.
+* The `~proplot.show.show_cmaps`, `~proplot.show.show_cycles`,
+  `~proplot.show.show_colors`, `~proplot.show.show_fonts`,
+  `~proplot.show.show_channels`, and `~~proplot.show.show_colorspaces`
+  functions are used to visualize your :ref:`color scheme <ug_colors>`
+  and :ref:`font options <ug_fonts>` and
+  :ref:`inspect individual colormaps <ug_perceptual>`.
+* The `~proplot.constructor.Norm` constructor function generates colormap
+  normalizers from shorthand names. The new
+  `~proplot.colors.LinearSegmentedNorm` normalizer scales colors evenly
+  w.r.t. index for arbitrarily spaced monotonic levels, and the new
+  `~proplot.colors.DiscreteNorm` meta-normalizer is used to
+  :ref:`break up colormap colors into discrete levels <ug_discrete>`.
+* The `~proplot.constructor.Locator`, `~proplot.constructor.Formatter`, and
+  `~proplot.constructor.Scale` constructor functions return corresponding class
+  instances from flexible input types. These are used to interpret keyword
+  arguments passed to `~proplot.axes.Axes.format`, and can be used to quickly
+  and easily modify :ref:`x and y axis settings <ug_xy_axis>`.
+* The `~proplot.config.rc` object, an instance of
+  `~proplot.config.rc_configurator`, is used for
+  :ref:`modifying individual settings, changing settings in bulk, and
+  temporarily changing settings in context blocks <ug_rc>`.
+  It also introduces several :ref:`new setings <ug_config>`
+  and sets up the inline plotting backend with `~proplot.config.inline_backend_fmt`
+  so that your inline figures look the same as your saved figures.

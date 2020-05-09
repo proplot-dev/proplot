@@ -11,7 +11,7 @@ dependencies:
   - xarray
   - pandas
   - matplotlib
-  - cartopy
+  - cartopy=0.17
   - basemap
   - pandoc
   - ipykernel
@@ -19,6 +19,9 @@ dependencies:
   - pip:
     - ..
     - pyqt5
-    - nbsphinx
+    - sphinx>=3.0
+    - sphinx-copybutton
     - sphinx_rtd_theme
-    - git+https://github.com/lukelbd/sphinx-automodapi@v0.6.proplot-mods
+    - jupytext
+    - nbsphinx
+    - git+https://github.com/lukelbd/sphinx-automodapi@v0.8.proplot-mods

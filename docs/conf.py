@@ -13,6 +13,7 @@
 
 import os
 import sys
+import datetime
 
 # Add proplot to path for sphinx-automodapi
 sys.path.insert(0, os.path.abspath('..'))
@@ -36,8 +37,9 @@ else:
 
 # -- Project information -----------------------------------------------------
 
+_today = datetime.datetime.today()
 project = 'ProPlot'
-copyright = '2019, Luke L. B. Davis'
+copyright = f'{_today.year}, Luke L. B. Davis'
 author = 'Luke L. B. Davis'
 
 # The short X.Y version
@@ -65,10 +67,11 @@ extensions = [
     'sphinx.ext.todo',  # Todo headers and todo:: directives
     'sphinx.ext.mathjax',  # LaTeX style math
     'sphinx.ext.viewcode',  # view code links
-    'sphinx.ext.autosummary',  # autosummary directive
     'sphinx.ext.napoleon',  # for NumPy style docstrings
     'sphinx.ext.intersphinx',  # external links
+    'sphinx.ext.autosummary',  # autosummary directive
     'sphinxext.custom_roles',  # local extension
+    'sphinx_copybutton',
     'sphinx_automodapi.automodapi',  # see: https://github.com/lukelbd/sphinx-automodapi/tree/proplot-mods # noqa
     'nbsphinx',
     ]
@@ -79,19 +82,37 @@ extlinks = {
     'pr': ('https://github.com/lukelbd/proplot/pull/%s', 'GH#'),
 }
 
+# Copy button
+# Use selectors for nbsphinx input cells from custom.css
+# TODO: Fix this, doesn't work
+copybutton_prompt_text = '>>>'
+# copybutton_selector = ',\n'.join((
+#     'code',
+#     '.rst-content tt',
+#     '.rst-content code',
+#     ".rst-content div:not(.stderr)>div[class^='highlight']",
+#     '.rst-content div.nbinput>div.input_area',
+#     '.rst-content pre.literal-bloc',
+# ))
+
 # Give *lots* of time for cell execution!
 # Note nbsphinx compiles *all* notebooks in docs unless excluded
 nbsphinx_timeout = 300
 
-# Set InlineBackend params, maybe nbsphinx skips ones in rctools.py
-# Not necessary because rctools.py configures the backend
+# Make nbsphinx detect jupytext
+nbsphinx_custom_formats = {
+    '.py': ['jupytext.reads', {'fmt': 'py:percent'}],
+}
+
+# Set InlineBackend params in case nbsphinx skips ones in config.py
+# Not necessary because config.py configures the backend.
 # nbsphinx_execute_arguments = [
 #     "--InlineBackend.figure_formats={'svg'}",
 #     "--InlineBackend.rc={'figure.dpi': 100}",
 # ]
 
-# Do not run doctest tests, these are just to show syntax and expected
-# output may be graphical
+# For now do not run doctest tests, these are just to show syntax
+# and expected output may be graphical
 doctest_test_doctest_blocks = ''
 
 # Generate stub pages whenever ::autosummary directive encountered
@@ -170,9 +191,9 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 exclude_patterns = [
-    '_templates', '_themes', 'sphinxext',
-    '.DS_Store', '**.ipynb_checkpoints',
-    # '[0-9a-eg-su-z]*.ipynb',  # only run [figures|tight].ipynb for debugging
+    '.DS_Store',
+    '_build', '_templates', '_themes',
+    'conf.py', 'sphinxext', '*.ipynb', '**.ipynb_checkpoints',
 ]
 
 # The name of the Pygments (syntax highlighting) style to use.
@@ -195,7 +216,7 @@ for style in get_all_styles():
         f.write(HtmlFormatter(style=style).get_style_defs('.highlight'))
 
 # Create sample .proplotrc file
-from proplot.rctools import _write_defaults  # noqa: E402
+from proplot.config import _write_defaults  # noqa: E402
 _write_defaults(os.path.join('_static', 'proplotrc'), comment=False)
 
 # Role
@@ -266,7 +287,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'proplot.tex', 'proplot Documentation',
+    (master_doc, 'proplot.tex', 'ProPlot Documentation',
      'Luke L. B. Davis', 'manual'),
 ]
 
@@ -276,7 +297,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'proplot', 'proplot Documentation',
+    (master_doc, 'proplot', 'ProPlot Documentation',
      [author], 1)
 ]
 

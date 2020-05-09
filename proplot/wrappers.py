@@ -1,17 +1,14 @@
 #!/usr/bin/env python3
 """
-These "wrapper" functions are applied to various `~proplot.axes.Axes` plotting
-methods. When a function is "wrapped", it accepts the parameters that the
-"wrapper" function accepts. In a future version, these features will be
-documented on the individual plotting methods, but for now they are documented
-separately on the "wrappers".
+Wrapper functions used to add functionality to various `~proplot.axes.Axes`
+plotting methods. "Wrapped" plotting methods accept the additional keyword
+arguments documented by the wrapper function. In a future version, these
+features will be documented on the individual plotting methods.
 """
 import sys
 import numpy as np
 import numpy.ma as ma
 import functools
-from . import styletools, axistools
-from .utils import _warn_proplot, _notNone, edges, edges2d, units
 import matplotlib.axes as maxes
 import matplotlib.container as mcontainer
 import matplotlib.contour as mcontour
@@ -22,26 +19,38 @@ import matplotlib.patches as mpatches
 import matplotlib.colors as mcolors
 import matplotlib.artist as martist
 import matplotlib.legend as mlegend
+import matplotlib.cm as mcm
 from numbers import Number
-from .rctools import rc
-try:  # use this for debugging instead of print()!
-    from icecream import ic
-except ImportError:  # graceful fallback if IceCream isn't installed
-    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
+from . import constructor
+from . import colors as pcolors
+from .config import rc
+from .utils import edges, edges2d, units, to_xyz, to_rgb
+from .internals import ic  # noqa: F401
+from .internals import docstring, warnings, _not_none
 try:
     from cartopy.crs import PlateCarree
 except ModuleNotFoundError:
     PlateCarree = object
 
 __all__ = [
-    'add_errorbars', 'bar_wrapper', 'barh_wrapper', 'boxplot_wrapper',
-    'default_crs', 'default_latlon', 'default_transform',
+    'add_errorbars',
+    'bar_wrapper',
+    'barh_wrapper',
+    'boxplot_wrapper',
     'cmap_changer',
-    'cycle_changer',
     'colorbar_wrapper',
-    'fill_between_wrapper', 'fill_betweenx_wrapper', 'hist_wrapper',
-    'legend_wrapper', 'plot_wrapper', 'scatter_wrapper',
-    'standardize_1d', 'standardize_2d', 'text_wrapper',
+    'cycle_changer',
+    'default_crs',
+    'default_latlon',
+    'default_transform',
+    'fill_between_wrapper',
+    'fill_betweenx_wrapper',
+    'hist_wrapper',
+    'legend_wrapper',
+    'scatter_wrapper',
+    'standardize_1d',
+    'standardize_2d',
+    'text_wrapper',
     'violinplot_wrapper',
 ]
 
@@ -70,30 +79,38 @@ STYLE_ARGS_TRANSLATE = {
     'contour': {
         'colors': 'colors',
         'linewidths': 'linewidths',
-        'linestyles': 'linestyles'},
-    'hexbin': {
-        'colors': 'edgecolors',
-        'linewidths': 'linewidths'},
+        'linestyles': 'linestyles',
+    },
     'tricontour': {
         'colors': 'colors',
         'linewidths': 'linewidths',
-        'linestyles': 'linestyles'},
-    'parametric': {
-        'colors': 'color',
-        'linewidths': 'linewidth',
-        'linestyles': 'linestyle'},
+        'linestyles': 'linestyles',
+    },
     'pcolor': {
         'colors': 'edgecolors',
         'linewidths': 'linewidth',
-        'linestyles': 'linestyle'},
-    'tripcolor': {
-        'colors': 'edgecolors',
-        'linewidths': 'linewidth',
-        'linestyles': 'linestyle'},
+        'linestyles': 'linestyle',
+    },
     'pcolormesh': {
         'colors': 'edgecolors',
         'linewidths': 'linewidth',
-        'linestyles': 'linestyle'},
+        'linestyles': 'linestyle',
+    },
+    'tripcolor': {
+        'colors': 'edgecolors',
+        'linewidths': 'linewidth',
+        'linestyles': 'linestyle',
+    },
+    'parametric': {
+        'colors': 'color',
+        'linewidths': 'linewidth',
+        'linestyles': 'linestyle',
+    },
+    'hexbin': {
+        'colors': 'edgecolors',
+        'linewidths': 'linewidths',
+        'linestyles': 'linestyles',
+    },
 }
 
 
@@ -101,26 +118,19 @@ def _is_number(data):
     """
     Test whether input is numeric array rather than datetime or strings.
     """
-    return len(data) and np.issubdtype(_to_array(data).dtype, np.number)
+    return len(data) and np.issubdtype(_to_ndarray(data).dtype, np.number)
 
 
 def _is_string(data):
     """
     Test whether input is array of strings.
     """
-    return len(data) and isinstance(_to_array(data).flat[0], str)
+    return len(data) and isinstance(_to_ndarray(data).flat[0], str)
 
 
 def _to_array(data):
     """
-    Convert to ndarray cleanly.
-    """
-    return np.asarray(getattr(data, 'values', data))
-
-
-def _to_arraylike(data):
-    """
-    Converts list of lists to array.
+    Convert list of lists to array-like type.
     """
     _load_objects()
     if not isinstance(data, (ndarray, DataArray, DataFrame, Series, Index)):
@@ -130,20 +140,29 @@ def _to_arraylike(data):
     return data
 
 
-def _to_iloc(data):
+def _to_indexer(data):
     """
-    Indexible attribute of array.
+    Return indexible attribute of array-like type.
     """
     return getattr(data, 'iloc', data)
+
+
+def _to_ndarray(data):
+    """
+    Convert arbitrary input to ndarray cleanly.
+    """
+    return np.asarray(getattr(data, 'values', data))
 
 
 def default_latlon(self, func, *args, latlon=True, **kwargs):
     """
     Makes ``latlon=True`` the default for basemap plots.
-    Wraps %(methods)s for `~proplot.axes.BasemapAxes`.
-
     This means you no longer have to pass ``latlon=True`` if your data
     coordinates are longitude and latitude.
+
+    Note
+    ----
+    This function wraps %(methods)s for `~proplot.axes.BasemapAxes`.
     """
     return func(self, *args, latlon=latlon, **kwargs)
 
@@ -151,12 +170,13 @@ def default_latlon(self, func, *args, latlon=True, **kwargs):
 def default_transform(self, func, *args, transform=None, **kwargs):
     """
     Makes ``transform=cartopy.crs.PlateCarree()`` the default
-    for cartopy plots.
-    Wraps %(methods)s for `~proplot.axes.GeoAxes`.
-
-    This means you no longer have to
+    for cartopy plots. This means you no longer have to
     pass ``transform=cartopy.crs.PlateCarree()`` if your data
     coordinates are longitude and latitude.
+
+    Note
+    ----
+    This function wraps %(methods)s for `~proplot.axes.CartopyAxes`.
     """
     # Apply default transform
     # TODO: Do some cartopy methods reset backgroundpatch or outlinepatch?
@@ -171,8 +191,11 @@ def default_crs(self, func, *args, crs=None, **kwargs):
     """
     Fixes the `~cartopy.mpl.geoaxes.GeoAxes.set_extent` bug associated with
     tight bounding boxes and makes ``crs=cartopy.crs.PlateCarree()`` the
-    default for cartopy plots. Wraps %(methods)s
-    for `~proplot.axes.GeoAxes`.
+    default for cartopy plots.
+
+    Note
+    ----
+    This function wraps %(methods)s for `~proplot.axes.CartopyAxes`.
     """
     # Apply default crs
     name = func.__name__
@@ -240,13 +263,17 @@ def standardize_1d(self, func, *args, **kwargs):
 
     Positional arguments are standardized as follows:
 
-    * If a 2D array is passed, the corresponding plot command is called for
+    * If a 2d array is passed, the corresponding plot command is called for
       each column of data (except for ``boxplot`` and ``violinplot``, in which
       case each column is interpreted as a distribution).
     * If *x* and *y* or *latitude* and *longitude* coordinates were not
       provided, and a `~pandas.DataFrame` or `~xarray.DataArray`, we
       try to infer them from the metadata. Otherwise,
       ``np.arange(0, data.shape[0])`` is used.
+
+   See also
+   --------
+   cycle_changer
    """
     # Sanitize input
     # TODO: Add exceptions for methods other than 'hist'?
@@ -273,7 +300,7 @@ def standardize_1d(self, func, *args, **kwargs):
         ys, args = (y, args[0]), args[1:]
     else:
         ys = (y,)
-    ys = [_to_arraylike(y) for y in ys]
+    ys = [_to_array(y) for y in ys]
 
     # Auto x coords
     y = ys[0]  # test the first y input
@@ -281,7 +308,7 @@ def standardize_1d(self, func, *args, **kwargs):
         axis = 1 if (name in ('hist', 'boxplot', 'violinplot') or any(
             kwargs.get(s, None) for s in ('means', 'medians'))) else 0
         x, _ = _standard_label(y, axis=axis)
-    x = _to_arraylike(x)
+    x = _to_array(x)
     if x.ndim != 1:
         raise ValueError(
             f'x coordinates must be 1-dimensional, but got {x.ndim}.'
@@ -327,7 +354,7 @@ def standardize_1d(self, func, *args, **kwargs):
     if xi is not None:
         x = xi
     if name in ('boxplot', 'violinplot'):
-        ys = [_to_array(yi) for yi in ys]  # store naked array
+        ys = [_to_ndarray(yi) for yi in ys]  # store naked array
 
     # Basemap shift x coordiantes without shifting y, we fix this!
     if getattr(self, 'name', '') == 'basemap' and kwargs.get('latlon', None):
@@ -342,49 +369,6 @@ def standardize_1d(self, func, *args, **kwargs):
     # WARNING: For some functions, e.g. boxplot and violinplot, we *require*
     # cycle_changer is also applied so it can strip 'x' input.
     return func(self, x, *ys, *args, **kwargs)
-
-
-def _interp_poles(y, Z):
-    """
-    Add data points on the poles as the average of highest latitude data.
-    """
-    # Get means
-    with np.errstate(all='ignore'):
-        p1 = Z[0, :].mean()  # pole 1, make sure is not 0D DataArray!
-        p2 = Z[-1, :].mean()  # pole 2
-    if hasattr(p1, 'item'):
-        p1 = np.asscalar(p1)  # happens with DataArrays
-    if hasattr(p2, 'item'):
-        p2 = np.asscalar(p2)
-    # Concatenate
-    ps = (-90, 90) if (y[0] < y[-1]) else (90, -90)
-    Z1 = np.repeat(p1, Z.shape[1])[None, :]
-    Z2 = np.repeat(p2, Z.shape[1])[None, :]
-    y = ma.concatenate((ps[:1], y, ps[1:]))
-    Z = ma.concatenate((Z1, Z, Z2), axis=0)
-    return y, Z
-
-
-def _standardize_latlon(x, y):
-    """
-    Ensure longitudes are monotonic and make `~numpy.ndarray` copies so the
-    contents can be modified. Ignores 2D coordinate arrays.
-    """
-    # Sanitization and bail if 2D
-    if x.ndim == 1:
-        x = ma.array(x)
-    if y.ndim == 1:
-        y = ma.array(y)
-    if x.ndim != 1 or all(x < x[0]):  # skip monotonic backwards data
-        return x, y
-    # Enforce monotonic longitudes
-    lon1 = x[0]
-    while True:
-        filter_ = (x < lon1)
-        if filter_.sum() == 0:
-            break
-        x[filter_] += 360
-    return x, y
 
 
 def _enforce_bounds(x, y, xmin, xmax):
@@ -416,6 +400,49 @@ def _enforce_bounds(x, y, xmin, xmax):
     return x, y
 
 
+def _interp_poles(y, Z):
+    """
+    Add data points on the poles as the average of highest latitude data.
+    """
+    # Get means
+    with np.errstate(all='ignore'):
+        p1 = Z[0, :].mean()  # pole 1, make sure is not 0D DataArray!
+        p2 = Z[-1, :].mean()  # pole 2
+    if hasattr(p1, 'item'):
+        p1 = np.asscalar(p1)  # happens with DataArrays
+    if hasattr(p2, 'item'):
+        p2 = np.asscalar(p2)
+    # Concatenate
+    ps = (-90, 90) if (y[0] < y[-1]) else (90, -90)
+    Z1 = np.repeat(p1, Z.shape[1])[None, :]
+    Z2 = np.repeat(p2, Z.shape[1])[None, :]
+    y = ma.concatenate((ps[:1], y, ps[1:]))
+    Z = ma.concatenate((Z1, Z, Z2), axis=0)
+    return y, Z
+
+
+def _standardize_latlon(x, y):
+    """
+    Ensure longitudes are monotonic and make `~numpy.ndarray` copies so the
+    contents can be modified. Ignores 2d coordinate arrays.
+    """
+    # Sanitization and bail if 2d
+    if x.ndim == 1:
+        x = ma.array(x)
+    if y.ndim == 1:
+        y = ma.array(y)
+    if x.ndim != 1 or all(x < x[0]):  # skip monotonic backwards data
+        return x, y
+    # Enforce monotonic longitudes
+    lon1 = x[0]
+    while True:
+        filter_ = (x < lon1)
+        if filter_.sum() == 0:
+            break
+        x[filter_] += 360
+    return x, y
+
+
 def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
     """
     Interprets positional arguments for the "2d" plotting methods
@@ -434,7 +461,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
       if *centers* were provided. For all other methods, coordinate *centers*
       are calculated if *edges* were provided.
 
-    For `~proplot.axes.GeoAxes` and `~proplot.axes.BasemapAxes`, the
+    For `~proplot.axes.CartopyAxes` and `~proplot.axes.BasemapAxes`, the
     `globe` keyword arg is added, suitable for plotting datasets with global
     coverage. Passing ``globe=True`` does the following:
 
@@ -442,10 +469,14 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
     2. Makes meridional coverage "circular", i.e. the last longitude coordinate
        equals the first longitude coordinate plus 360\N{DEGREE SIGN}.
 
-    For `~proplot.axes.BasemapAxes`, 1D longitude vectors are also cycled to
+    For `~proplot.axes.BasemapAxes`, 1d longitude vectors are also cycled to
     fit within the map edges. For example, if the projection central longitude
     is 90\N{DEGREE SIGN}, the data is shifted so that it spans
     -90\N{DEGREE SIGN} to 270\N{DEGREE SIGN}.
+
+    See also
+    --------
+    cmap_changer
     """
     # Sanitize input
     name = func.__name__
@@ -461,7 +492,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
     # Ensure DataArray, DataFrame or ndarray
     Zs = []
     for Z in args:
-        Z = _to_arraylike(Z)
+        Z = _to_array(Z)
         if Z.ndim != 2:
             raise ValueError(f'Z must be 2-dimensional, got shape {Z.shape}.')
         Zs.append(Z)
@@ -483,12 +514,12 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
         elif isinstance(Z, DataArray):  # DataArray
             x = Z.coords[Z.dims[idx]]
             y = Z.coords[Z.dims[idy]]
-        else:  # DataFrame; never Series or Index because these are 1D
+        else:  # DataFrame; never Series or Index because these are 1d
             x = Z.index
             y = Z.columns
 
     # Check coordinates
-    x, y = _to_arraylike(x), _to_arraylike(y)
+    x, y = _to_array(x), _to_array(y)
     if x.ndim != y.ndim:
         raise ValueError(
             f'x coordinates are {x.ndim}-dimensional, '
@@ -540,13 +571,13 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
 
     # Enforce edges
     if name in ('pcolor', 'pcolormesh'):
-        # Get centers or raise error. If 2D, don't raise error, but don't fix
+        # Get centers or raise error. If 2d, don't raise error, but don't fix
         # either, because matplotlib pcolor just trims last column and row.
         xlen, ylen = x.shape[-1], y.shape[0]
         for Z in Zs:
             if Z.ndim != 2:
                 raise ValueError(
-                    f'Input arrays must be 2D, instead got shape {Z.shape}.'
+                    f'Input arrays must be 2d, instead got shape {Z.shape}.'
                 )
             elif Z.shape[1] == xlen and Z.shape[0] == ylen:
                 if all(
@@ -585,13 +616,13 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
 
     # Enforce centers
     else:
-        # Get centers given edges. If 2D, don't raise error, let matplotlib
+        # Get centers given edges. If 2d, don't raise error, let matplotlib
         # raise error down the line.
         xlen, ylen = x.shape[-1], y.shape[0]
         for Z in Zs:
             if Z.ndim != 2:
                 raise ValueError(
-                    f'Input arrays must be 2D, instead got shape {Z.shape}.'
+                    f'Input arrays must be 2d, instead got shape {Z.shape}.'
                 )
             elif Z.shape[1] == xlen - 1 and Z.shape[0] == ylen - 1:
                 if all(
@@ -633,8 +664,10 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
             )
 
     # Cartopy projection axes
-    if (getattr(self, 'name', '') == 'geo'
-            and isinstance(kwargs.get('transform', None), PlateCarree)):
+    if (
+        getattr(self, 'name', '') == 'cartopy'
+        and isinstance(kwargs.get('transform', None), PlateCarree)
+    ):
         x, y = _standardize_latlon(x, y)
         ix, iZs = x, []
         for Z in Zs:
@@ -748,11 +781,16 @@ def add_errorbars(
     **kwargs
 ):
     """
-    Adds support for drawing error bars to the "1d" plotting methods
-    %(methods)s. Includes options for interpreting columns of data as ranges,
-    representing the mean or median of each column with lines, points, or bars,
-    and drawing error bars representing percentile ranges or standard deviation
-    multiples for the data in each column.
+    Adds support for drawing error bars on-the-fly.
+    Includes options for interpreting columns of data as *samples*,
+    representing the mean or median of each sample with lines, points, or
+    bars, and drawing error bars representing percentile ranges or standard
+    deviation multiples for each sample. Also supports specifying error
+    bar data explicitly.
+
+    Note
+    ----
+    This function wraps the 1d plotting methods: %(methods)s.
 
     Parameters
     ----------
@@ -779,19 +817,19 @@ def add_errorbars(
         deviation, or percentile ranges. Default is ``False``.
     barrange : (float, float), optional
         Percentile ranges or standard deviation multiples for drawing thin
-        error bars. The defaults are ``(-3,3)`` (i.e. +/-3 standard deviations)
-        when `barstd` is ``True``, and ``(0,100)`` (i.e. the full data range)
-        when `barstd` is ``False``.
+        error bars. The defaults are ``(-3, 3)`` (i.e. +/-3 standard
+        deviations) when `barstd` is ``True``, and ``(0, 100)`` (i.e. the full
+        data range) when `barstd` is ``False``.
     boxrange : (float, float), optional
         Percentile ranges or standard deviation multiples for drawing thick
-        error bars. The defaults are ``(-1,1)`` (i.e. +/-1 standard deviation)
-        when `boxstd` is ``True``, and ``(25,75)`` (i.e. the middle 50th
-        percentile) when `boxstd` is ``False``.
+        error bars. The defaults are ``(-1, 1)`` (i.e. +/-1 standard deviation)
+        when `boxstd` is ``True``, and ``(25, 75)`` (i.e. the interquartile
+        range) when `boxstd` is ``False``.
     barcolor, boxcolor : color-spec, optional
         Colors for the thick and thin error bars. Default is ``'k'``.
     barlw, boxlw : float, optional
         Line widths for the thin and thick error bars, in points. Default
-        `barlw` is ``0.7`` and default `boxlw` is ``4*barlw``.
+        `barlw` is ``0.7`` and default `boxlw` is ``4 * barlw``.
     boxmarker : bool, optional
         Whether to draw a small marker in the middle of the box denoting
         the mean or median position. Ignored if `boxes` is ``False``.
@@ -811,23 +849,23 @@ def add_errorbars(
     x, y, *args = args
     # Sensible defaults
     if boxdata is not None:
-        bars = _notNone(bars, True)
+        bars = _not_none(bars, True)
     if bardata is not None:
-        boxes = _notNone(boxes, True)
+        boxes = _not_none(boxes, True)
     if boxdata is not None or bardata is not None:
         # e.g. if boxdata passed but bardata not passed, use bars=False
-        bars = _notNone(bars, False)
-        boxes = _notNone(boxes, False)
+        bars = _not_none(bars, False)
+        boxes = _not_none(boxes, False)
 
     # Get means or medians for plotting
     iy = y
     if (means or medians):
-        bars = _notNone(bars, True)
-        boxes = _notNone(boxes, True)
+        bars = _not_none(bars, True)
+        boxes = _not_none(boxes, True)
         if y.ndim != 2:
             raise ValueError(
-                f'Need 2D data array for means=True or medians=True, '
-                f'got {y.ndim}D array.'
+                f'Need 2d data array for means=True or medians=True, '
+                f'got {y.ndim}d array.'
             )
         if means:
             iy = np.mean(y, axis=0)
@@ -836,9 +874,9 @@ def add_errorbars(
 
     # Call function, accounting for different signatures of plot and violinplot
     get = kwargs.pop if name == 'violinplot' else kwargs.get
-    lw = _notNone(get('lw', None), get('linewidth', None), 0.7)
+    lw = _not_none(get('lw', None), get('linewidth', None), 0.7)
     get = kwargs.pop if name != 'bar' else kwargs.get
-    edgecolor = _notNone(get('edgecolor', None), 'k')
+    edgecolor = _not_none(get('edgecolor', None), 'k')
     if name == 'violinplot':
         xy = (x, y)  # full data
     else:
@@ -860,16 +898,16 @@ def add_errorbars(
         xy = (x, iy)
 
     # Defaults settings
-    barlw = _notNone(barlw, lw)
-    boxlw = _notNone(boxlw, 4 * barlw)
-    capsize = _notNone(capsize, 3)
-    barcolor = _notNone(barcolor, edgecolor)
-    boxcolor = _notNone(boxcolor, edgecolor)
+    barlw = _not_none(barlw, lw)
+    boxlw = _not_none(boxlw, 4 * barlw)
+    capsize = _not_none(capsize, 3)
+    barcolor = _not_none(barcolor, edgecolor)
+    boxcolor = _not_none(boxcolor, edgecolor)
 
     # Draw boxes and bars
     if boxes:
         default = (-1, 1) if barstd else (25, 75)
-        boxrange = _notNone(boxrange, default)
+        boxrange = _not_none(boxrange, default)
         err = _errorbar_values(y, iy, boxdata, boxrange, boxstd)
         if boxmarker:
             self.scatter(
@@ -882,7 +920,7 @@ def add_errorbars(
         })
     if bars:  # now impossible to make thin bar width different from cap width!
         default = (-3, 3) if barstd else (0, 100)
-        barrange = _notNone(barrange, default)
+        barrange = _not_none(barrange, default)
         err = _errorbar_values(y, iy, bardata, barrange, barstd)
         self.errorbar(*xy, **{
             axis + 'err': err, 'capsize': capsize, 'zorder': barzorder,
@@ -892,27 +930,24 @@ def add_errorbars(
     return obj
 
 
-def plot_wrapper(self, func, *args, cmap=None, values=None, **kwargs):
+def _plot_wrapper_deprecated(
+    self, func, *args, cmap=None, values=None, **kwargs
+):
     """
-    Calls `~proplot.axes.Axes.parametric` if the `cmap` argument was supplied,
-    otherwise calls `~matplotlib.axes.Axes.plot`. Wraps %(methods)s.
-
-    Parameters
-    ----------
-    *args : (y,), (x, y), or (x, y, fmt)
-        Passed to `~matplotlib.axes.Axes.plot`.
-    cmap, values : optional
-        Passed to `~proplot.axes.Axes.parametric`.
-    **kwargs
-        `~matplotlib.lines.Line2D` properties.
+    Calls `~proplot.axes.Axes.parametric` in certain cases, but this behavior
+    is now deprecated.
     """
     if len(args) > 3:  # e.g. with fmt string
         raise ValueError(f'Expected 1-3 positional args, got {len(args)}.')
     if cmap is None:
-        lines = func(self, *args, values=values, **kwargs)
+        return func(self, *args, values=values, **kwargs)
     else:
-        lines = self.parametric(*args, cmap=cmap, values=values, **kwargs)
-    return lines
+        warnings._warn_proplot(
+            'Drawing "parametric" plots with ax.plot(..., cmap=cmap, values='
+            'values) is deprecated and will be removed in a future version. '
+            'Please use ax.parametric(..., cmap=cmap, values=values) instead.'
+        )
+        return self.parametric(*args, cmap=cmap, values=values, **kwargs)
 
 
 def scatter_wrapper(
@@ -931,45 +966,53 @@ def scatter_wrapper(
     Adds keyword arguments to `~matplotlib.axes.Axes.scatter` that are more
     consistent with the `~matplotlib.axes.Axes.plot` keyword arguments, and
     interpret the `cmap` and `norm` keyword arguments with
-    `~proplot.styletools.Colormap` and `~proplot.styletools.Normalize` like
-    in `cmap_changer`. Wraps %(methods)s.
+    `~proplot.constructor.Colormap` and `~proplot.constructor.Norm` like
+    in `cmap_changer`.
+
+    Note
+    ----
+    This function wraps %(methods)s.
 
     Parameters
     ----------
     s, size, markersize : float or list of float, optional
-        Aliases for the marker size.
+        The marker size(s). The units are scaled by `smin` and `smax`.
     smin, smax : float, optional
-        Used to scale the `s` array. These are the minimum and maximum marker
-        sizes. Defaults are the minimum and maximum of the `s` array.
+        The minimum and maximum marker size in units points ** 2 used to
+        scale the `s` array. If not provided, the marker sizes are equivalent
+        to the values in the `s` array.
     c, color, markercolor : color-spec or list thereof, or array, optional
-        Aliases for the marker fill color. If just an array of values, the
+        The marker fill color(s). If this is an array of scalar values, the
         colors will be generated by passing the values through the `norm`
         normalizer and drawing from the `cmap` colormap.
     cmap : colormap-spec, optional
-        The colormap specifer, passed to the `~proplot.styletools.Colormap`
+        The colormap specifer, passed to the `~proplot.constructor.Colormap`
         constructor.
     cmap_kw : dict-like, optional
-        Passed to `~proplot.styletools.Colormap`.
+        Passed to `~proplot.constructor.Colormap`.
     vmin, vmax : float, optional
         Used to generate a `norm` for scaling the `c` array. These are the
         values corresponding to the leftmost and rightmost colors in the
         colormap. Defaults are the minimum and maximum values of the `c` array.
     norm : normalizer spec, optional
-        The colormap normalizer, passed to the `~proplot.styletools.Norm`
+        The colormap normalizer, passed to the `~proplot.constructor.Norm`
         constructor.
     norm_kw : dict, optional
-        Passed to `~proplot.styletools.Norm`.
+        Passed to `~proplot.constructor.Norm`.
     lw, linewidth, linewidths, markeredgewidth, markeredgewidths : \
 float or list thereof, optional
-        Aliases for the marker edge width.
+        The marker edge width.
     edgecolors, markeredgecolor, markeredgecolors : \
 color-spec or list thereof, optional
-        Aliases for the marker edge color.
+        The marker edge color.
+
+    Other parameters
+    ----------------
     **kwargs
         Passed to `~matplotlib.axes.Axes.scatter`.
     """
     # Manage input arguments
-    # NOTE: Parse 1D must come before this
+    # NOTE: Parse 1d must come before this
     nargs = len(args)
     if len(args) > 4:
         raise ValueError(f'Expected 1-4 positional args, got {nargs}.')
@@ -983,42 +1026,33 @@ color-spec or list thereof, optional
     cmap_kw = cmap_kw or {}
     norm_kw = norm_kw or {}
     if cmap is not None:
-        cmap = styletools.Colormap(cmap, **cmap_kw)
+        cmap = constructor.Colormap(cmap, **cmap_kw)
     if norm is not None:
-        norm = styletools.Norm(norm, **norm_kw)
+        norm = constructor.Norm(norm, **norm_kw)
 
     # Apply some aliases for keyword arguments
-    c = _notNone(
-        c, color, markercolor, None,
-        names=('c', 'color', 'markercolor')
+    c = _not_none(c=c, color=color, markercolor=markercolor)
+    s = _not_none(s=s, size=size, markersize=markersize)
+    lw = _not_none(
+        lw=lw, linewidth=linewidth, linewidths=linewidths,
+        markeredgewidth=markeredgewidth, markeredgewidths=markeredgewidths,
     )
-    s = _notNone(
-        s, size, markersize, None,
-        names=('s', 'size', 'markersize')
-    )
-    lw = _notNone(
-        lw, linewidth, linewidths, markeredgewidth, markeredgewidths, None,
-        names=(
-            'lw', 'linewidth', 'linewidths',
-            'markeredgewidth', 'markeredgewidths'
-        ),
-    )
-    ec = _notNone(
-        edgecolor, edgecolors, markeredgecolor, markeredgecolors, None,
-        names=(
-            'edgecolor', 'edgecolors', 'markeredgecolor', 'markeredgecolors'
-        ),
+    ec = _not_none(
+        edgecolor=edgecolor, edgecolors=edgecolors,
+        markeredgecolor=markeredgecolor, markeredgecolors=markeredgecolors,
     )
 
     # Scale s array
-    if np.iterable(s):
+    if np.iterable(s) and (smin is not None or smax is not None):
         smin_true, smax_true = min(s), max(s)
         if smin is None:
             smin = smin_true
         if smax is None:
             smax = smax_true
-        s = smin + (smax - smin) * (np.array(s) - smin_true) / \
-            (smax_true - smin_true)
+        s = (
+            smin + (smax - smin)
+            * (np.array(s) - smin_true) / (smax_true - smin_true)
+        )
     return func(
         self, *args, c=c, s=s,
         cmap=cmap, vmin=vmin, vmax=vmax,
@@ -1027,16 +1061,64 @@ color-spec or list thereof, optional
     )
 
 
+_area_docstring = """
+Supports overlaying and stacking successive columns of data, and permits
+using different colors for "negative" and "positive" regions.
+
+Note
+----
+This function wraps `~matplotlib.axes.Axes.fill_between{suffix}` and
+`~proplot.axes.Axes.area{suffix}`.
+
+Parameters
+----------
+*args : ({y}1,), ({x}, {y}1), or ({x}, {y}1, {y}2)
+    The *{x}* and *{y}* coordinates. If `{x}` is not provided, it will be
+    inferred from `{y}1`. If `{y}1` and `{y}2` are provided, this function
+    will shade between respective columns of the arrays. The default value
+    for `{y}2` is ``0``.
+stacked : bool, optional
+    Whether to "stack" successive columns of the `{y}1` array. If this is
+    ``True`` and `{y}2` was provided, it will be ignored.
+negpos : bool, optional
+    Whether to shade where `{y}1` is greater than `{y}2` with the color
+    `poscolor`, and where `{y}1` is less than `{y}2` with the color
+    `negcolor`. For example, to shade positive values red and negative values
+    blue, use ``ax.fill_between{suffix}({x}, {y}, negpos=True)``.
+negcolor, poscolor : color-spec, optional
+    Colors to use for the negative and positive values. Ignored if `negpos`
+    is ``False``.
+where : ndarray, optional
+    Boolean ndarray mask for points you want to shade. See `this example \
+<https://matplotlib.org/3.1.0/gallery/pyplots/whats_new_98_4_fill_between.html#sphx-glr-gallery-pyplots-whats-new-98-4-fill-between-py>`__.
+
+Other parameters
+----------------
+**kwargs
+    Passed to `~matplotlib.axes.Axes.fill_between`.
+"""
+docstring.snippets['axes.fill_between'] = _area_docstring.format(
+    x='x', y='y', suffix='',
+)
+docstring.snippets['axes.fill_betweenx'] = _area_docstring.format(
+    x='y', y='x', suffix='x',
+)
+
+
 def _fill_between_apply(
     self, func, *args,
     negcolor='blue', poscolor='red', negpos=False,
     **kwargs
 ):
     """
-    Parse args and call function.
+    Helper function that powers `fill_between` and `fill_betweenx`.
     """
-    # Allow common keyword usage
-    x = 'y' if 'x' in func.__name__ else 'y'
+    # Parse input arguments as follows:
+    # * Permit using 'x', 'y1', and 'y2' or 'y', 'x1', and 'x2' as
+    #   keyword arguments.
+    # * If negpos=True, instead of using fill_between(x, y1, y2=0) as default,
+    #   make the default fill_between(x, y1=0, y2).
+    x = 'y' if 'x' in func.__name__ else 'x'
     y = 'x' if x == 'y' else 'y'
     if x in kwargs:
         args = (kwargs.pop(x), *args)
@@ -1046,75 +1128,55 @@ def _fill_between_apply(
     if len(args) == 1:
         args = (np.arange(len(args[0])), *args)
     if len(args) == 2:
+        args = (*args, 0)
+    elif len(args) == 3:
         if kwargs.get('stacked', False):
-            args = (*args, 0)
-        else:
-            args = (args[0], 0, args[1])  # default behavior
-    if len(args) != 3:
+            warnings._warn_proplot(
+                f'{func.__name__} cannot have three positional arguments '
+                f'with negpos=True. Ignoring third argument.'
+            )
+    else:
         raise ValueError(f'Expected 2-3 positional args, got {len(args)}.')
-    if not negpos:
-        obj = func(self, *args, **kwargs)
-        return obj
 
-    # Get zero points
-    objs = []
-    kwargs.setdefault('interpolate', True)
-    y1, y2 = np.atleast_1d(
-        args[-2]).squeeze(), np.atleast_1d(args[-1]).squeeze()
-    if y1.ndim > 1 or y2.ndim > 1:
-        raise ValueError(f'When "negpos" is True, y must be 1-dimensional.')
-    if kwargs.get('where', None) is not None:
-        raise ValueError(
-            'When "negpos" is True, you cannot set the "where" keyword.'
-        )
-    for i in range(2):
-        kw = {**kwargs}
-        kw.setdefault('color', negcolor if i == 0 else poscolor)
-        where = (y2 < y1) if i == 0 else (y2 >= y1)
-        obj = func(self, *args, where=where, **kw)
-        objs.append(obj)
-    return (*objs,)
+    # Draw patches
+    x, y1, y2 = args
+    if negpos:
+        # Get zero points
+        objs = []
+        kwargs.setdefault('interpolate', True)
+        where = kwargs.pop('where', None)
+        if where is not None:
+            warnings._warn_proplot(
+                f'{func.__name__} cannot have "where" argument '
+                f'with negpos=True. Ignoring where={where!r}.'
+            )
+
+        # Plot negative and positive patches
+        for i in range(2):
+            kw = kwargs.copy()
+            kw.setdefault('color', negcolor if i == 0 else poscolor)
+            where = y1 < y2 if i == 0 else y1 >= y2
+            obj = func(self, x, y1, y2, where=where, **kw)
+            objs.append(obj)
+        return tuple(objs)
+
+    else:
+        # Plot basic patches
+        return func(self, x, y1, y2, **kwargs)
 
 
+@docstring.add_snippets
 def fill_between_wrapper(self, func, *args, **kwargs):
     """
-    Supports overlaying and stacking successive columns of data, and permits
-    using different colors for "negative" and "positive" regions.
-    Wraps `~matplotlib.axes.Axes.fill_between` and `~proplot.axes.Axes.area`.
-
-    Parameters
-    ----------
-    *args : (y1,), (x,y1), or (x,y1,y2)
-        The *x* and *y* coordinates. If `x` is not provided, it will be
-        inferred from `y1`. If `y1` and `y2` are provided, their shapes
-        must be identical, and we fill between respective columns of these
-        arrays.
-    stacked : bool, optional
-        If `y2` is ``None``, this indicates whether to "stack" successive
-        columns of the `y1` array.
-    negpos : bool, optional
-        Whether to shade where `y2` is greater than `y1` with the color
-        `poscolor`, and where `y1` is greater than `y2` with the color
-        `negcolor`. For example, to shade positive values red and negtive blue,
-        use ``ax.fill_between(x, 0, y)``.
-    negcolor, poscolor : color-spec, optional
-        Colors to use for the negative and positive values. Ignored if `negpos`
-        is ``False``.
-    where : ndarray, optional
-        Boolean ndarray mask for points you want to shade. See `this example \
-<https://matplotlib.org/3.1.0/gallery/pyplots/whats_new_98_4_fill_between.html#sphx-glr-gallery-pyplots-whats-new-98-4-fill-between-py>`__.
-    **kwargs
-        Passed to `~matplotlib.axes.Axes.fill_between`.
-    """  # noqa
+    %(axes.fill_between)s
+    """
     return _fill_between_apply(self, func, *args, **kwargs)
 
 
+@docstring.add_snippets
 def fill_betweenx_wrapper(self, func, *args, **kwargs):
     """
-    Supports overlaying and stacking successive columns of data, and permits
-    using different colors for "negative" and "positive" regions.
-    Wraps `~matplotlib.axes.Axes.fillx_between` and `~proplot.axes.Axes.areax`.
-    Usage is same as `fill_between_wrapper`.
+    %(axes.fill_betweenx)s
     """
     return _fill_between_apply(self, func, *args, **kwargs)
 
@@ -1122,27 +1184,55 @@ def fill_betweenx_wrapper(self, func, *args, **kwargs):
 def hist_wrapper(self, func, x, bins=None, **kwargs):
     """
     Enforces that all arguments after `bins` are keyword-only and sets the
-    default patch linewidth to ``0``. Wraps %(methods)s.
+
+    Note
+    ----
+    This function wraps %(methods)s.
     """
     kwargs.setdefault('linewidth', 0)
     return func(self, x, bins=bins, **kwargs)
 
 
-def barh_wrapper(  # noqa: U100
-    self, func, y=None, width=None, height=0.8, left=None, **kwargs
-):
-    """
-    Supports grouping and stacking successive columns of data, and changes
-    the default bar style. Wraps %(methods)s.
-    """
-    kwargs.setdefault('orientation', 'horizontal')
-    if y is None and width is None:
-        raise ValueError(
-            f'barh() requires at least 1 positional argument, got 0.'
-        )
-    return self.bar(x=left, height=height, width=width, bottom=y, **kwargs)
+_bar_docstring = """
+Supports grouping and stacking successive columns of data, and changes
+the default bar style.
+
+Note
+----
+This function wraps `~matplotlib.axes.Axes.bar{suffix}`.
+
+Parameters
+----------
+{x}, {height}, {width}, {bottom} : float or list of float, optional
+    The dimensions of the bars. If the *{x}* coordinates are not provided,
+    they are set to ``np.arange(0, len(height))``.
+orientation : {{'vertical', 'horizontal'}}, optional
+    The orientation of the bars.
+vert : bool, optional
+    Alternative to the `orientation` keyword arg. If ``False``, horizontal
+    bars are drawn. This is for consistency with
+    `~matplotlib.axes.Axes.boxplot` and `~matplotlib.axes.Axes.violinplot`.
+stacked : bool, optional
+    Whether to stack columns of input data, or plot the bars side-by-side.
+edgecolor : color-spec, optional
+    The edge color for the bar patches.
+lw, linewidth : float, optional
+    The edge width for the bar patches.
+
+Other parameters
+----------------
+**kwargs
+    Passed to `~matplotlib.axes.Axes.bar{suffix}`.
+"""
+docstring.snippets['axes.bar'] = _bar_docstring.format(
+    x='x', height='height', width='width', bottom='bottom', suffix='',
+)
+docstring.snippets['axes.barh'] = _bar_docstring.format(
+    x='y', height='width', width='height', bottom='left', suffix='h',
+)
 
 
+@docstring.add_snippets
 def bar_wrapper(
     self, func, x=None, height=None, width=0.8, bottom=None, *, left=None,
     vert=None, orientation='vertical', stacked=False,
@@ -1150,33 +1240,8 @@ def bar_wrapper(
     **kwargs
 ):
     """
-    Supports grouping and stacking successive columns of data, and changes
-    the default bar style. Wraps %(methods)s.
-
-    Parameters
-    ----------
-    x, height, width, bottom : float or list of float, optional
-        The dimensions of the bars. If the *x* coordinates are not provided,
-        they are set to ``np.arange(0, len(height))``.
-    orientation : {'vertical', 'horizontal'}, optional
-        The orientation of the bars.
-    vert : bool, optional
-        Alternative to the `orientation` keyword arg. If ``False``, horizontal
-        bars are drawn. This is for consistency with
-        `~matplotlib.axes.Axes.boxplot` and `~matplotlib.axes.Axes.violinplot`.
-    stacked : bool, optional
-        Whether to stack columns of input data, or plot the bars side-by-side.
-    edgecolor : color-spec, optional
-        The edge color for the bar patches.
-    lw, linewidth : float, optional
-        The edge width for the bar patches.
+    %(axes.bar)s
     """
-    # Barh converts y-->bottom, left-->x, width-->height, height-->width.
-    # Convert back to (x, bottom, width, height) so we can pass stuff through
-    # cycle_changer.
-    # NOTE: You *must* do juggling of barh keyword order --> bar keyword order
-    # --> barh keyword order, because horizontal hist passes arguments to bar
-    # directly and will not use a 'barh' method with overridden argument order!
     if vert is not None:
         orientation = ('vertical' if vert else 'horizontal')
     if orientation == 'horizontal':
@@ -1187,7 +1252,7 @@ def bar_wrapper(
     # TODO: Stacked feature is implemented in `cycle_changer`, but makes more
     # sense do document here; figure out way to move it here?
     if left is not None:
-        _warn_proplot(
+        warnings._warn_proplot(
             f'The "left" keyword with bar() is deprecated. Use "x" instead.'
         )
         x = left
@@ -1201,13 +1266,34 @@ def bar_wrapper(
     # Call func
     # TODO: This *must* also be wrapped by cycle_changer, which ultimately
     # permutes back the x/bottom args for horizontal bars! Need to clean up.
-    lw = _notNone(lw, linewidth, None, names=('lw', 'linewidth'))
+    lw = _not_none(lw=lw, linewidth=linewidth)
     return func(
         self, x, height, width=width, bottom=bottom,
         linewidth=lw, edgecolor=edgecolor,
         stacked=stacked, orientation=orientation,
         **kwargs
     )
+
+
+@docstring.add_snippets  # noqa: U100
+def barh_wrapper(
+    self, func, y=None, width=None, height=0.8, left=None, **kwargs
+):
+    """
+    %(axes.barh)s
+    """
+    # Converts y-->bottom, left-->x, width-->height, height-->width.
+    # Convert back to (x, bottom, width, height) so we can pass stuff
+    # through cycle_changer.
+    # NOTE: You *must* do juggling of barh keyword order --> bar keyword order
+    # --> barh keyword order, because horizontal hist passes arguments to bar
+    # directly and will not use a 'barh' method with overridden argument order!
+    kwargs.setdefault('orientation', 'horizontal')
+    if y is None and width is None:
+        raise ValueError(
+            f'barh() requires at least 1 positional argument, got 0.'
+        )
+    return self.bar(x=left, height=height, width=width, bottom=y, **kwargs)
 
 
 def boxplot_wrapper(
@@ -1225,11 +1311,14 @@ def boxplot_wrapper(
 ):
     """
     Adds convenient keyword arguments and changes the default boxplot style.
-    Wraps %(methods)s.
+
+    Note
+    ----
+    This function wraps %(methods)s.
 
     Parameters
     ----------
-    *args : 1D or 2D ndarray
+    *args : 1d or 2d ndarray
         The data array.
     color : color-spec, optional
         The color of all objects.
@@ -1254,6 +1343,11 @@ color-spec, optional
     boxlw, caplw, meanlw, medianlw, whiskerlw : float, optional
         The line width of various boxplot components. These are shorthands so
         you don't have to pass e.g. a ``boxprops`` dictionary.
+
+    Other parameters
+    ----------------
+    **kwargs
+        Passed to the matplotlib plotting method.
     """
     # Call function
     if len(args) > 2:
@@ -1272,7 +1366,7 @@ color-spec, optional
 
     # Modify results
     # TODO: Pass props keyword args instead? Maybe does not matter.
-    lw = _notNone(lw, linewidth, None, names=('lw', 'linewidth'))
+    lw = _not_none(lw=lw, linewidth=linewidth)
     if fillcolor is None:
         cycler = next(self._get_lines.prop_cycler)
         fillcolor = cycler.get('color', None)
@@ -1287,8 +1381,8 @@ color-spec, optional
         if key not in obj:  # possible if not rendered
             continue
         artists = obj[key]
-        ilw = _notNone(ilw, lw)
-        icolor = _notNone(icolor, color)
+        ilw = _not_none(ilw, lw)
+        icolor = _not_none(icolor, color)
         for artist in artists:
             if icolor is not None:
                 artist.set_color(icolor)
@@ -1321,11 +1415,15 @@ def violinplot_wrapper(
 <https://matplotlib.org/3.1.0/gallery/statistics/customized_violin.html>`__.
     It is also no longer possible to show minima and maxima with whiskers --
     while this is useful for `~matplotlib.axes.Axes.boxplot`\\ s it is
-    redundant for `~matplotlib.axes.Axes.violinplot`\\ s. Wraps %(methods)s.
+    redundant for `~matplotlib.axes.Axes.violinplot`\\ s.
+
+    Note
+    ----
+    This function wraps %(methods)s.
 
     Parameters
     ----------
-    *args : 1D or 2D ndarray
+    *args : 1d or 2d ndarray
         The data array.
     lw, linewidth : float, optional
         The linewidth of the line objects. Default is ``1``.
@@ -1340,6 +1438,11 @@ def violinplot_wrapper(
     boxrange, barrange : (float, float), optional
         Percentile ranges for the thick and thin central bars. The defaults
         are ``(25, 75)`` and ``(5, 95)``, respectively.
+
+    Other parameters
+    ----------------
+    **kwargs
+        Passed to `~matplotlib.axes.Axes.violinplot`.
     """
     # Orientation and checks
     if len(args) > 2:
@@ -1354,9 +1457,9 @@ def violinplot_wrapper(
             )
 
     # Sanitize input
-    lw = _notNone(lw, linewidth, None, names=('lw', 'linewidth'))
+    lw = _not_none(lw=lw, linewidth=linewidth)
     if kwargs.pop('showextrema', None):
-        _warn_proplot(f'Ignoring showextrema=True.')
+        warnings._warn_proplot(f'Ignoring showextrema=True.')
     if 'showmeans' in kwargs:
         kwargs.setdefault('means', kwargs.pop('showmeans'))
     if 'showmedians' in kwargs:
@@ -1388,9 +1491,11 @@ def _get_transform(self, transform):
         from cartopy.crs import CRS
     except ModuleNotFoundError:
         CRS = None
-    cartopy = (getattr(self, 'name', '') == 'geo')
-    if (isinstance(transform, mtransforms.Transform)
-            or CRS and isinstance(transform, CRS)):
+    cartopy = getattr(self, 'name', '') == 'cartopy'
+    if (
+        isinstance(transform, mtransforms.Transform)
+        or CRS and isinstance(transform, CRS)
+    ):
         return transform
     elif transform == 'figure':
         return self.figure.transFigure
@@ -1435,13 +1540,17 @@ def _update_text(self, props):
 def text_wrapper(
     self, func,
     x=0, y=0, text='', transform='data',
-    fontfamily=None, fontname=None, fontsize=None, size=None,
+    family=None, fontfamily=None, fontname=None, fontsize=None, size=None,
     border=False, bordercolor='w', borderwidth=2, borderinvert=False,
     **kwargs
 ):
     """
-    Wraps %(methods)s, and enables specifying `tranform` with a string name and
-    adds feature for drawing borders around text.
+    Enables specifying `tranform` with a string name and adds a feature for
+    drawing borders around text.
+
+    Note
+    ----
+    This function wraps %(methods)s.
 
     Parameters
     ----------
@@ -1456,11 +1565,14 @@ def text_wrapper(
         `~matplotlib.axes.Axes.transData`, `~matplotlib.axes.Axes.transAxes`,
         or `~matplotlib.figure.Figure.transFigure` transforms. Default is
         ``'data'``, i.e. the text is positioned in data coordinates.
-    size, fontsize : float or str, optional
+    fontsize, size : float or str, optional
         The font size. If float, units are inches. If string, units are
         interpreted by `~proplot.utils.units`.
-    fontname, fontfamily : str, optional
-        Aliases for the ``fontfamily`` `~matplotlib.text.Text` property.
+    fontname, fontfamily, family : str, optional
+        The font name (e.g. ``'Fira Math'``) or font family name (e.g.
+        ``'serif'``). Matplotlib falls back to the system default if not found.
+    fontweight, weight, fontstyle, style, fontvariant, variant : str, optional
+        Additional font properties. See `~matplotlib.text.Text` for details.
     border : bool, optional
         Whether to draw border around text.
     borderwidth : float, optional
@@ -1473,40 +1585,30 @@ def text_wrapper(
     Other parameters
     ----------------
     **kwargs
-        Passed to `~matplotlib.text.Text` instantiator.
+        Passed to `~matplotlib.axes.Axes.text`.
     """
-    # Default transform by string name
+    # Parse input args
+    # NOTE: Previously issued warning if fontname did not match any of names
+    # in ttflist but this would result in warning for e.g. family='sans-serif'.
+    # Matplotlib font API makes it very difficult to inject warning in
+    # correct place. Simpler to just
+    # NOTE: Do not emit warning if user supplied conflicting properties
+    # because matplotlib has like 100 conflicting text properties for which
+    # it doesn't emit warnings. Prefer not to fix all of them.
+    fontsize = _not_none(fontsize, size)
+    fontfamily = _not_none(fontname, fontfamily, family)
+    if fontsize is not None:
+        kwargs['fontsize'] = units(fontsize, 'pt')
+    if fontfamily is not None:
+        kwargs['fontfamily'] = fontfamily
     if not transform:
         transform = self.transData
     else:
         transform = _get_transform(self, transform)
 
-    # Helpful warning if invalid font is specified
-    fontname = _notNone(
-        fontfamily, fontname, None, names=('fontfamily', 'fontname')
-    )
-    if fontname is not None:
-        if (
-            not isinstance(fontname, str)
-            and np.iterable(fontname)
-            and len(fontname) == 1
-        ):
-            fontname = fontname[0]
-        if fontname.lower() in list(map(str.lower, styletools.fonts)):
-            kwargs['fontfamily'] = fontname
-        else:
-            _warn_proplot(
-                f'Font {fontname!r} unavailable. Available fonts are '
-                + ', '.join(map(repr, styletools.fonts)) + '.'
-            )
-
-    # Units support for font sizes
-    # TODO: Document this feature
+    # Apply monkey patch to text object
     # TODO: Why only support this here, and not in arbitrary places throughout
     # rest of matplotlib API? Units engine needs better implementation.
-    size = _notNone(size, fontsize, None, names=('size', 'fontsize'))
-    if size is not None:
-        kwargs['fontsize'] = units(size, 'pt')
     obj = func(self, x, y, text, transform=transform, **kwargs)
     obj.update = _update_text.__get__(obj)
     obj.update({
@@ -1527,12 +1629,16 @@ def cycle_changer(
     **kwargs
 ):
     """
-    Wraps methods that use the property cycler (%(methods)s),
-    adds features for controlling colors in the property cycler and drawing
+    Adds features for controlling colors in the property cycler and drawing
     legends or colorbars in one go.
 
+    Note
+    ----
+    This function wraps every method that uses the property cycler:
+    %(methods)s.
+
     This wrapper also *standardizes acceptable input* -- these methods now all
-    accept 2D arrays holding columns of data, and *x*-coordinates are always
+    accept 2d arrays holding columns of data, and *x*-coordinates are always
     optional. Note this alters the behavior of `~matplotlib.axes.Axes.boxplot`
     and `~matplotlib.axes.Axes.violinplot`, which now compile statistics on
     *columns* of data instead of *rows*.
@@ -1540,18 +1646,18 @@ def cycle_changer(
     Parameters
     ----------
     cycle : cycle-spec, optional
-        The cycle specifer, passed to the `~proplot.styletools.Cycle`
+        The cycle specifer, passed to the `~proplot.constructor.Cycle`
         constructor. If the returned list of colors is unchanged from the
         current axes color cycler, the axes cycle will **not** be reset to the
         first position.
     cycle_kw : dict-like, optional
-        Passed to `~proplot.styletools.Cycle`.
+        Passed to `~proplot.constructor.Cycle`.
     label : float or str, optional
         The legend label to be used for this plotted element.
     labels, values : list of float or list of str, optional
-        Used with 2D input arrays. The legend labels or colorbar coordinates
+        Used with 2d input arrays. The legend labels or colorbar coordinates
         for each column in the array. Can be numeric or string, and must match
-        the number of columns in the 2D array.
+        the number of columns in the 2d array.
     legend : bool, int, or str, optional
         If not ``None``, this is a location specifying where to draw an *inset*
         or *panel* legend from the resulting handle(s). If ``True``, the
@@ -1576,16 +1682,11 @@ def cycle_changer(
 
     See also
     --------
-    `~proplot.styletools.Cycle`, `~proplot.styletools.colors`
-
-    Notes
-    -----
-    See the `matplotlib source \
-<https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_base.py>`_.
-    The `set_prop_cycle` command modifies underlying
-    `_get_lines` and `_get_patches_for_fill`.
+    standardize_1d
+    proplot.constructor.Cycle
+    proplot.constructor.Colors
     """
-    # No mutable defaults
+    # Parse input
     cycle_kw = cycle_kw or {}
     legend_kw = legend_kw or {}
     colorbar_kw = colorbar_kw or {}
@@ -1596,14 +1697,12 @@ def cycle_changer(
     name = func.__name__
     if not args:
         return func(self, *args, **kwargs)
-    barh = (name == 'bar' and kwargs.get('orientation', None) == 'horizontal')
+    barh = name == 'bar' and kwargs.get('orientation', None) == 'horizontal'
     x, y, *args = args
     if len(args) >= 1 and 'fill_between' in name:
-        ys = (y, args[0])
-        args = args[1:]
+        ys, args = (y, args[0]), args[1:]
     else:
         ys = (y,)
-    is1d = (y.ndim == 1)
 
     # Determine and temporarily set cycler
     # NOTE: Axes cycle has no getter, only set_prop_cycle, which sets a
@@ -1612,15 +1711,15 @@ def cycle_changer(
     # wrap set_prop_cycle because would get messy and fragile.
     # NOTE: The _get_lines cycler is an *itertools cycler*. Has no length, so
     # we must cycle over it with next(). We try calling next() the same number
-    # of times as the length of user input cycle. If the input cycle *is* in
-    # fact the same, below does not reset the color position, cycles us to
-    # start!
+    # of times as the length of input cycle. If the input cycle *is* in fact
+    # the same, below does not reset the color position, cycles us to start!
     if cycle is not None or cycle_kw:
         # Get the new cycler
         cycle_args = () if cycle is None else (cycle,)
-        if not is1d and y.shape[1] > 1:  # default samples count
+        if y.ndim > 1 and y.shape[1] > 1:  # default samples count
             cycle_kw.setdefault('N', y.shape[1])
-        cycle = styletools.Cycle(*cycle_args, **cycle_kw)
+        cycle = constructor.Cycle(*cycle_args, **cycle_kw)
+
         # Get the original property cycle
         # NOTE: Matplotlib saves itertools.cycle(cycler), not the original
         # cycler object, so we must build up the keys again.
@@ -1631,15 +1730,16 @@ def cycle_changer(
             prop = next(cycle_orig)
             for key, value in prop.items():
                 if key not in by_key:
-                    by_key[key] = {*()}  # set
+                    by_key[key] = set()
                 if isinstance(value, (list, np.ndarray)):
                     value = tuple(value)
                 by_key[key].add(value)
+
         # Reset property cycler if it differs
-        reset = ({*by_key} != {*cycle.by_key()})  # reset if keys are different
+        reset = set(by_key) != set(cycle.by_key())
         if not reset:  # test individual entries
             for key, value in cycle.by_key().items():
-                if by_key[key] != {*value}:
+                if by_key[key] != set(value):
                     reset = True
                     break
         if reset:
@@ -1649,7 +1749,7 @@ def cycle_changer(
     # NOTE: By default matplotlib uses _get_patches_for_fill.get_next_color
     # for scatter properties! So we simultaneously iterate through the
     # _get_lines property cycler and apply them.
-    apply = {*()}  # which keys to apply from property cycler
+    apply = set()  # which keys to apply from property cycler
     if name == 'scatter':
         # Figure out which props should be updated
         keys = {*self._get_lines._prop_keys} - {'color', 'linestyle', 'dashes'}
@@ -1665,31 +1765,34 @@ def cycle_changer(
             if key in keys and prop is None:
                 apply.add(key)
 
-    # Plot susccessive columns
-    # WARNING: Most methods that accept 2D arrays use columns of data, but when
+    # Handle legend labels and
+    # WARNING: Most methods that accept 2d arrays use columns of data, but when
     # pandas DataFrame passed to hist, boxplot, or violinplot, rows of data
     # assumed! This is fixed in parse_1d by converting to values.
-    objs = []
     ncols = 1
-    label_leg = None  # for colorbar or legend
-    labels = _notNone(values, labels, label, None,
-                      names=('values', 'labels', 'label'))
-    stacked = kwargs.pop('stacked', False)
+    labels = _not_none(values=values, labels=labels, label=label)
     if name in ('pie', 'boxplot', 'violinplot'):
         if labels is not None:
             kwargs['labels'] = labels
     else:
-        ncols = (1 if is1d else y.shape[1])
+        ncols = 1 if y.ndim == 1 else y.shape[1]
         if labels is None or isinstance(labels, str):
             labels = [labels] * ncols
+
+    # Handle stacked bar plots
+    stacked = kwargs.pop('stacked', False)
     if name in ('bar',):
-        # for bar plots; 0.8 is matplotlib default
         width = kwargs.pop('width', 0.8)
         kwargs['height' if barh else 'width'] = (
-            width if stacked else width / ncols)
+            width if stacked else width / ncols
+        )
+
+    # Plot susccessive columns
+    objs = []
+    label_leg = None  # for colorbar or legend
     for i in range(ncols):
         # Prop cycle properties
-        kw = {**kwargs}  # copy
+        kw = kwargs.copy()
         if apply:
             props = next(self._get_lines.prop_cycler)
             for key in apply:
@@ -1701,27 +1804,36 @@ def cycle_changer(
                 elif key == 'markeredgecolor':
                     key = 'edgecolors'
                 kw[key] = value
+
         # Get x coordinates
         ix, iy = x, ys[0]  # samples
         if name in ('pie',):
-            kw['labels'] = _notNone(labels, ix)  # TODO: move to pie wrapper?
+            kw['labels'] = _not_none(labels, ix)  # TODO: move to pie wrapper?
         if name in ('bar',):  # adjust
             if not stacked:
                 ix = x + (i - ncols / 2 + 0.5) * width / ncols
-            elif stacked and not is1d:
+            elif stacked and iy.ndim > 1:
                 key = 'x' if barh else 'bottom'
-                # sum of empty slice will be zero
-                kw[key] = _to_iloc(iy)[:, :i].sum(axis=1)
+                kw[key] = _to_indexer(iy)[:, :i].sum(axis=1)
+
         # Get y coordinates and labels
         if name in ('pie', 'boxplot', 'violinplot'):
             iys = (iy,)  # only ever have one y value, cannot have legend labs
         else:
             # The coordinates
+            # WARNING: If stacked=True then we always *ignore* second
+            # argument passed to fill_between. Warning should be issued
+            # by fill_between_wrapper in this case.
             if stacked and 'fill_between' in name:
-                iys = tuple(iy if is1d else _to_iloc(
-                    iy)[:, :j].sum(axis=1) for j in (i, i + 1))
+                iys = tuple(
+                    iy if iy.ndim == 1 else _to_indexer(iy)[:, :ii].sum(axis=1)
+                    for ii in (i, i + 1)
+                )
             else:
-                iys = tuple(iy if is1d else _to_iloc(iy)[:, i] for iy in ys)
+                iys = tuple(
+                    iy if iy.ndim == 1 else _to_indexer(iy)[:, i]
+                    for iy in ys
+                )
             # Possible legend labels
             if len(labels) != ncols:
                 raise ValueError(
@@ -1731,26 +1843,27 @@ def cycle_changer(
             label = labels[i]
             values, label_leg = _standard_label(iy, axis=1)
             if label_leg and label is None:
-                label = _to_array(values)[i]
+                label = _to_ndarray(values)[i]
             if label is not None:
                 kw['label'] = label
-        # Call with correct args
+
+        # Build coordinate arguments
         xy = ()
         if barh:  # special, use kwargs only!
             kw.update({'bottom': ix, 'width': iys[0]})
-            # must always be provided
-            kw.setdefault('x', kwargs.get('bottom', 0))
+            kw.setdefault('x', kwargs.get('bottom', 0))  # required
         elif name in ('pie', 'hist', 'boxplot', 'violinplot'):
             xy = (*iys,)
         else:  # has x-coordinates, and maybe more than one y
             xy = (ix, *iys)
+
+        # Call plotting function
         obj = func(self, *xy, *args, **kw)
-        # plot always returns list or tuple
         if isinstance(obj, (list, tuple)) and len(obj) == 1:
             obj = obj[0]
         objs.append(obj)
 
-    # Add colorbar and/or legend
+    # Add colorbar
     if colorbar:
         # Add handles
         loc = self._loc_translate(colorbar, 'colorbar', allow_manual=False)
@@ -1763,6 +1876,8 @@ def cycle_changer(
         if label_leg:
             colorbar_kw.setdefault('label', label_leg)
         self._auto_colorbar[loc][1].update(colorbar_kw)
+
+    # Add legend
     if legend:
         # Add handles
         loc = self._loc_translate(legend, 'legend', allow_manual=False)
@@ -1779,21 +1894,225 @@ def cycle_changer(
     # Return
     # WARNING: Make sure plot always returns tuple of objects, and bar always
     # returns singleton unless we have bulk drawn bar plots! Other matplotlib
-    # methods call these internally!
+    # methods call these internally and expect a certain output format!
     if name == 'plot':
-        return (*objs,)  # always return tuple of objects
+        return tuple(objs)  # always return tuple of objects
     elif name in ('boxplot', 'violinplot'):
-        # always singleton, because these methods accept the whole 2D object
-        return objs[0]
+        return objs[0]  # always return singleton
     else:
-        return objs[0] if is1d else (*objs,)  # sensible default behavior
+        return objs[0] if y.ndim == 1 else tuple(objs)
+
+
+def _build_discrete_norm(
+    data=None, levels=None, values=None,
+    norm=None, norm_kw=None, locator=None, locator_kw=None,
+    cmap=None, vmin=None, vmax=None, extend='neither', symmetric=False,
+    minlength=2,
+):
+    """
+    Build a `~proplot.pcolors.DiscreteNorm` or `~proplot.pcolors.BoundaryNorm`
+    from the input arguments. This automatically calculates "nice" level
+    boundaries if they were not provided.
+
+    Parameters
+    ----------
+    data, vmin, vmax, levels, values
+        Used to determine the level boundaries.
+    norm, norm_kw
+        Passed to `~proplot.constructor.Norm`.
+    locator, locator_kw
+        Passed to `~proplot.constructor.Locator`.
+    minlength : int
+        The minimum length for level lists.
+
+    Returns
+    -------
+    norm : `matplotlib.colors.Normalize`
+        The normalizer.
+    ticks : `numpy.ndarray` or `matplotlib.locator.Locator`
+        The axis locator or the tick location candidates.
+    """
+    # NOTE: Matplotlib colorbar algorithm *cannot* handle descending levels
+    # so this function reverses them and adds special attribute to the
+    # normalizer. Then colorbar_wrapper reads this attribute and flips the
+    # axis and the colormap direction.
+    # Check input levels and values
+    for key, val in (('levels', levels), ('values', values)):
+        if not np.iterable(val):
+            continue
+        if len(val) < minlength or len(val) >= 2 and any(
+            np.sign(np.diff(val)) != np.sign(val[1] - val[0])
+        ):
+            raise ValueError(
+                f'{key!r} must be monotonically increasing or decreasing '
+                f'and at least length {minlength}, got {val}.'
+            )
+
+    # Get level edges from level centers
+    from .config import rc
+    ticks = None
+    levels = _not_none(levels, rc['image.levels'])
+    norm_kw = norm_kw or {}
+    locator_kw = locator_kw or {}
+    if norm == 'segments':  # TODO: remove
+        norm = 'segmented'
+    if isinstance(values, Number):
+        levels = np.atleast_1d(values)[0] + 1
+    elif np.iterable(values) and len(values) == 1:
+        levels = [values[0] - 1, values[0] + 1]  # weird but why not
+    elif np.iterable(values) and len(values) > 1:
+        # Try to generate levels such that a LinearSegmentedNorm will
+        # place values ticks at the center of each colorbar level.
+        # utils.edges works only for evenly spaced values arrays.
+        # We solve for: (x1 + x2)/2 = y --> x2 = 2*y - x1
+        # with arbitrary starting point x1. We also start the algorithm
+        # on the end with *smaller* differences.
+        if norm is None or norm == 'segmented':
+            reverse = abs(values[-1] - values[-2]) < abs(values[1] - values[0])
+            if reverse:
+                values = values[::-1]
+            levels = [values[0] - (values[1] - values[0]) / 2]
+            for val in values:
+                levels.append(2 * val - levels[-1])
+            if reverse:
+                levels = levels[::-1]
+            if any(np.sign(np.diff(levels)) != np.sign(levels[1] - levels[0])):
+                levels = edges(values)  # backup plan, weird tick locations
+        # Generate levels by finding in-between points in the
+        # normalized numeric space, e.g. LogNorm space.
+        else:
+            inorm = constructor.Norm(norm, **norm_kw)
+            levels = inorm.inverse(edges(inorm(values)))
+    elif values is not None:
+        raise ValueError(
+            f'Unexpected input values={values!r}. '
+            'Must be integer or list of numbers.'
+        )
+
+    # Get default normalizer
+    # Only use LinearSegmentedNorm if necessary, because it is slow
+    descending = False
+    if np.iterable(levels):
+        levels, descending = pcolors._check_levels(levels)
+    if norm is None:
+        norm = 'linear'
+        if np.iterable(levels) and len(levels) > 2:
+            steps = np.abs(np.diff(levels))
+            eps = np.mean(steps) / 1e3
+            if np.any(np.abs(np.diff(steps)) >= eps):
+                norm = 'segmented'
+    if norm == 'segmented':
+        if not np.iterable(levels):
+            norm = 'linear'  # has same result
+        else:
+            norm_kw['levels'] = levels
+    norm = constructor.Norm(norm, **norm_kw)
+
+    # Use the locator to determine levels
+    # Mostly copied from the hidden contour.ContourSet._autolev
+    # NOTE: Subsequently, we *only* use the locator to determine ticks if
+    # *levels* and *values* were not passed.
+    if isinstance(norm, mcolors.BoundaryNorm):
+        # Get levels from bounds
+        # TODO: Test this feature?
+        # NOTE: No warning because we get here internally?
+        levels = norm.boundaries
+    elif np.iterable(values):
+        # Prefer ticks in center
+        ticks = np.asarray(values)
+    elif np.iterable(levels):
+        # Prefer ticks on level edges
+        ticks = np.asarray(levels)
+    else:
+        # Determine levels automatically
+        N = levels
+        if locator is not None:
+            locator = constructor.Locator(locator, **locator_kw)
+            ticks = locator
+        elif isinstance(norm, mcolors.LogNorm):
+            locator = mticker.LogLocator(**locator_kw)
+            ticks = locator
+        elif isinstance(norm, mcolors.SymLogNorm):
+            locator_kw.setdefault('linthresh', norm.linthresh)
+            locator = mticker.SymmetricalLogLocator(**locator_kw)
+            ticks = locator
+        else:
+            locator_kw.setdefault('symmetric', symmetric)
+            locator = mticker.MaxNLocator(N, min_n_ticks=1, **locator_kw)
+
+        # Get locations
+        automin = vmin is None
+        automax = vmax is None
+        if automin or automax:
+            data = ma.masked_invalid(data, copy=False)
+            if automin:
+                vmin = float(data.min())
+            if automax:
+                vmax = float(data.max())
+            if vmin == vmax or ma.is_masked(vmin) or ma.is_masked(vmax):
+                vmin, vmax = 0, 1
+        try:
+            levels = locator.tick_values(vmin, vmax)
+        except RuntimeError:  # too-many-ticks error
+            levels = np.linspace(vmin, vmax, N)  # TODO: _autolev used N+1
+
+        # Trim excess levels the locator may have supplied
+        # NOTE: This part is mostly copied from _autolev
+        if not locator_kw.get('symmetric', None):
+            i0, i1 = 0, len(levels)  # defaults
+            under, = np.where(levels < vmin)
+            if len(under):
+                i0 = under[-1]
+                if not automin or extend in ('min', 'both'):
+                    i0 += 1  # permit out-of-bounds data
+            over, = np.where(levels > vmax)
+            if len(over):
+                i1 = over[0] + 1 if len(over) else len(levels)
+                if not automax or extend in ('max', 'both'):
+                    i1 -= 1  # permit out-of-bounds data
+            if i1 - i0 < 3:
+                i0, i1 = 0, len(levels)  # revert
+            levels = levels[i0:i1]
+
+        # Compare the no. of levels we *got* (levels) to what we *wanted* (N)
+        # If we wanted more than 2 times the result, then add nn - 1 extra
+        # levels in-between the returned levels *in normalized space*.
+        # Example: A LogNorm gives too few levels, so we select extra levels
+        # here, but use the locator for determining tick locations.
+        nn = N // len(levels)
+        if nn >= 2:
+            olevels = norm(levels)
+            nlevels = []
+            for i in range(len(levels) - 1):
+                l1, l2 = olevels[i], olevels[i + 1]
+                nlevels.extend(np.linspace(l1, l2, nn + 1)[:-1])
+            nlevels.append(olevels[-1])
+            levels = norm.inverse(nlevels)
+
+        # Use auto-generated levels for ticks if still None
+        if ticks is None:
+            ticks = levels
+
+    # Generate DiscreteNorm and update "child" norm with vmin and vmax from
+    # levels. This lets the colorbar set tick locations properly!
+    if not isinstance(norm, mcolors.BoundaryNorm):
+        if getattr(cmap, '_cyclic', None):
+            bin_kw = {'step': 0.5, 'extend': 'both'}  # omit end colors
+        else:
+            bin_kw = {'extend': extend}
+        norm = pcolors.DiscreteNorm(
+            levels, norm=norm, descending=descending, **bin_kw
+        )
+    if descending:
+        cmap = cmap.reversed()
+    return norm, cmap, levels, ticks
 
 
 def cmap_changer(
     self, func, *args, cmap=None, cmap_kw=None,
     extend='neither', norm=None, norm_kw=None,
     N=None, levels=None, values=None, centers=None, vmin=None, vmax=None,
-    locator=None, symmetric=False, locator_kw=None,
+    symmetric=False, locator=None, locator_kw=None,
     edgefix=None, labels=False, labels_kw=None, fmt=None, precision=2,
     colorbar=False, colorbar_kw=None,
     lw=None, linewidth=None, linewidths=None,
@@ -1802,31 +2121,37 @@ def cmap_changer(
     **kwargs
 ):
     """
-    Wraps methods that take a `cmap` argument (%(methods)s),
-    adds several new keyword args and features.
-    Uses the `~proplot.styletools.BinNorm` normalizer to bin data into
-    discrete color levels (see notes).
+    Adds several new keyword args and features for specifying the colormap,
+    levels, and normalizers. Uses the `~proplot.pcolors.DiscreteNorm`
+    normalizer to bin data into discrete color levels (see notes).
+
+    Note
+    ----
+    This function wraps every method that take a `cmap` argument:
+    %(methods)s.
 
     Parameters
     ----------
     cmap : colormap spec, optional
-        The colormap specifer, passed to the `~proplot.styletools.Colormap`
+        The colormap specifer, passed to the `~proplot.constructor.Colormap`
         constructor.
     cmap_kw : dict-like, optional
-        Passed to `~proplot.styletools.Colormap`.
+        Passed to `~proplot.constructor.Colormap`.
     norm : normalizer spec, optional
         The colormap normalizer, used to warp data before passing it
-        to `~proplot.styletools.BinNorm`. This is passed to the
-        `~proplot.styletools.Norm` constructor.
+        to `~proplot.pcolors.DiscreteNorm`. This is passed to the
+        `~proplot.constructor.Norm` constructor.
     norm_kw : dict-like, optional
-        Passed to `~proplot.styletools.Norm`.
+        Passed to `~proplot.constructor.Norm`.
     extend : {'neither', 'min', 'max', 'both'}, optional
         Where to assign unique colors to out-of-bounds data and draw
         "extensions" (triangles, by default) on the colorbar.
     levels, N : int or list of float, optional
         The number of level edges, or a list of level edges. If the former,
         `locator` is used to generate this many levels at "nice" intervals.
-        Default is :rc:`image.levels`.
+        If the latter, the levels should be monotonically increasing or
+        decreasing (note that decreasing levels will only work with ``pcolor``
+        plots, not ``contour`` plots). Default is :rc:`image.levels`.
 
         Since this function also wraps `~matplotlib.axes.Axes.pcolor` and
         `~matplotlib.axes.Axes.pcolormesh`, this means they now
@@ -1836,6 +2161,8 @@ def cmap_changer(
         The number of level centers, or a list of level centers. If provided,
         levels are inferred using `~proplot.utils.edges`. This will override
         any `levels` input.
+    symmetric : bool, optional
+        If ``True``, auto-generated levels are symmetric about zero.
     vmin, vmax : float, optional
         Used to determine level locations if `levels` is an integer. Actual
         levels may not fall exactly on `vmin` and `vmax`, but the minimum
@@ -1847,14 +2174,11 @@ def cmap_changer(
     locator : locator-spec, optional
         The locator used to determine level locations if `levels` or `values`
         is an integer and `vmin` and `vmax` were not provided. Passed to the
-        `~proplot.axistools.Locator` constructor. Default is
+        `~proplot.constructor.Locator` constructor. Default is
         `~matplotlib.ticker.MaxNLocator` with ``levels`` or ``values+1``
         integer levels.
     locator_kw : dict-like, optional
-        Passed to `~proplot.axistools.Locator`.
-    symmetric : bool, optional
-        Toggle this to make automatically generated levels symmetric
-        about zero.
+        Passed to `~proplot.constructor.Locator`.
     edgefix : bool, optional
         Whether to fix the the `white-lines-between-filled-contours \
 <https://stackoverflow.com/q/8263769/4970632>`__
@@ -1868,7 +2192,7 @@ def cmap_changer(
         or `~matplotlib.axes.Axes.pcolormesh`, whether to add labels to the
         center of grid boxes. In the latter case, the text will be black
         when the luminance of the underlying grid box color is >50%%, and
-        white otherwise (see the `~proplot.styletools` documentation).
+        white otherwise.
     labels_kw : dict-like, optional
         Ignored if `labels` is ``False``. Extra keyword args for the labels.
         For `~matplotlib.axes.Axes.contour`, passed to
@@ -1876,12 +2200,12 @@ def cmap_changer(
         or `~matplotlib.axes.Axes.pcolormesh`, passed to
         `~matplotlib.axes.Axes.text`.
     fmt : format-spec, optional
-        Passed to the `~proplot.styletools.Norm` constructor, used to format
+        Passed to the `~proplot.constructor.Norm` constructor, used to format
         number labels. You can also use the `precision` keyword arg.
     precision : int, optional
         Maximum number of decimal places for the number labels.
         Number labels are generated with the
-        `~proplot.axistools.SimpleFormatter` formatter, which allows us to
+        `~proplot.ticker.SimpleFormatter` formatter, which allows us to
         limit the precision.
     colorbar : bool, int, or str, optional
         If not ``None``, this is a location specifying where to draw an *inset*
@@ -1903,252 +2227,153 @@ def cmap_changer(
     ls, linestyle, linestyles
         As above, but for the line style.
     color, colors, edgecolor, edgecolors
-        As above, but for the line color.
+        As above, but for the line color. For `~matplotlib.axes.Axes.contourf`
+        plots, if you provide `colors` without specifying the `linewidths`
+        or `linestyles`, this argument is used to manually specify the *fill
+        colors*. See the `~matplotlib.axes.Axes.contourf` documentation for
+        details.
     *args, **kwargs
         Passed to the matplotlib plotting method.
 
-    Notes
-    -----
-    The `~proplot.styletools.BinNorm` normalizer, used with all colormap
-    plots, makes sure that your "levels" always span the full range of colors
-    in the colormap, whether you are extending max, min, neither, or both. By
-    default, when you select `extend` not ``'both'``, matplotlib seems to just
-    cut off the most intense colors (reserved for coloring "out of bounds"
-    data), even though they are not being used.
+    See also
+    --------
+    standardize_2d
+    proplot.constructor.Colormap
+    proplot.constructor.Norm
+    proplot.pcolors.DiscreteNorm
+
+    Note
+    ----
+    The `~proplot.pcolors.DiscreteNorm` normalizer, used with all colormap
+    plots, makes sure that your levels always span the full range of colors
+    in the colormap, whether `extend` is set to ``'min'``, ``'max'``,
+    ``'neither'``, or ``'both'``. By default, when `extend` is not ``'both'``,
+    matplotlib seems to just cut off the most intense colors (reserved for
+    coloring "out of bounds" data), even though they are not being used.
 
     This could also be done by limiting the number of colors in the colormap
     lookup table by selecting a smaller ``N`` (see
-    `~matplotlib.colors.LinearSegmentedColormap`).  But I prefer the approach
-    of always building colormaps with hi-res lookup tables, and leaving the job
-    of normalizing data values to colormap locations to the
-    `~matplotlib.colors.Normalize` object.
-
-    See also
-    --------
-    `~proplot.styletools.Colormap`, `~proplot.styletools.Norm`,
-    `~proplot.styletools.BinNorm`
+    `~matplotlib.colors.LinearSegmentedColormap`). Instead, we prefer to
+    always build colormaps with high resolution lookup tables, and leave it
+    to the `~matplotlib.colors.Normalize` instance to handle discretization
+    of the color selections.
     """
-    # No mutable defaults
-    cmap_kw = cmap_kw or {}
-    norm_kw = norm_kw or {}
-    locator_kw = locator_kw or {}
-    labels_kw = labels_kw or {}
-    colorbar_kw = colorbar_kw or {}
-
-    # Parse args
-    # Disable edgefix=True for certain keyword combos e.g. if user wants
-    # white lines around their pcolor mesh.
     name = func.__name__
     if not args:
         return func(self, *args, **kwargs)
-    vmin = _notNone(
-        vmin, norm_kw.pop('vmin', None), None,
-        names=('vmin', 'norm_kw={"vmin":value}'))
-    vmax = _notNone(
-        vmax, norm_kw.pop('vmax', None), None,
-        names=('vmax', 'norm_kw={"vmax":value}'))
-    levels = _notNone(
-        N, levels, norm_kw.pop('levels', None), rc['image.levels'],
-        names=('N', 'levels', 'norm_kw={"levels":value}'))
-    values = _notNone(
-        values, centers, None,
-        names=('values', 'centers'))
-    colors = _notNone(
-        color, colors, edgecolor, edgecolors, None,
-        names=('color', 'colors', 'edgecolor', 'edgecolors'))
-    linewidths = _notNone(
-        lw, linewidth, linewidths, None,
-        names=('lw', 'linewidth', 'linewidths'))
-    linestyles = _notNone(
-        ls, linestyle, linestyles, None,
-        names=('ls', 'linestyle', 'linestyles'))
-    style_kw = STYLE_ARGS_TRANSLATE.get(name, {})
-    edgefix = _notNone(edgefix, rc['image.edgefix'])
-    for key, value in (
-            ('colors', colors),
-            ('linewidths', linewidths),
-            ('linestyles', linestyles)):
-        if value is None:
-            continue
-        elif 'contourf' in name:  # special case, we re-draw our own contours
-            continue
-        if key in style_kw:
-            edgefix = False  # override!
-            kwargs[style_kw[key]] = value
-        else:
-            raise ValueError(
-                f'Unknown keyword arg {key!r} for function {name!r}.'
-            )
-    # Check input
-    for key, val in (('levels', levels), ('values', values)):
-        if not np.iterable(val):
-            continue
-        if 'contour' in name and 'contourf' not in name:
-            continue
-        if len(val) < 2 or any(
-            np.sign(np.diff(val)) != np.sign(val[1] - val[0])
-        ):
-            raise ValueError(
-                f'{key!r} must be monotonically increasing or decreasing and '
-                f'at least length 2, got {val}.'
-            )
 
-    # Get level edges from level centers
-    if values is not None:
-        if isinstance(values, Number):
-            levels = values + 1
-        elif np.iterable(values):
-            # Try to generate levels such that a LinearSegmentedNorm will
-            # place values ticks at the center of each colorbar level.
-            # utile.edges works only for evenly spaced values arrays.
-            # We solve for: (x1 + x2)/2 = y --> x2 = 2*y - x1
-            # with arbitrary starting point x1.
-            if norm is None or norm in ('segments', 'segmented'):
-                levels = [values[0] - (values[1] - values[0]) / 2]
-                for i, val in enumerate(values):
-                    levels.append(2 * val - levels[-1])
-                if any(np.diff(levels) <= 0):  # algorithm failed
-                    levels = edges(values)
-            # Generate levels by finding in-between points in the
-            # normalized numeric space
-            else:
-                inorm = styletools.Norm(norm, **norm_kw)
-                levels = inorm.inverse(edges(inorm(values)))
-            if name in ('parametric',):
-                kwargs['values'] = values
-        else:
-            raise ValueError(
-                f'Unexpected input values={values!r}. '
-                'Must be integer or list of numbers.'
-            )
+    # Mutable inputs
+    cmap_kw = cmap_kw or {}
+    norm_kw = norm_kw or {}
+    labels_kw = labels_kw or {}
+    locator_kw = locator_kw or {}
+    colorbar_kw = colorbar_kw or {}
 
-    # Input colormap, for methods that accept a colormap and normalizer
-    # contour, tricontour, i.e. not a method where cmap is optional
-    if not ('contour' in name and 'contourf' not in name):
-        cmap = _notNone(cmap, rc['image.cmap'])
-    if cmap is not None:
-        # Get colormap object
-        cmap = styletools.Colormap(cmap, **cmap_kw)
-        cyclic = getattr(cmap, '_cyclic', False)
-        if cyclic and extend != 'neither':
-            _warn_proplot(
+    # Flexible user input
+    vmin = _not_none(vmin=vmin, norm_kw_vmin=norm_kw.pop('vmin', None))
+    vmax = _not_none(vmax=vmax, norm_kw_vmax=norm_kw.pop('vmax', None))
+    values = _not_none(values=values, centers=centers)
+    edgefix = _not_none(edgefix, rc['image.edgefix'])
+    linewidths = _not_none(lw=lw, linewidth=linewidth, linewidths=linewidths)
+    linestyles = _not_none(ls=ls, linestyle=linestyle, linestyles=linestyles)
+    colors = _not_none(
+        color=color, colors=colors, edgecolor=edgecolor, edgecolors=edgecolors,
+    )
+    levels = _not_none(
+        N=N, levels=levels, norm_kw_levels=norm_kw.pop('levels', None),
+        default=rc['image.levels']
+    )
+
+    # Get colormap, but do not use cmap when 'colors' are passed to contour()
+    # or to contourf() -- the latter only when 'linewidths' and 'linestyles'
+    # are also *not* passed. This wrapper lets us add "edges" to contourf
+    # plots by calling contour() after contourf() if 'linewidths' or
+    # 'linestyles' are explicitly passed, but do not want to disable the
+    # native matplotlib feature for manually coloring filled contours.
+    # https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.axes.Axes.contourf
+    add_contours = (
+        name in ('contourf', 'tricontourf')
+        and (linewidths is not None or linestyles is not None)
+    )
+    no_cmap = colors is not None and (
+        name in ('contour', 'tricontour')
+        or name in ('contourf', 'tricontourf') and not add_contours
+    )
+    if no_cmap:
+        if cmap is not None:
+            warnings._warn_proplot(
+                f'Ignoring input colormap cmap={cmap!r}, using input colors '
+                f'colors={colors!r} instead.'
+            )
+            cmap = None
+        if name in ('contourf', 'tricontourf'):
+            kwargs['colors'] = colors  # this was not done above
+            colors = None
+    else:
+        cmap = constructor.Colormap(
+            _not_none(cmap, rc['image.cmap']), **cmap_kw
+        )
+        if getattr(cmap, '_cyclic', None) and extend != 'neither':
+            warnings._warn_proplot(
                 f'Cyclic colormap requires extend="neither". '
-                'Overriding user input extend={extend!r}.'
+                f'Overriding user input extend={extend!r}.'
             )
             extend = 'neither'
-        kwargs['cmap'] = cmap
 
-        # Get default normalizer
-        # Only use LinearSegmentedNorm if necessary, because it is slow
-        if name not in ('hexbin',):
-            if norm is None:
-                if not np.iterable(levels) or len(levels) == 1:
-                    norm = 'linear'
-                else:
-                    diff = np.abs(np.diff(levels))  # permit descending
-                    eps = diff.mean() / 1e3
-                    if (np.abs(np.diff(diff)) >= eps).any():
-                        norm = 'segmented'
-                        norm_kw.setdefault('levels', levels)
-                    else:
-                        norm = 'linear'
-            elif norm in ('segments', 'segmented'):
-                norm_kw.setdefault('levels', levels)
-            norm = styletools.Norm(norm, **norm_kw)
-
-    # Get default levels
-    # TODO: Add kernel density plot to hexbin!
-    if isinstance(levels, Number):
-        # Cannot infer counts a priori, so do nothing
-        if name in ('hexbin',):
-            levels = None
-        # Use the locator to determine levels
-        # Mostly copied from the hidden contour.ContourSet._autolev
-        else:
-            # Get the locator
-            N = levels
-            if locator is not None:
-                locator = axistools.Locator(locator, **locator_kw)
-            elif isinstance(norm, mcolors.LogNorm):
-                locator = mticker.LogLocator(**locator_kw)
-            elif isinstance(norm, getattr(mcolors, 'SymLogNorm', type(None))):
-                locator = mticker.SymmetricalLogLocator(**locator_kw)
-            else:
-                locator_kw.setdefault('symmetric', symmetric)
-                locator = mticker.MaxNLocator(N, min_n_ticks=1, **locator_kw)
-            # Get locations
-            automin = (vmin is None)
-            automax = (vmax is None)
-            if automin or automax:
-                Z = ma.masked_invalid(args[-1], copy=False)
-                if automin:
-                    vmin = float(Z.min())
-                if automax:
-                    vmax = float(Z.max())
-                if vmin == vmax or ma.is_masked(vmin) or ma.is_masked(vmax):
-                    vmin, vmax = 0, 1
-            try:
-                levels = locator.tick_values(vmin, vmax)
-            except RuntimeError:
-                levels = np.linspace(vmin, vmax, N)  # TODO: orig used N+1
-            # Trim excess levels the locator may have supplied
-            if not locator_kw.get('symmetric', None):
-                i0, i1 = 0, len(levels)  # defaults
-                under, = np.where(levels < vmin)
-                if len(under):
-                    i0 = under[-1]
-                    if not automin or extend in ('min', 'both'):
-                        i0 += 1  # permit out-of-bounds data
-                over, = np.where(levels > vmax)
-                if len(over):
-                    i1 = over[0] + 1 if len(over) else len(levels)
-                    if not automax or extend in ('max', 'both'):
-                        i1 -= 1  # permit out-of-bounds data
-                if i1 - i0 < 3:
-                    i0, i1 = 0, len(levels)  # revert
-                levels = levels[i0:i1]
-            # Special consideration if not enough levels
-            # how many times more levels did we want than what we got?
-            nn = N // len(levels)
-            if nn >= 2:
-                olevels = norm(levels)
-                nlevels = []
-                for i in range(len(levels) - 1):
-                    l1, l2 = olevels[i], olevels[i + 1]
-                    nlevels.extend(np.linspace(l1, l2, nn + 1)[:-1])
-                nlevels.append(olevels[-1])
-                levels = norm.inverse(nlevels)
-
-    # Generate BinNorm and update "child" norm with vmin and vmax from levels
-    # This is important for the colorbar setting tick locations properly!
-    if norm is not None:
-        if not isinstance(norm, mcolors.BoundaryNorm):
-            if levels is not None:
-                norm.vmin, norm.vmax = min(levels), max(levels)
-            if levels is not None:
-                bin_kw = {'extend': extend}
-                if cyclic:
-                    bin_kw.update({'step': 0.5, 'extend': 'both'})
-                norm = styletools.BinNorm(norm=norm, levels=levels, **bin_kw)
-        kwargs['norm'] = norm
-
-    # Call function
-    if 'contour' in name:  # contour, contourf, tricontour, tricontourf
-        kwargs.update({'levels': levels, 'extend': extend})
-    obj = func(self, *args, **kwargs)
-    obj.extend = extend  # for colorbar to determine 'extend' property
-    if values is not None:
-        obj.values = values  # preferred tick locations
-    if levels is not None:
-        obj.levels = levels  # for colorbar to determine tick locations
-    if locator is not None and not isinstance(locator, mticker.MaxNLocator):
-        obj.locator = locator  # for colorbar to determine tick locations
-
-    # Call again to add "edges" to contourf plots
-    if 'contourf' in name and any(
-        _ is not None for _ in (colors, linewidths, linestyles)
+    # Translate standardized keyword arguments back into the keyword args
+    # accepted by native matplotlib methods. Also disable edgefix if user want
+    # to customize the "edges".
+    ignore = []
+    style_kw = STYLE_ARGS_TRANSLATE.get(name, None)
+    for key, value in (
+        ('colors', colors),
+        ('linewidths', linewidths),
+        ('linestyles', linestyles)
     ):
-        colors = _notNone(colors, 'k')
+        if add_contours or value is None:
+            continue
+        if not style_kw:  # no known conversion table
+            ignore.append(key)
+            continue
+        edgefix = False  # disable edgefix when specifying borders!
+        kwargs[style_kw[key]] = value
+    if ignore:
+        warnings._warn_proplot(
+            f'Ignoring keyword arguments for {name!r}: '
+            + ', '.join(map(repr, ignore)) + '.'
+        )
+
+    # Build colormap normalizer and update keyword args
+    # NOTE: Standard algorithm for obtaining default levels does not work
+    # for hexbin, because it colors *counts*, not data values!
+    ticks = None
+    if cmap is not None and name not in ('hexbin',):
+        norm, cmap, levels, ticks = _build_discrete_norm(
+            args[-1],  # sample data for getting suitable levels
+            levels=levels, values=values,
+            norm=norm, norm_kw=norm_kw,
+            locator=locator, locator_kw=locator_kw,
+            cmap=cmap, vmin=vmin, vmax=vmax, extend=extend,
+            symmetric=symmetric,
+            minlength=(1 if name in ('contour', 'tricontour') else 2),
+        )
+    if not no_cmap:
+        kwargs['cmap'] = cmap
+    if norm is not None:
+        kwargs['norm'] = norm
+    if name in ('contour', 'contourf', 'tricontour', 'tricontourf'):
+        kwargs['levels'] = levels
+        kwargs['extend'] = extend
+    if name in ('parametric',):
+        kwargs['values'] = values
+
+    # Call function, possibly twice to add 'edges' to contourf plot
+    obj = func(self, *args, **kwargs)
+    obj.extend = extend  # normally 'extend' is just for contour/contourf
+    if ticks is not None:
+        obj.ticks = ticks  # a Locator or ndarray used for controlling ticks
+    if add_contours:
+        colors = _not_none(colors, 'k')
         self.contour(
             *args, levels=levels, linewidths=linewidths,
             linestyles=linestyles, colors=colors
@@ -2158,20 +2383,19 @@ def cmap_changer(
     # TODO: Add quiverkey to this!
     if labels:
         # Formatting for labels
-        # Respect if 'fmt' was passed in labels_kw instead of as a main
-        # argument
-        fmt = _notNone(labels_kw.pop('fmt', None), fmt, 'simple')
-        fmt = axistools.Formatter(fmt, precision=precision)
+        fmt = _not_none(labels_kw.pop('fmt', None), fmt, 'simple')
+        fmt = constructor.Formatter(fmt, precision=precision)
+
         # Use clabel method
-        if 'contour' in name:
-            if 'contourf' in name:
-                lums = [styletools.to_xyz(cmap(norm(level)), 'hcl')[
-                    2] for level in levels]
-                colors = ['w' if lum < 50 else 'k' for lum in lums]
+        if name in ('contour', 'contourf', 'tricontour', 'tricontourf'):
+            cobj = obj
+            colors = None
+            if name in ('contourf', 'tricontourf'):
+                lums = [
+                    to_xyz(cmap(norm(level)), 'hcl')[2] for level in levels
+                ]
                 cobj = self.contour(*args, levels=levels, linewidths=0)
-            else:
-                cobj = obj
-                colors = None
+                colors = ['w' if lum < 50 else 'k' for lum in lums]
             text_kw = {}
             for key in (*labels_kw,):  # allow dict to change size
                 if key not in (
@@ -2185,12 +2409,15 @@ def cmap_changer(
             labs = self.clabel(cobj, fmt=fmt, **labels_kw)
             for lab in labs:
                 lab.update(text_kw)
+
         # Label each box manually
         # See: https://stackoverflow.com/a/20998634/4970632
-        elif 'pcolor' in name:
-            # populates the _facecolors attribute, initially filled with just a
-            # single color
+        elif name in ('pcolor', 'pcolormesh'):
+            # Populate the _facecolors attribute, which is initially filled
+            # with just a single color
             obj.update_scalarmappable()
+
+            # Get text positions and colors
             labels_kw_ = {'size': rc['small'], 'ha': 'center', 'va': 'center'}
             labels_kw_.update(labels_kw)
             array = obj.get_array()
@@ -2209,7 +2436,7 @@ def cmap_changer(
                 x = (bbox.xmin + bbox.xmax) / 2
                 y = (bbox.ymin + bbox.ymax) / 2
                 if 'color' not in labels_kw:
-                    _, _, lum = styletools.to_xyz(color, 'hcl')
+                    _, _, lum = to_xyz(color, 'hcl')
                     if lum < 50:
                         color = 'w'
                     else:
@@ -2221,25 +2448,26 @@ def cmap_changer(
             raise RuntimeError(f'Not possible to add labels to {name!r} plot.')
 
     # Fix white lines between filled contours/mesh, allow user to override!
-    # 0.4 points is thick enough to hide lines but thin enough to not
-    # add "dots" in corner of pcolor plots
-    # *Never* use this when colormap has opacity
+    # 0.4pt is thick enough to hide lines but thin enough to not add "dots" in
+    # corner of pcolor plots. *Never* use this when colormap has opacity.
     # See: https://stackoverflow.com/q/15003353/4970632
-    if 'pcolor' in name or 'contourf' in name:
+    if edgefix and name in (
+        'pcolor', 'pcolormesh', 'tripcolor', 'contourf', 'tricontourf'
+    ):
         cmap = obj.get_cmap()
         if not cmap._isinit:
             cmap._init()
-        if edgefix and all(cmap._lut[:-1, 3] == 1):
-            if 'pcolor' in name:  # 'pcolor', 'pcolormesh', 'tripcolor'
+        if all(cmap._lut[:-1, 3] == 1):  # skip for cmaps with transparency
+            if name in ('pcolor', 'pcolormesh', 'tripcolor'):
                 obj.set_edgecolor('face')
                 obj.set_linewidth(0.4)
-            elif 'contourf' in name:  # 'contourf', 'tricontourf'
+            else:
                 for contour in obj.collections:
                     contour.set_edgecolor('face')
                     contour.set_linewidth(0.4)
                     contour.set_linestyle('-')
 
-    # Add colorbar
+    # Optionally add colorbar
     if colorbar:
         loc = self._loc_translate(colorbar, 'colorbar', allow_manual=False)
         if 'label' not in colorbar_kw and self.figure._auto_format:
@@ -2251,11 +2479,12 @@ def cmap_changer(
         if loc != 'fill':
             colorbar_kw.setdefault('loc', loc)
         self.colorbar(obj, **colorbar_kw)
+
     return obj
 
 
 def legend_wrapper(
-    self, handles=None, labels=None, ncol=None, ncols=None,
+    self, handles=None, labels=None, *, ncol=None, ncols=None,
     center=None, order='C', loc=None, label=None, title=None,
     fontsize=None, fontweight=None, fontcolor=None,
     color=None, marker=None, lw=None, linewidth=None,
@@ -2263,9 +2492,13 @@ def legend_wrapper(
     **kwargs
 ):
     """
-    Wraps `~proplot.axes.Axes` `~proplot.axes.Axes.legend` and
-    `~proplot.subplots.Figure` `~proplot.subplots.Figure.legend`, adds some
-    handy features.
+    Adds useful features for controlling legends, including "centered-row"
+    legends.
+
+    Note
+    ----
+    This function wraps `proplot.axes.Axes.legend`
+    and `proplot.figure.Figure.legend`.
 
     Parameters
     ----------
@@ -2330,162 +2563,140 @@ property-spec, optional
     **kwargs
         Passed to `~matplotlib.axes.Axes.legend`.
     """
-    # First get legend settings and interpret kwargs.
+    # Parse input args
+    # TODO: Legend entries for colormap or scatterplot objects! Idea is we
+    # pass a scatter plot or contourf or whatever, and legend is generated by
+    # drawing patch rectangles or markers using data values and their
+    # corresponding cmap colors! For scatterplots just test get_facecolor()
+    # to see if it contains more than one color.
+    # TODO: It is *also* often desirable to label a colormap object with
+    # one data value. Maybe add a legend option for the *number of samples*
+    # or the *sample points* when drawing legends for colormap objects.
+    # Look into "legend handlers", might just want to add own handlers by
+    # passing handler_map to legend() and get_legend_handles_labels().
     if order not in ('F', 'C'):
         raise ValueError(
             f'Invalid order {order!r}. Choose from '
             '"C" (row-major, default) and "F" (column-major).'
         )
-    # may still be None, wait till later
-    ncol = _notNone(ncols, ncol, None, names=('ncols', 'ncol'))
-    title = _notNone(label, title, None, names=('label', 'title'))
-    frameon = _notNone(
-        frame, frameon, rc['legend.frameon'], names=('frame', 'frameon'))
+    ncol = _not_none(ncols=ncols, ncol=ncol)
+    title = _not_none(label=label, title=title)
+    frameon = _not_none(
+        frame=frame, frameon=frameon, default=rc['legend.frameon']
+    )
+    if not np.iterable(handles):  # e.g. a mappable object
+        handles = [handles]
+    if labels is not None and (not np.iterable(labels) or isinstance(labels, str)):  # noqa: E501
+        labels = [labels]
     if title is not None:
         kwargs['title'] = title
     if frameon is not None:
         kwargs['frameon'] = frameon
     if fontsize is not None:
         kwargs['fontsize'] = fontsize
-    # Text properties, some of which have to be set after-the-fact
+
+    # Text properties that have to be set after-the-fact
     kw_text = {}
     if fontcolor is not None:
         kw_text['color'] = fontcolor
     if fontweight is not None:
         kw_text['weight'] = fontweight
 
-    # Automatically get labels and handles
-    # TODO: Use legend._parse_legend_args instead? This covers functionality
-    # just fine, _parse_legend_args seems overkill.
-    if handles is None:
-        if self._filled:
-            raise ValueError(
-                'You must pass a handles list for panel axes '
-                '"filled" with a legend.'
-            )
+    # Get axes for legend handle detection
+    # TODO: Update this when no longer use "filled panels" for outer legends
+    axs = [self]
+    if self._panel_hidden:
+        if self._panel_parent:  # axes panel
+            axs = list(self._iter_axes(hidden=False, children=True))
         else:
-            # ignores artists with labels '_nolegend_'
-            handles, labels_default = self.get_legend_handles_labels()
-            if labels is None:
-                labels = labels_default
-            if not handles:
-                raise ValueError(
-                    'No labeled artists found. To generate a legend without '
-                    'providing the artists explicitly, pass label="label" in '
-                    'your plotting commands.'
-                )
-    if not np.iterable(handles):  # e.g. a mappable object
-        handles = [handles]
-    if labels is not None and (
-        not np.iterable(labels) or isinstance(labels, str)
+            axs = list(self.figure._iter_axes(hidden=False, children=True))
+
+    # Handle list of lists (centered row legends)
+    list_of_lists = not any(hasattr(handle, 'get_label') for handle in handles)
+    if (
+        handles is not None and labels is not None
+        and len(handles) != len(labels)
     ):
-        labels = [labels]
-
-    # Legend entry for colormap or scatterplot object
-    # TODO: Idea is we pass a scatter plot or contourf or whatever, and legend
-    # is generating by drawing patch rectangles or markers with different
-    # colors.
-    if any(not hasattr(handle, 'get_facecolor') and hasattr(handle, 'get_cmap')
-           for handle in handles) and len(handles) > 1:
         raise ValueError(
-            f'Handles must be objects with get_facecolor attributes or '
-            'a single mappable object from which we can draw colors.'
+            f'Got {len(handles)} handles and {len(labels)} labels.'
         )
-
-    # Build pairs of handles and labels
-    # This allows alternative workflow where user specifies labels when
-    # creating the legend.
-    pairs = []
-    # e.g. not including BarContainer
-    list_of_lists = (not hasattr(handles[0], 'get_label'))
-    if labels is None:
-        for handle in handles:
-            if list_of_lists:
-                ipairs = []
-                for ihandle in handle:
-                    if not hasattr(ihandle, 'get_label'):
-                        raise ValueError(
-                            f'Object {ihandle} must have "get_label" method.'
-                        )
-                    ipairs.append((ihandle, ihandle.get_label()))
-                pairs.append(ipairs)
-            else:
-                if not hasattr(handle, 'get_label'):
-                    raise ValueError(
-                        f'Object {handle} must have "get_label" method.'
-                    )
-                pairs.append((handle, handle.get_label()))
-    else:
-        if len(labels) != len(handles):
+    if list_of_lists:
+        if any(not np.iterable(_) for _ in handles):
+            raise ValueError(f'Invalid handles={handles!r}.')
+        if not labels:
+            labels = [None] * len(handles)
+        elif not all(
+            np.iterable(_) and not isinstance(_, str) for _ in labels
+        ):
             raise ValueError(
-                f'Got {len(labels)} labels, but {len(handles)} handles.'
+                f'Invalid labels={labels!r} for handles={handles!r}.'
             )
-        for label, handle in zip(labels, handles):
-            if list_of_lists:
-                ipairs = []
-                if not np.iterable(label) or isinstance(label, str):
-                    raise ValueError(
-                        f'Got list of lists of handles, but list of labels.'
-                    )
-                elif len(label) != len(handle):
-                    raise ValueError(
-                        f'Got {len(label)} labels in sublist, '
-                        f'but {len(handle)} handles.'
-                    )
-                for ilabel, ihandle in zip(label, handle):
-                    ipairs.append((ihandle, ilabel))
-                pairs.append(ipairs)
-            else:
-                if not isinstance(label, str) and np.iterable(label):
-                    raise ValueError(
-                        f'Got list of lists of labels, but list of handles.'
-                    )
-                pairs.append((handle, label))
+
+    # Parse handles and legends with native matplotlib parser
+    if not list_of_lists:
+        if isinstance(handles, np.ndarray):
+            handles = handles.tolist()
+        if isinstance(labels, np.ndarray):
+            labels = labels.tolist()
+        handles, labels, *_ = mlegend._parse_legend_args(
+            axs, handles=handles, labels=labels,
+        )
+        pairs = list(zip(handles, labels))
+    else:
+        pairs = []
+        for ihandles, ilabels in zip(handles, labels):
+            if isinstance(ihandles, np.ndarray):
+                ihandles = ihandles.tolist()
+            if isinstance(ilabels, np.ndarray):
+                ilabels = ilabels.tolist()
+            ihandles, ilabels, *_ = mlegend._parse_legend_args(
+                axs, handles=ihandles, labels=ilabels,
+            )
+            pairs.append(list(zip(handles, labels)))
 
     # Manage pairs in context of 'center' option
-    if center is None:  # automatically guess
-        center = list_of_lists
-    elif center and list_of_lists and ncol is not None:
-        _warn_proplot(
-            'Detected list of *lists* of legend handles. '
-            'Ignoring user input property "ncol".'
-        )
-    elif not center and list_of_lists:  # standardize format based on input
+    center = _not_none(center, list_of_lists)
+    if not center and list_of_lists:  # standardize format based on input
         list_of_lists = False  # no longer is list of lists
         pairs = [pair for ipairs in pairs for pair in ipairs]
     elif center and not list_of_lists:
         list_of_lists = True
-        ncol = _notNone(ncol, 3)
-        pairs = [pairs[i * ncol:(i + 1) * ncol]
-                 for i in range(len(pairs))]  # to list of iterables
+        ncol = _not_none(ncol, 3)
+        pairs = [
+            pairs[i * ncol:(i + 1) * ncol] for i in range(len(pairs))
+        ]  # to list of iterables
+        ncol = None
     if list_of_lists:  # remove empty lists, pops up in some examples
         pairs = [ipairs for ipairs in pairs if ipairs]
 
-    # Now draw legend(s)
+    # Individual legend
     legs = []
     width, height = self.get_size_inches()
-    # Individual legend
     if not center:
         # Optionally change order
         # See: https://stackoverflow.com/q/10101141/4970632
         # Example: If 5 columns, but final row length 3, columns 0-2 have
         # N rows but 3-4 have N-1 rows.
-        ncol = _notNone(ncol, 3)
+        ncol = _not_none(ncol, 3)
         if order == 'C':
+            split = [  # split into rows
+                pairs[i * ncol:(i + 1) * ncol]
+                for i in range(len(pairs) // ncol + 1)
+            ]
+            nrowsmax = len(split)  # max possible row count
+            nfinalrow = len(split[-1])  # columns in final row
+            nrows = (
+                [nrowsmax] * nfinalrow + [nrowsmax - 1] * (ncol - nfinalrow)
+            )
             fpairs = []
-            # split into rows
-            split = [pairs[i * ncol:(i + 1) * ncol]
-                     for i in range(len(pairs) // ncol + 1)]
-            # max possible row count, and columns in final row
-            nrowsmax, nfinalrow = len(split), len(split[-1])
-            nrows = [nrowsmax] * nfinalrow + \
-                [nrowsmax - 1] * (ncol - nfinalrow)
             for col, nrow in enumerate(nrows):  # iterate through cols
                 fpairs.extend(split[row][col] for row in range(nrow))
             pairs = fpairs
-        # Make legend object
+
+        # Draw legend
         leg = mlegend.Legend(self, *zip(*pairs), ncol=ncol, loc=loc, **kwargs)
         legs = [leg]
+
     # Legend with centered rows, accomplished by drawing separate legends for
     # each row. The label spacing/border spacing will be exactly replicated.
     else:
@@ -2496,12 +2707,18 @@ property-spec, optional
             prop = kwargs.pop(override, None)
             if prop is not None:
                 overridden.append(override)
-        if overridden:
-            _warn_proplot(
-                f'For centered-row legends, must override '
-                'user input properties '
-                + ', '.join(map(repr, overridden)) + '.'
+        if ncol is not None:
+            warnings._warn_proplot(
+                'Detected list of *lists* of legend handles. '
+                'Ignoring user input property "ncol".'
             )
+        if overridden:
+            warnings._warn_proplot(
+                f'Ignoring user input properties '
+                + ', '.join(map(repr, overridden))
+                + ' for centered-row legend.'
+            )
+
         # Determine space we want sub-legend to occupy as fraction of height
         # NOTE: Empirical testing shows spacing fudge factor necessary to
         # exactly replicate the spacing of standard aligned legends.
@@ -2509,6 +2726,7 @@ property-spec, optional
         spacing = kwargs.get('labelspacing', None) or rc['legend.labelspacing']
         interval = 1 / len(pairs)  # split up axes
         interval = (((1 + spacing * 0.85) * fontsize) / 72) / height
+
         # Iterate and draw
         # NOTE: We confine possible bounding box in *y*-direction, but do not
         # confine it in *x*-direction. Matplotlib will automatically move
@@ -2520,22 +2738,25 @@ property-spec, optional
                 'single-row legends. Column-major (order="F") ordering '
                 'is un-supported.'
             )
-        loc = _notNone(loc, 'upper center')
+        loc = _not_none(loc, 'upper center')
         if not isinstance(loc, str):
             raise ValueError(
                 f'Invalid location {loc!r} for legend with center=True. '
                 'Must be a location *string*.'
             )
         elif loc == 'best':
-            _warn_proplot(
+            warnings._warn_proplot(
                 'For centered-row legends, cannot use "best" location. '
                 'Using "upper center" instead.'
             )
+
+        # Iterate through sublists
         for i, ipairs in enumerate(pairs):
             if i == 1:
                 kwargs.pop('title', None)
             if i >= 1 and title is not None:
                 i += 1  # extra space!
+
             # Legend position
             if 'upper' in loc:
                 y1 = 1 - (i + 1) * interval
@@ -2546,14 +2767,16 @@ property-spec, optional
             else:  # center
                 y1 = 0.5 + interval * len(pairs) / 2 - (i + 1) * interval
                 y2 = 0.5 + interval * len(pairs) / 2 - i * interval
-            ymin = min(y1, _notNone(ymin, y1))
-            ymax = max(y2, _notNone(ymax, y2))
+            ymin = min(y1, _not_none(ymin, y1))
+            ymax = max(y2, _not_none(ymax, y2))
+
             # Draw legend
             bbox = mtransforms.Bbox([[0, y1], [1, y2]])
             leg = mlegend.Legend(
                 self, *zip(*ipairs), loc=loc, ncol=len(ipairs),
                 bbox_transform=self.transAxes, bbox_to_anchor=bbox,
-                frameon=False, **kwargs)
+                frameon=False, **kwargs
+            )
             legs.append(leg)
 
     # Add legends manually so matplotlib does not remove old ones
@@ -2589,6 +2812,7 @@ property-spec, optional
         for obj in leg.get_texts():
             if isinstance(obj, martist.Artist):
                 obj.update(kw_text)
+
     # Draw manual fancy bounding box for un-aligned legend
     # WARNING: The matplotlib legendPatch transform is the default transform,
     # i.e. universal coordinates in points. Means we have to transform
@@ -2630,6 +2854,7 @@ property-spec, optional
                 self.add_artist(shadow)
             # Add patch to list
             legs = (patch, *legs)
+
     # Append attributes and return, and set clip property!!! This is critical
     # for tight bounding box calcs!
     for leg in legs:
@@ -2642,7 +2867,7 @@ def colorbar_wrapper(
     extend=None, extendsize=None,
     title=None, label=None,
     grid=None, tickminor=None,
-    tickloc=None, ticklocation=None,
+    reverse=False, tickloc=None, ticklocation=None,
     locator=None, ticks=None, maxn=None, maxn_minor=None,
     minorlocator=None, minorticks=None,
     locator_kw=None, minorlocator_kw=None,
@@ -2655,9 +2880,12 @@ def colorbar_wrapper(
     **kwargs
 ):
     """
-    Wraps `~proplot.axes.Axes` `~proplot.axes.Axes.colorbar` and
-    `~proplot.subplots.Figure` `~proplot.subplots.Figure.colorbar`, adds some
-    handy features.
+    Adds useful features for controlling colorbars.
+
+    Note
+    ----
+    This function wraps `proplot.axes.Axes.legend`
+    and `proplot.figure.Figure.legend`.
 
     Parameters
     ----------
@@ -2688,6 +2916,11 @@ or colormap-spec
         Ignored if `mappable` is a mappable object. This maps each color or
         plot handle in the `mappable` list to numeric values, from which a
         colormap and normalizer are constructed.
+    norm : normalizer spec, optional
+        Ignored if `values` is ``None``. The normalizer for converting `values`
+        to colormap colors. Passed to `~proplot.constructor.Norm`.
+    norm_kw : dict-like, optional
+        The normalizer settings. Passed to `~proplot.constructor.Norm`.
     extend : {None, 'neither', 'both', 'min', 'max'}, optional
         Direction for drawing colorbar "extensions" (i.e. references to
         out-of-bounds data with a unique color). These are triangles by
@@ -2698,50 +2931,36 @@ or colormap-spec
         If float, units are inches. If string, units are interpreted
         by `~proplot.utils.units`. Default is :rc:`colorbar.insetextend`
         for inset colorbars and :rc:`colorbar.extend` for outer colorbars.
-
-        This is handy if you have multiple colorbars in one figure.
-        With the matplotlib API, it is really hard to get triangle
-        sizes to match, because the `extendsize` units are *relative*.
+    reverse : bool, optional
+        Whether to reverse the direction of the colorbar.
     tickloc, ticklocation : {'bottom', 'top', 'left', 'right'}, optional
         Where to draw tick marks on the colorbar.
+    tickminor : bool, optional
+        Whether to add minor ticks to the colorbar with
+        `~matplotlib.colorbar.ColorbarBase.minorticks_on`.
     label, title : str, optional
         The colorbar label. The `title` keyword is also accepted for
         consistency with `legend`.
     grid : bool, optional
         Whether to draw "gridlines" between each level of the colorbar.
         Default is :rc:`colorbar.grid`.
-    tickminor : bool, optional
-        Whether to add minor ticks to the colorbar with
-        `~matplotlib.colorbar.ColorbarBase.minorticks_on`. Default is
-        ``False``.
     locator, ticks : locator spec, optional
         Used to determine the colorbar tick positions. Passed to the
-        `~proplot.axistools.Locator` constructor.
+        `~proplot.constructor.Locator` constructor.
     maxn : int, optional
         Used if `locator` is ``None``. Determines the maximum number of levels
         that are ticked. Default depends on the colorbar length relative
         to the font size. The keyword name "maxn" is meant to mimic
         the `~matplotlib.ticker.MaxNLocator` class name.
-    maxn_minor : int, optional
-        As with `maxn`, but for minor tick positions. Default depends
-        on the colorbar length.
     locator_kw : dict-like, optional
-        The locator settings. Passed to `~proplot.axistools.Locator`.
-    minorlocator, minorticks
-        As with `locator`, but for the minor ticks.
-    minorlocator_kw
-        As for `locator_kw`, but for the minor ticks.
+        The locator settings. Passed to `~proplot.constructor.Locator`.
+    minorlocator, minorticks, maxn_minor, minorlocator_kw
+        As with `locator`, `maxn`, and `locator_kw`, but for the minor ticks.
     formatter, ticklabels : formatter spec, optional
-        The tick label format. Passed to the `~proplot.axistools.Formatter`
+        The tick label format. Passed to the `~proplot.constructor.Formatter`
         constructor.
     formatter_kw : dict-like, optional
-        The formatter settings. Passed to `~proplot.axistools.Formatter`.
-    norm : normalizer spec, optional
-        Ignored if `values` is ``None``. The normalizer
-        for converting `values` to colormap colors. Passed to the
-        `~proplot.styletools.Norm` constructor.
-    norm_kw : dict-like, optional
-        The normalizer settings. Passed to `~proplot.styletools.Norm`.
+        The formatter settings. Passed to `~proplot.constructor.Formatter`.
     edgecolor, linewidth : optional
         The edge color and line width for the colorbar outline.
     labelsize, labelweight, labelcolor : optional
@@ -2756,42 +2975,35 @@ or colormap-spec
     **kwargs
         Passed to `~matplotlib.figure.Figure.colorbar`.
     """
-    # Developer notes
-    # * Colorbar axes must be of type `matplotlib.axes.Axes`,
-    #   not `~proplot.axes.Axes`, because colorbar uses some internal methods
-    #   that are wrapped by `~proplot.axes.Axes`.
-    # * There is an insanely weird problem with colorbars when simultaneously
-    #   passing levels and norm object to a mappable; fixed by passing
-    #   vmin/vmax instead of levels.
-    #   (see: https://stackoverflow.com/q/40116968/4970632).
-    # * Problem is often want levels instead of vmin/vmax, while simultaneously
-    #   using a Normalize (for example) to determine colors between the levels
-    #   (see: https://stackoverflow.com/q/42723538/4970632). Workaround makes
-    #   sure locators are in vmin/vmax range exclusively; cannot match values.
-    # No mutable defaults
+    # NOTE: There is a weird problem with colorbars when simultaneously
+    # passing levels and norm object to a mappable; fixed by passing vmin/vmax
+    # instead of levels. (see: https://stackoverflow.com/q/40116968/4970632).
+    # NOTE: Often want levels instead of vmin/vmax, while simultaneously
+    # using a Normalize (for example) to determine colors between the levels
+    # (see: https://stackoverflow.com/q/42723538/4970632). Workaround makes
+    # sure locators are in vmin/vmax range exclusively; cannot match values.
+    # NOTE: In legend_wrapper() we try to add to the objects accepted by
+    # legend() using handler_map. We can't really do anything similar for
+    # colorbars; input must just be insnace of mixin class cm.ScalarMappable
+    # Mutable args
+    norm_kw = norm_kw or {}
+    formatter_kw = formatter_kw or {}
     locator_kw = locator_kw or {}
     minorlocator_kw = minorlocator_kw or {}
-    formatter_kw = formatter_kw or {}
-    norm_kw = norm_kw or {}
-    # Parse flexible input
-    label = _notNone(title, label, None, names=('title', 'label'))
-    locator = _notNone(ticks, locator, None, names=('ticks', 'locator'))
-    formatter = _notNone(
-        ticklabels, formatter, 'auto',
-        names=('ticklabels', 'formatter')
-    )
-    minorlocator = _notNone(
-        minorticks, minorlocator, None,
-        names=('minorticks', 'minorlocator')
-    )
-    ticklocation = _notNone(
-        tickloc, ticklocation, None,
-        names=('tickloc', 'ticklocation')
-    )
+
+    # Parse input args
+    label = _not_none(title=title, label=label)
+    locator = _not_none(ticks=ticks, locator=locator)
+    minorlocator = _not_none(minorticks=minorticks, minorlocator=minorlocator)
+    ticklocation = _not_none(tickloc=tickloc, ticklocation=ticklocation)
+    formatter = _not_none(ticklabels=ticklabels, formatter=formatter, default='auto')
 
     # Colorbar kwargs
     # WARNING: PathCollection scatter objects have an extend method!
-    grid = _notNone(grid, rc['colorbar.grid'])
+    # WARNING: Matplotlib 3.3 deprecated 'extend' parameter passed to colorbar()
+    # but *also* fails to read 'extend' parameter when added to a pcolor mappable!
+    # Need to figure out workaround!
+    grid = _not_none(grid, rc['colorbar.grid'])
     if extend is None:
         if isinstance(getattr(mappable, 'extend', None), str):
             extend = mappable.extend or 'neither'
@@ -2801,8 +3013,8 @@ or colormap-spec
         'cax': self,
         'use_gridspec': True,
         'orientation': orientation,
+        'spacing': 'uniform',
         'extend': extend,
-        'spacing': 'uniform'
     })
     kwargs.setdefault('drawedges', grid)
 
@@ -2822,8 +3034,8 @@ or colormap-spec
     if ticklabelcolor is not None:
         kw_ticklabels['color'] = ticklabelcolor
 
-    # Special case where auto colorbar is generated from 1D methods, a list is
-    # always passed, but some 1D methods (scatter) do have colormaps.
+    # Special case where auto colorbar is generated from 1d methods, a list is
+    # always passed, but some 1d methods (scatter) do have colormaps.
     if (
         np.iterable(mappable)
         and len(mappable) == 1
@@ -2873,8 +3085,16 @@ or colormap-spec
                     color = obj.get_color()
                 else:
                     color = obj.get_facecolor()
-                colors.append(color)
+                if isinstance(color, np.ndarray):
+                    color = color.squeeze()  # e.g. scatter plot
+                    if color.ndim != 1:
+                        raise ValueError(
+                            'Cannot make colorbar from list of artists '
+                            f'with more than one color: {color!r}.'
+                        )
+                colors.append(to_rgb(color))
             cmap = mcolors.ListedColormap(colors, '_no_name')
+
             # Try to infer values from labels
             if values is None:
                 values = []
@@ -2883,11 +3103,9 @@ or colormap-spec
                     try:
                         val = float(val)
                     except ValueError:
-                        values = None
+                        values = np.arange(len(colors))
                         break
                     values.append(val)
-            if values is None:
-                values = np.arange(len(colors))
 
         else:
             raise ValueError(
@@ -2896,43 +3114,39 @@ or colormap-spec
                 f'Got {mappable!r}.'
             )
 
-    # Build new ad hoc mappable object from colors
-    # NOTE: Need to use *wrapped* contourf but this might be native matplotlib
-    # axes. Call on self.axes, which is parent if child axes, self otherwise.
-    if cmap is not None:
-        if np.iterable(mappable) and len(values) != len(mappable):
-            raise ValueError(
-                f'Passed {len(values)} values, but only {len(mappable)} '
-                f'objects or colors.'
+        # Build ad hoc ScalarMappable object from colors
+        if cmap is not None:
+            locator = _not_none(locator, values)  # tick *all* vals by default
+            if np.iterable(mappable) and len(values) != len(mappable):
+                raise ValueError(
+                    f'Passed {len(values)} values, but only {len(mappable)} '
+                    f'objects or colors.'
+                )
+            norm, *_ = _build_discrete_norm(
+                values=values, extend='neither',
+                cmap=cmap, norm=norm, norm_kw=norm_kw,
             )
-        import warnings
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            mappable = self.axes.contourf(
-                [0, 0], [0, 0], ma.array([[0, 0], [0, 0]], mask=True),
-                cmap=cmap, extend='neither', values=np.array(values),
-                norm=norm, norm_kw=norm_kw
-            )  # workaround
+            mappable = mcm.ScalarMappable(norm, cmap)
 
     # Try to get tick locations from *levels* or from *values* rather than
-    # random points along the axis. If values were provided as keyword arg,
-    # this is colorbar from lines/colors, and we label *all* values by default.
-    # TODO: Handle more of the log locator stuff here instead of cmap_changer?
-    norm = getattr(mappable, 'norm', None)
-    if values is not None and locator is None:
-        locator = values
-        tickminor = False
+    # random points along the axis.
+    # NOTE: Do not necessarily want e.g. minor tick locations at logminor
+    # for LogNorm! In _build_discrete_norm we sometimes select evenly spaced
+    # levels in log-space *between* powers of 10, so logminor ticks would be
+    # misaligned with levels.
     if locator is None:
-        for attr in ('values', 'locator', 'levels'):
-            locator = getattr(mappable, attr, None)
-            if locator is not None:
-                break
-        if locator is None:  # i.e. no attributes found
+        locator = getattr(mappable, 'ticks', None)
+        if locator is None:
+            # This should only happen if user calls plotting method on native
+            # matplotlib axes.
             if isinstance(norm, mcolors.LogNorm):
                 locator = 'log'
+            elif isinstance(norm, mcolors.SymLogNorm):
+                locator = 'symlog'
+                locator_kw.setdefault('linthresh', norm.linthresh)
             else:
                 locator = 'auto'
-        # i.e. was a 'values' or 'levels' attribute
+
         elif not isinstance(locator, mticker.Locator):
             # Get default maxn, try to allot 2em squares per label maybe?
             # NOTE: Cannot use Axes.get_size_inches because this is a
@@ -2946,9 +3160,11 @@ or colormap-spec
                 scale = 1
                 length = height * abs(self.get_position().height)
                 fontsize = kw_ticklabels.get('size', rc['ytick.labelsize'])
-            maxn = _notNone(maxn, int(length / (scale * fontsize / 72)))
-            maxn_minor = _notNone(maxn_minor, int(
-                length / (0.5 * fontsize / 72)))
+            maxn = _not_none(maxn, int(length / (scale * fontsize / 72)))
+            maxn_minor = _not_none(
+                maxn_minor, int(length / (0.5 * fontsize / 72))
+            )
+
             # Get locator
             if tickminor and minorlocator is None:
                 step = 1 + len(locator) // max(1, maxn_minor)
@@ -2956,93 +3172,50 @@ or colormap-spec
             step = 1 + len(locator) // max(1, maxn)
             locator = locator[::step]
 
-    # Final settings
-    locator = axistools.Locator(locator, **locator_kw)
-    formatter = axistools.Formatter(formatter, **formatter_kw)
+    # Get extend triangles in physical units
     width, height = self.figure.get_size_inches()
     if orientation == 'horizontal':
         scale = width * abs(self.get_position().width)
     else:
         scale = height * abs(self.get_position().height)
-    extendsize = units(_notNone(extendsize, rc['colorbar.extend']))
+    extendsize = units(_not_none(extendsize, rc['colorbar.extend']))
     extendsize = extendsize / (scale - 2 * extendsize)
+
+    # Draw the colorbar
+    locator = constructor.Locator(locator, **locator_kw)
+    formatter = constructor.Formatter(formatter, **formatter_kw)
     kwargs.update({
         'ticks': locator,
         'format': formatter,
         'ticklocation': ticklocation,
         'extendfrac': extendsize
     })
-
-    # Draw the colorbar
-    # NOTE: self._use_auto_colorbar_locator() is never True because
-    # we use the custom BinNorm normalizer. Colorbar._ticks() always called.
-    try:
-        self.figure._locked = False
-        cb = self.figure.colorbar(mappable, **kwargs)
-    except Exception as err:
-        self.figure._locked = True
-        raise err
+    mappable.extend = extend  # matplotlib >=3.3
+    cb = self.figure.colorbar(mappable, **kwargs)
     axis = self.xaxis if orientation == 'horizontal' else self.yaxis
 
     # The minor locator
     # TODO: Document the improved minor locator functionality!
-    if tickminor and minorlocator is None:
-        cb.minorticks_on()
-    elif minorlocator is None:
-        cb.minorticks_off()
-    elif not hasattr(cb, '_ticker'):
-        _warn_proplot(
-            'Matplotlib colorbar API has changed. '
-            'Cannot use custom minor tick locator.'
-        )
+    # NOTE: Colorbar._use_auto_colorbar_locator() is never True because we use
+    # the custom DiscreteNorm normalizer. Colorbar._ticks() always called.
+    if minorlocator is None:
         if tickminor:
             cb.minorticks_on()
+        else:
+            cb.minorticks_off()
+    elif not hasattr(cb, '_ticker'):
+        warnings._warn_proplot(
+            'Matplotlib colorbar API has changed. '
+            f'Cannot use custom minor tick locator {minorlocator!r}.'
+        )
+        cb.minorticks_on()  # at least turn them on
     else:
         # Set the minor ticks just like matplotlib internally sets the
         # major ticks. Private API is the only way!
-        minorlocator = axistools.Locator(minorlocator, **minorlocator_kw)
+        minorlocator = constructor.Locator(minorlocator, **minorlocator_kw)
         ticks, *_ = cb._ticker(minorlocator, mticker.NullFormatter())
         axis.set_ticks(ticks, minor=True)
         axis.set_ticklabels([], minor=True)
-
-    # Outline
-    kw_outline = {
-        'edgecolor': _notNone(edgecolor, rc['axes.edgecolor']),
-        'linewidth': _notNone(linewidth, rc['axes.linewidth']),
-    }
-    if cb.outline is not None:
-        cb.outline.update(kw_outline)
-    if cb.dividers is not None:
-        cb.dividers.update(kw_outline)
-
-    # Fix alpha-blending issues.
-    # Cannot set edgecolor to 'face' if alpha non-zero because blending will
-    # occur, will get colored lines instead of white ones. Need manual blending
-    # NOTE: For some reason cb solids uses listed colormap with always 1.0
-    # alpha, then alpha is applied after.
-    # See: https://stackoverflow.com/a/35672224/4970632
-    cmap = cb.cmap
-    if not cmap._isinit:
-        cmap._init()
-    if any(cmap._lut[:-1, 3] < 1):
-        _warn_proplot(
-            f'Using manual alpha-blending for {cmap.name!r} colorbar solids.'
-        )
-        # Generate "secret" copy of the colormap!
-        lut = cmap._lut.copy()
-        cmap = mcolors.Colormap('_colorbar_fix', N=cmap.N)
-        cmap._isinit = True
-        cmap._init = (lambda: None)
-        # Manually fill lookup table with alpha-blended RGB colors!
-        for i in range(lut.shape[0] - 1):
-            alpha = lut[i, 3]
-            lut[i, :3] = (1 - alpha) * 1 + alpha * \
-                lut[i, :3]  # blend with *white*
-            lut[i, 3] = 1
-        cmap._lut = lut
-        # Update colorbar
-        cb.cmap = cmap
-        cb.draw_all()
 
     # Label and tick label settings
     # WARNING: Must use colorbar set_label to set text, calling set_text on
@@ -3065,16 +3238,56 @@ or colormap-spec
         axis.set_tick_params(which=which, **kw)
     axis.set_ticks_position(ticklocation)
 
-    # Invert the axis if BinNorm
-    # TODO: When is norm *not* BinNorm? Should be pretty much always.
-    if isinstance(norm, styletools.BinNorm):
-        axis.set_inverted(norm._descending)
+    # Fix alpha-blending issues.
+    # Cannot set edgecolor to 'face' if alpha non-zero because blending will
+    # occur, will get colored lines instead of white ones. Need manual blending
+    # NOTE: For some reason cb solids uses listed colormap with always 1.0
+    # alpha, then alpha is applied after.
+    # See: https://stackoverflow.com/a/35672224/4970632
+    cmap = cb.cmap
+    if not cmap._isinit:
+        cmap._init()
+    if any(cmap._lut[:-1, 3] < 1):
+        warnings._warn_proplot(
+            f'Using manual alpha-blending for {cmap.name!r} colorbar solids.'
+        )
+        # Generate "secret" copy of the colormap!
+        lut = cmap._lut.copy()
+        cmap = mcolors.Colormap('_cbar_fix', N=cmap.N)
+        cmap._isinit = True
+        cmap._init = lambda: None
+        # Manually fill lookup table with alpha-blended RGB colors!
+        for i in range(lut.shape[0] - 1):
+            alpha = lut[i, 3]
+            lut[i, :3] = (1 - alpha) * 1 + alpha * lut[i, :3]  # blend *white*
+            lut[i, 3] = 1
+        cmap._lut = lut
+        # Update colorbar
+        cb.cmap = cmap
+        cb.draw_all()
+
+    # Fix colorbar outline
+    kw_outline = {
+        'edgecolor': _not_none(edgecolor, rc['axes.edgecolor']),
+        'linewidth': _not_none(linewidth, rc['axes.linewidth']),
+    }
+    if cb.outline is not None:
+        cb.outline.update(kw_outline)
+    if cb.dividers is not None:
+        cb.dividers.update(kw_outline)
 
     # *Never* rasterize because it causes misalignment with border lines
     if cb.solids:
         cb.solids.set_rasterized(False)
         cb.solids.set_linewidth(0.4)
         cb.solids.set_edgecolor('face')
+
+    # Invert the axis if descending DiscreteNorm
+    norm = mappable.norm
+    if getattr(norm, '_descending', None):
+        axis.set_inverted(True)
+    if reverse:  # potentially double reverse, although that would be weird...
+        axis.set_inverted(True)
     return cb
 
 
@@ -3178,7 +3391,7 @@ _cycle_changer = _wrapper_decorator(cycle_changer)
 _fill_between_wrapper = _wrapper_decorator(fill_between_wrapper)
 _fill_betweenx_wrapper = _wrapper_decorator(fill_betweenx_wrapper)
 _hist_wrapper = _wrapper_decorator(hist_wrapper)
-_plot_wrapper = _wrapper_decorator(plot_wrapper)
+_plot_wrapper = _wrapper_decorator(_plot_wrapper_deprecated)
 _scatter_wrapper = _wrapper_decorator(scatter_wrapper)
 _standardize_1d = _wrapper_decorator(standardize_1d)
 _standardize_2d = _wrapper_decorator(standardize_2d)
