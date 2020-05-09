@@ -3,6 +3,10 @@
 Utilities used internally by proplot.
 """
 from . import defaults, docstring, timers, warnings  # noqa: F401
+try:  # print debugging
+    from icecream import ic
+except ImportError:  # graceful fallback if IceCream isn't installed
+    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
 
 
 def _not_none(*args, default=None, **kwargs):
