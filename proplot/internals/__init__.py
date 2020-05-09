@@ -34,6 +34,20 @@ def _not_none(*args, default=None, **kwargs):
     return first
 
 
+class _dummy_context(object):
+    """
+    Dummy context manager.
+    """
+    def __init__(self, obj=None):
+        self.obj = obj
+
+    def __enter__(self):
+        return self.obj
+
+    def __exit__(self, *args):
+        pass
+
+
 class _set_state(object):
     """
     Temporarily modify attribute(s) for an arbitrary object.
