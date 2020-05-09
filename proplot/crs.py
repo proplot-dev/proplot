@@ -1,33 +1,24 @@
 #!/usr/bin/env python3
 """
-New cartopy projection classes and a projection constructor function
-for generating `~mpl_toolkits.basemap.Basemap` and cartopy
-`~cartopy.crs.Projection` classes.
+New cartopy projection classes.
 """
-from .utils import _warn_proplot
-try:  # use this for debugging instead of print()!
-    from icecream import ic
-except ImportError:  # graceful fallback if IceCream isn't installed
-    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
-try:
-    from mpl_toolkits.basemap import Basemap
-except ImportError:
-    Basemap = object
+import warnings
+from .internals import ic  # noqa: F401
+from .internals import docstring
 try:
     from cartopy.crs import (
-        CRS, _WarpedRectangularProjection,
-        LambertAzimuthalEqualArea, AzimuthalEquidistant, Gnomonic
+        _WarpedRectangularProjection,
+        LambertAzimuthalEqualArea,
+        AzimuthalEquidistant,
+        Gnomonic,
     )
 except ModuleNotFoundError:
-    CRS = object
     _WarpedRectangularProjection = object
     LambertAzimuthalEqualArea = object
     AzimuthalEquidistant = object
     Gnomonic = object
 
 __all__ = [
-    'Proj',
-    'basemap_kwargs', 'cartopy_names',
     'Aitoff', 'Hammer', 'KavrayskiyVII',
     'NorthPolarAzimuthalEquidistant',
     'NorthPolarGnomonic',
@@ -38,16 +29,18 @@ __all__ = [
     'WinkelTripel',
 ]
 
-_reso_doc = """Projection resolution."""
-_proj_doc = """
+docstring.snippets['proj.reso'] = """
+The projection resolution.
+"""
+docstring.snippets['proj.init'] = """
 Parameters
 ----------
 central_longitude : float, optional
-    The longitude of the central meridian in degrees. Default is 0.
+    The central meridian longitude in degrees. Default is 0.
 false_easting: float, optional
-    X offset from planar origin in metres. Defaults to 0.
+    X offset from planar origin in metres. Default is 0.
 false_northing: float, optional
-    Y offset from planar origin in metres. Defaults to 0.
+    Y offset from planar origin in metres. Default is 0.
 globe : `~cartopy.crs.Globe`, optional
     If omitted, a default globe is created.
 """
@@ -211,8 +204,14 @@ class Aitoff(_WarpedRectangularProjection):
     #: Registered projection name.
     name = 'aitoff'
 
-    def __init__(self, central_longitude=0, globe=None,
-                 false_easting=None, false_northing=None):
+    @docstring.add_snippets
+    def __init__(
+        self, central_longitude=0, globe=None,
+        false_easting=None, false_northing=None
+    ):
+        """
+        %(proj.init)s
+        """
         from cartopy._crs import Globe
         from cartopy.crs import WGS84_SEMIMAJOR_AXIS
         if globe is None:
@@ -221,7 +220,7 @@ class Aitoff(_WarpedRectangularProjection):
         a = globe.semimajor_axis or WGS84_SEMIMAJOR_AXIS
         b = globe.semiminor_axis or a
         if b != a or globe.ellipse is not None:
-            _warn_proplot(
+            warnings.warn(
                 f'The {self.name!r} projection does not handle '
                 'elliptical globes.'
             )
@@ -234,12 +233,13 @@ class Aitoff(_WarpedRectangularProjection):
             globe=globe
         )
 
+    @docstring.add_snippets
     @property
     def threshold(self):  # how finely to interpolate line data, etc.
+        """
+        %(proj.reso)s
+        """
         return 1e5
-
-    __init__.__doc__ = _proj_doc
-    threshold.__doc__ = _reso_doc
 
 
 class Hammer(_WarpedRectangularProjection):
@@ -250,8 +250,14 @@ class Hammer(_WarpedRectangularProjection):
     #: Registered projection name.
     name = 'hammer'
 
-    def __init__(self, central_longitude=0, globe=None,
-                 false_easting=None, false_northing=None):
+    @docstring.add_snippets
+    def __init__(
+        self, central_longitude=0, globe=None,
+        false_easting=None, false_northing=None
+    ):
+        """
+        %(proj.init)s
+        """
         from cartopy._crs import Globe
         from cartopy.crs import WGS84_SEMIMAJOR_AXIS
         if globe is None:
@@ -260,7 +266,7 @@ class Hammer(_WarpedRectangularProjection):
         a = globe.semimajor_axis or WGS84_SEMIMAJOR_AXIS
         b = globe.semiminor_axis or a
         if b != a or globe.ellipse is not None:
-            _warn_proplot(
+            warnings.warn(
                 f'The {self.name!r} projection does not handle '
                 'elliptical globes.'
             )
@@ -273,12 +279,13 @@ class Hammer(_WarpedRectangularProjection):
             globe=globe
         )
 
+    @docstring.add_snippets
     @property
     def threshold(self):  # how finely to interpolate line data, etc.
+        """
+        %(proj.reso)s
+        """
         return 1e5
-
-    __init__.__doc__ = _proj_doc
-    threshold.__doc__ = _reso_doc
 
 
 class KavrayskiyVII(_WarpedRectangularProjection):
@@ -289,8 +296,14 @@ class KavrayskiyVII(_WarpedRectangularProjection):
     #: Registered projection name.
     name = 'kavrayskiyVII'
 
-    def __init__(self, central_longitude=0, globe=None,
-                 false_easting=None, false_northing=None):
+    @docstring.add_snippets
+    def __init__(
+        self, central_longitude=0, globe=None,
+        false_easting=None, false_northing=None
+    ):
+        """
+        %(proj.init)s
+        """
         from cartopy._crs import Globe
         from cartopy.crs import WGS84_SEMIMAJOR_AXIS
         if globe is None:
@@ -299,23 +312,26 @@ class KavrayskiyVII(_WarpedRectangularProjection):
         a = globe.semimajor_axis or WGS84_SEMIMAJOR_AXIS
         b = globe.semiminor_axis or a
         if b != a or globe.ellipse is not None:
-            _warn_proplot(
+            warnings.warn(
                 f'The {self.name!r} projection does not handle '
                 'elliptical globes.'
             )
 
         proj4_params = {'proj': 'kav7', 'lon_0': central_longitude}
-        super().__init__(proj4_params, central_longitude,
-                         false_easting=false_easting,
-                         false_northing=false_northing,
-                         globe=globe)
+        super().__init__(
+            proj4_params, central_longitude,
+            false_easting=false_easting,
+            false_northing=false_northing,
+            globe=globe
+        )
 
+    @docstring.add_snippets
     @property
     def threshold(self):
+        """
+        %(proj.reso)s
+        """
         return 1e5
-
-    __init__.__doc__ = _proj_doc
-    threshold.__doc__ = _reso_doc
 
 
 class WinkelTripel(_WarpedRectangularProjection):
@@ -326,8 +342,14 @@ class WinkelTripel(_WarpedRectangularProjection):
     #: Registered projection name.
     name = 'winkeltripel'
 
-    def __init__(self, central_longitude=0, globe=None,
-                 false_easting=None, false_northing=None):
+    @docstring.add_snippets
+    def __init__(
+        self, central_longitude=0, globe=None,
+        false_easting=None, false_northing=None
+    ):
+        """
+        %(proj.init)s
+        """
         from cartopy._crs import Globe
         from cartopy.crs import WGS84_SEMIMAJOR_AXIS
         if globe is None:
@@ -336,96 +358,116 @@ class WinkelTripel(_WarpedRectangularProjection):
         a = globe.semimajor_axis or WGS84_SEMIMAJOR_AXIS
         b = globe.semiminor_axis or a
         if b != a or globe.ellipse is not None:
-            _warn_proplot(
+            warnings.warn(
                 f'The {self.name!r} projection does not handle '
                 'elliptical globes.'
             )
 
         proj4_params = {'proj': 'wintri', 'lon_0': central_longitude}
-        super().__init__(proj4_params, central_longitude,
-                         false_easting=false_easting,
-                         false_northing=false_northing,
-                         globe=globe)
+        super().__init__(
+            proj4_params, central_longitude,
+            false_easting=false_easting,
+            false_northing=false_northing,
+            globe=globe
+        )
 
+    @docstring.add_snippets
     @property
     def threshold(self):
+        """
+        %(proj.reso)s
+        """
         return 1e5
-
-    __init__.__doc__ = _proj_doc
-    threshold.__doc__ = _reso_doc
 
 
 class NorthPolarAzimuthalEquidistant(AzimuthalEquidistant):
     """
     Analogous to `~cartopy.crs.NorthPolarStereo`.
     """
+    @docstring.add_snippets
     def __init__(self, central_longitude=0.0, globe=None):
+        """
+        %(proj.init)s
+        """
         super().__init__(
             central_latitude=90,
             central_longitude=central_longitude, globe=globe
         )
-    __init__.__doc__ = _proj_doc
 
 
 class SouthPolarAzimuthalEquidistant(AzimuthalEquidistant):
     """
     Analogous to `~cartopy.crs.SouthPolarStereo`.
     """
+    @docstring.add_snippets
     def __init__(self, central_longitude=0.0, globe=None):
+        """
+        %(proj.init)s
+        """
         super().__init__(
             central_latitude=-90,
             central_longitude=central_longitude, globe=globe
         )
-    __init__.__doc__ = _proj_doc
 
 
 class NorthPolarLambertAzimuthalEqualArea(LambertAzimuthalEqualArea):
     """
     Analogous to `~cartopy.crs.NorthPolarStereo`.
     """
+    @docstring.add_snippets
     def __init__(self, central_longitude=0.0, globe=None):
+        """
+        %(proj.init)s
+        """
         super().__init__(
             central_latitude=90,
             central_longitude=central_longitude, globe=globe
         )
-    __init__.__doc__ = _proj_doc
 
 
 class SouthPolarLambertAzimuthalEqualArea(LambertAzimuthalEqualArea):
     """
     Analogous to `~cartopy.crs.SouthPolarStereo`.
     """
+    @docstring.add_snippets
     def __init__(self, central_longitude=0.0, globe=None):
+        """
+        %(proj.init)s
+        """
         super().__init__(
             central_latitude=-90,
             central_longitude=central_longitude, globe=globe
         )
-    __init__.__doc__ = _proj_doc
 
 
 class NorthPolarGnomonic(Gnomonic):
     """
-    Analogous to `~cartopy.crs.SouthPolarStereo`.
+    Analogous to `~cartopy.crs.NorthPolarStereo`.
     """
+    @docstring.add_snippets
     def __init__(self, central_longitude=0.0, globe=None):
+        """
+        %(proj.init)s
+        """
         super().__init__(
             central_latitude=90,
             central_longitude=central_longitude, globe=globe
         )
-    __init__.__doc__ = _proj_doc
 
 
 class SouthPolarGnomonic(Gnomonic):
     """
     Analogous to `~cartopy.crs.SouthPolarStereo`.
     """
+    @docstring.add_snippets
     def __init__(self, central_longitude=0.0, globe=None):
+        """
+        %(proj.init)s
+        """
         super().__init__(
             central_latitude=-90,
             central_longitude=central_longitude, globe=globe
         )
-    __init__.__doc__ = _proj_doc
-
 
 # Hidden constants
 BASEMAP_TRANSLATE = {
