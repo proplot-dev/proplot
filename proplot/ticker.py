@@ -421,12 +421,13 @@ class AutoFormatter(mticker.ScalarFormatter):
         The matplotlib `~matplotlib.ticker.ScalarFormatter` determines the
         number of significant digits based on the axis limits, and therefore
         may *truncate* digits while formatting ticks on highly non-linear
-        axis scales like `~proplot.axistools.LogScale`. We try to correct
+        axis scales like `~proplot.scale.LogScale`. We try to correct
         this behavior with a patch.
         """
         tickrange = tickrange or (-np.inf, np.inf)
         super().__init__(*args, **kwargs)
-        zerotrim = _notNone(zerotrim, rc['axes.formatter.zerotrim'])
+        from .config import rc
+        zerotrim = _not_none(zerotrim, rc['axes.formatter.zerotrim'])
         self._zerotrim = zerotrim
         self._tickrange = tickrange
         self._prefix = prefix or ''
@@ -449,6 +450,7 @@ class AutoFormatter(mticker.ScalarFormatter):
         tickrange = self._tickrange
         if (x + eps) < tickrange[0] or (x - eps) > tickrange[1]:
             return ''  # avoid some ticks
+
         # Negative positive handling
         if not self._negpos or x == 0:
             tail = ''
@@ -457,14 +459,37 @@ class AutoFormatter(mticker.ScalarFormatter):
         else:
             x *= -1
             tail = self._negpos[0]
-        # Format the string
+
+        # Default string formatting
         string = super().__call__(x, pos)
-        string = _sanitize(string, zerotrim=self._zerotrim)
+        string = _sanitize_label(string, zerotrim=self._zerotrim)
+
+        # Add just enough precision for small numbers. Default formatter is
+        # only meant to be used for linear scales and cannot handle the wide
+        # range of magnitudes in e.g. log scales. To correct this, we only
+        # truncate if value is within one order of magnitude of the float
+        # precision. Common issue is e.g. levels=plot.arange(-1, 1, 0.1).
+        # This choice satisfies even 1000 additions of 0.1 to -100.
+        # Example code:
+        # def add(x, decimals=1, type_=np.float64):
+        #     step = type_(10 ** -decimals)
+        #     y = type_(x) + step
+        #     if np.round(y, decimals) == 0:
+        #         return y
+        #     else:
+        #         return add(y, decimals)
+        # num = abs(add(-200, 1, float))
+        # precision = abs(np.log10(num) // 1) - 1
+        # ('{:.%df}' % precision).format(num)
         if string == '0' and x != 0:
             string = (
-                '{:.%df}' % min(abs(np.log10(abs(x))) // 1, MAX_DIGITS)
+                '{:.%df}' % min(
+                    int(abs(np.log10(abs(x)) // 1)),
+                    np.finfo(type(x)).precision - 1
+                )
             ).format(x)
-            string = _sanitize(string, zerotrim=self._zerotrim)
+            string = _sanitize_label(string, zerotrim=self._zerotrim)
+
         # Prefix and suffix
         sign = ''
         if string and string[0] == '\N{MINUS SIGN}':
@@ -474,7 +499,7 @@ class AutoFormatter(mticker.ScalarFormatter):
 
 def SimpleFormatter(precision=6, zerotrim=True):
     """
-    Return a `~matplotlib.ticker.FuncFormatter` instance that replicates the
+    Return a `~matplotlib.ticker.FuncFormatter` that replicates the
     `zerotrim` feature from `AutoFormatter`. This is more suitable for
     arbitrary number formatting not necessarily associated with any
     `~matplotlib.axis.Axis` instance, e.g. labeling contours.
@@ -487,9 +512,10 @@ def SimpleFormatter(precision=6, zerotrim=True):
         Whether to trim trailing zeros.
         Default is :rc:`axes.formatter.zerotrim`.
     """
-    zerotrim = _notNone(zerotrim, rc['axes.formatter.zerotrim'])
+    from .config import rc
+    zerotrim = _not_none(zerotrim, rc['axes.formatter.zerotrim'])
 
-    def f(x, pos):
+    def func(x, pos):
         string = ('{:.%df}' % precision).format(x)
         if zerotrim and '.' in string:
             string = string.rstrip('0').rstrip('.')
@@ -497,7 +523,7 @@ def SimpleFormatter(precision=6, zerotrim=True):
         if string == '\N{MINUS SIGN}0':
             string = '0'
         return string
-    return mticker.FuncFormatter(f)
+    return mticker.FuncFormatter(func)
 
 
 def FracFormatter(symbol='', number=1):
@@ -514,7 +540,7 @@ def FracFormatter(symbol='', number=1):
     number : float
         The value, e.g. `numpy.pi`. Default is ``1``.
     """
-    def f(x, pos):  # must accept location argument
+    def func(x, pos):  # must accept location argument
         frac = Fraction(x / number).limit_denominator()
         if x == 0:
             string = '0'
@@ -533,7 +559,7 @@ def FracFormatter(symbol='', number=1):
             else:  # and again make sure we use unicode minus!
                 string = f'{frac.numerator:d}{symbol:s}/{frac.denominator:d}'
         return string.replace('-', '\N{MINUS SIGN}')
-    return mticker.FuncFormatter(f)
+    return mticker.FuncFormatter(func)
 
 #: The registered scale names and their associated
 #: `~matplotlib.scale.ScaleBase` classes. See `Scale` for a table.
