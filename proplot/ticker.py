@@ -22,6 +22,7 @@ try:  # use this for debugging instead of print()!
 except ImportError:  # graceful fallback if IceCream isn't installed
     ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
 
+from . import ticker as pticker
 __all__ = [
     'formatters', 'locators', 'scales',
     'Formatter', 'Locator', 'Scale',
@@ -153,6 +154,7 @@ def Locator(locator, *args, **kwargs):
         raise ValueError(f'Invalid locator {locator!r}.')
     return locator
 
+from .internals import _not_none
 
 def Formatter(formatter, *args, date=False, index=False, **kwargs):
     """
@@ -309,6 +311,7 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
         raise ValueError(f'Invalid formatter {formatter!r}.')
     return formatter
 
+from .internals import warnings
 
 def Scale(scale, *args, **kwargs):
     """
@@ -573,7 +576,9 @@ def _scale_factory(scale, axis, *args, **kwargs):  # noqa: U100
     """
     if isinstance(scale, mscale.ScaleBase):
         if args or kwargs:
-            _warn_proplot(f'Ignoring args {args} and keyword args {kwargs}.')
+            warnings._warn_proplot(
+                f'Ignoring args {args} and keyword args {kwargs}.'
+            )
         return scale  # do nothing
     else:
         scale = scale.lower()
@@ -585,38 +590,49 @@ def _scale_factory(scale, axis, *args, **kwargs):  # noqa: U100
         return scales[scale](*args, **kwargs)
 
 
-def _parse_logscale_args(kwargs, *keys):
+def _parse_logscale_args(*keys, **kwargs):
     """
     Parse arguments for `LogScale` and `SymmetricalLogScale` that
-    inexplicably require ``x`` and ``y`` suffixes by default.
+    inexplicably require ``x`` and ``y`` suffixes by default. Also
+    change the default `linthresh` to ``1``.
     """
+    # NOTE: Scale classes ignore unused arguments with warnings, but matplotlib 3.3
+    # version changes the keyword args. Since we can't do a try except clause, only way
+    # to avoid warnings with 3.3 upgrade is to test version string. Ugly, I know.
+    from packaging import version
+    from matplotlib import __version__
+    kwsuffix = '' if version.parse(__version__) >= version.parse('3.3') else 'x'
     for key in keys:
-        value = _notNone(  # issues warning when multiple args passed!
-            kwargs.pop(key, None),
-            kwargs.pop(key + 'x', None),
-            kwargs.pop(key + 'y', None),
-            None, names=(key, key + 'x', key + 'y'),
-        )
+        # Remove duplicates
+        opts = {
+            key: kwargs.pop(key, None),
+            key + 'x': kwargs.pop(key + 'x', None),
+            key + 'y': kwargs.pop(key + 'y', None),
+        }
+        value = _not_none(**opts)  # issues warning if multiple values passed
+
+        # Apply defaults
+        # NOTE: If linthresh is *exactly* on a power of the base, can end
+        # up with additional log-locator step inside the threshold, e.g. major
+        # ticks on -10, -1, -0.1, 0.1, 1, 10 for linthresh of 1. Adding slight
+        # offset to *desired* linthresh prevents this.
         if key == 'linthresh' and value is None:
-            # NOTE: If linthresh is *exactly* on a power of the base, can
-            # end up with additional log-locator step inside the threshold,
-            # e.g. major ticks on -10, -1, -0.1, 0.1, 1, 10 for linthresh of
-            # 1. Adding slight offset to *desired* linthresh prevents this.
             value = 1 + 1e-10
         if key == 'subs' and value is None:
             value = np.arange(1, 10)
         if value is not None:  # dummy axis_name is 'x'
-            kwargs[key + 'x'] = value
+            kwargs[key + kwsuffix] = value
+
     return kwargs
 
 
-class _ScaleBase(object):
+class _Scale(object):
     """
-    Mixin scale class that standardizes the
+    Mixin class that standardizes the behavior of
     `~matplotlib.scale.ScaleBase.set_default_locators_and_formatters`
-    and `~matplotlib.scale.ScaleBase.get_transform` methods.
-    Also overrides `__init__` so you no longer have to instantiate scales
-    with an `~matplotlib.axis.Axis` instance.
+    and `~matplotlib.scale.ScaleBase.get_transform`. Also overrides
+    `__init__` so you no longer have to instantiate scales with an
+    `~matplotlib.axis.Axis` instance.
     """
     def __init__(self, *args, **kwargs):
         # Pass a dummy axis to the superclass
@@ -647,29 +663,30 @@ class _ScaleBase(object):
         # but sometimes we need to bypass this method! Minor locator can be
         # "non default" even when user has not changed it, due to "turning
         # minor ticks" on and off, so set as 'default' if AutoMinorLocator.
+        from .config import rc
         if self._default_smart_bounds is not None:
             axis.set_smart_bounds(self._default_smart_bounds)
         if not only_if_default or axis.isDefault_majloc:
             axis.set_major_locator(
-                self._default_major_locator or Locator('auto')
+                self._default_major_locator or mticker.AutoLocator()
             )
             axis.isDefault_majloc = True
         if not only_if_default or axis.isDefault_majfmt:
             axis.set_major_formatter(
-                self._default_major_formatter or Formatter('auto')
+                self._default_major_formatter or pticker.AutoFormatter()
             )
             axis.isDefault_majfmt = True
         if not only_if_default or axis.isDefault_minloc:
             name = axis.axis_name if axis.axis_name in 'xy' else 'x'
             axis.set_minor_locator(
-                self._default_minor_locator or Locator(
-                    'minor' if rc[name + 'tick.minor.visible'] else 'null'
-                )
+                self._default_minor_locator or mticker.AutoMinorLocator()
+                if rc[name + 'tick.minor.visible']
+                else mticker.NullLocator()
             )
             axis.isDefault_minloc = True
         if not only_if_default or axis.isDefault_minfmt:
             axis.set_minor_formatter(
-                self._default_minor_formatter or Formatter('null')
+                self._default_minor_formatter or mticker.NullFormatter()
             )
             axis.isDefault_minfmt = True
 
@@ -680,25 +697,24 @@ class _ScaleBase(object):
         return self._transform
 
 
-class LinearScale(_ScaleBase, mscale.LinearScale):
+class LinearScale(_Scale, mscale.LinearScale):
     """
-    As with `~matplotlib.scale.LinearScale` but with `AutoFormatter` as the
-    default major formatter.
+    As with `~matplotlib.scale.LinearScale` but with
+    `~proplot.ticker.AutoFormatter` as the default major formatter.
     """
     #: The registered scale name
     name = 'linear'
 
     def __init__(self, **kwargs):
-        """
-        """
+        """"""  # empty docstring
         super().__init__(**kwargs)
         self._transform = mtransforms.IdentityTransform()
 
 
-class LogitScale(_ScaleBase, mscale.LogitScale):
+class LogitScale(_Scale, mscale.LogitScale):
     """
-    As with `~matplotlib.scale.LogitScale` but with `AutoFormatter` as the
-    default major formatter.
+    As with `~matplotlib.scale.LogitScale` but with
+    `~proplot.ticker.AutoFormatter` as the default major formatter.
     """
     #: The registered scale name
     name = 'logit'
@@ -712,16 +728,17 @@ class LogitScale(_ScaleBase, mscale.LogitScale):
           number very close to 0 or 1.
         """
         super().__init__(**kwargs)
-        # self._default_major_formatter = Formatter('logit')
-        self._default_major_locator = Locator('logit')
-        self._default_minor_locator = Locator('logit', minor=True)
+        # self._default_major_formatter = mticker.LogitFormatter()
+        self._default_major_locator = mticker.LogitLocator()
+        self._default_minor_locator = mticker.LogitLocator(minor=True)
 
 
-class LogScale(_ScaleBase, mscale.LogScale):
+class LogScale(_Scale, mscale.LogScale):
     """
-    As with `~matplotlib.scale.LogScale` but with `AutoFormatter` as the
-    default major formatter. Also, "``x``" and "``y``" versions of each
-    keyword argument are no longer required.
+    As with `~matplotlib.scale.LogScale` but with
+    `~proplot.ticker.AutoFormatter` as the default major formatter.
+    ``x`` and ``y`` versions of each keyword argument are no longer
+    required.
     """
     #: The registered scale name
     name = 'log'
@@ -743,20 +760,19 @@ class LogScale(_ScaleBase, mscale.LogScale):
             Aliases for the above keywords. These used to be conditional
             on the *name* of the axis.
         """
-        kwargs = _parse_logscale_args(kwargs, 'base', 'nonpos', 'subs')
-        super().__init__(**kwargs)
-        # self._default_major_formatter = Formatter('log')
-        self._default_major_locator = Locator('log', base=self.base)
-        self._default_minor_locator = Locator(
-            'log', base=self.base, subs=self.subs
-        )
+        keys = ('base', 'nonpos', 'subs')
+        super().__init__(**_parse_logscale_args(*keys, **kwargs))
+        # self._default_major_formatter = mticker.LogFormatter(self.base)
+        self._default_major_locator = mticker.LogLocator(self.base)
+        self._default_minor_locator = mticker.LogLocator(self.base, self.subs)
 
 
-class SymmetricalLogScale(_ScaleBase, mscale.SymmetricalLogScale):
+class SymmetricalLogScale(_Scale, mscale.SymmetricalLogScale):
     """
-    As with `~matplotlib.scale.SymmetricLogScale`. `AutoFormatter` is the new
-    default major formatter. Also, "``x``" and "``y``" versions of each
-    keyword argument are no longer required.
+    As with `~matplotlib.scale.SymmetricalLogScale` but with
+    `~proplot.ticker.AutoFormatter` as the default major formatter.
+    ``x`` and ``y`` versions of each keyword argument are no longer
+    required.
     """
     #: The registered scale name
     name = 'symlog'
@@ -788,20 +804,15 @@ subsx, subsy
             Aliases for the above keywords. These used to be conditional
             on the *name* of the axis.
         """
-        # Note the symlog locator gets base and linthresh from the transform
-        kwargs = _parse_logscale_args(
-            kwargs, 'base', 'linthresh', 'linscale', 'subs')
-        super().__init__(**kwargs)
-        # self._default_major_formatter = Formatter('symlog'))
-        self._default_major_locator = Locator(
-            'symlog', transform=self.get_transform()
-        )
-        self._default_minor_locator = Locator(
-            'symlog', transform=self.get_transform(), subs=self.subs
-        )
+        keys = ('base', 'linthresh', 'linscale', 'subs')
+        super().__init__(**_parse_logscale_args(*keys, **kwargs))
+        transform = self.get_transform()
+        # self._default_major_formatter = mticker.SymmetricalLogFormatter(transform)
+        self._default_major_locator = mticker.SymmetricalLogLocator(transform)
+        self._default_minor_locator = mticker.SymmetricalLogLocator(transform, self.subs)  # noqa: E501
 
 
-class FuncScale(_ScaleBase, mscale.ScaleBase):
+class FuncScale(_Scale, mscale.ScaleBase):
     """
     An axis scale comprised of arbitrary forward and inverse transformations.
     """
@@ -836,7 +847,7 @@ class FuncScale(_ScaleBase, mscale.ScaleBase):
               Again, if the first function is linear or involutory, you do
               not need to provide the second!
             * A `~matplotlib.scale.ScaleBase` instance, e.g. a scale returned
-              by the `~proplot.axistools.Scale` constructor function. The
+              by the `~proplot.constructor.Scale` constructor function. The
               forward transformation, inverse transformation, and default axis
               locators and formatters are borrowed from the resulting scale
               class.  For example, to apply the inverse, use
@@ -928,7 +939,7 @@ optional
         # WARNING: Using the same locator on multiple axes can evidently
         # have unintended side effects! Matplotlib bug. So we make copies.
         for scale in (arg, parent_scale):
-            if not isinstance(scale, _ScaleBase):
+            if not isinstance(scale, _Scale):
                 continue
             if isinstance(scale, mscale.LinearScale):
                 continue
@@ -963,7 +974,7 @@ class FuncTransform(mtransforms.Transform):
         return self._forward(values)
 
 
-class PowerScale(_ScaleBase, mscale.ScaleBase):
+class PowerScale(_Scale, mscale.ScaleBase):
     r"""
     "Power scale" that performs the transformation
 
@@ -1040,7 +1051,7 @@ class InvertedPowerTransform(mtransforms.Transform):
         return np.power(np.array(a), 1 / self._power)
 
 
-class ExpScale(_ScaleBase, mscale.ScaleBase):
+class ExpScale(_Scale, mscale.ScaleBase):
     r"""
     "Exponential scale" that performs either of two transformations. When
     `inverse` is ``False`` (the default), performs the transformation
@@ -1137,23 +1148,23 @@ class InvertedExpTransform(mtransforms.Transform):
         return np.log(aa / self._c) / (self._b * np.log(self._a))
 
 
-class MercatorLatitudeScale(_ScaleBase, mscale.ScaleBase):
+class MercatorLatitudeScale(_Scale, mscale.ScaleBase):
     """
-    Axis scale that transforms coordinates as with latitude in the `Mercator \
-projection <http://en.wikipedia.org/wiki/Mercator_projection>`__.
+    Axis scale that transforms coordinates as with latitude in the
+    `Mercator projection <http://en.wikipedia.org/wiki/Mercator_projection>`__.
     Adapted from `this matplotlib example \
 <https://matplotlib.org/examples/api/custom_scale_example.html>`__.
-    """r"""The scale function is as follows:
+    The scale function is as follows:
 
     .. math::
 
-        y = \\ln(\\tan(\\pi x/180) + \\sec(\\pi x/180))
+        y = \\ln(\\tan(\\pi x \\,/\\, 180) + \\sec(\\pi x \\,/\\, 180))
 
     The inverse scale function is as follows:
 
     .. math::
 
-        x = 180\\arctan(\\sinh(y))/\\pi
+        x = 180\\,\\arctan(\\sinh(y)) \\,/\\, \\pi
 
     """
     #: The registered scale name
@@ -1172,7 +1183,7 @@ projection <http://en.wikipedia.org/wiki/Mercator_projection>`__.
             raise ValueError('Threshold "thresh" must be <=90.')
         self._thresh = thresh
         self._transform = MercatorLatitudeTransform(thresh)
-        self._default_major_formatter = Formatter('deg')
+        self._default_major_formatter = pticker.AutoFormatter(suffix='\N{DEGREE SIGN}')  # noqa: E501
         self._default_smart_bounds = True
 
     def limit_range_for_scale(self, vmin, vmax, minpos):  # noqa: U100
@@ -1226,7 +1237,7 @@ class InvertedMercatorLatitudeTransform(mtransforms.Transform):
         return np.rad2deg(np.arctan2(1, np.sinh(a)))
 
 
-class SineLatitudeScale(_ScaleBase, mscale.ScaleBase):
+class SineLatitudeScale(_Scale, mscale.ScaleBase):
     r"""
     Axis scale that is linear in the *sine* of *x*. The axis limits are
     constrained to fall between ``-90`` and ``+90`` degrees. The scale
@@ -1246,9 +1257,10 @@ class SineLatitudeScale(_ScaleBase, mscale.ScaleBase):
     name = 'sine'
 
     def __init__(self):
+        """"""  # no parameters
         super().__init__()
         self._transform = SineLatitudeTransform()
-        self._default_major_formatter = Formatter('deg')
+        self._default_major_formatter = pticker.AutoFormatter(suffix='\N{DEGREE SIGN}')  # noqa: E501
         self._default_smart_bounds = True
 
     def limit_range_for_scale(self, vmin, vmax, minpos):  # noqa: U100
@@ -1302,12 +1314,11 @@ class InvertedSineLatitudeTransform(mtransforms.Transform):
         return np.rad2deg(np.arcsin(aa))
 
 
-class CutoffScale(_ScaleBase, mscale.ScaleBase):
+class CutoffScale(_Scale, mscale.ScaleBase):
     """
     Axis scale composed of arbitrary piecewise linear transformations.
     The axis can undergo discrete jumps, "accelerations", or "decelerations"
-    between successive thresholds. Adapted from
-    `this stackoverflow post <https://stackoverflow.com/a/5669301/4970632>`__.
+    between successive thresholds.
     """
     #: The registered scale name
     name = 'cutoff'
@@ -1334,14 +1345,13 @@ class CutoffScale(_ScaleBase, mscale.ScaleBase):
 
         Example
         -------
-
         >>> import proplot as plot
-        ... import numpy as np
-        ... scale = plot.CutoffScale(10, 0.5)  # move slower above 10
-        ... scale = plot.CutoffScale(10, 2, 20)  # zoom out between 10 and 20
-        ... scale = plot.CutoffScale(10, np.inf, 20)  # jump from 10 to 20
-
+        >>> import numpy as np
+        >>> scale = plot.CutoffScale(10, 0.5)  # move slower above 10
+        >>> scale = plot.CutoffScale(10, 2, 20)  # zoom out between 10 and 20
+        >>> scale = plot.CutoffScale(10, np.inf, 20)  # jump from 10 to 20
         """
+        # NOTE: See https://stackoverflow.com/a/5669301/4970632
         super().__init__()
         args = list(args)
         if len(args) % 2 == 1:
@@ -1412,7 +1422,7 @@ class CutoffTransform(mtransforms.Transform):
         return aa
 
 
-class InverseScale(_ScaleBase, mscale.ScaleBase):
+class InverseScale(_Scale, mscale.ScaleBase):
     r"""
     Axis scale that is linear in the *inverse* of *x*. The forward and inverse
     scale functions are as follows:
@@ -1426,13 +1436,12 @@ class InverseScale(_ScaleBase, mscale.ScaleBase):
     name = 'inverse'
 
     def __init__(self):
+        """"""  # empty docstring
         super().__init__()
         self._transform = InverseTransform()
         # self._default_major_formatter = Formatter('log')
-        self._default_major_locator = Locator('log', base=10)
-        self._default_minor_locator = Locator(
-            'log', base=10, subs=np.arange(1, 10)
-        )
+        self._default_major_locator = mticker.LogLocator(10)
+        self._default_minor_locator = mticker.LogLocator(10, np.arange(1, 10))
         self._default_smart_bounds = True
 
     def limit_range_for_scale(self, vmin, vmax, minpos):
@@ -1460,8 +1469,8 @@ class InverseTransform(mtransforms.Transform):
 
     def transform_non_affine(self, a):
         a = np.array(a)
-        # f = np.abs(a) <= self.minpos # attempt for negative-friendly
-        # aa[f] = np.sign(a[f])*self.minpos
+        # mask = np.abs(a) <= self.minpos # attempt for negative-friendly
+        # aa[mask] = np.sign(a[mask]) * self.minpos
         with np.errstate(divide='ignore', invalid='ignore'):
             return 1.0 / a
 
