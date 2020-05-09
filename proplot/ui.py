@@ -14,13 +14,12 @@ from .config import rc
 from .utils import units
 from .internals import ic  # noqa: F401
 from .internals import warnings, _not_none
-from .internals import _notNone
 
 __all__ = [
     'close', 'show', 'subplots', 'SubplotsContainer', 'subplot_grid',
 ]
 
-# Dimensions of figures for common journals
+# Width or (width, height) dimensions for common journal specifications
 JOURNAL_SPECS = {
     'aaas1': '5.5cm',
     'aaas2': '12cm',
@@ -81,8 +80,8 @@ def _journals(journal):
 
 def _axes_dict(naxs, value, kw=False, default=None):
     """
-    Return a dictionary that looks like ``{1:value1, 2:value2, ...}`` or
-    ``{1:{key1:value1, ...}, 2:{key2:value2, ...}, ...}`` for storing
+    Return a dictionary that looks like ``{1: value1, 2: value2, ...}`` or
+    ``{1: {key1: value1, ...}, 2: {key2: value2, ...}, ...}`` for storing
     standardized axes-specific properties or keyword args.
     """
     # First build up dictionary
@@ -138,7 +137,7 @@ def subplots(
     hratios=None, wratios=None,
     width_ratios=None, height_ratios=None,
     left=None, bottom=None, right=None, top=None,
-    basemap=False, proj=None, projection=None,
+    basemap=None, proj=None, projection=None,
     proj_kw=None, projection_kw=None,
     **kwargs
 ):
@@ -165,8 +164,8 @@ def subplots(
     order : {'C', 'F'}, optional
         Whether subplots are numbered in column-major (``'C'``) or row-major
         (``'F'``) order. Analogous to `numpy.array` ordering. This controls
-        the order that subplots appear in the `subplot_grid` returned by this
-        function, and the order of subplot a-b-c labels (see
+        the order that subplots appear in the `SubplotsContainer` returned by
+        this function, and the order of subplot a-b-c labels (see
         `~proplot.axes.Axes.format`).
     figsize : length-2 tuple, optional
         Tuple specifying the figure `(width, height)`.
@@ -186,68 +185,43 @@ def subplots(
         if `width`, `height`, or `figsize` was passed.
     aspect : float or length-2 list of floats, optional
         The reference subplot aspect ratio, in numeric form (width divided by
-        height) or as a (width, height) tuple. Ignored if `width`, `height`,
-        or `figsize` was passed.
-    journal : str, optional
-        String name corresponding to an academic journal standard that is used
-        to control the figure width and, if specified, the height. See the
-        below table.
-
-        ===========  ====================  ==========================================================================================================================================================
-        Key          Size description      Organization
-        ===========  ====================  ==========================================================================================================================================================
-        ``'aaas1'``  1-column              `American Association for the Advancement of Science <https://www.sciencemag.org/authors/instructions-preparing-initial-manuscript>`__ (e.g. *Science*)
-        ``'aaas2'``  2-column              ”
-        ``'agu1'``   1-column              `American Geophysical Union <https://publications.agu.org/author-resource-center/figures-faq/>`__
-        ``'agu2'``   2-column              ”
-        ``'agu3'``   full height 1-column  ”
-        ``'agu4'``   full height 2-column  ”
-        ``'ams1'``   1-column              `American Meteorological Society <https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/>`__
-        ``'ams2'``   small 2-column        ”
-        ``'ams3'``   medium 2-column       ”
-        ``'ams4'``   full 2-column         ”
-        ``'nat1'``   1-column              `Nature Research <https://www.nature.com/nature/for-authors/formatting-guide>`__
-        ``'nat2'``   2-column              ”
-        ``'pnas1'``  1-column              `Proceedings of the National Academy of Sciences <http://www.pnas.org/page/authors/submission>`__
-        ``'pnas2'``  2-column              ”
-        ``'pnas3'``  landscape page        ”
-        ===========  ====================  ==========================================================================================================================================================
-
+        height) or as a (width, height) tuple. Ignored if both `width` *and*
+        `height` or both `axwidth` *and* `axheight` were passed.
     width_ratios, height_ratios : float or list thereof, optional
-        Passed to `GridSpec`, denotes the width
+        Passed to `~proplot.gridspec.GridSpec`, denotes the width
         and height ratios for the subplot grid. Length of `width_ratios`
         must match the number of rows, and length of `height_ratios` must
         match the number of columns.
     wratios, hratios
-        Aliases for `height_ratios`, `width_ratios`.
+        Aliases for `width_ratios`, `height_ratios`.
     wspace, hspace, space : float or str or list thereof, optional
-        Passed to `GridSpec`, denotes the
+        Passed to `~proplot.gridspec.GridSpec`, denotes the
         spacing between grid columns, rows, and both, respectively. If float
-        or string, expanded into lists of length ``ncols-1`` (for `wspace`)
-        or length ``nrows-1`` (for `hspace`).
+        or string, expanded into lists of length ``ncols - 1`` (for `wspace`)
+        or length ``nrows - 1`` (for `hspace`).
 
         Units are interpreted by `~proplot.utils.units` for each element of
         the list. By default, these are determined by the "tight
         layout" algorithm.
     left, right, top, bottom : float or str, optional
-        Passed to `GridSpec`, denotes the width of padding between the
-        subplots and the figure edge. Units are interpreted by
+        Passed to `~proplot.gridspec.GridSpec`, denotes the width of padding
+        between the subplots and the figure edge. Units are interpreted by
         `~proplot.utils.units`. By default, these are determined by the
         "tight layout" algorithm.
     proj, projection : str or dict-like, optional
         The map projection name. The argument is interpreted as follows.
 
         * If string, this projection is used for all subplots. For valid
-          names, see the `~proplot.projs.Proj` documentation.
+          names, see the `~proplot.constructor.Proj` documentation.
         * If list of string, these are the projections to use for each
           subplot in their `array` order.
         * If dict-like, keys are integers or tuple integers that indicate
           the projection to use for each subplot. If a key is not provided,
-          that subplot will be a `~proplot.axes.XYAxes`. For example,
-          in a 4-subplot figure, ``proj={2:'merc', (3,4):'stere'}``
+          that subplot will be a `~proplot.axes.CartesianAxes`. For example,
+          in a 4-subplot figure, ``proj={2: 'merc', (3, 4): 'stere'}``
           draws a Cartesian axes for the first subplot, a Mercator
           projection for the second subplot, and a Stereographic projection
-          for the second and third subplots.
+          for the third and fourth.
 
     proj_kw, projection_kw : dict-like, optional
         Keyword arguments passed to `~mpl_toolkits.basemap.Basemap` or
@@ -257,7 +231,7 @@ def subplots(
         with `proj`.
 
         For example, with ``ncols=2`` and
-        ``proj_kw={1:{'lon_0':0}, 2:{'lon_0':180}}``, the projection in
+        ``proj_kw={1: {'lon_0': 0}, 2: {'lon_0': 180}}``, the projection in
         the left subplot is centered on the prime meridian, and the projection
         in the right subplot is centered on the international dateline.
     basemap : bool or dict-like, optional
@@ -265,18 +239,49 @@ def subplots(
         `~cartopy.crs.Projection` for map projections. Default is ``False``.
         If boolean, applies to all subplots. If dictionary, values apply to
         specific subplots, as with `proj`.
+    journal : str, optional
+        String name corresponding to an academic journal standard that is used
+        to control the figure width and, if specified, the height. See the
+        below table.
+
+        ===========  ====================  ===============================================================================
+        Key          Size description      Organization
+        ===========  ====================  ===============================================================================
+        ``'aaas1'``  1-column              `American Association for the Advancement of Science <aaas_>`_ (e.g. *Science*)
+        ``'aaas2'``  2-column              ”
+        ``'agu1'``   1-column              `American Geophysical Union <agu_>`_
+        ``'agu2'``   2-column              ”
+        ``'agu3'``   full height 1-column  ”
+        ``'agu4'``   full height 2-column  ”
+        ``'ams1'``   1-column              `American Meteorological Society <ams_>`_
+        ``'ams2'``   small 2-column        ”
+        ``'ams3'``   medium 2-column       ”
+        ``'ams4'``   full 2-column         ”
+        ``'nat1'``   1-column              `Nature Research <nat_>`_
+        ``'nat2'``   2-column              ”
+        ``'pnas1'``  1-column              `Proceedings of the National Academy of Sciences <pnas_>`_
+        ``'pnas2'``  2-column              ”
+        ``'pnas3'``  landscape page        ”
+        ===========  ====================  ===============================================================================
+
+        .. _aaas: https://www.sciencemag.org/authors/instructions-preparing-initial-manuscript
+        .. _agu: https://www.agu.org/Publish-with-AGU/Publish/Author-Resources/Graphic-Requirements
+        .. _ams: https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/
+        .. _nat: https://www.nature.com/nature/for-authors/formatting-guide
+        .. _pnas: https://www.pnas.org/page/authors/format
+
 
     Other parameters
     ----------------
     **kwargs
-        Passed to `Figure`.
+        Passed to `~proplot.figure.Figure`.
 
     Returns
     -------
-    f : `Figure`
+    f : `~proplot.figure.Figure`
         The figure instance.
-    axs : `subplot_grid`
-        A special list of axes instances. See `subplot_grid`.
+    axs : `SubplotsContainer`
+        A special list of axes instances. See `SubplotsContainer`.
     """  # noqa
     # Build array
     if order not in ('C', 'F'):  # better error message
@@ -290,8 +295,7 @@ def subplots(
     # Standardize array
     try:
         array = np.array(array, dtype=int)  # enforce array type
-        if array.ndim == 1:
-            # interpret as single row or column
+        if array.ndim == 1:  # interpret as single row or column
             array = array[None, :] if order == 'C' else array[:, None]
         elif array.ndim != 2:
             raise ValueError(
@@ -329,13 +333,11 @@ def subplots(
     yref = yrange[ref - 1, :]
 
     # Get basemap.Basemap or cartopy.crs.Projection instances for map
-    proj = _notNone(projection, proj, None, names=('projection', 'proj'))
-    proj_kw = _notNone(
-        projection_kw, proj_kw, {}, names=('projection_kw', 'proj_kw')
-    )
-    proj = _axes_dict(naxs, proj, kw=False, default='xy')
+    proj = _not_none(projection=projection, proj=proj)
+    proj = _axes_dict(naxs, proj, kw=False, default='cartesian')
+    proj_kw = _not_none(projection_kw=projection_kw, proj_kw=proj_kw) or {}
     proj_kw = _axes_dict(naxs, proj_kw, kw=True)
-    basemap = _axes_dict(naxs, basemap, kw=False, default=False)
+    basemap = _axes_dict(naxs, basemap, kw=False, default=None)
     axes_kw = {num: {} for num in range(1, naxs + 1)}  # store add_subplot args
     for num, name in proj.items():
         # The default is XYAxes
@@ -391,12 +393,14 @@ def subplots(
     # Standardized dimensions
     width, height = units(width), units(height)
     axwidth, axheight = units(axwidth), units(axheight)
+
     # Standardized user input border spaces
     left, right = units(left), units(right)
     bottom, top = units(bottom), units(top)
+
     # Standardized user input spaces
-    wspace = np.atleast_1d(units(_notNone(wspace, space)))
-    hspace = np.atleast_1d(units(_notNone(hspace, space)))
+    wspace = np.atleast_1d(units(_not_none(wspace, space)))
+    hspace = np.atleast_1d(units(_not_none(hspace, space)))
     if len(wspace) == 1:
         wspace = np.repeat(wspace, (ncols - 1,))
     if len(wspace) != ncols - 1:
@@ -411,12 +415,13 @@ def subplots(
             f'Require {nrows-1} height spacings for {nrows} rows, '
             'got {len(hspace)}.'
         )
+
     # Standardized user input ratios
-    wratios = np.atleast_1d(_notNone(
-        width_ratios, wratios, 1, names=('width_ratios', 'wratios')
+    wratios = np.atleast_1d(_not_none(
+        width_ratios=width_ratios, wratios=wratios, default=1,
     ))
-    hratios = np.atleast_1d(_notNone(
-        height_ratios, hratios, 1, names=('height_ratios', 'hratios')
+    hratios = np.atleast_1d(_not_none(
+        height_ratios=height_ratios, hratios=hratios, default=1,
     ))
     if len(wratios) == 1:
         wratios = np.repeat(wratios, (ncols,))
