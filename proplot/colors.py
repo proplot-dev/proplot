@@ -1449,8 +1449,87 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
             self._lut[i, :3] = to_rgb(self._lut[i, :3], self._space)
         self._lut[:, :3] = _clip_colors(self._lut[:, :3], self._clip)
 
-    @staticmethod
-    def from_color(name, color, fade=None, space='hsl', **kwargs):
+    @docstring.add_snippets
+    def set_gamma(self, gamma=None, gamma1=None, gamma2=None):
+        """
+        Modify the gamma value(s) and refresh the lookup table.
+
+        Parameters
+        ----------
+        %(cmap.gamma)s
+        """
+        gamma1 = _not_none(gamma1, gamma)
+        gamma2 = _not_none(gamma2, gamma)
+        if gamma1 is not None:
+            self._gamma1 = gamma1
+        if gamma2 is not None:
+            self._gamma2 = gamma2
+        self._init()
+
+    def copy(
+        self, name=None, segmentdata=None, N=None, *,
+        alpha=None, gamma=None, cyclic=None,
+        clip=None, gamma1=None, gamma2=None, space=None
+    ):
+        """
+        Return a new colormap with relevant properties copied from this one
+        if they were not provided as keyword arguments.
+
+        Parameters
+        ----------
+        name : str
+            The colormap name. Default is ``self.name + '_copy'``.
+        segmentdata, N, alpha, clip, cyclic, gamma, gamma1, gamma2, space : \
+optional
+            See `PerceptuallyUniformColormap`. If not provided,
+            these are copied from the current colormap.
+        """
+        if name is None:
+            name = self.name + '_copy'
+        if segmentdata is None:
+            segmentdata = self._segmentdata
+        if space is None:
+            space = self._space
+        if clip is None:
+            clip = self._clip
+        if gamma is not None:
+            gamma1 = gamma2 = gamma
+        if gamma1 is None:
+            gamma1 = self._gamma1
+        if gamma2 is None:
+            gamma2 = self._gamma2
+        if cyclic is None:
+            cyclic = self._cyclic
+        if N is None:
+            N = self.N
+        cmap = PerceptuallyUniformColormap(
+            name, segmentdata, N,
+            alpha=alpha, clip=clip, cyclic=cyclic,
+            gamma1=gamma1, gamma2=gamma2, space=space
+        )
+        cmap._rgba_bad = self._rgba_bad
+        cmap._rgba_under = self._rgba_under
+        cmap._rgba_over = self._rgba_over
+        return cmap
+
+    def to_linear_segmented(self, **kwargs):
+        """
+        Convert the `PerceptuallyUniformColormap` to a standard
+        `LinearSegmentedColormap`. This is used to merge such colormaps.
+
+        Parameters
+        ----------
+        **kwargs
+            Passed to `LinearSegmentedColormap`.
+        """
+        if not self._isinit:
+            self._init()
+        return LinearSegmentedColormap.from_list(
+            self.name, self._lut, **kwargs
+        )
+
+    @classmethod
+    def from_color(cls, name, color, fade=None, space='hsl', **kwargs):
         """
         Return a monochromatic "sequential" colormap that blends from white
         or near-white to the input color.
@@ -1603,307 +1682,7 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         cdict = {}
         for key, values in zip(keys, zip(*colors)):
             cdict[key] = _make_segmentdata_array(values, coords, ratios)
-        return PerceptuallyUniformColormap(name, cdict, **kwargs)
-
-    def set_gamma(self, gamma=None, gamma1=None, gamma2=None):
-        """
-        Modify the gamma value(s) and refresh the lookup table.
-
-        Parameters
-        ----------
-        gamma : float, optional
-            Sets `gamma1` and `gamma2` to this identical value.
-        gamma1 : float, optional
-            If >1, makes low saturation colors more prominent. If <1,
-            makes high saturation colors more prominent. Similar to the
-            `HCLWizard <http://hclwizard.org:64230/hclwizard/>`_ option.
-            See `make_mapping_array` for details.
-        gamma2 : float, optional
-            If >1, makes high luminance colors more prominent. If <1,
-            makes low luminance colors more prominent. Similar to the
-            `HCLWizard <http://hclwizard.org:64230/hclwizard/>`_ option.
-            See `make_mapping_array` for details.
-        """
-        gamma1 = _notNone(gamma1, gamma)
-        gamma2 = _notNone(gamma2, gamma)
-        if gamma1 is not None:
-            self._gamma1 = gamma1
-        if gamma2 is not None:
-            self._gamma2 = gamma2
-        self._init()
-
-    def updated(
-        self, name=None, segmentdata=None, N=None, *,
-        alpha=None, gamma=None, cyclic=None,
-        clip=None, gamma1=None, gamma2=None, space=None
-    ):
-        """
-        Return a new colormap with relevant properties copied from this one
-        if they were not provided as keyword arguments.
-
-        Parameters
-        ----------
-        name : str
-            The colormap name. Default is ``self.name + '_updated'``.
-        segmentdata, N, alpha, clip, cyclic, gamma, gamma1, gamma2, space : \
-optional
-            See `PerceptuallyUniformColormap`. If not provided,
-            these are copied from the current colormap.
-        """
-        if name is None:
-            name = self.name + '_updated'
-        if segmentdata is None:
-            segmentdata = self._segmentdata
-        if space is None:
-            space = self._space
-        if clip is None:
-            clip = self._clip
-        if gamma is not None:
-            gamma1 = gamma2 = gamma
-        if gamma1 is None:
-            gamma1 = self._gamma1
-        if gamma2 is None:
-            gamma2 = self._gamma2
-        if cyclic is None:
-            cyclic = self._cyclic
-        if N is None:
-            N = self.N
-        cmap = PerceptuallyUniformColormap(
-            name, segmentdata, N,
-            alpha=alpha, clip=clip, cyclic=cyclic,
-            gamma1=gamma1, gamma2=gamma2, space=space
-        )
-        cmap._rgba_bad = self._rgba_bad
-        cmap._rgba_under = self._rgba_under
-        cmap._rgba_over = self._rgba_over
-        return cmap
-
-
-class CmapDict(dict):
-    """
-    Dictionary subclass used to replace the `matplotlib.cm.cmap_d`
-    colormap dictionary. See `~CmapDict.__getitem__` and
-    `~CmapDict.__setitem__` for details. This class also handles the
-    `colormaps` and `cycles` variables, meant to provide users with an
-    easily accessible list of all registered colormap and cycle names.
-    """
-    def __init__(self, kwargs):
-        """
-        Parameters
-        ----------
-        kwargs : dict-like
-            The source dictionary.
-        """
-        for key, value in kwargs.items():
-            self.__setitem__(key, value, sort=False)
-        self._record_update(kwargs, sort=True)
-
-    def __delitem__(self, key):
-        """
-        Delete the item from the list records.
-        """
-        key = self._sanitize_key(key)
-        self._record_delete(key)
-        super().__delitem__(self, key)
-
-    def __getitem__(self, key):
-        """
-        Retrieve the colormap associated with the sanitized key name. The
-        key name is case insensitive.
-
-        * If the key ends in ``'_r'``, the result of ``cmap.reversed()`` is
-          returned for the colormap registered under the name ``key[:-2]``.
-        * If it ends in ``'_s'``, the result of ``cmap.shifted(180)`` is
-          returned for the colormap registered under the name ``cmap[:-8]``.
-        * Reversed diverging colormaps can be requested with their "reversed"
-          name -- for example, ``'BuRd'`` is equivalent to ``'RdBu_r'``.
-        """
-        key = self._sanitize_key(key, mirror=True)
-        shift = key[-2:] == '_s'
-        if shift:
-            key = key[:-2]
-        reverse = key[-2:] == '_r'
-        if reverse:
-            key = key[:-2]
-        value = super().__getitem__(key)  # may raise keyerror
-        if shift:
-            if hasattr(value, 'shifted'):
-                value = value.shifted(180)
-            else:
-                raise KeyError(
-                    f'Item of type {type(value).__name__!r} '
-                    'does not have shifted() method.'
-                )
-        if reverse:
-            if hasattr(value, 'reversed'):
-                value = value.reversed()
-            else:
-                raise KeyError(
-                    f'Item of type {type(value).__name__!r} '
-                    'does not have reversed() method.'
-                )
-        return value
-
-    def __setitem__(self, key, item, sort=True):
-        """
-        Store the colormap under its lowercase name. If the colormap is
-        a matplotlib `~matplotlib.colors.ListedColormap` or
-        `~matplotlib.colors.LinearSegmentedColormap`, it is converted to the
-        ProPlot `ListedColormap` or `LinearSegmentedColormap` subclass.
-        """
-        if not isinstance(key, str):
-            raise KeyError(f'Invalid key {key!r}. Must be string.')
-        if isinstance(item, (ListedColormap, LinearSegmentedColormap)):
-            pass
-        elif isinstance(item, mcolors.LinearSegmentedColormap):
-            item = LinearSegmentedColormap(
-                item.name, item._segmentdata, item.N, item._gamma
-            )
-        elif isinstance(item, mcolors.ListedColormap):
-            item = ListedColormap(
-                item.colors, item.name, item.N
-            )
-        else:
-            raise ValueError(
-                f'Invalid colormap {item}. Must be instance of '
-                'matplotlib.colors.ListedColormap or '
-                'matplotlib.colors.LinearSegmentedColormap.'
-            )
-        key = self._sanitize_key(key, mirror=False)
-        self._record_update({key: item}, sort=sort)
-        super().__setitem__(key, item)
-
-    def __contains__(self, item):
-        """
-        Test for membership using the sanitized colormap name.
-        """
-        try:  # by default __contains__ ignores __getitem__ overrides
-            self.__getitem__(item)
-            return True
-        except KeyError:
-            return False
-
-    @staticmethod
-    def _record_delete(key):
-        """
-        Remove the `colormaps` or `cycles` record.
-        """
-        try:
-            records = (cmaps, cycles)
-        except NameError:
-            pass
-        else:
-            for record in records:
-                try:
-                    record.remove(key)
-                except ValueError:
-                    pass
-
-    @staticmethod
-    def _record_update(kwargs, sort=False):
-        """
-        Update the `colormaps` or `cycles` record.
-        """
-        record = None
-        try:
-            cmaps, cycles
-        except NameError:
-            pass
-        else:
-            for key, item in kwargs.items():
-                record = cycles if isinstance(item, ListedColormap) else cmaps
-                record.append(key)
-            if sort:
-                record[:] = sorted(record)
-
-    def _sanitize_key(self, key, mirror=True):
-        """
-        Return the sanitized colormap name. This is used for lookups *and*
-        assignments.
-        """
-        if not isinstance(key, str):
-            raise KeyError(f'Invalid key {key!r}. Key must be a string.')
-        key = key.lower()
-        key = re.sub(r'\A(grays)(?:_r|_s)?\Z', 'greys', key)
-        reverse = key[-2:] == '_r'
-        if reverse:
-            key = key[:-2]
-        if mirror and not super().__contains__(key):  # search for mirrored key
-            key_mirror = key
-            for pair in CMAPS_DIVERGING:
-                try:
-                    idx = pair.index(key)
-                    key_mirror = pair[1 - idx]
-                except (ValueError, KeyError):
-                    continue
-            if super().__contains__(key_mirror):
-                reverse = not reverse
-                key = key_mirror
-        if reverse:
-            key = key + '_r'
-        return key
-
-
-class _ColorMappingOverride(mcolors._ColorMapping):
-    """
-    Mapping whose cache attribute is a `ColorDict` dictionary.
-    """
-    def __init__(self, mapping):
-        super().__init__(mapping)
-        self.cache = ColorDict({})
-
-
-class ColorDict(dict):
-    """
-    This class overrides the builtin matplotlib color cache, allowing
-    users to draw colors from *named colormaps and color cycles* for any
-    plotting command that accepts a `color` keyword arg.
-    See `~ColorDict.__getitem__` for details.
-    """
-    def __getitem__(self, key):
-        """
-        Permit selections from arbitrary named colormaps and color cycles:
-
-        * For a smooth colormap, usage is e.g. ``color=('Blues', 0.8)``. The
-          number is the colormap index, and must be between 0 and 1.
-        * For a color cycle, usage is e.g. ``color=('colorblind', 2)``. The
-          number is the list index.
-
-        These examples work with any matplotlib command that accepts a `color`
-        keyword arg.
-        """
-        # Matplotlib 'color' args are passed to to_rgba, which tries to read
-        # directly from cache and if that fails, sanitizes input, which
-        # raises error on receiving (colormap, idx) tuple. So we *have* to
-        # override cache instead of color dict itself.
-        rgb, alpha = key
-        if (
-            not isinstance(rgb, str) and np.iterable(rgb) and len(rgb) == 2
-            and isinstance(rgb[1], Number) and isinstance(rgb[0], str)
-        ):
-            try:
-                cmap = mcm.cmap_d[rgb[0]]
-            except (TypeError, KeyError):
-                pass
-            else:
-                if isinstance(cmap, ListedColormap):
-                    if not 0 <= rgb[1] < len(cmap.colors):
-                        raise ValueError(
-                            f'Color cycle sample for {rgb[0]!r} cycle must be '
-                            f'between 0 and {len(cmap.colors)-1}, '
-                            f'got {rgb[1]}.'
-                        )
-                    rgb = cmap.colors[rgb[1]]  # draw from list of colors
-                else:
-                    if not 0 <= rgb[1] <= 1:
-                        raise ValueError(
-                            f'Colormap sample for {rgb[0]!r} colormap must be '
-                            f'between 0 and 1, got {rgb[1]}.'
-                        )
-                    rgb = cmap(rgb[1])  # get color selection
-                rgba = mcolors.to_rgba(rgb, alpha)
-                return rgba
-        return super().__getitem__((rgb, alpha))
+        return cls(name, cdict, **kwargs)
 
 
 def Colors(*args, **kwargs):
@@ -1965,7 +1744,6 @@ def Colormap(
         color strings like ``'C0'`` and ``'C2'`` when generating colormaps
         with `PerceptuallyUniformColormap.from_color`. Default is colors
         from the currently active property cycler.
-
         For example, ``plot.Colormap('C0', 'C1', 'C2', cycle='538')``
         generates a colormap using colors from the ``'538'`` color cycle.
     listmode : {'perceptual', 'linear', 'listed'}, optional
