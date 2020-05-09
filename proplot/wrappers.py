@@ -2534,6 +2534,10 @@ property-spec, optional
 
     # Parse handles and legends with native matplotlib parser
     if not list_of_lists:
+        if isinstance(handles, np.ndarray):
+            handles = handles.tolist()
+        if isinstance(labels, np.ndarray):
+            labels = labels.tolist()
         handles, labels, *_ = mlegend._parse_legend_args(
             axs, handles=handles, labels=labels,
         )
@@ -2541,6 +2545,10 @@ property-spec, optional
     else:
         pairs = []
         for ihandles, ilabels in zip(handles, labels):
+            if isinstance(ihandles, np.ndarray):
+                ihandles = ihandles.tolist()
+            if isinstance(ilabels, np.ndarray):
+                ilabels = ilabels.tolist()
             ihandles, ilabels, *_ = mlegend._parse_legend_args(
                 axs, handles=ihandles, labels=ilabels,
             )
