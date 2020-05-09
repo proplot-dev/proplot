@@ -121,7 +121,7 @@ There are quite a lot of deprecations for this release. Since this is
 
 - Support drawing colorbars with descending levels (:commit:`10763146`)
 - Add support for matplotlib stylesheets with `~proplot.config.use_style`
-  function and ``style`` rc param (:commit:`###`).
+  function and ``style`` rc param (:commit:`edc6f3c9`).
 - Add `categories` keyword arg to `~proplot.styletools.show_cmaps` and
   `~proplot.styletools.show_cycles` (:commit:`79be642d`).
 - *Hide* bad colormaps like ``'jet'`` from the
@@ -157,6 +157,7 @@ There are quite a lot of deprecations for this release. Since this is
 
 .. rubric:: Bug fixes
 
+- Fix issue where ``matplotlib.style.use`` resets backend (:commit:`c8319104`).
 - Fix issue with colormaps with dots in name (:commit:`972956b1`).
 - Fix logarithmic scale argument parsing deprecation (:commit:`6ed7dbc5`).
 - Fix deprecation of direct access to ``matplotlib.cm.cmap_d``
