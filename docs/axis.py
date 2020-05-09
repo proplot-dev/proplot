@@ -44,7 +44,7 @@
 # specific locations in a list using `~matplotlib.ticker.FixedLocator` (just
 # like `~matplotlib.axes.Axes.set_xticks` and
 # `~matplotlib.axes.Axes.set_yticks`). See
-# `~proplot.axes.StandardAxes.format` and `~proplot.constructor.Locator` for
+# `~proplot.axes.CartesianAxes.format` and `~proplot.constructor.Locator` for
 # details.
 #
 # To generate lists of tick locations, we recommend using ProPlot's
@@ -121,7 +121,7 @@ plot.rc.reset()
 # `~matplotlib.ticker.FixedFormatter` (just like
 # `~matplotlib.axes.Axes.set_xticklabels` and
 # `~matplotlib.axes.Axes.set_yticklabels`). See
-# `~proplot.axes.StandardAxes.format` and `~proplot.constructor.Formatter`
+# `~proplot.axes.CartesianAxes.format` and `~proplot.constructor.Formatter`
 # for details.
 #
 # ProPlot also changes the default axis formatter to
@@ -213,7 +213,7 @@ plot.rc.reset()
 # `% style formatting
 # <https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior>`__
 # of datetime tick labels, just use a string containing ``'%'`` (e.g.
-# ``xformatter='%Y-%m-%d'``). See `~proplot.axes.StandardAxes.format`,
+# ``xformatter='%Y-%m-%d'``). See `~proplot.axes.CartesianAxes.format`,
 # `~proplot.constructor.Locator`, and `~proplot.constructor.Formatter` for
 # details.
 
@@ -283,7 +283,7 @@ plot.rc.reset()
 #   axis scales instead of e.g. `~matplotlib.ticker.LogFormatter` for
 #   `~matplotlib.scale.LogScale` scales. This can be changed e.g. by passing
 #   ``xformatter='log'`` or ``yformatter='log'`` to
-#   `~proplot.axes.StandardAxes.format`.
+#   `~proplot.axes.CartesianAxes.format`.
 # * To make its behavior consistent with `~proplot.constructor.Locator` and
 #   `~proplot.constructor.Formatter`, the `~proplot.constructor.Scale`
 #   constructor function returns instances of `~matplotlib.scale.ScaleBase`,
@@ -294,12 +294,10 @@ plot.rc.reset()
 #   `~matplotlib.axis.Axis` instance (for backward compatibility reasons),
 #   ProPlot axis scales can be instantiated without the axis instance (e.g.
 #   ``plot.LogScale()`` instead of ``plot.LogScale(ax.xaxis)``).
-# * The ``'log'`` and ``'symlog'`` axis scales now accept the more sensible
-#   `base`, `linthresh`, `linscale`, and `subs` keyword arguments, rather than
-#   `basex`, `basey`, `linthreshx`, `linthreshy`, `linscalex`, `linscaley`,
-#   `subsx`, and `subsy`. Also, the default `subs` for the ``'symlog'`` axis
-#   scale is now ``np.arange(1, 10)``, and the default `linthresh` is now
-#   ``1``.
+# * The default `subs` for the ``'symlog'`` axis scale is now ``np.arange(1, 10)``,
+#   and the default `linthresh` is now ``1``. Also the ``'log'`` and ``'symlog'``
+#   axis scales now accept the keywords `base`, `linthresh`, `linscale`, and
+#   `subs` rather than keywords with trailing ``x`` or ``y``.
 
 # %%
 import proplot as plot
@@ -332,8 +330,8 @@ plot.rc.reset()
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_scales_new:
 #
-# New axis scales
-# ---------------
+# Special axis scales
+# -------------------
 #
 # ProPlot introduces several new axis scales. The ``'cutoff'`` scale (see
 # `~proplot.scale.CutoffScale`) is useful when the statistical distribution
@@ -438,13 +436,13 @@ for ax, scale, color in zip(axs[4:], ('sine', 'mercator'), ('coral', 'sky blue')
 # Dual unit axes
 # --------------
 #
-# The `~proplot.axes.StandardAxes.dualx` and
-# `~proplot.axes.StandardAxes.dualy` methods can be used to draw duplicate
+# The `~proplot.axes.CartesianAxes.dualx` and
+# `~proplot.axes.CartesianAxes.dualy` methods can be used to draw duplicate
 # *x* and *y* axes meant to represent *alternate units* in the same
 # coordinate range as the "parent" axis. This feature is powered by the
 # `~proplot.scale.FuncScale` class.
 #
-# `~proplot.axes.StandardAxes.dualx` and `~proplot.axes.StandardAxes.dualy`
+# `~proplot.axes.CartesianAxes.dualx` and `~proplot.axes.CartesianAxes.dualy`
 # accept either (1) a single linear forward function, (2) a pair of arbitrary
 # forward and inverse functions, or (3) a scale name or scale class instance.
 # In the latter case, the scale's transforms are used for the forward and
@@ -452,7 +450,7 @@ for ax, scale, color in zip(axs[4:], ('sine', 'mercator'), ('coral', 'sky blue')
 # for the default `~proplot.scale.FuncScale` locators and formatters.
 #
 # Notably, the "parent" axis scale is now *arbitrary* -- in the first example
-# shown below, we create a `~proplot.axes.StandardAxes.dualx` axis for an
+# shown below, we create a `~proplot.axes.CartesianAxes.dualx` axis for an
 # axis scaled by the ``'symlog'`` scale.
 
 # %%

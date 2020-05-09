@@ -15,15 +15,14 @@
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_subplots:
 #
-# Subplots features
-# =================
-
-
+# Subplots
+# ========
+#
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_autosize:
 #
-# Automatic figure sizing
-# -----------------------
+# Automatic figure size
+# ---------------------
 #
 # By default, ProPlot automatically determines the suitable figure size given
 # the geometry of your subplot grid and the physical dimensions of a "reference"

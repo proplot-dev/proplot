@@ -398,9 +398,8 @@ ax.format(title='Violin plots', titleloc='uc')
 # ----------------
 #
 # To make "parametric" plots, use the new `~proplot.axes.Axes.parametric`
-# method or pass the `cmap` and `values` keyword arguments to
-# `~matplotlib.axes.Axes.plot`. Parametric plots are
-# `~matplotlib.collections.LineCollections`\ s that map individual line
+# method. Parametric plots are
+# `~matplotlib.collections.LineCollection`\ s that map individual line
 # segments to individual colors, where each segment represents a "parametric"
 # coordinate (e.g. time). The parametric coordinates are specified with the
 # `values` keyword argument. See `~proplot.axes.Axes.parametric` for details.

@@ -143,8 +143,8 @@ ProPlot includes several useful constructor functions and subclasses.
 * The `~proplot.show.show_cmaps`, `~proplot.show.show_cycles`,
   `~proplot.show.show_colors`, `~proplot.show.show_fonts`,
   `~proplot.show.show_channels`, and `~~proplot.show.show_colorspaces`
-  functions are used to visualize your
-  :ref:`color scheme and font options <ug_colors_fonts>` and
+  functions are used to visualize your :ref:`color scheme <ug_colors>`
+  and :ref:`font options <ug_fonts>` and
   :ref:`inspect individual colormaps <ug_perceptual>`.
 * The `~proplot.constructor.Norm` constructor function generates colormap
   normalizers from shorthand names. The new

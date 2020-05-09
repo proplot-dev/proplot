@@ -22,7 +22,7 @@
 # <https://matplotlib.org/3.1.0/gallery/pie_and_polar_charts/polar_demo.html>`__
 # and the `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`__ and
 # `basemap <https://matplotlib.org/basemap/index.html>`__ map projection
-# packages. These features are optional; installation of cartopy and basemap
+# packages. These features are optional -- installation of cartopy and basemap
 # are not required.
 #
 # To change the axes projection, pass ``proj='name'`` to
@@ -35,8 +35,8 @@
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_polar:
 #
-# Polar projections
-# -----------------
+# Polar axes
+# ----------
 #
 # To draw polar axes, pass ``proj='polar'`` or e.g. ``proj={1:'polar'}`` to
 # `~proplot.ui.subplots`. This generates a `~proplot.axes.PolarAxes`

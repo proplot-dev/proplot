@@ -146,22 +146,29 @@ axs.format(abc=True, xlabel='xlabel', ylabel='ylabel', suptitle='Quick plotting 
 #
 # Every `~matplotlib.axes.Axes` returned by `~proplot.ui.subplots` has a
 # ``format`` method. This is your one-stop-shop for changing axes settings.
-# Keyword args passed to ``format`` are interpreted as follows:
+# Keyword arguments passed to ``format`` are interpreted as follows:
 #
-# #. Any keyword arg matching the name of an `~proplot.config.rc` setting
-#    will be applied to the axes using
-#    `~proplot.config.rc_configurator.context`. If the name has "dots", simply
-#    omit them. See the :ref:`configuration section <ug_config>` for
-#    details.
-# #. Remaining keyword args are passed to the class-specific
+# #. Any keyword matching the name of an `~proplot.config.rc` setting
+#    will be used to update the axes. If the name has "dots", you can omit them
+#    (e.g. ``titleloc='left'`` to change the ``title.loc`` property). See the
+#    :ref:`configuration section <ug_config>` for details.
+# #. Valid keywords arguments are passed to the
 #    `proplot.axes.CartesianAxes.format`, `proplot.axes.PolarAxes.format`, or
 #    `proplot.axes.GeoAxes.format` methods. These change settings that are
-#    specific to the axes type.
-# #. Still remaining keyword args are passed to the base
-#    `proplot.axes.Axes.format` method. `~proplot.axes.Axes` is the base class
-#    for all other axes classes. This changes axes titles, a-b-c subplot
-#    labeling, and figure titles -- things that are the same for all axes
-#    types.
+#    specific to the axes type. For example:
+
+#    * To change the *x* axis bounds on a `~proplot.axes.CartesianAxes`,
+#      use e.g. ``xlim=(0, 5)``.
+#    * To change the radial bounds on a `~proplot.axes.PolarAxes`, use e.g.
+#      ``rlim=(0, 10)``.
+#    * To change the meridional bounds on a `~proplot.axes.GeoAxes`,
+#      use e.g. ``lonlim=(-90, 0)``.
+#
+#
+# #. All remaining keyword arguments are passed to the base `proplot.axes.Axes.format`
+#    method. `~proplot.axes.Axes` is the base class for all other axes classes.
+#    This changes things that are the same for all axes types, like titles and
+#    a-b-c subplot labels (for example, ``abcstyle='A.'``).
 #
 # ``format`` lets you use simple shorthands for changing all kinds of
 # settings at once, instead of one-liner setter methods like
@@ -300,8 +307,7 @@ for ax, style in zip(axs, styles):
 #
 # In the below example, the `~proplot.ui.SubplotsContainer` returned by
 # `~proplot.ui.subplots` is used to call `~proplot.axes.Axes.format` on
-# several axes at once. Note that you can make your own subplot grid simply
-# by passing a list of axes to `~proplot.ui.SubplotsContainer`.
+# several axes at once.
 
 # %%
 import proplot as plot
@@ -309,7 +315,7 @@ import numpy as np
 state = np.random.RandomState(51423)
 fig, axs = plot.subplots(ncols=4, nrows=4, axwidth=1.2)
 axs.format(
-    xlabel='xlabel', ylabel='ylabel', suptitle='Subplot grid demo',
+    xlabel='xlabel', ylabel='ylabel', suptitle='SubplotsContainer demo',
     grid=False, xlim=(0, 50), ylim=(-4, 4)
 )
 

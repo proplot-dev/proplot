@@ -26,9 +26,9 @@
 # ----------
 #
 # Often, it can be useful to have narrow "panels" along the edge of a larger
-# subplot for plotting secondary 1-dimensional datasets or summary
-# statistics. In matplotlib, this requires a lot of work. In ProPlot, you can
-# create "panels" by passing a location (e.g. ``loc='r'`` or ``loc='right'``)
+# subplot for plotting secondary 1-dimensional datasets or summary statistics.
+# In matplotlib, there is no simple way to do this. In ProPlot, you can
+# create panels by passing a location (e.g. ``loc='r'`` or ``loc='right'``)
 # to the `~proplot.axes.Axes.panel` or `~proplot.axes.Axes.panel_axes` methods.
 # The resulting axes are instances of `~proplot.axes.CartesianAxes`.
 #
@@ -50,37 +50,38 @@ data = (state.rand(20, 20) - 0.48).cumsum(axis=1).cumsum(axis=0)
 data = 10 * (data - data.min()) / (data.max() - data.min())
 
 # Stacked panels with outer colorbars
-for loc_cbar, loc_panel in ('rb', 'br'):
+for cbarlocation, plocation in ('rb', 'br'):
     fig, axs = plot.subplots(
         axwidth=1.6, nrows=1, ncols=2,
         share=0, panelpad=0.1, includepanels=True
     )
     axs.contourf(
         data, cmap='glacial', extend='both',
-        colorbar=loc_cbar, colorbar_kw={'label': 'colorbar'},
+        colorbar=cbarlocation, colorbar_kw={'label': 'colorbar'},
     )
 
     # Summary statistics and settings
-    x1 = x2 = np.arange(20)
-    y1 = data.mean(axis=int(loc_panel == 'r'))
-    y2 = data.std(axis=int(loc_panel == 'r'))
     titleloc = 'upper center'
-    if loc_panel == 'r':
+    axis = int(plocation == 'r')  # dimension along which stats are taken
+    x1 = x2 = np.arange(20)
+    y1 = data.mean(axis=axis)
+    y2 = data.std(axis=axis)
+    if plocation == 'r':
         titleloc = 'center'
         x1, x2, y1, y2 = y1, y2, x1, x2
+    kwargs = {'titleloc': titleloc, 'xreverse': False, 'yreverse': False}
     space = 0
     width = '30pt'
-    kwargs = {'xreverse': False, 'yreverse': False, 'titleloc': titleloc}
 
     # Panels for plotting the mean
-    paxs1 = axs.panel(loc_panel, space=space, width=width)
-    paxs1.plot(x1, y1, color='gray7')
-    paxs1.format(title='Mean', **kwargs)
+    panels = axs.panel(plocation, space=space, width=width)
+    panels.plot(x1, y1, color='gray7')
+    panels.format(title='Mean', **kwargs)
 
     # Panels for plotting the standard deviation
-    paxs2 = axs.panel(loc_panel, space=space, width=width)
-    paxs2.plot(x2, y2, color='gray7', ls='--')
-    paxs2.format(title='Stdev', **kwargs)
+    panels = axs.panel(plocation, space=space, width=width)
+    panels.plot(x2, y2, color='gray7', ls='--')
+    panels.format(title='Stdev', **kwargs)
 
     # Apply formatting *after*
     axs.format(
@@ -92,19 +93,18 @@ for loc_cbar, loc_panel in ('rb', 'br'):
 import proplot as plot
 fig, axs = plot.subplots(axwidth=1.5, nrows=2, ncols=2, share=0)
 
-# Panels do not interfere with subplot layout
+# Demonstration that complex arrangements of panels
+# do not mess up tight layout algorithm
 for ax, side in zip(axs, 'tlbr'):
     ax.panel(side, width='3em')
 axs.format(
+    xlim=(0, 1), ylim=(0, 1),
+    xlabel='xlabel', ylabel='ylabel',
+    yticks=plot.arange(0.2, 0.8, 0.2),
+    xticks=plot.arange(0.2, 0.8, 0.2),
     title='Title', suptitle='Complex arrangement of panels',
     collabels=['Column 1', 'Column 2'],
     abc=True, abcloc='ul', titleloc='uc', abovetop=False,
-    xlabel='xlabel', ylabel='ylabel',
-)
-axs.format(
-    xlim=(0, 1), ylim=(0, 1),
-    ylocator=plot.arange(0.2, 0.8, 0.2),
-    xlocator=plot.arange(0.2, 0.8, 0.2)
 )
 
 
@@ -120,24 +120,31 @@ axs.format(
 # `~proplot.axes.Axes.inset_axes` command. The resulting axes are instances
 # of `~proplot.axes.CartesianAxes`, and therefore can be modified with the
 # `~proplot.axes.CartesianAxes.format` command.
-#
 # Passing ``zoom=True`` to `~proplot.axes.Axes.inset` draws "zoom indication"
 # lines with `~matplotlib.axes.Axes.indicate_inset_zoom`, and ProPlot
-# *automatically updates* the lines when the axis limits of the parent axes
+# automatically updates the lines when the axis limits of the parent axes
 # change. To modify the line properties, simply use the `zoom_kw` argument.
 
 # %%
 import proplot as plot
 import numpy as np
+
+# Generate sample data
 N = 20
-# Inset axes representing a "zoom"
 state = np.random.RandomState(51423)
-fig, ax = plot.subplots(axwidth=3)
 x, y = np.arange(10), np.arange(10)
 data = state.rand(10, 10)
+
+# Plot sample data
+fig, ax = plot.subplots(axwidth=3)
 m = ax.pcolormesh(data, cmap='Grays', levels=N)
 ax.colorbar(m, loc='b', label='label')
-ax.format(xlabel='xlabel', ylabel='ylabel')
+ax.format(
+    xlabel='xlabel', ylabel='ylabel',
+    suptitle='"Zooming in" with an inset axes'
+)
+
+# Create inset axes representing a "zoom-in"
 iax = ax.inset(
     [5, 5, 4, 4], transform='data', zoom=True,
     zoom_kw={'color': 'red3', 'lw': 2, 'ls': '--'}
@@ -147,4 +154,3 @@ iax.format(
     linewidth=1.5, ticklabelweight='bold'
 )
 iax.pcolormesh(data, cmap='Grays', levels=N)
-ax.format(suptitle='"Zooming in" with an inset axes')
