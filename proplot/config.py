@@ -1096,10 +1096,6 @@ def _get_style_dicts(style, infer=False):
         'mpl15': 'classic',
         'original': mpl.matplotlib_fname(),
     }
-    if isinstance(style, str) or isinstance(style, dict):
-        styles = [style]
-    else:
-        styles = style
 
     # Always apply the default style *first* so styles are rigid
     kw_params = _get_default_dict()
@@ -1113,6 +1109,10 @@ def _get_style_dicts(style, infer=False):
 
     # Apply user input style(s) one by one
     # NOTE: Always use proplot fonts if style does not explicitly set them.
+    if isinstance(style, str) or isinstance(style, dict):
+        styles = [style]
+    else:
+        styles = style
     for style in styles:
         if isinstance(style, dict):
             kw = style
