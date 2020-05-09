@@ -66,14 +66,12 @@ def show():
     plt.show()
 
 
-def _canvas_preprocess(canvas, method):
+def _canvas_preprocessor(canvas, method):
     """
     Return a pre-processer that can be used to override instance-level
     canvas draw_idle() and print_figure() methods. This applies tight layout
     and aspect ratio-conserving adjustments and aligns labels. Required so that
     the canvas methods instantiate renderers with the correct dimensions.
-    Note that MacOSX currently `cannot be resized \
-<https://github.com/matplotlib/matplotlib/issues/15131>`__.
     """
     # NOTE: This is by far the most robust approach. Renderer must be (1)
     # initialized with the correct figure size or (2) changed inplace during
@@ -86,25 +84,31 @@ def _canvas_preprocess(canvas, method):
     # complicated, dangerous, and result in unnecessary extra draws.
     def _preprocess(self, *args, **kwargs):
         fig = self.figure  # update even if not stale! needed after saves
-        if method == 'draw_idle' and (
-            self._is_idle_drawing  # standard
-            or getattr(self, '_draw_pending', None)  # pyqt5
+        func = getattr(type(self), method)  # the original method
+        # For now we override 'draw' and '_draw' rather than 'draw_idle'
+        # but may change mind in the future. This breakout condition is
+        # copied from the matplotlib source.
+        if method[:4] == 'draw' and (
+            getattr(self, '_is_drawing', None)  # see backends_qt5.py source
+            or getattr(self, '_is_idle_drawing', None)  # older versions
+            or getattr(self, '_draw_pending', None)
         ):
-            # For now we override 'draw' and '_draw' rather than 'draw_idle'
-            # but may change mind in the future. This breakout condition is
-            # copied from the matplotlib source.
             return
-        if method == 'print_figure':
-            # When re-generating inline figures, the tight layout algorithm
-            # can get figure size *or* spacing wrong unless we force additional
-            # draw! Seems to have no adverse effects when calling savefig.
-            self.draw()
+
+        # When re-generating inline figures, the tight layout algorithm
+        # can get figure size *or* spacing wrong unless we force additional
+        # draw! Seems to have no adverse effects when calling savefig.
+        # if method == 'print_figure':
+        #     self.draw()
         if fig._is_preprocessing:
             return
+
+        # Apply formatting
         with fig._context_preprocessing():
             renderer = fig._get_renderer()  # any renderer will do for now
             for ax in fig._iter_axes(hidden=False, children=True):
-                ax._draw_auto_legends_colorbars()  # may insert panels
+                if isinstance(ax, paxes.Axes):
+                    ax._draw_auto_legends_colorbars()  # may insert panels:
             resize = rc['backend'] != 'nbAgg'
             if resize:
                 fig._adjust_aspect()  # resizes figure
@@ -116,7 +120,9 @@ def _canvas_preprocess(canvas, method):
                 fig._fallback_to_cm, rc['mathtext.fallback_to_cm']
             )
             with rc.context({'mathtext.fallback_to_cm': fallback}):
-                return getattr(type(self), method)(self, *args, **kwargs)
+                ret = func(self, *args, **kwargs)
+        return ret
+
     return _preprocess.__get__(canvas)  # ...I don't get it either
 
 
@@ -1487,15 +1493,16 @@ class Figure(mfigure.Figure):
         # `~matplotlib.backend_bases.FigureCanvasBase.draw_idle` and
         # `~matplotlib.backend_bases.FigureCanvasBase.print_figure`
         # methods. The latter is called by save() and by the inline backend.
-        # See `_canvas_preprocess` for details."""
+        # See `_canvas_preprocessor` for details."""
+        # TODO: Concatenate docstrings.
+        # TODO: Figure out bug with macos backend.
         # NOTE: Cannot use draw_idle() because it causes complications for qt5
-        # backend (wrong figure size). Even though usage is less consistent we
-        # *must* use draw() and _draw() instead.
-        if hasattr(canvas, '_draw'):
-            canvas._draw = _canvas_preprocess(canvas, '_draw')
-        else:
-            canvas.draw = _canvas_preprocess(canvas, 'draw')
-        canvas.print_figure = _canvas_preprocess(canvas, 'print_figure')
+        # backend (wrong figure size).
+        # NOTE: Actually now we *do* use draw_idle() because draw() seems
+        # to break everything in latest qt5 version.
+        # canvas.draw = _canvas_preprocessor(canvas, 'draw')
+        canvas.draw_idle = _canvas_preprocessor(canvas, 'draw_idle')
+        canvas.print_figure = _canvas_preprocessor(canvas, 'print_figure')
         super().set_canvas(canvas)
 
     def set_size_inches(self, w, h=None, forward=True, auto=False):
