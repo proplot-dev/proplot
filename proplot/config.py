@@ -750,7 +750,7 @@ class rc_configurator(object):
             yield self[key]
 
 
-def inline_backend_fmt(fmt=None):
+def config_inline_backend(fmt=None):
     """
     Set up the `ipython inline backend \
 <https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__
@@ -760,12 +760,14 @@ def inline_backend_fmt(fmt=None):
     .. code-block:: ipython
 
         %config InlineBackend.figure_formats = rc['inlinefmt']
-        %config InlineBackend.rc = {}  # never override the rc settings
-        %config InlineBackend.close_figures = True  # memory issues
+        %config InlineBackend.rc = {}  # never override rc settings
+        %config InlineBackend.close_figures = True  \
+# cells start with no active figures
         %config InlineBackend.print_figure_kwargs = {'bbox_inches': None}  \
-# not 'tight', because proplot has its own tight layout algorithm
+# never override rc settings
 
     When the inline backend is inactive or unavailable, this has no effect.
+    This function is called when you modify the :rcraw:`inlinefmt` property.
 
     Parameters
     ----------
@@ -773,24 +775,24 @@ def inline_backend_fmt(fmt=None):
         The inline backend file format(s). Default is :rc:`inlinefmt`.
         Valid formats include ``'jpg'``, ``'png'``, ``'svg'``, ``'pdf'``,
         and ``'retina'``.
-    """  # noqa
+    """
     # Note if inline backend is unavailable this will fail silently
     ipython = get_ipython()
     if ipython is None:
         return
-    fmt = fmt or rcParamsShort['inlinefmt']
+    fmt = _not_none(fmt, rc_quick['inlinefmt'])
     if isinstance(fmt, str):
         fmt = [fmt]
     elif np.iterable(fmt):
         fmt = list(fmt)
     else:
         raise ValueError(
-            f'Invalid inline backend format {fmt!r}. '
-            'Must be string or list thereof.'
+            f'Invalid inline backend format {fmt!r}. Must be string or list thereof.'
         )
     ipython.magic('config InlineBackend.figure_formats = ' + repr(fmt))
-    ipython.magic('config InlineBackend.rc = {}')  # no notebook overrides
-    ipython.magic('config InlineBackend.close_figures = True')  # memory
+    ipython.magic('config InlineBackend.rc = {}')
+    ipython.magic('config InlineBackend.close_figures = True')
+    ipython.magic("config InlineBackend.print_figure_kwargs = {'bbox_inches': None}")
     ipython.magic(  # use ProPlot tight layout instead
         'config InlineBackend.print_figure_kwargs = {"bbox_inches": None}'
     )
