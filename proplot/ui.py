@@ -8,7 +8,9 @@ pyplot-inspired functions for creating figures and related classes.
 import os
 import numpy as np
 import functools
+from .internals import warnings
 import inspect
+from . import axes as paxes
 import matplotlib.pyplot as plt
 import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
@@ -64,190 +66,6 @@ def show():
     when you create a new figure, it will be automatically displayed.
     """
     plt.show()
-
-
-class SubplotsContainer(list):
-    """
-    List subclass and pseudo-2d array used as a container for the
-    axes returned by `subplots`. See `~SubplotsContainer.__getattr__`
-    and `~SubplotsContainer.__getitem__` for details.
-    """
-    def __init__(self, objs, n=1, order='C'):
-        """
-        Parameters
-        ----------
-        objs : list-like
-            1d iterable of `~proplot.axes.Axes` instances.
-        n : int, optional
-            The length of the fastest-moving dimension, i.e. the number of
-            columns when `order` is ``'C'``, and the number of rows when
-            `order` is ``'F'``. Used to treat lists as pseudo-2d arrays.
-        order : {'C', 'F'}, optional
-            Whether 1d indexing returns results in row-major (C-style) or
-            column-major (Fortran-style) order, respectively. Used to treat
-            lists as pseudo-2d arrays.
-        """
-        if not all(isinstance(obj, axes.Axes) for obj in objs):
-            raise ValueError(
-                f'Axes grid must be filled with Axes instances, got {objs!r}.'
-            )
-        super().__init__(objs)
-        self._n = n
-        self._order = order
-        self._shape = (len(self) // n, n)[::(1 if order == 'C' else -1)]
-
-    def __repr__(self):
-        return 'SubplotsContainer([' + ', '.join(str(ax) for ax in self) + '])'
-
-    def __setitem__(self, key, value):  # noqa: U100
-        """
-        Raise an error. This enforces pseudo immutability.
-        """
-        raise LookupError('SubplotsContainer is immutable.')
-
-    def __getitem__(self, key):
-        """
-        If an integer is passed, the item is returned. If a slice is passed,
-        a `SubplotsContainer` of the items is returned. You can also use 2D
-        indexing, and the corresponding axes in the `SubplotsContainer` will
-        be chosen.
-
-        Example
-        -------
-        >>> import proplot as plot
-        >>> fig, axs = plot.subplots(nrows=3, ncols=3, colorbars='b', bstack=2)
-        >>> axs[0]  # the subplot in the top-right corner
-        >>> axs[3]  # the first subplot in the second row
-        >>> axs[1,2]  # the subplot in the second row, third from the left
-        >>> axs[:,0]  # the subplots in the first column
-        """
-        # Allow 2d specification
-        if isinstance(key, tuple) and len(key) == 1:
-            key = key[0]
-        # Do not expand single slice to list of integers or we get recursion!
-        # len() operator uses __getitem__!
-        if not isinstance(key, tuple):
-            axlist = isinstance(key, slice)
-            objs = list.__getitem__(self, key)
-        elif len(key) == 2:
-            axlist = any(isinstance(ikey, slice) for ikey in key)
-            # Expand keys
-            keys = []
-            order = self._order
-            for i, ikey in enumerate(key):
-                if (i == 1 and order == 'C') or (i == 0 and order != 'C'):
-                    n = self._n
-                else:
-                    n = len(self) // self._n
-                if isinstance(ikey, slice):
-                    start, stop, step = ikey.start, ikey.stop, ikey.step
-                    if start is None:
-                        start = 0
-                    elif start < 0:
-                        start = n + start
-                    if stop is None:
-                        stop = n
-                    elif stop < 0:
-                        stop = n + stop
-                    if step is None:
-                        step = 1
-                    ikeys = [*range(start, stop, step)]
-                else:
-                    if ikey < 0:
-                        ikey = n + ikey
-                    ikeys = [ikey]
-                keys.append(ikeys)
-
-            # Get index pairs and get objects
-            # Note that in double for loop, right loop varies fastest, so
-            # e.g. axs[:,:] delvers (0,0), (0,1), ..., (0,N), (1,0), ...
-            # Remember for order == 'F', SubplotsContainer was sent a list
-            # unfurled in column-major order, so we replicate row-major
-            # indexing syntax by reversing the order of the keys.
-            objs = []
-            if self._order == 'C':
-                idxs = [
-                    key0 * self._n + key1 for key0 in keys[0]
-                    for key1 in keys[1]
-                ]
-            else:
-                idxs = [
-                    key1 * self._n + key0 for key1 in keys[1]
-                    for key0 in keys[0]
-                ]
-            for idx in idxs:
-                objs.append(list.__getitem__(self, idx))
-            if not axlist:  # objs will always be length 1
-                objs = objs[0]
-        else:
-            raise IndexError
-
-        # Return
-        if axlist:
-            return SubplotsContainer(objs)
-        else:
-            return objs
-
-    def __getattr__(self, attr):
-        """
-        If the attribute is *callable*, return a dummy function that loops
-        through each identically named method, calls them in succession, and
-        returns a tuple of the results. This lets us call arbitrary methods
-        on several axes at once. If the `SubplotsContainer` has length ``1``,
-        the single result is returned. If the attribute is *not callable*,
-        returns a tuple of attributes for every object in the list.
-
-        Example
-        -------
-        >>> import proplot as plot
-        >>> fig, axs = plot.subplots(nrows=2, ncols=2)
-        >>> axs.format(...)  # calls "format" on all subplots
-        >>> panels = axs.panel_axes('right')  # returns SubplotsContainer of panels
-        >>> panels.format(...)  # calls "format" on all panels
-        """
-        if not self:
-            raise AttributeError(
-                f'Invalid attribute {attr!r}, axes grid {self!r} is empty.'
-            )
-        objs = tuple(getattr(ax, attr) for ax in self)  # may raise error
-
-        # Objects
-        if not any(callable(_) for _ in objs):
-            if len(self) == 1:
-                return objs[0]
-            else:
-                return objs
-        # Methods
-        # NOTE: Must manually copy docstring because help() cannot inherit it
-        elif all(callable(_) for _ in objs):
-            @functools.wraps(objs[0])
-            def _iterator(*args, **kwargs):
-                ret = []
-                for func in objs:
-                    ret.append(func(*args, **kwargs))
-                if len(self) == 1:
-                    return ret[0]
-                elif all(res is None for res in ret):
-                    return None
-                elif all(isinstance(res, axes.Axes) for res in ret):
-                    return SubplotsContainer(ret, n=self._n, order=self._order)
-                else:
-                    return tuple(ret)
-            _iterator.__doc__ = inspect.getdoc(objs[0])
-            return _iterator
-
-        # Mixed
-        raise AttributeError(f'Found mixed types for attribute {attr!r}.')
-
-    @property
-    def shape(self):
-        """
-        The "shape" of the 2d subplot grid assumed when performing 2d
-        indexing.  For :ref:`complex subplot grids <ug_intro>`, where
-        subplots may span contiguous rows and columns, this "shape" may be
-        incorrect. In such cases, 1d indexing should always be used.
-        """
-        return self._shape
 
 
 class SubplotSpec(mgridspec.SubplotSpec):
@@ -2558,3 +2376,191 @@ def subplots(
     # Return figure and axes
     n = ncols if order == 'C' else nrows
     return fig, SubplotsContainer(axs, n=n, order=order)
+
+
+class SubplotsContainer(list):
+    """
+    List subclass and pseudo-2d array used as a container for the
+    axes returned by `subplots`. See `~SubplotsContainer.__getattr__`
+    and `~SubplotsContainer.__getitem__` for details.
+    """
+    def __init__(self, objs, n=1, order='C'):
+        """
+        Parameters
+        ----------
+        objs : list-like
+            1d iterable of `~proplot.axes.Axes` instances.
+        n : int, optional
+            The length of the fastest-moving dimension, i.e. the number of
+            columns when `order` is ``'C'``, and the number of rows when
+            `order` is ``'F'``. Used to treat lists as pseudo-2d arrays.
+        order : {'C', 'F'}, optional
+            Whether 1d indexing returns results in row-major (C-style) or
+            column-major (Fortran-style) order, respectively. Used to treat
+            lists as pseudo-2d arrays.
+        """
+        if not all(isinstance(obj, paxes.Axes) for obj in objs):
+            raise ValueError(
+                f'Axes grid must be filled with Axes instances, got {objs!r}.'
+            )
+        super().__init__(objs)
+        self._n = n
+        self._order = order
+        self._shape = (len(self) // n, n)[::(1 if order == 'C' else -1)]
+
+    def __repr__(self):
+        return 'SubplotsContainer([' + ', '.join(str(ax) for ax in self) + '])'
+
+    def __setitem__(self, key, value):  # noqa: U100
+        """
+        Raise an error. This enforces pseudo immutability.
+        """
+        raise LookupError('SubplotsContainer is immutable.')
+
+    def __getitem__(self, key):
+        """
+        If an integer is passed, the item is returned. If a slice is passed,
+        a `SubplotsContainer` of the items is returned. You can also use 2D
+        indexing, and the corresponding axes in the `SubplotsContainer` will
+        be chosen.
+
+        Example
+        -------
+        >>> import proplot as plot
+        >>> fig, axs = plot.subplots(nrows=3, ncols=3, colorbars='b', bstack=2)
+        >>> axs[0]  # the subplot in the top-right corner
+        >>> axs[3]  # the first subplot in the second row
+        >>> axs[1,2]  # the subplot in the second row, third from the left
+        >>> axs[:,0]  # the subplots in the first column
+        """
+        # Allow 2d specification
+        if isinstance(key, tuple) and len(key) == 1:
+            key = key[0]
+        # Do not expand single slice to list of integers or we get recursion!
+        # len() operator uses __getitem__!
+        if not isinstance(key, tuple):
+            axlist = isinstance(key, slice)
+            objs = list.__getitem__(self, key)
+        elif len(key) == 2:
+            axlist = any(isinstance(ikey, slice) for ikey in key)
+            # Expand keys
+            keys = []
+            order = self._order
+            for i, ikey in enumerate(key):
+                if (i == 1 and order == 'C') or (i == 0 and order != 'C'):
+                    n = self._n
+                else:
+                    n = len(self) // self._n
+                if isinstance(ikey, slice):
+                    start, stop, step = ikey.start, ikey.stop, ikey.step
+                    if start is None:
+                        start = 0
+                    elif start < 0:
+                        start = n + start
+                    if stop is None:
+                        stop = n
+                    elif stop < 0:
+                        stop = n + stop
+                    if step is None:
+                        step = 1
+                    ikeys = [*range(start, stop, step)]
+                else:
+                    if ikey < 0:
+                        ikey = n + ikey
+                    ikeys = [ikey]
+                keys.append(ikeys)
+
+            # Get index pairs and get objects
+            # Note that in double for loop, right loop varies fastest, so
+            # e.g. axs[:,:] delvers (0,0), (0,1), ..., (0,N), (1,0), ...
+            # Remember for order == 'F', SubplotsContainer was sent a list
+            # unfurled in column-major order, so we replicate row-major
+            # indexing syntax by reversing the order of the keys.
+            objs = []
+            if self._order == 'C':
+                idxs = [
+                    key0 * self._n + key1 for key0 in keys[0]
+                    for key1 in keys[1]
+                ]
+            else:
+                idxs = [
+                    key1 * self._n + key0 for key1 in keys[1]
+                    for key0 in keys[0]
+                ]
+            for idx in idxs:
+                objs.append(list.__getitem__(self, idx))
+            if not axlist:  # objs will always be length 1
+                objs = objs[0]
+        else:
+            raise IndexError
+
+        # Return
+        if axlist:
+            return SubplotsContainer(objs)
+        else:
+            return objs
+
+    def __getattr__(self, attr):
+        """
+        If the attribute is *callable*, return a dummy function that loops
+        through each identically named method, calls them in succession, and
+        returns a tuple of the results. This lets us call arbitrary methods
+        on several axes at once. If the `SubplotsContainer` has length ``1``,
+        the single result is returned. If the attribute is *not callable*,
+        returns a tuple of attributes for every object in the list.
+
+        Example
+        -------
+        >>> import proplot as plot
+        >>> fig, axs = plot.subplots(nrows=2, ncols=2)
+        >>> axs.format(...)  # calls "format" on all subplots
+        >>> panels = axs.panel_axes('right')  # returns SubplotsContainer of panels
+        >>> panels.format(...)  # calls "format" on all panels
+        """
+        if not self:
+            raise AttributeError(
+                f'Invalid attribute {attr!r}, axes grid {self!r} is empty.'
+            )
+        objs = tuple(getattr(ax, attr) for ax in self)  # may raise error
+
+        # Objects
+        if not any(callable(_) for _ in objs):
+            if len(self) == 1:
+                return objs[0]
+            else:
+                return objs
+        # Methods
+        # NOTE: Must manually copy docstring because help() cannot inherit it
+        elif all(callable(_) for _ in objs):
+            @functools.wraps(objs[0])
+            def _iterator(*args, **kwargs):
+                ret = []
+                for func in objs:
+                    ret.append(func(*args, **kwargs))
+                if len(self) == 1:
+                    return ret[0]
+                elif all(res is None for res in ret):
+                    return None
+                elif all(isinstance(res, paxes.Axes) for res in ret):
+                    return SubplotsContainer(ret, n=self._n, order=self._order)
+                else:
+                    return tuple(ret)
+            _iterator.__doc__ = inspect.getdoc(objs[0])
+            return _iterator
+
+        # Mixed
+        raise AttributeError(f'Found mixed types for attribute {attr!r}.')
+
+    @property
+    def shape(self):
+        """
+        The "shape" of the 2d subplot grid assumed when performing 2d
+        indexing.  For :ref:`complex subplot grids <ug_intro>`, where
+        subplots may span contiguous rows and columns, this "shape" may be
+        incorrect. In such cases, 1d indexing should always be used.
+        """
+        return self._shape
+
+
+# Deprecations
+subplot_grid = warnings._rename_obj('subplot_grid', SubplotsContainer)
