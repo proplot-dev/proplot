@@ -1695,102 +1695,124 @@ def Colors(*args, **kwargs):
 
 
 def Colormap(
-    *args, name=None, listmode='perceptual', fade=None, cycle=None,
-    shift=None, cut=None, left=None, right=None, reverse=False,
-    save=False, save_kw=None, **kwargs
+    *args, name=None, listmode='perceptual',
+    samples=None, cut=None, left=None, right=None, reverse=False, shift=None,
+    fade=None, cycle=None, to_listed=False,
+    save=False, save_kw=None,
+    **kwargs
 ):
     """
-    Generate or retrieve colormaps and optionally merge and manipulate
-    them in a variety of ways. Used to interpret the `cmap` and `cmap_kw`
-    arguments when passed to any plotting method wrapped by
+    Generate, retrieve, modify, and/or merge instances of
+    `~proplot.colors.PerceptuallyUniformColormap`,
+    `~proplot.colors.LinearSegmentedColormap`, and
+    `~proplot.colors.ListedColormap`.
+    Used to interpret the `cmap` and `cmap_kw` arguments
+    when passed to any plotting method wrapped by
     `~proplot.wrappers.cmap_changer`.
 
     Parameters
     ----------
     *args : colormap-spec
         Positional arguments that individually generate colormaps. If more than
-        one argument is passed, the resulting colormaps are merged. Arguments
-        are interpreted as follows.
+        one argument is passed, the resulting colormaps are *merged* with
+        `~proplot.colors.LinearSegmentedColormap.append`
+        or `~proplot.colors.ListedColormap.append`.
+        Arguments are interpreted as follows:
 
-        * If `~matplotlib.colors.Colormap` or a registered colormap name, the
-          colormap is simply returned.
+        * If the argument is a `~matplotlib.colors.Colormap` or a registered
+          colormap name, nothing more is done.
         * If a filename string with valid extension, the colormap data will
-          be loaded. See `register_cmaps` and `register_cycles`.
-        * If RGB tuple or color string, a `PerceptuallyUniformColormap` is
-          generated with `~PerceptuallyUniformColormap.from_color`. If the
+          be loaded. See `~proplot.config.register_cmaps` and
+          `~proplot.config.register_cycles`.
+        * If RGB tuple or color string, a
+          `~proplot.colors.PerceptuallyUniformColormap` is generated with
+          `~proplot.colors.PerceptuallyUniformColormap.from_color`. If the
           string ends in ``'_r'``, the monochromatic map will be *reversed*,
           i.e. will go from dark to light instead of light to dark.
         * If list of RGB tuples or color strings, a
-          `PerceptuallyUniformColormap` is generated with
-          `~PerceptuallyUniformColormap.from_list`.
+          `~proplot.colors.PerceptuallyUniformColormap` is generated with
+          `~proplot.colors.PerceptuallyUniformColormap.from_list`.
         * If dictionary containing the keys ``'hue'``, ``'saturation'``, and
-          ``'luminance'``, a `PerceptuallyUniformColormap` is generated with
-          `~PerceptuallyUniformColormap.from_hsl`.
+          ``'luminance'``, a `~proplot.colors.PerceptuallyUniformColormap`
+          is generated with
+          `~proplot.colors.PerceptuallyUniformColormap.from_hsl`.
 
     name : str, optional
         Name under which the final colormap is registered. It can then be
         reused by passing ``cmap='name'`` to plotting functions like
         `~matplotlib.axes.Axes.contourf`.
-    fade : float, optional
-        The maximum luminosity used when generating colormaps with
-        `PerceptuallyUniformColormap.from_color`. Default is ``100`` when
-        calling `Colormap` directly, and ``90`` when `Colormap` is called by
-        `Cycle` (this prevents having pure white in the color cycle).
-
-        For example, ``plot.Colormap('blue', fade=80)`` generates a blue
-        colormap that fades to a pale blue with 80% luminance.
-    cycle : str or list of color-spec, optional
-        The registered cycle name or a list of colors used to interpret cycle
-        color strings like ``'C0'`` and ``'C2'`` when generating colormaps
-        with `PerceptuallyUniformColormap.from_color`. Default is colors
-        from the currently active property cycler.
-        For example, ``plot.Colormap('C0', 'C1', 'C2', cycle='538')``
-        generates a colormap using colors from the ``'538'`` color cycle.
     listmode : {'perceptual', 'linear', 'listed'}, optional
         Controls how colormaps are generated when you input list(s) of colors.
-        If ``'perceptual'``, a `PerceptuallyUniformColormap` is generated with
-        `PerceptuallyUniformColormap.from_list`. If ``'linear'``,
-        a `~matplotlib.colors.LinearSegmentedColormap` is generated with
-        `~matplotlib.colors.LinearSegmentedColormap.from_list`. If
-        ``'listed'``, the `~matplotlib.colors.ListedColormap` is generated.
+        If ``'perceptual'``, a `~proplot.colors.PerceptuallyUniformColormap`
+        is generated with
+        `~proplot.colors.PerceptuallyUniformColormap.from_list`. If
+        ``'linear'``, a `~matplotlib.colors.LinearSegmentedColormap` is
+        generated with `~matplotlib.colors.LinearSegmentedColormap.from_list`.
+        If ``'listed'``, a `~matplotlib.colors.ListedColormap` is generated.
 
-        Default is ``'perceptual'`` when calling `Colormap` directly, and
+        Default is ``'perceptual'`` when calling `Colormap` directly and
         ``'listed'`` when `Colormap` is called by `Cycle`.
-    cut : float, optional
-        Passed to `LinearSegmentedColormap.punched`.
-        This applies to the final *merged* colormap.
-    left, right : float, optional
-        Passed to `LinearSegmentedColormap.truncated` or
-        `ListedColormap.truncated`. These apply to *each colormap*
-        individually.
-    reverse : bool, optional
-        Passed to `LinearSegmentedColormap.reversed` or
-        `ListedColormap.reversed`. This applies to *each colormap*
-        individually.
-    shift : float, optional
-        Passed to `LinearSegmentedColormap.shifted` or
-        `ListedColormap.shifted`. This applies to the final *merged* colormap.
+    samples : int or list of int, optional
+        For `~proplot.colors.LinearSegmentedColormap`\\ s, this is used to
+        generate `~proplot.colors.ListedColormap`\\ s with
+        `~proplot.colors.LinearSegmentedColormap.to_listed`. For
+        `~proplot.colors.ListedColormap`\\ s, this is used to updates the
+        number of colors in the cycle. If `samples` is integer, it applies
+        to the final *merged* colormap. If it is a list of integers,
+        it applies to each input colormap-spec individually.
+    cut : float or list of float, optional
+        Passed to `~proplot.colors.LinearSegmentedColormap.cut`. If float,
+        this applies to the final *merged* colormap. If list of float, this
+        applies to each input colormap-spec individually.
+    left, right : float or list of float, optional
+        Passed to `~proplot.colors.LinearSegmentedColormap.truncate`.
+        If float, these apply to the final *merged* colormap. If list
+        of float, these apply to each input colormap-spec individually.
+    reverse : bool or list of bool, optional
+        Passed to `~proplot.colors.LinearSegmentedColormap.reversed`. If
+        float, this applies to the final *merged* colormap. If list of
+        float, this applies to each input colormap-spec individually.
+    shift : float or list of float, optional
+        Passed to `~proplot.colors.LinearSegmentedColormap.shifted`.
+        If float, this applies to the final *merged* colormap. If list of
+        float, this applies to each input colormap-spec individually.
+    fade : float or list of float, optional
+        The maximum luminosity used when generating colormaps with
+        `~proplot.colors.PerceptuallyUniformColormap.from_color`. Default is
+        ``100`` when calling `Colormap` directly, and ``90`` when `Colormap`
+        is called by `Cycle` (this prevents having pure white
+        in the color cycle).
+    cycle : str or list of color-spec, optional
+        The registered cycle name or a list of colors used to interpret cycle
+        color strings like ``'C0'`` and ``'C2'``. Default is colors from the
+        active property cycler.
+    to_listed : bool, optional
+        If ``True``, when the final colormap is a
+        `~proplot.colors.ListedColormap`, we leave it alone, but when it is a
+        `~proplot.colors.LinearSegmentedColormap`, we call
+        `~proplot.colors.LinearSegmentedColormap.to_listed` with
+        ``samples=10``. This option is used when `Cycle` calls `Colormap`.
     save : bool, optional
-        Whether to call the colormap save method, i.e.
-        `LinearSegmentedColormap.save` or
-        `ListedColormap.save`.
+        Whether to call the colormap/color cycle save method, i.e.
+        `proplot.colors.LinearSegmentedColormap.save` or
+        `proplot.colors.ListedColormap.save`.
     save_kw : dict-like, optional
-        Ignored if `save` is ``False``. Passed to the colormap save method,
-        i.e. `LinearSegmentedColormap.save` or
-        `ListedColormap.save`.
+        Ignored if `save` is ``False``. Passed to the colormap/color cycle
+        save method, i.e. `proplot.colors.LinearSegmentedColormap.save` or
+        `proplot.colors.ListedColormap.save`.
 
     Other parameters
     ----------------
     **kwargs
-        Passed to `LinearSegmentedColormap.concatenate` or
-        `ListedColormap.concatenate`. Each of these functions accepts
-        arbitrary colormap settings.
+        Passed to `proplot.colors.LinearSegmentedColormap.copy`,
+        `proplot.colors.PerceptuallyUniformColormap.copy`, or
+        `proplot.colors.ListedColormap.copy`.
 
     Returns
     -------
     `~matplotlib.colors.Colormap`
-        A `~matplotlib.colors.LinearSegmentedColormap` or
-        `~matplotlib.colors.ListedColormap` instance.
+        A `~proplot.colors.LinearSegmentedColormap` or
+        `~proplot.colors.ListedColormap` instance.
     """
     # Parse input args
     # TODO: Play with using "qualitative" colormaps in realistic examples,
@@ -1804,90 +1826,134 @@ def Colormap(
             f'Invalid listmode={listmode!r}. Options are: '
             "'listed', 'linear', 'perceptual'."
         )
+
+    # Parse keyword args that can apply to the merged colormap or each
+    # colormap individually.
+    def _parse_modification(key, value):
+        if not np.iterable(value):
+            values = (None,) * len(args)
+        elif len(value) != len(args):
+            raise ValueError(
+                f'Got {len(args)} colormap-specs '
+                f'but {len(value)} values for {key!r}.'
+            )
+        else:
+            value, values = None, tuple(value)
+        return value, values
+    cut, cuts = _parse_modification('cut', cut)
+    left, lefts = _parse_modification('left', left)
+    right, rights = _parse_modification('right', right)
+    shift, shifts = _parse_modification('shift', shift)
+    reverse, reverses = _parse_modification('reverse', reverse)
+    samples, sampless = _parse_modification('samples', samples)
+
+    # Loop through colormaps
     tmp = '_no_name'
     cmaps = []
-    for i, cmap in enumerate(args):
+    for arg, icut, ileft, iright, ireverse, ishift, isamples in zip(
+        args, cuts, lefts, rights, reverses, shifts, sampless
+    ):
         # Load registered colormaps and maps on file
         # TODO: Document how 'listmode' also affects loaded files
-        if isinstance(cmap, str):
-            if '.' in cmap:
+        if isinstance(arg, str):
+            if '.' in arg and os.path.isfile(arg):
                 if listmode == 'listed':
-                    cmap = ListedColormap.from_file(cmap)
+                    arg = pcolors.ListedColormap.from_file(arg)
                 else:
-                    cmap = LinearSegmentedColormap.from_file(cmap)
+                    arg = pcolors.LinearSegmentedColormap.from_file(arg)
             else:
                 try:
-                    cmap = mcm.cmap_d[cmap]
+                    arg = pcolors._cmapdict[arg]
                 except KeyError:
                     pass
+
         # Convert matplotlib colormaps to subclasses
-        if isinstance(cmap, (ListedColormap, LinearSegmentedColormap)):
-            pass
-        elif isinstance(cmap, mcolors.LinearSegmentedColormap):
-            cmap = LinearSegmentedColormap(
-                cmap.name, cmap._segmentdata, cmap.N, cmap._gamma)
-        elif isinstance(cmap, mcolors.ListedColormap):
-            cmap = ListedColormap(
-                cmap.colors, cmap.name, cmap.N)
-        # Dictionary of hue/sat/luminance values or 2-tuples representing
-        # linear transition
-        elif isinstance(cmap, dict):
-            cmap = PerceptuallyUniformColormap.from_hsl(tmp, **cmap)
+        if isinstance(arg, (
+            pcolors.ListedColormap, pcolors.LinearSegmentedColormap
+        )):
+            cmap = arg
+        elif isinstance(arg, mcolors.LinearSegmentedColormap):
+            cmap = pcolors.LinearSegmentedColormap(
+                arg.name, arg._segmentdata, arg.N, arg._gamma
+            )
+        elif isinstance(arg, mcolors.ListedColormap):
+            cmap = pcolors.ListedColormap(
+                arg.colors, arg.name, arg.N
+            )
+
+        # Dictionary of hue/sat/luminance values or 2-tuples
+        elif isinstance(arg, dict):
+            cmap = pcolors.PerceptuallyUniformColormap.from_hsl(tmp, **arg)
+
         # List of color tuples or color strings, i.e. iterable of iterables
-        elif (not isinstance(cmap, str) and np.iterable(cmap)
-              and all(np.iterable(color) for color in cmap)):
-            try:
-                colors = [to_rgb(color, cycle=cycle, alpha=True)
-                          for color in cmap]
-            except (ValueError, TypeError):
-                raise ValueError(f'Invalid color(s) in list {cmap!r}.')
+        elif (
+            not isinstance(arg, str) and np.iterable(arg)
+            and all(np.iterable(color) for color in arg)
+        ):
+            colors = [to_rgb(color, cycle=cycle, alpha=True) for color in arg]
             if listmode == 'listed':
-                cmap = ListedColormap(colors, tmp)
+                cmap = pcolors.ListedColormap(colors, tmp)
             elif listmode == 'linear':
-                cmap = LinearSegmentedColormap.from_list(tmp, colors)
+                cmap = pcolors.LinearSegmentedColormap.from_list(tmp, colors)
             else:
-                cmap = PerceptuallyUniformColormap.from_list(tmp, colors)
+                cmap = pcolors.PerceptuallyUniformColormap.from_list(tmp, colors)  # noqa: E501
+
         # Monochrome colormap from input color
         else:
-            ireverse = (isinstance(cmap, str) and cmap[-2:] == '_r')
-            if ireverse:
-                cmap = cmap[:-2]
+            creverse = isinstance(arg, str) and arg[-2:] == '_r'
+            if creverse:
+                arg = arg[:-2]
             try:
-                color = to_rgb(cmap, cycle=cycle, alpha=True)
+                color = to_rgb(arg, cycle=cycle, alpha=True)
             except (ValueError, TypeError):
-                msg = f'Invalid cmap, cycle, or color {cmap!r}.'
-                if isinstance(cmap, str):
-                    msg += (
-                        f'\nValid cmap and cycle names: '
-                        + ', '.join(map(repr, sorted(mcm.cmap_d))) + '.'
-                        f'\nValid color names: '
-                        + ', '.join(map(repr, sorted(
-                            mcolors.colorConverter.colors))
-                        ) + '.'
+                message = f'Invalid colormap, color cycle, or color {arg!r}.'
+                if isinstance(arg, str) and arg[:1] != '#':
+                    cmaps = ', '.join(sorted(
+                        repr(key) for key, value in pcolors._cmapdict.items()
+                        if isinstance(value, pcolors.LinearSegmentedColormap)
+                    ))
+                    cycles = ', '.join(sorted(
+                        repr(key) for key, value in pcolors._cmapdict.items()
+                        if isinstance(value, pcolors.ListedColormap)
+                    ))
+                    colors = ', '.join(sorted(
+                        map(repr, mcolors.colorConverter.colors)
+                    ))
+                    message += (
+                        f'\nValid color names: {colors}'
+                        f'\nValid colormap names: {cmaps}'
+                        f'\nValid color cycle names: {cycles}'
                     )
-                raise ValueError(msg)
-            cmap = PerceptuallyUniformColormap.from_color(tmp, color, fade)
-            if ireverse:
-                cmap = cmap.reversed()
+                raise ValueError(message)
+            cmap = pcolors.PerceptuallyUniformColormap.from_color(tmp, color, fade)  # noqa: E501
+            ireverse = _not_none(ireverse, False)
+            ireverse = ireverse ^ creverse  # xor
 
-        # Cut the edges and/or reverse the map
-        if left is not None or right is not None:
-            cmap = cmap.truncated(left, right)
-        if reverse:
-            cmap = cmap.reversed()
+        # Modify the colormap
+        cmap = _mod_colormap(
+            cmap, cut=icut, left=ileft, right=iright,
+            shift=ishift, reverse=ireverse, samples=isamples
+        )
         cmaps.append(cmap)
 
-    # Merge the result of this arbitrary user input
-    if len(cmaps) > 1:  # more than one map?
-        cmap = cmaps[0].concatenate(*cmaps[1:], **kwargs)
-    elif kwargs:  # modify any props?
-        cmap = cmaps[0].updated(**kwargs)
+    # Merge the resulting colormaps
+    if len(cmaps) > 1:  # more than one map and modify arbitrary properties
+        cmap = cmaps[0].append(*cmaps[1:], **kwargs)
+    elif kwargs:  # modify arbitrary properties
+        cmap = cmaps[0].copy(**kwargs)
+    else:
+        cmap = cmaps[0]
 
-    # Cut the center and roate the colormap
-    if cut is not None:
-        cmap = cmap.punched(cut)
-    if shift is not None:
-        cmap = cmap.shifted(shift)
+    # Modify the colormap
+    if (
+        to_listed and samples is None
+        and isinstance(cmap, pcolors.LinearSegmentedColormap)
+    ):
+        samples = 10
+    cmap = _mod_colormap(
+        cmap, cut=cut, left=left, right=right,
+        shift=shift, reverse=reverse, samples=samples
+    )
 
     # Initialize
     if not cmap._isinit:
@@ -1898,7 +1964,7 @@ def Colormap(
         name = cmap.name  # may have been modified by e.g. .shifted()
     else:
         cmap.name = name
-    mcm.cmap_d[name] = cmap
+    pcolors._cmapdict[name] = cmap
     if save:
         save_kw = save_kw or {}
         cmap.save(**save_kw)
@@ -1906,20 +1972,19 @@ def Colormap(
 
 
 def Cycle(
-    *args, N=None, name=None,
+    *args, N=None, samples=None, name=None,
     marker=None, alpha=None, dashes=None, linestyle=None, linewidth=None,
     markersize=None, markeredgewidth=None,
     markeredgecolor=None, markerfacecolor=None,
-    save=False, save_kw=None, **kwargs
+    **kwargs
 ):
     """
     Generate and merge `~cycler.Cycler` instances in a variety of ways.
     Used to interpret the `cycle` and `cycle_kw` arguments when passed to
-    any plotting method wrapped by
-    `~proplot.wrappers.cycle_changer`.
+    any plotting method wrapped by `~proplot.wrappers.cycle_changer`.
 
     If you just want a list of colors instead of a `~cycler.Cycler` instance,
-    use the `colors` function. If you want a `~cycler.Cycler` instance that
+    use the `Colors` function. If you want a `~cycler.Cycler` instance that
     imposes black as the default color and cycles through properties like
     ``linestyle`` instead, call this function without any positional arguments.
 
@@ -1928,36 +1993,31 @@ def Cycle(
     *args : colormap-spec or cycle-spec, optional
         Positional arguments control the *colors* in the `~cycler.Cycler`
         object. If more than one argument is passed, the resulting cycles are
-        merged. Arguments are interpreted as follows.
+        merged. Arguments are interpreted as follows:
 
-        * If `~cycler.Cycler`, nothing more
-          is done.
-        * If list of RGB tuples or color strings, these
-          colors are used.
-        * If `~matplotlib.colors.ListedColormap`, colors from the ``colors``
+        * If a `~cycler.Cycler`, nothing more is done.
+        * If a list of RGB tuples or color strings, these colors are used.
+        * If a `~proplot.colors.ListedColormap`, colors from the ``colors``
           attribute are used.
-        * If string color cycle name, that `~matplotlib.colors.ListedColormap`
-          is looked up and its ``colors`` attribute is used. See `cycles`.
-        * Otherwise, the argument is passed to `Colormap`, and colors
-          from the resulting `~matplotlib.colors.LinearSegmentedColormap`
-          are used. See the `N` argument.
+        * If a string cycle name, that `~proplot.colors.ListedColormap`
+          is looked up and its ``colors`` attribute is used.
+        * In all other cases, the argument is passed to `Colormap`, and
+          colors from the resulting `~proplot.colors.LinearSegmentedColormap`
+          are used. See the `samples` argument.
 
-        If the last positional argument is numeric, it is used for the `N`
-        keyword argument.
-    N : float or list of float, optional
-        For `~matplotlib.colors.ListedColormap`\ s, this is the number of
+        If the last positional argument is numeric, it is used for the
+        `samples` keyword argument.
+    N, samples : float or list of float, optional
+        For `~proplot.colors.ListedColormap`\\ s, this is the number of
         colors to select. For example, ``Cycle('538', 4)`` returns the first 4
         colors of the ``'538'`` color cycle.
 
-        For `~matplotlib.colors.LinearSegmentedColormap`\ s, this is either
+        For `~proplot.colors.LinearSegmentedColormap`\\ s, this is the
         a *list of sample coordinates* used to draw colors from the map, or an
         *integer number of colors* to draw. If the latter, the sample
         coordinates are ``np.linspace(0, 1, samples)``. For example,
         ``Cycle('Reds', 5)`` divides the ``'Reds'`` colormap into five evenly
         spaced colors.
-    name : str, optional
-        Name of the resulting `~matplotlib.colors.ListedColormap` used to
-        register the color cycle. Default name is ``'no_name'``.
     marker, alpha, dashes, linestyle, linewidth, markersize, markeredgewidth, markeredgecolor, markerfacecolor : list of specs, optional
         Lists of `~matplotlib.lines.Line2D` properties that can be added to
         the `~cycler.Cycler` instance. If the lists have unequal length, they
@@ -1969,15 +2029,14 @@ def Cycle(
 <https://matplotlib.org/3.1.0/gallery/lines_bars_and_markers/marker_reference.html>`__,
         and the `custom dashes reference \
 <https://matplotlib.org/3.1.0/gallery/lines_bars_and_markers/line_demo_dash_control.html>`__.
-    save : bool, optional
-        Whether to save the `ListedColormap` associated with this cycle.
-        See `ListedColormap.save`.
-    save_kw : dict-like, optional
-        Ignored if `save` is ``False``. Passed to `ListedColormap.save`
-        for the `ListedColormap` associated with this cycle.
+
+    Other parameters
+    ----------------
     **kwargs
-        Passed to `Colormap` when the input is not already a `~cycler.Cycler`
-        instance.
+        If the input is not already a `~cycler.Cycler` instance, these
+        are passed to `Colormap` and used to build the
+        `~proplot.colors.ListedColormap` from which the cycler will draw its
+        colors.
 
     Returns
     -------
@@ -1988,6 +2047,7 @@ def Cycle(
     # Add properties
     props = {}
     nprops = 0
+    samples = _not_none(samples=samples, N=N)
     for key, value in (
         ('marker', marker),
         ('alpha', alpha),
@@ -2007,15 +2067,21 @@ def Cycle(
                 )
             nprops = max(nprops, len(value))
             props[key] = [*value]  # ensure mutable list
+
     # If args is non-empty, means we want color cycle; otherwise is black
     if not args:
-        props['color'] = ['k']  # ensures property cycler is non empty
+        props['color'] = [mcolors.to_rgba('k')]
         if kwargs:
-            _warn_proplot(f'Ignoring Cycle() keyword arg(s) {kwargs}.')
+            warnings._warn_proplot(
+                f'Ignoring Cycle() keyword arg(s) {kwargs}.'
+            )
+
     # Merge cycler objects
     elif all(isinstance(arg, cycler.Cycler) for arg in args):
         if kwargs:
-            _warn_proplot(f'Ignoring Cycle() keyword arg(s) {kwargs}.')
+            warnings._warn_proplot(
+                f'Ignoring Cycle() keyword arg(s) {kwargs}.'
+            )
         if len(args) == 1:
             return args[0]
         else:
@@ -2026,39 +2092,19 @@ def Cycle(
                         props[key] = []
                     props[key].extend([*value])
             return cycler.cycler(**props)
-    # Build and register a ListedColormap
+
+    # Get cycler from a colormap
     else:
-        # Collect samples
+        # Get the ListedColormap
         if args and isinstance(args[-1], Number):
-            # means we want to sample existing colormaps or cycles
-            args, N = args[:-1], args[-1]
+            args, samples = args[:-1], args[-1]
         kwargs.setdefault('fade', 90)
         kwargs.setdefault('listmode', 'listed')
-        cmap = Colormap(*args, **kwargs)  # the cmap object itself
-        if isinstance(cmap, ListedColormap):
-            colors = cmap.colors[:N]  # if N is None, does nothing
-        else:
-            N = _notNone(N, 10)
-            if isinstance(N, Integral):
-                x = np.linspace(0, 1, N)  # from edge to edge
-            elif np.iterable(N) and all(
-                    isinstance(item, Number) for item in N):
-                x = np.array(N)
-            else:
-                raise ValueError(f'Invalid samples {N!r}.')
-            N = len(x)
-            colors = cmap(x)
+        kwargs.setdefault('to_listed', True)
+        cmap = Colormap(*args, samples=samples, **kwargs)
 
-        # Register and save the samples as a ListedColormap
-        name = name or '_no_name'
-        cmap = ListedColormap(colors, name=name, N=N)
-        mcm.cmap_d[name] = cmap
-        if save:
-            save_kw = save_kw or {}
-            cmap.save(**save_kw)
-
-        # Add to property dict
-        nprops = max(nprops, len(colors))
+        # Add colors to property dict
+        nprops = max(nprops, len(cmap.colors))
         props['color'] = [
             tuple(color) if not isinstance(color, str) else color
             for color in cmap.colors
