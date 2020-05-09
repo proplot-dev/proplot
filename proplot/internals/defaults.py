@@ -44,6 +44,7 @@ _rc_quick_default = {
     'share': 3,
     'small': 9,
     'span': True,
+    'style': None,
     'tickdir': 'out',
     'ticklen': 4.0,
     'ticklenratio': 0.5,

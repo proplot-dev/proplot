@@ -34,6 +34,7 @@ except ImportError:
 __all__ = [
     'rc', 'rc_configurator',
     'register_cmaps', 'register_cycles', 'register_colors', 'register_fonts',
+    'config_inline_backend', 'use_style',
     'inline_backend_fmt',  # deprecated
 ]
 
@@ -464,6 +465,11 @@ class rc_configurator(object):
         # Special key: configure inline backend
         if key == 'inlinefmt':
             config_inline_backend(value)
+
+        # Special key: apply stylesheet
+        elif key == 'style':
+            if value is not None:
+                kw_params, kw_added = _get_style_dicts(value, infer=True)
 
         # Cycler
         elif key in ('cycle', 'rgbcycle'):
@@ -1161,6 +1167,29 @@ def _infer_added_params(kw_params):
             for param in params:
                 kw_added[param] = value
     return kw_added
+
+
+def use_style(style):
+    """
+    Apply the `matplotlib style(s) \
+<https://matplotlib.org/tutorials/introductory/customizing.html>`__
+    with `matplotlib.style.use`. This function is
+    called when you modify the :rcraw:`style` property.
+
+    Parameters
+    ----------
+    style : str, dict, or list thereof
+        The matplotlib style name(s) or stylesheet filename(s), or dictionary(s)
+        of settings. Use ``'default'`` to apply matplotlib default settings and
+        ``'original'`` to include settings from your user ``matplotlibrc`` file.
+    """
+    # NOTE: This function is not really necessary but makes proplot's
+    # stylesheet-supporting features obvious. Plus changing the style does
+    # so much *more* than changing rc params or quick settings, so it is
+    # nice to have dedicated function instead of just another rc_param name.
+    kw_params, kw_added = _get_style_dicts(style, infer=True)
+    rc_params.update(kw_params)
+    rc_added.update(kw_added)
 
 
 @docstring.add_snippets
