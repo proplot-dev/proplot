@@ -7,10 +7,11 @@ pyplot-inspired functions for creating figures and related classes.
 # always included, so make it optional
 import os
 import numpy as np
+from . import axes as paxes
 import functools
 from .internals import warnings
 import inspect
-from . import axes as paxes
+from .internals import _not_none
 import matplotlib.pyplot as plt
 import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
@@ -137,12 +138,18 @@ class GridSpec(mgridspec.GridSpec):
     """
     Matplotlib `~matplotlib.gridspec.GridSpec` subclass that allows for grids
     with variable spacing between successive rows and columns of axes.
-    Accomplishes this by actually drawing ``nrows*2 + 1`` and ``ncols*2 + 1``
+    This is done by drawing ``nrows * 2 + 1`` and ``ncols * 2 + 1``
     `~matplotlib.gridspec.GridSpec` rows and columns, setting `wspace`
     and `hspace` to ``0``, and masking out every other row and column
     of the `~matplotlib.gridspec.GridSpec`, so they act as "spaces".
     These "spaces" are then allowed to vary in width using the builtin
     `width_ratios` and `height_ratios` properties.
+
+    Note
+    ----
+    In a future version, this class will natively support variable spacing
+    between successive rows and columns without the obfuscation. It will also
+    support specifying spaces in physical units via `~proplot.utils.units`.
     """
     def __repr__(self):  # do not show width and height ratios
         nrows, ncols = self.get_geometry()
@@ -152,17 +159,17 @@ class GridSpec(mgridspec.GridSpec):
         """
         Parameters
         ----------
-        figure : `Figure`
+        figure : `~proplot.figure.Figure`
             The figure instance filled by this gridspec. Unlike
             `~matplotlib.gridspec.GridSpec`, this argument is required.
         nrows, ncols : int, optional
             The number of rows and columns on the subplot grid.
         hspace, wspace : float or list of float
             The vertical and horizontal spacing between rows and columns of
-            subplots, respectively. In `~proplot.subplots.subplots`, ``wspace``
-            and ``hspace`` are in physical units. When calling
-            `GridSpec` directly, values are scaled relative to
-            the average subplot height or width.
+            subplots, respectively. In `~proplot.ui.subplots`, ``wspace``
+            and ``hspace`` are in physical units. When calling `GridSpec`
+            directly, values are scaled relative to the average subplot
+            height or width.
 
             If float, the spacing is identical between all rows and columns. If
             list of float, the length of the lists must equal ``nrows-1``
@@ -247,15 +254,14 @@ class GridSpec(mgridspec.GridSpec):
         **kwargs
     ):
         """
-        For keyword arg usage, see `GridSpec`.
+        For keyword argument usage, see `GridSpec`.
         """
         # Parse flexible input
         nrows, ncols = self.get_active_geometry()
-        hratios = np.atleast_1d(_notNone(height_ratios, 1))
-        wratios = np.atleast_1d(_notNone(width_ratios, 1))
-        # this is relative to axes
-        hspace = np.atleast_1d(_notNone(hspace, np.mean(hratios) * 0.10))
-        wspace = np.atleast_1d(_notNone(wspace, np.mean(wratios) * 0.10))
+        hratios = np.atleast_1d(_not_none(height_ratios, 1))
+        wratios = np.atleast_1d(_not_none(width_ratios, 1))
+        hspace = np.atleast_1d(_not_none(hspace, np.mean(hratios) * 0.10))  # relative
+        wspace = np.atleast_1d(_not_none(wspace, np.mean(wratios) * 0.10))
         if len(wspace) == 1:
             wspace = np.repeat(wspace, (ncols - 1,))  # note: may be length 0
         if len(hspace) == 1:
@@ -357,8 +363,10 @@ class GridSpec(mgridspec.GridSpec):
         nrows = kwargs.pop('nrows', None)
         ncols = kwargs.pop('ncols', None)
         nrows_current, ncols_current = self.get_active_geometry()
-        if (nrows is not None and nrows != nrows_current) or (
-                ncols is not None and ncols != ncols_current):
+        if (
+            nrows is not None and nrows != nrows_current
+            or ncols is not None and ncols != ncols_current
+        ):
             raise ValueError(
                 f'Input geometry {(nrows, ncols)} does not match '
                 f'current geometry {(nrows_current, ncols_current)}.'
