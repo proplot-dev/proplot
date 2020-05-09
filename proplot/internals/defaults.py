@@ -3,13 +3,18 @@
 Default proplot configuration settings and validators for
 `rc_configurator` assignments.
 """
-# NOTE: Make sure to add to docs/configuration.rst when updating or adding
-# new settings! Much of this script was adapted from seaborn; see:
-# https://github.com/mwaskom/seaborn/blob/master/seaborn/rcmod.py
-from matplotlib import rcParams as _rc_params
+# NOTE: Make sure to add to docs/configuration.rst when updating or adding settings!
+from matplotlib import rcParamsDefault as _rc_matplotlib_default
 
-# Dictionaries containing default settings
-_rc_quick_defaults = {
+
+# Quick settings
+# TODO: This is currently a hodgepodge of "real" settings and meta-settings.
+# Should give the real settings "real" longer names in _rc_added_default. For
+# example 'land' should be 'land.draw' or 'land.on'.
+# TODO: More consistent behavior for how format() handles rc params. Currently
+# some things are only keyword arguments while others are actual settings, but not
+# obvious which is which. For example xticklen and yticklen should be quick settings.
+_rc_quick_default = {
     'abc': False,
     'align': False,
     'alpha': 1,
@@ -48,7 +53,11 @@ _rc_quick_defaults = {
     'tight': True,
 }
 
-_rc_added_defaults = {
+# ProPlot pseudo-settings
+# TODO: Implement these as bonafide matplotlib settings by subclassing
+# matplotlib's RcParams and adding new validators. Quick settings should
+# be implemented under __getitem__.
+_rc_added_default = {
     'abc.border': True,
     'abc.borderwidth': 1.5,
     'abc.color': 'k',
@@ -134,7 +143,9 @@ _rc_added_defaults = {
     'toplabel.weight': 'bold',
 }
 
-_rc_param_defaults = {
+# ProPlot overrides of matplotlib default style
+# TODO: Allow users to override with custom stylesheets and .matplotlibrc files.
+_rc_params_default = {
     'axes.grid': True,
     'axes.labelpad': 3.0,
     'axes.titlepad': 3.0,
@@ -259,6 +270,9 @@ _rc_param_defaults = {
 }
 
 # "Global" settings and the lower-level settings they change
+# NOTE: Do not link title.color to axes.titlecolor because the latter
+# can have value 'auto' which is not handled in format() right now,
+# and because setting was only introduced in version 3.2.
 _rc_children = {
     'cmap': (
         'image.cmap',
@@ -338,13 +352,13 @@ _rc_children = {
 # Settings without dots
 _rc_nodots = {
     name.replace('.', ''): name
-    for dict_ in (_rc_params, _rc_added_defaults, _rc_quick_defaults)
+    for dict_ in (_rc_matplotlib_default, _rc_added_default, _rc_quick_default)
     for name in dict_.keys()
 }
 
 _rc_categories = {
     '.'.join(name.split('.')[:i + 1])
-    for dict_ in (_rc_added_defaults, _rc_params)
+    for dict_ in (_rc_added_default, _rc_matplotlib_default)
     for name in dict_
     for i in range(len(name.split('.')) - 1)
 }
