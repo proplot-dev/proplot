@@ -362,3 +362,22 @@ _rc_categories = {
     for name in dict_
     for i in range(len(name.split('.')) - 1)
 }
+
+
+# Helper functions
+def _get_default_param(key):
+    """
+    Get the default parameter from one of three places. This is
+    used for the :rc: role when compiling docs.
+    """
+    sentinel = object()
+    for dict_ in (
+        _rc_quick_default,
+        _rc_added_default,
+        _rc_params_default,
+        _rc_matplotlib_default,
+    ):
+        value = dict_.get(key, sentinel)
+        if value is not sentinel:
+            return value
+    raise KeyError(f'Invalid key {key!r}.')
