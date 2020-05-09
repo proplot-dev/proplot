@@ -7,16 +7,14 @@ pyplot-inspired functions for creating figures and related classes.
 # always included, so make it optional
 import os
 import numpy as np
-from . import axes as paxes
 import functools
 from .internals import warnings
 import inspect
-from .internals import _not_none
+from . import axes as paxes
+from . import gridspec as pgridspec
 import matplotlib.pyplot as plt
 import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
-import matplotlib.gridspec as mgridspec
-import matplotlib.axes as maxes
 from numbers import Integral
 from .rctools import rc
 from .utils import _warn_proplot, _notNone, _counter, _setstate, units  # noqa
@@ -28,7 +26,6 @@ except ImportError:  # graceful fallback if IceCream isn't installed
 
 __all__ = [
     'SubplotsContainer', 'close', 'show', 'subplots', 'Figure',
-    'GridSpec', 'SubplotSpec',
 ]
 
 # Dimensions of figures for common journals
@@ -67,329 +64,6 @@ def show():
     when you create a new figure, it will be automatically displayed.
     """
     plt.show()
-
-
-class SubplotSpec(mgridspec.SubplotSpec):
-    """
-    Matplotlib `~matplotlib.gridspec.SubplotSpec` subclass that adds
-    some helpful methods.
-    """
-    def __repr__(self):
-        nrows, ncols, row1, row2, col1, col2 = self.get_rows_columns()
-        return f'SubplotSpec({nrows}, {ncols}; {row1}:{row2}, {col1}:{col2})'
-
-    def get_active_geometry(self):
-        """
-        Return the number of rows, number of columns, and 1d subplot
-        location indices, ignoring rows and columns allocated for spaces.
-        """
-        nrows, ncols, row1, row2, col1, col2 = self.get_active_rows_columns()
-        num1 = row1 * ncols + col1
-        num2 = row2 * ncols + col2
-        return nrows, ncols, num1, num2
-
-    def get_active_rows_columns(self):
-        """
-        Return the number of rows, number of columns, first subplot row,
-        last subplot row, first subplot column, and last subplot column,
-        ignoring rows and columns allocated for spaces.
-        """
-        gridspec = self.get_gridspec()
-        nrows, ncols = gridspec.get_geometry()
-        row1, col1 = divmod(self.num1, ncols)
-        if self.num2 is not None:
-            row2, col2 = divmod(self.num2, ncols)
-        else:
-            row2 = row1
-            col2 = col1
-        return (
-            nrows // 2, ncols // 2, row1 // 2, row2 // 2, col1 // 2, col2 // 2
-        )
-
-    def get_geometry(self):
-        """
-        Return the number of rows, number of columns, and 1d subplot
-        location indices.
-        """
-        gridspec = self.get_gridspec()
-        rows, cols = gridspec.get_geometry()
-        return rows, cols, self.num1, self.num2
-
-    def get_rows_columns(self):
-        """
-        Return the number of rows, number of columns, first subplot row,
-        last subplot row, first subplot column, and last subplot column.
-        """
-        gridspec = self.get_gridspec()
-        nrows, ncols = gridspec.get_geometry()
-        row_start, col_start = divmod(self.num1, ncols)
-        row_stop, col_stop = divmod(self.num2, ncols)
-        return nrows, ncols, row_start, row_stop, col_start, col_stop
-
-    @classmethod
-    def _from_subplotspec(cls, subplotspec):
-        """
-        Translate a matplotlib subplotspec to proplot subplotspec.
-        """
-        return cls(subplotspec._gridspec, subplotspec.num1, subplotspec.num2)
-
-
-class GridSpec(mgridspec.GridSpec):
-    """
-    Matplotlib `~matplotlib.gridspec.GridSpec` subclass that allows for grids
-    with variable spacing between successive rows and columns of axes.
-    This is done by drawing ``nrows * 2 + 1`` and ``ncols * 2 + 1``
-    `~matplotlib.gridspec.GridSpec` rows and columns, setting `wspace`
-    and `hspace` to ``0``, and masking out every other row and column
-    of the `~matplotlib.gridspec.GridSpec`, so they act as "spaces".
-    These "spaces" are then allowed to vary in width using the builtin
-    `width_ratios` and `height_ratios` properties.
-
-    Note
-    ----
-    In a future version, this class will natively support variable spacing
-    between successive rows and columns without the obfuscation. It will also
-    support specifying spaces in physical units via `~proplot.utils.units`.
-    """
-    def __repr__(self):  # do not show width and height ratios
-        nrows, ncols = self.get_geometry()
-        return f'GridSpec({nrows}, {ncols})'
-
-    def __init__(self, figure, nrows=1, ncols=1, **kwargs):
-        """
-        Parameters
-        ----------
-        figure : `~proplot.figure.Figure`
-            The figure instance filled by this gridspec. Unlike
-            `~matplotlib.gridspec.GridSpec`, this argument is required.
-        nrows, ncols : int, optional
-            The number of rows and columns on the subplot grid.
-        hspace, wspace : float or list of float
-            The vertical and horizontal spacing between rows and columns of
-            subplots, respectively. In `~proplot.ui.subplots`, ``wspace``
-            and ``hspace`` are in physical units. When calling `GridSpec`
-            directly, values are scaled relative to the average subplot
-            height or width.
-
-            If float, the spacing is identical between all rows and columns. If
-            list of float, the length of the lists must equal ``nrows-1``
-            and ``ncols-1``, respectively.
-        height_ratios, width_ratios : list of float
-            Ratios for the relative heights and widths for rows and columns
-            of subplots, respectively. For example, ``width_ratios=(1,2)``
-            scales a 2-column gridspec so that the second column is twice as
-            wide as the first column.
-        left, right, top, bottom : float or str
-            Passed to `~matplotlib.gridspec.GridSpec`, denotes the margin
-            positions in figure-relative coordinates.
-
-        Other parameters
-        ----------------
-        **kwargs
-            Passed to `~matplotlib.gridspec.GridSpec`.
-        """
-        self._nrows = nrows * 2 - 1  # used with get_geometry
-        self._ncols = ncols * 2 - 1
-        self._nrows_active = nrows
-        self._ncols_active = ncols
-        wratios, hratios, kwargs = self._spaces_as_ratios(**kwargs)
-        super().__init__(
-            self._nrows, self._ncols,
-            hspace=0, wspace=0,  # replaced with "hidden" slots
-            width_ratios=wratios, height_ratios=hratios,
-            figure=figure, **kwargs
-        )
-
-    def __getitem__(self, key):
-        """
-        Magic obfuscation that renders `~matplotlib.gridspec.GridSpec`
-        rows and columns designated as 'spaces' inaccessible.
-        """
-        nrows, ncols = self.get_geometry()
-        nrows_active, ncols_active = self.get_active_geometry()
-        if not isinstance(key, tuple):  # usage gridspec[1,2]
-            num1, num2 = self._normalize(key, nrows_active * ncols_active)
-        else:
-            if len(key) == 2:
-                k1, k2 = key
-            else:
-                raise ValueError(f'Invalid index {key!r}.')
-            num1 = self._normalize(k1, nrows_active)
-            num2 = self._normalize(k2, ncols_active)
-            num1, num2 = np.ravel_multi_index((num1, num2), (nrows, ncols))
-        num1 = self._positem(num1)
-        num2 = self._positem(num2)
-        return SubplotSpec(self, num1, num2)
-
-    @staticmethod
-    def _positem(size):
-        """
-        Account for negative indices.
-        """
-        if size < 0:
-            # want -1 to stay -1, -2 becomes -3, etc.
-            return 2 * (size + 1) - 1
-        else:
-            return size * 2
-
-    @staticmethod
-    def _normalize(key, size):
-        """
-        Transform gridspec index into standardized form.
-        """
-        if isinstance(key, slice):
-            start, stop, _ = key.indices(size)
-            if stop > start:
-                return start, stop - 1
-        else:
-            if key < 0:
-                key += size
-            if 0 <= key < size:
-                return key, key
-        raise IndexError(f'Invalid index: {key} with size {size}.')
-
-    def _spaces_as_ratios(
-        self, hspace=None, wspace=None,  # spacing between axes
-        height_ratios=None, width_ratios=None,
-        **kwargs
-    ):
-        """
-        For keyword argument usage, see `GridSpec`.
-        """
-        # Parse flexible input
-        nrows, ncols = self.get_active_geometry()
-        hratios = np.atleast_1d(_not_none(height_ratios, 1))
-        wratios = np.atleast_1d(_not_none(width_ratios, 1))
-        hspace = np.atleast_1d(_not_none(hspace, np.mean(hratios) * 0.10))  # relative
-        wspace = np.atleast_1d(_not_none(wspace, np.mean(wratios) * 0.10))
-        if len(wspace) == 1:
-            wspace = np.repeat(wspace, (ncols - 1,))  # note: may be length 0
-        if len(hspace) == 1:
-            hspace = np.repeat(hspace, (nrows - 1,))
-        if len(wratios) == 1:
-            wratios = np.repeat(wratios, (ncols,))
-        if len(hratios) == 1:
-            hratios = np.repeat(hratios, (nrows,))
-
-        # Verify input ratios and spacings
-        # Translate height/width spacings, implement as extra columns/rows
-        if len(hratios) != nrows:
-            raise ValueError(f'Got {nrows} rows, but {len(hratios)} hratios.')
-        if len(wratios) != ncols:
-            raise ValueError(
-                f'Got {ncols} columns, but {len(wratios)} wratios.'
-            )
-        if len(wspace) != ncols - 1:
-            raise ValueError(
-                f'Require {ncols-1} width spacings for {ncols} columns, '
-                f'got {len(wspace)}.'
-            )
-        if len(hspace) != nrows - 1:
-            raise ValueError(
-                f'Require {nrows-1} height spacings for {nrows} rows, '
-                f'got {len(hspace)}.'
-            )
-
-        # Assign spacing as ratios
-        nrows, ncols = self.get_geometry()
-        wratios_final = [None] * ncols
-        wratios_final[::2] = [*wratios]
-        if ncols > 1:
-            wratios_final[1::2] = [*wspace]
-        hratios_final = [None] * nrows
-        hratios_final[::2] = [*hratios]
-        if nrows > 1:
-            hratios_final[1::2] = [*hspace]
-        return wratios_final, hratios_final, kwargs  # bring extra kwargs back
-
-    def get_margins(self):
-        """
-        Returns left, bottom, right, top values. Not sure why this method
-        doesn't already exist on `~matplotlib.gridspec.GridSpec`.
-        """
-        return self.left, self.bottom, self.right, self.top
-
-    def get_hspace(self):
-        """
-        Returns row ratios allocated for spaces.
-        """
-        return self.get_height_ratios()[1::2]
-
-    def get_wspace(self):
-        """
-        Returns column ratios allocated for spaces.
-        """
-        return self.get_width_ratios()[1::2]
-
-    def get_active_height_ratios(self):
-        """
-        Returns height ratios excluding slots allocated for spaces.
-        """
-        return self.get_height_ratios()[::2]
-
-    def get_active_width_ratios(self):
-        """
-        Returns width ratios excluding slots allocated for spaces.
-        """
-        return self.get_width_ratios()[::2]
-
-    def get_active_geometry(self):
-        """
-        Returns the number of active rows and columns, i.e. the rows and
-        columns that aren't skipped by `~GridSpec.__getitem__`.
-        """
-        return self._nrows_active, self._ncols_active
-
-    def update(self, **kwargs):
-        """
-        Update the gridspec with arbitrary initialization keyword arguments
-        then *apply* those updates to every figure using this gridspec.
-        The default `~matplotlib.gridspec.GridSpec.update` tries to update
-        positions for axes on all active figures -- but this can fail after
-        successive figure edits if it has been removed from the figure
-        manager. ProPlot insists one gridspec per figure.
-
-        Parameters
-        ----------
-        **kwargs
-            Valid initialization keyword arguments. See `GridSpec`.
-        """
-        # Convert spaces to ratios
-        wratios, hratios, kwargs = self._spaces_as_ratios(**kwargs)
-        self.set_width_ratios(wratios)
-        self.set_height_ratios(hratios)
-
-        # Validate args
-        nrows = kwargs.pop('nrows', None)
-        ncols = kwargs.pop('ncols', None)
-        nrows_current, ncols_current = self.get_active_geometry()
-        if (
-            nrows is not None and nrows != nrows_current
-            or ncols is not None and ncols != ncols_current
-        ):
-            raise ValueError(
-                f'Input geometry {(nrows, ncols)} does not match '
-                f'current geometry {(nrows_current, ncols_current)}.'
-            )
-        self.left = kwargs.pop('left', None)
-        self.right = kwargs.pop('right', None)
-        self.bottom = kwargs.pop('bottom', None)
-        self.top = kwargs.pop('top', None)
-        if kwargs:
-            raise ValueError(f'Unknown keyword arg(s): {kwargs}.')
-
-        # Apply to figure and all axes
-        fig = self.figure
-        fig.subplotpars.update(self.left, self.bottom, self.right, self.top)
-        for ax in fig.axes:
-            if not isinstance(ax, maxes.SubplotBase):
-                continue
-            subplotspec = ax.get_subplotspec().get_topmost_subplotspec()
-            if subplotspec.get_gridspec() is not self:
-                continue
-            ax.update_params()
-            ax.set_position(ax.figbox)
-        fig.stale = True
 
 
 def _canvas_preprocess(canvas, method):
@@ -844,7 +518,7 @@ class Figure(mfigure.Figure):
 
         # Various other attributes
         gridspec_kw = gridspec_kw or {}
-        gridspec = GridSpec(self, **gridspec_kw)
+        gridspec = pgridspec.GridSpec(self, **gridspec_kw)
         nrows, ncols = gridspec.get_active_geometry()
         self._pad = units(_notNone(pad, rc['subplots.pad']))
         self._axpad = units(_notNone(axpad, rc['subplots.axpad']))
@@ -1531,7 +1205,7 @@ class Figure(mfigure.Figure):
             gridspec.update(**gridspec_kw)
         else:
             # Make new gridspec
-            gridspec = GridSpec(self, **gridspec_kw)
+            gridspec = pgridspec.GridSpec(self, **gridspec_kw)
             self._gridspec_main = gridspec
 
             # Reassign subplotspecs to all axes and update positions
