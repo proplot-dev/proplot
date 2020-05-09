@@ -1464,8 +1464,17 @@ with timers._benchmark('fonts'):
 with timers._benchmark('rc'):
     _ = rc_configurator()
 
+#: Instance of `rc_configurator`. This is used to change global settings.
+#: See the :ref:`configuration guide <ug_config>` for details.
+rc = _
+
+# Modify N of existing colormaps because ProPlot settings may have changed
+# image.lut. We have to register colormaps and cycles first so that the 'cycle'
+# property accepts named cycles registered by ProPlot. No performance hit here.
+lut = rc['image.lut']
+for cmap in pcolors._cmapdict.values():
+    if isinstance(cmap, mcolors.LinearSegmentedColormap):
+        cmap.N = lut
+
 # Deprecated
 inline_backend_fmt = warnings._rename_obj('inline_backend_fmt', config_inline_backend)
-#: Instance of `rc_configurator`. This is used to change global settings.
-#: See :ref:`Configuring proplot` for details.
-rc = rc_configurator()
