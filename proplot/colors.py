@@ -15,14 +15,15 @@ import json
 import glob
 import cycler
 from xml.etree import ElementTree
+from .utils import to_rgb, to_xyz
 from numbers import Number, Integral
 from matplotlib import rcParams
 import numpy as np
+from .internals import warnings
 import numpy.ma as ma
 import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
 from .utils import _warn_proplot, _notNone, _timer
-from .external import hsluv
 try:  # use this for debugging instead of print()!
     from icecream import ic
 except ImportError:  # graceful fallback if IceCream isn't installed
@@ -37,9 +38,8 @@ __all__ = [
     'cmaps', 'colors', 'cycles', 'fonts',
     'make_mapping_array',
     'register_cmaps', 'register_colors', 'register_cycles', 'register_fonts',
-    'saturate', 'shade', 'show_cmaps', 'show_channels',
+    'show_cmaps', 'show_channels',
     'show_colors', 'show_colorspaces', 'show_cycles', 'show_fonts',
-    'to_rgb', 'to_xyz',
     'Colormap', 'Colors', 'Cycle', 'Norm',
 ]
 
@@ -289,191 +289,7 @@ def _get_channel(color, channel, space='hcl'):
     return offset + to_xyz(color, space)[channel]
 
 
-def shade(color, scale=1):
-    """
-    Scale the luminance channel of the input color.
-
-    Parameters
-    ----------
-    color : color-spec
-        The color. Sanitized with `to_rgb`.
-    scale : float, optoinal
-        The luminance channel is multiplied by this value.
-
-    Returns
-    -------
-    color : 4-tuple
-        The new RGBA tuple.
-    """
-    *color, alpha = to_rgb(color, alpha=True)
-    color = [*hsluv.rgb_to_hsl(*color)]
-    color[2] = max(0, min(color[2] * scale, 100))
-    color = [*hsluv.hsl_to_rgb(*color)]
-    return (*color, alpha)
-
-
-def saturate(color, scale=0.5):
-    """
-    Scale the saturation channel of the input color.
-
-    Parameters
-    ----------
-    color : color-spec
-        The color. Sanitized with `to_rgb`.
-    scale : float, optoinal
-        The HCL saturation channel is multiplied by this value.
-
-    Returns
-    -------
-    color : 4-tuple
-        The new RGBA tuple.
-    """
-    *color, alpha = to_rgb(color, alpha=True)
-    color = [*hsluv.rgb_to_hsl(*color)]
-    color[1] = max(0, min(color[1] * scale, 100))
-    color = [*hsluv.hsl_to_rgb(*color)]
-    return (*color, alpha)
-
-
-def to_rgb(color, space='rgb', cycle=None, alpha=False):
-    """
-    Translate the color in *any* format and from *any* colorspace to an RGB
-    tuple. This is a generalization of `matplotlib.colors.to_rgb` and the
-    inverse of `to_xyz`.
-
-    Parameters
-    ----------
-    color : str or length-3 list
-        The color specification. Can be a tuple of channel values for the
-        `space` colorspace, a hex string, a registered color name, a cycle
-        color, or a colormap color (see `ColorDict`).
-
-        If `space` is ``'rgb'``, this is a tuple of RGB values, and any
-        channels are larger than ``2``, the channels are assumed to be on
-        a ``0`` to ``255`` scale and are therefore divided by ``255``.
-    space : {'rgb', 'hsv', 'hsl', 'hpl', 'hcl'}, optional
-        The colorspace for the input channel values. Ignored unless `color` is
-        an container of numbers.
-    cycle : str or list, optional
-        The registered color cycle name used to interpret colors that
-        look like ``'C0'``, ``'C1'``, etc. Default is :rc:`cycle`.
-    alpha : bool, optional
-        Whether to preserve the opacity channel, if it exists. Default
-        is ``False``.
-
-    Returns
-    -------
-    color : 3-tuple or 4-tuple
-        The RGB[A] tuple.
-    """
-    # Convert color cycle strings
-    if isinstance(color, str) and re.match('^C[0-9]$', color):
-        if isinstance(cycle, str):
-            try:
-                cycle = mcm.cmap_d[cycle].colors
-            except (KeyError, AttributeError):
-                cycles = sorted(
-                    name for name, cmap in mcm.cmap_d.items()
-                    if isinstance(cmap, ListedColormap)
-                )
-                raise ValueError(
-                    f'Invalid cycle {cycle!r}. Options are: '
-                    + ', '.join(map(repr, cycles)) + '.'
-                )
-        elif cycle is None:
-            cycle = rcParams['axes.prop_cycle'].by_key()
-            if 'color' not in cycle:
-                cycle = ['k']
-            else:
-                cycle = cycle['color']
-        else:
-            raise ValueError(f'Invalid cycle {cycle!r}.')
-        color = cycle[int(color[-1]) % len(cycle)]
-
-    # Translate RGB strings and (cmap,index) tuples
-    opacity = 1
-    if isinstance(color, str) or (np.iterable(color) and len(color) == 2):
-        try:
-            *color, opacity = mcolors.to_rgba(color)  # ensure is valid color
-        except (ValueError, TypeError):
-            raise ValueError(f'Invalid RGB argument {color!r}.')
-
-    # Pull out alpha channel
-    if len(color) == 4:
-        *color, opacity = color
-    elif len(color) != 3:
-        raise ValueError(f'Invalid RGB argument {color!r}.')
-
-    # Translate arbitrary colorspaces
-    if space == 'rgb':
-        try:
-            if any(c > 2 for c in color):
-                color = [c / 255 for c in color]  # scale to within 0-1
-            color = tuple(color)
-        except (ValueError, TypeError):
-            raise ValueError(f'Invalid RGB argument {color!r}.')
-    elif space == 'hsv':
-        color = hsluv.hsl_to_rgb(*color)
-    elif space == 'hpl':
-        color = hsluv.hpluv_to_rgb(*color)
-    elif space == 'hsl':
-        color = hsluv.hsluv_to_rgb(*color)
-    elif space == 'hcl':
-        color = hsluv.hcl_to_rgb(*color)
-    else:
-        raise ValueError('Invalid color {color!r} for colorspace {space!r}.')
-
-    # Return RGB or RGBA
-    if alpha:
-        return (*color, opacity)
-    else:
-        return color
-
-
-def to_xyz(color, space='hcl', alpha=False):
-    """
-    Translate color in *any* format to a tuple of channel values in *any*
-    colorspace. This is the inverse of `to_rgb`.
-
-    Parameters
-    ----------
-    color : color-spec
-        The color. Sanitized with `to_rgb`.
-    space : {'hcl', 'hpl', 'hsl', 'hsv', 'rgb'}, optional
-        The colorspace for the output channel values.
-    alpha : bool, optional
-        Whether to preserve the opacity channel, if it exists. Default
-        is ``False``.
-
-    Returns
-    -------
-    color : 3-tuple or 4-tuple
-        Tuple of colorspace `space` channel values with optional opacity
-        channel.
-    """
-    # Run tuple conversions
-    # NOTE: Don't pass color tuple, because we may want to permit
-    # out-of-bounds RGB values to invert conversion
-    *color, opacity = to_rgb(color, alpha=True)
-    if space == 'rgb':
-        pass
-    elif space == 'hsv':
-        color = hsluv.rgb_to_hsl(*color)  # rgb_to_hsv would also work
-    elif space == 'hpl':
-        color = hsluv.rgb_to_hpluv(*color)
-    elif space == 'hsl':
-        color = hsluv.rgb_to_hsluv(*color)
-    elif space == 'hcl':
-        color = hsluv.rgb_to_hcl(*color)
-    else:
-        raise ValueError(f'Invalid colorspace {space}.')
-    if alpha:
-        return (*color, opacity)
-    else:
-        return color
-
-
-def _clip_colors(colors, clip=True, gray=0.2):
+def _clip_colors(colors, clip=True, gray=0.2, warn=False):
     """
     Clip impossible colors rendered in an HSL-to-RGB colorspace conversion.
     Used by `PerceptuallyUniformColormap`. If `mask` is ``True``, impossible
@@ -489,8 +305,9 @@ def _clip_colors(colors, clip=True, gray=0.2):
     gray : float, optional
         The identical RGB channel values (gray color) to be used if `mask`
         is ``True``.
+    warn : bool, optional
+        Whether to issue warning when colors are clipped.
     """
-    # Clip colors
     colors = np.array(colors)
     over = colors > 1
     under = colors < 0
@@ -499,14 +316,13 @@ def _clip_colors(colors, clip=True, gray=0.2):
         colors[over] = 1
     else:
         colors[under | over] = gray
-    # Message
-    # NOTE: Never print warning because happens when using builtin maps
-    # message = 'Clipped' if clip else 'Invalid'
-    # for i,name in enumerate('rgb'):
-    #     if under[:,i].any():
-    #         _warn_proplot(f'{message} {name!r} channel ( < 0).')
-    #     if over[:,i].any():
-    #         _warn_proplot(f'{message} {name!r} channel ( > 1).')
+    if warn:
+        msg = 'Clipped' if clip else 'Invalid'
+        for i, name in enumerate('rgb'):
+            if under[:, i].any():
+                warnings._warn_proplot(f'{msg} {name!r} channel ( < 0).')
+            if over[:, i].any():
+                warnings._warn_proplot(f'{msg} {name!r} channel ( > 1).')
     return colors
 
 
