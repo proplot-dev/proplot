@@ -9,21 +9,27 @@ See :ref:`Configuring proplot` for details.
 import re
 import os
 import numpy as np
-import cycler
+import matplotlib as mpl
+import matplotlib.font_manager as mfonts
 import matplotlib.colors as mcolors
 import matplotlib.cm as mcm
-from numbers import Number
-from matplotlib import style, rcParams
-try:  # use this for debugging instead of print()!
-    from icecream import ic
-except ImportError:  # graceful fallback if IceCream isn't installed
-    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
+import cycler
+from collections import namedtuple
+from . import colors as pcolors
+from .utils import units, to_xyz
+from .internals import ic  # noqa: F401
+from .internals import defaults, docstring, timers, warnings, _not_none
 try:
     from IPython import get_ipython
 except ImportError:
     def get_ipython():
         return
-from .utils import _warn_proplot, _counter, units
+
+__all__ = [
+    'rc', 'rc_configurator',
+    'register_cmaps', 'register_cycles', 'register_colors', 'register_fonts',
+    'inline_backend_fmt',  # deprecated
+]
 
 # Disable mathtext "missing glyph" warnings
 import matplotlib.mathtext  # noqa
@@ -31,260 +37,91 @@ import logging
 logger = logging.getLogger('matplotlib.mathtext')
 logger.setLevel(logging.ERROR)  # suppress warnings!
 
-__all__ = [
-    'rc', 'rc_configurator', 'inline_backend_fmt',
-]
-
 # Dictionaries used to track custom proplot settings
-rcParamsShort = {}
-rcParamsLong = {}
+_Context = namedtuple('Context', ('mode', 'kwargs', 'rc_new', 'rc_old'))
+rc_params = rcParams = mpl.rcParams  # PEP8 4 lyfe
+rc_quick = rcParamsShort = defaults._rc_quick_default.copy()
+rc_added = rcParamsLong = defaults._rc_added_default.copy()
+defaultParams = defaults._rc_matplotlib_default
+defaultParamsLong = defaults._rc_added_default
+defaultParamsShort = default._rc_quick_defautl
 
-# Dictionaries containing default settings
-defaultParamsShort = {
-    'abc': False,
-    'align': False,
-    'alpha': 1,
-    'borders': False,
-    'cmap': 'fire',
-    'coast': False,
-    'color': 'k',
-    'cycle': 'colorblind',
-    'facecolor': 'w',
-    'fontname': 'sans-serif',
-    'inlinefmt': 'retina',
-    'geogrid': True,
-    'grid': True,
-    'gridminor': False,
-    'gridratio': 0.5,
-    'innerborders': False,
-    'lakes': False,
-    'land': False,
-    'large': 10,
-    'linewidth': 0.6,
-    'lut': 256,
-    'margin': 0.0,
-    'ocean': False,
-    'reso': 'lo',
-    'rgbcycle': False,
-    'rivers': False,
-    'share': 3,
-    'small': 9,
-    'span': True,
-    'tickdir': 'out',
-    'ticklen': 4.0,
-    'ticklenratio': 0.5,
-    'tickminor': True,
-    'tickpad': 2.0,
-    'tickratio': 0.8,
-    'tight': True,
-}
-defaultParamsLong = {
-    'abc.border': True,
-    'abc.borderwidth': 1.5,
-    'abc.color': 'k',
-    'abc.loc': 'l',  # left side above the axes
-    'abc.size': None,  # = large
-    'abc.style': 'a',
-    'abc.weight': 'bold',
-    'axes.facealpha': None,  # if empty, depends on 'savefig.transparent'
-    'axes.formatter.timerotation': 90,
-    'axes.formatter.zerotrim': True,
-    'axes.geogrid': True,
-    'axes.gridminor': True,
-    'borders.color': 'k',
-    'borders.linewidth': 0.6,
-    'bottomlabel.color': 'k',
-    'bottomlabel.size': None,  # = large
-    'bottomlabel.weight': 'bold',
-    'coast.color': 'k',
-    'coast.linewidth': 0.6,
-    'colorbar.extend': '1.3em',
-    'colorbar.framealpha': 0.8,
-    'colorbar.frameon': True,
-    'colorbar.grid': False,
-    'colorbar.insetextend': '1em',
-    'colorbar.insetlength': '8em',
-    'colorbar.insetpad': '0.5em',
-    'colorbar.insetwidth': '1.2em',
-    'colorbar.length': 1,
-    'colorbar.loc': 'right',
-    'colorbar.width': '1.5em',
-    'geoaxes.edgecolor': None,  # = color
-    'geoaxes.facealpha': None,  # = alpha
-    'geoaxes.facecolor': None,  # = facecolor
-    'geoaxes.linewidth': None,  # = linewidth
-    'geogrid.alpha': 0.5,
-    'geogrid.color': 'k',
-    'geogrid.labels': False,
-    'geogrid.labelsize': None,  # = small
-    'geogrid.latmax': 90,
-    'geogrid.latstep': 20,
-    'geogrid.linestyle': ':',
-    'geogrid.linewidth': 1.0,
-    'geogrid.lonstep': 30,
-    'gridminor.alpha': None,  # = grid.alpha
-    'gridminor.color': None,  # = grid.color
-    'gridminor.linestyle': None,  # = grid.linewidth
-    'gridminor.linewidth': None,  # = grid.linewidth x gridratio
-    'image.edgefix': True,
-    'image.levels': 11,
-    'innerborders.color': 'k',
-    'innerborders.linewidth': 0.6,
-    'lakes.color': 'w',
-    'land.color': 'k',
-    'leftlabel.color': 'k',
-    'leftlabel.size': None,  # = large
-    'leftlabel.weight': 'bold',
-    'ocean.color': 'w',
-    'rightlabel.color': 'k',
-    'rightlabel.size': None,  # = large
-    'rightlabel.weight': 'bold',
-    'rivers.color': 'k',
-    'rivers.linewidth': 0.6,
-    'subplots.axpad': '1em',
-    'subplots.axwidth': '18em',
-    'subplots.pad': '0.5em',
-    'subplots.panelpad': '0.5em',
-    'subplots.panelwidth': '4em',
-    'suptitle.color': 'k',
-    'suptitle.size': None,  # = large
-    'suptitle.weight': 'bold',
-    'tick.labelcolor': None,  # = color
-    'tick.labelsize': None,  # = small
-    'tick.labelweight': 'normal',
-    'title.border': True,
-    'title.borderwidth': 1.5,
-    'title.color': 'k',
-    'title.loc': 'c',  # centered above the axes
-    'title.pad': 3.0,  # copy
-    'title.size': None,  # = large
-    'title.weight': 'normal',
-    'toplabel.color': 'k',
-    'toplabel.size': None,  # = large
-    'toplabel.weight': 'bold',
-}
-defaultParams = {
-    'axes.grid': True,
-    'axes.labelpad': 3.0,
-    'axes.titlepad': 3.0,
-    'axes.titleweight': 'normal',
-    'axes.xmargin': 0.0,
-    'axes.ymargin': 0.0,
-    'figure.autolayout': False,
-    'figure.facecolor': '#f2f2f2',
-    'figure.max_open_warning': 0,
-    'figure.titleweight': 'bold',
-    'font.serif': (
-        'TeX Gyre Schola',  # Century lookalike
-        'TeX Gyre Bonum',  # Bookman lookalike
-        'TeX Gyre Termes',  # Times New Roman lookalike
-        'TeX Gyre Pagella',  # Palatino lookalike
-        'DejaVu Serif',
-        'Bitstream Vera Serif',
-        'Computer Modern Roman',
-        'Bookman',
-        'Century Schoolbook L',
-        'Charter',
-        'ITC Bookman',
-        'New Century Schoolbook',
-        'Nimbus Roman No9 L',
-        'Palatino',
-        'Times New Roman',
-        'Times',
-        'Utopia',
-        'serif'
+# Misc constants
+# TODO: Use explicit validators for specific settings like matplotlib.
+REGEX_POINTS = re.compile(
+    r'\A(?!colorbar|subplots|pdf|ps).*(width|space|size|pad|len)\Z'
+)
+
+ALWAYS_ADD = (
+    *(  # common fancy names or natural names
+        'charcoal', 'tomato', 'burgundy', 'maroon', 'burgundy', 'lavendar',
+        'taupe', 'ocre', 'sand', 'stone', 'earth', 'sand brown', 'sienna',
+        'terracotta', 'moss', 'crimson', 'mauve', 'rose', 'teal', 'forest',
+        'grass', 'sage', 'pine', 'vermillion', 'russet', 'cerise', 'avocado',
+        'wine', 'brick', 'umber', 'mahogany', 'puce', 'grape', 'blurple',
+        'cranberry', 'sand', 'aqua', 'jade', 'coral', 'olive', 'magenta',
+        'turquoise', 'sea blue', 'royal blue', 'slate blue', 'slate grey',
+        'baby blue', 'salmon', 'beige', 'peach', 'mustard', 'lime', 'indigo',
+        'cornflower', 'marine', 'cloudy blue', 'tangerine', 'scarlet', 'navy',
+        'cool grey', 'warm grey', 'chocolate', 'raspberry', 'denim',
+        'gunmetal', 'midnight', 'chartreuse', 'ivory', 'khaki', 'plum',
+        'silver', 'tan', 'wheat', 'buff', 'bisque', 'cerulean',
     ),
-    'font.sans-serif': (
-        'TeX Gyre Heros',  # Helvetica lookalike
-        'DejaVu Sans',
-        'Bitstream Vera Sans',
-        'Computer Modern Sans Serif',
-        'Arial',
-        'Avenir',
-        'Fira Math',
-        'Frutiger',
-        'Geneva',
-        'Gill Sans',
-        'Helvetica',
-        'Lucid',
-        'Lucida Grande',
-        'Myriad Pro',
-        'Noto Sans',
-        'Roboto',
-        'Source Sans Pro',
-        'Tahoma',
-        'Trebuchet MS',
-        'Ubuntu',
-        'Univers',
-        'Verdana',
-        'sans-serif'
+    *(  # common combos
+        'red orange', 'yellow orange', 'yellow green',
+        'blue green', 'blue violet', 'red violet',
     ),
-    'font.monospace': (
-        'TeX Gyre Cursor',  # Courier lookalike
-        'DejaVu Sans Mono',
-        'Bitstream Vera Sans Mono',
-        'Computer Modern Typewriter',
-        'Andale Mono',
-        'Courier New',
-        'Courier',
-        'Fixed',
-        'Nimbus Mono L',
-        'Terminal',
-        'monospace'
-    ),
-    'font.cursive': (
-        'TeX Gyre Chorus',  # Chancery lookalike
-        'Apple Chancery',
-        'Felipa',
-        'Sand',
-        'Script MT',
-        'Textile',
-        'Zapf Chancery',
-        'cursive'
-    ),
-    'font.fantasy': (
-        'TeX Gyre Adventor',  # Avant Garde lookalike
-        'Avant Garde',
-        'Charcoal',
-        'Chicago',
-        'Comic Sans MS',
-        'Futura',
-        'Humor Sans',
-        'Impact',
-        'Optima',
-        'Western',
-        'xkcd',
-        'fantasy'
-    ),
-    'grid.alpha': 0.1,
-    'grid.color': 'k',
-    'grid.linestyle': '-',
-    'grid.linewidth': 0.6,
-    'hatch.color': 'k',
-    'hatch.linewidth': 0.6,
-    'legend.borderaxespad': 0,
-    'legend.borderpad': 0.5,
-    'legend.columnspacing': 1.0,
-    'legend.fancybox': False,
-    'legend.framealpha': 0.8,
-    'legend.frameon': True,
-    'legend.handlelength': 1.5,
-    'legend.handletextpad': 0.5,
-    'legend.labelspacing': 0.5,
-    'lines.linewidth': 1.3,
-    'lines.markersize': 3.0,
-    'mathtext.fontset': 'custom',
-    'mathtext.default': 'regular',
-    'savefig.bbox': 'standard',
-    'savefig.directory': '',
-    'savefig.dpi': 300,
-    'savefig.facecolor': 'white',
-    'savefig.format': 'pdf',
-    'savefig.pad_inches': 0.0,
-    'savefig.transparent': True,
-    'text.usetex': False,
-    'xtick.minor.visible': True,
-    'ytick.minor.visible': True,
+    *(  # common names
+        prefix + color
+        for color in (
+            'red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet',
+            'brown', 'grey'
+        )
+        for prefix in (
+            '', 'light ', 'dark ', 'medium ', 'pale ',
+        )
+    )
+)
+ALWAYS_REMOVE = (  # filter these out, let's try to be professional here...
+    'shit', 'poop', 'poo', 'pee', 'piss', 'puke', 'vomit', 'snot',
+    'booger', 'bile', 'diarrhea',
+)
+TRANSLATE_COLORS = (  # prevent registering similar-sounding names
+    ('/', ' '),
+    ("'s", ''),
+    ('forrest', 'forest'),  # typo?
+    ('reddish', 'red'),  # remove 'ish'
+    ('purplish', 'purple'),
+    ('bluish', 'blue'),
+    ('ish ', ' '),
+    ('grey', 'gray'),
+    ('pinky', 'pink'),
+    ('greeny', 'green'),
+    ('bluey', 'blue'),
+    ('purply', 'purple'),
+    ('purpley', 'purple'),
+    ('yellowy', 'yellow'),
+    ('robin egg', 'robins egg'),
+    ('egg blue', 'egg'),
+    ('bluegray', 'blue gray'),
+    ('grayblue', 'gray blue'),
+    ('lightblue', 'light blue'),
+    ('yellowgreen', 'yellow green'),
+    ('yelloworange', 'yellow orange'),
+)
+
+OPEN_COLORS = {}  # populated during register_colors
+XKCD_COLORS = {}  # populated during register_colors
+BASE_COLORS = {
+    **mcolors.BASE_COLORS,  # shorthand names like 'r', 'g', etc.
+    'blue': (0, 0, 1),
+    'green': (0, 0.5, 0),
+    'red': (1, 0, 0),
+    'cyan': (0, 0.75, 0.75),
+    'magenta': (0.75, 0, 0.75),
+    'yellow': (0.75, 0.75, 0),
+    'black': (0, 0, 0),
+    'white': (1, 1, 1),
 }
 
 # "Global" settings and the lower-level settings they change
@@ -390,269 +227,34 @@ _rc_categories = {
 }
 
 
-def _get_config_paths():
+def _get_data_paths(subfolder, user=True, default=True, reverse=False):
     """
-    Return a list of configuration file paths in reverse order of
-    precedence.
+    Return data folder paths in reverse order of precedence.
     """
-    # Local configuration
-    idir = os.getcwd()
+    # When loading colormaps, cycles, and colors, files in the latter
+    # directories overwrite files in the former directories. When loading
+    # fonts, the resulting paths need to be *reversed*.
     paths = []
-    while idir:  # not empty string
-        ipath = os.path.join(idir, '.proplotrc')
-        if os.path.exists(ipath):
-            paths.append(ipath)
-        ndir = os.path.dirname(idir)
-        if ndir == idir:  # root
-            break
-        idir = ndir
-    paths = paths[::-1]  # sort from decreasing to increasing importantce
-    # Home configuration
-    ipath = os.path.join(os.path.expanduser('~'), '.proplotrc')
-    if os.path.exists(ipath) and ipath not in paths:
-        paths.insert(0, ipath)
+    if user:
+        paths.append(os.path.join(os.path.dirname(__file__), subfolder))
+    if default:
+        paths.append(os.path.join(os.path.expanduser('~'), '.proplot', subfolder))
+    if reverse:
+        paths = paths[::-1]
     return paths
 
 
-def _get_synced_params(key, value):
+def _iter_data_paths(subfolder, **kwargs):
     """
-    Return dictionaries for updating the `rcParamsShort`, `rcParamsLong`,
-    and `rcParams` properties associated with this key.
+    Iterate over all files in the data paths. Also yield an index indicating
+    whether these are default ProPlot files or user files.
     """
-    kw = {}  # builtin properties that global setting applies to
-    kw_long = {}  # custom properties that global setting applies to
-    kw_short = {}  # short name properties
-
-    # Skip full name keys
-    key = _sanitize_key(key)
-    if '.' in key:
-        pass
-
-    # Backend
-    elif key == 'inlinefmt':
-        inline_backend_fmt(value)
-
-    # Cycler
-    elif key in ('cycle', 'rgbcycle'):
-        if key == 'rgbcycle':
-            cycle, rgbcycle = rcParamsShort['cycle'], value
-        else:
-            cycle, rgbcycle = value, rcParamsShort['rgbcycle']
-        try:
-            colors = mcm.cmap_d[cycle].colors
-        except (KeyError, AttributeError):
-            cycles = sorted(
-                name for name, cmap in mcm.cmap_d.items()
-                if isinstance(cmap, mcolors.ListedColormap)
-            )
-            raise ValueError(
-                f'Invalid cycle name {cycle!r}. Options are: '
-                + ', '.join(map(repr, cycles)) + '.'
-            )
-        if rgbcycle and cycle.lower() == 'colorblind':
-            regcolors = colors + [(0.1, 0.1, 0.1)]
-        elif mcolors.to_rgb('r') != (1.0, 0.0, 0.0):  # reset
-            regcolors = [
-                (0.0, 0.0, 1.0),
-                (1.0, 0.0, 0.0),
-                (0.0, 1.0, 0.0),
-                (0.75, 0.75, 0.0),
-                (0.75, 0.75, 0.0),
-                (0.0, 0.75, 0.75),
-                (0.0, 0.0, 0.0)
-            ]
-        else:
-            regcolors = []  # no reset necessary
-        for code, color in zip('brgmyck', regcolors):
-            rgb = mcolors.to_rgb(color)
-            mcolors.colorConverter.colors[code] = rgb
-            mcolors.colorConverter.cache[code] = rgb
-        kw['patch.facecolor'] = colors[0]
-        kw['axes.prop_cycle'] = cycler.cycler('color', colors)
-
-    # Zero linewidth almost always means zero tick length
-    elif key == 'linewidth' and _to_points(key, value) == 0:
-        _, ikw_long, ikw = _get_synced_params('ticklen', 0)
-        kw.update(ikw)
-        kw_long.update(ikw_long)
-
-    # Tick length/major-minor tick length ratio
-    elif key in ('ticklen', 'ticklenratio'):
-        if key == 'ticklen':
-            ticklen = _to_points(key, value)
-            ratio = rcParamsShort['ticklenratio']
-        else:
-            ticklen = rcParamsShort['ticklen']
-            ratio = value
-        kw['xtick.minor.size'] = ticklen * ratio
-        kw['ytick.minor.size'] = ticklen * ratio
-
-    # Spine width/major-minor tick width ratio
-    elif key in ('linewidth', 'tickratio'):
-        if key == 'linewidth':
-            tickwidth = _to_points(key, value)
-            ratio = rcParamsShort['tickratio']
-        else:
-            tickwidth = rcParamsShort['linewidth']
-            ratio = value
-        kw['xtick.minor.width'] = tickwidth * ratio
-        kw['ytick.minor.width'] = tickwidth * ratio
-
-    # Gridline width
-    elif key in ('grid.linewidth', 'gridratio'):
-        if key == 'grid.linewidth':
-            gridwidth = _to_points(key, value)
-            ratio = rcParamsShort['gridratio']
-        else:
-            gridwidth = rcParams['grid.linewidth']
-            ratio = value
-        kw_long['gridminor.linewidth'] = gridwidth * ratio
-
-    # Gridline toggling, complicated because of the clunky way this is
-    # implemented in matplotlib. There should be a gridminor setting!
-    elif key in ('grid', 'gridminor'):
-        ovalue = rcParams['axes.grid']
-        owhich = rcParams['axes.grid.which']
-        # Instruction is to turn off gridlines
-        if not value:
-            # Gridlines are already off, or they are on for the particular
-            # ones that we want to turn off. Instruct to turn both off.
-            if not ovalue or (key == 'grid' and owhich == 'major') or (
-                    key == 'gridminor' and owhich == 'minor'):
-                which = 'both'  # disable both sides
-            # Gridlines are currently on for major and minor ticks, so we
-            # instruct to turn on gridlines for the one we *don't* want off
-            elif owhich == 'both':  # and ovalue is True, as we already tested
-                # if gridminor=False, enable major, and vice versa
-                value = True
-                which = 'major' if key == 'gridminor' else 'minor'
-            # Gridlines are on for the ones that we *didn't* instruct to turn
-            # off, and off for the ones we do want to turn off. This just
-            # re-asserts the ones that are already on.
-            else:
-                value = True
-                which = owhich
-        # Instruction is to turn on gridlines
-        else:
-            # Gridlines are already both on, or they are off only for the ones
-            # that we want to turn on. Turn on gridlines for both.
-            if owhich == 'both' or (key == 'grid' and owhich == 'minor') or (
-                    key == 'gridminor' and owhich == 'major'):
-                which = 'both'
-            # Gridlines are off for both, or off for the ones that we
-            # don't want to turn on. We can just turn on these ones.
-            else:
-                which = owhich
-        kw['axes.grid'] = value
-        kw['axes.grid.which'] = which
-
-    # Update setting in dictionary, detect invalid keys
-    value = _to_points(key, value)
-    if key in rcParamsShort:
-        kw_short[key] = value
-    elif key in rcParamsLong:
-        kw_long[key] = value
-    elif key in rcParams:
-        kw[key] = value
-    else:
-        raise KeyError(f'Invalid key {key!r}.')
-
-    # Update linked settings
-    for name in _rc_children.get(key, ()):
-        if name in rcParamsLong:
-            kw_long[name] = value
-        else:
-            kw[name] = value
-    return kw_short, kw_long, kw
-
-
-def _sanitize_key(key):
-    """
-    Ensure string and convert keys with omitted dots.
-    """
-    if not isinstance(key, str):
-        raise KeyError(f'Invalid key {key!r}. Must be string.')
-    if '.' not in key and key not in rcParamsShort:  # speedup
-        key = _rc_nodots.get(key, key)
-    return key.lower()
-
-
-def _to_points(key, value):
-    """
-    Convert certain rc keys to the units "points".
-    """
-    # TODO: Incorporate into more sophisticated validation system
-    # See: https://matplotlib.org/users/customizing.html, all props matching
-    # the below strings use the units 'points', except custom categories!
-    if (
-        isinstance(value, str)
-        and key.split('.')[0] not in ('colorbar', 'subplots')
-        and re.match('^.*(width|space|size|pad|len|small|large)$', key)
-    ):
-        value = units(value, 'pt')
-    return value
-
-
-def _update_from_file(file):
-    """
-    Apply updates from a file. This is largely copied from matplotlib.
-
-    Parameters
-    ----------
-    file : str
-        The path.
-    """
-    file = os.path.expanduser(file)
-    added = set()
-    with open(file, 'r') as f:
-        for cnt, line in enumerate(f):
-            # Read file
-            stripped = line.split('#', 1)[0].strip()
-            if not stripped:
-                continue
-            pair = stripped.split(':', 1)
-            if len(pair) != 2:
-                _warn_proplot(
-                    f'Illegal line #{cnt + 1} in file {file!r}:\n{line!r}"'
-                )
-                continue
-            key, value = pair
-            key = key.strip()
-            value = value.strip()
-            if key in added:
-                _warn_proplot(
-                    f'Duplicate key {key!r} on line #{cnt + 1} '
-                    f'in file {file!r}.'
-                )
-            added.add(key)
-
-            # *Very primitive* type conversion system. Just check proplot
-            # settings (they are all simple/scalar) and leave rcParams alone.
-            # TODO: Add built-in validation by making special RcParamsLong
-            # and RcParamsShort classes just like matplotlib RcParams
-            if key in rcParamsShort or key in rcParamsLong:
-                if not value:
-                    value = None  # older proplot versions supported this
-                elif value in ('True', 'False', 'None'):
-                    value = eval(value)  # rare case where eval is o.k.
-                else:
-                    try:
-                        # int-float distinction does not matter in python3
-                        value = float(value)
-                    except ValueError:
-                        pass
-
-            # Add to dictionaries
-            try:
-                rc_short, rc_long, rc = _get_synced_params(key, value)
-            except KeyError:
-                _warn_proplot(
-                    f'Invalid key {key!r} on line #{cnt} in file {file!r}.'
-                )
-            else:
-                rcParamsShort.update(rc_short)
-                rcParamsLong.update(rc_long)
-                rcParams.update(rc)
+    for i, path in enumerate(_get_data_paths(subfolder, **kwargs)):
+        for dirname, dirnames, filenames in os.walk(path):
+            for filename in filenames:
+                if filename[0] == '.':  # UNIX-style hidden files
+                    continue
+                yield i, dirname, filename
 
 
 def _write_defaults(filename, comment=True):
@@ -1194,10 +796,277 @@ def inline_backend_fmt(fmt=None):
     )
 
 
-# Write defaults
+@docstring.add_snippets
+def register_cmaps(user=True, default=False):
+    """
+    Register colormaps packaged with ProPlot or saved to the
+    ``~/.proplot/cmaps`` folder. This is called on import.
+    Colormaps are registered according to their filenames -- for example,
+    ``name.xyz`` will be registered as ``'name'``.
+
+    %(register.ext_table)s
+
+    To visualize the registered colormaps, use `~proplot.show.show_cmaps`.
+
+    Parameters
+    ----------
+    %(register_cmaps.params)s
+    """
+    for i, dirname, filename in _iter_data_paths('cmaps', user=user, default=default):
+        path = os.path.join(dirname, filename)
+        cmap = pcolors.LinearSegmentedColormap.from_file(path, warn_on_failure=True)
+        if not cmap:
+            continue
+        if i == 0 and cmap.name.lower() in (
+            'phase', 'graycycle', 'romao', 'broco', 'corko', 'viko',
+        ):
+            cmap.set_cyclic(True)
+        pcolors._cmapdict[cmap.name] = cmap
+
+
+@docstring.add_snippets
+def register_cycles(user=True, default=False):
+    """
+    Register color cycles packaged with ProPlot or saved to the
+    ``~/.proplot/cycles`` folder. This is called on import. Color cycles
+    are registered according to their filenames -- for example, ``name.hex``
+    will be registered as ``'name'``.
+
+    %(register.ext_table)s
+
+    To visualize the registered color cycles, use `~proplot.show.show_cycles`.
+
+    Parameters
+    ----------
+    %(register_cycles.params)s
+    """
+    for _, dirname, filename in _iter_data_paths('cycles', user=user, default=default):
+        path = os.path.join(dirname, filename)
+        cmap = pcolors.ListedColormap.from_file(path, warn_on_failure=True)
+        if not cmap:
+            continue
+        pcolors._cmapdict[cmap.name] = cmap
+
+
+@docstring.add_snippets
+def register_colors(user=True, default=False, space='hcl', margin=0.10):
+    """
+    Register the `open-color <https://yeun.github.io/open-color/>`_ colors,
+    XKCD `color survey <https://xkcd.com/color/rgb/>`_ colors, and colors
+    saved to the ``~/.proplot/colors`` folder. This is called on import.
+    The color survey colors are filtered to a subset that is "perceptually
+    distinct" in the HCL colorspace. The user color names are loaded from
+    ``.txt`` files saved in ``~/.proplot/colors``. Each file should contain
+    one line per color in the format ``name : hex``. Whitespace is ignored.
+
+    To visualize the registered colors, use `~proplot.show.show_colors`.
+
+    Parameters
+    ----------
+    %(register_colors.params)s
+    space : {'hcl', 'hsl', 'hpl'}, optional
+        The colorspace used to detect "perceptually distinct" colors.
+    margin : float, optional
+        The margin by which a color's normalized hue, saturation, and
+        luminance channel values must differ from the normalized channel
+        values of the other colors to be deemed "perceptually distinct."
+    """
+    # Reset native colors dictionary
+    mcolors.colorConverter.colors.clear()  # clean out!
+    mcolors.colorConverter.cache.clear()  # clean out!
+
+    # Add in base colors and CSS4 colors so user has no surprises
+    for name, dict_ in (('base', BASE_COLORS), ('css', mcolors.CSS4_COLORS)):
+        mcolors.colorConverter.colors.update(dict_)
+
+    # Load colors from file and get their HCL values
+    # NOTE: Colors that come *later* overwrite colors that come earlier.
+    hex = re.compile(rf'\A{pcolors.HEX_PATTERN}\Z')  # match each string
+    for i, dirname, filename in _iter_data_paths('colors', user=user, default=default):
+        path = os.path.join(dirname, filename)
+        cat, ext = os.path.splitext(filename)
+        if ext != '.txt':
+            raise ValueError(
+                f'Unknown color data file extension ({path!r}). '
+                'All files in this folder should have extension .txt.'
+            )
+
+        # Read data
+        loaded = {}
+        with open(path, 'r') as fh:
+            for cnt, line in enumerate(fh):
+                # Load colors from file
+                stripped = line.strip()
+                if not stripped or stripped[0] == '#':
+                    continue
+                pair = tuple(
+                    item.strip().lower() for item in line.split(':')
+                )
+                if len(pair) != 2 or not hex.match(pair[1]):
+                    warnings._warn_proplot(
+                        f'Illegal line #{cnt + 1} in file {path!r}:\n'
+                        f'{line!r}\n'
+                        f'Lines must be formatted as "name: hexcolor".'
+                    )
+                    continue
+                # Never overwrite "base" colors with xkcd colors.
+                # Only overwrite with user colors.
+                name, color = pair
+                if i == 0 and name in BASE_COLORS:
+                    continue
+                loaded[name] = color
+
+        # Add every user color and every opencolor color and ensure XKCD
+        # colors are "perceptually distinct".
+        if i == 1:
+            mcolors.colorConverter.colors.update(loaded)
+        elif cat == 'opencolor':
+            mcolors.colorConverter.colors.update(loaded)
+            OPEN_COLORS.update(loaded)
+        elif cat == 'xkcd':
+            # Always add these colors, but make sure not to add other
+            # colors too close to them.
+            hcls = []
+            filtered = []
+            for name in ALWAYS_ADD:
+                color = loaded.pop(name, None)
+                if color is None:
+                    continue
+                if 'grey' in name:
+                    name = name.replace('grey', 'gray')
+                hcls.append(to_xyz(color, space=space))
+                filtered.append((name, color))
+                mcolors.colorConverter.colors[name] = color
+                XKCD_COLORS[name] = color
+
+            # Get locations of "perceptually distinct" colors
+            # WARNING: Unique axis argument requires numpy version >=1.13
+            for name, color in loaded.items():
+                for string, replace in TRANSLATE_COLORS:
+                    if string in name:
+                        name = name.replace(string, replace)
+                if any(string in name for string in ALWAYS_REMOVE):
+                    continue  # remove "unpofessional" names
+                hcls.append(to_xyz(color, space=space))
+                filtered.append((name, color))  # category name pair
+            hcls = np.asarray(hcls)
+            if not hcls.size:
+                continue
+            hcls = hcls / np.array([360, 100, 100])
+            hcls = np.round(hcls / margin).astype(np.int64)
+            _, idxs = np.unique(hcls, return_index=True, axis=0)
+
+            # Register "distinct" colors
+            for idx in idxs:
+                name, color = filtered[idx]
+                mcolors.colorConverter.colors[name] = color
+                XKCD_COLORS[name] = color
+        else:
+            raise ValueError(f'Unknown proplot color database {path!r}.')
+
+
+def register_fonts():
+    """
+    Add fonts packaged with ProPlot or saved to the ``~/.proplot/fonts``
+    folder, if they are not already added. Detects ``.ttf`` and ``.otf`` files
+    -- see `this link \
+<https://gree2.github.io/python/2015/04/27/python-change-matplotlib-font-on-mac>`__
+    for a guide on converting various other font file types to ``.ttf`` and
+    ``.otf`` for use with matplotlib.
+
+    To visualize the registered fonts, use `~proplot.show.show_fonts`.
+    """
+    # Find proplot fonts
+    # WARNING: If you include a font file with an unrecognized style,
+    # matplotlib may use that font instead of the 'normal' one! Valid styles:
+    # 'ultralight', 'light', 'normal', 'regular', 'book', 'medium', 'roman',
+    # 'semibold', 'demibold', 'demi', 'bold', 'heavy', 'extra bold', 'black'
+    # https://matplotlib.org/api/font_manager_api.html
+    # For macOS the only fonts with 'Thin' in one of the .ttf file names
+    # are Helvetica Neue and .SF NS Display Condensed. Never try to use these!
+    paths_proplot = _get_data_paths('fonts', reverse=True)
+    fnames_proplot = set(mfonts.findSystemFonts(paths_proplot))
+
+    # Detect user-input ttc fonts and issue warning
+    fnames_proplot_ttc = {
+        file for file in fnames_proplot if os.path.splitext(file)[1] == '.ttc'
+    }
+    if fnames_proplot_ttc:
+        warnings._warn_proplot(
+            'Ignoring the following .ttc fonts because they cannot be '
+            'saved into PDF or EPS files (see matplotlib issue #3135): '
+            + ', '.join(map(repr, sorted(fnames_proplot_ttc)))
+            + '. Please consider expanding them into separate .ttf files.'
+        )
+
+    # Rebuild font cache only if necessary! Can be >50% of total import time!
+    fnames_all = {font.fname for font in mfonts.fontManager.ttflist}
+    fnames_proplot -= fnames_proplot_ttc
+    if not fnames_all >= fnames_proplot:
+        warnings._warn_proplot('Rebuilding font cache.')
+        if hasattr(mfonts.fontManager, 'addfont'):
+            # New API lets us add font files manually
+            for fname in fnames_proplot:
+                mfonts.fontManager.addfont(fname)
+            mfonts.json_dump(mfonts.fontManager, mfonts._fmcache)
+        else:
+            # Old API requires us to modify TTFPATH
+            # NOTE: Previously we tried to modify TTFPATH before importing
+            # font manager with hope that it would load proplot fonts on
+            # initialization. But 99% of the time font manager just imports
+            # the FontManager from cache, so this doesn't work.
+            paths = ':'.join(paths_proplot)
+            if 'TTFPATH' not in os.environ:
+                os.environ['TTFPATH'] = paths
+            elif paths not in os.environ['TTFPATH']:
+                os.environ['TTFPATH'] += ':' + paths
+            mfonts._rebuild()
+
+    # Remove ttc files *after* rebuild
+    mfonts.fontManager.ttflist = [
+        font for font in mfonts.fontManager.ttflist
+        if os.path.splitext(font.fname)[1] != '.ttc'
+    ]
+
+
+# Initialize .proplotrc file
 _user_rc_file = os.path.join(os.path.expanduser('~'), '.proplotrc')
 if not os.path.exists(_user_rc_file):
     _write_defaults(_user_rc_file)
+
+# Initialize customization folders
+_rc_folder = os.path.join(os.path.expanduser('~'), '.proplot')
+if not os.path.isdir(_rc_folder):
+    os.mkdir(_rc_folder)
+for _rc_sub in ('cmaps', 'cycles', 'colors', 'fonts'):
+    _rc_sub = os.path.join(_rc_folder, _rc_sub)
+    if not os.path.isdir(_rc_sub):
+        os.mkdir(_rc_sub)
+
+# Convert colormaps that *should* be LinearSegmented from Listed
+for _name in ('viridis', 'plasma', 'inferno', 'magma', 'cividis', 'twilight'):
+    _cmap = pcolors._cmapdict.get(_name, None)
+    if _cmap and isinstance(_cmap, pcolors.ListedColormap):
+        del pcolors._cmapdict[_name]
+        pcolors._cmapdict[_name] = pcolors.LinearSegmentedColormap.from_list(
+            _name, _cmap.colors, cyclic=(_name == 'twilight')
+        )
+
+# Register objects and configure settings
+with timers._benchmark('cmaps'):
+    register_cmaps(default=True)
+
+with timers._benchmark('cycles'):
+    register_cycles(default=True)
+
+with timers._benchmark('colors'):
+    register_colors(default=True)
+
+with timers._benchmark('fonts'):
+    register_fonts()
+
+with timers._benchmark('rc'):
+    _ = rc_configurator()
 
 #: Instance of `rc_configurator`. This is used to change global settings.
 #: See :ref:`Configuring proplot` for details.
