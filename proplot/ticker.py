@@ -497,6 +497,35 @@ class AutoFormatter(mticker.ScalarFormatter):
         return sign + self._prefix + string + self._suffix + tail
 
 
+def SigFigFormatter(sigfig=1, zerotrim=False):
+    """
+    Return a `~matplotlib.ticker.FuncFormatter` that rounds numbers
+    to the specified number of *significant digits*.
+
+    Parameters
+    ----------
+    sigfig : float, optional
+        The number of significant digits.
+    zerotrim : bool, optional
+        Whether to trim trailing zeros.
+    """
+    def fmt(x, pos):
+        if x == 0:
+            digits = 0
+        else:
+            digits = -int(np.log10(abs(x)) // 1)
+        digits += sigfig - 1
+        x = np.round(x, digits)
+        string = ('{:.%df}' % max(0, digits)).format(x)
+        if zerotrim and '.' in string:
+            string = string.rstrip('0').rstrip('.')
+        string = string.replace('-', '\N{MINUS SIGN}')
+        if string == '\N{MINUS SIGN}0':
+            string = '0'
+        return string
+    return mticker.FuncFormatter(fmt)
+
+
 def SimpleFormatter(precision=6, zerotrim=True):
     """
     Return a `~matplotlib.ticker.FuncFormatter` that replicates the
