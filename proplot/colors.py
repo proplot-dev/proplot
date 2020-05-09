@@ -2302,46 +2302,47 @@ class DiscreteNorm(mcolors.BoundaryNorm):
 
 class LinearSegmentedNorm(mcolors.Normalize):
     """
-    This is the default normalizer paired with `BinNorm` whenever `levels`
-    are non-linearly spaced. The normalized value is linear with respect to
-    its average index in the `levels` vector, allowing uniform color
-    transitions across arbitrarily spaced monotonically increasing values.
-    Can be explicitly used by passing ``norm='segmented'`` to any command
-    accepting ``cmap``.
+    Normalizer that scales data linearly with respect to average *position*
+    in an arbitrary monotonically increasing level lists. This is the same
+    algorithm used by `~matplotlib.colors.LinearSegmentedColormap` to
+    select colors in-between indices in the segment data tables.
+    This is the default normalizer paired with `DiscreteNorm` whenever `levels`
+    are non-linearly spaced. Can be explicitly used by passing ``norm='segmented'``
+    to any command accepting ``cmap``.
     """
     def __init__(self, levels, vmin=None, vmax=None, clip=False):
         """
         Parameters
         ----------
         levels : list of float
-            The discrete data levels.
+            The level boundaries.
         vmin, vmax : None
             Ignored. `vmin` and `vmax` are set to the minimum and
             maximum of `levels`.
         clip : bool, optional
             Whether to clip values falling outside of the minimum and
             maximum levels.
+
+        Example
+        -------
+        In the below example, unevenly spaced levels are passed to
+        `~matplotlib.axes.Axes.contourf`, resulting in the automatic
+        application of `LinearSegmentedNorm`.
+
+        >>> import proplot as plot
+        >>> import numpy as np
+        >>> levels = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]
+        >>> data = 10 ** (3 * np.random.rand(10, 10))
+        >>> fig, ax = plot.subplots()
+        >>> ax.contourf(data, levels=levels)
         """
-        levels = np.atleast_1d(levels)
-        diffs = np.sign(np.diff(levels))
-        y = np.linspace(0, 1, len(levels))
-        self._descending = False
-        if levels.ndim != 1:
-            raise ValueError('Levels must be 1-dimensional.')
-        elif levels.size < 2:
-            raise ValueError('Need at least two levels.')
-        elif all(diffs == -1):
-            self._descending = True
-            levels = levels[::-1]
-            y = y[::-1]
-        elif not all(diffs == 1):
-            raise ValueError(
-                f'Levels {levels!r} must be monotonically increasing.'
-            )
-        vmin, vmax = levels.min(), levels.max()
-        super().__init__(vmin, vmax, clip=clip)  # second level superclass
+        levels = np.asarray(levels)
+        levels, _ = _check_levels(levels, allow_descending=False)
+        dest = np.linspace(0, 1, len(levels))
+        vmin, vmax = np.min(levels), np.max(levels)
+        super().__init__(vmin=vmin, vmax=vmax, clip=clip)
         self._x = levels
-        self._y = y
+        self._y = dest
 
     def __call__(self, value, clip=None):
         """
@@ -2356,28 +2357,15 @@ class LinearSegmentedNorm(mcolors.Normalize):
             Whether to clip values falling outside of the minimum and
             maximum levels. Default is ``self.clip``.
         """
-        # Follow example of make_mapping_array for efficient, vectorized
-        # linear interpolation across multiple segments.
-        # * Normal test puts values at a[i] if a[i-1] < v <= a[i]; for
-        #   left-most data, satisfy a[0] <= v <= a[1]
-        # * searchsorted gives where xq[i] must be inserted so it is larger
-        #   than x[ind[i]-1] but smaller than x[ind[i]]
         if clip is None:  # builtin clipping
             clip = self.clip
-        if clip:  # note that np.clip can handle masked arrays
+        if clip:  # numpy.clip can handle masked arrays
             value = np.clip(value, self.vmin, self.vmax)
-        x = self._x  # from arbitrarily spaced monotonic levels
-        y = self._y  # to linear range 0-1
-        xq = np.atleast_1d(value)
-        idx = np.searchsorted(x, xq)
-        idx[idx == 0] = 1
-        idx[idx == len(x)] = len(x) - 1
-        distance = (xq - x[idx - 1]) / (x[idx] - x[idx - 1])
-        yq = distance * (y[idx] - y[idx - 1]) + y[idx - 1]
-        if self._descending:
-            yq = 1 - yq
-        mask = ma.getmaskarray(xq)
-        return ma.array(yq, mask=mask)
+        xq, is_scalar = self.process_value(value)
+        yq = _interpolate_extrapolate(xq, self._x, self._y)
+        if is_scalar:
+            yq = np.atleast_1d(yq)[0]
+        return yq
 
     def inverse(self, value):
         """
@@ -2388,16 +2376,11 @@ class LinearSegmentedNorm(mcolors.Normalize):
         value : numeric
             The data to be un-normalized.
         """
-        x = self._x
-        y = self._y
-        yq = np.atleast_1d(value)
-        idx = np.searchsorted(y, yq)
-        idx[idx == 0] = 1
-        idx[idx == len(y)] = len(y) - 1
-        distance = (yq - y[idx - 1]) / (y[idx] - y[idx - 1])
-        xq = distance * (x[idx] - x[idx - 1]) + x[idx - 1]
-        mask = ma.getmaskarray(yq)
-        return ma.array(xq, mask=mask)
+        yq, is_scalar = self.process_value(value)
+        xq = _interpolate_extrapolate(yq, self._y, self._x)
+        if is_scalar:
+            xq = np.atleast_1d(xq)[0]
+        return xq
 
 
 class DivergingNorm(mcolors.Normalize):
