@@ -17,6 +17,7 @@ import matplotlib as mpl
 import matplotlib.font_manager as mfonts
 import matplotlib.colors as mcolors
 import matplotlib.style.core as mstyle
+import matplotlib.cbook as cbook
 import numbers
 import cycler
 from collections import namedtuple
@@ -903,7 +904,7 @@ class rc_configurator(object):
         # "style", and do not use rc_quick to apply any default settings -- this
         # should be for user convenience only and shold not be used internally.
         if default:
-            mstyle.use('default')
+            rc_params.update(_get_style_dicts('original', infer=False))
             rc_params.update(defaults._rc_params_default)  # proplot changes
             rc_added.update(defaults._rc_added_default)  # proplot custom params
             rc_quick.update(defaults._rc_quick_default)  # proplot quick params
@@ -1021,9 +1022,145 @@ def config_inline_backend(fmt=None):
     ipython.magic('config InlineBackend.rc = {}')
     ipython.magic('config InlineBackend.close_figures = True')
     ipython.magic("config InlineBackend.print_figure_kwargs = {'bbox_inches': None}")
-    ipython.magic(  # use ProPlot tight layout instead
-        'config InlineBackend.print_figure_kwargs = {"bbox_inches": None}'
-    )
+
+
+def _get_default_dict():
+    """
+    Get the default rc parameters dictionary with deprecated parameters filtered.
+    """
+    # NOTE: Use RcParams update to filter and translate deprecated settings
+    # before actually applying them to rcParams down pipeline. This way we can
+    # suppress warnings for deprecated default params but still issue warnings
+    # when user-supplied stylesheets have deprecated params.
+    # WARNING: Some deprecated rc params remain in dictionary as None so we
+    # filter them out. Beware if hidden attribute changes.
+    rcdict = _get_filtered_dict(mpl.rcParamsDefault, warn=False)
+    with cbook._suppress_matplotlib_deprecation_warning():
+        rcdict = dict(mpl.RcParams(rcdict))
+    for attr in ('_deprecated_remain_as_none', '_deprecated_set'):
+        if hasattr(mpl, attr):  # _deprecated_set is in matplotlib before v3
+            for deprecated in getattr(mpl, attr):
+                rcdict.pop(deprecated, None)
+    return rcdict
+
+
+def _get_filtered_dict(rcdict, warn=True):
+    """
+    Filter out blacklisted style parameters.
+    """
+    # NOTE: This implements bugfix: https://github.com/matplotlib/matplotlib/pull/17252
+    # This fix is *critical* for proplot because we always run style.use()
+    # when the configurator is made. Without fix backend is reset every time
+    # you import proplot in jupyter notebooks. So apply retroactively.
+    rcdict_filtered = {}
+    for key in rcdict:
+        if key in mstyle.STYLE_BLACKLIST:
+            if warn:
+                warnings._warn_proplot(
+                    f'Dictionary includes a parameter, {key!r}, that is not related '
+                    'to style. Ignoring.'
+                )
+        else:
+            rcdict_filtered[key] = rcdict[key]
+    return rcdict_filtered
+
+
+def _get_style_dicts(style, infer=False):
+    """
+    Return a dictionary of settings belonging to the requested style(s). If `infer`
+    is ``True``, two dictionaries are returned, where the second contains custom
+    ProPlot settings "inferred" from the matplotlib settings.
+    """
+    # NOTE: This is adapted from matplotlib source for the following changes:
+    # 1. Add 'original' option. Like rcParamsOrig except we also *reload*
+    #    from user matplotlibrc file.
+    # 2. When the style is changed we reset to the *default* state ignoring
+    #    matplotlibrc. Matplotlib applies styles on top of current state
+    #    (including matplotlibrc changes and runtime rcParams changes) but
+    #    IMO the word 'style' implies a *rigid* static format.
+    # 3. Add a separate function that returns lists of style dictionaries so
+    #    that we can modify the active style in a context block. ProPlot context
+    #    is more conservative than matplotlib's rc_context because it gets
+    #    called a lot (e.g. every time you make an axes and every format() call).
+    #    Instead of copying the entire rcParams dict we just track the keys
+    #    that were changed.
+    style_aliases = {
+        '538': 'fivethirtyeight',
+        'mpl20': 'default',
+        'mpl15': 'classic',
+        'original': mpl.matplotlib_fname(),
+    }
+    if isinstance(style, str) or isinstance(style, dict):
+        styles = [style]
+    else:
+        styles = style
+
+    # Always apply the default style *first* so styles are rigid
+    kw_params = _get_default_dict()
+    if style == 'default' or style is mpl.rcParamsDefault:
+        return kw_params
+
+    # Apply "pseudo" default properties. Pretend some proplot settings are part of
+    # the matplotlib specification so they propagate to other styles.
+    kw_params['font.family'] = 'sans-serif'
+    kw_params['font.sans-serif'] = defaults._rc_params_default['font.sans-serif']
+
+    # Apply user input style(s) one by one
+    # NOTE: Always use proplot fonts if style does not explicitly set them.
+    for style in styles:
+        if isinstance(style, dict):
+            kw = style
+        elif isinstance(style, str):
+            style = style_aliases.get(style, style)
+            if style in mstyle.library:
+                kw = mstyle.library[style]
+            else:
+                try:
+                    kw = mpl.rc_params_from_file(style, use_default_template=False)
+                except IOError:
+                    raise IOError(
+                        f'Style {style!r} not found in the style library and input is '
+                        'not a valid URL or path. Available styles are: '
+                        + ', '.join(map(repr, mstyle.available)) + '.'
+                    )
+        else:
+            raise ValueError(f'Invalid style {style!r}. Must be string or dictionary.')
+        kw = _get_filtered_dict(kw, warn=True)
+        kw_params.update(kw)
+
+    # Infer proplot params from stylesheet params
+    if infer:
+        kw_added = _infer_added_params(kw_params)
+        return kw_params, kw_added
+    else:
+        return kw_params
+
+
+def _infer_added_params(kw_params):
+    """
+    Infer values for proplot's "added" parameters from stylesheets.
+    """
+    kw_added = {}
+    mpl_to_proplot = {
+        'font.size': ('tick.labelsize',),
+        'axes.titlesize': (
+            'abc.size', 'suptitle.size', 'title.size',
+            'leftlabel.size', 'rightlabel.size',
+            'toplabel.size', 'bottomlabel.size',
+        ),
+        'axes.facecolor': ('geoaxes.facecolor',),
+        'text.color': (
+            'abc.color', 'suptitle.color', 'tick.labelcolor', 'title.color',
+            'leftlabel.color', 'rightlabel.color',
+            'toplabel.color', 'bottomlabel.color',
+        ),
+    }
+    for key, params in mpl_to_proplot.items():
+        if key in kw_params:
+            value = kw_params[key]
+            for param in params:
+                kw_added[param] = value
+    return kw_added
 
 
 @docstring.add_snippets
