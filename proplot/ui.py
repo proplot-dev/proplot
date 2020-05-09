@@ -340,14 +340,16 @@ def subplots(
     basemap = _axes_dict(naxs, basemap, kw=False, default=None)
     axes_kw = {num: {} for num in range(1, naxs + 1)}  # store add_subplot args
     for num, name in proj.items():
-        # The default is XYAxes
-        if name is None or name == 'xy':
-            axes_kw[num]['projection'] = 'xy'
+        # The default is CartesianAxes
+        if name is None or name == 'cartesian':
+            axes_kw[num]['projection'] = 'cartesian'
+
         # Builtin matplotlib polar axes, just use my overridden version
         elif name == 'polar':
-            axes_kw[num]['projection'] = 'polar'
+            axes_kw[num]['projection'] = 'polar2'
             if num == ref:
                 aspect = 1
+
         # Custom Basemap and Cartopy axes
         else:
             m = constructor.Proj(name, basemap=basemap[num], **proj_kw[num])
