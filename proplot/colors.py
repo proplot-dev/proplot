@@ -1,14 +1,7 @@
 #!/usr/bin/env python3
 """
-Tools for registering and visualizing colormaps, color cycles, color string
-names, and fonts. New colormap classes, new colormap normalizer
-classes, and new constructor functions for generating instances of these
-classes. Related utilities for manipulating colors. See
-:ref:`Colormaps`, :ref:`Color cycles`, and :ref:`Colors and fonts`
-for details.
+New colormap classes and colormap normalization classes.
 """
-# Potential bottleneck, loading all this stuff?  *No*. Try using @timer on
-# register functions, turns out worst is colormap one at 0.1 seconds.
 import os
 import re
 import json
@@ -2725,214 +2718,235 @@ class MidpointNorm(mcolors.Normalize):
         """
         Inverse operation of `~MidpointNorm.__call__`.
 
+class ColorDatabase(dict):
+    """
+    Dictionary subclass used to replace the builtin matplotlib color
+    database. This allows users to draw colors from named colormaps and color
+    cycles for any plotting command that accepts a `color` keyword arg.
+    See `~ColorDatabase.cache` for details.
+    """
+    def __init__(self, mapping):
+        """
         Parameters
         ----------
-        value : numeric
-            The data to be un-normalized.
+        mapping : dict-like
+            The colors.
         """
-        # Invert the above
-        # x, y = [self.vmin, self._midpoint, self.vmax], [0, 0.5, 1]
-        # return ma.masked_array(np.interp(yq, y, x))
-        # Performs inverse operation of __call__
-        x = np.array([self.vmin, self._midpoint, self.vmax])
-        y = np.array([0, 0.5, 1])
-        yq = np.atleast_1d(value)
-        ind = np.searchsorted(y, yq)
-        ind[ind == 0] = 1
-        ind[ind == len(y)] = len(y) - 1
-        distance = (yq - y[ind - 1]) / (y[ind] - y[ind - 1])
-        xq = distance * (x[ind] - x[ind - 1]) + x[ind - 1]
-        mask = ma.getmaskarray(yq)
-        return ma.array(xq, mask=mask)
+        super().__init__(mapping)
+        self._cache = _ColorCache({})
+
+    def __setitem__(self, key, value):
+        """
+        Add a color to the database and clear the cache.
+        """
+        if not isinstance(key, str):
+            raise ValueError(f'Invalid color name {key!r}. Must be string.')
+        super().__setitem__(key, value)
+        self.cache.clear()
+
+    def __delitem__(self, key):
+        """
+        Delete a color from the database and clear the cache.
+        """
+        super().__delitem__(key)
+        self.cache.clear()
+
+    @property
+    def cache(self):
+        """
+        A special dictionary subclass capable of retrieving colors
+        "on-the-fly" from registered colormaps and color cycles.
+
+        * For a smooth colormap, usage is e.g. ``color=('Blues', 0.8)``. The
+          number is the colormap index, and must be between 0 and 1.
+        * For a color cycle, usage is e.g. ``color=('colorblind', 2)``. The
+          number is the list index.
+
+        These examples work with any matplotlib command that accepts a `color`
+        keyword arg.
+        """
+        return self._cache
 
 
-def _get_data_paths(dirname):
-    """
-    Return data folder paths in reverse order of precedence.
-    """
-    # When loading colormaps, cycles, and colors, files in the latter
-    # directories overwrite files in the former directories. When loading
-    # fonts, the resulting paths need to be *reversed*.
-    return [
-        os.path.join(os.path.dirname(__file__), dirname),
-        os.path.join(os.path.expanduser('~'), '.proplot', dirname)
-    ]
-
-
-def _from_file(filename, listed=False, warn_on_failure=False):
-    """
-    Read generalized colormap and color cycle files.
-    """
-    filename = os.path.expanduser(filename)
-    if os.path.isdir(filename):  # no warning
-        return
-
-    # Warn if loading failed during `register_cmaps` or `register_cycles`
-    # but raise error if user tries to load a file.
-    def _warn_or_raise(msg, error=RuntimeError):
-        if warn_on_failure:
-            _warn_proplot(msg)
-        else:
-            raise error(msg)
-
-    # Directly read segmentdata json file
-    # NOTE: This is special case! Immediately return name and cmap
-    if not os.path.exists(filename):
-        _warn_or_raise(f'File {filename!r} not found.', FileNotFoundError)
-        return
-    N = rcParams['image.lut']
-    name, ext = os.path.splitext(os.path.basename(filename))
-    ext = ext[1:]
-    cmap = None
-    if ext == 'json':
-        try:
-            with open(filename, 'r') as f:
-                data = json.load(f)
-        except json.JSONDecodeError:
-            _warn_or_raise(
-                f'Failed to load {filename!r}.', json.JSONDecodeError
-            )
-            return
-        kw = {}
-        for key in ('cyclic', 'gamma', 'gamma1', 'gamma2', 'space'):
-            kw[key] = data.pop(key, None)
-        if 'red' in data:
-            cmap = LinearSegmentedColormap(name, data, N=N)
-        else:
-            cmap = PerceptuallyUniformColormap(name, data, N=N, **kw)
-        if name[-2:] == '_r':
-            cmap = cmap.reversed(name[:-2])
-
-    # Read .rgb and .rgba files
-    elif ext in ('txt', 'rgb'):
-        # Load
-        # NOTE: This appears to be biggest import time bottleneck! Increases
-        # time from 0.05s to 0.2s, with numpy loadtxt or with this regex thing.
-        delim = re.compile(r'[,\s]+')
-        data = [
-            delim.split(line.strip())
-            for line in open(filename)
-            if line.strip() and line.strip()[0] != '#'
-        ]
-        try:
-            data = [[float(num) for num in line] for line in data]
-        except ValueError:
-            _warn_or_raise(
-                f'Failed to load {filename!r}. Expected a table of comma '
-                'or space-separated values.'
-            )
-            return
-        # Build x-coordinates and standardize shape
-        data = np.array(data)
-        if data.shape[1] not in (3, 4):
-            _warn_or_raise(
-                f'Failed to load {filename!r}. Got {data.shape[1]} columns, '
-                f'but expected 3 or 4.'
-            )
-            return
-        if ext[0] != 'x':  # i.e. no x-coordinates specified explicitly
-            x = np.linspace(0, 1, data.shape[0])
-        else:
-            x, data = data[:, 0], data[:, 1:]
-
-    # Load XML files created with scivizcolor
-    # Adapted from script found here:
-    # https://sciviscolor.org/matlab-matplotlib-pv44/
-    elif ext == 'xml':
-        try:
-            doc = ElementTree.parse(filename)
-        except ElementTree.ParseError:
-            _warn_or_raise(
-                f'Failed to load {filename!r}. Parsing error.',
-                ElementTree.ParseError
-            )
-            return
-        x, data = [], []
-        for s in doc.getroot().findall('.//Point'):
-            # Verify keys
-            if any(key not in s.attrib for key in 'xrgb'):
-                _warn_or_raise(
-                    f'Failed to load {filename!r}. Missing an x, r, g, or b '
-                    'specification inside one or more <Point> tags.'
-                )
-                return
-            # Get data
-            color = []
-            for key in 'rgbao':  # o for opacity
-                if key not in s.attrib:
-                    continue
-                color.append(float(s.attrib[key]))
-            x.append(float(s.attrib['x']))
-            data.append(color)
-        # Convert to array
-        if not all(
-            len(data[0]) == len(color) and len(color) in (3, 4)
-            for color in data
+class _ColorCache(dict):
+    def __getitem__(self, key):
+        # Matplotlib 'color' args are passed to to_rgba, which tries to read
+        # directly from cache and if that fails, sanitizes input, which
+        # raises error on receiving (colormap, idx) tuple. So we *have* to
+        # override cache instead of color dict itself.
+        rgb, alpha = key
+        if (
+            not isinstance(rgb, str) and np.iterable(rgb) and len(rgb) == 2
+            and isinstance(rgb[1], Number) and isinstance(rgb[0], str)
         ):
-            _warn_or_raise(
-                f'Failed to load {filename!r}. Unexpected number of channels '
-                'or mixed channels across <Point> tags.'
-            )
-            return
+            try:
+                cmap = _cmapdict[rgb[0]]
+            except (TypeError, KeyError):
+                pass
+            else:
+                if isinstance(cmap, ListedColormap):
+                    if not 0 <= rgb[1] < len(cmap.colors):
+                        raise ValueError(
+                            f'Color cycle sample for {rgb[0]!r} cycle must be '
+                            f'between 0 and {len(cmap.colors)-1}, '
+                            f'got {rgb[1]}.'
+                        )
+                    rgb = cmap.colors[rgb[1]]  # draw from list of colors
+                else:
+                    if not 0 <= rgb[1] <= 1:
+                        raise ValueError(
+                            f'Colormap sample for {rgb[0]!r} colormap must be '
+                            f'between 0 and 1, got {rgb[1]}.'
+                        )
+                    rgb = cmap(rgb[1])  # get color selection
+                rgba = mcolors.to_rgba(rgb, alpha)
+                return rgba
 
-    # Read hex strings
-    elif ext == 'hex':
-        # Read arbitrary format
-        string = open(filename).read()  # into single string
-        data = re.findall(COLORS_HEXPATTERN, string)
-        if len(data) < 2:
-            _warn_or_raise(
-                f'Failed to load {filename!r}. Hex strings not found.'
-            )
-            return
-        # Convert to array
-        x = np.linspace(0, 1, len(data))
-        data = [to_rgb(color) for color in data]
-    else:
-        _warn_or_raise(
-            f'Colormap or cycle file {filename!r} has unknown extension.'
-        )
-        return
 
-    # Standardize and reverse if necessary to cmap
-    # TODO: Document the fact that filenames ending in _r return a reversed
-    # version of the colormap stored in that file.
-    if not cmap:
-        x, data = np.array(x), np.array(data)
-        # for some reason, some aren't in 0-1 range
-        x = (x - x.min()) / (x.max() - x.min())
-        if (data > 2).any():  # from 0-255 to 0-1
-            data = data / 255
-        if name[-2:] == '_r':
-            name = name[:-2]
-            data = data[::-1, :]
-            x = 1 - x[::-1]
-        if listed:
-            cmap = ListedColormap(data, name, N=len(data))
+
+
+class ColormapDatabase(dict):
+    """
+    Dictionary subclass used to replace the `matplotlib.cm.cmap_d`
+    colormap dictionary. See `~ColormapDatabase.__getitem__` and
+    `~ColormapDatabase.__setitem__` for details.
+    """
+    def __init__(self, kwargs):
+        """
+        Parameters
+        ----------
+        kwargs : dict-like
+            The source dictionary.
+        """
+        for key, value in kwargs.items():
+            self.__setitem__(key, value)
+
+    def __delitem__(self, key):
+        """
+        Delete the item from the database.
+        """
+        key = self._sanitize_key(key, mirror=True)
+        super().__delitem__(key)
+
+    def __getitem__(self, key):
+        """
+        Retrieve the colormap associated with the sanitized key name. The
+        key name is case insensitive.
+
+        * If the key ends in ``'_r'``, the result of ``cmap.reversed()`` is
+          returned for the colormap registered under the preceding name.
+        * If the key ends in ``'_s'``, the result of ``cmap.shifted(180)`` is
+          returned for the colormap registered under the preceding name.
+        * Reversed diverging colormaps can be requested with their "reversed"
+          name -- for example, ``'BuRd'`` is equivalent to ``'RdBu_r'``.
+        """
+        key = self._sanitize_key(key, mirror=True)
+        shift = key[-2:] == '_s'
+        if shift:
+            key = key[:-2]
+        reverse = key[-2:] == '_r'
+        if reverse:
+            key = key[:-2]
+        value = super().__getitem__(key)  # may raise keyerror
+        if shift:
+            if hasattr(value, 'shifted'):
+                value = value.shifted(180)
+            else:
+                raise KeyError(
+                    f'Item of type {type(value).__name__!r} '
+                    'does not have shifted() method.'
+                )
+        if reverse:
+            if hasattr(value, 'reversed'):
+                value = value.reversed()
+            else:
+                raise KeyError(
+                    f'Item of type {type(value).__name__!r} '
+                    'does not have reversed() method.'
+                )
+        return value
+
+    def __setitem__(self, key, item):
+        """
+        Store the colormap under its lowercase name. If the colormap is
+        a matplotlib `~matplotlib.colors.ListedColormap` or
+        `~matplotlib.colors.LinearSegmentedColormap`, it is converted to the
+        ProPlot `ListedColormap` or `LinearSegmentedColormap` subclass.
+        """
+        if not isinstance(key, str):
+            raise KeyError(f'Invalid key {key!r}. Must be string.')
+        if isinstance(item, (ListedColormap, LinearSegmentedColormap)):
+            pass
+        elif isinstance(item, mcolors.LinearSegmentedColormap):
+            item = LinearSegmentedColormap(
+                item.name, item._segmentdata, item.N, item._gamma
+            )
+        elif isinstance(item, mcolors.ListedColormap):
+            item = ListedColormap(
+                item.colors, item.name, item.N
+            )
         else:
-            data = [(x, color) for x, color in zip(x, data)]
-            cmap = LinearSegmentedColormap.from_list(name, data, N=N)
+            raise ValueError(
+                f'Invalid colormap {item}. Must be instance of '
+                'matplotlib.colors.ListedColormap or '
+                'matplotlib.colors.LinearSegmentedColormap.'
+            )
+        key = self._sanitize_key(key, mirror=False)
+        super().__setitem__(key, item)
 
-    # Return colormap or data
-    return cmap
+    def __contains__(self, item):
+        """
+        Test for membership using the sanitized colormap name.
+        """
+        try:  # by default __contains__ ignores __getitem__ overrides
+            self.__getitem__(item)
+            return True
+        except KeyError:
+            return False
+
+    def _sanitize_key(self, key, mirror=True):
+        """
+        Return the sanitized colormap name. This is used for lookups *and*
+        assignments.
+        """
+        if not isinstance(key, str):
+            raise KeyError(f'Invalid key {key!r}. Key must be a string.')
+        key = key.lower()
+        key = re.sub(r'\A(grays)(?:_r|_s)?\Z', 'greys', key)
+        reverse = key[-2:] == '_r'
+        if reverse:
+            key = key[:-2]
+        if mirror and not super().__contains__(key):  # search for mirrored key
+            key_mirror = key
+            for pair in CMAPS_DIVERGING:
+                try:
+                    idx = pair.index(key)
+                    key_mirror = pair[1 - idx]
+                except (ValueError, KeyError):
+                    continue
+            if super().__contains__(key_mirror):
+                reverse = not reverse
+                key = key_mirror
+        if reverse:
+            key = key + '_r'
+        return key
 
 
+# Replace color database with custom database
+if not isinstance(mcolors._colors_full_map, ColorDatabase):
+    _map = ColorDatabase(mcolors._colors_full_map)
+    mcolors._colors_full_map = _map
+    mcolors.colorConverter.cache = _map.cache
+    mcolors.colorConverter.colors = _map
 
-
-
-
-# Apply monkey patches to top level modules
-if not isinstance(mcm.cmap_d, CmapDict):
-    _dict = {
-        key: value for key, value in mcm.cmap_d.items()
+# Replace colormap database with custom database
+if not isinstance(_cmapdict, ColormapDatabase):
+    _cmapdict = {
+        key: value for key, value in _cmapdict.items()
         if key[-2:] != '_r' and key[-8:] != '_shifted'
     }
-    mcm.cmap_d = CmapDict(_dict)
-if not isinstance(mcolors._colors_full_map, _ColorMappingOverride):
-    _map = _ColorMappingOverride(mcolors._colors_full_map)
-    mcolors._colors_full_map = _map
-    mcolors.colorConverter.cache = _map.cache  # re-instantiate
-    mcolors.colorConverter.colors = _map  # re-instantiate
+    _cmapdict = ColormapDatabase(_cmapdict)
+    setattr(mcm, _cmapdict_attr, _cmapdict)
 
 #: Dictionary of possible normalizers. See `Norm` for a table.
 normalizers = {
@@ -2947,3 +2961,8 @@ normalizers = {
     'power': mcolors.PowerNorm,
     'symlog': mcolors.SymLogNorm,
 }
+
+# Deprecations
+CmapDict = warnings._rename_obj('CmapDict', ColormapDatabase)
+ColorDict = warnings._rename_obj('ColorDict', ColorDatabase)
+BinNorm = warnings._rename_obj('BinNorm', DiscreteNorm)
