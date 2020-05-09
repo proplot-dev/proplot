@@ -172,9 +172,7 @@ for ref in (1, 2):
 import proplot as plot
 
 # Automatic spacing for all margins and between all columns and rows
-fig, axs = plot.subplots(
-    ref=ref, nrows=3, ncols=3, axwidth=1.1, share=0
-)
+fig, axs = plot.subplots(nrows=3, ncols=3, axwidth=1.1, share=0)
 
 # Formatting that stress-tests the algorithm
 axs[4].format(
