@@ -2138,68 +2138,47 @@ def Norm(norm, *args, **kwargs):
     return normalizers[norm](*args, **kwargs)
 
 
-class BinNorm(mcolors.BoundaryNorm):
+class DiscreteNorm(mcolors.BoundaryNorm):
     """
-    This normalizer is used for all colormap plots. It can be thought of as a
-    "meta-normalizer": It first scales the data according to any
-    arbitrary `~matplotlib.colors.Normalize` class, then maps the normalized
-    values ranging from 0-1 into **discrete** levels.
-
-    Consider input levels of ``[0, 3, 6, 9, 12, 15]``. The algorithm is
-    as follows.
-
-    1. `levels` are normalized according to the input normalizer `norm`.
-       If it is ``None``, they are not changed. Possible normalizers include
-       `~matplotlib.colors.LogNorm`, which makes color transitions linear in
-       the logarithm of the value, or `LinearSegmentedNorm`, which makes
-       color transitions linear in the *index* of the level array.
-    2. Possible colormap coordinates, corresponding to bins delimited by the
-       normalized `levels` array, are calculated.  In this case, the bin
-       centers are simply ``[1.5, 4.5, 7.5, 10.5, 13.5]``, which gives us
-       normalized colormap coordinates of ``[0, 0.25, 0.5, 0.75, 1]``.
-    3. Out-of-bounds coordinates are added. These depend on the value of the
-       `extend` keyword argument. For `extend` equal to ``'neither'``,
-       the coordinates including out-of-bounds values are
-       ``[0, 0, 0.25, 0.5, 0.75, 1, 1]`` -- out-of-bounds values have the same
-       color as the nearest in-bounds values. For `extend` equal to ``'both'``,
-       the bins are ``[0, 0.16, 0.33, 0.5, 0.66, 0.83, 1]`` --
-       out-of-bounds values are given distinct colors. This makes sure your
-       colorbar always shows the *full range of colors* in the colormap.
-    4. Whenever `BinNorm.__call__` is invoked, the input value normalized by
-       `norm` is compared against the normalized `levels` array. Its bin index
-       is determined with `numpy.searchsorted`, and its corresponding
-       colormap coordinate is selected using this index.
-
+    Meta-normalizer that discretizes the possible color values returned by
+    arbitrary continuous normalizers given a list of level boundaries. This
+    is applied to all colormap plots in ProPlot.
     """
     # See this post: https://stackoverflow.com/a/48614231/4970632
     # WARNING: Must be child of BoundaryNorm. Many methods in ColorBarBase
     # test for class membership, crucially including _process_values(), which
-    # if it doesn't detect BoundaryNorm will try to use BinNorm.inverse().
+    # if it doesn't detect BoundaryNorm will try to use DiscreteNorm.inverse().
     def __init__(
-        self, levels, norm=None, clip=False,
-        step=1.0, extend=None,
+        self, levels, norm=None, step=1.0, extend=None,
+        clip=False, descending=False,
     ):
         """
         Parameters
         ----------
         levels : list of float
-            The discrete data levels.
+            The level boundaries.
         norm : `~matplotlib.colors.Normalize`, optional
             The normalizer used to transform `levels` and all data passed
-            to `BinNorm.__call__` *before* discretization.
+            to `~DiscreteNorm.__call__` before discretization. The ``vmin``
+            and ``vmax`` of the normalizer are set to the minimum and
+            maximum values in `levels`.
         step : float, optional
-            The intensity of the transition to out-of-bounds color, as a
-            faction of the *average* step between in-bounds colors.
+            The intensity of the transition to out-of-bounds colors as a
+            fraction of the adjacent step between in-bounds colors.
             Default is ``1``.
         extend : {'neither', 'both', 'min', 'max'}, optional
-            Which direction colors will be extended. No matter the `extend`
-            option, `BinNorm` ensures colors always extend through the
-            extreme end colors.
+            Which out-of-bounds regions should be assigned unique colormap
+            colors. The normalizer needs this information so it can ensure
+            the colorbar always spans the full range of colormap colors.
         clip : bool, optional
             Whether to clip values falling outside of the level bins. This
             only has an effect on lower colors when extend is
             ``'min'`` or ``'both'``, and on upper colors when extend is
             ``'max'`` or ``'both'``.
+        descending : bool, optional
+            Whether the levels are meant to be descending. This will cause
+            the colorbar axis to be reversed when it is drawn with a
+            `~matplotlib.cm.ScalarMappable` that uses this normalizer.
 
         Note
         ----
@@ -2207,25 +2186,15 @@ class BinNorm(mcolors.BoundaryNorm):
         ``extend='min'``, the center will get messed up. But that is very
         strange usage anyway... so please just don't do that :)
         """
+        # Parse input
         # NOTE: This must be a subclass BoundaryNorm, so ColorbarBase will
         # detect it... even though we completely override it.
-        # Check input levels
-        levels = np.atleast_1d(levels)
-        diffs = np.sign(np.diff(levels))
-        self._descending = False
-        if levels.ndim != 1:
-            raise ValueError('Levels must be 1-dimensional.')
-        elif levels.size < 2:
-            raise ValueError('Need at least two levels.')
-        elif all(diffs == -1):
-            self._descending = True
-            levels = levels[::-1]
-        elif not all(diffs == 1):
-            raise ValueError(
-                f'Levels {levels!r} must be monotonically increasing.'
-            )
-
-        # Check input extend
+        if not norm:
+            norm = mcolors.Normalize()
+        elif isinstance(norm, mcolors.BoundaryNorm):
+            raise ValueError(f'Normalizer cannot be instance of BoundaryNorm.')
+        elif not isinstance(norm, mcolors.Normalize):
+            raise ValueError('Normalizer must be instance of Normalize.')
         extend = extend or 'neither'
         extends = ('both', 'min', 'max', 'neither')
         if extend not in extends:
@@ -2234,72 +2203,66 @@ class BinNorm(mcolors.BoundaryNorm):
                 + ', '.join(map(repr, extends)) + '.'
             )
 
-        # Check input normalizer
-        if not norm:
-            norm = mcolors.Normalize()
-        elif not isinstance(norm, mcolors.Normalize):
-            raise ValueError(
-                'Normalizer must be matplotlib.colors.Normalize, '
-                f'got {type(norm)}.'
-            )
-        elif isinstance(norm, mcolors.BoundaryNorm):
-            raise ValueError(
-                f'Normalizer cannot be an instance of '
-                'matplotlib.colors.BoundaryNorm.'
-            )
-
-        # Normalize the level boundaries and get color coordinates
-        # corresponding to each bin.
-        x_b = norm(levels)
-        if isinstance(x_b, ma.core.MaskedArray):
-            x_b = x_b.filled(np.nan)
-        mask = np.isfinite(x_b)
-        if mask.sum() < 2:
-            raise ValueError(
-                f'Normalizer {norm!r} converted {levels!r} to {x_b!r}, '
-                'but we need at least *2* valid levels to continue.'
-            )
-        x_b = x_b[mask]
-        x_m = (x_b[1:] + x_b[:-1]) / 2  # get level centers after norm scaling
-        y = (x_m - x_m.min()) / (x_m.max() - x_m.min())
-
-        # Get extra 2 color coordinates for out-of-bounds colors
-        # For *same* out-of-bounds colors, looks like [0, 0, ..., 1, 1]
-        # For *unique* out-of-bounds colors, looks like [0, X, ..., 1 - X, 1]
-        offset = 0
-        scale = 1
-        if extend == 'max':
-            scale = 1 - step / y.size
-        elif extend == 'min':
-            offset = step / y.size
-            scale = 1 - offset
-        elif extend == 'both':
-            offset = step / (y.size + 1)
-            scale = 1 - 2 * offset
-        y = np.concatenate(([0], offset + scale * y, [1]))
-
-        # Builtin properties
-        # NOTE: With extend='min' the minimimum in-bounds and out-of-bounds
-        # colors are the same so clip=True will have no effect. Same goes
-        # for extend='max' with maximum colors.
+        # Ensure monotonically increasing levels
+        levels, _ = _check_levels(levels, allow_descending=False)
+        bins, _ = _check_levels(norm(levels), allow_descending=False)
         self.N = levels.size
         self.clip = clip
         self.boundaries = levels
-        self.vmin = levels.min()
-        self.vmax = levels.max()
+        self.vmin = norm.vmin = vmin = np.min(levels)
+        self.vmax = norm.vmax = vmax = np.max(levels)
+        vcenter = getattr(norm, 'vcenter', None)
 
-        # Extra properties
+        # Get color coordinates corresponding to each bin, plus extra
+        # 2 color coordinates for out-of-bounds color bins.
+        # For *same* out-of-bounds colors, looks like [0, 0, ..., 1, 1]
+        # For *unique* out-of-bounds colors, looks like [0, X, ..., 1 - X, 1]
+        # NOTE: Critical that we scale the bin centers in "physical space"
+        # and *then* translate to color coordinates so that nonlinearities in
+        # the normalization stay intact. If we scaled the bin centers in
+        # *normalized space* to have minimum 0 maximum 1, would mess up
+        # color distribution. However this is still not perfect... get
+        # asymmetric color intensity either side of central point. So add
+        # special handling for diverging norms below to improve symmetry.
+        mids = np.zeros((levels.size + 1,))
+        mids[1:-1] = 0.5 * (levels[1:] + levels[:-1])
+        mids[0], mids[-1] = mids[1], mids[-2]
+        if extend in ('min', 'both'):
+            mids[0] += step * (mids[1] - mids[2])
+        if extend in ('max', 'both'):
+            mids[-1] += step * (mids[-2] - mids[-3])
+        if vcenter is None:
+            mids = _interpolate_basic(
+                mids, np.min(mids), np.max(mids), vmin, vmax
+            )
+        else:
+            mids = mids.copy()
+            mids[mids < vcenter] = _interpolate_basic(
+                mids[mids < vcenter], np.min(mids), vcenter, vmin, vcenter,
+            )
+            mids[mids >= vcenter] = _interpolate_basic(
+                mids[mids >= vcenter], vcenter, np.max(mids), vcenter, vmax,
+            )
+        dest = norm(mids)
+
+        # Attributes
+        # NOTE: If clip is True, we clip values to the centers of the end
+        # bins rather than vmin/vmax to prevent out-of-bounds colors from
+        # getting an in-bounds bin color due to landing on a bin edge.
+        # NOTE: With extend='min' the minimimum in-bounds and out-of-bounds
+        # colors are the same so clip=True will have no effect. Same goes
+        # for extend='max' with maximum colors.
         # WARNING: For some reason must clip manually for LogNorm, or
         # end up with unpredictable fill value, weird "out-of-bounds" colors
+        self._bmin = np.min(mids)
+        self._bmax = np.max(mids)
+        self._bins = bins
+        self._dest = dest
         self._norm = norm
-        self._x_b = x_b
-        self._y = y
-        self._bmin = self.vmin + (levels[1] - levels[0]) / 2
-        self._bmax = self.vmax - (levels[-1] - levels[-2]) / 2
+        self._norm_clip = None
+        self._descending = descending
         if isinstance(norm, mcolors.LogNorm):
-            self._clip_norm = (5e-249, None)
-        else:
-            self._clip_norm = None
+            self._norm_clip = (5e-249, None)
 
     def __call__(self, value, clip=None):
         """
@@ -2315,25 +2278,26 @@ class BinNorm(mcolors.BoundaryNorm):
         """
         # Follow example of LinearSegmentedNorm, but perform no interpolation,
         # just use searchsorted to bin the data.
-        clip_norm = self._clip_norm
-        if clip_norm:  # special extra clipping due to normalizer
-            value = np.clip(value, *clip_norm)
+        norm_clip = self._norm_clip
+        if norm_clip:  # special extra clipping due to normalizer
+            value = np.clip(value, *norm_clip)
         if clip is None:  # builtin clipping
             clip = self.clip
         if clip:  # note that np.clip can handle masked arrays
             value = np.clip(value, self._bmin, self._bmax)
-        xq = self._norm(value)
-        yq = self._y[np.searchsorted(self._x_b, xq)]
-        if self._descending:
-            yq = 1 - yq
-        mask = ma.getmaskarray(xq)
-        return ma.array(yq, mask=mask)
+        xq, is_scalar = self.process_value(value)
+        xq = self._norm(xq)
+        yq = self._dest[np.searchsorted(self._bins, xq)]
+        yq = ma.array(yq, mask=ma.getmask(xq))
+        if is_scalar:
+            yq = np.atleast_1d(yq)[0]
+        return yq
 
     def inverse(self, value):  # noqa: U100
         """
         Raise an error. Inversion after discretization is impossible.
         """
-        raise ValueError('BinNorm is not invertible.')
+        raise ValueError('DiscreteNorm is not invertible.')
 
 
 class LinearSegmentedNorm(mcolors.Normalize):
