@@ -2918,54 +2918,56 @@ def _from_file(filename, listed=False, warn_on_failure=False):
     return cmap
 
 
-@_timer
-def register_cmaps():
+@docstring.add_snippets
+def register_cmaps(user=True, default=False):
     """
     Register colormaps packaged with ProPlot or saved to the
-    ``~/.proplot/cmaps`` folder. This is called on import. Maps are registered
-    according to their filenames -- for example, ``name.xyz`` will be
-    registered as ``'name'``.
+    ``~/.proplot/cmaps`` folder. This is called on import.
+    Colormaps are registered according to their filenames -- for example,
+    ``name.xyz`` will be registered as ``'name'``.
 
-    For a table of valid extensions, see `LinearSegmentedColormap.from_file`.
-    To visualize the registered colormaps, use `show_cmaps`.
+    %(register.ext_table)s
+
+    To visualize the registered colormaps, use `~proplot.show.show_cmaps`.
+
+    Parameters
+    ----------
+    %(register_cmaps.params)s
     """
-    for i, path in enumerate(_get_data_paths('cmaps')):
-        for filename in sorted(glob.glob(os.path.join(path, '*'))):
-            cmap = LinearSegmentedColormap.from_file(
-                filename, warn_on_failure=True
-            )
-            if not cmap:
-                continue
-            if i == 0 and cmap.name.lower() in (
-                'phase', 'graycycle', 'romao', 'broco', 'corko', 'viko',
-            ):
-                cmap._cyclic = True
-            mcm.cmap_d[cmap.name] = cmap
+    for i, dirname, filename in _iter_data_paths('cmaps', user=user, default=default):
+        path = os.path.join(dirname, filename)
+        cmap = pcolors.LinearSegmentedColormap.from_file(path, warn_on_failure=True)
+        if not cmap:
+            continue
+        if i == 0 and cmap.name.lower() in (
+            'phase', 'graycycle', 'romao', 'broco', 'corko', 'viko',
+        ):
+            cmap.set_cyclic(True)
+        pcolors._cmapdict[cmap.name] = cmap
 
 
-@_timer
-def register_cycles():
+@docstring.add_snippets
+def register_cycles(user=True, default=False):
     """
     Register color cycles packaged with ProPlot or saved to the
-    ``~/.proplot/cycles`` folder. This is called on import. Cycles are
-    registered according to their filenames -- for example, ``name.hex`` will
-    be registered under the name ``'name'`` as a
-    `~matplotlib.colors.ListedColormap` map (see `Cycle` for details).
+    ``~/.proplot/cycles`` folder. This is called on import. Color cycles
+    are registered according to their filenames -- for example, ``name.hex``
+    will be registered as ``'name'``.
 
-    For a table of valid extensions, see `ListedColormap.from_file`.
-    To visualize the registered colormaps, use `show_cmaps`.
+    %(register.ext_table)s
+
+    To visualize the registered color cycles, use `~proplot.show.show_cycles`.
+
+    Parameters
+    ----------
+    %(register_cycles.params)s
     """
-    for path in _get_data_paths('cycles'):
-        for filename in sorted(glob.glob(os.path.join(path, '*'))):
-            cmap = ListedColormap.from_file(
-                filename, warn_on_failure=True
-            )
-            if not cmap:
-                continue
-            if isinstance(cmap, LinearSegmentedColormap):
-                cmap = ListedColormap(colors(cmap), name=cmap.name)
-            mcm.cmap_d[cmap.name] = cmap
-            cycles.append(cmap.name)
+    for _, dirname, filename in _iter_data_paths('cycles', user=user, default=default):
+        path = os.path.join(dirname, filename)
+        cmap = pcolors.ListedColormap.from_file(path, warn_on_failure=True)
+        if not cmap:
+            continue
+        pcolors._cmapdict[cmap.name] = cmap
 
 
 @docstring.add_snippets
