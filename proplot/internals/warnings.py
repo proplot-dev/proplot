@@ -24,7 +24,7 @@ def _warn_proplot(message):
     """
     from . import _set_state
     with _set_state(warnings, formatwarning=_format_warning):
-        warnings.warn(message)
+        warnings.warn(message, stacklevel=2)
 
 
 def _rename_obj(old_name, new_obj, version=None):
