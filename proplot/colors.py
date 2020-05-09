@@ -32,7 +32,7 @@ __all__ = [
     'LinearSegmentedNorm',
     'ColorDatabase',
     'ColormapDatabase',
-    'BinNorm', 'ColorDict', 'CmapDict',  # deprecated
+    'BinNorm', 'MidpointNorm', 'ColorDict', 'CmapDict',  # deprecated
 ]
 
 HEX_PATTERN = r'#(?:[0-9a-fA-F]{3,4}){2}'  # 6-8 digit hex
@@ -101,64 +101,6 @@ warn_on_failure : bool, optional
     If ``True``, issue a warning when loading fails rather than
     raising an error.
 """  # noqa
-
-
-def _check_levels(levels, allow_descending=True):
-    """
-    Ensure the levels are monotonic. If they are descending, either
-    reverse them or raise an error.
-    """
-    levels = np.atleast_1d(levels)
-    if levels.ndim != 1 or levels.size < 2:
-        raise ValueError(f'Levels {levels} must be 1d vector with size >= 2.')
-    if isinstance(levels, ma.core.MaskedArray):
-        levels = levels.filled(np.nan)
-    if not np.all(np.isfinite(levels)):
-        raise ValueError(f'Levels {levels} contain invalid values.')
-    diffs = np.sign(np.diff(levels))
-    if all(diffs == 1):
-        descending = False
-    elif all(diffs == -1) and allow_descending:
-        levels = levels[::-1]
-        descending = True
-    elif allow_descending:
-        raise ValueError(f'Levels {levels} must be monotonic.')
-    else:
-        raise ValueError(f'Levels {levels} must be monotonically increasing.')
-    return levels, descending
-
-
-def _interpolate_basic(x, x0, x1, y0, y1):
-    """
-    Basic interpolation between pairs of fixed points.
-    """
-    return y0 + (y1 - y0) * (x - x0) / (x1 - x0)
-
-
-def _interpolate_extrapolate(xq, x, y):
-    """
-    Efficient vectorized linear interpolation. Similar to `numpy.interp`
-    except this does not truncate out-of-bounds values (i.e. is reversible).
-    """
-    # Follow example of make_mapping_array for efficient, vectorized
-    # linear interpolation across multiple segments.
-    # * Normal test puts values at a[i] if a[i-1] < v <= a[i]; for
-    #   left-most data, satisfy a[0] <= v <= a[1]
-    # * searchsorted gives where xq[i] must be inserted so it is larger
-    #   than x[ind[i]-1] but smaller than x[ind[i]]
-    # yq = ma.masked_array(np.interp(xq, x, y), mask=ma.getmask(xq))
-    x = np.asarray(x)
-    y = np.asarray(y)
-    xq = np.atleast_1d(xq)
-    idx = np.searchsorted(x, xq)
-    idx[idx == 0] = 1  # get normed value <0
-    idx[idx == len(x)] = len(x) - 1  # get normed value >0
-    distance = (xq - x[idx - 1]) / (x[idx] - x[idx - 1])
-    yq = distance * (y[idx] - y[idx - 1]) + y[idx - 1]
-    yq = ma.masked_array(yq, mask=ma.getmask(xq))
-    return yq
-
-
 
 
 def _get_channel(color, channel, space='hcl'):
@@ -1777,246 +1719,39 @@ def _check_levels(levels, allow_descending=True):
     elif allow_descending:
         raise ValueError(f'Levels {levels} must be monotonic.')
     else:
-        cmap = cmaps[0]
-
-    # Modify the colormap
-    if (
-        to_listed and samples is None
-        and isinstance(cmap, pcolors.LinearSegmentedColormap)
-    ):
-        samples = 10
-    cmap = _mod_colormap(
-        cmap, cut=cut, left=left, right=right,
-        shift=shift, reverse=reverse, samples=samples
-    )
-
-    # Initialize
-    if not cmap._isinit:
-        cmap._init()
-
-    # Register and save the colormap
-    if name is None:
-        name = cmap.name  # may have been modified by e.g. .shifted()
-    else:
-        cmap.name = name
-    pcolors._cmapdict[name] = cmap
-    if save:
-        save_kw = save_kw or {}
-        cmap.save(**save_kw)
-    return cmap
+        raise ValueError(f'Levels {levels} must be monotonically increasing.')
+    return levels, descending
 
 
-def Cycle(
-    *args, N=None, samples=None, name=None,
-    marker=None, alpha=None, dashes=None, linestyle=None, linewidth=None,
-    markersize=None, markeredgewidth=None,
-    markeredgecolor=None, markerfacecolor=None,
-    **kwargs
-):
+def _interpolate_basic(x, x0, x1, y0, y1):
     """
-    Generate and merge `~cycler.Cycler` instances in a variety of ways.
-    Used to interpret the `cycle` and `cycle_kw` arguments when passed to
-    any plotting method wrapped by `~proplot.wrappers.cycle_changer`.
-
-    If you just want a list of colors instead of a `~cycler.Cycler` instance,
-    use the `Colors` function. If you want a `~cycler.Cycler` instance that
-    imposes black as the default color and cycles through properties like
-    ``linestyle`` instead, call this function without any positional arguments.
-
-    Parameters
-    ----------
-    *args : colormap-spec or cycle-spec, optional
-        Positional arguments control the *colors* in the `~cycler.Cycler`
-        object. If more than one argument is passed, the resulting cycles are
-        merged. Arguments are interpreted as follows:
-
-        * If a `~cycler.Cycler`, nothing more is done.
-        * If a list of RGB tuples or color strings, these colors are used.
-        * If a `~proplot.colors.ListedColormap`, colors from the ``colors``
-          attribute are used.
-        * If a string cycle name, that `~proplot.colors.ListedColormap`
-          is looked up and its ``colors`` attribute is used.
-        * In all other cases, the argument is passed to `Colormap`, and
-          colors from the resulting `~proplot.colors.LinearSegmentedColormap`
-          are used. See the `samples` argument.
-
-        If the last positional argument is numeric, it is used for the
-        `samples` keyword argument.
-    N, samples : float or list of float, optional
-        For `~proplot.colors.ListedColormap`\\ s, this is the number of
-        colors to select. For example, ``Cycle('538', 4)`` returns the first 4
-        colors of the ``'538'`` color cycle.
-
-        For `~proplot.colors.LinearSegmentedColormap`\\ s, this is the
-        a *list of sample coordinates* used to draw colors from the map, or an
-        *integer number of colors* to draw. If the latter, the sample
-        coordinates are ``np.linspace(0, 1, samples)``. For example,
-        ``Cycle('Reds', 5)`` divides the ``'Reds'`` colormap into five evenly
-        spaced colors.
-    marker, alpha, dashes, linestyle, linewidth, markersize, markeredgewidth, markeredgecolor, markerfacecolor : list of specs, optional
-        Lists of `~matplotlib.lines.Line2D` properties that can be added to
-        the `~cycler.Cycler` instance. If the lists have unequal length, they
-        will be filled to match the length of the longest list.  See
-        `~matplotlib.axes.Axes.set_prop_cycle` for more info on cyclers.
-        Also see the `line style reference \
-<https://matplotlib.org/gallery/lines_bars_and_markers/line_styles_reference.html>`__,
-        the `marker reference \
-<https://matplotlib.org/3.1.0/gallery/lines_bars_and_markers/marker_reference.html>`__,
-        and the `custom dashes reference \
-<https://matplotlib.org/3.1.0/gallery/lines_bars_and_markers/line_demo_dash_control.html>`__.
-
-    Other parameters
-    ----------------
-    **kwargs
-        If the input is not already a `~cycler.Cycler` instance, these
-        are passed to `Colormap` and used to build the
-        `~proplot.colors.ListedColormap` from which the cycler will draw its
-        colors.
-
-    Returns
-    -------
-    `~cycler.Cycler`
-        A cycler instance that can be passed to
-        `~matplotlib.axes.Axes.set_prop_cycle`.
-    """  # noqa
-    # Add properties
-    props = {}
-    nprops = 0
-    samples = _not_none(samples=samples, N=N)
-    for key, value in (
-        ('marker', marker),
-        ('alpha', alpha),
-        ('dashes', dashes),
-        ('linestyle', linestyle),
-        ('linewidth', linewidth),
-        ('markersize', markersize),
-        ('markeredgewidth', markeredgewidth),
-        ('markeredgecolor', markeredgecolor),
-        ('markerfacecolor', markerfacecolor),
-    ):
-        if value is not None:
-            if isinstance(value, str) or not np.iterable(value):
-                raise ValueError(
-                    f'Invalid {key!r} property {value!r}. '
-                    f'Must be list or tuple of properties.'
-                )
-            nprops = max(nprops, len(value))
-            props[key] = [*value]  # ensure mutable list
-
-    # If args is non-empty, means we want color cycle; otherwise is black
-    if not args:
-        props['color'] = [mcolors.to_rgba('k')]
-        if kwargs:
-            warnings._warn_proplot(
-                f'Ignoring Cycle() keyword arg(s) {kwargs}.'
-            )
-
-    # Merge cycler objects
-    elif all(isinstance(arg, cycler.Cycler) for arg in args):
-        if kwargs:
-            warnings._warn_proplot(
-                f'Ignoring Cycle() keyword arg(s) {kwargs}.'
-            )
-        if len(args) == 1:
-            return args[0]
-        else:
-            props = {}
-            for arg in args:
-                for key, value in arg.by_key():
-                    if key not in props:
-                        props[key] = []
-                    props[key].extend([*value])
-            return cycler.cycler(**props)
-
-    # Get cycler from a colormap
-    else:
-        # Get the ListedColormap
-        if args and isinstance(args[-1], Number):
-            args, samples = args[:-1], args[-1]
-        kwargs.setdefault('fade', 90)
-        kwargs.setdefault('listmode', 'listed')
-        kwargs.setdefault('to_listed', True)
-        cmap = Colormap(*args, samples=samples, **kwargs)
-
-        # Add colors to property dict
-        nprops = max(nprops, len(cmap.colors))
-        props['color'] = [
-            tuple(color) if not isinstance(color, str) else color
-            for color in cmap.colors
-        ]  # save the tupled version!
-
-    # Build cycler, make sure lengths are the same
-    for key, value in props.items():
-        if len(value) < nprops:
-            value[:] = [
-                value[i % len(value)] for i in range(nprops)
-            ]  # make loop double back
-    cycle = cycler.cycler(**props)
-    cycle.name = name
-    return cycle
-
-
-def Norm(norm, *args, **kwargs):
+    Basic interpolation between pairs of fixed points.
     """
-    Return an arbitrary `~matplotlib.colors.Normalize` instance.
-    Used to interpret the `norm` and `norm_kw` arguments when passed to any
-    plotting method wrapped by `~proplot.wrappers.cmap_changer`.
+    return y0 + (y1 - y0) * (x - x0) / (x1 - x0)
 
-    Parameters
-    ----------
-    norm : str or `~matplotlib.colors.Normalize`
-        The normalizer specification. If a `~matplotlib.colors.Normalize`
-        instance already, the input argument is simply returned. Otherwise,
-        `norm` should be a string corresponding to one of the "registered"
-        colormap normalizers (see below table).
 
-        If `norm` is a list or tuple and the first element is a "registered"
-        normalizer name, subsequent elements are passed to the normalizer class
-        as positional arguments.
-
-        ===============================  ===============================
-        Key(s)                           Class
-        ===============================  ===============================
-        ``'midpoint'``, ``'zero'``       `MidpointNorm`
-        ``'segmented'``, ``'segments'``  `LinearSegmentedNorm`
-        ``'null'``, ``'none'``           `~matplotlib.colors.NoNorm`
-        ``'linear'``                     `~matplotlib.colors.Normalize`
-        ``'log'``                        `~matplotlib.colors.LogNorm`
-        ``'power'``                      `~matplotlib.colors.PowerNorm`
-        ``'symlog'``                     `~matplotlib.colors.SymLogNorm`
-        ===============================  ===============================
-
-    Other parameters
-    ----------------
-    *args, **kwargs
-        Passed to the `~matplotlib.colors.Normalize` initializer.
-        See `this tutorial \
-<https://matplotlib.org/tutorials/colors/colormapnorms.html>`__
-        for more info.
-
-    Returns
-    -------
-    `~matplotlib.colors.Normalize`
-        A `~matplotlib.colors.Normalize` instance.
+def _interpolate_extrapolate(xq, x, y):
     """
-    if isinstance(norm, mcolors.Normalize):
-        return norm
-
-    # Pull out extra args
-    if np.iterable(norm) and not isinstance(norm, str):
-        norm, args = norm[0], (*norm[1:], *args)
-    if not isinstance(norm, str):
-        raise ValueError(f'Invalid norm name {norm!r}. Must be string.')
-
-    # Get class
-    if norm not in normalizers:
-        raise ValueError(
-            f'Unknown normalizer {norm!r}. Options are: '
-            + ', '.join(map(repr, normalizers.keys())) + '.'
-        )
-    if norm == 'symlog' and not args and 'linthresh' not in kwargs:
-        kwargs['linthresh'] = 1  # special case, needs argument
-    return normalizers[norm](*args, **kwargs)
+    Efficient vectorized linear interpolation. Similar to `numpy.interp`
+    except this does not truncate out-of-bounds values (i.e. is reversible).
+    """
+    # Follow example of make_mapping_array for efficient, vectorized
+    # linear interpolation across multiple segments.
+    # * Normal test puts values at a[i] if a[i-1] < v <= a[i]; for
+    #   left-most data, satisfy a[0] <= v <= a[1]
+    # * searchsorted gives where xq[i] must be inserted so it is larger
+    #   than x[ind[i]-1] but smaller than x[ind[i]]
+    # yq = ma.masked_array(np.interp(xq, x, y), mask=ma.getmask(xq))
+    x = np.asarray(x)
+    y = np.asarray(y)
+    xq = np.atleast_1d(xq)
+    idx = np.searchsorted(x, xq)
+    idx[idx == 0] = 1  # get normed value <0
+    idx[idx == len(x)] = len(x) - 1  # get normed value >0
+    distance = (xq - x[idx - 1]) / (x[idx] - x[idx - 1])
+    yq = distance * (y[idx] - y[idx - 1]) + y[idx - 1]
+    yq = ma.masked_array(yq, mask=ma.getmask(xq))
+    return yq
 
 
 class DiscreteNorm(mcolors.BoundaryNorm):
@@ -2610,21 +2345,8 @@ if not isinstance(_cmapdict, ColormapDatabase):
     _cmapdict = ColormapDatabase(_cmapdict)
     setattr(mcm, _cmapdict_attr, _cmapdict)
 
-#: Dictionary of possible normalizers. See `Norm` for a table.
-normalizers = {
-    'none': mcolors.NoNorm,
-    'null': mcolors.NoNorm,
-    'zero': MidpointNorm,
-    'midpoint': MidpointNorm,
-    'segments': LinearSegmentedNorm,
-    'segmented': LinearSegmentedNorm,
-    'log': mcolors.LogNorm,
-    'linear': mcolors.Normalize,
-    'power': mcolors.PowerNorm,
-    'symlog': mcolors.SymLogNorm,
-}
-
 # Deprecations
 CmapDict = warnings._rename_obj('CmapDict', ColormapDatabase)
 ColorDict = warnings._rename_obj('ColorDict', ColorDatabase)
+MidpointNorm = warnings._rename_obj('MidpointNorm', DivergingNorm)
 BinNorm = warnings._rename_obj('BinNorm', DiscreteNorm)
