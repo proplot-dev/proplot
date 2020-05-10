@@ -467,25 +467,29 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
 
     * If *x* and *y* or *latitude* and *longitude* coordinates were not
       provided, and a `~pandas.DataFrame` or `~xarray.DataArray` is passed, we
-      try to infer them from the metadata. Otherwise,
-      ``np.arange(0, data.shape[0])`` and ``np.arange(0, data.shape[1])``
-      are used.
+      try to infer them from the metadata. Otherwise, ``np.arange(0, data.shape[0])``
+      and ``np.arange(0, data.shape[1])`` are used.
     * For ``pcolor`` and ``pcolormesh``, coordinate *edges* are calculated
       if *centers* were provided. For all other methods, coordinate *centers*
       are calculated if *edges* were provided.
 
-    For `~proplot.axes.CartopyAxes` and `~proplot.axes.BasemapAxes`, the
-    `globe` keyword arg is added, suitable for plotting datasets with global
-    coverage. Passing ``globe=True`` does the following:
+    Parameters
+    ----------
+    order : {'C', 'F'}, optional
+        If ``'C'``, arrays should be shaped as ``(y, x)``. If ``'F'``, arrays
+        should be shaped as ``(x, y)``. Default is ``'C'``.
+    globe : bool, optional
+        Whether to ensure global coverage for `~proplot.axes.GeoAxes` plots.
+        Default is ``False``. When set to ``True`` this does the following:
 
-    1. "Interpolates" input data to the North and South poles.
-    2. Makes meridional coverage "circular", i.e. the last longitude coordinate
-       equals the first longitude coordinate plus 360\N{DEGREE SIGN}.
-
-    For `~proplot.axes.BasemapAxes`, 1d longitude vectors are also cycled to
-    fit within the map edges. For example, if the projection central longitude
-    is 90\N{DEGREE SIGN}, the data is shifted so that it spans
-    -90\N{DEGREE SIGN} to 270\N{DEGREE SIGN}.
+        #. Interpolates input data to the North and South poles by setting the data
+           values at the poles to the mean from latitudes nearest each pole.
+        #. Makes meridional coverage "circular", i.e. the last longitude coordinate
+           equals the first longitude coordinate plus 360\N{DEGREE SIGN}.
+        #. For `~proplot.axes.BasemapAxes`, 1D longitude vectors are also cycled to
+           fit within the map edges. For example, if the projection central longitude
+           is 90\N{DEGREE SIGN}, the data is shifted so that it spans -90\N{DEGREE SIGN}
+           to 270\N{DEGREE SIGN}.
 
     See also
     --------
@@ -532,8 +536,12 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
             x = Z.coords[Z.dims[idx]]
             y = Z.coords[Z.dims[idy]]
         else:  # DataFrame; never Series or Index because these are 1d
-            x = Z.index
-            y = Z.columns
+            if order == 'C':
+                x = Z.columns
+                y = Z.index
+            else:
+                x = Z.index
+                y = Z.columns
 
     # Check coordinates
     x, y = _to_array(x), _to_array(y)

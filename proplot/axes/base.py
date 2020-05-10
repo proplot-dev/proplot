@@ -1297,13 +1297,29 @@ optional
         self._tightbbox = bbox
         return bbox
 
-    def heatmap(self, *args, **kwargs):
+    def heatmap(self, *args, aspect=None, **kwargs):
         """
         Pass all arguments to `~matplotlib.axes.Axes.pcolormesh` then apply
-        settings that are suitable for heatmaps: no gridlines, no minor ticks,
-        and major ticks at the center of each grid box.
+        settings that are suitable for heatmaps: square grid boxes by default,
+        major ticks at the center of each grid box, no minor ticks, and no gridlines.
+
+        Parameters
+        ----------
+        aspect : {'equal', 'auto'} or float, optional
+            Controls the aspect ratio of the axes. The aspect is of particular
+            relevance for heatmaps since it may distort the heatmap, i.e. a grid box
+            will not be square. This parameter is a shortcut for explicitly calling
+            `~matplotlib.axes.set_aspect`.
+
+            The default is :rc:`image.heatmap`. The options are:
+
+            - ``'equal'``: Ensures an aspect ratio of 1. Grid boxes will be square.
+            - ``'auto'``: The axes is kept fixed and the aspect is adjusted so
+              that the data fit in the axes. In general, this will result in non-square
+              grid boxes.
         """
         obj = self.pcolormesh(*args, **kwargs)
+        aspect = _not_none(aspect, rc['image.aspect'])
         xlocator, ylocator = None, None
         if hasattr(obj, '_coordinates'):
             coords = obj._coordinates
@@ -1311,6 +1327,7 @@ optional
             coords = (coords[:, 1:, :] + coords[:, :-1, :]) / 2
             xlocator, ylocator = coords[0, :, 0], coords[:, 0, 1]
         self.format(
+            aspect=aspect,
             xgrid=False, ygrid=False, xtickminor=False, ytickminor=False,
             xlocator=xlocator, ylocator=ylocator,
         )
