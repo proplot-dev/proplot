@@ -119,6 +119,8 @@ There are quite a lot of deprecations for this release. Since this is
 
 .. rubric:: Features
 
+- Support more `~proplot.ticker.AutoFormatter` features on
+  `~proplot.ticker.SimpleFormatter` (:commit:`6decf962`).
 - Support drawing colorbars with descending levels (:commit:`10763146`)
 - Add support for matplotlib stylesheets with `~proplot.config.use_style`
   function and ``style`` rc param (:commit:`edc6f3c9`).
@@ -157,6 +159,10 @@ There are quite a lot of deprecations for this release. Since this is
 
 .. rubric:: Bug fixes
 
+- Fix issue where `~proplot.ticker.AutoFormatter` tools were not locale-aware, i.e. use
+  comma as decimal point sometimes (:commit:`c7636296`).
+- Fix issue where `~proplot.ticker.AutoFormatter` nonzero-value correction algorithm was
+  right for wrong reasons and could be wrong in rare circumstances (:commit:`c7636296`).
 - Fix issue where ``matplotlib.style.use`` resets backend (:commit:`c8319104`).
 - Fix issue with colormaps with dots in name (:commit:`972956b1`).
 - Fix logarithmic scale argument parsing deprecation (:commit:`6ed7dbc5`).
