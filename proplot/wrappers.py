@@ -262,8 +262,8 @@ def _axis_labels_title(data, axis=None, units=True):
 
 def standardize_1d(self, func, *args, **kwargs):
     """
-    Interprets positional arguments for the "1d" plotting methods
-    %(methods)s. This also optionally modifies the x axis label, y axis label,
+    Interpret positional arguments for the "1d" plotting methods so usage is
+    consistent. This also optionally modifies the x axis label, y axis label,
     title, and axis ticks if a `~xarray.DataArray`, `~pandas.DataFrame`, or
     `~pandas.Series` is passed.
 
@@ -280,6 +280,10 @@ def standardize_1d(self, func, *args, **kwargs):
    See also
    --------
    cycle_changer
+
+   Note
+   ----
+   This function wraps the 1d plotting methods: %(methods)s.
    """
     # Sanitize input
     # TODO: Add exceptions for methods other than 'hist'?
@@ -311,8 +315,10 @@ def standardize_1d(self, func, *args, **kwargs):
     # Auto x coords
     y = ys[0]  # test the first y input
     if x is None:
-        axis = 1 if (name in ('hist', 'boxplot', 'violinplot') or any(
-            kwargs.get(s, None) for s in ('means', 'medians'))) else 0
+        axis = int(
+            name in ('hist', 'boxplot', 'violinplot')
+            or any(kwargs.get(s, None) for s in ('means', 'medians'))
+        )
         x, _ = _axis_labels_title(y, axis=axis)
     x = _to_array(x)
     if x.ndim != 1:
@@ -452,8 +458,8 @@ def _standardize_latlon(x, y):
 
 def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
     """
-    Interprets positional arguments for the "2d" plotting methods
-    %(methods)s. This also optionally modifies the x axis label, y axis label,
+    Interpret positional arguments for the "2d" plotting methods so usage is
+    consistent. This also optionally modifies the x axis label, y axis label,
     title, and axis ticks if a `~xarray.DataArray`, `~pandas.DataFrame`, or
     `~pandas.Series` is passed.
 
@@ -484,6 +490,10 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
     See also
     --------
     cmap_changer
+
+    Note
+    ----
+    This function wraps the 2d plotting methods: %(methods)s.
     """
     # Sanitize input
     name = func.__name__
@@ -587,10 +597,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
                     f'Input arrays must be 2d, instead got shape {Z.shape}.'
                 )
             elif Z.shape[1] == xlen and Z.shape[0] == ylen:
-                if all(
-                    z.ndim == 1 and z.size > 1
-                    and _is_number(z) for z in (x, y)
-                ):
+                if all(z.ndim == 1 and z.size > 1 and _is_number(z) for z in (x, y)):
                     x = edges(x)
                     y = edges(y)
                 else:
@@ -610,6 +617,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
                     f'Z centers {Z.shape} or '
                     f'Z borders {tuple(i+1 for i in Z.shape)}.'
                 )
+
         # Optionally re-order
         # TODO: Double check this
         if order == 'F':
@@ -632,10 +640,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
                     f'Input arrays must be 2d, instead got shape {Z.shape}.'
                 )
             elif Z.shape[1] == xlen - 1 and Z.shape[0] == ylen - 1:
-                if all(
-                    z.ndim == 1 and z.size > 1
-                    and _is_number(z) for z in (x, y)
-                ):
+                if all(z.ndim == 1 and z.size > 1 and _is_number(z) for z in (x, y)):
                     x = (x[1:] + x[:-1]) / 2
                     y = (y[1:] + y[:-1]) / 2
                 else:
@@ -643,22 +648,19 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
                         x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1
                         and _is_number(x)
                     ):
-                        x = 0.25 * (
-                            x[:-1, :-1] + x[:-1, 1:] + x[1:, :-1] + x[1:, 1:]
-                        )
+                        x = 0.25 * (x[:-1, :-1] + x[:-1, 1:] + x[1:, :-1] + x[1:, 1:])
                     if (
                         y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1
                         and _is_number(y)
                     ):
-                        y = 0.25 * (
-                            y[:-1, :-1] + y[:-1, 1:] + y[1:, :-1] + y[1:, 1:]
-                        )
+                        y = 0.25 * (y[:-1, :-1] + y[:-1, 1:] + y[1:, :-1] + y[1:, 1:])
             elif Z.shape[1] != xlen or Z.shape[0] != ylen:
                 raise ValueError(
                     f'Input shapes x {x.shape} and y {y.shape} '
                     f'must match Z centers {Z.shape} '
                     f'or Z borders {tuple(i+1 for i in Z.shape)}.'
                 )
+
         # Optionally re-order
         # TODO: Double check this
         if order == 'F':
@@ -1819,13 +1821,29 @@ def cycle_changer(
                     key = 'edgecolors'
                 kw[key] = value
 
-        # Get x coordinates
-        x_col, y_first = x, ys[0]  # samples
+        # Add x coordinates as pi chart labels by default
         if name in ('pie',):
-            kw['labels'] = _not_none(labels, x_col)  # TODO: move to pie wrapper?
+            kw['labels'] = _not_none(labels, x)  # TODO: move to pie wrapper?
+
+        # Step size for grouped bar plots
+        # WARNING: This will fail for non-numeric non-datetime64 singleton
+        # datatypes but this is good enough for vast majority of most cases.
+        x_step = np.atleast_1d(_to_ndarray(x))
+        if len(x_step) >= 2:
+            x_step = x_step[1:] - x_step[:-1]
+            x_step = np.concatenate((x_step, x_step[-1:]))
+        elif x_step.dtype == np.datetime64:
+            x_step = np.timedelta64(1, 'D')
+        else:
+            x_step = 0.5
+
+        # Get x coordinates for bar plot
+        x_col, y_first = x, ys[0]  # samples
         if name in ('bar',):  # adjust
             if not stacked:
-                x_col = x + (i - ncols / 2 + 0.5) * width / ncols
+                scale = i - 0.5 * (ncols - 1)  # offset from true coordinate
+                scale = width * scale / ncols
+                x_col = x + x_step * scale
             elif stacked and y_first.ndim > 1:
                 key = 'x' if barh else 'bottom'
                 kw[key] = _to_indexer(y_first)[:, :i].sum(axis=1)
