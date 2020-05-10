@@ -8,7 +8,6 @@ import matplotlib.text as mtext
 import matplotlib.path as mpath
 import matplotlib.ticker as mticker
 from . import base
-from .shared import _disable_decorator
 from .. import crs as pcrs
 from ..utils import arange
 from ..config import rc
@@ -294,37 +293,6 @@ optional
             name = 'lon' if lon else 'lat'
             raise ValueError(f'Invalid {name}label spec: {labels}.')
         return array
-
-    # Disabled methods suitable only for cartesian axes
-    _disable = _disable_decorator(
-        'Invalid plotting method {!r} for map projection axes.'
-    )
-    bar = _disable(base.Axes.bar)
-    barh = _disable(base.Axes.barh)
-    twinx = _disable(base.Axes.twinx)
-    twiny = _disable(base.Axes.twiny)
-    matshow = _disable(base.Axes.matshow)
-    imshow = _disable(base.Axes.imshow)
-    spy = _disable(base.Axes.spy)
-    hist = _disable(base.Axes.hist)
-    hist2d = _disable(base.Axes.hist2d)
-    boxplot = _disable(base.Axes.boxplot)
-    violinplot = _disable(base.Axes.violinplot)
-    step = _disable(base.Axes.step)
-    stem = _disable(base.Axes.stem)
-    stackplot = _disable(base.Axes.stackplot)
-    table = _disable(base.Axes.table)
-    eventplot = _disable(base.Axes.eventplot)
-    pie = _disable(base.Axes.pie)
-    xcorr = _disable(base.Axes.xcorr)
-    acorr = _disable(base.Axes.acorr)
-    psd = _disable(base.Axes.psd)
-    csd = _disable(base.Axes.csd)
-    cohere = _disable(base.Axes.cohere)
-    specgram = _disable(base.Axes.specgram)
-    angle_spectrum = _disable(base.Axes.angle_spectrum)
-    phase_spectrum = _disable(base.Axes.phase_spectrum)
-    magnitude_spectrum = _disable(base.Axes.magnitude_spectrum)
 
 
 def _axes_domain(self, *args, **kwargs):
