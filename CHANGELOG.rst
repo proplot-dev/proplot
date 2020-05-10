@@ -159,6 +159,7 @@ There are quite a lot of deprecations for this release. Since this is
 
 .. rubric:: Bug fixes
 
+- Fix issue drawing bar plots with datetime *x* axes (:pr:`156`).
 - Fix issue where `~proplot.ticker.AutoFormatter` tools were not locale-aware, i.e. use
   comma as decimal point sometimes (:commit:`c7636296`).
 - Fix issue where `~proplot.ticker.AutoFormatter` nonzero-value correction algorithm was
