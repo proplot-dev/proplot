@@ -657,7 +657,8 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         # PerceptuallyUniformColormap --> LinearSegmentedColormap conversions
         cmaps = [self, *args]
         spaces = {getattr(cmap, '_space', None) for cmap in cmaps}
-        if len(spaces) > 1:  # mixed colorspaces *or* mixed types
+        to_linear_segmented = len(spaces) > 1  # mixed colorspaces *or* mixed types
+        if to_linear_segmented:
             for i, cmap in enumerate(cmaps):
                 if isinstance(cmap, PerceptuallyUniformColormap):
                     cmaps[i] = cmap.to_linear_segmented()
@@ -672,7 +673,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         ratios = np.asarray(ratios) / np.sum(ratios)
         x0 = np.append(0, np.cumsum(ratios))  # coordinates for edges
         xw = x0[1:] - x0[:-1]  # widths between edges
-        for key in self._segmentdata.keys():
+        for key in cmaps[0]._segmentdata.keys():  # not self._segmentdata
             # Callable segments
             # WARNING: If just reference a global 'funcs' list from inside the
             # 'data' function it can get overwritten in this loop. Must
@@ -688,6 +689,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
                         idx = max(np.searchsorted(x0, jx) - 1, 0)
                         kx.flat[j] = funcs[idx]((jx - x0[idx]) / xw[idx])
                     return kx
+
             # Concatenate segment arrays and make the transition at the
             # seam instant so we *never interpolate* between end colors
             # of different maps.
@@ -702,11 +704,13 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
                     datas[i + 1] = datas[i + 1][1:, :]
                 xyy = np.concatenate(datas, axis=0)
                 xyy[:, 0] = xyy[:, 0] / xyy[:, 0].max(axis=0)  # fix fp errors
+
             else:
                 raise TypeError(
                     'Mixed callable and non-callable colormap values.'
                 )
             segmentdata[key] = xyy
+
             # Handle gamma values
             if key == 'saturation':
                 ikey = 'gamma1'
@@ -717,6 +721,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             if ikey in kwargs:
                 continue
             gamma = []
+
             for cmap in cmaps:
                 igamma = getattr(cmap, '_' + ikey)
                 if not np.iterable(igamma):
@@ -725,6 +730,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
                     else:
                         igamma = (len(cmap._segmentdata[key]) - 1) * [igamma]
                 gamma.extend(igamma)
+
             if all(callable_):
                 if any(igamma != gamma[0] for igamma in gamma[1:]):
                     warnings._warn_proplot(
@@ -733,10 +739,14 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
                         f'gamma of {gamma[0]}.'
                     )
                 gamma = gamma[0]
+
             kwargs[ikey] = gamma
 
-        # Return copy
-        return self.copy(name=name, segmentdata=segmentdata, N=N, **kwargs)
+        # Return copy or merge mixed types
+        if to_linear_segmented and isinstance(self, PerceptuallyUniformColormap):
+            return LinearSegmentedColormap(name, segmentdata, N, **kwargs)
+        else:
+            return self.copy(name, segmentdata, N, **kwargs)
 
     def cut(self, cut=None, name=None, left=None, right=None, **kwargs):
         """
@@ -1538,7 +1548,7 @@ optional
         if not self._isinit:
             self._init()
         return LinearSegmentedColormap.from_list(
-            self.name, self._lut, **kwargs
+            self.name, self._lut[:-3, :], **kwargs
         )
 
     @classmethod
@@ -2280,6 +2290,8 @@ class ColormapDatabase(dict):
             item = ListedColormap(
                 item.colors, item.name, item.N
             )
+        elif isinstance(item, mcolors.Colormap):  # base class
+            pass
         else:
             raise ValueError(
                 f'Invalid colormap {item}. Must be instance of '

@@ -476,6 +476,8 @@ def Colormap(
             cmap = pcolors.ListedColormap(
                 arg.colors, arg.name, arg.N
             )
+        elif isinstance(arg, mcolors.Colormap):  # base class
+            cmap = arg
 
         # Dictionary of hue/sat/luminance values or 2-tuples
         elif isinstance(arg, dict):
