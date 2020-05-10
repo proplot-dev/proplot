@@ -406,14 +406,29 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
         import cartopy.crs as ccrs
         from cartopy.mpl import gridliner
 
-        # Initial gridliner object, which ProPlot passively modifies
-        # TODO: Flexible formatter?
-        if not self._gridliners:
-            gl = self.gridlines(zorder=2.5)  # below text only
-            gl._axes_domain = _axes_domain.__get__(gl)  # apply monkey patches
-            gl._add_gridline_label = _add_gridline_label.__get__(gl)
-            gl.xlines = False
-            gl.ylines = False
+        # Gridliner labels names
+        def _toggle_labels(gl, left, right, bottom, top):
+            if hasattr(gl, 'left_labels'):  # new version
+                left_labels = 'left_labels'
+                right_labels = 'right_labels'
+                bottom_labels = 'bottom_labels'
+                top_labels = 'top_labels'
+            else:
+                left_labels = 'ylabels_left'
+                right_labels = 'ylabels_right'
+                bottom_labels = 'xlabels_bottom'
+                top_labels = 'xlabels_top'
+            if left is not None:
+                setattr(gl, left_labels, left)
+            if right is not None:
+                setattr(gl, right_labels, right)
+            if bottom is not None:
+                setattr(gl, bottom_labels, bottom)
+            if top is not None:
+                setattr(gl, top_labels, top)
+
+        # Apply default formatter
+        def _apply_formatter(gl):
             try:
                 lonformat = gridliner.LongitudeFormatter  # newer
                 latformat = gridliner.LatitudeFormatter
@@ -422,10 +437,16 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
                 latformat = gridliner.LATITUDE_FORMATTER
             gl.xformatter = lonformat
             gl.yformatter = latformat
-            gl.xlabels_top = False
-            gl.xlabels_bottom = False
-            gl.ylabels_left = False
-            gl.ylabels_right = False
+
+        # Initial gridliner object, which ProPlot passively modifies
+        # TODO: Flexible formatter?
+        if not self._gridliners:
+            gl = self.gridlines(zorder=2.5)  # below text only
+            gl._axes_domain = _axes_domain.__get__(gl)  # apply monkey patches
+            gl._add_gridline_label = _add_gridline_label.__get__(gl)
+            gl.xlines = gl.ylines = False
+            _apply_formatter(gl)
+            _toggle_labels(gl, False, False, False, False)
 
         # Projection extent
         # NOTE: They may add this as part of set_xlim and set_ylim in future
@@ -494,6 +515,7 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
         # Draw gridlines, manage them with one custom gridliner generated
         # by ProPlot, user may want to use griliner API directly
         gl = self._gridliners[0]
+
         # Collection props, see GoeAxes.gridlines() source code
         kw = rc.fill({
             'alpha': 'geogrid.alpha',
@@ -502,6 +524,7 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
             'linestyle': 'geogrid.linestyle',
         }, context=True)
         gl.collection_kwargs.update(kw)
+
         # Grid locations
         eps = 1e-10
         if lonlines is not None:
@@ -520,6 +543,7 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
                 if latlines[-1] == 90:
                     latlines[-1] -= eps
                 gl.ylocator = mticker.FixedLocator(latlines)
+
         # Grid label toggling
         # Issue warning instead of error!
         if not isinstance(self.projection, (ccrs.Mercator, ccrs.PlateCarree)):
@@ -535,12 +559,9 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
                     f'{type(self.projection).__name__} projection.'
                 )
                 lonarray = [0] * 4
-        if latarray is not None:
-            gl.ylabels_left = latarray[0]
-            gl.ylabels_right = latarray[1]
-        if lonarray is not None:
-            gl.xlabels_bottom = lonarray[2]
-            gl.xlabels_top = lonarray[3]
+        latarray = latarray or (None,) * 4
+        lonarray = lonarray or (None,) * 4
+        _toggle_labels(gl, *latarray[:2], *lonarray[2:])
 
         # Geographic features
         # WARNING: Seems cartopy features can't be updated!
