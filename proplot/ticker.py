@@ -3,8 +3,10 @@
 Various `~matplotlib.ticker.Locator` and `~matplotlib.ticker.Formatter`
 classes.
 """
+import re
 import numpy as np
 import matplotlib.ticker as mticker
+import locale
 from fractions import Fraction
 from .internals import ic  # noqa: F401
 from .internals import _not_none
@@ -16,33 +18,23 @@ __all__ = [
     'SimpleFormatter',
 ]
 
-
-def _sanitize_label(string, zerotrim=False):
-    """
-    Sanitize tick label strings.
-    """
-    if zerotrim and '.' in string:
-        string = string.rstrip('0').rstrip('.')
-    string = string.replace('-', '\N{MINUS SIGN}')
-    if string == '\N{MINUS SIGN}0':
-        string = '0'
-    return string
+REGEX_ZERO = re.compile('\\A[-\N{MINUS SIGN}]?0(.0*)?\\Z')
+REGEX_MINUS = re.compile('\\A[-\N{MINUS SIGN}]\\Z')
+REGEX_MINUS_ZERO = re.compile('\\A[-\N{MINUS SIGN}]0(.0*)?\\Z')
 
 
 class AutoFormatter(mticker.ScalarFormatter):
     """
-    The new default formatter, a simple wrapper around
-    `~matplotlib.ticker.ScalarFormatter`. Differs from
-    `~matplotlib.ticker.ScalarFormatter` in the following ways:
+    The new default formatter. Differs from `~matplotlib.ticker.ScalarFormatter`
+    in the following ways:
 
-    1. Trims trailing zeros if any exist.
-    2. Allows user to specify *range* within which major tick marks
-       are labelled.
-    3. Allows user to add arbitrary prefix or suffix to every
-       tick label string.
+    1. Trims trailing decimal zeros by default.
+    2. Permits specifying *range* within which major tick marks are labeled.
+    3. Permits adding arbitrary prefix or suffix to every tick label string.
+    4. Permits adding "negative" and "positive" indicator.
     """
     def __init__(
-        self, *args,
+        self,
         zerotrim=None, tickrange=None,
         prefix=None, suffix=None, negpos=None, **kwargs
     ):
@@ -63,7 +55,7 @@ class AutoFormatter(mticker.ScalarFormatter):
 
         Other parameters
         ----------------
-        *args, **kwargs
+        **kwargs
             Passed to `~matplotlib.ticker.ScalarFormatter`.
 
         Warning
@@ -75,7 +67,7 @@ class AutoFormatter(mticker.ScalarFormatter):
         this behavior with a patch.
         """
         tickrange = tickrange or (-np.inf, np.inf)
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
         from .config import rc
         zerotrim = _not_none(zerotrim, rc['axes.formatter.zerotrim'])
         self._zerotrim = zerotrim
@@ -96,55 +88,135 @@ class AutoFormatter(mticker.ScalarFormatter):
             The position.
         """
         # Tick range limitation
-        eps = abs(x) / 1000
-        tickrange = self._tickrange
-        if (x + eps) < tickrange[0] or (x - eps) > tickrange[1]:
-            return ''  # avoid some ticks
+        if self._outside_tick_range(x, self._tickrange):
+            return ''
 
         # Negative positive handling
-        if not self._negpos or x == 0:
-            tail = ''
-        elif x > 0:
-            tail = self._negpos[1]
-        else:
-            x *= -1
-            tail = self._negpos[0]
+        x, tail = self._neg_pos_format(x, self._negpos)
 
         # Default string formatting
         string = super().__call__(x, pos)
-        string = _sanitize_label(string, zerotrim=self._zerotrim)
 
+        # Fix issue where non-zero string is formatted as zero
+        string = self._fix_small_number(x, string)
+
+        # Custom string formatting
+        string = self._minus_format(string)
+        if self._zerotrim:
+            string = self._trim_trailing_zeros(string, self.get_useLocale())
+
+        # Prefix and suffix
+        string = self._add_prefix_suffix(string, self._prefix, self._suffix)
+        string = string + tail  # add negative-positive indicator
+        return string
+
+    @staticmethod
+    def _add_prefix_suffix(string, prefix=None, suffix=None):
+        """
+        Add prefix and suffix to string.
+        """
+        sign = ''
+        prefix = prefix or ''
+        suffix = suffix or ''
+        if string and REGEX_MINUS.match(string[0]):
+            sign, string = string[0], string[1:]
+        return sign + prefix + string + suffix
+
+    @staticmethod
+    def _fix_small_number(x, string, offset=2):
+        """
+        Fix formatting for non-zero number that gets formatted as zero. The `offset`
+        controls the offset from the true floating point precision at which we want
+        to limit maximum precision of the string.
+        """
         # Add just enough precision for small numbers. Default formatter is
         # only meant to be used for linear scales and cannot handle the wide
         # range of magnitudes in e.g. log scales. To correct this, we only
         # truncate if value is within one order of magnitude of the float
         # precision. Common issue is e.g. levels=plot.arange(-1, 1, 0.1).
         # This choice satisfies even 1000 additions of 0.1 to -100.
-        # Example code:
-        # def add(x, decimals=1, type_=np.float64):
-        #     step = type_(10 ** -decimals)
-        #     y = type_(x) + step
-        #     if np.round(y, decimals) == 0:
-        #         return y
-        #     else:
-        #         return add(y, decimals)
-        # num = abs(add(-200, 1, float))
-        # precision = abs(np.log10(num) // 1) - 1
-        # ('{:.%df}' % precision).format(num)
-        if string == '0' and x != 0:
-            string = (
-                '{:.%df}' % min(
-                    int(abs(np.log10(abs(x)) // 1)),
-                    np.finfo(type(x)).precision - 1
-                )
-            ).format(x)
-            string = _sanitize_label(string, zerotrim=self._zerotrim)
+        match = REGEX_ZERO.match(string)
+        decimal_point = AutoFormatter._get_decimal_point()
 
-        # Prefix and suffix
-        sign = ''
-        if string and string[0] == '\N{MINUS SIGN}':
-            sign, string = string[0], string[1:]
-        return sign + self._prefix + string + self._suffix + tail
+        if match and x != 0:
+            # Get initial precision spit out by algorithm
+            decimals, = match.groups()
+            if decimals:
+                precision_init = len(decimals.lstrip(decimal_point))
+            else:
+                precision_init = 0
+
+            # Format with precision below floating point error
+            precision_true = int(abs(np.log10(abs(x)) // 1))
+            precision_max = np.finfo(type(x)).precision - offset
+            precision = min(precision_true, precision_max)
+            string = ('{:.%df}' % precision).format(x)
+
+            # If number is zero after ignoring floating point error, generate
+            # zero with precision matching original string.
+            if REGEX_ZERO.match(string):
+                string = ('{:.%df}' % precision_init).format(0)
+
+            # Fix decimal point
+            string = string.replace('.', decimal_point)
+
+        return string
+
+    @staticmethod
+    def _get_decimal_point(use_locale=None):
+        """
+        Get decimal point symbol for current locale (e.g. in Europe will be comma).
+        """
+        from .config import rc
+        use_locale = _not_none(use_locale, rc['axes.formatter.use_locale'])
+        if use_locale:
+            return locale.localeconv()['decimal_point']
+        else:
+            return '.'
+
+    @staticmethod
+    def _minus_format(string):
+        """
+        Format the minus sign and avoid "negative zero," e.g. ``-0.000``.
+        """
+        from .config import rc
+        if rc['axes.unicode_minus'] and not rc['text.usetex']:
+            string = string.replace('-', '\N{MINUS SIGN}')
+        if REGEX_MINUS_ZERO.match(string):
+            string = string[1:]
+        return string
+
+    @staticmethod
+    def _neg_pos_format(x, negpos):
+        """
+        Permit suffixes indicators for "negative" and "positive" numbers.
+        """
+        if not negpos or x == 0:
+            tail = ''
+        elif x > 0:
+            tail = negpos[1]
+        else:
+            x *= -1
+            tail = negpos[0]
+        return x, tail
+
+    @staticmethod
+    def _outside_tick_range(x, tickrange):
+        """
+        Return whether point is outside tick range up to some precision.
+        """
+        eps = abs(x) / 1000
+        return (x + eps) < tickrange[0] or (x - eps) > tickrange[1]
+
+    @staticmethod
+    def _trim_trailing_zeros(string, use_locale=None):
+        """
+        Sanitize tick label strings.
+        """
+        decimal_point = AutoFormatter._get_decimal_point()
+        if decimal_point in string:
+            string = string.rstrip('0').rstrip(decimal_point)
+        return string
 
 
 def SigFigFormatter(sigfig=1, zerotrim=False):
