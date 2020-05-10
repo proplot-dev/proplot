@@ -9,7 +9,7 @@ import matplotlib.ticker as mticker
 import locale
 from fractions import Fraction
 from .internals import ic  # noqa: F401
-from .internals import _not_none
+from .internals import docstring, _not_none
 
 __all__ = [
     'AutoFormatter',
@@ -23,6 +23,20 @@ REGEX_MINUS = re.compile('\\A[-\N{MINUS SIGN}]\\Z')
 REGEX_MINUS_ZERO = re.compile('\\A[-\N{MINUS SIGN}]0(.0*)?\\Z')
 
 
+docstring.snippets['formatter.params'] = """
+zerotrim : bool, optional
+    Whether to trim trailing zeros. Default is :rc:`axes.formatter.zerotrim`.
+tickrange : (float, float), optional
+    Range within which major tick marks are labelled. Default is ``(-np.inf, np.inf)``.
+prefix, suffix : str, optional
+    Prefix and suffix for all strings.
+negpos : str, optional
+    Length-2 string indicating the suffix for "negative" and "positive"
+    numbers, meant to replace the minus sign. This is useful for indicating
+    cardinal geographic coordinates.
+"""
+
+
 class AutoFormatter(mticker.ScalarFormatter):
     """
     The new default formatter. Differs from `~matplotlib.ticker.ScalarFormatter`
@@ -33,25 +47,17 @@ class AutoFormatter(mticker.ScalarFormatter):
     3. Permits adding arbitrary prefix or suffix to every tick label string.
     4. Permits adding "negative" and "positive" indicator.
     """
+    @docstring.add_snippets
     def __init__(
         self,
         zerotrim=None, tickrange=None,
-        prefix=None, suffix=None, negpos=None, **kwargs
+        prefix=None, suffix=None, negpos=None,
+        **kwargs
     ):
         """
         Parameters
         ----------
-        zerotrim : bool, optional
-            Whether to trim trailing zeros.
-            Default is :rc:`axes.formatter.zerotrim`.
-        tickrange : (float, float), optional
-            Range within which major tick marks are labelled.
-        prefix, suffix : str, optional
-            Prefix and suffix for all strings.
-        negpos : str, optional
-            Length-2 string indicating the suffix for "negative" and "positive"
-            numbers, meant to replace the minus sign. This is useful for
-            indicating cardinal geographic coordinates.
+        %(formatter.params)s
 
         Other parameters
         ----------------
@@ -219,7 +225,7 @@ class AutoFormatter(mticker.ScalarFormatter):
         return string
 
 
-def SigFigFormatter(sigfig=1, zerotrim=False):
+def SigFigFormatter(sigfig=1, zerotrim=None):
     """
     Return a `~matplotlib.ticker.FuncFormatter` that rounds numbers
     to the specified number of *significant digits*.
@@ -231,7 +237,11 @@ def SigFigFormatter(sigfig=1, zerotrim=False):
     zerotrim : bool, optional
         Whether to trim trailing zeros.
     """
-    def fmt(x, pos):
+    from .config import rc
+    zerotrim = _not_none(zerotrim, rc['axes.formatter.zerotrim'])
+
+    def func(x, pos):
+        # Limit digits to significant figures
         if x == 0:
             digits = 0
         else:
@@ -239,16 +249,22 @@ def SigFigFormatter(sigfig=1, zerotrim=False):
         digits += sigfig - 1
         x = np.round(x, digits)
         string = ('{:.%df}' % max(0, digits)).format(x)
-        if zerotrim and '.' in string:
-            string = string.rstrip('0').rstrip('.')
-        string = string.replace('-', '\N{MINUS SIGN}')
-        if string == '\N{MINUS SIGN}0':
-            string = '0'
+        string = string.replace('.', AutoFormatter._get_decimal_point())
+
+        # Custom string formatting
+        string = AutoFormatter._minus_format(string)
+        if zerotrim:
+            string = AutoFormatter._trim_trailing_zeros(string)
         return string
-    return mticker.FuncFormatter(fmt)
+
+    return mticker.FuncFormatter(func)
 
 
-def SimpleFormatter(precision=6, zerotrim=True):
+@docstring.add_snippets
+def SimpleFormatter(
+    precision=6, zerotrim=None, tickrange=None,
+    prefix=None, suffix=None, negpos=None, **kwargs
+):
     """
     Return a `~matplotlib.ticker.FuncFormatter` that replicates the
     `zerotrim` feature from `AutoFormatter`. This is more suitable for
@@ -258,22 +274,38 @@ def SimpleFormatter(precision=6, zerotrim=True):
     Parameters
     ----------
     precision : int, optional
-        The maximum number of digits after the decimal point.
-    zerotrim : bool, optional
-        Whether to trim trailing zeros.
-        Default is :rc:`axes.formatter.zerotrim`.
+        The maximum number of digits after the decimal point. Default is ``6``.
+    %(formatter.params)s
     """
     from .config import rc
     zerotrim = _not_none(zerotrim, rc['axes.formatter.zerotrim'])
+    tickrange = tickrange or (-np.inf, np.inf)
+    prefix = prefix or ''
+    suffix = suffix or ''
+    negpos = negpos or ''
 
     def func(x, pos):
+        # Tick range limitation
+        if AutoFormatter._outside_tick_range(x, tickrange):
+            return ''
+
+        # Negative positive handling
+        x, tail = AutoFormatter._neg_pos_format(x, negpos)
+
+        # Default string formatting
         string = ('{:.%df}' % precision).format(x)
-        if zerotrim and '.' in string:
-            string = string.rstrip('0').rstrip('.')
-        string = string.replace('-', '\N{MINUS SIGN}')
-        if string == '\N{MINUS SIGN}0':
-            string = '0'
+        string = string.replace('.', AutoFormatter._get_decimal_point())
+
+        # Custom string formatting
+        string = AutoFormatter._minus_format(string)
+        if zerotrim:
+            string = AutoFormatter._trim_trailing_zeros(string)
+
+        # Prefix and suffix
+        string = AutoFormatter._add_prefix_suffix(string, prefix, suffix)
+        string = string + tail  # add negative-positive indicator
         return string
+
     return mticker.FuncFormatter(func)
 
 
@@ -309,5 +341,7 @@ def FracFormatter(symbol='', number=1):
                 string = f'-{symbol:s}/{frac.denominator:d}'
             else:  # and again make sure we use unicode minus!
                 string = f'{frac.numerator:d}{symbol:s}/{frac.denominator:d}'
-        return string.replace('-', '\N{MINUS SIGN}')
+        string = AutoFormatter._minus_format(string)
+        return string
+
     return mticker.FuncFormatter(func)
