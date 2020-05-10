@@ -49,59 +49,67 @@ def _parse_panel_args(
 def _canvas_preprocessor(canvas, method):
     """
     Return a pre-processer that can be used to override instance-level
-    canvas draw_idle() and print_figure() methods. This applies tight layout
+    canvas draw() and print_figure() methods. This applies tight layout
     and aspect ratio-conserving adjustments and aligns labels. Required so that
     the canvas methods instantiate renderers with the correct dimensions.
     """
-    # NOTE: This is by far the most robust approach. Renderer must be (1)
-    # initialized with the correct figure size or (2) changed inplace during
-    # draw, but vector graphic renderers *cannot* be changed inplace.
-    # Options include (1) monkey patch canvas.get_width_height, overriding
-    # figure.get_size_inches, and exploit the FigureCanvasAgg.get_renderer()
-    # implementation (because FigureCanvasAgg queries the bbox directly
-    # rather than using get_width_height() so requires a workaround), or (2)
-    # override bbox and bbox_inches as *properties*, but these are really
-    # complicated, dangerous, and result in unnecessary extra draws.
+    # NOTE: Renderer must be (1) initialized with the correct figure size or
+    # (2) changed inplace during draw, but vector graphic renderers *cannot*
+    # be changed inplace. So options include (1) monkey patch
+    # canvas.get_width_height, overriding figure.get_size_inches, and exploit
+    # the FigureCanvasAgg.get_renderer() implementation (because FigureCanvasAgg
+    # queries the bbox directly rather than using get_width_height() so requires
+    # workaround), (2) override bbox and bbox_inches as *properties* (but these
+    # are really complicated, dangerous, and result in unnecessary extra draws),
+    # or (3) simply override canvas draw methods. Our choice is (3).
     def _preprocess(self, *args, **kwargs):
         fig = self.figure  # update even if not stale! needed after saves
         func = getattr(type(self), method)  # the original method
-        # For now we override 'draw' and '_draw' rather than 'draw_idle'
-        # but may change mind in the future. This breakout condition is
-        # copied from the matplotlib source.
-        if method[:4] == 'draw' and (
-            getattr(self, '_is_drawing', None)  # see backends_qt5.py source
-            or getattr(self, '_is_idle_drawing', None)  # older versions
-            or getattr(self, '_draw_pending', None)
-        ):
-            return
 
-        # When re-generating inline figures, the tight layout algorithm
-        # can get figure size *or* spacing wrong unless we force additional
-        # draw! Seems to have no adverse effects when calling savefig.
-        # if method == 'print_figure':
-        #     self.draw()
+        # *Impossible* to get notebook backend to work with auto resizing so we
+        # just do the tight layout adjustments and skip resizing.
+        resize = rc['backend'] != 'nbAgg'
+
+        # When re-generating inline figures, the tight layout algorithm can get
+        # figure size *or* spacing wrong unless we force additional draw! Seems to
+        # have no adverse effects when calling savefig.
+        if method == 'print_figure':
+            self.draw()
+
+        # Bail out if we are already pre-processing
+        # The return value for macosx _draw is the renderer, for qt draw is
+        # nothing, and for print_figure is some figure object, but this block
+        # has never been invoked when calling print_figure.
+        renderer = fig._get_renderer()  # any renderer will do for now
         if fig._is_preprocessing:
-            return
+            if method == '_draw':  # macosx backend
+                return renderer
+            else:
+                return
 
         # Apply formatting
         with fig._context_preprocessing():
-            renderer = fig._get_renderer()  # any renderer will do for now
+            # Add legends and colorbars
             for ax in fig._iter_axes(hidden=False, children=True):
                 if isinstance(ax, paxes.Axes):
                     ax._draw_auto_legends_colorbars()  # may insert panels:
-            resize = rc['backend'] != 'nbAgg'
-            if resize:
-                fig._update_geometry_from_aspect(resize=resize)  # resizes figure
+
+            # Aspect ratio adjustment
+            fig._update_geometry_from_aspect(resize=resize)  # resizes figure
+
+            # Tight layout
             if fig._auto_tight:
                 fig._update_geometry_from_tight_layout(renderer, resize=resize)
+
+            # Align labels
             fig._align_labels_axis(True)
             fig._align_labels_figure(renderer)
-            fallback = _not_none(
-                fig._fallback_to_cm, rc['mathtext.fallback_to_cm']
-            )
+
+            # Call main function
+            fallback = _not_none(fig._fallback_to_cm, rc['mathtext.fallback_to_cm'])
             with rc.context({'mathtext.fallback_to_cm': fallback}):
-                ret = func(self, *args, **kwargs)
-        return ret
+                result = func(self, *args, **kwargs)
+        return result
 
     return _preprocess.__get__(canvas)  # ...I don't get it either
 
@@ -440,183 +448,6 @@ class Figure(mfigure.Figure):
         pax._panel_parent = None
         return pax
 
-    def _update_geometry_from_aspect(self, resize=True):
-        """
-        Adjust the average aspect ratio used for gridspec calculations.
-        This fixes grids with identically fixed aspect ratios, e.g.
-        identically zoomed-in cartopy projections and imshow images.
-        """
-        # Get aspect ratio
-        if not self._axes_main:
-            return
-        ax = self._axes_main[self._ref_num - 1]
-        curaspect = ax.get_aspect()
-        if isinstance(curaspect, str):
-            if curaspect == 'auto':
-                return
-            elif curaspect != 'equal':
-                raise RuntimeError(f'Unknown aspect ratio mode {curaspect!r}.')
-
-        # Compare to current aspect
-        subplots_kw = self._subplots_kw
-        xscale, yscale = ax.get_xscale(), ax.get_yscale()
-        if not isinstance(curaspect, str):
-            aspect = curaspect
-        elif xscale == 'linear' and yscale == 'linear':
-            aspect = 1.0 / ax.get_data_ratio()
-        elif xscale == 'log' and yscale == 'log':
-            aspect = 1.0 / ax.get_data_ratio_log()
-        else:
-            return  # matplotlib should have issued warning
-        if np.isclose(aspect, subplots_kw['aspect']):
-            return
-
-        # Apply new aspect
-        if not resize:
-            width, height = self.get_size_inches()
-            subplots_kw = subplots_kw.copy()
-            subplots_kw.update(width=width, height=height)
-        subplots_kw['aspect'] = aspect
-        figsize, gridspec_kw, _ = pgridspec._calc_geometry(**subplots_kw)
-        self._gridspec_main.update(**gridspec_kw)
-        if resize:
-            self.set_size_inches(figsize, auto=True)
-
-    def _update_geometry_from_tight_layout(self, renderer, resize=True):
-        """
-        Apply tight layout scaling that permits flexible figure
-        dimensions and preserves panel widths and subplot aspect ratios.
-        """
-        # Initial stuff
-        axs = list(self._iter_axes(hidden=True, children=False))
-        subplots_kw = self._subplots_kw
-        subplots_orig_kw = self._subplots_orig_kw  # tight layout overrides
-        if not axs or not subplots_kw or not subplots_orig_kw:
-            return
-
-        # Temporarily disable spanning labels and get correct
-        # positions for labels and suptitle
-        self._align_labels_axis(False)
-        self._align_labels_figure(renderer)
-
-        # Tight box *around* figure
-        # Get bounds from old bounding box
-        pad = self._pad
-        obox = self.bbox_inches  # original bbox
-        bbox = self.get_tightbbox(renderer)
-        left = bbox.xmin
-        bottom = bbox.ymin
-        right = obox.xmax - bbox.xmax
-        top = obox.ymax - bbox.ymax
-
-        # Apply new bounds, permitting user overrides
-        # TODO: Account for bounding box NaNs?
-        for key, offset in zip(
-            ('left', 'right', 'top', 'bottom'),
-            (left, right, top, bottom)
-        ):
-            previous = subplots_orig_kw[key]
-            current = subplots_kw[key]
-            subplots_kw[key] = _not_none(previous, current - offset + pad)
-
-        # Get arrays storing gridspec spacing args
-        axpad = self._axpad
-        panelpad = self._panelpad
-        gridspec = self._gridspec_main
-        nrows, ncols = gridspec.get_active_geometry()
-        wspace = subplots_kw['wspace']
-        hspace = subplots_kw['hspace']
-        wspace_orig = subplots_orig_kw['wspace']
-        hspace_orig = subplots_orig_kw['hspace']
-
-        # Get new subplot spacings, axes panel spacing, figure panel spacing
-        spaces = []
-        for (w, x, y, nacross, ispace, ispace_orig) in zip(
-            'wh', 'xy', 'yx', (nrows, ncols),
-            (wspace, hspace), (wspace_orig, hspace_orig),
-        ):
-            # Determine which rows and columns correspond to panels
-            panels = subplots_kw[w + 'panels']
-            jspace = [*ispace]
-            ralong = np.array([ax._range_gridspec(x) for ax in axs])
-            racross = np.array([ax._range_gridspec(y) for ax in axs])
-            for i, (space, space_orig) in enumerate(zip(ispace, ispace_orig)):
-                # Figure out whether this is a normal space, or a
-                # panel stack space/axes panel space
-                if (
-                    panels[i] in ('l', 't')
-                    and panels[i + 1] in ('l', 't', '')
-                    or panels[i] in ('', 'r', 'b')
-                    and panels[i + 1] in ('r', 'b')
-                    or panels[i] == 'f' and panels[i + 1] == 'f'
-                ):
-                    pad = panelpad
-                else:
-                    pad = axpad
-
-                # Find axes that abutt aginst this space on each row
-                groups = []
-                filt1 = ralong[:, 1] == i  # i.e. right/bottom edge abutts against this
-                filt2 = ralong[:, 0] == i + 1  # i.e. left/top edge abutts against this
-                for j in range(nacross):  # e.g. each row
-
-                    # Get indices
-                    filt = (racross[:, 0] <= j) & (j <= racross[:, 1])
-                    if sum(filt) < 2:  # no interface here
-                        continue
-                    idx1, = np.where(filt & filt1)
-                    idx2, = np.where(filt & filt2)
-                    if idx1.size > 1 or idx2.size > 2:
-                        warnings._warn_proplot('This should never happen.')
-                        continue
-                    elif not idx1.size or not idx2.size:
-                        continue
-                    idx1, idx2 = idx1[0], idx2[0]
-
-                    # Put these axes into unique groups. Store groups as
-                    # (left axes, right axes) or (bottom axes, top axes) pairs.
-                    ax1, ax2 = axs[idx1], axs[idx2]
-                    if x != 'x':  # order bottom-to-top
-                        ax1, ax2 = ax2, ax1
-                    newgroup = True
-                    for (group1, group2) in groups:
-                        if ax1 in group1 or ax2 in group2:
-                            newgroup = False
-                            group1.add(ax1)
-                            group2.add(ax2)
-                            break
-                    if newgroup:
-                        groups.append([{ax1}, {ax2}])  # form new group
-
-                # Get spaces
-                # Layout is lspace, lspaces[0], rspaces[0], wspace, ...
-                # so panels spaces are located where i % 3 is 1 or 2
-                jspaces = []
-                for (group1, group2) in groups:
-                    x1 = max(ax._range_tightbbox(x)[1] for ax in group1)
-                    x2 = min(ax._range_tightbbox(x)[0] for ax in group2)
-                    jspaces.append((x2 - x1) / self.dpi)
-                if jspaces:
-                    space = max(0, space - min(jspaces) + pad)
-                    space = _not_none(space_orig, space)  # overwritten by user
-                jspace[i] = space
-            spaces.append(jspace)
-
-        # Update geometry solver kwargs
-        subplots_kw.update({
-            'wspace': spaces[0], 'hspace': spaces[1],
-        })
-        if not resize:
-            width, height = self.get_size_inches()
-            subplots_kw = subplots_kw.copy()
-            subplots_kw.update(width=width, height=height)
-
-        # Apply new spacing
-        figsize, gridspec_kw, _ = pgridspec._calc_geometry(**subplots_kw)
-        self._gridspec_main.update(**gridspec_kw)
-        if resize:
-            self.set_size_inches(figsize, auto=True)
-
     def _align_labels_axis(self, b=True):
         """
         Align spanning *x* and *y* axis labels in the perpendicular
@@ -800,6 +631,15 @@ class Figure(mfigure.Figure):
         by figure resizes during pre-processing.
         """
         return _set_state(self, _is_preprocessing=True)
+
+    def _fix_figure_dimensions(self, subplots_kw):
+        """
+        Fix the figure geometry.
+        """
+        width, height = self.get_size_inches()
+        subplots_kw = subplots_kw.copy()
+        subplots_kw.update(width=width, height=height)
+        return subplots_kw
 
     def _get_align_coord(self, side, axs):
         """
@@ -1024,6 +864,175 @@ class Figure(mfigure.Figure):
             if kwargs:
                 obj.update(kwargs)
 
+    def _update_geometry_from_aspect(self, resize=True):
+        """
+        Adjust the average aspect ratio used for gridspec calculations.
+        This fixes grids with identically fixed aspect ratios, e.g.
+        identically zoomed-in cartopy projections and imshow images.
+        """
+        # Get aspect ratio
+        if not self._axes_main:
+            return
+        ax = self._axes_main[self._ref_num - 1]
+        curaspect = ax.get_aspect()
+        if isinstance(curaspect, str):
+            if curaspect == 'auto':
+                return
+            elif curaspect != 'equal':
+                raise RuntimeError(f'Unknown aspect ratio mode {curaspect!r}.')
+
+        # Compare to current aspect
+        subplots_kw = self._subplots_kw
+        xscale, yscale = ax.get_xscale(), ax.get_yscale()
+        if not isinstance(curaspect, str):
+            aspect = curaspect
+        elif xscale == 'linear' and yscale == 'linear':
+            aspect = 1.0 / ax.get_data_ratio()
+        elif xscale == 'log' and yscale == 'log':
+            aspect = 1.0 / ax.get_data_ratio_log()
+        else:
+            return  # matplotlib should have issued warning
+        if np.isclose(aspect, subplots_kw['aspect']):
+            return
+
+        # Apply new aspect
+        subplots_kw['aspect'] = aspect
+        if not resize:
+            subplots_kw = self._fix_figure_dimensions(subplots_kw)
+        figsize, gridspec_kw, _ = pgridspec._calc_geometry(**subplots_kw)
+        self._gridspec_main.update(**gridspec_kw)
+        if resize:
+            self.set_size_inches(figsize, auto=True)
+
+    def _update_geometry_from_tight_layout(self, renderer, resize=True):
+        """
+        Apply tight layout scaling that permits flexible figure
+        dimensions and preserves panel widths and subplot aspect ratios.
+        """
+        # Initial stuff
+        axs = list(self._iter_axes(hidden=True, children=False))
+        subplots_kw = self._subplots_kw
+        subplots_orig_kw = self._subplots_orig_kw  # tight layout overrides
+        if not axs or not subplots_kw or not subplots_orig_kw:
+            return
+
+        # Temporarily disable spanning labels and get correct
+        # positions for labels and suptitle
+        self._align_labels_axis(False)
+        self._align_labels_figure(renderer)
+
+        # Tight box *around* figure
+        # Get bounds from old bounding box
+        pad = self._pad
+        obox = self.bbox_inches  # original bbox
+        bbox = self.get_tightbbox(renderer)
+        left = bbox.xmin
+        bottom = bbox.ymin
+        right = obox.xmax - bbox.xmax
+        top = obox.ymax - bbox.ymax
+
+        # Apply new bounds, permitting user overrides
+        # TODO: Account for bounding box NaNs?
+        for key, offset in zip(
+            ('left', 'right', 'top', 'bottom'),
+            (left, right, top, bottom)
+        ):
+            previous = subplots_orig_kw[key]
+            current = subplots_kw[key]
+            subplots_kw[key] = _not_none(previous, current - offset + pad)
+
+        # Get arrays storing gridspec spacing args
+        axpad = self._axpad
+        panelpad = self._panelpad
+        gridspec = self._gridspec_main
+        nrows, ncols = gridspec.get_active_geometry()
+        wspace = subplots_kw['wspace']
+        hspace = subplots_kw['hspace']
+        wspace_orig = subplots_orig_kw['wspace']
+        hspace_orig = subplots_orig_kw['hspace']
+
+        # Get new subplot spacings, axes panel spacing, figure panel spacing
+        spaces = []
+        for (w, x, y, nacross, ispace, ispace_orig) in zip(
+            'wh', 'xy', 'yx', (nrows, ncols),
+            (wspace, hspace), (wspace_orig, hspace_orig),
+        ):
+            # Determine which rows and columns correspond to panels
+            panels = subplots_kw[w + 'panels']
+            jspace = [*ispace]
+            ralong = np.array([ax._range_gridspec(x) for ax in axs])
+            racross = np.array([ax._range_gridspec(y) for ax in axs])
+            for i, (space, space_orig) in enumerate(zip(ispace, ispace_orig)):
+                # Figure out whether this is a normal space, or a
+                # panel stack space/axes panel space
+                if (
+                    panels[i] in ('l', 't')
+                    and panels[i + 1] in ('l', 't', '')
+                    or panels[i] in ('', 'r', 'b')
+                    and panels[i + 1] in ('r', 'b')
+                    or panels[i] == 'f' and panels[i + 1] == 'f'
+                ):
+                    pad = panelpad
+                else:
+                    pad = axpad
+
+                # Find axes that abutt aginst this space on each row
+                groups = []
+                filt1 = ralong[:, 1] == i  # i.e. right/bottom edge abutts against this
+                filt2 = ralong[:, 0] == i + 1  # i.e. left/top edge abutts against this
+                for j in range(nacross):  # e.g. each row
+
+                    # Get indices
+                    filt = (racross[:, 0] <= j) & (j <= racross[:, 1])
+                    if sum(filt) < 2:  # no interface here
+                        continue
+                    idx1, = np.where(filt & filt1)
+                    idx2, = np.where(filt & filt2)
+                    if idx1.size > 1 or idx2.size > 2:
+                        warnings._warn_proplot('This should never happen.')
+                        continue
+                    elif not idx1.size or not idx2.size:
+                        continue
+                    idx1, idx2 = idx1[0], idx2[0]
+
+                    # Put these axes into unique groups. Store groups as
+                    # (left axes, right axes) or (bottom axes, top axes) pairs.
+                    ax1, ax2 = axs[idx1], axs[idx2]
+                    if x != 'x':  # order bottom-to-top
+                        ax1, ax2 = ax2, ax1
+                    newgroup = True
+                    for (group1, group2) in groups:
+                        if ax1 in group1 or ax2 in group2:
+                            newgroup = False
+                            group1.add(ax1)
+                            group2.add(ax2)
+                            break
+                    if newgroup:
+                        groups.append([{ax1}, {ax2}])  # form new group
+
+                # Get spaces
+                # Layout is lspace, lspaces[0], rspaces[0], wspace, ...
+                # so panels spaces are located where i % 3 is 1 or 2
+                jspaces = []
+                for (group1, group2) in groups:
+                    x1 = max(ax._range_tightbbox(x)[1] for ax in group1)
+                    x2 = min(ax._range_tightbbox(x)[0] for ax in group2)
+                    jspaces.append((x2 - x1) / self.dpi)
+                if jspaces:
+                    space = max(0, space - min(jspaces) + pad)
+                    space = _not_none(space_orig, space)  # overwritten by user
+                jspace[i] = space
+            spaces.append(jspace)
+
+        # Apply new spacing
+        subplots_kw.update({'wspace': spaces[0], 'hspace': spaces[1]})
+        if not resize:
+            subplots_kw = self._fix_figure_dimensions(subplots_kw)
+        figsize, gridspec_kw, _ = pgridspec._calc_geometry(**subplots_kw)
+        self._gridspec_main.update(**gridspec_kw)
+        if resize:
+            self.set_size_inches(figsize, auto=True)
+
     def add_subplot(self, *args, **kwargs):
         """
         Issues warning for new users that try to call
@@ -1198,13 +1207,13 @@ class Figure(mfigure.Figure):
         # methods. The latter is called by save() and by the inline backend.
         # See `_canvas_preprocessor` for details."""
         # TODO: Concatenate docstrings.
-        # TODO: Figure out bug with macos backend.
+        # TODO: Figure out matplotlib>=3.3 bug with macos backend.
         # NOTE: Cannot use draw_idle() because it causes complications for qt5
         # backend (wrong figure size).
-        # NOTE: Actually now we *do* use draw_idle() because draw() seems
-        # to break everything in latest qt5 version.
-        # canvas.draw = _canvas_preprocessor(canvas, 'draw')
-        canvas.draw_idle = _canvas_preprocessor(canvas, 'draw_idle')
+        if callable(getattr(canvas, '_draw', None)):  # for macos backend
+            canvas._draw = _canvas_preprocessor(canvas, '_draw')
+        else:
+            canvas.draw = _canvas_preprocessor(canvas, 'draw')
         canvas.print_figure = _canvas_preprocessor(canvas, 'print_figure')
         super().set_canvas(canvas)
 
