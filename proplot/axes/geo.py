@@ -639,7 +639,10 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
         self._hide_labels()
         if self.get_autoscale_on() and self.ignore_existing_data_limits:
             self.autoscale_view()
-        if getattr(self.background_patch, 'reclip', None):
+        if (
+            getattr(self.background_patch, 'reclip', None)
+            and hasattr(self.background_patch, 'orig_path')
+        ):
             clipped_path = self.background_patch.orig_path.clip_to_bbox(self.viewLim)
             self.background_patch._path = clipped_path
         self.apply_aspect()

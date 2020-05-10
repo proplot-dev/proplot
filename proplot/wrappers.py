@@ -208,10 +208,11 @@ def default_crs(self, func, *args, crs=None, **kwargs):
             raise err
         args, crs = args[:-1], args[-1]
         result = func(self, *args, crs=crs, **kwargs)
+
     # Fix extent, so axes tight bounding box gets correct box!
     # From this issue:
     # https://github.com/SciTools/cartopy/issues/1207#issuecomment-439975083
-    if name == 'set_extent':
+    if name == 'set_extent' and hasattr(self.outline_patch, 'orig_path'):
         clipped_path = self.outline_patch.orig_path.clip_to_bbox(self.viewLim)
         self.outline_patch._path = clipped_path
         self.background_patch._path = clipped_path
