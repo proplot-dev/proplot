@@ -1858,7 +1858,9 @@ def cycle_changer(
             label = labels[i]  # input labels
             labels_cols, label_leg_cbar = _axis_labels_title(y_first, axis=1)
             labels_cols = _to_ndarray(labels_cols)
-            if label is None and (label_leg_cbar or isinstance(labels_cols[i], str)):
+            if label is None and (
+                label_leg_cbar or labels_cols.size and isinstance(labels_cols[i], str)
+            ):
                 label = labels_cols[i]
             if label is not None:
                 kw['label'] = label
