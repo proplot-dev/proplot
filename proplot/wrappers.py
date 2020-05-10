@@ -532,8 +532,8 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
             x = Z.coords[Z.dims[idx]]
             y = Z.coords[Z.dims[idy]]
         else:  # DataFrame; never Series or Index because these are 1d
-            x = Z.index
-            y = Z.columns
+            y = Z.index
+            x = Z.columns
 
     # Check coordinates
     x, y = _to_array(x), _to_array(y)
