@@ -1300,8 +1300,8 @@ optional
     def heatmap(self, *args, aspect=None, **kwargs):
         """
         Pass all arguments to `~matplotlib.axes.Axes.pcolormesh` then apply
-        settings that are suitable for heatmaps: no gridlines, no minor ticks,
-        and major ticks at the center of each grid box.
+        settings that are suitable for heatmaps: square grid boxes by default,
+        major ticks at the center of each grid box, no minor ticks, and no gridlines.
 
         Parameters
         ----------
