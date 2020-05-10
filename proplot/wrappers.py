@@ -1049,6 +1049,13 @@ color-spec or list thereof, optional
         markeredgecolor=markeredgecolor, markeredgecolors=markeredgecolors,
     )
 
+    # Fix 2D arguments but still support scatter(x_vector, y_2d) usage
+    # NOTE: Since we are flattening vectors the coordinate metadata is meaningless,
+    # so converting to ndarray and stripping metadata is no problem.
+    # NOTE: numpy.ravel() preserves masked arrays
+    if len(args) == 2 and all(np.asarray(arg).squeeze().ndim > 1 for arg in args):
+        args = tuple(np.ravel(arg) for arg in args)
+
     # Scale s array
     if np.iterable(s) and (smin is not None or smax is not None):
         smin_true, smax_true = min(s), max(s)
