@@ -1538,7 +1538,7 @@ optional
         if not self._isinit:
             self._init()
         return LinearSegmentedColormap.from_list(
-            self.name, self._lut, **kwargs
+            self.name, self._lut[:-3, :], **kwargs
         )
 
     @classmethod
