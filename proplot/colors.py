@@ -2290,6 +2290,8 @@ class ColormapDatabase(dict):
             item = ListedColormap(
                 item.colors, item.name, item.N
             )
+        elif isinstance(item, mcolors.Colormap):  # base class
+            pass
         else:
             raise ValueError(
                 f'Invalid colormap {item}. Must be instance of '
