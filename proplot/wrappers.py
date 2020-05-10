@@ -1828,14 +1828,16 @@ def cycle_changer(
         # Step size for grouped bar plots
         # WARNING: This will fail for non-numeric non-datetime64 singleton
         # datatypes but this is good enough for vast majority of most cases.
-        x_step = np.atleast_1d(_to_ndarray(x))
-        if len(x_step) >= 2:
-            x_step = x_step[1:] - x_step[:-1]
+        x_test = np.atleast_1d(_to_ndarray(x))
+        if len(x_test) >= 2:
+            x_step = x_test[1:] - x_test[:-1]
             x_step = np.concatenate((x_step, x_step[-1:]))
-        elif x_step.dtype == np.datetime64:
+        elif x_test.dtype == np.datetime64:
             x_step = np.timedelta64(1, 'D')
         else:
-            x_step = 0.5
+            x_step = np.array(0.5)
+        if np.issubdtype(x_test.dtype, np.datetime64):
+            x_step = x_step.astype('timedelta64[ns]')  # avoid int timedelta truncation
 
         # Get x coordinates for bar plot
         x_col, y_first = x, ys[0]  # samples
