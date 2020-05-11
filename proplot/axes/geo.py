@@ -738,13 +738,10 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
         # Apply aspect
         self.apply_aspect()
         for gl in self._gridliners:
-            patch = self.background_patch
-            if _version_cartopy <= _version('0.16'):
-                gl._draw_gridliner(background_patch=patch)
-            elif _version_cartopy >= _version('0.18'):
+            if _version_cartopy >= _version('0.18'):
                 gl._draw_gridliner(renderer=renderer)
-            else:  # v0.17
-                gl._draw_gridliner(background_patch=patch, renderer=renderer)
+            else:
+                gl._draw_gridliner(background_patch=self.background_patch)
 
         # Remove gridliners
         if _version_cartopy < _version('0.18'):
