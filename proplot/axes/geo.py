@@ -703,17 +703,26 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
         ):
             clipped_path = self.background_patch.orig_path.clip_to_bbox(self.viewLim)
             self.background_patch._path = clipped_path
+
+        # Adjust location
+        if _version_cartopy >= _version('0.18'):
+            self.patch._adjust_location()
+
+        # Apply aspect
         self.apply_aspect()
         for gl in self._gridliners:
             patch = self.background_patch
-            try:  # v0.17
+            if _version_cartopy <= _version('0.16'):
+                gl._draw_gridliner(background_patch=patch)
+            elif _version_cartopy >= _version('0.18'):
+                gl._draw_gridliner(renderer=renderer)
+            else:  # v0.17
                 gl._draw_gridliner(background_patch=patch, renderer=renderer)
-            except TypeError:
-                try:  # v0.xx to v0.16
-                    gl._draw_gridliner(background_patch=patch)
-                except TypeError:  # v0.18
-                    gl._draw_gridliner(renderer=renderer)
-        self._gridliners = []
+
+        # Remove gridliners
+        if _version_cartopy < _version('0.18'):
+            self._gridliners = []
+
         return super().get_tightbbox(renderer, *args, **kwargs)
 
     @property
