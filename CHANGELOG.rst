@@ -117,6 +117,8 @@ There are quite a lot of deprecations for this release.
 
 - Support `cartopy 0.18 <https://scitools.org.uk/cartopy/docs/latest/whats_new.html>`__
   locators, formatters, deprecations, and new labelling features (:pr:`158`).
+- Add :rcraw:`geogrid.labelpad` and :rcraw:`geogrid.rotatelabels` settings
+  for cartopy gridline labels (:pr:`158`).
 - Support more `~proplot.ticker.AutoFormatter` features on
   `~proplot.ticker.SimpleFormatter` (:commit:`6decf962`).
 - Support drawing colorbars with descending levels (:commit:`10763146`)
