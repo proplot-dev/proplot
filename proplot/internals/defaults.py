@@ -95,6 +95,7 @@ _rc_added_default = {
     'geoaxes.linewidth': None,  # = linewidth
     'geogrid.alpha': 0.5,
     'geogrid.color': 'k',
+    'geogrid.labelpad': 5,  # use cartopy default
     'geogrid.labels': False,
     'geogrid.labelsize': None,  # = small
     'geogrid.latmax': 90,
@@ -102,6 +103,7 @@ _rc_added_default = {
     'geogrid.linestyle': ':',
     'geogrid.linewidth': 1.0,
     'geogrid.lonstep': 30,
+    'geogrid.rotatelabels': True,  # False limits projections where labels are available
     'gridminor.alpha': None,  # = grid.alpha
     'gridminor.color': None,  # = grid.color
     'gridminor.linestyle': None,  # = grid.linewidth
