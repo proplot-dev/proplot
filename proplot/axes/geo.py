@@ -399,8 +399,10 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
     def _format_apply(
         self, *, patch_kw,
         lonlim, latlim, boundinglat,
-        lonlines, latlines, latmax,
-        lonarray, latarray,
+        lonlines, latlines, lonlines_kw, latlines_kw,
+        lonformatter, latformatter, lonformatter_kw, latformatter_kw,
+        rotate_labels,
+        latmax, lonarray, latarray,
     ):
         """
         Apply formatting to cartopy axes. Extra kwargs are used to update proj4 params.
@@ -412,12 +414,12 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
 
         # Gridliner labels names
         def _toggle_labels(gl, left, right, bottom, top):
-            if hasattr(gl, 'left_labels'):  # new version
+            if _version_cartopy >= _version('0.18'):  # cartopy >= 0.18
                 left_labels = 'left_labels'
                 right_labels = 'right_labels'
                 bottom_labels = 'bottom_labels'
                 top_labels = 'top_labels'
-            else:
+            else:  # cartopy < 0.18
                 left_labels = 'ylabels_left'
                 right_labels = 'ylabels_right'
                 bottom_labels = 'xlabels_bottom'
@@ -587,21 +589,34 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
                         latlines[-1] -= eps
                     gl.ylocator = mticker.FixedLocator(latlines)
 
-        # Grid label toggling
+        # Gridline label format
+        if rotate_labels is not None:
+            gl.rotate_labels = rotate_labels  # ignored in cartopy <0.18
+        if lonformatter:
+            gl.xformatter = lonformatter
+        elif lonformatter_kw:
+            gl.xformatter = ticker.LongitudeFormatter(**lonformatter_kw)
+        if latformatter:
+            gl.yformatter = latformatter
+        elif latformatter_kw:
+            gl.yformatter = ticker.LatitudeFormatter(**latformatter_kw)
+
+        # Gridline label toggling
         # Issue warning instead of error!
-        if not isinstance(self.projection, (ccrs.Mercator, ccrs.PlateCarree)):
-            if latarray is not None and any(latarray):
-                warnings._warn_proplot(
-                    'Cannot add gridline labels to cartopy '
-                    f'{type(self.projection).__name__} projection.'
-                )
-                latarray = [0] * 4
-            if lonarray is not None and any(lonarray):
-                warnings._warn_proplot(
-                    'Cannot add gridline labels to cartopy '
-                    f'{type(self.projection).__name__} projection.'
-                )
-                lonarray = [0] * 4
+        if _version_cartopy < _version('0.18'):
+            if not isinstance(self.projection, (ccrs.Mercator, ccrs.PlateCarree)):
+                if latarray is not None and any(latarray):
+                    warnings._warn_proplot(
+                        'Cannot add gridline labels to cartopy '
+                        f'{type(self.projection).__name__} projection.'
+                    )
+                    latarray = [0] * 4
+                if lonarray is not None and any(lonarray):
+                    warnings._warn_proplot(
+                        'Cannot add gridline labels to cartopy '
+                        f'{type(self.projection).__name__} projection.'
+                    )
+                    lonarray = [0] * 4
         latarray = latarray or (None,) * 4
         lonarray = lonarray or (None,) * 4
         _toggle_labels(gl, *latarray[:2], *lonarray[2:])
@@ -672,7 +687,7 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
     def _hide_labels(self):
         """
         No-op for now. In future this will hide meridian and parallel
-        labels for rectangular projections.
+        labels for rectangular projections with axis sharing.
         """
         pass
 
