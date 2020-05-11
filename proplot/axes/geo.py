@@ -555,6 +555,9 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
             'linestyle': 'geogrid.linestyle',
         }, context=True)
         gl.collection_kwargs.update(kw)
+        pad = rc.get('geogrid.labelpad', context=True)
+        if pad is not None:
+            gl.xpadding = gl.ypadding = pad
 
         # Grid locations
         eps = 1e-10
