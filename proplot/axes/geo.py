@@ -12,7 +12,7 @@ from .. import crs as pcrs
 from ..utils import arange
 from ..config import rc
 from ..internals import ic  # noqa: F401
-from ..internals import warnings, _not_none
+from ..internals import warnings, _version, _version_cartopy, _not_none
 from ..wrappers import (
     _add_errorbars, _norecurse, _redirect,
     _plot_wrapper, _scatter_wrapper,
@@ -404,7 +404,7 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
         latmax  # prevent U100 error (cartopy handles 'latmax' automatically)
         import cartopy.feature as cfeature
         import cartopy.crs as ccrs
-        from cartopy.mpl import gridliner
+        from cartopy.mpl import ticker
 
         # Gridliner labels names
         def _toggle_labels(gl, left, right, bottom, top):
@@ -427,26 +427,61 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
             if top is not None:
                 setattr(gl, top_labels, top)
 
-        # Apply default formatter
-        def _apply_formatter(gl):
-            try:
-                lonformat = gridliner.LongitudeFormatter  # newer
-                latformat = gridliner.LatitudeFormatter
-            except AttributeError:
-                lonformat = gridliner.LONGITUDE_FORMATTER  # older
-                latformat = gridliner.LATITUDE_FORMATTER
-            gl.xformatter = lonformat
-            gl.yformatter = latformat
+        # Cartopy 0.18 monkey patch. This fixes issue where we get overlapping
+        # gridlines on dateline. See the "nx -= 1" line in Gridliner._draw_gridliner
+        # TODO: Submit cartopy PR. This is awful but necessary for quite a while if
+        # the time between v0.17 and v0.18 is any indication.
+        def _draw_gridliner(self, *args, **kwargs):
+            result = type(self)._draw_gridliner(self, *args, **kwargs)
+            if _version_cartopy == _version('0.18'):
+                lon_lim, _ = self._axes_domain()
+                if abs(np.diff(lon_lim)) == abs(np.diff(self.crs.x_limits)):
+                    for collection in self.xline_artists:
+                        if not getattr(collection, '_cartopy_fix', False):
+                            collection.get_paths().pop(-1)
+                            collection._cartopy_fix = True
+            return result
 
-        # Initial gridliner object, which ProPlot passively modifies
-        # TODO: Flexible formatter?
+        # Cartopy < 0.18 monkey patch. This is part of filtering valid label coordinates
+        # to values between lon_0 - 180 and lon_0 + 180.
+        def _axes_domain(self, *args, **kwargs):
+            x_range, y_range = type(self)._axes_domain(self, *args, **kwargs)
+            if _version_cartopy < _version('0.18'):
+                lon_0 = self.axes.projection.proj4_params.get('lon_0', 0)
+                x_range = np.asarray(x_range) + lon_0
+            return x_range, y_range
+
+        # Cartopy < 0.18 gridliner method monkey patch. Always print number in range
+        # (180W, 180E). We choose #4 of the following choices 3 choices (see Issue #78):
+        # 1. lonlines go from -180 to 180, but get double 180 labels at dateline
+        # 2. lonlines go from -180 to e.g. 150, but no lines from 150 to dateline
+        # 3. lonlines go from lon_0 - 180 to lon_0 + 180 mod 360, but results
+        #    in non-monotonic array causing double gridlines east of dateline
+        # 4. lonlines go from lon_0 - 180 to lon_0 + 180 monotonic, but prevents
+        #    labels from being drawn outside of range (-180, 180)
+        def _add_gridline_label(self, value, axis, upper_end):
+            if _version_cartopy < _version('0.18'):
+                if axis == 'x':
+                    value = (value + 180) % 360 - 180
+            return type(self)._add_gridline_label(self, value, axis, upper_end)
+
+        # Initial gridliner object which ProPlot passively modifies
+        # NOTE: The 'xpadding' and 'ypadding' props were introduced in v0.16
+        # with default 5 points, then set to default None in v0.18.
+        # TODO: Cartopy has had two formatters for a while but we use newer one
+        # https://github.com/SciTools/cartopy/pull/1066
         if not self._gridliners:
             gl = self.gridlines(zorder=2.5)  # below text only
             gl._axes_domain = _axes_domain.__get__(gl)  # apply monkey patches
             gl._add_gridline_label = _add_gridline_label.__get__(gl)
             gl.xlines = gl.ylines = False
-            _apply_formatter(gl)
+            gl.xformatter = ticker.LongitudeFormatter()
+            gl.yformatter = ticker.LatitudeFormatter()
+            if _version_cartopy < _version('0.18'):  # necessary... for some reason...
+                gl.xformatter.axis = self.xaxis
+                gl.yformatter.axis = self.yaxis
             _toggle_labels(gl, False, False, False, False)
+        gl = self._gridliners[0]
 
         # Projection extent
         # NOTE: They may add this as part of set_xlim and set_ylim in future
@@ -512,11 +547,7 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
                 extent = [*lonlim, *latlim]
                 self.set_extent(extent, crs=ccrs.PlateCarree())
 
-        # Draw gridlines, manage them with one custom gridliner generated
-        # by ProPlot, user may want to use griliner API directly
-        gl = self._gridliners[0]
-
-        # Collection props, see GoeAxes.gridlines() source code
+        # Gridline properties
         kw = rc.fill({
             'alpha': 'geogrid.alpha',
             'color': 'geogrid.color',
