@@ -1171,9 +1171,14 @@ color-spec or list thereof, optional
         cmap = constructor.Colormap(cmap, **cmap_kw)
 
     # Get normalizer and levels
+    # NOTE: If the length of the c array !=
     ticks = None
     carray = np.atleast_1d(c)
-    if np.issubdtype(carray.dtype, np.number) and len(carray) > 3:
+    if (
+        np.issubdtype(carray.dtype, np.number)
+        and not (carray.ndim == 2 and carray.shape[1] in (3, 4))
+    ):
+        carray = carray.ravel()
         norm, cmap, _, ticks = _build_discrete_norm(
             carray,  # sample data for getting suitable levels
             N=N, levels=levels, values=values,
