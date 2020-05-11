@@ -55,6 +55,132 @@ __all__ = [
 ]
 
 
+docstring.snippets['cmap_changer.params'] = """
+cmap : colormap spec, optional
+    The colormap specifer, passed to the `~proplot.constructor.Colormap`
+    constructor.
+cmap_kw : dict-like, optional
+    Passed to `~proplot.constructor.Colormap`.
+norm : normalizer spec, optional
+    The colormap normalizer, used to warp data before passing it
+    to `~proplot.colors.DiscreteNorm`. This is passed to the
+    `~proplot.constructor.Norm` constructor.
+norm_kw : dict-like, optional
+    Passed to `~proplot.constructor.Norm`.
+vmin, vmax : float, optional
+    Used to determine level locations if `levels` is an integer. Actual
+    levels may not fall exactly on `vmin` and `vmax`, but the minimum
+    level will be no smaller than `vmin` and the maximum level will be
+    no larger than `vmax`. If `vmin` or `vmax` is not provided, the
+    minimum and maximum data values are used.
+levels, N : int or list of float, optional
+    The number of level edges, or a list of level edges. If the former,
+    `locator` is used to generate this many levels at "nice" intervals.
+    If the latter, the levels should be monotonically increasing or
+    decreasing (note that decreasing levels will only work with ``pcolor``
+    plots, not ``contour`` plots). Default is :rc:`image.levels`.
+
+    Since this function also wraps `~matplotlib.axes.Axes.pcolor` and
+    `~matplotlib.axes.Axes.pcolormesh`, this means they now
+    accept the `levels` keyword arg. You can now discretize your
+    colors in a ``pcolor`` plot just like with ``contourf``.
+values : int or list of float, optional
+    The number of level centers, or a list of level centers. If provided,
+    levels are inferred using `~proplot.utils.edges`. This will override
+    any `levels` input.
+symmetric : bool, optional
+    If ``True``, automatically generated levels are symmetric about zero.
+locator : locator-spec, optional
+    The locator used to determine level locations if `levels` or `values`
+    is an integer and `vmin` and `vmax` were not provided. Passed to the
+    `~proplot.constructor.Locator` constructor. Default is
+    `~matplotlib.ticker.MaxNLocator` with ``levels`` integer levels.
+locator_kw : dict-like, optional
+    Passed to `~proplot.constructor.Locator`.
+"""
+
+_area_docstring = """
+Supports overlaying and stacking successive columns of data, and permits
+using different colors for "negative" and "positive" regions.
+
+Note
+----
+This function wraps `~matplotlib.axes.Axes.fill_between{suffix}` and
+`~proplot.axes.Axes.area{suffix}`.
+
+Parameters
+----------
+*args : ({y}1,), ({x}, {y}1), or ({x}, {y}1, {y}2)
+    The *{x}* and *{y}* coordinates. If `{x}` is not provided, it will be
+    inferred from `{y}1`. If `{y}1` and `{y}2` are provided, this function
+    will shade between respective columns of the arrays. The default value
+    for `{y}2` is ``0``.
+stacked : bool, optional
+    Whether to "stack" successive columns of the `{y}1` array. If this is
+    ``True`` and `{y}2` was provided, it will be ignored.
+negpos : bool, optional
+    Whether to shade where `{y}1` is greater than `{y}2` with the color
+    `poscolor`, and where `{y}1` is less than `{y}2` with the color
+    `negcolor`. For example, to shade positive values red and negative values
+    blue, use ``ax.fill_between{suffix}({x}, {y}, negpos=True)``.
+negcolor, poscolor : color-spec, optional
+    Colors to use for the negative and positive values. Ignored if `negpos`
+    is ``False``.
+where : ndarray, optional
+    Boolean ndarray mask for points you want to shade. See `this example \
+<https://matplotlib.org/3.1.0/gallery/pyplots/whats_new_98_4_fill_between.html#sphx-glr-gallery-pyplots-whats-new-98-4-fill-between-py>`__.
+
+Other parameters
+----------------
+**kwargs
+    Passed to `~matplotlib.axes.Axes.fill_between`.
+"""
+docstring.snippets['axes.fill_between'] = _area_docstring.format(
+    x='x', y='y', suffix='',
+)
+docstring.snippets['axes.fill_betweenx'] = _area_docstring.format(
+    x='y', y='x', suffix='x',
+)
+
+_bar_docstring = """
+Supports grouping and stacking successive columns of data, and changes
+the default bar style.
+
+Note
+----
+This function wraps `~matplotlib.axes.Axes.bar{suffix}`.
+
+Parameters
+----------
+{x}, {height}, {width}, {bottom} : float or list of float, optional
+    The dimensions of the bars. If the *{x}* coordinates are not provided,
+    they are set to ``np.arange(0, len(height))``.
+orientation : {{'vertical', 'horizontal'}}, optional
+    The orientation of the bars.
+vert : bool, optional
+    Alternative to the `orientation` keyword arg. If ``False``, horizontal
+    bars are drawn. This is for consistency with
+    `~matplotlib.axes.Axes.boxplot` and `~matplotlib.axes.Axes.violinplot`.
+stacked : bool, optional
+    Whether to stack columns of input data, or plot the bars side-by-side.
+edgecolor : color-spec, optional
+    The edge color for the bar patches.
+lw, linewidth : float, optional
+    The edge width for the bar patches.
+
+Other parameters
+----------------
+**kwargs
+    Passed to `~matplotlib.axes.Axes.bar{suffix}`.
+"""
+docstring.snippets['axes.bar'] = _bar_docstring.format(
+    x='x', height='height', width='width', bottom='bottom', suffix='',
+)
+docstring.snippets['axes.barh'] = _bar_docstring.format(
+    x='y', height='width', width='height', bottom='left', suffix='h',
+)
+
+
 def _load_objects():
     """
     Delay loading expensive modules. We just want to detect if *input
@@ -162,7 +288,7 @@ def default_latlon(self, func, *args, latlon=True, **kwargs):
 
     Note
     ----
-    This function wraps %(methods)s for `~proplot.axes.BasemapAxes`.
+    This function wraps {methods} for `~proplot.axes.BasemapAxes`.
     """
     return func(self, *args, latlon=latlon, **kwargs)
 
@@ -176,7 +302,7 @@ def default_transform(self, func, *args, transform=None, **kwargs):
 
     Note
     ----
-    This function wraps %(methods)s for `~proplot.axes.CartopyAxes`.
+    This function wraps {methods} for `~proplot.axes.CartopyAxes`.
     """
     # Apply default transform
     # TODO: Do some cartopy methods reset backgroundpatch or outlinepatch?
@@ -195,7 +321,7 @@ def default_crs(self, func, *args, crs=None, **kwargs):
 
     Note
     ----
-    This function wraps %(methods)s for `~proplot.axes.CartopyAxes`.
+    This function wraps {methods} for `~proplot.axes.CartopyAxes`.
     """
     # Apply default crs
     name = func.__name__
@@ -284,7 +410,7 @@ def standardize_1d(self, func, *args, **kwargs):
 
    Note
    ----
-   This function wraps the 1d plotting methods: %(methods)s.
+   This function wraps the 1d plotting methods: {methods}
    """
     # Sanitize input
     # TODO: Add exceptions for methods other than 'hist'?
@@ -476,7 +602,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
 
     Parameters
     ----------
-    order : {'C', 'F'}, optional
+    order : {{'C', 'F'}}, optional
         If ``'C'``, arrays should be shaped as ``(y, x)``. If ``'F'``, arrays
         should be shaped as ``(x, y)``. Default is ``'C'``.
     globe : bool, optional
@@ -498,7 +624,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
 
     Note
     ----
-    This function wraps the 2d plotting methods: %(methods)s.
+    This function wraps the 2d plotting methods: {methods}
     """
     # Sanitize input
     name = func.__name__
@@ -808,7 +934,7 @@ def add_errorbars(
 
     Note
     ----
-    This function wraps the 1d plotting methods: %(methods)s.
+    This function wraps the 1d plotting methods: {methods}
 
     Parameters
     ----------
@@ -968,12 +1094,14 @@ def _plot_wrapper_deprecated(
         return self.parametric(*args, cmap=cmap, values=values, **kwargs)
 
 
+@docstring.add_snippets
 def scatter_wrapper(
     self, func, *args,
     s=None, size=None, markersize=None,
-    c=None, color=None, markercolor=None,
-    smin=None, smax=None,
-    cmap=None, cmap_kw=None, vmin=None, vmax=None, norm=None, norm_kw=None,
+    c=None, color=None, markercolor=None, smin=None, smax=None,
+    cmap=None, cmap_kw=None, norm=None, norm_kw=None,
+    vmin=None, vmax=None, N=None, levels=None, values=None,
+    symmetric=False, locator=None, locator_kw=None,
     lw=None, linewidth=None, linewidths=None,
     markeredgewidth=None, markeredgewidths=None,
     edgecolor=None, edgecolors=None,
@@ -982,14 +1110,12 @@ def scatter_wrapper(
 ):
     """
     Adds keyword arguments to `~matplotlib.axes.Axes.scatter` that are more
-    consistent with the `~matplotlib.axes.Axes.plot` keyword arguments, and
-    interpret the `cmap` and `norm` keyword arguments with
-    `~proplot.constructor.Colormap` and `~proplot.constructor.Norm` like
-    in `cmap_changer`.
+    consistent with the `~matplotlib.axes.Axes.plot` keyword arguments and
+    supports `cmap_changer` features.
 
     Note
     ----
-    This function wraps %(methods)s.
+    This function wraps {methods}
 
     Parameters
     ----------
@@ -1003,20 +1129,7 @@ def scatter_wrapper(
         The marker fill color(s). If this is an array of scalar values, the
         colors will be generated by passing the values through the `norm`
         normalizer and drawing from the `cmap` colormap.
-    cmap : colormap-spec, optional
-        The colormap specifer, passed to the `~proplot.constructor.Colormap`
-        constructor.
-    cmap_kw : dict-like, optional
-        Passed to `~proplot.constructor.Colormap`.
-    vmin, vmax : float, optional
-        Used to generate a `norm` for scaling the `c` array. These are the
-        values corresponding to the leftmost and rightmost colors in the
-        colormap. Defaults are the minimum and maximum values of the `c` array.
-    norm : normalizer spec, optional
-        The colormap normalizer, passed to the `~proplot.constructor.Norm`
-        constructor.
-    norm_kw : dict, optional
-        Passed to `~proplot.constructor.Norm`.
+    %(cmap_changer.params)s
     lw, linewidth, linewidths, markeredgewidth, markeredgewidths : \
 float or list thereof, optional
         The marker edge width.
@@ -1040,14 +1153,6 @@ color-spec or list thereof, optional
     if len(args) == 3:
         s = args.pop(0)
 
-    # Format cmap and norm
-    cmap_kw = cmap_kw or {}
-    norm_kw = norm_kw or {}
-    if cmap is not None:
-        cmap = constructor.Colormap(cmap, **cmap_kw)
-    if norm is not None:
-        norm = constructor.Norm(norm, **norm_kw)
-
     # Apply some aliases for keyword arguments
     c = _not_none(c=c, color=color, markercolor=markercolor)
     s = _not_none(s=s, size=size, markersize=markersize)
@@ -1059,6 +1164,24 @@ color-spec or list thereof, optional
         edgecolor=edgecolor, edgecolors=edgecolors,
         markeredgecolor=markeredgecolor, markeredgecolors=markeredgecolors,
     )
+
+    # Get colormap
+    cmap_kw = cmap_kw or {}
+    if cmap is not None:
+        cmap = constructor.Colormap(cmap, **cmap_kw)
+
+    # Get normalizer and levels
+    ticks = None
+    carray = np.atleast_1d(c)
+    if np.issubdtype(carray.dtype, np.number) and len(carray) > 3:
+        norm, cmap, _, ticks = _build_discrete_norm(
+            carray,  # sample data for getting suitable levels
+            N=N, levels=levels, values=values,
+            norm=norm, norm_kw=norm_kw,
+            locator=locator, locator_kw=locator_kw,
+            cmap=cmap, vmin=vmin, vmax=vmax, extend='neither',
+            symmetric=symmetric,
+        )
 
     # Fix 2D arguments but still support scatter(x_vector, y_2d) usage
     # NOTE: Since we are flattening vectors the coordinate metadata is meaningless,
@@ -1078,56 +1201,13 @@ color-spec or list thereof, optional
             smin + (smax - smin)
             * (np.array(s) - smin_true) / (smax_true - smin_true)
         )
-    return func(
-        self, *args, c=c, s=s,
-        cmap=cmap, vmin=vmin, vmax=vmax,
-        norm=norm, linewidths=lw, edgecolors=ec,
-        **kwargs
+    obj = func(
+        self, *args, c=c, s=s, cmap=cmap, norm=norm,
+        linewidths=lw, edgecolors=ec, **kwargs
     )
-
-
-_area_docstring = """
-Supports overlaying and stacking successive columns of data, and permits
-using different colors for "negative" and "positive" regions.
-
-Note
-----
-This function wraps `~matplotlib.axes.Axes.fill_between{suffix}` and
-`~proplot.axes.Axes.area{suffix}`.
-
-Parameters
-----------
-*args : ({y}1,), ({x}, {y}1), or ({x}, {y}1, {y}2)
-    The *{x}* and *{y}* coordinates. If `{x}` is not provided, it will be
-    inferred from `{y}1`. If `{y}1` and `{y}2` are provided, this function
-    will shade between respective columns of the arrays. The default value
-    for `{y}2` is ``0``.
-stacked : bool, optional
-    Whether to "stack" successive columns of the `{y}1` array. If this is
-    ``True`` and `{y}2` was provided, it will be ignored.
-negpos : bool, optional
-    Whether to shade where `{y}1` is greater than `{y}2` with the color
-    `poscolor`, and where `{y}1` is less than `{y}2` with the color
-    `negcolor`. For example, to shade positive values red and negative values
-    blue, use ``ax.fill_between{suffix}({x}, {y}, negpos=True)``.
-negcolor, poscolor : color-spec, optional
-    Colors to use for the negative and positive values. Ignored if `negpos`
-    is ``False``.
-where : ndarray, optional
-    Boolean ndarray mask for points you want to shade. See `this example \
-<https://matplotlib.org/3.1.0/gallery/pyplots/whats_new_98_4_fill_between.html#sphx-glr-gallery-pyplots-whats-new-98-4-fill-between-py>`__.
-
-Other parameters
-----------------
-**kwargs
-    Passed to `~matplotlib.axes.Axes.fill_between`.
-"""
-docstring.snippets['axes.fill_between'] = _area_docstring.format(
-    x='x', y='y', suffix='',
-)
-docstring.snippets['axes.fill_betweenx'] = _area_docstring.format(
-    x='y', y='x', suffix='x',
-)
+    if ticks is not None:
+        obj.ticks = ticks
+    return obj
 
 
 def _fill_between_apply(
@@ -1212,49 +1292,10 @@ def hist_wrapper(self, func, x, bins=None, **kwargs):
 
     Note
     ----
-    This function wraps %(methods)s.
+    This function wraps {methods}
     """
     kwargs.setdefault('linewidth', 0)
     return func(self, x, bins=bins, **kwargs)
-
-
-_bar_docstring = """
-Supports grouping and stacking successive columns of data, and changes
-the default bar style.
-
-Note
-----
-This function wraps `~matplotlib.axes.Axes.bar{suffix}`.
-
-Parameters
-----------
-{x}, {height}, {width}, {bottom} : float or list of float, optional
-    The dimensions of the bars. If the *{x}* coordinates are not provided,
-    they are set to ``np.arange(0, len(height))``.
-orientation : {{'vertical', 'horizontal'}}, optional
-    The orientation of the bars.
-vert : bool, optional
-    Alternative to the `orientation` keyword arg. If ``False``, horizontal
-    bars are drawn. This is for consistency with
-    `~matplotlib.axes.Axes.boxplot` and `~matplotlib.axes.Axes.violinplot`.
-stacked : bool, optional
-    Whether to stack columns of input data, or plot the bars side-by-side.
-edgecolor : color-spec, optional
-    The edge color for the bar patches.
-lw, linewidth : float, optional
-    The edge width for the bar patches.
-
-Other parameters
-----------------
-**kwargs
-    Passed to `~matplotlib.axes.Axes.bar{suffix}`.
-"""
-docstring.snippets['axes.bar'] = _bar_docstring.format(
-    x='x', height='height', width='width', bottom='bottom', suffix='',
-)
-docstring.snippets['axes.barh'] = _bar_docstring.format(
-    x='y', height='width', width='height', bottom='left', suffix='h',
-)
 
 
 @docstring.add_snippets
@@ -1339,7 +1380,7 @@ def boxplot_wrapper(
 
     Note
     ----
-    This function wraps %(methods)s.
+    This function wraps {methods}
 
     Parameters
     ----------
@@ -1355,7 +1396,7 @@ def boxplot_wrapper(
         The opacity of the boxes. Default is ``1``.
     lw, linewidth : float, optional
         The linewidth of all objects.
-    orientation : {None, 'horizontal', 'vertical'}, optional
+    orientation : {{None, 'horizontal', 'vertical'}}, optional
         Alternative to the native `vert` keyword arg. Controls orientation.
     marker : marker-spec, optional
         Marker style for the 'fliers', i.e. outliers.
@@ -1444,7 +1485,7 @@ def violinplot_wrapper(
 
     Note
     ----
-    This function wraps %(methods)s.
+    This function wraps {methods}
 
     Parameters
     ----------
@@ -1458,7 +1499,7 @@ def violinplot_wrapper(
         The violin plot fill color. Default is the next color cycler color.
     fillalpha : float, optional
         The opacity of the violins. Default is ``1``.
-    orientation : {None, 'horizontal', 'vertical'}, optional
+    orientation : {{None, 'horizontal', 'vertical'}}, optional
         Alternative to the native `vert` keyword arg. Controls orientation.
     boxrange, barrange : (float, float), optional
         Percentile ranges for the thick and thin central bars. The defaults
@@ -1575,7 +1616,7 @@ def text_wrapper(
 
     Note
     ----
-    This function wraps %(methods)s.
+    This function wraps {methods}
 
     Parameters
     ----------
@@ -1583,7 +1624,7 @@ def text_wrapper(
         The *x* and *y* coordinates for the text.
     text : str
         The text string.
-    transform : {'data', 'axes', 'figure'} or \
+    transform : {{'data', 'axes', 'figure'}} or \
 `~matplotlib.transforms.Transform`, optional
         The transform used to interpret `x` and `y`. Can be a
         `~matplotlib.transforms.Transform` object or a string representing the
@@ -1660,7 +1701,7 @@ def cycle_changer(
     Note
     ----
     This function wraps every method that uses the property cycler:
-    %(methods)s.
+    {methods}
 
     This wrapper also *standardizes acceptable input* -- these methods now all
     accept 2d arrays holding columns of data, and *x*-coordinates are always
@@ -1958,7 +1999,7 @@ def cycle_changer(
 
 
 def _build_discrete_norm(
-    data=None, levels=None, values=None,
+    data=None, N=None, levels=None, values=None,
     norm=None, norm_kw=None, locator=None, locator_kw=None,
     cmap=None, vmin=None, vmax=None, extend='neither', symmetric=False,
     minlength=2,
@@ -1986,6 +2027,19 @@ def _build_discrete_norm(
     ticks : `numpy.ndarray` or `matplotlib.locator.Locator`
         The axis locator or the tick location candidates.
     """
+    # Parse flexible keyword args
+    from .config import rc
+    norm_kw = norm_kw or {}
+    locator_kw = locator_kw or {}
+    levels = _not_none(
+        N=N, levels=levels, norm_kw_levels=norm_kw.pop('levels', None),
+        default=rc['image.levels']
+    )
+    vmin = _not_none(vmin=vmin, norm_kw_vmin=norm_kw.pop('vmin', None))
+    vmax = _not_none(vmax=vmax, norm_kw_vmax=norm_kw.pop('vmax', None))
+    if norm == 'segments':  # TODO: remove
+        norm = 'segmented'
+
     # NOTE: Matplotlib colorbar algorithm *cannot* handle descending levels
     # so this function reverses them and adds special attribute to the
     # normalizer. Then colorbar_wrapper reads this attribute and flips the
@@ -2003,13 +2057,7 @@ def _build_discrete_norm(
             )
 
     # Get level edges from level centers
-    from .config import rc
     ticks = None
-    levels = _not_none(levels, rc['image.levels'])
-    norm_kw = norm_kw or {}
-    locator_kw = locator_kw or {}
-    if norm == 'segments':  # TODO: remove
-        norm = 'segmented'
     if isinstance(values, Number):
         levels = np.atleast_1d(values)[0] + 1
     elif np.iterable(values) and len(values) == 1:
@@ -2162,10 +2210,12 @@ def _build_discrete_norm(
     return norm, cmap, levels, ticks
 
 
+@warnings._rename_kwargs(centers='values')
+@docstring.add_snippets
 def cmap_changer(
-    self, func, *args, cmap=None, cmap_kw=None,
-    extend='neither', norm=None, norm_kw=None,
-    N=None, levels=None, values=None, centers=None, vmin=None, vmax=None,
+    self, func, *args, extend='neither',
+    cmap=None, cmap_kw=None, norm=None, norm_kw=None,
+    vmin=None, vmax=None, N=None, levels=None, values=None,
     symmetric=False, locator=None, locator_kw=None,
     edgefix=None, labels=False, labels_kw=None, fmt=None, precision=2,
     colorbar=False, colorbar_kw=None,
@@ -2182,57 +2232,14 @@ def cmap_changer(
     Note
     ----
     This function wraps every method that take a `cmap` argument:
-    %(methods)s.
+    {methods}
 
     Parameters
     ----------
-    cmap : colormap spec, optional
-        The colormap specifer, passed to the `~proplot.constructor.Colormap`
-        constructor.
-    cmap_kw : dict-like, optional
-        Passed to `~proplot.constructor.Colormap`.
-    norm : normalizer spec, optional
-        The colormap normalizer, used to warp data before passing it
-        to `~proplot.colors.DiscreteNorm`. This is passed to the
-        `~proplot.constructor.Norm` constructor.
-    norm_kw : dict-like, optional
-        Passed to `~proplot.constructor.Norm`.
-    extend : {'neither', 'min', 'max', 'both'}, optional
+    extend : {{'neither', 'min', 'max', 'both'}}, optional
         Where to assign unique colors to out-of-bounds data and draw
         "extensions" (triangles, by default) on the colorbar.
-    levels, N : int or list of float, optional
-        The number of level edges, or a list of level edges. If the former,
-        `locator` is used to generate this many levels at "nice" intervals.
-        If the latter, the levels should be monotonically increasing or
-        decreasing (note that decreasing levels will only work with ``pcolor``
-        plots, not ``contour`` plots). Default is :rc:`image.levels`.
-
-        Since this function also wraps `~matplotlib.axes.Axes.pcolor` and
-        `~matplotlib.axes.Axes.pcolormesh`, this means they now
-        accept the `levels` keyword arg. You can now discretize your
-        colors in a ``pcolor`` plot just like with ``contourf``.
-    values, centers : int or list of float, optional
-        The number of level centers, or a list of level centers. If provided,
-        levels are inferred using `~proplot.utils.edges`. This will override
-        any `levels` input.
-    symmetric : bool, optional
-        If ``True``, auto-generated levels are symmetric about zero.
-    vmin, vmax : float, optional
-        Used to determine level locations if `levels` is an integer. Actual
-        levels may not fall exactly on `vmin` and `vmax`, but the minimum
-        level will be no smaller than `vmin` and the maximum level will be
-        no larger than `vmax`.
-
-        If `vmin` or `vmax` is not provided, the minimum and maximum data
-        values are used.
-    locator : locator-spec, optional
-        The locator used to determine level locations if `levels` or `values`
-        is an integer and `vmin` and `vmax` were not provided. Passed to the
-        `~proplot.constructor.Locator` constructor. Default is
-        `~matplotlib.ticker.MaxNLocator` with ``levels`` or ``values+1``
-        integer levels.
-    locator_kw : dict-like, optional
-        Passed to `~proplot.constructor.Locator`.
+    %(cmap_changer.params)s
     edgefix : bool, optional
         Whether to fix the the `white-lines-between-filled-contours \
 <https://stackoverflow.com/q/8263769/4970632>`__
@@ -2325,18 +2332,11 @@ def cmap_changer(
 
     # Flexible user input
     Z_sample = args[-1]
-    vmin = _not_none(vmin=vmin, norm_kw_vmin=norm_kw.pop('vmin', None))
-    vmax = _not_none(vmax=vmax, norm_kw_vmax=norm_kw.pop('vmax', None))
-    values = _not_none(values=values, centers=centers)
     edgefix = _not_none(edgefix, rc['image.edgefix'])
     linewidths = _not_none(lw=lw, linewidth=linewidth, linewidths=linewidths)
     linestyles = _not_none(ls=ls, linestyle=linestyle, linestyles=linestyles)
     colors = _not_none(
         color=color, colors=colors, edgecolor=edgecolor, edgecolors=edgecolors,
-    )
-    levels = _not_none(
-        N=N, levels=levels, norm_kw_levels=norm_kw.pop('levels', None),
-        default=rc['image.levels']
     )
 
     # Get colormap, but do not use cmap when 'colors' are passed to contour()
@@ -2405,7 +2405,7 @@ def cmap_changer(
     if cmap is not None and name not in ('hexbin',):
         norm, cmap, levels, ticks = _build_discrete_norm(
             Z_sample,  # sample data for getting suitable levels
-            levels=levels, values=values,
+            N=N, levels=levels, values=values,
             norm=norm, norm_kw=norm_kw,
             locator=locator, locator_kw=locator_kw,
             cmap=cmap, vmin=vmin, vmax=vmax, extend=extend,
@@ -3022,7 +3022,7 @@ or colormap-spec
         The font size, weight, and color for colorbar label text.
     ticklabelsize, ticklabelweight, ticklabelcolor : optional
         The font size, weight, and color for colorbar tick labels.
-    orientation : {'horizontal', 'vertical'}, optional
+    orientation : {{'horizontal', 'vertical'}}, optional
         The colorbar orientation. You should not have to explicitly set this.
 
     Other parameters
@@ -3412,7 +3412,7 @@ def _wrapper_decorator(driver):
         # Prevents us from having to both explicitly apply decorators in
         # axes.py and explicitly list functions *again* in this file
         docstring = driver._docstring_orig
-        if '%(methods)s' in docstring:
+        if '{methods}' in docstring:
             if name in proplot_methods:
                 link = f'`~proplot.axes.Axes.{name}`'
             elif name in cartopy_methods:
@@ -3427,7 +3427,7 @@ def _wrapper_decorator(driver):
                     + ',' * int(len(methods) > 2)  # Oxford comma bitches
                     + ' and ' * int(len(methods) > 1)
                     + methods[-1])
-                driver.__doc__ = docstring % {'methods': string}
+                driver.__doc__ = docstring.format(methods=string)
         return _wrapper
     return decorator
 
