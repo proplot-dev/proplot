@@ -76,6 +76,8 @@ class GeoAxes(base.Axes):
         lonlim=None, latlim=None, boundinglat=None, grid=None,
         lonlines=None, lonlocator=None,
         latlines=None, latlocator=None, latmax=None,
+        lonlines_kw=None, lonlocator_kw=None,
+        latlines_kw=None, latlocator_kw=None,
         labels=None, latlabels=None, lonlabels=None,
         patch_kw=None, **kwargs,
     ):
@@ -96,10 +98,11 @@ class GeoAxes(base.Axes):
         grid : bool, optional
             Toggles meridian and parallel gridlines on and off. Default is
             :rc:`geogrid`.
-        lonlines, latlines : float or list of float, optional
-            If float, indicates the *spacing* of meridian and parallel
-            gridlines. Otherwise, must be a list of floats indicating specific
-            meridian and parallel gridlines to draw.
+        lonlines, latlines : float, list of float, or `~matplotlib.ticker.Locator`, \
+optional
+            If float, indicates the *spacing* of meridian and parallel gridlines. If
+            list of float, indicates the exact meridian and parallel gridlines to draw.
+            Otherwise, should be a `~matplotlib.ticker.Locator` instance.
         lonlocator, latlocator : optional
             Aliases for `lonlines`, `latlines`.
         latmax : float, optional
@@ -157,9 +160,17 @@ optional
         with rc.context(rc_kw, mode=rc_mode):
             # Parse alternative keyword args
             # TODO: Why isn't default latmax 80 respected sometimes?
-            lonlines = _not_none(
-                lonlines=lonlines, lonlocator=lonlocator,
-                default=rc.get('geogrid.lonstep', context=True),
+            lonlines = _not_none(lonlines=lonlines, lonlocator=lonlocator)
+            lonlines_user = lonlines is not None  # if True do not use LongitudeLocator
+            lonlines = _not_none(lonlines, rc.get('geogrid.lonstep', context=True))
+            latlines = _not_none(latlines=latlines, latlocator=latlocator)
+            latlines_user = latlines is not None
+            latlines = _not_none(latlines, rc.get('geogrid.latstep', context=True))
+            lonlines_kw = _not_none(
+                lonlines_kw=lonlines_kw, lonlocator_kw=lonlocator_kw, default={},
+            )
+            latlines_kw = _not_none(
+                latlines_kw=latlines_kw, latlocator_kw=latlocator_kw, default={},
             )
             latlines = _not_none(
                 latlines=latlines, latlocator=latlocator,
@@ -177,7 +188,9 @@ optional
                 if np.iterable(lonlines):
                     lonlines = list(lonlines)
                 else:
-                    lonlines = self._get_lonlines(step=lonlines)
+                    lonlines = self._get_lonlines(
+                        step=lonlines, user=lonlines_user, **lonlines_kw
+                    )
 
             # Get latitude lines. If latmax is changed we always need to reset latlines
             if latlines is not None or latmax is not None:
@@ -187,7 +200,9 @@ optional
                 if np.iterable(latlines):
                     latlines = list(latlines)
                 else:
-                    latlines = self._get_latlines(step=latlines, latmax=latmax)
+                    latlines = self._get_latlines(
+                        step=latlines, latmax=latmax, user=latlines_user, **latlines_kw
+                    )
 
             # Length-4 boolean arrays of whether and where to toggle labels
             # Format is [left, right, bottom, top]
@@ -226,9 +241,9 @@ optional
             )
             super().format(**kwargs)
 
-    def _get_latlines(self, step, latmax=None):
+    def _get_latlines(self, step, latmax=None, user=None, **kwargs):
         """
-        Get default latitude lines at nice intervals.
+        Get latitude lines every `step` degrees.
         """
         # Latitudes gridlines, draw from -latmax to latmax unless result
         # would be asymmetrical across equator
@@ -246,7 +261,7 @@ optional
             latlines = np.append(-latlines[::-1], latlines[1:])
         return list(latlines)
 
-    def _get_lonlines(self, step, lon0=None):
+    def _get_lonlines(self, step, lon0=None, user=None, **kwargs):
         """
         Get longitude lines every `step` degrees.
         """
@@ -293,36 +308,6 @@ optional
             name = 'lon' if lon else 'lat'
             raise ValueError(f'Invalid {name}label spec: {labels}.')
         return array
-
-
-def _axes_domain(self, *args, **kwargs):
-    """
-    Gridliner method monkey patch. Filter valid label coordinates to values
-    between lon_0 - 180 and lon_0 + 180.
-    """
-    # See _add_gridline_label for detials
-    lon_0 = self.axes.projection.proj4_params.get('lon_0', 0)
-    x_range, y_range = type(self)._axes_domain(self, *args, **kwargs)
-    x_range = np.asarray(x_range) + lon_0
-    return x_range, y_range
-
-
-def _add_gridline_label(self, value, axis, upper_end):
-    """
-    Gridliner method monkey patch. Always print number in range (180W, 180E).
-    """
-    # Have 3 choices (see Issue #78):
-    # 1. lonlines go from -180 to 180, but get double 180 labels at dateline
-    # 2. lonlines go from -180 to e.g. 150, but no lines from 150 to dateline
-    # 3. lonlines go from lon_0 - 180 to lon_0 + 180 mod 360, but results
-    #    in non-monotonic array causing double gridlines east of dateline
-    # 4. lonlines go from lon_0 - 180 to lon_0 + 180 monotonic, but prevents
-    #    labels from being drawn outside of range (-180, 180)
-    # These monkey patches choose #4 and permit labels being drawn
-    # outside of (-180 180)
-    if axis == 'x':
-        value = (value + 180) % 360 - 180
-    return type(self)._add_gridline_label(self, value, axis, upper_end)
 
 
 class CartopyAxes(GeoAxes, GeoAxesCartopy):
@@ -391,6 +376,25 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
     def _get_lon_0(self):
         """Get the central longitude."""
         return self.projection.proj4_params.get('lon_0', 0)
+
+    def _get_lonlines(self, step, user=False, **kwargs):
+        """Get longitude locator given the input step."""
+        if not user and _version_cartopy >= _version('0.18'):
+            from cartopy.mpl import ticker
+            return ticker.LongitudeLocator(**kwargs)
+        else:
+            return super()._get_lonlines(step)
+
+    def _get_latlines(self, step, latmax=None, user=False, **kwargs):
+        """Get latitude locator given the input step."""
+        # NOTE: After cartopy v0.18 meridian lines are no longer limited by the
+        # most southerly and northerly parallel lines, for both the automatic
+        # latitude locator and FixedLocator.
+        if not user and _version_cartopy >= _version('0.18'):
+            from cartopy.mpl import ticker
+            return ticker.LatitudeLocator(**kwargs)
+        else:
+            return super()._get_latlines(step, latmax=latmax)
 
     def _format_apply(
         self, *, patch_kw,
@@ -471,8 +475,9 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
         # TODO: Cartopy has had two formatters for a while but we use newer one
         # https://github.com/SciTools/cartopy/pull/1066
         if not self._gridliners:
-            gl = self.gridlines(zorder=2.5)  # below text only
-            gl._axes_domain = _axes_domain.__get__(gl)  # apply monkey patches
+            gl = self.gridlines(crs=ccrs.PlateCarree(), zorder=2.5)  # below text only
+            gl._draw_gridliner = _draw_gridliner.__get__(gl)  # apply monkey patch
+            gl._axes_domain = _axes_domain.__get__(gl)
             gl._add_gridline_label = _add_gridline_label.__get__(gl)
             gl.xlines = gl.ylines = False
             gl.xformatter = ticker.LongitudeFormatter()
@@ -488,7 +493,7 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
         # See: https://github.com/SciTools/cartopy/blob/master/lib/cartopy/mpl/geoaxes.py#L638  # noqa
         # WARNING: The set_extent method tries to set a *rectangle* between
         # the *4* (x,y) coordinate pairs (each corner), so something like
-        # (-180,180,-90,90) will result in *line*, causing error!
+        # (-180, 180, -90, 90) will result in *line*, causing error!
         proj = self.projection.proj4_params['proj']
         north = isinstance(self.projection, (
             ccrs.NorthPolarStereo, pcrs.NorthPolarGnomonic,
@@ -517,10 +522,7 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
                 eps = 1e-10  # bug with full -180, 180 range when lon_0 != 0
                 lat0 = (90 if north else -90)
                 lon0 = self.projection.proj4_params.get('lon_0', 0)
-                extent = [
-                    lon0 - 180 + eps, lon0 + 180 - eps,
-                    boundinglat, lat0
-                ]
+                extent = [lon0 - 180 + eps, lon0 + 180 - eps, boundinglat, lat0]
                 self.set_extent(extent, crs=ccrs.PlateCarree())
                 self._boundinglat = boundinglat
         else:
@@ -559,24 +561,31 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
         if pad is not None:
             gl.xpadding = gl.ypadding = pad
 
-        # Grid locations
+        # Gridline longitudes and latitudes
         eps = 1e-10
         if lonlines is not None:
-            if len(lonlines) == 0:
-                gl.xlines = False
-            else:
+            if isinstance(lonlines, mticker.Locator):
                 gl.xlines = True
-                gl.xlocator = mticker.FixedLocator(lonlines)
-        if latlines is not None:
-            if len(latlines) == 0:
-                gl.ylines = False
+                gl.xlocator = lonlines
             else:
+                # As of 0.18 lines no longer have to be in [lon_0 - 180, lon_0 + 180]
+                if _version_cartopy >= _version('0.18'):
+                    lonlines = (np.asarray(lonlines) + 180) % 360 - 180
+                gl.xlines = bool(len(lonlines))
+                if gl.xlines:
+                    gl.xlocator = mticker.FixedLocator(lonlines)
+        if latlines is not None:
+            if isinstance(latlines, mticker.Locator):
                 gl.ylines = True
-                if latlines[0] == -90:
-                    latlines[0] += eps
-                if latlines[-1] == 90:
-                    latlines[-1] -= eps
-                gl.ylocator = mticker.FixedLocator(latlines)
+                gl.ylocator = latlines
+            else:
+                gl.ylines = bool(len(latlines))
+                if gl.ylines:
+                    if latlines[0] == -90:
+                        latlines[0] += eps
+                    if latlines[-1] == 90:
+                        latlines[-1] -= eps
+                    gl.ylocator = mticker.FixedLocator(latlines)
 
         # Grid label toggling
         # Issue warning instead of error!
