@@ -859,17 +859,37 @@ class BasemapAxes(GeoAxes):
         """Get the central longitude."""
         return step * round(self.projection.lonmin / step) + 180
 
+    def _get_lonlines(self, step, user=False, **kwargs):
+        """Get longitude line locations given the input step."""
+        # Locations do not have to wrap around like they do in cartopy
+        lonlines = super()._get_lonlines(step)
+        lonlines = lonlines[:-1]
+        return lonlines
+
     def _format_apply(
         self, *, patch_kw,
         lonlim, latlim, boundinglat,
-        lonlines, latlines, latmax,
-        lonarray, latarray,
+        lonlines, latlines, lonlines_kw, latlines_kw,
+        lonformatter, latformatter, lonformatter_kw, latformatter_kw,
+        rotate_labels,
+        latmax, lonarray, latarray,
     ):
         """
         Apply changes to the basemap axes. Extra kwargs are used
         to update the proj4 params.
         """
-        # Informative warning messages
+        # Ignored arguments
+        rotate_labels  # avoid U100 error (this arg is simply ignored)
+        if lonformatter or lonformatter_kw:
+            warnings._warn_proplot(
+                f'Ignoring formatter arguments lonformatter={lonformatter} '
+                f'with lonformatter_kw={lonformatter_kw} for basemap axes.'
+            )
+        if latformatter or latformatter_kw:
+            warnings._warn_proplot(
+                f'Ignoring formatter arguments latformatter={latformatter} '
+                f'with latformatter_kw={latformatter_kw} for basemap axes.'
+            )
         if (
             lonlim is not None
             or latlim is not None
@@ -947,7 +967,7 @@ class BasemapAxes(GeoAxes):
             latlines = _not_none(latlines, self._latlines_values)
             latarray = _not_none(latarray, self._latlines_labels, [0] * 4)
             p = self.projection.drawparallels(
-                latlines, latmax=ilatmax, labels=latarray, ax=self
+                latlines, latmax=ilatmax, labels=latarray, ax=self, **latlines_kw,
             )
             self._latlines = p
             for obj in self._iter_lines(p):
@@ -967,7 +987,7 @@ class BasemapAxes(GeoAxes):
             lonlines = _not_none(lonlines, self._lonlines_values)
             lonarray = _not_none(lonarray, self._lonlines_labels, [0] * 4)
             p = self.projection.drawmeridians(
-                lonlines, latmax=ilatmax, labels=lonarray, ax=self,
+                lonlines, latmax=ilatmax, labels=lonarray, ax=self, **lonlines_kw,
             )
             self._lonlines = p
             for obj in self._iter_lines(p):
