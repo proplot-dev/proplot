@@ -10,7 +10,7 @@ import matplotlib.transforms as mtransforms
 import matplotlib.ticker as mticker
 from . import ticker as pticker
 from .internals import ic  # noqa: F401
-from .internals import warnings, _not_none
+from .internals import warnings, _version, _version_mpl, _not_none
 scales = mscale._scale_mapping
 
 __all__ = [
@@ -33,11 +33,9 @@ def _parse_logscale_args(*keys, **kwargs):
     change the default `linthresh` to ``1``.
     """
     # NOTE: Scale classes ignore unused arguments with warnings, but matplotlib 3.3
-    # version changes the keyword args. Since we can't do a try except clause, only way
-    # to avoid warnings with 3.3 upgrade is to test version string. Ugly, I know.
-    from packaging import version
-    from matplotlib import __version__
-    kwsuffix = '' if version.parse(__version__) >= version.parse('3.3') else 'x'
+    # version changes the keyword args. Since we can't do a try except clause, only
+    # way to avoid warnings with 3.3 upgrade is to test version string.
+    kwsuffix = '' if _version_mpl >= _version('3.3') else 'x'
     for key in keys:
         # Remove duplicates
         opts = {

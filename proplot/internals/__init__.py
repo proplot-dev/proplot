@@ -73,3 +73,31 @@ class _set_state(object):
                 setattr(self._obj, key, self._kwargs_orig[key])
             else:
                 delattr(self._obj, key)
+
+
+class _version(list):
+    """
+    Casual version parser for MAJOR.MINOR version strings. Do not want to add
+    'packaging' dependency and only care about major and minor tags.
+    """
+    def __repr__(self):
+        return f'version({self._version})'
+
+    def __init__(self, version):
+        try:
+            major, minor, *_ = version.split('.')
+            major, minor = int(major), int(minor)
+        except (ValueError, AttributeError):
+            raise ValueError(f'Invalid version {version!r}.')
+        self._version = version
+        super().__init__((major, minor))  # then use builtin python list sorting
+
+
+# Add matplotlib and cartopy versions
+import matplotlib as _
+_version_mpl = _version(_.__version__)
+try:
+    import cartopy as _
+    _version_cartopy = _version(_.__version__)
+except ImportError:
+    _version_cartopy = (0, 0)
