@@ -223,7 +223,7 @@ def _draw_bars(
                 iax += 1
                 ax.set_visible(False)
                 ax = axs[iax]
-            cmap = pcolors._cmapdict[name]
+            cmap = pcolors._cmap_database[name]
             if N is not None:
                 cmap = cmap.copy(N=N)
             ax.colorbar(
@@ -662,8 +662,8 @@ def show_cmaps(*args, **kwargs):
         ]
     else:
         names = [
-            name for name in pcolors._cmapdict.keys() if
-            isinstance(pcolors._cmapdict[name], pcolors.LinearSegmentedColormap)
+            name for name in pcolors._cmap_database.keys() if
+            isinstance(pcolors._cmap_database[name], pcolors.LinearSegmentedColormap)
         ]
 
     # Return figure of colorbars
@@ -705,8 +705,8 @@ def show_cycles(*args, **kwargs):
         ]
     else:
         names = [
-            name for name in pcolors._cmapdict.keys() if
-            isinstance(pcolors._cmapdict[name], pcolors.ListedColormap)
+            name for name in pcolors._cmap_database.keys() if
+            isinstance(pcolors._cmap_database[name], pcolors.ListedColormap)
         ]
 
     # Return figure of colorbars

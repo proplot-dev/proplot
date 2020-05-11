@@ -16,10 +16,10 @@ from .internals import ic  # noqa: F401
 from .internals import docstring, warnings, _not_none
 from .utils import to_rgb, to_xyz
 if hasattr(mcm, '_cmap_registry'):
-    _cmapdict_attr = '_cmap_registry'
+    _cmap_database_attr = '_cmap_registry'
 else:
-    _cmapdict_attr = 'cmap_d'
-_cmapdict = getattr(mcm, _cmapdict_attr)
+    _cmap_database_attr = 'cmap_d'
+_cmap_database = getattr(mcm, _cmap_database_attr)
 
 
 __all__ = [
@@ -2166,7 +2166,7 @@ class _ColorCache(dict):
             and isinstance(rgb[1], Number) and isinstance(rgb[0], str)
         ):
             try:
-                cmap = _cmapdict[rgb[0]]
+                cmap = _cmap_database[rgb[0]]
             except (TypeError, KeyError):
                 pass
             else:
@@ -2199,11 +2199,11 @@ def _get_cmap(name=None, lut=None):
     if isinstance(name, mcolors.Colormap):
         return name
     try:
-        cmap = _cmapdict[name]
+        cmap = _cmap_database[name]
     except KeyError:
         raise KeyError(
             f'Invalid colormap name {name!r}. Valid names are: '
-            + ', '.join(map(repr, _cmapdict)) + '.'
+            + ', '.join(map(repr, _cmap_database)) + '.'
         )
     if lut is not None:
         cmap = cmap._resample(lut)
@@ -2349,13 +2349,13 @@ if not isinstance(mcolors._colors_full_map, ColorDatabase):
 # Replace colormap database with custom database
 if mcm.get_cmap is not _get_cmap:
     mcm.get_cmap = _get_cmap
-if not isinstance(_cmapdict, ColormapDatabase):
-    _cmapdict = {
-        key: value for key, value in _cmapdict.items()
+if not isinstance(_cmap_database, ColormapDatabase):
+    _cmap_database = {
+        key: value for key, value in _cmap_database.items()
         if key[-2:] != '_r' and key[-8:] != '_shifted'
     }
-    _cmapdict = ColormapDatabase(_cmapdict)
-    setattr(mcm, _cmapdict_attr, _cmapdict)
+    _cmap_database = ColormapDatabase(_cmap_database)
+    setattr(mcm, _cmap_database_attr, _cmap_database)
 
 # Deprecations
 CmapDict = warnings._rename_obj('CmapDict', ColormapDatabase)

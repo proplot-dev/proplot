@@ -4,7 +4,6 @@ Various tools that may be useful while making plots.
 """
 import re
 import numpy as np
-import matplotlib.cm as mcm
 import matplotlib.colors as mcolors
 from matplotlib import rcParams
 from numbers import Number, Integral
@@ -364,11 +363,12 @@ def to_rgb(color, space='rgb', cycle=None, alpha=False):
     # Convert color cycle strings
     if isinstance(color, str) and re.match(r'\AC[0-9]\Z', color):
         if isinstance(cycle, str):
+            from .colors import _cmap_database
             try:
-                cycle = mcm.cmap_d[cycle].colors
+                cycle = _cmap_database[cycle].colors
             except (KeyError, AttributeError):
                 cycles = sorted(
-                    name for name, cmap in mcm.cmap_d.items()
+                    name for name, cmap in _cmap_database.items()
                     if isinstance(cmap, mcolors.ListedColormap)
                 )
                 raise ValueError(
