@@ -67,13 +67,9 @@ ProPlot v0.7.0 (2020-##-##)
 ProPlot v0.6.0 (2020-##-##)
 ===========================
 
-Rather than creating branches and opening pull requests, this release was
-developed by running the testing suite on my local machine and making commits
-directly to master. I will try to avoid this sort of workflow in the future.
-
 .. rubric:: Deprecated
 
-There are quite a lot of deprecations for this release. Since this is
+There are quite a lot of deprecations for this release.
 
 - Deprecate support for "parametric" plots inside `~matplotlib.axes.Axes.plot`,
   instead use `~proplot.axes.Axes.parametric` (:commit:`64210bce`).
@@ -114,11 +110,13 @@ There are quite a lot of deprecations for this release. Since this is
   `~proplot.styletools.LinearSegmentedColormap.truncated` to
   `~proplot.styletools.LinearSegmentedColormap.truncate`, and
   `~proplot.styletools.LinearSegmentedColormap.punched` to
-  `~proplot.styletools.LinearSegmentedColormap.cut` (:pr:`e1a08930`).  The old
+  `~proplot.styletools.LinearSegmentedColormap.cut` (:commit:`e1a08930`).  The old
   method names remain with a deprecation warning.
 
 .. rubric:: Features
 
+- Support `cartopy 0.18 <https://scitools.org.uk/cartopy/docs/latest/whats_new.html>`__
+  locators, formatters, deprecations, and new labelling features (:pr:`158`).
 - Support more `~proplot.ticker.AutoFormatter` features on
   `~proplot.ticker.SimpleFormatter` (:commit:`6decf962`).
 - Support drawing colorbars with descending levels (:commit:`10763146`)
