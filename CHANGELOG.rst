@@ -115,6 +115,8 @@ There are quite a lot of deprecations for this release.
 
 .. rubric:: Features
 
+- Support building a colormap and `DiscreteNorm` inside `~matplotlib.axes.Axes.scatter`,
+  just like `contourf` and `pcolormesh` (:pr:`162`).
 - Support `cartopy 0.18 <https://scitools.org.uk/cartopy/docs/latest/whats_new.html>`__
   locators, formatters, deprecations, and new labelling features (:pr:`158`).
 - Add :rcraw:`geogrid.labelpad` and :rcraw:`geogrid.rotatelabels` settings
