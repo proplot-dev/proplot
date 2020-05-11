@@ -1,5 +1,7 @@
 # Hard requirements for notebook examples and documentation build
 # Proplot itself just needs matplotlib
+# NOTE: Basemap is broken as of matplotlib >=3.3 so for documentation
+# use 3.2.1. Probably lots of basemap holdouts for next ~5 years.
 # NOTE: PyQt5 is needed by pyplot, RTD server *happens* to already have it
 # but creating local environment will fail.
 name: proplot-dev
@@ -10,7 +12,7 @@ dependencies:
   - numpy
   - xarray
   - pandas
-  - matplotlib
+  - matplotlib==3.2.1
   - cartopy
   - basemap
   - pandoc
