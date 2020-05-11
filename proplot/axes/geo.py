@@ -78,6 +78,9 @@ class GeoAxes(base.Axes):
         latlines=None, latlocator=None, latmax=None,
         lonlines_kw=None, lonlocator_kw=None,
         latlines_kw=None, latlocator_kw=None,
+        lonformatter=None, latformatter=None,
+        lonformatter_kw=None, latformatter_kw=None,
+        rotate_labels=None,
         labels=None, latlabels=None, lonlabels=None,
         patch_kw=None, **kwargs,
     ):
@@ -105,6 +108,25 @@ optional
             Otherwise, should be a `~matplotlib.ticker.Locator` instance.
         lonlocator, latlocator : optional
             Aliases for `lonlines`, `latlines`.
+        lonlines_kw, latlines_kw : dict, optional
+            Keyword argument dictionaries passed to the
+            `~cartopy.mpl.ticker.LongitudeFormatter` and
+            `~cartopy.mpl.ticker.LatitudeFormatter` formatters (respectively) for
+            cartopy axes, or passed to `~mpl_toolkits.basemap.Basemap.drawmeridians`
+            and `~mpl_toolkits.basemap.Basemap.drawparallels` methods (respectively)
+            for basemap axes.
+        lonlocator_kw, latlocator_kw : optional
+            Aliases for `lonlines_kw`, `latlines_kw`.
+        lonformatter, latformatter : `~matplotlib.ticker.Formatter`, optional
+            `~matplotlib.ticker.Formatter` instances used to style longitude
+            and latitude tick labels. For cartopy axes only.
+        lonformatter_kw, latformatter_kw : optional
+            Keyword arguments passed to `~cartopy.mpl.ticker.LongitudeFormatter`
+            and `~cartopy.mpl.ticker.LatitudeFormatter`. Ignored if `lonformatter`
+            or `latformatter` was provided. For cartopy axes only.
+        rotate_labels : bool, optional
+            Whether to rotate longitude and latitude gridline labels. For cartopy
+            axes only. Default is :rc:`geogrid.rotatelabels`.
         latmax : float, optional
             The maximum absolute latitude for meridian gridlines. Default is
             :rc:`geogrid.latmax`.
@@ -172,10 +194,11 @@ optional
             latlines_kw = _not_none(
                 latlines_kw=latlines_kw, latlocator_kw=latlocator_kw, default={},
             )
-            latlines = _not_none(
-                latlines=latlines, latlocator=latlocator,
-                default=rc.get('geogrid.latstep', context=True),
+            rotate_labels = _not_none(
+                rotate_labels, rc.get('geogrid.rotatelabels', context=True)
             )
+            lonformatter_kw = lonformatter_kw or {}
+            latformatter_kw = latformatter_kw or {}
             latmax = _not_none(latmax, rc.get('geogrid.latmax', context=True))
             labels = _not_none(labels, rc.get('geogrid.labels', context=True))
             grid = _not_none(grid, rc.get('geogrid', context=True))
@@ -236,8 +259,12 @@ optional
             self._format_apply(
                 patch_kw=patch_kw,
                 boundinglat=boundinglat, lonlim=lonlim, latlim=latlim,
-                lonlines=lonlines, latlines=latlines, latmax=latmax,
-                lonarray=lonarray, latarray=latarray,
+                lonlines=lonlines, latlines=latlines,
+                lonlines_kw=lonlines_kw, latlines_kw=latlines_kw,
+                lonformatter=lonformatter, latformatter=latformatter,
+                lonformatter_kw=lonformatter_kw, latformatter_kw=latformatter_kw,
+                rotate_labels=rotate_labels,
+                latmax=latmax, lonarray=lonarray, latarray=latarray,
             )
             super().format(**kwargs)
 
