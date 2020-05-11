@@ -135,7 +135,7 @@ Finally, the ``geoaxes``, ``land``, ``ocean``, ``rivers``, ``lakes``,
 the corresponding :ref:`quick settings <rc_quick>` are turned on.
 
 ===============================  =========================================================================================================================================================================================================================================================
-Key(s)                           Description
+Key                              Description
 ===============================  =========================================================================================================================================================================================================================================================
 ``abc.style``                    a-b-c label style. For options, see `~proplot.axes.Axes.format`.
 ``abc.loc``                      a-b-c label position. For options, see `~proplot.axes.Axes.format`.
@@ -165,11 +165,17 @@ Key(s)                           Description
 ``geoaxes.facecolor``            Face color for the map outline patch.
 ``geoaxes.edgecolor``            Edge color for the map outline patch.
 ``geoaxes.linewidth``            Edge width for the map outline patch.
+``geogrid.alpha``                Opacity of geographic gridlines.
+``geogrid.color``                Color of geographic gridlines.
+``geogrid.labelpad``             Default padding in points between map boundary edge and longitude/latitude labels.
 ``geogrid.labels``               Boolean, indicates whether to label the parallels and meridians.
 ``geogrid.labelsize``            Font size for latitude and longitude labels. Inherits from ``small``.
 ``geogrid.latmax``               Absolute latitude in degrees, poleward of which meridian gridlines are cut off.
-``geogrid.lonstep``              Default interval for meridian gridlines in degrees.
 ``geogrid.latstep``              Default interval for parallel gridlines in degrees.
+``geogrid.linestyle``            Line style for geographic gridlines.
+``geogrid.linewidth``            line width for geographic gridlines.
+``geogrid.lonstep``              Default interval for meridian gridlines in degrees.
+``geogrid.rotatelabels``         Whether to rotate meridian and parallel gridline labels on cartopy axes.
 ``gridminor.linewidth``          Minor gridline width.
 ``gridminor.linestyle``          Minor gridline style.
 ``gridminor.alpha``              Minor gridline transparency.

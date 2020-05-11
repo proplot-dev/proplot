@@ -27,7 +27,7 @@ from . import ticker as pticker
 from . import scale as pscale
 from .utils import to_rgb
 from .internals import ic  # noqa: F401
-from .internals import warnings, _not_none
+from .internals import warnings, _version, _version_mpl, _not_none
 try:
     from mpl_toolkits.basemap import Basemap
 except ImportError:
@@ -1298,19 +1298,26 @@ def Proj(name, basemap=None, **kwargs):
 
     # Basemap
     elif basemap:
+        # NOTE: Known issue that basemap sometimes produces backwards maps:
+        # https://stackoverflow.com/q/56299971/4970632
+        # NOTE: We set rsphere to fix non-conda installed basemap issue:
+        # https://github.com/matplotlib/basemap/issues/361
         import mpl_toolkits.basemap as mbasemap
+        if _version_mpl >= _version('3.3'):
+            raise RuntimeError(
+                f'Basemap is no longer maintained and is incompatible with '
+                'matplotlib >= 3.3. Please use cartopy as your cartographic '
+                'plotting backend or downgrade to matplotlib <=3.2.'
+            )
         name = BASEMAP_PROJ_ALIASES.get(name, name)
         kwproj = BASEMAP_KW_DEFAULTS.get(name, {})
         kwproj.update(kwargs)
         kwproj.setdefault('fix_aspect', True)
         if name[:2] in ('np', 'sp'):
             kwproj.setdefault('round', True)
-        # Fix non-conda installed basemap issue:
-        # https://github.com/matplotlib/basemap/issues/361
         if name == 'geos':
             kwproj.setdefault('rsphere', (6378137.00, 6356752.3142))
-        reso = kwproj.pop('resolution', None) or kwproj.pop(
-            'reso', None) or 'c'
+        reso = kwproj.pop('resolution', None) or kwproj.pop('reso', None) or 'c'
         proj = mbasemap.Basemap(projection=name, resolution=reso, **kwproj)
         proj._package_used = 'basemap'
 

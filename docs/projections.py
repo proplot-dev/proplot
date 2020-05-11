@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # ---
 # jupyter:
 #   jupytext:
@@ -5,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.3.0
+#       jupytext_version: 1.4.2
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -98,7 +99,7 @@ axs[2].format(
 # default, but you can switch to basemap using ``basemap=True``.
 # When you request map projections, `~proplot.ui.subplots` returns
 # instances of `~proplot.axes.CartopyAxes` or `~proplot.axes.BasemapAxes`.
-
+#
 # * `~proplot.axes.CartopyAxes` joins the cartopy
 #   `~cartopy.mpl.geoaxes.GeoAxes` class with the ProPlot
 #   `~matplotlib.axes.Axes` class and adds a `~proplot.axes.GeoAxes.format`
@@ -163,10 +164,11 @@ fig, axs = plot.subplots(
     },
     ncols=2, nrows=5
 )
-axs.format(suptitle='Figure with several projections')
-axs.format(coast=True, latlines=30, lonlines=60)
-axs[:, 1].format(labels=True, lonlines=plot.arange(-180, 179, 60))
-axs[-1, -1].format(labels=True, lonlines=30)
+axs.format(
+    suptitle='Figure with several projections',
+    coast=True, latlines=30, lonlines=60, labels=True,
+)
+axs[-1, :].format(labels=True, lonlines=30)
 axs.format(collabels=['Cartopy projections', 'Basemap projections'])
 plot.rc.reset()
 

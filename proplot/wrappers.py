@@ -26,7 +26,7 @@ from . import colors as pcolors
 from .config import rc
 from .utils import edges, edges2d, units, to_xyz, to_rgb
 from .internals import ic  # noqa: F401
-from .internals import docstring, warnings, _not_none
+from .internals import docstring, warnings, _version, _version_cartopy, _not_none
 try:
     from cartopy.crs import PlateCarree
 except ModuleNotFoundError:
@@ -208,13 +208,14 @@ def default_crs(self, func, *args, crs=None, **kwargs):
             raise err
         args, crs = args[:-1], args[-1]
         result = func(self, *args, crs=crs, **kwargs)
-    # Fix extent, so axes tight bounding box gets correct box!
-    # From this issue:
+
+    # Fix extent, so axes tight bounding box gets correct box! From this issue:
     # https://github.com/SciTools/cartopy/issues/1207#issuecomment-439975083
-    if name == 'set_extent':
-        clipped_path = self.outline_patch.orig_path.clip_to_bbox(self.viewLim)
-        self.outline_patch._path = clipped_path
-        self.background_patch._path = clipped_path
+    if _version_cartopy < _version('0.18'):
+        if name == 'set_extent':
+            clipped_path = self.outline_patch.orig_path.clip_to_bbox(self.viewLim)
+            self.outline_patch._path = clipped_path
+            self.background_patch._path = clipped_path
     return result
 
 
