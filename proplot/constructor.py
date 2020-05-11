@@ -459,7 +459,7 @@ def Colormap(
                     arg = pcolors.LinearSegmentedColormap.from_file(arg)
             else:
                 try:
-                    arg = pcolors._cmapdict[arg]
+                    arg = pcolors._cmap_database[arg]
                 except KeyError:
                     pass
 
@@ -507,11 +507,11 @@ def Colormap(
                 message = f'Invalid colormap, color cycle, or color {arg!r}.'
                 if isinstance(arg, str) and arg[:1] != '#':
                     cmaps = ', '.join(sorted(
-                        repr(key) for key, value in pcolors._cmapdict.items()
+                        repr(key) for key, value in pcolors._cmap_database.items()
                         if isinstance(value, pcolors.LinearSegmentedColormap)
                     ))
                     cycles = ', '.join(sorted(
-                        repr(key) for key, value in pcolors._cmapdict.items()
+                        repr(key) for key, value in pcolors._cmap_database.items()
                         if isinstance(value, pcolors.ListedColormap)
                     ))
                     colors = ', '.join(sorted(
@@ -562,7 +562,7 @@ def Colormap(
         name = cmap.name  # may have been modified by e.g. .shifted()
     else:
         cmap.name = name
-    pcolors._cmapdict[name] = cmap
+    pcolors._cmap_database[name] = cmap
     if save:
         save_kw = save_kw or {}
         cmap.save(**save_kw)

@@ -953,11 +953,11 @@ def _update_color_cycle(key, value):
     else:
         cycle, rgbcycle = value, rc_quick['rgbcycle']
     try:
-        colors = pcolors._cmapdict[cycle].colors
+        colors = pcolors._cmap_database[cycle].colors
     except (KeyError, AttributeError):
         return {}, {}, {}
         cycles = sorted(
-            name for name, cmap in pcolors._cmapdict.items()
+            name for name, cmap in pcolors._cmap_database.items()
             if isinstance(cmap, pcolors.ListedColormap)
         )
         raise ValueError(
@@ -1217,7 +1217,7 @@ def register_cmaps(user=True, default=False):
             'phase', 'graycycle', 'romao', 'broco', 'corko', 'viko',
         ):
             cmap.set_cyclic(True)
-        pcolors._cmapdict[cmap.name] = cmap
+        pcolors._cmap_database[cmap.name] = cmap
 
 
 @docstring.add_snippets
@@ -1241,7 +1241,7 @@ def register_cycles(user=True, default=False):
         cmap = pcolors.ListedColormap.from_file(path, warn_on_failure=True)
         if not cmap:
             continue
-        pcolors._cmapdict[cmap.name] = cmap
+        pcolors._cmap_database[cmap.name] = cmap
 
 
 @docstring.add_snippets
@@ -1418,10 +1418,13 @@ def register_fonts():
                 os.environ['TTFPATH'] += ':' + paths
             mfonts._rebuild()
 
-    # Remove ttc files *after* rebuild
+    # Remove ttc files and 'Thin' fonts *after* rebuild
+    # NOTE: 'Thin' filter is ugly kludge but without this matplotlib picks up on
+    # Roboto thin ttf files installed on the RTD server when compiling docs.
     mfonts.fontManager.ttflist = [
         font for font in mfonts.fontManager.ttflist
         if os.path.splitext(font.fname)[1] != '.ttc'
+        or 'Thin' in os.path.basename(font.fname)
     ]
 
 
@@ -1441,10 +1444,10 @@ for _rc_sub in ('cmaps', 'cycles', 'colors', 'fonts'):
 
 # Convert colormaps that *should* be LinearSegmented from Listed
 for _name in ('viridis', 'plasma', 'inferno', 'magma', 'cividis', 'twilight'):
-    _cmap = pcolors._cmapdict.get(_name, None)
+    _cmap = pcolors._cmap_database.get(_name, None)
     if _cmap and isinstance(_cmap, pcolors.ListedColormap):
-        del pcolors._cmapdict[_name]
-        pcolors._cmapdict[_name] = pcolors.LinearSegmentedColormap.from_list(
+        del pcolors._cmap_database[_name]
+        pcolors._cmap_database[_name] = pcolors.LinearSegmentedColormap.from_list(
             _name, _cmap.colors, cyclic=(_name == 'twilight')
         )
 
@@ -1472,7 +1475,7 @@ rc = _
 # image.lut. We have to register colormaps and cycles first so that the 'cycle'
 # property accepts named cycles registered by ProPlot. No performance hit here.
 lut = rc['image.lut']
-for cmap in pcolors._cmapdict.values():
+for cmap in pcolors._cmap_database.values():
     if isinstance(cmap, mcolors.LinearSegmentedColormap):
         cmap.N = lut
 
