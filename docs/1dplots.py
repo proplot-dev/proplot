@@ -410,38 +410,36 @@ ax.format(title='Violin plots', titleloc='uc')
 # %%
 import proplot as plot
 import numpy as np
-N = 50
-cmap = 'IceFire'
-values = np.linspace(-N / 2, N / 2, N)
 fig, axs = plot.subplots(
     share=0, ncols=2, wratios=(2, 1),
     axwidth='7cm', aspect=(2, 1)
 )
 axs.format(suptitle='Parametric plots demo')
+cmap = 'IceFire'
 
 # Parametric line with smooth gradations
 ax = axs[0]
 state = np.random.RandomState(51423)
+N = 50
+x = (state.rand(N) - 0.52).cumsum()
+y = state.rand(N)
+c = np.linspace(-N / 2, N / 2, N)  # color values
 m = ax.parametric(
-    (state.rand(N) - 0.5).cumsum(), state.rand(N),
-    cmap=cmap, values=values, lw=7, extend='both'
+    x, y, c, cmap=cmap, lw=7, interp=5, capstyle='round', joinstyle='round'
 )
-ax.format(
-    xlabel='xlabel', ylabel='ylabel',
-    title='Line with smooth gradations'
-)
-ax.format(xlim=(-1, 5), ylim=(-0.2, 1.2))
+ax.format(xlabel='xlabel', ylabel='ylabel', title='Line with smooth gradations')
+ax.format(xmargin=0.05, ymargin=0.05)
 ax.colorbar(m, loc='b', label='parametric coordinate', locator=5)
 
 # Parametric line with stepped gradations
 N = 12
 ax = axs[1]
-values = np.linspace(-N / 2, N / 2, N + 1)
 radii = np.linspace(1, 0.2, N + 1)
 angles = np.linspace(0, 4 * np.pi, N + 1)
 x = radii * np.cos(1.4 * angles)
 y = radii * np.sin(1.4 * angles)
-m = ax.parametric(x, y, cmap=cmap, values=values, linewidth=15, interp=False)
+c = np.linspace(-N / 2, N / 2, N + 1)
+m = ax.parametric(x, y, c, cmap=cmap, lw=15)
 ax.format(
     xlim=(-1, 1), ylim=(-1, 1), title='Step gradations',
     xlabel='cosine angle', ylabel='sine angle'

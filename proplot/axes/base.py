@@ -14,7 +14,7 @@ from .plot import (
     _add_errorbars, _bar_wrapper, _barh_wrapper, _boxplot_wrapper,
     _cmap_changer, _cycle_changer,
     _fill_between_wrapper, _fill_betweenx_wrapper,
-    _hist_wrapper, _plot_wrapper, _scatter_wrapper,
+    _hist_wrapper, _parametric_wrapper, _plot_wrapper, _scatter_wrapper,
     _standardize_1d, _standardize_2d,
     _text_wrapper, _violinplot_wrapper,
     colorbar_wrapper, legend_wrapper,
@@ -1506,6 +1506,7 @@ optional
         side = self._loc_translate(side, 'panel')
         return self.figure._add_axes_panel(self, side, **kwargs)
 
+    @_parametric_wrapper
     @_standardize_1d
     @_cmap_changer
     def parametric(
@@ -1522,15 +1523,19 @@ optional
 
         Parameters
         ----------
-        *args : (y,) or (x,y)
+        *args : (y,), (x, y), or (x, y, values)
             The coordinates. If `x` is not provided, it is inferred from `y`.
-        cmap : colormap spec, optional
-            The colormap specifier, passed to `~proplot.constructor.Colormap`.
         values : list of float
             The parametric values used to map points on the line to colors
-            in the colormap.
+            in the colormap. This can also be passed as a third positional argument.
+        cmap : colormap spec, optional
+            The colormap specifier, passed to `~proplot.constructor.Colormap`.
+        cmap_kw : dict, optional
+            Keyword arguments passed to `~proplot.constructor.Colormap`.
         norm : normalizer spec, optional
             The normalizer, passed to `~proplot.constructor.Norm`.
+        norm_kw : dict, optional
+            Keyword arguments passed to `~proplot.constructor.Norm`.
         interp : int, optional
             If greater than ``0``, we interpolate to additional points
             between the `values` coordinates. The number corresponds to the
@@ -1552,74 +1557,35 @@ optional
             The parametric line. See `this matplotlib example \
 <https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line>`__.
         """
-        # First error check
-        # WARNING: So far this only works for 1D *x* and *y* coordinates.
-        # Cannot draw multiple colormap lines at once
-        if values is None:
-            raise ValueError('Requires a "values" keyword arg.')
-        if len(args) not in (1, 2):
-            raise ValueError(f'Requires 1-2 arguments, got {len(args)}.')
-        y = np.array(args[-1]).squeeze()
-        x = np.arange(
-            y.shape[-1]) if len(args) == 1 else np.array(args[0]).squeeze()
-        values = np.array(values).squeeze()
-        if x.ndim != 1 or y.ndim != 1 or values.ndim != 1:
-            raise ValueError(
-                f'x ({x.ndim}d), y ({y.ndim}d), and values ({values.ndim}d)'
-                ' must be 1-dimensional.'
-            )
-        if len(x) != len(y) or len(x) != len(values) or len(y) != len(values):
-            raise ValueError(
-                f'{len(x)} xs, {len(y)} ys, but {len(values)} '
-                ' colormap values.'
-            )
-
-        # Interpolate values to allow for smooth gradations between values
-        # (interp=False) or color switchover halfway between points
-        # (interp=True). Then optionally interpolate the colormap values.
-        if interp > 0:
-            x, y, values = [], [], []
-            xorig, yorig, vorig = x, y, values
-            for j in range(xorig.shape[0] - 1):
-                idx = slice(None)
-                if j + 1 < xorig.shape[0] - 1:
-                    idx = slice(None, -1)
-                x.extend(
-                    np.linspace(xorig[j], xorig[j + 1], interp + 2)[idx].flat
-                )
-                y.extend(
-                    np.linspace(yorig[j], yorig[j + 1], interp + 2)[idx].flat
-                )
-                values.extend(
-                    np.linspace(vorig[j], vorig[j + 1], interp + 2)[idx].flat
-                )
-            x, y, values = np.array(x), np.array(y), np.array(values)
-
         # Get x/y coordinates and values for points to the 'left' and 'right'
         # of each joint
+        x, y = args  # standardized by parametric wrapper
+        interp  # avoid U100 unused argument error (arg is handled by wrapper)
         coords = []
         levels = edges(values)
         for j in range(y.shape[0]):
             if j == 0:
                 xleft, yleft = [], []
             else:
-                xleft = [(x[j - 1] + x[j]) / 2, x[j]]
-                yleft = [(y[j - 1] + y[j]) / 2, y[j]]
+                xleft = [0.5 * (x[j - 1] + x[j]), x[j]]
+                yleft = [0.5 * (y[j - 1] + y[j]), y[j]]
             if j + 1 == y.shape[0]:
                 xright, yright = [], []
             else:
                 xleft = xleft[:-1]  # prevent repetition when joined with right
                 yleft = yleft[:-1]
-                xright = [x[j], (x[j + 1] + x[j]) / 2]
-                yright = [y[j], (y[j + 1] + y[j]) / 2]
+                xright = [x[j], 0.5 * (x[j + 1] + x[j])]
+                yright = [y[j], 0.5 * (y[j + 1] + y[j])]
             pleft = np.stack((xleft, yleft), axis=1)
             pright = np.stack((xright, yright), axis=1)
             coords.append(np.concatenate((pleft, pright), axis=0))
+        coords = np.array(coords)
 
         # Create LineCollection and update with values
+        # NOTE: Default capstyle is butt but this may look weird with vector graphics
         hs = mcollections.LineCollection(
-            np.array(coords), cmap=cmap, norm=norm,
-            linestyles='-', capstyle='butt', joinstyle='miter'
+            coords, cmap=cmap, norm=norm,
+            linestyles='-', capstyle='butt', joinstyle='miter',
         )
         hs.set_array(np.array(values))
         hs.update({
