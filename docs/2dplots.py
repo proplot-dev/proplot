@@ -272,19 +272,20 @@ import pandas as pd
 
 # DataArray
 state = np.random.RandomState(51423)
-data = 50 * (
-    np.sin(np.linspace(0, 2 * np.pi, 20) + 0) ** 2
-    * np.cos(np.linspace(0, np.pi, 20) + np.pi / 2)[:, None] ** 2
+linspace = np.linspace(0, np.pi, 20)
+data = 50 * state.normal(1, 0.2, size=(20, 20)) * (
+    np.sin(linspace * 2) ** 2
+    * np.cos(linspace + np.pi / 2)[:, None] ** 2
 )
 lat = xr.DataArray(
     np.linspace(-90, 90, 20),
     dims=('lat',),
-    attrs={'units': 'degN'}
+    attrs={'units': 'deg_north'}
 )
 plev = xr.DataArray(
     np.linspace(1000, 0, 20),
     dims=('plev',),
-    attrs={'long_name': 'pressure', 'units': 'hPa'}
+    attrs={'long_name': 'pressure', 'units': 'mb'}
 )
 da = xr.DataArray(
     data,
@@ -295,14 +296,14 @@ da = xr.DataArray(
 )
 
 # DataFrame
-data = state.rand(20, 20)
+data = state.rand(12, 20)
 df = pd.DataFrame(
-    data.cumsum(axis=0).cumsum(axis=1),
-    index=[*'JFMAMJJASONDJFMAMJJA']
+    (data - 0.4).cumsum(axis=0).cumsum(axis=1),
+    index=list('JFMAMJJASOND'),
 )
 df.name = 'temporal data'
-df.index.name = 'index'
-df.columns.name = 'time (days)'
+df.index.name = 'month'
+df.columns.name = 'variable (units)'
 
 # %%
 import proplot as plot
@@ -311,13 +312,13 @@ axs.format(collabels=['Automatic subplot formatting'])
 
 # Plot DataArray
 axs[0].contourf(
-    da, cmap='RdPu', cmap_kw={'left': 0.05}, colorbar='l', lw=0.7, color='gray7'
+    da, cmap='RdPu', cmap_kw={'left': 0.05}, colorbar='l', lw=0.7, color='k'
 )
 axs[0].format(yreverse=True)
 
 # Plot DataFrame
 axs[1].contourf(
-    df, cmap='YlOrRd', colorbar='r', linewidth=0.7, color='gray7'
+    df, cmap='YlOrRd', colorbar='r', linewidth=0.7, color='k'
 )
 axs[1].format(xtickminor=False)
 

@@ -251,7 +251,7 @@ def _is_string(data):
     return len(data) and isinstance(_to_ndarray(data).flat[0], str)
 
 
-def _to_array(data):
+def _to_arraylike(data):
     """
     Convert list of lists to array-like type.
     """
@@ -434,7 +434,7 @@ def standardize_1d(self, func, *args, **kwargs):
         ys, args = (y, args[0]), args[1:]
     else:
         ys = (y,)
-    ys = [_to_array(y) for y in ys]
+    ys = [_to_arraylike(y) for y in ys]
 
     # Auto x coords
     y = ys[0]  # test the first y input
@@ -444,7 +444,7 @@ def standardize_1d(self, func, *args, **kwargs):
             or any(kwargs.get(s, None) for s in ('means', 'medians'))
         )
         x, _ = _axis_labels_title(y, axis=axis)
-    x = _to_array(x)
+    x = _to_arraylike(x)
     if x.ndim != 1:
         raise ValueError(
             f'x coordinates must be 1-dimensional, but got {x.ndim}.'
@@ -637,7 +637,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
     # Ensure DataArray, DataFrame or ndarray
     Zs = []
     for Z in args:
-        Z = _to_array(Z)
+        Z = _to_arraylike(Z)
         if Z.ndim != 2:
             raise ValueError(f'Z must be 2-dimensional, got shape {Z.shape}.')
         Zs.append(Z)
@@ -649,10 +649,12 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
     # Retrieve coordinates
     if x is None and y is None:
         Z = Zs[0]
-        if order == 'C':  # TODO: check order stuff works
+        if order == 'C':
             idx, idy = 1, 0
         else:
             idx, idy = 0, 1
+        # x = np.arange(Z.shape[idx])
+        # y = np.arange(Z.shape[idy])
         if isinstance(Z, ndarray):
             x = np.arange(Z.shape[idx])
             y = np.arange(Z.shape[idy])
@@ -667,8 +669,19 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
                 x = Z.index
                 y = Z.columns
 
+    # Optionally re-order
+    # TODO: Double check this
+    if order == 'F':
+        x, y = x.T, y.T  # in case they are 2-dimensional
+        Zs = tuple(Z.T for Z in Zs)
+    elif order != 'C':
+        raise ValueError(
+            f'Invalid order {order!r}. Choose from '
+            '"C" (row-major, default) and "F" (column-major).'
+        )
+
     # Check coordinates
-    x, y = _to_array(x), _to_array(y)
+    x, y = _to_arraylike(x), _to_arraylike(y)
     if x.ndim != y.ndim:
         raise ValueError(
             f'x coordinates are {x.ndim}-dimensional, '
@@ -691,7 +704,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
             kw['xlocator'] = mticker.FixedLocator(xi)
             kw['xformatter'] = mticker.IndexFormatter(x)
             kw['xminorlocator'] = mticker.NullLocator()
-        if _is_string(x):
+        if _is_string(y):
             yi = np.arange(len(y))
             kw['ylocator'] = mticker.FixedLocator(yi)
             kw['yformatter'] = mticker.IndexFormatter(y)
@@ -750,17 +763,6 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
                     f'Z borders {tuple(i+1 for i in Z.shape)}.'
                 )
 
-        # Optionally re-order
-        # TODO: Double check this
-        if order == 'F':
-            x, y = x.T, y.T  # in case they are 2-dimensional
-            Zs = (Z.T for Z in Zs)
-        elif order != 'C':
-            raise ValueError(
-                f'Invalid order {order!r}. Choose from '
-                '"C" (row-major, default) and "F" (column-major).'
-            )
-
     # Enforce centers
     else:
         # Get centers given edges. If 2d, don't raise error, let matplotlib
@@ -792,17 +794,6 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
                     f'must match Z centers {Z.shape} '
                     f'or Z borders {tuple(i+1 for i in Z.shape)}.'
                 )
-
-        # Optionally re-order
-        # TODO: Double check this
-        if order == 'F':
-            x, y = x.T, y.T  # in case they are 2-dimensional
-            Zs = (Z.T for Z in Zs)
-        elif order != 'C':
-            raise ValueError(
-                f'Invalid order {order!r}. Choose from '
-                '"C" (row-major, default) and "F" (column-major).'
-            )
 
     # Cartopy projection axes
     if (
