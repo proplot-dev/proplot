@@ -262,6 +262,28 @@ class CartesianAxes(base.Axes):
             self.xaxis.set_visible(False)
             self.patch.set_visible(False)
 
+    def _apply_axis_sharing(self):
+        """
+        Enforce the "shared" axis labels and axis tick labels. If this is
+        not called at drawtime, "shared" labels can be inadvertantly turned
+        off e.g. when the axis scale is changed.
+        """
+        for x in 'xy':
+            # "Shared" axis and tick labels
+            axis = getattr(self, x + 'axis')
+            share = getattr(self, '_share' + x)
+            if share is not None:
+                level = (
+                    3 if getattr(self, '_share' + x + '_override')
+                    else getattr(self.figure, '_share' + x)
+                )
+                if level > 0:
+                    axis.label.set_visible(False)
+                if level > 2:
+                    axis.set_major_formatter(mticker.NullFormatter())
+            # Enforce no minor ticks labels. TODO: Document?
+            axis.set_minor_formatter(mticker.NullFormatter())
+
     def _datex_rotate(self):
         """
         Apply default rotation to datetime axis coordinates.
@@ -334,28 +356,6 @@ class CartesianAxes(base.Axes):
             nlim = nlim[::-1]
         child.set_ylim(nlim, emit=False)
         self._dualy_cache = (scale, *olim)
-
-    def _hide_labels(self):
-        """
-        Enforce the "shared" axis labels and axis tick labels. If this is
-        not called at drawtime, "shared" labels can be inadvertantly turned
-        off e.g. when the axis scale is changed.
-        """
-        for x in 'xy':
-            # "Shared" axis and tick labels
-            axis = getattr(self, x + 'axis')
-            share = getattr(self, '_share' + x)
-            if share is not None:
-                level = (
-                    3 if getattr(self, '_share' + x + '_override')
-                    else getattr(self.figure, '_share' + x)
-                )
-                if level > 0:
-                    axis.label.set_visible(False)
-                if level > 2:
-                    axis.set_major_formatter(mticker.NullFormatter())
-            # Enforce no minor ticks labels. TODO: Document?
-            axis.set_minor_formatter(mticker.NullFormatter())
 
     def _make_twin_axes(self, *args, **kwargs):
         """
@@ -1185,7 +1185,7 @@ class CartesianAxes(base.Axes):
         # Perform extra post-processing steps
         # NOTE: This mimics matplotlib API, which calls identical
         # post-processing steps in both draw() and get_tightbbox()
-        self._hide_labels()
+        self._apply_axis_sharing()
         self._altx_overrides()
         self._alty_overrides()
         self._dualx_overrides()
@@ -1197,7 +1197,7 @@ class CartesianAxes(base.Axes):
 
     def get_tightbbox(self, renderer, *args, **kwargs):
         # Perform extra post-processing steps
-        self._hide_labels()
+        self._apply_axis_sharing()
         self._altx_overrides()
         self._alty_overrides()
         self._dualx_overrides()
