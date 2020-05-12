@@ -486,7 +486,7 @@ def subplots(
         y0, y1 = yrange[idx, 0], yrange[idx, 1]
         # Draw subplot
         subplotspec = gridspec[y0:y1 + 1, x0:x1 + 1]
-        with fig._authorize_add_subplot():
+        with fig._context_authorize_add_subplot():
             axs[idx] = fig.add_subplot(
                 subplotspec, number=num, main=True,
                 **axes_kw[num]

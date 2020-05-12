@@ -441,10 +441,10 @@ designed to make your life easier.
 
 ..
   All positional arguments for 1D plotting methods are standardized by
-  `~proplot.wrappers.standardize_1d`. All positional arguments for 2D
-  plotting methods are standardized by `~proplot.wrappers.standardize_2d`.
-  See :ref:`1D plotting wrappers` and :ref:`2D plotting wrappers` for
-  details.
+  `~proplot.axes.standardize_1d`. All positional arguments for 2D
+  plotting methods are standardized by `~proplot.axes.standardize_2d`.
+  See :ref:`1D plotting methods <1d_plots>` and :ref:`2D plotting methods <2d_plots>`
+  for details.
 
 
 .. _why_xarray_pandas:

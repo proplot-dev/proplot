@@ -181,8 +181,8 @@ plot.rc.reset()
 #
 # The below example demonstrates how to plot geographic data with ProPlot.
 # It is mostly the same as cartopy, but with some new features powered by the
-# `~proplot.wrappers.standardize_2d`, `~proplot.wrappers.default_transform`,
-# and `~proplot.wrappers.default_latlon` wrappers.
+# `~proplot.axes.standardize_2d`, `~proplot.axes.default_transform`,
+# and `~proplot.axes.default_latlon` wrappers.
 #
 # * For both basemap and cartopy projections, you can pass ``globe=True`` to
 #   2D plotting commands to ensure global data coverage.

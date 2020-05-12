@@ -1124,7 +1124,7 @@ class CartesianAxes(base.Axes):
         # See https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_subplots.py  # noqa
         if self._altx_child or self._altx_parent:
             raise RuntimeError('No more than *two* twin axes are allowed.')
-        with self.figure._authorize_add_subplot():
+        with self.figure._context_authorize_add_subplot():
             ax = self._make_twin_axes(sharey=self, projection='cartesian')
         ax.set_autoscaley_on(self.get_autoscaley_on())
         ax.grid(False)
@@ -1145,7 +1145,7 @@ class CartesianAxes(base.Axes):
         # Docstring is programatically assigned below
         if self._alty_child or self._alty_parent:
             raise RuntimeError('No more than *two* twin axes are allowed.')
-        with self.figure._authorize_add_subplot():
+        with self.figure._context_authorize_add_subplot():
             ax = self._make_twin_axes(sharex=self, projection='cartesian')
         ax.set_autoscalex_on(self.get_autoscalex_on())
         ax.grid(False)

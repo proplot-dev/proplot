@@ -28,7 +28,7 @@ Axes classes
 
 .. automodsumm:: proplot.axes
    :toctree: api
-   :skip: ProjAxes, XYAxes
+   :classes-only:
 
 
 Constructor functions
@@ -52,13 +52,15 @@ Configuration tools
 Plotting wrappers
 =================
 
-.. automodule:: proplot.wrappers
+.. automodule:: proplot.axes.plot
 
-.. automodsumm:: proplot.wrappers
+.. automodsumm:: proplot.axes
    :toctree: api
+   :functions-only:
+   :skip: ProjAxes, XYAxes
 
 
-Show functions
+Demo functions
 ==============
 
 .. automodule:: proplot.demos

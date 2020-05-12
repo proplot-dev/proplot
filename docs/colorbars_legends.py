@@ -43,8 +43,8 @@
 # `~matplotlib.axes.Axes.contourf`). To draw a legend or colorbar-legend in
 # one go, pass a location (e.g. ``legend='r'`` or ``colorbar='r'``) to
 # methods that accept a `cycle` argument (e.g. `~matplotlib.axes.Axes.plot`).
-# This feature is powered by the `~proplot.wrappers.cmap_changer` and
-# `~proplot.wrappers.cycle_changer` wrappers.
+# This feature is powered by the `~proplot.axes.cmap_changer` and
+# `~proplot.axes.cycle_changer` wrappers.
 #
 # Finally, just like matplotlib "inset" legends, ProPlot also supports
 # "inset" *colorbars*. To draw an inset colorbar, pass an inset location to
@@ -185,7 +185,7 @@ for ax, title in zip(
 #
 # The `~proplot.figure.Figure` `~proplot.figure.Figure.colorbar` and
 # `~proplot.axes.Axes` `~proplot.axes.Axes.colorbar` methods are wrapped by
-# `~proplot.wrappers.colorbar_wrapper`, which adds several new features.
+# `~proplot.axes.colorbar_wrapper`, which adds several new features.
 #
 # You can now draw colorbars from *lists of colors* or *lists of artists* by
 # passing a list instead of a mappable object. Colorbar minor ticks are now
@@ -243,7 +243,7 @@ axs.format(
 #
 # The `~proplot.figure.Figure` `~proplot.figure.Figure.legend` and
 # `~proplot.axes.Axes` `~proplot.axes.Axes.legend` methods are wrapped by
-# `~proplot.wrappers.legend_wrapper`, which adds several new features.
+# `~proplot.axes.legend_wrapper`, which adds several new features.
 #
 # You can draw legends with *centered legend rows*, either by passing
 # ``center=True`` or by passing *list of lists* of plot handles. This is

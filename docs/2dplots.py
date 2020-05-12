@@ -39,14 +39,14 @@
 #
 # It is often desirable to create ProPlot colormaps on-the-fly, without
 # explicitly using the `~proplot.constructor.Colormap` constructor function.
-# To enable this, the `~proplot.wrappers.cmap_changer` wrapper adds the
+# To enable this, the `~proplot.axes.cmap_changer` wrapper adds the
 # `cmap` and `cmap_kw` arguments to every 2D plotting method. These
 # arguments are passed to the `~proplot.constructor.Colormap` constructor
 # function, and the resulting colormap is used for the input data. For
 # example, to create and apply a monochromatic colormap, you can simply use
 # ``cmap='color name'``.
 
-# The `~proplot.wrappers.cmap_changer` wrapper also
+# The `~proplot.axes.cmap_changer` wrapper also
 # adds the `norm` and `norm_kw` arguments. They are passed to the
 # `~proplot.constructor.Norm` constructor function, and the resulting
 # normalizer is used for the input data. For more information on colormaps
@@ -80,7 +80,7 @@ with plot.rc.context({'lines.linewidth': 3}):
 # Discrete colormap levels
 # ------------------------
 #
-# The `~proplot.wrappers.cmap_changer` wrapper also applies the
+# The `~proplot.axes.cmap_changer` wrapper also applies the
 # `~proplot.colors.DiscreteNorm` normalizer to every colormap plot.
 # `~proplot.colors.DiscreteNorm` converts data values to colormap colors by (1)
 # transforming data using an arbitrary *continuous* normalizer (e.g.
@@ -212,7 +212,7 @@ for data, mode, fair in zip(
 # Standardized arguments
 # ----------------------
 #
-# The `~proplot.wrappers.standardize_2d` wrapper is used to standardize
+# The `~proplot.axes.standardize_2d` wrapper is used to standardize
 # positional arguments across all 2D plotting methods.  Among other things,
 # it guesses coordinate *edges* for `~matplotlib.axes.Axes.pcolor` and
 # `~matplotlib.axes.Axes.pcolormesh` plots when you supply coordinate
@@ -255,7 +255,7 @@ with plot.rc.context({'image.cmap': 'Grays', 'image.levels': 21}):
 # Pandas and xarray integration
 # -----------------------------
 #
-# The `~proplot.wrappers.standardize_2d` wrapper also integrates 2D
+# The `~proplot.axes.standardize_2d` wrapper also integrates 2D
 # plotting methods with pandas `~pandas.DataFrame`\ s and xarray
 # `~xarray.DataArray`\ s. When you pass a DataFrame or DataArray to any
 # plotting command, the x-axis label, y-axis label, legend label, colorbar
@@ -272,19 +272,20 @@ import pandas as pd
 
 # DataArray
 state = np.random.RandomState(51423)
-data = 50 * (
-    np.sin(np.linspace(0, 2 * np.pi, 20) + 0) ** 2
-    * np.cos(np.linspace(0, np.pi, 20) + np.pi / 2)[:, None] ** 2
+linspace = np.linspace(0, np.pi, 20)
+data = 50 * state.normal(1, 0.2, size=(20, 20)) * (
+    np.sin(linspace * 2) ** 2
+    * np.cos(linspace + np.pi / 2)[:, None] ** 2
 )
 lat = xr.DataArray(
     np.linspace(-90, 90, 20),
     dims=('lat',),
-    attrs={'units': 'degN'}
+    attrs={'units': 'deg_north'}
 )
 plev = xr.DataArray(
     np.linspace(1000, 0, 20),
     dims=('plev',),
-    attrs={'long_name': 'pressure', 'units': 'hPa'}
+    attrs={'long_name': 'pressure', 'units': 'mb'}
 )
 da = xr.DataArray(
     data,
@@ -295,14 +296,14 @@ da = xr.DataArray(
 )
 
 # DataFrame
-data = state.rand(20, 20)
+data = state.rand(12, 20)
 df = pd.DataFrame(
-    data.cumsum(axis=0).cumsum(axis=1),
-    index=[*'JFMAMJJASONDJFMAMJJA']
+    (data - 0.4).cumsum(axis=0).cumsum(axis=1),
+    index=list('JFMAMJJASOND'),
 )
 df.name = 'temporal data'
-df.index.name = 'index'
-df.columns.name = 'time (days)'
+df.index.name = 'month'
+df.columns.name = 'variable (units)'
 
 # %%
 import proplot as plot
@@ -311,13 +312,13 @@ axs.format(collabels=['Automatic subplot formatting'])
 
 # Plot DataArray
 axs[0].contourf(
-    da, cmap='RdPu', cmap_kw={'left': 0.05}, colorbar='l', lw=0.7, color='gray7'
+    da, cmap='RdPu', cmap_kw={'left': 0.05}, colorbar='l', lw=0.7, color='k'
 )
 axs[0].format(yreverse=True)
 
 # Plot DataFrame
 axs[1].contourf(
-    df, cmap='YlOrRd', colorbar='r', linewidth=0.7, color='gray7'
+    df, cmap='YlOrRd', colorbar='r', linewidth=0.7, color='k'
 )
 axs[1].format(xtickminor=False)
 
@@ -328,19 +329,19 @@ axs[1].format(xtickminor=False)
 # Contour and gridbox labels
 # --------------------------
 #
-# The `~proplot.wrappers.cmap_changer` wrapper also allows you to quickly add
+# The `~proplot.axes.cmap_changer` wrapper also allows you to quickly add
 # *labels* to `~proplot.axes.Axes.heatmap`, `~matplotlib.axes.Axes.pcolor`,
 # `~matplotlib.axes.Axes.pcolormesh`, `~matplotlib.axes.Axes.contour`, and
 # `~matplotlib.axes.Axes.contourf` plots by simply using ``labels=True``.
 # Critically, the label text is colored black or white depending on the
 # luminance of the underlying grid box or filled contour.
 #
-# `~proplot.wrappers.cmap_changer` draws contour labels with
+# `~proplot.axes.cmap_changer` draws contour labels with
 # `~matplotlib.axes.Axes.clabel` and grid box labels with
 # `~matplotlib.axes.Axes.text`. You can pass keyword arguments to these
 # functions using the `labels_kw` dictionary keyword argument, and change the
 # label precision with the `precision` keyword argument. See
-# `~proplot.wrappers.cmap_changer` for details.
+# `~proplot.axes.cmap_changer` for details.
 
 # %%
 import proplot as plot

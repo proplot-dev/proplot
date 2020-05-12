@@ -74,7 +74,7 @@ extensions = [
     'sphinx_copybutton',
     'sphinx_automodapi.automodapi',  # see: https://github.com/lukelbd/sphinx-automodapi/tree/proplot-mods # noqa
     'nbsphinx',
-    ]
+]
 
 extlinks = {
     'issue': ('https://github.com/lukelbd/proplot/issues/%s', 'GH#'),

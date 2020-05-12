@@ -17,9 +17,8 @@ __all__ = ['PolarAxes']
 
 class PolarAxes(base.Axes, mproj.PolarAxes):
     """
-    Axes subclass for plotting in polar coordinates.
-    Adds the `~PolarAxes.format` method and overrides several existing
-    methods.
+    Axes subclass for plotting in polar coordinates. Adds the `~PolarAxes.format`
+    method and overrides several existing methods.
     """
     #: The registered projection name.
     name = 'polar2'

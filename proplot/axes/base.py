@@ -9,12 +9,7 @@ import matplotlib.ticker as mticker
 import matplotlib.patches as mpatches
 import matplotlib.transforms as mtransforms
 import matplotlib.collections as mcollections
-from .. import gridspec as pgridspec
-from ..config import rc
-from ..utils import units, edges
-from ..internals import ic  # noqa: F401
-from ..internals import defaults, warnings, _not_none
-from ..wrappers import (
+from .plot import (
     _get_transform,
     _add_errorbars, _bar_wrapper, _barh_wrapper, _boxplot_wrapper,
     _cmap_changer, _cycle_changer,
@@ -24,6 +19,11 @@ from ..wrappers import (
     _text_wrapper, _violinplot_wrapper,
     colorbar_wrapper, legend_wrapper,
 )
+from .. import gridspec as pgridspec
+from ..config import rc
+from ..utils import units, edges
+from ..internals import ic  # noqa: F401
+from ..internals import defaults, warnings, _not_none
 
 __all__ = ['Axes']
 
@@ -329,7 +329,7 @@ class Axes(maxes.Axes):
         Return the column or row gridspec range for the axes.
         """
         if not hasattr(self, 'get_subplotspec'):
-            raise RuntimeError(f'Axes is not a subplot.')
+            raise RuntimeError('Axes is not a subplot.')
         ss = self.get_subplotspec()
         if hasattr(ss, 'get_active_rows_columns'):
             func = ss.get_active_rows_columns
@@ -952,7 +952,7 @@ optional
     ):
         """
         Add an *inset* colorbar or *outer* colorbar along the outside edge of
-        the axes. See `~proplot.wrappers.colorbar_wrapper` for details.
+        the axes. See `~proplot.axes.colorbar_wrapper` for details.
 
         Parameters
         ----------
@@ -1008,7 +1008,7 @@ optional
         Other parameters
         ----------------
         *args, **kwargs
-            Passed to `~proplot.wrappers.colorbar_wrapper`.
+            Passed to `~proplot.axes.colorbar_wrapper`.
         """
         # TODO: add option to pad inset away from axes edge!
         # TODO: get "best" colorbar location from legend algorithm.
@@ -1051,7 +1051,7 @@ optional
                 subplotspec = gridspec[1]
 
             # Draw colorbar axes
-            with self.figure._authorize_add_subplot():
+            with self.figure._context_authorize_add_subplot():
                 ax = self.figure.add_subplot(subplotspec, projection='cartesian')  # noqa: E501
             self.add_child_axes(ax)
 
@@ -1180,7 +1180,7 @@ optional
             ticklocation = kwargs.pop('ticklocation', None) or ticklocation
             if ticklocation is not None and ticklocation != 'bottom':
                 warnings._warn_proplot(
-                    f'Inset colorbars can only have ticks on the bottom.'
+                    'Inset colorbars can only have ticks on the bottom.'
                 )
             kwargs.update({
                 'orientation': 'horizontal', 'ticklocation': 'bottom'
@@ -1194,7 +1194,7 @@ optional
     def legend(self, *args, loc=None, width=None, space=None, **kwargs):
         """
         Add an *inset* legend or *outer* legend along the edge of the axes.
-        See `~proplot.wrappers.legend_wrapper` for details.
+        See `~proplot.axes.legend_wrapper` for details.
 
         Parameters
         ----------
@@ -1234,7 +1234,7 @@ optional
         Other parameters
         ----------------
         *args, **kwargs
-            Passed to `~proplot.wrappers.legend_wrapper`.
+            Passed to `~proplot.axes.legend_wrapper`.
         """
         if loc != 'fill':
             loc = self._loc_translate(loc, 'legend')

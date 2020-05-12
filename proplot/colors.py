@@ -1097,7 +1097,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         if isinstance(samples, Integral):
             samples = np.linspace(0, 1, samples)
         elif not np.iterable(samples):
-            raise TypeError(f'Samples must be integer or iterable.')
+            raise TypeError('Samples must be integer or iterable.')
         samples = np.asarray(samples)
         colors = self(samples)
         kwargs.setdefault('name', self.name)
@@ -1818,7 +1818,7 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         if not norm:
             norm = mcolors.Normalize()
         elif isinstance(norm, mcolors.BoundaryNorm):
-            raise ValueError(f'Normalizer cannot be instance of BoundaryNorm.')
+            raise ValueError('Normalizer cannot be instance of BoundaryNorm.')
         elif not isinstance(norm, mcolors.Normalize):
             raise ValueError('Normalizer must be instance of Normalize.')
         extend = extend or 'neither'
