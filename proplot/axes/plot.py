@@ -1760,19 +1760,23 @@ def cycle_changer(
     name = func.__name__
     if not args:
         return func(self, *args, **kwargs)
+    x, y, *args = args
+    ys = (y,)
+    if len(args) >= 1 and name in ('fill_between', 'fill_betweenx'):
+        ys, args = (y, args[0]), args[1:]
     barh = stacked = False
+    if name in ('pie',):  # add x coordinates as default pie chart labels
+        kwargs['labels'] = _not_none(labels, x)  # TODO: move to pie wrapper?
     if name in ('bar', 'fill_between', 'fill_betweenx'):
         stacked = kwargs.pop('stacked', False)
     if name in ('bar',):
         barh = kwargs.get('orientation', None) == 'horizontal'
         if barh:
             kwargs.setdefault('x', 0)
-    x, y, *args = args
-    ys = (y,)
-    if len(args) >= 1 and name in ('fill_between', 'fill_betweenx'):
-        ys, args = (y, args[0]), args[1:]
-    if name in ('pie',):  # add x coordinates as default pie chart labels
-        kwargs['labels'] = _not_none(labels, x)  # TODO: move to pie wrapper?
+            kwargs.setdefault('height', 0.8)
+        else:
+            kwargs.setdefault('y', 0)
+            kwargs.setdefault('width', 0.8)
     cycle_kw = cycle_kw or {}
     legend_kw = legend_kw or {}
     colorbar_kw = colorbar_kw or {}
