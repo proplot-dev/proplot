@@ -2,11 +2,14 @@
 """
 The axes classes used for all ProPlot figures.
 """
+from . import plot
+from .plot import *  # noqa: F401, F403
 from .base import Axes  # noqa: F401
-from ..internals import warnings
 from .cartesian import CartesianAxes
 from .polar import PolarAxes
-from .geo import GeoAxes, BasemapAxes, CartopyAxes  # noqa: F401
+from .geo import GeoAxes  # noqa: F401
+from .geo import BasemapAxes, CartopyAxes
+from ..internals import warnings
 XYAxes = warnings._rename_obj('XYAxes', CartesianAxes)
 ProjAxes = warnings._rename_obj('ProjAxes', GeoAxes)
 
@@ -22,3 +25,4 @@ __all__ = [
     'GeoAxes', 'CartopyAxes', 'BasemapAxes',
     'ProjAxes', 'XYAxes',  # deprecated
 ]
+__all__.extend(plot.__all__)

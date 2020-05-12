@@ -1094,7 +1094,7 @@ class Figure(mfigure.Figure):
         Other parameters
         ----------------
         *args, **kwargs
-            Passed to `~proplot.wrappers.colorbar_wrapper`.
+            Passed to `~proplot.axes.colorbar_wrapper`.
         """
         ax = kwargs.pop('ax', None)
         cax = kwargs.pop('cax', None)
@@ -1175,7 +1175,7 @@ class Figure(mfigure.Figure):
         Other parameters
         ----------------
         *args, **kwargs
-            Passed to `~proplot.wrappers.legend_wrapper`.
+            Passed to `~proplot.axes.legend_wrapper`.
         """
         ax = kwargs.pop('ax', None)
         # Generate axes panel

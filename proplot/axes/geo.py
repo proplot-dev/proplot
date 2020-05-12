@@ -8,12 +8,7 @@ import matplotlib.text as mtext
 import matplotlib.path as mpath
 import matplotlib.ticker as mticker
 from . import base
-from .. import crs as pcrs
-from ..utils import arange
-from ..config import rc
-from ..internals import ic  # noqa: F401
-from ..internals import warnings, _version, _version_cartopy, _not_none
-from ..wrappers import (
+from .plot import (
     _add_errorbars, _norecurse, _redirect,
     _plot_wrapper, _scatter_wrapper,
     _fill_between_wrapper, _fill_betweenx_wrapper,
@@ -22,6 +17,11 @@ from ..wrappers import (
     _standardize_1d, _standardize_2d,
     _text_wrapper,
 )
+from .. import crs as pcrs
+from ..utils import arange
+from ..config import rc
+from ..internals import ic  # noqa: F401
+from ..internals import warnings, _version, _version_cartopy, _not_none
 try:
     from cartopy.mpl.geoaxes import GeoAxes as GeoAxesCartopy
 except ModuleNotFoundError:

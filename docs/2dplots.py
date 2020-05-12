@@ -39,14 +39,14 @@
 #
 # It is often desirable to create ProPlot colormaps on-the-fly, without
 # explicitly using the `~proplot.constructor.Colormap` constructor function.
-# To enable this, the `~proplot.wrappers.cmap_changer` wrapper adds the
+# To enable this, the `~proplot.axes.cmap_changer` wrapper adds the
 # `cmap` and `cmap_kw` arguments to every 2D plotting method. These
 # arguments are passed to the `~proplot.constructor.Colormap` constructor
 # function, and the resulting colormap is used for the input data. For
 # example, to create and apply a monochromatic colormap, you can simply use
 # ``cmap='color name'``.
 
-# The `~proplot.wrappers.cmap_changer` wrapper also
+# The `~proplot.axes.cmap_changer` wrapper also
 # adds the `norm` and `norm_kw` arguments. They are passed to the
 # `~proplot.constructor.Norm` constructor function, and the resulting
 # normalizer is used for the input data. For more information on colormaps
@@ -80,7 +80,7 @@ with plot.rc.context({'lines.linewidth': 3}):
 # Discrete colormap levels
 # ------------------------
 #
-# The `~proplot.wrappers.cmap_changer` wrapper also applies the
+# The `~proplot.axes.cmap_changer` wrapper also applies the
 # `~proplot.colors.DiscreteNorm` normalizer to every colormap plot.
 # `~proplot.colors.DiscreteNorm` converts data values to colormap colors by (1)
 # transforming data using an arbitrary *continuous* normalizer (e.g.
@@ -212,7 +212,7 @@ for data, mode, fair in zip(
 # Standardized arguments
 # ----------------------
 #
-# The `~proplot.wrappers.standardize_2d` wrapper is used to standardize
+# The `~proplot.axes.standardize_2d` wrapper is used to standardize
 # positional arguments across all 2D plotting methods.  Among other things,
 # it guesses coordinate *edges* for `~matplotlib.axes.Axes.pcolor` and
 # `~matplotlib.axes.Axes.pcolormesh` plots when you supply coordinate
@@ -255,7 +255,7 @@ with plot.rc.context({'image.cmap': 'Grays', 'image.levels': 21}):
 # Pandas and xarray integration
 # -----------------------------
 #
-# The `~proplot.wrappers.standardize_2d` wrapper also integrates 2D
+# The `~proplot.axes.standardize_2d` wrapper also integrates 2D
 # plotting methods with pandas `~pandas.DataFrame`\ s and xarray
 # `~xarray.DataArray`\ s. When you pass a DataFrame or DataArray to any
 # plotting command, the x-axis label, y-axis label, legend label, colorbar
@@ -328,19 +328,19 @@ axs[1].format(xtickminor=False)
 # Contour and gridbox labels
 # --------------------------
 #
-# The `~proplot.wrappers.cmap_changer` wrapper also allows you to quickly add
+# The `~proplot.axes.cmap_changer` wrapper also allows you to quickly add
 # *labels* to `~proplot.axes.Axes.heatmap`, `~matplotlib.axes.Axes.pcolor`,
 # `~matplotlib.axes.Axes.pcolormesh`, `~matplotlib.axes.Axes.contour`, and
 # `~matplotlib.axes.Axes.contourf` plots by simply using ``labels=True``.
 # Critically, the label text is colored black or white depending on the
 # luminance of the underlying grid box or filled contour.
 #
-# `~proplot.wrappers.cmap_changer` draws contour labels with
+# `~proplot.axes.cmap_changer` draws contour labels with
 # `~matplotlib.axes.Axes.clabel` and grid box labels with
 # `~matplotlib.axes.Axes.text`. You can pass keyword arguments to these
 # functions using the `labels_kw` dictionary keyword argument, and change the
 # label precision with the `precision` keyword argument. See
-# `~proplot.wrappers.cmap_changer` for details.
+# `~proplot.axes.cmap_changer` for details.
 
 # %%
 import proplot as plot

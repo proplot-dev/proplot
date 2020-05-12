@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Wrapper functions used to add functionality to various `~proplot.axes.Axes`
-plotting methods. "Wrapped" plotting methods accept the additional keyword
-arguments documented by the wrapper function. In a future version, these
-features will be documented on the individual plotting methods.
+The plotting wrappers that add functionality to various `~matplotlib.axes.Axes`
+methods. "Wrapped" `~matplotlib.axes.Axes` methods accept the additional keyword
+arguments documented by the wrapper function. In a future version, these features will
+be documented on the individual `~proplot.axes.Axes` methods themselves.
 """
 import sys
 import numpy as np
@@ -21,12 +21,12 @@ import matplotlib.artist as martist
 import matplotlib.legend as mlegend
 import matplotlib.cm as mcm
 from numbers import Number
-from . import constructor
-from . import colors as pcolors
-from .config import rc
-from .utils import edges, edges2d, units, to_xyz, to_rgb
-from .internals import ic  # noqa: F401
-from .internals import docstring, warnings, _version, _version_cartopy, _not_none
+from .. import constructor
+from .. import colors as pcolors
+from ..utils import edges, edges2d, units, to_xyz, to_rgb
+from ..config import rc
+from ..internals import ic  # noqa: F401
+from ..internals import docstring, warnings, _version, _version_cartopy, _not_none
 try:
     from cartopy.crs import PlateCarree
 except ModuleNotFoundError:
@@ -2033,7 +2033,6 @@ def _build_discrete_norm(
         The axis locator or the tick location candidates.
     """
     # Parse flexible keyword args
-    from .config import rc
     norm_kw = norm_kw or {}
     locator_kw = locator_kw or {}
     levels = _not_none(

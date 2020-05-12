@@ -304,7 +304,7 @@ def Colormap(
     `~proplot.colors.ListedColormap`.
     Used to interpret the `cmap` and `cmap_kw` arguments
     when passed to any plotting method wrapped by
-    `~proplot.wrappers.cmap_changer`.
+    `~proplot.axes.cmap_changer`.
 
     Parameters
     ----------
@@ -579,7 +579,7 @@ def Cycle(
     """
     Generate and merge `~cycler.Cycler` instances in a variety of ways.
     Used to interpret the `cycle` and `cycle_kw` arguments when passed to
-    any plotting method wrapped by `~proplot.wrappers.cycle_changer`.
+    any plotting method wrapped by `~proplot.axes.cycle_changer`.
 
     If you just want a list of colors instead of a `~cycler.Cycler` instance,
     use the `Colors` function. If you want a `~cycler.Cycler` instance that
@@ -723,7 +723,7 @@ def Norm(norm, *args, **kwargs):
     """
     Return an arbitrary `~matplotlib.colors.Normalize` instance. Used to
     interpret the `norm` and `norm_kw` arguments when passed to any plotting
-    method wrapped by `~proplot.wrappers.cmap_changer`. See
+    method wrapped by `~proplot.axes.cmap_changer`. See
     `this tutorial \
 <https://matplotlib.org/tutorials/colors/colormapnorms.html>`__
     for more info.
@@ -790,7 +790,7 @@ def Locator(locator, *args, **kwargs):
     `yminorlocator_kw` arguments when passed to
     `~proplot.axes.CartesianAxes.format`, and the `locator`, `locator_kw`,
     `minorlocator`, and `minorlocator_kw` arguments when passed to colorbar
-    methods wrapped by `~proplot.wrappers.colorbar_wrapper`.
+    methods wrapped by `~proplot.axes.colorbar_wrapper`.
 
     Parameters
     ----------
@@ -894,7 +894,7 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
     `yformatter_kw` arguments when passed to
     `~proplot.axes.CartesianAxes.format`, and the `formatter`
     and `formatter_kw` arguments when passed to colorbar methods wrapped by
-    `~proplot.wrappers.colorbar_wrapper`.
+    `~proplot.axes.colorbar_wrapper`.
 
     Parameters
     ----------

@@ -269,8 +269,8 @@ plot.rc.reset()
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_scales:
 #
-# Axis scales
-# -----------
+# Changing the axis scale
+# -----------------------
 #
 # "Axis scales" like ``'linear'`` and ``'log'`` control the *x* and *y* axis
 # coordinate system. To change the axis scale, simply pass e.g.
@@ -448,8 +448,7 @@ for ax, scale, color in zip(axs[4:], ('sine', 'mercator'), ('coral', 'sky blue')
 # In the latter case, the scale's transforms are used for the forward and
 # inverse functions, and the scale's default locators and formatters are used
 # for the default `~proplot.scale.FuncScale` locators and formatters.
-#
-# Notably, the "parent" axis scale is now *arbitrary* -- in the first example
+# Note that the "parent" axis scale is now arbitrary -- in the first example
 # shown below, we create a `~proplot.axes.CartesianAxes.dualx` axis for an
 # axis scaled by the ``'symlog'`` scale.
 

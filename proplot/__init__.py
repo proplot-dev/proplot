@@ -15,7 +15,6 @@ with timers._benchmark('imports'):
     from .scale import *  # noqa: F401 F403
     from .gridspec import *  # noqa: F401 F403
     from .constructor import *  # noqa: F401 F403
-    from .wrappers import *  # noqa: F401 F403
     from .axes import *  # noqa: F401 F403
     from .figure import *  # noqa: F401 F403
     from .ui import *  # noqa: F401 F403
