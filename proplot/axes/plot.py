@@ -1062,6 +1062,56 @@ def add_errorbars(
     return obj
 
 
+def _parametric_wrapper_temporary(self, func, *args, interp=0, **kwargs):
+    """
+    Calls `~proplot.axes.Axes.parametric` and optionally interpolates values before
+    they get passed to `cmap_changer` and the colormap boundaries are drawn.
+    """
+    # Parse input arguments
+    # WARNING: So far this only works for 1D *x* and *y* coordinates.
+    # Cannot draw multiple colormap lines at once
+    if len(args) == 3:
+        x, y, values = args
+    elif 'values' in kwargs:
+        values = kwargs.pop('values')
+        if len(args) == 1:
+            y = np.asarray(args[0])
+            x = np.arange(y.shape[-1])
+        elif len(args) == 2:
+            x, y = args
+        else:
+            raise ValueError(f'1 to 3 positional arguments required, got {len(args)}.')
+    else:
+        raise ValueError('Missing required keyword argument "values".')
+    x, y, values = np.atleast_1d(x), np.atleast_1d(y), np.atleast_1d(values)
+    if (
+        any(_.ndim != 1 for _ in (x, y, values))
+        or len({x.size, y.size, values.size}) > 1
+    ):
+        raise ValueError(
+            f'x {x.shape}, y {y.shape}, and values {values.shape} '
+            'must be 1-dimensional and have the same size.'
+        )
+
+    # Interpolate values to allow for smooth gradations between values
+    # (interp=False) or color switchover halfway between points
+    # (interp=True). Then optionally interpolate the colormap values.
+    if interp > 0:
+        xorig, yorig, vorig = x, y, values
+        x, y, values = [], [], []
+        for j in range(xorig.shape[0] - 1):
+            idx = slice(None)
+            if j + 1 < xorig.shape[0] - 1:
+                idx = slice(None, -1)
+            x.extend(np.linspace(xorig[j], xorig[j + 1], interp + 2)[idx].flat)
+            y.extend(np.linspace(yorig[j], yorig[j + 1], interp + 2)[idx].flat)
+            values.extend(np.linspace(vorig[j], vorig[j + 1], interp + 2)[idx].flat)
+        x, y, values = np.array(x), np.array(y), np.array(values)
+
+    # Call main function
+    return func(self, x, y, values=values, **kwargs)
+
+
 def _plot_wrapper_deprecated(
     self, func, *args, cmap=None, values=None, **kwargs
 ):
@@ -1350,6 +1400,7 @@ def barh_wrapper(
     # NOTE: You *must* do juggling of barh keyword order --> bar keyword order
     # --> barh keyword order, because horizontal hist passes arguments to bar
     # directly and will not use a 'barh' method with overridden argument order!
+    func  # avoid U100 error
     kwargs.setdefault('orientation', 'horizontal')
     if y is None and width is None:
         raise ValueError(
@@ -3439,6 +3490,7 @@ _cycle_changer = _wrapper_decorator(cycle_changer)
 _fill_between_wrapper = _wrapper_decorator(fill_between_wrapper)
 _fill_betweenx_wrapper = _wrapper_decorator(fill_betweenx_wrapper)
 _hist_wrapper = _wrapper_decorator(hist_wrapper)
+_parametric_wrapper = _wrapper_decorator(_parametric_wrapper_temporary)
 _plot_wrapper = _wrapper_decorator(_plot_wrapper_deprecated)
 _scatter_wrapper = _wrapper_decorator(scatter_wrapper)
 _standardize_1d = _wrapper_decorator(standardize_1d)
