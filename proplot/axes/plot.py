@@ -79,11 +79,8 @@ levels, N : int or list of float, optional
     If the latter, the levels should be monotonically increasing or
     decreasing (note that decreasing levels will only work with ``pcolor``
     plots, not ``contour`` plots). Default is :rc:`image.levels`.
-
-    Since this function also wraps `~matplotlib.axes.Axes.pcolor` and
-    `~matplotlib.axes.Axes.pcolormesh`, this means they now
-    accept the `levels` keyword arg. You can now discretize your
-    colors in a ``pcolor`` plot just like with ``contourf``.
+    Note this means you can now discretize your colormap colors in a
+    ``pcolor`` plot just like with ``contourf``.
 values : int or list of float, optional
     The number of level centers, or a list of level centers. If provided,
     levels are inferred using `~proplot.utils.edges`. This will override
@@ -1757,23 +1754,28 @@ def cycle_changer(
     proplot.constructor.Cycle
     proplot.constructor.Colors
     """
-    # Parse input
-    cycle_kw = cycle_kw or {}
-    legend_kw = legend_kw or {}
-    colorbar_kw = colorbar_kw or {}
-
-    # Test input
+    # Parse input args
     # NOTE: Requires standardize_1d wrapper before reaching this. Also note
     # that the 'x' coordinates are sometimes ignored below.
     name = func.__name__
     if not args:
         return func(self, *args, **kwargs)
-    barh = name == 'bar' and kwargs.get('orientation', None) == 'horizontal'
+    barh = stacked = False
+    if name in ('bar', 'fill_between', 'fill_betweenx'):
+        stacked = kwargs.pop('stacked', False)
+    if name in ('bar',):
+        barh = kwargs.get('orientation', None) == 'horizontal'
+        if barh:
+            kwargs.setdefault('x', 0)
     x, y, *args = args
-    if len(args) >= 1 and 'fill_between' in name:
+    ys = (y,)
+    if len(args) >= 1 and name in ('fill_between', 'fill_betweenx'):
         ys, args = (y, args[0]), args[1:]
-    else:
-        ys = (y,)
+    if name in ('pie',):  # add x coordinates as default pie chart labels
+        kwargs['labels'] = _not_none(labels, x)  # TODO: move to pie wrapper?
+    cycle_kw = cycle_kw or {}
+    legend_kw = legend_kw or {}
+    colorbar_kw = colorbar_kw or {}
 
     # Determine and temporarily set cycler
     # NOTE: Axes cycle has no getter, only set_prop_cycle, which sets a
@@ -1850,13 +1852,25 @@ def cycle_changer(
         if labels is None or isinstance(labels, str):
             labels = [labels] * ncols
 
-    # Handle stacked bar plots
-    stacked = kwargs.pop('stacked', False)
-    if name in ('bar',):
-        width = kwargs.pop('width', 0.8)
-        kwargs['height' if barh else 'width'] = (
-            width if stacked else width / ncols
-        )
+    # Get step size for bar plots
+    # WARNING: This will fail for non-numeric non-datetime64 singleton
+    # datatypes but this is good enough for vast majority of most cases.
+    if name in ('bar',) and not stacked:
+        x_test = np.atleast_1d(_to_ndarray(x))
+        if len(x_test) >= 2:
+            x_step = x_test[1:] - x_test[:-1]
+            x_step = np.concatenate((x_step, x_step[-1:]))
+        elif x_test.dtype == np.datetime64:
+            x_step = np.timedelta64(1, 'D')
+        else:
+            x_step = np.array(0.5)
+        if np.issubdtype(x_test.dtype, np.datetime64):
+            # Avoid integer timedelta truncation
+            x_step = x_step.astype('timedelta64[ns]')
+        key = 'height' if barh else 'width'
+        width = kwargs.pop(key, 0.8)
+        width = width * x_step / ncols
+        kwargs[key] = width
 
     # Plot susccessive columns
     objs = []
@@ -1876,31 +1890,12 @@ def cycle_changer(
                     key = 'edgecolors'
                 kw[key] = value
 
-        # Add x coordinates as pi chart labels by default
-        if name in ('pie',):
-            kw['labels'] = _not_none(labels, x)  # TODO: move to pie wrapper?
-
-        # Step size for grouped bar plots
-        # WARNING: This will fail for non-numeric non-datetime64 singleton
-        # datatypes but this is good enough for vast majority of most cases.
-        x_test = np.atleast_1d(_to_ndarray(x))
-        if len(x_test) >= 2:
-            x_step = x_test[1:] - x_test[:-1]
-            x_step = np.concatenate((x_step, x_step[-1:]))
-        elif x_test.dtype == np.datetime64:
-            x_step = np.timedelta64(1, 'D')
-        else:
-            x_step = np.array(0.5)
-        if np.issubdtype(x_test.dtype, np.datetime64):
-            x_step = x_step.astype('timedelta64[ns]')  # avoid int timedelta truncation
-
         # Get x coordinates for bar plot
         x_col, y_first = x, ys[0]  # samples
         if name in ('bar',):  # adjust
             if not stacked:
-                scale = i - 0.5 * (ncols - 1)  # offset from true coordinate
-                scale = width * scale / ncols
-                x_col = x + x_step * scale
+                offset = width * (i - 0.5 * (ncols - 1))
+                x_col = x + offset
             elif stacked and y_first.ndim > 1:
                 key = 'x' if barh else 'bottom'
                 kw[key] = _to_indexer(y_first)[:, :i].sum(axis=1)
@@ -1915,7 +1910,7 @@ def cycle_changer(
             # WARNING: If stacked=True then we always *ignore* second
             # argument passed to fill_between. Warning should be issued
             # by fill_between_wrapper in this case.
-            if stacked and 'fill_between' in name:
+            if stacked and name in ('fill_between', 'fill_betweenx'):
                 ys_col = tuple(
                     y_first if y_first.ndim == 1
                     else _to_indexer(y_first)[:, :ii].sum(axis=1)
@@ -1949,15 +1944,12 @@ def cycle_changer(
 
         # Build coordinate arguments
         x_ys_col = ()
-        if barh:  # special, use kwargs only!
+        if barh:  # special case, use kwargs only!
             kw.update({'bottom': x_col, 'width': ys_col[0]})
-            kw.setdefault('x', kwargs.get('bottom', 0))  # required
         elif name in ('pie', 'hist', 'boxplot', 'violinplot'):
             x_ys_col = ys_col
         else:  # has x-coordinates, and maybe more than one y
             x_ys_col = (x_col, *ys_col)
-
-        # Call plotting function
         obj = func(self, *x_ys_col, *args, **kw)
         if isinstance(obj, (list, tuple)) and len(obj) == 1:
             obj = obj[0]
