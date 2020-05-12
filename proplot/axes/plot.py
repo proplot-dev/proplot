@@ -1310,8 +1310,11 @@ def bar_wrapper(
     """
     %(axes.bar)s
     """
+    # Parse arguments
+    # WARNING: Implementation is really weird... we flip around arguments for horizontal
+    # plots only to flip them back in cycle_changer when iterating through columns.
     if vert is not None:
-        orientation = ('vertical' if vert else 'horizontal')
+        orientation = 'vertical' if vert else 'horizontal'
     if orientation == 'horizontal':
         x, bottom = bottom, x
         width, height = height, width
@@ -1771,12 +1774,9 @@ def cycle_changer(
         stacked = kwargs.pop('stacked', False)
     if name in ('bar',):
         barh = kwargs.get('orientation', None) == 'horizontal'
-        if barh:
-            kwargs.setdefault('x', 0)
-            kwargs.setdefault('height', 0.8)
-        else:
-            kwargs.setdefault('y', 0)
-            kwargs.setdefault('width', 0.8)
+        width = kwargs.pop('width', 0.8)  # 'width' for bar *and* barh (see bar_wrapper)
+        bottom = 'x' if barh else 'bottom'
+        kwargs.setdefault(bottom, 0)  # 'x' required even though 'y' isn't for bar plots
     cycle_kw = cycle_kw or {}
     legend_kw = legend_kw or {}
     colorbar_kw = colorbar_kw or {}
@@ -1859,21 +1859,21 @@ def cycle_changer(
     # Get step size for bar plots
     # WARNING: This will fail for non-numeric non-datetime64 singleton
     # datatypes but this is good enough for vast majority of most cases.
-    if name in ('bar',) and not stacked:
-        x_test = np.atleast_1d(_to_ndarray(x))
-        if len(x_test) >= 2:
-            x_step = x_test[1:] - x_test[:-1]
-            x_step = np.concatenate((x_step, x_step[-1:]))
-        elif x_test.dtype == np.datetime64:
-            x_step = np.timedelta64(1, 'D')
-        else:
-            x_step = np.array(0.5)
-        if np.issubdtype(x_test.dtype, np.datetime64):
-            # Avoid integer timedelta truncation
-            x_step = x_step.astype('timedelta64[ns]')
+    if name in ('bar',):
+        if not stacked:
+            x_test = np.atleast_1d(_to_ndarray(x))
+            if len(x_test) >= 2:
+                x_step = x_test[1:] - x_test[:-1]
+                x_step = np.concatenate((x_step, x_step[-1:]))
+            elif x_test.dtype == np.datetime64:
+                x_step = np.timedelta64(1, 'D')
+            else:
+                x_step = np.array(0.5)
+            if np.issubdtype(x_test.dtype, np.datetime64):
+                # Avoid integer timedelta truncation
+                x_step = x_step.astype('timedelta64[ns]')
+            width = width * x_step / ncols
         key = 'height' if barh else 'width'
-        width = kwargs.pop(key, 0.8)
-        width = width * x_step / ncols
         kwargs[key] = width
 
     # Plot susccessive columns
