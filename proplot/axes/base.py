@@ -1051,7 +1051,7 @@ optional
                 subplotspec = gridspec[1]
 
             # Draw colorbar axes
-            with self.figure._authorize_add_subplot():
+            with self.figure._context_authorize_add_subplot():
                 ax = self.figure.add_subplot(subplotspec, projection='cartesian')  # noqa: E501
             self.add_child_axes(ax)
 

@@ -12,7 +12,7 @@ from . import gridspec as pgridspec
 from .config import rc
 from .utils import units
 from .internals import ic  # noqa: F401
-from .internals import warnings, _not_none, _set_state
+from .internals import warnings, _not_none, _dummy_context, _set_state
 
 __all__ = ['Figure']
 
@@ -77,11 +77,13 @@ def _canvas_preprocessor(canvas, method):
             self.draw()
 
         # Bail out if we are already pre-processing
-        # The return value for macosx _draw is the renderer, for qt draw is
+        # NOTE: The _is_autoresizing check necessary when inserting new gridspec
+        # rows or columns with the qt backend.
+        # NOTE: Return value for macosx _draw is the renderer, for qt draw is
         # nothing, and for print_figure is some figure object, but this block
         # has never been invoked when calling print_figure.
         renderer = fig._get_renderer()  # any renderer will do for now
-        if fig._is_preprocessing:
+        if fig._is_autoresizing or fig._is_preprocessing:
             if method == '_draw':  # macosx backend
                 return renderer
             else:
@@ -230,6 +232,8 @@ class Figure(mfigure.Figure):
         **kwargs
             Passed to `matplotlib.figure.Figure`.
         """  # noqa
+        # Initialize first, because need to provide fully initialized figure
+        # as argument to gridspec, because matplotlib tight_layout does that
         tight_layout = kwargs.pop('tight_layout', None)
         constrained_layout = kwargs.pop('constrained_layout', None)
         if tight_layout or constrained_layout:
@@ -237,14 +241,11 @@ class Figure(mfigure.Figure):
                 f'Ignoring tight_layout={tight_layout} and '
                 f'contrained_layout={constrained_layout}. ProPlot uses its '
                 'own tight layout algorithm, activated by default or with '
-                'tight=True.'
+                'plot.subplots(tight=True).'
             )
-
-        # Initialize first, because need to provide fully initialized figure
-        # as argument to gridspec, because matplotlib tight_layout does that
         self._authorized_add_subplot = False
         self._is_preprocessing = False
-        self._is_resizing = False
+        self._is_autoresizing = False
         super().__init__(**kwargs)
 
         # Axes sharing and spanning settings
@@ -330,7 +331,7 @@ class Figure(mfigure.Figure):
                 idx2 += 1
 
         # Draw and setup panel
-        with self._authorize_add_subplot():
+        with self._context_authorize_add_subplot():
             pax = self.add_subplot(gridspec[idx1, idx2], projection='cartesian')  # noqa: E501
         pgrid.append(pax)
         pax._panel_side = side
@@ -439,7 +440,7 @@ class Figure(mfigure.Figure):
         )
 
         # Draw and setup panel
-        with self._authorize_add_subplot():
+        with self._context_authorize_add_subplot():
             pax = self.add_subplot(gridspec[idx1, idx2], projection='cartesian')  # noqa: E501
         pgrid = getattr(self, '_' + side + '_panels')
         pgrid.append(pax)
@@ -611,19 +612,19 @@ class Figure(mfigure.Figure):
             }
             suptitle.update(kw)
 
-    def _authorize_add_subplot(self):
+    def _context_authorize_add_subplot(self):
         """
         Prevent warning message when adding subplots one-by-one. Used
         internally.
         """
         return _set_state(self, _authorized_add_subplot=True)
 
-    def _context_resizing(self):
+    def _context_autoresizing(self):
         """
         Ensure backend calls to `~matplotlib.figure.Figure.set_size_inches`
         during pre-processing are not interpreted as *manual* resizing.
         """
-        return _set_state(self, _is_resizing=True)
+        return _set_state(self, _is_autoresizing=True)
 
     def _context_preprocessing(self):
         """
@@ -753,30 +754,24 @@ class Figure(mfigure.Figure):
         spaces = subplots_kw[w + 'space']
         spaces_orig = subplots_orig_kw[w + 'space']
 
-        # Slot already exists
+        # Adjust space, ratio, and panel indicator arrays
         slot_type = 'f' if figure else side[0]
         slot_exists = idx not in (-1, len(panels)) and panels[idx] == slot_type
-        if slot_exists:  # already exists!
+        if slot_exists:
+            # Slot already exists
             if spaces_orig[idx_space] is None:
                 spaces_orig[idx_space] = units(space_orig)
             spaces[idx_space] = _not_none(spaces_orig[idx_space], space)
 
-        # Make room for new panel slot
         else:
-            # Modify basic geometry
+            # Modify basic geometry and insert new slot
             idx += idx_offset
             idx_space += idx_offset
             subplots_kw[ncols] += 1
-            # Original space, ratio array, space array, panel toggles
             spaces_orig.insert(idx_space, space_orig)
             spaces.insert(idx_space, space)
             ratios.insert(idx, ratio)
             panels.insert(idx, slot_type)
-            # Reference ax location array
-            # TODO: For now do not need to increment, but need to double
-            # check algorithm for fixing axes aspect!
-            # ref = subplots_kw[x + 'ref']
-            # ref[:] = [val + 1 if val >= idx else val for val in ref]
 
         # Update figure
         figsize, gridspec_kw, _ = pgridspec._calc_geometry(**subplots_kw)
@@ -788,7 +783,9 @@ class Figure(mfigure.Figure):
         else:
             # Make new gridspec
             gridspec = pgridspec.GridSpec(self, **gridspec_kw)
+            self._gridspec_main.figure = None
             self._gridspec_main = gridspec
+
             # Reassign subplotspecs to all axes and update positions
             for ax in self._iter_axes(hidden=True, children=True):
                 # Get old index
@@ -800,26 +797,24 @@ class Figure(mfigure.Figure):
                 else:
                     inserts = (idx, idx, None, None)
                 subplotspec = ax.get_subplotspec()
-                igridspec = subplotspec.get_gridspec()
-                topmost = subplotspec.get_topmost_subplotspec()
+                gridspec_ss = subplotspec.get_gridspec()
+                subplotspec_top = subplotspec.get_topmost_subplotspec()
 
                 # Apply new subplotspec
-                _, _, *coords = topmost.get_active_rows_columns()
+                _, _, *coords = subplotspec_top.get_active_rows_columns()
                 for i in range(4):
                     if inserts[i] is not None and coords[i] >= inserts[i]:
                         coords[i] += 1
                 row1, row2, col1, col2 = coords
                 subplotspec_new = gridspec[row1:row2 + 1, col1:col2 + 1]
-                if topmost is subplotspec:
+                if subplotspec_top is subplotspec:
                     ax.set_subplotspec(subplotspec_new)
-                elif topmost is igridspec._subplot_spec:
-                    igridspec._subplot_spec = subplotspec_new
+                elif subplotspec_top is gridspec_ss._subplot_spec:
+                    gridspec_ss._subplot_spec = subplotspec_new
                 else:
                     raise ValueError(
                         f'Unexpected GridSpecFromSubplotSpec nesting.'
                     )
-
-                # Update parent or child position
                 ax.update_params()
                 ax.set_position(ax.figbox)
 
@@ -1205,9 +1200,8 @@ class Figure(mfigure.Figure):
         # `~matplotlib.backend_bases.FigureCanvasBase.draw_idle` and
         # `~matplotlib.backend_bases.FigureCanvasBase.print_figure`
         # methods. The latter is called by save() and by the inline backend.
-        # See `_canvas_preprocessor` for details."""
+        # See `_canvas_preprocessor` for details.
         # TODO: Concatenate docstrings.
-        # TODO: Figure out matplotlib>=3.3 bug with macos backend.
         # NOTE: Cannot use draw_idle() because it causes complications for qt5
         # backend (wrong figure size).
         if callable(getattr(canvas, '_draw', None)):  # for macos backend
@@ -1230,6 +1224,9 @@ class Figure(mfigure.Figure):
         # renderer calls set_size_inches, size may be effectively the same, but
         # slightly changed due to roundoff error! Therefore, always compare to
         # *both* get_size_inches() and the truncated bbox dimensions times dpi.
+        # NOTE: If we fail to detect 'manual' resize as manual, not only will
+        # result be incorrect, but qt backend will crash because it detects a
+        # recursive size change, since preprocessor size will differ.
         if h is None:
             width, height = w
         else:
@@ -1241,20 +1238,18 @@ class Figure(mfigure.Figure):
         width_true, height_true = self.get_size_inches()
         width_trunc = int(self.bbox.width) / self.dpi
         height_trunc = int(self.bbox.height) / self.dpi
-        if auto:  # internal resizing not associated with any draws
-            with self._context_resizing():
-                super().set_size_inches(width, height, forward=forward)
-        else:  # manual resizing on behalf of user
-            if (
-                (
-                    width not in (width_true, width_trunc)
-                    or height not in (height_true, height_trunc)
-                )
-                and not self._is_resizing
-                and not self.canvas._is_idle_drawing  # standard
-                and not getattr(self.canvas, '_draw_pending', None)  # pyqt5
-            ):
-                self._subplots_kw.update(width=width, height=height)
+        if (
+            (
+                width not in (width_true, width_trunc)
+                or height not in (height_true, height_trunc)
+            )
+            and not auto
+            and not self._is_autoresizing
+            and not getattr(self.canvas, '_is_idle_drawing', None)  # standard
+        ):
+            self._subplots_kw.update(width=width, height=height)
+        context = self._context_autoresizing if auto else _dummy_context
+        with context():
             super().set_size_inches(width, height, forward=forward)
 
     def get_alignx(self):
