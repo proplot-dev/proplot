@@ -100,7 +100,7 @@ with plot.rc.context({'axes.prop_cycle': plot.Cycle('Grays', N=N, left=0.3)}):
     # Plot by passing both x and y coordinates
     ax = axs[0]
     ax.area(x, -1 * y / N, stacked=True)
-    ax.bar(x, y, linewidth=0, alpha=1, width=0.8 * (x[1] - x[0]))
+    ax.bar(x, y, linewidth=0, alpha=1, width=0.8)
     ax.plot(x, y + 1, linewidth=2)
     ax.scatter(x, y + 2, marker='s', markersize=5**2)
     ax.format(title='Manual x coordinates')
