@@ -760,7 +760,7 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
     def projection(self, map_projection):
         import cartopy.crs as ccrs
         if not isinstance(map_projection, ccrs.CRS):
-            raise ValueError(f'Projection must be a cartopy.crs.CRS instance.')
+            raise ValueError('Projection must be a cartopy.crs.CRS instance.')
         self._map_projection = map_projection
 
     # Wrapped methods
@@ -1074,7 +1074,7 @@ class BasemapAxes(GeoAxes):
     def projection(self, map_projection):
         import mpl_toolkits.basemap as mbasemap
         if not isinstance(map_projection, mbasemap.Basemap):
-            raise ValueError(f'Projection must be a basemap.Basemap instance.')
+            raise ValueError('Projection must be a basemap.Basemap instance.')
         self._map_projection = map_projection
 
     # Wrapped methods

@@ -329,7 +329,7 @@ class Axes(maxes.Axes):
         Return the column or row gridspec range for the axes.
         """
         if not hasattr(self, 'get_subplotspec'):
-            raise RuntimeError(f'Axes is not a subplot.')
+            raise RuntimeError('Axes is not a subplot.')
         ss = self.get_subplotspec()
         if hasattr(ss, 'get_active_rows_columns'):
             func = ss.get_active_rows_columns
@@ -1180,7 +1180,7 @@ optional
             ticklocation = kwargs.pop('ticklocation', None) or ticklocation
             if ticklocation is not None and ticklocation != 'bottom':
                 warnings._warn_proplot(
-                    f'Inset colorbars can only have ticks on the bottom.'
+                    'Inset colorbars can only have ticks on the bottom.'
                 )
             kwargs.update({
                 'orientation': 'horizontal', 'ticklocation': 'bottom'

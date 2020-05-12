@@ -1315,12 +1315,12 @@ def bar_wrapper(
     # sense do document here; figure out way to move it here?
     if left is not None:
         warnings._warn_proplot(
-            f'The "left" keyword with bar() is deprecated. Use "x" instead.'
+            'The "left" keyword with bar() is deprecated. Use "x" instead.'
         )
         x = left
     if x is None and height is None:
         raise ValueError(
-            f'bar() requires at least 1 positional argument, got 0.'
+            'bar() requires at least 1 positional argument, got 0.'
         )
     elif height is None:
         x, height = None, x
@@ -1353,7 +1353,7 @@ def barh_wrapper(
     kwargs.setdefault('orientation', 'horizontal')
     if y is None and width is None:
         raise ValueError(
-            f'barh() requires at least 1 positional argument, got 0.'
+            'barh() requires at least 1 positional argument, got 0.'
         )
     return self.bar(x=left, height=height, width=width, bottom=y, **kwargs)
 
@@ -1521,7 +1521,7 @@ def violinplot_wrapper(
     # Sanitize input
     lw = _not_none(lw=lw, linewidth=linewidth)
     if kwargs.pop('showextrema', None):
-        warnings._warn_proplot(f'Ignoring showextrema=True.')
+        warnings._warn_proplot('Ignoring showextrema=True.')
     if 'showmeans' in kwargs:
         kwargs.setdefault('means', kwargs.pop('showmeans'))
     if 'showmedians' in kwargs:
@@ -2760,7 +2760,7 @@ property-spec, optional
             )
         if overridden:
             warnings._warn_proplot(
-                f'Ignoring user input properties '
+                'Ignoring user input properties '
                 + ', '.join(map(repr, overridden))
                 + ' for centered-row legend.'
             )
@@ -2780,7 +2780,7 @@ property-spec, optional
         ymin, ymax = None, None
         if order == 'F':
             raise NotImplementedError(
-                f'When center=True, ProPlot vertically stacks successive '
+                'When center=True, ProPlot vertically stacks successive '
                 'single-row legends. Column-major (order="F") ordering '
                 'is un-supported.'
             )
@@ -3344,6 +3344,7 @@ def _redirect(func):
     be applied on the base axes class, not the basemap axes.
     """
     name = func.__name__
+
     @functools.wraps(func)
     def _wrapper(self, *args, **kwargs):
         if getattr(self, 'name', '') == 'basemap':
@@ -3361,6 +3362,7 @@ def _norecurse(func):
     """
     name = func.__name__
     func._has_recurred = False
+
     @functools.wraps(func)
     def _wrapper(self, *args, **kwargs):
         if func._has_recurred:

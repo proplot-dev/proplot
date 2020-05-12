@@ -264,7 +264,7 @@ def _mod_colormap(cmap, *, cut, left, right, shift, reverse, samples):
         if isinstance(cmap, pcolors.ListedColormap):
             if cut is not None:
                 warnings._warn_proplot(
-                    f"Invalid argument 'cut' for ListedColormap. Ignoring."
+                    "Invalid argument 'cut' for ListedColormap. Ignoring."
                 )
             cmap = cmap.truncate(left=left, right=right)
         else:
@@ -415,7 +415,7 @@ def Colormap(
     # how to make colormaps cyclic.
     if not args:
         raise ValueError(
-            f'Colormap() requires at least one positional argument.'
+            'Colormap() requires at least one positional argument.'
         )
     if listmode not in ('listed', 'linear', 'perceptual'):
         raise ValueError(
@@ -1305,7 +1305,7 @@ def Proj(name, basemap=None, **kwargs):
         import mpl_toolkits.basemap as mbasemap
         if _version_mpl >= _version('3.3'):
             raise RuntimeError(
-                f'Basemap is no longer maintained and is incompatible with '
+                'Basemap is no longer maintained and is incompatible with '
                 'matplotlib >= 3.3. Please use cartopy as your cartographic '
                 'plotting backend or downgrade to matplotlib <=3.2.'
             )
@@ -1333,7 +1333,7 @@ def Proj(name, basemap=None, **kwargs):
             kwproj.pop('central_latitude', None)
         if 'boundinglat' in kwproj:
             raise ValueError(
-                f'"boundinglat" must be passed to the ax.format() command '
+                '"boundinglat" must be passed to the ax.format() command '
                 'for cartopy axes.'
             )
         if crs is None:

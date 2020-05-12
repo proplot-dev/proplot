@@ -279,7 +279,7 @@ def show_channels(
     """
     # Figure and plot
     if not args:
-        raise ValueError(f'At least one positional argument required.')
+        raise ValueError('At least one positional argument required.')
     array = [[1, 1, 2, 2, 3, 3]]
     labels = ('Hue', 'Chroma', 'Luminance')
     if saturation:

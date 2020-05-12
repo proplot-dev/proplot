@@ -446,7 +446,7 @@ ax.format(
     xlim=(-1, 1), ylim=(-1, 1), title='Step gradations',
     xlabel='cosine angle', ylabel='sine angle'
 )
-ax.colorbar(m, loc='b', maxn=10, label=f'parametric coordinate')
+ax.colorbar(m, loc='b', maxn=10, label='parametric coordinate')
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"

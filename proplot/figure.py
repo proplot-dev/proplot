@@ -254,9 +254,9 @@ class Figure(mfigure.Figure):
         spanx = _not_none(spanx, span, 0 if sharex == 0 else None, rc['span'])
         spany = _not_none(spany, span, 0 if sharey == 0 else None, rc['span'])
         if spanx and (alignx or align):
-            warnings._warn_proplot(f'"alignx" has no effect when spanx=True.')
+            warnings._warn_proplot('"alignx" has no effect when spanx=True.')
         if spany and (aligny or align):
-            warnings._warn_proplot(f'"aligny" has no effect when spany=True.')
+            warnings._warn_proplot('"aligny" has no effect when spany=True.')
         alignx = _not_none(alignx, align, rc['align'])
         aligny = _not_none(aligny, align, rc['align'])
         self.set_alignx(alignx)
@@ -483,8 +483,8 @@ class Figure(mfigure.Figure):
                             grp.join(axs[0], ax)
                     elif align:
                         warnings._warn_proplot(
-                            f'Aligning *x* and *y* axis labels required '
-                            f'matplotlib >=3.1.0'
+                            'Aligning *x* and *y* axis labels required '
+                            'matplotlib >=3.1.0'
                         )
                 if not span:
                     continue
@@ -813,7 +813,7 @@ class Figure(mfigure.Figure):
                     gridspec_ss._subplot_spec = subplotspec_new
                 else:
                     raise ValueError(
-                        f'Unexpected GridSpecFromSubplotSpec nesting.'
+                        'Unexpected GridSpecFromSubplotSpec nesting.'
                     )
                 ax.update_params()
                 ax.set_position(ax.figbox)
