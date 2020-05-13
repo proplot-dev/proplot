@@ -1,6 +1,6 @@
 from docutils import nodes
 from os.path import sep
-from proplot.internals import defaults
+from proplot.internals import rcsetup
 
 
 def get_nodes(rawtext, text, inliner):
@@ -20,7 +20,7 @@ def get_nodes(rawtext, text, inliner):
 def rc_role(name, rawtext, text, lineno, inliner, options={}, content=[]):  # noqa: U100
     node_list = get_nodes(rawtext, text, inliner)
     try:
-        default = defaults._get_default_param(text)
+        default = rcsetup._get_default_param(text)
     except KeyError:
         pass
     else:
