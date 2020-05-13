@@ -7,6 +7,11 @@ Default proplot configuration settings and validators for
 from matplotlib import rcParamsDefault as _rc_matplotlib_default
 
 
+# Deprecated settings
+# TODO: Add 'openrgb' setting for renaming shorthand color names to
+_rc_removed = {'rgbcycle': '0.6'}  # {key: version} dictionary
+_rc_renamed = {}  # {old_key: (new_key, version)} dictionary
+
 # Quick settings
 # TODO: This is currently a hodgepodge of "real" settings and meta-settings.
 # Should give the real settings "real" longer names in _rc_added_default. For
@@ -39,7 +44,6 @@ _rc_quick_default = {
     'margin': 0.0,
     'ocean': False,
     'reso': 'lo',
-    'rgbcycle': False,
     'rivers': False,
     'share': 3,
     'small': 9,

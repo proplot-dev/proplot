@@ -91,7 +91,6 @@ Key               Description
 ``margin``        The margin of space between axes edges and objects plotted inside the axes, if ``xlim`` and ``ylim`` are unset.
 ``ocean``         Boolean, toggles ocean patches on and off.
 ``reso``          Resolution of geographic features, one of ``'lo'``, ``'med'``, or ``'hi'``
-``rgbcycle``      If ``True``, and ``colorblind`` is the current cycle, this registers the ``colorblind`` colors as ``'r'``, ``'b'``, ``'g'``, etc., like in `seaborn <https://seaborn.pydata.org/tutorial/color_palettes.html>`__.
 ``rivers``        Boolean, toggles river lines on and off.
 ``share``         The axis sharing level, one of ``0``, ``1``, ``2``, or ``3``. See `~proplot.ui.subplots` for details.
 ``small``         Font size for legend text, tick labels, axis labels, and text generated with `~matplotlib.axes.Axes.text`.

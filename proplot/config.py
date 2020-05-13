@@ -462,6 +462,20 @@ class rc_configurator(object):
             except KeyError:
                 value = units(value, 'pt')
 
+        # Deprecations
+        if key in defaults._rc_removed:
+            version = defaults._rc_removed[key]
+            warnings._warn_proplot(
+                f'rc setting {key!r} was removed in version {version}.'
+            )
+            return {}, {}, {}
+        if key in defaults._rc_renamed:
+            key_new, version = defaults._rc_renamed[key]
+            warnings._warn_proplot(
+                f'rc setting {key!r} was renamed to {key_new} in version {version}.'
+            )
+            key = key_new
+
         # Special key: configure inline backend
         if key == 'inlinefmt':
             config_inline_backend(value)
@@ -472,12 +486,13 @@ class rc_configurator(object):
                 kw_params, kw_added = _get_style_dicts(value, infer=True)
 
         # Cycler
-        elif key in ('cycle', 'rgbcycle'):
-            colors = _update_color_cycle(key, value)
+        elif key == 'cycle':
+            colors = _get_cycle_colors(value)
             kw_params['patch.facecolor'] = colors[0]
             kw_params['axes.prop_cycle'] = cycler.cycler('color', colors)
 
         # Zero linewidth almost always means zero tick length
+        # TODO: Document this feature
         elif key == 'linewidth' and value == 0:
             _, ikw_added, ikw_params = self._get_param_dicts('ticklen', 0)
             kw_added.update(ikw_added)
@@ -571,7 +586,7 @@ class rc_configurator(object):
         elif key in rc_params:
             kw_params[key] = value
         else:
-            raise KeyError(f'Invalid key {key!r}.')
+            raise KeyError(f'Invalid rc key {key!r}.')
 
         # Update linked settings
         for key in children:
@@ -944,47 +959,6 @@ class rc_configurator(object):
             yield self[key]
 
 
-def _update_color_cycle(key, value):
-    """
-    Update the color cycle.
-    """
-    if key == 'rgbcycle':
-        cycle, rgbcycle = rc_quick['cycle'], value
-    else:
-        cycle, rgbcycle = value, rc_quick['rgbcycle']
-    try:
-        colors = pcolors._cmap_database[cycle].colors
-    except (KeyError, AttributeError):
-        return {}, {}, {}
-        cycles = sorted(
-            name for name, cmap in pcolors._cmap_database.items()
-            if isinstance(cmap, pcolors.ListedColormap)
-        )
-        raise ValueError(
-            f'Invalid cycle name {cycle!r}. Options are: '
-            + ', '.join(map(repr, cycles)) + '.'
-        )
-    if rgbcycle and cycle.lower() == 'colorblind':
-        regcolors = colors + [(0.1, 0.1, 0.1)]
-    elif mcolors.to_rgb('r') != (1.0, 0.0, 0.0):  # reset
-        regcolors = [
-            (0.0, 0.0, 1.0),
-            (1.0, 0.0, 0.0),
-            (0.0, 1.0, 0.0),
-            (0.75, 0.75, 0.0),
-            (0.75, 0.75, 0.0),
-            (0.0, 0.75, 0.75),
-            (0.0, 0.0, 0.0)
-        ]
-    else:
-        regcolors = []  # no reset necessary
-    for code, color in zip('brgmyck', regcolors):
-        rgb = mcolors.to_rgb(color)
-        mcolors.colorConverter.colors[code] = rgb
-        mcolors.colorConverter.cache[code] = rgb
-    return colors
-
-
 def config_inline_backend(fmt=None):
     """
     Set up the `ipython inline backend \
@@ -1028,6 +1002,24 @@ def config_inline_backend(fmt=None):
     ipython.magic('config InlineBackend.rc = {}')
     ipython.magic('config InlineBackend.close_figures = True')
     ipython.magic("config InlineBackend.print_figure_kwargs = {'bbox_inches': None}")
+
+
+def _get_cycle_colors(cycle):
+    """
+    Update the color cycle.
+    """
+    try:
+        colors = pcolors._cmap_database[cycle].colors
+    except (KeyError, AttributeError):
+        cycles = sorted(
+            name for name, cmap in pcolors._cmap_database.items()
+            if isinstance(cmap, pcolors.ListedColormap)
+        )
+        raise ValueError(
+            f'Invalid cycle name {cycle!r}. Options are: '
+            + ', '.join(map(repr, cycles)) + '.'
+        )
+    return colors
 
 
 def _get_default_dict():

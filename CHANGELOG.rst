@@ -71,6 +71,7 @@ ProPlot v0.6.0 (2020-##-##)
 
 There are quite a lot of deprecations for this release.
 
+- Remove ``'rgbcycle'`` setting (:commit:`###`).
 - Deprecate support for "parametric" plots inside `~matplotlib.axes.Axes.plot`,
   instead use `~proplot.axes.Axes.parametric` (:commit:`64210bce`).
 - Change `~proplot.utils.units` ``units`` keyword argument to more natural
