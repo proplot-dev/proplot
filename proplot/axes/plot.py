@@ -55,7 +55,6 @@ __all__ = [
     'violinplot_wrapper',
 ]
 
-
 docstring.snippets['cmap_changer.params'] = """
 cmap : colormap spec, optional
     The colormap specifer, passed to the `~proplot.constructor.Colormap`
@@ -122,11 +121,15 @@ negpos : bool, optional
     `negcolor`. For example, to shade positive values red and negative values
     blue, use ``ax.fill_between{suffix}({x}, {y}, negpos=True)``.
 negcolor, poscolor : color-spec, optional
-    Colors to use for the negative and positive values. Ignored if `negpos`
-    is ``False``.
+    Colors to use for the negative and positive shaded regions. Ignored if `negpos`
+    is ``False``. Defaults are :rc:`negcolor` and :rc:`poscolor`.
 where : ndarray, optional
     Boolean ndarray mask for points you want to shade. See `this example \
 <https://matplotlib.org/3.1.0/gallery/pyplots/whats_new_98_4_fill_between.html#sphx-glr-gallery-pyplots-whats-new-98-4-fill-between-py>`__.
+lw, linewidth : float, optional
+    The edge width for the area patches.
+edgecolor : color-spec, optional
+    The edge color for the area patches.
 
 Other parameters
 ----------------
@@ -161,10 +164,16 @@ vert : bool, optional
     `~matplotlib.axes.Axes.boxplot` and `~matplotlib.axes.Axes.violinplot`.
 stacked : bool, optional
     Whether to stack columns of input data, or plot the bars side-by-side.
-edgecolor : color-spec, optional
-    The edge color for the bar patches.
+negpos : bool, optional
+    Whether to shade bars greater than zero with `poscolor` and bars less
+    than zero with `negcolor`.
+negcolor, poscolor : color-spec, optional
+    Colors to use for the negative and positive bars. Ignored if `negpos`
+    is ``False``. Defaults are :rc:`negcolor` and :rc:`poscolor`.
 lw, linewidth : float, optional
     The edge width for the bar patches.
+edgecolor : color-spec, optional
+    The edge color for the bar patches.
 
 Other parameters
 ----------------
