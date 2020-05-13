@@ -711,7 +711,7 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
         self.background_patch.update(kw_face)
         self.outline_patch.update(kw_edge)
 
-    def _hide_labels(self):
+    def _apply_axis_sharing(self):
         """
         No-op for now. In future this will hide meridian and parallel
         labels for rectangular projections with axis sharing.
@@ -721,7 +721,7 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
     def get_tightbbox(self, renderer, *args, **kwargs):
         # Perform extra post-processing steps
         # For now this just draws the gridliners
-        self._hide_labels()
+        self._apply_axis_sharing()
         if self.get_autoscale_on() and self.ignore_existing_data_limits:
             self.autoscale_view()
         if (

@@ -226,8 +226,9 @@ class CartesianAxes(base.Axes):
         """
         # Unlike matplotlib API, we strong arm user into certain twin axes
         # settings... doesn't really make sense to have twin axes without this
+        # NOTE: Could also use _panel_sharey_group = True to hide xaxis content
+        # but instead we set entire axis to visible = False. Safer that way.
         if self._altx_child is not None:  # altx was called on this axes
-            self._shared_y_axes.join(self, self._altx_child)
             self.spines['top'].set_visible(False)
             self.spines['bottom'].set_visible(True)
             self.xaxis.tick_bottom()
@@ -247,7 +248,6 @@ class CartesianAxes(base.Axes):
         Apply alternate *y* axis overrides.
         """
         if self._alty_child is not None:
-            self._shared_x_axes.join(self, self._alty_child)
             self.spines['right'].set_visible(False)
             self.spines['left'].set_visible(True)
             self.yaxis.tick_left()
@@ -261,6 +261,33 @@ class CartesianAxes(base.Axes):
             self.yaxis.set_label_position('right')
             self.xaxis.set_visible(False)
             self.patch.set_visible(False)
+
+    def _apply_axis_sharing(self):
+        """
+        Enforce the "shared" axis labels and axis tick labels. If this is not called
+        at drawtime, "shared" labels can be inadvertantly turned off.
+        """
+        # X axis
+        axis = self.xaxis
+        if self._sharex is not None:
+            level = 3 if self._panel_sharex_group else self.figure._sharex
+            if level > 0:
+                axis.label.set_visible(False)
+            if level > 2:
+                # WARNING: Cannot set NullFormatter because shared axes share the
+                # same axis.Ticker classes. Instead use the approach copied from
+                # matplotlib subplots().
+                axis.set_tick_params(which='both', labelbottom=False, labeltop=False)
+
+        # Y axis
+        axis = self.yaxis
+        if self._sharey is not None:
+            level = 3 if self._panel_sharey_group else self.figure._sharey
+            if level > 0:
+                axis.label.set_visible(False)
+            if level > 2:
+                axis.set_tick_params(which='both', labelleft=False, labelright=False)
+        axis.set_minor_formatter(mticker.NullFormatter())
 
     def _datex_rotate(self):
         """
@@ -335,43 +362,6 @@ class CartesianAxes(base.Axes):
         child.set_ylim(nlim, emit=False)
         self._dualy_cache = (scale, *olim)
 
-    def _hide_labels(self):
-        """
-        Enforce the "shared" axis labels and axis tick labels. If this is
-        not called at drawtime, "shared" labels can be inadvertantly turned
-        off e.g. when the axis scale is changed.
-        """
-        for x in 'xy':
-            # "Shared" axis and tick labels
-            axis = getattr(self, x + 'axis')
-            share = getattr(self, '_share' + x)
-            if share is not None:
-                level = (
-                    3 if getattr(self, '_share' + x + '_override')
-                    else getattr(self.figure, '_share' + x)
-                )
-                if level > 0:
-                    axis.label.set_visible(False)
-                if level > 2:
-                    axis.set_major_formatter(mticker.NullFormatter())
-            # Enforce no minor ticks labels. TODO: Document?
-            axis.set_minor_formatter(mticker.NullFormatter())
-
-    def _make_twin_axes(self, *args, **kwargs):
-        """
-        Return a twin of this axes. This is used for twinx and twiny and was
-        copied from matplotlib in case the private API changes.
-        """
-        # Typically, SubplotBase._make_twin_axes is called instead of this.
-        # There is also an override in axes_grid1/axes_divider.py.
-        if 'sharex' in kwargs and 'sharey' in kwargs:
-            raise ValueError('Twinned Axes may share only one axis.')
-        ax2 = self.figure.add_axes(self.get_position(True), *args, **kwargs)
-        self.set_adjustable('datalim')
-        ax2.set_adjustable('datalim')
-        self._twinned_axes.join(self, ax2)
-        return ax2
-
     def _sharex_setup(self, sharex):
         """
         Configure shared axes accounting for panels. The input is the
@@ -380,7 +370,10 @@ class CartesianAxes(base.Axes):
         # Share panel across different subplots
         super()._sharex_setup(sharex)
         # Get sharing level
-        level = 3 if self._sharex_override else self.figure._sharex
+        level = (
+            3 if self._panel_sharex_group and self._is_panel_parent_or_child(sharex)
+            else self.figure._sharex
+        )
         if level not in range(4):
             raise ValueError(
                 'Invalid sharing level sharex={value!r}. '
@@ -394,8 +387,13 @@ class CartesianAxes(base.Axes):
         # Builtin sharing features
         if level > 0:
             self._sharex = sharex
+            text = self.xaxis.label.get_text()
+            if text:
+                sharex.xaxis.label.set_text(text)
         if level > 1:
             self._shared_x_axes.join(self, sharex)
+            self.xaxis.major = sharex.xaxis.major
+            self.xaxis.minor = sharex.xaxis.minor
 
     def _sharey_setup(self, sharey):
         """
@@ -405,7 +403,10 @@ class CartesianAxes(base.Axes):
         # Share panel across different subplots
         super()._sharey_setup(sharey)
         # Get sharing level
-        level = 3 if self._sharey_override else self.figure._sharey
+        level = (
+            3 if self._panel_sharey_group and self._is_panel_parent_or_child(sharey)
+            else self.figure._sharey
+        )
         if level not in range(4):
             raise ValueError(
                 'Invalid sharing level sharey={value!r}. '
@@ -419,8 +420,47 @@ class CartesianAxes(base.Axes):
         # Builtin features
         if level > 0:
             self._sharey = sharey
+            text = self.yaxis.label.get_text()
+            if text:
+                sharey.yaxis.label.set_text(text)
         if level > 1:
             self._shared_y_axes.join(self, sharey)
+            self.yaxis.major = sharey.yaxis.major
+            self.yaxis.minor = sharey.yaxis.minor
+
+    def _update_axis_labels(self, x='x', **kwargs):
+        """
+        Apply axis labels to the relevant shared axis. If spanning labels are toggled
+        this keeps the labels synced for all subplots in the same row or column. Label
+        positions will be adjusted at draw-time with figure._align_axislabels.
+        """
+        if x not in 'xy':
+            return
+
+        # Get axes in 3 step process
+        # 1. Walk to parent if it is a main axes
+        # 2. Get spanning main axes in this row or column (ignore short panel edges)
+        # 3. Walk to parent if it exists (may be a panel long edge)
+        # NOTE: Critical to apply labels to *shared* axes attributes rather
+        # than testing extents or we end up sharing labels with twin axes.
+        ax = self
+        if getattr(self.figure, '_share' + x) > 0:
+            share = getattr(ax, '_share' + x) or ax
+            if not share._panel_parent:
+                ax = share  # shared main axes are only ever one level deep
+
+        # Get spanning axes
+        axs = [ax]
+        if getattr(ax.figure, '_span' + x):
+            side = getattr(self, x + 'axis').get_label_position()
+            if side in ('left', 'bottom'):
+                axs = ax._get_side_axes(side, panels=False)
+
+        # Update axes with label
+        for ax in axs:
+            ax = getattr(ax, '_share' + x) or ax  # defer to panel
+            axis = getattr(ax, x + 'axis')
+            axis.label.update(kwargs)
 
     def format(
         self, *,
@@ -645,29 +685,17 @@ class CartesianAxes(base.Axes):
             # Flexible keyword args, declare defaults
             xmargin = _not_none(xmargin, rc.get('axes.xmargin', context=True))
             ymargin = _not_none(ymargin, rc.get('axes.ymargin', context=True))
-            xtickdir = _not_none(
-                xtickdir, rc.get('xtick.direction', context=True)
-            )
-            ytickdir = _not_none(
-                ytickdir, rc.get('ytick.direction', context=True)
-            )
+            xtickdir = _not_none(xtickdir, rc.get('xtick.direction', context=True))
+            ytickdir = _not_none(ytickdir, rc.get('ytick.direction', context=True))
+            xformatter = _not_none(xticklabels=xticklabels, xformatter=xformatter)
+            yformatter = _not_none(yticklabels=yticklabels, yformatter=yformatter)
+            xlocator = _not_none(xticks=xticks, xlocator=xlocator)
+            ylocator = _not_none(yticks=yticks, ylocator=ylocator)
             xtickminor = _not_none(
                 xtickminor, rc.get('xtick.minor.visible', context=True)
             )
             ytickminor = _not_none(
                 ytickminor, rc.get('ytick.minor.visible', context=True)
-            )
-            xformatter = _not_none(
-                xticklabels=xticklabels, xformatter=xformatter,
-            )
-            yformatter = _not_none(
-                yticklabels=yticklabels, yformatter=yformatter,
-            )
-            xlocator = _not_none(
-                xticks=xticks, xlocator=xlocator
-            )
-            ylocator = _not_none(
-                yticks=yticks, ylocator=ylocator
             )
             xminorlocator = _not_none(
                 xminorticks=xminorticks, xminorlocator=xminorlocator
@@ -705,24 +733,12 @@ class CartesianAxes(base.Axes):
             # Sensible defaults for spine, tick, tick label, and label locs
             # NOTE: Allow tick labels to be present without ticks! User may
             # want this sometimes! Same goes for spines!
-            xspineloc = _not_none(
-                xloc=xloc, xspineloc=xspineloc,
-            )
-            yspineloc = _not_none(
-                yloc=yloc, yspineloc=yspineloc,
-            )
-            xtickloc = _not_none(
-                xtickloc, xspineloc, _parse_rcloc('x', 'xtick')
-            )
-            ytickloc = _not_none(
-                ytickloc, yspineloc, _parse_rcloc('y', 'ytick')
-            )
-            xspineloc = _not_none(
-                xspineloc, _parse_rcloc('x', 'axes.spines')
-            )
-            yspineloc = _not_none(
-                yspineloc, _parse_rcloc('y', 'axes.spines')
-            )
+            xspineloc = _not_none(xloc=xloc, xspineloc=xspineloc,)
+            yspineloc = _not_none(yloc=yloc, yspineloc=yspineloc,)
+            xtickloc = _not_none(xtickloc, xspineloc, _parse_rcloc('x', 'xtick'))
+            ytickloc = _not_none(ytickloc, yspineloc, _parse_rcloc('y', 'ytick'))
+            xspineloc = _not_none(xspineloc, _parse_rcloc('x', 'axes.spines'))
+            yspineloc = _not_none(yspineloc, _parse_rcloc('y', 'axes.spines'))
             if xtickloc != 'both':
                 xticklabelloc = _not_none(xticklabelloc, xtickloc)
                 xlabelloc = _not_none(xlabelloc, xticklabelloc)
@@ -1059,11 +1075,7 @@ class CartesianAxes(base.Axes):
                 # NOTE: The only reliable way to disable ticks labels and then
                 # restore them is by messing with the *formatter*, rather than
                 # setting labelleft=False, labelright=False, etc.
-                if (formatter is not None or tickrange is not None) and not (
-                    isinstance(
-                        axis.get_major_formatter(), mticker.NullFormatter
-                    ) and getattr(self, '_share' + x)
-                ):
+                if formatter is not None or tickrange is not None:
                     # Tick range
                     if tickrange is not None:
                         if formatter not in (None, 'auto'):
@@ -1185,24 +1197,24 @@ class CartesianAxes(base.Axes):
         # Perform extra post-processing steps
         # NOTE: This mimics matplotlib API, which calls identical
         # post-processing steps in both draw() and get_tightbbox()
-        self._hide_labels()
         self._altx_overrides()
         self._alty_overrides()
         self._dualx_overrides()
         self._dualy_overrides()
         self._datex_rotate()
+        self._apply_axis_sharing()
         if self._inset_parent is not None and self._inset_zoom:
             self.indicate_inset_zoom()
         super().draw(renderer, *args, **kwargs)
 
     def get_tightbbox(self, renderer, *args, **kwargs):
         # Perform extra post-processing steps
-        self._hide_labels()
         self._altx_overrides()
         self._alty_overrides()
         self._dualx_overrides()
         self._dualy_overrides()
         self._datex_rotate()
+        self._apply_axis_sharing()
         if self._inset_parent is not None and self._inset_zoom:
             self.indicate_inset_zoom()
         return super().get_tightbbox(renderer, *args, **kwargs)
