@@ -23,7 +23,7 @@ from .. import gridspec as pgridspec
 from ..config import rc
 from ..utils import units, edges
 from ..internals import ic  # noqa: F401
-from ..internals import defaults, warnings, _not_none
+from ..internals import rcsetup, warnings, _not_none
 
 __all__ = ['Axes']
 
@@ -611,7 +611,7 @@ class Axes(maxes.Axes):
         rc_kw = rc_kw or {}
         rc_mode = _not_none(rc_mode, 2)
         for key, value in kwargs.items():
-            key_fixed = defaults._rc_nodots.get(key, None)
+            key_fixed = rcsetup._rc_nodots.get(key, None)
             if key_fixed is None:
                 kw[key] = value
             else:

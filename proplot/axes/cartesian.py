@@ -12,7 +12,7 @@ from .. import constructor
 from ..config import rc
 from ..utils import units
 from ..internals import ic  # noqa: F401
-from ..internals import defaults, docstring, warnings, _not_none
+from ..internals import rcsetup, docstring, warnings, _not_none
 
 __all__ = ['CartesianAxes']
 
@@ -149,7 +149,7 @@ def _parse_alt(x, kwargs):
             # while is more elegant and consistent with e.g. colorbar() syntax
             # but latter is more consistent and easier to use when refactoring.
             kw_out[key] = value
-        elif key in defaults._rc_nodots:
+        elif key in rcsetup._rc_nodots:
             kw_out[key] = value
         else:
             kw_bad[key] = value

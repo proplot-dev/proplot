@@ -24,7 +24,7 @@ from collections import namedtuple
 from . import colors as pcolors
 from .utils import units, to_xyz
 from .internals import ic  # noqa: F401
-from .internals import defaults, docstring, timers, warnings, _not_none
+from .internals import rcsetup, docstring, timers, warnings, _not_none
 try:
     from IPython import get_ipython
 except ImportError:
@@ -47,8 +47,8 @@ logger.setLevel(logging.ERROR)  # suppress warnings!
 # Dictionaries used to track custom proplot settings
 _Context = namedtuple('Context', ('mode', 'kwargs', 'rc_new', 'rc_old'))
 rc_params = mpl.rcParams  # PEP8 4 lyfe
-rc_quick = defaults._rc_quick_default.copy()
-rc_added = defaults._rc_added_default.copy()
+rc_quick = rcsetup._rc_quick_default.copy()
+rc_added = rcsetup._rc_added_default.copy()
 
 # Misc constants
 # TODO: Use explicit validators for specific settings like matplotlib.
@@ -232,11 +232,11 @@ def _write_defaults(filename, comment=True):
     # TODO: Never set
     rc_parents = {
         child: parent
-        for parent, children in defaults._rc_children.items()
+        for parent, children in rcsetup._rc_children.items()
         for child in children
     }
-    rc_added_filled = defaults._rc_added_default.copy()
-    for key, value in defaults._rc_added_default.items():
+    rc_added_filled = rcsetup._rc_added_default.copy()
+    for key, value in rcsetup._rc_added_default.items():
         if value is None:
             try:
                 parent = rc_parents[key]
@@ -245,10 +245,10 @@ def _write_defaults(filename, comment=True):
                     f'rc_added param {key!r} has default value of None '
                     'but has no rcParmsShort parent!'
                 )
-            if parent in defaults._rc_quick_default:
-                value = defaults._rc_quick_default[parent]
-            elif parent in defaults._rc_params_default:
-                value = defaults._rc_params_default[parent]
+            if parent in rcsetup._rc_quick_default:
+                value = rcsetup._rc_quick_default[parent]
+            elif parent in rcsetup._rc_params_default:
+                value = rcsetup._rc_params_default[parent]
             else:
                 value = rc_params[parent]
             rc_added_filled[key] = value
@@ -263,13 +263,13 @@ def _write_defaults(filename, comment=True):
 # https://matplotlib.org/3.1.1/tutorials/introductory/customizing.html
 #---------------------------------------------------------------------
 # ProPlot quick settings
-{_tabulate(defaults._rc_quick_default)}
+{_tabulate(rcsetup._rc_quick_default)}
 
 # ProPlot added settings
 {_tabulate(rc_added_filled)}
 
 # Matplotlib settings
-{_tabulate(defaults._rc_params_default)}
+{_tabulate(rcsetup._rc_params_default)}
 """.strip())
 
 
@@ -450,7 +450,7 @@ class rc_configurator(object):
         kw_added = {}  # custom properties that global setting applies to
         kw_quick = {}  # short name properties
         key = self._sanitize_key(key)
-        children = defaults._rc_children.get(key, ())
+        children = rcsetup._rc_children.get(key, ())
 
         # Permit arbitary units for builtin matplotlib params
         # See: https://matplotlib.org/users/customizing.html, props matching
@@ -463,14 +463,14 @@ class rc_configurator(object):
                 value = units(value, 'pt')
 
         # Deprecations
-        if key in defaults._rc_removed:
-            version = defaults._rc_removed[key]
+        if key in rcsetup._rc_removed:
+            version = rcsetup._rc_removed[key]
             warnings._warn_proplot(
                 f'rc setting {key!r} was removed in version {version}.'
             )
             return {}, {}, {}
-        if key in defaults._rc_renamed:
-            key_new, version = defaults._rc_renamed[key]
+        if key in rcsetup._rc_renamed:
+            key_new, version = rcsetup._rc_renamed[key]
             warnings._warn_proplot(
                 f'rc setting {key!r} was renamed to {key_new} in version {version}.'
             )
@@ -629,7 +629,7 @@ class rc_configurator(object):
         if not isinstance(key, str):
             raise KeyError(f'Invalid key {key!r}. Must be string.')
         if '.' not in key and key not in rc_quick:  # speedup
-            key = defaults._rc_nodots.get(key, key)
+            key = rcsetup._rc_nodots.get(key, key)
         return key.lower()
 
     @staticmethod
@@ -718,10 +718,10 @@ class rc_configurator(object):
             context mode dictionaries is omitted from the output dictionary.
             See `~rc_configurator.context`.
         """
-        if cat not in defaults._rc_categories:
+        if cat not in rcsetup._rc_categories:
             raise ValueError(
                 f'Invalid rc category {cat!r}. Valid categories are '
-                ', '.join(map(repr, defaults._rc_categories)) + '.'
+                ', '.join(map(repr, rcsetup._rc_categories)) + '.'
             )
         kw = {}
         mode = 0 if not context else None
@@ -926,9 +926,9 @@ class rc_configurator(object):
         # should be for user convenience only and shold not be used internally.
         if default:
             rc_params.update(_get_style_dicts('original', infer=False))
-            rc_params.update(defaults._rc_params_default)  # proplot changes
-            rc_added.update(defaults._rc_added_default)  # proplot custom params
-            rc_quick.update(defaults._rc_quick_default)  # proplot quick params
+            rc_params.update(rcsetup._rc_params_default)  # proplot changes
+            rc_added.update(rcsetup._rc_added_default)  # proplot custom params
+            rc_quick.update(rcsetup._rc_quick_default)  # proplot quick params
             for dict_ in (rc_quick, rc_added):
                 for key, value in dict_.items():
                     _, kw_added, kw_params = self._get_param_dicts(key, value)
@@ -1097,7 +1097,7 @@ def _get_style_dicts(style, infer=False):
     # Apply "pseudo" default properties. Pretend some proplot settings are part of
     # the matplotlib specification so they propagate to other styles.
     kw_params['font.family'] = 'sans-serif'
-    kw_params['font.sans-serif'] = defaults._rc_params_default['font.sans-serif']
+    kw_params['font.sans-serif'] = rcsetup._rc_params_default['font.sans-serif']
 
     # Apply user input style(s) one by one
     # NOTE: Always use proplot fonts if style does not explicitly set them.
