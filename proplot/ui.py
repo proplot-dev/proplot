@@ -494,9 +494,9 @@ def subplots(
 
     # Shared axes setup
     # TODO: Figure out how to defer this to drawtime in #50
-    # For some reason just adding _share_setup() to draw() doesn't work
+    # For some reason just adding _auto_share_setup() to draw() doesn't work
     for ax in axs:
-        ax._share_setup()
+        ax._auto_share_setup()
 
     # Return figure and axes
     n = ncols if order == 'C' else nrows
@@ -659,17 +659,17 @@ class SubplotsContainer(list):
         elif all(callable(_) for _ in objs):
             @functools.wraps(objs[0])
             def _iterator(*args, **kwargs):
-                ret = []
+                result = []
                 for func in objs:
-                    ret.append(func(*args, **kwargs))
+                    result.append(func(*args, **kwargs))
                 if len(self) == 1:
-                    return ret[0]
-                elif all(res is None for res in ret):
+                    return result[0]
+                elif all(res is None for res in result):
                     return None
-                elif all(isinstance(res, paxes.Axes) for res in ret):
-                    return SubplotsContainer(ret, n=self._n, order=self._order)
+                elif all(isinstance(res, paxes.Axes) for res in result):
+                    return SubplotsContainer(result, n=self._n, order=self._order)
                 else:
-                    return tuple(ret)
+                    return tuple(result)
             _iterator.__doc__ = inspect.getdoc(objs[0])
             return _iterator
 
