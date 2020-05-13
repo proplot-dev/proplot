@@ -1377,7 +1377,8 @@ def hist_wrapper(self, func, x, bins=None, **kwargs):
 def bar_wrapper(
     self, func, x=None, height=None, width=0.8, bottom=None, *, left=None,
     vert=None, orientation='vertical', stacked=False,
-    lw=None, linewidth=0.7, edgecolor='k',
+    lw=None, linewidth=0.7, edgecolor='black',
+    negpos=False, negcolor=None, poscolor=None,
     **kwargs
 ):
     """
@@ -1396,32 +1397,51 @@ def bar_wrapper(
     # TODO: Stacked feature is implemented in `cycle_changer`, but makes more
     # sense do document here; figure out way to move it here?
     if left is not None:
-        warnings._warn_proplot(
-            'The "left" keyword with bar() is deprecated. Use "x" instead.'
-        )
+        warnings._warn_proplot('bar() keyword "left" is deprecated. Use "x" instead.')
         x = left
     if x is None and height is None:
-        raise ValueError(
-            'bar() requires at least 1 positional argument, got 0.'
-        )
+        raise ValueError('bar() requires at least 1 positional argument, got 0.')
     elif height is None:
         x, height = None, x
+    args = (x, height)
+    linewidth = _not_none(lw=lw, linewidth=linewidth)
+    kwargs.update({
+        'width': width, 'bottom': bottom, 'stacked': stacked,
+        'orientation': orientation, 'linewidth': linewidth, 'edgecolor': edgecolor,
+    })
 
     # Call func
-    # TODO: This *must* also be wrapped by cycle_changer, which ultimately
+    # NOTE: This *must* also be wrapped by cycle_changer, which ultimately
     # permutes back the x/bottom args for horizontal bars! Need to clean up.
-    lw = _not_none(lw=lw, linewidth=linewidth)
-    return func(
-        self, x, height, width=width, bottom=bottom,
-        linewidth=lw, edgecolor=edgecolor,
-        stacked=stacked, orientation=orientation,
-        **kwargs
-    )
+    if negpos:
+        # Draw negative and positive bars
+        # NOTE: cycle_changer makes bar widths *relative* to step size between
+        # x coordinates to cannot just omit data. Instead make some height nan.
+        message = 'bar() argument {}={!r} is incompatible with negpos=True. Ignoring.'
+        stacked = kwargs.pop('stacked', None)
+        if stacked:
+            warnings._warn_proplot(message.format('stacked', stacked))
+        height = np.asarray(height)
+        if height.ndim > 1:
+            raise ValueError('bar() heights with negpos=True must be 1D.')
+        height1 = height.copy().astype(np.float64)
+        height1[height >= 0] = np.nan
+        height2 = height.copy().astype(np.float64)
+        height2[height < 0] = np.nan
+        negcolor = _not_none(negcolor, rc['negcolor'])
+        poscolor = _not_none(poscolor, rc['poscolor'])
+        obj1 = func(self, x, height1, **{'color': negcolor, **kwargs})
+        obj2 = func(self, x, height2, **{'color': poscolor, **kwargs})
+        result = (obj1, obj2)
+    else:
+        # Draw simple bars
+        result = func(self, *args, **kwargs)
+    return result
 
 
-@docstring.add_snippets  # noqa: U100
+@docstring.add_snippets
 def barh_wrapper(
-    self, func, y=None, width=None, height=0.8, left=None, **kwargs
+    self, func, y=None, right=None, width=None, left=None, height=None, **kwargs
 ):
     """
     %(axes.barh)s
@@ -1429,16 +1449,17 @@ def barh_wrapper(
     # Converts y-->bottom, left-->x, width-->height, height-->width.
     # Convert back to (x, bottom, width, height) so we can pass stuff
     # through cycle_changer.
+    # NOTE: ProPlot calls second positional argument 'right' so that 'width'
+    # means the width of *bars*.
     # NOTE: You *must* do juggling of barh keyword order --> bar keyword order
     # --> barh keyword order, because horizontal hist passes arguments to bar
     # directly and will not use a 'barh' method with overridden argument order!
     func  # avoid U100 error
+    height = _not_none(height=height, width=width, default=0.8)
     kwargs.setdefault('orientation', 'horizontal')
     if y is None and width is None:
-        raise ValueError(
-            'barh() requires at least 1 positional argument, got 0.'
-        )
-    return self.bar(x=left, height=height, width=width, bottom=y, **kwargs)
+        raise ValueError('barh() requires at least 1 positional argument, got 0.')
+    return self.bar(x=left, width=right, height=height, bottom=y, **kwargs)
 
 
 def boxplot_wrapper(
