@@ -13,10 +13,10 @@ from .plot import (
     _get_transform,
     _add_errorbars, _bar_wrapper, _barh_wrapper, _boxplot_wrapper,
     _cmap_changer, _cycle_changer,
-    _fill_between_wrapper, _fill_betweenx_wrapper,
-    _hist_wrapper, _parametric_wrapper, _plot_wrapper, _scatter_wrapper,
+    _fill_between_wrapper, _fill_betweenx_wrapper, _hlines_wrapper,
+    _hist_wrapper, _parametric_wrapper, _plot_wrapper, _scatter_wrapper, _stem_wrapper,
     _standardize_1d, _standardize_2d,
-    _text_wrapper, _violinplot_wrapper,
+    _text_wrapper, _violinplot_wrapper, _vlines_wrapper,
     colorbar_wrapper, legend_wrapper,
 )
 from .. import gridspec as pgridspec
@@ -1671,11 +1671,19 @@ optional
     pie = _standardize_1d(_cycle_changer(
         maxes.Axes.pie
     ))
-    stem = _standardize_1d(_cycle_changer(
-        maxes.Axes.stem
-    ))
     step = _standardize_1d(_cycle_changer(
         maxes.Axes.step
+    ))
+
+    # Wrapped by standardizer
+    stem = _standardize_1d(_stem_wrapper(
+        maxes.Axes.stem
+    ))
+    hlines = _standardize_1d(_hlines_wrapper(
+        maxes.Axes.hlines
+    ))
+    vlines = _standardize_1d(_vlines_wrapper(
+        maxes.Axes.vlines
     ))
 
     # Wrapped by cmap wrapper and standardized

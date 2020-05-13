@@ -1077,7 +1077,7 @@ def add_errorbars(
     return obj
 
 
-def _parametric_wrapper_temporary(self, func, *args, interp=0, **kwargs):
+def _parametric_wrapper_private(self, func, *args, interp=0, **kwargs):
     """
     Calls `~proplot.axes.Axes.parametric` and optionally interpolates values before
     they get passed to `cmap_changer` and the colormap boundaries are drawn.
@@ -1127,7 +1127,7 @@ def _parametric_wrapper_temporary(self, func, *args, interp=0, **kwargs):
     return func(self, x, y, values=values, **kwargs)
 
 
-def _plot_wrapper_deprecated(
+def _plot_wrapper_private(
     self, func, *args, cmap=None, values=None, **kwargs
 ):
     """
@@ -1276,6 +1276,59 @@ color-spec or list thereof, optional
     if ticks is not None:
         obj.ticks = ticks
     return obj
+
+
+def _stem_wrapper_private(self, func, *args, **kwargs):
+    """
+    Make `use_line_collection` the default to suppress annoying warning message.
+    """
+    kwargs.setdefault('use_line_collection', True)
+    kwargs.setdefault('linefmt', 'C0-')
+    kwargs.setdefault('basefmt', kwargs['linefmt'])  # use *same* for base
+    try:
+        return func(self, *args, **kwargs)
+    except TypeError:
+        kwargs.pop('use_line_collection')  # old version
+        return func(self, *args, **kwargs)
+
+
+def _parse_lines_args(x, args, kwargs):
+    """
+    Parse lines arguments. Support automatic *x* coordinates and default
+    "minima" at zero.
+    """
+    args = list(args)
+    if x in kwargs:
+        args.insert(0, kwargs.pop(x))
+    y = 'y' if x == 'x' else 'x'
+    for suffix in ('min', 'max'):
+        key = y + suffix
+        if key in kwargs:
+            args.append(kwargs.pop(key))
+    if len(args) == 1:
+        x = np.arange(len(np.atleast_1d(args[0])))
+        args.insert(0, x)
+    if len(args) == 2:
+        args.insert(1, 0.0)
+    elif len(args) != 3:
+        raise TypeError('lines() requires 1 to 3 positional arguments.')
+    return args, kwargs
+
+
+def _hlines_wrapper_private(self, func, *args, **kwargs):
+    """
+    Parse hlines arguments.
+    """
+    args, kwargs = _parse_lines_args('x', args, kwargs)
+    return func(self, *args, **kwargs)
+
+
+def _vlines_wrapper_private(self, func, *args, **kwargs):
+    """
+    Parse vlines arguments.
+    """
+    args, kwargs = _parse_lines_args('y', args, kwargs)
+    return func(self, *args, **kwargs)
 
 
 def _fill_between_apply(
@@ -1938,12 +1991,12 @@ def cycle_changer(
 
     # Custom property cycler additions
     # NOTE: By default matplotlib uses _get_patches_for_fill.get_next_color
-    # for scatter properties! So we simultaneously iterate through the
-    # _get_lines property cycler and apply them.
-    apply = set()  # which keys to apply from property cycler
-    if name == 'scatter':
+    # for scatter next scatter color, but cannot get anything else! We simultaneously
+    # iterate through the _get_lines property cycler and apply relevant properties.
+    apply_from_cycler = set()  # which keys to apply from property cycler
+    if name in ('scatter',):
         # Figure out which props should be updated
-        keys = {*self._get_lines._prop_keys} - {'color', 'linestyle', 'dashes'}
+        prop_keys = set(self._get_lines._prop_keys) - {'color', 'linestyle', 'dashes'}
         for key, prop in (
             ('markersize', 's'),
             ('linewidth', 'linewidths'),
@@ -1953,8 +2006,8 @@ def cycle_changer(
             ('marker', 'marker'),
         ):
             prop = kwargs.get(prop, None)
-            if key in keys and prop is None:
-                apply.add(key)
+            if key in prop_keys and prop is None:  # if key in cycler and property unset
+                apply_from_cycler.add(key)
 
     # Handle legend labels and
     # WARNING: Most methods that accept 2d arrays use columns of data, but when
@@ -1996,9 +2049,9 @@ def cycle_changer(
     for i in range(ncols):
         # Prop cycle properties
         kw = kwargs.copy()
-        if apply:
+        if apply_from_cycler:
             props = next(self._get_lines.prop_cycler)
-            for key in apply:
+            for key in apply_from_cycler:
                 value = props[key]
                 if key in ('size', 'markersize'):
                     key = 's'
@@ -3554,10 +3607,13 @@ _cycle_changer = _generate_decorator(cycle_changer)
 _fill_between_wrapper = _generate_decorator(fill_between_wrapper)
 _fill_betweenx_wrapper = _generate_decorator(fill_betweenx_wrapper)
 _hist_wrapper = _generate_decorator(hist_wrapper)
-_parametric_wrapper = _generate_decorator(_parametric_wrapper_temporary)
-_plot_wrapper = _generate_decorator(_plot_wrapper_deprecated)
+_hlines_wrapper = _generate_decorator(_hlines_wrapper_private)
+_parametric_wrapper = _generate_decorator(_parametric_wrapper_private)
+_plot_wrapper = _generate_decorator(_plot_wrapper_private)
 _scatter_wrapper = _generate_decorator(scatter_wrapper)
 _standardize_1d = _generate_decorator(standardize_1d)
 _standardize_2d = _generate_decorator(standardize_2d)
+_stem_wrapper = _generate_decorator(_stem_wrapper_private)
 _text_wrapper = _generate_decorator(text_wrapper)
 _violinplot_wrapper = _generate_decorator(violinplot_wrapper)
+_vlines_wrapper = _generate_decorator(_vlines_wrapper_private)

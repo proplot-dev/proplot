@@ -465,12 +465,6 @@ ax.colorbar(m, loc='b', maxn=10, label='parametric coordinate')
 # `~matplotlib.axes.Axes.scatter` now optionally accepts keywords that look
 # like `~matplotlib.axes.Axes.plot` keywords (e.g. `color` instead of `c` and
 # `markersize` instead of `s`).
-#
-# We are also considering supporting 2D array input and property cycle
-# iteration for more obscure matplotlib plotting commands like
-# `~matplotlib.axes.Axes.stem`, `~matplotlib.axes.Axes.step`,
-# `~matplotlib.axes.Axes.vlines`, and `~matplotlib.axes.Axes.hlines`. Stay
-# tuned.
 
 # %%
 import proplot as plot
