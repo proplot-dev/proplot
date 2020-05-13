@@ -9,12 +9,11 @@ import matplotlib.path as mpath
 import matplotlib.ticker as mticker
 from . import base
 from .plot import (
-    _add_errorbars, _basemap_norecurse, _basemap_redirect,
-    _plot_wrapper, _scatter_wrapper,
-    _fill_between_wrapper, _fill_betweenx_wrapper,
+    _basemap_norecurse, _basemap_redirect, _cmap_changer, _cycle_changer,
     _default_crs, _default_latlon, _default_transform,
-    _cmap_changer, _cycle_changer,
-    _standardize_1d, _standardize_2d,
+    _fill_between_wrapper, _fill_betweenx_wrapper,
+    _indicate_error, _plot_wrapper,
+    _scatter_wrapper, _standardize_1d, _standardize_2d,
     _text_wrapper,
 )
 from .. import crs as pcrs
@@ -770,10 +769,10 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
             GeoAxesCartopy.text
         )
         plot = _default_transform(_plot_wrapper(_standardize_1d(
-            _add_errorbars(_cycle_changer(GeoAxesCartopy.plot))
+            _indicate_error(_cycle_changer(GeoAxesCartopy.plot))
         )))
         scatter = _default_transform(_scatter_wrapper(_standardize_1d(
-            _add_errorbars(_cycle_changer(GeoAxesCartopy.scatter))
+            _indicate_error(_cycle_changer(GeoAxesCartopy.scatter))
         )))
         fill_between = _fill_between_wrapper(_standardize_1d(_cycle_changer(
             GeoAxesCartopy.fill_between
@@ -1079,10 +1078,10 @@ class BasemapAxes(GeoAxes):
 
     # Wrapped methods
     plot = _basemap_norecurse(_default_latlon(_plot_wrapper(_standardize_1d(
-        _add_errorbars(_cycle_changer(_basemap_redirect(maxes.Axes.plot)))
+        _indicate_error(_cycle_changer(_basemap_redirect(maxes.Axes.plot)))
     ))))
     scatter = _basemap_norecurse(_default_latlon(_scatter_wrapper(_standardize_1d(
-        _add_errorbars(_cycle_changer(_basemap_redirect(maxes.Axes.scatter)))
+        _indicate_error(_cycle_changer(_basemap_redirect(maxes.Axes.scatter)))
     ))))
     contour = _basemap_norecurse(_default_latlon(_standardize_2d(_cmap_changer(
         _basemap_redirect(maxes.Axes.contour)
