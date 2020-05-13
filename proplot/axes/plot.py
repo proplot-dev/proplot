@@ -220,6 +220,11 @@ STYLE_ARGS_TRANSLATE = {
         'linewidths': 'linewidth',
         'linestyles': 'linestyle',
     },
+    'pcolorfast': {
+        'colors': 'edgecolors',
+        'linewidths': 'linewidth',
+        'linestyles': 'linestyle',
+    },
     'tripcolor': {
         'colors': 'edgecolors',
         'linewidths': 'linewidth',
@@ -733,7 +738,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
             self.format(**kw)
 
     # Enforce edges
-    if name in ('pcolor', 'pcolormesh'):
+    if name in ('pcolor', 'pcolormesh', 'pcolorfast'):
         # Get centers or raise error. If 2d, don't raise error, but don't fix
         # either, because matplotlib pcolor just trims last column and row.
         xlen, ylen = x.shape[-1], y.shape[0]
@@ -2489,9 +2494,7 @@ def cmap_changer(
             cobj = obj
             colors = None
             if name in ('contourf', 'tricontourf'):
-                lums = [
-                    to_xyz(cmap(norm(level)), 'hcl')[2] for level in levels
-                ]
+                lums = [to_xyz(cmap(norm(level)), 'hcl')[2] for level in levels]
                 cobj = self.contour(*args, levels=levels, linewidths=0)
                 colors = ['w' if lum < 50 else 'k' for lum in lums]
             text_kw = {}
@@ -2504,13 +2507,13 @@ def cmap_changer(
             labels_kw.setdefault('colors', colors)
             labels_kw.setdefault('inline_spacing', 3)
             labels_kw.setdefault('fontsize', rc['small'])
-            labs = self.clabel(cobj, fmt=fmt, **labels_kw)
+            labs = cobj.clabel(fmt=fmt, **labels_kw)
             for lab in labs:
                 lab.update(text_kw)
 
         # Label each box manually
         # See: https://stackoverflow.com/a/20998634/4970632
-        elif name in ('pcolor', 'pcolormesh'):
+        elif name in ('pcolor', 'pcolormesh', 'pcolorfast'):
             # Populate the _facecolors attribute, which is initially filled
             # with just a single color
             obj.update_scalarmappable()
@@ -2550,13 +2553,13 @@ def cmap_changer(
     # corner of pcolor plots. *Never* use this when colormap has opacity.
     # See: https://stackoverflow.com/q/15003353/4970632
     if edgefix and name in (
-        'pcolor', 'pcolormesh', 'tripcolor', 'contourf', 'tricontourf'
+        'pcolor', 'pcolormesh', 'pcolorfast', 'tripcolor', 'contourf', 'tricontourf'
     ):
         cmap = obj.get_cmap()
         if not cmap._isinit:
             cmap._init()
         if all(cmap._lut[:-1, 3] == 1):  # skip for cmaps with transparency
-            if name in ('pcolor', 'pcolormesh', 'tripcolor'):
+            if name in ('pcolor', 'pcolormesh', 'pcolorfast', 'tripcolor'):
                 obj.set_edgecolor('face')
                 obj.set_linewidth(0.4)
             else:

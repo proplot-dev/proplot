@@ -1695,6 +1695,9 @@ optional
     pcolormesh = _standardize_2d(_cmap_changer(
         maxes.Axes.pcolormesh
     ))
+    pcolorfast = _standardize_2d(_cmap_changer(
+        maxes.Axes.pcolorfast  # WARNING: not available in cartopy and basemap
+    ))
     quiver = _standardize_2d(_cmap_changer(
         maxes.Axes.quiver
     ))
