@@ -1261,7 +1261,8 @@ color-spec or list thereof, optional
 
 def _fill_between_apply(
     self, func, *args,
-    negcolor='blue', poscolor='red', negpos=False,
+    negcolor=None, poscolor=None, negpos=False,
+    lw=None, linewidth=None,
     **kwargs
 ):
     """
@@ -1274,15 +1275,16 @@ def _fill_between_apply(
     #   make the default fill_between(x, y1=0, y2).
     x = 'y' if 'x' in func.__name__ else 'x'
     y = 'x' if x == 'y' else 'y'
-    if x in kwargs:
-        args = (kwargs.pop(x), *args)
-    for y in (y + '1', y + '2'):
-        if y in kwargs:
-            args = (*args, kwargs.pop(y))
+    args = list(args)
+    if x in kwargs:  # keyword 'x'
+        args.insert(0, kwargs.pop(x))
     if len(args) == 1:
-        args = (np.arange(len(args[0])), *args)
+        args.insert(0, np.arange(len(args[0])))
+    for yi in (y + '1', y + '2'):
+        if yi in kwargs:  # keyword 'y'
+            args.append(kwargs.pop(yi))
     if len(args) == 2:
-        args = (*args, 0)
+        args.append(0)
     elif len(args) == 3:
         if kwargs.get('stacked', False):
             warnings._warn_proplot(
@@ -1292,31 +1294,55 @@ def _fill_between_apply(
     else:
         raise ValueError(f'Expected 2-3 positional args, got {len(args)}.')
 
+    # Modify default properties
+    # Set default edge width for patches to zero
+    kwargs['linewidth'] = _not_none(lw=lw, linewidth=linewidth, default=0)
+
     # Draw patches
-    x, y1, y2 = args
+    xv, y1, y2 = args
     if negpos:
-        # Get zero points
-        objs = []
-        kwargs.setdefault('interpolate', True)
+        # Plot negative and positive patches
+        name = func.__name__
+        message = name + ' argument {}={!r} is incompatible with negpos=True. Ignoring.'
         where = kwargs.pop('where', None)
         if where is not None:
-            warnings._warn_proplot(
-                f'{func.__name__} cannot have "where" argument '
-                f'with negpos=True. Ignoring where={where!r}.'
-            )
-
-        # Plot negative and positive patches
-        for i in range(2):
-            kw = kwargs.copy()
-            kw.setdefault('color', negcolor if i == 0 else poscolor)
-            where = y1 < y2 if i == 0 else y1 >= y2
-            obj = func(self, x, y1, y2, where=where, **kw)
-            objs.append(obj)
-        return tuple(objs)
+            warnings._warn_proplot(message.format('where', where))
+        stacked = kwargs.pop('stacked', None)
+        if stacked:
+            warnings._warn_proplot(message.format('stacked', stacked))
+        kwargs.setdefault('interpolate', True)
+        if np.asarray(y1).ndim > 1 or np.asarray(y2).ndim > 2:
+            raise ValueError(f'{name} arguments with negpos=True must be 1D.')
+        where1 = y1 < y2
+        where2 = y1 >= y2
+        negcolor = _not_none(negcolor, rc['negcolor'])
+        poscolor = _not_none(poscolor, rc['poscolor'])
+        obj1 = func(self, xv, y1, y2, where=where1, **{'color': negcolor, **kwargs})
+        obj2 = func(self, xv, y1, y2, where=where2, **{'color': poscolor, **kwargs})
+        result = objs = (obj1, obj2)  # may be tuple of tuples due to cycle_changer
 
     else:
         # Plot basic patches
-        return func(self, x, y1, y2, **kwargs)
+        result = func(self, xv, y1, y2, **kwargs)
+        objs = (result,)
+
+    # Add sticky edges in x-direction, and sticky edges in y-direction *only*
+    # if one of the y limits is scalar. This should satisfy most users.
+    # NOTE: Current private API self._request_autoscale_view is very recent but
+    xsides = (np.min(xv), np.max(xv))
+    ysides = []
+    if np.isscalar(y1):
+        ysides.append(np.asarray(y1).item())
+    if np.isscalar(y2):
+        ysides.append(np.asarray(y2).item())
+    for iobjs in objs:
+        if not isinstance(iobjs, tuple):
+            iobjs = (iobjs,)
+        for obj in iobjs:
+            getattr(obj.sticky_edges, x).extend(xsides)
+            getattr(obj.sticky_edges, y).extend(ysides)
+
+    return result
 
 
 @docstring.add_snippets
