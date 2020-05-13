@@ -205,7 +205,6 @@ import proplot as plot
 import numpy as np
 import pandas as pd
 plot.rc['title.loc'] = 'uc'
-plot.rc['axes.ymargin'] = plot.rc['axes.xmargin'] = 0.05
 state = np.random.RandomState(51423)
 data = (
     state.rand(20, 8).cumsum(axis=0).cumsum(axis=1)[:, ::-1]
@@ -258,9 +257,10 @@ plot.rc.reset()
 # `~proplot.axes.cycle_changer`, and `~proplot.axes.standardize_1d`.
 # You can now *group* or *stack* columns of data by passing 2D arrays to
 # `~matplotlib.axes.Axes.bar` or `~matplotlib.axes.Axes.barh`, just like in
-# `pandas`. Also, `~matplotlib.axes.Axes.bar` and `~matplotlib.axes.Axes.barh`
-# now employ "default" *x* coordinates if you failed to provide them
-# explicitly, just like `~matplotlib.axes.Axes.plot`.
+# `pandas`, or use different colors for negative and positive bars by
+# passing ``negpos=True``. Also, `~matplotlib.axes.Axes.bar` and
+# `~matplotlib.axes.Axes.barh` now employ "default" *x* coordinates if you
+# failed to provide them explicitly.
 #
 # To make filled "area" plots, use the new `~proplot.axes.Axes.area` and
 # `~proplot.axes.Axes.areax` methods. These are alises for
@@ -270,7 +270,7 @@ plot.rc.reset()
 # `~proplot.axes.fill_betweenx_wrapper`. You can now *stack* or *overlay*
 # columns of data by passing 2D arrays to `~proplot.axes.Axes.area` and
 # `~proplot.axes.Axes.areax`, just like in `pandas`. You can also now draw
-# area plots that *change color* when the fill boundaries cross each other by
+# area plots that change color when the fill boundaries cross each other by
 # passing ``negpos=True`` to `~matplotlib.axes.Axes.fill_between`. The most
 # common use case for this is highlighting negative and positive areas with
 # different colors, as shown below.
@@ -313,20 +313,21 @@ plot.rc.reset()
 # %%
 import proplot as plot
 import numpy as np
-plot.rc.margin = 0
-fig, axs = plot.subplots(array=[[1, 2], [3, 3]], hratios=(1, 0.8), share=0)
-axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Area plot demo')
+fig, axs = plot.subplots(array=[[1, 2], [3, 3]], hratios=(1, 1.5), share=0)
+axs.format(grid=False, xlabel='xlabel', ylabel='ylabel', suptitle='Area plot demo')
 state = np.random.RandomState(51423)
 data = state.rand(5, 3).cumsum(axis=0)
 cycle = ('gray3', 'gray5', 'gray7')
 
-# Overlaid and stacked area patches
+# Overlaid area patches
 ax = axs[0]
 ax.area(
-    np.arange(5), data, data + state.rand(5)[:, None], cycle=cycle, alpha=0.5,
+    np.arange(5), data, data + state.rand(5)[:, None], cycle=cycle, alpha=0.7,
     legend='uc', legend_kw={'center': True, 'ncols': 2, 'labels': ['z', 'y', 'qqqq']},
 )
 ax.format(title='Fill between columns')
+
+# Stacked area patches
 ax = axs[1]
 ax.area(
     np.arange(5), data, stacked=True, cycle=cycle, alpha=0.8,
@@ -334,12 +335,17 @@ ax.area(
 )
 ax.format(title='Stack between columns')
 
-# Positive and negative color area patches
+# Positive and negative color bars and area patches
 ax = axs[2]
-data = 5 * (state.rand(20) - 0.5)
-ax.area(data, negpos=True, negcolor='blue7', poscolor='red7')
-ax.format(title='Positive and negative colors', xlabel='xlabel', ylabel='ylabel')
-axs.format(grid=False)
+data = 4 * (state.rand(20) - 0.5)
+ax.bar(data, bottom=-2, width=1, edgecolor='none', negpos=True)
+ax.area(data + 2, y2=2, negpos=True)
+for offset in (-2, 2):
+    ax.axhline(offset, color='k', linewidth=1, linestyle='--')
+ax.format(
+    xmargin=0, xlabel='xlabel', ylabel='ylabel',
+    title='Positive and negative colors demo', titleweight='bold',
+)
 plot.rc.reset()
 
 
@@ -369,10 +375,7 @@ data = pd.DataFrame(
     data,
     columns=pd.Index(['a', 'b', 'c', 'd', 'e'], name='xlabel')
 )
-axs.format(
-    ymargin=0.1, xmargin=0.1, grid=False,
-    suptitle='Boxes and violins demo'
-)
+axs.format(grid=False, suptitle='Boxes and violins demo')
 
 # Box plots
 ax = axs[0]
@@ -428,7 +431,6 @@ m = ax.parametric(
     x, y, c, cmap=cmap, lw=7, interp=5, capstyle='round', joinstyle='round'
 )
 ax.format(xlabel='xlabel', ylabel='ylabel', title='Line with smooth gradations')
-ax.format(xmargin=0.05, ymargin=0.05)
 ax.colorbar(m, loc='b', label='parametric coordinate', locator=5)
 
 # Parametric line with stepped gradations

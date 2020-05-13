@@ -220,12 +220,6 @@ for globe in (False, True,):
             fig.colorbar(m, loc='b', span=i + 1, label='values', extendsize='1.7em')
         else:
             ax.pcolor(lon, lat, data, cmap=cmap, globe=globe, extend='both')
-        if globe:
-            continue
-        xi = offset + np.linspace(0, 360, 20)
-        for cmd in (np.sin, np.cos):
-            yi = cmd(xi * np.pi / 180) * 60
-            ax.plot(xi, yi, color='k', lw=0, marker='o')
     axs.format(
         suptitle=titles[globe],
         collabels=['Cartopy example', 'Basemap example'],
