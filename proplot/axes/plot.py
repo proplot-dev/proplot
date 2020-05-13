@@ -1136,15 +1136,25 @@ def _plot_wrapper_deprecated(
     """
     if len(args) > 3:  # e.g. with fmt string
         raise ValueError(f'Expected 1-3 positional args, got {len(args)}.')
-    if cmap is None:
-        return func(self, *args, values=values, **kwargs)
-    else:
+    if cmap is not None:
         warnings._warn_proplot(
-            'Drawing "parametric" plots with ax.plot(..., cmap=cmap, values='
-            'values) is deprecated and will be removed in a future version. '
-            'Please use ax.parametric(..., cmap=cmap, values=values) instead.'
+            'Drawing "parametric" plots with ax.plot(x, y, values=values, cmap=cmap) '
+            'is deprecated and will be removed in a future version. Please use '
+            'ax.parametric(x, y, values, cmap=cmap) instead.'
         )
         return self.parametric(*args, cmap=cmap, values=values, **kwargs)
+
+    # Draw lines
+    # Add sticky edges? No because there is no way to check whether "dependent variable"
+    # is x or y axis like with area/areax and bar/barh. Better to always have margin.
+    result = func(self, *args, values=values, **kwargs)
+    # for objs in result:
+    #     if not isinstance(objs, tuple):
+    #         objs = (objs,)
+    #     for obj in objs:
+    #         xdata = obj.get_xdata()
+    #         obj.sticky_edges.x.extend((np.min(xdata), np.max(xdata)))
+    return result
 
 
 @docstring.add_snippets
