@@ -12,7 +12,7 @@ from . import colors as pcolors
 from .utils import to_rgb, to_xyz
 from .config import rc, _get_data_paths, BASE_COLORS, XKCD_COLORS, OPEN_COLORS
 from .internals import ic  # noqa: F401
-from .internals import docstring, _not_none
+from .internals import docstring, warnings, _not_none
 
 __all__ = [
     'show_cmaps',
@@ -201,7 +201,7 @@ def _draw_bars(
             + ', '.join(map(repr, source)) + '.'
         )
     for cat in (*cmapdict,):
-        if cat not in categories:
+        if cat not in categories and cat != unknown:
             cmapdict.pop(cat)
 
     # Draw figure
@@ -223,7 +223,11 @@ def _draw_bars(
                 iax += 1
                 ax.set_visible(False)
                 ax = axs[iax]
-            cmap = pcolors._cmap_database[name]
+            try:
+                cmap = pcolors._cmap_database[name]
+            except KeyError:
+                warnings._warn_proplot(f'Colormap {name!r} not found or unregistered.')
+                continue
             if N is not None:
                 cmap = cmap.copy(N=N)
             ax.colorbar(
