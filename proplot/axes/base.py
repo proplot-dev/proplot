@@ -11,10 +11,11 @@ import matplotlib.transforms as mtransforms
 import matplotlib.collections as mcollections
 from .plot import (
     _get_transform,
-    _add_errorbars, _bar_wrapper, _barh_wrapper, _boxplot_wrapper,
+    _bar_wrapper, _barh_wrapper, _boxplot_wrapper,
     _cmap_changer, _cycle_changer,
     _fill_between_wrapper, _fill_betweenx_wrapper, _hlines_wrapper,
-    _hist_wrapper, _parametric_wrapper, _plot_wrapper, _scatter_wrapper, _stem_wrapper,
+    _hist_wrapper, _indicate_error,
+    _parametric_wrapper, _plot_wrapper, _scatter_wrapper, _stem_wrapper,
     _standardize_1d, _standardize_2d,
     _text_wrapper, _violinplot_wrapper, _vlines_wrapper,
     colorbar_wrapper, legend_wrapper,
@@ -1639,13 +1640,13 @@ optional
     text = _text_wrapper(
         maxes.Axes.text
     )
-    plot = _plot_wrapper(_standardize_1d(_add_errorbars(_cycle_changer(
+    plot = _plot_wrapper(_standardize_1d(_indicate_error(_cycle_changer(
         maxes.Axes.plot
     ))))
-    scatter = _scatter_wrapper(_standardize_1d(_add_errorbars(_cycle_changer(
+    scatter = _scatter_wrapper(_standardize_1d(_indicate_error(_cycle_changer(
         maxes.Axes.scatter
     ))))
-    bar = _bar_wrapper(_standardize_1d(_add_errorbars(_cycle_changer(
+    bar = _bar_wrapper(_standardize_1d(_indicate_error(_cycle_changer(
         maxes.Axes.bar
     ))))
     barh = _barh_wrapper(
@@ -1657,7 +1658,7 @@ optional
     boxplot = _boxplot_wrapper(_standardize_1d(_cycle_changer(
         maxes.Axes.boxplot
     )))
-    violinplot = _violinplot_wrapper(_standardize_1d(_add_errorbars(
+    violinplot = _violinplot_wrapper(_standardize_1d(_indicate_error(
         _cycle_changer(maxes.Axes.violinplot)
     )))
     fill_between = _fill_between_wrapper(_standardize_1d(_cycle_changer(

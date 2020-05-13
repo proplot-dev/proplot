@@ -34,7 +34,6 @@ except ModuleNotFoundError:
     PlateCarree = object
 
 __all__ = [
-    'add_errorbars',
     'bar_wrapper',
     'barh_wrapper',
     'boxplot_wrapper',
@@ -47,6 +46,7 @@ __all__ = [
     'fill_between_wrapper',
     'fill_betweenx_wrapper',
     'hist_wrapper',
+    'indicate_error',
     'legend_wrapper',
     'scatter_wrapper',
     'standardize_1d',
@@ -915,7 +915,7 @@ def _errorbar_values(data, idata, bardata=None, barrange=None, barstd=False):
     return err
 
 
-def add_errorbars(
+def indicate_error(
     self, func, *args,
     medians=False, means=False,
     boxes=None, bars=None,
@@ -3595,7 +3595,6 @@ def _generate_decorator(driver):
 
 
 # Auto generated decorators. Each wrapper internally calls func(self, ...) somewhere.
-_add_errorbars = _generate_decorator(add_errorbars)
 _bar_wrapper = _generate_decorator(bar_wrapper)
 _barh_wrapper = _generate_decorator(barh_wrapper)
 _default_latlon = _generate_decorator(default_latlon)
@@ -3608,6 +3607,7 @@ _fill_between_wrapper = _generate_decorator(fill_between_wrapper)
 _fill_betweenx_wrapper = _generate_decorator(fill_betweenx_wrapper)
 _hist_wrapper = _generate_decorator(hist_wrapper)
 _hlines_wrapper = _generate_decorator(_hlines_wrapper_private)
+_indicate_error = _generate_decorator(indicate_error)
 _parametric_wrapper = _generate_decorator(_parametric_wrapper_private)
 _plot_wrapper = _generate_decorator(_plot_wrapper_private)
 _scatter_wrapper = _generate_decorator(scatter_wrapper)
