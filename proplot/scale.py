@@ -257,7 +257,6 @@ class FuncScale(_Scale, mscale.ScaleBase):
         self, arg, invert=False, parent_scale=None,
         major_locator=None, minor_locator=None,
         major_formatter=None, minor_formatter=None,
-        smart_bounds=None,
     ):
         """
         Parameters
@@ -304,11 +303,6 @@ optional
             The default major and minor formatter. By default these are
             borrowed from `transform`. If `transform` is not an axis scale,
             they are the same as `~matplotlib.scale.LinearScale`.
-        smart_bounds : bool, optional
-            Whether "smart bounds" are enabled by default. If not ``None``,
-            this is passed to `~matplotlib.axis.Axis.set_smart_bounds` when
-            `~matplotlib.scale.ScaleBase.set_default_locators_and_formatters`
-            is called. By default these are borrowed from `transform`.
         """
         # NOTE: We permit *arbitrary* parent axis scales. If the parent is
         # non-linear, we use *its* default locators and formatters. Assumption
@@ -363,7 +357,6 @@ optional
         # Transform and default stuff
         self.functions = (forward, inverse)
         self._transform = functransform
-        self._default_smart_bounds = smart_bounds
         self._default_major_locator = major_locator
         self._default_minor_locator = minor_locator
         self._default_major_formatter = major_formatter
@@ -378,8 +371,7 @@ optional
             if isinstance(scale, mscale.LinearScale):
                 continue
             for key in (
-                'smart_bounds', 'major_locator', 'minor_locator',
-                'major_formatter', 'minor_formatter'
+                'major_locator', 'minor_locator', 'major_formatter', 'minor_formatter'
             ):
                 key = '_default_' + key
                 attr = getattr(scale, key)
