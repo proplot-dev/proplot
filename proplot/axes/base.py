@@ -105,12 +105,12 @@ class Axes(maxes.Axes):
         self._left_panels = []
         self._right_panels = []
         self._tightbbox = None  # bounding boxes are saved
-        self._panel_parent = None
-        self._panel_side = None
-        self._panel_share = False
         self._panel_hidden = False  # True when "filled" with cbar/legend
-        self._sharex_override = False
-        self._sharey_override = False
+        self._panel_parent = None
+        self._panel_share = False
+        self._panel_sharex_group = False
+        self._panel_sharey_group = False
+        self._panel_side = None
         self._inset_parent = None
         self._inset_zoom = False
         self._inset_zoom_data = None
@@ -174,8 +174,62 @@ class Axes(maxes.Axes):
 
         # Automatic axis sharing and formatting
         # TODO: Instead of format() call specific setters
-        self._share_setup()
+        self._auto_share_setup()
         self.format(rc_mode=1)  # mode == 1 applies the rcShortParams
+
+    def _auto_share_setup(self):
+        """
+        Automatically configure axis sharing based on the horizontal and
+        vertical extent of subplots in the figure gridspec.
+        """
+        # Panel axes sharing, between main subplot and its panels
+        # NOTE: _panel_share means "include this panel in the axis sharing group"
+        # while _panel_sharex_group indicates the group itself and may include main axes
+        def shared(paxs):
+            return [pax for pax in paxs if not pax._panel_hidden and pax._panel_share]
+
+        # Internal axis sharing, share stacks of panels and main axes with each other
+        # NOTE: *This* block is why, even though share[xy] are figure-wide
+        # settings, we still need the axes-specific _share[xy]_override attr
+        if not self._panel_side:  # this is a main axes
+            # Top and bottom
+            bottom = self
+            paxs = shared(self._bottom_panels)
+            if paxs:
+                bottom = paxs[-1]
+                bottom._panel_sharex_group = False
+                for iax in (self, *paxs[:-1]):
+                    iax._panel_sharex_group = True
+                    iax._sharex_setup(bottom)  # parent is bottom-most
+            paxs = shared(self._top_panels)
+            for iax in paxs:
+                iax._panel_sharex_group = True
+                iax._sharex_setup(bottom)
+            # Left and right
+            # NOTE: Order of panel lists is always inside-to-outside
+            left = self
+            paxs = shared(self._left_panels)
+            if paxs:
+                left = paxs[-1]
+                left._panel_sharey_group = False
+                for iax in (self, *paxs[:-1]):
+                    iax._panel_sharey_group = True
+                    iax._sharey_setup(left)  # parent is left-most
+            paxs = shared(self._right_panels)
+            for iax in paxs:
+                iax._panel_sharey_group = True
+                iax._sharey_setup(left)
+
+        # External axes sharing, sometimes overrides panel axes sharing
+        # NOTE: This can get very repetitive, but probably minimal impact?
+        # Share x axes
+        parent, *children = self._get_extent_axes('x')
+        for child in children:
+            child._sharex_setup(parent)
+        # Share y axes
+        parent, *children = self._get_extent_axes('y')
+        for child in children:
+            child._sharey_setup(parent)
 
     def _draw_auto_legends_colorbars(self):
         """
@@ -259,10 +313,21 @@ class Axes(maxes.Axes):
         self.patch.set_alpha(0)
         self._panel_hidden = True
 
+    def _is_panel(self):
+        """
+        Return whether the current axes is a panel.
+        """
+        return bool(self._panel_parent)
+
+    def _is_panel_parent_or_child(self, other):
+        """
+        Return whether the axes are related.
+        """
+        return self._panel_parent is other or other._panel_parent is self
+
     def _loc_translate(self, loc, mode=None, allow_manual=True):
         """
-        Return the location string `loc` translated into a standardized
-        form.
+        Return the location string `loc` translated into a standardized form.
         """
         if mode == 'legend':
             valid = tuple(LOC_TRANSLATE.values())
@@ -357,7 +422,7 @@ class Axes(maxes.Axes):
         else:
             return bbox.ymin, bbox.ymax
 
-    def _reassign_suplabel(self, side):
+    def _reassign_subplot_label(self, side):
         """
         Re-assign the column and row labels to the relevant panel if
         present. This is called by `~proplot.figure.Figure._align_suplabel`.
@@ -422,9 +487,9 @@ class Axes(maxes.Axes):
         Configure x-axis sharing for panels. Main axis sharing is done in
         `~CartesianAxes._sharex_setup`.
         """
-        self._share_short_axis(sharex, 'left')
+        self._share_short_axis(sharex, 'left')  # x axis of left panels
         self._share_short_axis(sharex, 'right')
-        self._share_long_axis(sharex, 'bottom')
+        self._share_long_axis(sharex, 'bottom')  # x axis of bottom panels
         self._share_long_axis(sharex, 'top')
 
     def _sharey_setup(self, sharey):
@@ -432,71 +497,10 @@ class Axes(maxes.Axes):
         Configure y-axis sharing for panels. Main axis sharing is done in
         `~CartesianAxes._sharey_setup`.
         """
-        self._share_short_axis(sharey, 'bottom')
+        self._share_short_axis(sharey, 'bottom')  # y axis of bottom panels
         self._share_short_axis(sharey, 'top')
-        self._share_long_axis(sharey, 'left')
+        self._share_long_axis(sharey, 'left')  # y axis of left panels
         self._share_long_axis(sharey, 'right')
-
-    def _share_setup(self):
-        """
-        Automatically configure axis sharing based on the horizontal and
-        vertical extent of subplots in the figure gridspec.
-        """
-        # Panel axes sharing, between main subplot and its panels
-        # NOTE: While _panel_share just means "include this panel" in the
-        # axis sharing between the main subplot and panel children,
-        # _sharex_override and _sharey_override say "override the sharing level
-        # for these axes, because they belong to a panel group", and may
-        # include the main subplot itself.
-        def shared(paxs):
-            return [
-                pax for pax in paxs
-                if not pax._panel_hidden and pax._panel_share
-            ]
-
-        # Internal axis sharing; share stacks of panels and the main
-        # axes with each other.
-        # NOTE: *This* block is why, even though share[xy] are figure-wide
-        # settings, we still need the axes-specific _share[xy]_override attr
-        if not self._panel_side:  # this is a main axes
-            # Top and bottom
-            bottom = self
-            paxs = shared(self._bottom_panels)
-            if paxs:
-                bottom = paxs[-1]
-                bottom._sharex_override = False
-                for iax in (self, *paxs[:-1]):
-                    iax._sharex_override = True
-                    iax._sharex_setup(bottom)  # parent is bottom-most
-            paxs = shared(self._top_panels)
-            for iax in paxs:
-                iax._sharex_override = True
-                iax._sharex_setup(bottom)
-            # Left and right
-            # NOTE: Order of panel lists is always inside-to-outside
-            left = self
-            paxs = shared(self._left_panels)
-            if paxs:
-                left = paxs[-1]
-                left._sharey_override = False
-                for iax in (self, *paxs[:-1]):
-                    iax._sharey_override = True
-                    iax._sharey_setup(left)  # parent is left-most
-            paxs = shared(self._right_panels)
-            for iax in paxs:
-                iax._sharey_override = True
-                iax._sharey_setup(left)
-
-        # Main axes, sometimes overrides panel axes sharing
-        # TODO: This can get very repetitive, but probably minimal impact?
-        # Share x axes
-        parent, *children = self._get_extent_axes('x')
-        for child in children:
-            child._sharex_setup(parent)
-        # Share y axes
-        parent, *children = self._get_extent_axes('y')
-        for child in children:
-            child._sharey_setup(parent)
 
     def _share_short_axis(self, share, side):
         """
@@ -527,38 +531,6 @@ class Axes(maxes.Axes):
         paxs = [pax for pax in paxs if not pax._panel_hidden]
         for pax in paxs:
             getattr(pax, '_share' + axis + '_setup')(share)
-
-    def _update_axis_labels(self, x='x', **kwargs):
-        """
-        Apply axis labels to the relevant shared axis. If spanning
-        labels are toggled this keeps the labels synced for all subplots in
-        the same row or column. Label positions will be adjusted at draw-time
-        with figure._align_axislabels.
-        """
-        # TODO: Major issues with this algorithm, especially when twin axes
-        # are present.
-        # TODO: Share axis locators and formatters just like matplotlib shares
-        # axis limits and proplot shares axis labels.
-        if x not in 'xy':
-            return
-
-        # Update label on this axes
-        axis = getattr(self, x + 'axis')
-        axis.label.update(kwargs)
-        kwargs.pop('color', None)
-        if getattr(self.figure, '_share' + x) == 0:
-            return
-
-        # Get "shared axes" siblings
-        ax, *_ = self._get_extent_axes(x, panels=True)
-        axs = [ax]
-        if getattr(ax.figure, '_span' + x):
-            side = axis.get_label_position()
-            if side in ('left', 'bottom'):
-                axs = ax._get_side_axes(side, panels=True)
-        for ax in axs:
-            axis = getattr(ax, x + 'axis')
-            axis.label.update(kwargs)  # apply to main axes
 
     def _update_title_position(self, renderer):
         """
@@ -775,7 +747,7 @@ optional
                 'fontfamily': 'font.family'
             }, context=True)
         if suptitle or kw:
-            fig._update_figtitle(suptitle, **kw)
+            fig._update_super_title(suptitle, **kw)
 
         # Labels
         rlabels = _not_none(rightlabels=rightlabels, rlabels=rlabels)
@@ -797,7 +769,7 @@ optional
                 'fontfamily': 'font.family'
             }, context=True)
             if labels or kw:
-                fig._update_labels(self, side, labels, **kw)
+                fig._update_subplot_labels(self, side, labels, **kw)
 
         # Helper function
         def sanitize_kw(kw, loc):
@@ -1320,7 +1292,7 @@ optional
         """
         obj = self.pcolormesh(*args, **kwargs)
         aspect = _not_none(aspect, rc['image.aspect'])
-        xlocator, ylocator = None, None
+        xlocator = ylocator = None
         if hasattr(obj, '_coordinates'):
             coords = obj._coordinates
             coords = (coords[1:, ...] + coords[:-1, ...]) / 2
@@ -1475,7 +1447,7 @@ optional
                 line.set_visible(visible)
                 line_prev.set_visible(False)
         self._inset_zoom_data = (rectpatch, connects)
-        return (rectpatch, connects)
+        return rectpatch, connects
 
     def panel_axes(self, side, **kwargs):
         """
@@ -1542,9 +1514,8 @@ optional
             number of additional color levels between the line joints
             and the halfway points between line joints.
         scalex, scaley : bool, optional
-            These parameters determine if the view limits are adapted to
-            the data limits. The values are passed on to
-            `~matplotlib.axes.Axes.autoscale_view`.
+            Whether the view limits are adapted to the data limits. The values are
+            passed on to `~matplotlib.axes.Axes.autoscale_view`.
 
         Other parameters
         ----------------
@@ -1587,17 +1558,20 @@ optional
             coords, cmap=cmap, norm=norm,
             linestyles='-', capstyle='butt', joinstyle='miter',
         )
-        hs.set_array(np.array(values))
+        values = np.asarray(values)
+        hs.set_array(values)
         hs.update({
             key: value for key, value in kwargs.items()
             if key not in ('color',)
         })
 
         # Add collection with some custom attributes
+        # NOTE: Modern API uses self._request_autoscale_view but this is
+        # backwards compatible to earliest matplotlib versions.
         self.add_collection(hs)
         self.autoscale_view(scalex=scalex, scaley=scaley)
         hs.values = values
-        hs.levels = levels  # needed for other functions some
+        hs.levels = levels  # needed for other functions
         return hs
 
     def violins(self, *args, **kwargs):

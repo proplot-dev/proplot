@@ -340,7 +340,8 @@ class Figure(mfigure.Figure):
 
         # Axis sharing and axis setup only for non-legend or colorbar axes
         if not filled:
-            ax._share_setup()
+            for ax in self._axes_main:
+                ax._auto_share_setup()
             axis = pax.yaxis if side in ('left', 'right') else pax.xaxis
             getattr(axis, 'tick_' + side)()  # set tick and label positions
             axis.set_label_position(side)
@@ -458,7 +459,7 @@ class Figure(mfigure.Figure):
         # NOTE: Need to turn off aligned labels before
         # _update_geometry_from_tight_layout
         # call, so cannot put this inside Axes draw
-        tracker = {*()}
+        xaxs_updated = set()
         for ax in self._axes_main:
             if not isinstance(ax, paxes.CartesianAxes):
                 continue
@@ -466,55 +467,58 @@ class Figure(mfigure.Figure):
                 side = axis.get_label_position()
                 span = getattr(self, '_span' + x)
                 align = getattr(self, '_align' + x)
-                if side not in ('bottom', 'left') or axis in tracker:
+                if side not in ('bottom', 'left') or axis in xaxs_updated:
                     continue
-                axs = ax._get_side_axes(side)
-                for _ in range(2):
-                    axs = [getattr(ax, '_share' + x) or ax for ax in axs]
+
+                # Get panels for axes on each side (2 levels deep is maximum)
+                axs = ax._get_side_axes(side, panels=False)
+                axs = [getattr(ax, '_share' + x) or ax for ax in axs]
+                axs = [getattr(ax, '_share' + x) or ax for ax in axs]
 
                 # Align axis label offsets
-                axises = [getattr(ax, x + 'axis') for ax in axs]
-                tracker.update(axises)
+                xaxs = [getattr(ax, x + 'axis') for ax in axs]
+                xaxs_updated.update(xaxs)
                 if span or align:
-                    grp = getattr(self, '_align_' + x + 'label_grp', None)
-                    if grp is not None:
+                    group = getattr(self, '_align_' + x + 'label_grp', None)
+                    if group is not None:
                         for ax in axs[1:]:
-                            # copied from source code, add to grouper
-                            grp.join(axs[0], ax)
+                            group.join(axs[0], ax)  # add to grouper
                     elif align:
                         warnings._warn_proplot(
-                            'Aligning *x* and *y* axis labels required '
+                            'Aligning *x* and *y* axis labels requires '
                             'matplotlib >=3.1.0'
                         )
                 if not span:
                     continue
 
                 # Get spanning label position
-                c, spanax = self._get_align_coord(side, axs)
-                spanaxis = getattr(spanax, x + 'axis')
-                spanlabel = spanaxis.label
-                if not hasattr(spanlabel, '_orig_transform'):
-                    spanlabel._orig_transform = spanlabel.get_transform()
-                    spanlabel._orig_position = spanlabel.get_position()
+                c, ax_span = self._get_align_coord(side, axs)
+                ax_span = getattr(ax_span, '_share' + x) or ax_span
+                ax_span = getattr(ax_span, '_share' + x) or ax_span
+                axis_span = getattr(ax_span, x + 'axis')
+                label_span = axis_span.label
+                if not hasattr(label_span, '_orig_transform'):
+                    label_span._orig_transform = label_span.get_transform()
+                    label_span._orig_position = label_span.get_position()
                 if not b:  # toggle off, done before tight layout
-                    spanlabel.set_transform(spanlabel._orig_transform)
-                    spanlabel.set_position(spanlabel._orig_position)
-                    for axis in axises:
+                    label_span.set_transform(label_span._orig_transform)
+                    label_span.set_position(label_span._orig_position)
+                    for axis in xaxs:
                         axis.label.set_visible(True)
                 else:  # toggle on, done after tight layout
                     if x == 'x':
                         position = (c, 1)
                         transform = mtransforms.blended_transform_factory(
-                            self.transFigure, mtransforms.IdentityTransform())
+                            self.transFigure, mtransforms.IdentityTransform()
+                        )
                     else:
                         position = (1, c)
                         transform = mtransforms.blended_transform_factory(
-                            mtransforms.IdentityTransform(), self.transFigure)
-                    for axis in axises:
-                        axis.label.set_visible((axis is spanaxis))
-                    spanlabel.update({
-                        'position': position, 'transform': transform
-                    })
+                            mtransforms.IdentityTransform(), self.transFigure
+                        )
+                    for axis in xaxs:
+                        axis.label.set_visible((axis is axis_span))
+                    label_span.update({'position': position, 'transform': transform})
 
     def _align_labels_figure(self, renderer):
         """
@@ -539,7 +543,7 @@ class Figure(mfigure.Figure):
                 x = 'y'
                 panels = ('left', 'right')
             axs = self._get_align_axes(side)
-            axs = [ax._reassign_suplabel(side) for ax in axs]
+            axs = [ax._reassign_subplot_label(side) for ax in axs]
             labels = [getattr(ax, '_' + side + '_label') for ax in axs]
             coords = [None] * len(axs)
             if side == 'top' and suptitle_on:
@@ -660,22 +664,22 @@ class Figure(mfigure.Figure):
                 for iax in ax._iter_axes(panels=panels, children=False)
             ]
 
-        # Get coords
+        # Get coordinates
         ranges = np.array([ax._range_gridspec(x) for ax in axs])
         min_, max_ = ranges[:, 0].min(), ranges[:, 1].max()
-        axlo = axs[np.where(ranges[:, 0] == min_)[0][0]]
-        axhi = axs[np.where(ranges[:, 1] == max_)[0][0]]
-        lobox = axlo.get_subplotspec().get_position(self)
-        hibox = axhi.get_subplotspec().get_position(self)
+        ax_lo = axs[np.where(ranges[:, 0] == min_)[0][0]]
+        ax_hi = axs[np.where(ranges[:, 1] == max_)[0][0]]
+        box_lo = ax_lo.get_subplotspec().get_position(self)
+        box_hi = ax_hi.get_subplotspec().get_position(self)
         if x == 'x':
-            pos = 0.5 * (lobox.x0 + hibox.x1)
+            pos = 0.5 * (box_lo.x0 + box_hi.x1)
         else:
-            pos = 0.5 * (lobox.y1 + hibox.y0)  # 'lo' is actually on top, highest in gs
+            pos = 0.5 * (box_lo.y1 + box_hi.y0)  # 'lo' is actually on top of figure
 
         # Return axis suitable for spanning position
-        spanax = axs[(np.argmin(ranges[:, 0]) + np.argmax(ranges[:, 1])) // 2]
-        spanax = spanax._panel_parent or spanax
-        return pos, spanax
+        ax_span = axs[(np.argmin(ranges[:, 0]) + np.argmax(ranges[:, 1])) // 2]
+        ax_span = ax_span._panel_parent or ax_span
+        return pos, ax_span
 
     def _get_align_axes(self, side):
         """
@@ -776,7 +780,6 @@ class Figure(mfigure.Figure):
         # Update figure
         figsize, gridspec_kw, _ = pgridspec._calc_geometry(**subplots_kw)
         if slot_exists:
-            # Use existing gridspec
             gridspec = self._gridspec_main
             gridspec.update(**gridspec_kw)
 
@@ -823,7 +826,7 @@ class Figure(mfigure.Figure):
 
         return gridspec
 
-    def _update_figtitle(self, title, **kwargs):
+    def _update_super_title(self, title, **kwargs):
         """
         Assign the figure "super title" and update settings.
         """
@@ -832,7 +835,7 @@ class Figure(mfigure.Figure):
         if kwargs:
             self._suptitle.update(kwargs)
 
-    def _update_labels(self, ax, side, labels, **kwargs):
+    def _update_subplot_labels(self, ax, side, labels, **kwargs):
         """
         Assign the side labels and update settings.
         """
@@ -1232,23 +1235,25 @@ class Figure(mfigure.Figure):
         else:
             width, height = w, h
         if not all(np.isfinite(_) for _ in (width, height)):
-            raise ValueError(
-                f'Figure size must be finite, not ({width}, {height}).'
-            )
+            raise ValueError(f'Figure size must be finite, not ({width}, {height}).')
         width_true, height_true = self.get_size_inches()
         width_trunc = int(self.bbox.width) / self.dpi
         height_trunc = int(self.bbox.height) / self.dpi
-        if (
-            (
+        user = (  # detect user resize
+            (  # sometimes get (width_trunc, height_true) or (width_true, height_trunc)
                 width not in (width_true, width_trunc)
                 or height not in (height_true, height_trunc)
             )
             and not auto
             and not self._is_autoresizing
-            and not getattr(self.canvas, '_is_idle_drawing', None)  # standard
-        ):
+            and not self._is_preprocessing
+            and not getattr(self.canvas, '_is_idle_drawing', None)
+            and not getattr(self.canvas, '_is_drawing', None)
+            and not getattr(self.canvas, '_draw_pending', None)
+        )
+        if user:
             self._subplots_kw.update(width=width, height=height)
-        context = self._context_autoresizing if auto else _dummy_context
+        context = self._context_autoresizing if auto or not user else _dummy_context
         with context():
             super().set_size_inches(width, height, forward=forward)
 
