@@ -71,7 +71,7 @@ ProPlot v0.6.0 (2020-##-##)
 
 There are quite a lot of deprecations for this release.
 
-- Remove ``'rgbcycle'`` setting (:commit:`###`).
+- Remove ``'rgbcycle'`` setting (:commit:`6653b7f0`).
 - Deprecate support for "parametric" plots inside `~matplotlib.axes.Axes.plot`,
   instead use `~proplot.axes.Axes.parametric` (:commit:`64210bce`).
 - Change `~proplot.utils.units` ``units`` keyword argument to more natural
@@ -116,10 +116,22 @@ There are quite a lot of deprecations for this release.
 
 .. rubric:: Features
 
-- Support building a colormap and `DiscreteNorm` inside `~matplotlib.axes.Axes.scatter`,
-  just like `contourf` and `pcolormesh` (:pr:`162`).
+- Wrap ``pcolorfast`` just like ``pcolor`` and ``pcolormesh`` are
+  wrapped (:commit:`50a262dd`).
+- Add ``negpos`` feature to `~proplot.axes.plot.bar_wrapper` and new
+  :rcraw:`negcolor` and :rcraw:`poscolor` rc keyword arguments (:commit:`ab4d6746`).
+- Increase default line width from ``0.6`` to ``0.8`` to match matplotlib defaults
+  (:commit:`f801852b`; try to avoid frivolously changing defaults).
+- Change default resolution for geographic features from ``'lo'`` to ``'med'``
+  (:commit:`f801852b`).
+- Change default line style for geographic gridlines from ``':'`` to ``'-'``
+  and match style from primary gridlines (:commit:`f801852b`).
+- Support cartopy inline meridian and parallel gridlines and support
+  changing the gridline padding (:commit:`###`).
 - Support `cartopy 0.18 <https://scitools.org.uk/cartopy/docs/latest/whats_new.html>`__
   locators, formatters, deprecations, and new labelling features (:pr:`158`).
+- Support building a colormap and `DiscreteNorm` inside `~matplotlib.axes.Axes.scatter`,
+  just like `contourf` and `pcolormesh` (:pr:`162`).
 - Add :rcraw:`geogrid.labelpad` and :rcraw:`geogrid.rotatelabels` settings
   for cartopy gridline labels (:pr:`158`).
 - Support more `~proplot.ticker.AutoFormatter` features on
@@ -162,6 +174,8 @@ There are quite a lot of deprecations for this release.
 
 .. rubric:: Bug fixes
 
+- Fix various issues with axis label sharing and axis sharing for
+  twinned axes and panel axes (:pr:`164`).
 - Fix issue drawing bar plots with datetime *x* axes (:pr:`156`).
 - Fix issue where `~proplot.ticker.AutoFormatter` tools were not locale-aware, i.e. use
   comma as decimal point sometimes (:commit:`c7636296`).
@@ -207,9 +221,8 @@ There are quite a lot of deprecations for this release.
   sensible behavior.
 - Turn some private `~proplot.config` functions into static
   methods (:commit:`6121de03`).
+- Remove "smart bounds" feature from `FuncScale` (:commit:`9ac149ea`).
 - Clean up axes iterators (:commit:`c8a0768a`).
-- Clean up locator and formatter sharing stuff (:commit:`###`).
-- Configure label sharing at draw-time rather than label-time (:commit:`###`).
 
 .. rubric:: Documentation
 
@@ -246,7 +259,6 @@ ProPlot v0.5.0 (2020-02-10)
 
 .. rubric:: Bug fixes
 
-- Fix issue where colormaps cannot have "dot" in name (:commit:`###`).
 - Fix issue where `~proplot.styletools.show_cmaps` and
   `~proplot.styletools.show_cycles` colormap names were messed up
   (:commit:`13045599`)
@@ -257,9 +269,9 @@ ProPlot v0.5.0 (2020-02-10)
   `~proplot.wrappers.colorbar_wrapper` were sometimes ignored
   (:commit:`fd4f8d5f`).
 - Permit passing *lists of colors* to manually shade line contours and filled
-  contours in `~proplot.wrappers.cmap_changer` (:commit:`###`).
+  contours in `~proplot.wrappers.cmap_changer`.
 - Prevent formatting rightmost meridian label as ``1e-10`` on cartopy map
-  projections (:commit:`37fdd1eb]`).
+  projections (:commit:`37fdd1eb`).
 - Support CF-time axes by fixing bug in `~proplot.wrappers.standardize_1d`
   and `~proplot.wrappers.standardize_2d` (:issue:`103`, :pr:`121`).
 - Redirect to the "default" location when using ``legend=True`` and
