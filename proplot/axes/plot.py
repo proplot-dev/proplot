@@ -26,7 +26,8 @@ from .. import colors as pcolors
 from ..utils import edges, edges2d, units, to_xyz, to_rgb
 from ..config import rc
 from ..internals import ic  # noqa: F401
-from ..internals import docstring, warnings, _version, _version_cartopy, _not_none
+from ..internals import docstring, warnings, _version, _version_cartopy
+from ..internals import _not_none, _set_state
 try:
     from cartopy.crs import PlateCarree
 except ModuleNotFoundError:
@@ -3388,11 +3389,10 @@ or colormap-spec
     return cb
 
 
-def _redirect(func):
+def _basemap_redirect(func):
     """
     Docorator that calls the basemap version of the function of the
-    same name. This must be applied as innermost decorator, which means it must
-    be applied on the base axes class, not the basemap axes.
+    same name. This must be applied as the innermost decorator.
     """
     name = func.__name__
 
@@ -3406,30 +3406,26 @@ def _redirect(func):
     return _wrapper
 
 
-def _norecurse(func):
+def _basemap_norecurse(func):
     """
     Decorator to prevent recursion in basemap method overrides.
     See `this post https://stackoverflow.com/a/37675810/4970632`__.
     """
     name = func.__name__
-    func._has_recurred = False
+    func._called_from_basemap = False
 
     @functools.wraps(func)
     def _wrapper(self, *args, **kwargs):
-        if func._has_recurred:
-            # Return the *original* version of the matplotlib method
-            func._has_recurred = False
+        if func._called_from_basemap:
             result = getattr(maxes.Axes, name)(self, *args, **kwargs)
         else:
-            # Return the version we have wrapped
-            func._has_recurred = True
-            result = func(self, *args, **kwargs)
-        func._has_recurred = False  # cleanup, in case recursion never occurred
+            with _set_state(func, _called_from_basemap=True):
+                result = func(self, *args, **kwargs)
         return result
     return _wrapper
 
 
-def _wrapper_decorator(driver):
+def _generate_decorator(driver):
     """
     Generate generic wrapper decorator and dynamically modify the docstring
     to list methods wrapped by this function. Also set `__doc__` to ``None`` so
@@ -3476,24 +3472,23 @@ def _wrapper_decorator(driver):
     return decorator
 
 
-# Auto generated decorators. Each wrapper internally calls
-# func(self, ...) somewhere.
-_add_errorbars = _wrapper_decorator(add_errorbars)
-_bar_wrapper = _wrapper_decorator(bar_wrapper)
-_barh_wrapper = _wrapper_decorator(barh_wrapper)
-_default_latlon = _wrapper_decorator(default_latlon)
-_boxplot_wrapper = _wrapper_decorator(boxplot_wrapper)
-_default_crs = _wrapper_decorator(default_crs)
-_default_transform = _wrapper_decorator(default_transform)
-_cmap_changer = _wrapper_decorator(cmap_changer)
-_cycle_changer = _wrapper_decorator(cycle_changer)
-_fill_between_wrapper = _wrapper_decorator(fill_between_wrapper)
-_fill_betweenx_wrapper = _wrapper_decorator(fill_betweenx_wrapper)
-_hist_wrapper = _wrapper_decorator(hist_wrapper)
-_parametric_wrapper = _wrapper_decorator(_parametric_wrapper_temporary)
-_plot_wrapper = _wrapper_decorator(_plot_wrapper_deprecated)
-_scatter_wrapper = _wrapper_decorator(scatter_wrapper)
-_standardize_1d = _wrapper_decorator(standardize_1d)
-_standardize_2d = _wrapper_decorator(standardize_2d)
-_text_wrapper = _wrapper_decorator(text_wrapper)
-_violinplot_wrapper = _wrapper_decorator(violinplot_wrapper)
+# Auto generated decorators. Each wrapper internally calls func(self, ...) somewhere.
+_add_errorbars = _generate_decorator(add_errorbars)
+_bar_wrapper = _generate_decorator(bar_wrapper)
+_barh_wrapper = _generate_decorator(barh_wrapper)
+_default_latlon = _generate_decorator(default_latlon)
+_boxplot_wrapper = _generate_decorator(boxplot_wrapper)
+_default_crs = _generate_decorator(default_crs)
+_default_transform = _generate_decorator(default_transform)
+_cmap_changer = _generate_decorator(cmap_changer)
+_cycle_changer = _generate_decorator(cycle_changer)
+_fill_between_wrapper = _generate_decorator(fill_between_wrapper)
+_fill_betweenx_wrapper = _generate_decorator(fill_betweenx_wrapper)
+_hist_wrapper = _generate_decorator(hist_wrapper)
+_parametric_wrapper = _generate_decorator(_parametric_wrapper_temporary)
+_plot_wrapper = _generate_decorator(_plot_wrapper_deprecated)
+_scatter_wrapper = _generate_decorator(scatter_wrapper)
+_standardize_1d = _generate_decorator(standardize_1d)
+_standardize_2d = _generate_decorator(standardize_2d)
+_text_wrapper = _generate_decorator(text_wrapper)
+_violinplot_wrapper = _generate_decorator(violinplot_wrapper)
