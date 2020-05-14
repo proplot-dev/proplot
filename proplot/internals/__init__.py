@@ -2,7 +2,7 @@
 """
 Utilities used internally by proplot.
 """
-from . import defaults, docstring, timers, warnings  # noqa: F401
+from . import rcsetup, docstring, timers, warnings  # noqa: F401
 try:  # print debugging
     from icecream import ic
 except ImportError:  # graceful fallback if IceCream isn't installed

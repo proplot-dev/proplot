@@ -200,7 +200,7 @@ axs.format(
     xlabel='x-axis', ylabel='y-axis',
     xscale='log',
     xlim=(1, 10), xticks=1,
-    ylim=(-2, 2), yticks=plot.arange(-2, 2),
+    ymargin=0.05, yticks=plot.arange(-2, 2),
     yticklabels=('a', 'bb', 'c', 'dd', 'e'),
     ytickloc='both', yticklabelloc='both',
     xtickdir='inout', xtickminor=False, ygridminor=True,

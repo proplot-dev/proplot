@@ -11,19 +11,20 @@ import matplotlib.transforms as mtransforms
 import matplotlib.collections as mcollections
 from .plot import (
     _get_transform,
-    _add_errorbars, _bar_wrapper, _barh_wrapper, _boxplot_wrapper,
+    _bar_wrapper, _barh_wrapper, _boxplot_wrapper,
     _cmap_changer, _cycle_changer,
-    _fill_between_wrapper, _fill_betweenx_wrapper,
-    _hist_wrapper, _parametric_wrapper, _plot_wrapper, _scatter_wrapper,
+    _fill_between_wrapper, _fill_betweenx_wrapper, _hlines_wrapper,
+    _hist_wrapper, _indicate_error,
+    _parametric_wrapper, _plot_wrapper, _scatter_wrapper, _stem_wrapper,
     _standardize_1d, _standardize_2d,
-    _text_wrapper, _violinplot_wrapper,
+    _text_wrapper, _violinplot_wrapper, _vlines_wrapper,
     colorbar_wrapper, legend_wrapper,
 )
 from .. import gridspec as pgridspec
 from ..config import rc
 from ..utils import units, edges
 from ..internals import ic  # noqa: F401
-from ..internals import defaults, warnings, _not_none
+from ..internals import rcsetup, warnings, _not_none
 
 __all__ = ['Axes']
 
@@ -362,7 +363,10 @@ class Axes(maxes.Axes):
                 try:
                     loc = loc_translate[loc]
                 except KeyError:
-                    raise KeyError(f'Invalid {mode} location {loc!r}.')
+                    raise KeyError(
+                        f'Invalid {mode} location {loc!r}. Options are: '
+                        + ', '.join(map(repr, loc_translate)) + '.'
+                    )
         elif (
             allow_manual
             and mode == 'legend'
@@ -611,7 +615,7 @@ class Axes(maxes.Axes):
         rc_kw = rc_kw or {}
         rc_mode = _not_none(rc_mode, 2)
         for key, value in kwargs.items():
-            key_fixed = defaults._rc_nodots.get(key, None)
+            key_fixed = rcsetup._rc_nodots.get(key, None)
             if key_fixed is None:
                 kw[key] = value
             else:
@@ -1639,13 +1643,13 @@ optional
     text = _text_wrapper(
         maxes.Axes.text
     )
-    plot = _plot_wrapper(_standardize_1d(_add_errorbars(_cycle_changer(
+    plot = _plot_wrapper(_standardize_1d(_indicate_error(_cycle_changer(
         maxes.Axes.plot
     ))))
-    scatter = _scatter_wrapper(_standardize_1d(_add_errorbars(_cycle_changer(
+    scatter = _scatter_wrapper(_standardize_1d(_indicate_error(_cycle_changer(
         maxes.Axes.scatter
     ))))
-    bar = _bar_wrapper(_standardize_1d(_add_errorbars(_cycle_changer(
+    bar = _bar_wrapper(_standardize_1d(_indicate_error(_cycle_changer(
         maxes.Axes.bar
     ))))
     barh = _barh_wrapper(
@@ -1657,7 +1661,7 @@ optional
     boxplot = _boxplot_wrapper(_standardize_1d(_cycle_changer(
         maxes.Axes.boxplot
     )))
-    violinplot = _violinplot_wrapper(_standardize_1d(_add_errorbars(
+    violinplot = _violinplot_wrapper(_standardize_1d(_indicate_error(
         _cycle_changer(maxes.Axes.violinplot)
     )))
     fill_between = _fill_between_wrapper(_standardize_1d(_cycle_changer(
@@ -1671,11 +1675,19 @@ optional
     pie = _standardize_1d(_cycle_changer(
         maxes.Axes.pie
     ))
-    stem = _standardize_1d(_cycle_changer(
-        maxes.Axes.stem
-    ))
     step = _standardize_1d(_cycle_changer(
         maxes.Axes.step
+    ))
+
+    # Wrapped by standardizer
+    stem = _standardize_1d(_stem_wrapper(
+        maxes.Axes.stem
+    ))
+    hlines = _standardize_1d(_hlines_wrapper(
+        maxes.Axes.hlines
+    ))
+    vlines = _standardize_1d(_vlines_wrapper(
+        maxes.Axes.vlines
     ))
 
     # Wrapped by cmap wrapper and standardized
@@ -1694,6 +1706,9 @@ optional
     ))
     pcolormesh = _standardize_2d(_cmap_changer(
         maxes.Axes.pcolormesh
+    ))
+    pcolorfast = _standardize_2d(_cmap_changer(
+        maxes.Axes.pcolorfast  # WARNING: not available in cartopy and basemap
     ))
     quiver = _standardize_2d(_cmap_changer(
         maxes.Axes.quiver

@@ -26,14 +26,14 @@ from .. import colors as pcolors
 from ..utils import edges, edges2d, units, to_xyz, to_rgb
 from ..config import rc
 from ..internals import ic  # noqa: F401
-from ..internals import docstring, warnings, _version, _version_cartopy, _not_none
+from ..internals import docstring, warnings, _version, _version_cartopy
+from ..internals import _not_none, _set_state
 try:
     from cartopy.crs import PlateCarree
 except ModuleNotFoundError:
     PlateCarree = object
 
 __all__ = [
-    'add_errorbars',
     'bar_wrapper',
     'barh_wrapper',
     'boxplot_wrapper',
@@ -46,6 +46,7 @@ __all__ = [
     'fill_between_wrapper',
     'fill_betweenx_wrapper',
     'hist_wrapper',
+    'indicate_error',
     'legend_wrapper',
     'scatter_wrapper',
     'standardize_1d',
@@ -53,7 +54,6 @@ __all__ = [
     'text_wrapper',
     'violinplot_wrapper',
 ]
-
 
 docstring.snippets['cmap_changer.params'] = """
 cmap : colormap spec, optional
@@ -121,11 +121,15 @@ negpos : bool, optional
     `negcolor`. For example, to shade positive values red and negative values
     blue, use ``ax.fill_between{suffix}({x}, {y}, negpos=True)``.
 negcolor, poscolor : color-spec, optional
-    Colors to use for the negative and positive values. Ignored if `negpos`
-    is ``False``.
+    Colors to use for the negative and positive shaded regions. Ignored if `negpos`
+    is ``False``. Defaults are :rc:`negcolor` and :rc:`poscolor`.
 where : ndarray, optional
     Boolean ndarray mask for points you want to shade. See `this example \
 <https://matplotlib.org/3.1.0/gallery/pyplots/whats_new_98_4_fill_between.html#sphx-glr-gallery-pyplots-whats-new-98-4-fill-between-py>`__.
+lw, linewidth : float, optional
+    The edge width for the area patches.
+edgecolor : color-spec, optional
+    The edge color for the area patches.
 
 Other parameters
 ----------------
@@ -160,10 +164,16 @@ vert : bool, optional
     `~matplotlib.axes.Axes.boxplot` and `~matplotlib.axes.Axes.violinplot`.
 stacked : bool, optional
     Whether to stack columns of input data, or plot the bars side-by-side.
-edgecolor : color-spec, optional
-    The edge color for the bar patches.
+negpos : bool, optional
+    Whether to shade bars greater than zero with `poscolor` and bars less
+    than zero with `negcolor`.
+negcolor, poscolor : color-spec, optional
+    Colors to use for the negative and positive bars. Ignored if `negpos`
+    is ``False``. Defaults are :rc:`negcolor` and :rc:`poscolor`.
 lw, linewidth : float, optional
     The edge width for the bar patches.
+edgecolor : color-spec, optional
+    The edge color for the bar patches.
 
 Other parameters
 ----------------
@@ -215,6 +225,11 @@ STYLE_ARGS_TRANSLATE = {
         'linestyles': 'linestyle',
     },
     'pcolormesh': {
+        'colors': 'edgecolors',
+        'linewidths': 'linewidth',
+        'linestyles': 'linestyle',
+    },
+    'pcolorfast': {
         'colors': 'edgecolors',
         'linewidths': 'linewidth',
         'linestyles': 'linestyle',
@@ -344,9 +359,8 @@ def default_crs(self, func, *args, crs=None, **kwargs):
 
 def _axis_labels_title(data, axis=None, units=True):
     """
-    Get data and label for pandas or xarray objects or their coordinates
-    along axis `axis`. If `units` is ``True`` also look for units on xarray
-    data arrays.
+    Get data and label for pandas or xarray objects or their coordinates along axis
+    `axis`. If `units` is ``True`` also look for units on xarray data arrays.
     """
     label = ''
     _load_objects()
@@ -371,12 +385,14 @@ def _axis_labels_title(data, axis=None, units=True):
     # Pandas object with name attribute
     # if not label and isinstance(data, DataFrame) and data.columns.size == 1:
     elif isinstance(data, (DataFrame, Series, Index)):
-        if axis == 0 and isinstance(data, (DataFrame, Series)):
+        if axis == 0 and isinstance(data, Index):
+            pass
+        elif axis == 0 and isinstance(data, (DataFrame, Series)):
             data = data.index
         elif axis == 1 and isinstance(data, DataFrame):
             data = data.columns
-        elif axis is not None:
-            data = np.arange(len(data))  # e.g. for Index
+        elif axis == 1 and isinstance(data, (Series, Index)):
+            data = np.array([data.name])  # treat series name as the "column" data
         # DataFrame has no native name attribute but user can add one:
         # https://github.com/pandas-dev/pandas/issues/447
         label = getattr(data, 'name', '') or ''
@@ -709,6 +725,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
             kw['ylocator'] = mticker.FixedLocator(yi)
             kw['yformatter'] = mticker.IndexFormatter(y)
             kw['yminorlocator'] = mticker.NullLocator()
+
         # Handle labels if 'autoformat' is on
         if self.figure._auto_format:
             for key, xy in zip(('xlabel', 'ylabel'), (x, y)):
@@ -722,6 +739,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
         x = xi
     if yi is not None:
         y = yi
+
     # Handle figure titles
     if self.figure._auto_format:
         _, colorbar_label = _axis_labels_title(Zs[0], units=True)
@@ -732,7 +750,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
             self.format(**kw)
 
     # Enforce edges
-    if name in ('pcolor', 'pcolormesh'):
+    if name in ('pcolor', 'pcolormesh', 'pcolorfast'):
         # Get centers or raise error. If 2d, don't raise error, but don't fix
         # either, because matplotlib pcolor just trims last column and row.
         xlen, ylen = x.shape[-1], y.shape[0]
@@ -875,45 +893,128 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
     return func(self, x, y, *Zs, colorbar_kw=colorbar_kw, **kwargs)
 
 
-def _errorbar_values(data, idata, bardata=None, barrange=None, barstd=False):
+def _get_error_data(
+    data, y, errdata=None, stds=None, pctiles=False,
+    stds_default=None, pctiles_default=None,
+    means_or_medians=True, absolute=False,
+):
     """
     Return values that can be passed to the `~matplotlib.axes.Axes.errorbar`
     `xerr` and `yerr` keyword args.
     """
-    if bardata is not None:
-        err = np.array(bardata)
-        if err.ndim == 1:
-            err = err[:, None]
-        if err.ndim != 2 or err.shape[0] != 2 \
-                or err.shape[1] != idata.shape[-1]:
+    # Parse arguments
+    if stds in (1, True):
+        stds = stds_default
+    elif stds in (0, False):
+        stds = None
+    if pctiles in (1, True):
+        pctiles = pctiles_default
+    elif pctiles in (0, False):
+        pctiles = None
+
+    # Incompatible settings
+    if stds is not None and pctiles is not None:
+        warnings._warn_proplot(
+            'You passed both a standard deviation range and a percentile range for '
+            'drawing error indicators. Using the former.'
+        )
+        pctiles = None
+    if not means_or_medians and (stds is not None or pctiles is not None):
+        raise ValueError(
+            'To automatically compute standard deviations or percentiles on columns '
+            'of data you must pass means=True or medians=True.'
+        )
+    if means_or_medians and errdata is not None:
+        stds = pctiles = None
+        warnings._warn_proplot(
+            'You explicitly provided the error bounds but also requested '
+            'automatically calculating means or medians on data columns. '
+            'It may make more sense to use the "stds" or "pctiles" keyword args '
+            'and have *proplot* calculate the error bounds.'
+        )
+
+    # Compute error data in format that can be passed to matplotlib.axes.Axes.errorbar()
+    # NOTE: Include option to pass symmetric deviation from central points
+    y = _to_ndarray(y)
+    data = _to_ndarray(data)
+    if errdata is not None:
+        label = 'error range'
+        err = _to_ndarray(errdata)
+        if (
+            err.ndim not in (1, 2)
+            or err.shape[-1] != y.shape[-1]
+            or err.ndim == 2 and err.shape[0] != 2
+        ):
             raise ValueError(
-                f'bardata must have shape (2, {idata.shape[-1]}), '
-                f'but got {err.shape}.'
+                f'errdata must have shape (2, {y.shape[-1]}), but got {err.shape}.'
             )
-    elif barstd:
-        err = np.array(idata) + \
-            np.std(data, axis=0)[None, :] * np.array(barrange)[:, None]
+        if err.ndim == 1:
+            abserr = err
+            err = np.empty((2, err.size))
+            err[:, 0] = y - abserr  # translated back to absolute deviations below
+            err[:, 1] = y + abserr
+    elif stds is not None:
+        label = fr'{stds[1]}$\sigma$ range'
+        err = y + np.std(data, axis=0)[None, :] * np.asarray(stds)[:, None]
+    elif pctiles is not None:
+        label = f'{pctiles[0]}-{pctiles[1]} percentile range'
+        err = np.percentile(data, pctiles, axis=0)
     else:
-        err = np.percentile(data, barrange, axis=0)
-    err = err - np.array(idata)
-    err[0, :] *= -1  # array now represents error bar sizes
-    return err
+        raise ValueError('You must provide error bounds.')
+    if not absolute:
+        err = err - y
+        err[0, :] *= -1  # absolute deviations from central points
+
+    # Return data with default legend entry
+    return err, label
 
 
-def add_errorbars(
+def _deprecate_add_errorbars(func):
+    """
+    Translate old-style keyword arguments to new-style in way that is too complex
+    for _rename_kwargs. Use a decorator to avoid call signature pollution.
+    """
+    @functools.wraps(func)
+    def _wrapper(
+        *args,
+        bars=None, boxes=None, barstd=None, boxstd=None, barrange=None, boxrange=None,
+        **kwargs
+    ):
+        for (prefix, b, std, span) in zip(
+            ('bar', 'box'), (bars, boxes), (barstd, boxstd), (barrange, boxrange),
+        ):
+            if b is not None or std is not None or span is not None:
+                warnings._warn_proplot(
+                    f'Keyword args "{prefix}s", "{prefix}std", and "{prefix}range" '
+                    'are deprecated and will be removed in a future version. '
+                    f'Please use "{prefix}stds" or "{prefix}pctiles" instead.'
+                )
+            if span is None and b:  # means 'use the default range'
+                span = b
+            if std:
+                kwargs.setdefault(prefix + 'stds', span)
+            else:
+                kwargs.setdefault(prefix + 'pctiles', span)
+        return func(*args, **kwargs)
+    return _wrapper
+
+
+@_deprecate_add_errorbars
+def indicate_error(
     self, func, *args,
     medians=False, means=False,
-    boxes=None, bars=None,
-    boxdata=None, bardata=None,
-    boxstd=False, barstd=False,
+    boxdata=None, bardata=None, shadedata=None, fadedata=None,
+    boxstds=None, barstds=None, shadestds=None, fadestds=None,
+    boxpctiles=None, barpctiles=None, shadepctiles=None, fadepctiles=None,
     boxmarker=True, boxmarkercolor='white',
-    boxrange=(25, 75), barrange=(5, 95), boxcolor=None, barcolor=None,
-    boxlw=None, barlw=None, capsize=None,
-    boxzorder=3, barzorder=3,
+    boxcolor=None, barcolor=None, shadecolor=None, fadecolor=None,
+    shadelabel=None, fadelabel=None, shadealpha=0.4, fadealpha=0.2,
+    boxlinewidth=None, boxlw=None, barlinewidth=None, barlw=None, capsize=None,
+    boxzorder=2.5, barzorder=2.5, shadezorder=1.5, fadezorder=1.5,
     **kwargs
 ):
     """
-    Adds support for drawing error bars on-the-fly.
+    Adds support for drawing error bars and error shading on-the-fly.
     Includes options for interpreting columns of data as *samples*,
     representing the mean or median of each sample with lines, points, or
     bars, and drawing error bars representing percentile ranges or standard
@@ -928,141 +1029,230 @@ def add_errorbars(
     ----------
     *args
         The input data.
-    bars : bool, optional
-        Toggles *thin* error bars with optional "whiskers" (i.e. caps). Default
-        is ``True`` when `means` is ``True``, `medians` is ``True``, or
-        `bardata` is not ``None``.
-    boxes : bool, optional
-        Toggles *thick* boxplot-like error bars with a marker inside
-        representing the mean or median. Default is ``True`` when `means` is
-        ``True``, `medians` is ``True``, or `boxdata` is not ``None``.
     means : bool, optional
         Whether to plot the means of each column in the input data.
     medians : bool, optional
         Whether to plot the medians of each column in the input data.
-    bardata, boxdata : 2xN ndarray, optional
-        Arrays that manually specify the thin and thick error bar coordinates.
-        The first row contains lower bounds, and the second row contains
-        upper bounds. Columns correspond to points in the dataset.
-    barstd, boxstd : bool, optional
-        Whether `barrange` and `boxrange` refer to multiples of the standard
-        deviation, or percentile ranges. Default is ``False``.
-    barrange : (float, float), optional
-        Percentile ranges or standard deviation multiples for drawing thin
-        error bars. The defaults are ``(-3, 3)`` (i.e. +/-3 standard
-        deviations) when `barstd` is ``True``, and ``(0, 100)`` (i.e. the full
-        data range) when `barstd` is ``False``.
-    boxrange : (float, float), optional
-        Percentile ranges or standard deviation multiples for drawing thick
-        error bars. The defaults are ``(-1, 1)`` (i.e. +/-1 standard deviation)
-        when `boxstd` is ``True``, and ``(25, 75)`` (i.e. the interquartile
-        range) when `boxstd` is ``False``.
-    barcolor, boxcolor : color-spec, optional
-        Colors for the thick and thin error bars. Default is ``'k'``.
-    barlw, boxlw : float, optional
-        Line widths for the thin and thick error bars, in points. Default
-        `barlw` is ``0.7`` and default `boxlw` is ``4 * barlw``.
+    barstds : (float, float) or bool, optional
+        Standard deviation multiples for *thin error bars* with optional whiskers
+        (i.e. caps). If ``True``, the default standard deviation multiples ``(-3, 3)``
+        are used. This argument is only valid if `means` or `medians` is ``True``.
+    barpctiles : (float, float) or bool, optional
+        As with `barstds`, but instead using *percentiles* for the error bars.
+        The percentiles are calculated with `numpy.percentile`. If ``True``, the
+        default percentiles ``(0, 100)`` are used.
+    bardata : 2 x N array or 1D array, optional
+        If shape is 2 x N these are the lower and upper bounds for the thin error bars.
+        If array is 1D these are the absolute, symmetric deviations from the central
+        points.  This should be used if `means` and `medians` are both ``False`` (i.e.
+        you did not provide dataset columns from which statistical properties can be
+        calculated automatically).
+    boxstds, boxpctiles, boxdata : optional
+        As with `barstds`, `barpctiles`, and `bardata`, but for *thicker error bars*
+        representing a smaller interval than thick error bars. If `boxstds` is
+        ``True``, the default standard deviation multiples ``(-1, 1)`` are used.
+        If `boxpctiles` is ``True``, the default percentile multiples ``(25, 75)``
+        (i.e. the interquartile range) are used. When boxes and bars are combined, this
+        has the effect of drawing miniature box-and-whisker plots.
+    shadestds, shadepctiles, shadedata : optional
+        As with `barstds`, `barpctiles`, and `bardata`, but using *shading* to indicate
+        the error range. If `shadestds` is ``True``, the default standard deviation
+        multiples ``(-2, 2)`` are used. If `shadepctiles` is ``True``, the default
+        percentile multiples ``(5, 95)`` are used. Shading is generally useful for
+        `~matplotlib.axes.Axes.plot` plots and not `~matplotlib.axes.Axes.bar` plots.
+    fadestds, fadepctiles, fadedata : optional
+        As with `shadestds`, `shadepctiles`, and `shadedata`, but for an additional,
+        more faded, *secondary* shaded region.
+    barcolor, boxcolor, shadecolor, fadecolor : color-spec, optional
+        Colors for the different error indicators. For error bars, the default is
+        ``'k'``. For shading, the default behavior is to inherit color from the
+        primary `~matplotlib.artist.Artist`.
+    shadelabel, fadelabel : str, optional
+        Labels for the shaded regions, to be used in legends. There is no option
+        to change the "error bar" labels because error bars should not appear in a
+        legend -- they should instead be described in the figure caption.
+    barlinewidth, boxlinewidth, barlw, boxlw : float, optional
+        Line widths for the thin and thick error bars, in points. The defaults
+        are ``barlw=0.8`` and ``boxlw=4 * barlw``.
     boxmarker : bool, optional
-        Whether to draw a small marker in the middle of the box denoting
-        the mean or median position. Ignored if `boxes` is ``False``.
-        Default is ``True``.
+        Whether to draw a small marker in the middle of the box denoting the mean or
+        median position. Ignored if `boxes` is ``False``. Default is ``True``.
     boxmarkercolor : color-spec, optional
         Color for the `boxmarker` marker. Default is ``'w'``.
     capsize : float, optional
-        The cap size for thin error bars, in points.
-    barzorder, boxzorder : float, optional
-        The "zorder" for the thin and thick error bars.
-    lw, linewidth : float, optional
-        If passed, this is used for the default `barlw`.
-    edgecolor : float, optional
-        If passed, this is used for the default `barcolor` and `boxcolor`.
+        The cap size for thin error bars in points.
+    barzorder, boxzorder, shadezorder, fadezorder : float, optional
+        The "zorder" for the thin error bars, thick error bars, and shading.
+
+    Returns
+    -------
+    h, errobj1, errobj2, ...
+        The original plotting handle and the error bar objects.
     """
     name = func.__name__
-    x, y, *args = args
-    # Sensible defaults
-    if boxdata is not None:
-        bars = _not_none(bars, True)
-    if bardata is not None:
-        boxes = _not_none(boxes, True)
-    if boxdata is not None or bardata is not None:
-        # e.g. if boxdata passed but bardata not passed, use bars=False
-        bars = _not_none(bars, False)
-        boxes = _not_none(boxes, False)
+    x, data, *args = args
+    x = _to_arraylike(x)
+    data = _to_arraylike(data)
 
     # Get means or medians for plotting
-    iy = y
-    if (means or medians):
-        bars = _not_none(bars, True)
-        boxes = _not_none(boxes, True)
-        if y.ndim != 2:
+    # NOTE: We can *only* use pctiles and stds if one of these was true
+    # TODO: Add support for 3D arrays.
+    y = data
+    bars = any(_ is not None for _ in (barstds, barpctiles, bardata))
+    boxes = any(_ is not None for _ in (boxstds, boxpctiles, boxdata))
+    shading = any(_ is not None for _ in (shadestds, shadepctiles, shadedata))
+    fading = any(_ is not None for _ in (fadestds, fadepctiles, fadedata))
+    if means or medians:
+        # Take means or medians while preserving metadata for legends
+        # NOTE: Permit 3d array with error dimension coming first
+        if not (bars or boxes or shading or fading):
+            bars = boxes = True  # toggle these on
+            barstds = boxstds = True  # error bars and boxes with default stdev ranges
+        if data.ndim != 2:
             raise ValueError(
-                f'Need 2d data array for means=True or medians=True, '
-                f'got {y.ndim}d array.'
+                f'Need 2D data array for means=True or medians=True, '
+                f'got {data.ndim}D array.'
             )
+        keep = {}
+        if DataArray is not ndarray and isinstance(data, DataArray):
+            keep['keep_attrs'] = True
         if means:
-            iy = np.mean(y, axis=0)
+            y = data.mean(axis=0, **keep)
         elif medians:
-            iy = np.percentile(y, 50, axis=0)
+            if hasattr(data, 'quantile'):  # DataFrame and DataArray
+                y = data.quantile(0.5, axis=0, **keep)
+                if Series is not ndarray and isinstance(y, Series):
+                    y.name = ''  # do not set name to quantile number
+            else:
+                y = np.percentile(data, 50, axis=0, **keep)
+        if getattr(data, 'name', '') and not getattr(y, 'name', ''):
+            y.name = data.name  # copy DataFrame name to Series name
 
-    # Call function, accounting for different signatures of plot and violinplot
-    get = kwargs.pop if name == 'violinplot' else kwargs.get
-    lw = _not_none(get('lw', None), get('linewidth', None), 0.7)
-    get = kwargs.pop if name != 'bar' else kwargs.get
-    edgecolor = _not_none(get('edgecolor', None), 'k')
-    if name == 'violinplot':
-        xy = (x, y)  # full data
-    else:
-        xy = (x, iy)  # just the stats
-    obj = func(self, *xy, *args, **kwargs)
-    if not boxes and not bars:
-        return obj
+    # Infer width of error elements
+    # NOTE: violinplot_wrapper passes some invalid keyword args with expectation
+    # that indicate_error wrapper pops them and uses them for error bars.
+    lw = None
+    if name == 'bar':
+        lw = _not_none(kwargs.get('linewidth', None), kwargs.get('lw', None))
+    elif name == 'violinplot':
+        lw = _not_none(kwargs.pop('linewidth', None), kwargs.pop('lw', None))
+    lw = _not_none(lw, 0.8)
+    barlw = _not_none(barlinewidth=barlinewidth, barlw=barlw, default=lw)
+    boxlw = _not_none(boxlinewidth=boxlinewidth, boxlw=boxlw, default=4 * barlw)
+    capsize = _not_none(capsize, 3.0)
 
-    # Account for horizontal bar plots
-    if 'vert' in kwargs:
-        orientation = 'vertical' if kwargs['vert'] else 'horizontal'
-    else:
-        orientation = kwargs.get('orientation', 'vertical')
-    if orientation == 'horizontal':
-        axis = 'x'  # xerr
-        xy = (iy, x)
-    else:
-        axis = 'y'  # yerr
-        xy = (x, iy)
-
-    # Defaults settings
-    barlw = _not_none(barlw, lw)
-    boxlw = _not_none(boxlw, 4 * barlw)
-    capsize = _not_none(capsize, 3)
+    # Infer color for error bars
+    edgecolor = None
+    if name == 'bar':
+        edgecolor = kwargs.get('edgecolor', None)
+    elif name == 'violinplot':
+        edgecolor = kwargs.pop('edgecolor', None)
+    edgecolor = _not_none(edgecolor, 'k')
     barcolor = _not_none(barcolor, edgecolor)
-    boxcolor = _not_none(boxcolor, edgecolor)
+    boxcolor = _not_none(boxcolor, barcolor)
 
-    # Draw boxes and bars
+    # Infer color for shading
+    shadecolor_infer = shadecolor is None
+    shadecolor = _not_none(
+        shadecolor, kwargs.get('color', None), kwargs.get('facecolor', None), edgecolor
+    )
+    fadecolor_infer = fadecolor is None
+    fadecolor = _not_none(fadecolor, shadecolor)
+
+    # Draw dark and light shading
+    vert = kwargs.get('vert', kwargs.get('orientation', 'vertical') == 'vertical')
+    axis = 'y' if vert else 'x'  # yerr
+    errargs = (x, y) if vert else (y, x)
+    errobjs = []
+    means_or_medians = means or medians
+    if fading:
+        err, label = _get_error_data(
+            data, y, fadedata, fadestds, fadepctiles,
+            stds_default=(-3, 3), pctiles_default=(0, 100), absolute=True,
+            means_or_medians=means_or_medians,
+        )
+        errfunc = self.fill_between if vert else self.fill_betweenx
+        errobj = errfunc(
+            x, *err, linewidth=0, color=fadecolor,
+            alpha=fadealpha, zorder=fadezorder,
+        )
+        errobj.set_label(_not_none(fadelabel, label))
+        errobjs.append(errobj)
+    if shading:
+        err, label = _get_error_data(
+            data, y, shadedata, shadestds, shadepctiles,
+            stds_default=(-2, 2), pctiles_default=(10, 90), absolute=True,
+            means_or_medians=means_or_medians,
+        )
+        errfunc = self.fill_between if vert else self.fill_betweenx
+        errobj = errfunc(
+            x, *err, linewidth=0, color=shadecolor,
+            alpha=shadealpha, zorder=shadezorder,
+        )
+        errobj.set_label(_not_none(shadelabel, label))
+        errobjs.append(errobj)
+
+    # Draw thin error bars and thick error boxes
     if boxes:
-        default = (-1, 1) if barstd else (25, 75)
-        boxrange = _not_none(boxrange, default)
-        err = _errorbar_values(y, iy, boxdata, boxrange, boxstd)
+        err, label = _get_error_data(
+            data, y, boxdata, boxstds, boxpctiles,
+            stds_default=(-1, 1), pctiles_default=(25, 75),
+            means_or_medians=means_or_medians,
+        )
         if boxmarker:
-            self.scatter(
-                *xy, marker='o', color=boxmarkercolor,
-                s=boxlw, zorder=5
-            )
-        self.errorbar(*xy, **{
-            axis + 'err': err, 'capsize': 0, 'zorder': boxzorder,
-            'color': boxcolor, 'linestyle': 'none', 'linewidth': boxlw
-        })
+            self.scatter(*errargs, s=boxlw, marker='o', color=boxmarkercolor, zorder=5)
+        errkw = {axis + 'err': err}
+        errobj = self.errorbar(
+            *errargs, color=boxcolor, linewidth=boxlw, linestyle='none',
+            capsize=0, zorder=boxzorder, **errkw,
+        )
+        errobjs.append(errobj)
     if bars:  # now impossible to make thin bar width different from cap width!
-        default = (-3, 3) if barstd else (0, 100)
-        barrange = _not_none(barrange, default)
-        err = _errorbar_values(y, iy, bardata, barrange, barstd)
-        self.errorbar(*xy, **{
-            axis + 'err': err, 'capsize': capsize, 'zorder': barzorder,
-            'color': barcolor, 'linewidth': barlw, 'linestyle': 'none',
-            'markeredgecolor': barcolor, 'markeredgewidth': barlw
-        })
-    return obj
+        err, label = _get_error_data(
+            data, y, bardata, barstds, barpctiles,
+            stds_default=(-3, 3), pctiles_default=(0, 100),
+            means_or_medians=means_or_medians,
+        )
+        errkw = {axis + 'err': err}
+        errobj = self.errorbar(
+            *errargs, color=barcolor, linewidth=barlw, linestyle='none',
+            markeredgecolor=barcolor, markeredgewidth=barlw,
+            capsize=capsize, zorder=barzorder, **errkw
+        )
+        errobjs.append(errobj)
+
+    # Call main function
+    # NOTE: Provide error objects for inclusion in legend, but *only* provide
+    # the shading. Never want legend entries for error bars.
+    xy = (x, data) if name == 'violinplot' else (x, y)
+    kwargs.setdefault('errobjs', errobjs[:int(shading + fading)])
+    result = obj = func(self, *xy, *args, **kwargs)
+
+    # Apply inferrred colors to objects
+    if type(result) in (tuple, list):  # avoid BarContainer
+        obj = result[0]
+    i = 0
+    for b, infer in zip((fading, shading), (fadecolor_infer, shadecolor_infer)):
+        if b and infer:
+            color = getattr(
+                obj, 'get_facecolor', getattr(obj, 'get_color', lambda: None)
+            )()
+            if color is not None:
+                errobjs[i].set_facecolor(color)
+            i += 1
+
+    # Return objects
+    # NOTE: This should not affect internal
+    if errobjs:
+        if type(result) in (tuple, list):  # e.g. result of plot
+            return (*result, *errobjs)
+        else:
+            return (result, *errobjs)
+    else:
+        return result
 
 
-def _parametric_wrapper_temporary(self, func, *args, interp=0, **kwargs):
+def _parametric_wrapper_private(self, func, *args, interp=0, **kwargs):
     """
     Calls `~proplot.axes.Axes.parametric` and optionally interpolates values before
     they get passed to `cmap_changer` and the colormap boundaries are drawn.
@@ -1112,7 +1302,7 @@ def _parametric_wrapper_temporary(self, func, *args, interp=0, **kwargs):
     return func(self, x, y, values=values, **kwargs)
 
 
-def _plot_wrapper_deprecated(
+def _plot_wrapper_private(
     self, func, *args, cmap=None, values=None, **kwargs
 ):
     """
@@ -1121,15 +1311,25 @@ def _plot_wrapper_deprecated(
     """
     if len(args) > 3:  # e.g. with fmt string
         raise ValueError(f'Expected 1-3 positional args, got {len(args)}.')
-    if cmap is None:
-        return func(self, *args, values=values, **kwargs)
-    else:
+    if cmap is not None:
         warnings._warn_proplot(
-            'Drawing "parametric" plots with ax.plot(..., cmap=cmap, values='
-            'values) is deprecated and will be removed in a future version. '
-            'Please use ax.parametric(..., cmap=cmap, values=values) instead.'
+            'Drawing "parametric" plots with ax.plot(x, y, values=values, cmap=cmap) '
+            'is deprecated and will be removed in a future version. Please use '
+            'ax.parametric(x, y, values, cmap=cmap) instead.'
         )
         return self.parametric(*args, cmap=cmap, values=values, **kwargs)
+
+    # Draw lines
+    # Add sticky edges? No because there is no way to check whether "dependent variable"
+    # is x or y axis like with area/areax and bar/barh. Better to always have margin.
+    result = func(self, *args, values=values, **kwargs)
+    # for objs in result:
+    #     if not isinstance(objs, tuple):
+    #         objs = (objs,)
+    #     for obj in objs:
+    #         xdata = obj.get_xdata()
+    #         obj.sticky_edges.x.extend((np.min(xdata), np.max(xdata)))
+    return result
 
 
 @docstring.add_snippets
@@ -1253,9 +1453,63 @@ color-spec or list thereof, optional
     return obj
 
 
+def _stem_wrapper_private(self, func, *args, **kwargs):
+    """
+    Make `use_line_collection` the default to suppress annoying warning message.
+    """
+    kwargs.setdefault('use_line_collection', True)
+    kwargs.setdefault('linefmt', 'C0-')
+    kwargs.setdefault('basefmt', kwargs['linefmt'])  # use *same* for base
+    try:
+        return func(self, *args, **kwargs)
+    except TypeError:
+        kwargs.pop('use_line_collection')  # old version
+        return func(self, *args, **kwargs)
+
+
+def _parse_lines_args(x, args, kwargs):
+    """
+    Parse lines arguments. Support automatic *x* coordinates and default
+    "minima" at zero.
+    """
+    args = list(args)
+    if x in kwargs:
+        args.insert(0, kwargs.pop(x))
+    y = 'y' if x == 'x' else 'x'
+    for suffix in ('min', 'max'):
+        key = y + suffix
+        if key in kwargs:
+            args.append(kwargs.pop(key))
+    if len(args) == 1:
+        x = np.arange(len(np.atleast_1d(args[0])))
+        args.insert(0, x)
+    if len(args) == 2:
+        args.insert(1, 0.0)
+    elif len(args) != 3:
+        raise TypeError('lines() requires 1 to 3 positional arguments.')
+    return args, kwargs
+
+
+def _hlines_wrapper_private(self, func, *args, **kwargs):
+    """
+    Parse hlines arguments.
+    """
+    args, kwargs = _parse_lines_args('x', args, kwargs)
+    return func(self, *args, **kwargs)
+
+
+def _vlines_wrapper_private(self, func, *args, **kwargs):
+    """
+    Parse vlines arguments.
+    """
+    args, kwargs = _parse_lines_args('y', args, kwargs)
+    return func(self, *args, **kwargs)
+
+
 def _fill_between_apply(
     self, func, *args,
-    negcolor='blue', poscolor='red', negpos=False,
+    negcolor=None, poscolor=None, negpos=False,
+    lw=None, linewidth=None,
     **kwargs
 ):
     """
@@ -1268,15 +1522,16 @@ def _fill_between_apply(
     #   make the default fill_between(x, y1=0, y2).
     x = 'y' if 'x' in func.__name__ else 'x'
     y = 'x' if x == 'y' else 'y'
-    if x in kwargs:
-        args = (kwargs.pop(x), *args)
-    for y in (y + '1', y + '2'):
-        if y in kwargs:
-            args = (*args, kwargs.pop(y))
+    args = list(args)
+    if x in kwargs:  # keyword 'x'
+        args.insert(0, kwargs.pop(x))
     if len(args) == 1:
-        args = (np.arange(len(args[0])), *args)
+        args.insert(0, np.arange(len(args[0])))
+    for yi in (y + '1', y + '2'):
+        if yi in kwargs:  # keyword 'y'
+            args.append(kwargs.pop(yi))
     if len(args) == 2:
-        args = (*args, 0)
+        args.append(0)
     elif len(args) == 3:
         if kwargs.get('stacked', False):
             warnings._warn_proplot(
@@ -1286,31 +1541,55 @@ def _fill_between_apply(
     else:
         raise ValueError(f'Expected 2-3 positional args, got {len(args)}.')
 
+    # Modify default properties
+    # Set default edge width for patches to zero
+    kwargs['linewidth'] = _not_none(lw=lw, linewidth=linewidth, default=0)
+
     # Draw patches
-    x, y1, y2 = args
+    xv, y1, y2 = args
     if negpos:
-        # Get zero points
-        objs = []
-        kwargs.setdefault('interpolate', True)
+        # Plot negative and positive patches
+        name = func.__name__
+        message = name + ' argument {}={!r} is incompatible with negpos=True. Ignoring.'
         where = kwargs.pop('where', None)
         if where is not None:
-            warnings._warn_proplot(
-                f'{func.__name__} cannot have "where" argument '
-                f'with negpos=True. Ignoring where={where!r}.'
-            )
-
-        # Plot negative and positive patches
-        for i in range(2):
-            kw = kwargs.copy()
-            kw.setdefault('color', negcolor if i == 0 else poscolor)
-            where = y1 < y2 if i == 0 else y1 >= y2
-            obj = func(self, x, y1, y2, where=where, **kw)
-            objs.append(obj)
-        return tuple(objs)
+            warnings._warn_proplot(message.format('where', where))
+        stacked = kwargs.pop('stacked', None)
+        if stacked:
+            warnings._warn_proplot(message.format('stacked', stacked))
+        kwargs.setdefault('interpolate', True)
+        if np.asarray(y1).ndim > 1 or np.asarray(y2).ndim > 2:
+            raise ValueError(f'{name} arguments with negpos=True must be 1D.')
+        where1 = y1 < y2
+        where2 = y1 >= y2
+        negcolor = _not_none(negcolor, rc['negcolor'])
+        poscolor = _not_none(poscolor, rc['poscolor'])
+        obj1 = func(self, xv, y1, y2, where=where1, **{'color': negcolor, **kwargs})
+        obj2 = func(self, xv, y1, y2, where=where2, **{'color': poscolor, **kwargs})
+        result = objs = (obj1, obj2)  # may be tuple of tuples due to cycle_changer
 
     else:
         # Plot basic patches
-        return func(self, x, y1, y2, **kwargs)
+        result = func(self, xv, y1, y2, **kwargs)
+        objs = (result,)
+
+    # Add sticky edges in x-direction, and sticky edges in y-direction *only*
+    # if one of the y limits is scalar. This should satisfy most users.
+    # NOTE: Current private API self._request_autoscale_view is very recent but
+    xsides = (np.min(xv), np.max(xv))
+    ysides = []
+    if np.isscalar(y1):
+        ysides.append(np.asarray(y1).item())
+    if np.isscalar(y2):
+        ysides.append(np.asarray(y2).item())
+    for iobjs in objs:
+        if not isinstance(iobjs, tuple):
+            iobjs = (iobjs,)
+        for obj in iobjs:
+            getattr(obj.sticky_edges, x).extend(xsides)
+            getattr(obj.sticky_edges, y).extend(ysides)
+
+    return result
 
 
 @docstring.add_snippets
@@ -1345,7 +1624,8 @@ def hist_wrapper(self, func, x, bins=None, **kwargs):
 def bar_wrapper(
     self, func, x=None, height=None, width=0.8, bottom=None, *, left=None,
     vert=None, orientation='vertical', stacked=False,
-    lw=None, linewidth=0.7, edgecolor='k',
+    lw=None, linewidth=0.7, edgecolor='black',
+    negpos=False, negcolor=None, poscolor=None,
     **kwargs
 ):
     """
@@ -1364,32 +1644,51 @@ def bar_wrapper(
     # TODO: Stacked feature is implemented in `cycle_changer`, but makes more
     # sense do document here; figure out way to move it here?
     if left is not None:
-        warnings._warn_proplot(
-            'The "left" keyword with bar() is deprecated. Use "x" instead.'
-        )
+        warnings._warn_proplot('bar() keyword "left" is deprecated. Use "x" instead.')
         x = left
     if x is None and height is None:
-        raise ValueError(
-            'bar() requires at least 1 positional argument, got 0.'
-        )
+        raise ValueError('bar() requires at least 1 positional argument, got 0.')
     elif height is None:
         x, height = None, x
+    args = (x, height)
+    linewidth = _not_none(lw=lw, linewidth=linewidth)
+    kwargs.update({
+        'width': width, 'bottom': bottom, 'stacked': stacked,
+        'orientation': orientation, 'linewidth': linewidth, 'edgecolor': edgecolor,
+    })
 
     # Call func
-    # TODO: This *must* also be wrapped by cycle_changer, which ultimately
+    # NOTE: This *must* also be wrapped by cycle_changer, which ultimately
     # permutes back the x/bottom args for horizontal bars! Need to clean up.
-    lw = _not_none(lw=lw, linewidth=linewidth)
-    return func(
-        self, x, height, width=width, bottom=bottom,
-        linewidth=lw, edgecolor=edgecolor,
-        stacked=stacked, orientation=orientation,
-        **kwargs
-    )
+    if negpos:
+        # Draw negative and positive bars
+        # NOTE: cycle_changer makes bar widths *relative* to step size between
+        # x coordinates to cannot just omit data. Instead make some height nan.
+        message = 'bar() argument {}={!r} is incompatible with negpos=True. Ignoring.'
+        stacked = kwargs.pop('stacked', None)
+        if stacked:
+            warnings._warn_proplot(message.format('stacked', stacked))
+        height = np.asarray(height)
+        if height.ndim > 1:
+            raise ValueError('bar() heights with negpos=True must be 1D.')
+        height1 = height.copy().astype(np.float64)
+        height1[height >= 0] = np.nan
+        height2 = height.copy().astype(np.float64)
+        height2[height < 0] = np.nan
+        negcolor = _not_none(negcolor, rc['negcolor'])
+        poscolor = _not_none(poscolor, rc['poscolor'])
+        obj1 = func(self, x, height1, **{'color': negcolor, **kwargs})
+        obj2 = func(self, x, height2, **{'color': poscolor, **kwargs})
+        result = (obj1, obj2)
+    else:
+        # Draw simple bars
+        result = func(self, *args, **kwargs)
+    return result
 
 
-@docstring.add_snippets  # noqa: U100
+@docstring.add_snippets
 def barh_wrapper(
-    self, func, y=None, width=None, height=0.8, left=None, **kwargs
+    self, func, y=None, right=None, width=None, left=None, height=None, **kwargs
 ):
     """
     %(axes.barh)s
@@ -1397,22 +1696,23 @@ def barh_wrapper(
     # Converts y-->bottom, left-->x, width-->height, height-->width.
     # Convert back to (x, bottom, width, height) so we can pass stuff
     # through cycle_changer.
+    # NOTE: ProPlot calls second positional argument 'right' so that 'width'
+    # means the width of *bars*.
     # NOTE: You *must* do juggling of barh keyword order --> bar keyword order
     # --> barh keyword order, because horizontal hist passes arguments to bar
     # directly and will not use a 'barh' method with overridden argument order!
     func  # avoid U100 error
+    height = _not_none(height=height, width=width, default=0.8)
     kwargs.setdefault('orientation', 'horizontal')
     if y is None and width is None:
-        raise ValueError(
-            'barh() requires at least 1 positional argument, got 0.'
-        )
-    return self.bar(x=left, height=height, width=width, bottom=y, **kwargs)
+        raise ValueError('barh() requires at least 1 positional argument, got 0.')
+    return self.bar(x=left, width=right, height=height, bottom=y, **kwargs)
 
 
 def boxplot_wrapper(
     self, func, *args,
     color='k', fill=True, fillcolor=None, fillalpha=0.7,
-    lw=None, linewidth=0.7, orientation=None,
+    lw=None, linewidth=None, orientation=None,
     marker=None, markersize=None,
     boxcolor=None, boxlw=None,
     capcolor=None, caplw=None,
@@ -1479,7 +1779,7 @@ color-spec, optional
 
     # Modify results
     # TODO: Pass props keyword args instead? Maybe does not matter.
-    lw = _not_none(lw=lw, linewidth=linewidth)
+    lw = _not_none(lw=lw, linewidth=linewidth, default=0.8)
     if fillcolor is None:
         cycler = next(self._get_lines.prop_cycler)
         fillcolor = cycler.get('color', None)
@@ -1518,7 +1818,7 @@ color-spec, optional
 
 def violinplot_wrapper(
     self, func, *args,
-    lw=None, linewidth=0.7, fillcolor=None, edgecolor='k',
+    lw=None, linewidth=None, fillcolor=None, edgecolor='black',
     fillalpha=0.7, orientation=None,
     **kwargs
 ):
@@ -1541,7 +1841,7 @@ def violinplot_wrapper(
     lw, linewidth : float, optional
         The linewidth of the line objects. Default is ``1``.
     edgecolor : color-spec, optional
-        The edge color for the violin patches. Default is ``'k'``.
+        The edge color for the violin patches. Default is ``'black'``.
     fillcolor : color-spec, optional
         The violin plot fill color. Default is the next color cycler color.
     fillalpha : float, optional
@@ -1570,7 +1870,7 @@ def violinplot_wrapper(
             )
 
     # Sanitize input
-    lw = _not_none(lw=lw, linewidth=linewidth)
+    lw = _not_none(lw=lw, linewidth=linewidth, default=0.8)
     if kwargs.pop('showextrema', None):
         warnings._warn_proplot('Ignoring showextrema=True.')
     if 'showmeans' in kwargs:
@@ -1578,22 +1878,23 @@ def violinplot_wrapper(
     if 'showmedians' in kwargs:
         kwargs.setdefault('medians', kwargs.pop('showmedians'))
     kwargs.setdefault('capsize', 0)
-    obj = func(
+    result = obj = func(
         self, *args,
-        showmeans=False, showmedians=False, showextrema=False,
-        edgecolor=edgecolor, lw=lw, **kwargs
+        showmeans=False, showmedians=False, showextrema=False, lw=lw, **kwargs
     )
     if not args:
-        return obj
+        return result
 
     # Modify body settings
+    if isinstance(result, (list, tuple)):
+        obj = result[0]
     for artist in obj['bodies']:
         artist.set_alpha(fillalpha)
         artist.set_edgecolor(edgecolor)
         artist.set_linewidths(lw)
         if fillcolor is not None:
             artist.set_facecolor(fillcolor)
-    return obj
+    return result
 
 
 def _get_transform(self, transform):
@@ -1739,6 +2040,7 @@ def cycle_changer(
     label=None, labels=None, values=None,
     legend=None, legend_kw=None,
     colorbar=None, colorbar_kw=None,
+    errobjs=None,
     **kwargs
 ):
     """
@@ -1787,6 +2089,9 @@ def cycle_changer(
     colorbar_kw : dict-like, optional
         Ignored if `colorbar` is ``None``. Extra keyword args for our call
         to `~proplot.axes.Axes.colorbar`.
+    errobjs : `~matplotlib.artist.Artist` or list thereof, optional
+        Error bar objects to add to the legend. This is used internally and
+        should not be necessary for users. See `indicate_error`.
 
     Other parameters
     ----------------
@@ -1866,12 +2171,12 @@ def cycle_changer(
 
     # Custom property cycler additions
     # NOTE: By default matplotlib uses _get_patches_for_fill.get_next_color
-    # for scatter properties! So we simultaneously iterate through the
-    # _get_lines property cycler and apply them.
-    apply = set()  # which keys to apply from property cycler
-    if name == 'scatter':
+    # for scatter next scatter color, but cannot get anything else! We simultaneously
+    # iterate through the _get_lines property cycler and apply relevant properties.
+    apply_from_cycler = set()  # which keys to apply from property cycler
+    if name in ('scatter',):
         # Figure out which props should be updated
-        keys = {*self._get_lines._prop_keys} - {'color', 'linestyle', 'dashes'}
+        prop_keys = set(self._get_lines._prop_keys) - {'color', 'linestyle', 'dashes'}
         for key, prop in (
             ('markersize', 's'),
             ('linewidth', 'linewidths'),
@@ -1881,8 +2186,8 @@ def cycle_changer(
             ('marker', 'marker'),
         ):
             prop = kwargs.get(prop, None)
-            if key in keys and prop is None:
-                apply.add(key)
+            if key in prop_keys and prop is None:  # if key in cycler and property unset
+                apply_from_cycler.add(key)
 
     # Handle legend labels and
     # WARNING: Most methods that accept 2d arrays use columns of data, but when
@@ -1924,9 +2229,9 @@ def cycle_changer(
     for i in range(ncols):
         # Prop cycle properties
         kw = kwargs.copy()
-        if apply:
+        if apply_from_cycler:
             props = next(self._get_lines.prop_cycler)
-            for key in apply:
+            for key in apply_from_cycler:
                 value = props[key]
                 if key in ('size', 'markersize'):
                     key = 's'
@@ -2017,11 +2322,14 @@ def cycle_changer(
 
     # Add legend
     if legend:
-        # Add handles
+        # Add handles and error objects
         loc = self._loc_translate(legend, 'legend', allow_manual=False)
         if loc not in self._auto_legend:
             self._auto_legend[loc] = ([], {})
         self._auto_legend[loc][0].extend(objs)
+        if type(errobjs) not in (list, tuple):
+            errobjs = (errobjs,)
+        self._auto_legend[loc][0].extend(obj for obj in errobjs if obj is not None)
         # Add keywords
         if loc != 'fill':
             legend_kw.setdefault('loc', loc)
@@ -2488,9 +2796,7 @@ def cmap_changer(
             cobj = obj
             colors = None
             if name in ('contourf', 'tricontourf'):
-                lums = [
-                    to_xyz(cmap(norm(level)), 'hcl')[2] for level in levels
-                ]
+                lums = [to_xyz(cmap(norm(level)), 'hcl')[2] for level in levels]
                 cobj = self.contour(*args, levels=levels, linewidths=0)
                 colors = ['w' if lum < 50 else 'k' for lum in lums]
             text_kw = {}
@@ -2503,13 +2809,13 @@ def cmap_changer(
             labels_kw.setdefault('colors', colors)
             labels_kw.setdefault('inline_spacing', 3)
             labels_kw.setdefault('fontsize', rc['small'])
-            labs = self.clabel(cobj, fmt=fmt, **labels_kw)
+            labs = cobj.clabel(fmt=fmt, **labels_kw)
             for lab in labs:
                 lab.update(text_kw)
 
         # Label each box manually
         # See: https://stackoverflow.com/a/20998634/4970632
-        elif name in ('pcolor', 'pcolormesh'):
+        elif name in ('pcolor', 'pcolormesh', 'pcolorfast'):
             # Populate the _facecolors attribute, which is initially filled
             # with just a single color
             obj.update_scalarmappable()
@@ -2549,13 +2855,13 @@ def cmap_changer(
     # corner of pcolor plots. *Never* use this when colormap has opacity.
     # See: https://stackoverflow.com/q/15003353/4970632
     if edgefix and name in (
-        'pcolor', 'pcolormesh', 'tripcolor', 'contourf', 'tricontourf'
+        'pcolor', 'pcolormesh', 'pcolorfast', 'tripcolor', 'contourf', 'tricontourf'
     ):
         cmap = obj.get_cmap()
         if not cmap._isinit:
             cmap._init()
         if all(cmap._lut[:-1, 3] == 1):  # skip for cmaps with transparency
-            if name in ('pcolor', 'pcolormesh', 'tripcolor'):
+            if name in ('pcolor', 'pcolormesh', 'pcolorfast', 'tripcolor'):
                 obj.set_edgecolor('face')
                 obj.set_linewidth(0.4)
             else:
@@ -3388,11 +3694,10 @@ or colormap-spec
     return cb
 
 
-def _redirect(func):
+def _basemap_redirect(func):
     """
     Docorator that calls the basemap version of the function of the
-    same name. This must be applied as innermost decorator, which means it must
-    be applied on the base axes class, not the basemap axes.
+    same name. This must be applied as the innermost decorator.
     """
     name = func.__name__
 
@@ -3406,30 +3711,26 @@ def _redirect(func):
     return _wrapper
 
 
-def _norecurse(func):
+def _basemap_norecurse(func):
     """
     Decorator to prevent recursion in basemap method overrides.
     See `this post https://stackoverflow.com/a/37675810/4970632`__.
     """
     name = func.__name__
-    func._has_recurred = False
+    func._called_from_basemap = False
 
     @functools.wraps(func)
     def _wrapper(self, *args, **kwargs):
-        if func._has_recurred:
-            # Return the *original* version of the matplotlib method
-            func._has_recurred = False
+        if func._called_from_basemap:
             result = getattr(maxes.Axes, name)(self, *args, **kwargs)
         else:
-            # Return the version we have wrapped
-            func._has_recurred = True
-            result = func(self, *args, **kwargs)
-        func._has_recurred = False  # cleanup, in case recursion never occurred
+            with _set_state(func, _called_from_basemap=True):
+                result = func(self, *args, **kwargs)
         return result
     return _wrapper
 
 
-def _wrapper_decorator(driver):
+def _generate_decorator(driver):
     """
     Generate generic wrapper decorator and dynamically modify the docstring
     to list methods wrapped by this function. Also set `__doc__` to ``None`` so
@@ -3476,24 +3777,26 @@ def _wrapper_decorator(driver):
     return decorator
 
 
-# Auto generated decorators. Each wrapper internally calls
-# func(self, ...) somewhere.
-_add_errorbars = _wrapper_decorator(add_errorbars)
-_bar_wrapper = _wrapper_decorator(bar_wrapper)
-_barh_wrapper = _wrapper_decorator(barh_wrapper)
-_default_latlon = _wrapper_decorator(default_latlon)
-_boxplot_wrapper = _wrapper_decorator(boxplot_wrapper)
-_default_crs = _wrapper_decorator(default_crs)
-_default_transform = _wrapper_decorator(default_transform)
-_cmap_changer = _wrapper_decorator(cmap_changer)
-_cycle_changer = _wrapper_decorator(cycle_changer)
-_fill_between_wrapper = _wrapper_decorator(fill_between_wrapper)
-_fill_betweenx_wrapper = _wrapper_decorator(fill_betweenx_wrapper)
-_hist_wrapper = _wrapper_decorator(hist_wrapper)
-_parametric_wrapper = _wrapper_decorator(_parametric_wrapper_temporary)
-_plot_wrapper = _wrapper_decorator(_plot_wrapper_deprecated)
-_scatter_wrapper = _wrapper_decorator(scatter_wrapper)
-_standardize_1d = _wrapper_decorator(standardize_1d)
-_standardize_2d = _wrapper_decorator(standardize_2d)
-_text_wrapper = _wrapper_decorator(text_wrapper)
-_violinplot_wrapper = _wrapper_decorator(violinplot_wrapper)
+# Auto generated decorators. Each wrapper internally calls func(self, ...) somewhere.
+_bar_wrapper = _generate_decorator(bar_wrapper)
+_barh_wrapper = _generate_decorator(barh_wrapper)
+_default_latlon = _generate_decorator(default_latlon)
+_boxplot_wrapper = _generate_decorator(boxplot_wrapper)
+_default_crs = _generate_decorator(default_crs)
+_default_transform = _generate_decorator(default_transform)
+_cmap_changer = _generate_decorator(cmap_changer)
+_cycle_changer = _generate_decorator(cycle_changer)
+_fill_between_wrapper = _generate_decorator(fill_between_wrapper)
+_fill_betweenx_wrapper = _generate_decorator(fill_betweenx_wrapper)
+_hist_wrapper = _generate_decorator(hist_wrapper)
+_hlines_wrapper = _generate_decorator(_hlines_wrapper_private)
+_indicate_error = _generate_decorator(indicate_error)
+_parametric_wrapper = _generate_decorator(_parametric_wrapper_private)
+_plot_wrapper = _generate_decorator(_plot_wrapper_private)
+_scatter_wrapper = _generate_decorator(scatter_wrapper)
+_standardize_1d = _generate_decorator(standardize_1d)
+_standardize_2d = _generate_decorator(standardize_2d)
+_stem_wrapper = _generate_decorator(_stem_wrapper_private)
+_text_wrapper = _generate_decorator(text_wrapper)
+_violinplot_wrapper = _generate_decorator(violinplot_wrapper)
+_vlines_wrapper = _generate_decorator(_vlines_wrapper_private)

@@ -400,8 +400,8 @@ designed to make your life easier.
   `~matplotlib.axes.Axes.fill_betweenx`, you will be able to use different
   colors for positive/negative bars.
 * All :ref:`1D plotting methods <ug_1dplots>` can be used to :ref:`add error
-  bars <ug_errorbars>` using various specialized keyword arguments. You no
-  longer have to work with the `~matplotlib.axes.Axes.errorbar` method
+  bars or error shading <ug_errorbars>` using various specialized keyword arguments.
+  You no longer have to work with the `~matplotlib.axes.Axes.errorbar` method
   directly.  They also accept a
   :ref:`"cycle" keyword argument <ug_cycle_changer>`
   interpreted by `~proplot.constructor.Cycle` and optional

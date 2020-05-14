@@ -50,10 +50,11 @@ Please use {new_name!r} instead.
     return obj
 
 
-def _rename_kwargs(version=None, **kwargs_rename):
+def _rename_kwargs(version=None, ignore=False, **kwargs_rename):
     """
     Emit a basic deprecation warning after removing or renaming function
-    keyword arguments.
+    keyword arguments. Each key should be an old keyword, and each arguments
+    should be the new keyword or a tuple of new keyword options.
     """
     version = 'a future version' if version is None else f'version {version}'
 
@@ -62,20 +63,20 @@ def _rename_kwargs(version=None, **kwargs_rename):
         def func(*args, **kwargs):
             for key_old, key_new in kwargs_rename.items():
                 if key_old in kwargs:
-                    if key_new is None:
+                    if ignore or not isinstance(key_new, str):
                         del kwargs[key_old]
-                        _warn_proplot(
-                            f'Ignoring keyword arg {key_old!r}. This argument '
-                            'is deprecated. Using it will raise an error '
-                            'in {version}.'
-                        )
+                        message = f'Ignoring deprecated keyword arg {key_old!r}.'
                     else:
                         kwargs[key_new] = kwargs.pop(key_old)
-                        _warn_proplot(
-                            f'Keyword arg {key_old!r} is deprecated and will be '
-                            f'removed in {version}. Please use {key_new!r} '
-                            'instead.'
+                        message = (
+                            f'Keyword arg {key_old!r} is deprecated and will '
+                            f'be removed in {version}.'
                         )
+                    if isinstance(key_new, str):
+                        alternative = repr(key_new)
+                    else:
+                        alternative = ', '.join(map(repr, key_new))
+                    _warn_proplot(f'{message} Please use {alternative} instead.')
             return func_orig(*args, **kwargs)
         return func
     return decorator

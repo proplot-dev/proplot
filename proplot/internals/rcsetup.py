@@ -7,6 +7,11 @@ Default proplot configuration settings and validators for
 from matplotlib import rcParamsDefault as _rc_matplotlib_default
 
 
+# Deprecated settings
+# TODO: Add 'openrgb' setting for renaming shorthand color names to
+_rc_removed = {'rgbcycle': '0.6'}  # {key: version} dictionary
+_rc_renamed = {}  # {old_key: (new_key, version)} dictionary
+
 # Quick settings
 # TODO: This is currently a hodgepodge of "real" settings and meta-settings.
 # Should give the real settings "real" longer names in _rc_added_default. For
@@ -21,7 +26,7 @@ _rc_quick_default = {
     'borders': False,
     'cmap': 'fire',
     'coast': False,
-    'color': 'k',
+    'color': 'black',
     'cycle': 'colorblind',
     'facecolor': 'w',
     'fontname': 'sans-serif',
@@ -34,12 +39,13 @@ _rc_quick_default = {
     'lakes': False,
     'land': False,
     'large': 10,
-    'linewidth': 0.6,
+    'linewidth': 0.8,
     'lut': 256,
-    'margin': 0.0,
+    'margin': 0.05,
+    'negcolor': 'blue7',
     'ocean': False,
-    'reso': 'lo',
-    'rgbcycle': False,
+    'poscolor': 'red7',
+    'reso': 'med',
     'rivers': False,
     'share': 3,
     'small': 9,
@@ -61,7 +67,7 @@ _rc_quick_default = {
 _rc_added_default = {
     'abc.border': True,
     'abc.borderwidth': 1.5,
-    'abc.color': 'k',
+    'abc.color': 'black',
     'abc.loc': 'l',  # left side above the axes
     'abc.size': None,  # = large
     'abc.style': 'a',
@@ -71,13 +77,13 @@ _rc_added_default = {
     'axes.formatter.zerotrim': True,
     'axes.geogrid': True,
     'axes.gridminor': True,
-    'borders.color': 'k',
-    'borders.linewidth': 0.6,
-    'bottomlabel.color': 'k',
+    'borders.color': 'black',
+    'borders.linewidth': 0.8,
+    'bottomlabel.color': 'black',
     'bottomlabel.size': None,  # = large
     'bottomlabel.weight': 'bold',
-    'coast.color': 'k',
-    'coast.linewidth': 0.6,
+    'coast.color': 'black',
+    'coast.linewidth': 0.8,
     'colorbar.extend': '1.3em',
     'colorbar.framealpha': 0.8,
     'colorbar.frameon': True,
@@ -93,15 +99,15 @@ _rc_added_default = {
     'geoaxes.facealpha': None,  # = alpha
     'geoaxes.facecolor': None,  # = facecolor
     'geoaxes.linewidth': None,  # = linewidth
-    'geogrid.alpha': 0.5,
-    'geogrid.color': 'k',
+    'geogrid.alpha': 0.25,
+    'geogrid.color': 'black',
     'geogrid.labelpad': 5,  # use cartopy default
     'geogrid.labels': False,
     'geogrid.labelsize': None,  # = small
     'geogrid.latmax': 90,
     'geogrid.latstep': 20,
-    'geogrid.linestyle': ':',
-    'geogrid.linewidth': 1.0,
+    'geogrid.linestyle': '-',
+    'geogrid.linewidth': 0.8,
     'geogrid.lonstep': 30,
     'geogrid.rotatelabels': True,  # False limits projections where labels are available
     'gridminor.alpha': None,  # = grid.alpha
@@ -110,25 +116,25 @@ _rc_added_default = {
     'gridminor.linewidth': None,  # = grid.linewidth x gridratio
     'image.edgefix': True,
     'image.levels': 11,
-    'innerborders.color': 'k',
-    'innerborders.linewidth': 0.6,
+    'innerborders.color': 'black',
+    'innerborders.linewidth': 0.8,
     'lakes.color': 'w',
-    'land.color': 'k',
-    'leftlabel.color': 'k',
+    'land.color': 'black',
+    'leftlabel.color': 'black',
     'leftlabel.size': None,  # = large
     'leftlabel.weight': 'bold',
     'ocean.color': 'w',
-    'rightlabel.color': 'k',
+    'rightlabel.color': 'black',
     'rightlabel.size': None,  # = large
     'rightlabel.weight': 'bold',
-    'rivers.color': 'k',
-    'rivers.linewidth': 0.6,
+    'rivers.color': 'black',
+    'rivers.linewidth': 0.8,
     'subplots.axpad': '1em',
     'subplots.axwidth': '18em',
     'subplots.pad': '0.5em',
     'subplots.panelpad': '0.5em',
     'subplots.panelwidth': '4em',
-    'suptitle.color': 'k',
+    'suptitle.color': 'black',
     'suptitle.size': None,  # = large
     'suptitle.weight': 'bold',
     'tick.labelcolor': None,  # = color
@@ -136,29 +142,31 @@ _rc_added_default = {
     'tick.labelweight': 'normal',
     'title.border': True,
     'title.borderwidth': 1.5,
-    'title.color': 'k',
+    'title.color': 'black',
     'title.loc': 'c',  # centered above the axes
     'title.pad': 3.0,  # copy
     'title.size': None,  # = large
     'title.weight': 'normal',
-    'toplabel.color': 'k',
+    'toplabel.color': 'black',
     'toplabel.size': None,  # = large
     'toplabel.weight': 'bold',
 }
 
 # ProPlot overrides of matplotlib default style
-# TODO: Allow users to override with custom stylesheets and .matplotlibrc files.
+# NOTE: Hard to say what best value for 'margin' is. 0 is bad for bar plots and scatter
+# plots, 0.05 is good for line plot in y direction but not x direction.
+# NOTE: Settings bounds is same as setting limits, except bounds get
+# overridden after next plot: https://stackoverflow.com/a/11467349/4970632
+# NOTE: Some of these parameters are the same as matplotlib defaults but want
+# to enforce some critical settings on top of user or system matplotlibrc files
 _rc_params_default = {
-    'axes.grid': True,
-    'axes.labelpad': 3.0,
-    'axes.titlepad': 3.0,
+    'axes.grid': True,  # enable lightweight transparent grid by default
+    'axes.labelpad': 3.0,  # more compact
+    'axes.titlepad': 3.0,  # more compact
     'axes.titleweight': 'normal',
-    'axes.xmargin': 0.0,
-    'axes.ymargin': 0.0,
     'figure.autolayout': False,
-    'figure.facecolor': '#f2f2f2',
-    'figure.max_open_warning': 0,
-    'figure.titleweight': 'bold',
+    'figure.facecolor': '#f2f2f2',  # similar to MATLAB interface
+    'figure.titleweight': 'bold',  # differentiate from axes titles
     'font.serif': (
         'TeX Gyre Schola',  # Century lookalike
         'TeX Gyre Bonum',  # Bookman lookalike
@@ -241,34 +249,29 @@ _rc_params_default = {
         'xkcd',
         'fantasy'
     ),
-    'grid.alpha': 0.1,
-    'grid.color': 'k',
+    'grid.alpha': 0.1,  # lightweight unobtrusive gridlines
+    'grid.color': 'black',  # lightweight unobtrusive gridlines
     'grid.linestyle': '-',
-    'grid.linewidth': 0.6,
-    'hatch.color': 'k',
-    'hatch.linewidth': 0.6,
-    'legend.borderaxespad': 0,
-    'legend.borderpad': 0.5,
-    'legend.columnspacing': 1.0,
-    'legend.fancybox': False,
-    'legend.framealpha': 0.8,
-    'legend.frameon': True,
-    'legend.handlelength': 1.5,
+    'grid.linewidth': 0.8,
+    'hatch.color': 'black',
+    'hatch.linewidth': 0.8,
+    'lines.linestyle': '-',
+    'lines.linewidth': 1.5,
+    'lines.markersize': 6.0,
+    'legend.borderaxespad': 0,  # looks sleeker flush against edge
+    'legend.borderpad': 0.5,  # a bit more space
+    'legend.columnspacing': 1.5,  # more compact
+    'legend.fancybox': False,  # looks modern without curvy box
     'legend.handletextpad': 0.5,
-    'legend.labelspacing': 0.5,
-    'lines.linewidth': 1.3,
-    'lines.markersize': 3.0,
     'mathtext.fontset': 'custom',
     'mathtext.default': 'regular',
-    'savefig.bbox': 'standard',
-    'savefig.directory': '',
-    'savefig.dpi': 300,
-    'savefig.facecolor': 'white',
-    'savefig.format': 'pdf',
-    'savefig.pad_inches': 0.0,
+    'savefig.bbox': 'standard',  # use custom tight layout
+    'savefig.directory': '',  # current directory
+    'savefig.dpi': 300,  # low dpi to improve performance, high dpi when it matters
+    'savefig.facecolor': 'white',  # different from figure.facecolor
+    'savefig.format': 'pdf',  # most users use bitmap when vector graphics are better
     'savefig.transparent': True,
-    'text.usetex': False,
-    'xtick.minor.visible': True,
+    'xtick.minor.visible': True,  # enable minor ticks by default
     'ytick.minor.visible': True,
 }
 

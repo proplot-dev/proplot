@@ -9,12 +9,11 @@ import matplotlib.path as mpath
 import matplotlib.ticker as mticker
 from . import base
 from .plot import (
-    _add_errorbars, _norecurse, _redirect,
-    _plot_wrapper, _scatter_wrapper,
-    _fill_between_wrapper, _fill_betweenx_wrapper,
+    _basemap_norecurse, _basemap_redirect, _cmap_changer, _cycle_changer,
     _default_crs, _default_latlon, _default_transform,
-    _cmap_changer, _cycle_changer,
-    _standardize_1d, _standardize_2d,
+    _fill_between_wrapper, _fill_betweenx_wrapper,
+    _indicate_error, _plot_wrapper,
+    _scatter_wrapper, _standardize_1d, _standardize_2d,
     _text_wrapper,
 )
 from .. import crs as pcrs
@@ -770,10 +769,10 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
             GeoAxesCartopy.text
         )
         plot = _default_transform(_plot_wrapper(_standardize_1d(
-            _add_errorbars(_cycle_changer(GeoAxesCartopy.plot))
+            _indicate_error(_cycle_changer(GeoAxesCartopy.plot))
         )))
         scatter = _default_transform(_scatter_wrapper(_standardize_1d(
-            _add_errorbars(_cycle_changer(GeoAxesCartopy.scatter))
+            _indicate_error(_cycle_changer(GeoAxesCartopy.scatter))
         )))
         fill_between = _fill_between_wrapper(_standardize_1d(_cycle_changer(
             GeoAxesCartopy.fill_between
@@ -1078,36 +1077,36 @@ class BasemapAxes(GeoAxes):
         self._map_projection = map_projection
 
     # Wrapped methods
-    plot = _norecurse(_default_latlon(_plot_wrapper(_standardize_1d(
-        _add_errorbars(_cycle_changer(_redirect(maxes.Axes.plot)))
+    plot = _basemap_norecurse(_default_latlon(_plot_wrapper(_standardize_1d(
+        _indicate_error(_cycle_changer(_basemap_redirect(maxes.Axes.plot)))
     ))))
-    scatter = _norecurse(_default_latlon(_scatter_wrapper(_standardize_1d(
-        _add_errorbars(_cycle_changer(_redirect(maxes.Axes.scatter)))
+    scatter = _basemap_norecurse(_default_latlon(_scatter_wrapper(_standardize_1d(
+        _indicate_error(_cycle_changer(_basemap_redirect(maxes.Axes.scatter)))
     ))))
-    contour = _norecurse(_default_latlon(_standardize_2d(_cmap_changer(
-        _redirect(maxes.Axes.contour)
+    contour = _basemap_norecurse(_default_latlon(_standardize_2d(_cmap_changer(
+        _basemap_redirect(maxes.Axes.contour)
     ))))
-    contourf = _norecurse(_default_latlon(_standardize_2d(_cmap_changer(
-        _redirect(maxes.Axes.contourf)
+    contourf = _basemap_norecurse(_default_latlon(_standardize_2d(_cmap_changer(
+        _basemap_redirect(maxes.Axes.contourf)
     ))))
-    pcolor = _norecurse(_default_latlon(_standardize_2d(_cmap_changer(
-        _redirect(maxes.Axes.pcolor)
+    pcolor = _basemap_norecurse(_default_latlon(_standardize_2d(_cmap_changer(
+        _basemap_redirect(maxes.Axes.pcolor)
     ))))
-    pcolormesh = _norecurse(_default_latlon(_standardize_2d(_cmap_changer(
-        _redirect(maxes.Axes.pcolormesh)
+    pcolormesh = _basemap_norecurse(_default_latlon(_standardize_2d(_cmap_changer(
+        _basemap_redirect(maxes.Axes.pcolormesh)
     ))))
-    quiver = _norecurse(_default_latlon(_standardize_2d(_cmap_changer(
-        _redirect(maxes.Axes.quiver)
+    quiver = _basemap_norecurse(_default_latlon(_standardize_2d(_cmap_changer(
+        _basemap_redirect(maxes.Axes.quiver)
     ))))
-    streamplot = _norecurse(_default_latlon(_standardize_2d(_cmap_changer(
-        _redirect(maxes.Axes.streamplot)
+    streamplot = _basemap_norecurse(_default_latlon(_standardize_2d(_cmap_changer(
+        _basemap_redirect(maxes.Axes.streamplot)
     ))))
-    barbs = _norecurse(_default_latlon(_standardize_2d(_cmap_changer(
-        _redirect(maxes.Axes.barbs)
+    barbs = _basemap_norecurse(_default_latlon(_standardize_2d(_cmap_changer(
+        _basemap_redirect(maxes.Axes.barbs)
     ))))
-    hexbin = _norecurse(_standardize_1d(_cmap_changer(
-        _redirect(maxes.Axes.hexbin)
+    hexbin = _basemap_norecurse(_standardize_1d(_cmap_changer(
+        _basemap_redirect(maxes.Axes.hexbin)
     )))
-    imshow = _norecurse(_cmap_changer(
-        _redirect(maxes.Axes.imshow)
+    imshow = _basemap_norecurse(_cmap_changer(
+        _basemap_redirect(maxes.Axes.imshow)
     ))
