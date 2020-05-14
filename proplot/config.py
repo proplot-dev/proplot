@@ -499,21 +499,21 @@ class rc_configurator(object):
             kw_params.update(ikw_params)
 
         # Tick length/major-minor tick length ratio
-        elif key in ('ticklen', 'ticklenratio'):
-            if key == 'ticklen':
+        elif key in ('tick.len', 'tick.lenratio'):
+            if key == 'tick.len':
                 ticklen = value
-                ratio = rc_quick['ticklenratio']
+                ratio = rc_added['tick.lenratio']
             else:
-                ticklen = rc_quick['ticklen']
+                ticklen = rc_added['tick.len']
                 ratio = value
             kw_params['xtick.minor.size'] = ticklen * ratio
             kw_params['ytick.minor.size'] = ticklen * ratio
 
         # Spine width/major-minor tick width ratio
-        elif key in ('linewidth', 'tickratio'):
+        elif key in ('linewidth', 'tick.ratio'):
             if key == 'linewidth':
                 tickwidth = value
-                ratio = rc_quick['tickratio']
+                ratio = rc_added['tick.ratio']
             else:
                 tickwidth = rc_quick['linewidth']
                 ratio = value
@@ -521,10 +521,10 @@ class rc_configurator(object):
             kw_params['ytick.minor.width'] = tickwidth * ratio
 
         # Gridline width
-        elif key in ('grid.linewidth', 'gridratio'):
+        elif key in ('grid.linewidth', 'grid.ratio'):
             if key == 'grid.linewidth':
                 gridwidth = value
-                ratio = rc_quick['gridratio']
+                ratio = rc_added['grid.ratio']
             else:
                 gridwidth = rc_params['grid.linewidth']
                 ratio = value

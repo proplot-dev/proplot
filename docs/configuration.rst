@@ -80,12 +80,11 @@ Key               Description
 ``geogrid``       Boolean, toggles meridian and parallel gridlines on and off.
 ``grid``          Boolean, toggles major grid lines on and off.
 ``gridminor``     Boolean, toggles minor grid lines on and off.
-``gridratio``     Ratio of minor gridline width to major gridline width.
 ``inlinefmt``     The inline backend figure format or list thereof. Valid formats include ``'svg'``, ``'pdf'``, ``'retina'``, ``'png'``, and ``jpeg``.
 ``innerborders``  Boolean, toggles internal border lines on and off, e.g. for states and provinces.
 ``lakes``         Boolean, toggles lake patches on and off.
 ``land``          Boolean, toggles land patches on and off.
-``large``         Font size for titles, "super" titles, and a-b-c subplot labels.
+``large``         Font size for titles, "super" titles, and a-b-c subplot labels. Alias for :rcraw:`font.large`.
 ``linewidth``     Thickness of axes spines and major tick lines.
 ``lut``           The number of colors to put in the colormap lookup table.
 ``margin``        The margin of space between axes edges and objects plotted inside the axes, if ``xlim`` and ``ylim`` are unset.
@@ -95,15 +94,9 @@ Key               Description
 ``reso``          Resolution of geographic features, one of ``'lo'``, ``'med'``, or ``'hi'``
 ``rivers``        Boolean, toggles river lines on and off.
 ``share``         The axis sharing level, one of ``0``, ``1``, ``2``, or ``3``. See `~proplot.ui.subplots` for details.
-``small``         Font size for legend text, tick labels, axis labels, and text generated with `~matplotlib.axes.Axes.text`.
+``small``         Font size for legend text, tick labels, axis labels, and text generated with `~matplotlib.axes.Axes.text`. Alias for :rcraw:`font.small`.
 ``span``          Boolean, toggles spanning axis labels. See `~proplot.ui.subplots` for details.
 ``style``         The matplotlib `stylesheet <https://matplotlib.org/3.2.1/gallery/style_sheets/style_sheets_reference.html>`__ name. If ``None``, a custom proplot style is used.
-``tickdir``       Major and minor tick direction. Must be one of ``'out'``, ``'in'``, or ``'inout'``.
-``ticklen``       Length of major ticks in points.
-``ticklenratio``  Ratio of minor tickline length to major tickline length.
-``tickpad``       Padding between ticks and tick labels in points.
-``titlepad``      Padding between the axes and the title, alias for :rcraw:`axes.titlepad`.
-``tickratio``     Ratio of minor tickline width to major tickline width.
 ``tight``         Boolean, indicates whether to auto-adjust figure bounds and subplot spacings.
 ================  ==============================================================================================================================================================================================================================================
 
@@ -163,6 +156,8 @@ Key                              Description
 ``colorbar.axespad``             Padding between axes edge and inset colorbars. Units are interpreted by `~proplot.utils.units`.
 ``colorbar.extend``              Length of rectangular or triangular "extensions" for panel colorbars. Units are interpreted by `~proplot.utils.units`.
 ``colorbar.insetextend``         Length of rectangular or triangular "extensions" for inset colorbars. Units are interpreted by `~proplot.utils.units`.
+``font.small``                   Font size for legend text, tick labels, axis labels, and text generated with `~matplotlib.axes.Axes.text`. Alias for :rcraw:`font.small`.
+``font.large``                   Font size for titles, "super" titles, and a-b-c subplot labels. Alias for :rcraw:`font.large`.
 ``geoaxes.facecolor``            Face color for the map outline patch.
 ``geoaxes.edgecolor``            Edge color for the map outline patch.
 ``geoaxes.linewidth``            Edge width for the map outline patch.
@@ -180,6 +175,7 @@ Key                              Description
 ``geogrid.loninline``            Whether default cartopy longitude gridlines should be inline. Set to ``None`` to use cartopy's `auto_inline`.
 ``geogrid.lonstep``              Default interval for meridian gridlines in degrees.
 ``geogrid.rotatelabels``         Whether to rotate meridian and parallel gridline labels on cartopy axes.
+``grid.ratio``                   Ratio of minor gridline width to major gridline width.
 ``gridminor.linewidth``          Minor gridline width.
 ``gridminor.linestyle``          Minor gridline style.
 ``gridminor.alpha``              Minor gridline transparency.
@@ -207,13 +203,18 @@ Key                              Description
 ``suptitle.color``               Figure title color.
 ``suptitle.size``                Figure title font size.
 ``suptitle.weight``              Figure title font weight.
+``tick.dir``                     Major and minor tick direction. Must be one of ``'out'``, ``'in'``, or ``'inout'``.
+``tick.len``                     Length of major ticks in points.
 ``tick.labelcolor``              Axis tick label color. Mirrors the *axis* label :rcraw:`axes.labelcolor` setting.
 ``tick.labelsize``               Axis tick label font size. Mirrors the *axis* label :rcraw:`axes.labelsize` setting.
 ``tick.labelweight``             Axis tick label font weight. Mirrors the *axis* label :rcraw:`axes.labelweight` setting.
+``tick.lenratio``                Ratio of minor tickline length to major tickline length.
+``tick.pad``                     Padding between ticks and tick labels in points.
+``tick.ratio``                   Ratio of minor tickline width to major tickline width.
 ``title.loc``                    Title position. For options, see `~proplot.axes.Axes.format`.
 ``title.border``                 Boolean, indicates whether to draw a white border around titles inside an axes.
 ``title.borderwidth``            Width of the white border around titles.
-``title.pad``                    The title offset in arbitrary units. Alias for :rcraw:`axes.titlepad`.
+``title.pad``                    Padding between the axes and in arbitrary units. Alias for :rcraw:`axes.titlepad`.
 ``title.color``                  Axes title color.
 ``title.size``                   Axes title font size.
 ``title.weight``                 Axes title font weight.

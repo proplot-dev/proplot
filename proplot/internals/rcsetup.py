@@ -34,7 +34,6 @@ _rc_quick_default = {
     'geogrid': True,
     'grid': True,
     'gridminor': False,
-    'gridratio': 0.5,
     'innerborders': False,
     'lakes': False,
     'land': False,
@@ -51,12 +50,7 @@ _rc_quick_default = {
     'small': 9,
     'span': True,
     'style': None,
-    'tickdir': 'out',
-    'ticklen': 4.0,
-    'ticklenratio': 0.5,
     'tickminor': True,
-    'tickpad': 2.0,
-    'tickratio': 0.8,
     'tight': True,
 }
 
@@ -111,6 +105,7 @@ _rc_added_default = {
     'geogrid.linewidth': 0.8,
     'geogrid.lonstep': 30,
     'geogrid.rotatelabels': True,  # False limits projections where labels are available
+    'grid.ratio': 0.5,
     'gridminor.alpha': None,  # = grid.alpha
     'gridminor.color': None,  # = grid.color
     'gridminor.linestyle': None,  # = grid.linewidth
@@ -138,9 +133,15 @@ _rc_added_default = {
     'suptitle.color': 'black',
     'suptitle.size': None,  # = large
     'suptitle.weight': 'bold',
+    'tick.dir': 'out',
     'tick.labelcolor': None,  # = color
+    'tick.labelpad': 2.0,
     'tick.labelsize': None,  # = small
     'tick.labelweight': 'normal',
+    'tick.len': 4.0,
+    'tick.lenratio': 0.5,
+    'tick.pad': 2.0,
+    'tick.ratio': 0.8,
     'title.border': True,
     'title.borderwidth': 1.5,
     'title.color': 'black',
@@ -304,7 +305,17 @@ _rc_children = {
         'font.size', 'tick.labelsize', 'xtick.labelsize', 'ytick.labelsize',
         'axes.labelsize', 'legend.fontsize', 'geogrid.labelsize'
     ),
+    'font.small': (
+        'font.size', 'tick.labelsize', 'xtick.labelsize', 'ytick.labelsize',
+        'axes.labelsize', 'legend.fontsize', 'geogrid.labelsize'
+    ),
     'large': (  # the 'large' fonts
+        'abc.size', 'figure.titlesize',
+        'axes.titlesize', 'suptitle.size', 'title.size',
+        'leftlabel.size', 'toplabel.size',
+        'rightlabel.size', 'bottomlabel.size'
+    ),
+    'font.large': (
         'abc.size', 'figure.titlesize',
         'axes.titlesize', 'suptitle.size', 'title.size',
         'leftlabel.size', 'toplabel.size',
@@ -326,21 +337,21 @@ _rc_children = {
     'geogrid': (
         'axes.geogrid',
     ),
-    'ticklen': (
+    'tick.len': (
         'xtick.major.size', 'ytick.major.size'
     ),
-    'tickdir': (
+    'tick.dir': (
         'xtick.direction', 'ytick.direction'
     ),
-    'labelpad': (
+    'tick.labelpad': (
         'axes.labelpad',
     ),
-    'titlepad': (
-        'axes.titlepad',
-    ),
-    'tickpad': (
+    'tick.pad': (
         'xtick.major.pad', 'xtick.minor.pad',
         'ytick.major.pad', 'ytick.minor.pad'
+    ),
+    'title.pad': (
+        'axes.titlepad',
     ),
     'grid.color': (
         'gridminor.color',
