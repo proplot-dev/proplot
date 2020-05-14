@@ -725,6 +725,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
             kw['ylocator'] = mticker.FixedLocator(yi)
             kw['yformatter'] = mticker.IndexFormatter(y)
             kw['yminorlocator'] = mticker.NullLocator()
+
         # Handle labels if 'autoformat' is on
         if self.figure._auto_format:
             for key, xy in zip(('xlabel', 'ylabel'), (x, y)):
@@ -738,6 +739,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
         x = xi
     if yi is not None:
         y = yi
+
     # Handle figure titles
     if self.figure._auto_format:
         _, colorbar_label = _axis_labels_title(Zs[0], units=True)
@@ -891,45 +893,128 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
     return func(self, x, y, *Zs, colorbar_kw=colorbar_kw, **kwargs)
 
 
-def _errorbar_values(data, idata, bardata=None, barrange=None, barstd=False):
+def _get_error_data(
+    data, y, errdata=None, stds=None, pctiles=False,
+    stds_default=None, pctiles_default=None,
+    means_or_medians=True, absolute=False,
+):
     """
     Return values that can be passed to the `~matplotlib.axes.Axes.errorbar`
     `xerr` and `yerr` keyword args.
     """
-    if bardata is not None:
-        err = np.array(bardata)
-        if err.ndim == 1:
-            err = err[:, None]
-        if err.ndim != 2 or err.shape[0] != 2 \
-                or err.shape[1] != idata.shape[-1]:
+    # Parse arguments
+    if stds in (1, True):
+        stds = stds_default
+    elif stds in (0, False):
+        stds = None
+    if pctiles in (1, True):
+        pctiles = pctiles_default
+    elif pctiles in (0, False):
+        pctiles = None
+
+    # Incompatible settings
+    if stds is not None and pctiles is not None:
+        warnings._warn_proplot(
+            'You passed both a standard deviation range and a percentile range for '
+            'drawing error indicators. Using the former.'
+        )
+        pctiles = None
+    if not means_or_medians and (stds is not None or pctiles is not None):
+        raise ValueError(
+            'To automatically compute standard deviations or percentiles on columns '
+            'of data you must pass means=True or medians=True.'
+        )
+    if means_or_medians and errdata is not None:
+        stds = pctiles = None
+        warnings._warn_proplot(
+            'You explicitly provided the error bounds but also requested '
+            'automatically calculating means or medians on data columns. '
+            'It may make more sense to use the "stds" or "pctiles" keyword args '
+            'and have *proplot* calculate the error bounds.'
+        )
+
+    # Compute error data in format that can be passed to matplotlib.axes.Axes.errorbar()
+    # NOTE: Include option to pass symmetric deviation from central points
+    y = _to_ndarray(y)
+    data = _to_ndarray(data)
+    if errdata is not None:
+        label = 'error range'
+        err = _to_ndarray(errdata)
+        if (
+            err.ndim not in (1, 2)
+            or err.shape[-1] != y.shape[-1]
+            or err.ndim == 2 and err.shape[0] != 2
+        ):
             raise ValueError(
-                f'bardata must have shape (2, {idata.shape[-1]}), '
-                f'but got {err.shape}.'
+                f'errdata must have shape (2, {y.shape[-1]}), but got {err.shape}.'
             )
-    elif barstd:
-        err = np.array(idata) + \
-            np.std(data, axis=0)[None, :] * np.array(barrange)[:, None]
+        if err.ndim == 1:
+            abserr = err
+            err = np.empty((2, err.size))
+            err[:, 0] = y - abserr  # translated back to absolute deviations below
+            err[:, 1] = y + abserr
+    elif stds is not None:
+        label = fr'{stds[1]}$\sigma$ range'
+        err = y + np.std(data, axis=0)[None, :] * np.asarray(stds)[:, None]
+    elif pctiles is not None:
+        label = f'{pctiles[0]}-{pctiles[1]} percentile range'
+        err = np.percentile(data, pctiles, axis=0)
     else:
-        err = np.percentile(data, barrange, axis=0)
-    err = err - np.array(idata)
-    err[0, :] *= -1  # array now represents error bar sizes
-    return err
+        raise ValueError('You must provide error bounds.')
+    if not absolute:
+        err = err - y
+        err[0, :] *= -1  # absolute deviations from central points
+
+    # Return data with default legend entry
+    return err, label
 
 
+def _deprecate_add_errorbars(func):
+    """
+    Translate old-style keyword arguments to new-style in way that is too complex
+    for _rename_kwargs. Use a decorator to avoid call signature pollution.
+    """
+    @functools.wraps(func)
+    def _wrapper(
+        *args,
+        bars=None, boxes=None, barstd=None, boxstd=None, barrange=None, boxrange=None,
+        **kwargs
+    ):
+        for (prefix, b, std, span) in zip(
+            ('bar', 'box'), (bars, boxes), (barstd, boxstd), (barrange, boxrange),
+        ):
+            if b is not None or std is not None or span is not None:
+                warnings._warn_proplot(
+                    f'Keyword args "{prefix}s", "{prefix}std", and "{prefix}range" '
+                    'are deprecated and will be removed in a future version. '
+                    f'Please use "{prefix}stds" or "{prefix}pctiles" instead.'
+                )
+            if span is None and b:  # means 'use the default range'
+                span = b
+            if std:
+                kwargs.setdefault(prefix + 'stds', span)
+            else:
+                kwargs.setdefault(prefix + 'pctiles', span)
+        return func(*args, **kwargs)
+    return _wrapper
+
+
+@_deprecate_add_errorbars
 def indicate_error(
     self, func, *args,
     medians=False, means=False,
-    boxes=None, bars=None,
-    boxdata=None, bardata=None,
-    boxstd=False, barstd=False,
+    boxdata=None, bardata=None, shadedata=None, fadedata=None,
+    boxstds=None, barstds=None, shadestds=None, fadestds=None,
+    boxpctiles=None, barpctiles=None, shadepctiles=None, fadepctiles=None,
     boxmarker=True, boxmarkercolor='white',
-    boxrange=(25, 75), barrange=(5, 95), boxcolor=None, barcolor=None,
-    boxlw=None, barlw=None, capsize=None,
-    boxzorder=3, barzorder=3,
+    boxcolor=None, barcolor=None, shadecolor=None, fadecolor=None,
+    shadelabel=None, fadelabel=None, shadealpha=0.4, fadealpha=0.2,
+    boxlinewidth=None, boxlw=None, barlinewidth=None, barlw=None, capsize=None,
+    boxzorder=2.5, barzorder=2.5, shadezorder=1.5, fadezorder=1.5,
     **kwargs
 ):
     """
-    Adds support for drawing error bars on-the-fly.
+    Adds support for drawing error bars and error shading on-the-fly.
     Includes options for interpreting columns of data as *samples*,
     representing the mean or median of each sample with lines, points, or
     bars, and drawing error bars representing percentile ranges or standard
@@ -944,138 +1029,227 @@ def indicate_error(
     ----------
     *args
         The input data.
-    bars : bool, optional
-        Toggles *thin* error bars with optional "whiskers" (i.e. caps). Default
-        is ``True`` when `means` is ``True``, `medians` is ``True``, or
-        `bardata` is not ``None``.
-    boxes : bool, optional
-        Toggles *thick* boxplot-like error bars with a marker inside
-        representing the mean or median. Default is ``True`` when `means` is
-        ``True``, `medians` is ``True``, or `boxdata` is not ``None``.
     means : bool, optional
         Whether to plot the means of each column in the input data.
     medians : bool, optional
         Whether to plot the medians of each column in the input data.
-    bardata, boxdata : 2xN ndarray, optional
-        Arrays that manually specify the thin and thick error bar coordinates.
-        The first row contains lower bounds, and the second row contains
-        upper bounds. Columns correspond to points in the dataset.
-    barstd, boxstd : bool, optional
-        Whether `barrange` and `boxrange` refer to multiples of the standard
-        deviation, or percentile ranges. Default is ``False``.
-    barrange : (float, float), optional
-        Percentile ranges or standard deviation multiples for drawing thin
-        error bars. The defaults are ``(-3, 3)`` (i.e. +/-3 standard
-        deviations) when `barstd` is ``True``, and ``(0, 100)`` (i.e. the full
-        data range) when `barstd` is ``False``.
-    boxrange : (float, float), optional
-        Percentile ranges or standard deviation multiples for drawing thick
-        error bars. The defaults are ``(-1, 1)`` (i.e. +/-1 standard deviation)
-        when `boxstd` is ``True``, and ``(25, 75)`` (i.e. the interquartile
-        range) when `boxstd` is ``False``.
-    barcolor, boxcolor : color-spec, optional
-        Colors for the thick and thin error bars. Default is ``'k'``.
-    barlw, boxlw : float, optional
-        Line widths for the thin and thick error bars, in points. Default
-        `barlw` is ``0.7`` and default `boxlw` is ``4 * barlw``.
+    barstds : (float, float) or bool, optional
+        Standard deviation multiples for *thin error bars* with optional whiskers
+        (i.e. caps). If ``True``, the default standard deviation multiples ``(-3, 3)``
+        are used. This argument is only valid if `means` or `medians` is ``True``.
+    barpctiles : (float, float) or bool, optional
+        As with `barstds`, but instead using *percentiles* for the error bars.
+        The percentiles are calculated with `numpy.percentile`. If ``True``, the
+        default percentiles ``(0, 100)`` are used.
+    bardata : 2 x N array or 1D array, optional
+        If shape is 2 x N these are the lower and upper bounds for the thin error bars.
+        If array is 1D these are the absolute, symmetric deviations from the central
+        points.  This should be used if `means` and `medians` are both ``False`` (i.e.
+        you did not provide dataset columns from which statistical properties can be
+        calculated automatically).
+    boxstds, boxpctiles, boxdata : optional
+        As with `barstds`, `barpctiles`, and `bardata`, but for *thicker error bars*
+        representing a smaller interval than thick error bars. If `boxstds` is
+        ``True``, the default standard deviation multiples ``(-1, 1)`` are used.
+        If `boxpctiles` is ``True``, the default percentile multiples ``(25, 75)``
+        (i.e. the interquartile range) are used. When boxes and bars are combined, this
+        has the effect of drawing miniature box-and-whisker plots.
+    shadestds, shadepctiles, shadedata : optional
+        As with `barstds`, `barpctiles`, and `bardata`, but using *shading* to indicate
+        the error range. If `shadestds` is ``True``, the default standard deviation
+        multiples ``(-2, 2)`` are used. If `shadepctiles` is ``True``, the default
+        percentile multiples ``(5, 95)`` are used. Shading is generally useful for
+        `~matplotlib.axes.Axes.plot` plots and not `~matplotlib.axes.Axes.bar` plots.
+    fadestds, fadepctiles, fadedata : optional
+        As with `shadestds`, `shadepctiles`, and `shadedata`, but for an additional,
+        more faded, *secondary* shaded region.
+    barcolor, boxcolor, shadecolor, fadecolor : color-spec, optional
+        Colors for the different error indicators. For error bars, the default is
+        ``'k'``. For shading, the default behavior is to inherit color from the
+        primary `~matplotlib.artist.Artist`.
+    shadelabel, fadelabel : str, optional
+        Labels for the shaded regions, to be used in legends. There is no option
+        to change the "error bar" labels because error bars should not appear in a
+        legend -- they should instead be described in the figure caption.
+    barlinewidth, boxlinewidth, barlw, boxlw : float, optional
+        Line widths for the thin and thick error bars, in points. The defaults
+        are ``barlw=0.8`` and ``boxlw=4 * barlw``.
     boxmarker : bool, optional
-        Whether to draw a small marker in the middle of the box denoting
-        the mean or median position. Ignored if `boxes` is ``False``.
-        Default is ``True``.
+        Whether to draw a small marker in the middle of the box denoting the mean or
+        median position. Ignored if `boxes` is ``False``. Default is ``True``.
     boxmarkercolor : color-spec, optional
         Color for the `boxmarker` marker. Default is ``'w'``.
     capsize : float, optional
-        The cap size for thin error bars, in points.
-    barzorder, boxzorder : float, optional
-        The "zorder" for the thin and thick error bars.
-    lw, linewidth : float, optional
-        If passed, this is used for the default `barlw`.
-    edgecolor : float, optional
-        If passed, this is used for the default `barcolor` and `boxcolor`.
+        The cap size for thin error bars in points.
+    barzorder, boxzorder, shadezorder, fadezorder : float, optional
+        The "zorder" for the thin error bars, thick error bars, and shading.
+
+    Returns
+    -------
+    h, errobj1, errobj2, ...
+        The original plotting handle and the error bar objects.
     """
     name = func.__name__
-    x, y, *args = args
-    # Sensible defaults
-    if boxdata is not None:
-        bars = _not_none(bars, True)
-    if bardata is not None:
-        boxes = _not_none(boxes, True)
-    if boxdata is not None or bardata is not None:
-        # e.g. if boxdata passed but bardata not passed, use bars=False
-        bars = _not_none(bars, False)
-        boxes = _not_none(boxes, False)
+    x, data, *args = args
+    x = _to_arraylike(x)
+    data = _to_arraylike(data)
 
     # Get means or medians for plotting
-    iy = y
-    if (means or medians):
-        bars = _not_none(bars, True)
-        boxes = _not_none(boxes, True)
-        if y.ndim != 2:
+    # NOTE: We can *only* use pctiles and stds if one of these was true
+    # TODO: Add support for 3D arrays.
+    y = data
+    bars = any(_ is not None for _ in (barstds, barpctiles, bardata))
+    boxes = any(_ is not None for _ in (boxstds, boxpctiles, boxdata))
+    shading = any(_ is not None for _ in (shadestds, shadepctiles, shadedata))
+    fading = any(_ is not None for _ in (fadestds, fadepctiles, fadedata))
+    if means or medians:
+        # Take means or medians while preserving metadata for legends
+        # NOTE: Permit 3d array with error dimension coming first
+        if not (bars or boxes or shading or fading):
+            bars = boxes = True  # toggle these on
+            barstds = boxstds = True  # error bars and boxes with default stdev ranges
+        if data.ndim != 2:
             raise ValueError(
-                f'Need 2d data array for means=True or medians=True, '
-                f'got {y.ndim}d array.'
+                f'Need 2D data array for means=True or medians=True, '
+                f'got {data.ndim}D array.'
             )
+        keep = {}
+        if DataArray is not ndarray and isinstance(data, DataArray):
+            keep['keep_attrs'] = True
         if means:
-            iy = np.mean(y, axis=0)
+            y = data.mean(axis=0, **keep)
         elif medians:
-            iy = np.percentile(y, 50, axis=0)
+            if hasattr(data, 'quantile'):  # DataFrame and DataArray
+                y = data.quantile(0.5, axis=0, **keep)
+                if Series is not ndarray and isinstance(y, Series):
+                    y.name = ''  # do not set name to quantile number
+            else:
+                y = np.percentile(data, 50, axis=0, **keep)
+        if getattr(data, 'name', '') and not getattr(y, 'name', ''):
+            y.name = data.name  # copy DataFrame name to Series name
 
-    # Call function, accounting for different signatures of plot and violinplot
-    get = kwargs.pop if name == 'violinplot' else kwargs.get
-    lw = _not_none(get('lw', None), get('linewidth', None), 0.7)
-    get = kwargs.pop if name != 'bar' else kwargs.get
-    edgecolor = _not_none(get('edgecolor', None), 'k')
-    if name == 'violinplot':
-        xy = (x, y)  # full data
-    else:
-        xy = (x, iy)  # just the stats
-    obj = func(self, *xy, *args, **kwargs)
-    if not boxes and not bars:
-        return obj
+    # Infer width of error elements
+    # NOTE: violinplot_wrapper passes some invalid keyword args with expectation
+    # that indicate_error wrapper pops them and uses them for error bars.
+    lw = None
+    if name == 'bar':
+        lw = _not_none(kwargs.get('linewidth', None), kwargs.get('lw', None))
+    elif name == 'violinplot':
+        lw = _not_none(kwargs.pop('linewidth', None), kwargs.pop('lw', None))
+    lw = _not_none(lw, 0.8)
+    barlw = _not_none(barlinewidth=barlinewidth, barlw=barlw, default=lw)
+    boxlw = _not_none(boxlinewidth=boxlinewidth, boxlw=boxlw, default=4 * barlw)
+    capsize = _not_none(capsize, 3.0)
 
-    # Account for horizontal bar plots
-    if 'vert' in kwargs:
-        orientation = 'vertical' if kwargs['vert'] else 'horizontal'
-    else:
-        orientation = kwargs.get('orientation', 'vertical')
-    if orientation == 'horizontal':
-        axis = 'x'  # xerr
-        xy = (iy, x)
-    else:
-        axis = 'y'  # yerr
-        xy = (x, iy)
-
-    # Defaults settings
-    barlw = _not_none(barlw, lw)
-    boxlw = _not_none(boxlw, 4 * barlw)
-    capsize = _not_none(capsize, 3)
+    # Infer color for error bars
+    edgecolor = None
+    if name == 'bar':
+        edgecolor = kwargs.get('edgecolor', None)
+    elif name == 'violinplot':
+        edgecolor = kwargs.pop('edgecolor', None)
+    edgecolor = _not_none(edgecolor, 'k')
     barcolor = _not_none(barcolor, edgecolor)
-    boxcolor = _not_none(boxcolor, edgecolor)
+    boxcolor = _not_none(boxcolor, barcolor)
 
-    # Draw boxes and bars
+    # Infer color for shading
+    shadecolor_infer = shadecolor is None
+    shadecolor = _not_none(
+        shadecolor, kwargs.get('color', None), kwargs.get('facecolor', None), edgecolor
+    )
+    fadecolor_infer = fadecolor is None
+    fadecolor = _not_none(fadecolor, shadecolor)
+
+    # Draw dark and light shading
+    vert = kwargs.get('vert', kwargs.get('orientation', 'vertical') == 'vertical')
+    axis = 'y' if vert else 'x'  # yerr
+    errargs = (x, y) if vert else (y, x)
+    errobjs = []
+    means_or_medians = means or medians
+    if fading:
+        err, label = _get_error_data(
+            data, y, fadedata, fadestds, fadepctiles,
+            stds_default=(-3, 3), pctiles_default=(0, 100), absolute=True,
+            means_or_medians=means_or_medians,
+        )
+        errfunc = self.fill_between if vert else self.fill_betweenx
+        errobj = errfunc(
+            x, *err, linewidth=0, color=fadecolor,
+            alpha=fadealpha, zorder=fadezorder,
+        )
+        errobj.set_label(_not_none(fadelabel, label))
+        errobjs.append(errobj)
+    if shading:
+        err, label = _get_error_data(
+            data, y, shadedata, shadestds, shadepctiles,
+            stds_default=(-2, 2), pctiles_default=(10, 90), absolute=True,
+            means_or_medians=means_or_medians,
+        )
+        errfunc = self.fill_between if vert else self.fill_betweenx
+        errobj = errfunc(
+            x, *err, linewidth=0, color=shadecolor,
+            alpha=shadealpha, zorder=shadezorder,
+        )
+        errobj.set_label(_not_none(shadelabel, label))
+        errobjs.append(errobj)
+
+    # Draw thin error bars and thick error boxes
     if boxes:
-        default = (-1, 1) if barstd else (25, 75)
-        boxrange = _not_none(boxrange, default)
-        err = _errorbar_values(y, iy, boxdata, boxrange, boxstd)
+        err, label = _get_error_data(
+            data, y, boxdata, boxstds, boxpctiles,
+            stds_default=(-1, 1), pctiles_default=(25, 75),
+            means_or_medians=means_or_medians,
+        )
         if boxmarker:
-            self.scatter(
-                *xy, marker='o', color=boxmarkercolor,
-                s=boxlw, zorder=5
-            )
-        self.errorbar(*xy, **{
-            axis + 'err': err, 'capsize': 0, 'zorder': boxzorder,
-            'color': boxcolor, 'linestyle': 'none', 'linewidth': boxlw
-        })
+            self.scatter(*errargs, s=boxlw, marker='o', color=boxmarkercolor, zorder=5)
+        errkw = {axis + 'err': err}
+        errobj = self.errorbar(
+            *errargs, color=boxcolor, linewidth=boxlw, linestyle='none',
+            capsize=0, zorder=boxzorder, **errkw,
+        )
+        errobjs.append(errobj)
     if bars:  # now impossible to make thin bar width different from cap width!
-        default = (-3, 3) if barstd else (0, 100)
-        barrange = _not_none(barrange, default)
-        err = _errorbar_values(y, iy, bardata, barrange, barstd)
-        self.errorbar(*xy, **{
-            axis + 'err': err, 'capsize': capsize, 'zorder': barzorder,
-            'color': barcolor, 'linewidth': barlw, 'linestyle': 'none',
-            'markeredgecolor': barcolor, 'markeredgewidth': barlw
-        })
-    return obj
+        err, label = _get_error_data(
+            data, y, bardata, barstds, barpctiles,
+            stds_default=(-3, 3), pctiles_default=(0, 100),
+            means_or_medians=means_or_medians,
+        )
+        errkw = {axis + 'err': err}
+        errobj = self.errorbar(
+            *errargs, color=barcolor, linewidth=barlw, linestyle='none',
+            markeredgecolor=barcolor, markeredgewidth=barlw,
+            capsize=capsize, zorder=barzorder, **errkw
+        )
+        errobjs.append(errobj)
+
+    # Call main function
+    # NOTE: Provide error objects for inclusion in legend, but *only* provide
+    # the shading. Never want legend entries for error bars.
+    xy = (x, data) if name == 'violinplot' else (x, y)
+    kwargs.setdefault('errobjs', errobjs[:int(shading + fading)])
+    result = obj = func(self, *xy, *args, **kwargs)
+
+    # Apply inferrred colors to objects
+    if type(result) in (tuple, list):  # avoid BarContainer
+        obj = result[0]
+    i = 0
+    for b, infer in zip((fading, shading), (fadecolor_infer, shadecolor_infer)):
+        if b and infer:
+            color = getattr(
+                obj, 'get_facecolor', getattr(obj, 'get_color', lambda: None)
+            )()
+            if color is not None:
+                errobjs[i].set_facecolor(color)
+            i += 1
+
+    # Return objects
+    # NOTE: This should not affect internal
+    if errobjs:
+        if type(result) in (tuple, list):  # e.g. result of plot
+            return (*result, *errobjs)
+        else:
+            return (result, *errobjs)
+    else:
+        return result
 
 
 def _parametric_wrapper_private(self, func, *args, interp=0, **kwargs):
@@ -1704,22 +1878,23 @@ def violinplot_wrapper(
     if 'showmedians' in kwargs:
         kwargs.setdefault('medians', kwargs.pop('showmedians'))
     kwargs.setdefault('capsize', 0)
-    obj = func(
+    result = obj = func(
         self, *args,
-        showmeans=False, showmedians=False, showextrema=False,
-        edgecolor=edgecolor, lw=lw, **kwargs
+        showmeans=False, showmedians=False, showextrema=False, lw=lw, **kwargs
     )
     if not args:
-        return obj
+        return result
 
     # Modify body settings
+    if isinstance(result, (list, tuple)):
+        obj = result[0]
     for artist in obj['bodies']:
         artist.set_alpha(fillalpha)
         artist.set_edgecolor(edgecolor)
         artist.set_linewidths(lw)
         if fillcolor is not None:
             artist.set_facecolor(fillcolor)
-    return obj
+    return result
 
 
 def _get_transform(self, transform):
