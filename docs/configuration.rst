@@ -172,10 +172,12 @@ Key                              Description
 ``geogrid.labelpad``             Default padding in points between map boundary edge and longitude/latitude labels.
 ``geogrid.labels``               Boolean, indicates whether to label the parallels and meridians.
 ``geogrid.labelsize``            Font size for latitude and longitude labels. Inherits from ``small``.
+``geogrid.latinline``            Whether default cartopy latitude gridlines should be inline. Set to ``None`` to use cartopy's `auto_inline`.
 ``geogrid.latmax``               Absolute latitude in degrees, poleward of which meridian gridlines are cut off.
 ``geogrid.latstep``              Default interval for parallel gridlines in degrees.
 ``geogrid.linestyle``            Line style for geographic gridlines.
-``geogrid.linewidth``            line width for geographic gridlines.
+``geogrid.linewidth``            Line width for geographic gridlines.
+``geogrid.loninline``            Whether default cartopy longitude gridlines should be inline. Set to ``None`` to use cartopy's `auto_inline`.
 ``geogrid.lonstep``              Default interval for meridian gridlines in degrees.
 ``geogrid.rotatelabels``         Whether to rotate meridian and parallel gridline labels on cartopy axes.
 ``gridminor.linewidth``          Minor gridline width.

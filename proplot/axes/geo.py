@@ -267,7 +267,7 @@ optional
             )
             super().format(**kwargs)
 
-    def _get_latlines(self, step, latmax=None, user=None, **kwargs):
+    def _get_latlines(self, step, latmax=None):
         """
         Get latitude lines every `step` degrees.
         """
@@ -287,7 +287,7 @@ optional
             latlines = np.append(-latlines[::-1], latlines[1:])
         return list(latlines)
 
-    def _get_lonlines(self, step, lon0=None, user=None, **kwargs):
+    def _get_lonlines(self, step, lon0=None):
         """
         Get longitude lines every `step` degrees.
         """
@@ -434,6 +434,7 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
         Apply formatting to cartopy axes. Extra kwargs are used to update proj4 params.
         """
         latmax  # prevent U100 error (cartopy handles 'latmax' automatically)
+        lonlines_kw, latlines_kw  # preven U100 error (these were already applied)
         import cartopy.feature as cfeature
         import cartopy.crs as ccrs
         from cartopy.mpl import ticker
@@ -577,7 +578,7 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
                 extent = [*lonlim, *latlim]
                 self.set_extent(extent, crs=ccrs.PlateCarree())
 
-        # Gridline properties including an axes.axisbelow-mimicking property
+        # Gridline collection properties including axes.axisbelow-mimicking property
         kw = rc.fill({
             'alpha': 'geogrid.alpha',
             'color': 'geogrid.color',
@@ -596,9 +597,17 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
                 raise ValueError(f'Unexpected geogrid.axisbelow value {axisbelow!r}.')
             kw['zorder'] = zorder
         gl.collection_kwargs.update(kw)
+
+        # Special gridline properties
         pad = rc.get('geogrid.labelpad', context=True)
         if pad is not None:
             gl.xpadding = gl.ypadding = pad
+        loninline = rc.get('geogrid.loninline', context=True)
+        if loninline is not None:
+            gl.x_inline = loninline
+        latinline = rc.get('geogrid.latinline', context=True)
+        if latinline is not None:
+            gl.y_inline = latinline
 
         # Gridline longitudes and latitudes
         eps = 1e-10
@@ -904,10 +913,16 @@ class BasemapAxes(GeoAxes):
 
     def _get_lonlines(self, step, user=False, **kwargs):
         """Get longitude line locations given the input step."""
+        user, kwargs  # prevent U100 error (this is used in cartopy subclass)
         # Locations do not have to wrap around like they do in cartopy
         lonlines = super()._get_lonlines(step)
         lonlines = lonlines[:-1]
         return lonlines
+
+    def _get_latlines(self, step, latmax=None, user=False, **kwargs):
+        """Get latitude line locations given the input step."""
+        user, kwargs  # prevent U100 error (these are used in cartopy subclass)
+        return super()._get_latlines(step, latmax=latmax)
 
     def _format_apply(
         self, *, patch_kw,
