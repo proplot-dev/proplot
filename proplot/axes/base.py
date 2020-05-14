@@ -363,7 +363,10 @@ class Axes(maxes.Axes):
                 try:
                     loc = loc_translate[loc]
                 except KeyError:
-                    raise KeyError(f'Invalid {mode} location {loc!r}.')
+                    raise KeyError(
+                        f'Invalid {mode} location {loc!r}. Options are: '
+                        + ', '.join(map(repr, loc_translate)) + '.'
+                    )
         elif (
             allow_manual
             and mode == 'legend'
