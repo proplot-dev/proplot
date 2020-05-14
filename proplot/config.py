@@ -245,12 +245,13 @@ def _write_defaults(filename, comment=True):
                     f'rc_added param {key!r} has default value of None '
                     'but has no rcParmsShort parent!'
                 )
-            if parent in rcsetup._rc_quick_default:
-                value = rcsetup._rc_quick_default[parent]
-            elif parent in rcsetup._rc_params_default:
-                value = rcsetup._rc_params_default[parent]
-            else:
-                value = rc_params[parent]
+            for source in (
+                rcsetup._rc_quick_default, rcsetup._rc_added_default,
+                rcsetup._rc_params_default, rc_params,
+            ):
+                if parent in source:
+                    value = source[parent]
+                    break
             rc_added_filled[key] = value
 
     with open(filename, 'w') as fh:

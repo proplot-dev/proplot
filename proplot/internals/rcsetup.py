@@ -89,6 +89,8 @@ _rc_added_default = {
     'colorbar.length': 1,
     'colorbar.loc': 'right',
     'colorbar.width': '1.5em',
+    'font.small': 9,
+    'font.large': 10,
     'geoaxes.edgecolor': None,  # = color
     'geoaxes.facealpha': None,  # = alpha
     'geoaxes.facecolor': None,  # = facecolor
