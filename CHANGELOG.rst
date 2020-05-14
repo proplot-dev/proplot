@@ -71,6 +71,8 @@ ProPlot v0.6.0 (2020-##-##)
 
 There are quite a lot of deprecations for this release.
 
+- Rename `add_errorbars` to `~proplot.axes.plot.indicate_error` and rename
+  various keyword args (:pr:`166`, :commit:`d8c50a8d`).
 - Remove ``'rgbcycle'`` setting (:commit:`6653b7f0`).
 - Deprecate support for "parametric" plots inside `~matplotlib.axes.Axes.plot`,
   instead use `~proplot.axes.Axes.parametric` (:commit:`64210bce`).
@@ -116,6 +118,9 @@ There are quite a lot of deprecations for this release.
 
 .. rubric:: Features
 
+- Add options to `~proplot.axes.plot.indicate_error` for adding *shading*
+  to arbitrary plots (:pr:`166`, :commit:`d8c50a8d`). Also support automatic legend
+  entries for shading and ensure `indicate_error` preserves metadata.
 - Wrap ``pcolorfast`` just like ``pcolor`` and ``pcolormesh`` are
   wrapped (:commit:`50a262dd`).
 - Add ``negpos`` feature to `~proplot.axes.plot.bar_wrapper` and new
