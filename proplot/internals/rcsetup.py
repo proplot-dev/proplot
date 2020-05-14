@@ -100,6 +100,7 @@ _rc_added_default = {
     'geoaxes.facecolor': None,  # = facecolor
     'geoaxes.linewidth': None,  # = linewidth
     'geogrid.alpha': 0.25,
+    'geogrid.axisbelow': False,  # like axes.axisbelow
     'geogrid.color': 'black',
     'geogrid.labelpad': 5,  # use cartopy default
     'geogrid.labels': False,

@@ -503,7 +503,7 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
         # TODO: Cartopy has had two formatters for a while but we use newer one
         # https://github.com/SciTools/cartopy/pull/1066
         if not self._gridliners:
-            gl = self.gridlines(crs=ccrs.PlateCarree(), zorder=2.5)  # below text only
+            gl = self.gridlines(crs=ccrs.PlateCarree())
             gl._draw_gridliner = _draw_gridliner.__get__(gl)  # apply monkey patch
             gl._axes_domain = _axes_domain.__get__(gl)
             gl._add_gridline_label = _add_gridline_label.__get__(gl)
@@ -577,13 +577,24 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
                 extent = [*lonlim, *latlim]
                 self.set_extent(extent, crs=ccrs.PlateCarree())
 
-        # Gridline properties
+        # Gridline properties including an axes.axisbelow-mimicking property
         kw = rc.fill({
             'alpha': 'geogrid.alpha',
             'color': 'geogrid.color',
             'linewidth': 'geogrid.linewidth',
             'linestyle': 'geogrid.linestyle',
         }, context=True)
+        axisbelow = rc.get('geogrid.axisbelow', context=True)
+        if axisbelow is not None:
+            if axisbelow is True:
+                zorder = 0.5
+            elif axisbelow is False:
+                zorder = 2.5
+            elif axisbelow == 'lines':
+                zorder = 1.5
+            else:
+                raise ValueError(f'Unexpected geogrid.axisbelow value {axisbelow!r}.')
+            kw['zorder'] = zorder
         gl.collection_kwargs.update(kw)
         pad = rc.get('geogrid.labelpad', context=True)
         if pad is not None:

@@ -167,6 +167,7 @@ Key                              Description
 ``geoaxes.edgecolor``            Edge color for the map outline patch.
 ``geoaxes.linewidth``            Edge width for the map outline patch.
 ``geogrid.alpha``                Opacity of geographic gridlines.
+``geogrid.axisbelow``            Like :rcraw:`axes.axisbelow`. If ``False``, draw gridlines on top of everything. If ``True``, underneath everything. If ``'lines'``, underneath patches only.
 ``geogrid.color``                Color of geographic gridlines.
 ``geogrid.labelpad``             Default padding in points between map boundary edge and longitude/latitude labels.
 ``geogrid.labels``               Boolean, indicates whether to label the parallels and meridians.
