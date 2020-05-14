@@ -1712,7 +1712,7 @@ def barh_wrapper(
 def boxplot_wrapper(
     self, func, *args,
     color='k', fill=True, fillcolor=None, fillalpha=0.7,
-    lw=None, linewidth=0.7, orientation=None,
+    lw=None, linewidth=None, orientation=None,
     marker=None, markersize=None,
     boxcolor=None, boxlw=None,
     capcolor=None, caplw=None,
@@ -1779,7 +1779,7 @@ color-spec, optional
 
     # Modify results
     # TODO: Pass props keyword args instead? Maybe does not matter.
-    lw = _not_none(lw=lw, linewidth=linewidth)
+    lw = _not_none(lw=lw, linewidth=linewidth, default=0.8)
     if fillcolor is None:
         cycler = next(self._get_lines.prop_cycler)
         fillcolor = cycler.get('color', None)
@@ -1818,7 +1818,7 @@ color-spec, optional
 
 def violinplot_wrapper(
     self, func, *args,
-    lw=None, linewidth=0.7, fillcolor=None, edgecolor='k',
+    lw=None, linewidth=None, fillcolor=None, edgecolor='black',
     fillalpha=0.7, orientation=None,
     **kwargs
 ):
@@ -1841,7 +1841,7 @@ def violinplot_wrapper(
     lw, linewidth : float, optional
         The linewidth of the line objects. Default is ``1``.
     edgecolor : color-spec, optional
-        The edge color for the violin patches. Default is ``'k'``.
+        The edge color for the violin patches. Default is ``'black'``.
     fillcolor : color-spec, optional
         The violin plot fill color. Default is the next color cycler color.
     fillalpha : float, optional
@@ -1870,7 +1870,7 @@ def violinplot_wrapper(
             )
 
     # Sanitize input
-    lw = _not_none(lw=lw, linewidth=linewidth)
+    lw = _not_none(lw=lw, linewidth=linewidth, default=0.8)
     if kwargs.pop('showextrema', None):
         warnings._warn_proplot('Ignoring showextrema=True.')
     if 'showmeans' in kwargs:
