@@ -2040,6 +2040,7 @@ def cycle_changer(
     label=None, labels=None, values=None,
     legend=None, legend_kw=None,
     colorbar=None, colorbar_kw=None,
+    errobjs=None,
     **kwargs
 ):
     """
@@ -2088,6 +2089,9 @@ def cycle_changer(
     colorbar_kw : dict-like, optional
         Ignored if `colorbar` is ``None``. Extra keyword args for our call
         to `~proplot.axes.Axes.colorbar`.
+    errobjs : `~matplotlib.artist.Artist` or list thereof, optional
+        Error bar objects to add to the legend. This is used internally and
+        should not be necessary for users. See `indicate_error`.
 
     Other parameters
     ----------------
@@ -2318,11 +2322,14 @@ def cycle_changer(
 
     # Add legend
     if legend:
-        # Add handles
+        # Add handles and error objects
         loc = self._loc_translate(legend, 'legend', allow_manual=False)
         if loc not in self._auto_legend:
             self._auto_legend[loc] = ([], {})
         self._auto_legend[loc][0].extend(objs)
+        if type(errobjs) not in (list, tuple):
+            errobjs = (errobjs,)
+        self._auto_legend[loc][0].extend(obj for obj in errobjs if obj is not None)
         # Add keywords
         if loc != 'fill':
             legend_kw.setdefault('loc', loc)
