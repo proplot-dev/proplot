@@ -94,7 +94,7 @@ with plot.rc.context({'axes.prop_cycle': plot.Cycle('Grays', N=N, left=0.3)}):
     fig, axs = plot.subplots(ncols=2, share=False)
     x = np.linspace(-5, 5, N)
     y = state.rand(N, 5)
-    axs.format(xlabel='xlabel', ylabel='ylabel', ymargin=0.05)
+    axs.format(xlabel='xlabel', ylabel='ylabel')
     axs.format(suptitle='Standardized arguments demonstration')
 
     # Plot by passing both x and y coordinates
@@ -182,65 +182,70 @@ axs[1].plot(df, cycle=cycle, lw=3, legend='uc')
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_errorbars:
 #
-# Adding error bars
-# -----------------
+# Error bars and shading
+# ----------------------
 #
-# The `~proplot.axes.add_errorbars` wrapper lets you draw error bars
-# on-the-fly by passing certain keyword arguments to
+# The `~proplot.axes.indicate_error` wrapper lets you draw error bars
+# and error shading on-the-fly by passing certain keyword arguments to
 # `~matplotlib.axes.Axes.plot`, `~matplotlib.axes.Axes.scatter`,
 # `~matplotlib.axes.Axes.bar`, or `~matplotlib.axes.Axes.barh`.
 #
 # If you pass 2D arrays to these methods with ``means=True`` or
 # ``medians=True``, the means or medians of each column are drawn as points,
-# lines, or bars, and error bars are drawn to represent the spread in each
-# column. `~proplot.axes.add_errorbars` lets you draw both thin error
-# "bars" with optional whiskers, and thick error "boxes" overlayed on top of
-# these bars (this can be used to represent different percentil ranges).
-# Instead of using 2D arrays, you can also pass error bar coordinates
-# *manually* with the `bardata` and `boxdata` keyword arguments. See
-# `~proplot.axes.add_errorbars` for details.
+# lines, or bars, and error bars or shading is drawn to represent the spread in
+# each column. `~proplot.axes.indicate_error` lets you draw thin error
+# bars with optional whiskers, thick "boxes" overlayed on top of these bars
+# (think of this as a miniature boxplot), or up to 2 intervals of shading.
+# Instead of using 2D arrays, you can also pass the error bounds
+# *manually* with the `bardata`, `boxdata`, `shadedata`, and `fadedata` keyword
+# arguments. See `~proplot.axes.indicate_error` for details.
 
-# %%
 import proplot as plot
 import numpy as np
 import pandas as pd
 plot.rc['title.loc'] = 'uc'
+
+# Generate sample data
 state = np.random.RandomState(51423)
-data = (
-    state.rand(20, 8).cumsum(axis=0).cumsum(axis=1)[:, ::-1]
-    + 20 * state.normal(size=(20, 8)) + 30
-)
+data = state.rand(20, 8).cumsum(axis=0).cumsum(axis=1)[:, ::-1]
+data = data + 20 * state.normal(size=(20, 8)) + 30
+data = pd.DataFrame(data, columns=np.arange(0, 16, 2))
+data.name = 'variable'
+
+# Generate figure
 fig, axs = plot.subplots(
     nrows=3, aspect=1.5, axwidth=4,
     share=0, hratios=(2, 1, 1)
 )
-axs.format(suptitle='Error bars with various plotting commands')
+axs.format(suptitle='Indicating error bounds with various plotting commands')
 axs[1:].format(xlabel='column number', xticks=1, xgrid=False)
 
-# Asking add_errorbars to calculate bars
+# Automatically calculate medians and display default percentile range
 ax = axs[0]
-obj = ax.barh(data, color='red orange', means=True)
+obj = ax.barh(
+    data, color='light red', legend=True,
+    medians=True, barpctiles=True, boxpctiles=True
+)
 ax.format(title='Column statistics')
 ax.format(ylabel='column number', title='Bar plot', ygrid=False)
 
-# Showing a standard deviation range instead of percentile range
+# Automatically calculate means and display requested standard deviation range
 ax = axs[1]
 ax.scatter(
-    data, color='k', marker='_', markersize=50,
-    medians=True, barstd=True, boxes=False, capsize=2,
-    barcolor='gray6', barrange=(-1, 1), barzorder=0, barlw=1,
+    data, color='denim', marker='x', markersize=8**2, linewidth=0.8,
+    means=True, shadestds=(-1, 1), legend='ll',
 )
 ax.format(title='Scatter plot')
 
-# Supplying error bar data manually
+# Manually supply error bar data and legend labels
 ax = axs[2]
-boxdata = np.percentile(data, (25, 75), axis=0)
-bardata = np.percentile(data, (5, 95), axis=0)
+means = data.mean(axis=0)
+means.name = data.name
+shadedata = np.percentile(data, (25, 75), axis=0)  # dark shading
+fadedata = np.percentile(data, (5, 95), axis=0)  # light shading
 ax.plot(
-    data.mean(axis=0), boxes=True,
-    edgecolor='k', color='gray9',
-    boxdata=boxdata, bardata=bardata, barzorder=0,
-    boxcolor='gray7', barcolor='gray7', boxmarker=False,
+    means, shadedata=shadedata, fadedata=fadedata,
+    color='ocean blue', barzorder=0, boxmarker=False, legend='ll',
 )
 ax.format(title='Line plot')
 plot.rc.reset()
@@ -280,7 +285,6 @@ import proplot as plot
 import numpy as np
 import pandas as pd
 plot.rc.titleloc = 'uc'
-plot.rc.margin = 0.05
 fig, axs = plot.subplots(nrows=2, aspect=2, axwidth=5, share=0, hratios=(3, 2))
 state = np.random.RandomState(51423)
 data = state.rand(5, 5).cumsum(axis=0).cumsum(axis=1)[:, ::-1]
@@ -367,14 +371,18 @@ plot.rc.reset()
 import proplot as plot
 import numpy as np
 import pandas as pd
+
+# Generate sample data
 N = 500
 state = np.random.RandomState(51423)
-fig, axs = plot.subplots(ncols=2, axwidth=2.5)
 data = state.normal(size=(N, 5)) + 2 * (state.rand(N, 5) - 0.5) * np.arange(5)
 data = pd.DataFrame(
     data,
     columns=pd.Index(['a', 'b', 'c', 'd', 'e'], name='xlabel')
 )
+
+# Generate figure
+fig, axs = plot.subplots(ncols=2, axwidth=2.5)
 axs.format(grid=False, suptitle='Boxes and violins demo')
 
 # Box plots
