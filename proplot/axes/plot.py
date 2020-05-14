@@ -359,9 +359,8 @@ def default_crs(self, func, *args, crs=None, **kwargs):
 
 def _axis_labels_title(data, axis=None, units=True):
     """
-    Get data and label for pandas or xarray objects or their coordinates
-    along axis `axis`. If `units` is ``True`` also look for units on xarray
-    data arrays.
+    Get data and label for pandas or xarray objects or their coordinates along axis
+    `axis`. If `units` is ``True`` also look for units on xarray data arrays.
     """
     label = ''
     _load_objects()
@@ -386,12 +385,14 @@ def _axis_labels_title(data, axis=None, units=True):
     # Pandas object with name attribute
     # if not label and isinstance(data, DataFrame) and data.columns.size == 1:
     elif isinstance(data, (DataFrame, Series, Index)):
-        if axis == 0 and isinstance(data, (DataFrame, Series)):
+        if axis == 0 and isinstance(data, Index):
+            pass
+        elif axis == 0 and isinstance(data, (DataFrame, Series)):
             data = data.index
         elif axis == 1 and isinstance(data, DataFrame):
             data = data.columns
-        elif axis is not None:
-            data = np.arange(len(data))  # e.g. for Index
+        elif axis == 1 and isinstance(data, (Series, Index)):
+            data = np.array([data.name])  # treat series name as the "column" data
         # DataFrame has no native name attribute but user can add one:
         # https://github.com/pandas-dev/pandas/issues/447
         label = getattr(data, 'name', '') or ''
