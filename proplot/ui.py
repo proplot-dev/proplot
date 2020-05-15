@@ -13,7 +13,7 @@ from . import gridspec as pgridspec
 from .config import rc
 from .utils import units
 from .internals import ic  # noqa: F401
-from .internals import warnings, _not_none
+from .internals import docstring, warnings, _not_none
 
 __all__ = [
     'close', 'show', 'subplots', 'SubplotsContainer', 'subplot_grid',
@@ -127,6 +127,7 @@ def _axes_dict(naxs, value, kw=False, default=None):
     return kwargs
 
 
+@docstring.add_snippets
 def subplots(
     array=None, ncols=1, nrows=1,
     ref=1, order='C',
@@ -208,37 +209,37 @@ def subplots(
         between the subplots and the figure edge. Units are interpreted by
         `~proplot.utils.units`. By default, these are determined by the
         "tight layout" algorithm.
-    proj, projection : str or dict-like, optional
-        The map projection name. The argument is interpreted as follows.
+    proj, projection : str, `cartopy.crs.Projection`, `~mpl_toolkits.basemap.Basemap`, \
+list thereof, or dict thereof, optional
+        %(axes.proj)s
 
-        * If string, this projection is used for all subplots. For valid
-          names, see the `~proplot.constructor.Proj` documentation.
-        * If list of string, these are the projections to use for each
-          subplot in their `array` order.
-        * If dict-like, keys are integers or tuple integers that indicate
-          the projection to use for each subplot. If a key is not provided,
-          that subplot will be a `~proplot.axes.CartesianAxes`. For example,
-          in a 4-subplot figure, ``proj={2: 'merc', (3, 4): 'stere'}``
-          draws a Cartesian axes for the first subplot, a Mercator
+        To use different projections for different subplots, you have
+        two options:
+
+        * Pass a *list* of projection specifications, one for each subplot.
+          For example, ``plot.subplots(ncols=2, proj=('cartesian', 'robin')``.
+        * Pass a *dictionary* of projection specifications, where the
+          keys are integers or tuples of integers that indicate the projection
+          to use for the corresponding subplot(s). If a key is not provided, the
+          default projection ``'cartesian'`` is used. For example,
+          ``plot.subplots(ncols=4, proj={2: 'merc', (3, 4): 'stere'})`` creates
+          a figure with a Cartesian axes for the first subplot, a Mercator
           projection for the second subplot, and a Stereographic projection
-          for the third and fourth.
+          for the third and fourth subplots.
 
-    proj_kw, projection_kw : dict-like, optional
-        Keyword arguments passed to `~mpl_toolkits.basemap.Basemap` or
-        cartopy `~cartopy.crs.Projection` classes on instantiation.
-        If dictionary of properties, applies globally. If *dictionary of
-        dictionaries* of properties, applies to specific subplots, as
-        with `proj`.
-
-        For example, with ``ncols=2`` and
-        ``proj_kw={1: {'lon_0': 0}, 2: {'lon_0': 180}}``, the projection in
-        the left subplot is centered on the prime meridian, and the projection
-        in the right subplot is centered on the international dateline.
-    basemap : bool or dict-like, optional
-        Whether to use `~mpl_toolkits.basemap.Basemap` or
-        `~cartopy.crs.Projection` for map projections. Default is ``False``.
-        If boolean, applies to all subplots. If dictionary, values apply to
-        specific subplots, as with `proj`.
+    proj_kw, projection_kw : dict, list of dict, or dict of dicts, optional
+        Keyword arguments passed to `~mpl_toolkits.basemap.Basemap` or cartopy
+        `~cartopy.crs.Projection` classes on instantiation. If dictionary of
+        properties, applies globally. If list of dictionaries or dictionary of
+        dictionaries, these apply to specific subplots, as with `proj`. For example,
+        ``plot.subplots(ncols=2, proj_kw={1: {'lon_0': 0}, 2: {'lon_0': 180}})``
+        centers the projection in the left subplot on the prime meridian and
+        in the right subplot on the international dateline.
+    basemap : bool, list of bool, or dict of bool, optional
+        Passed to `~proplot.constructor.Proj`, determines whether projection
+        string names like ``'pcarree'`` are used to create `~proplot.axes.BasemapAxes`
+        or `~proplot.axes.CartopyAxes`. Default is ``False``. If boolean, applies
+        to all subplots. If list or dict, applies to specific subplots, as with `proj`.
     journal : str, optional
         String name corresponding to an academic journal standard that is used
         to control the figure width and, if specified, the height. See the
@@ -353,7 +354,7 @@ def subplots(
         # Custom Basemap and Cartopy axes
         else:
             m = constructor.Proj(name, basemap=basemap[num], **proj_kw[num])
-            package = m._package_used
+            package = m._proj_package
             if num == ref:
                 if package == 'basemap':
                     aspect = (m.urcrnrx - m.llcrnrx) / (m.urcrnry - m.llcrnry)

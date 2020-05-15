@@ -17,6 +17,7 @@ from .plot import (
     _text_wrapper,
 )
 from .. import crs as pcrs
+from .. import constructor
 from ..utils import arange
 from ..config import rc
 from ..internals import ic  # noqa: F401
@@ -681,23 +682,13 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
         # hi res versions. Use cfeature.COASTLINE.name to see how it can be
         # looked up with NaturalEarthFeature.
         reso = rc['reso']
-        if reso not in ('lo', 'med', 'hi'):
-            raise ValueError(f'Invalid resolution {reso!r}.')
-        reso = {
-            'lo': '110m',
-            'med': '50m',
-            'hi': '10m',
-        }.get(reso)
-        features = {
-            'land': ('physical', 'land'),
-            'ocean': ('physical', 'ocean'),
-            'lakes': ('physical', 'lakes'),
-            'coast': ('physical', 'coastline'),
-            'rivers': ('physical', 'rivers_lake_centerlines'),
-            'borders': ('cultural', 'admin_0_boundary_lines_land'),
-            'innerborders': ('cultural', 'admin_1_states_provinces_lakes'),
-        }
-        for name, args in features.items():
+        reso = constructor.CARTOPY_RESOS.get(reso, None)
+        if reso is None:
+            raise ValueError(
+                f'Invalid resolution {reso!r}. Options are: '
+                + ', '.join(map(repr, constructor.CARTOPY_RESOS)) + '.'
+            )
+        for name, args in constructor.CARTPOY_FEATURES.items():
             # Get feature
             if not rc[name]:  # toggled
                 continue
@@ -1058,14 +1049,7 @@ class BasemapAxes(GeoAxes):
         # TODO: Allow setting the zorder.
         # NOTE: Also notable are drawcounties, blumarble, drawlsmask,
         # shadedrelief, and etopo methods.
-        features = {
-            'land': 'fillcontinents',
-            'coast': 'drawcoastlines',
-            'rivers': 'drawrivers',
-            'borders': 'drawcountries',
-            'innerborders': 'drawstates',
-        }
-        for name, method in features.items():
+        for name, method in constructor.BASEMAP_FEATURES.items():
             if not rc[name]:  # toggled
                 continue
             if getattr(self, f'_{name}', None):  # already drawn

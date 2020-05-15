@@ -25,6 +25,7 @@ from . import crs as pcrs
 from . import colors as pcolors
 from . import ticker as pticker
 from . import scale as pscale
+from .config import rc
 from .utils import to_rgb
 from .internals import ic  # noqa: F401
 from .internals import warnings, _version, _version_mpl, _not_none
@@ -253,6 +254,41 @@ CARTOPY_KW_ALIASES = {  # use PROJ shorthands instead of verbose cartopy names
     'lon_0': 'central_longitude',
     'lat_min': 'min_latitude',
     'lat_max': 'max_latitude',
+}
+
+# Resolution aliases
+# NOTE: Maximum basemap resolutions are much finer than cartopy
+CARTOPY_RESOS = {
+    'lo': '110m',
+    'med': '50m',
+    'hi': '10m',
+    'xhi': '10m',  # extra high
+    'xxhi': '10m',  # extra extra high
+}
+BASEMAP_RESOS = {
+    'lo': 'c',  # coarse
+    'med': 'l',
+    'hi': 'm',
+    'xhi': 'h',
+    'xxhi': 'f',  # fine
+}
+
+# Geographic feature properties
+CARTOPY_FEATURES = {  # positional arguments passed to NaturalEarthFeature
+    'land': ('physical', 'land'),
+    'ocean': ('physical', 'ocean'),
+    'lakes': ('physical', 'lakes'),
+    'coast': ('physical', 'coastline'),
+    'rivers': ('physical', 'rivers_lake_centerlines'),
+    'borders': ('cultural', 'admin_0_boundary_lines_land'),
+    'innerborders': ('cultural', 'admin_1_states_provinces_lakes'),
+}
+BASEMAP_FEATURES = {  # names of relevant basemap methods
+    'land': 'fillcontinents',
+    'coast': 'drawcoastlines',
+    'rivers': 'drawrivers',
+    'borders': 'drawcountries',
+    'innerborders': 'drawstates',
 }
 
 
@@ -1136,7 +1172,7 @@ def Scale(scale, *args, **kwargs):
 
 def Proj(name, basemap=None, **kwargs):
     """
-    Return a `cartopy.crs.Projection` or `mpl_toolkits.basemap.Basemap`
+    Return a `cartopy.crs.Projection` or `~mpl_toolkits.basemap.Basemap`
     instance. Used to interpret the `proj` and `proj_kw` arguments when
     passed to `~proplot.ui.subplots`.
 
@@ -1282,7 +1318,7 @@ def Proj(name, basemap=None, **kwargs):
     is_basemap = Basemap is not object and isinstance(name, Basemap)
     if is_crs or is_basemap:
         proj = name
-        proj._package_used = 'cartopy' if is_crs else 'basemap'
+        proj._proj_package = 'cartopy' if is_crs else 'basemap'
         if basemap is not None:
             kwargs['basemap'] = basemap
         if kwargs:
@@ -1302,6 +1338,8 @@ def Proj(name, basemap=None, **kwargs):
         # https://stackoverflow.com/q/56299971/4970632
         # NOTE: We set rsphere to fix non-conda installed basemap issue:
         # https://github.com/matplotlib/basemap/issues/361
+        # NOTE: Unlike cartopy, basemap resolution is configured on
+        # initialization and controls *all* features.
         import mpl_toolkits.basemap as mbasemap
         if _version_mpl >= _version('3.3'):
             raise RuntimeError(
@@ -1317,9 +1355,20 @@ def Proj(name, basemap=None, **kwargs):
             kwproj.setdefault('round', True)
         if name == 'geos':
             kwproj.setdefault('rsphere', (6378137.00, 6356752.3142))
-        reso = kwproj.pop('resolution', None) or kwproj.pop('reso', None) or 'c'
-        proj = mbasemap.Basemap(projection=name, resolution=reso, **kwproj)
-        proj._package_used = 'basemap'
+        reso = _not_none(
+            reso=kwproj.pop('reso', None),
+            resolution=kwproj.pop('resolution', None),
+            default=rc['reso']
+        )
+        reso = BASEMAP_RESOS.get(reso, None)
+        if reso is None:
+            raise ValueError(
+                f'Invalid resolution {reso!r}. Options are: '
+                + ', '.join(map(repr, BASEMAP_RESOS)) + '.'
+            )
+        kwproj.update({'resolution': reso, 'projection': name})
+        proj = mbasemap.Basemap(**kwproj)
+        proj._proj_package = 'basemap'
 
     # Cartopy
     else:
@@ -1342,6 +1391,6 @@ def Proj(name, basemap=None, **kwargs):
                 + ', '.join(map(repr, CARTOPY_PROJS.keys())) + '.'
             )
         proj = crs(**kwproj)
-        proj._package_used = 'cartopy'
+        proj._proj_package = 'cartopy'
 
     return proj
