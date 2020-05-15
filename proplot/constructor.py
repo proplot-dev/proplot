@@ -776,6 +776,8 @@ def Norm(norm, *args, **kwargs):
         normalizer name, subsequent elements are passed to the normalizer class
         as positional arguments.
 
+        .. _norm_table:
+
         ==========================  =====================================
         Key(s)                      Class
         ==========================  =====================================
@@ -845,6 +847,8 @@ def Locator(locator, *args, **kwargs):
         list or tuple and the first element is a "registered" locator name,
         subsequent elements are passed to the locator class as positional
         arguments.
+
+        .. _locator_table:
 
         ======================  ============================================  =====================================================================================
         Key                     Class                                         Description
@@ -960,6 +964,8 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
         a list or tuple and the first element is a "registered" formatter
         name, subsequent elements are passed to the formatter class as
         positional arguments.
+
+        .. _formatter_table:
 
         ======================  ==============================================  ===============================================================
         Key                     Class                                           Description
@@ -1098,6 +1104,8 @@ def Scale(scale, *args, **kwargs):
         "registered" scale name, subsequent elements are passed to the
         scale class as positional arguments.
 
+        .. _scale_table:
+
         =================  ======================================  ===============================================
         Key                Class                                   Description
         =================  ======================================  ===============================================
@@ -1190,6 +1198,8 @@ def Proj(name, basemap=None, **kwargs):
         and whether they are available in the cartopy and basemap packages.
         (added) indicates a projection class that ProPlot has "added"
         to cartopy using the cartopy API.
+
+        .. _proj_table:
 
         =============  ===============================================  =========  =======
         Key            Name                                             Cartopy    Basemap

@@ -245,6 +245,8 @@ list thereof, or dict thereof, optional
         to control the figure width and, if specified, the height. See the
         below table.
 
+        .. _journal_table:
+
         ===========  ====================  ===============================================================================
         Key          Size description      Organization
         ===========  ====================  ===============================================================================
