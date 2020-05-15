@@ -83,37 +83,6 @@ transform : {'data', 'axes', 'figure'} or \
     `~matplotlib.axes.Axes.transAxes`,
     or `~matplotlib.figure.Figure.transFigure` transforms. Default is
     ``'axes'``, i.e. `bounds` is in axes-relative coordinates.
-proj, projection : str or dict-like, optional
-    The map projection name. The argument is interpreted as follows.
-
-    * If string, this projection is used for all subplots. For valid
-    names, see the `~proplot.constructor.Proj` documentation.
-    * If list of string, these are the projections to use for each
-    subplot in their `array` order.
-    * If dict-like, keys are integers or tuple integers that indicate
-    the projection to use for each subplot. If a key is not provided,
-    that subplot will be a `~proplot.axes.CartesianAxes`. For example,
-    in a 4-subplot figure, ``proj={2: 'merc', (3, 4): 'stere'}``
-    draws a Cartesian axes for the first subplot, a Mercator
-    projection for the second subplot, and a Stereographic projection
-    for the third and fourth.
-
-proj_kw, projection_kw : dict-like, optional
-    Keyword arguments passed to `~mpl_toolkits.basemap.Basemap` or
-    cartopy `~cartopy.crs.Projection` classes on instantiation.
-    If dictionary of properties, applies globally. If *dictionary of
-    dictionaries* of properties, applies to specific subplots, as
-    with `proj`.
-
-    For example, with ``ncols=2`` and
-    ``proj_kw={1: {'lon_0': 0}, 2: {'lon_0': 180}}``, the projection in
-    the left subplot is centered on the prime meridian, and the projection
-    in the right subplot is centered on the international dateline.
-basemap : bool or dict-like, optional
-    Whether to use `~mpl_toolkits.basemap.Basemap` or
-    `~cartopy.crs.Projection` for map projections. Default is ``False``.
-    If boolean, applies to all subplots. If dictionary, values apply to
-    specific subplots, as with `proj`.
 zorder : float, optional
     The `zorder <https://matplotlib.org/3.1.1/gallery/misc/zorder_demo.html>`__
     of the axes, should be greater than the zorder of
@@ -1430,7 +1399,6 @@ optional
     def inset_axes(
         self, bounds, *, transform=None, zorder=4,
         zoom=True, zoom_kw=None,
-        proj=None, proj_kw=None,
         **kwargs
     ):
         """
