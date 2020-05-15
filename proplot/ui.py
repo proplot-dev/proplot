@@ -13,7 +13,7 @@ from . import gridspec as pgridspec
 from .config import rc
 from .utils import units
 from .internals import ic  # noqa: F401
-from .internals import docstring, warnings, _not_none
+from .internals import warnings, _not_none
 
 __all__ = [
     'close', 'show', 'subplots', 'SubplotsContainer', 'subplot_grid',
@@ -127,7 +127,6 @@ def _axes_dict(naxs, value, kw=False, default=None):
     return kwargs
 
 
-@docstring.add_snippets
 def subplots(
     array=None, ncols=1, nrows=1,
     ref=1, order='C',
@@ -211,7 +210,13 @@ def subplots(
         "tight layout" algorithm.
     proj, projection : str, `cartopy.crs.Projection`, `~mpl_toolkits.basemap.Basemap`, \
 list thereof, or dict thereof, optional
-        %(axes.proj)s
+        The map projection specification(s). If ``'cartesian'`` (the default), a
+        `~proplot.axes.CartesianAxes` is created. If ``'polar'``, a
+        `~proplot.axes.PolarAxes` is created. Otherwise, the argument is
+        interpreted by `~proplot.constructor.Proj`, and the result is used
+        to make a `~proplot.axes.GeoAxes` (in this case the argument can be
+        a `cartopy.crs.Projection` instance, a `~mpl_toolkits.basemap.Basemap`
+        instance, or a projection name listed in :ref:`this table <proj_table>`).
 
         To use different projections for different subplots, you have
         two options:
