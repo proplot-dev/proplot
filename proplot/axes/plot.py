@@ -195,12 +195,13 @@ def _load_objects():
     module has already been imported! So, we only try loading these classes
     within autoformat calls. This saves >~500ms of import time.
     """
-    global DataArray, DataFrame, Series, Index, ndarray
+    global DataArray, DataFrame, Series, Index, ndarray, ARRAY_TYPES
     ndarray = np.ndarray
     DataArray = getattr(sys.modules.get('xarray', None), 'DataArray', ndarray)
     DataFrame = getattr(sys.modules.get('pandas', None), 'DataFrame', ndarray)
     Series = getattr(sys.modules.get('pandas', None), 'Series', ndarray)
     Index = getattr(sys.modules.get('pandas', None), 'Index', ndarray)
+    ARRAY_TYPES = (ndarray, DataArray, DataFrame, Series, Index)
 
 
 _load_objects()
@@ -903,14 +904,17 @@ def _get_error_data(
     `xerr` and `yerr` keyword args.
     """
     # Parse arguments
-    if stds in (1, True):
-        stds = stds_default
-    elif stds in (0, False):
-        stds = None
-    if pctiles in (1, True):
-        pctiles = pctiles_default
-    elif pctiles in (0, False):
-        pctiles = None
+    # NOTE: Have to guard against "truth value of an array is ambiguous" errors
+    if not isinstance(stds, ARRAY_TYPES):
+        if stds in (1, True):
+            stds = stds_default
+        elif stds in (0, False):
+            stds = None
+    if not isinstance(pctiles, ARRAY_TYPES):
+        if pctiles in (1, True):
+            pctiles = pctiles_default
+        elif pctiles in (0, False):
+            pctiles = None
 
     # Incompatible settings
     if stds is not None and pctiles is not None:
@@ -1086,8 +1090,8 @@ def indicate_error(
 
     Returns
     -------
-    h, errobj1, errobj2, ...
-        The original plotting handle and the error bar objects.
+    h, err1, err2, ...
+        The original plot object and the error bar or shading objects.
     """
     name = func.__name__
     x, data, *args = args
