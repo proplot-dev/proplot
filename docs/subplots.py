@@ -46,9 +46,11 @@
 #   and the subplot spacing. If both are specified (or if the matplotlib
 #   `figsize` parameter is specified), `aspect` is ignored.
 # * The `journal` parameter constrains the physical dimensions of the figure
-#   so it meets the requirements for submission to a variety of academic
-#   journals -- for example, ``'nat1'`` for a single-column *Nature* figure.
-#   A table of valid `journal` arguments can be found at `~proplot.ui.subplots`.
+#   so it meets requirements for submission to an academic journal. For example,
+#   figures created with ``journal='nat1'`` are sized as single-column
+#   *Nature* figures. See :ref:`this table <journal_table>` for the list
+#   of available journal specifications (feel free to add to this table by
+#   submitting a PR).
 #
 # This algorithm also has the following notable properties:
 #
