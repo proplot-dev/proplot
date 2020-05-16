@@ -951,6 +951,111 @@ class rc_configurator(object):
                     continue
                 self._update_from_file(path)
 
+    def from_file(self, path):
+        """
+        Load settings from the specified file.
+
+        Parameters
+        ----------
+        path : str
+            The file path.
+        """
+        self._update_from_file(path)
+
+    @staticmethod
+    def _save_rst(path):
+        """
+        Used internally to create table for online docs.
+        """
+        string = rcsetup._gen_rst_table()
+        with open(path, 'w') as fh:
+            fh.write(string)
+
+    @staticmethod
+    def _save_proplotrc(path, comment=False):
+        """
+        Used internally to create initial proplotrc file and file for online docs.
+        """
+        self = object()  # self is unused when 'user' is False
+        rc_configurator.save(self, path, user=False, backup=False, comment=comment)
+
+    def save(self, path=None, user=True, comment=None, backup=True):
+        """
+        Save the current settings to a ``.proplotrc`` file. This writes
+        the default values commented out plus the values that *differ*
+        from the defaults at the top of the file.
+
+        Parameters
+        ----------
+        path : str, optional
+            The path name. The default file name is ``.proplotrc`` and the default
+            directory is the home directory. Use ``path=''`` to save to the current
+            directory.
+        user : bool, optional
+            If ``True`` (the default), the settings you changed since importing
+            proplot are shown uncommented at the very top of the file.
+        backup : bool, optional
+            If the file already exists and this is set to ``True``, it is moved
+            to a backup file with the suffix ``.bak``.
+        comment : bool, optional
+            Whether to comment out the default settings. Default is the
+            value of `user`.
+        """
+        if path is None:
+            path = '~'
+        path = os.path.abspath(os.path.expanduser(path))
+        if os.path.isdir(path):
+            path = os.path.join(path, '.proplotrc')
+        if os.path.isfile(path) and backup:
+            os.rename(path, path + '.bak')
+            warnings._warn_proplot(
+                f'Existing proplotrc file {path!r} was moved to {path + ".bak"!r}.'
+            )
+
+        # Generate user-specific table, ignoring non-style related
+        # settings that may be changed from defaults like 'backend'
+        rc_user = ()
+        if user:
+            # Changed settings
+            rcdict = {
+                key: value for key, value in self
+                if value != rcsetup._get_default_param(key)
+            }
+
+            # Special handling for certain settings
+            # TODO: For now not sure how to detect if prop cycle changed since
+            # we cannot load it from _cmap_database in rcsetup.
+            rcdict.pop('interactive', None)  # changed by backend
+            rcdict.pop('axes.prop_cycle', None)
+
+            # Filter and get table
+            rcdict = _get_filtered_dict(rcdict, warn=False)
+            rc_user_table = rcsetup._gen_yaml_table(rcdict, comment=False)
+            rc_user = ('# Settings changed by user', rc_user_table, '')  # + blank line
+
+        # Generate tables and write
+        comment = _not_none(comment, user)
+        rc_proplot_table = rcsetup._gen_yaml_table(
+            rcsetup._rc_proplot, comment=comment
+        )
+        rc_matplotlib_table = rcsetup._gen_yaml_table(
+            rcsetup._rc_matplotlib_default, comment=comment
+        )
+        with open(path, 'w') as fh:
+            fh.write('\n'.join((
+                '#--------------------------------------------------------------------',
+                '# Use this file to change the default proplot and matplotlib settings',
+                '# The syntax is identical to matplotlibrc syntax. For details see:',
+                '# https://proplot.readthedocs.io/en/latest/configuration.html',
+                '# https://matplotlib.org/3.1.1/tutorials/introductory/customizing',
+                '#--------------------------------------------------------------------',
+                *rc_user,  # includes blank line
+                '# ProPlot settings',
+                rc_proplot_table,
+                '\n# Matplotlib settings',
+                rc_matplotlib_table,
+            )))
+
     def values(self):
         """
         Return an iterator that loops over all setting values.
