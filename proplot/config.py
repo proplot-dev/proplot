@@ -18,7 +18,6 @@ import matplotlib.font_manager as mfonts
 import matplotlib.colors as mcolors
 import matplotlib.style.core as mstyle
 import matplotlib.cbook as cbook
-import numbers
 import cycler
 from collections import namedtuple
 from . import colors as pcolors
@@ -46,9 +45,8 @@ logger.setLevel(logging.ERROR)  # suppress warnings!
 
 # Dictionaries used to track custom proplot settings
 _Context = namedtuple('Context', ('mode', 'kwargs', 'rc_new', 'rc_old'))
-rc_params = mpl.rcParams  # PEP8 4 lyfe
-rc_quick = rcsetup._rc_quick_default.copy()
-rc_added = rcsetup._rc_added_default.copy()
+rc_proplot = rcsetup._rc_proplot_default.copy()
+rc_matplotlib = mpl.rcParams  # PEP8 4 lyfe
 
 # Misc constants
 # TODO: Use explicit validators for specific settings like matplotlib.
@@ -190,122 +188,43 @@ def _iter_data_paths(subfolder, **kwargs):
                 yield i, dirname, filename
 
 
-def _write_defaults(filename, comment=True):
-    """
-    Save a file to the specified path containing the default `rc` settings.
-
-    Parameters
-    ----------
-    filename : str
-        The path.
-    comment : bool, optional
-        Whether to "comment out" each setting.
-    """
-    def _tabulate(rcdict):
-        string = ''
-        prefix = '# ' if comment else ''
-        maxlen = max(map(len, rcdict))
-        NoneType = type(None)
-        for key, value in rcdict.items():
-            if isinstance(value, cycler.Cycler):  # special case!
-                value = repr(value)
-            elif isinstance(value, (str, numbers.Number, NoneType)):
-                value = str(value)
-            elif isinstance(value, (list, tuple)) and all(
-                isinstance(val, (str, numbers.Number)) for val in value
-            ):
-                value = ', '.join(str(val) for val in value)
-            else:
-                raise ValueError(
-                    f'Failed to write rc setting {key} = {value!r}. '
-                    'Must be string, number, or list or tuple thereof, '
-                    'or None or a cycler.'
-                )
-            space = ' ' * (maxlen - len(key) + 1)
-            string += f'{prefix}{key}:{space}{value}\n'
-        return string.strip()
-
-    # Fill empty _rc_added_default values with _rc_quick_default
-    # They are only allowed to be None in the *default dictionaries* because
-    # they are immediately overwritten. However if users try to set them as
-    # None in a .proplotrc file, may trigger error down the line.
-    # TODO: Never set
-    rc_parents = {
-        child: parent
-        for parent, children in rcsetup._rc_children.items()
-        for child in children
-    }
-    rc_added_filled = rcsetup._rc_added_default.copy()
-    for key, value in rcsetup._rc_added_default.items():
-        if value is None:
-            try:
-                parent = rc_parents[key]
-            except KeyError:
-                raise RuntimeError(
-                    f'rc_added param {key!r} has default value of None '
-                    'but has no rcParmsShort parent!'
-                )
-            for source in (
-                rcsetup._rc_quick_default, rcsetup._rc_added_default,
-                rcsetup._rc_params_default, rc_params,
-            ):
-                if parent in source:
-                    value = source[parent]
-                    break
-            rc_added_filled[key] = value
-
-    with open(filename, 'w') as fh:
-        fh.write(f"""
-#---------------------------------------------------------------------
-# Use this file to change the default proplot and matplotlib settings
-# The syntax is mostly the same as for matplotlibrc files
-# For descriptions of each setting see:
-# https://proplot.readthedocs.io/en/latest/configuration.html
-# https://matplotlib.org/3.1.1/tutorials/introductory/customizing.html
-#---------------------------------------------------------------------
-# ProPlot quick settings
-{_tabulate(rcsetup._rc_quick_default)}
-
-# ProPlot added settings
-{_tabulate(rc_added_filled)}
-
-# Matplotlib settings
-{_tabulate(rcsetup._rc_params_default)}
-""".strip())
-
-
 class rc_configurator(object):
     """
-    Magical abstract class for managing matplotlib's
-    `builtin settings <rc_params>`_, ProPlot's
-    :ref:`added settings <rc_added>`, and :ref:`quick settings <rc_quick>`.
+    Magical abstract class for managing matplotlib's `builtin settings <rc_matplotlib>`_
+    and ProPlot's :ref:`added settings <rc_proplot>`.
     When ProPlot is imported, this class is instantiated as the `rc` object
     and the ProPlot default settings and ``.proplotrc`` user overrides
     are applied. To modify these settings, use the `rc` object.
     See the :ref:`configuration guide <ug_config>` for details.
     """
-    def __repr__(self):  # encapsulate params in temporary class
-        rcdict = type('rc', (dict,), {})(rc_quick)
-        string = type(rc_params).__repr__(rcdict)
+    def __repr__(self):
+        rcdict = type('rc', (dict,), {})({  # encapsulate params in temporary class
+            key: value for key, value in rc_proplot.items()
+            if '.' not in key  # show short names
+        })
+        string = type(rc_matplotlib).__repr__(rcdict)
         return string.strip()[:-2] + ',\n    ... <rcParams> ...\n    })'
 
     def __str__(self):
-        rcdict = type('rc', (dict,), {})(rc_quick)
-        string = type(rc_params).__str__(rcdict)
+        rcdict = type('rc', (dict,), {})({
+            key: value for key, value in rc_proplot.items()
+            if '.' not in key  # show short names
+        })
+        string = type(rc_matplotlib).__str__(rcdict)
         return string + '\n... <rcParams> ...'
 
     def __iter__(self):  # lets us build dict
         """
         Iterate over keys and values of matplotlib and proplot settings.
         """
-        for key in sorted((*rc_quick, *rc_added, *rc_params)):
+        for key in sorted((*rc_proplot, *rc_matplotlib)):
             yield key, self[key]
 
     def __contains__(self, key):
         """
         Test whether key exists as matplotlib or proplot setting.
         """
-        return key in rc_quick or key in rc_added or key in rc_params
+        return key in rc_proplot or key in rc_matplotlib
 
     @docstring.add_snippets
     def __init__(self, local=True, user=True, default=True):
@@ -331,10 +250,10 @@ class rc_configurator(object):
         rc_new = context.rc_new  # used for context-based _get_item
         rc_old = context.rc_old  # used to re-apply settings without copying whole dict
         for key, value in kwargs.items():
-            kw_quick, kw_added, kw_params = self._get_param_dicts(key, value)
+            kw_proplot, kw_matplotlib = self._get_param_dicts(key, value)
             for rc_dict, kw_new in zip(
-                (rc_quick, rc_added, rc_params),
-                (kw_quick, kw_added, kw_params),
+                (rc_proplot, rc_matplotlib),
+                (kw_proplot, kw_matplotlib),
             ):
                 for key, value in kw_new.items():
                     rc_old[key] = rc_dict[key]
@@ -351,10 +270,9 @@ class rc_configurator(object):
             )
         context = self._context[-1]
         for key, value in context.rc_old.items():
-            kw_quick, kw_added, kw_params = self._get_param_dicts(key, value)
-            rc_quick.update(kw_quick)
-            rc_added.update(kw_added)
-            rc_params.update(kw_params)
+            kw_proplot, kw_matplotlib = self._get_param_dicts(key, value)
+            rc_proplot.update(kw_proplot)
+            rc_matplotlib.update(kw_matplotlib)
         del self._context[-1]
 
     def __delitem__(self, item):  # noqa: 100
@@ -381,12 +299,11 @@ class rc_configurator(object):
 
     def __getitem__(self, key):
         """
-        Return a `builtin matplotlib setting <rc_params>`_,
-        a ProPlot :ref:`added setting <rc_added>`,
-        or a :ref:`quick setting <rc_quick>`.
+        Return a `builtin matplotlib setting <rc_matplotlib>`_
+        or a ProPlot :ref:`added setting <rc_proplot>`.
         """
         key = self._sanitize_key(key)
-        for kw in (rc_quick, rc_added, rc_params):
+        for kw in (rc_proplot, rc_matplotlib):
             try:
                 return kw[key]
             except KeyError:
@@ -404,14 +321,12 @@ class rc_configurator(object):
 
     def __setitem__(self, key, value):
         """
-        Modify a `builtin matplotlib setting <rc_params>`_,
-        a ProPlot :ref:`added setting <rc_added>`,
-        or a :ref:`quick setting <rc_quick>`.
+        Modify a `builtin matplotlib setting <rc_matplotlib>`_ or
+        a ProPlot :ref:`added setting <rc_proplot>`.
         """
-        kw_quick, kw_added, kw_params = self._get_param_dicts(key, value)
-        rc_quick.update(kw_quick)
-        rc_added.update(kw_added)
-        rc_params.update(kw_params)
+        kw_proplot, kw_matplotlib = self._get_param_dicts(key, value)
+        rc_proplot.update(kw_proplot)
+        rc_matplotlib.update(kw_matplotlib)
 
     def _get_item(self, key, mode=None):
         """
@@ -423,9 +338,9 @@ class rc_configurator(object):
             mode = min((context.mode for context in self._context), default=0)
         cache = tuple(context.rc_new for context in self._context)
         if mode == 0:
-            rcdicts = (*cache, rc_quick, rc_added, rc_params)
+            rcdicts = (*cache, rc_proplot, rc_matplotlib)
         elif mode == 1:
-            rcdicts = (*cache, rc_quick, rc_added)  # custom only!
+            rcdicts = (*cache, rc_proplot)  # custom only!
         elif mode == 2:
             rcdicts = (*cache,)
         else:
@@ -444,13 +359,13 @@ class rc_configurator(object):
 
     def _get_param_dicts(self, key, value):
         """
-        Return dictionaries for updating the `rc_quick`, `rc_added`,
-        and `rc_params` properties associated with this key.
+        Return dictionaries for updating the `rc_proplot`
+        and `rc_matplotlib` properties associated with this key.
         """
-        kw_params = {}  # builtin properties that global setting applies to
-        kw_added = {}  # custom properties that global setting applies to
-        kw_quick = {}  # short name properties
+        kw_matplotlib = {}  # builtin properties that global setting applies to
+        kw_proplot = {}  # custom properties that global setting applies to
         key = self._sanitize_key(key)
+        value = self._sanitize_value(value)
         children = rcsetup._rc_children.get(key, ())
 
         # Permit arbitary units for builtin matplotlib params
@@ -463,7 +378,7 @@ class rc_configurator(object):
             except KeyError:
                 value = units(value, 'pt')
 
-        # Deprecations
+        # Handle deprecations
         if key in rcsetup._rc_removed:
             version = rcsetup._rc_removed[key]
             warnings._warn_proplot(
@@ -484,60 +399,61 @@ class rc_configurator(object):
         # Special key: apply stylesheet
         elif key == 'style':
             if value is not None:
-                kw_params, kw_added = _get_style_dicts(value, infer=True)
+                kw_matplotlib, kw_proplot = _get_style_dicts(value, infer=True)
 
         # Cycler
         elif key == 'cycle':
             colors = _get_cycle_colors(value)
-            kw_params['patch.facecolor'] = colors[0]
-            kw_params['axes.prop_cycle'] = cycler.cycler('color', colors)
+            kw_matplotlib['patch.facecolor'] = 'C0'
+            kw_matplotlib['axes.prop_cycle'] = cycler.cycler('color', colors)
 
         # Zero linewidth almost always means zero tick length
         # TODO: Document this feature
         elif key == 'linewidth' and value == 0:
             _, ikw_added, ikw_params = self._get_param_dicts('ticklen', 0)
-            kw_added.update(ikw_added)
-            kw_params.update(ikw_params)
+            kw_proplot.update(ikw_added)
+            kw_matplotlib.update(ikw_params)
 
         # Tick length/major-minor tick length ratio
         elif key in ('tick.len', 'tick.lenratio'):
             if key == 'tick.len':
                 ticklen = value
-                ratio = rc_added['tick.lenratio']
+                ratio = rc_proplot['tick.lenratio']
             else:
-                ticklen = rc_added['tick.len']
+                ticklen = rc_proplot['tick.len']
                 ratio = value
-            kw_params['xtick.minor.size'] = ticklen * ratio
-            kw_params['ytick.minor.size'] = ticklen * ratio
+            kw_matplotlib['xtick.minor.size'] = ticklen * ratio
+            kw_matplotlib['ytick.minor.size'] = ticklen * ratio
 
         # Spine width/major-minor tick width ratio
         elif key in ('linewidth', 'tick.ratio'):
             if key == 'linewidth':
                 tickwidth = value
-                ratio = rc_added['tick.ratio']
+                ratio = rc_proplot['tick.ratio']
             else:
-                tickwidth = rc_quick['linewidth']
+                tickwidth = rc_proplot['linewidth']
                 ratio = value
-            kw_params['xtick.minor.width'] = tickwidth * ratio
-            kw_params['ytick.minor.width'] = tickwidth * ratio
+            kw_matplotlib['xtick.minor.width'] = tickwidth * ratio
+            kw_matplotlib['ytick.minor.width'] = tickwidth * ratio
 
         # Gridline width
         elif key in ('grid.linewidth', 'grid.ratio'):
             if key == 'grid.linewidth':
                 gridwidth = value
-                ratio = rc_added['grid.ratio']
+                ratio = rc_proplot['grid.ratio']
             else:
-                gridwidth = rc_params['grid.linewidth']
+                gridwidth = rc_matplotlib['grid.linewidth']
                 ratio = value
-            kw_added['gridminor.linewidth'] = gridwidth * ratio
+            kw_proplot['gridminor.linewidth'] = gridwidth * ratio
 
         # Gridline toggling, complicated because of the clunky way this is
         # implemented in matplotlib. There should be a gridminor setting!
         elif key in ('grid', 'gridminor'):
-            ovalue = rc_params['axes.grid']
-            owhich = rc_params['axes.grid.which']
+            ovalue = rc_matplotlib['axes.grid']
+            owhich = rc_matplotlib['axes.grid.which']
 
             # Instruction is to turn off gridlines
+            b = value
             if not value:
                 # Gridlines are already off, or they are on for the particular
                 # ones that we want to turn off. Instruct to turn both off.
@@ -551,13 +467,13 @@ class rc_configurator(object):
                 # instruct to turn on gridlines for the one we *don't* want off
                 elif owhich == 'both':  # and ovalue is True, as already tested
                     # if gridminor=False, enable major, and vice versa
-                    value = True
+                    b = True
                     which = 'major' if key == 'gridminor' else 'minor'
                 # Gridlines are on for the ones that we *didn't* instruct to
                 # turn off, and off for the ones we do want to turn off. This
                 # just re-asserts the ones that are already on.
                 else:
-                    value = True
+                    b = True
                     which = owhich
 
             # Instruction is to turn on gridlines
@@ -576,26 +492,24 @@ class rc_configurator(object):
                     which = owhich
 
             # Finally apply settings
-            kw_params['axes.grid'] = value
-            kw_params['axes.grid.which'] = which
+            kw_matplotlib['axes.grid'] = b
+            kw_matplotlib['axes.grid.which'] = which
 
         # Update setting in dictionary, detect invalid keys
-        if key in rc_quick:
-            kw_quick[key] = value
-        elif key in rc_added:
-            kw_added[key] = value
-        elif key in rc_params:
-            kw_params[key] = value
+        if key in rc_proplot:
+            kw_proplot[key] = value
+        elif key in rc_matplotlib:
+            kw_matplotlib[key] = value
         else:
             raise KeyError(f'Invalid rc key {key!r}.')
 
         # Update linked settings
         for key in children:
-            if key in rc_added:
-                kw_added[key] = value
+            if key in rc_proplot:
+                kw_proplot[key] = value
             else:
-                kw_params[key] = value
-        return kw_quick, kw_added, kw_params
+                kw_matplotlib[key] = value
+        return kw_proplot, kw_matplotlib
 
     @staticmethod
     def _get_local_paths():
@@ -629,9 +543,21 @@ class rc_configurator(object):
         """
         if not isinstance(key, str):
             raise KeyError(f'Invalid key {key!r}. Must be string.')
-        if '.' not in key and key not in rc_quick:  # speedup
+        if '.' not in key:
             key = rcsetup._rc_nodots.get(key, key)
         return key.lower()
+
+    @staticmethod
+    def _sanitize_value(value):
+        """
+        Convert numpy ndarray to list.
+        """
+        if isinstance(value, np.ndarray):
+            if value.size <= 1:
+                value = value.item()
+            else:
+                value = value.tolist()
+        return value
 
     @staticmethod
     def _scale_font(size):
@@ -639,7 +565,7 @@ class rc_configurator(object):
         Translate font size to numeric.
         """
         if isinstance(size, str):
-            size = rc_params['font.size'] * mfonts.font_scalings[size]
+            size = rc_matplotlib['font.size'] * mfonts.font_scalings[size]
         return size
 
     def _update_from_file(self, path):
@@ -677,9 +603,9 @@ class rc_configurator(object):
                 added.add(key)
 
                 # *Very primitive* type conversion system. Just check proplot
-                # settings (they are all simple/scalar) and leave rc_params alone.
+                # settings (they are all simple/scalar) and leave rc_matplotlib alone.
                 # TODO: Add built-in validation just like matplotlib RcParams
-                if key in rc_quick or key in rc_added:
+                if key in rc_proplot:
                     if not val:
                         val = None  # older proplot versions supported this
                     elif val in ('True', 'False', 'None'):
@@ -689,18 +615,19 @@ class rc_configurator(object):
                             val = float(val) if '.' in val else int(val)
                         except ValueError:
                             pass  # retain string
+                if val[:1] == val[-1:] == "'" or val[:1] == val[-1:] == '"':
+                    val = val[1:-1]  # remove literal strings
 
                 # Add to dictionaries
                 try:
-                    kw_quick, kw_added, kw_params = self._get_param_dicts(key, val)
+                    kw_proplot, kw_matplotlib = self._get_param_dicts(key, val)
                 except KeyError:
                     warnings._warn_proplot(
                         f'Invalid key {key!r} on line #{cnt} in file {path!r}.'
                     )
                 else:
-                    rc_quick.update(kw_quick)
-                    rc_added.update(kw_added)
-                    rc_params.update(kw_params)
+                    rc_proplot.update(kw_proplot)
+                    rc_matplotlib.update(kw_matplotlib)
 
     def category(self, cat, *, trimcat=True, context=False):
         """
@@ -726,7 +653,7 @@ class rc_configurator(object):
             )
         kw = {}
         mode = 0 if not context else None
-        for rcdict in (rc_added, rc_params):
+        for rcdict in (rc_proplot, rc_matplotlib):
             for key in rcdict:
                 if not re.match(fr'\A{cat}\.[^.]+\Z', key):
                     continue
@@ -769,18 +696,15 @@ class rc_configurator(object):
 
             The options are as follows:
 
-            0. Matplotlib's `builtin settings <rc_params>`_,
-               ProPlot's :ref:`added settings <rc_added>`,
-               and the :ref:`quick settings <rc_quick>` are all returned,
+            0. Matplotlib's `builtin settings <rc_matplotlib>`_ and ProPlot's
+               :ref:`added settings <rc_proplot>` are all returned,
                whether or not `~rc_configurator.context` has changed them.
-            1. *Unchanged* `matplotlib settings <rc_params>`_
-               return ``None``. All of ProPlot's
-               :ref:`added settings <rc_added>`
-               and the :ref:`quick settings <rc_quick>` are returned whether
-               or not `~rc_configurator.context` has changed them.  This is
-               used in the `~proplot.axes.Axes.__init__` call to
-               `~proplot.axes.Axes.format`. When a lookup returns
-               ``None``, `~proplot.axes.Axes.format` does not apply it.
+            1. *Unchanged* `matplotlib settings <rc_matplotlib>`_ return ``None``.
+               All of ProPlot's :ref:`added settings <rc_proplot>` are returned
+               whether or not `~rc_configurator.context` has changed them.
+               This is used in the `~proplot.axes.Axes.__init__` call to
+               `~proplot.axes.Axes.format`. When a lookup returns ``None``,
+               `~proplot.axes.Axes.format` does not apply it.
             2. All unchanged settings return ``None``. This is used during
                user calls to `~proplot.axes.Axes.format`.
 
@@ -807,8 +731,8 @@ class rc_configurator(object):
             if not isinstance(arg, dict):
                 raise ValueError('Non-dictionary argument {arg!r}.')
             kwargs.update(arg)
-        tup = _Context(mode=mode, kwargs=kwargs, rc_new={}, rc_old={})
-        self._context.append(tup)
+        ctx = _Context(mode=mode, kwargs=kwargs, rc_new={}, rc_old={})
+        self._context.append(ctx)
         return self
 
     def get(self, key, *, context=False):
@@ -920,21 +844,14 @@ class rc_configurator(object):
 
         # Update from default settings
         # NOTE: see _remove_blacklisted_style_params bugfix
-        # TODO: Make proplot settings compatible with matplotlib stylesheets.
-        # Tweak rc_added so they are *consistent* with properties in rcParams,
-        # load from rcParamsOrig rather than rcParamsDefault, implement proplot
-        # "style", and do not use rc_quick to apply any default settings -- this
-        # should be for user convenience only and shold not be used internally.
         if default:
-            rc_params.update(_get_style_dicts('original', infer=False))
-            rc_params.update(rcsetup._rc_params_default)  # proplot changes
-            rc_added.update(rcsetup._rc_added_default)  # proplot custom params
-            rc_quick.update(rcsetup._rc_quick_default)  # proplot quick params
-            for dict_ in (rc_quick, rc_added):
-                for key, value in dict_.items():
-                    _, kw_added, kw_params = self._get_param_dicts(key, value)
-                    rc_added.update(kw_added)
-                    rc_params.update(kw_params)
+            rc_matplotlib.update(_get_style_dicts('original', infer=False))
+            rc_matplotlib.update(rcsetup._rc_matplotlib_default)
+            rc_proplot.update(rcsetup._rc_proplot_default)
+            for key, value in rc_proplot.items():
+                kw_proplot, kw_matplotlib = self._get_param_dicts(key, value)
+                rc_matplotlib.update(kw_matplotlib)
+                rc_proplot.update(kw_proplot)
 
         # Update from user home
         user_path = None
@@ -1095,7 +1012,7 @@ def config_inline_backend(fmt=None):
     ipython = get_ipython()
     if ipython is None:
         return
-    fmt = _not_none(fmt, rc_quick['inlinefmt'])
+    fmt = _not_none(fmt, rc_proplot['inlinefmt'])
     if isinstance(fmt, str):
         fmt = [fmt]
     elif np.iterable(fmt):
@@ -1196,14 +1113,14 @@ def _get_style_dicts(style, infer=False):
     }
 
     # Always apply the default style *first* so styles are rigid
-    kw_params = _get_default_dict()
+    kw_matplotlib = _get_default_dict()
     if style == 'default' or style is mpl.rcParamsDefault:
-        return kw_params
+        return kw_matplotlib
 
     # Apply "pseudo" default properties. Pretend some proplot settings are part of
     # the matplotlib specification so they propagate to other styles.
-    kw_params['font.family'] = 'sans-serif'
-    kw_params['font.sans-serif'] = rcsetup._rc_params_default['font.sans-serif']
+    kw_matplotlib['font.family'] = 'sans-serif'
+    kw_matplotlib['font.sans-serif'] = rcsetup._rc_matplotlib_default['font.sans-serif']
 
     # Apply user input style(s) one by one
     # NOTE: Always use proplot fonts if style does not explicitly set them.
@@ -1230,21 +1147,21 @@ def _get_style_dicts(style, infer=False):
         else:
             raise ValueError(f'Invalid style {style!r}. Must be string or dictionary.')
         kw = _get_filtered_dict(kw, warn=True)
-        kw_params.update(kw)
+        kw_matplotlib.update(kw)
 
     # Infer proplot params from stylesheet params
     if infer:
-        kw_added = _infer_added_params(kw_params)
-        return kw_params, kw_added
+        kw_proplot = _infer_added_params(kw_matplotlib)
+        return kw_matplotlib, kw_proplot
     else:
-        return kw_params
+        return kw_matplotlib
 
 
 def _infer_added_params(kw_params):
     """
     Infer values for proplot's "added" parameters from stylesheets.
     """
-    kw_added = {}
+    kw_proplot = {}
     mpl_to_proplot = {
         'font.size': ('tick.labelsize',),
         'axes.titlesize': (
@@ -1263,8 +1180,8 @@ def _infer_added_params(kw_params):
         if key in kw_params:
             value = kw_params[key]
             for param in params:
-                kw_added[param] = value
-    return kw_added
+                kw_proplot[param] = value
+    return kw_proplot
 
 
 def use_style(style):
@@ -1285,9 +1202,9 @@ def use_style(style):
     # stylesheet-supporting features obvious. Plus changing the style does
     # so much *more* than changing rc params or quick settings, so it is
     # nice to have dedicated function instead of just another rc_param name.
-    kw_params, kw_added = _get_style_dicts(style, infer=True)
-    rc_params.update(kw_params)
-    rc_added.update(kw_added)
+    kw_matplotlib, kw_proplot = _get_style_dicts(style, infer=True)
+    rc_matplotlib.update(kw_matplotlib)
+    rc_proplot.update(kw_proplot)
 
 
 @docstring.add_snippets
@@ -1529,7 +1446,7 @@ def register_fonts():
 # Initialize .proplotrc file
 _user_rc_file = os.path.join(os.path.expanduser('~'), '.proplotrc')
 if not os.path.exists(_user_rc_file):
-    _write_defaults(_user_rc_file)
+    rc_configurator._save_proplotrc(_user_rc_file, comment=True)
 
 # Initialize customization folders
 _rc_folder = os.path.join(os.path.expanduser('~'), '.proplot')
