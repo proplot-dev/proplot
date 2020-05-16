@@ -40,7 +40,6 @@ _rc_removed = {  # {key: version} dictionary
 }
 _rc_renamed = {  # {old_key: (new_key, version)} dictionary
     'align': ('subplots.align', '0.6'),
-    'cmap': ('cmap.sequential', '0.6'),
     'axes.facealpha': ('axes.alpha', '0.6'),
     'geoaxes.edgecolor': ('axes.edgecolor', '0.6'),
     'geoaxes.facealpha': ('axes.alpha', '0.6'),
@@ -857,7 +856,6 @@ _rc_children = {
 _rc_aliases = {
     'alpha': 'axes.alpha',
     'axes.titlesize': 'title.size',  # NOTE: translate "auto" to color
-    'cmap.sequential': 'image.cmap',
     'facecolor': 'axes.facecolor',
     'fontname': 'font.family',
     'grid.below': 'axes.axisbelow',
