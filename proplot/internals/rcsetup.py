@@ -11,6 +11,7 @@ from matplotlib import rcParamsDefault as _rc_matplotlib_default_full
 
 # Initial synced properties
 COLOR = 'black'
+CMAP = 'fire'
 CYCLE = 'colorblind'
 CYCLIC = 'twilight'
 DIVERGING = 'div'
@@ -23,7 +24,6 @@ GRIDSTYLE = '-'
 LARGE = 10.0
 LINEWIDTH = 0.8
 MARGIN = 0.05
-SEQUENTIAL = 'fire'
 SMALL = 9.0
 TICKDIR = 'out'
 TICKLEN = 2.0
@@ -176,7 +176,7 @@ _rc_matplotlib_default = {
     'grid.linewidth': LINEWIDTH,
     'hatch.color': COLOR,
     'hatch.linewidth': LINEWIDTH,
-    'image.cmap': SEQUENTIAL,
+    'image.cmap': CMAP,
     'lines.linestyle': '-',
     'lines.linewidth': 1.5,
     'lines.markersize': 6.0,
@@ -378,17 +378,9 @@ _rc_proplot = {
     ),
 
     # Style shorthands
-    'cmap.sequential': (
-        SEQUENTIAL,
+    'cmap': (
+        CMAP,
         'The default sequential colormap.'
-    ),
-    'cmap.diverging': (
-        DIVERGING,
-        'The default diverging colormap.'
-    ),
-    'cmap.cyclic': (
-        CYCLIC,
-        'The default cyclic colormap.'
     ),
     'color': (
         COLOR,
