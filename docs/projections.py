@@ -67,7 +67,7 @@ for i in range(5):
 # Standard polar plot
 axs[0].format(
     title='Normal plot', thetaformatter='pi', rlines=5,
-    rlabelpos=180, color='gray8', ticklabelweight='bold'
+    rlabelpos=180, color='gray8', ticklabelpad='1em'
 )
 
 # Sector plot
@@ -78,7 +78,7 @@ axs[1].format(
 
 # Annular plot
 axs[2].format(
-    title='Annular plot', thetadir=-1, thetalines=10, gridcolor='red',
+    title='Annular plot', thetadir=-1, thetalines=20, gridcolor='red',
     r0=0, rlim=(10, 22), rformatter='null', rlocator=2
 )
 
