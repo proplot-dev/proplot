@@ -50,6 +50,7 @@ rc_matplotlib = mpl.rcParams  # PEP8 4 lyfe
 
 # Misc constants
 # TODO: Use explicit validators for specific settings like matplotlib.
+REGEX_STRING = re.compile('\\A(\'.*\'|".*")\\Z')
 REGEX_POINTS = re.compile(
     r'\A(?!colorbar|subplots|pdf|ps).*(width|space|size|pad|len)\Z'
 )
@@ -843,9 +844,8 @@ class rc_configurator(object):
                         try:
                             val = float(val) if '.' in val else int(val)
                         except ValueError:
-                            pass  # retain string
-                if val[:1] == val[-1:] == "'" or val[:1] == val[-1:] == '"':
-                    val = val[1:-1]  # remove literal strings
+                            if REGEX_STRING.match(val):
+                                val = val[1:-1]  # remove quotes from string
 
                 # Add to dictionaries
                 try:
