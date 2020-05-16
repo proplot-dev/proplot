@@ -44,7 +44,7 @@ logger = logging.getLogger('matplotlib.mathtext')
 logger.setLevel(logging.ERROR)  # suppress warnings!
 
 # Dictionaries used to track custom proplot settings
-_Context = namedtuple('Context', ('mode', 'kwargs', 'rc_new', 'rc_old'))
+_RcContext = namedtuple('RcContext', ('mode', 'kwargs', 'rc_new', 'rc_old'))
 rc_proplot = rcsetup._rc_proplot_default.copy()
 rc_matplotlib = mpl.rcParams  # PEP8 4 lyfe
 
@@ -568,67 +568,6 @@ class rc_configurator(object):
             size = rc_matplotlib['font.size'] * mfonts.font_scalings[size]
         return size
 
-    def _update_from_file(self, path):
-        """
-        Apply updates from a file. This is largely copied from matplotlib.
-
-        Parameters
-        ----------
-        path : str
-            The path.
-        """
-        path = os.path.expanduser(path)
-        added = set()
-        with open(path, 'r') as fh:
-            for cnt, line in enumerate(fh):
-                # Parse line and ignore comments
-                stripped = line.split('#', 1)[0].strip()
-                if not stripped:
-                    continue
-                pair = stripped.split(':', 1)
-                if len(pair) != 2:
-                    warnings._warn_proplot(
-                        f'Illegal line #{cnt + 1} in file {path!r}:\n{line!r}"'
-                    )
-                    continue
-
-                # Get key value pair
-                key, val = pair
-                key = key.strip()
-                val = val.strip()
-                if key in added:
-                    warnings._warn_proplot(
-                        f'Duplicate key {key!r} on line #{cnt + 1} in file {path!r}.'
-                    )
-                added.add(key)
-
-                # *Very primitive* type conversion system. Just check proplot
-                # settings (they are all simple/scalar) and leave rc_matplotlib alone.
-                # TODO: Add built-in validation just like matplotlib RcParams
-                if key in rc_proplot:
-                    if not val:
-                        val = None  # older proplot versions supported this
-                    elif val in ('True', 'False', 'None'):
-                        val = eval(val)  # rare case where eval is o.k.
-                    else:
-                        try:
-                            val = float(val) if '.' in val else int(val)
-                        except ValueError:
-                            pass  # retain string
-                if val[:1] == val[-1:] == "'" or val[:1] == val[-1:] == '"':
-                    val = val[1:-1]  # remove literal strings
-
-                # Add to dictionaries
-                try:
-                    kw_proplot, kw_matplotlib = self._get_param_dicts(key, val)
-                except KeyError:
-                    warnings._warn_proplot(
-                        f'Invalid key {key!r} on line #{cnt} in file {path!r}.'
-                    )
-                else:
-                    rc_proplot.update(kw_proplot)
-                    rc_matplotlib.update(kw_matplotlib)
-
     def category(self, cat, *, trimcat=True, context=False):
         """
         Return a dictionary of settings beginning with the substring
@@ -665,24 +604,16 @@ class rc_configurator(object):
                 kw[key] = value
         return kw
 
-    def context(self, *args, mode=0, **kwargs):
+    def context(self, *args, mode=0, fname=None, **kwargs):
         """
         Temporarily modify the rc settings in a "with as" block.
-
-        This is used by ProPlot internally but may also be useful for power
-        users. It was invented to prevent successive calls to
-        `~proplot.axes.Axes.format` from constantly looking up and
-        re-applying unchanged settings. Testing showed that these gratuitous
-        `rcParams <https://matplotlib.org/users/customizing.html>`__
-        lookups and artist updates increased runtime by seconds, even for
-        relatively simple plots. It also resulted in overwriting previous
-        rc changes with the default values upon subsequent calls to
-        `~proplot.axes.Axes.format`.
 
         Parameters
         ----------
         *args
             Dictionaries of `rc` names and values.
+        fname : str, optional
+            Filename from which settings should be loaded.
         **kwargs
             `rc` names and values passed as keyword arguments. If the
             name has dots, simply omit them.
@@ -708,6 +639,14 @@ class rc_configurator(object):
             2. All unchanged settings return ``None``. This is used during
                user calls to `~proplot.axes.Axes.format`.
 
+        Note
+        ----
+        This is used by ProPlot internally but may also be useful for power users.
+        It was invented to prevent successive calls to `~proplot.axes.Axes.format`
+        from constantly looking up and re-applying unchanged settings. These
+        gratuitous lookups increased runtime significantly, and resulted in successive
+        calls to `~proplot.axes.Axes.format` overwriting the previous calls.
+
         Example
         -------
         The below applies settings to axes in a specific figure using
@@ -725,13 +664,23 @@ class rc_configurator(object):
         >>> fig, ax = plot.subplots()
         >>> ax.format(linewidth=2, ticklen=5)
         """
-        if mode not in range(3):
-            raise ValueError(f'Invalid mode {mode!r}.')
+        # Add input dictionaries
         for arg in args:
             if not isinstance(arg, dict):
                 raise ValueError('Non-dictionary argument {arg!r}.')
             kwargs.update(arg)
-        ctx = _Context(mode=mode, kwargs=kwargs, rc_new={}, rc_old={})
+
+        # Add settings from file
+        # TODO: Incoporate with matplotlib 'stylesheets'
+        if fname is not None:
+            kw_proplot, kw_matplotlib = self._load_file(fname)
+            kwargs.update(kw_proplot)
+            kwargs.update(kw_matplotlib)
+
+        # Activate context object
+        if mode not in range(3):
+            raise ValueError(f'Invalid mode {mode!r}.')
+        ctx = _RcContext(mode=mode, kwargs=kwargs, rc_new={}, rc_old={})
         self._context.append(ctx)
         return self
 
@@ -771,22 +720,6 @@ class rc_configurator(object):
             if item is not None:
                 kw[key] = item
         return kw
-
-    def items(self):
-        """
-        Return an iterator that loops over all setting names and values.
-        Same as `dict.items`.
-        """
-        for key in self:
-            yield key, self[key]
-
-    def keys(self):
-        """
-        Return an iterator that loops over all setting names.
-        Same as `dict.keys`.
-        """
-        for key in self:
-            yield key
 
     def update(self, *args, **kwargs):
         """
@@ -858,7 +791,7 @@ class rc_configurator(object):
         if user:
             user_path = self._get_user_path()
             if os.path.isfile(user_path):
-                self._update_from_file(user_path)
+                self.load_file(user_path)
 
         # Update from local paths
         if local:
@@ -866,9 +799,67 @@ class rc_configurator(object):
             for path in local_paths:
                 if path == user_path:  # local files always have precedence
                     continue
-                self._update_from_file(path)
+                self.load_file(path)
 
-    def from_file(self, path):
+    def _load_file(self, path):
+        """
+        Return dictionaries of proplot and matplotlib settings loaded from the file.
+        """
+        added = set()
+        path = os.path.expanduser(path)
+        kw_proplot = {}
+        kw_matplotlib = {}
+        with open(path, 'r') as fh:
+            for cnt, line in enumerate(fh):
+                # Parse line and ignore comments
+                stripped = line.split('#', 1)[0].strip()
+                if not stripped:
+                    continue
+                pair = stripped.split(':', 1)
+                if len(pair) != 2:
+                    warnings._warn_proplot(
+                        f'Illegal line #{cnt + 1} in file {path!r}:\n{line!r}"'
+                    )
+                    continue
+
+                # Get key value pair
+                key, val = pair
+                key = key.strip()
+                val = val.strip()
+                if key in added:
+                    warnings._warn_proplot(
+                        f'Duplicate key {key!r} on line #{cnt + 1} in file {path!r}.'
+                    )
+                added.add(key)
+
+                # *Very primitive* type conversion system for proplot settings.
+                # Matplotlib does this automatically.
+                if key in rc_proplot:
+                    if not val:
+                        val = None  # older proplot versions supported this
+                    elif val in ('True', 'False', 'None'):
+                        val = eval(val)  # rare case where eval is o.k.
+                    else:
+                        try:
+                            val = float(val) if '.' in val else int(val)
+                        except ValueError:
+                            pass  # retain string
+                if val[:1] == val[-1:] == "'" or val[:1] == val[-1:] == '"':
+                    val = val[1:-1]  # remove literal strings
+
+                # Add to dictionaries
+                try:
+                    ikw_proplot, ikw_matplotlib = self._get_param_dicts(key, val)
+                    kw_proplot.update(ikw_proplot)
+                    kw_matplotlib.update(ikw_matplotlib)
+                except KeyError:
+                    warnings._warn_proplot(
+                        f'Invalid key {key!r} on line #{cnt} in file {path!r}.'
+                    )
+
+        return kw_proplot, kw_matplotlib
+
+    def load_file(self, path):
         """
         Load settings from the specified file.
 
@@ -877,7 +868,9 @@ class rc_configurator(object):
         path : str
             The file path.
         """
-        self._update_from_file(path)
+        kw_proplot, kw_matplotlib = self._load_file(path)
+        rc_proplot.update(kw_proplot)
+        rc_matplotlib.update(kw_matplotlib)
 
     @staticmethod
     def _save_rst(path):
@@ -972,6 +965,22 @@ class rc_configurator(object):
                 '\n# Matplotlib settings',
                 rc_matplotlib_table,
             )))
+
+    def items(self):
+        """
+        Return an iterator that loops over all setting names and values.
+        Same as `dict.items`.
+        """
+        for key in self:
+            yield key, self[key]
+
+    def keys(self):
+        """
+        Return an iterator that loops over all setting names.
+        Same as `dict.keys`.
+        """
+        for key in self:
+            yield key
 
     def values(self):
         """
