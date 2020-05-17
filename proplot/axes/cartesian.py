@@ -869,54 +869,44 @@ class CartesianAxes(base.Axes):
                     if spine.get_visible()
                 ]
 
-                # Helper func
-                def _grid_dict(grid):
-                    return {
-                        'grid_color': grid + '.color',
-                        'grid_alpha': grid + '.alpha',
-                        'grid_linewidth': grid + '.linewidth',
-                        'grid_linestyle': grid + '.linestyle',
-                    }
-
                 # Tick and grid settings for major and minor ticks separately
                 # Override is just a "new default", but user can override this
                 for which, igrid in zip(('major', 'minor'), (grid, gridminor)):
                     # Tick properties
-                    kw_ticks = rc.category(x + 'tick.' + which, context=True)
-                    if kw_ticks is None:
-                        kw_ticks = {}
+                    # NOTE: This loads xtick.major.size, xtick.major.width,
+                    # xtick.major.pad, xtick.major.bottom, and xtick.major.top
+                    # For all the x/y major/minor tick types
+                    kwticks = rc.category(x + 'tick.' + which, context=True)
+                    if kwticks is None:
+                        kwticks = {}
                     else:
-                        kw_ticks.pop('visible', None)  # invalid setting
+                        kwticks.pop('visible', None)  # invalid setting
                     if ticklen is not None:
-                        kw_ticks['size'] = units(ticklen, 'pt')
+                        kwticks['size'] = units(ticklen, 'pt')
                         if which == 'minor':
-                            kw_ticks['size'] *= rc['ticklenratio']
+                            kwticks['size'] *= rc['ticklenratio']
 
                     # Grid style and toggling
+                    name = 'grid' if which == 'major' else 'gridminor'
                     if igrid is not None:
                         axis.grid(igrid, which=which)
-                    if which == 'major':
-                        kw_grid = rc.fill(
-                            _grid_dict('grid'), context=True
-                        )
-                    else:
-                        kw_grid = rc.fill(
-                            _grid_dict('gridminor'), context=True
-                        )
-
-                    # Changed rc settings
-                    if gridcolor is not None:
+                    kwgrid = rc.fill({
+                        'grid_color': name + '.color',
+                        'grid_alpha': name + '.alpha',
+                        'grid_linewidth': name + '.linewidth',
+                        'grid_linestyle': name + '.linestyle',
+                    }, context=True)
+                    if gridcolor is not None:  # override for specific x/y axes
                         kw['grid_color'] = gridcolor
-                    axis.set_tick_params(which=which, **kw_grid, **kw_ticks)
+                    axis.set_tick_params(which=which, **kwgrid, **kwticks)
 
                 # Tick and ticklabel properties that apply to major and minor
-                # * Weird issue causes set_tick_params to reset/forget grid
-                #   is turned on if you access tick.gridOn directly, instead of
-                #   passing through tick_params. Since gridOn is undocumented
-                #   feature, don't use it. So calling _format_axes() a second
-                #   time will remove the lines.
-                # * Can specify whether the left/right/bottom/top spines get
-                #   ticks; sides will be group of left/right or top/bottom.
+                # * Weird issue causes set_tick_params to reset/forget grid is turned
+                #   on if you access tick.gridOn directly, instead of passing through
+                #   tick_params. Since gridOn is undocumented feature, don't use it.
+                #   So calling _format_axes() a second time will remove the lines.
+                # * Can specify whether the left/right/bottom/top spines get ticks;
+                #   sides will be group of left/right or top/bottom.
                 # * Includes option to draw spines but not draw ticks on that
                 #   spine, e.g. on the left/right edges
                 kw = {}
@@ -970,7 +960,6 @@ class CartesianAxes(base.Axes):
                     axis.set_label_position(labelloc)
 
                 # Tick label settings
-                # First color and size
                 kw = rc.fill({
                     'labelcolor': 'tick.labelcolor',  # new props
                     'labelsize': 'tick.labelsize',

@@ -268,7 +268,7 @@ CARTOPY_RESOS = {
 BASEMAP_RESOS = {
     'lo': 'c',  # coarse
     'med': 'l',
-    'hi': 'm',
+    'hi': 'i',
     'xhi': 'h',
     'xxhi': 'f',  # fine
 }

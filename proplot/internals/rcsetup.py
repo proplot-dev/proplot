@@ -226,7 +226,7 @@ _rc_matplotlib_default = {
 # be implemented under __getitem__.
 _addendum_units = ' Units are interpted by `~proplot.utils.units`.'
 _addendum_fonts = (
-    ' See `this page ',
+    ' See `this page '
     '<https://matplotlib.org/3.1.1/tutorials/text/text_props.html#default-font>`__ '
     'for a list of valid relative font sizes.'
 )
@@ -702,7 +702,7 @@ _rc_proplot = {
     'text.labelsize': (
         'medium',
         'Meta setting that changes the label-like sizes '
-        ':rcraw:`tick.labelsize`, :rcraw:`axes.labelsize`, :rcraw:`legend.fontsize`,'
+        ':rcraw:`tick.labelsize`, :rcraw:`axes.labelsize`, :rcraw:`legend.fontsize`, '
         "and :rcraw:`grid.labelsize`. Default is ``'medium'``, i.e. "
         'the value of :rcraw:`font.size`.' + _addendum_fonts
     ),
