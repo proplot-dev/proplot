@@ -60,6 +60,8 @@ _rc_renamed = {  # {old_key: (new_key, version)} dictionary
     'geogrid.lonstep': ('grid.lonstep', '0.6'),
     'geogrid.rotatelabels': ('grid.rotatelabels', '0.6'),
     'share': ('subplots.share', '0.6'),
+    'small': ('font.small', '0.6'),
+    'large': ('font.large', '0.6'),
     'span': ('subplots.span', '0.6'),
     'tight': ('subplots.tight', '0.6'),
 }
@@ -221,7 +223,12 @@ _rc_matplotlib_default = {
 # TODO: Implement these as bonafide matplotlib settings by subclassing
 # matplotlib's RcParams and adding new validators. Quick settings should
 # be implemented under __getitem__.
-_units_addendum = ' Units are interpted by `~proplot.utils.units`.'
+_addendum_units = ' Units are interpted by `~proplot.utils.units`.'
+_addendum_fonts = (
+    ' See `this page ',
+    '<https://matplotlib.org/3.1.1/tutorials/text/text_props.html#default-font>`__ '
+    'for a list of valid relative font sizes.'
+)
 _rc_proplot = {
     # Stylesheet
     'style': (
@@ -332,7 +339,7 @@ _rc_proplot = {
     'colorbar.extend': (
         '1.3em',
         'Length of rectangular or triangular "extensions" for panel colorbars. '
-        + _units_addendum
+        + _addendum_units
     ),
     'colorbar.framealpha': (
         FRAMEALPHA,
@@ -349,11 +356,11 @@ _rc_proplot = {
     'colorbar.insetextend': (
         '1em',
         'Length of rectangular or triangular "extensions" for inset colorbars. '
-        + _units_addendum
+        + _addendum_units
     ),
     'colorbar.insetlength': (
         '8em',
-        'Length of inset colorbars. ' + _units_addendum
+        'Length of inset colorbars. ' + _addendum_units
     ),
     'colorbar.insetpad': (
         '0.5em',
@@ -361,7 +368,7 @@ _rc_proplot = {
     ),
     'colorbar.insetwidth': (
         '1.2em',
-        'Width of inset colorbars. ' + _units_addendum
+        'Width of inset colorbars. ' + _addendum_units
     ),
     'colorbar.length': (
         1,
@@ -373,7 +380,7 @@ _rc_proplot = {
     ),
     'colorbar.width': (
         '1.5em',
-        'Width of outer colorbars. ' + _units_addendum
+        'Width of outer colorbars. ' + _addendum_units
     ),
 
     # Style shorthands
@@ -393,10 +400,26 @@ _rc_proplot = {
         'white',
         'The color of the background axes patch.'
     ),
-    'fontname': (
+
+    # Font setting
+    'font.name': (
         'sans-serif',
-        'Name of font used for all text in the figure. '
-        'The default is :ref:`TeX Gyre Heros <ug_fonts>`.'
+        "Alias for :rcraw:`font.family`. The default is ``'sans-serif'``."
+    ),
+    'font.small': (
+        'medium',
+        'Meta setting that changes '
+        ':rcraw:`tick.labelsize`, :rcraw:`axes.labelsize`, :rcraw:`legend.fontsize`,'
+        "and :rcraw:`grid.labelsize` simultaneously. Default is ``'medium'``, i.e. "
+        'the value of :rcraw:`font.size`.' + _addendum_fonts
+    ),
+    'font.large': (
+        'med-large',
+        'Meta setting that changes '
+        ':rcraw:`abc.size`, :rcraw:`title.size`, :rcraw:`suptitle.size`, '
+        'and subplot label settings like :rcraw:`leftlabel.size` simultaneously. '
+        "Default is ``'med-large'``, i.e. 1.1. times :rcraw:`font.size`."
+        + _addendum_fonts
     ),
 
     # Gridlines
@@ -419,6 +442,11 @@ _rc_proplot = {
         False,
         'Boolean, indicates whether to label the meridians and parallels '
         'for `~proplot.axes.GeoAxes`.'
+    ),
+    'grid.labelrotate': (
+        True,  # False limits projections where labels are available
+        'Whether to rotate meridian and parallel `~proplot.axes.CartopyAxes` '
+        'gridline labels.'
     ),
     'grid.labelsize': (
         SMALL,
@@ -448,11 +476,6 @@ _rc_proplot = {
         False,
         'Whether to use inline labels for `~proplot.axes.CartopyAxes` '
         'meridian gridlines.'
-    ),
-    'grid.rotatelabels': (
-        True,  # False limits projections where labels are available
-        'Whether to rotate meridian and parallel `~proplot.axes.CartopyAxes` '
-        'gridline labels.'
     ),
     'grid.ratio': (
         GRIDRATIO,
@@ -545,12 +568,6 @@ _rc_proplot = {
         'Face color for land patches.'
     ),
 
-    # Large font bulk setting
-    'large': (
-        10,
-        'Font size for titles, "super" titles, and a-b-c subplot labels.'
-    ),
-
     # Left subplot labels
     'leftlabel.color': (
         'black',
@@ -639,13 +656,6 @@ _rc_proplot = {
         'Line width for river lines.'
     ),
 
-    # Small font bulk setting
-    'small': (
-        9,
-        'Font size for legend text, tick labels, axis labels, and text generated '
-        'with `~matplotlib.axes.Axes.text`.'
-    ),
-
     # Subplots settings
     'subplots.align': (
         False,
@@ -654,24 +664,24 @@ _rc_proplot = {
     ),
     'subplots.axpad': (
         '1em',
-        'Padding between adjacent subplots. ' + _units_addendum
+        'Padding between adjacent subplots. ' + _addendum_units
     ),
     'subplots.axwidth': (
         '18em',
-        'Default width of each axes. ' + _units_addendum
+        'Default width of each axes. ' + _addendum_units
     ),
     'subplots.pad': (
         '0.5em',
-        'Padding around figure edge. ' + _units_addendum
+        'Padding around figure edge. ' + _addendum_units
     ),
     'subplots.panelpad': (
         '0.5em',
         'Padding between subplots and panels, and between stacked panels. '
-        + _units_addendum
+        + _addendum_units
     ),
     'subplots.panelwidth': (
         '4em',
-        'Width of side panels. ' + _units_addendum
+        'Width of side panels. ' + _addendum_units
     ),
     'subplots.share': (
         3,
@@ -805,11 +815,11 @@ _rc_children = {
         'axes.edgecolor', 'axes.labelcolor',
         'tick.labelcolor', 'hatch.color', 'xtick.color', 'ytick.color'
     ),
-    'small': (  # the 'small' fonts
-        'font.size', 'tick.labelsize', 'xtick.labelsize', 'ytick.labelsize',
+    'font.small': (  # the 'small' fonts
+        'tick.labelsize', 'xtick.labelsize', 'ytick.labelsize',
         'axes.labelsize', 'legend.fontsize', 'grid.labelsize'
     ),
-    'large': (  # the 'large' fonts
+    'font.large': (  # the 'large' fonts
         'abc.size', 'figure.titlesize',
         'axes.titlesize', 'suptitle.size', 'title.size',
         'leftlabel.size', 'toplabel.size',
@@ -857,7 +867,7 @@ _rc_aliases = {
     'alpha': 'axes.alpha',
     'axes.titlesize': 'title.size',  # NOTE: translate "auto" to color
     'facecolor': 'axes.facecolor',
-    'fontname': 'font.family',
+    'font.name': 'font.family',
     'grid.below': 'axes.axisbelow',
     'title.pad': 'axes.titlepad',
 }
