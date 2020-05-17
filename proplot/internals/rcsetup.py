@@ -39,6 +39,7 @@ _rc_removed = {  # {key: version} dictionary
     'tick.labelpad': '0.6',
 }
 _rc_renamed = {  # {old_key: (new_key, version)} dictionary
+    'abc.format': ('abc.style', '0.5'),
     'align': ('subplots.align', '0.6'),
     'axes.facealpha': ('axes.alpha', '0.6'),
     'geoaxes.edgecolor': ('axes.edgecolor', '0.6'),
