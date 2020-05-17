@@ -190,10 +190,13 @@ optional
                     max_ = getattr(self, 'get_' + r + 'max')()
 
                 # Spine settings
-                kw = rc.fill({
-                    'linewidth': 'axes.linewidth',
-                    'color': 'axes.edgecolor',
-                }, context=True)
+                kw = rc.fill(
+                    {
+                        'linewidth': 'axes.linewidth',
+                        'color': 'axes.edgecolor',
+                    },
+                    context=True,
+                )
                 sides = ('inner', 'polar') if r == 'r' else ('start', 'end')
                 spines = [self.spines[side] for side in sides]
                 for spine, side in zip(spines, sides):
@@ -201,21 +204,27 @@ optional
 
                 # Grid and grid label settings
                 # NOTE: Not sure if polar lines inherit tick or grid props
-                kw = rc.fill({
-                    'color': x + 'tick.color',
-                    'labelcolor': 'tick.labelcolor',  # new props
-                    'labelsize': 'tick.labelsize',
-                    'grid_color': 'grid.color',
-                    'grid_alpha': 'grid.alpha',
-                    'grid_linewidth': 'grid.linewidth',
-                    'grid_linestyle': 'grid.linestyle',
-                }, context=True)
+                kw = rc.fill(
+                    {
+                        'color': x + 'tick.color',
+                        'labelcolor': 'tick.labelcolor',  # new props
+                        'labelsize': 'tick.labelsize',
+                        'grid_color': 'grid.color',
+                        'grid_alpha': 'grid.alpha',
+                        'grid_linewidth': 'grid.linewidth',
+                        'grid_linestyle': 'grid.linestyle',
+                    },
+                    context=True,
+                )
                 axis.set_tick_params(which='both', **kw)
                 # Label settings that can't be controlled with set_tick_params
-                kw = rc.fill({
-                    'fontfamily': 'font.family',
-                    'weight': 'tick.labelweight'
-                }, context=True)
+                kw = rc.fill(
+                    {
+                        'fontfamily': 'font.family',
+                        'weight': 'tick.labelweight'
+                    },
+                    context=True,
+                )
                 for t in axis.get_ticklabels():
                     t.update(kw)
 

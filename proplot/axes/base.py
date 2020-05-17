@@ -834,12 +834,15 @@ optional
         if len(fig._axes_main) > 1 and rc._context and rc._context[-1].mode == 1:
             kw = {}
         else:
-            kw = rc.fill({
-                'fontsize': 'suptitle.size',
-                'weight': 'suptitle.weight',
-                'color': 'suptitle.color',
-                'fontfamily': 'font.family'
-            }, context=True)
+            kw = rc.fill(
+                {
+                    'fontsize': 'suptitle.size',
+                    'weight': 'suptitle.weight',
+                    'color': 'suptitle.color',
+                    'fontfamily': 'font.family'
+                },
+                context=True,
+            )
         if suptitle or kw:
             fig._update_super_title(suptitle, **kw)
 
@@ -856,12 +859,15 @@ optional
             ('left', 'right', 'top', 'bottom'),
             (llabels, rlabels, tlabels, blabels)
         ):
-            kw = rc.fill({
-                'fontsize': side + 'label.size',
-                'weight': side + 'label.weight',
-                'color': side + 'label.color',
-                'fontfamily': 'font.family'
-            }, context=True)
+            kw = rc.fill(
+                {
+                    'fontsize': side + 'label.size',
+                    'weight': side + 'label.weight',
+                    'color': side + 'label.color',
+                    'fontfamily': 'font.family'
+                },
+                context=True,
+            )
             if labels or kw:
                 fig._update_subplot_labels(self, side, labels, **kw)
 
@@ -880,16 +886,23 @@ optional
             # NOTE: Border props only apply for "inner" title locations so we
             # need to store on the axes whenever they are modified and always
             # re-apply the ones stored on the axes.
-            kw = rc.fill({
-                'fontsize': 'abc.size',
-                'weight': 'abc.weight',
-                'color': 'abc.color',
-                'fontfamily': 'font.family',
-            }, context=True)
-            self._abc_border_kwargs.update(rc.fill({
-                'border': 'abc.border',
-                'borderwidth': 'abc.borderwidth',
-            }, context=True))
+            kw = rc.fill(
+                {
+                    'fontsize': 'abc.size',
+                    'weight': 'abc.weight',
+                    'color': 'abc.color',
+                    'fontfamily': 'font.family',
+                },
+                context=True
+            )
+            kwb = rc.fill(
+                {
+                    'border': 'abc.border',
+                    'borderwidth': 'abc.borderwidth',
+                },
+                context=True,
+            )
+            self._abc_border_kwargs.update(kwb)
             kw.update(self._abc_border_kwargs)
 
             # Label format
@@ -937,18 +950,25 @@ optional
         # still use custom title.size, title.weight, title.color
         # properties for retroactive support in older matplotlib versions.
         # First get params and update kwargs
-        kw = rc.fill({
-            'fontsize': 'title.size',
-            'weight': 'title.weight',
-            'color': 'title.color',
-            'fontfamily': 'font.family',
-        }, context=True)
+        kw = rc.fill(
+            {
+                'fontsize': 'title.size',
+                'weight': 'title.weight',
+                'color': 'title.color',
+                'fontfamily': 'font.family',
+            },
+            context=True
+        )
         if 'color' in kw and kw['color'] == 'auto':
             del kw['color']  # WARNING: matplotlib permits invalid color here
-        self._title_border_kwargs.update(rc.fill({
-            'border': 'title.border',
-            'borderwidth': 'title.borderwidth',
-        }, context=True))
+        kwb = rc.fill(
+            {
+                'border': 'title.border',
+                'borderwidth': 'title.borderwidth',
+            },
+            context=True,
+        )
+        self._title_border_kwargs.update(kwb)
         kw.update(self._title_border_kwargs)
 
         # Workflow 2, want this to come first so workflow 1 gets priority

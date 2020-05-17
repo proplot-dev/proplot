@@ -658,10 +658,13 @@ class CartesianAxes(base.Axes):
             # Background basics
             self.patch.set_clip_on(False)
             self.patch.set_zorder(-1)
-            kw_face = rc.fill({
-                'facecolor': 'axes.facecolor',
-                'alpha': 'axes.alpha'
-            }, context=True)
+            kw_face = rc.fill(
+                {
+                    'facecolor': 'axes.facecolor',
+                    'alpha': 'axes.alpha'
+                },
+                context=True,
+            )
             patch_kw = patch_kw or {}
             kw_face.update(patch_kw)
             self.patch.update(kw_face)
@@ -813,10 +816,13 @@ class CartesianAxes(base.Axes):
                 date = isinstance(axis.converter, mdates.DateConverter)
 
                 # Fix spines
-                kw = rc.fill({
-                    'color': 'axes.edgecolor',
-                    'linewidth': 'axes.linewidth',
-                }, context=True)
+                kw = rc.fill(
+                    {
+                        'color': 'axes.edgecolor',
+                        'linewidth': 'axes.linewidth',
+                    },
+                    context=True,
+                )
                 if color is not None:
                     kw['color'] = color
                 if linewidth is not None:
@@ -887,12 +893,15 @@ class CartesianAxes(base.Axes):
                     name = 'grid' if which == 'major' else 'gridminor'
                     if igrid is not None:
                         axis.grid(igrid, which=which)
-                    kwgrid = rc.fill({
-                        'grid_color': name + '.color',
-                        'grid_alpha': name + '.alpha',
-                        'grid_linewidth': name + '.linewidth',
-                        'grid_linestyle': name + '.linestyle',
-                    }, context=True)
+                    kwgrid = rc.fill(
+                        {
+                            'grid_color': name + '.color',
+                            'grid_alpha': name + '.alpha',
+                            'grid_linewidth': name + '.linewidth',
+                            'grid_linestyle': name + '.linestyle',
+                        },
+                        context=True,
+                    )
                     if gridcolor is not None:  # override for specific x/y axes
                         kw['grid_color'] = gridcolor
                     axis.set_tick_params(which=which, **kwgrid, **kwticks)
@@ -955,11 +964,14 @@ class CartesianAxes(base.Axes):
                     axis.set_label_position(labelloc)
 
                 # Tick label settings
-                kw = rc.fill({
-                    'labelcolor': 'tick.labelcolor',  # new props
-                    'labelsize': 'tick.labelsize',
-                    'color': x + 'tick.color',
-                }, context=True)
+                kw = rc.fill(
+                    {
+                        'labelcolor': 'tick.labelcolor',  # new props
+                        'labelsize': 'tick.labelsize',
+                        'color': x + 'tick.color',
+                    },
+                    context=True,
+                )
                 if color:
                     kw['color'] = color
                     kw['labelcolor'] = color
@@ -979,10 +991,13 @@ class CartesianAxes(base.Axes):
 
                 # Settings that can't be controlled by set_tick_params
                 # Also set rotation and alignment here
-                kw = rc.fill({
-                    'fontfamily': 'font.family',
-                    'weight': 'tick.labelweight'
-                }, context=True)
+                kw = rc.fill(
+                    {
+                        'fontfamily': 'font.family',
+                        'weight': 'tick.labelweight'
+                    },
+                    context=True,
+                )
                 if rotation is not None:
                     kw = {'rotation': rotation}
                     if x == 'x':
@@ -999,12 +1014,15 @@ class CartesianAxes(base.Axes):
                 # Axis label updates
                 # NOTE: This has to come after set_label_position, or ha or va
                 # overrides in label_kw are overwritten
-                kw = rc.fill({
-                    'color': 'axes.labelcolor',
-                    'weight': 'axes.labelweight',
-                    'fontsize': 'axes.labelsize',
-                    'fontfamily': 'font.family',
-                }, context=True)
+                kw = rc.fill(
+                    {
+                        'color': 'axes.labelcolor',
+                        'weight': 'axes.labelweight',
+                        'fontsize': 'axes.labelsize',
+                        'fontfamily': 'font.family',
+                    },
+                    context=True,
+                )
                 if label is not None:
                     kw['text'] = label
                 if color:
