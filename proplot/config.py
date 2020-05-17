@@ -846,6 +846,8 @@ class rc_configurator(object):
 
                 # *Very primitive* type conversion system for proplot settings.
                 # Matplotlib does this automatically.
+                if REGEX_STRING.match(val):  # also do this for matplotlib settings
+                    val = val[1:-1]  # remove quotes from string
                 if key in rc_proplot:
                     if not val:
                         val = None  # older proplot versions supported this
@@ -855,8 +857,7 @@ class rc_configurator(object):
                         try:
                             val = float(val) if '.' in val else int(val)
                         except ValueError:
-                            if REGEX_STRING.match(val):
-                                val = val[1:-1]  # remove quotes from string
+                            pass
 
                 # Add to dictionaries
                 try:
