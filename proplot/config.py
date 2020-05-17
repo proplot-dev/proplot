@@ -616,7 +616,7 @@ class rc_configurator(object):
                 kw[key] = value
         return kw
 
-    def context(self, *args, mode=0, fname=None, **kwargs):
+    def context(self, *args, mode=0, file=None, **kwargs):
         """
         Temporarily modify the rc settings in a "with as" block.
 
@@ -624,7 +624,7 @@ class rc_configurator(object):
         ----------
         *args
             Dictionaries of `rc` names and values.
-        fname : str, optional
+        file : str, optional
             Filename from which settings should be loaded.
         **kwargs
             `rc` names and values passed as keyword arguments. If the
@@ -684,8 +684,8 @@ class rc_configurator(object):
 
         # Add settings from file
         # TODO: Incoporate with matplotlib 'stylesheets'
-        if fname is not None:
-            kw_proplot, kw_matplotlib = self._load_file(fname)
+        if file is not None:
+            kw_proplot, kw_matplotlib = self._load_file(file)
             kwargs.update(kw_proplot)
             kwargs.update(kw_matplotlib)
 
