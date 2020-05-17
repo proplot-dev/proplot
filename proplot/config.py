@@ -412,9 +412,9 @@ class rc_configurator(object):
         # Zero linewidth almost always means zero tick length
         # TODO: Document this feature
         elif key == 'linewidth' and value == 0:
-            ikw_added, ikw_params = self._get_param_dicts('ticklen', 0)
-            kw_proplot.update(ikw_added)
-            kw_matplotlib.update(ikw_params)
+            ikw_proplot, ikw_matplotlib = self._get_param_dicts('ticklen', 0)
+            kw_proplot.update(ikw_proplot)
+            kw_matplotlib.update(ikw_matplotlib)
 
         # Tick length/major-minor tick length ratio
         elif key in ('tick.len', 'tick.lenratio'):
