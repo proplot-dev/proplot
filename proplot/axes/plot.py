@@ -2812,7 +2812,7 @@ def cmap_changer(
                     text_kw[key] = labels_kw.pop(key)
             labels_kw.setdefault('colors', colors)
             labels_kw.setdefault('inline_spacing', 3)
-            labels_kw.setdefault('fontsize', rc['small'])
+            labels_kw.setdefault('fontsize', rc['text.labelsize'])
             labs = cobj.clabel(fmt=fmt, **labels_kw)
             for lab in labs:
                 lab.update(text_kw)
@@ -2825,7 +2825,7 @@ def cmap_changer(
             obj.update_scalarmappable()
 
             # Get text positions and colors
-            labels_kw_ = {'size': rc['small'], 'ha': 'center', 'va': 'center'}
+            labels_kw_ = {'size': rc['text.labelsize'], 'ha': 'center', 'va': 'center'}
             labels_kw_.update(labels_kw)
             array = obj.get_array()
             paths = obj.get_paths()

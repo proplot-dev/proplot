@@ -60,8 +60,8 @@ _rc_renamed = {  # {old_key: (new_key, version)} dictionary
     'geogrid.lonstep': ('grid.lonstep', '0.6'),
     'geogrid.rotatelabels': ('grid.rotatelabels', '0.6'),
     'share': ('subplots.share', '0.6'),
-    'small': ('font.small', '0.6'),
-    'large': ('font.large', '0.6'),
+    'small': ('text.labelsize', '0.6'),
+    'large': ('text.titlesize', '0.6'),
     'span': ('subplots.span', '0.6'),
     'tight': ('subplots.tight', '0.6'),
     'tick.labelpad': ('tick.pad', '0.6'),
@@ -402,25 +402,10 @@ _rc_proplot = {
         'The color of the background axes patch.'
     ),
 
-    # Font setting
+    # Font settings
     'font.name': (
         'sans-serif',
         "Alias for :rcraw:`font.family`. The default is ``'sans-serif'``."
-    ),
-    'font.small': (
-        'medium',
-        'Meta setting that changes '
-        ':rcraw:`tick.labelsize`, :rcraw:`axes.labelsize`, :rcraw:`legend.fontsize`,'
-        "and :rcraw:`grid.labelsize` simultaneously. Default is ``'medium'``, i.e. "
-        'the value of :rcraw:`font.size`.' + _addendum_fonts
-    ),
-    'font.large': (
-        'med-large',
-        'Meta setting that changes '
-        ':rcraw:`abc.size`, :rcraw:`title.size`, :rcraw:`suptitle.size`, '
-        'and subplot label settings like :rcraw:`leftlabel.size` simultaneously. '
-        "Default is ``'med-large'``, i.e. 1.1. times :rcraw:`font.size`."
-        + _addendum_fonts
     ),
 
     # Gridlines
@@ -713,6 +698,23 @@ _rc_proplot = {
         'Figure title font weight.'
     ),
 
+    # Text settings
+    'text.labelsize': (
+        'medium',
+        'Meta setting that changes the label-like sizes '
+        ':rcraw:`tick.labelsize`, :rcraw:`axes.labelsize`, :rcraw:`legend.fontsize`,'
+        "and :rcraw:`grid.labelsize`. Default is ``'medium'``, i.e. "
+        'the value of :rcraw:`font.size`.' + _addendum_fonts
+    ),
+    'text.titlesize': (
+        'med-large',
+        'Meta setting that changes the title-like sizes '
+        ':rcraw:`abc.size`, :rcraw:`title.size`, :rcraw:`suptitle.size`, '
+        'and subplot label settings like :rcraw:`leftlabel.size`. '
+        "Default is ``'med-large'``, i.e. 1.1. times :rcraw:`font.size`."
+        + _addendum_fonts
+    ),
+
     # Tick settings
     'tick.color': (
         COLOR,
@@ -816,11 +818,11 @@ _rc_children = {
         'axes.edgecolor', 'axes.labelcolor',
         'tick.labelcolor', 'hatch.color', 'xtick.color', 'ytick.color'
     ),
-    'font.small': (  # the 'small' fonts
+    'text.labelsize': (  # the 'small' fonts
         'tick.labelsize', 'xtick.labelsize', 'ytick.labelsize',
         'axes.labelsize', 'legend.fontsize', 'grid.labelsize'
     ),
-    'font.large': (  # the 'large' fonts
+    'text.titlesize': (  # the 'large' fonts
         'abc.size', 'figure.titlesize',
         'axes.titlesize', 'suptitle.size', 'title.size',
         'leftlabel.size', 'toplabel.size',
