@@ -57,6 +57,17 @@ LOC_TRANSLATE = {  # for inset colorbars and legends TODO: also as text location
     'lc': 'lower center',
 }
 
+
+docstring.snippets['axes.other'] = """
+rc_kw : dict, optional
+    Dictionary containing `~proplot.config.rc` settings applied to
+    this axes using `~proplot.config.rc_configurator.context`.
+**kwargs
+    Passed to `Axes.format` or passed to `~proplot.config.rc_configurator.context`
+    and used to update axes `~proplot.config.rc` settings. For example,
+    ``abcstyle='A.'`` modifies the :rcraw:`abc.style` setting.
+"""
+
 docstring.snippets['axes.proj'] = """
 The map projection specification(s). If ``'cartesian'`` (the default), a
 `~proplot.axes.CartesianAxes` is created. If ``'polar'``, a

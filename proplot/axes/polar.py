@@ -10,7 +10,7 @@ from .. import ticker as pticker
 from .. import constructor
 from ..config import rc
 from ..internals import ic  # noqa: F401
-from ..internals import warnings, _not_none
+from ..internals import docstring, warnings, _not_none
 
 __all__ = ['PolarAxes']
 
@@ -38,6 +38,7 @@ class PolarAxes(base.Axes, mproj.PolarAxes):
         for axis in (self.xaxis, self.yaxis):
             axis.set_tick_params(which='both', size=0)
 
+    @docstring.add_snippets
     def format(
         self, *args,
         r0=None, theta0=None, thetadir=None,
@@ -104,14 +105,7 @@ optional
 
         Other parameters
         ----------------
-        rc_kw : dict, optional
-            Dictionary containing `~proplot.config.rc` settings applied to
-            this axes using `~proplot.config.rc_configurator.context`.
-        **kwargs
-            Passed to `Axes.format` or passed to
-            `~proplot.config.rc_configurator.context` and used to update the
-            axes `~proplot.config.rc` settings. For example,
-            ``axestitlesize=15`` modifies the :rcraw:`axes.titlesize` setting.
+        %(axes.other)s
 
         See also
         --------

@@ -462,6 +462,7 @@ class CartesianAxes(base.Axes):
             axis = getattr(ax, x + 'axis')
             axis.label.update(kwargs)
 
+    @docstring.add_snippets
     def format(
         self, *,
         aspect=None,
@@ -556,8 +557,10 @@ class CartesianAxes(base.Axes):
             *y* axis.
         xgrid, ygrid : bool, optional
             Whether to draw major gridlines on the *x* and *y* axis.
+            Use `grid` to toggle both.
         xgridminor, ygridminor : bool, optional
             Whether to draw minor gridlines for the *x* and *y* axis.
+            Use `gridminor` to toggle both.
         xticklabeldir, yticklabeldir : {'in', 'out'}
             Whether to place *x* and *y* axis tick label text inside
             or outside the axes.
@@ -634,14 +637,7 @@ class CartesianAxes(base.Axes):
 
         Other parameters
         ----------------
-        rc_kw : dict, optional
-            Dictionary containing `~proplot.config.rc` settings applied to
-            this axes using `~proplot.config.rc_configurator.context`.
-        **kwargs
-            Passed to `Axes.format` or passed to
-            `~proplot.config.rc_configurator.context` and used to update
-            axes `~proplot.config.rc` settings. For example,
-            ``axestitlesize=15`` modifies the :rcraw:`axes.titlesize` setting.
+        %(axes.other)s
 
         See also
         --------
@@ -664,7 +660,7 @@ class CartesianAxes(base.Axes):
             self.patch.set_zorder(-1)
             kw_face = rc.fill({
                 'facecolor': 'axes.facecolor',
-                'alpha': 'axes.facealpha'
+                'alpha': 'axes.alpha'
             }, context=True)
             patch_kw = patch_kw or {}
             kw_face.update(patch_kw)
@@ -832,6 +828,7 @@ class CartesianAxes(base.Axes):
                     # In this case just have spines on edges by default
                     if bounds is not None and spineloc not in sides:
                         spineloc = sides[0]
+
                     # Eliminate sides
                     if spineloc == 'neither':
                         spine.set_visible(False)
@@ -852,8 +849,8 @@ class CartesianAxes(base.Axes):
                                 spine.set_position(spineloc)
                             except ValueError:
                                 raise ValueError(
-                                    f'Invalid {x} spine location {spineloc!r}.'
-                                    f' Options are '
+                                    f'Invalid {x} spine location {spineloc!r}. '
+                                    'Options are: '
                                     + ', '.join(map(
                                         repr, (*sides, 'both', 'neither')
                                     )) + '.'
@@ -900,15 +897,13 @@ class CartesianAxes(base.Axes):
                         kw['grid_color'] = gridcolor
                     axis.set_tick_params(which=which, **kwgrid, **kwticks)
 
-                # Tick and ticklabel properties that apply to major and minor
-                # * Weird issue causes set_tick_params to reset/forget grid is turned
-                #   on if you access tick.gridOn directly, instead of passing through
-                #   tick_params. Since gridOn is undocumented feature, don't use it.
-                #   So calling _format_axes() a second time will remove the lines.
-                # * Can specify whether the left/right/bottom/top spines get ticks;
-                #   sides will be group of left/right or top/bottom.
-                # * Includes option to draw spines but not draw ticks on that
-                #   spine, e.g. on the left/right edges
+                # Tick and ticklabel properties that apply equally for major/minor lines
+                # Weird issue causes set_tick_params to reset/forget grid is turned
+                # on if you access tick.gridOn directly, instead of passing through
+                # tick_params. Since gridOn is undocumented feature, don't use it.
+                # So calling _format_axes() a second time will remove the lines.
+                # First determine tick sides, avoiding situation where we draw ticks
+                # on top of invisible spine.
                 kw = {}
                 loc2sides = {
                     None: None,
@@ -969,12 +964,12 @@ class CartesianAxes(base.Axes):
                     kw['color'] = color
                     kw['labelcolor'] = color
 
-                # Tick direction and rotation
-                if tickdir == 'in':
-                    kw['pad'] = 1  # ticklabels should be much closer
+                # Tick label direction and rotation
+                if tickdir == 'in':  # ticklabels should be much closer
+                    kw['pad'] = 1.0
                 if ticklabeldir == 'in':  # put tick labels inside the plot
                     tickdir = 'in'
-                    kw['pad'] = -1 * sum(
+                    kw['pad'] = -1.0 * sum(
                         rc[f'{x}tick.{key}']
                         for key in ('major.size', 'major.pad', 'labelsize')
                     )

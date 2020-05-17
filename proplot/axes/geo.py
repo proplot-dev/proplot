@@ -21,7 +21,7 @@ from .. import constructor
 from ..utils import arange
 from ..config import rc
 from ..internals import ic  # noqa: F401
-from ..internals import warnings, _version, _version_cartopy, _not_none
+from ..internals import docstring, warnings, _version, _version_cartopy, _not_none
 try:
     from cartopy.mpl.geoaxes import GeoAxes as GeoAxesCartopy
 except ModuleNotFoundError:
@@ -71,6 +71,7 @@ class GeoAxes(base.Axes):
         self._latlines_labels = None
         super().__init__(*args, **kwargs)
 
+    @docstring.add_snippets
     def format(
         self, *,
         lonlim=None, latlim=None, boundinglat=None, grid=None,
@@ -163,14 +164,7 @@ optional
 
         Other parameters
         ----------------
-        rc_kw : dict, optional
-            Dictionary containing `~proplot.config.rc` settings applied to
-            this axes using `~proplot.config.rc_configurator.context`.
-        **kwargs
-            Passed to `Axes.format` or passed to
-            `~proplot.config.rc_configurator.context` and used to update
-            axes `~proplot.config.rc` settings. For example,
-            ``axestitlesize=15`` modifies the :rcraw:`axes.titlesize` setting.
+        %(axes.other)s
 
         See also
         --------
