@@ -50,6 +50,7 @@ class PolarAxes(base.Axes, mproj.PolarAxes):
         thetalabels=None, rlabels=None,
         thetalocator_kw=None, rlocator_kw=None,
         thetaformatter_kw=None, rformatter_kw=None,
+        patch_kw=None,
         **kwargs
     ):
         """
@@ -102,6 +103,7 @@ optional
         thetaformatter_kw, rformatter_kw : dict-like, optional
             The azimuthal and radial label formatter settings. Passed to
             `~proplot.constructor.Formatter`.
+        %(axes.patch_kw)s
 
         Other parameters
         ----------------
@@ -114,6 +116,18 @@ optional
         """
         rc_kw, rc_mode, kwargs = self._parse_format(**kwargs)
         with rc.context(rc_kw, mode=rc_mode):
+            # Background patch
+            kw_face = rc.fill(
+                {
+                    'facecolor': 'axes.facecolor',
+                    'alpha': 'axes.alpha'
+                },
+                context=True,
+            )
+            patch_kw = patch_kw or {}
+            kw_face.update(patch_kw)
+            self.patch.update(kw_face)
+
             # Not mutable default args
             thetalocator_kw = thetalocator_kw or {}
             thetaformatter_kw = thetaformatter_kw or {}

@@ -155,12 +155,10 @@ optional
             :rcraw:`land`, :rcraw:`ocean`, :rcraw:`coast`, :rcraw:`rivers`,
             :rcraw:`lakes`, :rcraw:`borders`, and :rcraw:`innerborders`
             settings passed to `~proplot.config.rc_configurator.context`.
-            The style can be modified by passing additional settings, e.g.
-            ``ax.format(landcolor='g')``.
-        patch_kw : dict-like, optional
-            Keyword arguments used to update the background patch object. You
-            can use this, for example, to set background hatching with
-            ``patch_kw={'hatch': 'xxx'}``.
+            The style can be modified using additional `rc` settings. For example,
+            to change :rcraw:`land.color`, use ``ax.format(landcolor='green')``,
+            and to change :rcraw:`land.zorder`, use ``ax.format(landzorder=4)``.
+        %(axes.patch_kw)s
 
         Other parameters
         ----------------

@@ -630,10 +630,7 @@ class CartesianAxes(base.Axes):
             `~matplotlib.ticker.FixedLocator` instance. Default is ``False``.
             If your axis ticks are doing weird things (for example, ticks
             drawn outside of the axis spine), try setting this to ``True``.
-        patch_kw : dict-like, optional
-            Keyword arguments used to update the background patch object. You
-            can use this, for example, to set background hatching with
-            ``patch_kw={'hatch':'xxx'}``.
+        %(axes.patch_kw)s
 
         Other parameters
         ----------------
@@ -655,9 +652,7 @@ class CartesianAxes(base.Axes):
         """
         rc_kw, rc_mode, kwargs = self._parse_format(**kwargs)
         with rc.context(rc_kw, mode=rc_mode):
-            # Background basics
-            self.patch.set_clip_on(False)
-            self.patch.set_zorder(-1)
+            # Background patch
             kw_face = rc.fill(
                 {
                     'facecolor': 'axes.facecolor',
