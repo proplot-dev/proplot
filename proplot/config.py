@@ -381,10 +381,11 @@ class rc_configurator(object):
 
         # Handle deprecations
         if key in rcsetup._rc_removed:
-            version = rcsetup._rc_removed[key]
-            warnings._warn_proplot(
-                f'rc setting {key!r} was removed in version {version}.'
-            )
+            alternative, version = rcsetup._rc_removed[key]
+            message = f'rc setting {key!r} was removed in version {version}.'
+            if alternative:  # provide an alternative
+                message = f'{message} {alternative}'
+            warnings._warn_proplot(warnings)
             return {}, {}, {}
         if key in rcsetup._rc_renamed:
             key_new, version = rcsetup._rc_renamed[key]
