@@ -1467,6 +1467,13 @@ for _rc_sub in ('cmaps', 'cycles', 'colors', 'fonts'):
     if not os.path.isdir(_rc_sub):
         os.mkdir(_rc_sub)
 
+# Add custom font scalings to font_manager
+# NOTE: This is because we prefer large sizes
+if hasattr(mfonts, 'font_scalings'):
+    mfonts.font_scalings['med-small'] = 0.9
+    mfonts.font_scalings['med-large'] = 1.1
+
+
 # Convert colormaps that *should* be LinearSegmented from Listed
 for _name in ('viridis', 'plasma', 'inferno', 'magma', 'cividis', 'twilight'):
     _cmap = pcolors._cmap_database.get(_name, None)
