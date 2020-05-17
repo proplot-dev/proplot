@@ -262,15 +262,15 @@ CARTOPY_RESOS = {
     'lo': '110m',
     'med': '50m',
     'hi': '10m',
-    'xhi': '10m',  # extra high
-    'xxhi': '10m',  # extra extra high
+    'x-hi': '10m',  # extra high
+    'xx-hi': '10m',  # extra extra high
 }
 BASEMAP_RESOS = {
     'lo': 'c',  # coarse
     'med': 'l',
     'hi': 'i',
-    'xhi': 'h',
-    'xxhi': 'f',  # fine
+    'x-hi': 'h',
+    'xx-hi': 'f',  # fine
 }
 
 # Geographic feature properties

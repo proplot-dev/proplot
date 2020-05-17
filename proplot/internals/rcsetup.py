@@ -611,7 +611,7 @@ _rc_proplot = {
     'reso': (
         'med',
         'Resolution for `~proplot.axes.GeoAxes` geographic features. '
-        "Must be one of ``'lo'``, ``'med'``, or ``'hi'``."
+        "Must be one of ``'lo'``, ``'med'``, ``'hi'``, ``'x-hi'``, or ``'xx-hi'``."
     ),
 
     # Right subplot labels
