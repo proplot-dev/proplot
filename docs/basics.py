@@ -22,8 +22,8 @@
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_intro:
 #
-# Figures and subplots
-# --------------------
+# Creating figures
+# ----------------
 #
 # ProPlot works by subclassing the matplotlib `~matplotlib.figure.Figure` and
 # `~matplotlib.axes.Axes` classes. You can generate grids of proplot
@@ -47,12 +47,21 @@
 # and modify the axes using `~proplot.axes.Axes.format` and
 # `~proplot.ui.SubplotsContainer`. See the :ref:`formatting guide <ug_format>`
 # and :ref:`subplots container <ug_container>` sections for details.
+#
 # Please note that by default, ProPlot sets :rcraw:`figure.facecolor` to gray,
 # :rcraw:`savefig.facecolor` to white, and :rcraw:`savefig.transparent` to ``True``.
 # That is, the default display background is gray, the default background for
 # saved figures is transparent, and the default background is white when you pass
-# ``transparent=False`` to `~matplotlib.figure.Figure.savefig`. See the
-# :ref:`configuration section <ug_proplotrc>` for how to change this.
+# ``transparent=False`` to `~matplotlib.figure.Figure.savefig`.
+# ProPlot also sets the default :rcraw:`savefig.format` to PDF, because
+# (1) vector graphic formats are always more suitable for matplotlib figures than
+# raster formats, (2) most academic journals these days accept PDF format figures
+# alongside the older EPS format, (3) PDF figures are easy to embed in LaTeX documents,
+# and (4) the EPS format does not support transparent graphic elements. If you *do*
+# need raster graphics, ProPlot sets the default :rcraw:`savefig.dpi` to 1200 dots per
+# inch, which is recommended by most journals as the minimum resolution for rasterized
+# figures containing lines and text. See the :ref:`configuration section <ug_proplotrc>`
+# for how to change these settings.
 
 # %%
 import proplot as plot
