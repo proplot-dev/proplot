@@ -567,7 +567,17 @@ class rc_configurator(object):
         Translate font size to numeric.
         """
         if isinstance(size, str):
-            size = rc_matplotlib['font.size'] * mfonts.font_scalings[size]
+            try:
+                scale = mfonts.font_scalings[size]
+            except KeyError:
+                raise ValueError(
+                    f'Invalid font scaling {size!r}. Options are: '
+                    + ', '.join(
+                        f'{key}={value}' for key, value in mfonts.font_scalings.items()
+                    ) + '.'
+                )
+            else:
+                size = rc_matplotlib['font.size'] * scale
         return size
 
     def category(self, cat, *, trimcat=True, context=False):
