@@ -177,7 +177,7 @@ plot.rc.reset()
 # %%
 import proplot as plot
 plot.rc.linewidth = 2
-plot.rc.small = plot.rc.large = 11
+plot.rc.fontsize = 11
 locator = [0, 0.25, 0.5, 0.75, 1]
 fig, axs = plot.subplots([[1, 1, 2, 2], [0, 3, 3, 0]], axwidth=1.5, share=0)
 
