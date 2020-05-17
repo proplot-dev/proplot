@@ -34,9 +34,8 @@ TICKRATIO = 0.8  # very slight width reduction
 
 # Deprecated settings
 # TODO: Add 'openrgb' setting for renaming shorthand color names to
-_rc_removed = {  # {key: version} dictionary
-    'rgbcycle': '0.6',
-    'tick.labelpad': '0.6',
+_rc_removed = {  # {key: (alternative, version)} dictionary
+    'rgbcycle': ('', '0.6'),  # no alternative, we no longer offer this feature
 }
 _rc_renamed = {  # {old_key: (new_key, version)} dictionary
     'abc.format': ('abc.style', '0.5'),
@@ -65,6 +64,7 @@ _rc_renamed = {  # {old_key: (new_key, version)} dictionary
     'large': ('font.large', '0.6'),
     'span': ('subplots.span', '0.6'),
     'tight': ('subplots.tight', '0.6'),
+    'tick.labelpad': ('tick.pad', '0.6'),
 }
 
 # ProPlot overrides of matplotlib default style
@@ -826,7 +826,11 @@ _rc_children = {
         'leftlabel.size', 'toplabel.size',
         'rightlabel.size', 'bottomlabel.size'
     ),
-    'linewidth': (  # also sets minor tick widths through tick.ratio
+    'linewidth': (
+        # also sets minor tick widths through tick.ratio
+        # NOTE: do not add grid.linewidth to this because common use case is
+        # making the edge a bit thicker to *highlight* a subplot, and generally
+        # we do not want that to affect gridlines.
         'axes.linewidth', 'hatch.linewidth',
         'xtick.major.width', 'ytick.major.width'
     ),
