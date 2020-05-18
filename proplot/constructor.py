@@ -92,9 +92,9 @@ if hasattr(mpolar, 'ThetaLocator'):
     LOCATORS['theta'] = mpolar.ThetaLocator
 if cticker is not object:
     if hasattr(cticker, 'LongitudeLocator'):
-        LOCATORS['clon'] = cticker.LongitudeLocator
+        LOCATORS['lon'] = cticker.LongitudeLocator
     if hasattr(cticker, 'LatitudeLocator'):
-        LOCATORS['clat'] = cticker.LatitudeLocator
+        LOCATORS['lat'] = cticker.LatitudeLocator
 
 # Mapping of strings to `~matplotlib.ticker.Formatter` classes. See
 # `Formatter` for a table.
@@ -125,9 +125,9 @@ if hasattr(mpolar, 'ThetaFormatter'):
     FORMATTERS['theta'] = mpolar.ThetaFormatter
 if cticker is not None:
     if hasattr(cticker, 'LongitudeFormatter'):
-        FORMATTERS['clon'] = cticker.LongitudeFormatter
+        FORMATTERS['lon'] = cticker.LongitudeFormatter
     if hasattr(cticker, 'LatitudeFormatter'):
-        FORMATTERS['clat'] = cticker.LatitudeFormatter
+        FORMATTERS['lat'] = cticker.LatitudeFormatter
 
 # The registered scale names and their associated
 # `~matplotlib.scale.ScaleBase` classes. See `Scale` for a table.
@@ -888,8 +888,8 @@ def Locator(locator, *args, **kwargs):
         ``'minute'``            `~matplotlib.dates.MinuteLocator`             Ticks every ``N`` minutes
         ``'second'``            `~matplotlib.dates.SecondLocator`             Ticks every ``N`` seconds
         ``'microsecond'``       `~matplotlib.dates.MicrosecondLocator`        Ticks every ``N`` microseconds
-        ``'clon'``              `~cartopy.mpl.ticker.LongitudeLocator`        "Nice" longitude gridline locations for `~proplot.axes.CartopyAxes`.
-        ``'clat'``              `~cartopy.mpl.ticker.LatitudeLocator`         "Nice" latitude gridline locations for `~proplot.axes.CartopyAxes`.
+        ``'lon'``               `~cartopy.mpl.ticker.LongitudeLocator`        "Nice" longitude gridline locations for `~proplot.axes.CartopyAxes`.
+        ``'lat'``               `~cartopy.mpl.ticker.LatitudeLocator`         "Nice" latitude gridline locations for `~proplot.axes.CartopyAxes`.
         ======================  ============================================  =====================================================================================
 
     Other parameters
@@ -1008,10 +1008,8 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
         ``'deg'``               `~proplot.ticker.AutoFormatter` preset          Trailing degree symbol
         ``'deglat'``            `~proplot.ticker.AutoFormatter` preset          Trailing degree symbol and cardinal "SN" indicator
         ``'deglon'``            `~proplot.ticker.AutoFormatter` preset          Trailing degree symbol and cardinal "WE" indicator
-        ``'lat'``               `~proplot.ticker.AutoFormatter` preset          Cardinal "SN" indicator
-        ``'lon'``               `~proplot.ticker.AutoFormatter` preset          Cardinal "WE" indicator
-        ``'clon'``              `~cartopy.mpl.ticker.LongitudeFormatter`        Longitude labels with degrees/minutes/seconds support
-        ``'clat'``              `~cartopy.mpl.ticker.LatitudeFormatter`         Latitude labels with degrees/minutes/seconds support
+        ``'lon'``               `~cartopy.mpl.ticker.LongitudeFormatter`        Cartopy longitude labels with degrees/minutes/seconds support
+        ``'lat'``               `~cartopy.mpl.ticker.LatitudeFormatter`         Cartopy latitude labels with degrees/minutes/seconds support
         ======================  ==============================================  ===============================================================
 
     date : bool, optional
@@ -1069,7 +1067,7 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
                 kwargs.setdefault('number', number)
                 formatter = 'frac'
             # Cartographic shorthands
-            if formatter in ('deg', 'deglon', 'deglat', 'lon', 'lat'):
+            if formatter in ('deg', 'deglon', 'deglat'):
                 negpos, suffix = None, None
                 if 'deg' in formatter:
                     suffix = '\N{DEGREE SIGN}'
