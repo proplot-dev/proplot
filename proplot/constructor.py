@@ -35,9 +35,10 @@ except ImportError:
     Basemap = object
 try:
     import cartopy.crs as ccrs
-    CRS = ccrs.CRS
+    import cartopy.mpl.ticker as cticker
+    from cartopy.crs import CRS
 except ModuleNotFoundError:
-    CRS = ccrs = object
+    CRS = ccrs = cticker = object
 
 __all__ = [
     'Colormap', 'Colors', 'Cycle', 'Norm',
@@ -89,6 +90,11 @@ LOCATORS = {
 }
 if hasattr(mpolar, 'ThetaLocator'):
     LOCATORS['theta'] = mpolar.ThetaLocator
+if cticker is not object:
+    if hasattr(cticker, 'LongitudeLocator'):
+        LOCATORS['clon'] = cticker.LongitudeLocator
+    if hasattr(cticker, 'LatitudeLocator'):
+        LOCATORS['clat'] = cticker.LatitudeLocator
 
 # Mapping of strings to `~matplotlib.ticker.Formatter` classes. See
 # `Formatter` for a table.
@@ -117,6 +123,11 @@ if hasattr(mdates, 'ConciseDateFormatter'):
     FORMATTERS['concise'] = mdates.ConciseDateFormatter
 if hasattr(mpolar, 'ThetaFormatter'):
     FORMATTERS['theta'] = mpolar.ThetaFormatter
+if cticker is not None:
+    if hasattr(cticker, 'LongitudeFormatter'):
+        FORMATTERS['clon'] = cticker.LongitudeFormatter
+    if hasattr(cticker, 'LatitudeFormatter'):
+        FORMATTERS['clat'] = cticker.LatitudeFormatter
 
 # The registered scale names and their associated
 # `~matplotlib.scale.ScaleBase` classes. See `Scale` for a table.
@@ -877,6 +888,8 @@ def Locator(locator, *args, **kwargs):
         ``'minute'``            `~matplotlib.dates.MinuteLocator`             Ticks every ``N`` minutes
         ``'second'``            `~matplotlib.dates.SecondLocator`             Ticks every ``N`` seconds
         ``'microsecond'``       `~matplotlib.dates.MicrosecondLocator`        Ticks every ``N`` microseconds
+        ``'clon'``              `~cartopy.mpl.ticker.LongitudeLocator`        "Nice" longitude gridline locations for `~proplot.axes.CartopyAxes`.
+        ``'clat'``              `~cartopy.mpl.ticker.LatitudeLocator`         "Nice" latitude gridline locations for `~proplot.axes.CartopyAxes`.
         ======================  ============================================  =====================================================================================
 
     Other parameters
@@ -997,6 +1010,8 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
         ``'deglon'``            `~proplot.ticker.AutoFormatter` preset          Trailing degree symbol and cardinal "WE" indicator
         ``'lat'``               `~proplot.ticker.AutoFormatter` preset          Cardinal "SN" indicator
         ``'lon'``               `~proplot.ticker.AutoFormatter` preset          Cardinal "WE" indicator
+        ``'clon'``              `~cartopy.mpl.ticker.LongitudeFormatter`        Longitude labels with degrees/minutes/seconds support
+        ``'clat'``              `~cartopy.mpl.ticker.LatitudeFormatter`         Latitude labels with degrees/minutes/seconds support
         ======================  ==============================================  ===============================================================
 
     date : bool, optional
