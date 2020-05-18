@@ -37,6 +37,65 @@ negpos : str, optional
 """
 
 
+class _SimpleMinorLocator(mticker.Locator):
+    """
+    Simple locator that intakes an existing major locator rather than depending
+    on the axis. This is used for minor geographic gridlines.
+    """
+    def __init__(self, locator, n=None):
+        """
+        Parameters
+        ----------
+        locator : `~matplotlib.ticker.Locator`
+            The locator used for "major" tick lines.
+        n : int, optional
+            The number of subdivisions of the interval between major ticks. For example,
+            n=2 will place a single minor tick midway between major ticks.
+        """
+        if not isinstance(locator, mticker.Locator):
+            raise ValueError('locator must be matplotlib.ticker.Locator instance.')
+        self._locator = locator
+        self.ndivs = n
+
+    def __call__(self):
+        """
+        Not implemented.
+        """
+        raise NotImplementedError(
+            'Locator is independent of the axis. Please use tick_values instead.'
+        )
+
+    def tick_values(self, vmin, vmax):  # noqa: U100
+        """
+        Return the tick values. This is adapted from
+        `matplotlib.ticker.AutoMinorLocator.__call__`.
+        """
+        if vmin > vmax:
+            vmin, vmax = vmax, vmin
+        majorlocs = self._locator.tick_values(vmin, vmax)
+        try:
+            majorstep = majorlocs[1] - majorlocs[0]
+        except IndexError:
+            return []
+
+        if self.ndivs is None:
+            majorstep_no_exponent = 10 ** (np.log10(majorstep) % 1)
+            if np.isclose(majorstep_no_exponent, [1.0, 2.5, 5.0, 10.0]).any():
+                ndivs = 5
+            else:
+                ndivs = 4
+        else:
+            ndivs = self.ndivs
+
+        t0 = majorlocs[0]
+        minorstep = majorstep / ndivs
+        tmin = ((vmin - t0) // minorstep + 1) * minorstep
+        tmax = ((vmax - t0) // minorstep + 1) * minorstep
+        locs = np.arange(tmin, tmax, minorstep) + t0
+
+        return self.raise_if_exceeds(locs)
+
+
 class AutoFormatter(mticker.ScalarFormatter):
     """
     The new default formatter. Differs from `~matplotlib.ticker.ScalarFormatter`
