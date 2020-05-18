@@ -109,7 +109,7 @@ class AutoFormatter(mticker.ScalarFormatter):
         # Custom string formatting
         string = self._minus_format(string)
         if self._zerotrim:
-            string = self._trim_trailing_zeros(string, self.get_useLocale())
+            string = self._trim_trailing_zeros(string)
 
         # Prefix and suffix
         string = self._add_prefix_suffix(string, self._prefix, self._suffix)
@@ -128,8 +128,7 @@ class AutoFormatter(mticker.ScalarFormatter):
             sign, string = string[0], string[1:]
         return sign + prefix + string + suffix
 
-    @staticmethod
-    def _fix_small_number(x, string, offset=2):
+    def _fix_small_number(self, x, string, offset=2):
         """
         Fix formatting for non-zero number that gets formatted as zero. The `offset`
         controls the offset from the true floating point precision at which we want
@@ -142,7 +141,7 @@ class AutoFormatter(mticker.ScalarFormatter):
         # precision. Common issue is e.g. levels=plot.arange(-1, 1, 0.1).
         # This choice satisfies even 1000 additions of 0.1 to -100.
         match = REGEX_ZERO.match(string)
-        decimal_point = AutoFormatter._get_decimal_point()
+        decimal_point = self._get_decimal_point()
 
         if match and x != 0:
             # Get initial precision spit out by algorithm
@@ -168,17 +167,24 @@ class AutoFormatter(mticker.ScalarFormatter):
 
         return string
 
-    @staticmethod
-    def _get_decimal_point(use_locale=None):
+    def _get_decimal_point(self, use_locale=None):
         """
         Get decimal point symbol for current locale (e.g. in Europe will be comma).
         """
         from .config import rc
+        use_locale = _not_none(
+            use_locale, self.get_useLocale(), rc['axes.formatter.use_locale']
+        )
+        return locale.localeconv()['decimal_point'] if use_locale else '.'
+
+    @staticmethod
+    def _get_default_decimal_point(use_locale=None):
+        """
+        Get decimal point symbol for current locale. Called externally.
+        """
+        from .config import rc
         use_locale = _not_none(use_locale, rc['axes.formatter.use_locale'])
-        if use_locale:
-            return locale.localeconv()['decimal_point']
-        else:
-            return '.'
+        return locale.localeconv()['decimal_point'] if use_locale else '.'
 
     @staticmethod
     def _minus_format(string):
@@ -214,12 +220,11 @@ class AutoFormatter(mticker.ScalarFormatter):
         eps = abs(x) / 1000
         return (x + eps) < tickrange[0] or (x - eps) > tickrange[1]
 
-    @staticmethod
-    def _trim_trailing_zeros(string, use_locale=None):
+    def _trim_trailing_zeros(self, string):
         """
         Sanitize tick label strings.
         """
-        decimal_point = AutoFormatter._get_decimal_point()
+        decimal_point = self._get_decimal_point()
         if decimal_point in string:
             string = string.rstrip('0').rstrip(decimal_point)
         return string
@@ -249,7 +254,7 @@ def SigFigFormatter(sigfig=1, zerotrim=None):
         digits += sigfig - 1
         x = np.round(x, digits)
         string = ('{:.%df}' % max(0, digits)).format(x)
-        string = string.replace('.', AutoFormatter._get_decimal_point())
+        string = string.replace('.', AutoFormatter._get_default_decimal_point())
 
         # Custom string formatting
         string = AutoFormatter._minus_format(string)
@@ -263,7 +268,7 @@ def SigFigFormatter(sigfig=1, zerotrim=None):
 @docstring.add_snippets
 def SimpleFormatter(
     precision=6, zerotrim=None, tickrange=None,
-    prefix=None, suffix=None, negpos=None, **kwargs
+    prefix=None, suffix=None, negpos=None,
 ):
     """
     Return a `~matplotlib.ticker.FuncFormatter` that replicates the
@@ -294,7 +299,7 @@ def SimpleFormatter(
 
         # Default string formatting
         string = ('{:.%df}' % precision).format(x)
-        string = string.replace('.', AutoFormatter._get_decimal_point())
+        string = string.replace('.', AutoFormatter._get_default_decimal_point())
 
         # Custom string formatting
         string = AutoFormatter._minus_format(string)
