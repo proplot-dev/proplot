@@ -454,7 +454,7 @@ optional
 
             # Apply worker functions
             self._update_extent(lonlim=lonlim, latlim=latlim, boundinglat=boundinglat)
-            self._update_patches(patch_kw or {})
+            self._update_boundary(patch_kw or {})
             self._update_features()
             self._update_major_gridlines(
                 longrid=longrid, latgrid=latgrid,  # gridline toggles
@@ -481,6 +481,27 @@ optional
         else:
             raise ValueError(f'Unexpected grid.below value {axisbelow!r}.')
         return zorder
+
+    def _get_boundary_props(self):
+        """
+        Return map boundary properties.
+        """
+        rc_mode = rc._get_context_mode()
+        kw_face = rc.fill(
+            {
+                'facecolor': 'axes.facecolor',
+                'alpha': 'axes.alpha',
+            },
+            context=(rc_mode == 2),
+        )
+        kw_edge = rc.fill(
+            {
+                'linewidth': 'axes.linewidth',
+                'edgecolor': 'axes.edgecolor',
+            },
+            context=(rc_mode == 2),
+        )
+        return kw_face, kw_edge
 
     def _get_gridline_props(self, which='major', context=True):
         """
@@ -818,25 +839,11 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
                 extent = lonlim + latlim
                 self.set_extent(extent, crs=ccrs.PlateCarree())
 
-    def _update_patches(self, patch_kw=None):
+    def _update_boundary(self, patch_kw=None):
         """
-        Update the map background based on rc settings.
+        Update the map boundary patches.
         """
-        # Update background patch
-        kw_face = rc.fill(
-            {
-                'facecolor': 'axes.facecolor',
-                'alpha': 'axes.alpha',
-            },
-            context=True
-        )
-        kw_edge = rc.fill(
-            {
-                'edgecolor': 'geoaxes.edgecolor',
-                'linewidth': 'geoaxes.linewidth',
-            },
-            context=True
-        )
+        kw_edge, kw_face = self._get_boundary_props()
         kw_face.update(patch_kw or {})
         self.background_patch.update(kw_face)
         self.outline_patch.update(kw_edge)
@@ -1206,25 +1213,11 @@ class BasemapAxes(GeoAxes):
                 "'urcrnrx', 'urcrnry', 'width', or 'height'."
             )
 
-    def _update_patches(self, patch_kw=None):
+    def _update_boundary(self, patch_kw=None):
         """
         Update the map boundary patches.
         """
-        # Map boundary settings
-        kw_face = rc.fill(
-            {
-                'facecolor': 'axes.facecolor',
-                'alpha': 'axes.alpha',
-            },
-            context=True
-        )
-        kw_edge = rc.fill(
-            {
-                'linewidth': 'axes.linewidth',
-                'edgecolor': 'axes.edgecolor',
-            },
-            context=True
-        )
+        kw_edge, kw_face = self._get_boundary_props()
         kw_face.update(patch_kw or {})
         self.axesPatch = self.patch  # backwards compatibility
 
