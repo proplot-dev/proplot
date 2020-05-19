@@ -192,12 +192,12 @@ BASEMAP_KW_DEFAULTS = {
     'cass': {'lon_0': 0, 'lat_0': 90, 'width': 15000e3, 'height': 15000e3},
     'gnom': {'lon_0': 0, 'lat_0': 90, 'width': 15000e3, 'height': 15000e3},
     'poly': {'lon_0': 0, 'lat_0': 0, 'width': 10000e3, 'height': 10000e3},
-    'npaeqd': {'lon_0': 0, 'boundinglat': 0},
-    'nplaea': {'lon_0': 0, 'boundinglat': 0},
-    'npstere': {'lon_0': 0, 'boundinglat': 0},
-    'spaeqd': {'lon_0': 0, 'boundinglat': 0},
-    'splaea': {'lon_0': 0, 'boundinglat': 0},
-    'spstere': {'lon_0': 0, 'boundinglat': 0},
+    'npaeqd': {'lon_0': 0, 'boundinglat': 10},  # NOTE: everything breaks if you
+    'nplaea': {'lon_0': 0, 'boundinglat': 10},  # try to set boundinglat to zero
+    'npstere': {'lon_0': 0, 'boundinglat': 10},
+    'spaeqd': {'lon_0': 0, 'boundinglat': -10},
+    'splaea': {'lon_0': 0, 'boundinglat': -10},
+    'spstere': {'lon_0': 0, 'boundinglat': -10},
     'lcc': {
         'lon_0': 0, 'lat_0': 40, 'lat_1': 35, 'lat_2': 45,  # use cartopy defaults
         'width': 20000e3, 'height': 15000e3

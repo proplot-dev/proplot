@@ -227,11 +227,10 @@ axs.format(
 # ProPlot. `~proplot.config.rc` is similar to the matplotlib
 # `~matplotlib.rcParams` dictionary, but can be used to change (1)
 # matplotlib's `builtin settings
-# <https://matplotlib.org/tutorials/introductory/customizing.html>`_, (2)
-# ProPlot's :ref:`added settings <rc_added>`, and (3) :ref:`quick settings
-# <rc_quick>` that can be used to change lots of matplotlib and ProPlot
-# settings at once. `~proplot.config.rc` also provides a ``style`` parameter
-# that can be used to switch between `matplotlib stylesheets\
+# <https://matplotlib.org/tutorials/introductory/customizing.html>`_ and
+# (2) ProPlot's :ref:`added settings <rc_proplot>`. `~proplot.config.rc` also
+# provides a ``style`` parameter that can be used to switch between
+# `matplotlib stylesheets\
 # <https://matplotlib.org/3.1.1/gallery/style_sheets/style_sheets_reference.html>`__.
 # See the :ref:`configuration section <ug_config>` for details.
 #

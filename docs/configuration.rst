@@ -57,7 +57,7 @@ Details on existing matplotlib settings can be found on `this page <rc_matplotli
 .. _rc_proplot:
 
 ProPlot settings
---------------
+----------------
 
 ProPlot adds several settings to customize things not covered by
 `matplotlib's builtin settings <https://matplotlib.org/users/customizing.html>`__.
@@ -83,8 +83,8 @@ when a ``grid`` property is changed, it also changed the corresponding
 
 Finally, the ``geoaxes``, ``land``, ``ocean``, ``rivers``, ``lakes``,
 ``borders``, and ``innerborders`` categories control various
-`~proplot.axes.GeoAxes` settings. These are used when the boolean toggles for
-the corresponding :ref:`quick settings <rc_quick>` are turned on.
+`~proplot.axes.GeoAxes` settings. These are used when the corresponding
+boolean toggles are turned on.
 
 .. include:: _static/rctable.rst
 
