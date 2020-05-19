@@ -453,8 +453,8 @@ list thereof, or dict thereof, optional
 
     # Apply default settings
     share = kwargs.get('share', None)
-    sharex = _not_none(kwargs.get('sharex', None), share, rc['share'])
-    sharey = _not_none(kwargs.get('sharey', None), share, rc['share'])
+    sharex = _not_none(kwargs.get('sharex', None), share, rc['subplots.share'])
+    sharey = _not_none(kwargs.get('sharey', None), share, rc['subplots.share'])
 
     left = _not_none(left, pgridspec._default_space('left'))
     right = _not_none(right, pgridspec._default_space('right'))
