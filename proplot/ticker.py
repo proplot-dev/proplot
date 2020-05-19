@@ -14,6 +14,8 @@ from .internals import docstring, _not_none
 __all__ = [
     'AutoFormatter',
     'FracFormatter',
+    'LongitudeLocator',
+    'LatitudeLocator',
     'SigFigFormatter',
     'SimpleFormatter',
 ]
@@ -75,10 +77,9 @@ class _GeoLocator(mticker.MaxNLocator):
         return self._raw_ticks(vmin, vmax)  # may call Latitude/LongitudeLocator copies
 
 
-class _LongitudeLocator(_GeoLocator):
+class LongitudeLocator(_GeoLocator):
     """
-    A locator for determining longitude gridlines. Includes considerations
-    to prevent double gridlines on tick boundaries.
+    A locator for determining longitude gridlines. Adapted from cartopy.
 
     Parameters
     ----------
@@ -103,10 +104,9 @@ class _LongitudeLocator(_GeoLocator):
         return ticks
 
 
-class _LatitudeLocator(_GeoLocator):
+class LatitudeLocator(_GeoLocator):
     """
-    A locator for latitudes that works even at very small scale.
-    Copied  from cartopy so this can be used in basemap.
+    A locator for determining latitude gridlines. Adapted from cartopy.
 
     Parameters
     ----------
@@ -202,7 +202,7 @@ class AutoFormatter(mticker.ScalarFormatter):
         # Custom string formatting
         string = self._minus_format(string)
         if self._zerotrim:
-            string = self._trim_trailing_zeros(string)
+            string = self._trim_trailing_zeros(string, self._get_decimal_point())
 
         # Prefix and suffix
         string = self._add_prefix_suffix(string, self._prefix, self._suffix)
@@ -322,11 +322,11 @@ class AutoFormatter(mticker.ScalarFormatter):
         eps = abs(x) / 1000
         return (x + eps) < tickrange[0] or (x - eps) > tickrange[1]
 
-    def _trim_trailing_zeros(self, string):
+    @staticmethod
+    def _trim_trailing_zeros(string, decimal_point='.'):
         """
         Sanitize tick label strings.
         """
-        decimal_point = self._get_decimal_point()
         if decimal_point in string:
             string = string.rstrip('0').rstrip(decimal_point)
         return string
@@ -364,15 +364,16 @@ def SigFigFormatter(sigfig=1, zerotrim=None):
             digits = 0
         else:
             digits = -int(np.log10(abs(x)) // 1)
+        decimal_point = AutoFormatter._get_default_decimal_point()
         digits += sigfig - 1
         x = np.round(x, digits)
         string = ('{:.%df}' % max(0, digits)).format(x)
-        string = string.replace('.', AutoFormatter._get_default_decimal_point())
+        string = string.replace('.', decimal_point)
 
         # Custom string formatting
         string = AutoFormatter._minus_format(string)
         if zerotrim:
-            string = AutoFormatter._trim_trailing_zeros(string)
+            string = AutoFormatter._trim_trailing_zeros(string, decimal_point)
         return string
 
     return mticker.FuncFormatter(func)
@@ -412,13 +413,14 @@ def SimpleFormatter(
         x, tail = AutoFormatter._neg_pos_format(x, negpos, wraprange=wraprange)
 
         # Default string formatting
+        decimal_point = AutoFormatter._get_default_decimal_point()
         string = ('{:.%df}' % precision).format(x)
-        string = string.replace('.', AutoFormatter._get_default_decimal_point())
+        string = string.replace('.', decimal_point)
 
         # Custom string formatting
         string = AutoFormatter._minus_format(string)
         if zerotrim:
-            string = AutoFormatter._trim_trailing_zeros(string)
+            string = AutoFormatter._trim_trailing_zeros(string, decimal_point)
 
         # Prefix and suffix
         string = AutoFormatter._add_prefix_suffix(string, prefix, suffix)
