@@ -254,7 +254,7 @@ plot.rc.color = 'gray6'
 plot.rc.update({'fontname': 'Noto Sans'})
 plot.rc['figure.facecolor'] = 'gray3'
 plot.rc.axesfacecolor = 'gray4'
-plot.rc.save()  # save the current settings to a ~/.proplotrc file
+# plot.rc.save()  # save the current settings to ~/.proplotrc
 
 # Apply settings to figure with context()
 with plot.rc.context({'suptitle.size': 11}, toplabelcolor='gray6', linewidth=1.5):
