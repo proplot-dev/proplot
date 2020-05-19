@@ -26,7 +26,7 @@ from .. import colors as pcolors
 from ..utils import edges, edges2d, units, to_xyz, to_rgb
 from ..config import rc
 from ..internals import ic  # noqa: F401
-from ..internals import docstring, warnings, _version, _version_cartopy
+from ..internals import docstring, warnings
 from ..internals import _not_none, _set_state
 try:
     from cartopy.crs import PlateCarree
@@ -40,7 +40,6 @@ __all__ = [
     'cmap_changer',
     'colorbar_wrapper',
     'cycle_changer',
-    'default_crs',
     'default_latlon',
     'default_transform',
     'fill_between_wrapper',
@@ -195,12 +194,13 @@ def _load_objects():
     module has already been imported! So, we only try loading these classes
     within autoformat calls. This saves >~500ms of import time.
     """
-    global DataArray, DataFrame, Series, Index, ndarray
+    global DataArray, DataFrame, Series, Index, ndarray, ARRAY_TYPES
     ndarray = np.ndarray
     DataArray = getattr(sys.modules.get('xarray', None), 'DataArray', ndarray)
     DataFrame = getattr(sys.modules.get('pandas', None), 'DataFrame', ndarray)
     Series = getattr(sys.modules.get('pandas', None), 'Series', ndarray)
     Index = getattr(sys.modules.get('pandas', None), 'Index', ndarray)
+    ARRAY_TYPES = (ndarray, DataArray, DataFrame, Series, Index)
 
 
 _load_objects()
@@ -322,38 +322,6 @@ def default_transform(self, func, *args, transform=None, **kwargs):
     if transform is None:
         transform = PlateCarree()
     result = func(self, *args, transform=transform, **kwargs)
-    return result
-
-
-def default_crs(self, func, *args, crs=None, **kwargs):
-    """
-    Fixes the `~cartopy.mpl.geoaxes.GeoAxes.set_extent` bug associated with
-    tight bounding boxes and makes ``crs=cartopy.crs.PlateCarree()`` the
-    default for cartopy plots.
-
-    Note
-    ----
-    This function wraps {methods} for `~proplot.axes.CartopyAxes`.
-    """
-    # Apply default crs
-    name = func.__name__
-    if crs is None:
-        crs = PlateCarree()
-    try:
-        result = func(self, *args, crs=crs, **kwargs)
-    except TypeError as err:  # duplicate keyword args, i.e. crs is positional
-        if not args:
-            raise err
-        args, crs = args[:-1], args[-1]
-        result = func(self, *args, crs=crs, **kwargs)
-
-    # Fix extent, so axes tight bounding box gets correct box! From this issue:
-    # https://github.com/SciTools/cartopy/issues/1207#issuecomment-439975083
-    if _version_cartopy < _version('0.18'):
-        if name == 'set_extent':
-            clipped_path = self.outline_patch.orig_path.clip_to_bbox(self.viewLim)
-            self.outline_patch._path = clipped_path
-            self.background_patch._path = clipped_path
     return result
 
 
@@ -903,14 +871,17 @@ def _get_error_data(
     `xerr` and `yerr` keyword args.
     """
     # Parse arguments
-    if stds in (1, True):
-        stds = stds_default
-    elif stds in (0, False):
-        stds = None
-    if pctiles in (1, True):
-        pctiles = pctiles_default
-    elif pctiles in (0, False):
-        pctiles = None
+    # NOTE: Have to guard against "truth value of an array is ambiguous" errors
+    if not isinstance(stds, ARRAY_TYPES):
+        if stds in (1, True):
+            stds = stds_default
+        elif stds in (0, False):
+            stds = None
+    if not isinstance(pctiles, ARRAY_TYPES):
+        if pctiles in (1, True):
+            pctiles = pctiles_default
+        elif pctiles in (0, False):
+            pctiles = None
 
     # Incompatible settings
     if stds is not None and pctiles is not None:
@@ -1086,8 +1057,8 @@ def indicate_error(
 
     Returns
     -------
-    h, errobj1, errobj2, ...
-        The original plotting handle and the error bar objects.
+    h, err1, err2, ...
+        The original plot object and the error bar or shading objects.
     """
     name = func.__name__
     x, data, *args = args
@@ -2808,7 +2779,7 @@ def cmap_changer(
                     text_kw[key] = labels_kw.pop(key)
             labels_kw.setdefault('colors', colors)
             labels_kw.setdefault('inline_spacing', 3)
-            labels_kw.setdefault('fontsize', rc['small'])
+            labels_kw.setdefault('fontsize', rc['text.labelsize'])
             labs = cobj.clabel(fmt=fmt, **labels_kw)
             for lab in labs:
                 lab.update(text_kw)
@@ -2821,7 +2792,7 @@ def cmap_changer(
             obj.update_scalarmappable()
 
             # Get text positions and colors
-            labels_kw_ = {'size': rc['small'], 'ha': 'center', 'va': 'center'}
+            labels_kw_ = {'size': rc['text.labelsize'], 'ha': 'center', 'va': 'center'}
             labels_kw_.update(labels_kw)
             array = obj.get_array()
             paths = obj.get_paths()
@@ -3185,12 +3156,14 @@ property-spec, optional
     # Add legends manually so matplotlib does not remove old ones
     # Also apply override settings
     kw_handle = {}
-    outline = rc.fill({
-        'linewidth': 'axes.linewidth',
-        'edgecolor': 'axes.edgecolor',
-        'facecolor': 'axes.facecolor',
-        'alpha': 'legend.framealpha',
-    })
+    outline = rc.fill(
+        {
+            'linewidth': 'axes.linewidth',
+            'edgecolor': 'axes.edgecolor',
+            'facecolor': 'axes.facecolor',
+            'alpha': 'legend.framealpha',
+        }
+    )
     for key in (*outline,):
         if key != 'linewidth':
             if kwargs.get(key, None):
@@ -3741,7 +3714,6 @@ def _generate_decorator(driver):
     driver._docstring_orig = driver.__doc__ or ''
     driver._methods_wrapped = []
     proplot_methods = ('parametric', 'heatmap', 'area', 'areax')
-    cartopy_methods = ('get_extent', 'set_extent')
 
     def decorator(func):
         # Define wrapper and suppress documentation
@@ -3760,8 +3732,6 @@ def _generate_decorator(driver):
         if '{methods}' in docstring:
             if name in proplot_methods:
                 link = f'`~proplot.axes.Axes.{name}`'
-            elif name in cartopy_methods:
-                link = f'`~cartopy.mpl.geoaxes.GeoAxes.{name}`'
             else:
                 link = f'`~matplotlib.axes.Axes.{name}`'
             methods = driver._methods_wrapped
@@ -3782,7 +3752,6 @@ _bar_wrapper = _generate_decorator(bar_wrapper)
 _barh_wrapper = _generate_decorator(barh_wrapper)
 _default_latlon = _generate_decorator(default_latlon)
 _boxplot_wrapper = _generate_decorator(boxplot_wrapper)
-_default_crs = _generate_decorator(default_crs)
 _default_transform = _generate_decorator(default_transform)
 _cmap_changer = _generate_decorator(cmap_changer)
 _cycle_changer = _generate_decorator(cycle_changer)

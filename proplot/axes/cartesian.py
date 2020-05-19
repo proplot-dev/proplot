@@ -462,6 +462,7 @@ class CartesianAxes(base.Axes):
             axis = getattr(ax, x + 'axis')
             axis.label.update(kwargs)
 
+    @docstring.add_snippets
     def format(
         self, *,
         aspect=None,
@@ -556,14 +557,17 @@ class CartesianAxes(base.Axes):
             *y* axis.
         xgrid, ygrid : bool, optional
             Whether to draw major gridlines on the *x* and *y* axis.
+            Use `grid` to toggle both.
         xgridminor, ygridminor : bool, optional
             Whether to draw minor gridlines for the *x* and *y* axis.
+            Use `gridminor` to toggle both.
         xticklabeldir, yticklabeldir : {'in', 'out'}
             Whether to place *x* and *y* axis tick label text inside
             or outside the axes.
         xlocator, ylocator : locator spec, optional
             Used to determine the *x* and *y* axis tick mark positions. Passed
-            to the `~proplot.constructor.Locator` constructor.
+            to the `~proplot.constructor.Locator` constructor.  Can be float,
+            list of float, string, or `matplotlib.ticker.Locator` instance.
         xticks, yticks : optional
             Aliases for `xlocator`, `ylocator`.
         xlocator_kw, ylocator_kw : dict-like, optional
@@ -578,7 +582,8 @@ class CartesianAxes(base.Axes):
         xformatter, yformatter : formatter spec, optional
             Used to determine the *x* and *y* axis tick label string format.
             Passed to the `~proplot.constructor.Formatter` constructor.
-            Use ``[]`` or ``'null'`` for no ticks.
+            Can be string, list of strings, or `matplotlib.ticker.Formatter`
+            instance. Use ``[]`` or ``'null'`` for no ticks.
         xticklabels, yticklabels : optional
             Aliases for `xformatter`, `yformatter`.
         xformatter_kw, yformatter_kw : dict-like, optional
@@ -627,21 +632,11 @@ class CartesianAxes(base.Axes):
             `~matplotlib.ticker.FixedLocator` instance. Default is ``False``.
             If your axis ticks are doing weird things (for example, ticks
             drawn outside of the axis spine), try setting this to ``True``.
-        patch_kw : dict-like, optional
-            Keyword arguments used to update the background patch object. You
-            can use this, for example, to set background hatching with
-            ``patch_kw={'hatch':'xxx'}``.
+        %(axes.patch_kw)s
 
         Other parameters
         ----------------
-        rc_kw : dict, optional
-            Dictionary containing `~proplot.config.rc` settings applied to
-            this axes using `~proplot.config.rc_configurator.context`.
-        **kwargs
-            Passed to `Axes.format` or passed to
-            `~proplot.config.rc_configurator.context` and used to update
-            axes `~proplot.config.rc` settings. For example,
-            ``axestitlesize=15`` modifies the :rcraw:`axes.titlesize` setting.
+        %(axes.other)s
 
         See also
         --------
@@ -659,13 +654,14 @@ class CartesianAxes(base.Axes):
         """
         rc_kw, rc_mode, kwargs = self._parse_format(**kwargs)
         with rc.context(rc_kw, mode=rc_mode):
-            # Background basics
-            self.patch.set_clip_on(False)
-            self.patch.set_zorder(-1)
-            kw_face = rc.fill({
-                'facecolor': 'axes.facecolor',
-                'alpha': 'axes.facealpha'
-            }, context=True)
+            # Background patch
+            kw_face = rc.fill(
+                {
+                    'facecolor': 'axes.facecolor',
+                    'alpha': 'axes.alpha'
+                },
+                context=True,
+            )
             patch_kw = patch_kw or {}
             kw_face.update(patch_kw)
             self.patch.update(kw_face)
@@ -687,10 +683,10 @@ class CartesianAxes(base.Axes):
             ymargin = _not_none(ymargin, rc.get('axes.ymargin', context=True))
             xtickdir = _not_none(xtickdir, rc.get('xtick.direction', context=True))
             ytickdir = _not_none(ytickdir, rc.get('ytick.direction', context=True))
-            xformatter = _not_none(xticklabels=xticklabels, xformatter=xformatter)
-            yformatter = _not_none(yticklabels=yticklabels, yformatter=yformatter)
-            xlocator = _not_none(xticks=xticks, xlocator=xlocator)
-            ylocator = _not_none(yticks=yticks, ylocator=ylocator)
+            xformatter = _not_none(xformatter=xformatter, xticklabels=xticklabels)
+            yformatter = _not_none(yformatter=yformatter, yticklabels=yticklabels)
+            xlocator = _not_none(xlocator=xlocator, xticks=xticks)
+            ylocator = _not_none(ylocator=ylocator, yticks=yticks)
             xtickminor = _not_none(
                 xtickminor, rc.get('xtick.minor.visible', context=True)
             )
@@ -698,10 +694,10 @@ class CartesianAxes(base.Axes):
                 ytickminor, rc.get('ytick.minor.visible', context=True)
             )
             xminorlocator = _not_none(
-                xminorticks=xminorticks, xminorlocator=xminorlocator
+                xminorlocator=xminorlocator, xminorticks=xminorticks,
             )
             yminorlocator = _not_none(
-                yminorticks=yminorticks, yminorlocator=yminorlocator
+                yminorlocator=yminorlocator, yminorticks=yminorticks,
             )
 
             # Grid defaults are more complicated
@@ -817,10 +813,13 @@ class CartesianAxes(base.Axes):
                 date = isinstance(axis.converter, mdates.DateConverter)
 
                 # Fix spines
-                kw = rc.fill({
-                    'color': 'axes.edgecolor',
-                    'linewidth': 'axes.linewidth',
-                }, context=True)
+                kw = rc.fill(
+                    {
+                        'color': 'axes.edgecolor',
+                        'linewidth': 'axes.linewidth',
+                    },
+                    context=True,
+                )
                 if color is not None:
                     kw['color'] = color
                 if linewidth is not None:
@@ -832,6 +831,7 @@ class CartesianAxes(base.Axes):
                     # In this case just have spines on edges by default
                     if bounds is not None and spineloc not in sides:
                         spineloc = sides[0]
+
                     # Eliminate sides
                     if spineloc == 'neither':
                         spine.set_visible(False)
@@ -852,8 +852,8 @@ class CartesianAxes(base.Axes):
                                 spine.set_position(spineloc)
                             except ValueError:
                                 raise ValueError(
-                                    f'Invalid {x} spine location {spineloc!r}.'
-                                    f' Options are '
+                                    f'Invalid {x} spine location {spineloc!r}. '
+                                    'Options are: '
                                     + ', '.join(map(
                                         repr, (*sides, 'both', 'neither')
                                     )) + '.'
@@ -869,56 +869,47 @@ class CartesianAxes(base.Axes):
                     if spine.get_visible()
                 ]
 
-                # Helper func
-                def _grid_dict(grid):
-                    return {
-                        'grid_color': grid + '.color',
-                        'grid_alpha': grid + '.alpha',
-                        'grid_linewidth': grid + '.linewidth',
-                        'grid_linestyle': grid + '.linestyle',
-                    }
-
                 # Tick and grid settings for major and minor ticks separately
                 # Override is just a "new default", but user can override this
                 for which, igrid in zip(('major', 'minor'), (grid, gridminor)):
                     # Tick properties
-                    kw_ticks = rc.category(x + 'tick.' + which, context=True)
-                    if kw_ticks is None:
-                        kw_ticks = {}
+                    # NOTE: This loads xtick.major.size, xtick.major.width,
+                    # xtick.major.pad, xtick.major.bottom, and xtick.major.top
+                    # For all the x/y major/minor tick types
+                    kwticks = rc.category(x + 'tick.' + which, context=True)
+                    if kwticks is None:
+                        kwticks = {}
                     else:
-                        kw_ticks.pop('visible', None)  # invalid setting
+                        kwticks.pop('visible', None)  # invalid setting
                     if ticklen is not None:
-                        kw_ticks['size'] = units(ticklen, 'pt')
+                        kwticks['size'] = units(ticklen, 'pt')
                         if which == 'minor':
-                            kw_ticks['size'] *= rc['ticklenratio']
+                            kwticks['size'] *= rc['ticklenratio']
 
                     # Grid style and toggling
+                    name = 'grid' if which == 'major' else 'gridminor'
                     if igrid is not None:
                         axis.grid(igrid, which=which)
-                    if which == 'major':
-                        kw_grid = rc.fill(
-                            _grid_dict('grid'), context=True
-                        )
-                    else:
-                        kw_grid = rc.fill(
-                            _grid_dict('gridminor'), context=True
-                        )
-
-                    # Changed rc settings
-                    if gridcolor is not None:
+                    kwgrid = rc.fill(
+                        {
+                            'grid_color': name + '.color',
+                            'grid_alpha': name + '.alpha',
+                            'grid_linewidth': name + '.linewidth',
+                            'grid_linestyle': name + '.linestyle',
+                        },
+                        context=True,
+                    )
+                    if gridcolor is not None:  # override for specific x/y axes
                         kw['grid_color'] = gridcolor
-                    axis.set_tick_params(which=which, **kw_grid, **kw_ticks)
+                    axis.set_tick_params(which=which, **kwgrid, **kwticks)
 
-                # Tick and ticklabel properties that apply to major and minor
-                # * Weird issue causes set_tick_params to reset/forget grid
-                #   is turned on if you access tick.gridOn directly, instead of
-                #   passing through tick_params. Since gridOn is undocumented
-                #   feature, don't use it. So calling _format_axes() a second
-                #   time will remove the lines.
-                # * Can specify whether the left/right/bottom/top spines get
-                #   ticks; sides will be group of left/right or top/bottom.
-                # * Includes option to draw spines but not draw ticks on that
-                #   spine, e.g. on the left/right edges
+                # Tick and ticklabel properties that apply equally for major/minor lines
+                # Weird issue causes set_tick_params to reset/forget grid is turned
+                # on if you access tick.gridOn directly, instead of passing through
+                # tick_params. Since gridOn is undocumented feature, don't use it.
+                # So calling _format_axes() a second time will remove the lines.
+                # First determine tick sides, avoiding situation where we draw ticks
+                # on top of invisible spine.
                 kw = {}
                 loc2sides = {
                     None: None,
@@ -931,23 +922,22 @@ class CartesianAxes(base.Axes):
                 ticklocs = loc2sides.get(tickloc, (tickloc,))
                 if ticklocs is not None:
                     kw.update({side: side in ticklocs for side in sides})
-                kw.update({  # override
-                    side: False for side in sides if side not in spines
-                })
+                kw.update({side: False for side in sides if side not in spines})
 
                 # Tick label sides
                 # Will override to make sure only appear where ticks are
                 ticklabellocs = loc2sides.get(ticklabelloc, (ticklabelloc,))
                 if ticklabellocs is not None:
-                    kw.update({
-                        'label' + side: (side in ticklabellocs)
-                        for side in sides
-                    })
-                kw.update({  # override
-                    'label' + side: False for side in sides
-                    if side not in spines
-                    or (ticklocs is not None and side not in ticklocs)
-                })  # override
+                    kw.update(
+                        {'label' + side: (side in ticklabellocs) for side in sides}
+                    )
+                kw.update(  # override
+                    {
+                        'label' + side: False for side in sides
+                        if side not in spines
+                        or (ticklocs is not None and side not in ticklocs)
+                    }
+                )  # override
 
                 # The axis label side
                 if labelloc is None:
@@ -970,22 +960,24 @@ class CartesianAxes(base.Axes):
                     axis.set_label_position(labelloc)
 
                 # Tick label settings
-                # First color and size
-                kw = rc.fill({
-                    'labelcolor': 'tick.labelcolor',  # new props
-                    'labelsize': 'tick.labelsize',
-                    'color': x + 'tick.color',
-                }, context=True)
+                kw = rc.fill(
+                    {
+                        'labelcolor': 'tick.labelcolor',  # new props
+                        'labelsize': 'tick.labelsize',
+                        'color': x + 'tick.color',
+                    },
+                    context=True,
+                )
                 if color:
                     kw['color'] = color
                     kw['labelcolor'] = color
 
-                # Tick direction and rotation
-                if tickdir == 'in':
-                    kw['pad'] = 1  # ticklabels should be much closer
+                # Tick label direction and rotation
+                if tickdir == 'in':  # ticklabels should be much closer
+                    kw['pad'] = 1.0
                 if ticklabeldir == 'in':  # put tick labels inside the plot
                     tickdir = 'in'
-                    kw['pad'] = -1 * sum(
+                    kw['pad'] = -1.0 * sum(
                         rc[f'{x}tick.{key}']
                         for key in ('major.size', 'major.pad', 'labelsize')
                     )
@@ -995,10 +987,13 @@ class CartesianAxes(base.Axes):
 
                 # Settings that can't be controlled by set_tick_params
                 # Also set rotation and alignment here
-                kw = rc.fill({
-                    'fontfamily': 'font.family',
-                    'weight': 'tick.labelweight'
-                }, context=True)
+                kw = rc.fill(
+                    {
+                        'fontfamily': 'font.family',
+                        'weight': 'tick.labelweight'
+                    },
+                    context=True,
+                )
                 if rotation is not None:
                     kw = {'rotation': rotation}
                     if x == 'x':
@@ -1015,12 +1010,15 @@ class CartesianAxes(base.Axes):
                 # Axis label updates
                 # NOTE: This has to come after set_label_position, or ha or va
                 # overrides in label_kw are overwritten
-                kw = rc.fill({
-                    'color': 'axes.labelcolor',
-                    'weight': 'axes.labelweight',
-                    'fontsize': 'axes.labelsize',
-                    'fontfamily': 'font.family',
-                }, context=True)
+                kw = rc.fill(
+                    {
+                        'color': 'axes.labelcolor',
+                        'weight': 'axes.labelweight',
+                        'fontsize': 'axes.labelsize',
+                        'fontfamily': 'font.family',
+                    },
+                    context=True,
+                )
                 if label is not None:
                     kw['text'] = label
                 if color:

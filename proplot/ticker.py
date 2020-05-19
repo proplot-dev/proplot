@@ -9,11 +9,19 @@ import matplotlib.ticker as mticker
 import locale
 from fractions import Fraction
 from .internals import ic  # noqa: F401
-from .internals import docstring, _not_none
+from .internals import docstring, _dummy_context, _set_state, _not_none
+try:
+    import cartopy.crs as ccrs
+    from cartopy.mpl.ticker import LatitudeFormatter, LongitudeFormatter
+except ModuleNotFoundError:
+    ccrs = None
+    LatitudeFormatter = LongitudeFormatter = object
 
 __all__ = [
     'AutoFormatter',
     'FracFormatter',
+    'LongitudeLocator',
+    'LatitudeLocator',
     'SigFigFormatter',
     'SimpleFormatter',
 ]
@@ -22,19 +30,143 @@ REGEX_ZERO = re.compile('\\A[-\N{MINUS SIGN}]?0(.0*)?\\Z')
 REGEX_MINUS = re.compile('\\A[-\N{MINUS SIGN}]\\Z')
 REGEX_MINUS_ZERO = re.compile('\\A[-\N{MINUS SIGN}]0(.0*)?\\Z')
 
-
 docstring.snippets['formatter.params'] = """
 zerotrim : bool, optional
     Whether to trim trailing zeros. Default is :rc:`axes.formatter.zerotrim`.
 tickrange : (float, float), optional
     Range within which major tick marks are labelled. Default is ``(-np.inf, np.inf)``.
+wraprange : (float, float), optional
+    Range outside of which tick values are wrapped. For example, ``(0, 2)``
+    will format a value of ``2.5`` as ``0.5``, and ``(-180, 180)`` will format
+    a value of ``200`` as ``-180 + 20 == -160``.
 prefix, suffix : str, optional
-    Prefix and suffix for all strings.
+    Prefix and suffix for all tick strings.
 negpos : str, optional
     Length-2 string indicating the suffix for "negative" and "positive"
-    numbers, meant to replace the minus sign. This is useful for indicating
-    cardinal geographic coordinates.
+    numbers, meant to replace the minus sign.
 """
+
+
+class _GeoFormatter(object):
+    """
+    Mixin class that fixes cartopy formatters.
+    """
+    # NOTE: Cartopy formatters pre 0.18 required axis, and *always* translated
+    # input values from map projection coordinates to Plate Carrée coordinates.
+    # After 0.18 you can avoid this behavior by not setting axis but really
+    # dislike that inconsistency. Solution is temporarily change projection.
+    def __init__(self, *args, **kwargs):
+        import cartopy  # noqa: F401 (ensure available)
+        super().__init__(*args, **kwargs)
+
+    def __call__(self, value, pos=None):
+        if self.axis is not None:
+            context = _set_state(self.axis.axes, projection=ccrs.PlateCarree())
+        else:
+            context = _dummy_context()
+        with context:
+            return super().__call__(value, pos)
+
+
+class _LongitudeFormatter(_GeoFormatter, LongitudeFormatter):
+    """
+    Mix longitude formatter with custom formatter.
+    """
+    pass
+
+
+class _LatitudeFormatter(_GeoFormatter, LatitudeFormatter):
+    """
+    Mix latitude formatter with custom formatter.
+    """
+    pass
+
+
+class _GeoLocator(mticker.MaxNLocator):
+    """
+    A locator for determining longitude and latitude gridlines.
+    Adapted from cartopy.
+    """
+    # NOTE: Locator implementation is weird AF. __init__ just calls set_params with all
+    # keyword args and fills in missing params with default_params class attribute.
+    # Unknown params result in warning instead of error.
+    default_params = mticker.MaxNLocator.default_params.copy()
+    default_params.update(nbins=8, dms=False)
+
+    def set_params(self, **kwargs):
+        if 'dms' in kwargs:
+            self._dms = kwargs.pop('dms')
+        super().set_params(**kwargs)
+
+    def _guess_steps(self, vmin, vmax):
+        dv = abs(vmax - vmin)
+        if dv > 180:
+            dv -= 180
+        if dv > 50:
+            steps = np.array([1, 2, 3, 6, 10])
+        elif not self._dms or dv > 3.0:
+            steps = np.array([1, 1.5, 2, 2.5, 3, 5, 10])
+        else:
+            steps = np.array([1, 10 / 6.0, 15 / 6.0, 20 / 6.0, 30 / 6.0, 10])
+        self.set_params(steps=np.array(steps))
+
+    def _raw_ticks(self, vmin, vmax):
+        self._guess_steps(vmin, vmax)
+        return super()._raw_ticks(vmin, vmax)
+
+    def bin_boundaries(self, vmin, vmax):  # matplotlib <2.2.0
+        return self._raw_ticks(vmin, vmax)  # may call Latitude/LongitudeLocator copies
+
+
+class LongitudeLocator(_GeoLocator):
+    """
+    A locator for determining longitude gridlines. Adapted from cartopy.
+
+    Parameters
+    ----------
+    dms : bool, optional
+        Allow the locator to stop on minutes and seconds. Default is ``False``.
+    """
+    # NOTE: Proplot ensures vmin, vmax are always the *actual* longitude range
+    # accounting for central longitude position.
+    def tick_values(self, vmin, vmax):
+        ticks = super().tick_values(vmin, vmax)
+        if np.isclose(ticks[0] + 360, ticks[-1]):
+            eps = 1e-10
+            if ticks[-1] % 360 > 0:
+                # Make sure the label appears on *right*, not on
+                # top of the leftmost label.
+                ticks[-1] -= eps
+            else:
+                # Formatter formats label as 1e-10... so there is simply no way to
+                # put label on right. Just shift this location off the map edge so
+                # parallels still extend all the way to the edge, but label disappears.
+                ticks[-1] += eps
+        return ticks
+
+
+class LatitudeLocator(_GeoLocator):
+    """
+    A locator for determining latitude gridlines. Adapted from cartopy.
+
+    Parameters
+    ----------
+    dms : bool, optional
+        Allow the locator to stop on minutes and seconds. Default is ``False``.
+    """
+    def tick_values(self, vmin, vmax):
+        vmin = max(vmin, -90)
+        vmax = min(vmax, 90)
+        return super().tick_values(vmin, vmax)
+
+    def _guess_steps(self, vmin, vmax):
+        vmin = max(vmin, -90)
+        vmax = min(vmax, 90)
+        super()._guess_steps(vmin, vmax)
+
+    def _raw_ticks(self, vmin, vmax):
+        ticks = super()._raw_ticks(vmin, vmax)
+        return [t for t in ticks if -90 <= t <= 90]
 
 
 class AutoFormatter(mticker.ScalarFormatter):
@@ -50,7 +182,7 @@ class AutoFormatter(mticker.ScalarFormatter):
     @docstring.add_snippets
     def __init__(
         self,
-        zerotrim=None, tickrange=None,
+        zerotrim=None, tickrange=None, wraprange=None,
         prefix=None, suffix=None, negpos=None,
         **kwargs
     ):
@@ -78,6 +210,7 @@ class AutoFormatter(mticker.ScalarFormatter):
         zerotrim = _not_none(zerotrim, rc['axes.formatter.zerotrim'])
         self._zerotrim = zerotrim
         self._tickrange = tickrange
+        self._wraprange = wraprange
         self._prefix = prefix or ''
         self._suffix = suffix or ''
         self._negpos = negpos or ''
@@ -96,9 +229,10 @@ class AutoFormatter(mticker.ScalarFormatter):
         # Tick range limitation
         if self._outside_tick_range(x, self._tickrange):
             return ''
+        x = self._wrap_tick_range(x, self._wraprange)
 
         # Negative positive handling
-        x, tail = self._neg_pos_format(x, self._negpos)
+        x, tail = self._neg_pos_format(x, self._negpos, wraprange=self._wraprange)
 
         # Default string formatting
         string = super().__call__(x, pos)
@@ -109,7 +243,7 @@ class AutoFormatter(mticker.ScalarFormatter):
         # Custom string formatting
         string = self._minus_format(string)
         if self._zerotrim:
-            string = self._trim_trailing_zeros(string, self.get_useLocale())
+            string = self._trim_trailing_zeros(string, self._get_decimal_point())
 
         # Prefix and suffix
         string = self._add_prefix_suffix(string, self._prefix, self._suffix)
@@ -128,8 +262,7 @@ class AutoFormatter(mticker.ScalarFormatter):
             sign, string = string[0], string[1:]
         return sign + prefix + string + suffix
 
-    @staticmethod
-    def _fix_small_number(x, string, offset=2):
+    def _fix_small_number(self, x, string, offset=2):
         """
         Fix formatting for non-zero number that gets formatted as zero. The `offset`
         controls the offset from the true floating point precision at which we want
@@ -138,11 +271,11 @@ class AutoFormatter(mticker.ScalarFormatter):
         # Add just enough precision for small numbers. Default formatter is
         # only meant to be used for linear scales and cannot handle the wide
         # range of magnitudes in e.g. log scales. To correct this, we only
-        # truncate if value is within one order of magnitude of the float
+        # truncate if value is within `offset` order of magnitude of the float
         # precision. Common issue is e.g. levels=plot.arange(-1, 1, 0.1).
         # This choice satisfies even 1000 additions of 0.1 to -100.
         match = REGEX_ZERO.match(string)
-        decimal_point = AutoFormatter._get_decimal_point()
+        decimal_point = self._get_decimal_point()
 
         if match and x != 0:
             # Get initial precision spit out by algorithm
@@ -168,17 +301,24 @@ class AutoFormatter(mticker.ScalarFormatter):
 
         return string
 
-    @staticmethod
-    def _get_decimal_point(use_locale=None):
+    def _get_decimal_point(self, use_locale=None):
         """
         Get decimal point symbol for current locale (e.g. in Europe will be comma).
         """
         from .config import rc
+        use_locale = _not_none(
+            use_locale, self.get_useLocale(), rc['axes.formatter.use_locale']
+        )
+        return locale.localeconv()['decimal_point'] if use_locale else '.'
+
+    @staticmethod
+    def _get_default_decimal_point(use_locale=None):
+        """
+        Get decimal point symbol for current locale. Called externally.
+        """
+        from .config import rc
         use_locale = _not_none(use_locale, rc['axes.formatter.use_locale'])
-        if use_locale:
-            return locale.localeconv()['decimal_point']
-        else:
-            return '.'
+        return locale.localeconv()['decimal_point'] if use_locale else '.'
 
     @staticmethod
     def _minus_format(string):
@@ -193,11 +333,20 @@ class AutoFormatter(mticker.ScalarFormatter):
         return string
 
     @staticmethod
-    def _neg_pos_format(x, negpos):
+    def _neg_pos_format(x, negpos, wraprange=None):
         """
         Permit suffixes indicators for "negative" and "positive" numbers.
         """
+        # NOTE: If input is a symmetric wraprange, the value conceptually has
+        # no "sign", so trim tail and format as absolute value.
         if not negpos or x == 0:
+            tail = ''
+        elif (
+            wraprange is not None
+            and np.isclose(-wraprange[0], wraprange[1])
+            and np.any(np.isclose(x, wraprange))
+        ):
+            x = abs(x)
             tail = ''
         elif x > 0:
             tail = negpos[1]
@@ -215,14 +364,24 @@ class AutoFormatter(mticker.ScalarFormatter):
         return (x + eps) < tickrange[0] or (x - eps) > tickrange[1]
 
     @staticmethod
-    def _trim_trailing_zeros(string, use_locale=None):
+    def _trim_trailing_zeros(string, decimal_point='.'):
         """
         Sanitize tick label strings.
         """
-        decimal_point = AutoFormatter._get_decimal_point()
         if decimal_point in string:
             string = string.rstrip('0').rstrip(decimal_point)
         return string
+
+    @staticmethod
+    def _wrap_tick_range(x, wraprange):
+        """
+        Wrap the tick range to within these values.
+        """
+        if wraprange is None:
+            return x
+        base = wraprange[0]
+        modulus = wraprange[1] - wraprange[0]
+        return (x - base) % modulus + base
 
 
 def SigFigFormatter(sigfig=1, zerotrim=None):
@@ -246,15 +405,16 @@ def SigFigFormatter(sigfig=1, zerotrim=None):
             digits = 0
         else:
             digits = -int(np.log10(abs(x)) // 1)
+        decimal_point = AutoFormatter._get_default_decimal_point()
         digits += sigfig - 1
         x = np.round(x, digits)
         string = ('{:.%df}' % max(0, digits)).format(x)
-        string = string.replace('.', AutoFormatter._get_decimal_point())
+        string = string.replace('.', decimal_point)
 
         # Custom string formatting
         string = AutoFormatter._minus_format(string)
         if zerotrim:
-            string = AutoFormatter._trim_trailing_zeros(string)
+            string = AutoFormatter._trim_trailing_zeros(string, decimal_point)
         return string
 
     return mticker.FuncFormatter(func)
@@ -262,8 +422,8 @@ def SigFigFormatter(sigfig=1, zerotrim=None):
 
 @docstring.add_snippets
 def SimpleFormatter(
-    precision=6, zerotrim=None, tickrange=None,
-    prefix=None, suffix=None, negpos=None, **kwargs
+    precision=6, zerotrim=None, tickrange=None, wraprange=None,
+    prefix=None, suffix=None, negpos=None,
 ):
     """
     Return a `~matplotlib.ticker.FuncFormatter` that replicates the
@@ -288,18 +448,20 @@ def SimpleFormatter(
         # Tick range limitation
         if AutoFormatter._outside_tick_range(x, tickrange):
             return ''
+        x = AutoFormatter._wrap_tick_range(x, wraprange)
 
         # Negative positive handling
-        x, tail = AutoFormatter._neg_pos_format(x, negpos)
+        x, tail = AutoFormatter._neg_pos_format(x, negpos, wraprange=wraprange)
 
         # Default string formatting
+        decimal_point = AutoFormatter._get_default_decimal_point()
         string = ('{:.%df}' % precision).format(x)
-        string = string.replace('.', AutoFormatter._get_decimal_point())
+        string = string.replace('.', decimal_point)
 
         # Custom string formatting
         string = AutoFormatter._minus_format(string)
         if zerotrim:
-            string = AutoFormatter._trim_trailing_zeros(string)
+            string = AutoFormatter._trim_trailing_zeros(string, decimal_point)
 
         # Prefix and suffix
         string = AutoFormatter._add_prefix_suffix(string, prefix, suffix)

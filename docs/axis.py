@@ -58,8 +58,7 @@ import numpy as np
 state = np.random.RandomState(51423)
 plot.rc.facecolor = plot.scale_luminance('powder blue', 1.15)
 plot.rc.update(
-    linewidth=1,
-    small=10, large=12,
+    linewidth=1, fontsize=10,
     color='dark blue', suptitlecolor='dark blue',
     titleloc='upper center', titlecolor='dark blue', titleborder=False,
 )
@@ -134,7 +133,7 @@ plot.rc.reset()
 import proplot as plot
 import numpy as np
 plot.rc.update(
-    linewidth=1.2, small=10, large=12, facecolor='gray8', figurefacecolor='gray8',
+    linewidth=1.2, fontsize=10, facecolor='gray8', figurefacecolor='gray8',
     suptitlecolor='w', gridcolor='w', color='w',
     titleloc='upper center', titlecolor='w', titleborder=False,
 )
@@ -177,7 +176,7 @@ plot.rc.reset()
 # %%
 import proplot as plot
 plot.rc.linewidth = 2
-plot.rc.small = plot.rc.large = 11
+plot.rc.fontsize = 11
 locator = [0, 0.25, 0.5, 0.75, 1]
 fig, axs = plot.subplots([[1, 1, 2, 2], [0, 3, 3, 0]], axwidth=1.5, share=0)
 
@@ -221,7 +220,7 @@ plot.rc.reset()
 import proplot as plot
 import numpy as np
 plot.rc.update(
-    linewidth=1.2, small=10, large=12, ticklenratio=0.7,
+    linewidth=1.2, fontsize=10, ticklenratio=0.7,
     figurefacecolor='w', facecolor='pastel blue',
     titleloc='upper center', titleborder=False,
 )

@@ -22,8 +22,8 @@
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_intro:
 #
-# Figures and subplots
-# --------------------
+# Creating figures
+# ----------------
 #
 # ProPlot works by subclassing the matplotlib `~matplotlib.figure.Figure` and
 # `~matplotlib.axes.Axes` classes. You can generate grids of proplot
@@ -47,12 +47,21 @@
 # and modify the axes using `~proplot.axes.Axes.format` and
 # `~proplot.ui.SubplotsContainer`. See the :ref:`formatting guide <ug_format>`
 # and :ref:`subplots container <ug_container>` sections for details.
+#
 # Please note that by default, ProPlot sets :rcraw:`figure.facecolor` to gray,
 # :rcraw:`savefig.facecolor` to white, and :rcraw:`savefig.transparent` to ``True``.
 # That is, the default display background is gray, the default background for
 # saved figures is transparent, and the default background is white when you pass
-# ``transparent=False`` to `~matplotlib.figure.Figure.savefig`. See the
-# :ref:`configuration section <ug_proplotrc>` for how to change this.
+# ``transparent=False`` to `~matplotlib.figure.Figure.savefig`.
+# ProPlot also sets the default :rcraw:`savefig.format` to PDF, because
+# (1) vector graphic formats are always more suitable for matplotlib figures than
+# raster formats, (2) most academic journals these days accept PDF format figures
+# alongside the older EPS format, (3) PDF figures are easy to embed in LaTeX documents,
+# and (4) the EPS format does not support transparent graphic elements. If you *do*
+# need raster graphics, ProPlot sets the default :rcraw:`savefig.dpi` to 1200 dots per
+# inch, which is recommended by most journals as the minimum resolution for rasterized
+# figures containing lines and text. See the :ref:`configuration section <ug_proplotrc>`
+# for how to change these settings.
 
 # %%
 import proplot as plot
@@ -218,11 +227,10 @@ axs.format(
 # ProPlot. `~proplot.config.rc` is similar to the matplotlib
 # `~matplotlib.rcParams` dictionary, but can be used to change (1)
 # matplotlib's `builtin settings
-# <https://matplotlib.org/tutorials/introductory/customizing.html>`_, (2)
-# ProPlot's :ref:`added settings <rc_added>`, and (3) :ref:`quick settings
-# <rc_quick>` that can be used to change lots of matplotlib and ProPlot
-# settings at once. `~proplot.config.rc` also provides a ``style`` parameter
-# that can be used to switch between `matplotlib stylesheets\
+# <https://matplotlib.org/tutorials/introductory/customizing.html>`_ and
+# (2) ProPlot's :ref:`added settings <rc_proplot>`. `~proplot.config.rc` also
+# provides a ``style`` parameter that can be used to switch between
+# `matplotlib stylesheets\
 # <https://matplotlib.org/3.1.1/gallery/style_sheets/style_sheets_reference.html>`__.
 # See the :ref:`configuration section <ug_config>` for details.
 #
@@ -245,6 +253,7 @@ plot.rc.color = 'gray6'
 plot.rc.update({'fontname': 'Noto Sans'})
 plot.rc['figure.facecolor'] = 'gray3'
 plot.rc.axesfacecolor = 'gray4'
+# plot.rc.save()  # save the current settings to ~/.proplotrc
 
 # Apply settings to figure with context()
 with plot.rc.context({'suptitle.size': 11}, toplabelcolor='gray6', linewidth=1.5):

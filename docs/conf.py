@@ -216,8 +216,9 @@ for style in get_all_styles():
         f.write(HtmlFormatter(style=style).get_style_defs('.highlight'))
 
 # Create sample .proplotrc file
-from proplot.config import _write_defaults  # noqa: E402
-_write_defaults(os.path.join('_static', 'proplotrc'), comment=False)
+from proplot.config import rc
+rc._save_proplotrc(os.path.join('_static', 'proplotrc'))
+rc._save_rst(os.path.join('_static', 'rctable.rst'))
 
 # Role
 # default family is py, but can also set default role so don't need

@@ -157,12 +157,11 @@ class Figure(mfigure.Figure):
         Parameters
         ----------
         tight : bool, optional
-            Toggles automatic tight layout adjustments. Default is :rc:`tight`.
-            If you manually specified a spacing in the call to
-            `~proplot.ui.subplots`, it will be used to override the tight
-            layout spacing. For example, with ``left=0.1``, the left margin is
-            set to 0.1 inches wide, while the remaining margin widths are
-            calculated automatically.
+            Toggles automatic tight layout adjustments. Default is :rc:`subplots.tight`.
+            If you manually specified a spacing in the call to `~proplot.ui.subplots`,
+            it will be used to override the tight layout spacing. For example, with
+            ``left=0.1``, the left margin is set to 0.1 inches wide, while the
+            remaining margin widths are calculated automatically.
         ref : int, optional
             The reference subplot number. See `~proplot.ui.subplots` for
             details. Default is ``1``.
@@ -183,14 +182,12 @@ class Figure(mfigure.Figure):
             subplot grid. Default is ``False``.
         sharex, sharey, share : {3, 2, 1, 0}, optional
             The "axis sharing level" for the *x* axis, *y* axis, or both axes.
-            Default is ``3``. This can considerably reduce redundancy in your
-            figure. Options are as follows.
+            Default is :rc:`subplots.share`. Options are as follows:
 
             0. No axis sharing. Also sets the default `spanx` and `spany`
                values to ``False``.
-            1. Only draw *axis label* on the leftmost column (*y*) or
-               bottommost row (*x*) of subplots. Axis tick labels
-               still appear on every subplot.
+            1. Only draw *axis label* on the leftmost column (*y*) or bottommost row
+               (*x*) of subplots. Axis tick labels still appear on every subplot.
             2. As in 1, but forces the axis limits to be identical. Axis
                tick labels still appear on every subplot.
             3. As in 2, but only show the *axis tick labels* on the
@@ -199,27 +196,26 @@ class Figure(mfigure.Figure):
         spanx, spany, span : bool or {0, 1}, optional
             Toggles "spanning" axis labels for the *x* axis, *y* axis, or both
             axes.  Default is ``False`` if `sharex`, `sharey`, or `share` are
-            ``0``, ``True`` otherwise. When ``True``, a single, centered axis
-            label is used for all axes with bottom and left edges in the same
+            ``0``, :rc:`subplots.span` otherwise. When ``True``, a single, centered
+            axis label is used for all axes with bottom and left edges in the same
             row or column.  This can considerably redundancy in your figure.
 
             "Spanning" labels integrate with "shared" axes. For example,
             for a 3-row, 3-column figure, with ``sharey > 1`` and ``spany=1``,
             your figure will have 1 ylabel instead of 9.
         alignx, aligny, align : bool or {0, 1}, optional
-            Default is ``False``. Whether to `align axis labels \
+            Whether to `align axis labels \
 <https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/align_labels_demo.html>`__
-            for the *x* axis, *y* axis, or both axes. Only has an effect when
-            `spanx`, `spany`, or `span` are ``False``.
+            for the *x* axis, *y* axis, or both axes. Only has an effect when `spanx`,
+            `spany`, or `span` are ``False``. Default is :rc:`subplots.align`.
         autoformat : bool, optional
-            Whether to automatically configure *x* axis labels, *y* axis
-            labels, axis formatters, axes titles, colorbar labels, and legend
-            labels when a `~pandas.Series`, `~pandas.DataFrame` or
-            `~xarray.DataArray` with relevant metadata is passed to a plotting
-            command.
+            Whether to automatically configure *x* axis labels, *y* axis labels,
+            axis formatters, axes titles, colorbar labels, and legend labels when
+            a `~pandas.Series`, `~pandas.DataFrame` or `~xarray.DataArray` with
+            relevant metadata is passed to a plotting command.
         fallback_to_cm : bool, optional
-            Whether to replace unavailable glyphs with a glyph from Computer
-            Modern or the "¤" dummy character. See `mathtext \
+            Whether to replace unavailable glyphs with a glyph from Computer Modern
+            or the "¤" dummy character. See `mathtext \
 <https://matplotlib.org/3.1.1/tutorials/text/mathtext.html#custom-fonts>`__
             for details.
         gridspec_kw, subplots_kw, subplots_orig_kw
@@ -231,7 +227,7 @@ class Figure(mfigure.Figure):
         ----------------
         **kwargs
             Passed to `matplotlib.figure.Figure`.
-        """  # noqa
+        """
         # Initialize first, because need to provide fully initialized figure
         # as argument to gridspec, because matplotlib tight_layout does that
         tight_layout = kwargs.pop('tight_layout', None)
@@ -249,16 +245,16 @@ class Figure(mfigure.Figure):
         super().__init__(**kwargs)
 
         # Axes sharing and spanning settings
-        sharex = _not_none(sharex, share, rc['share'])
-        sharey = _not_none(sharey, share, rc['share'])
-        spanx = _not_none(spanx, span, 0 if sharex == 0 else None, rc['span'])
-        spany = _not_none(spany, span, 0 if sharey == 0 else None, rc['span'])
+        sharex = _not_none(sharex, share, rc['subplots.share'])
+        sharey = _not_none(sharey, share, rc['subplots.share'])
+        spanx = _not_none(spanx, span, 0 if sharex == 0 else None, rc['subplots.span'])
+        spany = _not_none(spany, span, 0 if sharey == 0 else None, rc['subplots.span'])
         if spanx and (alignx or align):
             warnings._warn_proplot('"alignx" has no effect when spanx=True.')
         if spany and (aligny or align):
             warnings._warn_proplot('"aligny" has no effect when spany=True.')
-        alignx = _not_none(alignx, align, rc['align'])
-        aligny = _not_none(aligny, align, rc['align'])
+        alignx = _not_none(alignx, align, rc['subplots.align'])
+        aligny = _not_none(aligny, align, rc['subplots.align'])
         self.set_alignx(alignx)
         self.set_aligny(aligny)
         self.set_sharex(sharex)
@@ -274,7 +270,7 @@ class Figure(mfigure.Figure):
         self._axpad = units(_not_none(axpad, rc['subplots.axpad']))
         self._panelpad = units(_not_none(panelpad, rc['subplots.panelpad']))
         self._auto_format = autoformat
-        self._auto_tight = _not_none(tight, rc['tight'])
+        self._auto_tight = _not_none(tight, rc['subplots.tight'])
         self._include_panels = includepanels
         self._fallback_to_cm = fallback_to_cm
         self._ref_num = ref

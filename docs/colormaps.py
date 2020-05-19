@@ -178,7 +178,7 @@ fig, axs = plot.subplots(
 
 # Monochromatic colormaps
 axs.format(
-    xlabel='x axis', ylabel='y axis', span=False,
+    xlabel='x axis', ylabel='y axis',
     suptitle='Building your own PerceptuallyUniformColormaps'
 )
 data = state.rand(30, 30).cumsum(axis=1)

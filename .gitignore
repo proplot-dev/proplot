@@ -5,6 +5,7 @@
 
 # Ignore auto-generated files
 proplotrc
+rctable.rst
 
 # PyPi stuff
 build

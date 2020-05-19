@@ -6,17 +6,16 @@ import warnings
 from .internals import ic  # noqa: F401
 from .internals import docstring
 try:
-    from cartopy.crs import (
-        _WarpedRectangularProjection,
-        LambertAzimuthalEqualArea,
-        AzimuthalEquidistant,
-        Gnomonic,
-    )
+    from cartopy.crs import _WarpedRectangularProjection
+    from cartopy.crs import AzimuthalEquidistant, Gnomonic, LambertAzimuthalEqualArea
+    from cartopy.crs import NorthPolarStereo, SouthPolarStereo  # noqa: F401 (geo.py)
 except ModuleNotFoundError:
     _WarpedRectangularProjection = object
-    LambertAzimuthalEqualArea = object
     AzimuthalEquidistant = object
     Gnomonic = object
+    LambertAzimuthalEqualArea = object
+    NorthPolarStereo = object
+    SouthPolarStereo = object
 
 __all__ = [
     'Aitoff', 'Hammer', 'KavrayskiyVII',

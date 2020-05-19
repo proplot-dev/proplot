@@ -14,29 +14,32 @@ from simple shorthand arguments.
 import os
 import re
 import numpy as np
-from numbers import Number
 import matplotlib.colors as mcolors
 import matplotlib.ticker as mticker
 import matplotlib.dates as mdates
 import matplotlib.projections.polar as mpolar
 import matplotlib.scale as mscale
 import cycler
+from functools import partial
+from numbers import Number
 from . import crs as pcrs
 from . import colors as pcolors
 from . import ticker as pticker
 from . import scale as pscale
+from .config import rc
 from .utils import to_rgb
 from .internals import ic  # noqa: F401
-from .internals import warnings, _version, _version_mpl, _not_none
+from .internals import warnings, _version, _version_cartopy, _version_mpl, _not_none
 try:
     from mpl_toolkits.basemap import Basemap
 except ImportError:
     Basemap = object
 try:
     import cartopy.crs as ccrs
-    CRS = ccrs.CRS
+    import cartopy.mpl.ticker as cticker
+    from cartopy.crs import CRS
 except ModuleNotFoundError:
-    CRS = ccrs = object
+    CRS = ccrs = cticker = object
 
 __all__ = [
     'Colormap', 'Colors', 'Cycle', 'Norm',
@@ -85,12 +88,29 @@ LOCATORS = {
     'weekday': mdates.WeekdayLocator,
     'month': mdates.MonthLocator,
     'year': mdates.YearLocator,
+    'lon': partial(pticker.LongitudeLocator, dms=False),
+    'lat': partial(pticker.LatitudeLocator, dms=False),
+    'deglon': partial(pticker.LongitudeLocator, dms=False),
+    'deglat': partial(pticker.LatitudeLocator, dms=False),
 }
+if _version_cartopy >= _version('0.18'):
+    # NOTE: This only makes sense when paired with cartopy formatter
+    # with degree-minute-second support.
+    # NOTE: We copied cartopy locators because they are short and necessary
+    # for determining both cartopy and basemap tick locations. We did not
+    # copy formatter because they are long and we have nice, simpler
+    # alternatives of deglon and deglat.
+    LOCATORS['dmslon'] = partial(pticker.LongitudeLocator, dms=True)
+    LOCATORS['dmslat'] = partial(pticker.LatitudeLocator, dms=True)
 if hasattr(mpolar, 'ThetaLocator'):
     LOCATORS['theta'] = mpolar.ThetaLocator
 
 # Mapping of strings to `~matplotlib.ticker.Formatter` classes. See
 # `Formatter` for a table.
+# NOTE: Critical to use SimpleFormatter for cardinal formatters rather than
+# AutoFormatter because latter fails with Basemap formatting.
+# NOTE: Define cartopy longitude/latitude formatters with dms=True because that
+# is their distinguishing feature relative to proplot formatter.
 FORMATTERS = {  # note default LogFormatter uses ugly e+00 notation
     'auto': pticker.AutoFormatter,
     'frac': pticker.FracFormatter,
@@ -111,6 +131,15 @@ FORMATTERS = {  # note default LogFormatter uses ugly e+00 notation
     'eng': mticker.EngFormatter,
     'percent': mticker.PercentFormatter,
     'index': mticker.IndexFormatter,
+    'pi': partial(pticker.FracFormatter, symbol=r'$\pi$', number=np.pi),
+    'e': partial(pticker.FracFormatter, symbol=r'$e$', number=np.e),
+    'lat': partial(pticker.SimpleFormatter, negpos='SN'),
+    'lon': partial(pticker.SimpleFormatter, negpos='WE', wraprange=(-180, 180)),
+    'deg': partial(pticker.SimpleFormatter, suffix='\N{DEGREE SIGN}'),
+    'deglat': partial(pticker.SimpleFormatter, negpos='SN', suffix='\N{DEGREE SIGN}'),
+    'deglon': partial(pticker.SimpleFormatter, negpos='WE', suffix='\N{DEGREE SIGN}', wraprange=(-180, 180)),  # noqa: E501
+    'dmslon': partial(pticker._LongitudeFormatter, dms=True),
+    'dmslat': partial(pticker._LatitudeFormatter, dms=True),
 }
 if hasattr(mdates, 'ConciseDateFormatter'):
     FORMATTERS['concise'] = mdates.ConciseDateFormatter
@@ -162,14 +191,17 @@ BASEMAP_KW_DEFAULTS = {
     'eqdc': {'lon_0': 0, 'lat_0': 90, 'width': 15000e3, 'height': 15000e3},
     'cass': {'lon_0': 0, 'lat_0': 90, 'width': 15000e3, 'height': 15000e3},
     'gnom': {'lon_0': 0, 'lat_0': 90, 'width': 15000e3, 'height': 15000e3},
-    'lcc': {'lon_0': 0, 'lat_0': 90, 'width': 10000e3, 'height': 10000e3},
     'poly': {'lon_0': 0, 'lat_0': 0, 'width': 10000e3, 'height': 10000e3},
-    'npaeqd': {'lon_0': 0, 'boundinglat': 10},
-    'nplaea': {'lon_0': 0, 'boundinglat': 10},
+    'npaeqd': {'lon_0': 0, 'boundinglat': 10},  # NOTE: everything breaks if you
+    'nplaea': {'lon_0': 0, 'boundinglat': 10},  # try to set boundinglat to zero
     'npstere': {'lon_0': 0, 'boundinglat': 10},
     'spaeqd': {'lon_0': 0, 'boundinglat': -10},
     'splaea': {'lon_0': 0, 'boundinglat': -10},
     'spstere': {'lon_0': 0, 'boundinglat': -10},
+    'lcc': {
+        'lon_0': 0, 'lat_0': 40, 'lat_1': 35, 'lat_2': 45,  # use cartopy defaults
+        'width': 20000e3, 'height': 15000e3
+    },
     'tmerc': {
         'lon_0': 0, 'lat_0': 0, 'width': 10000e3, 'height': 10000e3
     },
@@ -253,6 +285,41 @@ CARTOPY_KW_ALIASES = {  # use PROJ shorthands instead of verbose cartopy names
     'lon_0': 'central_longitude',
     'lat_min': 'min_latitude',
     'lat_max': 'max_latitude',
+}
+
+# Resolution aliases
+# NOTE: Maximum basemap resolutions are much finer than cartopy
+CARTOPY_RESOS = {
+    'lo': '110m',
+    'med': '50m',
+    'hi': '10m',
+    'x-hi': '10m',  # extra high
+    'xx-hi': '10m',  # extra extra high
+}
+BASEMAP_RESOS = {
+    'lo': 'c',  # coarse
+    'med': 'l',
+    'hi': 'i',
+    'x-hi': 'h',
+    'xx-hi': 'f',  # fine
+}
+
+# Geographic feature properties
+CARTOPY_FEATURES = {  # positional arguments passed to NaturalEarthFeature
+    'land': ('physical', 'land'),
+    'ocean': ('physical', 'ocean'),
+    'lakes': ('physical', 'lakes'),
+    'coast': ('physical', 'coastline'),
+    'rivers': ('physical', 'rivers_lake_centerlines'),
+    'borders': ('cultural', 'admin_0_boundary_lines_land'),
+    'innerborders': ('cultural', 'admin_1_states_provinces_lakes'),
+}
+BASEMAP_FEATURES = {  # names of relevant basemap methods
+    'land': 'fillcontinents',
+    'coast': 'drawcoastlines',
+    'rivers': 'drawrivers',
+    'borders': 'drawcountries',
+    'innerborders': 'drawstates',
 }
 
 
@@ -740,6 +807,8 @@ def Norm(norm, *args, **kwargs):
         normalizer name, subsequent elements are passed to the normalizer class
         as positional arguments.
 
+        .. _norm_table:
+
         ==========================  =====================================
         Key(s)                      Class
         ==========================  =====================================
@@ -810,34 +879,40 @@ def Locator(locator, *args, **kwargs):
         subsequent elements are passed to the locator class as positional
         arguments.
 
-        ======================  ============================================  =====================================================================================
-        Key                     Class                                         Description
-        ======================  ============================================  =====================================================================================
-        ``'null'``, ``'none'``  `~matplotlib.ticker.NullLocator`              No ticks
-        ``'auto'``              `~matplotlib.ticker.AutoLocator`              Major ticks at sensible locations
-        ``'minor'``             `~matplotlib.ticker.AutoMinorLocator`         Minor ticks at sensible locations
-        ``'date'``              `~matplotlib.dates.AutoDateLocator`           Default tick locations for datetime axes
-        ``'fixed'``             `~matplotlib.ticker.FixedLocator`             Ticks at these exact locations
-        ``'index'``             `~matplotlib.ticker.IndexLocator`             Ticks on the non-negative integers
-        ``'linear'``            `~matplotlib.ticker.LinearLocator`            Exactly ``N`` ticks encompassing axis limits, spaced as ``numpy.linspace(lo, hi, N)``
-        ``'log'``               `~matplotlib.ticker.LogLocator`               For log-scale axes
-        ``'logminor'``          `~matplotlib.ticker.LogLocator`               For log-scale axes on the 1st through 9th multiples of each power of the base
-        ``'logit'``             `~matplotlib.ticker.LogitLocator`             For logit-scale axes
-        ``'logitminor'``        `~matplotlib.ticker.LogitLocator`             For logit-scale axes with ``minor=True`` passed to `~matplotlib.ticker.LogitLocator`
-        ``'maxn'``              `~matplotlib.ticker.MaxNLocator`              No more than ``N`` ticks at sensible locations
-        ``'multiple'``          `~matplotlib.ticker.MultipleLocator`          Ticks every ``N`` step away from zero
-        ``'symlog'``            `~matplotlib.ticker.SymmetricalLogLocator`    For symlog-scale axes
-        ``'symlogminor'``       `~matplotlib.ticker.SymmetricalLogLocator`    For symlog-scale axes on the 1st through 9th multiples of each power of the base
-        ``'theta'``             `~matplotlib.projections.polar.ThetaLocator`  Like the base locator but default locations are every `numpy.pi`/8 radians
-        ``'year'``              `~matplotlib.dates.YearLocator`               Ticks every ``N`` years
-        ``'month'``             `~matplotlib.dates.MonthLocator`              Ticks every ``N`` months
-        ``'weekday'``           `~matplotlib.dates.WeekdayLocator`            Ticks every ``N`` weekdays
-        ``'day'``               `~matplotlib.dates.DayLocator`                Ticks every ``N`` days
-        ``'hour'``              `~matplotlib.dates.HourLocator`               Ticks every ``N`` hours
-        ``'minute'``            `~matplotlib.dates.MinuteLocator`             Ticks every ``N`` minutes
-        ``'second'``            `~matplotlib.dates.SecondLocator`             Ticks every ``N`` seconds
-        ``'microsecond'``       `~matplotlib.dates.MicrosecondLocator`        Ticks every ``N`` microseconds
-        ======================  ============================================  =====================================================================================
+        .. _locator_table:
+
+        =======================  ============================================  =====================================================================================
+        Key                      Class                                         Description
+        =======================  ============================================  =====================================================================================
+        ``'null'``, ``'none'``   `~matplotlib.ticker.NullLocator`              No ticks
+        ``'auto'``               `~matplotlib.ticker.AutoLocator`              Major ticks at sensible locations
+        ``'minor'``              `~matplotlib.ticker.AutoMinorLocator`         Minor ticks at sensible locations
+        ``'date'``               `~matplotlib.dates.AutoDateLocator`           Default tick locations for datetime axes
+        ``'fixed'``              `~matplotlib.ticker.FixedLocator`             Ticks at these exact locations
+        ``'index'``              `~matplotlib.ticker.IndexLocator`             Ticks on the non-negative integers
+        ``'linear'``             `~matplotlib.ticker.LinearLocator`            Exactly ``N`` ticks encompassing axis limits, spaced as ``numpy.linspace(lo, hi, N)``
+        ``'log'``                `~matplotlib.ticker.LogLocator`               For log-scale axes
+        ``'logminor'``           `~matplotlib.ticker.LogLocator`               For log-scale axes on the 1st through 9th multiples of each power of the base
+        ``'logit'``              `~matplotlib.ticker.LogitLocator`             For logit-scale axes
+        ``'logitminor'``         `~matplotlib.ticker.LogitLocator`             For logit-scale axes with ``minor=True`` passed to `~matplotlib.ticker.LogitLocator`
+        ``'maxn'``               `~matplotlib.ticker.MaxNLocator`              No more than ``N`` ticks at sensible locations
+        ``'multiple'``           `~matplotlib.ticker.MultipleLocator`          Ticks every ``N`` step away from zero
+        ``'symlog'``             `~matplotlib.ticker.SymmetricalLogLocator`    For symlog-scale axes
+        ``'symlogminor'``        `~matplotlib.ticker.SymmetricalLogLocator`    For symlog-scale axes on the 1st through 9th multiples of each power of the base
+        ``'theta'``              `~matplotlib.projections.polar.ThetaLocator`  Like the base locator but default locations are every `numpy.pi`/8 radians
+        ``'year'``               `~matplotlib.dates.YearLocator`               Ticks every ``N`` years
+        ``'month'``              `~matplotlib.dates.MonthLocator`              Ticks every ``N`` months
+        ``'weekday'``            `~matplotlib.dates.WeekdayLocator`            Ticks every ``N`` weekdays
+        ``'day'``                `~matplotlib.dates.DayLocator`                Ticks every ``N`` days
+        ``'hour'``               `~matplotlib.dates.HourLocator`               Ticks every ``N`` hours
+        ``'minute'``             `~matplotlib.dates.MinuteLocator`             Ticks every ``N`` minutes
+        ``'second'``             `~matplotlib.dates.SecondLocator`             Ticks every ``N`` seconds
+        ``'microsecond'``        `~matplotlib.dates.MicrosecondLocator`        Ticks every ``N`` microseconds
+        ``'lon'``, ``'deglon'``  `~proplot.ticker.LongitudeLocator`            Longitude gridlines at sensible decimal locations, for `~proplot.axes.GeoAxes`
+        ``'lat'``, ``'deglat'``  `~proplot.ticker.LatitudeLocator`             Latitude gridlines at sensible decimal locations, for `~proplot.axes.GeoAxes`
+        ``'dmslon'``             `~proplot.ticker.LongitudeLocator`            Longitude gridlines on whole minutes and seconds, for `~proplot.axes.GeoAxes`
+        ``'dmslat'``             `~proplot.ticker.LatitudeLocator`             Latitude gridlines on whole minutes and seconds, for `~proplot.axes.GeoAxes`
+        =======================  ============================================  =====================================================================================
 
     Other parameters
     ----------------
@@ -919,11 +994,13 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
           `this page <https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes>`__
           for a review. Returns a `~matplotlib.ticker.DateFormatter`.
 
-        Otherwise, `formatter` should be a string corresponding to one
-        of the "registered" formatters (see below table). If `formatter` is
-        a list or tuple and the first element is a "registered" formatter
-        name, subsequent elements are passed to the formatter class as
-        positional arguments.
+        Otherwise, `formatter` should be a string corresponding to one of the
+        "registered" formatters or formatter presets (see below table). If
+        `formatter` is a list or tuple and the first element is a "registered"
+        formatter name, subsequent elements are passed to the formatter class
+        as positional arguments.
+
+        .. _formatter_table:
 
         ======================  ==============================================  ===============================================================
         Key                     Class                                           Description
@@ -950,11 +1027,13 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
         ``'theta'``             `~matplotlib.projections.polar.ThetaFormatter`  Formats radians as degrees, with a degree symbol
         ``'e'``                 `~proplot.ticker.FracFormatter` preset          Fractions of *e*
         ``'pi'``                `~proplot.ticker.FracFormatter` preset          Fractions of :math:`\\pi`
+        ``'lat'``               `~proplot.ticker.AutoFormatter` preset          Cardinal "SN" indicator
+        ``'lon'``               `~proplot.ticker.AutoFormatter` preset          Cardinal "WE" indicator
         ``'deg'``               `~proplot.ticker.AutoFormatter` preset          Trailing degree symbol
         ``'deglat'``            `~proplot.ticker.AutoFormatter` preset          Trailing degree symbol and cardinal "SN" indicator
         ``'deglon'``            `~proplot.ticker.AutoFormatter` preset          Trailing degree symbol and cardinal "WE" indicator
-        ``'lat'``               `~proplot.ticker.AutoFormatter` preset          Cardinal "SN" indicator
-        ``'lon'``               `~proplot.ticker.AutoFormatter` preset          Cardinal "WE" indicator
+        ``'dmslon'``            `~cartopy.mpl.ticker.LongitudeFormatter`        Cartopy longitude labels with degree/minute/second support
+        ``'dmslat'``            `~cartopy.mpl.ticker.LatitudeFormatter`         Cartopy latitude labels with degree/minute/second support
         ======================  ==============================================  ===============================================================
 
     date : bool, optional
@@ -1001,35 +1080,14 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
                 formatter = mticker.FormatStrFormatter(
                     formatter, *args, **kwargs
                 )
-        else:
-            # Fraction shorthands
-            if formatter in ('pi', 'e'):
-                if formatter == 'pi':
-                    symbol, number = r'$\pi$', np.pi
-                else:
-                    symbol, number = '$e$', np.e
-                kwargs.setdefault('symbol', symbol)
-                kwargs.setdefault('number', number)
-                formatter = 'frac'
-            # Cartographic shorthands
-            if formatter in ('deg', 'deglon', 'deglat', 'lon', 'lat'):
-                negpos, suffix = None, None
-                if 'deg' in formatter:
-                    suffix = '\N{DEGREE SIGN}'
-                if 'lat' in formatter:
-                    negpos = 'SN'
-                if 'lon' in formatter:
-                    negpos = 'WE'
-                kwargs.setdefault('suffix', suffix)
-                kwargs.setdefault('negpos', negpos)
-                formatter = 'auto'
+        elif formatter in FORMATTERS:
             # Lookup
-            if formatter not in FORMATTERS:
-                raise ValueError(
-                    f'Unknown formatter {formatter!r}. Options are '
-                    + ', '.join(map(repr, FORMATTERS.keys())) + '.'
-                )
             formatter = FORMATTERS[formatter](*args, **kwargs)
+        else:
+            raise ValueError(
+                f'Unknown formatter {formatter!r}. Options are '
+                + ', '.join(map(repr, FORMATTERS.keys())) + '.'
+            )
     elif callable(formatter):
         # Function
         formatter = mticker.FuncFormatter(formatter, *args, **kwargs)
@@ -1061,6 +1119,8 @@ def Scale(scale, *args, **kwargs):
         If `scale` is a list or tuple and the first element is a
         "registered" scale name, subsequent elements are passed to the
         scale class as positional arguments.
+
+        .. _scale_table:
 
         =================  ======================================  ===============================================
         Key                Class                                   Description
@@ -1136,7 +1196,7 @@ def Scale(scale, *args, **kwargs):
 
 def Proj(name, basemap=None, **kwargs):
     """
-    Return a `cartopy.crs.Projection` or `mpl_toolkits.basemap.Basemap`
+    Return a `cartopy.crs.Projection` or `~mpl_toolkits.basemap.Basemap`
     instance. Used to interpret the `proj` and `proj_kw` arguments when
     passed to `~proplot.ui.subplots`.
 
@@ -1154,6 +1214,8 @@ def Proj(name, basemap=None, **kwargs):
         and whether they are available in the cartopy and basemap packages.
         (added) indicates a projection class that ProPlot has "added"
         to cartopy using the cartopy API.
+
+        .. _proj_table:
 
         =============  ===============================================  =========  =======
         Key            Name                                             Cartopy    Basemap
@@ -1282,7 +1344,7 @@ def Proj(name, basemap=None, **kwargs):
     is_basemap = Basemap is not object and isinstance(name, Basemap)
     if is_crs or is_basemap:
         proj = name
-        proj._package_used = 'cartopy' if is_crs else 'basemap'
+        proj._proj_package = 'cartopy' if is_crs else 'basemap'
         if basemap is not None:
             kwargs['basemap'] = basemap
         if kwargs:
@@ -1302,6 +1364,8 @@ def Proj(name, basemap=None, **kwargs):
         # https://stackoverflow.com/q/56299971/4970632
         # NOTE: We set rsphere to fix non-conda installed basemap issue:
         # https://github.com/matplotlib/basemap/issues/361
+        # NOTE: Unlike cartopy, basemap resolution is configured on
+        # initialization and controls *all* features.
         import mpl_toolkits.basemap as mbasemap
         if _version_mpl >= _version('3.3'):
             raise RuntimeError(
@@ -1310,16 +1374,33 @@ def Proj(name, basemap=None, **kwargs):
                 'plotting backend or downgrade to matplotlib <=3.2.'
             )
         name = BASEMAP_PROJ_ALIASES.get(name, name)
-        kwproj = BASEMAP_KW_DEFAULTS.get(name, {})
+        kwproj = BASEMAP_KW_DEFAULTS.get(name, {}).copy()
         kwproj.update(kwargs)
         kwproj.setdefault('fix_aspect', True)
+        if kwproj.get('lon_0', 0) > 0:
+            # Fix issues with Robinson (and related?) projections
+            # See: https://stackoverflow.com/questions/56299971/
+            # Get both this issue *and* 'no room for axes' issue
+            kwproj['lon_0'] -= 360
         if name[:2] in ('np', 'sp'):
             kwproj.setdefault('round', True)
         if name == 'geos':
             kwproj.setdefault('rsphere', (6378137.00, 6356752.3142))
-        reso = kwproj.pop('resolution', None) or kwproj.pop('reso', None) or 'c'
-        proj = mbasemap.Basemap(projection=name, resolution=reso, **kwproj)
-        proj._package_used = 'basemap'
+        reso = _not_none(
+            reso=kwproj.pop('reso', None),
+            resolution=kwproj.pop('resolution', None),
+            default=rc['reso']
+        )
+        try:
+            reso = BASEMAP_RESOS[reso]
+        except KeyError:
+            raise ValueError(
+                f'Invalid resolution {reso!r}. Options are: '
+                + ', '.join(map(repr, BASEMAP_RESOS)) + '.'
+            )
+        kwproj.update({'resolution': reso, 'projection': name})
+        proj = mbasemap.Basemap(**kwproj)
+        proj._proj_package = 'basemap'
 
     # Cartopy
     else:
@@ -1342,6 +1423,6 @@ def Proj(name, basemap=None, **kwargs):
                 + ', '.join(map(repr, CARTOPY_PROJS.keys())) + '.'
             )
         proj = crs(**kwproj)
-        proj._package_used = 'cartopy'
+        proj._proj_package = 'cartopy'
 
     return proj

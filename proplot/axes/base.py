@@ -24,13 +24,12 @@ from .. import gridspec as pgridspec
 from ..config import rc
 from ..utils import units, edges
 from ..internals import ic  # noqa: F401
-from ..internals import rcsetup, warnings, _not_none
+from ..internals import docstring, rcsetup, warnings, _not_none
 
 __all__ = ['Axes']
 
-# Translator for inset colorbars and legends
 ABC_STRING = 'abcdefghijklmnopqrstuvwxyz'
-LOC_TRANSLATE = {
+LOC_TRANSLATE = {  # for inset colorbars and legends TODO: also as text locations
     'inset': 'best',
     'i': 'best',
     0: 'best',
@@ -57,6 +56,104 @@ LOC_TRANSLATE = {
     'uc': 'upper center',
     'lc': 'lower center',
 }
+
+
+docstring.snippets['axes.other'] = """
+rc_kw : dict, optional
+    Dictionary containing `~proplot.config.rc` settings applied to
+    this axes using `~proplot.config.rc_configurator.context`.
+**kwargs
+    Passed to `Axes.format` or passed to `~proplot.config.rc_configurator.context`
+    and used to update axes `~proplot.config.rc` settings. For example,
+    ``abcstyle='A.'`` modifies the :rcraw:`abc.style` setting.
+"""
+
+docstring.snippets['axes.patch_kw'] = """
+patch_kw : dict-like, optional
+    Keyword arguments used to update the background patch object. You
+    can use this, for example, to set background hatching with
+    ``patch_kw={'hatch': 'xxx'}``.
+"""
+
+docstring.snippets['axes.proj'] = """
+The map projection specification(s). If ``'cartesian'`` (the default), a
+`~proplot.axes.CartesianAxes` is created. If ``'polar'``, a
+`~proplot.axes.PolarAxes` is created. Otherwise, the argument is
+interpreted by `~proplot.constructor.Proj`, and the result is used
+to make a `~proplot.axes.GeoAxes` (in this case the argument can be
+a `cartopy.crs.Projection` instance, a `~mpl_toolkits.basemap.Basemap`
+instance, or a projection name listed in :ref:`this table <proj_table>`).
+"""
+
+docstring.snippets['axes.inset'] = """
+Return an inset `CartesianAxes`. This is similar to the builtin
+`~matplotlib.axes.Axes.inset_axes` but includes some extra options.
+
+Parameters
+----------
+bounds : list of float
+    The bounds for the inset axes, listed as ``(x, y, width, height)``.
+transform : {'data', 'axes', 'figure'} or \
+`~matplotlib.transforms.Transform`, optional
+    The transform used to interpret `bounds`. Can be a
+    `~matplotlib.transforms.Transform` object or a string representing
+    the `~matplotlib.axes.Axes.transData`,
+    `~matplotlib.axes.Axes.transAxes`,
+    or `~matplotlib.figure.Figure.transFigure` transforms. Default is
+    ``'axes'``, i.e. `bounds` is in axes-relative coordinates.
+zorder : float, optional
+    The `zorder <https://matplotlib.org/3.1.1/gallery/misc/zorder_demo.html>`__
+    of the axes, should be greater than the zorder of
+    elements in the parent axes. Default is ``4``.
+zoom : bool, optional
+    Whether to draw lines indicating the inset zoom using
+    `~Axes.indicate_inset_zoom`. The lines will automatically
+    adjust whenever the parent axes or inset axes limits are changed.
+    Default is ``True``.
+zoom_kw : dict, optional
+    Passed to `~Axes.indicate_inset_zoom`.
+
+Other parameters
+----------------
+**kwargs
+    Passed to `CartesianAxes`.
+""" % docstring.snippets
+
+docstring.snippets['axes.panel'] = """
+Return a panel drawn along the edge of this axes.
+
+Parameters
+----------
+side : str, optional
+    The panel location. The following location keys are valid:
+
+    ==========  =====================
+    Location    Valid keys
+    ==========  =====================
+    left        ``'left'``, ``'l'``
+    right       ``'right'``, ``'r'``
+    bottom      ``'bottom'``, ``'b'``
+    top         ``'top'``, ``'t'``
+    ==========  =====================
+
+width : float or str or list thereof, optional
+    The panel width. Units are interpreted by `~proplot.utils.units`.
+    Default is :rc:`subplots.panelwidth`.
+space : float or str or list thereof, optional
+    Empty space between the main subplot and the panel.
+    When :rcraw:`tight` is ``True``, this is adjusted automatically.
+    Otherwise, the default is :rc:`subplots.panelpad`.
+share : bool, optional
+    Whether to enable axis sharing between the *x* and *y* axes of the
+    main subplot and the panel long axes for each panel in the stack.
+    Sharing between the panel short axis and other panel short axes
+    is determined by figure-wide `sharex` and `sharey` settings.
+
+Returns
+-------
+`~proplot.axes.CartesianAxes`
+    The panel axes.
+"""
 
 
 class Axes(maxes.Axes):
@@ -744,12 +841,15 @@ optional
         if len(fig._axes_main) > 1 and rc._context and rc._context[-1].mode == 1:
             kw = {}
         else:
-            kw = rc.fill({
-                'fontsize': 'suptitle.size',
-                'weight': 'suptitle.weight',
-                'color': 'suptitle.color',
-                'fontfamily': 'font.family'
-            }, context=True)
+            kw = rc.fill(
+                {
+                    'fontsize': 'suptitle.size',
+                    'weight': 'suptitle.weight',
+                    'color': 'suptitle.color',
+                    'fontfamily': 'font.family'
+                },
+                context=True,
+            )
         if suptitle or kw:
             fig._update_super_title(suptitle, **kw)
 
@@ -766,12 +866,15 @@ optional
             ('left', 'right', 'top', 'bottom'),
             (llabels, rlabels, tlabels, blabels)
         ):
-            kw = rc.fill({
-                'fontsize': side + 'label.size',
-                'weight': side + 'label.weight',
-                'color': side + 'label.color',
-                'fontfamily': 'font.family'
-            }, context=True)
+            kw = rc.fill(
+                {
+                    'fontsize': side + 'label.size',
+                    'weight': side + 'label.weight',
+                    'color': side + 'label.color',
+                    'fontfamily': 'font.family'
+                },
+                context=True,
+            )
             if labels or kw:
                 fig._update_subplot_labels(self, side, labels, **kw)
 
@@ -790,16 +893,23 @@ optional
             # NOTE: Border props only apply for "inner" title locations so we
             # need to store on the axes whenever they are modified and always
             # re-apply the ones stored on the axes.
-            kw = rc.fill({
-                'fontsize': 'abc.size',
-                'weight': 'abc.weight',
-                'color': 'abc.color',
-                'fontfamily': 'font.family',
-            }, context=True)
-            self._abc_border_kwargs.update(rc.fill({
-                'border': 'abc.border',
-                'borderwidth': 'abc.borderwidth',
-            }, context=True))
+            kw = rc.fill(
+                {
+                    'fontsize': 'abc.size',
+                    'weight': 'abc.weight',
+                    'color': 'abc.color',
+                    'fontfamily': 'font.family',
+                },
+                context=True
+            )
+            kwb = rc.fill(
+                {
+                    'border': 'abc.border',
+                    'borderwidth': 'abc.borderwidth',
+                },
+                context=True,
+            )
+            self._abc_border_kwargs.update(kwb)
             kw.update(self._abc_border_kwargs)
 
             # Label format
@@ -847,18 +957,25 @@ optional
         # still use custom title.size, title.weight, title.color
         # properties for retroactive support in older matplotlib versions.
         # First get params and update kwargs
-        kw = rc.fill({
-            'fontsize': 'title.size',
-            'weight': 'title.weight',
-            'color': 'title.color',
-            'fontfamily': 'font.family',
-        }, context=True)
+        kw = rc.fill(
+            {
+                'fontsize': 'title.size',
+                'weight': 'title.weight',
+                'color': 'title.color',
+                'fontfamily': 'font.family',
+            },
+            context=True
+        )
         if 'color' in kw and kw['color'] == 'auto':
             del kw['color']  # WARNING: matplotlib permits invalid color here
-        self._title_border_kwargs.update(rc.fill({
-            'border': 'title.border',
-            'borderwidth': 'title.borderwidth',
-        }, context=True))
+        kwb = rc.fill(
+            {
+                'border': 'title.border',
+                'borderwidth': 'title.borderwidth',
+            },
+            context=True,
+        )
+        self._title_border_kwargs.update(kwb)
         kw.update(self._title_border_kwargs)
 
         # Workflow 2, want this to come first so workflow 1 gets priority
@@ -1309,43 +1426,21 @@ optional
         )
         return obj
 
+    @docstring.add_snippets
+    def inset(self, *args, **kwargs):
+        """
+        %(axes.inset)s
+        """
+        return self.inset_axes(*args, **kwargs)
+
+    @docstring.add_snippets
     def inset_axes(
         self, bounds, *, transform=None, zorder=4,
-        zoom=True, zoom_kw=None, **kwargs
+        zoom=True, zoom_kw=None,
+        **kwargs
     ):
         """
-        Return an inset `CartesianAxes`. This is similar to the builtin
-        `~matplotlib.axes.Axes.inset_axes` but includes some extra options.
-
-        Parameters
-        ----------
-        bounds : list of float
-            The bounds for the inset axes, listed as ``(x, y, width, height)``.
-        transform : {'data', 'axes', 'figure'} or \
-`~matplotlib.transforms.Transform`, optional
-            The transform used to interpret `bounds`. Can be a
-            `~matplotlib.transforms.Transform` object or a string representing
-            the `~matplotlib.axes.Axes.transData`,
-            `~matplotlib.axes.Axes.transAxes`,
-            or `~matplotlib.figure.Figure.transFigure` transforms. Default is
-            ``'axes'``, i.e. `bounds` is in axes-relative coordinates.
-        zorder : float, optional
-            The `zorder \
-<https://matplotlib.org/3.1.1/gallery/misc/zorder_demo.html>`__
-            of the axes, should be greater than the zorder of
-            elements in the parent axes. Default is ``4``.
-        zoom : bool, optional
-            Whether to draw lines indicating the inset zoom using
-            `~Axes.indicate_inset_zoom`. The lines will automatically
-            adjust whenever the parent axes or inset axes limits are changed.
-            Default is ``True``.
-        zoom_kw : dict, optional
-            Passed to `~Axes.indicate_inset_zoom`.
-
-        Other parameters
-        ----------------
-        **kwargs
-            Passed to `CartesianAxes`.
+        %(axes.inset)s
         """
         # Carbon copy with my custom axes
         if not transform:
@@ -1453,31 +1548,17 @@ optional
         self._inset_zoom_data = (rectpatch, connects)
         return rectpatch, connects
 
+    @docstring.add_snippets
+    def panel(self, side, **kwargs):
+        """
+        %(axes.panel)s
+        """
+        return self.panel_axes(side, **kwargs)
+
+    @docstring.add_snippets
     def panel_axes(self, side, **kwargs):
         """
-        Return a panel axes drawn along the edge of this axes.
-
-        Parameters
-        ----------
-        ax : `~proplot.axes.Axes`
-            The axes for which we are drawing a panel.
-        width : float or str or list thereof, optional
-            The panel width. Units are interpreted by `~proplot.utils.units`.
-            Default is :rc:`subplots.panelwidth`.
-        space : float or str or list thereof, optional
-            Empty space between the main subplot and the panel.
-            When :rcraw:`tight` is ``True``, this is adjusted automatically.
-            Otherwise, the default is :rc:`subplots.panelpad`.
-        share : bool, optional
-            Whether to enable axis sharing between the *x* and *y* axes of the
-            main subplot and the panel long axes for each panel in the stack.
-            Sharing between the panel short axis and other panel short axes
-            is determined by figure-wide `sharex` and `sharey` settings.
-
-        Returns
-        -------
-        `~proplot.axes.Axes`
-            The panel axes.
+        %(axes.panel)s
         """
         side = self._loc_translate(side, 'panel')
         return self.figure._add_axes_panel(self, side, **kwargs)
@@ -1631,12 +1712,6 @@ optional
 
     # For consistency with _left_title, _upper_left_title, etc.
     _center_title = property(lambda self: self.title)
-
-    #: Alias for `~Axes.panel_axes`.
-    panel = panel_axes
-
-    #: Alias for `~Axes.inset_axes`.
-    inset = inset_axes
 
     # Wrapped by special functions
     # Also support redirecting to Basemap methods

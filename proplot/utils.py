@@ -528,21 +528,21 @@ def units(value, dest='in', axes=None, figure=None, width=True):
     # NOTE: Delay font_manager import, because want to avoid rebuilding font
     # cache, which means import must come after TTFPATH added to environ
     # by register_fonts()!
-    small = rcParams['font.size']  # must be absolute
-    large = rcParams['axes.titlesize']
-    if isinstance(large, str):
+    fontsize_small = rcParams['font.size']  # must be absolute
+    fontsize_large = rcParams['axes.titlesize']
+    if isinstance(fontsize_large, str):
         import matplotlib.font_manager as mfonts
         # error will be raised somewhere else if string name is invalid!
-        scale = mfonts.font_scalings.get(large, 1)
-        large = small * scale
+        scale = mfonts.font_scalings.get(fontsize_large, 1)
+        fontsize_large = fontsize_small * scale
 
     # Scales for converting physical units to inches
     unit_dict = UNIT_DICT.copy()
     unit_dict.update({
-        'em': small / 72.0,
-        'en': 0.5 * small / 72.0,
-        'Em': large / 72.0,
-        'En': 0.5 * large / 72.0,
+        'em': fontsize_small / 72.0,
+        'en': 0.5 * fontsize_small / 72.0,
+        'Em': fontsize_large / 72.0,
+        'En': 0.5 * fontsize_large / 72.0,
     })
 
     # Scales for converting display units to inches

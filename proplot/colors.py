@@ -2198,13 +2198,7 @@ def _get_cmap(name=None, lut=None):
         name = rcParams['image.cmap']
     if isinstance(name, mcolors.Colormap):
         return name
-    try:
-        cmap = _cmap_database[name]
-    except KeyError:
-        raise KeyError(
-            f'Invalid colormap name {name!r}. Valid names are: '
-            + ', '.join(map(repr, _cmap_database)) + '.'
-        )
+    cmap = _cmap_database[name]
     if lut is not None:
         cmap = cmap._resample(lut)
     return cmap
@@ -2245,6 +2239,7 @@ class ColormapDatabase(dict):
         * Reversed diverging colormaps can be requested with their "reversed"
           name -- for example, ``'BuRd'`` is equivalent to ``'RdBu_r'``.
         """
+        # Sanitize key and handle suffixes
         key = self._sanitize_key(key, mirror=True)
         shift = key[-2:] == '_s'
         if shift:
@@ -2252,7 +2247,17 @@ class ColormapDatabase(dict):
         reverse = key[-2:] == '_r'
         if reverse:
             key = key[:-2]
-        value = super().__getitem__(key)  # may raise keyerror
+
+        # Get item and issue nice error message
+        try:
+            value = super().__getitem__(key)  # may raise keyerror
+        except KeyError:
+            raise KeyError(
+                f'Invalid colormap or cycle name {key!r}. Valid names are: '
+                + ', '.join(map(repr, self)) + '.'
+            )
+
+        # Auto-reverse and auto-shift
         if shift:
             if hasattr(value, 'shifted'):
                 value = value.shifted(180)

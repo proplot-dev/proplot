@@ -10,7 +10,7 @@ from .. import ticker as pticker
 from .. import constructor
 from ..config import rc
 from ..internals import ic  # noqa: F401
-from ..internals import warnings, _not_none
+from ..internals import docstring, warnings, _not_none
 
 __all__ = ['PolarAxes']
 
@@ -38,6 +38,7 @@ class PolarAxes(base.Axes, mproj.PolarAxes):
         for axis in (self.xaxis, self.yaxis):
             axis.set_tick_params(which='both', size=0)
 
+    @docstring.add_snippets
     def format(
         self, *args,
         r0=None, theta0=None, thetadir=None,
@@ -49,6 +50,7 @@ class PolarAxes(base.Axes, mproj.PolarAxes):
         thetalabels=None, rlabels=None,
         thetalocator_kw=None, rlocator_kw=None,
         thetaformatter_kw=None, rformatter_kw=None,
+        patch_kw=None,
         **kwargs
     ):
         """
@@ -84,7 +86,8 @@ optional
             automatically be matplotlib.
         thetalocator, rlocator : float or list of float, optional
             Used to determine the azimuthal and radial gridline positions.
-            Passed to the `~proplot.constructor.Locator` constructor.
+            Passed to the `~proplot.constructor.Locator` constructor. Can be
+            float, list of float, string, or `matplotlib.ticker.Locator` instance.
         thetalines, rlines
             Aliases for `thetalocator`, `rlocator`.
         thetalocator_kw, rlocator_kw : dict-like, optional
@@ -95,23 +98,18 @@ optional
         thetaformatter, rformatter : formatter spec, optional
             Used to determine the azimuthal and radial label format.
             Passed to the `~proplot.constructor.Formatter` constructor.
-            Use ``[]`` or ``'null'`` for no ticks.
+            Can be string, list of string, or `matplotlib.ticker.Formatter`
+            instance. Use ``[]`` or ``'null'`` for no ticks.
         thetalabels, rlabels : optional
             Aliases for `thetaformatter`, `rformatter`.
         thetaformatter_kw, rformatter_kw : dict-like, optional
             The azimuthal and radial label formatter settings. Passed to
             `~proplot.constructor.Formatter`.
+        %(axes.patch_kw)s
 
         Other parameters
         ----------------
-        rc_kw : dict, optional
-            Dictionary containing `~proplot.config.rc` settings applied to
-            this axes using `~proplot.config.rc_configurator.context`.
-        **kwargs
-            Passed to `Axes.format` or passed to
-            `~proplot.config.rc_configurator.context` and used to update the
-            axes `~proplot.config.rc` settings. For example,
-            ``axestitlesize=15`` modifies the :rcraw:`axes.titlesize` setting.
+        %(axes.other)s
 
         See also
         --------
@@ -120,6 +118,18 @@ optional
         """
         rc_kw, rc_mode, kwargs = self._parse_format(**kwargs)
         with rc.context(rc_kw, mode=rc_mode):
+            # Background patch
+            kw_face = rc.fill(
+                {
+                    'facecolor': 'axes.facecolor',
+                    'alpha': 'axes.alpha'
+                },
+                context=True,
+            )
+            patch_kw = patch_kw or {}
+            kw_face.update(patch_kw)
+            self.patch.update(kw_face)
+
             # Not mutable default args
             thetalocator_kw = thetalocator_kw or {}
             thetaformatter_kw = thetaformatter_kw or {}
@@ -196,10 +206,13 @@ optional
                     max_ = getattr(self, 'get_' + r + 'max')()
 
                 # Spine settings
-                kw = rc.fill({
-                    'linewidth': 'axes.linewidth',
-                    'color': 'axes.edgecolor',
-                }, context=True)
+                kw = rc.fill(
+                    {
+                        'linewidth': 'axes.linewidth',
+                        'color': 'axes.edgecolor',
+                    },
+                    context=True,
+                )
                 sides = ('inner', 'polar') if r == 'r' else ('start', 'end')
                 spines = [self.spines[side] for side in sides]
                 for spine, side in zip(spines, sides):
@@ -207,21 +220,27 @@ optional
 
                 # Grid and grid label settings
                 # NOTE: Not sure if polar lines inherit tick or grid props
-                kw = rc.fill({
-                    'color': x + 'tick.color',
-                    'labelcolor': 'tick.labelcolor',  # new props
-                    'labelsize': 'tick.labelsize',
-                    'grid_color': 'grid.color',
-                    'grid_alpha': 'grid.alpha',
-                    'grid_linewidth': 'grid.linewidth',
-                    'grid_linestyle': 'grid.linestyle',
-                }, context=True)
+                kw = rc.fill(
+                    {
+                        'color': x + 'tick.color',
+                        'labelcolor': 'tick.labelcolor',  # new props
+                        'labelsize': 'tick.labelsize',
+                        'grid_color': 'grid.color',
+                        'grid_alpha': 'grid.alpha',
+                        'grid_linewidth': 'grid.linewidth',
+                        'grid_linestyle': 'grid.linestyle',
+                    },
+                    context=True,
+                )
                 axis.set_tick_params(which='both', **kw)
                 # Label settings that can't be controlled with set_tick_params
-                kw = rc.fill({
-                    'fontfamily': 'font.family',
-                    'weight': 'tick.labelweight'
-                }, context=True)
+                kw = rc.fill(
+                    {
+                        'fontfamily': 'font.family',
+                        'weight': 'tick.labelweight'
+                    },
+                    context=True,
+                )
                 for t in axis.get_ticklabels():
                     t.update(kw)
 
