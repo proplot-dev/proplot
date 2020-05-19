@@ -16,15 +16,14 @@ from .plot import (
     _scatter_wrapper, _standardize_1d, _standardize_2d,
     _text_wrapper,
 )
-from .. import crs as pcrs
 from .. import constructor
+from .. import crs as pcrs
 from .. import ticker as pticker
 from ..config import rc
 from ..internals import ic  # noqa: F401
 from ..internals import docstring, warnings, _version, _version_cartopy, _not_none
-from ..utils import arange
 try:
-    from cartopy.mpl.geoaxes import GeoAxes as GeoAxesCartopy
+    from cartopy.mpl.geoaxes import GeoAxes as GeoAxesBase
     import cartopy.feature as cfeature
     import cartopy.mpl.ticker as cticker
     import cartopy.crs as ccrs
@@ -39,7 +38,7 @@ except ModuleNotFoundError:
 __all__ = ['GeoAxes', 'BasemapAxes', 'CartopyAxes']
 
 
-def _circle_path(N=100):
+def _circle_boundary(N=100):
     """
     Return a circle `~matplotlib.path.Path` used as the outline for polar
     stereographic, azimuthal equidistant, Lambert conformal, and gnomonic
@@ -205,81 +204,92 @@ class GeoAxes(base.Axes):
         proplot.axes.CartopyAxes
         proplot.axes.BasemapAxes
         """
-        # Store props that let us dynamically and incrementally modify
-        # line locations and settings like with Cartesian axes
-        self._boundinglat = None
-        self._latmax = None
-        self._latlines = None
-        self._lonlines = None
-        self._lonlines_values = None
-        self._latlines_values = None
-        self._lonlines_labels = None
-        self._latlines_labels = None
+        self._boundinglat = None  # latitude bound for polar projections
         super().__init__(*args, **kwargs)
 
     @docstring.add_snippets
     def format(
         self, *,
-        lonlim=None, latlim=None, boundinglat=None, grid=None,
-        lonlines=None, lonlocator=None,
-        latlines=None, latlocator=None, latmax=None,
-        lonlines_kw=None, lonlocator_kw=None,
-        latlines_kw=None, latlocator_kw=None,
+        lonlim=None, latlim=None, boundinglat=None,
+        longrid=None, latgrid=None, longridminor=None, latgridminor=None,
+        lonlocator=None, lonlines=None,
+        latlocator=None, latlines=None, latmax=None,
+        lonminorlocator=None, lonminorlines=None,
+        latminorlocator=None, latminorlines=None,
+        lonlocator_kw=None, lonlines_kw=None,
+        latlocator_kw=None, latlines_kw=None,
+        lonminorlocator_kw=None, lonminorlines_kw=None,
+        latminorlocator_kw=None, latminorlines_kw=None,
         lonformatter=None, latformatter=None,
         lonformatter_kw=None, latformatter_kw=None,
-        rotate_labels=None,
         labels=None, latlabels=None, lonlabels=None,
+        loninline=None, latinline=None, rotate_labels=None, labelpad=None,
         patch_kw=None, **kwargs,
     ):
         """
-        Modify the meridian and parallel labels, longitude and latitude map
+        Modify the longitude and latitude labels, longitude and latitude map
         limits, geographic features, and more. Unknown keyword arguments are
         passed to `Axes.format` and `~proplot.config.rc_configurator.context`.
 
         Parameters
         ----------
         lonlim, latlim : (float, float), optional
+            *For cartopy axes only.*
             The approximate longitude and latitude boundaries of the map,
-            applied with `~cartopy.mpl.geoaxes.GeoAxes.set_extent`. For
-            cartopy axes only.
+            applied with `~cartopy.mpl.geoaxes.GeoAxes.set_extent`.
+            Basemap axes extents must be declared when instantiating the
+            `~mpl_toolkits.basemap.Basemap` object.
         boundinglat : float, optional
+            *For cartopy axes only.*
             The edge latitude for the circle bounding North Pole and
             South Pole-centered projections.
-        grid : bool, optional
-            Toggles meridian and parallel gridlines on and off. Default is
-            :rc:`geogrid`.
-        lonlines, latlines : float, list of float, or `~matplotlib.ticker.Locator`, \
+            Basemap bounding latitudes must be declared when instantiating the
+            `~mpl_toolkits.basemap.Basemap` object.
+        longrid, latgrid : bool, optional
+            Whether to draw longitude and latitude gridlines.
+            Default is :rc:`grid`. Use `grid` to toggle both.
+        longridminor, latgridminor : bool, optional
+            Whether to draw "minor" longitude and latitude lines.
+            Default is :rc:`gridminor`. Use `gridminor` to toggle both.
+        lonlocator, latlocator : str, float, list of float, or \
+`~matplotlib.ticker.Locator`, optional
+            Used to determine the longitude and latitude gridline locations.
+            Passed to the `~proplot.constructor.Locator` constructor. Can be
+            string, float, list of float, or `matplotlib.ticker.Locator` instance.
+            The defaults are custom proplot
+
+            Locator spec used to determine longitude and latitude gridline locations.
+            If float, indicates the *step size* between longitude and latitude
+            gridlines. If list of float, indicates the exact longitude and latitude
+            gridline locations. Otherwise, the argument is interpreted by the
+            `~proplot.constructor.Locator` constructor, and the defaults are ProPlot's
+            custom longitude and latitude locators adapted from cartopy.
+        lonlines, latlines : optional
+            Aliases for `lonlocator`, `latlocator`.
+        lonlocator_kw, latlocator_kw : dict, optional
+            Keyword argument dictionaries passed to the `~matplotlib.ticker.Locator`
+            class.
+        lonlines_kw, latlines_kw : optional
+            Aliases for `lonlocator_kw`, `latlocator_kw`.
+        lonminorlocator, latminorlocator, lonminorlines, latminorlines : optional
+            As with `lonlocator` and `latlocator` but for the "minor" gridlines.
+            The defaults are :rc:`grid.lonminorstep` and :rc:`grid.latminorstep`.
+        lonminorlocator_kw, latminorlocator_kw, lonminorlines_kw, latminorlines_kw : \
 optional
-            If float, indicates the *spacing* of meridian and parallel gridlines. If
-            list of float, indicates the exact meridian and parallel gridlines to draw.
-            Otherwise, should be a `~matplotlib.ticker.Locator` instance.
-        lonlocator, latlocator : optional
-            Aliases for `lonlines`, `latlines`.
-        lonlines_kw, latlines_kw : dict, optional
-            Keyword argument dictionaries passed to the
-            `~cartopy.mpl.ticker.LongitudeFormatter` and
-            `~cartopy.mpl.ticker.LatitudeFormatter` formatters (respectively) for
-            cartopy axes, or passed to `~mpl_toolkits.basemap.Basemap.drawmeridians`
-            and `~mpl_toolkits.basemap.Basemap.drawparallels` methods (respectively)
-            for basemap axes.
-        lonlocator_kw, latlocator_kw : optional
-            Aliases for `lonlines_kw`, `latlines_kw`.
-        lonformatter, latformatter : `~matplotlib.ticker.Formatter`, optional
-            `~matplotlib.ticker.Formatter` instances used to style longitude
-            and latitude tick labels. For cartopy axes only.
-        lonformatter_kw, latformatter_kw : optional
-            Keyword arguments passed to `~cartopy.mpl.ticker.LongitudeFormatter`
-            and `~cartopy.mpl.ticker.LatitudeFormatter`. Ignored if `lonformatter`
-            or `latformatter` was provided. For cartopy axes only.
-        rotate_labels : bool, optional
-            Whether to rotate longitude and latitude gridline labels. For cartopy
-            axes only. Default is :rc:`geogrid.rotatelabels`.
+            As with `lonminorlocator_kw` and `latminorlocator_kw` but for the "minor"
+            gridlines.
         latmax : float, optional
-            The maximum absolute latitude for meridian gridlines. Default is
-            :rc:`geogrid.latmax`.
+            The maximum absolute latitude for longitude and latitude gridlines.
+            Longitude gridlines are cut off poleward of this latitude for *all*
+            basemap projections and the *subset* of cartopy projections that support
+            this feature. Default is ``80``.
+        latmax : float, optional
+            Maximum absolute gridline latitude. Lines poleward of this latitude are cut
+            off for *all* basemap projections and the *subset* of cartopy projections
+            that support this feature.
         labels : bool, optional
-            Toggles meridian and parallel gridline labels on and off. Default
-            is :rc:`geogrid.labels`.
+            Toggles longitude and latitude gridline labels on and off. Default
+            is :rc:`grid.labels`.
         lonlabels, latlabels
             Whether to label longitudes and latitudes, and on which sides
             of the map. There are four different options:
@@ -295,6 +305,27 @@ optional
                `~mpl_toolkits.basemap.Basemap.drawmeridians` and
                `~mpl_toolkits.basemap.Basemap.drawparallels` methods.
 
+        lonformatter, latformatter : str or `~matplotlib.ticker.Formatter`, optional
+            Formatter spec used to style longitude and latitude gridline labels.
+            Can be string, list of string, or `matplotlib.ticker.Formatter`
+            instance. Use ``[]`` or ``'null'`` for no ticks. The defaults are
+            are `~cartopy.mpl.ticker.LongitudeFormatter` and
+            `~cartopy.mpl.ticker.LatitudeFormatter`.
+        lonformatter_kw, latformatter_kw : optional
+            Keyword argument dictionaries passed to the `~matplotlib.ticker.Formatter`
+            class.
+        loninline, latinline : bool, optional
+            *For cartopy axes only.*
+            Whether to draw inline longitude and latitude gridline labels.
+            Defaults are :rc:`grid.loninline` and :rc:`grid.latinline`.
+        rotate_labels : bool, optional
+            *For cartopy axes only.*
+            Whether to rotate longitude and latitude gridline labels.
+            Default is :rc:`grid.rotatelabels`.
+        labelpad : float, optional
+            *For cartopy axes only.*
+            Controls the padding between the map boundary and longitude and
+            latitude gridline labels. Default is :rc:`grid.labelpad`.
         land, ocean, coast, rivers, lakes, borders, innerborders : bool, \
 optional
             Toggles various geographic features. These are actually the
@@ -318,143 +349,154 @@ optional
         # Format axes
         rc_kw, rc_mode, kwargs = self._parse_format(**kwargs)
         with rc.context(rc_kw, mode=rc_mode):
-            # Parse alternative keyword args
-            # TODO: Why isn't default latmax 80 respected sometimes?
-            lonlines = _not_none(lonlines=lonlines, lonlocator=lonlocator)
-            lonlines_user = lonlines is not None  # if True do not use LongitudeLocator
-            lonlines = _not_none(lonlines, rc.get('geogrid.lonstep', context=True))
-            latlines = _not_none(latlines=latlines, latlocator=latlocator)
-            latlines_user = latlines is not None
-            latlines = _not_none(latlines, rc.get('geogrid.latstep', context=True))
-            lonlines_kw = _not_none(
-                lonlines_kw=lonlines_kw, lonlocator_kw=lonlocator_kw, default={},
-            )
-            latlines_kw = _not_none(
-                latlines_kw=latlines_kw, latlocator_kw=latlocator_kw, default={},
-            )
-            rotate_labels = _not_none(
-                rotate_labels, rc.get('geogrid.rotatelabels', context=True)
-            )
-            lonformatter_kw = lonformatter_kw or {}
-            latformatter_kw = latformatter_kw or {}
-            latmax = _not_none(latmax, rc.get('geogrid.latmax', context=True))
-            labels = _not_none(labels, rc.get('geogrid.labels', context=True))
-            grid = _not_none(grid, rc.get('geogrid', context=True))
-            if labels:
-                lonlabels = _not_none(lonlabels, 1)
-                latlabels = _not_none(latlabels, 1)
+            # Gridline toggles
+            grid = rc.get('grid', context=True)
+            gridminor = rc.get('gridminor', context=True)
+            longrid = _not_none(longrid, grid)
+            latgrid = _not_none(latgrid, grid)
+            longridminor = _not_none(longridminor, gridminor)
+            latgridminor = _not_none(latgridminor, gridminor)
 
-            # Get longitude lines
-            if lonlines is not None:
-                if np.iterable(lonlines):
-                    lonlines = list(lonlines)
-                else:
-                    lonlines = self._get_lonlines(
-                        step=lonlines, user=lonlines_user, **lonlines_kw
-                    )
+            # Label toggles
+            labels = _not_none(labels, rc.get('grid.labels', context=True))
+            lonlabels = _not_none(lonlabels, labels)
+            latlabels = _not_none(latlabels, labels)
+            lonarray = self._to_label_array(lonlabels, lon=True)
+            latarray = self._to_label_array(latlabels, lon=False)
 
-            # Get latitude lines. If latmax is changed we always need to reset latlines
-            if latlines is not None or latmax is not None:
-                if latlines is None:
-                    latlines_prev = self._latlines_values
-                    latlines = _not_none(latlines_prev, rc['geogrid.latstep'])
-                if np.iterable(latlines):
-                    latlines = list(latlines)
-                else:
-                    latlines = self._get_latlines(
-                        step=latlines, latmax=latmax, user=latlines_user, **latlines_kw
-                    )
-
-            # Length-4 boolean arrays of whether and where to toggle labels
-            # Format is [left, right, bottom, top]
-            lonarray = self._parse_labels(lonlabels, lon=True)
-            latarray = self._parse_labels(latlabels, lon=False)
-
-            # Add attributes for redrawing lines
+            # Update 'maximum latitude'
+            latmax = _not_none(latmax, rc.get('grid.latmax', context=True))
             if latmax is not None:
-                self._latmax = latmax
-            if latlines is not None:
-                self._latlines_values = latlines
-            if lonlines is not None:
-                self._lonlines_values = lonlines
-            if latarray is not None:
-                self._latlines_labels = latarray
-            if lonarray is not None:
-                self._lonlines_labels = lonarray
+                self._lataxis.set_latmax(latmax)
 
-            # Grid toggling, must come after everything else in case e.g.
-            # rc.geogrid is False but user passed grid=True so we need to
-            # recover the *default* lonlines and latlines values
-            if grid is not None:
-                if not grid:
-                    lonlines = latlines = []
-                else:
-                    lonlines = self._lonlines_values
-                    latlines = self._latlines_values
+            # Update major locators
+            lonlocator = _not_none(lonlocator=lonlocator, lonlines=lonlines)
+            latlocator = _not_none(latlocator=latlocator, latlines=latlines)
+            if lonlocator is not None:
+                lonlocator_kw = _not_none(
+                    lonlocator_kw=lonlocator_kw, lonlines_kw=lonlines_kw, default={},
+                )
+                locator = constructor.Locator(lonlocator, **lonlocator_kw)
+                self._lonaxis.set_major_locator(locator)
+            if latlocator is not None:
+                latlocator_kw = _not_none(
+                    latlocator_kw=latlocator_kw, latlines_kw=latlines_kw, default={},
+                )
+                locator = constructor.Locator(latlocator, **latlocator_kw)
+                self._lataxis.set_major_locator(locator)
 
-            # Apply formatting to basemap or cartpoy axes
-            patch_kw = patch_kw or {}
-            self._format_apply(
-                patch_kw=patch_kw,
-                boundinglat=boundinglat, lonlim=lonlim, latlim=latlim,
-                lonlines=lonlines, latlines=latlines,
-                lonlines_kw=lonlines_kw, latlines_kw=latlines_kw,
-                lonformatter=lonformatter, latformatter=latformatter,
-                lonformatter_kw=lonformatter_kw, latformatter_kw=latformatter_kw,
-                rotate_labels=rotate_labels,
-                latmax=latmax, lonarray=lonarray, latarray=latarray,
+            # Update minor locators
+            lonminorlocator = _not_none(
+                lonminorlocator=lonminorlocator, lonminorlines=lonminorlines
             )
+            latminorlocator = _not_none(
+                latminorlocator=latminorlocator, latminorlines=latminorlines
+            )
+            if lonminorlocator is not None:
+                lonminorlocator_kw = _not_none(
+                    lonminorlocator_kw=lonminorlocator_kw,
+                    lonminorlines_kw=lonminorlines_kw,
+                    default={},
+                )
+                locator = constructor.Locator(lonminorlocator, **lonminorlocator_kw)
+                self._lonaxis.set_minor_locator(locator)
+            if latminorlocator is not None:
+                latminorlocator_kw = _not_none(
+                    latminorlocator_kw=latminorlocator_kw,
+                    latminorlines_kw=latminorlines_kw,
+                    default={},
+                )
+                locator = constructor.Locator(latminorlocator, **latminorlocator_kw)
+                self._lataxis.set_minor_locator(locator)
+
+            # Update formatters
+            loninline = _not_none(loninline, rc.get('grid.loninline', context=True))
+            latinline = _not_none(latinline, rc.get('grid.latinline', context=True))
+            labelpad = _not_none(labelpad, rc.get('grid.labelpad', context=True))
+            rotate_labels = _not_none(
+                rotate_labels, rc.get('grid.rotatelabels', context=True)
+            )
+            if lonformatter is not None:
+                lonformatter_kw = lonformatter_kw or {}
+                formatter = constructor.Formatter(lonformatter, **lonformatter_kw)
+                self._lonaxis.set_major_formatter(formatter)
+            if latformatter is not None:
+                latformatter_kw = latformatter_kw or {}
+                formatter = constructor.Formatter(latformatter, **latformatter_kw)
+                self._lataxis.set_major_formatter(formatter)
+
+            # Apply worker functions
+            self._update_extent(lonlim=lonlim, latlim=latlim, boundinglat=boundinglat)
+            self._update_patches(patch_kw or {})
+            self._update_features()
+            self._update_major_gridlines(
+                longrid=longrid, latgrid=latgrid,  # gridline toggles
+                lonarray=lonarray, latarray=latarray,  # label toggles
+                loninline=loninline, latinline=latinline, rotate_labels=rotate_labels,
+                labelpad=labelpad,
+            )
+            self._update_minor_gridlines(
+                longridminor=longridminor, latgridminor=latgridminor,
+            )
+
+            # Call main axes format method
             super().format(**kwargs)
 
-    def _get_latlines(self, step, latmax=None):
+    @staticmethod
+    def _axis_below_to_zorder(axisbelow):
         """
-        Get latitude lines every `step` degrees.
+        Get the zorder for an axisbelow setting.
         """
-        # Latitudes gridlines, draw from -latmax to latmax unless result
-        # would be asymmetrical across equator
-        # NOTE: Basemap axes redraw *meridians* if they detect latmax was
-        # explicitly changed, so important not to overwrite 'latmax'
-        # with default value! Just need it for this calculation, then when
-        # drawparallels is called will use self._latmax
-        latmax = _not_none(latmax, self._latmax, rc['geogrid.latmax'])
-        if latmax % step == -latmax % step:
-            latlines = arange(-latmax, latmax, step)
+        if axisbelow is True:
+            zorder = 0.5
+        elif axisbelow is False:
+            zorder = 2.5
+        elif axisbelow == 'lines':
+            zorder = 1.5
         else:
-            latlines = arange(0, latmax, step)
-            if latlines[-1] != latmax:
-                latlines = np.append(latlines, latmax)
-            latlines = np.append(-latlines[::-1], latlines[1:])
-        return list(latlines)
+            raise ValueError(f'Unexpected grid.below value {axisbelow!r}.')
+        return zorder
 
-    def _get_lonlines(self, step, lon0=None):
+    def _get_lonticklocs(self, which='major'):
         """
-        Get longitude lines every `step` degrees.
+        Retrieve longitude tick locations.
         """
-        # Longitude gridlines, draw relative to projection prime meridian
-        # NOTE: We always generate gridlines array on first format call
-        # because rc setting will be not None
-        lon0 = _not_none(lon0, self._get_lon_0())
-        lonlines = arange(lon0 - 180, lon0 + 180, step)
-        lonlines = lonlines.astype(np.float64)
-        if lonlines[-1] % 360 > 0:
-            # Make sure the label appears on *right*, not on
-            # top of the leftmost label.
-            lonlines[-1] -= 1e-10
+        # Get tick locations from dummy axes
+        # NOTE: This is workaround for: https://github.com/SciTools/cartopy/issues/1564
+        # Since _axes_domain is wrong we determine tick locations ourselves with
+        # more accurate extent tracked by _LatAxis and _LonAxis.
+        axis = self._lonaxis
+        if which == 'major':
+            lines = axis.get_majorticklocs()
         else:
-            # Formatter formats label as 1e-10... so there is
-            # simply no way to put label on right. Just shift this
-            # location off the map edge so parallels still extend
-            # all the way to the edge, but label disappears.
-            lonlines[-1] += 1e-10
-        return list(lonlines)
+            lines = axis.get_minorticklocs()
+        return lines
+
+    def _get_latticklocs(self, which='major'):
+        """
+        Retrieve latitude tick locations.
+        """
+        axis = self._lataxis
+        if which == 'major':
+            lines = axis.get_majorticklocs()
+        else:
+            lines = axis.get_minorticklocs()
+        return lines
+
+    def _set_view_intervals(self, extent):
+        """
+        Update view intervals for lon and lat axis.
+        """
+        self._lonaxis.set_view_interval(*extent[:2])
+        self._lataxis.set_view_interval(*extent[2:])
 
     @staticmethod
-    def _parse_labels(labels, lon):
+    def _to_label_array(labels, lon=True):
         """
         Convert labels argument to length-4 boolean array.
         """
         if labels is None:
-            return None
+            return (None,) * 4
         if isinstance(labels, str):
             array = [0] * 4
             for idx, char in zip([0, 1, 2, 3], 'lrbt'):
@@ -475,7 +517,7 @@ optional
         return array
 
 
-class CartopyAxes(GeoAxes, GeoAxesCartopy):
+class CartopyAxes(GeoAxes, GeoAxesBase):
     """
     Axes subclass for plotting
     `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`__ projections.
@@ -488,7 +530,19 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
     """
     #: The registered projection name.
     name = 'cartopy'
-    _circle_points = 100  # number of points for drawing circle map boundary
+    _proj_north = (
+        pcrs.NorthPolarStereo,
+        pcrs.NorthPolarGnomonic,
+        pcrs.NorthPolarAzimuthalEquidistant,
+        pcrs.NorthPolarLambertAzimuthalEqualArea,
+    )
+    _proj_south = (
+        pcrs.SouthPolarStereo,
+        pcrs.SouthPolarGnomonic,
+        pcrs.SouthPolarAzimuthalEquidistant,
+        pcrs.SouthPolarLambertAzimuthalEqualArea
+    )
+    _proj_polar = _proj_north + _proj_south
 
     def __init__(self, *args, map_projection=None, **kwargs):
         """
@@ -509,96 +563,72 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
         """
         # GeoAxes initialization. Note that critical attributes like
         # outline_patch needed by _format_apply are added before it is called.
-        import cartopy.crs as ccrs
+        # NOTE: Initial extent is configured in _update_extent
+        import cartopy  # noqa: F401
         if not isinstance(map_projection, ccrs.Projection):
-            raise ValueError(
-                'GeoAxes requires map_projection=cartopy.crs.Projection.'
-            )
-        super().__init__(*args, map_projection=map_projection, **kwargs)
+            raise ValueError('GeoAxes requires map_projection=cartopy.crs.Projection.')
+        latmax = 90
+        boundinglat = None
+        polar = isinstance(map_projection, self._proj_polar)
+        if polar:
+            latmax = 80
+            boundinglat = 0
+            if isinstance(map_projection, pcrs.NorthPolarGnomonic):
+                boundinglat = 30  # *default* bounding latitudes
+            elif isinstance(map_projection, pcrs.SouthPolarGnomonic):
+                boundinglat = -30
 
-        # Zero out ticks so gridlines are not offset
+        # Initialize axes
+        self._boundinglat = boundinglat
+        self._projection = map_projection  # cartopy also does this
+        self._gridlines_major = None
+        self._gridlines_minor = None
+        self._lonaxis = _LonAxis(self)
+        self._lataxis = _LatAxis(self, latmax=latmax)
+        super().__init__(*args, map_projection=map_projection, latmax=latmax, **kwargs)
+
+        # Apply circular map boundary for polar projections. Apply default
+        # global extent for other projections.
+        # NOTE: This has to come after initialization, and we override set_global
+        # so it also updates _LatAxis and _LonAxis. Also want to use set_global
+        # rather than _update_extent([-180 + lon0, 180 + lon0, -90, 90]) in case
+        # projection extent cannot be global.
+        if polar and hasattr(self, 'set_boundary'):
+            self.set_boundary(_circle_boundary(), transform=self.transAxes)
+        if not rc['cartopy.autoextent']:
+            if polar:
+                self._update_extent(boundinglat=self._boundinglat)
+            else:
+                self.set_global()
+
+        # Zero out ticks to prevent extra label offset
         for axis in (self.xaxis, self.yaxis):
             axis.set_tick_params(which='both', size=0)
 
-        # Set extent and boundary extent for projections
-        # The default bounding latitude is set in _format_apply
-        # NOTE: set_global does not mess up non-global projections like OSNI
-        if hasattr(self, 'set_boundary') and isinstance(
-            self.projection, (
-                ccrs.NorthPolarStereo, ccrs.SouthPolarStereo,
-                pcrs.NorthPolarGnomonic, pcrs.SouthPolarGnomonic,
-                pcrs.NorthPolarAzimuthalEquidistant,
-                pcrs.NorthPolarLambertAzimuthalEqualArea,
-                pcrs.SouthPolarAzimuthalEquidistant,
-                pcrs.SouthPolarLambertAzimuthalEqualArea
-            )
-        ):
-            path = _circle_path(self._circle_points)
-            self.set_boundary(path, transform=self.transAxes)
-        else:
-            self.set_global()
+    def _get_current_extent(self):
+        """
+        Get extent as last set from `~cartopy.mpl.geoaxes.GeoAxes.set_extent`.
+        """
+        # NOTE: This is *also* not perfect because if set_extent() was called
+        # and extent crosses map boundary of rectangular projection, the *actual*
+        # resulting extent is the opposite. But that means user has messed up anyway
+        # so probably doesn't matter if gridlines are also wrong.
+        if not self._current_extent:
+            lon0 = self._get_lon0()
+            self._current_extent = [-180 + lon0, 180 + lon0, -90, 90]
+        return self._current_extent
 
-    def _get_lon_0(self):
-        """Get the central longitude."""
+    def _get_lon0(self):
+        """
+        Get the central longitude. Default is ``0``.
+        """
         return self.projection.proj4_params.get('lon_0', 0)
 
-    def _get_lonlines(self, step, user=False, **kwargs):
-        """Get longitude locator given the input step."""
-        if not user and _version_cartopy >= _version('0.18'):
-            from cartopy.mpl import ticker
-            return ticker.LongitudeLocator(**kwargs)
-        else:
-            return super()._get_lonlines(step)
-
-    def _get_latlines(self, step, latmax=None, user=False, **kwargs):
-        """Get latitude locator given the input step."""
-        # NOTE: After cartopy v0.18 meridian lines are no longer limited by the
-        # most southerly and northerly parallel lines, for both the automatic
-        # latitude locator and FixedLocator.
-        if not user and _version_cartopy >= _version('0.18'):
-            from cartopy.mpl import ticker
-            return ticker.LatitudeLocator(**kwargs)
-        else:
-            return super()._get_latlines(step, latmax=latmax)
-
-    def _format_apply(
-        self, *, patch_kw,
-        lonlim, latlim, boundinglat,
-        lonlines, latlines, lonlines_kw, latlines_kw,
-        lonformatter, latformatter, lonformatter_kw, latformatter_kw,
-        rotate_labels,
-        latmax, lonarray, latarray,
-    ):
+    @staticmethod
+    def _init_gridlines(self):
         """
-        Apply formatting to cartopy axes. Extra kwargs are used to update proj4 params.
+        Create monkey patched "major" and "minor" gridliners managed by ProPlot.
         """
-        latmax  # prevent U100 error (cartopy handles 'latmax' automatically)
-        lonlines_kw, latlines_kw  # preven U100 error (these were already applied)
-        import cartopy.feature as cfeature
-        import cartopy.crs as ccrs
-        from cartopy.mpl import ticker
-
-        # Gridliner labels names
-        def _toggle_labels(gl, left, right, bottom, top):
-            if _version_cartopy >= _version('0.18'):  # cartopy >= 0.18
-                left_labels = 'left_labels'
-                right_labels = 'right_labels'
-                bottom_labels = 'bottom_labels'
-                top_labels = 'top_labels'
-            else:  # cartopy < 0.18
-                left_labels = 'ylabels_left'
-                right_labels = 'ylabels_right'
-                bottom_labels = 'xlabels_bottom'
-                top_labels = 'xlabels_top'
-            if left is not None:
-                setattr(gl, left_labels, left)
-            if right is not None:
-                setattr(gl, right_labels, right)
-            if bottom is not None:
-                setattr(gl, bottom_labels, bottom)
-            if top is not None:
-                setattr(gl, top_labels, top)
-
         # Cartopy 0.18 monkey patch. This fixes issue where we get overlapping
         # gridlines on dateline. See the "nx -= 1" line in Gridliner._draw_gridliner
         # TODO: Submit cartopy PR. This is awful but necessary for quite a while if
@@ -637,62 +667,73 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
                     value = (value + 180) % 360 - 180
             return type(self)._add_gridline_label(self, value, axis, upper_end)
 
-        # Initial gridliner object which ProPlot passively modifies
         # NOTE: The 'xpadding' and 'ypadding' props were introduced in v0.16
         # with default 5 points, then set to default None in v0.18.
         # TODO: Cartopy has had two formatters for a while but we use newer one
         # https://github.com/SciTools/cartopy/pull/1066
-        if not self._gridliners:
-            gl = self.gridlines(crs=ccrs.PlateCarree())
-            gl._draw_gridliner = _draw_gridliner.__get__(gl)  # apply monkey patch
-            gl._axes_domain = _axes_domain.__get__(gl)
-            gl._add_gridline_label = _add_gridline_label.__get__(gl)
-            gl.xlines = gl.ylines = False
-            gl.xformatter = ticker.LongitudeFormatter()
-            gl.yformatter = ticker.LatitudeFormatter()
-            if _version_cartopy < _version('0.18'):  # necessary... for some reason...
-                gl.xformatter.axis = self.xaxis
-                gl.yformatter.axis = self.yaxis
-            _toggle_labels(gl, False, False, False, False)
-        gl = self._gridliners[0]
+        gl = self.gridlines(crs=ccrs.PlateCarree())
+        gl._draw_gridliner = _draw_gridliner.__get__(gl)  # apply monkey patch
+        gl._axes_domain = _axes_domain.__get__(gl)
+        gl._add_gridline_label = _add_gridline_label.__get__(gl)
+        gl.xlines = gl.ylines = False
+        gl.xformatter = cticker.LongitudeFormatter()
+        gl.yformatter = cticker.LatitudeFormatter()
+        self._toggle_gridliner_labels(gl, False, False, False, False)
+        return gl
 
+    @staticmethod
+    def _toggle_gridliner_labels(gl, left, right, bottom, top):
+        """
+        Toggle gridliner labels across different cartopy versions.
+        """
+        if _version_cartopy >= _version('0.18'):  # cartopy >= 0.18
+            left_labels = 'left_labels'
+            right_labels = 'right_labels'
+            bottom_labels = 'bottom_labels'
+            top_labels = 'top_labels'
+        else:  # cartopy < 0.18
+            left_labels = 'ylabels_left'
+            right_labels = 'ylabels_right'
+            bottom_labels = 'xlabels_bottom'
+            top_labels = 'xlabels_top'
+        if left is not None:
+            setattr(gl, left_labels, left)
+        if right is not None:
+            setattr(gl, right_labels, right)
+        if bottom is not None:
+            setattr(gl, bottom_labels, bottom)
+        if top is not None:
+            setattr(gl, top_labels, top)
+
+    def _update_extent(self, lonlim=None, latlim=None, boundinglat=None):
+        """
+        Set the projection extent.
+        """
         # Projection extent
-        # NOTE: They may add this as part of set_xlim and set_ylim in future
-        # See: https://github.com/SciTools/cartopy/blob/master/lib/cartopy/mpl/geoaxes.py#L638  # noqa
-        # WARNING: The set_extent method tries to set a *rectangle* between
-        # the *4* (x,y) coordinate pairs (each corner), so something like
-        # (-180, 180, -90, 90) will result in *line*, causing error!
-        proj = self.projection.proj4_params['proj']
-        north = isinstance(self.projection, (
-            ccrs.NorthPolarStereo, pcrs.NorthPolarGnomonic,
-            pcrs.NorthPolarAzimuthalEquidistant,
-            pcrs.NorthPolarLambertAzimuthalEqualArea
-        ))
-        south = isinstance(self.projection, (
-            ccrs.SouthPolarStereo, pcrs.SouthPolarGnomonic,
-            pcrs.SouthPolarAzimuthalEquidistant,
-            pcrs.SouthPolarLambertAzimuthalEqualArea
-        ))
+        # NOTE: Lon axis and lat axis extents are updated by set_extent.
+        # WARNING: The set_extent method tries to set a *rectangle* between the *4*
+        # (x, y) coordinate pairs (each corner), so something like (-180, 180, -90, 90)
+        # will result in *line*, causing error! We correct this here.
+        eps = 1e-10  # bug with full -180, 180 range when lon_0 != 0
+        lon0 = self.get_lon0()
+        proj = type(self.projection).__name__
+        north = isinstance(self.projection, self._proj_north)
+        south = isinstance(self.projection, self._proj_south)
+        extent = None
         if north or south:
             if lonlim is not None or latlim is not None:
                 warnings._warn_proplot(
                     f'{proj!r} extent is controlled by "boundinglat", '
                     f'ignoring lonlim={lonlim!r} and latlim={latlim!r}.'
                 )
-            if self._boundinglat is None:
-                if isinstance(self.projection, pcrs.NorthPolarGnomonic):
-                    boundinglat = 30
-                elif isinstance(self.projection, pcrs.SouthPolarGnomonic):
-                    boundinglat = -30
-                else:
-                    boundinglat = 0
             if boundinglat is not None and boundinglat != self._boundinglat:
-                eps = 1e-10  # bug with full -180, 180 range when lon_0 != 0
-                lat0 = (90 if north else -90)
-                lon0 = self.projection.proj4_params.get('lon_0', 0)
+                lat0 = 90 if north else -90
+                lon0 = self._get_lon0()
                 extent = [lon0 - 180 + eps, lon0 + 180 - eps, boundinglat, lat0]
                 self.set_extent(extent, crs=ccrs.PlateCarree())
                 self._boundinglat = boundinglat
+
+        # Rectangular extent
         else:
             if boundinglat is not None:
                 warnings._warn_proplot(
@@ -700,171 +741,170 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
                     f'ignoring boundinglat={boundinglat!r}.'
                 )
             if lonlim is not None or latlim is not None:
-                lonlim = lonlim or [None, None]
-                latlim = latlim or [None, None]
-                lonlim, latlim = [*lonlim], [*latlim]
-                lon_0 = self.projection.proj4_params.get('lon_0', 0)
+                lonlim = list(lonlim or [None, None])
+                latlim = list(latlim or [None, None])
                 if lonlim[0] is None:
-                    lonlim[0] = lon_0 - 180
+                    lonlim[0] = lon0 - 180
                 if lonlim[1] is None:
-                    lonlim[1] = lon_0 + 180
-                eps = 1e-10  # bug with full -180, 180 range when lon_0 != 0
+                    lonlim[1] = lon0 + 180
                 lonlim[0] += eps
                 if latlim[0] is None:
                     latlim[0] = -90
                 if latlim[1] is None:
                     latlim[1] = 90
-                extent = [*lonlim, *latlim]
+                extent = lonlim + latlim
                 self.set_extent(extent, crs=ccrs.PlateCarree())
 
-        # Gridline collection properties including axes.axisbelow-mimicking property
-        kw = rc.fill({
-            'alpha': 'geogrid.alpha',
-            'color': 'geogrid.color',
-            'linewidth': 'geogrid.linewidth',
-            'linestyle': 'geogrid.linestyle',
-        }, context=True)
-        axisbelow = rc.get('geogrid.axisbelow', context=True)
-        if axisbelow is not None:
-            if axisbelow is True:
-                zorder = 0.5
-            elif axisbelow is False:
-                zorder = 2.5
-            elif axisbelow == 'lines':
-                zorder = 1.5
-            else:
-                raise ValueError(f'Unexpected geogrid.axisbelow value {axisbelow!r}.')
-            kw['zorder'] = zorder
-        gl.collection_kwargs.update(kw)
+    def _update_patches(self, patch_kw=None):
+        """
+        Update the map background based on rc settings.
+        """
+        # Update background patch
+        kw_face = rc.fill(
+            {
+                'facecolor': 'axes.facecolor',
+                'alpha': 'axes.alpha',
+            },
+            context=True
+        )
+        kw_edge = rc.fill(
+            {
+                'edgecolor': 'geoaxes.edgecolor',
+                'linewidth': 'geoaxes.linewidth',
+            },
+            context=True
+        )
+        kw_face.update(patch_kw or {})
+        self.background_patch.update(kw_face)
+        self.outline_patch.update(kw_edge)
 
-        # Special gridline properties
-        pad = rc.get('geogrid.labelpad', context=True)
-        if pad is not None:
-            gl.xpadding = gl.ypadding = pad
-        loninline = rc.get('geogrid.loninline', context=True)
-        if loninline is not None:
-            gl.x_inline = loninline
-        latinline = rc.get('geogrid.latinline', context=True)
-        if latinline is not None:
-            gl.y_inline = latinline
-
-        # Gridline longitudes and latitudes
-        eps = 1e-10
-        if lonlines is not None:
-            if isinstance(lonlines, mticker.Locator):
-                gl.xlines = True
-                gl.xlocator = lonlines
-            else:
-                # As of 0.18 lines no longer have to be in [lon_0 - 180, lon_0 + 180]
-                if _version_cartopy >= _version('0.18'):
-                    lonlines = (np.asarray(lonlines) + 180) % 360 - 180
-                gl.xlines = bool(len(lonlines))
-                if gl.xlines:
-                    gl.xlocator = mticker.FixedLocator(lonlines)
-        if latlines is not None:
-            if isinstance(latlines, mticker.Locator):
-                gl.ylines = True
-                gl.ylocator = latlines
-            else:
-                gl.ylines = bool(len(latlines))
-                if gl.ylines:
-                    if latlines[0] == -90:
-                        latlines[0] += eps
-                    if latlines[-1] == 90:
-                        latlines[-1] -= eps
-                    gl.ylocator = mticker.FixedLocator(latlines)
-
-        # Gridline label format
-        if rotate_labels is not None:
-            gl.rotate_labels = rotate_labels  # ignored in cartopy <0.18
-        if lonformatter:
-            gl.xformatter = lonformatter
-        elif lonformatter_kw:
-            gl.xformatter = ticker.LongitudeFormatter(**lonformatter_kw)
-        if latformatter:
-            gl.yformatter = latformatter
-        elif latformatter_kw:
-            gl.yformatter = ticker.LatitudeFormatter(**latformatter_kw)
-
-        # Gridline label toggling
-        # Issue warning instead of error!
-        if _version_cartopy < _version('0.18'):
-            if not isinstance(self.projection, (ccrs.Mercator, ccrs.PlateCarree)):
-                if latarray is not None and any(latarray):
-                    warnings._warn_proplot(
-                        'Cannot add gridline labels to cartopy '
-                        f'{type(self.projection).__name__} projection.'
-                    )
-                    latarray = [0] * 4
-                if lonarray is not None and any(lonarray):
-                    warnings._warn_proplot(
-                        'Cannot add gridline labels to cartopy '
-                        f'{type(self.projection).__name__} projection.'
-                    )
-                    lonarray = [0] * 4
-        latarray = latarray or (None,) * 4
-        lonarray = lonarray or (None,) * 4
-        _toggle_labels(gl, *latarray[:2], *lonarray[2:])
-
-        # Geographic features
-        # WARNING: Seems cartopy features can't be updated!
-        # See: https://scitools.org.uk/cartopy/docs/v0.14/_modules/cartopy/feature.html#Feature  # noqa
-        # Change the _kwargs property also does *nothing*
-        # WARNING: Changing linewidth is impossible with cfeature. Bug?
-        # See: https://stackoverflow.com/questions/43671240/changing-line-width-of-cartopy-borders  # noqa
-        # TODO: Editing existing natural features? Creating natural features
-        # at __init__ time and hiding them?
-        # NOTE: The natural_earth_shp method is deprecated, use add_feature.
-        # See: https://cartopy-pelson.readthedocs.io/en/readthedocs/whats_new.html  # noqa
+    def _update_features(self):
+        """
+        Update geographic features.
+        """
         # NOTE: The e.g. cfeature.COASTLINE features are just for convenience,
-        # hi res versions. Use cfeature.COASTLINE.name to see how it can be
-        # looked up with NaturalEarthFeature.
-        reso = rc['reso']
+        # lo res versions. Use NaturalEarthFeature instead.
+        # WARNING: Seems cartopy features cannot be updated! Updating _kwargs
+        # attribute does *nothing*.
+        reso = rc['reso']  # resolution cannot be changed after feature created
         reso = constructor.CARTOPY_RESOS.get(reso, None)
         if reso is None:
             raise ValueError(
                 f'Invalid resolution {reso!r}. Options are: '
                 + ', '.join(map(repr, constructor.CARTOPY_RESOS)) + '.'
             )
-        for name, args in constructor.CARTPOY_FEATURES.items():
-            # Get feature
-            if not rc[name]:  # toggled
-                continue
-            if getattr(self, '_' + name, None):  # already drawn
-                continue
-            feat = cfeature.NaturalEarthFeature(*args, reso)
-            # For 'lines', need to specify edgecolor and facecolor
-            # See: https://github.com/SciTools/cartopy/issues/803
-            kw = rc.category(name)  # do not omit uncached props
-            if name in ('coast', 'rivers', 'borders', 'innerborders'):
-                kw['edgecolor'] = kw.pop('color')
-                kw['facecolor'] = 'none'
-            else:
-                kw['linewidth'] = 0
-            if name in ('ocean',):
-                kw['zorder'] = 0.5  # below everything!
-            self.add_feature(feat, **kw)
-            setattr(self, '_' + name, feat)
+        for name, args in constructor.CARTOPY_FEATURES.items():
+            b = rc.get(name, context=True)
+            attr = f'_{name}_feature'
+            if b is not None:
+                feat = getattr(self, attr, None)
+                if not b:
+                    if feat is not None:  # toggle existing feature off
+                        feat.set_visible(False)
+                else:
+                    drawn = feat is not None  # if exists, apply *updated* settings
+                    if not drawn:
+                        feat = cfeature.NaturalEarthFeature(*args, reso)
+                        feat = self.add_feature(feat)  # convert to FeatureArtist
+                    # For 'lines', need to specify edgecolor and facecolor
+                    # See: https://github.com/SciTools/cartopy/issues/803
+                    kw = rc.category(name, context=drawn)
+                    if name in ('coast', 'rivers', 'borders', 'innerborders'):
+                        kw.update({'edgecolor': kw.pop('color'), 'facecolor': 'none'})
+                    else:
+                        kw.update({'linewidth': 0})
+                    # Update artist attributes (_kwargs used back to v0.5)
+                    # feat.update(kw)  # TODO: check this fails
+                    self._kwargs.update(kw)
+                    setattr(self, attr, feat)
 
-        # Update patch
-        kw_face = rc.fill({
-            'facecolor': 'geoaxes.facecolor',
-            'alpha': 'geoaxes.facealpha',
-        }, context=True)
-        kw_edge = rc.fill({
-            'edgecolor': 'geoaxes.edgecolor',
-            'linewidth': 'geoaxes.linewidth',
-        }, context=True)
-        kw_face.update(patch_kw or {})
-        self.background_patch.update(kw_face)
-        self.outline_patch.update(kw_edge)
+    def _update_gridlines(self, gl, which='major', longrid=None, latgrid=None):
+        """
+        Update gridliner object with axis locators, and toggle gridlines on and off.
+        """
+        # Update gridliner collection properties
+        key = 'grid' if which == 'major' else 'gridminor'
+        kw = rc.fill(
+            {
+                'alpha': f'{key}.alpha',
+                'color': f'{key}.color',
+                'linewidth': f'{key}.linewidth',
+                'linestyle': f'{key}.linestyle',
+            },
+            context=True
+        )
+        axisbelow = rc.get('axes.axisbelow', context=True)
+        if axisbelow is not None:
+            kw['zorder'] = self._axis_below_to_zorder(axisbelow)
+        gl.collection_kwargs.update(kw)
 
-    def _apply_axis_sharing(self):
+        # Apply tick locations from dummy _LonAxis and _LatAxis axes
+        if longrid is not None:
+            gl.xlines = longrid
+        if latgrid is not None:
+            gl.ylines = latgrid
+        gl.xlocator = mticker.FixedLocator(self._get_lonticklocs())
+        gl.ylocator = mticker.FixedLocator(self._get_latticklocs())
+
+    def _update_major_gridlines(
+        self,
+        longrid=None, latgrid=None,
+        lonarray=None, latarray=None,
+        loninline=None, latinline=None, labelpad=None, rotate_labels=None,
+    ):
         """
-        No-op for now. In future this will hide meridian and parallel
-        labels for rectangular projections with axis sharing.
+        Update major gridlines.
         """
-        pass
+        if not self._gridlines_major:
+            self._gridlines_major = self._init_gridlines()
+        gl = self._gridlines_major
+
+        # Update gridline locations and style
+        self._update_gridlines(gl, which='major', longrid=longrid, latgrid=latgrid)
+
+        # Updage gridline label parameters
+        if labelpad is not None:
+            gl.xpadding = gl.ypadding = labelpad
+        if loninline is not None:
+            gl.x_inline = loninline
+        if latinline is not None:
+            gl.y_inline = latinline
+        if rotate_labels is not None:
+            gl.rotate_labels = rotate_labels  # ignored in cartopy <0.18
+
+        # Gridline label formatters
+        # TODO: Use lonaxis and lataxis instead
+        lonaxis = self._lonaxis
+        lataxis = self._lataxis
+        gl.xformatter = lonaxis.get_major_formatter()
+        gl.yformatter = lataxis.get_major_formatter()
+
+        # Gridline label toggling
+        # Issue warning instead of error!
+        if _version_cartopy < _version('0.18'):
+            if not isinstance(self.projection, (ccrs.Mercator, ccrs.PlateCarree)):
+                if any(latarray):
+                    warnings._warn_proplot(
+                        'Cannot add gridline labels to cartopy '
+                        f'{type(self.projection).__name__} projection.'
+                    )
+                    latarray = [0] * 4
+                if any(lonarray):
+                    warnings._warn_proplot(
+                        'Cannot add gridline labels to cartopy '
+                        f'{type(self.projection).__name__} projection.'
+                    )
+                    lonarray = [0] * 4
+        self._toggle_gridliner_labels(gl, *latarray[:2], *lonarray[2:])
+
+    def _update_minor_gridlines(self, longrid=None, latgrid=None):
+        """
+        Update minor gridlines.
+        """
+        if not self._gridlines_minor:
+            self._gridlines_minor = self._init_gridlines()
+        gl = self._gridlines_minor
+        self._update_gridlines(gl, which='minor', longrid=longrid, latgrid=latgrid)
 
     def get_tightbbox(self, renderer, *args, **kwargs):
         # Perform extra post-processing steps
@@ -897,6 +937,44 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
 
         return super().get_tightbbox(renderer, *args, **kwargs)
 
+    @_default_crs
+    def get_extent(self, crs=None):
+        # Get extent and try to repair longitude bounds.
+        # NOTE: Do not use @_default_crs in case cartopy uses this internally
+        extent = super().get_extent(crs=crs)
+        if isinstance(crs, ccrs.PlateCarree):
+            if np.isclose(extent[0], -180) and np.isclose(extent[-1], 180):
+                # Repair longitude bounds to reflect dateline position
+                # NOTE: This is critical so we can prevent duplicate gridlines
+                # on dateline. See _update_gridlines.
+                lon0 = self._get_lon0()
+                extent[:2] = [lon0 - 180, lon0 + 180]
+        return extent
+
+    @_default_crs
+    def set_extent(self, extent, crs=None):
+        # Fix extent, so axes tight bounding box gets correct box! From this issue:
+        # https://github.com/SciTools/cartopy/issues/1207#issuecomment-439975083
+        # Also record the requested longitude latitude extent so we can use these
+        # values for LongitudeLocator and LatitudeLocator. Otherwise if longitude
+        # extent is across international dateline LongitudeLocator fails because
+        # get_extent() reports -180 to 180.
+        # See: https://github.com/SciTools/cartopy/issues/1564
+        if isinstance(crs, ccrs.PlateCarree):
+            self._set_view_intervals(extent)
+            self._update_gridlines()  # just re-apply locators
+            if _version_cartopy < _version('0.18'):
+                clipped_path = self.outline_patch.orig_path.clip_to_bbox(self.viewLim)
+                self.outline_patch._path = clipped_path
+                self.background_patch._path = clipped_path
+        return super().set_extent(extent, crs=crs)
+
+    def set_global(self):
+        # Set up "global" extent and update _LatAxis and _LonAxis view intervals
+        result = super().set_global()
+        self._set_view_intervals(self.get_extent())
+        return result
+
     @property
     def projection(self):
         """
@@ -906,70 +984,63 @@ class CartopyAxes(GeoAxes, GeoAxesCartopy):
 
     @projection.setter
     def projection(self, map_projection):
-        import cartopy.crs as ccrs
         if not isinstance(map_projection, ccrs.CRS):
             raise ValueError('Projection must be a cartopy.crs.CRS instance.')
         self._map_projection = map_projection
 
     # Wrapped methods
     # TODO: Remove this duplication!
-    if GeoAxesCartopy is not object:
+    if GeoAxesBase is not object:
         text = _text_wrapper(
-            GeoAxesCartopy.text
+            GeoAxesBase.text
         )
         plot = _default_transform(_plot_wrapper(_standardize_1d(
-            _indicate_error(_cycle_changer(GeoAxesCartopy.plot))
+            _indicate_error(_cycle_changer(GeoAxesBase.plot))
         )))
         scatter = _default_transform(_scatter_wrapper(_standardize_1d(
-            _indicate_error(_cycle_changer(GeoAxesCartopy.scatter))
+            _indicate_error(_cycle_changer(GeoAxesBase.scatter))
         )))
         fill_between = _fill_between_wrapper(_standardize_1d(_cycle_changer(
-            GeoAxesCartopy.fill_between
+            GeoAxesBase.fill_between
         )))
         fill_betweenx = _fill_betweenx_wrapper(_standardize_1d(_cycle_changer(
-            GeoAxesCartopy.fill_betweenx
+            GeoAxesBase.fill_betweenx
         )))
         contour = _default_transform(_standardize_2d(_cmap_changer(
-            GeoAxesCartopy.contour
+            GeoAxesBase.contour
         )))
         contourf = _default_transform(_standardize_2d(_cmap_changer(
-            GeoAxesCartopy.contourf
+            GeoAxesBase.contourf
         )))
         pcolor = _default_transform(_standardize_2d(_cmap_changer(
-            GeoAxesCartopy.pcolor
+            GeoAxesBase.pcolor
         )))
         pcolormesh = _default_transform(_standardize_2d(_cmap_changer(
-            GeoAxesCartopy.pcolormesh
+            GeoAxesBase.pcolormesh
         )))
         quiver = _default_transform(_standardize_2d(_cmap_changer(
-            GeoAxesCartopy.quiver
+            GeoAxesBase.quiver
         )))
         streamplot = _default_transform(_standardize_2d(_cmap_changer(
-            GeoAxesCartopy.streamplot
+            GeoAxesBase.streamplot
         )))
         barbs = _default_transform(_standardize_2d(_cmap_changer(
-            GeoAxesCartopy.barbs
+            GeoAxesBase.barbs
         )))
         tripcolor = _default_transform(_cmap_changer(
-            GeoAxesCartopy.tripcolor
+            GeoAxesBase.tripcolor
         ))
         tricontour = _default_transform(_cmap_changer(
-            GeoAxesCartopy.tricontour
+            GeoAxesBase.tricontour
         ))
         tricontourf = _default_transform(_cmap_changer(
-            GeoAxesCartopy.tricontourf
+            GeoAxesBase.tricontourf
         ))
-        get_extent = _default_crs(
-            GeoAxesCartopy.get_extent
-        )
-        set_extent = _default_crs(
-            GeoAxesCartopy.set_extent
-        )
         set_xticks = _default_crs(
-            GeoAxesCartopy.set_xticks
+            GeoAxesBase.set_xticks
         )
         set_yticks = _default_crs(
-            GeoAxesCartopy.set_yticks
+            GeoAxesBase.set_yticks
         )
 
 
@@ -985,13 +1056,14 @@ class BasemapAxes(GeoAxes):
     """
     #: The registered projection name.
     name = 'basemap'
-    _proj_non_rectangular = (  # do not use axes spines as boundaries
+    _proj_north = ('npaeqd', 'nplaea', 'npstere')
+    _proj_south = ('spaeqd', 'splaea', 'spstere')
+    _proj_polar = _proj_north + _proj_south
+    _proj_non_rectangular = _proj_polar + (  # do not use axes spines as boundaries
         'ortho', 'geos', 'nsper',
         'moll', 'hammer', 'robin',
         'eck4', 'kav7', 'mbtfpq',
         'sinu', 'vandg',
-        'npstere', 'spstere', 'nplaea',
-        'splaea', 'npaeqd', 'spaeqd',
     )
 
     def __init__(self, *args, map_projection=None, **kwargs):
@@ -1011,10 +1083,103 @@ class BasemapAxes(GeoAxes):
         proplot.axes.GeoAxes
         proplot.constructor.Proj
         """
+        # First assign projection and set axis bounds for locators
         # WARNING: Investigated whether Basemap.__init__() could be called
         # twice with updated proj kwargs to modify map bounds after creation
         # and python immmediately crashes. Do not try again.
-        # Map boundary notes
+        import mpl_toolkits.basemap  # noqa: F401 verify available
+        if not isinstance(map_projection, mbasemap.Basemap):
+            raise ValueError(
+                'BasemapAxes requires map_projection=basemap.Basemap'
+            )
+        self._map_projection = map_projection
+        lon0 = self._get_lon0()
+        if map_projection.projection in self._proj_polar:
+            latmax = 80  # default latmax for gridlines
+            extent = [-180 + lon0, 180 + lon0]
+            boundinglat = getattr(map_projection, 'boundinglat', 0)
+            if map_projection.projection in self._proj_north:
+                extent.extend([boundinglat, 90])
+            else:
+                extent.extend([-90, boundinglat])
+        else:
+            # NOTE: check out Basemap.__init__
+            latmax = 90
+            attrs = ('lonmin', 'lonmax', 'latmin', 'latmax')
+            extent = [getattr(map_projection, attr, None) for attr in attrs]
+            if any(_ is None for _ in extent):
+                extent = [180 - lon0, 180 + lon0, -90, 90]  # fallback
+        self._set_view_intervals(extent)
+
+        # Initialize axes
+        self._map_boundary = None  # start with empty map boundary
+        self._has_recurred = False  # use this to override plotting methods
+        self._lonlines_major = None  # store gridliner objects this way
+        self._lonlines_minor = None
+        self._latlines_major = None
+        self._latlines_minor = None
+        self._lonaxis = _LonAxis(self)
+        self._lataxis = _LatAxis(self, latmax=latmax)
+        super().__init__(*args, **kwargs)
+
+    def _get_lon0(self):
+        """
+        Get the central longitude.
+        """
+        return getattr(self.projection, 'projparams', {}).get('lon_0', 0)
+
+    @staticmethod
+    def _iter_gridlines(dict_):
+        """
+        Iterate over longitude latitude lines.
+        """
+        dict_ = dict_ or {}
+        for pi in dict_.values():
+            for pj in pi:
+                for obj in pj:
+                    yield obj
+
+    def _update_extent(self, lonlim=None, latlim=None, boundinglat=None):
+        """
+        No-op. Map bounds cannot be changed in basemap.
+        """
+        if lonlim is not None or latlim is not None or boundinglat is not None:
+            warnings._warn_proplot(
+                f'Got lonlim={lonlim!r}, latlim={latlim!r}, '
+                f'boundinglat={boundinglat!r}, but you cannot "zoom into" a '
+                'basemap projection after creating it. Add any of the following '
+                "keyword args in your call to plot.Proj('name', basemap=True, ...): "
+                "'boundinglat', 'llcrnrlon', 'llcrnrlat', "
+                "'urcrnrlon', 'urcrnrlat', 'llcrnrx', 'llcrnry', "
+                "'urcrnrx', 'urcrnry', 'width', or 'height'."
+            )
+
+    def _update_patches(self, patch_kw=None):
+        """
+        Update the map boundary patches.
+        """
+        # Map boundary settings
+        kw_face = rc.fill(
+            {
+                'facecolor': 'axes.facecolor',
+                'alpha': 'axes.alpha',
+            },
+            context=True
+        )
+        kw_edge = rc.fill(
+            {
+                'linewidth': 'axes.linewidth',
+                'edgecolor': 'axes.edgecolor',
+            },
+            context=True
+        )
+        kw_face.update(patch_kw or {})
+        self.axesPatch = self.patch  # backwards compatibility
+
+        # Non-rectangularly-bounded projections
+        # NOTE: Make sure to turn off clipping by invisible axes boundary. Otherwise
+        # get these weird flat edges where map boundaries, latitude/longitude
+        # markers come up to the axes bbox
         # * Must set boundary before-hand, otherwise the set_axes_limits method
         #   called by mcontourf/mpcolormesh/etc draws two mapboundary Patch
         #   objects called "limb1" and "limb2" automatically: one for fill and
@@ -1026,189 +1191,152 @@ class BasemapAxes(GeoAxes):
         # * If you instead call drawmapboundary right away, _mapboundarydrawn
         #   will contain both the edges and the fill; so calling it again will
         #   replace *both*
-        import mpl_toolkits.basemap as mbasemap  # verify package is available
-        if not isinstance(map_projection, mbasemap.Basemap):
-            raise ValueError(
-                'BasemapAxes requires map_projection=basemap.Basemap'
-            )
-        self._map_projection = map_projection
-        self._map_boundary = None
-        self._has_recurred = False  # use this to override plotting methods
-        super().__init__(*args, **kwargs)
-
-    def _get_lon_0(self, step=5):
-        """Get the central longitude."""
-        return step * round(self.projection.lonmin / step) + 180
-
-    def _get_lonlines(self, step, user=False, **kwargs):
-        """Get longitude line locations given the input step."""
-        user, kwargs  # prevent U100 error (this is used in cartopy subclass)
-        # Locations do not have to wrap around like they do in cartopy
-        lonlines = super()._get_lonlines(step)
-        lonlines = lonlines[:-1]
-        return lonlines
-
-    def _get_latlines(self, step, latmax=None, user=False, **kwargs):
-        """Get latitude line locations given the input step."""
-        user, kwargs  # prevent U100 error (these are used in cartopy subclass)
-        return super()._get_latlines(step, latmax=latmax)
-
-    def _format_apply(
-        self, *, patch_kw,
-        lonlim, latlim, boundinglat,
-        lonlines, latlines, lonlines_kw, latlines_kw,
-        lonformatter, latformatter, lonformatter_kw, latformatter_kw,
-        rotate_labels,
-        latmax, lonarray, latarray,
-    ):
-        """
-        Apply changes to the basemap axes. Extra kwargs are used
-        to update the proj4 params.
-        """
-        # Ignored arguments
-        rotate_labels  # avoid U100 error (this arg is simply ignored)
-        if lonformatter or lonformatter_kw:
-            warnings._warn_proplot(
-                f'Ignoring formatter arguments lonformatter={lonformatter} '
-                f'with lonformatter_kw={lonformatter_kw} for basemap axes.'
-            )
-        if latformatter or latformatter_kw:
-            warnings._warn_proplot(
-                f'Ignoring formatter arguments latformatter={latformatter} '
-                f'with latformatter_kw={latformatter_kw} for basemap axes.'
-            )
-        if (
-            lonlim is not None
-            or latlim is not None
-            or boundinglat is not None
-        ):
-            warnings._warn_proplot(
-                f'Got lonlim={lonlim!r}, latlim={latlim!r}, '
-                f'boundinglat={boundinglat!r}, but you cannot "zoom into" a '
-                'basemap projection after creating it. Pass proj_kw in your '
-                'call to subplots with any of the following basemap keywords: '
-                "'boundinglat', 'llcrnrlon', 'llcrnrlat', "
-                "'urcrnrlon', 'urcrnrlat', 'llcrnrx', 'llcrnry', "
-                "'urcrnrx', 'urcrnry', 'width', or 'height'."
-            )
-
-        # Map boundary
-        # * First have to *manually replace* the old boundary by just
-        #   deleting the original one
-        # * If boundary is drawn successfully should be able to call
-        #   self.projection._mapboundarydrawn.set_visible(False) and
-        #   edges/fill color disappear
-        # * For now will enforce that map plots *always* have background
-        #   whereas axes plots can have transparent background
-        kw_face = rc.fill({
-            'facecolor': 'geoaxes.facecolor',
-            'alpha': 'geoaxes.facealpha',
-        }, context=True)
-        kw_edge = rc.fill({
-            'linewidth': 'geoaxes.linewidth',
-            'edgecolor': 'geoaxes.edgecolor',
-        }, context=True)
-        kw_face.update(patch_kw or {})
-        self.axesPatch = self.patch  # bugfix or something
         if self.projection.projection in self._proj_non_rectangular:
-            self.patch.set_alpha(0)  # make patch invisible
+            self.patch.set_alpha(0)  # make main patch invisible
             if not self.projection._mapboundarydrawn:
-                # set fill_color to 'none' to make transparent
                 p = self.projection.drawmapboundary(ax=self)
             else:
                 p = self.projection._mapboundarydrawn
             p.update(kw_face)
             p.update(kw_edge)
             p.set_rasterized(False)
-            p.set_clip_on(False)  # so edges denoting boundary aren't cut off
+            p.set_clip_on(False)
             self._map_boundary = p
+
+        # Rectangularly-bounded projections
         else:
             self.patch.update({**kw_face, 'edgecolor': 'none'})
             for spine in self.spines.values():
                 spine.update(kw_edge)
 
-        # Longitude/latitude lines
-        # Make sure to turn off clipping by invisible axes boundary; otherwise
-        # get these weird flat edges where map boundaries, parallel/meridian
-        # markers come up to the axes bbox
-        lkw = rc.fill({
-            'alpha': 'geogrid.alpha',
-            'color': 'geogrid.color',
-            'linewidth': 'geogrid.linewidth',
-            'linestyle': 'geogrid.linestyle',
-        })
-        tkw = rc.fill({
-            'color': 'geogrid.color',
-            'fontsize': 'geogrid.labelsize',
-        })
-        if lonarray is not None:  # change from lrbt to lrtb
-            lonarray[2:] = lonarray[2:][::-1]
-        if latarray is not None:  # change from lrbt to lrtb
-            latarray[2:] = latarray[2:][::-1]
-
-        # Parallel lines
-        ilatmax = _not_none(latmax, self._latmax)
-        if latlines is not None or latmax is not None or latarray is not None:
-            for obj in self._iter_lines(self._latlines):
-                obj.set_visible(False)
-            latlines = _not_none(latlines, self._latlines_values)
-            latarray = _not_none(latarray, self._latlines_labels, [0] * 4)
-            p = self.projection.drawparallels(
-                latlines, latmax=ilatmax, labels=latarray, ax=self, **latlines_kw,
-            )
-            self._latlines = p
-            for obj in self._iter_lines(p):
-                # Tried passing clip_on to the below, but it does nothing
-                # Must set for lines created after the fact
-                if isinstance(obj, mtext.Text):
-                    obj.update(tkw)
-                else:
-                    obj.update(lkw)
-
-        # Meridian lines
-        # NOTE: Although it is not stated, latmax only affects drawmeridians for
-        # north polar and south polar projections! Ignored otherwise!
-        if lonlines is not None or latmax is not None or lonarray is not None:
-            for obj in self._iter_lines(self._lonlines):
-                obj.set_visible(False)
-            lonlines = _not_none(lonlines, self._lonlines_values)
-            lonarray = _not_none(lonarray, self._lonlines_labels, [0] * 4)
-            p = self.projection.drawmeridians(
-                lonlines, latmax=ilatmax, labels=lonarray, ax=self, **lonlines_kw,
-            )
-            self._lonlines = p
-            for obj in self._iter_lines(p):
-                if isinstance(obj, mtext.Text):
-                    obj.update(tkw)
-                else:
-                    obj.update(lkw)
-
-        # Geography
-        # TODO: Allow setting the zorder.
+    def _update_features(self):
+        """
+        Update geographic features.
+        """
         # NOTE: Also notable are drawcounties, blumarble, drawlsmask,
         # shadedrelief, and etopo methods.
         for name, method in constructor.BASEMAP_FEATURES.items():
-            if not rc[name]:  # toggled
-                continue
-            if getattr(self, f'_{name}', None):  # already drawn
-                continue
-            kw = rc.category(name)
-            feat = getattr(self.projection, method)(ax=self)
-            if isinstance(feat, (list, tuple)):  # list of artists?
-                for obj in feat:
-                    obj.update(kw)
-            else:
-                feat.update(kw)
-            setattr(self, '_' + name, feat)
+            b = rc.get(name, context=True)
+            attr = f'_{name}_feature'
+            if b is not None:
+                feat = getattr(self, attr, None)
+                if not b:
+                    if feat is not None:  # toggle existing feature off
+                        for obj in feat:
+                            feat.set_visible(False)
+                else:
+                    drawn = feat is not None  # if exists, apply *updated* settings
+                    if not drawn:
+                        feat = getattr(self.projection, method)(ax=self)
+                    kw = rc.category(name, context=drawn)
+                    if not isinstance(feat, (list, tuple)):  # list of artists?
+                        feat = (feat,)
+                    for obj in feat:
+                        obj.update(kw)
+                    setattr(self, attr, feat)
 
-    @staticmethod
-    def _iter_lines(dict_):
-        """Iterate over longitude latitude lines."""
-        dict_ = dict_ or {}
-        for pi in dict_.values():
-            for pj in pi:
-                for obj in pj:
-                    yield obj
+    def _update_gridlines(
+        self, which='major', longrid=None, latgrid=None, lonarray=None, latarray=None,
+    ):
+        """
+        Apply changes to the basemap axes. Extra kwargs are used
+        to update the proj4 params.
+        """
+        latmax = self._lataxis.get_latmax()
+        for name, grid, array, method in zip(
+            ('lon', 'lat'),
+            (longrid, latgrid),
+            (lonarray, latarray),
+            ('drawmeridians', 'drawparallels'),
+        ):
+            # Correct lonarray and latarray, change fromm lrbt to lrtb
+            if array is not None:
+                array[2:] = array[2:][::-1]
+            axis = getattr(self, f'_{name}axis')
+
+            # Toggle gridlines
+            attr = f'_{name}lines_{which}'
+            objs = getattr(self, attr)  # dictionary of previous objects
+            lines = getattr(self, f'_get_{name}ticklocs')(which=which)
+            formatter = axis.get_major_formatter()
+            if which == 'major':
+                rebuild = (
+                    not objs
+                    or any(_ is not None for _ in array)
+                    or not axis.isDefault_majloc or not axis.isDefault_majfmt
+                )
+            else:
+                rebuild = not objs or not axis.isDefault_minloc
+
+            # Get gridline properties
+            kwlines = rc.fill(
+                {
+                    'alpha': 'grid.alpha',
+                    'color': 'grid.color',
+                    'linewidth': 'grid.linewidth',
+                    'linestyle': 'grid.linestyle',
+                },
+                context=(not rebuild),
+            )
+            kwtext = rc.fill(
+                {
+                    'color': 'grid.color',
+                    'fontsize': 'grid.labelsize',
+                },
+                context=(not rebuild),
+            )
+
+            # Draw or redraw meridian or parallel lines
+            # TODO: Verify cartopy formatter works in basemap axes...
+            if rebuild:
+                kwdraw = {}
+                if formatter is not None:  # use functional formatter
+                    kwdraw['fmt'] = formatter
+                for obj in self._iter_gridlines(objs):
+                    obj.set_visible(False)
+                objs = getattr(self.projection, method)(
+                    lines, ax=self, latmax=latmax, labels=array, **kwdraw
+                )
+                setattr(self, attr, objs)
+
+            # Update gridline settings
+            for obj in self._iter_gridlines(objs):
+                if isinstance(obj, mtext.Text):
+                    obj.update(kwtext)
+                else:
+                    obj.update(kwlines)
+
+            # Toggle existing gridlines on and off
+            if grid is not None:
+                for obj in self._iter_gridlines(objs):
+                    obj.set_visible(grid)
+
+    def _update_major_gridlines(
+        self,
+        longrid=None, latgrid=None, lonarray=None, latarray=None,
+        loninline=None, latinline=None, rotate_labels=None, labelpad=None,
+    ):
+        """
+        Update major gridlines.
+        """
+        loninline, latinline, labelpad, rotate_labels  # avoid U100 error
+        self._update_gridlines(
+            which='major',
+            longrid=longrid, latgrid=latgrid, lonarray=lonarray, latarray=latarray,
+        )
+
+    def _update_minor_gridlines(
+        self, longrid=None, latgrid=None, lonarray=None, latarray=None,
+    ):
+        """
+        Update minor gridlines.
+        """
+        lonarray, latarray  # prevent U100 error (ignore these)
+        array = [0] * 4
+        self._update_gridlines(
+            which='minor',
+            longrid=longrid, latgrid=latgrid, lonarray=array, latarray=array,
+        )
 
     @property
     def projection(self):
@@ -1219,7 +1347,6 @@ class BasemapAxes(GeoAxes):
 
     @projection.setter
     def projection(self, map_projection):
-        import mpl_toolkits.basemap as mbasemap
         if not isinstance(map_projection, mbasemap.Basemap):
             raise ValueError('Projection must be a basemap.Basemap instance.')
         self._map_projection = map_projection
