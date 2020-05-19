@@ -1553,7 +1553,7 @@ optional
         """
         %(axes.panel)s
         """
-        return self.panel_axes(self, side, **kwargs)
+        return self.panel_axes(side, **kwargs)
 
     @docstring.add_snippets
     def panel_axes(self, side, **kwargs):
