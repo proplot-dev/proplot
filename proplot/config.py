@@ -568,11 +568,13 @@ class rc_configurator(object):
         """
         Translate font size to numeric.
         """
+        # NOTE: Critical this remains KeyError so except clause
+        # in _get_synced_params works.
         if isinstance(size, str):
             try:
                 scale = mfonts.font_scalings[size]
             except KeyError:
-                raise ValueError(
+                raise KeyError(
                     f'Invalid font scaling {size!r}. Options are: '
                     + ', '.join(
                         f'{key!r} ({value})'
