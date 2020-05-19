@@ -128,7 +128,7 @@ class _LonAxis(_GeoAxis):
         super().__init__(axes)
         formatter = 'deglon'
         if cticker is not None and isinstance(self.axes, (ccrs._RectangularProjection, ccrs.Mercator)):  # noqa: E501
-            formatter = 'fancylon'
+            formatter = 'dmslon'
         self.set_major_formatter(constructor.Formatter(formatter), default=True)
         self.set_major_locator(pticker._LongitudeLocator(), default=True)
         self.set_minor_locator(mticker.AutoMinorLocator(), default=True)
@@ -153,7 +153,7 @@ class _LatAxis(_GeoAxis):
         super().__init__(axes)
         formatter = 'deglat'
         if cticker is not None and isinstance(self.axes, (ccrs._RectangularProjection, ccrs.Mercator)):  # noqa: E501
-            formatter = 'fancylat'
+            formatter = 'dmslat'
         self.set_major_formatter(constructor.Formatter(formatter), default=True)
         self.set_major_locator(pticker._LatitudeLocator(), default=True)
         self.set_minor_locator(mticker.AutoMinorLocator(), default=True)

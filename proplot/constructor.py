@@ -14,13 +14,14 @@ from simple shorthand arguments.
 import os
 import re
 import numpy as np
-from numbers import Number
 import matplotlib.colors as mcolors
 import matplotlib.ticker as mticker
 import matplotlib.dates as mdates
 import matplotlib.projections.polar as mpolar
 import matplotlib.scale as mscale
 import cycler
+from functools import partial
+from numbers import Number
 from . import crs as pcrs
 from . import colors as pcolors
 from . import ticker as pticker
@@ -95,6 +96,8 @@ if hasattr(mpolar, 'ThetaLocator'):
 
 # Mapping of strings to `~matplotlib.ticker.Formatter` classes. See
 # `Formatter` for a table.
+# NOTE: Define cartopy longitude/latitude formatters with dms=True because that
+# is their distinguishing feature relative to proplot formatter.
 FORMATTERS = {  # note default LogFormatter uses ugly e+00 notation
     'auto': pticker.AutoFormatter,
     'frac': pticker.FracFormatter,
@@ -115,6 +118,13 @@ FORMATTERS = {  # note default LogFormatter uses ugly e+00 notation
     'eng': mticker.EngFormatter,
     'percent': mticker.PercentFormatter,
     'index': mticker.IndexFormatter,
+    'pi': partial(pticker.FracFormatter, symbol=r'$\pi$', number=np.pi),
+    'e': partial(pticker.FracFormatter, symbol=r'$e$', number=np.e),
+    'lat': partial(pticker.AutoFormatter, negpos='SN'),
+    'lon': partial(pticker.AutoFormatter, negpos='WE', wraprange=(-180, 180)),
+    'deg': partial(pticker.AutoFormatter, suffix='\N{DEGREE SIGN}'),
+    'deglat': partial(pticker.AutoFormatter, negpos='SN', suffix='\N{DEGREE SIGN}'),
+    'deglon': partial(pticker.AutoFormatter, negpos='WE', suffix='\N{DEGREE SIGN}', wraprange=(-180, 180)),  # noqa: E501
 }
 if hasattr(mdates, 'ConciseDateFormatter'):
     FORMATTERS['concise'] = mdates.ConciseDateFormatter
@@ -122,9 +132,9 @@ if hasattr(mpolar, 'ThetaFormatter'):
     FORMATTERS['theta'] = mpolar.ThetaFormatter
 if cticker is not None:
     if hasattr(cticker, 'LongitudeFormatter'):
-        FORMATTERS['lon'] = cticker.LongitudeFormatter
+        FORMATTERS['dmslon'] = partial(cticker.LongitudeFormatter, dms=True)
     if hasattr(cticker, 'LatitudeFormatter'):
-        FORMATTERS['lat'] = cticker.LatitudeFormatter
+        FORMATTERS['dmslat'] = partial(cticker.LatitudeFormatter, dms=True)
 
 # The registered scale names and their associated
 # `~matplotlib.scale.ScaleBase` classes. See `Scale` for a table.
@@ -1007,8 +1017,8 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
         ``'deg'``               `~proplot.ticker.AutoFormatter` preset          Trailing degree symbol
         ``'deglat'``            `~proplot.ticker.AutoFormatter` preset          Trailing degree symbol and cardinal "SN" indicator
         ``'deglon'``            `~proplot.ticker.AutoFormatter` preset          Trailing degree symbol and cardinal "WE" indicator
-        ``'fancylon'``          `~cartopy.mpl.ticker.LongitudeFormatter`        Cartopy longitude labels with degree/minute/second support
-        ``'fancylat'``          `~cartopy.mpl.ticker.LatitudeFormatter`         Cartopy latitude labels with degree/minute/second support
+        ``'dmslon'``            `~cartopy.mpl.ticker.LongitudeFormatter`        Cartopy longitude labels with degree/minute/second support
+        ``'dmslat'``            `~cartopy.mpl.ticker.LatitudeFormatter`         Cartopy latitude labels with degree/minute/second support
         ======================  ==============================================  ===============================================================
 
     date : bool, optional
@@ -1055,36 +1065,14 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
                 formatter = mticker.FormatStrFormatter(
                     formatter, *args, **kwargs
                 )
-        else:
-            # Fraction shorthands
-            if formatter in ('pi', 'e'):
-                if formatter == 'pi':
-                    symbol, number = r'$\pi$', np.pi
-                else:
-                    symbol, number = '$e$', np.e
-                kwargs.setdefault('symbol', symbol)
-                kwargs.setdefault('number', number)
-                formatter = 'frac'
-            # Cartographic shorthands
-            if formatter in ('deg', 'lon', 'lat', 'deglon', 'deglat'):
-                negpos, suffix = None, None
-                if 'deg' in formatter:
-                    suffix = '\N{DEGREE SIGN}'
-                if 'lat' in formatter:
-                    negpos = 'SN'
-                if 'lon' in formatter:
-                    negpos = 'WE'
-                    kwargs.setdefault('wraprange', (-180, 180))
-                kwargs.setdefault('suffix', suffix)
-                kwargs.setdefault('negpos', negpos)
-                formatter = 'auto'
+        elif formatter in FORMATTERS:
             # Lookup
-            if formatter not in FORMATTERS:
-                raise ValueError(
-                    f'Unknown formatter {formatter!r}. Options are '
-                    + ', '.join(map(repr, FORMATTERS.keys())) + '.'
-                )
             formatter = FORMATTERS[formatter](*args, **kwargs)
+        else:
+            raise ValueError(
+                f'Unknown formatter {formatter!r}. Options are '
+                + ', '.join(map(repr, FORMATTERS.keys())) + '.'
+            )
     elif callable(formatter):
         # Function
         formatter = mticker.FuncFormatter(formatter, *args, **kwargs)
