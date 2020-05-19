@@ -3,12 +3,14 @@
 The base axes class used for all ProPlot figures.
 """
 import numpy as np
-from numbers import Integral, Number
+import copy
 import matplotlib.axes as maxes
 import matplotlib.ticker as mticker
 import matplotlib.patches as mpatches
 import matplotlib.transforms as mtransforms
 import matplotlib.collections as mcollections
+import matplotlib.projections as mprojections
+from numbers import Integral, Number
 from .plot import (
     _get_transform,
     _bar_wrapper, _barh_wrapper, _boxplot_wrapper,
@@ -21,6 +23,7 @@ from .plot import (
     colorbar_wrapper, legend_wrapper,
 )
 from .. import gridspec as pgridspec
+from .. import constructor
 from ..config import rc
 from ..utils import units, edges
 from ..internals import ic  # noqa: F401
@@ -101,6 +104,21 @@ transform : {'data', 'axes', 'figure'} or \
     `~matplotlib.axes.Axes.transAxes`,
     or `~matplotlib.figure.Figure.transFigure` transforms. Default is
     ``'axes'``, i.e. `bounds` is in axes-relative coordinates.
+proj, projection : str, `cartopy.crs.Projection`, or `~mpl_toolkits.basemap.Basemap`
+    The map projection specification(s). If not provided, the inset axes
+    projection is identical to the current axes projection. If ``'cartesian'``,
+    a `~proplot.axes.CartesianAxes` inset is created. If ``'polar'``, a
+    `~proplot.axes.PolarAxes` inset is created. Otherwise, the argument is
+    interpreted by `~proplot.constructor.Proj`, and the result is used
+    to make a `~proplot.axes.GeoAxes` (in this case the argument can be
+    a `cartopy.crs.Projection` instance, a `~mpl_toolkits.basemap.Basemap`
+    instance, or a projection name listed in :ref:`this table <proj_table>`).
+proj_kw, projection_kw : dict-like, optional
+    Keyword arguments passed to `~mpl_toolkits.basemap.Basemap` or
+    cartopy `~cartopy.crs.Projection` classes on instantiation.
+basemap : bool or dict-like, optional
+    Whether to use `~mpl_toolkits.basemap.Basemap` or
+    `~cartopy.crs.Projection` for map projections. Default is ``False``.
 zorder : float, optional
     The `zorder <https://matplotlib.org/3.1.1/gallery/misc/zorder_demo.html>`__
     of the axes, should be greater than the zorder of
@@ -1435,8 +1453,9 @@ optional
 
     @docstring.add_snippets
     def inset_axes(
-        self, bounds, *, transform=None, zorder=4,
-        zoom=True, zoom_kw=None,
+        self, bounds, transform=None, zorder=4,
+        zoom=None, zoom_kw=None,
+        proj=None, proj_kw=None, projection=None, projection_kw=None, basemap=None,
         **kwargs
     ):
         """
@@ -1448,18 +1467,43 @@ optional
         else:
             transform = _get_transform(self, transform)
         label = kwargs.pop('label', 'inset_axes')
+        proj = _not_none(proj=proj, projection=projection)
+        proj_kw = _not_none(proj_kw=proj_kw, projection_kw=projection_kw, default={})
+
+        # Inherit from current axes
+        if proj is None:
+            proj = self.name
+            if basemap is not None:
+                proj_kw['basemap'] = basemap
+            if proj_kw:
+                warnings._warn_proplot(
+                    'Inheriting projection from the main axes. '
+                    f'Ignoring proj_kw keyword args: {proj_kw}'
+                )
+            if proj in ('cartopy', 'basemap'):
+                map_projection = copy.copy(self.projection)
+                kwargs.setdefault('map_projection', map_projection)
+
+        # Create new projection
+        elif proj == 'cartesian':
+            pass
+        elif proj == 'polar':
+            proj = 'polar2'  # custom proplot name
+        else:
+            proj_kw.setdefault('basemap', basemap)
+            map_projection = constructor.Proj(proj, **proj_kw)
+            kwargs.setdefault('map_projection', map_projection)
+            proj = 'basemap' if proj_kw['basemap'] else 'cartopy'
 
         # This puts the rectangle into figure-relative coordinates.
-        from .cartesian import CartesianAxes
         locator = self._make_inset_locator(bounds, transform)
+        cls = mprojections.get_projection_class(proj)
         bb = locator(None, None)
-        ax = CartesianAxes(
-            self.figure, bb.bounds,
-            zorder=zorder, label=label, **kwargs
-        )
+        ax = cls(self.figure, bb.bounds, zorder=zorder, label=label, **kwargs)
 
         # The following locator lets the axes move if we used data coordinates,
         # is called by ax.apply_aspect()
+        zoom = _not_none(zoom, self.name == ax.name)  # only zoom when same projection
         ax.set_axes_locator(locator)
         self.add_child_axes(ax)
         ax._inset_zoom = zoom
