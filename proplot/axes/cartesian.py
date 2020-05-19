@@ -566,7 +566,8 @@ class CartesianAxes(base.Axes):
             or outside the axes.
         xlocator, ylocator : locator spec, optional
             Used to determine the *x* and *y* axis tick mark positions. Passed
-            to the `~proplot.constructor.Locator` constructor.
+            to the `~proplot.constructor.Locator` constructor.  Can be float,
+            list of float, string, or `matplotlib.ticker.Locator` instance.
         xticks, yticks : optional
             Aliases for `xlocator`, `ylocator`.
         xlocator_kw, ylocator_kw : dict-like, optional
@@ -581,7 +582,8 @@ class CartesianAxes(base.Axes):
         xformatter, yformatter : formatter spec, optional
             Used to determine the *x* and *y* axis tick label string format.
             Passed to the `~proplot.constructor.Formatter` constructor.
-            Use ``[]`` or ``'null'`` for no ticks.
+            Can be string, list of strings, or `matplotlib.ticker.Formatter`
+            instance. Use ``[]`` or ``'null'`` for no ticks.
         xticklabels, yticklabels : optional
             Aliases for `xformatter`, `yformatter`.
         xformatter_kw, yformatter_kw : dict-like, optional
@@ -681,10 +683,10 @@ class CartesianAxes(base.Axes):
             ymargin = _not_none(ymargin, rc.get('axes.ymargin', context=True))
             xtickdir = _not_none(xtickdir, rc.get('xtick.direction', context=True))
             ytickdir = _not_none(ytickdir, rc.get('ytick.direction', context=True))
-            xformatter = _not_none(xticklabels=xticklabels, xformatter=xformatter)
-            yformatter = _not_none(yticklabels=yticklabels, yformatter=yformatter)
-            xlocator = _not_none(xticks=xticks, xlocator=xlocator)
-            ylocator = _not_none(yticks=yticks, ylocator=ylocator)
+            xformatter = _not_none(xformatter=xformatter, xticklabels=xticklabels)
+            yformatter = _not_none(yformatter=yformatter, yticklabels=yticklabels)
+            xlocator = _not_none(xlocator=xlocator, xticks=xticks)
+            ylocator = _not_none(ylocator=ylocator, yticks=yticks)
             xtickminor = _not_none(
                 xtickminor, rc.get('xtick.minor.visible', context=True)
             )
@@ -692,10 +694,10 @@ class CartesianAxes(base.Axes):
                 ytickminor, rc.get('ytick.minor.visible', context=True)
             )
             xminorlocator = _not_none(
-                xminorticks=xminorticks, xminorlocator=xminorlocator
+                xminorlocator=xminorlocator, xminorticks=xminorticks,
             )
             yminorlocator = _not_none(
-                yminorticks=yminorticks, yminorlocator=yminorlocator
+                yminorlocator=yminorlocator, yminorticks=yminorticks,
             )
 
             # Grid defaults are more complicated
@@ -920,23 +922,22 @@ class CartesianAxes(base.Axes):
                 ticklocs = loc2sides.get(tickloc, (tickloc,))
                 if ticklocs is not None:
                     kw.update({side: side in ticklocs for side in sides})
-                kw.update({  # override
-                    side: False for side in sides if side not in spines
-                })
+                kw.update({side: False for side in sides if side not in spines})
 
                 # Tick label sides
                 # Will override to make sure only appear where ticks are
                 ticklabellocs = loc2sides.get(ticklabelloc, (ticklabelloc,))
                 if ticklabellocs is not None:
-                    kw.update({
-                        'label' + side: (side in ticklabellocs)
-                        for side in sides
-                    })
-                kw.update({  # override
-                    'label' + side: False for side in sides
-                    if side not in spines
-                    or (ticklocs is not None and side not in ticklocs)
-                })  # override
+                    kw.update(
+                        {'label' + side: (side in ticklabellocs) for side in sides}
+                    )
+                kw.update(  # override
+                    {
+                        'label' + side: False for side in sides
+                        if side not in spines
+                        or (ticklocs is not None and side not in ticklocs)
+                    }
+                )  # override
 
                 # The axis label side
                 if labelloc is None:

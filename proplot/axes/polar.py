@@ -86,7 +86,8 @@ optional
             automatically be matplotlib.
         thetalocator, rlocator : float or list of float, optional
             Used to determine the azimuthal and radial gridline positions.
-            Passed to the `~proplot.constructor.Locator` constructor.
+            Passed to the `~proplot.constructor.Locator` constructor. Can be
+            float, list of float, string, or `matplotlib.ticker.Locator` instance.
         thetalines, rlines
             Aliases for `thetalocator`, `rlocator`.
         thetalocator_kw, rlocator_kw : dict-like, optional
@@ -97,7 +98,8 @@ optional
         thetaformatter, rformatter : formatter spec, optional
             Used to determine the azimuthal and radial label format.
             Passed to the `~proplot.constructor.Formatter` constructor.
-            Use ``[]`` or ``'null'`` for no ticks.
+            Can be string, list of string, or `matplotlib.ticker.Formatter`
+            instance. Use ``[]`` or ``'null'`` for no ticks.
         thetalabels, rlabels : optional
             Aliases for `thetaformatter`, `rformatter`.
         thetaformatter_kw, rformatter_kw : dict-like, optional
