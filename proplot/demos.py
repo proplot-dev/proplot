@@ -4,6 +4,7 @@ Functions for enumerating and contrasting the available colors and fonts.
 """
 import os
 import numpy as np
+import cycler
 import matplotlib.font_manager as mfonts
 import matplotlib.colors as mcolors
 from . import ui
@@ -12,7 +13,7 @@ from . import colors as pcolors
 from .utils import to_rgb, to_xyz
 from .config import rc, _get_data_paths, BASE_COLORS, XKCD_COLORS, OPEN_COLORS
 from .internals import ic  # noqa: F401
-from .internals import docstring, warnings, _not_none
+from .internals import docstring, _not_none
 
 __all__ = [
     'show_cmaps',
@@ -173,16 +174,37 @@ docstring.snippets['cycle.categories'] = ', '.join(
 
 
 def _draw_bars(
-    names, *, source, unknown='User', categories=None,
+    cmaps, *, source, unknown='User', categories=None,
     length=4.0, width=0.2, N=None
 ):
     """
     Draw colorbars for "colormaps" and "color cycles". This is called by
     `show_cycles` and `show_cmaps`.
     """
+    # Translate local names into database of colormaps
+    # NOTE: Custom cmap database raises nice error if colormap name is unknown
+    i = 1
+    database = {}
+    for cmap in cmaps:
+        if isinstance(cmap, cycler.Cycler):
+            name = getattr(cmap, 'name', '_no_name')
+            cmap = mcolors.ListedColormap(cmap.by_key()['color'], name)
+        elif isinstance(cmap, (list, tuple)):
+            name = '_no_name'
+            cmap = mcolors.ListedColormap(cmap, name)
+        elif isinstance(cmap, mcolors.Colormap):
+            name = cmap.name
+        else:
+            name = cmap
+            cmap = pcolors._cmap_database[cmap]
+        if name in database:
+            name = f'{name}_{i}'  # e.g. _no_name_2
+            i += 1
+        database[name] = cmap
+
     # Categorize the input names
     cmapdict = {}
-    names_all = list(map(str.lower, names))
+    names_all = list(map(str.lower, database.keys()))
     names_known = list(map(str.lower, sum(map(list, source.values()), [])))
     names_unknown = [name for name in names_all if name not in names_known]
     if unknown and names_unknown:
@@ -224,10 +246,9 @@ def _draw_bars(
                 ax.set_visible(False)
                 ax = axs[iax]
             try:
-                cmap = pcolors._cmap_database[name]
+                cmap = database[name]
             except KeyError:
-                warnings._warn_proplot(f'Colormap {name!r} not found or unregistered.')
-                continue
+                cmap = database[name.lower()]
             if N is not None:
                 cmap = cmap.copy(N=N)
             ax.colorbar(
@@ -245,7 +266,7 @@ def _draw_bars(
 
 
 def show_channels(
-    *args, N=100, rgb=True, saturation=True, minhue=0,
+    *args, N=100, saturation=True, rgb=False, minhue=0,
     maxsat=500, width=100, axwidth=1.7
 ):
     """
@@ -297,7 +318,7 @@ def show_channels(
         axwidth=axwidth, axpad='1em',
     )
     # Iterate through colormaps
-    mc, ms, mp = 0, 0, 0
+    mc = ms = mp = 0
     cmaps = []
     for cmap in args:
         # Get colormap and avoid registering new names
@@ -312,19 +333,17 @@ def show_channels(
         x = np.linspace(0, 1, N)
         lut = cmap._lut[:-3, :3].copy()
         rgb_data = lut.T  # 3 by N
-        hcl_data = np.array([
-            to_xyz(color, space='hcl') for color in lut
-        ]).T  # 3 by N
+        hcl_data = np.array([to_xyz(color, space='hcl') for color in lut]).T  # 3 by N
         hsl_data = [to_xyz(color, space='hsl')[1] for color in lut]
         hpl_data = [to_xyz(color, space='hpl')[1] for color in lut]
 
         # Plot channels
         # If rgb is False, the zip will just truncate the other iterables
-        data = (*hcl_data,)
+        data = tuple(hcl_data)
         if saturation:
             data += (hsl_data, hpl_data)
         if rgb:
-            data += (*rgb_data,)
+            data += tuple(rgb_data)
         for ax, y, label in zip(axs, data, labels):
             ylim, ylocator = None, None
             if label in ('Red', 'Green', 'Blue'):
@@ -355,9 +374,12 @@ def show_channels(
             ax.format(title=label, ylim=ylim, ylocator=ylocator)
 
     # Formatting
-    suptitle = ', '.join(repr(cmap.name) for cmap in cmaps[:-1]) + (
-        ', and ' if len(cmaps) > 2 else ' and ' if len(cmaps) == 2 else ' '
-    ) + f'{repr(cmaps[-1].name)} colormap' + ('s' if len(cmaps) > 1 else '')
+    suptitle = (
+        ', '.join(repr(cmap.name) for cmap in cmaps[:-1])
+        + (', and ' if len(cmaps) > 2 else ' and ' if len(cmaps) == 2 else ' ')
+        + f'{repr(cmaps[-1].name)} colormap'
+        + ('s' if len(cmaps) > 1 else '')
+    )
     axs.format(
         xlocator=0.25, xformatter='null',
         suptitle=f'{suptitle} by channel', ylim=None, ytickminor=False,
@@ -661,18 +683,16 @@ def show_cmaps(*args, **kwargs):
     """
     # Get the list of colormaps
     if args:
-        names = [
-            constructor.Colormap(cmap, to_listed=True).name for cmap in args
-        ]
+        cmaps = [constructor.Colormap(cmap) for cmap in args]
     else:
-        names = [
+        cmaps = [
             name for name in pcolors._cmap_database.keys() if
             isinstance(pcolors._cmap_database[name], pcolors.LinearSegmentedColormap)
         ]
 
     # Return figure of colorbars
     kwargs.setdefault('source', CMAPS_TABLE)
-    return _draw_bars(names, **kwargs)
+    return _draw_bars(cmaps, **kwargs)
 
 
 @docstring.add_snippets
@@ -704,18 +724,16 @@ def show_cycles(*args, **kwargs):
     """
     # Get the list of cycles
     if args:
-        names = [
-            constructor.Colormap(cmap).name for cmap in args
-        ]
+        cycles = [constructor.Cycle(cmap, to_listed=True) for cmap in args]
     else:
-        names = [
+        cycles = [
             name for name in pcolors._cmap_database.keys() if
             isinstance(pcolors._cmap_database[name], pcolors.ListedColormap)
         ]
 
     # Return figure of colorbars
     kwargs.setdefault('source', CYCLES_TABLE)
-    return _draw_bars(names, **kwargs)
+    return _draw_bars(cycles, **kwargs)
 
 
 def show_fonts(
