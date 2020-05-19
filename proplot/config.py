@@ -251,7 +251,7 @@ class rc_configurator(object):
         rc_new = context.rc_new  # used for context-based _get_item
         rc_old = context.rc_old  # used to re-apply settings without copying whole dict
         for key, value in kwargs.items():
-            kw_proplot, kw_matplotlib = self._get_param_dicts(key, value)
+            kw_proplot, kw_matplotlib = self._get_synced_params(key, value)
             for rc_dict, kw_new in zip(
                 (rc_proplot, rc_matplotlib),
                 (kw_proplot, kw_matplotlib),
@@ -271,7 +271,7 @@ class rc_configurator(object):
             )
         context = self._context[-1]
         for key, value in context.rc_old.items():
-            kw_proplot, kw_matplotlib = self._get_param_dicts(key, value)
+            kw_proplot, kw_matplotlib = self._get_synced_params(key, value)
             rc_proplot.update(kw_proplot)
             rc_matplotlib.update(kw_matplotlib)
         del self._context[-1]
@@ -325,7 +325,7 @@ class rc_configurator(object):
         Modify a `builtin matplotlib setting <rc_matplotlib>`_ or
         a ProPlot :ref:`added setting <rc_proplot>`.
         """
-        kw_proplot, kw_matplotlib = self._get_param_dicts(key, value)
+        kw_proplot, kw_matplotlib = self._get_synced_params(key, value)
         rc_proplot.update(kw_proplot)
         rc_matplotlib.update(kw_matplotlib)
 
@@ -358,7 +358,7 @@ class rc_configurator(object):
         else:
             return
 
-    def _get_param_dicts(self, key, value):
+    def _get_synced_params(self, key, value):
         """
         Return dictionaries for updating the `rc_proplot`
         and `rc_matplotlib` properties associated with this key.
@@ -366,14 +366,14 @@ class rc_configurator(object):
         kw_matplotlib = {}  # builtin properties that global setting applies to
         kw_proplot = {}  # custom properties that global setting applies to
         key = self._sanitize_key(key)
+        keys = (key,) + rcsetup._rc_children.get(key, ())  # settings to change
         value = self._sanitize_value(value)
-        children = rcsetup._rc_children.get(key, ())
 
         # Permit arbitary units for builtin matplotlib params
         # See: https://matplotlib.org/users/customizing.html, props matching
         # the below strings use the units 'points'.
         # TODO: Incorporate into more sophisticated validation system
-        if any(REGEX_POINTS.match(_) for _ in (children or (key,))):
+        if any(REGEX_POINTS.match(_) for _ in keys):
             try:
                 value = self._scale_font(value)
             except KeyError:
@@ -412,7 +412,7 @@ class rc_configurator(object):
         # Zero linewidth almost always means zero tick length
         # TODO: Document this feature
         elif key == 'linewidth' and value == 0:
-            ikw_proplot, ikw_matplotlib = self._get_param_dicts('ticklen', 0)
+            ikw_proplot, ikw_matplotlib = self._get_synced_params('ticklen', 0)
             kw_proplot.update(ikw_proplot)
             kw_matplotlib.update(ikw_matplotlib)
 
@@ -451,18 +451,18 @@ class rc_configurator(object):
         # Gridline toggling, complicated because of the clunky way this is
         # implemented in matplotlib. There should be a gridminor setting!
         elif key in ('grid', 'gridminor'):
+            b = value
             ovalue = rc_matplotlib['axes.grid']
             owhich = rc_matplotlib['axes.grid.which']
 
             # Instruction is to turn off gridlines
-            b = value
             if not value:
                 # Gridlines are already off, or they are on for the particular
                 # ones that we want to turn off. Instruct to turn both off.
                 if (
                     not ovalue
-                    or (key == 'grid' and owhich == 'major')
-                    or (key == 'gridminor' and owhich == 'minor')
+                    or key == 'grid' and owhich == 'major'
+                    or key == 'gridminor' and owhich == 'minor'
                 ):
                     which = 'both'  # disable both sides
                 # Gridlines are currently on for major and minor ticks, so we
@@ -484,8 +484,8 @@ class rc_configurator(object):
                 # ones that we want to turn on. Turn on gridlines for both.
                 if (
                     owhich == 'both'
-                    or (key == 'grid' and owhich == 'minor')
-                    or (key == 'gridminor' and owhich == 'major')
+                    or key == 'grid' and owhich == 'minor'
+                    or key == 'gridminor' and owhich == 'major'
                 ):
                     which = 'both'
                 # Gridlines are off for both, or off for the ones that we
@@ -497,20 +497,14 @@ class rc_configurator(object):
             kw_matplotlib['axes.grid'] = b
             kw_matplotlib['axes.grid.which'] = which
 
-        # Update setting in dictionary, detect invalid keys
-        if key in rc_proplot:
-            kw_proplot[key] = value
-        elif key in rc_matplotlib:
-            kw_matplotlib[key] = value
-        else:
-            raise KeyError(f'Invalid rc key {key!r}.')
-
-        # Update linked settings
-        for key in children:
+        # Update original setting and linked settings
+        for key in keys:
             if key in rc_proplot:
                 kw_proplot[key] = value
-            else:
+            elif key in rc_matplotlib:
                 kw_matplotlib[key] = value
+            else:
+                raise KeyError(f'Invalid rc key {key!r}.')
         return kw_proplot, kw_matplotlib
 
     @staticmethod
@@ -794,7 +788,7 @@ class rc_configurator(object):
             rc_matplotlib.update(rcsetup._rc_matplotlib_default)
             rc_proplot.update(rcsetup._rc_proplot_default)
             for key, value in rc_proplot.items():
-                kw_proplot, kw_matplotlib = self._get_param_dicts(key, value)
+                kw_proplot, kw_matplotlib = self._get_synced_params(key, value)
                 rc_matplotlib.update(kw_matplotlib)
                 rc_proplot.update(kw_proplot)
 
@@ -861,7 +855,7 @@ class rc_configurator(object):
 
                 # Add to dictionaries
                 try:
-                    ikw_proplot, ikw_matplotlib = self._get_param_dicts(key, val)
+                    ikw_proplot, ikw_matplotlib = self._get_synced_params(key, val)
                     kw_proplot.update(ikw_proplot)
                     kw_matplotlib.update(ikw_matplotlib)
                 except KeyError:
