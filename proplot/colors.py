@@ -14,7 +14,7 @@ import matplotlib.colors as mcolors
 from matplotlib import rcParams
 from .internals import ic  # noqa: F401
 from .internals import docstring, warnings, _not_none
-from .utils import to_rgb, to_xyz
+from .utils import to_rgb, to_rgba, to_xyz, to_xyza
 if hasattr(mcm, '_cmap_registry'):
     _cmap_database_attr = '_cmap_registry'
 else:
@@ -113,7 +113,7 @@ def _get_channel(color, channel, space='hcl'):
     Parameters
     ----------
     color : color-spec
-        The color. Sanitized with `to_rgb`.
+        The color. Sanitized with `to_rgba`.
     channel : {'hue', 'chroma', 'saturation', 'luminance'}
         The HCL channel to be retrieved.
     space : {'hcl', 'hpl', 'hsl', 'hsv', 'rgb'}, optional
@@ -622,7 +622,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             Relative extent of each component colormap in the merged colormap.
             Length must equal ``len(args) + 1``.
 
-            For example, ``cmap1.append(cmap2, ratios=[2,1])`` generates
+            For example, ``cmap1.append(cmap2, ratios=(2, 1))`` generates
             a colormap with the left two-thrids containing colors from
             ``cmap1`` and the right one-third containing colors from ``cmap2``.
         name : str, optional
@@ -898,16 +898,27 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
                 fh.write(data)
         print(f'Saved colormap to {filename!r}.')
 
-    def set_alpha(self, alpha):
+    def set_alpha(self, alpha, coords=None, ratios=None):
         """
-        Set the opacity for the entire colormap.
+        Set the opacity for the entire colormap or set up an opacity gradation.
 
         Parameters
         ----------
-        alpha : float
-            The opacity.
+        alpha : float or list of float
+            If float, this is the opacity for the entire colormap. If list of
+            float, the colormap traverses these opacity values.
+        coords : list of float, optional
+            Colormap coordinates for the opacity values. The first and last
+            coordinates must be ``0`` and ``1``. If `alpha` is not scalar, the
+            default coordinates are ``np.linspace(0, 1, len(alpha))``.
+        ratios : list of float, optional
+            Relative extent of each opacity transition segment. Length should
+            equal ``len(alpha) + 1``. For example
+            ``cmap.set_alpha((1, 1, 0), ratios=(2, 1))`` creates a transtion from
+            100 percent to 0 percent opacity in the right *third* of the colormap.
         """
-        self._segmentdata['alpha'] = [(0, alpha, alpha), (1, alpha, alpha)]
+        alpha = _make_segmentdata_array(alpha, coords=coords, ratios=ratios)
+        self._segmentdata['alpha'] = alpha
         self._isinit = False
 
     def set_cyclic(self, b):
@@ -1155,7 +1166,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             and not isinstance(colors[0], str)
         ):
             coords, colors = zip(*colors)
-        colors = [to_rgb(color, alpha=True) for color in colors]
+        colors = [to_rgba(color) for color in colors]
 
         # Build segmentdata
         keys = ('red', 'green', 'blue', 'alpha')
@@ -1568,9 +1579,9 @@ optional
             side of the colormap (default is ``100``), and the saturation
             channel is held constant throughout the colormap.
 
-            If RGB tuple, hex string, or named color string, the luminance and
-            saturation (but *not* the hue) from this color are used for the
-            left-hand side of the colormap.
+            If RGB[A] tuple, hex string, or named color string, the luminance,
+            saturation, and opacity (but *not* the hue) from this color are used
+            for the left-hand side of the colormap.
         space : {'hsl', 'hpl', 'hcl'}, optional
             The colorspace in which the luminance is varied.
 
@@ -1584,15 +1595,16 @@ optional
         `PerceptuallyUniformColormap`
             The colormap.
         """
-        hue, saturation, luminance, alpha = to_xyz(color, space, alpha=True)
+        hue, saturation, luminance, alpha = to_xyza(color, space)
         if fade is None:
             fade = 100
         if isinstance(fade, Number):
-            saturation_fade, luminance_fade = saturation, fade
+            alpha_fade, saturation_fade, luminance_fade = alpha, saturation, fade
         else:
-            _, saturation_fade, luminance_fade = to_xyz(fade, space)
+            _, saturation_fade, luminance_fade, alpha_fade = to_xyza(fade, space)
         return cls.from_hsl(
-            name, hue=hue, alpha=alpha, space=space,
+            name, hue=hue, space=space,
+            alpha=(alpha_fade, alpha),
             saturation=(saturation_fade, saturation),
             luminance=(luminance_fade, luminance),
             **kwargs
@@ -1629,7 +1641,7 @@ optional
             ``len(colors) - 1``. Larger numbers indicate a slower
             transition, smaller numbers indicate a faster transition.
 
-            For example, ``luminance=[100,50,0]`` with ``ratios=[2,1]``
+            For example, ``luminance=(100, 50, 0)`` with ``ratios=(2, 1)``
             results in a colormap with the transition from luminance ``100``
             to ``50`` taking *twice as long* as the transition from luminance
             ``50`` to ``0``.
@@ -1675,7 +1687,7 @@ optional
             ``len(colors) - 1``. Larger numbers indicate a slower
             transition, smaller numbers indicate a faster transition.
 
-            For example, ``red=[1,0.5,0]`` with ``ratios=[2,1]``
+            For example, ``red=(1, 0.5, 0)`` with ``ratios=(2, 1)``
             results in a colormap with the transition from red ``1``
             to ``0.5`` taking *twice as long* as the transition from red
             ``0.5`` to ``0``.
@@ -1695,10 +1707,12 @@ optional
         space = kwargs.get('space', 'hsl')  # use the builtin default
         if not np.iterable(colors):
             raise ValueError(f'Colors must be iterable, got colors={colors!r}')
-        if (np.iterable(colors[0]) and len(colors[0]) == 2
-                and not isinstance(colors[0], str)):
+        if (
+            np.iterable(colors[0]) and len(colors[0]) == 2
+            and not isinstance(colors[0], str)
+        ):
             coords, colors = zip(*colors)
-        colors = [to_xyz(color, space, alpha=True) for color in colors]
+        colors = [to_xyza(color, space) for color in colors]
 
         # Build segmentdata
         keys = ('hue', 'saturation', 'luminance', 'alpha')

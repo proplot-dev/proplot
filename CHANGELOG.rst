@@ -141,6 +141,14 @@ There are quite a lot of deprecations for this release.
 - No longer distinguish between "quick" settings and proplot's "added"
   settings (:commit:`e6dd8314`). Quick settings, added settings, and matplotlib
   settings can all have "children" so the distinction no longer makes sense.
+- Add opacity-preserving functions `~proplot.utils.to_rgba`
+  and `~proplot.utils.to_xyza`, plus `~proplot.utils.set_alpha` for
+  changing alpha channel of arbitrary color (:commit:`81c647da`).
+- Add to `~proplot.colors.LinearSegmentedColormap.set_alpha` the ability to
+  create an *opacity gradation*, rather than just an opacity for the entire
+  colormap (:commit:`4a138ba4`).
+- Support passing colormap objects, not just names, to `~proplot.demos.show_cmaps`
+  and `~proplot.demos.show_cycles` (:commit:`7f8ca59f`).
 - Add options to `~proplot.axes.plot.indicate_error` for adding *shading*
   to arbitrary plots (:pr:`166`, :commit:`d8c50a8d`). Also support automatic legend
   entries for shading and ensure `indicate_error` preserves metadata.

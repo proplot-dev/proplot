@@ -359,7 +359,9 @@ axs[0].format(
     title='Cartopy example', land=True,
     lonlim=(-20, 50), latlim=(30, 70)
 )
-axs[1].format(title='Basemap example', land=True)
+axs[1].format(
+    title='Basemap example', land=True, lonlines=20
+)
 plot.rc.reset()
 
 

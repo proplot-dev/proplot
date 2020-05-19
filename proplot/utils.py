@@ -13,9 +13,9 @@ from .externals import hsluv
 
 __all__ = [
     'arange', 'edges', 'edges2d', 'units',
-    'set_hue', 'set_luminance', 'set_saturation',
+    'set_alpha', 'set_hue', 'set_luminance', 'set_saturation',
     'scale_luminance', 'scale_saturation',
-    'to_rgb', 'to_xyz',
+    'to_rgb', 'to_xyz', 'to_rgba', 'to_xyza',
     'shade', 'saturate',
 ]
 
@@ -33,23 +33,41 @@ UNIT_DICT = {
     'ly': 3.725e+17,
 }
 
-docstring.snippets['colors.color'] = """
+# Shared parameters
+docstring.snippets['param.rgba'] = """
 color : color-spec
-    The color. Sanitized with `to_rgb`.
+    The color. Sanitized with `to_rgba`.
 """
-docstring.snippets['colors.alpha'] = """
-alpha : bool, optional
-    Whether to include an opacity channel in the return value. Default
-    is ``False``.
+docstring.snippets['param.to_rgb'] = """
+color : str, 3-tuple, or 4-tuple
+    The color specification. Can be a tuple of channel values, a hex string,
+    a registered color name, a cycle color like ``'C0'``, or a colormap color
+    (see `~proplot.colors.ColorDatabase`).
+
+    If `space` is ``'rgb'``, this is a tuple of RGB values, and if any
+    channels are larger than ``2``, the channels are assumed to be on
+    the ``0`` to ``255`` scale and are divided by ``255``.
+space : {'rgb', 'hsv', 'hcl', 'hpl', 'hsl'}, optional
+    The colorspace for the input channel values. Ignored unless `color` is
+    a tuple of numbers.
+cycle : str or list, optional
+    The registered color cycle name used to interpret colors that
+    look like ``'C0'``, ``'C1'``, etc. Default is :rc:`cycle`.
 """
-docstring.snippets['colors.space'] = """
+docstring.snippets['param.space'] = """
 space : {'hcl', 'hpl', 'hsl', 'hsv'}, optional
     The hue-saturation-luminance-like colorspace used to transform the color.
     Default is the perceptually uniform colorspace ``'hcl'``.
 """
-docstring.snippets['colors.returns'] = """
-color : 3-tuple or 4-tuple
-    An RGB[A] tuple.
+
+# Shared return values
+docstring.snippets['return.rgb'] = """
+color : 3-tuple
+    An RGB tuple.
+"""
+docstring.snippets['return.rgba'] = """
+color : 4-tuple
+    An RGBA tuple.
 """
 
 
@@ -169,37 +187,33 @@ def edges2d(Z):
     return Zb
 
 
-def _transform_color(func, color, alpha, space):
+def _transform_color(func, color, space):
     """
     Standardized input for color transformation functions.
     """
-    *color, opacity = to_rgb(color, alpha=True)
+    *color, opacity = to_rgba(color)
     channels = list(to_xyz(color, space=space))
     channels = func(channels)  # apply transform
     color = to_rgb(channels, space=space)
     color = tuple(np.clip(color, 0, 1))  # clip to valid range
-    if alpha:
-        return (*color, opacity)
-    else:
-        return color
+    return (*color, opacity)
 
 
 @docstring.add_snippets
-def scale_saturation(color, scale=1, alpha=False, space='hcl'):
+def scale_saturation(color, scale=1, space='hcl'):
     """
     Scale the saturation channel of a color.
 
     Parameters
     ----------
-    %(colors.color)s
+    %(param.rgba)s
     scale : float, optoinal
         The HCL saturation channel is multiplied by this value.
-    %(colors.alpha)s
-    %(colors.space)s
+    %(param.space)s
 
     Returns
     -------
-    %(colors.returns)s
+    %(return.rgba)s
 
     See also
     --------
@@ -209,25 +223,24 @@ def scale_saturation(color, scale=1, alpha=False, space='hcl'):
         channels[1] *= scale
         return channels
 
-    return _transform_color(func, color, alpha, space)
+    return _transform_color(func, color, space)
 
 
 @docstring.add_snippets
-def scale_luminance(color, scale=1, alpha=False, space='hcl'):
+def scale_luminance(color, scale=1, space='hcl'):
     """
     Scale the luminance channel of a color.
 
     Parameters
     ----------
-    %(colors.color)s
+    %(param.rgba)s
     scale : float, optoinal
         The luminance channel is multiplied by this value.
-    %(colors.alpha)s
-    %(colors.space)s
+    %(param.space)s
 
     Returns
     -------
-    %(colors.returns)s
+    %(return.rgba)s
 
     See also
     --------
@@ -237,26 +250,41 @@ def scale_luminance(color, scale=1, alpha=False, space='hcl'):
         channels[2] *= scale
         return channels
 
-    return _transform_color(func, color, alpha, space)
+    return _transform_color(func, color, space)
 
 
 @docstring.add_snippets
-def set_hue(color, hue, alpha=False, space='hcl'):
+def set_alpha(color, alpha):
+    """
+    Return a color with the opacity channel set to the specified value.
+
+    Parameters
+    ----------
+    %(param.rgba)s
+    alpha : float, optional
+        The new opacity. Should be between ``0`` and ``1``.
+    """
+    color = list(to_rgba(color))
+    color[3] = alpha
+    return tuple(color)
+
+
+@docstring.add_snippets
+def set_hue(color, hue, space='hcl'):
     """
     Return a color with a different hue and the same luminance and saturation
     as the input color.
 
     Parameters
     ----------
-    %(colors.color)s
+    %(param.rgba)s
     hue : float, optional
         The new hue. Should lie between ``0`` and ``360`` degrees.
-    %(colors.alpha)s
-    %(colors.space)s
+    %(param.space)s
 
     Returns
     -------
-    %(colors.returns)s
+    %(return.rgba)s
 
     See also
     --------
@@ -266,26 +294,25 @@ def set_hue(color, hue, alpha=False, space='hcl'):
         channels[0] = hue
         return channels
 
-    return _transform_color(func, color, alpha, space)
+    return _transform_color(func, color, space)
 
 
 @docstring.add_snippets
-def set_saturation(color, saturation, alpha=False, space='hcl'):
+def set_saturation(color, saturation, space='hcl'):
     """
     Return a color with a different saturation and the same hue and luminance
     as the input color.
 
     Parameters
     ----------
-    %(colors.color)s
+    %(param.rgba)s
     saturation : float, optional
         The new saturation. Should lie between ``0`` and ``360`` degrees.
-    %(colors.alpha)s
-    %(colors.space)s
+    %(param.space)s
 
     Returns
     -------
-    %(colors.returns)s
+    %(return.rgba)s
 
     See also
     --------
@@ -295,26 +322,25 @@ def set_saturation(color, saturation, alpha=False, space='hcl'):
         channels[1] = saturation
         return channels
 
-    return _transform_color(func, color, alpha, space)
+    return _transform_color(func, color, space)
 
 
 @docstring.add_snippets
-def set_luminance(color, luminance, alpha=False, space='hcl'):
+def set_luminance(color, luminance, space='hcl'):
     """
     Return a color with a different luminance and the same hue and saturation
     as the input color.
 
     Parameters
     ----------
-    %(colors.color)s
+    %(param.rgba)s
     luminance : float, optional
         The new luminance. Should lie between ``0`` and ``100``.
-    %(colors.alpha)s
-    %(colors.space)s
+    %(param.space)s
 
     Returns
     -------
-    %(colors.returns)s
+    %(return.rgba)s
 
     See also
     --------
@@ -324,11 +350,11 @@ def set_luminance(color, luminance, alpha=False, space='hcl'):
         channels[2] = luminance
         return channels
 
-    return _transform_color(func, color, alpha, space)
+    return _transform_color(func, color, space)
 
 
 @docstring.add_snippets
-def to_rgb(color, space='rgb', cycle=None, alpha=False):
+def to_rgb(color, space='rgb', cycle=None):
     """
     Translate the color in *any* format and from *any* colorspace to an RGB
     tuple. This is a generalization of `matplotlib.colors.to_rgb` and the
@@ -336,29 +362,37 @@ def to_rgb(color, space='rgb', cycle=None, alpha=False):
 
     Parameters
     ----------
-    color : str, 3-tuple, or 4-tuple
-        The color specification. Can be a tuple of channel values for the
-        `space` colorspace, a hex string, a registered color name, a cycle
-        color, or a colormap color (see `~proplot.colors.ColorDatabase`).
-
-        If `space` is ``'rgb'``, this is a tuple of RGB values, and any
-        channels are larger than ``2``, the channels are assumed to be on
-        a ``0`` to ``255`` scale and are therefore divided by ``255``.
-    space : {'rgb', 'hsv', 'hcl', 'hpl', 'hsl'}, optional
-        The colorspace for the input channel values. Ignored unless `color` is
-        a 3-tuple or 4-tuple.
-    cycle : str or list, optional
-        The registered color cycle name used to interpret colors that
-        look like ``'C0'``, ``'C1'``, etc. Default is :rc:`cycle`.
-    %(colors.alpha)s
+    %(param.to_rgb)s
 
     Returns
     -------
-    %(colors.returns)s
+    %(return.rgb)s
 
     See also
     --------
-    to_xyz
+    to_rgba, to_xyz
+    """
+    return to_rgba(color, space=space, cycle=cycle)[:3]
+
+
+@docstring.add_snippets
+def to_rgba(color, space='rgb', cycle=None):
+    """
+    Translate the color in *any* format and from *any* colorspace to an RGB
+    tuple. This is a generalization of `matplotlib.colors.to_rgba` and the
+    inverse of `to_xyza`.
+
+    Parameters
+    ----------
+    %(param.to_rgb)s
+
+    Returns
+    -------
+    %(return.rgba)s
+
+    See also
+    --------
+    to_rgb, to_xyza
     """
     # Convert color cycle strings
     if isinstance(color, str) and re.match(r'\AC[0-9]\Z', color):
@@ -419,39 +453,58 @@ def to_rgb(color, space='rgb', cycle=None, alpha=False):
         raise ValueError('Invalid color {color!r} for colorspace {space!r}.')
 
     # Return RGB or RGBA
-    if alpha:
-        return (*color, opacity)
-    else:
-        return color
+    return (*color, opacity)
 
 
 @docstring.add_snippets
-def to_xyz(color, space='hcl', alpha=False):
+def to_xyz(color, space='hcl'):
     """
     Translate color in *any* format to a tuple of channel values in *any*
     colorspace. This is the inverse of `to_rgb`.
 
     Parameters
     ----------
-    %(colors.color)s
-    space : {'hcl', 'hpl', 'hsl', 'rgb', 'hsv'}, optional
+    %(param.rgba)s
+    space : {'hcl', 'hpl', 'hsl', 'hsv', 'rgb'}, optional
         The colorspace for the output channel values.
-    %(colors.alpha)s
 
     Returns
     -------
-    color : 3-tuple or 4-tuple
-        Tuple of channel values for the colorspace `space` with an optional
-        opacity channel.
+    color : 3-tuple
+        Tuple of channel values for the colorspace `space`.
 
     See also
     --------
-    to_xyz
+    to_rgb, to_xyza
+    """
+    return to_xyza(color, space)[:3]
+
+
+@docstring.add_snippets
+def to_xyza(color, space='hcl'):
+    """
+    Translate color in *any* format to a tuple of channel values in *any*
+    colorspace. This is the inverse of `to_rgba`.
+
+    Parameters
+    ----------
+    %(param.rgba)s
+    space : {'hcl', 'hpl', 'hsl', 'hsv', 'rgb'}, optional
+        The colorspace for the output channel values.
+
+    Returns
+    -------
+    color : 3-tuple
+        Tuple of channel values for the colorspace `space`.
+
+    See also
+    --------
+    to_rgba, to_xyz
     """
     # Run tuple conversions
     # NOTE: Don't pass color tuple, because we may want to permit
     # out-of-bounds RGB values to invert conversion
-    *color, opacity = to_rgb(color, alpha=True)
+    *color, opacity = to_rgba(color)
     if space == 'rgb':
         pass
     elif space == 'hsv':
@@ -464,10 +517,7 @@ def to_xyz(color, space='hcl', alpha=False):
         color = hsluv.rgb_to_hpluv(*color)
     else:
         raise ValueError(f'Invalid colorspace {space}.')
-    if alpha:
-        return (*color, opacity)
-    else:
-        return color
+    return (*color, opacity)
 
 
 @warnings._rename_kwargs(units='dest')
