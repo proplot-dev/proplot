@@ -238,7 +238,7 @@ axs[:, 0].format(ylabel='ylabel\nylabel')
 # %%
 import proplot as plot
 import numpy as np
-with plot.rc.context(small='12px', large='15px'):
+with plot.rc.context(fontsize='12px'):
     fig, axs = plot.subplots(
         ncols=3, width='15cm', height='2.5in',
         wspace=('10pt', '20pt'), right='10mm'
