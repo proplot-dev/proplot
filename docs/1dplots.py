@@ -460,8 +460,8 @@ ax.colorbar(m, loc='b', maxn=10, label='parametric coordinate')
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_scatter:
 #
-# Scatter plots
-# -------------
+# Other plotting methods
+# ----------------------
 #
 # The `~matplotlib.axes.Axes.scatter` method is now wrapped by
 # `~proplot.axes.scatter_wrapper`, `~proplot.axes.cycle_changer`, and
@@ -473,6 +473,12 @@ ax.colorbar(m, loc='b', maxn=10, label='parametric coordinate')
 # `~matplotlib.axes.Axes.scatter` now optionally accepts keywords that look
 # like `~matplotlib.axes.Axes.plot` keywords (e.g. `color` instead of `c` and
 # `markersize` instead of `s`).
+#
+# ProPlot also supports property cycling for `~proplot.axes.Axes.step` plots
+# and wraps the `~matplotlib.axes.Axes.vlines` and `~matplotlib.axes.Axes.hlines`
+# methods with `~proplot.axes.plot.vlines_wrapper`
+# and `~proplot.axes.plot.hlines_wrapper`, which adds the ability to use
+# different colors for "negative" and "positive" lines.
 
 # %%
 import proplot as plot
@@ -486,7 +492,7 @@ data = pd.DataFrame(data, columns=pd.Index(['a', 'b', 'c', 'd'], name='label'))
 
 # Scatter plot with property cycler
 ax = axs[0]
-ax.format(title='Extra prop cycle properties', suptitle='Scatter plot demo')
+ax.format(suptitle='Scatter plot demo', title='Extra prop cycle properties')
 obj = ax.scatter(
     x, data, legend='ul', cycle='Set2', legend_kw={'ncols': 2},
     cycle_kw={'marker': ['x', 'o', 'x', 'o'], 'markersize': [5, 10, 20, 30]}
@@ -502,3 +508,40 @@ obj = ax.scatter(
     colorbar_kw={'label': 'label', 'locator': 0.5}
 )
 axs.format(xlabel='xlabel', ylabel='ylabel')
+
+# %%
+import proplot as plot
+import numpy as np
+state = np.random.RandomState(51423)
+fig, axs = plot.subplots(ncols=2, nrows=2, share=0)
+axs.format(suptitle='Line plots demo', xlabel='xlabel', ylabel='ylabel')
+
+# Step
+ax = axs[0]
+data = state.rand(20, 4).cumsum(axis=1).cumsum(axis=0)
+cycle = (
+    'blue7', plot.set_alpha('blue7', 0.4),
+    'red7', plot.set_alpha('red7', 0.4),
+)
+ax.step(data, cycle=cycle, labels=list('ABCD'), legend='ul', legend_kw={'ncol': 2})
+ax.format(title='Step plot')
+
+# Stems
+ax = axs[1]
+data = state.rand(20)
+ax.stem(data, linefmt='k-')
+ax.format(title='Stem plot')
+
+# Vertical lines
+gray = 'gray7'
+data = state.rand(20) - 0.5
+ax = axs[2]
+ax.area(data, linewidth=1.5, color=gray, alpha=0.2)
+ax.vlines(data, negpos=True, linewidth=2)
+ax.format(title='Vertical lines')
+
+# Horizontal lines
+ax = axs[3]
+ax.areax(data, linewidth=1.5, color=gray, alpha=0.2)
+ax.hlines(data, negpos=True, linewidth=2)
+ax.format(title='Horizontal lines')

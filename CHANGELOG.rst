@@ -156,6 +156,9 @@ There are quite a lot of deprecations for this release.
   wrapped (:commit:`50a262dd`).
 - Add ``negpos`` feature to `~proplot.axes.plot.bar_wrapper` and new
   :rcraw:`negcolor` and :rcraw:`poscolor` rc keyword arguments (:commit:`ab4d6746`).
+- Support `~matplotlib.axes.Axes.vlines` and `~matplotlib.axes.Axes.hlines`
+  flexible arguments and add ``negpos`` feature
+  (:commit:`1c53e947`, :commit:`e42ee913`).
 - Increase default line width from ``0.6`` to ``0.8`` to match matplotlib defaults
   (:commit:`f801852b`; try to avoid frivolously changing defaults).
 - Change default resolution for geographic features from ``'lo'`` to ``'med'``
