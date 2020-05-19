@@ -126,13 +126,15 @@ class _LonAxis(_GeoAxis):
     # NOTE: Basemap accepts tick formatters with drawmeridians(fmt=Formatter())
     # Try to use cartopy formatter if cartopy installed. Otherwise use
     # default builtin basemap formatting.
-    def __init__(self, axes):
+    def __init__(self, axes, projection=None):
         super().__init__(axes)
+        dms = False
         formatter = 'deglon'
-        if cticker is not None and isinstance(self.axes, (ccrs._RectangularProjection, ccrs.Mercator)):  # noqa: E501
+        if cticker is not None and isinstance(projection, (ccrs._RectangularProjection, ccrs.Mercator)):  # noqa: E501
+            dms = True
             formatter = 'dmslon'
         self.set_major_formatter(constructor.Formatter(formatter), default=True)
-        self.set_major_locator(pticker._LongitudeLocator(), default=True)
+        self.set_major_locator(pticker._LongitudeLocator(dms=dms), default=True)
         self.set_minor_locator(mticker.AutoMinorLocator(), default=True)
 
     def _constrain_ticks(self, ticks):
@@ -157,14 +159,19 @@ class _LatAxis(_GeoAxis):
     """
     Axis with default latitude locator.
     """
-    def __init__(self, axes, latmax):
+    def __init__(self, axes, latmax=90, projection=None):
+        # NOTE: Need to pass projection because lataxis/lonaxis are
+        # initialized before geoaxes is initialized, because format() needs
+        # the axes and format() is called by proplot.axes.Axes.__init__()
         self._latmax = latmax
         super().__init__(axes)
+        dms = False
         formatter = 'deglat'
-        if cticker is not None and isinstance(self.axes, (ccrs._RectangularProjection, ccrs.Mercator)):  # noqa: E501
+        if cticker is not None and isinstance(projection, (ccrs._RectangularProjection, ccrs.Mercator)):  # noqa: E501
+            dms = True
             formatter = 'dmslat'
         self.set_major_formatter(constructor.Formatter(formatter), default=True)
-        self.set_major_locator(pticker._LatitudeLocator(), default=True)
+        self.set_major_locator(pticker._LatitudeLocator(dms=dms), default=True)
         self.set_minor_locator(mticker.AutoMinorLocator(), default=True)
 
     def _constrain_ticks(self, ticks):
@@ -447,6 +454,8 @@ optional
             if dms is not None:
                 self._lonaxis.get_major_formatter()._dms = dms
                 self._lataxis.get_major_formatter()._dms = dms
+                self._lonaxis.get_major_locator()._dms = dms
+                self._lataxis.get_major_locator()._dms = dms
 
             # Apply worker functions
             self._update_extent(lonlim=lonlim, latlim=latlim, boundinglat=boundinglat)
@@ -636,11 +645,11 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
 
         # Initialize axes
         self._boundinglat = boundinglat
-        self._projection = map_projection  # cartopy also does this
+        self._map_projection = map_projection  # cartopy also does this
         self._gridlines_major = None
         self._gridlines_minor = None
-        self._lonaxis = _LonAxis(self)
-        self._lataxis = _LatAxis(self, latmax=latmax)
+        self._lonaxis = _LonAxis(self, projection=map_projection)
+        self._lataxis = _LatAxis(self, latmax=latmax, projection=map_projection)
         super().__init__(*args, map_projection=map_projection, **kwargs)
 
         # Apply circular map boundary for polar projections. Apply default

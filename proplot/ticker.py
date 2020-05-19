@@ -75,7 +75,7 @@ class _GeoLocator(mticker.MaxNLocator):
         return self._raw_ticks(vmin, vmax)  # may call Latitude/LongitudeLocator copies
 
 
-class _LongitudeLocator(mticker.MaxNLocator):
+class _LongitudeLocator(_GeoLocator):
     """
     A locator for determining longitude gridlines. Includes considerations
     to prevent double gridlines on tick boundaries.
@@ -113,9 +113,6 @@ class _LatitudeLocator(_GeoLocator):
     dms : bool, optional
         Allow the locator to stop on minutes and seconds. Default is ``False``.
     """
-    default_params = _GeoLocator.default_params.copy()
-    default_params.update(symmetric=True)  # always draw gridline on equator!
-
     def tick_values(self, vmin, vmax):
         vmin = max(vmin, -90)
         vmax = min(vmax, 90)
