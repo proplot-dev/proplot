@@ -199,10 +199,11 @@ class _LatAxis(_GeoAxis):
         # Adjust latitude ticks to fix bug in some projections. Harmless for basemap.
         # NOTE: Maybe fixed by cartopy v0.18?
         eps = 1e-10
-        if ticks[0] == -90:
-            ticks[0] += eps
-        if ticks[-1] == 90:
-            ticks[-1] -= eps
+        if ticks:
+            if ticks[0] == -90:
+                ticks[0] += eps
+            if ticks[-1] == 90:
+                ticks[-1] -= eps
         return ticks
 
     def get_latmax(self):
@@ -1201,14 +1202,9 @@ class BasemapAxes(GeoAxes):
             else:
                 extent.extend([-90, boundinglat])
         else:
-            # NOTE: Using 'corner' values tends to give more accurate results
-            # but might be unavailable sometimes, so also check lonmin/lonmax, etc.
             latmax = 90
-            attrs = ('llcrnrlon', 'urcrnrlon', 'llcrnrlat', 'urcrnrlat')
+            attrs = ('lonmin', 'lonmax', 'latmin', 'latmax')
             extent = [getattr(map_projection, attr, None) for attr in attrs]
-            if any(_ is None for _ in extent):
-                attrs = ('lonmin', 'lonmax', 'latmin', 'latmax')
-                extent = [getattr(map_projection, attr, None) for attr in attrs]
             if any(_ is None for _ in extent):
                 extent = [180 - lon0, 180 + lon0, -90, 90]  # fallback
 
@@ -1336,6 +1332,7 @@ class BasemapAxes(GeoAxes):
 
             # Get gridlines
             lines = getattr(self, f'_get_{name}ticklocs')(which=which)
+            lines = list(lines)
             if name == 'lon' and np.isclose(lines[0] + 360, lines[-1]):
                 lines = lines[:-1]  # prevent double labels
 
@@ -1346,7 +1343,7 @@ class BasemapAxes(GeoAxes):
                 attrs = ('isDefault_majloc', 'isDefault_majfmt')
             else:
                 attrs = ('isDefault_minloc',)
-            rebuild = (
+            rebuild = lines and (
                 not objs
                 or any(_ is not None for _ in array)
                 or any(not getattr(axis, _) for _ in attrs)
