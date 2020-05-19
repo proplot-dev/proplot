@@ -88,18 +88,20 @@ LOCATORS = {
     'weekday': mdates.WeekdayLocator,
     'month': mdates.MonthLocator,
     'year': mdates.YearLocator,
-    'lon': partial(pticker._LongitudeLocator, dms=False),  # NOTE: undocumented for now
-    'lat': partial(pticker._LatitudeLocator, dms=False),
-    'deglon': partial(pticker._LongitudeLocator, dms=False),
-    'deglat': partial(pticker._LatitudeLocator, dms=False),
-    'dmslon': partial(pticker._LongitudeLocator, dms=True),
-    'dmslat': partial(pticker._LatitudeLocator, dms=True),
+    'lon': partial(pticker.LongitudeLocator, dms=False),
+    'lat': partial(pticker.LatitudeLocator, dms=False),
+    'deglon': partial(pticker.LongitudeLocator, dms=False),
+    'deglat': partial(pticker.LatitudeLocator, dms=False),
+    'dmslon': partial(pticker.LongitudeLocator, dms=True),
+    'dmslat': partial(pticker.LatitudeLocator, dms=True),
 }
 if hasattr(mpolar, 'ThetaLocator'):
     LOCATORS['theta'] = mpolar.ThetaLocator
 
 # Mapping of strings to `~matplotlib.ticker.Formatter` classes. See
 # `Formatter` for a table.
+# NOTE: Critical to use SimpleFormatter for cardinal formatters rather than
+# AutoFormatter because latter fails with Basemap formatting.
 # NOTE: Define cartopy longitude/latitude formatters with dms=True because that
 # is their distinguishing feature relative to proplot formatter.
 FORMATTERS = {  # note default LogFormatter uses ugly e+00 notation
@@ -124,11 +126,11 @@ FORMATTERS = {  # note default LogFormatter uses ugly e+00 notation
     'index': mticker.IndexFormatter,
     'pi': partial(pticker.FracFormatter, symbol=r'$\pi$', number=np.pi),
     'e': partial(pticker.FracFormatter, symbol=r'$e$', number=np.e),
-    'lat': partial(pticker.AutoFormatter, negpos='SN'),
-    'lon': partial(pticker.AutoFormatter, negpos='WE', wraprange=(-180, 180)),
-    'deg': partial(pticker.AutoFormatter, suffix='\N{DEGREE SIGN}'),
-    'deglat': partial(pticker.AutoFormatter, negpos='SN', suffix='\N{DEGREE SIGN}'),
-    'deglon': partial(pticker.AutoFormatter, negpos='WE', suffix='\N{DEGREE SIGN}', wraprange=(-180, 180)),  # noqa: E501
+    'lat': partial(pticker.SimpleFormatter, negpos='SN'),
+    'lon': partial(pticker.SimpleFormatter, negpos='WE', wraprange=(-180, 180)),
+    'deg': partial(pticker.SimpleFormatter, suffix='\N{DEGREE SIGN}'),
+    'deglat': partial(pticker.SimpleFormatter, negpos='SN', suffix='\N{DEGREE SIGN}'),
+    'deglon': partial(pticker.SimpleFormatter, negpos='WE', suffix='\N{DEGREE SIGN}', wraprange=(-180, 180)),  # noqa: E501
 }
 if hasattr(mdates, 'ConciseDateFormatter'):
     FORMATTERS['concise'] = mdates.ConciseDateFormatter
@@ -872,36 +874,38 @@ def Locator(locator, *args, **kwargs):
 
         .. _locator_table:
 
-        ======================  ============================================  =====================================================================================
-        Key                     Class                                         Description
-        ======================  ============================================  =====================================================================================
-        ``'null'``, ``'none'``  `~matplotlib.ticker.NullLocator`              No ticks
-        ``'auto'``              `~matplotlib.ticker.AutoLocator`              Major ticks at sensible locations
-        ``'minor'``             `~matplotlib.ticker.AutoMinorLocator`         Minor ticks at sensible locations
-        ``'date'``              `~matplotlib.dates.AutoDateLocator`           Default tick locations for datetime axes
-        ``'fixed'``             `~matplotlib.ticker.FixedLocator`             Ticks at these exact locations
-        ``'index'``             `~matplotlib.ticker.IndexLocator`             Ticks on the non-negative integers
-        ``'linear'``            `~matplotlib.ticker.LinearLocator`            Exactly ``N`` ticks encompassing axis limits, spaced as ``numpy.linspace(lo, hi, N)``
-        ``'log'``               `~matplotlib.ticker.LogLocator`               For log-scale axes
-        ``'logminor'``          `~matplotlib.ticker.LogLocator`               For log-scale axes on the 1st through 9th multiples of each power of the base
-        ``'logit'``             `~matplotlib.ticker.LogitLocator`             For logit-scale axes
-        ``'logitminor'``        `~matplotlib.ticker.LogitLocator`             For logit-scale axes with ``minor=True`` passed to `~matplotlib.ticker.LogitLocator`
-        ``'maxn'``              `~matplotlib.ticker.MaxNLocator`              No more than ``N`` ticks at sensible locations
-        ``'multiple'``          `~matplotlib.ticker.MultipleLocator`          Ticks every ``N`` step away from zero
-        ``'symlog'``            `~matplotlib.ticker.SymmetricalLogLocator`    For symlog-scale axes
-        ``'symlogminor'``       `~matplotlib.ticker.SymmetricalLogLocator`    For symlog-scale axes on the 1st through 9th multiples of each power of the base
-        ``'theta'``             `~matplotlib.projections.polar.ThetaLocator`  Like the base locator but default locations are every `numpy.pi`/8 radians
-        ``'year'``              `~matplotlib.dates.YearLocator`               Ticks every ``N`` years
-        ``'month'``             `~matplotlib.dates.MonthLocator`              Ticks every ``N`` months
-        ``'weekday'``           `~matplotlib.dates.WeekdayLocator`            Ticks every ``N`` weekdays
-        ``'day'``               `~matplotlib.dates.DayLocator`                Ticks every ``N`` days
-        ``'hour'``              `~matplotlib.dates.HourLocator`               Ticks every ``N`` hours
-        ``'minute'``            `~matplotlib.dates.MinuteLocator`             Ticks every ``N`` minutes
-        ``'second'``            `~matplotlib.dates.SecondLocator`             Ticks every ``N`` seconds
-        ``'microsecond'``       `~matplotlib.dates.MicrosecondLocator`        Ticks every ``N`` microseconds
-        ``'lon'``               `~cartopy.mpl.ticker.LongitudeLocator`        "Nice" longitude gridline locations for `~proplot.axes.CartopyAxes`.
-        ``'lat'``               `~cartopy.mpl.ticker.LatitudeLocator`         "Nice" latitude gridline locations for `~proplot.axes.CartopyAxes`.
-        ======================  ============================================  =====================================================================================
+        =======================  ============================================  =====================================================================================
+        Key                      Class                                         Description
+        =======================  ============================================  =====================================================================================
+        ``'null'``, ``'none'``   `~matplotlib.ticker.NullLocator`              No ticks
+        ``'auto'``               `~matplotlib.ticker.AutoLocator`              Major ticks at sensible locations
+        ``'minor'``              `~matplotlib.ticker.AutoMinorLocator`         Minor ticks at sensible locations
+        ``'date'``               `~matplotlib.dates.AutoDateLocator`           Default tick locations for datetime axes
+        ``'fixed'``              `~matplotlib.ticker.FixedLocator`             Ticks at these exact locations
+        ``'index'``              `~matplotlib.ticker.IndexLocator`             Ticks on the non-negative integers
+        ``'linear'``             `~matplotlib.ticker.LinearLocator`            Exactly ``N`` ticks encompassing axis limits, spaced as ``numpy.linspace(lo, hi, N)``
+        ``'log'``                `~matplotlib.ticker.LogLocator`               For log-scale axes
+        ``'logminor'``           `~matplotlib.ticker.LogLocator`               For log-scale axes on the 1st through 9th multiples of each power of the base
+        ``'logit'``              `~matplotlib.ticker.LogitLocator`             For logit-scale axes
+        ``'logitminor'``         `~matplotlib.ticker.LogitLocator`             For logit-scale axes with ``minor=True`` passed to `~matplotlib.ticker.LogitLocator`
+        ``'maxn'``               `~matplotlib.ticker.MaxNLocator`              No more than ``N`` ticks at sensible locations
+        ``'multiple'``           `~matplotlib.ticker.MultipleLocator`          Ticks every ``N`` step away from zero
+        ``'symlog'``             `~matplotlib.ticker.SymmetricalLogLocator`    For symlog-scale axes
+        ``'symlogminor'``        `~matplotlib.ticker.SymmetricalLogLocator`    For symlog-scale axes on the 1st through 9th multiples of each power of the base
+        ``'theta'``              `~matplotlib.projections.polar.ThetaLocator`  Like the base locator but default locations are every `numpy.pi`/8 radians
+        ``'year'``               `~matplotlib.dates.YearLocator`               Ticks every ``N`` years
+        ``'month'``              `~matplotlib.dates.MonthLocator`              Ticks every ``N`` months
+        ``'weekday'``            `~matplotlib.dates.WeekdayLocator`            Ticks every ``N`` weekdays
+        ``'day'``                `~matplotlib.dates.DayLocator`                Ticks every ``N`` days
+        ``'hour'``               `~matplotlib.dates.HourLocator`               Ticks every ``N`` hours
+        ``'minute'``             `~matplotlib.dates.MinuteLocator`             Ticks every ``N`` minutes
+        ``'second'``             `~matplotlib.dates.SecondLocator`             Ticks every ``N`` seconds
+        ``'microsecond'``        `~matplotlib.dates.MicrosecondLocator`        Ticks every ``N`` microseconds
+        ``'lon'``, ``'deglon'``  `~proplot.ticker.LongitudeLocator`            Longitude gridlines at sensible decimal locations, for `~proplot.axes.GeoAxes`
+        ``'lat'``, ``'deglat'``  `~proplot.ticker.LatitudeLocator`             Latitude gridlines at sensible decimal locations, for `~proplot.axes.GeoAxes`
+        ``'dmslon'``             `~proplot.ticker.LongitudeLocator`            Longitude gridlines on whole minutes and seconds, for `~proplot.axes.GeoAxes`
+        ``'dmslat'``             `~proplot.ticker.LatitudeLocator`             Latitude gridlines on whole minutes and seconds, for `~proplot.axes.GeoAxes`
+        =======================  ============================================  =====================================================================================
 
     Other parameters
     ----------------
