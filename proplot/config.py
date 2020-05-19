@@ -18,6 +18,7 @@ import matplotlib.font_manager as mfonts
 import matplotlib.colors as mcolors
 import matplotlib.style.core as mstyle
 import matplotlib.cbook as cbook
+import matplotlib.rcsetup as msetup
 import cycler
 from collections import namedtuple
 from . import colors as pcolors
@@ -44,9 +45,10 @@ logger = logging.getLogger('matplotlib.mathtext')
 logger.setLevel(logging.ERROR)  # suppress warnings!
 
 # Dictionaries used to track custom proplot settings
-_RcContext = namedtuple('RcContext', ('mode', 'kwargs', 'rc_new', 'rc_old'))
 rc_proplot = rcsetup._rc_proplot_default.copy()
 rc_matplotlib = mpl.rcParams  # PEP8 4 lyfe
+RcParams = mpl.RcParams  # the special class
+_RcContext = namedtuple('RcContext', ('mode', 'kwargs', 'rc_new', 'rc_old'))
 
 # Misc constants
 # TODO: Use explicit validators for specific settings like matplotlib.
@@ -567,7 +569,8 @@ class rc_configurator(object):
                 raise ValueError(
                     f'Invalid font scaling {size!r}. Options are: '
                     + ', '.join(
-                        f'{key}={value}' for key, value in mfonts.font_scalings.items()
+                        f'{key!r} ({value})'
+                        for key, value in mfonts.font_scalings.items()
                     ) + '.'
                 )
             else:
@@ -1072,7 +1075,7 @@ def _get_default_dict():
     # filter them out. Beware if hidden attribute changes.
     rcdict = _get_filtered_dict(mpl.rcParamsDefault, warn=False)
     with cbook._suppress_matplotlib_deprecation_warning():
-        rcdict = dict(mpl.RcParams(rcdict))
+        rcdict = dict(RcParams(rcdict))
     for attr in ('_deprecated_remain_as_none', '_deprecated_set'):
         if hasattr(mpl, attr):  # _deprecated_set is in matplotlib before v3
             for deprecated in getattr(mpl, attr):
@@ -1458,6 +1461,50 @@ def register_fonts():
     ]
 
 
+def _patch_validators():
+    """
+    Fix the fontsize validators to allow for new font scalings.
+    """
+    # First define valdiators
+    # NOTE: In the future will subclass RcParams directly and control the
+    # validators ourselves.
+    def _validate_fontsize(s):
+        fontsizes = list(mfonts.font_scalings)
+        if isinstance(s, str):
+            s = s.lower()
+        if s in fontsizes:
+            return s
+        try:
+            return float(s)
+        except ValueError:
+            raise ValueError(
+                f'{s!r} is not a valid font size. Valid sizes are: '
+                ', '.join(map(repr, fontsizes))
+            )
+
+    def _validate_fontsize_None(s):
+        if s is None or s == 'None':
+            return None
+        else:
+            return _validate_fontsize(s)
+
+    _validate_fontsizelist = None
+    if hasattr(msetup, '_listify_validator'):
+        _validate_fontsizelist = msetup._listify_validator(_validate_fontsize)
+
+    # Apply new functions
+    validate = RcParams.validate
+    for key in list(validate):  # modify in-place
+        validator = validate[key]
+        if validator is msetup.validate_fontsize:
+            validate[key] = _validate_fontsize
+        elif validator is getattr(msetup, 'validate_fontsize_None', None):
+            validate[key] = _validate_fontsize_None
+        elif validator is getattr(msetup, 'validate_fontsizelist', None):
+            if _validate_fontsizelist is not None:
+                validate[key] = _validate_fontsizelist
+
+
 # Initialize .proplotrc file
 _user_rc_file = os.path.join(os.path.expanduser('~'), '.proplotrc')
 if not os.path.exists(_user_rc_file):
@@ -1472,12 +1519,12 @@ for _rc_sub in ('cmaps', 'cycles', 'colors', 'fonts'):
     if not os.path.isdir(_rc_sub):
         os.mkdir(_rc_sub)
 
-# Add custom font scalings to font_manager
+# Add custom font scalings to font_manager and monkey patch rcParams validator
 # NOTE: This is because we prefer large sizes
 if hasattr(mfonts, 'font_scalings'):
     mfonts.font_scalings['med-small'] = 0.9
     mfonts.font_scalings['med-large'] = 1.1
-
+    _patch_validators()
 
 # Convert colormaps that *should* be LinearSegmented from Listed
 for _name in ('viridis', 'plasma', 'inferno', 'magma', 'cividis', 'twilight'):
