@@ -22,7 +22,6 @@ REGEX_ZERO = re.compile('\\A[-\N{MINUS SIGN}]?0(.0*)?\\Z')
 REGEX_MINUS = re.compile('\\A[-\N{MINUS SIGN}]\\Z')
 REGEX_MINUS_ZERO = re.compile('\\A[-\N{MINUS SIGN}]0(.0*)?\\Z')
 
-
 docstring.snippets['formatter.params'] = """
 zerotrim : bool, optional
     Whether to trim trailing zeros. Default is :rc:`axes.formatter.zerotrim`.
@@ -37,63 +36,107 @@ negpos : str, optional
 """
 
 
-class _SimpleMinorLocator(mticker.Locator):
+class _GeoLocator(mticker.MaxNLocator):
     """
-    Simple locator that intakes an existing major locator rather than depending
-    on the axis. This is used for minor geographic gridlines.
+    A locator for determining longitude and latitude gridlines.
+    Adapted from cartopy.
     """
-    def __init__(self, locator, n=None):
-        """
-        Parameters
-        ----------
-        locator : `~matplotlib.ticker.Locator`
-            The locator used for "major" tick lines.
-        n : int, optional
-            The number of subdivisions of the interval between major ticks. For example,
-            n=2 will place a single minor tick midway between major ticks.
-        """
-        if not isinstance(locator, mticker.Locator):
-            raise ValueError('locator must be matplotlib.ticker.Locator instance.')
-        self._locator = locator
-        self.ndivs = n
+    # NOTE: Locator implementation is weird AF. __init__ just calls set_params with all
+    # keyword args and fills in missing params with default_params class attribute.
+    # Unknown params result in warning instead of error.
+    default_params = mticker.MaxNLocator.default_params.copy()
+    default_params.update(nbins=8, dms=False)
 
-    def __call__(self):
-        """
-        Not implemented.
-        """
-        raise NotImplementedError(
-            'Locator is independent of the axis. Please use tick_values instead.'
-        )
+    def set_params(self, **kwargs):
+        if 'dms' in kwargs:
+            self._dms = kwargs.pop('dms')
+        super().set_params(**kwargs)
 
-    def tick_values(self, vmin, vmax):  # noqa: U100
-        """
-        Return the tick values. This is adapted from
-        `matplotlib.ticker.AutoMinorLocator.__call__`.
-        """
-        if vmin > vmax:
-            vmin, vmax = vmax, vmin
-        majorlocs = self._locator.tick_values(vmin, vmax)
-        try:
-            majorstep = majorlocs[1] - majorlocs[0]
-        except IndexError:
-            return []
-
-        if self.ndivs is None:
-            majorstep_no_exponent = 10 ** (np.log10(majorstep) % 1)
-            if np.isclose(majorstep_no_exponent, [1.0, 2.5, 5.0, 10.0]).any():
-                ndivs = 5
-            else:
-                ndivs = 4
+    def _guess_steps(self, vmin, vmax):
+        dv = abs(vmax - vmin)
+        if dv > 180:
+            dv -= 180
+        if dv > 50:
+            steps = np.array([1, 2, 3, 6, 10])
+        elif not self._dms or dv > 3.0:
+            steps = np.array([1, 1.5, 2, 2.5, 3, 5, 10])
         else:
-            ndivs = self.ndivs
+            steps = np.array([1, 10 / 6.0, 15 / 6.0, 20 / 6.0, 30 / 6.0, 10])
+        self.set_params(steps=np.array(steps))
 
-        t0 = majorlocs[0]
-        minorstep = majorstep / ndivs
-        tmin = ((vmin - t0) // minorstep + 1) * minorstep
-        tmax = ((vmax - t0) // minorstep + 1) * minorstep
-        locs = np.arange(tmin, tmax, minorstep) + t0
+    def _raw_ticks(self, vmin, vmax):
+        self._guess_steps(vmin, vmax)
+        return super()._raw_ticks(vmin, vmax)
 
-        return self.raise_if_exceeds(locs)
+    def bin_boundaries(self, vmin, vmax):  # matplotlib <2.2.0
+        return self._raw_ticks(vmin, vmax)  # may call Latitude/LongitudeLocator copies
+
+
+class _LongitudeLocator(mticker.MaxNLocator):
+    """
+    A locator for determining longitude gridlines. Includes considerations
+    to prevent double gridlines on tick boundaries.
+
+    Parameters
+    ----------
+    lonstep : float, optional
+        The longitude step size. If ``None`` this is determined automatically.
+    dms : bool, optional
+        Allow the locator to stop on minutes and seconds. Default is ``False``.
+    """
+    # NOTE: Proplot ensures vmin, vmax are always the *actual* longitude range
+    # accounting for central longitude position.
+    def tick_values(self, vmin, vmax):
+        ticks = super().tick_values(vmin, vmax)
+        if np.isclose(ticks[0] + 360, ticks[-1]):
+            eps = 1e-10
+            if ticks[-1] % 360 > 0:
+                # Make sure the label appears on *right*, not on
+                # top of the leftmost label.
+                ticks[-1] -= eps
+            else:
+                # Formatter formats label as 1e-10... so there is simply no way to
+                # put label on right. Just shift this location off the map edge so
+                # parallels still extend all the way to the edge, but label disappears.
+                ticks[-1] += eps
+        return ticks
+
+
+class _LatitudeLocator(_GeoLocator):
+    """
+    A locator for latitudes that works even at very small scale.
+    Copied  from cartopy so this can be used in basemap.
+
+    Parameters
+    ----------
+    latstep : float, optional
+        The latitude step size. If ``None`` this is determined automatically.
+    latmax : float, optional
+        Maximum absolute gridline latitude. Lines poleward of this latitude will be
+        cut off. This can be set to e.g. ``80`` to create a "hole" around the poles
+        for pole-centered projections.
+    dms : bool, optional
+        Allow the locator to stop on minutes and seconds. Default is ``False``.
+    """
+    default_params = _GeoLocator.default_params.copy()
+    default_params.update(symmetric=True)  # always draw gridline on equator!
+
+    def tick_values(self, vmin, vmax):
+        latmax = self.axis.get_latmax()
+        vmin = max(vmin, -latmax)
+        vmax = min(vmax, latmax)
+        return super().tick_values(vmin, vmax)
+
+    def _guess_steps(self, vmin, vmax):
+        latmax = self.axis.get_latmax()
+        vmin = max(vmin, -latmax)
+        vmax = min(vmax, latmax)
+        super()._guess_steps(vmin, vmax)
+
+    def _raw_ticks(self, vmin, vmax):
+        latmax = self.axis.get_latmax()
+        ticks = super()._raw_ticks(vmin, vmax)
+        return [t for t in ticks if -latmax <= t <= latmax]
 
 
 class AutoFormatter(mticker.ScalarFormatter):
@@ -196,7 +239,7 @@ class AutoFormatter(mticker.ScalarFormatter):
         # Add just enough precision for small numbers. Default formatter is
         # only meant to be used for linear scales and cannot handle the wide
         # range of magnitudes in e.g. log scales. To correct this, we only
-        # truncate if value is within one order of magnitude of the float
+        # truncate if value is within `offset` order of magnitude of the float
         # precision. Common issue is e.g. levels=plot.arange(-1, 1, 0.1).
         # This choice satisfies even 1000 additions of 0.1 to -100.
         match = REGEX_ZERO.match(string)
