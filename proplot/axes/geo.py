@@ -231,7 +231,7 @@ class GeoAxes(base.Axes):
         lonformatter=None, latformatter=None,
         lonformatter_kw=None, latformatter_kw=None,
         labels=None, latlabels=None, lonlabels=None,
-        loninline=None, latinline=None, rotate_labels=None, labelpad=None, dms=None,
+        loninline=None, latinline=None, rotatelabels=None, labelpad=None, dms=None,
         patch_kw=None, **kwargs,
     ):
         """
@@ -330,7 +330,7 @@ optional
             *For cartopy axes only.*
             Whether to draw inline longitude and latitude gridline labels.
             Defaults are :rc:`grid.loninline` and :rc:`grid.latinline`.
-        rotate_labels : bool, optional
+        rotatelabels : bool, optional
             *For cartopy axes only.*
             Whether to rotate longitude and latitude gridline labels.
             Default is :rc:`grid.rotatelabels`.
@@ -435,8 +435,8 @@ optional
             loninline = _not_none(loninline, rc.get('grid.loninline', context=True))
             latinline = _not_none(latinline, rc.get('grid.latinline', context=True))
             labelpad = _not_none(labelpad, rc.get('grid.labelpad', context=True))
-            rotate_labels = _not_none(
-                rotate_labels, rc.get('grid.rotatelabels', context=True)
+            rotatelabels = _not_none(
+                rotatelabels, rc.get('grid.rotatelabels', context=True)
             )
             if lonformatter is not None:
                 lonformatter_kw = lonformatter_kw or {}
@@ -459,7 +459,7 @@ optional
             self._update_major_gridlines(
                 longrid=longrid, latgrid=latgrid,  # gridline toggles
                 lonarray=lonarray, latarray=latarray,  # label toggles
-                loninline=loninline, latinline=latinline, rotate_labels=rotate_labels,
+                loninline=loninline, latinline=latinline, rotatelabels=rotatelabels,
                 labelpad=labelpad,
             )
             self._update_minor_gridlines(longrid=longridminor, latgrid=latgridminor)
@@ -914,7 +914,7 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
         self,
         longrid=None, latgrid=None,
         lonarray=None, latarray=None,
-        loninline=None, latinline=None, labelpad=None, rotate_labels=None,
+        loninline=None, latinline=None, labelpad=None, rotatelabels=None,
     ):
         """
         Update major gridlines.
@@ -932,8 +932,8 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
             gl.x_inline = loninline
         if latinline is not None:
             gl.y_inline = latinline
-        if rotate_labels is not None:
-            gl.rotate_labels = rotate_labels  # ignored in cartopy <0.18
+        if rotatelabels is not None:
+            gl.rotate_labels = rotatelabels  # ignored in cartopy <0.18
 
         # Gridline label formatters
         # TODO: Use lonaxis and lataxis instead
@@ -1349,12 +1349,12 @@ class BasemapAxes(GeoAxes):
     def _update_major_gridlines(
         self,
         longrid=None, latgrid=None, lonarray=None, latarray=None,
-        loninline=None, latinline=None, rotate_labels=None, labelpad=None,
+        loninline=None, latinline=None, rotatelabels=None, labelpad=None,
     ):
         """
         Update major gridlines.
         """
-        loninline, latinline, labelpad, rotate_labels  # avoid U100 error
+        loninline, latinline, labelpad, rotatelabels  # avoid U100 error
         self._update_gridlines(
             which='major',
             longrid=longrid, latgrid=latgrid, lonarray=lonarray, latarray=latarray,
