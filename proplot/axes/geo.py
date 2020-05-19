@@ -1254,32 +1254,31 @@ class BasemapAxes(GeoAxes):
         """
         kw_face, kw_edge = self._get_boundary_props()
         kw_face.update(patch_kw or {})
-        kw_face['facecolor'] = kw_edge['facecolor'] = 'none'
-        self.axes.patch.set_facecolor('none')
-        self.axesPatch = self.patch  # backwards compatibility
 
         # Rectangularly-bounded projections
+        self.axesPatch = self.patch  # backwards compatibility
         if self.projection.projection not in self._proj_non_rectangular:
             self.patch.update({**kw_face, 'edgecolor': 'none'})
             for spine in self.spines.values():
                 spine.update(kw_edge)
 
         # Non-rectangularly-bounded projections
+        # NOTE: Impossible to put map bounds 'above' plotted content because
+        # then would have to make fill color invisible.
         # NOTE: Make sure to turn off clipping by invisible axes boundary. Otherwise
         # get these weird flat edges where map boundaries, latitude/longitude
         # markers come up to the axes bbox
         else:
-            self.patch.set_alpha(0)  # make main patch invisible
+            self.patch.set_facecolor('none')  # make main patch invisible
             if not self.projection._mapboundarydrawn:
                 p = self.projection.drawmapboundary(ax=self)
             else:
                 p = self.projection._mapboundarydrawn
             self._map_boundary = p
-            p.set_zorder(2.01)  # same as ticks
+            kw = {**kw_face, **kw_edge, 'facecolor': 'none'}
             p.set_rasterized(False)
-            p.set_clip_on(False)  # XXX: why this?
-            p.update(kw_face)
-            p.update(kw_edge)
+            p.set_clip_on(False)
+            p.update(kw)
 
     def _update_features(self):
         """
@@ -1325,14 +1324,17 @@ class BasemapAxes(GeoAxes):
             if array is not None:
                 array = list(array)
                 array[2:] = array[2:][::-1]
+            array = [False if _ is None else _ for _ in array]  # None causes error
             axis = getattr(self, f'_{name}axis')
 
-            # Toggle gridlines
-            attr = f'_{name}lines_{which}'
-            objs = getattr(self, attr)  # dictionary of previous objects
+            # Get gridlines
             lines = getattr(self, f'_get_{name}ticklocs')(which=which)
             if name == 'lon' and np.isclose(lines[0] + 360, lines[-1]):
                 lines = lines[:-1]  # prevent double labels
+
+            # Figure out whether we have to redraw meridians/parallels
+            attr = f'_{name}lines_{which}'
+            objs = getattr(self, attr)  # dictionary of previous objects
             if which == 'major':
                 attrs = ('isDefault_majloc', 'isDefault_majfmt')
             else:
@@ -1342,6 +1344,8 @@ class BasemapAxes(GeoAxes):
                 or any(_ is not None for _ in array)
                 or any(not getattr(axis, _) for _ in attrs)
             )
+            if rebuild and objs and grid is None:  # get *previous* toggle state
+                grid = all(obj.get_visible() for obj in self._iter_gridlines(objs))
 
             # Draw or redraw meridian or parallel lines
             # Also mark formatters and locators as 'default'
