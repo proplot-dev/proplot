@@ -228,7 +228,7 @@ class GeoAxes(base.Axes):
         lonformatter=None, latformatter=None,
         lonformatter_kw=None, latformatter_kw=None,
         labels=None, latlabels=None, lonlabels=None,
-        loninline=None, latinline=None, rotate_labels=None, labelpad=None,
+        loninline=None, latinline=None, rotate_labels=None, labelpad=None, dms=None,
         patch_kw=None, **kwargs,
     ):
         """
@@ -335,6 +335,12 @@ optional
             *For cartopy axes only.*
             Controls the padding between the map boundary and longitude and
             latitude gridline labels. Default is :rc:`grid.labelpad`.
+        dms : bool, optional
+            *For cartopy axes only.*
+            Specifies whether the cartopy `~cartopy.mpl.ticker.LongitudeFormatter`
+            and `~cartopy.mpl.ticker.LatitudeFormatter` should use
+            degrees-minutes-seconds for gridline labels on small scales in
+            rectangular projections. Default is ``True``.
         land, ocean, coast, rivers, lakes, borders, innerborders : bool, \
 optional
             Toggles various geographic features. These are actually the
@@ -433,6 +439,9 @@ optional
                 latformatter_kw = latformatter_kw or {}
                 formatter = constructor.Formatter(latformatter, **latformatter_kw)
                 self._lataxis.set_major_formatter(formatter)
+            if dms is not None:
+                self._lonaxis.get_major_formatter()._dms = dms
+                self._lataxis.get_major_formatter()._dms = dms
 
             # Apply worker functions
             self._update_extent(lonlim=lonlim, latlim=latlim, boundinglat=boundinglat)
