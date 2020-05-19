@@ -19,7 +19,6 @@ from .plot import (
 )
 from .. import constructor
 from .. import crs as pcrs
-from .. import ticker as pticker
 from ..config import rc
 from ..internals import ic  # noqa: F401
 from ..internals import docstring, warnings, _version, _version_cartopy, _not_none
@@ -128,13 +127,11 @@ class _LonAxis(_GeoAxis):
     # default builtin basemap formatting.
     def __init__(self, axes, projection=None):
         super().__init__(axes)
-        dms = False
-        formatter = 'deglon'
+        locator = formatter = 'deglon'
         if cticker is not None and isinstance(projection, (ccrs._RectangularProjection, ccrs.Mercator)):  # noqa: E501
-            dms = True
-            formatter = 'dmslon'
+            locator = formatter = 'dmslon'
         self.set_major_formatter(constructor.Formatter(formatter), default=True)
-        self.set_major_locator(pticker._LongitudeLocator(dms=dms), default=True)
+        self.set_major_locator(constructor.Locator(locator), default=True)
         self.set_minor_locator(mticker.AutoMinorLocator(), default=True)
 
     def _constrain_ticks(self, ticks):
@@ -165,13 +162,11 @@ class _LatAxis(_GeoAxis):
         # the axes and format() is called by proplot.axes.Axes.__init__()
         self._latmax = latmax
         super().__init__(axes)
-        dms = False
-        formatter = 'deglat'
+        locator = formatter = 'deglat'
         if cticker is not None and isinstance(projection, (ccrs._RectangularProjection, ccrs.Mercator)):  # noqa: E501
-            dms = True
-            formatter = 'dmslat'
+            locator = formatter = 'dmslat'
         self.set_major_formatter(constructor.Formatter(formatter), default=True)
-        self.set_major_locator(pticker._LatitudeLocator(dms=dms), default=True)
+        self.set_major_locator(constructor.Locator(locator), default=True)
         self.set_minor_locator(mticker.AutoMinorLocator(), default=True)
 
     def _constrain_ticks(self, ticks):

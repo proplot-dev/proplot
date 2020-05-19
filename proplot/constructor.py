@@ -88,8 +88,12 @@ LOCATORS = {
     'weekday': mdates.WeekdayLocator,
     'month': mdates.MonthLocator,
     'year': mdates.YearLocator,
-    'lon': pticker._LongitudeLocator,
-    'lat': pticker._LatitudeLocator,
+    'lon': partial(pticker._LongitudeLocator, dms=False),  # NOTE: undocumented for now
+    'lat': partial(pticker._LatitudeLocator, dms=False),
+    'deglon': partial(pticker._LongitudeLocator, dms=False),
+    'deglat': partial(pticker._LatitudeLocator, dms=False),
+    'dmslon': partial(pticker._LongitudeLocator, dms=True),
+    'dmslat': partial(pticker._LatitudeLocator, dms=True),
 }
 if hasattr(mpolar, 'ThetaLocator'):
     LOCATORS['theta'] = mpolar.ThetaLocator
@@ -979,11 +983,11 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
           `this page <https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes>`__
           for a review. Returns a `~matplotlib.ticker.DateFormatter`.
 
-        Otherwise, `formatter` should be a string corresponding to one
-        of the "registered" formatters (see below table). If `formatter` is
-        a list or tuple and the first element is a "registered" formatter
-        name, subsequent elements are passed to the formatter class as
-        positional arguments.
+        Otherwise, `formatter` should be a string corresponding to one of the
+        "registered" formatters or formatter presets (see below table). If
+        `formatter` is a list or tuple and the first element is a "registered"
+        formatter name, subsequent elements are passed to the formatter class
+        as positional arguments.
 
         .. _formatter_table:
 
