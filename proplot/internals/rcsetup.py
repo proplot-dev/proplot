@@ -19,7 +19,7 @@ CYCLIC = 'twilight'
 DIVERGING = 'div'
 FRAMEALPHA = 0.8  # legend and colorbar
 FONTSIZE = 9.0
-GRIDALPHA = 0.1
+GRIDALPHA = 0.11
 GRIDBELOW = 'line'
 GRIDCOLOR = 'black'
 GRIDRATIO = 0.5  # differentiated from major by half size reduction
@@ -34,6 +34,8 @@ TICKMINOR = True
 TICKPAD = 2.0
 TICKRATIO = 0.8  # very slight width reduction
 TITLESIZE = 'med-large'
+ZLINES = 2  # default zorder for lines
+ZPATCHES = 1
 
 # Deprecated settings
 # TODO: Add 'openrgb' setting for renaming shorthand color names to open-color colors
@@ -308,7 +310,7 @@ _rc_proplot = {
         'Line width for country borders.'
     ),
     'borders.zorder': (
-        'black',
+        ZLINES,
         'Z-order for country border lines.'
     ),
 
@@ -548,7 +550,7 @@ _rc_proplot = {
         'Line width for internal political borders.'
     ),
     'innerborders.zorder': (
-        'black',
+        ZLINES,
         'Z-order for internal border lines.'
     ),
 
@@ -562,7 +564,7 @@ _rc_proplot = {
         'Face color for lake patches.'
     ),
     'lakes.zorder': (
-        'black',
+        ZPATCHES,
         'Z-order for lake patches.'
     ),
 
@@ -576,7 +578,7 @@ _rc_proplot = {
         'Face color for land patches.'
     ),
     'land.zorder': (
-        'black',
+        ZPATCHES,
         'Z-order for land patches.'
     ),
 
@@ -633,13 +635,13 @@ _rc_proplot = {
         'Face color for ocean patches.'
     ),
     'ocean.zorder': (
-        'black',
+        ZPATCHES,
         'Z-order for ocean patches.'
     ),
 
     # Geographic resolution
     'reso': (
-        'med',
+        'lo',
         'Resolution for `~proplot.axes.GeoAxes` geographic features. '
         "Must be one of ``'lo'``, ``'med'``, ``'hi'``, ``'x-hi'``, or ``'xx-hi'``."
     ),
@@ -672,7 +674,7 @@ _rc_proplot = {
         'Line width for river lines.'
     ),
     'rivers.zorder': (
-        'black',
+        ZLINES,
         'Z-order for river lines.'
     ),
 
