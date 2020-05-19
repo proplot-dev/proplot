@@ -11,7 +11,7 @@ import matplotlib.ticker as mticker
 from . import base
 from .plot import (
     _basemap_norecurse, _basemap_redirect, _cmap_changer, _cycle_changer,
-    _default_crs, _default_latlon, _default_transform,
+    _default_latlon, _default_transform,
     _fill_between_wrapper, _fill_betweenx_wrapper,
     _indicate_error, _plot_wrapper,
     _scatter_wrapper, _standardize_1d, _standardize_2d,
@@ -984,10 +984,10 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
 
         return super().get_tightbbox(renderer, *args, **kwargs)
 
-    @_default_crs
     def get_extent(self, crs=None):
         # Get extent and try to repair longitude bounds.
-        # NOTE: Do not use @_default_crs in case cartopy uses this internally
+        if crs is None:
+            crs = ccrs.PlateCarree()
         extent = super().get_extent(crs=crs)
         if isinstance(crs, ccrs.PlateCarree):
             if np.isclose(extent[0], -180) and np.isclose(extent[-1], 180):
@@ -998,7 +998,6 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
                 extent[:2] = [lon0 - 180, lon0 + 180]
         return extent
 
-    @_default_crs
     def set_extent(self, extent, crs=None):
         # Fix extent, so axes tight bounding box gets correct box! From this issue:
         # https://github.com/SciTools/cartopy/issues/1207#issuecomment-439975083
@@ -1007,6 +1006,8 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
         # extent is across international dateline LongitudeLocator fails because
         # get_extent() reports -180 to 180.
         # See: https://github.com/SciTools/cartopy/issues/1564
+        if crs is None:
+            crs = ccrs.PlateCarree()
         if isinstance(crs, ccrs.PlateCarree):
             self._set_view_intervals(extent)
             self._update_gridlines()  # just re-apply locators
@@ -1083,12 +1084,6 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
         tricontourf = _default_transform(_cmap_changer(
             GeoAxesBase.tricontourf
         ))
-        set_xticks = _default_crs(
-            GeoAxesBase.set_xticks
-        )
-        set_yticks = _default_crs(
-            GeoAxesBase.set_yticks
-        )
 
 
 class BasemapAxes(GeoAxes):

@@ -26,7 +26,7 @@ from .. import colors as pcolors
 from ..utils import edges, edges2d, units, to_xyz, to_rgb
 from ..config import rc
 from ..internals import ic  # noqa: F401
-from ..internals import docstring, warnings, _version, _version_cartopy
+from ..internals import docstring, warnings
 from ..internals import _not_none, _set_state
 try:
     from cartopy.crs import PlateCarree
@@ -40,7 +40,6 @@ __all__ = [
     'cmap_changer',
     'colorbar_wrapper',
     'cycle_changer',
-    'default_crs',
     'default_latlon',
     'default_transform',
     'fill_between_wrapper',
@@ -323,38 +322,6 @@ def default_transform(self, func, *args, transform=None, **kwargs):
     if transform is None:
         transform = PlateCarree()
     result = func(self, *args, transform=transform, **kwargs)
-    return result
-
-
-def default_crs(self, func, *args, crs=None, **kwargs):
-    """
-    Fixes the `~cartopy.mpl.geoaxes.GeoAxes.set_extent` bug associated with
-    tight bounding boxes and makes ``crs=cartopy.crs.PlateCarree()`` the
-    default for cartopy plots.
-
-    Note
-    ----
-    This function wraps {methods} for `~proplot.axes.CartopyAxes`.
-    """
-    # Apply default crs
-    name = func.__name__
-    if crs is None:
-        crs = PlateCarree()
-    try:
-        result = func(self, *args, crs=crs, **kwargs)
-    except TypeError as err:  # duplicate keyword args, i.e. crs is positional
-        if not args:
-            raise err
-        args, crs = args[:-1], args[-1]
-        result = func(self, *args, crs=crs, **kwargs)
-
-    # Fix extent, so axes tight bounding box gets correct box! From this issue:
-    # https://github.com/SciTools/cartopy/issues/1207#issuecomment-439975083
-    if _version_cartopy < _version('0.18'):
-        if name == 'set_extent':
-            clipped_path = self.outline_patch.orig_path.clip_to_bbox(self.viewLim)
-            self.outline_patch._path = clipped_path
-            self.background_patch._path = clipped_path
     return result
 
 
@@ -3189,12 +3156,14 @@ property-spec, optional
     # Add legends manually so matplotlib does not remove old ones
     # Also apply override settings
     kw_handle = {}
-    outline = rc.fill({
-        'linewidth': 'axes.linewidth',
-        'edgecolor': 'axes.edgecolor',
-        'facecolor': 'axes.facecolor',
-        'alpha': 'legend.framealpha',
-    })
+    outline = rc.fill(
+        {
+            'linewidth': 'axes.linewidth',
+            'edgecolor': 'axes.edgecolor',
+            'facecolor': 'axes.facecolor',
+            'alpha': 'legend.framealpha',
+        }
+    )
     for key in (*outline,):
         if key != 'linewidth':
             if kwargs.get(key, None):
@@ -3745,7 +3714,6 @@ def _generate_decorator(driver):
     driver._docstring_orig = driver.__doc__ or ''
     driver._methods_wrapped = []
     proplot_methods = ('parametric', 'heatmap', 'area', 'areax')
-    cartopy_methods = ('get_extent', 'set_extent')
 
     def decorator(func):
         # Define wrapper and suppress documentation
@@ -3764,8 +3732,6 @@ def _generate_decorator(driver):
         if '{methods}' in docstring:
             if name in proplot_methods:
                 link = f'`~proplot.axes.Axes.{name}`'
-            elif name in cartopy_methods:
-                link = f'`~cartopy.mpl.geoaxes.GeoAxes.{name}`'
             else:
                 link = f'`~matplotlib.axes.Axes.{name}`'
             methods = driver._methods_wrapped
@@ -3786,7 +3752,6 @@ _bar_wrapper = _generate_decorator(bar_wrapper)
 _barh_wrapper = _generate_decorator(barh_wrapper)
 _default_latlon = _generate_decorator(default_latlon)
 _boxplot_wrapper = _generate_decorator(boxplot_wrapper)
-_default_crs = _generate_decorator(default_crs)
 _default_transform = _generate_decorator(default_transform)
 _cmap_changer = _generate_decorator(cmap_changer)
 _cycle_changer = _generate_decorator(cycle_changer)
