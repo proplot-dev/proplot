@@ -10,6 +10,8 @@ from . import warnings
 from matplotlib import rcParamsDefault as _rc_matplotlib_default_full
 
 # Initial synced properties
+# NOTE: Important that LINEWIDTH is less than matplotlib default of 0.8.
+# In general want axes lines to look about as thick as text.
 COLOR = 'black'
 CMAP = 'fire'
 CYCLE = 'colorblind'
@@ -23,7 +25,7 @@ GRIDCOLOR = 'black'
 GRIDRATIO = 0.5  # differentiated from major by half size reduction
 GRIDSTYLE = '-'
 LABELSIZE = 'medium'
-LINEWIDTH = 0.8
+LINEWIDTH = 0.6
 MARGIN = 0.05
 TICKDIR = 'out'
 TICKLEN = 2.0
