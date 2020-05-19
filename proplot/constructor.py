@@ -1371,7 +1371,7 @@ def Proj(name, basemap=None, **kwargs):
                 'plotting backend or downgrade to matplotlib <=3.2.'
             )
         name = BASEMAP_PROJ_ALIASES.get(name, name)
-        kwproj = BASEMAP_KW_DEFAULTS.get(name, {})
+        kwproj = BASEMAP_KW_DEFAULTS.get(name, {}).copy()
         kwproj.update(kwargs)
         kwproj.setdefault('fix_aspect', True)
         if name[:2] in ('np', 'sp'):
@@ -1383,8 +1383,9 @@ def Proj(name, basemap=None, **kwargs):
             resolution=kwproj.pop('resolution', None),
             default=rc['reso']
         )
-        reso = BASEMAP_RESOS.get(reso, None)
-        if reso is None:
+        try:
+            reso = BASEMAP_RESOS[reso]
+        except KeyError:
             raise ValueError(
                 f'Invalid resolution {reso!r}. Options are: '
                 + ', '.join(map(repr, BASEMAP_RESOS)) + '.'

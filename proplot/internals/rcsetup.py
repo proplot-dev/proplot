@@ -443,13 +443,23 @@ _rc_proplot = {
     ),
     'grid.labels': (
         False,
-        'Boolean, indicates whether to label the longitude and parallels '
-        'for `~proplot.axes.GeoAxes`.'
+        'Boolean, indicates whether to label the longitude and latitude gridlines '
+        'in `~proplot.axes.GeoAxes`.'
     ),
     'grid.labelsize': (
         LABELSIZE,
-        'Font size for longitude and latitude labels for `~proplot.axes.GeoAxes`. '
-        'Inherits from :rcraw:`small`.'
+        'Font size for longitude and latitude gridline labels in '
+        '`~proplot.axes.GeoAxes`. Inherits from :rcraw:`small`.'
+    ),
+    'grid.labelweight': (
+        'normal',
+        'Font weight for longitude and latitude gridline labels in '
+        '`~proplot.axes.GeoAxes`.'
+    ),
+    'grid.labelcolor': (
+        COLOR,
+        'Font color for longitude and latitude gridline labels in '
+        '`~proplot.axes.Geoaxes`.'
     ),
     'grid.latinline': (
         False,

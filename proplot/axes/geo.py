@@ -464,6 +464,41 @@ optional
             raise ValueError(f'Unexpected grid.below value {axisbelow!r}.')
         return zorder
 
+    def _get_gridline_props(self, which='major', context=True):
+        """
+        Get dictionaries of gridline properties for lines and text.
+        """
+        # Line properties
+        # WARNING: Here we use apply existing *matplotlib* rc param to brand new
+        # *proplot* setting. So if rc mode is 1 (first format call) use context=False.
+        key = 'grid' if which == 'major' else 'gridminor'
+        kwlines = rc.fill(
+            {
+                'alpha': f'{key}.alpha',
+                'color': f'{key}.color',
+                'linewidth': f'{key}.linewidth',
+                'linestyle': f'{key}.linestyle',
+            },
+            context=context,
+        )
+        axisbelow = rc.get('axes.axisbelow', context=True)
+        if axisbelow is not None:
+            kwlines['zorder'] = self._axis_below_to_zorder(axisbelow)
+
+        # Text properties
+        kwtext = {}
+        if which == 'major':
+            kwtext = rc.fill(
+                {
+                    'color': f'{key}.color',
+                    'fontsize': f'{key}.labelsize',
+                    'weight': f'{key}.labelweight',
+                },
+                context=context,
+            )
+
+        return kwlines, kwtext
+
     def _get_lonticklocs(self, which='major'):
         """
         Retrieve longitude tick locations.
@@ -688,8 +723,6 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
         gl._axes_domain = _axes_domain.__get__(gl)
         gl._add_gridline_label = _add_gridline_label.__get__(gl)
         gl.xlines = gl.ylines = False
-        gl.xformatter = cticker.LongitudeFormatter()
-        gl.yformatter = cticker.LatitudeFormatter()
         self._toggle_gridliner_labels(gl, False, False, False, False)
         return gl
 
@@ -799,8 +832,9 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
         # WARNING: Seems cartopy features cannot be updated! Updating _kwargs
         # attribute does *nothing*.
         reso = rc['reso']  # resolution cannot be changed after feature created
-        reso = constructor.CARTOPY_RESOS.get(reso, None)
-        if reso is None:
+        try:
+            reso = constructor.CARTOPY_RESOS[reso]
+        except KeyError:
             raise ValueError(
                 f'Invalid resolution {reso!r}. Options are: '
                 + ', '.join(map(repr, constructor.CARTOPY_RESOS)) + '.'
@@ -838,20 +872,10 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
         # WARNING: Here we use apply existing *matplotlib* rc param to brand new
         # *proplot* setting. So if rc mode is 1 (first format call) use context=False.
         rc_mode = rc._get_context_mode()
-        key = 'grid' if which == 'major' else 'gridminor'
-        kw = rc.fill(
-            {
-                'alpha': f'{key}.alpha',
-                'color': f'{key}.color',
-                'linewidth': f'{key}.linewidth',
-                'linestyle': f'{key}.linestyle',
-            },
-            context=(rc_mode == 2)
-        )
-        axisbelow = rc.get('axes.axisbelow', context=True)
-        if axisbelow is not None:
-            kw['zorder'] = self._axis_below_to_zorder(axisbelow)
-        gl.collection_kwargs.update(kw)
+        kwlines, kwtext = self._get_gridline_props(which=which, context=(rc_mode == 2))
+        gl.collection_kwargs.update(kwlines)
+        gl.xlabel_style.update(kwtext)
+        gl.ylabel_style.update(kwtext)
 
         # Apply tick locations from dummy _LonAxis and _LatAxis axes
         if longrid is not None:
@@ -870,11 +894,10 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
         """
         Update major gridlines.
         """
+        # Update gridline locations and style
         if not self._gridlines_major:
             self._gridlines_major = self._init_gridlines()
         gl = self._gridlines_major
-
-        # Update gridline locations and style
         self._update_gridlines(gl, which='major', longrid=longrid, latgrid=latgrid)
 
         # Updage gridline label parameters
@@ -1124,7 +1147,6 @@ class BasemapAxes(GeoAxes):
             extent = [getattr(map_projection, attr, None) for attr in attrs]
             if any(_ is None for _ in extent):
                 extent = [180 - lon0, 180 + lon0, -90, 90]  # fallback
-        self._set_view_intervals(extent)
 
         # Initialize axes
         self._map_boundary = None  # start with empty map boundary
@@ -1135,6 +1157,7 @@ class BasemapAxes(GeoAxes):
         self._latlines_minor = None
         self._lonaxis = _LonAxis(self)
         self._lataxis = _LatAxis(self, latmax=latmax)
+        self._set_view_intervals(extent)
         super().__init__(*args, **kwargs)
 
     def _get_lon0(self):
@@ -1283,28 +1306,7 @@ class BasemapAxes(GeoAxes):
             else:
                 rebuild = not objs or not axis.isDefault_minloc
 
-            # Get gridline properties
-            key = 'grid' if which == 'major' else 'gridminor'
-            rc_mode = rc._get_context_mode()
-            kwlines = rc.fill(
-                {
-                    'alpha': f'{key}.alpha',
-                    'color': f'{key}.color',
-                    'linewidth': f'{key}.linewidth',
-                    'linestyle': f'{key}.linestyle',
-                },
-                context=(not rebuild and rc_mode == 2),
-            )
-            kwtext = rc.fill(
-                {
-                    'color': f'{key}.color',
-                    'fontsize': f'{key}.labelsize',
-                },
-                context=(not rebuild and rc_mode == 2),
-            )
-
             # Draw or redraw meridian or parallel lines
-            # TODO: Verify cartopy formatter works in basemap axes...
             if rebuild:
                 kwdraw = {}
                 if formatter is not None:  # use functional formatter
@@ -1317,6 +1319,10 @@ class BasemapAxes(GeoAxes):
                 setattr(self, attr, objs)
 
             # Update gridline settings
+            rc_mode = rc._get_context_mode()
+            kwlines, kwtext = self._get_gridline_props(
+                which=which, context=(not rebuild and rc_mode == 2)
+            )
             for obj in self._iter_gridlines(objs):
                 if isinstance(obj, mtext.Text):
                     obj.update(kwtext)
