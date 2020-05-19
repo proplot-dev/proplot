@@ -27,7 +27,7 @@ from . import colors as pcolors
 from . import ticker as pticker
 from . import scale as pscale
 from .config import rc
-from .utils import to_rgb
+from .utils import to_rgba
 from .internals import ic  # noqa: F401
 from .internals import warnings, _version, _version_cartopy, _version_mpl, _not_none
 try:
@@ -555,7 +555,7 @@ def Colormap(
             not isinstance(arg, str) and np.iterable(arg)
             and all(np.iterable(color) for color in arg)
         ):
-            colors = [to_rgb(color, cycle=cycle, alpha=True) for color in arg]
+            colors = [to_rgba(color, cycle=cycle) for color in arg]
             if listmode == 'listed':
                 cmap = pcolors.ListedColormap(colors, tmp)
             elif listmode == 'linear':
@@ -569,7 +569,7 @@ def Colormap(
             if creverse:
                 arg = arg[:-2]
             try:
-                color = to_rgb(arg, cycle=cycle, alpha=True)
+                color = to_rgba(arg, cycle=cycle)
             except (ValueError, TypeError):
                 message = f'Invalid colormap, color cycle, or color {arg!r}.'
                 if isinstance(arg, str) and arg[:1] != '#':
