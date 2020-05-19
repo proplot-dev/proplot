@@ -9,7 +9,13 @@ import matplotlib.ticker as mticker
 import locale
 from fractions import Fraction
 from .internals import ic  # noqa: F401
-from .internals import docstring, _not_none
+from .internals import docstring, _dummy_context, _set_state, _not_none
+try:
+    import cartopy.crs as ccrs
+    from cartopy.mpl.ticker import LatitudeFormatter, LongitudeFormatter
+except ModuleNotFoundError:
+    ccrs = None
+    LatitudeFormatter = LongitudeFormatter = object
 
 __all__ = [
     'AutoFormatter',
@@ -39,6 +45,41 @@ negpos : str, optional
     Length-2 string indicating the suffix for "negative" and "positive"
     numbers, meant to replace the minus sign.
 """
+
+
+class _GeoFormatter(object):
+    """
+    Mixin class that fixes cartopy formatters.
+    """
+    # NOTE: Cartopy formatters pre 0.18 required axis, and *always* translated
+    # input values from map projection coordinates to Plate Carrée coordinates.
+    # After 0.18 you can avoid this behavior by not setting axis but really
+    # dislike that inconsistency. Solution is temporarily change projection.
+    def __init__(self, *args, **kwargs):
+        import cartopy  # noqa: F401 (ensure available)
+        super().__init__(*args, **kwargs)
+
+    def __call__(self, value, pos=None):
+        if self.axis is not None:
+            context = _set_state(self.axis.axes, projection=ccrs.PlateCarree())
+        else:
+            context = _dummy_context()
+        with context:
+            return super().__call__(value, pos)
+
+
+class _LongitudeFormatter(_GeoFormatter, LongitudeFormatter):
+    """
+    Mix longitude formatter with custom formatter.
+    """
+    pass
+
+
+class _LatitudeFormatter(_GeoFormatter, LatitudeFormatter):
+    """
+    Mix latitude formatter with custom formatter.
+    """
+    pass
 
 
 class _GeoLocator(mticker.MaxNLocator):

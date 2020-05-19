@@ -138,16 +138,13 @@ FORMATTERS = {  # note default LogFormatter uses ugly e+00 notation
     'deg': partial(pticker.SimpleFormatter, suffix='\N{DEGREE SIGN}'),
     'deglat': partial(pticker.SimpleFormatter, negpos='SN', suffix='\N{DEGREE SIGN}'),
     'deglon': partial(pticker.SimpleFormatter, negpos='WE', suffix='\N{DEGREE SIGN}', wraprange=(-180, 180)),  # noqa: E501
+    'dmslon': partial(pticker._LongitudeFormatter, dms=True),
+    'dmslat': partial(pticker._LatitudeFormatter, dms=True),
 }
 if hasattr(mdates, 'ConciseDateFormatter'):
     FORMATTERS['concise'] = mdates.ConciseDateFormatter
 if hasattr(mpolar, 'ThetaFormatter'):
     FORMATTERS['theta'] = mpolar.ThetaFormatter
-if cticker is not None:
-    if hasattr(cticker, 'LongitudeFormatter') and _version_cartopy >= _version('0.18'):
-        FORMATTERS['dmslon'] = partial(cticker.LongitudeFormatter, dms=True)
-    if hasattr(cticker, 'LatitudeFormatter') and _version_cartopy >= _version('0.18'):
-        FORMATTERS['dmslat'] = partial(cticker.LatitudeFormatter, dms=True)
 
 # The registered scale names and their associated
 # `~matplotlib.scale.ScaleBase` classes. See `Scale` for a table.
