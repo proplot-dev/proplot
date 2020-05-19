@@ -86,8 +86,8 @@ axs[2].format(
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_geo:
 #
-# Cartographic projections
-# ------------------------
+# Geographic axes
+# ---------------
 #
 # To turn a subplot into a plottable map projection, pass
 # ``proj='name'`` or e.g. ``proj={2: 'name'}``
@@ -107,6 +107,15 @@ axs[2].format(
 #   methods, and its `~proplot.axes.GeoAxes.format` method can be used to set
 #   the map bounds with `~cartopy.mpl.geoaxes.GeoAxes.set_extent` and add
 #   geographic features with `~cartopy.mpl.geoaxes.GeoAxes.add_feature`.
+#
+#   ProPlot also makes sure polar projections like `~cartopy.crs.NorthPolarStereo`
+#   have circular bounds. By default, polar Gnomonic projections are bounded
+#   at 30 degrees latitude, other polar projections are bounded at the equator,
+#   and all other projections are given global extent using
+#   `~cartopy.mpl.geoaxes.GeoAxes.set_global`. This behavior can be disabled
+#   by setting :rc:`cartopy.autoextent` to ``True``, which lets cartopy automatically
+#   determine the map boundaries based on plotted content.
+#
 # * `~proplot.axes.BasemapAxes` redirects the plot, scatter, contour,
 #   contourf, pcolor, pcolormesh, quiver, streamplot, and barb methods to
 #   identically named methods on the `~mpl_toolkits.basemap.Basemap` instance,
@@ -114,7 +123,7 @@ axs[2].format(
 #   commands like `~mpl_toolkits.basemap.Basemap.fillcontinents` via
 #   `~proplot.axes.GeoAxes.format`.
 #
-# So with ProPlot, you no longer have to invoke verbose cartopy
+# This means with ProPlot, you no longer have to invoke verbose cartopy
 # `~cartopy.crs.Projection` classes like
 # `~cartopy.crs.LambertAzimuthalEqualArea`, and you never have to directly
 # reference the `~mpl_toolkits.basemap.Basemap` instance -- ProPlot works
@@ -193,6 +202,12 @@ plot.rc.reset()
 # * For `~proplot.axes.BasemapAxes` plotting methods, ``latlon=True`` is now
 #   the default behavior. Again, plotting methods are now called on the *axes*
 #   instead of the `~mpl_toolkits.basemap.Basemap` instance.
+#
+# To mask out the parts of your data over the land or the ocean, simply toggle
+# the :rcraw:`land` or and :rcraw:`ocean` settings and set the corresponding
+# `zorder <https://matplotlib.org/3.1.1/gallery/misc/zorder_demo.html>`__
+# to a high value with e.g. ``plot.rc.update({'land': True, 'land.zorder': 5})``.
+# See the :ref:`next section <ug_geoformat>` for details.
 
 # %%
 import proplot as plot
@@ -286,11 +301,10 @@ ax.format(
 #
 # To zoom into cartopy projections, you can use
 # `~cartopy.mpl.geoaxes.GeoAxes.set_extent`, or alternatively pass `lonlim`,
-# `latlim`, or `boundinglat` to `~proplot.axes.GeoAxes.format`. The
-# `boundinglat` controls the *circular boundary extent* for North Polar and
+# `latlim`, or `boundinglat` to `~proplot.axes.GeoAxes.format`. The `boundinglat`
+# keyword controls the circular latitude boundary for North Polar and
 # South Polar Stereographic, Azimuthal Equidistant, Lambert Azimuthal
-# Equal-Area, and Gnomonic projections. Note that ProPlot makes sure these
-# projections always have circular bounds.
+# Equal-Area, and Gnomonic projections.
 #
 # To zoom into basemap projections, you can pass any of the `boundinglat`,
 # `llcrnrlon`, `llcrnrlat`, `urcrnrlon`, `urcrnrlat`, `llcrnrx`, `llcrnry`,

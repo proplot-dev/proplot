@@ -322,6 +322,14 @@ _rc_proplot = {
         'Font weight for column labels on the bottom of the figure.'
     ),
 
+    # Special cartopy settings
+    'cartopy.autoextent': (
+        False,
+        'If ``False`` (the default), the projection extent is no longer automatically '
+        'adjusted based on plotted content. See the :ref:`user guide <ug_geo>` for '
+        'details.'
+    ),
+
     # Coastlines
     'coast': (
         False,
