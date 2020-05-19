@@ -16,26 +16,30 @@ CYCLE = 'colorblind'
 CYCLIC = 'twilight'
 DIVERGING = 'div'
 FRAMEALPHA = 0.8  # legend and colorbar
+FONTSIZE = 9.0
 GRIDALPHA = 0.1
 GRIDBELOW = 'line'
 GRIDCOLOR = 'black'
 GRIDRATIO = 0.5  # differentiated from major by half size reduction
 GRIDSTYLE = '-'
-LARGE = 10.0
+LABELSIZE = 'medium'
 LINEWIDTH = 0.8
 MARGIN = 0.05
-SMALL = 9.0
 TICKDIR = 'out'
 TICKLEN = 2.0
 TICKLENRATIO = 0.5  # differentiated from major by half length reduction
 TICKMINOR = True
 TICKPAD = 2.0
 TICKRATIO = 0.8  # very slight width reduction
+TITLESIZE = 'med-large'
 
 # Deprecated settings
-# TODO: Add 'openrgb' setting for renaming shorthand color names to
+# TODO: Add 'openrgb' setting for renaming shorthand color names to open-color colors
 _rc_removed = {  # {key: (alternative, version)} dictionary
     'rgbcycle': ('', '0.6'),  # no alternative, we no longer offer this feature
+    'geogrid.lonstep': ('Use ax.format(lonlocator=N) instead.', '0.6'),
+    'geogrid.latstep': ('Use ax.format(latlocator=N) instead.', '0.6'),
+    'geogrid.latmax': ('Use ax.format(latmax=N) instead.', '0.6'),
 }
 _rc_renamed = {  # {old_key: (new_key, version)} dictionary
     'abc.format': ('abc.style', '0.5'),
@@ -47,18 +51,11 @@ _rc_renamed = {  # {old_key: (new_key, version)} dictionary
     'geoaxes.linewidth': ('axes.linewidth', '0.6'),
     'geogrid.alpha': ('grid.alpha', '0.6'),
     'geogrid.color': ('grid.color', '0.6'),
-    'geogrid.linewidth': ('grid.linewidth', '0.6'),
-    'geogrid.linestyle': ('grid.linestyle', '0.6'),
-    'geogrid.color': ('grid.color', '0.6'),
-    'geogrid.labelpad': ('grid.labelpad', '0.6'),
     'geogrid.labels': ('grid.labels', '0.6'),
+    'geogrid.labelpad': ('grid.labelpad', '0.6'),
     'geogrid.labelsize': ('grid.labelsize', '0.6'),
-    'geogrid.latmax': ('grid.latmax', '0.6'),
-    'geogrid.latstep': ('grid.latstep', '0.6'),
     'geogrid.linestyle': ('grid.linestyle', '0.6'),
     'geogrid.linewidth': ('grid.linewidth', '0.6'),
-    'geogrid.lonstep': ('grid.lonstep', '0.6'),
-    'geogrid.rotatelabels': ('grid.rotatelabels', '0.6'),
     'share': ('subplots.share', '0.6'),
     'small': ('text.labelsize', '0.6'),
     'large': ('text.titlesize', '0.6'),
@@ -78,16 +75,17 @@ _rc_matplotlib_default = {
     'axes.grid': True,  # enable lightweight transparent grid by default
     'axes.grid.which': 'major',
     'axes.labelpad': 3.0,  # more compact
-    'axes.labelsize': SMALL,
-    'axes.titlesize': LARGE,
+    'axes.labelsize': LABELSIZE,
+    'axes.labelweight': 'normal',
     'axes.titlepad': 3.0,  # more compact
+    'axes.titlesize': TITLESIZE,
     'axes.titleweight': 'normal',
     'axes.xmargin': MARGIN,
     'axes.ymargin': MARGIN,
     'figure.autolayout': False,
     'figure.dpi': 100,
     'figure.facecolor': '#f2f2f2',  # similar to MATLAB interface
-    'figure.titlesize': LARGE,
+    'figure.titlesize': TITLESIZE,
     'figure.titleweight': 'bold',  # differentiate from axes titles
     'font.serif': [  # NOTE: font lists passed to rcParams are lists, not tuples
         'TeX Gyre Schola',  # Century lookalike
@@ -171,7 +169,7 @@ _rc_matplotlib_default = {
         'xkcd',
         'fantasy'
     ],
-    'font.size': SMALL,
+    'font.size': FONTSIZE,
     'grid.alpha': GRIDALPHA,  # lightweight unobtrusive gridlines
     'grid.color': GRIDCOLOR,  # lightweight unobtrusive gridlines
     'grid.linestyle': GRIDSTYLE,
@@ -186,19 +184,19 @@ _rc_matplotlib_default = {
     'legend.borderpad': 0.5,  # a bit more space
     'legend.columnspacing': 1.5,  # more compact
     'legend.fancybox': False,  # looks modern without curvy box
-    'legend.fontsize': SMALL,
+    'legend.fontsize': LABELSIZE,
     'legend.framealpha': FRAMEALPHA,
     'legend.handletextpad': 0.5,
     'mathtext.fontset': 'custom',
     'mathtext.default': 'regular',
     'savefig.bbox': None,  # use custom tight layout
     'savefig.directory': '',  # current directory
-    'savefig.dpi': 300,  # low dpi to improve performance, high dpi when it matters
+    'savefig.dpi': 1200,  # academic journal recommendations for raster line art
     'savefig.facecolor': 'white',  # different from figure.facecolor
     'savefig.format': 'pdf',  # most users use bitmap, but vector graphics are better
     'savefig.transparent': True,
     'xtick.direction': TICKDIR,
-    'xtick.labelsize': SMALL,
+    'xtick.labelsize': LABELSIZE,
     'xtick.major.pad': TICKPAD,
     'xtick.major.size': TICKLEN,
     'xtick.major.width': LINEWIDTH,
@@ -207,7 +205,7 @@ _rc_matplotlib_default = {
     'xtick.minor.visible': TICKMINOR,
     'xtick.minor.width': LINEWIDTH * TICKRATIO,
     'ytick.direction': TICKDIR,
-    'ytick.labelsize': SMALL,
+    'ytick.labelsize': LABELSIZE,
     'ytick.major.pad': TICKPAD,
     'ytick.major.size': TICKLEN,
     'ytick.major.width': LINEWIDTH,
@@ -263,7 +261,7 @@ _rc_proplot = {
         'a-b-c label position. For options, see `~proplot.axes.Axes.format`.',
     ),
     'abc.size': (
-        LARGE,
+        TITLESIZE,
         'a-b-c label font size.'
     ),
     'abc.style': (
@@ -307,6 +305,10 @@ _rc_proplot = {
         LINEWIDTH,
         'Line width for country borders.'
     ),
+    'borders.zorder': (
+        'black',
+        'Z-order for country border lines.'
+    ),
 
     # Bottom subplot labels
     'bottomlabel.color': (
@@ -314,7 +316,7 @@ _rc_proplot = {
         'Font color for column labels on the bottom of the figure.'
     ),
     'bottomlabel.size': (
-        LARGE,
+        TITLESIZE,
         'Font size for column labels on the bottom of the figure.'
     ),
     'bottomlabel.weight': (
@@ -427,53 +429,44 @@ _rc_proplot = {
         "everything. If ``True``, underneath everything. If ``'line'``, "
         'underneath patches only.'
     ),
+    'grid.dmslabels': (
+        False,
+        'Boolean, indicates whether to use degrees-minutes-seconds rather than '
+        'decimals for gridline labels on `~proplot.axes.CartopyAxes`.'
+    ),
     'grid.labelpad': (
         5,  # use cartopy default
-        'Padding in points between map boundary edge and meridian and '
-        'parallel labels for `~proplot.axes.GeoAxes`.'
+        'Padding in points between map boundary edge and longitude and '
+        'latitude labels for `~proplot.axes.GeoAxes`.'
     ),
     'grid.labels': (
         False,
-        'Boolean, indicates whether to label the meridians and parallels '
+        'Boolean, indicates whether to label the longitude and parallels '
         'for `~proplot.axes.GeoAxes`.'
     ),
-    'grid.labelrotate': (
-        True,  # False limits projections where labels are available
-        'Whether to rotate meridian and parallel `~proplot.axes.CartopyAxes` '
-        'gridline labels.'
-    ),
     'grid.labelsize': (
-        SMALL,
-        'Font size for meridian and parallel labels for `~proplot.axes.GeoAxes`. '
+        LABELSIZE,
+        'Font size for longitude and latitude labels for `~proplot.axes.GeoAxes`. '
         'Inherits from :rcraw:`small`.'
-    ),
-    'grid.latmax': (
-        90,
-        'Latitude poleward of which meridian gridlines are cut off for '
-        '`~proplot.axes.GeoAxes`. This works always for all basemap projections '
-        'but only some cartopy projections.'
-    ),
-    'grid.latstep': (
-        20,
-        'Interval for `~proplot.axes.GeoAxes` parallel gridlines in degrees.'
     ),
     'grid.latinline': (
         False,
         'Whether to use inline labels for `~proplot.axes.CartopyAxes` '
-        'parallel gridlines.'
-    ),
-    'grid.lonstep': (
-        30,
-        'Interval for `~proplot.axes.GeoAxes` meridian gridlines in degrees.'
+        'latitude gridlines.'
     ),
     'grid.loninline': (
         False,
         'Whether to use inline labels for `~proplot.axes.CartopyAxes` '
-        'meridian gridlines.'
+        'longitude gridlines.'
     ),
     'grid.ratio': (
         GRIDRATIO,
         'Ratio of minor gridline width to major gridline width.'
+    ),
+    'grid.rotatelabels': (
+        False,  # False limits projections where labels are available
+        'Boolean, indicates whether to rotate longitude and latitude '
+        '`~proplot.axes.CartopyAxes` gridline labels.'
     ),
 
     # Minor gridlines
@@ -490,8 +483,9 @@ _rc_proplot = {
         'Minor gridline color.'
     ),
     'gridminor.latstep': (
-        5,
-        'Interval for parallel gridlines in degrees.'
+        10,
+        'Latitude gridline interval for `~proplot.axes.GeoAxes` with global '
+        'extent.'
     ),
     'gridminor.linestyle': (
         GRIDSTYLE,
@@ -502,8 +496,8 @@ _rc_proplot = {
         'Minor gridline width.'
     ),
     'gridminor.lonstep': (
-        10,
-        'Interval for meridian gridlines in degrees.'
+        20,
+        'Interval for `~proplot.axes.GeoAxes` longitude gridlines in degrees.'
     ),
 
     # Image additions
@@ -530,16 +524,20 @@ _rc_proplot = {
     # Inner borders
     'innerborders': (
         False,
-        'Boolean, toggles internal border lines on and off, e.g. '
-        'for states and provinces.'
+        'Boolean, toggles internal political border lines (e.g. states and provinces) '
+        'on and off.'
     ),
     'innerborders.color': (
         'black',
-        'Line color for internal border lines.'
+        'Line color for internal political borders.'
     ),
     'innerborders.linewidth': (
         LINEWIDTH,
-        'Line width for internal border lines.'
+        'Line width for internal political borders.'
+    ),
+    'innerborders.zorder': (
+        'black',
+        'Z-order for internal border lines.'
     ),
 
     # Lake patches
@@ -551,15 +549,23 @@ _rc_proplot = {
         'w',
         'Face color for lake patches.'
     ),
+    'lakes.zorder': (
+        'black',
+        'Z-order for lake patches.'
+    ),
 
     # Land patches
     'land': (
         False,
-        'Boolean, toggles patches on and off.'
+        'Boolean, toggles land patches on and off.'
     ),
     'land.color': (
         'black',
         'Face color for land patches.'
+    ),
+    'land.zorder': (
+        'black',
+        'Z-order for land patches.'
     ),
 
     # Left subplot labels
@@ -568,7 +574,7 @@ _rc_proplot = {
         'Font color for row labels on the left-hand side.'
     ),
     'leftlabel.size': (
-        LARGE,
+        TITLESIZE,
         'Font size for row labels on the left-hand side.'
     ),
     'leftlabel.weight': (
@@ -614,6 +620,10 @@ _rc_proplot = {
         'w',
         'Face color for ocean patches.'
     ),
+    'ocean.zorder': (
+        'black',
+        'Z-order for ocean patches.'
+    ),
 
     # Geographic resolution
     'reso': (
@@ -628,7 +638,7 @@ _rc_proplot = {
         'Font color for row labels on the right-hand side.'
     ),
     'rightlabel.size': (
-        LARGE,
+        TITLESIZE,
         'Font size for row labels on the right-hand side.'
     ),
     'rightlabel.weight': (
@@ -648,6 +658,10 @@ _rc_proplot = {
     'rivers.linewidth': (
         LINEWIDTH,
         'Line width for river lines.'
+    ),
+    'rivers.zorder': (
+        'black',
+        'Z-order for river lines.'
     ),
 
     # Subplots settings
@@ -681,7 +695,6 @@ _rc_proplot = {
         3,
         'The axis sharing level, one of ``0``, ``1``, ``2``, or ``3``. '
         'See :ref:`the user guide <ug_share>` for details.'
-        'See `~proplot.ui.subplots` for details.'
     ),
     'subplots.span': (
         True,
@@ -698,7 +711,7 @@ _rc_proplot = {
         'Figure title color.'
     ),
     'suptitle.size': (
-        LARGE,
+        TITLESIZE,
         'Figure title font size.'
     ),
     'suptitle.weight': (
@@ -708,18 +721,18 @@ _rc_proplot = {
 
     # Text settings
     'text.labelsize': (
-        'medium',
+        LABELSIZE,
         'Meta setting that changes the label-like sizes '
         ':rcraw:`tick.labelsize`, :rcraw:`axes.labelsize`, :rcraw:`legend.fontsize`, '
         "and :rcraw:`grid.labelsize`. Default is ``'medium'``, i.e. "
         'the value of :rcraw:`font.size`.' + _addendum_fonts
     ),
     'text.titlesize': (
-        'med-large',
+        TITLESIZE,
         'Meta setting that changes the title-like sizes '
         ':rcraw:`abc.size`, :rcraw:`title.size`, :rcraw:`suptitle.size`, '
-        'and subplot label settings like :rcraw:`leftlabel.size`. '
-        "Default is ``'med-large'``, i.e. 1.1. times :rcraw:`font.size`."
+        'and row and column label sizes like :rcraw:`leftlabel.size`. '
+        "Default is ``'med-large'``, i.e. 1.1 times :rcraw:`font.size`."
         + _addendum_fonts
     ),
 
@@ -739,7 +752,7 @@ _rc_proplot = {
         ':rcraw:`axes.labelcolor` setting.'
     ),
     'tick.labelsize': (
-        SMALL,
+        LABELSIZE,
         'Axis tick label font size. Mirrors the *axis* label '
         ':rcraw:`axes.labelsize` setting.'
     ),
@@ -793,7 +806,7 @@ _rc_proplot = {
         'Alias for :rcraw:`axes.titlepad`.'
     ),
     'title.size': (
-        LARGE,
+        TITLESIZE,
         'Axes title font size.'
     ),
     'title.weight': (
@@ -807,7 +820,7 @@ _rc_proplot = {
         'Font color for column labels on the top of the figure.'
     ),
     'toplabel.size': (
-        LARGE,
+        TITLESIZE,
         'Font size for column labels on the top of the figure.'
     ),
     'toplabel.weight': (

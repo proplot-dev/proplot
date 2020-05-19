@@ -155,7 +155,7 @@ class _LatAxis(_GeoAxis):
     def _constrain_ticks(self, ticks):
         # Limit tick latitudes to satisfy latmax
         latmax = self.get_latmax()
-        ticks = [l for l in ticks if -latmax <= l <= latmax]
+        ticks = [t for t in ticks if -latmax <= t <= latmax]
         # Adjust latitude ticks to fix bug in some projections. Harmless for basemap.
         # NOTE: Maybe fixed by cartopy v0.18?
         eps = 1e-10
