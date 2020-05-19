@@ -135,6 +135,12 @@ axs[2].format(
 # `central_longitude`. It also lets you instantiate `~mpl_toolkits.basemap.Basemap`
 # projections with sensible defaults rather than raising an error when certain
 # projection arguments are omitted.
+#
+# Note that while basemap is `no longer a maintained package\
+# <https://matplotlib.org/basemap/users/intro.html#cartopy-new-management-and-eol-announcement>`__,
+# gridline labels tend to look much nicer in basemap than in cartopy. This is the
+# main reason ProPlot continues to support both basemap and cartopy. But when
+# cartopy catches up, basemap support may be deprecated.
 
 # %%
 import proplot as plot
@@ -157,7 +163,7 @@ axs.format(
 
 # Complex figure with different projections
 fig, axs = plot.subplots(
-    hratios=(1.5, 1, 1, 1, 1),
+    hratios=(1.5, 1, 1, 1, 1.5),
     basemap={
         (1, 3, 5, 7, 9): False,  # use cartopy in column 1
         (2, 4, 6, 8, 10): True,  # use basemap in column 2
@@ -173,7 +179,8 @@ fig, axs = plot.subplots(
 )
 axs.format(
     suptitle='Figure with several projections',
-    coast=True, latlines=30, lonlines=60, labels=True,
+    coast=True, latlines=30, lonlines=60,
+    lonlabels='b', latlabels='r',  # or lonlabels=True, labels=True, etc.
 )
 axs[-1, :].format(labels=True, lonlines=30)
 axs.format(collabels=['Cartopy projections', 'Basemap projections'])
