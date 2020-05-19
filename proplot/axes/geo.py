@@ -57,6 +57,9 @@ class _GeoAxis(object):
     Dummy axis used with longitude and latitude locators and for storing
     view limits on longitude latitude coordinates.
     """
+    # NOTE: Due to cartopy bug (https://github.com/SciTools/cartopy/issues/1564)
+    # we store presistent longitude and latitude locators on axes, then *call*
+    # them whenever set_extent is called and apply *fixed* locators.
     # NOTE: This is modeled after _DummyAxis in matplotlib/ticker.py, but we just
     # needs a couple methods used by simple, linear locators like `MaxNLocator`,
     # `MultipleLocator`, and `AutoMinorLocator`.
@@ -92,9 +95,10 @@ class _GeoAxis(object):
         return self.minor.locator()
 
     def set_major_formatter(self, formatter, default=False):
-        # NOTE: Cartopy <0.18 requires formatter axis is yaxis
+        # NOTE: Cartopy formatters check Formatter.axis.axes.projection and has
+        # special projection-dependent behavior.
         self.major.formatter = formatter
-        formatter.set_axis(self.axis)
+        formatter.set_axis(self)
         self.isDefault_majfmt = default
 
     def set_major_locator(self, locator, default=False):
@@ -121,7 +125,6 @@ class _LonAxis(_GeoAxis):
     # Try to use cartopy formatter if cartopy installed. Otherwise use
     # default builtin basemap formatting.
     def __init__(self, axes):
-        self.axis = axes.xaxis  # the *actual* axis associated with this dummy one
         super().__init__(axes)
         if cticker is not None:
             self.set_major_formatter(cticker.LongitudeFormatter(), default=True)
@@ -143,9 +146,8 @@ class _LatAxis(_GeoAxis):
     """
     Axis with default latitude locator.
     """
-    def __init__(self, axes):
-        self._latmax = 90
-        self.axis = axes.yaxis  # the *actual* axis associated with this dummy one
+    def __init__(self, axes, latmax):
+        self._latmax = latmax
         super().__init__(axes)
         if cticker is not None:
             self.set_major_formatter(cticker.LatitudeFormatter(), default=True)
@@ -155,7 +157,7 @@ class _LatAxis(_GeoAxis):
     def _constrain_ticks(self, ticks):
         # Limit tick latitudes to satisfy latmax
         latmax = self.get_latmax()
-        ticks = [t for t in ticks if -latmax <= t <= latmax]
+        ticks = [l for l in ticks if -latmax <= l <= latmax]
         # Adjust latitude ticks to fix bug in some projections. Harmless for basemap.
         # NOTE: Maybe fixed by cartopy v0.18?
         eps = 1e-10
