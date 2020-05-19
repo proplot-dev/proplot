@@ -306,6 +306,8 @@ class rc_configurator(object):
         or a ProPlot :ref:`added setting <rc_proplot>`.
         """
         key = self._sanitize_key(key)
+        if key is None:  # means key was *removed*, warnings was issued
+            return None
         for kw in (rc_proplot, rc_matplotlib):
             try:
                 return kw[key]
@@ -371,11 +373,13 @@ class rc_configurator(object):
         Return dictionaries for updating the `rc_proplot`
         and `rc_matplotlib` properties associated with this key.
         """
-        kw_matplotlib = {}  # builtin properties that global setting applies to
-        kw_proplot = {}  # custom properties that global setting applies to
         key = self._sanitize_key(key)
+        if key is None:  # means setting was removed
+            return {}, {}, {}
         keys = (key,) + rcsetup._rc_children.get(key, ())  # settings to change
         value = self._sanitize_value(value)
+        kw_proplot = {}  # custom properties that global setting applies to
+        kw_matplotlib = {}  # builtin properties that global setting applies to
 
         # Permit arbitary units for builtin matplotlib params
         # See: https://matplotlib.org/users/customizing.html, props matching
@@ -386,21 +390,6 @@ class rc_configurator(object):
                 value = self._scale_font(value)
             except KeyError:
                 value = units(value, 'pt')
-
-        # Handle deprecations
-        if key in rcsetup._rc_removed:
-            alternative, version = rcsetup._rc_removed[key]
-            message = f'rc setting {key!r} was removed in version {version}.'
-            if alternative:  # provide an alternative
-                message = f'{message} {alternative}'
-            warnings._warn_proplot(warnings)
-            return {}, {}, {}
-        if key in rcsetup._rc_renamed:
-            key_new, version = rcsetup._rc_renamed[key]
-            warnings._warn_proplot(
-                f'rc setting {key!r} was renamed to {key_new} in version {version}.'
-            )
-            key = key_new
 
         # Special key: configure inline backend
         if key == 'inlinefmt':
@@ -547,8 +536,26 @@ class rc_configurator(object):
         """
         if not isinstance(key, str):
             raise KeyError(f'Invalid key {key!r}. Must be string.')
+
+        # Translate from nodots to 'full' version
         if '.' not in key:
             key = rcsetup._rc_nodots.get(key, key)
+
+        # Handle deprecations
+        if key in rcsetup._rc_removed:
+            alternative, version = rcsetup._rc_removed[key]
+            message = f'rc setting {key!r} was removed in version {version}.'
+            if alternative:  # provide an alternative
+                message = f'{message} {alternative}'
+            warnings._warn_proplot(warnings)
+            key = None
+        if key in rcsetup._rc_renamed:
+            key_new, version = rcsetup._rc_renamed[key]
+            warnings._warn_proplot(
+                f'rc setting {key!r} was renamed to {key_new} in version {version}.'
+            )
+            key = key_new
+
         return key.lower()
 
     @staticmethod
