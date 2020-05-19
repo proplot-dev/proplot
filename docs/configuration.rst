@@ -8,9 +8,8 @@ Overview
 
 A special object named `~proplot.config.rc`, belonging to the
 `~proplot.config.rc_configurator` class, is created on import. This is your one-stop
-shop for working with `builtin matplotlib global settings
-<https://matplotlib.org/users/customizing.html>`__ and the global settings
-`added by proplot <rc_proplot>`.
+shop for working with `builtin matplotlib global settings <rc_matplotlib>`_
+and the global settings :ref:`added by proplot <rc_proplot>`.
 
 Global settings can be changed on-the-fly using the
 `~proplot.config.rc` object as follows:
@@ -50,27 +49,23 @@ you can simply omit the dots. For example, to change the
 
 .. _rc_matplotlib: https://matplotlib.org/users/customizing.html
 
-.. _rc_proplot:
+Matplotlib settings
+-------------------
 
-New settings
-------------
-
-These are *short, simple* names used to change multiple matplotlib and
-ProPlot settings at once, as shorthands for settings with longer names, or
-for special options. For example, :rcraw:`ticklen` changes the tick length for
-the *x* and *y* axes in one go.
+Details on existing matplotlib settings can be found on `this page <rc_matplotlib_>`_.
 
 .. _rc_proplot:
 
-Added settings
+ProPlot settings
 --------------
 
 ProPlot adds several settings to customize things not covered by
 `matplotlib's builtin settings <https://matplotlib.org/users/customizing.html>`__.
 Some of these settings may be more accurately described as "meta-settings",
 as they change several matplotlib settings at once (for example,
-``'style'`` applies the settings associated with a stylesheet and
-``'small'`` changes the "small" font size).
+``'style'`` changes whichever settings are associated with the corresponding
+stylesheet and ``'linewidth'`` changes axes edge widths, gridline widths,
+and tick widths).
 
 The ``subplots`` category controls the default layout for figures and axes.
 The ``abc``, ``title``, and ``tick`` categories control a-b-c label, title,
