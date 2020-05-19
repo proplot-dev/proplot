@@ -194,7 +194,7 @@ class AutoFormatter(mticker.ScalarFormatter):
         x = self._wrap_tick_range(x, self._wraprange)
 
         # Negative positive handling
-        x, tail = self._neg_pos_format(x, self._negpos)
+        x, tail = self._neg_pos_format(x, self._negpos, wraprange=self._wraprange)
 
         # Default string formatting
         string = super().__call__(x, pos)
@@ -295,11 +295,20 @@ class AutoFormatter(mticker.ScalarFormatter):
         return string
 
     @staticmethod
-    def _neg_pos_format(x, negpos):
+    def _neg_pos_format(x, negpos, wraprange=None):
         """
         Permit suffixes indicators for "negative" and "positive" numbers.
         """
+        # NOTE: If input is a symmetric wraprange, the value conceptually has
+        # no "sign", so trim tail and format as absolute value.
         if not negpos or x == 0:
+            tail = ''
+        elif (
+            wraprange is not None
+            and np.isclose(-wraprange[0], wraprange[1])
+            and np.any(np.isclose(x, wraprange))
+        ):
+            x = abs(x)
             tail = ''
         elif x > 0:
             tail = negpos[1]
@@ -403,7 +412,7 @@ def SimpleFormatter(
         x = AutoFormatter._wrap_tick_range(x, wraprange)
 
         # Negative positive handling
-        x, tail = AutoFormatter._neg_pos_format(x, negpos)
+        x, tail = AutoFormatter._neg_pos_format(x, negpos, wraprange=wraprange)
 
         # Default string formatting
         string = ('{:.%df}' % precision).format(x)

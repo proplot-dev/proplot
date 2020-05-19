@@ -125,8 +125,10 @@ class _LonAxis(_GeoAxis):
     # default builtin basemap formatting.
     def __init__(self, axes):
         super().__init__(axes)
-        if cticker is not None:
-            self.set_major_formatter(cticker.LongitudeFormatter(), default=True)
+        formatter = 'deglon'
+        if cticker is not None and isinstance(self.axes, (ccrs._RectangularProjection, ccrs.Mercator)):  # noqa: E501
+            formatter = 'fancylon'
+        self.set_major_formatter(constructor.Formatter(formatter), default=True)
         self.set_major_locator(pticker._LongitudeLocator(), default=True)
         self.set_minor_locator(mticker.AutoMinorLocator(), default=True)
 
@@ -148,8 +150,10 @@ class _LatAxis(_GeoAxis):
     def __init__(self, axes, latmax):
         self._latmax = latmax
         super().__init__(axes)
-        if cticker is not None:
-            self.set_major_formatter(cticker.LatitudeFormatter(), default=True)
+        formatter = 'deglat'
+        if cticker is not None and isinstance(self.axes, (ccrs._RectangularProjection, ccrs.Mercator)):  # noqa: E501
+            formatter = 'fancylat'
+        self.set_major_formatter(constructor.Formatter(formatter), default=True)
         self.set_major_locator(pticker._LatitudeLocator(), default=True)
         self.set_minor_locator(mticker.AutoMinorLocator(), default=True)
 
@@ -307,10 +311,14 @@ optional
 
         lonformatter, latformatter : str or `~matplotlib.ticker.Formatter`, optional
             Formatter spec used to style longitude and latitude gridline labels.
+            Passed to the `~proplot.constructor.Formatter` constructor.
             Can be string, list of string, or `matplotlib.ticker.Formatter`
-            instance. Use ``[]`` or ``'null'`` for no ticks. The defaults are
+            instance. Use ``[]`` or ``'null'`` for no ticks. The defaults are the
+            ``'deglon'`` and ``'deglat'`` `~proplot.ticker.AutoFormatter` presets.
+            For cartopy rectangular projections, the defaults are cartopy's fancy
             are `~cartopy.mpl.ticker.LongitudeFormatter` and
-            `~cartopy.mpl.ticker.LatitudeFormatter`.
+            `~cartopy.mpl.ticker.LatitudeFormatter` formatters with
+            degrees-minutes-seconds support.
         lonformatter_kw, latformatter_kw : optional
             Keyword argument dictionaries passed to the `~matplotlib.ticker.Formatter`
             class.
