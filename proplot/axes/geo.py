@@ -1303,6 +1303,7 @@ class BasemapAxes(GeoAxes):
         ):
             # Correct lonarray and latarray, change fromm lrbt to lrtb
             if array is not None:
+                array = list(array)
                 array[2:] = array[2:][::-1]
             axis = getattr(self, f'_{name}axis')
 
@@ -1310,19 +1311,23 @@ class BasemapAxes(GeoAxes):
             attr = f'_{name}lines_{which}'
             objs = getattr(self, attr)  # dictionary of previous objects
             lines = getattr(self, f'_get_{name}ticklocs')(which=which)
-            formatter = axis.get_major_formatter()
             if which == 'major':
-                rebuild = (
-                    not objs
-                    or any(_ is not None for _ in array)
-                    or not axis.isDefault_majloc or not axis.isDefault_majfmt
-                )
+                attrs = ('isDefault_majloc', 'isDefault_majfmt')
             else:
-                rebuild = not objs or not axis.isDefault_minloc
+                attrs = ('isDefault_minloc',)
+            rebuild = (
+                not objs
+                or any(_ is not None for _ in array)
+                or any(not getattr(axis, _) for _ in attrs)
+            )
 
             # Draw or redraw meridian or parallel lines
+            # Also mark formatters and locators as 'default'
             if rebuild:
                 kwdraw = {}
+                for _ in attrs:
+                    setattr(axis, _, True)
+                formatter = axis.get_major_formatter()
                 if formatter is not None:  # use functional formatter
                     kwdraw['fmt'] = formatter
                 for obj in self._iter_gridlines(objs):
@@ -1369,7 +1374,7 @@ class BasemapAxes(GeoAxes):
         Update minor gridlines.
         """
         lonarray, latarray  # prevent U100 error (ignore these)
-        array = [0] * 4
+        array = [None] * 4  # NOTE: must be None not False (see _update_gridlines)
         self._update_gridlines(
             which='minor',
             longrid=longrid, latgrid=latgrid, lonarray=array, latarray=array,
