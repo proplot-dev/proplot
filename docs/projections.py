@@ -237,8 +237,8 @@ for globe in (False, True,):
         suptitle=titles[globe],
         collabels=['Cartopy example', 'Basemap example'],
         rowlabels=['Contourf', 'Pcolor'],
-        coast=True, latlabels='r', lonlabels='b', lonlines=90,
         abc=True, abcstyle='a)', abcloc='ul', abcborder=False,
+        coast=True, lonlines=90,
     )
 
 
