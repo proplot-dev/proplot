@@ -67,7 +67,7 @@ for i in range(5):
 # Standard polar plot
 axs[0].format(
     title='Normal plot', thetaformatter='pi', rlines=5,
-    rlabelpos=180, color='gray8', ticklabelpad='1em'
+    rlabelpos=180, color='gray8', tickpad='1em'
 )
 
 # Sector plot

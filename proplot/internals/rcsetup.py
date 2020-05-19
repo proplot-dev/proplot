@@ -918,13 +918,16 @@ for key, value in _rc_aliases.items():
     _rc_children[value] = (key,)
 
 # Various helper dicts
+# NOTE: Make sure to add deprecated rc settings to nodots.
 _rc_proplot_default = {
     key: value for key, (value, *_) in _rc_proplot.items()
 }
 
 _rc_nodots = {
     name.replace('.', ''): name
-    for dict_ in (_rc_proplot_default, _rc_matplotlib_default_full)
+    for dict_ in (
+        _rc_proplot_default, _rc_matplotlib_default_full, _rc_removed, _rc_renamed
+    )
     for name in dict_.keys()
 }
 
