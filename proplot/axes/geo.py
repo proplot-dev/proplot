@@ -489,7 +489,7 @@ optional
             zorder = 0.5
         elif axisbelow is False:
             zorder = 2.5
-        elif axisbelow == 'lines':
+        elif axisbelow in ('line', 'lines'):
             zorder = 1.5
         else:
             raise ValueError(f'Unexpected grid.below value {axisbelow!r}.')
