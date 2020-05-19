@@ -1377,6 +1377,11 @@ def Proj(name, basemap=None, **kwargs):
         kwproj = BASEMAP_KW_DEFAULTS.get(name, {}).copy()
         kwproj.update(kwargs)
         kwproj.setdefault('fix_aspect', True)
+        if kwproj.get('lon_0', 0) > 0:
+            # Fix issues with Robinson (and related?) projections
+            # See: https://stackoverflow.com/questions/56299971/
+            # Get both this issue *and* 'no room for axes' issue
+            kwproj['lon_0'] -= 360
         if name[:2] in ('np', 'sp'):
             kwproj.setdefault('round', True)
         if name == 'geos':

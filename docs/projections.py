@@ -317,6 +317,7 @@ ax.format(
 import proplot as plot
 
 # Plate Carrée map projection
+plot.rc.reso = 'med'  # use higher res for zoomed in geographic features
 proj = plot.Proj('cyl', llcrnrlon=-20, llcrnrlat=-10, urcrnrlon=180, urcrnrlat=50, basemap=True)  # noqa: E501
 fig, axs = plot.subplots(nrows=2, axwidth=4.5, proj=('cyl', proj))
 axs.format(
@@ -339,15 +340,17 @@ axs.format(
 axs[0].format(boundinglat=-60, title='Cartopy example')
 axs[1].format(title='Basemap example')
 
-# Examples from basemap website
-proj = plot.Proj('lcc', lon_0=-100, lat_0=45, width=8e6, height=8e6, basemap=True)
-fig, axs = plot.subplots(ncols=2, axwidth=2.4, proj=('lcc', proj), proj_kw={'lon_0': 0})
+# Focusing on continents
+proj1 = plot.Proj('lcc', lon_0=0)  # cartopy projection
+proj2 = plot.Proj('lcc', lon_0=-100, lat_0=45, width=8e6, height=8e6, basemap=True)
+fig, axs = plot.subplots(ncols=2, axwidth=2.4, proj=(proj1, proj2))
 axs.format(suptitle='Zooming into specific regions', land=True)
 axs[0].format(
     title='Cartopy example', land=True,
     lonlim=(-20, 50), latlim=(30, 70)
 )
 axs[1].format(title='Basemap example', land=True)
+plot.rc.reset()
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"

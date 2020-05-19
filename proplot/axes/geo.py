@@ -2,6 +2,7 @@
 """
 Axes filled with cartographic projections.
 """
+import copy
 import numpy as np
 import matplotlib.axes as maxes
 import matplotlib.axis as maxis
@@ -591,21 +592,21 @@ optional
         Convert labels argument to length-4 boolean array.
         """
         if labels is None:
-            return (None,) * 4
+            return [None] * 4
         if isinstance(labels, str):
-            array = [0] * 4
-            for idx, char in zip([0, 1, 2, 3], 'lrbt'):
+            array = [False] * 4
+            for idx, char in enumerate('lrbt'):
                 if char in labels:
-                    array[idx] = 1
+                    array[idx] = True
         else:
-            array = np.atleast_1d(labels)
+            array = np.atleast_1d(labels).tolist()
         if len(array) == 1:
-            array = [*array, 0]  # default is to label bottom or left
+            array.append(False)  # default is to label bottom or left
         if len(array) == 2:
             if lon:
-                array = [0, 0, *array]
+                array = [False, False, *array]
             else:
-                array = [*array, 0, 0]
+                array = [*array, False, False]
         elif len(array) != 4:
             name = 'lon' if lon else 'lat'
             raise ValueError(f'Invalid {name}label spec: {labels}.')
@@ -931,6 +932,7 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
             gl.ylines = latgrid
         lonlines = self._get_lonticklocs(which=which)
         latlines = self._get_latticklocs(which=which)
+        lonlines = (np.asarray(lonlines) + 180) % 360 - 180  # specific to CartopyAxes
         gl.xlocator = mticker.FixedLocator(lonlines)
         gl.ylocator = mticker.FixedLocator(latlines)
 
@@ -1170,6 +1172,7 @@ class BasemapAxes(GeoAxes):
         proplot.constructor.Proj
         """
         # First assign projection and set axis bounds for locators
+        # NOTE: Basemaps cannot noramally be reused so we make copy.
         # WARNING: Investigated whether Basemap.__init__() could be called
         # twice with updated proj kwargs to modify map bounds after creation
         # and python immmediately crashes. Do not try again.
@@ -1178,6 +1181,7 @@ class BasemapAxes(GeoAxes):
             raise ValueError(
                 'BasemapAxes requires map_projection=basemap.Basemap'
             )
+        map_projection = copy.copy(map_projection)
         self._map_projection = map_projection
         lon0 = self._get_lon0()
         if map_projection.projection in self._proj_polar:
@@ -1189,10 +1193,14 @@ class BasemapAxes(GeoAxes):
             else:
                 extent.extend([-90, boundinglat])
         else:
-            # NOTE: check out Basemap.__init__
+            # NOTE: Using 'corner' values tends to give more accurate results
+            # but might be unavailable sometimes, so also check lonmin/lonmax, etc.
             latmax = 90
-            attrs = ('lonmin', 'lonmax', 'latmin', 'latmax')
+            attrs = ('llcrnrlon', 'urcrnrlon', 'llcrnrlat', 'urcrnrlat')
             extent = [getattr(map_projection, attr, None) for attr in attrs]
+            if any(_ is None for _ in extent):
+                attrs = ('lonmin', 'lonmax', 'latmin', 'latmax')
+                extent = [getattr(map_projection, attr, None) for attr in attrs]
             if any(_ is None for _ in extent):
                 extent = [180 - lon0, 180 + lon0, -90, 90]  # fallback
 
