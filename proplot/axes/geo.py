@@ -18,29 +18,152 @@ from .plot import (
 )
 from .. import crs as pcrs
 from .. import constructor
-from ..utils import arange
+from .. import ticker as pticker
 from ..config import rc
 from ..internals import ic  # noqa: F401
 from ..internals import docstring, warnings, _version, _version_cartopy, _not_none
+from ..utils import arange
 try:
     from cartopy.mpl.geoaxes import GeoAxes as GeoAxesCartopy
+    import cartopy.feature as cfeature
+    import cartopy.mpl.ticker as cticker
+    import cartopy.crs as ccrs
 except ModuleNotFoundError:
-    GeoAxesCartopy = object
+    GeoAxesBase = object
+    cfeature = cticker = ccrs = None
+try:
+    import mpl_toolkits.basemap as mbasemap
+except ModuleNotFoundError:
+    mbasemap = None
 
 __all__ = ['GeoAxes', 'BasemapAxes', 'CartopyAxes']
 
 
 def _circle_path(N=100):
     """
-    Return a circle `~matplotlib.path.Path` used as the outline
-    for polar stereographic, azimuthal equidistant, and Lambert
-    conformal projections. This was developed from `this cartopy example \
+    Return a circle `~matplotlib.path.Path` used as the outline for polar
+    stereographic, azimuthal equidistant, Lambert conformal, and gnomonic
+    projections. This was developed from `this cartopy example \
 <https://scitools.org.uk/cartopy/docs/v0.15/examples/always_circular_stereo.html>`__.
-    """  # noqa
+    """
     theta = np.linspace(0, 2 * np.pi, N)
     center, radius = [0.5, 0.5], 0.5
     verts = np.vstack([np.sin(theta), np.cos(theta)]).T
     return mpath.Path(verts * radius + center)
+
+
+class _GeoAxis(object):
+    """
+    Dummy axis used with longitude and latitude locators and for storing
+    view limits on longitude latitude coordinates.
+    """
+    # NOTE: This is modeled after _DummyAxis in matplotlib/ticker.py, but we just
+    # needs a couple methods used by simple, linear locators like `MaxNLocator`,
+    # `MultipleLocator`, and `AutoMinorLocator`.
+    def __init__(self, axes):
+        self.axes = axes
+        self.major = mticker.Ticker()
+        self.minor = mticker.Ticker()
+        self.isDefault_majfmt = True
+        self.isDefault_majloc = True
+        self.isDefault_minloc = True
+        self._interval = None
+
+    def get_scale(self):
+        return 'linear'
+
+    def get_tick_space(self):
+        # Just use the long-standing default of nbins=9
+        return 9
+
+    def get_major_formatter(self):
+        return self.major.formatter
+
+    def get_major_locator(self):
+        return self.major.locator
+
+    def get_minor_locator(self):
+        return self.minor.locator
+
+    def get_majorticklocs(self):
+        return self.major.locator()
+
+    def get_minorticklocs(self):
+        return self.minor.locator()
+
+    def set_major_formatter(self, formatter, default=False):
+        # NOTE: Cartopy <0.18 requires formatter axis is yaxis
+        self.major.formatter = formatter
+        formatter.set_axis(self.axis)
+        self.isDefault_majfmt = default
+
+    def set_major_locator(self, locator, default=False):
+        self.major.locator = locator
+        if self.major.formatter:
+            self.major.formatter._set_locator(locator)
+        locator.set_axis(self)
+        self.isDefault_majloc = default
+
+    def set_minor_locator(self, locator, default=False):
+        self.minor.locator = locator
+        locator.set_axis(self)
+        self.isDefault_majfmt = default
+
+    def set_view_interval(self, vmin, vmax):
+        self._interval = (vmin, vmax)
+
+
+class _LonAxis(_GeoAxis):
+    """
+    Axis with default longitude locator.
+    """
+    # NOTE: Basemap accepts tick formatters with drawmeridians(fmt=Formatter())
+    # Try to use cartopy formatter if cartopy installed. Otherwise use
+    # default builtin basemap formatting.
+    def __init__(self, axes):
+        self.axis = axes.xaxis  # the *actual* axis associated with this dummy one
+        super().__init__(axes)
+        if cticker is not None:
+            self.set_major_formatter(cticker.LongitudeFormatter(), default=True)
+        self.set_major_locator(pticker.LongitudeLocator(), default=True)
+        self.set_minor_locator(mticker.AutoMinorLocator(), default=True)
+
+    def get_view_interval(self):
+        # NOTE: Proplot tries to set its *own* view intervals to avoid dateline
+        # weirdness, but if cartopy.autoextent is False the interval will be
+        # unset, so we are forced to use get_extent().
+        interval = self._interval
+        if interval is None:
+            extent = self.axes.get_extent()
+            interval = extent[:2]  # longitude extents
+        return interval
+
+
+class _LatAxis(_GeoAxis):
+    """
+    Axis with default latitude locator.
+    """
+    def __init__(self, axes):
+        self._latmax = 90
+        self.axis = axes.yaxis  # the *actual* axis associated with this dummy one
+        super().__init__(axes)
+        if cticker is not None:
+            self.set_major_formatter(cticker.LatitudeFormatter(), default=True)
+        self.set_major_locator(pticker.LatitudeLocator(), default=True)
+        self.set_minor_locator(mticker.AutoMinorLocator(), default=True)
+
+    def get_view_interval(self):
+        interval = self._interval
+        if interval is None:
+            extent = self.axes.get_extent()
+            interval = extent[2:]  # latitudes
+        return interval
+
+    def get_latmax(self):
+        return self._latmax
+
+    def set_latmax(self, latmax):
+        self._latmax = latmax
 
 
 class GeoAxes(base.Axes):
