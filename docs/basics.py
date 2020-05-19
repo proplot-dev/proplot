@@ -53,6 +53,7 @@
 # That is, the default display background is gray, the default background for
 # saved figures is transparent, and the default background is white when you pass
 # ``transparent=False`` to `~matplotlib.figure.Figure.savefig`.
+#
 # ProPlot also sets the default :rcraw:`savefig.format` to PDF, because
 # (1) vector graphic formats are always more suitable for matplotlib figures than
 # raster formats, (2) most academic journals these days accept PDF format figures
