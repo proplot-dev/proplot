@@ -4,6 +4,7 @@ Axes filled with cartographic projections.
 """
 import numpy as np
 import matplotlib.axes as maxes
+import matplotlib.axis as maxis
 import matplotlib.text as mtext
 import matplotlib.path as mpath
 import matplotlib.ticker as mticker
@@ -64,8 +65,8 @@ class _GeoAxis(object):
     # `MultipleLocator`, and `AutoMinorLocator`.
     def __init__(self, axes):
         self.axes = axes
-        self.major = mticker.Ticker()
-        self.minor = mticker.Ticker()
+        self.major = maxis.Ticker()
+        self.minor = maxis.Ticker()
         self.isDefault_majfmt = True
         self.isDefault_majloc = True
         self.isDefault_minloc = True
@@ -443,9 +444,7 @@ optional
                 loninline=loninline, latinline=latinline, rotate_labels=rotate_labels,
                 labelpad=labelpad,
             )
-            self._update_minor_gridlines(
-                longridminor=longridminor, latgridminor=latgridminor,
-            )
+            self._update_minor_gridlines(longrid=longridminor, latgrid=latgridminor)
 
             # Call main axes format method
             super().format(**kwargs)
@@ -593,7 +592,7 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
         self._gridlines_minor = None
         self._lonaxis = _LonAxis(self)
         self._lataxis = _LatAxis(self, latmax=latmax)
-        super().__init__(*args, map_projection=map_projection, latmax=latmax, **kwargs)
+        super().__init__(*args, map_projection=map_projection, **kwargs)
 
         # Apply circular map boundary for polar projections. Apply default
         # global extent for other projections.
@@ -612,6 +611,12 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
         # Zero out ticks to prevent extra label offset
         for axis in (self.xaxis, self.yaxis):
             axis.set_tick_params(which='both', size=0)
+
+    def _apply_axis_sharing(self):  # noqa: U100
+        """
+        No-op for now. In future will hide labels on certain subplots.
+        """
+        pass
 
     def _get_current_extent(self):
         """
@@ -632,7 +637,6 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
         """
         return self.projection.proj4_params.get('lon_0', 0)
 
-    @staticmethod
     def _init_gridlines(self):
         """
         Create monkey patched "major" and "minor" gridliners managed by ProPlot.
@@ -723,7 +727,7 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
         # (x, y) coordinate pairs (each corner), so something like (-180, 180, -90, 90)
         # will result in *line*, causing error! We correct this here.
         eps = 1e-10  # bug with full -180, 180 range when lon_0 != 0
-        lon0 = self.get_lon0()
+        lon0 = self._get_lon0()
         proj = type(self.projection).__name__
         north = isinstance(self.projection, self._proj_north)
         south = isinstance(self.projection, self._proj_south)
@@ -823,7 +827,7 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
                         kw.update({'linewidth': 0})
                     # Update artist attributes (_kwargs used back to v0.5)
                     # feat.update(kw)  # TODO: check this fails
-                    self._kwargs.update(kw)
+                    feat._kwargs.update(kw)
                     setattr(self, attr, feat)
 
     def _update_gridlines(self, gl, which='major', longrid=None, latgrid=None):
@@ -831,6 +835,9 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
         Update gridliner object with axis locators, and toggle gridlines on and off.
         """
         # Update gridliner collection properties
+        # WARNING: Here we use apply existing *matplotlib* rc param to brand new
+        # *proplot* setting. So if rc mode is 1 (first format call) use context=False.
+        rc_mode = rc._get_context_mode()
         key = 'grid' if which == 'major' else 'gridminor'
         kw = rc.fill(
             {
@@ -839,7 +846,7 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
                 'linewidth': f'{key}.linewidth',
                 'linestyle': f'{key}.linestyle',
             },
-            context=True
+            context=(rc_mode == 2)
         )
         axisbelow = rc.get('axes.axisbelow', context=True)
         if axisbelow is not None:
@@ -1277,21 +1284,23 @@ class BasemapAxes(GeoAxes):
                 rebuild = not objs or not axis.isDefault_minloc
 
             # Get gridline properties
+            key = 'grid' if which == 'major' else 'gridminor'
+            rc_mode = rc._get_context_mode()
             kwlines = rc.fill(
                 {
-                    'alpha': 'grid.alpha',
-                    'color': 'grid.color',
-                    'linewidth': 'grid.linewidth',
-                    'linestyle': 'grid.linestyle',
+                    'alpha': f'{key}.alpha',
+                    'color': f'{key}.color',
+                    'linewidth': f'{key}.linewidth',
+                    'linestyle': f'{key}.linestyle',
                 },
-                context=(not rebuild),
+                context=(not rebuild and rc_mode == 2),
             )
             kwtext = rc.fill(
                 {
-                    'color': 'grid.color',
-                    'fontsize': 'grid.labelsize',
+                    'color': f'{key}.color',
+                    'fontsize': f'{key}.labelsize',
                 },
-                context=(not rebuild),
+                context=(not rebuild and rc_mode == 2),
             )
 
             # Draw or redraw meridian or parallel lines
