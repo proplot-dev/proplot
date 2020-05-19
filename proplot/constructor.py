@@ -1002,11 +1002,13 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
         ``'theta'``             `~matplotlib.projections.polar.ThetaFormatter`  Formats radians as degrees, with a degree symbol
         ``'e'``                 `~proplot.ticker.FracFormatter` preset          Fractions of *e*
         ``'pi'``                `~proplot.ticker.FracFormatter` preset          Fractions of :math:`\\pi`
+        ``'lat'``               `~proplot.ticker.AutoFormatter` preset          Cardinal "SN" indicator
+        ``'lon'``               `~proplot.ticker.AutoFormatter` preset          Cardinal "WE" indicator
         ``'deg'``               `~proplot.ticker.AutoFormatter` preset          Trailing degree symbol
         ``'deglat'``            `~proplot.ticker.AutoFormatter` preset          Trailing degree symbol and cardinal "SN" indicator
         ``'deglon'``            `~proplot.ticker.AutoFormatter` preset          Trailing degree symbol and cardinal "WE" indicator
-        ``'lon'``               `~cartopy.mpl.ticker.LongitudeFormatter`        Cartopy longitude labels with degrees/minutes/seconds support
-        ``'lat'``               `~cartopy.mpl.ticker.LatitudeFormatter`         Cartopy latitude labels with degrees/minutes/seconds support
+        ``'fancylon'``          `~cartopy.mpl.ticker.LongitudeFormatter`        Cartopy longitude labels with degree/minute/second support
+        ``'fancylat'``          `~cartopy.mpl.ticker.LatitudeFormatter`         Cartopy latitude labels with degree/minute/second support
         ======================  ==============================================  ===============================================================
 
     date : bool, optional
@@ -1064,7 +1066,7 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
                 kwargs.setdefault('number', number)
                 formatter = 'frac'
             # Cartographic shorthands
-            if formatter in ('deg', 'deglon', 'deglat'):
+            if formatter in ('deg', 'lon', 'lat', 'deglon', 'deglat'):
                 negpos, suffix = None, None
                 if 'deg' in formatter:
                     suffix = '\N{DEGREE SIGN}'
@@ -1072,6 +1074,7 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
                     negpos = 'SN'
                 if 'lon' in formatter:
                     negpos = 'WE'
+                    kwargs.setdefault('wraprange', (-180, 180))
                 kwargs.setdefault('suffix', suffix)
                 kwargs.setdefault('negpos', negpos)
                 formatter = 'auto'

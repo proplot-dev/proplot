@@ -27,12 +27,15 @@ zerotrim : bool, optional
     Whether to trim trailing zeros. Default is :rc:`axes.formatter.zerotrim`.
 tickrange : (float, float), optional
     Range within which major tick marks are labelled. Default is ``(-np.inf, np.inf)``.
+wraprange : (float, float), optional
+    Range outside of which tick values are wrapped. For example, ``(0, 2)``
+    will format a value of ``2.5`` as ``0.5``, and ``(-180, 180)`` will format
+    a value of ``200`` as ``-180 + 20 == -160``.
 prefix, suffix : str, optional
-    Prefix and suffix for all strings.
+    Prefix and suffix for all tick strings.
 negpos : str, optional
     Length-2 string indicating the suffix for "negative" and "positive"
-    numbers, meant to replace the minus sign. This is useful for indicating
-    cardinal geographic coordinates.
+    numbers, meant to replace the minus sign.
 """
 
 
@@ -141,7 +144,7 @@ class AutoFormatter(mticker.ScalarFormatter):
     @docstring.add_snippets
     def __init__(
         self,
-        zerotrim=None, tickrange=None,
+        zerotrim=None, tickrange=None, wraprange=None,
         prefix=None, suffix=None, negpos=None,
         **kwargs
     ):
@@ -169,6 +172,7 @@ class AutoFormatter(mticker.ScalarFormatter):
         zerotrim = _not_none(zerotrim, rc['axes.formatter.zerotrim'])
         self._zerotrim = zerotrim
         self._tickrange = tickrange
+        self._wraprange = wraprange
         self._prefix = prefix or ''
         self._suffix = suffix or ''
         self._negpos = negpos or ''
@@ -187,6 +191,7 @@ class AutoFormatter(mticker.ScalarFormatter):
         # Tick range limitation
         if self._outside_tick_range(x, self._tickrange):
             return ''
+        x = self._wrap_tick_range(x, self._wraprange)
 
         # Negative positive handling
         x, tail = self._neg_pos_format(x, self._negpos)
@@ -320,6 +325,17 @@ class AutoFormatter(mticker.ScalarFormatter):
             string = string.rstrip('0').rstrip(decimal_point)
         return string
 
+    @staticmethod
+    def _wrap_tick_range(x, wraprange):
+        """
+        Wrap the tick range to within these values.
+        """
+        if wraprange is None:
+            return x
+        base = wraprange[0]
+        modulus = wraprange[1] - wraprange[0]
+        return (x - base) % modulus + base
+
 
 def SigFigFormatter(sigfig=1, zerotrim=None):
     """
@@ -358,7 +374,7 @@ def SigFigFormatter(sigfig=1, zerotrim=None):
 
 @docstring.add_snippets
 def SimpleFormatter(
-    precision=6, zerotrim=None, tickrange=None,
+    precision=6, zerotrim=None, tickrange=None, wraprange=None,
     prefix=None, suffix=None, negpos=None,
 ):
     """
@@ -384,6 +400,7 @@ def SimpleFormatter(
         # Tick range limitation
         if AutoFormatter._outside_tick_range(x, tickrange):
             return ''
+        x = AutoFormatter._wrap_tick_range(x, wraprange)
 
         # Negative positive handling
         x, tail = AutoFormatter._neg_pos_format(x, negpos)
