@@ -29,7 +29,7 @@ from . import scale as pscale
 from .config import rc
 from .utils import to_rgb
 from .internals import ic  # noqa: F401
-from .internals import warnings, _version, _version_mpl, _not_none
+from .internals import warnings, _version, _version_cartopy, _version_mpl, _not_none
 try:
     from mpl_toolkits.basemap import Basemap
 except ImportError:
@@ -92,9 +92,16 @@ LOCATORS = {
     'lat': partial(pticker.LatitudeLocator, dms=False),
     'deglon': partial(pticker.LongitudeLocator, dms=False),
     'deglat': partial(pticker.LatitudeLocator, dms=False),
-    'dmslon': partial(pticker.LongitudeLocator, dms=True),
-    'dmslat': partial(pticker.LatitudeLocator, dms=True),
 }
+if _version_cartopy >= _version('0.18'):
+    # NOTE: This only makes sense when paired with cartopy formatter
+    # with degree-minute-second support.
+    # NOTE: We copied cartopy locators because they are short and necessary
+    # for determining both cartopy and basemap tick locations. We did not
+    # copy formatter because they are long and we have nice, simpler
+    # alternatives of deglon and deglat.
+    LOCATORS['dmslon'] = partial(pticker.LongitudeLocator, dms=True)
+    LOCATORS['dmslat'] = partial(pticker.LatitudeLocator, dms=True)
 if hasattr(mpolar, 'ThetaLocator'):
     LOCATORS['theta'] = mpolar.ThetaLocator
 
@@ -137,9 +144,9 @@ if hasattr(mdates, 'ConciseDateFormatter'):
 if hasattr(mpolar, 'ThetaFormatter'):
     FORMATTERS['theta'] = mpolar.ThetaFormatter
 if cticker is not None:
-    if hasattr(cticker, 'LongitudeFormatter'):
+    if hasattr(cticker, 'LongitudeFormatter') and _version_cartopy >= _version('0.18'):
         FORMATTERS['dmslon'] = partial(cticker.LongitudeFormatter, dms=True)
-    if hasattr(cticker, 'LatitudeFormatter'):
+    if hasattr(cticker, 'LatitudeFormatter') and _version_cartopy >= _version('0.18'):
         FORMATTERS['dmslat'] = partial(cticker.LatitudeFormatter, dms=True)
 
 # The registered scale names and their associated

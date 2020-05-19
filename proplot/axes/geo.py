@@ -71,6 +71,17 @@ class _GeoAxis(object):
         self.isDefault_minloc = True
         self._interval = None
 
+    @staticmethod
+    def _dms_available(projection=None):
+        # Return whether dms locators/formatters are available for the
+        # cartopy projection and the user cartopy version. Basemap axes will
+        # provide projection==None and so will always be false.
+        return (
+            _version_cartopy >= _version('0.18')
+            and cticker is not None
+            and isinstance(projection, (ccrs._RectangularProjection, ccrs.Mercator))
+        )
+
     def get_scale(self):
         return 'linear'
 
@@ -127,9 +138,10 @@ class _LonAxis(_GeoAxis):
     # default builtin basemap formatting.
     def __init__(self, axes, projection=None):
         super().__init__(axes)
-        locator = formatter = 'deglon'
-        if cticker is not None and isinstance(projection, (ccrs._RectangularProjection, ccrs.Mercator)):  # noqa: E501
+        if self._dms_available(projection):
             locator = formatter = 'dmslon'
+        else:
+            locator = formatter = 'deglon'
         self.set_major_formatter(constructor.Formatter(formatter), default=True)
         self.set_major_locator(constructor.Locator(locator), default=True)
         self.set_minor_locator(mticker.AutoMinorLocator(), default=True)
@@ -162,9 +174,10 @@ class _LatAxis(_GeoAxis):
         # the axes and format() is called by proplot.axes.Axes.__init__()
         self._latmax = latmax
         super().__init__(axes)
-        locator = formatter = 'deglat'
-        if cticker is not None and isinstance(projection, (ccrs._RectangularProjection, ccrs.Mercator)):  # noqa: E501
+        if self._dms_available(projection):
             locator = formatter = 'dmslat'
+        else:
+            locator = formatter = 'deglat'
         self.set_major_formatter(constructor.Formatter(formatter), default=True)
         self.set_major_locator(constructor.Locator(locator), default=True)
         self.set_minor_locator(mticker.AutoMinorLocator(), default=True)
@@ -501,6 +514,7 @@ optional
             },
             context=(rc_mode == 2),
         )
+        kw_edge['capstyle'] = 'projecting'  # NOTE: needed to fix cartopy bounds
         return kw_face, kw_edge
 
     def _get_gridline_props(self, which='major', context=True):
@@ -670,17 +684,19 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
 
         # Apply circular map boundary for polar projections. Apply default
         # global extent for other projections.
-        # NOTE: This has to come after initialization, and we override set_global
-        # so it also updates _LatAxis and _LonAxis. Also want to use set_global
-        # rather than _update_extent([-180 + lon0, 180 + lon0, -90, 90]) in case
-        # projection extent cannot be global.
+        # NOTE: This has to come after initialization so set_extent and set_global
+        # can do their things. This also updates _LatAxis and _LonAxis.
+        # NOTE: Use set_global rather than _update_extent() manually in case projection
+        # extent cannot be global.
         if polar and hasattr(self, 'set_boundary'):
             self.set_boundary(_circle_boundary(), transform=self.transAxes)
-        if not rc['cartopy.autoextent']:
-            if polar:
-                self._update_extent(boundinglat=self._boundinglat)
-            else:
-                self.set_global()
+        auto = rc['cartopy.autoextent']
+        if auto:
+            self._set_view_intervals(self._get_global_extent())
+        elif polar:
+            self._update_extent(boundinglat=self._boundinglat)
+        else:
+            self.set_global()
 
         # Zero out ticks to prevent extra label offset
         for axis in (self.xaxis, self.yaxis):
@@ -692,18 +708,12 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
         """
         pass
 
-    def _get_current_extent(self):
+    def _get_global_extent(self):
         """
-        Get extent as last set from `~cartopy.mpl.geoaxes.GeoAxes.set_extent`.
+        Return the global extent with meridian properly shifted.
         """
-        # NOTE: This is *also* not perfect because if set_extent() was called
-        # and extent crosses map boundary of rectangular projection, the *actual*
-        # resulting extent is the opposite. But that means user has messed up anyway
-        # so probably doesn't matter if gridlines are also wrong.
-        if not self._current_extent:
-            lon0 = self._get_lon0()
-            self._current_extent = [-180 + lon0, 180 + lon0, -90, 90]
-        return self._current_extent
+        lon0 = self._get_lon0()
+        return [-180 + lon0, 180 + lon0, -90, 90]
 
     def _get_lon0(self):
         """
@@ -843,10 +853,22 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
         """
         Update the map boundary patches.
         """
-        kw_edge, kw_face = self._get_boundary_props()
-        kw_face.update(patch_kw or {})
-        self.background_patch.update(kw_face)
-        self.outline_patch.update(kw_edge)
+        # TODO: Understand issue where setting global linewidth puts map boundary on
+        # top of land patches, but setting linewidth with format() (even with separate
+        # format() calls) puts map boundary underneath. Zorder seems to be totally
+        # ignored and using spines vs. patch makes no difference.
+        # NOTE: outline_patch is redundant, use background_patch instead
+        kw_face, kw_edge = self._get_boundary_props()
+        patch_kw = patch_kw or {}
+        kw_face.update(patch_kw)
+        kw_face['linewidth'] = 0
+        kw_edge['facecolor'] = 'none'
+        if _version_cartopy < _version('0.18'):
+            self.background_patch.update(kw_face)
+            self.outline_patch.update(kw_edge)
+        else:
+            self.patch.update(kw_face)
+            self.spines['geo'].update(kw_edge)
 
     def _update_features(self):
         """
@@ -907,8 +929,10 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
             gl.xlines = longrid
         if latgrid is not None:
             gl.ylines = latgrid
-        gl.xlocator = mticker.FixedLocator(self._get_lonticklocs(which=which))
-        gl.ylocator = mticker.FixedLocator(self._get_latticklocs(which=which))
+        lonlines = self._get_lonticklocs(which=which)
+        latlines = self._get_latticklocs(which=which)
+        gl.xlocator = mticker.FixedLocator(lonlines)
+        gl.ylocator = mticker.FixedLocator(latlines)
 
     def _update_major_gridlines(
         self,
@@ -1015,13 +1039,16 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
         return extent
 
     def set_extent(self, extent, crs=None):
-        # Fix extent, so axes tight bounding box gets correct box! From this issue:
+        # Fix paths, so axes tight bounding box gets correct box! From this issue:
         # https://github.com/SciTools/cartopy/issues/1207#issuecomment-439975083
         # Also record the requested longitude latitude extent so we can use these
         # values for LongitudeLocator and LatitudeLocator. Otherwise if longitude
-        # extent is across international dateline LongitudeLocator fails because
-        # get_extent() reports -180 to 180.
-        # See: https://github.com/SciTools/cartopy/issues/1564
+        # extent is across dateline LongitudeLocator fails because get_extent()
+        # reports -180 to 180: https://github.com/SciTools/cartopy/issues/1564
+        # NOTE: This is *also* not perfect because if set_extent() was called
+        # and extent crosses map boundary of rectangular projection, the *actual*
+        # resulting extent is the opposite. But that means user has messed up anyway
+        # so probably doesn't matter if gridlines are also wrong.
         if crs is None:
             crs = ccrs.PlateCarree()
         if isinstance(crs, ccrs.PlateCarree):
@@ -1037,7 +1064,7 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
     def set_global(self):
         # Set up "global" extent and update _LatAxis and _LonAxis view intervals
         result = super().set_global()
-        self._set_view_intervals(self.get_extent())
+        self._set_view_intervals(self._get_global_extent())
         return result
 
     @property
@@ -1217,42 +1244,34 @@ class BasemapAxes(GeoAxes):
         """
         Update the map boundary patches.
         """
-        kw_edge, kw_face = self._get_boundary_props()
+        kw_face, kw_edge = self._get_boundary_props()
         kw_face.update(patch_kw or {})
+        kw_face['facecolor'] = kw_edge['facecolor'] = 'none'
+        self.axes.patch.set_facecolor('none')
         self.axesPatch = self.patch  # backwards compatibility
+
+        # Rectangularly-bounded projections
+        if self.projection.projection not in self._proj_non_rectangular:
+            self.patch.update({**kw_face, 'edgecolor': 'none'})
+            for spine in self.spines.values():
+                spine.update(kw_edge)
 
         # Non-rectangularly-bounded projections
         # NOTE: Make sure to turn off clipping by invisible axes boundary. Otherwise
         # get these weird flat edges where map boundaries, latitude/longitude
         # markers come up to the axes bbox
-        # * Must set boundary before-hand, otherwise the set_axes_limits method
-        #   called by mcontourf/mpcolormesh/etc draws two mapboundary Patch
-        #   objects called "limb1" and "limb2" automatically: one for fill and
-        #   the other for the edges
-        # * Then, since the patch object in _mapboundarydrawn is only the
-        #   fill-version, calling drawmapboundary again will replace only *that
-        #   one*, but the original visible edges are still drawn -- so e.g. you
-        #   can't change the color
-        # * If you instead call drawmapboundary right away, _mapboundarydrawn
-        #   will contain both the edges and the fill; so calling it again will
-        #   replace *both*
-        if self.projection.projection in self._proj_non_rectangular:
+        else:
             self.patch.set_alpha(0)  # make main patch invisible
             if not self.projection._mapboundarydrawn:
                 p = self.projection.drawmapboundary(ax=self)
             else:
                 p = self.projection._mapboundarydrawn
+            self._map_boundary = p
+            p.set_zorder(2.01)  # same as ticks
+            p.set_rasterized(False)
+            p.set_clip_on(False)  # XXX: why this?
             p.update(kw_face)
             p.update(kw_edge)
-            p.set_rasterized(False)
-            p.set_clip_on(False)
-            self._map_boundary = p
-
-        # Rectangularly-bounded projections
-        else:
-            self.patch.update({**kw_face, 'edgecolor': 'none'})
-            for spine in self.spines.values():
-                spine.update(kw_edge)
 
     def _update_features(self):
         """
@@ -1304,6 +1323,8 @@ class BasemapAxes(GeoAxes):
             attr = f'_{name}lines_{which}'
             objs = getattr(self, attr)  # dictionary of previous objects
             lines = getattr(self, f'_get_{name}ticklocs')(which=which)
+            if name == 'lon' and np.isclose(lines[0] + 360, lines[-1]):
+                lines = lines[:-1]  # prevent double labels
             if which == 'major':
                 attrs = ('isDefault_majloc', 'isDefault_majfmt')
             else:

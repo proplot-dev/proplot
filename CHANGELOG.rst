@@ -71,6 +71,8 @@ ProPlot v0.6.0 (2020-##-##)
 
 There are quite a lot of deprecations for this release.
 
+- Remove the ``geoaxes`` and ``geogrid`` rc settings (:pr:`###`). Cartographic
+  gridlines are now controlled with ``grid`` and ``gridminor``.
 - Rename `add_errorbars` to `~proplot.axes.plot.indicate_error` and rename
   various keyword args (:pr:`166`, :commit:`d8c50a8d`).
 - Remove ``'rgbcycle'`` setting (:commit:`6653b7f0`).
