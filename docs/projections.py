@@ -124,19 +124,17 @@ axs[2].format(
 #   `~proplot.axes.GeoAxes.format`.
 #
 # This means with ProPlot, you no longer have to invoke verbose cartopy
-# `~cartopy.crs.Projection` classes like
-# `~cartopy.crs.LambertAzimuthalEqualArea`, and you never have to directly
-# reference the `~mpl_toolkits.basemap.Basemap` instance -- ProPlot works
-# with the `~mpl_toolkits.basemap.Basemap` instance under the hood.
+# `~cartopy.crs.Projection` classes like `~cartopy.crs.LambertAzimuthalEqualArea`,
+# and you never have to directly reference the `~mpl_toolkits.basemap.Basemap`
+# instance -- ProPlot works with the `~mpl_toolkits.basemap.Basemap` instance
+# under the hood.
 #
-# To pass keyword args to basemap's `~mpl_toolkits.basemap.Basemap` and cartopy's
-# `~cartopy.crs.Projection` classes, use the `proj_kw` dictionary. To make things
-# a bit more consistent, ProPlot lets you supply native `PROJ
-# <https://proj.org>`__ keyword names to the cartopy
-# `~cartopy.crs.Projection` classes, e.g. `lon_0` instead of
-# `central_longitude`. ProPlot also lets you instantiate
-# `~mpl_toolkits.basemap.Basemap` projections with sensible defaults
-# rather than raising an error when certain projection arguments are omitted.
+# To make things a bit more consistent, the `~proplot.constructor.Proj` constructor
+# function lets you supply native `PROJ <https://proj.org>`__ keyword names to
+# the cartopy `~cartopy.crs.Projection` classes, e.g. `lon_0` instead of
+# `central_longitude`. It also lets you instantiate `~mpl_toolkits.basemap.Basemap`
+# projections with sensible defaults rather than raising an error when certain
+# projection arguments are omitted.
 
 # %%
 import proplot as plot
@@ -147,7 +145,7 @@ plot.rc.update({
 })
 
 # Simple figure with just one projection
-# Option 1: Manually create a cartopy Projection
+# Option 1: Create a projection manually with plot.Proj()
 # proj = plot.Proj('robin', lon_0=180)
 # fig, axs = plot.subplots(ncols=2, axwidth=2.5, proj=proj)
 # Option 2: Pass the name to 'proj' and keyword arguments to 'proj_kw'
@@ -239,8 +237,8 @@ for globe in (False, True,):
         suptitle=titles[globe],
         collabels=['Cartopy example', 'Basemap example'],
         rowlabels=['Contourf', 'Pcolor'],
-        latlabels='r', lonlabels='b', lonlines=90,
-        abc=True, abcstyle='a)', abcloc='ul', abcborder=False
+        coast=True, latlabels='r', lonlabels='b', lonlines=90,
+        abc=True, abcstyle='a)', abcloc='ul', abcborder=False,
     )
 
 
@@ -310,8 +308,10 @@ ax.format(
 # `llcrnrlon`, `llcrnrlat`, `urcrnrlon`, `urcrnrlat`, `llcrnrx`, `llcrnry`,
 # `urcrnrx`, `urcrnry`, `width`, or `height` keyword arguments to
 # the `~proplot.constructor.Proj` constructor function either directly or via
-# the `proj_kw` `~proplot.ui.subplots` keyword argument. You can not zoom
-# into basemap projections after they have been created.
+# the `proj_kw` `~proplot.ui.subplots` keyword argument. You can also pass
+# `lonlim` and `latlim` to `~proplot.constructor.Proj` and these arguments
+# will be used for `llcrnrlon`, `llcrnrlat`, etc. You can not zoom into basemap
+# projections with `format` after they have already been created.
 
 # %%
 import proplot as plot
