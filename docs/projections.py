@@ -251,9 +251,10 @@ for globe in (False, True,):
 # `~proplot.axes.CartopyAxes` and `~proplot.axes.BasemapAxes` both derive
 # from `~proplot.axes.GeoAxes`, which provides a
 # `~proplot.axes.GeoAxes.format` method. `~proplot.axes.GeoAxes.format` can
-# be used to draw gridlines, add gridline labels, set gridline label
-# locations, modify the projection bounding box, and add and stylize common
-# geographic features like land masses, coastlines, and international
+# be used to draw "major" gridlines, "minor" gridlines, add gridline labels
+# with optional degree-minute-second units (cartopy > 0.18), specify gridline
+# label locations, modify the projection bounding box, and add and stylize common
+# geographic features like land masses, coastlines, and administrative
 # borders. This method also calls `format` on `~proplot.axes.Axes`, and so
 # can be used for subplot titles, a-b-c labels, and figure titles as before.
 
@@ -275,19 +276,21 @@ ax = axs[0]
 ax.format(
     title='Equal earth', land=True, landcolor='navy', facecolor='pale blue',
     coastcolor='gray5', borderscolor='gray5', innerborderscolor='gray5',
-    geogridlinewidth=1, geogridcolor='gray5', geogridalpha=0.5,
-    coast=True, innerborders=True, borders=True
+    gridlinewidth=1.5, gridcolor='gray5', gridalpha=0.5,
+    gridminor=True, gridminorlinewidth=0.5,
+    coast=True, borders=True, borderslinewidth=0.8,
 )
 ax = axs[1]
 ax.format(
     title='Orthographic', reso='med', land=True, coast=True, latlines=10, lonlines=15,
     landcolor='mushroom', suptitle='Projection axes formatting demo',
-    facecolor='petrol', coastcolor='charcoal', coastlinewidth=0.8, geogridlinewidth=1
+    facecolor='petrol', coastcolor='charcoal', coastlinewidth=0.8, gridlinewidth=1
 )
 ax = axs[2]
 ax.format(
     land=True, facecolor='ocean blue', landcolor='bisque', title='Winkel tripel',
-    lonlines=60, latlines=15
+    lonlines=60, latlines=15,
+    gridlinewidth=0.8, gridminor=True, gridminorlinestyle=':',
 )
 
 
