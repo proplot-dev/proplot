@@ -226,7 +226,6 @@ class GeoAxes(base.Axes):
         proplot.axes.CartopyAxes
         proplot.axes.BasemapAxes
         """
-        self._boundinglat = None  # latitude bound for polar projections
         super().__init__(*args, **kwargs)
 
     @docstring.add_snippets
@@ -675,7 +674,7 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
                 boundinglat = -30
 
         # Initialize axes
-        self._boundinglat = boundinglat
+        self._boundinglat = None  # NOTE: must start at None so _update_extent acts
         self._map_projection = map_projection  # cartopy also does this
         self._gridlines_major = None
         self._gridlines_minor = None
@@ -695,7 +694,7 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
         if auto:
             self._set_view_intervals(self._get_global_extent())
         elif polar:
-            self._update_extent(boundinglat=self._boundinglat)
+            self._update_extent(boundinglat=boundinglat)
         else:
             self.set_global()
 
@@ -1275,7 +1274,7 @@ class BasemapAxes(GeoAxes):
             else:
                 p = self.projection._mapboundarydrawn
             self._map_boundary = p
-            kw = {**kw_face, **kw_edge, 'facecolor': 'none'}
+            kw = {**kw_face, **kw_edge}
             p.set_rasterized(False)
             p.set_clip_on(False)
             p.update(kw)
@@ -1324,7 +1323,6 @@ class BasemapAxes(GeoAxes):
             if array is not None:
                 array = list(array)
                 array[2:] = array[2:][::-1]
-            array = [False if _ is None else _ for _ in array]  # None causes error
             axis = getattr(self, f'_{name}axis')
 
             # Get gridlines
@@ -1358,6 +1356,7 @@ class BasemapAxes(GeoAxes):
                     kwdraw['fmt'] = formatter
                 for obj in self._iter_gridlines(objs):
                     obj.set_visible(False)
+                array = [False if _ is None else _ for _ in array]  # None causes error
                 objs = getattr(self.projection, method)(
                     lines, ax=self, latmax=latmax, labels=array, **kwdraw
                 )
