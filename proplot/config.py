@@ -1195,7 +1195,6 @@ def _infer_added_params(kw_params):
             'leftlabel.size', 'rightlabel.size',
             'toplabel.size', 'bottomlabel.size',
         ),
-        'axes.facecolor': ('geoaxes.facecolor',),
         'text.color': (
             'abc.color', 'suptitle.color', 'tick.labelcolor', 'title.color',
             'leftlabel.color', 'rightlabel.color',
