@@ -58,19 +58,19 @@ class _set_state(object):
     """
     def __init__(self, obj, **kwargs):
         self._obj = obj
-        self._kwargs = kwargs
-        self._kwargs_orig = {
+        self._attrs_new = kwargs
+        self._attrs_prev = {
             key: getattr(obj, key) for key in kwargs if hasattr(obj, key)
         }
 
     def __enter__(self):
-        for key, value in self._kwargs.items():
+        for key, value in self._attrs_new.items():
             setattr(self._obj, key, value)
 
     def __exit__(self, *args):  # noqa: U100
-        for key in self._kwargs.keys():
-            if key in self._kwargs_orig:
-                setattr(self._obj, key, self._kwargs_orig[key])
+        for key in self._attrs_new.keys():
+            if key in self._attrs_prev:
+                setattr(self._obj, key, self._attrs_prev[key])
             else:
                 delattr(self._obj, key)
 
