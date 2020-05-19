@@ -677,7 +677,7 @@ _rc_proplot = {
         'Padding between adjacent subplots. ' + _addendum_units
     ),
     'subplots.axwidth': (
-        '18em',
+        '20em',  # about 3 inches wide
         'Default width of each axes. ' + _addendum_units
     ),
     'subplots.pad': (
