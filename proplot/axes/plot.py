@@ -5,6 +5,7 @@ methods. "Wrapped" `~matplotlib.axes.Axes` methods accept the additional keyword
 arguments documented by the wrapper function. In a future version, these features will
 be documented on the individual `~proplot.axes.Axes` methods themselves.
 """
+import re
 import sys
 import numpy as np
 import numpy.ma as ma
@@ -27,7 +28,7 @@ from ..utils import edges, edges2d, units, to_xyz, to_rgb
 from ..config import rc
 from ..internals import ic  # noqa: F401
 from ..internals import docstring, warnings
-from ..internals import _not_none, _set_state
+from ..internals import _dummy_context, _not_none, _set_state
 try:
     from cartopy.crs import PlateCarree
 except ModuleNotFoundError:
@@ -1435,18 +1436,39 @@ color-spec or list thereof, optional
     return obj
 
 
-def _stem_wrapper_private(self, func, *args, **kwargs):
+def _stem_wrapper_private(
+    self, func, *args, linefmt=None, basefmt=None, markerfmt=None, **kwargs
+):
     """
     Make `use_line_collection` the default to suppress annoying warning message.
     """
-    kwargs.setdefault('use_line_collection', True)
-    kwargs.setdefault('linefmt', 'C0-')
-    kwargs.setdefault('basefmt', kwargs['linefmt'])  # use *same* for base
-    try:
-        return func(self, *args, **kwargs)
-    except TypeError:
-        kwargs.pop('use_line_collection')  # old version
-        return func(self, *args, **kwargs)
+    # Set default colors
+    # NOTE: 'fmt' strings can only be 2 to 3 characters and include color shorthands
+    # like 'r' or cycle colors like 'C0'. Cannot use full color names.
+    # NOTE: Matplotlib defaults try to make a 'reddish' color the base and 'bluish'
+    # color the stems. To make this more robust we temporarily replace the cycler
+    # with a negcolor/poscolor cycler, otherwise try to point default colors to the
+    # blush 'C0' and reddish 'C1' from the new default 'colorblind' cycler.
+    if not any(
+        isinstance(fmt, str) and re.match(r'\AC[0-9]', fmt)
+        for fmt in (linefmt, basefmt, markerfmt)
+    ):
+        cycle = constructor.Cycle((rc['negcolor'], rc['poscolor']), name='_neg_pos')
+        context = rc.context({'axes.prop_cycle': cycle})
+    else:
+        context = _dummy_context()
+
+    # Add stem lines with bluish stem color and reddish base color
+    with context:
+        kwargs['linefmt'] = _not_none(linefmt, 'C0-')
+        kwargs['basefmt'] = _not_none(basefmt, 'C1-')
+        kwargs['markerfmt'] = _not_none(markerfmt, linefmt[:-1] + 'o')
+        kwargs.setdefault('use_line_collection', True)
+        try:
+            return func(self, *args, **kwargs)
+        except TypeError:
+            kwargs.pop('use_line_collection')  # old version
+            return func(self, *args, **kwargs)
 
 
 def _draw_lines(
