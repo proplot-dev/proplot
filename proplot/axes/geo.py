@@ -83,6 +83,15 @@ class _GeoAxis(object):
             and isinstance(projection, (ccrs._RectangularProjection, ccrs.Mercator))
         )
 
+    def _get_extent(self):
+        # Try to get extent but bail out for projections where this is impossible
+        # So far just transverse Mercator
+        try:
+            return self.axes.get_extent()
+        except Exception:
+            lon0 = self.axes._get_lon0()
+            return (-180 + lon0, 180 + lon0, -90, 90)
+
     def get_scale(self):
         return 'linear'
 
@@ -160,7 +169,7 @@ class _LonAxis(_GeoAxis):
         # unset, so we are forced to use get_extent().
         interval = self._interval
         if interval is None:
-            extent = self.axes.get_extent()
+            extent = self._get_extent()
             interval = extent[:2]  # longitude extents
         return interval
 
@@ -202,7 +211,7 @@ class _LatAxis(_GeoAxis):
     def get_view_interval(self):
         interval = self._interval
         if interval is None:
-            extent = self.axes.get_extent()
+            extent = self._get_extent()
             interval = extent[2:]  # latitudes
         return interval
 
