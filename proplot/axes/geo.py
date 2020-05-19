@@ -125,7 +125,7 @@ class _LonAxis(_GeoAxis):
         super().__init__(axes)
         if cticker is not None:
             self.set_major_formatter(cticker.LongitudeFormatter(), default=True)
-        self.set_major_locator(pticker.LongitudeLocator(), default=True)
+        self.set_major_locator(pticker._LongitudeLocator(), default=True)
         self.set_minor_locator(mticker.AutoMinorLocator(), default=True)
 
     def get_view_interval(self):
@@ -149,8 +149,32 @@ class _LatAxis(_GeoAxis):
         super().__init__(axes)
         if cticker is not None:
             self.set_major_formatter(cticker.LatitudeFormatter(), default=True)
-        self.set_major_locator(pticker.LatitudeLocator(), default=True)
+        self.set_major_locator(pticker._LatitudeLocator(), default=True)
         self.set_minor_locator(mticker.AutoMinorLocator(), default=True)
+
+    def _constrain_ticks(self, ticks):
+        # Limit tick latitudes to satisfy latmax
+        latmax = self.get_latmax()
+        ticks = [l for l in ticks if -latmax <= l <= latmax]
+        # Adjust latitude ticks to fix bug in some projections. Harmless for basemap.
+        # NOTE: Maybe fixed by cartopy v0.18?
+        eps = 1e-10
+        if ticks[0] == -90:
+            ticks[0] += eps
+        if ticks[-1] == 90:
+            ticks[-1] -= eps
+        return ticks
+
+    def get_latmax(self):
+        return self._latmax
+
+    def get_majorticklocs(self):
+        ticks = super().get_majorticklocs()
+        return self._constrain_ticks(ticks)
+
+    def get_minorticklocs(self):
+        ticks = super().get_minorticklocs()
+        return self._constrain_ticks(ticks)
 
     def get_view_interval(self):
         interval = self._interval
@@ -158,9 +182,6 @@ class _LatAxis(_GeoAxis):
             extent = self.axes.get_extent()
             interval = extent[2:]  # latitudes
         return interval
-
-    def get_latmax(self):
-        return self._latmax
 
     def set_latmax(self, latmax):
         self._latmax = latmax

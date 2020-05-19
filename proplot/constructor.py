@@ -87,14 +87,11 @@ LOCATORS = {
     'weekday': mdates.WeekdayLocator,
     'month': mdates.MonthLocator,
     'year': mdates.YearLocator,
+    'lon': pticker._LongitudeLocator,
+    'lat': pticker._LatitudeLocator,
 }
 if hasattr(mpolar, 'ThetaLocator'):
     LOCATORS['theta'] = mpolar.ThetaLocator
-if cticker is not object:
-    if hasattr(cticker, 'LongitudeLocator'):
-        LOCATORS['lon'] = cticker.LongitudeLocator
-    if hasattr(cticker, 'LatitudeLocator'):
-        LOCATORS['lat'] = cticker.LatitudeLocator
 
 # Mapping of strings to `~matplotlib.ticker.Formatter` classes. See
 # `Formatter` for a table.

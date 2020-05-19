@@ -79,8 +79,6 @@ class _LongitudeLocator(mticker.MaxNLocator):
 
     Parameters
     ----------
-    lonstep : float, optional
-        The longitude step size. If ``None`` this is determined automatically.
     dms : bool, optional
         Allow the locator to stop on minutes and seconds. Default is ``False``.
     """
@@ -109,12 +107,6 @@ class _LatitudeLocator(_GeoLocator):
 
     Parameters
     ----------
-    latstep : float, optional
-        The latitude step size. If ``None`` this is determined automatically.
-    latmax : float, optional
-        Maximum absolute gridline latitude. Lines poleward of this latitude will be
-        cut off. This can be set to e.g. ``80`` to create a "hole" around the poles
-        for pole-centered projections.
     dms : bool, optional
         Allow the locator to stop on minutes and seconds. Default is ``False``.
     """
@@ -122,21 +114,18 @@ class _LatitudeLocator(_GeoLocator):
     default_params.update(symmetric=True)  # always draw gridline on equator!
 
     def tick_values(self, vmin, vmax):
-        latmax = self.axis.get_latmax()
-        vmin = max(vmin, -latmax)
-        vmax = min(vmax, latmax)
+        vmin = max(vmin, -90)
+        vmax = min(vmax, 90)
         return super().tick_values(vmin, vmax)
 
     def _guess_steps(self, vmin, vmax):
-        latmax = self.axis.get_latmax()
-        vmin = max(vmin, -latmax)
-        vmax = min(vmax, latmax)
+        vmin = max(vmin, -90)
+        vmax = min(vmax, 90)
         super()._guess_steps(vmin, vmax)
 
     def _raw_ticks(self, vmin, vmax):
-        latmax = self.axis.get_latmax()
         ticks = super()._raw_ticks(vmin, vmax)
-        return [t for t in ticks if -latmax <= t <= latmax]
+        return [t for t in ticks if -90 <= t <= 90]
 
 
 class AutoFormatter(mticker.ScalarFormatter):
