@@ -331,6 +331,12 @@ class rc_configurator(object):
         rc_proplot.update(kw_proplot)
         rc_matplotlib.update(kw_matplotlib)
 
+    def _get_context_mode(self):
+        """
+        Return lowest (most permissive) context mode.
+        """
+        return min((context.mode for context in self._context), default=0)
+
     def _get_item(self, key, mode=None):
         """
         As with `~rc_configurator.__getitem__` but the search is limited
@@ -338,7 +344,7 @@ class rc_configurator(object):
         found in the dictionaries.
         """
         if mode is None:
-            mode = min((context.mode for context in self._context), default=0)
+            mode = self._get_context_mode()
         cache = tuple(context.rc_new for context in self._context)
         if mode == 0:
             rcdicts = (*cache, rc_proplot, rc_matplotlib)
@@ -629,7 +635,7 @@ class rc_configurator(object):
 
         Other parameters
         ----------------
-        mode : {0,1,2}, optional
+        mode : {0, 1, 2}, optional
             The context mode. Dictates the behavior of `~rc_configurator.get`,
             `~rc_configurator.fill`, and `~rc_configurator.category` within a
             "with as" block when called with ``context=True``.
