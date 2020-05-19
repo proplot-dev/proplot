@@ -89,10 +89,12 @@ class _GeoAxis(object):
         return self.minor.locator
 
     def get_majorticklocs(self):
-        return self.major.locator()
+        ticks = self.major.locator()
+        return self._constrain_ticks(ticks)
 
     def get_minorticklocs(self):
-        return self.minor.locator()
+        ticks = self.minor.locator()
+        return self._constrain_ticks(ticks)
 
     def set_major_formatter(self, formatter, default=False):
         # NOTE: Cartopy formatters check Formatter.axis.axes.projection and has
@@ -132,6 +134,13 @@ class _LonAxis(_GeoAxis):
         self.set_major_formatter(constructor.Formatter(formatter), default=True)
         self.set_major_locator(pticker._LongitudeLocator(), default=True)
         self.set_minor_locator(mticker.AutoMinorLocator(), default=True)
+
+    def _constrain_ticks(self, ticks):
+        eps = 5e-10  # more than 1e-10 because we use 1e-10 in _LongitudeLocator
+        ticks = sorted(ticks)
+        while ticks and ticks[-1] - eps > ticks[0] + 360 + eps:  # cut off looped ticks
+            ticks = ticks[:-1]
+        return ticks
 
     def get_view_interval(self):
         # NOTE: Proplot tries to set its *own* view intervals to avoid dateline
@@ -173,14 +182,6 @@ class _LatAxis(_GeoAxis):
 
     def get_latmax(self):
         return self._latmax
-
-    def get_majorticklocs(self):
-        ticks = super().get_majorticklocs()
-        return self._constrain_ticks(ticks)
-
-    def get_minorticklocs(self):
-        ticks = super().get_minorticklocs()
-        return self._constrain_ticks(ticks)
 
     def get_view_interval(self):
         interval = self._interval
@@ -350,6 +351,10 @@ optional
             The style can be modified using additional `rc` settings. For example,
             to change :rcraw:`land.color`, use ``ax.format(landcolor='green')``,
             and to change :rcraw:`land.zorder`, use ``ax.format(landzorder=4)``.
+        reso : {'lo', 'med', 'hi', 'x-hi', 'xx-hi'}
+            *For cartopy axes only.*
+            Resolution of geographic features. For basemap axes, this must be
+            passed when the projection is created with `~proplot.constructor.Proj`.
         %(axes.patch_kw)s
 
         Other parameters
@@ -891,8 +896,8 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
             gl.xlines = longrid
         if latgrid is not None:
             gl.ylines = latgrid
-        gl.xlocator = mticker.FixedLocator(self._get_lonticklocs())
-        gl.ylocator = mticker.FixedLocator(self._get_latticklocs())
+        gl.xlocator = mticker.FixedLocator(self._get_lonticklocs(which=which))
+        gl.ylocator = mticker.FixedLocator(self._get_latticklocs(which=which))
 
     def _update_major_gridlines(
         self,
@@ -1010,7 +1015,8 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
             crs = ccrs.PlateCarree()
         if isinstance(crs, ccrs.PlateCarree):
             self._set_view_intervals(extent)
-            self._update_gridlines()  # just re-apply locators
+            self._update_gridlines(self._gridlines_major)
+            self._update_gridlines(self._gridlines_minor)
             if _version_cartopy < _version('0.18'):
                 clipped_path = self.outline_patch.orig_path.clip_to_bbox(self.viewLim)
                 self.outline_patch._path = clipped_path
