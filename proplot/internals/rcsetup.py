@@ -66,6 +66,8 @@ _rc_renamed = {  # {old_key: (new_key, version)} dictionary
     'span': ('subplots.span', '0.6'),
     'tight': ('subplots.tight', '0.6'),
     'tick.labelpad': ('tick.pad', '0.6'),
+    'axes.formatter.timerotation': ('formatter.timerotation', '0.6'),
+    'axes.formatter.zerotrim': ('formatter.zerotrim', '0.6'),
 }
 
 # ProPlot overrides of matplotlib default style
@@ -286,14 +288,38 @@ _rc_proplot = {
         1.0,
         'Opacity of the background axes patch.'
     ),
-    'axes.formatter.timerotation': (
+    'formatter.timerotation': (
         90,
         'Float, indicates the default *x* axis tick label rotation '
         'for datetime tick labels.'
     ),
-    'axes.formatter.zerotrim': (
+    'formatter.zerotrim': (
         True,
         'Boolean, indicates whether trailing decimal zeros are trimmed on tick labels.'
+    ),
+    'formatter.limits': (
+        (-5, 6),
+        'Alias for :rcraw:`axes.formatter.limits`.'
+    ),
+    'formatter.use_locale': (
+        False,
+        'Alias for :rcraw:`axes.formatter.use_locale`.'
+    ),
+    'formatter.use_mathtext': (
+        True,  # TODO: check this!!!
+        'Alias for :rcraw:`axes.formatter.use_mathtext`.'
+    ),
+    'formatter.min_exponent': (
+        0,
+        'Alias for :rcraw:`axes.formatter.min_exponent`.'
+    ),
+    'formatter.use_offset': (
+        True,
+        'Alias for :rcraw:`axes.formatter.useOffset`.'
+    ),
+    'formatter.offset_threshold': (
+        4,
+        'Alias for :rcraw:`axes.formatter.offset_threshold`.'
     ),
 
     # Country borders
@@ -901,6 +927,24 @@ _rc_children = {
     ),
     'grid.alpha': (
         'gridminor.alpha',
+    ),
+    'formatter.limits': (
+        'axes.formatter.limits',
+    ),
+    'formatter.use_locale': (
+        'axes.formatter.use_locale',
+    ),
+    'formatter.use_mathtext': (
+        'axes.formatter.use_mathtext',
+    ),
+    'formatter.min_exponent': (
+        'axes.formatter.min_exponent',
+    ),
+    'formatter.use_offset': (
+        'axes.formatter.useoffset',
+    ),
+    'formatter.offset_threshold': (
+        'axes.formatter.offset_threshold',
     ),
 }
 
