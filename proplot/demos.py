@@ -370,7 +370,7 @@ def show_channels(
                     m = mp
                 ylim = (0, m)
                 ylocator = ('maxn', 5)
-            ax.scatter(x, y, c=x, cmap=cmap, s=width, linewidths=0)
+            ax.scatter(x, y, c=x, cmap=cmap, N=len(x), s=width, linewidths=0)
             ax.format(title=label, ylim=ylim, ylocator=ylocator)
 
     # Formatting
