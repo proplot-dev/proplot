@@ -15,16 +15,14 @@
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_2dplots:
 #
-# Plotting 2-dimensional data
-# ===========================
+# Plotting 2D data
+# ================
 #
 # ProPlot adds new features to various `~matplotlib.axes.Axes` plotting
 # methods using a set of wrapper functions. When a plotting method like
 # `~matplotlib.axes.Axes.contourf` is "wrapped" by one of these functions, it
 # accepts the same parameters as the wrapper. These features are a strict
-# *superset* of the matplotlib API; if you want, you can use the plotting
-# methods exactly as you always have.
-#
+# *superset* of the matplotlib API.
 # This section documents the features added by wrapper functions to 2D
 # plotting commands like `~matplotlib.axes.Axes.contour`,
 # `~matplotlib.axes.Axes.contourf`, `~matplotlib.axes.Axes.pcolor`, and
@@ -147,22 +145,30 @@ for ax, extend in zip(axs[1:], ('min', 'max', 'neither', 'both')):
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_norm:
 #
-# New normalizers
-# ---------------
+# Special normalizers
+# -------------------
 #
-# ProPlot introduces the following useful new `~matplotlib.colors.Normalize`
-# classes:
+# The `~proplot.colors.LinearSegmentedNorm` colormap normalizer
+# provides even color gradations with respect to *index* for an
+# arbitrary monotonically increasing list of levels. This is automatically applied
+# if you pass unevenly spaced `levels` to a plotting command, or it can be manually
+# applied using e.g. ``norm='segmented'``.
 #
-# * `~proplot.colors.LinearSegmentedNorm` provides even color gradations
-#   *with respect to index* for arbitrary monotonically increasing `level`
-#   lists. This is *automatically applied* if you pass unevenly spaced
-#   `levels` to a plotting command, or can be manually applied using e.g.
-#   ``norm='segmented'``.
-# * ProPlot's `~proplot.colors.DivergingNorm` is similar to matplotlib's
-#   `~matplotlib.colors.TwoSlopeNorm`. It ensures the colormap midpoint lies
-#   on some *central* data value (usually ``0``), even if `vmin`, `vmax`, or
-#   `levels` are asymmetric with respect to the central value. This can be
-#   applied using e.g. ``norm='diverging'``.
+# The `~proplot.colors.DivergingNorm` normalizer
+# ensures the colormap midpoint lies on some *central* data value (usually 0),
+# even if `vmin`, `vmax`, or `levels` are asymmetric with respect to the central
+# value. This can be applied using e.g. ``norm='diverging'`` and be configured
+# to scale colors "fairly" or "unfairly":
+#
+# * With fair scaling (the default), the gradations on either side of the midpoint
+#   have equal intensity. If `vmin` and `vmax` are not symmetric about zero, the most
+#   intense colormap colors on one side of the midpoint will be truncated.
+# * With unfair scaling, the gradations on either side of the midpoint are warped
+#   so that the full range of colormap colors is traversed. This configuration should
+#   be used with care, as it may lead you to misinterpret your data!
+#
+# The below example demonstrates how these normalizers can be used for datasets
+# with unusual statistical distributions.
 
 # %%
 import proplot as plot
@@ -184,6 +190,10 @@ for i, (norm, title) in enumerate(zip(
     )
     axs[i].format(title=title)
 axs.format(suptitle='Linear segmented normalizer demo')
+
+# %%
+import proplot as plot
+import numpy as np
 
 # Diverging norm
 data1 = (state.rand(20, 20) - 0.43).cumsum(axis=0)
@@ -382,14 +392,16 @@ ax.format(title='Line contour plot with labels')
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
+# .. _ug_heatmap:
+#
 # Heatmap plots
 # -------------
 #
 # The new `~proplot.axes.Axes.heatmap` command simply calls
 # `~matplotlib.axes.Axes.pcolormesh` and applies default formatting that is
-# suitable for heatmaps: no gridlines, no minor ticks, and major ticks at the
-# center of each box. Among other things, this is useful for displaying
-# covariance and correlation matrices. See the below example.
+# suitable for heatmaps -- fixed aspect ratio, no gridlines, no minor ticks, and
+# major ticks at the center of each box. Among other things, this is useful for
+# displaying covariance and correlation matrices, as shown in the below example.
 
 # %%
 import proplot as plot

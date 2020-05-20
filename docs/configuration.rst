@@ -63,25 +63,18 @@ ProPlot adds several settings to customize things not covered by
 `matplotlib's builtin settings <https://matplotlib.org/users/customizing.html>`__.
 Some of these settings may be more accurately described as "meta-settings",
 as they change several matplotlib settings at once (for example,
-``'style'`` changes whichever settings are associated with the corresponding
-stylesheet and ``'linewidth'`` changes axes edge widths, gridline widths,
-and tick widths).
+``'linewidth'`` changes axes edge widths, gridline widths, and tick widths).
 
 The ``subplots`` category controls the default layout for figures and axes.
 The ``abc``, ``title``, and ``tick`` categories control a-b-c label, title,
 and axis tick label settings. The ``suptitle``, ``leftlabel``, ``toplabel``,
 ``rightlabel``, and ``bottomlabel`` categories control figure title and edge
-label settings.
-
-There are two new additions to the ``image`` category, and the new
-``colorbar`` category controls *inset* and *outer*
-`~proplot.axes.Axes.colorbar` properties.  The new ``gridminor`` category
-controls minor gridline settings, and the new ``geogrid`` category controls
-meridian and parallel line settings for `~proplot.axes.GeoAxes`. Note that
-when a ``grid`` property is changed, it also changed the corresponding
-``gridminor`` property.
-
-Finally, the ``geoaxes``, ``land``, ``ocean``, ``rivers``, ``lakes``,
+label settings. There are two new additions to the ``image`` category, and the
+new ``colorbar`` category controls *inset* and *outer*
+`~proplot.axes.Axes.colorbar` properties. There is also a new ``gridminor``
+category for minor gridline settings (note that when ``gridminor`` inherits
+``grid`` properties when they are changed).
+Finally, the ``land``, ``ocean``, ``rivers``, ``lakes``,
 ``borders``, and ``innerborders`` categories control various
 `~proplot.axes.GeoAxes` settings. These are used when the corresponding
 boolean toggles are turned on.

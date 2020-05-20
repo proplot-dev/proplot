@@ -14,17 +14,21 @@
 # ---
 
 # %% [raw] raw_mimetype="text/restructuredtext"
+#
+# .. _polar: https://matplotlib.org/3.1.0/gallery/pie_and_polar_charts/polar_demo.html
+
+# .. _cartopy: https://scitools.org.uk/cartopy/docs/latest/
+
+# .. _basemap: https://matplotlib.org/basemap/index.html
+#
 # .. _ug_proj:
 #
 # Geographic and polar plots
 # ==========================
 #
-# ProPlot includes features for working with `polar axes
-# <https://matplotlib.org/3.1.0/gallery/pie_and_polar_charts/polar_demo.html>`__
-# and the `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`__ and
-# `basemap <https://matplotlib.org/basemap/index.html>`__ map projection
-# packages. These features are optional -- installation of cartopy and basemap
-# are not required.
+# ProPlot includes features for working with `polar axes <polar_>`_
+# and the `cartopy`_ and `basemap`_ map projection packages. These features
+# are optional -- installation of cartopy and basemap are not required.
 #
 # To change the axes projection, pass ``proj='name'`` to
 # `~proplot.ui.subplots`. To use different projections for different
@@ -39,13 +43,15 @@
 # Polar axes
 # ----------
 #
-# To draw polar axes, pass ``proj='polar'`` or e.g. ``proj={1:'polar'}`` to
-# `~proplot.ui.subplots`. This generates a `~proplot.axes.PolarAxes`
-# instance. Its `~proplot.axes.PolarAxes.format` command permits
-# polar-specific modifications like changing the central radius, the zero
-# azimuth location, the radial and azimuthal limits, and the positive
-# azimuthal direction. This projection can also be used to make sector plots
-# and annular plots.
+# To draw `polar axes <polar_>`_, pass ``proj='polar'`` or e.g. ``proj={1:'polar'}``
+# to `~proplot.ui.subplots`. This generates a `~proplot.axes.PolarAxes`
+# instance with its own `proplot.axes.PolarAxes.format` command. This
+# command permits polar-specific modifications like changing the central radius `r0`,
+# the zero azimuth location `theta0`, and the positive azimuthal direction `thetadir`.
+# It also supports changing the radial and azimuthal limits `rlim` and `thetalim`,
+# which can be used to make sector plots and annular plots.
+#
+# For details, see `proplot.axes.PolarAxes.format`.
 
 # %%
 import proplot as plot
@@ -89,16 +95,25 @@ axs[2].format(
 # Geographic axes
 # ---------------
 #
-# To turn a subplot into a plottable map projection, pass
+# ProPlot can turn any subplot into a geographic projection using
+# the `cartopy`_ or `basemap`_ packages as "backends." The
+# `~proplot.axes.GeoAxes` class and the `~proplot.constructor.Proj`
+# constructor function ensure that ProPlot's syntax with cartopy as the
+# "backend" is exactly the same as when basemap is the "backend".
+# Cartopy is the default backend, but you can switch
+# to basemap using ``basemap=True`` (see below).
+#
+# To turn a subplot into a geographic projection, pass
 # ``proj='name'`` or e.g. ``proj={2: 'name'}``
 # (:ref:`see above <ug_proj>`) to  `~proplot.ui.subplots`
-# where ``'name'`` is any valid :ref:`PROJ projection name <proj_included>`,
-# or supply `proj` with a cartopy `~cartopy.crs.Projection` or basemap
-# `~mpl_toolkits.basemap.Basemap` instance returned by the
-# `~proplot.constructor.Proj` constructor function. Cartopy is used by
-# default, but you can switch to basemap using ``basemap=True``.
+# where ``name`` is any valid :ref:`PROJ projection name <proj_included>`.
+# You can also generate a `cartopy.crs.Projection` or `mpl_toolkits.basemap.Basemap`
+# instance directly using the `~proplot.constructor.Proj` constructor function and
+# pass the class instance to `proj`.
+#
 # When you request map projections, `~proplot.ui.subplots` returns
 # instances of `~proplot.axes.CartopyAxes` or `~proplot.axes.BasemapAxes`.
+# These axes have the following properties:
 #
 # * `~proplot.axes.CartopyAxes` joins the cartopy
 #   `~cartopy.mpl.geoaxes.GeoAxes` class with the ProPlot
@@ -108,60 +123,69 @@ axs[2].format(
 #   the map bounds with `~cartopy.mpl.geoaxes.GeoAxes.set_extent` and add
 #   geographic features with `~cartopy.mpl.geoaxes.GeoAxes.add_feature`.
 #
-#   ProPlot also makes sure polar projections like `~cartopy.crs.NorthPolarStereo`
-#   have circular bounds. By default, polar Gnomonic projections are bounded
-#   at 30 degrees latitude, other polar projections are bounded at the equator,
-#   and all other projections are given global extent using
-#   `~cartopy.mpl.geoaxes.GeoAxes.set_global`. This behavior can be disabled
-#   by setting :rc:`cartopy.autoextent` to ``True``, which lets cartopy automatically
-#   determine the map boundaries based on plotted content.
-#
 # * `~proplot.axes.BasemapAxes` redirects the plot, scatter, contour,
-#   contourf, pcolor, pcolormesh, quiver, streamplot, and barb methods to
-#   identically named methods on the `~mpl_toolkits.basemap.Basemap` instance,
-#   and provides access to `~mpl_toolkits.basemap.Basemap` geographic plotting
-#   commands like `~mpl_toolkits.basemap.Basemap.fillcontinents` via
-#   `~proplot.axes.GeoAxes.format`.
+#   contourf, pcolor, pcolormesh, quiver, streamplot, and barb *axes methods* to
+#   identically named methods on the `~mpl_toolkits.basemap.Basemap` instance.
+#   This means you can work with axes plotting methods just like in cartopy.
+#   `~proplot.axes.BasemapAxes` also provides access to `~mpl_toolkits.basemap.Basemap`
+#   geographic plotting commands like `~mpl_toolkits.basemap.Basemap.fillcontinents`
+#   via `~proplot.axes.GeoAxes.format`.
 #
-# This means with ProPlot, you no longer have to invoke verbose cartopy
-# `~cartopy.crs.Projection` classes like `~cartopy.crs.LambertAzimuthalEqualArea`,
-# and you never have to directly reference the `~mpl_toolkits.basemap.Basemap`
-# instance -- ProPlot works with the `~mpl_toolkits.basemap.Basemap` instance
-# under the hood.
+# These features help address the limitations of the cartopy and basemap APIs.
+# You no longer have to invoke verbose cartopy classes like
+# `~cartopy.crs.LambertAzimuthalEqualArea` and `~cartopy.feature.NaturalEarthFeature`,
+# and you no longer have to directly work with the `~mpl_toolkits.basemap.Basemap`
+# instance. However if you do need access to the projection class instances,
+# they are stored as `proplot.axes.CartopyAxes.projection` and
+# `proplot.axes.BasemapAxes.projection` attributes. Also, to make things more
+# consistent, the `~proplot.constructor.Proj` constructor function lets you supply
+# native `PROJ <https://proj.org>`__ keyword names to the cartopy
+# `~cartopy.crs.Projection` classes (e.g. `lon_0` instead of `central_longitude`),
+# and instantiates `~mpl_toolkits.basemap.Basemap` projections with sensible
+# defaults (e.g. ``lon_0=0``) rather than raising an error when projection
+# arguments are omitted.
 #
-# To make things a bit more consistent, the `~proplot.constructor.Proj` constructor
-# function lets you supply native `PROJ <https://proj.org>`__ keyword names to
-# the cartopy `~cartopy.crs.Projection` classes, e.g. `lon_0` instead of
-# `central_longitude`. It also lets you instantiate `~mpl_toolkits.basemap.Basemap`
-# projections with sensible defaults rather than raising an error when certain
-# projection arguments are omitted.
+# In the below examples, we generate two grids of geographic projections.
 #
-# Note that while basemap is `no longer a maintained package\
-# <https://matplotlib.org/basemap/users/intro.html#cartopy-new-management-and-eol-announcement>`__,
-# gridline labels tend to look much nicer in basemap than in cartopy. This is the
-# main reason ProPlot continues to support both basemap and cartopy. But when
-# cartopy catches up, basemap support may be deprecated.
+# .. note::
+#
+#   ProPlot makes sure polar cartopy projections like `~cartopy.crs.NorthPolarStereo`
+#   have a circular boundary. By default, polar projections are bounded at the
+#   equator and non-polar projections are forced to have global extent with
+#   `~cartopy.mpl.geoaxes.GeoAxes.set_global`. To revert to the behavior where
+#   cartopy automatically determines map boundaries based on plotted content,
+#   simply set :rcraw:`cartopy.autoextent` to ``True`` or
+#   pass ``autoextent=True`` to `~proplot.axes.CartopyAxes`. See the
+#   :ref:`configuration guide <ug_config>` for details.
+#
+# .. warning::
+#
+#    Basemap is `no longer a maintained package\
+#    <https://matplotlib.org/basemap/users/intro.html#cartopy-new-management-and-eol-announcement>`__.
+#    However as shown below, gridline labels tend to look much nicer in basemap
+#    than in cartopy -- especially when "inline" cartopy labels are disabled.
+#    This is the main reason ProPlot continues to support both basemap and cartopy.
+#    When cartopy catches up, basemap support may be deprecated.
 
 # %%
-import proplot as plot
-plot.rc.update({
-    'geogrid.linewidth': 0.5,
-    'geogrid.linestyle': '-',
-    'geogrid.alpha': 0.2,
-})
-
 # Simple figure with just one projection
+
 # Option 1: Create a projection manually with plot.Proj()
+# immport proplot as plot
 # proj = plot.Proj('robin', lon_0=180)
-# fig, axs = plot.subplots(ncols=2, axwidth=2.5, proj=proj)
+# fig, axs = plot.subplots(nrows=2, axwidth=3, proj=proj)
+
 # Option 2: Pass the name to 'proj' and keyword arguments to 'proj_kw'
-fig, axs = plot.subplots(ncols=2, axwidth=2.5, proj='robin', proj_kw={'lon_0': 180})
+import proplot as plot
+fig, axs = plot.subplots(nrows=2, axwidth=3, proj='robin', proj_kw={'lon_0': 180})
 axs.format(
     suptitle='Figure with single projection',
     coast=True, latlines=30, lonlines=60,
 )
 
+# %%
 # Complex figure with different projections
+import proplot as plot
 fig, axs = plot.subplots(
     hratios=(1.5, 1, 1, 1, 1.5),
     basemap={
@@ -193,25 +217,23 @@ plot.rc.reset()
 # Plotting geographic data
 # ------------------------
 #
-# The below example demonstrates how to plot geographic data with ProPlot.
-# It is mostly the same as cartopy, but with some new features powered by the
-# `~proplot.axes.standardize_2d`, `~proplot.axes.default_transform`,
-# and `~proplot.axes.default_latlon` wrappers.
+# In ProPlot, plotting in `~proplot.axes.GeoAxes` looks pretty much exactly the
+# same as plotting in `~proplot.axes.CartesianAxes`. While cartopy and basemap
+# assume your data is in "map projection" coordinates unless specified otherwise,
+# ProPlot makes longitude-latitude (i.e. Plate Carrée) coordinates the *default*
+# coordinate system for your datasets by passing ``transform=ccrs.PlateCarree()``
+# to cartopy plotting methods and ``latlon=True`` to basemap plotting methods.
 #
-# * For both basemap and cartopy projections, you can pass ``globe=True`` to
-#   2D plotting commands to ensure global data coverage.
-# * For `~proplot.axes.CartopyAxes` plotting methods,
-#   ``transform=crs.PlateCarree()`` is now the default behavior. That is,
-#   ProPlot assumes your data is in longitude-latitude coordinates rather than
-#   map projection coordinates.
-# * For `~proplot.axes.BasemapAxes` plotting methods, ``latlon=True`` is now
-#   the default behavior. Again, plotting methods are now called on the *axes*
-#   instead of the `~mpl_toolkits.basemap.Basemap` instance.
+# There are also a couple plotting features specific to `~proplot.axes.GeoAxes`.
+# To ensure a 2D plot like `~matplotlib.axes.Axes.contour` covers the entire globe,
+# pass ``globe=True`` to the plotting command. This interpolates your data
+# to the poles and the longitude seams before plotting.
 #
-# To mask out the parts of your data over the land or the ocean, simply toggle
-# the :rcraw:`land` or and :rcraw:`ocean` settings and set the corresponding
+# To mask out the parts of your data over the land or the ocean, toggle
+# the :rcraw:`land` or and :rcraw:`ocean` settings and make sure the corresponding
 # `zorder <https://matplotlib.org/3.1.1/gallery/misc/zorder_demo.html>`__
-# to a high value with e.g. ``plot.rc.update({'land': True, 'land.zorder': 5})``.
+# is high enough to sit above all plotted content, e.g. with
+# ``plot.rc.update({'land': True, 'land.zorder': 5})``.
 # See the :ref:`next section <ug_geoformat>` for details.
 
 # %%
@@ -227,7 +249,6 @@ state = np.random.RandomState(51423)
 data = state.rand(len(lat), len(lon))
 
 # Plot data both without and with globe=True
-titles = ('Geophysical data demo', 'Global coverage demo')
 for globe in (False, True,):
     fig, axs = plot.subplots(
         ncols=2, nrows=2, axwidth=2.5,
@@ -240,12 +261,13 @@ for globe in (False, True,):
             fig.colorbar(m, loc='b', span=i + 1, label='values', extendsize='1.7em')
         else:
             ax.pcolor(lon, lat, data, cmap=cmap, globe=globe, extend='both')
+    string = 'with' if globe else 'without'
     axs.format(
-        suptitle=titles[globe],
+        suptitle=f'Geophysical data {string} global coverage',
         collabels=['Cartopy example', 'Basemap example'],
         rowlabels=['Contourf', 'Pcolor'],
         abc=True, abcstyle='a)', abcloc='ul', abcborder=False,
-        coast=True, lonlines=90,
+        land=True, landzorder=3, lonlines=90,
     )
 
 
@@ -256,14 +278,22 @@ for globe in (False, True,):
 # ----------------------
 #
 # `~proplot.axes.CartopyAxes` and `~proplot.axes.BasemapAxes` both derive
-# from `~proplot.axes.GeoAxes`, which provides a
-# `~proplot.axes.GeoAxes.format` method. `~proplot.axes.GeoAxes.format` can
-# be used to draw "major" gridlines, "minor" gridlines, add gridline labels
-# with optional degree-minute-second units (cartopy > 0.18), specify gridline
-# label locations, modify the projection bounding box, and add and stylize common
-# geographic features like land masses, coastlines, and administrative
-# borders. This method also calls `format` on `~proplot.axes.Axes`, and so
-# can be used for subplot titles, a-b-c labels, and figure titles as before.
+# from `~proplot.axes.GeoAxes`, which provides the
+# `proplot.axes.GeoAxes.format` method. This can
+# be used to draw "major" gridlines "minor" gridlines with the `grid`,
+# `longrid`, `latgrid`, and `gridminor`, `longridminor`, and `latgridminor`
+# keywords. Gridline locations and label formats are configured with the
+# `lonlocator`, `latlocator`, `lonformatter`, `latformatter`, `lonminorlocator`,
+# and `latminorlocator` keywords. Major gridline labels and their positions
+# can be configured with the `labels`, `lonlabels`, and `latlabels` keywords.
+# Cartopy map bounds can be set with the `lonlim` and `latlim` keywordis. Geographic
+# features like land masses, coastlines, and administrative borders can be toggled
+# on and off and stylized with a variety of :ref:`rc settings <rc_proplot>`.
+# Finally, `proplot.axes.GeoAxes.format` also calls `proplot.axes.Axes.format`,
+# and so can be used to for subplot titles, a-b-c labels, and figure titles
+# as before.
+#
+# For details, see the `proplot.axes.GeoAxes.format` documentation.
 
 # %%
 import proplot as plot
@@ -298,6 +328,8 @@ ax.format(
     land=True, facecolor='ocean blue', landcolor='bisque', title='Winkel tripel',
     lonlines=60, latlines=15,
     gridlinewidth=0.8, gridminor=True, gridminorlinestyle=':',
+    lonlabels=True, latlabels='r', loninline=True,
+    gridlabelcolor='gray8', gridlabelsize='med-large',
 )
 
 
@@ -307,14 +339,17 @@ ax.format(
 # Zooming into projections
 # ------------------------
 #
-# To zoom into cartopy projections, you can use
-# `~cartopy.mpl.geoaxes.GeoAxes.set_extent`, or alternatively pass `lonlim`,
+# To zoom into cartopy projections, use
+# `~cartopy.mpl.geoaxes.GeoAxes.set_extent` or pass `lonlim`,
 # `latlim`, or `boundinglat` to `~proplot.axes.GeoAxes.format`. The `boundinglat`
 # keyword controls the circular latitude boundary for North Polar and
 # South Polar Stereographic, Azimuthal Equidistant, Lambert Azimuthal
-# Equal-Area, and Gnomonic projections.
+# Equal-Area, and Gnomonic projections. By default, ProPlot tries to use the
+# degree-minute-second cartopy locators and formatters made available in cartopy
+# 0.18. You can switch from minute-second subintervals to traditional decimal
+# subintervals by passing ``dms=False`` to `~proplot.axes.GeoAxes.format`.
 #
-# To zoom into basemap projections, you can pass any of the `boundinglat`,
+# To zoom into basemap projections, pass any of the `boundinglat`,
 # `llcrnrlon`, `llcrnrlat`, `urcrnrlon`, `urcrnrlat`, `llcrnrx`, `llcrnry`,
 # `urcrnrx`, `urcrnry`, `width`, or `height` keyword arguments to
 # the `~proplot.constructor.Proj` constructor function either directly or via
@@ -328,7 +363,7 @@ import proplot as plot
 
 # Plate Carrée map projection
 plot.rc.reso = 'med'  # use higher res for zoomed in geographic features
-proj = plot.Proj('cyl', llcrnrlon=-20, llcrnrlat=-10, urcrnrlon=180, urcrnrlat=50, basemap=True)  # noqa: E501
+proj = plot.Proj('cyl', lonlim=(-20, 180), latlim=(-10, 50), basemap=True)
 fig, axs = plot.subplots(nrows=2, axwidth=4.5, proj=('cyl', proj))
 axs.format(
     land=True, labels=True, lonlines=20,
@@ -340,17 +375,23 @@ axs[0].format(
 )
 axs[1].format(title='Basemap example')
 
+# %%
+import proplot as plot
+
 # Pole-centered map projections
 proj = plot.Proj('npaeqd', boundinglat=60, basemap=True)
 fig, axs = plot.subplots(ncols=2, axwidth=2.2, proj=('splaea', proj))
 axs.format(
-    land=True, latlines=10, latmax=80,
+    land=True, latmax=80,  # no gridlines poleward of 80 degrees
     suptitle='Zooming into polar projections'
 )
 axs[0].format(boundinglat=-60, title='Cartopy example')
 axs[1].format(title='Basemap example')
 
-# Focusing on continents
+# %%
+import proplot as plot
+
+# Zooming in on continents
 proj1 = plot.Proj('lcc', lon_0=0)  # cartopy projection
 proj2 = plot.Proj('lcc', lon_0=-100, lat_0=45, width=8e6, height=8e6, basemap=True)
 fig, axs = plot.subplots(ncols=2, axwidth=2.4, proj=(proj1, proj2))
@@ -362,6 +403,17 @@ axs[0].format(
 axs[1].format(
     title='Basemap example', land=True, lonlines=20
 )
+
+# Zooming to very small scale with degree-minute-second labels
+plot.rc.reso = 'hi'
+fig, axs = plot.subplots(ncols=2, axwidth=2.5, proj='cyl')
+axs.format(
+    land=True, labels=True,
+    borders=True, borderscolor='white',
+    suptitle='Degree-minute-second labels',
+)
+axs[0].format(lonlim=(-7.5, 2), latlim=(49.5, 59))
+axs[1].format(lonlim=(-6, -2), latlim=(54.5, 58.5))
 plot.rc.reset()
 
 
