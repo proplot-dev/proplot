@@ -440,7 +440,7 @@ def SciFormatter(precision=None, zerotrim=None):
     return mticker.FuncFormatter(func)
 
 
-def SigFigFormatter(sigfig=1, zerotrim=None):
+def SigFigFormatter(sigfig=3, zerotrim=None):
     """
     Return a `~matplotlib.ticker.FuncFormatter` that rounds numbers
     to the specified number of *significant digits*.
