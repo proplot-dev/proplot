@@ -382,14 +382,14 @@ def _axis_labels_title(data, axis=None, units=True):
 
 def standardize_1d(self, func, *args, **kwargs):
     """
-    Interpret positional arguments for the "1d" plotting methods so usage is
+    Interpret positional arguments for the "1D" plotting methods so usage is
     consistent. This also optionally modifies the x axis label, y axis label,
     title, and axis ticks if a `~xarray.DataArray`, `~pandas.DataFrame`, or
     `~pandas.Series` is passed.
 
     Positional arguments are standardized as follows:
 
-    * If a 2d array is passed, the corresponding plot command is called for
+    * If a 2D array is passed, the corresponding plot command is called for
       each column of data (except for ``boxplot`` and ``violinplot``, in which
       case each column is interpreted as a distribution).
     * If *x* and *y* or *latitude* and *longitude* coordinates were not
@@ -403,7 +403,7 @@ def standardize_1d(self, func, *args, **kwargs):
 
    Note
    ----
-   This function wraps the 1d plotting methods: {methods}
+   This function wraps the 1D plotting methods: {methods}
    """
     # Sanitize input
     # TODO: Add exceptions for methods other than 'hist'?
@@ -557,7 +557,7 @@ def _interp_poles(y, Z):
 def _standardize_latlon(x, y):
     """
     Ensure longitudes are monotonic and make `~numpy.ndarray` copies so the
-    contents can be modified. Ignores 2d coordinate arrays.
+    contents can be modified. Ignores 2D coordinate arrays.
     """
     # Sanitization and bail if 2d
     if x.ndim == 1:
@@ -578,7 +578,7 @@ def _standardize_latlon(x, y):
 
 def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
     """
-    Interpret positional arguments for the "2d" plotting methods so usage is
+    Interpret positional arguments for the "2D" plotting methods so usage is
     consistent. This also optionally modifies the x axis label, y axis label,
     title, and axis ticks if a `~xarray.DataArray`, `~pandas.DataFrame`, or
     `~pandas.Series` is passed.
@@ -617,7 +617,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
 
     Note
     ----
-    This function wraps the 2d plotting methods: {methods}
+    This function wraps the 2D plotting methods: {methods}
     """
     # Sanitize input
     name = func.__name__
@@ -731,15 +731,14 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
 
     # Enforce edges
     if name in ('pcolor', 'pcolormesh', 'pcolorfast'):
-        # Get centers or raise error. If 2d, don't raise error, but don't fix
-        # either, because matplotlib pcolor just trims last column and row.
         xlen, ylen = x.shape[-1], y.shape[0]
         for Z in Zs:
             if Z.ndim != 2:
                 raise ValueError(
-                    f'Input arrays must be 2d, instead got shape {Z.shape}.'
+                    f'Input arrays must be 2D, instead got shape {Z.shape}.'
                 )
             elif Z.shape[1] == xlen and Z.shape[0] == ylen:
+                # Get edges given centers
                 if all(z.ndim == 1 and z.size > 1 and _is_number(z) for z in (x, y)):
                     x = edges(x)
                     y = edges(y)
@@ -763,8 +762,6 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
 
     # Enforce centers
     else:
-        # Get centers given edges. If 2d, don't raise error, let matplotlib
-        # raise error down the line.
         xlen, ylen = x.shape[-1], y.shape[0]
         for Z in Zs:
             if Z.ndim != 2:
@@ -772,6 +769,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
                     f'Input arrays must be 2d, instead got shape {Z.shape}.'
                 )
             elif Z.shape[1] == xlen - 1 and Z.shape[0] == ylen - 1:
+                # Get centers given edges.
                 if all(z.ndim == 1 and z.size > 1 and _is_number(z) for z in (x, y)):
                     x = (x[1:] + x[:-1]) / 2
                     y = (y[1:] + y[:-1]) / 2
@@ -1006,7 +1004,7 @@ def indicate_error(
 
     Note
     ----
-    This function wraps the 1d plotting methods: {methods}
+    This function wraps the 1D plotting methods: {methods}
 
     Parameters
     ----------
@@ -1793,7 +1791,7 @@ def boxplot_wrapper(
 
     Parameters
     ----------
-    *args : 1d or 2d ndarray
+    *args : 1D or 2D ndarray
         The data array.
     color : color-spec, optional
         The color of all objects.
@@ -1898,7 +1896,7 @@ def violinplot_wrapper(
 
     Parameters
     ----------
-    *args : 1d or 2d ndarray
+    *args : 1D or 2D ndarray
         The data array.
     lw, linewidth : float, optional
         The linewidth of the line objects. Default is ``1``.
@@ -2119,7 +2117,7 @@ def cycle_changer(
     {methods}
 
     This wrapper also *standardizes acceptable input* -- these methods now all
-    accept 2d arrays holding columns of data, and *x*-coordinates are always
+    accept 2D arrays holding columns of data, and *x*-coordinates are always
     optional. Note this alters the behavior of `~matplotlib.axes.Axes.boxplot`
     and `~matplotlib.axes.Axes.violinplot`, which now compile statistics on
     *columns* of data instead of *rows*.
@@ -2136,9 +2134,9 @@ def cycle_changer(
     label : float or str, optional
         The legend label to be used for this plotted element.
     labels, values : list of float or list of str, optional
-        Used with 2d input arrays. The legend labels or colorbar coordinates
+        Used with 2D input arrays. The legend labels or colorbar coordinates
         for each column in the array. Can be numeric or string, and must match
-        the number of columns in the 2d array.
+        the number of columns in the 2D array.
     legend : bool, int, or str, optional
         If not ``None``, this is a location specifying where to draw an *inset*
         or *panel* legend from the resulting handle(s). If ``True``, the
@@ -2256,7 +2254,7 @@ def cycle_changer(
                 apply_from_cycler.add(key)
 
     # Handle legend labels and
-    # WARNING: Most methods that accept 2d arrays use columns of data, but when
+    # WARNING: Most methods that accept 2D arrays use columns of data, but when
     # pandas DataFrame passed to hist, boxplot, or violinplot, rows of data
     # assumed! This is fixed in parse_1d by converting to values.
     ncols = 1
