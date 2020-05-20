@@ -236,6 +236,13 @@ code,
   background-color: #fdd !important;
 }
 
+/* Do not use scrollbar in nbsphinx figure output areas */
+/* Interrupts vertical scrolling through document and nbsphinx makes */
+/* enough vertical space already (scroll bar adds 2 pixels of scrolling) */
+.rst-content div.nboutput>div.output_area {
+  overflow: hidden !important;
+}
+
 /* Nbsphinx prompt */
 .rst-content div.nbinput>div.prompt>div.highlight,
 .rst-content div.nboutput>div.prompt>div.highlight {
