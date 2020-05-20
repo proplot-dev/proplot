@@ -299,6 +299,12 @@ body,
   margin-bottom: 0 !important;
 }
 
+/* Disable scrolling in special tables */
+/* .wy-table-responsive table td { */
+.proplot-rctable td {
+  white-space: normal !important;
+}
+
 /* Table rows */
 .wy-table-odd td,
 .wy-table-striped tr:nth-child(2n-1) td,

@@ -231,11 +231,10 @@ _rc_matplotlib_default = {
 # TODO: Implement these as bonafide matplotlib settings by subclassing
 # matplotlib's RcParams and adding new validators. Quick settings should
 # be implemented under __getitem__.
-_addendum_units = ' Units are interpted by `~proplot.utils.units`.'
+_addendum_units = ' Interpted by `~proplot.utils.units`.'
 _addendum_fonts = (
-    ' See `this page '
-    '<https://matplotlib.org/3.1.1/tutorials/text/text_props.html#default-font>`__ '
-    'for a list of valid relative font sizes.'
+    ' (see `this list of valid font sizes '
+    '<https://matplotlib.org/3.1.1/tutorials/text/text_props.html#default-font>`__).'
 )
 _rc_proplot = {
     # Stylesheet
@@ -267,7 +266,8 @@ _rc_proplot = {
     ),
     'abc.loc': (
         'l',  # left side above the axes
-        'a-b-c label position. For options, see `~proplot.axes.Axes.format`.',
+        'a-b-c label position. For options, see the :ref:`title location '
+        'table <title_table>`.'
     ),
     'abc.size': (
         TITLESIZE,
@@ -275,7 +275,8 @@ _rc_proplot = {
     ),
     'abc.style': (
         'a',
-        'a-b-c label style. For options, see `~proplot.axes.Axes.format`.'
+        'a-b-c label style. Must be string containing the character ``a`` '
+        "or ``A``, for example ``'a.'`` or ``'(A)'``."
     ),
     'abc.weight': (
         'bold',
@@ -420,7 +421,8 @@ _rc_proplot = {
     ),
     'colorbar.loc': (
         'right',
-        'Inset colorbar location, options are listed in `~proplot.axes.Axes.colorbar`.'
+        'Inset colorbar location. For options, see the :ref:`location table '
+        '<colorbar_table>`.'
     ),
     'colorbar.width': (
         '1.5em',
@@ -463,7 +465,7 @@ _rc_proplot = {
         'underneath patches only.'
     ),
     'grid.dmslabels': (
-        False,
+        True,
         'Boolean, indicates whether to use degrees-minutes-seconds rather than '
         'decimals for gridline labels on `~proplot.axes.CartopyAxes`.'
     ),
@@ -549,8 +551,7 @@ _rc_proplot = {
         'Whether to fix the `white-lines-between-filled-contours '
         '<https://stackoverflow.com/q/8263769/4970632>`__ and '
         '`white-lines-between-pcolor-rectangles '
-        '<https://stackoverflow.com/q/27092991/4970632>`__ issues. '
-        'This slows down figure rendering a bit.'
+        '<https://stackoverflow.com/q/27092991/4970632>`__ issues.'
     ),
     'image.levels': (
         11,
@@ -766,16 +767,16 @@ _rc_proplot = {
     'text.labelsize': (
         LABELSIZE,
         'Meta setting that changes the label-like sizes '
-        ':rcraw:`tick.labelsize`, :rcraw:`axes.labelsize`, :rcraw:`legend.fontsize`, '
-        "and :rcraw:`grid.labelsize`. Default is ``'medium'``, i.e. "
-        'the value of :rcraw:`font.size`.' + _addendum_fonts
+        '``tick.labelsize``, ``axes.labelsize``, ``legend.fontsize``, '
+        "and ``grid.labelsize``. Default is ``'medium'``, i.e. "
+        'the value of :rcraw:`font.size`' + _addendum_fonts
     ),
     'text.titlesize': (
         TITLESIZE,
         'Meta setting that changes the title-like sizes '
-        ':rcraw:`abc.size`, :rcraw:`title.size`, :rcraw:`suptitle.size`, '
-        'and row and column label sizes like :rcraw:`leftlabel.size`. '
-        "Default is ``'med-large'``, i.e. 1.1 times :rcraw:`font.size`."
+        '``abc.size``, ``title.size``, ``suptitle.size``, '
+        'and row and column label sizes like ``leftlabel.size``. '
+        "Default is ``'med-large'``, i.e. 1.1 times :rcraw:`font.size`"
         + _addendum_fonts
     ),
 
@@ -787,7 +788,7 @@ _rc_proplot = {
     'tick.dir': (
         TICKDIR,
         'Major and minor tick direction. Must be one of '
-        "'``'out'``, ``'in'``, or ``'inout'``."
+        "``'out'``, ``'in'``, or ``'inout'``."
     ),
     'tick.labelcolor': (
         COLOR,
@@ -841,7 +842,8 @@ _rc_proplot = {
     ),
     'title.loc': (
         'c',
-        'Title position. For options, see `~proplot.axes.Axes.format`.'
+        'Title position. For options, see the :ref:`title location '
+        'table <title_table>`.'
     ),
     'title.pad': (
         3.0,
@@ -1072,4 +1074,4 @@ def _gen_rst_table():
         string += f'``{key}``{spaces}{descrip}\n'
 
     string = string + divider
-    return string.strip()
+    return '.. rst-class:: proplot-rctable\n\n' + string.strip()
