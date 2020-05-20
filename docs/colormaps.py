@@ -39,8 +39,7 @@
 # ------------------
 #
 # On import, ProPlot registers a few sample
-# `~proplot.colors.PerceptuallyUniformColormap` colormaps (see
-# :ref:`perceptually uniform colormaps <ug_perceptual>`) plus several
+# :ref:`perceptually uniform colormaps <ug_perceptual>`, plus several
 # colormaps from other online data viz projects. Use
 # `~proplot.demos.show_cmaps` to generate a table of registered maps. The
 # figure is broken down into the following sections:
@@ -61,14 +60,18 @@
 #   are intended to be *merged* into more complex colormaps.
 #
 # ProPlot removes some default matplotlib colormaps with erratic color
-# transitions. Note that colormap and color cycle identification is now
-# flexible: Colormap names are *case-insensitive* (e.g. ``'Viridis'``,
-# ``'viridis'``, and ``'ViRiDiS'`` are equivalent), diverging colormap names
-# can be specified in their "reversed" form (e.g. ``'BuRd'`` is equivalent to
-# ``'RdBu_r'``), and appending ``'_r'`` or ``'_s'`` to *any* colormap name
-# will return a `~proplot.colors.LinearSegmentedColormap.reversed` or
-# `~proplot.colors.LinearSegmentedColormap.shifted` version of the colormap.
-# See `~proplot.colors.ColormapDatabase` for more info.
+# transitions.
+#
+# .. note::
+#
+#    Colormap and color cycle identification is more flexible in ProPlot. The names
+#    are are case-insensitive (e.g. ``'Viridis'``, ``'viridis'``, and ``'ViRiDiS'``
+#    are equivalent), diverging colormap names can be specified in their "reversed"
+#    form (e.g. ``'BuRd'`` is equivalent to ``'RdBu_r'``), and appending ``'_r'``
+#    or ``'_s'`` to *any* colormap name will return a
+#    `~proplot.colors.LinearSegmentedColormap.reversed` or
+#    `~proplot.colors.LinearSegmentedColormap.shifted` version of the colormap
+#    or color cycle. See `~proplot.colors.ColormapDatabase` for more info.
 
 # %%
 import proplot as plot
@@ -168,7 +171,7 @@ for cmaps in (('magma', 'rocket'), ('fire', 'dusk')):
 #   end any color string with ``'+N'`` or ``'-N'`` to *offset* the channel
 #   value by the number ``N``.
 #
-# Below, we use all of these methods to make brand new
+# In the below example, we use all of these methods to make brand new
 # `~proplot.colors.PerceptuallyUniformColormap`\ s in the ``'hsl'`` and
 # ``'hpl'`` colorspaces.
 
@@ -265,7 +268,7 @@ fig, axs = plot.show_channels(
 # %%
 import proplot as plot
 import numpy as np
-fig, axs = plot.subplots([[0, 1, 1, 0], [2, 2, 3, 3]], axwidth=2, span=False)
+fig, axs = plot.subplots([[0, 1, 1, 0], [2, 2, 3, 3]], axwidth=2.4, span=False)
 state = np.random.RandomState(51423)
 data = state.rand(30, 30).cumsum(axis=1)
 
@@ -413,15 +416,15 @@ for ax, alpha in zip(axs, (1.0, 0.5, 0.0)):
     )
 
 # Changing the colormap gamma
-fig, axs = plot.subplots(ncols=3, axwidth=1.7, aspect=1)
+fig, axs = plot.subplots(ncols=3, axwidth=1.7)
 data = state.rand(10, 10).cumsum(axis=1)
 for ax, gamma in zip(axs, (0.7, 1.0, 1.4)):
-    cmap = plot.Colormap('boreal', name=str(gamma), gamma=gamma)
+    cmap = plot.Colormap('boreal', gamma=gamma)
     m = ax.pcolormesh(data, cmap=cmap, levels=10, extend='both')
     ax.colorbar(m, loc='b', locator='none')
     ax.format(
         title=f'gamma = {gamma}', xlabel='x axis', ylabel='y axis',
-        suptitle='Changing the colormap gamma'
+        suptitle='Changing the PerceptuallyUniformColormap gamma'
     )
 
 

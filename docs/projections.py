@@ -436,7 +436,6 @@ plot.rc.reset()
 
 # %%
 import proplot as plot
-import numpy as np
 
 # Table of cartopy projections
 projs = [
@@ -453,6 +452,9 @@ axs.format(
 )
 for proj, ax in zip(projs, axs):
     ax.format(title=proj, titleweight='bold', labels=False)
+
+# %%
+import proplot as plot
 
 # Table of basemap projections
 projs = [

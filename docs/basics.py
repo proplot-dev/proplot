@@ -232,8 +232,8 @@ axs.format(
     xlabel='x-axis', ylabel='y-axis',
     xscale='log',
     xlim=(1, 10), xticks=1,
-    ymargin=0.05, yticks=plot.arange(-2, 2),
-    yticklabels=('a', 'bb', 'c', 'dd', 'e'),
+    ymargin=0.05, yticks=plot.arange(-2, 5),
+    yticklabels=('a', 'bb', 'c', 'dd', 'e', 'ff', 'g', 'hh', 'i'),
     ytickloc='both', yticklabelloc='both',
     xtickdir='inout', xtickminor=False, ygridminor=True,
 )

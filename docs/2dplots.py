@@ -56,6 +56,7 @@
 import proplot as plot
 import numpy as np
 N = 20
+cmap = plot.Colormap(('orange0', 'blood'))
 state = np.random.RandomState(51423)
 data = 10 ** (0.25 * np.cumsum(state.rand(N, N), axis=0))
 with plot.rc.context({'lines.linewidth': 3}):
@@ -66,8 +67,8 @@ with plot.rc.context({'lines.linewidth': 3}):
     )
 
     # On-the-fly colormaps and normalizers
-    axs[0].pcolormesh(data, cmap=['orange0', 'blood'], colorbar='b')
-    axs[1].pcolormesh(data, norm='log', cmap='maroon', colorbar='b')
+    axs[0].pcolormesh(data, cmap=cmap, colorbar='b')
+    axs[1].pcolormesh(data, norm='log', cmap=cmap, colorbar='b')
     axs[0].format(title='Linear normalizer')
     axs[1].format(title='Logarithmic normalizer')
 
@@ -177,7 +178,7 @@ import numpy as np
 # Linear segmented norm
 state = np.random.RandomState(51423)
 data = 10**(2 * state.rand(20, 20).cumsum(axis=0) / 7)
-fig, axs = plot.subplots(ncols=2, axwidth=2.5, aspect=1.5)
+fig, axs = plot.subplots(ncols=2, axwidth=2.4)
 ticks = [5, 10, 20, 50, 100, 200, 500, 1000]
 for i, (norm, title) in enumerate(zip(
     ('linear', 'segmented'),
@@ -198,7 +199,7 @@ import numpy as np
 # Diverging norm
 data1 = (state.rand(20, 20) - 0.43).cumsum(axis=0)
 data2 = (state.rand(20, 20) - 0.57).cumsum(axis=0)
-fig, axs = plot.subplots(nrows=2, ncols=2, axwidth=2.5, aspect=1.5, order='F')
+fig, axs = plot.subplots(nrows=2, ncols=2, axwidth=2.4, order='F')
 cmap = plot.Colormap('DryWet', cut=0.1)
 axs.format(suptitle='Diverging normalizer demo')
 i = 0
@@ -321,15 +322,12 @@ fig, axs = plot.subplots(nrows=2, axwidth=2.5, share=0)
 axs.format(collabels=['Automatic subplot formatting'])
 
 # Plot DataArray
-axs[0].contourf(
-    da, cmap='RdPu', cmap_kw={'left': 0.05}, colorbar='l', lw=0.7, color='k'
-)
+cmap = plot.Colormap('RdPu', left=0.05)
+axs[0].contourf(da, cmap=cmap, colorbar='l', linewidth=0.7, color='k')
 axs[0].format(yreverse=True)
 
 # Plot DataFrame
-axs[1].contourf(
-    df, cmap='YlOrRd', colorbar='r', linewidth=0.7, color='k'
-)
+axs[1].contourf(df, cmap='YlOrRd', colorbar='r', linewidth=0.7, color='k')
 axs[1].format(xtickminor=False)
 
 
@@ -343,8 +341,8 @@ axs[1].format(xtickminor=False)
 # *labels* to `~proplot.axes.Axes.heatmap`, `~matplotlib.axes.Axes.pcolor`,
 # `~matplotlib.axes.Axes.pcolormesh`, `~matplotlib.axes.Axes.contour`, and
 # `~matplotlib.axes.Axes.contourf` plots by simply using ``labels=True``.
-# Critically, the label text is colored black or white depending on the
-# luminance of the underlying grid box or filled contour.
+# The label text is colored black or white depending on the luminance of
+# the underlying grid box or filled contour.
 #
 # `~proplot.axes.cmap_changer` draws contour labels with
 # `~matplotlib.axes.Axes.clabel` and grid box labels with
@@ -397,10 +395,10 @@ ax.format(title='Line contour plot with labels')
 # Heatmap plots
 # -------------
 #
-# The new `~proplot.axes.Axes.heatmap` command simply calls
-# `~matplotlib.axes.Axes.pcolormesh` and applies default formatting that is
-# suitable for heatmaps -- fixed aspect ratio, no gridlines, no minor ticks, and
-# major ticks at the center of each box. Among other things, this is useful for
+# The new `~proplot.axes.Axes.heatmap` command calls
+# `~matplotlib.axes.Axes.pcolormesh` and configures the axes with settings
+# that are suitable for heatmaps -- fixed aspect ratio, no gridlines, no minor ticks,
+# and major ticks at the center of each box. Among other things, this is useful for
 # displaying covariance and correlation matrices, as shown below.
 
 # %%

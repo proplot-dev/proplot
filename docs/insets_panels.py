@@ -117,13 +117,14 @@ axs.format(
 # `Inset axes\
 # <https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/zoom_inset_axes.html>`__
 # can be generated with the `~proplot.axes.Axes.inset` or
-# `~proplot.axes.Axes.inset_axes` command. The resulting axes are instances
-# of `~proplot.axes.CartesianAxes`, and therefore can be modified with the
-# `~proplot.axes.CartesianAxes.format` command.
+# `~proplot.axes.Axes.inset_axes` command. By defaut, the resulting axes
+# use the same projection as the parent axes, but you can also specify
+# a different projection (for example, ``ax.inset(bounds, proj='polar')``).
 # Passing ``zoom=True`` to `~proplot.axes.Axes.inset` draws "zoom indication"
-# lines with `~matplotlib.axes.Axes.indicate_inset_zoom`, and ProPlot
-# automatically updates the lines when the axis limits of the parent axes
-# change. To modify the line properties, simply use the `zoom_kw` argument.
+# lines with `~matplotlib.axes.Axes.indicate_inset_zoom` when the axes are both
+# Cartesian, and ProPlot automatically updates the lines when the axis limits of
+# the parent axes change. To modify the line properties, simply use the `zoom_kw`
+# argument.
 
 # %%
 import proplot as plot

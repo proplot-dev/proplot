@@ -191,13 +191,11 @@ axs[1].plot(df, cycle=cycle, lw=3, legend='uc')
 # If you pass 2D arrays to these methods with ``means=True`` or
 # ``medians=True``, the means or medians of each column are drawn as points,
 # lines, or bars, and *error bars* or *shading* is drawn to represent the spread
-# of the distribution for each column. `~proplot.axes.indicate_error` lets you draw
-# thin error bars with optional whiskers, thick "boxes" overlayed on top of these
-# bars (think of this as a miniature boxplot), or up to 2 regions of shading.
-# Instead of using 2D arrays, you can also pass the error bounds *manually*
-# with the `bardata`, `boxdata`, `shadedata`, and `fadedata` keywords.
-#
-# See `~proplot.axes.indicate_error` for details.
+# of the distribution for each column. You can also specify the error bounds
+# *manually* with the `bardata`, `boxdata`, `shadedata`, and `fadedata` keywords.
+# `~proplot.axes.indicate_error` can draw thin error bars with optional whiskers,
+# thick "boxes" overlayed on top of these bars (think of this as a miniature boxplot),
+# and up to 2 regions of shading. See `~proplot.axes.indicate_error` for details.
 
 
 # %%
@@ -271,7 +269,7 @@ plot.rc.reset()
 # To make filled "area" plots, use the new `~proplot.axes.Axes.area` and
 # `~proplot.axes.Axes.areax` methods. These are alises for
 # `~matplotlib.axes.Axes.fill_between` and
-# `~matplotlib.axes.Axes.fill_betweenx`, which are now wrapped by
+# `~matplotlib.axes.Axes.fill_betweenx`, which are wrapped by
 # `~proplot.axes.fill_between_wrapper` and
 # `~proplot.axes.fill_betweenx_wrapper`. You can now *stack* or *overlay*
 # columns of data by passing 2D arrays to `~proplot.axes.Axes.area` and
@@ -348,7 +346,7 @@ ax.area(data + 2, y2=2, negpos=True)
 for offset in (-2, 2):
     ax.axhline(offset, color='k', linewidth=1, linestyle='--')
 ax.format(
-    xmargin=0, xlabel='xlabel', ylabel='ylabel',
+    xmargin=0, xlabel='xlabel', ylabel='ylabel', grid=True,
     title='Positive and negative colors demo', titleweight='bold',
 )
 plot.rc.reset()
@@ -477,9 +475,8 @@ ax.colorbar(m, loc='b', maxn=10, label='parametric coordinate')
 #
 # ProPlot also supports property cycling for `~proplot.axes.Axes.step` plots
 # and wraps the `~matplotlib.axes.Axes.vlines` and `~matplotlib.axes.Axes.hlines`
-# methods with `~proplot.axes.plot.vlines_wrapper`
-# and `~proplot.axes.plot.hlines_wrapper`, which adds the ability to use
-# different colors for "negative" and "positive" lines.
+# methods with `~proplot.axes.vlines_wrapper` and `~proplot.axes.hlines_wrapper`,
+# which adds the ability to use different colors for "negative" and "positive" lines.
 
 # %%
 import proplot as plot
