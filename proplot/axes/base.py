@@ -777,7 +777,7 @@ class Axes(maxes.Axes):
             center above axes         ``'center'``, ``'c'``
             left above axes           ``'left'``, ``'l'``
             right above axes          ``'right'``, ``'r'``
-            lower center inside axes  ``'lower center``', ``'lc'``
+            lower center inside axes  ``'lower center'``, ``'lc'``
             upper center inside axes  ``'upper center'``, ``'uc'``
             upper right inside axes   ``'upper right'``, ``'ur'``
             upper left inside axes    ``'upper left'``, ``'ul'``

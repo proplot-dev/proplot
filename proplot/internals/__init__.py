@@ -11,10 +11,9 @@ except ImportError:  # graceful fallback if IceCream isn't installed
 
 def _not_none(*args, default=None, **kwargs):
     """
-    Return the first non-``None`` value. This is used with keyword arg
-    aliases and for setting default values. Ugly name but clear purpose. Pass
-    the `names` keyword arg to issue warning if multiple args were passed. Must
-    be list of non-empty strings.
+    Return the first non-``None`` value. This is used with keyword arg aliases and
+    for setting default values. Use `kwargs` to issue warnings when multiple
+    non-``None`` values were passed. Use `args` to just ignore extra values.
     """
     first = default
     if args and kwargs:

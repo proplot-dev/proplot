@@ -222,7 +222,7 @@ list thereof, or dict thereof, optional
         two options:
 
         * Pass a *list* of projection specifications, one for each subplot.
-          For example, ``plot.subplots(ncols=2, proj=('cartesian', 'robin')``.
+          For example, ``plot.subplots(ncols=2, proj=('cartesian', 'robin'))``.
         * Pass a *dictionary* of projection specifications, where the
           keys are integers or tuples of integers that indicate the projection
           to use for the corresponding subplot(s). If a key is not provided, the

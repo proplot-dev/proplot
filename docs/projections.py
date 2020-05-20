@@ -362,7 +362,7 @@ import proplot as plot
 # Plate Carrée map projection
 plot.rc.reso = 'med'  # use higher res for zoomed in geographic features
 proj = plot.Proj('cyl', lonlim=(-20, 180), latlim=(-10, 50), basemap=True)
-fig, axs = plot.subplots(nrows=2, axwidth=4.5, proj=('cyl', proj))
+fig, axs = plot.subplots(nrows=2, axwidth=5, proj=('cyl', proj))
 axs.format(
     land=True, labels=True, lonlines=20,
     latlines=20, suptitle='Zooming into projections'
@@ -378,7 +378,7 @@ import proplot as plot
 
 # Pole-centered map projections
 proj = plot.Proj('npaeqd', boundinglat=60, basemap=True)
-fig, axs = plot.subplots(ncols=2, axwidth=2.2, proj=('splaea', proj))
+fig, axs = plot.subplots(ncols=2, axwidth=3, proj=('splaea', proj))
 axs.format(
     land=True, latmax=80,  # no gridlines poleward of 80 degrees
     suptitle='Zooming into polar projections'
@@ -392,7 +392,7 @@ import proplot as plot
 # Zooming in on continents
 proj1 = plot.Proj('lcc', lon_0=0)  # cartopy projection
 proj2 = plot.Proj('lcc', lon_0=-100, lat_0=45, width=8e6, height=8e6, basemap=True)
-fig, axs = plot.subplots(ncols=2, axwidth=2.4, proj=(proj1, proj2))
+fig, axs = plot.subplots(ncols=2, axwidth=3, proj=(proj1, proj2))
 axs.format(suptitle='Zooming into specific regions', land=True)
 axs[0].format(
     title='Cartopy example', land=True,
