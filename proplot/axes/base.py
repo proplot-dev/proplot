@@ -771,6 +771,8 @@ class Axes(maxes.Axes):
             main title. The following locations keys are valid (defaults are
             :rc:`abc.loc` and :rc:`title.loc`):
 
+            .. _title_table:
+
             ========================  ============================
             Location                  Valid keys
             ========================  ============================
