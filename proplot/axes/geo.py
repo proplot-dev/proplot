@@ -553,7 +553,7 @@ optional
         if which == 'major':
             kwtext = rc.fill(
                 {
-                    'color': f'{key}.color',
+                    'color': f'{key}.labelcolor',
                     'fontsize': f'{key}.labelsize',
                     'weight': f'{key}.labelweight',
                 },
@@ -649,10 +649,13 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
     )
     _proj_polar = _proj_north + _proj_south
 
-    def __init__(self, *args, map_projection=None, **kwargs):
+    def __init__(self, *args, autoextent=None, map_projection=None, **kwargs):
         """
         Parameters
         ----------
+        autoextent : bool, optional
+            Whether to automatically adjust map bounds based on plotted content
+            or enforce *global* map extent. Default is :rc:`cartopy.autoextent`.
         map_projection : `~cartopy.crs.Projection`
             The `~cartopy.crs.Projection` instance.
 
@@ -700,7 +703,7 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
         # extent cannot be global.
         if polar and hasattr(self, 'set_boundary'):
             self.set_boundary(_circle_boundary(), transform=self.transAxes)
-        auto = rc['cartopy.autoextent']
+        auto = _not_none(autoextent, rc['cartopy.autoextent'])
         if auto:
             self._set_view_intervals(self._get_global_extent())
         elif polar:

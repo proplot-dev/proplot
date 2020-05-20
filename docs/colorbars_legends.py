@@ -28,29 +28,52 @@
 # Axes colorbars and legends
 # --------------------------
 #
-# To draw a colorbar or legend along the *outside edge* of a subplot, pass an
-# "edge" location (e.g. ``loc='right'``) to the `~proplot.axes.Axes.colorbar`
-# or `~proplot.axes.Axes.legend` `~proplot.axes.Axes` methods. If you draw
-# multiple colorbars or legends on the same side, they are stacked on top of
-# each other. To preserve subplot aspect ratios and visual symmetry between
-# subplots, the space for outer colorbars and legends is not "stolen" from
-# subplots, but separately allocated within the figure
-# `~proplot.gridspec.GridSpec`.
+# In matplotlib, colorbars are added to the edges of subplots with the *figure*
+# method `matplotlib.figure.Figure.colorbar` as follows:
 #
-# ProPlot can also be used to draw colorbars and legends on-the-fly. To plot
-# data and draw a colorbar in one go, pass a location (e.g. ``colorbar='r'``)
+# .. code-block:: python
+#
+#    fig.colorbar(m, ax=ax, location='right')
+#
+# In ProPlot, colorbars are added to the edges of subplots using
+# the new *axes* colorbar method `proplot.axes.Axes.colorbar` as follows:
+
+# .. code-block:: python
+#
+#    ax.colorbar(m, loc='right')
+#
+# The `proplot.axes.Axes.colorbar` method preserves subplot aspect ratios
+# and visual symmetry between subplots by allocating new space in the figure
+# `~proplot.gridspec.GridSpec` rather than "stealing" space from the parent
+# subplot (see the section on :ref:`automatic subplot spacing <ug_tight>` for
+# details). Calling `~proplot.axes.Axes.colorbar` more than once results in
+# "stacked" colorbars.
+
+# ProPlot also includes an improved legend axes method `proplot.axes.Axes.legend`
+# and tries to make the usage of `~proplot.axes.Axes.legend` and
+# `~proplot.axes.Axes.colorbar` consistent:
+#
+# * `proplot.axes.Axes.legend` can
+#   draw "outer" legends along the edges of subplots when you request
+#   a :ref:`side location <legend_table>` for the legend (e.g. ``loc='right'``
+#   or ``loc='r'``). If you draw multiple colorbars and legends on one side,
+#   they are "stacked" on top of each other.
+# * `proplot.axes.Axes.colorbar` can draw
+#   "inset" colorbars when you request an :ref:`inset location <colorbar_table>`
+#   for the colorbar (e.g. ``loc='upper right'`` or ``loc='ur'``). Inset
+#   colorbars have optional background "frames" that can be configured with
+#   various `~proplot.axes.Axes.colorbar` keyword arguments.
+
+# ProPlot can also draw colorbars and legends on-the-fly. To plot data and draw
+# a colorbar in one go, pass a location (e.g. ``colorbar='r'``)
 # to methods that accept a `cmap` argument (e.g.
 # `~matplotlib.axes.Axes.contourf`). To draw a legend or colorbar-legend in
 # one go, pass a location (e.g. ``legend='r'`` or ``colorbar='r'``) to
 # methods that accept a `cycle` argument (e.g. `~matplotlib.axes.Axes.plot`).
+# Use `legend_kw` and `colorbar_kw` to pass keyword arguments to the colorbar
+# and legend functions.
 # This feature is powered by the `~proplot.axes.cmap_changer` and
 # `~proplot.axes.cycle_changer` wrappers.
-#
-# Finally, just like matplotlib "inset" legends, ProPlot also supports
-# "inset" *colorbars*. To draw an inset colorbar, pass an inset location to
-# `~proplot.axes.Axes.colorbar` (e.g. ``loc='upper right'`` or ``loc='ur'``).
-# These colorbars have optional background "frames" that can be configured
-# with various `~proplot.axes.Axes.colorbar` keyword arguments.
 
 # %%
 import proplot as plot
@@ -113,18 +136,17 @@ for j, ax in enumerate(axs):
 # Figure colorbars and legends
 # ----------------------------
 #
-# To draw a colorbar or legend along the *edge of the figure*, simply use the
-# `~proplot.figure.Figure.colorbar` or `~proplot.figure.Figure.legend`
-# `~proplot.figure.Figure` methods. Figure colorbars and legends are aligned
-# between the edges of the subplot grid. As with :ref:`axes colorbars and
-# legends <Axes colorbars and legends>`, if you draw multiple colorbars or
+# In ProPlot, colorbars and legends are added to the edge of figures
+# with the `proplot.figure.Figure.colorbar` and `proplot.figure.Figure.legend`
+# methods. Figure colorbars and legends are aligned between the edges of the
+# subplot grid, rather than the figure bounds. As with :ref:`axes colorbars and
+# legends <ug_cbars_axes>`, if you draw multiple colorbars or
 # legends on the same side, they are stacked on top of each other.
 #
-# To draw a colorbar or legend alongside *particular row(s) or column(s)* of
-# the subplot grid, use the `row`, `rows`, `col`, or `cols` keyword
-# arguments. Pass an integer to draw the colorbar or legend beside a single
-# row or column, or pass a tuple to draw it beside a range of rows or
-# columns.
+# To draw a colorbar or legend alongside particular row(s) or column(s) of
+# the subplot grid, use the `row`, `rows`, `col`, or `cols` keyword arguments.
+# Pass an integer to draw the colorbar or legend beside a single row or column,
+# or pass a tuple to draw it beside a range of rows or columns.
 
 # %%
 import proplot as plot
@@ -183,9 +205,9 @@ for ax, title in zip(
 # New colorbar features
 # ---------------------
 #
-# The `~proplot.figure.Figure` `~proplot.figure.Figure.colorbar` and
-# `~proplot.axes.Axes` `~proplot.axes.Axes.colorbar` methods are wrapped by
-# `~proplot.axes.colorbar_wrapper`, which adds several new features.
+# The `proplot.figure.Figure.colorbar` and `proplot.axes.Axes.colorbar`
+# methods are wrapped by `~proplot.axes.colorbar_wrapper`, which adds several
+# new features.
 #
 # You can now draw colorbars from *lists of colors* or *lists of artists* by
 # passing a list instead of a mappable object. Colorbar minor ticks are now
@@ -210,9 +232,9 @@ hs = ax.plot(
     data, lw=4, cycle=cycle, colorbar='lr',
     colorbar_kw={'length': '8em', 'label': 'from lines'}
 )
-ax.colorbar(
+axs.colorbar(
     hs, loc='t', values=np.arange(0, 10),
-    label='from lines', length=0.7, ticks=2
+    label='from lines', ticks=2
 )
 
 # Colorbars from a mappable
@@ -241,12 +263,11 @@ axs.format(
 # New legend features
 # -------------------
 #
-# The `~proplot.figure.Figure` `~proplot.figure.Figure.legend` and
-# `~proplot.axes.Axes` `~proplot.axes.Axes.legend` methods are wrapped by
-# `~proplot.axes.legend_wrapper`, which adds several new features.
+# The `proplot.figure.Figure.legend` and `proplot.axes.Axes.legend` methods
+# are wrapped by `~proplot.axes.legend_wrapper`, which adds several new features.
 #
-# You can draw legends with *centered legend rows*, either by passing
-# ``center=True`` or by passing *list of lists* of plot handles. This is
+# You can draw legends with centered legend rows, either by passing
+# ``center=True`` or by passing list of lists of plot handles. This is
 # accomplished by stacking multiple single-row, horizontally centered
 # legends, then manually adding an encompassing legend frame. You can also
 # modify legend *text and handle properties* with several keyword args, and
@@ -258,7 +279,7 @@ import proplot as plot
 import numpy as np
 plot.rc.cycle = '538'
 labels = ['a', 'bb', 'ccc', 'dddd', 'eeeee']
-fig, axs = plot.subplots(ncols=2, span=False, share=1, axwidth=2)
+fig, axs = plot.subplots(ncols=2, span=False, share=1, axwidth=2.3)
 hs1, hs2 = [], []
 
 # On-the-fly legends

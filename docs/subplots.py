@@ -28,7 +28,9 @@
 # the geometry of your subplot grid and the physical dimensions of a "reference"
 # subplot. ProPlot can also determine the suitable figure height given a fixed
 # figure width, and figure width given a fixed figure height (which can be
-# particularly useful when preparing publications). This algorithm is controlled by
+# particularly useful when preparing publications).
+#
+# This algorithm is controlled by
 # a variety of `~proplot.ui.subplots` keyword arguments:
 #
 # * The `ref` parameter sets the reference subplot number (default is ``1``,
@@ -52,20 +54,25 @@
 #   of available journal specifications (feel free to add to this table by
 #   submitting a PR).
 #
-# This algorithm also has the following notable properties:
+# .. important::
+
+#    The automatic figure size algorithm has the following notable properties:
 #
-# * For very simple subplot grids (i.e. subplots created with the `ncols` and
-#   `nrows` arguments), the arguments `aspect`, `axwidth`, and `axheight` apply
-#   to every subplot in the figure -- not just the reference subplot.
-# * When the reference subplot `aspect ratio\
-#   <https://matplotlib.org/2.0.2/examples/pylab_examples/equal_aspect_ratio.html>`__
-#   has been manually overridden (e.g. with ``ax.set_aspect(1)``) or is set
-#   to ``'equal'`` (as with :ref:`map projections <ug_geo>` and
-#   `~matplotlib.axes.Axes.imshow` images), the `aspect` parameter is ignored.
-# * When `~proplot.axes.Axes.colorbar`\ s and `~proplot.axes.Axes.panel`\ s
-#   are present in the figure, their physical widths are *preserved* during
-#   figure resizing. ProPlot specifies their widths in physical units to help
-#   avoid colorbars that look "too skinny" or "too fat".
+#    * For very simple subplot grids (i.e. subplots created with the `ncols` and
+#      `nrows` arguments), the arguments `aspect`, `axwidth`, and `axheight` apply
+#      to every subplot in the figure -- not just the reference subplot.
+#    * When the reference subplot `aspect ratio\
+#      <https://matplotlib.org/2.0.2/examples/pylab_examples/equal_aspect_ratio.html>`__
+#      has been fixed (e.g. with ``ax.set_aspect(1)``) or is set
+#      to ``'equal'`` (as with :ref:`map projections <ug_geo>` and
+#      `~matplotlib.axes.Axes.imshow` images), the fixed aspect ratio is used
+#      and the `~proplot.ui.subplots` `aspect` parameter is ignored. This
+#      is critical for getting the figure size right when working with grids
+#      of images and grids of projections.
+#    * When `~proplot.axes.Axes.colorbar`\ s and `~proplot.axes.Axes.panel`\ s
+#      are present in the figure, their physical widths are *preserved* during
+#      figure resizing. ProPlot specifies their widths in physical units to help
+#      avoid colorbars that look "too skinny" or "too fat".
 #
 # The below examples demonstrate the default behavior of the automatic figure
 # sizing algorithm, and how it can be controlled with `~proplot.ui.subplots`
@@ -114,6 +121,9 @@ for aspect in (1, (3, 2)):
         titleloc='uc', titlecolor='red9',
     )
 
+# %%
+import proplot as plot
+
 # Change the reference subplot in presence of unequal width/height ratios
 for ref in (1, 2):
     fig, axs = plot.subplots(
@@ -155,9 +165,10 @@ for ref in (1, 2):
 # and permits variable spacing between subsequent subplot rows and columns (see the
 # new `~proplot.gridspec.GridSpec` class for details).
 #
-# The tight layout algorithm can also be easily overridden. When you
-# pass a spacing argument like `left`, `right`, `top`, `bottom`, `wspace`, or
-# `hspace` to `~proplot.ui.subplots`, that value is always respected. For example:
+# The tight layout algorithm can also be overridden. When you pass a
+# spacing argument like `left`, `right`, `top`, `bottom`, `wspace`, or
+# `hspace` to `~proplot.ui.subplots`, that value is always respected.
+# For example:
 #
 # * ``left='2em'`` fixes the left margin, while the right, bottom, and
 #   top margins are determined automatically.
@@ -221,9 +232,9 @@ axs[:, 0].format(ylabel='ylabel\nylabel')
 # ------------------------
 #
 # ProPlot supports arbitrary *physical units* for controlling the figure
-# `width` and `height`; the reference subplot `axwidth` and `axheight`; the
+# `width` and `height`, the reference subplot `axwidth` and `axheight`, the
 # gridspec spacing values `left`, `right`, `bottom`, `top`, `wspace`, and
-# `hspace`; and in a few other places, e.g. `~proplot.axes.Axes.panel` and
+# `hspace`, and in a few other places, e.g. `~proplot.axes.Axes.panel` and
 # `~proplot.axes.Axes.colorbar` widths. This feature is powered by the
 # `~proplot.utils.units` function.
 #
@@ -310,11 +321,14 @@ axs.format(
 # * Level ``3`` is the same as ``2``, but the *x* and *y* tick labels are
 #   also shared.
 #
-# These features are best illustrated by example (see below). Note that since
-# "shared" and "spanning" labels are determined automatically based on position of
-# each subplot in the `~proplot.gridspec.GridSpec`, these features work for
-# arbitrarily complex figures. Since ProPlot uses just one `~proplot.gridspec.GridSpec`
-# per figure, this can be done with zero ambiguity.
+# These features are best illustrated by example (see below).
+#
+# .. note::
+#
+#    Since "shared" and "spanning" labels are determined automatically based on
+#    position of each subplot in the `~proplot.gridspec.GridSpec`, these features
+#    work for arbitrarily complex figures. Because ProPlot uses just one
+#    `~proplot.gridspec.GridSpec` per figure, this can be done with zero ambiguity.
 
 # %%
 import proplot as plot

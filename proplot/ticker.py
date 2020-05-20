@@ -32,7 +32,7 @@ REGEX_MINUS_ZERO = re.compile('\\A[-\N{MINUS SIGN}]0(.0*)?\\Z')
 
 docstring.snippets['formatter.params'] = """
 zerotrim : bool, optional
-    Whether to trim trailing zeros. Default is :rc:`axes.formatter.zerotrim`.
+    Whether to trim trailing zeros. Default is :rc:`formatter.zerotrim`.
 tickrange : (float, float), optional
     Range within which major tick marks are labelled. Default is ``(-np.inf, np.inf)``.
 wraprange : (float, float), optional
@@ -45,41 +45,6 @@ negpos : str, optional
     Length-2 string indicating the suffix for "negative" and "positive"
     numbers, meant to replace the minus sign.
 """
-
-
-class _GeoFormatter(object):
-    """
-    Mixin class that fixes cartopy formatters.
-    """
-    # NOTE: Cartopy formatters pre 0.18 required axis, and *always* translated
-    # input values from map projection coordinates to Plate Carrée coordinates.
-    # After 0.18 you can avoid this behavior by not setting axis but really
-    # dislike that inconsistency. Solution is temporarily change projection.
-    def __init__(self, *args, **kwargs):
-        import cartopy  # noqa: F401 (ensure available)
-        super().__init__(*args, **kwargs)
-
-    def __call__(self, value, pos=None):
-        if self.axis is not None:
-            context = _set_state(self.axis.axes, projection=ccrs.PlateCarree())
-        else:
-            context = _dummy_context()
-        with context:
-            return super().__call__(value, pos)
-
-
-class _LongitudeFormatter(_GeoFormatter, LongitudeFormatter):
-    """
-    Mix longitude formatter with custom formatter.
-    """
-    pass
-
-
-class _LatitudeFormatter(_GeoFormatter, LatitudeFormatter):
-    """
-    Mix latitude formatter with custom formatter.
-    """
-    pass
 
 
 class _GeoLocator(mticker.MaxNLocator):
@@ -169,6 +134,41 @@ class LatitudeLocator(_GeoLocator):
         return [t for t in ticks if -90 <= t <= 90]
 
 
+class _GeoFormatter(object):
+    """
+    Mixin class that fixes cartopy formatters.
+    """
+    # NOTE: Cartopy formatters pre 0.18 required axis, and *always* translated
+    # input values from map projection coordinates to Plate Carrée coordinates.
+    # After 0.18 you can avoid this behavior by not setting axis but really
+    # dislike that inconsistency. Solution is temporarily change projection.
+    def __init__(self, *args, **kwargs):
+        import cartopy  # noqa: F401 (ensure available)
+        super().__init__(*args, **kwargs)
+
+    def __call__(self, value, pos=None):
+        if self.axis is not None:
+            context = _set_state(self.axis.axes, projection=ccrs.PlateCarree())
+        else:
+            context = _dummy_context()
+        with context:
+            return super().__call__(value, pos)
+
+
+class _LongitudeFormatter(_GeoFormatter, LongitudeFormatter):
+    """
+    Mix longitude formatter with custom formatter.
+    """
+    pass
+
+
+class _LatitudeFormatter(_GeoFormatter, LatitudeFormatter):
+    """
+    Mix latitude formatter with custom formatter.
+    """
+    pass
+
+
 class AutoFormatter(mticker.ScalarFormatter):
     """
     The new default formatter. Differs from `~matplotlib.ticker.ScalarFormatter`
@@ -207,7 +207,7 @@ class AutoFormatter(mticker.ScalarFormatter):
         tickrange = tickrange or (-np.inf, np.inf)
         super().__init__(**kwargs)
         from .config import rc
-        zerotrim = _not_none(zerotrim, rc['axes.formatter.zerotrim'])
+        zerotrim = _not_none(zerotrim, rc['formatter.zerotrim'])
         self._zerotrim = zerotrim
         self._tickrange = tickrange
         self._wraprange = wraprange
@@ -307,7 +307,7 @@ class AutoFormatter(mticker.ScalarFormatter):
         """
         from .config import rc
         use_locale = _not_none(
-            use_locale, self.get_useLocale(), rc['axes.formatter.use_locale']
+            use_locale, self.get_useLocale(), rc['formatter.use_locale']
         )
         return locale.localeconv()['decimal_point'] if use_locale else '.'
 
@@ -317,7 +317,7 @@ class AutoFormatter(mticker.ScalarFormatter):
         Get decimal point symbol for current locale. Called externally.
         """
         from .config import rc
-        use_locale = _not_none(use_locale, rc['axes.formatter.use_locale'])
+        use_locale = _not_none(use_locale, rc['formatter.use_locale'])
         return locale.localeconv()['decimal_point'] if use_locale else '.'
 
     @staticmethod
@@ -397,7 +397,7 @@ def SigFigFormatter(sigfig=1, zerotrim=None):
         Whether to trim trailing zeros.
     """
     from .config import rc
-    zerotrim = _not_none(zerotrim, rc['axes.formatter.zerotrim'])
+    zerotrim = _not_none(zerotrim, rc['formatter.zerotrim'])
 
     def func(x, pos):
         # Limit digits to significant figures
@@ -438,7 +438,7 @@ def SimpleFormatter(
     %(formatter.params)s
     """
     from .config import rc
-    zerotrim = _not_none(zerotrim, rc['axes.formatter.zerotrim'])
+    zerotrim = _not_none(zerotrim, rc['formatter.zerotrim'])
     tickrange = tickrange or (-np.inf, np.inf)
     prefix = prefix or ''
     suffix = suffix or ''

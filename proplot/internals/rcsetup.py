@@ -27,6 +27,7 @@ GRIDSTYLE = '-'
 LABELSIZE = 'medium'
 LINEWIDTH = 0.6
 MARGIN = 0.05
+MATHTEXT = False
 TICKDIR = 'out'
 TICKLEN = 4.0
 TICKLENRATIO = 0.5  # differentiated from major by half length reduction
@@ -56,7 +57,7 @@ _rc_renamed = {  # {old_key: (new_key, version)} dictionary
     'geogrid.alpha': ('grid.alpha', '0.6'),
     'geogrid.color': ('grid.color', '0.6'),
     'geogrid.labels': ('grid.labels', '0.6'),
-    'geogrid.labelpad': ('grid.labelpad', '0.6'),
+    'geogrid.labelpad': ('grid.pad', '0.6'),
     'geogrid.labelsize': ('grid.labelsize', '0.6'),
     'geogrid.linestyle': ('grid.linestyle', '0.6'),
     'geogrid.linewidth': ('grid.linewidth', '0.6'),
@@ -66,6 +67,8 @@ _rc_renamed = {  # {old_key: (new_key, version)} dictionary
     'span': ('subplots.span', '0.6'),
     'tight': ('subplots.tight', '0.6'),
     'tick.labelpad': ('tick.pad', '0.6'),
+    'axes.formatter.timerotation': ('formatter.timerotation', '0.6'),
+    'axes.formatter.zerotrim': ('formatter.zerotrim', '0.6'),
 }
 
 # ProPlot overrides of matplotlib default style
@@ -76,11 +79,13 @@ _rc_renamed = {  # {old_key: (new_key, version)} dictionary
 # plots, 0.05 is good for line plot in y direction but not x direction.
 _rc_matplotlib_default = {
     'axes.axisbelow': GRIDBELOW,
+    'axes.formatter.use_mathtext': MATHTEXT,
     'axes.grid': True,  # enable lightweight transparent grid by default
     'axes.grid.which': 'major',
     'axes.labelpad': 3.0,  # more compact
     'axes.labelsize': LABELSIZE,
     'axes.labelweight': 'normal',
+    'axes.linewidth': LINEWIDTH,
     'axes.titlepad': 3.0,  # more compact
     'axes.titlesize': TITLESIZE,
     'axes.titleweight': 'normal',
@@ -286,14 +291,38 @@ _rc_proplot = {
         1.0,
         'Opacity of the background axes patch.'
     ),
-    'axes.formatter.timerotation': (
+    'formatter.timerotation': (
         90,
         'Float, indicates the default *x* axis tick label rotation '
         'for datetime tick labels.'
     ),
-    'axes.formatter.zerotrim': (
+    'formatter.zerotrim': (
         True,
         'Boolean, indicates whether trailing decimal zeros are trimmed on tick labels.'
+    ),
+    'formatter.limits': (
+        (-5, 6),
+        'Alias for :rcraw:`axes.formatter.limits`.'
+    ),
+    'formatter.use_locale': (
+        False,
+        'Alias for :rcraw:`axes.formatter.use_locale`.'
+    ),
+    'formatter.use_mathtext': (
+        MATHTEXT,
+        'Alias for :rcraw:`axes.formatter.use_mathtext`.'
+    ),
+    'formatter.min_exponent': (
+        0,
+        'Alias for :rcraw:`axes.formatter.min_exponent`.'
+    ),
+    'formatter.use_offset': (
+        True,
+        'Alias for :rcraw:`axes.formatter.useOffset`.'
+    ),
+    'formatter.offset_threshold': (
+        4,
+        'Alias for :rcraw:`axes.formatter.offset_threshold`.'
     ),
 
     # Country borders
@@ -438,8 +467,8 @@ _rc_proplot = {
         'Boolean, indicates whether to use degrees-minutes-seconds rather than '
         'decimals for gridline labels on `~proplot.axes.CartopyAxes`.'
     ),
-    'grid.labelpad': (
-        8,  # use twice cartopy default
+    'grid.pad': (
+        5,  # use twice cartopy default
         'Padding in points between map boundary edge and longitude and '
         'latitude labels for `~proplot.axes.GeoAxes`.'
     ),
@@ -891,7 +920,7 @@ _rc_children = {
         'ytick.major.pad', 'ytick.minor.pad'
     ),
     'grid.color': (
-        'gridminor.color',
+        'gridminor.color', 'grid.labelcolor',
     ),
     'grid.linewidth': (
         'gridminor.linewidth',
@@ -901,6 +930,24 @@ _rc_children = {
     ),
     'grid.alpha': (
         'gridminor.alpha',
+    ),
+    'formatter.limits': (
+        'axes.formatter.limits',
+    ),
+    'formatter.use_locale': (
+        'axes.formatter.use_locale',
+    ),
+    'formatter.use_mathtext': (
+        'axes.formatter.use_mathtext',
+    ),
+    'formatter.min_exponent': (
+        'axes.formatter.min_exponent',
+    ),
+    'formatter.use_offset': (
+        'axes.formatter.useoffset',
+    ),
+    'formatter.offset_threshold': (
+        'axes.formatter.offset_threshold',
     ),
 }
 
@@ -971,7 +1018,7 @@ def _gen_yaml_table(rcdict, comment=True, description=True):
         else:
             descrip = ''
             if isinstance(pair, tuple):
-                value = pair[1]
+                value = pair[0]
             else:
                 value = pair
 

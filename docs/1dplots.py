@@ -15,16 +15,14 @@
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_1dplots:
 #
-# Plotting 1-dimensional data
-# ===========================
+# Plotting 1D data
+# ================
 #
 # ProPlot adds new features to various `~matplotlib.axes.Axes` plotting
 # methods using a set of wrapper functions. When a plotting method like
 # `~matplotlib.axes.Axes.plot` is "wrapped" by one of these functions, it
 # accepts the same parameters as the wrapper. These features are a strict
-# *superset* of the matplotlib API -- if you want, you can use the plotting
-# methods exactly as you always have.
-#
+# *superset* of the matplotlib API.
 # This section documents the features added by wrapper functions to 1D
 # plotting commands like `~matplotlib.axes.Axes.plot`,
 # `~matplotlib.axes.Axes.scatter`, `~matplotlib.axes.Axes.bar`, and
@@ -182,7 +180,7 @@ axs[1].plot(df, cycle=cycle, lw=3, legend='uc')
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_errorbars:
 #
-# Error bars and shading
+# Shading and error bars
 # ----------------------
 #
 # The `~proplot.axes.indicate_error` wrapper lets you draw error bars
@@ -192,14 +190,17 @@ axs[1].plot(df, cycle=cycle, lw=3, legend='uc')
 #
 # If you pass 2D arrays to these methods with ``means=True`` or
 # ``medians=True``, the means or medians of each column are drawn as points,
-# lines, or bars, and error bars or shading is drawn to represent the spread in
-# each column. `~proplot.axes.indicate_error` lets you draw thin error
-# bars with optional whiskers, thick "boxes" overlayed on top of these bars
-# (think of this as a miniature boxplot), or up to 2 intervals of shading.
-# Instead of using 2D arrays, you can also pass the error bounds
-# *manually* with the `bardata`, `boxdata`, `shadedata`, and `fadedata` keyword
-# arguments. See `~proplot.axes.indicate_error` for details.
+# lines, or bars, and *error bars* or *shading* is drawn to represent the spread
+# of the distribution for each column. `~proplot.axes.indicate_error` lets you draw
+# thin error bars with optional whiskers, thick "boxes" overlayed on top of these
+# bars (think of this as a miniature boxplot), or up to 2 regions of shading.
+# Instead of using 2D arrays, you can also pass the error bounds *manually*
+# with the `bardata`, `boxdata`, `shadedata`, and `fadedata` keywords.
+#
+# See `~proplot.axes.indicate_error` for details.
 
+
+# %%
 import proplot as plot
 import numpy as np
 import pandas as pd
@@ -224,7 +225,7 @@ axs[1:].format(xlabel='column number', xticks=1, xgrid=False)
 ax = axs[0]
 obj = ax.barh(
     data, color='light red', legend=True,
-    medians=True, barpctiles=True, boxpctiles=True
+    medians=True, boxpctiles=True, barpctiles=(5, 95),
 )
 ax.format(title='Column statistics')
 ax.format(ylabel='column number', title='Bar plot', ygrid=False)
@@ -285,7 +286,7 @@ import proplot as plot
 import numpy as np
 import pandas as pd
 plot.rc.titleloc = 'uc'
-fig, axs = plot.subplots(nrows=2, aspect=2, axwidth=5, share=0, hratios=(3, 2))
+fig, axs = plot.subplots(nrows=2, aspect=2, axwidth=4.8, share=0, hratios=(3, 2))
 state = np.random.RandomState(51423)
 data = state.rand(5, 5).cumsum(axis=0).cumsum(axis=1)[:, ::-1]
 data = pd.DataFrame(
@@ -301,7 +302,7 @@ obj = ax.bar(
 )
 ax.format(
     xlocator=1, xminorlocator=0.5, ytickminor=False,
-    title='Side-by-side', suptitle='Bar plot wrapper demo'
+    title='Side-by-side', suptitle='Bar plot demo'
 )
 
 # Stacked bars
@@ -317,7 +318,7 @@ plot.rc.reset()
 # %%
 import proplot as plot
 import numpy as np
-fig, axs = plot.subplots(array=[[1, 2], [3, 3]], hratios=(1, 1.5), share=0)
+fig, axs = plot.subplots(array=[[1, 2], [3, 3]], hratios=(1, 1.5), axwidth=2.5, share=0)
 axs.format(grid=False, xlabel='xlabel', ylabel='ylabel', suptitle='Area plot demo')
 state = np.random.RandomState(51423)
 data = state.rand(5, 3).cumsum(axis=0)
@@ -423,7 +424,7 @@ import proplot as plot
 import numpy as np
 fig, axs = plot.subplots(
     share=0, ncols=2, wratios=(2, 1),
-    axwidth='7cm', aspect=(2, 1)
+    width='16cm', aspect=(2, 1)
 )
 axs.format(suptitle='Parametric plots demo')
 cmap = 'IceFire'
@@ -519,10 +520,7 @@ axs.format(suptitle='Line plots demo', xlabel='xlabel', ylabel='ylabel')
 # Step
 ax = axs[0]
 data = state.rand(20, 4).cumsum(axis=1).cumsum(axis=0)
-cycle = (
-    'blue7', plot.set_alpha('blue7', 0.4),
-    'red7', plot.set_alpha('red7', 0.4),
-)
+cycle = ('blue7', 'gray5', 'red7', 'gray5')
 ax.step(data, cycle=cycle, labels=list('ABCD'), legend='ul', legend_kw={'ncol': 2})
 ax.format(title='Step plot')
 
@@ -536,12 +534,12 @@ ax.format(title='Stem plot')
 gray = 'gray7'
 data = state.rand(20) - 0.5
 ax = axs[2]
-ax.area(data, linewidth=1.5, color=gray, alpha=0.2)
+ax.area(data, color=gray, alpha=0.2)
 ax.vlines(data, negpos=True, linewidth=2)
 ax.format(title='Vertical lines')
 
 # Horizontal lines
 ax = axs[3]
-ax.areax(data, linewidth=1.5, color=gray, alpha=0.2)
+ax.areax(data, color=gray, alpha=0.2)
 ax.hlines(data, negpos=True, linewidth=2)
 ax.format(title='Horizontal lines')

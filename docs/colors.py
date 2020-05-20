@@ -73,16 +73,16 @@ fig, axs = plot.subplots(nrows=2, aspect=1.5, axwidth=3.5, share=0)
 
 # Drawing from colormap
 ax = axs[0]
-cmap = 'Deep'
-m = ax.pcolormesh([[0], [1]], cmap=cmap, N=1000)
+name = 'Deep'
+cmap = plot.Colormap(name)
 idxs = plot.arange(0, 1, 0.2)
 state.shuffle(idxs)
 for idx in idxs:
     h = ax.plot(
-        (np.random.rand(20) - 0.4).cumsum(), lw=5, color=(cmap, idx),
+        (np.random.rand(20) - 0.4).cumsum(), lw=5, color=(name, idx),
         label=f'idx {idx:.1f}', legend='r', legend_kw={'ncols': 1}
     )
-ax.colorbar(m, loc='ul', locator=0.2, label='colormap')
+ax.colorbar(cmap, loc='ul', label='colormap')
 ax.format(title='Drawing from the Solar colormap', grid=True)
 
 # Drawing from color cycle

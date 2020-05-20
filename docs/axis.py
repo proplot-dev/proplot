@@ -447,9 +447,11 @@ for ax, scale, color in zip(axs[4:], ('sine', 'mercator'), ('coral', 'sky blue')
 # In the latter case, the scale's transforms are used for the forward and
 # inverse functions, and the scale's default locators and formatters are used
 # for the default `~proplot.scale.FuncScale` locators and formatters.
-# Note that the "parent" axis scale is now arbitrary -- in the first example
-# shown below, we create a `~proplot.axes.CartesianAxes.dualx` axis for an
-# axis scaled by the ``'symlog'`` scale.
+#
+# In the below examples, we generate dual axes with each of these three methods. Note
+# that the "parent" axis scale is now arbitrary -- in the first example shown below,
+# we create a `~proplot.axes.CartesianAxes.dualx` axis for an axis scaled by the
+# `symlog scale <https://matplotlib.org/3.1.0/gallery/scales/symlog_demo.html>`__.
 
 # %%
 import proplot as plot
@@ -526,7 +528,7 @@ plot.rc.reset()
 # %%
 import proplot as plot
 import numpy as np
-plot.rc['axes.ymargin'] = 0
+plot.rc.margin = 0
 c1 = plot.scale_luminance('cerulean', 0.5)
 c2 = plot.scale_luminance('red', 0.5)
 fig, ax = plot.subplots(aspect=(3, 1), width=6)

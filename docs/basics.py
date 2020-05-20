@@ -25,52 +25,70 @@
 # Creating figures
 # ----------------
 #
-# ProPlot works by subclassing the matplotlib `~matplotlib.figure.Figure` and
-# `~matplotlib.axes.Axes` classes. You can generate grids of proplot
-# `~proplot.axes.Axes` axes on a proplot `~proplot.figure.Figure` using the
-# `~proplot.ui.subplots` command.
+# ProPlot works by introducing the `proplot.figure.Figure` subclass of the
+# matplotlib figure class `matplotlib.figure.Figure`, and the `proplot.axes.Axes`
+# subclass of the matplotlib axes class `matplotlib.axes.Axes`.
+# All plotting in ProPlot begins by generating
+# an instance of the new figure class filled with instances of the new
+# axes classes using the `~proplot.ui.subplots` command, which is modeled
+# after `matplotlib.pyplot.subplots`.
+# ProPlot's `~proplot.ui.subplots` command can be used as follows:
 #
-# .. code-block:: python
-#
-#   import proplot as plot
-#   fig, axs = plot.subplots(...)
-#
-# Just like `matplotlib.pyplot.subplots`, you can use
-# `~proplot.ui.subplots` without arguments to generate a single-axes figure
-# or with `ncols` or `nrows` to set up simple grids of subplots.  You can
-# *also* draw arbitrarily complex grids in ProPlot by passing 2D arrays of
-# integers to `~proplot.ui.subplots`. Just think of this array as a
-# "picture" of your figure, where each unique integer indicates a slot that
-# is occupied by the corresponding subplot and ``0`` indicates an empty space.
+# * Without any arguments, `~proplot.ui.subplots` returns a figure with a
+#   single subplot.
+# * With `ncols` or `nrows`, `~proplot.ui.subplots` returns a
+#   figure with a simple grid of subplots.
+# * With `array`, `~proplot.ui.subplots` returns an
+#   *arbitrarily complex* grid of subplots. This is a 2D array representing
+#   a "picture" of the subplot layout, where each unique integer indicates a
+#   `~matplotlib.gridspec.GridSpec` slot that is occupied by the corresponding
+#   subplot and ``0`` indicates an empty space.
 #
 # In the below examples, we create subplot grids with `~proplot.ui.subplots`
-# and modify the axes using `~proplot.axes.Axes.format` and
-# `~proplot.ui.SubplotsContainer`. See the :ref:`formatting guide <ug_format>`
+# and modify the axes labels. See the :ref:`formatting guide <ug_format>`
 # and :ref:`subplots container <ug_container>` sections for details.
+
+# %% [raw] raw_mimetype="text/restructuredtext"
+# .. note::
 #
-# Please note that by default, ProPlot sets :rcraw:`figure.facecolor` to gray,
-# :rcraw:`savefig.facecolor` to white, and :rcraw:`savefig.transparent` to ``True``.
-# That is, the default display background is gray, the default background for
-# saved figures is transparent, and the default background is white when you pass
-# ``transparent=False`` to `~matplotlib.figure.Figure.savefig`.
+#    ProPlot sets the default display background color :rcraw:`figure.facecolor`
+#    to gray, the default background color for saved figures
+#    :rcraw:`savefig.facecolor` to white, and makes saved figure backgrounds
+#    transparent by default by setting :rcraw:`savefig.transparent` to ``True``.
+#    It also switches the default :rcraw:`savefig.format` from PNG to PDF
+#    for the following reasons:
 #
-# ProPlot also sets the default :rcraw:`savefig.format` to PDF, because
-# (1) vector graphic formats are always more suitable for matplotlib figures than
-# raster formats, (2) most academic journals these days accept PDF format figures
-# alongside the older EPS format, (3) PDF figures are easy to embed in LaTeX documents,
-# and (4) the EPS format does not support transparent graphic elements. If you *do*
-# need raster graphics, ProPlot sets the default :rcraw:`savefig.dpi` to 1200 dots per
-# inch, which is recommended by most journals as the minimum resolution for rasterized
-# figures containing lines and text. See the :ref:`configuration section <ug_proplotrc>`
-# for how to change these settings.
+#        #. Vector graphic formats are infinitely scalable.
+#        #. Vector graphic formats are preferred by academic journals.
+#        #. Most academic journals accept PDF figures alongside the traditional
+#           `EPS <https://en.wikipedia.org/wiki/Encapsulated_PostScript>`__ format.
+#        #. PDF figures are even easier to embed in LaTeX documents than EPS.
+#        #. The EPS format does not support transparent graphic elements.
+#
+#    In case you *do* need raster graphics, ProPlot sets the default
+#    :rcraw:`savefig.dpi` to 1200 dots per inch, which is
+#    `recommended by most journals <https://www.pnas.org/page/authors/format>`__
+#    as the minimum resolution for rasterized figures containing lines and text.
+#    See the :ref:`configuration section <ug_proplotrc>` for how to change these
+#    settings.
 
 # %%
-import proplot as plot
+# Generate sample data
 import numpy as np
 state = np.random.RandomState(51423)
 data = 2 * (state.rand(100, 5) - 0.5).cumsum(axis=0)
 
-# Simple plot
+# %%
+# Single subplot
+import proplot as plot
+fig, ax = plot.subplots()
+ax.plot(data, lw=2)
+ax.format(suptitle='Single subplot', xlabel='x axis', ylabel='y axis')
+
+
+# %%
+# Simple subplot grid
+import proplot as plot
 fig, axs = plot.subplots(ncols=2)
 axs[0].plot(data, lw=2)
 axs[0].format(xticks=20, xtickminor=False)
@@ -79,8 +97,11 @@ axs.format(
     xlabel='x axis', ylabel='y axis'
 )
 
+
+# %%
 # Complex grid
-array = [  # the "picture"; 1 == subplot A, 2 == subplot B, etc.
+import proplot as plot
+array = [  # the "picture" (0 == nothing, 1 == subplot A, 2 == subplot B, etc.)
     [1, 1, 2, 2],
     [0, 3, 3, 0],
 ]
@@ -91,8 +112,11 @@ axs.format(
 )
 axs[2].plot(data, lw=2)
 
+
+# %%
 # Really complex grid
-array = [  # the "picture"
+import proplot as plot
+array = [  # the "picture" (1 == subplot A, 2 == subplot B, etc.)
     [1, 1, 2],
     [1, 1, 6],
     [3, 4, 4],
@@ -180,13 +204,12 @@ axs.format(abc=True, xlabel='xlabel', ylabel='ylabel', suptitle='Quick plotting 
 #    This changes things that are the same for all axes types, like titles and
 #    a-b-c subplot labels (for example, ``abcstyle='A.'``).
 #
-# ``format`` lets you use simple shorthands for changing all kinds of
-# settings at once, instead of one-liner setter methods like
-# ``ax.set_title()``, ``ax.set_xlabel()``, and ``ax.xaxis.tick_params()``. It
-# is also integrated with the `~proplot.constructor.Locator`,
-# `~proplot.constructor.Formatter`, and `~proplot.constructor.Scale`
-# constructor functions (see the :ref:`x and y axis settings <ug_xy_axis>`
-# section for details).
+# The ``format`` methods let you use simple shorthands for changing all kinds
+# of settings at once, instead of one-liner setter methods like
+# ``ax.set_title()`` and ``ax.set_xlabel()``. They are also integrated with
+# the `~proplot.constructor.Locator`, `~proplot.constructor.Formatter`,
+# and `~proplot.constructor.Scale` constructor functions (see the
+# :ref:`x and y axis settings <ug_xy_axis>` section for details).
 #
 # The below example shows the many different keyword arguments accepted by
 # ``format``, and demonstrates how ``format`` can be used to succinctly and
@@ -214,7 +237,6 @@ axs.format(
     yticklabels=('a', 'bb', 'c', 'dd', 'e'),
     ytickloc='both', yticklabelloc='both',
     xtickdir='inout', xtickminor=False, ygridminor=True,
-    linewidth=0.8, gridlinewidth=0.8, gridminorlinewidth=0.5,
 )
 
 
@@ -226,10 +248,9 @@ axs.format(
 #
 # A special object named `~proplot.config.rc` is created whenever you import
 # ProPlot. `~proplot.config.rc` is similar to the matplotlib
-# `~matplotlib.rcParams` dictionary, but can be used to change (1)
-# matplotlib's `builtin settings
-# <https://matplotlib.org/tutorials/introductory/customizing.html>`_ and
-# (2) ProPlot's :ref:`added settings <rc_proplot>`. `~proplot.config.rc` also
+# `~matplotlib.rcParams` dictionary, but can be used to change both
+# :ref:`matplotlib settings <rc_matplotlib>`_ and
+# :ref:`ProPlot settings <rc_proplot>`. `~proplot.config.rc` also
 # provides a ``style`` parameter that can be used to switch between
 # `matplotlib stylesheets\
 # <https://matplotlib.org/3.1.1/gallery/style_sheets/style_sheets_reference.html>`__.
@@ -244,6 +265,7 @@ axs.format(
 # default state, use `~proplot.config.rc_configurator.reset`. See the below
 # example.
 
+
 # %%
 import proplot as plot
 import numpy as np
@@ -251,13 +273,13 @@ import numpy as np
 # Update global settings in several different ways
 plot.rc.cycle = 'colorblind'
 plot.rc.color = 'gray6'
-plot.rc.update({'fontname': 'Noto Sans'})
+plot.rc.update({'fontname': 'Univers', 'fontsize': 11})
 plot.rc['figure.facecolor'] = 'gray3'
 plot.rc.axesfacecolor = 'gray4'
 # plot.rc.save()  # save the current settings to ~/.proplotrc
 
 # Apply settings to figure with context()
-with plot.rc.context({'suptitle.size': 11}, toplabelcolor='gray6', linewidth=1.5):
+with plot.rc.context({'suptitle.size': 13}, toplabelcolor='gray6', linewidth=1.5):
     fig, axs = plot.subplots(ncols=2, aspect=1, width=6, span=False, sharey=2)
 
 # Plot lines
@@ -283,6 +305,7 @@ ay.plot((state.rand(100) - 0.2).cumsum(), color='r', lw=3)
 
 # Reset persistent modifications from head of cell
 plot.rc.reset()
+
 
 # %%
 import proplot as plot

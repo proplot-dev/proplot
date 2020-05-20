@@ -70,6 +70,10 @@ class _Scale(object):
     """
     def __init__(self, *args, **kwargs):
         # Pass a dummy axis to the superclass
+        # WARNING: Smart bounds is deprecated. Figure out workaround by matplotlib
+        # 3.4: https://github.com/matplotlib/matplotlib/pull/11004
+        # Without smart bounds, inverse scale ticks disappear and Mercator ticks
+        # have weird issues.
         axis = type('Axis', (object,), {'axis_name': 'x'})()
         super().__init__(axis, *args, **kwargs)
         self._default_smart_bounds = None
@@ -196,7 +200,6 @@ class LogScale(_Scale, mscale.LogScale):
         """
         keys = ('base', 'nonpos', 'subs')
         super().__init__(**_parse_logscale_args(*keys, **kwargs))
-        # self._default_major_formatter = mticker.LogFormatter(self.base)
         self._default_major_locator = mticker.LogLocator(self.base)
         self._default_minor_locator = mticker.LogLocator(self.base, self.subs)
 
@@ -241,7 +244,6 @@ subsx, subsy
         keys = ('base', 'linthresh', 'linscale', 'subs')
         super().__init__(**_parse_logscale_args(*keys, **kwargs))
         transform = self.get_transform()
-        # self._default_major_formatter = mticker.SymmetricalLogFormatter(transform)
         self._default_major_locator = mticker.SymmetricalLogLocator(transform)
         self._default_minor_locator = mticker.SymmetricalLogLocator(transform, self.subs)  # noqa: E501
 
@@ -364,19 +366,19 @@ optional
 
         # Try to borrow locators and formatters
         # WARNING: Using the same locator on multiple axes can evidently
-        # have unintended side effects! Matplotlib bug. So we make copies.
+        # have unintended side effects! So we make copies.
         for scale in (arg, parent_scale):
             if not isinstance(scale, _Scale):
                 continue
             if isinstance(scale, mscale.LinearScale):
                 continue
-            for key in (
+            for name in (
                 'major_locator', 'minor_locator', 'major_formatter', 'minor_formatter'
             ):
-                key = '_default_' + key
-                attr = getattr(scale, key)
-                if getattr(self, key) is None and attr is not None:
-                    setattr(self, key, copy.copy(attr))
+                attr = f'_default_{name}'
+                obj = getattr(scale, attr)
+                if getattr(self, attr) is None and obj is not None:
+                    setattr(self, attr, copy.copy(obj))
 
 
 class FuncTransform(mtransforms.Transform):
@@ -865,7 +867,6 @@ class InverseScale(_Scale, mscale.ScaleBase):
         """"""  # empty docstring
         super().__init__()
         self._transform = InverseTransform()
-        # self._default_major_formatter = Formatter('log')
         self._default_major_locator = mticker.LogLocator(10)
         self._default_minor_locator = mticker.LogLocator(10, np.arange(1, 10))
         self._default_smart_bounds = True
@@ -876,7 +877,7 @@ class InverseScale(_Scale, mscale.ScaleBase):
         """
         # Unlike log-scale, we can't just warp the space between
         # the axis limits -- have to actually change axis limits. Also this
-        # scale will invert and swap the limits you provide. Weird!
+        # scale will invert and swap the limits you provide.
         return max(vmin, minpos), max(vmax, minpos)
 
 

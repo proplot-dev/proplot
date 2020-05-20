@@ -117,10 +117,15 @@ fig, axs = plot.show_cmaps()
 # in hue, luminance, and *HPL saturation* (bottom left).
 
 # %%
+# Colorspace demo
 import proplot as plot
 fig, axs = plot.show_colorspaces(axwidth=1.6, luminance=50)
 fig, axs = plot.show_colorspaces(axwidth=1.6, saturation=60)
 fig, axs = plot.show_colorspaces(axwidth=1.6, hue=0)
+
+# %%
+# Compare colormaps
+import proplot as plot
 for cmaps in (('magma', 'rocket'), ('fire', 'dusk')):
     fig, axs = plot.show_channels(
         *cmaps, axwidth=1.5, minhue=-180, maxsat=400, rgb=False
@@ -215,7 +220,9 @@ m = axs[4].pcolormesh(
 cmap5 = m.cmap
 axs[4].format(title='From list of colors')
 
+# %%
 # Test the channels
+import proplot as plot
 fig, axs = plot.show_channels(cmap1, cmap2, axwidth=1.5, rgb=False)
 fig, axs = plot.show_channels(
     cmap3, cmap4, cmap5, minhue=-180, axwidth=1.5, rgb=False

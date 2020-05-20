@@ -301,7 +301,7 @@ class CartesianAxes(base.Axes):
             or self._datex_rotated
         ):
             return
-        rotation = rc['axes.formatter.timerotation']
+        rotation = rc['formatter.timerotation']
         kw = {'rotation': rotation}
         if rotation not in (0, 90, -90):
             kw['ha'] = ('right' if rotation > 0 else 'left')
@@ -591,7 +591,7 @@ class CartesianAxes(base.Axes):
             `~proplot.constructor.Formatter`.
         xrotation, yrotation : float, optional
             The rotation for *x* and *y* axis tick labels. Default is ``0``
-            for normal axes, :rc:`axes.formatter.timerotation` for time
+            for normal axes, :rc:`formatter.timerotation` for time
             *x* axes.
         xtickrange, ytickrange : (float, float), optional
             The *x* and *y* axis data ranges within which major tick marks

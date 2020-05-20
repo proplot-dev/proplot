@@ -2074,7 +2074,11 @@ def text_wrapper(
     fontsize = _not_none(fontsize, size)
     fontfamily = _not_none(fontname, fontfamily, family)
     if fontsize is not None:
-        kwargs['fontsize'] = units(fontsize, 'pt')
+        try:
+            rc._scale_font(fontsize)  # *validate* but do not translate
+        except KeyError:
+            fontsize = units(fontsize, 'pt')
+        kwargs['fontsize'] = fontsize
     if fontfamily is not None:
         kwargs['fontfamily'] = fontfamily
     if not transform:
@@ -3058,7 +3062,7 @@ property-spec, optional
     if frameon is not None:
         kwargs['frameon'] = frameon
     if fontsize is not None:
-        kwargs['fontsize'] = fontsize
+        kwargs['fontsize'] = rc._scale_font(fontsize)
 
     # Text properties that have to be set after-the-fact
     kw_text = {}
@@ -3188,6 +3192,7 @@ property-spec, optional
         # NOTE: Empirical testing shows spacing fudge factor necessary to
         # exactly replicate the spacing of standard aligned legends.
         fontsize = kwargs.get('fontsize', None) or rc['legend.fontsize']
+        fontsize = rc._scale_font(fontsize)
         spacing = kwargs.get('labelspacing', None) or rc['legend.labelspacing']
         interval = 1 / len(pairs)  # split up axes
         interval = (((1 + spacing * 0.85) * fontsize) / 72) / height
@@ -3528,7 +3533,7 @@ or colormap-spec
         if isinstance(mappable, mcolors.Colormap):
             cmap = mappable
             if values is None:
-                values = np.arange(cmap.N)
+                values = np.linspace(0, 1, rc['image.levels'] + 1)
 
         # List of colors
         elif np.iterable(mappable) and all(
@@ -3573,6 +3578,7 @@ or colormap-spec
                         values = np.arange(len(colors))
                         break
                     values.append(val)
+            locator = _not_none(locator, values)  # tick *all* values by default
 
         else:
             raise ValueError(
@@ -3583,7 +3589,6 @@ or colormap-spec
 
         # Build ad hoc ScalarMappable object from colors
         if cmap is not None:
-            locator = _not_none(locator, values)  # tick *all* vals by default
             if np.iterable(mappable) and len(values) != len(mappable):
                 raise ValueError(
                     f'Passed {len(values)} values, but only {len(mappable)} '
@@ -3627,6 +3632,7 @@ or colormap-spec
                 scale = 1
                 length = height * abs(self.get_position().height)
                 fontsize = kw_ticklabels.get('size', rc['ytick.labelsize'])
+            fontsize = rc._scale_font(fontsize)
             maxn = _not_none(maxn, int(length / (scale * fontsize / 72)))
             maxn_minor = _not_none(
                 maxn_minor, int(length / (0.5 * fontsize / 72))
