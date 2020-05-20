@@ -573,21 +573,10 @@ def Colormap(
             except (ValueError, TypeError):
                 message = f'Invalid colormap, color cycle, or color {arg!r}.'
                 if isinstance(arg, str) and arg[:1] != '#':
-                    cmaps = ', '.join(sorted(
-                        repr(key) for key, value in pcolors._cmap_database.items()
-                        if isinstance(value, pcolors.LinearSegmentedColormap)
-                    ))
-                    cycles = ', '.join(sorted(
-                        repr(key) for key, value in pcolors._cmap_database.items()
-                        if isinstance(value, pcolors.ListedColormap)
-                    ))
-                    colors = ', '.join(sorted(
-                        map(repr, mcolors.colorConverter.colors)
-                    ))
+                    # NOTE: Do not print color names. Message is too big to be useful.
                     message += (
-                        f'\nValid color names: {colors}'
-                        f'\nValid colormap names: {cmaps}'
-                        f'\nValid color cycle names: {cycles}'
+                        ' Valid names are: '
+                        + ', '.join(map(repr, pcolors._cmap_database)) + '.'
                     )
                 raise ValueError(message)
             cmap = pcolors.PerceptuallyUniformColormap.from_color(tmp, color, fade)  # noqa: E501
