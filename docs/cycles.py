@@ -168,7 +168,7 @@ data = (state.rand(20, 4) - 0.5).cumsum(axis=0)
 data = pd.DataFrame(data, columns=pd.Index(['a', 'b', 'c', 'd'], name='label'))
 
 # Plot data
-fig, ax = plot.subplots(axwidth=3, aspect=1)
+fig, ax = plot.subplots(axwidth=2.6, aspect=1)
 ax.format(suptitle='Plot without color cycle')
 obj = ax.plot(
     data, lw=3, cycle=cycle, legend='ul',
