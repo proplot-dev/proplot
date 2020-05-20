@@ -257,10 +257,9 @@ elements when drawing multiple subplots, namely...
 * ...repeated colorbars.
 * ...repeated legends.
 
-These sorts of redundancies are extremely common even in publications, where
+These sorts of redundancies are very common even in publications, where
 they waste valuable page space. They arise because this is often the path of
-least resistance for the default API -- removing redundancies tends to require
-extra work.
+least resistance -- removing redundancies tends to require extra work.
 
 .. rubric:: Solution
 
@@ -328,7 +327,6 @@ the process of drawing colorbars and legends much cleaner.
 * To draw a colorbar or legend on the inside of a specific subplot, pass an
   "inner" location (e.g. ``loc='ur'`` or ``loc='upper right'``)
   to `proplot.axes.Axes.colorbar` or `proplot.axes.Axes.legend`.
-  And yes, that's right, you can now draw inset colorbars.
 * To draw a colorbar or legend along the edge of the figure, use
   `proplot.figure.Figure.colorbar` and `proplot.figure.Figure.legend`.
   The `col`, `row`, and `span` keyword args control which
@@ -386,23 +384,24 @@ designed to make your life easier.
   box. This is more convenient for things like covariance matrices.
 * The new `~proplot.axes.Axes.parametric` method draws *parametric* line
   plots, where the parametric coordinate is denoted with a colorbar and
-  colormap colors rather than text annotations. This much cleaner than the
-  conventional approach.
-* The new `~proplot.axes.Axes.area` and `~proplot.axes.Axes.areax` methods
-  call `~matplotlib.axes.Axes.fill_between` and
-  `~matplotlib.axes.Axes.fill_betweenx`. These methods now accept 2D arrays
-  and *stack* or *overlay* successive columns. They also accept a `negpos`
-  keyword argument that can be used to assign separate colors to negative and
-  positive data.
+  colormap colors rather than text annotations.
 * The `~matplotlib.axes.Axes.bar` and `~matplotlib.axes.Axes.barh` methods
-  accept 2D arrays and *stack* or *group* successive columns. In a future
-  version, just like `~matplotlib.axes.Axes.fill_between` and
-  `~matplotlib.axes.Axes.fill_betweenx`, you will be able to use different
-  colors for positive/negative bars.
-* All :ref:`1D plotting methods <ug_1dplots>` can be used to :ref:`add error
-  bars or error shading <ug_errorbars>` using various specialized keyword arguments.
-  You no longer have to work with the `~matplotlib.axes.Axes.errorbar` method
-  directly.  They also accept a
+  accept 2D arrays and can *stack* or *group* successive columns. Similarly,
+  the new `~proplot.axes.Axes.area` and `~proplot.axes.Axes.areax` methods
+  (aliases for `~matplotlib.axes.Axes.fill_between` and
+  `~matplotlib.axes.Axes.fill_betweenx`) also accept 2D arrays
+  and can *stack* or *overlay* successive columns.
+* The `~matplotlib.axes.Axes.bar`, `~matplotlib.axes.Axes.barh`,
+  `~matplotlib.axes.Axes.vlines`, `~matplotlib.axes.Axes.hlines`,
+  `~proplot.axes.Axes.area`, and `~proplot.axes.Axes.areax` commands
+  all accept a `negpos` keyword argument that can be used to assign
+  "negative" and "positive" colors to different regions.
+* You can now :ref:`add error bars or error shading <ug_errorbars>`
+  to `~matplotlib.axes.Axes.bar`, `~matplotlib.axes.Axes.barh`,
+  `~matplotlib.axes.Axes.plot`, and `~matplotlib.axes.Axes.scatter` plots
+  by passing special keyword arguments to these functions. You no longer have
+  to work with the `~matplotlib.axes.Axes.errorbar` method directly.
+* All :ref:`1D plotting methods <ug_1dplots>` accept a
   :ref:`"cycle" keyword argument <ug_cycle_changer>`
   interpreted by `~proplot.constructor.Cycle` and optional
   :ref:`"colorbar" and "legend" keyword arguments <ug_cbars_axes>`
@@ -415,8 +414,8 @@ designed to make your life easier.
   :ref:`"colorbar" keyword argument <ug_cbars_axes>`
   for drawing on-the-fly colorbars. They also accept a
   :ref:`"labels" keyword argument <ug_labels>` used to
-  draw contour labels or grid box labels on-the-fly. Labels are
-  colored black or white according to the luminance of the underlying filled
+  draw contour labels or grid box labels on-the-fly, and labels are colored
+  black or white according to the luminance of the underlying filled
   contour or grid box color.
 * Matplotlib requires coordinate *centers* for contour plots and *edges* for
   pcolor plots. If you pass *centers* to pcolor, matplotlib treats them as
