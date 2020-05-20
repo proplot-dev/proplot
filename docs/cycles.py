@@ -76,13 +76,15 @@ kwargs = {'legend': 'b', 'labels': list('abcdef')}
 # Modify the default color cycle
 plot.rc.cycle = '538'
 fig, axs = plot.subplots(ncols=3, axwidth=1.9)
-axs.format(suptitle='Changing the color cycle globally and locally')
+axs.format(suptitle='Changing the color cycle')
 ax = axs[0]
 ax.plot(data, lw=lw, **kwargs)
+ax.format(title='Global color cycle')
 
 # Pass the cycle to a plotting command
 ax = axs[1]
 ax.plot(data, cycle='qual1', lw=lw, **kwargs)
+ax.format(title='Local color cycle')
 
 # As above but draw each line individually
 # Note that the color cycle is not reset with each plot call
@@ -90,6 +92,7 @@ ax = axs[2]
 labels = kwargs['labels']
 for i in range(data.shape[1]):
     ax.plot(data[:, i], cycle='qual1', legend='b', label=labels[i], lw=lw)
+ax.format(title='With multiple plot calls')
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -118,13 +121,13 @@ for i in range(data.shape[1]):
 # %%
 import proplot as plot
 import numpy as np
-fig, axs = plot.subplots(ncols=2, share=0, axwidth=2, aspect=1.2)
+fig, axs = plot.subplots(ncols=2, share=0, axwidth=2.3)
 state = np.random.RandomState(51423)
 data = (20 * state.rand(10, 21) - 10).cumsum(axis=0)
 
 # Cycle from on-the-fly monochromatic colormap
 ax = axs[0]
-lines = ax.plot(data[:, :5], cycle='plum', cycle_kw={'left': 0.3}, lw=5)
+lines = ax.plot(data[:, :5], cycle='plum', cycle_kw={'fade': 85}, lw=5)
 fig.colorbar(lines, loc='b', col=1, values=np.arange(0, len(lines)))
 fig.legend(lines, loc='b', col=1, labels=np.arange(0, len(lines)))
 ax.format(title='Cycle from color')
@@ -155,12 +158,18 @@ ax.format(
 # %%
 import numpy as np
 import pandas as pd
-fig, ax = plot.subplots(axwidth=3, aspect=1.5)
+
+# Create cycle that loops through 'dashes' Line2D property
+cycle = plot.Cycle(dashes=[(1, 0.5), (1, 1.5), (3, 0.5), (3, 1.5)])
+
+# Generate sample data
 state = np.random.RandomState(51423)
 data = (state.rand(20, 4) - 0.5).cumsum(axis=0)
 data = pd.DataFrame(data, columns=pd.Index(['a', 'b', 'c', 'd'], name='label'))
+
+# Plot data
+fig, ax = plot.subplots(axwidth=3, aspect=1)
 ax.format(suptitle='Plot without color cycle')
-cycle = plot.Cycle(dashes=[(1, 0.5), (1, 1.5), (3, 0.5), (3, 1.5)])
 obj = ax.plot(
     data, lw=3, cycle=cycle, legend='ul',
     legend_kw={'ncols': 2, 'handlelength': 3}

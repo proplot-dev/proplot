@@ -69,7 +69,11 @@ fig, axs = plot.show_colors()
 import proplot as plot
 import numpy as np
 state = np.random.RandomState(51423)
-fig, axs = plot.subplots(nrows=2, aspect=1.5, axwidth=3.5, share=0)
+fig, axs = plot.subplots(nrows=2, axwidth=3.2, share=0)
+axs.format(
+    xformatter='null', yformatter='null', abc=True, abcloc='ul', abcstyle='A.',
+    suptitle='Getting individual colors from colormaps and cycles'
+)
 
 # Drawing from colormap
 ax = axs[0]
@@ -78,11 +82,12 @@ cmap = plot.Colormap(name)
 idxs = plot.arange(0, 1, 0.2)
 state.shuffle(idxs)
 for idx in idxs:
+    data = (state.rand(20) - 0.4).cumsum()
     h = ax.plot(
-        (np.random.rand(20) - 0.4).cumsum(), lw=5, color=(name, idx),
+        data, lw=5, color=(name, idx),
         label=f'idx {idx:.1f}', legend='r', legend_kw={'ncols': 1}
     )
-ax.colorbar(cmap, loc='ul', label='colormap')
+ax.colorbar(cmap, loc='ur', label='colormap', length='12em')
 ax.format(title='Drawing from the Solar colormap', grid=True)
 
 # Drawing from color cycle
@@ -90,15 +95,12 @@ ax = axs[1]
 idxs = np.arange(6)
 state.shuffle(idxs)
 for idx in idxs:
+    data = (state.rand(20) - 0.4).cumsum()
     h = ax.plot(
-        (np.random.rand(20) - 0.4).cumsum(), lw=5, color=('qual1', idx),
+        data, lw=5, color=('qual1', idx),
         label=f'idx {idx:.0f}', legend='r', legend_kw={'ncols': 1}
     )
 ax.format(title='Drawing from the ggplot color cycle')
-axs.format(
-    xlocator='null', abc=True, abcloc='ur', abcstyle='A.',
-    suptitle='Getting individual colors from colormaps and cycles'
-)
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
