@@ -134,11 +134,11 @@ plot.rc.reset()
 import proplot as plot
 import numpy as np
 plot.rc.update(
-    linewidth=1.2, fontsize=10, facecolor='blue0', figurefacecolor='gray2',
+    linewidth=1.2, fontsize=10, facecolor='gray0', figurefacecolor='gray2',
     color='gray8', gridcolor='gray8', titlecolor='gray8', suptitlecolor='gray8',
     titleloc='upper center', titleborder=False,
 )
-fig, axs = plot.subplots(nrows=8, axwidth=5, aspect=(8, 1), share=0)
+fig, axs = plot.subplots(nrows=9, axwidth=5, aspect=(8, 1), share=0)
 
 # Scientific notation
 axs[0].format(
@@ -154,32 +154,36 @@ axs[1].format(
 
 # Fraction formatters
 axs[2].format(
-    xlim=(0, 3 * np.pi), xlocator=plot.arange(0, 4, 0.25) * np.pi,
+    xlim=(0, 3 * np.pi), xlocator=np.pi / 4,
     xformatter='pi', title='FracFormatter',
 )
 axs[3].format(
-    xlim=(0, 2 * np.e), xlocator=plot.arange(0, 2, 0.5) * np.e,
+    xlim=(0, 2 * np.e), xlocator=np.e / 2,
     xticklabels='e', title='FracFormatter',
 )
 
-# Geographic formatter
+# Geographic formatters
 axs[4].format(
-    xlim=(-90, 90), xlocator=plot.arange(-90, 90, 30),
-    xformatter='deglat', title='Geographic Formatter'
+    xlim=(-90, 90), xlocator=30,
+    xformatter='deglat', title='Latitude Formatter'
+)
+axs[5].format(
+    xlim=(0, 360), xlocator=60,
+    xformatter='deglon', title='Longitude Formatter'
 )
 
 # User input labels
-axs[5].format(
+axs[6].format(
     xlim=(-1.01, 1), xlocator=0.5,
     xticklabels=['a', 'b', 'c', 'd', 'e'], title='FixedFormatter',
 )
 
 # Custom style labels
-axs[6].format(
+axs[7].format(
     xlim=(0, 0.001), xlocator=0.0001,
     xformatter='%.E', title='FormatStrFormatter',
 )
-axs[7].format(
+axs[8].format(
     xlim=(0, 100), xtickminor=False, xlocator=20,
     xformatter='{x:.1f}', title='StrMethodFormatter',
 )
