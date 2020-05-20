@@ -251,6 +251,13 @@ class AutoFormatter(mticker.ScalarFormatter):
         string = string + tail  # add negative-positive indicator
         return string
 
+    def get_offset(self):
+        """
+        Get the offset but *always* use math text.
+        """
+        with _set_state(self, _useMathText=True):
+            return super().get_offset()
+
     @staticmethod
     def _add_prefix_suffix(string, prefix=None, suffix=None):
         """
