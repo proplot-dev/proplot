@@ -26,16 +26,16 @@ Please note that due to my day job as a graduate student, `certain feature addit
 
    basics
    subplots
+   axis
+   projections
    colorbars_legends
+   insets_panels
+   1dplots
+   2dplots
    colormaps
    cycles
    colors
    fonts
-   projections
-   axis
-   insets_panels
-   1dplots
-   2dplots
    configuration
 
 .. toctree::
