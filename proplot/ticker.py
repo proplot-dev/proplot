@@ -478,7 +478,7 @@ def SigFigFormatter(sigfig=3, zerotrim=None):
 
 @docstring.add_snippets
 def SimpleFormatter(
-    precision=6, zerotrim=None, tickrange=None, wraprange=None,
+    precision=None, zerotrim=None, tickrange=None, wraprange=None,
     prefix=None, suffix=None, negpos=None,
 ):
     """
@@ -490,11 +490,14 @@ def SimpleFormatter(
     Parameters
     ----------
     precision : int, optional
-        The maximum number of digits after the decimal point. Default is ``6``.
+        The maximum number of digits after the decimal point. Default is ``6``
+        when `zerotrim` is ``True`` and ``2`` otherwise.
     %(formatter.params)s
     """
     from .config import rc
     zerotrim = _not_none(zerotrim, rc['formatter.zerotrim'])
+    if precision is None:
+        precision = 6 if zerotrim else 2
     tickrange = tickrange or (-np.inf, np.inf)
     prefix = prefix or ''
     suffix = suffix or ''
