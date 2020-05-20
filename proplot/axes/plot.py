@@ -3528,7 +3528,7 @@ or colormap-spec
         if isinstance(mappable, mcolors.Colormap):
             cmap = mappable
             if values is None:
-                values = np.arange(cmap.N)
+                values = np.linspace(0, 1, rc['image.levels'] + 1)
 
         # List of colors
         elif np.iterable(mappable) and all(
@@ -3573,6 +3573,7 @@ or colormap-spec
                         values = np.arange(len(colors))
                         break
                     values.append(val)
+            locator = _not_none(locator, values)  # tick *all* values by default
 
         else:
             raise ValueError(
@@ -3583,7 +3584,6 @@ or colormap-spec
 
         # Build ad hoc ScalarMappable object from colors
         if cmap is not None:
-            locator = _not_none(locator, values)  # tick *all* vals by default
             if np.iterable(mappable) and len(values) != len(mappable):
                 raise ValueError(
                     f'Passed {len(values)} values, but only {len(mappable)} '

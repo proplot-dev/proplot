@@ -1092,12 +1092,15 @@ class Figure(mfigure.Figure):
         """
         ax = kwargs.pop('ax', None)
         cax = kwargs.pop('cax', None)
+
         # Fill this axes
         if cax is not None:
             return super().colorbar(*args, cax=cax, **kwargs)
+
         # Generate axes panel
         elif ax is not None:
             return ax.colorbar(*args, space=space, width=width, **kwargs)
+
         # Generate figure panel
         loc = self._axes_main[0]._loc_translate(loc, 'panel')
         ax = self._add_figure_panel(
@@ -1172,9 +1175,11 @@ class Figure(mfigure.Figure):
             Passed to `~proplot.axes.legend_wrapper`.
         """
         ax = kwargs.pop('ax', None)
+
         # Generate axes panel
         if ax is not None:
             return ax.legend(*args, space=space, width=width, **kwargs)
+
         # Generate figure panel
         loc = self._axes_main[0]._loc_translate(loc, 'panel')
         ax = self._add_figure_panel(

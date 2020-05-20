@@ -1057,7 +1057,7 @@ optional
 
     def colorbar(
         self, *args, loc=None, pad=None,
-        length=None, width=None, space=None, frame=None, frameon=None,
+        length=None, shrink=None, width=None, space=None, frame=None, frameon=None,
         alpha=None, linewidth=None, edgecolor=None, facecolor=None,
         **kwargs
     ):
@@ -1070,6 +1070,8 @@ optional
         loc : str, optional
             The colorbar location. Default is :rc:`colorbar.loc`. The
             following location keys are valid:
+
+            .. _colorbar_table:
 
             ==================  =======================================
             Location            Valid keys
@@ -1095,6 +1097,10 @@ optional
             axes width or height. Default is :rc:`colorbar.length`. For inset
             colorbars, units are interpreted by `~proplot.utils.units`. Default
             is :rc:`colorbar.insetlength`.
+        shrink : float, optional
+            Alias for `length`. This is included to match the
+            `matplotlib.figure.Figure.colorbar` keyword that has roughly the same
+            meaning as `length`.
         width : float or str, optional
             The colorbar width. Units are interpreted by
             `~proplot.utils.units`.  For outer colorbars, default is
@@ -1124,6 +1130,7 @@ optional
         # TODO: add option to pad inset away from axes edge!
         # TODO: get "best" colorbar location from legend algorithm.
         kwargs.update({'edgecolor': edgecolor, 'linewidth': linewidth})
+        length = _not_none(length=length, shrink=shrink)
         if loc != 'fill':
             loc = self._loc_translate(loc, 'colorbar')
 
@@ -1311,6 +1318,8 @@ optional
         ----------
         loc : int or str, optional
             The legend location. The following location keys are valid:
+
+            .. _legend_table:
 
             ==================  =======================================
             Location            Valid keys
