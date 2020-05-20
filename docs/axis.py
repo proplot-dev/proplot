@@ -141,10 +141,7 @@ plot.rc.update(
 fig, axs = plot.subplots(nrows=9, axwidth=5, aspect=(8, 1), share=0)
 
 # Scientific notation
-axs[0].format(
-    xlim=(0, 1e20),
-    xformatter='sci', title='SciFormatter'
-)
+axs[0].format(xlim=(0, 1e20), xformatter='sci', title='SciFormatter')
 
 # N significant figures for ticks at specific values
 axs[1].format(
@@ -154,22 +151,18 @@ axs[1].format(
 
 # Fraction formatters
 axs[2].format(
-    xlim=(0, 3 * np.pi), xlocator=np.pi / 4,
-    xformatter='pi', title='FracFormatter',
+    xlim=(0, 3 * np.pi), xlocator=np.pi / 4, xformatter='pi', title='FracFormatter',
 )
 axs[3].format(
-    xlim=(0, 2 * np.e), xlocator=np.e / 2,
-    xticklabels='e', title='FracFormatter',
+    xlim=(0, 2 * np.e), xlocator=np.e / 2, xticklabels='e', title='FracFormatter',
 )
 
 # Geographic formatters
 axs[4].format(
-    xlim=(-90, 90), xlocator=30,
-    xformatter='deglat', title='Latitude Formatter'
+    xlim=(-90, 90), xlocator=30, xformatter='deglat', title='Latitude Formatter'
 )
 axs[5].format(
-    xlim=(0, 360), xlocator=60,
-    xformatter='deglon', title='Longitude Formatter'
+    xlim=(0, 360), xlocator=60, xformatter='deglon', title='Longitude Formatter'
 )
 
 # User input labels
@@ -180,8 +173,7 @@ axs[6].format(
 
 # Custom style labels
 axs[7].format(
-    xlim=(0, 0.001), xlocator=0.0001,
-    xformatter='%.E', title='FormatStrFormatter',
+    xlim=(0, 0.001), xlocator=0.0001, xformatter='%.E', title='FormatStrFormatter',
 )
 axs[8].format(
     xlim=(0, 100), xtickminor=False, xlocator=20,
