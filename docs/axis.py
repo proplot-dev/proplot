@@ -112,16 +112,17 @@ plot.rc.reset()
 #
 # These keyword arguments can be used to apply built-in matplotlib
 # `~matplotlib.ticker.Formatter`\ s by their "registered" names (e.g.
-# ``xformatter='log'``), to apply new "preset" axis formatters (e.g.
-# ``xformatter='deglat'`` to label ticks as the geographic latitude or
-# ``xformatter='pi'`` to label ticks as fractions of :math:`\pi`), to apply a
-# ``%``-style format directive with `~matplotlib.ticker.FormatStrFormatter`
-# (e.g. ``xformatter='%.0f'``), or to apply custom tick labels with
-# `~matplotlib.ticker.FixedFormatter` (just like
-# `~matplotlib.axes.Axes.set_xticklabels` and
-# `~matplotlib.axes.Axes.set_yticklabels`). See
-# `~proplot.axes.CartesianAxes.format` and `~proplot.constructor.Formatter`
-# for details.
+# ``xformatter='log'``), to apply a ``%``-style format directive with
+# `~matplotlib.ticker.FormatStrFormatter` (e.g. ``xformatter='%.0f'``), or
+# to apply custom tick labels with `~matplotlib.ticker.FixedFormatter` (just
+# like `~matplotlib.axes.Axes.set_xticklabels` and
+# `~matplotlib.axes.Axes.set_yticklabels`). They can also be used
+# to apply one of ProPlot's new axis formatters -- for example,
+# ``xformatter='deglat'`` to label ticks as the geographic latitude,
+# ``xformatter='pi'`` to label ticks as fractions of :math:`\pi`,
+# or ``xformatter='sci'`` to label ticks with scientific notation.
+# See `~proplot.axes.CartesianAxes.format` and
+# `~proplot.constructor.Formatter` for details.
 #
 # ProPlot also changes the default axis formatter to
 # `~proplot.ticker.AutoFormatter`. This class trims trailing zeros by
@@ -137,36 +138,48 @@ plot.rc.update(
     suptitlecolor='w', gridcolor='w', color='w',
     titleloc='upper center', titlecolor='w', titleborder=False,
 )
-fig, axs = plot.subplots(nrows=6, axwidth=5, aspect=(8, 1), share=0)
+fig, axs = plot.subplots(nrows=8, axwidth=5, aspect=(8, 1), share=0)
+
+# Scientific notation
+axs[0].format(
+    xlim=(0, 1e20),
+    xformatter='sci', title='SciFormatter'
+)
+
+# N significant figures for ticks at specific values
+axs[1].format(
+    xlim=(0, 20), xlocator=(0.0034, 3.233, 9.2, 15.2344, 7.2343, 19.58),
+    xformatter=('sigfig', 2), title='SigFigFormatter',  # 2 significant digits
+)
 
 # Fraction formatters
-axs[0].format(
+axs[2].format(
     xlim=(0, 3 * np.pi), xlocator=plot.arange(0, 4, 0.25) * np.pi,
     xformatter='pi', title='FracFormatter',
 )
-axs[1].format(
+axs[3].format(
     xlim=(0, 2 * np.e), xlocator=plot.arange(0, 2, 0.5) * np.e,
     xticklabels='e', title='FracFormatter',
 )
 
 # Geographic formatter
-axs[2].format(
+axs[4].format(
     xlim=(-90, 90), xlocator=plot.arange(-90, 90, 30),
-    xformatter='deglat', title='Geographic preset'
+    xformatter='deglat', title='Geographic Formatter'
 )
 
 # User input labels
-axs[3].format(
+axs[5].format(
     xlim=(-1.01, 1), xlocator=0.5,
     xticklabels=['a', 'b', 'c', 'd', 'e'], title='FixedFormatter',
 )
 
 # Custom style labels
-axs[4].format(
+axs[6].format(
     xlim=(0, 0.001), xlocator=0.0001,
     xformatter='%.E', title='FormatStrFormatter',
 )
-axs[5].format(
+axs[7].format(
     xlim=(0, 100), xtickminor=False, xlocator=20,
     xformatter='{x:.1f}', title='StrMethodFormatter',
 )
@@ -178,7 +191,7 @@ import proplot as plot
 plot.rc.linewidth = 2
 plot.rc.fontsize = 11
 locator = [0, 0.25, 0.5, 0.75, 1]
-fig, axs = plot.subplots([[1, 1, 2, 2], [0, 3, 3, 0]], axwidth=1.5, share=0)
+fig, axs = plot.subplots(ncols=2, nrows=2, axwidth=1.5, share=0)
 
 # Formatter comparison
 axs[0].format(
@@ -187,10 +200,16 @@ axs[0].format(
 axs[1].format(yticklabelloc='both', title='ProPlot formatter')
 axs[:2].format(xlocator=locator, ylocator=locator)
 
-# Limiting the formatter tick range
+# Limiting the tick range
 axs[2].format(
     title='Omitting tick labels', ticklen=5, xlim=(0, 5), ylim=(0, 5),
     xtickrange=(0, 2), ytickrange=(0, 2), xlocator=1, ylocator=1
+)
+
+# Setting the wrap range
+axs[3].format(
+    title='Wrapping the tick range', ticklen=5, xlim=(0, 7), ylim=(0, 6),
+    xwraprange=(0, 5), ywraprange=(0, 3), xlocator=1, ylocator=1
 )
 axs.format(
     ytickloc='both', yticklabelloc='both',
