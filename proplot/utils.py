@@ -5,6 +5,7 @@ Various tools that may be useful while making plots.
 import re
 import numpy as np
 import matplotlib.colors as mcolors
+import matplotlib.font_manager as mfonts
 from matplotlib import rcParams
 from numbers import Number, Integral
 from .internals import ic  # noqa: F401
@@ -581,8 +582,6 @@ def units(value, dest='in', axes=None, figure=None, width=True):
     fontsize_small = rcParams['font.size']  # must be absolute
     fontsize_large = rcParams['axes.titlesize']
     if isinstance(fontsize_large, str):
-        import matplotlib.font_manager as mfonts
-        # error will be raised somewhere else if string name is invalid!
         scale = mfonts.font_scalings.get(fontsize_large, 1)
         fontsize_large = fontsize_small * scale
 

@@ -387,7 +387,7 @@ class rc_configurator(object):
         # TODO: Incorporate into more sophisticated validation system
         if any(REGEX_POINTS.match(_) for _ in keys):
             try:
-                value = self._scale_font(value)
+                self._scale_font(value)  # *validate* but do not translate
             except KeyError:
                 value = units(value, 'pt')
 

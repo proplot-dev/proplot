@@ -2074,7 +2074,11 @@ def text_wrapper(
     fontsize = _not_none(fontsize, size)
     fontfamily = _not_none(fontname, fontfamily, family)
     if fontsize is not None:
-        kwargs['fontsize'] = units(fontsize, 'pt')
+        try:
+            rc._scale_font(fontsize)  # *validate* but do not translate
+        except KeyError:
+            fontsize = units(fontsize, 'pt')
+        kwargs['fontsize'] = fontsize
     if fontfamily is not None:
         kwargs['fontfamily'] = fontfamily
     if not transform:
