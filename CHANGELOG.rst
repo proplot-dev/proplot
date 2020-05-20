@@ -123,6 +123,9 @@ There are quite a lot of deprecations for this release.
 
 .. rubric:: Features
 
+- Add `~proplot.ticker.SigFigFormatter` (:pr:`149`, :commit:`da6105d2`)
+  and `~proplot.ticker.SciFormatter` (:pr:`175`, :commit:`c43f7f91`)
+  axis formatters.
 - Use `_LonAxis` and `_LatAxis` dummy axes with custom `LongitudeLocator`
   and `LatitudeLocator` to control geographic gridlines (:pr:`168`).
 - Add ``'dmslat'`` and ``'dmslon'`` as formatters for cartopy projections,
@@ -165,8 +168,6 @@ There are quite a lot of deprecations for this release.
   (:commit:`f801852b`).
 - Change default line style for geographic gridlines from ``':'`` to ``'-'``
   and match style from primary gridlines (:commit:`f801852b`).
-- Support cartopy inline meridian and parallel gridlines and support
-  changing the gridline padding (:commit:`###`).
 - Support `cartopy 0.18 <https://scitools.org.uk/cartopy/docs/latest/whats_new.html>`__
   locators, formatters, deprecations, and new labelling features (:pr:`158`).
 - Support building a colormap and `DiscreteNorm` inside `~matplotlib.axes.Axes.scatter`,
@@ -216,7 +217,7 @@ There are quite a lot of deprecations for this release.
 - Fix various issues with axis label sharing and axis sharing for
   twinned axes and panel axes (:pr:`164`).
 - Permit modifying existing cartopy geographic features with successive
-  calls to `~proplot.axes.GeoAxes.format` (:commit:`###`).
+  calls to `~proplot.axes.GeoAxes.format` (:pr:`168`).
 - Fix issue drawing bar plots with datetime *x* axes (:pr:`156`).
 - Fix issue where `~proplot.ticker.AutoFormatter` tools were not locale-aware, i.e. use
   comma as decimal point sometimes (:commit:`c7636296`).
