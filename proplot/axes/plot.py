@@ -3062,7 +3062,7 @@ property-spec, optional
     if frameon is not None:
         kwargs['frameon'] = frameon
     if fontsize is not None:
-        kwargs['fontsize'] = fontsize
+        kwargs['fontsize'] = rc._scale_font(fontsize)
 
     # Text properties that have to be set after-the-fact
     kw_text = {}
@@ -3192,6 +3192,7 @@ property-spec, optional
         # NOTE: Empirical testing shows spacing fudge factor necessary to
         # exactly replicate the spacing of standard aligned legends.
         fontsize = kwargs.get('fontsize', None) or rc['legend.fontsize']
+        fontsize = rc._scale_font(fontsize)
         spacing = kwargs.get('labelspacing', None) or rc['legend.labelspacing']
         interval = 1 / len(pairs)  # split up axes
         interval = (((1 + spacing * 0.85) * fontsize) / 72) / height
@@ -3631,6 +3632,7 @@ or colormap-spec
                 scale = 1
                 length = height * abs(self.get_position().height)
                 fontsize = kw_ticklabels.get('size', rc['ytick.labelsize'])
+            fontsize = rc._scale_font(fontsize)
             maxn = _not_none(maxn, int(length / (scale * fontsize / 72)))
             maxn_minor = _not_none(
                 maxn_minor, int(length / (0.5 * fontsize / 72))
