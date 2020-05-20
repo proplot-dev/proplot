@@ -73,7 +73,7 @@ class _GeoAxis(object):
         self._interval = None
 
     @staticmethod
-    def _dms_available(projection=None):
+    def _use_dms(projection=None):
         # Return whether dms locators/formatters are available for the
         # cartopy projection and the user cartopy version. Basemap axes will
         # provide projection==None and so will always be false.
@@ -81,6 +81,7 @@ class _GeoAxis(object):
             _version_cartopy >= _version('0.18')
             and cticker is not None
             and isinstance(projection, (ccrs._RectangularProjection, ccrs.Mercator))
+            and rc['grid.dmslabels']
         )
 
     def _get_extent(self):
@@ -148,7 +149,7 @@ class _LonAxis(_GeoAxis):
     # default builtin basemap formatting.
     def __init__(self, axes, projection=None):
         super().__init__(axes)
-        if self._dms_available(projection):
+        if self._use_dms(projection):
             locator = formatter = 'dmslon'
         else:
             locator = formatter = 'deglon'
@@ -184,7 +185,7 @@ class _LatAxis(_GeoAxis):
         # the axes and format() is called by proplot.axes.Axes.__init__()
         self._latmax = latmax
         super().__init__(axes)
-        if self._dms_available(projection):
+        if self._use_dms(projection):
             locator = formatter = 'dmslat'
         else:
             locator = formatter = 'deglat'
