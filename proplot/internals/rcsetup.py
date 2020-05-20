@@ -27,6 +27,7 @@ GRIDSTYLE = '-'
 LABELSIZE = 'medium'
 LINEWIDTH = 0.6
 MARGIN = 0.05
+MATHTEXT = False
 TICKDIR = 'out'
 TICKLEN = 4.0
 TICKLENRATIO = 0.5  # differentiated from major by half length reduction
@@ -78,11 +79,13 @@ _rc_renamed = {  # {old_key: (new_key, version)} dictionary
 # plots, 0.05 is good for line plot in y direction but not x direction.
 _rc_matplotlib_default = {
     'axes.axisbelow': GRIDBELOW,
+    'axes.formatter.use_mathtext': MATHTEXT,
     'axes.grid': True,  # enable lightweight transparent grid by default
     'axes.grid.which': 'major',
     'axes.labelpad': 3.0,  # more compact
     'axes.labelsize': LABELSIZE,
     'axes.labelweight': 'normal',
+    'axes.linewidth': LINEWIDTH,
     'axes.titlepad': 3.0,  # more compact
     'axes.titlesize': TITLESIZE,
     'axes.titleweight': 'normal',
@@ -306,7 +309,7 @@ _rc_proplot = {
         'Alias for :rcraw:`axes.formatter.use_locale`.'
     ),
     'formatter.use_mathtext': (
-        True,  # TODO: check this!!!
+        MATHTEXT,
         'Alias for :rcraw:`axes.formatter.use_mathtext`.'
     ),
     'formatter.min_exponent': (
