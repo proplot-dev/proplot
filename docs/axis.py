@@ -134,9 +134,9 @@ plot.rc.reset()
 import proplot as plot
 import numpy as np
 plot.rc.update(
-    linewidth=1.2, fontsize=10, facecolor='gray8', figurefacecolor='gray8',
-    suptitlecolor='w', gridcolor='w', color='w',
-    titleloc='upper center', titlecolor='w', titleborder=False,
+    linewidth=1.2, fontsize=10, facecolor='blue0', figurefacecolor='gray2',
+    color='gray8', gridcolor='gray8', titlecolor='gray8', suptitlecolor='gray8',
+    titleloc='upper center', titleborder=False,
 )
 fig, axs = plot.subplots(nrows=8, axwidth=5, aspect=(8, 1), share=0)
 
