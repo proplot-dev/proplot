@@ -480,7 +480,7 @@ _rc_proplot = {
     'grid.labelsize': (
         LABELSIZE,
         'Font size for longitude and latitude gridline labels in '
-        '`~proplot.axes.GeoAxes`. Inherits from :rcraw:`small`.'
+        '`~proplot.axes.GeoAxes`.'
     ),
     'grid.labelweight': (
         'normal',
@@ -490,7 +490,7 @@ _rc_proplot = {
     'grid.labelcolor': (
         COLOR,
         'Font color for longitude and latitude gridline labels in '
-        '`~proplot.axes.Geoaxes`.'
+        '`~proplot.axes.GeoAxes`.'
     ),
     'grid.latinline': (
         False,

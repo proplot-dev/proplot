@@ -62,7 +62,8 @@ ProPlot adds several settings to customize things not covered by
 `matplotlib's builtin settings <https://matplotlib.org/users/customizing.html>`__.
 Some of these settings may be more accurately described as "meta-settings",
 as they change several matplotlib settings at once (for example,
-``'linewidth'`` changes axes edge widths, gridline widths, and tick widths).
+:rcraw:`linewidth` changes axes edge widths, gridline widths, and tick widths).
+Other settings are for specific features controlled by ProPlot, like a-b-c labels.
 
 The ``subplots`` category controls the default layout for figures and axes.
 The ``abc``, ``title``, and ``tick`` categories control a-b-c label, title,
@@ -71,12 +72,11 @@ and axis tick label settings. The ``suptitle``, ``leftlabel``, ``toplabel``,
 label settings. There are two new additions to the ``image`` category, and the
 new ``colorbar`` category controls *inset* and *outer*
 `~proplot.axes.Axes.colorbar` properties. There is also a new ``gridminor``
-category for minor gridline settings (note that when ``gridminor`` inherits
+category for minor gridline settings (note that ``gridminor`` inherits
 ``grid`` properties when they are changed).
 Finally, the ``land``, ``ocean``, ``rivers``, ``lakes``,
 ``borders``, and ``innerborders`` categories control various
-`~proplot.axes.GeoAxes` settings. These are used when the corresponding
-boolean toggles are turned on.
+`~proplot.axes.GeoAxes` settings.
 
 .. include:: _static/rctable.rst
 
