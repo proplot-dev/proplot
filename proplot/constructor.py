@@ -114,6 +114,7 @@ if hasattr(mpolar, 'ThetaLocator'):
 FORMATTERS = {  # note default LogFormatter uses ugly e+00 notation
     'auto': pticker.AutoFormatter,
     'frac': pticker.FracFormatter,
+    'sci': pticker.SciFormatter,
     'sigfig': pticker.SigFigFormatter,
     'simple': pticker.SimpleFormatter,
     'date': mdates.AutoDateFormatter,
@@ -124,9 +125,7 @@ FORMATTERS = {  # note default LogFormatter uses ugly e+00 notation
     'func': mticker.FuncFormatter,
     'strmethod': mticker.StrMethodFormatter,
     'formatstr': mticker.FormatStrFormatter,
-    'log': mticker.LogFormatterSciNotation,
-    'sci': mticker.LogFormatterSciNotation,
-    'math': mticker.LogFormatterMathtext,
+    'log': mticker.LogFormatterSciNotation,  # NOTE: this is subclass of Mathtext class
     'logit': mticker.LogitFormatter,
     'eng': mticker.EngFormatter,
     'percent': mticker.PercentFormatter,
@@ -140,6 +139,7 @@ FORMATTERS = {  # note default LogFormatter uses ugly e+00 notation
     'deglon': partial(pticker.SimpleFormatter, negpos='WE', suffix='\N{DEGREE SIGN}', wraprange=(-180, 180)),  # noqa: E501
     'dmslon': partial(pticker._LongitudeFormatter, dms=True),
     'dmslat': partial(pticker._LatitudeFormatter, dms=True),
+    'math': mticker.LogFormatterMathtext,  # deprecated (use SciNotation subclass)
 }
 if hasattr(mdates, 'ConciseDateFormatter'):
     FORMATTERS['concise'] = mdates.ConciseDateFormatter
@@ -1007,6 +1007,7 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
         ======================  ==============================================  ===============================================================
         ``'null'``, ``'none'``  `~matplotlib.ticker.NullFormatter`              No tick labels
         ``'auto'``              `~proplot.ticker.AutoFormatter`                 New default tick labels for axes
+        ``'sci'``               `~proplot.ticker.SciFormatter`                  Format ticks with scientific notation.
         ``'simple'``            `~proplot.ticker.SimpleFormatter`               New default tick labels for e.g. contour labels
         ``'sigfig'``            `~proplot.ticker.SigFigFormatter`               Format labels using the first ``N`` significant digits
         ``'frac'``              `~proplot.ticker.FracFormatter`                 Rational fractions
@@ -1018,9 +1019,8 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
         ``'formatstr'``         `~matplotlib.ticker.FormatStrFormatter`         From C-style ``string % format`` notation
         ``'func'``              `~matplotlib.ticker.FuncFormatter`              Use an arbitrary function
         ``'index'``             `~matplotlib.ticker.IndexFormatter`             List of strings corresponding to non-negative integer positions
-        ``'log'``, ``'sci'``    `~matplotlib.ticker.LogFormatterSciNotation`    For log-scale axes with scientific notation
+        ``'log'``               `~matplotlib.ticker.LogFormatterSciNotation`    For log-scale axes with scientific notation
         ``'logit'``             `~matplotlib.ticker.LogitFormatter`             For logistic-scale axes
-        ``'math'``              `~matplotlib.ticker.LogFormatterMathtext`       For log-scale axes with math text
         ``'percent'``           `~matplotlib.ticker.PercentFormatter`           Trailing percent sign
         ``'scalar'``            `~matplotlib.ticker.ScalarFormatter`            Old default tick labels for axes
         ``'strmethod'``         `~matplotlib.ticker.StrMethodFormatter`         From the ``string.format`` method

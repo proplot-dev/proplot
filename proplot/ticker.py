@@ -22,6 +22,7 @@ __all__ = [
     'FracFormatter',
     'LongitudeLocator',
     'LatitudeLocator',
+    'SciFormatter',
     'SigFigFormatter',
     'SimpleFormatter',
 ]
@@ -382,6 +383,54 @@ class AutoFormatter(mticker.ScalarFormatter):
         base = wraprange[0]
         modulus = wraprange[1] - wraprange[0]
         return (x - base) % modulus + base
+
+
+def SciFormatter(precision=None, zerotrim=None):
+    """
+    Return a `~matplotlib.ticker.FuncFormatter` that formats
+    the number with scientific notation.
+
+    Parameters
+    ----------
+    precision : int, optional
+        The maximum number of digits after the decimal point. Default is ``6``
+        when `zerotrim` is ``True`` and ``2`` otherwise.
+    zerotrim : bool, optional
+        Whether to trim trailing zeros. Default is
+    """
+    from .config import rc
+    zerotrim = _not_none(zerotrim, rc['formatter.zerotrim'])
+    if precision is None:
+        precision = 6 if zerotrim else 2
+
+    def func(x, pos):
+        # Get string
+        decimal_point = AutoFormatter._get_default_decimal_point()
+        string = ('{:.%de}' % precision).format(x)
+        parts = string.split('e')
+
+        # Trim trailing zeros
+        significand = parts[0].rstrip(decimal_point)
+        if zerotrim:
+            significand = AutoFormatter._trim_trailing_zeros(significand, decimal_point)
+
+        # Get sign and exponent
+        sign = parts[1][0].replace('+', '')
+        exponent = parts[1][1:].lstrip('0')
+        if exponent:
+            exponent = f'10^{{{sign}{exponent}}}'
+        if significand and exponent:
+            string = rf'{significand}{{\times}}{exponent}'
+        else:
+            string = rf'{significand}{exponent}'
+
+        # Ensure unicode minus sign
+        string = AutoFormatter._minus_format(string)
+
+        # Return TeX string
+        return f'${string}$'
+
+    return mticker.FuncFormatter(func)
 
 
 def SigFigFormatter(sigfig=1, zerotrim=None):
