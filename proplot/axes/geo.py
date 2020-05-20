@@ -553,7 +553,7 @@ optional
         if which == 'major':
             kwtext = rc.fill(
                 {
-                    'color': f'{key}.color',
+                    'color': f'{key}.labelcolor',
                     'fontsize': f'{key}.labelsize',
                     'weight': f'{key}.labelweight',
                 },
