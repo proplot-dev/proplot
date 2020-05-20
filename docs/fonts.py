@@ -65,7 +65,7 @@
 #
 # To compare different fonts, use the `~proplot.demos.show_fonts` command. By
 # default, this displays the *sans serif* fonts available on your system and
-# packaged with ProPlot. The default table on a sparse Linux server is shown
+# packaged with ProPlot. The sans serif table on the RTD server is shown
 # below. The "¤" symbol appears where characters for a particular font are
 # unavailable (when making plots, "¤" is replaced with the character from
 # a fallback font). Since most TeX Gyre fonts have limited
@@ -73,6 +73,16 @@
 # you may want to set :rcraw:`font.family` to DejaVu Sans or
 # `Fira Math <https://github.com/firamath/firamath>`__, which is packaged
 # with ProPlot.
+#
+# .. note::
+#
+#    Try to avoid ``.ttf`` files with ``Thin`` in the file name. Matplotlib
+#    interprets fonts with the "thin" style having *normal* weight (see
+#    `this matplotlib issue <https://github.com/matplotlib/matplotlib/issues/8788>`__),
+#    causing them to override the correct normal weight versions. While ProPlot
+#    tries to filter out these files, this cannot be done systematically. In the
+#    below example, the "Roboto" font may be overridden by its "thin" version
+#    because the RTD server includes this style.
 
 # %%
 import proplot as plot
@@ -102,9 +112,6 @@ fig, axs = plot.show_fonts()
 # `DFontSplitter application <https://peter.upfold.org.uk/projects/dfontsplitter>`__,
 # then saving the files in-place or in the ``~/.proplot/fonts`` folder.
 #
-# To find font files, check the paths listed in ``OSXFontDirectories``,
+# To find font collections, check the paths listed in ``OSXFontDirectories``,
 # ``X11FontDirectories``, ``MSUserFontDirectories``, and ``MSFontDirectories``
-# under the `~matplotlib.font_manager` module. Note that if the font in question has
-# a "thin" style, implied by file names with the word ``Thin``,
-# `a matplotlib bug <https://github.com/matplotlib/matplotlib/issues/8788>`__
-# may cause these styles to override the "normal" style.
+# under the `matplotlib.font_manager` module.
