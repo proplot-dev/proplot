@@ -1,18 +1,25 @@
 from docutils import nodes
 from os.path import sep
 from proplot.internals import rcsetup
+from matplotlib import rcParams
 
 
 def get_nodes(rawtext, text, inliner):
     repr_ = f"rc['{text}']" if '.' in text else f'rc.{text}'
-    section = 'rc-added' if '.' in text else 'rc-quick'  # reST labels for sections
     rendered = nodes.Text(repr_)
     source = inliner.document.attributes['source'].replace(sep, '/')
     relsource = source.split('/docs/', 1)
     if len(relsource) == 1:
         return []
     levels = relsource[1].count('/')  # distance to 'docs' folder
-    refuri = '../' * levels + f'en/latest/configuration.html?highlight={text}#{section}'
+    if text in rcParams:
+        refuri = 'https://matplotlib.org/tutorials/introduction/customizing.html'
+        refuri = f'{refuri}?highlight={text}#the-matplotlibrc-file'
+    else:
+        levels = relsource[1].count('/')  # distance to docs folder
+        # url = '../' * levels + 'en/latest/configuration.html
+        refuri = '../' * levels + 'configuration.html'
+        refuri = f'{refuri}?highlight={text}#rc-proplot'
     ref = nodes.reference(rawtext, rendered, refuri=refuri)
     return [nodes.literal('', '', ref)]
 
