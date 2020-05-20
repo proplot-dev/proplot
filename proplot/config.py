@@ -913,7 +913,7 @@ class rc_configurator(object):
         self = object()  # self is unused when 'user' is False
         rc_configurator.save(self, path, user=False, backup=False, comment=comment)
 
-    def save(self, path=None, user=True, comment=None, backup=True):
+    def save(self, path=None, user=True, comment=None, backup=True, description=False):
         """
         Save the current settings to a ``.proplotrc`` file. This writes
         the default values commented out plus the values that *differ*
@@ -934,6 +934,9 @@ class rc_configurator(object):
         comment : bool, optional
             Whether to comment out the default settings. Default is the
             value of `user`.
+        description : bool, optional
+            Whether to include descriptions of each setting as comments.
+            Default is ``False``.
         """
         if path is None:
             path = '~'
@@ -970,7 +973,7 @@ class rc_configurator(object):
         # Generate tables and write
         comment = _not_none(comment, user)
         rc_proplot_table = rcsetup._gen_yaml_table(
-            rcsetup._rc_proplot, comment=comment
+            rcsetup._rc_proplot, comment=comment, description=description,
         )
         rc_matplotlib_table = rcsetup._gen_yaml_table(
             rcsetup._rc_matplotlib_default, comment=comment

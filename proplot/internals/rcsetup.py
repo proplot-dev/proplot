@@ -1015,7 +1015,7 @@ def _gen_yaml_table(rcdict, comment=True, description=True):
         else:
             descrip = ''
             if isinstance(pair, tuple):
-                value = pair[1]
+                value = pair[0]
             else:
                 value = pair
 
