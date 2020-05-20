@@ -228,9 +228,9 @@ class AutoFormatter(mticker.ScalarFormatter):
             The position.
         """
         # Tick range limitation
+        x = self._wrap_tick_range(x, self._wraprange)
         if self._outside_tick_range(x, self._tickrange):
             return ''
-        x = self._wrap_tick_range(x, self._wraprange)
 
         # Negative positive handling
         x, tail = self._neg_pos_format(x, self._negpos, wraprange=self._wraprange)
@@ -505,9 +505,9 @@ def SimpleFormatter(
 
     def func(x, pos):
         # Tick range limitation
+        x = AutoFormatter._wrap_tick_range(x, wraprange)
         if AutoFormatter._outside_tick_range(x, tickrange):
             return ''
-        x = AutoFormatter._wrap_tick_range(x, wraprange)
 
         # Negative positive handling
         x, tail = AutoFormatter._neg_pos_format(x, negpos, wraprange=wraprange)
