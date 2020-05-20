@@ -128,7 +128,8 @@ plot.rc.reset()
 # `~proplot.ticker.AutoFormatter`. This class trims trailing zeros by
 # default, can be used to *omit tick labels* outside of some data range, and
 # can add arbitrary prefixes and suffixes to each label. See
-# `~proplot.ticker.AutoFormatter` for details.
+# `~proplot.ticker.AutoFormatter` for details. To disable the trailing
+# zero-trimming feature, set :rcraw:`formatter.zerotrim` to ``False``.
 
 # %%
 import proplot as plot
