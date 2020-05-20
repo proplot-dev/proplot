@@ -318,7 +318,7 @@ plot.rc.reset()
 # %%
 import proplot as plot
 import numpy as np
-fig, axs = plot.subplots(array=[[1, 2], [3, 3]], hratios=(1, 1.5), axwidth=2.5, share=0)
+fig, axs = plot.subplots(array=[[1, 2], [3, 3]], hratios=(1, 1.5), axwidth=2.3, share=0)
 axs.format(grid=False, xlabel='xlabel', ylabel='ylabel', suptitle='Area plot demo')
 state = np.random.RandomState(51423)
 data = state.rand(5, 3).cumsum(axis=0)
