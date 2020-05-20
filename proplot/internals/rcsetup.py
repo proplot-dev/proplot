@@ -891,7 +891,7 @@ _rc_children = {
         'ytick.major.pad', 'ytick.minor.pad'
     ),
     'grid.color': (
-        'gridminor.color',
+        'gridminor.color', 'grid.labelcolor',
     ),
     'grid.linewidth': (
         'gridminor.linewidth',
