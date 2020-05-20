@@ -146,7 +146,7 @@ CYCLES_TABLE = {
     'Matplotlib stylesheets': (
         # NOTE: Do not include 'solarized' because colors are terrible for
         # colorblind folks.
-        'colorblind', 'colorblind10', 'ggplot', '538', 'seaborn', 'bmh',
+        'colorblind', 'colorblind10', 'tableau', 'ggplot', '538', 'seaborn', 'bmh',
     ),
     'ColorBrewer2.0 qualitative': (
         'Accent', 'Dark2',
