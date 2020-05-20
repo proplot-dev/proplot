@@ -1276,6 +1276,12 @@ def Proj(name, basemap=None, **kwargs):
     basemap : bool, optional
         Whether to use the basemap package as opposed to the cartopy package.
         Default is ``False``.
+    lonlim : 2-tuple of float, optional
+        Alternative way to specify `llcrnrlon` and `urcrnrlon` for basemap
+        projections.
+    latlim : 2-tuple of float, optional
+        Alternative way to specify `llcrnrlat` and `urcrnrlat` for basemap
+        projections.
 
     Other parameters
     ----------------
@@ -1373,6 +1379,10 @@ def Proj(name, basemap=None, **kwargs):
                 'matplotlib >= 3.3. Please use cartopy as your cartographic '
                 'plotting backend or downgrade to matplotlib <=3.2.'
             )
+        if 'lonlim' in kwargs:
+            kwargs['llcrnrlon'], kwargs['urcrnrlon'] = kwargs.pop('lonlim')
+        if 'latlim' in kwargs:
+            kwargs['llcrnrlat'], kwargs['urcrnrlat'] = kwargs.pop('latlim')
         name = BASEMAP_PROJ_ALIASES.get(name, name)
         kwproj = BASEMAP_KW_DEFAULTS.get(name, {}).copy()
         kwproj.update(kwargs)
