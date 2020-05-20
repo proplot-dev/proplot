@@ -3531,9 +3531,10 @@ or colormap-spec
         # Any colormap spec, including a list of colors, colormap name, or
         # colormap instance.
         if isinstance(mappable, mcolors.Colormap):
+            # NOTE: 'Values' makes no sense if this is just a colormap. Just
+            # use unique color for every segmentdata / colors color.
             cmap = mappable
-            if values is None:
-                values = np.linspace(0, 1, rc['image.levels'] + 1)
+            values = np.linspace(0, 1, cmap.N)
 
         # List of colors
         elif np.iterable(mappable) and all(
@@ -3544,6 +3545,7 @@ or colormap-spec
             cmap = mcolors.ListedColormap(colors, '_no_name')
             if values is None:
                 values = np.arange(len(colors))
+            locator = _not_none(locator, values)  # tick *all* values by default
 
         # List of artists
         elif np.iterable(mappable) and all(

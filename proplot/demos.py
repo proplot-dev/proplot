@@ -33,8 +33,10 @@ COLORS_TABLE = {
 
 CMAPS_TABLE = {
     # Nice colormaps that get shown by default
+    # NOTE: No longer rename colorbrewer greys map, just redirect 'grays'
+    # to 'greys' in colormap database.
     'Grayscale': (  # assorted origin, but they belong together
-        'Grays', 'Mono', 'MonoCycle',
+        'Greys', 'Mono', 'MonoCycle',
     ),
     'Matplotlib sequential': (
         'viridis', 'plasma', 'inferno', 'magma', 'cividis',
@@ -148,6 +150,7 @@ CYCLES_TABLE = {
         'Accent', 'Dark2',
         'Paired', 'Pastel1', 'Pastel2',
         'Set1', 'Set2', 'Set3',
+        'tab10', 'tab20', 'tab20b', 'tab20c',
     ),
     'Other qualitative': (
         'FlatUI', 'Qual1', 'Qual2',
@@ -184,7 +187,7 @@ def _draw_bars(
     # Translate local names into database of colormaps
     # NOTE: Custom cmap database raises nice error if colormap name is unknown
     i = 1
-    database = {}
+    database = pcolors.ColormapDatabase({})  # subset to be drawn
     for cmap in cmaps:
         if isinstance(cmap, cycler.Cycler):
             name = getattr(cmap, 'name', '_no_name')
@@ -245,10 +248,7 @@ def _draw_bars(
                 iax += 1
                 ax.set_visible(False)
                 ax = axs[iax]
-            try:
-                cmap = database[name]
-            except KeyError:
-                cmap = database[name.lower()]
+            cmap = database[name]
             if N is not None:
                 cmap = cmap.copy(N=N)
             ax.colorbar(
