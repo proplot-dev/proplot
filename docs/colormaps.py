@@ -326,8 +326,8 @@ axs.format(
 #   `~proplot.colors.LinearSegmentedColormap.shifted` method. ProPlot ensures
 #   the colors at the ends of "shifted" colormaps are *distinct* so that
 #   levels never blur together.
-# * To change the transparency of an entire colormap, pass `alpha` to
-#   `~proplot.constructor.Colormap`. This calls the
+# * To change the opacity of a colormap or add an opacity *gradation*, pass
+#   `alpha` to `~proplot.constructor.Colormap`. This calls the
 #   `~proplot.colors.LinearSegmentedColormap.set_alpha` method, and can be
 #   useful when *layering* filled contour or mesh elements.
 # * To change the "gamma" of a `~proplot.colors.PerceptuallyUniformColormap`,
@@ -398,6 +398,19 @@ for ax, shift in zip(axs, (0, 90, 180)):
         suptitle='Rotating cyclic colormaps'
     )
     ax.colorbar(m, loc='b', locator='null')
+
+# Changing the colormap opacity
+fig, axs = plot.subplots(ncols=3, axwidth=1.7)
+data = state.rand(10, 10).cumsum(axis=1)
+for ax, alpha in zip(axs, (1.0, 0.5, 0.0)):
+    alpha = (alpha, 1 - 0.2 * (1 - alpha), 1.0)
+    cmap = plot.Colormap('lajolla', alpha=alpha)
+    m = ax.contourf(data, cmap=cmap, levels=10, extend='both', linewidth=0)
+    ax.colorbar(m, loc='b', locator='none')
+    ax.format(
+        title=f'alpha = {alpha}', xlabel='x axis', ylabel='y axis',
+        suptitle='Adding opacity gradations'
+    )
 
 # Changing the colormap gamma
 fig, axs = plot.subplots(ncols=3, axwidth=1.7, aspect=1)
