@@ -62,7 +62,6 @@
 #        #. Vector graphic formats are preferred by academic journals.
 #        #. Most academic journals accept PDF figures alongside the traditional
 #           `EPS <https://en.wikipedia.org/wiki/Encapsulated_PostScript>`__ format.
-#        #. PDF figures are even easier to embed in LaTeX documents than EPS.
 #        #. The EPS format does not support transparent graphic elements.
 #
 #    In case you *do* need raster graphics, ProPlot sets the default

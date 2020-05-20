@@ -378,7 +378,7 @@ import proplot as plot
 
 # Pole-centered map projections
 proj = plot.Proj('npaeqd', boundinglat=60, basemap=True)
-fig, axs = plot.subplots(ncols=2, axwidth=3, proj=('splaea', proj))
+fig, axs = plot.subplots(ncols=2, axwidth=2.7, proj=('splaea', proj))
 axs.format(
     land=True, latmax=80,  # no gridlines poleward of 80 degrees
     suptitle='Zooming into polar projections'
@@ -446,7 +446,7 @@ projs = [
     'npstere', 'nplaea', 'npaeqd', 'npgnom', 'igh',
     'eck1', 'eck2', 'eck3', 'eck4', 'eck5', 'eck6'
 ]
-fig, axs = plot.subplots(ncols=3, nrows=10, proj=projs)
+fig, axs = plot.subplots(ncols=3, nrows=10, width=7, proj=projs)
 axs.format(
     land=True, reso='lo', labels=False,
     suptitle='Table of cartopy projections'
@@ -462,7 +462,7 @@ projs = [
     'vandg', 'aea', 'eqdc', 'gnom', 'cass', 'lcc',
     'npstere', 'npaeqd', 'nplaea'
 ]
-fig, axs = plot.subplots(ncols=3, nrows=8, basemap=True, proj=projs)
+fig, axs = plot.subplots(ncols=3, nrows=8, basemap=True, width=7, proj=projs)
 axs.format(
     land=True, labels=False,
     suptitle='Table of basemap projections'

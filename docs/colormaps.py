@@ -109,12 +109,12 @@ fig, axs = plot.show_cmaps()
 # are shown below.
 #
 # In theory, "uniform" colormaps should have *straight* lines in hue, chroma,
-# and luminance (bottom figure; top row) -- but in practice, this is
+# and luminance (second figure, top row). In practice, this is
 # difficult to accomplish due to impossible colors. Matplotlib and seaborn's
 # ``'magma'`` and ``'Rocket'`` colormaps are fairly linear with respect to
 # hue and luminance, but not chroma. ProPlot's ``'Fire'`` is linear in hue,
 # luminance, and *HSL saturation* (bottom left), while ``'Dusk'`` is linear
-# in hue, luminance, and *HPL saturation* (bottom left).
+# in hue, luminance, and *HPL saturation* (bottom right).
 
 # %%
 # Colorspace demo
@@ -176,20 +176,25 @@ for cmaps in (('magma', 'rocket'), ('fire', 'dusk')):
 import proplot as plot
 import numpy as np
 state = np.random.RandomState(51423)
+data = state.rand(30, 30).cumsum(axis=1)
+
+# Initialize figure
 fig, axs = plot.subplots(
     [[0, 1, 1, 2, 2, 0], [3, 3, 4, 4, 5, 5]],
     ncols=2, axwidth=2, aspect=1
 )
-
-# Monochromatic colormaps
 axs.format(
     xlabel='x axis', ylabel='y axis',
     suptitle='Building your own PerceptuallyUniformColormaps'
 )
-data = state.rand(30, 30).cumsum(axis=1)
+
+# Simple monochromatic colormap
 axs[0].format(title='From single color')
 m = axs[0].contourf(data, cmap='ocean blue', cmap_kw={'name': 'water'})
 cmap1 = m.cmap
+
+# Three merged monochromatic colormaps
+# The trailing '_r' make the colormap go dark-to-light instead of light-to-dark
 axs[1].format(title='From three colors')
 cmap2 = plot.Colormap(
     'dark red_r', 'denim_r', 'warm gray_r',
@@ -199,30 +204,37 @@ axs[1].contourf(data, cmap=cmap2, levels=12)
 
 # Colormaps from channel value dictionaries
 axs[2:4].format(title='From channel values')
-cmap3 = plot.Colormap({
-    'hue': ['red-90', 'red+90'],
-    'saturation': [50, 70, 30],
-    'luminance': [20, 100]
-}, name='Matter', space='hcl')
+cmap3 = plot.Colormap(
+    {
+        'hue': ['red-90', 'red+90'],
+        'saturation': [50, 70, 30],
+        'luminance': [20, 100]
+    },
+    name='Matter',
+    space='hcl',
+)
 axs[2].pcolormesh(data, cmap=cmap3)
-cmap4 = plot.Colormap({
-    'hue': ['red', 'red-720'],
-    'saturation': [80, 20],
-    'luminance': [20, 100]
-}, name='cubehelix', space='hpl')
+cmap4 = plot.Colormap(
+    {
+        'hue': ['red', 'red-720'],
+        'saturation': [80, 20],
+        'luminance': [20, 100]
+    },
+    name='cubehelix',
+    space='hpl',
+)
 axs[3].pcolormesh(data, cmap=cmap4)
 
 # Colormap from lists
 m = axs[4].pcolormesh(
-    data, cmap=('maroon', 'ivory'),
+    data,
+    cmap=('maroon', 'ivory'),
     cmap_kw={'name': 'heat'}
 )
 cmap5 = m.cmap
 axs[4].format(title='From list of colors')
 
-# %%
-# Test the channels
-import proplot as plot
+# Display the channels
 fig, axs = plot.show_channels(cmap1, cmap2, axwidth=1.5, rgb=False)
 fig, axs = plot.show_channels(
     cmap3, cmap4, cmap5, minhue=-180, axwidth=1.5, rgb=False
