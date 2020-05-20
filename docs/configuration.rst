@@ -1,3 +1,5 @@
+.. _rc_matplotlib: https://matplotlib.org/users/customizing.html
+
 .. _ug_config:
 
 Configuring ProPlot
@@ -10,9 +12,8 @@ A special object named `~proplot.config.rc`, belonging to the
 `~proplot.config.rc_configurator` class, is created on import. This is your one-stop
 shop for working with `builtin matplotlib global settings <rc_matplotlib>`_
 and the global settings :ref:`added by proplot <rc_proplot>`.
-
-Global settings can be changed on-the-fly using the
-`~proplot.config.rc` object as follows:
+Global settings can be changed on-the-fly using the `~proplot.config.rc`
+object as follows:
 
 .. code-block:: python
 
@@ -47,12 +48,10 @@ you can simply omit the dots. For example, to change the
   fig, ax = plot.subplots()
   ax.format(titleloc=value)
 
-.. _rc_matplotlib: https://matplotlib.org/users/customizing.html
-
 Matplotlib settings
 -------------------
 
-Details on existing matplotlib settings can be found on `this page <rc_matplotlib_>`_.
+Details on the matplotlib settings can be found on `this page <rc_matplotlib_>`_.
 
 .. _rc_proplot:
 

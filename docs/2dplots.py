@@ -401,7 +401,7 @@ ax.format(title='Line contour plot with labels')
 # `~matplotlib.axes.Axes.pcolormesh` and applies default formatting that is
 # suitable for heatmaps -- fixed aspect ratio, no gridlines, no minor ticks, and
 # major ticks at the center of each box. Among other things, this is useful for
-# displaying covariance and correlation matrices, as shown in the below example.
+# displaying covariance and correlation matrices, as shown below.
 
 # %%
 import proplot as plot

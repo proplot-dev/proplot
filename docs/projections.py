@@ -145,8 +145,6 @@ axs[2].format(
 # defaults (e.g. ``lon_0=0``) rather than raising an error when projection
 # arguments are omitted.
 #
-# In the below examples, we generate two grids of geographic projections.
-#
 # .. note::
 #
 #   ProPlot makes sure polar cartopy projections like `~cartopy.crs.NorthPolarStereo`

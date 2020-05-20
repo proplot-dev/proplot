@@ -237,7 +237,6 @@ axs.format(
     yticklabels=('a', 'bb', 'c', 'dd', 'e'),
     ytickloc='both', yticklabelloc='both',
     xtickdir='inout', xtickminor=False, ygridminor=True,
-    linewidth=0.8, gridlinewidth=0.8, gridminorlinewidth=0.5,
 )
 
 
@@ -306,6 +305,24 @@ ay.plot((state.rand(100) - 0.2).cumsum(), color='r', lw=3)
 
 # Reset persistent modifications from head of cell
 plot.rc.reset()
+
+
+# %%
+import proplot as plot
+import numpy as np
+# plot.rc.style = 'style'  # set the style everywhere
+
+# Set up figure
+styles = ('ggplot', 'seaborn', '538', 'bmh')
+state = np.random.RandomState(51423)
+data = state.rand(10, 5)
+fig, axs = plot.subplots(ncols=2, nrows=2, span=False, share=False)
+
+# Apply different styles to different axes with format()
+axs.format(suptitle='Stylesheets demo')
+for ax, style in zip(axs, styles):
+    ax.format(style=style, xlabel='xlabel', ylabel='ylabel', title=style)
+    ax.plot(data, linewidth=3)
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"

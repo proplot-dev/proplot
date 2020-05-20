@@ -35,13 +35,20 @@
 #
 #    fig.colorbar(m, ax=ax, location='right')
 #
-# In ProPlot, by contrast, colorbars are added to the edges of subplots using
+# In ProPlot, colorbars are added to the edges of subplots using
 # the new *axes* colorbar method `proplot.axes.Axes.colorbar` as follows:
 
 # .. code-block:: python
 #
 #    ax.colorbar(m, loc='right')
 #
+# The `proplot.axes.Axes.colorbar` method preserves subplot aspect ratios
+# and visual symmetry between subplots by allocating new space in the figure
+# `~proplot.gridspec.GridSpec` rather than "stealing" space from the parent
+# subplot (see the section on :ref:`automatic subplot spacing <ug_tight>` for
+# details). Calling `~proplot.axes.Axes.colorbar` more than once results in
+# "stacked" colorbars.
+
 # ProPlot also includes an improved legend axes method `proplot.axes.Axes.legend`
 # and tries to make the usage of `~proplot.axes.Axes.legend` and
 # `~proplot.axes.Axes.colorbar` consistent:
@@ -67,15 +74,6 @@
 # and legend functions.
 # This feature is powered by the `~proplot.axes.cmap_changer` and
 # `~proplot.axes.cycle_changer` wrappers.
-#
-# .. note::
-#
-#    To preserve subplot aspect ratios and visual symmetry between
-#    subplots, the space for outer colorbars and legends is not "stolen" from
-#    subplots. Instead it is separately allocated within the figure
-#    `~proplot.gridspec.GridSpec`. See the section on
-#    :ref:`automatic subplot spacing <ug_tight>` for details.
-#
 
 # %%
 import proplot as plot
@@ -207,9 +205,9 @@ for ax, title in zip(
 # New colorbar features
 # ---------------------
 #
-# The `~proplot.figure.Figure` `~proplot.figure.Figure.colorbar` and
-# `~proplot.axes.Axes` `~proplot.axes.Axes.colorbar` methods are wrapped by
-# `~proplot.axes.colorbar_wrapper`, which adds several new features.
+# The `proplot.figure.Figure.colorbar` and `proplot.axes.Axes.colorbar`
+# methods are wrapped by `~proplot.axes.colorbar_wrapper`, which adds several
+# new features.
 #
 # You can now draw colorbars from *lists of colors* or *lists of artists* by
 # passing a list instead of a mappable object. Colorbar minor ticks are now
@@ -265,12 +263,11 @@ axs.format(
 # New legend features
 # -------------------
 #
-# The `~proplot.figure.Figure` `~proplot.figure.Figure.legend` and
-# `~proplot.axes.Axes` `~proplot.axes.Axes.legend` methods are wrapped by
-# `~proplot.axes.legend_wrapper`, which adds several new features.
+# The `proplot.figure.Figure.legend` and `proplot.axes.Axes.legend` methods
+# are wrapped by `~proplot.axes.legend_wrapper`, which adds several new features.
 #
-# You can draw legends with *centered legend rows*, either by passing
-# ``center=True`` or by passing *list of lists* of plot handles. This is
+# You can draw legends with centered legend rows, either by passing
+# ``center=True`` or by passing list of lists of plot handles. This is
 # accomplished by stacking multiple single-row, horizontally centered
 # legends, then manually adding an encompassing legend frame. You can also
 # modify legend *text and handle properties* with several keyword args, and
@@ -282,7 +279,7 @@ import proplot as plot
 import numpy as np
 plot.rc.cycle = '538'
 labels = ['a', 'bb', 'ccc', 'dddd', 'eeeee']
-fig, axs = plot.subplots(ncols=2, span=False, share=1, axwidth=2)
+fig, axs = plot.subplots(ncols=2, span=False, share=1, axwidth=2.3)
 hs1, hs2 = [], []
 
 # On-the-fly legends
