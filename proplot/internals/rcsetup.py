@@ -56,7 +56,7 @@ _rc_renamed = {  # {old_key: (new_key, version)} dictionary
     'geogrid.alpha': ('grid.alpha', '0.6'),
     'geogrid.color': ('grid.color', '0.6'),
     'geogrid.labels': ('grid.labels', '0.6'),
-    'geogrid.labelpad': ('grid.labelpad', '0.6'),
+    'geogrid.labelpad': ('grid.pad', '0.6'),
     'geogrid.labelsize': ('grid.labelsize', '0.6'),
     'geogrid.linestyle': ('grid.linestyle', '0.6'),
     'geogrid.linewidth': ('grid.linewidth', '0.6'),
@@ -438,8 +438,8 @@ _rc_proplot = {
         'Boolean, indicates whether to use degrees-minutes-seconds rather than '
         'decimals for gridline labels on `~proplot.axes.CartopyAxes`.'
     ),
-    'grid.labelpad': (
-        8,  # use twice cartopy default
+    'grid.pad': (
+        5,  # use twice cartopy default
         'Padding in points between map boundary edge and longitude and '
         'latitude labels for `~proplot.axes.GeoAxes`.'
     ),
