@@ -507,7 +507,7 @@ class CartesianAxes(base.Axes):
         Modify the *x* and *y* axis labels, tick locations, tick labels,
         axis scales, spine settings, and more. Unknown keyword arguments
         are passed to `Axes.format` and
-        `~proplot.config.rc_configurator.context`.
+        `~proplot.config.RcConfigurator.context`.
 
         Parameters
         ----------
@@ -647,7 +647,7 @@ class CartesianAxes(base.Axes):
 
         See also
         --------
-        proplot.config.rc_configurator.context
+        proplot.config.RcConfigurator.context
         proplot.axes.Axes.format
 
         Note

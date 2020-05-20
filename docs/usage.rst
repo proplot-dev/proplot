@@ -158,7 +158,7 @@ ProPlot includes several useful constructor functions and subclasses.
   arguments passed to `~proplot.axes.Axes.format`, and can be used to quickly
   and easily modify :ref:`x and y axis settings <ug_xy_axis>`.
 * The `~proplot.config.rc` object, an instance of
-  `~proplot.config.rc_configurator`, is used for
+  `~proplot.config.RcConfigurator`, is used for
   :ref:`modifying individual settings, changing settings in bulk, and
   temporarily changing settings in context blocks <ug_rc>`.
   It also introduces several :ref:`new setings <ug_config>`

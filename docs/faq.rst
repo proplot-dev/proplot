@@ -10,7 +10,7 @@ There is already a great matplotlib wrapper called `seaborn <https://seaborn.pyd
 * ProPlot, seaborn, pandas, and xarray all offer tools for generating rigid, simple, nice-looking plots from data stored in `~pandas.DataFrame`\ s and `~xarray.DataArray`\ s (ProPlot tries to apply labels from these objects, just like pandas and xarray).
 * Unlike seaborn, pandas, and xarray, ProPlot *also* works for arbitrarily complex subplot grids, and ProPlot provides tools for heavily customizing plots.
 * ProPlot is integrated with *cartopy* and *basemap*. You will find plotting geophysical data in ProPlot to be much more concise than working with cartopy and basemap directly.
-* ProPlot *expands upon* the seaborn tools for working with color and global settings. For example, see `~proplot.constructor.Colormap`, `~proplot.colors.PerceptuallyUniformColormap`, and `~proplot.config.rc_configurator`.
+* ProPlot *expands upon* the seaborn tools for working with color and global settings. For example, see `~proplot.constructor.Colormap`, `~proplot.colors.PerceptuallyUniformColormap`, and `~proplot.config.RcConfigurator`.
 * ProPlot *expands upon* matplotlib by fixing various quirks, developing a more sophisticated automatic layout algorithm, simplifying the process of drawing outer colorbars and legends, and much more.
 * ProPlot is *built right into the matplotlib API*, thanks to special subclasses of the `~matplotlib.figure.Figure` and `~matplotlib.axes.Axes` classes, while seaborn, pandas, and xarray are meant to be used separately from the matplotlib API.
 

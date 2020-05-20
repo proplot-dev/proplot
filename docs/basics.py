@@ -258,10 +258,10 @@ axs.format(
 # To modify a setting for just one subplot, you can pass it to the
 # `~proplot.axes.Axes` `~proplot.axes.Axes.format` method. To temporarily
 # modify setting(s) for a block of code, use
-# `~proplot.config.rc_configurator.context`. To modify setting(s) for the
+# `~proplot.config.RcConfigurator.context`. To modify setting(s) for the
 # entire python session, just assign it to the `~proplot.config.rc` object or
-# use `~proplot.config.rc_configurator.update`.  To reset everything to the
-# default state, use `~proplot.config.rc_configurator.reset`. See the below
+# use `~proplot.config.RcConfigurator.update`.  To reset everything to the
+# default state, use `~proplot.config.RcConfigurator.reset`. See the below
 # example.
 
 

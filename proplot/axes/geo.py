@@ -261,7 +261,7 @@ class GeoAxes(base.Axes):
         """
         Modify the longitude and latitude labels, longitude and latitude map
         limits, geographic features, and more. Unknown keyword arguments are
-        passed to `Axes.format` and `~proplot.config.rc_configurator.context`.
+        passed to `Axes.format` and `~proplot.config.RcConfigurator.context`.
 
         Parameters
         ----------
@@ -373,7 +373,7 @@ optional
             Toggles various geographic features. These are actually the
             :rcraw:`land`, :rcraw:`ocean`, :rcraw:`coast`, :rcraw:`rivers`,
             :rcraw:`lakes`, :rcraw:`borders`, and :rcraw:`innerborders`
-            settings passed to `~proplot.config.rc_configurator.context`.
+            settings passed to `~proplot.config.RcConfigurator.context`.
             The style can be modified using additional `rc` settings. For example,
             to change :rcraw:`land.color`, use ``ax.format(landcolor='green')``,
             and to change :rcraw:`land.zorder`, use ``ax.format(landzorder=4)``.
@@ -390,7 +390,7 @@ optional
         See also
         --------
         proplot.axes.Axes.format
-        proplot.config.rc_configurator.context
+        proplot.config.RcConfigurator.context
         """
         # Format axes
         rc_kw, rc_mode, kwargs = self._parse_format(**kwargs)

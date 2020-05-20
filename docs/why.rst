@@ -669,7 +669,7 @@ settings at once with convenient shorthands.  This is meant to replace
 matplotlib's `~matplotlib.rcParams`.  dictionary. Settings can be changed
 with ``plot.rc.key = value``, ``plot.rc[key] = value``,
 ``plot.rc.update(...)``, with the `~proplot.axes.Axes.format` method, or with
-the `~proplot.config.rc_configurator.context` method.
+the `~proplot.config.RcConfigurator.context` method.
 
 The most notable bulk settings are described below.
 See the :ref:`user guide <ug_config>` for details.

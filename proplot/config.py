@@ -32,10 +32,10 @@ except ImportError:
         return
 
 __all__ = [
-    'rc', 'rc_configurator',
+    'rc', 'RcConfigurator',
     'register_cmaps', 'register_cycles', 'register_colors', 'register_fonts',
     'config_inline_backend', 'use_style',
-    'inline_backend_fmt',  # deprecated
+    'inline_backend_fmt', 'rc_configurator',  # deprecated
 ]
 
 # Disable mathtext "missing glyph" warnings
@@ -191,7 +191,7 @@ def _iter_data_paths(subfolder, **kwargs):
                 yield i, dirname, filename
 
 
-class rc_configurator(object):
+class RcConfigurator(object):
     """
     Magical abstract class for managing matplotlib's `builtin settings <rc_matplotlib>`_
     and ProPlot's :ref:`added settings <rc_proplot>`.
@@ -292,7 +292,7 @@ class rc_configurator(object):
 
     def __getattr__(self, attr):
         """
-        Pass the attribute to `~rc_configurator.__getitem__` and return
+        Pass the attribute to `~RcConfigurator.__getitem__` and return
         the result.
         """
         if attr[:1] == '_':
@@ -317,7 +317,7 @@ class rc_configurator(object):
 
     def __setattr__(self, attr, value):
         """
-        Pass the attribute and value to `~rc_configurator.__setitem__`.
+        Pass the attribute and value to `~RcConfigurator.__setitem__`.
         """
         if attr[:1] == '_':
             super().__setattr__(attr, value)
@@ -341,7 +341,7 @@ class rc_configurator(object):
 
     def _get_item(self, key, mode=None):
         """
-        As with `~rc_configurator.__getitem__` but the search is limited
+        As with `~RcConfigurator.__getitem__` but the search is limited
         based on the context mode and ``None`` is returned if the key is not
         found in the dictionaries.
         """
@@ -607,7 +607,7 @@ class rc_configurator(object):
         context : bool, optional
             If ``True``, then each category setting that is not found in the
             context mode dictionaries is omitted from the output dictionary.
-            See `~rc_configurator.context`.
+            See `~RcConfigurator.context`.
         """
         if cat not in rcsetup._rc_categories:
             raise ValueError(
@@ -645,18 +645,18 @@ class rc_configurator(object):
         Other parameters
         ----------------
         mode : {0, 1, 2}, optional
-            The context mode. Dictates the behavior of `~rc_configurator.get`,
-            `~rc_configurator.fill`, and `~rc_configurator.category` within a
+            The context mode. Dictates the behavior of `~RcConfigurator.get`,
+            `~RcConfigurator.fill`, and `~RcConfigurator.category` within a
             "with as" block when called with ``context=True``.
 
             The options are as follows:
 
             0. Matplotlib's `builtin settings <rc_matplotlib>`_ and ProPlot's
                :ref:`added settings <rc_proplot>` are all returned,
-               whether or not `~rc_configurator.context` has changed them.
+               whether or not `~RcConfigurator.context` has changed them.
             1. *Unchanged* `matplotlib settings <rc_matplotlib>`_ return ``None``.
                All of ProPlot's :ref:`added settings <rc_proplot>` are returned
-               whether or not `~rc_configurator.context` has changed them.
+               whether or not `~RcConfigurator.context` has changed them.
                This is used in the `~proplot.axes.Axes.__init__` call to
                `~proplot.axes.Axes.format`. When a lookup returns ``None``,
                `~proplot.axes.Axes.format` does not apply it.
@@ -674,7 +674,7 @@ class rc_configurator(object):
         Example
         -------
         The below applies settings to axes in a specific figure using
-        `~rc_configurator.context`.
+        `~RcConfigurator.context`.
 
         >>> import proplot as plot
         >>> with plot.rc.context(linewidth=2, ticklen=5):
@@ -682,7 +682,7 @@ class rc_configurator(object):
         >>>     ax.plot(data)
 
         The below applies settings to a specific axes using `~proplot.axes.Axes.format`,
-        which uses `~rc_configurator.context` internally.
+        which uses `~RcConfigurator.context` internally.
 
         >>> import proplot as plot
         >>> fig, ax = plot.subplots()
@@ -718,7 +718,7 @@ class rc_configurator(object):
             The setting name.
         context : bool, optional
             If ``True``, then ``None`` is returned if the setting is not found
-            in the context mode dictionaries. See `~rc_configurator.context`.
+            in the context mode dictionaries. See `~RcConfigurator.context`.
         """
         mode = 0 if not context else None
         return self._get_item(key, mode)
@@ -735,7 +735,7 @@ class rc_configurator(object):
         context : bool, optional
             If ``True``, then each setting that is not found in the
             context mode dictionaries is omitted from the output dictionary.
-            See `~rc_configurator.context`.
+            See `~RcConfigurator.context`.
         """
         kw = {}
         mode = 0 if not context else None
@@ -911,7 +911,7 @@ class rc_configurator(object):
         Used internally to create initial proplotrc file and file for online docs.
         """
         self = object()  # self is unused when 'user' is False
-        rc_configurator.save(self, path, user=False, backup=False, comment=comment)
+        RcConfigurator.save(self, path, user=False, backup=False, comment=comment)
 
     def save(self, path=None, user=True, comment=None, backup=True, description=False):
         """
@@ -1525,7 +1525,7 @@ def _patch_validators():
 # Initialize .proplotrc file
 _user_rc_file = os.path.join(os.path.expanduser('~'), '.proplotrc')
 if not os.path.exists(_user_rc_file):
-    rc_configurator._save_proplotrc(_user_rc_file, comment=True)
+    RcConfigurator._save_proplotrc(_user_rc_file, comment=True)
 
 # Initialize customization folders
 _rc_folder = os.path.join(os.path.expanduser('~'), '.proplot')
@@ -1566,9 +1566,9 @@ with timers._benchmark('fonts'):
     register_fonts()
 
 with timers._benchmark('rc'):
-    _ = rc_configurator()
+    _ = RcConfigurator()
 
-#: Instance of `rc_configurator`. This is used to change global settings.
+#: Instance of `RcConfigurator`. This is used to change global settings.
 #: See the :ref:`configuration guide <ug_config>` for details.
 rc = _
 
@@ -1582,3 +1582,4 @@ for cmap in pcolors._cmap_database.values():
 
 # Deprecated
 inline_backend_fmt = warnings._rename_obj('inline_backend_fmt', config_inline_backend)
+rc_configurator = warnings._rename_obj('RcConfigurator', config_inline_backend)

@@ -56,7 +56,7 @@ class PolarAxes(base.Axes, mproj.PolarAxes):
         """
         Modify radial gridline locations, gridline labels, limits, and more.
         Unknown keyword arguments are passed to `Axes.format` and
-        `~proplot.config.rc_configurator.context`. All ``theta`` arguments are
+        `~proplot.config.RcConfigurator.context`. All ``theta`` arguments are
         specified in *degrees*, not radians. The below parameters are specific
         to `PolarAxes`.
 
@@ -113,7 +113,7 @@ optional
 
         See also
         --------
-        proplot.config.rc_configurator.context
+        proplot.config.RcConfigurator.context
         proplot.axes.Axes.format
         """
         rc_kw, rc_mode, kwargs = self._parse_format(**kwargs)

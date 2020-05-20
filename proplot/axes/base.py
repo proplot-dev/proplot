@@ -64,9 +64,9 @@ LOC_TRANSLATE = {  # for inset colorbars and legends TODO: also as text location
 docstring.snippets['axes.other'] = """
 rc_kw : dict, optional
     Dictionary containing `~proplot.config.rc` settings applied to
-    this axes using `~proplot.config.rc_configurator.context`.
+    this axes using `~proplot.config.RcConfigurator.context`.
 **kwargs
-    Passed to `Axes.format` or passed to `~proplot.config.rc_configurator.context`
+    Passed to `Axes.format` or passed to `~proplot.config.RcConfigurator.context`
     and used to update axes `~proplot.config.rc` settings. For example,
     ``abcstyle='A.'`` modifies the :rcraw:`abc.style` setting.
 """
@@ -821,13 +821,13 @@ optional
         ----
         The `abc`, `abcstyle`, `abcloc`, and `titleloc` keyword arguments are
         actually :ref:`configuration settings <ug_config>` that are temporarily
-        changed by the call to `~proplot.config.rc_configurator.context`.  They
+        changed by the call to `~proplot.config.RcConfigurator.context`.  They
         are also documented here because it is very common to change them with
         `~Axes.format`.
 
         See also
         --------
-        proplot.config.rc_configurator.context
+        proplot.config.RcConfigurator.context
         proplot.axes.CartesianAxes.format
         proplot.axes.PolarAxes.format
         proplot.axes.GeoAxes.format
