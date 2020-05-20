@@ -29,42 +29,33 @@
 # --------------------------
 #
 # In matplotlib, colorbars are added to the edges of subplots with the *figure*
-# method `matplotlib.figure.Figure.colorbar` as follows:
-#
-# .. code-block:: python
-#
-#    fig.colorbar(m, ax=ax, location='right')
-#
-# In ProPlot, colorbars are added to the edges of subplots using
-# the new *axes* colorbar method `proplot.axes.Axes.colorbar` as follows:
-
-# .. code-block:: python
-#
-#    ax.colorbar(m, loc='right')
-#
+# method `matplotlib.figure.Figure.colorbar` using e.g.
+# ``fig.colorbar(m, ax=ax, location='right')``.
+# In ProPlot, this is done using the new *axes* colorbar method
+# `proplot.axes.Axes.colorbar` with e.g. ``ax.colorbar(m, loc='r')``.
 # The `proplot.axes.Axes.colorbar` method preserves subplot aspect ratios
 # and visual symmetry between subplots by allocating new space in the figure
 # `~proplot.gridspec.GridSpec` rather than "stealing" space from the parent
 # subplot (see the section on :ref:`automatic subplot spacing <ug_tight>` for
-# details). Calling `~proplot.axes.Axes.colorbar` more than once results in
-# "stacked" colorbars.
-
-# ProPlot also includes an improved legend axes method `proplot.axes.Axes.legend`
-# and tries to make the usage of `~proplot.axes.Axes.legend` and
-# `~proplot.axes.Axes.colorbar` consistent:
+# details).
 #
-# * `proplot.axes.Axes.legend` can
+# ProPlot tries to make the usage of `proplot.axes.Axes.colorbar` consistent
+# with `~matplotlib.axes.Axes.legend`, and includes an improved
+# `proplot.axes.Axes.legend` legend method that tries to do the same:
+#
+# * Just like `~proplot.axes.Axes.colorbar`, `proplot.axes.Axes.legend` can
 #   draw "outer" legends along the edges of subplots when you request
 #   a :ref:`side location <legend_table>` for the legend (e.g. ``loc='right'``
 #   or ``loc='r'``). If you draw multiple colorbars and legends on one side,
 #   they are "stacked" on top of each other.
-# * `proplot.axes.Axes.colorbar` can draw
+# * Just like `~proplot.axes.Axes.legend`, `proplot.axes.Axes.colorbar` can draw
 #   "inset" colorbars when you request an :ref:`inset location <colorbar_table>`
 #   for the colorbar (e.g. ``loc='upper right'`` or ``loc='ur'``). Inset
 #   colorbars have optional background "frames" that can be configured with
-#   various `~proplot.axes.Axes.colorbar` keyword arguments.
+#   various `~proplot.axes.Axes.colorbar` keywords.
 
-# ProPlot can also draw colorbars and legends on-the-fly. To plot data and draw
+# You can also draw colorbars and legends on-the-fly by supplying keyword
+# arguments to various plotting commands. To plot data and draw
 # a colorbar in one go, pass a location (e.g. ``colorbar='r'``)
 # to methods that accept a `cmap` argument (e.g.
 # `~matplotlib.axes.Axes.contourf`). To draw a legend or colorbar-legend in
@@ -136,7 +127,7 @@ for j, ax in enumerate(axs):
 # Figure colorbars and legends
 # ----------------------------
 #
-# In ProPlot, colorbars and legends are added to the edge of figures
+# In ProPlot, colorbars and legends can be added to the edge of figures
 # with the `proplot.figure.Figure.colorbar` and `proplot.figure.Figure.legend`
 # methods. Figure colorbars and legends are aligned between the edges of the
 # subplot grid, rather than the figure bounds. As with :ref:`axes colorbars and

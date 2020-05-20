@@ -54,8 +54,12 @@
 #   of available journal specifications (feel free to add to this table by
 #   submitting a PR).
 #
+# The below examples demonstrate the default behavior of the automatic figure
+# sizing algorithm, and how it can be controlled with `~proplot.ui.subplots`
+# keyword arguments.
+#
 # .. important::
-
+#
 #    The automatic figure size algorithm has the following notable properties:
 #
 #    * For very simple subplot grids (i.e. subplots created with the `ncols` and
@@ -73,10 +77,6 @@
 #      are present in the figure, their physical widths are *preserved* during
 #      figure resizing. ProPlot specifies their widths in physical units to help
 #      avoid colorbars that look "too skinny" or "too fat".
-#
-# The below examples demonstrate the default behavior of the automatic figure
-# sizing algorithm, and how it can be controlled with `~proplot.ui.subplots`
-# keyword arguments.
 
 # %%
 import proplot as plot
@@ -327,8 +327,8 @@ axs.format(
 #
 #    Since "shared" and "spanning" labels are determined automatically based on
 #    position of each subplot in the `~proplot.gridspec.GridSpec`, these features
-#    work for arbitrarily complex figures. Because ProPlot uses just one
-#    `~proplot.gridspec.GridSpec` per figure, this can be done with zero ambiguity.
+#    work for arbitrarily complex figures. This can be done without any ambiguity
+#    because ProPlot ensures each figure has only one `~proplot.gridspec.GridSpec`.
 
 # %%
 import proplot as plot

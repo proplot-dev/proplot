@@ -25,7 +25,7 @@
 # Panel axes
 # ----------
 #
-# Often, it can be useful to have narrow "panels" along the edge of a larger
+# It is often useful to have narrow "panels" along the edge of a larger
 # subplot for plotting secondary 1-dimensional datasets or summary statistics.
 # In matplotlib, there is no simple way to do this. In ProPlot, you can
 # create panels by passing a location (e.g. ``loc='r'`` or ``loc='right'``)
