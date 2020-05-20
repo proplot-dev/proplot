@@ -1069,40 +1069,4 @@ def _gen_rst_table():
         string += f'``{key}``{spaces}{descrip}\n'
 
     string = string + divider
-    string = string.strip()
-    return f'.. table::\n   :widths: {keylen} 60\n\n' + '\n'.join(
-        '   ' + line for line in string.split('\n')
-    )
-
-
-def _gen_fixed_rst_table(width=50):
-    """
-    Return the settings in an RST-style table.
-    """
-    # Initial stuff
-    import textwrap
-    keylen = len(max((*_rc_proplot, 'Key'), key=len)) + 4  # includes literal backticks
-    divide = '+-' + '-' * keylen + '-+-' + '-' * width + '-+\n'
-    header = divide.replace('-', '=')
-
-    def _fill(key, descrip):
-        lines = [
-            string + ' ' * (width - len(string))
-            for string in textwrap.wrap(descrip, width=width)
-        ]
-        spaces = ' ' * (keylen - len(key) - 4)
-        string = f'| ``{key}``{spaces} | {lines[0]} |\n'
-        spaces = ' ' * keylen  # includes backticks
-        for line in lines[1:]:
-            string += f'| {spaces} | {line} |\n'
-        return string
-
-    # Build table
-    string = divide + _fill('Key', 'Description') + header
-    for key, (_, descrip) in _rc_proplot.items():
-        string += _fill(key, descrip) + divide
-
-    string = string.strip()
-    return f'.. table::\n   :widths: {keylen} 60\n\n' + '\n'.join(
-        '   ' + line for line in string.split('\n')
-    )
+    return string.strip()
