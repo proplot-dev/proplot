@@ -45,7 +45,7 @@ Parameters
 _alt_kwargs = (  # TODO: More systematic approach?
     'label', 'locator', 'formatter', 'ticks', 'ticklabels',
     'minorlocator', 'minorticks', 'tickminor',
-    'ticklen', 'tickrange', 'tickdir', 'ticklabeldir', 'tickrotation',
+    'ticklen', 'tickrange', 'tickdir', 'ticklabeldir', 'tickrotation', 'wraprange',
     'bounds', 'margin', 'color', 'linewidth', 'grid', 'gridminor', 'gridcolor',
     'locator_kw', 'formatter_kw', 'minorlocator_kw', 'label_kw',
 )
@@ -477,6 +477,7 @@ class CartesianAxes(base.Axes):
         xtickminor=None, ytickminor=None,
         xticklabeldir=None, yticklabeldir=None,
         xtickrange=None, ytickrange=None,
+        xwraprange=None, ywraprange=None,
         xreverse=None, yreverse=None,
         xlabel=None, ylabel=None,
         xlim=None, ylim=None,
@@ -595,9 +596,15 @@ class CartesianAxes(base.Axes):
             *x* axes.
         xtickrange, ytickrange : (float, float), optional
             The *x* and *y* axis data ranges within which major tick marks
-            are labelled. For example, the tick range ``(-1,1)`` with
-            axis range ``(-5,5)`` and a tick interval of 1 will only
-            label the ticks marks at -1, 0, and 1.
+            are labelled. For example, the tick range ``(-1, 1)`` with
+            axis range ``(-5, 5)`` and a tick interval of 1 will only
+            label the ticks marks at -1, 0, and 1. See
+            `~proplot.ticker.AutoFormatter` for details.
+        xwraprange, ywraprange : (float, float), optional
+            The *x* and *y* axis data ranges with which major tick mark
+            values are *wrapped*. For example, the wrap range ``(0, 3)``
+            causes the values 0 through 9 to be formatted as 0, 1, 2,
+            0, 1, 2, 0, 1, 2, 0. See `~proplot.ticker.AutoFormatter` for details.
         xmargin, ymargin : float, optional
             The default margin between plotted content and the *x* and *y* axis
             spines. Value is proportional to the width, height of the axes.
@@ -759,6 +766,7 @@ class CartesianAxes(base.Axes):
                 tickminor, minorlocator,
                 lim, reverse, scale,
                 locator, tickrange,
+                wraprange,
                 formatter, tickdir,
                 ticklabeldir, rotation,
                 label_kw, scale_kw,
@@ -776,6 +784,7 @@ class CartesianAxes(base.Axes):
                 (xtickminor, ytickminor), (xminorlocator, yminorlocator),
                 (xlim, ylim), (xreverse, yreverse), (xscale, yscale),
                 (xlocator, ylocator), (xtickrange, ytickrange),
+                (xwraprange, ywraprange),
                 (xformatter, yformatter), (xtickdir, ytickdir),
                 (xticklabeldir, yticklabeldir), (xrotation, yrotation),
                 (xlabel_kw, ylabel_kw), (xscale_kw, yscale_kw),
@@ -1073,17 +1082,24 @@ class CartesianAxes(base.Axes):
                 # NOTE: The only reliable way to disable ticks labels and then
                 # restore them is by messing with the *formatter*, rather than
                 # setting labelleft=False, labelright=False, etc.
-                if formatter is not None or tickrange is not None:
+                if (
+                    formatter is not None
+                    or tickrange is not None
+                    or wraprange is not None
+                ):
                     # Tick range
-                    if tickrange is not None:
+                    if tickrange is not None or wraprange is not None:
                         if formatter not in (None, 'auto'):
                             warnings._warn_proplot(
-                                'The tickrange feature requires '
+                                'The tickrange and autorange features require '
                                 'proplot.AutoFormatter formatter. Overriding '
                                 'input formatter.'
                             )
                         formatter = 'auto'
-                        formatter_kw.setdefault('tickrange', tickrange)
+                        if tickrange is not None:
+                            formatter_kw.setdefault('tickrange', tickrange)
+                        if wraprange is not None:
+                            formatter_kw.setdefault('wraprange', wraprange)
 
                     # Set the formatter
                     # Note some formatters require 'locator' as keyword arg
