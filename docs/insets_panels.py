@@ -50,51 +50,53 @@ data = (state.rand(20, 20) - 0.48).cumsum(axis=1).cumsum(axis=0)
 data = 10 * (data - data.min()) / (data.max() - data.min())
 
 # Stacked panels with outer colorbars
-for cbarlocation, plocation in ('rb', 'br'):
+for cbarloc, ploc in ('rb', 'br'):
     fig, axs = plot.subplots(
-        axwidth=1.6, nrows=1, ncols=2,
+        axwidth=1.8, nrows=1, ncols=2,
         share=0, panelpad=0.1, includepanels=True
     )
-    axs.contourf(
-        data, cmap='glacial', extend='both',
-        colorbar=cbarlocation, colorbar_kw={'label': 'colorbar'},
-    )
-
-    # Summary statistics and settings
-    titleloc = 'upper center'
-    axis = int(plocation == 'r')  # dimension along which stats are taken
-    x1 = x2 = np.arange(20)
-    y1 = data.mean(axis=axis)
-    y2 = data.std(axis=axis)
-    if plocation == 'r':
-        titleloc = 'center'
-        x1, x2, y1, y2 = y1, y2, x1, x2
-    kwargs = {'titleloc': titleloc, 'xreverse': False, 'yreverse': False}
-    space = 0
-    width = '30pt'
-
-    # Panels for plotting the mean
-    panels = axs.panel(plocation, space=space, width=width)
-    panels.plot(x1, y1, color='gray7')
-    panels.format(title='Mean', **kwargs)
-
-    # Panels for plotting the standard deviation
-    panels = axs.panel(plocation, space=space, width=width)
-    panels.plot(x2, y2, color='gray7', ls='--')
-    panels.format(title='Stdev', **kwargs)
-
-    # Apply formatting *after*
     axs.format(
         xlabel='xlabel', ylabel='ylabel', title='Title',
         suptitle='Using panels for summary statistics',
     )
 
+    # Plot 2D dataset
+    axs.contourf(
+        data, cmap='glacial', extend='both',
+        colorbar=cbarloc, colorbar_kw={'label': 'colorbar'},
+    )
+
+    # Get summary statistics and settings
+    axis = int(ploc == 'r')  # dimension along which stats are taken
+    x1 = x2 = np.arange(20)
+    y1 = data.mean(axis=axis)
+    y2 = data.std(axis=axis)
+    titleloc = 'upper center'
+    if ploc == 'r':
+        titleloc = 'center'
+        x1, x2, y1, y2 = y1, y2, x1, x2
+
+    # Panels for plotting the mean. We make two panels at once and plot data
+    # on both panels at once by calling functions from SubplotsContainers.
+    # More realistically, you would plot data on each panel one-by-one.
+    space = 0
+    width = '3em'
+    kwargs = {'titleloc': titleloc, 'xreverse': False, 'yreverse': False}
+    paxs = axs.panel(ploc, space=space, width=width)
+    paxs.plot(x1, y1, color='gray7')
+    paxs.format(title='Mean', **kwargs)
+
+    # Panels for plotting the standard deviation
+    paxs = axs.panel(ploc, space=space, width=width)
+    paxs.plot(x2, y2, color='gray7', ls='--')
+    paxs.format(title='Stdev', **kwargs)
+
 # %%
 import proplot as plot
 fig, axs = plot.subplots(axwidth=1.5, nrows=2, ncols=2, share=0)
 
-# Demonstration that complex arrangements of panels
-# do not mess up tight layout algorithm
+# Demonstrate that complex arrangements of panels do not mess up
+# subplot aspect ratios or tight layout spacing.
 for ax, side in zip(axs, 'tlbr'):
     ax.panel(side, width='3em')
 axs.format(
