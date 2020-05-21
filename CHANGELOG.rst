@@ -64,7 +64,21 @@ ProPlot v0.7.0 (2020-##-##)
   `~proplot.subplots.EdgeStack` stacks rather than getting inserted directly
   into the main `~proplot.subplots.GridSpec` (:pr:`110`).
 
-ProPlot v0.6.0 (2020-##-##)
+ProPlot v0.6.1 (2020-05-20)
+===========================
+
+.. rubric:: Bug fixes
+
+- Fix issue where cartopy version checking fails if cartopy is not installed
+  (:commit:`86cd50b8`).
+- Fix issue where "tight" layout of geographic plots was broken in pre-v0.18
+  cartopy (:commit:`72cb93c6`).
+- Fix issue where gridline coverage was incomplete in some zoomed-in
+  projections (:commit:`458c6d7c`).
+- Fix issue where basemap minor gridlines did not update when
+  major gridlines were updated (:commit:`427326a7`).
+
+ProPlot v0.6.0 (2020-05-20)
 ===========================
 
 .. rubric:: Deprecated
