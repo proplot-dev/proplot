@@ -272,7 +272,7 @@ import numpy as np
 # Update global settings in several different ways
 plot.rc.cycle = 'colorblind'
 plot.rc.color = 'gray6'
-plot.rc.update({'fontname': 'Univers', 'fontsize': 11})
+plot.rc.update({'fontname': 'Source Sans Pro', 'fontsize': 11})
 plot.rc['figure.facecolor'] = 'gray3'
 plot.rc.axesfacecolor = 'gray4'
 # plot.rc.save()  # save the current settings to ~/.proplotrc

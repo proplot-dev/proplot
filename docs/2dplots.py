@@ -56,21 +56,19 @@
 import proplot as plot
 import numpy as np
 N = 20
-cmap = plot.Colormap(('orange0', 'blood'))
 state = np.random.RandomState(51423)
 data = 10 ** (0.25 * np.cumsum(state.rand(N, N), axis=0))
-with plot.rc.context({'lines.linewidth': 3}):
-    fig, axs = plot.subplots(ncols=2, span=False)
-    axs.format(
-        xlabel='xlabel', ylabel='ylabel',
-        suptitle='On-the-fly colormaps and normalizers'
-    )
+fig, axs = plot.subplots(ncols=2, span=False)
+axs.format(
+    xlabel='xlabel', ylabel='ylabel', grid=True,
+    suptitle='On-the-fly colormaps and normalizers'
+)
 
-    # On-the-fly colormaps and normalizers
-    axs[0].pcolormesh(data, cmap=cmap, colorbar='b')
-    axs[1].pcolormesh(data, norm='log', cmap=cmap, colorbar='b')
-    axs[0].format(title='Linear normalizer')
-    axs[1].format(title='Logarithmic normalizer')
+# On-the-fly colormaps and normalizers
+axs[0].pcolormesh(data, cmap=('orange0', 'blood'), colorbar='b')
+axs[1].pcolormesh(data, norm='log', cmap=('orange0', 'blood'), colorbar='b')
+axs[0].format(title='Linear normalizer')
+axs[1].format(title='Logarithmic normalizer')
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"

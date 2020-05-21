@@ -231,7 +231,7 @@ axs[3].pcolormesh(data, cmap=cmap4)
 # Colormap from lists
 m = axs[4].pcolormesh(
     data,
-    cmap=('maroon', 'ivory'),
+    cmap=('maroon', 'yellow0'),
     cmap_kw={'name': 'heat'}
 )
 cmap5 = m.cmap
