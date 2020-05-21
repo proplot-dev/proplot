@@ -104,8 +104,8 @@ def _canvas_preprocessor(canvas, method):
                 fig._update_geometry_from_tight_layout(renderer, resize=resize)
 
             # Align labels
-            fig._align_labels_axis(True)
-            fig._align_labels_figure(renderer)
+            fig._align_axis_labels(True)
+            fig._align_subplot_super_labels(renderer)
 
             # Call main function
             fallback = _not_none(fig._fallback_to_cm, rc['mathtext.fallback_to_cm'])
@@ -446,7 +446,7 @@ class Figure(mfigure.Figure):
         pax._panel_parent = None
         return pax
 
-    def _align_labels_axis(self, b=True):
+    def _align_axis_labels(self, b=True):
         """
         Align spanning *x* and *y* axis labels in the perpendicular
         direction and, if `b` is ``True``, the parallel direction.
@@ -516,7 +516,7 @@ class Figure(mfigure.Figure):
                         axis.label.set_visible((axis is axis_span))
                     label_span.update({'position': position, 'transform': transform})
 
-    def _align_labels_figure(self, renderer):
+    def _align_subplot_super_labels(self, renderer):
         """
         Adjust the position of row and column labels, and align figure super
         title accounting for figure margins and axes and figure panels.
@@ -912,8 +912,8 @@ class Figure(mfigure.Figure):
 
         # Temporarily disable spanning labels and get correct
         # positions for labels and suptitle
-        self._align_labels_axis(False)
-        self._align_labels_figure(renderer)
+        self._align_axis_labels(False)
+        self._align_subplot_super_labels(renderer)
 
         # Tight box *around* figure
         # Get bounds from old bounding box
@@ -1122,8 +1122,8 @@ class Figure(mfigure.Figure):
             rc['backend'] == 'MacOSX' or rc['backend'][:2] == 'Qt'
         ):
             self._update_geometry_from_tight_layout(renderer, resize=False)
-            self._align_labels_axis(True)  # if spaces changed need to realign
-            self._align_labels_figure(renderer)
+            self._align_axis_labels(True)  # if spaces changed need to realign
+            self._align_subplot_super_labels(renderer)
         return super().draw(renderer)
 
     def legend(

@@ -543,8 +543,8 @@ class Axes(maxes.Axes):
 
     def _reassign_subplot_label(self, side):
         """
-        Re-assign the column and row labels to the relevant panel if
-        present. This is called by `~proplot.figure.Figure._align_suplabel`.
+        Re-assign the column and row labels to the relevant panel if present.
+        This is called by `~proplot.figure.Figure._align_subplot_figure_labels`.
         """
         # Place column and row labels on panels instead of axes -- works when
         # this is called on the main axes *or* on the relevant panel itself
