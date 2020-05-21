@@ -41,13 +41,13 @@ class _dummy_context(object):
     """
     Dummy context manager.
     """
-    def __init__(self, obj=None):
-        self.obj = obj
+    def __init__(self):
+        pass
 
     def __enter__(self):
-        return self.obj
+        pass
 
-    def __exit__(self, *args):
+    def __exit__(self, *args):  # noqa: U100
         pass
 
 
