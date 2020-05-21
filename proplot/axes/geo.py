@@ -105,7 +105,6 @@ class _GeoAxis(object):
             _version_cartopy >= _version('0.18')
             and cticker is not None
             and isinstance(projection, (ccrs._RectangularProjection, ccrs.Mercator))
-            and rc['grid.dmslabels']
         )
 
     def get_scale(self):
@@ -499,6 +498,7 @@ optional
             rotatelabels = _not_none(
                 rotatelabels, rc.get('grid.rotatelabels', context=True)
             )
+            dms = _not_none(dms, rc.get('grid.dmslabels', context=True))
             nsteps = _not_none(nsteps, rc.get('grid.nsteps', context=True))
             if lonformatter is not None:
                 lonformatter_kw = lonformatter_kw or {}
@@ -508,7 +508,7 @@ optional
                 latformatter_kw = latformatter_kw or {}
                 formatter = constructor.Formatter(latformatter, **latformatter_kw)
                 self._lataxis.set_major_formatter(formatter)
-            if dms is not None:
+            if dms is not None:  # harmless if these are not GeoLocators
                 self._lonaxis.get_major_formatter()._dms = dms
                 self._lataxis.get_major_formatter()._dms = dms
                 self._lonaxis.get_major_locator()._dms = dms
