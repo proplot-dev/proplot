@@ -291,7 +291,7 @@ class Axes(maxes.Axes):
         # Automatic axis sharing and formatting
         # TODO: Instead of format() call specific setters
         self._auto_share_setup()
-        self.format(rc_mode=1)  # mode == 1 applies the rcShortParams
+        self.format(rc_mode=1)  # mode == 1 applies the custom proplot params
 
     def _auto_share_setup(self):
         """
