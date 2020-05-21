@@ -369,6 +369,7 @@ class CartesianAxes(base.Axes):
         """
         # Share panel across different subplots
         super()._sharex_setup(sharex)
+
         # Get sharing level
         level = (
             3 if self._panel_sharex_group and self._is_panel_parent_or_child(sharex)
@@ -384,16 +385,31 @@ class CartesianAxes(base.Axes):
             )
         if sharex in (None, self) or not isinstance(sharex, CartesianAxes):
             return
-        # Builtin sharing features
+
+        # Share future changes to axis labels
+        # Proplot internally uses _sharex and _sharey for label sharing. Matplotlib
+        # only uses these in __init__() and cla() to share tickers -- all other builtin
+        # matplotlib axis sharing features derive from _shared_x_axes() group.
+        xself = self.xaxis
+        xsharex = sharex.xaxis
         if level > 0:
             self._sharex = sharex
-            text = self.xaxis.label.get_text()
-            if text:
-                sharex.xaxis.label.set_text(text)
+            if not xsharex.label.get_text():
+                xsharex.label.set_text(xself.label.get_text())
+
+        # Share future axis tickers, limits, and scales
         if level > 1:
-            self._shared_x_axes.join(self, sharex)
-            self.xaxis.major = sharex.xaxis.major
-            self.xaxis.minor = sharex.xaxis.minor
+            self._shared_x_axes.join(self, sharex)  # share limit/scale changes
+            if xsharex.isDefault_majloc:
+                xsharex.major.locator = xself.major.locator
+            if xsharex.isDefault_minloc:
+                xsharex.minor.locator = xself.minor.locator
+            if xsharex.isDefault_majloc:
+                xsharex.major.formatter = xself.major.formatter
+            if xsharex.isDefault_majloc:
+                xsharex.minor.formatter = xself.minor.formatter
+            xself.major = xsharex.major
+            xself.minor = xsharex.minor
 
     def _sharey_setup(self, sharey):
         """
@@ -417,16 +433,28 @@ class CartesianAxes(base.Axes):
             )
         if sharey in (None, self) or not isinstance(sharey, CartesianAxes):
             return
-        # Builtin features
+
+        # Share future changes to axis labels
+        yself = self.yaxis
+        ysharey = sharey.yaxis
         if level > 0:
             self._sharey = sharey
-            text = self.yaxis.label.get_text()
-            if text:
-                sharey.yaxis.label.set_text(text)
+            if not ysharey.label.get_text():
+                ysharey.label.set_text(yself.label.get_text())
+
+        # Share future axis tickers, limits, and scales
         if level > 1:
-            self._shared_y_axes.join(self, sharey)
-            self.yaxis.major = sharey.yaxis.major
-            self.yaxis.minor = sharey.yaxis.minor
+            self._shared_y_axes.join(self, sharey)  # share limit/scale changes
+            if ysharey.isDefault_majloc:
+                ysharey.major.locator = yself.major.locator
+            if ysharey.isDefault_minloc:
+                ysharey.minor.locator = yself.minor.locator
+            if ysharey.isDefault_majloc:
+                ysharey.major.formatter = yself.major.formatter
+            if ysharey.isDefault_majloc:
+                ysharey.minor.formatter = yself.minor.formatter
+            yself.major = ysharey.major
+            yself.minor = ysharey.minor
 
     def _update_axis_labels(self, x='x', **kwargs):
         """
@@ -441,13 +469,14 @@ class CartesianAxes(base.Axes):
         # 1. Walk to parent if it is a main axes
         # 2. Get spanning main axes in this row or column (ignore short panel edges)
         # 3. Walk to parent if it exists (may be a panel long edge)
+        # NOTE: Axis sharing between "main" axes is only ever one level deep.
         # NOTE: Critical to apply labels to *shared* axes attributes rather
         # than testing extents or we end up sharing labels with twin axes.
         ax = self
         if getattr(self.figure, '_share' + x) > 0:
             share = getattr(ax, '_share' + x) or ax
             if not share._panel_parent:
-                ax = share  # shared main axes are only ever one level deep
+                ax = share
 
         # Get spanning axes
         axs = [ax]
