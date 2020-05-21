@@ -97,8 +97,6 @@ fig, axs = plot.subplots(axwidth=1.5, nrows=2, ncols=2, share=0)
 
 # Demonstrate that complex arrangements of panels do not mess up
 # subplot aspect ratios or tight layout spacing.
-for ax, side in zip(axs, 'tlbr'):
-    ax.panel(side, width='3em')
 axs.format(
     xlim=(0, 1), ylim=(0, 1),
     xlabel='xlabel', ylabel='ylabel',
@@ -108,6 +106,8 @@ axs.format(
     collabels=['Column 1', 'Column 2'],
     abc=True, abcloc='ul', titleloc='uc', abovetop=False,
 )
+for ax, side in zip(axs, 'tlbr'):
+    ax.panel(side, width='3em')
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
