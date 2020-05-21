@@ -83,8 +83,6 @@ ProPlot v0.6.0 (2020-05-20)
 
 .. rubric:: Deprecated
 
-There are quite a lot of deprecations for this release.
-
 - Remove the ``geoaxes`` and ``geogrid`` rc settings (:pr:`168`). Gridline
   settings are now controlled with ``grid``.
 - Remove the ``lonstep`` and ``latstep`` settings -- we now use
@@ -176,10 +174,6 @@ There are quite a lot of deprecations for this release.
 - Support `~matplotlib.axes.Axes.vlines` and `~matplotlib.axes.Axes.hlines`
   flexible arguments and add ``negpos`` feature
   (:commit:`1c53e947`, :commit:`e42ee913`).
-- Increase default line width from ``0.6`` to ``0.8`` to match matplotlib defaults
-  (:commit:`f801852b`; try to avoid frivolously changing defaults).
-- Change default resolution for geographic features from ``'lo'`` to ``'med'``
-  (:commit:`f801852b`).
 - Change default line style for geographic gridlines from ``':'`` to ``'-'``
   and match style from primary gridlines (:commit:`f801852b`).
 - Support `cartopy 0.18 <https://scitools.org.uk/cartopy/docs/latest/whats_new.html>`__
