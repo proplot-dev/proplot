@@ -1050,6 +1050,7 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
             and hasattr(self.background_patch, 'orig_path')
         ):
             clipped_path = self.background_patch.orig_path.clip_to_bbox(self.viewLim)
+            self.outline_patch._path = clipped_path
             self.background_patch._path = clipped_path
 
         # Adjust location
