@@ -1341,12 +1341,11 @@ class BasemapAxes(GeoAxes):
                 lines = lines[:-1]  # prevent double labels
 
             # Figure out whether we have to redraw meridians/parallels
+            # NOTE: Always update minor gridlines if major locator also changed
             attr = f'_{name}lines_{which}'
             objs = getattr(self, attr)  # dictionary of previous objects
-            if which == 'major':
-                attrs = ('isDefault_majloc', 'isDefault_majfmt')
-            else:
-                attrs = ('isDefault_minloc',)
+            attrs = ['isDefault_majloc']  # always check this one
+            attrs.append('isDefault_majfmt' if which == 'major' else 'isDefault_minloc')
             rebuild = lines and (
                 not objs
                 or any(_ is not None for _ in array)
@@ -1359,8 +1358,6 @@ class BasemapAxes(GeoAxes):
             # Also mark formatters and locators as 'default'
             if rebuild:
                 kwdraw = {}
-                for _ in attrs:
-                    setattr(axis, _, True)
                 formatter = axis.get_major_formatter()
                 if formatter is not None:  # use functional formatter
                     kwdraw['fmt'] = formatter
@@ -1408,12 +1405,20 @@ class BasemapAxes(GeoAxes):
         """
         Update minor gridlines.
         """
+        # Update gridline locations
         lonarray, latarray  # prevent U100 error (ignore these)
         array = [None] * 4  # NOTE: must be None not False (see _update_gridlines)
         self._update_gridlines(
             which='minor',
             longrid=longrid, latgrid=latgrid, lonarray=array, latarray=array,
         )
+        # Set isDefault_majloc, etc. to True for both axes
+        # NOTE: This cannot be done inside _update_gridlines or minor gridlines
+        # will not update to reflect new major gridline locations.
+        for axis in (self._lonaxis, self._lataxis):
+            axis.isDefault_majfmt = True
+            axis.isDefault_majloc = True
+            axis.isDefault_minloc = True
 
     @property
     def projection(self):
