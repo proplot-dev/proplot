@@ -364,8 +364,8 @@ plot.rc.reso = 'med'  # use higher res for zoomed in geographic features
 proj = plot.Proj('cyl', lonlim=(-20, 180), latlim=(-10, 50), basemap=True)
 fig, axs = plot.subplots(nrows=2, axwidth=5, proj=('cyl', proj))
 axs.format(
-    land=True, labels=True, lonlines=20,
-    latlines=20, suptitle='Zooming into projections'
+    land=True, labels=True, lonlines=20, latlines=20,
+    gridminor=True, suptitle='Zooming into projections'
 )
 axs[0].format(
     lonlim=(-140, 60), latlim=(-10, 50),
@@ -380,7 +380,7 @@ import proplot as plot
 proj = plot.Proj('npaeqd', boundinglat=60, basemap=True)
 fig, axs = plot.subplots(ncols=2, axwidth=2.7, proj=('splaea', proj))
 axs.format(
-    land=True, latmax=80,  # no gridlines poleward of 80 degrees
+    land=True, latmax=80, # no gridlines poleward of 80 degrees
     suptitle='Zooming into polar projections'
 )
 axs[0].format(boundinglat=-60, title='Cartopy example')
@@ -393,20 +393,15 @@ import proplot as plot
 proj1 = plot.Proj('lcc', lon_0=0)  # cartopy projection
 proj2 = plot.Proj('lcc', lon_0=-100, lat_0=45, width=8e6, height=8e6, basemap=True)
 fig, axs = plot.subplots(ncols=2, axwidth=3, proj=(proj1, proj2))
-axs.format(suptitle='Zooming into specific regions', land=True)
-axs[0].format(
-    title='Cartopy example', land=True,
-    lonlim=(-20, 50), latlim=(30, 70)
-)
-axs[1].format(
-    title='Basemap example', land=True, lonlines=20
-)
+axs.format(suptitle='Zooming into specific regions', land=True, gridminor=True)
+axs[0].format(lonlim=(-20, 50), latlim=(30, 70), title='Cartopy example')
+axs[1].format(lonlines=20, title='Basemap example')
 
 # Zooming to very small scale with degree-minute-second labels
 plot.rc.reso = 'hi'
 fig, axs = plot.subplots(ncols=2, axwidth=2.5, proj='cyl')
 axs.format(
-    land=True, labels=True,
+    land=True, labels=True, gridminor=True,
     borders=True, borderscolor='white',
     suptitle='Degree-minute-second labels',
 )
