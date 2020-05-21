@@ -286,7 +286,8 @@ class GeoAxes(base.Axes):
         lonformatter=None, latformatter=None,
         lonformatter_kw=None, latformatter_kw=None,
         labels=None, latlabels=None, lonlabels=None,
-        loninline=None, latinline=None, rotatelabels=None, labelpad=None, dms=None,
+        loninline=None, latinline=None, rotatelabels=None,
+        labelpad=None, dms=None, nsteps=None,
         patch_kw=None, **kwargs,
     ):
         """
@@ -399,6 +400,11 @@ optional
             and `~cartopy.mpl.ticker.LatitudeFormatter` should use
             degrees-minutes-seconds for gridline labels on small scales in
             rectangular projections. Default is ``True``.
+        nsteps : int, optional
+            *For cartopy axes only.*
+            Specifies the `cartopy.mpl.gridliner.Gridliner.n_steps` property,
+            i.e. the number of interpolation steps used to draw gridlines.
+            Default is :rc:`grid.nsteps`.
         land, ocean, coast, rivers, lakes, borders, innerborders : bool, \
 optional
             Toggles various geographic features. These are actually the
@@ -493,6 +499,7 @@ optional
             rotatelabels = _not_none(
                 rotatelabels, rc.get('grid.rotatelabels', context=True)
             )
+            nsteps = _not_none(nsteps, rc.get('grid.nsteps', context=True))
             if lonformatter is not None:
                 lonformatter_kw = lonformatter_kw or {}
                 formatter = constructor.Formatter(lonformatter, **lonformatter_kw)
@@ -515,9 +522,11 @@ optional
                 longrid=longrid, latgrid=latgrid,  # gridline toggles
                 lonarray=lonarray, latarray=latarray,  # label toggles
                 loninline=loninline, latinline=latinline, rotatelabels=rotatelabels,
-                labelpad=labelpad,
+                labelpad=labelpad, nsteps=nsteps,
             )
-            self._update_minor_gridlines(longrid=longridminor, latgrid=latgridminor)
+            self._update_minor_gridlines(
+                longrid=longridminor, latgrid=latgridminor, nsteps=nsteps,
+            )
 
             # Call main axes format method
             super().format(**kwargs)
@@ -956,7 +965,9 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
                     feat._kwargs.update(kw)
                     setattr(self, attr, feat)
 
-    def _update_gridlines(self, gl, which='major', longrid=None, latgrid=None):
+    def _update_gridlines(
+        self, gl, which='major', longrid=None, latgrid=None, nsteps=None,
+    ):
         """
         Update gridliner object with axis locators, and toggle gridlines on and off.
         """
@@ -974,6 +985,8 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
             gl.xlines = longrid
         if latgrid is not None:
             gl.ylines = latgrid
+        if nsteps is not None:
+            gl.n_steps = nsteps
         lonlines = self._get_lonticklocs(which=which)
         latlines = self._get_latticklocs(which=which)
         lonlines = (np.asarray(lonlines) + 180) % 360 - 180  # specific to CartopyAxes
@@ -985,6 +998,7 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
         longrid=None, latgrid=None,
         lonarray=None, latarray=None,
         loninline=None, latinline=None, labelpad=None, rotatelabels=None,
+        nsteps=None,
     ):
         """
         Update major gridlines.
@@ -993,9 +1007,11 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
         if not self._gridlines_major:
             self._gridlines_major = self._init_gridlines()
         gl = self._gridlines_major
-        self._update_gridlines(gl, which='major', longrid=longrid, latgrid=latgrid)
+        self._update_gridlines(
+            gl, which='major', longrid=longrid, latgrid=latgrid, nsteps=nsteps,
+        )
 
-        # Updage gridline label parameters
+        # Update gridline label parameters
         if labelpad is not None:
             gl.xpadding = gl.ypadding = labelpad
         if loninline is not None:
@@ -1030,14 +1046,16 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
                     lonarray = [0] * 4
         self._toggle_gridliner_labels(gl, *latarray[:2], *lonarray[2:])
 
-    def _update_minor_gridlines(self, longrid=None, latgrid=None):
+    def _update_minor_gridlines(self, longrid=None, latgrid=None, nsteps=None):
         """
         Update minor gridlines.
         """
         if not self._gridlines_minor:
             self._gridlines_minor = self._init_gridlines()
         gl = self._gridlines_minor
-        self._update_gridlines(gl, which='minor', longrid=longrid, latgrid=latgrid)
+        self._update_gridlines(
+            gl, which='minor', longrid=longrid, latgrid=latgrid, nsteps=nsteps,
+        )
 
     def get_tightbbox(self, renderer, *args, **kwargs):
         # Perform extra post-processing steps
@@ -1420,25 +1438,23 @@ class BasemapAxes(GeoAxes):
     def _update_major_gridlines(
         self,
         longrid=None, latgrid=None, lonarray=None, latarray=None,
-        loninline=None, latinline=None, rotatelabels=None, labelpad=None,
+        loninline=None, latinline=None, rotatelabels=None, labelpad=None, nsteps=None,
     ):
         """
         Update major gridlines.
         """
-        loninline, latinline, labelpad, rotatelabels  # avoid U100 error
+        loninline, latinline, labelpad, rotatelabels, nsteps  # avoid U100 error
         self._update_gridlines(
             which='major',
             longrid=longrid, latgrid=latgrid, lonarray=lonarray, latarray=latarray,
         )
 
-    def _update_minor_gridlines(
-        self, longrid=None, latgrid=None, lonarray=None, latarray=None,
-    ):
+    def _update_minor_gridlines(self, longrid=None, latgrid=None, nsteps=None):
         """
         Update minor gridlines.
         """
         # Update gridline locations
-        lonarray, latarray  # prevent U100 error (ignore these)
+        nsteps  # avoid U100 error
         array = [None] * 4  # NOTE: must be None not False (see _update_gridlines)
         self._update_gridlines(
             which='minor',

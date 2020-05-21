@@ -504,6 +504,10 @@ _rc_proplot = {
         'Whether to use inline labels for `~proplot.axes.CartopyAxes` '
         'longitude gridlines.'
     ),
+    'grid.nsteps': (
+        250,
+        'Number of interpolation steps used to draw cartopy gridlines.'
+    ),
     'grid.ratio': (
         GRIDRATIO,
         'Ratio of minor gridline width to major gridline width.'
