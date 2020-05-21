@@ -380,7 +380,7 @@ import proplot as plot
 proj = plot.Proj('npaeqd', boundinglat=60, basemap=True)
 fig, axs = plot.subplots(ncols=2, axwidth=2.7, proj=('splaea', proj))
 axs.format(
-    land=True, latmax=80, # no gridlines poleward of 80 degrees
+    land=True, latmax=80,  # no gridlines poleward of 80 degrees
     suptitle='Zooming into polar projections'
 )
 axs[0].format(boundinglat=-60, title='Cartopy example')
