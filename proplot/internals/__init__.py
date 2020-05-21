@@ -87,9 +87,12 @@ class _version(list):
             major, minor, *_ = version.split('.')
             major, minor = int(major), int(minor)
         except (ValueError, AttributeError):
-            raise ValueError(f'Invalid version {version!r}.')
+            warnings._warn_proplot(
+                f"Invalid version {version!r}. Defaulting to '0.0'."
+            )
+            major = minor = 0
         self._version = version
-        super().__init__((major, minor))  # then use builtin python list sorting
+        super().__init__([major, minor])  # then use builtin python list sorting
 
 
 # Add matplotlib and cartopy versions
@@ -99,4 +102,4 @@ try:
     import cartopy as _
     _version_cartopy = _version(_.__version__)
 except ImportError:
-    _version_cartopy = (0, 0)
+    _version_cartopy = [0, 0]
