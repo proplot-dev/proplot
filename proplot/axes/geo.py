@@ -72,6 +72,30 @@ class _GeoAxis(object):
         self.isDefault_minloc = True
         self._interval = None
 
+    def _get_extent(self):
+        # Try to get extent but bail out for projections where this is impossible
+        # So far just transverse Mercator
+        try:
+            return self.axes.get_extent()
+        except Exception:
+            lon0 = self.axes._get_lon0()
+            return (-180 + lon0, 180 + lon0, -90, 90)
+
+    @staticmethod
+    def _pad_ticks(ticks, vmin, vmax):
+        # Wrap up to the longitude/latitude range to avoid
+        # giant lists of 10,000 gridline locations.
+        range_ = max(ticks) - min(ticks)
+        vmin = max(vmin, ticks[0] - range_)
+        vmax = min(vmax, ticks[-1] + range_)
+
+        # Pad the reported tick range up to specified range
+        step = ticks[1] - ticks[0]  # MaxNLocator/AutoMinorLocator steps are equal
+        ticks_lo = np.arange(ticks[0], vmin, -step)[1:][::-1].tolist()
+        ticks_hi = np.arange(ticks[-1], vmax, step)[1:].tolist()
+        ticks = ticks_lo + ticks + ticks_hi
+        return ticks
+
     @staticmethod
     def _use_dms(projection=None):
         # Return whether dms locators/formatters are available for the
@@ -83,15 +107,6 @@ class _GeoAxis(object):
             and isinstance(projection, (ccrs._RectangularProjection, ccrs.Mercator))
             and rc['grid.dmslabels']
         )
-
-    def _get_extent(self):
-        # Try to get extent but bail out for projections where this is impossible
-        # So far just transverse Mercator
-        try:
-            return self.axes.get_extent()
-        except Exception:
-            lon0 = self.axes._get_lon0()
-            return (-180 + lon0, 180 + lon0, -90, 90)
 
     def get_scale(self):
         return 'linear'
@@ -110,12 +125,10 @@ class _GeoAxis(object):
         return self.minor.locator
 
     def get_majorticklocs(self):
-        ticks = self.major.locator()
-        return self._constrain_ticks(ticks)
+        return self._get_sanitized_ticks(self.major.locator)
 
     def get_minorticklocs(self):
-        ticks = self.minor.locator()
-        return self._constrain_ticks(ticks)
+        return self._get_sanitized_ticks(self.minor.locator)
 
     def set_major_formatter(self, formatter, default=False):
         # NOTE: Cartopy formatters check Formatter.axis.axes.projection and has
@@ -157,11 +170,21 @@ class _LonAxis(_GeoAxis):
         self.set_major_locator(constructor.Locator(locator), default=True)
         self.set_minor_locator(mticker.AutoMinorLocator(), default=True)
 
-    def _constrain_ticks(self, ticks):
+    def _get_sanitized_ticks(self, locator):
+        # Prevent ticks from looping around
         eps = 5e-10  # more than 1e-10 because we use 1e-10 in _LongitudeLocator
-        ticks = sorted(ticks)
+        ticks = sorted(locator())
         while ticks and ticks[-1] - eps > ticks[0] + 360 + eps:  # cut off looped ticks
             ticks = ticks[:-1]
+
+        # Append extra ticks in case longitude/latitude limits do not encompass
+        # the entire view range of map, e.g. for Lambert Conformal sectors.
+        # NOTE: Try to avoid making 10,000 element lists. Just wrap extra ticks
+        # up to the width of *reported* longitude range.
+        if isinstance(locator, (mticker.MaxNLocator, mticker.AutoMinorLocator)):
+            lon0 = self.axes._get_lon0()
+            ticks = self._pad_ticks(ticks, lon0 - 180 + eps, lon0 + 180 - eps)
+
         return ticks
 
     def get_view_interval(self):
@@ -193,18 +216,26 @@ class _LatAxis(_GeoAxis):
         self.set_major_locator(constructor.Locator(locator), default=True)
         self.set_minor_locator(mticker.AutoMinorLocator(), default=True)
 
-    def _constrain_ticks(self, ticks):
-        # Limit tick latitudes to satisfy latmax
-        latmax = self.get_latmax()
-        ticks = [l for l in ticks if -latmax <= l <= latmax]
+    def _get_sanitized_ticks(self, locator):
         # Adjust latitude ticks to fix bug in some projections. Harmless for basemap.
         # NOTE: Maybe fixed by cartopy v0.18?
-        eps = 1e-10
+        eps = 5e-10
+        ticks = sorted(locator())
         if ticks:
             if ticks[0] == -90:
                 ticks[0] += eps
             if ticks[-1] == 90:
                 ticks[-1] -= eps
+
+        # Append extra ticks in case longitude/latitude limits do not encompass
+        # the entire view range of map, e.g. for Lambert Conformal sectors.
+        if isinstance(locator, (mticker.MaxNLocator, mticker.AutoMinorLocator)):
+            ticks = self._pad_ticks(ticks, -90 + eps, 90 - eps)
+
+        # Filter ticks to latmax range
+        latmax = self.get_latmax()
+        ticks = [l for l in ticks if -latmax <= l <= latmax]
+
         return ticks
 
     def get_latmax(self):
