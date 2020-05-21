@@ -390,26 +390,27 @@ class CartesianAxes(base.Axes):
         # Proplot internally uses _sharex and _sharey for label sharing. Matplotlib
         # only uses these in __init__() and cla() to share tickers -- all other builtin
         # matplotlib axis sharing features derive from _shared_x_axes() group.
-        xself = self.xaxis
-        xsharex = sharex.xaxis
         if level > 0:
             self._sharex = sharex
-            if not xsharex.label.get_text():
-                xsharex.label.set_text(xself.label.get_text())
+            if not sharex.xaxis.label.get_text():
+                sharex.xaxis.label.set_text(self.xaxis.label.get_text())
 
         # Share future axis tickers, limits, and scales
         if level > 1:
+            sharex.set_xscale(self.get_xscale())
+            if not self.get_autoscalex_on():
+                sharex.set_xlim(self.get_xlim())
             self._shared_x_axes.join(self, sharex)  # share limit/scale changes
-            if xsharex.isDefault_majloc:
-                xsharex.major.locator = xself.major.locator
-            if xsharex.isDefault_minloc:
-                xsharex.minor.locator = xself.minor.locator
-            if xsharex.isDefault_majloc:
-                xsharex.major.formatter = xself.major.formatter
-            if xsharex.isDefault_majloc:
-                xsharex.minor.formatter = xself.minor.formatter
-            xself.major = xsharex.major
-            xself.minor = xsharex.minor
+            if sharex.xaxis.isDefault_majloc:
+                sharex.xaxis.set_major_locator(self.xaxis.get_major_locator())
+            if sharex.xaxis.isDefault_minloc:
+                sharex.xaxis.set_minor_locator(self.xaxis.get_minor_locator())
+            if sharex.xaxis.isDefault_majfmt:
+                sharex.xaxis.set_major_formatter(self.xaxis.get_major_formatter())
+            if sharex.xaxis.isDefault_minfmt:
+                sharex.xaxis.set_minor_formatter(self.xaxis.get_minor_formatter())
+            self.xaxis.major = sharex.xaxis.major
+            self.xaxis.minor = sharex.xaxis.minor
 
     def _sharey_setup(self, sharey):
         """
@@ -435,26 +436,29 @@ class CartesianAxes(base.Axes):
             return
 
         # Share future changes to axis labels
-        yself = self.yaxis
-        ysharey = sharey.yaxis
         if level > 0:
             self._sharey = sharey
-            if not ysharey.label.get_text():
-                ysharey.label.set_text(yself.label.get_text())
+            if not sharey.yaxis.label.get_text():
+                sharey.yaxis.label.set_text(self.yaxis.label.get_text())
 
         # Share future axis tickers, limits, and scales
+        # NOTE: Only difference between levels 2 and 3 is level 3 hides
+        # tick labels. But this is done after the fact -- tickers are still shared.
         if level > 1:
+            sharey.set_yscale(self.get_yscale())
+            if not self.get_autoscaley_on():
+                sharey.set_ylim(self.get_ylim())
             self._shared_y_axes.join(self, sharey)  # share limit/scale changes
-            if ysharey.isDefault_majloc:
-                ysharey.major.locator = yself.major.locator
-            if ysharey.isDefault_minloc:
-                ysharey.minor.locator = yself.minor.locator
-            if ysharey.isDefault_majloc:
-                ysharey.major.formatter = yself.major.formatter
-            if ysharey.isDefault_majloc:
-                ysharey.minor.formatter = yself.minor.formatter
-            yself.major = ysharey.major
-            yself.minor = ysharey.minor
+            if sharey.yaxis.isDefault_majloc:
+                sharey.yaxis.set_major_locator(self.yaxis.get_major_locator())
+            if sharey.yaxis.isDefault_minloc:
+                sharey.yaxis.set_minor_locator(self.yaxis.get_minor_locator())
+            if sharey.yaxis.isDefault_majfmt:
+                sharey.yaxis.set_major_formatter(self.yaxis.get_major_formatter())
+            if sharey.yaxis.isDefault_minfmt:
+                sharey.yaxis.set_minor_formatter(self.yaxis.get_minor_formatter())
+            self.yaxis.major = sharey.yaxis.major
+            self.yaxis.minor = sharey.yaxis.minor
 
     def _update_axis_labels(self, x='x', **kwargs):
         """
