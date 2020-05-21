@@ -13,7 +13,7 @@ def get_nodes(rawtext, text, inliner):
         return []
     levels = relsource[1].count('/')  # distance to 'docs' folder
     if text in rcParams:
-        refuri = 'https://matplotlib.org/tutorials/introduction/customizing.html'
+        refuri = 'https://matplotlib.org/tutorials/introductory/customizing.html'
         refuri = f'{refuri}?highlight={text}#the-matplotlibrc-file'
     else:
         levels = relsource[1].count('/')  # distance to docs folder
