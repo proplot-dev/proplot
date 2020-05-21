@@ -11,14 +11,12 @@ def get_nodes(rawtext, text, inliner):
     relsource = source.split('/docs/', 1)
     if len(relsource) == 1:
         return []
-    levels = relsource[1].count('/')  # distance to 'docs' folder
     if text in rcParams:
         refuri = 'https://matplotlib.org/tutorials/introductory/customizing.html'
         refuri = f'{refuri}?highlight={text}#the-matplotlibrc-file'
     else:
-        levels = relsource[1].count('/')  # distance to docs folder
-        # url = '../' * levels + 'en/latest/configuration.html
-        refuri = '../' * levels + 'configuration.html'
+        levels = relsource[1].count('/')  # distance to base URL
+        refuri = '../' * levels + 'en/latest/configuration.html'
         refuri = f'{refuri}?highlight={text}#rc-proplot'
     ref = nodes.reference(rawtext, rendered, refuri=refuri)
     return [nodes.literal('', '', ref)]
