@@ -945,12 +945,12 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
             b = rc.get(name, context=True)
             attr = f'_{name}_feature'
             feat = getattr(self, attr, None)
+            drawn = feat is not None  # if exists, apply *updated* settings
             if b is not None:
                 if not b:
-                    if feat is not None:  # toggle existing feature off
+                    if drawn:  # toggle existing feature off
                         feat.set_visible(False)
                 else:
-                    drawn = feat is not None  # if exists, apply *updated* settings
                     if not drawn:
                         feat = cfeature.NaturalEarthFeature(*args, reso)
                         feat = self.add_feature(feat)  # convert to FeatureArtist
@@ -1352,21 +1352,24 @@ class BasemapAxes(GeoAxes):
         # NOTE: Also notable are drawcounties, blumarble, drawlsmask,
         # shadedrelief, and etopo methods.
         for name, method in constructor.BASEMAP_FEATURES.items():
+            # Draw feature or toggle on and off
             b = rc.get(name, context=True)
             attr = f'_{name}_feature'
             feat = getattr(self, attr, None)
+            drawn = feat is not None  # if exists, apply *updated* settings
             if b is not None:
                 if not b:
-                    if feat is not None:  # toggle existing feature off
+                    if drawn:  # toggle existing feature off
                         for obj in feat:
                             feat.set_visible(False)
                 else:
-                    drawn = feat is not None  # if exists, apply *updated* settings
                     if not drawn:
                         feat = getattr(self.projection, method)(ax=self)
                     if not isinstance(feat, (list, tuple)):  # list of artists?
                         feat = (feat,)
                     setattr(self, attr, feat)
+
+            # Update settings
             if feat is not None:
                 kw = rc.category(name, context=drawn)
                 for obj in feat:
