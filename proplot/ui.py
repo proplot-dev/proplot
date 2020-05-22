@@ -50,9 +50,7 @@ def close(*args, **kwargs):
 def show():
     """
     Call `matplotlib.pyplot.show`. This is included so you don't have to import
-    `~matplotlib.pyplot`. Note this command should *not be necessary* if you
-    are working in an iPython session and :rcraw:`matplotlib` is non-empty --
-    when you create a new figure, it will be automatically displayed.
+    `~matplotlib.pyplot`.
     """
     plt.show()
 
