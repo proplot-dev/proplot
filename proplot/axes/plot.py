@@ -403,7 +403,7 @@ def standardize_1d(self, func, *args, **kwargs):
 
    Note
    ----
-   This function wraps the 1D plotting methods: {methods}
+   This function wraps {methods}
    """
     # Sanitize input
     # TODO: Add exceptions for methods other than 'hist'?
@@ -617,7 +617,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
 
     Note
     ----
-    This function wraps the 2D plotting methods: {methods}
+    This function wraps {methods}
     """
     # Sanitize input
     name = func.__name__
@@ -1004,7 +1004,7 @@ def indicate_error(
 
     Note
     ----
-    This function wraps the 1D plotting methods: {methods}
+    This function wraps {methods}
 
     Parameters
     ----------
@@ -1547,6 +1547,10 @@ def hlines_wrapper(self, func, *args, **kwargs):
     Parameters
     ----------
     %(axes.lines)s
+
+    Note
+    ----
+    This function wraps {methods}
     """
     return _draw_lines(self, func, *args, **kwargs)
 
@@ -1560,6 +1564,10 @@ def vlines_wrapper(self, func, *args, **kwargs):
     Parameters
     ----------
     %(axes.lines)s
+
+    Note
+    ----
+    This function wraps {methods}
     """
     return _draw_lines(self, func, *args, **kwargs)
 
@@ -2118,8 +2126,7 @@ def cycle_changer(
 
     Note
     ----
-    This function wraps every method that uses the property cycler:
-    {methods}
+    This function wraps {methods}
 
     This wrapper also *standardizes acceptable input* -- these methods now all
     accept 2D arrays holding columns of data, and *x*-coordinates are always
@@ -2650,8 +2657,7 @@ def cmap_changer(
 
     Note
     ----
-    This function wraps every method that take a `cmap` argument:
-    {methods}
+    This function wraps {methods}
 
     Parameters
     ----------
