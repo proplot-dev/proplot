@@ -79,7 +79,7 @@ for cbarloc, ploc in ('rb', 'br'):
     # on both panels at once by calling functions from SubplotsContainers.
     # More realistically, you would plot data on each panel one-by-one.
     space = 0
-    width = '3em'
+    width = '4em'
     kwargs = {'titleloc': titleloc, 'xreverse': False, 'yreverse': False}
     paxs = axs.panel(ploc, space=space, width=width)
     paxs.plot(x1, y1, color='gray7')
@@ -94,8 +94,8 @@ for cbarloc, ploc in ('rb', 'br'):
 import proplot as plot
 fig, axs = plot.subplots(axwidth=1.5, nrows=2, ncols=2, share=0)
 
-# Demonstrate that complex arrangements of panels do not mess up
-# subplot aspect ratios or tight layout spacing.
+# Demonstrate that complex arrangements of panels does
+# not mess up subplot aspect ratios or tight layout spacing
 axs.format(
     xlim=(0, 1), ylim=(0, 1),
     xlabel='xlabel', ylabel='ylabel',
