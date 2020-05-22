@@ -3,12 +3,15 @@
 
 |build-status| |docs| |pypi| |code-style| |pr-welcome| |license| |gitter|
 
-A comprehensive `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful, publication-quality graphics.
+A `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful,
+publication-quality graphics.
 
 Installation
 ============
 
-ProPlot is published on `PyPi <https://pypi.org/project/proplot/>`__ and `conda-forge <https://conda-forge.org>`__. It can be installed with ``pip`` or ``conda`` as follows:
+ProPlot is published on `PyPi <https://pypi.org/project/proplot/>`__ and
+`conda-forge <https://conda-forge.org>`__. It can be installed with ``pip`` or
+``conda`` as follows:
 
 .. code-block:: bash
 
