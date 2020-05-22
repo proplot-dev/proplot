@@ -28,7 +28,7 @@ from ..utils import edges, edges2d, units, to_xyz, to_rgb
 from ..config import rc
 from ..internals import ic  # noqa: F401
 from ..internals import docstring, warnings
-from ..internals import _dummy_context, _not_none, _set_state
+from ..internals import _dummy_context, _state_context, _not_none
 try:
     from cartopy.crs import PlateCarree
 except ModuleNotFoundError:
@@ -3794,7 +3794,7 @@ def _basemap_norecurse(func):
         if func._called_from_basemap:
             result = getattr(maxes.Axes, name)(self, *args, **kwargs)
         else:
-            with _set_state(func, _called_from_basemap=True):
+            with _state_context(func, _called_from_basemap=True):
                 result = func(self, *args, **kwargs)
         return result
     return _wrapper

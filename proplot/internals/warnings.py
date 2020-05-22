@@ -22,8 +22,8 @@ def _warn_proplot(message):
     Temporarily apply the `_format_warning` monkey patch and emit the
     warning. Do not want to affect warnings emitted by other modules.
     """
-    from . import _set_state
-    with _set_state(warnings, formatwarning=_format_warning):
+    from . import _state_context
+    with _state_context(warnings, formatwarning=_format_warning):
         warnings.warn(message, stacklevel=2)
 
 

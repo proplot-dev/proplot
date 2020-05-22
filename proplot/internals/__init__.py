@@ -51,7 +51,7 @@ class _dummy_context(object):
         pass
 
 
-class _set_state(object):
+class _state_context(object):
     """
     Temporarily modify attribute(s) for an arbitrary object.
     """

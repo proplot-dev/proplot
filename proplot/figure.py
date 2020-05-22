@@ -12,7 +12,7 @@ from . import gridspec as pgridspec
 from .config import rc
 from .utils import units
 from .internals import ic  # noqa: F401
-from .internals import warnings, _not_none, _dummy_context, _set_state
+from .internals import warnings, _dummy_context, _state_context, _not_none
 
 __all__ = ['Figure']
 
@@ -617,21 +617,21 @@ class Figure(mfigure.Figure):
         Prevent warning message when adding subplots one-by-one. Used
         internally.
         """
-        return _set_state(self, _authorized_add_subplot=True)
+        return _state_context(self, _authorized_add_subplot=True)
 
     def _context_autoresizing(self):
         """
         Ensure backend calls to `~matplotlib.figure.Figure.set_size_inches`
         during pre-processing are not interpreted as *manual* resizing.
         """
-        return _set_state(self, _is_autoresizing=True)
+        return _state_context(self, _is_autoresizing=True)
 
     def _context_preprocessing(self):
         """
         Prevent re-running pre-processing steps due to draws triggered
         by figure resizes during pre-processing.
         """
-        return _set_state(self, _is_preprocessing=True)
+        return _state_context(self, _is_preprocessing=True)
 
     def _fix_figure_dimensions(self, subplots_kw):
         """

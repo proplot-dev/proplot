@@ -9,7 +9,7 @@ import matplotlib.ticker as mticker
 import locale
 from fractions import Fraction
 from .internals import ic  # noqa: F401
-from .internals import docstring, _dummy_context, _set_state, _not_none
+from .internals import docstring, _dummy_context, _state_context, _not_none
 try:
     import cartopy.crs as ccrs
     from cartopy.mpl.ticker import LatitudeFormatter, LongitudeFormatter
@@ -149,7 +149,7 @@ class _GeoFormatter(object):
 
     def __call__(self, value, pos=None):
         if self.axis is not None:
-            context = _set_state(self.axis.axes, projection=ccrs.PlateCarree())
+            context = _state_context(self.axis.axes, projection=ccrs.PlateCarree())
         else:
             context = _dummy_context()
         with context:
@@ -255,7 +255,7 @@ class AutoFormatter(mticker.ScalarFormatter):
         """
         Get the offset but *always* use math text.
         """
-        with _set_state(self, _useMathText=True):
+        with _state_context(self, _useMathText=True):
             return super().get_offset()
 
     @staticmethod
