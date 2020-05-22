@@ -250,7 +250,7 @@ axs.format(
 # A special object named `~proplot.config.rc` is created whenever you import
 # ProPlot. `~proplot.config.rc` is similar to the matplotlib
 # `~matplotlib.rcParams` dictionary, but can be used to change both
-# :ref:`matplotlib settings <rc_matplotlib>`_ and
+# `matplotlib settings <https://matplotlib.org/users/customizing.html>`__ and
 # :ref:`ProPlot settings <rc_proplot>`. `~proplot.config.rc` also
 # provides a ``style`` parameter that can be used to switch between
 # `matplotlib stylesheets\

@@ -10,7 +10,7 @@ Overview
 
 A special object named `~proplot.config.rc`, belonging to the
 `~proplot.config.RcConfigurator` class, is created on import. This is your one-stop
-shop for working with `builtin matplotlib global settings <rc_matplotlib>`_
+shop for working with `builtin matplotlib global settings <rc_matplotlib_>`_
 and the global settings :ref:`added by proplot <rc_proplot>`.
 Global settings can be changed on-the-fly using the `~proplot.config.rc`
 object as follows:
