@@ -292,13 +292,6 @@ along the outside of subplots with ``fig.colorbar(..., ax=ax)``, this can
 cause asymmetry in plots with more than one subplot, since the space allocated
 for the colorbar is "stolen" from the parent axes.
 
-It is also notoriously difficult to make colorbars that span multiple
-subplots in matplotlib. You have to supply
-`~matplotlib.figure.Figure.colorbar` with an axes that you drew yourself,
-generally using an elaborate `~matplotlib.gridspec.GridSpec` specification.
-This requires so much tinkering that most users just add identical colorbars
-to every single subplot!
-
 
 ..
    And since colorbar widths are specified in *axes relative* coordinates,
@@ -316,10 +309,9 @@ to every single subplot!
 
 .. rubric:: Solution
 
-ProPlot introduces a brand new framework for drawing colorbars and legends
+ProPlot introduces a new framework for drawing colorbars and legends
 referencing :ref:`individual subplots <ug_cbars_axes>` and
-:ref:`multiple contiguous subplots <ug_cbars_figure>`. This framework makes
-the process of drawing colorbars and legends much cleaner.
+:ref:`multiple contiguous subplots <ug_cbars_figure>`.
 
 * To draw a colorbar or legend on the outside of a specific subplot, pass an
   "outer" location (e.g. ``loc='l'`` or ``loc='left'``)
@@ -342,8 +334,8 @@ now specified in *physical* units rather than relative units, which makes
 colorbar thickness independent of subplot size and easier to get just right.
 
 There are also several new :ref:`colorbar <ug_cbars>` and
-:ref:`legend <ug_legends>` features described in greater detail in the user
-guide.
+:ref:`legend <ug_legends>` features described in greater detail in the
+user guide.
 
 
 .. _why_plotting:
