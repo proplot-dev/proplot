@@ -25,29 +25,27 @@
 # ---------------------
 #
 # By default, ProPlot automatically determines the suitable figure size given
-# the geometry of your subplot grid and the physical dimensions of a "reference"
+# the geometry of your subplot grid and the size of a "reference"
 # subplot. ProPlot can also determine the suitable figure height given a fixed
-# figure width, and figure width given a fixed figure height (which can be
-# particularly useful when preparing publications).
+# figure width, and figure width given a fixed figure height.
 #
 # This algorithm is controlled by
-# a variety of `~proplot.ui.subplots` keyword arguments:
+# the following `~proplot.ui.subplots` keyword arguments:
 #
-# * The `ref` parameter sets the reference subplot number (default is ``1``,
+# * `ref` sets the reference subplot number (default is ``1``,
 #   i.e. the subplot in the upper left corner).
-# * The `aspect` parameter sets the reference subplot aspect ratio (default
+# * `aspect` sets the reference subplot aspect ratio (default
 #   is ``1``). You can also use the built-in matplotlib
 #   `~matplotlib.axes.Axes.set_aspect` method.
-# * The `axwidth` and `axheight` parameters set the physical dimensions of
+# * `axwidth` and `axheight` set the physical dimensions of
 #   the *reference subplot* (default is ``axwidth=2``). If one is specified,
 #   the other is calculated to satisfy `aspect`. If both are specified,
-#   `aspect` is ignored. The physical dimensions of the *figure* are
-#   determined automatically.
-# * The `width` and `height` parameters set the physical dimensions of the
+#   `aspect` is ignored. The dimensions of the *figure* are determined automatically.
+# * `width` and `height` set the physical dimensions of the
 #   *figure*. If one is specified, the other is calculated to satisfy `aspect`
 #   and the subplot spacing. If both are specified (or if the matplotlib
 #   `figsize` parameter is specified), `aspect` is ignored.
-# * The `journal` parameter constrains the physical dimensions of the figure
+# * `journal` constrains the physical dimensions of the figure
 #   so it meets requirements for submission to an academic journal. For example,
 #   figures created with ``journal='nat1'`` are sized as single-column
 #   *Nature* figures. See :ref:`this table <journal_table>` for the list
@@ -226,93 +224,19 @@ axs[:, 0].format(ylabel='ylabel\nylabel')
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
-# .. _ug_units:
-#
-# Arbitrary physical units
-# ------------------------
-#
-# ProPlot supports arbitrary *physical units* for controlling the figure
-# `width` and `height`, the reference subplot `axwidth` and `axheight`, the
-# gridspec spacing values `left`, `right`, `bottom`, `top`, `wspace`, and
-# `hspace`, and in a few other places, e.g. `~proplot.axes.Axes.panel` and
-# `~proplot.axes.Axes.colorbar` widths. This feature is powered by the
-# `~proplot.utils.units` function.
-#
-# If a sizing argument is numeric, the units are inches or points; if it is
-# string, the units are converted to inches or points by
-# `~proplot.utils.units`. A table of acceptable units is found in the
-# `~proplot.utils.units` documentation. They include centimeters,
-# millimeters, pixels,
-# `em-heights <https://en.wikipedia.org/wiki/Em_(typography)>`__, and
-# `points <https://en.wikipedia.org/wiki/Point_(typography)>`__.
-
-# %%
-import proplot as plot
-import numpy as np
-with plot.rc.context(fontsize='12px'):
-    fig, axs = plot.subplots(
-        ncols=3, width='15cm', height='2.5in',
-        wspace=('10pt', '20pt'), right='10mm'
-    )
-    panel = axs[2].panel_axes('r', width='2em')
-    panel.format(xlim=(0, 1))
-axs.format(
-    suptitle='Arguments with arbitrary units',
-    xlabel='x axis', ylabel='y axis',
-    xlim=(0, 1), ylim=(0, 1),
-)
-
-
-# %% [raw] raw_mimetype="text/restructuredtext"
-# .. _ug_abc:
-#
-# A-b-c subplot labels
-# --------------------
-#
-# ProPlot can be used to add "a-b-c" labels to subplots. This is possible
-# because `~proplot.ui.subplots` assigns unique `~proplot.axes.Axes.number`\ s
-# to each subplot. If you :ref:`passed an array <ug_intro>` to
-# `~proplot.ui.subplots`, the subplot numbers correspond to the numbers in
-# the array. If you used the `ncols` and `nrows` keyword arguments, the number
-# order is row-major by default but can be switched to column-major by passing
-# ``order='C'`` to `~proplot.ui.subplots`. The number order also determines the
-# subplot order in the `~proplot.ui.SubplotsContainer` returned by
-# `~proplot.ui.subplots`.
-#
-# To turn on "a-b-c" labels, set :rcraw:`abc` to ``True`` or pass
-# ``abc=True`` to `~proplot.axes.Axes.format` (see
-# :ref:`the format command <ug_format>` for details). To change the label
-# style, modify :rcraw:`abc.style` or pass e.g. ``abcstyle='A.'`` to
-# `~proplot.axes.Axes.format`. You can also modify the "a-b-c" label
-# location, weight, and size with the :rcraw:`abc.loc`, :rcraw:`abc.weight`,
-# and :rcraw:`abc.size` settings.
-
-# %%
-import proplot as plot
-fig, axs = plot.subplots(nrows=8, ncols=8, axwidth=0.7, space=0)
-axs.format(
-    abc=True, abcloc='ur', xlabel='x axis', ylabel='y axis',
-    xticks=[], yticks=[], suptitle='Subplot labels demo'
-)
-
-
-# %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_share:
 #
 # Axis sharing
 # ------------
 #
-# Redundant labels are a common problem for figures with lots of subplots. To
-# address this, `matplotlib.pyplot.subplots` includes `sharex` and `sharey`
+# Redundant labels are a common problem for figures with lots of subplots.
+# To address this, `matplotlib.pyplot.subplots` includes `sharex` and `sharey`
 # keywords that permit sharing axis limits, ticks, and tick labels between like
-# rows and columns of subplots. However there is no convenient way to enable
-# axis sharing between complex grids of subplots, nor is there a way to share axis
-# labels between subplots in the same row or column.
-#
-# ProPlot expands upon this feature by introducing a new option for drawing
-# labels that "span" subplots in the same row or column, controlled by the
-# `spanx` and `spany` keywords, along with four axis-sharing "levels"
-# rather than just one, controlled with the `sharex` and `sharey` keywords:
+# rows and columns of subplots. ProPlot expands upon this feature by
+# (1) adding an option for sharing labels in the same row or column of the
+# `~proplot.gridspec.GridSpec`, controlled by the `spanx` and `spany` keywords,
+# and (2) adding four axis-sharing "levels," controlled by the `sharex` and `sharey`
+# keywords. The axis-sharing levels are defined as follows:
 #
 # * Level ``0`` disables axis sharing.
 # * Level ``1`` shares duplicate *x* and *y* axis labels, but nothing else.
@@ -321,14 +245,8 @@ axs.format(
 # * Level ``3`` is the same as ``2``, but the *x* and *y* tick labels are
 #   also shared.
 #
-# These features are best illustrated by example (see below).
-#
-# .. note::
-#
-#    Since "shared" and "spanning" labels are determined automatically based on
-#    position of each subplot in the `~proplot.gridspec.GridSpec`, these features
-#    work for arbitrarily complex figures. This can be done without any ambiguity
-#    because ProPlot ensures each figure has only one `~proplot.gridspec.GridSpec`.
+# These features are best illustrated by example (see below). Note that ProPlot's
+# axis sharing algorithm works for arbitrarily complex grids of subplots.
 
 # %%
 import proplot as plot
@@ -377,3 +295,74 @@ for mode in (0, 1):
         abc=True, abcloc='ul',
         grid=False, xticks=25, yticks=5
     )
+
+
+# %% [raw] raw_mimetype="text/restructuredtext"
+# .. _ug_abc:
+#
+# A-b-c subplot labels
+# --------------------
+#
+# ProPlot can be used to add "a-b-c" labels to subplots. This is possible
+# because `~proplot.ui.subplots` assigns unique `~proplot.axes.Axes.number`\ s
+# to each subplot. If you :ref:`passed an array <ug_intro>` to
+# `~proplot.ui.subplots`, the subplot numbers correspond to the numbers in
+# the array. If you used the `ncols` and `nrows` keyword arguments, the number
+# order is row-major by default but can be switched to column-major by passing
+# ``order='F'`` to `~proplot.ui.subplots`. The number order also determines the
+# subplot order in the `~proplot.ui.SubplotsContainer` returned by
+# `~proplot.ui.subplots`.
+#
+# To turn on "a-b-c" labels, set :rcraw:`abc` to ``True`` or pass
+# ``abc=True`` to `~proplot.axes.Axes.format` (see
+# :ref:`the format command <ug_format>` for details). To change the label
+# style, modify :rcraw:`abc.style` or pass e.g. ``abcstyle='A.'`` to
+# `~proplot.axes.Axes.format`. You can also modify the "a-b-c" label
+# location, weight, and size with the :rcraw:`abc.loc`, :rcraw:`abc.weight`,
+# and :rcraw:`abc.size` settings.
+
+# %%
+import proplot as plot
+fig, axs = plot.subplots(nrows=8, ncols=8, axwidth=0.7, space=0)
+axs.format(
+    abc=True, abcloc='ur', xlabel='x axis', ylabel='y axis',
+    xticks=[], yticks=[], suptitle='Subplot labels demo'
+)
+
+
+# %% [raw] raw_mimetype="text/restructuredtext"
+# .. _ug_units:
+#
+# Arbitrary physical units
+# ------------------------
+#
+# ProPlot supports arbitrary *physical units* for controlling the figure
+# `width` and `height`, the reference subplot `axwidth` and `axheight`, the
+# gridspec spacing values `left`, `right`, `bottom`, `top`, `wspace`, and
+# `hspace`, and in a few other places, e.g. `~proplot.axes.Axes.panel` and
+# `~proplot.axes.Axes.colorbar` widths. This feature is powered by the
+# `~proplot.utils.units` function.
+#
+# If a sizing argument is numeric, the units are inches or points; if it is
+# string, the units are converted to inches or points by
+# `~proplot.utils.units`. A table of acceptable units is found in the
+# `~proplot.utils.units` documentation. They include centimeters,
+# millimeters, pixels,
+# `em-heights <https://en.wikipedia.org/wiki/Em_(typography)>`__, and
+# `points <https://en.wikipedia.org/wiki/Point_(typography)>`__.
+
+# %%
+import proplot as plot
+import numpy as np
+with plot.rc.context(fontsize='12px'):
+    fig, axs = plot.subplots(
+        ncols=3, width='15cm', height='2.5in',
+        wspace=('10pt', '20pt'), right='10mm'
+    )
+    panel = axs[2].panel_axes('r', width='2em')
+    panel.format(xlim=(0, 1))
+axs.format(
+    suptitle='Arguments with arbitrary units',
+    xlabel='x axis', ylabel='y axis',
+    xlim=(0, 1), ylim=(0, 1),
+)
