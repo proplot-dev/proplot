@@ -1197,7 +1197,9 @@ class Figure(mfigure.Figure):
         # Automatically expand user the user name. Undocumented because we
         # do not want to overwrite the matplotlib docstring.
         # TODO: Concatenate docstrings.
-        super().savefig(os.path.expanduser(filename), **kwargs)
+        if isinstance(filename, str):
+            filename = os.path.expanduser(filename)
+        super().savefig(filename, **kwargs)
 
     def set_canvas(self, canvas):
         # Set the canvas and add monkey patches to the instance-level
