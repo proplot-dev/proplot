@@ -115,46 +115,51 @@ axs[2].format(
 # instances of `~proplot.axes.CartopyAxes` or `~proplot.axes.BasemapAxes`.
 # These axes have the following properties:
 #
-# * `~proplot.axes.CartopyAxes` joins the cartopy
-#   `~cartopy.mpl.geoaxes.GeoAxes` class with the ProPlot
-#   `~matplotlib.axes.Axes` class and adds a `~proplot.axes.GeoAxes.format`
-#   command. This class includes all the normal `~cartopy.mpl.geoaxes.GeoAxes`
-#   methods, and its `~proplot.axes.GeoAxes.format` method can be used to set
-#   the map bounds with `~cartopy.mpl.geoaxes.GeoAxes.set_extent` and add
-#   geographic features with `~cartopy.mpl.geoaxes.GeoAxes.add_feature`.
+# * `~proplot.axes.CartopyAxes` joins the
+#   `cartopy.mpl.geoaxes.GeoAxes` class with the `proplot.axes.Axes`
+#   and adds a `~proplot.axes.GeoAxes.format` command. This class includes all the
+#   normal `cartopy.mpl.geoaxes.GeoAxes` methods. Its `~proplot.axes.GeoAxes.format`
+#   method can be used to quickly set the map bounds with
+#   `~cartopy.mpl.geoaxes.GeoAxes.set_extent`, add major and minor gridlines with
+#   `~cartopy.mpl.geoaxes.GeoAxes.gridlines`, and add geographic features with
+#   `~cartopy.mpl.geoaxes.GeoAxes.add_feature`.
 #
 # * `~proplot.axes.BasemapAxes` redirects the plot, scatter, contour,
 #   contourf, pcolor, pcolormesh, quiver, streamplot, and barb *axes methods* to
 #   identically named methods on the `~mpl_toolkits.basemap.Basemap` instance.
-#   This means you can work with axes plotting methods just like in cartopy.
-#   `~proplot.axes.BasemapAxes` also provides access to `~mpl_toolkits.basemap.Basemap`
-#   geographic plotting commands like `~mpl_toolkits.basemap.Basemap.fillcontinents`
-#   via `~proplot.axes.GeoAxes.format`.
+#   This means you can work with *axes* plotting methods rather than the
+#   basemap methods, just like cartopy. Its `~proplot.axes.GeoAxes.format`
+#   method can be used to add major and minor gridlines with
+#   `~mpl_toolkits.basemap.Basemap.drawmeridians` and
+#   `~mpl_toolkits.basemap.Basemap.drawparallels` and geographic features
+#   with commands like `~mpl_toolkits.basemap.Basemap.fillcontinents`.
 #
 # These features help address the limitations of the cartopy and basemap APIs.
 # You no longer have to invoke verbose cartopy classes like
 # `~cartopy.crs.LambertAzimuthalEqualArea` and `~cartopy.feature.NaturalEarthFeature`,
 # and you no longer have to directly work with the `~mpl_toolkits.basemap.Basemap`
-# instance. However if you do need access to the projection class instances,
-# they are stored as `proplot.axes.CartopyAxes.projection` and
-# `proplot.axes.BasemapAxes.projection` attributes. Also, to make things more
-# consistent, the `~proplot.constructor.Proj` constructor function lets you supply
-# native `PROJ <https://proj.org>`__ keyword names to the cartopy
-# `~cartopy.crs.Projection` classes (e.g. `lon_0` instead of `central_longitude`),
-# and instantiates `~mpl_toolkits.basemap.Basemap` projections with sensible
-# defaults (e.g. ``lon_0=0``) rather than raising an error when projection
-# arguments are omitted.
+# instance. In case you *do* need access to the projection class instances,
+# they are available via the `proplot.axes.CartopyAxes.projection` and
+# `proplot.axes.BasemapAxes.projection` attributes.
 #
 # .. note::
 #
-#   ProPlot makes sure polar cartopy projections like `~cartopy.crs.NorthPolarStereo`
-#   have a circular boundary. By default, polar projections are bounded at the
-#   equator and non-polar projections are forced to have global extent with
-#   `~cartopy.mpl.geoaxes.GeoAxes.set_global`. To revert to the behavior where
-#   cartopy automatically determines map boundaries based on plotted content,
-#   simply set :rcraw:`cartopy.autoextent` to ``True`` or
-#   pass ``autoextent=True`` to `~proplot.axes.CartopyAxes`. See the
-#   :ref:`configuration guide <ug_config>` for details.
+#    To make things more consistent, the `~proplot.constructor.Proj` constructor
+#    function lets you supply native `PROJ <https://proj.org>`__ keyword names to
+#    the cartopy `~cartopy.crs.Projection` classes (e.g. `lon_0` instead of
+#    `central_longitude`), and instantiates `~mpl_toolkits.basemap.Basemap`
+#    projections with sensible defaults rather than raising an error when projection
+#    arguments are omitted (e.g. ``lon_0=0`` for most projections).
+#
+# .. note::
+#
+#    ProPlot makes sure polar cartopy projections like `~cartopy.crs.NorthPolarStereo`
+#    have a circular boundary. By default, polar projections are bounded at the
+#    equator and non-polar projections are forced to have global extent with
+#    `~cartopy.mpl.geoaxes.GeoAxes.set_global`. To revert to the behavior where
+#    cartopy automatically determines map boundaries based on plotted content,
+#    simply set :rcraw:`cartopy.autoextent` to ``True`` or
+#    pass ``autoextent=True`` to `~proplot.axes.CartopyAxes`.
 #
 # .. warning::
 #
@@ -276,21 +281,18 @@ for globe in (False, True,):
 # Formatting projections
 # ----------------------
 #
-# `~proplot.axes.CartopyAxes` and `~proplot.axes.BasemapAxes` both derive
-# from `~proplot.axes.GeoAxes`, which provides the
-# `proplot.axes.GeoAxes.format` method. This can
-# be used to draw "major" gridlines "minor" gridlines with the `grid`,
-# `longrid`, `latgrid`, and `gridminor`, `longridminor`, and `latgridminor`
-# keywords. Gridline locations and label formats are configured with the
-# `lonlocator`, `latlocator`, `lonformatter`, `latformatter`, `lonminorlocator`,
-# and `latminorlocator` keywords. Major gridline labels and their positions
-# can be configured with the `labels`, `lonlabels`, and `latlabels` keywords.
-# Cartopy map bounds can be set with the `lonlim` and `latlim` keywordis. Geographic
-# features like land masses, coastlines, and administrative borders can be toggled
-# on and off and stylized with a variety of :ref:`rc settings <rc_proplot>`.
-# Finally, `proplot.axes.GeoAxes.format` also calls `proplot.axes.Axes.format`,
-# and so can be used to for subplot titles, a-b-c labels, and figure titles
-# as before.
+# `~proplot.axes.CartopyAxes` and `~proplot.axes.BasemapAxes` both derive from
+# `proplot.axes.GeoAxes`, which provides a `~proplot.axes.GeoAxes.format` method.
+# This can be used to draw "major" gridlines "minor" gridlines. Gridline locations
+# and label formats can be configured with the `lonlocator`, `latlocator`,
+# `lonformatter`, `latformatter`, `lonminorlocator`, and `latminorlocator` keywords.
+# Major gridline labels and their positions can be configured with the `labels`,
+# `lonlabels`, and `latlabels` keywords. Cartopy map bounds can be set with the
+# `lonlim`, `latlim`, and `boundinglat` keywords. Geographic features like land masses,
+# coastlines, and administrative borders can be toggled on and off and stylized with
+# a variety of :ref:`rc settings <rc_proplot>`. Finally, `proplot.axes.GeoAxes.format`
+# also calls `proplot.axes.Axes.format`, and so can be used to for subplot titles,
+# a-b-c labels, and figure titles as before.
 #
 # For details, see the `proplot.axes.GeoAxes.format` documentation.
 
@@ -394,7 +396,7 @@ import proplot as plot
 proj1 = plot.Proj('lcc', lon_0=0)  # cartopy projection
 proj2 = plot.Proj('lcc', lon_0=-100, lat_0=45, width=8e6, height=8e6, basemap=True)
 fig, axs = plot.subplots(ncols=2, axwidth=3, proj=(proj1, proj2))
-axs.format(suptitle='Zooming into specific regions', land=True, gridminor=True)
+axs.format(suptitle='Zooming into specific regions', land=True)
 axs[0].format(lonlim=(-20, 50), latlim=(30, 70), title='Cartopy example')
 axs[1].format(lonlines=20, title='Basemap example')
 
@@ -402,7 +404,7 @@ axs[1].format(lonlines=20, title='Basemap example')
 plot.rc.reso = 'hi'
 fig, axs = plot.subplots(ncols=2, axwidth=2.5, proj='cyl')
 axs.format(
-    land=True, labels=True, gridminor=True,
+    land=True, labels=True,
     borders=True, borderscolor='white',
     suptitle='Degree-minute-second labels',
 )
