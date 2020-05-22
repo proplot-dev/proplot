@@ -941,10 +941,11 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
                 + ', '.join(map(repr, constructor.CARTOPY_RESOS)) + '.'
             )
         for name, args in constructor.CARTOPY_FEATURES.items():
+            # Draw feature or toggle feature off
             b = rc.get(name, context=True)
             attr = f'_{name}_feature'
+            feat = getattr(self, attr, None)
             if b is not None:
-                feat = getattr(self, attr, None)
                 if not b:
                     if feat is not None:  # toggle existing feature off
                         feat.set_visible(False)
@@ -953,17 +954,23 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
                     if not drawn:
                         feat = cfeature.NaturalEarthFeature(*args, reso)
                         feat = self.add_feature(feat)  # convert to FeatureArtist
-                    # For 'lines', need to specify edgecolor and facecolor
-                    # See: https://github.com/SciTools/cartopy/issues/803
-                    kw = rc.category(name, context=drawn)
-                    if name in ('coast', 'rivers', 'borders', 'innerborders'):
-                        kw.update({'edgecolor': kw.pop('color'), 'facecolor': 'none'})
-                    else:
-                        kw.update({'linewidth': 0})
-                    # Update artist attributes (_kwargs used back to v0.5)
-                    # feat.update(kw)  # TODO: check this fails
+
+            # Update artist attributes (FeatureArtist._kwargs used back to v0.5).
+            # For 'lines', need to specify edgecolor and facecolor
+            # See: https://github.com/SciTools/cartopy/issues/803
+            if feat is not None:
+                kw = rc.category(name, context=drawn)
+                if name in ('coast', 'rivers', 'borders', 'innerborders'):
+                    kw.update({'edgecolor': kw.pop('color'), 'facecolor': 'none'})
+                else:
+                    kw.update({'linewidth': 0})
+                if 'zorder' in kw:
+                    # NOTE: Necessary to update zorder directly because _kwargs
+                    # attributes are not applied until draw()... at which point
+                    # matplotlib is drawing in the order based on the *old* zorder.
+                    feat.set_zorder(kw['zorder'])
+                if hasattr(feat, '_kwargs'):
                     feat._kwargs.update(kw)
-                    setattr(self, attr, feat)
 
     def _update_gridlines(
         self, gl, which='major', longrid=None, latgrid=None, nsteps=None,
@@ -1347,8 +1354,8 @@ class BasemapAxes(GeoAxes):
         for name, method in constructor.BASEMAP_FEATURES.items():
             b = rc.get(name, context=True)
             attr = f'_{name}_feature'
+            feat = getattr(self, attr, None)
             if b is not None:
-                feat = getattr(self, attr, None)
                 if not b:
                     if feat is not None:  # toggle existing feature off
                         for obj in feat:
@@ -1357,12 +1364,13 @@ class BasemapAxes(GeoAxes):
                     drawn = feat is not None  # if exists, apply *updated* settings
                     if not drawn:
                         feat = getattr(self.projection, method)(ax=self)
-                    kw = rc.category(name, context=drawn)
                     if not isinstance(feat, (list, tuple)):  # list of artists?
                         feat = (feat,)
-                    for obj in feat:
-                        obj.update(kw)
                     setattr(self, attr, feat)
+            if feat is not None:
+                kw = rc.category(name, context=drawn)
+                for obj in feat:
+                    obj.update(kw)
 
     def _update_gridlines(
         self, which='major', longrid=None, latgrid=None, lonarray=None, latarray=None,

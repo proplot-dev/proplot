@@ -215,23 +215,24 @@ plot.rc.reset()
 # Plotting geographic data
 # ------------------------
 #
-# In ProPlot, plotting in `~proplot.axes.GeoAxes` looks pretty much exactly the
-# same as plotting in `~proplot.axes.CartesianAxes`. While cartopy and basemap
-# assume your data is in "map projection" coordinates unless specified otherwise,
-# ProPlot makes longitude-latitude (i.e. Plate Carrée) coordinates the *default*
-# coordinate system for your datasets by passing ``transform=ccrs.PlateCarree()``
-# to cartopy plotting methods and ``latlon=True`` to basemap plotting methods.
+# In ProPlot, plotting in `~proplot.axes.GeoAxes` is not much different from
+# plotting in `~proplot.axes.CartesianAxes`. ProPlot makes longitude-latitude
+# (i.e. Plate Carrée) coordinates the *default* coordinate system for your
+# datasets by passing ``transform=ccrs.PlateCarree()`` to cartopy plotting
+# commands and ``latlon=True`` to basemap plotting commands. And again, basemap
+# plotting commands are invoked from the `proplot.axes.Axes.GeoAxes` rather
+# than from the `~mpl_toolkits.basemap.Basemap` instance.
 #
-# There are also a couple plotting features specific to `~proplot.axes.GeoAxes`.
-# To ensure a 2D plot like `~matplotlib.axes.Axes.contour` covers the entire globe,
+# To ensure 2D plots like `~matplotlib.axes.Axes.contour` cover the entire globe,
 # pass ``globe=True`` to the plotting command. This interpolates your data
-# to the poles and the longitude seams before plotting.
+# to the poles and across the longitude seams before plotting, having the same
+# effect as cartopy's `~cartopy.util.add_cyclic_point` function and basemap's
+# `~mpl_toolkits.basemap.addcyclic` function.
 #
-# To mask out the parts of your data over the land or the ocean, toggle
-# the :rcraw:`land` or and :rcraw:`ocean` settings and make sure the corresponding
-# `zorder <https://matplotlib.org/3.1.1/gallery/misc/zorder_demo.html>`__
-# is high enough to sit above all plotted content, e.g. with
-# ``plot.rc.update({'land': True, 'land.zorder': 5})``.
+# Geographic feature can be drawn underneath data or on top of data by changing the
+# corresponding `zorder <https://matplotlib.org/3.1.1/gallery/misc/zorder_demo.html>`__
+# rc setting. For example, to draw land patches on top of all plotted content as
+# a "land mask," use ``ax.format(land=True, landzorder=4)``.
 # See the :ref:`next section <ug_geoformat>` for details.
 
 # %%
@@ -248,9 +249,17 @@ data = state.rand(len(lat), len(lon))
 
 # Plot data both without and with globe=True
 for globe in (False, True,):
+    string = 'with' if globe else 'without'
     fig, axs = plot.subplots(
         ncols=2, nrows=2, axwidth=2.5,
         proj='kav7', basemap={(1, 3): False, (2, 4): True}
+    )
+    axs.format(
+        suptitle=f'Geophysical data {string} global coverage',
+        collabels=['Cartopy example', 'Basemap example'],
+        rowlabels=['Contourf', 'Pcolor'],
+        abc=True, abcstyle='a)', abcloc='ul', abcborder=False,
+        land=True, lonlines=90,
     )
     for i, ax in enumerate(axs):
         cmap = ('sunset', 'sunrise')[i % 2]
@@ -259,14 +268,6 @@ for globe in (False, True,):
             fig.colorbar(m, loc='b', span=i + 1, label='values', extendsize='1.7em')
         else:
             ax.pcolor(lon, lat, data, cmap=cmap, globe=globe, extend='both')
-    string = 'with' if globe else 'without'
-    axs.format(
-        suptitle=f'Geophysical data {string} global coverage',
-        collabels=['Cartopy example', 'Basemap example'],
-        rowlabels=['Contourf', 'Pcolor'],
-        abc=True, abcstyle='a)', abcloc='ul', abcborder=False,
-        land=True, landzorder=3, lonlines=90,
-    )
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
