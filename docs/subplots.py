@@ -92,7 +92,7 @@ axs.format(
 # Auto sized grid of images
 state = np.random.RandomState(51423)
 fig, axs = plot.subplots(ncols=3, nrows=2, axwidth=1.5)
-colors = state.rand(13, 10, 3).cumsum(axis=2)
+colors = state.rand(15, 12, 3).cumsum(axis=2)
 colors /= colors.max()
 axs.imshow(colors)
 axs.format(
