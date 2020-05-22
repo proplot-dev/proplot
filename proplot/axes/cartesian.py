@@ -268,6 +268,9 @@ class CartesianAxes(base.Axes):
         at drawtime, "shared" labels can be inadvertantly turned off.
         """
         # X axis
+        # NOTE: The "panel sharing group" refers to axes and panels *above* the
+        # bottommost or to the *right* of the leftmost panel. But the edge panel
+        # sharing level is the *figure* sharing level.
         axis = self.xaxis
         if self._sharex is not None:
             level = 3 if self._panel_sharex_group else self.figure._sharex
@@ -372,7 +375,7 @@ class CartesianAxes(base.Axes):
 
         # Get sharing level
         level = (
-            3 if self._panel_sharex_group and self._is_panel_parent_or_child(sharex)
+            3 if self._panel_sharex_group and self._is_panel_group_member(sharex)
             else self.figure._sharex
         )
         if level not in range(4):
@@ -431,7 +434,7 @@ class CartesianAxes(base.Axes):
 
         # Get sharing level
         level = (
-            3 if self._panel_sharey_group and self._is_panel_parent_or_child(sharey)
+            3 if self._panel_sharey_group and self._is_panel_group_member(sharey)
             else self.figure._sharey
         )
         if level not in range(4):

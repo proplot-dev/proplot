@@ -435,11 +435,15 @@ class Axes(maxes.Axes):
         """
         return bool(self._panel_parent)
 
-    def _is_panel_parent_or_child(self, other):
+    def _is_panel_group_member(self, other):
         """
         Return whether the axes are related.
         """
-        return self._panel_parent is other or other._panel_parent is self
+        return (
+            self._panel_parent is other  # child
+            or other._panel_parent is self   # parent
+            or other._panel_parent is self._panel_parent  # sibling
+        )
 
     def _loc_translate(self, loc, mode=None, allow_manual=True):
         """

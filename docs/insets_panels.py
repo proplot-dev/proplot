@@ -27,10 +27,9 @@
 #
 # It is often useful to have narrow "panels" along the edge of a larger
 # subplot for plotting secondary 1-dimensional datasets or summary statistics.
-# In matplotlib, there is no simple way to do this. In ProPlot, you can
-# create panels by passing a location (e.g. ``loc='r'`` or ``loc='right'``)
-# to the `~proplot.axes.Axes.panel` or `~proplot.axes.Axes.panel_axes` methods.
-# The resulting axes are instances of `~proplot.axes.CartesianAxes`.
+# In ProPlot, you can create panels by passing a location (e.g. ``loc='r'`` or
+# ``loc='right'``) to the `~proplot.axes.Axes.panel` or `~proplot.axes.Axes.panel_axes`
+# methods. The resulting axes are instances of `~proplot.axes.CartesianAxes`.
 #
 # To generate "stacked" panels, simply call `~proplot.axes.Axes.panel` more
 # than once. To include panels when centering spanning axis labels and super
@@ -100,8 +99,7 @@ fig, axs = plot.subplots(axwidth=1.5, nrows=2, ncols=2, share=0)
 axs.format(
     xlim=(0, 1), ylim=(0, 1),
     xlabel='xlabel', ylabel='ylabel',
-    yticks=plot.arange(0.2, 0.8, 0.2),
-    xticks=plot.arange(0.2, 0.8, 0.2),
+    xticks=0.2, yticks=0.2,
     title='Title', suptitle='Complex arrangement of panels',
     collabels=['Column 1', 'Column 2'],
     abc=True, abcloc='ul', titleloc='uc', abovetop=False,
