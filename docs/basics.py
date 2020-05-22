@@ -26,8 +26,8 @@
 # ----------------
 #
 # ProPlot works by introducing the `proplot.figure.Figure` subclass of the
-# matplotlib figure class `matplotlib.figure.Figure`, and the `proplot.axes.Axes`
-# subclass of the matplotlib axes class `matplotlib.axes.Axes`.
+# matplotlib figure class `~matplotlib.figure.Figure`, and the `proplot.axes.Axes`
+# subclass of the matplotlib axes class `~matplotlib.axes.Axes`.
 # All plotting in ProPlot begins by generating
 # an instance of the new figure class filled with instances of the new
 # axes classes using the `~proplot.ui.subplots` command, which is modeled
@@ -181,13 +181,13 @@ axs.format(abc=True, xlabel='xlabel', ylabel='ylabel', suptitle='Quick plotting 
 # ``format`` method. This is your one-stop-shop for changing axes settings.
 # Keyword arguments passed to ``format`` are interpreted as follows:
 #
-# #. Any keyword matching the name of an `~proplot.config.rc` setting
-#    will be used to update the axes. If the name has "dots", you can omit them
-#    (e.g. ``titleloc='left'`` to change the ``title.loc`` property). See the
-#    :ref:`configuration section <ug_config>` for details.
-# #. Valid keywords arguments are passed to the
+# 1. Any keyword matching the name of an `~proplot.config.rc` setting
+#    is used to update the axes. If the name has "dots", you can omit them
+#    (e.g. ``titleloc='left'`` to change the :rcraw:`title.loc` property).
+#    See the :ref:`configuration section <ug_config>` for details.
+# 2. Valid keywords arguments are passed to
 #    `proplot.axes.CartesianAxes.format`, `proplot.axes.PolarAxes.format`, or
-#    `proplot.axes.GeoAxes.format` methods. These change settings that are
+#    `proplot.axes.GeoAxes.format`. These change settings that are
 #    specific to the axes type. For example:
 
 #    * To change the *x* axis bounds on a `~proplot.axes.CartesianAxes`,
@@ -197,18 +197,19 @@ axs.format(abc=True, xlabel='xlabel', ylabel='ylabel', suptitle='Quick plotting 
 #    * To change the meridional bounds on a `~proplot.axes.GeoAxes`,
 #      use e.g. ``lonlim=(-90, 0)``.
 #
+# .. rst-class:: dummy-line-break-class
 #
-# #. All remaining keyword arguments are passed to the base `proplot.axes.Axes.format`
+# 3. Remaining keyword arguments are passed to the base `proplot.axes.Axes.format`
 #    method. `~proplot.axes.Axes` is the base class for all other axes classes.
 #    This changes things that are the same for all axes types, like titles and
-#    a-b-c subplot labels (for example, ``abcstyle='A.'``).
+#    a-b-c subplot labels (e.g. ``title='Title'``).
 #
 # The ``format`` methods let you use simple shorthands for changing all kinds
 # of settings at once, instead of one-liner setter methods like
 # ``ax.set_title()`` and ``ax.set_xlabel()``. They are also integrated with
 # the `~proplot.constructor.Locator`, `~proplot.constructor.Formatter`,
 # and `~proplot.constructor.Scale` constructor functions (see the
-# :ref:`x and y axis settings <ug_xy_axis>` section for details).
+# :ref:`Cartesian axis settings <ug_cartesian>` section for details).
 #
 # The below example shows the many different keyword arguments accepted by
 # ``format``, and demonstrates how ``format`` can be used to succinctly and
@@ -219,8 +220,9 @@ import proplot as plot
 import numpy as np
 fig, axs = plot.subplots(ncols=2, nrows=2, share=0, tight=True, axwidth=2)
 state = np.random.RandomState(51423)
-x = np.linspace(1, 10, 80)
-y = (state.rand(80, 5) - 0.5).cumsum(axis=0)
+N = 60
+x = np.linspace(1, 10, N)
+y = (state.rand(N, 5) - 0.5).cumsum(axis=0)
 axs[0].plot(x, y, linewidth=1.5)
 axs.format(
     suptitle='Format command demo',
@@ -232,8 +234,8 @@ axs.format(
     xlabel='x-axis', ylabel='y-axis',
     xscale='log',
     xlim=(1, 10), xticks=1,
-    ymargin=0.05, yticks=plot.arange(-2, 5),
-    yticklabels=('a', 'bb', 'c', 'dd', 'e', 'ff', 'g', 'hh', 'i'),
+    ylim=(-3, 3), yticks=plot.arange(-3, 3),
+    yticklabels=('a', 'bb', 'c', 'dd', 'e', 'ff', 'g'),
     ytickloc='both', yticklabelloc='both',
     xtickdir='inout', xtickminor=False, ygridminor=True,
 )

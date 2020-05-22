@@ -131,7 +131,7 @@ a `~matplotlib.ticker.MultipleLocator` instance, lists of strings passed to
 colormap names, individual colors, and lists of colors. Passing the relevant
 class instance to a constructor function simply returns the instance.
 
-See the user guide sections on :ref:`x and y axis settings <ug_xy_axis>`,
+See the user guide sections on :ref:`Cartesian axis settings <ug_cartesian>`,
 :ref:`colormaps <ug_cmaps>`, and :ref:`color cycles <ug_cycles>` for
 details. The below table lists the constructor functions and the keyword
 arguments that use them.

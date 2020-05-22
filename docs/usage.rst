@@ -80,7 +80,7 @@ several *existing* methods.
   axes settings.  Think of this as a dedicated
   `~matplotlib.artist.Artist.update` method for axes artists. See
   :ref:`formatting subplots <ug_format>` for a broad overview, along with the
-  individual sections on formatting :ref:`Cartesian plots <ug_xy_axis>`,
+  individual sections on formatting :ref:`Cartesian plots <ug_cartesian>`,
   :ref:`polar plots <ug_polar>`, and :ref:`geographic projections
   <ug_geoformat>`.
 * The `proplot.axes.Axes.colorbar` and `proplot.axes.Axes.legend` commands
@@ -156,7 +156,7 @@ ProPlot includes several useful constructor functions and subclasses.
   `~proplot.constructor.Scale` constructor functions return corresponding class
   instances from flexible input types. These are used to interpret keyword
   arguments passed to `~proplot.axes.Axes.format`, and can be used to quickly
-  and easily modify :ref:`x and y axis settings <ug_xy_axis>`.
+  and easily modify :ref:`x and y axis settings <ug_cartesian>`.
 * The `~proplot.config.rc` object, an instance of
   `~proplot.config.RcConfigurator`, is used for
   :ref:`modifying individual settings, changing settings in bulk, and

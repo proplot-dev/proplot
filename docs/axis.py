@@ -14,14 +14,14 @@
 # ---
 
 # %% [raw] raw_mimetype="text/restructuredtext"
-# .. _ug_xy_axis:
+# .. _ug_cartesian:
 #
-# X and Y axis settings
-# =====================
+# Cartesian axis settings
+# =======================
 #
-# This section documents features used for modifying *x* and *y* axis
-# settings, including axis scales, tick locations, and tick label formatting.
-# It also documents a handy "dual axes" feature.
+# This section documents features used for modifying Cartesian *x* and *y*
+# axis settings, including axis scales, tick locations, and tick label
+# formatting. It also documents a handy "dual axes" feature.
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
