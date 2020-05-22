@@ -46,7 +46,6 @@ __all__ = [
     'fill_between_wrapper',
     'fill_betweenx_wrapper',
     'hlines_wrapper',
-    'hist_wrapper',
     'indicate_error',
     'legend_wrapper',
     'scatter_wrapper',
@@ -155,9 +154,10 @@ This function wraps `~matplotlib.axes.Axes.bar{suffix}`.
 
 Parameters
 ----------
-{x}, {height}, {width}, {bottom} : float or list of float, optional
+{x}, {height}, width, {bottom} : float or list of float, optional
     The dimensions of the bars. If the *{x}* coordinates are not provided,
-    they are set to ``np.arange(0, len(height))``.
+    they are set to ``np.arange(0, len(height))``. Note that the units
+    for `width` are now *relative*.
 orientation : {{'vertical', 'horizontal'}}, optional
     The orientation of the bars.
 vert : bool, optional
@@ -183,10 +183,10 @@ Other parameters
     Passed to `~matplotlib.axes.Axes.bar{suffix}`.
 """
 docstring.snippets['axes.bar'] = _bar_docstring.format(
-    x='x', height='height', width='width', bottom='bottom', suffix='',
+    x='x', height='height', bottom='bottom', suffix='',
 )
 docstring.snippets['axes.barh'] = _bar_docstring.format(
-    x='y', height='width', width='height', bottom='left', suffix='h',
+    x='y', height='right', bottom='left', suffix='h',
 )
 
 docstring.snippets['axes.lines'] = """
@@ -1668,23 +1668,27 @@ def fill_betweenx_wrapper(self, func, *args, **kwargs):
     return _fill_between_apply(self, func, *args, **kwargs)
 
 
-def hist_wrapper(self, func, x, bins=None, **kwargs):
+def _hist_wrapper_private(self, func, x, bins=None, **kwargs):
     """
     Enforces that all arguments after `bins` are keyword-only and sets the
+    default bar edge width to ``0``.
 
     Note
     ----
     This function wraps {methods}
     """
-    kwargs.setdefault('linewidth', 0)
-    return func(self, x, bins=bins, **kwargs)
+    linewidth = _not_none(  # match default behavior
+        lw=kwargs.pop('lw', None), linewidth=kwargs.pop('linewidth', None), default=0,
+    )
+    with _state_context(self, _absolute_bar_width=True):
+        return func(self, x, bins=bins, linewidth=linewidth, **kwargs)
 
 
 @docstring.add_snippets
 def bar_wrapper(
-    self, func, x=None, height=None, width=0.8, bottom=None, *, left=None,
+    self, func, x=None, height=None, width=0.8, bottom=None, *,
     vert=None, orientation='vertical', stacked=False,
-    lw=None, linewidth=0.7, edgecolor='black',
+    lw=None, linewidth=None, edgecolor='black',
     negpos=False, negcolor=None, poscolor=None,
     **kwargs
 ):
@@ -1703,15 +1707,15 @@ def bar_wrapper(
     # Parse args
     # TODO: Stacked feature is implemented in `cycle_changer`, but makes more
     # sense do document here; figure out way to move it here?
-    if left is not None:
+    if kwargs.get('left', None) is not None:
         warnings._warn_proplot('bar() keyword "left" is deprecated. Use "x" instead.')
-        x = left
+        x = kwargs.pop('left')
     if x is None and height is None:
         raise ValueError('bar() requires at least 1 positional argument, got 0.')
     elif height is None:
         x, height = None, x
     args = (x, height)
-    linewidth = _not_none(lw=lw, linewidth=linewidth)
+    linewidth = _not_none(lw=lw, linewidth=linewidth, default=0.6)
     kwargs.update({
         'width': width, 'bottom': bottom, 'stacked': stacked,
         'orientation': orientation, 'linewidth': linewidth, 'edgecolor': edgecolor,
@@ -1747,9 +1751,7 @@ def bar_wrapper(
 
 
 @docstring.add_snippets
-def barh_wrapper(
-    self, func, y=None, right=None, width=None, left=None, height=None, **kwargs
-):
+def barh_wrapper(self, func, y=None, right=None, width=0.8, left=None, **kwargs):
     """
     %(axes.barh)s
     """
@@ -1762,7 +1764,7 @@ def barh_wrapper(
     # --> barh keyword order, because horizontal hist passes arguments to bar
     # directly and will not use a 'barh' method with overridden argument order!
     func  # avoid U100 error
-    height = _not_none(height=height, width=width, default=0.8)
+    height = _not_none(height=kwargs.pop('height', None), width=width, default=0.8)
     kwargs.setdefault('orientation', 'horizontal')
     if y is None and width is None:
         raise ValueError('barh() requires at least 1 positional argument, got 0.')
@@ -1803,6 +1805,8 @@ def boxplot_wrapper(
         The opacity of the boxes. Default is ``1``.
     lw, linewidth : float, optional
         The linewidth of all objects.
+    vert : bool, optional
+        If ``False``, box plots are drawn horizontally.
     orientation : {{None, 'horizontal', 'vertical'}}, optional
         Alternative to the native `vert` keyword arg. Controls orientation.
     marker : marker-spec, optional
@@ -1906,6 +1910,8 @@ def violinplot_wrapper(
         The violin plot fill color. Default is the next color cycler color.
     fillalpha : float, optional
         The opacity of the violins. Default is ``1``.
+    vert : bool, optional
+        If ``False``, box plots are drawn horizontally.
     orientation : {{None, 'horizontal', 'vertical'}}, optional
         Alternative to the native `vert` keyword arg. Controls orientation.
     boxrange, barrange : (float, float), optional
@@ -2001,12 +2007,11 @@ def _update_text(self, props):
         kwargs = {
             'linewidth': borderwidth,
             'foreground': bgcolor,
-            'joinstyle': 'miter'
+            'joinstyle': 'miter',
         }
         self.update({
             'color': facecolor,
-            'path_effects':
-                [mpatheffects.Stroke(**kwargs), mpatheffects.Normal()]
+            'path_effects': [mpatheffects.Stroke(**kwargs), mpatheffects.Normal()],
         })
     return type(self).update(self, props)
 
@@ -2271,7 +2276,7 @@ def cycle_changer(
     # WARNING: This will fail for non-numeric non-datetime64 singleton
     # datatypes but this is good enough for vast majority of most cases.
     if name in ('bar',):
-        if not stacked:
+        if not stacked and not getattr(self, '_absolute_bar_width', False):
             x_test = np.atleast_1d(_to_ndarray(x))
             if len(x_test) >= 2:
                 x_step = x_test[1:] - x_test[:-1]
@@ -3838,7 +3843,8 @@ def _generate_decorator(driver):
                     ', '.join(methods[:-1])
                     + ',' * int(len(methods) > 2)  # Oxford comma bitches
                     + ' and ' * int(len(methods) > 1)
-                    + methods[-1])
+                    + methods[-1]
+                )
                 driver.__doc__ = docstring.format(methods=string)
         return _wrapper
     return decorator
@@ -3854,7 +3860,7 @@ _cmap_changer = _generate_decorator(cmap_changer)
 _cycle_changer = _generate_decorator(cycle_changer)
 _fill_between_wrapper = _generate_decorator(fill_between_wrapper)
 _fill_betweenx_wrapper = _generate_decorator(fill_betweenx_wrapper)
-_hist_wrapper = _generate_decorator(hist_wrapper)
+_hist_wrapper = _generate_decorator(_hist_wrapper_private)
 _hlines_wrapper = _generate_decorator(hlines_wrapper)
 _indicate_error = _generate_decorator(indicate_error)
 _parametric_wrapper = _generate_decorator(_parametric_wrapper_private)
