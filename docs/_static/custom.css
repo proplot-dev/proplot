@@ -59,22 +59,22 @@
   --highlight-color: #b27600;
   --link-hover-color: #549aeb;
   --link-visited-color: #c194ff;
-  --code-border-color: #707070;
-  --menu-border-color: #909090;
-  --search-border-color: #555;
-  --search-shadow-color: #444;
-  --main-bg-color: #303030;
-  --code-bg-color: #3a3a3a;
-  --empty-bg-color: #363636;
-  --l1-bg-color: #404040;
-  --l2-bg-color: #4c4c4c;
-  --l3-bg-color: #595959;
-  --l4-bg-color: #666666;
-  --l5-bg-color: #737373;
-  --l6-bg-color: #808080;
-  --l7-bg-color: #8c8c8c;
-  --block-bg-color: #3a3a3a;
-  --accent-bg-color: #606060;
+  --code-border-color: #606060;
+  --menu-border-color: #808080;
+  --search-border-color: #444;
+  --search-shadow-color: #333;
+  --main-bg-color: #202020;
+  --code-bg-color: #2a2a2a;
+  --empty-bg-color: #262626;
+  --l1-bg-color: #303030;
+  --l2-bg-color: #3c3c3c;
+  --l3-bg-color: #494949;
+  --l4-bg-color: #565656;
+  --l5-bg-color: #636363;
+  --l6-bg-color: #707070;
+  --l7-bg-color: #7c7c7c;
+  --block-bg-color: #2a2a2a;
+  --accent-bg-color: #505050;
 }
 
 /* RST content background color */
