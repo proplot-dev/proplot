@@ -61,7 +61,7 @@ def _canvas_preprocessor(canvas, method):
     # queries the bbox directly rather than using get_width_height() so requires
     # workaround), (2) override bbox and bbox_inches as *properties* (but these
     # are really complicated, dangerous, and result in unnecessary extra draws),
-    # or (3) simply override canvas draw methods. Our choice is (3).
+    # or (3) simply override canvas draw methods. Our choice is #3.
     def _preprocess(self, *args, **kwargs):
         fig = self.figure  # update even if not stale! needed after saves
         func = getattr(type(self), method)  # the original method
@@ -90,7 +90,18 @@ def _canvas_preprocessor(canvas, method):
                 return
 
         # Apply formatting
-        with fig._context_preprocessing():
+        # NOTE: *Critical* to not add print_figure renderer to the cache when the
+        # print method (print_pdf, print_png, etc.) calls Figure.draw(). Otherwise
+        # have issues where (1) figure size and/or figure bounds are incorrect after
+        # saving figure *then* displaying it in qt or inline notebook backends, and
+        # (2) figure fails to update correctly after successively modifying
+        # and displaying within inline notebook backend (previously worked around
+        # this by forcing additional draw() call in this function before proceeding
+        # with print_figure). Solution is to use _state_context with _cachedRenderer.
+        fallback = _not_none(fig._fallback_to_cm, rc['mathtext.fallback_to_cm'])
+        rc_context = rc.context({'mathtext.fallback_to_cm': fallback})
+        fig_context = fig._context_preprocessing(cache=(method != 'print_figure'))
+        with rc_context, fig_context:
             # Add legends and colorbars
             for ax in fig._iter_axes(hidden=False, children=True):
                 if isinstance(ax, paxes.Axes):
@@ -108,9 +119,7 @@ def _canvas_preprocessor(canvas, method):
             fig._align_subplot_super_labels(renderer)
 
             # Call main function
-            fallback = _not_none(fig._fallback_to_cm, rc['mathtext.fallback_to_cm'])
-            with rc.context({'mathtext.fallback_to_cm': fallback}):
-                result = func(self, *args, **kwargs)
+            result = func(self, *args, **kwargs)
         return result
 
     return _preprocess.__get__(canvas)  # ...I don't get it either
@@ -626,12 +635,16 @@ class Figure(mfigure.Figure):
         """
         return _state_context(self, _is_autoresizing=True)
 
-    def _context_preprocessing(self):
+    def _context_preprocessing(self, cache=True):
         """
         Prevent re-running pre-processing steps due to draws triggered
-        by figure resizes during pre-processing.
+        by figure resizes during pre-processing. `cache` controls whether the
+        renderer passed to draw should be cached.
         """
-        return _state_context(self, _is_preprocessing=True)
+        kwargs = {}
+        if not cache:
+            kwargs['_cachedRenderer'] = None  # __exit__ will restore previous value
+        return _state_context(self, _is_preprocessing=True, **kwargs)
 
     def _fix_figure_dimensions(self, subplots_kw):
         """
@@ -706,10 +719,10 @@ class Figure(mfigure.Figure):
 
     def _get_renderer(self):
         """
-        Get a renderer at all costs, even if it means generating a brand
-        new one! Used for updating the figure bounding box when it is accessed
-        and calculating centered-row legend bounding boxes. This is copied from
-        tight_layout.py in matplotlib.
+        Get a renderer at all costs, even if it means generating a brand new one!
+        Used for updating the figure bounding box when it is accessed and calculating
+        centered-row legend bounding boxes. This is copied from tight_layout.py in
+        matplotlib.
         """
         if self._cachedRenderer:
             renderer = self._cachedRenderer
