@@ -41,18 +41,28 @@ JOURNAL_SPECS = {
 
 def close(*args, **kwargs):
     """
-    Pass the input arguments to `matplotlib.pyplot.close`. This is included
-    so you don't have to import `~matplotlib.pyplot`.
+    Call `matplotlib.pyplot.close`. This is included so you don't have to import
+    `~matplotlib.pyplot`.
+
+    Parameters
+    ----------
+    *args, **kwargs
+        Passed to `matplotlib.pyplot.close`.
     """
     plt.close(*args, **kwargs)
 
 
-def show():
+def show(*args, **kwargs):
     """
     Call `matplotlib.pyplot.show`. This is included so you don't have to import
     `~matplotlib.pyplot`.
+
+    Parameters
+    ----------
+    *args, **kwargs
+        Passed to `matplotlib.pyplot.show`.
     """
-    plt.show()
+    plt.show(*args, **kwargs)
 
 
 def _journals(journal):
