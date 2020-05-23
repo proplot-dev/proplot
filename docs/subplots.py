@@ -163,13 +163,12 @@ for ref in (1, 2):
 # and permits variable spacing between subsequent subplot rows and columns (see the
 # new `~proplot.gridspec.GridSpec` class for details).
 #
-# The tight layout algorithm can also be overridden. When you pass a
-# spacing argument like `left`, `right`, `top`, `bottom`, `wspace`, or
-# `hspace` to `~proplot.ui.subplots`, that value is always respected.
-# For example:
+# The tight layout algorithm can also be overridden. When you use any
+# of the spacing arguments `left`, `right`, `top`, `bottom`, `wspace`, or
+# `hspace`, that value is always respected. For example:
 #
-# * ``left='2em'`` fixes the left margin, while the right, bottom, and
-#   top margins are determined automatically.
+# * ``left='2em'`` fixes the left margin width, while the right,
+#   bottom, and top margin widths are determined automatically.
 # * ``wspace='1em'`` fixes the spaces between subplot columns, while the spaces
 #   between subplot rows are determined automatically.
 # * ``wspace=('3em', None)`` fixes the space between the first two columns of
@@ -245,8 +244,10 @@ axs[:, 0].format(ylabel='ylabel\nylabel')
 # * Level ``3`` is the same as ``2``, but the *x* and *y* tick labels are
 #   also shared.
 #
-# These features are best illustrated by example (see below). Note that ProPlot's
-# axis sharing algorithm works for arbitrarily complex grids of subplots.
+# Axis and label sharing works for
+# :ref:`arbitrarily complex grids of subplots <ug_intro>`.
+# The below examples demonstrate the effect of various axis and label
+# sharing settings on the appearance of simple subplot grids.
 
 # %%
 import proplot as plot

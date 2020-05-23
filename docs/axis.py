@@ -536,8 +536,7 @@ ax.format(
 )
 scale = plot.Scale('pressure')
 ax.dualy(
-    scale, label='pressure (hPa)', locator=100,
-    color=c1, gridcolor=c1, grid=True
+    scale, label='pressure (hPa)', locator=100, color=c1, gridcolor=c1, grid=True,
 )
 plot.rc.reset()
 
