@@ -704,8 +704,8 @@ class RcConfigurator(object):
         # Activate context object
         if mode not in range(3):
             raise ValueError(f'Invalid mode {mode!r}.')
-        ctx = _RcContext(mode=mode, kwargs=kwargs, rc_new={}, rc_old={})
-        self._context.append(ctx)
+        context = _RcContext(mode=mode, kwargs=kwargs, rc_new={}, rc_old={})
+        self._context.append(context)
         return self
 
     def get(self, key, *, context=False):
