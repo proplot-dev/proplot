@@ -47,6 +47,17 @@ negpos : str, optional
     numbers, meant to replace the minus sign.
 """
 
+docstring.snippets['formatter.call'] = """
+Convert number to a string.
+
+Parameters
+----------
+x : float
+    The value.
+pos : float, optional
+    The position.
+"""
+
 
 class _GeoLocator(mticker.MaxNLocator):
     """
@@ -216,16 +227,10 @@ class AutoFormatter(mticker.ScalarFormatter):
         self._suffix = suffix or ''
         self._negpos = negpos or ''
 
+    @docstring.add_snippets
     def __call__(self, x, pos=None):
         """
-        Convert number to a string.
-
-        Parameters
-        ----------
-        x : float
-            The value.
-        pos : float, optional
-            The position.
+        %(formatter.call)s
         """
         # Tick range limitation
         x = self._wrap_tick_range(x, self._wraprange)
@@ -392,33 +397,40 @@ class AutoFormatter(mticker.ScalarFormatter):
         return (x - base) % modulus + base
 
 
-def SciFormatter(precision=None, zerotrim=None):
+class SciFormatter(mticker.Formatter):
     """
-    Return a `~matplotlib.ticker.FuncFormatter` that formats
-    the number with scientific notation.
-
-    Parameters
-    ----------
-    precision : int, optional
-        The maximum number of digits after the decimal point. Default is ``6``
-        when `zerotrim` is ``True`` and ``2`` otherwise.
-    zerotrim : bool, optional
-        Whether to trim trailing zeros. Default is
+    Format numbers with scientific notation.
     """
-    from .config import rc
-    zerotrim = _not_none(zerotrim, rc['formatter.zerotrim'])
-    if precision is None:
-        precision = 6 if zerotrim else 2
+    def __init__(self, precision=None, zerotrim=None):
+        """
+        Parameters
+        ----------
+        precision : int, optional
+            The maximum number of digits after the decimal point. Default is ``6``
+            when `zerotrim` is ``True`` and ``2`` otherwise.
+        zerotrim : bool, optional
+            Whether to trim trailing zeros. Default is
+        """
+        from .config import rc
+        zerotrim = _not_none(zerotrim, rc['formatter.zerotrim'])
+        if precision is None:
+            precision = 6 if zerotrim else 2
+        self._precision = precision
+        self._zerotrim = zerotrim
 
-    def func(x, pos):
+    @docstring.add_snippets
+    def __call__(self, x, pos=None):  # noqa: U100
+        """
+        %(formatter.call)s
+        """
         # Get string
         decimal_point = AutoFormatter._get_default_decimal_point()
-        string = ('{:.%de}' % precision).format(x)
+        string = ('{:.%de}' % self._precision).format(x)
         parts = string.split('e')
 
         # Trim trailing zeros
         significand = parts[0].rstrip(decimal_point)
-        if zerotrim:
+        if self._zerotrim:
             significand = AutoFormatter._trim_trailing_zeros(significand, decimal_point)
 
         # Get sign and exponent
@@ -437,115 +449,136 @@ def SciFormatter(precision=None, zerotrim=None):
         # Return TeX string
         return f'${string}$'
 
-    return mticker.FuncFormatter(func)
 
-
-def SigFigFormatter(sigfig=3, zerotrim=None):
+class SigFigFormatter(mticker.Formatter):
     """
-    Return a `~matplotlib.ticker.FuncFormatter` that rounds numbers
-    to the specified number of *significant digits*.
-
-    Parameters
-    ----------
-    sigfig : float, optional
-        The number of significant digits.
-    zerotrim : bool, optional
-        Whether to trim trailing zeros.
+    Rounds numbers to the specified number of *significant digits*.
     """
-    from .config import rc
-    zerotrim = _not_none(zerotrim, rc['formatter.zerotrim'])
+    def __init__(self, sigfig=3, zerotrim=None):
+        """
+        Parameters
+        ----------
+        sigfig : float, optional
+            The number of significant digits.
+        zerotrim : bool, optional
+            Whether to trim trailing zeros.
+        """
+        from .config import rc
+        self._sigfig = sigfig
+        self._zerotrim = _not_none(zerotrim, rc['formatter.zerotrim'])
 
-    def func(x, pos):
+    @docstring.add_snippets
+    def __call__(self, x, pos=None):  # noqa: U100
+        """
+        %(formatter.call)s
+        """
         # Limit digits to significant figures
         if x == 0:
             digits = 0
         else:
             digits = -int(np.log10(abs(x)) // 1)
         decimal_point = AutoFormatter._get_default_decimal_point()
-        digits += sigfig - 1
+        digits += self._sigfig - 1
         x = np.round(x, digits)
         string = ('{:.%df}' % max(0, digits)).format(x)
         string = string.replace('.', decimal_point)
 
         # Custom string formatting
         string = AutoFormatter._minus_format(string)
-        if zerotrim:
+        if self._zerotrim:
             string = AutoFormatter._trim_trailing_zeros(string, decimal_point)
         return string
 
-    return mticker.FuncFormatter(func)
 
-
-@docstring.add_snippets
-def SimpleFormatter(
-    precision=None, zerotrim=None, tickrange=None, wraprange=None,
-    prefix=None, suffix=None, negpos=None,
-):
+class SimpleFormatter(mticker.Formatter):
     """
-    Return a `~matplotlib.ticker.FuncFormatter` that replicates the
-    `zerotrim` feature from `AutoFormatter`. This is more suitable for
+    Replicate various features from `AutoFormatter`. This is more suitable for
     arbitrary number formatting not necessarily associated with any
     `~matplotlib.axis.Axis` instance, e.g. labeling contours.
-
-    Parameters
-    ----------
-    precision : int, optional
-        The maximum number of digits after the decimal point. Default is ``6``
-        when `zerotrim` is ``True`` and ``2`` otherwise.
-    %(formatter.params)s
     """
-    from .config import rc
-    zerotrim = _not_none(zerotrim, rc['formatter.zerotrim'])
-    if precision is None:
-        precision = 6 if zerotrim else 2
-    tickrange = tickrange or (-np.inf, np.inf)
-    prefix = prefix or ''
-    suffix = suffix or ''
-    negpos = negpos or ''
+    @docstring.add_snippets
+    def __init__(
+        self, precision=None, zerotrim=None,
+        tickrange=None, wraprange=None,
+        prefix=None, suffix=None, negpos=None,
+    ):
+        """
+        Parameters
+        ----------
+        precision : int, optional
+            The maximum number of digits after the decimal point. Default is ``6``
+            when `zerotrim` is ``True`` and ``2`` otherwise.
+        %(formatter.params)s
+        """
+        from .config import rc
+        zerotrim = _not_none(zerotrim, rc['formatter.zerotrim'])
+        if precision is None:
+            precision = 6 if zerotrim else 2
+        self._precision = precision
+        self._prefix = prefix or ''
+        self._suffix = suffix or ''
+        self._negpos = negpos or ''
+        self._tickrange = tickrange or (-np.inf, np.inf)
+        self._wraprange = wraprange
+        self._zerotrim = zerotrim
 
-    def func(x, pos):
+    @docstring.add_snippets
+    def __call__(self, x, pos=None):  # noqa: U100
+        """
+        %(formatter.call)s
+        """
         # Tick range limitation
-        x = AutoFormatter._wrap_tick_range(x, wraprange)
-        if AutoFormatter._outside_tick_range(x, tickrange):
+        x = AutoFormatter._wrap_tick_range(x, self._wraprange)
+        if AutoFormatter._outside_tick_range(x, self._tickrange):
             return ''
 
         # Negative positive handling
-        x, tail = AutoFormatter._neg_pos_format(x, negpos, wraprange=wraprange)
+        x, tail = AutoFormatter._neg_pos_format(
+            x, self._negpos, wraprange=self._wraprange
+        )
 
         # Default string formatting
         decimal_point = AutoFormatter._get_default_decimal_point()
-        string = ('{:.%df}' % precision).format(x)
+        string = ('{:.%df}' % self._precision).format(x)
         string = string.replace('.', decimal_point)
 
         # Custom string formatting
         string = AutoFormatter._minus_format(string)
-        if zerotrim:
+        if self._zerotrim:
             string = AutoFormatter._trim_trailing_zeros(string, decimal_point)
 
         # Prefix and suffix
-        string = AutoFormatter._add_prefix_suffix(string, prefix, suffix)
+        string = AutoFormatter._add_prefix_suffix(string, self._prefix, self._suffix)
         string = string + tail  # add negative-positive indicator
         return string
 
-    return mticker.FuncFormatter(func)
 
-
-def FracFormatter(symbol='', number=1):
+class FracFormatter(mticker.Formatter):
     r"""
-    Return a `~matplotlib.ticker.FuncFormatter` that formats numbers as
-    fractions or multiples of some arbitrary value.
+    Format numbers as fractions or multiples of some arbitrary value.
     This is powered by the builtin `~fractions.Fraction` class
     and the `~fractions.Fraction.limit_denominator` method.
-
-    Parameters
-    ----------
-    symbol : str
-        The symbol, e.g. ``r'$\pi$'``. Default is ``''``.
-    number : float
-        The value, e.g. `numpy.pi`. Default is ``1``.
     """
-    def func(x, pos):  # must accept location argument
-        frac = Fraction(x / number).limit_denominator()
+    def __init__(self, symbol='', number=1):
+        r"""
+        Parameters
+        ----------
+        symbol : str
+            The symbol, e.g. ``r'$\pi$'``. Default is ``''``.
+        number : float
+            The value, e.g. `numpy.pi`. Default is ``1``.
+        """
+        self._symbol = symbol
+        self._number = number
+        super().__init__()
+
+    @docstring.add_snippets
+    def __call__(self, x, pos=None):  # noqa: U100
+        """
+        %(formatter.call)s
+        """
+        frac = Fraction(x / self._number).limit_denominator()
+        symbol = self._symbol
         if x == 0:
             string = '0'
         elif frac.denominator == 1:  # denominator is one
@@ -564,5 +597,3 @@ def FracFormatter(symbol='', number=1):
                 string = f'{frac.numerator:d}{symbol:s}/{frac.denominator:d}'
         string = AutoFormatter._minus_format(string)
         return string
-
-    return mticker.FuncFormatter(func)
