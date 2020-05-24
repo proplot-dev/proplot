@@ -847,8 +847,20 @@ class CartesianAxes(base.Axes):
                 (xminorlocator_kw, yminorlocator_kw),
                 (xformatter_kw, yformatter_kw),
             ):
+                # Axis scale
+                # WARNING: This relies on monkey patch of mscale.scale_factory
+                # that allows it to accept a custom scale class!
+                # WARNING: Changing axis scale also changes default locators
+                # and formatters, and restricts possible range of axis limits,
+                # so critical to do it first.
+                if scale is not None:
+                    scale = constructor.Scale(scale, **scale_kw)
+                    getattr(self, 'set_' + x + 'scale')(scale)
+
                 # Axis limits
                 # NOTE: 3.1+ has axis.set_inverted(), below is from source code
+                # NOTE: Critical to apply axis limits first in case axis scale
+                # is incompatible with current limits.
                 if lim is not None:
                     getattr(self, 'set_' + x + 'lim')(lim)
                 if reverse is not None:
@@ -858,15 +870,6 @@ class CartesianAxes(base.Axes):
                     else:
                         lim = (min(lo, hi), max(lo, hi))
                     axis.set_view_interval(*lim, ignore=True)
-
-                # Axis scale
-                # WARNING: This relies on monkey patch of mscale.scale_factory
-                # that allows it to accept a custom scale class!
-                # WARNING: Changing axis scale also changes default locators
-                # and formatters, so do it first
-                if scale is not None:
-                    scale = constructor.Scale(scale, **scale_kw)
-                    getattr(self, 'set_' + x + 'scale')(scale)
 
                 # Is this a date axis?
                 # NOTE: Make sure to get this *after* lims set!

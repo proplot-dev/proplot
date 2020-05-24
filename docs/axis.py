@@ -375,15 +375,17 @@ data = state.rand(len(dy) - 1, len(x) - 1)
 
 # Loop through various cutoff scale options
 titles = ('Zoom out of left', 'Zoom into left', 'Discrete jump', 'Fast jump')
-args = [
+args = (
     (np.pi, 3),  # speed up
     (3 * np.pi, 1 / 3),  # slow down
     (np.pi, np.inf, 3 * np.pi),  # discrete jump
     (np.pi, 5, 3 * np.pi)  # fast jump
-]
+)
 locators = (
-    2 * [np.pi / 3]
-    + 2 * [[*np.linspace(0, 1, 4) * np.pi, *(np.linspace(0, 1, 4) * np.pi + 3 * np.pi)]]
+    np.pi / 3,
+    np.pi / 3,
+    np.pi * np.append(np.linspace(0, 1, 4), np.linspace(3, 4, 4)),
+    np.pi * np.append(np.linspace(0, 1, 4), np.linspace(3, 4, 4)),
 )
 for ax, iargs, title, locator in zip(axs, args, titles, locators):
     ax.pcolormesh(x, dy, data, cmap='grays', cmap_kw={'right': 0.8})
@@ -402,7 +404,7 @@ import numpy as np
 plot.rc.reset()
 fig, axs = plot.subplots(nrows=2, ncols=3, axwidth=1.7, share=0, order='F')
 axs.format(
-    collabels=['Power scales', 'Exponential scales', 'Cartographic scales'],
+    collabels=('Power scales', 'Exponential scales', 'Cartographic scales'),
     suptitle='Additional axis scales demo'
 )
 x = np.linspace(0, 1, 50)
@@ -421,22 +423,22 @@ for ax, power, color in zip(axs[:2], (2, 1 / 4), colors):
     )
 
 # Exp scales
-for ax, a, c, color in zip(axs[2:4], (np.e, 2), (0.5, -1), colors):
+for ax, a, c, color in zip(axs[2:4], (np.e, 2), (0.5, 2), colors):
     ax.pcolormesh(x, y, data, cmap='grays', cmap_kw={'right': 0.8})
     ax.plot(x, y, lw=4, color=color)
     ax.format(
         ylim=(0.1, 10), yscale=('exp', a, c),
-        title=f'${(a,"e")[a==np.e]}^{{{(c,"-")[c==-1]}x}}$'
+        title=f"${(a, 'e')[a == np.e]}^{{{(c, '')[c == 1]}x}}$"
     )
 
 # Geographic scales
 n = 20
 x = np.linspace(-180, 180, n)
-y = np.linspace(-85, 85, n)
+y1 = np.linspace(-85, 85, n)
 y2 = np.linspace(-85, 85, n)
-data = state.rand(len(x), len(y2))
+data = state.rand(len(x) - 1, len(y2) - 1)
 for ax, scale, color in zip(axs[4:], ('sine', 'mercator'), ('coral', 'sky blue')):
-    ax.plot(x, y, '-', color=color, lw=4)
+    ax.plot(x, y1, '-', color=color, lw=4)
     ax.pcolormesh(x, y2, data, cmap='grays', cmap_kw={'right': 0.8})
     ax.format(
         title=scale.title() + ' y-axis', yscale=scale, ytickloc='left',

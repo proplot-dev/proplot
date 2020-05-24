@@ -76,7 +76,6 @@ class _Scale(object):
         # have weird issues.
         axis = type('Axis', (object,), {'axis_name': 'x'})()
         super().__init__(axis, *args, **kwargs)
-        self._default_smart_bounds = None
         self._default_major_locator = None
         self._default_minor_locator = None
         self._default_major_formatter = None
@@ -102,8 +101,6 @@ class _Scale(object):
         # "non default" even when user has not changed it, due to "turning
         # minor ticks" on and off, so set as 'default' if AutoMinorLocator.
         from .config import rc
-        if self._default_smart_bounds is not None:
-            axis.set_smart_bounds(self._default_smart_bounds)
         if not only_if_default or axis.isDefault_majloc:
             axis.set_major_locator(
                 self._default_major_locator or mticker.AutoLocator()
@@ -399,7 +396,8 @@ class FuncTransform(mtransforms.Transform):
         return FuncTransform(self._inverse, self._forward)
 
     def transform_non_affine(self, values):
-        return self._forward(values)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            return self._forward(values)
 
 
 class PowerScale(_Scale, mscale.ScaleBase):
@@ -414,7 +412,7 @@ class PowerScale(_Scale, mscale.ScaleBase):
     #: The registered scale name
     name = 'power'
 
-    def __init__(self, power=1, inverse=False, *, minpos=1e-300):
+    def __init__(self, power=1, inverse=False):
         """
         Parameters
         ----------
@@ -423,20 +421,23 @@ class PowerScale(_Scale, mscale.ScaleBase):
         inverse : bool, optional
             If ``True``, the "forward" direction performs
             the inverse operation :math:`x^{1/c}`.
-        minpos : float, optional
-            The minimum permissible value, used to truncate negative values.
         """
         super().__init__()
         if not inverse:
-            self._transform = PowerTransform(power, minpos)
+            self._transform = PowerTransform(power)
         else:
-            self._transform = InvertedPowerTransform(power, minpos)
+            self._transform = InvertedPowerTransform(power)
 
     def limit_range_for_scale(self, vmin, vmax, minpos):
         """
         Return the range *vmin* and *vmax* limited to positive numbers.
         """
-        return max(vmin, minpos), max(vmax, minpos)
+        if not np.isfinite(minpos):
+            minpos = 1e-300
+        return (
+            minpos if vmin <= 0 else vmin,
+            minpos if vmax <= 0 else vmax,
+        )
 
 
 class PowerTransform(mtransforms.Transform):
@@ -445,18 +446,16 @@ class PowerTransform(mtransforms.Transform):
     has_inverse = True
     is_separable = True
 
-    def __init__(self, power, minpos):
+    def __init__(self, power):
         super().__init__()
-        self.minpos = minpos
         self._power = power
 
     def inverted(self):
-        return InvertedPowerTransform(self._power, self.minpos)
+        return InvertedPowerTransform(self._power)
 
     def transform_non_affine(self, a):
-        aa = np.array(a)
-        aa[aa <= self.minpos] = self.minpos  # necessary
-        return np.power(np.array(a), self._power)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            return np.power(a, self._power)
 
 
 class InvertedPowerTransform(mtransforms.Transform):
@@ -465,18 +464,16 @@ class InvertedPowerTransform(mtransforms.Transform):
     has_inverse = True
     is_separable = True
 
-    def __init__(self, power, minpos):
+    def __init__(self, power):
         super().__init__()
-        self.minpos = minpos
         self._power = power
 
     def inverted(self):
-        return PowerTransform(self._power, self.minpos)
+        return PowerTransform(self._power)
 
     def transform_non_affine(self, a):
-        aa = np.array(a)
-        aa[aa <= self.minpos] = self.minpos  # necessary
-        return np.power(np.array(a), 1 / self._power)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            return np.power(a, 1 / self._power)
 
 
 class ExpScale(_Scale, mscale.ScaleBase):
@@ -502,9 +499,7 @@ class ExpScale(_Scale, mscale.ScaleBase):
     #: The registered scale name
     name = 'exp'
 
-    def __init__(
-        self, a=np.e, b=1, c=1, inverse=False, minpos=1e-300,
-    ):
+    def __init__(self, a=np.e, b=1, c=1, inverse=False):
         """
         Parameters
         ----------
@@ -515,23 +510,26 @@ class ExpScale(_Scale, mscale.ScaleBase):
         c : float, optional
             The coefficient of the exponential, i.e. the :math:`C`
             in :math:`Ca^{bx}`.
-        minpos : float, optional
-            The minimum permissible value, used to truncate negative values.
         inverse : bool, optional
             If ``True``, the "forward" direction performs the inverse
             operation.
         """
         super().__init__()
         if not inverse:
-            self._transform = ExpTransform(a, b, c, minpos)
+            self._transform = ExpTransform(a, b, c)
         else:
-            self._transform = InvertedExpTransform(a, b, c, minpos)
+            self._transform = InvertedExpTransform(a, b, c)
 
     def limit_range_for_scale(self, vmin, vmax, minpos):
         """
         Return the range *vmin* and *vmax* limited to positive numbers.
         """
-        return max(vmin, minpos), max(vmax, minpos)
+        if not np.isfinite(minpos):
+            minpos = 1e-300
+        return (
+            minpos if vmin <= 0 else vmin,
+            minpos if vmax <= 0 else vmax,
+        )
 
 
 class ExpTransform(mtransforms.Transform):
@@ -540,18 +538,18 @@ class ExpTransform(mtransforms.Transform):
     has_inverse = True
     is_separable = True
 
-    def __init__(self, a, b, c, minpos):
+    def __init__(self, a, b, c):
         super().__init__()
-        self.minpos = minpos
         self._a = a
         self._b = b
         self._c = c
 
     def inverted(self):
-        return InvertedExpTransform(self._a, self._b, self._c, self.minpos)
+        return InvertedExpTransform(self._a, self._b, self._c)
 
     def transform_non_affine(self, a):
-        return self._c * np.power(self._a, self._b * np.array(a))
+        with np.errstate(divide='ignore', invalid='ignore'):
+            return self._c * np.power(self._a, self._b * np.array(a))
 
 
 class InvertedExpTransform(mtransforms.Transform):
@@ -560,20 +558,18 @@ class InvertedExpTransform(mtransforms.Transform):
     has_inverse = True
     is_separable = True
 
-    def __init__(self, a, b, c, minpos):
+    def __init__(self, a, b, c):
         super().__init__()
-        self.minpos = minpos
         self._a = a
         self._b = b
         self._c = c
 
     def inverted(self):
-        return ExpTransform(self._a, self._b, self._c, self.minpos)
+        return ExpTransform(self._a, self._b, self._c)
 
     def transform_non_affine(self, a):
-        aa = np.array(a)
-        aa[aa <= self.minpos] = self.minpos  # necessary
-        return np.log(aa / self._c) / (self._b * np.log(self._a))
+        with np.errstate(divide='ignore', invalid='ignore'):
+            return np.log(a / self._c) / (self._b * np.log(self._a))
 
 
 class MercatorLatitudeScale(_Scale, mscale.ScaleBase):
@@ -607,12 +603,11 @@ class MercatorLatitudeScale(_Scale, mscale.ScaleBase):
             ``-thresh`` and ``+thresh``.
         """
         super().__init__()
-        if thresh >= 90.0:
-            raise ValueError('Threshold "thresh" must be <=90.')
+        if thresh >= 90:
+            raise ValueError("Mercator scale 'thresh' must be <= 90.")
         self._thresh = thresh
         self._transform = MercatorLatitudeTransform(thresh)
         self._default_major_formatter = pticker.AutoFormatter(suffix='\N{DEGREE SIGN}')  # noqa: E501
-        self._default_smart_bounds = True
 
     def limit_range_for_scale(self, vmin, vmax, minpos):  # noqa: U100
         """
@@ -636,14 +631,18 @@ class MercatorLatitudeTransform(mtransforms.Transform):
         return InvertedMercatorLatitudeTransform(self._thresh)
 
     def transform_non_affine(self, a):
-        # With safeguards
-        # TODO: Can improve this?
-        a = np.deg2rad(a)  # convert to radians
-        m = ma.masked_where((a < -self._thresh) | (a > self._thresh), a)
-        if m.mask.any():
-            return ma.log(np.abs(ma.tan(m) + 1 / ma.cos(m)))
-        else:
-            return np.log(np.abs(np.tan(a) + 1 / np.cos(a)))
+        # NOTE: Critical to truncate valid range inside transform *and*
+        # in limit_range_for_scale or get weird duplicate tick labels. This
+        # is not necessary for positive-only scales because it is harder to
+        # run up right against the scale boundaries.
+        with np.errstate(divide='ignore', invalid='ignore'):
+            m = ma.masked_where((a <= -90) | (a >= 90), a)
+            if m.mask.any():
+                m = np.deg2rad(m)
+                return ma.log(ma.abs(ma.tan(m) + 1 / ma.cos(m)))
+            else:
+                a = np.deg2rad(a)
+                return np.log(np.abs(np.tan(a) + 1 / np.cos(a)))
 
 
 class InvertedMercatorLatitudeTransform(mtransforms.Transform):
@@ -660,9 +659,8 @@ class InvertedMercatorLatitudeTransform(mtransforms.Transform):
         return MercatorLatitudeTransform(self._thresh)
 
     def transform_non_affine(self, a):
-        # m = ma.masked_where((a < -self._thresh) | (a > self._thresh), a)
-        # always assume in first/fourth quadrant, i.e. go from -pi/2 to pi/2
-        return np.rad2deg(np.arctan2(1, np.sinh(a)))
+        with np.errstate(divide='ignore', invalid='ignore'):
+            return np.rad2deg(np.arctan2(1, np.sinh(a)))
 
 
 class SineLatitudeScale(_Scale, mscale.ScaleBase):
@@ -688,8 +686,7 @@ class SineLatitudeScale(_Scale, mscale.ScaleBase):
         """"""  # no parameters
         super().__init__()
         self._transform = SineLatitudeTransform()
-        self._default_major_formatter = pticker.AutoFormatter(suffix='\N{DEGREE SIGN}')  # noqa: E501
-        self._default_smart_bounds = True
+        self._default_major_formatter = pticker.AutoFormatter(suffix='\N{DEGREE SIGN}')
 
     def limit_range_for_scale(self, vmin, vmax, minpos):  # noqa: U100
         """
@@ -712,15 +709,16 @@ class SineLatitudeTransform(mtransforms.Transform):
         return InvertedSineLatitudeTransform()
 
     def transform_non_affine(self, a):
-        # With safeguards
-        # TODO: Can improve this?
-        with np.errstate(invalid='ignore'):  # NaNs will always be False
-            m = (a >= -90) & (a <= 90)
-        if not m.all():
-            aa = ma.masked_where(~m, a)
-            return ma.sin(np.deg2rad(aa))
-        else:
-            return np.sin(np.deg2rad(a))
+        # NOTE: Critical to truncate valid range inside transform *and*
+        # in limit_range_for_scale or get weird duplicate tick labels. This
+        # is not necessary for positive-only scales because it is harder to
+        # run up right against the scale boundaries.
+        with np.errstate(divide='ignore', invalid='ignore'):
+            m = ma.masked_where((a < -90) | (a > 90), a)
+            if m.mask.any():
+                return ma.sin(np.deg2rad(m))
+            else:
+                return np.sin(np.deg2rad(a))
 
 
 class InvertedSineLatitudeTransform(mtransforms.Transform):
@@ -736,10 +734,8 @@ class InvertedSineLatitudeTransform(mtransforms.Transform):
         return SineLatitudeTransform()
 
     def transform_non_affine(self, a):
-        # Clipping, instead of setting invalid
-        # NOTE: Using ma.arcsin below caused super weird errors, dun do that
-        aa = a.copy()
-        return np.rad2deg(np.arcsin(aa))
+        with np.errstate(divide='ignore', invalid='ignore'):
+            return np.rad2deg(np.arcsin(a))
 
 
 class CutoffScale(_Scale, mscale.ScaleBase):
@@ -829,7 +825,7 @@ class CutoffTransform(mtransforms.Transform):
         # Use same algorithm for inversion!
         threshs = np.cumsum(self._dists)  # thresholds in transformed space
         with np.errstate(divide='ignore', invalid='ignore'):
-            scales = 1 / self._scales  # new scales are inverse
+            scales = 1.0 / self._scales  # new scales are inverse
         zero_dists = np.diff(self._threshs)[scales[:-1] == 0]
         return CutoffTransform(threshs, scales, zero_dists=zero_dists)
 
@@ -844,9 +840,7 @@ class CutoffTransform(mtransforms.Transform):
             for i, ai in np.ndenumerate(a):
                 j = np.searchsorted(threshs, ai)
                 if j > 0:
-                    aa[i] = (
-                        dists[:j].sum() + (ai - threshs[j - 1]) / scales[j - 1]
-                    )
+                    aa[i] = dists[:j].sum() + (ai - threshs[j - 1]) / scales[j - 1]
         return aa
 
 
@@ -869,7 +863,6 @@ class InverseScale(_Scale, mscale.ScaleBase):
         self._transform = InverseTransform()
         self._default_major_locator = mticker.LogLocator(10)
         self._default_minor_locator = mticker.LogLocator(10, np.arange(1, 10))
-        self._default_smart_bounds = True
 
     def limit_range_for_scale(self, vmin, vmax, minpos):
         """
@@ -878,7 +871,12 @@ class InverseScale(_Scale, mscale.ScaleBase):
         # Unlike log-scale, we can't just warp the space between
         # the axis limits -- have to actually change axis limits. Also this
         # scale will invert and swap the limits you provide.
-        return max(vmin, minpos), max(vmax, minpos)
+        if not np.isfinite(minpos):
+            minpos = 1e-300
+        return (
+            minpos if vmin <= 0 else vmin,
+            minpos if vmax <= 0 else vmax,
+        )
 
 
 class InverseTransform(mtransforms.Transform):
@@ -895,9 +893,6 @@ class InverseTransform(mtransforms.Transform):
         return InverseTransform()
 
     def transform_non_affine(self, a):
-        a = np.array(a)
-        # mask = np.abs(a) <= self.minpos # attempt for negative-friendly
-        # aa[mask] = np.sign(a[mask]) * self.minpos
         with np.errstate(divide='ignore', invalid='ignore'):
             return 1.0 / a
 
