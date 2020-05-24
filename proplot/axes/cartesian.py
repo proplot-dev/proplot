@@ -43,11 +43,14 @@ Parameters
 """
 
 _alt_kwargs = (  # TODO: More systematic approach?
-    'label', 'locator', 'formatter', 'ticks', 'ticklabels',
-    'minorlocator', 'minorticks', 'tickminor',
-    'ticklen', 'tickrange', 'tickdir', 'ticklabeldir', 'tickrotation', 'wraprange',
-    'bounds', 'margin', 'color', 'linewidth', 'grid', 'gridminor', 'gridcolor',
-    'locator_kw', 'formatter_kw', 'minorlocator_kw', 'label_kw',
+    'lim', 'reverse', 'scale', 'label',
+    'tickdir', 'grid', 'gridminor',
+    'tickminor', 'ticklabeldir', 'tickrange', 'wraprange',
+    'rotation', 'formatter', 'ticklabels',
+    'ticks', 'locator', 'minorticks', 'minorlocator',
+    'bounds', 'margin', 'color',
+    'ticklen', 'linewidth', 'gridcolor',
+    'label_kw', 'scale_kw', 'locator_kw', 'formatter_kw', 'minorlocator_kw',
 )
 
 docstring.snippets['axes.altx'] = _alt_doc.format(
@@ -537,10 +540,10 @@ class CartesianAxes(base.Axes):
         xrotation=None, yrotation=None,
         xformatter=None, yformatter=None,
         xticklabels=None, yticklabels=None,
-        xticks=None, xminorticks=None,
-        xlocator=None, xminorlocator=None,
-        yticks=None, yminorticks=None,
-        ylocator=None, yminorlocator=None,
+        xticks=None, yticks=None,
+        xlocator=None, ylocator=None,
+        xminorticks=None, yminorticks=None,
+        xminorlocator=None, yminorlocator=None,
         xbounds=None, ybounds=None,
         xmargin=None, ymargin=None,
         xcolor=None, ycolor=None,
