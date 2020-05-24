@@ -861,7 +861,8 @@ class Figure(mfigure.Figure):
         # has changed. Otherwise triggers recursive draws (???). Tried avoiding
         # this with additional context blocks in set_size_inches but could not
         # find consistent solution. For some reason *this* works consistently.
-        if not np.isclose(width, figsize[0]) and not np.isclose(height, figsize[1]):
+        fixed = all(subplots_kw[key] is not None for key in ('width', 'height'))
+        if not fixed:
             self.set_size_inches(figsize, auto=True)
 
     def _update_geometry_from_aspect(self, resize=True):
