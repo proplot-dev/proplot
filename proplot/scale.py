@@ -281,14 +281,12 @@ class FuncScale(_Scale, mscale.ScaleBase):
               ``ax.dual%(x)s((lambda x: x**2, lambda x: x**0.5))``.
               Again, if the first function is linear or involutory, you do
               not need to provide the second!
-            * A `~matplotlib.scale.ScaleBase` instance, e.g. a scale returned
-              by the `~proplot.constructor.Scale` constructor function. The
-              forward transformation, inverse transformation, and default axis
-              locators and formatters are borrowed from the resulting scale
-              class.  For example, to apply the inverse, use
-              ``ax.dual%(x)s(plot.Scale('inverse'))``.
-              To apply the base-10 exponential function, use
-              ``ax.dual%(x)s(plot.Scale('exp', 10))``.
+            * A scale specification interpreted by the `~proplot.constructor.Scale`
+              constructor function. The forward transformation, inverse transformation,
+              and default axis locators and formatters are borrowed from the resulting
+              `~matplotlib.scale.ScaleBase` instance. For example, to apply the
+              inverse, use ``ax.dual%(x)s('inverse')``. To apply the base-10
+              exponential function, use ``ax.dual%(x)s(('exp', 10))``.
 
         invert : bool, optional
             If ``True``, the forward and inverse functions are *swapped*.
@@ -316,16 +314,18 @@ optional
             forward = inverse = arg
         elif np.iterable(arg) and len(arg) == 2 and all(map(callable, arg)):
             forward, inverse = arg
-        elif isinstance(arg, mscale.ScaleBase):
-            trans = arg.get_transform()
+        else:
+            from .constructor import Scale
+            try:
+                scale = Scale(arg)
+            except ValueError:
+                raise ValueError(
+                    'Input should be a function, 2-tuple of forward and and inverse '
+                    f'functions, or an axis scale specification, not {arg!r}.'
+                )
+            trans = scale.get_transform()
             forward = trans.transform
             inverse = trans.inverted().transform
-        else:
-            raise ValueError(
-                'Input should be a function, 2-tuple of forward and '
-                'and inverse functions, or a matplotlib.scale.ScaleBase '
-                f'instance, not {arg!r}.'
-            )
 
         # Create the FuncTransform or composite transform used for this class
         # May need to invert functions for dualx() and dualy()

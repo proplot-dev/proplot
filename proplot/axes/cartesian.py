@@ -78,12 +78,13 @@ coordinates in *alternate units*.
 
 Parameters
 ----------
-arg : function, (function, function), or `~matplotlib.scale.ScaleBase`
+arg : function, (function, function), or scale-spec
     Used to transform units from the parent axis to the secondary axis.
     This can be a `~proplot.scale.FuncScale` itself or a function,
-    (function, function) tuple, or `~matplotlib.scale.ScaleBase` instance used
-    to *generate* a `~proplot.scale.FuncScale` (see
-    `~proplot.scale.FuncScale` for details).
+    (function, function) tuple, or an axis scale specification interpreted
+    by the `~proplot.constructor.Scale` constructor function, any of which will
+    be used to build a `~proplot.scale.FuncScale` and applied to the dual axis
+    (see `~proplot.scale.FuncScale` for details).
 {args} : optional
     Prepended with ``'{x}'`` and passed to `Axes.format`.
 """

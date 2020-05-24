@@ -523,9 +523,8 @@ ax.format(
     xformatter='null', ylabel='pressure (hPa)',
     ylim=(1000, 10), xlocator=[], ycolor=c1, gridcolor=c1
 )
-scale = plot.Scale('height')
 ax.dualy(
-    scale, label='height (km)', ticks=2.5, color=c2, gridcolor=c2, grid=True
+    'height', label='height (km)', ticks=2.5, color=c2, gridcolor=c2, grid=True
 )
 
 # Height as the linear scale, pressure on opposite axis (scale height 7km)
@@ -534,9 +533,8 @@ ax.format(
     xformatter='null', ylabel='height (km)', ylim=(0, 20), xlocator='null',
     grid=True, gridcolor=c2, ycolor=c2
 )
-scale = plot.Scale('pressure')
 ax.dualy(
-    scale, label='pressure (hPa)', locator=100, color=c1, gridcolor=c1, grid=True,
+    'pressure', label='pressure (hPa)', locator=100, color=c1, gridcolor=c1, grid=True,
 )
 plot.rc.reset()
 
@@ -557,13 +555,12 @@ ax.fill_between([cutoff - 0.03, cutoff + 0.03], 0, 1, color=c2, alpha=0.3)
 ax.plot(x, response, color=c1, lw=2)
 
 # Add inverse scale to top
-scale = plot.Scale('inverse')
 ax.format(
     xlabel='wavenumber (days$^{-1}$)', ylabel='response', grid=False,
     title='Imaginary response function',
     suptitle='Duplicate axes with wavenumber and period',
 )
 ax = ax.dualx(
-    scale, locator='log', locator_kw={'subs': (1, 2, 5)}, label='period (days)'
+    'inverse', locator='log', locator_kw={'subs': (1, 2, 5)}, label='period (days)'
 )
 plot.rc.reset()
