@@ -1202,8 +1202,10 @@ class Figure(mfigure.Figure):
         return ax.legend(*args, loc='fill', **kwargs)
 
     def save(self, filename, **kwargs):
-        # Alias for `~Figure.savefig` because ``fig.savefig`` is redundant.
-        # TODO: Concatenate docstrings.
+        """
+        Alias for `~matplotlib.figure.Figure.savefig`. User paths are
+        expanded with `os.path.expanduser`.
+        """
         return self.savefig(filename, **kwargs)
 
     def savefig(self, filename, **kwargs):
