@@ -307,6 +307,7 @@ optional
         # of that scale. If the parent axis scale is linear, use the funcscale
         # defaults, which can inherit defaults.
         super().__init__()
+        inherit_scale = None  # scale for inheriting properties
         if callable(arg):
             forward = inverse = arg
         elif np.iterable(arg) and len(arg) == 2 and all(map(callable, arg)):
@@ -314,13 +315,13 @@ optional
         else:
             from .constructor import Scale
             try:
-                scale = Scale(arg)
+                inherit_scale = Scale(arg)
             except ValueError:
                 raise ValueError(
                     'Input should be a function, 2-tuple of forward and and inverse '
                     f'functions, or an axis scale specification, not {arg!r}.'
                 )
-            trans = scale.get_transform()
+            trans = inherit_scale.get_transform()
             forward = trans.transform
             inverse = trans.inverted().transform
 
@@ -364,7 +365,7 @@ optional
         # Try to borrow locators and formatters
         # WARNING: Using the same locator on multiple axes can evidently
         # have unintended side effects! So we make copies.
-        for scale in (arg, parent_scale):
+        for scale in (inherit_scale, parent_scale):
             if not isinstance(scale, _Scale):
                 continue
             if isinstance(scale, mscale.LinearScale):

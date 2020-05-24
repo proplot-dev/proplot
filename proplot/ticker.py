@@ -35,11 +35,12 @@ docstring.snippets['formatter.params'] = """
 zerotrim : bool, optional
     Whether to trim trailing zeros. Default is :rc:`formatter.zerotrim`.
 tickrange : (float, float), optional
-    Range within which major tick marks are labelled. Default is ``(-np.inf, np.inf)``.
+    Range within which major tick marks are labelled. Default is
+    ``(-np.inf, np.inf)``.
 wraprange : (float, float), optional
     Range outside of which tick values are wrapped. For example, ``(0, 2)``
-    will format a value of ``2.5`` as ``0.5``, and ``(-180, 180)`` will format
-    a value of ``200`` as ``-180 + 20 == -160``.
+    will format a value of ``2.5`` as ``0.5``, and ``(-180, 180)`` will
+    format a value of ``200`` as ``-180 + 20 == -160``.
 prefix, suffix : str, optional
     Prefix and suffix for all tick strings.
 negpos : str, optional
