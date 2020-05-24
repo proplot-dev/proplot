@@ -472,7 +472,7 @@ _rc_proplot = {
         'decimals for gridline labels on `~proplot.axes.CartopyAxes`.'
     ),
     'grid.pad': (
-        5,  # use twice cartopy default
+        5,
         'Padding in points between map boundary edge and longitude and '
         'latitude labels for `~proplot.axes.GeoAxes`.'
     ),

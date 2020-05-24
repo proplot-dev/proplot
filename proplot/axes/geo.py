@@ -494,7 +494,7 @@ optional
             # Update formatters
             loninline = _not_none(loninline, rc.get('grid.loninline', context=True))
             latinline = _not_none(latinline, rc.get('grid.latinline', context=True))
-            labelpad = _not_none(labelpad, rc.get('grid.labelpad', context=True))
+            labelpad = _not_none(labelpad, rc.get('grid.pad', context=True))
             rotatelabels = _not_none(
                 rotatelabels, rc.get('grid.rotatelabels', context=True)
             )
