@@ -24,6 +24,7 @@ GRIDBELOW = 'line'
 GRIDCOLOR = 'black'
 GRIDRATIO = 0.5  # differentiated from major by half size reduction
 GRIDSTYLE = '-'
+LABELPAD = 4.0  # default is 4.0, previously was 3.0
 LABELSIZE = 'medium'
 LINEWIDTH = 0.6
 MARGIN = 0.05
@@ -34,6 +35,7 @@ TICKLENRATIO = 0.5  # differentiated from major by half length reduction
 TICKMINOR = True
 TICKPAD = 2.0
 TICKRATIO = 0.8  # very slight width reduction
+TITLEPAD = 5.0  # default is 6.0, previously was 3.0
 TITLESIZE = 'med-large'
 ZLINES = 2  # default zorder for lines
 ZPATCHES = 1
@@ -82,11 +84,11 @@ _rc_matplotlib_default = {
     'axes.formatter.use_mathtext': MATHTEXT,
     'axes.grid': True,  # enable lightweight transparent grid by default
     'axes.grid.which': 'major',
-    'axes.labelpad': 3.0,  # more compact
+    'axes.labelpad': LABELPAD,  # more compact
     'axes.labelsize': LABELSIZE,
     'axes.labelweight': 'normal',
     'axes.linewidth': LINEWIDTH,
-    'axes.titlepad': 3.0,  # more compact
+    'axes.titlepad': TITLEPAD,  # more compact
     'axes.titlesize': TITLESIZE,
     'axes.titleweight': 'normal',
     'axes.xmargin': MARGIN,
@@ -850,9 +852,9 @@ _rc_proplot = {
         'table <title_table>`.'
     ),
     'title.pad': (
-        3.0,
-        'Padding between the axes and in arbitrary units. '
-        'Alias for :rcraw:`axes.titlepad`.'
+        TITLEPAD,
+        'Padding between axes and outer titles or a-b-c labels '
+        'in arbitrary units. Alias for :rcraw:`axes.titlepad`.'
     ),
     'title.size': (
         TITLESIZE,

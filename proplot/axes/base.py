@@ -658,7 +658,7 @@ class Axes(maxes.Axes):
     def _update_title_position(self, renderer):
         """
         Update the position of proplot inset titles and builtin matplotlib
-        titles.
+        titles. This is called by matplotlib at drawtime.
         """
         # Custom inset titles
         width, height = self.get_size_inches()
@@ -672,20 +672,18 @@ class Axes(maxes.Axes):
                 loc = self._abc_loc
                 if loc in ('left', 'right', 'center'):
                     continue
+            pad = rc['axes.titlepad'] / (72 * width)
             if loc in ('upper center', 'lower center'):
                 x = 0.5
             elif loc in ('upper left', 'lower left'):
-                pad = rc['axes.titlepad'] / (72 * width)
-                x = 1.5 * pad
+                x = pad
             elif loc in ('upper right', 'lower right'):
-                pad = rc['axes.titlepad'] / (72 * width)
-                x = 1 - 1.5 * pad
+                x = 1 - pad
+            pad = rc['axes.titlepad'] / (72 * height)
             if loc in ('upper left', 'upper right', 'upper center'):
-                pad = rc['axes.titlepad'] / (72 * height)
-                y = 1 - 1.5 * pad
+                y = 1 - pad
             elif loc in ('lower left', 'lower right', 'lower center'):
-                pad = rc['axes.titlepad'] / (72 * height)
-                y = 1.5 * pad
+                y = pad
             obj.set_position((x, y))
 
         # Push title above tick marks, since builtin algorithm used to offset
