@@ -1038,10 +1038,8 @@ class CartesianAxes(base.Axes):
                     kw['pad'] = 1.0
                 if ticklabeldir == 'in':  # put tick labels inside the plot
                     tickdir = 'in'
-                    kw['pad'] = -1.0 * sum(
-                        rc[f'{x}tick.{key}']
-                        for key in ('major.size', 'major.pad', 'labelsize')
-                    )
+                    kw['pad'] = -rc[f'{x}tick.major.size'] - rc[f'{x}tick.major.pad']
+                    kw['pad'] -= rc._scale_font(rc[f'{x}tick.labelsize'])
                 if tickdir is not None:
                     kw['direction'] = tickdir
                 axis.set_tick_params(which='both', **kw)
