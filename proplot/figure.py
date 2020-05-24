@@ -70,12 +70,6 @@ def _canvas_preprocessor(canvas, method):
         # just do the tight layout adjustments and skip resizing.
         resize = rc['backend'] != 'nbAgg'
 
-        # When re-generating inline figures, the tight layout algorithm can get
-        # figure size *or* spacing wrong unless we force additional draw! Seems to
-        # have no adverse effects when calling savefig.
-        if method == 'print_figure':
-            self.draw()
-
         # Bail out if we are already pre-processing
         # NOTE: The _is_autoresizing check necessary when inserting new gridspec
         # rows or columns with the qt backend.
