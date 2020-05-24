@@ -66,26 +66,15 @@ def _canvas_preprocessor(canvas, method):
         fig = self.figure  # update even if not stale! needed after saves
         func = getattr(type(self), method)  # the original method
 
-        # *Impossible* to get notebook backend to work with auto resizing so we
-        # just do the tight layout adjustments and skip resizing.
-        resize = rc['backend'] != 'nbAgg'
-
-        # When re-generating inline figures, the tight layout algorithm can get
-        # figure size *or* spacing wrong unless we force additional draw! Seems to
-        # have no adverse effects when calling savefig.
-        if method == 'print_figure':
-            self.draw()
-
         # Bail out if we are already pre-processing
         # NOTE: The _is_autoresizing check necessary when inserting new gridspec
         # rows or columns with the qt backend.
         # NOTE: Return value for macosx _draw is the renderer, for qt draw is
         # nothing, and for print_figure is some figure object, but this block
         # has never been invoked when calling print_figure.
-        renderer = fig._get_renderer()  # any renderer will do for now
         if fig._is_autoresizing or fig._is_preprocessing:
             if method == '_draw':  # macosx backend
-                return renderer
+                return fig._get_renderer()
             else:
                 return
 
@@ -102,23 +91,7 @@ def _canvas_preprocessor(canvas, method):
         rc_context = rc.context({'mathtext.fallback_to_cm': fallback})
         fig_context = fig._context_preprocessing(cache=(method != 'print_figure'))
         with rc_context, fig_context:
-            # Add legends and colorbars
-            for ax in fig._iter_axes(hidden=False, children=True):
-                if isinstance(ax, paxes.Axes):
-                    ax._draw_auto_legends_colorbars()  # may insert panels:
-
-            # Aspect ratio adjustment
-            fig._update_geometry_from_aspect(resize=resize)  # resizes figure
-
-            # Tight layout
-            if fig._auto_tight:
-                fig._update_geometry_from_tight_layout(renderer, resize=resize)
-
-            # Align labels
-            fig._align_axis_labels(True)
-            fig._align_subplot_super_labels(renderer)
-
-            # Call main function
+            fig.auto_layout()
             result = func(self, *args, **kwargs)
         return result
 
@@ -462,7 +435,7 @@ class Figure(mfigure.Figure):
         """
         # TODO: Ensure this is robust to complex panels and shared axes
         # NOTE: Need to turn off aligned labels before
-        # _update_geometry_from_tight_layout
+        # _update_geometry_from_spacing
         # call, so cannot put this inside Axes draw
         xaxs_updated = set()
         for ax in self._axes_main:
@@ -646,14 +619,15 @@ class Figure(mfigure.Figure):
             kwargs['_cachedRenderer'] = None  # __exit__ will restore previous value
         return _state_context(self, _is_preprocessing=True, **kwargs)
 
-    def _fix_figure_dimensions(self, subplots_kw):
+    def _draw_auto_legends_colorbars(self):
         """
-        Fix the figure geometry.
+        Draw legends and colorbars requested via plotting commands. Drawing is
+        deferred so that successive calls to the plotting commands can successively
+        add entries to legends and colorbars in particular locations.
         """
-        width, height = self.get_size_inches()
-        subplots_kw = subplots_kw.copy()
-        subplots_kw.update(width=width, height=height)
-        return subplots_kw
+        for ax in self._iter_axes(hidden=False, children=True):
+            if isinstance(ax, paxes.Axes):
+                ax._draw_auto_legends_colorbars()  # may insert panels
 
     def _get_align_coord(self, side, axs):
         """
@@ -871,6 +845,25 @@ class Figure(mfigure.Figure):
             if kwargs:
                 obj.update(kwargs)
 
+    def _update_geometry(self, resize=True):
+        """
+        Update the figure geometry based on the subplots keyword arguments.
+        """
+        subplots_kw = self._subplots_kw
+        width, height = self.get_size_inches()
+        if not resize:
+            subplots_kw = subplots_kw.copy()
+            subplots_kw.update(width=width, height=height)
+        figsize, gridspec_kw, _ = pgridspec._calc_geometry(**subplots_kw)
+        self._gridspec_main.update(**gridspec_kw)
+        # Resize the figure
+        # NOTE: Critical for qt backend to only do this if the figure size
+        # has changed. Otherwise triggers recursive draws (???). Tried avoiding
+        # this with additional context blocks in set_size_inches but could not
+        # find consistent solution. For some reason *this* works consistently.
+        if not np.isclose(width, figsize[0]) and not np.isclose(height, figsize[1]):
+            self.set_size_inches(figsize, auto=True)
+
     def _update_geometry_from_aspect(self, resize=True):
         """
         Adjust the average aspect ratio used for gridspec calculations.
@@ -904,14 +897,9 @@ class Figure(mfigure.Figure):
 
         # Apply new aspect
         subplots_kw['aspect'] = aspect
-        if not resize:
-            subplots_kw = self._fix_figure_dimensions(subplots_kw)
-        figsize, gridspec_kw, _ = pgridspec._calc_geometry(**subplots_kw)
-        self._gridspec_main.update(**gridspec_kw)
-        if resize:
-            self.set_size_inches(figsize, auto=True)
+        self._update_geometry(resize=resize)
 
-    def _update_geometry_from_tight_layout(self, renderer, resize=True):
+    def _update_geometry_from_spacing(self, renderer, resize=True):
         """
         Apply tight layout scaling that permits flexible figure
         dimensions and preserves panel widths and subplot aspect ratios.
@@ -1033,24 +1021,70 @@ class Figure(mfigure.Figure):
 
         # Apply new spacing
         subplots_kw.update({'wspace': spaces[0], 'hspace': spaces[1]})
-        if not resize:
-            subplots_kw = self._fix_figure_dimensions(subplots_kw)
-        figsize, gridspec_kw, _ = pgridspec._calc_geometry(**subplots_kw)
-        self._gridspec_main.update(**gridspec_kw)
-        if resize:
-            self.set_size_inches(figsize, auto=True)
+        self._update_geometry(resize=resize)
 
     def add_subplot(self, *args, **kwargs):
-        """
-        Issues warning for new users that try to call
-        `~matplotlib.figure.Figure.add_subplot` manually.
-        """
+        # Issue warning for new users that try to call
+        # `~matplotlib.figure.Figure.add_subplot` manually.
         if not self._authorized_add_subplot:
             warnings._warn_proplot(
                 'Using "fig.add_subplot()" with ProPlot figures may result in '
                 'unexpected behavior. Please use "proplot.subplots()" instead.'
             )
         return super().add_subplot(*args, **kwargs)
+
+    def auto_layout(self, renderer=None, resize=None, aspect=None, tight=None):
+        """
+        Trigger proplot's automatic figure size and tight layout algorithm. This
+        is triggered automatically when the figure is drawn but is also documented
+        here for pedagogical purposes.
+
+        Parameters
+        ----------
+        renderer : `~matplotlib.backend_bases.RendererBase`, optional
+            The renderer. If ``None`` a default renderer will be produced.
+        resize : bool, optional
+            If ``False``, the current figure dimensions are fixed and automatic
+            figure resizing is disabled. This is set to ``False`` if the current
+            backend is the `interactive ipython notebook backend \
+<https://ipython.readthedocs.io/en/stable/interactive/plotting.html#id1>`__,
+            which cannot handle automatic resizing. By default, the figure size may
+            change unless both `width` and `height` or `figsize` were passed
+            to `~proplot.ui.subplots`, `~matplotlib.figure.Figure.set_size_inches`
+            was called by the user at any point, or the user manually resized the
+            figure window with an interactive backend.
+        aspect : bool, optional
+            Whether to make figure size adjustments based on the aspect ratios of
+            subplots. By default, this is ``True``.
+        tight : bool, optional
+            Whether to make figure size adjustments and gridspec spacing adjustments
+            to produce a "tight layout". By default, this takes on the value of
+            `tight` passed to `Figure`.
+        """
+        # *Impossible* to get notebook backend to work with auto resizing so we
+        # just do the tight layout adjustments and skip resizing.
+        renderer = self._get_renderer()
+        if aspect is None:
+            aspect = True
+        if tight is None:
+            tight = self._auto_tight
+        if resize is None:
+            resize = rc['backend'] != 'nbAgg'
+
+        # Draw objects that will affect tight layout
+        self._draw_auto_legends_colorbars()
+
+        # Aspect ratio adjustment
+        if aspect:
+            self._update_geometry_from_aspect(resize=resize)  # resizes figure
+
+        # Tight layout
+        if tight:
+            self._update_geometry_from_spacing(renderer, resize=resize)
+
+        # Align labels after all is said and done
+        self._align_axis_labels(True)
+        self._align_subplot_super_labels(renderer)
 
     def colorbar(
         self, *args,
@@ -1121,23 +1155,6 @@ class Figure(mfigure.Figure):
             row=row, col=col, rows=rows, cols=cols
         )
         return ax.colorbar(*args, loc='fill', **kwargs)
-
-    def draw(self, renderer):
-        # Certain backends *still* have issues with the tight layout
-        # algorithm e.g. due to opening windows in *tabs*. Have not found way
-        # to intervene in the FigureCanvas. For this reason we *also* apply
-        # the algorithm inside Figure.draw in the same way that matplotlib
-        # applies its tight layout algorithm. So far we just do this for Qt*
-        # and MacOSX; corrections are generally *small* but notable!
-        if not self.get_visible():
-            return
-        if self._auto_tight and (
-            rc['backend'] == 'MacOSX' or rc['backend'][:2] == 'Qt'
-        ):
-            self._update_geometry_from_tight_layout(renderer, resize=False)
-            self._align_axis_labels(True)  # if spaces changed need to realign
-            self._align_subplot_super_labels(renderer)
-        return super().draw(renderer)
 
     def legend(
         self, *args,
