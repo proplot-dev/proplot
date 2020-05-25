@@ -208,6 +208,7 @@ class Axes(maxes.Axes):
         self.xaxis.isDefault_minloc = self.yaxis.isDefault_minloc = True
 
         # Properties
+        self._auto_format = None  # manipulated by wrapper functions
         self._abc_loc = None
         self._abc_text = None
         self._abc_border_kwargs = {}  # abs border properties
@@ -1793,9 +1794,9 @@ optional
     boxplot = _boxplot_wrapper(_standardize_1d(_cycle_changer(
         maxes.Axes.boxplot
     )))
-    violinplot = _violinplot_wrapper(_standardize_1d(_indicate_error(
-        _cycle_changer(maxes.Axes.violinplot)
-    )))
+    violinplot = _violinplot_wrapper(_standardize_1d(_indicate_error(_cycle_changer(
+        maxes.Axes.violinplot
+    ))))
     fill_between = _fill_between_wrapper(_standardize_1d(_cycle_changer(
         maxes.Axes.fill_between
     )))

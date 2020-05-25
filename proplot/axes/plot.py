@@ -56,6 +56,15 @@ __all__ = [
     'vlines_wrapper',
 ]
 
+docstring.snippets['standardize.autoformat'] = """
+autoformat : bool, optional
+    Whether *x* axis labels, *y* axis labels, axis formatters, axes titles,
+    colorbar labels, and legend labels are automatically configured when
+    a `~pandas.Series`, `~pandas.DataFrame` or `~xarray.DataArray` is passed
+    to the plotting command. Default is the figure-wide
+    `proplot.figure.Figure.autoformat` setting.
+"""
+
 docstring.snippets['axes.cmap_changer'] = """
 cmap : colormap spec, optional
     The colormap specifer, passed to the `~proplot.constructor.Colormap`
@@ -380,7 +389,8 @@ def _axis_labels_title(data, axis=None, units=True):
     return data, str(label).strip()
 
 
-def standardize_1d(self, func, *args, **kwargs):
+@docstring.add_snippets
+def standardize_1d(self, func, *args, autoformat=None, **kwargs):
     """
     Interpret positional arguments for the "1D" plotting methods so usage is
     consistent. This also optionally modifies the x axis label, y axis label,
@@ -397,17 +407,22 @@ def standardize_1d(self, func, *args, **kwargs):
       try to infer them from the metadata. Otherwise,
       ``np.arange(0, data.shape[0])`` is used.
 
-   See also
-   --------
-   cycle_changer
+    Parameters
+    ----------
+    %(standardize.autoformat)s
 
-   Note
-   ----
-   This function wraps {methods}
-   """
+    See also
+    --------
+    cycle_changer
+
+    Note
+    ----
+    This function wraps {methods}
+    """
     # Sanitize input
     # TODO: Add exceptions for methods other than 'hist'?
     name = func.__name__
+    autoformat = _not_none(autoformat, self.figure._auto_format)
     _load_objects()
     if not args:
         return func(self, *args, **kwargs)
@@ -466,7 +481,7 @@ def standardize_1d(self, func, *args, **kwargs):
             kwargs['positions'] = xi
 
         # Next handle labels if 'autoformat' is on
-        if self.figure._auto_format:
+        if autoformat:
             # Ylabel
             y, label = _axis_labels_title(y)
             if label:  # for histogram, this label is used for *x* coordinates
@@ -495,13 +510,14 @@ def standardize_1d(self, func, *args, **kwargs):
         xmin, xmax = self.projection.lonmin, self.projection.lonmax
         for y in ys:
             # Ensure data is monotonic and falls within map bounds
-            ix, iy = _enforce_bounds(*_standardize_latlon(x, y), xmin, xmax)
+            ix, iy = _enforce_bounds(*_fix_latlon(x, y), xmin, xmax)
             iys.append(iy)
         x, ys = ix, iys
 
     # WARNING: For some functions, e.g. boxplot and violinplot, we *require*
     # cycle_changer is also applied so it can strip 'x' input.
-    return func(self, x, *ys, *args, **kwargs)
+    with _state_context(self, _auto_format=autoformat):
+        return func(self, x, *ys, *args, **kwargs)
 
 
 def _enforce_bounds(x, y, xmin, xmax):
@@ -554,7 +570,7 @@ def _interp_poles(y, Z):
     return y, Z
 
 
-def _standardize_latlon(x, y):
+def _fix_latlon(x, y):
     """
     Ensure longitudes are monotonic and make `~numpy.ndarray` copies so the
     contents can be modified. Ignores 2D coordinate arrays.
@@ -576,7 +592,10 @@ def _standardize_latlon(x, y):
     return x, y
 
 
-def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
+@docstring.add_snippets
+def standardize_2d(
+    self, func, *args, autoformat=None, order='C', globe=False, **kwargs
+):
     """
     Interpret positional arguments for the "2D" plotting methods so usage is
     consistent. This also optionally modifies the x axis label, y axis label,
@@ -595,6 +614,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
 
     Parameters
     ----------
+    %(standardize.autoformat)s
     order : {{'C', 'F'}}, optional
         If ``'C'``, arrays should be shaped as ``(y, x)``. If ``'F'``, arrays
         should be shaped as ``(x, y)``. Default is ``'C'``.
@@ -621,6 +641,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
     """
     # Sanitize input
     name = func.__name__
+    autoformat = _not_none(autoformat, self.figure._auto_format)
     _load_objects()
     if not args:
         return func(self, *args, **kwargs)
@@ -707,13 +728,16 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
             kw['yminorlocator'] = mticker.NullLocator()
 
         # Handle labels if 'autoformat' is on
-        if self.figure._auto_format:
+        if autoformat:
             for key, xy in zip(('xlabel', 'ylabel'), (x, y)):
                 _, label = _axis_labels_title(xy)
                 if label:
                     kw[key] = label
-                if len(xy) > 1 and all(isinstance(xy, Number)
-                                       for xy in xy[:2]) and xy[1] < xy[0]:
+                if (
+                    len(xy) > 1
+                    and all(isinstance(xy, Number) for xy in xy[:2])
+                    and xy[1] < xy[0]
+                ):
                     kw[key[0] + 'reverse'] = True
     if xi is not None:
         x = xi
@@ -721,7 +745,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
         y = yi
 
     # Handle figure titles
-    if self.figure._auto_format:
+    if autoformat:
         _, colorbar_label = _axis_labels_title(Zs[0], units=True)
         _, title = _axis_labels_title(Zs[0], units=False)
         if title:
@@ -796,7 +820,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
         getattr(self, 'name', '') == 'cartopy'
         and isinstance(kwargs.get('transform', None), PlateCarree)
     ):
-        x, y = _standardize_latlon(x, y)
+        x, y = _fix_latlon(x, y)
         ix, iZs = x, []
         for Z in Zs:
             if globe and x.ndim == 1 and y.ndim == 1:
@@ -805,7 +829,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
 
                 # Fix seams by ensuring circular coverage. Unlike basemap,
                 # cartopy can plot across map edges.
-                if (x[0] % 360) != ((x[-1] + 360) % 360):
+                if x[0] % 360 != (x[-1] + 360) % 360:
                     ix = ma.concatenate((x, [x[0] + 360]))
                     Z = ma.concatenate((Z, Z[:, :1]), axis=1)
             iZs.append(Z)
@@ -815,7 +839,7 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
     elif getattr(self, 'name', '') == 'basemap' and kwargs.get('latlon', None):
         # Fix grid
         xmin, xmax = self.projection.lonmin, self.projection.lonmax
-        x, y = _standardize_latlon(x, y)
+        x, y = _fix_latlon(x, y)
         ix, iZs = x, []
         for Z in Zs:
             # Ensure data is within map bounds
@@ -868,7 +892,8 @@ def standardize_2d(self, func, *args, order='C', globe=False, **kwargs):
     # was stripped by globe=True.
     colorbar_kw = kwargs.pop('colorbar_kw', None) or {}
     colorbar_kw.setdefault('label', colorbar_label)
-    return func(self, x, y, *Zs, colorbar_kw=colorbar_kw, **kwargs)
+    with _state_context(self, _auto_format=autoformat):
+        return func(self, x, y, *Zs, colorbar_kw=colorbar_kw, **kwargs)
 
 
 def _get_error_data(
@@ -2184,6 +2209,7 @@ def cycle_changer(
     # NOTE: Requires standardize_1d wrapper before reaching this. Also note
     # that the 'x' coordinates are sometimes ignored below.
     name = func.__name__
+    autoformat = self._auto_format  # possibly manipulated by standardize_[12]d
     if not args:
         return func(self, *args, **kwargs)
     x, y, *args = args
@@ -2265,19 +2291,36 @@ def cycle_changer(
             if key in prop_keys and prop is None:  # if key in cycler and property unset
                 apply_from_cycler.add(key)
 
-    # Handle legend labels and
+    # Handle legend labels. Several scenarios:
+    # 1. Always prefer input labels
+    # 2. Always add labels if this is a *named* dimension.
+    # 3. Even if not *named* dimension add labels if labels are string
     # WARNING: Most methods that accept 2D arrays use columns of data, but when
     # pandas DataFrame passed to hist, boxplot, or violinplot, rows of data
     # assumed! This is fixed in parse_1d by converting to values.
+    y1 = ys[0]
     ncols = 1
     labels = _not_none(values=values, labels=labels, label=label)
+    colorbar_legend_label = None  # for colorbar or legend
     if name in ('pie', 'boxplot', 'violinplot'):
         if labels is not None:
-            kwargs['labels'] = labels
+            kwargs['labels'] = labels  # error raised down the line
     else:
+        # Get column count and sanitize labels
         ncols = 1 if y.ndim == 1 else y.shape[1]
-        if labels is None or isinstance(labels, str):
+        if not np.iterable(labels) or isinstance(labels, str):
             labels = [labels] * ncols
+        if len(labels) != ncols:
+            raise ValueError(
+                f'Got {ncols} columns in data array, but {len(labels)} labels.'
+            )
+        # Get automatic legend labels and legend title
+        if autoformat:
+            ilabels, colorbar_legend_label = _axis_labels_title(y1, axis=1)
+            ilabels = _to_ndarray(ilabels)  # may be empty!
+            for i, (ilabel, label) in enumerate(zip(ilabels, labels)):
+                if label is None and (colorbar_legend_label or isinstance(ilabel, str)):
+                    labels[i] = ilabel
 
     # Get step size for bar plots
     # WARNING: This will fail for non-numeric non-datetime64 singleton
@@ -2301,7 +2344,6 @@ def cycle_changer(
 
     # Plot susccessive columns
     objs = []
-    label_leg_cbar = None  # for colorbar or legend
     for i in range(ncols):
         # Prop cycle properties
         kw = kwargs.copy()
@@ -2318,19 +2360,19 @@ def cycle_changer(
                 kw[key] = value
 
         # Get x coordinates for bar plot
-        x_col, y_first = x, ys[0]  # samples
+        ix = x  # samples
         if name in ('bar',):  # adjust
             if not stacked:
                 offset = width * (i - 0.5 * (ncols - 1))
-                x_col = x + offset
-            elif stacked and y_first.ndim > 1:
+                ix = x + offset
+            elif stacked and y1.ndim > 1:
                 key = 'x' if barh else 'bottom'
-                kw[key] = _to_indexer(y_first)[:, :i].sum(axis=1)
+                kw[key] = _to_indexer(y1)[:, :i].sum(axis=1)
 
         # Get y coordinates and labels
         if name in ('pie', 'boxplot', 'violinplot'):
             # Only ever have one y value, cannot have legend labs
-            ys_col = (y_first,)
+            iys = (y1,)
 
         else:
             # The coordinates
@@ -2338,46 +2380,31 @@ def cycle_changer(
             # argument passed to fill_between. Warning should be issued
             # by fill_between_wrapper in this case.
             if stacked and name in ('fill_between', 'fill_betweenx'):
-                ys_col = tuple(
-                    y_first if y_first.ndim == 1
-                    else _to_indexer(y_first)[:, :ii].sum(axis=1)
+                iys = tuple(
+                    y1 if y1.ndim == 1
+                    else _to_indexer(y1)[:, :ii].sum(axis=1)
                     for ii in (i, i + 1)
                 )
             else:
-                ys_col = tuple(
+                iys = tuple(
                     y_i if y_i.ndim == 1 else _to_indexer(y_i)[:, i]
                     for y_i in ys
                 )
 
-            # Possible legend labels
-            # Several scenarios:
-            # 1. Always prefer input labels
-            # 2. Always add labels if this is a *named* dimension.
-            # 3. Even if not *named* dimension add labels if labels are string
-            if len(labels) != ncols:
-                raise ValueError(
-                    f'Got {ncols} columns in data array, '
-                    f'but {len(labels)} labels.'
-                )
-            label = labels[i]  # input labels
-            labels_cols, label_leg_cbar = _axis_labels_title(y_first, axis=1)
-            labels_cols = _to_ndarray(labels_cols)
-            if label is None and (
-                label_leg_cbar or labels_cols.size and isinstance(labels_cols[i], str)
-            ):
-                label = labels_cols[i]
+            # Add label for artist
+            label = labels[i]
             if label is not None:
                 kw['label'] = label
 
         # Build coordinate arguments
-        x_ys_col = ()
+        ixy = ()
         if barh:  # special case, use kwargs only!
-            kw.update({'bottom': x_col, 'width': ys_col[0]})
+            kw.update({'bottom': ix, 'width': iys[0]})
         elif name in ('pie', 'hist', 'boxplot', 'violinplot'):
-            x_ys_col = ys_col
+            ixy = iys
         else:  # has x-coordinates, and maybe more than one y
-            x_ys_col = (x_col, *ys_col)
-        obj = func(self, *x_ys_col, *args, **kw)
+            ixy = (ix, *iys)
+        obj = func(self, *ixy, *args, **kw)
         if isinstance(obj, (list, tuple)) and len(obj) == 1:
             obj = obj[0]
         objs.append(obj)
@@ -2392,8 +2419,8 @@ def cycle_changer(
         # Add keywords
         if loc != 'fill':
             colorbar_kw.setdefault('loc', loc)
-        if label_leg_cbar:
-            colorbar_kw.setdefault('label', label_leg_cbar)
+        if colorbar_legend_label:
+            colorbar_kw.setdefault('label', colorbar_legend_label)
         self._auto_colorbar[loc][1].update(colorbar_kw)
 
     # Add legend
@@ -2409,8 +2436,8 @@ def cycle_changer(
         # Add keywords
         if loc != 'fill':
             legend_kw.setdefault('loc', loc)
-        if label_leg_cbar:
-            legend_kw.setdefault('label', label_leg_cbar)
+        if colorbar_legend_label:
+            legend_kw.setdefault('label', colorbar_legend_label)
         self._auto_legend[loc][1].update(legend_kw)
 
     # Return
@@ -2745,6 +2772,7 @@ def cmap_changer(
     of the color selections.
     """
     name = func.__name__
+    autoformat = self._auto_format  # possibly manipulated by standardize_[12]d
     if not args:
         return func(self, *args, **kwargs)
 
@@ -2948,7 +2976,8 @@ def cmap_changer(
     # Optionally add colorbar
     if colorbar:
         loc = self._loc_translate(colorbar, 'colorbar', allow_manual=False)
-        if 'label' not in colorbar_kw and self.figure._auto_format:
+        label = colorbar_kw.pop('label', None)
+        if label is None and autoformat:
             _, label = _axis_labels_title(Z_sample)  # last one is data, we assume
             if label:
                 colorbar_kw.setdefault('label', label)
