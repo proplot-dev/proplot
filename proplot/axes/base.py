@@ -722,7 +722,7 @@ class Axes(maxes.Axes):
             )
 
     @staticmethod
-    @warnings._rename_kwargs(mode='rc_mode')
+    @warnings._rename_kwargs('0.6', mode='rc_mode')
     def _parse_format(rc_kw=None, rc_mode=None, **kwargs):
         """
         Separate `~proplot.config.rc` setting name value pairs from

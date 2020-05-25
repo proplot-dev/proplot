@@ -956,7 +956,7 @@ def _deprecate_add_errorbars(func):
     for _rename_kwargs. Use a decorator to avoid call signature pollution.
     """
     @functools.wraps(func)
-    def _wrapper(
+    def wrapper(
         *args,
         bars=None, boxes=None, barstd=None, boxstd=None, barrange=None, boxrange=None,
         **kwargs
@@ -966,9 +966,9 @@ def _deprecate_add_errorbars(func):
         ):
             if b is not None or std is not None or span is not None:
                 warnings._warn_proplot(
-                    f'Keyword args "{prefix}s", "{prefix}std", and "{prefix}range" '
+                    f"Keyword args '{prefix}s', '{prefix}std', and '{prefix}range' "
                     'are deprecated and will be removed in a future version. '
-                    f'Please use "{prefix}stds" or "{prefix}pctiles" instead.'
+                    f"Please use '{prefix}stds' or '{prefix}pctiles' instead."
                 )
             if span is None and b:  # means 'use the default range'
                 span = b
@@ -977,7 +977,7 @@ def _deprecate_add_errorbars(func):
             else:
                 kwargs.setdefault(prefix + 'pctiles', span)
         return func(*args, **kwargs)
-    return _wrapper
+    return wrapper
 
 
 @_deprecate_add_errorbars
@@ -2636,7 +2636,7 @@ def _build_discrete_norm(
     return norm, cmap, levels, ticks
 
 
-@warnings._rename_kwargs(centers='values')
+@warnings._rename_kwargs('0.6', centers='values')
 @docstring.add_snippets
 def cmap_changer(
     self, func, *args, extend='neither',
@@ -3783,13 +3783,13 @@ def _basemap_redirect(func):
     name = func.__name__
 
     @functools.wraps(func)
-    def _wrapper(self, *args, **kwargs):
+    def wrapper(self, *args, **kwargs):
         if getattr(self, 'name', '') == 'basemap':
             return getattr(self.projection, name)(*args, ax=self, **kwargs)
         else:
             return func(self, *args, **kwargs)
-    _wrapper.__doc__ = None
-    return _wrapper
+    wrapper.__doc__ = None
+    return wrapper
 
 
 def _basemap_norecurse(func):
@@ -3801,14 +3801,14 @@ def _basemap_norecurse(func):
     func._called_from_basemap = False
 
     @functools.wraps(func)
-    def _wrapper(self, *args, **kwargs):
+    def wrapper(self, *args, **kwargs):
         if func._called_from_basemap:
             result = getattr(maxes.Axes, name)(self, *args, **kwargs)
         else:
             with _state_context(func, _called_from_basemap=True):
                 result = func(self, *args, **kwargs)
         return result
-    return _wrapper
+    return wrapper
 
 
 def _generate_decorator(driver):
@@ -3827,11 +3827,11 @@ def _generate_decorator(driver):
         # Define wrapper and suppress documentation
         # We only document wrapper functions, not the methods they wrap
         @functools.wraps(func)
-        def _wrapper(self, *args, **kwargs):
+        def wrapper(self, *args, **kwargs):
             return driver(self, func, *args, **kwargs)
         name = func.__name__
         if name not in proplot_methods:
-            _wrapper.__doc__ = None
+            wrapper.__doc__ = None
 
         # List wrapped methods in the driver function docstring
         # Prevents us from having to both explicitly apply decorators in
@@ -3852,7 +3852,7 @@ def _generate_decorator(driver):
                     + methods[-1]
                 )
                 driver.__doc__ = docstring.format(methods=string)
-        return _wrapper
+        return wrapper
     return decorator
 
 

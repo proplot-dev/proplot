@@ -6,7 +6,6 @@ import os
 import numpy as np
 import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
-from numbers import Integral
 from . import axes as paxes
 from . import gridspec as pgridspec
 from .config import rc
@@ -237,12 +236,28 @@ class Figure(mfigure.Figure):
             warnings._warn_proplot('"aligny" has no effect when spany=True.')
         alignx = _not_none(alignx, align, rc['subplots.align'])
         aligny = _not_none(aligny, align, rc['subplots.align'])
-        self.set_alignx(alignx)
-        self.set_aligny(aligny)
-        self.set_sharex(sharex)
-        self.set_sharey(sharey)
-        self.set_spanx(spanx)
-        self.set_spany(spany)
+        if int(sharex) not in range(4):
+            raise ValueError(
+                'Invalid sharing level sharex={value!r}. '
+                'Axis sharing level can be 0 (share nothing), '
+                '1 (hide axis labels), '
+                '2 (share limits and hide axis labels), or '
+                '3 (share limits and hide axis and tick labels).'
+            )
+        if int(sharey) not in range(4):
+            raise ValueError(
+                'Invalid sharing level sharey={sharey!r}. '
+                'Axis sharing level can be 0 (share nothing), '
+                '1 (hide axis labels), '
+                '2 (share limits and hide axis labels), or '
+                '3 (share limits and hide axis and tick labels).'
+            )
+        self._alignx = bool(alignx)
+        self._aligny = bool(aligny)
+        self._sharex = int(sharex)
+        self._sharey = int(sharey)
+        self._spanx = bool(spanx)
+        self._spany = bool(spany)
 
         # Various other attributes
         gridspec_kw = gridspec_kw or {}
@@ -1293,101 +1308,47 @@ class Figure(mfigure.Figure):
         with context():
             super().set_size_inches(width, height, forward=forward)
 
-    def get_alignx(self):
+    @property
+    def alignx(self):
         """
-        Return the *x* axis label alignment mode.
+        The *x* axis label alignment mode.
         """
         return self._alignx
 
-    def get_aligny(self):
+    @property
+    def aligny(self):
         """
-        Return the *y* axis label alignment mode.
+        The *y* axis label alignment mode.
         """
         return self._aligny
 
-    def get_sharex(self):
+    @property
+    def sharex(self):
         """
-        Return the *x* axis sharing level.
+        The *x* axis sharing level.
         """
         return self._sharex
 
-    def get_sharey(self):
+    @property
+    def sharey(self):
         """
-        Return the *y* axis sharing level.
+        The *y* axis sharing level.
         """
         return self._sharey
 
-    def get_spanx(self):
+    @property
+    def spanx(self):
         """
-        Return the *x* axis label spanning mode.
+        The *x* axis label spanning mode.
         """
         return self._spanx
 
-    def get_spany(self):
+    @property
+    def spany(self):
         """
-        Return the *y* axis label spanning mode.
+        The *y* axis label spanning mode.
         """
         return self._spany
-
-    def set_alignx(self, value):
-        """
-        Set the *x* axis label alignment mode.
-        """
-        self.stale = True
-        self._alignx = bool(value)
-
-    def set_aligny(self, value):
-        """
-        Set the *y* axis label alignment mode.
-        """
-        self.stale = True
-        self._aligny = bool(value)
-
-    def set_sharex(self, value):
-        """
-        Set the *x* axis sharing level.
-        """
-        value = int(value)
-        if value not in range(4):
-            raise ValueError(
-                'Invalid sharing level sharex={value!r}. '
-                'Axis sharing level can be 0 (share nothing), '
-                '1 (hide axis labels), '
-                '2 (share limits and hide axis labels), or '
-                '3 (share limits and hide axis and tick labels).'
-            )
-        self.stale = True
-        self._sharex = value
-
-    def set_sharey(self, value):
-        """
-        Set the *y* axis sharing level.
-        """
-        value = int(value)
-        if value not in range(4):
-            raise ValueError(
-                'Invalid sharing level sharey={value!r}. '
-                'Axis sharing level can be 0 (share nothing), '
-                '1 (hide axis labels), '
-                '2 (share limits and hide axis labels), or '
-                '3 (share limits and hide axis and tick labels).'
-            )
-        self.stale = True
-        self._sharey = value
-
-    def set_spanx(self, value):
-        """
-        Set the *x* axis label spanning mode.
-        """
-        self.stale = True
-        self._spanx = bool(value)
-
-    def set_spany(self, value):
-        """
-        Set the *y* axis label spanning mode.
-        """
-        self.stale = True
-        self._spany = bool(value)
 
     @property
     def gridspec(self):
@@ -1405,16 +1366,7 @@ class Figure(mfigure.Figure):
         `~proplot.ui.figure` arguments are applied to this axes, and
         aspect ratio is conserved for this axes in tight layout adjustment.
         """
-        return self._ref
-
-    @ref.setter
-    def ref(self, ref):
-        if not isinstance(ref, Integral) or ref < 1:
-            raise ValueError(
-                f'Invalid axes number {ref!r}. Must be integer >=1.'
-            )
-        self.stale = True
-        self._ref = ref
+        return self._ref_num
 
     def _iter_axes(self, hidden=False, children=False):
         """
@@ -1438,3 +1390,13 @@ class Figure(mfigure.Figure):
             if not hidden and ax._panel_hidden:
                 continue  # ignore hidden panel and its colorbar/legend child
             yield from ax._iter_axes(hidden=hidden, children=children)
+
+    # Deprecations
+    # NOTE: None of these even *worked* after drawing the figure. And not sure
+    # what value (if any) they add even if we do get them to work.
+    get_alignx, set_alignx = warnings._read_only_property('0.6', 'alignx')
+    get_aligny, set_aligny = warnings._read_only_property('0.6', 'aligny')
+    get_sharex, set_sharex = warnings._read_only_property('0.6', 'sharex')
+    get_sharey, set_sharey = warnings._read_only_property('0.6', 'sharey')
+    get_spanx, set_spanx = warnings._read_only_property('0.6', 'spanx')
+    get_spany, set_spany = warnings._read_only_property('0.6', 'spany')

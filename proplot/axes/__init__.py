@@ -10,8 +10,11 @@ from .polar import PolarAxes
 from .geo import GeoAxes  # noqa: F401
 from .geo import BasemapAxes, CartopyAxes
 from ..internals import warnings
-XYAxes = warnings._rename_obj('XYAxes', CartesianAxes)
-ProjAxes = warnings._rename_obj('ProjAxes', GeoAxes)
+XYAxes, ProjAxes = warnings._rename_objs(
+    '0.6',
+    XYAxes=CartesianAxes,
+    ProjAxes=GeoAxes,
+)
 
 import matplotlib.projections as mproj
 mproj.register_projection(CartesianAxes)

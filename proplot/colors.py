@@ -1176,10 +1176,13 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         return cls(name, cdict, **kwargs)
 
     # Rename methods
-    concatenate = warnings._rename_obj('concatenate', append)
-    punched = warnings._rename_obj('punched', cut)
-    truncated = warnings._rename_obj('truncated', truncate)
-    updated = warnings._rename_obj('updated', copy)
+    concatenate, punched, truncated, updated = warnings._rename_objs(
+        '0.6',
+        concatenate=append,
+        punched=cut,
+        truncated=truncate,
+        updated=copy,
+    )
 
 
 class ListedColormap(mcolors.ListedColormap, _Colormap):
@@ -1375,9 +1378,12 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         return cls._from_file(path, warn_on_failure=warn_on_failure)
 
     # Rename methods
-    concatenate = warnings._rename_obj('concatenate', append)
-    truncated = warnings._rename_obj('truncated', truncate)
-    updated = warnings._rename_obj('updated', copy)
+    concatenate, truncated, updated = warnings._rename_objs(
+        '0.6',
+        concatenate=append,
+        truncated=truncate,
+        updated=copy,
+    )
 
 
 class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
@@ -2377,7 +2383,10 @@ if not isinstance(_cmap_database, ColormapDatabase):
     setattr(mcm, _cmap_database_attr, _cmap_database)
 
 # Deprecations
-CmapDict = warnings._rename_obj('CmapDict', ColormapDatabase)
-ColorDict = warnings._rename_obj('ColorDict', ColorDatabase)
-MidpointNorm = warnings._rename_obj('MidpointNorm', DivergingNorm)
-BinNorm = warnings._rename_obj('BinNorm', DiscreteNorm)
+CmapDict, ColorDict, MidpointNorm, BinNorm = warnings._rename_objs(
+    '0.6',
+    CmapDict=ColormapDatabase,
+    ColorDict=ColorDatabase,
+    MidpointNorm=DivergingNorm,
+    BinNorm=DiscreteNorm
+)

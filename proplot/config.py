@@ -1581,5 +1581,8 @@ for cmap in pcolors._cmap_database.values():
         cmap.N = lut
 
 # Deprecated
-inline_backend_fmt = warnings._rename_obj('inline_backend_fmt', config_inline_backend)
-rc_configurator = warnings._rename_obj('RcConfigurator', config_inline_backend)
+inline_backend_fmt, rc_configurator = warnings._rename_objs(
+    '0.6',
+    inline_backend_fmt=config_inline_backend,
+    RcConfigurator=config_inline_backend,
+)

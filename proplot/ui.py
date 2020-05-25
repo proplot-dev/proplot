@@ -525,12 +525,12 @@ class SubplotsContainer(list):
     axes returned by `subplots`. See `~SubplotsContainer.__getattr__`
     and `~SubplotsContainer.__getitem__` for details.
     """
-    def __init__(self, objs, n=1, order='C'):
+    def __init__(self, iterable=None, n=1, order='C'):
         """
         Parameters
         ----------
-        objs : list-like
-            1d iterable of `~proplot.axes.Axes` instances.
+        iterable : list-like
+            1D iterable of `~proplot.axes.Axes` instances.
         n : int, optional
             The length of the fastest-moving dimension, i.e. the number of
             columns when `order` is ``'C'``, and the number of rows when
@@ -540,11 +540,13 @@ class SubplotsContainer(list):
             column-major (Fortran-style) order, respectively. Used to treat
             lists as pseudo-2d arrays.
         """
-        if not all(isinstance(obj, paxes.Axes) for obj in objs):
+        if iterable is None:
+            iterable = []
+        if not all(isinstance(obj, paxes.Axes) for obj in iterable):
             raise ValueError(
-                f'Axes grid must be filled with Axes instances, got {objs!r}.'
+                f'Axes grid must be filled with Axes instances, got {iterable!r}.'
             )
-        super().__init__(objs)
+        super().__init__(iterable)
         self._n = n
         self._order = order
         self._shape = (len(self) // n, n)[::(1 if order == 'C' else -1)]
@@ -704,4 +706,7 @@ class SubplotsContainer(list):
 
 
 # Deprecations
-subplot_grid = warnings._rename_obj('subplot_grid', SubplotsContainer)
+subplot_grid = warnings._rename_objs(
+    '0.6',
+    subplot_grid=SubplotsContainer,
+)

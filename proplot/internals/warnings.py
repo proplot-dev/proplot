@@ -27,56 +27,73 @@ def _warn_proplot(message):
         warnings.warn(message, stacklevel=2)
 
 
-def _rename_obj(old_name, new_obj, version=None):
+def _read_only_property(version, property):
     """
-    Emit a basic deprecation warning after removing or renaming a function,
-    method, or class. Do not document the deprecated object to discourage use.
+    Generate `set_name` and `get_name` methods for property setters and getters,
+    and issue warnings when they are used.
     """
-    new_name = new_obj.__name__
-    version = 'a future version' if version is None else f'version {version}'
-    type_ = 'class' if isinstance(new_obj, type) else 'function'
-
-    def obj(*args, **kwargs):
+    def getter(self):
         _warn_proplot(
-            f'{old_name!r} is deprecated and will be removed in {version}. '
-            f'Please use {new_name!r} instead.',
+            f'get_{property}() was deprecated in {version}. Please use '
+            f'{type(self).__name__}.{property} instead.'
         )
-        return new_obj(*args, **kwargs)  # call function or instantiate class
-    obj.__name__ = old_name
-    obj.__doc__ = f"""
-{type_.title()} {old_name!r} is deprecated and will be removed in {version}.
-Please use {new_name!r} instead.
-"""
-    return obj
+        return getattr(self, '_' + property)
+
+    def setter(self, value):
+        _warn_proplot(
+            f'set_{property}() was deprecated in {version}. The property is '
+            f'now read-only.'
+        )
+        return
+
+    getter.__name__ = f'get_{property}'
+    setter.__name__ = f'set_{property}'
+
+    return getter, setter
 
 
-def _rename_kwargs(version=None, ignore=False, **kwargs_rename):
+def _rename_objs(version, **kwargs):
     """
-    Emit a basic deprecation warning after removing or renaming function
-    keyword arguments. Each key should be an old keyword, and each arguments
-    should be the new keyword or a tuple of new keyword options.
+    Emit a basic deprecation warning after renaming function(s), method(s), or
+    class(es). Do not document the deprecated object to discourage use.
     """
-    version = 'a future version' if version is None else f'version {version}'
+    wrappers = []
+    for old_name, func_or_class in kwargs.items():
+        new_name = func_or_class.__name__
 
+        def wrapper(*args, **kwargs):
+            _warn_proplot(
+                f'{old_name!r} was deprecated in version {version} and will be '
+                f'removed in the next major release. Please use {new_name!r} instead.'
+            )
+            return func_or_class(*args, **kwargs)
+
+        wrapper.__name__ = old_name
+        wrappers.append(wrapper)
+
+    if len(wrappers) == 1:
+        return wrappers[0]
+    else:
+        return tuple(wrappers)
+
+
+def _rename_kwargs(version, **kwargs_rename):
+    """
+    Emit a basic deprecation warning after removing or renaming function keyword
+    arguments. Each key should be an old keyword, and each arguments should be the
+    new keyword or a tuple of new keyword options.
+    """
     def decorator(func_orig):
         @functools.wraps(func_orig)
-        def func(*args, **kwargs):
+        def wrapper(*args, **kwargs):
             for key_old, key_new in kwargs_rename.items():
                 if key_old in kwargs:
-                    if ignore or not isinstance(key_new, str):
-                        del kwargs[key_old]
-                        message = f'Ignoring deprecated keyword arg {key_old!r}.'
-                    else:
-                        kwargs[key_new] = kwargs.pop(key_old)
-                        message = (
-                            f'Keyword arg {key_old!r} is deprecated and will '
-                            f'be removed in {version}.'
-                        )
-                    if isinstance(key_new, str):
-                        alternative = repr(key_new)
-                    else:
-                        alternative = ', '.join(map(repr, key_new))
-                    _warn_proplot(f'{message} Please use {alternative} instead.')
+                    kwargs[key_new] = kwargs.pop(key_old)
+                    _warn_proplot(
+                        f'Keyword arg {key_old!r} was deprecated in {version} and '
+                        'will be removed in the next major release. '
+                        f'Please use {key_new!r} instead.'
+                    )
             return func_orig(*args, **kwargs)
-        return func
+        return wrapper
     return decorator

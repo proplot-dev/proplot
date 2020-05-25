@@ -521,7 +521,7 @@ def to_xyza(color, space='hcl'):
     return (*color, opacity)
 
 
-@warnings._rename_kwargs(units='dest')
+@warnings._rename_kwargs('0.6', units='dest')
 def units(value, dest='in', axes=None, figure=None, width=True):
     """
     Convert values and lists of values between arbitrary physical units. This
@@ -655,5 +655,8 @@ def units(value, dest='in', axes=None, figure=None, width=True):
 
 
 # Deprecations
-shade = warnings._rename_obj('shade', scale_luminance)
-saturate = warnings._rename_obj('saturate', scale_saturation)
+shade, saturate = warnings._rename_objs(
+    '0.6',
+    shade=scale_luminance,
+    saturate=scale_saturation,
+)
