@@ -1351,6 +1351,14 @@ class Figure(mfigure.Figure):
         return self._spany
 
     @property
+    def tight(self):
+        """
+        Whether subplot spacing is determined automatically for spaces that
+        were not explicitly fixed by the user.
+        """
+        return self._auto_tight
+
+    @property
     def gridspec(self):
         """
         The single `~proplot.gridspec.GridSpec` instance used for all subplots
