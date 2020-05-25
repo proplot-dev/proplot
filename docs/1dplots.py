@@ -344,7 +344,7 @@ data = 4 * (state.rand(20) - 0.5)
 ax.bar(data, bottom=-2, width=1, edgecolor='none', negpos=True)
 ax.area(data + 2, y2=2, negpos=True)
 for offset in (-2, 2):
-    ax.axhline(offset, color='k', linewidth=1, linestyle='--')
+    ax.axhline(offset, color='k', linewidth=1)
 ax.format(
     xmargin=0, xlabel='xlabel', ylabel='ylabel', grid=True,
     title='Positive and negative colors demo', titleweight='bold',
