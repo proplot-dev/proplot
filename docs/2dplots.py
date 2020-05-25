@@ -195,6 +195,7 @@ import proplot as plot
 import numpy as np
 
 # Diverging norm
+state = np.random.RandomState(51423)
 data1 = (state.rand(20, 20) - 0.43).cumsum(axis=0)
 data2 = (state.rand(20, 20) - 0.57).cumsum(axis=0)
 fig, axs = plot.subplots(nrows=2, ncols=2, axwidth=2.4, order='F')
