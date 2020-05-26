@@ -802,7 +802,7 @@ class RcConfigurator(object):
         # Update from default settings
         # NOTE: see _remove_blacklisted_style_params bugfix
         if default:
-            rc_matplotlib.update(_get_style_dicts('original', infer=False))
+            rc_matplotlib.update(_get_style_dicts('original', filter=False))
             rc_matplotlib.update(rcsetup._rc_matplotlib_default)
             rc_proplot.update(rcsetup._rc_proplot_default)
             for key, value in rc_proplot.items():
@@ -1122,11 +1122,12 @@ def _get_filtered_dict(rcdict, warn=True):
     return rcdict_filtered
 
 
-def _get_style_dicts(style, infer=False):
+def _get_style_dicts(style, infer=False, filter=True):
     """
     Return a dictionary of settings belonging to the requested style(s). If `infer`
     is ``True``, two dictionaries are returned, where the second contains custom
-    ProPlot settings "inferred" from the matplotlib settings.
+    ProPlot settings "inferred" from the matplotlib settings. If `filter` is ``True``,
+    invalid style parameters like `backend` are filtered out.
     """
     # NOTE: This is adapted from matplotlib source for the following changes:
     # 1. Add 'original' option. Like rcParamsOrig except we also *reload*
@@ -1182,7 +1183,8 @@ def _get_style_dicts(style, infer=False):
                     )
         else:
             raise ValueError(f'Invalid style {style!r}. Must be string or dictionary.')
-        kw = _get_filtered_dict(kw, warn=True)
+        if filter:
+            kw = _get_filtered_dict(kw, warn=True)
         kw_matplotlib.update(kw)
 
     # Infer proplot params from stylesheet params
