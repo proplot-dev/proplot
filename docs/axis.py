@@ -27,11 +27,13 @@
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_locators:
 #
-# Axis tick locations
-# -------------------
+# Tick locations
+# --------------
 #
-# "Axis locators" are used to automatically select sensible tick locations
-# based on the axis data limits. In ProPlot, you can change the axis locator
+# `Tick locators\
+# <https://matplotlib.org/3.2.1/gallery/ticks_and_spines/tick-locators.html>`__
+# are used to automatically select sensible tick locations
+# based on the axis data limits. In ProPlot, you can change the tick locator
 # using the `~proplot.axes.Axes.format` keyword arguments `xlocator`,
 # `ylocator`, `xminorlocator`, and `yminorlocator` (or their aliases,
 # `xticks`, `yticks`, `xminorticks`, and `yminorticks`). This is powered by
@@ -120,11 +122,13 @@ axs[7].format(
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_formatters:
 #
-# Axis tick labels
-# ----------------
+# Tick labels
+# -----------
 #
-# "Axis formatters" are used to convert floating point numbers to
-# nicely-formatted tick labels. In ProPlot, you can change the axis formatter
+# `Tick formatters\
+# <https://matplotlib.org/3.2.1/gallery/ticks_and_spines/tick-formatters.html>`__
+# are used to convert floating point numbers to
+# nicely-formatted tick labels. In ProPlot, you can change the tick formatter
 # using the `~proplot.axes.Axes.format` keyword arguments `xformatter` and
 # `yformatter`  (or their aliases, `xticklabels` and `yticklabels`). This is
 # powered by the `~proplot.constructor.Formatter` constructor function.
@@ -136,14 +140,14 @@ axs[7].format(
 # to apply custom tick labels with `~matplotlib.ticker.FixedFormatter` (just
 # like `~matplotlib.axes.Axes.set_xticklabels` and
 # `~matplotlib.axes.Axes.set_yticklabels`). They can also be used
-# to apply one of ProPlot's new axis formatters -- for example,
+# to apply one of ProPlot's new tick formatters -- for example,
 # ``xformatter='deglat'`` to label ticks as the geographic latitude,
 # ``xformatter='pi'`` to label ticks as fractions of :math:`\pi`,
 # or ``xformatter='sci'`` to label ticks with scientific notation.
 # See `~proplot.axes.CartesianAxes.format` and
 # `~proplot.constructor.Formatter` for details.
 #
-# ProPlot also changes the default axis formatter to
+# ProPlot also changes the default tick formatter to
 # `~proplot.ticker.AutoFormatter`. This class trims trailing zeros by
 # default, can be used to *omit tick labels* outside of some data range, and
 # can add arbitrary prefixes and suffixes to each label. See
@@ -237,11 +241,11 @@ plot.rc.reset()
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_datetime:
 #
-# Datetime axes
-# -------------
+# Datetime ticks
+# --------------
 #
 # ProPlot can also be used to customize the tick locations and tick label
-# format of "datetime" axes. To draw ticks on some particular time unit, just
+# format of "datetime" ticks. To draw ticks on some particular time unit, just
 # use a unit string (e.g. ``xlocator='month'``). To draw ticks every ``N``
 # time units, just use a (unit, N) tuple (e.g. ``xlocator=('day', 5)``). For
 # `% style formatting
