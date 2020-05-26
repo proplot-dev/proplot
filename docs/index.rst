@@ -8,7 +8,7 @@
 ProPlot
 =======
 
-A `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful,
+A lightweight `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful,
 publication-quality graphics. This project is `published on GitHub
 <https://github.com/lukelbd/proplot>`__.
 
