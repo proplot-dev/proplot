@@ -245,7 +245,7 @@ plot.rc.reset()
 # --------------
 #
 # ProPlot can also be used to customize the tick locations and tick label
-# format of "datetime" ticks. To draw ticks on some particular time unit, just
+# format of "datetime" axes. To draw ticks on some particular time unit, just
 # use a unit string (e.g. ``xlocator='month'``). To draw ticks every ``N``
 # time units, just use a (unit, N) tuple (e.g. ``xlocator=('day', 5)``). For
 # `% style formatting
