@@ -227,7 +227,7 @@ plot.rc.reset()
 # (i.e. Plate Carrée) coordinates the *default* coordinate system for your
 # datasets by passing ``transform=ccrs.PlateCarree()`` to cartopy plotting
 # commands and ``latlon=True`` to basemap plotting commands. And again, basemap
-# plotting commands are invoked from the `proplot.axes.Axes.GeoAxes` rather
+# plotting commands are invoked from the `proplot.axes.GeoAxes` rather
 # than from the `~mpl_toolkits.basemap.Basemap` instance.
 #
 # To ensure 2D plots like `~matplotlib.axes.Axes.contour` cover the entire globe,

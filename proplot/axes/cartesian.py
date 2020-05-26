@@ -336,9 +336,7 @@ class CartesianAxes(base.Axes):
         funcscale = pscale.FuncScale(arg, invert=True, parent_scale=scale)
         child.xaxis._scale = funcscale
         child._update_transScale()
-        funcscale.set_default_locators_and_formatters(
-            child.xaxis, only_if_default=True
-        )
+        funcscale.set_default_locators_and_formatters(child.xaxis, only_if_default=True)
         nlim = list(map(funcscale.functions[1], np.array(olim)))
         if np.sign(np.diff(olim)) != np.sign(np.diff(nlim)):
             nlim = nlim[::-1]  # if function flips limits, so will set_xlim!
@@ -360,9 +358,7 @@ class CartesianAxes(base.Axes):
         funcscale = pscale.FuncScale(arg, invert=True, parent_scale=scale)
         child.yaxis._scale = funcscale
         child._update_transScale()
-        funcscale.set_default_locators_and_formatters(
-            child.yaxis, only_if_default=True
-        )
+        funcscale.set_default_locators_and_formatters(child.yaxis, only_if_default=True)
         nlim = list(map(funcscale.functions[1], np.array(olim)))
         if np.sign(np.diff(olim)) != np.sign(np.diff(nlim)):
             nlim = nlim[::-1]
@@ -627,8 +623,7 @@ class CartesianAxes(base.Axes):
         xticks, yticks : optional
             Aliases for `xlocator`, `ylocator`.
         xlocator_kw, ylocator_kw : dict-like, optional
-            The *x* and *y* axis locator settings. Passed to
-            `~proplot.constructor.Locator`.
+            Keyword arguments passed to the `matplotlib.ticker.Locator` class.
         xminorlocator, yminorlocator : optional
             As for `xlocator`, `ylocator`, but for the minor ticks.
         xminorticks, yminorticks : optional
@@ -643,8 +638,7 @@ class CartesianAxes(base.Axes):
         xticklabels, yticklabels : optional
             Aliases for `xformatter`, `yformatter`.
         xformatter_kw, yformatter_kw : dict-like, optional
-            The *x* and *y* axis formatter settings. Passed to
-            `~proplot.constructor.Formatter`.
+            Keyword arguments passed to the `matplotlib.ticker.Formatter` class.
         xrotation, yrotation : float, optional
             The rotation for *x* and *y* axis tick labels. Default is ``0``
             for normal axes, :rc:`formatter.timerotation` for time

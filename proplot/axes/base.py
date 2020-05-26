@@ -73,9 +73,8 @@ rc_kw : dict, optional
 
 docstring.snippets['axes.patch_kw'] = """
 patch_kw : dict-like, optional
-    Keyword arguments used to update the background patch object. You
-    can use this, for example, to set background hatching with
-    ``patch_kw={'hatch': 'xxx'}``.
+    Keyword arguments used to update the background patch. This can
+    be used e.g. to apply background hatching with ``patch_kw={'hatch': 'xxx'}``.
 """
 
 docstring.snippets['axes.proj'] = """
