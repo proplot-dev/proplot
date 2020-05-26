@@ -12,10 +12,12 @@ from .internals import ic  # noqa: F401
 from .internals import docstring, _dummy_context, _state_context, _not_none
 try:
     import cartopy.crs as ccrs
-    from cartopy.mpl.ticker import LatitudeFormatter, LongitudeFormatter
+    from cartopy.mpl.ticker import (
+        _PlateCarreeFormatter, LatitudeFormatter, LongitudeFormatter
+    )
 except ModuleNotFoundError:
     ccrs = None
-    LatitudeFormatter = LongitudeFormatter = object
+    _PlateCarreeFormatter, LatitudeFormatter = LongitudeFormatter = object
 
 __all__ = [
     'AutoFormatter',
@@ -60,7 +62,7 @@ pos : float, optional
 """
 
 
-class _GeoLocator(mticker.MaxNLocator):
+class _DegreeLocator(mticker.MaxNLocator):
     """
     A locator for determining longitude and latitude gridlines.
     Adapted from cartopy.
@@ -96,7 +98,7 @@ class _GeoLocator(mticker.MaxNLocator):
         return self._raw_ticks(vmin, vmax)  # may call Latitude/LongitudeLocator copies
 
 
-class LongitudeLocator(_GeoLocator):
+class LongitudeLocator(_DegreeLocator):
     """
     A locator for determining longitude gridlines. Adapted from cartopy.
 
@@ -123,7 +125,7 @@ class LongitudeLocator(_GeoLocator):
         return ticks
 
 
-class LatitudeLocator(_GeoLocator):
+class LatitudeLocator(_DegreeLocator):
     """
     A locator for determining latitude gridlines. Adapted from cartopy.
 
@@ -147,7 +149,7 @@ class LatitudeLocator(_GeoLocator):
         return [t for t in ticks if -90 <= t <= 90]
 
 
-class _GeoFormatter(object):
+class _CartopyFormatter(object):
     """
     Mixin class that fixes cartopy formatters.
     """
@@ -168,18 +170,30 @@ class _GeoFormatter(object):
             return super().__call__(value, pos)
 
 
-class _LongitudeFormatter(_GeoFormatter, LongitudeFormatter):
+class _LongitudeFormatter(_CartopyFormatter, LongitudeFormatter):
     """
     Mix longitude formatter with custom formatter.
     """
     pass
 
 
-class _LatitudeFormatter(_GeoFormatter, LatitudeFormatter):
+class _LatitudeFormatter(_CartopyFormatter, LatitudeFormatter):
     """
     Mix latitude formatter with custom formatter.
     """
     pass
+
+
+class _DegreeFormatter(_CartopyFormatter, _PlateCarreeFormatter):
+    """
+    Mix Plate Carrée formatter with custom formatter and add base methods
+    that permit using this as degree-minute-second formatter anywhere.
+    """
+    def _apply_transform(self, value, *args, **kwargs):
+        return value
+
+    def _hemisphere(self, value, *args, **kwargs):
+        return ''
 
 
 class AutoFormatter(mticker.ScalarFormatter):

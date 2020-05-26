@@ -56,47 +56,66 @@
 import proplot as plot
 import numpy as np
 state = np.random.RandomState(51423)
-plot.rc.facecolor = plot.scale_luminance('powder blue', 1.15)
 plot.rc.update(
+    facecolor=plot.scale_luminance('powderblue', 1.15),
     linewidth=1, fontsize=10,
     color='dark blue', suptitlecolor='dark blue',
     titleloc='upper center', titlecolor='dark blue', titleborder=False,
 )
-fig, axs = plot.subplots(nrows=5, axwidth=5, aspect=(8, 1), share=0)
+fig, axs = plot.subplots(nrows=8, axwidth=5, aspect=(8, 1), share=0)
 axs.format(suptitle='Tick locators demo')
 
-# Manual locations
+# Step size for tick locations
 axs[0].format(
     xlim=(0, 200), xminorlocator=10, xlocator=30,
     title='MultipleLocator'
 )
+
+# Specific list of locations
 axs[1].format(
     xlim=(0, 10), xminorlocator=0.1,
     xlocator=[0, 0.3, 0.8, 1.6, 4.4, 8, 8.8, 10],
     title='FixedLocator',
 )
 
-# Approx number of ticks you want, but not exact locations
-axs[3].format(
-    xlim=(1, 10), xlocator=('maxn', 20),
-    title='MaxNLocator',
+# Ticks at numpy.linspace(xmin, xmax, N)
+axs[2].format(
+    xlim=(0, 10), xlocator=('linear', 21),
+    title='LinearLocator',
 )
 
-# Log minor locator, automatically applied for log scale plots
-axs[2].format(
+# Logarithmic locator, used automatically for log scale plots
+axs[3].format(
     xlim=(1, 100), xlocator='log', xminorlocator='logminor',
     title='LogLocator',
 )
 
-# Index locator, only draws ticks where data is plotted
-axs[4].plot(np.arange(10) - 5, state.rand(10), alpha=0)
+# Maximum number of ticks, but at "nice" locations
 axs[4].format(
+    xlim=(1, 7), xlocator=('maxn', 11),
+    title='MaxNLocator',
+)
+
+# Index locator, only draws ticks where data is plotted
+axs[5].plot(np.arange(10) - 5, state.rand(10), alpha=0)
+axs[5].format(
     xlim=(0, 6), ylim=(0, 1), xlocator='index',
     xformatter=[r'$\alpha$', r'$\beta$', r'$\gamma$', r'$\delta$', r'$\epsilon$'],
     title='IndexLocator',
 )
 plot.rc.reset()
 
+# Hide all ticks
+axs[6].format(
+    xlim=(-10, 10), xlocator='null',
+    title='NullLocator',
+)
+
+# Tick locations that cleanly divide 60 minute/60 second intervals
+axs[7].format(
+    xlim=(0, 2), xlocator='dmslon', xformatter='dmslon',
+    title='Degree-Minute-Second Locator (requires cartopy)',
+)
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_formatters:
