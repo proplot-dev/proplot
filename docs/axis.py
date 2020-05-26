@@ -113,7 +113,7 @@ axs[6].format(
 
 # Tick locations that cleanly divide 60 minute/60 second intervals
 axs[7].format(
-    xlim=(0, 2), xlocator='dmslon', xformatter='dmslon',
+    xlim=(0, 2), xlocator='dms', xformatter='dms',
     title='Degree-Minute-Second Locator (requires cartopy)',
 )
 
