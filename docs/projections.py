@@ -36,7 +36,6 @@
 # the key -- for example, ``proj={1: 'name'}``. The default "projection" is
 # always `~proplot.axes.CartesianAxes`.
 
-
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_polar:
 #
@@ -60,10 +59,9 @@ N = 200
 state = np.random.RandomState(51423)
 x = np.linspace(0, 2 * np.pi, N)
 y = 100 * (state.rand(N, 5) - 0.3).cumsum(axis=0) / N
-plot.rc['axes.titlepad'] = '1em'  # default matplotlib offset is incorrect
 fig, axs = plot.subplots([[1, 1, 2, 2], [0, 3, 3, 0]], proj='polar')
 axs.format(
-    suptitle='Polar axes demo', linewidth=1,
+    suptitle='Polar axes demo', linewidth=1, titlepad='1em',
     ticklabelsize=9, rlines=0.5, rlim=(0, 19),
 )
 for i in range(5):
@@ -72,14 +70,15 @@ for i in range(5):
 
 # Standard polar plot
 axs[0].format(
-    title='Normal plot', thetaformatter='pi', rlines=5,
-    rlabelpos=180, color='gray8', tickpad='1em'
+    title='Normal plot', thetaformatter='pi',
+    rlabelpos=225, rlines=plot.arange(5, 30, 5),
+    color='red8', tickpad='1em',
 )
 
 # Sector plot
 axs[1].format(
     title='Sector plot', thetadir=-1, thetalines=90, thetalim=(0, 270), theta0='N',
-    rlim=(0, 22), rlines=5
+    rlim=(0, 22), rlines=plot.arange(5, 30, 5),
 )
 
 # Annular plot
@@ -192,27 +191,18 @@ axs.format(
 # Complex figure with different projections
 import proplot as plot
 fig, axs = plot.subplots(
-    hratios=(1.5, 1, 1, 1, 1.5),
-    basemap={
-        (1, 3, 5, 7, 9): False,  # use cartopy in column 1
-        (2, 4, 6, 8, 10): True,  # use basemap in column 2
-    },
-    proj={
-        (1, 2): 'mill',  # different projection each row
-        (3, 4): 'cyl',
-        (5, 6): 'moll',
-        (7, 8): 'sinu',
-        (9, 10): 'npstere'
-    },
-    ncols=2, nrows=5
+    ncols=2, nrows=3,
+    hratios=(1, 1, 1.4),
+    basemap=(False, True, False, True, False, True),  # cartopy column 1
+    proj=('cyl', 'cyl', 'hammer', 'hammer', 'npstere', 'npstere'),
 )
 axs.format(
     suptitle='Figure with several projections',
-    coast=True, latlines=30, lonlines=60,
+    collabels=['Cartopy projections', 'Basemap projections'],
+    coast=True, latlines=20, lonlines=30,
     lonlabels='b', latlabels='r',  # or lonlabels=True, labels=True, etc.
 )
-axs[-1, :].format(labels=True, lonlines=30)
-axs.format(collabels=['Cartopy projections', 'Basemap projections'])
+axs[0, :].format(latlines=30, lonlines=60, labels=True)
 plot.rc.reset()
 
 
@@ -246,8 +236,7 @@ plot.rc.reset()
 import proplot as plot
 import numpy as np
 
-# Fake data with unusual longitude seam location and
-# without coverage up to longitude seam and poles
+# Fake data with unusual longitude seam location and without coverage over poles
 offset = -40
 lon = plot.arange(offset, 360 + offset - 1, 60)
 lat = plot.arange(-60, 60 + 1, 30)
@@ -264,9 +253,9 @@ for globe in (False, True,):
     axs.format(
         suptitle=f'Geophysical data {string} global coverage',
         collabels=['Cartopy example', 'Basemap example'],
-        rowlabels=['Contourf', 'Pcolor'],
+        rowlabels=['Contourf', 'Pcolormesh'],
         abc=True, abcstyle='a)', abcloc='ul', abcborder=False,
-        land=True, lonlines=90,
+        coast=True, lonlines=90,
     )
     for i, ax in enumerate(axs):
         cmap = ('sunset', 'sunrise')[i % 2]
