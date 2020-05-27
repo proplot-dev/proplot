@@ -167,18 +167,16 @@ physical dimensions of the figure, despite the fact that...
    the aspect ratio must be held fixed for
    :ref:`geographic and polar <ug_proj>` projections and most
    `~matplotlib.axes.Axes.imshow` plots.
-#. ...the physical width and height of the subplot controls the *evident*
+#. ...the physical width and height of the *subplot* controls the "evident"
    thickness of text, lines, and other content plotted inside the subplot.
-   By comparison, the effect of the figure size on the *evident* thickness
-   depends on the number of subplots in the figure.
+   The effect of the figure size on this "evident" thickness depends on the
+   number of subplot tiles in the figure.
 
 Also, while matplotlib has a `tight layout
 <https://matplotlib.org/tutorials/intermediate/tight_layout_guide.html>`__
 algorithm to keep you from having to "tweak" the *spacing*, the algorithm
 cannot apply different amounts of spacing between different subplot row and
-column boundaries. This limitation often results in unnecessary whitespace,
-and can be a major problem when you want to put e.g. a legend on the outside
-of a subplot.
+column boundaries.
 
 .. rubric:: Solution
 
@@ -190,32 +188,25 @@ instead of the figure by passing `axwidth`, `axheight`, and/or `aspect` to
 for the reference subplot is set to ``'equal'``, as with
 :ref:`geographic and polar <ug_proj>` plots and
 `~matplotlib.axes.Axes.imshow` plots, the *imposed* aspect ratio will be used
-instead.  Figure dimensions are constrained as follows:
+instead. The width or height of the figure can also be constrained with
+the `width` and `height` parameters, and the `journal` parameter lets you
+create figures with suitable size for :ref:`various publications <journal_table>`.
 
-* When `axwidth` or `axheight` are specified, the figure dimensions are
-  determined automatically.
-* When `width` is specified, the figure height is determined automatically.
-* When `height` is specified, the figure width is determined automatically.
-* When `width` *and* `height` or `figsize` is specified, the figure
-  dimensions are fixed.
+ProPlot also uses its own "tight layout" algorithm to automatically
+determine the `left`, `right`, `bottom`, `top`, `wspace`, and `hspace`
+`~matplotlib.gridspec.GridSpec` parameters. This algorithm has
+the following advantages:
 
-..
-   Several matplotlib backends require figure dimensions to be fixed. When `~proplot.figure.Figure.draw` changes the figure dimensions, this can "surprise" the backend and cause unexpected behavior. ProPlot fixes this issue for the static inline backend and the Qt popup backend. However, this issue is unfixable the "notebook" inline backend, the "macosx" popup backend, and possibly other untested backends.
-
-ProPlot also uses a custom tight layout algorithm that automatically
-determines the `left`, `right`, `bottom`, `top`, `wspace`, and `hspace`
-`~matplotlib.gridspec.GridSpec` parameters. This algorithm is simpler
-and more accurate for the following reasons:
-
-* The new `~proplot.gridspec.GridSpec` class permits variable spacing between
-  rows and columns. This is critical for putting :ref:`colorbars
-  and legends <ug_cbars_legends>` outside of subplots without "stealing
-  space" from the parent subplot.
-* Figures are restricted to have only *one* `~proplot.gridspec.GridSpec` per
+* Spacing between rows and columns is *variable* thanks to the new
+  `~proplot.gridspec.GridSpec` class. This is critical for putting
+  :ref:`colorbars and legends <ug_cbars_legends>` outside of subplots
+  without "stealing space" from the parent subplot.
+* The "tight layout" is calculated quickly and simply because figures are
+  restricted to have only *one* `~proplot.gridspec.GridSpec` per
   figure. This is done by requiring users to draw all of their subplots at
   once with `~proplot.ui.subplots` (although in a :pr:`future version <50>`,
-  there will be a `~proplot.ui.figure` function that allows users to add
-  subplots one-by-one while retaining the gridspec restriction).
+  there will be a ``proplot.figure`` function that allows users to add
+  subplots one-by-one while retaining the single-gridspec restriction).
 
 See the :ref:`user guide <ug_subplots>` for details.
 
@@ -247,9 +238,9 @@ Eliminating redundancies
 
 .. rubric:: Problem
 
-For many of us, figures with just one subplot are a rarity. We tend to need
+For many academics, figures with just one subplot are a rarity. We tend to need
 multiple subplots for comparing different datasets and illustrating complex
-concepts.  Unfortunately, it is easy to end up with *redundant* figure
+concepts. Unfortunately, it is easy to end up with *redundant* figure
 elements when drawing multiple subplots, namely...
 
 * ...repeated axis tick labels.
@@ -333,9 +324,8 @@ Also, `~proplot.figure.Figure` and `~proplot.axes.Axes` colorbar widths are
 now specified in *physical* units rather than relative units, which makes
 colorbar thickness independent of subplot size and easier to get just right.
 
-There are also several new :ref:`colorbar <ug_cbars>` and
-:ref:`legend <ug_legends>` features described in greater detail in the
-user guide.
+There are also several new :ref:`colorbar <ug_cbars>` and :ref:`legend <ug_legends>`
+features described in the user guide.
 
 
 .. _why_plotting:
@@ -348,8 +338,7 @@ Enhanced plotting methods
 Certain common plotting tasks take a lot of work when using the default
 matplotlib API.  The `seaborn`, `xarray`, and `pandas` packages offer
 improvements, but it would be nice to have this functionality build right
-into matplotlib.  There is also room for improvement of the native matplotlib
-plotting methods that none of these packages address.
+into matplotlib.
 
 ..
    Matplotlib also has some finicky plotting issues
@@ -486,40 +475,37 @@ There are two widely-used engines for plotting geophysical data with
 matplotlib: `cartopy` and `~mpl_toolkits.basemap`.  Using cartopy tends to be
 verbose and involve boilerplate code, while using basemap requires you to use
 plotting commands on a separate `~mpl_toolkits.basemap.Basemap` object rather
-than an axes object.
+than an axes object. They both require separate import statements and extra
+lines of code to configure the projection.
 
 Furthermore, when you use `cartopy` and `~mpl_toolkits.basemap` plotting
 commands, the assumed coordinate system is *map projection* coordinates
-rather than longitude-latitude coordinates. For many users, this choice is
-confusing, since the vast majority of geophysical data are stored in
+rather than longitude-latitude coordinates. This choice is confusing for
+many users, since the vast majority of geophysical data are stored in
 longitude-latitude or "Plate Carrée" coordinates.
 
 .. rubric:: Solution
 
-ProPlot integrates various `cartopy` and `~mpl_toolkits.basemap` features
-into the `proplot.axes.GeoAxes.format` method.  This lets you apply all kinds
-of geographic plot settings, like continents, coastlines, political
-boundaries, and meridian and parallel gridlines.
+ProPlot lets you specify geographic projections by simply passing
+the `PROJ <https://proj.org>`__ name to `~proplot.ui.subplots` with
+e.g. ``fig, ax = plot.subplots(proj='pcarree')``. Alternatively, the
+`~proplot.constructor.Proj` constructor function can be used to quickly generate
+`cartopy.crs.Projection` and `~mpl_toolkits.basemap.Basemap` instances.
 
-`~proplot.axes.GeoAxes` also overrides various plotting methods as follows:
+ProPlot also gives you access to various `cartopy` and `~mpl_toolkits.basemap`
+features via the `proplot.axes.GeoAxes.format` method.  This lets you quickly
+modify geographic plot settings like latitude and longitude gridlines,
+gridline labels, continents, coastlines, and political boundaries.
 
-* The new default for all `~proplot.axes.CartopyAxes` plotting methods is
-  ``transform=ccrs.PlateCarree()``.
-* The new default for all `~proplot.axes.BasemapAxes` plotting methods is
-  ``latlon=True``.
-* *Global* coverage over the poles and across the matrix longitude boundaries
-  can be enforced by passing ``globe=True`` to any 2D plotting command, e.g.
-  `~matplotlib.axes.Axes.pcolormesh` and `~matplotlib.axes.Axes.contourf`.
+Finally, `~proplot.axes.GeoAxes` makes longitude-latitude coordinates the "default"
+coordinate system by passing ``transform=ccrs.PlateCarree()``
+to `~proplot.axes.CartopyAxes` plotting methods and ``latlon=True``
+to `~proplot.axes.BasemapAxes` plotting methods. And to enforce global coverage
+over the poles and across longitude seams, you can pass ``globe=True``
+to any 2D plotting command, e.g. `~matplotlib.axes.Axes.pcolormesh`
+and `~matplotlib.axes.Axes.contourf`.
 
-See the :ref:`user guide <ug_proj>` for details.  Note that active
-development on basemap will `halt after 2020
-<https://matplotlib.org/basemap/users/intro.html#cartopy-new-management-and-eol-announcement>`__.
-For now, cartopy is `missing several features
-<https://matplotlib.org/basemap/api/basemap_api.html#module-mpl_toolkits.basemap>`__
-offered by basemap -- namely, flexible meridian and parallel gridline labels,
-drawing physical map scales, and convenience features for adding background
-images like the "blue marble". But once these are added to cartopy, ProPlot
-may deprecate the `~mpl_toolkits.basemap` integration features.
+See the :ref:`user guide <ug_proj>` for details.
 
 ..
   This is the right decision: Cartopy is integrated more closely with the matplotlib API
@@ -536,7 +522,7 @@ Colormaps and property cycles
 In matplotlib, colormaps are implemented with the
 `~matplotlib.colors.ListedColormap` and
 `~matplotlib.colors.LinearSegmentedColormap` classes. They are generally
-difficult to edit or create from scratch. The `seaborn` package introduces
+cumbersome to edit or create from scratch. The `seaborn` package introduces
 "color palettes" to make this easier, but it would be nice to have similar
 features built right into the matplotlib API.
 
@@ -564,41 +550,7 @@ Importing ProPlot also makes all colormap names *case-insensitive*, and
 colormaps can be *reversed* or *cyclically shifted* by 180 degrees simply by
 appending ``'_r'`` or ``'_s'`` to the colormap name. This is powered by the
 `~proplot.colors.ColormapDatabase` dictionary, which replaces matplotlib's
-native colormap database.
-
-.. _why_normalization:
-
-Cleaner colormap normalization
-==============================
-
-.. rubric:: Problem
-
-In matplotlib, when ``extend='min'``, ``extend='max'``, or
-``extend='neither'`` is passed to `~matplotlib.figure.Figure.colorbar` , the
-colormap colors reserved for "out-of-bounds" values are truncated. This can
-be irritating for plots with very few colormap levels, which are often more
-desirable (see the :ref:`user guide <ug_discrete>` for an example).
-
-The problem is that matplotlib "discretizes" colormaps by generating
-low-resolution lookup tables (see
-`~matplotlib.colors.LinearSegmentedColormap`).  While straightforward, this
-approach has limitations and results in unnecessary plot-specific copies of
-the colormap.  Ideally, the task of discretizing colormap colors should be
-left to the *normalizer*. While matplotlib provides
-`~matplotlib.colors.BoundaryNorm` for this purpose, it is seldom used and
-its features are limited.
-
-.. rubric:: Solution
-
-In ProPlot, all colormaps retain a high-resolution lookup table and the
-`~proplot.colors.DiscreteNorm` class is used to make distinct "levels".
-`~proplot.colors.DiscreteNorm` first normalizes the levels with a
-"continuous" normalizer like `~matplotlib.colors.Normalize` or
-`~matplotlib.colors.LogNorm`, then restricts the plot to a *subset* of lookup
-table colors at the indices of the normalized level centers. It also adjusts
-the indices such that the colorbar colors always traverse the full range of
-the colormap, regardless of the `extend` setting, and ensures that the end
-colors on cyclic colormaps are distinct.
+native database.
 
 .. _why_container:
 
@@ -625,11 +577,11 @@ you want to style your subplots identically (e.g.
 also unifies the behavior of the three possible `matplotlib.pyplot.subplots`
 return values:
 
-* `~proplot.ui.SubplotsContainer` permits 2D indexing, e.g. ``axs[1,0]``.
+* `~proplot.ui.SubplotsContainer` permits 2D indexing, e.g. ``axs[1, 0]``.
   Since `~proplot.ui.subplots` can generate figures with arbitrarily complex
   subplot geometry, this 2D indexing is useful only when the arrangement
   happens to be a clean 2D matrix.
-* `~proplot.ui.SubplotsContainer` also permits 1D indexing, e.g. ``axs[0]``.
+* `~proplot.ui.SubplotsContainer` permits 1D indexing, e.g. ``axs[0]``.
   The default order can be switched from row-major to column-major by passing
   ``order='F'`` to `~proplot.ui.subplots`.
 * When it is singleton, `~proplot.ui.SubplotsContainer` behaves like a
@@ -658,28 +610,11 @@ than globally.
 
 In ProPlot, you can use the `~proplot.config.rc` object to change lots of
 settings at once with convenient shorthands.  This is meant to replace
-matplotlib's `~matplotlib.rcParams`.  dictionary. Settings can be changed
+matplotlib's `~matplotlib.rcParams` dictionary. Settings can be changed
 with ``plot.rc.key = value``, ``plot.rc[key] = value``,
 ``plot.rc.update(...)``, with the `~proplot.axes.Axes.format` method, or with
 the `~proplot.config.RcConfigurator.context` method.
-
-The most notable bulk settings are described below.
 See the :ref:`user guide <ug_config>` for details.
-
-=============  =============================================  ===========================================================================================================================================================================
-Key            Description                                    Children
-=============  =============================================  ===========================================================================================================================================================================
-``color``      The color for axes bounds, ticks, and labels.  ``axes.edgecolor``, ``geoaxes.edgecolor``, ``axes.labelcolor``, ``tick.labelcolor``, ``hatch.color``, ``xtick.color``, ``ytick.color``
-``linewidth``  The width of axes bounds and ticks.            ``axes.linewidth``, ``geoaxes.linewidth``, ``hatch.linewidth``, ``xtick.major.width``, ``ytick.major.width``
-``small``      Font size for "small" labels.                  ``font.size``, ``tick.labelsize``, ``xtick.labelsize``, ``ytick.labelsize``, ``axes.labelsize``, ``legend.fontsize``, ``geogrid.labelsize``
-``large``      Font size for "large" labels.                  ``abc.size``, ``figure.titlesize``, ``axes.titlesize``, ``suptitle.size``, ``title.size``, ``leftlabel.size``, ``toplabel.size``, ``rightlabel.size``, ``bottomlabel.size``
-``tickpad``    Padding between ticks and labels.              ``xtick.major.pad``, ``xtick.minor.pad``, ``ytick.major.pad``, ``ytick.minor.pad``
-``tickdir``    Tick direction.                                ``xtick.direction``, ``ytick.direction``
-``ticklen``    Tick length.                                   ``xtick.major.size``, ``ytick.major.size``, ``ytick.minor.size * tickratio``, ``xtick.minor.size * tickratio``
-``tickratio``  Ratio between major and minor tick lengths.    ``xtick.major.size``, ``ytick.major.size``, ``ytick.minor.size * tickratio``, ``xtick.minor.size * tickratio``
-``margin``     Margin width when limits not explicitly set.    ``axes.xmargin``, ``axes.ymargin``
-=============  =============================================  ===========================================================================================================================================================================
-
 
 .. _why_units:
 
@@ -706,17 +641,15 @@ interpreting `figsize`, `width`, `height`, `axwidth`, `axheight`, `left`,
 `right`, `top`, `bottom`, `wspace`, `hspace`, and arguments in a few other
 places. Acceptable units include inches, centimeters, millimeters, pixels,
 `points <https://en.wikipedia.org/wiki/Point_(typography)>`__, `picas
-<https://en.wikipedia.org/wiki/Pica_(typography)>`__, `em-heights
-<https://en.wikipedia.org/wiki/Em_(typography)>`__, and `light years
-<https://en.wikipedia.org/wiki/Light-year>`__.  Em-heights
-are particularly useful, as labels already present can be useful *rulers* for
-figuring out the amount of space needed.
+<https://en.wikipedia.org/wiki/Pica_(typography)>`__, and `em-heights
+<https://en.wikipedia.org/wiki/Em_(typography)>`__.
+Em-heights are particularly useful, as labels already present can be useful
+"rulers" for figuring out the amount of space needed.
 
 `~proplot.utils.units` is also used to convert settings passed to
 `~proplot.config.rc` from arbitrary physical units to *points* -- for
-example, :rcraw:`linewidth`, :rcraw:`ticklen`, :rcraw:`axes.titlesize`, and
-:rcraw:`axes.titlepad`.  See the :ref:`user guide <ug_config>` for
-details.
+example :rcraw:`ticklen`, :rcraw:`title.size`, and
+:rcraw:`title.pad`.  See the :ref:`user guide <ug_units>` for
 
 .. _why_dotproplot:
 
