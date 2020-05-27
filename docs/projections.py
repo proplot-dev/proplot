@@ -70,7 +70,7 @@ for i in range(5):
 
 # Standard polar plot
 axs[0].format(
-    title='Normal plot', thetaformatter='pi',
+    title='Normal plot', thetaformatter='tau',
     rlabelpos=225, rlines=plot.arange(5, 30, 5),
     color='red8', tickpad='1em',
 )

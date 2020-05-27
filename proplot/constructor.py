@@ -130,8 +130,9 @@ FORMATTERS = {  # note default LogFormatter uses ugly e+00 notation
     'eng': mticker.EngFormatter,
     'percent': mticker.PercentFormatter,
     'index': mticker.IndexFormatter,
-    'pi': partial(pticker.FracFormatter, symbol=r'$\pi$', number=np.pi),
     'e': partial(pticker.FracFormatter, symbol=r'$e$', number=np.e),
+    'pi': partial(pticker.FracFormatter, symbol=r'$\pi$', number=np.pi),
+    'tau': partial(pticker.FracFormatter, symbol=r'$\tau$', number=2 * np.pi),
     'lat': partial(pticker.SimpleFormatter, negpos='SN'),
     'lon': partial(pticker.SimpleFormatter, negpos='WE', wraprange=(-180, 180)),
     'deg': partial(pticker.SimpleFormatter, suffix='\N{DEGREE SIGN}'),
@@ -993,11 +994,13 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
         formatter name, subsequent elements are passed to the formatter class
         as positional arguments.
 
+        .. _tau: https://tauday.com/tau-manifesto
+
         .. _formatter_table:
 
-        ======================  ==============================================  ===============================================================
+        ======================  ==============================================  =================================================================
         Key                     Class                                           Description
-        ======================  ==============================================  ===============================================================
+        ======================  ==============================================  =================================================================
         ``'null'``, ``'none'``  `~matplotlib.ticker.NullFormatter`              No tick labels
         ``'auto'``              `~proplot.ticker.AutoFormatter`                 New default tick labels for axes
         ``'sci'``               `~proplot.ticker.SciFormatter`                  Format ticks with scientific notation.
@@ -1020,6 +1023,7 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
         ``'theta'``             `~matplotlib.projections.polar.ThetaFormatter`  Formats radians as degrees, with a degree symbol
         ``'e'``                 `~proplot.ticker.FracFormatter` preset          Fractions of *e*
         ``'pi'``                `~proplot.ticker.FracFormatter` preset          Fractions of :math:`\\pi`
+        ``'tau'``               `~proplot.ticker.FracFormatter` preset          Fractions of the `one true circle constant <tau_>`_ :math:`\\tau`
         ``'lat'``               `~proplot.ticker.AutoFormatter` preset          Cardinal "SN" indicator
         ``'lon'``               `~proplot.ticker.AutoFormatter` preset          Cardinal "WE" indicator
         ``'deg'``               `~proplot.ticker.AutoFormatter` preset          Trailing degree symbol
@@ -1028,7 +1032,7 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
         ``'dms'``               `~cartopy.mpl.ticker._PlateCarreeFormatter`     Labels with degree/minute/second support
         ``'dmslon'``            `~cartopy.mpl.ticker.LongitudeFormatter`        Longitude labels with degree/minute/second support
         ``'dmslat'``            `~cartopy.mpl.ticker.LatitudeFormatter`         Latitude labels with degree/minute/second support
-        ======================  ==============================================  ===============================================================
+        ======================  ==============================================  =================================================================
 
     date : bool, optional
         Toggles the behavior when `formatter` contains a ``'%'`` sign (see
