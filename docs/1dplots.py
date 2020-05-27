@@ -222,7 +222,8 @@ axs[1:].format(xlabel='column number', xticks=1, xgrid=False)
 # Automatically calculate medians and display default percentile range
 ax = axs[0]
 obj = ax.barh(
-    data, color='light red', legend=True,
+    data,
+    color='light red', legend=True,
     medians=True, boxpctiles=True, barpctiles=(5, 95),
 )
 ax.format(title='Column statistics')
@@ -231,7 +232,8 @@ ax.format(ylabel='column number', title='Bar plot', ygrid=False)
 # Automatically calculate means and display requested standard deviation range
 ax = axs[1]
 ax.scatter(
-    data, color='denim', marker='x', markersize=8**2, linewidth=0.8,
+    data,
+    color='denim', marker='x', markersize=8**2, linewidth=0.8,
     means=True, shadestds=(-1, 1), legend='ll',
 )
 ax.format(title='Scatter plot')
@@ -243,7 +245,9 @@ means.name = data.name
 shadedata = np.percentile(data, (25, 75), axis=0)  # dark shading
 fadedata = np.percentile(data, (5, 95), axis=0)  # light shading
 ax.plot(
-    means, shadedata=shadedata, fadedata=fadedata,
+    means,
+    shadedata=shadedata, fadedata=fadedata,
+    shadelabel='50% CI', fadelabel='90% CI',
     color='ocean blue', barzorder=0, boxmarker=False, legend='ll',
 )
 ax.format(title='Line plot')
