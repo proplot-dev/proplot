@@ -84,7 +84,7 @@ axs[1].format(
 # Annular plot
 axs[2].format(
     title='Annular plot', thetadir=-1, thetalines=20, gridcolor='red',
-    r0=0, rlim=(10, 22), rformatter='null', rlocator=2
+    r0=-20, rlim=(0, 22), rformatter='null', rlocator=2
 )
 
 
