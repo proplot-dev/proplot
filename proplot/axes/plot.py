@@ -3394,8 +3394,8 @@ def colorbar_wrapper(
 
     Note
     ----
-    This function wraps `proplot.axes.Axes.legend`
-    and `proplot.figure.Figure.legend`.
+    This function wraps `proplot.axes.Axes.colorbar`
+    and `proplot.figure.Figure.colorbar`.
 
     Parameters
     ----------
