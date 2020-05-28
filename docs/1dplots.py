@@ -287,14 +287,16 @@ plot.rc.reset()
 import proplot as plot
 import numpy as np
 import pandas as pd
-plot.rc.titleloc = 'uc'
-fig, axs = plot.subplots(nrows=2, aspect=2, axwidth=4.8, share=0, hratios=(3, 2))
 state = np.random.RandomState(51423)
 data = state.rand(5, 5).cumsum(axis=0).cumsum(axis=1)[:, ::-1]
 data = pd.DataFrame(
     data, columns=pd.Index(np.arange(1, 6), name='column'),
     index=pd.Index(['a', 'b', 'c', 'd', 'e'], name='row idx')
 )
+
+# Generate figure
+plot.rc.titleloc = 'uc'
+fig, axs = plot.subplots(nrows=2, aspect=2, axwidth=4.8, share=0, hratios=(3, 2))
 
 # Side-by-side bars
 ax = axs[0]
@@ -320,11 +322,13 @@ plot.rc.reset()
 # %%
 import proplot as plot
 import numpy as np
-fig, axs = plot.subplots(array=[[1, 2], [3, 3]], hratios=(1, 1.5), axwidth=2.3, share=0)
-axs.format(grid=False, xlabel='xlabel', ylabel='ylabel', suptitle='Area plot demo')
 state = np.random.RandomState(51423)
 data = state.rand(5, 3).cumsum(axis=0)
 cycle = ('gray3', 'gray5', 'gray7')
+
+# Generate figure
+fig, axs = plot.subplots(ncols=2, axwidth=2.3, share=0)
+axs.format(grid=False, xlabel='xlabel', ylabel='ylabel', suptitle='Area plot demo')
 
 # Overlaid area patches
 ax = axs[0]
@@ -342,18 +346,27 @@ ax.area(
 )
 ax.format(title='Stack between columns')
 
-# Positive and negative color bars and area patches
-ax = axs[2]
-data = 4 * (state.rand(20) - 0.5)
-ax.bar(data, bottom=-2, width=1, edgecolor='none', negpos=True)
-ax.area(data + 2, y2=2, negpos=True)
-for offset in (-2, 2):
-    ax.axhline(offset, color='k', linewidth=1)
-ax.format(
+# %%
+import proplot as plot
+import numpy as np
+state = np.random.RandomState(51423)
+data = 4 * (state.rand(50) - 0.5)
+
+# Generate figure
+fig, axs = plot.subplots(nrows=2, width=5, aspect=2)
+axs.format(
     xmargin=0, xlabel='xlabel', ylabel='ylabel', grid=True,
-    title='Positive and negative colors demo', titleweight='bold',
+    suptitle='Positive and negative colors demo',
 )
-plot.rc.reset()
+axs.axhline(0, color='k', linewidth=1)  # zero line
+
+# Bar plot
+axs[0].bar(data, width=1, edgecolor='none', negpos=True)
+axs[0].format(title='Bar plot')
+
+# Area plot
+axs[1].area(data, negpos=True)
+axs[1].format(title='Area plot')
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
