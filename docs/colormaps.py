@@ -292,11 +292,12 @@ for ax, cmap, title in zip(axs, (cmap1, cmap2, cmap3), (title1, title2, title3))
 #   useful when you want to use colormaps as :ref:`color cycles <ug_cycles>`
 #   and need to remove the "white" part so that your lines stand out against
 #   the background.
-# * To remove central colors from a diverging colormap, pass `cut` to
+# * To modify the central colors of a diverging colormap, pass `cut` to
 #   `~proplot.constructor.Colormap`. This calls the
 #   `~proplot.colors.LinearSegmentedColormap.cut` method, and can be used
-#   to create a sharper cutoff between negative and positive values. This
-#   should generally be used *without* a central level.
+#   to create a sharper cutoff between negative and positive values or (when
+#   `cut` is negative) to expand the "neutral" region of the colormap.
+#   This should generally be used *without* a central level.
 # * To rotate a cyclic colormap,  pass `shift` to
 #   `~proplot.constructor.Colormap`. This calls the
 #   `~proplot.colors.LinearSegmentedColormap.shifted` method. ProPlot ensures
@@ -351,10 +352,7 @@ state = np.random.RandomState(51423)
 data = (state.rand(40, 40) - 0.5).cumsum(axis=0).cumsum(axis=1)
 
 # Generate figure
-fig, axs = plot.subplots(
-    [[1, 1, 2, 2], [3, 3, 4, 4], [0, 5, 5, 0]],
-    axwidth=1.7, span=False
-)
+fig, axs = plot.subplots(ncols=2, nrows=2, axwidth=1.7, span=False)
 axs.format(
     xlabel='x axis', ylabel='y axis',
     suptitle='Modifying diverging colormaps',
@@ -362,9 +360,9 @@ axs.format(
 
 # Cutting out central colors
 levels = plot.arange(-10, 10, 2)
-for i, (ax, cut) in enumerate(zip(axs, (None, None, 0.1, 0.2, -0.1))):
+for i, (ax, cut) in enumerate(zip(axs, (None, None, 0.2, -0.1))):
     levels = plot.arange(-10, 10, 2)
-    if i == 1 or i == 4:
+    if i == 1 or i == 3:
         levels = plot.edges(levels)
     if i == 0:
         title = 'Even number of levels'
