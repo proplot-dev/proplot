@@ -182,7 +182,7 @@ state = np.random.RandomState(51423)
 data = state.rand(30, 30).cumsum(axis=1)
 
 # Initialize figure
-fig, axs = plot.subplots(ncols=3, axwidth=2, share=0)
+fig, axs = plot.subplots([[1, 1, 2, 2], [0, 3, 3, 0]], axwidth=2, span=0)
 axs.format(
     xlabel='x axis', ylabel='y axis',
     suptitle='Building your own PerceptuallyUniformColormaps'
@@ -401,7 +401,7 @@ data = state.rand(20, 20).cumsum(axis=1)
 # Use pcolorfast because AxesImage does not have issue where pixels
 # appear to have "outline" when colors are not 100% opaque
 fig, axs = plot.subplots(ncols=3, axwidth=1.7)
-for ax, alpha in zip(axs, (1.0, 0.6, 0.2)):
+for ax, alpha in zip(axs, (1.0, 0.5, 0.0)):
     alpha = (alpha, 1.0)
     cmap = plot.Colormap('batlow_r', alpha=alpha)
     m = ax.pcolorfast(data, cmap=cmap, levels=10, extend='both')
