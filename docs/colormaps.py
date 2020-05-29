@@ -362,14 +362,15 @@ axs.format(
 
 # Cutting out central colors
 levels = plot.arange(-10, 10, 2)
-for i, (ax, cut) in enumerate(zip(axs, (None, None, 0.1, 0.2, -0.15))):
+for i, (ax, cut) in enumerate(zip(axs, (None, None, 0.1, 0.2, -0.1))):
+    levels = plot.arange(-10, 10, 2)
+    if i == 1 or i == 4:
+        levels = plot.edges(levels)
     if i == 0:
-        title = 'With central level'
-        levels = plot.edges(plot.arange(-10, 10, 2))
+        title = 'Even number of levels'
+    elif i == 1:
+        title = 'Odd number of levels'
     else:
-        title = 'Without central level'
-        levels = plot.arange(-10, 10, 2)
-    if cut is not None:
         title = 'Sharper cutoff' if cut > 0 else 'Expanded center'
         title = f'{title}\ncut = ${cut}$'
     ax.format(title=title)

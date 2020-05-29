@@ -725,7 +725,6 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
             for cmap in cmaps:
                 igamma = getattr(cmap, '_' + ikey)
-                print('hi!', igamma, ikey)
                 if not np.iterable(igamma):
                     if all(callable_):
                         igamma = [igamma]
@@ -806,13 +805,14 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         # Permit adding extra 'white' to colormap center
         args = []
         if cut < 0:
+            ratio = 0.5 - 0.5 * abs(cut)  # ratio for flanks on either side
             xyza = to_xyza(self(0.5), space=getattr(self, '_space', None) or 'rgb')
             segmentdata = {
                 key: _make_segmentdata_array(x)
                 for key, x in zip(self._segmentdata, xyza)
             }
             args.append(type(self)('_no_name', segmentdata, self.N))
-            kwargs.setdefault('ratios', (1, abs(cut), 1))
+            kwargs.setdefault('ratios', (ratio, abs(cut), ratio))
         args.append(cmap_right)
         return cmap_left.append(*args, name=name, **kwargs)
 
