@@ -1863,6 +1863,8 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         # 2 color coordinates for out-of-bounds color bins.
         # For *same* out-of-bounds colors, looks like [0, 0, ..., 1, 1]
         # For *unique* out-of-bounds colors, looks like [0, X, ..., 1 - X, 1]
+        # NOTE: For cyclic colormaps, _build_discrete_norm sets extend to
+        # 'both' and step to 0.5 so that we omit end colors.
         # NOTE: Critical that we scale the bin centers in "physical space"
         # and *then* translate to color coordinates so that nonlinearities in
         # the normalization stay intact. If we scaled the bin centers in

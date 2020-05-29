@@ -2953,9 +2953,10 @@ def cmap_changer(
         else:
             raise RuntimeError(f'Not possible to add labels to {name!r} plot.')
 
-    # Fix white lines between filled contours/mesh, allow user to override!
-    # 0.4pt is thick enough to hide lines but thin enough to not add "dots" in
-    # corner of pcolor plots. *Never* use this when colormap has opacity.
+    # Fix white lines between filled contours/mesh and fix issues with colormaps
+    # that are not perfectly opaque. 0.4pt is thick enough to hide lines but thin
+    # enough to not add "dots" in corner of pcolor plots.
+    # See: https://github.com/jklymak/contourfIssues
     # See: https://stackoverflow.com/q/15003353/4970632
     if edgefix and name in (
         'pcolor', 'pcolormesh', 'pcolorfast', 'tripcolor', 'contourf', 'tricontourf'
@@ -2964,14 +2965,19 @@ def cmap_changer(
         if not cmap._isinit:
             cmap._init()
         if all(cmap._lut[:-1, 3] == 1):  # skip for cmaps with transparency
-            if name in ('pcolor', 'pcolormesh', 'pcolorfast', 'tripcolor'):
-                obj.set_edgecolor('face')
+            edgecolor = 'face'
+        else:
+            edgecolor = 'none'
+        if name in ('pcolor', 'pcolormesh', 'pcolorfast', 'tripcolor'):
+            if hasattr(obj, 'set_linewidth'):  # not always true for pcolorfast
                 obj.set_linewidth(0.4)
-            else:
-                for contour in obj.collections:
-                    contour.set_edgecolor('face')
-                    contour.set_linewidth(0.4)
-                    contour.set_linestyle('-')
+            if hasattr(obj, 'set_edgecolor'):  # not always true for pcolorfast
+                obj.set_edgecolor(edgecolor)
+        else:
+            for contour in obj.collections:
+                contour.set_edgecolor(edgecolor)
+                contour.set_linewidth(0.4)
+                contour.set_linestyle('-')
 
     # Optionally add colorbar
     if colorbar:
