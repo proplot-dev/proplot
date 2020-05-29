@@ -182,42 +182,25 @@ state = np.random.RandomState(51423)
 data = state.rand(30, 30).cumsum(axis=1)
 
 # Initialize figure
-fig, axs = plot.subplots(
-    [[0, 1, 1, 2, 2, 0], [3, 3, 4, 4, 5, 5]],
-    ncols=2, axwidth=2, aspect=1
-)
+fig, axs = plot.subplots(ncols=3, axwidth=2, share=0)
 axs.format(
     xlabel='x axis', ylabel='y axis',
     suptitle='Building your own PerceptuallyUniformColormaps'
 )
 
-# Simple monochromatic colormap
-axs[0].format(title='From single color')
-m = axs[0].contourf(data, cmap='ocean blue', cmap_kw={'name': 'water'})
-cmap1 = m.cmap
+# Colormap from named color
+# The trailing '_r' makes the colormap go dark-to-light instead of light-to-dark
+cmap1 = plot.Colormap('prussian blue_r', name='pacific', fade=100, space='hpl')
+axs[0].format(title='From single named color')
+axs[0].pcolormesh(data, cmap=cmap1)
 
-# Three merged monochromatic colormaps
-# The trailing '_r' make the colormap go dark-to-light instead of light-to-dark
-axs[1].format(title='From three colors')
-cmap2 = plot.Colormap(
-    'dark red_r', 'denim_r', 'warm gray_r',
-    fade=90, name='tricolor'
-)
-axs[1].contourf(data, cmap=cmap2, levels=12)
+# Colormap from lists
+cmap2 = plot.Colormap(('maroon', 'light tan'), name='heatwave')
+axs[1].format(title='From list of colors')
+axs[1].pcolormesh(data, cmap=cmap2)
 
 # Colormaps from channel value dictionaries
-axs[2:4].format(title='From channel values')
 cmap3 = plot.Colormap(
-    {
-        'hue': ['red-90', 'red+90'],
-        'saturation': [50, 70, 30],
-        'luminance': [20, 100]
-    },
-    name='Matter',
-    space='hcl',
-)
-axs[2].pcolormesh(data, cmap=cmap3)
-cmap4 = plot.Colormap(
     {
         'hue': ['red', 'red-720'],
         'saturation': [80, 20],
@@ -226,22 +209,11 @@ cmap4 = plot.Colormap(
     name='cubehelix',
     space='hpl',
 )
-axs[3].pcolormesh(data, cmap=cmap4)
-
-# Colormap from lists
-m = axs[4].pcolormesh(
-    data,
-    cmap=('maroon', 'yellow0'),
-    cmap_kw={'name': 'heat'}
-)
-cmap5 = m.cmap
-axs[4].format(title='From list of colors')
+axs[2].format(title='From channel values')
+axs[2].pcolormesh(data, cmap=cmap3)
 
 # Display the channels
-fig, axs = plot.show_channels(cmap1, cmap2, axwidth=1.5, rgb=False)
-fig, axs = plot.show_channels(
-    cmap3, cmap4, cmap5, minhue=-180, axwidth=1.5, rgb=False
-)
+fig, axs = plot.show_channels(cmap1, cmap2, cmap3, axwidth=1.5, rgb=False)
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
