@@ -1072,7 +1072,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         if name is None:
             name = self.name + '_copy'
         if segmentdata is None:
-            segmentdata = self._segmentdata
+            segmentdata = self._segmentdata.copy()
         if gamma is None:
             gamma = self._gamma
         if cyclic is None:
@@ -1358,7 +1358,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         if name is None:
             name = self.name + '_copy'
         if colors is None:
-            colors = self.colors
+            colors = list(self.colors)  # copy
         if N is None:
             N = self.N
         cmap = ListedColormap(colors, name, N, alpha=alpha)
@@ -1527,7 +1527,7 @@ optional
         if name is None:
             name = self.name + '_copy'
         if segmentdata is None:
-            segmentdata = self._segmentdata
+            segmentdata = self._segmentdata.copy()
         if space is None:
             space = self._space
         if clip is None:
