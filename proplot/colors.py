@@ -382,6 +382,7 @@ class _Colormap(object):
         if not self._isinit:
             self._init()
         colors = self._lut[:-3, :]
+
         # Get data string
         if ext == 'hex':
             data = ', '.join(mcolors.to_hex(color) for color in colors)
@@ -724,6 +725,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
             for cmap in cmaps:
                 igamma = getattr(cmap, '_' + ikey)
+                print('hi!', igamma, ikey)
                 if not np.iterable(igamma):
                     if all(callable_):
                         igamma = [igamma]
@@ -757,8 +759,9 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         Parameters
         ----------
         cut : float, optional
-            The proportion to cut from the center of the colormap.
-            For example, ``center=0.1`` cuts the central 10%.
+            The proportion to cut from the center of the colormap. For example,
+            ``cut=0.1`` cuts the central 10%, or ``cut=-0.1`` fills the ctranl 10%
+            of the colormap with the current central color (usually white).
         name : str, optional
             The name of the new colormap. Default is
             ``self.name + '_cut'``.
@@ -783,20 +786,35 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         # Parse input args
         left = max(_not_none(left, 0), 0)
         right = min(_not_none(right, 1), 1)
-        offset = _not_none(cut, 0) / 2
-        if offset == 0:
+        cut = _not_none(cut, 0)
+        offset = 0.5 * cut
+        if offset < 0:  # add extra 'white' later on
+            offset = 0
+        elif offset == 0:
             return self.truncate(left, right)
 
         # Decompose cut into two truncations followed by concatenation
         if 0.5 - offset < left or 0.5 + offset > right:
             raise ValueError(
-                f'Invalid cut={cut} for left={left} and right={right}.'
+                f'Invalid combination cut={cut} for left={left} and right={right}.'
             )
         if name is None:
             name = self.name + '_cut'
         cmap_left = self.truncate(left, 0.5 - offset)
         cmap_right = self.truncate(0.5 + offset, right)
-        return cmap_left.append(cmap_right, name=name, **kwargs)
+
+        # Permit adding extra 'white' to colormap center
+        args = []
+        if cut < 0:
+            xyza = to_xyza(self(0.5), space=getattr(self, '_space', None) or 'rgb')
+            segmentdata = {
+                key: _make_segmentdata_array(x)
+                for key, x in zip(self._segmentdata, xyza)
+            }
+            args.append(type(self)('_no_name', segmentdata, self.N))
+            kwargs.setdefault('ratios', (1, abs(cut), 1))
+        args.append(cmap_right)
+        return cmap_left.append(*args, name=name, **kwargs)
 
     def reversed(self, name=None, **kwargs):
         """
@@ -1049,7 +1067,11 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
                         )
                     gamma = gamma[0]
                 else:
-                    gamma = gamma[l - 1:r + 1]
+                    igamma = gamma[l - 1:r + 1]
+                    if len(igamma) == 0:  # TODO: issue warning?
+                        gamma = gamma[0]
+                    else:
+                        gamma = igamma
             kwargs[ikey] = gamma
         return self.copy(name, segmentdata, **kwargs)
 

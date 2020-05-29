@@ -351,7 +351,10 @@ state = np.random.RandomState(51423)
 data = (state.rand(40, 40) - 0.5).cumsum(axis=0).cumsum(axis=1)
 
 # Generate figure
-fig, axs = plot.subplots(ncols=2, nrows=2, axwidth=1.7, span=False)
+fig, axs = plot.subplots(
+    [[1, 1, 2, 2], [3, 3, 4, 4], [0, 5, 5, 0]],
+    axwidth=1.7, span=False
+)
 axs.format(
     xlabel='x axis', ylabel='y axis',
     suptitle='Modifying diverging colormaps',
@@ -359,7 +362,7 @@ axs.format(
 
 # Cutting out central colors
 levels = plot.arange(-10, 10, 2)
-for i, (ax, cut) in enumerate(zip(axs, (None, None, 0.1, 0.2))):
+for i, (ax, cut) in enumerate(zip(axs, (None, None, 0.1, 0.2, -0.15))):
     if i == 0:
         title = 'With central level'
         levels = plot.edges(plot.arange(-10, 10, 2))
@@ -367,7 +370,8 @@ for i, (ax, cut) in enumerate(zip(axs, (None, None, 0.1, 0.2))):
         title = 'Without central level'
         levels = plot.arange(-10, 10, 2)
     if cut is not None:
-        title = f'cut = {cut}'
+        title = 'Sharper cutoff' if cut > 0 else 'Expanded center'
+        title = f'{title}\ncut = ${cut}$'
     ax.format(title=title)
     m = ax.contourf(
         data, cmap='Div', cmap_kw={'cut': cut},
