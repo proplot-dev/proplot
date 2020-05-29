@@ -329,19 +329,21 @@ for ax, style in zip(axs, styles):
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_container:
 #
-# The subplots container
-# ----------------------
+# Subplots containers
+# -------------------
 #
 # Instead of an `~numpy.ndarray` of axes, `~proplot.ui.subplots` returns a
-# `~proplot.ui.SubplotsContainer` instance. This container behaves
-# like a python *list*, but lets you call any arbitrary method on multiple
-# axes at once. It supports both 2D indexing (e.g. ``axs[0, 1]``) and 1D
-# indexing (e.g. ``axs[2]``), and is row-major by default. Further, slicing a
-# subplot container (e.g. ``axs[:, 0]``) returns another subplot container.
+# `~proplot.ui.SubplotsContainer` instance. This container behaves like an
+# `~matplotlib.axes.Axes` object when it contains just one axes, and behaves
+# like a list otherwise. It supports both 1D indexing (e.g. ``axs[1]``) and
+# 2D indexing (e.g. ``axs[0, 1]``), and is row-major by default. Slicing a
+# `~proplot.ui.SubplotsContainer` returns another container (e.g. ``axs[:, 0]``),
+# and `~proplot.axes.Axes` methods can be called simultaneously for all axes in the
+# container by calling the method from the container (e.g. ``axs.format(abc=True)``).
 #
 # In the below example, the `~proplot.ui.SubplotsContainer` returned by
-# `~proplot.ui.subplots` is used to call `~proplot.axes.Axes.format` on
-# several axes at once.
+# `~proplot.ui.subplots` is used to cusomtize several axes at once with
+# `proplot.axes.Axes.format`.
 
 # %%
 import proplot as plot
@@ -353,7 +355,7 @@ axs.format(
     grid=False, xlim=(0, 50), ylim=(-4, 4)
 )
 
-# Various ways to select subplots in the subplot grid
+# Various ways to select subplots in the container
 axs[:, 0].format(facecolor='blush', color='gray7', linewidth=1)
 axs[0, :].format(facecolor='sky blue', color='gray7', linewidth=1)
 axs[0].format(color='black', facecolor='gray5', linewidth=1.4)
