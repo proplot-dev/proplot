@@ -163,14 +163,15 @@ body.scroll-down,
 }
 
 /* Hide sidebar expansion button when not on current item */
-.wy-menu li.toctree-l1:not(.current) a span.toctree-expand,
-.wy-menu li.toctree-l2:not(.current) a span.toctree-expand,
-.wy-menu li.toctree-l3:not(.current) a span.toctree-expand,
-.wy-menu li.toctree-l1:not(.current) a:hover span.toctree-expand,
-.wy-menu li.toctree-l2:not(.current) a:hover span.toctree-expand,
-.wy-menu li.toctree-l3:not(.current) a:hover span.toctree-expand {
-  display: none;
-}
+/* Stop doing this (cannot re-expand after collapsing) */
+/* .wy-menu li.toctree-l1:not(.current) a span.toctree-expand,
+ * .wy-menu li.toctree-l2:not(.current) a span.toctree-expand,
+ * .wy-menu li.toctree-l3:not(.current) a span.toctree-expand,
+ * .wy-menu li.toctree-l1:not(.current) a:hover span.toctree-expand,
+ * .wy-menu li.toctree-l2:not(.current) a:hover span.toctree-expand,
+ * .wy-menu li.toctree-l3:not(.current) a:hover span.toctree-expand {
+ *   display: none;
+ * } */
 
 /* Sidebar logo flush in box */
 /* Also remove bottom margins because TOC caption padding is enough */
