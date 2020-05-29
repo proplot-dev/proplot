@@ -315,15 +315,18 @@ axs.format(
 # %%
 import proplot as plot
 import numpy as np
-fig, axs = plot.subplots(
-    [[1, 1, 2, 2, 3, 3], [0, 4, 4, 5, 5, 0], [0, 6, 6, 7, 7, 0]],
-    axwidth=1.7, span=False
-)
 state = np.random.RandomState(51423)
-data = state.rand(40, 40).cumsum(axis=0) - 12
+data = state.rand(40, 40).cumsum(axis=0)
+
+# Generate figure
+fig, axs = plot.subplots(ncols=3, axwidth=1.7, span=False)
+axs.format(
+    xlabel='x axis', ylabel='y axis',
+    suptitle='Truncating sequential colormaps',
+)
 
 # Cutting left and right
-for ax, coord in zip(axs[:3], (None, 0.3, 0.7)):
+for ax, coord in zip(axs, (None, 0.3, 0.7)):
     cmap = 'grays'
     if coord is None:
         title, cmap_kw = 'Original', {}
@@ -331,15 +334,29 @@ for ax, coord in zip(axs[:3], (None, 0.3, 0.7)):
         title, cmap_kw = f'left={coord}', {'left': coord}
     else:
         title, cmap_kw = f'right={coord}', {'right': coord}
+    ax.format(title=title)
     ax.pcolormesh(
         data, cmap=cmap, cmap_kw=cmap_kw,
         colorbar='b', colorbar_kw={'locator': 'null'}
     )
-    ax.format(xlabel='x axis', ylabel='y axis', title=title)
 
-# Cutting central colors
+
+# %%
+import proplot as plot
+import numpy as np
+state = np.random.RandomState(51423)
+data = (state.rand(40, 40) - 0.5).cumsum(axis=0).cumsum(axis=1)
+
+# Generate figure
+fig, axs = plot.subplots(ncols=2, nrows=2, axwidth=1.7, span=False)
+axs.format(
+    xlabel='x axis', ylabel='y axis',
+    suptitle='Modifying diverging colormaps',
+)
+
+# Cutting out central colors
 levels = plot.arange(-10, 10, 2)
-for i, (ax, cut) in enumerate(zip(axs[3:], (None, None, 0.1, 0.2))):
+for i, (ax, cut) in enumerate(zip(axs, (None, None, 0.1, 0.2))):
     if i == 0:
         title = 'With central level'
         levels = plot.edges(plot.arange(-10, 10, 2))
@@ -348,13 +365,26 @@ for i, (ax, cut) in enumerate(zip(axs[3:], (None, None, 0.1, 0.2))):
         levels = plot.arange(-10, 10, 2)
     if cut is not None:
         title = f'cut = {cut}'
+    ax.format(title=title)
     m = ax.contourf(
         data, cmap='Div', cmap_kw={'cut': cut},
         extend='both', levels=levels,
+        colorbar='b', colorbar_kw={'locator': 'null'},
     )
+
+# %%
+import proplot as plot
+import numpy as np
+state = np.random.RandomState(51423)
+data = (state.rand(50, 50) - 0.48).cumsum(axis=0).cumsum(axis=1) % 30
+
+# Rotating cyclic colormaps
+fig, axs = plot.subplots(ncols=3, axwidth=1.7)
+for ax, shift in zip(axs, (0, 90, 180)):
+    m = ax.pcolormesh(data, cmap='romaO', cmap_kw={'shift': shift}, levels=12)
     ax.format(
-        xlabel='x axis', ylabel='y axis', title=title,
-        suptitle='Truncating sequential and diverging colormaps'
+        xlabel='x axis', ylabel='y axis', title=f'shift = {shift}',
+        suptitle='Rotating cyclic colormaps'
     )
     ax.colorbar(m, loc='b', locator='null')
 
@@ -362,41 +392,20 @@ for i, (ax, cut) in enumerate(zip(axs[3:], (None, None, 0.1, 0.2))):
 import proplot as plot
 import numpy as np
 state = np.random.RandomState(51423)
-
-# Rotating cyclic colormaps
-fig, axs = plot.subplots(ncols=3, axwidth=1.7)
-data = (state.rand(50, 50) - 0.48).cumsum(axis=1).cumsum(axis=0) - 50
-for ax, shift in zip(axs, (0, 90, 180)):
-    m = ax.contourf(data, cmap='twilight', cmap_kw={'shift': shift}, levels=12)
-    ax.format(
-        xlabel='x axis', ylabel='y axis', title=f'shift = {shift}',
-        suptitle='Rotating cyclic colormaps'
-    )
-    ax.colorbar(m, loc='b', locator='null')
+data = state.rand(20, 20).cumsum(axis=1)
 
 # Changing the colormap opacity
+# Use pcolorfast because AxesImage does not have issue where pixels
+# appear to have "outline" when colors are not 100% opaque
 fig, axs = plot.subplots(ncols=3, axwidth=1.7)
-data = state.rand(10, 10).cumsum(axis=1)
-for ax, alpha in zip(axs, (1.0, 0.5, 0.0)):
-    alpha = (alpha, 1 - 0.2 * (1 - alpha), 1.0)
-    cmap = plot.Colormap('lajolla', alpha=alpha)
-    m = ax.contourf(data, cmap=cmap, levels=10, extend='both', linewidth=0)
+for ax, alpha in zip(axs, (1.0, 0.6, 0.2)):
+    alpha = (alpha, 1.0)
+    cmap = plot.Colormap('batlow_r', alpha=alpha)
+    m = ax.pcolorfast(data, cmap=cmap, levels=10, extend='both')
     ax.colorbar(m, loc='b', locator='none')
     ax.format(
         title=f'alpha = {alpha}', xlabel='x axis', ylabel='y axis',
         suptitle='Adding opacity gradations'
-    )
-
-# Changing the colormap gamma
-fig, axs = plot.subplots(ncols=3, axwidth=1.7)
-data = state.rand(10, 10).cumsum(axis=1)
-for ax, gamma in zip(axs, (0.7, 1.0, 1.4)):
-    cmap = plot.Colormap('boreal', gamma=gamma)
-    m = ax.pcolormesh(data, cmap=cmap, levels=10, extend='both')
-    ax.colorbar(m, loc='b', locator='none')
-    ax.format(
-        title=f'gamma = {gamma}', xlabel='x axis', ylabel='y axis',
-        suptitle='Changing the PerceptuallyUniformColormap gamma'
     )
 
 
