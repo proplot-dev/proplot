@@ -240,9 +240,15 @@ fig, axs = plot.show_channels(cmap1, cmap2, cmap3, axwidth=1.5, rgb=False)
 # %%
 import proplot as plot
 import numpy as np
-fig, axs = plot.subplots([[0, 1, 1, 0], [2, 2, 3, 3]], axwidth=2.4, span=False)
 state = np.random.RandomState(51423)
 data = state.rand(30, 30).cumsum(axis=1)
+
+# Generate figure
+fig, axs = plot.subplots([[0, 1, 1, 0], [2, 2, 3, 3]], axwidth=2.4, span=False)
+axs.format(
+    xlabel='xlabel', ylabel='ylabel',
+    suptitle='Merging existing colormaps'
+)
 
 # Diverging colormap example
 title1 = 'Custom diverging map'
@@ -262,14 +268,9 @@ cmap3 = plot.Colormap(
 
 # Plot examples
 for ax, cmap, title in zip(axs, (cmap1, cmap2, cmap3), (title1, title2, title3)):
-    func = (ax.pcolormesh if cmap is cmap1 else ax.contourf)
-    m = func(data, cmap=cmap, levels=256)
+    m = ax.pcolormesh(data, cmap=cmap, levels=500)
     ax.colorbar(m, loc='b', locator='null', label=cmap.name)
     ax.format(title=title)
-axs.format(
-    xlabel='xlabel', ylabel='ylabel',
-    suptitle='Merging existing colormaps'
-)
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -310,7 +311,9 @@ axs.format(
 #   `~proplot.colors.PerceptuallyUniformColormap.set_gamma` method, and
 #   controls how the luminance and saturation channels vary between colormap
 #   segments. ``gamma > 1`` emphasizes high luminance, low saturation colors,
-#   while ``gamma < 1`` emphasizes low luminance, high saturation colors.
+#   while ``gamma < 1`` emphasizes low luminance, high saturation colors. This
+#   is similar to the effect of the
+#   `HCL wizard <http://hclwizard.org:64230/hclwizard/>`__ "power" sliders.
 
 # %%
 import proplot as plot
@@ -408,6 +411,22 @@ for ax, alpha in zip(axs, (1.0, 0.6, 0.2)):
         suptitle='Adding opacity gradations'
     )
 
+# %%
+import proplot as plot
+import numpy as np
+state = np.random.RandomState(51423)
+data = state.rand(20, 20).cumsum(axis=1)
+
+# Changing the colormap gamma
+fig, axs = plot.subplots(ncols=3, axwidth=1.7)
+for ax, gamma in zip(axs, (0.7, 1.0, 1.4)):
+    cmap = plot.Colormap('boreal', gamma=gamma)
+    m = ax.pcolormesh(data, cmap=cmap, levels=10, extend='both')
+    ax.colorbar(m, loc='b', locator='none')
+    ax.format(
+        title=f'gamma = {gamma}', xlabel='x axis', ylabel='y axis',
+        suptitle='Changing the PerceptuallyUniformColormap gamma'
+    )
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_cmaps_dl:
