@@ -101,15 +101,19 @@ class _DegreeLocator(mticker.MaxNLocator):
 class LongitudeLocator(_DegreeLocator):
     """
     A locator for determining longitude gridlines. Adapted from cartopy.
-
-    Parameters
-    ----------
-    dms : bool, optional
-        Allow the locator to stop on minutes and seconds. Default is ``False``.
     """
-    # NOTE: Proplot ensures vmin, vmax are always the *actual* longitude range
-    # accounting for central longitude position.
+    def __init__(self, *args, **kwargs):
+        """
+        Parameters
+        ----------
+        dms : bool, optional
+            Allow the locator to stop on minutes and seconds. Default is ``False``.
+        """
+        super().__init__(*args, **kwargs)
+
     def tick_values(self, vmin, vmax):
+        # NOTE: Proplot ensures vmin, vmax are always the *actual* longitude range
+        # accounting for central longitude position.
         ticks = super().tick_values(vmin, vmax)
         if np.isclose(ticks[0] + 360, ticks[-1]):
             eps = 1e-10
@@ -128,12 +132,16 @@ class LongitudeLocator(_DegreeLocator):
 class LatitudeLocator(_DegreeLocator):
     """
     A locator for determining latitude gridlines. Adapted from cartopy.
-
-    Parameters
-    ----------
-    dms : bool, optional
-        Allow the locator to stop on minutes and seconds. Default is ``False``.
     """
+    def __init__(self, *args, **kwargs):
+        """
+        Parameters
+        ----------
+        dms : bool, optional
+            Allow the locator to stop on minutes and seconds. Default is ``False``.
+        """
+        super().__init__(*args, **kwargs)
+
     def tick_values(self, vmin, vmax):
         vmin = max(vmin, -90)
         vmax = min(vmax, 90)
@@ -189,10 +197,10 @@ class _DegreeFormatter(_CartopyFormatter, _PlateCarreeFormatter):
     Mix Plate Carrée formatter with custom formatter and add base methods
     that permit using this as degree-minute-second formatter anywhere.
     """
-    def _apply_transform(self, value, *args, **kwargs):
+    def _apply_transform(self, value, *args, **kwargs):  # noqa: U100
         return value
 
-    def _hemisphere(self, value, *args, **kwargs):
+    def _hemisphere(self, value, *args, **kwargs):  # noqa: U100
         return ''
 
 
