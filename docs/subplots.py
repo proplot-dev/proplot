@@ -349,19 +349,25 @@ axs.format(
 # `~proplot.utils.units`. A table of acceptable units is found in the
 # `~proplot.utils.units` documentation. They include centimeters,
 # millimeters, pixels,
-# `em-heights <https://en.wikipedia.org/wiki/Em_(typography)>`__, and
-# `points <https://en.wikipedia.org/wiki/Point_(typography)>`__.
+# `em-heights <https://en.wikipedia.org/wiki/Em_(typography)>`__,
+# `en-heights <https://en.wikipedia.org/wiki/En_(typography)>`__,
+# and `points <https://en.wikipedia.org/wiki/Point_(typography)>`__.
 
 # %%
 import proplot as plot
 import numpy as np
 with plot.rc.context(fontsize='12px'):
     fig, axs = plot.subplots(
-        ncols=3, width='15cm', height='2.5in',
+        ncols=3, width='15cm', height='3in',
         wspace=('10pt', '20pt'), right='10mm'
     )
-    panel = axs[2].panel_axes('r', width='2em')
-    panel.format(xlim=(0, 1))
+    cmap = plot.Colormap('Mono')
+    cb = fig.colorbar(
+        cmap, loc='b', extend='both', label='colorbar',
+        width='2em', extendsize='3em', shrink=0.8,
+    )
+    pax = axs[2].panel('r', width='5en')
+    pax.format(xlim=(0, 1))
 axs.format(
     suptitle='Arguments with arbitrary units',
     xlabel='x axis', ylabel='y axis',
