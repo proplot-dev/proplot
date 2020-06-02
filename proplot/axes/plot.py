@@ -745,6 +745,9 @@ def standardize_2d(
         y = yi
 
     # Handle figure titles
+    # NOTE: Must apply default colorbar label *here* rather than in
+    # cmap_changer in case metadata is stripped by globe=True.
+    colorbar_kw = kwargs.pop('colorbar_kw', None) or {}
     if autoformat:
         _, colorbar_label = _axis_labels_title(Zs[0], units=True)
         _, title = _axis_labels_title(Zs[0], units=False)
@@ -752,6 +755,8 @@ def standardize_2d(
             kw['title'] = title
         if kw:
             self.format(**kw)
+        colorbar_kw.setdefault('label', colorbar_label)
+    kwargs['colorbar_kw'] = colorbar_kw
 
     # Enforce edges
     if name in ('pcolor', 'pcolormesh', 'pcolorfast'):
@@ -888,12 +893,8 @@ def standardize_2d(
         kwargs['latlon'] = False
 
     # Finally return result
-    # WARNING: Must apply default colorbar label *here* in case metadata
-    # was stripped by globe=True.
-    colorbar_kw = kwargs.pop('colorbar_kw', None) or {}
-    colorbar_kw.setdefault('label', colorbar_label)
     with _state_context(self, _auto_format=autoformat):
-        return func(self, x, y, *Zs, colorbar_kw=colorbar_kw, **kwargs)
+        return func(self, x, y, *Zs, **kwargs)
 
 
 def _get_error_data(
