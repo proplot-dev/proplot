@@ -135,12 +135,12 @@ axs[0].plot(data, lw=2)
 # Plotting data
 # -------------
 #
-# Matplotlib includes
-# `two different APIs <https://matplotlib.org/3.2.1/api/index.html>`__
-# for making plots: an object-oriented API, and a MATLAB-style
-# `~matplotlib.pyplot` API that uses the object-oriented API under the hood.
+# Matplotlib has
+# `two different APIs <https://matplotlib.org/3.2.1/api/index.html>`__:
+# an object-oriented API and a MATLAB-style
+# `~matplotlib.pyplot` API (which uses the object-oriented API internally).
 # Plotting in ProPlot is just like plotting in matplotlib with
-# the *object-oriented* API. This is because rather than creating
+# the *object-oriented* API. Rather than creating
 # a brand new interface, ProPlot simply builds upon the existing matplotlib
 # constructs of the `~matplotlib.axes.Axes` and the `~matplotlib.figure.Figure`
 # by adding new commands and new options to existing commands, without changing
