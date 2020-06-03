@@ -1,7 +1,7 @@
 .. image:: https://github.com/lukelbd/proplot/blob/master/docs/_static/logo_long.png?raw=true
    :width: 1000px
 
-|build-status| |docs| |pypi| |code-style| |pr-welcome| |doi| |license| |gitter|
+|build-status| |docs| |pypi| |code-style| |pr-welcome| |license| |gitter| |doi|
 
 A lightweight `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful,
 publication-quality graphics.
