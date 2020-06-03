@@ -64,6 +64,63 @@ ProPlot v0.7.0 (2020-##-##)
   `~proplot.subplots.EdgeStack` stacks rather than getting inserted directly
   into the main `~proplot.subplots.GridSpec` (:pr:`110`).
 
+ProPlot v0.6.2 (2020-06-02)
+===========================
+
+.. rubric:: Deprecated
+
+* Remove `~proplot.figure.Figure` setters like `set_sharex`, replace with
+  read-only properties (:commit:`7b455008`). These did not work and did not
+  add critical functionality.
+
+.. rubric:: Features
+
+* Add `autoformat` as `~proplot.axes.standardize_1d` and
+  `~proplot.axes.standardize_2d` keyword arg, so inheriting labels can
+  be turned on/off for individual plots (:commit:`61258280`).
+* Share *initial* limits/scales/tickers from parent subplots when making
+  new panels (:commit:`cf0d5d4e`).
+* Permit negative "cuts" with `~proplot.colors.LinearSegmentedColormap.cut`
+  to expand the neutral zone of a diverging cmap (:commit:`94548d09`).
+* Add valid `format` arguments to `altx` and `alty`, including ``[x|y]lim``
+  (:commit:`734f5940`).
+* Pass string `dual[x|y]` arguments like ``'inverse'`` through the
+  `~proplot.constructor.Scale` constructor (:commit:`413e1781`).
+* Add ``'dms'`` locator and formatter, for degree-minute-second labels
+  without cardinal direction indicators (:commit:`1b180cd2`).
+* Add `"tau" formatter <https://tauday.com/tau-manifesto>`__
+  (:commit:`fc6a9752`).
+* Restore default :rcraw:`title.pad` to matplotlib value, stop artificially bumping
+  up :rcraw:`title.pad` for "inner" titles (:commit:`7de1c1f4`).
+* Make custom formatters like ``SciFormatter`` *classes* rather than functions
+  returning `~matplotlib.ticker.FuncFormatter` (:commit:`7591f474`).
+
+.. rubric:: Bug fixes
+
+* Various improvements to auto-figure sizing with Qt backend and when calling
+  `print_figure` (:commit:`db4e48d5`, :commit:`82457347`, :commit:`744d7d37`).
+* Suppress warning when ``matplotlibrc`` contains non-style param
+  (:commit:`4a0c7f10`).
+* Fix fatal `standardize_2d` error when ``autoformat=False`` (:issue:`181`)
+* Fix issue where ``Colormap(..., alpha=alpha)`` made persistent changes
+  to the original registered colormap (:commit:`cb24ea51`).
+* Prevent matplotlib deprecation warning by removing `set_smart_bounds`
+  dependency and improving axis scale transforms (:commit:`432576d8`).
+* Fix panel sharing issue in presence of stacked or multiple panels
+  (:commit:`28eaf0ca`).
+* Fix geographic feature toggling, zorder bugs (:commit:`acf0d5d4`, :commit:`ea151b25`).
+* Fix `~matplotlib.axes.Axes.hist` bug due to ``bar(..., width=width)`` now
+  being *relative* to the *x* step size (:commit:`e32ed0bc`).
+* Fix bug where `~matplotlib.figure.Figure.savefig` receives ``Path`` instead
+  of string (:issue:`176`).
+
+.. rubric:: Documentation
+
+* Various improvements to website and API docstrings.
+* Document `proplot.figure.Figure.save` method (:commit:`da25266a`).
+* Darker "dark mode" (:commit:`979c8188`).
+* Prevent website from flashing light mode when changing pages (:commit:`75e4d6a1`).
+
 ProPlot v0.6.1 (2020-05-20)
 ===========================
 
