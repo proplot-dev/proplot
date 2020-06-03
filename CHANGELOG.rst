@@ -64,6 +64,13 @@ ProPlot v0.7.0 (2020-##-##)
   `~proplot.subplots.EdgeStack` stacks rather than getting inserted directly
   into the main `~proplot.subplots.GridSpec` (:pr:`110`).
 
+ProPlot v0.6.3 (2020-06-02)
+===========================
+
+.. rubric:: Bug fixes
+
+* Fix issue where import fails if cartopy is not installed (:commit:`e29d49e8`).
+
 ProPlot v0.6.2 (2020-06-02)
 ===========================
 
