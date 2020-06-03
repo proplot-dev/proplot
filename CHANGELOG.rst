@@ -1,5 +1,5 @@
 ..
-  Valid subsections:
+  Valid rubrics:
   - Deprecated
   - Features
   - Bug fixes
