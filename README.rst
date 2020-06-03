@@ -1,7 +1,7 @@
 .. image:: https://github.com/lukelbd/proplot/blob/master/docs/_static/logo_long.png?raw=true
    :width: 1000px
 
-|build-status| |docs| |pypi| |code-style| |pr-welcome| |license| |gitter|
+|build-status| |docs| |pypi| |code-style| |pr-welcome| |doi| |license| |gitter|
 
 A lightweight `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful,
 publication-quality graphics.
@@ -43,6 +43,10 @@ The documentation is `published on readthedocs <https://proplot.readthedocs.io>`
 .. |license| image:: https://img.shields.io/github/license/lukelbd/proplot.svg
    :alt: license
    :target: LICENSE.txt
+
+.. |doi| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.3873879.svg
+   :alt: doi
+   :target: https://zenodo.org/record/3873879
 
 .. |docs| image:: https://readthedocs.org/projects/proplot/badge/?version=latest
    :alt: docs
