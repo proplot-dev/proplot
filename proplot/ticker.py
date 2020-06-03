@@ -17,7 +17,7 @@ try:
     )
 except ModuleNotFoundError:
     ccrs = None
-    _PlateCarreeFormatter, LatitudeFormatter = LongitudeFormatter = object
+    _PlateCarreeFormatter = LatitudeFormatter = LongitudeFormatter = object
 
 __all__ = [
     'AutoFormatter',
