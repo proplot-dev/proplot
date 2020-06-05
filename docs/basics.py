@@ -25,8 +25,8 @@
 # Creating figures
 # ----------------
 #
-# ProPlot works by introducing the `proplot.figure.Figure` subclass of the
-# matplotlib figure class `~matplotlib.figure.Figure`, and the `proplot.axes.Axes`
+# ProPlot works by creating a `proplot.figure.Figure` subclass of the
+# matplotlib figure class `~matplotlib.figure.Figure`, and a `proplot.axes.Axes`
 # subclass of the matplotlib axes class `~matplotlib.axes.Axes`.
 # All plotting in ProPlot begins by generating
 # an instance of the new figure class filled with instances of the new
