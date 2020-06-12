@@ -95,12 +95,8 @@ axs[2].format(
 # ---------------
 #
 # ProPlot can turn any subplot into a geographic projection using
-# the `cartopy`_ or `basemap`_ packages as "backends." The
-# `~proplot.axes.GeoAxes` class and the `~proplot.constructor.Proj`
-# constructor function ensure that ProPlot's syntax with cartopy as the
-# "backend" is exactly the same as when basemap is the "backend".
-# Cartopy is the default backend, but you can switch
-# to basemap using ``basemap=True`` (see below).
+# the `cartopy`_ or `basemap`_ packages as "backends". The syntax with
+# cartopy as the backend is exactly the same as when basemap is the backend.
 #
 # To turn a subplot into a geographic projection, pass
 # ``proj='name'`` or e.g. ``proj={2: 'name'}``
@@ -110,57 +106,59 @@ axs[2].format(
 # instance directly using the `~proplot.constructor.Proj` constructor function and
 # pass the class instance to `proj`.
 #
-# When you request map projections, `~proplot.ui.subplots` returns
-# instances of `~proplot.axes.CartopyAxes` or `~proplot.axes.BasemapAxes`.
-# These axes have the following properties:
+# `~proplot.ui.subplots` returns instances of `proplot.axes.CartopyAxes`
+# or `proplot.axes.BasemapAxes`, depending on whether ``basemap=True`` was used.
+# Both of these derive from `proplot.axes.GeoAxes`, which includes a
+# `~proplot.axes.GeoAxes.format` method that can be used to control various
+# :ref:`geographic features <ug_geoformat>` with the same syntax whether
+# cartopy or basemap is the backend.
 #
-# * `~proplot.axes.CartopyAxes` joins
-#   `cartopy.mpl.geoaxes.GeoAxes` with the `proplot.axes.Axes` class
-#   and adds a `~proplot.axes.GeoAxes.format` method. This class includes all the
-#   normal `cartopy.mpl.geoaxes.GeoAxes` methods. Its `~proplot.axes.GeoAxes.format`
-#   method can be used to set the map bounds with
-#   `~cartopy.mpl.geoaxes.GeoAxes.set_extent`, add major and minor gridlines with
-#   `~cartopy.mpl.geoaxes.GeoAxes.gridlines`, and add geographic features with
+# * `proplot.axes.CartopyAxes` unifies cartopy's `~cartopy.mpl.geoaxes.GeoAxes`
+#   class with the `proplot.axes.Axes` class. The `~proplot.axes.GeoAxes.format`
+#   method changes map bounds with
+#   `~cartopy.mpl.geoaxes.GeoAxes.set_extent`, adds major and minor gridlines with
+#   `~cartopy.mpl.geoaxes.GeoAxes.gridlines`, and adds geographic features with
 #   `~cartopy.mpl.geoaxes.GeoAxes.add_feature`.
 #
-# * `~proplot.axes.BasemapAxes` uses the same `~proplot.axes.GeoAxes.format` method
-#   and redirects the plot, scatter, contour,
-#   contourf, pcolor, pcolormesh, quiver, streamplot, and barb *axes methods* to
+# * `~proplot.axes.BasemapAxes` redirects the plot, scatter, contour, contourf,
+#   pcolor, pcolormesh, quiver, streamplot, and barb *axes methods* to
 #   identically named methods on the `~mpl_toolkits.basemap.Basemap` instance.
 #   This means you can work with *axes* plotting methods rather than the
-#   basemap methods, just like cartopy. Its `~proplot.axes.GeoAxes.format`
-#   method can be used to add major and minor gridlines with
+#   basemap methods, just like cartopy. The `~proplot.axes.GeoAxes.format`
+#   method adds major and minor gridlines with
 #   `~mpl_toolkits.basemap.Basemap.drawmeridians` and
-#   `~mpl_toolkits.basemap.Basemap.drawparallels` and geographic features
+#   `~mpl_toolkits.basemap.Basemap.drawparallels` and adds geographic features
 #   with commands like `~mpl_toolkits.basemap.Basemap.fillcontinents`
-#   and `~mpl_toolkits.basemap.Basemap.drawcoastlines`.
+#   and `~mpl_toolkits.basemap.Basemap.drawcoastlines`. In case you need to
+#   use it, the corresponding `~mpl_toolkits.basemap.Basemap` instance is
+#   available via the `proplot.axes.BasemapAxes.projection` attribute.
 #
-# These features help address the limitations of the cartopy and basemap APIs.
-# You no longer have to invoke verbose cartopy classes like
+# These features mean you no longer have to invoke verbose cartopy classes like
 # `~cartopy.crs.LambertAzimuthalEqualArea` and `~cartopy.feature.NaturalEarthFeature`,
 # and you no longer have to directly work with the `~mpl_toolkits.basemap.Basemap`
-# instance. In case you *do* need access to the projection class instances,
-# they are available via the `proplot.axes.CartopyAxes.projection` and
-# `proplot.axes.BasemapAxes.projection` attributes.
+# instance. In the below examples, we create a variety of geographic plots with
+# both cartopy and basemap as the backends.
 #
 # .. note::
 #
-#    ProPlot makes sure polar cartopy projections like `~cartopy.crs.NorthPolarStereo`
-#    have a circular boundary. By default, polar projections are bounded at the
-#    equator and non-polar projections are forced to have global extent with
-#    `~cartopy.mpl.geoaxes.GeoAxes.set_global`. To revert to the behavior where
-#    cartopy automatically determines map boundaries based on plotted content,
-#    simply set :rcraw:`cartopy.autoextent` to ``True`` or
-#    pass ``autoextent=True`` to `~proplot.axes.CartopyAxes`.
-#
-# .. note::
-#
-#    To make things more consistent, the `~proplot.constructor.Proj` constructor
-#    function lets you supply native `PROJ <https://proj.org>`__ keyword names to
-#    the cartopy `~cartopy.crs.Projection` classes (e.g. `lon_0` instead of
-#    `central_longitude`), and instantiates `~mpl_toolkits.basemap.Basemap`
-#    projections with sensible defaults rather than raising an error when projection
-#    arguments are omitted (e.g. ``lon_0=0`` for most projections).
+#    * ProPlot ensures that polar cartopy projections like
+#      `~cartopy.crs.NorthPolarStereo` have circular boundaries (see `this example\
+#      <https://scitools.org.uk/cartopy/docs/latest/gallery/always_circular_stereo>`__
+#      from the cartopy website).
+#    * By default, non-polar cartopy projections are forced to have global extent
+#      with `~cartopy.mpl.geoaxes.GeoAxes.set_global` and polar cartopy projections
+#      are bounded at the equator. This stands in contrast to the default cartopy
+#      behavior, where map boundaries are determined automatically based on the
+#      coordinates of the plotted content. To revert to cartopy's default behavior,
+#      set :rcraw:`cartopy.autoextent` to ``True`` or pass ``autoextent=True``
+#      to `~proplot.axes.CartopyAxes`.
+#    * To make things more consistent between cartopy and basemap, the
+#      `~proplot.constructor.Proj` constructor function lets you supply native
+#      `PROJ <https://proj.org>`__ keyword names for the cartopy
+#      `~cartopy.crs.Projection` classes (e.g. `lon_0` instead of `central_longitude`)
+#      and instantiates `~mpl_toolkits.basemap.Basemap` projections with sensible
+#      default PROJ parameters rather than raising an error when they are
+#      omitted (e.g. ``lon_0=0`` as the default for most projections).
 #
 # .. warning::
 #

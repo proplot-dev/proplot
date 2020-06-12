@@ -51,11 +51,14 @@
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. note::
 #
-#    ProPlot sets the default display background color :rcraw:`figure.facecolor`
-#    to gray, the default background color for saved figures
-#    :rcraw:`savefig.facecolor` to white, and makes saved figure backgrounds
-#    transparent by default by setting :rcraw:`savefig.transparent` to ``True``.
-#    It also switches the default :rcraw:`savefig.format` from PNG to PDF
+#    ProPlot figure backgrounds are only gray when displayed by the
+#    `matplotlib backend <https://matplotlib.org/faq/usage_faq#what-is-a-backend>`__
+#    -- the default background color is white when the figure is saved. This is done
+#    by setting :rcraw:`figure.facecolor` to gray, in order to improve contrast
+#    when working with figures.
+#    ProPlot also makes the default saved figure background *transparent*
+#    by setting :rcraw:`savefig.transparent` to ``True``
+#    and changes the default :rcraw:`savefig.format` from PNG to PDF
 #    for the following reasons:
 #
 #        #. Vector graphic formats are infinitely scalable.
@@ -68,8 +71,8 @@
 #    :rcraw:`savefig.dpi` to 1200 dots per inch, which is
 #    `recommended by most journals <https://www.pnas.org/page/authors/format>`__
 #    as the minimum resolution for rasterized figures containing lines and text.
-#    See the :ref:`configuration section <ug_proplotrc>` for how to change these
-#    settings.
+#    See the :ref:`configuration section <ug_proplotrc>` for how to change
+#    any of these settings.
 
 # %%
 # Generate sample data
