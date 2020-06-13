@@ -64,6 +64,16 @@ ProPlot v0.7.0 (2020-##-##)
   `~proplot.subplots.EdgeStack` stacks rather than getting inserted directly
   into the main `~proplot.subplots.GridSpec` (:pr:`110`).
 
+ProPlot v0.6.4 (2020-##-##)
+===========================
+
+.. rubric:: Bug fixes
+
+* Use :rcraw:`patch.linewidth` for default bar edge width, stop setting
+  default histogram plot linewidth to zero, and set :rcraw:`patch.linewidth`
+  to ``0.6`` to match proplot's default line width for lines, axes edges, and
+  hatches (:commit:`598214e1`).
+
 ProPlot v0.6.3 (2020-06-02)
 ===========================
 
