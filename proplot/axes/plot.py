@@ -49,9 +49,12 @@ __all__ = [
     'hlines_wrapper',
     'indicate_error',
     'legend_wrapper',
+    # 'parametric_wrapper',  # full documentation is on Axes method
+    # 'plot_wrapper',  # the only functionality provided by this wrapper is deprecated
     'scatter_wrapper',
     'standardize_1d',
     'standardize_2d',
+    # 'stem_wrapper',  # very minor changes
     'text_wrapper',
     'violinplot_wrapper',
     'vlines_wrapper',
@@ -1260,12 +1263,13 @@ def indicate_error(
         return result
 
 
-def _parametric_wrapper_private(self, func, *args, interp=0, **kwargs):
+def parametric_wrapper(self, func, *args, interp=0, **kwargs):
     """
     Calls `~proplot.axes.Axes.parametric` and optionally interpolates values before
     they get passed to `cmap_changer` and the colormap boundaries are drawn.
     """
     # Parse input arguments
+    # NOTE: This wrapper is required so that
     # WARNING: So far this only works for 1D *x* and *y* coordinates.
     # Cannot draw multiple colormap lines at once
     if len(args) == 3:
@@ -1310,12 +1314,12 @@ def _parametric_wrapper_private(self, func, *args, interp=0, **kwargs):
     return func(self, x, y, values=values, **kwargs)
 
 
-def _plot_wrapper_private(
+def plot_wrapper(
     self, func, *args, cmap=None, values=None, **kwargs
 ):
     """
-    Calls `~proplot.axes.Axes.parametric` in certain cases, but this behavior
-    is now deprecated.
+    Calls `~proplot.axes.Axes.parametric` in certain cases (but this behavior
+    is now deprecated).
     """
     if len(args) > 3:  # e.g. with fmt string
         raise ValueError(f'Expected 1-3 positional args, got {len(args)}.')
@@ -1328,15 +1332,17 @@ def _plot_wrapper_private(
         return self.parametric(*args, cmap=cmap, values=values, **kwargs)
 
     # Draw lines
+    result = func(self, *args, values=values, **kwargs)
+
     # Add sticky edges? No because there is no way to check whether "dependent variable"
     # is x or y axis like with area/areax and bar/barh. Better to always have margin.
-    result = func(self, *args, values=values, **kwargs)
     # for objs in result:
     #     if not isinstance(objs, tuple):
     #         objs = (objs,)
     #     for obj in objs:
     #         xdata = obj.get_xdata()
     #         obj.sticky_edges.x.extend((np.min(xdata), np.max(xdata)))
+
     return result
 
 
@@ -1461,7 +1467,7 @@ color-spec or list thereof, optional
     return obj
 
 
-def _stem_wrapper_private(
+def stem_wrapper(
     self, func, *args, linefmt=None, basefmt=None, markerfmt=None, **kwargs
 ):
     """
@@ -3899,12 +3905,12 @@ _fill_betweenx_wrapper = _generate_decorator(fill_betweenx_wrapper)
 _hist_wrapper = _generate_decorator(hist_wrapper)
 _hlines_wrapper = _generate_decorator(hlines_wrapper)
 _indicate_error = _generate_decorator(indicate_error)
-_parametric_wrapper = _generate_decorator(_parametric_wrapper_private)
-_plot_wrapper = _generate_decorator(_plot_wrapper_private)
+_parametric_wrapper = _generate_decorator(parametric_wrapper)
+_plot_wrapper = _generate_decorator(plot_wrapper)
 _scatter_wrapper = _generate_decorator(scatter_wrapper)
 _standardize_1d = _generate_decorator(standardize_1d)
 _standardize_2d = _generate_decorator(standardize_2d)
-_stem_wrapper = _generate_decorator(_stem_wrapper_private)
+_stem_wrapper = _generate_decorator(stem_wrapper)
 _text_wrapper = _generate_decorator(text_wrapper)
 _violinplot_wrapper = _generate_decorator(violinplot_wrapper)
 _vlines_wrapper = _generate_decorator(vlines_wrapper)
