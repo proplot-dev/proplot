@@ -2857,9 +2857,12 @@ def cmap_changer(
             kwargs['colors'] = colors  # this was not done above
             colors = None
     else:
-        cmap = constructor.Colormap(
-            _not_none(cmap, rc['image.cmap']), **cmap_kw
-        )
+        if cmap is None:
+            if name == 'spy':
+                cmap = pcolors.ListedColormap(['w', 'k'], '_binary')
+            else:
+                cmap = rc['image.cmap']
+        cmap = constructor.Colormap(cmap, **cmap_kw)
         if getattr(cmap, '_cyclic', None) and extend != 'neither':
             warnings._warn_proplot(
                 f'Cyclic colormap requires extend="neither". '
