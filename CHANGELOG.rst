@@ -69,6 +69,9 @@ ProPlot v0.6.4 (2020-##-##)
 
 .. rubric:: Bug fixes
 
+* Support changing line width, line style, and color properties
+  for barb, quiver, streamplot, matshow, spy, and hist2d plots
+  (:commit:`54c7d8c8`).
 * Use :rcraw:`patch.linewidth` for default bar edge width, stop setting
   default histogram plot linewidth to zero, and set :rcraw:`patch.linewidth`
   to ``0.6`` to match proplot's default line width for lines, axes edges, and
