@@ -799,65 +799,65 @@ def standardize_2d(
 
     # Enforce edges
     if name in ('pcolor', 'pcolormesh', 'pcolorfast'):
+        Z = Zs[0]  # already enforced that shapes must be identical (see above)
         xlen, ylen = x.shape[-1], y.shape[0]
-        for Z in Zs:
-            if Z.ndim != 2:
-                raise ValueError(
-                    f'Input arrays must be 2D, instead got shape {Z.shape}.'
-                )
-            elif Z.shape[1] == xlen and Z.shape[0] == ylen:
-                # Get edges given centers
-                if all(z.ndim == 1 and z.size > 1 and _is_number(z) for z in (x, y)):
-                    x = edges(x)
-                    y = edges(y)
-                else:
-                    if (
-                        x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1
-                        and _is_number(x)
-                    ):
-                        x = edges2d(x)
-                    if (
-                        y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1
-                        and _is_number(y)
-                    ):
-                        y = edges2d(y)
-            elif Z.shape[1] != xlen - 1 or Z.shape[0] != ylen - 1:
-                raise ValueError(
-                    f'Input shapes x {x.shape} and y {y.shape} must match '
-                    f'Z centers {Z.shape} or '
-                    f'Z borders {tuple(i+1 for i in Z.shape)}.'
-                )
+        if Z.ndim != 2:
+            raise ValueError(
+                f'Input arrays must be 2D, instead got shape {Z.shape}.'
+            )
+        elif Z.shape[1] == xlen and Z.shape[0] == ylen:
+            # Get edges given centers
+            if all(z.ndim == 1 and z.size > 1 and _is_number(z) for z in (x, y)):
+                x = edges(x)
+                y = edges(y)
+            else:
+                if (
+                    x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1
+                    and _is_number(x)
+                ):
+                    x = edges2d(x)
+                if (
+                    y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1
+                    and _is_number(y)
+                ):
+                    y = edges2d(y)
+        elif Z.shape[1] != xlen - 1 or Z.shape[0] != ylen - 1:
+            raise ValueError(
+                f'Input shapes x {x.shape} and y {y.shape} must match '
+                f'Z centers {Z.shape} or '
+                f'Z borders {tuple(i+1 for i in Z.shape)}.'
+            )
 
     # Enforce centers
     else:
+        Z = Zs[0]  # already enforced that shapes must be identical (see above)
         xlen, ylen = x.shape[-1], y.shape[0]
-        for Z in Zs:
-            if Z.ndim != 2:
-                raise ValueError(
-                    f'Input arrays must be 2d, instead got shape {Z.shape}.'
-                )
-            elif Z.shape[1] == xlen - 1 and Z.shape[0] == ylen - 1:
-                # Get centers given edges.
-                if all(z.ndim == 1 and z.size > 1 and _is_number(z) for z in (x, y)):
-                    x = (x[1:] + x[:-1]) / 2
-                    y = (y[1:] + y[:-1]) / 2
-                else:
-                    if (
-                        x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1
-                        and _is_number(x)
-                    ):
-                        x = 0.25 * (x[:-1, :-1] + x[:-1, 1:] + x[1:, :-1] + x[1:, 1:])
-                    if (
-                        y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1
-                        and _is_number(y)
-                    ):
-                        y = 0.25 * (y[:-1, :-1] + y[:-1, 1:] + y[1:, :-1] + y[1:, 1:])
-            elif Z.shape[1] != xlen or Z.shape[0] != ylen:
-                raise ValueError(
-                    f'Input shapes x {x.shape} and y {y.shape} '
-                    f'must match Z centers {Z.shape} '
-                    f'or Z borders {tuple(i+1 for i in Z.shape)}.'
-                )
+        if Z.ndim != 2:
+            raise ValueError(
+                f'Input arrays must be 2d, instead got shape {Z.shape}.'
+            )
+        elif Z.shape[1] == xlen - 1 and Z.shape[0] == ylen - 1:
+            # Get centers given edges.
+            if all(z.ndim == 1 and z.size > 1 and _is_number(z) for z in (x, y)):
+                x = 0.5 * (x[1:] + x[:-1])
+                y = 0.5 * (y[1:] + y[:-1])
+            else:
+                if (
+                    x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1
+                    and _is_number(x)
+                ):
+                    x = 0.25 * (x[:-1, :-1] + x[:-1, 1:] + x[1:, :-1] + x[1:, 1:])
+                if (
+                    y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1
+                    and _is_number(y)
+                ):
+                    y = 0.25 * (y[:-1, :-1] + y[:-1, 1:] + y[1:, :-1] + y[1:, 1:])
+        elif Z.shape[1] != xlen or Z.shape[0] != ylen:
+            raise ValueError(
+                f'Input shapes x {x.shape} and y {y.shape} '
+                f'must match Z centers {Z.shape} '
+                f'or Z borders {tuple(i+1 for i in Z.shape)}.'
+            )
 
     # Cartopy projection axes
     if (
@@ -920,7 +920,7 @@ def standardize_2d(
                         Z = ma.concatenate((Zq, Z, Zq), axis=1)
                 else:
                     raise ValueError(
-                        'Unexpected shape of longitude/latitude/data arrays.'
+                        'Unexpected shape of longitude, latitude, and/or data array(s).'
                     )
             iZs.append(Z)
         x, Zs = ix, iZs
