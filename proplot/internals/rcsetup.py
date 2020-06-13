@@ -200,6 +200,7 @@ _rc_matplotlib_default = {
     'legend.handletextpad': 0.5,
     'mathtext.fontset': 'custom',
     'mathtext.default': 'regular',
+    'patch.linewidth': LINEWIDTH,
     'savefig.bbox': None,  # use custom tight layout
     'savefig.directory': '',  # current directory
     'savefig.dpi': 1200,  # academic journal recommendations for raster line art
@@ -901,12 +902,11 @@ _rc_children = {
         'rightlabel.size', 'bottomlabel.size'
     ),
     'linewidth': (
-        # also sets minor tick widths through tick.ratio
+        # NOTE: rc_configurator will adjust [xy]tick.minor.width accordingly
         # NOTE: do not add grid.linewidth to this because common use case is
         # making the edge a bit thicker to *highlight* a subplot, and generally
         # we do not want that to affect gridlines.
-        'axes.linewidth', 'hatch.linewidth',
-        'xtick.major.width', 'ytick.major.width'
+        'axes.linewidth', 'xtick.major.width', 'ytick.major.width'
     ),
     'margin': (
         'axes.xmargin', 'axes.ymargin'

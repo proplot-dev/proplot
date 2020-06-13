@@ -45,6 +45,7 @@ __all__ = [
     'default_transform',
     'fill_between_wrapper',
     'fill_betweenx_wrapper',
+    # 'hist_wrapper',  # very minor changes
     'hlines_wrapper',
     'indicate_error',
     'legend_wrapper',
@@ -1702,20 +1703,13 @@ def fill_betweenx_wrapper(self, func, *args, **kwargs):
     return _fill_between_apply(self, func, *args, **kwargs)
 
 
-def _hist_wrapper_private(self, func, x, bins=None, **kwargs):
+def hist_wrapper(self, func, x, bins=None, **kwargs):
     """
-    Enforces that all arguments after `bins` are keyword-only and sets the
-    default bar edge width to ``0``.
-
-    Note
-    ----
-    This function wraps {methods}
+    Forces `bar_wrapper` to interpret `width` as literal rather than relative
+    to step size and enforces all arguments after `bins` are keyword-only.
     """
-    linewidth = _not_none(  # match default behavior
-        lw=kwargs.pop('lw', None), linewidth=kwargs.pop('linewidth', None), default=0,
-    )
     with _state_context(self, _absolute_bar_width=True):
-        return func(self, x, bins=bins, linewidth=linewidth, **kwargs)
+        return func(self, x, bins=bins, **kwargs)
 
 
 @docstring.add_snippets
@@ -1749,7 +1743,7 @@ def bar_wrapper(
     elif height is None:
         x, height = None, x
     args = (x, height)
-    linewidth = _not_none(lw=lw, linewidth=linewidth, default=0.6)
+    linewidth = _not_none(lw=lw, linewidth=linewidth, default=rc['patch.linewidth'])
     kwargs.update({
         'width': width, 'bottom': bottom, 'stacked': stacked,
         'orientation': orientation, 'linewidth': linewidth, 'edgecolor': edgecolor,
@@ -3902,7 +3896,7 @@ _cmap_changer = _generate_decorator(cmap_changer)
 _cycle_changer = _generate_decorator(cycle_changer)
 _fill_between_wrapper = _generate_decorator(fill_between_wrapper)
 _fill_betweenx_wrapper = _generate_decorator(fill_betweenx_wrapper)
-_hist_wrapper = _generate_decorator(_hist_wrapper_private)
+_hist_wrapper = _generate_decorator(hist_wrapper)
 _hlines_wrapper = _generate_decorator(hlines_wrapper)
 _indicate_error = _generate_decorator(indicate_error)
 _parametric_wrapper = _generate_decorator(_parametric_wrapper_private)
