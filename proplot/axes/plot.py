@@ -230,9 +230,9 @@ def _load_objects():
 
 _load_objects()
 
-# Keywords for styling cmap overridden plots
-# TODO: Deprecate this when #45 merged! Pcolor *already* accepts lw,
-# linewidth, *and* linewidths!
+# Make keywords for styling cmap_changer-overridden plots *consistent*
+# TODO: Consider deprecating linewidth and linestyle interpretation. Think
+# these already have flexible interpretation for all plotting funcs.
 STYLE_ARGS_TRANSLATE = {
     'contour': {
         'colors': 'colors',
@@ -274,6 +274,37 @@ STYLE_ARGS_TRANSLATE = {
         'linewidths': 'linewidths',
         'linestyles': 'linestyles',
     },
+    'hist2d': {
+        'colors': 'edgecolors',
+        'linewidths': 'linewidths',
+        'linestyles': 'linestyles',
+    },
+    'barbs': {
+        'colors': 'barbcolor',
+        'linewidths': 'linewidth',
+        'linestyles': 'linestyle',
+    },
+    'quiver': {  # NOTE: linewidth/linestyle apply to *arrow outline*
+        'colors': 'color',
+        'linewidths': 'linewidth',
+        'linestyles': 'linestyle',
+    },
+    'streamplot': {
+        'colors': 'color',
+        'linewidths': 'linewidth',
+        'linestyles': 'linestyle',
+    },
+    'spy': {
+        'colors': 'color',
+        'linewidths': 'linewidth',
+        'linestyles': 'linestyle',
+    },
+    'matshow': {
+        'colors': 'color',
+        'linewidths': 'linewidth',
+        'linestyles': 'linestyle',
+    },
+    'imshow': None,
 }
 
 
@@ -433,10 +464,12 @@ def standardize_1d(self, func, *args, autoformat=None, **kwargs):
     elif len(args) == 1:
         x = None
         y, *args = args
-    elif len(args) in (2, 3, 4):
-        x, y, *args = args  # same
+    elif len(args) <= 4:  # max signature is x, y, z, color
+        x, y, *args = args
     else:
-        raise ValueError(f'Too many arguments passed to {name}. Max is 4.')
+        raise ValueError(
+            f'{name}() takes up to 4 positional arguments but {len(args)} was given.'
+        )
     vert = kwargs.get('vert', None)
     if vert is not None:
         orientation = ('vertical' if vert else 'horizontal')
@@ -649,8 +682,10 @@ def standardize_2d(
     _load_objects()
     if not args:
         return func(self, *args, **kwargs)
-    elif len(args) > 4:
-        raise ValueError(f'Too many arguments passed to {name}. Max is 4.')
+    elif len(args) > 5:
+        raise ValueError(
+            f'{name}() takes up to 5 positional arguments but {len(args)} was given.'
+        )
     x, y = None, None
     if len(args) > 2:
         x, y, *args = args
@@ -2835,25 +2870,18 @@ def cmap_changer(
     # Translate standardized keyword arguments back into the keyword args
     # accepted by native matplotlib methods. Also disable edgefix if user want
     # to customize the "edges".
-    ignore = []
     style_kw = STYLE_ARGS_TRANSLATE.get(name, None)
     for key, value in (
         ('colors', colors),
         ('linewidths', linewidths),
         ('linestyles', linestyles)
     ):
-        if add_contours or value is None:
+        if value is None or add_contours:
             continue
-        if not style_kw:  # no known conversion table
-            ignore.append(key)
-            continue
+        if not style_kw or key not in style_kw:  # no known conversion table
+            raise TypeError(f'{name}() got an unexpected keyword argument {key!r}')
         edgefix = False  # disable edgefix when specifying borders!
         kwargs[style_kw[key]] = value
-    if ignore:
-        warnings._warn_proplot(
-            f'Ignoring keyword arguments for {name!r}: '
-            + ', '.join(map(repr, ignore)) + '.'
-        )
 
     # Build colormap normalizer and update keyword args
     # NOTE: Standard algorithm for obtaining default levels does not work
@@ -2881,9 +2909,10 @@ def cmap_changer(
 
     # Call function, possibly twice to add 'edges' to contourf plot
     obj = func(self, *args, **kwargs)
-    obj.extend = extend  # normally 'extend' is just for contour/contourf
-    if ticks is not None:
-        obj.ticks = ticks  # a Locator or ndarray used for controlling ticks
+    if not isinstance(obj, tuple):  # hist2d
+        obj.extend = extend  # normally 'extend' is just for contour/contourf
+        if ticks is not None:
+            obj.ticks = ticks  # a Locator or ndarray used for controlling ticks
     if add_contours:
         colors = _not_none(colors, 'k')
         self.contour(
