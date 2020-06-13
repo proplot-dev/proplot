@@ -2549,7 +2549,10 @@ def _build_discrete_norm(
     # Only use LinearSegmentedNorm if necessary, because it is slow
     descending = False
     if np.iterable(levels):
-        levels, descending = pcolors._check_levels(levels)
+        if len(levels) == 1:
+            norm = mcolors.Normalize(vmin=levels[0] - 1, vmax=levels[0] + 1)
+        else:
+            levels, descending = pcolors._check_levels(levels)
     if norm is None:
         norm = 'linear'
         if np.iterable(levels) and len(levels) > 2:
@@ -2651,7 +2654,7 @@ def _build_discrete_norm(
 
     # Generate DiscreteNorm and update "child" norm with vmin and vmax from
     # levels. This lets the colorbar set tick locations properly!
-    if not isinstance(norm, mcolors.BoundaryNorm):
+    if not isinstance(norm, mcolors.BoundaryNorm) and len(levels) > 1:
         if getattr(cmap, '_cyclic', None):
             bin_kw = {'step': 0.5, 'extend': 'both'}  # omit end colors
         else:
