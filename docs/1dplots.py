@@ -35,15 +35,16 @@
 # Property cycles
 # ---------------
 #
-# It is often desirable to use different `property cycles
+# It is often desirable to use different, *local* `property cycles
 # <https://matplotlib.org/tutorials/intermediate/color_cycle.html#sphx-glr-tutorials-intermediate-color-cycle-py>`__
-# for different axes or different plot elements. To enable this, the
-# `~proplot.axes.cycle_changer` adds the `cycle` and `cycle_kw` to the 1D
-# plotting methods. These arguments are passed to the
-# `~proplot.constructor.Cycle` constructor function, and the resulting property
-# cycle is used to style the input data. ProPlot iterates through property
-# cycle properties when (1) making multiple calls to a plotting command, or (2)
-# plotting successive columns of 2-dimensional input data. For more information
+# for specific subplots or plot elements, rather than a single *global* property
+# cycle. You can change the property cycle on-the-fly using the
+# `cycle` and `cycle_kw` arguments with any plotting method wrapped by
+# `~proplot.axes.cycle_changer`. `cycle` and `cycle_kw` are passed to
+# the `~proplot.constructor.Cycle` constructor function, and the resulting property
+# cycle is applied to the input data. ProPlot iterates through the property
+# cycle properties when (1) a plotting command is called more than once or (2)
+# when plotting successive columns of 2-dimensional input data. For more information
 # on property cycles, see the :ref:`color cycles section <ug_cycles>` and `this
 # matplotlib tutorial
 # <https://matplotlib.org/tutorials/intermediate/color_cycle.html#sphx-glr-tutorials-intermediate-color-cycle-py>`__.
@@ -74,7 +75,7 @@ with plot.rc.context({'lines.linewidth': 3}):
 # Standardized arguments
 # ----------------------
 #
-# The `~proplot.axes.standardize_1d` wrapper is used to standardize
+# The `~proplot.axes.standardize_1d` wrapper standardizes
 # positional arguments across all 1D plotting methods.
 # `~proplot.axes.standardize_1d` allows you to optionally omit *x*
 # coordinates, in which case they are inferred from the data. It also permits

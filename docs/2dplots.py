@@ -37,17 +37,17 @@
 #
 # It is often desirable to create ProPlot colormaps on-the-fly, without
 # explicitly using the `~proplot.constructor.Colormap` constructor function.
-# To enable this, the `~proplot.axes.cmap_changer` wrapper adds the
-# `cmap` and `cmap_kw` arguments to every 2D plotting method. These
-# arguments are passed to the `~proplot.constructor.Colormap` constructor
-# function, and the resulting colormap is used for the input data. For
-# example, to create and apply a monochromatic colormap, you can simply use
+# You can do so using the `cmap` and `cmap_kw` arguments with any plotting
+# method wrapped by `~proplot.axes.cmap_changer`. `cmap` and `cmap_kw`
+# are passed to the `~proplot.constructor.Colormap` constructor
+# function, and the resulting colormap is used for the plot. For example,
+# to create and apply a monochromatic colormap, you can simply use
 # ``cmap='color name'``.
 
 # The `~proplot.axes.cmap_changer` wrapper also
 # adds the `norm` and `norm_kw` arguments. They are passed to the
 # `~proplot.constructor.Norm` constructor function, and the resulting
-# normalizer is used for the input data. For more information on colormaps
+# normalizer is used for the plot. For more information on colormaps
 # and normalizers, see the :ref:`colormaps section <ug_cmaps>` and `this
 # matplotlib tutorial
 # <https://matplotlib.org/tutorials/colors/colormapnorms.html>`__.
@@ -222,7 +222,7 @@ for data, mode, fair in zip(
 # Standardized arguments
 # ----------------------
 #
-# The `~proplot.axes.standardize_2d` wrapper is used to standardize
+# The `~proplot.axes.standardize_2d` wrapper standardizes
 # positional arguments across all 2D plotting methods.  Among other things,
 # it guesses coordinate *edges* for `~matplotlib.axes.Axes.pcolor` and
 # `~matplotlib.axes.Axes.pcolormesh` plots when you supply coordinate

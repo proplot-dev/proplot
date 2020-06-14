@@ -95,11 +95,8 @@ axs[2].format(
 # ---------------
 #
 # ProPlot can turn any subplot into a geographic projection using
-# the `cartopy`_ or `basemap`_ packages as "backends". The syntax with
-# cartopy as the backend is exactly the same as when basemap is the backend.
-#
-# To turn a subplot into a geographic projection, pass
-# ``proj='name'`` or e.g. ``proj={2: 'name'}``
+# the `cartopy`_ or `basemap`_ packages as "backends". To turn a subplot into
+# a geographic projection, pass ``proj='name'`` or e.g. ``proj={2: 'name'}``
 # (:ref:`see above <ug_proj>`) to  `~proplot.ui.subplots`
 # where ``name`` is any valid :ref:`PROJ projection name <proj_included>`.
 # You can also generate a `cartopy.crs.Projection` or `mpl_toolkits.basemap.Basemap`
