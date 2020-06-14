@@ -3054,8 +3054,7 @@ def cmap_changer(
     # Optionally add colorbar
     if colorbar:
         loc = self._loc_translate(colorbar, 'colorbar', allow_manual=False)
-        label = colorbar_kw.pop('label', None)
-        if label is None and autoformat:
+        if autoformat:
             _, label = _axis_labels_title(Z_sample)  # last one is data, we assume
             if label:
                 colorbar_kw.setdefault('label', label)
