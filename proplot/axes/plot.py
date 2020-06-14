@@ -20,6 +20,7 @@ import matplotlib.patches as mpatches
 import matplotlib.colors as mcolors
 import matplotlib.artist as martist
 import matplotlib.legend as mlegend
+import matplotlib.text as mtext
 import matplotlib.cm as mcm
 from numbers import Number
 from .. import constructor
@@ -939,7 +940,7 @@ def standardize_2d(
 def _get_error_data(
     data, y, errdata=None, stds=None, pctiles=False,
     stds_default=None, pctiles_default=None,
-    means_or_medians=True, absolute=False,
+    means_or_medians=True, absolute=False, label=False,
 ):
     """
     Return values that can be passed to the `~matplotlib.axes.Axes.errorbar`
@@ -984,7 +985,7 @@ def _get_error_data(
     y = _to_ndarray(y)
     data = _to_ndarray(data)
     if errdata is not None:
-        label = 'error range'
+        label_default = 'error range'
         err = _to_ndarray(errdata)
         if (
             err.ndim not in (1, 2)
@@ -1000,13 +1001,17 @@ def _get_error_data(
             err[:, 0] = y - abserr  # translated back to absolute deviations below
             err[:, 1] = y + abserr
     elif stds is not None:
-        label = fr'{stds[1]}$\sigma$ range'
+        label_default = fr'{stds[1]}$\sigma$ range'
         err = y + np.std(data, axis=0)[None, :] * np.asarray(stds)[:, None]
     elif pctiles is not None:
-        label = f'{pctiles[0]}-{pctiles[1]} percentile range'
+        label_default = f'{pctiles[0]}-{pctiles[1]} percentile range'
         err = np.percentile(data, pctiles, axis=0)
     else:
         raise ValueError('You must provide error bounds.')
+    if label == True:  # noqa: E712 e.g. 1, 1.0, True
+        label = label_default
+    elif not label:
+        label = None
     if not absolute:
         err = err - y
         err[0, :] *= -1  # absolute deviations from central points
@@ -1054,7 +1059,7 @@ def indicate_error(
     boxpctiles=None, barpctiles=None, shadepctiles=None, fadepctiles=None,
     boxmarker=True, boxmarkercolor='white',
     boxcolor=None, barcolor=None, shadecolor=None, fadecolor=None,
-    shadelabel=None, fadelabel=None, shadealpha=0.4, fadealpha=0.2,
+    shadelabel=False, fadelabel=False, shadealpha=0.4, fadealpha=0.2,
     boxlinewidth=None, boxlw=None, barlinewidth=None, barlw=None, capsize=None,
     boxzorder=2.5, barzorder=2.5, shadezorder=1.5, fadezorder=1.5,
     **kwargs
@@ -1113,10 +1118,11 @@ def indicate_error(
         Colors for the different error indicators. For error bars, the default is
         ``'k'``. For shading, the default behavior is to inherit color from the
         primary `~matplotlib.artist.Artist`.
-    shadelabel, fadelabel : str, optional
-        Labels for the shaded regions, to be used in legends. There is no option
-        to change the "error bar" labels because error bars should not appear in a
-        legend -- they should instead be described in the figure caption.
+    shadelabel, fadelabel : bool or str, optional
+        Labels for the shaded regions to be used as separate legend entries. To toggle
+        labels "on" and apply a *default* label, use e.g. ``shadelabel=True``. To apply
+        a *custom* label, use e.g. ``shadelabel='label'``. Otherwise, the shading is
+        drawn underneath the line and/or marker in the legend entry.
     barlinewidth, boxlinewidth, barlw, boxlw : float, optional
         Line widths for the thin and thick error bars, in points. The defaults
         are ``barlw=0.8`` and ``boxlw=4 * barlw``.
@@ -1215,27 +1221,27 @@ def indicate_error(
         err, label = _get_error_data(
             data, y, fadedata, fadestds, fadepctiles,
             stds_default=(-3, 3), pctiles_default=(0, 100), absolute=True,
-            means_or_medians=means_or_medians,
+            means_or_medians=means_or_medians, label=fadelabel,
         )
         errfunc = self.fill_between if vert else self.fill_betweenx
         errobj = errfunc(
             x, *err, linewidth=0, color=fadecolor,
             alpha=fadealpha, zorder=fadezorder,
         )
-        errobj.set_label(_not_none(fadelabel, label))
+        errobj.set_label(label)
         errobjs.append(errobj)
     if shading:
         err, label = _get_error_data(
             data, y, shadedata, shadestds, shadepctiles,
             stds_default=(-2, 2), pctiles_default=(10, 90), absolute=True,
-            means_or_medians=means_or_medians,
+            means_or_medians=means_or_medians, label=shadelabel,
         )
         errfunc = self.fill_between if vert else self.fill_betweenx
         errobj = errfunc(
             x, *err, linewidth=0, color=shadecolor,
             alpha=shadealpha, zorder=shadezorder,
         )
-        errobj.set_label(_not_none(shadelabel, label))
+        errobj.set_label(label)  # shadelabel=False
         errobjs.append(errobj)
 
     # Draw thin error bars and thick error boxes
@@ -1280,15 +1286,19 @@ def indicate_error(
     i = 0
     for b, infer in zip((fading, shading), (fadecolor_infer, shadecolor_infer)):
         if b and infer:
-            color = getattr(
-                obj, 'get_facecolor', getattr(obj, 'get_color', lambda: None)
-            )()
+            if hasattr(obj, 'get_facecolor'):
+                color = obj.get_facecolor()
+            elif hasattr(obj, 'get_color'):
+                color = obj.get_color()
+            else:
+                color = None
             if color is not None:
                 errobjs[i].set_facecolor(color)
             i += 1
 
     # Return objects
-    # NOTE: This should not affect internal
+    # NOTE: This should not affect internal matplotlib calls to these funcs
+    # NOTE: Avoid expanding matplolib collections that are list subclasses here
     if errobjs:
         if type(result) in (tuple, list):  # e.g. result of plot
             return (*result, *errobjs)
@@ -2441,7 +2451,7 @@ def cycle_changer(
         else:  # has x-coordinates, and maybe more than one y
             ixy = (ix, *iys)
         obj = func(self, *ixy, *args, **kw)
-        if isinstance(obj, (list, tuple)) and len(obj) == 1:
+        if type(obj) in (list, tuple) and len(obj) == 1:
             obj = obj[0]
         objs.append(obj)
 
@@ -2452,6 +2462,7 @@ def cycle_changer(
         if loc not in self._auto_colorbar:
             self._auto_colorbar[loc] = ([], {})
         self._auto_colorbar[loc][0].extend(objs)
+
         # Add keywords
         if loc != 'fill':
             colorbar_kw.setdefault('loc', loc)
@@ -2461,15 +2472,39 @@ def cycle_changer(
 
     # Add legend
     if legend:
-        # Add handles and error objects
-        loc = self._loc_translate(legend, 'legend', allow_manual=False)
-        if loc not in self._auto_legend:
-            self._auto_legend[loc] = ([], {})
-        self._auto_legend[loc][0].extend(objs)
+        # Get error objects. If they have separate label, allocate separate
+        # legend entry. If not, try to combine with current legend entry.
         if type(errobjs) not in (list, tuple):
             errobjs = (errobjs,)
-        self._auto_legend[loc][0].extend(obj for obj in errobjs if obj is not None)
-        # Add keywords
+        errobjs = list(filter(None, errobjs))
+        errobjs_join = [obj for obj in errobjs if not obj.get_label()]
+        errobjs_separate = [obj for obj in errobjs if obj.get_label()]
+
+        # Get legend objects
+        # NOTE: It is not yet possible to draw error bounds *and* draw lines
+        # with multiple columns of data.
+        # NOTE: Put error bounds objects *before* line objects in the tuple,
+        # so that line gets drawn on top of bounds.
+        # NOTE: Use legend(handles, labels) syntax so we can assign labels
+        # for tuples of artists. Otherwise they are label-less.
+        legobjs = objs.copy()
+        if errobjs_join:
+            legobjs = [(*legobjs, *errobjs_join)[::-1]]
+        legobjs.extend(errobjs_separate)
+
+        # Add handles and labels
+        # NOTE: Important to add labels as *keyword* so users can override
+        loc = self._loc_translate(legend, 'legend', allow_manual=False)
+        if loc not in self._auto_legend:
+            self._auto_legend[loc] = ([], {'labels': []})
+        labels = [
+            (obj[-1] if type(obj) in (list, tuple) else obj).get_label()
+            for obj in legobjs
+        ]
+        self._auto_legend[loc][0].extend(legobjs)
+        self._auto_legend[loc][1]['labels'].extend(labels)
+
+        # Add other keywords
         if loc != 'fill':
             legend_kw.setdefault('loc', loc)
         if colorbar_legend_label:
@@ -2485,7 +2520,7 @@ def cycle_changer(
     elif name in ('boxplot', 'violinplot'):
         return objs[0]  # always return singleton
     else:
-        return objs[0] if y.ndim == 1 else tuple(objs)
+        return objs[0] if len(objs) == 1 else tuple(objs)
 
 
 def _build_discrete_norm(
@@ -3032,6 +3067,18 @@ def cmap_changer(
     return obj
 
 
+def _iter_legend_children(children):
+    """
+    Iterate recursively through `_children` attributes of various `HPacker`,
+    `VPacker`, and `DrawingArea` classes.
+    """
+    for obj in children:
+        if hasattr(obj, '_children'):
+            yield from _iter_legend_children(obj._children)
+        else:
+            yield obj
+
+
 def legend_wrapper(
     self, handles=None, labels=None, *, ncol=None, ncols=None,
     center=None, order='C', loc=None, label=None, title=None,
@@ -3144,12 +3191,40 @@ property-spec, optional
     if fontsize is not None:
         kwargs['fontsize'] = rc._scale_font(fontsize)
 
-    # Text properties that have to be set after-the-fact
+    # Handle and text properties that are applied after-the-fact
+    # NOTE: Set solid_capstyle to 'butt' so line does not extend past error bounds
+    # shading in legend entry. This change is not noticable in other situations.
     kw_text = {}
     if fontcolor is not None:
         kw_text['color'] = fontcolor
     if fontweight is not None:
         kw_text['weight'] = fontweight
+    kw_handle = {'solid_capstyle': 'butt'}
+    for key, value in (
+        ('color', color),
+        ('marker', marker),
+        ('linewidth', lw),
+        ('linewidth', linewidth),
+        ('markersize', markersize),
+        ('linestyle', linestyle),
+        ('dashes', dashes),
+    ):
+        if value is not None:
+            kw_handle[key] = value
+
+    # Legend box properties
+    outline = rc.fill(
+        {
+            'linewidth': 'axes.linewidth',
+            'edgecolor': 'axes.edgecolor',
+            'facecolor': 'axes.facecolor',
+            'alpha': 'legend.framealpha',
+        }
+    )
+    for key in (*outline,):
+        if key != 'linewidth':
+            if kwargs.get(key, None):
+                outline.pop(key, None)
 
     # Get axes for legend handle detection
     # TODO: Update this when no longer use "filled panels" for outer legends
@@ -3161,14 +3236,17 @@ property-spec, optional
             axs = list(self.figure._iter_axes(hidden=False, children=True))
 
     # Handle list of lists (centered row legends)
-    # WARNING: Tuples indicate entries drawn on top of eachother
+    # NOTE: Avoid very common plot() error where users draw individual lines
+    # with plot() and add singleton tuples to a list of handles. If matplotlib
+    # gets a list like this but gets no 'labels' argument, it raises error.
     list_of_lists = False
     if handles is not None:
+        handles = [
+            handle[0] if type(handle) is tuple and len(handle) == 1 else handle
+            for handle in handles
+        ]
         list_of_lists = any(type(handle) in (list, np.ndarray) for handle in handles)
-    if (
-        handles is not None and labels is not None
-        and len(handles) != len(labels)
-    ):
+    if handles is not None and labels is not None and len(handles) != len(labels):
         raise ValueError(
             f'Got {len(handles)} handles and {len(labels)} labels.'
         )
@@ -3177,9 +3255,8 @@ property-spec, optional
             raise ValueError(f'Invalid handles={handles!r}.')
         if not labels:
             labels = [None] * len(handles)
-        elif not all(
-            np.iterable(_) and not isinstance(_, str) for _ in labels
-        ):
+        elif not all(np.iterable(_) and not isinstance(_, str) for _ in labels):
+            # e.g. handles=[obj1, [obj2, obj3]] requires labels=[lab1, [lab2, lab3]]
             raise ValueError(
                 f'Invalid labels={labels!r} for handles={handles!r}.'
             )
@@ -3333,40 +3410,31 @@ property-spec, optional
             legs.append(leg)
 
     # Add legends manually so matplotlib does not remove old ones
-    # Also apply override settings
-    kw_handle = {}
-    outline = rc.fill(
-        {
-            'linewidth': 'axes.linewidth',
-            'edgecolor': 'axes.edgecolor',
-            'facecolor': 'axes.facecolor',
-            'alpha': 'legend.framealpha',
-        }
-    )
-    for key in (*outline,):
-        if key != 'linewidth':
-            if kwargs.get(key, None):
-                outline.pop(key, None)
-    for key, value in (
-        ('color', color),
-        ('marker', marker),
-        ('linewidth', lw),
-        ('linewidth', linewidth),
-        ('markersize', markersize),
-        ('linestyle', linestyle),
-        ('dashes', dashes),
-    ):
-        if value is not None:
-            kw_handle[key] = value
     for leg in legs:
         self.add_artist(leg)
         leg.legendPatch.update(outline)  # or get_frame()
-        for obj in leg.legendHandles:
-            if isinstance(obj, martist.Artist):
-                obj.update(kw_handle)
-        for obj in leg.get_texts():
-            if isinstance(obj, martist.Artist):
-                obj.update(kw_text)
+
+    # Apply *overrides* to legend elements
+    # WARNING: legendHandles only contains the *first* artist per legend because
+    # HandlerBase.legend_artist() called in Legend._init_legend_box() only
+    # returns the first artist. Instead we try to iterate through offset boxes.
+    # TODO: Remove this feature? Idea was this lets users create *categorical*
+    # legends in clunky way, e.g. entries denoting *colors* and entries denoting
+    # *markers*. But would be better to add capacity for categorical labels in a
+    # *single* legend like seaborn rather than multiple legends.
+    for leg in legs:
+        try:
+            children = leg._legend_handle_box._children
+        except AttributeError:  # older versions maybe?
+            children = []
+        for obj in _iter_legend_children(children):
+            # account for mixed legends, e.g. line on top of
+            # error bounds shading.
+            if isinstance(obj, mtext.Text):
+                leg.update(kw_text)
+            else:
+                for key, value in kw_handle.items():
+                    getattr(obj, f'set_{key}', lambda value: None)(value)
 
     # Draw manual fancy bounding box for un-aligned legend
     # WARNING: The matplotlib legendPatch transform is the default transform,

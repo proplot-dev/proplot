@@ -234,7 +234,7 @@ ax = axs[1]
 ax.scatter(
     data,
     color='denim', marker='x', markersize=8**2, linewidth=0.8,
-    means=True, shadestds=(-1, 1), legend='ll',
+    means=True, shadestds=(-1, 1), shadelabel=True, legend='ll',
 )
 ax.format(title='Scatter plot')
 

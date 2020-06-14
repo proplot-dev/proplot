@@ -67,6 +67,12 @@ ProPlot v0.7.0 (2020-##-##)
 ProPlot v0.6.4 (2020-##-##)
 ===========================
 
+.. rubric:: Features
+
+* Combine shading and lines when drawing on-the-fly legends with `indicate_error`
+  shading using tuple of `fill_between`, `plot` handles, and have `shadelabel` and
+  `fadelabel` instead create separate entries *only when passed* (:issue:`187`).
+
 .. rubric:: Bug fixes
 
 * Fix major issue where calling ``legend()`` without any handles
