@@ -428,11 +428,7 @@ def _axis_labels_title(data, axis=None, units=True):
 def standardize_1d(self, func, *args, autoformat=None, **kwargs):
     """
     Interpret positional arguments for the "1D" plotting methods so usage is
-    consistent. This also optionally modifies the x axis label, y axis label,
-    title, and axis ticks if a `~xarray.DataArray`, `~pandas.DataFrame`, or
-    `~pandas.Series` is passed.
-
-    Positional arguments are standardized as follows:
+    consistent. Positional arguments are standardized as follows:
 
     * If a 2D array is passed, the corresponding plot command is called for
       each column of data (except for ``boxplot`` and ``violinplot``, in which
@@ -503,13 +499,13 @@ def standardize_1d(self, func, *args, autoformat=None, **kwargs):
     if not hasattr(self, 'projection'):
         # First handle string-type x-coordinates
         kw = {}
-        xax = 'y' if orientation == 'horizontal' else 'x'
-        yax = 'x' if xax == 'y' else 'y'
+        xname = 'y' if orientation == 'horizontal' else 'x'
+        yname = 'x' if xname == 'y' else 'y'
         if _is_string(x):
             xi = np.arange(len(x))
-            kw[xax + 'locator'] = mticker.FixedLocator(xi)
-            kw[xax + 'formatter'] = mticker.IndexFormatter(x)
-            kw[xax + 'minorlocator'] = mticker.NullLocator()
+            kw[xname + 'locator'] = mticker.FixedLocator(xi)
+            kw[xname + 'formatter'] = mticker.IndexFormatter(x)
+            kw[xname + 'minorlocator'] = mticker.NullLocator()
             if name == 'boxplot':
                 kwargs['labels'] = x
             elif name == 'violinplot':
@@ -522,15 +518,18 @@ def standardize_1d(self, func, *args, autoformat=None, **kwargs):
         if autoformat:
             # Ylabel
             y, label = _axis_labels_title(y)
-            if label:  # for histogram, this label is used for *x* coordinates
-                iaxis = xax if name in ('hist',) else yax
-                kw[iaxis + 'label'] = label
+            iname = xname if name in ('hist',) else yname
+            if label and not getattr(self, f'get_{iname}label')():
+                # For histograms, this label is used for *x* coordinates
+                kw[iname + 'label'] = label
             # Xlabel
-            x, label = _axis_labels_title(x)
-            if label and name not in ('hist',):
-                kw[xax + 'label'] = label
-            if name != 'scatter' and len(x) > 1 and xi is None and x[1] < x[0]:
-                kw[xax + 'reverse'] = True
+            if name not in ('hist',):
+                x, label = _axis_labels_title(x)
+                if label and not getattr(self, f'get_{xname}label')():
+                    kw[xname + 'label'] = label
+            # Reversed axis
+            if name not in ('scatter',) and len(x) > 1 and xi is None and x[1] < x[0]:
+                kw[xname + 'reverse'] = True
 
         # Appply
         if kw:
@@ -636,11 +635,7 @@ def standardize_2d(
 ):
     """
     Interpret positional arguments for the "2D" plotting methods so usage is
-    consistent. This also optionally modifies the x axis label, y axis label,
-    title, and axis ticks if a `~xarray.DataArray`, `~pandas.DataFrame`, or
-    `~pandas.Series` is passed.
-
-    Positional arguments are standardized as follows:
+    consistent. Positional arguments are standardized as follows:
 
     * If *x* and *y* or *latitude* and *longitude* coordinates were not
       provided, and a `~pandas.DataFrame` or `~xarray.DataArray` is passed, we
@@ -654,8 +649,8 @@ def standardize_2d(
     ----------
     %(standardize.autoformat)s
     order : {{'C', 'F'}}, optional
-        If ``'C'``, arrays should be shaped as ``(y, x)``. If ``'F'``, arrays
-        should be shaped as ``(x, y)``. Default is ``'C'``.
+        If ``'C'``, arrays should be shaped ``(y, x)``. If ``'F'``, arrays
+        should be shaped ``(x, y)``. Default is ``'C'``.
     globe : bool, optional
         Whether to ensure global coverage for `~proplot.axes.GeoAxes` plots.
         Default is ``False``. When set to ``True`` this does the following:
@@ -751,9 +746,10 @@ def standardize_2d(
                 f'but must be 1 or 2-dimensional.'
             )
 
-    # Auto formatting
+    # Auto axis labels
+    # TODO: Check whether isinstance(GeoAxes) instead of checking projection attribute
     kw = {}
-    xi, yi = None, None
+    xi = yi = None
     if not hasattr(self, 'projection'):
         # First handle string-type x and y-coordinates
         if _is_string(x):
@@ -768,11 +764,14 @@ def standardize_2d(
             kw['yminorlocator'] = mticker.NullLocator()
 
         # Handle labels if 'autoformat' is on
+        # NOTE: Do not overwrite existing labels!
         if autoformat:
             for key, xy in zip(('xlabel', 'ylabel'), (x, y)):
+                # Axis label
                 _, label = _axis_labels_title(xy)
-                if label:
+                if label and not getattr(self, f'get_{key}')():
                     kw[key] = label
+                # Reversed axis
                 if (
                     len(xy) > 1
                     and all(isinstance(xy, Number) for xy in xy[:2])
@@ -788,7 +787,8 @@ def standardize_2d(
     if yi is not None:
         y = yi
 
-    # Handle figure titles
+    # Auto axes title and colorbar label
+    # NOTE: Do not overwrite existing title!
     # NOTE: Must apply default colorbar label *here* rather than in
     # cmap_changer in case metadata is stripped by globe=True.
     colorbar_kw = kwargs.pop('colorbar_kw', None) or {}
@@ -2350,8 +2350,10 @@ def cycle_changer(
     labels = _not_none(values=values, labels=labels, label=label)
     colorbar_legend_label = None  # for colorbar or legend
     if name in ('pie', 'boxplot', 'violinplot'):
+        # Pass labels directly to functions
         if labels is not None:
             kwargs['labels'] = labels  # error raised down the line
+
     else:
         # Get column count and sanitize labels
         ncols = 1 if y.ndim == 1 else y.shape[1]
@@ -2361,7 +2363,10 @@ def cycle_changer(
             raise ValueError(
                 f'Got {ncols} columns in data array, but {len(labels)} labels.'
             )
+
         # Get automatic legend labels and legend title
+        # NOTE: Only apply labels if they are string labels *or* the
+        # legend or colorbar has a title (latter is more common for colorbars)
         if autoformat:
             ilabels, colorbar_legend_label = _axis_labels_title(y1, axis=1)
             ilabels = _to_ndarray(ilabels)  # may be empty!
@@ -2486,22 +2491,22 @@ def cycle_changer(
         # with multiple columns of data.
         # NOTE: Put error bounds objects *before* line objects in the tuple,
         # so that line gets drawn on top of bounds.
-        # NOTE: Use legend(handles, labels) syntax so we can assign labels
-        # for tuples of artists. Otherwise they are label-less.
         legobjs = objs.copy()
         if errobjs_join:
             legobjs = [(*legobjs, *errobjs_join)[::-1]]
         legobjs.extend(errobjs_separate)
-
-        # Add handles and labels
-        # NOTE: Important to add labels as *keyword* so users can override
-        loc = self._loc_translate(legend, 'legend', allow_manual=False)
-        if loc not in self._auto_legend:
-            self._auto_legend[loc] = ([], {'labels': []})
         labels = [
             (obj[-1] if type(obj) in (list, tuple) else obj).get_label()
             for obj in legobjs
         ]
+
+        # Add handles and labels
+        # NOTE: Important to add labels as *keyword* so users can override
+        # NOTE: Use legend(handles, labels) syntax so we can assign labels
+        # for tuples of artists. Otherwise they are label-less.
+        loc = self._loc_translate(legend, 'legend', allow_manual=False)
+        if loc not in self._auto_legend:
+            self._auto_legend[loc] = ([], {'labels': []})
         self._auto_legend[loc][0].extend(legobjs)
         self._auto_legend[loc][1]['labels'].extend(labels)
 
