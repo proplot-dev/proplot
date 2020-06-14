@@ -3236,7 +3236,7 @@ property-spec, optional
     axs = [self]
     if self._panel_hidden:
         if self._panel_parent:  # axes panel
-            axs = list(self._iter_axes(hidden=False, children=True))
+            axs = list(self._panel_parent._iter_axes(hidden=False, children=True))
         else:
             axs = list(self.figure._iter_axes(hidden=False, children=True))
 
