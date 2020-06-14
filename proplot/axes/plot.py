@@ -3303,6 +3303,10 @@ property-spec, optional
     if list_of_lists:  # remove empty lists, pops up in some examples
         pairs = [ipairs for ipairs in pairs if ipairs]
 
+    # Bail if no pairs
+    if not pairs:
+        return mlegend.Legend(self, [], [], ncol=ncol, loc=loc, **kwargs)
+
     # Individual legend
     legs = []
     width, height = self.get_size_inches()
@@ -3359,8 +3363,9 @@ property-spec, optional
         fontsize = kwargs.get('fontsize', None) or rc['legend.fontsize']
         fontsize = rc._scale_font(fontsize)
         spacing = kwargs.get('labelspacing', None) or rc['legend.labelspacing']
-        interval = 1 / len(pairs)  # split up axes
-        interval = (((1 + spacing * 0.85) * fontsize) / 72) / height
+        if pairs:
+            interval = 1 / len(pairs)  # split up axes
+            interval = (((1 + spacing * 0.85) * fontsize) / 72) / height
 
         # Iterate and draw
         # NOTE: We confine possible bounding box in *y*-direction, but do not
@@ -3451,23 +3456,29 @@ property-spec, optional
     # _legend_box attribute, which is accessed by get_window_extent.
     if center and frameon:
         if len(legs) == 1:
-            legs[0].set_frame_on(True)  # easy!
+            # Use builtin frame
+            legs[0].set_frame_on(True)
         else:
             # Get coordinates
             renderer = self.figure._get_renderer()
-            bboxs = [leg.get_window_extent(renderer).transformed(
-                self.transAxes.inverted()) for leg in legs]
-            xmin, xmax = min(bbox.xmin for bbox in bboxs), max(
-                bbox.xmax for bbox in bboxs)
-            ymin, ymax = min(bbox.ymin for bbox in bboxs), max(
-                bbox.ymax for bbox in bboxs)
+            bboxs = [
+                leg.get_window_extent(renderer).transformed(self.transAxes.inverted())
+                for leg in legs
+            ]
+            xmin = min(bbox.xmin for bbox in bboxs)
+            xmax = max(bbox.xmax for bbox in bboxs)
+            ymin = min(bbox.ymin for bbox in bboxs)
+            ymax = max(bbox.ymax for bbox in bboxs)
             fontsize = (fontsize / 72) / width  # axes relative units
             fontsize = renderer.points_to_pixels(fontsize)
+
             # Draw and format patch
             patch = mpatches.FancyBboxPatch(
                 (xmin, ymin), xmax - xmin, ymax - ymin,
                 snap=True, zorder=4.5,
-                mutation_scale=fontsize, transform=self.transAxes)
+                mutation_scale=fontsize,
+                transform=self.transAxes
+            )
             if kwargs.get('fancybox', rc['legend.fancybox']):
                 patch.set_boxstyle('round', pad=0, rounding_size=0.2)
             else:
@@ -3475,11 +3486,13 @@ property-spec, optional
             patch.set_clip_on(False)
             patch.update(outline)
             self.add_artist(patch)
+
             # Add shadow
             # TODO: This does not work, figure out
             if kwargs.get('shadow', rc['legend.shadow']):
                 shadow = mpatches.Shadow(patch, 20, -20)
                 self.add_artist(shadow)
+
             # Add patch to list
             legs = (patch, *legs)
 
@@ -3487,7 +3500,7 @@ property-spec, optional
     # for tight bounding box calcs!
     for leg in legs:
         leg.set_clip_on(False)
-    return legs[0] if len(legs) == 1 else (*legs,)
+    return legs[0] if len(legs) == 1 else tuple(legs)
 
 
 def colorbar_wrapper(
