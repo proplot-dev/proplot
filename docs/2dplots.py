@@ -35,14 +35,13 @@
 # Colormaps and normalizers
 # -------------------------
 #
-# It is often desirable to create ProPlot colormaps on-the-fly, without
-# explicitly using the `~proplot.constructor.Colormap` constructor function.
-# You can do so using the `cmap` and `cmap_kw` arguments with any plotting
-# method wrapped by `~proplot.axes.cmap_changer`. `cmap` and `cmap_kw`
-# are passed to the `~proplot.constructor.Colormap` constructor
-# function, and the resulting colormap is used for the plot. For example,
-# to create and apply a monochromatic colormap, you can simply use
-# ``cmap='color name'``.
+# It is often useful to create ProPlot colormaps on-the-fly, without
+# explicitly calling the `~proplot.constructor.Colormap` constructor function.
+# You can do so using the `cmap` and `cmap_kw` arguments, available with any
+# plotting method wrapped by `~proplot.axes.cmap_changer`. `cmap` and `cmap_kw`
+# are passed to `~proplot.constructor.Colormap` and the resulting colormap is
+# used for the plot. For example, to create and apply a monochromatic colormap,
+# you can simply use ``cmap='color name'``.
 
 # The `~proplot.axes.cmap_changer` wrapper also
 # adds the `norm` and `norm_kw` arguments. They are passed to the
