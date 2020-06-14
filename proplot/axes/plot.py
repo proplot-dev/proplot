@@ -3133,9 +3133,9 @@ property-spec, optional
     frameon = _not_none(
         frame=frame, frameon=frameon, default=rc['legend.frameon']
     )
-    if not np.iterable(handles):  # e.g. a mappable object
+    if handles is not None and not np.iterable(handles):  # e.g. a mappable object
         handles = [handles]
-    if labels is not None and (not np.iterable(labels) or isinstance(labels, str)):  # noqa: E501
+    if labels is not None and (not np.iterable(labels) or isinstance(labels, str)):
         labels = [labels]
     if title is not None:
         kwargs['title'] = title
@@ -3161,7 +3161,10 @@ property-spec, optional
             axs = list(self.figure._iter_axes(hidden=False, children=True))
 
     # Handle list of lists (centered row legends)
-    list_of_lists = not any(hasattr(handle, 'get_label') for handle in handles)
+    # WARNING: Tuples indicate entries drawn on top of eachother
+    list_of_lists = False
+    if handles is not None:
+        list_of_lists = any(type(handle) in (list, np.ndarray) for handle in handles)
     if (
         handles is not None and labels is not None
         and len(handles) != len(labels)
