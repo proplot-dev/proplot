@@ -69,13 +69,16 @@ ProPlot v0.6.4 (2020-##-##)
 
 .. rubric:: Bug fixes
 
+* Fix major issue where calling ``legend()`` without any handles
+  triggers error rather than using default handles (:issue:`188`).
+* Support single-level contours with colormap colors (:issue:`182`).
 * Support changing line width, line style, and color properties
   for barb, quiver, streamplot, matshow, spy, and hist2d plots
-  (:commit:`54c7d8c8`).
+  (:issue:`177`).
 * Use :rcraw:`patch.linewidth` for default bar edge width, stop setting
   default histogram plot linewidth to zero, and set :rcraw:`patch.linewidth`
   to ``0.6`` to match proplot's default line width for lines, axes edges, and
-  hatches (:commit:`598214e1`).
+  hatches (:issue:`186`).
 
 ProPlot v0.6.3 (2020-06-02)
 ===========================
