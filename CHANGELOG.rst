@@ -64,7 +64,7 @@ ProPlot v0.7.0 (2020-##-##)
   `~proplot.subplots.EdgeStack` stacks rather than getting inserted directly
   into the main `~proplot.subplots.GridSpec` (:pr:`110`).
 
-ProPlot v0.6.4 (2020-##-##)
+ProPlot v0.6.4 (2020-06-13)
 ===========================
 
 .. rubric:: Features
