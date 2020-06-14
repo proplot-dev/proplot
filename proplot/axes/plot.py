@@ -457,6 +457,7 @@ def standardize_1d(self, func, *args, autoformat=None, **kwargs):
     # Sanitize input
     # TODO: Add exceptions for methods other than 'hist'?
     name = func.__name__
+    autoformat = _not_none(autoformat, rc['autoformat'])
     _load_objects()
     if not args:
         return func(self, *args, **kwargs)
@@ -517,6 +518,7 @@ def standardize_1d(self, func, *args, autoformat=None, **kwargs):
             kwargs['positions'] = xi
 
         # Next handle labels if 'autoformat' is on
+        # NOTE: Do not overwrite existing labels!
         if autoformat:
             # Ylabel
             y, label = _axis_labels_title(y)
@@ -552,7 +554,6 @@ def standardize_1d(self, func, *args, autoformat=None, **kwargs):
 
     # WARNING: For some functions, e.g. boxplot and violinplot, we *require*
     # cycle_changer is also applied so it can strip 'x' input.
-    autoformat = _not_none(autoformat, rc['autoformat'])
     with rc.context(autoformat=autoformat):
         return func(self, x, *ys, *args, **kwargs)
 
@@ -678,6 +679,7 @@ def standardize_2d(
     """
     # Sanitize input
     name = func.__name__
+    autoformat = _not_none(autoformat, rc['autoformat'])
     _load_objects()
     if not args:
         return func(self, *args, **kwargs)
@@ -930,7 +932,6 @@ def standardize_2d(
         kwargs['latlon'] = False
 
     # Finally return result
-    autoformat = _not_none(autoformat, rc['autoformat'])
     with rc.context(autoformat=autoformat):
         return func(self, x, y, *Zs, **kwargs)
 
