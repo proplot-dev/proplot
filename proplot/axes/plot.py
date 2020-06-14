@@ -587,27 +587,6 @@ def _enforce_bounds(x, y, xmin, xmax):
     return x, y
 
 
-def _interp_poles(y, Z):
-    """
-    Add data points on the poles as the average of highest latitude data.
-    """
-    # Get means
-    with np.errstate(all='ignore'):
-        p1 = Z[0, :].mean()  # pole 1, make sure is not 0D DataArray!
-        p2 = Z[-1, :].mean()  # pole 2
-    if hasattr(p1, 'item'):
-        p1 = np.asscalar(p1)  # happens with DataArrays
-    if hasattr(p2, 'item'):
-        p2 = np.asscalar(p2)
-    # Concatenate
-    ps = (-90, 90) if (y[0] < y[-1]) else (90, -90)
-    Z1 = np.repeat(p1, Z.shape[1])[None, :]
-    Z2 = np.repeat(p2, Z.shape[1])[None, :]
-    y = ma.concatenate((ps[:1], y, ps[1:]))
-    Z = ma.concatenate((Z1, Z, Z2), axis=0)
-    return y, Z
-
-
 def _fix_latlon(x, y):
     """
     Ensure longitudes are monotonic and make `~numpy.ndarray` copies so the
@@ -628,6 +607,27 @@ def _fix_latlon(x, y):
             break
         x[filter_] += 360
     return x, y
+
+
+def _interp_poles(y, Z):
+    """
+    Add data points on the poles as the average of highest latitude data.
+    """
+    # Get means
+    with np.errstate(all='ignore'):
+        p1 = Z[0, :].mean()  # pole 1, make sure is not 0D DataArray!
+        p2 = Z[-1, :].mean()  # pole 2
+    if hasattr(p1, 'item'):
+        p1 = np.asscalar(p1)  # happens with DataArrays
+    if hasattr(p2, 'item'):
+        p2 = np.asscalar(p2)
+    # Concatenate
+    ps = (-90, 90) if (y[0] < y[-1]) else (90, -90)
+    Z1 = np.repeat(p1, Z.shape[1])[None, :]
+    Z2 = np.repeat(p2, Z.shape[1])[None, :]
+    y = ma.concatenate((ps[:1], y, ps[1:]))
+    Z = ma.concatenate((Z1, Z, Z2), axis=0)
+    return y, Z
 
 
 @docstring.add_snippets
