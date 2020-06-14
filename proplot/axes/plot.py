@@ -777,6 +777,10 @@ def standardize_2d(
                     and xy[1] < xy[0]
                 ):
                     kw[key[0] + 'reverse'] = True
+    if kw:
+        self.format(**kw)
+
+    # Use *index coordinates* from here on out if input was array of strings
     if xi is not None:
         x = xi
     if yi is not None:
@@ -788,11 +792,6 @@ def standardize_2d(
     colorbar_kw = kwargs.pop('colorbar_kw', None) or {}
     if autoformat:
         _, colorbar_label = _axis_labels_title(Zs[0], units=True)
-        _, title = _axis_labels_title(Zs[0], units=False)
-        if title:
-            kw['title'] = title
-        if kw:
-            self.format(**kw)
         colorbar_kw.setdefault('label', colorbar_label)
     kwargs['colorbar_kw'] = colorbar_kw
 
