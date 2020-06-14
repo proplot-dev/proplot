@@ -69,6 +69,8 @@ ProPlot v0.6.4 (2020-06-13)
 
 .. rubric:: Features
 
+* Change ``autoformat`` from a `Figure` keyword argument into the
+  :rcraw:`autoformat` rc setting (:commit:`3a7e5a7c`).
 * Combine shading and lines when drawing on-the-fly legends with `indicate_error`
   shading using tuple of `fill_between`, `plot` handles, and have `shadelabel` and
   `fadelabel` instead create separate entries *only when passed* (:issue:`187`).
@@ -77,6 +79,10 @@ ProPlot v0.6.4 (2020-06-13)
 
 * Fix major issue where calling ``legend()`` without any handles
   triggers error rather than using default handles (:issue:`188`).
+* Fix issue where on-the-fly colorbar labels were
+  ignored (:commit:`a642eeed`).
+* Stop overwriting existing axis labels when ``autoformat=True``
+  and DataArrays or DataFrames passed to plotting command (:commit:`76c7c586`).
 * Support single-level contours with colormap colors (:issue:`182`).
 * Support changing line width, line style, and color properties
   for barb, quiver, streamplot, matshow, spy, and hist2d plots
