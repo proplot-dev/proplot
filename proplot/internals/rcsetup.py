@@ -285,15 +285,21 @@ _rc_proplot = {
         'bold',
         'a-b-c label font weight.'
     ),
+    'autoformat': (
+        True,
+        'Whether to automatically apply labels from `pandas.Series`, '
+        '`pandas.DataFrame`, and `xarray.DataArray` objects passed to '
+        'plotting functions.'
+    ),
 
     # Axes additions
     'alpha': (
-        1,
+        1.0,
         'The opacity of the background axes patch.'
     ),
     'axes.alpha': (
         1.0,
-        'Opacity of the background axes patch.'
+        'The opacity of the background axes patch.'
     ),
     'formatter.timerotation': (
         90,

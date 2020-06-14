@@ -124,14 +124,17 @@ class Figure(mfigure.Figure):
     Figure dimensions may be automatically scaled to preserve subplot aspect
     ratios.
     """
+    # NOTE: If _rename_kwargs argument is an invalid identifier, it is
+    # simply used in the warning message.
+    @warnings._rename_kwargs('0.6.4', autoformat='plot.rc.autoformat = {}')
     def __init__(
         self, tight=None,
         ref=1, pad=None, axpad=None, panelpad=None, includepanels=False,
         span=None, spanx=None, spany=None,
         align=None, alignx=None, aligny=None,
         share=None, sharex=None, sharey=None,
-        autoformat=True, fallback_to_cm=None,
         gridspec_kw=None, subplots_kw=None, subplots_orig_kw=None,
+        fallback_to_cm=None,
         **kwargs
     ):
         """
@@ -189,11 +192,6 @@ class Figure(mfigure.Figure):
 <https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/align_labels_demo.html>`__
             for the *x* axis, *y* axis, or both axes. Only has an effect when `spanx`,
             `spany`, or `span` are ``False``. Default is :rc:`subplots.align`.
-        autoformat : bool, optional
-            Whether to automatically configure *x* axis labels, *y* axis labels,
-            axis formatters, axes titles, colorbar labels, and legend labels when
-            a `~pandas.Series`, `~pandas.DataFrame` or `~xarray.DataArray` with
-            relevant metadata is passed to a plotting command.
         fallback_to_cm : bool, optional
             Whether to replace unavailable glyphs with a glyph from Computer Modern
             or the "¤" dummy character. See `mathtext \
@@ -266,7 +264,6 @@ class Figure(mfigure.Figure):
         self._pad = units(_not_none(pad, rc['subplots.pad']))
         self._axpad = units(_not_none(axpad, rc['subplots.axpad']))
         self._panelpad = units(_not_none(panelpad, rc['subplots.panelpad']))
-        self._auto_format = autoformat
         self._auto_tight = _not_none(tight, rc['subplots.tight'])
         self._include_panels = includepanels
         self._fallback_to_cm = fallback_to_cm
@@ -1402,9 +1399,9 @@ class Figure(mfigure.Figure):
     # Deprecations
     # NOTE: None of these even *worked* after drawing the figure. And not sure
     # what value (if any) they add even if we do get them to work.
-    get_alignx, set_alignx = warnings._read_only_property('0.6', 'alignx')
-    get_aligny, set_aligny = warnings._read_only_property('0.6', 'aligny')
-    get_sharex, set_sharex = warnings._read_only_property('0.6', 'sharex')
-    get_sharey, set_sharey = warnings._read_only_property('0.6', 'sharey')
-    get_spanx, set_spanx = warnings._read_only_property('0.6', 'spanx')
-    get_spany, set_spany = warnings._read_only_property('0.6', 'spany')
+    get_alignx, set_alignx = warnings._deprecate_getter_setter('0.6', 'alignx')
+    get_aligny, set_aligny = warnings._deprecate_getter_setter('0.6', 'aligny')
+    get_sharex, set_sharex = warnings._deprecate_getter_setter('0.6', 'sharex')
+    get_sharey, set_sharey = warnings._deprecate_getter_setter('0.6', 'sharey')
+    get_spanx, set_spanx = warnings._deprecate_getter_setter('0.6', 'spanx')
+    get_spany, set_spany = warnings._deprecate_getter_setter('0.6', 'spany')

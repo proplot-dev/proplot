@@ -66,8 +66,7 @@ autoformat : bool, optional
     Whether *x* axis labels, *y* axis labels, axis formatters, axes titles,
     colorbar labels, and legend labels are automatically configured when
     a `~pandas.Series`, `~pandas.DataFrame` or `~xarray.DataArray` is passed
-    to the plotting command. Default is the figure-wide
-    `proplot.figure.Figure.autoformat` setting.
+    to the plotting command. Default is :rc:`autoformat`.
 """
 
 docstring.snippets['axes.cmap_changer'] = """
@@ -458,7 +457,6 @@ def standardize_1d(self, func, *args, autoformat=None, **kwargs):
     # Sanitize input
     # TODO: Add exceptions for methods other than 'hist'?
     name = func.__name__
-    autoformat = _not_none(autoformat, self.figure._auto_format)
     _load_objects()
     if not args:
         return func(self, *args, **kwargs)
@@ -554,7 +552,8 @@ def standardize_1d(self, func, *args, autoformat=None, **kwargs):
 
     # WARNING: For some functions, e.g. boxplot and violinplot, we *require*
     # cycle_changer is also applied so it can strip 'x' input.
-    with _state_context(self, _auto_format=autoformat):
+    autoformat = _not_none(autoformat, rc['autoformat'])
+    with rc.context(autoformat=autoformat):
         return func(self, x, *ys, *args, **kwargs)
 
 
@@ -679,7 +678,6 @@ def standardize_2d(
     """
     # Sanitize input
     name = func.__name__
-    autoformat = _not_none(autoformat, self.figure._auto_format)
     _load_objects()
     if not args:
         return func(self, *args, **kwargs)
@@ -933,7 +931,8 @@ def standardize_2d(
         kwargs['latlon'] = False
 
     # Finally return result
-    with _state_context(self, _auto_format=autoformat):
+    autoformat = _not_none(autoformat, rc['autoformat'])
+    with rc.context(autoformat=autoformat):
         return func(self, x, y, *Zs, **kwargs)
 
 
@@ -1100,20 +1099,22 @@ def indicate_error(
         calculated automatically).
     boxstds, boxpctiles, boxdata : optional
         As with `barstds`, `barpctiles`, and `bardata`, but for *thicker error bars*
-        representing a smaller interval than thick error bars. If `boxstds` is
+        representing a smaller interval than the thin error bars. If `boxstds` is
         ``True``, the default standard deviation multiples ``(-1, 1)`` are used.
         If `boxpctiles` is ``True``, the default percentile multiples ``(25, 75)``
-        (i.e. the interquartile range) are used. When boxes and bars are combined, this
+        are used (i.e. the interquartile range). When boxes and bars are combined, this
         has the effect of drawing miniature box-and-whisker plots.
     shadestds, shadepctiles, shadedata : optional
         As with `barstds`, `barpctiles`, and `bardata`, but using *shading* to indicate
         the error range. If `shadestds` is ``True``, the default standard deviation
         multiples ``(-2, 2)`` are used. If `shadepctiles` is ``True``, the default
-        percentile multiples ``(5, 95)`` are used. Shading is generally useful for
+        percentile multiples ``(10, 90)`` are used. Shading is generally useful for
         `~matplotlib.axes.Axes.plot` plots and not `~matplotlib.axes.Axes.bar` plots.
     fadestds, fadepctiles, fadedata : optional
         As with `shadestds`, `shadepctiles`, and `shadedata`, but for an additional,
-        more faded, *secondary* shaded region.
+        more faded, *secondary* shaded region. If `fadestds` is ``True``, the default
+        standard deviation multiples ``(-3, 3)`` are used. If `fadepctiles` is ``True``,
+        the default percentile multiples ``(0, 100)`` are used.
     barcolor, boxcolor, shadecolor, fadecolor : color-spec, optional
         Colors for the different error indicators. For error bars, the default is
         ``'k'``. For shading, the default behavior is to inherit color from the
@@ -2255,7 +2256,7 @@ def cycle_changer(
     # NOTE: Requires standardize_1d wrapper before reaching this. Also note
     # that the 'x' coordinates are sometimes ignored below.
     name = func.__name__
-    autoformat = self._auto_format  # possibly manipulated by standardize_[12]d
+    autoformat = rc['autoformat']  # possibly manipulated by standardize_[12]d
     if not args:
         return func(self, *args, **kwargs)
     x, y, *args = args
@@ -2846,7 +2847,7 @@ def cmap_changer(
     of the color selections.
     """
     name = func.__name__
-    autoformat = self._auto_format  # possibly manipulated by standardize_[12]d
+    autoformat = rc['autoformat']  # possibly manipulated by standardize_[12]d
     if not args:
         return func(self, *args, **kwargs)
 

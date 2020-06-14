@@ -27,7 +27,7 @@ def _warn_proplot(message):
         warnings.warn(message, stacklevel=2)
 
 
-def _read_only_property(version, property):
+def _deprecate_getter_setter(version, property):
     """
     Generate `set_name` and `get_name` methods for property setters and getters,
     and issue warnings when they are used.
@@ -80,15 +80,21 @@ def _rename_objs(version, **kwargs):
 def _rename_kwargs(version, **kwargs_rename):
     """
     Emit a basic deprecation warning after removing or renaming function keyword
-    arguments. Each key should be an old keyword, and each arguments should be the
-    new keyword or a tuple of new keyword options.
+    arguments. Each key should be an old keyword, and each argument should be the
+    new keyword or *instructions* for what to use instead.
     """
     def decorator(func_orig):
         @functools.wraps(func_orig)
         def wrapper(*args, **kwargs):
             for key_old, key_new in kwargs_rename.items():
                 if key_old in kwargs:
-                    kwargs[key_new] = kwargs.pop(key_old)
+                    value = kwargs.pop(key_old)
+                    if key_new.isidentifier():
+                        # Rename argument
+                        kwargs[key_new] = value
+                    elif '{}' in key_new:
+                        # Nice warning message, but user's desired behavior fails
+                        key_new = key_new.format(value)
                     _warn_proplot(
                         f'Keyword arg {key_old!r} was deprecated in {version} and '
                         'will be removed in the next major release. '
