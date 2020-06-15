@@ -107,20 +107,20 @@ CMAPS_TABLE = {
         'Greens6', 'Greens7', 'Greens8',
     ),
     'SciVisColor yellows': (
-        'Yellows1', 'Yellows2', 'Yellows3', 'Yellows4', 'Yellows5',
+        'Yellows1', 'Yellows2', 'Yellows3', 'Yellows4',
     ),
     'SciVisColor oranges': (
-        'Oranges1', 'Oranges2', 'Oranges3',
+        'Oranges1', 'Oranges2', 'Oranges3', 'Oranges4',
     ),
     'SciVisColor browns': (
         'Browns1', 'Browns2', 'Browns3', 'Browns4', 'Browns5',
         'Browns6', 'Browns7', 'Browns8', 'Browns9',
     ),
     'SciVisColor reds': (
-        'Reds1', 'Reds2', 'Reds3',
+        'Reds1', 'Reds2', 'Reds3', 'Reds4', 'Reds5',
     ),
     'SciVisColor purples': (
-        'Purples1', 'Purples2', 'Purples3', 'Purples4', 'Purples5',
+        'Purples1', 'Purples2', 'Purples3',
     ),
     # Builtin colormaps that re hidden by default. Some are really bad, some
     # are segmented maps that should be cycles, and some are just uninspiring.
