@@ -3641,7 +3641,7 @@ or colormap-spec
     locator = _not_none(ticks=ticks, locator=locator)
     minorlocator = _not_none(minorticks=minorticks, minorlocator=minorlocator)
     ticklocation = _not_none(tickloc=tickloc, ticklocation=ticklocation)
-    formatter = _not_none(ticklabels=ticklabels, formatter=formatter, default='auto')
+    formatter = _not_none(ticklabels=ticklabels, formatter=formatter)
 
     # Colorbar kwargs
     # WARNING: PathCollection scatter objects have an extend method!
@@ -3704,8 +3704,9 @@ or colormap-spec
     # and PolyCollection matplotlib classes are iterable.
     cmap = None
     if not isinstance(mappable, (martist.Artist, mcontour.ContourSet)):
-        # Any colormap spec, including a list of colors, colormap name, or
-        # colormap instance.
+        # A colormap instance
+        # TODO: Pass remaining arguments through Colormap()? This is really
+        # niche usage so maybe not necessary.
         if isinstance(mappable, mcolors.Colormap):
             # NOTE: 'Values' makes no sense if this is just a colormap. Just
             # use unique color for every segmentdata / colors color.
@@ -3724,11 +3725,12 @@ or colormap-spec
             locator = _not_none(locator, values)  # tick *all* values by default
 
         # List of artists
+        # NOTE: Do not check for isinstance(Artist) in case it is an mpl collection
         elif np.iterable(mappable) and all(
             hasattr(obj, 'get_color') or hasattr(obj, 'get_facecolor')
             for obj in mappable
         ):
-            # Generate colormap from colors
+            # Generate colormap from colors and infer tick labels
             colors = []
             for obj in mappable:
                 if hasattr(obj, 'get_color'):
@@ -3745,17 +3747,27 @@ or colormap-spec
                 colors.append(to_rgb(color))
             cmap = mcolors.ListedColormap(colors, '_no_name')
 
-            # Try to infer values from labels
+            # Try to infer tick values and tick labels from Artist labels
             if values is None:
+                labs = []
                 values = []
                 for obj in mappable:
-                    val = obj.get_label()
+                    if hasattr(obj, 'get_label'):
+                        lab = obj.get_label()
+                    else:
+                        lab = None
                     try:
-                        val = float(val)
+                        value = float(lab)
                     except ValueError:
-                        values = np.arange(len(colors))
-                        break
-                    values.append(val)
+                        value = None
+                    labs.append(lab)
+                    values.append(value)
+                if any(value is None for value in values):
+                    values = np.arange(len(mappable))
+                    if formatter is None and any(lab is not None for lab in labs):
+                        formatter = labs  # use these fixed values for ticks
+                        if orientation == 'horizontal':
+                            kw_ticklabels.setdefault('rotation', 90)
             locator = _not_none(locator, values)  # tick *all* values by default
 
         else:
@@ -3833,8 +3845,10 @@ or colormap-spec
     extendsize = extendsize / (scale - 2 * extendsize)
 
     # Draw the colorbar
+    # NOTE: Set default formatter here because we optionally apply a FixedFormatter
+    # using *labels* from handle input.
     locator = constructor.Locator(locator, **locator_kw)
-    formatter = constructor.Formatter(formatter, **formatter_kw)
+    formatter = constructor.Formatter(_not_none(formatter, 'auto'), **formatter_kw)
     kwargs.update({
         'ticks': locator,
         'format': formatter,
