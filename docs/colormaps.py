@@ -252,17 +252,17 @@ axs.format(
 
 # Diverging colormap example
 title1 = 'Custom diverging map'
-cmap1 = plot.Colormap('Blue4_r', 'RedPurple3', name='Diverging', save=True)
+cmap1 = plot.Colormap('Blues4_r', 'Reds3', name='Diverging', save=True)
 
 # SciVisColor examples
 title2 = 'Custom complex map'
 cmap2 = plot.Colormap(
-    'Green1_r', 'Orange5', 'Blue1_r', 'Blue6',
+    'Greens1_r', 'Oranges5', 'Blues1_r', 'Blues6',
     name='Complex', save=True
 )
 title3 = 'SciVisColor example reproduction'
 cmap3 = plot.Colormap(
-    'Green1_r', 'Orange5', 'Blue1_r', 'Blue6',
+    'Greens1_r', 'Oranges5', 'Blues1_r', 'Blues6',
     ratios=(1, 3, 5, 10), name='SciVisColor', save=True
 )
 

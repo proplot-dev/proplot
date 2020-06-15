@@ -99,24 +99,26 @@ CMAPS_TABLE = {
         'RdBu', 'RdYlBu', 'RdYlGn',
     ),
     'SciVisColor blues': (
-        'Blue1', 'Blue2', 'Blue3', 'Blue4', 'Blue5',
-        'Blue6', 'Blue7', 'Blue8', 'Blue9', 'Blue10', 'Blue11',
+        'Blues1', 'Blues2', 'Blues3', 'Blues4', 'Blues5',
+        'Blues6', 'Blues7', 'Blues8', 'Blues9', 'Blues10', 'Blues11',
     ),
     'SciVisColor greens': (
-        'Green1', 'Green2', 'Green3', 'Green4', 'Green5',
-        'Green6', 'Green7', 'Green8',
+        'Greens1', 'Greens2', 'Greens3', 'Greens4', 'Greens5',
+        'Greens6', 'Greens7', 'Greens8',
     ),
     'SciVisColor oranges': (
-        'Orange1', 'Orange2', 'Orange3', 'Orange4', 'Orange5',
-        'Orange6', 'Orange7', 'Orange8',
+        'Oranges1', 'Oranges2', 'Oranges3', 'Oranges4', 'Oranges5',
+        'Oranges6', 'Oranges7', 'Oranges8',
     ),
     'SciVisColor browns': (
-        'Brown1', 'Brown2', 'Brown3', 'Brown4', 'Brown5',
-        'Brown6', 'Brown7', 'Brown8', 'Brown9',
+        'Browns1', 'Browns2', 'Browns3', 'Browns4', 'Browns5',
+        'Browns6', 'Browns7', 'Browns8', 'Browns9',
     ),
-    'SciVisColor reds and purples': (
-        'RedPurple1', 'RedPurple2', 'RedPurple3', 'RedPurple4',
-        'RedPurple5', 'RedPurple6', 'RedPurple7', 'RedPurple8',
+    'SciVisColor reds': (
+        'Reds1', 'Reds2', 'Reds3', 'Reds4', 'Reds5',
+    ),
+    'SciVisColor purples': (
+        'Purples1', 'Purples2', 'Purples3',
     ),
     # Builtin colormaps that re hidden by default. Some are really bad, some
     # are segmented maps that should be cycles, and some are just uninspiring.

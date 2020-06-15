@@ -2,6 +2,10 @@
 """
 New colormap classes and colormap normalization classes.
 """
+# NOTE: Avoid colormap/color name conflicts by checking
+# set(plot.colors._cmap_database) & set(plot.colors.mcolors._colors_full_map)
+# whenever new default colormaps are added. Current result is
+# {'gray', 'marine', 'ocean', 'pink'} which correspond to MATLAB and GNUplot maps.
 import os
 import re
 import json
@@ -2267,8 +2271,8 @@ def _get_cmap(name=None, lut=None):
 
 class ColormapDatabase(dict):
     """
-    Dictionary subclass used to replace the `matplotlib.cm.cmap_d`
-    colormap dictionary. See `~ColormapDatabase.__getitem__` and
+    Dictionary subclass used to replace the matplotlib
+    colormap registry. See `~ColormapDatabase.__getitem__` and
     `~ColormapDatabase.__setitem__` for details.
     """
     def __init__(self, kwargs):
