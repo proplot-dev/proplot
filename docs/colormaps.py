@@ -255,14 +255,14 @@ title1 = 'Custom diverging map'
 cmap1 = plot.Colormap('Blues4_r', 'Reds3', name='Diverging', save=True)
 
 # SciVisColor examples
-title2 = 'Custom complex map'
+title2 = 'SciVisColor example with equal ratios'
 cmap2 = plot.Colormap(
-    'Greens1_r', 'Oranges5', 'Blues1_r', 'Blues6',
-    name='Complex', save=True
+    'Greens1_r', 'Oranges1', 'Blues1_r', 'Blues6',
+    name='SciVisColorEqual', save=True
 )
-title3 = 'SciVisColor example reproduction'
+title3 = 'SciVisColor example'
 cmap3 = plot.Colormap(
-    'Greens1_r', 'Oranges5', 'Blues1_r', 'Blues6',
+    'Greens1_r', 'Oranges1', 'Blues1_r', 'Blues6',
     ratios=(1, 3, 5, 10), name='SciVisColor', save=True
 )
 
@@ -297,7 +297,6 @@ for ax, cmap, title in zip(axs, (cmap1, cmap2, cmap3), (title1, title2, title3))
 #   `~proplot.colors.LinearSegmentedColormap.cut` method, and can be used
 #   to create a sharper cutoff between negative and positive values or (when
 #   `cut` is negative) to expand the "neutral" region of the colormap.
-#   This should generally be used *without* a central level.
 # * To rotate a cyclic colormap,  pass `shift` to
 #   `~proplot.constructor.Colormap`. This calls the
 #   `~proplot.colors.LinearSegmentedColormap.shifted` method. ProPlot ensures

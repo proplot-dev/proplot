@@ -106,9 +106,11 @@ CMAPS_TABLE = {
         'Greens1', 'Greens2', 'Greens3', 'Greens4', 'Greens5',
         'Greens6', 'Greens7', 'Greens8',
     ),
+    'SciVisColor yellows': (
+        'Yellows1', 'Yellows2', 'Yellows3', 'Yellows4', 'Yellows5',
+    ),
     'SciVisColor oranges': (
-        'Oranges1', 'Oranges2', 'Oranges3', 'Oranges4', 'Oranges5',
-        'Oranges6', 'Oranges7', 'Oranges8',
+        'Oranges1', 'Oranges2', 'Oranges3',
     ),
     'SciVisColor browns': (
         'Browns1', 'Browns2', 'Browns3', 'Browns4', 'Browns5',
