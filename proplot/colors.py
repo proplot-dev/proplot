@@ -92,16 +92,6 @@ gamma2 : float, optional
     See `make_mapping_array` for details.
 """
 
-docstring.snippets['cmap.from_file'] = """
-Parameters
-----------
-path : str
-    The file path.
-warn_on_failure : bool, optional
-    If ``True``, issue a warning when loading fails rather than
-    raising an error.
-"""  # noqa
-
 
 def _get_channel(color, channel, space='hcl'):
     """
@@ -865,13 +855,13 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             is the colormap name. Valid extensions are described in
             the below table.
 
-            =====================  ==========================================
-            Extension              Description
-            =====================  ==========================================
-            ``.json`` (default)    JSON database of the channel segment data.
-            ``.hex``               Comma-delimited list of HEX strings.
-            ``.rgb``, ``.txt``     3-4 column table of channel values.
-            =====================  ==========================================
+            ===================  ==========================================
+            Extension            Description
+            ===================  ==========================================
+            ``.json`` (default)  JSON database of the channel segment data.
+            ``.hex``             Comma-delimited list of HEX strings.
+            ``.rgb``, ``.txt``   3-4 column table of channel values.
+            ===================  ==========================================
 
         alpha : bool, optional
             Whether to include an opacity column for ``.rgb``
@@ -1136,13 +1126,27 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         kwargs.setdefault('name', self.name)
         return ListedColormap(colors, **kwargs)
 
-    @docstring.add_snippets
     @classmethod
     def from_file(cls, path, warn_on_failure=False):
         """
         Load colormap from a file.
-        %(cmap.ext_table)s
-        %(cmap.from_file)s
+
+        Parameters
+        ----------
+        path : str
+            The file path. The file extension should be one of the following:
+
+            ===================  ==========================================
+            Extension            Description
+            ===================  ==========================================
+            ``.json``            JSON database of the channel segment data.
+            ``.hex``             Comma-delimited list of HEX strings.
+            ``.rgb``, ``.txt``   3-4 column table of channel values.
+            ===================  ==========================================
+
+        warn_on_failure : bool, optional
+            If ``True``, issue a warning when loading fails instead of
+            raising an error.
         """
         return cls._from_file(path, warn_on_failure=warn_on_failure)
 
@@ -1283,12 +1287,12 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
             is the colormap name. Valid extensions are described in
             the below table.
 
-            =====================  ====================================
-            Extension              Description
-            =====================  ====================================
-            ``.hex`` (default)     Comma-delimited list of HEX strings.
-            ``.rgb``, ``.txt``     3-4 column table of channel values.
-            =====================  ====================================
+            ==================  ====================================
+            Extension           Description
+            ==================  ====================================
+            ``.hex`` (default)  Comma-delimited list of HEX strings.
+            ``.rgb``, ``.txt``  3-4 column table of channel values.
+            ==================  ====================================
 
         alpha : bool, optional
             Whether to include an opacity column for ``.rgb``
@@ -1389,13 +1393,26 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         cmap._rgba_over = self._rgba_over
         return cmap
 
-    @docstring.add_snippets
     @classmethod
     def from_file(cls, path, warn_on_failure=False):
         """
         Load color cycle from a file.
-        %(cmap.ext_table)s
-        %(cmap.from_file)s
+
+        Parameters
+        ----------
+        path : str
+            The file path. The file extension should be one of the following:
+
+            ==================  ==========================================
+            Extension           Description
+            ==================  ==========================================
+            ``.hex``            Comma-delimited list of HEX strings.
+            ``.rgb``, ``.txt``  3-4 column table of channel values.
+            ==================  ==========================================
+
+        warn_on_failure : bool, optional
+            If ``True``, issue a warning when loading fails instead of
+            raising an error.
         """
         return cls._from_file(path, warn_on_failure=warn_on_failure)
 
