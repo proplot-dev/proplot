@@ -205,6 +205,10 @@ def _draw_bars(
         if name in database:
             name = f'{name}_{i}'  # e.g. _no_name_2
             i += 1
+        if name.lower()[-2:] == '_r':
+            name = name[:-2]
+        if name.lower()[-2:] == '_s':
+            name = name[:-2]
         database[name] = cmap
 
     # Categorize the input names
