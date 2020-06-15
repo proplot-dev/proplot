@@ -2385,7 +2385,7 @@ class ColormapDatabase(dict):
         if not isinstance(key, str):
             raise KeyError(f'Invalid key {key!r}. Key must be a string.')
         key = key.lower()
-        key = re.sub(r'\A(grays)(?:_r|_s)?\Z', 'greys', key)
+        key = re.sub(r'\A(grays)(_r(_s)?|_s)?\Z', r'greys\2', key)
         reverse = key[-2:] == '_r'
         if reverse:
             key = key[:-2]
