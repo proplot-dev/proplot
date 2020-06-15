@@ -3749,19 +3749,25 @@ or colormap-spec
 
             # Try to infer tick values and tick labels from Artist labels
             if values is None:
+                # Get object labels and values (avoid overwriting colorbar 'label')
                 labs = []
                 values = []
                 for obj in mappable:
+                    lab = value = None
                     if hasattr(obj, 'get_label'):
-                        lab = obj.get_label()
-                    else:
-                        lab = None
-                    try:
-                        value = float(lab)
-                    except ValueError:
-                        value = None
+                        lab = obj.get_label() or None
+                        if lab and lab[:1] == '_':  # intended to be ignored by legend
+                            lab = None
+                    if lab:
+                        try:
+                            value = float(lab)
+                        except (TypeError, ValueError):
+                            pass
                     labs.append(lab)
                     values.append(value)
+                # Use default values if labels are non-numeric (numeric labels are
+                # common when making on-the-fly colorbars). Try to use object labels
+                # for ticks with default vertical rotation, like datetime axes.
                 if any(value is None for value in values):
                     values = np.arange(len(mappable))
                     if formatter is None and any(lab is not None for lab in labs):
