@@ -3200,10 +3200,12 @@ property-spec, optional
     # NOTE: Set solid_capstyle to 'butt' so line does not extend past error bounds
     # shading in legend entry. This change is not noticable in other situations.
     kw_text = {}
-    if fontcolor is not None:
-        kw_text['color'] = fontcolor
-    if fontweight is not None:
-        kw_text['weight'] = fontweight
+    for key, value in (
+        ('color', fontcolor),
+        ('weight', fontweight),
+    ):
+        if value is not None:
+            kw_text[key] = value
     kw_handle = {'solid_capstyle': 'butt'}
     for key, value in (
         ('color', color),
@@ -3512,7 +3514,7 @@ def colorbar_wrapper(
     locator=None, ticks=None, maxn=None, maxn_minor=None,
     minorlocator=None, minorticks=None,
     locator_kw=None, minorlocator_kw=None,
-    formatter=None, ticklabels=None, formatter_kw=None,
+    formatter=None, ticklabels=None, formatter_kw=None, rotation=None,
     norm=None, norm_kw=None,  # normalizer to use when passing colors/lines
     orientation='horizontal',
     edgecolor=None, linewidth=None,
@@ -3579,12 +3581,12 @@ or colormap-spec
     tickminor : bool, optional
         Whether to add minor ticks to the colorbar with
         `~matplotlib.colorbar.ColorbarBase.minorticks_on`.
-    label, title : str, optional
-        The colorbar label. The `title` keyword is also accepted for
-        consistency with `legend`.
     grid : bool, optional
         Whether to draw "gridlines" between each level of the colorbar.
         Default is :rc:`colorbar.grid`.
+    label, title : str, optional
+        The colorbar label. The `title` keyword is also accepted for
+        consistency with `legend`.
     locator, ticks : locator spec, optional
         Used to determine the colorbar tick positions. Passed to the
         `~proplot.constructor.Locator` constructor.
@@ -3602,6 +3604,8 @@ or colormap-spec
         constructor.
     formatter_kw : dict-like, optional
         The formatter settings. Passed to `~proplot.constructor.Formatter`.
+    rotation : float, optional
+        The tick label rotation. Default is ``0``.
     edgecolor, linewidth : optional
         The edge color and line width for the colorbar outline.
     labelsize, labelweight, labelcolor : optional
@@ -3661,19 +3665,22 @@ or colormap-spec
 
     # Text property keyword args
     kw_label = {}
-    if labelsize is not None:
-        kw_label['size'] = labelsize
-    if labelweight is not None:
-        kw_label['weight'] = labelweight
-    if labelcolor is not None:
-        kw_label['color'] = labelcolor
+    for key, value in (
+        ('size', labelsize),
+        ('weight', labelweight),
+        ('color', labelcolor),
+    ):
+        if value is not None:
+            kw_label[key] = value
     kw_ticklabels = {}
-    if ticklabelsize is not None:
-        kw_ticklabels['size'] = ticklabelsize
-    if ticklabelweight is not None:
-        kw_ticklabels['weight'] = ticklabelweight
-    if ticklabelcolor is not None:
-        kw_ticklabels['color'] = ticklabelcolor
+    for key, value in (
+        ('size', ticklabelsize),
+        ('weight', ticklabelweight),
+        ('color', ticklabelcolor),
+        ('rotation', rotation),
+    ):
+        if value is not None:
+            kw_ticklabels[key] = value
 
     # Special case where auto colorbar is generated from 1d methods, a list is
     # always passed, but some 1d methods (scatter) do have colormaps.
