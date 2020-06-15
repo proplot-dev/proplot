@@ -2319,14 +2319,6 @@ class ColormapDatabase(dict):
             )
 
         # Auto-reverse and auto-shift
-        if shift:
-            if hasattr(value, 'shifted'):
-                value = value.shifted(180)
-            else:
-                raise KeyError(
-                    f'Item of type {type(value).__name__!r} '
-                    'does not have shifted() method.'
-                )
         if reverse:
             if hasattr(value, 'reversed'):
                 value = value.reversed()
@@ -2334,6 +2326,14 @@ class ColormapDatabase(dict):
                 raise KeyError(
                     f'Item of type {type(value).__name__!r} '
                     'does not have reversed() method.'
+                )
+        if shift:
+            if hasattr(value, 'shifted'):
+                value = value.shifted(180)
+            else:
+                raise KeyError(
+                    f'Item of type {type(value).__name__!r} '
+                    'does not have shifted() method.'
                 )
         return value
 
