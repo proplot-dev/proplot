@@ -81,7 +81,7 @@ coordinates in *alternate units*.
 
 Parameters
 ----------
-arg : function, (function, function), or scale-spec
+funcscale : function, (function, function), or scale-spec
     Used to transform units from the parent axis to the secondary axis.
     This can be a `~proplot.scale.FuncScale` itself or a function,
     (function, function) tuple, or an axis scale specification interpreted
@@ -217,12 +217,11 @@ class CartesianAxes(base.Axes):
         self.yaxis.set_major_formatter(formatter)
         self.xaxis.isDefault_majfmt = True
         self.yaxis.isDefault_majfmt = True
-        # Custom attributes
         self._datex_rotated = False  # whether manual rotation has been applied
-        self._dualy_arg = None  # for scaling units on opposite side of ax
-        self._dualx_arg = None
-        self._dualy_cache = None  # prevent excess _dualy_overrides calls
-        self._dualx_cache = None
+        self._dualy_funcscale = None  # for scaling units on opposite side of ax
+        self._dualx_funcscale = None
+        self._dualy_parent_prev_state = None  # prevent excess _dualy_overrides calls
+        self._dualx_parent_prev_state = None
 
     def _altx_overrides(self):
         """
@@ -237,7 +236,7 @@ class CartesianAxes(base.Axes):
             self.spines['bottom'].set_visible(True)
             self.xaxis.tick_bottom()
             self.xaxis.set_label_position('bottom')
-        elif self._altx_parent is not None:  # this axes is the result of altx
+        if self._altx_parent is not None:  # this axes is the result of altx
             self.spines['bottom'].set_visible(False)
             self.spines['top'].set_visible(True)
             self.spines['left'].set_visible(False)
@@ -256,7 +255,7 @@ class CartesianAxes(base.Axes):
             self.spines['left'].set_visible(True)
             self.yaxis.tick_left()
             self.yaxis.set_label_position('left')
-        elif self._alty_parent is not None:
+        if self._alty_parent is not None:
             self.spines['left'].set_visible(False)
             self.spines['right'].set_visible(True)
             self.spines['top'].set_visible(False)
@@ -322,18 +321,20 @@ class CartesianAxes(base.Axes):
         """
         # NOTE: We set the scale using private API to bypass application of
         # set_default_locators_and_formatters: only_if_default=True is critical
-        # to prevent overriding user settings! We also bypass autoscale_view
-        # because we set limits manually, and bypass child.stale = True
-        # because that is done in call to set_xlim() below.
-        arg = self._dualx_arg
-        if arg is None:
+        # to prevent overriding user settings!
+        # NOTE: We bypass autoscale_view because we set limits manually, and bypass
+        # child.stale = True because that is done in call to set_xlim() below.
+        # NOTE: Dual axis only needs to be constrained if the parent axis scale
+        # and limits have changed.
+        funcscale = self._dualx_funcscale
+        if funcscale is None:
             return
         scale = self.xaxis._scale
         olim = self.get_xlim()
-        if (scale, *olim) == self._dualx_cache:
+        if (scale, *olim) == self._dualx_parent_prev_state:
             return
         child = self._altx_child
-        funcscale = pscale.FuncScale(arg, invert=True, parent_scale=scale)
+        funcscale = pscale.FuncScale(funcscale, invert=True, parent_scale=scale)
         child.xaxis._scale = funcscale
         child._update_transScale()
         funcscale.set_default_locators_and_formatters(child.xaxis, only_if_default=True)
@@ -341,21 +342,21 @@ class CartesianAxes(base.Axes):
         if np.sign(np.diff(olim)) != np.sign(np.diff(nlim)):
             nlim = nlim[::-1]  # if function flips limits, so will set_xlim!
         child.set_xlim(nlim, emit=False)
-        self._dualx_cache = (scale, *olim)
+        self._dualx_parent_prev_state = (scale, *olim)
 
     def _dualy_overrides(self):
         """
         Lock the child "dual" *y* axis limits to the parent.
         """
-        arg = self._dualy_arg
-        if arg is None:
+        funcscale = self._dualy_funcscale
+        if funcscale is None:
             return
         scale = self.yaxis._scale
         olim = self.get_ylim()
-        if (scale, *olim) == self._dualy_cache:
+        if (scale, *olim) == self._dualy_parent_prev_state:
             return
         child = self._alty_child
-        funcscale = pscale.FuncScale(arg, invert=True, parent_scale=scale)
+        funcscale = pscale.FuncScale(funcscale, invert=True, parent_scale=scale)
         child.yaxis._scale = funcscale
         child._update_transScale()
         funcscale.set_default_locators_and_formatters(child.yaxis, only_if_default=True)
@@ -363,7 +364,7 @@ class CartesianAxes(base.Axes):
         if np.sign(np.diff(olim)) != np.sign(np.diff(nlim)):
             nlim = nlim[::-1]
         child.set_ylim(nlim, emit=False)
-        self._dualy_cache = (scale, *olim)
+        self._dualy_parent_prev_state = (scale, *olim)
 
     def _sharex_setup(self, sharex):
         """
@@ -1248,7 +1249,7 @@ class CartesianAxes(base.Axes):
         return ax
 
     @docstring.add_snippets
-    def dualx(self, arg, **kwargs):
+    def dualx(self, funcscale, **kwargs):
         """
         %(axes.dualx)s
         """
@@ -1256,17 +1257,17 @@ class CartesianAxes(base.Axes):
         # being, our version is more robust (see FuncScale) and simpler, since
         # we do not create an entirely separate _SecondaryAxis class.
         ax = self.altx(**kwargs)
-        self._dualx_arg = arg
+        self._dualx_funcscale = funcscale
         self._dualx_overrides()
         return ax
 
     @docstring.add_snippets
-    def dualy(self, arg, **kwargs):
+    def dualy(self, funcscale, **kwargs):
         """
         %(axes.dualy)s
         """
         ax = self.alty(**kwargs)
-        self._dualy_arg = arg
+        self._dualy_funcscale = funcscale
         self._dualy_overrides()
         return ax
 
