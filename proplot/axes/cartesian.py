@@ -1195,13 +1195,23 @@ class CartesianAxes(base.Axes):
         """
         %(axes.altx)s
         """
-        # Cannot wrap twiny() because we want to use CartesianAxes, not
-        # matplotlib Axes. Instead use hidden method _make_twin_axes.
-        # See https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axes/_subplots.py  # noqa
+        # NOTE: Cannot *wrap* twiny() because we want to use CartesianAxes, not
+        # matplotlib Axes. Instead use hidden method SubplotBase._make_twin_axes.
+        # WARNING: This repairs a matplotlib bug where twins fail to inherit the minor
+        # locator due to application of `AutoMinorLocator` when `ytick.minor.visible`
+        # is ``True`` in `Axes.cla` and due to the fact that passing ``sharey=self``
+        # to the alternate axes means that they share the same major and minor Tickers.
+        # >>> import matplotlib.pyplot as plt
+        # ... fig, ax = plt.subplots()
+        # ... ax.set_yscale('log')
+        # ... ax.twiny()
         if self._altx_child or self._altx_parent:
             raise RuntimeError('No more than *two* twin axes are allowed.')
         with self.figure._context_authorize_add_subplot():
+            ylocator = self.yaxis.get_minor_locator()
             ax = self._make_twin_axes(sharey=self, projection='cartesian')
+            ax.yaxis.set_minor_locator(ylocator)
+            ax.yaxis.isDefault_minloc = True
         ax.set_autoscaley_on(self.get_autoscaley_on())
         ax.grid(False)
         self._altx_child = ax
@@ -1218,11 +1228,14 @@ class CartesianAxes(base.Axes):
         """
         %(axes.alty)s
         """
-        # Docstring is programatically assigned below
+        # See altx() comments
         if self._alty_child or self._alty_parent:
             raise RuntimeError('No more than *two* twin axes are allowed.')
         with self.figure._context_authorize_add_subplot():
+            xlocator = self.xaxis.get_minor_locator()
             ax = self._make_twin_axes(sharex=self, projection='cartesian')
+            ax.xaxis.set_minor_locator(xlocator)
+            ax.xaxis.isDefault_minloc = True
         ax.set_autoscalex_on(self.get_autoscalex_on())
         ax.grid(False)
         self._alty_child = ax
