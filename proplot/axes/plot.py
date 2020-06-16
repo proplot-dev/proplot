@@ -522,14 +522,15 @@ def standardize_1d(self, func, *args, autoformat=None, **kwargs):
             if label and not getattr(self, f'get_{iname}label')():
                 # For histograms, this label is used for *x* coordinates
                 kw[iname + 'label'] = label
-            # Xlabel
             if name not in ('hist',):
+                # Xlabel
                 x, label = _axis_labels_title(x)
                 if label and not getattr(self, f'get_{xname}label')():
                     kw[xname + 'label'] = label
-            # Reversed axis
-            if name not in ('scatter',) and len(x) > 1 and xi is None and x[1] < x[0]:
-                kw[xname + 'reverse'] = True
+                # Reversed axis
+                if name not in ('scatter',):
+                    if len(x) > 1 and xi is None and x[1] < x[0]:
+                        kw[xname + 'reverse'] = True
 
         # Appply
         if kw:
