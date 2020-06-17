@@ -1159,6 +1159,7 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
         text = _text_wrapper(
             GeoAxesBase.text
         )
+        fill = _default_transform(GeoAxesBase.fill)
         plot = _default_transform(_plot_wrapper(_standardize_1d(
             _indicate_error(_cycle_changer(GeoAxesBase.plot))
         )))
