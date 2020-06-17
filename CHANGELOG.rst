@@ -16,7 +16,7 @@ This will be published when some major refactoring tasks are completed,
 and deprecation warnings will be removed. See :pr:`89`, :pr:`109`, :pr:`110`,
 and :pr:`111`.
 
-ProPlot v0.7.0 (2020-##-##)
+ProPlot v0.8.0 (2020-##-##)
 ===========================
 .. rubric:: Deprecated
 
@@ -63,6 +63,46 @@ ProPlot v0.7.0 (2020-##-##)
 - Panels, colorbars, and legends are now members of
   `~proplot.subplots.EdgeStack` stacks rather than getting inserted directly
   into the main `~proplot.subplots.GridSpec` (:pr:`110`).
+
+ProPlot v0.7.0 (2020-##-#3)
+===========================
+
+.. rubric:: Deprecated
+
+* Rename `SciVisColor` colormaps from ``Blue1``, ``Blue2``, etc. to ``Blues1``,
+  ``Blues2``, etc. to avoid name conflict with open-color colors. This permits making
+  monochromatic open-color maps with e.g. ``plot.Colormap('blue9')``
+  (:commit:`8be0473f`).
+* Shuffle some SciVisColor map names to make them more consistent/succinct
+  (:commit:`8be0473f`).
+  Make the ``Browns1`` map the most colorful/vibrant one, just
+  like ``Greens1`` and ``Blues1``; split up ``RedPurple`` maps into ``Reds``
+  and ``Purples``; and add ``Yellows`` category from ``Oranges`` maps.
+
+.. rubric:: Features
+
+* Add ``'rotation'`` keyword to `colorbar_wrapper` for rotating colorbar tick
+  labels (:commit:`2d835f20`).
+* Use `Artist` labels for colorbar tick labels when making colorbars from lists of
+  artists if `values` was not passed or labels are non-numeric, and rotate them
+  90 degrees for horizontal colorbars by default (:commit:`ed8e1314`).
+
+.. rubric:: Bug fixes
+
+* Fix matplotlib bug where `altx` and `alty` reset the minor locator of the shared
+  axis to ``AutoMinorLocator`` even if the axis scale is ``'log'`` (:commit:`2f64361d`).
+* Fix issue where axis is inverted for histogram plots (:issue:`191`).
+* Fix issue where proplot fails to detect legend entries for "outer"
+  legends (:issue:`189`).
+* Fix error when no legend handles are found (:commit:`2c6bf3e2`).
+* Fix issue where `show_cmaps` cannot display reversed colormaps (:commit:`2dd51177`).
+* Fix issue where ``'grays_r'`` translated to ``'greys'`` (:commit:`074c6aef`).
+* First reverse, *then* shift ``cmap_r_s`` colormaps (:commit:`e5156294`).
+
+.. rubric:: Documentation
+
+* Fix ``from_file`` docstrings (:commit:`54f1bc7c`).
+
 
 ProPlot v0.6.4 (2020-06-13)
 ===========================
