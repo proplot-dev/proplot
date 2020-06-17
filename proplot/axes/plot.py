@@ -998,8 +998,8 @@ def _get_error_data(
         if err.ndim == 1:
             abserr = err
             err = np.empty((2, err.size))
-            err[:, 0] = y - abserr  # translated back to absolute deviations below
-            err[:, 1] = y + abserr
+            err[0, :] = y - abserr  # translated back to absolute deviations below
+            err[1, :] = y + abserr
     elif stds is not None:
         label_default = fr'{stds[1]}$\sigma$ range'
         err = y + np.std(data, axis=0)[None, :] * np.asarray(stds)[:, None]
