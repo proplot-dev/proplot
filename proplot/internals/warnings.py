@@ -60,9 +60,9 @@ def _rename_objs(version, **kwargs):
     """
     wrappers = []
     for old_name, func_or_class in kwargs.items():
-        new_name = func_or_class.__name__
 
-        def wrapper(*args, old_name=old_name, new_name=new_name, **kwargs):
+        def wrapper(*args, old_name=old_name, func_or_class=func_or_class, **kwargs):
+            new_name = func_or_class.__name__
             _warn_proplot(
                 f'{old_name!r} was deprecated in version {version} and will be '
                 f'removed in the next major release. Please use {new_name!r} instead.'
