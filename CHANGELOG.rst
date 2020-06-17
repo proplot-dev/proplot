@@ -81,6 +81,8 @@ ProPlot v0.7.0 (2020-##-#3)
 
 .. rubric:: Features
 
+* Set default transform to ``ccrs.PlateCarree`` when calling
+  `matplotlib.axes.Axes.fill` on `CartopyAxes` (:issue:`193`).
 * Add ``'rotation'`` keyword to `colorbar_wrapper` for rotating colorbar tick
   labels (:commit:`2d835f20`).
 * Use `Artist` labels for colorbar tick labels when making colorbars from lists of
@@ -91,6 +93,7 @@ ProPlot v0.7.0 (2020-##-#3)
 
 * Fix matplotlib bug where `altx` and `alty` reset the minor locator of the shared
   axis to ``AutoMinorLocator`` even if the axis scale is ``'log'`` (:commit:`2f64361d`).
+* Fix issue where `indicate_error` cannot accept 1D error bounds (:commit:`ef2d72cd`).
 * Fix issue where axis is inverted for histogram plots (:issue:`191`).
 * Fix issue where proplot fails to detect legend entries for "outer"
   legends (:issue:`189`).
