@@ -2,29 +2,30 @@
 """
 Custom warning style and deprecation functions.
 """
+import re
+import sys
 import warnings
 import functools
-
-
-def _format_warning(message, category, filename, lineno, line=None):  # noqa: U100, E501
-    """
-    Warnings format monkey patch for warnings issued by ProPlot. See the
-    `internal warning call signature \
-<https://docs.python.org/3/library/warnings.html#warnings.showwarning>`__
-    and the `default warning source code \
-<https://github.com/python/cpython/blob/master/Lib/warnings.py>`__.
-"""
-    return f'{filename}:{lineno}: ProPlotWarning: {message}\n'  # needs newline
+ProPlotWarning = type('ProPlotWarning', (UserWarning,), {})
 
 
 def _warn_proplot(message):
     """
-    Temporarily apply the `_format_warning` monkey patch and emit the
-    warning. Do not want to affect warnings emitted by other modules.
+    Emit a `ProPlotWarning` and show the stack level outside of matplotlib and proplot.
     """
-    from . import _state_context
-    with _state_context(warnings, formatwarning=_format_warning):
-        warnings.warn(message, stacklevel=2)
+    frame = sys._getframe()
+    stacklevel = 1
+    while True:
+        if frame is None:
+            break  # when called in embedded context may hit frame is None
+        if not re.match(
+            r'\A(matplotlib|mpl_toolkits|proplot)\.',
+            frame.f_globals.get('__name__', '')
+        ):
+            break
+        frame = frame.f_back
+        stacklevel += 1
+    warnings.warn(message, ProPlotWarning, stacklevel=stacklevel)
 
 
 def _deprecate_getter_setter(version, property):
