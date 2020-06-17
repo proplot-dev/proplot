@@ -13,7 +13,6 @@ from . import base
 from .plot import (
     _basemap_norecurse, _basemap_redirect, _cmap_changer, _cycle_changer,
     _default_latlon, _default_transform,
-    _fill_between_wrapper, _fill_betweenx_wrapper,
     _indicate_error, _plot_wrapper,
     _scatter_wrapper, _standardize_1d, _standardize_2d,
     _text_wrapper,
@@ -1155,6 +1154,7 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
 
     # Wrapped methods
     # TODO: Remove this duplication!
+    # NOTE: Do not wrap fill_between because it is broken in cartopy
     if GeoAxesBase is not object:
         text = _text_wrapper(
             GeoAxesBase.text
@@ -1165,12 +1165,6 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
         )))
         scatter = _default_transform(_scatter_wrapper(_standardize_1d(
             _indicate_error(_cycle_changer(GeoAxesBase.scatter))
-        )))
-        fill_between = _fill_between_wrapper(_standardize_1d(_cycle_changer(
-            GeoAxesBase.fill_between
-        )))
-        fill_betweenx = _fill_betweenx_wrapper(_standardize_1d(_cycle_changer(
-            GeoAxesBase.fill_betweenx
         )))
         contour = _default_transform(_standardize_2d(_cmap_changer(
             GeoAxesBase.contour
