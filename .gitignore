@@ -21,7 +21,7 @@ docs/_build
 sources
 
 # Folder of notebooks for testing and bugfixing
-local
+notebooks
 
 # Notebook stuff
 .ipynb_checkpoints
