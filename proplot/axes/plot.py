@@ -2192,13 +2192,13 @@ def _iter_legend_objects(objs):
     # Account for (1) multiple columns of data, (2) functions that return
     # multiple values (e.g. hist() returns (bins, values, patches)), and
     # (3) matplotlib.Collection list subclasses.
-    if isinstance(objs, (list, tuple)):
-        for obj in objs:
-            yield from _iter_legend_objects(obj)
-    elif hasattr(objs, 'get_label'):
+    if hasattr(objs, 'get_label'):
         label = objs.get_label()
         if label and label[:1] != '_':
             yield (objs, label)
+    elif isinstance(objs, (list, tuple)):
+        for obj in objs:
+            yield from _iter_legend_objects(obj)
 
 
 def cycle_changer(
