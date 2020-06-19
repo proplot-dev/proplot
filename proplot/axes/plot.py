@@ -2292,9 +2292,9 @@ def cycle_changer(
         label=label,
         legend_kw_labels=legend_kw.pop('labels', None),
     )
-    colorbar_legend_label = None  # for colorbar or legend
     if name in ('pie',):  # add x coordinates as default pie chart labels
-        kwargs['labels'] = _not_none(labels, x)  # TODO: move to pie wrapper?
+        labels = _not_none(labels, x)  # TODO: move to pie wrapper?
+    colorbar_legend_label = None  # for colorbar or legend
     if name in ('bar', 'fill_between', 'fill_betweenx'):
         stacked = kwargs.pop('stacked', False)
     if name in ('bar',):
@@ -2400,7 +2400,10 @@ def cycle_changer(
     # Sanitize labels
     # WARNING: Must convert labels to string here because e.g. scatter() applies
     # default label if input is False-ey. So numeric '0' would be overridden.
-    labels = [str(_not_none(label, '')) for label in labels]
+    if labels is None:
+        labels = [''] * ncols
+    else:
+        labels = [str(_not_none(label, '')) for label in labels]
 
     # Get step size for bar plots
     # WARNING: This will fail for non-numeric non-datetime64 singleton
