@@ -93,6 +93,10 @@ ProPlot v0.7.0 (2020-##-#3)
 
 * Fix matplotlib bug where `altx` and `alty` reset the minor locator of the shared
   axis to ``AutoMinorLocator`` even if the axis scale is ``'log'`` (:commit:`2f64361d`).
+* Fix issue where `hist` with `xarray.DataArray` or `pandas.Dataframe` input causes
+  erroneous axis labels; use labels for legend instead (:issue:`195`).
+* Fix issue where axis coordinates are incorrect when `violinplot` or `boxplot`
+  receive non-DataFrame input (:commit:`b5c3ec4c`).
 * Fix issue where `indicate_error` cannot accept 1D error bounds (:commit:`ef2d72cd`).
 * Fix issue where axis is inverted for histogram plots (:issue:`191`).
 * Fix issue where proplot fails to detect legend entries for "outer"
