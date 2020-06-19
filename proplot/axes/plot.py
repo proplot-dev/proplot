@@ -495,23 +495,22 @@ def standardize_1d(self, func, *args, autoformat=None, **kwargs):
         )
 
     # Auto formatting
-    xi = None  # index version of 'x'
+    x_index = None  # index version of 'x'
     if not hasattr(self, 'projection'):
         # First handle string-type x-coordinates
         kw = {}
         xname = 'y' if orientation == 'horizontal' else 'x'
         yname = 'x' if xname == 'y' else 'y'
         if _is_string(x):
-            xi = np.arange(len(x))
-            kw[xname + 'locator'] = mticker.FixedLocator(xi)
-            kw[xname + 'formatter'] = mticker.IndexFormatter(x)
-            kw[xname + 'minorlocator'] = mticker.NullLocator()
-            if name == 'boxplot':
-                kwargs['labels'] = x
-            elif name == 'violinplot':
-                kwargs['positions'] = xi
-        if name in ('boxplot', 'violinplot'):
-            kwargs['positions'] = xi
+            if name in ('hist',):
+                kwargs.setdefault('labels', list(x))
+            else:
+                x_index = np.arange(len(x))
+                kw[xname + 'locator'] = mticker.FixedLocator(x_index)
+                kw[xname + 'formatter'] = mticker.IndexFormatter(x)
+                kw[xname + 'minorlocator'] = mticker.NullLocator()
+                if name == 'boxplot':  # otherwise IndexFormatter is overridden
+                    kwargs['labels'] = x
 
         # Next handle labels if 'autoformat' is on
         # NOTE: Do not overwrite existing labels!
@@ -529,7 +528,7 @@ def standardize_1d(self, func, *args, autoformat=None, **kwargs):
                     kw[xname + 'label'] = label
                 # Reversed axis
                 if name not in ('scatter',):
-                    if len(x) > 1 and xi is None and x[1] < x[0]:
+                    if x_index is None and len(x) > 1 and x[1] < x[0]:
                         kw[xname + 'reverse'] = True
 
         # Appply
@@ -537,10 +536,11 @@ def standardize_1d(self, func, *args, autoformat=None, **kwargs):
             self.format(**kw)
 
     # Standardize args
-    if xi is not None:
-        x = xi
+    if x_index is not None:
+        x = x_index
     if name in ('boxplot', 'violinplot'):
         ys = [_to_ndarray(yi) for yi in ys]  # store naked array
+        kwargs['positions'] = x
 
     # Basemap shift x coordiantes without shifting y, we fix this!
     if getattr(self, 'name', '') == 'basemap' and kwargs.get('latlon', None):
@@ -2375,6 +2375,9 @@ def cycle_changer(
                 if label is None and (colorbar_legend_label or isinstance(ilabel, str)):
                     labels[i] = ilabel
 
+    # Sanitize labels
+    labels = [_not_none(label, '') for label in labels]
+
     # Get step size for bar plots
     # WARNING: This will fail for non-numeric non-datetime64 singleton
     # datatypes but this is good enough for vast majority of most cases.
@@ -2424,7 +2427,7 @@ def cycle_changer(
 
         # Get y coordinates and labels
         if name in ('pie', 'boxplot', 'violinplot'):
-            # Only ever have one y value, cannot have legend labs
+            # Only ever have one y value, cannot have legend labels
             iys = (y1,)
 
         else:
@@ -2443,11 +2446,7 @@ def cycle_changer(
                     y_i if y_i.ndim == 1 else _to_indexer(y_i)[:, i]
                     for y_i in ys
                 )
-
-            # Add label for artist
-            label = labels[i]
-            if label is not None:
-                kw['label'] = label
+            kw['label'] = labels[i] or ''
 
         # Build coordinate arguments
         ixy = ()
@@ -2496,10 +2495,14 @@ def cycle_changer(
         if errobjs_join:
             legobjs = [(*legobjs, *errobjs_join)[::-1]]
         legobjs.extend(errobjs_separate)
-        labels = [
-            (obj[-1] if type(obj) in (list, tuple) else obj).get_label()
-            for obj in legobjs
-        ]
+        for _ in range(3):
+            # Account for (1) multiple columns of data, (2) functions that return
+            # multiple values (e.g. hist() returns (bins, values, patches)), and
+            # (3) matplotlib.Collection list subclasses.
+            legobjs = [
+                obj[-1] if isinstance(obj, (list, tuple)) else obj
+                for obj in legobjs
+            ]
 
         # Add handles and labels
         # NOTE: Important to add labels as *keyword* so users can override
