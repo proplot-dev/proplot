@@ -2184,6 +2184,23 @@ def text_wrapper(
     return obj
 
 
+def _iter_legend_objects(objs):
+    """
+    Retrieve the (object, label) pairs for objects with actual labels
+    from nested lists and tuples of objects.
+    """
+    # Account for (1) multiple columns of data, (2) functions that return
+    # multiple values (e.g. hist() returns (bins, values, patches)), and
+    # (3) matplotlib.Collection list subclasses.
+    if isinstance(objs, (list, tuple)):
+        for obj in objs:
+            yield from _iter_legend_objects(obj)
+    elif hasattr(objs, 'get_label'):
+        label = objs.get_label()
+        if label and label[:1] != '_':
+            yield (objs, label)
+
+
 def cycle_changer(
     self, func, *args,
     cycle=None, cycle_kw=None,
@@ -2253,18 +2270,29 @@ def cycle_changer(
     proplot.constructor.Cycle
     proplot.constructor.Colors
     """
-    # Parse input args
+    # Parse positional args
     # NOTE: Requires standardize_1d wrapper before reaching this. Also note
     # that the 'x' coordinates are sometimes ignored below.
     name = func.__name__
-    autoformat = rc['autoformat']  # possibly manipulated by standardize_[12]d
     if not args:
         return func(self, *args, **kwargs)
     x, y, *args = args
     ys = (y,)
     if len(args) >= 1 and name in ('fill_between', 'fill_betweenx'):
         ys, args = (y, args[0]), args[1:]
+    # Parse keyword args
+    autoformat = rc['autoformat']  # possibly manipulated by standardize_[12]d
     barh = stacked = False
+    cycle_kw = cycle_kw or {}
+    legend_kw = legend_kw or {}
+    colorbar_kw = colorbar_kw or {}
+    labels = _not_none(
+        values=values,
+        labels=labels,
+        label=label,
+        legend_kw_labels=legend_kw.pop('labels', None),
+    )
+    colorbar_legend_label = None  # for colorbar or legend
     if name in ('pie',):  # add x coordinates as default pie chart labels
         kwargs['labels'] = _not_none(labels, x)  # TODO: move to pie wrapper?
     if name in ('bar', 'fill_between', 'fill_betweenx'):
@@ -2274,9 +2302,6 @@ def cycle_changer(
         width = kwargs.pop('width', 0.8)  # 'width' for bar *and* barh (see bar_wrapper)
         bottom = 'x' if barh else 'bottom'
         kwargs.setdefault(bottom, 0)  # 'x' required even though 'y' isn't for bar plots
-    cycle_kw = cycle_kw or {}
-    legend_kw = legend_kw or {}
-    colorbar_kw = colorbar_kw or {}
 
     # Determine and temporarily set cycler
     # NOTE: Axes cycle has no getter, only set_prop_cycle, which sets a
@@ -2348,13 +2373,10 @@ def cycle_changer(
     # assumed! This is fixed in parse_1d by converting to values.
     y1 = ys[0]
     ncols = 1
-    labels = _not_none(values=values, labels=labels, label=label)
-    colorbar_legend_label = None  # for colorbar or legend
     if name in ('pie', 'boxplot', 'violinplot'):
-        # Pass labels directly to functions
+        # Functions handle multiple labels on their own
         if labels is not None:
             kwargs['labels'] = labels  # error raised down the line
-
     else:
         # Get column count and sanitize labels
         ncols = 1 if y.ndim == 1 else y.shape[1]
@@ -2497,14 +2519,10 @@ def cycle_changer(
         if errobjs_join:
             legobjs = [(*legobjs, *errobjs_join)[::-1]]
         legobjs.extend(errobjs_separate)
-        for _ in range(3):
-            # Account for (1) multiple columns of data, (2) functions that return
-            # multiple values (e.g. hist() returns (bins, values, patches)), and
-            # (3) matplotlib.Collection list subclasses.
-            legobjs = [
-                obj[-1] if isinstance(obj, (list, tuple)) else obj
-                for obj in legobjs
-            ]
+        try:
+            legobjs, labels = list(zip(*_iter_legend_objects(legobjs)))
+        except ValueError:
+            legobjs = labels = ()
 
         # Add handles and labels
         # NOTE: Important to add labels as *keyword* so users can override
