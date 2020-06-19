@@ -21,11 +21,15 @@
 # ProPlot defines **color cycles** as color palettes comprising sets of
 # *distinct colors*. Unlike :ref:`colormaps <Colormaps>`, interpolation
 # between these colors may not make sense. Color cycles are generally used
-# with bar plots, line plots, and other distinct plot elements. ProPlot uses
-# the `~proplot.colors.ListedColormap` class to *name* color cycles, then
-# applies them to plots by updating the `property cycler\
-# <https://matplotlib.org/3.1.0/tutorials/intermediate/color_cycle.html>`__.
-# Color cycles can also be made by :ref:`sampling colormaps <ug_cycles_new>`.
+# with bar plots, line plots, and other distinct plot elements. ProPlot's
+# named color cycles are actually registered as `~proplot.colors.ListedColormap`
+# instances so that they can be `used with categorical data\
+# <https://journals.ametsoc.org/view-large/figure/9538246/bams-d-13-00155_1-f5.tif>`__.
+# Much more commonly, we build `*property cycles*\
+# <https://matplotlib.org/3.1.0/tutorials/intermediate/color_cycle.html>`__
+# from the `~proplot.colors.ListedColormap` colors using the
+# `~proplot.constructor.Cycle` constructor function or by
+# :ref:`drawing samples <ug_cycles_new>` from continuous colormaps.
 #
 # ProPlot adds several features to help you use color cycles effectively in
 # your figures. This section documents the new registered color cycles,
