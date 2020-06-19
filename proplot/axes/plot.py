@@ -2376,7 +2376,9 @@ def cycle_changer(
                     labels[i] = ilabel
 
     # Sanitize labels
-    labels = [_not_none(label, '') for label in labels]
+    # WARNING: Must convert labels to string here because e.g. scatter() applies
+    # default label if input is False-ey. So numeric '0' would be overridden.
+    labels = [str(_not_none(label, '')) for label in labels]
 
     # Get step size for bar plots
     # WARNING: This will fail for non-numeric non-datetime64 singleton
