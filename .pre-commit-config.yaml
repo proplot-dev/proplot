@@ -1,7 +1,8 @@
 # See: https://pre-commit.com/hooks.html
+# Must put flake8 in separate group so 'black' is executed first
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.2.3
+    rev: v3.1.0
     hooks:
     - id: no-commit-to-branch
     - id: double-quote-string-fixer
@@ -9,5 +10,27 @@ repos:
     - id: check-merge-conflict
     - id: end-of-file-fixer
     - id: trailing-whitespace
+
+  # - repo: https://github.com/ambv/black
+  #   rev: 19.10
+  #   hooks:
+  #   - id: black
+  #     args: ['--line-length', '88', '--skip-string-normalization']
+
+  - repo: https://github.com/pre-commit/mirrors-isort
+    rev: v4.3.21
+    hooks:
+    - id: isort
+      args: ['--line-width', '88']
+
+  - repo: https://github.com/PyCQA/flake8
+    rev: 3.8.3
+    hooks:
     - id: flake8
       args: ['--max-line-length=88', '--ignore=W503,E402,E741']
+
+  - repo: https://github.com/PyCQA/doc8
+    rev: 0.8.1
+    hooks:
+    - id: doc8
+      args: ['--max-line-length', '88', '--allow-long-titles']

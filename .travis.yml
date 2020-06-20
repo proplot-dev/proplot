@@ -1,8 +1,6 @@
 # Travis Continuos Integration
 # Currently only tests notebook files
 # Based on http://conda.pydata.org/docs/travis.html
-# Not sure why pip install . is necessary since conf.py adds it
-# to the the path. Maybe nbsphinx executes in separate environment.
 sudo: false # use container based build
 language: python
 notifications:
@@ -30,15 +28,16 @@ before_install:
   - conda info -a
 
 install:
-  - conda env create -n proplot-dev --file docs/environment.yml
+  - conda env create -n proplot-dev --file ci/environment.yml
   - source activate proplot-dev
-  - pip install flake8
   - conda list
   - which conda
   - which python
+  - pip install .
+  - python setup.py install --user
 
 script:
-  - flake8 proplot docs --max-line-length=88 --ignore=W503,E402,E741
+  - ci/run-linter.sh
   - pushd docs
   - make html
   - popd

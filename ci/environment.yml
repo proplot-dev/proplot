@@ -1,4 +1,4 @@
-# Hard requirements for notebook examples and documentation build
+# Hard requirements for running tests
 # NOTE: Basemap is broken as of matplotlib >=3.3 so for documentation
 # use 3.2.1. Probably lots of basemap holdouts for next ~5 years.
 # NOTE: PyQt5 is needed by pyplot, RTD server *happens* to already have it
@@ -19,10 +19,15 @@ dependencies:
   - pip
   - pip:
     - ..
-    - pyqt5
+    - flake8
+    - isort
+    - doc8
+    - pytest
+    - pytest-sugar
     - sphinx>=3.0
     - sphinx-copybutton
     - sphinx_rtd_theme
     - jupytext
     - nbsphinx
     - git+https://github.com/lukelbd/sphinx-automodapi@v0.8.proplot-mods
+    - pyqt5
