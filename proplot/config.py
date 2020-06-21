@@ -3,28 +3,33 @@
 Tools for setting up ProPlot and configuring global settings.
 See the :ref:`configuration guide <ug_config>` for details.
 """
-# NOTE: The matplotlib analogue to this file is actually in __init__.py
+# NOTE: The matplotlib analogue to this file is actually __init__.py
 # but it makes more sense to have all the setup actions in a separate file
 # so the namespace of the top-level module is unpolluted.
 # NOTE: Why also load colormaps and cycles in this file and not colors.py?
 # Because I think it makes sense to have all the code that "runs" (i.e. not
 # just definitions) in the same place, and I was having issues with circular
 # dependencies and where import order of __init__.py was affecting behavior.
-import re
+import logging
 import os
-import numpy as np
-import matplotlib as mpl
-import matplotlib.font_manager as mfonts
-import matplotlib.colors as mcolors
-import matplotlib.style.core as mstyle
-import matplotlib.cbook as cbook
-import matplotlib.rcsetup as msetup
-import cycler
+import re
 from collections import namedtuple
+
+import cycler
+import matplotlib as mpl
+import matplotlib.cbook as cbook
+import matplotlib.colors as mcolors
+import matplotlib.font_manager as mfonts
+import matplotlib.mathtext  # noqa
+import matplotlib.rcsetup as msetup
+import matplotlib.style.core as mstyle
+import numpy as np
+
 from . import colors as pcolors
-from .utils import units, to_xyz
 from .internals import ic  # noqa: F401
-from .internals import rcsetup, docstring, timers, warnings, _not_none
+from .internals import _not_none, docstring, rcsetup, timers, warnings
+from .utils import to_xyz, units
+
 try:
     from IPython import get_ipython
 except ImportError:
@@ -38,9 +43,6 @@ __all__ = [
     'inline_backend_fmt', 'rc_configurator',  # deprecated
 ]
 
-# Disable mathtext "missing glyph" warnings
-import matplotlib.mathtext  # noqa
-import logging
 logger = logging.getLogger('matplotlib.mathtext')
 logger.setLevel(logging.ERROR)  # suppress warnings!
 

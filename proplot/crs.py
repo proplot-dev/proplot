@@ -3,8 +3,10 @@
 New cartopy projection classes.
 """
 import warnings
+
 from .internals import ic  # noqa: F401
 from .internals import docstring
+
 try:
     from cartopy.crs import _WarpedRectangularProjection
     from cartopy.crs import AzimuthalEquidistant, Gnomonic, LambertAzimuthalEqualArea

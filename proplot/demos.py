@@ -3,17 +3,18 @@
 Functions for enumerating and contrasting the available colors and fonts.
 """
 import os
-import numpy as np
+
 import cycler
-import matplotlib.font_manager as mfonts
 import matplotlib.colors as mcolors
-from . import ui
-from . import constructor
+import matplotlib.font_manager as mfonts
+import numpy as np
+
 from . import colors as pcolors
-from .utils import to_rgb, to_xyz
-from .config import rc, _get_data_paths, BASE_COLORS, XKCD_COLORS, OPEN_COLORS
+from . import constructor, ui
+from .config import BASE_COLORS, OPEN_COLORS, XKCD_COLORS, _get_data_paths, rc
 from .internals import ic  # noqa: F401
-from .internals import docstring, _not_none
+from .internals import _not_none, docstring
+from .utils import to_rgb, to_xyz
 
 __all__ = [
     'show_cmaps',

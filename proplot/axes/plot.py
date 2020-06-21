@@ -5,31 +5,34 @@ methods. "Wrapped" `~matplotlib.axes.Axes` methods accept the additional keyword
 arguments documented by the wrapper function. In a future version, these features will
 be documented on the individual `~proplot.axes.Axes` methods themselves.
 """
+import functools
+import inspect
 import re
 import sys
-import numpy as np
-import numpy.ma as ma
-import functools
+from numbers import Number
+
+import matplotlib.artist as martist
 import matplotlib.axes as maxes
+import matplotlib.cm as mcm
+import matplotlib.colors as mcolors
 import matplotlib.container as mcontainer
 import matplotlib.contour as mcontour
+import matplotlib.legend as mlegend
+import matplotlib.patches as mpatches
+import matplotlib.patheffects as mpatheffects
+import matplotlib.text as mtext
 import matplotlib.ticker as mticker
 import matplotlib.transforms as mtransforms
-import matplotlib.patheffects as mpatheffects
-import matplotlib.patches as mpatches
-import matplotlib.colors as mcolors
-import matplotlib.artist as martist
-import matplotlib.legend as mlegend
-import matplotlib.text as mtext
-import matplotlib.cm as mcm
-from numbers import Number
-from .. import constructor
+import numpy as np
+import numpy.ma as ma
+
 from .. import colors as pcolors
-from ..utils import edges, edges2d, units, to_xyz, to_rgb
+from .. import constructor
 from ..config import rc
 from ..internals import ic  # noqa: F401
-from ..internals import docstring, warnings
-from ..internals import _dummy_context, _state_context, _not_none
+from ..internals import _dummy_context, _not_none, _state_context, docstring, warnings
+from ..utils import edges, edges2d, to_rgb, to_xyz, units
+
 try:
     from cartopy.crs import PlateCarree
 except ModuleNotFoundError:
@@ -210,6 +213,62 @@ negcolor, poscolor : color-spec, optional
     Colors to use for the negative and positive lines. Ignored if `negpos`
     is ``False``. Defaults are :rc:`negcolor` and :rc:`poscolor`.
 """
+
+
+def _concatenate_docstrings(func):
+    """
+    Concatenate docstrings from a matplotlib axes method with a ProPlot axes
+    method and obfuscate the call signature to avoid misleading users. Requires
+    that ProPlot documentation has no "other parameters", notes, or examples
+    sections.
+    """
+    # NOTE: Originally had idea to use numpydoc.docscrape.NumpyDocString to
+    # interpolate docstrings but *enormous* number of assupmtions would go into
+    # this. And simple is better than complex.
+    # Get matplotlib axes func
+    # If current func has no docstring just blindly copy matplotlib one
+    name = func.__name__
+    orig = getattr(maxes.Axes, name)
+    odoc = inspect.getdoc(orig)
+    if not odoc:  # should never happen
+        return func
+
+    # Prepend summary and potentially bail
+    # TODO: Does this break anything on sphinx website?
+    fdoc = inspect.getdoc(func) or ''  # also dedents
+    regex = re.search(r'\.( | *\n|\Z)', odoc)
+    if regex:
+        fdoc = odoc[:regex.start() + 1] + '\n\n' + fdoc
+    if rc['docstring.hardcopy']:  # True when running sphinx
+        func.__doc__ = fdoc
+        return func
+
+    # Obfuscate signature by converting to *args **kwargs. Note this does
+    # not change behavior of function! Copy parameters from a dummy function
+    # because I'm too lazy to figure out inspect.Parameters API
+    # See: https://stackoverflow.com/a/33112180/4970632
+    dsig = inspect.signature(lambda *args, **kwargs: None)
+    fsig = inspect.signature(func)
+    func.__signature__ = (
+        fsig.replace(parameters=tuple(dsig.parameters.values()))
+    )
+
+    # Concatenate docstrings and copy summary
+    # Make sure different sections are very visible
+    doc = f"""
+================================{'=' * len(name)}
+proplot.axes.Axes.{name} documentation
+================================{'=' * len(name)}
+{fdoc}
+==================================={'=' * len(name)}
+matplotlib.axes.Axes.{name} documentation
+==================================={'=' * len(name)}
+{odoc}
+"""
+    func.__doc__ = doc
+
+    # Return
+    return func
 
 
 def _load_objects():

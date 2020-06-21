@@ -3,15 +3,17 @@
 The figure class used for all ProPlot figures.
 """
 import os
-import numpy as np
+
 import matplotlib.figure as mfigure
 import matplotlib.transforms as mtransforms
+import numpy as np
+
 from . import axes as paxes
 from . import gridspec as pgridspec
 from .config import rc
-from .utils import units
 from .internals import ic  # noqa: F401
-from .internals import warnings, _dummy_context, _state_context, _not_none
+from .internals import _dummy_context, _not_none, _state_context, warnings
+from .utils import units
 
 __all__ = ['Figure']
 

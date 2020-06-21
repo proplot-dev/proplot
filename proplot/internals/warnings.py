@@ -2,10 +2,11 @@
 """
 Custom warning style and deprecation functions.
 """
+import functools
 import re
 import sys
 import warnings
-import functools
+
 ProPlotWarning = type('ProPlotWarning', (UserWarning,), {})
 
 

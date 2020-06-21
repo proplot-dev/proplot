@@ -3,14 +3,16 @@
 Various tools that may be useful while making plots.
 """
 import re
-import numpy as np
+from numbers import Integral, Number
+
 import matplotlib.colors as mcolors
 import matplotlib.font_manager as mfonts
+import numpy as np
 from matplotlib import rcParams
-from numbers import Number, Integral
-from .internals import ic  # noqa: F401
-from .internals import warnings, docstring
+
 from .externals import hsluv
+from .internals import ic  # noqa: F401
+from .internals import docstring, warnings
 
 __all__ = [
     'arange', 'edges', 'edges2d', 'units',

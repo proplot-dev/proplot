@@ -3,33 +3,43 @@
 Axes filled with cartographic projections.
 """
 import copy
-import numpy as np
+
 import matplotlib.axes as maxes
 import matplotlib.axis as maxis
-import matplotlib.text as mtext
 import matplotlib.path as mpath
+import matplotlib.text as mtext
 import matplotlib.ticker as mticker
-from . import base
-from .plot import (
-    _basemap_norecurse, _basemap_redirect, _cmap_changer, _cycle_changer,
-    _default_latlon, _default_transform,
-    _indicate_error, _plot_wrapper,
-    _scatter_wrapper, _standardize_1d, _standardize_2d,
-    _text_wrapper,
-)
+import numpy as np
+
 from .. import constructor
 from .. import crs as pcrs
 from ..config import rc
 from ..internals import ic  # noqa: F401
-from ..internals import docstring, warnings, _version, _version_cartopy, _not_none
+from ..internals import _not_none, _version, _version_cartopy, docstring, warnings
+from . import base
+from .plot import (
+    _basemap_norecurse,
+    _basemap_redirect,
+    _cmap_changer,
+    _cycle_changer,
+    _default_latlon,
+    _default_transform,
+    _indicate_error,
+    _plot_wrapper,
+    _scatter_wrapper,
+    _standardize_1d,
+    _standardize_2d,
+    _text_wrapper,
+)
+
 try:
-    from cartopy.mpl.geoaxes import GeoAxes as GeoAxesBase
+    import cartopy.crs as ccrs
     import cartopy.feature as cfeature
     import cartopy.mpl.ticker as cticker
-    import cartopy.crs as ccrs
+    from cartopy.mpl.geoaxes import GeoAxes as GeoAxesBase
 except ModuleNotFoundError:
-    GeoAxesBase = object
     cfeature = cticker = ccrs = None
+    GeoAxesBase = object
 try:
     import mpl_toolkits.basemap as mbasemap
 except ModuleNotFoundError:

@@ -4,21 +4,24 @@ New colormap classes and colormap normalization classes.
 """
 # NOTE: Avoid colormap/color name conflicts by checking
 # set(plot.colors._cmap_database) & set(plot.colors.mcolors._colors_full_map)
-# whenever new default colormaps are added. Current result is
+# whenever new default colormaps are added. Currently result is
 # {'gray', 'marine', 'ocean', 'pink'} which correspond to MATLAB and GNUplot maps.
+import json
 import os
 import re
-import json
+from numbers import Integral, Number
 from xml.etree import ElementTree
-from numbers import Number, Integral
-import numpy as np
-import numpy.ma as ma
+
 import matplotlib.cm as mcm
 import matplotlib.colors as mcolors
+import numpy as np
+import numpy.ma as ma
 from matplotlib import rcParams
+
 from .internals import ic  # noqa: F401
-from .internals import docstring, warnings, _not_none
+from .internals import _not_none, docstring, warnings
 from .utils import to_rgb, to_rgba, to_xyz, to_xyza
+
 if hasattr(mcm, '_cmap_registry'):
     _cmap_database_attr = '_cmap_registry'
 else:

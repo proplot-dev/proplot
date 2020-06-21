@@ -6,30 +6,33 @@ from simple shorthand arguments.
 # NOTE: These functions used to be in separate files like crs.py and
 # ticker.py but makes more sense to group them together to ensure usage is
 # consistent and so online documentation is easier to understand. Also in
-# future version classes will not be imported into top-level namespace, which
-# will be easier to do with all constructor functions in separate file.
+# future version classes will not be imported into top-level namespace. This
+# change will be easier to do with all constructor functions in separate file.
 # NOTE: Used to include the raw variable names that define string keys as
 # part of documentation, but this is redundant and pollutes the namespace.
 # User should just inspect docstrings, use trial-error, or see online tables.
 import os
 import re
-import numpy as np
+from functools import partial
+from numbers import Number
+
+import cycler
 import matplotlib.colors as mcolors
-import matplotlib.ticker as mticker
 import matplotlib.dates as mdates
 import matplotlib.projections.polar as mpolar
 import matplotlib.scale as mscale
-import cycler
-from functools import partial
-from numbers import Number
-from . import crs as pcrs
+import matplotlib.ticker as mticker
+import numpy as np
+
 from . import colors as pcolors
-from . import ticker as pticker
+from . import crs as pcrs
 from . import scale as pscale
+from . import ticker as pticker
 from .config import rc
-from .utils import to_rgba
 from .internals import ic  # noqa: F401
-from .internals import warnings, _version, _version_cartopy, _version_mpl, _not_none
+from .internals import _not_none, _version, _version_cartopy, _version_mpl, warnings
+from .utils import to_rgba
+
 try:
     from mpl_toolkits.basemap import Basemap
 except ImportError:

@@ -3,13 +3,16 @@
 Various `~matplotlib.ticker.Locator` and `~matplotlib.ticker.Formatter`
 classes.
 """
-import re
-import numpy as np
-import matplotlib.ticker as mticker
 import locale
+import re
 from fractions import Fraction
+
+import matplotlib.ticker as mticker
+import numpy as np
+
 from .internals import ic  # noqa: F401
-from .internals import docstring, _dummy_context, _state_context, _not_none
+from .internals import _dummy_context, _not_none, _state_context, docstring
+
 try:
     import cartopy.crs as ccrs
     from cartopy.mpl.ticker import (

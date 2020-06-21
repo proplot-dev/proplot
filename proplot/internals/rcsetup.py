@@ -3,11 +3,13 @@
 Default proplot configuration settings and validators for
 `RcConfigurator` assignments.
 """
-import numpy as np
 import numbers
+
 import cycler
-from . import warnings
+import numpy as np
 from matplotlib import rcParamsDefault as _rc_matplotlib_default_full
+
+from . import warnings
 
 # Initial synced properties
 # NOTE: Important that LINEWIDTH is less than matplotlib default of 0.8.

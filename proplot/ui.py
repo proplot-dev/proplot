@@ -2,18 +2,20 @@
 """
 The starting point for creating custom ProPlot figures.
 """
-import numpy as np
 import functools
 import inspect
+
 import matplotlib.pyplot as plt
-from . import constructor
+import numpy as np
+
 from . import axes as paxes
+from . import constructor
 from . import figure as pfigure
 from . import gridspec as pgridspec
 from .config import rc
-from .utils import units
 from .internals import ic  # noqa: F401
-from .internals import warnings, _not_none
+from .internals import _not_none, warnings
+from .utils import units
 
 __all__ = [
     'close', 'show', 'subplots', 'SubplotsContainer', 'subplot_grid',

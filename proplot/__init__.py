@@ -5,8 +5,10 @@ A python package for making beautiful, publication-quality graphics.
 # For now import everything into the top-level module namespace
 # In the future we will not import the class names
 import pkg_resources as _pkg
+
 from .config import *  # noqa: F401 F403
 from .internals import timers
+
 with timers._benchmark('imports'):
     from .utils import *  # noqa: F401 F403
     from .crs import *  # noqa: F401 F403

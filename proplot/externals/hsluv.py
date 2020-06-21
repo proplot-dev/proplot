@@ -12,14 +12,14 @@ and the `HSLuv system <http://www.hsluv.org/implementations/>`__.
 
 Provided by matplotlib:
 
-* `~matplotlib.colors.to_rgb`
-* `~matplotlib.colors.rgb_to_hsv`
-* `~matplotlib.colors.hsv_to_rgb`
+* `matplotlib.colors.to_rgb`
+* `matplotlib.colors.rgb_to_hsv`
+* `matplotlib.colors.hsv_to_rgb`
 
-New conversion tools:
+Provided by this module:
 
-* `rgb_to_hsl` (same as `~matplotlib.colors.rgb_to_hsv`)
-* `hsl_to_rgb` (same as `~matplotlib.colors.hsv_to_rgb`)
+* `rgb_to_hsl` (same as `matplotlib.colors.rgb_to_hsv`)
+* `hsl_to_rgb` (same as `matplotlib.colors.hsv_to_rgb`)
 * `hcl_to_rgb`
 * `rgb_to_hcl`
 * `hsluv_to_rgb`
@@ -32,6 +32,7 @@ New conversion tools:
 # The HLS is actually HCL
 import math
 from colorsys import hls_to_rgb, rgb_to_hls
+
 # Coefficients or something
 m = [
     [3.2406, -1.5372, -0.4986],

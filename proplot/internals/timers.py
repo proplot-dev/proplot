@@ -3,6 +3,7 @@
 Utilities for timing ProPlot performance.
 """
 import time
+
 BENCHMARK = False  # toggle this to turn on benchmarking
 
 

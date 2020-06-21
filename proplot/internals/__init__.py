@@ -2,7 +2,16 @@
 """
 Utilities used internally by proplot.
 """
-from . import rcsetup, docstring, timers, warnings  # noqa: F401
+import matplotlib
+
+from . import docstring, rcsetup, timers, warnings  # noqa: F401
+
+try:
+    import cartopy
+except ImportError:
+    cartopy = None
+
+
 try:  # print debugging
     from icecream import ic
 except ImportError:  # graceful fallback if IceCream isn't installed
@@ -95,11 +104,8 @@ class _version(list):
         super().__init__([major, minor])  # then use builtin python list sorting
 
 
-# Add matplotlib and cartopy versions
-import matplotlib as _
-_version_mpl = _version(_.__version__)
-try:
-    import cartopy as _
-    _version_cartopy = _version(_.__version__)
-except ImportError:
+_version_mpl = _version(matplotlib.__version__)
+if cartopy is None:
     _version_cartopy = [0, 0]
+else:
+    _version_cartopy = _version(cartopy.__version__)

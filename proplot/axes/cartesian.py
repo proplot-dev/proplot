@@ -2,17 +2,18 @@
 """
 The standard x-y axes used for most ProPlot figures.
 """
-import numpy as np
 import matplotlib.dates as mdates
 import matplotlib.ticker as mticker
-from . import base
-from .. import ticker as pticker
-from .. import scale as pscale
+import numpy as np
+
 from .. import constructor
+from .. import scale as pscale
+from .. import ticker as pticker
 from ..config import rc
-from ..utils import units
 from ..internals import ic  # noqa: F401
-from ..internals import rcsetup, docstring, warnings, _not_none
+from ..internals import _not_none, docstring, rcsetup, warnings
+from ..utils import units
+from . import base
 
 __all__ = ['CartesianAxes']
 

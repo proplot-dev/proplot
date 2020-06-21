@@ -2,32 +2,47 @@
 """
 The base axes class used for all ProPlot figures.
 """
-import numpy as np
 import copy
-import matplotlib.axes as maxes
-import matplotlib.ticker as mticker
-import matplotlib.patches as mpatches
-import matplotlib.transforms as mtransforms
-import matplotlib.collections as mcollections
-import matplotlib.projections as mprojections
 from numbers import Integral, Number
-from .plot import (
-    _get_transform,
-    _bar_wrapper, _barh_wrapper, _boxplot_wrapper,
-    _cmap_changer, _cycle_changer,
-    _fill_between_wrapper, _fill_betweenx_wrapper, _hlines_wrapper,
-    _hist_wrapper, _indicate_error,
-    _parametric_wrapper, _plot_wrapper, _scatter_wrapper, _stem_wrapper,
-    _standardize_1d, _standardize_2d,
-    _text_wrapper, _violinplot_wrapper, _vlines_wrapper,
-    colorbar_wrapper, legend_wrapper,
-)
-from .. import gridspec as pgridspec
+
+import matplotlib.axes as maxes
+import matplotlib.collections as mcollections
+import matplotlib.patches as mpatches
+import matplotlib.projections as mprojections
+import matplotlib.ticker as mticker
+import matplotlib.transforms as mtransforms
+import numpy as np
+
 from .. import constructor
+from .. import gridspec as pgridspec
 from ..config import rc
-from ..utils import units, edges
 from ..internals import ic  # noqa: F401
-from ..internals import docstring, rcsetup, warnings, _not_none
+from ..internals import _not_none, docstring, rcsetup, warnings
+from ..utils import edges, units
+from .plot import (
+    _bar_wrapper,
+    _barh_wrapper,
+    _boxplot_wrapper,
+    _cmap_changer,
+    _cycle_changer,
+    _fill_between_wrapper,
+    _fill_betweenx_wrapper,
+    _get_transform,
+    _hist_wrapper,
+    _hlines_wrapper,
+    _indicate_error,
+    _parametric_wrapper,
+    _plot_wrapper,
+    _scatter_wrapper,
+    _standardize_1d,
+    _standardize_2d,
+    _stem_wrapper,
+    _text_wrapper,
+    _violinplot_wrapper,
+    _vlines_wrapper,
+    colorbar_wrapper,
+    legend_wrapper,
+)
 
 __all__ = ['Axes']
 

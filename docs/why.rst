@@ -79,7 +79,7 @@ As an example, it is trivial to see that
    import proplot as plot
    fig, axs = plot.subplots(ncols=2)
    axs.format(linewidth=1, color='gray')
-   axs.format(xlim=(0, 100), xticks=10, xtickminor=True, xlabel='x axis', ylabel='y axis')
+   axs.format(xlim=(0, 100), xticks=10, xtickminor=True, xlabel='foo', ylabel='bar')
 
 ...is much more succinct than
 
@@ -90,13 +90,13 @@ As an example, it is trivial to see that
    import matplotlib as mpl
    with mpl.rc_context(rc={'axes.linewidth': 1, 'axes.color': 'gray'}):
        fig, axs = plt.subplots(ncols=2, sharey=True)
-       axs[0].set_ylabel('y axis', color='gray')
+       axs[0].set_ylabel('bar', color='gray')
        for ax in axs:
            ax.set_xlim(0, 100)
            ax.xaxis.set_major_locator(mticker.MultipleLocator(10))
            ax.tick_params(width=1, color='gray', labelcolor='gray')
            ax.tick_params(axis='x', which='minor', bottom=True)
-           ax.set_xlabel('x axis', color='gray')
+           ax.set_xlabel('foo', color='gray')
 
 
 .. _why_constructor:
@@ -106,35 +106,42 @@ Class constructor functions
 
 .. rubric:: Problem
 
-Matplotlib and cartopy introduce a bunch of classes with verbose names like `~matplotlib.ticker.MultipleLocator`, `~matplotlib.ticker.FormatStrFormatter`, and `~cartopy.crs.LambertAzimuthalEqualArea`. Since plotting code has a half life of about 30 seconds, typing out these extra class names and import statements can be a *major* drag.
+Matplotlib and cartopy introduce a bunch of classes with verbose names like
+`~matplotlib.ticker.MultipleLocator`, `~matplotlib.ticker.FormatStrFormatter`,
+and `~cartopy.crs.LambertAzimuthalEqualArea`. Since plotting code has a half life of
+about 30 seconds, typing out these extra class names and import statements can be a
+*major* drag.
 
 Parts of the matplotlib API were actually designed with this in mind.
 `Backend classes <https://matplotlib.org/faq/usage_faq.html#what-is-a-backend>`__,
 `native axes projections <https://matplotlib.org/3.1.1/api/projections_api.html>`__,
 `axis scales <https://matplotlib.org/3.1.0/gallery/scales/scales.html>`__,
-`box styles <https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.patches.FancyBboxPatch.html?highlight=boxstyle>`__, `arrow styles <https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.patches.FancyArrowPatch.html?highlight=arrowstyle>`__, and
-`arc styles <https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.patches.ConnectionStyle.html?highlight=class%20name%20attrs>`__
+`box styles <https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.patches.FancyBboxPatch.html?highlight=boxstyle>`__,
+`arrow styles <https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.patches.FancyArrowPatch.html?highlight=arrowstyle>`__,
+and `arc styles <https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.patches.ConnectionStyle.html?highlight=class%20name%20attrs>`__
 are referenced with "registered" string names,
-as are `basemap projection types <https://matplotlib.org/basemap/users/mapsetup.html>`__.
+as are `basemap projections <https://matplotlib.org/basemap/users/mapsetup.html>`__.
 So, why not "register" everything else?
 
 .. rubric:: Solution
 
-In ProPlot, tick locators, tick formatters, axis scales, cartopy projections, colormaps, and property cyclers are all "registered". ProPlot does this by introducing several *constructor functions* and passing various keyword argument through the constructor functions. This may seem "unpythonic" but it is absolutely invaluable when writing plotting code.
+In ProPlot, tick locators, tick formatters, axis scales, cartopy projections, colormaps,
+and property cyclers are all "registered". ProPlot does this by introducing several
+*constructor functions* and passing various keyword argument through the constructor
+functions. This may seem "unpythonic" but it is absolutely invaluable when writing
+plotting code.
 
-The constructor functions also accept other input types for your convenience.
-For example, scalar numbers passed to `~proplot.constructor.Locator` returns
-a `~matplotlib.ticker.MultipleLocator` instance, lists of strings passed to
-`~proplot.constructor.Formatter` returns a
-`~matplotlib.ticker.FixedFormatter` instance, and
-`~proplot.constructor.Colormap` and `~proplot.constructor.Cycle` accept
-colormap names, individual colors, and lists of colors. Passing the relevant
-class instance to a constructor function simply returns the instance.
+The constructor functions also accept other input types for your convenience.  For
+example, scalar numbers passed to `~proplot.constructor.Locator` returns a
+`~matplotlib.ticker.MultipleLocator` instance, lists of strings passed to
+`~proplot.constructor.Formatter` returns a `~matplotlib.ticker.FixedFormatter` instance,
+and `~proplot.constructor.Colormap` and `~proplot.constructor.Cycle` accept colormap
+names, individual colors, and lists of colors. Passing the relevant class instance to a
+constructor function simply returns the instance.
 
 See the user guide sections on :ref:`Cartesian axis settings <ug_cartesian>`,
-:ref:`colormaps <ug_cmaps>`, and :ref:`color cycles <ug_cycles>` for
-details. The below table lists the constructor functions and the keyword
-arguments that use them.
+:ref:`colormaps <ug_cmaps>`, and :ref:`color cycles <ug_cycles>` for details. The below
+table lists the constructor functions and the keyword arguments that use them.
 
 ================================  ============================================================  =============================================================  =================================================================================================================================================================================================
 Function                          Return type                                                   Used by                                                        Keyword argument(s)
@@ -148,8 +155,9 @@ Function                          Return type                                   
 `~proplot.constructor.Proj`       `~cartopy.crs.Projection` or `~mpl_toolkits.basemap.Basemap`  `~proplot.ui.subplots`                                         ``proj=``
 ================================  ============================================================  =============================================================  =================================================================================================================================================================================================
 
-Note that `~matplotlib.axes.Axes.set_xscale` and `~matplotlib.axes.Axes.set_yscale` now accept instances of `~matplotlib.scale.ScaleBase` thanks to a monkey patch
-applied by ProPlot.
+Note that `~matplotlib.axes.Axes.set_xscale` and `~matplotlib.axes.Axes.set_yscale` now
+accept instances of `~matplotlib.scale.ScaleBase` thanks to a monkey patch applied by
+ProPlot.
 
 .. _why_spacing:
 
@@ -158,9 +166,9 @@ Automatic dimensions and spacing
 
 .. rubric:: Problem
 
-Matplotlib plots tend to require lots of "tweaking" when you have more than
-one subplot in the figure. This is partly because you must specify the
-physical dimensions of the figure, despite the fact that...
+Matplotlib plots tend to require lots of "tweaking" when you have more than one subplot
+in the figure. This is partly because you must specify the physical dimensions of the
+figure, despite the fact that...
 
 #. ...the subplot aspect ratio is generally more relevant than the figure
    aspect ratio. An aspect ratio of ``1`` is desirable for most plots, and
@@ -172,11 +180,10 @@ physical dimensions of the figure, despite the fact that...
    The effect of the figure size on this "evident" thickness depends on the
    number of subplot tiles in the figure.
 
-Also, while matplotlib has a `tight layout
-<https://matplotlib.org/tutorials/intermediate/tight_layout_guide.html>`__
-algorithm to keep you from having to "tweak" the *spacing*, the algorithm
-cannot apply different amounts of spacing between different subplot row and
-column boundaries.
+Also, while matplotlib has a
+`tight layout <https://matplotlib.org/tutorials/intermediate/tight_layout_guide.html>`__
+algorithm to keep you from having to "tweak" the *spacing*, the algorithm cannot apply
+different amounts of spacing between different subplot row and column boundaries.
 
 .. rubric:: Solution
 
@@ -289,8 +296,7 @@ for the colorbar is "stolen" from the parent axes.
    they often look "too skinny" or "too fat" after the first draw.
 
 ..
-   The matplotlib example for `~matplotlib.figure.Figure` legends is `not
-   pretty
+   The matplotlib example for `~matplotlib.figure.Figure` legends is `not pretty
    <https://matplotlib.org/3.1.1/gallery/text_labels_and_annotations/figlegend_demo.html>`__.
 
 ..
@@ -527,7 +533,8 @@ cumbersome to edit or create from scratch. The `seaborn` package introduces
 features built right into the matplotlib API.
 
 ..
-   Colormap identification is also suboptimal, since the names are case-sensitive, and reversed versions of each colormap are not guaranteed to exist.
+   Colormap identification is also suboptimal, since the names are case-sensitive, and
+   reversed versions of each colormap are not guaranteed to exist.
 
 .. rubric:: Solution
 
@@ -558,7 +565,9 @@ The subplot container class
 ===========================
 
 ..
-   The `~matplotlib.pyplot.subplots` command is useful for generating a scaffolding of * axes all at once. This is generally faster than successive `~matplotlib.figure.Figure.add_subplot` commands.
+   The `~matplotlib.pyplot.subplots` command is useful for generating a scaffolding of
+   axes all at once. This is generally faster than successive
+   `~matplotlib.figure.Figure.add_subplot` commands.
 
 .. rubric:: Problem
 

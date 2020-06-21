@@ -3,14 +3,15 @@
 Polar axes using azimuth and radius instead of *x* and *y*.
 """
 import matplotlib.projections as mproj
-import numpy as np
 import matplotlib.ticker as mticker
-from . import base
-from .. import ticker as pticker
+import numpy as np
+
 from .. import constructor
+from .. import ticker as pticker
 from ..config import rc
 from ..internals import ic  # noqa: F401
-from ..internals import docstring, warnings, _not_none
+from ..internals import _not_none, docstring, warnings
+from . import base
 
 __all__ = ['PolarAxes']
 

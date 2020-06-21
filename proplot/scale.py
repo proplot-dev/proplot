@@ -3,14 +3,17 @@
 Various axis `~matplotlib.scale.ScaleBase` classes.
 """
 import copy
+
+import matplotlib.scale as mscale
+import matplotlib.ticker as mticker
+import matplotlib.transforms as mtransforms
 import numpy as np
 import numpy.ma as ma
-import matplotlib.scale as mscale
-import matplotlib.transforms as mtransforms
-import matplotlib.ticker as mticker
+
 from . import ticker as pticker
 from .internals import ic  # noqa: F401
-from .internals import warnings, _version, _version_mpl, _not_none
+from .internals import _not_none, _version, _version_mpl, warnings
+
 scales = mscale._scale_mapping
 
 __all__ = [

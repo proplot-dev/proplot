@@ -2,13 +2,14 @@
 """
 The new gridspec classes.
 """
-import numpy as np
 import matplotlib.axes as maxes
 import matplotlib.gridspec as mgridspec
-from .utils import units
+import numpy as np
+
 from .config import rc
 from .internals import ic  # noqa: F401
 from .internals import _not_none
+from .utils import units
 
 __all__ = ['GridSpec', 'SubplotSpec']
 
