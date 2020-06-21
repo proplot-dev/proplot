@@ -696,7 +696,7 @@ class Axes(maxes.Axes):
         if getattr(self, 'name', '') == 'basemap':
             return getattr(self.projection, name)(*args, ax=self, **kwargs)
         else:
-            return getattr(maxes.Axes, name)(self, *args, **kwargs)
+            return getattr(super(), name)(self, *args, **kwargs)
 
     def _range_gridspec(self, x):
         """
@@ -1244,7 +1244,7 @@ optional
     # bar = _bar_wrapper(_standardize_1d(_indicate_error(_cycle_changer(
     @plot._concatenate_docstrings
     @docstring.add_snippets
-    @plot._add_autoformat
+    @plot._with_autoformat
     def bar(
         self, x=None, height=None, width=0.8, bottom=None, *,
         vert=None, orientation='vertical', stacked=False,
@@ -1267,6 +1267,23 @@ optional
         x, height = plot._parse_1d(x, height)
         kwargs, kwargs_legend_colorbar = plot._parse_cycle(**kwargs)
         kwargs, kwargs_error = plot._parse_error(**kwargs)
+
+        # Get step size for bar plots
+        # WARNING: This will fail for non-numeric non-datetime64 singleton
+        # datatypes but this is good enough for vast majority of cases.
+        if not stacked and not getattr(self, '_absolute_bar_width', False):
+            x_test = np.atleast_1d(_to_ndarray(x))
+            if len(x_test) >= 2:
+                x_step = x_test[1:] - x_test[:-1]
+                x_step = np.concatenate((x_step, x_step[-1:]))
+            elif x_test.dtype == np.datetime64:
+                x_step = np.timedelta64(1, 'D')
+            else:
+                x_step = np.array(0.5)
+            if np.issubdtype(x_test.dtype, np.datetime64):
+                # Avoid integer timedelta truncation
+                x_step = x_step.astype('timedelta64[ns]')
+            width = width * x_step / ncols
 
         # Parse args
         # TODO: Stacked feature is implemented in `cycle_changer`, but makes more
@@ -1369,7 +1386,7 @@ optional
     # boxplot = _boxplot_wrapper(_standardize_1d(_cycle_changer(
     @plot._concatenate_docstrings
     @docstring.add_snippets
-    @plot._add_autoformat
+    @plot._with_autoformat
     def boxplot(
         self, *args,
         color='k', fill=True, fillcolor=None, fillalpha=0.7,
@@ -1716,10 +1733,19 @@ optional
         %(plot.auto_colorbar)s
         %(plot.cmap_args)s
         """
+        # Parse arguments
         args = plot._parse_2d(*args)
         kwargs, kwargs_colorbar = plot._parse_cmap(**kwargs)
+        kwargs, kwargs_label = plot._parse_labels(**kwargs)
+
+        # Call main function
         mappable = self._plot_redirect('contour', *args, **kwargs)
+
+        # Post-processing
+        plot._auto_contour_labels(mappable, **kwargs_label)
         plot._auto_colorbar(mappable, **kwargs_colorbar)
+        plot._edgefix_contour(mappable)
+
         return mappable
 
     @plot._concatenate_docstrings
@@ -1840,7 +1866,7 @@ optional
 
     @plot._concatenate_docstrings
     @docstring.add_snippets
-    @plot._add_autoformat
+    @plot._with_autoformat
     def fill_between(self, *args, **kwargs):
         """
         %(axes.fill_between)s
@@ -1849,7 +1875,7 @@ optional
 
     @plot._concatenate_docstrings
     @docstring.add_snippets
-    @plot._add_autoformat
+    @plot._with_autoformat
     def fill_betweenx(self, *args, **kwargs):
         """
         %(axes.fill_betweenx)s
@@ -1934,7 +1960,7 @@ optional
     # hist = _hist_wrapper(_standardize_1d(_cycle_changer(
     @plot._concatenate_docstrings
     @docstring.add_snippets
-    @plot._add_autoformat
+    @plot._with_autoformat
     def hist(self, x, bins=None, **kwargs):
         """
         Add histogram(s).
@@ -2395,7 +2421,7 @@ optional
                 )
         else:
             raise ValueError('Missing required keyword argument "values".')
-        cmap, norm, kwargs = plot._parse_cmap_norm(**kwargs)
+        kwargs, kwargs_colorbar = plot._parse_cmap(**kwargs)
 
         # Verify shapes
         x, y, values = np.atleast_1d(x), np.atleast_1d(y), np.atleast_1d(values)
@@ -2446,27 +2472,26 @@ optional
             coords.append(np.concatenate((pleft, pright), axis=0))
         coords = np.array(coords)
 
-        # Create LineCollection and update with values
+        # Add LineCollection and update with values
         # NOTE: Default capstyle is butt but this may look weird with vector graphics
-        obj = mcollections.LineCollection(
-            coords, cmap=cmap, norm=norm,
-            linestyles='-', capstyle='butt', joinstyle='miter',
-        )
-        values = np.asarray(values)
-        obj.set_array(values)
-        obj.update({
-            key: value for key, value in kwargs.items()
-            if key not in ('color',)
-        })
+        # NOTE: Calling set_array is what triggers LineCollection to determine
+        # colors using ScalarMappable and normalizer.
+        kwargs.setdefault('capstyle', 'butt')
+        kwargs.setdefault('joinstyle', 'miter')
+        kwargs.setdefault('linestyles', '-')
+        mappable = mcollections.LineCollection(coords, **kwargs)
+        mappable.set_array(values)
+        self.add_collection(mappable)
+        self.autoscale_view(scalex=scalex, scaley=scaley)
 
         # Add collection with some custom attributes
         # NOTE: Modern API uses self._request_autoscale_view but this is
         # backwards compatible to earliest matplotlib versions.
-        self.add_collection(obj)
-        self.autoscale_view(scalex=scalex, scaley=scaley)
-        obj.values = values
-        obj.levels = levels  # needed for other functions
-        return obj
+        mappable.values = values
+        mappable.levels = levels  # needed for other functions
+        plot._auto_colorbar(mappable, **kwargs_colorbar)
+
+        return mappable
 
     @plot._concatenate_docstrings
     @docstring.add_snippets
@@ -2542,7 +2567,7 @@ optional
     # plot = _plot_wrapper(_standardize_1d(_indicate_error(_cycle_changer(
     @plot._concatenate_docstrings
     @docstring.add_snippets
-    @plot._add_autoformat
+    @plot._with_autoformat
     def plot(self, *args, cmap=None, values=None, **kwargs):
         """
         Parameters
@@ -2622,7 +2647,7 @@ optional
     # scatter = _scatter_wrapper(_standardize_1d(_indicate_error(_cycle_changer(
     @plot._concatenate_docstrings
     @docstring.add_snippets
-    @plot._add_autoformat
+    @plot._with_autoformat
     def scatter(
         self, *args,
         s=None, size=None, markersize=None,

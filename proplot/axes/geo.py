@@ -4,6 +4,7 @@ Axes filled with cartographic projections.
 """
 import copy
 
+import matplotlib.axes as maxes
 import matplotlib.axis as maxis
 import matplotlib.path as mpath
 import matplotlib.text as mtext
@@ -14,9 +15,15 @@ from .. import constructor
 from .. import crs as pcrs
 from ..config import rc
 from ..internals import ic  # noqa: F401
-from ..internals import _not_none, _version, _version_cartopy, docstring, warnings
+from ..internals import (
+    _not_none,
+    _state_context,
+    _version,
+    _version_cartopy,
+    docstring,
+    warnings,
+)
 from . import base
-from .plot import _basemap_norecurse
 
 try:
     import cartopy.crs as ccrs
@@ -1317,6 +1324,16 @@ class BasemapAxes(GeoAxes):
                 for obj in pj:
                     yield obj
 
+    def _plot_norecurse(self, name, *args, **kwargs):
+        """
+        Call the plotting method and avoid recursion.
+        """
+        if self._called_from_basemap:
+            return getattr(maxes.Axes, name)(self, *args, **kwargs)
+        else:
+            with _state_context(self, _called_from_basemap=True):
+                return getattr(super(), name)(self, *args, **kwargs)
+
     def _update_extent(self, lonlim=None, latlim=None, boundinglat=None):
         """
         No-op. Map bounds cannot be changed in basemap.
@@ -1512,57 +1529,48 @@ class BasemapAxes(GeoAxes):
         self._map_projection = map_projection
 
     # Undocumented plotting overrides
-    @_basemap_norecurse
+    # NOTE: Simpler to document latlon=True and transform=PlateCarree()
+    # default behavior in 'Note' boxes on all base plotting methods.
     def barbs(self, *args, latlon=True, **kwargs):
         # Use latlon=True by default
-        return super().barbs(*args, latlon=latlon, **kwargs)
+        return self._plot_norecurse('barbs', *args, latlon=latlon, **kwargs)
 
-    @_basemap_norecurse
     def contour(self, *args, latlon=True, **kwargs):
         # Use latlon=True by default
-        return super().contour(*args, latlon=latlon, **kwargs)
+        return self._plot_norecurse('contour', *args, latlon=latlon, **kwargs)
 
-    @_basemap_norecurse
     def contourf(self, *args, latlon=True, **kwargs):
         # Use latlon=True by default
-        return super().contourf(*args, latlon=latlon, **kwargs)
+        return self._plot_norecurse('contourf', *args, latlon=latlon, **kwargs)
 
-    @_basemap_norecurse
     def hexbin(self, *args, latlon=True, **kwargs):
         # Use latlon=True by default
-        return super().hexbin(*args, latlon=latlon, **kwargs)
+        return self._plot_norecurse('hexbin', *args, latlon=latlon, **kwargs)
 
-    @_basemap_norecurse
     def imshow(self, *args, latlon=True, **kwargs):
         # Use latlon=True by default
-        return super().imshow(*args, latlon=latlon, **kwargs)
+        return self._plot_norecurse('imshow', *args, latlon=latlon, **kwargs)
 
-    @_basemap_norecurse
     def pcolor(self, *args, latlon=True, **kwargs):
         # Use latlon=True by default
-        return super().pcolor(*args, latlon=latlon, **kwargs)
+        return self._plot_norecurse('pcolor', *args, latlon=latlon, **kwargs)
 
-    @_basemap_norecurse
     def pcolormesh(self, *args, latlon=True, **kwargs):
         # Use latlon=True by default
-        return super().pcolormesh(*args, latlon=latlon, **kwargs)
+        return self._plot_norecurse('pcolormesh', *args, latlon=latlon, **kwargs)
 
-    @_basemap_norecurse
     def plot(self, *args, latlon=True, **kwargs):
         # Use latlon=True by default
-        return super().plot(*args, latlon=latlon, **kwargs)
+        return self._plot_norecurse('plot', *args, latlon=latlon, **kwargs)
 
-    @_basemap_norecurse
     def quiver(self, *args, latlon=True, **kwargs):
         # Use latlon=True by default
-        return super().quiver(*args, latlon=latlon, **kwargs)
+        return self._plot_norecurse('quiver', *args, latlon=latlon, **kwargs)
 
-    @_basemap_norecurse
     def scatter(self, *args, latlon=True, **kwargs):
         # Use latlon=True by default
-        return super().scatter(*args, latlon=latlon, **kwargs)
+        return self._plot_norecurse('scatter', *args, latlon=latlon, **kwargs)
 
-    @_basemap_norecurse
     def streamplot(self, *args, latlon=True, **kwargs):
         # Use latlon=True by default
-        return super().streamplot(*args, latlon=latlon, **kwargs)
+        return self._plot_norecurse('streamplot', *args, latlon=latlon, **kwargs)
