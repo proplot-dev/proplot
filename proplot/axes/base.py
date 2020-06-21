@@ -24,6 +24,7 @@ from .plot import (
     _barh_wrapper,
     _boxplot_wrapper,
     _cmap_changer,
+    _concatenate_docstrings,
     _cycle_changer,
     _fill_between_wrapper,
     _fill_betweenx_wrapper,
@@ -32,7 +33,6 @@ from .plot import (
     _hlines_wrapper,
     _indicate_error,
     _parametric_wrapper,
-    _plot_wrapper,
     _scatter_wrapper,
     _standardize_1d,
     _standardize_2d,
@@ -1657,14 +1657,6 @@ optional
         values : list of float
             The parametric values used to map points on the line to colors
             in the colormap. This can also be passed as a third positional argument.
-        cmap : colormap spec, optional
-            The colormap specifier, passed to `~proplot.constructor.Colormap`.
-        cmap_kw : dict, optional
-            Keyword arguments passed to `~proplot.constructor.Colormap`.
-        norm : normalizer spec, optional
-            The normalizer, passed to `~proplot.constructor.Norm`.
-        norm_kw : dict, optional
-            Keyword arguments passed to `~proplot.constructor.Norm`.
         interp : int, optional
             If greater than ``0``, we interpolate to additional points
             between the `values` coordinates. The number corresponds to the
@@ -1673,6 +1665,9 @@ optional
         scalex, scaley : bool, optional
             Whether the view limits are adapted to the data limits. The values are
             passed on to `~matplotlib.axes.Axes.autoscale_view`.
+        %(standardize_1d_kwargs)s
+        %(cycle_changer_kwargs)s
+        %(add_errorbars_kwargs)s
 
         Other parameters
         ----------------
@@ -1687,7 +1682,7 @@ optional
         """
         # Get x/y coordinates and values for points to the 'left' and 'right'
         # of each joint
-        x, y = args  # standardized by parametric wrapper
+        x, y = _standardize_1d(args)
         interp  # avoid U100 unused argument error (arg is handled by wrapper)
         coords = []
         levels = edges(values)
@@ -1730,6 +1725,167 @@ optional
         hs.values = values
         hs.levels = levels  # needed for other functions
         return hs
+
+    @_concatenate_docstrings
+    @docstring.add_snippets
+    def plot(self, *args, cmap=None, values=None, **kwargs):
+        """
+        Parameters
+        ----------
+        %(standardize_1d_args)s
+        cmap, values : optional
+            *Deprecated usage*. Passed to `~proplot.axes.Axes.cmapline`.
+        %(standardize_1d_kwargs)s
+        %(cycle_changer_kwargs)s
+        %(add_errorbars_kwargs)s
+
+        Other parameters
+        ----------------
+        **kwargs
+            `~matplotlib.lines.Line2D` properties.
+        """
+        if len(args) > 3:  # e.g. with fmt string
+            raise ValueError(f'Expected 1-3 positional args, got {len(args)}.')
+        if cmap is not None:
+            warnings._warn_proplot(
+                'Drawing "parametric" plots with ax.plot(x, y, values=values, cmap=cmap) '
+                'is deprecated and will be removed in a future version. Please use '
+                'ax.parametric(x, y, values, cmap=cmap) instead.'
+            )
+            return self.parametric(*args, cmap=cmap, values=values, **kwargs)
+
+        # Draw lines
+        result = super().plot(*args, values=values, **kwargs)
+
+        # Add sticky edges? No because there is no way to check whether "dependent variable"
+        # is x or y axis like with area/areax and bar/barh. Better to always have margin.
+        # for objs in result:
+        #     if not isinstance(objs, tuple):
+        #         objs = (objs,)
+        #     for obj in objs:
+        #         xdata = obj.get_xdata()
+        #         obj.sticky_edges.x.extend((np.min(xdata), np.max(xdata)))
+
+        return result
+
+    @_concatenate_docstrings
+    @docstring.add_snippets
+    def scatter_wrapper(
+        self, *args,
+        s=None, size=None, markersize=None,
+        c=None, color=None, markercolor=None, smin=None, smax=None,
+        cmap=None, cmap_kw=None, norm=None, norm_kw=None,
+        vmin=None, vmax=None, N=None, levels=None, values=None,
+        symmetric=False, locator=None, locator_kw=None,
+        lw=None, linewidth=None, linewidths=None,
+        markeredgewidth=None, markeredgewidths=None,
+        edgecolor=None, edgecolors=None,
+        markeredgecolor=None, markeredgecolors=None,
+        **kwargs
+    ):
+        """
+        Parameters
+        ----------
+        %(standardize_1d_args)s
+        s, size, markersize : float or list of float, optional
+            The marker size(s). The units are scaled by `smin` and `smax`.
+        smin, smax : float, optional
+            The minimum and maximum marker size in units points ** 2 used to
+            scale the `s` array. If not provided, the marker sizes are equivalent
+            to the values in the `s` array.
+        c, color, markercolor : color-spec or list thereof, or array, optional
+            The marker fill color(s). If this is an array of scalar values, the
+            colors will be generated by passing the values through the `norm`
+            normalizer and drawing from the `cmap` colormap.
+        %(axes.cmap_changer)s
+        lw, linewidth, linewidths, markeredgewidth, markeredgewidths : \
+    float or list thereof, optional
+            The marker edge width.
+        edgecolors, markeredgecolor, markeredgecolors : \
+    color-spec or list thereof, optional
+            The marker edge color.
+        %(standardize_1d_kwargs)s
+        %(cycle_changer_kwargs)s
+        %(add_errorbars_kwargs)s
+
+        Other parameters
+        ----------------
+        **kwargs
+            Passed to `~matplotlib.axes.Axes.scatter`.
+        """
+        # Manage input arguments
+        # NOTE: Parse 1d must come before this
+        nargs = len(args)
+        if len(args) > 4:
+            raise ValueError(f'Expected 1-4 positional args, got {nargs}.')
+        args = list(args)
+        if len(args) == 4:
+            c = args.pop(1)
+        if len(args) == 3:
+            s = args.pop(0)
+
+        # Apply some aliases for keyword arguments
+        c = _not_none(c=c, color=color, markercolor=markercolor)
+        s = _not_none(s=s, size=size, markersize=markersize)
+        lw = _not_none(
+            lw=lw, linewidth=linewidth, linewidths=linewidths,
+            markeredgewidth=markeredgewidth, markeredgewidths=markeredgewidths,
+        )
+        ec = _not_none(
+            edgecolor=edgecolor, edgecolors=edgecolors,
+            markeredgecolor=markeredgecolor, markeredgecolors=markeredgecolors,
+        )
+
+        # Get colormap
+        cmap_kw = cmap_kw or {}
+        if cmap is not None:
+            cmap = constructor.Colormap(cmap, **cmap_kw)
+
+        # Get normalizer and levels
+        # NOTE: If the length of the c array !=
+        ticks = None
+        carray = np.atleast_1d(c)
+        if (
+            np.issubdtype(carray.dtype, np.number)
+            and not (carray.ndim == 2 and carray.shape[1] in (3, 4))
+        ):
+            carray = carray.ravel()
+            norm, cmap, _, ticks = _build_discrete_norm(
+                carray,  # sample data for getting suitable levels
+                N=N, levels=levels, values=values,
+                norm=norm, norm_kw=norm_kw,
+                locator=locator, locator_kw=locator_kw,
+                cmap=cmap, vmin=vmin, vmax=vmax, extend='neither',
+                symmetric=symmetric,
+            )
+
+        # Fix 2D arguments but still support scatter(x_vector, y_2d) usage
+        # NOTE: Since we are flattening vectors the coordinate metadata is meaningless,
+        # so converting to ndarray and stripping metadata is no problem.
+        # NOTE: numpy.ravel() preserves masked arrays
+        if len(args) == 2 and all(np.asarray(arg).squeeze().ndim > 1 for arg in args):
+            args = tuple(np.ravel(arg) for arg in args)
+
+        # Scale s array
+        if np.iterable(s) and (smin is not None or smax is not None):
+            smin_true, smax_true = min(s), max(s)
+            if smin is None:
+                smin = smin_true
+            if smax is None:
+                smax = smax_true
+            s = (
+                smin + (smax - smin)
+                * (np.array(s) - smin_true) / (smax_true - smin_true)
+            )
+        obj = super().scatter(
+            *args, c=c, s=s, cmap=cmap, norm=norm,
+            linewidths=lw, edgecolors=ec, **kwargs
+        )
+        if ticks is not None:
+            obj.ticks = ticks
+        return obj
+
+
 
     def violins(self, *args, **kwargs):
         """
