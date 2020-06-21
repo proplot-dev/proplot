@@ -538,20 +538,8 @@ def Colormap(
                     pass
 
         # Convert matplotlib colormaps to subclasses
-        if isinstance(arg, (
-            pcolors.ListedColormap, pcolors.LinearSegmentedColormap
-        )):
-            cmap = arg
-        elif isinstance(arg, mcolors.LinearSegmentedColormap):
-            cmap = pcolors.LinearSegmentedColormap(
-                arg.name, arg._segmentdata, arg.N, arg._gamma
-            )
-        elif isinstance(arg, mcolors.ListedColormap):
-            cmap = pcolors.ListedColormap(
-                arg.colors, arg.name, arg.N
-            )
-        elif isinstance(arg, mcolors.Colormap):  # base class
-            cmap = arg
+        if isinstance(arg, mcolors.Colormap):
+            cmap = pcolors._to_proplot_colormap(arg)
 
         # Dictionary of hue/sat/luminance values or 2-tuples
         elif isinstance(arg, dict):

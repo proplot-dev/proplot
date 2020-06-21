@@ -585,8 +585,9 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             if callable(data):
                 string += f' {key!r}: <function>,\n'
             else:
-                string += (f' {key!r}: [{data[0][2]:.3f}, '
-                           f'..., {data[-1][1]:.3f}],\n')
+                string += (
+                    f' {key!r}: [{data[0][2]:.3f}, ..., {data[-1][1]:.3f}],\n'
+                )
         return type(self).__name__ + '({\n' + string + '})'
 
     @docstring.add_snippets
@@ -1230,7 +1231,8 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
             'ListedColormap({\n'
             f" 'name': {self.name!r},\n"
             f" 'colors': {[mcolors.to_hex(color) for color in self.colors]},\n"
-            '})')
+            '})'
+        )
 
     def __init__(self, *args, alpha=None, **kwargs):
         """
@@ -1840,9 +1842,10 @@ class DiscreteNorm(mcolors.BoundaryNorm):
     # WARNING: Must be child of BoundaryNorm. Many methods in ColorBarBase
     # test for class membership, crucially including _process_values(), which
     # if it doesn't detect BoundaryNorm will try to use DiscreteNorm.inverse().
+    @warnings._rename_kwargs('0.7', extend='unique')
     def __init__(
-        self, levels, norm=None, step=1.0, extend=None,
-        clip=False, descending=False,
+        self, levels, norm=None, cmap=None,
+        unique=None, step=None, clip=False, descending=False,
     ):
         """
         Parameters
@@ -1854,18 +1857,24 @@ class DiscreteNorm(mcolors.BoundaryNorm):
             to `~DiscreteNorm.__call__` before discretization. The ``vmin``
             and ``vmax`` of the normalizer are set to the minimum and
             maximum values in `levels`.
+        cmap : `matplotlib.colors.Colormap`, optional
+            The colormap associated with this normalizer. This is used to
+            apply default `unique` and `step` settings depending on whether the
+            colormap is cyclic and whether distinct "extreme" colors have been
+            designated with `~matplotlib.colors.Colormap.set_under` and/or
+            `~matplotlib.colors.Colormap.set_over`.
+        unique : {'neither', 'both', 'min', 'max'}, optional
+            Which out-of-bounds regions should be assigned unique colormap
+            colors. The normalizer needs this information so it can ensure
+            the colorbar always spans the full range of colormap colors.
         step : float, optional
             The intensity of the transition to out-of-bounds colors as a
             fraction of the adjacent step between in-bounds colors.
             Default is ``1``.
-        extend : {'neither', 'both', 'min', 'max'}, optional
-            Which out-of-bounds regions should be assigned unique colormap
-            colors. The normalizer needs this information so it can ensure
-            the colorbar always spans the full range of colormap colors.
         clip : bool, optional
             Whether to clip values falling outside of the level bins. This
-            only has an effect on lower colors when extend is
-            ``'min'`` or ``'both'``, and on upper colors when extend is
+            only has an effect on lower colors when unique is
+            ``'min'`` or ``'both'``, and on upper colors when unique is
             ``'max'`` or ``'both'``.
         descending : bool, optional
             Whether the levels are meant to be descending. This will cause
@@ -1874,11 +1883,52 @@ class DiscreteNorm(mcolors.BoundaryNorm):
 
         Note
         ----
-        If you are using a diverging colormap with ``extend='max'`` or
-        ``extend='min'``, the center will get messed up. But that is very
-        strange usage anyway... so please just don't do that :)
+        This normalizer also makes sure that your levels always span the full range
+        of colors in the colormap, whether `extend` is set to ``'min'``, ``'max'``,
+        ``'neither'``, or ``'both'``. By default, when `extend` is not ``'both'``,
+        matplotlib simply cuts off the most intense colors (reserved for
+        "out of bounds" data), even though they are not being used.
+
+        While this could also be done by limiting the number of colors in the colormap
+        lookup table by selecting a smaller ``N`` (see
+        `~matplotlib.colors.LinearSegmentedColormap`), ProPlot chooses to
+        always build colormaps with high resolution lookup tables and leave it
+        to the `~matplotlib.colors.Normalize` instance to handle *discretization*
+        of the color selections.
+
+        Note that this approach means if you use a diverging colormap with
+        ``extend='max'`` or ``extend='min'``, the central color will get messed up.
+        But that is very strange usage anyway... so please just don't do that :)
         """
-        # Parse input
+        # Special properties specific to colormap type
+        if cmap is not None:
+            over = cmap._rgba_over
+            under = cmap._rgba_under
+            cyclic = getattr(cmap, '_cyclic', None)
+            if cyclic:
+                # *Scale bins* as if extend='both' to omit end colors
+                step = 0.5
+                unique = 'both'
+
+            else:
+                # *Scale bins* as if unique='neither' because there may be *discrete
+                # change* between minimum color and out-of-bounds colors.
+                if over is not None and under is not None:
+                    unique = 'both'
+                elif over is not None:
+                    # Turn off unique bin for over-bounds colors
+                    if unique == 'both':
+                        unique = 'min'
+                    elif unique == 'max':
+                        unique = 'neither'
+                elif under is not None:
+                    # Turn off unique bin for under-bounds colors
+                    if unique == 'both':
+                        unique = 'min'
+                    elif unique == 'max':
+                        unique = 'neither'
+
+        # Validate input arguments
         # NOTE: This must be a subclass BoundaryNorm, so ColorbarBase will
         # detect it... even though we completely override it.
         if not norm:
@@ -1887,12 +1937,13 @@ class DiscreteNorm(mcolors.BoundaryNorm):
             raise ValueError('Normalizer cannot be instance of BoundaryNorm.')
         elif not isinstance(norm, mcolors.Normalize):
             raise ValueError('Normalizer must be instance of Normalize.')
-        extend = extend or 'neither'
-        extends = ('both', 'min', 'max', 'neither')
-        if extend not in extends:
+        if unique is None:
+            unique = 'neither'
+        uniques = ('both', 'min', 'max', 'neither')
+        if unique not in uniques:
             raise ValueError(
-                f'Unknown extend option {extend!r}. Options are: '
-                + ', '.join(map(repr, extends)) + '.'
+                f'Unknown unique option {unique!r}. Options are: '
+                + ', '.join(map(repr, uniques)) + '.'
             )
 
         # Ensure monotonically increasing levels
@@ -1909,8 +1960,9 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         # 2 color coordinates for out-of-bounds color bins.
         # For *same* out-of-bounds colors, looks like [0, 0, ..., 1, 1]
         # For *unique* out-of-bounds colors, looks like [0, X, ..., 1 - X, 1]
-        # NOTE: For cyclic colormaps, _build_discrete_norm sets extend to
-        # 'both' and step to 0.5 so that we omit end colors.
+        # NOTE: Ensure out-of-bounds bin values correspond to out-of-bounds
+        # coordinate in case user used set_under or set_over to apply discrete
+        # change. See lukelbd/proplot#190
         # NOTE: Critical that we scale the bin centers in "physical space"
         # and *then* translate to color coordinates so that nonlinearities in
         # the normalization stay intact. If we scaled the bin centers in
@@ -1921,9 +1973,11 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         mids = np.zeros((levels.size + 1,))
         mids[1:-1] = 0.5 * (levels[1:] + levels[:-1])
         mids[0], mids[-1] = mids[1], mids[-2]
-        if extend in ('min', 'both'):
+        if step is None:
+            step = 1.0
+        if unique in ('min', 'both'):
             mids[0] += step * (mids[1] - mids[2])
-        if extend in ('max', 'both'):
+        if unique in ('max', 'both'):
             mids[-1] += step * (mids[-2] - mids[-3])
         if vcenter is None:
             mids = _interpolate_basic(
@@ -1937,15 +1991,18 @@ class DiscreteNorm(mcolors.BoundaryNorm):
             mids[mids >= vcenter] = _interpolate_basic(
                 mids[mids >= vcenter], vcenter, np.max(mids), vcenter, vmax,
             )
+        eps = 1e-10  # mids and dest are numpy.float64
         dest = norm(mids)
+        dest[0] -= eps
+        dest[-1] += eps
 
         # Attributes
         # NOTE: If clip is True, we clip values to the centers of the end
         # bins rather than vmin/vmax to prevent out-of-bounds colors from
         # getting an in-bounds bin color due to landing on a bin edge.
-        # NOTE: With extend='min' the minimimum in-bounds and out-of-bounds
+        # NOTE: With unique='min' the minimimum in-bounds and out-of-bounds
         # colors are the same so clip=True will have no effect. Same goes
-        # for extend='max' with maximum colors.
+        # for unique='max' with maximum colors.
         # WARNING: For some reason must clip manually for LogNorm, or
         # end up with unpredictable fill value, weird "out-of-bounds" colors
         self._bmin = np.min(mids)
@@ -2272,6 +2329,34 @@ def _get_cmap(name=None, lut=None):
     return cmap
 
 
+def _to_proplot_colormap(cmap):
+    """
+    Translate the input argument to a ProPlot colormap subclass.
+    """
+    cmap_orig = cmap
+    if isinstance(cmap, (ListedColormap, LinearSegmentedColormap)):
+        pass
+    elif isinstance(cmap, mcolors.LinearSegmentedColormap):
+        cmap = LinearSegmentedColormap(
+            cmap.name, cmap._segmentdata, cmap.N, cmap._gamma
+        )
+    elif isinstance(cmap, mcolors.ListedColormap):
+        cmap = ListedColormap(
+            cmap.colors, cmap.name, cmap.N
+        )
+    elif isinstance(cmap, mcolors.Colormap):  # base class
+        pass
+    else:
+        raise ValueError(
+            f'Invalid colormap type {type(cmap).__name__!r}. '
+            'Must be instance of matplotlib.colors.Colormap.'
+        )
+    cmap._rgba_bad = cmap_orig._rgba_bad
+    cmap._rgba_under = cmap_orig._rgba_under
+    cmap._rgba_over = cmap_orig._rgba_over
+    return cmap
+
+
 class ColormapDatabase(dict):
     """
     Dictionary subclass used to replace the matplotlib
@@ -2353,25 +2438,8 @@ class ColormapDatabase(dict):
         """
         if not isinstance(key, str):
             raise KeyError(f'Invalid key {key!r}. Must be string.')
-        if isinstance(item, (ListedColormap, LinearSegmentedColormap)):
-            pass
-        elif isinstance(item, mcolors.LinearSegmentedColormap):
-            item = LinearSegmentedColormap(
-                item.name, item._segmentdata, item.N, item._gamma
-            )
-        elif isinstance(item, mcolors.ListedColormap):
-            item = ListedColormap(
-                item.colors, item.name, item.N
-            )
-        elif isinstance(item, mcolors.Colormap):  # base class
-            pass
-        else:
-            raise ValueError(
-                f'Invalid colormap {item}. Must be instance of '
-                'matplotlib.colors.ListedColormap or '
-                'matplotlib.colors.LinearSegmentedColormap.'
-            )
         key = self._sanitize_key(key, mirror=False)
+        item = _to_proplot_colormap(item)
         super().__setitem__(key, item)
 
     def __contains__(self, item):

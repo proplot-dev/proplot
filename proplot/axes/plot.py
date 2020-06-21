@@ -2618,7 +2618,7 @@ def cycle_changer(
 def _build_discrete_norm(
     data=None, N=None, levels=None, values=None,
     norm=None, norm_kw=None, locator=None, locator_kw=None,
-    cmap=None, vmin=None, vmax=None, extend='neither', symmetric=False,
+    cmap=None, vmin=None, vmax=None, extend=None, symmetric=False,
     minlength=2,
 ):
     """
@@ -2816,13 +2816,10 @@ def _build_discrete_norm(
 
     # Generate DiscreteNorm and update "child" norm with vmin and vmax from
     # levels. This lets the colorbar set tick locations properly!
+    # TODO: Move these to DiscreteNorm?
     if not isinstance(norm, mcolors.BoundaryNorm) and len(levels) > 1:
-        if getattr(cmap, '_cyclic', None):
-            bin_kw = {'step': 0.5, 'extend': 'both'}  # omit end colors
-        else:
-            bin_kw = {'extend': extend}
         norm = pcolors.DiscreteNorm(
-            levels, norm=norm, descending=descending, **bin_kw
+            levels, cmap=cmap, norm=norm, descending=descending, unique=extend,
         )
     if descending:
         cmap = cmap.reversed()
@@ -2832,7 +2829,7 @@ def _build_discrete_norm(
 @warnings._rename_kwargs('0.6', centers='values')
 @docstring.add_snippets
 def cmap_changer(
-    self, func, *args, extend='neither',
+    self, func, *args, extend=None,
     cmap=None, cmap_kw=None, norm=None, norm_kw=None,
     vmin=None, vmax=None, N=None, levels=None, values=None,
     symmetric=False, locator=None, locator_kw=None,
@@ -2920,22 +2917,6 @@ def cmap_changer(
     proplot.constructor.Colormap
     proplot.constructor.Norm
     proplot.colors.DiscreteNorm
-
-    Note
-    ----
-    The `~proplot.colors.DiscreteNorm` normalizer, used with all colormap
-    plots, makes sure that your levels always span the full range of colors
-    in the colormap, whether `extend` is set to ``'min'``, ``'max'``,
-    ``'neither'``, or ``'both'``. By default, when `extend` is not ``'both'``,
-    matplotlib seems to just cut off the most intense colors (reserved for
-    coloring "out of bounds" data), even though they are not being used.
-
-    This could also be done by limiting the number of colors in the colormap
-    lookup table by selecting a smaller ``N`` (see
-    `~matplotlib.colors.LinearSegmentedColormap`). Instead, we prefer to
-    always build colormaps with high resolution lookup tables, and leave it
-    to the `~matplotlib.colors.Normalize` instance to handle discretization
-    of the color selections.
     """
     name = func.__name__
     autoformat = rc['autoformat']  # possibly manipulated by standardize_[12]d
@@ -2995,7 +2976,7 @@ def cmap_changer(
                 f'Cyclic colormap requires extend="neither". '
                 f'Overriding user input extend={extend!r}.'
             )
-            extend = 'neither'
+            extend = None
 
     # Translate standardized keyword arguments back into the keyword args
     # accepted by native matplotlib methods. Also disable edgefix if user want
