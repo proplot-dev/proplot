@@ -1276,8 +1276,8 @@ class BasemapAxes(GeoAxes):
                 extent = [180 - lon0, 180 + lon0, -90, 90]  # fallback
 
         # Initialize axes
+        self._called_from_basemap = False  # used to override plotting methods
         self._map_boundary = None  # start with empty map boundary
-        self._has_recurred = False  # use this to override plotting methods
         self._lonlines_major = None  # store gridliner objects this way
         self._lonlines_minor = None
         self._latlines_major = None
