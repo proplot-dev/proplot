@@ -350,35 +350,43 @@ class Axes(maxes.Axes):
         # Ensure isDefault_minloc enabled at start, needed for dual axes
         self.xaxis.isDefault_minloc = self.yaxis.isDefault_minloc = True
 
-        # Properties
         self._auto_format = None  # manipulated by wrapper functions
+
         self._abc_loc = None
         self._abc_text = None
         self._abc_border_kwargs = {}  # abs border properties
+
         self._title_loc = None  # location of main title
         self._title_pad = rc['axes.titlepad']  # format() can overwrite
         self._title_pad_active = None
         self._title_border_kwargs = {}  # title border properties
+
         self._above_top_panels = True  # TODO: add rc prop?
         self._bottom_panels = []
         self._top_panels = []
         self._left_panels = []
         self._right_panels = []
+
         self._tightbbox = None  # bounding boxes are saved
+
         self._panel_hidden = False  # True when "filled" with cbar/legend
         self._panel_parent = None
         self._panel_share = False
         self._panel_sharex_group = False
         self._panel_sharey_group = False
         self._panel_side = None
+
         self._inset_parent = None
         self._inset_zoom = False
         self._inset_zoom_data = None
+
         self._alty_child = None
         self._altx_child = None
         self._alty_parent = None
         self._altx_parent = None
+
         self.number = number  # for abc numbering
+
         if main:
             self.figure._axes_main.append(self)
 
@@ -680,6 +688,15 @@ class Axes(maxes.Axes):
             bb = mtransforms.TransformedBbox(bb, tr)
             return bb
         return inset_locator
+
+    def _plot_redirect(self, name, *args, **kwargs):
+        """
+        Redirect to the associated basemap method if possible.
+        """
+        if getattr(self, 'name', '') == 'basemap':
+            return getattr(self.projection, name)(*args, ax=self, **kwargs)
+        else:
+            return getattr(maxes.Axes, name)(self, *args, **kwargs)
 
     def _range_gridspec(self, x):
         """
@@ -1338,7 +1355,7 @@ optional
         """
         args = plot._parse_2d(*args)
         kwargs, kwargs_colorbar = plot._parse_cmap(**kwargs)
-        mappable = super().barbs(*args, **kwargs)
+        mappable = self._plot_redirect('barbs', *args, **kwargs)
         plot._auto_colorbar(mappable, **kwargs_colorbar)
         return mappable
 
@@ -1701,7 +1718,7 @@ optional
         """
         args = plot._parse_2d(*args)
         kwargs, kwargs_colorbar = plot._parse_cmap(**kwargs)
-        mappable = super().contour(*args, **kwargs)
+        mappable = self._plot_redirect('contour', *args, **kwargs)
         plot._auto_colorbar(mappable, **kwargs_colorbar)
         return mappable
 
@@ -1720,9 +1737,14 @@ optional
         """
         args = plot._parse_2d(*args)
         kwargs, kwargs_colorbar = plot._parse_cmap(**kwargs)
-        mappable = super().contourf(*args, **kwargs)
+        mappable = self._plot_redirect('contourf', *args, **kwargs)
         plot._auto_colorbar(mappable, **kwargs_colorbar)
         return mappable
+
+    def draw(self, renderer=None, *args, **kwargs):
+        # Perform extra post-processing steps
+        self._reassign_title()
+        super().draw(renderer, *args, **kwargs)
 
     # fill_between = _fill_between_wrapper(_standardize_1d(_cycle_changer(
     def _fill_between_apply(
@@ -1834,101 +1856,6 @@ optional
         """
         return self._fill_between_apply('yx', *args, **kwargs)
 
-    @plot._concatenate_docstrings
-    @docstring.add_snippets
-    def legend(self, *args, loc=None, width=None, space=None, **kwargs):
-        """
-        Add an *inset* legend or *outer* legend along the edge of the axes.
-
-        Parameters
-        ----------
-        %(plot.legend_args)s
-        loc : int or str, optional
-            The legend location. The following location keys are valid:
-
-            .. _legend_table:
-
-            ==================  =======================================
-            Location            Valid keys
-            ==================  =======================================
-            outer left          ``'left'``, ``'l'``
-            outer right         ``'right'``, ``'r'``
-            outer bottom        ``'bottom'``, ``'b'``
-            outer top           ``'top'``, ``'t'``
-            "best" inset        ``'best'``, ``'inset'``, ``'i'``, ``0``
-            upper right inset   ``'upper right'``, ``'ur'``, ``1``
-            upper left inset    ``'upper left'``, ``'ul'``, ``2``
-            lower left inset    ``'lower left'``, ``'ll'``, ``3``
-            lower right inset   ``'lower right'``, ``'lr'``, ``4``
-            center left inset   ``'center left'``, ``'cl'``, ``5``
-            center right inset  ``'center right'``, ``'cr'``, ``6``
-            lower center inset  ``'lower center'``, ``'lc'``, ``7``
-            upper center inset  ``'upper center'``, ``'uc'``, ``8``
-            center inset        ``'center'``, ``'c'``, ``9``
-            "filled"            ``'fill'``
-            ==================  =======================================
-
-        width : float or str, optional
-            For outer legends only. The space allocated for the legend box.
-            This does nothing if :rcraw:`tight` is ``True``. Units are
-            interpreted by `~proplot.utils.units`.
-        space : float or str, optional
-            For outer legends only. The space between the axes and the legend
-            box. Units are interpreted by `~proplot.utils.units`.
-            When :rcraw:`tight` is ``True``, this is adjusted automatically.
-            Otherwise, the default is :rc:`subplots.panelpad`.
-        %(plot.legend_kwargs)s
-
-        Other parameters
-        ----------------
-        **kwargs
-            Passed to `~matplotlib.axes.Axes.legend`.
-        """
-        if loc != 'fill':
-            loc = self._loc_translate(loc, 'legend')
-        if isinstance(loc, np.ndarray):
-            loc = loc.tolist()
-
-        # Generate panel
-        if loc in ('left', 'right', 'top', 'bottom'):
-            ax = self.panel_axes(loc, width=width, space=space, filled=True)
-            return ax.legend(*args, loc='fill', **kwargs)
-
-        # Fill
-        if loc == 'fill':
-            # Hide content
-            self._hide_panel()
-
-            # Try to make handles and stuff flush against the axes edge
-            kwargs.setdefault('borderaxespad', 0)
-            frameon = _not_none(
-                kwargs.get('frame', None), kwargs.get('frameon', None),
-                rc['legend.frameon']
-            )
-            if not frameon:
-                kwargs.setdefault('borderpad', 0)
-
-            # Apply legend location
-            side = self._panel_side
-            if side == 'bottom':
-                loc = 'upper center'
-            elif side == 'right':
-                loc = 'center left'
-            elif side == 'left':
-                loc = 'center right'
-            elif side == 'top':
-                loc = 'lower center'
-            else:
-                raise ValueError(f'Invalid panel side {side!r}.')
-
-        # Draw legend
-        return plot._add_legend(self, *args, loc=loc, **kwargs)
-
-    def draw(self, renderer=None, *args, **kwargs):
-        # Perform extra post-processing steps
-        self._reassign_title()
-        super().draw(renderer, *args, **kwargs)
-
     def get_size_inches(self):
         # Return the width and height of the axes in inches.
         width, height = self.figure.get_size_inches()
@@ -2000,7 +1927,7 @@ optional
         """
         args = plot._parse_1d(*args)
         kwargs, kwargs_colorbar = plot._parse_cmap(**kwargs)
-        mappable = super().hexbin(*args, **kwargs)
+        mappable = self._plot_redirect('hexbin', *args, **kwargs)
         plot._auto_colorbar(mappable, **kwargs_colorbar)
         return mappable
 
@@ -2140,7 +2067,7 @@ optional
         %(plot.cmap_args)s
         """
         kwargs, kwargs_colorbar = plot._parse_cmap(**kwargs)
-        mappable = super().imshow(*args, **kwargs)
+        mappable = self._plot_redirect('imshow', *args, **kwargs)
         plot._auto_colorbar(mappable, **kwargs_colorbar)
         return mappable
 
@@ -2291,6 +2218,96 @@ optional
                 line_prev.set_visible(False)
         self._inset_zoom_data = (rectpatch, connects)
         return rectpatch, connects
+
+    @plot._concatenate_docstrings
+    @docstring.add_snippets
+    def legend(self, *args, loc=None, width=None, space=None, **kwargs):
+        """
+        Add an *inset* legend or *outer* legend along the edge of the axes.
+
+        Parameters
+        ----------
+        %(plot.legend_args)s
+        loc : int or str, optional
+            The legend location. The following location keys are valid:
+
+            .. _legend_table:
+
+            ==================  =======================================
+            Location            Valid keys
+            ==================  =======================================
+            outer left          ``'left'``, ``'l'``
+            outer right         ``'right'``, ``'r'``
+            outer bottom        ``'bottom'``, ``'b'``
+            outer top           ``'top'``, ``'t'``
+            "best" inset        ``'best'``, ``'inset'``, ``'i'``, ``0``
+            upper right inset   ``'upper right'``, ``'ur'``, ``1``
+            upper left inset    ``'upper left'``, ``'ul'``, ``2``
+            lower left inset    ``'lower left'``, ``'ll'``, ``3``
+            lower right inset   ``'lower right'``, ``'lr'``, ``4``
+            center left inset   ``'center left'``, ``'cl'``, ``5``
+            center right inset  ``'center right'``, ``'cr'``, ``6``
+            lower center inset  ``'lower center'``, ``'lc'``, ``7``
+            upper center inset  ``'upper center'``, ``'uc'``, ``8``
+            center inset        ``'center'``, ``'c'``, ``9``
+            "filled"            ``'fill'``
+            ==================  =======================================
+
+        width : float or str, optional
+            For outer legends only. The space allocated for the legend box.
+            This does nothing if :rcraw:`tight` is ``True``. Units are
+            interpreted by `~proplot.utils.units`.
+        space : float or str, optional
+            For outer legends only. The space between the axes and the legend
+            box. Units are interpreted by `~proplot.utils.units`.
+            When :rcraw:`tight` is ``True``, this is adjusted automatically.
+            Otherwise, the default is :rc:`subplots.panelpad`.
+        %(plot.legend_kwargs)s
+
+        Other parameters
+        ----------------
+        **kwargs
+            Passed to `~matplotlib.axes.Axes.legend`.
+        """
+        if loc != 'fill':
+            loc = self._loc_translate(loc, 'legend')
+        if isinstance(loc, np.ndarray):
+            loc = loc.tolist()
+
+        # Generate panel
+        if loc in ('left', 'right', 'top', 'bottom'):
+            ax = self.panel_axes(loc, width=width, space=space, filled=True)
+            return ax.legend(*args, loc='fill', **kwargs)
+
+        # Fill
+        if loc == 'fill':
+            # Hide content
+            self._hide_panel()
+
+            # Try to make handles and stuff flush against the axes edge
+            kwargs.setdefault('borderaxespad', 0)
+            frameon = _not_none(
+                kwargs.get('frame', None), kwargs.get('frameon', None),
+                rc['legend.frameon']
+            )
+            if not frameon:
+                kwargs.setdefault('borderpad', 0)
+
+            # Apply legend location
+            side = self._panel_side
+            if side == 'bottom':
+                loc = 'upper center'
+            elif side == 'right':
+                loc = 'center left'
+            elif side == 'left':
+                loc = 'center right'
+            elif side == 'top':
+                loc = 'lower center'
+            else:
+                raise ValueError(f'Invalid panel side {side!r}.')
+
+        # Draw legend
+        return plot._add_legend(self, *args, loc=loc, **kwargs)
 
     @plot._concatenate_docstrings
     @docstring.add_snippets
@@ -2466,7 +2483,7 @@ optional
         """
         args = plot._parse_2d(*args)
         kwargs, kwargs_colorbar = plot._parse_cmap(**kwargs)
-        mappable = super().pcolor(*args, **kwargs)
+        mappable = self._plot_redirect('pcolor', *args, **kwargs)
         plot._auto_colorbar(mappable, **kwargs_colorbar)
         return mappable
 
@@ -2504,7 +2521,7 @@ optional
         """
         args = plot._parse_2d(*args)
         kwargs, kwargs_colorbar = plot._parse_cmap(**kwargs)
-        mappable = super().pcolormesh(*args, **kwargs)
+        mappable = self._plot_redirect('pcolormesh', *args, **kwargs)
         plot._auto_colorbar(mappable, **kwargs_colorbar)
         return mappable
 
@@ -2565,7 +2582,7 @@ optional
         kwargs, kwargs_legend_colorbar = plot._parse_cycle(**kwargs)
 
         # Draw lines
-        objs = super().plot(x, y, values=values, **kwargs)
+        objs = self._plot_redirect('plot', x, y, values=values, **kwargs)
 
         # Add sticky edges? No because there is no way to check whether "dependent
         # variable" is x or y axis like with area/areax and bar/barh. Better to always
@@ -2598,7 +2615,7 @@ optional
         """
         args = plot._parse_2d(*args)
         kwargs, kwargs_colorbar = plot._parse_cmap(**kwargs)
-        mappable = super().quiver(*args, **kwargs)
+        mappable = self._plot_redirect('quiver', *args, **kwargs)
         plot._auto_colorbar(mappable, **kwargs_colorbar)
         return mappable
 
@@ -2725,8 +2742,8 @@ optional
             )
 
         # Draw scatterplot
-        objs = super().scatter(
-            *args, c=c, s=s, cmap=cmap, norm=norm,
+        objs = self._plot_redirect(
+            'scatter', *args, c=c, s=s, cmap=cmap, norm=norm,
             linewidths=lw, edgecolors=ec, **kwargs
         )
         if ticks is not None:
@@ -2813,7 +2830,7 @@ optional
         """
         args = plot._parse_2d(*args)
         kwargs, kwargs_colorbar = plot._parse_cmap(**kwargs)
-        mappable = super().streamplot(*args, **kwargs)
+        mappable = self._plot_redirect('streamplot', *args, **kwargs)
         plot._auto_colorbar(mappable, **kwargs_colorbar)
         return mappable
 

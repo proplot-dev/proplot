@@ -631,35 +631,6 @@ def _to_ndarray(data):
     return np.atleast_1d(getattr(data, 'values', data))
 
 
-def _default_latlon(self, func, *args, latlon=None, **kwargs):
-    """
-    Makes ``latlon=True`` the default for basemap plots.
-    This means you no longer have to pass ``latlon=True`` if your data
-    coordinates are longitude and latitude.
-    """
-    @functools.wraps(func)
-    def wrapper(*args, latlon=None, **kwargs):
-        if latlon is None:
-            latlon = True
-        return func(*args, latlon=latlon, **kwargs)
-    return wrapper
-
-
-def _default_transform(self, func, *args, transform=None, **kwargs):
-    """
-    Makes ``transform=cartopy.crs.PlateCarree()`` the default
-    for cartopy plots. This means you no longer have to
-    pass ``transform=cartopy.crs.PlateCarree()`` if your data
-    coordinates are longitude and latitude.
-    """
-    @functools.wraps(func)
-    def wrapper(*args, transform=None, **kwargs):
-        if transform is None:
-            transform = PlateCarree()
-        return func(*args, transform=transform, **kwargs)
-    return wrapper
-
-
 def _axis_labels_title(data, axis=None, units=True):
     """
     Get data and label for pandas or xarray objects or their coordinates along axis
@@ -2992,23 +2963,6 @@ def _add_autoformat(func):
         autoformat = _not_none(autoformat, rc['autoformat'])
         with rc.context(autoformat=autoformat):
             return func(*args, **kwargs)
-
-
-def _basemap_redirect(func):
-    """
-    Docorator that calls the basemap version of the function of the
-    same name. This must be applied as the innermost decorator.
-    """
-    name = func.__name__
-
-    @functools.wraps(func)
-    def wrapper(self, *args, **kwargs):
-        if getattr(self, 'name', '') == 'basemap':
-            return getattr(self.projection, name)(*args, ax=self, **kwargs)
-        else:
-            return func(self, *args, **kwargs)
-    wrapper.__doc__ = None
-    return wrapper
 
 
 def _basemap_norecurse(func):
