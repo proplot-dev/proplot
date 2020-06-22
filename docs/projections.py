@@ -101,16 +101,17 @@ axs[2].format(
 # where ``name`` is any valid :ref:`PROJ projection name <proj_included>`.
 # You can also generate a `cartopy.crs.Projection` or `mpl_toolkits.basemap.Basemap`
 # instance directly using the `~proplot.constructor.Proj` constructor function and
-# pass the class instance to `proj`.
+# pass the class instance with ``proj=<object>``.
 #
+# When you request a geographic projection,
 # `~proplot.ui.subplots` returns instances of `proplot.axes.CartopyAxes`
 # or `proplot.axes.BasemapAxes`, depending on whether ``basemap=True`` was used.
 # Both of these derive from `proplot.axes.GeoAxes`, which includes a
-# `~proplot.axes.GeoAxes.format` method that can be used to control various
-# :ref:`geographic features <ug_geoformat>` with the same syntax whether
-# cartopy or basemap is the backend.
+# `~proplot.axes.GeoAxes.format` method. This method allows you to
+# :ref:`modify geographic features <ug_geoformat>` with the same syntax whether
+# cartopy or basemap is the "backend".
 #
-# * `proplot.axes.CartopyAxes` unifies cartopy's `~cartopy.mpl.geoaxes.GeoAxes`
+# * `proplot.axes.CartopyAxes` unifies the `cartopy.mpl.geoaxes.GeoAxes`
 #   class with the `proplot.axes.Axes` class. The `~proplot.axes.GeoAxes.format`
 #   method changes map bounds with
 #   `~cartopy.mpl.geoaxes.GeoAxes.set_extent`, adds major and minor gridlines with
@@ -130,11 +131,12 @@ axs[2].format(
 #   use it, the corresponding `~mpl_toolkits.basemap.Basemap` instance is
 #   available via the `proplot.axes.BasemapAxes.projection` attribute.
 #
-# These features mean you no longer have to invoke verbose cartopy classes like
-# `~cartopy.crs.LambertAzimuthalEqualArea` and `~cartopy.feature.NaturalEarthFeature`,
-# and you no longer have to directly work with the `~mpl_toolkits.basemap.Basemap`
-# instance. In the below examples, we create a variety of geographic plots with
-# both cartopy and basemap as the backends.
+# These features let you work with geographic data without having to invoke verbose
+# cartopy classes like `~cartopy.crs.LambertAzimuthalEqualArea` and
+# `~cartopy.feature.NaturalEarthFeature` or keep track of a separate
+# `~mpl_toolkits.basemap.Basemap` object. They considerably reduce the amount of
+# code needed to make geographic plots. In the below examples, we create a variety
+# of geographic plots with both cartopy and basemap as the backends.
 #
 # .. note::
 #
