@@ -55,7 +55,6 @@ release = ''
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-# For plot_directiev:
 extensions = [
     # 'matplotlib.sphinxext.plot_directive', # see: https://matplotlib.org/sampledoc/extensions.html  # noqa
     'IPython.sphinxext.ipython_console_highlighting',
@@ -236,9 +235,7 @@ default_role = 'py:obj'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 
-# Rtd theme still the best
-# in _templates but can just use below optoin.
-# We set "style_nav_header_background" in custom.css
+# Use modified RTD theme with overrides in custom.css and custom.js
 html_theme = 'sphinx_rtd_theme'
 html_theme_options = {
     'logo_only': True,

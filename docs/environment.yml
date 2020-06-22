@@ -22,7 +22,7 @@ dependencies:
     - pyqt5
     - sphinx>=3.0
     - sphinx-copybutton
-    - sphinx_rtd_theme
+    - sphinx_rtd_theme==0.4.3
     - jupytext
     - nbsphinx
     - git+https://github.com/lukelbd/sphinx-automodapi@v0.9.proplot-mods
