@@ -2829,7 +2829,7 @@ def _build_discrete_norm(
 @warnings._rename_kwargs('0.6', centers='values')
 @docstring.add_snippets
 def cmap_changer(
-    self, func, *args, extend=None,
+    self, func, *args, extend='neither',
     cmap=None, cmap_kw=None, norm=None, norm_kw=None,
     vmin=None, vmax=None, N=None, levels=None, values=None,
     symmetric=False, locator=None, locator_kw=None,
@@ -2973,10 +2973,10 @@ def cmap_changer(
         cmap = constructor.Colormap(cmap, **cmap_kw)
         if getattr(cmap, '_cyclic', None) and extend != 'neither':
             warnings._warn_proplot(
-                f'Cyclic colormap requires extend="neither". '
+                'Cyclic colormap requires extend="neither". '
                 f'Overriding user input extend={extend!r}.'
             )
-            extend = None
+            extend = 'neither'
 
     # Translate standardized keyword arguments back into the keyword args
     # accepted by native matplotlib methods. Also disable edgefix if user want
