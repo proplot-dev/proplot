@@ -159,6 +159,12 @@ add_module_names = False  # proplot imports everything in top-level namespace
 
 # Napoleon options
 # See: http://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html
+# * use_param is set to False so that we can put multiple "parameters"
+#   on one line -- for example 'xlocator, ylocator : locator-spec, optional'
+# * use_keyword is set to False because we do not want separate 'Keyword Arguments'
+#   section and have same issue for multiple keywords.
+# * use_ivar and use_rtype are set to False for (presumably) style consistency
+#   with the above options set to False.
 napoleon_use_ivar = False
 napoleon_use_param = False
 napoleon_use_keyword = False

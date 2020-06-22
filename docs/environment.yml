@@ -25,4 +25,4 @@ dependencies:
     - sphinx_rtd_theme
     - jupytext
     - nbsphinx
-    - git+https://github.com/lukelbd/sphinx-automodapi@v0.8.proplot-mods
+    - git+https://github.com/lukelbd/sphinx-automodapi@v0.9.proplot-mods
