@@ -49,14 +49,7 @@
 # constructor function.
 
 # %%
-import numpy as np
-import pandas as pd
-
-# %%
-# %%
-# %%
 import proplot as plot
-
 fig, axs = plot.show_cycles()
 
 
@@ -76,6 +69,8 @@ fig, axs = plot.show_cycles()
 # `~proplot.constructor.Cycle` to the :rcraw:`axes.prop_cycle` setting (see
 # the :ref:`configuration guide <ug_config>`).
 
+# %%
+import numpy as np
 lw = 5
 state = np.random.RandomState(51423)
 data = (state.rand(12, 6) - 0.45).cumsum(axis=0)
@@ -126,6 +121,9 @@ ax.format(title='With multiple plot calls')
 # lines are referenced with colorbars and legends. Note that ProPlot allows
 # you to :ref:`generate colorbars from lists of lines <ug_cbars>`.
 
+# %%
+import proplot as plot
+import numpy as np
 fig, axs = plot.subplots(ncols=2, share=0, axwidth=2.3)
 state = np.random.RandomState(51423)
 data = (20 * state.rand(10, 21) - 10).cumsum(axis=0)
@@ -160,6 +158,10 @@ ax.format(
 # constructed and applied to the axes locally. To apply it globally, simply
 # use ``plot.rc['axes.prop_cycle'] = cycle``.
 
+# %%
+import proplot as plot
+import numpy as np
+import pandas as pd
 
 # Create cycle that loops through 'dashes' Line2D property
 cycle = plot.Cycle(dashes=[(1, 0.5), (1, 1.5), (3, 0.5), (3, 1.5)])
