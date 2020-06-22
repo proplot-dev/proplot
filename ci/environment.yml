@@ -11,7 +11,7 @@ dependencies:
   - numpy
   - xarray
   - pandas
-  - matplotlib=3.2.1
+  - matplotlib==3.2.1
   - cartopy
   - basemap
   - pandoc
@@ -26,7 +26,7 @@ dependencies:
     - pytest-sugar
     - sphinx>=3.0
     - sphinx-copybutton
-    - sphinx_rtd_theme=0.4.3
+    - sphinx_rtd_theme==0.4.3
     - jupytext
     - nbsphinx
     - git+https://github.com/lukelbd/sphinx-automodapi@v0.8.proplot-mods
