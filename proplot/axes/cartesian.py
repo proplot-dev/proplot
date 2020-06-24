@@ -582,10 +582,10 @@ class CartesianAxes(base.Axes):
             The *x* and *y* axis data limits. Applied with
             `~matplotlib.axes.Axes.set_xlim` and
             `~matplotlib.axes.Axes.set_ylim`.
-        xmin, ymin : float, optoinal
+        xmin, ymin : float, optional
             The *x* and *y* minimum data limits. Useful if you do not want
             to set the maximum limits.
-        xmax, ymax : float, optoinal
+        xmax, ymax : float, optional
             The *x* and *y* maximum data limits. Useful if you do not want
             to set the minimum limits.
         xreverse, yreverse : bool, optional
