@@ -64,7 +64,7 @@ ProPlot v0.8.0 (2020-##-##)
   `~proplot.subplots.EdgeStack` stacks rather than getting inserted directly
   into the main `~proplot.subplots.GridSpec` (:pr:`110`).
 
-ProPlot v0.7.0 (2020-##-#3)
+ProPlot v0.7.0 (2020-##-##)
 ===========================
 
 .. rubric:: Deprecated
@@ -81,6 +81,8 @@ ProPlot v0.7.0 (2020-##-#3)
 
 .. rubric:: Features
 
+* Add `xmin`, `xmax`, `ymin`, and `ymax` keyword args
+  to `~proplot.axes.CartesianAxes.format` (:commit:`ae0719b7`).
 * Set default transform to ``ccrs.PlateCarree`` when calling
   `matplotlib.axes.Axes.fill` on `CartopyAxes` (:issue:`193`).
 * Add ``'rotation'`` keyword to `colorbar_wrapper` for rotating colorbar tick
