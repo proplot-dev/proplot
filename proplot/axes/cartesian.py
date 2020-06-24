@@ -534,6 +534,8 @@ class CartesianAxes(base.Axes):
         xreverse=None, yreverse=None,
         xlabel=None, ylabel=None,
         xlim=None, ylim=None,
+        xmin=None, ymin=None,
+        xmax=None, ymax=None,
         xscale=None, yscale=None,
         xrotation=None, yrotation=None,
         xformatter=None, yformatter=None,
@@ -576,10 +578,16 @@ class CartesianAxes(base.Axes):
             `~matplotlib.artist.Artist.update` method on the
             `~matplotlib.text.Text` instance. Options include ``'color'``,
             ``'size'``, and ``'weight'``.
-        xlim, ylim : (float or None, float or None), optional
+        xlim, ylim : 2-tuple of floats or None, optional
             The *x* and *y* axis data limits. Applied with
             `~matplotlib.axes.Axes.set_xlim` and
             `~matplotlib.axes.Axes.set_ylim`.
+        xmin, ymin : float, optoinal
+            The *x* and *y* minimum data limits. Useful if you do not want
+            to set the maximum limits.
+        xmax, ymax : float, optoinal
+            The *x* and *y* maximum data limits. Useful if you do not want
+            to set the minimum limits.
         xreverse, yreverse : bool, optional
             Sets whether the *x* and *y* axis are oriented in the "reverse"
             direction. The "normal" direction is increasing to the right for
@@ -815,7 +823,8 @@ class CartesianAxes(base.Axes):
                 ticklabelloc, labelloc,
                 grid, gridminor,
                 tickminor, minorlocator,
-                lim, reverse, scale,
+                min_, max_, lim,
+                reverse, scale,
                 locator, tickrange,
                 wraprange,
                 formatter, tickdir,
@@ -833,7 +842,8 @@ class CartesianAxes(base.Axes):
                 (xticklabelloc, yticklabelloc), (xlabelloc, ylabelloc),
                 (xgrid, ygrid), (xgridminor, ygridminor),
                 (xtickminor, ytickminor), (xminorlocator, yminorlocator),
-                (xlim, ylim), (xreverse, yreverse), (xscale, yscale),
+                (xmin, ymin), (xmax, ymax), (xlim, ylim),
+                (xreverse, yreverse), (xscale, yscale),
                 (xlocator, ylocator), (xtickrange, ytickrange),
                 (xwraprange, ywraprange),
                 (xformatter, yformatter), (xtickdir, ytickdir),
@@ -857,6 +867,13 @@ class CartesianAxes(base.Axes):
                 # NOTE: 3.1+ has axis.set_inverted(), below is from source code
                 # NOTE: Critical to apply axis limits first in case axis scale
                 # is incompatible with current limits.
+                if min_ is not None or max_ is not None:
+                    if lim is not None:
+                        warnings._warn_proplot(
+                            f'Overriding {x}lim={lim!r} '
+                            f'with {x}min={min_!r} and {x}max={max_!r}.'
+                        )
+                    lim = (min_, max_)
                 if lim is not None:
                     getattr(self, 'set_' + x + 'lim')(lim)
                 if reverse is not None:
