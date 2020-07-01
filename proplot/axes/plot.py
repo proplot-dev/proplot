@@ -2615,11 +2615,120 @@ def cycle_changer(
         return objs[0] if len(objs) == 1 else tuple(objs)
 
 
+def _auto_levels(
+    *args, N=11,
+    norm=None, norm_kw=None, locator=None, locator_kw=None,
+    vmin=None, vmax=None, symmetric=False, extend='both',
+):
+    """
+    Automatically generate level locations based on the input data, the
+    input locator, and the input normalizer.
+
+    Parameters
+    ----------
+    *args
+        The sample dataset(s).
+    N : int, optional
+        The (approximate) number of levels to create.
+    norm, norm_kw
+        Passed to `~proplot.constructor.Norm`. Used to determine suitable
+        level locations if `locator` is not passed.
+    locator, locator_kw
+        Passed to `~proplot.constructor.Locator`. Used to determine suitable
+        level locations.
+    symmetric : bool, optional
+        Whether the automatic levels should be symmetric.
+    extend : str, optional
+        The extend setting.
+
+    Returns
+    -------
+    levels : ndarray
+        The levels.
+    locator : ndarray or `matplotlib.ticker.Locator`
+        The locator used for colorbar tick locations.
+    """
+    norm_kw = norm_kw or {}
+    locator_kw = locator_kw or {}
+    norm = constructor.Norm(norm or 'linear', **norm_kw)
+    if locator is not None:
+        level_locator = tick_locator = constructor.Locator(locator, **locator_kw)
+    elif isinstance(norm, mcolors.LogNorm):
+        level_locator = tick_locator = mticker.LogLocator(**locator_kw)
+    elif isinstance(norm, mcolors.SymLogNorm):
+        locator_kw.setdefault('linthresh', norm.linthresh)
+        level_locator = tick_locator = mticker.SymmetricalLogLocator(**locator_kw)
+    else:
+        locator_kw.setdefault('symmetric', symmetric)
+        level_locator = mticker.MaxNLocator(N, min_n_ticks=1, **locator_kw)
+        tick_locator = None
+
+    # Get locations
+    automin = vmin is None
+    automax = vmax is None
+    if automin or automax:
+        vmins = []
+        vmaxs = []
+        for data in args:
+            data = ma.masked_invalid(data, copy=False)
+            if automin:
+                vmin = float(data.min())
+            if automax:
+                vmax = float(data.max())
+            if vmin == vmax or ma.is_masked(vmin) or ma.is_masked(vmax):
+                vmin, vmax = 0, 1
+            vmins.append(vmin)
+            vmaxs.append(vmax)
+        vmin = min(vmins)
+        vmax = max(vmaxs)
+    try:
+        levels = level_locator.tick_values(vmin, vmax)
+    except RuntimeError:  # too-many-ticks error
+        levels = np.linspace(vmin, vmax, N)  # TODO: _autolev used N+1
+
+    # Trim excess levels the locator may have supplied
+    # NOTE: This part is mostly copied from matplotlib _autolev
+    if not locator_kw.get('symmetric', None):
+        i0, i1 = 0, len(levels)  # defaults
+        under, = np.where(levels < vmin)
+        if len(under):
+            i0 = under[-1]
+            if not automin or extend in ('min', 'both'):
+                i0 += 1  # permit out-of-bounds data
+        over, = np.where(levels > vmax)
+        if len(over):
+            i1 = over[0] + 1 if len(over) else len(levels)
+            if not automax or extend in ('max', 'both'):
+                i1 -= 1  # permit out-of-bounds data
+        if i1 - i0 < 3:
+            i0, i1 = 0, len(levels)  # revert
+        levels = levels[i0:i1]
+
+    # Compare the no. of levels we *got* (levels) to what we *wanted* (N)
+    # If we wanted more than 2 times the result, then add nn - 1 extra
+    # levels in-between the returned levels *in normalized space*.
+    # Example: A LogNorm gives too few levels, so we select extra levels
+    # here, but use the locator for determining tick locations.
+    nn = N // len(levels)
+    if nn >= 2:
+        olevels = norm(levels)
+        nlevels = []
+        for i in range(len(levels) - 1):
+            l1, l2 = olevels[i], olevels[i + 1]
+            nlevels.extend(np.linspace(l1, l2, nn + 1)[:-1])
+        nlevels.append(olevels[-1])
+        levels = norm.inverse(nlevels)
+
+    # Use auto-generated levels for ticks if still None
+    locator = tick_locator or levels
+    return levels, locator
+
+
 def _build_discrete_norm(
     data=None, N=None, levels=None, values=None,
-    norm=None, norm_kw=None, locator=None, locator_kw=None,
-    cmap=None, vmin=None, vmax=None, extend=None, symmetric=False,
+    norm=None, norm_kw=None, cmap=None, vmin=None, vmax=None, extend=None,
     minlength=2,
+    **kwargs,
 ):
     """
     Build a `~proplot.colors.DiscreteNorm` or `~proplot.colors.BoundaryNorm`
@@ -2631,11 +2740,17 @@ def _build_discrete_norm(
     data, vmin, vmax, levels, values
         Used to determine the level boundaries.
     norm, norm_kw
-        Passed to `~proplot.constructor.Norm`.
-    locator, locator_kw
-        Passed to `~proplot.constructor.Locator`.
-    minlength : int
+        Passed to `~proplot.constructor.Norm` and then to `DiscreteNorm`.
+    vmin, vmax : float, optional
+        The minimum and maximum values for the normalizer.
+    cmap : `matplotlib.colors.Colormap`, optional
+        The colormap. Passed to `DiscreteNorm`.
+    extend : str, optional
+        The extend setting.
+    minlength : int, optional
         The minimum length for level lists.
+    **kwargs
+        Passed to `_auto_levels`.
 
     Returns
     -------
@@ -2646,7 +2761,6 @@ def _build_discrete_norm(
     """
     # Parse flexible keyword args
     norm_kw = norm_kw or {}
-    locator_kw = locator_kw or {}
     levels = _not_none(
         N=N, levels=levels, norm_kw_levels=norm_kw.pop('levels', None),
         default=rc['image.levels']
@@ -2673,7 +2787,7 @@ def _build_discrete_norm(
             )
 
     # Get level edges from level centers
-    ticks = None
+    locator = None
     if isinstance(values, Number):
         levels = np.atleast_1d(values)[0] + 1
     elif np.iterable(values) and len(values) == 1:
@@ -2715,19 +2829,17 @@ def _build_discrete_norm(
             norm = mcolors.Normalize(vmin=levels[0] - 1, vmax=levels[0] + 1)
         else:
             levels, descending = pcolors._check_levels(levels)
-    if norm is None:
-        norm = 'linear'
-        if np.iterable(levels) and len(levels) > 2:
-            steps = np.abs(np.diff(levels))
-            eps = np.mean(steps) / 1e3
-            if np.any(np.abs(np.diff(steps)) >= eps):
-                norm = 'segmented'
+            if len(levels) > 2 and norm is None:
+                steps = np.abs(np.diff(levels))
+                eps = np.mean(steps) / 1e3
+                if np.any(np.abs(np.diff(steps)) >= eps):
+                    norm = 'segmented'
     if norm == 'segmented':
         if not np.iterable(levels):
-            norm = 'linear'  # has same result
+            norm = 'linear'  # same result with improved speed
         else:
             norm_kw['levels'] = levels
-    norm = constructor.Norm(norm, **norm_kw)
+    norm = constructor.Norm(norm or 'linear', **norm_kw)
 
     # Use the locator to determine levels
     # Mostly copied from the hidden contour.ContourSet._autolev
@@ -2739,80 +2851,16 @@ def _build_discrete_norm(
         # NOTE: No warning because we get here internally?
         levels = norm.boundaries
     elif np.iterable(values):
-        # Prefer ticks in center
-        ticks = np.asarray(values)
+        # Prefer ticks in center, but subsample if necessary
+        locator = np.asarray(values)
     elif np.iterable(levels):
-        # Prefer ticks on level edges
-        ticks = np.asarray(levels)
+        # Prefer ticks on level edges, but subsample if necessary
+        locator = np.asarray(levels)
     else:
         # Determine levels automatically
-        N = levels
-        if locator is not None:
-            locator = constructor.Locator(locator, **locator_kw)
-            ticks = locator
-        elif isinstance(norm, mcolors.LogNorm):
-            locator = mticker.LogLocator(**locator_kw)
-            ticks = locator
-        elif isinstance(norm, mcolors.SymLogNorm):
-            locator_kw.setdefault('linthresh', norm.linthresh)
-            locator = mticker.SymmetricalLogLocator(**locator_kw)
-            ticks = locator
-        else:
-            locator_kw.setdefault('symmetric', symmetric)
-            locator = mticker.MaxNLocator(N, min_n_ticks=1, **locator_kw)
-
-        # Get locations
-        automin = vmin is None
-        automax = vmax is None
-        if automin or automax:
-            data = ma.masked_invalid(data, copy=False)
-            if automin:
-                vmin = float(data.min())
-            if automax:
-                vmax = float(data.max())
-            if vmin == vmax or ma.is_masked(vmin) or ma.is_masked(vmax):
-                vmin, vmax = 0, 1
-        try:
-            levels = locator.tick_values(vmin, vmax)
-        except RuntimeError:  # too-many-ticks error
-            levels = np.linspace(vmin, vmax, N)  # TODO: _autolev used N+1
-
-        # Trim excess levels the locator may have supplied
-        # NOTE: This part is mostly copied from _autolev
-        if not locator_kw.get('symmetric', None):
-            i0, i1 = 0, len(levels)  # defaults
-            under, = np.where(levels < vmin)
-            if len(under):
-                i0 = under[-1]
-                if not automin or extend in ('min', 'both'):
-                    i0 += 1  # permit out-of-bounds data
-            over, = np.where(levels > vmax)
-            if len(over):
-                i1 = over[0] + 1 if len(over) else len(levels)
-                if not automax or extend in ('max', 'both'):
-                    i1 -= 1  # permit out-of-bounds data
-            if i1 - i0 < 3:
-                i0, i1 = 0, len(levels)  # revert
-            levels = levels[i0:i1]
-
-        # Compare the no. of levels we *got* (levels) to what we *wanted* (N)
-        # If we wanted more than 2 times the result, then add nn - 1 extra
-        # levels in-between the returned levels *in normalized space*.
-        # Example: A LogNorm gives too few levels, so we select extra levels
-        # here, but use the locator for determining tick locations.
-        nn = N // len(levels)
-        if nn >= 2:
-            olevels = norm(levels)
-            nlevels = []
-            for i in range(len(levels) - 1):
-                l1, l2 = olevels[i], olevels[i + 1]
-                nlevels.extend(np.linspace(l1, l2, nn + 1)[:-1])
-            nlevels.append(olevels[-1])
-            levels = norm.inverse(nlevels)
-
-        # Use auto-generated levels for ticks if still None
-        if ticks is None:
-            ticks = levels
+        levels, locator = _auto_levels(
+            data, N=levels, norm=norm, vmin=vmin, vmax=vmax, extend=extend, **kwargs
+        )
 
     # Generate DiscreteNorm and update "child" norm with vmin and vmax from
     # levels. This lets the colorbar set tick locations properly!
@@ -2823,7 +2871,7 @@ def _build_discrete_norm(
         )
     if descending:
         cmap = cmap.reversed()
-    return norm, cmap, levels, ticks
+    return norm, cmap, levels, locator
 
 
 @warnings._rename_kwargs('0.6', centers='values')
