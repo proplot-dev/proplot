@@ -2615,7 +2615,7 @@ def cycle_changer(
         return objs[0] if len(objs) == 1 else tuple(objs)
 
 
-def _auto_levels(
+def _auto_levels_locator(
     *args, N=11,
     norm=None, norm_kw=None, locator=None, locator_kw=None,
     vmin=None, vmax=None, symmetric=False, extend='both',
@@ -2750,7 +2750,7 @@ def _build_discrete_norm(
     minlength : int, optional
         The minimum length for level lists.
     **kwargs
-        Passed to `_auto_levels`.
+        Passed to `_auto_levels_locator`.
 
     Returns
     -------
@@ -2858,7 +2858,7 @@ def _build_discrete_norm(
         locator = np.asarray(levels)
     else:
         # Determine levels automatically
-        levels, locator = _auto_levels(
+        levels, locator = _auto_levels_locator(
             data, N=levels, norm=norm, vmin=vmin, vmax=vmax, extend=extend, **kwargs
         )
 
