@@ -2616,8 +2616,7 @@ def cycle_changer(
 
 
 def _auto_levels_locator(
-    *args, N=11,
-    norm=None, norm_kw=None, locator=None, locator_kw=None,
+    *args, N=None, norm=None, norm_kw=None, locator=None, locator_kw=None,
     vmin=None, vmax=None, symmetric=False, extend='both',
 ):
     """
@@ -2648,6 +2647,8 @@ def _auto_levels_locator(
     locator : ndarray or `matplotlib.ticker.Locator`
         The locator used for colorbar tick locations.
     """
+    if N is None:
+        N = 11
     norm_kw = norm_kw or {}
     locator_kw = locator_kw or {}
     norm = constructor.Norm(norm or 'linear', **norm_kw)
