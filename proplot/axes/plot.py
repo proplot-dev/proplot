@@ -9,7 +9,7 @@ import functools
 import inspect
 import re
 import sys
-from numbers import Number
+from numbers import Integral, Number
 
 import matplotlib.artist as martist
 import matplotlib.axes as maxes
@@ -104,6 +104,8 @@ values : int or list of float, optional
     any `levels` input.
 symmetric : bool, optional
     If ``True``, automatically generated levels are symmetric about zero.
+nozero : bool, optional
+    If ``True``, ``0`` is removed from the level list.
 locator : locator-spec, optional
     The locator used to determine level locations if `levels` or `values`
     is an integer and `vmin` and `vmax` were not provided. Passed to the
@@ -1540,10 +1542,8 @@ color-spec or list thereof, optional
         norm, cmap, _, ticks = _build_discrete_norm(
             carray,  # sample data for getting suitable levels
             N=N, levels=levels, values=values,
-            norm=norm, norm_kw=norm_kw,
-            locator=locator, locator_kw=locator_kw,
-            cmap=cmap, vmin=vmin, vmax=vmax, extend='neither',
-            symmetric=symmetric,
+            norm=norm, norm_kw=norm_kw, locator=locator, locator_kw=locator_kw,
+            cmap=cmap, vmin=vmin, vmax=vmax, extend='neither', symmetric=symmetric,
         )
 
     # Fix 2D arguments but still support scatter(x_vector, y_2d) usage
@@ -2617,7 +2617,7 @@ def cycle_changer(
 
 def _auto_levels_locator(
     *args, N=None, norm=None, norm_kw=None, locator=None, locator_kw=None,
-    vmin=None, vmax=None, symmetric=False, extend='both',
+    vmin=None, vmax=None, extend='both', symmetric=False, nozero=False,
 ):
     """
     Automatically generate level locations based on the input data, the
@@ -2635,10 +2635,15 @@ def _auto_levels_locator(
     locator, locator_kw
         Passed to `~proplot.constructor.Locator`. Used to determine suitable
         level locations.
-    symmetric : bool, optional
-        Whether the automatic levels should be symmetric.
     extend : str, optional
         The extend setting.
+    symmetric : bool, optional
+        Whether the automatic levels should be symmetric.
+    nozero : bool, optional
+        Whether zero should be excluded from automatic levels. This is also
+        implemented in `cmap_changer` so that `nozero` can be used to remove user
+        input levels (e.g. ``ax.contour(..., levels=plot.arange(-5, 5), nozero=True)``),
+        but is replecated here so power users can use this function in isolation.
 
     Returns
     -------
@@ -2647,6 +2652,8 @@ def _auto_levels_locator(
     locator : ndarray or `matplotlib.ticker.Locator`
         The locator used for colorbar tick locations.
     """
+    if np.iterable(N):
+        return N, N
     if N is None:
         N = 11
     norm_kw = norm_kw or {}
@@ -2720,6 +2727,10 @@ def _auto_levels_locator(
         nlevels.append(olevels[-1])
         levels = norm.inverse(nlevels)
 
+    # Remove the zero contour
+    if nozero and 0 in levels:
+        levels = levels[levels != 0]
+
     # Use auto-generated levels for ticks if still None
     locator = tick_locator or levels
     return levels, locator
@@ -2789,8 +2800,8 @@ def _build_discrete_norm(
 
     # Get level edges from level centers
     locator = None
-    if isinstance(values, Number):
-        levels = np.atleast_1d(values)[0] + 1
+    if isinstance(values, Integral):
+        levels = values + 1
     elif np.iterable(values) and len(values) == 1:
         levels = [values[0] - 1, values[0] + 1]  # weird but why not
     elif np.iterable(values) and len(values) > 1:
@@ -2881,7 +2892,7 @@ def cmap_changer(
     self, func, *args, extend='neither',
     cmap=None, cmap_kw=None, norm=None, norm_kw=None,
     vmin=None, vmax=None, N=None, levels=None, values=None,
-    symmetric=False, locator=None, locator_kw=None,
+    symmetric=False, nozero=False, locator=None, locator_kw=None,
     edgefix=None, labels=False, labels_kw=None, fmt=None, precision=2,
     colorbar=False, colorbar_kw=None,
     lw=None, linewidth=None, linewidths=None,
@@ -2978,14 +2989,23 @@ def cmap_changer(
     labels_kw = labels_kw or {}
     locator_kw = locator_kw or {}
     colorbar_kw = colorbar_kw or {}
+    norm_kw = norm_kw or {}
 
     # Flexible user input
+    # NOTE: For now when drawing contour or contourf plots with no colormap,
+    # cannot use 'values' to specify level centers or level center count.
+    # NOTE: For now need to duplicate 'levels' parsing here and in
+    # _build_discrete_norm so that it works with contour plots with no cmap.
     Z_sample = args[-1]
     edgefix = _not_none(edgefix, rc['image.edgefix'])
     linewidths = _not_none(lw=lw, linewidth=linewidth, linewidths=linewidths)
     linestyles = _not_none(ls=ls, linestyle=linestyle, linestyles=linestyles)
     colors = _not_none(
         color=color, colors=colors, edgecolor=edgecolor, edgecolors=edgecolors,
+    )
+    levels = _not_none(
+        N=N, levels=levels, norm_kw_levels=norm_kw.pop('levels', None),
+        default=rc['image.levels']
     )
 
     # Get colormap, but do not use cmap when 'colors' are passed to contour()
@@ -2999,11 +3019,11 @@ def cmap_changer(
         name in ('contourf', 'tricontourf')
         and (linewidths is not None or linestyles is not None)
     )
-    no_cmap = colors is not None and (
-        name in ('contour', 'tricontour')
-        or name in ('contourf', 'tricontourf') and not add_contours
+    has_cmap = colors is None or (
+        name not in ('contour', 'tricontour')
+        and (name not in ('contourf', 'tricontourf') or add_contours)
     )
-    if no_cmap:
+    if not has_cmap:
         if cmap is not None:
             warnings._warn_proplot(
                 f'Ignoring input colormap cmap={cmap!r}, using input colors '
@@ -3047,17 +3067,23 @@ def cmap_changer(
     # NOTE: Standard algorithm for obtaining default levels does not work
     # for hexbin, because it colors *counts*, not data values!
     ticks = None
-    if cmap is not None and name not in ('hexbin',):
+    if not has_cmap and not np.iterable(levels):
+        levels, _ = _auto_levels_locator(
+            Z_sample, N=levels,
+            norm=norm, norm_kw=norm_kw, locator=locator, locator_kw=locator_kw,
+            vmin=vmin, vmax=vmax, extend=extend, symmetric=symmetric,
+        )
+    if has_cmap and name not in ('hexbin',):
         norm, cmap, levels, ticks = _build_discrete_norm(
-            Z_sample,  # sample data for getting suitable levels
-            N=N, levels=levels, values=values,
-            norm=norm, norm_kw=norm_kw,
-            locator=locator, locator_kw=locator_kw,
-            cmap=cmap, vmin=vmin, vmax=vmax, extend=extend,
-            symmetric=symmetric,
+            Z_sample, levels=levels, values=values, cmap=cmap,
+            norm=norm, norm_kw=norm_kw, locator=locator, locator_kw=locator_kw,
+            vmin=vmin, vmax=vmax, extend=extend, symmetric=symmetric,
             minlength=(1 if name in ('contour', 'tricontour') else 2),
         )
-    if not no_cmap:
+    if nozero and np.iterable(levels) and 0 in levels:
+        levels = np.asarray(levels)
+        levels = levels[levels != 0]
+    if has_cmap:
         kwargs['cmap'] = cmap
     if norm is not None:
         kwargs['norm'] = norm
