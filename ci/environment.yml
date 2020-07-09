@@ -20,7 +20,7 @@ dependencies:
   - pip:
     - ..
     - flake8
-    - isort
+    - isort==4.3.21
     - doc8
     - pytest
     - pytest-sugar
