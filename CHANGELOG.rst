@@ -81,6 +81,10 @@ ProPlot v0.7.0 (2020-##-##)
 
 .. rubric:: Features
 
+* Use same default-level generation algorithm for contour plots without
+  colormaps as for all other colormap plots (:commit:`10e0f13b`).
+* Add `nozero` keyword arg to `cmap_changer` to remove the zero contour
+  from automatically generated levels (:commit:`10e0f13b`).
 * Add `xmin`, `xmax`, `ymin`, and `ymax` keyword args
   to `~proplot.axes.CartesianAxes.format` (:commit:`ae0719b7`).
 * Set default transform to ``ccrs.PlateCarree`` when calling
