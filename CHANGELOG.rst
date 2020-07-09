@@ -83,6 +83,8 @@ ProPlot v0.7.0 (2020-##-##)
 
 * Use same default-level generation algorithm for contour plots without
   colormaps as for all other colormap plots (:commit:`10e0f13b`).
+* Add `positive` and `negative` keyword args to `cmap_changer` for
+  generating all-positive or all-negative levels (:commit:`335d58f4`).
 * Add `nozero` keyword arg to `cmap_changer` to remove the zero contour
   from automatically generated levels (:commit:`10e0f13b`).
 * Add `xmin`, `xmax`, `ymin`, and `ymax` keyword args
