@@ -104,6 +104,10 @@ values : int or list of float, optional
     any `levels` input.
 symmetric : bool, optional
     If ``True``, automatically generated levels are symmetric about zero.
+positive : bool, optional
+    If ``True``, automatically generated levels are positive with a minimum at zero.
+negative : bool, optional
+    If ``True``, automatically generated levels are negative with a maximum at zero.
 nozero : bool, optional
     If ``True``, ``0`` is removed from the level list.
 locator : locator-spec, optional
@@ -2617,7 +2621,8 @@ def cycle_changer(
 
 def _auto_levels_locator(
     *args, N=None, norm=None, norm_kw=None, locator=None, locator_kw=None,
-    vmin=None, vmax=None, extend='both', symmetric=False, nozero=False,
+    vmin=None, vmax=None, extend='both', symmetric=False,
+    positive=False, negative=False, nozero=False,
 ):
     """
     Automatically generate level locations based on the input data, the
@@ -2637,8 +2642,9 @@ def _auto_levels_locator(
         level locations.
     extend : str, optional
         The extend setting.
-    symmetric : bool, optional
-        Whether the automatic levels should be symmetric.
+    symmetric, positive, negative : bool, optional
+        Whether the automatic levels should be symmetric, should be all positive
+        with a minimum at zero, or should be all negative with a maximum at zero.
     nozero : bool, optional
         Whether zero should be excluded from automatic levels. This is also
         implemented in `cmap_changer` so that `nozero` can be used to remove user
@@ -2659,6 +2665,8 @@ def _auto_levels_locator(
     norm_kw = norm_kw or {}
     locator_kw = locator_kw or {}
     norm = constructor.Norm(norm or 'linear', **norm_kw)
+    if positive and negative:
+        raise ValueError('Incompatible options: positive=True and negative=True.')
     if locator is not None:
         level_locator = tick_locator = constructor.Locator(locator, **locator_kw)
     elif isinstance(norm, mcolors.LogNorm):
@@ -2667,8 +2675,9 @@ def _auto_levels_locator(
         locator_kw.setdefault('linthresh', norm.linthresh)
         level_locator = tick_locator = mticker.SymmetricalLogLocator(**locator_kw)
     else:
-        locator_kw.setdefault('symmetric', symmetric)
-        level_locator = mticker.MaxNLocator(N, min_n_ticks=1, **locator_kw)
+        nbins = N * 2 if positive or negative else N
+        locator_kw.setdefault('symmetric', symmetric or positive or negative)
+        level_locator = mticker.MaxNLocator(nbins, min_n_ticks=1, **locator_kw)
         tick_locator = None
 
     # Get locations
@@ -2727,9 +2736,13 @@ def _auto_levels_locator(
         nlevels.append(olevels[-1])
         levels = norm.inverse(nlevels)
 
-    # Remove the zero contour
+    # Filter the remaining contours
     if nozero and 0 in levels:
         levels = levels[levels != 0]
+    if positive:
+        levels = levels[levels >= 0]
+    if negative:
+        levels = levels[levels <= 0]
 
     # Use auto-generated levels for ticks if still None
     locator = tick_locator or levels
@@ -2892,7 +2905,8 @@ def cmap_changer(
     self, func, *args, extend='neither',
     cmap=None, cmap_kw=None, norm=None, norm_kw=None,
     vmin=None, vmax=None, N=None, levels=None, values=None,
-    symmetric=False, nozero=False, locator=None, locator_kw=None,
+    symmetric=False, positive=False, negative=False, nozero=False,
+    locator=None, locator_kw=None,
     edgefix=None, labels=False, labels_kw=None, fmt=None, precision=2,
     colorbar=False, colorbar_kw=None,
     lw=None, linewidth=None, linewidths=None,
@@ -3077,7 +3091,8 @@ def cmap_changer(
         norm, cmap, levels, ticks = _build_discrete_norm(
             Z_sample, levels=levels, values=values, cmap=cmap,
             norm=norm, norm_kw=norm_kw, locator=locator, locator_kw=locator_kw,
-            vmin=vmin, vmax=vmax, extend=extend, symmetric=symmetric,
+            vmin=vmin, vmax=vmax, extend=extend,
+            symmetric=symmetric, positive=positive, negative=negative, nozero=nozero,
             minlength=(1 if name in ('contour', 'tricontour') else 2),
         )
     if nozero and np.iterable(levels) and 0 in levels:
