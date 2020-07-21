@@ -614,7 +614,7 @@ class RcConfigurator(object):
         if cat not in rcsetup._rc_categories:
             raise ValueError(
                 f'Invalid rc category {cat!r}. Valid categories are '
-                ', '.join(map(repr, rcsetup._rc_categories)) + '.'
+                + ', '.join(map(repr, rcsetup._rc_categories)) + '.'
             )
         kw = {}
         mode = 0 if not context else None
@@ -1500,7 +1500,7 @@ def _patch_validators():
         except ValueError:
             raise ValueError(
                 f'{s!r} is not a valid font size. Valid sizes are: '
-                ', '.join(map(repr, fontsizes))
+                + ', '.join(map(repr, fontsizes))
             )
 
     def _validate_fontsize_None(s):
