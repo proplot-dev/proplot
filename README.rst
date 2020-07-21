@@ -36,9 +36,9 @@ Documentation
 The documentation is `published on readthedocs <https://proplot.readthedocs.io>`__.
 
 
-.. |code-style| image:: https://img.shields.io/badge/code%20style-pep8-green.svg
-   :alt: pep8
-   :target: https://www.python.org/dev/peps/pep-0008/
+.. |code-style| image:: https://img.shields.io/badge/code%20style-black-000000.svg
+   :alt: black
+   :target: https://github.com/psf/black
 
 .. |build-status| image:: https://travis-ci.com/lukelbd/proplot.svg?branch=master
    :alt: build status
@@ -67,6 +67,12 @@ The documentation is `published on readthedocs <https://proplot.readthedocs.io>`
 .. |gitter| image:: https://badges.gitter.im/gitterHQ/gitter.svg
    :alt: gitter
    :target: https://gitter.im/pro-plot/community
+
+
+..
+   |code-style| image:: https://img.shields.io/badge/code%20style-pep8-green.svg
+   :alt: pep8
+   :target: https://www.python.org/dev/peps/pep-0008/
 
 ..
    |coverage| image:: https://codecov.io/gh/lukelbd/proplot.org/branch/master/graph/badge.svg
