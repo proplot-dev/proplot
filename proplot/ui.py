@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-The starting point for creating custom ProPlot figures.
+The starting point for creating ProPlot figures.
 """
 import functools
 import inspect
@@ -14,12 +14,25 @@ from . import figure as pfigure
 from . import gridspec as pgridspec
 from .config import rc
 from .internals import ic  # noqa: F401
-from .internals import _not_none, warnings
+from .internals import _not_none, docstring, warnings
 from .utils import units
 
 __all__ = [
-    'close', 'show', 'subplots', 'SubplotsContainer', 'subplot_grid',
+    'close',
+    'ion',
+    'ioff',
+    'isinteractive',
+    'show',
+    'switch_backend',
+    'subplots',
+    'SubplotsContainer',
+    'subplot_grid',
 ]
+
+docstring.snippets['pyplot.statement'] = """
+This is included so you don't have to import `~matplotlib.pyplot`.
+"""
+
 
 # Width or (width, height) dimensions for common journal specifications
 JOURNAL_SPECS = {
@@ -41,10 +54,11 @@ JOURNAL_SPECS = {
 }
 
 
+@docstring.add_snippets
 def close(*args, **kwargs):
     """
-    Call `matplotlib.pyplot.close`. This is included so you don't have to import
-    `~matplotlib.pyplot`.
+    Call `matplotlib.pyplot.close`.
+    %(pyplot.statement)s
 
     Parameters
     ----------
@@ -54,10 +68,38 @@ def close(*args, **kwargs):
     plt.close(*args, **kwargs)
 
 
+@docstring.add_snippets
+def ion():
+    """
+    Call `matplotlib.pyplot.ion`.
+    %(pyplot.statement)s
+    """
+    plt.ion()
+
+
+@docstring.add_snippets
+def ioff():
+    """
+    Call `matplotlib.pyplot.ioff`.
+    %(pyplot.statement)s
+    """
+    plt.ioff()
+
+
+@docstring.add_snippets
+def isinteractive():
+    """
+    Call `matplotlib.pyplot.isinteractive`.
+    %(pyplot.statement)s
+    """
+    plt.isinteractive()
+
+
+@docstring.add_snippets
 def show(*args, **kwargs):
     """
-    Call `matplotlib.pyplot.show`. This is included so you don't have to import
-    `~matplotlib.pyplot`.
+    Call `matplotlib.pyplot.show`.
+    %(pyplot.statement)s
 
     Parameters
     ----------
@@ -65,6 +107,20 @@ def show(*args, **kwargs):
         Passed to `matplotlib.pyplot.show`.
     """
     plt.show(*args, **kwargs)
+
+
+@docstring.add_snippets
+def switch_backend(*args, **kwargs):
+    """
+    Call `matplotlib.pyplot.switch_backend`.
+    %(pyplot.statement)s
+
+    Parameters
+    ----------
+    *args, **kwargs
+        Passed to `matplotlib.pyplot.switch_backend`.
+    """
+    plt.switch_backend(*args, **kwargs)
 
 
 def _journals(journal):
