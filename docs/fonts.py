@@ -57,10 +57,11 @@
 # * The `Avant Garde <https://en.wikipedia.org/wiki/ITC_Avant_Garde>`__ lookalike
 #   :rcraw:`font.fantasy` = ``'TeX Gyre Adventor'``.
 #
-# Thus after importing ProPlot, the default font will be the more conventional
-# and aesthetically pleasing Helvetica lookalike
-# `TeX Gyre Heros <https://ctan.org/pkg/tex-gyre-heros>`__. The new font priority
-# lists for each font family are shown in the
+# After importing ProPlot, the default matplotlib font will be
+# `TeX Gyre Heros <https://ctan.org/pkg/tex-gyre-heros>`__,
+# which emulates the more conventional and aesthetically pleasing font
+# `Helvetica <https://en.wikipedia.org/wiki/Helvetica>`__. The
+# full font priority lists for each family are displayed in the
 # :ref:`default proplotrc file <ug_proplotrc>`.
 #
 # To compare different fonts, use the `~proplot.demos.show_fonts` command. By

@@ -20,9 +20,9 @@ cumbersome plotting code. As an undergraduate, he developed an extensive set of
 When he switched to python in graduate school, he replicated most of these utilities in
 python, learned more about the language, began to rapidly develop them, and decided to
 share them with the rest of the scientific community. Luke is also working on a project
-called `climpy <https://github.com/lukelbd/climpy>`__, a companion to
+called `climopy <https://github.com/lukelbd/climopy>`__, a companion to
 `metpy <https://github.com/Unidata/MetPy>`__ for carrying out data analysis tasks
-related to *climate science*, and has authored
+related to climate science, and has authored
 `a number of vim plugins <https://github.com/lukelbd?tab=repositories>`__
 as an avid vim user.
 

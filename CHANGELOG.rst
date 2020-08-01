@@ -73,7 +73,7 @@ ProPlot v0.7.0 (2020-##-##)
   ``Blues2``, etc. to avoid name conflict with open-color colors. This permits making
   monochromatic open-color maps with e.g. ``plot.Colormap('blue9')``
   (:commit:`8be0473f`).
-* Shuffle some SciVisColor map names to make them more consistent/succinct
+* Shuffle various SciVisColor colormap names to make them more consistent/succinct
   (:commit:`8be0473f`).
   Make the ``Browns1`` map the most colorful/vibrant one, just
   like ``Greens1`` and ``Blues1``; split up ``RedPurple`` maps into ``Reds``
@@ -88,7 +88,8 @@ ProPlot v0.7.0 (2020-##-##)
 * Add `nozero` keyword arg to `cmap_changer` to remove the zero contour
   from automatically generated levels (:commit:`10e0f13b`).
 * Add `xmin`, `xmax`, `ymin`, and `ymax` keyword args
-  to `~proplot.axes.CartesianAxes.format` (:commit:`ae0719b7`).
+  to `~proplot.axes.CartesianAxes.format` as alternatives to `xlim`
+  and `ylim` (:commit:`ae0719b7`).
 * Set default transform to ``ccrs.PlateCarree`` when calling
   `matplotlib.axes.Axes.fill` on `CartopyAxes` (:issue:`193`).
 * Add ``'rotation'`` keyword to `colorbar_wrapper` for rotating colorbar tick
@@ -99,20 +100,20 @@ ProPlot v0.7.0 (2020-##-##)
 
 .. rubric:: Bug fixes
 
-* Fix matplotlib bug where `altx` and `alty` reset the minor locator of the shared
-  axis to ``AutoMinorLocator`` even if the axis scale is ``'log'`` (:commit:`2f64361d`).
-* Fix issue where `hist` with `xarray.DataArray` or `pandas.Dataframe` input causes
-  erroneous axis labels; use labels for legend instead (:issue:`195`).
-* Fix issue where axis coordinates are incorrect when `violinplot` or `boxplot`
-  receive non-DataFrame input (:commit:`b5c3ec4c`).
-* Fix issue where `indicate_error` cannot accept 1D error bounds (:commit:`ef2d72cd`).
 * Fix issue where axis is inverted for histogram plots (:issue:`191`).
 * Fix issue where proplot fails to detect legend entries for "outer"
   legends (:issue:`189`).
-* Fix error when no legend handles are found (:commit:`2c6bf3e2`).
+* Fix issue where `hist` with `xarray.DataArray` or `pandas.Dataframe` input causes
+  erroneous axis labels; use labels for legend instead (:issue:`195`).
+* Fix matplotlib bug where `altx` and `alty` reset the minor locator of the shared
+  axis to ``AutoMinorLocator`` even if the axis scale is ``'log'`` (:commit:`2f64361d`).
+* Fix issue where axis coordinates are incorrect when `violinplot` or `boxplot`
+  receive non-DataFrame input (:commit:`b5c3ec4c`).
+* Fix issue where `indicate_error` cannot accept 1D error bounds (:commit:`ef2d72cd`).
 * Fix issue where `show_cmaps` cannot display reversed colormaps (:commit:`2dd51177`).
 * Fix issue where ``'grays_r'`` translated to ``'greys'`` (:commit:`074c6aef`).
 * First reverse, *then* shift ``cmap_r_s`` colormaps (:commit:`e5156294`).
+* Fix error message when no legend handles are found (:commit:`2c6bf3e2`).
 
 .. rubric:: Documentation
 
