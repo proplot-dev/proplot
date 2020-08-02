@@ -30,7 +30,14 @@ from .. import colors as pcolors
 from .. import constructor
 from ..config import rc
 from ..internals import ic  # noqa: F401
-from ..internals import _dummy_context, _not_none, _state_context, docstring, warnings
+from ..internals import (
+    _dummy_context,
+    _flexible_getattr,
+    _not_none,
+    _state_context,
+    docstring,
+    warnings,
+)
 from ..utils import edges, edges2d, to_rgb, to_xyz, units
 
 try:
@@ -2672,7 +2679,8 @@ def _auto_levels_locator(
     elif isinstance(norm, mcolors.LogNorm):
         level_locator = tick_locator = mticker.LogLocator(**locator_kw)
     elif isinstance(norm, mcolors.SymLogNorm):
-        locator_kw.setdefault('linthresh', norm.linthresh)
+        locator_kw.setdefault('base', _flexible_getattr(norm, 'base', 10))
+        locator_kw.setdefault('linthresh', _flexible_getattr(norm, 'linthresh', 1))
         level_locator = tick_locator = mticker.SymmetricalLogLocator(**locator_kw)
     else:
         nbins = N * 2 if positive or negative else N

@@ -18,6 +18,19 @@ except ImportError:  # graceful fallback if IceCream isn't installed
     ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
 
 
+def _flexible_getattr(obj, attr, default=None):
+    """
+    Search for attribute ``attr`` and ``_attr``. This guards against simple
+    upstream matplotlib changes.
+    """
+    if hasattr(obj, attr) and hasattr(obj, '_' + attr):
+        warnings._warn_proplot(
+            f"Object {obj!r} has both {attr!r} and {'_' + attr!r} attributes."
+            'Using former.'
+        )
+    return getattr(obj, attr, getattr(obj, '_' + attr, default))
+
+
 def _not_none(*args, default=None, **kwargs):
     """
     Return the first non-``None`` value. This is used with keyword arg aliases and
