@@ -202,6 +202,7 @@ def subplots(
     hspace=None, wspace=None, space=None,
     hratios=None, wratios=None,
     width_ratios=None, height_ratios=None,
+    wequal=None, hequal=None, equal=None,
     left=None, bottom=None, right=None, top=None,
     basemap=None, proj=None, projection=None,
     proj_kw=None, projection_kw=None,
@@ -269,6 +270,10 @@ def subplots(
         Units are interpreted by `~proplot.utils.units` for each element of
         the list. By default, these are determined by the "tight
         layout" algorithm.
+    wequal, hequal, equal :  bool, optional
+        Whether to automatically make spacing between columns, rows, or both
+        equal.
+        Default false.
     left, right, top, bottom : float or str, optional
         Passed to `~proplot.gridspec.GridSpec`, denotes the width of padding
         between the subplots and the figure edge. Units are interpreted by
@@ -541,6 +546,7 @@ list thereof, or dict thereof, optional
         left=left, right=right, bottom=bottom, top=top,
         width=width, height=height, axwidth=axwidth, axheight=axheight,
         wratios=wratios, hratios=hratios, wspace=wspace, hspace=hspace,
+        wequal=bool(wequal), hequal=bool(hequal), equal=bool(equal),
         wpanels=[''] * ncols, hpanels=[''] * nrows,
     )
     fig = plt.figure(

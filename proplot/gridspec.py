@@ -90,6 +90,7 @@ def _calc_geometry(**kwargs):
     wratios, hratios = kwargs['wratios'], kwargs['hratios']
     left, bottom = kwargs['left'], kwargs['bottom']
     right, top = kwargs['right'], kwargs['top']
+    wequal, hequal, equal = kwargs['wequal'], kwargs['hequal'], kwargs['equal']
 
     # Panel string toggles, lists containing empty strings '' (indicating a
     # main axes), or one of 'l', 'r', 'b', 't' (indicating axes panels) or
@@ -249,6 +250,14 @@ def _calc_geometry(**kwargs):
     bottom = bottom / height
     right = 1 - right / width
     top = 1 - top / height
+
+    # Constant spacing corrections
+    if equal:  # do both
+        wequal = hequal = True
+    if wequal:
+        wspace = [max(wspace) for _ in wspace]
+    if hequal:
+        hspace = [max(hspace) for _ in hspace]
 
     # Return gridspec keyword args
     gridspec_kw = {
