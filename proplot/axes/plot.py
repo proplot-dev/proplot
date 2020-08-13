@@ -2015,14 +2015,14 @@ color-spec, optional
 
         # If fillcolor is a list, make a list
         if not isinstance(fillcolor, list):
-            fillcolor = [fillcolor]*len(artists)
+            fillcolor = [fillcolor] * len(artists)
 
         for i, artist in enumerate(artists):
             if icolor is not None:
                 if isinstance(icolor, list):
                     if key in ['caps', 'whiskers']:
-                        artist.set_color(icolor[i//2])
-                        artist.set_markeredgecolor(icolor[i//2])
+                        artist.set_color(icolor[i // 2])
+                        artist.set_markeredgecolor(icolor[i // 2])
                     else:
                         artist.set_color(icolor[i])
                         artist.set_markeredgecolor(icolor[i])
@@ -2126,9 +2126,9 @@ def violinplot_wrapper(
 
     # If the color settings are a list, make a list
     if not isinstance(edgecolor, list):
-        edgecolor = [edgecolor]*len(artists)
+        edgecolor = [edgecolor] * len(artists)
     if not isinstance(fillcolor, list):
-        fillcolor = [fillcolor]*len(artists)
+        fillcolor = [fillcolor] * len(artists)
 
     for i, artist in enumerate(artists):
         artist.set_alpha(fillalpha)
