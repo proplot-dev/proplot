@@ -1947,11 +1947,12 @@ def boxplot_wrapper(
     *args : 1D or 2D ndarray
         The data array.
     color : color-spec, optional
-        The color of all objects.
+        The color (or color list) of all objects.
     fill : bool, optional
         Whether to fill the box with a color.
     fillcolor : color-spec, optional
-        The fill color for the boxes. Default is the next color cycler color.
+        The fill color (or color list) for the boxes. Default is the next
+        color cycler color.
     fillalpha : float, optional
         The opacity of the boxes. Default is ``1``.
     lw, linewidth : float, optional
@@ -1966,8 +1967,8 @@ def boxplot_wrapper(
         Marker size for the 'fliers', i.e. outliers.
     boxcolor, capcolor, meancolor, mediancolor, whiskercolor : \
 color-spec, optional
-        The color of various boxplot components. These are shorthands so you
-        don't have to pass e.g. a ``boxprops`` dictionary.
+        The color (or color list) of various boxplot components. These are
+        shorthands so you don't have to pass e.g. a ``boxprops`` dictionary.
     boxlw, caplw, meanlw, medianlw, whiskerlw : float, optional
         The line width of various boxplot components. These are shorthands so
         you don't have to pass e.g. a ``boxprops`` dictionary.
@@ -2011,16 +2012,29 @@ color-spec, optional
         artists = obj[key]
         ilw = _not_none(ilw, lw)
         icolor = _not_none(icolor, color)
-        for artist in artists:
+
+        # If fillcolor is a list, make a list
+        if not isinstance(fillcolor, list):
+            fillcolor = [fillcolor]*len(artists)
+
+        for i, artist in enumerate(artists):
             if icolor is not None:
-                artist.set_color(icolor)
-                artist.set_markeredgecolor(icolor)
+                if isinstance(icolor, list):
+                    if key in ['caps', 'whiskers']:
+                        artist.set_color(icolor[i//2])
+                        artist.set_markeredgecolor(icolor[i//2])
+                    else:
+                        artist.set_color(icolor[i])
+                        artist.set_markeredgecolor(icolor[i])
+                else:
+                    artist.set_color(icolor)
+                    artist.set_markeredgecolor(icolor)
             if ilw is not None:
                 artist.set_linewidth(ilw)
                 artist.set_markeredgewidth(ilw)
             if key == 'boxes' and fill:
                 patch = mpatches.PathPatch(
-                    artist.get_path(), color=fillcolor,
+                    artist.get_path(), color=fillcolor[i],
                     alpha=fillalpha, linewidth=0)
                 self.add_artist(patch)
             if key == 'fliers':
@@ -2056,9 +2070,11 @@ def violinplot_wrapper(
     lw, linewidth : float, optional
         The linewidth of the line objects. Default is ``1``.
     edgecolor : color-spec, optional
-        The edge color for the violin patches. Default is ``'black'``.
+        The edge color (or color list) for the violin patches. Default is
+        ``'black'``.
     fillcolor : color-spec, optional
-        The violin plot fill color. Default is the next color cycler color.
+        The violin plot fill color (or color list). Default is the next
+        color cycler color.
     fillalpha : float, optional
         The opacity of the violins. Default is ``1``.
     vert : bool, optional
@@ -2105,12 +2121,21 @@ def violinplot_wrapper(
     # Modify body settings
     if isinstance(result, (list, tuple)):
         obj = result[0]
-    for artist in obj['bodies']:
+
+    artists = obj['bodies']
+
+    # If the color settings are a list, make a list
+    if not isinstance(edgecolor, list):
+        edgecolor = [edgecolor]*len(artists)
+    if not isinstance(fillcolor, list):
+        fillcolor = [fillcolor]*len(artists)
+
+    for i, artist in enumerate(artists):
         artist.set_alpha(fillalpha)
-        artist.set_edgecolor(edgecolor)
+        artist.set_edgecolor(edgecolor[i])
         artist.set_linewidths(lw)
         if fillcolor is not None:
-            artist.set_facecolor(fillcolor)
+            artist.set_facecolor(fillcolor[i])
     return result
 
 
