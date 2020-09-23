@@ -1946,13 +1946,14 @@ def boxplot_wrapper(
     ----------
     *args : 1D or 2D ndarray
         The data array.
-    color : color-spec, optional
-        The color (or color list) of all objects.
+    color : color-spec, list, optional
+        The color of all objects. If a list, it should be the same length as
+        the number of objects.
     fill : bool, optional
         Whether to fill the box with a color.
-    fillcolor : color-spec, optional
-        The fill color (or color list) for the boxes. Default is the next
-        color cycler color.
+    fillcolor : color-spec, list, optional
+        The fill color for the boxes. Default is the next color cycler color. If
+        a list, it should be the same length as the number of objects.
     fillalpha : float, optional
         The opacity of the boxes. Default is ``1``.
     lw, linewidth : float, optional
@@ -1966,9 +1967,10 @@ def boxplot_wrapper(
     markersize : float, optional
         Marker size for the 'fliers', i.e. outliers.
     boxcolor, capcolor, meancolor, mediancolor, whiskercolor : \
-color-spec, optional
-        The color (or color list) of various boxplot components. These are
-        shorthands so you don't have to pass e.g. a ``boxprops`` dictionary.
+color-spec, list, optional
+        The color of various boxplot components. If a list, it should be the
+        same length as the number of objects. These are shorthands so you don't
+        have to pass e.g. a ``boxprops`` dictionary.
     boxlw, caplw, meanlw, medianlw, whiskerlw : float, optional
         The line width of various boxplot components. These are shorthands so
         you don't have to pass e.g. a ``boxprops`` dictionary.
@@ -2013,7 +2015,7 @@ color-spec, optional
         ilw = _not_none(ilw, lw)
         icolor = _not_none(icolor, color)
 
-        # If fillcolor is a list, make a list
+        # If fillcolor is a not list, make a list
         if not isinstance(fillcolor, list):
             fillcolor = [fillcolor] * len(artists)
 
@@ -2069,12 +2071,12 @@ def violinplot_wrapper(
         The data array.
     lw, linewidth : float, optional
         The linewidth of the line objects. Default is ``1``.
-    edgecolor : color-spec, optional
-        The edge color (or color list) for the violin patches. Default is
-        ``'black'``.
-    fillcolor : color-spec, optional
-        The violin plot fill color (or color list). Default is the next
-        color cycler color.
+    edgecolor : color-spec, list, optional
+        The edge color for the violin patches. Default is ``'black'``. If a
+        list, it should be the same length as the number of objects.
+    fillcolor : color-spec, list, optional
+        The violin plot fill color. Default is the next color cycler color. If
+        a list, it should be the same length as the number of objects.
     fillalpha : float, optional
         The opacity of the violins. Default is ``1``.
     vert : bool, optional
@@ -2124,7 +2126,7 @@ def violinplot_wrapper(
 
     artists = obj['bodies']
 
-    # If the color settings are a list, make a list
+    # If the color settings are not a list, make a list
     if not isinstance(edgecolor, list):
         edgecolor = [edgecolor] * len(artists)
     if not isinstance(fillcolor, list):
