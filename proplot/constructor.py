@@ -750,7 +750,7 @@ def Cycle(
         kwargs.setdefault('fade', 90)
         kwargs.setdefault('listmode', 'listed')
         kwargs.setdefault('to_listed', True)
-        cmap = Colormap(*args, samples=samples, **kwargs)
+        cmap = Colormap(*args, name=name, samples=samples, **kwargs)
         name = _not_none(name, cmap.name)
 
         # Add colors to property dict
