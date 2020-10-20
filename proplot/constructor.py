@@ -751,6 +751,7 @@ def Cycle(
         kwargs.setdefault('listmode', 'listed')
         kwargs.setdefault('to_listed', True)
         cmap = Colormap(*args, samples=samples, **kwargs)
+        name = _not_none(name, cmap.name)
 
         # Add colors to property dict
         nprops = max(nprops, len(cmap.colors))
@@ -766,7 +767,7 @@ def Cycle(
                 value[i % len(value)] for i in range(nprops)
             ]  # make loop double back
     cycle = cycler.cycler(**props)
-    cycle.name = name
+    cycle.name = _not_none(name, '_no_name')
     return cycle
 
 

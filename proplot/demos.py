@@ -204,9 +204,12 @@ def _draw_bars(
             cmap = mcolors.ListedColormap(cmap, name)
         elif isinstance(cmap, mcolors.Colormap):
             name = cmap.name
-        else:
+        elif isinstance(cmap, str):
             name = cmap
             cmap = pcolors._cmap_database[cmap]
+        else:
+            raise ValueError(f'Invalid colormap or cycle type {cmap!r}.')
+        name = _not_none(name, '_no_name')
         if name in database:
             name = f'{name}_{i}'  # e.g. _no_name_2
             i += 1
