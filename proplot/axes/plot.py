@@ -1946,12 +1946,14 @@ def boxplot_wrapper(
     ----------
     *args : 1D or 2D ndarray
         The data array.
-    color : color-spec, optional
-        The color of all objects.
+    color : color-spec, list, optional
+        The color of all objects. If a list, it should be the same length as
+        the number of objects.
     fill : bool, optional
         Whether to fill the box with a color.
-    fillcolor : color-spec, optional
-        The fill color for the boxes. Default is the next color cycler color.
+    fillcolor : color-spec, list, optional
+        The fill color for the boxes. Default is the next color cycler color. If
+        a list, it should be the same length as the number of objects.
     fillalpha : float, optional
         The opacity of the boxes. Default is ``1``.
     lw, linewidth : float, optional
@@ -1965,9 +1967,10 @@ def boxplot_wrapper(
     markersize : float, optional
         Marker size for the 'fliers', i.e. outliers.
     boxcolor, capcolor, meancolor, mediancolor, whiskercolor : \
-color-spec, optional
-        The color of various boxplot components. These are shorthands so you
-        don't have to pass e.g. a ``boxprops`` dictionary.
+color-spec, list, optional
+        The color of various boxplot components. If a list, it should be the
+        same length as the number of objects. These are shorthands so you don't
+        have to pass e.g. a ``boxprops`` dictionary.
     boxlw, caplw, meanlw, medianlw, whiskerlw : float, optional
         The line width of various boxplot components. These are shorthands so
         you don't have to pass e.g. a ``boxprops`` dictionary.
@@ -2011,16 +2014,29 @@ color-spec, optional
         artists = obj[key]
         ilw = _not_none(ilw, lw)
         icolor = _not_none(icolor, color)
-        for artist in artists:
+
+        # If fillcolor is a not list, make a list
+        if not isinstance(fillcolor, list):
+            fillcolor = [fillcolor] * len(artists)
+
+        for i, artist in enumerate(artists):
             if icolor is not None:
-                artist.set_color(icolor)
-                artist.set_markeredgecolor(icolor)
+                if isinstance(icolor, list):
+                    if key in ['caps', 'whiskers']:
+                        artist.set_color(icolor[i // 2])
+                        artist.set_markeredgecolor(icolor[i // 2])
+                    else:
+                        artist.set_color(icolor[i])
+                        artist.set_markeredgecolor(icolor[i])
+                else:
+                    artist.set_color(icolor)
+                    artist.set_markeredgecolor(icolor)
             if ilw is not None:
                 artist.set_linewidth(ilw)
                 artist.set_markeredgewidth(ilw)
             if key == 'boxes' and fill:
                 patch = mpatches.PathPatch(
-                    artist.get_path(), color=fillcolor,
+                    artist.get_path(), color=fillcolor[i],
                     alpha=fillalpha, linewidth=0)
                 self.add_artist(patch)
             if key == 'fliers':
@@ -2055,10 +2071,12 @@ def violinplot_wrapper(
         The data array.
     lw, linewidth : float, optional
         The linewidth of the line objects. Default is ``1``.
-    edgecolor : color-spec, optional
-        The edge color for the violin patches. Default is ``'black'``.
-    fillcolor : color-spec, optional
-        The violin plot fill color. Default is the next color cycler color.
+    edgecolor : color-spec, list, optional
+        The edge color for the violin patches. Default is ``'black'``. If a
+        list, it should be the same length as the number of objects.
+    fillcolor : color-spec, list, optional
+        The violin plot fill color. Default is the next color cycler color. If
+        a list, it should be the same length as the number of objects.
     fillalpha : float, optional
         The opacity of the violins. Default is ``1``.
     vert : bool, optional
@@ -2105,12 +2123,21 @@ def violinplot_wrapper(
     # Modify body settings
     if isinstance(result, (list, tuple)):
         obj = result[0]
-    for artist in obj['bodies']:
+
+    artists = obj['bodies']
+
+    # If the color settings are not a list, make a list
+    if not isinstance(edgecolor, list):
+        edgecolor = [edgecolor] * len(artists)
+    if not isinstance(fillcolor, list):
+        fillcolor = [fillcolor] * len(artists)
+
+    for i, artist in enumerate(artists):
         artist.set_alpha(fillalpha)
-        artist.set_edgecolor(edgecolor)
+        artist.set_edgecolor(edgecolor[i])
         artist.set_linewidths(lw)
         if fillcolor is not None:
-            artist.set_facecolor(fillcolor)
+            artist.set_facecolor(fillcolor[i])
     return result
 
 
