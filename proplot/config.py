@@ -10,6 +10,7 @@ See the :ref:`configuration guide <ug_config>` for details.
 # Because I think it makes sense to have all the code that "runs" (i.e. not
 # just definitions) in the same place, and I was having issues with circular
 # dependencies and where import order of __init__.py was affecting behavior.
+import ast
 import logging
 import os
 import re
@@ -865,11 +866,9 @@ class RcConfigurator(object):
                 if key in rc_proplot:
                     if not val:
                         val = None  # older proplot versions supported this
-                    elif val in ('True', 'False', 'None'):
-                        val = eval(val)  # rare case where eval is o.k.
                     else:
                         try:
-                            val = float(val) if '.' in val else int(val)
+                            val = ast.literal_eval(ast.literal_eval(ast.parse(val, mode="eval")))
                         except ValueError:
                             pass
 
