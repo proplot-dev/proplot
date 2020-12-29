@@ -1154,7 +1154,11 @@ def _get_style_dicts(style, infer=False, filter=True):
     # Always apply the default style *first* so styles are rigid
     kw_matplotlib = _get_default_dict()
     if style == 'default' or style is mpl.rcParamsDefault:
-        return kw_matplotlib
+        if infer:
+            kw_proplot = _infer_added_params(kw_matplotlib)
+            return kw_matplotlib, kw_proplot
+        else:
+            return kw_matplotlib
 
     # Apply "pseudo" default properties. Pretend some proplot settings are part of
     # the matplotlib specification so they propagate to other styles.
