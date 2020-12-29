@@ -412,14 +412,14 @@ optional
             *For cartopy axes only.*
             The number of interpolation steps used to draw gridlines.
             Default is :rc:`grid.nsteps`.
-        land, ocean, coast, rivers, lakes, borders, innerborders : bool, \
+        land, ocean, coast, rivers, lakes, borders, innerborders, urban : bool, \
 optional
             Toggles various geographic features. These are actually the
             :rcraw:`land`, :rcraw:`ocean`, :rcraw:`coast`, :rcraw:`rivers`,
-            :rcraw:`lakes`, :rcraw:`borders`, and :rcraw:`innerborders`
+            :rcraw:`lakes`, :rcraw:`borders`, :rcraw:`innerborders`, and :rcraw:`urban`,
             settings passed to `~proplot.config.RcConfigurator.context`.
             The style can be modified using additional `rc` settings.
-
+            (Urban works only with reso='med' or 'hi')
             For example, to change :rcraw:`land.color`, use
             ``ax.format(landcolor='green')``, and to change :rcraw:`land.zorder`,
             use ``ax.format(landzorder=4)``.
@@ -970,7 +970,7 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
             # See: https://github.com/SciTools/cartopy/issues/803
             if feat is not None:
                 kw = rc.category(name, context=drawn)
-                if name in ('coast', 'rivers', 'borders', 'innerborders'):
+                if name in ('coast', 'rivers', 'borders', 'innerborders', 'urban'):
                     kw.update({'edgecolor': kw.pop('color'), 'facecolor': 'none'})
                 else:
                     kw.update({'linewidth': 0})

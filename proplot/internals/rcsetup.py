@@ -627,6 +627,24 @@ _rc_proplot = {
         'Z-order for land patches.'
     ),
 
+    # Urban patches
+    'urban': (
+        False,
+        'Boolean, toggles urban patches on and off.'
+    ),
+    'urban.color': (
+        'black',
+        'Face color for urban patches.'
+    ),
+    'urban.linewidth': (
+        LINEWIDTH,
+        'Line width for urban borders.'
+    ),
+    'urban.zorder': (
+        ZLINES,
+        'Z-order for urban patches.'
+    ),
+
     # Left subplot labels
     'leftlabel.color': (
         'black',
@@ -686,7 +704,7 @@ _rc_proplot = {
 
     # Geographic resolution
     'reso': (
-        'lo',
+        'med',
         'Resolution for `~proplot.axes.GeoAxes` geographic features. '
         "Must be one of ``'lo'``, ``'med'``, ``'hi'``, ``'x-hi'``, or ``'xx-hi'``."
     ),

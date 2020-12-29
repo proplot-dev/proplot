@@ -320,6 +320,7 @@ CARTOPY_FEATURES = {  # positional arguments passed to NaturalEarthFeature
     'rivers': ('physical', 'rivers_lake_centerlines'),
     'borders': ('cultural', 'admin_0_boundary_lines_land'),
     'innerborders': ('cultural', 'admin_1_states_provinces_lakes'),
+    'urban': ('cultural', 'urban_areas')
 }
 BASEMAP_FEATURES = {  # names of relevant basemap methods
     'land': 'fillcontinents',
