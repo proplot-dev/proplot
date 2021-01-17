@@ -265,6 +265,22 @@ _rc_proplot = {
         1.5,
         'Width of the white border around a-b-c labels.'
     ),
+    'abc.bbox': (
+        True,
+        'Boolean, whether to draw semi-transparent bbox around the a-b-c.'
+    ),
+    'abc.bboxcolor': (
+        'w',
+        'color-spec, the color of the a-b-c bbox.'
+    ),
+    'abc.bboxstyle': (
+        'round',
+        'boxstyle, the style of the a-b-c bbox.'
+    ),
+    'abc.bboxalpha': (
+        0.5,
+        'float, The alpha for the a-b-c bbox.'
+    ),
     'abc.color': (
         'black',
         'a-b-c label color.'
@@ -850,6 +866,23 @@ _rc_proplot = {
     'title.borderwidth': (
         1.5,
         'Width of the white border around titles.'
+    ),
+    'title.bbox': (
+        True,
+        'Boolean, whether to draw semi-transparent bbox around the title.'
+        'when :rcraw:`title.loc` is inside the axes.'
+    ),
+    'title.bboxcolor': (
+        'w',
+        'color-spec, the color of the title bbox.'
+    ),
+    'title.bboxstyle': (
+        'round',
+        'boxstyle, the style of the title bbox.'
+    ),
+    'title.bboxalpha': (
+        0.5,
+        'float, The alpha for the title bbox.'
     ),
     'title.color': (
         'black',

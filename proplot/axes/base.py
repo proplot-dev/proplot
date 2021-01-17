@@ -809,6 +809,11 @@ class Axes(maxes.Axes):
             positioned inside the axes. This can help them stand out on top
             of artists plotted inside the axes. Defaults are
             :rc:`abc.border` and :rc:`title.border`
+        abcbbox, titlebbox : bool, optional
+            Whether to draw a white bbox around titles and a-b-c labels
+            positioned inside the axes. This can help them stand out on top
+            of artists plotted inside the axes. Defaults are
+            :rc:`abc.bbox` and :rc:`title.bbox`
         abovetop : bool, optional
             Whether to try to put the title and a-b-c label above the top panel
             (if it exists), or to always put them above the main subplot.
@@ -921,6 +926,10 @@ optional
             if loc in ('left', 'right', 'center'):
                 kw.pop('border', None)
                 kw.pop('borderwidth', None)
+                kw.pop('bbox', None)
+                kw.pop('bboxcolor', None)
+                kw.pop('bboxstyle', None)
+                kw.pop('bboxalpha', None)
             return kw
 
         # A-b-c labels
@@ -943,6 +952,10 @@ optional
                 {
                     'border': 'abc.border',
                     'borderwidth': 'abc.borderwidth',
+                    'bbox': 'abc.bbox',
+                    'bboxcolor': 'abc.bboxcolor',
+                    'bboxstyle': 'abc.bboxstyle',
+                    'bboxalpha': 'abc.bboxalpha', 
                 },
                 context=True,
             )
@@ -1009,6 +1022,10 @@ optional
             {
                 'border': 'title.border',
                 'borderwidth': 'title.borderwidth',
+                'bbox': 'title.bbox',
+                'bboxcolor': 'title.bboxcolor',
+                'bboxstyle': 'title.bboxstyle',
+                'bboxalpha': 'title.bboxalpha', 
             },
             context=True,
         )
