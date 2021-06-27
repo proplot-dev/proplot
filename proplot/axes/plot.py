@@ -3453,7 +3453,7 @@ property-spec, optional
             ihandles, ilabels, *_ = mlegend._parse_legend_args(
                 axs, handles=ihandles, labels=ilabels,
             )
-            pairs.append(list(zip(handles, labels)))
+            pairs.append(list(zip(ihandles, ilabels)))
 
     # Manage pairs in context of 'center' option
     center = _not_none(center, list_of_lists)
