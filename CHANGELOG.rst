@@ -10,13 +10,13 @@
 Changelog history
 =================
 
-ProPlot v1.0.0 (2020-##-##)
+ProPlot v1.0.0 (2022-##-##)
 ===========================
 This will be published when some major refactoring tasks are completed,
 and deprecation warnings will be removed. See :pr:`89`, :pr:`109`, :pr:`110`,
 and :pr:`111`.
 
-ProPlot v0.8.0 (2020-##-##)
+ProPlot v0.8.0 (2021-##-##)
 ===========================
 .. rubric:: Deprecated
 
@@ -35,8 +35,8 @@ ProPlot v0.8.0 (2020-##-##)
   matplotlib, but we still encourage using the bulk ``set`` method through
   documentation examples and by populating the ``set`` docstring (so valid
   arguments are no longer implicit).
-- Users can now use `~proplot.subplots.figure` with
-  `~proplot.subplots.Figure.add_subplot` *or* `~proplot.subplots.subplots`
+- Users can now use `~proplot.subplots.figure` with `~proplot.subplots.Figure.add_subplot`
+  as an alternative to the recommended `~proplot.subplots.subplots` workflow
   (:pr:`110`). This is a major improvement!
 - `~proplot.subplots.GridSpec` now accepts physical units, rather than having
   `~proplot.subplots.subplots` handle the units (:pr:`110`).
@@ -64,7 +64,7 @@ ProPlot v0.8.0 (2020-##-##)
   `~proplot.subplots.EdgeStack` stacks rather than getting inserted directly
   into the main `~proplot.subplots.GridSpec` (:pr:`110`).
 
-ProPlot v0.7.0 (2020-##-##)
+ProPlot v0.7.0 (2021-06-30)
 ===========================
 
 .. rubric:: Deprecated
@@ -94,6 +94,10 @@ ProPlot v0.7.0 (2020-##-##)
   `matplotlib.axes.Axes.fill` on `CartopyAxes` (:issue:`193`).
 * Add ``'rotation'`` keyword to `colorbar_wrapper` for rotating colorbar tick
   labels (:commit:`2d835f20`).
+* Add ``'tickdir'`` and ``'tickdirection'`` keywords to `colorbar_wrapper` for
+  controlling tick style, like ``'xtickdir'`` and ``'ytickdir'`` (:commit:`f377f090]`).
+* Allow passing full "side" names to `lonlabels` and `latlabels`, e.g. ``'left'`` or
+  ``'bottom'`` (:commit:`a5060f67`). This is more consistent with rest of package.
 * Use `Artist` labels for colorbar tick labels when making colorbars from lists of
   artists if `values` was not passed or labels are non-numeric, and rotate them
   90 degrees for horizontal colorbars by default (:commit:`ed8e1314`).
@@ -103,6 +107,8 @@ ProPlot v0.7.0 (2020-##-##)
 * Fix issue where axis is inverted for histogram plots (:issue:`191`).
 * Fix issue where proplot fails to detect legend entries for "outer"
   legends (:issue:`189`).
+* Fix issue where list-of-list-style legend handle and label input fails completely
+  (:commit:`a298f81f`). This can be used to specify "centered" legend rows.
 * Fix issue where `hist` with `xarray.DataArray` or `pandas.Dataframe` input causes
   erroneous axis labels; use labels for legend instead (:issue:`195`).
 * Fix matplotlib bug where `altx` and `alty` reset the minor locator of the shared
@@ -114,6 +120,15 @@ ProPlot v0.7.0 (2020-##-##)
 * Fix issue where ``'grays_r'`` translated to ``'greys'`` (:commit:`074c6aef`).
 * First reverse, *then* shift ``cmap_r_s`` colormaps (:commit:`e5156294`).
 * Fix error message when no legend handles are found (:commit:`2c6bf3e2`).
+* Fix obscure `~proplot.axes.Axes.parametric` bug where `numpy.stack` tries to make
+  nested ragged arrays from parametric coords (:commit:`b16d56a8`).
+* Fix issue where where `SubplotSpec.get_active_rows_columns` returned incorrect
+  number of "active" rows and columns (:commit:`5cf20b84`).
+* Fix deprecation warning in matplotlib >= 3.3 -- add `extend` as mappable attribute
+  rather than passing it to `colorbar()` (:commit:`a23e7043`).
+* For rc lookup with `context=True`, use most restrictive search mode rather than least.
+  Otherwise `ax.format()` calls inside context blocks can be overwritten with the
+  context block values in subsequent `ax.format()` calls (:commit:`8005fcc1`).
 
 .. rubric:: Documentation
 
