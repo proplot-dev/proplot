@@ -1691,22 +1691,13 @@ optional
         interp  # avoid U100 unused argument error (arg is handled by wrapper)
         coords = []
         levels = edges(values)
-        for j in range(y.shape[0]):
-            if j == 0:
-                xleft, yleft = [], []
-            else:
-                xleft = [0.5 * (x[j - 1] + x[j]), x[j]]
-                yleft = [0.5 * (y[j - 1] + y[j]), y[j]]
-            if j + 1 == y.shape[0]:
-                xright, yright = [], []
-            else:
-                xleft = xleft[:-1]  # prevent repetition when joined with right
-                yleft = yleft[:-1]
-                xright = [x[j], 0.5 * (x[j + 1] + x[j])]
-                yright = [y[j], 0.5 * (y[j + 1] + y[j])]
-            pleft = np.stack((xleft, yleft), axis=1)
-            pright = np.stack((xright, yright), axis=1)
-            coords.append(np.concatenate((pleft, pright), axis=0))
+        for i in range(y.shape[0]):
+            icoords = np.empty((3, 2))
+            for j, arr in enumerate((x, y)):
+                icoords[0, j] = arr[0] if i == 0 else 0.5 * (arr[i - 1] + arr[i])
+                icoords[1, j] = arr[i]
+                icoords[2, j] = arr[-1] if i + 1 == y.shape[0] else 0.5 * (arr[i + 1] + arr[i])  # noqa: E501
+            coords.append(icoords)
         coords = np.array(coords)
 
         # Create LineCollection and update with values
