@@ -286,8 +286,7 @@ class SubplotSpec(mgridspec.SubplotSpec):
         last subplot row, first subplot column, and last subplot column,
         ignoring rows and columns allocated for spaces.
         """
-        gridspec = self.get_gridspec()
-        nrows, ncols = gridspec.get_geometry()
+        nrows, ncols = self.get_gridspec().get_geometry()
         row1, col1 = divmod(self.num1, ncols)
         if self.num2 is not None:
             row2, col2 = divmod(self.num2, ncols)
@@ -295,7 +294,12 @@ class SubplotSpec(mgridspec.SubplotSpec):
             row2 = row1
             col2 = col1
         return (
-            nrows // 2, ncols // 2, row1 // 2, row2 // 2, col1 // 2, col2 // 2
+            (nrows + 1) // 2,
+            (ncols + 1) // 2,
+            row1 // 2,
+            row2 // 2,
+            col1 // 2,
+            col2 // 2
         )
 
     def get_geometry(self):
