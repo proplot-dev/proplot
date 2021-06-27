@@ -337,9 +337,9 @@ class RcConfigurator(object):
 
     def _get_context_mode(self):
         """
-        Return lowest (most permissive) context mode.
+        Return highest (least permissive) context mode.
         """
-        return min((context.mode for context in self._context), default=0)
+        return max((context.mode for context in self._context), default=0)
 
     def _get_item(self, key, mode=None):
         """
