@@ -19,6 +19,7 @@ dependencies:
   - pip
   - pip:
     - ..
+    - pyqt5
     - flake8
     - isort==4.3.21
     - doc8
@@ -29,5 +30,4 @@ dependencies:
     - sphinx_rtd_theme==0.4.3
     - jupytext
     - nbsphinx
-    - git+https://github.com/lukelbd/sphinx-automodapi@v0.8.proplot-mods
-    - pyqt5
+    - git+https://github.com/lukelbd/sphinx-automodapi@v0.9.proplot-mods
