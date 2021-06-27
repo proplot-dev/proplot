@@ -35,6 +35,8 @@ from ..internals import (
     _flexible_getattr,
     _not_none,
     _state_context,
+    _version,
+    _version_mpl,
     docstring,
     warnings,
 )
@@ -4028,7 +4030,8 @@ or colormap-spec
         'ticklocation': ticklocation,
         'extendfrac': extendsize
     })
-    mappable.extend = extend  # matplotlib >=3.3
+    if _version_mpl >= _version('3.3'):
+        mappable.extend = kwargs.pop('extend')  # matplotlib >=3.3
     cb = self.figure.colorbar(mappable, **kwargs)
     axis = self.xaxis if orientation == 'horizontal' else self.yaxis
 
