@@ -3463,9 +3463,7 @@ property-spec, optional
     elif center and not list_of_lists:
         list_of_lists = True
         ncol = _not_none(ncol, 3)
-        pairs = [
-            pairs[i * ncol:(i + 1) * ncol] for i in range(len(pairs))
-        ]  # to list of iterables
+        pairs = [pairs[i * ncol:(i + 1) * ncol] for i in range(len(pairs))]
         ncol = None
     if list_of_lists:  # remove empty lists, pops up in some examples
         pairs = [ipairs for ipairs in pairs if ipairs]
@@ -3675,7 +3673,7 @@ def colorbar_wrapper(
     extend=None, extendsize=None,
     title=None, label=None,
     grid=None, tickminor=None,
-    reverse=False, tickloc=None, ticklocation=None,
+    reverse=False, tickloc=None, ticklocation=None, tickdir=None, tickdirection=None,
     locator=None, ticks=None, maxn=None, maxn_minor=None,
     minorlocator=None, minorticks=None,
     locator_kw=None, minorlocator_kw=None,
@@ -3743,6 +3741,8 @@ or colormap-spec
         Whether to reverse the direction of the colorbar.
     tickloc, ticklocation : {'bottom', 'top', 'left', 'right'}, optional
         Where to draw tick marks on the colorbar.
+    tickdir, tickdirection : {'out', 'in', 'inout'}, optional
+        Direction that major and minor tick marks point.
     tickminor : bool, optional
         Whether to add minor ticks to the colorbar with
         `~matplotlib.colorbar.ColorbarBase.minorticks_on`.
@@ -3806,6 +3806,7 @@ or colormap-spec
     locator = _not_none(ticks=ticks, locator=locator)
     minorlocator = _not_none(minorticks=minorticks, minorlocator=minorlocator)
     ticklocation = _not_none(tickloc=tickloc, ticklocation=ticklocation)
+    tickdirection = _not_none(tickdir=tickdir, tickdirection=tickdirection)
     formatter = _not_none(ticklabels=ticklabels, formatter=formatter)
 
     # Colorbar kwargs
@@ -3956,8 +3957,11 @@ or colormap-spec
                     f'objects or colors.'
                 )
             norm, *_ = _build_discrete_norm(
-                values=values, extend='neither',
-                cmap=cmap, norm=norm, norm_kw=norm_kw,
+                values=values,
+                extend='neither',
+                cmap=cmap,
+                norm=norm,
+                norm_kw=norm_kw,
             )
             mappable = mcm.ScalarMappable(norm, cmap)
 
@@ -3995,9 +3999,7 @@ or colormap-spec
                 fontsize = kw_ticklabels.get('size', rc['ytick.labelsize'])
             fontsize = rc._scale_font(fontsize)
             maxn = _not_none(maxn, int(length / (scale * fontsize / 72)))
-            maxn_minor = _not_none(
-                maxn_minor, int(length / (0.5 * fontsize / 72))
-            )
+            maxn_minor = _not_none(maxn_minor, int(length / (0.5 * fontsize / 72)))
 
             # Get locator
             if tickminor and minorlocator is None:
@@ -4062,11 +4064,13 @@ or colormap-spec
     for obj in axis.get_ticklabels():
         obj.update(kw_ticklabels)
 
-    # Ticks
+    # Ticks consistent with rc settings and overrides
     xy = axis.axis_name
     for which in ('minor', 'major'):
         kw = rc.category(xy + 'tick.' + which)
         kw.pop('visible', None)
+        if tickdirection:
+            kw['direction'] = tickdirection
         if edgecolor:
             kw['color'] = edgecolor
         if linewidth:
