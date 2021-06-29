@@ -31,13 +31,13 @@ ProPlot v0.8.0 (2021-##-##)
 
 .. rubric:: Features
 
-- All features are now implemented with individual *setters*, like in
-  matplotlib, but we still encourage using the bulk ``set`` method through
-  documentation examples and by populating the ``set`` docstring (so valid
+- All `~proplot.axes.Axes.format` features are now implemented with individual
+  *setters*, like in matplotlib, but we still encourage using the bulk ``set`` method
+  through documentation examples and by populating the ``set`` docstring (so valid
   arguments are no longer implicit).
-- Users can now use `~proplot.subplots.figure` with `~proplot.subplots.Figure.add_subplot`
-  as an alternative to the recommended `~proplot.subplots.subplots` workflow
-  (:pr:`110`). This is a major improvement!
+- Users can now use `~proplot.subplots.figure` with
+  `~proplot.subplots.Figure.add_subplot` as an alternative to the recommended
+  `~proplot.subplots.subplots` workflow (:pr:`110`). This is a major improvement!
 - `~proplot.subplots.GridSpec` now accepts physical units, rather than having
   `~proplot.subplots.subplots` handle the units (:pr:`110`).
 - Allow "hanging" twin *x* and *y* axes as members of the
@@ -69,46 +69,72 @@ ProPlot v0.7.0 (2021-06-30)
 
 .. rubric:: Deprecated
 
-* Rename `SciVisColor` colormaps from ``Blue1``, ``Blue2``, etc. to ``Blues1``,
+* Rename `SciVisColor` colormaps from ``Blue1``, ``Blue2``, etc. to plurals ``Blues1``,
   ``Blues2``, etc. to avoid name conflict with open-color colors. This permits making
-  monochromatic open-color maps with e.g. ``plot.Colormap('blue9')``
-  (:commit:`8be0473f`).
-* Shuffle various SciVisColor colormap names to make them more consistent/succinct
-  (:commit:`8be0473f`).
+  monochromatic open-color maps with e.g. ``plot.Colormap('blue9')``, and feels more
+  consistent with the ColorBrewer convention of using plurals like ``Blues``, ``Reds``,
+  etc. (:commit:`8be0473f`).
+* Shuffle various SciVisColor colormap names to make them more consistent/succinct.
   Make the ``Browns1`` map the most colorful/vibrant one, just
-  like ``Greens1`` and ``Blues1``; split up ``RedPurple`` maps into ``Reds``
-  and ``Purples``; and add ``Yellows`` category from ``Oranges`` maps.
+  like ``Greens1`` and ``Blues1``; split up the ``RedPurple`` maps into ``Reds`` and
+  ``Purples``; and add the ``Yellows`` category from the ``Oranges`` maps (:commit:`8be0473f`).
 
 .. rubric:: Features
 
-* Use same default-level generation algorithm for contour plots without
-  colormaps as for all other colormap plots (:commit:`10e0f13b`).
-* Add `positive` and `negative` keyword args to `cmap_changer` for
-  generating all-positive or all-negative levels (:commit:`335d58f4`).
+* Add the remaining commonly-used backend-related `pyplot` functions `ion`, `ioff`,
+  `isinteractive`, and `switch_backend` to the top-level `proplot` namespace
+  (:commit:`cd440155`). This avoids forcing users to import pyplot inside a proplot
+  session (the remaining pyplot functions are related to the "non-object-oriented"
+  workflow, which proplot explicitly discourages).
+* Use same default-level generation algorithm for contour plots without colormaps as for
+  all other colormap plots (:commit:`10e0f13b`). Makes automatically-generated
+  solid-color contours and colormap-style contours identical.
 * Add `nozero` keyword arg to `cmap_changer` to remove the zero contour
   from automatically generated levels (:commit:`10e0f13b`).
-* Add `xmin`, `xmax`, `ymin`, and `ymax` keyword args
-  to `~proplot.axes.CartesianAxes.format` as alternatives to `xlim`
-  and `ylim` (:commit:`ae0719b7`).
-* Set default transform to ``ccrs.PlateCarree`` when calling
-  `matplotlib.axes.Axes.fill` on `CartopyAxes` (:issue:`193`).
+  Example usage: ``ax.contour(x, y, z, nozero=True)``.
+* Add `positive` and `negative` keyword args to `cmap_changer` for requesting
+  automatically-generated all-positive or all-negative levels (:commit:`335d58f4`).
+  Example usage: ``ax.contourf(x, y, z, positive=True)``.
+* Add `xmin`, `xmax`, `ymin`, and `ymax` keyword args to
+  `~proplot.axes.CartesianAxes.format` as alternatives to `xlim` and `ylim`
+  (:commit:`ae0719b7`). Example usage: ``ax.format(xmin=0)`` as opposed to
+  ``ax.format(xlim=(0, None))``.
 * Add ``'rotation'`` keyword to `colorbar_wrapper` for rotating colorbar tick
-  labels (:commit:`2d835f20`).
+  labels, like ``'xrotation'`` and ``'yrotation'`` (:commit:`2d835f20`).
 * Add ``'tickdir'`` and ``'tickdirection'`` keywords to `colorbar_wrapper` for
-  controlling tick style, like ``'xtickdir'`` and ``'ytickdir'`` (:commit:`f377f090]`).
+  controlling tick style, like ``'xtickdir'`` and ``'ytickdir'`` (:commit:`f377f090`).
 * Allow passing full "side" names to `lonlabels` and `latlabels`, e.g. ``'left'`` or
   ``'bottom'`` (:commit:`a5060f67`). This is more consistent with rest of package.
-* Use `Artist` labels for colorbar tick labels when making colorbars from lists of
-  artists if `values` was not passed or labels are non-numeric, and rotate them
-  90 degrees for horizontal colorbars by default (:commit:`ed8e1314`).
+* Allow specifying labels for auto-generated legends using a ``'labels'`` key
+  in a `legend_kw` keyword argument (:commit:`a11d1813`).
+* Set default transform to ``ccrs.PlateCarree`` when calling `matplotlib.axes.Axes.fill`
+  on `CartopyAxes` (:issue:`193`). This is more consistent with rest of package.
+* Use `Artist` labels for the default colorbar tick labels when making colorbars from
+  lists of artists if `values` was not passed -- and if labels are non-numeric, rotate
+  them 90 degrees for horizontal colorbars by default (:commit:`ed8e1314`). Makes
+  the choice between "traditional" legends and "colorbar-style" legends for objects
+  whose colors represent a colormap gradation more seamless.
+* Add suffix ``'_copy'`` to colormaps converted with `to_listed` and
+  `to_linear_segmented` to avoid accidental overwriting (:commit:`91998e93`).
+* If available, use :rcraw:`pcolormesh.snap` to repair overlap in transparent colorbar
+  solids rather than manual-blending workaround (:commit:`c9f59e49`).
 
 .. rubric:: Bug fixes
 
-* Fix issue where axis is inverted for histogram plots (:issue:`191`).
+* Fix issue where axis is accidentally inverted for histogram plots (:issue:`191`).
+* Fix issue where numeric zero cannot be applied as legend label (:commit:`02417c8c`).
+* Fix issue where `~proplot.colors.Cycle` fails to register new names and fails to
+  display in `~proplot.demos.show_cycles` (:commit:`94ffc1dc`, :commit:`4a7a3c79`).
 * Fix issue where proplot fails to detect legend entries for "outer"
   legends (:issue:`189`).
-* Fix issue where list-of-list-style legend handle and label input fails completely
-  (:commit:`a298f81f`). This can be used to specify "centered" legend rows.
+* Fix issue where proplot ignores `set_under` and `set_over` values when translating
+  matplotlib colormap classes to proplot subclasses (:issue:`190`).
+* Fix issue where `~proplot.colors.DiscreteNorm` does not account for `set_under` and
+  `set_over` colors distinct from adjacent in-bounds colors (:issue:`190`).
+* Fix issue where multiple-artist legend entries (e.g., for lines indicating means and
+  shading indicating uncertainty) are accidentally truncated (:commit:`a11d1813`).
+* Fix issue where list-of-list-style `legend()` handle and label input fails completely
+  (:commit:`a298f81f`). This input style is used to specify "centered" legend rows.
 * Fix issue where `hist` with `xarray.DataArray` or `pandas.Dataframe` input causes
   erroneous axis labels; use labels for legend instead (:issue:`195`).
 * Fix matplotlib bug where `altx` and `alty` reset the minor locator of the shared
@@ -128,10 +154,11 @@ ProPlot v0.7.0 (2021-06-30)
   rather than passing it to `colorbar()` (:commit:`a23e7043`).
 * For rc lookup with `context=True`, use most restrictive search mode rather than least.
   Otherwise `ax.format()` calls inside context blocks can be overwritten with the
-  context block values in subsequent `ax.format()` calls (:commit:`8005fcc1`).
+  default rc values in subsequent `ax.format()` calls (:commit:`8005fcc1`).
 
 .. rubric:: Documentation
 
+* Use ``pplt`` as default package abbreviation throughout documentation (:issue:`139`).
 * Fix ``from_file`` docstrings (:commit:`54f1bc7c`).
 
 
@@ -168,7 +195,7 @@ ProPlot v0.6.3 (2020-06-02)
 
 .. rubric:: Bug fixes
 
-* Fix issue where import fails if cartopy is not installed (:commit:`e29d49e8`).
+* Fix issue where proplot import fails if cartopy is not installed (:commit:`e29d49e8`).
 
 ProPlot v0.6.2 (2020-06-02)
 ===========================
