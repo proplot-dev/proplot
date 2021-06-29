@@ -132,7 +132,7 @@ FORMATTERS = {  # note default LogFormatter uses ugly e+00 notation
     'logit': mticker.LogitFormatter,
     'eng': mticker.EngFormatter,
     'percent': mticker.PercentFormatter,
-    'index': mticker.IndexFormatter,
+    'index': pticker._IndexFormatter,
     'e': partial(pticker.FracFormatter, symbol=r'$e$', number=np.e),
     'pi': partial(pticker.FracFormatter, symbol=r'$\pi$', number=np.pi),
     'tau': partial(pticker.FracFormatter, symbol=r'$\tau$', number=2 * np.pi),
@@ -1080,7 +1080,7 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
     elif np.iterable(formatter):
         # List of strings
         if index:
-            formatter = mticker.IndexFormatter(formatter)
+            formatter = pticker._IndexFormatter(formatter)
         else:
             formatter = mticker.FixedFormatter(formatter)
     else:
