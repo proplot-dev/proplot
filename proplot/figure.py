@@ -340,7 +340,7 @@ class Figure(mfigure.Figure):
 
         # Draw and setup panel
         with self._context_authorize_add_subplot():
-            pax = self.add_subplot(gridspec[idx1, idx2], projection='cartesian')  # noqa: E501
+            pax = self.add_subplot(gridspec[idx1, idx2], projection='proplot_cartesian')
         pgrid.append(pax)
         pax._panel_side = side
         pax._panel_share = share
@@ -450,7 +450,7 @@ class Figure(mfigure.Figure):
 
         # Draw and setup panel
         with self._context_authorize_add_subplot():
-            pax = self.add_subplot(gridspec[idx1, idx2], projection='cartesian')  # noqa: E501
+            pax = self.add_subplot(gridspec[idx1, idx2], projection='proplot_cartesian')
         pgrid = getattr(self, '_' + side + '_panels')
         pgrid.append(pax)
         pax._panel_side = side
@@ -1064,7 +1064,7 @@ class Figure(mfigure.Figure):
         if (
             len(args) == 1
             and isinstance(args[0], mgridspec.SubplotSpec)
-            and kwargs.get('projection', None) in ('cartesian', 'polar2', 'basemap', 'cartopy')  # noqa: E501
+            and kwargs.get('projection', '').startswith('proplot_')
         ):
             kwargs['_subplotspec'] = args[0]  # mpl>=3.4.0 workaround: see Axes.__init__
         return super().add_subplot(*args, **kwargs)

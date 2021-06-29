@@ -703,7 +703,7 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
     the equator by default.
     """
     #: The registered projection name.
-    name = 'cartopy'
+    name = 'proplot_cartopy'
     _proj_north = (
         pcrs.NorthPolarStereo,
         pcrs.NorthPolarGnomonic,
@@ -1236,7 +1236,7 @@ class BasemapAxes(GeoAxes):
     to plotting methods by default.
     """
     #: The registered projection name.
-    name = 'basemap'
+    name = 'proplot_basemap'
     _proj_north = ('npaeqd', 'nplaea', 'npstere')
     _proj_south = ('spaeqd', 'splaea', 'spstere')
     _proj_polar = _proj_north + _proj_south

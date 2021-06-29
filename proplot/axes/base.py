@@ -1200,7 +1200,7 @@ optional
 
             # Draw colorbar axes
             with self.figure._context_authorize_add_subplot():
-                ax = self.figure.add_subplot(subplotspec, projection='cartesian')  # noqa: E501
+                ax = self.figure.add_subplot(subplotspec, projection='proplot_cartesian')  # noqa: E501
             self.add_child_axes(ax)
 
             # Location
@@ -1508,31 +1508,30 @@ optional
         label = kwargs.pop('label', 'inset_axes')
         proj = _not_none(proj=proj, projection=projection)
         proj_kw = _not_none(proj_kw=proj_kw, projection_kw=projection_kw, default={})
+        if basemap is not None:
+            proj_kw['basemap'] = basemap
 
         # Inherit from current axes
         if proj is None:
-            proj = self.name
-            if basemap is not None:
-                proj_kw['basemap'] = basemap
+            proj = self.name  # will have 'proplot_' prefix
             if proj_kw:
                 warnings._warn_proplot(
                     'Inheriting projection from the main axes. '
                     f'Ignoring proj_kw keyword args: {proj_kw}'
                 )
-            if proj in ('cartopy', 'basemap'):
-                map_projection = copy.copy(self.projection)
-                kwargs.setdefault('map_projection', map_projection)
+            if proj in ('proplot_cartopy', 'proplot_basemap'):
+                m = copy.copy(self.projection)
+                kwargs.setdefault('map_projection', m)
 
         # Create new projection
         elif proj == 'cartesian':
-            pass
+            proj = 'proplot_cartesian'
         elif proj == 'polar':
-            proj = 'polar2'  # custom proplot name
+            proj = 'proplot_polar'
         else:
-            proj_kw.setdefault('basemap', basemap)
-            map_projection = constructor.Proj(proj, **proj_kw)
-            kwargs.setdefault('map_projection', map_projection)
-            proj = 'basemap' if proj_kw['basemap'] else 'cartopy'
+            m = constructor.Proj(proj, **proj_kw)
+            kwargs.setdefault('map_projection', m)
+            proj = 'proplot_' + m._proj_package
 
         # This puts the rectangle into figure-relative coordinates.
         locator = self._make_inset_locator(bounds, transform)

@@ -203,7 +203,7 @@ class CartesianAxes(base.Axes):
     methods.
     """
     #: The registered projection name.
-    name = 'cartesian'
+    name = 'proplot_cartesian'
 
     def __init__(self, *args, **kwargs):
         """
@@ -1228,7 +1228,7 @@ class CartesianAxes(base.Axes):
             raise RuntimeError('No more than *two* twin axes are allowed.')
         with self.figure._context_authorize_add_subplot():
             ylocator = self.yaxis.get_minor_locator()
-            ax = self._make_twin_axes(sharey=self, projection='cartesian')
+            ax = self._make_twin_axes(sharey=self, projection='proplot_cartesian')
             ax.yaxis.set_minor_locator(ylocator)
             ax.yaxis.isDefault_minloc = True
         ax.set_autoscaley_on(self.get_autoscaley_on())
@@ -1252,7 +1252,7 @@ class CartesianAxes(base.Axes):
             raise RuntimeError('No more than *two* twin axes are allowed.')
         with self.figure._context_authorize_add_subplot():
             xlocator = self.xaxis.get_minor_locator()
-            ax = self._make_twin_axes(sharex=self, projection='cartesian')
+            ax = self._make_twin_axes(sharex=self, projection='proplot_cartesian')
             ax.xaxis.set_minor_locator(xlocator)
             ax.xaxis.isDefault_minloc = True
         ax.set_autoscalex_on(self.get_autoscalex_on())
