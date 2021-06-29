@@ -4117,7 +4117,10 @@ or colormap-spec
     cmap = cb.cmap
     if not cmap._isinit:
         cmap._init()
-    if any(cmap._lut[:-1, 3] < 1):
+    if (
+        any(cmap._lut[:-1, 3] < 1)
+        and ('pcolormesh.snap' not in rc or not rc['pcolormesh.snap'])
+    ):
         warnings._warn_proplot(
             f'Using manual alpha-blending for {cmap.name!r} colorbar solids.'
         )
