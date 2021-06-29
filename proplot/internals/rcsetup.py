@@ -76,11 +76,11 @@ _rc_renamed = {  # {old_key: (new_key, version)} dictionary
 }
 
 # ProPlot overrides of matplotlib default style
+# NOTE: Hard to say what best value for 'margin' is. 0 is bad for bar plots and scatter
+# plots, 0.05 is good for line plot in y direction but not x direction.
 # WARNING: Critical to include every parameter here that can be changed by a
 # "meta" setting so that _get_default_param returns the value imposed by *proplot*
 # and so that "changed" settings detectd by RcConfigurator.save are correct.
-# NOTE: Hard to say what best value for 'margin' is. 0 is bad for bar plots and scatter
-# plots, 0.05 is good for line plot in y direction but not x direction.
 _rc_matplotlib_default = {
     'axes.axisbelow': GRIDBELOW,
     'axes.formatter.use_mathtext': MATHTEXT,

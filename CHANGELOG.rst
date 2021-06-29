@@ -78,6 +78,8 @@ ProPlot v0.7.0 (2021-06-30)
   Make the ``Browns1`` map the most colorful/vibrant one, just
   like ``Greens1`` and ``Blues1``; split up the ``RedPurple`` maps into ``Reds`` and
   ``Purples``; and add the ``Yellows`` category from the ``Oranges`` maps (:commit:`8be0473f`).
+* Rename seldom-used `Figure` argument `fallback_to_cm` to more understandable
+  `mathtext_fallback` (:pr:`251`).
 
 .. rubric:: Features
 
@@ -121,6 +123,16 @@ ProPlot v0.7.0 (2021-06-30)
 
 .. rubric:: Bug fixes
 
+* Fix 3 fatal issues preventing proplot import and basic usage in matplotlib >= 3.4
+  (:pr:`251`).
+* Fix deprecation warnings associated with matplotlib 3.4 refactoring of
+  subplot classes (:pr:`251`).
+* Fix deprecated reference to :rc:`fallback_to_cm` in matplotlib >= 3.3
+  (:pr:`251`).
+* Fix `~matplotlib.ticker.IndexFormatter` deprecation warning in matplotlib >= 3.3 by
+  replacing with proplot-local copy (:pr:`251`).
+* Fix deprecation warning in matplotlib >= 3.3 -- add `extend` as mappable attribute
+  rather than passing it to `colorbar()` (:commit:`a23e7043`).
 * Fix issue where axis is accidentally inverted for histogram plots (:issue:`191`).
 * Fix issue where numeric zero cannot be applied as legend label (:commit:`02417c8c`).
 * Fix issue where `~proplot.colors.Cycle` fails to register new names and fails to
@@ -150,8 +162,6 @@ ProPlot v0.7.0 (2021-06-30)
   nested ragged arrays from parametric coords (:commit:`b16d56a8`).
 * Fix issue where where `SubplotSpec.get_active_rows_columns` returned incorrect
   number of "active" rows and columns (:commit:`5cf20b84`).
-* Fix deprecation warning in matplotlib >= 3.3 -- add `extend` as mappable attribute
-  rather than passing it to `colorbar()` (:commit:`a23e7043`).
 * For rc lookup with `context=True`, use most restrictive search mode rather than least.
   Otherwise `ax.format()` calls inside context blocks can be overwritten with the
   default rc values in subsequent `ax.format()` calls (:commit:`8005fcc1`).

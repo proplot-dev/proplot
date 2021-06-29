@@ -193,7 +193,7 @@ class Axes(maxes.Axes):
     Lowest-level axes subclass. Handles titles and axis
     sharing. Adds several new methods and overrides existing ones.
     """
-    def __init__(self, *args, number=None, main=False, **kwargs):
+    def __init__(self, *args, number=None, main=False, _subplotspec=None, **kwargs):
         """
         Parameters
         ----------
@@ -259,7 +259,7 @@ class Axes(maxes.Axes):
 
         # Figure row and column labels
         # NOTE: Most of these sit empty for most subplots
-        # TODO: Implement this with EdgeStack
+        # TODO: Implement this with EdgeStack, avoid creating silly empty objects
         coltransform = mtransforms.blended_transform_factory(
             self.transAxes, self.figure.transFigure
         )
@@ -303,9 +303,20 @@ class Axes(maxes.Axes):
         # Abc label
         self._abc_label = self.text(0, 0, '', transform=transform)
 
-        # Automatic axis sharing and formatting
-        # TODO: Instead of format() call specific setters
+        # Subplot spec
+        # WARNING: For mpl>=3.4.0 subplotspec assigned *after* initialization using
+        # set_subplotspec. Tried to defer to setter but really messes up both format()
+        # and _auto_share_setup(). Instead use workaround: Have Figure.add_subplot pass
+        # subplotspec as a hidden keyword arg. Non-subplots don't need this arg.
+        # See https://github.com/matplotlib/matplotlib/pull/18564
+        if _subplotspec is not None:
+            self.set_subplotspec(_subplotspec)
+
+        # Automatic axis sharing
         self._auto_share_setup()
+
+        # Automatic formatting
+        # TODO: Apply specific setters instead of format()
         self.format(rc_mode=1)  # mode == 1 applies the custom proplot params
 
     def _auto_share_setup(self):

@@ -17,7 +17,6 @@ from collections import namedtuple
 
 import cycler
 import matplotlib as mpl
-import matplotlib.cbook as cbook
 import matplotlib.colors as mcolors
 import matplotlib.font_manager as mfonts
 import matplotlib.mathtext  # noqa
@@ -29,6 +28,11 @@ from . import colors as pcolors
 from .internals import ic  # noqa: F401
 from .internals import _not_none, docstring, rcsetup, timers, warnings
 from .utils import to_xyz, units
+
+try:
+    from matplotlib.cbook import _suppress_matplotlib_deprecation_warning  # mpl<3.4.0
+except ImportError:
+    from matplotlib._api import suppress_matplotlib_deprecation_warning as _suppress_matplotlib_deprecation_warning  # noqa: E501
 
 try:
     from IPython import get_ipython
@@ -1094,7 +1098,7 @@ def _get_default_dict():
     # WARNING: Some deprecated rc params remain in dictionary as None so we
     # filter them out. Beware if hidden attribute changes.
     rcdict = _get_filtered_dict(mpl.rcParamsDefault, warn=False)
-    with cbook._suppress_matplotlib_deprecation_warning():
+    with _suppress_matplotlib_deprecation_warning():
         rcdict = dict(RcParams(rcdict))
     for attr in ('_deprecated_remain_as_none', '_deprecated_set'):
         if hasattr(mpl, attr):  # _deprecated_set is in matplotlib before v3
@@ -1456,10 +1460,19 @@ def register_fonts():
     if not fnames_all >= fnames_proplot:
         warnings._warn_proplot('Rebuilding font cache.')
         if hasattr(mfonts.fontManager, 'addfont'):
-            # New API lets us add font files manually
+            # New API lets us add font files manually and deprecates TTFPATH. However,
+            # to cache fonts added this way, we must call json_dump explicitly.
+            # NOTE: Previously, cache filename was specified as _fmcache variable, but
+            # recently became inaccessible. Must reproduce mpl code instead! Annoying.
+            # NOTE: Older mpl versions used fontList.json as the cache, but these
+            # versions also did not have 'addfont', so makes no difference.
             for fname in fnames_proplot:
                 mfonts.fontManager.addfont(fname)
-            mfonts.json_dump(mfonts.fontManager, mfonts._fmcache)
+            cache = os.path.join(
+                mpl.get_cachedir(),
+                f'fontlist-v{mfonts.FontManager.__version__}.json'
+            )
+            mfonts.json_dump(mfonts.fontManager, cache)
         else:
             # Old API requires us to modify TTFPATH
             # NOTE: Previously we tried to modify TTFPATH before importing
