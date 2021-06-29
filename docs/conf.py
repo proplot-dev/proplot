@@ -81,18 +81,12 @@ extlinks = {
     'pr': ('https://github.com/lukelbd/proplot/pull/%s', 'GH#'),
 }
 
-# Copy button
-# Use selectors for nbsphinx input cells from custom.css
-# TODO: Fix this, doesn't work
-copybutton_prompt_text = '>>>'
-# copybutton_selector = ',\n'.join((
-#     'code',
-#     '.rst-content tt',
-#     '.rst-content code',
-#     ".rst-content div:not(.stderr)>div[class^='highlight']",
-#     '.rst-content div.nbinput>div.input_area',
-#     '.rst-content pre.literal-bloc',
-# ))
+# Cupybutton configuration
+# See: https://sphinx-copybutton.readthedocs.io/en/latest/
+copybutton_prompt_text = r'>>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: '
+copybutton_prompt_is_regexp = True
+copybutton_only_copy_prompt_lines = True
+copybutton_remove_prompts = True
 
 # Give *lots* of time for cell execution!
 # Note nbsphinx compiles *all* notebooks in docs unless excluded
