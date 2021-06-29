@@ -1363,7 +1363,7 @@ def Proj(name, basemap=None, **kwargs):
             raise RuntimeError(
                 'Basemap is no longer maintained and is incompatible with '
                 'matplotlib >= 3.3. Please use cartopy as your cartographic '
-                'plotting backend or downgrade to matplotlib <=3.2.'
+                'plotting backend or downgrade to matplotlib <= 3.2.'
             )
         if 'lonlim' in kwargs:
             kwargs['llcrnrlon'], kwargs['urcrnrlon'] = kwargs.pop('lonlim')

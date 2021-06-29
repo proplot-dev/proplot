@@ -1465,7 +1465,7 @@ def register_fonts():
             # NOTE: Previously, cache filename was specified as _fmcache variable, but
             # recently became inaccessible. Must reproduce mpl code instead! Annoying.
             # NOTE: Older mpl versions used fontList.json as the cache, but these
-            # versions aldo did not have 'addfont', so makes no difference.
+            # versions also did not have 'addfont', so makes no difference.
             for fname in fnames_proplot:
                 mfonts.fontManager.addfont(fname)
             cache = os.path.join(

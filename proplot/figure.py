@@ -99,7 +99,7 @@ def _canvas_preprocessor(canvas, method):
         local = fig._mathtext_fallback
         if local is None:
             context = {}
-        elif _version_mpl >= _version('3.4.0'):
+        elif _version_mpl >= _version('3.4'):
             context = {'mathtext.fallback': local if isinstance(local, str) else 'cm' if local else None}  # noqa: E501
         else:
             context = {'mathtext.fallback_to_cm': bool(local)}
@@ -827,7 +827,7 @@ class Figure(mfigure.Figure):
                     gridspec_ss._subplot_spec = subplotspec_new
                 else:
                     raise ValueError('Unexpected GridSpecFromSubplotSpec nesting.')
-                if _version_mpl >= _version('3.4.0'):
+                if _version_mpl >= _version('3.4'):
                     ax.set_position(ax.get_subplotspec().get_position(ax.figure))
                 else:
                     ax.update_params()
