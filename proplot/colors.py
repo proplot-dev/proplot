@@ -2493,7 +2493,7 @@ if mcm.get_cmap is not _get_cmap:
 if not isinstance(_cmap_database, ColormapDatabase):
     _cmap_database = {
         key: value for key, value in _cmap_database.items()
-        if key[-2:] != '_r' and key[-8:] != '_shifted'
+        if key[-2:] != '_r' and key[-2:] != '_s'
     }
     _cmap_database = ColormapDatabase(_cmap_database)
     setattr(mcm, _cmap_database_attr, _cmap_database)
