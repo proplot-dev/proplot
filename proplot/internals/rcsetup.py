@@ -208,7 +208,7 @@ _rc_matplotlib_default = {
     'savefig.dpi': 1200,  # academic journal recommendations for raster line art
     'savefig.facecolor': 'white',  # different from figure.facecolor
     'savefig.format': 'pdf',  # most users use bitmap, but vector graphics are better
-    'savefig.transparent': True,
+    'savefig.transparent': False,
     'xtick.direction': TICKDIR,
     'xtick.labelsize': LABELSIZE,
     'xtick.major.pad': TICKPAD,
