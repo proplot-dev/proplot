@@ -91,6 +91,8 @@ ProPlot v0.7.0 (2021-06-30)
 * Use same default-level generation algorithm for contour plots without colormaps as for
   all other colormap plots (:commit:`10e0f13b`). Makes automatically-generated
   solid-color contours and colormap-style contours identical.
+* Use proplot TeX Gyre fonts with `~proplot.config.use_style` styles unless specified
+  otherwise (:commit:`6d7444fe`). Styles otherwise build on matplotlib defaults.
 * Add `nozero` keyword arg to `cmap_changer` to remove the zero contour
   from automatically generated levels (:commit:`10e0f13b`).
   Example usage: ``ax.contour(x, y, z, nozero=True)``.
@@ -166,10 +168,14 @@ ProPlot v0.7.0 (2021-06-30)
   Otherwise `ax.format()` calls inside context blocks can be overwritten with the
   default rc values in subsequent `ax.format()` calls (:commit:`8005fcc1`).
 
+.. rubric:: Internals
+
+* Add prefix ``'proplot_'`` to registered axes "projections" (:commit:`be7ef21e`). More
+  clear and guards against conflicts with external packages and other mpl versions.
+
 .. rubric:: Documentation
 
-* Use ``pplt`` as default package abbreviation throughout documentation (:issue:`139`).
-* Fix ``from_file`` docstrings (:commit:`54f1bc7c`).
+* Fix incomplete ``cmap.from_file`` docstrings (:commit:`54f1bc7c`).
 
 
 ProPlot v0.6.4 (2020-06-13)
