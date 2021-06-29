@@ -1,8 +1,11 @@
 # Hard requirements for running tests
-# NOTE: Basemap is broken as of matplotlib >=3.3 so for documentation
+# NOTE: Keep up-to-date with docs/environment.yml!
+# NOTE: Basemap is broken as of matplotlib >= 3.3 so for documentation
 # use 3.2.1. Probably lots of basemap holdouts for next ~5 years.
 # NOTE: PyQt5 is needed by pyplot, RTD server *happens* to already have it
 # but creating local environment will fail.
+# NOTE: Jinja >= 3.0 and nbsphinx >= 0.8.2 seem to break default ReST roles when
+# jupytext notebooks are converted to HTML. Interpreted as italics instead.
 name: proplot-dev
 channels:
   - conda-forge
@@ -19,15 +22,16 @@ dependencies:
   - pip
   - pip:
     - ..
-    - pyqt5
     - flake8
     - isort==4.3.21
     - doc8
     - pytest
     - pytest-sugar
+    - pyqt5
     - sphinx>=3.0
     - sphinx-copybutton
     - sphinx_rtd_theme==0.4.3
     - jupytext
-    - nbsphinx
+    - jinja2==2.11.3
+    - nbsphinx==0.8.1
     - git+https://github.com/lukelbd/sphinx-automodapi@v0.9.proplot-mods
