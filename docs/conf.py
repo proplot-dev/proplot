@@ -208,12 +208,13 @@ pygments_style = 'none'
 # Create local pygments copies
 # Previously used: https://github.com/richleland/pygments-css
 # But do not want to depend on some random repository
+# from pygments.styles import get_all_styles  # noqa: E402
 from pygments.formatters import HtmlFormatter  # noqa: E402
-from pygments.styles import get_all_styles  # noqa: E402
 path = os.path.join('_static', 'pygments')
 if not os.path.isdir(path):
     os.mkdir(path)
-for style in get_all_styles():
+# for style in get_all_styles():
+for style in ('pastie', 'monokai'):  # WARNING: update when _static/custom.js changes
     path = os.path.join('_static', 'pygments', style + '.css')
     if os.path.isfile(path):
         continue
