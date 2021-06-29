@@ -728,9 +728,7 @@ def Cycle(
     # Merge cycler objects
     elif all(isinstance(arg, cycler.Cycler) for arg in args):
         if kwargs:
-            warnings._warn_proplot(
-                f'Ignoring Cycle() keyword arg(s) {kwargs}.'
-            )
+            warnings._warn_proplot(f'Ignoring Cycle() keyword arg(s) {kwargs}.')
         if len(args) == 1:
             return args[0]
         else:
@@ -762,10 +760,8 @@ def Cycle(
 
     # Build cycler, make sure lengths are the same
     for key, value in props.items():
-        if len(value) < nprops:
-            value[:] = [
-                value[i % len(value)] for i in range(nprops)
-            ]  # make loop double back
+        if len(value) < nprops:  # double back if necessary
+            value[:] = [value[i % len(value)] for i in range(nprops)]
     cycle = cycler.cycler(**props)
     cycle.name = _not_none(name, '_no_name')
     return cycle
