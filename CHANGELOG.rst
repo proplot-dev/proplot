@@ -69,6 +69,9 @@ ProPlot v0.7.0 (2021-06-30)
 
 .. rubric:: Deprecated
 
+* Change default :rcraw:`savefig.transparent` back to ``False`` (:pr:`252`). Dubious
+  justification for ``True`` in the first place, and makes default PNG proplot figures
+  unreadable wherever "dark mode" is enabled.
 * Rename `SciVisColor` colormaps from ``Blue1``, ``Blue2``, etc. to plurals ``Blues1``,
   ``Blues2``, etc. to avoid name conflict with open-color colors. This permits making
   monochromatic open-color maps with e.g. ``plot.Colormap('blue9')``, and feels more
