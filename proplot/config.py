@@ -1455,10 +1455,19 @@ def register_fonts():
     if not fnames_all >= fnames_proplot:
         warnings._warn_proplot('Rebuilding font cache.')
         if hasattr(mfonts.fontManager, 'addfont'):
-            # New API lets us add font files manually
+            # New API lets us add font files manually and deprecates TTFPATH. However,
+            # to cache fonts added this way, we must call json_dump explicitly.
+            # NOTE: Previously, cache filename was specified as _fmcache variable, but
+            # recently became inaccessible. Must reproduce mpl code instead! Annoying.
+            # NOTE: Older mpl versions used fontList.json as the cache, but these
+            # versions aldo did not have 'addfont', so makes no difference.
             for fname in fnames_proplot:
                 mfonts.fontManager.addfont(fname)
-            mfonts.json_dump(mfonts.fontManager, mfonts._fmcache)
+            cache = os.path.join(
+                mpl.get_cachedir(),
+                f'fontlist-v{mfonts.FontManager.__version__}.json'
+            )
+            mfonts.json_dump(mfonts.fontManager, cache)
         else:
             # Old API requires us to modify TTFPATH
             # NOTE: Previously we tried to modify TTFPATH before importing
