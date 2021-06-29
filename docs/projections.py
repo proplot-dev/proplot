@@ -142,7 +142,7 @@ axs[2].format(
 #
 #    * ProPlot ensures that polar cartopy projections like
 #      `~cartopy.crs.NorthPolarStereo` have circular boundaries (see `this example\
-#      <https://scitools.org.uk/cartopy/docs/latest/gallery/always_circular_stereo>`__
+#      <https://scitools.org.uk/cartopy/docs/latest/gallery/lines_and_polygons/always_circular_stereo.html>`__
 #      from the cartopy website).
 #    * By default, non-polar cartopy projections are forced to have global extent
 #      with `~cartopy.mpl.geoaxes.GeoAxes.set_global` and polar cartopy projections

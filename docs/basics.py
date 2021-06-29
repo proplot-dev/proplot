@@ -55,11 +55,8 @@
 #    `matplotlib backend <https://matplotlib.org/faq/usage_faq#what-is-a-backend>`__
 #    -- the default background color is white when the figure is saved. This is done
 #    by setting :rcraw:`figure.facecolor` to gray, in order to improve contrast
-#    when working with figures.
-#    ProPlot also makes the default saved figure background *transparent*
-#    by setting :rcraw:`savefig.transparent` to ``True``
-#    and changes the default :rcraw:`savefig.format` from PNG to PDF
-#    for the following reasons:
+#    when working with figures, similar to MATLAB. ProPlot also changes the default
+#    :rcraw:`savefig.format` from PNG to PDF for the following reasons:
 #
 #        #. Vector graphic formats are infinitely scalable.
 #        #. Vector graphic formats are preferred by academic journals.
