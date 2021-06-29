@@ -28,6 +28,7 @@ import numpy.ma as ma
 
 from .. import colors as pcolors
 from .. import constructor
+from .. import ticker as pticker
 from ..config import rc
 from ..internals import ic  # noqa: F401
 from ..internals import (
@@ -572,19 +573,22 @@ def standardize_1d(self, func, *args, autoformat=None, **kwargs):
     x_index = None  # index version of 'x'
     if not hasattr(self, 'projection'):
         # First handle string-type x-coordinates
+        # NOTE: Why FixedLocator and not IndexLocator? The latter requires plotting
+        # lines or else error is raised... very strange.
+        # NOTE: Why IndexFormatter and not FixedFormatter? The former ensures labels
+        # correspond to indices while the latter can mysteriously truncate labels.
         kw = {}
         xname = 'y' if orientation == 'horizontal' else 'x'
         yname = 'x' if xname == 'y' else 'y'
-        if _is_string(x):
-            if name in ('hist',):
-                kwargs.setdefault('labels', list(x))
-            else:
-                x_index = np.arange(len(x))
-                kw[xname + 'locator'] = mticker.FixedLocator(x_index)
-                kw[xname + 'formatter'] = mticker.IndexFormatter(x)
-                kw[xname + 'minorlocator'] = mticker.NullLocator()
-                if name == 'boxplot':  # otherwise IndexFormatter is overridden
-                    kwargs['labels'] = x
+        if _is_string(x) and name in ('hist',):
+            kwargs.setdefault('labels', _to_ndarray(x))
+        elif _is_string(x):
+            x_index = np.arange(len(x))
+            kw[xname + 'locator'] = mticker.FixedLocator(x_index)
+            kw[xname + 'formatter'] = pticker._IndexFormatter(_to_ndarray(x))
+            kw[xname + 'minorlocator'] = mticker.NullLocator()
+            if name == 'boxplot':  # otherwise IndexFormatter is overridden
+                kwargs['labels'] = _to_ndarray(x)
 
         # Next handle labels if 'autoformat' is on
         # NOTE: Do not overwrite existing labels!
@@ -601,9 +605,8 @@ def standardize_1d(self, func, *args, autoformat=None, **kwargs):
                 if label and not getattr(self, f'get_{xname}label')():
                     kw[xname + 'label'] = label
                 # Reversed axis
-                if name not in ('scatter',):
-                    if x_index is None and len(x) > 1 and x[1] < x[0]:
-                        kw[xname + 'reverse'] = True
+                if name not in ('scatter',) and x_index is None and len(x) > 1 and x[1] < x[0]:  # noqa: E501
+                    kw[xname + 'reverse'] = True
 
         # Appply
         if kw:
@@ -613,7 +616,7 @@ def standardize_1d(self, func, *args, autoformat=None, **kwargs):
     if x_index is not None:
         x = x_index
     if name in ('boxplot', 'violinplot'):
-        ys = [_to_ndarray(yi) for yi in ys]  # store naked array
+        ys = list(map(_to_ndarray, ys))  # store naked arrays
         kwargs['positions'] = x
 
     # Basemap shift x coordinates without shifting y, we fix this!
@@ -824,18 +827,22 @@ def standardize_2d(
     # Auto axis labels
     # TODO: Check whether isinstance(GeoAxes) instead of checking projection attribute
     kw = {}
-    xi = yi = None
+    x_index = y_index = None
     if not hasattr(self, 'projection'):
         # First handle string-type x and y-coordinates
+        # NOTE: Why FixedLocator and not IndexLocator? The latter requires plotting
+        # lines or else error is raised... very strange.
+        # NOTE: Why IndexFormatter and not FixedFormatter? The former ensures labels
+        # correspond to indices while the latter can mysteriously truncate labels.
         if _is_string(x):
-            xi = np.arange(len(x))
-            kw['xlocator'] = mticker.FixedLocator(xi)
-            kw['xformatter'] = mticker.IndexFormatter(x)
+            x_index = np.arange(len(x))
+            kw['xlocator'] = mticker.FixedLocator(x_index)
+            kw['xformatter'] = pticker._IndexFormatter(_to_ndarray(x))
             kw['xminorlocator'] = mticker.NullLocator()
         if _is_string(y):
-            yi = np.arange(len(y))
-            kw['ylocator'] = mticker.FixedLocator(yi)
-            kw['yformatter'] = mticker.IndexFormatter(y)
+            y_index = np.arange(len(y))
+            kw['ylocator'] = mticker.FixedLocator(y_index)
+            kw['yformatter'] = pticker._IndexFormatter(_to_ndarray(y))
             kw['yminorlocator'] = mticker.NullLocator()
 
         # Handle labels if 'autoformat' is on
@@ -857,10 +864,10 @@ def standardize_2d(
         self.format(**kw)
 
     # Use *index coordinates* from here on out if input was array of strings
-    if xi is not None:
-        x = xi
-    if yi is not None:
-        y = yi
+    if x_index is not None:
+        x = x_index
+    if y_index is not None:
+        y = y_index
 
     # Auto axes title and colorbar label
     # NOTE: Do not overwrite existing title!
