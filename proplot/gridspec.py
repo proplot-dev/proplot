@@ -8,7 +8,7 @@ import numpy as np
 
 from .config import rc
 from .internals import ic  # noqa: F401
-from .internals import _not_none
+from .internals import _not_none, _version, _version_mpl
 from .utils import units
 
 __all__ = ['GridSpec', 'SubplotSpec']
@@ -583,8 +583,11 @@ class GridSpec(mgridspec.GridSpec):
             subplotspec = ax.get_subplotspec().get_topmost_subplotspec()
             if subplotspec.get_gridspec() is not self:
                 continue
-            ax.update_params()
-            ax.set_position(ax.get_subplotspec().get_position(ax.figure))
+            if _version_mpl >= _version('3.4.0'):
+                ax.set_position(ax.get_subplotspec().get_position(ax.figure))
+            else:
+                ax.update_params()
+                ax.set_position(ax.figbox)  # equivalent to above
         fig.stale = True
 
 

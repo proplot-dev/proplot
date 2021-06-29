@@ -13,7 +13,14 @@ from . import axes as paxes
 from . import gridspec as pgridspec
 from .config import rc
 from .internals import ic  # noqa: F401
-from .internals import _dummy_context, _not_none, _state_context, warnings
+from .internals import (
+    _dummy_context,
+    _not_none,
+    _state_context,
+    _version,
+    _version_mpl,
+    warnings,
+)
 from .utils import units
 
 __all__ = ['Figure']
@@ -811,11 +818,12 @@ class Figure(mfigure.Figure):
                 elif subplotspec_top is gridspec_ss._subplot_spec:
                     gridspec_ss._subplot_spec = subplotspec_new
                 else:
-                    raise ValueError(
-                        'Unexpected GridSpecFromSubplotSpec nesting.'
-                    )
-                ax.update_params()
-                ax.set_position(ax.get_subplotspec().get_position(ax.figure))
+                    raise ValueError('Unexpected GridSpecFromSubplotSpec nesting.')
+                if _version_mpl >= _version('3.4.0'):
+                    ax.set_position(ax.get_subplotspec().get_position(ax.figure))
+                else:
+                    ax.update_params()
+                    ax.set_position(ax.figbox)  # equivalent to above
 
         # Adjust figure size *after* gridspecs are fixed
         self.set_size_inches(figsize, auto=True)
