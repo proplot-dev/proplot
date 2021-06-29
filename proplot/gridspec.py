@@ -584,7 +584,7 @@ class GridSpec(mgridspec.GridSpec):
             if subplotspec.get_gridspec() is not self:
                 continue
             ax.update_params()
-            ax.set_position(ax.figbox)
+            ax.set_position(ax.get_subplotspec().get_position(ax.figure))
         fig.stale = True
 
 

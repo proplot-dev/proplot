@@ -815,7 +815,7 @@ class Figure(mfigure.Figure):
                         'Unexpected GridSpecFromSubplotSpec nesting.'
                     )
                 ax.update_params()
-                ax.set_position(ax.figbox)
+                ax.set_position(ax.get_subplotspec().get_position(ax.figure))
 
         # Adjust figure size *after* gridspecs are fixed
         self.set_size_inches(figsize, auto=True)
