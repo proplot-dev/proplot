@@ -616,8 +616,8 @@ def standardize_1d(self, func, *args, autoformat=None, **kwargs):
         ys = [_to_ndarray(yi) for yi in ys]  # store naked array
         kwargs['positions'] = x
 
-    # Basemap shift x coordiantes without shifting y, we fix this!
-    if getattr(self, 'name', '') == 'basemap' and kwargs.get('latlon', None):
+    # Basemap shift x coordinates without shifting y, we fix this!
+    if getattr(self, 'name', '') == 'proplot_basemap' and kwargs.get('latlon', None):
         ix, iys = x, []
         xmin, xmax = self.projection.lonmin, self.projection.lonmax
         for y in ys:
@@ -936,7 +936,7 @@ def standardize_2d(
 
     # Cartopy projection axes
     if (
-        getattr(self, 'name', '') == 'cartopy'
+        getattr(self, 'name', '') == 'proplot_cartopy'
         and isinstance(kwargs.get('transform', None), PlateCarree)
     ):
         x, y = _fix_latlon(x, y)
@@ -955,7 +955,7 @@ def standardize_2d(
         x, Zs = ix, iZs
 
     # Basemap projection axes
-    elif getattr(self, 'name', '') == 'basemap' and kwargs.get('latlon', None):
+    elif getattr(self, 'name', '') == 'proplot_basemap' and kwargs.get('latlon', None):
         # Fix grid
         xmin, xmax = self.projection.lonmin, self.projection.lonmax
         x, y = _fix_latlon(x, y)
@@ -2151,7 +2151,7 @@ def _get_transform(self, transform):
         from cartopy.crs import CRS
     except ModuleNotFoundError:
         CRS = None
-    cartopy = getattr(self, 'name', '') == 'cartopy'
+    cartopy = getattr(self, 'name', '') == 'proplot_cartopy'
     if (
         isinstance(transform, mtransforms.Transform)
         or CRS and isinstance(transform, CRS)
@@ -4173,7 +4173,7 @@ def _basemap_redirect(func):
 
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
-        if getattr(self, 'name', '') == 'basemap':
+        if getattr(self, 'name', '') == 'proplot_basemap':
             return getattr(self.projection, name)(*args, ax=self, **kwargs)
         else:
             return func(self, *args, **kwargs)
