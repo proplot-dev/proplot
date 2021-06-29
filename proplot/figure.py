@@ -96,8 +96,14 @@ def _canvas_preprocessor(canvas, method):
         # and displaying within inline notebook backend (previously worked around
         # this by forcing additional draw() call in this function before proceeding
         # with print_figure). Solution is to use _state_context with _cachedRenderer.
-        fallback = _not_none(fig._fallback_to_cm, rc['mathtext.fallback_to_cm'])
-        rc_context = rc.context({'mathtext.fallback_to_cm': fallback})
+        local = fig._mathtext_fallback
+        if local is None:
+            context = {}
+        elif _version_mpl >= _version('3.4.0'):
+            context = {'mathtext.fallback': local if isinstance(local, str) else 'cm' if local else None}  # noqa: E501
+        else:
+            context = {'mathtext.fallback_to_cm': bool(local)}
+        rc_context = rc.context(context)
         fig_context = fig._context_preprocessing(cache=(method != 'print_figure'))
         with rc_context, fig_context:
             fig.auto_layout()
@@ -144,7 +150,7 @@ class Figure(mfigure.Figure):
         align=None, alignx=None, aligny=None,
         share=None, sharex=None, sharey=None,
         gridspec_kw=None, subplots_kw=None, subplots_orig_kw=None,
-        fallback_to_cm=None,
+        mathtext_fallback=None,
         **kwargs
     ):
         """
@@ -202,9 +208,11 @@ class Figure(mfigure.Figure):
 <https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/align_labels_demo.html>`__
             for the *x* axis, *y* axis, or both axes. Only has an effect when `spanx`,
             `spany`, or `span` are ``False``. Default is :rc:`subplots.align`.
-        fallback_to_cm : bool, optional
-            Whether to replace unavailable glyphs with a glyph from Computer Modern
-            or the "¤" dummy character. See `mathtext \
+        mathtext_fallback : bool or str, optional
+            Figure-specific application of the :rc:`mathtext.fallback` property.
+            If ``True`` or string, unavailable glyphs are replaced with a glyph from a
+            fallback font (Computer Modern by default). Otherwise, they are replaced
+            with the "¤" dummy character. See `mathtext \
 <https://matplotlib.org/3.1.1/tutorials/text/mathtext.html#custom-fonts>`__
             for details.
         gridspec_kw, subplots_kw, subplots_orig_kw
@@ -276,7 +284,7 @@ class Figure(mfigure.Figure):
         self._panelpad = units(_not_none(panelpad, rc['subplots.panelpad']))
         self._auto_tight = _not_none(tight, rc['subplots.tight'])
         self._include_panels = includepanels
-        self._fallback_to_cm = fallback_to_cm
+        self._mathtext_fallback = mathtext_fallback
         self._ref_num = ref
         self._axes_main = []
         self._subplots_orig_kw = subplots_orig_kw
