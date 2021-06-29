@@ -1156,13 +1156,14 @@ def _get_style_dicts(style, infer=False, filter=True):
     if style == 'default' or style is mpl.rcParamsDefault:
         return kw_matplotlib
 
-    # Apply "pseudo" default properties. Pretend some proplot settings are part of
-    # the matplotlib specification so they propagate to other styles.
+    # Apply limited deviations from the matplotlib style that we want to propagate to
+    # other styles. Want users selecting stylesheets to have few surprises, so
+    # currently just enforce the new aesthetically pleasing fonts.
     kw_matplotlib['font.family'] = 'sans-serif'
-    kw_matplotlib['font.sans-serif'] = rcsetup._rc_matplotlib_default['font.sans-serif']
+    for fmly in ('serif', 'sans-serif', 'monospace', 'cursive', 'fantasy'):
+        kw_matplotlib['font.' + fmly] = rcsetup._rc_matplotlib_default['font.' + fmly]
 
     # Apply user input style(s) one by one
-    # NOTE: Always use proplot fonts if style does not explicitly set them.
     if isinstance(style, str) or isinstance(style, dict):
         styles = [style]
     else:
