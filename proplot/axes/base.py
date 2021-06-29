@@ -307,13 +307,10 @@ class Axes(maxes.Axes):
         # WARNING: For mpl>=3.4.0 subplotspec assigned *after* initialization using
         # set_subplotspec. Tried to defer to setter but really messes up both format()
         # and _auto_share_setup(). Instead use workaround: Have Figure.add_subplot pass
-        # subplotspec as a hidden keyword arg. Introduces limitation for future
-        # development... but proplot should explicitly forbid non-subplot axes anyway,
-        # since our whole paradigm puts "subplots" front-and-center over "figures".
+        # subplotspec as a hidden keyword arg. Non-subplots don't need this arg.
         # See https://github.com/matplotlib/matplotlib/pull/18564
-        if _subplotspec is None:
-            raise ValueError('Subplot must be passed.')
-        self.set_subplotspec(_subplotspec)
+        if _subplotspec is not None:
+            self.set_subplotspec(_subplotspec)
 
         # Automatic axis sharing
         self._auto_share_setup()
