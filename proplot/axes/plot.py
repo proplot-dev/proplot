@@ -2657,7 +2657,7 @@ def cycle_changer(
 
 def _auto_levels_locator(
     *args, N=None, norm=None, norm_kw=None, locator=None, locator_kw=None,
-    vmin=None, vmax=None, extend='both', symmetric=False,
+    vmin=None, vmax=None, extend='neither', symmetric=False,
     positive=False, negative=False, nozero=False,
 ):
     """
@@ -2788,7 +2788,7 @@ def _auto_levels_locator(
 
 def _build_discrete_norm(
     data=None, N=None, levels=None, values=None,
-    norm=None, norm_kw=None, cmap=None, vmin=None, vmax=None, extend=None,
+    norm=None, norm_kw=None, cmap=None, vmin=None, vmax=None, extend='neither',
     minlength=2,
     **kwargs,
 ):
