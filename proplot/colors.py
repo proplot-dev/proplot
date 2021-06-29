@@ -760,8 +760,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             ``cut=0.1`` cuts the central 10%, or ``cut=-0.1`` fills the ctranl 10%
             of the colormap with the current central color (usually white).
         name : str, optional
-            The name of the new colormap. Default is
-            ``self.name + '_cut'``.
+            The name of the new colormap. Default is ``self.name + '_copy'``.
         left, right : float, optional
             The colormap indices for the "leftmost" and "rightmost" colors.
             Defaults are ``0`` and ``1``. See
@@ -796,7 +795,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
                 f'Invalid combination cut={cut} for left={left} and right={right}.'
             )
         if name is None:
-            name = self.name + '_cut'
+            name = self.name + '_copy'
         cmap_left = self.truncate(left, 0.5 - offset)
         cmap_right = self.truncate(0.5 + offset, right)
 
@@ -997,7 +996,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             The colormap index for the new "rightmost" color. Must fall between ``0``
             and ``1``. For example, ``right=0.9`` cuts the leftmost 10%% of the colors.
         name : str, optional
-            The name of the new colormap. Default is ``self.name + '_truncate'``.
+            The name of the new colormap. Default is ``self.name + '_copy'``.
 
         Other parameters
         ----------------
@@ -1011,7 +1010,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         if left == 0 and right == 1:
             return self
         if name is None:
-            name = self.name + '_truncate'
+            name = self.name + '_copy'
 
         # Resample the segmentdata arrays
         segmentdata = {}
@@ -1367,12 +1366,12 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
             ``0`` and ``self.N``. For example,
             ``right=4`` deletes colors after the fourth color.
         name : str, optional
-            The name of the new colormap. Default is ``self.name + '_truncate'``.
+            The name of the new colormap. Default is ``self.name + '_copy'``.
         """
         if left is None and right is None:
             return self
         if name is None:
-            name = self.name + '_truncate'
+            name = self.name + '_copy'
         colors = self.colors[left:right]
         return self.copy(colors, name, len(colors))
 
