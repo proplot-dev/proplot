@@ -376,14 +376,6 @@ hr {
 }
 
 /* RTD versions box colors */
-/* Also make entire sidebar scrollable but add empty space to the bottom
- * of the colling region, rather than truncating the scrollable space */
-nav.wy-nav-side .ethical-rtd {
-  margin-bottom: 3em !important;  /* padding below ad or below sidebar */
-}
-nav.wy-nav-side {
-  padding-bottom: 0em !important;  /* entire sidebar is always scrollable */
-}
 .rst-versions .rst-current-version {
   padding: 0.66em;  /* match padding for list items */
   color: var(--versions-color);
@@ -406,6 +398,17 @@ nav.wy-nav-side {
 .rst-versions .rst-other-versions dd a {
   color: var(--main-color);
 }
+
+/* Make entire sidebar scrollable but add empty space to the bottom
+ * of the colling region, rather than truncating the scrollable space */
+/*
+ * nav.wy-nav-side .ethical-rtd {
+ *   margin-bottom: 3em !important;  #<{(| padding below ad or below sidebar |)}>#
+ * }
+ * nav.wy-nav-side {
+ *   padding-bottom: 0em !important;  #<{(| entire sidebar is always scrollable |)}>#
+ * }
+ */
 
 /* Next and previous buttons */
 .btn {
