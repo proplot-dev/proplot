@@ -1262,7 +1262,7 @@ class Figure(mfigure.Figure):
         return self.savefig(filename, **kwargs)
 
     def savefig(self, filename, **kwargs):
-        # Automatically expand user the user name. Undocumented because we
+        # Automatically expand the user name. Undocumented because we
         # do not want to overwrite the matplotlib docstring.
         # TODO: Concatenate docstrings.
         if isinstance(filename, str):
