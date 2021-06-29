@@ -488,7 +488,7 @@ Furthermore, when you use `cartopy` and `~mpl_toolkits.basemap` plotting
 commands, the assumed coordinate system is *map projection* coordinates
 rather than longitude-latitude coordinates. This choice is confusing for
 many users, since the vast majority of geophysical data are stored in
-longitude-latitude or "Plate Carrée" coordinates.
+longitude-latitude (i.e., "Plate Carrée") coordinates.
 
 .. rubric:: Solution
 

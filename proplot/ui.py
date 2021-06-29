@@ -352,7 +352,7 @@ list thereof, or dict thereof, optional
 
     Returns
     -------
-    f : `~proplot.figure.Figure`
+    fig : `~proplot.figure.Figure`
         The figure instance.
     axs : `SubplotsContainer`
         A special list of axes instances. See `SubplotsContainer`.
@@ -621,7 +621,7 @@ class SubplotsContainer(list):
     def __getitem__(self, key):
         """
         If an integer is passed, the item is returned. If a slice is passed,
-        a `SubplotsContainer` of the items is returned. You can also use 2D
+        a `SubplotsContainer` of the items is returned. You can also use 2d
         indexing, and the corresponding axes in the `SubplotsContainer` will
         be chosen.
 

@@ -81,29 +81,27 @@ several *existing* methods.
   `~matplotlib.artist.Artist.update` method for axes artists. See
   :ref:`formatting subplots <ug_format>` for a broad overview, along with the
   individual sections on formatting :ref:`Cartesian plots <ug_cartesian>`,
-  :ref:`polar plots <ug_polar>`, and :ref:`geographic projections
-  <ug_geoformat>`.
+  :ref:`geographic plots <ug_geoformat>`, and :ref:`polar plots <ug_polar>`.
 * The `proplot.axes.Axes.colorbar` and `proplot.axes.Axes.legend` commands
-  are used to add colorbars and legends inside of subplots and along the
-  outside edge of subplots.  The `proplot.figure.Figure.colorbar` and
-  `proplot.figure.Figure.legend` commands are used to draw colorbars and
-  legends along the edge of an entire figure, centered between subplot
-  boundaries. These commands :ref:`considerably simplify <ug_cbars_legends>`
+  draw colorbars and legends inside of subplots or along the outside edges of
+  subplots. The `proplot.figure.Figure.colorbar` and `proplot.figure.Figure.legend`
+  commands draw colorbars or legends along the edges of an entire figure (centered
+  between subplot boundaries). These commands :ref:`simplify <ug_cbars_legends>`
   the process of drawing colorbars and legends.
-* ProPlot adds a huge variety of features for working with the
+* ProPlot adds a variety of useful features for working with the
   `~matplotlib.axes.Axes.plot`, `~matplotlib.axes.Axes.bar`,
   `~proplot.axes.Axes.area`, `~matplotlib.axes.Axes.contour`,
-  `~matplotlib.axes.Axes.pcolormesh`, `~proplot.axes.Axes.heatmap`, and
-  `~proplot.axes.Axes.parametric` plotting methods by "wrapping" them. See
-  the :ref:`1D plotting <ug_1dplots>` and :ref:`2D plotting <ug_2dplots>`
-  sections for details.
+  `~matplotlib.axes.Axes.contourf`, `~matplotlib.axes.Axes.pcolormesh`,
+  `~proplot.axes.Axes.heatmap`, and `~proplot.axes.Axes.parametric` plotting commands
+  by "wrapping" them. See the :ref:`1D plotting <ug_1dplots>` and
+  :ref:`2D plotting <ug_2dplots>` sections for details.
 
 Integration with other packages
 ===============================
 
 ProPlot includes *optional* integration features with four external
 packages: the `pandas` and `xarray` packages, used for working with annotated
-tables and arrays, and the `cartopy` and `~mpl_toolkits.basemap` cartographic
+tables and arrays, and the `cartopy` and `~mpl_toolkits.basemap` geographic
 plotting packages.
 
 * When you pass a `pandas.Series`, `pandas.DataFrame`, or `xarray.DataArray`
@@ -116,7 +114,7 @@ plotting packages.
 * The `~proplot.axes.GeoAxes` class uses the `cartopy` or
   `~mpl_toolkits.basemap` packages to :ref:`plot geophysical data <ug_geoplot>`,
   :ref:`add geographic features <ug_geoformat>`, and
-  :ref:`format projections <ug_geoformat>`. This is a much simpler, smoother
+  :ref:`format projections <ug_geoformat>`. This is a simpler, cleaner
   interface than the original `cartopy` and `~mpl_toolkits.basemap`
   interfaces. Figures can be filled with `~proplot.axes.GeoAxes` by using the
   `proj` keyword argument with `~proplot.ui.subplots`.
