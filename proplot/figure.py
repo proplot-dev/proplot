@@ -5,6 +5,7 @@ The figure class used for all ProPlot figures.
 import os
 
 import matplotlib.figure as mfigure
+import matplotlib.gridspec as mgridspec
 import matplotlib.transforms as mtransforms
 import numpy as np
 
@@ -699,9 +700,7 @@ class Figure(mfigure.Figure):
         edge = min_ if side in ('left', 'top') else max_
 
         # Return axes on edge sorted by order of appearance
-        axs = [
-            ax for ax in self._axes_main if ax._range_gridspec(x)[idx] == edge
-        ]
+        axs = [ax for ax in self._axes_main if ax._range_gridspec(x)[idx] == edge]
         ranges = [ax._range_gridspec(y)[0] for ax in axs]
         return [ax for _, ax in sorted(zip(ranges, axs)) if ax.get_visible()]
 
@@ -1046,6 +1045,12 @@ class Figure(mfigure.Figure):
                 'Using "fig.add_subplot()" with ProPlot figures may result in '
                 'unexpected behavior. Please use "proplot.subplots()" instead.'
             )
+        if (
+            len(args) == 1
+            and isinstance(args[0], mgridspec.SubplotSpec)
+            and kwargs.get('projection', None) in ('cartesian', 'polar2', 'basemap', 'cartopy')  # noqa: E501
+        ):
+            kwargs['_subplotspec'] = args[0]  # mpl>=3.4.0 workaround: see Axes.__init__
         return super().add_subplot(*args, **kwargs)
 
     def auto_layout(self, renderer=None, resize=None, aspect=None, tight=None):
