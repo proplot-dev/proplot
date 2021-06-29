@@ -6,9 +6,9 @@
   - Internals
   - Documentation
 
-=================
-Changelog history
-=================
+===========
+What's new?
+===========
 
 ProPlot v1.0.0 (2022-##-##)
 ===========================
