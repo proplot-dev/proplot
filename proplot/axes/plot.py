@@ -1465,12 +1465,10 @@ def plot_wrapper(
 
     # Add sticky edges? No because there is no way to check whether "dependent variable"
     # is x or y axis like with area/areax and bar/barh. Better to always have margin.
-    # for objs in result:
-    #     if not isinstance(objs, tuple):
-    #         objs = (objs,)
-    #     for obj in objs:
-    #         xdata = obj.get_xdata()
-    #         obj.sticky_edges.x.extend((np.min(xdata), np.max(xdata)))
+    # for obj in result:
+    #     xdata = obj.get_xdata()
+    #     obj.sticky_edges.x.append(self.convert_xunits(min(xdata)))
+    #     obj.sticky_edges.x.append(self.convert_yunits(max(xdata)))
 
     return result
 
@@ -1812,12 +1810,12 @@ def _fill_between_apply(
         ysides.append(np.asarray(y1).item())
     if y2.size == 1:
         ysides.append(np.asarray(y2).item())
-    for iobjs in objs:
-        if not isinstance(iobjs, tuple):
-            iobjs = (iobjs,)
-        for obj in iobjs:
-            getattr(obj.sticky_edges, x).extend(xsides)
-            getattr(obj.sticky_edges, y).extend(ysides)
+    objs = tuple(obj for _ in objs for obj in (_ if isinstance(_, tuple) else (_,)))
+    for obj in objs:
+        for s, sides in zip((x, y), (xsides, ysides)):
+            convert = getattr(self, 'convert_' + s + 'units')
+            edges = getattr(obj.sticky_edges, s)
+            edges.extend(convert(sides))
 
     return result
 

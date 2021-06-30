@@ -80,9 +80,9 @@ ProPlot v0.7.0 (2021-06-30)
   consistent with the ColorBrewer convention of using plurals like ``Blues``, ``Reds``,
   etc. (:commit:`8be0473f`).
 * Shuffle various SciVisColor colormap names to make them more consistent/succinct.
-  Make the ``Browns1`` map the most colorful/vibrant one, just
-  like ``Greens1`` and ``Blues1``; split up the ``RedPurple`` maps into ``Reds`` and
-  ``Purples``; and add the ``Yellows`` category from the ``Oranges`` maps (:commit:`8be0473f`).
+  Make the ``Browns1`` map the most colorful/vibrant one, just like ``Greens1`` and
+  ``Blues1``; split up the ``RedPurple`` maps into ``Reds`` and ``Purples``; and add
+  the ``Yellows`` category from the ``Oranges`` maps (:commit:`8be0473f`).
 * Rename seldom-used `Figure` argument `fallback_to_cm` to more understandable
   `mathtext_fallback` (:pr:`251`).
 * Rename `abovetop` keyword for moving title/abc label above or below top panels to rc
@@ -151,6 +151,7 @@ ProPlot v0.7.0 (2021-06-30)
   replacing with proplot-local copy (:pr:`251`).
 * Fix deprecation warning in matplotlib >= 3.3 -- add `extend` as mappable attribute
   rather than passing it to `colorbar()` (:commit:`a23e7043`).
+* Fix issue where cannot have datetime labels on `area` plots (:issue:`255`).
 * Fix issue where axis is accidentally inverted for histogram plots (:issue:`191`).
 * Fix issue where numeric zero cannot be applied as legend label (:commit:`02417c8c`).
 * Fix issue where `[xy]minorlocator=1` is not allowed (:issue:`219`).
@@ -200,6 +201,7 @@ ProPlot v0.7.0 (2021-06-30)
 
 ProPlot v0.6.4 (2020-06-13)
 ===========================
+
 .. rubric:: Features
 
 * Change ``autoformat`` from a `Figure` keyword argument into the
