@@ -228,14 +228,14 @@ axs[:, 0].format(ylabel='ylabel\nylabel')
 # Axis sharing
 # ------------
 #
-# Redundant labels are a common problem for figures with lots of subplots.
-# To address this, `matplotlib.pyplot.subplots` includes `sharex` and `sharey`
-# keywords that permit sharing axis limits, ticks, and tick labels between like
-# rows and columns of subplots. ProPlot expands upon this feature by
-# (1) adding an option for sharing labels in the same row or column of the
-# `~proplot.gridspec.GridSpec`, controlled by the `spanx` and `spany` keywords,
-# and (2) adding four axis-sharing "levels," controlled by the `sharex` and `sharey`
-# keywords. The axis-sharing levels are defined as follows:
+# Redundant labels are a common problem for figures with lots of subplots. To
+# address this, `matplotlib.pyplot.subplots` includes `sharex` and `sharey` keywords
+# that permit sharing axis limits, ticks, and tick labels between like rows and columns
+# of subplots. ProPlot expands upon this feature by (1) adding an option for sharing
+# labels in the same row or column of the subplot grid, controlled by the `spanx` and
+# `spany` keywords (default is :rc:`subplots.span`), and (2) adding four axis-sharing
+# "levels," controlled by the `sharex` and `sharey` keywords (default is
+# :rc:`subplots.share`). The axis-sharing levels are defined as follows:
 #
 # * Level ``0`` disables axis sharing.
 # * Level ``1`` shares duplicate *x* and *y* axis labels, but nothing else.
@@ -245,9 +245,9 @@ axs[:, 0].format(ylabel='ylabel\nylabel')
 #   also shared.
 #
 # Axis and label sharing works for
-# :ref:`arbitrarily complex grids of subplots <ug_intro>`.
-# The below examples demonstrate the effect of various axis and label
-# sharing settings on the appearance of simple subplot grids.
+# :ref:`arbitrarily complex grids of subplots <ug_intro>`. The below examples
+# demonstrate the effect of various axis and label sharing settings on the appearance
+# of simple subplot grids.
 
 # %%
 import proplot as plot
