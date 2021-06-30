@@ -227,11 +227,11 @@ class Axes(maxes.Axes):
         self._abc_loc = None
         self._abc_text = None
         self._abc_border_kwargs = {}  # abs border properties
+        self._title_above = rc['axes.titleabove']
         self._title_loc = None  # location of main title
         self._title_pad = rc['axes.titlepad']  # format() can overwrite
         self._title_pad_active = None
         self._title_border_kwargs = {}  # title border properties
-        self._above_top_panels = True  # TODO: add rc prop?
         self._bottom_panels = []
         self._top_panels = []
         self._left_panels = []
@@ -616,7 +616,7 @@ class Axes(maxes.Axes):
         else:
             ax = self
         taxs = ax._top_panels
-        if not taxs or not ax._above_top_panels:
+        if not taxs or not ax._title_above:
             tax = ax
         else:
             tax = taxs[-1]
@@ -767,7 +767,7 @@ class Axes(maxes.Axes):
         return rc_kw, rc_mode, kw
 
     def format(
-        self, *, title=None, abovetop=None,
+        self, *, title=None,
         figtitle=None, suptitle=None, rowlabels=None, collabels=None,
         leftlabels=None, rightlabels=None, toplabels=None, bottomlabels=None,
         llabels=None, rlabels=None, tlabels=None, blabels=None,
@@ -816,29 +816,30 @@ class Axes(maxes.Axes):
             lower right inside axes   ``'lower right'``, ``'lr'``
             ========================  ============================
 
+        ltitle, ctitle, rtitle, ultitle, uctitle, urtitle, lltitle, lctitle, \
+lrtitle : str, optional
+            Axes titles in specific positions. Works as an alternative to
+            ``ax.format(title='title', titleloc='loc')`` and lets you specify
+            multiple title-like labels in a single subplot.
         abcborder, titleborder : bool, optional
             Whether to draw a white border around titles and a-b-c labels
             positioned inside the axes. This can help them stand out on top
             of artists plotted inside the axes. Defaults are
             :rc:`abc.border` and :rc:`title.border`
-        abovetop : bool, optional
-            Whether to try to put the title and a-b-c label above the top panel
-            (if it exists), or to always put them above the main subplot.
-            Default is ``True``.
-        ltitle, ctitle, rtitle, ultitle, uctitle, urtitle, lltitle, lctitle, \
-lrtitle : str, optional
-            Axes titles in specific positions (see `abcloc`). This lets you
-            specify multiple title-like labels for a single subplot.
-        leftlabels, rightlabels, toplabels, bottomlabels : list of str, \
+        titlepad : float, optional
+            The padding for the inner and outer titles and a-b-c labels in
+            arbitrary units (default is points). Default is :rc:`axes.titlepad`.
+        titleabove : bool, optional
+            Whether to try to put outer titles and a-b-c labels above the top panel
+            (if it exists). Default is :rc:`axes.titleabove`.
+        leftlabels, toplabels, rightlabels, bottomlabels : list of str, \
 optional
-            Labels for the subplots lying along the left, right, top, and
+            Labels for the subplots lying along the left, top, right, and
             bottom edges of the figure. The length of each list must match
             the number of subplots along the corresponding edge.
-        rowlabels, collabels : list of str, optional
-            Aliases for `leftlabels`, `toplabels`.
-        llabels, rlabels, tlabels, blabels : list of str, optional
-            Aliases for `leftlabels`, `toplabels`, `rightlabels`,
-            `bottomlabels`.
+        rowlabels, collabels, llabels, tlabels, rlabels, blabels : list of str, optional
+            Aliases for `leftlabels`, `toplabels`, `leftlabels`, `toplabels`,
+            `rightlabels`, and `bottomlabels`.
         figtitle, suptitle : str, optional
             The figure "super" title, centered between the left edge of
             the lefmost column of subplots and the right edge of the rightmost
@@ -861,18 +862,19 @@ optional
         proplot.axes.PolarAxes.format
         proplot.axes.GeoAxes.format
         """
-        # Misc axes settings
-        # TODO: Add more settings to this?
+        # Figure patch (needs to be re-asserted even if declared before figure is drawn)
+        kw = rc.fill({'facecolor': 'figure.facecolor'}, context=True)
+        self.figure.patch.update(kw)
+
+        # Axes settings (TODO: add more settings?)
         cycle = rc.get('axes.prop_cycle', context=True)
         if cycle is not None:
             self.set_prop_cycle(cycle)
 
-        # Figure patch (for some reason needs to be re-asserted even if
-        # declared before figure is drawn)
-        kw = rc.fill({'facecolor': 'figure.facecolor'}, context=True)
-        self.figure.patch.update(kw)
-        if abovetop is not None:
-            self._above_top_panels = abovetop
+        # Text positioning
+        above = rc.get('axes.titleabove', context=True)
+        if above is not None:
+            self._title_above = above
         pad = rc.get('axes.titlepad', context=True)
         if pad is not None:
             self._set_title_offset_trans(pad)

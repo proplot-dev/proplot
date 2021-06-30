@@ -53,6 +53,7 @@ _rc_removed = {  # {key: (alternative, version)} dictionary
 _rc_renamed = {  # {old_key: (new_key, version)} dictionary
     'abc.format': ('abc.style', '0.5'),
     'align': ('subplots.align', '0.6'),
+    'abovetop': ('title.above', '0.7'),
     'axes.facealpha': ('axes.alpha', '0.6'),
     'geoaxes.edgecolor': ('axes.edgecolor', '0.6'),
     'geoaxes.facealpha': ('axes.alpha', '0.6'),
@@ -302,6 +303,11 @@ _rc_proplot = {
     'axes.alpha': (
         1.0,
         'The opacity of the background axes patch.'
+    ),
+    'axes.titleabove': (
+        True,
+        'Boolean, indicates whether to move the title and a-b-c labels above any "top" '
+        'panels above axes.'
     ),
     'formatter.timerotation': (
         90,
@@ -842,6 +848,11 @@ _rc_proplot = {
     ),
 
     # Title settings
+    'title.above': (
+        True,
+        'Boolean, indicates whether to move the title and a-b-c labels above any "top" '
+        'panels above axes. Alias for :rcraw:`axes.titleabove`.'
+    ),
     'title.border': (
         True,
         'Boolean, indicates whether to draw a white border around titles '
@@ -975,6 +986,7 @@ _rc_aliases = {
     'font.name': 'font.family',
     'grid.below': 'axes.axisbelow',
     'title.pad': 'axes.titlepad',
+    'title.above': 'axes.titleabove',
 }
 for key, value in _rc_aliases.items():
     _rc_children[key] = (value,)
