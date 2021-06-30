@@ -81,6 +81,7 @@
 body.scroll-up,
 body.scroll-down,
 .wy-nav-content {
+  /* max-width: 50em !important; */
   background: var(--main-bg-color);
 }
 
