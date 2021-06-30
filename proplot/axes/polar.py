@@ -22,7 +22,7 @@ class PolarAxes(base.Axes, mproj.PolarAxes):
     method and overrides several existing methods.
     """
     #: The registered projection name.
-    name = 'polar2'
+    name = 'proplot_polar'
 
     def __init__(self, *args, **kwargs):
         """

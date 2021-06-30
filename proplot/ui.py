@@ -352,7 +352,7 @@ list thereof, or dict thereof, optional
 
     Returns
     -------
-    f : `~proplot.figure.Figure`
+    fig : `~proplot.figure.Figure`
         The figure instance.
     axs : `SubplotsContainer`
         A special list of axes instances. See `SubplotsContainer`.
@@ -416,11 +416,11 @@ list thereof, or dict thereof, optional
     for num, name in proj.items():
         # The default is CartesianAxes
         if name is None or name == 'cartesian':
-            axes_kw[num]['projection'] = 'cartesian'
+            axes_kw[num]['projection'] = 'proplot_cartesian'
 
         # Builtin matplotlib polar axes, just use my overridden version
         elif name == 'polar':
-            axes_kw[num]['projection'] = 'polar2'
+            axes_kw[num]['projection'] = 'proplot_polar'
             if num == ref:
                 aspect = 1
 
@@ -433,7 +433,7 @@ list thereof, or dict thereof, optional
                     aspect = (m.urcrnrx - m.llcrnrx) / (m.urcrnry - m.llcrnry)
                 else:
                     aspect = (np.diff(m.x_limits) / np.diff(m.y_limits))[0]
-            axes_kw[num].update({'projection': package, 'map_projection': m})
+            axes_kw[num].update({'projection': 'proplot_' + package, 'map_projection': m})  # noqa: E501
 
     # Figure and/or axes dimensions
     names, values = (), ()
@@ -621,7 +621,7 @@ class SubplotsContainer(list):
     def __getitem__(self, key):
         """
         If an integer is passed, the item is returned. If a slice is passed,
-        a `SubplotsContainer` of the items is returned. You can also use 2D
+        a `SubplotsContainer` of the items is returned. You can also use 2d
         indexing, and the corresponding axes in the `SubplotsContainer` will
         be chosen.
 

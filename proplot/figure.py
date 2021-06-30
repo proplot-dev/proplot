@@ -5,6 +5,7 @@ The figure class used for all ProPlot figures.
 import os
 
 import matplotlib.figure as mfigure
+import matplotlib.gridspec as mgridspec
 import matplotlib.transforms as mtransforms
 import numpy as np
 
@@ -12,7 +13,14 @@ from . import axes as paxes
 from . import gridspec as pgridspec
 from .config import rc
 from .internals import ic  # noqa: F401
-from .internals import _dummy_context, _not_none, _state_context, warnings
+from .internals import (
+    _dummy_context,
+    _not_none,
+    _state_context,
+    _version,
+    _version_mpl,
+    warnings,
+)
 from .utils import units
 
 __all__ = ['Figure']
@@ -88,8 +96,14 @@ def _canvas_preprocessor(canvas, method):
         # and displaying within inline notebook backend (previously worked around
         # this by forcing additional draw() call in this function before proceeding
         # with print_figure). Solution is to use _state_context with _cachedRenderer.
-        fallback = _not_none(fig._fallback_to_cm, rc['mathtext.fallback_to_cm'])
-        rc_context = rc.context({'mathtext.fallback_to_cm': fallback})
+        local = fig._mathtext_fallback
+        if local is None:
+            context = {}
+        elif _version_mpl >= _version('3.4'):
+            context = {'mathtext.fallback': local if isinstance(local, str) else 'cm' if local else None}  # noqa: E501
+        else:
+            context = {'mathtext.fallback_to_cm': bool(local)}
+        rc_context = rc.context(context)
         fig_context = fig._context_preprocessing(cache=(method != 'print_figure'))
         with rc_context, fig_context:
             fig.auto_layout()
@@ -136,7 +150,7 @@ class Figure(mfigure.Figure):
         align=None, alignx=None, aligny=None,
         share=None, sharex=None, sharey=None,
         gridspec_kw=None, subplots_kw=None, subplots_orig_kw=None,
-        fallback_to_cm=None,
+        mathtext_fallback=None,
         **kwargs
     ):
         """
@@ -194,9 +208,11 @@ class Figure(mfigure.Figure):
 <https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/align_labels_demo.html>`__
             for the *x* axis, *y* axis, or both axes. Only has an effect when `spanx`,
             `spany`, or `span` are ``False``. Default is :rc:`subplots.align`.
-        fallback_to_cm : bool, optional
-            Whether to replace unavailable glyphs with a glyph from Computer Modern
-            or the "¤" dummy character. See `mathtext \
+        mathtext_fallback : bool or str, optional
+            Figure-specific application of the :rc:`mathtext.fallback` property.
+            If ``True`` or string, unavailable glyphs are replaced with a glyph from a
+            fallback font (Computer Modern by default). Otherwise, they are replaced
+            with the "¤" dummy character. See `mathtext \
 <https://matplotlib.org/3.1.1/tutorials/text/mathtext.html#custom-fonts>`__
             for details.
         gridspec_kw, subplots_kw, subplots_orig_kw
@@ -268,7 +284,7 @@ class Figure(mfigure.Figure):
         self._panelpad = units(_not_none(panelpad, rc['subplots.panelpad']))
         self._auto_tight = _not_none(tight, rc['subplots.tight'])
         self._include_panels = includepanels
-        self._fallback_to_cm = fallback_to_cm
+        self._mathtext_fallback = mathtext_fallback
         self._ref_num = ref
         self._axes_main = []
         self._subplots_orig_kw = subplots_orig_kw
@@ -324,7 +340,7 @@ class Figure(mfigure.Figure):
 
         # Draw and setup panel
         with self._context_authorize_add_subplot():
-            pax = self.add_subplot(gridspec[idx1, idx2], projection='cartesian')  # noqa: E501
+            pax = self.add_subplot(gridspec[idx1, idx2], projection='proplot_cartesian')
         pgrid.append(pax)
         pax._panel_side = side
         pax._panel_share = share
@@ -434,7 +450,7 @@ class Figure(mfigure.Figure):
 
         # Draw and setup panel
         with self._context_authorize_add_subplot():
-            pax = self.add_subplot(gridspec[idx1, idx2], projection='cartesian')  # noqa: E501
+            pax = self.add_subplot(gridspec[idx1, idx2], projection='proplot_cartesian')
         pgrid = getattr(self, '_' + side + '_panels')
         pgrid.append(pax)
         pax._panel_side = side
@@ -699,9 +715,7 @@ class Figure(mfigure.Figure):
         edge = min_ if side in ('left', 'top') else max_
 
         # Return axes on edge sorted by order of appearance
-        axs = [
-            ax for ax in self._axes_main if ax._range_gridspec(x)[idx] == edge
-        ]
+        axs = [ax for ax in self._axes_main if ax._range_gridspec(x)[idx] == edge]
         ranges = [ax._range_gridspec(y)[0] for ax in axs]
         return [ax for _, ax in sorted(zip(ranges, axs)) if ax.get_visible()]
 
@@ -812,11 +826,12 @@ class Figure(mfigure.Figure):
                 elif subplotspec_top is gridspec_ss._subplot_spec:
                     gridspec_ss._subplot_spec = subplotspec_new
                 else:
-                    raise ValueError(
-                        'Unexpected GridSpecFromSubplotSpec nesting.'
-                    )
-                ax.update_params()
-                ax.set_position(ax.figbox)
+                    raise ValueError('Unexpected GridSpecFromSubplotSpec nesting.')
+                if _version_mpl >= _version('3.4'):
+                    ax.set_position(ax.get_subplotspec().get_position(ax.figure))
+                else:
+                    ax.update_params()
+                    ax.set_position(ax.figbox)  # equivalent to above
 
         # Adjust figure size *after* gridspecs are fixed
         self.set_size_inches(figsize, auto=True)
@@ -1046,6 +1061,12 @@ class Figure(mfigure.Figure):
                 'Using "fig.add_subplot()" with ProPlot figures may result in '
                 'unexpected behavior. Please use "proplot.subplots()" instead.'
             )
+        if (
+            len(args) == 1
+            and isinstance(args[0], mgridspec.SubplotSpec)
+            and kwargs.get('projection', '').startswith('proplot_')
+        ):
+            kwargs['_subplotspec'] = args[0]  # mpl>=3.4.0 workaround: see Axes.__init__
         return super().add_subplot(*args, **kwargs)
 
     def auto_layout(self, renderer=None, resize=None, aspect=None, tight=None):
@@ -1084,7 +1105,8 @@ class Figure(mfigure.Figure):
         if tight is None:
             tight = self._auto_tight
         if resize is None:
-            resize = rc['backend'] != 'nbAgg'
+            backend = _not_none(rc.backend, '').lower()
+            resize = 'nbagg' not in backend and 'ipympl' not in backend
 
         # Draw objects that will affect tight layout
         self._draw_auto_legends_colorbars()
@@ -1241,7 +1263,7 @@ class Figure(mfigure.Figure):
         return self.savefig(filename, **kwargs)
 
     def savefig(self, filename, **kwargs):
-        # Automatically expand user the user name. Undocumented because we
+        # Automatically expand the user name. Undocumented because we
         # do not want to overwrite the matplotlib docstring.
         # TODO: Concatenate docstrings.
         if isinstance(filename, str):

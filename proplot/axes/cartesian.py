@@ -203,7 +203,7 @@ class CartesianAxes(base.Axes):
     methods.
     """
     #: The registered projection name.
-    name = 'cartesian'
+    name = 'proplot_cartesian'
 
     def __init__(self, *args, **kwargs):
         """
@@ -218,53 +218,13 @@ class CartesianAxes(base.Axes):
         self.yaxis.set_major_formatter(formatter)
         self.xaxis.isDefault_majfmt = True
         self.yaxis.isDefault_majfmt = True
+        self._altx_parent = None
+        self._alty_parent = None
         self._datex_rotated = False  # whether manual rotation has been applied
-        self._dualy_funcscale = None  # for scaling units on opposite side of ax
-        self._dualx_funcscale = None
-        self._dualy_parent_prev_state = None  # prevent excess _dualy_overrides calls
-        self._dualx_parent_prev_state = None
-
-    def _altx_overrides(self):
-        """
-        Apply alternate *x* axis overrides.
-        """
-        # Unlike matplotlib API, we strong arm user into certain twin axes
-        # settings... doesn't really make sense to have twin axes without this
-        # NOTE: Could also use _panel_sharey_group = True to hide xaxis content
-        # but instead we set entire axis to visible = False. Safer that way.
-        if self._altx_child is not None:  # altx was called on this axes
-            self.spines['top'].set_visible(False)
-            self.spines['bottom'].set_visible(True)
-            self.xaxis.tick_bottom()
-            self.xaxis.set_label_position('bottom')
-        if self._altx_parent is not None:  # this axes is the result of altx
-            self.spines['bottom'].set_visible(False)
-            self.spines['top'].set_visible(True)
-            self.spines['left'].set_visible(False)
-            self.spines['right'].set_visible(False)
-            self.xaxis.tick_top()
-            self.xaxis.set_label_position('top')
-            self.yaxis.set_visible(False)
-            self.patch.set_visible(False)
-
-    def _alty_overrides(self):
-        """
-        Apply alternate *y* axis overrides.
-        """
-        if self._alty_child is not None:
-            self.spines['right'].set_visible(False)
-            self.spines['left'].set_visible(True)
-            self.yaxis.tick_left()
-            self.yaxis.set_label_position('left')
-        if self._alty_parent is not None:
-            self.spines['left'].set_visible(False)
-            self.spines['right'].set_visible(True)
-            self.spines['top'].set_visible(False)
-            self.spines['bottom'].set_visible(False)
-            self.yaxis.tick_right()
-            self.yaxis.set_label_position('right')
-            self.xaxis.set_visible(False)
-            self.patch.set_visible(False)
+        self._dualx_funcscale = None  # for scaling units on dual axes
+        self._dualx_prevstate = None  # prevent excess _dualy_scale calls
+        self._dualy_funcscale = None
+        self._dualy_prevstate = None
 
     def _apply_axis_sharing(self):
         """
@@ -316,25 +276,25 @@ class CartesianAxes(base.Axes):
             label.update(kw)
         self._datex_rotated = True  # do not need to apply more than once
 
-    def _dualx_overrides(self):
+    def _dualx_scale(self):
         """
         Lock the child "dual" *x* axis limits to the parent.
         """
+        # NOTE: We bypass autoscale_view because we set limits manually, and bypass
+        # child.stale = True because that is done in call to set_xlim() below.
         # NOTE: We set the scale using private API to bypass application of
         # set_default_locators_and_formatters: only_if_default=True is critical
         # to prevent overriding user settings!
-        # NOTE: We bypass autoscale_view because we set limits manually, and bypass
-        # child.stale = True because that is done in call to set_xlim() below.
         # NOTE: Dual axis only needs to be constrained if the parent axis scale
-        # and limits have changed.
-        funcscale = self._dualx_funcscale
-        if funcscale is None:
+        # and limits have changed, and limits are always applied before we reach
+        # the child.draw() because always called after parent.draw()
+        funcscale, parent, child = self._dualx_funcscale, self._altx_parent, self
+        if funcscale is None or parent is None:
             return
-        scale = self.xaxis._scale
-        olim = self.get_xlim()
-        if (scale, *olim) == self._dualx_parent_prev_state:
+        olim = parent.get_xlim()
+        scale = parent.xaxis._scale
+        if (scale, *olim) == child._dualx_prevstate:
             return
-        child = self._altx_child
         funcscale = pscale.FuncScale(funcscale, invert=True, parent_scale=scale)
         child.xaxis._scale = funcscale
         child._update_transScale()
@@ -343,20 +303,20 @@ class CartesianAxes(base.Axes):
         if np.sign(np.diff(olim)) != np.sign(np.diff(nlim)):
             nlim = nlim[::-1]  # if function flips limits, so will set_xlim!
         child.set_xlim(nlim, emit=False)
-        self._dualx_parent_prev_state = (scale, *olim)
+        child._dualx_prevstate = (scale, *olim)
 
-    def _dualy_overrides(self):
+    def _dualy_scale(self):
         """
         Lock the child "dual" *y* axis limits to the parent.
         """
-        funcscale = self._dualy_funcscale
-        if funcscale is None:
+        # See _dualx_scale() comments
+        funcscale, parent, child = self._dualy_funcscale, self._alty_parent, self
+        if funcscale is None or parent is None:
             return
-        scale = self.yaxis._scale
-        olim = self.get_ylim()
-        if (scale, *olim) == self._dualy_parent_prev_state:
+        olim = parent.get_ylim()
+        scale = parent.yaxis._scale
+        if (scale, *olim) == child._dualy_prevstate:
             return
-        child = self._alty_child
         funcscale = pscale.FuncScale(funcscale, invert=True, parent_scale=scale)
         child.yaxis._scale = funcscale
         child._update_transScale()
@@ -365,7 +325,7 @@ class CartesianAxes(base.Axes):
         if np.sign(np.diff(olim)) != np.sign(np.diff(nlim)):
             nlim = nlim[::-1]
         child.set_ylim(nlim, emit=False)
-        self._dualy_parent_prev_state = (scale, *olim)
+        child._dualy_prevstate = (scale, *olim)
 
     def _sharex_setup(self, sharex):
         """
@@ -1117,7 +1077,7 @@ class CartesianAxes(base.Axes):
                     axis.set_major_locator(locator)
                     if isinstance(locator, mticker.IndexLocator):
                         tickminor = False  # 'index' minor ticks make no sense
-                if minorlocator in (True, False):
+                if minorlocator is True or minorlocator is False:  # must test identity
                     warnings._warn_proplot(
                         f'You passed {x}minorticks={minorlocator}, but this '
                         'argument is used to specify tick *locations*. If '
@@ -1224,19 +1184,35 @@ class CartesianAxes(base.Axes):
         # ... fig, ax = plt.subplots()
         # ... ax.set_yscale('log')
         # ... ax.twiny()
-        if self._altx_child or self._altx_parent:
-            raise RuntimeError('No more than *two* twin axes are allowed.')
+        # WARNING: We add axes as children for tight layout algorithm convenience and
+        # to support eventual paradigm of arbitrarily many duplicates with spines
+        # arranged in an edge stack. However this means all artists drawn there take
+        # on zorder of their axes when drawn inside the "parent" (see Axes.draw()).
+        # To restore matplotlib behavior, which draws "child" artists on top simply
+        # because the axes was created after the "parent" one, use the inset_axes
+        # zorder of 4 and make the background transparent.
+        minorlocator = self.yaxis.get_minor_locator()
         with self.figure._context_authorize_add_subplot():
-            ylocator = self.yaxis.get_minor_locator()
-            ax = self._make_twin_axes(sharey=self, projection='cartesian')
-            ax.yaxis.set_minor_locator(ylocator)
-            ax.yaxis.isDefault_minloc = True
-        ax.set_autoscaley_on(self.get_autoscaley_on())
-        ax.grid(False)
-        self._altx_child = ax
+            ax = self._make_twin_axes(sharey=self, projection='proplot_cartesian')
+        # Child defaults
         ax._altx_parent = self
-        self._altx_overrides()
-        ax._altx_overrides()
+        ax.yaxis.set_minor_locator(minorlocator)
+        ax.yaxis.isDefault_minloc = True
+        for side, spine in ax.spines.items():
+            spine.set_visible(side == 'top')
+        ax.xaxis.tick_top()
+        ax.xaxis.set_label_position('top')
+        ax.yaxis.set_visible(False)
+        ax.patch.set_visible(False)
+        ax.grid(False)
+        ax.set_zorder(4)
+        ax.set_autoscaley_on(self.get_autoscaley_on())
+        # Parent defaults
+        self.spines['top'].set_visible(False)
+        self.spines['bottom'].set_visible(True)
+        self.xaxis.tick_bottom()
+        self.xaxis.set_label_position('bottom')
+        # Add axes
         self.add_child_axes(ax)  # to facilitate tight layout
         self.figure._axstack.remove(ax)  # or gets drawn twice!
         ax.format(**_parse_alt('x', kwargs))
@@ -1248,19 +1224,28 @@ class CartesianAxes(base.Axes):
         %(axes.alty)s
         """
         # See altx() comments
-        if self._alty_child or self._alty_parent:
-            raise RuntimeError('No more than *two* twin axes are allowed.')
+        minorlocator = self.xaxis.get_minor_locator()
         with self.figure._context_authorize_add_subplot():
-            xlocator = self.xaxis.get_minor_locator()
-            ax = self._make_twin_axes(sharex=self, projection='cartesian')
-            ax.xaxis.set_minor_locator(xlocator)
-            ax.xaxis.isDefault_minloc = True
-        ax.set_autoscalex_on(self.get_autoscalex_on())
-        ax.grid(False)
-        self._alty_child = ax
+            ax = self._make_twin_axes(sharex=self, projection='proplot_cartesian')
+        # Child defaults
         ax._alty_parent = self
-        self._alty_overrides()
-        ax._alty_overrides()
+        ax.xaxis.set_minor_locator(minorlocator)
+        ax.xaxis.isDefault_minloc = True
+        for side, spine in ax.spines.items():
+            spine.set_visible(side == 'right')
+        ax.yaxis.tick_right()
+        ax.yaxis.set_label_position('right')
+        ax.xaxis.set_visible(False)
+        ax.patch.set_visible(False)
+        ax.grid(False)
+        ax.set_zorder(4)
+        ax.set_autoscalex_on(self.get_autoscalex_on())
+        # Parent defaults
+        self.spines['right'].set_visible(False)
+        self.spines['left'].set_visible(True)
+        self.yaxis.tick_left()
+        self.yaxis.set_label_position('left')
+        # Add axes
         self.add_child_axes(ax)  # to facilitate tight layout
         self.figure._axstack.remove(ax)  # or gets drawn twice!
         ax.format(**_parse_alt('y', kwargs))
@@ -1275,8 +1260,8 @@ class CartesianAxes(base.Axes):
         # being, our version is more robust (see FuncScale) and simpler, since
         # we do not create an entirely separate _SecondaryAxis class.
         ax = self.altx(**kwargs)
-        self._dualx_funcscale = funcscale
-        self._dualx_overrides()
+        ax._dualx_funcscale = funcscale
+        ax._dualx_scale()
         return ax
 
     @docstring.add_snippets
@@ -1285,18 +1270,16 @@ class CartesianAxes(base.Axes):
         %(axes.dualy)s
         """
         ax = self.alty(**kwargs)
-        self._dualy_funcscale = funcscale
-        self._dualy_overrides()
+        ax._dualy_funcscale = funcscale
+        ax._dualy_scale()
         return ax
 
     def draw(self, renderer=None, *args, **kwargs):
         # Perform extra post-processing steps
         # NOTE: This mimics matplotlib API, which calls identical
         # post-processing steps in both draw() and get_tightbbox()
-        self._altx_overrides()
-        self._alty_overrides()
-        self._dualx_overrides()
-        self._dualy_overrides()
+        self._dualx_scale()
+        self._dualy_scale()
         self._datex_rotate()
         self._apply_axis_sharing()
         if self._inset_parent is not None and self._inset_zoom:
@@ -1305,10 +1288,8 @@ class CartesianAxes(base.Axes):
 
     def get_tightbbox(self, renderer, *args, **kwargs):
         # Perform extra post-processing steps
-        self._altx_overrides()
-        self._alty_overrides()
-        self._dualx_overrides()
-        self._dualy_overrides()
+        self._dualx_scale()
+        self._dualy_scale()
         self._datex_rotate()
         self._apply_axis_sharing()
         if self._inset_parent is not None and self._inset_zoom:

@@ -132,7 +132,7 @@ FORMATTERS = {  # note default LogFormatter uses ugly e+00 notation
     'logit': mticker.LogitFormatter,
     'eng': mticker.EngFormatter,
     'percent': mticker.PercentFormatter,
-    'index': mticker.IndexFormatter,
+    'index': pticker._IndexFormatter,
     'e': partial(pticker.FracFormatter, symbol=r'$e$', number=np.e),
     'pi': partial(pticker.FracFormatter, symbol=r'$\pi$', number=np.pi),
     'tau': partial(pticker.FracFormatter, symbol=r'$\tau$', number=2 * np.pi),
@@ -728,9 +728,7 @@ def Cycle(
     # Merge cycler objects
     elif all(isinstance(arg, cycler.Cycler) for arg in args):
         if kwargs:
-            warnings._warn_proplot(
-                f'Ignoring Cycle() keyword arg(s) {kwargs}.'
-            )
+            warnings._warn_proplot(f'Ignoring Cycle() keyword arg(s) {kwargs}.')
         if len(args) == 1:
             return args[0]
         else:
@@ -762,10 +760,8 @@ def Cycle(
 
     # Build cycler, make sure lengths are the same
     for key, value in props.items():
-        if len(value) < nprops:
-            value[:] = [
-                value[i % len(value)] for i in range(nprops)
-            ]  # make loop double back
+        if len(value) < nprops:  # double back if necessary
+            value[:] = [value[i % len(value)] for i in range(nprops)]
     cycle = cycler.cycler(**props)
     cycle.name = _not_none(name, '_no_name')
     return cycle
@@ -1084,7 +1080,7 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
     elif np.iterable(formatter):
         # List of strings
         if index:
-            formatter = mticker.IndexFormatter(formatter)
+            formatter = pticker._IndexFormatter(formatter)
         else:
             formatter = mticker.FixedFormatter(formatter)
     else:
@@ -1367,7 +1363,7 @@ def Proj(name, basemap=None, **kwargs):
             raise RuntimeError(
                 'Basemap is no longer maintained and is incompatible with '
                 'matplotlib >= 3.3. Please use cartopy as your cartographic '
-                'plotting backend or downgrade to matplotlib <=3.2.'
+                'plotting backend or downgrade to matplotlib <= 3.2.'
             )
         if 'lonlim' in kwargs:
             kwargs['llcrnrlon'], kwargs['urcrnrlon'] = kwargs.pop('lonlim')

@@ -8,7 +8,7 @@ import numpy as np
 
 from .config import rc
 from .internals import ic  # noqa: F401
-from .internals import _not_none
+from .internals import _not_none, _version, _version_mpl
 from .utils import units
 
 __all__ = ['GridSpec', 'SubplotSpec']
@@ -286,8 +286,7 @@ class SubplotSpec(mgridspec.SubplotSpec):
         last subplot row, first subplot column, and last subplot column,
         ignoring rows and columns allocated for spaces.
         """
-        gridspec = self.get_gridspec()
-        nrows, ncols = gridspec.get_geometry()
+        nrows, ncols = self.get_gridspec().get_geometry()
         row1, col1 = divmod(self.num1, ncols)
         if self.num2 is not None:
             row2, col2 = divmod(self.num2, ncols)
@@ -295,7 +294,12 @@ class SubplotSpec(mgridspec.SubplotSpec):
             row2 = row1
             col2 = col1
         return (
-            nrows // 2, ncols // 2, row1 // 2, row2 // 2, col1 // 2, col2 // 2
+            (nrows + 1) // 2,
+            (ncols + 1) // 2,
+            row1 // 2,
+            row2 // 2,
+            col1 // 2,
+            col2 // 2
         )
 
     def get_geometry(self):
@@ -579,8 +583,11 @@ class GridSpec(mgridspec.GridSpec):
             subplotspec = ax.get_subplotspec().get_topmost_subplotspec()
             if subplotspec.get_gridspec() is not self:
                 continue
-            ax.update_params()
-            ax.set_position(ax.figbox)
+            if _version_mpl >= _version('3.4.0'):
+                ax.set_position(ax.get_subplotspec().get_position(ax.figure))
+            else:
+                ax.update_params()
+                ax.set_position(ax.figbox)  # equivalent to above
         fig.stale = True
 
 

@@ -63,8 +63,8 @@ def _circle_boundary(N=100):
 
 class _GeoAxis(object):
     """
-    Dummy axis used with longitude and latitude locators and for storing
-    view limits on longitude latitude coordinates.
+    Dummy axis used by longitude and latitude locators and for storing
+    view limits on longitude and latitude coordinates.
     """
     # NOTE: Due to cartopy bug (https://github.com/SciTools/cartopy/issues/1564)
     # we store presistent longitude and latitude locators on axes, then *call*
@@ -361,12 +361,14 @@ optional
 
             1. Boolean ``True``. Indicates the left side for latitudes,
                bottom side for longitudes.
-            2. A string indicating the side names, e.g. ``'lr'`` for latitudes
-               or ``'bt'`` for longitudes.
-            3. A boolean 2-tuple indicating whether to draw labels on the
+            2. A string or tuple of strings indicating the side names, e.g.
+               ``'left'`` for latitudes or ``'bottom'`` for longitudes.
+            3. A string indicating the side names with single characters, e.g.
+               ``'lr'`` for latitudes or ``'bt'`` for longitudes.
+            4. A boolean 2-tuple indicating whether to draw labels on the
                ``(left, right)`` sides for latitudes, or ``(bottom, top)``
                sides for longitudes.
-            4. A boolean 4-tuple indicating whether to draw labels on the
+            5. A boolean 4-tuple indicating whether to draw labels on the
                ``(left, right, bottom, top)`` sides, as with the basemap
                `~mpl_toolkits.basemap.Basemap.drawmeridians` and
                `~mpl_toolkits.basemap.Basemap.drawparallels` `labels`
@@ -653,13 +655,29 @@ optional
         """
         if labels is None:
             return [None] * 4
+        which = 'lon' if lon else 'lat'
+
+        # Parse string label indicators
         if isinstance(labels, str):
-            array = [False] * 4
-            for idx, char in enumerate('lrbt'):
-                if char in labels:
-                    array[idx] = True
-        else:
-            array = np.atleast_1d(labels).tolist()
+            labels = (labels,)
+        array = np.atleast_1d(labels).tolist()
+        if all(isinstance(_, str) for _ in array):
+            bool_ = [False] * 4
+            opts = ('left', 'right', 'bottom', 'top')
+            for string in array:
+                if string in opts:
+                    string = string[0]
+                elif set(string) - set('lrbt'):
+                    raise ValueError(
+                        f'Invalid {which}label string {string!r}. Must be one of '
+                        + ', '.join(map(repr, opts))
+                        + " or a string of single-letter characters like 'lr'."
+                    )
+                for char in string:
+                    bool_['lrbt'.index(char)] = True
+            array = bool_
+
+        # Parse boolean label indicators
         if len(array) == 1:
             array.append(False)  # default is to label bottom or left
         if len(array) == 2:
@@ -667,9 +685,9 @@ optional
                 array = [False, False, *array]
             else:
                 array = [*array, False, False]
-        elif len(array) != 4:
-            name = 'lon' if lon else 'lat'
-            raise ValueError(f'Invalid {name}label spec: {labels}.')
+        if len(array) != 4 or any(isinstance(_, str) for _ in array):
+            raise ValueError(f'Invalid {which}label spec: {labels}.')
+
         return array
 
 
@@ -685,7 +703,7 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
     the equator by default.
     """
     #: The registered projection name.
-    name = 'cartopy'
+    name = 'proplot_cartopy'
     _proj_north = (
         pcrs.NorthPolarStereo,
         pcrs.NorthPolarGnomonic,
@@ -1039,7 +1057,6 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
             gl.rotate_labels = rotatelabels  # ignored in cartopy <0.18
 
         # Gridline label formatters
-        # TODO: Use lonaxis and lataxis instead
         lonaxis = self._lonaxis
         lataxis = self._lataxis
         gl.xformatter = lonaxis.get_major_formatter()
@@ -1219,7 +1236,7 @@ class BasemapAxes(GeoAxes):
     to plotting methods by default.
     """
     #: The registered projection name.
-    name = 'basemap'
+    name = 'proplot_basemap'
     _proj_north = ('npaeqd', 'nplaea', 'npstere')
     _proj_south = ('spaeqd', 'splaea', 'spstere')
     _proj_polar = _proj_north + _proj_south

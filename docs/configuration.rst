@@ -13,7 +13,7 @@ A special object named `~proplot.config.rc`, belonging to the
 shop for working with `builtin matplotlib global settings <rc_matplotlib_>`_
 and the global settings :ref:`added by proplot <rc_proplot>`.
 Global settings can be changed on-the-fly using the `~proplot.config.rc`
-object as follows:
+object:
 
 .. code-block:: python
 
@@ -24,8 +24,7 @@ object as follows:
   plot.rc.update({'name1': value1, 'name2': value2})
 
 To apply settings to a particular axes, pass the setting
-to the `~proplot.axes.Axes.format` command using either
-of the following approaches:
+to the `~proplot.axes.Axes.format` command:
 
 .. code-block:: python
 
@@ -33,6 +32,18 @@ of the following approaches:
   fig, ax = plot.subplots()
   ax.format(name1=value1, name2=value2)
   ax.format(rc_kw={'name1': value1, 'name2': value2})
+
+To temporarily modify settings for particular figure(s), pass the setting
+to the `~proplot.config.rc_configurator.context` command:
+
+.. code-block:: python
+
+   import proplot as plot
+   with plot.rc.context(name1=value1, name2=value2):
+       fig, ax = plot.subplots()
+   with plot.rc.context({'name1': value1, 'name2': value2}):
+       fig, ax = plot.subplots()
+
 
 In all of these examples, if the setting name contains dots,
 you can simply omit the dots. For example, to change the

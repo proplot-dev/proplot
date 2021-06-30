@@ -3,6 +3,7 @@
 The base axes class used for all ProPlot figures.
 """
 import copy
+import re
 from numbers import Integral, Number
 
 import matplotlib.axes as maxes
@@ -193,7 +194,7 @@ class Axes(maxes.Axes):
     Lowest-level axes subclass. Handles titles and axis
     sharing. Adds several new methods and overrides existing ones.
     """
-    def __init__(self, *args, number=None, main=False, **kwargs):
+    def __init__(self, *args, number=None, main=False, _subplotspec=None, **kwargs):
         """
         Parameters
         ----------
@@ -226,11 +227,11 @@ class Axes(maxes.Axes):
         self._abc_loc = None
         self._abc_text = None
         self._abc_border_kwargs = {}  # abs border properties
+        self._title_above = rc['axes.titleabove']
         self._title_loc = None  # location of main title
         self._title_pad = rc['axes.titlepad']  # format() can overwrite
         self._title_pad_active = None
         self._title_border_kwargs = {}  # title border properties
-        self._above_top_panels = True  # TODO: add rc prop?
         self._bottom_panels = []
         self._top_panels = []
         self._left_panels = []
@@ -245,10 +246,6 @@ class Axes(maxes.Axes):
         self._inset_parent = None
         self._inset_zoom = False
         self._inset_zoom_data = None
-        self._alty_child = None
-        self._altx_child = None
-        self._alty_parent = None
-        self._altx_parent = None
         self.number = number  # for abc numbering
         if main:
             self.figure._axes_main.append(self)
@@ -259,7 +256,7 @@ class Axes(maxes.Axes):
 
         # Figure row and column labels
         # NOTE: Most of these sit empty for most subplots
-        # TODO: Implement this with EdgeStack
+        # TODO: Implement this with EdgeStack, avoid creating silly empty objects
         coltransform = mtransforms.blended_transform_factory(
             self.transAxes, self.figure.transFigure
         )
@@ -303,9 +300,20 @@ class Axes(maxes.Axes):
         # Abc label
         self._abc_label = self.text(0, 0, '', transform=transform)
 
-        # Automatic axis sharing and formatting
-        # TODO: Instead of format() call specific setters
+        # Subplot spec
+        # WARNING: For mpl>=3.4.0 subplotspec assigned *after* initialization using
+        # set_subplotspec. Tried to defer to setter but really messes up both format()
+        # and _auto_share_setup(). Instead use workaround: Have Figure.add_subplot pass
+        # subplotspec as a hidden keyword arg. Non-subplots don't need this arg.
+        # See https://github.com/matplotlib/matplotlib/pull/18564
+        if _subplotspec is not None:
+            self.set_subplotspec(_subplotspec)
+
+        # Automatic axis sharing
         self._auto_share_setup()
+
+        # Automatic formatting
+        # TODO: Apply specific setters instead of format()
         self.format(rc_mode=1)  # mode == 1 applies the custom proplot params
 
     def _auto_share_setup(self):
@@ -604,7 +612,7 @@ class Axes(maxes.Axes):
         else:
             ax = self
         taxs = ax._top_panels
-        if not taxs or not ax._above_top_panels:
+        if not taxs or not ax._title_above:
             tax = ax
         else:
             tax = taxs[-1]
@@ -687,14 +695,14 @@ class Axes(maxes.Axes):
                 loc = self._abc_loc
                 if loc in ('left', 'right', 'center'):
                     continue
-            pad = rc['axes.titlepad'] / (72 * width)
+            pad = self._title_pad / (72 * width)
             if loc in ('upper center', 'lower center'):
                 x = 0.5
             elif loc in ('upper left', 'lower left'):
                 x = pad
             elif loc in ('upper right', 'lower right'):
                 x = 1 - pad
-            pad = rc['axes.titlepad'] / (72 * height)
+            pad = self._title_pad / (72 * height)
             if loc in ('upper left', 'upper right', 'upper center'):
                 y = 1 - pad
             elif loc in ('lower left', 'lower right', 'lower center'):
@@ -755,7 +763,7 @@ class Axes(maxes.Axes):
         return rc_kw, rc_mode, kw
 
     def format(
-        self, *, title=None, abovetop=None,
+        self, *, title=None,
         figtitle=None, suptitle=None, rowlabels=None, collabels=None,
         leftlabels=None, rightlabels=None, toplabels=None, bottomlabels=None,
         llabels=None, rlabels=None, tlabels=None, blabels=None,
@@ -804,6 +812,11 @@ class Axes(maxes.Axes):
             lower right inside axes   ``'lower right'``, ``'lr'``
             ========================  ============================
 
+        ltitle, ctitle, rtitle, ultitle, uctitle, urtitle, lltitle, lctitle, \
+lrtitle : str, optional
+            Axes titles in specific positions. Works as an alternative to
+            ``ax.format(title='title', titleloc='loc')`` and lets you specify
+            multiple title-like labels in a single subplot.
         abcborder, titleborder : bool, optional
             Whether to draw a white border around titles and a-b-c labels
             positioned inside the axes. This can help them stand out on top
@@ -814,24 +827,20 @@ class Axes(maxes.Axes):
             positioned inside the axes. This can help them stand out on top
             of artists plotted inside the axes. Defaults are
             :rc:`abc.bbox` and :rc:`title.bbox`
-        abovetop : bool, optional
-            Whether to try to put the title and a-b-c label above the top panel
-            (if it exists), or to always put them above the main subplot.
-            Default is ``True``.
-        ltitle, ctitle, rtitle, ultitle, uctitle, urtitle, lltitle, lctitle, \
-lrtitle : str, optional
-            Axes titles in specific positions (see `abcloc`). This lets you
-            specify multiple title-like labels for a single subplot.
-        leftlabels, rightlabels, toplabels, bottomlabels : list of str, \
+        titlepad : float, optional
+            The padding for the inner and outer titles and a-b-c labels in
+            arbitrary units (default is points). Default is :rc:`axes.titlepad`.
+        titleabove : bool, optional
+            Whether to try to put outer titles and a-b-c labels above the top panel
+            (if it exists). Default is :rc:`axes.titleabove`.
+        leftlabels, toplabels, rightlabels, bottomlabels : list of str, \
 optional
-            Labels for the subplots lying along the left, right, top, and
+            Labels for the subplots lying along the left, top, right, and
             bottom edges of the figure. The length of each list must match
             the number of subplots along the corresponding edge.
-        rowlabels, collabels : list of str, optional
-            Aliases for `leftlabels`, `toplabels`.
-        llabels, rlabels, tlabels, blabels : list of str, optional
-            Aliases for `leftlabels`, `toplabels`, `rightlabels`,
-            `bottomlabels`.
+        rowlabels, collabels, llabels, tlabels, rlabels, blabels : list of str, optional
+            Aliases for `leftlabels`, `toplabels`, `leftlabels`, `toplabels`,
+            `rightlabels`, and `bottomlabels`.
         figtitle, suptitle : str, optional
             The figure "super" title, centered between the left edge of
             the lefmost column of subplots and the right edge of the rightmost
@@ -854,18 +863,19 @@ optional
         proplot.axes.PolarAxes.format
         proplot.axes.GeoAxes.format
         """
-        # Misc axes settings
-        # TODO: Add more settings to this?
+        # Figure patch (needs to be re-asserted even if declared before figure is drawn)
+        kw = rc.fill({'facecolor': 'figure.facecolor'}, context=True)
+        self.figure.patch.update(kw)
+
+        # Axes settings (TODO: add more settings?)
         cycle = rc.get('axes.prop_cycle', context=True)
         if cycle is not None:
             self.set_prop_cycle(cycle)
 
-        # Figure patch (for some reason needs to be re-asserted even if
-        # declared before figure is drawn)
-        kw = rc.fill({'facecolor': 'figure.facecolor'}, context=True)
-        self.figure.patch.update(kw)
-        if abovetop is not None:
-            self._above_top_panels = abovetop
+        # Text positioning
+        above = rc.get('axes.titleabove', context=True)
+        if above is not None:
+            self._title_above = above
         pad = rc.get('axes.titlepad', context=True)
         if pad is not None:
             self._set_title_offset_trans(pad)
@@ -898,12 +908,8 @@ optional
         # Labels
         rlabels = _not_none(rightlabels=rightlabels, rlabels=rlabels)
         blabels = _not_none(bottomlabels=bottomlabels, blabels=blabels)
-        llabels = _not_none(
-            rowlabels=rowlabels, leftlabels=leftlabels, llabels=llabels,
-        )
-        tlabels = _not_none(
-            collabels=collabels, toplabels=toplabels, tlabels=tlabels,
-        )
+        llabels = _not_none(rowlabels=rowlabels, leftlabels=leftlabels, llabels=llabels)
+        tlabels = _not_none(collabels=collabels, toplabels=toplabels, tlabels=tlabels)
         for side, labels in zip(
             ('left', 'right', 'top', 'bottom'),
             (llabels, rlabels, tlabels, blabels)
@@ -962,22 +968,18 @@ optional
             self._abc_border_kwargs.update(kwb)
             kw.update(self._abc_border_kwargs)
 
-            # Label format
-            abcstyle = rc.get('abc.style', context=True)  # 1st run, or changed
-            if abcstyle and self.number is not None:
-                if not isinstance(abcstyle, str) or (
-                    'a' not in abcstyle and 'A' not in abcstyle
-                ):
+            # A-b-c labels. Build as a...z...aa...zz...aaa...zzz
+            style = rc.get('abc.style', context=True)  # 1st run, or changed
+            if style and self.number is not None:
+                if not isinstance(style, str) or 'a' not in style and 'A' not in style:
                     raise ValueError(
-                        f'Invalid abcstyle {abcstyle!r}. '
-                        'Must include letter "a" or "A".'
+                        f'Invalid abcstyle {style!r}. Must include letter "a" or "A".'
                     )
-                # Build abc labels as a...z...aa...zz...aaa...zzz
-                # Permit abcstyles with arbitrary counts of A's
                 nabc, iabc = divmod(self.number - 1, 26)
-                text = (nabc + 1) * ABC_STRING[iabc]
-                text = abcstyle.replace('a', text).replace('A', text.upper())
-                self._abc_text = text
+                old = re.search('[aA]', style).group()  # return the *first* 'a'
+                new = (nabc + 1) * ABC_STRING[iabc]
+                new = new.upper() if old == 'A' else new
+                self._abc_text = style.replace(old, new, 1)
 
             # Apply text
             obj = self._abc_label
@@ -1206,7 +1208,7 @@ optional
 
             # Draw colorbar axes
             with self.figure._context_authorize_add_subplot():
-                ax = self.figure.add_subplot(subplotspec, projection='cartesian')  # noqa: E501
+                ax = self.figure.add_subplot(subplotspec, projection='proplot_cartesian')  # noqa: E501
             self.add_child_axes(ax)
 
             # Location
@@ -1514,31 +1516,30 @@ optional
         label = kwargs.pop('label', 'inset_axes')
         proj = _not_none(proj=proj, projection=projection)
         proj_kw = _not_none(proj_kw=proj_kw, projection_kw=projection_kw, default={})
+        if basemap is not None:
+            proj_kw['basemap'] = basemap
 
         # Inherit from current axes
         if proj is None:
-            proj = self.name
-            if basemap is not None:
-                proj_kw['basemap'] = basemap
+            proj = self.name  # will have 'proplot_' prefix
             if proj_kw:
                 warnings._warn_proplot(
                     'Inheriting projection from the main axes. '
                     f'Ignoring proj_kw keyword args: {proj_kw}'
                 )
-            if proj in ('cartopy', 'basemap'):
-                map_projection = copy.copy(self.projection)
-                kwargs.setdefault('map_projection', map_projection)
+            if proj in ('proplot_cartopy', 'proplot_basemap'):
+                m = copy.copy(self.projection)
+                kwargs.setdefault('map_projection', m)
 
         # Create new projection
         elif proj == 'cartesian':
-            pass
+            proj = 'proplot_cartesian'
         elif proj == 'polar':
-            proj = 'polar2'  # custom proplot name
+            proj = 'proplot_polar'
         else:
-            proj_kw.setdefault('basemap', basemap)
-            map_projection = constructor.Proj(proj, **proj_kw)
-            kwargs.setdefault('map_projection', map_projection)
-            proj = 'basemap' if proj_kw['basemap'] else 'cartopy'
+            m = constructor.Proj(proj, **proj_kw)
+            kwargs.setdefault('map_projection', m)
+            proj = 'proplot_' + m._proj_package
 
         # This puts the rectangle into figure-relative coordinates.
         locator = self._make_inset_locator(bounds, transform)
@@ -1708,22 +1709,13 @@ optional
         interp  # avoid U100 unused argument error (arg is handled by wrapper)
         coords = []
         levels = edges(values)
-        for j in range(y.shape[0]):
-            if j == 0:
-                xleft, yleft = [], []
-            else:
-                xleft = [0.5 * (x[j - 1] + x[j]), x[j]]
-                yleft = [0.5 * (y[j - 1] + y[j]), y[j]]
-            if j + 1 == y.shape[0]:
-                xright, yright = [], []
-            else:
-                xleft = xleft[:-1]  # prevent repetition when joined with right
-                yleft = yleft[:-1]
-                xright = [x[j], 0.5 * (x[j + 1] + x[j])]
-                yright = [y[j], 0.5 * (y[j + 1] + y[j])]
-            pleft = np.stack((xleft, yleft), axis=1)
-            pright = np.stack((xright, yright), axis=1)
-            coords.append(np.concatenate((pleft, pright), axis=0))
+        for i in range(y.shape[0]):
+            icoords = np.empty((3, 2))
+            for j, arr in enumerate((x, y)):
+                icoords[0, j] = arr[0] if i == 0 else 0.5 * (arr[i - 1] + arr[i])
+                icoords[1, j] = arr[i]
+                icoords[2, j] = arr[-1] if i + 1 == y.shape[0] else 0.5 * (arr[i + 1] + arr[i])  # noqa: E501
+            coords.append(icoords)
         coords = np.array(coords)
 
         # Create LineCollection and update with values

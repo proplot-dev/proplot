@@ -53,6 +53,7 @@ _rc_removed = {  # {key: (alternative, version)} dictionary
 _rc_renamed = {  # {old_key: (new_key, version)} dictionary
     'abc.format': ('abc.style', '0.5'),
     'align': ('subplots.align', '0.6'),
+    'abovetop': ('title.above', '0.7'),
     'axes.facealpha': ('axes.alpha', '0.6'),
     'geoaxes.edgecolor': ('axes.edgecolor', '0.6'),
     'geoaxes.facealpha': ('axes.alpha', '0.6'),
@@ -76,11 +77,11 @@ _rc_renamed = {  # {old_key: (new_key, version)} dictionary
 }
 
 # ProPlot overrides of matplotlib default style
+# NOTE: Hard to say what best value for 'margin' is. 0 is bad for bar plots and scatter
+# plots, 0.05 is good for line plot in y direction but not x direction.
 # WARNING: Critical to include every parameter here that can be changed by a
 # "meta" setting so that _get_default_param returns the value imposed by *proplot*
 # and so that "changed" settings detectd by RcConfigurator.save are correct.
-# NOTE: Hard to say what best value for 'margin' is. 0 is bad for bar plots and scatter
-# plots, 0.05 is good for line plot in y direction but not x direction.
 _rc_matplotlib_default = {
     'axes.axisbelow': GRIDBELOW,
     'axes.formatter.use_mathtext': MATHTEXT,
@@ -208,7 +209,7 @@ _rc_matplotlib_default = {
     'savefig.dpi': 1200,  # academic journal recommendations for raster line art
     'savefig.facecolor': 'white',  # different from figure.facecolor
     'savefig.format': 'pdf',  # most users use bitmap, but vector graphics are better
-    'savefig.transparent': True,
+    'savefig.transparent': False,
     'xtick.direction': TICKDIR,
     'xtick.labelsize': LABELSIZE,
     'xtick.major.pad': TICKPAD,
@@ -318,6 +319,11 @@ _rc_proplot = {
     'axes.alpha': (
         1.0,
         'The opacity of the background axes patch.'
+    ),
+    'axes.titleabove': (
+        True,
+        'Boolean, indicates whether to move the title and a-b-c labels above any "top" '
+        'panels above axes.'
     ),
     'formatter.timerotation': (
         90,
@@ -858,6 +864,11 @@ _rc_proplot = {
     ),
 
     # Title settings
+    'title.above': (
+        True,
+        'Boolean, indicates whether to move the title and a-b-c labels above any "top" '
+        'panels above axes. Alias for :rcraw:`axes.titleabove`.'
+    ),
     'title.border': (
         True,
         'Boolean, indicates whether to draw a white border around titles '
@@ -1008,6 +1019,7 @@ _rc_aliases = {
     'font.name': 'font.family',
     'grid.below': 'axes.axisbelow',
     'title.pad': 'axes.titlepad',
+    'title.above': 'axes.titleabove',
 }
 for key, value in _rc_aliases.items():
     _rc_children[key] = (value,)

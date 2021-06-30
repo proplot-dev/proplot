@@ -81,18 +81,12 @@ extlinks = {
     'pr': ('https://github.com/lukelbd/proplot/pull/%s', 'GH#'),
 }
 
-# Copy button
-# Use selectors for nbsphinx input cells from custom.css
-# TODO: Fix this, doesn't work
-copybutton_prompt_text = '>>>'
-# copybutton_selector = ',\n'.join((
-#     'code',
-#     '.rst-content tt',
-#     '.rst-content code',
-#     ".rst-content div:not(.stderr)>div[class^='highlight']",
-#     '.rst-content div.nbinput>div.input_area',
-#     '.rst-content pre.literal-bloc',
-# ))
+# Cupybutton configuration
+# See: https://sphinx-copybutton.readthedocs.io/en/latest/
+copybutton_prompt_text = r'>>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: '
+copybutton_prompt_is_regexp = True
+copybutton_only_copy_prompt_lines = True
+copybutton_remove_prompts = True
 
 # Give *lots* of time for cell execution!
 # Note nbsphinx compiles *all* notebooks in docs unless excluded
@@ -197,7 +191,7 @@ language = None
 # directories to ignore when looking for source files.
 exclude_patterns = [
     '.DS_Store',
-    '_build', '_templates', '_themes',
+    '_build', '_templates', '_themes', 'trash',
     'conf.py', 'sphinxext', '*.ipynb', '**.ipynb_checkpoints',
 ]
 
@@ -208,12 +202,13 @@ pygments_style = 'none'
 # Create local pygments copies
 # Previously used: https://github.com/richleland/pygments-css
 # But do not want to depend on some random repository
+# from pygments.styles import get_all_styles  # noqa: E402
 from pygments.formatters import HtmlFormatter  # noqa: E402
-from pygments.styles import get_all_styles  # noqa: E402
 path = os.path.join('_static', 'pygments')
 if not os.path.isdir(path):
     os.mkdir(path)
-for style in get_all_styles():
+# for style in get_all_styles():
+for style in ('pastie', 'monokai'):  # WARNING: update when _static/custom.js changes
     path = os.path.join('_static', 'pygments', style + '.css')
     if os.path.isfile(path):
         continue

@@ -625,7 +625,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             a colormap with the left two-thrids containing colors from
             ``cmap1`` and the right one-third containing colors from ``cmap2``.
         name : str, optional
-            The colormap name. Default is
+            The name of the new colormap. Default is
             ``'_'.join(cmap.name for cmap in args)``.
         N : int, optional
             The number of points in the colormap lookup table.
@@ -760,8 +760,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             ``cut=0.1`` cuts the central 10%, or ``cut=-0.1`` fills the ctranl 10%
             of the colormap with the current central color (usually white).
         name : str, optional
-            The name of the new colormap. Default is
-            ``self.name + '_cut'``.
+            The name of the new colormap. Default is ``self.name + '_copy'``.
         left, right : float, optional
             The colormap indices for the "leftmost" and "rightmost" colors.
             Defaults are ``0`` and ``1``. See
@@ -796,7 +795,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
                 f'Invalid combination cut={cut} for left={left} and right={right}.'
             )
         if name is None:
-            name = self.name + '_cut'
+            name = self.name + '_copy'
         cmap_left = self.truncate(left, 0.5 - offset)
         cmap_right = self.truncate(0.5 + offset, right)
 
@@ -822,7 +821,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         Parameters
         ----------
         name : str, optional
-            The new colormap name. Default is ``self.name + '_r'``.
+            The name of the new colormap. Default is ``self.name + '_r'``.
 
         Other parameters
         ----------------
@@ -956,8 +955,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             The number of degrees to shift, out of 360 degrees.
             The default is ``180``.
         name : str, optional
-            The name of the new colormap. Default is
-            ``self.name + '_s'``.
+            The name of the new colormap. Default is ``self.name + '_s'``.
 
         Other parameters
         ----------------
@@ -992,16 +990,13 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         Parameters
         ----------
         left : float, optional
-            The colormap index for the new "leftmost" color. Must fall between
-            ``0`` and ``1``. For example,
-            ``left=0.1`` cuts the leftmost 10%% of the colors.
+            The colormap index for the new "leftmost" color. Must fall between ``0``
+            and ``1``. For example, ``left=0.1`` cuts the leftmost 10%% of the colors.
         right : float, optional
-            The colormap index for the new "rightmost" color. Must fall between
-            ``0`` and ``1``. For example,
-            ``right=0.9`` cuts the leftmost 10%% of the colors.
+            The colormap index for the new "rightmost" color. Must fall between ``0``
+            and ``1``. For example, ``right=0.9`` cuts the leftmost 10%% of the colors.
         name : str, optional
-            The name of the new colormap. Default is
-            ``self.name + '_truncate'``.
+            The name of the new colormap. Default is ``self.name + '_copy'``.
 
         Other parameters
         ----------------
@@ -1015,7 +1010,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         if left == 0 and right == 1:
             return self
         if name is None:
-            name = self.name + '_truncate'
+            name = self.name + '_copy'
 
         # Resample the segmentdata arrays
         segmentdata = {}
@@ -1084,10 +1079,10 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         Parameters
         ----------
         name : str
-            The colormap name. Default is ``self.name + '_copy'``.
+            The name of the new colormap. Default is ``self.name + '_copy'``.
         segmentdata, N, alpha, gamma, cyclic : optional
-            See `LinearSegmentedColormap`. If not provided,
-            these are copied from the current colormap.
+            See `LinearSegmentedColormap`. If not provided, these are copied from
+            the current colormap.
         """
         if name is None:
             name = self.name + '_copy'
@@ -1108,7 +1103,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         cmap._rgba_over = self._rgba_over
         return cmap
 
-    def to_listed(self, samples=10, **kwargs):
+    def to_listed(self, samples=10, name=None, **kwargs):
         """
         Convert the `LinearSegmentedColormap` to a `ListedColormap` by drawing
         samples from the colormap.
@@ -1119,6 +1114,8 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             If integer, draw samples at the colormap coordinates
             ``np.linspace(0, 1, samples)``. If list of float, draw samples
             at the specified points.
+        name : str, optional
+            The name of the new colormap. Default is ``self.name + '_copy'``.
 
         Other parameters
         ----------------
@@ -1131,8 +1128,9 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             raise TypeError('Samples must be integer or iterable.')
         samples = np.asarray(samples)
         colors = self(samples)
-        kwargs.setdefault('name', self.name)
-        return ListedColormap(colors, **kwargs)
+        if name is None:
+            name = self.name + '_copy'
+        return ListedColormap(colors, name=name, **kwargs)
 
     @classmethod
     def from_file(cls, path, warn_on_failure=False):
@@ -1260,7 +1258,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         *args
             Instances of `ListedColormap`.
         name : str, optional
-            The colormap name. Default is
+            The name of the new colormap. Default is
             ``'_'.join(cmap.name for cmap in args)``.
         N : int, optional
             The number of colors in the colormap lookup table. Default is
@@ -1342,7 +1340,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
             The number of places to shift, between ``-self.N`` and ``self.N``.
             The default is ``1``.
         name : str, optional
-            The new colormap name. Default is ``self.name + '_s'``.
+            The name of the new colormap. Default is ``self.name + '_s'``.
         """
         if not shift:
             return self
@@ -1368,12 +1366,12 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
             ``0`` and ``self.N``. For example,
             ``right=4`` deletes colors after the fourth color.
         name : str, optional
-            The new colormap name. Default is ``self.name + '_truncate'``.
+            The name of the new colormap. Default is ``self.name + '_copy'``.
         """
         if left is None and right is None:
             return self
         if name is None:
-            name = self.name + '_truncate'
+            name = self.name + '_copy'
         colors = self.colors[left:right]
         return self.copy(colors, name, len(colors))
 
@@ -1385,7 +1383,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         Parameters
         ----------
         name : str
-            The colormap name. Default is ``self.name + '_copy'``.
+            The name of the new colormap. Default is ``self.name + '_copy'``.
         colors, N, alpha : optional
             See `ListedColormap`. If not provided,
             these are copied from the current colormap.
@@ -1566,7 +1564,7 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         Parameters
         ----------
         name : str
-            The colormap name. Default is ``self.name + '_copy'``.
+            The name of the new colormap. Default is ``self.name + '_copy'``.
         segmentdata, N, alpha, clip, cyclic, gamma, gamma1, gamma2, space : \
 optional
             See `PerceptuallyUniformColormap`. If not provided,
@@ -1600,21 +1598,26 @@ optional
         cmap._rgba_over = self._rgba_over
         return cmap
 
-    def to_linear_segmented(self, **kwargs):
+    def to_linear_segmented(self, name=None, **kwargs):
         """
         Convert the `PerceptuallyUniformColormap` to a standard
         `LinearSegmentedColormap`. This is used to merge such colormaps.
 
         Parameters
         ----------
+        name : str, optional
+            The name of the new colormap. Default is ``self.name + '_copy'``.
+
+        Other parameters
+        ----------------
         **kwargs
             Passed to `LinearSegmentedColormap`.
         """
         if not self._isinit:
             self._init()
-        return LinearSegmentedColormap.from_list(
-            self.name, self._lut[:-3, :], **kwargs
-        )
+        if name is None:
+            name = self.name + '_copy'
+        return LinearSegmentedColormap.from_list(name, self._lut[:-3, :], **kwargs)
 
     @classmethod
     def from_color(cls, name, color, fade=None, space='hsl', **kwargs):
@@ -2493,7 +2496,7 @@ if mcm.get_cmap is not _get_cmap:
 if not isinstance(_cmap_database, ColormapDatabase):
     _cmap_database = {
         key: value for key, value in _cmap_database.items()
-        if key[-2:] != '_r' and key[-8:] != '_shifted'
+        if key[-2:] != '_r' and key[-2:] != '_s'
     }
     _cmap_database = ColormapDatabase(_cmap_database)
     setattr(mcm, _cmap_database_attr, _cmap_database)

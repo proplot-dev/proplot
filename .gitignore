@@ -16,6 +16,7 @@ dist
 # Local docs builds
 docs/api
 docs/_build
+docs/_static/pygments
 
 # Subfolder used to consider new colormaps
 sources

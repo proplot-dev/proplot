@@ -207,6 +207,25 @@ class _DegreeFormatter(_CartopyFormatter, _PlateCarreeFormatter):
         return ''
 
 
+class _IndexFormatter(mticker.Formatter):
+    """
+    Duplication of the exceedingly simple `~matplotlib.ticker.IndexFormatter`
+    class deprecated in matplotlib 3.3.0.
+    """
+    # NOTE: For details check out https://github.com/matplotlib/matplotlib/issues/16631
+    # and bring some popcorn.
+    def __init__(self, labels):
+        self.labels = labels
+        self.n = len(labels)
+
+    def __call__(self, x, pos=None):  # noqa: U100
+        i = int(round(x))
+        if i < 0 or i >= self.n:
+            return ''
+        else:
+            return self.labels[i]
+
+
 class AutoFormatter(mticker.ScalarFormatter):
     """
     The new default formatter. Differs from `~matplotlib.ticker.ScalarFormatter`

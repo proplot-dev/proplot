@@ -28,6 +28,7 @@ import numpy.ma as ma
 
 from .. import colors as pcolors
 from .. import constructor
+from .. import ticker as pticker
 from ..config import rc
 from ..internals import ic  # noqa: F401
 from ..internals import (
@@ -91,13 +92,16 @@ norm : normalizer spec, optional
     `~proplot.constructor.Norm` constructor.
 norm_kw : dict-like, optional
     Passed to `~proplot.constructor.Norm`.
+extend : {{'neither', 'min', 'max', 'both'}}, optional
+    Whether to assign unique colors to out-of-bounds data and draw
+    "extensions" (triangles, by default) on the colorbar.
 vmin, vmax : float, optional
     Used to determine level locations if `levels` is an integer. Actual
     levels may not fall exactly on `vmin` and `vmax`, but the minimum
     level will be no smaller than `vmin` and the maximum level will be
     no larger than `vmax`. If `vmin` or `vmax` is not provided, the
     minimum and maximum data values are used.
-levels, N : int or list of float, optional
+N, levels : int or list of float, optional
     The number of level edges, or a list of level edges. If the former,
     `locator` is used to generate this many levels at "nice" intervals.
     If the latter, the levels should be monotonically increasing or
@@ -570,19 +574,22 @@ def standardize_1d(self, func, *args, autoformat=None, **kwargs):
     x_index = None  # index version of 'x'
     if not hasattr(self, 'projection'):
         # First handle string-type x-coordinates
+        # NOTE: Why FixedLocator and not IndexLocator? The latter requires plotting
+        # lines or else error is raised... very strange.
+        # NOTE: Why IndexFormatter and not FixedFormatter? The former ensures labels
+        # correspond to indices while the latter can mysteriously truncate labels.
         kw = {}
         xname = 'y' if orientation == 'horizontal' else 'x'
         yname = 'x' if xname == 'y' else 'y'
-        if _is_string(x):
-            if name in ('hist',):
-                kwargs.setdefault('labels', list(x))
-            else:
-                x_index = np.arange(len(x))
-                kw[xname + 'locator'] = mticker.FixedLocator(x_index)
-                kw[xname + 'formatter'] = mticker.IndexFormatter(x)
-                kw[xname + 'minorlocator'] = mticker.NullLocator()
-                if name == 'boxplot':  # otherwise IndexFormatter is overridden
-                    kwargs['labels'] = x
+        if _is_string(x) and name in ('hist',):
+            kwargs.setdefault('labels', _to_ndarray(x))
+        elif _is_string(x):
+            x_index = np.arange(len(x))
+            kw[xname + 'locator'] = mticker.FixedLocator(x_index)
+            kw[xname + 'formatter'] = pticker._IndexFormatter(_to_ndarray(x))
+            kw[xname + 'minorlocator'] = mticker.NullLocator()
+            if name == 'boxplot':  # otherwise IndexFormatter is overridden
+                kwargs['labels'] = _to_ndarray(x)
 
         # Next handle labels if 'autoformat' is on
         # NOTE: Do not overwrite existing labels!
@@ -599,9 +606,8 @@ def standardize_1d(self, func, *args, autoformat=None, **kwargs):
                 if label and not getattr(self, f'get_{xname}label')():
                     kw[xname + 'label'] = label
                 # Reversed axis
-                if name not in ('scatter',):
-                    if x_index is None and len(x) > 1 and x[1] < x[0]:
-                        kw[xname + 'reverse'] = True
+                if name not in ('scatter',) and x_index is None and len(x) > 1 and x[1] < x[0]:  # noqa: E501
+                    kw[xname + 'reverse'] = True
 
         # Appply
         if kw:
@@ -611,11 +617,11 @@ def standardize_1d(self, func, *args, autoformat=None, **kwargs):
     if x_index is not None:
         x = x_index
     if name in ('boxplot', 'violinplot'):
-        ys = [_to_ndarray(yi) for yi in ys]  # store naked array
+        ys = list(map(_to_ndarray, ys))  # store naked arrays
         kwargs['positions'] = x
 
-    # Basemap shift x coordiantes without shifting y, we fix this!
-    if getattr(self, 'name', '') == 'basemap' and kwargs.get('latlon', None):
+    # Basemap shift x coordinates without shifting y, we fix this!
+    if getattr(self, 'name', '') == 'proplot_basemap' and kwargs.get('latlon', None):
         ix, iys = x, []
         xmin, xmax = self.projection.lonmin, self.projection.lonmax
         for y in ys:
@@ -822,18 +828,22 @@ def standardize_2d(
     # Auto axis labels
     # TODO: Check whether isinstance(GeoAxes) instead of checking projection attribute
     kw = {}
-    xi = yi = None
+    x_index = y_index = None
     if not hasattr(self, 'projection'):
         # First handle string-type x and y-coordinates
+        # NOTE: Why FixedLocator and not IndexLocator? The latter requires plotting
+        # lines or else error is raised... very strange.
+        # NOTE: Why IndexFormatter and not FixedFormatter? The former ensures labels
+        # correspond to indices while the latter can mysteriously truncate labels.
         if _is_string(x):
-            xi = np.arange(len(x))
-            kw['xlocator'] = mticker.FixedLocator(xi)
-            kw['xformatter'] = mticker.IndexFormatter(x)
+            x_index = np.arange(len(x))
+            kw['xlocator'] = mticker.FixedLocator(x_index)
+            kw['xformatter'] = pticker._IndexFormatter(_to_ndarray(x))
             kw['xminorlocator'] = mticker.NullLocator()
         if _is_string(y):
-            yi = np.arange(len(y))
-            kw['ylocator'] = mticker.FixedLocator(yi)
-            kw['yformatter'] = mticker.IndexFormatter(y)
+            y_index = np.arange(len(y))
+            kw['ylocator'] = mticker.FixedLocator(y_index)
+            kw['yformatter'] = pticker._IndexFormatter(_to_ndarray(y))
             kw['yminorlocator'] = mticker.NullLocator()
 
         # Handle labels if 'autoformat' is on
@@ -855,10 +865,10 @@ def standardize_2d(
         self.format(**kw)
 
     # Use *index coordinates* from here on out if input was array of strings
-    if xi is not None:
-        x = xi
-    if yi is not None:
-        y = yi
+    if x_index is not None:
+        x = x_index
+    if y_index is not None:
+        y = y_index
 
     # Auto axes title and colorbar label
     # NOTE: Do not overwrite existing title!
@@ -934,7 +944,7 @@ def standardize_2d(
 
     # Cartopy projection axes
     if (
-        getattr(self, 'name', '') == 'cartopy'
+        getattr(self, 'name', '') == 'proplot_cartopy'
         and isinstance(kwargs.get('transform', None), PlateCarree)
     ):
         x, y = _fix_latlon(x, y)
@@ -953,7 +963,7 @@ def standardize_2d(
         x, Zs = ix, iZs
 
     # Basemap projection axes
-    elif getattr(self, 'name', '') == 'basemap' and kwargs.get('latlon', None):
+    elif getattr(self, 'name', '') == 'proplot_basemap' and kwargs.get('latlon', None):
         # Fix grid
         xmin, xmax = self.projection.lonmin, self.projection.lonmax
         x, y = _fix_latlon(x, y)
@@ -1455,12 +1465,10 @@ def plot_wrapper(
 
     # Add sticky edges? No because there is no way to check whether "dependent variable"
     # is x or y axis like with area/areax and bar/barh. Better to always have margin.
-    # for objs in result:
-    #     if not isinstance(objs, tuple):
-    #         objs = (objs,)
-    #     for obj in objs:
-    #         xdata = obj.get_xdata()
-    #         obj.sticky_edges.x.extend((np.min(xdata), np.max(xdata)))
+    # for obj in result:
+    #     xdata = obj.get_xdata()
+    #     obj.sticky_edges.x.append(self.convert_xunits(min(xdata)))
+    #     obj.sticky_edges.x.append(self.convert_yunits(max(xdata)))
 
     return result
 
@@ -1471,7 +1479,7 @@ def scatter_wrapper(
     s=None, size=None, markersize=None,
     c=None, color=None, markercolor=None, smin=None, smax=None,
     cmap=None, cmap_kw=None, norm=None, norm_kw=None,
-    vmin=None, vmax=None, N=None, levels=None, values=None,
+    vmin=None, vmax=None, extend='neither', N=None, levels=None, values=None,
     symmetric=False, locator=None, locator_kw=None,
     lw=None, linewidth=None, linewidths=None,
     markeredgewidth=None, markeredgewidths=None,
@@ -1542,7 +1550,6 @@ color-spec or list thereof, optional
         cmap = constructor.Colormap(cmap, **cmap_kw)
 
     # Get normalizer and levels
-    # NOTE: If the length of the c array !=
     ticks = None
     carray = np.atleast_1d(c)
     if (
@@ -1553,8 +1560,8 @@ color-spec or list thereof, optional
         norm, cmap, _, ticks = _build_discrete_norm(
             carray,  # sample data for getting suitable levels
             N=N, levels=levels, values=values,
-            norm=norm, norm_kw=norm_kw, locator=locator, locator_kw=locator_kw,
-            cmap=cmap, vmin=vmin, vmax=vmax, extend='neither', symmetric=symmetric,
+            cmap=cmap, norm=norm, norm_kw=norm_kw, vmin=vmin, vmax=vmax, extend=extend,
+            symmetric=symmetric, locator=locator, locator_kw=locator_kw,
         )
 
     # Fix 2D arguments but still support scatter(x_vector, y_2d) usage
@@ -1575,12 +1582,15 @@ color-spec or list thereof, optional
             smin + (smax - smin)
             * (np.array(s) - smin_true) / (smax_true - smin_true)
         )
-    obj = func(
+    obj = objs = func(
         self, *args, c=c, s=s, cmap=cmap, norm=norm,
         linewidths=lw, edgecolors=ec, **kwargs
     )
-    if ticks is not None:
-        obj.ticks = ticks
+    if not isinstance(objs, tuple):
+        objs = (obj,)
+    for iobj in objs:
+        iobj._colorbar_extend = extend
+        iobj._colorbar_ticks = ticks
     return obj
 
 
@@ -1800,12 +1810,12 @@ def _fill_between_apply(
         ysides.append(np.asarray(y1).item())
     if y2.size == 1:
         ysides.append(np.asarray(y2).item())
-    for iobjs in objs:
-        if not isinstance(iobjs, tuple):
-            iobjs = (iobjs,)
-        for obj in iobjs:
-            getattr(obj.sticky_edges, x).extend(xsides)
-            getattr(obj.sticky_edges, y).extend(ysides)
+    objs = tuple(obj for _ in objs for obj in (_ if isinstance(_, tuple) else (_,)))
+    for obj in objs:
+        for s, sides in zip((x, y), (xsides, ysides)):
+            convert = getattr(self, 'convert_' + s + 'units')
+            edges = getattr(obj.sticky_edges, s)
+            edges.extend(convert(sides))
 
     return result
 
@@ -2149,7 +2159,7 @@ def _get_transform(self, transform):
         from cartopy.crs import CRS
     except ModuleNotFoundError:
         CRS = None
-    cartopy = getattr(self, 'name', '') == 'cartopy'
+    cartopy = getattr(self, 'name', '') == 'proplot_cartopy'
     if (
         isinstance(transform, mtransforms.Transform)
         or CRS and isinstance(transform, CRS)
@@ -2680,9 +2690,9 @@ def cycle_changer(
 
 
 def _auto_levels_locator(
-    *args, N=None, norm=None, norm_kw=None, locator=None, locator_kw=None,
-    vmin=None, vmax=None, extend='both', symmetric=False,
-    positive=False, negative=False, nozero=False,
+    *args, N=None, norm=None, norm_kw=None,
+    vmin=None, vmax=None, extend='neither', locator=None, locator_kw=None,
+    symmetric=False, positive=False, negative=False, nozero=False,
 ):
     """
     Automatically generate level locations based on the input data, the
@@ -2697,11 +2707,13 @@ def _auto_levels_locator(
     norm, norm_kw
         Passed to `~proplot.constructor.Norm`. Used to determine suitable
         level locations if `locator` is not passed.
+    vmin, vmax : float, optional
+        The data limits.
+    extend : str, optional
+        The extend setting.
     locator, locator_kw
         Passed to `~proplot.constructor.Locator`. Used to determine suitable
         level locations.
-    extend : str, optional
-        The extend setting.
     symmetric, positive, negative : bool, optional
         Whether the automatic levels should be symmetric, should be all positive
         with a minimum at zero, or should be all negative with a maximum at zero.
@@ -2812,7 +2824,7 @@ def _auto_levels_locator(
 
 def _build_discrete_norm(
     data=None, N=None, levels=None, values=None,
-    norm=None, norm_kw=None, cmap=None, vmin=None, vmax=None, extend=None,
+    cmap=None, norm=None, norm_kw=None, vmin=None, vmax=None, extend='neither',
     minlength=2,
     **kwargs,
 ):
@@ -2823,8 +2835,10 @@ def _build_discrete_norm(
 
     Parameters
     ----------
-    data, vmin, vmax, levels, values
-        Used to determine the level boundaries.
+    data : ndarray, optional
+        The data.
+    levels, values : ndarray, optional
+        The explicit boundaries.
     norm, norm_kw
         Passed to `~proplot.constructor.Norm` and then to `DiscreteNorm`.
     vmin, vmax : float, optional
@@ -2963,9 +2977,9 @@ def _build_discrete_norm(
 @warnings._rename_kwargs('0.6', centers='values')
 @docstring.add_snippets
 def cmap_changer(
-    self, func, *args, extend='neither',
+    self, func, *args,
     cmap=None, cmap_kw=None, norm=None, norm_kw=None,
-    vmin=None, vmax=None, N=None, levels=None, values=None,
+    vmin=None, vmax=None, extend='neither', N=None, levels=None, values=None,
     symmetric=False, positive=False, negative=False, nozero=False,
     locator=None, locator_kw=None,
     edgefix=None, labels=False, labels_kw=None, fmt=None, precision=2,
@@ -2986,9 +3000,6 @@ def cmap_changer(
 
     Parameters
     ----------
-    extend : {{'neither', 'min', 'max', 'both'}}, optional
-        Where to assign unique colors to out-of-bounds data and draw
-        "extensions" (triangles, by default) on the colorbar.
     %(axes.cmap_changer)s
     edgefix : bool, optional
         Whether to fix the the `white-lines-between-filled-contours \
@@ -3150,10 +3161,10 @@ def cmap_changer(
         )
     if has_cmap and name not in ('hexbin',):
         norm, cmap, levels, ticks = _build_discrete_norm(
-            Z_sample, levels=levels, values=values, cmap=cmap,
-            norm=norm, norm_kw=norm_kw, locator=locator, locator_kw=locator_kw,
-            vmin=vmin, vmax=vmax, extend=extend,
+            Z_sample, levels=levels, values=values,
+            cmap=cmap, norm=norm, norm_kw=norm_kw, vmin=vmin, vmax=vmax, extend=extend,
             symmetric=symmetric, positive=positive, negative=negative, nozero=nozero,
+            locator=locator, locator_kw=locator_kw,
             minlength=(1 if name in ('contour', 'tricontour') else 2),
         )
     if nozero and np.iterable(levels) and 0 in levels:
@@ -3172,9 +3183,8 @@ def cmap_changer(
     # Call function, possibly twice to add 'edges' to contourf plot
     obj = func(self, *args, **kwargs)
     if not isinstance(obj, tuple):  # hist2d
-        obj.extend = extend  # normally 'extend' is just for contour/contourf
-        if ticks is not None:
-            obj.ticks = ticks  # a Locator or ndarray used for controlling ticks
+        obj._colorbar_extend = extend
+        obj._colorbar_ticks = ticks  # a Locator or ndarray used for controlling ticks
     if add_contours:
         colors = _not_none(colors, 'k')
         self.contour(
@@ -3506,7 +3516,7 @@ property-spec, optional
             ihandles, ilabels, *_ = mlegend._parse_legend_args(
                 axs, handles=ihandles, labels=ilabels,
             )
-            pairs.append(list(zip(handles, labels)))
+            pairs.append(list(zip(ihandles, ilabels)))
 
     # Manage pairs in context of 'center' option
     center = _not_none(center, list_of_lists)
@@ -3516,9 +3526,7 @@ property-spec, optional
     elif center and not list_of_lists:
         list_of_lists = True
         ncol = _not_none(ncol, 3)
-        pairs = [
-            pairs[i * ncol:(i + 1) * ncol] for i in range(len(pairs))
-        ]  # to list of iterables
+        pairs = [pairs[i * ncol:(i + 1) * ncol] for i in range(len(pairs))]
         ncol = None
     if list_of_lists:  # remove empty lists, pops up in some examples
         pairs = [ipairs for ipairs in pairs if ipairs]
@@ -3641,7 +3649,10 @@ property-spec, optional
 
     # Add legends manually so matplotlib does not remove old ones
     for leg in legs:
-        self.add_artist(leg)
+        if hasattr(self, 'legend_') and self.legend_ is None:
+            self.legend_ = leg  # set *first* legend accessible with get_legend()
+        else:
+            self.add_artist(leg)
         leg.legendPatch.update(outline)  # or get_frame()
 
     # Apply *overrides* to legend elements
@@ -3728,7 +3739,7 @@ def colorbar_wrapper(
     extend=None, extendsize=None,
     title=None, label=None,
     grid=None, tickminor=None,
-    reverse=False, tickloc=None, ticklocation=None,
+    reverse=False, tickloc=None, ticklocation=None, tickdir=None, tickdirection=None,
     locator=None, ticks=None, maxn=None, maxn_minor=None,
     minorlocator=None, minorticks=None,
     locator_kw=None, minorlocator_kw=None,
@@ -3796,6 +3807,8 @@ or colormap-spec
         Whether to reverse the direction of the colorbar.
     tickloc, ticklocation : {'bottom', 'top', 'left', 'right'}, optional
         Where to draw tick marks on the colorbar.
+    tickdir, tickdirection : {'out', 'in', 'inout'}, optional
+        Direction that major and minor tick marks point.
     tickminor : bool, optional
         Whether to add minor ticks to the colorbar with
         `~matplotlib.colorbar.ColorbarBase.minorticks_on`.
@@ -3859,25 +3872,16 @@ or colormap-spec
     locator = _not_none(ticks=ticks, locator=locator)
     minorlocator = _not_none(minorticks=minorticks, minorlocator=minorlocator)
     ticklocation = _not_none(tickloc=tickloc, ticklocation=ticklocation)
+    tickdirection = _not_none(tickdir=tickdir, tickdirection=tickdirection)
     formatter = _not_none(ticklabels=ticklabels, formatter=formatter)
 
     # Colorbar kwargs
-    # WARNING: PathCollection scatter objects have an extend method!
-    # WARNING: Matplotlib 3.3 deprecated 'extend' parameter passed to colorbar()
-    # but *also* fails to read 'extend' parameter when added to a pcolor mappable!
-    # Need to figure out workaround!
     grid = _not_none(grid, rc['colorbar.grid'])
-    if extend is None:
-        if isinstance(getattr(mappable, 'extend', None), str):
-            extend = mappable.extend or 'neither'
-        else:
-            extend = 'neither'
     kwargs.update({
         'cax': self,
         'use_gridspec': True,
         'orientation': orientation,
         'spacing': 'uniform',
-        'extend': extend,
     })
     kwargs.setdefault('drawedges', grid)
 
@@ -4009,8 +4013,11 @@ or colormap-spec
                     f'objects or colors.'
                 )
             norm, *_ = _build_discrete_norm(
-                values=values, extend='neither',
-                cmap=cmap, norm=norm, norm_kw=norm_kw,
+                values=values,
+                cmap=cmap,
+                norm=norm,
+                norm_kw=norm_kw,
+                extend='neither',
             )
             mappable = mcm.ScalarMappable(norm, cmap)
 
@@ -4021,7 +4028,7 @@ or colormap-spec
     # levels in log-space *between* powers of 10, so logminor ticks would be
     # misaligned with levels.
     if locator is None:
-        locator = getattr(mappable, 'ticks', None)
+        locator = getattr(mappable, '_colorbar_ticks', None)
         if locator is None:
             # This should only happen if user calls plotting method on native
             # matplotlib axes.
@@ -4048,9 +4055,7 @@ or colormap-spec
                 fontsize = kw_ticklabels.get('size', rc['ytick.labelsize'])
             fontsize = rc._scale_font(fontsize)
             maxn = _not_none(maxn, int(length / (scale * fontsize / 72)))
-            maxn_minor = _not_none(
-                maxn_minor, int(length / (0.5 * fontsize / 72))
-            )
+            maxn_minor = _not_none(maxn_minor, int(length / (0.5 * fontsize / 72)))
 
             # Get locator
             if tickminor and minorlocator is None:
@@ -4071,15 +4076,20 @@ or colormap-spec
     # Draw the colorbar
     # NOTE: Set default formatter here because we optionally apply a FixedFormatter
     # using *labels* from handle input.
+    extend = _not_none(extend, getattr(mappable, '_colorbar_extend', 'neither'))
     locator = constructor.Locator(locator, **locator_kw)
     formatter = constructor.Formatter(_not_none(formatter, 'auto'), **formatter_kw)
     kwargs.update({
         'ticks': locator,
         'format': formatter,
         'ticklocation': ticklocation,
-        'extendfrac': extendsize
+        'extendfrac': extendsize,
+        'extend': extend,
     })
-    mappable.extend = extend  # matplotlib >=3.3
+    if isinstance(mappable, mcontour.ContourSet):
+        mappable.extend = extend  # required in mpl >= 3.3, else optional
+    else:
+        kwargs['extend'] = extend
     cb = self.figure.colorbar(mappable, **kwargs)
     axis = self.xaxis if orientation == 'horizontal' else self.yaxis
 
@@ -4115,11 +4125,13 @@ or colormap-spec
     for obj in axis.get_ticklabels():
         obj.update(kw_ticklabels)
 
-    # Ticks
+    # Ticks consistent with rc settings and overrides
     xy = axis.axis_name
     for which in ('minor', 'major'):
         kw = rc.category(xy + 'tick.' + which)
         kw.pop('visible', None)
+        if tickdirection:
+            kw['direction'] = tickdirection
         if edgecolor:
             kw['color'] = edgecolor
         if linewidth:
@@ -4136,7 +4148,10 @@ or colormap-spec
     cmap = cb.cmap
     if not cmap._isinit:
         cmap._init()
-    if any(cmap._lut[:-1, 3] < 1):
+    if (
+        any(cmap._lut[:-1, 3] < 1)
+        and ('pcolormesh.snap' not in rc or not rc['pcolormesh.snap'])
+    ):
         warnings._warn_proplot(
             f'Using manual alpha-blending for {cmap.name!r} colorbar solids.'
         )
@@ -4189,7 +4204,7 @@ def _basemap_redirect(func):
 
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
-        if getattr(self, 'name', '') == 'basemap':
+        if getattr(self, 'name', '') == 'proplot_basemap':
             return getattr(self.projection, name)(*args, ax=self, **kwargs)
         else:
             return func(self, *args, **kwargs)
