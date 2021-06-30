@@ -12,12 +12,14 @@ What's new?
 
 ProPlot v1.0.0 (2022-##-##)
 ===========================
+
 This will be published when some major refactoring tasks are completed,
 and deprecation warnings will be removed. See :pr:`89`, :pr:`109`, :pr:`110`,
 and :pr:`111`.
 
 ProPlot v0.8.0 (2021-##-##)
 ===========================
+
 .. rubric:: Deprecated
 
 * Deprecate `~proplot.axes.Axes.format` functions in favor of the axes-artist
@@ -198,7 +200,6 @@ ProPlot v0.7.0 (2021-06-30)
 
 ProPlot v0.6.4 (2020-06-13)
 ===========================
-
 .. rubric:: Features
 
 * Change ``autoformat`` from a `Figure` keyword argument into the
@@ -312,9 +313,13 @@ ProPlot v0.6.0 (2020-05-20)
 * Remove the ``lonstep`` and ``latstep`` settings -- we now use
   `~proplot.ticker.LongitudeLocator` and `~proplot.ticker.LatitudeLocator`
   to select "nice" gridline locations even when zoomed in (:pr:`168`)
+* Change default rc settings closer to matplotlib, including margins and line
+  width (:pr:`166`, :commit:`f801852b`). Many were changed for no good reason.
+* Change default line style for geographic gridlines from ``':'`` to ``'-'``
+  and match style from primary gridlines (:pr:`166`, :commit:`f801852b`).
 * Rename `add_errorbars` to `~proplot.axes.plot.indicate_error` and rename
   various keyword args (:pr:`166`, :commit:`d8c50a8d`).
-* Remove ``'rgbcycle'`` setting (:commit:`6653b7f0`).
+* Remove ``'rgbcycle'`` setting (:pr:`166`, :commit:`6653b7f0`).
 * Deprecate support for "parametric" plots inside `~matplotlib.axes.Axes.plot`,
   instead use `~proplot.axes.Axes.parametric` (:commit:`64210bce`).
 * Change `~proplot.utils.units` ``units`` keyword argument to more natural
@@ -362,6 +367,8 @@ ProPlot v0.6.0 (2020-05-20)
 * Add `~proplot.ticker.SigFigFormatter` (:pr:`149`, :commit:`da6105d2`)
   and `~proplot.ticker.SciFormatter` (:pr:`175`, :commit:`c43f7f91`)
   axis formatters.
+* Make default `areax` and `areay` bounds "sticky", similar to
+  histograms and barplots (:pr:`166`).
 * Use `_LonAxis` and `_LatAxis` dummy axes with custom `LongitudeLocator`
   and `LatitudeLocator` to control geographic gridlines (:pr:`168`).
 * Add ``'dmslat'`` and ``'dmslon'`` as formatters for cartopy projections,
@@ -373,33 +380,31 @@ ProPlot v0.6.0 (2020-05-20)
 * Add `loninline`, `latinline`, and `rotatelabels` keywords for controlling
   cartopy gridliner behavior (:pr:`168`).
 * Add `proplot.config.rc_configurator.save` and
-  `proplot.config.rc_configurator.from_file` methods (:commit:`e6dd8314`).
+  `proplot.config.rc_configurator.from_file` methods (:pr:`167`, :commit:`e6dd8314`).
 * Increase default :rcraw:`savefig.dpi` to 1200, matching recommendations
-  from academic journals (:commit:`c00e7314`). Also add detailed discussion
+  from academic journals (:pr:`167`, :commit:`c00e7314`). Also add detailed discussion
   to user guide.
 * No longer distinguish between "quick" settings and proplot's "added"
-  settings (:commit:`e6dd8314`). Quick settings, added settings, and matplotlib
-  settings can all have "children" so the distinction no longer makes sense.
+  settings (:pr:`167`, :commit:`e6dd8314`). Quick settings, added settings, and
+  matplotlib settings can all have "children" so the distinction no longer makes sense.
 * Add opacity-preserving functions `~proplot.utils.to_rgba`
   and `~proplot.utils.to_xyza`, plus `~proplot.utils.set_alpha` for
-  changing alpha channel of arbitrary color (:commit:`81c647da`).
+  changing alpha channel of arbitrary color (:pr:`171`, :commit:`81c647da`).
 * Add to `~proplot.colors.LinearSegmentedColormap.set_alpha` the ability to
   create an *opacity gradation*, rather than just an opacity for the entire
-  colormap (:commit:`4a138ba4`).
+  colormap (:pr:`171`, :commit:`4583736`).
 * Support passing colormap objects, not just names, to `~proplot.demos.show_cmaps`
-  and `~proplot.demos.show_cycles` (:commit:`7f8ca59f`).
+  and `~proplot.demos.show_cycles` (:pr:`171`, :commit:`7f8ca59f`).
 * Add options to `~proplot.axes.plot.indicate_error` for adding *shading*
   to arbitrary plots (:pr:`166`, :commit:`d8c50a8d`). Also support automatic legend
   entries for shading and ensure `indicate_error` preserves metadata.
 * Wrap ``pcolorfast`` just like ``pcolor`` and ``pcolormesh`` are
-  wrapped (:commit:`50a262dd`).
-* Add ``negpos`` feature to `~proplot.axes.plot.bar_wrapper` and new
-  :rcraw:`negcolor` and :rcraw:`poscolor` rc keyword arguments (:commit:`ab4d6746`).
+  wrapped (:pr:`166`, :commit:`50a262dd`).
+* Add ``negpos`` feature to `~proplot.axes.plot.bar_wrapper` and new :rcraw:`negcolor`
+  and :rcraw:`poscolor` rc keyword arguments (:pr:`166`, :commit:`ab4d6746`).
 * Support `~matplotlib.axes.Axes.vlines` and `~matplotlib.axes.Axes.hlines`
   flexible arguments and add ``negpos`` feature
-  (:commit:`1c53e947`, :commit:`e42ee913`).
-* Change default line style for geographic gridlines from ``':'`` to ``'-'``
-  and match style from primary gridlines (:commit:`f801852b`).
+  (:pr:`166`, :commit:`1c53e947`, :commit:`e42ee913`).
 * Support `cartopy 0.18 <https://scitools.org.uk/cartopy/docs/latest/whats_new.html>`__
   locators, formatters, deprecations, and new labelling features (:pr:`158`).
 * Support building a colormap and `DiscreteNorm` inside `~matplotlib.axes.Axes.scatter`,
@@ -407,36 +412,35 @@ ProPlot v0.6.0 (2020-05-20)
 * Add :rcraw:`geogrid.labelpad` and :rcraw:`geogrid.rotatelabels` settings
   for cartopy gridline labels (:pr:`158`).
 * Support more `~proplot.ticker.AutoFormatter` features on
-  `~proplot.ticker.SimpleFormatter` (:commit:`6decf962`).
-* Support drawing colorbars with descending levels (:commit:`10763146`)
+  `~proplot.ticker.SimpleFormatter` (:pr:`152`, :commit:`6decf962`).
+* Support drawing colorbars with descending levels (:pr:`149`, :commit:`10763146`)
 * Add support for matplotlib stylesheets with `~proplot.config.use_style`
-  function and ``style`` rc param (:commit:`edc6f3c9`).
+  function and ``style`` rc param (:pr:`149`, :commit:`edc6f3c9`).
 * Add `categories` keyword arg to `~proplot.styletools.show_cmaps` and
-  `~proplot.styletools.show_cycles` (:commit:`79be642d`).
+  `~proplot.styletools.show_cycles` (:pr:`149`, :commit:`79be642d`).
 * *Hide* bad colormaps like ``'jet'`` from the
   `~proplot.styletools.show_cmaps` table instead of deleting them outright,
-  just like CSS4 colors (:commit:`ce4ef6a0`).
+  just like CSS4 colors (:pr:`149`, :commit:`ce4ef6a0`).
 * Draw `~proplot.styletools.show_colors` table as single figure with category
-  labels, similar to `~proplot.styletools.show_cmaps` (:commit:`c8ca2909`).
+  labels, similar to `~proplot.styletools.show_cmaps` (:pr:`149`, :commit:`c8ca2909`).
 * Make ``'Grays'`` and ``'Greys'`` synonyms for the same ColorBrewer colormap
-  (:commit:`da4ccb08`).
+  (:pr:`149`, :commit:`da4ccb08`).
 * Permit drawing "outer" axes and figure legends without explicitly passing
-  handles (:commit:`a69b48eb`). Figure legends use the handles from all axes.
+  handles (:pr:`149`, :commit:`a69b48eb`). Figure legends use the handles from all axes.
 * Add `~proplot.styletools.LinearSegmentedColormap.to_listed` and
   `~proplot.styletools.PerceptuallyUniformColormap.to_linear_segmented`
-  methods for handling conversions (:pr:`e1a08930`).
+  methods for handling conversions (:pr:`149`, :commit:`e1a08930`).
 * Permit merging mixed colormap types `~proplot.styletools.LinearSegmentedColormap`
   with `~proplot.styletools.PerceptuallyUniformColormap` (:commit:`972956b1`).
 * Include the `alpha` channel when saving colormaps and cycles by default
-  (:commit:`117e05f2`).
+  (:pr:`149`, :commit:`117e05f2`).
 * Permit 8-character hex strings with alpha channels when loading colormaps
-  and color cycles from hex files (:commit:`381a84d4`).
+  and color cycles from hex files (:pr:`149`, :commit:`381a84d4`).
 * Publicly support "filling" axes with colorbars using ``loc='fill'``
-  (:commit:`057c9895`).
-* Make ``'Grays'`` colormap identical to ``'Greys'`` (:commit:`da4ccb08`).
+  (:pr:`149`, :commit:`057c9895`).
 * Return both figure and axes in ``show_`` functions; this gives users access
   to the axes and prevents drawing them twice in notebooks
-  (:commit:`2f600bc9`).
+  (:pr:`149`, :commit:`2f600bc9`).
 * Enable passing callables to `~proplot.axistools.Formatter` to create a
   `~proplot.axistools.FuncFormatter` instance.
 * Support sampling `~prolot.styletools.LinearSegmentedColormap` into
@@ -452,24 +456,27 @@ ProPlot v0.6.0 (2020-05-20)
   calls to `~proplot.axes.GeoAxes.format` (:pr:`168`).
 * Fix issue drawing bar plots with datetime *x* axes (:pr:`156`).
 * Fix issue where `~proplot.ticker.AutoFormatter` tools were not locale-aware, i.e. use
-  comma as decimal point sometimes (:commit:`c7636296`).
+  comma as decimal point sometimes (:pr:`152`, :commit:`c7636296`).
 * Fix issue where `~proplot.ticker.AutoFormatter` nonzero-value correction algorithm was
-  right for wrong reasons and could be wrong in rare circumstances (:commit:`c7636296`).
-* Fix issue where ``matplotlib.style.use`` resets backend (:commit:`c8319104`).
-* Fix issue with colormaps with dots in name (:commit:`972956b1`).
-* Fix logarithmic scale argument parsing deprecation (:commit:`6ed7dbc5`).
+  right for wrong reasons and could be wrong in rare circumstances
+  (:pr:`152`, :commit:`c7636296`).
+* Fix issue where ``matplotlib.style.use`` resets backend
+  (:pr:`149`, :commit:`c8319104`).
+* Fix issue with colormaps with dots in name (:pr:`149`, :commit:`972956b1`).
+* Fix logarithmic scale argument parsing deprecation (:pr:`149`, :commit:`6ed7dbc5`).
 * Fix deprecation of direct access to ``matplotlib.cm.cmap_d``
-  in matplotlib >=3.2.0 (:commit:`a69c16da`).
-* Fix issues with string font sizes (:commit:`6121de03`). Add hidden
+  in matplotlib >=3.2.0 (:pr:`149`, :commit:`a69c16da`).
+* Fix issues with string font sizes (:pr:`149`, :commit:`6121de03`). Add hidden
   `~proplot.config.rc_configurator._get_font_size` method to
   translate font size to numeric.
 * Fix issue where passing actual projection instances generated with
   `~proplot.constructor.Proj` to `~proplot.ui.subplots` could incorrectly
-  pair cartopy projections with basemap axes and vice versa.
+  pair cartopy projections with basemap axes and vice versa (:pr:`149`).
 * Fix issue where could not draw colorbar from list of single-color
-  `~matplotlib.collections.PathCollection`\ s, i.e. scatter plots (:commit:`e893900b`).
+  `~matplotlib.collections.PathCollection`\ s, i.e.
+  scatter plots (:pr:`149`, :commit:`e893900b`).
 * Fix issue where importing proplot in jupyter notebooks resets the default
-  inline backend (:commit:`6121de03`).
+  inline backend (:pr:`149`, :commit:`6121de03`).
 * Improve axis label sharing algorithm (:commit:`6535b219`).
 * Fix main axis label sharing bugs in presence of panels
   (:commit:`7b709db9`).
@@ -481,7 +488,7 @@ ProPlot v0.6.0 (2020-05-20)
   numbers (:issue:`117`).
 * Label cyclic Scientific colour maps as cyclic (:commit:`e10a3109`).
 * Permit special colormap normalization and level scaling for
-  colormap-colored contour plots, just like contourf (:commit:`054cceb5`).
+  colormap-colored contour plots, just like contourf (:pr:`149`, :commit:`054cceb5`).
 
 .. rubric:: Internals
 
@@ -495,8 +502,8 @@ ProPlot v0.6.0 (2020-05-20)
   sensible behavior.
 * Turn some private `~proplot.config` functions into static
   methods (:commit:`6121de03`).
-* Remove "smart bounds" feature from `FuncScale` (:commit:`9ac149ea`).
-* Clean up axes iterators (:commit:`c8a0768a`).
+* Remove "smart bounds" feature from `FuncScale` (:pr:`166`, :commit:`9ac149ea`).
+* Clean up axes iterators (:pr:`149`, :commit:`c8a0768a`).
 
 .. rubric:: Documentation
 
@@ -509,6 +516,7 @@ ProPlot v0.6.0 (2020-05-20)
 
 ProPlot v0.5.0 (2020-02-10)
 ===========================
+
 .. rubric:: Deprecated
 
 * Remove `abcformat` from `~proplot.axes.Axes.format` (:commit:`2f295e18`).
@@ -567,6 +575,7 @@ ProPlot v0.5.0 (2020-02-10)
 
 ProPlot v0.4.3 (2020-01-21)
 ===========================
+
 .. rubric:: Deprecated
 
 * Remove `~proplot.rctools.ipython_autoreload`,
@@ -589,6 +598,7 @@ ProPlot v0.4.3 (2020-01-21)
 
 ProPlot v0.4.2 (2020-01-09)
 ===========================
+
 .. rubric:: Features
 
 * Add ``family`` keyword arg to `~proplot.styletools.show_fonts` (:pr:`106`).
@@ -603,6 +613,7 @@ ProPlot v0.4.2 (2020-01-09)
 
 ProPlot v0.4.1 (2020-01-08)
 ===========================
+
 .. rubric:: Deprecation
 
 * Change the default ``.proplotrc`` format from YAML to the ``.matplotlibrc``
@@ -635,6 +646,7 @@ ProPlot v0.4.1 (2020-01-08)
 
 ProPlot v0.4.0 (2020-01-07)
 ===========================
+
 .. rubric:: Deprecated
 
 * Rename `basemap_defaults` to `~proplot.projs.basemap_kwargs` and
@@ -712,6 +724,7 @@ ProPlot v0.4.0 (2020-01-07)
 
 ProPlot v0.3.1 (2019-12-16)
 ===========================
+
 .. rubric:: Bug fixes
 
 * Fix issue where custom fonts were not synced (:commit:`a1b47b4c`).
@@ -720,6 +733,7 @@ ProPlot v0.3.1 (2019-12-16)
 
 ProPlot v0.3.0 (2019-12-15)
 ===========================
+
 .. rubric:: Deprecated
 
 * Remove ``'Moisture'`` colormap (:commit:`cf8952b1`).
@@ -775,6 +789,7 @@ ProPlot v0.2.7 (2019-12-09)
 
 ProPlot v0.2.6 (2019-12-08)
 ===========================
+
 .. rubric:: Bug fixes
 
 * Fix issue where twin axes are drawn *twice* (:commit:`56145122`).
@@ -782,6 +797,7 @@ ProPlot v0.2.6 (2019-12-08)
 
 ProPlot v0.2.5 (2019-12-07)
 ===========================
+
 .. rubric:: Features
 
 * Much better `~proplot.axistools.CutoffScale` algorithm, permit arbitrary
@@ -789,6 +805,7 @@ ProPlot v0.2.5 (2019-12-07)
 
 ProPlot v0.2.4 (2019-12-07)
 ===========================
+
 .. rubric:: Deprecated
 
 * Rename `ColorCacheDict` to `~proplot.styletools.ColorDict`
@@ -808,6 +825,7 @@ ProPlot v0.2.4 (2019-12-07)
 
 ProPlot v0.2.3 (2019-12-05)
 ===========================
+
 .. rubric:: Bug fixes
 
 * Fix issue with overlapping gridlines using monkey patches on gridliner
@@ -830,6 +848,7 @@ ProPlot v0.2.3 (2019-12-05)
 
 ProPlot v0.2.2 (2019-12-04)
 ===========================
+
 .. rubric:: Deprecated
 
 * Rename `~proplot.subplots.axes_grid` to `~proplot.subplots.subplot_grid`
@@ -846,6 +865,7 @@ ProPlot v0.2.2 (2019-12-04)
 
 ProPlot v0.2.1 (2019-12-02)
 ===========================
+
 .. rubric:: Deprecated
 
 * Rename `autoreload_setup`, `autosave_setup`, and `matplotlib_setup` to
@@ -855,6 +875,7 @@ ProPlot v0.2.1 (2019-12-02)
 
 ProPlot v0.2.0 (2019-12-02)
 ===========================
+
 .. rubric:: Deprecated
 
 * Remove the ``nbsetup`` rc setting in favor of separate ``autosave``,
@@ -891,6 +912,7 @@ ProPlot v0.2.0 (2019-12-02)
 
 ProPlot v0.1.0 (2019-12-01)
 ===========================
+
 .. rubric:: Internals
 
 * Include `flake8` in Travis CI testing (:commit:`8743b857`).
