@@ -651,7 +651,7 @@ class CartesianAxes(base.Axes):
             is :rc:`ticklen`.
 
             Minor tick lengths are scaled according
-            to :rc:`ticklenratio`. Use e.g. ``ax.format(ticklen=1)`` to
+            to :rc:`tick.lenratio`. Use e.g. ``ax.format(ticklen=1)`` to
             set for both axes.
         fixticks : bool, optional
             Whether to always transform the tick locators to a
@@ -924,7 +924,7 @@ class CartesianAxes(base.Axes):
                     if ticklen is not None:
                         kwticks['size'] = units(ticklen, 'pt')
                         if which == 'minor':
-                            kwticks['size'] *= rc['ticklenratio']
+                            kwticks['size'] *= rc['tick.lenratio']
 
                     # Grid style and toggling
                     name = 'grid' if which == 'major' else 'gridminor'
