@@ -167,6 +167,8 @@ ProPlot v0.7.0 (2021-06-30)
   (:commit:`a298f81f`). This input style is used to specify "centered" legend rows.
 * Fix issue where `hist` with `xarray.DataArray` or `pandas.Dataframe` input causes
   erroneous axis labels; use labels for legend instead (:issue:`195`).
+* Fix unnecessary restriction where users can only draw <2 "alt" axes and clean
+  up the `alt[xy]` and `dual[xy]` internals (:issue:`226`).
 * Fix matplotlib bug where `altx` and `alty` reset the minor locator of the shared
   axis to ``AutoMinorLocator`` even if the axis scale is ``'log'`` (:commit:`2f64361d`).
 * Fix issue where axis coordinates are incorrect when `violinplot` or `boxplot`

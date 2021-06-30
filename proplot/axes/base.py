@@ -246,10 +246,6 @@ class Axes(maxes.Axes):
         self._inset_parent = None
         self._inset_zoom = False
         self._inset_zoom_data = None
-        self._alty_child = None
-        self._altx_child = None
-        self._alty_parent = None
-        self._altx_parent = None
         self.number = number  # for abc numbering
         if main:
             self.figure._axes_main.append(self)
