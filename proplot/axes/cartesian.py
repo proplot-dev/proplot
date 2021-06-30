@@ -1224,6 +1224,13 @@ class CartesianAxes(base.Axes):
         # ... fig, ax = plt.subplots()
         # ... ax.set_yscale('log')
         # ... ax.twiny()
+        # WARNING: We add axes as children for tight layout algorithm convenience and
+        # to support eventual paradigm of arbitrarily many duplicates with spines
+        # arranged in an edge stack. However this means all artists drawn there take
+        # on zorder of their axes when drawn inside the "parent" (see Axes.draw()).
+        # To restore matplotlib behavior, which draws "child" artists on top simply
+        # because the axes was created after the "parent" one, use the inset_axes
+        # zorder of 4 and make the background transparent.
         if self._altx_child or self._altx_parent:
             raise RuntimeError('No more than *two* twin axes are allowed.')
         with self.figure._context_authorize_add_subplot():
@@ -1233,6 +1240,8 @@ class CartesianAxes(base.Axes):
             ax.yaxis.isDefault_minloc = True
         ax.set_autoscaley_on(self.get_autoscaley_on())
         ax.grid(False)
+        ax.set_alpha(0)
+        ax.set_zorder(4)
         self._altx_child = ax
         ax._altx_parent = self
         self._altx_overrides()
@@ -1257,6 +1266,8 @@ class CartesianAxes(base.Axes):
             ax.xaxis.isDefault_minloc = True
         ax.set_autoscalex_on(self.get_autoscalex_on())
         ax.grid(False)
+        ax.set_alpha(0)
+        ax.set_zorder(4)
         self._alty_child = ax
         ax._alty_parent = self
         self._alty_overrides()

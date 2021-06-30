@@ -136,6 +136,8 @@ ProPlot v0.7.0 (2021-06-30)
   subplot classes (:pr:`251`).
 * Fix deprecated reference to :rc:`fallback_to_cm` in matplotlib >= 3.3
   (:pr:`251`).
+* Fix issue where "twin" ("alternate") axes content always hidden beneath "parent"
+  content due to adding as children (:issue:`223`).
 * Fix issue where `~xarray.DataArray` string coordinates are not extracted from
   container before applying as tick labels (:issue:`214`).
 * Fix issue where cannot set `extend` other than ``'neither'`` for
@@ -146,7 +148,7 @@ ProPlot v0.7.0 (2021-06-30)
   rather than passing it to `colorbar()` (:commit:`a23e7043`).
 * Fix issue where axis is accidentally inverted for histogram plots (:issue:`191`).
 * Fix issue where numeric zero cannot be applied as legend label (:commit:`02417c8c`).
-* Fix issue where `minorlocator=1` is not allowed (:issue:`219`).
+* Fix issue where `[xy]minorlocator=1` is not allowed (:issue:`219`).
 * Fix issue where `~proplot.colors.Cycle` fails to register new names and fails to
   display in `~proplot.demos.show_cycles` (:commit:`94ffc1dc`, :commit:`4a7a3c79`).
 * Fix issue where proplot fails to detect legend entries for "outer"
