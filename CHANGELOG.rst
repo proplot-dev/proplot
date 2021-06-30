@@ -83,6 +83,8 @@ ProPlot v0.7.0 (2021-06-30)
   ``Purples``; and add the ``Yellows`` category from the ``Oranges`` maps (:commit:`8be0473f`).
 * Rename seldom-used `Figure` argument `fallback_to_cm` to more understandable
   `mathtext_fallback` (:pr:`251`).
+* Rename `abovetop` keyword for moving title/abc label above or below top panels to rc
+  param :rcraw:`axes.titleabove` with alias :rcraw:`title.above` (:commit:`9ceacb7b`).
 
 .. rubric:: Features
 
@@ -150,6 +152,7 @@ ProPlot v0.7.0 (2021-06-30)
 * Fix issue where axis is accidentally inverted for histogram plots (:issue:`191`).
 * Fix issue where numeric zero cannot be applied as legend label (:commit:`02417c8c`).
 * Fix issue where `[xy]minorlocator=1` is not allowed (:issue:`219`).
+* Fix issue where inner titles ignore axes-local `titlepad` (:commit:`14f3d0e3`).
 * Fix issue where `~proplot.colors.Cycle` fails to register new names and fails to
   display in `~proplot.demos.show_cycles` (:commit:`94ffc1dc`, :commit:`4a7a3c79`).
 * Fix issue where proplot fails to detect legend entries for "outer"
