@@ -1105,7 +1105,8 @@ class Figure(mfigure.Figure):
         if tight is None:
             tight = self._auto_tight
         if resize is None:
-            resize = rc['backend'] != 'nbAgg'
+            backend = _not_none(rc.backend, '').lower()
+            resize = 'nbagg' not in backend and 'ipympl' not in backend
 
         # Draw objects that will affect tight layout
         self._draw_auto_legends_colorbars()
