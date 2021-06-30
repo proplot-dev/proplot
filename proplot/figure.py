@@ -471,23 +471,23 @@ class Figure(mfigure.Figure):
         for ax in self._axes_main:
             if not isinstance(ax, paxes.CartesianAxes):
                 continue
-            for x, axis in zip('xy', (ax.xaxis, ax.yaxis)):
+            for s, axis in zip('xy', (ax.xaxis, ax.yaxis)):
                 side = axis.get_label_position()
-                span = getattr(self, '_span' + x)
-                align = getattr(self, '_align' + x)
+                span = getattr(self, '_span' + s)
+                align = getattr(self, '_align' + s)
                 if side not in ('bottom', 'left') or axis in xaxs_updated:
                     continue
 
                 # Get panels for axes on each side (2 levels deep is maximum)
                 axs = ax._get_side_axes(side, panels=False)
-                axs = [getattr(ax, '_share' + x) or ax for ax in axs]
-                axs = [getattr(ax, '_share' + x) or ax for ax in axs]
+                axs = [getattr(ax, '_share' + s) or ax for ax in axs]
+                axs = [getattr(ax, '_share' + s) or ax for ax in axs]
 
                 # Align axis label offsets
-                xaxs = [getattr(ax, x + 'axis') for ax in axs]
+                xaxs = [getattr(ax, s + 'axis') for ax in axs]
                 xaxs_updated.update(xaxs)
                 if span or align:
-                    group = getattr(self, '_align_' + x + 'label_grp', None)
+                    group = getattr(self, '_align_' + s + 'label_grp', None)
                     if group is not None:
                         for ax in axs[1:]:
                             group.join(axs[0], ax)  # add to grouper
@@ -501,9 +501,9 @@ class Figure(mfigure.Figure):
 
                 # Get spanning label position
                 c, ax_span = self._get_align_coord(side, axs)
-                ax_span = getattr(ax_span, '_share' + x) or ax_span
-                ax_span = getattr(ax_span, '_share' + x) or ax_span
-                axis_span = getattr(ax_span, x + 'axis')
+                ax_span = getattr(ax_span, '_share' + s) or ax_span
+                ax_span = getattr(ax_span, '_share' + s) or ax_span
+                axis_span = getattr(ax_span, s + 'axis')
                 label_span = axis_span.label
                 if not hasattr(label_span, '_orig_transform'):
                     label_span._orig_transform = label_span.get_transform()
@@ -514,7 +514,7 @@ class Figure(mfigure.Figure):
                     for axis in xaxs:
                         axis.label.set_visible(True)
                 else:  # toggle on, done after tight layout
-                    if x == 'x':
+                    if s == 'x':
                         position = (c, 1)
                         transform = mtransforms.blended_transform_factory(
                             self.transFigure, mtransforms.IdentityTransform()
@@ -545,10 +545,10 @@ class Figure(mfigure.Figure):
         for side in ('left', 'right', 'bottom', 'top'):
             # Get axes and offset the label to relevant panel
             if side in ('left', 'right'):
-                x = 'x'
+                s = 'x'
                 panels = ('bottom', 'top')
             else:
-                x = 'y'
+                s = 'y'
                 panels = ('left', 'right')
             axs = self._get_align_axes(side)
             axs = [ax._reassign_subplot_label(side) for ax in axs]
@@ -589,23 +589,16 @@ class Figure(mfigure.Figure):
                     else:
                         scale1, scale2 = 0.3, height
                     if side in ('left', 'bottom'):
-                        coords[i] = min(icoords) - (
-                            scale1 * fontsize / 72
-                        ) / scale2
+                        coords[i] = min(icoords) - (scale1 * fontsize / 72) / scale2
                     else:
-                        coords[i] = max(icoords) + (
-                            scale1 * fontsize / 72
-                        ) / scale2
+                        coords[i] = max(icoords) + (scale1 * fontsize / 72) / scale2
 
                 # Assign coords
                 coords = [i for i in coords if i is not None]
                 if coords:
-                    if side in ('left', 'bottom'):
-                        c = min(coords)
-                    else:
-                        c = max(coords)
+                    c = min(coords) if side in ('left', 'bottom') else max(coords)
                     for label in labels:
-                        label.update({x: c})
+                        label.update({s: c})
 
         # Update super title position
         # If no axes on the top row are visible, do not try to align!
@@ -666,10 +659,10 @@ class Figure(mfigure.Figure):
         """
         # Get position in figure relative coordinates
         if side in ('left', 'right'):
-            x = 'y'
+            s = 'y'
             panels = ('top', 'bottom')
         else:
-            x = 'x'
+            s = 'x'
             panels = ('left', 'right')
         if self._include_panels:
             axs = [
@@ -678,13 +671,13 @@ class Figure(mfigure.Figure):
             ]
 
         # Get coordinates
-        ranges = np.array([ax._range_gridspec(x) for ax in axs])
+        ranges = np.array([ax._range_gridspec(s) for ax in axs])
         min_, max_ = ranges[:, 0].min(), ranges[:, 1].max()
         ax_lo = axs[np.where(ranges[:, 0] == min_)[0][0]]
         ax_hi = axs[np.where(ranges[:, 1] == max_)[0][0]]
         box_lo = ax_lo.get_subplotspec().get_position(self)
         box_hi = ax_hi.get_subplotspec().get_position(self)
-        if x == 'x':
+        if s == 'x':
             pos = 0.5 * (box_lo.x0 + box_hi.x1)
         else:
             pos = 0.5 * (box_lo.y1 + box_hi.y0)  # 'lo' is actually on top of figure

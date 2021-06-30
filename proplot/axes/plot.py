@@ -849,16 +849,16 @@ def standardize_2d(
         # Handle labels if 'autoformat' is on
         # NOTE: Do not overwrite existing labels!
         if autoformat:
-            for key, xy in zip(('xlabel', 'ylabel'), (x, y)):
+            for key, d in zip(('xlabel', 'ylabel'), (x, y)):
                 # Axis label
-                _, label = _axis_labels_title(xy)
+                _, label = _axis_labels_title(d)
                 if label and not getattr(self, f'get_{key}')():
                     kw[key] = label
                 # Reversed axis
                 if (
-                    len(xy) > 1
-                    and all(isinstance(xy, Number) for xy in xy[:2])
-                    and xy[1] < xy[0]
+                    len(d) > 1
+                    and all(isinstance(d, Number) for d in d[:2])
+                    and d[1] < d[0]
                 ):
                     kw[key[0] + 'reverse'] = True
     if kw:
@@ -4100,9 +4100,9 @@ or colormap-spec
         obj.update(kw_ticklabels)
 
     # Ticks consistent with rc settings and overrides
-    xy = axis.axis_name
+    s = axis.axis_name
     for which in ('minor', 'major'):
-        kw = rc.category(xy + 'tick.' + which)
+        kw = rc.category(s + 'tick.' + which)
         kw.pop('visible', None)
         if tickdirection:
             kw['direction'] = tickdirection
