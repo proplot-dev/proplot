@@ -3625,7 +3625,10 @@ property-spec, optional
 
     # Add legends manually so matplotlib does not remove old ones
     for leg in legs:
-        self.add_artist(leg)
+        if hasattr(self, 'legend_') and self.legend_ is None:
+            self.legend_ = leg  # set *first* legend accessible with get_legend()
+        else:
+            self.add_artist(leg)
         leg.legendPatch.update(outline)  # or get_frame()
 
     # Apply *overrides* to legend elements
