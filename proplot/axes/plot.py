@@ -2198,10 +2198,12 @@ def _update_text(self, props):
     bboxalpha = props.pop('bboxalpha', 0.5)
 
     if bbox:
-        self.set_bbox(dict(facecolor=bboxcolor,
-        edgecolor='black',
-        boxstyle=bboxstyle,
-        alpha=bboxalpha))
+        self.set_bbox({
+            'facecolor': bboxcolor,
+            'edgecolor': 'black',
+            'boxstyle': bboxstyle,
+            'alpha': bboxalpha,
+        })
 
     return type(self).update(self, props)
 
@@ -2297,10 +2299,10 @@ def text_wrapper(
         'bordercolor': bordercolor,
         'borderinvert': borderinvert,
         'borderwidth': borderwidth,
-        'bbox' : bbox,
+        'bbox': bbox,
         'bboxcolor': bboxcolor,
-        'bboxstyle' : bboxstyle,
-        'bboxalpha' : bboxalpha,
+        'bboxstyle': bboxstyle,
+        'bboxalpha': bboxalpha,
     })
     return obj
 
