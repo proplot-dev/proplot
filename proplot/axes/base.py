@@ -699,14 +699,14 @@ class Axes(maxes.Axes):
                 loc = self._abc_loc
                 if loc in ('left', 'right', 'center'):
                     continue
-            pad = rc['axes.titlepad'] / (72 * width)
+            pad = self._title_pad / (72 * width)
             if loc in ('upper center', 'lower center'):
                 x = 0.5
             elif loc in ('upper left', 'lower left'):
                 x = pad
             elif loc in ('upper right', 'lower right'):
                 x = 1 - pad
-            pad = rc['axes.titlepad'] / (72 * height)
+            pad = self._title_pad / (72 * height)
             if loc in ('upper left', 'upper right', 'upper center'):
                 y = 1 - pad
             elif loc in ('lower left', 'lower right', 'lower center'):
