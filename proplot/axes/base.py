@@ -955,7 +955,7 @@ optional
                     'bbox': 'abc.bbox',
                     'bboxcolor': 'abc.bboxcolor',
                     'bboxstyle': 'abc.bboxstyle',
-                    'bboxalpha': 'abc.bboxalpha', 
+                    'bboxalpha': 'abc.bboxalpha',
                 },
                 context=True,
             )
@@ -1025,7 +1025,7 @@ optional
                 'bbox': 'title.bbox',
                 'bboxcolor': 'title.bboxcolor',
                 'bboxstyle': 'title.bboxstyle',
-                'bboxalpha': 'title.bboxalpha', 
+                'bboxalpha': 'title.bboxalpha',
             },
             context=True,
         )
