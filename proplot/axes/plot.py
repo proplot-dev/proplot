@@ -2179,7 +2179,7 @@ def _get_transform(self, transform):
 
 def _update_text(self, props):
     """
-    Monkey patch that adds pseudo "border" properties to text objects
+    Monkey patch that adds pseudo "border" and "bbox" properties to text objects
     without wrapping the entire class. We override update to facilitate
     updating inset titles.
     """
@@ -2201,6 +2201,20 @@ def _update_text(self, props):
             'color': facecolor,
             'path_effects': [mpatheffects.Stroke(**kwargs), mpatheffects.Normal()],
         })
+
+    bbox = props.pop('bbox', None)
+    bboxcolor = props.pop('bboxcolor', 'w')
+    bboxstyle = props.pop('bboxstyle', 'round')
+    bboxalpha = props.pop('bboxalpha', 0.5)
+
+    if bbox:
+        self.set_bbox({
+            'facecolor': bboxcolor,
+            'edgecolor': 'black',
+            'boxstyle': bboxstyle,
+            'alpha': bboxalpha,
+        })
+
     return type(self).update(self, props)
 
 
@@ -2209,11 +2223,12 @@ def text_wrapper(
     x=0, y=0, text='', transform='data',
     family=None, fontfamily=None, fontname=None, fontsize=None, size=None,
     border=False, bordercolor='w', borderwidth=2, borderinvert=False,
+    bbox=False, bboxcolor='w', bboxstyle='round', bboxalpha=0.5,
     **kwargs
 ):
     """
     Enables specifying `tranform` with a string name and adds a feature for
-    drawing borders around text.
+    drawing borders and bbox around text.
 
     Note
     ----
@@ -2248,7 +2263,14 @@ def text_wrapper(
         The color of the text border. Default is ``'w'``.
     borderinvert : bool, optional
         If ``True``, the text and border colors are swapped.
-
+    bbox : bool, optional
+        Whether to draw bbox around text.
+    bboxcolor : color-spec, optional
+        The color of the text bbox. Default is ``'w'``.
+    bboxstyle : boxstyle, optional
+        The style of the bbox. Default is ``'round'``.
+    bboxalpha : float, optional
+        The alpha for the bbox. Default is ``'0.5'``.
     Other parameters
     ----------------
     **kwargs
@@ -2287,6 +2309,10 @@ def text_wrapper(
         'bordercolor': bordercolor,
         'borderinvert': borderinvert,
         'borderwidth': borderwidth,
+        'bbox': bbox,
+        'bboxcolor': bboxcolor,
+        'bboxstyle': bboxstyle,
+        'bboxalpha': bboxalpha,
     })
     return obj
 
