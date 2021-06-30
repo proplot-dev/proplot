@@ -35,7 +35,7 @@ related to climate science, and has authored a number of
 `vim plugins <https://github.com/lukelbd?tab=repositories>`__
 as an avid vim user.
 
-`Riley Brady`_ is the next-largest contributor so far. He helped Luke set up automatic
+`Riley Brady`_ is the next-biggest contributor so far. He helped Luke set up automatic
 testing, deploy ProPlot to PyPi, and make ProPlot easier for new users. He is also
 ProPlot's earliest user and helped fix `a lot of the early bugs
 <https://github.com/lukelbd/proplot/issues?q=is%3Aissue+is%3Aclosed>`__.
