@@ -1,3 +1,5 @@
+.. _external_links:
+
 ==============
 External links
 ==============

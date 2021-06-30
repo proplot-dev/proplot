@@ -1,5 +1,7 @@
+.. _contributions:
+
 ==================
-Contribution guide
+How to contribute?
 ==================
 
 Contributions of any size are highly welcomed and highly appreciated!
@@ -160,27 +162,25 @@ Here is a quick guide for submitting pull requests:
             coverage run --source proplot -m py.test
          This command will run tests via the ``pytest`` tool against Python 3.7.
 
-#. If you intend to make changes or add examples to the user guide,
-   you may want to open the ``docs/*.py`` files as
+#. If you intend to make changes or add examples to the user guide, you may want to
+   open the ``docs/*.py`` files as
    `jupyter notebooks <https://jupyter-notebook.readthedocs.io/en/stable/>`__.
    This can be done by
    `installing jupytext <https://jupytext.readthedocs.io/en/latest/install.html>`__,
-   starting a jupyter session, and clicking on the ``.py`` files in the ``Files``
-   page.
+   starting a jupyter session, and opening the ``.py`` files from the ``Files`` page.
 
 #. When you're finished, create a new changelog entry in ``CHANGELOG.rst``.
    The entry should be entered as:
 
    .. code-block::
 
-      <description> (:pr:`<PR number>`) `<author name>`_
+      * <description> (:pr:`<PR number>`) by `<author name>`_.
 
    where ``<description>`` is the description of the PR related to the change,
    ``<PR number>`` is the pull request number, and ``<author name>`` is your first
-   and last name. Add yourself to list of authors at the end of ``CHANGELOG.rst``
-   if not there, in alphabetical order.
-
-   Make sure to add the changelog entry under one of the valid
+   and last name. Make sure to add yourself to the list of authors at the end of
+   ``CHANGELOG.rst`` and the list of contributors in ``docs/authors.rst``.
+   Also make sure to add the changelog entry under one of the valid
    ``.. rubric:: <heading>`` headings listed at the top of ``CHANGELOG.rst``.
 
 #. Finally, submit a pull request through the GitHub website using this data:
@@ -214,14 +214,14 @@ releases on PyPi, but this will change in the future. Releases should
 be carried out as follows:
 
 #. Create a new branch ``release-vX.Y.Z`` with the version for the release.
-   In this branch, update ``CHANGELOG.rst``, and make sure all new changes are
-   reflected in the documentation:
+
+#. Make sure to update ``CHANGELOG.rst`` and that all new changes are reflected
+   in the documentation:
 
    .. code-block:: bash
 
       git add CHANGELOG.rst
-      git commit -m "Changelog updates"
-
+      git commit -m 'Update changelog'
 
 #. Open a new pull request for this branch targeting ``master``.
 

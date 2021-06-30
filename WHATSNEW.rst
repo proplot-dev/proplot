@@ -6,9 +6,17 @@
   - Internals
   - Documentation
 
+.. _whats_new:
+
 ===========
 What's new?
 ===========
+
+The following lists past and future (where dates are replaced with `##`) changes to
+ProPlot. Authors are shown next to each change. Where not indicated, `Luke Davis`_ was
+the author. See the :ref:`author page <authors>` for a list of contributors, and see
+the :ref:`contribution guide <contributions>` if you are interested in submitting
+your own changes.
 
 ProPlot v1.0.0 (2022-##-##)
 ===========================
@@ -90,18 +98,11 @@ ProPlot v0.7.0 (2021-06-30)
 
 .. rubric:: Features
 
-* Add the remaining commonly-used backend-related `pyplot` functions `ion`, `ioff`,
-  `isinteractive`, and `switch_backend` to the top-level `proplot` namespace
-  (:commit:`cd440155`). This avoids forcing users to import pyplot inside a proplot
-  session (the remaining pyplot functions are related to the "non-object-oriented"
-  workflow, which proplot explicitly discourages).
-* Use same default-level generation algorithm for contour plots without colormaps as for
-  all other colormap plots (:commit:`10e0f13b`). Makes automatically-generated
-  solid-color contours and colormap-style contours identical.
-* Use proplot TeX Gyre fonts with `~proplot.config.use_style` styles unless specified
-  otherwise (:commit:`6d7444fe`). Styles otherwise build on matplotlib defaults.
-* More robust interpretation of :rcraw:`abc.style` -- now match case with first
-  ``'a'`` or ``'A'`` in string, and only replace that one (:issue:`201`).
+* Permit different colors for `~matplotlib.axes.Axes.boxplot` and
+  `~matplotlib.axes.Axes.violinplot` using color lists (:issue:`217`, :pr:`218`)
+  by `Mickaël Lalande`_.
+* Add `titlebbox` and `abcbbox` as alternatives to `titleborder` and `abcborder`
+  for "inner" titles and a-b-c labels (:pr:`240`) by `Pratiman Patel`_.
 * Add `nozero` keyword arg to `cmap_changer` to remove the zero contour
   from automatically generated levels (:commit:`10e0f13b`).
   Example usage: ``ax.contour(x, y, z, nozero=True)``.
@@ -127,10 +128,22 @@ ProPlot v0.7.0 (2021-06-30)
   them 90 degrees for horizontal colorbars by default (:commit:`ed8e1314`). Makes
   the choice between "traditional" legends and "colorbar-style" legends for objects
   whose colors represent a colormap gradation more seamless.
+* Add the remaining commonly-used backend-related `pyplot` functions `ion`, `ioff`,
+  `isinteractive`, and `switch_backend` to the top-level `proplot` namespace
+  (:commit:`cd440155`). This avoids forcing users to import pyplot inside a proplot
+  session (the remaining pyplot functions are related to the "non-object-oriented"
+  workflow, which proplot explicitly discourages).
+* Use same default-level generation algorithm for contour plots without colormaps as for
+  all other colormap plots (:commit:`10e0f13b`). Makes automatically-generated
+  solid-color contours and colormap-style contours identical.
 * Add suffix ``'_copy'`` to colormaps converted with `to_listed` and
   `to_linear_segmented` to avoid accidental overwriting (:commit:`91998e93`).
 * If available, use :rcraw:`pcolormesh.snap` to repair overlap in transparent colorbar
   solids rather than manual-blending workaround (:commit:`c9f59e49`).
+* Use proplot TeX Gyre fonts with `~proplot.config.use_style` styles unless specified
+  otherwise (:commit:`6d7444fe`). Styles otherwise build on matplotlib defaults.
+* More robust interpretation of :rcraw:`abc.style` -- now match case with first
+  ``'a'`` or ``'A'`` in string, and only replace that one (:issue:`201`).
 
 .. rubric:: Bug fixes
 
@@ -142,6 +155,7 @@ ProPlot v0.7.0 (2021-06-30)
   (:pr:`251`).
 * Fix issue where "twin" ("alternate") axes content always hidden beneath "parent"
   content due to adding as children (:issue:`223`).
+* Fix issue where cannot set `rc.style = 'default'` (:pr:`240`) by `Pratiman Patel`_.
 * Fix issue where `get_legend` returns None even with legends present (:issue:`224`).
 * Fix issue where `~xarray.DataArray` string coordinates are not extracted from
   container before applying as tick labels (:issue:`214`).
@@ -935,5 +949,12 @@ ProPlot v0.0.0 (2019-11-27)
 
 The first version released on `PyPi <https://pypi.org/project/proplot/>`__.
 
-.. _`Luke Davis`: https://github.com/lukelbd
-.. _`Riley X. Brady`: https://github.com/bradyrx
+.. _Luke Davis: https://github.com/lukelbd
+
+.. _Riley Brady: https://github.com/bradyrx
+
+.. _Mickaël Lalande: https://github.com/mickaellalande
+
+.. _Pratiman Patel: https://github.com/pratiman-91
+
+.. _Zachary Moon: https://github.com/zmoon

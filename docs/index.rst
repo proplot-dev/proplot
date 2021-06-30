@@ -49,7 +49,7 @@ welcome!
    :caption: Reference
 
    api
-   changelog
+   whatsnew
    contributions
    external-links
    authors
