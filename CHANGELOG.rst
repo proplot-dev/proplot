@@ -96,6 +96,8 @@ ProPlot v0.7.0 (2021-06-30)
   solid-color contours and colormap-style contours identical.
 * Use proplot TeX Gyre fonts with `~proplot.config.use_style` styles unless specified
   otherwise (:commit:`6d7444fe`). Styles otherwise build on matplotlib defaults.
+* More robust interpretation of :rcraw:`abc.style` -- now match case with first
+  ``'a'`` or ``'A'`` in string, and only replace that one (:issue:`201`).
 * Add `nozero` keyword arg to `cmap_changer` to remove the zero contour
   from automatically generated levels (:commit:`10e0f13b`).
   Example usage: ``ax.contour(x, y, z, nozero=True)``.

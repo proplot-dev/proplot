@@ -3,6 +3,7 @@
 The base axes class used for all ProPlot figures.
 """
 import copy
+import re
 from numbers import Integral, Number
 
 import matplotlib.axes as maxes
@@ -904,12 +905,8 @@ optional
         # Labels
         rlabels = _not_none(rightlabels=rightlabels, rlabels=rlabels)
         blabels = _not_none(bottomlabels=bottomlabels, blabels=blabels)
-        llabels = _not_none(
-            rowlabels=rowlabels, leftlabels=leftlabels, llabels=llabels,
-        )
-        tlabels = _not_none(
-            collabels=collabels, toplabels=toplabels, tlabels=tlabels,
-        )
+        llabels = _not_none(rowlabels=rowlabels, leftlabels=leftlabels, llabels=llabels)
+        tlabels = _not_none(collabels=collabels, toplabels=toplabels, tlabels=tlabels)
         for side, labels in zip(
             ('left', 'right', 'top', 'bottom'),
             (llabels, rlabels, tlabels, blabels)
@@ -960,22 +957,18 @@ optional
             self._abc_border_kwargs.update(kwb)
             kw.update(self._abc_border_kwargs)
 
-            # Label format
-            abcstyle = rc.get('abc.style', context=True)  # 1st run, or changed
-            if abcstyle and self.number is not None:
-                if not isinstance(abcstyle, str) or (
-                    'a' not in abcstyle and 'A' not in abcstyle
-                ):
+            # A-b-c labels. Build as a...z...aa...zz...aaa...zzz
+            style = rc.get('abc.style', context=True)  # 1st run, or changed
+            if style and self.number is not None:
+                if not isinstance(style, str) or 'a' not in style and 'A' not in style:
                     raise ValueError(
-                        f'Invalid abcstyle {abcstyle!r}. '
-                        'Must include letter "a" or "A".'
+                        f'Invalid abcstyle {style!r}. Must include letter "a" or "A".'
                     )
-                # Build abc labels as a...z...aa...zz...aaa...zzz
-                # Permit abcstyles with arbitrary counts of A's
                 nabc, iabc = divmod(self.number - 1, 26)
-                text = (nabc + 1) * ABC_STRING[iabc]
-                text = abcstyle.replace('a', text).replace('A', text.upper())
-                self._abc_text = text
+                old = re.search('[aA]', style).group()  # return the *first* 'a'
+                new = (nabc + 1) * ABC_STRING[iabc]
+                new = new.upper() if old == 'A' else new
+                self._abc_text = style.replace(old, new, 1)
 
             # Apply text
             obj = self._abc_label
