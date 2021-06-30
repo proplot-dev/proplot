@@ -146,6 +146,7 @@ ProPlot v0.7.0 (2021-06-30)
   rather than passing it to `colorbar()` (:commit:`a23e7043`).
 * Fix issue where axis is accidentally inverted for histogram plots (:issue:`191`).
 * Fix issue where numeric zero cannot be applied as legend label (:commit:`02417c8c`).
+* Fix issue where `minorlocator=1` is not allowed (:issue:`219`).
 * Fix issue where `~proplot.colors.Cycle` fails to register new names and fails to
   display in `~proplot.demos.show_cycles` (:commit:`94ffc1dc`, :commit:`4a7a3c79`).
 * Fix issue where proplot fails to detect legend entries for "outer"

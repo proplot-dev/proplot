@@ -1117,7 +1117,7 @@ class CartesianAxes(base.Axes):
                     axis.set_major_locator(locator)
                     if isinstance(locator, mticker.IndexLocator):
                         tickminor = False  # 'index' minor ticks make no sense
-                if minorlocator in (True, False):
+                if minorlocator is True or minorlocator is False:  # must test identity
                     warnings._warn_proplot(
                         f'You passed {x}minorticks={minorlocator}, but this '
                         'argument is used to specify tick *locations*. If '
