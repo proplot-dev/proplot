@@ -36,8 +36,6 @@ from ..internals import (
     _flexible_getattr,
     _not_none,
     _state_context,
-    _version,
-    _version_mpl,
     docstring,
     warnings,
 )
@@ -94,13 +92,16 @@ norm : normalizer spec, optional
     `~proplot.constructor.Norm` constructor.
 norm_kw : dict-like, optional
     Passed to `~proplot.constructor.Norm`.
+extend : {{'neither', 'min', 'max', 'both'}}, optional
+    Whether to assign unique colors to out-of-bounds data and draw
+    "extensions" (triangles, by default) on the colorbar.
 vmin, vmax : float, optional
     Used to determine level locations if `levels` is an integer. Actual
     levels may not fall exactly on `vmin` and `vmax`, but the minimum
     level will be no smaller than `vmin` and the maximum level will be
     no larger than `vmax`. If `vmin` or `vmax` is not provided, the
     minimum and maximum data values are used.
-levels, N : int or list of float, optional
+N, levels : int or list of float, optional
     The number of level edges, or a list of level edges. If the former,
     `locator` is used to generate this many levels at "nice" intervals.
     If the latter, the levels should be monotonically increasing or
@@ -1480,7 +1481,7 @@ def scatter_wrapper(
     s=None, size=None, markersize=None,
     c=None, color=None, markercolor=None, smin=None, smax=None,
     cmap=None, cmap_kw=None, norm=None, norm_kw=None,
-    vmin=None, vmax=None, N=None, levels=None, values=None,
+    vmin=None, vmax=None, extend='neither', N=None, levels=None, values=None,
     symmetric=False, locator=None, locator_kw=None,
     lw=None, linewidth=None, linewidths=None,
     markeredgewidth=None, markeredgewidths=None,
@@ -1551,7 +1552,6 @@ color-spec or list thereof, optional
         cmap = constructor.Colormap(cmap, **cmap_kw)
 
     # Get normalizer and levels
-    # NOTE: If the length of the c array !=
     ticks = None
     carray = np.atleast_1d(c)
     if (
@@ -1562,8 +1562,8 @@ color-spec or list thereof, optional
         norm, cmap, _, ticks = _build_discrete_norm(
             carray,  # sample data for getting suitable levels
             N=N, levels=levels, values=values,
-            norm=norm, norm_kw=norm_kw, locator=locator, locator_kw=locator_kw,
-            cmap=cmap, vmin=vmin, vmax=vmax, extend='neither', symmetric=symmetric,
+            cmap=cmap, norm=norm, norm_kw=norm_kw, vmin=vmin, vmax=vmax, extend=extend,
+            symmetric=symmetric, locator=locator, locator_kw=locator_kw,
         )
 
     # Fix 2D arguments but still support scatter(x_vector, y_2d) usage
@@ -1584,12 +1584,15 @@ color-spec or list thereof, optional
             smin + (smax - smin)
             * (np.array(s) - smin_true) / (smax_true - smin_true)
         )
-    obj = func(
+    obj = objs = func(
         self, *args, c=c, s=s, cmap=cmap, norm=norm,
         linewidths=lw, edgecolors=ec, **kwargs
     )
-    if ticks is not None:
-        obj.ticks = ticks
+    if not isinstance(objs, tuple):
+        objs = (obj,)
+    for iobj in objs:
+        iobj._colorbar_extend = extend
+        iobj._colorbar_ticks = ticks
     return obj
 
 
@@ -2663,9 +2666,9 @@ def cycle_changer(
 
 
 def _auto_levels_locator(
-    *args, N=None, norm=None, norm_kw=None, locator=None, locator_kw=None,
-    vmin=None, vmax=None, extend='neither', symmetric=False,
-    positive=False, negative=False, nozero=False,
+    *args, N=None, norm=None, norm_kw=None,
+    vmin=None, vmax=None, extend='neither', locator=None, locator_kw=None,
+    symmetric=False, positive=False, negative=False, nozero=False,
 ):
     """
     Automatically generate level locations based on the input data, the
@@ -2680,11 +2683,13 @@ def _auto_levels_locator(
     norm, norm_kw
         Passed to `~proplot.constructor.Norm`. Used to determine suitable
         level locations if `locator` is not passed.
+    vmin, vmax : float, optional
+        The data limits.
+    extend : str, optional
+        The extend setting.
     locator, locator_kw
         Passed to `~proplot.constructor.Locator`. Used to determine suitable
         level locations.
-    extend : str, optional
-        The extend setting.
     symmetric, positive, negative : bool, optional
         Whether the automatic levels should be symmetric, should be all positive
         with a minimum at zero, or should be all negative with a maximum at zero.
@@ -2795,7 +2800,7 @@ def _auto_levels_locator(
 
 def _build_discrete_norm(
     data=None, N=None, levels=None, values=None,
-    norm=None, norm_kw=None, cmap=None, vmin=None, vmax=None, extend='neither',
+    cmap=None, norm=None, norm_kw=None, vmin=None, vmax=None, extend='neither',
     minlength=2,
     **kwargs,
 ):
@@ -2806,8 +2811,10 @@ def _build_discrete_norm(
 
     Parameters
     ----------
-    data, vmin, vmax, levels, values
-        Used to determine the level boundaries.
+    data : ndarray, optional
+        The data.
+    levels, values : ndarray, optional
+        The explicit boundaries.
     norm, norm_kw
         Passed to `~proplot.constructor.Norm` and then to `DiscreteNorm`.
     vmin, vmax : float, optional
@@ -2946,9 +2953,9 @@ def _build_discrete_norm(
 @warnings._rename_kwargs('0.6', centers='values')
 @docstring.add_snippets
 def cmap_changer(
-    self, func, *args, extend='neither',
+    self, func, *args,
     cmap=None, cmap_kw=None, norm=None, norm_kw=None,
-    vmin=None, vmax=None, N=None, levels=None, values=None,
+    vmin=None, vmax=None, extend='neither', N=None, levels=None, values=None,
     symmetric=False, positive=False, negative=False, nozero=False,
     locator=None, locator_kw=None,
     edgefix=None, labels=False, labels_kw=None, fmt=None, precision=2,
@@ -2969,9 +2976,6 @@ def cmap_changer(
 
     Parameters
     ----------
-    extend : {{'neither', 'min', 'max', 'both'}}, optional
-        Where to assign unique colors to out-of-bounds data and draw
-        "extensions" (triangles, by default) on the colorbar.
     %(axes.cmap_changer)s
     edgefix : bool, optional
         Whether to fix the the `white-lines-between-filled-contours \
@@ -3133,10 +3137,10 @@ def cmap_changer(
         )
     if has_cmap and name not in ('hexbin',):
         norm, cmap, levels, ticks = _build_discrete_norm(
-            Z_sample, levels=levels, values=values, cmap=cmap,
-            norm=norm, norm_kw=norm_kw, locator=locator, locator_kw=locator_kw,
-            vmin=vmin, vmax=vmax, extend=extend,
+            Z_sample, levels=levels, values=values,
+            cmap=cmap, norm=norm, norm_kw=norm_kw, vmin=vmin, vmax=vmax, extend=extend,
             symmetric=symmetric, positive=positive, negative=negative, nozero=nozero,
+            locator=locator, locator_kw=locator_kw,
             minlength=(1 if name in ('contour', 'tricontour') else 2),
         )
     if nozero and np.iterable(levels) and 0 in levels:
@@ -3155,9 +3159,8 @@ def cmap_changer(
     # Call function, possibly twice to add 'edges' to contourf plot
     obj = func(self, *args, **kwargs)
     if not isinstance(obj, tuple):  # hist2d
-        obj.extend = extend  # normally 'extend' is just for contour/contourf
-        if ticks is not None:
-            obj.ticks = ticks  # a Locator or ndarray used for controlling ticks
+        obj._colorbar_extend = extend
+        obj._colorbar_ticks = ticks  # a Locator or ndarray used for controlling ticks
     if add_contours:
         colors = _not_none(colors, 'k')
         self.contour(
@@ -3846,22 +3849,12 @@ or colormap-spec
     formatter = _not_none(ticklabels=ticklabels, formatter=formatter)
 
     # Colorbar kwargs
-    # WARNING: PathCollection scatter objects have an extend method!
-    # WARNING: Matplotlib 3.3 deprecated 'extend' parameter passed to colorbar()
-    # but *also* fails to read 'extend' parameter when added to a pcolor mappable!
-    # Need to figure out workaround!
     grid = _not_none(grid, rc['colorbar.grid'])
-    if extend is None:
-        if isinstance(getattr(mappable, 'extend', None), str):
-            extend = mappable.extend or 'neither'
-        else:
-            extend = 'neither'
     kwargs.update({
         'cax': self,
         'use_gridspec': True,
         'orientation': orientation,
         'spacing': 'uniform',
-        'extend': extend,
     })
     kwargs.setdefault('drawedges', grid)
 
@@ -3994,10 +3987,10 @@ or colormap-spec
                 )
             norm, *_ = _build_discrete_norm(
                 values=values,
-                extend='neither',
                 cmap=cmap,
                 norm=norm,
                 norm_kw=norm_kw,
+                extend='neither',
             )
             mappable = mcm.ScalarMappable(norm, cmap)
 
@@ -4008,7 +4001,7 @@ or colormap-spec
     # levels in log-space *between* powers of 10, so logminor ticks would be
     # misaligned with levels.
     if locator is None:
-        locator = getattr(mappable, 'ticks', None)
+        locator = getattr(mappable, '_colorbar_ticks', None)
         if locator is None:
             # This should only happen if user calls plotting method on native
             # matplotlib axes.
@@ -4056,16 +4049,20 @@ or colormap-spec
     # Draw the colorbar
     # NOTE: Set default formatter here because we optionally apply a FixedFormatter
     # using *labels* from handle input.
+    extend = _not_none(extend, getattr(mappable, '_colorbar_extend', 'neither'))
     locator = constructor.Locator(locator, **locator_kw)
     formatter = constructor.Formatter(_not_none(formatter, 'auto'), **formatter_kw)
     kwargs.update({
         'ticks': locator,
         'format': formatter,
         'ticklocation': ticklocation,
-        'extendfrac': extendsize
+        'extendfrac': extendsize,
+        'extend': extend,
     })
-    if _version_mpl >= _version('3.3'):
-        mappable.extend = kwargs.pop('extend')  # matplotlib >=3.3
+    if isinstance(mappable, mcontour.ContourSet):
+        mappable.extend = extend  # required in mpl >= 3.3, else optional
+    else:
+        kwargs['extend'] = extend
     cb = self.figure.colorbar(mappable, **kwargs)
     axis = self.xaxis if orientation == 'horizontal' else self.yaxis
 

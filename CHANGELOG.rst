@@ -136,6 +136,8 @@ ProPlot v0.7.0 (2021-06-30)
   (:pr:`251`).
 * Fix issue where `~xarray.DataArray` string coordinates are not extracted from
   container before applying as tick labels (:issue:`214`).
+* Fix issue where cannot set `extend` other than ``'neither'`` for
+  `~matplotlib.axes.Axes.scatter` colorbars (:issue:`206`).
 * Fix `~matplotlib.ticker.IndexFormatter` deprecation warning in matplotlib >= 3.3 by
   replacing with proplot-local copy (:pr:`251`).
 * Fix deprecation warning in matplotlib >= 3.3 -- add `extend` as mappable attribute

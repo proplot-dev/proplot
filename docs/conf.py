@@ -191,7 +191,7 @@ language = None
 # directories to ignore when looking for source files.
 exclude_patterns = [
     '.DS_Store',
-    '_build', '_templates', '_themes',
+    '_build', '_templates', '_themes', 'trash',
     'conf.py', 'sphinxext', '*.ipynb', '**.ipynb_checkpoints',
 ]
 
