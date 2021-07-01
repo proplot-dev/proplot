@@ -21,13 +21,13 @@
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_autosize:
 #
-# Automatic figure size
-# ---------------------
+# Automatic sizing
+# ----------------
 #
-# By default, ProPlot automatically determines the suitable figure size given
+# By default, ProPlot determines the suitable figure size given
 # the geometry of your subplot grid and the size of a "reference"
-# subplot. ProPlot can also determine the suitable figure height given a fixed
-# figure width, and figure width given a fixed figure height.
+# subplot. ProPlot can also determine the suitable figure height given a
+# fixed *figure* width, and figure width given a fixed *figure* height.
 #
 # This algorithm is controlled by
 # the following `~proplot.ui.subplots` keyword arguments:
@@ -52,9 +52,8 @@
 #   of available journal specifications (feel free to add to this table by
 #   submitting a PR).
 #
-# The below examples demonstrate the default behavior of the automatic figure
-# sizing algorithm, and how it can be controlled with `~proplot.ui.subplots`
-# keyword arguments.
+# The below examples demonstrate the default behavior of the figure sizing algorithm,
+# and how it can be controlled with `~proplot.ui.subplots` keyword arguments.
 #
 # .. important::
 #
@@ -150,8 +149,8 @@ for ref in (1, 2):
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_tight:
 #
-# Automatic subplot spacing
-# -------------------------
+# Automatic spacing
+# -----------------
 #
 # In addition to automatic figure sizing, by default ProPlot applies a *tight layout*
 # algorithm to every figure. This algorithm automatically adjusts the space between
@@ -231,11 +230,14 @@ axs[:, 0].format(ylabel='ylabel\nylabel')
 # Redundant labels are a common problem for figures with lots of subplots. To
 # address this, `matplotlib.pyplot.subplots` includes `sharex` and `sharey` keywords
 # that permit sharing axis limits, ticks, and tick labels between like rows and columns
-# of subplots. ProPlot expands upon this feature by (1) adding an option for sharing
-# labels in the same row or column of the subplot grid, controlled by the `spanx` and
-# `spany` keywords (default is :rc:`subplots.span`), and (2) adding four axis-sharing
-# "levels," controlled by the `sharex` and `sharey` keywords (default is
-# :rc:`subplots.share`). The axis-sharing levels are defined as follows:
+# of subplots. ProPlot expands upon this feature by:
+
+# 1. Adding an option for sharing labels in the same row or column of the subplot grid,
+#    controlled by the `spanx` and `spany` keywords (default is :rc:`subplots.span`).
+# 2. Adding four axis-sharing "levels", controlled by the `sharex` and `sharey` keywords
+#    (default is :rc:`subplots.share`).
+
+# The axis-sharing "levels" are defined as follows:
 #
 # * Level ``0`` disables axis sharing.
 # * Level ``1`` shares duplicate *x* and *y* axis labels, but nothing else.
@@ -244,10 +246,9 @@ axs[:, 0].format(ylabel='ylabel\nylabel')
 # * Level ``3`` is the same as ``2``, but the *x* and *y* tick labels are
 #   also shared.
 #
-# Axis and label sharing works for
-# :ref:`arbitrarily complex grids of subplots <ug_intro>`. The below examples
-# demonstrate the effect of various axis and label sharing settings on the appearance
-# of simple subplot grids.
+# Axis and label sharing works for :ref:`arbitrarily complex subplot grids <ug_intro>`.
+# The below examples demonstrate the effect of various axis and label sharing settings
+# on the appearance of simple subplot grids.
 
 # %%
 import proplot as plot
@@ -301,8 +302,8 @@ for mode in (0, 1):
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_abc:
 #
-# A-b-c subplot labels
-# --------------------
+# A-b-c labels
+# ------------
 #
 # ProPlot can be used to add "a-b-c" labels to subplots. This is possible
 # because `~proplot.ui.subplots` assigns unique `~proplot.axes.Axes.number`\ s
@@ -334,8 +335,8 @@ axs.format(
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_units:
 #
-# Arbitrary physical units
-# ------------------------
+# Physical units
+# --------------
 #
 # ProPlot supports arbitrary *physical units* for controlling the figure
 # `width` and `height`, the reference subplot `axwidth` and `axheight`, the

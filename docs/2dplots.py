@@ -42,7 +42,7 @@
 # are passed to `~proplot.constructor.Colormap` and the resulting colormap is
 # used for the plot. For example, to create and apply a monochromatic colormap,
 # you can simply use ``cmap='color name'``.
-
+#
 # The `~proplot.axes.cmap_changer` wrapper also
 # adds the `norm` and `norm_kw` arguments. They are passed to the
 # `~proplot.constructor.Norm` constructor function, and the resulting

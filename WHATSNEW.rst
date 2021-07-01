@@ -348,29 +348,30 @@ ProPlot v0.6.0 (2020-05-20)
 * Drop support for ``.rgba`` files, but optionally read 4th opacity column
   from ``.rgb`` and ``.txt`` files (:commit:`4fa72b0c`).
 * Stop reversing the ``'Spectral'`` colormap when ProPlot is imported
-  (:commit:`ce4ef6a0`).
-* Remove ``'Blue0'`` SciVisColor colormap (:commit:`7cb4ce0f`). It was odd man
-  out in the table, and not even really perceptually uniform.
+  (:pr:`149`, :commit:`ce4ef6a0`).
+* Remove ``'Blue0'`` SciVisColor colormap (:pr:`149`, :commit:`7cb4ce0f`). It was odd
+  man out in the table, and not even really perceptually uniform.
 * Remove custom ProPlot cycles -- these should be thought out much more
   carefully (:commit:`43f65d17`).
-* Remove "crayola" colors and clean up the `~proplot.setup.register_colors`
-  algorithm (:commit:`8922d6de`). Crayola color names less intuitive than XKCD.
+* Remove "crayola" colors and clean up the `~proplot.setup.register_colors` algorithm
+  (:pr:`149`, :commit:`8922d6de`). Crayola color names less intuitive than XKCD.
 * Use ``'cmap_s'`` instead of ``'cmap_shifted'`` to quickly get a 180
-  degree-shifted colormap, similar to ``'cmap_r'`` (:commit:`da4ccb08`).
+  degree-shifted colormap, similar to ``'cmap_r'`` (:pr:`149`, :commit:`da4ccb08`).
 * Rename ``GrayCycle`` colormap to ``MonoCycle`` to more accurately reflect
-  colormap design origins (:commit:`d67e45bf`).
-* Rename `~proplot.config.rc_configurator` to `~proplot.config.RcConfigurator`
-  to match capitalized class naming convention.
+  colormap design origins (:pr:`149`, :commit:`d67e45bf`).
+* Rename `~proplot.config.rc_configurator` and `~proplot.ui.subplot_grid` to
+  `~proplot.config.RcConfigurator` and `~proplot.ui.SubplotsContainer`
+  to match capitalized class naming convention (:pr:`149`).
 * Rename `~proplot.colors.MidpointNorm` to more intuitive
   `~proplot.colors.DivergingNorm`, and make "fair" color scaling the default
   behavior (:commit:`2f549c9`).
 * Rename `XYAxes` to `~proplot.axes.CartesianAxes`, `~proplot.axes.GeoAxes`
   to `~proplot.axes.CartopyAxes`, and `~proplot.axes.ProjAxes` to
-  `~proplot.axes.GeoAxes` (:commit:`4a6a0e34`).
+  `~proplot.axes.GeoAxes` (:pr:`149`, :commit:`4a6a0e34`).
 * Rename `BinNorm` to `~proplot.styletools.DiscreteNorm`
-  and fix issues with diverging norm color scaling (:commit:`98a976f1`).
+  and fix issues with diverging norm color scaling (:pr:`149`, :commit:`98a976f1`).
 * Rename `ColorDict` to `~proplot.colors.ColorDatabase`, `CmapDict`
-  to `~proplot.colors.ColormapDatabase` (:commit:`9d7fd3e0`).
+  to `~proplot.colors.ColormapDatabase` (:pr:`149`, :commit:`9d7fd3e0`).
 * Rename `~proplot.styletools.LinearSegmentedColormap.concatenate` to
   `~proplot.styletools.LinearSegmentedColormap.append`,
   `~proplot.styletools.LinearSegmentedColormap.updated` to
@@ -378,8 +379,8 @@ ProPlot v0.6.0 (2020-05-20)
   `~proplot.styletools.LinearSegmentedColormap.truncated` to
   `~proplot.styletools.LinearSegmentedColormap.truncate`, and
   `~proplot.styletools.LinearSegmentedColormap.punched` to
-  `~proplot.styletools.LinearSegmentedColormap.cut` (:commit:`e1a08930`).  The old
-  method names remain with a deprecation warning.
+  `~proplot.styletools.LinearSegmentedColormap.cut` (:pr:`149`, :commit:`e1a08930`).
+  The old method names remain with a deprecation warning.
 
 .. rubric:: Features
 

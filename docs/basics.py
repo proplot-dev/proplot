@@ -28,13 +28,12 @@
 # ProPlot works by creating a `proplot.figure.Figure` subclass of the
 # matplotlib figure class `~matplotlib.figure.Figure`, and a `proplot.axes.Axes`
 # subclass of the matplotlib axes class `~matplotlib.axes.Axes`.
-# All plotting in ProPlot begins by generating
-# an instance of the new figure class filled with instances of the new
-# axes classes using the `~proplot.ui.subplots` command, which is modeled
-# after `matplotlib.pyplot.subplots`.
-# ProPlot's `~proplot.ui.subplots` command can be used as follows:
 #
-# * Without any arguments, `~proplot.ui.subplots` returns a figure with a
+# The `~proplot.ui.subplots` command is used to create ProPlot figures. Modeled after
+# `matplotlib.pyplot.subplots`, it generates a `proplot.figure.Figure` instance filled
+# with `proplot.axes.Axes` instances. `~proplot.ui.subplots` can be used as follows:
+#
+# * With no arguments, `~proplot.ui.subplots` returns a figure with a
 #   single subplot.
 # * With `ncols` or `nrows`, `~proplot.ui.subplots` returns a
 #   figure with a simple grid of subplots.
@@ -44,9 +43,8 @@
 #   `~matplotlib.gridspec.GridSpec` slot that is occupied by the corresponding
 #   subplot and ``0`` indicates an empty space.
 #
-# In the below examples, we create subplot grids with `~proplot.ui.subplots`
-# and modify the axes labels. See the :ref:`formatting guide <ug_format>`
-# and :ref:`subplots container <ug_container>` sections for details.
+# In the below examples, we create a few simple figures with `~proplot.ui.subplots`.
+# See the next sections for details.
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. note::
@@ -55,7 +53,9 @@
 #    `matplotlib backend <https://matplotlib.org/faq/usage_faq#what-is-a-backend>`__
 #    -- the default background color is white when the figure is saved. This is done
 #    by setting :rcraw:`figure.facecolor` to gray, in order to improve contrast
-#    when working with figures, similar to MATLAB. ProPlot also changes the default
+#    when working with figures, similar to MATLAB.
+#
+#    ProPlot also changes the default
 #    :rcraw:`savefig.format` from PNG to PDF for the following reasons:
 #
 #        #. Vector graphic formats are infinitely scalable.
@@ -132,26 +132,24 @@ axs[0].plot(data, lw=2)
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_plots:
 #
-# Plotting data
-# -------------
+# Plotting stuff
+# --------------
 #
 # Matplotlib has
-# `two different APIs <https://matplotlib.org/3.2.1/api/index.html>`__:
-# an object-oriented API and a MATLAB-style
-# `~matplotlib.pyplot` API (which uses the object-oriented API internally).
-# Plotting in ProPlot is just like plotting in matplotlib with
-# the *object-oriented* API. Rather than creating
-# a brand new interface, ProPlot simply builds upon the existing matplotlib
-# constructs of the `~matplotlib.axes.Axes` and the `~matplotlib.figure.Figure`
-# by adding new commands and new options to existing commands, without changing
-# the usage or syntax. This means a shallow learning curve for the average
-# matplotlib user.
+# `two different interfaces <https://matplotlib.org/3.2.1/api/index.html>`__:
+# an object-oriented interface and a MATLAB-style `~matplotlib.pyplot` interface
+# (which uses the object-oriented interface internally). Plotting with ProPlot is
+# just like plotting with matplotlib's *object-oriented* interface. Proplot builds
+# upon the matplotlib constructs of the `~matplotlib.figure.Figure` and the
+# `~matplotlib.axes.Axes` by adding new commands and adding new features to
+# existing commands. These additions do not change the usage or syntax of existing
+# commands, which means a shallow learning curve for the average matplotlib user.
 #
 # In the below example, we create a 4-panel figure with the familiar matplotlib
 # commands `~matplotlib.axes.Axes.plot`, `~matplotlib.axes.Axes.scatter`,
 # `~matplotlib.axes.Axes.pcolormesh`, and `~matplotlib.axes.Axes.contourf`.
 # See the :ref:`1d plotting <ug_1dplots>` and :ref:`2d plotting <ug_2dplots>`
-# sections for details on the plotting features added by ProPlot.
+# sections for details on the features added by ProPlot.
 
 
 # %%
@@ -176,7 +174,7 @@ axs.format(abc=True, xlabel='xlabel', ylabel='ylabel', suptitle='Quick plotting 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_format:
 #
-# Formatting plots
+# Formatting stuff
 # ----------------
 #
 # Every `~matplotlib.axes.Axes` returned by `~proplot.ui.subplots` has a
@@ -191,7 +189,7 @@ axs.format(abc=True, xlabel='xlabel', ylabel='ylabel', suptitle='Quick plotting 
 #    `proplot.axes.CartesianAxes.format`, `proplot.axes.PolarAxes.format`, or
 #    `proplot.axes.GeoAxes.format`. These change settings that are
 #    specific to the axes type. For example:
-
+#
 #    * To change the *x* axis bounds on a `~proplot.axes.CartesianAxes`,
 #      use e.g. ``xlim=(0, 5)``.
 #    * To change the radial bounds on a `~proplot.axes.PolarAxes`, use e.g.
@@ -242,12 +240,49 @@ axs.format(
     xtickdir='inout', xtickminor=False, ygridminor=True,
 )
 
+# %% [raw] raw_mimetype="text/restructuredtext"
+# .. _ug_container:
+#
+# Formatting all-at-once
+# ----------------------
+#
+# Instead of an `~numpy.ndarray` of subplots, `~proplot.ui.subplots` returns a
+# `~proplot.ui.SubplotsContainer`. This container behaves like an
+# `~matplotlib.axes.Axes` object when it contains just one axes, and behaves
+# like a list otherwise. It supports both 1D indexing (e.g. ``axs[1]``) and
+# 2D indexing (e.g. ``axs[0, 1]``), and is row-major by default. Slicing a
+# `~proplot.ui.SubplotsContainer` returns another container (e.g. ``axs[:, 0]``).
+#
+# `~proplot.ui.SubplotsContainer` is useful because it lets you call
+# `~proplot.axes.Axes` methods simultaneously for all subplots in the container.
+# In the below example, we use the `~proplot.ui.SubplotsContainer` returned by
+# `~proplot.ui.subplots` with the `proplot.axes.Axes.format` command to format
+# several subplots at once.
+
+# %%
+import proplot as plot
+import numpy as np
+state = np.random.RandomState(51423)
+fig, axs = plot.subplots(ncols=4, nrows=4, axwidth=1.2)
+axs.format(
+    xlabel='xlabel', ylabel='ylabel', suptitle='SubplotsContainer demo',
+    grid=False, xlim=(0, 50), ylim=(-4, 4)
+)
+
+# Various ways to select subplots in the container
+axs[:, 0].format(facecolor='blush', color='gray7', linewidth=1)
+axs[0, :].format(facecolor='sky blue', color='gray7', linewidth=1)
+axs[0].format(color='black', facecolor='gray5', linewidth=1.4)
+axs[1:, 1:].format(facecolor='gray1')
+for ax in axs[1:, 1:]:
+    ax.plot((state.rand(50, 5) - 0.5).cumsum(axis=0), cycle='Grays', lw=2)
+
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_rc:
 #
-# Changing rc settings
-# --------------------
+# Styles and settings
+# -------------------
 #
 # A special object named `~proplot.config.rc` is created whenever you import
 # ProPlot. `~proplot.config.rc` is similar to the matplotlib
@@ -326,41 +361,3 @@ axs.format(suptitle='Stylesheets demo')
 for ax, style in zip(axs, styles):
     ax.format(style=style, xlabel='xlabel', ylabel='ylabel', title=style)
     ax.plot(data, linewidth=3)
-
-
-# %% [raw] raw_mimetype="text/restructuredtext"
-# .. _ug_container:
-#
-# Subplots containers
-# -------------------
-#
-# Instead of an `~numpy.ndarray` of axes, `~proplot.ui.subplots` returns a
-# `~proplot.ui.SubplotsContainer` instance. This container behaves like an
-# `~matplotlib.axes.Axes` object when it contains just one axes, and behaves
-# like a list otherwise. It supports both 1D indexing (e.g. ``axs[1]``) and
-# 2D indexing (e.g. ``axs[0, 1]``), and is row-major by default. Slicing a
-# `~proplot.ui.SubplotsContainer` returns another container (e.g. ``axs[:, 0]``),
-# and `~proplot.axes.Axes` methods can be called simultaneously for all axes in the
-# container by calling the method from the container (e.g. ``axs.format(abc=True)``).
-#
-# In the below example, the `~proplot.ui.SubplotsContainer` returned by
-# `~proplot.ui.subplots` is used to cusomtize several axes at once with
-# `proplot.axes.Axes.format`.
-
-# %%
-import proplot as plot
-import numpy as np
-state = np.random.RandomState(51423)
-fig, axs = plot.subplots(ncols=4, nrows=4, axwidth=1.2)
-axs.format(
-    xlabel='xlabel', ylabel='ylabel', suptitle='SubplotsContainer demo',
-    grid=False, xlim=(0, 50), ylim=(-4, 4)
-)
-
-# Various ways to select subplots in the container
-axs[:, 0].format(facecolor='blush', color='gray7', linewidth=1)
-axs[0, :].format(facecolor='sky blue', color='gray7', linewidth=1)
-axs[0].format(color='black', facecolor='gray5', linewidth=1.4)
-axs[1:, 1:].format(facecolor='gray1')
-for ax in axs[1:, 1:]:
-    ax.plot((state.rand(50, 5) - 0.5).cumsum(axis=0), cycle='Grays', lw=2)

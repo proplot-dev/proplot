@@ -525,8 +525,8 @@ ax.format(title='Scatter plot with cmap')
 data = state.rand(2, 100)
 obj = ax.scatter(
     *data, color=data.sum(axis=0), size=state.rand(100), smin=3, smax=30,
-    marker='o', cmap='dark red', colorbar='lr', vmin=0, vmax=2,
-    colorbar_kw={'label': 'label', 'locator': 0.5}
+    marker='o', cmap='dark red', cmap_kw={'fade': 90}, vmin=0, vmax=2,
+    colorbar='lr', colorbar_kw={'label': 'label', 'locator': 0.5},
 )
 axs.format(xlabel='xlabel', ylabel='ylabel')
 

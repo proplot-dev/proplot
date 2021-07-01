@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.4.2
+#       jupytext_version: 1.3.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -16,9 +16,9 @@
 # %% [raw] raw_mimetype="text/restructuredtext"
 #
 # .. _polar: https://matplotlib.org/3.1.0/gallery/pie_and_polar_charts/polar_demo.html
-
+#
 # .. _cartopy: https://scitools.org.uk/cartopy/docs/latest/
-
+#
 # .. _basemap: https://matplotlib.org/basemap/index.html
 #
 # .. _ug_proj:
@@ -206,8 +206,8 @@ plot.rc.reset()
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_geoplot:
 #
-# Plotting geographic data
-# ------------------------
+# Geographic plotting
+# -------------------
 #
 # In ProPlot, plotting in `~proplot.axes.GeoAxes` is not much different from
 # plotting in `~proplot.axes.CartesianAxes`. ProPlot makes longitude-latitude

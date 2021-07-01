@@ -34,7 +34,7 @@ to the `~proplot.axes.Axes.format` command:
   ax.format(rc_kw={'name1': value1, 'name2': value2})
 
 To temporarily modify settings for particular figure(s), pass the setting
-to the `~proplot.config.rc_configurator.context` command:
+to the `~proplot.config.RcConfigurator.context` command:
 
 .. code-block:: python
 
