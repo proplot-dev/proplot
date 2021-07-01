@@ -1613,5 +1613,5 @@ for cmap in pcolors._cmap_database.values():
 inline_backend_fmt, rc_configurator = warnings._rename_objs(
     '0.6',
     inline_backend_fmt=config_inline_backend,
-    RcConfigurator=config_inline_backend,
+    rc_configurator=RcConfigurator,
 )
