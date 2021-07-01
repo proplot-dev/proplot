@@ -2184,6 +2184,8 @@ def _update_text(self, props):
     updating inset titles.
     """
     props = props.copy()  # shallow copy
+
+    # Update border
     border = props.pop('border', None)
     bordercolor = props.pop('bordercolor', 'w')
     borderinvert = props.pop('borderinvert', False)
@@ -2202,17 +2204,21 @@ def _update_text(self, props):
             'path_effects': [mpatheffects.Stroke(**kwargs), mpatheffects.Normal()],
         })
 
+    # Update bounding box
+    # NOTE: For some reason using pad / 10 results in perfect alignment. Matplotlib
+    # docs are vague about bounding box units, maybe they are tens of points?
     bbox = props.pop('bbox', None)
     bboxcolor = props.pop('bboxcolor', 'w')
     bboxstyle = props.pop('bboxstyle', 'round')
     bboxalpha = props.pop('bboxalpha', 0.5)
-
+    bboxpad = _not_none(props.pop('bboxpad', None), self.axes._title_pad / 10)
     if bbox:
         self.set_bbox({
-            'facecolor': bboxcolor,
             'edgecolor': 'black',
+            'facecolor': bboxcolor,
             'boxstyle': bboxstyle,
             'alpha': bboxalpha,
+            'pad': bboxpad,
         })
 
     return type(self).update(self, props)
@@ -2223,7 +2229,7 @@ def text_wrapper(
     x=0, y=0, text='', transform='data',
     family=None, fontfamily=None, fontname=None, fontsize=None, size=None,
     border=False, bordercolor='w', borderwidth=2, borderinvert=False,
-    bbox=False, bboxcolor='w', bboxstyle='round', bboxalpha=0.5,
+    bbox=False, bboxcolor='w', bboxstyle='round', bboxalpha=0.5, bboxpad=None,
     **kwargs
 ):
     """
@@ -2264,13 +2270,16 @@ def text_wrapper(
     borderinvert : bool, optional
         If ``True``, the text and border colors are swapped.
     bbox : bool, optional
-        Whether to draw bbox around text.
+        Whether to draw a bouning box around text.
     bboxcolor : color-spec, optional
-        The color of the text bbox. Default is ``'w'``.
+        The color of the text bouning box. Default is ``'w'``.
     bboxstyle : boxstyle, optional
-        The style of the bbox. Default is ``'round'``.
+        The style of the bouning box. Default is ``'round'``.
     bboxalpha : float, optional
-        The alpha for the bbox. Default is ``'0.5'``.
+        The alpha for the bounding box. Default is ``'0.5'``.
+    bboxpad : float, optional
+        The padding of the bounding box. Default is :rc:`title.pad` / 10.
+
     Other parameters
     ----------------
     **kwargs
@@ -2313,6 +2322,7 @@ def text_wrapper(
         'bboxcolor': bboxcolor,
         'bboxstyle': bboxstyle,
         'bboxalpha': bboxalpha,
+        'bboxpad': bboxpad,
     })
     return obj
 

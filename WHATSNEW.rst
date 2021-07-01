@@ -61,7 +61,7 @@ ProPlot v0.8.0 (2021-##-##)
 
 .. rubric:: Internals
 
-* Assignments to `~proplot.rctools.rc_configurator` are now validated, and
+* Assignments to `~proplot.config.RcConfigurator` are now validated, and
   the configurator is now a monkey patch of `~matplotlib.rcParams`
   (:pr:`109`).
 * Plotting wrapper features (e.g. `~proplot.wrappers.standardize_1d`) are now
@@ -103,6 +103,7 @@ ProPlot v0.7.0 (2021-06-30)
   by `Mickaël Lalande`_.
 * Add `titlebbox` and `abcbbox` as alternatives to `titleborder` and `abcborder`
   for "inner" titles and a-b-c labels (:pr:`240`) by `Pratiman Patel`_.
+  Default behavior uses borders.
 * Add `nozero` keyword arg to `cmap_changer` to remove the zero contour
   from automatically generated levels (:commit:`10e0f13b`).
   Example usage: ``ax.contour(x, y, z, nozero=True)``.
@@ -358,6 +359,8 @@ ProPlot v0.6.0 (2020-05-20)
   degree-shifted colormap, similar to ``'cmap_r'`` (:commit:`da4ccb08`).
 * Rename ``GrayCycle`` colormap to ``MonoCycle`` to more accurately reflect
   colormap design origins (:commit:`d67e45bf`).
+* Rename `~proplot.config.rc_configurator` to `~proplot.config.RcConfigurator`
+  to match capitalized class naming convention.
 * Rename `~proplot.colors.MidpointNorm` to more intuitive
   `~proplot.colors.DivergingNorm`, and make "fair" color scaling the default
   behavior (:commit:`2f549c9`).
@@ -395,8 +398,8 @@ ProPlot v0.6.0 (2020-05-20)
   used for minor gridlines is `~matplotlib.ticker.AutoMinorLocator`.
 * Add `loninline`, `latinline`, and `rotatelabels` keywords for controlling
   cartopy gridliner behavior (:pr:`168`).
-* Add `proplot.config.rc_configurator.save` and
-  `proplot.config.rc_configurator.from_file` methods (:pr:`167`, :commit:`e6dd8314`).
+* Add `proplot.config.RcConfigurator.save` and
+  `proplot.config.RcConfigurator.from_file` methods (:pr:`167`, :commit:`e6dd8314`).
 * Increase default :rcraw:`savefig.dpi` to 1200, matching recommendations
   from academic journals (:pr:`167`, :commit:`c00e7314`). Also add detailed discussion
   to user guide.
@@ -483,7 +486,7 @@ ProPlot v0.6.0 (2020-05-20)
 * Fix deprecation of direct access to ``matplotlib.cm.cmap_d``
   in matplotlib >=3.2.0 (:pr:`149`, :commit:`a69c16da`).
 * Fix issues with string font sizes (:pr:`149`, :commit:`6121de03`). Add hidden
-  `~proplot.config.rc_configurator._get_font_size` method to
+  `~proplot.config.RcConfigurator._get_font_size` method to
   translate font size to numeric.
 * Fix issue where passing actual projection instances generated with
   `~proplot.constructor.Proj` to `~proplot.ui.subplots` could incorrectly

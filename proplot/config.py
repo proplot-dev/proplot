@@ -419,6 +419,13 @@ class RcConfigurator(object):
             kw_proplot.update(ikw_proplot)
             kw_matplotlib.update(ikw_matplotlib)
 
+        # Turning bounding box on should turn border off and vice versa
+        elif key in ('abc.bbox', 'title.bbox', 'abc.border', 'title.border'):
+            if value:
+                name, this = key.split('.')
+                other = 'border' if this == 'bbox' else 'border'
+                kw_proplot[name + '.' + other] = False
+
         # Tick length/major-minor tick length ratio
         elif key in ('tick.len', 'tick.lenratio'):
             if key == 'tick.len':
