@@ -953,6 +953,8 @@ The first version released on `PyPi <https://pypi.org/project/proplot/>`__.
 
 .. _Riley Brady: https://github.com/bradyrx
 
+.. _Stephane Raynaud: https://github.com/stefraynaud
+
 .. _Mickaël Lalande: https://github.com/mickaellalande
 
 .. _Pratiman Patel: https://github.com/pratiman-91

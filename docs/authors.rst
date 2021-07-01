@@ -13,6 +13,7 @@ Contributors
 
 * `Luke Davis`_
 * `Riley Brady`_
+* `Stephane Raynaud`_
 * `Mickaël Lalande`_
 * `Pratiman Patel`_
 * `Zachary Moon`_
@@ -43,6 +44,8 @@ ProPlot's earliest user and helped fix `a lot of the early bugs
 .. _Luke Davis: https://github.com/lukelbd
 
 .. _Riley Brady: https://github.com/bradyrx
+
+.. _Stephane Raynaud: https://github.com/stefraynaud
 
 .. _Pratiman Patel: https://github.com/pratiman-91
 
