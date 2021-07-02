@@ -19,7 +19,7 @@
 # =====================
 #
 # ProPlot includes some useful improvements to the matplotlib API that make
-# working with colorbars and legends much easier.
+# working with colorbars and legends :ref:`much easier <why_colorbars_legends>`.
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -28,11 +28,11 @@
 # Axes colorbars and legends
 # --------------------------
 #
-# In matplotlib, colorbars are added to the edges of subplots with the *figure* method
-# `matplotlib.figure.Figure.colorbar` using e.g.
-# ``fig.colorbar(m, ax=ax, location='right')``.
-# In ProPlot, colorbars are added using the axes method
-# `proplot.axes.Axes.colorbar` with e.g. ``ax.colorbar(m, loc='r')``.
+# In matplotlib, colorbars are added to the edges of subplots using the figure
+# method `matplotlib.figure.Figure.colorbar`
+# (e.g., ``fig.colorbar(m, ax=ax, location='right')``.
+# In ProPlot, this is done using the axes method
+# `proplot.axes.Axes.colorbar` (e.g., ``ax.colorbar(m, loc='r')``.
 # `proplot.axes.Axes.colorbar` preserves subplot aspect ratios and visual
 # symmetry between subplots by allocating new space in the figure
 # `~proplot.gridspec.GridSpec` rather than "stealing" space from the parent subplot

@@ -263,11 +263,10 @@ axs.format(
 # 2D indexing (e.g., ``axs[0, 1]``), and is row-major by default. Slicing a
 # `~proplot.ui.SubplotsContainer` returns another container (e.g., ``axs[:, 0]``).
 #
-# `~proplot.ui.SubplotsContainer` is useful because it lets you call
-# `~proplot.axes.Axes` methods simultaneously for all subplots in the container.
-# In the below example, we use the `~proplot.ui.SubplotsContainer` returned by
-# `~proplot.ui.subplots` with the `proplot.axes.Axes.format` command to format
-# several subplots at once.
+# `~proplot.ui.SubplotsContainer` also lets you call `~proplot.axes.Axes` methods
+# simultaneously for all subplots in the container. In the below example, we use the
+# `~proplot.ui.SubplotsContainer` returned by `~proplot.ui.subplots` with the
+# `proplot.axes.Axes.format` command to format several subplots at once.
 
 # %%
 import proplot as plot

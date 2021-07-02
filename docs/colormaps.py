@@ -27,9 +27,10 @@
 # :ref:`subclassed from <ug_cmaps_new>`
 # `matplotlib.colors.LinearSegmentedColormap`.
 #
-# ProPlot adds several features to help you use colormaps effectively in your
-# figures. This section documents the new registered colormaps, explains how
-# to make and modify colormaps, and shows how to apply them to your plots.
+# ProPlot :ref:`adds several features <why_colormaps_cyles>` to help you use
+# colormaps effectively in your figures. This section documents the new registered
+# colormaps, explains how to make and modify colormaps, and shows how to apply them
+# to your plots.
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"

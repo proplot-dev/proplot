@@ -31,10 +31,10 @@
 # `~proplot.constructor.Cycle` constructor function or by
 # :ref:`drawing samples <ug_cycles_new>` from continuous colormaps.
 #
-# ProPlot adds several features to help you use color cycles effectively in
-# your figures. This section documents the new registered color cycles,
-# explains how to make and modify colormaps, and shows how to apply them to
-# your plots.
+# ProPlot :ref:`adds several features <why_colormaps_cyles>` to help you use color
+# cycles effectively in your figures. This section documents the new registered
+# color cycles, explains how to make and modify colormaps, and shows how to apply
+# them to your plots.
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"

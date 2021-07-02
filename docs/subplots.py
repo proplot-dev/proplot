@@ -227,10 +227,10 @@ axs[:, 0].format(ylabel='ylabel\nylabel')
 # Axis sharing
 # ------------
 #
-# Redundant labels are a common problem for figures with lots of subplots. To
-# address this, `matplotlib.pyplot.subplots` includes `sharex` and `sharey` keywords
-# that permit sharing axis limits, ticks, and tick labels between like rows and columns
-# of subplots. ProPlot expands upon this feature by:
+# :ref:`Redundant labels <why_redundant>` are a common problem for figures with lots of
+# subplots. To address this, `matplotlib.pyplot.subplots` includes `sharex` and `sharey`
+# keywords that permit sharing axis limits, ticks, and tick labels between like rows and
+# columns of subplots. ProPlot expands upon this feature by:
 
 # 1. Adding an option for sharing labels in the same row or column of the subplot grid,
 #    controlled by the `spanx` and `spany` keywords (default is :rc:`subplots.span`).

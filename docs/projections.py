@@ -27,8 +27,8 @@
 # ==========================
 #
 # ProPlot includes features for working with `polar axes <polar_>`_ and the
-# `cartopy`_ and `basemap`_ geographic projection packages. These features are
-# optional -- installation of cartopy or basemap is not required.
+# `cartopy`_ and `basemap`_ :ref:`geographic projection packages <why_cartopy_basemap>`.
+# These features are *optional*. Installation of cartopy or basemap is not required.
 #
 # To change the axes projection, pass ``proj='name'`` to `~proplot.ui.subplots`. To use
 # different projections for different subplots, pass a dictionary of projection names
@@ -56,7 +56,6 @@
 # `proplot.axes.PolarAxes.format` calls `proplot.axes.Axes.format`, it can be used to
 # add axes titles, a-b-c labels, and figure titles, just like
 # `~proplot.axes.CartesianAxes`.
-
 #
 # For details, see `proplot.axes.PolarAxes.format`.
 
@@ -102,43 +101,46 @@ axs[2].format(
 # Geographic axes
 # ---------------
 #
-# ProPlot can create geographic projection axes using either `cartopy`_ or `basemap`_
-# as "backends". To draw geographic axes, pass ``proj='name'`` or e.g.
-# ``proj={2: 'name'}`` (:ref:`see above <ug_proj>`) to  `~proplot.ui.subplots`
-# where ``name`` is any valid :ref:`PROJ projection name <proj_included>`.
-# You can also use ``proj=projection_instance``, where ``projection_instance``
-# is a `cartopy.crs.Projection` or `mpl_toolkits.basemap.Basemap` returned by
-# the `~proplot.constructor.Proj` constructor function.
+# ProPlot can create geographic projection axes using
+# either `cartopy`_ or `basemap`_ as "backends". To draw geographic axes, pass
+# ``proj='name'`` or e.g. ``proj={2: 'name'}`` (:ref:`see above <ug_proj>`) to
+# `~proplot.ui.subplots` where ``name`` is any valid :ref:`PROJ projection name
+# <proj_included>`. You can also use ``proj=projection_instance``, where
+# ``projection_instance`` is a `cartopy.crs.Projection` or
+# `mpl_toolkits.basemap.Basemap` returned by the `~proplot.constructor.Proj`
+# :ref:`constructor function <why_constructor>`.
 #
 # When you request a geographic projection, `~proplot.ui.subplots` returns
 # a `proplot.axes.GeoAxes` instance with its own `~proplot.axes.GeoAxes.format`
-# method. The `proplot.axes.GeoAxes.format` method allows you to
-# :ref:`modify geographic features <ug_geoformat>` with the same syntax whether
-# cartopy or basemap is the "backend". A few details:
+# method. The `proplot.axes.GeoAxes.format` method lets you
+# :ref:`modify geographic features <ug_geoformat>` with the same syntax for
+# either backend. A few details:
 #
 # * Cartopy is the default backend. When you request projections with cartopy as the
 #   backend, `~proplot.ui.subplots` returns `proplot.axes.CartopyAxes`, which is a
-#   subclass of both `cartopy.mpl.geoaxes.GeoAxes` and `proplot.axes.Axes.GeoAxes`.
-#   On `~proplot.axes.CartopyAxes`, `~proplot.axes.GeoAxes.format` changes map
-#   bounds using `~cartopy.mpl.geoaxes.GeoAxes.set_extent`, adds major and minor
-#   gridlines using `~cartopy.mpl.geoaxes.GeoAxes.gridlines`, and adds geographic
-#   features using `~cartopy.mpl.geoaxes.GeoAxes.add_feature`.
+#   subclass of both `proplot.axes.GeoAxes` and `cartopy.mpl.geoaxes.GeoAxes`.
+#   Under the hood, invoking `~proplot.axes.GeoAxes.format` on a
+#   `~proplot.axes.CartopyAxes` changes map bounds using
+#   `~cartopy.mpl.geoaxes.GeoAxes.set_extent`, adds major and minor gridlines using
+#   `~cartopy.mpl.geoaxes.GeoAxes.gridlines`, and adds geographic features using
+#   `~cartopy.mpl.geoaxes.GeoAxes.add_feature`. If you prefer, you can use the
+#   standard `cartopy.mpl.geoaxes.GeoAxes` methods just like you would in cartopy.
 #
-# * Basemap is an alternative backend. To use basemap as the backend, set the
-#   :rcraw:`basemap` setting to ``True`` or pass ``basemap=True`` to
-#   `~proplot.ui.subplots`. When you request projections with basemap as the backend,
-#   `~proplot.ui.subplots` returns `proplot.axes.BasemapAxes`, which is a subclass
-#   of `proplot.axes.GeoAxes`. `~proplot.axes.Axes.BasemapAxes` redirects the plot,
-#   scatter, contour, contourf, pcolor, pcolormesh, quiver, streamplot, and barb
-#   methods to identically named methods on the `~mpl_toolkits.basemap.Basemap`
-#   instance. This means you can work with the standard axes plotting methods rather
-#   than the basemap methods -- just like cartopy. On `~proplot.axes.BasemapAxes`,
-#   `~proplot.axes.GeoAxes.format` adds adds major and minor gridlines using
+# * Basemap is an alternative backend. To use basemap, set :rcraw:`basemap` to
+#   ``True`` or pass ``basemap=True`` to `~proplot.ui.subplots`. When you request
+#   projections with basemap as the backend, `~proplot.ui.subplots` returns
+#   `proplot.axes.BasemapAxes`, which is a subclass of `proplot.axes.GeoAxes`.
+#   `~proplot.axes.BasemapAxes` redirects the plot, scatter, contour, contourf,
+#   pcolor, pcolormesh, quiver, streamplot, and barb methods to identically named
+#   methods on the `~mpl_toolkits.basemap.Basemap` instance. This means you can work
+#   with the standard axes plotting methods rather than the basemap methods -- just
+#   like cartopy. Under the hood, invoking `~proplot.axes.GeoAxes.format` on a
+#   `~proplot.axes.BasemapAxes` adds major and minor gridlines using
 #   `~mpl_toolkits.basemap.Basemap.drawmeridians` and
 #   `~mpl_toolkits.basemap.Basemap.drawparallels` and adds geographic features
 #   using methods like `~mpl_toolkits.basemap.Basemap.fillcontinents`
-#   and `~mpl_toolkits.basemap.Basemap.drawcoastlines`. In case you need to
-#   explicitly use the underlying `~mpl_toolkits.basemap.Basemap` instance, it is
+#   and `~mpl_toolkits.basemap.Basemap.drawcoastlines`. If you need to
+#   use the underlying `~mpl_toolkits.basemap.Basemap` instance, it is
 #   available via the `proplot.axes.BasemapAxes.projection` attribute.
 #
 # Together, these features let you work with geophysical data without invoking

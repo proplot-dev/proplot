@@ -18,14 +18,13 @@
 # Plotting 2D data
 # ================
 #
-# ProPlot adds new features to various `~matplotlib.axes.Axes` plotting
-# methods using a set of wrapper functions. When a plotting method like
-# `~matplotlib.axes.Axes.contourf` is "wrapped" by one of these functions, it
-# accepts the same parameters as the wrapper. These additions are a strict
-# *superset* of matplotlib -- if you are not interested, you
-# can use matplotlib's plotting methods just like you always have.
-# This section documents the features added by wrapper functions to 2D
-# plotting commands like `~matplotlib.axes.Axes.contour`,
+# ProPlot :ref:`adds new features <why_plotting>` to various `~matplotlib.axes.Axes`
+# plotting methods using a set of "wrapper" functions. When a plotting method like
+# `~matplotlib.axes.Axes.contourf` is "wrapped" by one of these functions, it accepts
+# the same parameters as the wrapper. These additions are a strict *superset* of
+# matplotlib -- if you are not interested, you can use matplotlib's plotting methods
+# just like you always have. This section documents the features added by wrapper
+# functions to 2D plotting commands like `~matplotlib.axes.Axes.contour`,
 # `~matplotlib.axes.Axes.contourf`, `~matplotlib.axes.Axes.pcolor`, and
 # `~matplotlib.axes.Axes.pcolormesh`.
 
