@@ -119,7 +119,8 @@ plotting packages.
   works just like the native `xarray.DataArray.plot` and
   `pandas.DataFrame.plot` methods. A demonstration of this feature is given
   in the sections on :ref:`1D plotting <ug_1dintegration>` and
-  :ref:`2D plotting <ug_2dintegration>`.
+  :ref:`2D plotting <ug_2dintegration>`. This feature can be disabled by
+  setting :rcraw:`autoformat` to ``False``.
 * The `~proplot.axes.GeoAxes` class uses the `cartopy` or
   `~mpl_toolkits.basemap` packages to :ref:`plot geophysical data <ug_geoplot>`,
   :ref:`add geographic features <ug_geoformat>`, and

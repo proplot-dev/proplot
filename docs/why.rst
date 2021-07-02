@@ -462,9 +462,8 @@ ProPlot reproduces many of the `xarray.DataArray.plot`,
 `~proplot.axes.Axes` plotting methods themselves.  Passing a
 `~xarray.DataArray`, `~pandas.DataFrame`, or `~pandas.Series` through any
 plotting method automatically updates the axis tick labels, axis labels,
-subplot titles, and colorbar and legend labels from the metadata.  This can
-be disabled by passing ``autoformat=False`` to the plotting method or to
-`~proplot.ui.subplots`.
+subplot titles, and colorbar and legend labels from the metadata.  This
+feature can be disabled by setting :rcraw:`autoformat` to ``False``.
 
 Also, as described in the section on :ref:`plotting methods <why_plotting>`,
 ProPlot implements certain features like grouped bar plots, layered area
