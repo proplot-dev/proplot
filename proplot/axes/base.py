@@ -226,17 +226,17 @@ class Axes(maxes.Axes):
         self._auto_format = None  # manipulated by wrapper functions
         self._abc_loc = None
         self._abc_text = None
-        self._abc_border_kwargs = {}  # abs border properties
-        self._title_above = rc['axes.titleabove']
-        self._title_loc = None  # location of main title
-        self._title_pad = rc['axes.titlepad']  # format() can overwrite
-        self._title_pad_active = None
+        self._abc_border_kwargs = {}
+        self._title_loc = None
         self._title_border_kwargs = {}  # title border properties
+        self._title_above = rc['title.above']
+        self._title_pad = rc['title.pad']
+        self._title_pad_current = None
         self._bottom_panels = []
         self._top_panels = []
         self._left_panels = []
         self._right_panels = []
-        self._tightbbox = None  # bounding boxes are saved
+        self._tight_bbox = None  # bounding boxes are saved
         self._panel_hidden = False  # True when "filled" with cbar/legend
         self._panel_parent = None
         self._panel_share = False
@@ -560,7 +560,7 @@ class Axes(maxes.Axes):
         `~Figure.get_tightbbox` is called.
         """
         # TODO: Better testing for axes visibility
-        bbox = self._tightbbox
+        bbox = self._tight_bbox
         if bbox is None:
             return np.nan, np.nan
         if x == 'x':
@@ -570,30 +570,21 @@ class Axes(maxes.Axes):
 
     def _reassign_subplot_label(self, side):
         """
-        Re-assign the column and row labels to the relevant panel if present.
+        Reassign the column and row labels to the relevant panel if present.
         This is called by `~proplot.figure.Figure._align_subplot_figure_labels`.
         """
-        # Place column and row labels on panels instead of axes -- works when
-        # this is called on the main axes *or* on the relevant panel itself
-        # TODO: Mixed figure panels with super labels? How does that work?
-        if side == self._panel_side:
-            ax = self._panel_parent
-        else:
-            ax = self
-        paxs = getattr(ax, '_' + side + '_panels')
+        # NOTE: Since panel axes are "children" main axes is always drawn first.
+        paxs = getattr(self, '_' + side + '_panels')
         if not paxs:
-            return ax
+            return self
         kw = {}
-        pax = paxs[-1]  # outermost is always list in list
-        obj = getattr(ax, '_' + side + '_label')
-        for key in ('color', 'fontproperties'):  # TODO: add to this?
-            kw[key] = getattr(obj, 'get_' + key)()
+        pax = paxs[-1]  # outermost
+        obj = getattr(self, '_' + side + '_label')
         pobj = getattr(pax, '_' + side + '_label')
+        for key in ('text', 'color', 'fontproperties'):
+            kw[key] = getattr(obj, 'get_' + key)()
         pobj.update(kw)
-        text = obj.get_text()
-        if text:
-            obj.set_text('')
-            pobj.set_text(text)
+        obj.set_text('')
         return pax
 
     def _reassign_title(self):
@@ -603,30 +594,20 @@ class Axes(maxes.Axes):
         be offset but still belong to main axes, which messes up the tight
         bounding box.
         """
-        # Reassign title from main axes to top panel -- works when this is
-        # called on the main axes *or* on the top panel itself. This is
-        # critical for bounding box calcs; not always clear whether draw() and
-        # get_tightbbox() are called on the main axes or panel first
-        if self._panel_side == 'top' and self._panel_parent:
-            ax = self._panel_parent
-        else:
-            ax = self
-        taxs = ax._top_panels
-        if not taxs or not ax._title_above:
-            tax = ax
-        else:
-            tax = taxs[-1]
-            tax._title_pad = ax._title_pad
-            for loc in ('abc', 'left', 'center', 'right'):
-                kw = {}
-                obj = ax._get_title(loc)
-                if not obj.get_text():
-                    continue
-                tobj = tax._get_title(loc)
-                for key in ('text', 'color', 'fontproperties'):  # add to this?
-                    kw[key] = getattr(obj, 'get_' + key)()
-                tobj.update(kw)
-                obj.set_text('')
+        # NOTE: Since panel axes are "children" main axes is always drawn first.
+        taxs = self._top_panels
+        if not taxs or not self._title_above:
+            return
+        tax = taxs[-1]  # outermost
+        tax._title_pad = self._title_pad
+        for loc in ('abc', 'left', 'center', 'right'):
+            kw = {}
+            obj = self._get_title(loc)
+            tobj = tax._get_title(loc)
+            for key in ('text', 'color', 'fontproperties'):
+                kw[key] = getattr(obj, 'get_' + key)()
+            tobj.update(kw)
+            obj.set_text('')
 
     def _sharex_setup(self, sharex):
         """
@@ -683,7 +664,8 @@ class Axes(maxes.Axes):
         Update the position of proplot inset titles and builtin matplotlib
         titles. This is called by matplotlib at drawtime.
         """
-        # Custom inset titles
+        # Update custom inset titles
+        pad = self._title_pad
         width, height = self.get_size_inches()
         for loc in (
             'abc',
@@ -695,18 +677,18 @@ class Axes(maxes.Axes):
                 loc = self._abc_loc
                 if loc in ('left', 'right', 'center'):
                     continue
-            pad = self._title_pad / (72 * width)
+            x_pad = pad / (72 * width)
             if loc in ('upper center', 'lower center'):
                 x = 0.5
             elif loc in ('upper left', 'lower left'):
-                x = pad
+                x = x_pad
             elif loc in ('upper right', 'lower right'):
-                x = 1 - pad
-            pad = self._title_pad / (72 * height)
+                x = 1 - x_pad
+            y_pad = pad / (72 * height)
             if loc in ('upper left', 'upper right', 'upper center'):
-                y = 1 - pad
+                y = 1 - y_pad
             elif loc in ('lower left', 'lower right', 'lower center'):
-                y = pad
+                y = y_pad
             obj.set_position((x, y))
 
         # Push title above tick marks, since builtin algorithm used to offset
@@ -714,7 +696,6 @@ class Axes(maxes.Axes):
         # especially annoying with top panels.
         # TODO: Make sure this is robust. Seems 'default' is returned usually
         # when tick sides is actually *both*.
-        pad = self._title_pad
         pos = self.xaxis.get_ticks_position()
         fmt = self.xaxis.get_major_formatter()
         if self.xaxis.get_visible() and (
@@ -727,11 +708,12 @@ class Axes(maxes.Axes):
             )
         ):
             pad += self.xaxis.get_tick_padding()
-        pad_active = self._title_pad_active
-        if pad_active is None or not np.isclose(pad_active, pad):
-            # Avoid doing this on every draw in case it is expensive to change
-            # the title Text transforms every time.
-            self._title_pad_active = pad
+
+        # Avoid applying padding on every draw in case it is expensive to change
+        # the title Text transforms every time.
+        pad_current = self._title_pad_current
+        if pad_current is None or not np.isclose(pad, pad_current):
+            self._title_pad_current = pad
             self._set_title_offset_trans(pad)
 
         # Adjust the title positions with builtin algorithm and match
@@ -740,9 +722,7 @@ class Axes(maxes.Axes):
         if self._abc_loc in ('left', 'center', 'right'):
             title = self._get_title(self._abc_loc)
             self._abc_label.set_position(title.get_position())
-            self._abc_label.set_transform(
-                self.transAxes + self.titleOffsetTrans
-            )
+            self._abc_label.set_transform(self.transAxes + self.titleOffsetTrans)
 
     @staticmethod
     @warnings._rename_kwargs('0.6', mode='rc_mode')
@@ -829,10 +809,10 @@ lrtitle : str, optional
             :rc:`abc.bbox` and :rc:`title.bbox`
         titlepad : float, optional
             The padding for the inner and outer titles and a-b-c labels in
-            arbitrary units (default is points). Default is :rc:`axes.titlepad`.
+            arbitrary units (default is points). Default is :rc:`title.pad`.
         titleabove : bool, optional
-            Whether to try to put outer titles and a-b-c labels above the top panel
-            (if it exists). Default is :rc:`axes.titleabove`.
+            Whether to try to put outer titles and a-b-c labels above panels,
+            colorbars, or legends that are above the axes. Default is :rc:`title.above`.
         leftlabels, toplabels, rightlabels, bottomlabels : list of str, \
 optional
             Labels for the subplots lying along the left, top, right, and
@@ -863,31 +843,32 @@ optional
         proplot.axes.PolarAxes.format
         proplot.axes.GeoAxes.format
         """
-        # Figure patch (needs to be re-asserted even if declared before figure is drawn)
+        # Figure patch
+        # TODO: Work out awkward situation where "figure" settings applied on axes
         kw = rc.fill({'facecolor': 'figure.facecolor'}, context=True)
         self.figure.patch.update(kw)
 
-        # Axes settings (TODO: add more settings?)
+        # Axes settings
         cycle = rc.get('axes.prop_cycle', context=True)
         if cycle is not None:
             self.set_prop_cycle(cycle)
 
-        # Text positioning
-        above = rc.get('axes.titleabove', context=True)
+        # Text positioning equivalent
+        above = rc.get('title.above', context=True)
         if above is not None:
             self._title_above = above
-        pad = rc.get('axes.titlepad', context=True)
+        pad = rc.get('title.pad', context=True)
         if pad is not None:
             self._set_title_offset_trans(pad)
             self._title_pad = pad
 
         # Super title
-        # NOTE: These are actually *figure-wide* settings, but that line
-        # gets blurred where we have shared axes, spanning labels, and
-        # whatnot. May result in redundant assignments if formatting more than
-        # one axes, but operations are fast so some redundancy is nbd.
-        # NOTE: Below kludge prevents changed *figure-wide* settings
-        # from getting overwritten when user makes a new axes.
+        # NOTE: These are actually *figure-wide* settings, but that line gets
+        # blurred where we have shared axes, spanning labels, and whatnot. May result
+        # in redundant assignments if formatting more than one axes, but operations
+        # are fast so some redundancy is nbd.
+        # NOTE: Below kludge prevents changed *figure-wide* settings from getting
+        # overwritten when user makes a new axes.
         fig = self.figure
         suptitle = _not_none(figtitle=figtitle, suptitle=suptitle)
         if len(fig._axes_main) > 1 and rc._context and rc._context[-1].mode == 1:
@@ -933,6 +914,7 @@ optional
                 kw.pop('border', None)
                 kw.pop('borderwidth', None)
                 kw.pop('bbox', None)
+                kw.pop('bboxpad', None)
                 kw.pop('bboxcolor', None)
                 kw.pop('bboxstyle', None)
                 kw.pop('bboxalpha', None)
@@ -959,6 +941,7 @@ optional
                     'border': 'abc.border',
                     'borderwidth': 'abc.borderwidth',
                     'bbox': 'abc.bbox',
+                    'bboxpad': 'abc.bboxpad',
                     'bboxcolor': 'abc.bboxcolor',
                     'bboxstyle': 'abc.bboxstyle',
                     'bboxalpha': 'abc.bboxalpha',
@@ -1025,6 +1008,7 @@ optional
                 'border': 'title.border',
                 'borderwidth': 'title.borderwidth',
                 'bbox': 'title.bbox',
+                'bboxpad': 'title.bboxpad',
                 'bboxcolor': 'title.bboxcolor',
                 'bboxstyle': 'title.bboxstyle',
                 'bboxalpha': 'title.bboxalpha',
@@ -1452,7 +1436,7 @@ optional
         # box as an attribute.
         self._reassign_title()
         bbox = super().get_tightbbox(renderer, *args, **kwargs)
-        self._tightbbox = bbox
+        self._tight_bbox = bbox
         return bbox
 
     def heatmap(self, *args, aspect=None, **kwargs):

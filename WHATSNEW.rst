@@ -91,19 +91,17 @@ ProPlot v0.7.0 (2021-06-30)
   Make the ``Browns1`` map the most colorful/vibrant one, just like ``Greens1`` and
   ``Blues1``; split up the ``RedPurple`` maps into ``Reds`` and ``Purples``; and add
   the ``Yellows`` category from the ``Oranges`` maps (:commit:`8be0473f`).
+* Rename `abovetop` keyword for moving title/abc labels above or below top panels,
+  colorbars, and legends to :rcraw:`title.above` (:commit:`9ceacb7b`).
 * Rename seldom-used `Figure` argument `fallback_to_cm` to more understandable
   `mathtext_fallback` (:pr:`251`).
-* Rename `abovetop` keyword for moving title/abc label above or below top panels to rc
-  param :rcraw:`axes.titleabove` with alias :rcraw:`title.above` (:commit:`9ceacb7b`).
 
 .. rubric:: Features
 
-* Add :rcraw:`basemap` setting for changing the default backend (:commit:`###`). If
+* Add :rcraw:`basemap` setting for changing the default backend (:commit:`c9ca0bdd`). If
   users have a cartopy vs. basemap preference, they probably want to use it globally.
 * Add :rcraw:`cartopy.circular` setting for optionally disabling the "circular bounds
-  on polar projections" feature (:commit:`###`).
-* Add :rcraw:`abc.pad` and :rcraw:`abc.above` settings for changing a-b-c label
-  padding separate from titles (:commit:`###`).
+  on polar projections" feature (:commit:`c9ca0bdd`).
 * Add `titlebbox` and `abcbbox` as alternatives to `titleborder` and `abcborder`
   for "inner" titles and a-b-c labels (:pr:`240`) by `Pratiman Patel`_.
   Default behavior uses borders.

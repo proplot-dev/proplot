@@ -2205,6 +2205,8 @@ def _update_text(self, props):
         })
 
     # Update bounding box
+    # NOTE: We use '_title_pad' and '_title_above' for both titles and a-b-c labels
+    # because always want to keep them aligned.
     # NOTE: For some reason using pad / 10 results in perfect alignment. Matplotlib
     # docs are vague about bounding box units, maybe they are tens of points?
     bbox = props.pop('bbox', None)
@@ -2270,15 +2272,15 @@ def text_wrapper(
     borderinvert : bool, optional
         If ``True``, the text and border colors are swapped.
     bbox : bool, optional
-        Whether to draw a bouning box around text.
+        Whether to draw a bounding box around text.
     bboxcolor : color-spec, optional
-        The color of the text bouning box. Default is ``'w'``.
+        The color of the text bounding box. Default is ``'w'``.
     bboxstyle : boxstyle, optional
-        The style of the bouning box. Default is ``'round'``.
+        The style of the bounding box. Default is ``'round'``.
     bboxalpha : float, optional
         The alpha for the bounding box. Default is ``'0.5'``.
     bboxpad : float, optional
-        The padding of the bounding box. Default is :rc:`title.pad` / 10.
+        The padding for the bounding box. Default is :rc:`title.bboxpad`.
 
     Other parameters
     ----------------

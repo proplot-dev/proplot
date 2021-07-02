@@ -234,10 +234,11 @@ _rc_matplotlib_default = {
 # TODO: More consistent behavior for how format() handles rc params. Currently
 # some things are only keyword arguments while others are actual settings, but not
 # obvious which is which. For example xticklen and yticklen should be quick settings.
-# TODO: Implement these as bonafide matplotlib settings by subclassing
-# matplotlib's RcParams and adding new validators. Quick settings should
-# be implemented under __getitem__.
-_addendum_units = ' Interpted by `~proplot.utils.units`.'
+# TODO: Implement these as bonafide matplotlib settings by subclassing matplotlib's
+# RcParams and adding validators. Quick settings should be implemented in __getitem__.
+# NOTE: Cannot have different a-b-c and title paddings because they are both controlled
+# by matplotlib's _title_offset_trans transform and want to keep them aligned anyway.
+_addendum_units = ' Interpreted by `~proplot.utils.units`.'
 _addendum_fonts = (
     ' (see `this list of valid font sizes '
     '<https://matplotlib.org/3.1.1/tutorials/text/text_props.html#default-font>`__).'
@@ -268,23 +269,25 @@ _rc_proplot = {
     ),
     'abc.bbox': (
         False,
-        'Boolean, whether to draw semi-transparent bbox around the a-b-c.'
+        'Boolean, whether to draw semi-transparent bounding boxes around a-b-c labels '
+        'when :rcraw:`abc.loc` is inside the axes.'
     ),
     'abc.bboxcolor': (
         'w',
-        'Color-spec, the color of the a-b-c bbox.'
+        'a-b-c label bounding box color.'
     ),
     'abc.bboxstyle': (
         'square',
-        'Box style, the style of the a-b-c bbox.'
+        'a-b-c label bounding box style.'
     ),
     'abc.bboxalpha': (
         0.5,
-        'Float, the alpha for the a-b-c bbox.'
+        'a-b-c label bounding box opacity.'
     ),
     'abc.bboxpad': (
         None,
-        'Float, the alpha for the a-b-c bbox.'
+        'Padding for the a-b-c label bounding box. By default this is scaled '
+        'to make the box flush against the subplot edge. ' + _addendum_units
     ),
     'abc.color': (
         'black',
@@ -456,7 +459,7 @@ _rc_proplot = {
     ),
     'colorbar.insetpad': (
         '0.5em',
-        'Padding between axes edge and inset colorbars.'
+        'Padding between axes edge and inset colorbars. ' + _addendum_units
     ),
     'colorbar.insetwidth': (
         '1.2em',
@@ -518,8 +521,8 @@ _rc_proplot = {
     ),
     'grid.pad': (
         5,
-        'Padding in points between map boundary edge and longitude and '
-        'latitude labels for `~proplot.axes.GeoAxes`.'
+        'Padding between map boundary edge and longitude and '
+        'latitude labels for `~proplot.axes.GeoAxes`. ' + _addendum_units
     ),
     'grid.labels': (
         False,
@@ -870,7 +873,7 @@ _rc_proplot = {
     ),
     'tick.pad': (
         TICKPAD,
-        'Padding between ticks and tick labels in points.'
+        'Padding between ticks and tick labels. ' + _addendum_units
     ),
     'tick.ratio': (
         TICKRATIO,
@@ -880,8 +883,13 @@ _rc_proplot = {
     # Title settings
     'title.above': (
         True,
-        'Boolean, indicates whether to move the title and a-b-c labels above any "top" '
-        'panels above axes. Alias for :rcraw:`axes.titleabove`.'
+        'Boolean, indicates whether to move outer titles and a-b-c labels above '
+        'panels, colorbars, or legends that are above the axes.'
+    ),
+    'title.pad': (
+        TITLEPAD,
+        'Padding between the axes edge and the inner and outer titles and '
+        'a-b-c labels. Alias for :rcraw:`axes.titlepad`. ' + _addendum_units
     ),
     'title.border': (
         True,
@@ -890,28 +898,29 @@ _rc_proplot = {
     ),
     'title.borderwidth': (
         1.5,
-        'Width of the white border around titles.'
+        'Width of the border around titles.'
     ),
     'title.bbox': (
         False,
-        'Boolean, whether to draw semi-transparent bbox around the title.'
+        'Boolean, whether to draw semi-transparent bounding boxes around titles '
         'when :rcraw:`title.loc` is inside the axes.'
     ),
     'title.bboxcolor': (
         'w',
-        'Color-spec, the color of the a-b-c bbox.'
+        'Axes title bounding box color.'
     ),
     'title.bboxstyle': (
         'square',
-        'Box style, the style of the a-b-c bbox.'
+        'Axes title bounding box style.'
     ),
     'title.bboxalpha': (
         0.5,
-        'Float, the alpha for the a-b-c bbox.'
+        'Axes title bounding box opacity.'
     ),
     'title.bboxpad': (
         None,
-        'Float, the alpha for the a-b-c bbox.'
+        'Padding for the title bounding box. By default this is scaled '
+        'to make the box flush against the axes edge. ' + _addendum_units
     ),
     'title.color': (
         'black',
@@ -921,11 +930,6 @@ _rc_proplot = {
         'c',
         'Title position. For options, see the :ref:`title location '
         'table <title_table>`.'
-    ),
-    'title.pad': (
-        TITLEPAD,
-        'Padding between axes and outer titles or a-b-c labels '
-        'in arbitrary units. Alias for :rcraw:`axes.titlepad`.'
     ),
     'title.size': (
         TITLESIZE,
@@ -1037,7 +1041,6 @@ _rc_aliases = {
     'font.name': 'font.family',
     'grid.below': 'axes.axisbelow',
     'title.pad': 'axes.titlepad',
-    'title.above': 'axes.titleabove',
 }
 for key, value in _rc_aliases.items():
     _rc_children[key] = (value,)
