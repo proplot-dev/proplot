@@ -27,7 +27,7 @@
 #
 # It is often useful to have narrow "panels" along the edge of a larger
 # subplot for plotting secondary 1-dimensional datasets or summary statistics.
-# In ProPlot, you can create panels by passing a location (e.g. ``loc='r'`` or
+# In ProPlot, you can create panels by passing a location (e.g., ``loc='r'`` or
 # ``loc='right'``) to the `~proplot.axes.Axes.panel` or `~proplot.axes.Axes.panel_axes`
 # methods. The resulting axes are instances of `~proplot.axes.CartesianAxes`.
 #
@@ -38,8 +38,8 @@
 # :ref:`do not affect the subplot aspect ratios <ug_autosize>`.
 #
 # In the first example below, the panel distance from the main subplot is
-# manually set to ``space=0``. In the second example, it is adjusted automatically
-# by the tight layout algorithm.
+# manually set to ``space=0``. In the second example, the distance is automatically
+# adjusted by the tight layout algorithm.
 
 # %%
 import proplot as plot
@@ -117,9 +117,9 @@ for ax, side in zip(axs, 'tlbr'):
 # `Inset axes\
 # <https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/zoom_inset_axes.html>`__
 # can be generated with the `~proplot.axes.Axes.inset` or
-# `~proplot.axes.Axes.inset_axes` command. By defaut, the resulting axes
-# use the same projection as the parent axes, but you can also specify
-# a different projection (for example, ``ax.inset(bounds, proj='polar')``).
+# `~proplot.axes.Axes.inset_axes` command. By default, inset axes
+# have the same projection as the parent axes, but you can also request
+# a different projection (e.g., ``ax.inset(bounds, proj='polar')``).
 # Passing ``zoom=True`` to `~proplot.axes.Axes.inset` draws "zoom indication"
 # lines with `~matplotlib.axes.Axes.indicate_inset_zoom` when the axes are both
 # Cartesian, and ProPlot automatically updates the lines when the axis limits of

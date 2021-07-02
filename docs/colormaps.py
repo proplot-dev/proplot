@@ -44,9 +44,9 @@
 # `~proplot.demos.show_cmaps` to generate a table of registered maps. The
 # figure is broken down into the following sections:
 #
-# * "User" colormaps, i.e. colormaps saved to your ``~/.proplot/cmaps``
-#   folder. You can use ProPlot to :ref:`make new colormaps <ug_cmaps_new>` and
-#   add them to this folder.
+# * "User" colormaps, i.e. colormaps saved to your ``~/.proplot/cmaps`` folder.
+#   You :ref:`make new colormaps <ug_cmaps_new>` and add them to this folder using the
+#   `~proplot.constructor.Colormaps` :ref:`constructor function <why_constructor>`.
 # * Matplotlib and seaborn original colormaps.
 # * ProPlot original :ref:`perceptually uniform colormaps <ug_perceptual>`.
 # * `cmOcean <https://matplotlib.org/cmocean/>`__ colormaps designed for
@@ -65,9 +65,9 @@
 # .. note::
 #
 #    Colormap and color cycle identification is more flexible in ProPlot. The names
-#    are are case-insensitive (e.g. ``'Viridis'``, ``'viridis'``, and ``'ViRiDiS'``
+#    are are case-insensitive (e.g., ``'Viridis'``, ``'viridis'``, and ``'ViRiDiS'``
 #    are equivalent), diverging colormap names can be specified in their "reversed"
-#    form (e.g. ``'BuRd'`` is equivalent to ``'RdBu_r'``), and appending ``'_r'``
+#    form (e.g., ``'BuRd'`` is equivalent to ``'RdBu_r'``), and appending ``'_r'``
 #    or ``'_s'`` to *any* colormap name will return a
 #    `~proplot.colors.LinearSegmentedColormap.reversed` or
 #    `~proplot.colors.LinearSegmentedColormap.shifted` version of the colormap
@@ -145,8 +145,8 @@ for cmaps in (('magma', 'rocket'), ('fire', 'dusk')):
 # colormaps, modifying colormaps, making :ref:`perceptually uniform colormaps
 # <ug_perceptual>` from scratch, and saving the results for future use. For
 # your convenience, most of these features can be accessed via the
-# `~proplot.constructor.Colormap` constructor function. Note that every
-# plotting command that accepts a `cmap` keyword passes it through this
+# `~proplot.constructor.Colormap` :ref:`constructor function <why_constructor>`. Note
+# that every plotting command that accepts a `cmap` keyword passes it through this
 # function (see `~proplot.axes.cmap_changer`).
 #
 # To make `~proplot.colors.PerceptuallyUniformColormap`\ s from scratch, you

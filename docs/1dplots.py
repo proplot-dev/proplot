@@ -19,10 +19,11 @@
 # ================
 #
 # ProPlot adds new features to various `~matplotlib.axes.Axes` plotting
-# methods using a set of wrapper functions. When a plotting method like
+# methods using a set of "wrapper" functions. When a plotting method like
 # `~matplotlib.axes.Axes.plot` is "wrapped" by one of these functions, it
-# accepts the same parameters as the wrapper. These features are a strict
-# *superset* of the matplotlib API.
+# accepts the same parameters as the wrapper. These additions are a strict
+# *superset* of matplotlib -- if you are not interested, you
+# can use matplotlib's plotting methods just like you always have.
 # This section documents the features added by wrapper functions to 1D
 # plotting commands like `~matplotlib.axes.Axes.plot`,
 # `~matplotlib.axes.Axes.scatter`, `~matplotlib.axes.Axes.bar`, and
@@ -40,11 +41,11 @@
 # and use different property cycles for different plot elements. You can create and
 # apply property cycles on-the-fly using the `cycle` and `cycle_kw` arguments, available
 # with any plotting method wrapped by `~proplot.axes.cycle_changer`. `cycle` and
-# `cycle_kw` are passed to the `~proplot.constructor.Cycle` constructor function, and
-# the resulting property cycle is used for the plot. You can specify `cycle`
-# once with 2D input data (in which case each column is plotted in succession
-# according to the property cycle) or call a plotting command multiple times with the
-# same `cycle` argument each time (the property cycle is not reset). For more
+# `cycle_kw` are passed to the `~proplot.constructor.Cycle` :ref:`constructor function
+# <why_constructor>`, and the resulting property cycle is used for the plot. You can
+# specify `cycle` once with 2D input data (in which case each column is plotted in
+# succession according to the property cycle) or call a plotting command multiple times
+# with the same `cycle` argument each time (the property cycle is not reset). For more
 # information on property cycles, see the :ref:`color cycles section <ug_cycles>` and
 # `this matplotlib tutorial
 # <https://matplotlib.org/tutorials/intermediate/color_cycle.html#sphx-glr-tutorials-intermediate-color-cycle-py>`__.
@@ -133,7 +134,8 @@ with plot.rc.context({'axes.prop_cycle': plot.Cycle('Grays', N=N, left=0.3)}):
 # configured from the metadata. This restores some of the convenience you get
 # with the builtin `pandas <https://pandas.pydata.org>`__ and `xarray
 # <https://pandas.pydata.org>`__ plotting functions. This feature is
-# *optional*; installation of pandas and xarray are not required.
+# *optional*. Installation of pandas and xarray are not required, and
+# it can be disabled by setting :rcraw:`autoformat` to ``False``.
 
 # %%
 import xarray as xr
@@ -434,7 +436,7 @@ ax.format(title='Violin plots', titleloc='uc')
 # method. Parametric plots are
 # `~matplotlib.collections.LineCollection`\ s that map individual line
 # segments to individual colors, where each segment represents a "parametric"
-# coordinate (e.g. time). The parametric coordinates are specified with the
+# coordinate (e.g., time). The parametric coordinates are specified with the
 # `values` keyword argument. See `~proplot.axes.Axes.parametric` for details.
 # As shown below, it is also easy to build colorbars from the
 # `~matplotlib.collections.LineCollection` returned by
@@ -491,9 +493,9 @@ ax.colorbar(m, loc='b', maxn=10, label='parametric coordinate')
 # `~matplotlib.axes.Axes.scatter` now accepts 2D arrays, just like
 # `~matplotlib.axes.Axes.plot`. Also, successive calls to
 # `~matplotlib.axes.Axes.scatter` now use the property cycler properties
-# (e.g.  `color`, `marker`, and `markersize`), and
+# (e.g.,  `color`, `marker`, and `markersize`), and
 # `~matplotlib.axes.Axes.scatter` now optionally accepts keywords that look
-# like `~matplotlib.axes.Axes.plot` keywords (e.g. `color` instead of `c` and
+# like `~matplotlib.axes.Axes.plot` keywords (e.g., `color` instead of `c` and
 # `markersize` instead of `s`).
 #
 # ProPlot also supports property cycling for `~proplot.axes.Axes.step` plots

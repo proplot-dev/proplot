@@ -45,8 +45,8 @@
 #
 # Use `~proplot.demos.show_cycles` to generate a table of the color cycles
 # registered by default and loaded from your ``~/.proplot/cycles`` folder.
-# You can make your own color cycles using the `~proplot.constructor.Cycle`
-# constructor function.
+# You can make new color cycles and add them to this folder using the
+# `~proplot.constructor.Cycle` :ref:`constructor function <why_constructor>`.
 
 # %%
 import proplot as plot
@@ -54,14 +54,14 @@ fig, axs = plot.show_cycles()
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
+# .. _ug_cycles_changing:
+#
 # Changing the color cycle
 # ------------------------
 #
-# You can make and apply new property cyclers with the
-# `~proplot.constructor.Cycle` constructor function. Various plotting
-# commands like `~matplotlib.axes.Axes.plot` and
+# Various plotting commands like `~matplotlib.axes.Axes.plot` and
 # `~matplotlib.axes.Axes.scatter` now accept a `cycle` keyword arg, which is
-# passed to `~proplot.constructor.Cycle` (see
+# passed to the `~proplot.constructor.Cycle` constructor function (see
 # `~proplot.axes.cycle_changer`). To save your color cycle data and use
 # it every time ProPlot is imported, simply pass ``save=True`` to
 # `~proplot.constructor.Cycle`. If you want to change the global property
@@ -105,10 +105,10 @@ ax.format(title='With multiple plot calls')
 # -----------------------
 #
 # You can make new color cycles with the `~proplot.constructor.Cycle`
-# constructor function. One great way to make cycles is by sampling a
-# colormap! Just pass the colormap name to `~proplot.constructor.Cycle`, and
-# optionally specify the number of samples you want to draw as the last
-# positional argument (e.g. ``plot.Cycle('Blues', 5)``).
+# :ref:`constructor function <why_constructor>`. One great way to make cycles is by
+# sampling a colormap! Just pass the colormap name to `~proplot.constructor.Cycle`,
+# and optionally specify the number of samples you want to draw as the last positional
+# argument (e.g., ``plot.Cycle('Blues', 5)``).
 #
 # Positional arguments passed to `~proplot.constructor.Cycle` are interpreted
 # by the `~proplot.constructor.Colormap` constructor, and the resulting

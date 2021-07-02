@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.3.0
+#       jupytext_version: 1.4.2
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -44,7 +44,7 @@
 #   subplot and ``0`` indicates an empty space.
 #
 # In the below examples, we create a few simple figures with `~proplot.ui.subplots`.
-# See the next sections for details.
+# See the :ref:`next sections <ug_format>` for details.
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. note::
@@ -53,9 +53,7 @@
 #    `matplotlib backend <https://matplotlib.org/faq/usage_faq#what-is-a-backend>`__
 #    -- the default background color is white when the figure is saved. This is done
 #    by setting :rcraw:`figure.facecolor` to gray, in order to improve contrast
-#    when working with figures, similar to MATLAB.
-#
-#    ProPlot also changes the default
+#    when working with figures. ProPlot also changes the default
 #    :rcraw:`savefig.format` from PNG to PDF for the following reasons:
 #
 #        #. Vector graphic formats are infinitely scalable.
@@ -70,6 +68,15 @@
 #    as the minimum resolution for rasterized figures containing lines and text.
 #    See the :ref:`configuration section <ug_proplotrc>` for how to change
 #    any of these settings.
+#
+# .. warning::
+#
+#    ProPlot enables "axis sharing" by default. This lets subplots in the same row or
+#    column share the same axis limits, scales, ticks, and labels. This is often
+#    convenient, but may be annoying for some users. To keep this feature turned off,
+#    simply :ref:`change the default settings <ug_rc>` with e.g.
+#    ``plot.rc.update(share=False, span=False)``. See :ref:`this section <ug_share>`
+#    for details.
 
 # %%
 # Generate sample data
@@ -181,10 +188,13 @@ axs.format(abc=True, xlabel='xlabel', ylabel='ylabel', suptitle='Quick plotting 
 # ``format`` method. This is your one-stop-shop for changing axes settings.
 # Keyword arguments passed to ``format`` are interpreted as follows:
 #
+# .. rst-class:: dummy-line-break-class
+#
 # 1. Any keyword matching the name of an `~proplot.config.rc` setting
 #    is used to update the axes. If the name has "dots", you can omit them
-#    (e.g. ``titleloc='left'`` to change the :rcraw:`title.loc` property).
+#    (e.g., ``titleloc='left'`` changes the :rcraw:`title.loc` property).
 #    See the :ref:`configuration section <ug_config>` for details.
+#
 # 2. Valid keywords arguments are passed to
 #    `proplot.axes.CartesianAxes.format`, `proplot.axes.PolarAxes.format`, or
 #    `proplot.axes.GeoAxes.format`. These change settings that are
@@ -202,14 +212,14 @@ axs.format(abc=True, xlabel='xlabel', ylabel='ylabel', suptitle='Quick plotting 
 # 3. Remaining keyword arguments are passed to the base `proplot.axes.Axes.format`
 #    method. `~proplot.axes.Axes` is the base class for all other axes classes.
 #    This changes things that are the same for all axes types, like titles and
-#    a-b-c subplot labels (e.g. ``title='Title'``).
+#    a-b-c subplot labels (e.g., ``title='Title'``).
 #
 # The ``format`` methods let you use simple shorthands for changing all kinds
 # of settings at once, instead of one-liner setter methods like
 # ``ax.set_title()`` and ``ax.set_xlabel()``. They are also integrated with
 # the `~proplot.constructor.Locator`, `~proplot.constructor.Formatter`,
-# and `~proplot.constructor.Scale` constructor functions (see the
-# :ref:`Cartesian axis settings <ug_cartesian>` section for details).
+# and `~proplot.constructor.Scale` :ref:`constructor functions <why_constructor>`
+# (see :ref:`this section <ug_cartesian>` for details).
 #
 # The below example shows the many different keyword arguments accepted by
 # ``format``, and demonstrates how ``format`` can be used to succinctly and
@@ -243,15 +253,15 @@ axs.format(
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_container:
 #
-# Formatting all-at-once
-# ----------------------
+# Subplot containers
+# ------------------
 #
 # Instead of an `~numpy.ndarray` of subplots, `~proplot.ui.subplots` returns a
 # `~proplot.ui.SubplotsContainer`. This container behaves like an
 # `~matplotlib.axes.Axes` object when it contains just one axes, and behaves
-# like a list otherwise. It supports both 1D indexing (e.g. ``axs[1]``) and
-# 2D indexing (e.g. ``axs[0, 1]``), and is row-major by default. Slicing a
-# `~proplot.ui.SubplotsContainer` returns another container (e.g. ``axs[:, 0]``).
+# like a list otherwise. It supports both 1D indexing (e.g., ``axs[1]``) and
+# 2D indexing (e.g., ``axs[0, 1]``), and is row-major by default. Slicing a
+# `~proplot.ui.SubplotsContainer` returns another container (e.g., ``axs[:, 0]``).
 #
 # `~proplot.ui.SubplotsContainer` is useful because it lets you call
 # `~proplot.axes.Axes` methods simultaneously for all subplots in the container.
@@ -281,7 +291,7 @@ for ax in axs[1:, 1:]:
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_rc:
 #
-# Styles and settings
+# Settings and styles
 # -------------------
 #
 # A special object named `~proplot.config.rc` is created whenever you import

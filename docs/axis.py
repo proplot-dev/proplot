@@ -37,12 +37,12 @@
 # using the `~proplot.axes.Axes.format` keyword arguments `xlocator`,
 # `ylocator`, `xminorlocator`, and `yminorlocator` (or their aliases,
 # `xticks`, `yticks`, `xminorticks`, and `yminorticks`). This is powered by
-# the `~proplot.constructor.Locator` constructor function.
+# the `~proplot.constructor.Locator` :ref:`constructor function <why_constructor>`.
 #
 # These keyword arguments can be used to apply built-in matplotlib
 # `~matplotlib.ticker.Locator`\ s by their "registered" names (e.g.
 # ``xlocator='log'``), to draw ticks every ``N`` data values with
-# `~matplotlib.ticker.MultipleLocator` (e.g. ``xlocator=2``), or to tick the
+# `~matplotlib.ticker.MultipleLocator` (e.g., ``xlocator=2``), or to tick the
 # specific locations in a list using `~matplotlib.ticker.FixedLocator` (just
 # like `~matplotlib.axes.Axes.set_xticks` and
 # `~matplotlib.axes.Axes.set_yticks`). See
@@ -131,12 +131,13 @@ axs[7].format(
 # nicely-formatted tick labels. In ProPlot, you can change the tick formatter
 # using the `~proplot.axes.Axes.format` keyword arguments `xformatter` and
 # `yformatter`  (or their aliases, `xticklabels` and `yticklabels`). This is
-# powered by the `~proplot.constructor.Formatter` constructor function.
+# powered by the `~proplot.constructor.Formatter`
+# :ref:`constructor function <why_constructor>`.
 #
 # These keyword arguments can be used to apply built-in matplotlib
 # `~matplotlib.ticker.Formatter`\ s by their "registered" names (e.g.
 # ``xformatter='log'``), to apply a ``%``-style format directive with
-# `~matplotlib.ticker.FormatStrFormatter` (e.g. ``xformatter='%.0f'``), or
+# `~matplotlib.ticker.FormatStrFormatter` (e.g., ``xformatter='%.0f'``), or
 # to apply custom tick labels with `~matplotlib.ticker.FixedFormatter` (just
 # like `~matplotlib.axes.Axes.set_xticklabels` and
 # `~matplotlib.axes.Axes.set_yticklabels`). They can also be used
@@ -246,8 +247,8 @@ plot.rc.reset()
 #
 # ProPlot can also be used to customize the tick locations and tick label
 # format of "datetime" axes. To draw ticks on some particular time unit, just
-# use a unit string (e.g. ``xlocator='month'``). To draw ticks every ``N``
-# time units, just use a (unit, N) tuple (e.g. ``xlocator=('day', 5)``). For
+# use a unit string (e.g., ``xlocator='month'``). To draw ticks every ``N``
+# time units, just use a (unit, N) tuple (e.g., ``xlocator=('day', 5)``). For
 # `% style formatting
 # <https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior>`__
 # of datetime tick labels, just use a string containing ``'%'`` (e.g.
@@ -313,7 +314,8 @@ plot.rc.reset()
 # "Axis scales" like ``'linear'`` and ``'log'`` control the *x* and *y* axis
 # coordinate system. To change the axis scale, simply pass e.g.
 # ``xscale='log'`` or ``yscale='log'`` to `~proplot.axes.Axes.format`. This
-# is powered by the `~proplot.constructor.Scale` constructor function.
+# is powered by the `~proplot.constructor.Scale`
+# :ref:`constructor function <why_constructor>`.
 #
 # ProPlot also makes several changes to the axis scale API:
 #

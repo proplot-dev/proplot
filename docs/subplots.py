@@ -64,8 +64,8 @@
 #      to every subplot in the figure -- not just the reference subplot.
 #    * When the reference subplot `aspect ratio\
 #      <https://matplotlib.org/2.0.2/examples/pylab_examples/equal_aspect_ratio.html>`__
-#      has been fixed (e.g. with ``ax.set_aspect(1)``) or is set
-#      to ``'equal'`` (as with :ref:`map projections <ug_geo>` and
+#      has been fixed (e.g., using ``ax.set_aspect(1)``) or is set to ``'equal'``
+#      (as with :ref:`geographic projections <ug_geo>` and
 #      `~matplotlib.axes.Axes.imshow` images), the fixed aspect ratio is used
 #      and the `~proplot.ui.subplots` `aspect` parameter is ignored. This
 #      is critical for getting the figure size right when working with grids
@@ -234,8 +234,10 @@ axs[:, 0].format(ylabel='ylabel\nylabel')
 
 # 1. Adding an option for sharing labels in the same row or column of the subplot grid,
 #    controlled by the `spanx` and `spany` keywords (default is :rc:`subplots.span`).
-# 2. Adding four axis-sharing "levels", controlled by the `sharex` and `sharey` keywords
-#    (default is :rc:`subplots.share`).
+#    Use the `span` keyword as shorthand to set both `spanx` and `spany`.
+# 2. Adding four axis-sharing "levels", controlled by the `sharex` and `sharey`
+#    keywords (default is :rc:`subplots.share`). Use the `share` keyword as shorthand
+#    to set both `sharex` and `sharey`.
 
 # The axis-sharing "levels" are defined as follows:
 #

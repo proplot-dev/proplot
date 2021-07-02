@@ -21,8 +21,9 @@
 # ProPlot adds new features to various `~matplotlib.axes.Axes` plotting
 # methods using a set of wrapper functions. When a plotting method like
 # `~matplotlib.axes.Axes.contourf` is "wrapped" by one of these functions, it
-# accepts the same parameters as the wrapper. These features are a strict
-# *superset* of the matplotlib API.
+# accepts the same parameters as the wrapper. These additions are a strict
+# *superset* of matplotlib -- if you are not interested, you
+# can use matplotlib's plotting methods just like you always have.
 # This section documents the features added by wrapper functions to 2D
 # plotting commands like `~matplotlib.axes.Axes.contour`,
 # `~matplotlib.axes.Axes.contourf`, `~matplotlib.axes.Axes.pcolor`, and
@@ -36,7 +37,8 @@
 # -------------------------
 #
 # It is often useful to create ProPlot colormaps on-the-fly, without
-# explicitly calling the `~proplot.constructor.Colormap` constructor function.
+# explicitly calling the `~proplot.constructor.Colormap`
+# :ref:`constructor function <why_constructor>`.
 # You can do so using the `cmap` and `cmap_kw` arguments, available with any
 # plotting method wrapped by `~proplot.axes.cmap_changer`. `cmap` and `cmap_kw`
 # are passed to `~proplot.constructor.Colormap` and the resulting colormap is
@@ -45,11 +47,10 @@
 #
 # The `~proplot.axes.cmap_changer` wrapper also
 # adds the `norm` and `norm_kw` arguments. They are passed to the
-# `~proplot.constructor.Norm` constructor function, and the resulting
-# normalizer is used for the plot. For more information on colormaps
-# and normalizers, see the :ref:`colormaps section <ug_cmaps>` and `this
-# matplotlib tutorial
-# <https://matplotlib.org/tutorials/colors/colormapnorms.html>`__.
+# `~proplot.constructor.Norm` :ref:`constructor function <why_constructor>`,
+# and the resulting normalizer is used for the plot. For more information on colormaps
+# and normalizers, see the :ref:`colormaps section <ug_cmaps>` and `this matplotlib
+# tutorial <https://matplotlib.org/tutorials/colors/colormapnorms.html>`__.
 
 # %%
 import proplot as plot
@@ -271,8 +272,8 @@ with plot.rc.context({'image.cmap': 'Grays', 'image.levels': 21}):
 # label, and/or title are configured from the metadata. This restores some of
 # the convenience you get with the builtin `pandas
 # <https://pandas.pydata.org>`__ and `xarray <https://pandas.pydata.org>`__
-# plotting functions. This feature is *optional*; installation of pandas and
-# xarray are not required.
+# plotting functions. This feature is *optional*. Installation of pandas and xarray are
+# not required, and it can be disabled by setting :rcraw:`autoformat` to ``False``.
 
 # %%
 import xarray as xr

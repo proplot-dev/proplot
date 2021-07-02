@@ -8,6 +8,8 @@ This page offers a condensed overview of ProPlot's features. It is populated
 with links to the :ref:`API reference` and :ref:`User Guide <ug_basics>`.
 For a more in-depth discussion, see :ref:`Why ProPlot?`
 
+.. _usage_background:
+
 Background
 ==========
 
@@ -29,6 +31,7 @@ working with multiple figures and axes, and is certainly more
 although some ProPlot features may still work, we do not officially support
 the `~matplotlib.pyplot` API.
 
+.. _usage_import:
 
 Importing proplot
 =================
@@ -46,6 +49,8 @@ We recommend importing ProPlot as follows:
 
 This differentiates ProPlot from the usual ``plt`` abbreviation reserved for
 the `~matplotlib.pyplot` module.
+
+.. _usage_classes:
 
 Figure and axes classes
 =======================
@@ -98,8 +103,10 @@ several *existing* methods.
   by "wrapping" them. See the :ref:`1D plotting <ug_1dplots>` and
   :ref:`2D plotting <ug_2dplots>` sections for details.
 
-Integration with other packages
-===============================
+.. _usage_integration:
+
+Integration features
+====================
 
 ProPlot includes *optional* integration features with four external
 packages: the `pandas` and `xarray` packages, used for working with annotated
@@ -124,11 +131,14 @@ plotting packages.
 Since these features are optional, ProPlot can be used without installing
 any of these packages.
 
-New functions and classes
-=========================
+.. _usage_features:
 
-Outside of the `~proplot.figure.Figure` and `~proplot.axes.Axes` subclasses,
-ProPlot includes several useful constructor functions and subclasses.
+Additional features
+===================
+
+Outside of the features provided by the `proplot.figure.Figure` and
+`proplot.axes.Axes` subclasses, ProPlot includes several useful
+classes and :ref:`constructor functions <why_constructor>`.
 
 * The `~proplot.constructor.Colormap` and `~proplot.constructor.Cycle`
   constructor functions can be used to :ref:`slice <ug_cmaps_mod>`,
