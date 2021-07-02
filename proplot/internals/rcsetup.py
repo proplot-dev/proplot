@@ -363,6 +363,12 @@ _rc_proplot = {
         'Alias for :rcraw:`axes.formatter.offset_threshold`.'
     ),
 
+    # Special basemap settings
+    'basemap': (
+        False,
+        'Boolean, toggles whether basemap is the default backend.'
+    ),
+
     # Country borders
     'borders': (
         False,
@@ -398,9 +404,13 @@ _rc_proplot = {
     # Special cartopy settings
     'cartopy.autoextent': (
         False,
-        'If ``False`` (the default), the projection extent is no longer automatically '
-        'adjusted based on plotted content. See the :ref:`user guide <ug_geo>` for '
-        'details.'
+        'If ``False`` (the default), cartopy projection extents are global by '
+        'default and no longer automatically adjusted based on plotted content.'
+    ),
+    'cartopy.circular': (
+        True,
+        "If ``True`` (the default), polar cartopy projections like ``'npstere'`` and "
+        "``'spstere'`` are bounded with circles rather than squares."
     ),
 
     # Coastlines

@@ -1261,7 +1261,7 @@ def Proj(name, basemap=None, **kwargs):
 
     basemap : bool, optional
         Whether to use the basemap package as opposed to the cartopy package.
-        Default is ``False``.
+        Default is :rc:`basemap`.
     lonlim : 2-tuple of float, optional
         Alternative way to specify `llcrnrlon` and `urcrnrlon` for basemap
         projections.
@@ -1351,7 +1351,7 @@ def Proj(name, basemap=None, **kwargs):
         )
 
     # Basemap
-    elif basemap:
+    elif basemap or basemap is None and rc['basemap']:
         # NOTE: Known issue that basemap sometimes produces backwards maps:
         # https://stackoverflow.com/q/56299971/4970632
         # NOTE: We set rsphere to fix non-conda installed basemap issue:

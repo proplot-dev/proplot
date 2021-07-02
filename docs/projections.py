@@ -150,17 +150,16 @@ axs[2].format(
 #
 # .. note::
 #
-#    * ProPlot ensures that polar cartopy projections like
-#      `~cartopy.crs.NorthPolarStereo` have circular boundaries (see `this example\
+#    * By default, ProPlot gives circular boundaries to polar cartopy projections like
+#      `~cartopy.crs.NorthPolarStereo` (see `this example\
 #      <https://scitools.org.uk/cartopy/docs/latest/gallery/lines_and_polygons/always_circular_stereo.html>`__
-#      from the cartopy website).
-#    * By default, non-polar cartopy projections are forced to have global extent
-#      with `~cartopy.mpl.geoaxes.GeoAxes.set_global` and polar cartopy projections
-#      are bounded at the equator. This stands in contrast to the default cartopy
-#      behavior, where map boundaries are determined automatically based on the
-#      coordinates of the plotted content. To revert to cartopy's default behavior,
-#      set :rcraw:`cartopy.autoextent` to ``True`` or pass ``autoextent=True``
-#      to `~proplot.axes.CartopyAxes`.
+#      from the cartopy website). This is consistent with basemap's default behavior.
+#      To disable this feature, set :rcraw:`cartopy.circular` to ``False``.
+#    * By default, ProPlot uses `~cartopy.mpl.geoaxes.GeoAxes.set_global` to give
+#      non-polar cartopy projections global extent and bounds polar cartopy projections
+#      at the equator. This is a deviation from cartopy, which determines map boundaries
+#      automatically based on the coordinates of the plotted content. To revert to
+#      cartopy's default behavior, set :rcraw:`cartopy.autoextent` to ``True``.
 #    * To make things more consistent between cartopy and basemap, the
 #      `~proplot.constructor.Proj` constructor function lets you supply native
 #      `PROJ <https://proj.org>`__ keyword names for the cartopy

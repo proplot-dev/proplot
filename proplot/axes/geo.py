@@ -48,7 +48,7 @@ except ModuleNotFoundError:
 __all__ = ['GeoAxes', 'BasemapAxes', 'CartopyAxes']
 
 
-def _circle_boundary(N=100):
+def _circular_boundary(N=100):
     """
     Return a circle `~matplotlib.path.Path` used as the outline for polar
     stereographic, azimuthal equidistant, Lambert conformal, and gnomonic
@@ -718,13 +718,18 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
     )
     _proj_polar = _proj_north + _proj_south
 
-    def __init__(self, *args, autoextent=None, map_projection=None, **kwargs):
+    def __init__(
+        self, *args, autoextent=None, circular=None, map_projection=None, **kwargs
+    ):
         """
         Parameters
         ----------
         autoextent : bool, optional
             Whether to automatically adjust map bounds based on plotted content
             or enforce *global* map extent. Default is :rc:`cartopy.autoextent`.
+        circular : bool, optional
+            Whether to bound polar projections with circles rather than squares.
+            Default is :rc:`cartopy.circular`.
         map_projection : `~cartopy.crs.Projection`
             The `~cartopy.crs.Projection` instance.
 
@@ -770,9 +775,10 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
         # can do their things. This also updates _LatAxis and _LonAxis.
         # NOTE: Use set_global rather than _update_extent() manually in case projection
         # extent cannot be global.
-        if polar and hasattr(self, 'set_boundary'):
-            self.set_boundary(_circle_boundary(), transform=self.transAxes)
         auto = _not_none(autoextent, rc['cartopy.autoextent'])
+        circular = _not_none(circular, rc['cartopy.circular'])
+        if polar and circular and hasattr(self, 'set_boundary'):
+            self.set_boundary(_circular_boundary(), transform=self.transAxes)
         if auto:
             self._set_view_intervals(self._get_global_extent())
         elif polar:

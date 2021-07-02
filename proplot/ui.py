@@ -309,7 +309,7 @@ list thereof, or dict thereof, optional
     basemap : bool, list of bool, or dict of bool, optional
         Passed to `~proplot.constructor.Proj`, determines whether projection
         string names like ``'pcarree'`` are used to create `~proplot.axes.BasemapAxes`
-        or `~proplot.axes.CartopyAxes`. Default is ``False``. If boolean, applies
+        or `~proplot.axes.CartopyAxes`. Default is :rc:`basemap`. If boolean, applies
         to all subplots. If list or dict, applies to specific subplots, as with `proj`.
     journal : str, optional
         String name corresponding to an academic journal standard that is used
@@ -562,8 +562,7 @@ list thereof, or dict thereof, optional
         subplotspec = gridspec[y0:y1 + 1, x0:x1 + 1]
         with fig._context_authorize_add_subplot():
             axs[idx] = fig.add_subplot(
-                subplotspec, number=num, main=True,
-                **axes_kw[num]
+                subplotspec, number=num, main=True, **axes_kw[num]
             )
 
     # Shared axes setup
