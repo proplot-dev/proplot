@@ -251,8 +251,8 @@ class Axes(maxes.Axes):
             self.figure._axes_main.append(self)
 
         # On-the-fly legends and colorbars
-        self._auto_colorbar = {}
-        self._auto_legend = {}
+        self._queued_colorbars = {}
+        self._queued_legends = {}
 
         # Figure row and column labels
         # NOTE: Most of these sit empty for most subplots
@@ -370,18 +370,20 @@ class Axes(maxes.Axes):
         for child in children:
             child._sharey_setup(parent)
 
-    def _draw_auto_legends_colorbars(self):
+    def _draw_queued_colorbars_legends(self):
         """
         Generate automatic legends and colorbars. Wrapper funcs
         let user add handles to location lists with successive calls to
         make successive calls to plotting commands.
         """
-        for loc, (handles, kwargs) in self._auto_colorbar.items():
+        for loc, (handles, kwargs) in self._queued_colorbars.items():
+            kwargs.setdefault('loc', loc)
             self.colorbar(handles, **kwargs)
-        for loc, (handles, kwargs) in self._auto_legend.items():
-            self.legend(handles, **kwargs)
-        self._auto_legend = {}
-        self._auto_colorbar = {}
+        for loc, (handles, kwargs) in self._queued_legends.items():
+            kwargs.setdefault('loc', loc)
+            self.legend(handles, queue=False, **kwargs)
+        self._queued_legends = {}
+        self._queued_colorbars = {}
 
     def _get_extent_axes(self, x, panels=False):
         """
@@ -468,7 +470,7 @@ class Axes(maxes.Axes):
             or other._panel_parent is self._panel_parent  # sibling
         )
 
-    def _loc_translate(self, loc, mode=None, allow_manual=True):
+    def _loc_translate(self, loc, mode=None):
         """
         Return the location string `loc` translated into a standardized form.
         """
@@ -510,13 +512,12 @@ class Axes(maxes.Axes):
                         + ', '.join(map(repr, loc_translate)) + '.'
                     )
         elif (
-            allow_manual
-            and mode == 'legend'
+            mode == 'legend'
             and np.iterable(loc)
             and len(loc) == 2
             and all(isinstance(l, Number) for l in loc)
         ):
-            loc = np.array(loc)
+            loc = tuple(loc)
         else:
             raise KeyError(f'Invalid {mode} location {loc!r}.')
         if mode == 'colorbar' and loc == 'best':  # white lie
@@ -534,6 +535,30 @@ class Axes(maxes.Axes):
             bb = mtransforms.TransformedBbox(bb, tr)
             return bb
         return inset_locator
+
+    def _queue_driver(self, legend, loc, *args, **kwargs):
+        """
+        Driver function.
+        """
+        database = self._queued_legends if legend else self._queued_colorbars
+        database.setdefault(loc, ([], {}))
+        database[loc][0].extend(args)
+        if legend and 'labels' in kwargs:
+            database[loc][1].setdefault('labels', [])
+            database[loc][1]['labels'].extend(kwargs.pop('labels'))
+        database[loc][1].update(kwargs)
+
+    def _queue_colorbar(self, *args, **kwargs):
+        """
+        Queue up objects for list-of-artist style colorbars.
+        """
+        self._queue_driver(False, *args, **kwargs)
+
+    def _queue_legend(self, *args, **kwargs):
+        """
+        Queues up objects for legends.
+        """
+        self._queue_driver(True, *args, **kwargs)
 
     def _range_gridspec(self, x):
         """
@@ -1233,18 +1258,12 @@ optional
 
         # Inset colorbar
         else:
-            # Default props
+            # Default properties
             cbwidth, cblength = width, length
             width, height = self.get_size_inches()
-            extend = units(_not_none(
-                kwargs.get('extendsize', None), rc['colorbar.insetextend']
-            ))
-            cbwidth = units(_not_none(
-                cbwidth, rc['colorbar.insetwidth']
-            )) / height
-            cblength = units(_not_none(
-                cblength, rc['colorbar.insetlength']
-            )) / width
+            cbwidth = units(_not_none(cbwidth, rc['colorbar.insetwidth'])) / height
+            cblength = units(_not_none(cblength, rc['colorbar.insetlength'])) / width
+            extend = units(_not_none(kwargs.get('extendsize', None), rc['colorbar.insetextend']))  # noqa: E501
             pad = units(_not_none(pad, rc['colorbar.insetpad']))
             xpad, ypad = pad / width, pad / height
 
@@ -1257,21 +1276,18 @@ optional
                 xspace += 1.2 * rc['font.size'] / 72
             xspace /= height  # space for labels
             if loc == 'upper right':
-                bounds = (1 - xpad - cblength, 1 - ypad - cbwidth)
-                fbounds = (
-                    1 - 2 * xpad - cblength,
-                    1 - 2 * ypad - cbwidth - xspace
-                )
+                ibounds = (1 - xpad - cblength, 1 - ypad - cbwidth)
+                fbounds = (1 - 2 * xpad - cblength, 1 - 2 * ypad - cbwidth - xspace)
             elif loc == 'upper left':
-                bounds = (xpad, 1 - ypad - cbwidth)
+                ibounds = (xpad, 1 - ypad - cbwidth)
                 fbounds = (0, 1 - 2 * ypad - cbwidth - xspace)
             elif loc == 'lower left':
-                bounds = (xpad, ypad + xspace)
+                ibounds = (xpad, ypad + xspace)
                 fbounds = (0, 0)
             else:
-                bounds = (1 - xpad - cblength, ypad + xspace)
+                ibounds = (1 - xpad - cblength, ypad + xspace)
                 fbounds = (1 - 2 * xpad - cblength, 0)
-            bounds = (bounds[0], bounds[1], cblength, cbwidth)
+            ibounds = (ibounds[0], ibounds[1], cblength, cbwidth)
             fbounds = (
                 fbounds[0], fbounds[1],
                 2 * xpad + cblength, 2 * ypad + cbwidth + xspace
@@ -1280,9 +1296,7 @@ optional
             # Make frame
             # NOTE: We do not allow shadow effects or fancy edges effect.
             # Also keep zorder same as with legend.
-            frameon = _not_none(
-                frame=frame, frameon=frameon, default=rc['colorbar.frameon'],
-            )
+            frameon = _not_none(frame=frame, frameon=frameon, default=rc['colorbar.frameon'])  # noqa: E501
             if frameon:
                 xmin, ymin, width, height = fbounds
                 patch = mpatches.Rectangle(
@@ -1303,7 +1317,7 @@ optional
 
             # Make axes
             from .cartesian import CartesianAxes
-            locator = self._make_inset_locator(bounds, self.transAxes)
+            locator = self._make_inset_locator(ibounds, self.transAxes)
             bbox = locator(None, None)
             ax = CartesianAxes(self.figure, bbox.bounds, zorder=5)
             ax.set_axes_locator(locator)
@@ -1322,16 +1336,14 @@ optional
                 warnings._warn_proplot(
                     'Inset colorbars can only have ticks on the bottom.'
                 )
-            kwargs.update({
-                'orientation': 'horizontal', 'ticklocation': 'bottom'
-            })
+            kwargs.update({'orientation': 'horizontal', 'ticklocation': 'bottom'})
             kwargs.setdefault('maxn', 5)
             kwargs.setdefault('extendsize', extend)
 
         # Generate colorbar
         return colorbar_wrapper(ax, *args, **kwargs)
 
-    def legend(self, *args, loc=None, width=None, space=None, **kwargs):
+    def legend(self, *args, loc=None, width=None, space=None, queue=True, **kwargs):
         """
         Add an *inset* legend or *outer* legend along the edge of the axes.
         See `~proplot.axes.legend_wrapper` for details.
@@ -1372,6 +1384,10 @@ optional
             box. Units are interpreted by `~proplot.utils.units`.
             When :rcraw:`tight` is ``True``, this is adjusted automatically.
             Otherwise, the default is :rc:`subplots.panelpad`.
+        queue : bool, optional
+            Whether to queue the legend or draw it immediately. Default is ``True``.
+            This lets you successively add items to the legend in location `loc`
+            by calling e.g. `ax.legend(h, loc=loc)` more than once.
 
         Other parameters
         ----------------
@@ -1415,8 +1431,21 @@ optional
             else:
                 raise ValueError(f'Invalid panel side {side!r}.')
 
-        # Draw legend
-        return legend_wrapper(self, *args, loc=loc, **kwargs)
+        # Queue legend so that objects can be successively added (like matplotlib but
+        # expanding this feature so it works with multiple legends in same location)
+        if not args:
+            objs = []
+        elif len(args) == 1:
+            objs = args[0]
+        elif len(args) == 2:
+            objs = args[0]
+            kwargs.setdefault('labels', args[1])
+        else:
+            raise TypeError(f'Too many arguments. Expected 1 or 2, got {len(args)}.')
+        if queue:
+            self._queue_legend(loc, *objs, **kwargs)
+        else:
+            return legend_wrapper(self, *args, loc=loc, **kwargs)
 
     def draw(self, renderer=None, *args, **kwargs):
         # Perform extra post-processing steps

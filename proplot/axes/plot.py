@@ -459,28 +459,31 @@ def default_transform(self, func, *args, transform=None, **kwargs):
 
 def _axis_labels_title(data, axis=None, units=True):
     """
-    Get data and label for pandas or xarray objects or their coordinates along axis
-    `axis`. If `units` is ``True`` also look for units on xarray data arrays.
+    Get "labels" and "title" for the coordinates along axis `axis` (if specified) or
+    assuming the object itself represents coordinates (if ``None``) for numpy, pandas,
+    or xarray objects. If `units` is ``True`` also look for units on xarray arrays.
     """
-    label = ''
+    # TODO: Why not raise error here if bad dimensionality? Defer to later?
+    title = ''
+    labels = data
     _load_objects()
     if isinstance(data, ndarray):
         if axis is not None and data.ndim > axis:
-            data = np.arange(data.shape[axis])
+            labels = np.arange(data.shape[axis])
 
     # Xarray with common NetCDF attribute names
     elif isinstance(data, DataArray):
         if axis is not None and data.ndim > axis:
-            data = data.coords[data.dims[axis]]
-        label = getattr(data, 'name', '') or ''
+            labels = data.coords[data.dims[axis]]
+        title = getattr(labels, 'name', '') or ''
         for key in ('standard_name', 'long_name'):
-            label = data.attrs.get(key, label)
+            title = labels.attrs.get(key, title)
         if units:
-            units = data.attrs.get('units', '')
-            if label and units:
-                label = f'{label} ({units})'
+            units = labels.attrs.get('units', '')
+            if title and units:
+                title = f'{title} ({units})'
             elif units:
-                label = units
+                title = units
 
     # Pandas object with name attribute
     # if not label and isinstance(data, DataFrame) and data.columns.size == 1:
@@ -488,16 +491,16 @@ def _axis_labels_title(data, axis=None, units=True):
         if axis == 0 and isinstance(data, Index):
             pass
         elif axis == 0 and isinstance(data, (DataFrame, Series)):
-            data = data.index
+            labels = data.index
         elif axis == 1 and isinstance(data, DataFrame):
-            data = data.columns
+            labels = data.columns
         elif axis == 1 and isinstance(data, (Series, Index)):
-            data = np.array([data.name])  # treat series name as the "column" data
+            labels = np.array([data.name])  # treat series name as the "column" data
         # DataFrame has no native name attribute but user can add one:
         # https://github.com/pandas-dev/pandas/issues/447
-        label = getattr(data, 'name', '') or ''
+        title = getattr(labels, 'name', '') or ''
 
-    return data, str(label).strip()
+    return labels, str(title).strip()
 
 
 @docstring.add_snippets
@@ -542,11 +545,7 @@ def standardize_1d(self, func, *args, autoformat=None, **kwargs):
         raise ValueError(
             f'{name}() takes up to 4 positional arguments but {len(args)} was given.'
         )
-    vert = kwargs.get('vert', None)
-    if vert is not None:
-        orientation = ('vertical' if vert else 'horizontal')
-    else:
-        orientation = kwargs.get('orientation', 'vertical')
+    vert = kwargs.get('vert', kwargs.get('orientation', 'vertical') == 'vertical')
 
     # Iterate through list of ys that we assume are identical
     # Standardize based on the first y input
@@ -579,15 +578,15 @@ def standardize_1d(self, func, *args, autoformat=None, **kwargs):
         # NOTE: Why IndexFormatter and not FixedFormatter? The former ensures labels
         # correspond to indices while the latter can mysteriously truncate labels.
         kw = {}
-        xname = 'y' if orientation == 'horizontal' else 'x'
-        yname = 'x' if xname == 'y' else 'y'
+        sx = 'x' if vert else 'y'
+        sy = 'y' if sx == 'x' else 'x'
         if _is_string(x) and name in ('hist',):
             kwargs.setdefault('labels', _to_ndarray(x))
         elif _is_string(x):
             x_index = np.arange(len(x))
-            kw[xname + 'locator'] = mticker.FixedLocator(x_index)
-            kw[xname + 'formatter'] = pticker._IndexFormatter(_to_ndarray(x))
-            kw[xname + 'minorlocator'] = mticker.NullLocator()
+            kw[sx + 'locator'] = mticker.FixedLocator(x_index)
+            kw[sx + 'formatter'] = pticker._IndexFormatter(_to_ndarray(x))
+            kw[sx + 'minorlocator'] = mticker.NullLocator()
             if name == 'boxplot':  # otherwise IndexFormatter is overridden
                 kwargs['labels'] = _to_ndarray(x)
 
@@ -595,19 +594,24 @@ def standardize_1d(self, func, *args, autoformat=None, **kwargs):
         # NOTE: Do not overwrite existing labels!
         if autoformat:
             # Ylabel
-            y, label = _axis_labels_title(y)
-            iname = xname if name in ('hist',) else yname
-            if label and not getattr(self, f'get_{iname}label')():
+            _, title = _axis_labels_title(y)
+            s = sx if name in ('hist',) else sy
+            if title and not getattr(self, f'get_{s}label')():
                 # For histograms, this label is used for *x* coordinates
-                kw[iname + 'label'] = label
+                kw[s + 'label'] = title
             if name not in ('hist',):
                 # Xlabel
-                x, label = _axis_labels_title(x)
-                if label and not getattr(self, f'get_{xname}label')():
-                    kw[xname + 'label'] = label
+                _, title = _axis_labels_title(x)
+                if title and not getattr(self, f'get_{sx}label')():
+                    kw[sx + 'label'] = title
                 # Reversed axis
-                if name not in ('scatter',) and x_index is None and len(x) > 1 and x[1] < x[0]:  # noqa: E501
-                    kw[xname + 'reverse'] = True
+                if (
+                    name not in ('scatter',)
+                    and x_index is None
+                    and len(x) > 1
+                    and _to_ndarray(x)[1] < _to_ndarray(x)[0]
+                ):  # noqa: E501
+                    kw[sx + 'reverse'] = True
 
         # Appply
         if kw:
@@ -849,18 +853,18 @@ def standardize_2d(
         # Handle labels if 'autoformat' is on
         # NOTE: Do not overwrite existing labels!
         if autoformat:
-            for key, d in zip(('xlabel', 'ylabel'), (x, y)):
+            for s, d in zip('xy', (x, y)):
                 # Axis label
                 _, label = _axis_labels_title(d)
-                if label and not getattr(self, f'get_{key}')():
-                    kw[key] = label
+                if label and not getattr(self, f'get_{s}label')():
+                    kw[s + 'label'] = label
                 # Reversed axis
                 if (
                     len(d) > 1
                     and all(isinstance(d, Number) for d in d[:2])
-                    and d[1] < d[0]
+                    and _to_ndarray(d)[1] < _to_ndarray(d)[0]
                 ):
-                    kw[key[0] + 'reverse'] = True
+                    kw[s + 'reverse'] = True
     if kw:
         self.format(**kw)
 
@@ -1361,7 +1365,7 @@ def indicate_error(
     # NOTE: Provide error objects for inclusion in legend, but *only* provide
     # the shading. Never want legend entries for error bars.
     xy = (x, data) if name == 'violinplot' else (x, y)
-    kwargs.setdefault('errobjs', errobjs[:int(shading + fading)])
+    kwargs.setdefault('_errobjs', errobjs[:int(shading + fading)])
     result = obj = func(self, *xy, *args, **kwargs)
 
     # Apply inferrred colors to objects
@@ -2352,7 +2356,7 @@ def cycle_changer(
     label=None, labels=None, values=None,
     legend=None, legend_kw=None,
     colorbar=None, colorbar_kw=None,
-    errobjs=None,
+    _errobjs=None,
     **kwargs
 ):
     """
@@ -2400,9 +2404,6 @@ def cycle_changer(
     colorbar_kw : dict-like, optional
         Ignored if `colorbar` is ``None``. Extra keyword args for our call
         to `~proplot.axes.Axes.colorbar`.
-    errobjs : `~matplotlib.artist.Artist` or list thereof, optional
-        Error bar objects to add to the legend. This is used internally and
-        should not be necessary for users. See `indicate_error`.
 
     Other parameters
     ----------------
@@ -2635,59 +2636,44 @@ def cycle_changer(
 
     # Add colorbar
     if colorbar:
-        # Add handles
-        loc = self._loc_translate(colorbar, 'colorbar', allow_manual=False)
-        if loc not in self._auto_colorbar:
-            self._auto_colorbar[loc] = ([], {})
-        self._auto_colorbar[loc][0].extend(objs)
-
-        # Add keywords
-        if loc != 'fill':
-            colorbar_kw.setdefault('loc', loc)
+        loc = self._loc_translate(colorbar, 'colorbar')
         if colorbar_legend_label:
             colorbar_kw.setdefault('label', colorbar_legend_label)
-        self._auto_colorbar[loc][1].update(colorbar_kw)
+        self._queue_colorbar(loc, *objs, **colorbar_kw)
 
     # Add legend
     if legend:
         # Get error objects. If they have separate label, allocate separate
         # legend entry. If not, try to combine with current legend entry.
-        if type(errobjs) not in (list, tuple):
-            errobjs = (errobjs,)
-        errobjs = list(filter(None, errobjs))
-        errobjs_join = [obj for obj in errobjs if not obj.get_label()]
-        errobjs_separate = [obj for obj in errobjs if obj.get_label()]
+        if type(_errobjs) not in (list, tuple):
+            _errobjs = (_errobjs,)
+        _errobjs = list(filter(None, _errobjs))
+        eobjs_join = [obj for obj in _errobjs if not obj.get_label()]
+        eobjs_separate = [obj for obj in _errobjs if obj.get_label()]
 
         # Get legend objects
         # NOTE: It is not yet possible to draw error bounds *and* draw lines
         # with multiple columns of data.
         # NOTE: Put error bounds objects *before* line objects in the tuple,
         # so that line gets drawn on top of bounds.
-        legobjs = objs.copy()
-        if errobjs_join:
-            legobjs = [(*legobjs, *errobjs_join)[::-1]]
-        legobjs.extend(errobjs_separate)
+        if eobjs_join:
+            lobjs = [(*eobjs_join[::-1], *objs)]
+        else:
+            lobjs = objs.copy()
+        lobjs.extend(eobjs_separate)
         try:
-            legobjs, labels = list(zip(*_iter_legend_objects(legobjs)))
+            lobjs, labels = list(zip(*_iter_legend_objects(lobjs)))
         except ValueError:
-            legobjs = labels = ()
+            lobjs = labels = ()
 
         # Add handles and labels
-        # NOTE: Important to add labels as *keyword* so users can override
         # NOTE: Use legend(handles, labels) syntax so we can assign labels
         # for tuples of artists. Otherwise they are label-less.
-        loc = self._loc_translate(legend, 'legend', allow_manual=False)
-        if loc not in self._auto_legend:
-            self._auto_legend[loc] = ([], {'labels': []})
-        self._auto_legend[loc][0].extend(legobjs)
-        self._auto_legend[loc][1]['labels'].extend(labels)
-
-        # Add other keywords
-        if loc != 'fill':
-            legend_kw.setdefault('loc', loc)
+        loc = self._loc_translate(legend, 'legend')
+        legend_kw.setdefault('labels', labels)  # extended in the queue command
         if colorbar_legend_label:
             legend_kw.setdefault('label', colorbar_legend_label)
-        self._auto_legend[loc][1].update(legend_kw)
+        self._queue_legend(loc, *lobjs, **legend_kw)
 
     # Return
     # WARNING: Make sure plot always returns tuple of objects, and bar always
@@ -3297,12 +3283,12 @@ def cmap_changer(
                 contour.set_linestyle('-')
 
     # Optionally add colorbar
+    if autoformat:
+        _, label = _axis_labels_title(Z_sample)  # last one is data, we assume
+        if label:
+            colorbar_kw.setdefault('label', label)
     if colorbar:
-        loc = self._loc_translate(colorbar, 'colorbar', allow_manual=False)
-        if autoformat:
-            _, label = _axis_labels_title(Z_sample)  # last one is data, we assume
-            if label:
-                colorbar_kw.setdefault('label', label)
+        loc = self._loc_translate(colorbar, 'colorbar')
         if name in ('parametric',) and values is not None:
             colorbar_kw.setdefault('values', values)
         if loc != 'fill':
@@ -3325,8 +3311,8 @@ def _iter_legend_children(children):
 
 
 def legend_wrapper(
-    self, handles=None, labels=None, *, ncol=None, ncols=None,
-    center=None, order='C', loc=None, label=None, title=None,
+    self, handles=None, labels=None, *, loc=None, ncol=None, ncols=None,
+    center=None, order='C', label=None, title=None,
     fontsize=None, fontweight=None, fontcolor=None,
     color=None, marker=None, lw=None, linewidth=None,
     dashes=None, linestyle=None, markersize=None, frameon=None, frame=None,
@@ -3352,21 +3338,6 @@ def legend_wrapper(
         the `center` keywod). If ``None``, the labels are retrieved by calling
         `~matplotlib.artist.Artist.get_label` on each
         `~matplotlib.artist.Artist` in `handles`.
-    ncol, ncols : int, optional
-        The number of columns. `ncols` is an alias, added
-        for consistency with `~matplotlib.pyplot.subplots`.
-    order : {'C', 'F'}, optional
-        Whether legend handles are drawn in row-major (``'C'``) or column-major
-        (``'F'``) order. Analagous to `numpy.array` ordering. For some reason
-        ``'F'`` was the original matplotlib default. Default is ``'C'``.
-    center : bool, optional
-        Whether to center each legend row individually. If ``True``, we
-        actually draw successive single-row legends stacked on top of each
-        other.
-
-        If ``None``, we infer this setting from `handles`. Default is ``True``
-        if `handles` is a list of lists; each sublist is used as a *row*
-        in the legend. Otherwise, default is ``False``.
     loc : int or str, optional
         The legend location. The following location keys are valid:
 
@@ -3385,19 +3356,31 @@ def legend_wrapper(
         center              ``9``, ``'center'``, ``'c'``
         ==================  ================================================
 
-    label, title : str, optional
+    ncol, ncols : int, optional
+        The number of columns. `ncols` is an alias, added
+        for consistency with `~matplotlib.pyplot.subplots`.
+    order : {'C', 'F'}, optional
+        Whether legend handles are drawn in row-major (``'C'``) or column-major
+        (``'F'``) order. Analagous to `numpy.array` ordering. For some reason
+        ``'F'`` was the original matplotlib default. Default is ``'C'``.
+    center : bool, optional
+        Whether to center each legend row individually. If ``True``, we
+        actually draw successive single-row legends stacked on top of each
+        other. If ``None``, we infer this setting from `handles`. Default is
+        ``True`` if `handles` is a list of lists (each sublist is used as a *row*
+        in the legend). Otherwise, default is ``False``.
+    title, label : str, optional
         The legend title. The `label` keyword is also accepted, for consistency
         with `colorbar`.
     fontsize, fontweight, fontcolor : optional
         The font size, weight, and color for legend text.
     color, lw, linewidth, marker, linestyle, dashes, markersize : \
 property-spec, optional
-        Properties used to override the legend handles. For example, if you
-        want a legend that describes variations in line style ignoring
-        variations in color, you might want to use ``color='k'``. For now this
-        does not include `facecolor`, `edgecolor`, and `alpha`, because
-        `~matplotlib.axes.Axes.legend` uses these keyword args to modify the
-        frame properties.
+        Properties used to override the legend handles. For example, for a
+        legend describing variations in line style ignoring variations in color, you
+        might want to use ``color='k'``. For now this does not include `facecolor`,
+        `edgecolor`, and `alpha`, because `~matplotlib.axes.Axes.legend` uses these
+        keyword args to modify the frame properties.
 
     Other parameters
     ----------------
@@ -3422,9 +3405,7 @@ property-spec, optional
         )
     ncol = _not_none(ncols=ncols, ncol=ncol)
     title = _not_none(label=label, title=title)
-    frameon = _not_none(
-        frame=frame, frameon=frameon, default=rc['legend.frameon']
-    )
+    frameon = _not_none(frame=frame, frameon=frameon, default=rc['legend.frameon'])
     if handles is not None and not np.iterable(handles):  # e.g. a mappable object
         handles = [handles]
     if labels is not None and (not np.iterable(labels) or isinstance(labels, str)):
@@ -3493,10 +3474,6 @@ property-spec, optional
             for handle in handles
         ]
         list_of_lists = any(type(handle) in (list, np.ndarray) for handle in handles)
-    if handles is not None and labels is not None and len(handles) != len(labels):
-        raise ValueError(
-            f'Got {len(handles)} handles and {len(labels)} labels.'
-        )
     if list_of_lists:
         if any(not np.iterable(_) for _ in handles):
             raise ValueError(f'Invalid handles={handles!r}.')
@@ -3504,9 +3481,7 @@ property-spec, optional
             labels = [None] * len(handles)
         elif not all(np.iterable(_) and not isinstance(_, str) for _ in labels):
             # e.g. handles=[obj1, [obj2, obj3]] requires labels=[lab1, [lab2, lab3]]
-            raise ValueError(
-                f'Invalid labels={labels!r} for handles={handles!r}.'
-            )
+            raise ValueError(f'Invalid labels={labels!r} for handles={handles!r}.')
 
     # Parse handles and legends with native matplotlib parser
     if not list_of_lists:
