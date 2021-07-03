@@ -98,13 +98,21 @@ ProPlot v0.7.0 (2021-06-30)
 
 .. rubric:: Features
 
+* Permit different colors for `~matplotlib.axes.Axes.boxplot` and
+  `~matplotlib.axes.Axes.violinplot` using color lists (:issue:`217`, :pr:`218`)
+  by `Mickaël Lalande`_.
+* Add `titlebbox` and `abcbbox` as alternatives to `titleborder` and `abcborder` for
+  "inner" titles and a-b-c labels (:pr:`240`) by `Pratiman Patel`_. Borders are still
+  used by default.
+* Add `wequal`, `hequal`, and `equal` options to still use automatic spacing but force
+  the tight layout algorithm to make spacings equal (:pr:`215`, :issue:`64`)
+  by `Zachary Moon`_.
 * Add :rcraw:`basemap` setting for changing the default backend (:commit:`c9ca0bdd`). If
   users have a cartopy vs. basemap preference, they probably want to use it globally.
 * Add :rcraw:`cartopy.circular` setting for optionally disabling the "circular bounds
   on polar projections" feature (:commit:`c9ca0bdd`).
-* Add `titlebbox` and `abcbbox` as alternatives to `titleborder` and `abcborder`
-  for "inner" titles and a-b-c labels (:pr:`240`) by `Pratiman Patel`_.
-  Default behavior uses borders.
+* Add `queue` keyword to `colorbar` and `legend` to support workflow where users
+  successively add handles to location (:pr:`254`).
 * Add `nozero` keyword arg to `cmap_changer` to remove the zero contour
   from automatically generated levels (:commit:`10e0f13b`).
   Example usage: ``ax.contour(x, y, z, nozero=True)``.
@@ -125,9 +133,6 @@ ProPlot v0.7.0 (2021-06-30)
   in a `legend_kw` keyword argument (:commit:`a11d1813`).
 * Set default transform to ``ccrs.PlateCarree`` when calling `matplotlib.axes.Axes.fill`
   on `CartopyAxes` (:issue:`193`). This is more consistent with rest of package.
-* Permit different colors for `~matplotlib.axes.Axes.boxplot` and
-  `~matplotlib.axes.Axes.violinplot` using color lists (:issue:`217`, :pr:`218`)
-  by `Mickaël Lalande`_.
 * Use `Artist` labels for the default colorbar tick labels when making colorbars from
   lists of artists if `values` was not passed -- and if labels are non-numeric, rotate
   them 90 degrees for horizontal colorbars by default (:commit:`ed8e1314`). Makes

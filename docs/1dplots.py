@@ -13,6 +13,10 @@
 # ---
 
 # %% [raw] raw_mimetype="text/restructuredtext"
+# .. _pandas: https://pandas.pydata.org
+#
+# .. _xarray: http://xarray.pydata.org/en/stable/
+#
 # .. _ug_1dplots:
 #
 # Plotting 1D data
@@ -131,8 +135,7 @@ with plot.rc.context({'axes.prop_cycle': plot.Cycle('Grays', N=N, left=0.3)}):
 # When you pass a DataFrame or DataArray to any plotting command, the x-axis
 # label, y-axis label, legend label, colorbar label, and/or title are
 # configured from the metadata. This restores some of the convenience you get
-# with the builtin `pandas <https://pandas.pydata.org>`__ and `xarray
-# <https://pandas.pydata.org>`__ plotting functions. This feature is
+# with the builtin `pandas`_ and `xarray`_ plotting functions. This feature is
 # *optional*. Installation of pandas and xarray are not required, and
 # it can be disabled by setting :rcraw:`autoformat` to ``False``.
 
@@ -272,7 +275,7 @@ plot.rc.reset()
 # `~proplot.axes.cycle_changer`, and `~proplot.axes.standardize_1d`.
 # You can now *group* or *stack* columns of data by passing 2D arrays to
 # `~matplotlib.axes.Axes.bar` or `~matplotlib.axes.Axes.barh`, just like in
-# `pandas`, or use different colors for negative and positive bars by
+# `pandas`_, or use different colors for negative and positive bars by
 # passing ``negpos=True``. Also, `~matplotlib.axes.Axes.bar` and
 # `~matplotlib.axes.Axes.barh` now employ "default" *x* coordinates if you
 # failed to provide them explicitly.
@@ -284,7 +287,7 @@ plot.rc.reset()
 # `~proplot.axes.fill_between_wrapper` and
 # `~proplot.axes.fill_betweenx_wrapper`. You can now *stack* or *overlay*
 # columns of data by passing 2D arrays to `~proplot.axes.Axes.area` and
-# `~proplot.axes.Axes.areax`, just like in `pandas`. You can also now draw
+# `~proplot.axes.Axes.areax`, just like in `pandas`_. You can also now draw
 # area plots that change color when the fill boundaries cross each other by
 # passing ``negpos=True`` to `~matplotlib.axes.Axes.fill_between`. The most
 # common use case for this is highlighting negative and positive areas with

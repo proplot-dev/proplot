@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.3.0
+#       jupytext_version: 1.11.3
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -52,7 +52,7 @@
 #   for the colorbar (e.g., ``loc='upper right'`` or ``loc='ur'``). Inset
 #   colorbars have optional background "frames" that can be configured with
 #   various `~proplot.axes.Axes.colorbar` keywords.
-
+#
 # You can also draw colorbars and legends on-the-fly by supplying keyword arguments
 # to various plotting commands. To plot data and draw a colorbar in one go, pass a
 # location (e.g., ``colorbar='r'``) to methods that accept a `cmap` argument (e.g.
@@ -242,7 +242,7 @@ ax.colorbar(
 )
 axs.format(
     suptitle='Colorbar formatting demo',
-    xlabel='xlabel', ylabel='ylabel', abovetop=False
+    xlabel='xlabel', ylabel='ylabel', titleabove=False
 )
 
 

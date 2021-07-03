@@ -29,7 +29,7 @@ more clear and concise than `~matplotlib.pyplot`, makes things easier when
 working with multiple figures and axes, and is certainly more
 "`pythonic <https://www.python.org/dev/peps/pep-0020/>`__". Therefore,
 although some ProPlot features may still work, we do not officially support
-the `~matplotlib.pyplot` API.
+the `~matplotlib.pyplot` interface.
 
 .. _usage_import:
 

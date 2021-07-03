@@ -2,8 +2,8 @@
 Frequently asked questions
 ==========================
 
-What makes this matplotlib wrapper different?
-=============================================
+What makes this project different?
+==================================
 
 There is already a great matplotlib wrapper called
 `seaborn <https://seaborn.pydata.org/>`__. Also, `pandas\

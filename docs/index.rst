@@ -12,12 +12,6 @@ A lightweight `matplotlib <https://matplotlib.org/>`__ wrapper for making beauti
 publication-quality graphics. This project is `published on GitHub
 <https://github.com/lukelbd/proplot>`__.
 
-Please note that due to my day job as a graduate student, `certain feature additions
-<https://github.com/lukelbd/proplot/pulls?q=is%3Aopen+is%3Apr>`__ may be delayed to the
-summer of 2020. In the meantime, if you are interested in contributing to ProPlot,
-please see the :ref:`contribution guide <Contribution guide>`. Any amount of help is
-welcome!
-
 .. toctree::
    :maxdepth: 1
    :caption: Getting Started

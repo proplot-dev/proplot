@@ -13,6 +13,10 @@
 # ---
 
 # %% [raw] raw_mimetype="text/restructuredtext"
+# .. _pandas: https://pandas.pydata.org
+#
+# .. _xarray: http://xarray.pydata.org/en/stable/
+#
 # .. _ug_2dplots:
 #
 # Plotting 2D data
@@ -269,9 +273,8 @@ with plot.rc.context({'image.cmap': 'Grays', 'image.levels': 21}):
 # `~xarray.DataArray`\ s. When you pass a DataFrame or DataArray to any
 # plotting command, the x-axis label, y-axis label, legend label, colorbar
 # label, and/or title are configured from the metadata. This restores some of
-# the convenience you get with the builtin `pandas
-# <https://pandas.pydata.org>`__ and `xarray <https://pandas.pydata.org>`__
-# plotting functions. This feature is *optional*. Installation of pandas and xarray are
+# the convenience you get with the builtin `pandas`_ and `xarray`_ plotting
+# functions. This feature is *optional*. Installation of pandas and xarray are
 # not required, and it can be disabled by setting :rcraw:`autoformat` to ``False``.
 
 # %%

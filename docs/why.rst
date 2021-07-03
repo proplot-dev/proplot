@@ -2,6 +2,12 @@
 
 .. _basemap: https://matplotlib.org/basemap/index.html
 
+.. _seaborn: https://seaborn.pydata.org
+
+.. _pandas: https://pandas.pydata.org
+
+.. _xarray: http://xarray.pydata.org/en/stable/
+
 .. _why:
 
 ============
@@ -10,8 +16,7 @@ Why ProPlot?
 
 Matplotlib is an extremely powerful plotting package used
 by academics, engineers, and data scientists far and wide. However,
-the default matplotlib API can be cumbersome or repetitive for
-users who...
+matplotlib can be cumbersome or repetitive for users who...
 
 * ...make very complex figures with multiple subplots.
 * ...want to finely tune their figure annotations and aesthetics.
@@ -19,12 +24,12 @@ users who...
 
 ProPlot's core mission is to provide a smoother plotting experience
 for matplotlib's heaviest users. We accomplish this by *expanding upon*
-the object-oriented matplotlib API. ProPlot makes changes that would be
+matplotlib's object-oriented interface. ProPlot makes changes that would be
 hard to justify or difficult to incorporate into matplotlib itself, owing
 to differing design choices and backwards compatibility considerations.
 
 This page enumerates these changes and explains how they
-address the limitations of the matplotlib API.
+address the limitations of matplotlib's default interface.
 
 ..
    This page is not comprehensive --
@@ -43,7 +48,7 @@ Less typing, more plotting
 .. rubric:: Problem
 
 Matplotlib users often need to change lots of plot settings all at once. With
-the default API, this requires calling a series of one-liner setter methods.
+the default interface, this requires calling a series of one-liner setter methods.
 
 This workflow is quite verbose -- it tends to require "boilerplate code" that
 gets copied and pasted a hundred times. It can also be confusing -- it is
@@ -62,7 +67,7 @@ day-to-day matplotlib usage.
 
 ..
    This is perhaps one reason why many users prefer the `~matplotlib.pyplot`
-   API to the object-oriented API (see :ref:`Using ProPlot`).
+   interface to the object-oriented interface (see :ref:`Using ProPlot`).
 
 .. rubric:: Solution
 
@@ -117,7 +122,7 @@ the top-level package namespace. Under other circumstances this would be fine --
 but since plotting code has a half life of about 30 seconds, typing out these
 extra class names and import statements can be a drag.
 
-Parts of the matplotlib API were actually designed with this in mind.
+Parts of matplotlib's interface were actually designed with this in mind.
 `Backend classes <https://matplotlib.org/faq/usage_faq.html#what-is-a-backend>`__,
 `native axes projections <https://matplotlib.org/3.1.1/api/projections_api.html>`__,
 `axis scales <https://matplotlib.org/3.1.0/gallery/scales/scales.html>`__,
@@ -348,10 +353,9 @@ Improved plotting methods
 
 .. rubric:: Problem
 
-Certain common plotting tasks take a lot of work when using the default
-matplotlib API.  The `seaborn`, `xarray`, and `pandas` packages offer
-improvements, but it would be nice to have this functionality build right
-into matplotlib.
+A few common plotting tasks take a lot of work using matplotlib alone. The `seaborn`_,
+`xarray`_, and `pandas`_ packages offer improvements, but it would be nice to
+have this functionality built right into matplotlib's interface.
 
 ..
    Matplotlib also has some finicky plotting issues
@@ -366,8 +370,8 @@ into matplotlib.
 
 .. rubric:: Solution
 
-ProPlot adds various `seaborn`, `xarray`, and `pandas` features to the
-`~proplot.axes.Axes` plotting methods along with several *brand new* features
+ProPlot adds various `seaborn`_, `xarray`_, and `pandas`_ features to the
+`~proplot.axes.Axes` plotting methods along with several additional features
 designed to make your life easier.
 
 * The new `~proplot.axes.Axes.heatmap` method invokes
@@ -516,8 +520,8 @@ or `~matplotlib.axes.Axes.pcolormesh`.
 See the :ref:`user guide <ug_proj>` for details.
 
 ..
-  This is the right decision: Cartopy is integrated more closely with the matplotlib API
-  and is more amenable to further development.
+  This is the right decision: Cartopy is integrated more closely with the matplotlib
+  interface and is more amenable to further development.
 
 
 .. _why_colormaps_cycles:
@@ -530,7 +534,7 @@ Colormaps and property cycles
 In matplotlib, colormaps are implemented with the
 `~matplotlib.colors.ListedColormap` and
 `~matplotlib.colors.LinearSegmentedColormap` classes. They are generally
-cumbersome to edit or create from scratch. The `seaborn` package introduces
+cumbersome to edit or create from scratch. The `seaborn`_ package introduces
 "color palettes" to make this easier, but it would be nice to have similar
 features built more closely into the matplotlib interface.
 

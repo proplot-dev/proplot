@@ -19,8 +19,8 @@ def _default_space(key, share=0, pad=None):
     Return suitable default spacing given a shared axes setting.
     """
     # Pull out sizes
-    outerpad = rc['subplots.pad']  # TODO: rename these to outerpad, innerpad
-    innerpad = rc['subplots.axpad']
+    outerpad = _not_none(pad, rc['subplots.pad'])  # TODO: rename to outerpad, innerpad
+    innerpad = _not_none(pad, rc['subplots.axpad'])
     xtick = rc['xtick.major.size']
     ytick = rc['ytick.major.size']
     xtickpad = rc['xtick.major.pad']
@@ -33,30 +33,21 @@ def _default_space(key, share=0, pad=None):
 
     # Get suitable size for various spaces
     if key == 'left':
-        space = units(_not_none(pad, outerpad)) + (
-            ytick + yticklabel + ytickpad + label
-        ) / 72
-
+        space = units(outerpad) + (ytick + yticklabel + ytickpad + label) / 72
     elif key == 'right':
-        space = units(_not_none(pad, outerpad))
-
+        space = units(outerpad)
     elif key == 'bottom':
-        space = units(_not_none(pad, outerpad)) + (
-            xtick + xticklabel + xtickpad + label
-        ) / 72
-
+        space = units(outerpad) + (xtick + xticklabel + xtickpad + label) / 72
     elif key == 'top':
-        space = units(_not_none(pad, outerpad)) + (title + titlepad) / 72
-
+        space = units(outerpad) + (title + titlepad) / 72
     elif key == 'wspace':
-        space = units(_not_none(pad, innerpad)) + ytick / 72
+        space = units(innerpad) + ytick / 72
         if share < 3:
             space += (yticklabel + ytickpad) / 72
         if share < 1:
             space += label / 72
-
     elif key == 'hspace':
-        space = units(_not_none(pad, innerpad)) + (title + titlepad + xtick) / 72
+        space = units(innerpad) + (title + titlepad + xtick) / 72
         if share < 3:
             space += (xticklabel + xtickpad) / 72
         if share < 0:
@@ -148,12 +139,10 @@ def _calc_geometry(**kwargs):
     hratios_main = [hratios[idx] for idx in idxs_ratios[0]]
     wratios_main = [wratios[idx] for idx in idxs_ratios[1]]
     hratios_panels = [
-        ratio for idx, ratio in enumerate(hratios)
-        if idx not in idxs_ratios[0]
+        ratio for idx, ratio in enumerate(hratios) if idx not in idxs_ratios[0]
     ]
     wratios_panels = [
-        ratio for idx, ratio in enumerate(wratios)
-        if idx not in idxs_ratios[1]
+        ratio for idx, ratio in enumerate(wratios) if idx not in idxs_ratios[1]
     ]
     hspace_main = [hspace[idx] for idx in idxs_space[0]]
     wspace_main = [wspace[idx] for idx in idxs_space[1]]
@@ -168,12 +157,8 @@ def _calc_geometry(**kwargs):
     dx, dy = x2 - x1 + 1, y2 - y1 + 1
     rwspace = sum(wspace_main[x1:x2])
     rhspace = sum(hspace_main[y1:y2])
-    rwratio = (
-        ncols_main * sum(wratios_main[x1:x2 + 1]) / (dx * sum(wratios_main))
-    )
-    rhratio = (
-        nrows_main * sum(hratios_main[y1:y2 + 1]) / (dy * sum(hratios_main))
-    )
+    rwratio = ncols_main * sum(wratios_main[x1:x2 + 1]) / (dx * sum(wratios_main))
+    rhratio = nrows_main * sum(hratios_main[y1:y2 + 1]) / (dy * sum(hratios_main))
     if rwratio == 0 or rhratio == 0:
         raise RuntimeError(
             f'Something went wrong, got wratio={rwratio!r} '
@@ -193,31 +178,26 @@ def _calc_geometry(**kwargs):
         if axheight is not None:
             auto_width = True
             axheight_all = (nrows_main * (axheight - rhspace)) / (dy * rhratio)
-            height = axheight_all + top + bottom + \
-                sum(hspace) + sum(hratios_panels)
+            height = axheight_all + top + bottom + sum(hspace) + sum(hratios_panels)
         if axwidth is not None:
             auto_height = True
             axwidth_all = (ncols_main * (axwidth - rwspace)) / (dx * rwratio)
-            width = axwidth_all + left + right + \
-                sum(wspace) + sum(wratios_panels)
+            width = axwidth_all + left + right + sum(wspace) + sum(wratios_panels)
         if axwidth is not None and axheight is not None:
             auto_width = auto_height = False
     else:
         if height is not None:
-            axheight_all = height - top - bottom - \
-                sum(hspace) - sum(hratios_panels)
+            axheight_all = height - top - bottom - sum(hspace) - sum(hratios_panels)
             axheight = (axheight_all * dy * rhratio) / nrows_main + rhspace
         if width is not None:
-            axwidth_all = width - left - right - \
-                sum(wspace) - sum(wratios_panels)
+            axwidth_all = width - left - right - sum(wspace) - sum(wratios_panels)
             axwidth = (axwidth_all * dx * rwratio) / ncols_main + rwspace
 
     # Automatically figure dim that was not specified above
     if auto_height:
         axheight = axwidth / aspect
         axheight_all = (nrows_main * (axheight - rhspace)) / (dy * rhratio)
-        height = axheight_all + top + bottom + \
-            sum(hspace) + sum(hratios_panels)
+        height = axheight_all + top + bottom + sum(hspace) + sum(hratios_panels)
     elif auto_width:
         axwidth = axheight * aspect
         axwidth_all = (ncols_main * (axwidth - rwspace)) / (dx * rwratio)
