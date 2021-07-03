@@ -84,20 +84,22 @@ ProPlot v0.7.0 (2021-06-30)
 * Change default :rcraw:`savefig.transparent` back to ``False`` (:pr:`252`). Dubious
   justification for ``True`` in the first place, and makes default PNG proplot figures
   unreadable wherever "dark mode" is enabled.
-* Rename `SciVisColor` colormaps from ``Blue1``, ``Blue2``, etc. to plurals ``Blues1``,
+* Rename SciVisColor colormaps from ``Blue1``, ``Blue2``, etc. to plurals ``Blues1``,
   ``Blues2``, etc. to avoid name conflict with open-color colors (:commit:`8be0473f`).
-  Requesting old names (case-sensitive) redirects to new names (:commit:`3f0794d0`).
-  This permits making monochromatic open-color maps with e.g. ``plot.Colormap('blue9')``
-  and feels more consistent with ColorBrewer convention of using plurals like ``Blues``.
-* Shuffle various SciVisColor colormap names to make them more consistent/succinct.
-  Make the ``Browns1`` map the most colorful/vibrant one, just like ``Greens1`` and
-  ``Blues1``; split up the ``RedPurple`` maps into ``Reds`` and ``Purples``; and add
-  the ``Yellows`` category from the ``Oranges`` maps (:commit:`8be0473f`).
-  Requesting old names (case-sensitive) redirects to new names (:commit:`3f0794d0`).
+  Requesting the old names (case-sensitive) redirects to the new names
+  (:commit:`3f0794d0`). This permits making monochromatic open-color maps with e.g.
+  ``plot.Colormap('blue9')`` and feels more consistent with ColorBrewer convention of
+  using plurals like ``Blues``, ``Reds``, etc.
+* Shuffle various SciVisColor colormap names to make them consistent/succinct. Make
+  ``Browns1`` the most colorful/vibrant one, just like ``Greens1`` and ``Blues1``;
+  split up the ``RedPurple`` maps into ``Reds`` and ``Purples``; and add
+  the ``Yellows`` category from the ``Oranges`` maps (:commit:`8be0473f`). Requesting
+  the old names (case-sensitive) redirects to the new names (:commit:`3f0794d0`).
 * Use proplot TeX Gyre fonts with `~proplot.config.use_style` styles unless specified
   otherwise (:commit:`6d7444fe`). Styles otherwise build on matplotlib defaults.
 * Rename `abovetop` keyword for moving title/abc labels above top panels, colorbars,
-  and legends to :rcraw:`title.above` (:commit:`9ceacb7b`).
+  and legends to :rcraw:`title.above` (:commit:`9ceacb7b`). Example usage:
+  ``ax.format(title='Title', titleabove=True)``.
 * Rename seldom-used `Figure` argument `fallback_to_cm` to more understandable
   `mathtext_fallback` (:pr:`251`).
 * Reduce matplotlib conflicts by replacing legends drawn in the same location
