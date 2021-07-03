@@ -42,6 +42,7 @@ __all__ = [
     'BinNorm', 'MidpointNorm', 'ColorDict', 'CmapDict',  # deprecated
 ]
 
+# Constants
 HEX_PATTERN = r'#(?:[0-9a-fA-F]{3,4}){2}'  # 6-8 digit hex
 CMAPS_DIVERGING = tuple(
     (key1.lower(), key2.lower()) for key1, key2 in (
@@ -61,6 +62,61 @@ CMAPS_DIVERGING = tuple(
     )
 )
 
+# Deprecations
+_cmaps_removed = {
+    'Blue0': '0.6',
+    'Cool': '0.6',
+    'Warm': '0.6',
+    'Hot': '0.6',
+    'Floral': '0.6',
+    'Contrast': '0.6',
+    'Sharp': '0.6',
+    'Viz': '0.6',
+}
+_cmaps_renamed = {
+    'Blue1': ('Blues1', '0.7'),
+    'Blue2': ('Blues2', '0.7'),
+    'Blue3': ('Blues3', '0.7'),
+    'Blue4': ('Blues4', '0.7'),
+    'Blue5': ('Blues5', '0.7'),
+    'Blue6': ('Blues6', '0.7'),
+    'Blue7': ('Blues7', '0.7'),
+    'Blue8': ('Blues8', '0.7'),
+    'Blue9': ('Blues9', '0.7'),
+    'Green1': ('Greens1', '0.7'),
+    'Green2': ('Greens2', '0.7'),
+    'Green3': ('Greens3', '0.7'),
+    'Green4': ('Greens4', '0.7'),
+    'Green5': ('Greens5', '0.7'),
+    'Green6': ('Greens6', '0.7'),
+    'Green7': ('Greens7', '0.7'),
+    'Green8': ('Greens8', '0.7'),
+    'Orange1': ('Yellows1', '0.7'),
+    'Orange2': ('Yellows2', '0.7'),
+    'Orange3': ('Yellows3', '0.7'),
+    'Orange4': ('Oranges2', '0.7'),
+    'Orange5': ('Oranges1', '0.7'),
+    'Orange6': ('Oranges3', '0.7'),
+    'Orange7': ('Oranges4', '0.7'),
+    'Orange8': ('Yellows4', '0.7'),
+    'Brown1': ('Browns1', '0.7'),
+    'Brown2': ('Browns2', '0.7'),
+    'Brown3': ('Browns3', '0.7'),
+    'Brown4': ('Browns4', '0.7'),
+    'Brown5': ('Browns5', '0.7'),
+    'Brown6': ('Browns6', '0.7'),
+    'Brown7': ('Browns7', '0.7'),
+    'Brown8': ('Browns8', '0.7'),
+    'Brown9': ('Browns9', '0.7'),
+    'RedPurple1': ('Reds1', '0.7'),
+    'RedPurple2': ('Reds2', '0.7'),
+    'RedPurple3': ('Reds3', '0.7'),
+    'RedPurple4': ('Reds4', '0.7'),
+    'RedPurple5': ('Reds5', '0.7'),
+    'RedPurple6': ('Purples1', '0.7'),
+    'RedPurple7': ('Purples2', '0.7'),
+    'RedPurple8': ('Purples3', '0.7'),
+}
 
 docstring.snippets['cmap.init'] = """
 name : str
@@ -2395,6 +2451,25 @@ class ColormapDatabase(dict):
         * Reversed diverging colormaps can be requested with their "reversed"
           name -- for example, ``'BuRd'`` is equivalent to ``'RdBu_r'``.
         """
+        # Deprecate previous names with support for '_r' and '_s' suffixes
+        # NOTE: Must search only for case sensitive *capitalized* names or we would
+        # helpfully "redirect" user to correct cmap when they are trying to generate
+        # a monochromatic cmap in Colormap and would disallow some color names.
+        test = re.sub(r'(_r(_s)?|_s)?\Z', '', key, flags=re.IGNORECASE)
+        if not super().__contains__(test):
+            if test in _cmaps_removed:
+                version = _cmaps_removed[test]
+                raise ValueError(
+                    f'ProPlot colormap {key!r} was removed in version {version}.'
+                )
+            if test in _cmaps_renamed:
+                test_new, version = _cmaps_renamed[test]
+                warnings._warn_proplot(
+                    f'Colormap {test!r} was renamed in version {version} and will be '
+                    f'deprecated in a future release. Please use {test_new!r} instead.'
+                )
+                key = re.sub(test, test_new, key, flags=re.IGNORECASE)
+
         # Sanitize key and handle suffixes
         key = self._sanitize_key(key, mirror=True)
         shift = key[-2:] == '_s'
@@ -2409,7 +2484,7 @@ class ColormapDatabase(dict):
             value = super().__getitem__(key)  # may raise keyerror
         except KeyError:
             raise KeyError(
-                f'Invalid colormap or cycle name {key!r}. Valid names are: '
+                f'Invalid colormap or cycle name {key!r}. Options are: '
                 + ', '.join(map(repr, self)) + '.'
             )
 
