@@ -167,6 +167,10 @@ ProPlot v0.7.0 (2021-06-30)
   subplot classes (:pr:`251`).
 * Fix deprecated reference to :rc:`fallback_to_cm` in matplotlib >= 3.3
   (:pr:`251`).
+* Fix `~matplotlib.ticker.IndexFormatter` deprecation warning in matplotlib >= 3.3 by
+  replacing with proplot-local copy (:pr:`251`).
+* Fix deprecation warning in matplotlib >= 3.3 -- add `extend` as mappable attribute
+  rather than passing it to `colorbar()` (:commit:`a23e7043`).
 * Fix issue where "twin" ("alternate") axes content always hidden beneath "parent"
   content due to adding as children (:issue:`223`).
 * Fix issue where simple `pandas.DataFrame.plot` calls with ``legend=True`` fail
@@ -177,15 +181,13 @@ ProPlot v0.7.0 (2021-06-30)
   container before applying as tick labels (:issue:`214`).
 * Fix issue where cannot set `extend` other than ``'neither'`` for
   `~matplotlib.axes.Axes.scatter` colorbars (:issue:`206`).
-* Fix `~matplotlib.ticker.IndexFormatter` deprecation warning in matplotlib >= 3.3 by
-  replacing with proplot-local copy (:pr:`251`).
-* Fix deprecation warning in matplotlib >= 3.3 -- add `extend` as mappable attribute
-  rather than passing it to `colorbar()` (:commit:`a23e7043`).
 * Fix issue where cannot have datetime labels on `area` plots (:issue:`255`).
 * Fix issue where axis is accidentally inverted for histogram plots (:issue:`191`).
 * Fix issue where numeric zero cannot be applied as legend label (:commit:`02417c8c`).
 * Fix issue where `[xy]minorlocator=1` is not allowed (:issue:`219`).
 * Fix issue where inner titles ignore axes-local `titlepad` (:commit:`14f3d0e3`).
+* Fix issue where non-Cartesian `heatmap` errors rather than warns (:issue:`238`).
+* Fix issue where `labels=True` with no contours causes error (:issue:`238`).
 * Fix issue where `~proplot.colors.Cycle` fails to register new names and fails to
   display in `~proplot.demos.show_cycles` (:commit:`94ffc1dc`, :commit:`4a7a3c79`).
 * Fix issue where proplot fails to detect legend entries for "outer"
