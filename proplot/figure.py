@@ -225,8 +225,8 @@ class Figure(mfigure.Figure):
         **kwargs
             Passed to `matplotlib.figure.Figure`.
         """
-        # Initialize first, because need to provide fully initialized figure
-        # as argument to gridspec, because matplotlib tight_layout does that
+        # Initialize first because need to provide fully initialized figure
+        # as argument to gridspec (since matplotlib tight_layout does that)
         tight_layout = kwargs.pop('tight_layout', None)
         constrained_layout = kwargs.pop('constrained_layout', None)
         if tight_layout or constrained_layout:
@@ -241,7 +241,7 @@ class Figure(mfigure.Figure):
         self._is_autoresizing = False
         super().__init__(**kwargs)
 
-        # Axes sharing and spanning settings
+        # Sharing and spanning settings
         sharex = _not_none(sharex, share, rc['subplots.share'])
         sharey = _not_none(sharey, share, rc['subplots.share'])
         spanx = _not_none(spanx, span, 0 if sharex == 0 else None, rc['subplots.span'])
@@ -275,30 +275,34 @@ class Figure(mfigure.Figure):
         self._spanx = bool(spanx)
         self._spany = bool(spany)
 
-        # Various other attributes
+        # Properties
         gridspec_kw = gridspec_kw or {}
         gridspec = pgridspec.GridSpec(self, **gridspec_kw)
         nrows, ncols = gridspec.get_active_geometry()
         self._pad = units(_not_none(pad, rc['subplots.pad']))
-        self._axpad = units(_not_none(axpad, rc['subplots.axpad']))
-        self._panelpad = units(_not_none(panelpad, rc['subplots.panelpad']))
+        self._ax_pad = units(_not_none(axpad, rc['subplots.axpad']))
+        self._panel_pad = units(_not_none(panelpad, rc['subplots.panelpad']))
         self._auto_tight = _not_none(tight, rc['subplots.tight'])
         self._include_panels = includepanels
         self._mathtext_fallback = mathtext_fallback
         self._ref_num = ref
         self._axes_main = []
-        self._subplots_orig_kw = subplots_orig_kw
         self._subplots_kw = subplots_kw
-        self._bottom_panels = []
-        self._top_panels = []
-        self._left_panels = []
-        self._right_panels = []
-        self._bottom_array = np.empty((0, ncols), dtype=bool)
-        self._top_array = np.empty((0, ncols), dtype=bool)
-        self._left_array = np.empty((0, nrows), dtype=bool)
-        self._right_array = np.empty((0, nrows), dtype=bool)
+        self._subplots_orig_kw = subplots_orig_kw
         self._gridspec_main = gridspec
         self.suptitle('')  # add _suptitle attribute
+
+        # Figure panels
+        d = self._panel_dict = {}
+        d['left'] = []  # NOTE: panels will be sorted inside-to-outside
+        d['right'] = []
+        d['bottom'] = []
+        d['top'] = []
+        d = self._panel_array = {}  # array representation of overlap
+        d['left'] = np.empty((0, nrows), dtype=bool)
+        d['right'] = np.empty((0, nrows), dtype=bool)
+        d['bottom'] = np.empty((0, ncols), dtype=bool)
+        d['top'] = np.empty((0, ncols), dtype=bool)
 
     def _add_axes_panel(self, ax, side, filled=False, **kwargs):
         """
@@ -318,7 +322,7 @@ class Figure(mfigure.Figure):
         # Get gridspec and subplotspec indices
         subplotspec = ax.get_subplotspec()
         *_, row1, row2, col1, col2 = subplotspec.get_active_rows_columns()
-        pgrid = getattr(ax, '_' + side + '_panels')
+        pgrid = ax._panel_dict[side]
         offset = len(pgrid) * bool(pgrid) + 1
         if side in ('left', 'right'):
             iratio = col1 - offset if side == 'left' else col2 + offset
@@ -393,7 +397,7 @@ class Figure(mfigure.Figure):
             panels, nacross = subplots_kw['hpanels'], subplots_kw['ncols']
         else:
             panels, nacross = subplots_kw['wpanels'], subplots_kw['nrows']
-        array = getattr(self, '_' + side + '_array')
+        array = self._panel_array[side]
         npanels, nalong = array.shape
 
         # Check span array
@@ -432,7 +436,7 @@ class Figure(mfigure.Figure):
             iarray = np.zeros((1, nalong), dtype=bool)
             iarray[0, start:stop] = True
             array = np.concatenate((array, iarray), axis=0)
-            setattr(self, '_' + side + '_array', array)
+            self._panel_array[side] = array  # update array
 
         # Get gridspec and subplotspec indices
         idxs, = np.where(np.array(panels) == '')
@@ -451,7 +455,7 @@ class Figure(mfigure.Figure):
         # Draw and setup panel
         with self._context_authorize_add_subplot():
             pax = self.add_subplot(gridspec[idx1, idx2], projection='proplot_cartesian')
-        pgrid = getattr(self, '_' + side + '_panels')
+        pgrid = self._panel_dict[side]
         pgrid.append(pax)
         pax._panel_side = side
         pax._panel_share = False
@@ -551,8 +555,8 @@ class Figure(mfigure.Figure):
                 s = 'y'
                 panels = ('left', 'right')
             axs = self._get_align_axes(side)
-            axs = [ax._reassign_subplot_label(side) for ax in axs]
-            labels = [getattr(ax, '_' + side + '_label') for ax in axs]
+            axs = [ax._reassign_label(side) for ax in axs]
+            labels = [ax._label_dict[side] for ax in axs]
             coords = [None] * len(axs)
             if side == 'top' and suptitle_on:
                 supaxs = axs
@@ -642,7 +646,7 @@ class Figure(mfigure.Figure):
             kwargs['_cachedRenderer'] = None  # __exit__ will restore previous value
         return _state_context(self, _is_preprocessing=True, **kwargs)
 
-    def _draw_auto_legends_colorbars(self):
+    def _draw_colorbars_legends(self):
         """
         Draw legends and colorbars requested via plotting commands. Drawing is
         deferred so that successive calls to the plotting commands can successively
@@ -650,7 +654,7 @@ class Figure(mfigure.Figure):
         """
         for ax in self._iter_axes(hidden=False, children=True):
             if isinstance(ax, paxes.Axes):
-                ax._draw_auto_legends_colorbars()  # may insert panels
+                ax._draw_colorbars_legends()  # may insert panels
 
     def _get_align_coord(self, side, axs):
         """
@@ -861,7 +865,7 @@ class Figure(mfigure.Figure):
                 f'{len(axs)} axes along that side.'
             )
         for ax, label in zip(axs, labels):
-            obj = getattr(ax, '_' + side + '_label')
+            obj = ax._label_dict[side]
             if label is not None and obj.get_text() != label:
                 obj.set_text(label)
             if kwargs:
@@ -960,8 +964,8 @@ class Figure(mfigure.Figure):
             subplots_kw[key] = _not_none(previous, current - offset + pad)
 
         # Get arrays storing gridspec spacing args
-        axpad = self._axpad
-        panelpad = self._panelpad
+        axpad = self._ax_pad
+        panelpad = self._panel_pad
         gridspec = self._gridspec_main
         nrows, ncols = gridspec.get_active_geometry()
         wspace = subplots_kw['wspace']
@@ -1102,7 +1106,7 @@ class Figure(mfigure.Figure):
             resize = 'nbagg' not in backend and 'ipympl' not in backend
 
         # Draw objects that will affect tight layout
-        self._draw_auto_legends_colorbars()
+        self._draw_colorbars_legends()
 
         # Aspect ratio adjustment
         if aspect:
@@ -1117,8 +1121,7 @@ class Figure(mfigure.Figure):
         self._align_subplot_super_labels(renderer)
 
     def colorbar(
-        self, *args,
-        loc='r', width=None, space=None,
+        self, mappable, values=None, *, loc='r', width=None, space=None,
         row=None, col=None, rows=None, cols=None, span=None,
         **kwargs
     ):
@@ -1153,11 +1156,16 @@ class Figure(mfigure.Figure):
             left two columns of subplots. By default, the colorbar will span
             all rows and columns.
         space : float or str, optional
-            The space between the main subplot grid and the colorbar, or the
-            space between successively stacked colorbars. Units are interpreted
-            by `~proplot.utils.units`. By default, this is determined by
-            the "tight layout" algorithm, or is :rc:`subplots.panelpad`
-            if "tight layout" is off.
+            The space between the main subplot grid and the colorbar, or the space
+            between successively stacked colorbars. Units are interpreted by
+            `~proplot.utils.units`. By default, this is determined by the "tight layout"
+            algorithm, or is :rc:`subplots.panelpad` if "tight layout" is off.
+        length : float or str, optional
+            The colorbar length. Units are relative to the span of the rows and
+            columns of subplots. Default is :rc:`colorbar.length`.
+        shrink : float, optional
+            Alias for `length`. This is included for consistency with
+            `matplotlib.figure.Figure.colorbar`.
         width : float or str, optional
             The colorbar width. Units are interpreted by
             `~proplot.utils.units`. Default is :rc:`colorbar.width`.
@@ -1172,11 +1180,11 @@ class Figure(mfigure.Figure):
 
         # Fill this axes
         if cax is not None:
-            return super().colorbar(*args, cax=cax, **kwargs)
+            return super().colorbar(mappable, cax=cax, **kwargs)
 
         # Generate axes panel
-        elif ax is not None:
-            return ax.colorbar(*args, space=space, width=width, **kwargs)
+        if ax is not None:
+            return ax.colorbar(mappable, values, space=space, width=width, **kwargs)
 
         # Generate figure panel
         loc = self._axes_main[0]._loc_translate(loc, 'panel')
@@ -1184,11 +1192,10 @@ class Figure(mfigure.Figure):
             loc, space=space, width=width, span=span,
             row=row, col=col, rows=rows, cols=cols
         )
-        return ax.colorbar(*args, loc='fill', **kwargs)
+        return ax.colorbar(mappable, values, loc='fill', **kwargs)
 
     def legend(
-        self, *args,
-        loc='r', width=None, space=None,
+        self, handles=None, labels=None, *, loc='r', width=None, space=None,
         row=None, col=None, rows=None, cols=None, span=None,
         **kwargs
     ):
@@ -1238,7 +1245,7 @@ class Figure(mfigure.Figure):
 
         # Generate axes panel
         if ax is not None:
-            return ax.legend(*args, space=space, width=width, **kwargs)
+            return ax.legend(handles, labels, space=space, width=width, **kwargs)
 
         # Generate figure panel
         loc = self._axes_main[0]._loc_translate(loc, 'panel')
@@ -1246,7 +1253,7 @@ class Figure(mfigure.Figure):
             loc, space=space, width=width, span=span,
             row=row, col=col, rows=rows, cols=cols
         )
-        return ax.legend(*args, loc='fill', **kwargs)
+        return ax.legend(handles, labels, loc='fill', **kwargs)
 
     def save(self, filename, **kwargs):
         """
@@ -1406,8 +1413,7 @@ class Figure(mfigure.Figure):
         """
         for ax in (
             *self._axes_main,
-            *self._left_panels, *self._right_panels,
-            *self._bottom_panels, *self._top_panels
+            *(pax for _ in self._panel_dict.values() for pax in _)
         ):
             if not hidden and ax._panel_hidden:
                 continue  # ignore hidden panel and its colorbar/legend child

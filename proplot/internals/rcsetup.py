@@ -458,11 +458,11 @@ _rc_proplot = {
         'Length of inset colorbars. ' + _addendum_units
     ),
     'colorbar.insetpad': (
-        '0.5em',
+        '0.75em',
         'Padding between axes edge and inset colorbars. ' + _addendum_units
     ),
     'colorbar.insetwidth': (
-        '1.2em',
+        '1.25em',
         'Width of inset colorbars. ' + _addendum_units
     ),
     'colorbar.length': (
