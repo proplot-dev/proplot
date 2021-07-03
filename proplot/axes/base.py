@@ -1869,11 +1869,11 @@ optional
     pcolorfast = _standardize_2d(_cmap_changer(
         maxes.Axes.pcolorfast  # WARNING: not available in cartopy and basemap
     ))
-    quiver = _standardize_2d(_cmap_changer(
-        maxes.Axes.quiver
-    ))
     streamplot = _standardize_2d(_cmap_changer(
         maxes.Axes.streamplot
+    ))
+    quiver = _standardize_2d(_cmap_changer(
+        maxes.Axes.quiver
     ))
     barbs = _standardize_2d(_cmap_changer(
         maxes.Axes.barbs

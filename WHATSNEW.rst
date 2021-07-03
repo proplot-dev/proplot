@@ -178,6 +178,7 @@ ProPlot v0.7.0 (2021-06-30)
   rather than passing it to `colorbar()` (:commit:`a23e7043`).
 * Fix issue where "twin" ("alternate") axes content always hidden beneath "parent"
   content due to adding as children (:issue:`223`).
+* Fix issue where `barb` and `quiver` cannot accept 1D data arrays (:issue:`255`).
 * Fix issue where cannot set `rc.style = 'default'` (:pr:`240`) by `Pratiman Patel`_.
 * Fix issue where `get_legend` returns None even with legends present (:issue:`224`).
 * Fix issue where `~xarray.DataArray` string coordinates are not extracted from

@@ -757,63 +757,55 @@ def standardize_2d(
     """
     # Sanitize input
     name = func.__name__
+    allow_1d = name in ('barbs', 'quiver')  # these also allow 1D data
     autoformat = _not_none(autoformat, rc['autoformat'])
     _load_objects()
     if not args:
         return func(self, *args, **kwargs)
     elif len(args) > 5:
-        raise ValueError(
-            f'{name}() takes up to 5 positional arguments but {len(args)} was given.'
+        raise TypeError(
+            f'{name}() takes up to 5 positional arguments but {len(args)} were given.'
         )
-    x, y = None, None
     if len(args) > 2:
         x, y, *args = args
+    else:
+        x, y = None, None
+    if order not in ('C', 'F'):
+        raise ValueError(
+            f'Invalid order {order!r}. '
+            f"Choose from 'C' (row-major, default) and 'F' (column-major)."
+        )
 
     # Ensure DataArray, DataFrame or ndarray
     Zs = []
     for Z in args:
         Z = _to_arraylike(Z)
-        if Z.ndim != 2:
-            raise ValueError(f'Z must be 2-dimensional, got shape {Z.shape}.')
+        if Z.ndim != 2 and not (allow_1d and Z.ndim == 1):
+            raise ValueError(f'Array must be 2-dimensional, but got shape {Z.shape}.')
         Zs.append(Z)
-    if not all(Zs[0].shape == Z.shape for Z in Zs):
-        raise ValueError(
-            f'Zs must be same shape, got shapes {[Z.shape for Z in Zs]}.'
-        )
+    Zshapes = tuple(Z.shape for Z in Zs)
+    if len(set(Zshapes)) > 1:
+        raise ValueError(f'Arrays must have same shape, but got shapes {Zshapes}.')
 
     # Retrieve coordinates
     if x is None and y is None:
         Z = Zs[0]
-        if order == 'C':
-            idx, idy = 1, 0
-        else:
-            idx, idy = 0, 1
-        # x = np.arange(Z.shape[idx])
-        # y = np.arange(Z.shape[idy])
         if isinstance(Z, ndarray):
-            x = np.arange(Z.shape[idx])
-            y = np.arange(Z.shape[idy])
-        elif isinstance(Z, DataArray):  # DataArray
-            x = Z.coords[Z.dims[idx]]
-            y = Z.coords[Z.dims[idy]]
-        else:  # DataFrame; never Series or Index because these are 1d
-            if order == 'C':
-                x = Z.columns
-                y = Z.index
-            else:
-                x = Z.index
-                y = Z.columns
-
-    # Optionally re-order
-    # TODO: Double check this
-    if order == 'F':
-        x, y = x.T, y.T  # in case they are 2-dimensional
-        Zs = tuple(Z.T for Z in Zs)
-    elif order != 'C':
-        raise ValueError(
-            f'Invalid order {order!r}. Choose from '
-            '"C" (row-major, default) and "F" (column-major).'
-        )
+            x = np.arange(Z.shape[-1])  # in case 1D
+            y = np.zeros(Z.shape) if Z.ndim == 1 else np.arange(Z.shape[0])
+        elif isinstance(Z, DataArray):
+            x = Z.coords[Z.dims[-1]]  # in case 1D
+            y = np.zeros(Z.shape) if Z.ndim == 1 else Z.coords[Z.dims[0]]
+        elif isinstance(Z, DataFrame):
+            x, y = Z.columns, Z.index
+        elif isinstance(Z, Series):  # e.g. barbs or quiver
+            x, y = Z.index, np.zeros(Z.shape)
+        elif isinstance(Z, Index):  # e.g. barbs or quiver
+            x, y = np.arange(Z.size), np.zeros(Z.shape)
+        else:  # snould be unreachable due to _to_arraylike
+            raise ValueError(f'Unrecognized array type {type(Z)}.')
+        if order == 'F':
+            x, y = y, x
 
     # Check coordinates
     x, y = _to_arraylike(x), _to_arraylike(y)
@@ -828,6 +820,19 @@ def standardize_2d(
                 f'{s} coordinates are {array.ndim}-dimensional, '
                 f'but must be 1 or 2-dimensional.'
             )
+    if order == 'F':  # TODO: double check this
+        x, y = x.T, y.T  # in case they are 2-dimensional
+        Zs = tuple(Z.T for Z in Zs)
+
+    # Auto title and colorbar label
+    # NOTE: Do not overwrite existing title!
+    # NOTE: Must apply default colorbar label *here* rather than in
+    # cmap_changer in case metadata is stripped by globe=True.
+    colorbar_kw = kwargs.pop('colorbar_kw', None) or {}
+    if autoformat:
+        _, colorbar_label = _axis_labels_title(Zs[0], units=True)
+        colorbar_kw.setdefault('label', colorbar_label)
+    kwargs['colorbar_kw'] = colorbar_kw
 
     # Auto axis labels
     # TODO: Check whether isinstance(GeoAxes) instead of checking projection attribute
@@ -867,33 +872,17 @@ def standardize_2d(
                     kw[s + 'reverse'] = True
     if kw:
         self.format(**kw)
-
-    # Use *index coordinates* from here on out if input was array of strings
-    if x_index is not None:
+    if x_index is not None:  # input was array of strings so "coordinate data" is index
         x = x_index
     if y_index is not None:
         y = y_index
 
-    # Auto axes title and colorbar label
-    # NOTE: Do not overwrite existing title!
-    # NOTE: Must apply default colorbar label *here* rather than in
-    # cmap_changer in case metadata is stripped by globe=True.
-    colorbar_kw = kwargs.pop('colorbar_kw', None) or {}
-    if autoformat:
-        _, colorbar_label = _axis_labels_title(Zs[0], units=True)
-        colorbar_kw.setdefault('label', colorbar_label)
-    kwargs['colorbar_kw'] = colorbar_kw
-
-    # Enforce edges
+    # Standardize data arrays
+    Z = Zs[0]
+    xlen, ylen = x.shape[-1], y.shape[0]
     if name in ('pcolor', 'pcolormesh', 'pcolorfast'):
-        Z = Zs[0]  # already enforced that shapes must be identical (see above)
-        xlen, ylen = x.shape[-1], y.shape[0]
-        if Z.ndim != 2:
-            raise ValueError(
-                f'Input arrays must be 2D, instead got shape {Z.shape}.'
-            )
-        elif Z.shape[1] == xlen and Z.shape[0] == ylen:
-            # Get edges given centers
+        # Get edges given centers
+        if Z.ndim == 2 and Z.shape[1] == xlen and Z.shape[0] == ylen:
             if all(z.ndim == 1 and z.size > 1 and _is_number(z) for z in (x, y)):
                 x = edges(x)
                 y = edges(y)
@@ -908,22 +897,16 @@ def standardize_2d(
                     and _is_number(y)
                 ):
                     y = edges2d(y)
-        elif Z.shape[1] != xlen - 1 or Z.shape[0] != ylen - 1:
+        # Enforce edges
+        elif Z.shape[-1] != xlen - 1 or Z.shape[0] != ylen - 1:
             raise ValueError(
                 f'Input shapes x {x.shape} and y {y.shape} must match '
-                f'Z centers {Z.shape} or '
-                f'Z borders {tuple(i+1 for i in Z.shape)}.'
+                f'array centers {Z.shape} or '
+                f'array borders {tuple(i + 1 for i in Z.shape)}.'
             )
-
-    # Enforce centers
     else:
-        Z = Zs[0]  # already enforced that shapes must be identical (see above)
-        xlen, ylen = x.shape[-1], y.shape[0]
-        if Z.ndim != 2:
-            raise ValueError(
-                f'Input arrays must be 2d, instead got shape {Z.shape}.'
-            )
-        elif Z.shape[1] == xlen - 1 and Z.shape[0] == ylen - 1:
+        # Get centers given edges
+        if Z.ndim == 2 and Z.shape[1] == xlen - 1 and Z.shape[0] == ylen - 1:
             # Get centers given edges.
             if all(z.ndim == 1 and z.size > 1 and _is_number(z) for z in (x, y)):
                 x = 0.5 * (x[1:] + x[:-1])
@@ -939,7 +922,8 @@ def standardize_2d(
                     and _is_number(y)
                 ):
                     y = 0.25 * (y[:-1, :-1] + y[:-1, 1:] + y[1:, :-1] + y[1:, 1:])
-        elif Z.shape[1] != xlen or Z.shape[0] != ylen:
+        # Enforce centers (possibly for 1D quiver or barbs data)
+        elif Z.shape[-1] != xlen or Z.shape[0] != ylen:
             raise ValueError(
                 f'Input shapes x {x.shape} and y {y.shape} '
                 f'must match Z centers {Z.shape} '
@@ -948,7 +932,7 @@ def standardize_2d(
 
     # Cartopy projection axes
     if (
-        getattr(self, 'name', '') == 'proplot_cartopy'
+        not allow_1d and getattr(self, 'name', '') == 'proplot_cartopy'
         and isinstance(kwargs.get('transform', None), PlateCarree)
     ):
         x, y = _fix_latlon(x, y)
@@ -967,7 +951,10 @@ def standardize_2d(
         x, Zs = ix, iZs
 
     # Basemap projection axes
-    elif getattr(self, 'name', '') == 'proplot_basemap' and kwargs.get('latlon', None):
+    elif (
+        not allow_1d and getattr(self, 'name', '') == 'proplot_basemap'
+        and kwargs.get('latlon', None)
+    ):
         # Fix grid
         xmin, xmax = self.projection.lonmin, self.projection.lonmax
         x, y = _fix_latlon(x, y)
@@ -1000,15 +987,11 @@ def standardize_2d(
                     if xi[0] != xi[1]:
                         Zq = ma.concatenate((Z[:, -1:], Z[:, :1]), axis=1)
                         xq = xmin + 360
-                        Zq = (
-                            Zq[:, :1] * (xi[1] - xq) + Zq[:, 1:] * (xq - xi[0])
-                        ) / (xi[1] - xi[0])
+                        Zq = (Zq[:, :1] * (xi[1] - xq) + Zq[:, 1:] * (xq - xi[0])) / (xi[1] - xi[0])  # noqa: E501
                         ix = ma.concatenate(([xmin], ix, [xmin + 360]))
                         Z = ma.concatenate((Zq, Z, Zq), axis=1)
                 else:
-                    raise ValueError(
-                        'Unexpected shape of longitude, latitude, and/or data array(s).'
-                    )
+                    raise ValueError('Unexpected shapes of coordinates or data arrays.')
             iZs.append(Z)
         x, Zs = ix, iZs
 
