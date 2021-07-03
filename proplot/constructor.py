@@ -570,7 +570,7 @@ def Colormap(
                 if isinstance(arg, str) and arg[:1] != '#':
                     # NOTE: Do not print color names. Message is too big to be useful.
                     message += (
-                        ' Valid names are: '
+                        ' Options are: '
                         + ', '.join(map(repr, pcolors._cmap_database)) + '.'
                     )
                 raise ValueError(message)
