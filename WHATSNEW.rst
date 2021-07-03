@@ -85,14 +85,15 @@ ProPlot v0.7.0 (2021-06-30)
   justification for ``True`` in the first place, and makes default PNG proplot figures
   unreadable wherever "dark mode" is enabled.
 * Rename `SciVisColor` colormaps from ``Blue1``, ``Blue2``, etc. to plurals ``Blues1``,
-  ``Blues2``, etc. to avoid name conflict with open-color colors. This permits making
-  monochromatic open-color maps with e.g. ``plot.Colormap('blue9')``, and feels more
-  consistent with the ColorBrewer convention of using plurals like ``Blues``, ``Reds``,
-  etc. (:commit:`8be0473f`).
+  ``Blues2``, etc. to avoid name conflict with open-color colors (:commit:`8be0473f`).
+  Requesting old names (case-sensitive) redirects to new names (:commit:`3f0794d0`).
+  This permits making monochromatic open-color maps with e.g. ``plot.Colormap('blue9')``
+  and feels more consistent with ColorBrewer convention of using plurals like ``Blues``.
 * Shuffle various SciVisColor colormap names to make them more consistent/succinct.
   Make the ``Browns1`` map the most colorful/vibrant one, just like ``Greens1`` and
   ``Blues1``; split up the ``RedPurple`` maps into ``Reds`` and ``Purples``; and add
   the ``Yellows`` category from the ``Oranges`` maps (:commit:`8be0473f`).
+  Requesting old names (case-sensitive) redirects to new names (:commit:`3f0794d0`).
 * Use proplot TeX Gyre fonts with `~proplot.config.use_style` styles unless specified
   otherwise (:commit:`6d7444fe`). Styles otherwise build on matplotlib defaults.
 * Rename `abovetop` keyword for moving title/abc labels above top panels, colorbars,
