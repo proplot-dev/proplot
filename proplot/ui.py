@@ -272,8 +272,7 @@ def subplots(
         layout" algorithm.
     wequal, hequal, equal :  bool, optional
         Whether to automatically make spacing between columns, rows, or both
-        equal.
-        Default false.
+        equal. Default is ``False``.
     left, right, top, bottom : float or str, optional
         Passed to `~proplot.gridspec.GridSpec`, denotes the width of padding
         between the subplots and the figure edge. Units are interpreted by
