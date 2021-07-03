@@ -29,4 +29,4 @@ Please make sure this bug is related to a specific proplot feature. If you're no
 
 ### Proplot version
 
-Paste the result of `import proplot; print(proplot.version)` here.
+Paste the results of `import matplotlib; print(matplotlib.__version__); import proplot; print(proplot.version)`here.
