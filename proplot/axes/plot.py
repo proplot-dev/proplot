@@ -3099,11 +3099,12 @@ def cmap_changer(
         name in ('contourf', 'tricontourf')
         and (linewidths is not None or linestyles is not None)
     )
-    has_cmap = colors is None or (
+    uses_cmap = colors is None or (
         name not in ('contour', 'tricontour')
         and (name not in ('contourf', 'tricontourf') or add_contours)
     )
-    if not has_cmap:
+    no_discrete_norm = name in ('hexbin',)
+    if not uses_cmap:
         if cmap is not None:
             warnings._warn_proplot(
                 f'Ignoring input colormap cmap={cmap!r}, using input colors '
@@ -3147,13 +3148,13 @@ def cmap_changer(
     # NOTE: Standard algorithm for obtaining default levels does not work
     # for hexbin, because it colors *counts*, not data values!
     ticks = None
-    if not has_cmap and not np.iterable(levels):
+    if not uses_cmap and not np.iterable(levels):
         levels, _ = _auto_levels_locator(
             Z_sample, N=levels,
             norm=norm, norm_kw=norm_kw, locator=locator, locator_kw=locator_kw,
             vmin=vmin, vmax=vmax, extend=extend, symmetric=symmetric,
         )
-    if has_cmap and name not in ('hexbin',):
+    if uses_cmap and not no_discrete_norm:
         norm, cmap, levels, ticks = _build_discrete_norm(
             Z_sample, levels=levels, values=values,
             cmap=cmap, norm=norm, norm_kw=norm_kw, vmin=vmin, vmax=vmax, extend=extend,
@@ -3164,10 +3165,13 @@ def cmap_changer(
     if nozero and np.iterable(levels) and 0 in levels:
         levels = np.asarray(levels)
         levels = levels[levels != 0]
-    if has_cmap:
+    if cmap is not None:
         kwargs['cmap'] = cmap
     if norm is not None:
         kwargs['norm'] = norm
+    if no_discrete_norm:
+        kwargs['vmin'] = vmin
+        kwargs['vmax'] = vmax
     if name in ('contour', 'contourf', 'tricontour', 'tricontourf'):
         kwargs['levels'] = levels
         kwargs['extend'] = extend
