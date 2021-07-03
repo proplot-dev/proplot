@@ -17,7 +17,6 @@ A "[Minimal, Complete and Verifiable Example](http://matthewrocklin.com/blog/wor
 
 **Actual behavior**: [What actually happened]
 
-
 ### Equivalent steps in matplotlib
 
 Please make sure this bug is related to a specific proplot feature. If you're not sure, try to replicate it with the [native matplotlib API](https://matplotlib.org/3.1.1/api/index.html). Matplotlib bugs belong on the [matplotlib github page](https://github.com/matplotlib/matplotlib).
@@ -25,7 +24,6 @@ Please make sure this bug is related to a specific proplot feature. If you're no
 ```python
 # your code here, if applicable
 ```
-
 
 ### Proplot version
 
