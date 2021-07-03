@@ -91,8 +91,12 @@ ProPlot v0.7.0 (2021-06-30)
   Make the ``Browns1`` map the most colorful/vibrant one, just like ``Greens1`` and
   ``Blues1``; split up the ``RedPurple`` maps into ``Reds`` and ``Purples``; and add
   the ``Yellows`` category from the ``Oranges`` maps (:commit:`8be0473f`).
-* Rename `abovetop` keyword for moving title/abc labels above or below top panels,
-  colorbars, and legends to :rcraw:`title.above` (:commit:`9ceacb7b`).
+* Reduce matplotlib conflicts by replacing legends drawn in the same location
+  rather than drawing two legends (:pr:`254`).
+* Until centered-row legends become a class, stop returning the ad hoc background patch,
+  consistent with inaccessible background patches for inset colorbars (:pr:`254`).
+* Rename `abovetop` keyword for moving title/abc labels above top panels, colorbars,
+  and legends to :rcraw:`title.above` (:commit:`9ceacb7b`).
 * Rename seldom-used `Figure` argument `fallback_to_cm` to more understandable
   `mathtext_fallback` (:pr:`251`).
 
@@ -165,6 +169,8 @@ ProPlot v0.7.0 (2021-06-30)
   (:pr:`251`).
 * Fix issue where "twin" ("alternate") axes content always hidden beneath "parent"
   content due to adding as children (:issue:`223`).
+* Fix issue where simple `pandas.DataFrame.plot` calls with ``legend=True`` fail
+  (:pr:`254`, :issue:`198`).
 * Fix issue where cannot set `rc.style = 'default'` (:pr:`240`) by `Pratiman Patel`_.
 * Fix issue where `get_legend` returns None even with legends present (:issue:`224`).
 * Fix issue where `~xarray.DataArray` string coordinates are not extracted from
@@ -215,6 +221,8 @@ ProPlot v0.7.0 (2021-06-30)
 
 .. rubric:: Internals
 
+* Significantly refactor `colorbar` and `legend` code to make more manageable and
+  expand the "queueing" feature beyond wrappers (:pr:`254`).
 * Add prefix ``'proplot_'`` to registered axes "projections" (:commit:`be7ef21e`). More
   clear and guards against conflicts with external packages and other mpl versions.
 
