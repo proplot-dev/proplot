@@ -428,6 +428,10 @@ list thereof, or dict thereof, optional
             if num == ref:
                 aspect = 1
 
+        # Builtin matplotlib 3D axes, no overwrite yet
+        elif name == '3d' or name == '3D':
+            axes_kw[num]['projection'] = 'proplot_3d'
+
         # Custom Basemap and Cartopy axes
         else:
             m = constructor.Proj(name, basemap=basemap[num], **proj_kw[num])

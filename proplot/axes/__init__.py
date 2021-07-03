@@ -12,6 +12,7 @@ from .geo import GeoAxes  # noqa: F401
 from .geo import BasemapAxes, CartopyAxes
 from .plot import *  # noqa: F401, F403
 from .polar import PolarAxes
+from .three import Axes3D  # noqa: F401
 
 XYAxes, ProjAxes = warnings._rename_objs(
     '0.6',
@@ -23,6 +24,8 @@ mproj.register_projection(CartesianAxes)
 mproj.register_projection(PolarAxes)
 mproj.register_projection(BasemapAxes)
 mproj.register_projection(CartopyAxes)
+if Axes3D is not None:
+    mproj.register_projection(Axes3D)
 
 # Prevent importing module names and set order of appearance for objects
 __all__ = [
