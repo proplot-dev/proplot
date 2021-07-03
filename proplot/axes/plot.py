@@ -3212,8 +3212,9 @@ def cmap_changer(
             labels_kw.setdefault('inline_spacing', 3)
             labels_kw.setdefault('fontsize', rc['text.labelsize'])
             labs = cobj.clabel(fmt=fmt, **labels_kw)
-            for lab in labs:
-                lab.update(text_kw)
+            if labs is not None:  # returns None if no contours
+                for lab in labs:
+                    lab.update(text_kw)
 
         # Label each box manually
         # See: https://stackoverflow.com/a/20998634/4970632
