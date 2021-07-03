@@ -14,7 +14,9 @@ What's new?
 
 The following lists past and future (where dates are replaced with ``##``) changes to
 ProPlot. Authors are shown next to each change. Where not indicated, `Luke Davis`_ was
-the author. See the :ref:`author page <authors>` for a list of contributors, and see
+the author.
+
+See the :ref:`author page <authors>` for a list of contributors, and see
 the :ref:`contribution guide <contributions>` if you are interested in submitting
 your own changes.
 
@@ -93,14 +95,14 @@ ProPlot v0.7.0 (2021-06-30)
   the ``Yellows`` category from the ``Oranges`` maps (:commit:`8be0473f`).
 * Use proplot TeX Gyre fonts with `~proplot.config.use_style` styles unless specified
   otherwise (:commit:`6d7444fe`). Styles otherwise build on matplotlib defaults.
-* Reduce matplotlib conflicts by replacing legends drawn in the same location
-  rather than drawing two legends (:pr:`254`).
-* Until centered-row legends become a class, stop returning the ad hoc background patch,
-  consistent with inaccessible background patches for inset colorbars (:pr:`254`).
 * Rename `abovetop` keyword for moving title/abc labels above top panels, colorbars,
   and legends to :rcraw:`title.above` (:commit:`9ceacb7b`).
 * Rename seldom-used `Figure` argument `fallback_to_cm` to more understandable
   `mathtext_fallback` (:pr:`251`).
+* Reduce matplotlib conflicts by replacing legends drawn in the same location
+  rather than drawing two legends (:pr:`254`).
+* Until centered-row legends become a class, stop returning the ad hoc background patch,
+  consistent with inaccessible background patches for inset colorbars (:pr:`254`).
 
 .. rubric:: Features
 
@@ -113,6 +115,8 @@ ProPlot v0.7.0 (2021-06-30)
 * Add `wequal`, `hequal`, and `equal` options to still use automatic spacing but force
   the tight layout algorithm to make spacings equal (:pr:`215`, :issue:`64`)
   by `Zachary Moon`_.
+* Add baseline support for "3D" `~matplotlib.mpl_toolkits.mplot3d.Axes3D` axes
+  (:issue:`249`). Example usage: ``fig.subplots(proj='3d')``.
 * Add :rcraw:`basemap` setting for changing the default backend (:commit:`c9ca0bdd`). If
   users have a cartopy vs. basemap preference, they probably want to use it globally.
 * Add :rcraw:`cartopy.circular` setting for optionally disabling the "circular bounds
