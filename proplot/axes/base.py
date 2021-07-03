@@ -1470,7 +1470,7 @@ optional
         return ax, kwargs
 
     def _inset_colorbar_axes(
-        self, loc=None, pad=None, width=None, length=None, frame=None, frameon=None,
+        self, loc=None, width=None, length=None, pad=None, frame=None, frameon=None,
         alpha=None, linewidth=None, edgecolor=None, facecolor=None, **kwargs
     ):
         """
@@ -1647,7 +1647,7 @@ optional
         if loc == 'fill':
             ax, kwargs = self._fill_colorbar_axes(length=length, **kwargs)
         else:
-            ax, kwargs = self._inset_colorbar_axes(width=width, length=length, pad=pad, **kwargs)  # noqa: E501
+            ax, kwargs = self._inset_colorbar_axes(loc=loc, width=width, length=length, pad=pad, **kwargs)  # noqa: E501
 
         # Generate colorbar
         obj = colorbar_wrapper(ax, mappable, values, **kwargs)
