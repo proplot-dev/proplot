@@ -1078,17 +1078,24 @@ optional
         """
         obj = self.pcolormesh(*args, **kwargs)
         aspect = _not_none(aspect, rc['image.aspect'])
-        xlocator = ylocator = None
-        if hasattr(obj, '_coordinates'):
-            coords = obj._coordinates
-            coords = (coords[1:, ...] + coords[:-1, ...]) / 2
-            coords = (coords[:, 1:, :] + coords[:, :-1, :]) / 2
-            xlocator, ylocator = coords[0, :, 0], coords[:, 0, 1]
-        self.format(
-            aspect=aspect,
-            xgrid=False, ygrid=False, xtickminor=False, ytickminor=False,
-            xlocator=xlocator, ylocator=ylocator,
-        )
+        from .cartesian import CartesianAxes
+        if not isinstance(self, CartesianAxes):
+            warnings._warn_proplot(
+                'Cannot adjust aspect ratio or ticks for non-Cartesian heatmap plot. '
+                'Consider using pcolormesh() or pcolor() instead.'
+            )
+        else:
+            xlocator = ylocator = None
+            if hasattr(obj, '_coordinates'):
+                coords = obj._coordinates
+                coords = (coords[1:, ...] + coords[:-1, ...]) / 2
+                coords = (coords[:, 1:, :] + coords[:, :-1, :]) / 2
+                xlocator, ylocator = coords[0, :, 0], coords[:, 0, 1]
+            self.format(
+                aspect=aspect,
+                xgrid=False, ygrid=False, xtickminor=False, ytickminor=False,
+                xlocator=xlocator, ylocator=ylocator,
+            )
         return obj
 
     @docstring.add_snippets
