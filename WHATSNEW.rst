@@ -12,7 +12,7 @@
 What's new?
 ===========
 
-The following lists past and future (where dates are replaced with `##`) changes to
+The following lists past and future (where dates are replaced with ``##``) changes to
 ProPlot. Authors are shown next to each change. Where not indicated, `Luke Davis`_ was
 the author. See the :ref:`author page <authors>` for a list of contributors, and see
 the :ref:`contribution guide <contributions>` if you are interested in submitting
@@ -91,6 +91,8 @@ ProPlot v0.7.0 (2021-06-30)
   Make the ``Browns1`` map the most colorful/vibrant one, just like ``Greens1`` and
   ``Blues1``; split up the ``RedPurple`` maps into ``Reds`` and ``Purples``; and add
   the ``Yellows`` category from the ``Oranges`` maps (:commit:`8be0473f`).
+* Use proplot TeX Gyre fonts with `~proplot.config.use_style` styles unless specified
+  otherwise (:commit:`6d7444fe`). Styles otherwise build on matplotlib defaults.
 * Reduce matplotlib conflicts by replacing legends drawn in the same location
   rather than drawing two legends (:pr:`254`).
 * Until centered-row legends become a class, stop returning the ad hoc background patch,
@@ -127,21 +129,21 @@ ProPlot v0.7.0 (2021-06-30)
   `~proplot.axes.CartesianAxes.format` as alternatives to `xlim` and `ylim`
   (:commit:`ae0719b7`). Example usage: ``ax.format(xmin=0)`` as opposed to
   ``ax.format(xlim=(0, None))``.
-* Add ``'rotation'`` keyword to `colorbar_wrapper` for rotating colorbar tick
-  labels, like ``'xrotation'`` and ``'yrotation'`` (:commit:`2d835f20`).
-* Add ``'tickdir'`` and ``'tickdirection'`` keywords to `colorbar_wrapper` for
-  controlling tick style, like ``'xtickdir'`` and ``'ytickdir'`` (:commit:`f377f090`).
-* Allow passing full "side" names to `lonlabels` and `latlabels`, e.g. ``'left'`` or
-  ``'bottom'`` (:commit:`a5060f67`). This is more consistent with rest of package.
+* Add `rotation` keyword to `colorbar_wrapper` for rotating colorbar tick
+  labels, like `xrotation` and `yrotation` (:commit:`2d835f20`).
+* Add `tickdir` and `tickdirection` keywords to `colorbar_wrapper` for
+  controlling tick style, like `xtickdir` and `ytickdir` (:commit:`f377f090`).
+* Allow passing full "side" names to `lonlabels` and `latlabels` rather than
+  abbreviations, e.g. ``'left'`` instead of ``'l'`` (:commit:`a5060f67`). This is
+  more consistent with rest of package.
 * Allow specifying labels for auto-generated legends using a ``'labels'`` key
   in a `legend_kw` keyword argument (:commit:`a11d1813`).
 * Set default transform to ``ccrs.PlateCarree`` when calling `matplotlib.axes.Axes.fill`
   on `CartopyAxes` (:issue:`193`). This is more consistent with rest of package.
-* Use `Artist` labels for the default colorbar tick labels when making colorbars from
-  lists of artists if `values` was not passed -- and if labels are non-numeric, rotate
-  them 90 degrees for horizontal colorbars by default (:commit:`ed8e1314`). Makes
-  the choice between "traditional" legends and "colorbar-style" legends for objects
-  whose colors represent a colormap gradation more seamless.
+* Use `Artist` labels for the default list-of-artist colorbar tick labels if `values`
+  was not passed -- and if labels are non-numeric, rotate them 90 degrees for horizontal
+  colorbars by default (:commit:`ed8e1314`). Makes the choice between "traditional"
+  legends and "colorbar-style" legends more seamless.
 * Add the remaining commonly-used backend-related `pyplot` functions `ion`, `ioff`,
   `isinteractive`, and `switch_backend` to the top-level `proplot` namespace
   (:commit:`cd440155`). This avoids forcing users to import pyplot inside a proplot
@@ -154,8 +156,6 @@ ProPlot v0.7.0 (2021-06-30)
   `to_linear_segmented` to avoid accidental overwriting (:commit:`91998e93`).
 * If available, use :rcraw:`pcolormesh.snap` to repair overlap in transparent colorbar
   solids rather than manual-blending workaround (:commit:`c9f59e49`).
-* Use proplot TeX Gyre fonts with `~proplot.config.use_style` styles unless specified
-  otherwise (:commit:`6d7444fe`). Styles otherwise build on matplotlib defaults.
 * More robust interpretation of :rcraw:`abc.style` -- now match case with first
   ``'a'`` or ``'A'`` in string, and only replace that one (:issue:`201`).
 
@@ -173,14 +173,14 @@ ProPlot v0.7.0 (2021-06-30)
   rather than passing it to `colorbar()` (:commit:`a23e7043`).
 * Fix issue where "twin" ("alternate") axes content always hidden beneath "parent"
   content due to adding as children (:issue:`223`).
-* Fix issue where simple `pandas.DataFrame.plot` calls with ``legend=True`` fail
-  (:pr:`254`, :issue:`198`).
 * Fix issue where cannot set `rc.style = 'default'` (:pr:`240`) by `Pratiman Patel`_.
 * Fix issue where `get_legend` returns None even with legends present (:issue:`224`).
 * Fix issue where `~xarray.DataArray` string coordinates are not extracted from
   container before applying as tick labels (:issue:`214`).
 * Fix issue where cannot set `extend` other than ``'neither'`` for
   `~matplotlib.axes.Axes.scatter` colorbars (:issue:`206`).
+* Fix issue where `~matplotlib.axes.Axes.hexbin` ignores `vmin` and `vmax`
+  keywords (:issue:`250`).
 * Fix issue where cannot have datetime labels on `area` plots (:issue:`255`).
 * Fix issue where axis is accidentally inverted for histogram plots (:issue:`191`).
 * Fix issue where numeric zero cannot be applied as legend label (:commit:`02417c8c`).
@@ -217,6 +217,8 @@ ProPlot v0.7.0 (2021-06-30)
   nested ragged arrays from parametric coords (:commit:`b16d56a8`).
 * Fix issue where where `SubplotSpec.get_active_rows_columns` returned incorrect
   number of "active" rows and columns (:commit:`5cf20b84`).
+* Fix issue where simple `pandas.DataFrame.plot` calls with ``legend=True`` fail
+  (:pr:`254`, :issue:`198`).
 * For rc lookup with `context=True`, use most restrictive search mode rather than least.
   Otherwise `ax.format()` calls inside context blocks can be overwritten with the
   default rc values in subsequent `ax.format()` calls (:commit:`8005fcc1`).
