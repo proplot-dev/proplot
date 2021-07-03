@@ -14,6 +14,7 @@ from numbers import Integral, Number
 import matplotlib.artist as martist
 import matplotlib.axes as maxes
 import matplotlib.cm as mcm
+import matplotlib.collections as mcollections
 import matplotlib.colors as mcolors
 import matplotlib.container as mcontainer
 import matplotlib.contour as mcontour
@@ -1007,8 +1008,8 @@ def standardize_2d(
 
 
 def _get_error_data(
-    data, y, errdata=None, stds=None, pctiles=False,
-    stds_default=None, pctiles_default=None,
+    data, y, errdata=None,
+    stds=None, pctiles=False, stds_default=None, pctiles_default=None,
     means_or_medians=True, absolute=False, label=False,
 ):
     """
@@ -1828,7 +1829,7 @@ def hist_wrapper(self, func, x, bins=None, **kwargs):
     Forces `bar_wrapper` to interpret `width` as literal rather than relative
     to step size and enforces all arguments after `bins` are keyword-only.
     """
-    with _state_context(self, _absolute_bar_width=True):
+    with _state_context(self, _bar_widths_absolute=True):
         return func(self, x, bins=bins, **kwargs)
 
 
@@ -2236,10 +2237,10 @@ def text_wrapper(
         The *x* and *y* coordinates for the text.
     text : str
         The text string.
-    transform : {{'data', 'axes', 'figure'}} or \
-`~matplotlib.transforms.Transform`, optional
+    transform : {{'data', 'axes', 'figure'}} \
+or `~matplotlib.transforms.Transform`, optional
         The transform used to interpret `x` and `y`. Can be a
-        `~matplotlib.transforms.Transform` object or a string representing the
+        `~matplotlib.transforms.Transform` object or a string corresponding to
         `~matplotlib.axes.Axes.transData`, `~matplotlib.axes.Axes.transAxes`,
         or `~matplotlib.figure.Figure.transFigure` transforms. Default is
         ``'data'``, i.e. the text is positioned in data coordinates.
@@ -2247,8 +2248,8 @@ def text_wrapper(
         The font size. If float, units are inches. If string, units are
         interpreted by `~proplot.utils.units`.
     fontname, fontfamily, family : str, optional
-        The font name (e.g. ``'Fira Math'``) or font family name (e.g.
-        ``'serif'``). Matplotlib falls back to the system default if not found.
+        The font name (e.g. ``'Fira Math'``) or font family name (e.g. ``'serif'``).
+        Matplotlib falls back to the system default if not found.
     fontweight, weight, fontstyle, style, fontvariant, variant : str, optional
         Additional font properties. See `~matplotlib.text.Text` for details.
     border : bool, optional
@@ -2317,6 +2318,27 @@ def text_wrapper(
     return obj
 
 
+def _convert_bar_width(x, width=1, ncols=1):
+    """
+    Convert bar plot widths from relative to coordinate spacing. Relative
+    widths are much more convenient for users.
+    """
+    # WARNING: This will fail for non-numeric non-datetime64 singleton
+    # datatypes but this is good enough for vast majority of most cases.
+    x_test = np.atleast_1d(_to_ndarray(x))
+    if len(x_test) >= 2:
+        x_step = x_test[1:] - x_test[:-1]
+        x_step = np.concatenate((x_step, x_step[-1:]))
+    elif x_test.dtype == np.datetime64:
+        x_step = np.timedelta64(1, 'D')
+    else:
+        x_step = np.array(0.5)
+    if np.issubdtype(x_test.dtype, np.datetime64):
+        # Avoid integer timedelta truncation
+        x_step = x_step.astype('timedelta64[ns]')
+    return width * x_step / ncols
+
+
 def _iter_objs_labels(objs):
     """
     Retrieve the (object, label) pairs for objects with actual labels
@@ -2334,14 +2356,77 @@ def _iter_objs_labels(objs):
             yield from _iter_objs_labels(obj)
 
 
+def _update_cycle(self, cycle, scatter=False, **kwargs):
+    """
+    Try to update the `~cycler.Cycler` without resetting it if it has not changed.
+    Also return keys that should be explicitly iterated over for commands that
+    otherwise don't use the property cycler (currently just scatter).
+    """
+    # Get the original property cycle
+    # NOTE: Matplotlib saves itertools.cycle(cycler), not the original
+    # cycler object, so we must build up the keys again.
+    # NOTE: Axes cycle has no getter, only set_prop_cycle, which sets a
+    # prop_cycler attribute on the hidden _get_lines and _get_patches_for_fill
+    # objects. This is the only way to query current axes cycler! Should not
+    # wrap set_prop_cycle because would get messy and fragile.
+    # NOTE: The _get_lines cycler is an *itertools cycler*. Has no length, so
+    # we must cycle over it with next(). We try calling next() the same number
+    # of times as the length of input cycle. If the input cycle *is* in fact
+    # the same, below does not reset the color position, cycles us to start!
+    i = 0
+    by_key = {}
+    cycle_orig = self._get_lines.prop_cycler
+    for i in range(len(cycle)):  # use the cycler object length as a guess
+        prop = next(cycle_orig)
+        for key, value in prop.items():
+            if key not in by_key:
+                by_key[key] = set()
+            if isinstance(value, (list, np.ndarray)):
+                value = tuple(value)
+            by_key[key].add(value)
+
+    # Reset property cycler if it differs
+    reset = set(by_key) != set(cycle.by_key())
+    if not reset:  # test individual entries
+        for key, value in cycle.by_key().items():
+            if by_key[key] != set(value):
+                reset = True
+                break
+    if reset:
+        self.set_prop_cycle(cycle)
+
+    # Psuedo-expansion of matplotlib's native property cycling for scatter(). Check out
+    # the current property cycle for extra keys not interpreted by matplotlib (all keys
+    # other than color, linestyle, and dashes). If they are present, and the user didn't
+    # explicitly override them with some other keyword arg, then take note of that.
+    # NOTE: By default matplotlib uses _get_patches_for_fill.get_next_color
+    # for scatter next scatter color, but cannot get anything else! We simultaneously
+    # iterate through the _get_lines property cycler and apply relevant properties.
+    apply_manually = set()  # which keys to apply from property cycler
+    if scatter:
+        prop_keys = set(self._get_lines._prop_keys) - {'color', 'linestyle', 'dashes'}
+        for key, prop in (
+            ('markersize', 's'),
+            ('linewidth', 'linewidths'),
+            ('markeredgewidth', 'linewidths'),
+            ('markeredgecolor', 'edgecolors'),
+            ('alpha', 'alpha'),
+            ('marker', 'marker'),
+        ):
+            prop = kwargs.get(prop, None)  # a cycle_changer argument
+            if key in prop_keys and prop is None:  # if key in cycler and property unset
+                apply_manually.add(key)
+
+    return apply_manually  # set indicating additional keys we cycle through
+
+
 def cycle_changer(
     self, func, *args,
     cycle=None, cycle_kw=None,
     label=None, labels=None, values=None,
     legend=None, legend_kw=None,
     colorbar=None, colorbar_kw=None,
-    _errobjs=None,
-    **kwargs
+    _errobjs=None, **kwargs
 ):
     """
     Adds features for controlling colors in the property cycler and drawing
@@ -2400,99 +2485,56 @@ def cycle_changer(
     proplot.constructor.Cycle
     proplot.constructor.Colors
     """
-    # Parse positional args
+    # Function name
     # NOTE: Requires standardize_1d wrapper before reaching this. Also note
     # that the 'x' coordinates are sometimes ignored below.
     name = func.__name__
+    scatter = name in ('scatter',)
+    fill = name in ('fill_between', 'fill_betweenx')
+    hist = name in ('hist',)
+    bar = name in ('bar',)
+    pie = name in ('pie',)
+    box = name in ('boxplot', 'violinplot')
+
+    # Parse positional args
     if not args:
         return func(self, *args, **kwargs)
     x, y, *args = args
     ys = (y,)
-    if len(args) >= 1 and name in ('fill_between', 'fill_betweenx'):
+    if fill and len(args) >= 1:
         ys, args = (y, args[0]), args[1:]
+
     # Parse keyword args
     autoformat = rc['autoformat']  # possibly manipulated by standardize_[12]d
-    barh = stacked = False
     cycle_kw = cycle_kw or {}
     legend_kw = legend_kw or {}
     colorbar_kw = colorbar_kw or {}
+    colorbar_legend_label = None  # for colorbar or legend
+    barh = stacked = False
     labels = _not_none(
         values=values,
         labels=labels,
         label=label,
         legend_kw_labels=legend_kw.pop('labels', None),
     )
-    if name in ('pie',):  # add x coordinates as default pie chart labels
-        labels = _not_none(labels, x)  # TODO: move to pie wrapper?
-    colorbar_legend_label = None  # for colorbar or legend
-    if name in ('bar', 'fill_between', 'fill_betweenx'):
-        stacked = kwargs.pop('stacked', False)
-    if name in ('bar',):
+    if bar:
         barh = kwargs.get('orientation', None) == 'horizontal'
         width = kwargs.pop('width', 0.8)  # 'width' for bar *and* barh (see bar_wrapper)
         bottom = 'x' if barh else 'bottom'
         kwargs.setdefault(bottom, 0)  # 'x' required even though 'y' isn't for bar plots
+    if pie:  # add x coordinates as default pie chart labels
+        labels = _not_none(labels, x)  # TODO: move to pie wrapper?
+    if bar or fill:
+        stacked = kwargs.pop('stacked', False)
 
-    # Determine and temporarily set cycler
-    # NOTE: Axes cycle has no getter, only set_prop_cycle, which sets a
-    # prop_cycler attribute on the hidden _get_lines and _get_patches_for_fill
-    # objects. This is the only way to query current axes cycler! Should not
-    # wrap set_prop_cycle because would get messy and fragile.
-    # NOTE: The _get_lines cycler is an *itertools cycler*. Has no length, so
-    # we must cycle over it with next(). We try calling next() the same number
-    # of times as the length of input cycle. If the input cycle *is* in fact
-    # the same, below does not reset the color position, cycles us to start!
+    # Update the property cycler
+    apply_manually = set()
     if cycle is not None or cycle_kw:
-        # Get the new cycler
-        cycle_args = () if cycle is None else (cycle,)
         if y.ndim > 1 and y.shape[1] > 1:  # default samples count
             cycle_kw.setdefault('N', y.shape[1])
+        cycle_args = () if cycle is None else (cycle,)
         cycle = constructor.Cycle(*cycle_args, **cycle_kw)
-
-        # Get the original property cycle
-        # NOTE: Matplotlib saves itertools.cycle(cycler), not the original
-        # cycler object, so we must build up the keys again.
-        i = 0
-        by_key = {}
-        cycle_orig = self._get_lines.prop_cycler
-        for i in range(len(cycle)):  # use the cycler object length as a guess
-            prop = next(cycle_orig)
-            for key, value in prop.items():
-                if key not in by_key:
-                    by_key[key] = set()
-                if isinstance(value, (list, np.ndarray)):
-                    value = tuple(value)
-                by_key[key].add(value)
-
-        # Reset property cycler if it differs
-        reset = set(by_key) != set(cycle.by_key())
-        if not reset:  # test individual entries
-            for key, value in cycle.by_key().items():
-                if by_key[key] != set(value):
-                    reset = True
-                    break
-        if reset:
-            self.set_prop_cycle(cycle)
-
-    # Custom property cycler additions
-    # NOTE: By default matplotlib uses _get_patches_for_fill.get_next_color
-    # for scatter next scatter color, but cannot get anything else! We simultaneously
-    # iterate through the _get_lines property cycler and apply relevant properties.
-    apply_from_cycler = set()  # which keys to apply from property cycler
-    if name in ('scatter',):
-        # Figure out which props should be updated
-        prop_keys = set(self._get_lines._prop_keys) - {'color', 'linestyle', 'dashes'}
-        for key, prop in (
-            ('markersize', 's'),
-            ('linewidth', 'linewidths'),
-            ('markeredgewidth', 'linewidths'),
-            ('markeredgecolor', 'edgecolors'),
-            ('alpha', 'alpha'),
-            ('marker', 'marker'),
-        ):
-            prop = kwargs.get(prop, None)
-            if key in prop_keys and prop is None:  # if key in cycler and property unset
-                apply_from_cycler.add(key)
+        apply_manually = _update_cycle(self, cycle, scatter=scatter, **kwargs)
 
     # Handle legend labels. Several scenarios:
     # 1. Always prefer input labels
@@ -2503,7 +2545,7 @@ def cycle_changer(
     # assumed! This is fixed in parse_1d by converting to values.
     y1 = ys[0]
     ncols = 1
-    if name in ('pie', 'boxplot', 'violinplot'):
+    if pie or box:
         # Functions handle multiple labels on their own
         if labels is not None:
             kwargs['labels'] = labels  # error raised down the line
@@ -2535,81 +2577,63 @@ def cycle_changer(
     else:
         labels = [str(_not_none(label, '')) for label in labels]
 
-    # Get step size for bar plots
-    # WARNING: This will fail for non-numeric non-datetime64 singleton
-    # datatypes but this is good enough for vast majority of most cases.
-    if name in ('bar',):
-        if not stacked and not getattr(self, '_absolute_bar_width', False):
-            x_test = np.atleast_1d(_to_ndarray(x))
-            if len(x_test) >= 2:
-                x_step = x_test[1:] - x_test[:-1]
-                x_step = np.concatenate((x_step, x_step[-1:]))
-            elif x_test.dtype == np.datetime64:
-                x_step = np.timedelta64(1, 'D')
-            else:
-                x_step = np.array(0.5)
-            if np.issubdtype(x_test.dtype, np.datetime64):
-                # Avoid integer timedelta truncation
-                x_step = x_step.astype('timedelta64[ns]')
-            width = width * x_step / ncols
+    # Width for bar plots
+    if bar:
         key = 'height' if barh else 'width'
+        if not stacked and not getattr(self, '_bar_widths_absolute', None):
+            width = _convert_bar_width(x, width, ncols)
         kwargs[key] = width
 
-    # Plot susccessive columns
+    # Plot successive columns
     objs = []
     for i in range(ncols):
-        # Prop cycle properties
+        # Additional property cycling options for 'scatter'
         kw = kwargs.copy()
-        if apply_from_cycler:
+        if apply_manually:
             props = next(self._get_lines.prop_cycler)
-            for key in apply_from_cycler:
-                value = props[key]
-                if key in ('size', 'markersize'):
-                    key = 's'
-                elif key in ('linewidth', 'markeredgewidth'):  # translate
-                    key = 'linewidths'
-                elif key == 'markeredgecolor':
-                    key = 'edgecolors'
-                kw[key] = value
+        for key in apply_manually:
+            value = props[key]
+            if key in ('size', 'markersize'):
+                key = 's'
+            elif key in ('linewidth', 'markeredgewidth'):  # translate
+                key = 'linewidths'
+            elif key == 'markeredgecolor':
+                key = 'edgecolors'
+            kw[key] = value
 
         # Get x coordinates for bar plot
         ix = x  # samples
-        if name in ('bar',):  # adjust
-            if not stacked:
-                offset = width * (i - 0.5 * (ncols - 1))
-                ix = x + offset
-            elif stacked and y1.ndim > 1:
-                key = 'x' if barh else 'bottom'
-                kw[key] = _to_indexer(y1)[:, :i].sum(axis=1)
+        if bar and stacked and y1.ndim > 1:
+            key = 'x' if barh else 'bottom'
+            kw[key] = _to_indexer(y1)[:, :i].sum(axis=1)
+        if bar and not stacked:
+            offset = width * (i - 0.5 * (ncols - 1))
+            ix = x + offset
 
         # Get y coordinates and labels
-        if name in ('pie', 'boxplot', 'violinplot'):
-            # Only ever have one y value, cannot have legend labels
-            iys = (y1,)
-
+        # WARNING: If stacked=True then we always *ignore* second argument passed to
+        # fill_between. Warning should be issued by fill_between_wrapper in this case.
+        if pie or box:
+            iys = (y1,)  # only ever have one y value, cannot have legend labels
+        elif fill and stacked:
+            iys = tuple(
+                y1 if y1.ndim == 1
+                else _to_indexer(y1)[:, :ii].sum(axis=1)
+                for ii in (i, i + 1)
+            )
+            kw['label'] = labels[i] or ''
         else:
-            # The coordinates
-            # WARNING: If stacked=True then we always *ignore* second
-            # argument passed to fill_between. Warning should be issued
-            # by fill_between_wrapper in this case.
-            if stacked and name in ('fill_between', 'fill_betweenx'):
-                iys = tuple(
-                    y1 if y1.ndim == 1
-                    else _to_indexer(y1)[:, :ii].sum(axis=1)
-                    for ii in (i, i + 1)
-                )
-            else:
-                iys = tuple(
-                    y_i if y_i.ndim == 1 else _to_indexer(y_i)[:, i]
-                    for y_i in ys
-                )
+            iys = tuple(
+                y_i if y_i.ndim == 1 else _to_indexer(y_i)[:, i]
+                for y_i in ys
+            )
             kw['label'] = labels[i] or ''
 
         # Build coordinate arguments
         ixy = ()
         if barh:  # special case, use kwargs only!
             kw.update({'bottom': ix, 'width': iys[0]})
-        elif name in ('pie', 'hist', 'boxplot', 'violinplot'):
+        elif pie or hist or box:
             ixy = iys
         else:  # has x-coordinates, and maybe more than one y
             ixy = (ix, *iys)
@@ -2641,8 +2665,6 @@ def cycle_changer(
         # with multiple columns of data.
         # NOTE: Put error bounds objects *before* line objects in the tuple,
         # so that line gets drawn on top of bounds.
-        # NOTE: Use legend(handles, labels) syntax so we can assign labels
-        # for tuples of artists. Otherwise they are label-less.
         lobjs = [(*eobjs_join[::-1], *objs)] if eobjs_join else objs.copy()
         lobjs.extend(eobjs_separate)
         try:
@@ -2660,7 +2682,7 @@ def cycle_changer(
     # methods call these internally and expect a certain output format!
     if name == 'plot':
         return tuple(objs)  # always return tuple of objects
-    elif name in ('boxplot', 'violinplot'):
+    elif box:
         return objs[0]  # always return singleton
     else:
         return objs[0] if len(objs) == 1 else tuple(objs)
@@ -2951,6 +2973,116 @@ def _build_discrete_norm(
     return norm, cmap, levels, locator
 
 
+def _fix_white_lines(obj):
+    """
+    Fix white lines between between filled contours and mesh and fix issues with
+    colormaps that are transparent.
+    """
+    # See: https://github.com/jklymak/contourfIssues
+    # See: https://stackoverflow.com/q/15003353/4970632
+    # 0.4pt is thick enough to hide lines but thin enough to not add "dots"
+    # in corner of pcolor plots so good compromise.
+    cmap = obj.cmap
+    if not cmap._isinit:
+        cmap._init()
+    if all(cmap._lut[:-1, 3] == 1):  # skip for cmaps with transparency
+        edgecolor = 'face'
+    else:
+        edgecolor = 'none'
+    # Contour fixes
+    # NOTE: This also covers TriContourSet returned by tricontour
+    if isinstance(obj, mcontour.ContourSet):
+        for contour in obj.collections:
+            contour.set_edgecolor(edgecolor)
+            contour.set_linewidth(0.4)
+            contour.set_linestyle('-')
+    # Pcolor fixes
+    # NOTE: This ignores AxesImage and PcolorImage sometimes returned by pcolorfast
+    elif isinstance(obj, (mcollections.PolyCollection, mcollections.QuadMesh)):
+        if hasattr(obj, 'set_linewidth'):  # not always true for pcolorfast
+            obj.set_linewidth(0.4)
+        if hasattr(obj, 'set_edgecolor'):  # not always true for pcolorfast
+            obj.set_edgecolor(edgecolor)
+
+
+def _labels_contour(obj, *args, fmt=None, **kwargs):
+    """
+    Add labels to contours with support for shade-dependent filled contour labels
+    flexible keyword arguments. Requires original arguments passed to contour function.
+    """
+    # Parse input args
+    text_kw = {}
+    for key in (*kwargs,):  # allow dict to change size
+        if key not in (
+            'levels', 'colors', 'fontsize', 'inline', 'inline_spacing',
+            'manual', 'rightside_up', 'use_clabeltext',
+        ):
+            text_kw[key] = kwargs.pop(key)
+    kwargs.setdefault('inline_spacing', 3)
+    kwargs.setdefault('fontsize', rc['text.labelsize'])
+    fmt = _not_none(fmt, pticker.SimpleFormatter())
+
+    # Draw hidden additional contour for filled contour labels
+    colors = None
+    if obj.filled:  # guard against changes?
+        obj = obj.axes.contour(*args, levels=obj.levels, linewidths=0)
+        lums = [to_xyz(obj.cmap(obj.norm(level)), 'hcl')[2] for level in obj.levels]
+        colors = ['w' if lum < 50 else 'k' for lum in lums]
+    kwargs.setdefault('colors', colors)
+
+    # Draw labels
+    labs = obj.clabel(fmt=fmt, **kwargs)
+    if labs is not None:  # returns None if no contours
+        for lab in labs:
+            lab.update(text_kw)
+
+    return labs
+
+
+def _labels_pcolor(obj, fmt=None, **kwargs):
+    """
+    Add labels to pcolor boxes with support for shade-dependent text colors.
+    """
+    # Parse input args and populate _facecolors, which is initially unfilled
+    # See: https://stackoverflow.com/a/20998634/4970632
+    fmt = _not_none(fmt, pticker.SimpleFormatter())
+    labels_kw = {'size': rc['text.labelsize'], 'ha': 'center', 'va': 'center'}
+    labels_kw.update(kwargs)
+    obj.update_scalarmappable()  # populate _facecolors
+
+    # Get positions and contour colors
+    array = obj.get_array()
+    paths = obj.get_paths()
+    colors = np.asarray(obj.get_facecolors())
+    edgecolors = np.asarray(obj.get_edgecolors())
+    if len(colors) == 1:  # weird flex but okay
+        colors = np.repeat(colors, len(array), axis=0)
+    if len(edgecolors) == 1:
+        edgecolors = np.repeat(edgecolors, len(array), axis=0)
+
+    # Apply colors
+    labs = []
+    for i, (color, path, num) in enumerate(zip(colors, paths, array)):
+        if not np.isfinite(num):
+            edgecolors[i, :] = 0
+            continue
+        bbox = path.get_extents()
+        x = (bbox.xmin + bbox.xmax) / 2
+        y = (bbox.ymin + bbox.ymax) / 2
+        if 'color' not in kwargs:
+            _, _, lum = to_xyz(color, 'hcl')
+            if lum < 50:
+                color = 'w'
+            else:
+                color = 'k'
+            labels_kw['color'] = color
+        lab = obj.axes.text(x, y, fmt(num), **labels_kw)
+        labs.append(lab)
+    obj.set_edgecolors(edgecolors)
+
+    return labs
+
+
 @warnings._rename_kwargs('0.6', centers='values')
 @docstring.add_snippets
 def cmap_changer(
@@ -3161,110 +3293,32 @@ def cmap_changer(
     if name in ('parametric',):
         kwargs['values'] = values
 
-    # Call function, possibly twice to add 'edges' to contourf plot
+    # Call function and possibly add solid contours between filled ones or
+    # fix common "white lines" issues with vector graphic output
     obj = func(self, *args, **kwargs)
     if not isinstance(obj, tuple):  # hist2d
-        obj._colorbar_extend = extend
-        obj._colorbar_ticks = ticks  # a Locator or ndarray used for controlling ticks
+        obj._colorbar_extend = extend  # used by proplot colorbar
+        obj._colorbar_ticks = ticks  # used by proplot colorbar
     if add_contours:
         colors = _not_none(colors, 'k')
         self.contour(
             *args, levels=levels, linewidths=linewidths,
             linestyles=linestyles, colors=colors
         )
+    if edgefix:
+        _fix_white_lines(obj)
 
     # Apply labels
     # TODO: Add quiverkey to this!
     if labels:
-        # Formatting for labels
         fmt = _not_none(labels_kw.pop('fmt', None), fmt, 'simple')
         fmt = constructor.Formatter(fmt, precision=precision)
-
-        # Use clabel method
         if name in ('contour', 'contourf', 'tricontour', 'tricontourf'):
-            cobj = obj
-            colors = None
-            if name in ('contourf', 'tricontourf'):
-                lums = [to_xyz(cmap(norm(level)), 'hcl')[2] for level in levels]
-                cobj = self.contour(*args, levels=levels, linewidths=0)
-                colors = ['w' if lum < 50 else 'k' for lum in lums]
-            text_kw = {}
-            for key in (*labels_kw,):  # allow dict to change size
-                if key not in (
-                    'levels', 'fontsize', 'colors', 'inline', 'inline_spacing',
-                    'manual', 'rightside_up', 'use_clabeltext',
-                ):
-                    text_kw[key] = labels_kw.pop(key)
-            labels_kw.setdefault('colors', colors)
-            labels_kw.setdefault('inline_spacing', 3)
-            labels_kw.setdefault('fontsize', rc['text.labelsize'])
-            labs = cobj.clabel(fmt=fmt, **labels_kw)
-            if labs is not None:  # returns None if no contours
-                for lab in labs:
-                    lab.update(text_kw)
-
-        # Label each box manually
-        # See: https://stackoverflow.com/a/20998634/4970632
+            _labels_contour(obj, *args, fmt=fmt, **labels_kw)
         elif name in ('pcolor', 'pcolormesh', 'pcolorfast'):
-            # Populate the _facecolors attribute, which is initially filled
-            # with just a single color
-            obj.update_scalarmappable()
-
-            # Get text positions and colors
-            labels_kw_ = {'size': rc['text.labelsize'], 'ha': 'center', 'va': 'center'}
-            labels_kw_.update(labels_kw)
-            array = obj.get_array()
-            paths = obj.get_paths()
-            colors = np.asarray(obj.get_facecolors())
-            edgecolors = np.asarray(obj.get_edgecolors())
-            if len(colors) == 1:  # weird flex but okay
-                colors = np.repeat(colors, len(array), axis=0)
-            if len(edgecolors) == 1:
-                edgecolors = np.repeat(edgecolors, len(array), axis=0)
-            for i, (color, path, num) in enumerate(zip(colors, paths, array)):
-                if not np.isfinite(num):
-                    edgecolors[i, :] = 0
-                    continue
-                bbox = path.get_extents()
-                x = (bbox.xmin + bbox.xmax) / 2
-                y = (bbox.ymin + bbox.ymax) / 2
-                if 'color' not in labels_kw:
-                    _, _, lum = to_xyz(color, 'hcl')
-                    if lum < 50:
-                        color = 'w'
-                    else:
-                        color = 'k'
-                    labels_kw_['color'] = color
-                self.text(x, y, fmt(num), **labels_kw_)
-            obj.set_edgecolors(edgecolors)
+            _labels_pcolor(obj, fmt=fmt, **labels_kw)
         else:
             raise RuntimeError(f'Not possible to add labels to {name!r} plot.')
-
-    # Fix white lines between filled contours/mesh and fix issues with colormaps
-    # that are not perfectly opaque. 0.4pt is thick enough to hide lines but thin
-    # enough to not add "dots" in corner of pcolor plots.
-    # See: https://github.com/jklymak/contourfIssues
-    # See: https://stackoverflow.com/q/15003353/4970632
-    if edgefix and name in (
-        'pcolor', 'pcolormesh', 'pcolorfast', 'tripcolor', 'contourf', 'tricontourf'
-    ):
-        cmap = obj.get_cmap()
-        if not cmap._isinit:
-            cmap._init()
-        if all(cmap._lut[:-1, 3] == 1):  # skip for cmaps with transparency
-            edgecolor = 'face'
-        else:
-            edgecolor = 'none'
-        if name in ('pcolor', 'pcolormesh', 'pcolorfast', 'tripcolor'):
-            if hasattr(obj, 'set_linewidth'):  # not always true for pcolorfast
-                obj.set_linewidth(0.4)
-            if hasattr(obj, 'set_edgecolor'):  # not always true for pcolorfast
-                obj.set_edgecolor(edgecolor)
-        else:
-            for contour in obj.collections:
-                contour.set_edgecolor(edgecolor)
-                contour.set_linewidth(0.4)
-                contour.set_linestyle('-')
 
     # Optionally add colorbar
     if autoformat:
@@ -3586,10 +3640,9 @@ or colormap-spec
 
     # Try to get tick locations from *levels* or from *values* rather than
     # random points along the axis.
-    # NOTE: Do not necessarily want e.g. minor tick locations at logminor
-    # for LogNorm! In _build_discrete_norm we sometimes select evenly spaced
-    # levels in log-space *between* powers of 10, so logminor ticks would be
-    # misaligned with levels.
+    # NOTE: Do not necessarily want e.g. minor tick locations at logminor for LogNorm!
+    # In _build_discrete_norm we sometimes select evenly spaced levels in log-space
+    # *between* powers of 10, so logminor ticks would be misaligned with levels.
     if locator is None:
         locator = getattr(mappable, '_colorbar_ticks', None)
         if locator is None:
@@ -3766,29 +3819,6 @@ def _iter_legend_children(children):
             yield obj
 
 
-def _individual_legend(self, pairs, ncol=None, order=None, **kwargs):
-    """
-    Draw an individual legend with support for changing legend-entries
-    between column-major and row-major.
-    """
-    # Optionally change order
-    # See: https://stackoverflow.com/q/10101141/4970632
-    # Example: If 5 columns, but final row length 3, columns 0-2 have
-    # N rows but 3-4 have N-1 rows.
-    ncol = _not_none(ncol, 3)
-    if order == 'C':
-        split = [pairs[i * ncol:(i + 1) * ncol] for i in range(len(pairs) // ncol + 1)]
-        pairs = []
-        nrows_max = len(split)  # max possible row count
-        ncols_final = len(split[-1])  # columns in final row
-        nrows = [nrows_max] * ncols_final + [nrows_max - 1] * (ncol - ncols_final)
-        for col, nrow in enumerate(nrows):  # iterate through cols
-            pairs.extend(split[row][col] for row in range(nrow))
-
-    # Draw legend
-    return mlegend.Legend(self, *zip(*pairs), ncol=ncol, **kwargs)
-
-
 def _multiple_legend(self, pairs, loc=None, ncol=None, order=None, **kwargs):
     """
     Draw "legend" with centered rows by creating separate legends for
@@ -3927,6 +3957,29 @@ def _multiple_legend(self, pairs, loc=None, ncol=None, order=None, **kwargs):
 
     # Add patch to list
     return patch, *legs
+
+
+def _single_legend(self, pairs, ncol=None, order=None, **kwargs):
+    """
+    Draw an individual legend with support for changing legend-entries
+    between column-major and row-major.
+    """
+    # Optionally change order
+    # See: https://stackoverflow.com/q/10101141/4970632
+    # Example: If 5 columns, but final row length 3, columns 0-2 have
+    # N rows but 3-4 have N-1 rows.
+    ncol = _not_none(ncol, 3)
+    if order == 'C':
+        split = [pairs[i * ncol:(i + 1) * ncol] for i in range(len(pairs) // ncol + 1)]
+        pairs = []
+        nrows_max = len(split)  # max possible row count
+        ncols_final = len(split[-1])  # columns in final row
+        nrows = [nrows_max] * ncols_final + [nrows_max - 1] * (ncol - ncols_final)
+        for col, nrow in enumerate(nrows):  # iterate through cols
+            pairs.extend(split[row][col] for row in range(nrow))
+
+    # Draw legend
+    return mlegend.Legend(self, *zip(*pairs), ncol=ncol, **kwargs)
 
 
 def legend_wrapper(
@@ -4125,7 +4178,7 @@ property-spec, optional
         objs = _multiple_legend(self, pairs, loc=loc, ncol=ncol, order=order, **kwargs)
     # Individual legend
     else:
-        objs = [_individual_legend(self, pairs, loc=loc, ncol=ncol, **kwargs)]
+        objs = [_single_legend(self, pairs, loc=loc, ncol=ncol, **kwargs)]
 
     # Add legends manually so matplotlib does not remove old ones
     for obj in objs:
@@ -4219,7 +4272,7 @@ def _basemap_norecurse(func):
     return wrapper
 
 
-def _generate_decorator(driver):
+def _process_wrapper(driver):
     """
     Generate generic wrapper decorator and dynamically modify the docstring
     to list methods wrapped by this function. Also set `__doc__` to ``None`` so
@@ -4264,25 +4317,26 @@ def _generate_decorator(driver):
     return decorator
 
 
-# Auto generated decorators. Each wrapper internally calls func(self, ...) somewhere.
-_bar_wrapper = _generate_decorator(bar_wrapper)
-_barh_wrapper = _generate_decorator(barh_wrapper)
-_default_latlon = _generate_decorator(default_latlon)
-_boxplot_wrapper = _generate_decorator(boxplot_wrapper)
-_default_transform = _generate_decorator(default_transform)
-_cmap_changer = _generate_decorator(cmap_changer)
-_cycle_changer = _generate_decorator(cycle_changer)
-_fill_between_wrapper = _generate_decorator(fill_between_wrapper)
-_fill_betweenx_wrapper = _generate_decorator(fill_betweenx_wrapper)
-_hist_wrapper = _generate_decorator(hist_wrapper)
-_hlines_wrapper = _generate_decorator(hlines_wrapper)
-_indicate_error = _generate_decorator(indicate_error)
-_parametric_wrapper = _generate_decorator(parametric_wrapper)
-_plot_wrapper = _generate_decorator(plot_wrapper)
-_scatter_wrapper = _generate_decorator(scatter_wrapper)
-_standardize_1d = _generate_decorator(standardize_1d)
-_standardize_2d = _generate_decorator(standardize_2d)
-_stem_wrapper = _generate_decorator(stem_wrapper)
-_text_wrapper = _generate_decorator(text_wrapper)
-_violinplot_wrapper = _generate_decorator(violinplot_wrapper)
-_vlines_wrapper = _generate_decorator(vlines_wrapper)
+# Generate function decorators and fill wrapper docstring. Each wrapper internally
+# calls function(self, ...) somewhere.
+_bar_wrapper = _process_wrapper(bar_wrapper)
+_barh_wrapper = _process_wrapper(barh_wrapper)
+_default_latlon = _process_wrapper(default_latlon)
+_boxplot_wrapper = _process_wrapper(boxplot_wrapper)
+_default_transform = _process_wrapper(default_transform)
+_cmap_changer = _process_wrapper(cmap_changer)
+_cycle_changer = _process_wrapper(cycle_changer)
+_fill_between_wrapper = _process_wrapper(fill_between_wrapper)
+_fill_betweenx_wrapper = _process_wrapper(fill_betweenx_wrapper)
+_hist_wrapper = _process_wrapper(hist_wrapper)
+_hlines_wrapper = _process_wrapper(hlines_wrapper)
+_indicate_error = _process_wrapper(indicate_error)
+_parametric_wrapper = _process_wrapper(parametric_wrapper)
+_plot_wrapper = _process_wrapper(plot_wrapper)
+_scatter_wrapper = _process_wrapper(scatter_wrapper)
+_standardize_1d = _process_wrapper(standardize_1d)
+_standardize_2d = _process_wrapper(standardize_2d)
+_stem_wrapper = _process_wrapper(stem_wrapper)
+_text_wrapper = _process_wrapper(text_wrapper)
+_violinplot_wrapper = _process_wrapper(violinplot_wrapper)
+_vlines_wrapper = _process_wrapper(vlines_wrapper)
