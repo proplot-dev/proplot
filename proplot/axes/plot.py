@@ -3756,7 +3756,6 @@ or colormap-spec
         'format': formatter,
         'ticklocation': ticklocation,
         'extendfrac': extendsize,
-        'extend': extend,
     })
     if isinstance(mappable, mcontour.ContourSet):
         mappable.extend = extend  # required in mpl >= 3.3, else optional
