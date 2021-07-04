@@ -235,6 +235,8 @@ ProPlot v0.7.0 (2021-06-30)
 
 * Significantly refactor `colorbar` and `legend` code to make more manageable and
   expand the "queueing" feature beyond wrappers (:pr:`254`).
+* Refactor `standardize_(1d|2d)` and `(cmap|cycle)_changer` wrappers to make them
+  more manageable by breaking up into chunks (:commit:`6af22567`, :commit:`d3352720`).
 * Add prefix ``'proplot_'`` to registered axes "projections" (:commit:`be7ef21e`). More
   clear and guards against conflicts with external packages and other mpl versions.
 
