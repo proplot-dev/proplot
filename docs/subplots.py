@@ -191,8 +191,8 @@ axs[4].format(
 axs[1].format(ylabel='ylabel\nylabel\nylabel')
 axs[:4:2].format(xlabel='xlabel\nxlabel\nxlabel')
 axs.format(
-    rowlabels=['Row 1', 'Row 2', 'Row 3'],
-    collabels=['Column 1', 'Column 2', 'Column 3']
+    toplabels=('Column 1', 'Column 2', 'Column 3'),
+    leftlabels=('Row 1', 'Row 2', 'Row 3'),
 )
 
 # %%
@@ -209,8 +209,8 @@ fig, axs = plot.subplots(
 axs.format(
     xlim=(-1.5, 1.5), ylim=(-1.5, 1.5), xlocator=1, ylocator=1,
     suptitle='Tight layout with user overrides',
-    rowlabels=['Row 1', 'Row 2', 'Row 3'],
-    collabels=['Column 1', 'Column 2', 'Column 3', 'Column 4']
+    toplabels=('Column 1', 'Column 2', 'Column 3', 'Column 4'),
+    leftlabels=('Row 1', 'Row 2', 'Row 3'),
 )
 axs[0, :].format(xtickloc='top')
 axs[2, :].format(xtickloc='both')

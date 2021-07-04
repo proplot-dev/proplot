@@ -101,7 +101,7 @@ axs.format(
     xlabel='xlabel', ylabel='ylabel',
     xticks=0.2, yticks=0.2,
     title='Title', suptitle='Complex arrangement of panels',
-    collabels=['Column 1', 'Column 2'],
+    toplabels=('Column 1', 'Column 2'),
     abc=True, abcloc='ul', titleloc='uc', titleabove=False,
 )
 for ax, side in zip(axs, 'tlbr'):

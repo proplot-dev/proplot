@@ -207,7 +207,7 @@ fig, axs = plot.subplots(
 )
 axs.format(
     suptitle='Figure with several projections',
-    collabels=['Cartopy projections', 'Basemap projections'],
+    toplabels=('Cartopy projections', 'Basemap projections'),
     coast=True, latlines=20, lonlines=30,
     lonlabels='b', latlabels='r',  # or lonlabels=True, labels=True, etc.
 )
@@ -263,8 +263,9 @@ for globe in (False, True,):
     )
     axs.format(
         suptitle=f'Geophysical data {string} global coverage',
-        collabels=['Cartopy example', 'Basemap example'],
-        rowlabels=['Contourf', 'Pcolormesh'],
+        toplabels=('Cartopy example', 'Basemap example'),
+        leftlabels=('Contourf', 'Pcolormesh'),
+        toplabelweight='normal', leftlabelweight='normal',
         abc=True, abcstyle='a)', abcloc='ul', abcborder=False,
         coast=True, lonlines=90,
     )
@@ -307,7 +308,7 @@ fig, axs = plot.subplots(
 )
 axs.format(
     suptitle='Projection axes formatting demo',
-    collabels=['Column 1', 'Column 2'],
+    toplabels=('Column 1', 'Column 2'),
     abc=True, abcstyle='A.', abcloc='ul', abcborder=False, linewidth=1.5
 )
 

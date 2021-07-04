@@ -320,7 +320,7 @@ df.columns.name = 'variable (units)'
 # %%
 import proplot as plot
 fig, axs = plot.subplots(nrows=2, axwidth=2.5, share=0)
-axs.format(collabels=['Automatic subplot formatting'])
+axs.format(toplabels=('Automatic subplot formatting',))
 
 # Plot DataArray
 cmap = plot.Colormap('RdPu', left=0.05)

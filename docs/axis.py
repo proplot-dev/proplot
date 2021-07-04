@@ -429,7 +429,7 @@ import numpy as np
 plot.rc.reset()
 fig, axs = plot.subplots(nrows=2, ncols=3, axwidth=1.7, share=0, order='F')
 axs.format(
-    collabels=('Power scales', 'Exponential scales', 'Cartographic scales'),
+    toplabels=('Power scales', 'Exponential scales', 'Cartographic scales'),
     suptitle='Additional axis scales demo'
 )
 x = np.linspace(0, 1, 50)

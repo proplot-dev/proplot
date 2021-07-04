@@ -239,8 +239,8 @@ axs.format(
     abc=True, abcloc='ul', abcstyle='A.',
     title='Main', ltitle='Left', rtitle='Right',  # different titles
     urtitle='Title A', lltitle='Title B', lrtitle='Title C',  # extra titles
-    collabels=['Column label 1', 'Column label 2'],
-    rowlabels=['Row label 1', 'Row label 2'],
+    toplabels=('Column 1', 'Column 2'),
+    leftlabels=('Row 1', 'Row 2'),
     xlabel='x-axis', ylabel='y-axis',
     xscale='log',
     xlim=(1, 10), xticks=1,
@@ -340,7 +340,7 @@ for i, ax in enumerate(axs):
 # Apply settings to axes with format()
 axs.format(
     grid=False, xlabel='x label', ylabel='y label',
-    collabels=['Column label 1', 'Column label 2'],
+    toplabels=('Column 1', 'Column 2'),
     suptitle='Rc settings demo',
     suptitlecolor='gray7',
     abc=True, abcloc='l', abcstyle='A)',
