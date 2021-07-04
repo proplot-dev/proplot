@@ -34,51 +34,6 @@
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
-# .. _ug_cycle_changer:
-#
-# Property cycles
-# ---------------
-#
-# It is often useful to create on-the-fly `property cycles
-# <https://matplotlib.org/tutorials/intermediate/color_cycle.html#sphx-glr-tutorials-intermediate-color-cycle-py>`__
-# and use different property cycles for different plot elements. You can create and
-# apply property cycles on-the-fly using the `cycle` and `cycle_kw` arguments, available
-# with any plotting method wrapped by `~proplot.axes.cycle_changer`. `cycle` and
-# `cycle_kw` are passed to the `~proplot.constructor.Cycle` :ref:`constructor function
-# <why_constructor>`, and the resulting property cycle is used for the plot. You can
-# specify `cycle` once with 2D input data (in which case each column is plotted in
-# succession according to the property cycle) or call a plotting command multiple times
-# with the same `cycle` argument each time (the property cycle is not reset). For more
-# information on property cycles, see the :ref:`color cycles section <ug_cycles>` and
-# `this matplotlib tutorial
-# <https://matplotlib.org/tutorials/intermediate/color_cycle.html#sphx-glr-tutorials-intermediate-color-cycle-py>`__.
-
-# %%
-import proplot as plot
-import numpy as np
-N = 4
-state = np.random.RandomState(51423)
-data1 = state.rand(6, N)
-data2 = state.rand(6, N) * 1.5
-with plot.rc.context({'lines.linewidth': 3}):
-    fig, axs = plot.subplots(ncols=2)
-    axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Local property cycles demo')
-
-    # Use property cycle for columns of 2D input data
-    axs[0].plot(
-        data1 * data2,
-        cycle='black',
-        cycle_kw={'linestyle': ('-', '--', '-.', ':')}
-    )
-
-    # Use property cycle with successive plot() calls
-    for i in range(data1.shape[1]):
-        axs[1].plot(data1[:, i], cycle='Reds', cycle_kw={'N': N, 'left': 0.3})
-    for i in range(data1.shape[1]):
-        axs[1].plot(data2[:, i], cycle='Blues', cycle_kw={'N': N, 'left': 0.3})
-
-
-# %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_1dstd:
 #
 # Standardized arguments
@@ -185,6 +140,51 @@ axs[0].scatter(da, cycle=cycle, lw=3, colorbar='ul', colorbar_kw={'locator': 20}
 # Plot Dataframe
 cycle = plot.Cycle('dark green', fade=90, space='hpl', N=df.shape[1])
 axs[1].plot(df, cycle=cycle, lw=3, legend='uc')
+
+
+# %% [raw] raw_mimetype="text/restructuredtext"
+# .. _ug_cycle_changer:
+#
+# Property cycles
+# ---------------
+#
+# It is often useful to create on-the-fly `property cycles
+# <https://matplotlib.org/tutorials/intermediate/color_cycle.html#sphx-glr-tutorials-intermediate-color-cycle-py>`__
+# and use different property cycles for different plot elements. You can create and
+# apply property cycles on-the-fly using the `cycle` and `cycle_kw` arguments, available
+# with any plotting method wrapped by `~proplot.axes.cycle_changer`. `cycle` and
+# `cycle_kw` are passed to the `~proplot.constructor.Cycle` :ref:`constructor function
+# <why_constructor>`, and the resulting property cycle is used for the plot. You can
+# specify `cycle` once with 2D input data (in which case each column is plotted in
+# succession according to the property cycle) or call a plotting command multiple times
+# with the same `cycle` argument each time (the property cycle is not reset). For more
+# information on property cycles, see the :ref:`color cycles section <ug_cycles>` and
+# `this matplotlib tutorial
+# <https://matplotlib.org/tutorials/intermediate/color_cycle.html#sphx-glr-tutorials-intermediate-color-cycle-py>`__.
+
+# %%
+import proplot as plot
+import numpy as np
+N = 4
+state = np.random.RandomState(51423)
+data1 = state.rand(6, N)
+data2 = state.rand(6, N) * 1.5
+with plot.rc.context({'lines.linewidth': 3}):
+    fig, axs = plot.subplots(ncols=2)
+    axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Local property cycles demo')
+
+    # Use property cycle for columns of 2D input data
+    axs[0].plot(
+        data1 * data2,
+        cycle='black',
+        cycle_kw={'linestyle': ('-', '--', '-.', ':')}
+    )
+
+    # Use property cycle with successive plot() calls
+    for i in range(data1.shape[1]):
+        axs[1].plot(data1[:, i], cycle='Reds', cycle_kw={'N': N, 'left': 0.3})
+    for i in range(data1.shape[1]):
+        axs[1].plot(data2[:, i], cycle='Blues', cycle_kw={'N': N, 'left': 0.3})
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"

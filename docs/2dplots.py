@@ -34,6 +34,119 @@
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
+# .. _ug_2dstd:
+#
+# Standardized arguments
+# ----------------------
+#
+# The `~proplot.axes.standardize_2d` wrapper standardizes
+# positional arguments across all 2D plotting methods.  Among other things,
+# it guesses coordinate *edges* for `~matplotlib.axes.Axes.pcolor` and
+# `~matplotlib.axes.Axes.pcolormesh` plots when you supply coordinate
+# *centers*, and calculates coordinate *centers* for
+# `~matplotlib.axes.Axes.contourf` and `~matplotlib.axes.Axes.contour` plots
+# when you supply coordinate *edges*. Notice the locations of the rectangle
+# edges in the ``pcolor`` plots shown below.
+
+# %%
+import proplot as plot
+import numpy as np
+
+# Figure and sample data
+state = np.random.RandomState(51423)
+x = y = np.array([-10, -5, 0, 5, 10])
+xedges = plot.edges(x)
+yedges = plot.edges(y)
+data = state.rand(y.size, x.size)  # "center" coordinates
+lim = (np.min(xedges), np.max(xedges))
+with plot.rc.context({'image.cmap': 'Grays', 'image.levels': 21}):
+    fig, axs = plot.subplots(ncols=2, nrows=2, share=False)
+    axs.format(
+        xlabel='xlabel', ylabel='ylabel',
+        xlim=lim, ylim=lim, xlocator=5, ylocator=5,
+        suptitle='Standardized input demonstration'
+    )
+    axs[0].format(title='Supplying coordinate centers')
+    axs[1].format(title='Supplying coordinate edges')
+
+    # Plot using both centers and edges as coordinates
+    axs[0].pcolormesh(x, y, data)
+    axs[1].pcolormesh(xedges, yedges, data)
+    axs[2].contourf(x, y, data)
+    axs[3].contourf(xedges, yedges, data)
+
+
+# %% [raw] raw_mimetype="text/restructuredtext"
+# .. _ug_2dintegration:
+#
+# Pandas and xarray integration
+# -----------------------------
+#
+# The `~proplot.axes.standardize_2d` wrapper also integrates 2D
+# plotting methods with pandas `~pandas.DataFrame`\ s and xarray
+# `~xarray.DataArray`\ s. When you pass a DataFrame or DataArray to any
+# plotting command, the x-axis label, y-axis label, legend label, colorbar
+# label, and/or title are configured from the metadata. This restores some of
+# the convenience you get with the builtin `pandas`_ and `xarray`_ plotting
+# functions. This feature is *optional*. Installation of pandas and xarray are
+# not required, and it can be disabled by setting :rcraw:`autoformat` to ``False``.
+
+# %%
+import xarray as xr
+import numpy as np
+import pandas as pd
+
+# DataArray
+state = np.random.RandomState(51423)
+linspace = np.linspace(0, np.pi, 20)
+data = 50 * state.normal(1, 0.2, size=(20, 20)) * (
+    np.sin(linspace * 2) ** 2
+    * np.cos(linspace + np.pi / 2)[:, None] ** 2
+)
+lat = xr.DataArray(
+    np.linspace(-90, 90, 20),
+    dims=('lat',),
+    attrs={'units': 'deg_north'}
+)
+plev = xr.DataArray(
+    np.linspace(1000, 0, 20),
+    dims=('plev',),
+    attrs={'long_name': 'pressure', 'units': 'mb'}
+)
+da = xr.DataArray(
+    data,
+    name='u',
+    dims=('plev', 'lat'),
+    coords={'plev': plev, 'lat': lat},
+    attrs={'long_name': 'zonal wind', 'units': 'm/s'}
+)
+
+# DataFrame
+data = state.rand(12, 20)
+df = pd.DataFrame(
+    (data - 0.4).cumsum(axis=0).cumsum(axis=1),
+    index=list('JFMAMJJASOND'),
+)
+df.name = 'temporal data'
+df.index.name = 'month'
+df.columns.name = 'variable (units)'
+
+# %%
+import proplot as plot
+fig, axs = plot.subplots(nrows=2, axwidth=2.5, share=0)
+axs.format(toplabels=('Automatic subplot formatting',))
+
+# Plot DataArray
+cmap = plot.Colormap('RdPu', left=0.05)
+axs[0].contourf(da, cmap=cmap, colorbar='l', linewidth=0.7, color='k')
+axs[0].format(yreverse=True)
+
+# Plot DataFrame
+axs[1].contourf(df, cmap='YlOrRd', colorbar='r', linewidth=0.7, color='k')
+axs[1].format(xtickminor=False)
+
+
+# %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_cmap_changer:
 #
 # Colormaps and normalizers
@@ -217,119 +330,6 @@ for data, mode, fair in zip(
         ax.colorbar(m, loc='b', locator=1)
         ax.format(title=f'Skewed {mode} data, {fair!r} scaling')
         i += 1
-
-
-# %% [raw] raw_mimetype="text/restructuredtext"
-# .. _ug_2dstd:
-#
-# Standardized arguments
-# ----------------------
-#
-# The `~proplot.axes.standardize_2d` wrapper standardizes
-# positional arguments across all 2D plotting methods.  Among other things,
-# it guesses coordinate *edges* for `~matplotlib.axes.Axes.pcolor` and
-# `~matplotlib.axes.Axes.pcolormesh` plots when you supply coordinate
-# *centers*, and calculates coordinate *centers* for
-# `~matplotlib.axes.Axes.contourf` and `~matplotlib.axes.Axes.contour` plots
-# when you supply coordinate *edges*. Notice the locations of the rectangle
-# edges in the ``pcolor`` plots shown below.
-
-# %%
-import proplot as plot
-import numpy as np
-
-# Figure and sample data
-state = np.random.RandomState(51423)
-x = y = np.array([-10, -5, 0, 5, 10])
-xedges = plot.edges(x)
-yedges = plot.edges(y)
-data = state.rand(y.size, x.size)  # "center" coordinates
-lim = (np.min(xedges), np.max(xedges))
-with plot.rc.context({'image.cmap': 'Grays', 'image.levels': 21}):
-    fig, axs = plot.subplots(ncols=2, nrows=2, share=False)
-    axs.format(
-        xlabel='xlabel', ylabel='ylabel',
-        xlim=lim, ylim=lim, xlocator=5, ylocator=5,
-        suptitle='Standardized input demonstration'
-    )
-    axs[0].format(title='Supplying coordinate centers')
-    axs[1].format(title='Supplying coordinate edges')
-
-    # Plot using both centers and edges as coordinates
-    axs[0].pcolormesh(x, y, data)
-    axs[1].pcolormesh(xedges, yedges, data)
-    axs[2].contourf(x, y, data)
-    axs[3].contourf(xedges, yedges, data)
-
-
-# %% [raw] raw_mimetype="text/restructuredtext"
-# .. _ug_2dintegration:
-#
-# Pandas and xarray integration
-# -----------------------------
-#
-# The `~proplot.axes.standardize_2d` wrapper also integrates 2D
-# plotting methods with pandas `~pandas.DataFrame`\ s and xarray
-# `~xarray.DataArray`\ s. When you pass a DataFrame or DataArray to any
-# plotting command, the x-axis label, y-axis label, legend label, colorbar
-# label, and/or title are configured from the metadata. This restores some of
-# the convenience you get with the builtin `pandas`_ and `xarray`_ plotting
-# functions. This feature is *optional*. Installation of pandas and xarray are
-# not required, and it can be disabled by setting :rcraw:`autoformat` to ``False``.
-
-# %%
-import xarray as xr
-import numpy as np
-import pandas as pd
-
-# DataArray
-state = np.random.RandomState(51423)
-linspace = np.linspace(0, np.pi, 20)
-data = 50 * state.normal(1, 0.2, size=(20, 20)) * (
-    np.sin(linspace * 2) ** 2
-    * np.cos(linspace + np.pi / 2)[:, None] ** 2
-)
-lat = xr.DataArray(
-    np.linspace(-90, 90, 20),
-    dims=('lat',),
-    attrs={'units': 'deg_north'}
-)
-plev = xr.DataArray(
-    np.linspace(1000, 0, 20),
-    dims=('plev',),
-    attrs={'long_name': 'pressure', 'units': 'mb'}
-)
-da = xr.DataArray(
-    data,
-    name='u',
-    dims=('plev', 'lat'),
-    coords={'plev': plev, 'lat': lat},
-    attrs={'long_name': 'zonal wind', 'units': 'm/s'}
-)
-
-# DataFrame
-data = state.rand(12, 20)
-df = pd.DataFrame(
-    (data - 0.4).cumsum(axis=0).cumsum(axis=1),
-    index=list('JFMAMJJASOND'),
-)
-df.name = 'temporal data'
-df.index.name = 'month'
-df.columns.name = 'variable (units)'
-
-# %%
-import proplot as plot
-fig, axs = plot.subplots(nrows=2, axwidth=2.5, share=0)
-axs.format(toplabels=('Automatic subplot formatting',))
-
-# Plot DataArray
-cmap = plot.Colormap('RdPu', left=0.05)
-axs[0].contourf(da, cmap=cmap, colorbar='l', linewidth=0.7, color='k')
-axs[0].format(yreverse=True)
-
-# Plot DataFrame
-axs[1].contourf(df, cmap='YlOrRd', colorbar='r', linewidth=0.7, color='k')
-axs[1].format(xtickminor=False)
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
