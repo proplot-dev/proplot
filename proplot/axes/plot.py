@@ -504,6 +504,61 @@ def _axis_labels_title(data, axis=None, units=True):
     return labels, str(title).strip()
 
 
+def _auto_format_1d(self, x, y, name='plot', autoformat=False, **kwargs):
+    """
+    Apply automatic formatting based on the coordinates. Also updates the
+    keyword arguments.
+    """
+    # First handle string-type x-coordinates
+    # NOTE: Why FixedLocator and not IndexLocator? The latter requires plotting
+    # lines or else error is raised... very strange.
+    # NOTE: Why IndexFormatter and not FixedFormatter? The former ensures labels
+    # correspond to indices while the latter can mysteriously truncate labels.
+    kw_format = {}
+    x_index = None
+    vert = kwargs.get('vert', kwargs.get('orientation', 'vertical') == 'vertical')
+    sx = 'x' if vert else 'y'
+    sy = 'y' if sx == 'x' else 'x'
+    if _is_string(x) and name in ('hist',):
+        kwargs.setdefault('labels', _to_ndarray(x))
+    elif _is_string(x):
+        x_index = np.arange(len(x))
+        kw_format[sx + 'locator'] = mticker.FixedLocator(x_index)
+        kw_format[sx + 'formatter'] = pticker._IndexFormatter(_to_ndarray(x))
+        kw_format[sx + 'minorlocator'] = mticker.NullLocator()
+        if name == 'boxplot':  # otherwise IndexFormatter is overridden
+            kwargs['labels'] = _to_ndarray(x)
+
+    # Next handle labels if 'autoformat' is on
+    # NOTE: Do not overwrite existing labels!
+    if autoformat:
+        # Ylabel
+        _, title = _axis_labels_title(y)
+        s = sx if name in ('hist',) else sy
+        if title and not getattr(self, f'get_{s}label')():
+            # For histograms, this label is used for *x* coordinates
+            kw_format[s + 'label'] = title
+        if name not in ('hist',):
+            # Xlabel
+            _, title = _axis_labels_title(x)
+            if title and not getattr(self, f'get_{sx}label')():
+                kw_format[sx + 'label'] = title
+            # Reversed axis
+            if (
+                name not in ('scatter',)
+                and x_index is None
+                and len(x) > 1
+                and _to_ndarray(x)[1] < _to_ndarray(x)[0]
+            ):  # noqa: E501
+                kw_format[sx + 'reverse'] = True
+
+    # Appply
+    if kw_format:
+        self.format(**kw_format)
+
+    return x_index, kwargs
+
+
 @docstring.add_snippets
 def standardize_1d(self, func, *args, autoformat=None, **kwargs):
     """
@@ -546,7 +601,6 @@ def standardize_1d(self, func, *args, autoformat=None, **kwargs):
         raise ValueError(
             f'{name}() takes up to 4 positional arguments but {len(args)} was given.'
         )
-    vert = kwargs.get('vert', kwargs.get('orientation', 'vertical') == 'vertical')
 
     # Iterate through list of ys that we assume are identical
     # Standardize based on the first y input
@@ -573,72 +627,71 @@ def standardize_1d(self, func, *args, autoformat=None, **kwargs):
     # Auto formatting
     x_index = None  # index version of 'x'
     if not hasattr(self, 'projection'):
-        # First handle string-type x-coordinates
-        # NOTE: Why FixedLocator and not IndexLocator? The latter requires plotting
-        # lines or else error is raised... very strange.
-        # NOTE: Why IndexFormatter and not FixedFormatter? The former ensures labels
-        # correspond to indices while the latter can mysteriously truncate labels.
-        kw = {}
-        sx = 'x' if vert else 'y'
-        sy = 'y' if sx == 'x' else 'x'
-        if _is_string(x) and name in ('hist',):
-            kwargs.setdefault('labels', _to_ndarray(x))
-        elif _is_string(x):
-            x_index = np.arange(len(x))
-            kw[sx + 'locator'] = mticker.FixedLocator(x_index)
-            kw[sx + 'formatter'] = pticker._IndexFormatter(_to_ndarray(x))
-            kw[sx + 'minorlocator'] = mticker.NullLocator()
-            if name == 'boxplot':  # otherwise IndexFormatter is overridden
-                kwargs['labels'] = _to_ndarray(x)
-
-        # Next handle labels if 'autoformat' is on
-        # NOTE: Do not overwrite existing labels!
-        if autoformat:
-            # Ylabel
-            _, title = _axis_labels_title(y)
-            s = sx if name in ('hist',) else sy
-            if title and not getattr(self, f'get_{s}label')():
-                # For histograms, this label is used for *x* coordinates
-                kw[s + 'label'] = title
-            if name not in ('hist',):
-                # Xlabel
-                _, title = _axis_labels_title(x)
-                if title and not getattr(self, f'get_{sx}label')():
-                    kw[sx + 'label'] = title
-                # Reversed axis
-                if (
-                    name not in ('scatter',)
-                    and x_index is None
-                    and len(x) > 1
-                    and _to_ndarray(x)[1] < _to_ndarray(x)[0]
-                ):  # noqa: E501
-                    kw[sx + 'reverse'] = True
-
-        # Appply
-        if kw:
-            self.format(**kw)
-
-    # Standardize args
+        x_index, kwargs = _auto_format_1d(self, x, y, name=name, **kwargs)
     if x_index is not None:
         x = x_index
     if name in ('boxplot', 'violinplot'):
         ys = list(map(_to_ndarray, ys))  # store naked arrays
         kwargs['positions'] = x
 
-    # Basemap shift x coordinates without shifting y, we fix this!
+    # Ensure data is monotonic and falls within map bounds
     if getattr(self, 'name', '') == 'proplot_basemap' and kwargs.get('latlon', None):
-        ix, iys = x, []
         xmin, xmax = self.projection.lonmin, self.projection.lonmax
-        for y in ys:
-            # Ensure data is monotonic and falls within map bounds
-            ix, iy = _enforce_bounds(*_fix_latlon(x, y), xmin, xmax)
-            iys.append(iy)
-        x, ys = ix, iys
+        x_orig, ys_orig = x, ys
+        ys = []
+        for y in ys_orig:
+            x, y = _enforce_bounds(*_fix_latlon(x_orig, y), xmin, xmax)
+            ys.append(y)
 
     # WARNING: For some functions, e.g. boxplot and violinplot, we *require*
     # cycle_changer is also applied so it can strip 'x' input.
     with rc.context(autoformat=autoformat):
         return func(self, x, *ys, *args, **kwargs)
+
+
+def _auto_format_2d(self, x, y, autoformat=False):
+    """
+    Apply automatic formatting based on the coordinates. This includes converting
+    string coordinates to index arrays and applying coordinates as tick labels.
+    """
+    # First handle string-type x and y-coordinates
+    # NOTE: Why FixedLocator and not IndexLocator? The latter requires plotting
+    # lines or else error is raised... very strange.
+    # NOTE: Why IndexFormatter and not FixedFormatter? The former ensures labels
+    # correspond to indices while the latter can mysteriously truncate labels.
+    kw_format = {}
+    x_index = y_index = None
+    if _is_string(x):
+        x_index = np.arange(len(x))
+        kw_format['xlocator'] = mticker.FixedLocator(x_index)
+        kw_format['xformatter'] = pticker._IndexFormatter(_to_ndarray(x))
+        kw_format['xminorlocator'] = mticker.NullLocator()
+    if _is_string(y):
+        y_index = np.arange(len(y))
+        kw_format['ylocator'] = mticker.FixedLocator(y_index)
+        kw_format['yformatter'] = pticker._IndexFormatter(_to_ndarray(y))
+        kw_format['yminorlocator'] = mticker.NullLocator()
+
+    # Handle labels if 'autoformat' is on
+    # NOTE: Do not overwrite existing labels!
+    if autoformat:
+        for s, d in zip('xy', (x, y)):
+            # Axis label
+            _, label = _axis_labels_title(d)
+            if label and not getattr(self, f'get_{s}label')():
+                kw_format[s + 'label'] = label
+            # Reversed axis
+            if (
+                len(d) > 1
+                and all(isinstance(d, Number) for d in d[:2])
+                and _to_ndarray(d)[1] < _to_ndarray(d)[0]
+            ):
+                kw_format[s + 'reverse'] = True
+
+    # Apply formatting
+    if kw_format:
+        self.format(**kw_format)
+    return x_index, y_index
 
 
 def _enforce_bounds(x, y, xmin, xmax):
@@ -670,6 +723,68 @@ def _enforce_bounds(x, y, xmin, xmax):
     return x, y
 
 
+def _enforce_centers(x, y, Z):
+    """
+    Enforce that coordinates are centers. Convert from edges if possible.
+    """
+    xlen, ylen = x.shape[-1], y.shape[0]
+    # Get centers given edges
+    if Z.ndim == 2 and Z.shape[1] == xlen - 1 and Z.shape[0] == ylen - 1:
+        if all(z.ndim == 1 and z.size > 1 and _is_number(z) for z in (x, y)):
+            x = 0.5 * (x[1:] + x[:-1])
+            y = 0.5 * (y[1:] + y[:-1])
+        else:
+            if (
+                x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1
+                and _is_number(x)
+            ):
+                x = 0.25 * (x[:-1, :-1] + x[:-1, 1:] + x[1:, :-1] + x[1:, 1:])
+            if (
+                y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1
+                and _is_number(y)
+            ):
+                y = 0.25 * (y[:-1, :-1] + y[:-1, 1:] + y[1:, :-1] + y[1:, 1:])
+    # Test validity
+    elif Z.shape[-1] != xlen or Z.shape[0] != ylen:
+        raise ValueError(
+            f'Input shapes x {x.shape} and y {y.shape} '
+            f'must match Z centers {Z.shape} '
+            f'or Z borders {tuple(i+1 for i in Z.shape)}.'
+        )
+    return x, y
+
+
+def _enforce_edges(x, y, Z):
+    """
+    Enforce that coordinates are edges. Convert from centers if possible.
+    """
+    xlen, ylen = x.shape[-1], y.shape[0]
+    # Get edges given centers
+    if Z.ndim == 2 and Z.shape[1] == xlen and Z.shape[0] == ylen:
+        if all(z.ndim == 1 and z.size > 1 and _is_number(z) for z in (x, y)):
+            x = edges(x)
+            y = edges(y)
+        else:
+            if (
+                x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1
+                and _is_number(x)
+            ):
+                x = edges2d(x)
+            if (
+                y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1
+                and _is_number(y)
+            ):
+                y = edges2d(y)
+    # Test validity
+    elif Z.shape[-1] != xlen - 1 or Z.shape[0] != ylen - 1:
+        raise ValueError(
+            f'Input shapes x {x.shape} and y {y.shape} must match '
+            f'array centers {Z.shape} or '
+            f'array borders {tuple(i + 1 for i in Z.shape)}.'
+        )
+    return x, y
+
+
 def _fix_latlon(x, y):
     """
     Ensure longitudes are monotonic and make `~numpy.ndarray` copies so the
@@ -692,7 +807,7 @@ def _fix_latlon(x, y):
     return x, y
 
 
-def _interp_poles(y, Z):
+def _fix_poles(y, Z):
     """
     Add data points on the poles as the average of highest latitude data.
     """
@@ -711,6 +826,81 @@ def _interp_poles(y, Z):
     y = ma.concatenate((ps[:1], y, ps[1:]))
     Z = ma.concatenate((Z1, Z, Z2), axis=0)
     return y, Z
+
+
+def _fix_cartopy(x, y, *Zs, globe=False):
+    """
+    Fix cartopy geographic data arrays.
+    """
+    x, y = _fix_latlon(x, y)
+    x_orig, Zs_orig = x, Zs
+    Zs = []
+    for Z in Zs_orig:
+        if not globe or x.ndim > 1 or y.ndim > 1:
+            Zs.append(Z)
+            continue
+        # Fix holes over poles by *interpolating* there
+        y, Z = _fix_poles(y, Z)
+        # Fix seams by ensuring circular coverage. Unlike basemap,
+        # cartopy can plot across map edges.
+        if x_orig[0] % 360 != (x_orig[-1] + 360) % 360:
+            x = ma.concatenate((x_orig, [x_orig[0] + 360]))
+            Z = ma.concatenate((Z, Z[:, :1]), axis=1)
+        Zs.append(Z)
+
+    return x, y, *Zs
+
+
+def _fix_basemap(x, y, *Zs, globe=False, projection=None):
+    """
+    Fix basemap geographic data arrays.
+    """
+    xmin, xmax = projection.lonmin, projection.lonmax
+    x, y = _fix_latlon(x, y)
+    x_orig, Zs_orig = x, Zs
+    Zs = []
+    for Z in Zs_orig:
+        # Ensure data is within map bounds
+        x, Z = _enforce_bounds(x_orig, Z, xmin, xmax)
+        if not globe or x.ndim > 1 or y.ndim > 1:
+            Zs.append(Z)
+            continue
+
+        # Fix holes over poles by interpolating there (equivalent to
+        # simple mean of highest/lowest latitude points)
+        y, Z = _fix_poles(y, Z)
+
+        # Fix seams at map boundary; 3 scenarios here:
+        # Have edges (e.g. for pcolor), and they fit perfectly against
+        # basemap seams. Does not augment size.
+        if x[0] == xmin and x.size - 1 == Z.shape[1]:
+            pass  # do nothing
+        # Have edges (e.g. for pcolor), and the projection edge is
+        # in-between grid cell boundaries. Augments size by 1.
+        elif x.size - 1 == Z.shape[1]:  # just add grid cell
+            x = ma.append(xmin, x)
+            x[-1] = xmin + 360
+            Z = ma.concatenate((Z[:, -1:], Z), axis=1)
+        # Have centers (e.g. for contourf), and we need to interpolate
+        # to left/right edges of the map boundary. Augments size by 2.
+        elif x.size == Z.shape[1]:
+            xi = np.array([x[-1], x[0] + 360])  # x
+            if xi[0] != xi[1]:
+                Zq = ma.concatenate((Z[:, -1:], Z[:, :1]), axis=1)
+                xq = xmin + 360
+                Zq = (Zq[:, :1] * (xi[1] - xq) + Zq[:, 1:] * (xq - xi[0])) / (xi[1] - xi[0])  # noqa: E501
+                x = ma.concatenate(([xmin], x, [xmin + 360]))
+                Z = ma.concatenate((Zq, Z, Zq), axis=1)
+        else:
+            raise ValueError('Unexpected shapes of coordinates or data arrays.')
+        Zs.append(Z)
+
+    # Convert coordinates manually
+    if x.ndim == 1 and y.ndim == 1:
+        x, y = np.meshgrid(x, y)
+    x, y = projection(x, y)
+
+    return x, y, *Zs
 
 
 @docstring.add_snippets
@@ -837,169 +1027,33 @@ def standardize_2d(
 
     # Auto axis labels
     # TODO: Check whether isinstance(GeoAxes) instead of checking projection attribute
-    kw = {}
     x_index = y_index = None
     if not hasattr(self, 'projection'):
-        # First handle string-type x and y-coordinates
-        # NOTE: Why FixedLocator and not IndexLocator? The latter requires plotting
-        # lines or else error is raised... very strange.
-        # NOTE: Why IndexFormatter and not FixedFormatter? The former ensures labels
-        # correspond to indices while the latter can mysteriously truncate labels.
-        if _is_string(x):
-            x_index = np.arange(len(x))
-            kw['xlocator'] = mticker.FixedLocator(x_index)
-            kw['xformatter'] = pticker._IndexFormatter(_to_ndarray(x))
-            kw['xminorlocator'] = mticker.NullLocator()
-        if _is_string(y):
-            y_index = np.arange(len(y))
-            kw['ylocator'] = mticker.FixedLocator(y_index)
-            kw['yformatter'] = pticker._IndexFormatter(_to_ndarray(y))
-            kw['yminorlocator'] = mticker.NullLocator()
-
-        # Handle labels if 'autoformat' is on
-        # NOTE: Do not overwrite existing labels!
-        if autoformat:
-            for s, d in zip('xy', (x, y)):
-                # Axis label
-                _, label = _axis_labels_title(d)
-                if label and not getattr(self, f'get_{s}label')():
-                    kw[s + 'label'] = label
-                # Reversed axis
-                if (
-                    len(d) > 1
-                    and all(isinstance(d, Number) for d in d[:2])
-                    and _to_ndarray(d)[1] < _to_ndarray(d)[0]
-                ):
-                    kw[s + 'reverse'] = True
-    if kw:
-        self.format(**kw)
+        x_index, y_index = _auto_format_2d(self, x, y, autoformat=autoformat)
     if x_index is not None:  # input was array of strings so "coordinate data" is index
         x = x_index
     if y_index is not None:
         y = y_index
 
-    # Standardize data arrays
-    Z = Zs[0]
-    xlen, ylen = x.shape[-1], y.shape[0]
+    # Standardize coordinates
     if name in ('pcolor', 'pcolormesh', 'pcolorfast'):
-        # Get edges given centers
-        if Z.ndim == 2 and Z.shape[1] == xlen and Z.shape[0] == ylen:
-            if all(z.ndim == 1 and z.size > 1 and _is_number(z) for z in (x, y)):
-                x = edges(x)
-                y = edges(y)
-            else:
-                if (
-                    x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1
-                    and _is_number(x)
-                ):
-                    x = edges2d(x)
-                if (
-                    y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1
-                    and _is_number(y)
-                ):
-                    y = edges2d(y)
-        # Enforce edges
-        elif Z.shape[-1] != xlen - 1 or Z.shape[0] != ylen - 1:
-            raise ValueError(
-                f'Input shapes x {x.shape} and y {y.shape} must match '
-                f'array centers {Z.shape} or '
-                f'array borders {tuple(i + 1 for i in Z.shape)}.'
-            )
+        x, y = _enforce_edges(x, y, Zs[0])
     else:
-        # Get centers given edges
-        if Z.ndim == 2 and Z.shape[1] == xlen - 1 and Z.shape[0] == ylen - 1:
-            # Get centers given edges.
-            if all(z.ndim == 1 and z.size > 1 and _is_number(z) for z in (x, y)):
-                x = 0.5 * (x[1:] + x[:-1])
-                y = 0.5 * (y[1:] + y[:-1])
-            else:
-                if (
-                    x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1
-                    and _is_number(x)
-                ):
-                    x = 0.25 * (x[:-1, :-1] + x[:-1, 1:] + x[1:, :-1] + x[1:, 1:])
-                if (
-                    y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1
-                    and _is_number(y)
-                ):
-                    y = 0.25 * (y[:-1, :-1] + y[:-1, 1:] + y[1:, :-1] + y[1:, 1:])
-        # Enforce centers (possibly for 1D quiver or barbs data)
-        elif Z.shape[-1] != xlen or Z.shape[0] != ylen:
-            raise ValueError(
-                f'Input shapes x {x.shape} and y {y.shape} '
-                f'must match Z centers {Z.shape} '
-                f'or Z borders {tuple(i+1 for i in Z.shape)}.'
-            )
+        x, y = _enforce_centers(x, y, Zs[0])
 
     # Cartopy projection axes
     if (
         not allow_1d and getattr(self, 'name', '') == 'proplot_cartopy'
         and isinstance(kwargs.get('transform', None), PlateCarree)
     ):
-        x, y = _fix_latlon(x, y)
-        ix, iZs = x, []
-        for Z in Zs:
-            if globe and x.ndim == 1 and y.ndim == 1:
-                # Fix holes over poles by *interpolating* there
-                y, Z = _interp_poles(y, Z)
-
-                # Fix seams by ensuring circular coverage. Unlike basemap,
-                # cartopy can plot across map edges.
-                if x[0] % 360 != (x[-1] + 360) % 360:
-                    ix = ma.concatenate((x, [x[0] + 360]))
-                    Z = ma.concatenate((Z, Z[:, :1]), axis=1)
-            iZs.append(Z)
-        x, Zs = ix, iZs
+        x, y, *Zs = _fix_cartopy(x, y, *Zs, globe=globe)
 
     # Basemap projection axes
     elif (
         not allow_1d and getattr(self, 'name', '') == 'proplot_basemap'
         and kwargs.get('latlon', None)
     ):
-        # Fix grid
-        xmin, xmax = self.projection.lonmin, self.projection.lonmax
-        x, y = _fix_latlon(x, y)
-        ix, iZs = x, []
-        for Z in Zs:
-            # Ensure data is within map bounds
-            ix, Z = _enforce_bounds(x, Z, xmin, xmax)
-
-            # Globe coverage fixes
-            if globe and ix.ndim == 1 and y.ndim == 1:
-                # Fix holes over poles by interpolating there (equivalent to
-                # simple mean of highest/lowest latitude points)
-                y, Z = _interp_poles(y, Z)
-
-                # Fix seams at map boundary; 3 scenarios here:
-                # Have edges (e.g. for pcolor), and they fit perfectly against
-                # basemap seams. Does not augment size.
-                if ix[0] == xmin and ix.size - 1 == Z.shape[1]:
-                    pass  # do nothing
-                # Have edges (e.g. for pcolor), and the projection edge is
-                # in-between grid cell boundaries. Augments size by 1.
-                elif ix.size - 1 == Z.shape[1]:  # just add grid cell
-                    ix = ma.append(xmin, ix)
-                    ix[-1] = xmin + 360
-                    Z = ma.concatenate((Z[:, -1:], Z), axis=1)
-                # Have centers (e.g. for contourf), and we need to interpolate
-                # to left/right edges of the map boundary. Augments size by 2.
-                elif ix.size == Z.shape[1]:
-                    xi = np.array([ix[-1], ix[0] + 360])  # x
-                    if xi[0] != xi[1]:
-                        Zq = ma.concatenate((Z[:, -1:], Z[:, :1]), axis=1)
-                        xq = xmin + 360
-                        Zq = (Zq[:, :1] * (xi[1] - xq) + Zq[:, 1:] * (xq - xi[0])) / (xi[1] - xi[0])  # noqa: E501
-                        ix = ma.concatenate(([xmin], ix, [xmin + 360]))
-                        Z = ma.concatenate((Zq, Z, Zq), axis=1)
-                else:
-                    raise ValueError('Unexpected shapes of coordinates or data arrays.')
-            iZs.append(Z)
-        x, Zs = ix, iZs
-
-        # Convert to projection coordinates
-        if x.ndim == 1 and y.ndim == 1:
-            x, y = np.meshgrid(x, y)
-        x, y = self.projection(x, y)
+        x, y, *Zs = _fix_basemap(x, y, *Zs, globe=globe, projection=self.projection)
         kwargs['latlon'] = False
 
     # Finally return result
