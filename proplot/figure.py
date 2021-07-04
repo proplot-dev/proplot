@@ -918,6 +918,8 @@ class Figure(mfigure.Figure):
             aspect = curaspect / ax.get_data_ratio_log()
         else:
             return  # matplotlib should have issued warning
+        if np.isclose(aspect, subplots_kw['aspect']):
+            return
 
         # Apply new aspect
         subplots_kw['aspect'] = aspect
