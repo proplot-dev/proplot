@@ -2257,7 +2257,9 @@ def _update_text(self, props):
     bboxstyle = props.pop('bboxstyle', 'round')
     bboxalpha = props.pop('bboxalpha', 0.5)
     bboxpad = _not_none(props.pop('bboxpad', None), self.axes._title_pad / 10)
-    if bbox:
+    if isinstance(bbox, dict):  # *native* matplotlib usage
+        props['bbox'] = bbox
+    elif bbox:
         self.set_bbox({
             'edgecolor': 'black',
             'facecolor': bboxcolor,
