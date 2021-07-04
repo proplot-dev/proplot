@@ -96,13 +96,13 @@ def _canvas_preprocessor(canvas, method):
         # and displaying within inline notebook backend (previously worked around
         # this by forcing additional draw() call in this function before proceeding
         # with print_figure). Solution is to use _state_context with _cachedRenderer.
-        local = fig._mathtext_fallback
-        if local is None:
+        fallback = fig._mathtext_fallback
+        if fallback is None:
             context = {}
         elif _version_mpl >= _version('3.4'):
-            context = {'mathtext.fallback': local if isinstance(local, str) else 'cm' if local else None}  # noqa: E501
+            context = {'mathtext.fallback': fallback if isinstance(fallback, str) else 'cm' if fallback else None}  # noqa: E501
         else:
-            context = {'mathtext.fallback_to_cm': bool(local)}
+            context = {'mathtext.fallback_to_cm': bool(fallback)}
         rc_context = rc.context(context)
         fig_context = fig._context_preprocessing(cache=(method != 'print_figure'))
         with rc_context, fig_context:
