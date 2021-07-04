@@ -157,6 +157,8 @@ axs[2].format(
 #      <https://scitools.org.uk/cartopy/docs/latest/gallery/lines_and_polygons/always_circular_stereo.html>`__
 #      from the cartopy website). This is consistent with basemap's default behavior.
 #      To disable this feature, set :rcraw:`cartopy.circular` to ``False``.
+#      Please note that cartopy cannot add gridline labels to polar plots with
+#      circular boundaries.
 #    * By default, ProPlot uses `~cartopy.mpl.geoaxes.GeoAxes.set_global` to give
 #      non-polar cartopy projections global extent and bounds polar cartopy projections
 #      at the equator. This is a deviation from cartopy, which determines map boundaries
