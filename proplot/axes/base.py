@@ -450,8 +450,10 @@ class Axes(maxes.Axes):
         else:
             raise ValueError(f'Invalid mode {mode!r}.')
         loc_translate = {
-            key: value for key, value in LOC_TRANSLATE.items()
-            if value in options
+            key: value
+            for short, long in LOC_TRANSLATE.items()
+            for key, value in ((long, long), (short, long))
+            if long in options
         }
         if loc in (None, True):
             context = mode in ('abc', 'title')
@@ -459,16 +461,13 @@ class Axes(maxes.Axes):
             if loc is not None:
                 loc = self._loc_translate(loc, mode)
         elif isinstance(loc, (str, Integral)):
-            if loc in loc_translate.values():  # full name
-                pass
-            else:
-                try:
-                    loc = loc_translate[loc]
-                except KeyError:
-                    raise KeyError(
-                        f'Invalid {mode} location {loc!r}. Options are: '
-                        + ', '.join(map(repr, loc_translate)) + '.'
-                    )
+            try:
+                loc = loc_translate[loc]
+            except KeyError:
+                raise KeyError(
+                    f'Invalid {mode} location {loc!r}. Options are: '
+                    + ', '.join(map(repr, loc_translate)) + '.'
+                )
         elif (
             mode == 'legend'
             and np.iterable(loc)
