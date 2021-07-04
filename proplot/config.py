@@ -874,10 +874,12 @@ class RcConfigurator(object):
                 if REGEX_STRING.match(val):  # also do this for matplotlib settings
                     val = val[1:-1]  # remove quotes from string
                 if key in rc_proplot:
-                    if not val:
+                    if not val or val == 'None':
                         val = None  # older proplot versions supported this
-                    elif val in ('True', 'False', 'None'):
-                        val = eval(val)  # rare case where eval is o.k.
+                    elif val == 'True':
+                        val = True
+                    elif val == 'False':
+                        val = False
                     else:
                         try:
                             val = float(val) if '.' in val else int(val)
