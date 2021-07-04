@@ -3919,7 +3919,7 @@ def _multiple_legend(self, pairs, loc=None, ncol=None, order=None, **kwargs):
     if order == 'F':
         raise NotImplementedError(
             'When center=True, ProPlot vertically stacks successive '
-            'single-row legends. Column-major (order="F") ordering '
+            "single-row legends. Column-major (order='F') ordering "
             'is un-supported.'
         )
     loc = _not_none(loc, 'upper center')
@@ -4234,7 +4234,7 @@ property-spec, optional
         objs = _multiple_legend(self, pairs, loc=loc, ncol=ncol, order=order, **kwargs)
     # Individual legend
     else:
-        objs = [_single_legend(self, pairs, loc=loc, ncol=ncol, **kwargs)]
+        objs = [_single_legend(self, pairs, loc=loc, ncol=ncol, order=order, **kwargs)]
 
     # Add legends manually so matplotlib does not remove old ones
     for obj in objs:
