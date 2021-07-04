@@ -1392,6 +1392,8 @@ optional
         for loc, legend in self._legend_dict.items():
             if not isinstance(legend, tuple):
                 continue
+            elif any(isinstance(_, mlegend.Legend) for _ in legend):
+                continue
             handles, labels, kwargs = legend
             self.legend(handles, labels or None, loc=loc, **kwargs)
 
