@@ -3061,7 +3061,7 @@ def _fix_white_lines(obj):
             obj.set_edgecolor(edgecolor)
 
 
-def _labels_contour(obj, *args, fmt=None, **kwargs):
+def _labels_contour(self, obj, *args, fmt=None, **kwargs):
     """
     Add labels to contours with support for shade-dependent filled contour labels
     flexible keyword arguments. Requires original arguments passed to contour function.
@@ -3081,7 +3081,7 @@ def _labels_contour(obj, *args, fmt=None, **kwargs):
     # Draw hidden additional contour for filled contour labels
     colors = None
     if obj.filled:  # guard against changes?
-        obj = obj.axes.contour(*args, levels=obj.levels, linewidths=0)
+        obj = self.contour(*args, levels=obj.levels, linewidths=0)
         lums = [to_xyz(obj.cmap(obj.norm(level)), 'hcl')[2] for level in obj.levels]
         colors = ['w' if lum < 50 else 'k' for lum in lums]
     kwargs.setdefault('colors', colors)
@@ -3095,7 +3095,7 @@ def _labels_contour(obj, *args, fmt=None, **kwargs):
     return labs
 
 
-def _labels_pcolor(obj, fmt=None, **kwargs):
+def _labels_pcolor(self, obj, fmt=None, **kwargs):
     """
     Add labels to pcolor boxes with support for shade-dependent text colors.
     """
@@ -3132,7 +3132,7 @@ def _labels_pcolor(obj, fmt=None, **kwargs):
             else:
                 color = 'k'
             labels_kw['color'] = color
-        lab = obj.axes.text(x, y, fmt(num), **labels_kw)
+        lab = self.text(x, y, fmt(num), **labels_kw)
         labs.append(lab)
     obj.set_edgecolors(edgecolors)
 
@@ -3370,9 +3370,9 @@ def cmap_changer(
         fmt = _not_none(labels_kw.pop('fmt', None), fmt, 'simple')
         fmt = constructor.Formatter(fmt, precision=precision)
         if name in ('contour', 'contourf', 'tricontour', 'tricontourf'):
-            _labels_contour(obj, *args, fmt=fmt, **labels_kw)
+            _labels_contour(self, obj, *args, fmt=fmt, **labels_kw)
         elif name in ('pcolor', 'pcolormesh', 'pcolorfast'):
-            _labels_pcolor(obj, fmt=fmt, **labels_kw)
+            _labels_pcolor(self, obj, fmt=fmt, **labels_kw)
         else:
             raise RuntimeError(f'Not possible to add labels to {name!r} plot.')
 
