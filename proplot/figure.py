@@ -901,26 +901,23 @@ class Figure(mfigure.Figure):
         if not self._axes_main:
             return
         ax = self._axes_main[self._ref_num - 1]
-        curaspect = ax.get_aspect()
-        if isinstance(curaspect, str):
-            if curaspect == 'auto':
-                return
-            elif curaspect != 'equal':
-                raise RuntimeError(f'Unknown aspect ratio mode {curaspect!r}.')
+        curaspect = ax.get_aspect()  # the aspect ratio in *data units*
+        if curaspect == 'auto':
+            return
+        elif curaspect == 'equal':
+            curaspect = 1
+        elif isinstance(curaspect, str):
+            raise RuntimeError(f'Unknown aspect ratio mode {curaspect!r}.')
 
         # Compare to current aspect
         subplots_kw = self._subplots_kw
         xscale, yscale = ax.get_xscale(), ax.get_yscale()
-        if not isinstance(curaspect, str):
-            aspect = curaspect
-        elif xscale == 'linear' and yscale == 'linear':
-            aspect = 1.0 / ax.get_data_ratio()
+        if xscale == 'linear' and yscale == 'linear':
+            aspect = curaspect / ax.get_data_ratio()
         elif xscale == 'log' and yscale == 'log':
-            aspect = 1.0 / ax.get_data_ratio_log()
+            aspect = curaspect / ax.get_data_ratio_log()
         else:
             return  # matplotlib should have issued warning
-        if np.isclose(aspect, subplots_kw['aspect']):
-            return
 
         # Apply new aspect
         subplots_kw['aspect'] = aspect

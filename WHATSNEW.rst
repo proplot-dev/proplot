@@ -178,6 +178,9 @@ ProPlot v0.7.0 (2021-06-30)
   replacing with proplot-local copy (:pr:`251`).
 * Fix deprecation warning in matplotlib >= 3.3 -- add `extend` as mappable attribute
   rather than passing it to `colorbar()` (:commit:`a23e7043`).
+* Fix issue where fixed-aspect figures (e.g. from `imshow` and projections) don't scale
+  properly due to confusion of matplotlib's data-units ``aspect`` and proplot's
+  physical-units ``aspect`` (:issue:`210`, :issue:`235`).
 * Fix issue where "twin" ("alternate") axes content always hidden beneath "parent"
   content due to adding as children (:issue:`223`).
 * Fix issue where `barb` and `quiver` cannot accept 1D data arrays (:issue:`255`).
