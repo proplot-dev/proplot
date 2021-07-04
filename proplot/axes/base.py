@@ -828,21 +828,20 @@ optional
         # in redundant assignments if formatting more than one axes, but operations
         # are fast so some redundancy is nbd.
         # NOTE: Below kludge prevents changed *figure-wide* settings from getting
-        # overwritten when user makes a new axes.
+        # overwritten when user makes a new panels or insets. Funky limnitation but
+        # kind of makes sense if these are inaccessible from panels.
         fig = self.figure
+        ignore = self not in fig._axes_main
         suptitle = _not_none(figtitle=figtitle, suptitle=suptitle)
-        if len(fig._axes_main) > 1 and rc._context and rc._context[-1].mode == 1:
-            kw = {}
-        else:
-            kw = rc.fill(
-                {
-                    'fontsize': 'suptitle.size',
-                    'weight': 'suptitle.weight',
-                    'color': 'suptitle.color',
-                    'fontfamily': 'font.family'
-                },
-                context=True,
-            )
+        kw = {} if ignore else rc.fill(
+            {
+                'fontsize': 'suptitle.size',
+                'weight': 'suptitle.weight',
+                'color': 'suptitle.color',
+                'fontfamily': 'font.family'
+            },
+            context=True,
+        )
         if suptitle or kw:
             fig._update_super_title(suptitle, **kw)
 
@@ -855,7 +854,7 @@ optional
             ('left', 'right', 'top', 'bottom'),
             (llabels, rlabels, tlabels, blabels)
         ):
-            kw = rc.fill(
+            kw = {} if ignore else rc.fill(
                 {
                     'fontsize': side + 'label.size',
                     'weight': side + 'label.weight',
