@@ -145,7 +145,7 @@ axs[2].format(
 #
 # Together, these features let you work with geophysical data without invoking
 # verbose cartopy classes like `~cartopy.crs.LambertAzimuthalEqualArea` and
-# `~cartopy.feature.NaturalEarthFeature` or keep track of separate
+# `~cartopy.feature.NaturalEarthFeature` or keeping track of separate
 # `~mpl_toolkits.basemap.Basemap` instances. They considerably reduce the amount of
 # code needed to make geographic plots. In the below examples, we create a variety
 # of geographic plots using both cartopy and basemap as backends.
@@ -208,6 +208,7 @@ fig, axs = plot.subplots(
 axs.format(
     suptitle='Figure with several projections',
     toplabels=('Cartopy projections', 'Basemap projections'),
+    toplabelweight='normal',
     coast=True, latlines=20, lonlines=30,
     lonlabels='b', latlabels='r',  # or lonlabels=True, labels=True, etc.
 )
