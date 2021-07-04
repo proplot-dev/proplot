@@ -43,9 +43,9 @@ publication-quality graphics. This project is `published on GitHub
    :caption: Reference
 
    api
+   external-links
    whatsnew
    contributions
-   external-links
    authors
 
 

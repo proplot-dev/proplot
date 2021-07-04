@@ -18,9 +18,9 @@ Matplotlib is an extremely powerful plotting package used
 by academics, engineers, and data scientists far and wide. However,
 matplotlib can be cumbersome or repetitive for users who...
 
-* ...make very complex figures with multiple subplots.
-* ...want to finely tune their figure annotations and aesthetics.
-* ...need to make new figures nearly every day.
+* Make very complex figures with multiple subplots.
+* Want to finely tune their figure annotations and aesthetics.
+* Need to make new figures nearly every day.
 
 ProPlot's core mission is to provide a smoother plotting experience
 for matplotlib's heaviest users. We accomplish this by *expanding upon*
@@ -74,7 +74,6 @@ day-to-day matplotlib usage.
 ProPlot introduces the `~proplot.axes.Axes.format` method to resolve this.
 Think of this as an expanded and thoroughly documented version of the
 `matplotlib.artist.Artist.update` method.
-
 `~proplot.axes.Axes.format` can modify things like axis labels and titles and
 update existing axes with new :ref:`"rc" settings <why_rc>`. It also integrates
 with ProPlot's :ref:`constructor functions <why_constructor>` to help keep things
@@ -82,7 +81,7 @@ succinct. Further, :ref:`subplot containers <why_container>` can be used to
 invoke `~proplot.axes.Axes.format` on several subplots at once.
 
 Together, these features significantly reduce the amount of code needed to create
-highly customized figures. As an example, it is trivial to see that
+highly customized figures. As an example, it is trivial to see that...
 
 .. code-block:: python
 
@@ -91,7 +90,7 @@ highly customized figures. As an example, it is trivial to see that
    axs.format(linewidth=1, color='gray')
    axs.format(xlim=(0, 100), xticks=10, xtickminor=True, xlabel='foo', ylabel='bar')
 
-...is much more succinct than
+is much more succinct than
 
 .. code-block:: python
 
@@ -118,9 +117,8 @@ Class constructor functions
 Matplotlib and cartopy define several classes with verbose names like
 `~matplotlib.ticker.MultipleLocator`, `~matplotlib.ticker.FormatStrFormatter`,
 and `~cartopy.crs.LambertAzimuthalEqualArea`. They also keep them out of
-the top-level package namespace. Under other circumstances this would be fine --
-but since plotting code has a half life of about 30 seconds, typing out these
-extra class names and import statements can be a drag.
+the top-level package namespace. Since plotting code has a half life of about 30
+seconds, typing out these extra class names and import statements can be a major drag.
 
 Parts of matplotlib's interface were actually designed with this in mind.
 `Backend classes <https://matplotlib.org/faq/usage_faq.html#what-is-a-backend>`__,
@@ -140,15 +138,15 @@ and property cyclers are all "registered". ProPlot does this by defining *constr
 functions* and passing various keyword arguments through these functions. This may seem
 "unpythonic" but it is absolutely invaluable for writing plotting code.
 
-The constructor functions also accept intuitive inputs for your convenience. For
-example, scalar numbers passed to `~proplot.constructor.Locator` returns a
-`~matplotlib.ticker.MultipleLocator` instance, lists of strings passed to
-`~proplot.constructor.Formatter` returns a `~matplotlib.ticker.FixedFormatter` instance,
-and `~proplot.constructor.Colormap` and `~proplot.constructor.Cycle` accept colormap
-names, individual colors, and lists of colors. Passing the relevant class instance to a
-constructor function simply returns the instance.
+The constructor functions also accept flexible inputs. For example, a scalar passed
+to `~proplot.constructor.Locator` returns a `~matplotlib.ticker.MultipleLocator`, a
+lists of strings passed to `~proplot.constructor.Formatter` returns a
+`~matplotlib.ticker.FixedFormatter`, and `~proplot.constructor.Colormap`
+and `~proplot.constructor.Cycle` accept colormap names, individual colors, and lists
+of colors. Passing the relevant class instance to a constructor function simply
+returns the instance.
 
-See the user guide sections on :ref:`Cartesian axis settings <ug_cartesian>`,
+See the user guide sections on :ref:`Cartesian plots <ug_cartesian>`,
 :ref:`colormaps <ug_cmaps>`, and :ref:`color cycles <ug_cycles>` for details. The below
 table lists the constructor functions and the keyword arguments that use them.
 
@@ -179,12 +177,12 @@ Matplotlib plots tend to require lots of "tweaking" when you have more than one 
 in the figure. This is partly because you must specify the physical dimensions of the
 figure, despite the fact that...
 
-#. ...the *subplot* aspect ratio is generally more relevant than the figure
+#. The *subplot* aspect ratio is generally more relevant than the figure
    aspect ratio. An aspect ratio of ``1`` is desirable for most plots, and
    the aspect ratio must be held fixed for
    :ref:`geographic and polar <ug_proj>` projections and most
    `~matplotlib.axes.Axes.imshow` plots.
-#. ...the physical width and height of the *subplot* controls the "evident"
+#. The physical width and height of the *subplot* controls the "evident"
    thickness of text, lines, and other content plotted inside the subplot.
    The effect of the figure size on this "evident" thickness depends on the
    number of subplot tiles in the figure.
@@ -205,25 +203,26 @@ for the reference subplot is set to ``'equal'``, as with
 :ref:`geographic and polar <ug_proj>` plots and `~matplotlib.axes.Axes.imshow` plots,
 the *imposed* aspect ratio will be used instead.
 
-The width or height of the *figure* can also be constrained separately with
+The width or height of the *figure* can also be constrained independently with
 the `width` and `height` parameters. If only one is specified, the other will be
-adjusted to preserve subplot aspect ratios. The `journal` parameter lets you
-create figures with suitable widths or heights for submission to
-:ref:`various publications <journal_table>`.
+adjusted to preserve subplot aspect ratios. You can select a `width` and/or `height`
+suitable for submission to :ref:`various publications <journal_table>` using
+the `journal` parameter.
 
 ProPlot also uses its own "tight layout" algorithm to automatically
 determine the `left`, `right`, `bottom`, `top`, `wspace`, and `hspace`
 `~matplotlib.gridspec.GridSpec` parameters. This algorithm has
 the following advantages:
 
-* Spacing between rows and columns is *variable* thanks to the new
-  `~proplot.gridspec.GridSpec` class. This is critical for putting
-  :ref:`colorbars and legends <ug_cbars_legends>` outside of subplots
+* Spacing between rows and columns is now *variable* thanks to the
+  `~proplot.gridspec.GridSpec` subclass. This is critical for putting
+  :ref:`colorbars and legends <ug_cbars_legends>` or
+  :ref:`axes panels <ug_insets_panels>` outside of subplots
   without "stealing space" from the parent subplot.
-* The "tight layout" is calculated quickly and simply because figures are
-  restricted to have only *one* `~proplot.gridspec.GridSpec` per
-  figure. This is done by requiring users to draw all of their subplots at
-  once with `~proplot.ui.subplots` (although in a :pr:`future version <50>`,
+* The "tight layout" algorithm is fairly simple because figures are
+  restricted to have just *one* `~proplot.gridspec.GridSpec`. This is done
+  by requiring users to draw all of their subplots at once with
+  `~proplot.ui.subplots` (although in a :pr:`future version <50>`,
   there will be a ``proplot.figure`` function that allows users to add
   subplots one-by-one while retaining the single-gridspec restriction).
 
@@ -252,8 +251,8 @@ See the :ref:`user guide <ug_subplots>` for details.
 
 .. _why_redundant:
 
-Eliminating redundancies
-========================
+Removing redundancies
+=====================
 
 .. rubric:: Problem
 
@@ -262,22 +261,22 @@ multiple subplots to compare different datasets and communicate complex
 ideas. Unfortunately, it is easy to end up with *redundant* figure
 elements when drawing multiple subplots, namely...
 
-* ...repeated axis tick labels.
-* ...repeated axis labels.
-* ...repeated colorbars.
-* ...repeated legends.
+* Repeated axis tick labels.
+* Repeated axis labels.
+* Repeated colorbars.
+* Repeated legends.
 
 These sorts of redundancies are very common even in publications, where they waste
 valuable page space. They arise because this is often the path of least resistance.
 
 .. rubric:: Solution
 
-ProPlot seeks to eliminate redundant elements to help you make clear, concise
-figures.  We tackle this issue using :ref:`shared and spanning axis labels
+ProPlot makes it easier to eliminate redundant elements and help you make clear,
+concise figures. We tackle this issue using :ref:`shared and spanning axis labels
 <ug_share>` and :ref:`figure-spanning colorbars and legends
 <ug_cbars_figure>`.
 
-* Axis tick labels and axis labels are *shared* between subplots in the
+* Axis tick labels and axis labels are shared between subplots in the
   same row or column by default. This is controlled by the `sharex`, `sharey`,
   `spanx`, and `spany` `~proplot.ui.subplots` keyword args.
 * The new `~proplot.figure.Figure` `~proplot.figure.Figure.colorbar` and
@@ -295,8 +294,7 @@ Outer colorbars and legends
 
 In matplotlib, it can be difficult to draw `~matplotlib.figure.Figure.legend`\ s
 along the outside of subplots. Generally, you need to position the legend
-manually and adjust the `~matplotlib.gridspec.GridSpec` spacing
-properties to make *room* for the legend.
+manually and tweak the spacing to make *room* for the legend.
 
 Also, while matplotlib can draw colorbars along the outside of subplots with
 ``fig.colorbar(..., ax=ax)``, the space allocated for the colorbar is "stolen"
@@ -639,7 +637,7 @@ can be useful "rulers" for figuring out the amount of space needed.
 `~proplot.utils.units` is also used to convert settings passed to
 `~proplot.config.rc` from arbitrary physical units to *points* -- for
 example :rcraw:`ticklen`, :rcraw:`title.size`, and
-:rcraw:`title.pad`.  See the :ref:`user guide <ug_units>` for
+:rcraw:`title.pad`.  See the :ref:`user guide <ug_units>` for details.
 
 .. _why_rc:
 

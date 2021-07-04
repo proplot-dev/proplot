@@ -178,9 +178,8 @@ ProPlot v0.7.0 (2021-06-30)
   replacing with proplot-local copy (:pr:`251`).
 * Fix deprecation warning in matplotlib >= 3.3 -- add `extend` as mappable attribute
   rather than passing it to `colorbar()` (:commit:`a23e7043`).
-* Fix issue where fixed-aspect figures (e.g. from `imshow` and projections) don't scale
-  properly due to confusion of matplotlib's data-units ``aspect`` and proplot's
-  physical-units ``aspect`` (:issue:`210`, :issue:`235`).
+* Fix issue where figures with fixed-aspect axes don't scale properly
+  in matplotlib >= 3.3 (:issue:`210`, :issue:`235`).
 * Fix issue where "twin" ("alternate") axes content always hidden beneath "parent"
   content due to adding as children (:issue:`223`).
 * Fix issue where `barb` and `quiver` cannot accept 1D data arrays (:issue:`255`).
@@ -237,10 +236,10 @@ ProPlot v0.7.0 (2021-06-30)
 
 .. rubric:: Internals
 
-* Significantly refactor `colorbar` and `legend` code to make more manageable and
-  expand the "queueing" feature beyond wrappers (:pr:`254`).
-* Refactor `standardize_(1d|2d)` and `(cmap|cycle)_changer` wrappers to make them
-  more manageable by breaking up into chunks (:commit:`6af22567`, :commit:`d3352720`).
+* Refactor `colorbar` and `legend` methods and their massive wrappers to clean
+  things up and expand the "queueing" feature beyond wrappers (:pr:`254`).
+* Refactor massive `standardize_(1d|2d)` and `(cmap|cycle)_changer` wrappers to break
+  things into manageable chunks (:commit:`6af22567`, :commit:`d3352720`).
 * Add prefix ``'proplot_'`` to registered axes "projections" (:commit:`be7ef21e`). More
   clear and guards against conflicts with external packages and other mpl versions.
 

@@ -219,7 +219,7 @@ axs.format(abc=True, xlabel='xlabel', ylabel='ylabel', suptitle='Quick plotting 
 # ``ax.set_title()`` and ``ax.set_xlabel()``. They are also integrated with
 # the `~proplot.constructor.Locator`, `~proplot.constructor.Formatter`,
 # and `~proplot.constructor.Scale` :ref:`constructor functions <why_constructor>`
-# (see :ref:`this section <ug_cartesian>` for details).
+# (see :ref:`this section <ug_cartesian>`).
 #
 # The below example shows the many different keyword arguments accepted by
 # ``format``, and demonstrates how ``format`` can be used to succinctly and
@@ -263,10 +263,11 @@ axs.format(
 # 2D indexing (e.g., ``axs[0, 1]``), and is row-major by default. Slicing a
 # `~proplot.ui.SubplotsContainer` returns another container (e.g., ``axs[:, 0]``).
 #
-# `~proplot.ui.SubplotsContainer` also lets you call `~proplot.axes.Axes` methods
-# simultaneously for all subplots in the container. In the below example, we use the
-# `~proplot.ui.SubplotsContainer` returned by `~proplot.ui.subplots` with the
-# `proplot.axes.Axes.format` command to format several subplots at once.
+# `~proplot.ui.SubplotsContainer` is mainly useful because it lets you call
+# `~proplot.axes.Axes` methods simultaneously for all subplots in the container. In the
+# below example, we use the `~proplot.ui.SubplotsContainer` returned by
+# `~proplot.ui.subplots` with the `proplot.axes.Axes.format` command to format several
+# subplots at once.
 
 # %%
 import proplot as plot
@@ -304,7 +305,7 @@ for ax in axs[1:, 1:]:
 # See the :ref:`configuration section <ug_config>` for details.
 #
 # To modify a setting for just one subplot, you can pass it to the
-# `~proplot.axes.Axes` `~proplot.axes.Axes.format` method. To temporarily
+# `proplot.axes.Axes.format` method. To temporarily
 # modify setting(s) for a block of code, use
 # `~proplot.config.RcConfigurator.context`. To modify setting(s) for the
 # entire python session, just assign it to the `~proplot.config.rc` object or

@@ -77,9 +77,9 @@
 #
 # .. note::
 #
-#    Try to avoid ``.ttf`` files with ``Thin`` in the file name. Matplotlib
-#    interprets fonts with the "thin" style having *normal* weight (see
-#    `this matplotlib issue <https://github.com/matplotlib/matplotlib/issues/8788>`__),
+#    Try to avoid ``.ttf`` files with ``Thin`` in the file name. Some versions of
+#    matplotlib interpret fonts with the "thin" style as having *normal* weight (see
+#    `this issue page <https://github.com/matplotlib/matplotlib/issues/8788>`__),
 #    causing them to override the correct normal weight versions. While ProPlot
 #    tries to filter out these files, this cannot be done systematically. In the
 #    below example, the "Roboto" font may be overridden by its "thin" version

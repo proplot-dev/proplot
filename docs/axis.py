@@ -430,7 +430,6 @@ plot.rc.reset()
 fig, axs = plot.subplots(nrows=2, ncols=3, axwidth=1.7, share=0, order='F')
 axs.format(
     toplabels=('Power scales', 'Exponential scales', 'Cartographic scales'),
-    suptitle='Additional axis scales demo'
 )
 x = np.linspace(0, 1, 50)
 y = 10 * x
