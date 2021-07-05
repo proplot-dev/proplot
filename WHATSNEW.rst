@@ -95,17 +95,22 @@ ProPlot v0.7.0 (2021-06-30)
   split up the ``RedPurple`` maps into ``Reds`` and ``Purples``; and add
   the ``Yellows`` category from the ``Oranges`` maps (:commit:`8be0473f`). Requesting
   the old names (case-sensitive) redirects to the new names (:commit:`3f0794d0`).
-* Use proplot TeX Gyre fonts with `~proplot.config.use_style` styles unless specified
-  otherwise (:commit:`6d7444fe`). Styles otherwise build on matplotlib defaults.
+* Reduce default :rcraw:`savefig.dpi` to 1000 (:commit:`bfda9c98`). Nature recommends
+  1000, Science recommends "more than 300", PNAS recommends 1000--1200. So 1000 is fine.
+* Increase default :rcraw:`colorbar.insetpad` to avoid recurring issue where ticklabels
+  run close to the background patch (:commit:`f5435976`)
 * Rename `abovetop` keyword for moving title/abc labels above top panels, colorbars,
   and legends to :rcraw:`title.above` (:commit:`9ceacb7b`). Example usage:
   ``ax.format(title='Title', titleabove=True)``.
 * Rename seldom-used `Figure` argument `fallback_to_cm` to more understandable
   `mathtext_fallback` (:pr:`251`).
-* Reduce matplotlib conflicts by replacing legends drawn in the same location
-  rather than drawing two legends (:pr:`254`).
-* Until centered-row legends become a class, stop returning the ad hoc background patch,
-  consistent with inaccessible background patches for inset colorbars (:pr:`254`).
+* Use proplot TeX Gyre fonts with `~proplot.config.use_style` styles unless specified
+  otherwise (:commit:`6d7444fe`). Styles otherwise build on matplotlib defaults.
+* `legend_wrapper` no longer returns the background patch generated for centered-row
+  legends (:pr:`254`). This is consistent with `colorbar_wrapper` not returning
+  background patches generated for inset colorbars. Until proplot adds new subclasses,
+  it makes more sense if these functions only return `~matplotlib.legend.Legend` and
+  `~matplotlib.colorbar.Colorbar` instances.
 
 .. rubric:: Features
 
@@ -145,6 +150,8 @@ ProPlot v0.7.0 (2021-06-30)
   more consistent with rest of package.
 * Allow specifying labels for auto-generated legends using a ``'labels'`` key
   in a `legend_kw` keyword argument (:commit:`a11d1813`).
+* Replace legends drawn in the same location by default rather than drawing two
+  legends on top of each other (:pr:`254`).
 * Set default transform to ``ccrs.PlateCarree`` when calling `matplotlib.axes.Axes.fill`
   on `CartopyAxes` (:issue:`193`). This is more consistent with rest of package.
 * Use `Artist` labels for the default list-of-artist colorbar tick labels if `values`
