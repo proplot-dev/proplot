@@ -206,7 +206,7 @@ _rc_matplotlib_default = {
     'patch.linewidth': LINEWIDTH,
     'savefig.bbox': None,  # use custom tight layout
     'savefig.directory': '',  # current directory
-    'savefig.dpi': 1200,  # academic journal recommendations for raster line art
+    'savefig.dpi': 1000,  # academic journal recommendations for raster line art
     'savefig.facecolor': 'white',  # different from figure.facecolor
     'savefig.format': 'pdf',  # most users use bitmap, but vector graphics are better
     'savefig.transparent': False,
