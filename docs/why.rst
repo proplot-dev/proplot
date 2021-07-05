@@ -271,15 +271,15 @@ See the :ref:`user guide <ug_subplots>` for details.
 
 .. _why_redundant:
 
-Removing redundancies
-=====================
+Working with multiple subplots
+==============================
 
 .. rubric:: Limitation
 
-For many of us, figures with one subplot are a rarity. We usually need
-multiple subplots to compare different datasets and communicate complex
-ideas. Unfortunately, it is easy to end up with *redundant* figure
-elements when drawing multiple subplots, namely...
+For many matplotlib users, figures with one subplot are a rarity. These users
+need multiple subplots to communicate complex ideas. Unfortunately, the path of
+least resistance often leads to *redundant* figure elements when drawing
+multiple subplots, namely...
 
 * Repeated axis tick labels.
 * Repeated axis labels.
@@ -287,23 +287,26 @@ elements when drawing multiple subplots, namely...
 * Repeated legends.
 
 These sorts of redundancies are very common even in publications, where they waste
-valuable page space. They arise because this is often the path of least resistance
-in matplotlib.
+valuable page space. It is also generally necessary to add "a-b-c" labels to
+figures with multiple subplots before submitting them to publications, but
+matplotlib has no built-in way of doing this.
 
 .. rubric:: Solution
 
-ProPlot makes it easier to eliminate redundant elements and help you make clear,
-concise figures. We tackle this issue using :ref:`shared and spanning axis labels
-<ug_share>` and :ref:`figure-spanning colorbars and legends
-<ug_cbars_figure>`.
+ProPlot makes it easier to work with multiple subplots and create clear, concise
+figures.
 
-* Axis tick labels and axis labels are shared between subplots in the
-  same row or column by default. This is controlled by the `sharex`, `sharey`,
+* Axis tick labels and axis labels are :ref:`shared between subplots <ug_share>`
+  in the same row or column by default. This is controlled by the `sharex`, `sharey`,
   `spanx`, and `spany` `~proplot.ui.subplots` keyword args.
-* The new `~proplot.figure.Figure` `~proplot.figure.Figure.colorbar` and
-  `~proplot.figure.Figure.legend` methods make it easy to draw colorbars and
-  legends intended to reference more than one subplot. For details, see the
-  next section.
+* The new `proplot.figure.Figure.colorbar` and `proplot.figure.Figure.legend` methods
+  can be used to draw colorbars and legends intended to reference more than one
+  subplot in arbitrary contiguous rows and columns. See the
+  :ref:`next section <why_colorbars_legends>` for details.
+* :ref:`A-b-c labels <ug_abc>` can be easily added to subplots using the :rcraw:`abc`
+  and :rcraw:`abc.style` settings -- for example, using
+  ``axs.format(abc=True, abcstyle='A.')``. This is possible because
+  `~proplot.ui.subplots` assigns a unique `~proplot.axes.Axes.number` to every axes.
 
 
 .. _why_colorbars_legends:
@@ -560,8 +563,8 @@ See the :ref:`user guide <ug_proj>` for details.
 
 .. _why_aesthetics:
 
-Aesthetically pleasing colors and fonts
-=======================================
+Aesthetic colors and fonts
+==========================
 
 .. rubric:: Limitation
 

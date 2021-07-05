@@ -625,7 +625,7 @@ def units(value, dest='in', axes=None, figure=None, width=True):
 
     # Convert units for each value in list
     result = []
-    singleton = (not np.iterable(value) or isinstance(value, str))
+    singleton = not np.iterable(value) or isinstance(value, str)
     for val in ((value,) if singleton else value):
         if val is None or isinstance(val, Number):
             result.append(val)
