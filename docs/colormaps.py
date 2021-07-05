@@ -14,6 +14,18 @@
 # ---
 
 # %% [raw] raw_mimetype="text/restructuredtext"
+# .. _cmocean: https://matplotlib.org/cmocean/
+#
+# .. _fabio: http://www.fabiocrameri.ch/colourmaps.php
+#
+# .. _brewer: http://colorbrewer2.org/
+#
+# .. _sciviscolor: https://sciviscolor.org/home/colormoves/
+#
+# .. _matplotlib: https://matplotlib.org/stable/tutorials/colors/colormaps.html
+#
+# .. _seaborn: https://seaborn.pydata.org/tutorial/color_palettes.html
+#
 # .. _ug_cmaps:
 #
 # Colormaps
@@ -47,18 +59,16 @@
 #
 # * "User" colormaps, i.e. colormaps saved to your ``~/.proplot/cmaps`` folder.
 #   You :ref:`make new colormaps <ug_cmaps_new>` and add them to this folder using the
-#   `~proplot.constructor.Colormaps` :ref:`constructor function <why_constructor>`.
-# * Matplotlib and seaborn original colormaps.
+#   `~proplot.constructor.Colormap` :ref:`constructor function <why_constructor>`.
+# * `Matplotlib <matplotlib_>`_ and `seaborn <seaborn_>`_ original colormaps.
 # * ProPlot original :ref:`perceptually uniform colormaps <ug_perceptual>`.
-# * `cmOcean <https://matplotlib.org/cmocean/>`__ colormaps designed for
+# * The `cmOcean <cmocean_>`_ colormaps, designed for
 #   oceanographic data but useful for everyone.
-# * Fabio Crameri's
-#   `"scientific colour maps" <http://www.fabiocrameri.ch/colourmaps.php>`__.
-# * Cynthia Brewer's `ColorBrewer <http://colorbrewer2.org/>`__ colormaps, included
-#   with matplotlib by default.
-# * Colormaps from the `SciVisColor <https://sciviscolor.org/home/colormoves/>`__
-#   online interactive tool. There are so many of these colormaps because they
-#   are intended to be *merged* into more complex colormaps.
+# * Fabio Crameri's `"scientific colour maps" <fabio_>`_.
+# * Cynthia Brewer's `ColorBrewer <brewer_>`_ colormaps,
+#   included with matplotlib by default.
+# * Colormaps from the `SciVisColor <sciviscolor_>`_ project. There are so many of
+#   these because they are intended to be merged into more complex colormaps.
 #
 # ProPlot removes some default matplotlib colormaps with erratic color
 # transitions.

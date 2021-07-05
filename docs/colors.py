@@ -32,11 +32,11 @@
 # <https://blog.xkcd.com/2010/05/03/color-survey-results/>`__  and
 # the `Open Color <https://github.com/yeun/open-color>`__ UI design color
 # palettes. You can use `~proplot.demos.show_colors` to generate a table of these
-# colors. Note that matplotlib's native `X11 named colors
+# colors. Note that matplotlib's native `X11/CSS4 named colors
 # <https://matplotlib.org/examples/color/named_colors.html>`__ are still
-# registered, but some of the X11 color names may be overwritten by the XKCD names,
+# registered, but some of these color names may be overwritten by the XKCD names,
 # and we encourage choosing colors from the below tables instead. ProPlot
-# registers XKCD colors because the selection is larger and the names are
+# registers the XKCD names because the selection is larger and the names are
 # more likely to match your intuition for what a color "should" look like.
 #
 # To reduce the number of registered color names to a more manageable size,

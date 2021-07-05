@@ -258,18 +258,28 @@ axs.format(
 # Subplot containers
 # ------------------
 #
-# Instead of an `~numpy.ndarray` of subplots, `~proplot.ui.subplots` returns a
-# `~proplot.ui.SubplotsContainer`. This container behaves like an
-# `~matplotlib.axes.Axes` object when it contains just one axes, and behaves
-# like a list otherwise. It supports both 1D indexing (e.g., ``axs[1]``) and
-# 2D indexing (e.g., ``axs[0, 1]``), and is row-major by default. Slicing a
-# `~proplot.ui.SubplotsContainer` returns another container (e.g., ``axs[:, 0]``).
+# `matplotlib.pyplot.subplots` returns a 2D `~numpy.ndarray` for figures with more
+# than one column and row, a 1D `~numpy.ndarray` for single-row or column figures,
+# or a lone `~matplotlib.axes.Axes` instance for single-subplot figures. By contrast,
+# `proplot.ui.subplots` returns a `~proplot.ui.SubplotsContainer` that
+# unifies these three possible return values:
 #
-# `~proplot.ui.SubplotsContainer` is mainly useful because it lets you call
-# `~proplot.axes.Axes` methods simultaneously for all subplots in the container. In the
-# below example, we use the `~proplot.ui.SubplotsContainer` returned by
-# `~proplot.ui.subplots` with the `proplot.axes.Axes.format` command to format several
-# subplots at once.
+# * `~proplot.ui.SubplotsContainer` permits 2D indexing, e.g. ``axs[1, 0]``.
+#   Since `~proplot.ui.subplots` can generate figures with arbitrarily complex
+#   subplot geometry, this 2D indexing is useful only when the arrangement
+#   happens to be a clean 2D matrix.
+# * `~proplot.ui.SubplotsContainer` permits 1D indexing, e.g. ``axs[0]``.
+#   The default order can be switched from row-major to column-major by passing
+#   ``order='F'`` to `~proplot.ui.subplots`.
+# * When it is singleton, `~proplot.ui.SubplotsContainer` behaves like a
+#   scalar. So when you make a single axes with ``fig, axs = plot.subplots()``,
+#   ``axs[0].method(...)`` is equivalent to ``axs.method(...)``.
+#
+# `~proplot.ui.SubplotsContainer` is especially useful because it lets you call
+# `~proplot.axes.Axes` methods simultaneously for all subplots in the container.
+# In the below example, we use the `~proplot.ui.SubplotsContainer` returned by
+# `~proplot.ui.subplots` with the `proplot.axes.Axes.format` command to format
+# several subplots at once.
 
 # %%
 import proplot as plot
