@@ -24,8 +24,7 @@ mproj.register_projection(CartesianAxes)
 mproj.register_projection(PolarAxes)
 mproj.register_projection(BasemapAxes)
 mproj.register_projection(CartopyAxes)
-if Axes3D is not None:
-    mproj.register_projection(Axes3D)
+mproj.register_projection(Axes3D)
 
 # Prevent importing module names and set order of appearance for objects
 __all__ = [

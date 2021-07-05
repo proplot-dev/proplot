@@ -63,15 +63,13 @@ def _circular_boundary(N=100):
 
 class _GeoAxis(object):
     """
-    Dummy axis used by longitude and latitude locators and for storing
-    view limits on longitude and latitude coordinates.
+    Dummy axis used by longitude and latitude locators and for storing view limits on
+    longitude and latitude coordinates. Modeled after how `matplotlib.ticker._DummyAxis`
+    and `matplotlib.ticker.TickHelper` are used to control tick locations and labels.
     """
     # NOTE: Due to cartopy bug (https://github.com/SciTools/cartopy/issues/1564)
     # we store presistent longitude and latitude locators on axes, then *call*
     # them whenever set_extent is called and apply *fixed* locators.
-    # NOTE: This is modeled after _DummyAxis in matplotlib/ticker.py, but we just
-    # needs a couple methods used by simple, linear locators like `MaxNLocator`,
-    # `MultipleLocator`, and `AutoMinorLocator`.
     def __init__(self, axes):
         self.axes = axes
         self.major = maxis.Ticker()
@@ -746,7 +744,7 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
         # GeoAxes initialization. Note that critical attributes like
         # outline_patch needed by _format_apply are added before it is called.
         # NOTE: Initial extent is configured in _update_extent
-        import cartopy  # noqa: F401
+        import cartopy  # noqa: F401 verify package is available
         if not isinstance(map_projection, ccrs.Projection):
             raise ValueError('GeoAxes requires map_projection=cartopy.crs.Projection.')
         latmax = 90
@@ -1271,11 +1269,11 @@ class BasemapAxes(GeoAxes):
         proplot.constructor.Proj
         """
         # First assign projection and set axis bounds for locators
-        # NOTE: Basemaps cannot noramally be reused so we make copy.
+        # NOTE: Basemaps cannot normally be reused so we make copy.
         # WARNING: Investigated whether Basemap.__init__() could be called
         # twice with updated proj kwargs to modify map bounds after creation
         # and python immmediately crashes. Do not try again.
-        import mpl_toolkits.basemap  # noqa: F401 verify available
+        import mpl_toolkits.basemap  # noqa: F401 verify package is available
         if not isinstance(map_projection, mbasemap.Basemap):
             raise ValueError(
                 'BasemapAxes requires map_projection=basemap.Basemap'
