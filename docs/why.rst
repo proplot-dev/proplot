@@ -24,7 +24,7 @@
 
 .. _matplotlib: https://matplotlib.org/stable/tutorials/colors/colormaps.html
 
-.. _seaborn: https://seaborn.pydata.org/tutorial/color_palettes.html
+.. _seacolor: https://seaborn.pydata.org/tutorial/color_palettes.html
 
 .. _texgyre: https://frommindtotype.wordpress.com/2018/04/23/the-tex-gyre-font-family/
 
@@ -573,7 +573,7 @@ like ``'jet'``. These colormaps tend to have jarring jumps in
 `hue, saturation, and luminance <rainbow_>`_ that can trick the human eye into seeing
 non-existing patterns. It is important to use "perceptually uniform" colormaps
 instead. Matplotlib comes packaged with `some of its own <matplotlib_>`_, plus
-colormaps from the `ColorBrewer <brewer_>` project, but there several external projects
+colormaps from the `ColorBrewer <brewer_>`_ project, but there several external projects
 offering a larger variety of aesthetically pleasing "perceptually uniform" colormaps.
 
 Matplotlib also "registers" the X11/CSS4 color names, but these are relatively
@@ -591,8 +591,8 @@ can also be difficult to change the default matplotlib font.
 ProPlot adds new colormaps, new colors, and new fonts to help you make more
 aesthetically pleasing figures.
 
-* ProPlot adds colormaps from the `seaborn <seaborn_>`_, `cmocean <cmocean_>`_,
-  `SciVisColor <sciviscolor_>`_, and `Scientific Colour Maps <fabio_>` projects.
+* ProPlot adds colormaps from the `seaborn <seacolor_>`_, `cmocean <cmocean_>`_,
+  `SciVisColor <sciviscolor_>`_, and `Scientific Colour Maps <fabio_>`_ projects.
   It also defines a few default :ref:`perceptually uniform colormaps <ug_perceptual>`
   and includes a `~proplot.colors.PerceptuallyUniformColormap` class for generating
   new ones. A table of colormap and color cycle names can be shown using
