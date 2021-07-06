@@ -30,7 +30,6 @@ _cmap_database = getattr(mcm, _cmap_database_attr)
 
 
 __all__ = [
-    'make_mapping_array',
     'ListedColormap',
     'LinearSegmentedColormap',
     'PerceptuallyUniformColormap',
@@ -147,12 +146,10 @@ gamma1 : float, optional
     If >1, makes low saturation colors more prominent. If <1,
     makes high saturation colors more prominent. Similar to the
     `HCLWizard <http://hclwizard.org:64230/hclwizard/>`_ option.
-    See `make_mapping_array` for details.
 gamma2 : float, optional
     If >1, makes high luminance colors more prominent. If <1,
     makes low luminance colors more prominent. Similar to the
     `HCLWizard <http://hclwizard.org:64230/hclwizard/>`_ option.
-    See `make_mapping_array` for details.
 """
 
 
@@ -235,7 +232,7 @@ def _clip_colors(colors, clip=True, gray=0.2, warn=False):
     return colors
 
 
-def _make_segmentdata_array(values, coords=None, ratios=None):
+def _make_segment_data(values, coords=None, ratios=None):
     """
     Return a segmentdata array or callable given the input colors
     and coordinates.
@@ -290,10 +287,11 @@ def _make_segmentdata_array(values, coords=None, ratios=None):
     return array
 
 
-def make_mapping_array(N, data, gamma=1.0, inverse=False):
+def _make_lookup_table(N, data, gamma=1.0, inverse=False):
     r"""
-    Similar to `~matplotlib.colors.makeMappingArray` but permits
-    *circular* hue gradations along 0-360, disables clipping of
+    Used to generate lookup tables of HSL values given gradations specified
+    by `PerceptuallyUniformColormap`. Similar to `~matplotlib.colors.makeMappingArray`
+    but permits *circular* hue gradations along 0-360, disables clipping of
     out-of-bounds channel values, and uses fancier "gamma" scaling.
 
     Parameters
@@ -325,9 +323,7 @@ def make_mapping_array(N, data, gamma=1.0, inverse=False):
         than the coordinates themselves. This makes more sense for
         `PerceptuallyUniformColormap`\ s because they usually consist of just
         one linear transition for *sequential* colormaps and two linear
-        transitions for *diverging* colormaps -- and in the latter case, it
-        is often desirable to modify both "halves" of the colormap in the
-        same way.
+        transitions for *diverging* colormaps.
     inverse : bool, optional
         If ``True``, :math:`w_i^{\gamma_i}` is replaced with
         :math:`1 - (1 - w_i)^{\gamma_i}` -- that is, when `gamma` is greater
@@ -337,8 +333,7 @@ def make_mapping_array(N, data, gamma=1.0, inverse=False):
         This is implemented in case we want to apply *equal* "gamma scaling"
         to different HSL channels in different directions. Usually, this
         is done to weight low data values with higher luminance *and* lower
-        saturation, thereby emphasizing "extreme" data values with stronger
-        colors.
+        saturation, thereby emphasizing "extreme" data values.
     """
     # Allow for *callable* instead of linearly interpolating between segments
     gammas = np.atleast_1d(gamma)
@@ -861,7 +856,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             ratio = 0.5 - 0.5 * abs(cut)  # ratio for flanks on either side
             xyza = to_xyza(self(0.5), space=getattr(self, '_space', None) or 'rgb')
             segmentdata = {
-                key: _make_segmentdata_array(x)
+                key: _make_segment_data(x)
                 for key, x in zip(self._segmentdata, xyza)
             }
             args.append(type(self)('_no_name', segmentdata, self.N))
@@ -988,7 +983,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             ``cmap.set_alpha((1, 1, 0), ratios=(2, 1))`` creates a transtion from
             100 percent to 0 percent opacity in the right *third* of the colormap.
         """
-        alpha = _make_segmentdata_array(alpha, coords=coords, ratios=ratios)
+        alpha = _make_segment_data(alpha, coords=coords, ratios=ratios)
         self._segmentdata['alpha'] = alpha
         self._isinit = False
 
@@ -1260,7 +1255,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         keys = ('red', 'green', 'blue', 'alpha')
         cdict = {}
         for key, values in zip(keys, zip(*colors)):
-            cdict[key] = _make_segmentdata_array(values, coords, ratios)
+            cdict[key] = _make_segment_data(values, coords, ratios)
         return cls(name, cdict, **kwargs)
 
     # Rename methods
@@ -1572,11 +1567,11 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         for i, (channel, gamma, inverse) in enumerate(
             zip(channels, gammas, inverses)
         ):
-            self._lut_hsl[:-3, i] = make_mapping_array(
+            self._lut_hsl[:-3, i] = _make_lookup_table(
                 self.N, self._segmentdata[channel], gamma, inverse
             )
         if 'alpha' in self._segmentdata:
-            self._lut_hsl[:-3, 3] = make_mapping_array(
+            self._lut_hsl[:-3, 3] = _make_lookup_table(
                 self.N, self._segmentdata['alpha']
             )
         self._lut_hsl[:-3, 0] %= 360
@@ -1775,7 +1770,7 @@ optional
             ('hue', 'saturation', 'luminance', 'alpha'),
             (hue, saturation, luminance, alpha)
         ):
-            cdict[key] = _make_segmentdata_array(channel, ratios=ratios)
+            cdict[key] = _make_segment_data(channel, ratios=ratios)
         return cls(name, cdict, **kwargs)
 
     @classmethod
@@ -1831,7 +1826,7 @@ optional
         keys = ('hue', 'saturation', 'luminance', 'alpha')
         cdict = {}
         for key, values in zip(keys, zip(*colors)):
-            cdict[key] = _make_segmentdata_array(values, coords, ratios)
+            cdict[key] = _make_segment_data(values, coords, ratios)
         return cls(name, cdict, **kwargs)
 
 
@@ -1872,7 +1867,7 @@ def _interpolate_extrapolate(xq, x, y):
     Efficient vectorized linear interpolation. Similar to `numpy.interp`
     except this does not truncate out-of-bounds values (i.e. is reversible).
     """
-    # Follow example of make_mapping_array for efficient, vectorized
+    # Follow example of _make_lookup_table for efficient, vectorized
     # linear interpolation across multiple segments.
     # * Normal test puts values at a[i] if a[i-1] < v <= a[i]; for
     #   left-most data, satisfy a[0] <= v <= a[1]
@@ -2583,4 +2578,8 @@ CmapDict, ColorDict, MidpointNorm, BinNorm = warnings._rename_objs(
     ColorDict=ColorDatabase,
     MidpointNorm=DivergingNorm,
     BinNorm=DiscreteNorm
+)
+make_mapping_array = warnings._rename_objs(
+    '0.7',
+    make_mapping_array=_make_lookup_table
 )
