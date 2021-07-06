@@ -88,8 +88,10 @@ copybutton_prompt_is_regexp = True
 copybutton_only_copy_prompt_lines = True
 copybutton_remove_prompts = True
 
+# Fail on error. Note nbsphinx compiles *all* notebooks in docs unless excluded
+nbsphinx_allow_errors = False
+
 # Give *lots* of time for cell execution!
-# Note nbsphinx compiles *all* notebooks in docs unless excluded
 nbsphinx_timeout = 300
 
 # Make nbsphinx detect jupytext
