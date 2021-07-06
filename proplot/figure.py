@@ -986,38 +986,35 @@ class Figure(mfigure.Figure):
             for i, (space, space_orig) in enumerate(zip(ispace, ispace_orig)):
                 # Figure out whether this is a normal space, or a
                 # panel stack space/axes panel space
+                pad = axpad
                 if (
                     panels[i] in ('l', 't')
                     and panels[i + 1] in ('l', 't', '')
-                    or panels[i] in ('', 'r', 'b')
+                    or panels[i] in ('r', 'b', '')
                     and panels[i + 1] in ('r', 'b')
                     or panels[i] == 'f' and panels[i + 1] == 'f'
                 ):
                     pad = panelpad
-                else:
-                    pad = axpad
 
-                # Find axes that abutt aginst this space on each row
+                # Find axes that abutt aginst this space on each row or column
                 groups = []
                 filt1 = ralong[:, 1] == i  # i.e. right/bottom edge abutts against this
                 filt2 = ralong[:, 0] == i + 1  # i.e. left/top edge abutts against this
                 for j in range(nacross):  # e.g. each row
-
-                    # Get indices
+                    # Get indices for axes that meet this row or column edge
                     filt = (racross[:, 0] <= j) & (j <= racross[:, 1])
                     if sum(filt) < 2:  # no interface here
                         continue
                     idx1, = np.where(filt & filt1)
                     idx2, = np.where(filt & filt2)
                     if idx1.size > 1 or idx2.size > 2:
-                        warnings._warn_proplot('This should never happen.')
+                        warnings._warn_proplot('This should not be possible.')
                         continue
                     elif not idx1.size or not idx2.size:
                         continue
                     idx1, idx2 = idx1[0], idx2[0]
-
-                    # Put these axes into unique groups. Store groups as
-                    # (left axes, right axes) or (bottom axes, top axes) pairs.
+                    # Put these axes into unique groups and store as (left, right)
+                    # or (bottom, top) pairs.
                     ax1, ax2 = axs[idx1], axs[idx2]
                     if x != 'x':  # order bottom-to-top
                         ax1, ax2 = ax2, ax1
@@ -1039,7 +1036,9 @@ class Figure(mfigure.Figure):
                     x1 = max(ax._range_tightbbox(x)[1] for ax in group1)
                     x2 = min(ax._range_tightbbox(x)[0] for ax in group2)
                     jspaces.append((x2 - x1) / self.dpi)
-                if jspaces:
+                if not jspaces:
+                    space = 0  # no adjacent edges so no padding is necessary!
+                else:
                     space = max(0, space - min(jspaces) + pad)
                     space = _not_none(space_orig, space)  # overwritten by user
                 jspace[i] = space
