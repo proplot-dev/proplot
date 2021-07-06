@@ -34,12 +34,6 @@ ProPlot v0.8.0 (2021-##-##)
 
 * Deprecate `~proplot.axes.Axes.format` functions in favor of the axes-artist
   `~matplotlib.artist.Artist.set` override (:pr:`89`).
-* Rename `width` and `height` `~proplot.subplots.subplots` keyword args to
-  `figwidth` and `figheight` (:pr:`###`).
-* Rename `aspect`, `axwidth`, and `axheight` keyword args to `refaspect`,
-  `refwidth`, and `refheight` (:pr:`###`).
-* Rename :rcraw:`subplots.pad` and :rcraw:`subplots.axpad` to
-  :rcraw:`subplots.edgepad` and :rcraw:`subplots.subplotpad` (:pr:`###`).
 
 .. rubric:: Features
 
@@ -76,7 +70,7 @@ ProPlot v0.8.0 (2021-##-##)
   `~proplot.subplots.EdgeStack` stacks rather than getting inserted directly
   into the main `~proplot.subplots.GridSpec` (:pr:`110`).
 
-ProPlot v0.7.0 (2021-06-30)
+ProPlot v0.7.0 (2021-07-##)
 ===========================
 
 .. rubric:: Deprecated
@@ -99,13 +93,23 @@ ProPlot v0.7.0 (2021-06-30)
   1000, Science recommends "more than 300", PNAS recommends 1000--1200. So 1000 is fine.
 * Increase default :rcraw:`colorbar.insetpad` to avoid recurring issue where ticklabels
   run close to the background patch (:commit:`f5435976`)
+* Use proplot TeX Gyre fonts with `~proplot.config.use_style` styles unless specified
+  otherwise (:commit:`6d7444fe`). Styles otherwise build on matplotlib defaults.
+* Rename :rcraw:`subplots.pad` and :rcraw:`subplots.axpad` to more understandable
+  :rcraw:`subplots.outerpad` and :rcraw:`subplots.innerpad` (:commit:`3c7a33a8`).
+* Rename `width` and `height` `~proplot.subplots.subplots` keyword args to
+  `figwidth` and `figheight` (:commit:`12d01996`). Will accept old keyword args
+  without warning for now since they are so heavily used.
+* Rename `aspect`, `axwidth`, and `axheight` keyword args to `refaspect`,
+  `refwidth`, and `refheight` (:commit:`12d01996`). Will accept old keyword args
+  without warning for now since they are so heavily used.
 * Rename `abovetop` keyword for moving title/abc labels above top panels, colorbars,
   and legends to :rcraw:`title.above` (:commit:`9ceacb7b`). Example usage:
   ``ax.format(title='Title', titleabove=True)``.
 * Rename seldom-used `Figure` argument `fallback_to_cm` to more understandable
   `mathtext_fallback` (:pr:`251`).
-* Use proplot TeX Gyre fonts with `~proplot.config.use_style` styles unless specified
-  otherwise (:commit:`6d7444fe`). Styles otherwise build on matplotlib defaults.
+* Move `make_mapping_array` to private API, following lead of matplotlib's deprecated
+  `makeMappingArray` function (:commit:`66ae574b`).
 * `legend_wrapper` no longer returns the background patch generated for centered-row
   legends (:pr:`254`). This is consistent with `colorbar_wrapper` not returning
   background patches generated for inset colorbars. Until proplot adds new subclasses,
@@ -189,8 +193,10 @@ ProPlot v0.7.0 (2021-06-30)
   in matplotlib >= 3.3 (:issue:`210`, :issue:`235`).
 * Fix issue where "twin" ("alternate") axes content always hidden beneath "parent"
   content due to adding as children (:issue:`223`).
+* Fix issue where default layout in complex subplot grids with non-adjacent
+  edges is incorrect (:issue:`221`).
 * Fix issue where `barb` and `quiver` cannot accept 1D data arrays (:issue:`255`).
-* Fix issue where cannot set `rc.style = 'default'` (:pr:`240`) by `Pratiman Patel`_.
+* Fix issue where cannot set ``rc.style = 'default'`` (:pr:`240`) by `Pratiman Patel`_.
 * Fix issue where `get_legend` returns None even with legends present (:issue:`224`).
 * Fix issue where new child axes reset row/col label settings (:commit:`f32d9703`).
 * Fix issue where `~xarray.DataArray` string coordinates are not extracted from
@@ -205,7 +211,7 @@ ProPlot v0.7.0 (2021-06-30)
 * Fix issue where `[xy]minorlocator=1` is not allowed (:issue:`219`).
 * Fix issue where inner titles ignore axes-local `titlepad` (:commit:`14f3d0e3`).
 * Fix issue where non-Cartesian `heatmap` errors rather than warns (:issue:`238`).
-* Fix issue where `labels=True` with no contours causes error (:issue:`238`).
+* Fix issue where ``labels=True`` with no contours causes error (:issue:`238`).
 * Fix issue where `~proplot.colors.Cycle` fails to register new names and fails to
   display in `~proplot.demos.show_cycles` (:commit:`94ffc1dc`, :commit:`4a7a3c79`).
 * Fix issue where proplot fails to detect legend entries for "outer"
@@ -237,7 +243,7 @@ ProPlot v0.7.0 (2021-06-30)
   number of "active" rows and columns (:commit:`5cf20b84`).
 * Fix issue where simple `pandas.DataFrame.plot` calls with ``legend=True`` fail
   (:pr:`254`, :issue:`198`).
-* For rc lookup with `context=True`, use most restrictive search mode rather than least.
+* For rc lookup with ``context=True``, use most restrictive search mode rather than least.
   Otherwise `ax.format()` calls inside context blocks can be overwritten with the
   default rc values in subsequent `ax.format()` calls (:commit:`8005fcc1`).
 

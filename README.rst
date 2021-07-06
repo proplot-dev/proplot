@@ -42,7 +42,7 @@ The documentation is `published on readthedocs <https://proplot.readthedocs.io>`
 
 .. |build-status| image:: https://travis-ci.com/lukelbd/proplot.svg?branch=master
    :alt: build status
-   :target: https://travis-ci.org/lukelbd/proplot
+   :target: https://travis-ci.com/lukelbd/proplot
 
 .. |license| image:: https://img.shields.io/github/license/lukelbd/proplot.svg
    :alt: license
