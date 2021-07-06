@@ -19,8 +19,8 @@ def _default_space(key, share=0, pad=None):
     Return suitable default spacing given a shared axes setting.
     """
     # Pull out sizes
-    outerpad = _not_none(pad, rc['subplots.pad'])  # TODO: rename to outerpad, innerpad
-    innerpad = _not_none(pad, rc['subplots.axpad'])
+    outerpad = _not_none(pad, rc['subplots.outerpad'])
+    innerpad = _not_none(pad, rc['subplots.innerpad'])
     xtick = rc['xtick.major.size']
     ytick = rc['ytick.major.size']
     xtickpad = rc['xtick.major.pad']
@@ -52,7 +52,6 @@ def _default_space(key, share=0, pad=None):
             space += (xticklabel + xtickpad) / 72
         if share < 0:
             space += label / 72
-
     else:
         raise KeyError(f'Invalid space key {key!r}.')
 

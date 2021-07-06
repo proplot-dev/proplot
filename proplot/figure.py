@@ -49,7 +49,7 @@ def _parse_panel_args(
 
     if space is None:
         key = 'wspace' if side in ('left', 'right') else 'hspace'
-        pad = rc['subplots.axpad'] if figure else rc['subplots.panelpad']
+        pad = rc['subplots.innerpad'] if figure else rc['subplots.panelpad']
         space = pgridspec._default_space(key, share, pad=pad)
 
     return share, width, space, space_user
@@ -142,10 +142,11 @@ class Figure(mfigure.Figure):
     """
     # NOTE: If _rename_kwargs argument is an invalid identifier, it is
     # simply used in the warning message.
+    @warnings._rename_kwargs('0.7', pad='outerpad', axpad='innerpad')
     @warnings._rename_kwargs('0.6.4', autoformat='plot.rc.autoformat = {}')
     def __init__(
         self, tight=None,
-        ref=1, pad=None, axpad=None, panelpad=None, includepanels=False,
+        ref=1, outerpad=None, innerpad=None, panelpad=None, includepanels=False,
         span=None, spanx=None, spany=None,
         align=None, alignx=None, aligny=None,
         share=None, sharex=None, sharey=None,
@@ -165,13 +166,13 @@ class Figure(mfigure.Figure):
         ref : int, optional
             The reference subplot number. See `~proplot.ui.subplots` for
             details. Default is ``1``.
-        pad : float or str, optional
+        outerpad : float or str, optional
             Padding around edge of figure. Units are interpreted by
-            `~proplot.utils.units`. Default is :rc:`subplots.pad`.
-        axpad : float or str, optional
+            `~proplot.utils.units`. Default is :rc:`subplots.outerpad`.
+        innerpad : float or str, optional
             Padding between subplots in adjacent columns and rows. Units are
             interpreted by `~proplot.utils.units`. Default is
-            :rc:`subplots.axpad`.
+            :rc:`subplots.innerpad`.
         panelpad : float or str, optional
             Padding between subplots and axes panels, and between "stacked"
             panels. Units are interpreted by `~proplot.utils.units`. Default is
@@ -279,8 +280,8 @@ class Figure(mfigure.Figure):
         gridspec_kw = gridspec_kw or {}
         gridspec = pgridspec.GridSpec(self, **gridspec_kw)
         nrows, ncols = gridspec.get_active_geometry()
-        self._pad = units(_not_none(pad, rc['subplots.pad']))
-        self._ax_pad = units(_not_none(axpad, rc['subplots.axpad']))
+        self._outer_pad = units(_not_none(outerpad, rc['subplots.outerpad']))
+        self._inner_pad = units(_not_none(innerpad, rc['subplots.innerpad']))
         self._panel_pad = units(_not_none(panelpad, rc['subplots.panelpad']))
         self._auto_tight = _not_none(tight, rc['subplots.tight'])
         self._include_panels = includepanels
@@ -944,7 +945,7 @@ class Figure(mfigure.Figure):
 
         # Tight box *around* figure
         # Get bounds from old bounding box
-        pad = self._pad
+        pad = self._outer_pad
         obox = self.bbox_inches  # original bbox
         bbox = self.get_tightbbox(renderer)
         left = bbox.xmin
@@ -963,7 +964,7 @@ class Figure(mfigure.Figure):
             subplots_kw[key] = _not_none(previous, current - offset + pad)
 
         # Get arrays storing gridspec spacing args
-        axpad = self._ax_pad
+        innerpad = self._inner_pad
         panelpad = self._panel_pad
         gridspec = self._gridspec_main
         nrows, ncols = gridspec.get_active_geometry()
@@ -986,7 +987,7 @@ class Figure(mfigure.Figure):
             for i, (space, space_orig) in enumerate(zip(ispace, ispace_orig)):
                 # Figure out whether this is a normal space, or a
                 # panel stack space/axes panel space
-                pad = axpad
+                pad = innerpad
                 if (
                     panels[i] in ('l', 't')
                     and panels[i + 1] in ('l', 't', '')

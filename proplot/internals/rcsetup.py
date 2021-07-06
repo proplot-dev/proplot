@@ -53,7 +53,6 @@ _rc_removed = {  # {key: (alternative, version)} dictionary
 _rc_renamed = {  # {old_key: (new_key, version)} dictionary
     'abc.format': ('abc.style', '0.5'),
     'align': ('subplots.align', '0.6'),
-    'abovetop': ('title.above', '0.7'),
     'axes.facealpha': ('axes.alpha', '0.6'),
     'geoaxes.edgecolor': ('axes.edgecolor', '0.6'),
     'geoaxes.facealpha': ('axes.alpha', '0.6'),
@@ -74,6 +73,9 @@ _rc_renamed = {  # {old_key: (new_key, version)} dictionary
     'tick.labelpad': ('tick.pad', '0.6'),
     'axes.formatter.timerotation': ('formatter.timerotation', '0.6'),
     'axes.formatter.zerotrim': ('formatter.zerotrim', '0.6'),
+    'abovetop': ('title.above', '0.7'),
+    'subplots.pad': ('subplots.outerpad', '0.7'),
+    'subplots.axpad': ('subplots.innerpad', '0.7'),
 }
 
 # ProPlot overrides of matplotlib default style
@@ -768,15 +770,15 @@ _rc_proplot = {
         'Whether to align axis labels during draw. See `aligning labels '
         '<https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/align_labels_demo.html>`__.'  # noqa: E501
     ),
-    'subplots.axpad': (
-        '1em',
-        'Padding between adjacent subplots. ' + _addendum_units
-    ),
     'subplots.axwidth': (
         '20em',  # about 3 inches wide
         'Default width of each axes. ' + _addendum_units
     ),
-    'subplots.pad': (
+    'subplots.innerpad': (
+        '1em',
+        'Padding between adjacent subplots. ' + _addendum_units
+    ),
+    'subplots.outerpad': (
         '0.5em',
         'Padding around figure edge. ' + _addendum_units
     ),
