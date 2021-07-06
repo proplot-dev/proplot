@@ -888,7 +888,7 @@ class Figure(mfigure.Figure):
         # has changed. Otherwise triggers recursive draws (???). Tried avoiding
         # this with additional context blocks in set_size_inches but could not
         # find consistent solution. For some reason *this* works consistently.
-        fixed = all(subplots_kw[key] is not None for key in ('width', 'height'))
+        fixed = all(subplots_kw[key] is not None for key in ('figwidth', 'figheight'))
         if not fixed:
             self.set_size_inches(figsize, auto=True)
 
