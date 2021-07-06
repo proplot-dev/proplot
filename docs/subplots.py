@@ -34,17 +34,17 @@
 #
 # * `ref` sets the reference subplot number (default is ``1``,
 #   i.e. the subplot in the upper left corner).
-# * `aspect` sets the reference subplot aspect ratio (default
+# * `refaspect` sets the reference subplot aspect ratio (default
 #   is ``1``). You can also use the built-in matplotlib
 #   `~matplotlib.axes.Axes.set_aspect` method.
-# * `axwidth` and `axheight` set the physical dimensions of
-#   the *reference subplot* (default is ``axwidth=2``). If one is specified,
-#   the other is calculated to satisfy `aspect`. If both are specified,
-#   `aspect` is ignored. The dimensions of the *figure* are determined automatically.
-# * `width` and `height` set the physical dimensions of the
-#   *figure*. If one is specified, the other is calculated to satisfy `aspect`
+# * `refwidth` and `refheight` set the physical dimensions of
+#   the *reference subplot* (default is ``refwidth=2``). If one is specified,
+#   the other is calculated to satisfy `refaspect`. If both are specified,
+#   `refaspect` is ignored. The dimensions of the *figure* are determined automatically.
+# * `figwidth` and `figheight` set the physical dimensions of the
+#   *figure*. If one is specified, the other is calculated to satisfy `refaspect`
 #   and the subplot spacing. If both are specified (or if the matplotlib
-#   `figsize` parameter is specified), `aspect` is ignored.
+#   `figsize` parameter is specified), `refaspect` is ignored.
 # * `journal` constrains the physical dimensions of the figure
 #   so it meets requirements for submission to an academic journal. For example,
 #   figures created with ``journal='nat1'`` are sized as single-column
@@ -60,14 +60,14 @@
 #    The automatic figure size algorithm has the following notable properties:
 #
 #    * For very simple subplot grids (i.e. subplots created with the `ncols` and
-#      `nrows` arguments), the arguments `aspect`, `axwidth`, and `axheight` apply
-#      to every subplot in the figure -- not just the reference subplot.
+#      `nrows` arguments), the arguments `refaspect`, `refwidth`, and `refheight`
+#      apply to every subplot in the figure -- not just the reference subplot.
 #    * When the reference subplot `aspect ratio\
 #      <https://matplotlib.org/2.0.2/examples/pylab_examples/equal_aspect_ratio.html>`__
 #      has been fixed (e.g., using ``ax.set_aspect(1)``) or is set to ``'equal'``
 #      (as with :ref:`geographic projections <ug_geo>` and
 #      `~matplotlib.axes.Axes.imshow` images), the fixed aspect ratio is used
-#      and the `~proplot.ui.subplots` `aspect` parameter is ignored. This
+#      and the `~proplot.ui.subplots` `refaspect` parameter is ignored. This
 #      is critical for getting the figure size right when working with grids
 #      of images and grids of projections.
 #    * When `~proplot.axes.Axes.colorbar`\ s and `~proplot.axes.Axes.panel`\ s
@@ -88,7 +88,7 @@ axs.format(
 
 # Auto sized grid of images
 state = np.random.RandomState(51423)
-fig, axs = plot.subplots(ncols=3, nrows=2, axwidth=1.7)
+fig, axs = plot.subplots(ncols=3, nrows=2, refwidth=1.7)
 colors = state.rand(15, 12, 3).cumsum(axis=2)
 colors /= colors.max()
 axs.imshow(colors)
@@ -101,20 +101,20 @@ import proplot as plot
 
 # Change the reference subplot width
 suptitle = 'Effect of subplot width on figure size'
-for axwidth in ('4cm', '6cm'):
-    fig, axs = plot.subplots(ncols=2, axwidth=axwidth,)
+for refwidth in ('4cm', '6cm'):
+    fig, axs = plot.subplots(ncols=2, refwidth=refwidth,)
     axs[0].format(
         suptitle=suptitle,
-        title=f'axwidth = {axwidth}', titleweight='bold',
+        title=f'refwidth = {refwidth}', titleweight='bold',
         titleloc='uc', titlecolor='red9',
     )
 
 # Change the reference subplot aspect ratio
-for aspect in (1, (3, 2)):
-    fig, axs = plot.subplots(ncols=2, nrows=2, axwidth=1.6, aspect=aspect)
+for refaspect in (1, (3, 2)):
+    fig, axs = plot.subplots(ncols=2, nrows=2, refwidth=1.6, refaspect=refaspect)
     axs[0].format(
         suptitle='Effect of subplot aspect ratio on figure size',
-        title=f'aspect = {aspect}', titleweight='bold',
+        title=f'refaspect = {refaspect}', titleweight='bold',
         titleloc='uc', titlecolor='red9',
     )
 
@@ -125,7 +125,7 @@ import proplot as plot
 for ref in (1, 2):
     fig, axs = plot.subplots(
         ref=ref, nrows=3, ncols=3, wratios=(3, 2, 2),
-        axwidth=1.1,
+        refwidth=1.1,
     )
     axs[ref - 1].format(
         suptitle='Effect of reference subplot on figure size',
@@ -137,7 +137,7 @@ for ref in (1, 2):
 for ref in (1, 2):
     fig, axs = plot.subplots(
         [[1, 2], [1, 3]],
-        ref=ref, axwidth=1.8, span=False
+        ref=ref, refwidth=1.8, span=False
     )
     axs[ref - 1].format(
         suptitle='Effect of reference subplot on figure size',
@@ -181,7 +181,7 @@ for ref in (1, 2):
 import proplot as plot
 
 # Automatic spacing for all margins and between all columns and rows
-fig, axs = plot.subplots(nrows=3, ncols=3, axwidth=1.1, share=0)
+fig, axs = plot.subplots(nrows=3, ncols=3, refwidth=1.1, share=0)
 
 # Formatting that stress-tests the algorithm
 axs[4].format(
@@ -200,7 +200,7 @@ import proplot as plot
 
 # Manual spacing for certain margins and between certain columns and rows
 fig, axs = plot.subplots(
-    ncols=4, nrows=3, axwidth=1.1, span=False,
+    ncols=4, nrows=3, refwidth=1.1, span=False,
     bottom='5em', right='5em',  # margin spacing overrides
     wspace=(0, 0, None), hspace=(0, None),  # column and row spacing overrides
 )
@@ -266,7 +266,7 @@ for scale in (1, 3, 7, 0.2):
 # Same plot with different sharing and spanning settings
 for share in (0, 1, 2, 3):
     fig, axs = plot.subplots(
-        ncols=4, aspect=1, axwidth=1.06,
+        ncols=4, refaspect=1, refwidth=1.06,
         sharey=share, spanx=share // 2
     )
     for ax, data in zip(axs, datas):
@@ -289,7 +289,7 @@ titles = ['With redundant labels', 'Without redundant labels']
 for mode in (0, 1):
     fig, axs = plot.subplots(
         nrows=4, ncols=4, share=3 * mode,
-        span=1 * mode, axwidth=1
+        span=1 * mode, refwidth=1
     )
     for ax in axs:
         ax.plot((state.rand(100, 20) - 0.4).cumsum(axis=0))
@@ -326,7 +326,7 @@ for mode in (0, 1):
 
 # %%
 import proplot as plot
-fig, axs = plot.subplots(nrows=8, ncols=8, axwidth=0.7, space=0)
+fig, axs = plot.subplots(nrows=8, ncols=8, refwidth=0.7, space=0)
 axs.format(
     abc=True, abcloc='ur', xlabel='x axis', ylabel='y axis',
     xticks=[], yticks=[], suptitle='Subplot labels demo'
@@ -340,8 +340,8 @@ axs.format(
 # --------------
 #
 # ProPlot supports arbitrary *physical units* for controlling the figure
-# `width` and `height`, the reference subplot `axwidth` and `axheight`, the
-# gridspec spacing values `left`, `right`, `bottom`, `top`, `wspace`, and
+# `figwidth` and `figheight`, the reference subplot `refwidth` and `refheight`,
+# the gridspec spacing values `left`, `right`, `bottom`, `top`, `wspace`, and
 # `hspace`, and in a few other places, e.g. `~proplot.axes.Axes.panel` and
 # `~proplot.axes.Axes.colorbar` widths. This feature is powered by the
 # `~proplot.utils.units` function.
@@ -360,7 +360,7 @@ import proplot as plot
 import numpy as np
 with plot.rc.context(fontsize='12px'):
     fig, axs = plot.subplots(
-        ncols=3, width='15cm', height='3in',
+        ncols=3, figwidth='15cm', figheight='3in',
         wspace=('10pt', '20pt'), right='10mm'
     )
     cmap = plot.Colormap('Mono')

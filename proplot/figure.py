@@ -877,10 +877,10 @@ class Figure(mfigure.Figure):
         Update the figure geometry based on the subplots keyword arguments.
         """
         subplots_kw = self._subplots_kw
-        width, height = self.get_size_inches()
+        figwidth, figheight = self.get_size_inches()
         if not resize:
             subplots_kw = subplots_kw.copy()
-            subplots_kw.update(width=width, height=height)
+            subplots_kw.update(figwidth=figwidth, figheight=figheight)
         figsize, gridspec_kw, _ = pgridspec._calc_geometry(**subplots_kw)
         self._gridspec_main.update(**gridspec_kw)
         # Resize the figure
@@ -919,11 +919,11 @@ class Figure(mfigure.Figure):
             aspect = curaspect / ax.get_data_ratio_log()
         else:
             return  # matplotlib should have issued warning
-        if np.isclose(aspect, subplots_kw['aspect']):
+        if np.isclose(aspect, subplots_kw['refaspect']):
             return
 
         # Apply new aspect
-        subplots_kw['aspect'] = aspect
+        subplots_kw['refaspect'] = aspect
         self._update_geometry(resize=resize)
 
     def _update_geometry_from_spacing(self, renderer, resize=True):
@@ -1389,7 +1389,7 @@ class Figure(mfigure.Figure):
     @property
     def ref(self):
         """
-        The reference axes number. The `axwidth`, `axheight`, and `aspect`
+        The reference axes number. The `refwidth`, `refheight`, and `refaspect`
         arguments passed to `~proplot.ui.subplots` and
         `~proplot.ui.figure` arguments are applied to this axes, and
         aspect ratio is conserved for this axes in tight layout adjustment.

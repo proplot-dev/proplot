@@ -215,19 +215,19 @@ spacing between different subplot row and column boundaries.
 .. rubric:: Solution
 
 In ProPlot, you can specify the physical dimensions of a *reference subplot*
-instead of the figure by passing `axwidth`, `axheight`, and/or `aspect` to
-`~proplot.figure.Figure`. The default behavior is ``aspect=1`` and
-``axwidth=2`` (inches). If the `aspect ratio mode
+instead of the figure by passing `refwidth`, `refheight`, and/or `refaspect` to
+`~proplot.figure.Figure`. The default behavior is ``refaspect=1`` and
+``refwidth=2`` (inches). If the `aspect ratio mode
 <https://matplotlib.org/2.0.2/examples/pylab_examples/equal_aspect_ratio.html>`__
 for the reference subplot is set to ``'equal'``, as with
 :ref:`geographic and polar <ug_proj>` plots and `~matplotlib.axes.Axes.imshow` plots,
 the *imposed* aspect ratio will be used instead.
 
-The width or height of the *figure* can also be constrained independently with
-the `width` and `height` parameters. If only one is specified, the other will be
-adjusted to preserve subplot aspect ratios. You can select a `width` and/or `height`
-suitable for submission to :ref:`various publications <journal_table>` using
-the `journal` parameter.
+The width or height of the *figure* can also be constrained independently with the
+`figwidth` and `figheight` parameters. If only one is specified, the other will be
+adjusted to preserve subplot aspect ratios. You can select a `figwidth` and/or
+`figheight` suitable for submission to :ref:`various publications <journal_table>`
+using the `journal` parameter.
 
 ProPlot also uses its own "tight layout" algorithm to automatically
 determine the `left`, `right`, `bottom`, `top`, `wspace`, and `hspace`
@@ -681,10 +681,10 @@ This may be confusing for users outside of the United States.
 .. rubric:: Solution
 
 ProPlot introduces the physical units engine `~proplot.utils.units` for
-interpreting `figsize`, `width`, `height`, `axwidth`, `axheight`, `left`,
-`right`, `top`, `bottom`, `wspace`, `hspace`, and arguments in a few other
-places. Acceptable units include inches, centimeters, millimeters, pixels,
-`points <https://en.wikipedia.org/wiki/Point_(typography)>`__, `picas
+interpreting `figsize`, `figwidth`, `figheight`, `refwidth`, `refheight`,
+`left`, `right`, `top`, `bottom`, `wspace`, `hspace`, and arguments in a
+few other places. Acceptable units include inches, centimeters, millimeters,
+pixels, `points <https://en.wikipedia.org/wiki/Point_(typography)>`__, `picas
 <https://en.wikipedia.org/wiki/Pica_(typography)>`__, and `em-heights
 <https://en.wikipedia.org/wiki/Em_(typography)>`__.
 Em-heights are particularly useful, as the labels already present

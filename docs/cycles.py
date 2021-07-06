@@ -78,7 +78,7 @@ kwargs = {'legend': 'b', 'labels': list('abcdef')}
 
 # Modify the default color cycle
 plot.rc.cycle = '538'
-fig, axs = plot.subplots(ncols=3, axwidth=1.9)
+fig, axs = plot.subplots(ncols=3, refwidth=1.9)
 axs.format(suptitle='Changing the color cycle')
 ax = axs[0]
 ax.plot(data, lw=lw, **kwargs)
@@ -124,7 +124,7 @@ ax.format(title='With multiple plot calls')
 # %%
 import proplot as plot
 import numpy as np
-fig, axs = plot.subplots(ncols=2, share=0, axwidth=2.3)
+fig, axs = plot.subplots(ncols=2, share=0, refwidth=2.3)
 state = np.random.RandomState(51423)
 data = (20 * state.rand(10, 21) - 10).cumsum(axis=0)
 
@@ -172,7 +172,7 @@ data = (state.rand(20, 4) - 0.5).cumsum(axis=0)
 data = pd.DataFrame(data, columns=pd.Index(['a', 'b', 'c', 'd'], name='label'))
 
 # Plot data
-fig, ax = plot.subplots(axwidth=2.6, aspect=1)
+fig, ax = plot.subplots(refwidth=2.6)
 ax.format(suptitle='Plot without color cycle')
 obj = ax.plot(
     data, lw=3, cycle=cycle, legend='ul',

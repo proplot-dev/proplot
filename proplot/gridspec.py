@@ -70,10 +70,11 @@ def _calc_geometry(**kwargs):
     # NOTE: In the future this will be replaced with a GeometryConfigurator
     # class that acts as the interface between the figure and the gridspec.
     # Dimensions and geometry
+    refaspect = kwargs['refaspect']
+    refxrange, refyrange = kwargs['refxrange'], kwargs['refyrange']
+    refwidth, refheight = kwargs['refwidth'], kwargs['refheight']
+    figwidth, figheight = kwargs['figwidth'], kwargs['figheight']
     nrows, ncols = kwargs['nrows'], kwargs['ncols']
-    aspect, xref, yref = kwargs['aspect'], kwargs['xref'], kwargs['yref']
-    width, height = kwargs['width'], kwargs['height']
-    axwidth, axheight = kwargs['axwidth'], kwargs['axheight']
 
     # Gridspec settings
     wspace, hspace = kwargs['wspace'], kwargs['hspace']
@@ -138,12 +139,8 @@ def _calc_geometry(**kwargs):
     # Separate the panel and axes ratios
     hratios_main = [hratios[idx] for idx in idxs_ratios[0]]
     wratios_main = [wratios[idx] for idx in idxs_ratios[1]]
-    hratios_panels = [
-        ratio for idx, ratio in enumerate(hratios) if idx not in idxs_ratios[0]
-    ]
-    wratios_panels = [
-        ratio for idx, ratio in enumerate(wratios) if idx not in idxs_ratios[1]
-    ]
+    hratios_panels = [r for idx, r in enumerate(hratios) if idx not in idxs_ratios[0]]
+    wratios_panels = [r for idx, r in enumerate(wratios) if idx not in idxs_ratios[1]]
     hspace_main = [hspace[idx] for idx in idxs_space[0]]
     wspace_main = [wspace[idx] for idx in idxs_space[1]]
 
@@ -153,7 +150,7 @@ def _calc_geometry(**kwargs):
 
     # Get reference properties, account for panel slots in space and ratios
     # TODO: Shouldn't panel space be included in these calculations?
-    (x1, x2), (y1, y2) = xref, yref
+    (x1, x2), (y1, y2) = refxrange, refyrange
     dx, dy = x2 - x1 + 1, y2 - y1 + 1
     rwspace = sum(wspace_main[x1:x2])
     rhspace = sum(hspace_main[y1:y2])
@@ -164,71 +161,71 @@ def _calc_geometry(**kwargs):
             f'Something went wrong, got wratio={rwratio!r} '
             f'and hratio={rhratio!r} for reference axes.'
         )
-    if np.iterable(aspect):
-        aspect = aspect[0] / aspect[1]
+    if np.iterable(refaspect):
+        refaspect = refaspect[0] / refaspect[1]
 
     # Determine figure and axes dims from input in width or height dimenion.
     # For e.g. common use case [[1,1,2,2],[0,3,3,0]], make sure we still scale
     # the reference axes like square even though takes two columns of gridspec!
-    auto_width = (width is None and height is not None)
-    auto_height = (height is None and width is not None)
-    if width is None and height is None:  # get stuff directly from axes
-        if axwidth is None and axheight is None:
-            axwidth = units(rc['subplots.axwidth'])
-        if axheight is not None:
+    auto_width = figwidth is None and figheight is not None
+    auto_height = figheight is None and figwidth is not None
+    if figwidth is None and figheight is None:  # get stuff directly from axes
+        if refwidth is None and refheight is None:
+            refwidth = units(rc['subplots.refwidth'])
+        if refheight is not None:
             auto_width = True
-            axheight_all = (nrows_main * (axheight - rhspace)) / (dy * rhratio)
-            height = axheight_all + top + bottom + sum(hspace) + sum(hratios_panels)
-        if axwidth is not None:
+            refheight_all = (nrows_main * (refheight - rhspace)) / (dy * rhratio)
+            figheight = refheight_all + top + bottom + sum(hspace) + sum(hratios_panels)
+        if refwidth is not None:
             auto_height = True
-            axwidth_all = (ncols_main * (axwidth - rwspace)) / (dx * rwratio)
-            width = axwidth_all + left + right + sum(wspace) + sum(wratios_panels)
-        if axwidth is not None and axheight is not None:
+            refwidth_all = (ncols_main * (refwidth - rwspace)) / (dx * rwratio)
+            figwidth = refwidth_all + left + right + sum(wspace) + sum(wratios_panels)
+        if refwidth is not None and refheight is not None:
             auto_width = auto_height = False
     else:
-        if height is not None:
-            axheight_all = height - top - bottom - sum(hspace) - sum(hratios_panels)
-            axheight = (axheight_all * dy * rhratio) / nrows_main + rhspace
-        if width is not None:
-            axwidth_all = width - left - right - sum(wspace) - sum(wratios_panels)
-            axwidth = (axwidth_all * dx * rwratio) / ncols_main + rwspace
+        if figheight is not None:
+            refheight_all = figheight - top - bottom - sum(hspace) - sum(hratios_panels)
+            refheight = (refheight_all * dy * rhratio) / nrows_main + rhspace
+        if figwidth is not None:
+            refwidth_all = figwidth - left - right - sum(wspace) - sum(wratios_panels)
+            refwidth = (refwidth_all * dx * rwratio) / ncols_main + rwspace
 
     # Automatically figure dim that was not specified above
     if auto_height:
-        axheight = axwidth / aspect
-        axheight_all = (nrows_main * (axheight - rhspace)) / (dy * rhratio)
-        height = axheight_all + top + bottom + sum(hspace) + sum(hratios_panels)
+        refheight = refwidth / refaspect
+        refheight_all = (nrows_main * (refheight - rhspace)) / (dy * rhratio)
+        figheight = refheight_all + top + bottom + sum(hspace) + sum(hratios_panels)
     elif auto_width:
-        axwidth = axheight * aspect
-        axwidth_all = (ncols_main * (axwidth - rwspace)) / (dx * rwratio)
-        width = axwidth_all + left + right + sum(wspace) + sum(wratios_panels)
-    if axwidth_all < 0:
+        refwidth = refheight * refaspect
+        refwidth_all = (ncols_main * (refwidth - rwspace)) / (dx * rwratio)
+        figwidth = refwidth_all + left + right + sum(wspace) + sum(wratios_panels)
+    if refwidth_all < 0:
         raise ValueError(
-            f'Not enough room for axes (would have width {axwidth_all}). '
+            f'Not enough room for axes (would have width {refwidth_all}). '
             'Try using tight=False, increasing figure width, or decreasing '
             "'left', 'right', or 'wspace' spaces."
         )
-    if axheight_all < 0:
+    if refheight_all < 0:
         raise ValueError(
-            f'Not enough room for axes (would have height {axheight_all}). '
+            f'Not enough room for axes (would have height {refheight_all}). '
             'Try using tight=False, increasing figure height, or decreasing '
             "'top', 'bottom', or 'hspace' spaces."
         )
 
     # Reconstruct the ratios array with physical units for subplot slots
     # The panel slots are unchanged because panels have fixed widths
-    wratios_main = axwidth_all * np.array(wratios_main) / sum(wratios_main)
-    hratios_main = axheight_all * np.array(hratios_main) / sum(hratios_main)
+    wratios_main = refwidth_all * np.array(wratios_main) / sum(wratios_main)
+    hratios_main = refheight_all * np.array(hratios_main) / sum(hratios_main)
     for idx, ratio in zip(idxs_ratios[0], hratios_main):
         hratios[idx] = ratio
     for idx, ratio in zip(idxs_ratios[1], wratios_main):
         wratios[idx] = ratio
 
     # Convert margins to figure-relative coordinates
-    left = left / width
-    bottom = bottom / height
-    right = 1 - right / width
-    top = 1 - top / height
+    left = left / figwidth
+    bottom = bottom / figheight
+    right = 1 - right / figwidth
+    top = 1 - top / figheight
 
     # Constant spacing corrections
     if equal:  # do both
@@ -246,7 +243,8 @@ def _calc_geometry(**kwargs):
         'left': left, 'bottom': bottom, 'right': right, 'top': top,
     }
 
-    return (width, height), gridspec_kw, kwargs
+    figsize = (figwidth, figheight)
+    return figsize, gridspec_kw, kwargs
 
 
 class SubplotSpec(mgridspec.SubplotSpec):

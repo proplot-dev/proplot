@@ -64,7 +64,7 @@ plot.rc.update(
     color='dark blue', suptitlecolor='dark blue',
     titleloc='upper center', titlecolor='dark blue', titleborder=False,
 )
-fig, axs = plot.subplots(nrows=8, axwidth=5, aspect=(8, 1), share=0)
+fig, axs = plot.subplots(nrows=8, refwidth=5, refaspect=(8, 1), share=0)
 axs.format(suptitle='Tick locators demo')
 
 # Step size for tick locations
@@ -163,7 +163,7 @@ plot.rc.update(
     color='gray8', gridcolor='gray8', titlecolor='gray8', suptitlecolor='gray8',
     titleloc='upper center', titleborder=False,
 )
-fig, axs = plot.subplots(nrows=9, axwidth=5, aspect=(8, 1), share=0)
+fig, axs = plot.subplots(nrows=9, refwidth=5, refaspect=(8, 1), share=0)
 
 # Scientific notation
 axs[0].format(xlim=(0, 1e20), xformatter='sci', title='SciFormatter')
@@ -212,7 +212,7 @@ import proplot as plot
 plot.rc.linewidth = 2
 plot.rc.fontsize = 11
 locator = [0, 0.25, 0.5, 0.75, 1]
-fig, axs = plot.subplots(ncols=2, nrows=2, axwidth=1.5, share=0)
+fig, axs = plot.subplots(ncols=2, nrows=2, refwidth=1.5, share=0)
 
 # Formatter comparison
 axs[0].format(
@@ -264,7 +264,7 @@ plot.rc.update(
     figurefacecolor='w', facecolor='pastel blue',
     titleloc='upper center', titleborder=False,
 )
-fig, axs = plot.subplots(nrows=5, axwidth=6, aspect=(8, 1), share=0)
+fig, axs = plot.subplots(nrows=5, refwidth=6, refaspect=(8, 1), share=0)
 axs[:4].format(xrotation=0)  # no rotation for these examples
 
 # Default date locator
@@ -347,7 +347,7 @@ lw = 3
 plot.rc.update({
     'linewidth': 1, 'ticklabelweight': 'bold', 'axeslabelweight': 'bold'
 })
-fig, axs = plot.subplots(ncols=2, nrows=2, axwidth=1.8, share=0)
+fig, axs = plot.subplots(ncols=2, nrows=2, refwidth=1.8, share=0)
 axs.format(suptitle='Axis scales demo', ytickminor=True)
 
 # Linear and log scales
@@ -387,7 +387,7 @@ plot.rc.reset()
 # %%
 import proplot as plot
 import numpy as np
-fig, axs = plot.subplots(width=6, nrows=4, aspect=(5, 1), sharex=False)
+fig, axs = plot.subplots(nrows=4, refaspect=(5, 1), figwidth=6, sharex=False)
 ax = axs[0]
 
 # Sample data
@@ -427,7 +427,7 @@ for ax, iargs, title, locator in zip(axs, args, titles, locators):
 import proplot as plot
 import numpy as np
 plot.rc.reset()
-fig, axs = plot.subplots(nrows=2, ncols=3, axwidth=1.7, share=0, order='F')
+fig, axs = plot.subplots(nrows=2, ncols=3, refwidth=1.7, share=0, order='F')
 axs.format(
     toplabels=('Power scales', 'Exponential scales', 'Cartographic scales'),
 )
@@ -502,7 +502,7 @@ c1 = plot.scale_luminance('cerulean', 0.5)
 c2 = plot.scale_luminance('red', 0.5)
 fig, axs = plot.subplots(
     [[1, 1, 2, 2], [0, 3, 3, 0]],
-    share=0, aspect=2.2, axwidth=3
+    share=0, refaspect=2.2, refwidth=3
 )
 axs.format(
     suptitle='Duplicate axes with custom transformations',
@@ -540,7 +540,7 @@ import proplot as plot
 plot.rc.update({'grid.alpha': 0.4, 'linewidth': 1, 'grid.linewidth': 1})
 c1 = plot.scale_luminance('cerulean', 0.5)
 c2 = plot.scale_luminance('red', 0.5)
-fig, axs = plot.subplots(ncols=2, share=0, aspect=0.4, axwidth=1.8)
+fig, axs = plot.subplots(ncols=2, share=0, refaspect=0.4, refwidth=1.8)
 axs.format(suptitle='Duplicate axes with special transformations')
 
 # Pressure as the linear scale, height on opposite axis (scale height 7km)
@@ -570,7 +570,7 @@ import numpy as np
 plot.rc.margin = 0
 c1 = plot.scale_luminance('cerulean', 0.5)
 c2 = plot.scale_luminance('red', 0.5)
-fig, ax = plot.subplots(aspect=(3, 1), width=6)
+fig, ax = plot.subplots(refaspect=(3, 1), figwidth=6)
 
 # Sample data
 cutoff = 1 / 5

@@ -130,7 +130,7 @@ df.columns.name = 'columns'
 
 # %%
 import proplot as plot
-fig, axs = plot.subplots(ncols=2, axwidth=2.2, share=0)
+fig, axs = plot.subplots(ncols=2, refwidth=2.2, share=0)
 axs.format(suptitle='Automatic subplot formatting')
 
 # Plot DataArray
@@ -223,7 +223,7 @@ data.name = 'variable'
 
 # Generate figure
 fig, axs = plot.subplots(
-    nrows=3, aspect=1.5, axwidth=4,
+    nrows=3, refaspect=1.5, refwidth=4,
     share=0, hratios=(2, 1, 1)
 )
 axs.format(suptitle='Indicating error bounds with various plotting commands')
@@ -306,7 +306,7 @@ data = pd.DataFrame(
 
 # Generate figure
 plot.rc.titleloc = 'uc'
-fig, axs = plot.subplots(nrows=2, aspect=2, axwidth=4.8, share=0, hratios=(3, 2))
+fig, axs = plot.subplots(nrows=2, refaspect=2, refwidth=4.8, share=0, hratios=(3, 2))
 
 # Side-by-side bars
 ax = axs[0]
@@ -337,7 +337,7 @@ data = state.rand(5, 3).cumsum(axis=0)
 cycle = ('gray3', 'gray5', 'gray7')
 
 # Generate figure
-fig, axs = plot.subplots(ncols=2, axwidth=2.3, share=0)
+fig, axs = plot.subplots(ncols=2, refwidth=2.3, share=0)
 axs.format(grid=False, xlabel='xlabel', ylabel='ylabel', suptitle='Area plot demo')
 
 # Overlaid area patches
@@ -363,7 +363,7 @@ state = np.random.RandomState(51423)
 data = 4 * (state.rand(50) - 0.5)
 
 # Generate figure
-fig, axs = plot.subplots(nrows=2, width=5, aspect=2)
+fig, axs = plot.subplots(nrows=2, refaspect=2, figwidth=5)
 axs.format(
     xmargin=0, xlabel='xlabel', ylabel='ylabel', grid=True,
     suptitle='Positive and negative colors demo',
@@ -408,7 +408,7 @@ data = pd.DataFrame(
 )
 
 # Generate figure
-fig, axs = plot.subplots(ncols=2, axwidth=2.5)
+fig, axs = plot.subplots(ncols=2, refwidth=2.5)
 axs.format(grid=False, suptitle='Boxes and violins demo')
 
 # Box plots
@@ -449,7 +449,7 @@ import proplot as plot
 import numpy as np
 fig, axs = plot.subplots(
     share=0, ncols=2, wratios=(2, 1),
-    width='16cm', aspect=(2, 1)
+    figwidth='16cm', refaspect=(2, 1)
 )
 axs.format(suptitle='Parametric plots demo')
 cmap = 'IceFire'

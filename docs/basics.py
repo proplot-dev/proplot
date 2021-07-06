@@ -113,7 +113,7 @@ array = [  # the "picture" (0 == nothing, 1 == subplot A, 2 == subplot B, etc.)
     [1, 1, 2, 2],
     [0, 3, 3, 0],
 ]
-fig, axs = plot.subplots(array, axwidth=1.8)
+fig, axs = plot.subplots(array, refwidth=1.8)
 axs.format(
     abc=True, abcloc='ul', suptitle='Complex subplot grid',
     xlabel='xlabel', ylabel='ylabel'
@@ -130,7 +130,7 @@ array = [  # the "picture" (1 == subplot A, 2 == subplot B, etc.)
     [3, 4, 4],
     [3, 5, 5],
 ]
-fig, axs = plot.subplots(array, width=5, span=False)
+fig, axs = plot.subplots(array, figwidth=5, span=False)
 axs.format(
     suptitle='Really complex subplot grid',
     xlabel='xlabel', ylabel='ylabel', abc=True
@@ -172,7 +172,7 @@ data = (state.rand(N, N) - 0.5).cumsum(axis=0).cumsum(axis=1)
 
 # Example plots
 cycle = plot.Cycle('greys', left=0.2, N=5)
-fig, axs = plot.subplots(ncols=2, nrows=2, share=0, width=5)
+fig, axs = plot.subplots(ncols=2, nrows=2, figwidth=5, share=0)
 axs[0].plot(data[:, :5], linewidth=2, linestyle='--', cycle=cycle)
 axs[1].scatter(data[:, :5], marker='x', cycle=cycle)
 axs[2].pcolormesh(data, cmap='greys')
@@ -230,7 +230,7 @@ axs.format(abc=True, xlabel='xlabel', ylabel='ylabel', suptitle='Quick plotting 
 # %%
 import proplot as plot
 import numpy as np
-fig, axs = plot.subplots(ncols=2, nrows=2, share=0, tight=True, axwidth=2)
+fig, axs = plot.subplots(ncols=2, nrows=2, share=0, tight=True, refwidth=2)
 state = np.random.RandomState(51423)
 N = 60
 x = np.linspace(1, 10, N)
@@ -285,7 +285,7 @@ axs.format(
 import proplot as plot
 import numpy as np
 state = np.random.RandomState(51423)
-fig, axs = plot.subplots(ncols=4, nrows=4, axwidth=1.2)
+fig, axs = plot.subplots(ncols=4, nrows=4, refwidth=1.2)
 axs.format(
     xlabel='xlabel', ylabel='ylabel', suptitle='SubplotsContainer demo',
     grid=False, xlim=(0, 50), ylim=(-4, 4)
@@ -340,7 +340,7 @@ plot.rc.axesfacecolor = 'gray4'
 
 # Apply settings to figure with context()
 with plot.rc.context({'suptitle.size': 13}, toplabelcolor='gray6', linewidth=1.5):
-    fig, axs = plot.subplots(ncols=2, aspect=1, width=6, span=False, sharey=2)
+    fig, axs = plot.subplots(ncols=2, figwidth=6, sharey=2, span=False)
 
 # Plot lines
 N, M = 100, 6

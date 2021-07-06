@@ -188,11 +188,11 @@ axs[2].format(
 # Option 1: Create a projection manually with plot.Proj()
 # immport proplot as plot
 # proj = plot.Proj('robin', lon_0=180)
-# fig, axs = plot.subplots(nrows=2, axwidth=3, proj=proj)
+# fig, axs = plot.subplots(nrows=2, refwidth=3, proj=proj)
 
 # Option 2: Pass the name to 'proj' and keyword arguments to 'proj_kw'
 import proplot as plot
-fig, axs = plot.subplots(nrows=2, axwidth=3, proj='robin', proj_kw={'lon_0': 180})
+fig, axs = plot.subplots(nrows=2, refwidth=3, proj='robin', proj_kw={'lon_0': 180})
 axs.format(
     suptitle='Figure with single projection',
     coast=True, latlines=30, lonlines=60,
@@ -261,7 +261,7 @@ data = state.rand(len(lat), len(lon))
 for globe in (False, True,):
     string = 'with' if globe else 'without'
     fig, axs = plot.subplots(
-        ncols=2, nrows=2, axwidth=2.5,
+        ncols=2, nrows=2, refwidth=2.5,
         proj='kav7', basemap={(1, 3): False, (2, 4): True}
     )
     axs.format(
@@ -306,7 +306,7 @@ for globe in (False, True,):
 import proplot as plot
 fig, axs = plot.subplots(
     [[1, 1, 2], [3, 3, 3]],
-    axwidth=4, proj={1: 'eqearth', 2: 'ortho', 3: 'wintri'},
+    refwidth=4, proj={1: 'eqearth', 2: 'ortho', 3: 'wintri'},
     wratios=(1, 1, 1.2), hratios=(1, 1.2),
 )
 axs.format(
@@ -372,7 +372,7 @@ import proplot as plot
 # Plate Carrée map projection
 plot.rc.reso = 'med'  # use higher res for zoomed in geographic features
 proj = plot.Proj('cyl', lonlim=(-20, 180), latlim=(-10, 50), basemap=True)
-fig, axs = plot.subplots(nrows=2, axwidth=5, proj=('cyl', proj))
+fig, axs = plot.subplots(nrows=2, refwidth=5, proj=('cyl', proj))
 axs.format(
     land=True, labels=True, lonlines=20, latlines=20,
     gridminor=True, suptitle='Zooming into projections'
@@ -388,7 +388,7 @@ import proplot as plot
 
 # Pole-centered map projections
 proj = plot.Proj('npaeqd', boundinglat=60, basemap=True)
-fig, axs = plot.subplots(ncols=2, axwidth=2.7, proj=('splaea', proj))
+fig, axs = plot.subplots(ncols=2, refwidth=2.7, proj=('splaea', proj))
 axs.format(
     land=True, latmax=80,  # no gridlines poleward of 80 degrees
     suptitle='Zooming into polar projections'
@@ -402,14 +402,14 @@ import proplot as plot
 # Zooming in on continents
 proj1 = plot.Proj('lcc', lon_0=0)  # cartopy projection
 proj2 = plot.Proj('lcc', lon_0=-100, lat_0=45, width=8e6, height=8e6, basemap=True)
-fig, axs = plot.subplots(ncols=2, axwidth=3, proj=(proj1, proj2))
+fig, axs = plot.subplots(ncols=2, refwidth=3, proj=(proj1, proj2))
 axs.format(suptitle='Zooming into specific regions', land=True)
 axs[0].format(lonlim=(-20, 50), latlim=(30, 70), title='Cartopy example')
 axs[1].format(lonlines=20, title='Basemap example')
 
 # Zooming to very small scale with degree-minute-second labels
 plot.rc.reso = 'hi'
-fig, axs = plot.subplots(ncols=2, axwidth=2.5, proj='cyl')
+fig, axs = plot.subplots(ncols=2, refwidth=2.5, proj='cyl')
 axs.format(
     land=True, labels=True,
     borders=True, borderscolor='white',
@@ -450,7 +450,7 @@ projs = [
     'npstere', 'nplaea', 'npaeqd', 'npgnom', 'igh',
     'eck1', 'eck2', 'eck3', 'eck4', 'eck5', 'eck6'
 ]
-fig, axs = plot.subplots(ncols=3, nrows=10, width=7, proj=projs)
+fig, axs = plot.subplots(ncols=3, nrows=10, figwidth=7, proj=projs)
 axs.format(
     land=True, reso='lo', labels=False,
     suptitle='Table of cartopy projections'
@@ -469,7 +469,7 @@ projs = [
     'vandg', 'aea', 'eqdc', 'gnom', 'cass', 'lcc',
     'npstere', 'npaeqd', 'nplaea'
 ]
-fig, axs = plot.subplots(ncols=3, nrows=8, basemap=True, width=7, proj=projs)
+fig, axs = plot.subplots(ncols=3, nrows=8, basemap=True, figwidth=7, proj=projs)
 axs.format(
     land=True, labels=False,
     suptitle='Table of basemap projections'

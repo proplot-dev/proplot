@@ -136,12 +136,12 @@ def _journals(journal):
             + ', '.join(map(repr, JOURNAL_SPECS.keys()))
         )
     # Return width, and optionally also the height
-    width, height = None, None
+    figwidth = figheight = None
     try:
-        width, height = value
+        figwidth, figheight = value
     except (TypeError, ValueError):
-        width = value
-    return width, height
+        figwidth = value
+    return figwidth, figheight
 
 
 def _axes_dict(naxs, value, kw=False, default=None):
@@ -195,10 +195,9 @@ def _axes_dict(naxs, value, kw=False, default=None):
 
 def subplots(
     array=None, ncols=1, nrows=1,
-    ref=1, order='C',
-    aspect=1, figsize=None,
-    width=None, height=None, journal=None,
-    axwidth=None, axheight=None,
+    ref=1, order='C', refaspect=1,
+    figwidth=None, figheight=None, journal=None, figsize=None,
+    refwidth=None, refheight=None,
     hspace=None, wspace=None, space=None,
     hratios=None, wratios=None,
     width_ratios=None, height_ratios=None,
@@ -206,6 +205,7 @@ def subplots(
     left=None, bottom=None, right=None, top=None,
     basemap=None, proj=None, projection=None,
     proj_kw=None, projection_kw=None,
+    width=None, height=None, axwidth=None, axheight=None, aspect=None,  # deprecated
     **kwargs
 ):
     """
@@ -236,24 +236,24 @@ def subplots(
         `~proplot.axes.Axes.format`).
     figsize : length-2 tuple, optional
         Tuple specifying the figure `(width, height)`.
-    width, height : float or str, optional
+    figwidth, figheight : float or str, optional
         The figure width and height. If you specify just one, the aspect
-        ratio `aspect` of the reference subplot `ref` will be preserved.
+        ratio `refaspect` of the reference subplot `ref` will be preserved.
     ref : int, optional
-        The reference subplot number. The `axwidth`, `axheight`, and `aspect`
-        keyword args are applied to this subplot, and the aspect ratio is
-        conserved for this subplot in the tight layout adjustment. If you
-        did not specify `width_ratios` and `height_ratios`, the `axwidth`,
-        `axheight`, and `aspect` settings will apply to *all* subplots --
-        not just the `ref` subplot.
-    axwidth, axheight : float or str, optional
+        The reference subplot number. The `refwidth`, `refheight`, and
+        `refaspect` keyword args are applied to this subplot, and the aspect
+        ratio is conserved for this subplot in the tight layout adjustment.
+        If you did not specify `width_ratios` and `height_ratios`, the
+        `refwidth`, `refheight`, and `refaspect` settings will apply to *all*
+        subplots -- not just the `ref` subplot.
+    refwidth, refheight : float or str, optional
         The width, height of the reference subplot. Units are interpreted by
-        `~proplot.utils.units`. Default is :rc:`subplots.axwidth`. Ignored
+        `~proplot.utils.units`. Default is :rc:`subplots.refwidth`. Ignored
         if `width`, `height`, or `figsize` was passed.
-    aspect : float or length-2 list of floats, optional
+    refaspect : float or length-2 list of floats, optional
         The reference subplot aspect ratio, in numeric form (width divided by
         height) or as a (width, height) tuple. Ignored if both `width` *and*
-        `height` or both `axwidth` *and* `axheight` were passed.
+        `height` or both `refwidth` *and* `refheight` were passed.
     width_ratios, height_ratios : float or list thereof, optional
         Passed to `~proplot.gridspec.GridSpec`, denotes the width
         and height ratios for the subplot grid. Length of `width_ratios`
@@ -407,8 +407,8 @@ list thereof, or dict thereof, optional
     axids = [np.where(array == i) for i in np.sort(np.unique(array)) if i > 0]
     xrange = np.array([[x.min(), x.max()] for _, x in axids])
     yrange = np.array([[y.min(), y.max()] for y, _ in axids])
-    xref = xrange[ref - 1, :]  # range for reference axes
-    yref = yrange[ref - 1, :]
+    refxrange = xrange[ref - 1, :]  # range for reference axes
+    refyrange = yrange[ref - 1, :]
 
     # Get basemap.Basemap or cartopy.crs.Projection instances for map
     proj = _not_none(projection=projection, proj=proj)
@@ -426,7 +426,7 @@ list thereof, or dict thereof, optional
         elif name == 'polar':
             axes_kw[num]['projection'] = 'proplot_polar'
             if num == ref:
-                aspect = 1
+                refaspect = 1
 
         # Builtin matplotlib 3D axes, no overwrite yet
         elif name == '3d' or name == '3D':
@@ -438,34 +438,39 @@ list thereof, or dict thereof, optional
             package = m._proj_package
             if num == ref:
                 if package == 'basemap':
-                    aspect = (m.urcrnrx - m.llcrnrx) / (m.urcrnry - m.llcrnry)
+                    refaspect = (m.urcrnrx - m.llcrnrx) / (m.urcrnry - m.llcrnry)
                 else:
-                    aspect = (np.diff(m.x_limits) / np.diff(m.y_limits))[0]
+                    refaspect = (np.diff(m.x_limits) / np.diff(m.y_limits))[0]
             axes_kw[num].update({'projection': 'proplot_' + package, 'map_projection': m})  # noqa: E501
 
     # Figure and/or axes dimensions
     names, values = (), ()
+    refaspect = _not_none(refaspect, aspect)
+    refwidth = _not_none(refwidth, axwidth)  # eventually deprecated synonyms
+    refheight = _not_none(refheight, axheight)
+    figwidth = _not_none(figwidth, width)
+    figheight = _not_none(figheight, height)
     if journal:
         # if user passed width=<string > , will use that journal size
         figsize = _journals(journal)
         spec = f'journal={journal!r}'
-        names = ('axwidth', 'axheight', 'width')
-        values = (axwidth, axheight, width)
-        width, height = figsize
+        names = ('refwidth', 'refheight', 'figwidth')
+        values = (refwidth, refheight, figwidth)
+        figwidth, figheight = figsize
     elif figsize:
         spec = f'figsize={figsize!r}'
-        names = ('axwidth', 'axheight', 'width', 'height')
-        values = (axwidth, axheight, width, height)
-        width, height = figsize
-    elif width is not None or height is not None:
+        names = ('refwidth', 'refheight', 'figwidth', 'figheight')
+        values = (refwidth, refheight, figwidth, figheight)
+        figwidth, figheight = figsize
+    elif figwidth is not None or figheight is not None:
         spec = []
-        if width is not None:
-            spec.append(f'width={width!r}')
-        if height is not None:
-            spec.append(f'height={height!r}')
+        if figwidth is not None:
+            spec.append(f'figwidth={figwidth!r}')
+        if figheight is not None:
+            spec.append(f'figheight={figheight!r}')
         spec = ', '.join(spec)
-        names = ('axwidth', 'axheight')
-        values = (axwidth, axheight)
+        names = ('refwidth', 'refheight')
+        values = (refwidth, refheight)
     # Raise warning
     for name, value in zip(names, values):
         if value is not None:
@@ -475,8 +480,8 @@ list thereof, or dict thereof, optional
             )
 
     # Standardized dimensions
-    width, height = units(width), units(height)
-    axwidth, axheight = units(axwidth), units(axheight)
+    figwidth, figheight = units(figwidth), units(figheight)
+    refwidth, refheight = units(refwidth), units(refheight)
 
     # Standardized user input border spaces
     left, right = units(left), units(right)
@@ -536,8 +541,8 @@ list thereof, or dict thereof, optional
     top = _not_none(top, pgridspec._default_space('top'))
 
     wspace, hspace = np.array(wspace), np.array(hspace)  # also copies!
-    wspace[wspace == None] = pgridspec._default_space('wspace', sharex)  # noqa: E711, E501
-    hspace[hspace == None] = pgridspec._default_space('hspace', sharey)  # noqa: E711, E501
+    wspace[wspace == None] = pgridspec._default_space('wspace', sharex)  # noqa: E711
+    hspace[hspace == None] = pgridspec._default_space('hspace', sharey)  # noqa: E711
 
     wratios, hratios = list(wratios), list(hratios)
     wspace, hspace = list(wspace), list(hspace)
@@ -545,9 +550,10 @@ list thereof, or dict thereof, optional
     # Parse arguments, fix dimensions in light of desired aspect ratio
     figsize, gridspec_kw, subplots_kw = pgridspec._calc_geometry(
         nrows=nrows, ncols=ncols,
-        aspect=aspect, xref=xref, yref=yref,
         left=left, right=right, bottom=bottom, top=top,
-        width=width, height=height, axwidth=axwidth, axheight=axheight,
+        figwidth=figwidth, figheight=figheight,
+        refaspect=refaspect, refwidth=refwidth, refheight=refheight,
+        refxrange=refxrange, refyrange=refyrange,
         wratios=wratios, hratios=hratios, wspace=wspace, hspace=hspace,
         wequal=bool(wequal), hequal=bool(hequal), equal=bool(equal),
         wpanels=[''] * ncols, hpanels=[''] * nrows,

@@ -133,7 +133,7 @@ df.columns.name = 'variable (units)'
 
 # %%
 import proplot as plot
-fig, axs = plot.subplots(nrows=2, axwidth=2.5, share=0)
+fig, axs = plot.subplots(nrows=2, refwidth=2.5, share=0)
 axs.format(toplabels=('Automatic subplot formatting',))
 
 # Plot DataArray
@@ -220,7 +220,7 @@ import proplot as plot
 import numpy as np
 
 # Pcolor plot with and without distinct levels
-fig, axs = plot.subplots(ncols=2, axwidth=2)
+fig, axs = plot.subplots(ncols=2, refwidth=2)
 state = np.random.RandomState(51423)
 data = (state.normal(0, 1, size=(33, 33))).cumsum(axis=0).cumsum(axis=1)
 axs.format(suptitle='Pcolor plot with levels')
@@ -233,7 +233,7 @@ import proplot as plot
 import numpy as np
 fig, axs = plot.subplots(
     [[0, 0, 1, 1, 0, 0], [2, 3, 3, 4, 4, 5]],
-    wratios=(1.5, 0.5, 1, 1, 0.5, 1.5), axwidth=1.7, ref=1, right='2em'
+    wratios=(1.5, 0.5, 1, 1, 0.5, 1.5), refwidth=1.7, ref=1, right='2em'
 )
 axs.format(suptitle='DiscreteNorm color-range standardization')
 levels = plot.arange(0, 360, 45)
@@ -292,7 +292,7 @@ import numpy as np
 # Linear segmented norm
 state = np.random.RandomState(51423)
 data = 10**(2 * state.rand(20, 20).cumsum(axis=0) / 7)
-fig, axs = plot.subplots(ncols=2, axwidth=2.4)
+fig, axs = plot.subplots(ncols=2, refwidth=2.4)
 ticks = [5, 10, 20, 50, 100, 200, 500, 1000]
 for i, (norm, title) in enumerate(zip(
     ('linear', 'segmented'),
@@ -314,7 +314,7 @@ import numpy as np
 state = np.random.RandomState(51423)
 data1 = (state.rand(20, 20) - 0.43).cumsum(axis=0)
 data2 = (state.rand(20, 20) - 0.57).cumsum(axis=0)
-fig, axs = plot.subplots(nrows=2, ncols=2, axwidth=2.4, order='F')
+fig, axs = plot.subplots(nrows=2, ncols=2, refwidth=2.4, order='F')
 cmap = plot.Colormap('DryWet', cut=0.1)
 axs.format(suptitle='Diverging normalizer demo')
 i = 0
@@ -358,7 +358,7 @@ import pandas as pd
 import numpy as np
 fig, axs = plot.subplots(
     [[1, 1, 2, 2], [0, 3, 3, 0]],
-    axwidth=2.2, share=1, span=False, hratios=(1, 0.9)
+    refwidth=2.2, share=1, span=False, hratios=(1, 0.9)
 )
 state = np.random.RandomState(51423)
 data = state.rand(6, 6)
@@ -416,7 +416,7 @@ data[np.tril_indices(data.shape[0], -1)] = np.nan  # fill half with empty boxes
 data = pd.DataFrame(data, columns=list('abcdefghij'), index=list('abcdefghij'))
 
 # Covariance matrix plot
-fig, ax = plot.subplots(axwidth=4.5)
+fig, ax = plot.subplots(refwidth=4.5)
 m = ax.heatmap(
     data, cmap='ColdHot', vmin=-1, vmax=1, N=100,
     lw=0.5, edgecolor='k', labels=True, labels_kw={'weight': 'bold'},

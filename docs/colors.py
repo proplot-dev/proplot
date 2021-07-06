@@ -70,7 +70,7 @@ fig, axs = plot.show_colors()
 import proplot as plot
 import numpy as np
 state = np.random.RandomState(51423)
-fig, axs = plot.subplots(nrows=2, axwidth=3.2, share=0)
+fig, axs = plot.subplots(nrows=2, refwidth=3.2, share=0)
 axs.format(
     xformatter='null', yformatter='null', abc=True, abcloc='ul', abcstyle='A.',
     suptitle='Getting individual colors from colormaps and cycles'

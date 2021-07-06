@@ -92,7 +92,7 @@ axs.format(xlabel='xlabel', ylabel='ylabel')
 # %%
 import proplot as plot
 import numpy as np
-fig, axs = plot.subplots(nrows=2, share=0, axwidth='55mm', panelpad='1em')
+fig, axs = plot.subplots(nrows=2, share=0, refwidth='55mm', panelpad='1em')
 axs.format(suptitle='Stacked colorbars demo')
 state = np.random.RandomState(51423)
 N = 10
@@ -139,7 +139,7 @@ for j, ax in enumerate(axs):
 # %%
 import proplot as plot
 import numpy as np
-fig, axs = plot.subplots(ncols=3, nrows=3, axwidth=1.4)
+fig, axs = plot.subplots(ncols=3, nrows=3, refwidth=1.4)
 state = np.random.RandomState(51423)
 m = axs.pcolormesh(
     state.rand(20, 20), cmap='grays',
@@ -158,7 +158,7 @@ fig.colorbar(m, label='colorbar with length <1', ticks=0.1, loc='r', length=0.7)
 import proplot as plot
 import numpy as np
 fig, axs = plot.subplots(
-    ncols=2, nrows=2, axwidth=1.7,
+    ncols=2, nrows=2, refwidth=1.7,
     share=0, wspace=0.3, order='F'
 )
 
@@ -210,7 +210,7 @@ for ax, title in zip(
 # %%
 import proplot as plot
 import numpy as np
-fig, axs = plot.subplots(share=0, ncols=2, axwidth=2)
+fig, axs = plot.subplots(share=0, ncols=2, refwidth=2)
 
 # Colorbars from lines
 ax = axs[0]
@@ -268,7 +268,7 @@ import proplot as plot
 import numpy as np
 plot.rc.cycle = '538'
 labels = ['a', 'bb', 'ccc', 'dddd', 'eeeee']
-fig, axs = plot.subplots(ncols=2, span=False, share=1, axwidth=2.3)
+fig, axs = plot.subplots(ncols=2, span=False, share=1, refwidth=2.3)
 hs1, hs2 = [], []
 
 # On-the-fly legends

@@ -51,7 +51,7 @@ data = 10 * (data - data.min()) / (data.max() - data.min())
 # Stacked panels with outer colorbars
 for cbarloc, ploc in ('rb', 'br'):
     fig, axs = plot.subplots(
-        axwidth=1.8, nrows=1, ncols=2,
+        refwidth=1.8, nrows=1, ncols=2,
         share=0, panelpad=0.1, includepanels=True
     )
     axs.format(
@@ -92,7 +92,7 @@ for cbarloc, ploc in ('rb', 'br'):
 
 # %%
 import proplot as plot
-fig, axs = plot.subplots(axwidth=1.5, nrows=2, ncols=2, share=0)
+fig, axs = plot.subplots(refwidth=1.5, nrows=2, ncols=2, share=0)
 
 # Demonstrate that complex arrangements of panels does
 # not mess up subplot aspect ratios or tight layout spacing
@@ -137,7 +137,7 @@ x, y = np.arange(10), np.arange(10)
 data = state.rand(10, 10)
 
 # Plot sample data
-fig, ax = plot.subplots(axwidth=3)
+fig, ax = plot.subplots(refwidth=3)
 m = ax.pcolormesh(data, cmap='Grays', levels=N)
 ax.colorbar(m, loc='b', label='label')
 ax.format(

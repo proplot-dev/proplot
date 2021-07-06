@@ -76,6 +76,7 @@ _rc_renamed = {  # {old_key: (new_key, version)} dictionary
     'abovetop': ('title.above', '0.7'),
     'subplots.pad': ('subplots.outerpad', '0.7'),
     'subplots.axpad': ('subplots.innerpad', '0.7'),
+    'subplots.axwidth': ('subplots.refwidth', '0.7'),
 }
 
 # ProPlot overrides of matplotlib default style
@@ -770,10 +771,6 @@ _rc_proplot = {
         'Whether to align axis labels during draw. See `aligning labels '
         '<https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/align_labels_demo.html>`__.'  # noqa: E501
     ),
-    'subplots.axwidth': (
-        '20em',  # about 3 inches wide
-        'Default width of each axes. ' + _addendum_units
-    ),
     'subplots.innerpad': (
         '1em',
         'Padding between adjacent subplots. ' + _addendum_units
@@ -790,6 +787,10 @@ _rc_proplot = {
     'subplots.panelwidth': (
         '4em',
         'Width of side panels. ' + _addendum_units
+    ),
+    'subplots.refwidth': (
+        '20em',  # about 3 inches wide
+        'Default width of the reference subplot. ' + _addendum_units
     ),
     'subplots.share': (
         3,

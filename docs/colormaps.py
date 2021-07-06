@@ -133,16 +133,16 @@ fig, axs = plot.show_cmaps()
 # %%
 # Colorspace demo
 import proplot as plot
-fig, axs = plot.show_colorspaces(axwidth=1.6, luminance=50)
-fig, axs = plot.show_colorspaces(axwidth=1.6, saturation=60)
-fig, axs = plot.show_colorspaces(axwidth=1.6, hue=0)
+fig, axs = plot.show_colorspaces(refwidth=1.6, luminance=50)
+fig, axs = plot.show_colorspaces(refwidth=1.6, saturation=60)
+fig, axs = plot.show_colorspaces(refwidth=1.6, hue=0)
 
 # %%
 # Compare colormaps
 import proplot as plot
 for cmaps in (('magma', 'rocket'), ('fire', 'dusk')):
     fig, axs = plot.show_channels(
-        *cmaps, axwidth=1.5, minhue=-180, maxsat=400, rgb=False
+        *cmaps, refwidth=1.5, minhue=-180, maxsat=400, rgb=False
     )
 
 
@@ -193,7 +193,7 @@ state = np.random.RandomState(51423)
 data = state.rand(30, 30).cumsum(axis=1)
 
 # Initialize figure
-fig, axs = plot.subplots([[1, 1, 2, 2], [0, 3, 3, 0]], axwidth=2, span=0)
+fig, axs = plot.subplots([[1, 1, 2, 2], [0, 3, 3, 0]], refwidth=2, span=0)
 axs.format(
     xlabel='x axis', ylabel='y axis',
     suptitle='Building your own PerceptuallyUniformColormaps'
@@ -224,7 +224,7 @@ axs[2].format(title='From channel values')
 axs[2].pcolormesh(data, cmap=cmap3)
 
 # Display the channels
-fig, axs = plot.show_channels(cmap1, cmap2, cmap3, axwidth=1.5, rgb=False)
+fig, axs = plot.show_channels(cmap1, cmap2, cmap3, refwidth=1.5, rgb=False)
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -255,7 +255,7 @@ state = np.random.RandomState(51423)
 data = state.rand(30, 30).cumsum(axis=1)
 
 # Generate figure
-fig, axs = plot.subplots([[0, 1, 1, 0], [2, 2, 3, 3]], axwidth=2.4, span=False)
+fig, axs = plot.subplots([[0, 1, 1, 0], [2, 2, 3, 3]], refwidth=2.4, span=False)
 axs.format(
     xlabel='xlabel', ylabel='ylabel',
     suptitle='Merging existing colormaps'
@@ -333,7 +333,7 @@ state = np.random.RandomState(51423)
 data = state.rand(40, 40).cumsum(axis=0)
 
 # Generate figure
-fig, axs = plot.subplots(ncols=3, axwidth=1.7, span=False)
+fig, axs = plot.subplots(ncols=3, refwidth=1.7, span=False)
 axs.format(
     xlabel='x axis', ylabel='y axis',
     suptitle='Truncating sequential colormaps',
@@ -362,7 +362,7 @@ state = np.random.RandomState(51423)
 data = (state.rand(40, 40) - 0.5).cumsum(axis=0).cumsum(axis=1)
 
 # Generate figure
-fig, axs = plot.subplots(ncols=2, nrows=2, axwidth=1.7, span=False)
+fig, axs = plot.subplots(ncols=2, nrows=2, refwidth=1.7, span=False)
 axs.format(
     xlabel='x axis', ylabel='y axis',
     suptitle='Modifying diverging colormaps',
@@ -395,7 +395,7 @@ state = np.random.RandomState(51423)
 data = (state.rand(50, 50) - 0.48).cumsum(axis=0).cumsum(axis=1) % 30
 
 # Rotating cyclic colormaps
-fig, axs = plot.subplots(ncols=3, axwidth=1.7)
+fig, axs = plot.subplots(ncols=3, refwidth=1.7)
 for ax, shift in zip(axs, (0, 90, 180)):
     m = ax.pcolormesh(data, cmap='romaO', cmap_kw={'shift': shift}, levels=12)
     ax.format(
@@ -413,7 +413,7 @@ data = state.rand(20, 20).cumsum(axis=1)
 # Changing the colormap opacity
 # Use pcolorfast because AxesImage does not have issue where pixels
 # appear to have "outline" when colors are not 100% opaque
-fig, axs = plot.subplots(ncols=3, axwidth=1.7)
+fig, axs = plot.subplots(ncols=3, refwidth=1.7)
 for ax, alpha in zip(axs, (1.0, 0.5, 0.0)):
     alpha = (alpha, 1.0)
     cmap = plot.Colormap('batlow_r', alpha=alpha)
@@ -431,7 +431,7 @@ state = np.random.RandomState(51423)
 data = state.rand(20, 20).cumsum(axis=1)
 
 # Changing the colormap gamma
-fig, axs = plot.subplots(ncols=3, axwidth=1.7)
+fig, axs = plot.subplots(ncols=3, refwidth=1.7)
 for ax, gamma in zip(axs, (0.7, 1.0, 1.4)):
     cmap = plot.Colormap('boreal', gamma=gamma)
     m = ax.pcolormesh(data, cmap=cmap, levels=10, extend='both')

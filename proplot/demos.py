@@ -246,7 +246,7 @@ def _draw_bars(
     # Draw figure
     naxs = len(cmapdict) + sum(map(len, cmapdict.values()))
     fig, axs = ui.subplots(
-        nrows=naxs, axwidth=length, axheight=width,
+        nrows=naxs, refwidth=length, refheight=width,
         share=0, hspace=0.03,
     )
     iax = -1
@@ -281,7 +281,7 @@ def _draw_bars(
 
 def show_channels(
     *args, N=100, saturation=True, rgb=False, minhue=0,
-    maxsat=500, width=100, axwidth=1.7
+    maxsat=500, width=100, refwidth=1.7
 ):
     """
     Show how arbitrary colormap(s) vary with respect to the hue, chroma,
@@ -308,7 +308,7 @@ def show_channels(
         The maximum saturation. Use this to truncate large saturation values.
     width : int, optional
         The width of each colormap line in points.
-    axwidth : int or str, optional
+    refwidth : int or str, optional
         The width of each subplot. Passed to `~proplot.ui.subplots`.
 
     Returns
@@ -329,7 +329,7 @@ def show_channels(
         labels += ('Red', 'Green', 'Blue')
     fig, axs = ui.subplots(
         array=array, span=False, share=1,
-        axwidth=axwidth, innerpad='1em',
+        refwidth=refwidth, innerpad='1em',
     )
     # Iterate through colormaps
     mc = ms = mp = 0
@@ -408,7 +408,7 @@ def show_channels(
     return fig, axs
 
 
-def show_colorspaces(*, luminance=None, saturation=None, hue=None, axwidth=2):
+def show_colorspaces(*, luminance=None, saturation=None, hue=None, refwidth=2):
     """
     Generate hue-saturation, hue-luminance, and luminance-saturation
     cross-sections for the HCL, HSL, and HPL colorspaces.
@@ -424,7 +424,7 @@ def show_colorspaces(*, luminance=None, saturation=None, hue=None, axwidth=2):
     hue : float, optional
         If passed, luminance-saturation cross-sections
         are drawn for this hue. Must be between ``0`` and ``360``.
-    axwidth : str or float, optional
+    refwidth : str or float, optional
         Average width of each subplot. Units are interpreted by
         `~proplot.utils.units`.
 
@@ -470,9 +470,7 @@ def show_colorspaces(*, luminance=None, saturation=None, hue=None, axwidth=2):
 
     # Make figure, with black indicating invalid values
     # Note we invert the x-y ordering for imshow
-    fig, axs = ui.subplots(
-        ncols=3, share=0, axwidth=axwidth, aspect=1, innerpad=0.05
-    )
+    fig, axs = ui.subplots(ncols=3, share=0, refwidth=refwidth, innerpad=0.05)
     for ax, space in zip(axs, ('hcl', 'hsl', 'hpl')):
         rgba = np.ones((*hsl.shape[:2][::-1], 4))  # RGBA
         for j in range(hsl.shape[0]):
@@ -607,16 +605,16 @@ def show_colors(*, nhues=17, minsat=10, categories=None, unknown='User'):
     # of rows, times the aspect ratio of the slot for each swatch-name
     # pair, which we set to 5.
     shape = tuple(namess.values())[0].shape  # sample *first* group
-    width = 6.5
     margin = 0.1
-    ncols_max = max(names.shape[0] for names in namess.values())
-    aspect_axes = (width * 72) / (10 * shape[1])  # points
-    height_ratios = tuple(names.shape[1] for names in namess.values())
+    figwidth = 6.5
+    refaspect = (figwidth * 72) / (10 * shape[1])  # points
+    maxcols = max(names.shape[0] for names in namess.values())
+    hratios = tuple(names.shape[1] for names in namess.values())
     fig, axs = ui.subplots(
         nrows=len(categories),
-        width=width,
-        aspect=aspect_axes,
-        height_ratios=height_ratios,
+        hratios=hratios,
+        figwidth=figwidth,
+        refaspect=refaspect,
         left=margin, right=margin, bottom=margin,
     )
     title_dict = {
@@ -630,7 +628,7 @@ def show_colors(*, nhues=17, minsat=10, categories=None, unknown='User'):
         ax.format(
             title=title_dict.get(cat, cat),
             titleweight='bold',
-            xlim=(0, ncols_max - 1),
+            xlim=(0, maxcols - 1),
             ylim=(0, names.shape[1]),
             grid=False, yloc='neither', xloc='neither',
             alpha=0,
@@ -645,7 +643,7 @@ def show_colors(*, nhues=17, minsat=10, categories=None, unknown='User'):
                 if not name:
                     continue
                 y = nrows - row - 1  # start at top
-                x1 = col * (ncols_max - 1) / ncols  # e.g. idx 3 --> idx 7
+                x1 = col * (maxcols - 1) / ncols  # e.g. idx 3 --> idx 7
                 x2 = x1 + swatch  # portion of column
                 xtext = x1 + 1.1 * swatch
                 ax.text(
@@ -839,7 +837,7 @@ def show_fonts(
     # Create figure
     fig, axs = ui.subplots(
         ncols=1, nrows=len(args), space=0,
-        axwidth=4.5, axheight=1.2 * (text.count('\n') + 2.5) * size / 72,
+        refwidth=4.5, refheight=1.2 * (text.count('\n') + 2.5) * size / 72,
         mathtext_fallback=False
     )
     axs.format(
