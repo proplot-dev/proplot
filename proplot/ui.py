@@ -194,10 +194,9 @@ def _axes_dict(naxs, value, kw=False, default=None):
 
 
 def subplots(
-    array=None, ncols=1, nrows=1,
-    ref=1, order='C', refaspect=1,
+    array=None, ncols=1, nrows=1, order='C',
+    ref=1, refaspect=1, refwidth=None, refheight=None,
     figwidth=None, figheight=None, journal=None, figsize=None,
-    refwidth=None, refheight=None,
     hspace=None, wspace=None, space=None,
     hratios=None, wratios=None,
     width_ratios=None, height_ratios=None,
@@ -234,11 +233,6 @@ def subplots(
         the order that subplots appear in the `SubplotsContainer` returned by
         this function, and the order of subplot a-b-c labels (see
         `~proplot.axes.Axes.format`).
-    figsize : length-2 tuple, optional
-        Tuple specifying the figure `(width, height)`.
-    figwidth, figheight : float or str, optional
-        The figure width and height. If you specify just one, the aspect
-        ratio `refaspect` of the reference subplot `ref` will be preserved.
     ref : int, optional
         The reference subplot number. The `refwidth`, `refheight`, and
         `refaspect` keyword args are applied to this subplot, and the aspect
@@ -246,21 +240,19 @@ def subplots(
         If you did not specify `width_ratios` and `height_ratios`, the
         `refwidth`, `refheight`, and `refaspect` settings will apply to *all*
         subplots -- not just the `ref` subplot.
-    refwidth, refheight : float or str, optional
-        The width, height of the reference subplot. Units are interpreted by
-        `~proplot.utils.units`. Default is :rc:`subplots.refwidth`. Ignored
-        if `width`, `height`, or `figsize` was passed.
     refaspect : float or length-2 list of floats, optional
         The reference subplot aspect ratio, in numeric form (width divided by
         height) or as a (width, height) tuple. Ignored if both `width` *and*
         `height` or both `refwidth` *and* `refheight` were passed.
-    width_ratios, height_ratios : float or list thereof, optional
-        Passed to `~proplot.gridspec.GridSpec`, denotes the width
-        and height ratios for the subplot grid. Length of `width_ratios`
-        must match the number of rows, and length of `height_ratios` must
-        match the number of columns.
-    wratios, hratios
-        Aliases for `width_ratios`, `height_ratios`.
+    refwidth, refheight : float or str, optional
+        The width, height of the reference subplot. Units are interpreted by
+        `~proplot.utils.units`. Default is :rc:`subplots.refwidth`. Ignored
+        if `width`, `height`, or `figsize` was passed.
+    figwidth, figheight : float or str, optional
+        The figure width and height. If you specify just one, the aspect
+        ratio `refaspect` of the reference subplot `ref` will be preserved.
+    figsize : length-2 tuple, optional
+        Tuple specifying the figure `(width, height)`.
     wspace, hspace, space : float or str or list thereof, optional
         Passed to `~proplot.gridspec.GridSpec`, denotes the
         spacing between grid columns, rows, and both, respectively. If float
@@ -273,6 +265,13 @@ def subplots(
     wequal, hequal, equal :  bool, optional
         Whether to automatically make spacing between columns, rows, or both
         equal. Default is ``False``.
+    wratios, hratios : float or list thereof, optional
+        Passed to `~proplot.gridspec.GridSpec`, denotes the width
+        and height ratios for the subplot grid. Length of `wratios`
+        must match the number of rows, and length of `hratios` must
+        match the number of columns.
+    width_ratios, height_ratios
+        Aliases for `wratios`, `hratios`.
     left, right, top, bottom : float or str, optional
         Passed to `~proplot.gridspec.GridSpec`, denotes the width of padding
         between the subplots and the figure edge. Units are interpreted by
@@ -317,8 +316,8 @@ list thereof, or dict thereof, optional
         to all subplots. If list or dict, applies to specific subplots, as with `proj`.
     journal : str, optional
         String name corresponding to an academic journal standard that is used
-        to control the figure width and, if specified, the height. See the
-        below table.
+        to control the figure width `figwidth` and, if specified, the figure
+        height `figheight`. See the below table.
 
         .. _journal_table:
 
@@ -417,6 +416,7 @@ list thereof, or dict thereof, optional
     proj_kw = _axes_dict(naxs, proj_kw, kw=True)
     basemap = _axes_dict(naxs, basemap, kw=False, default=None)
     axes_kw = {num: {} for num in range(1, naxs + 1)}  # store add_subplot args
+    refaspect = _not_none(refaspect, aspect)
     for num, name in proj.items():
         # The default is CartesianAxes
         if name is None or name == 'cartesian':
@@ -445,7 +445,6 @@ list thereof, or dict thereof, optional
 
     # Figure and/or axes dimensions
     names, values = (), ()
-    refaspect = _not_none(refaspect, aspect)
     refwidth = _not_none(refwidth, axwidth)  # eventually deprecated synonyms
     refheight = _not_none(refheight, axheight)
     figwidth = _not_none(figwidth, width)
