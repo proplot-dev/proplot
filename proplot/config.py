@@ -395,10 +395,10 @@ class RcConfigurator(object):
         # Props matching the below strings use the units 'points'.
         # See: https://matplotlib.org/users/customizing.html
         # TODO: Incorporate into more sophisticated validation system
-        if any(REGEX_POINTS.match(_) for _ in keys):
-            try:
-                self._scale_font(value)  # *validate* but do not translate
-            except KeyError:
+        if REGEX_POINTS.match(key):
+            if key in FONT_KEYS and value in mfonts.font_scalings:
+                pass
+            else:
                 value = units(value, 'pt')  # allows e.g. fontsize='10px'
 
         # Special key: configure inline backend
@@ -606,20 +606,20 @@ class RcConfigurator(object):
         """
         # NOTE: Critical this remains KeyError so except clause
         # in _get_synced_params works.
-        if isinstance(size, str):
-            try:
-                scale = mfonts.font_scalings[size]
-            except KeyError:
-                raise KeyError(
-                    f'Invalid font scaling {size!r}. Options are: '
-                    + ', '.join(
-                        f'{key!r} ({value})'
-                        for key, value in mfonts.font_scalings.items()
-                    ) + '.'
-                )
-            else:
-                size = rc_matplotlib['font.size'] * scale
-        return size
+        if not isinstance(size, str):
+            return size
+        try:
+            scale = mfonts.font_scalings[size]
+        except KeyError:
+            raise KeyError(
+                f'Invalid font scaling {size!r}. Options are: '
+                + ', '.join(
+                    f'{key!r} ({value})'
+                    for key, value in mfonts.font_scalings.items()
+                ) + '.'
+            )
+        else:
+            return rc_matplotlib['font.size'] * scale
 
     def category(self, cat, *, trimcat=True, context=False):
         """
