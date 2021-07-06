@@ -75,6 +75,19 @@ ProPlot v0.7.0 (2021-07-##)
 
 .. rubric:: Deprecated
 
+* Rename :rcraw:`subplots.pad` and :rcraw:`subplots.axpad` to more understandable
+  :rcraw:`subplots.outerpad` and :rcraw:`subplots.innerpad` (:commit:`3c7a33a8`).
+* Rename `width` and `height` `~proplot.subplots.subplots` keyword args to
+  more understandable `figwidth` and `figheight` (:commit:`12d01996`). Will accept old
+  keyword args without warning for now since they are used heavily.
+* Rename `aspect`, `axwidth`, and `axheight` keyword args to more understandable
+  `refaspect`, `refwidth`, and `refheight` (:commit:`12d01996`). Will accept old
+  keyword args without warning for now since they are used heavily.
+* Rename `abovetop` keyword for moving title/abc labels above top panels, colorbars,
+  and legends to :rcraw:`title.above` (:commit:`9ceacb7b`). Example usage:
+  ``ax.format(title='Title', titleabove=True)``.
+* Rename seldom-used `Figure` argument `fallback_to_cm` to more understandable
+  `mathtext_fallback` (:pr:`251`).
 * Change default :rcraw:`savefig.transparent` back to ``False`` (:pr:`252`). Dubious
   justification for ``True`` in the first place, and makes default PNG proplot figures
   unreadable wherever "dark mode" is enabled.
@@ -95,19 +108,6 @@ ProPlot v0.7.0 (2021-07-##)
   run close to the background patch (:commit:`f5435976`)
 * Use proplot TeX Gyre fonts with `~proplot.config.use_style` styles unless specified
   otherwise (:commit:`6d7444fe`). Styles otherwise build on matplotlib defaults.
-* Rename :rcraw:`subplots.pad` and :rcraw:`subplots.axpad` to more understandable
-  :rcraw:`subplots.outerpad` and :rcraw:`subplots.innerpad` (:commit:`3c7a33a8`).
-* Rename `width` and `height` `~proplot.subplots.subplots` keyword args to
-  `figwidth` and `figheight` (:commit:`12d01996`). Will accept old keyword args
-  without warning for now since they are so heavily used.
-* Rename `aspect`, `axwidth`, and `axheight` keyword args to `refaspect`,
-  `refwidth`, and `refheight` (:commit:`12d01996`). Will accept old keyword args
-  without warning for now since they are so heavily used.
-* Rename `abovetop` keyword for moving title/abc labels above top panels, colorbars,
-  and legends to :rcraw:`title.above` (:commit:`9ceacb7b`). Example usage:
-  ``ax.format(title='Title', titleabove=True)``.
-* Rename seldom-used `Figure` argument `fallback_to_cm` to more understandable
-  `mathtext_fallback` (:pr:`251`).
 * Move `make_mapping_array` to private API, following lead of matplotlib's deprecated
   `makeMappingArray` function (:commit:`66ae574b`).
 * `legend_wrapper` no longer returns the background patch generated for centered-row
@@ -121,6 +121,8 @@ ProPlot v0.7.0 (2021-07-##)
 * Permit different colors for `~matplotlib.axes.Axes.boxplot` and
   `~matplotlib.axes.Axes.violinplot` using color lists (:issue:`217`, :pr:`218`)
   by `Mickaël Lalande`_.
+* Allow updating axes fonts that use scalings like ``'small'`` and ``'large'``
+  by passing ``fontsize=N`` to `format` (:issue:`212`).
 * Add `titlebbox` and `abcbbox` as alternatives to `titleborder` and `abcborder` for
   "inner" titles and a-b-c labels (:pr:`240`) by `Pratiman Patel`_. Borders are still
   used by default.

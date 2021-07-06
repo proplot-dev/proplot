@@ -11,7 +11,7 @@ import numpy as np
 
 from . import colors as pcolors
 from . import constructor, ui
-from .config import BASE_COLORS, OPEN_COLORS, XKCD_COLORS, _get_data_paths, rc
+from .config import COLORS_BASE, COLORS_OPEN, COLORS_XKCD, _get_data_paths, rc
 from .internals import ic  # noqa: F401
 from .internals import _not_none, docstring
 from .utils import to_rgb, to_xyz
@@ -26,9 +26,9 @@ __all__ = [
 ]
 
 COLORS_TABLE = {
-    'base': list(BASE_COLORS),
-    'opencolor': list(OPEN_COLORS),
-    'xkcd': list(XKCD_COLORS),
+    'base': list(COLORS_BASE),
+    'opencolor': list(COLORS_OPEN),
+    'xkcd': list(COLORS_XKCD),
     'css4': list(mcolors.CSS4_COLORS),
 }
 

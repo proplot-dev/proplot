@@ -50,11 +50,11 @@ __all__ = [
 logger = logging.getLogger('matplotlib.mathtext')
 logger.setLevel(logging.ERROR)  # suppress warnings!
 
-# Dictionaries used to track custom proplot settings
+# Dictionaries used to track settings
 rc_proplot = rcsetup._rc_proplot_default.copy()
 rc_matplotlib = mpl.rcParams  # PEP8 4 lyfe
-RcParams = mpl.RcParams  # the special class
 _RcContext = namedtuple('RcContext', ('mode', 'kwargs', 'rc_new', 'rc_old'))
+RcParams = mpl.RcParams  # the special class
 
 # Misc constants
 # TODO: Use explicit validators for specific settings like matplotlib.
@@ -62,8 +62,54 @@ REGEX_STRING = re.compile('\\A(\'.*\'|".*")\\Z')
 REGEX_POINTS = re.compile(
     r'\A(?!colorbar|subplots|pdf|ps).*(width|space|size|pad|len)\Z'
 )
-
-ALWAYS_ADD = (
+FONT_KEYS = (
+    'abc.size', 'axes.labelsize', 'axes.titlesize', 'figure.titlesize',
+    'xtick.labelsize', 'ytick.labelsize', 'tick.labelsize', 'grid.labelsize',
+    'bottomlabel.size', 'leftlabel.size', 'rightlabel.size', 'toplabel.size',
+    'suptitle.size', 'title.size', 'text.labelsize', 'text.titlesize',
+    'legend.fontsize', 'legend.title_fontsize'
+)
+COLORS_OPEN = {}  # populated during register_colors
+COLORS_XKCD = {}  # populated during register_colors
+COLORS_BASE = {
+    **mcolors.BASE_COLORS,  # shorthand names like 'r', 'g', etc.
+    'blue': (0, 0, 1),
+    'green': (0, 0.5, 0),
+    'red': (1, 0, 0),
+    'cyan': (0, 0.75, 0.75),
+    'magenta': (0.75, 0, 0.75),
+    'yellow': (0.75, 0.75, 0),
+    'black': (0, 0, 0),
+    'white': (1, 1, 1),
+}
+COLORS_REMOVE = (  # filter these out, let's try to be professional here...
+    'shit', 'poop', 'poo', 'pee', 'piss', 'puke', 'vomit', 'snot',
+    'booger', 'bile', 'diarrhea',
+)
+COLORS_TRANSLATE = (  # prevent registering similar-sounding names
+    ('/', ' '),
+    ("'s", ''),
+    ('forrest', 'forest'),  # survey typo?
+    ('reddish', 'red'),  # remove 'ish'
+    ('purplish', 'purple'),
+    ('bluish', 'blue'),
+    ('ish ', ' '),
+    ('grey', 'gray'),  # 'Murica
+    ('pinky', 'pink'),
+    ('greeny', 'green'),
+    ('bluey', 'blue'),
+    ('purply', 'purple'),
+    ('purpley', 'purple'),
+    ('yellowy', 'yellow'),
+    ('robin egg', 'robins egg'),
+    ('egg blue', 'egg'),
+    ('bluegray', 'blue gray'),
+    ('grayblue', 'gray blue'),
+    ('lightblue', 'light blue'),
+    ('yellowgreen', 'yellow green'),
+    ('yelloworange', 'yellow orange'),
+)
+COLORS_ADD = (
     *(  # common fancy names or natural names
         'charcoal', 'tomato', 'burgundy', 'maroon', 'burgundy', 'lavendar',
         'taupe', 'ocre', 'sand', 'stone', 'earth', 'sand brown', 'sienna',
@@ -88,52 +134,10 @@ ALWAYS_ADD = (
             'red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet',
             'brown', 'grey'
         )
-        for prefix in (
-            '', 'light ', 'dark ', 'medium ', 'pale ',
-        )
+        for prefix in ('', 'light ', 'dark ', 'medium ', 'pale ')
     )
 )
-ALWAYS_REMOVE = (  # filter these out, let's try to be professional here...
-    'shit', 'poop', 'poo', 'pee', 'piss', 'puke', 'vomit', 'snot',
-    'booger', 'bile', 'diarrhea',
-)
-TRANSLATE_COLORS = (  # prevent registering similar-sounding names
-    ('/', ' '),
-    ("'s", ''),
-    ('forrest', 'forest'),  # typo?
-    ('reddish', 'red'),  # remove 'ish'
-    ('purplish', 'purple'),
-    ('bluish', 'blue'),
-    ('ish ', ' '),
-    ('grey', 'gray'),
-    ('pinky', 'pink'),
-    ('greeny', 'green'),
-    ('bluey', 'blue'),
-    ('purply', 'purple'),
-    ('purpley', 'purple'),
-    ('yellowy', 'yellow'),
-    ('robin egg', 'robins egg'),
-    ('egg blue', 'egg'),
-    ('bluegray', 'blue gray'),
-    ('grayblue', 'gray blue'),
-    ('lightblue', 'light blue'),
-    ('yellowgreen', 'yellow green'),
-    ('yelloworange', 'yellow orange'),
-)
 
-OPEN_COLORS = {}  # populated during register_colors
-XKCD_COLORS = {}  # populated during register_colors
-BASE_COLORS = {
-    **mcolors.BASE_COLORS,  # shorthand names like 'r', 'g', etc.
-    'blue': (0, 0, 1),
-    'green': (0, 0.5, 0),
-    'red': (1, 0, 0),
-    'cyan': (0, 0.75, 0.75),
-    'magenta': (0.75, 0, 0.75),
-    'yellow': (0.75, 0.75, 0),
-    'black': (0, 0, 0),
-    'white': (1, 1, 1),
-}
 
 _config_docstring = """
 user : bool, optional
@@ -388,14 +392,14 @@ class RcConfigurator(object):
         kw_matplotlib = {}  # builtin properties that global setting applies to
 
         # Permit arbitary units for builtin matplotlib params
-        # See: https://matplotlib.org/users/customizing.html, props matching
-        # the below strings use the units 'points'.
+        # Props matching the below strings use the units 'points'.
+        # See: https://matplotlib.org/users/customizing.html
         # TODO: Incorporate into more sophisticated validation system
         if any(REGEX_POINTS.match(_) for _ in keys):
             try:
                 self._scale_font(value)  # *validate* but do not translate
             except KeyError:
-                value = units(value, 'pt')
+                value = units(value, 'pt')  # allows e.g. fontsize='10px'
 
         # Special key: configure inline backend
         if key == 'inlinefmt':
@@ -412,19 +416,31 @@ class RcConfigurator(object):
             kw_matplotlib['patch.facecolor'] = 'C0'
             kw_matplotlib['axes.prop_cycle'] = cycler.cycler('color', colors)
 
-        # Zero linewidth almost always means zero tick length
-        # TODO: Document this feature
-        elif key == 'linewidth' and value == 0:
-            ikw_proplot, ikw_matplotlib = self._get_synced_params('ticklen', 0)
-            kw_proplot.update(ikw_proplot)
-            kw_matplotlib.update(ikw_matplotlib)
-
         # Turning bounding box on should turn border off and vice versa
         elif key in ('abc.bbox', 'title.bbox', 'abc.border', 'title.border'):
             if value:
                 name, this = key.split('.')
                 other = 'border' if this == 'bbox' else 'border'
                 kw_proplot[name + '.' + other] = False
+
+        # Fontsize
+        # NOTE: Re-application of e.g. size='small' uses the updated 'font.size'
+        elif key == 'font.size':
+            kw_proplot.update({
+                key: value for key, value in rc_proplot.items()
+                if key in FONT_KEYS and value in mfonts.font_scalings
+            })
+            kw_matplotlib.update({
+                key: value for key, value in rc_matplotlib.items()
+                if key in FONT_KEYS and value in mfonts.font_scalings
+            })
+
+        # Zero linewidth almost always means zero tick length
+        # TODO: Document this feature
+        elif key == 'linewidth' and value == 0:
+            ikw_proplot, ikw_matplotlib = self._get_synced_params('ticklen', 0)
+            kw_proplot.update(ikw_proplot)
+            kw_matplotlib.update(ikw_matplotlib)
 
         # Tick length/major-minor tick length ratio
         elif key in ('tick.len', 'tick.lenratio'):
@@ -1344,7 +1360,7 @@ def register_colors(user=True, default=False, space='hcl', margin=0.10):
     mcolors.colorConverter.cache.clear()  # clean out!
 
     # Add in base colors and CSS4 colors so user has no surprises
-    for name, dict_ in (('base', BASE_COLORS), ('css', mcolors.CSS4_COLORS)):
+    for name, dict_ in (('base', COLORS_BASE), ('css', mcolors.CSS4_COLORS)):
         mcolors.colorConverter.colors.update(dict_)
 
     # Load colors from file and get their HCL values
@@ -1380,7 +1396,7 @@ def register_colors(user=True, default=False, space='hcl', margin=0.10):
                 # Never overwrite "base" colors with xkcd colors.
                 # Only overwrite with user colors.
                 name, color = pair
-                if i == 0 and name in BASE_COLORS:
+                if i == 0 and name in COLORS_BASE:
                     continue
                 loaded[name] = color
 
@@ -1390,13 +1406,13 @@ def register_colors(user=True, default=False, space='hcl', margin=0.10):
             mcolors.colorConverter.colors.update(loaded)
         elif cat == 'opencolor':
             mcolors.colorConverter.colors.update(loaded)
-            OPEN_COLORS.update(loaded)
+            COLORS_OPEN.update(loaded)
         elif cat == 'xkcd':
             # Always add these colors, but make sure not to add other
             # colors too close to them.
             hcls = []
             filtered = []
-            for name in ALWAYS_ADD:
+            for name in COLORS_ADD:
                 color = loaded.pop(name, None)
                 if color is None:
                     continue
@@ -1405,15 +1421,15 @@ def register_colors(user=True, default=False, space='hcl', margin=0.10):
                 hcls.append(to_xyz(color, space=space))
                 filtered.append((name, color))
                 mcolors.colorConverter.colors[name] = color
-                XKCD_COLORS[name] = color
+                COLORS_XKCD[name] = color
 
             # Get locations of "perceptually distinct" colors
             # WARNING: Unique axis argument requires numpy version >=1.13
             for name, color in loaded.items():
-                for string, replace in TRANSLATE_COLORS:
+                for string, replace in COLORS_TRANSLATE:
                     if string in name:
                         name = name.replace(string, replace)
-                if any(string in name for string in ALWAYS_REMOVE):
+                if any(string in name for string in COLORS_REMOVE):
                     continue  # remove "unpofessional" names
                 hcls.append(to_xyz(color, space=space))
                 filtered.append((name, color))  # category name pair
@@ -1428,7 +1444,7 @@ def register_colors(user=True, default=False, space='hcl', margin=0.10):
             for idx in idxs:
                 name, color = filtered[idx]
                 mcolors.colorConverter.colors[name] = color
-                XKCD_COLORS[name] = color
+                COLORS_XKCD[name] = color
         else:
             raise ValueError(f'Unknown proplot color database {path!r}.')
 
