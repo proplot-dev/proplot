@@ -248,9 +248,15 @@ def subplots(
         The width, height of the reference subplot. Units are interpreted by
         `~proplot.utils.units`. Default is :rc:`subplots.refwidth`. Ignored
         if `width`, `height`, or `figsize` was passed.
+    aspect, axwidth, axheight
+        Aliases for `refaspect`, `refwidth`, `refheight`. *Will be deprecated in the
+        next major release and removed in a subsequent release.*
     figwidth, figheight : float or str, optional
         The figure width and height. If you specify just one, the aspect
         ratio `refaspect` of the reference subplot `ref` will be preserved.
+    width, height
+        Aliases for `figwidth`, `figheight`. *Will be deprecated in the next
+        major release and removed in a subsequent release.*
     figsize : length-2 tuple, optional
         Tuple specifying the figure `(width, height)`.
     wspace, hspace, space : float or str or list thereof, optional
@@ -266,17 +272,16 @@ def subplots(
         Whether to automatically make spacing between columns, rows, or both
         equal. Default is ``False``.
     wratios, hratios : float or list thereof, optional
-        Passed to `~proplot.gridspec.GridSpec`, denotes the width
-        and height ratios for the subplot grid. Length of `wratios`
-        must match the number of rows, and length of `hratios` must
-        match the number of columns.
+        Passed to `~proplot.gridspec.GridSpec`, denotes the width and height
+        ratios for the subplot grid. Length of `wratios` must match the number
+        of rows, and length of `hratios` must match the number of columns.
     width_ratios, height_ratios
-        Aliases for `wratios`, `hratios`.
+        Aliases for `wratios`, `hratios`. Included for consistency with
+        the `matplotlib.pyplot.subplots` command.
     left, right, top, bottom : float or str, optional
-        Passed to `~proplot.gridspec.GridSpec`, denotes the width of padding
-        between the subplots and the figure edge. Units are interpreted by
-        `~proplot.utils.units`. By default, these are determined by the
-        "tight layout" algorithm.
+        Passed to `~proplot.gridspec.GridSpec`, denotes the width of padding between
+        the subplots and figure edge. Units are interpreted by `~proplot.utils.units`.
+        By default, these are determined by the "tight layout" algorithm.
     proj, projection : str, `cartopy.crs.Projection`, `~mpl_toolkits.basemap.Basemap`, \
 list thereof, or dict thereof, optional
         The map projection specification(s). If ``'cartesian'`` (the default), a
