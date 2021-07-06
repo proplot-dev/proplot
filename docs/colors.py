@@ -14,6 +14,7 @@
 # ---
 
 # %% [raw] raw_mimetype="text/restructuredtext"
+# .. _ug_colors:
 #
 # Color names
 # ===========
@@ -23,7 +24,7 @@
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
-# .. _ug_colors:
+# .. _ug_colors_included:
 #
 # Included colors
 # ---------------

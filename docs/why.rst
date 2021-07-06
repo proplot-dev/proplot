@@ -96,7 +96,7 @@ Think of this as an expanded and thoroughly documented version of the
 `matplotlib.artist.Artist.update` method.
 `~proplot.axes.Axes.format` can modify things like axis labels and titles and
 update existing axes with new :ref:`"rc" settings <why_rc>`. It also integrates
-with ProPlot's :ref:`constructor functions <why_constructor>` to help keep things
+with various :ref:`constructor functions <why_constructor>` to help keep things
 succinct. Further, :ref:`subplot containers <ug_container>` can be used to
 invoke `~proplot.axes.Axes.format` on several subplots at once.
 
@@ -110,7 +110,7 @@ highly customized figures. As an example, it is trivial to see that...
    axs.format(linewidth=1, color='gray')
    axs.format(xlim=(0, 100), xticks=10, xtickminor=True, xlabel='foo', ylabel='bar')
 
-is much more succinct than
+is much more succinct than...
 
 .. code-block:: python
 
@@ -476,44 +476,6 @@ The following features are relevant for "2D" plotting methods like
   See :ref:`1D plotting methods <1d_plots>` and :ref:`2D plotting methods <2d_plots>`
   for details.
 
-
-.. _why_xarray_pandas:
-
-Xarray and pandas integration
-=============================
-
-.. rubric:: Limitation
-
-Data intended for visualization are commonly stored in array-like containers
-that include metadata -- namely `xarray.DataArray`, `pandas.DataFrame`, and
-`pandas.Series`. When matplotlib receives these objects, it simply ignores
-the associated metadata. To create plots that are labeled with the metadata,
-you must use the `xarray.DataArray.plot`, `pandas.DataFrame.plot`,
-and `pandas.Series.plot` tools instead.
-
-This approach is fine for quick plots, but not ideal for complex ones. It
-requires learning a different syntax from matplotlib, and tends to encourage
-using the `~matplotlib.pyplot` interface rather than the object-oriented interface.
-These tools also include features that would be useful additions to matplotlib
-in their own right, without requiring special containers and a separate interface.
-
-.. rubric:: Solution
-
-ProPlot reproduces many of the `xarray.DataArray.plot`,
-`pandas.DataFrame.plot`, and `pandas.Series.plot` features on the
-`~proplot.axes.Axes` plotting methods themselves.  Passing a
-`~xarray.DataArray`, `~pandas.DataFrame`, or `~pandas.Series` through any
-plotting method automatically updates the axis tick labels, axis labels,
-subplot titles, and colorbar and legend labels from the metadata.  This
-feature can be disabled by setting :rcraw:`autoformat` to ``False``.
-
-Also, as :ref:`desribed above <why_plotting>`, ProPlot implements features
-that were originally only available from the `xarray.DataArray.plot`,
-`pandas.DataFrame.plot`, and `pandas.Series.plot` commands -- like grouped
-bar plots, layered area plots, heatmap plots, and on-the-fly colorbars and
-legends -- directly within the `~proplot.axes.Axes` plotting commands.
-
-
 .. _why_cartopy_basemap:
 
 Cartopy and basemap integration
@@ -561,6 +523,42 @@ See the :ref:`user guide <ug_proj>` for details.
   This is the right decision: Cartopy is integrated more closely with the matplotlib
   interface and is more amenable to further development.
 
+.. _why_xarray_pandas:
+
+Xarray and pandas integration
+=============================
+
+.. rubric:: Limitation
+
+Data intended for visualization are commonly stored in array-like containers
+that include metadata -- namely `xarray.DataArray`, `pandas.DataFrame`, and
+`pandas.Series`. When matplotlib receives these objects, it simply ignores
+the associated metadata. To create plots that are labeled with the metadata,
+you must use the `xarray.DataArray.plot`, `pandas.DataFrame.plot`,
+and `pandas.Series.plot` tools instead.
+
+This approach is fine for quick plots, but not ideal for complex ones. It
+requires learning a different syntax from matplotlib, and tends to encourage
+using the `~matplotlib.pyplot` interface rather than the object-oriented interface.
+These tools also include features that would be useful additions to matplotlib
+in their own right, without requiring special containers and a separate interface.
+
+.. rubric:: Solution
+
+ProPlot reproduces many of the `xarray.DataArray.plot`,
+`pandas.DataFrame.plot`, and `pandas.Series.plot` features on the
+`~proplot.axes.Axes` plotting methods themselves.  Passing a
+`~xarray.DataArray`, `~pandas.DataFrame`, or `~pandas.Series` through any
+plotting method automatically updates the axis tick labels, axis labels,
+subplot titles, and colorbar and legend labels from the metadata.  This
+feature can be disabled by setting :rcraw:`autoformat` to ``False``.
+
+Also, as :ref:`desribed above <why_plotting>`, ProPlot implements features
+that were originally only available from the `xarray.DataArray.plot`,
+`pandas.DataFrame.plot`, and `pandas.Series.plot` commands -- like grouped
+bar plots, layered area plots, heatmap plots, and on-the-fly colorbars and
+legends -- directly within the `~proplot.axes.Axes` plotting commands.
+
 .. _why_aesthetics:
 
 Aesthetic colors and fonts
@@ -573,8 +571,8 @@ like ``'jet'``. These colormaps tend to have jarring jumps in
 `hue, saturation, and luminance <rainbow_>`_ that can trick the human eye into seeing
 non-existing patterns. It is important to use "perceptually uniform" colormaps
 instead. Matplotlib comes packaged with `some of its own <matplotlib_>`_, plus
-colormaps from the `ColorBrewer <brewer_>`_ project, but there several external projects
-offering a larger variety of aesthetically pleasing "perceptually uniform" colormaps.
+colormaps from the `ColorBrewer <brewer_>`_ project, but several external projects
+offer a larger variety of aesthetically pleasing "perceptually uniform" colormaps.
 
 Matplotlib also "registers" the X11/CSS4 color names, but these are relatively
 limited. The more intuitive and more numerous `XKCD color survey <xkcd_>`_ names can
@@ -595,20 +593,22 @@ aesthetically pleasing figures.
   `SciVisColor <sciviscolor_>`_, and `Scientific Colour Maps <fabio_>`_ projects.
   It also defines a few default :ref:`perceptually uniform colormaps <ug_perceptual>`
   and includes a `~proplot.colors.PerceptuallyUniformColormap` class for generating
-  new ones. A table of colormap and color cycle names can be shown using
+  new ones. A :ref:`table of colormap <ug_cmaps_included>` and
+  :ref:`color cycles <ug_cycles_included>` can be shown using
   `~proplot.demos.show_cmaps` and `~proplot.demos.show_cycles`. Old colormaps
   like ``'jet'`` can still be accessed, but this is discouraged.
 * ProPlot adds colors from the `open color <opencolor_>`_ project and adds
   `XKCD color survey <xkcd_>`_ names without the ``'xkcd:'`` prefix after
-  *filtering* them to exclude perceptually-similar colors and *normalizing*
-  the naming pattern to make them more self-consistent. Old X11/CSS4 colors can still
-  be accessed, but this is discouraged. A table of color names can be shown using
-  `~proplot.demos.show_colors`.
+  *filtering* them to exclude perceptually-similar colors and *normalizing* the
+  naming pattern to make them more self-consistent. Old X11/CSS4 colors can still be
+  accessed, but this is discouraged. A :ref:`table of color names <ug_colors_included>`
+  can be shown using `~proplot.demos.show_colors`.
 * ProPlot adds the entire `TeX Gyre <texgyre_>`_ font family to matplotlib. These
   are open-source fonts designed to resemble more popular, commonly-used fonts like
   Helvetica and Century. They are used for the new default serif, sans-serif, monospace,
   cursive, and "fantasy" fonts, and they are consistent across all workstations.
-  A table of font names can be shown using `~proplot.demos.show_fonts`.
+  A :ref:`table of font names <ug_fonts_included>` can be shown
+  using `~proplot.demos.show_fonts`.
 
 For details on adding new colormaps, colors, and fonts, see the
 :ref:`.proplot folder <why_dotproplot>` section.
@@ -730,7 +730,6 @@ cycles, and there is no builtin way to save them for future use. It is also
 difficult to get matplotlib to use custom ``.ttc``, ``.ttf``, and ``.otf``
 font files, which may be desirable when you are working on Linux servers with
 limited font selections.
-
 
 .. rubric:: Solution
 

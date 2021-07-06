@@ -14,6 +14,8 @@
 # ---
 
 # %% [raw] raw_mimetype="text/restructuredtext"
+# .. _ug_fonts:
+#
 #
 # Font selection
 # ==============
@@ -23,7 +25,7 @@
 #
 #
 # %% [raw] raw_mimetype="text/restructuredtext"
-# .. _ug_fonts:
+# .. _ug_fonts_included:
 #
 # Included fonts
 # --------------
