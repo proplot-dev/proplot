@@ -254,11 +254,11 @@ def subplots(
     figwidth, figheight : float or str, optional
         The figure width and height. If you specify just one, the aspect
         ratio `refaspect` of the reference subplot `ref` will be preserved.
+    figsize : length-2 tuple, optional
+        Tuple specifying the figure `(width, height)`.
     width, height
         Aliases for `figwidth`, `figheight`. *Will be deprecated in the next
         major release and removed in a subsequent release.*
-    figsize : length-2 tuple, optional
-        Tuple specifying the figure `(width, height)`.
     wspace, hspace, space : float or str or list thereof, optional
         Passed to `~proplot.gridspec.GridSpec`, denotes the
         spacing between grid columns, rows, and both, respectively. If float
