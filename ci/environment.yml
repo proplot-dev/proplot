@@ -20,6 +20,11 @@ dependencies:
   - pandoc
   - ipykernel
   - pip
+  - setuptools
+  - wheel
+  - setuptools_scm
+  - setuptools_scm_git_archive
+  - python-build
   - pip:
     - ..
     - flake8
