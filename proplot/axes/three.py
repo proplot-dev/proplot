@@ -8,7 +8,7 @@ from . import base
 try:
     from mpl_toolkits.mplot3d import Axes3D as Axes3DBase
 except ImportError:
-    Axes3DBase = None
+    Axes3DBase = object
 
 
 class Axes3D(base.Axes, Axes3DBase):
