@@ -419,7 +419,7 @@ The following features are relevant for "1D" plotting methods like
   these functions. You do not have to work with the
   `~matplotlib.axes.Axes.errorbar` method separately.
 * All :ref:`1D plotting methods <ug_1dplots>` accept a
-  `cycle` :ref:`keyword argument <ug_cycle_changer>`
+  `cycle` :ref:`keyword argument <ug_apply_cycle>`
   interpreted by `~proplot.constructor.Cycle` and
   `colorbar` and `legend` :ref:`keyword arguments <ug_cbars_axes>`
   for drawing colorbars and legends at the specified location.
@@ -454,7 +454,7 @@ The following features are relevant for "2D" plotting methods like
   <https://stackoverflow.com/q/27092991/4970632>`__, and `colorbar patches
   <https://stackoverflow.com/q/15003353/4970632>`__.
 * All :ref:`2D plotting methods <ug_2dplots>` methods accept
-  `cmap` and `norm` :ref:`keyword arguments <ug_cmap_changer>`
+  `cmap` and `norm` :ref:`keyword arguments <ug_apply_cmap>`
   interpreted by `~proplot.constructor.Colormap` and
   `~proplot.constructor.Norm` and a `colorbar` :ref:`keyword argument <ug_cbars_axes>`
   for drawing colorbars at the specified location.

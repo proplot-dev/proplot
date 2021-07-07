@@ -48,12 +48,12 @@ except ModuleNotFoundError:
     PlateCarree = object
 
 __all__ = [
+    'apply_cmap',
+    'apply_cycle',
     'bar_wrapper',
     'barh_wrapper',
     'boxplot_wrapper',
-    'cmap_changer',
     'colorbar_wrapper',
-    'cycle_changer',
     'default_latlon',
     'default_transform',
     'fill_between_wrapper',
@@ -64,14 +64,13 @@ __all__ = [
     'scatter_wrapper',
     'standardize_1d',
     'standardize_2d',
-    # 'stem_wrapper',  # very minor changes
     'text_wrapper',
     'violinplot_wrapper',
     'vlines_wrapper',
 ]
 
 
-# Consistent keywords for styling cmap_changer-overridden plots
+# Consistent keywords for styling apply_cmap-overridden plots
 # TODO: Deprecate linewidth and linestyle interpretation. Think these
 # already have flexible interpretation for all plotting funcs.
 STYLE_ARGS_TRANSLATE = {
@@ -157,7 +156,7 @@ autoformat : bool, optional
     to the plotting command. Default is :rc:`autoformat`.
 """
 
-docstring.snippets['axes.cmap_changer'] = """
+docstring.snippets['axes.apply_cmap'] = """
 cmap : colormap spec, optional
     The colormap specifer, passed to the `~proplot.constructor.Colormap`
     constructor.
@@ -249,7 +248,7 @@ See also
 --------
 proplot.axes.Axes.area{suffix}
 standardize_1d
-cycle_changer
+apply_cycle
 """
 docstring.snippets['axes.fill_between'] = _fill_between_docstring.format(
     x='x', y='y', suffix='',
@@ -301,7 +300,7 @@ See also
 --------
 standardize_1d
 indicate_error
-cycle_changer
+apply_cycle
 """
 docstring.snippets['axes.bar'] = _bar_docstring.format(
     x='x', height='height', bottom='bottom', suffix='',
@@ -585,7 +584,7 @@ def _auto_format_1d(
             self.format(**kw_format)
 
     # Default legend or colorbar labels and title
-    # WARNING: This will fail for any funcs not wrapped by cycle_changer. Keep
+    # WARNING: This will fail for any funcs not wrapped by apply_cycle. Keep
     # the 'nocycle' list updated until 'wrapper' functions disbanded.
     if labels is None and not nocycle and autoformat:
         labels = _get_labels(ys[0] if vert else x, axis=1)
@@ -633,7 +632,7 @@ def standardize_1d(self, func, *args, autoformat=None, **kwargs):
 
     See also
     --------
-    cycle_changer
+    apply_cycle
     indicate_error
     """
     name = func.__name__
@@ -646,7 +645,7 @@ def standardize_1d(self, func, *args, autoformat=None, **kwargs):
 
     # Parse input args
     # WARNING: This will temporarily add pseudo-x coordinates to hist, boxplot, and
-    # pie but they are ignored when we reach cycle_changer.
+    # pie but they are ignored when we reach apply_cycle.
     if len(args) == 1:
         x = None
         y, *args = args
@@ -747,7 +746,7 @@ def _auto_format_2d(self, x, y, *Zs, order='C', autoformat=False, **kwargs):
 
     # Default colorbar label
     # WARNING: This will fail for any funcs wrapped by standardize_2d but not
-    # wrapped by cmap_changer. So far there are none.
+    # wrapped by apply_cmap. So far there are none.
     if autoformat:
         kwargs.setdefault('colorbar_kw', {})
         title = _get_title(Zs[0])
@@ -1007,7 +1006,7 @@ def standardize_2d(
 
     See also
     --------
-    cmap_changer
+    apply_cmap
     """
     name = func.__name__
     pcolor = name in ('pcolor', 'pcolormesh', 'pcolorfast')
@@ -1457,7 +1456,7 @@ def _plot_apply(self, func, *args, cmap=None, values=None, **kwargs):
 def _parametric_apply(self, func, *args, interp=0, **kwargs):
     """
     Calls `~proplot.axes.Axes.parametric` and optionally interpolates values before
-    they get passed to `cmap_changer` and the colormap boundaries are drawn. Full
+    they get passed to `apply_cmap` and the colormap boundaries are drawn. Full
     documentation is on public axes method.
     """
     # Parse input arguments
@@ -1666,7 +1665,7 @@ def scatter_wrapper(
     """
     Adds keyword arguments to `~matplotlib.axes.Axes.scatter` that are more
     consistent with the `~matplotlib.axes.Axes.plot` keyword arguments and
-    supports `cmap_changer` features.
+    supports `apply_cmap` features.
 
     Important
     ---------
@@ -1683,7 +1682,7 @@ def scatter_wrapper(
     c, color, markercolor : color-spec or list thereof, or array, optional
         The marker fill color(s). If this is an array of scalar values, colors
         will be generated using the colormap `cmap` and normalizer `norm`.
-    %(axes.cmap_changer)s
+    %(axes.apply_cmap)s
     lw, linewidth, linewidths, markeredgewidth, markeredgewidths : \
 float or list thereof, optional
         The marker edge width.
@@ -1700,7 +1699,7 @@ color-spec or list thereof, optional
     --------
     standardize_1d
     indicate_error
-    cycle_changer
+    apply_cycle
     """
     # Manage input arguments
     # NOTE: Parse 1d must come before this
@@ -1833,7 +1832,7 @@ def _fill_between_apply(
         poscolor = _not_none(poscolor, rc['poscolor'])
         obj1 = func(self, x, y1, y2, where=(y1 < y2), color=negcolor, **kwargs)
         obj2 = func(self, x, y1, y2, where=(y1 >= y2), color=poscolor, **kwargs)
-        result = objs = (obj1, obj2)  # may be tuple of tuples due to cycle_changer
+        result = objs = (obj1, obj2)  # may be tuple of tuples due to apply_cycle
 
     # Add sticky edges in x-direction, and sticky edges in y-direction *only*
     # if one of the y limits is scalar. This should satisfy most users.
@@ -1891,14 +1890,14 @@ def bar_wrapper(
     """
     # Parse arguments
     # WARNING: Implementation is really weird... we flip around arguments for horizontal
-    # plots only to flip them back in cycle_changer when iterating through columns.
+    # plots only to flip them back in apply_cycle when iterating through columns.
     if vert is not None:
         orientation = 'vertical' if vert else 'horizontal'
     if orientation == 'horizontal':
         x, bottom, width, height = bottom, x, height, width
 
     # Parse args
-    # TODO: Stacked feature is implemented in `cycle_changer`, but makes more
+    # TODO: Stacked feature is implemented in `apply_cycle`, but makes more
     # sense do document here; figure out way to move it here?
     if kwargs.get('left', None) is not None:
         warnings._warn_proplot('bar() keyword "left" is deprecated. Use "x" instead.')
@@ -1914,7 +1913,7 @@ def bar_wrapper(
     kwargs.update({'linewidth': linewidth, 'edgecolor': edgecolor})
 
     # Call func
-    # NOTE: This *must* also be wrapped by cycle_changer, which ultimately
+    # NOTE: This *must* also be wrapped by apply_cycle, which ultimately
     # permutes back the x/bottom args for horizontal bars! Need to clean up.
     if not negpos or kwargs.get('color') is not None:
         # Draw simple bars
@@ -1922,7 +1921,7 @@ def bar_wrapper(
         result = func(self, *args, **kwargs)
     else:
         # Draw negative and positive bars
-        # NOTE: cycle_changer makes bar widths *relative* to step size between
+        # NOTE: apply_cycle makes bar widths *relative* to step size between
         # x coordinates so cannot just omit data. Instead make some heights nan.
         message = 'bar() argument {}={!r} is incompatible with negpos=True. Ignoring.'
         stack = kwargs.pop('stack', None)
@@ -1950,7 +1949,7 @@ def barh_wrapper(self, func, y=None, right=None, width=0.8, left=None, **kwargs)
     """
     # Converts y-->bottom, left-->x, width-->height, height-->width.
     # Convert back to (x, bottom, width, height) so we can pass stuff
-    # through cycle_changer.
+    # through apply_cycle.
     # NOTE: ProPlot calls second positional argument 'right' so that 'width'
     # means the width of *bars*.
     # NOTE: You *must* do juggling of barh keyword order --> bar keyword order
@@ -2039,7 +2038,7 @@ meanlinewidth, medianlinewidth, whiskerlinewidth, flierlinewidth : float, option
     proplot.axes.Axes.boxes
     standardize_1d
     indicate_error
-    cycle_changer
+    apply_cycle
     """
     # Parse keyword args
     fill = fill is True or fillcolor is not None or fillalpha is not None
@@ -2175,7 +2174,7 @@ def violinplot_wrapper(
     proplot.axes.Axes.violins
     standardize_1d
     indicate_error
-    cycle_changer
+    apply_cycle
     """
     # Parse keyword args
     # NOTE: Some of these are caught by indicate_error for drawing error bars
@@ -2505,14 +2504,14 @@ def _update_cycle(self, cycle, scatter=False, **kwargs):
             ('alpha', 'alpha'),
             ('marker', 'marker'),
         ):
-            value = kwargs.get(key, None)  # a cycle_changer argument
+            value = kwargs.get(key, None)  # a apply_cycle argument
             if prop in prop_keys and value is None:  # if key in cycler and prop unset
                 apply_manually[prop] = key
 
     return apply_manually  # set indicating additional keys we cycle through
 
 
-def cycle_changer(
+def apply_cycle(
     self, func, *args,
     cycle=None, cycle_kw=None,
     label=None, labels=None, values=None,
@@ -2760,7 +2759,7 @@ def _auto_levels_locator(
         with a minimum at zero, or should be all negative with a maximum at zero.
     nozero : bool, optional
         Whether zero should be excluded from automatic levels. This is also
-        implemented in `cmap_changer` so that `nozero` can be used to remove user
+        implemented in `apply_cmap` so that `nozero` can be used to remove user
         input levels (e.g. ``ax.contour(..., levels=plot.arange(-5, 5), nozero=True)``),
         but is replecated here so power users can use this function in isolation.
 
@@ -3127,7 +3126,7 @@ def _labels_pcolor(self, obj, fmt=None, **kwargs):
 
 @warnings._rename_kwargs('0.6', centers='values')
 @docstring.add_snippets
-def cmap_changer(
+def apply_cmap(
     self, func, *args,
     cmap=None, cmap_kw=None, norm=None, norm_kw=None,
     vmin=None, vmax=None, extend='neither', N=None, levels=None, values=None,
@@ -3151,7 +3150,7 @@ def cmap_changer(
 
     Parameters
     ----------
-    %(axes.cmap_changer)s
+    %(axes.apply_cmap)s
     edgefix : bool, optional
         Whether to fix the the `white-lines-between-filled-contours \
 <https://stackoverflow.com/q/8263769/4970632>`__
@@ -4423,8 +4422,8 @@ _barh_wrapper = _process_wrapper(barh_wrapper)
 _default_latlon = _process_wrapper(default_latlon)
 _boxplot_wrapper = _process_wrapper(boxplot_wrapper)
 _default_transform = _process_wrapper(default_transform)
-_cmap_changer = _process_wrapper(cmap_changer)
-_cycle_changer = _process_wrapper(cycle_changer)
+_apply_cmap = _process_wrapper(apply_cmap)
+_apply_cycle = _process_wrapper(apply_cycle)
 _fill_between_wrapper = _process_wrapper(fill_between_wrapper)
 _fill_betweenx_wrapper = _process_wrapper(fill_betweenx_wrapper)
 _hlines_wrapper = _process_wrapper(hlines_wrapper)
@@ -4435,3 +4434,10 @@ _standardize_2d = _process_wrapper(standardize_2d)
 _text_wrapper = _process_wrapper(text_wrapper)
 _violinplot_wrapper = _process_wrapper(violinplot_wrapper)
 _vlines_wrapper = _process_wrapper(vlines_wrapper)
+
+# Deprecated
+cmap_changer, cycle_changer = warnings._rename_objs(
+    '0.6',
+    cmap_changer=apply_cmap,
+    cycle_changer=apply_cycle,
+)

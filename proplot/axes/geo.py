@@ -18,10 +18,10 @@ from ..internals import ic  # noqa: F401
 from ..internals import _not_none, _version, _version_cartopy, docstring, warnings
 from . import base
 from .plot import (
+    _apply_cmap,
+    _apply_cycle,
     _basemap_norecurse,
     _basemap_redirect,
-    _cmap_changer,
-    _cycle_changer,
     _default_latlon,
     _default_transform,
     _indicate_error,
@@ -1192,39 +1192,39 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
         )
         fill = _default_transform(GeoAxesBase.fill)
         plot = _default_transform(_plot_wrapper(_standardize_1d(
-            _indicate_error(_cycle_changer(GeoAxesBase.plot))
+            _indicate_error(_apply_cycle(GeoAxesBase.plot))
         )))
         scatter = _default_transform(_scatter_wrapper(_standardize_1d(
-            _indicate_error(_cycle_changer(GeoAxesBase.scatter))
+            _indicate_error(_apply_cycle(GeoAxesBase.scatter))
         )))
-        contour = _default_transform(_standardize_2d(_cmap_changer(
+        contour = _default_transform(_standardize_2d(_apply_cmap(
             GeoAxesBase.contour
         )))
-        contourf = _default_transform(_standardize_2d(_cmap_changer(
+        contourf = _default_transform(_standardize_2d(_apply_cmap(
             GeoAxesBase.contourf
         )))
-        pcolor = _default_transform(_standardize_2d(_cmap_changer(
+        pcolor = _default_transform(_standardize_2d(_apply_cmap(
             GeoAxesBase.pcolor
         )))
-        pcolormesh = _default_transform(_standardize_2d(_cmap_changer(
+        pcolormesh = _default_transform(_standardize_2d(_apply_cmap(
             GeoAxesBase.pcolormesh
         )))
-        quiver = _default_transform(_standardize_2d(_cmap_changer(
+        quiver = _default_transform(_standardize_2d(_apply_cmap(
             GeoAxesBase.quiver
         )))
-        streamplot = _default_transform(_standardize_2d(_cmap_changer(
+        streamplot = _default_transform(_standardize_2d(_apply_cmap(
             GeoAxesBase.streamplot
         )))
-        barbs = _default_transform(_standardize_2d(_cmap_changer(
+        barbs = _default_transform(_standardize_2d(_apply_cmap(
             GeoAxesBase.barbs
         )))
-        tripcolor = _default_transform(_cmap_changer(
+        tripcolor = _default_transform(_apply_cmap(
             GeoAxesBase.tripcolor
         ))
-        tricontour = _default_transform(_cmap_changer(
+        tricontour = _default_transform(_apply_cmap(
             GeoAxesBase.tricontour
         ))
-        tricontourf = _default_transform(_cmap_changer(
+        tricontourf = _default_transform(_apply_cmap(
             GeoAxesBase.tricontourf
         ))
 
@@ -1521,35 +1521,35 @@ class BasemapAxes(GeoAxes):
 
     # Wrapped methods
     plot = _basemap_norecurse(_default_latlon(_plot_wrapper(_standardize_1d(
-        _indicate_error(_cycle_changer(_basemap_redirect(maxes.Axes.plot)))
+        _indicate_error(_apply_cycle(_basemap_redirect(maxes.Axes.plot)))
     ))))
     scatter = _basemap_norecurse(_default_latlon(_scatter_wrapper(_standardize_1d(
-        _indicate_error(_cycle_changer(_basemap_redirect(maxes.Axes.scatter)))
+        _indicate_error(_apply_cycle(_basemap_redirect(maxes.Axes.scatter)))
     ))))
-    contour = _basemap_norecurse(_default_latlon(_standardize_2d(_cmap_changer(
+    contour = _basemap_norecurse(_default_latlon(_standardize_2d(_apply_cmap(
         _basemap_redirect(maxes.Axes.contour)
     ))))
-    contourf = _basemap_norecurse(_default_latlon(_standardize_2d(_cmap_changer(
+    contourf = _basemap_norecurse(_default_latlon(_standardize_2d(_apply_cmap(
         _basemap_redirect(maxes.Axes.contourf)
     ))))
-    pcolor = _basemap_norecurse(_default_latlon(_standardize_2d(_cmap_changer(
+    pcolor = _basemap_norecurse(_default_latlon(_standardize_2d(_apply_cmap(
         _basemap_redirect(maxes.Axes.pcolor)
     ))))
-    pcolormesh = _basemap_norecurse(_default_latlon(_standardize_2d(_cmap_changer(
+    pcolormesh = _basemap_norecurse(_default_latlon(_standardize_2d(_apply_cmap(
         _basemap_redirect(maxes.Axes.pcolormesh)
     ))))
-    quiver = _basemap_norecurse(_default_latlon(_standardize_2d(_cmap_changer(
+    quiver = _basemap_norecurse(_default_latlon(_standardize_2d(_apply_cmap(
         _basemap_redirect(maxes.Axes.quiver)
     ))))
-    streamplot = _basemap_norecurse(_default_latlon(_standardize_2d(_cmap_changer(
+    streamplot = _basemap_norecurse(_default_latlon(_standardize_2d(_apply_cmap(
         _basemap_redirect(maxes.Axes.streamplot)
     ))))
-    barbs = _basemap_norecurse(_default_latlon(_standardize_2d(_cmap_changer(
+    barbs = _basemap_norecurse(_default_latlon(_standardize_2d(_apply_cmap(
         _basemap_redirect(maxes.Axes.barbs)
     ))))
-    hexbin = _basemap_norecurse(_standardize_1d(_cmap_changer(
+    hexbin = _basemap_norecurse(_standardize_1d(_apply_cmap(
         _basemap_redirect(maxes.Axes.hexbin)
     )))
-    imshow = _basemap_norecurse(_cmap_changer(
+    imshow = _basemap_norecurse(_apply_cmap(
         _basemap_redirect(maxes.Axes.imshow)
     ))

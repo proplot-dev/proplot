@@ -158,7 +158,7 @@ for cmaps in (('magma', 'rocket'), ('fire', 'dusk')):
 # your convenience, most of these features can be accessed via the
 # `~proplot.constructor.Colormap` :ref:`constructor function <why_constructor>`. Note
 # that every plotting command that accepts a `cmap` keyword passes it through this
-# function (see `~proplot.axes.cmap_changer`).
+# function (see `~proplot.axes.apply_cmap`).
 #
 # To make `~proplot.colors.PerceptuallyUniformColormap`\ s from scratch, you
 # have the following three options:

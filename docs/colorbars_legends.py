@@ -60,8 +60,8 @@
 # one go, pass a location (e.g., ``legend='r'`` or ``colorbar='r'``) to
 # methods that accept a `cycle` argument (e.g., `~matplotlib.axes.Axes.plot`).
 # Use `legend_kw` and `colorbar_kw` to pass keyword arguments to the colorbar
-# and legend functions. This feature is powered by the `~proplot.axes.cmap_changer` and
-# `~proplot.axes.cycle_changer` wrappers.
+# and legend functions. This feature is powered by the `~proplot.axes.apply_cmap` and
+# `~proplot.axes.apply_cycle` wrappers.
 
 # %%
 import proplot as plot

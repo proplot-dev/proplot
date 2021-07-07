@@ -146,7 +146,7 @@ axs[1].plot(df, cycle=cycle, lw=3, legend='uc')
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
-# .. _ug_cycle_changer:
+# .. _ug_apply_cycle:
 #
 # Property cycles
 # ---------------
@@ -155,7 +155,7 @@ axs[1].plot(df, cycle=cycle, lw=3, legend='uc')
 # <https://matplotlib.org/tutorials/intermediate/color_cycle.html#sphx-glr-tutorials-intermediate-color-cycle-py>`__
 # and use different property cycles for different plot elements. You can create and
 # apply property cycles on-the-fly using the `cycle` and `cycle_kw` arguments, available
-# with any plotting method wrapped by `~proplot.axes.cycle_changer`. `cycle` and
+# with any plotting method wrapped by `~proplot.axes.apply_cycle`. `cycle` and
 # `cycle_kw` are passed to the `~proplot.constructor.Cycle` :ref:`constructor function
 # <why_constructor>`, and the resulting property cycle is used for the plot. You can
 # specify `cycle` once with 2D input data (in which case each column is plotted in
@@ -280,7 +280,7 @@ plot.rc.reset()
 #
 # The `~matplotlib.axes.Axes.bar` and `~matplotlib.axes.Axes.barh` methods
 # are wrapped by `~proplot.axes.bar_wrapper`,
-# `~proplot.axes.cycle_changer`, and `~proplot.axes.standardize_1d`.
+# `~proplot.axes.apply_cycle`, and `~proplot.axes.standardize_1d`.
 # You can now *group* or *stack* columns of data by passing 2D arrays to
 # `~matplotlib.axes.Axes.bar` or `~matplotlib.axes.Axes.barh`, just like in
 # `pandas`_, or use different colors for negative and positive bars by
@@ -401,7 +401,7 @@ axs[1].format(title='Area plot')
 #
 # The `~matplotlib.axes.Axes.boxplot` and `~matplotlib.axes.Axes.violinplot`
 # methods are now wrapped with `~proplot.axes.boxplot_wrapper`,
-# `~proplot.axes.violinplot_wrapper`, `~proplot.axes.cycle_changer`,
+# `~proplot.axes.violinplot_wrapper`, `~proplot.axes.apply_cycle`,
 # and `~proplot.axes.standardize_1d`. These wrappers add some useful
 # options and apply aesthetically pleasing default settings. They also
 # automatically apply axis labels based on the `~pandas.DataFrame` column
@@ -513,7 +513,7 @@ ax.colorbar(m, loc='b', maxn=10, label='parametric coordinate')
 # ----------------------
 #
 # The `~matplotlib.axes.Axes.scatter` method is now wrapped by
-# `~proplot.axes.scatter_wrapper`, `~proplot.axes.cycle_changer`, and
+# `~proplot.axes.scatter_wrapper`, `~proplot.axes.apply_cycle`, and
 # `~proplot.axes.standardize_1d`. This means that
 # `~matplotlib.axes.Axes.scatter` now accepts 2D arrays, just like
 # `~matplotlib.axes.Axes.plot`. Also, successive calls to

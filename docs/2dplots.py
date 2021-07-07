@@ -147,7 +147,7 @@ axs[1].format(xtickminor=False)
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
-# .. _ug_cmap_changer:
+# .. _ug_apply_cmap:
 #
 # Colormaps and normalizers
 # -------------------------
@@ -156,12 +156,12 @@ axs[1].format(xtickminor=False)
 # explicitly calling the `~proplot.constructor.Colormap`
 # :ref:`constructor function <why_constructor>`.
 # You can do so using the `cmap` and `cmap_kw` arguments, available with any
-# plotting method wrapped by `~proplot.axes.cmap_changer`. `cmap` and `cmap_kw`
+# plotting method wrapped by `~proplot.axes.apply_cmap`. `cmap` and `cmap_kw`
 # are passed to `~proplot.constructor.Colormap` and the resulting colormap is
 # used for the plot. For example, to create and apply a monochromatic colormap,
 # you can simply use ``cmap='color name'``.
 #
-# The `~proplot.axes.cmap_changer` wrapper also
+# The `~proplot.axes.apply_cmap` wrapper also
 # adds the `norm` and `norm_kw` arguments. They are passed to the
 # `~proplot.constructor.Norm` :ref:`constructor function <why_constructor>`,
 # and the resulting normalizer is used for the plot. For more information on colormaps
@@ -197,7 +197,7 @@ axs[1].format(title='Logarithmic normalizer')
 # Discrete colormap levels
 # ------------------------
 #
-# The `~proplot.axes.cmap_changer` wrapper also applies the
+# The `~proplot.axes.apply_cmap` wrapper also applies the
 # `~proplot.colors.DiscreteNorm` normalizer to every colormap plot.
 # `~proplot.colors.DiscreteNorm` converts data values to colormap colors by (1)
 # transforming data using an arbitrary *continuous* normalizer (e.g.
@@ -356,19 +356,19 @@ for data, mode, fair, locator in zip(
 # Contour and gridbox labels
 # --------------------------
 #
-# The `~proplot.axes.cmap_changer` wrapper also allows you to quickly add
+# The `~proplot.axes.apply_cmap` wrapper also allows you to quickly add
 # *labels* to `~proplot.axes.Axes.heatmap`, `~matplotlib.axes.Axes.pcolor`,
 # `~matplotlib.axes.Axes.pcolormesh`, `~matplotlib.axes.Axes.contour`, and
 # `~matplotlib.axes.Axes.contourf` plots by simply using ``labels=True``.
 # The label text is colored black or white depending on the luminance of
 # the underlying grid box or filled contour.
 #
-# `~proplot.axes.cmap_changer` draws contour labels with
+# `~proplot.axes.apply_cmap` draws contour labels with
 # `~matplotlib.axes.Axes.clabel` and grid box labels with
 # `~matplotlib.axes.Axes.text`. You can pass keyword arguments to these
 # functions using the `labels_kw` dictionary keyword argument, and change the
 # label precision with the `precision` keyword argument. See
-# `~proplot.axes.cmap_changer` for details.
+# `~proplot.axes.apply_cmap` for details.
 
 # %%
 import proplot as plot

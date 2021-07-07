@@ -378,7 +378,7 @@ def Colormap(
     `~proplot.colors.ListedColormap`.
     Used to interpret the `cmap` and `cmap_kw` arguments
     when passed to any plotting method wrapped by
-    `~proplot.axes.cmap_changer`.
+    `~proplot.axes.apply_cmap`.
 
     Parameters
     ----------
@@ -630,7 +630,7 @@ def Cycle(
     """
     Generate and merge `~cycler.Cycler` instances in a variety of ways.
     Used to interpret the `cycle` and `cycle_kw` arguments when passed to
-    any plotting method wrapped by `~proplot.axes.cycle_changer`.
+    any plotting method wrapped by `~proplot.axes.apply_cycle`.
 
     If you just want a list of colors instead of a `~cycler.Cycler` instance,
     use the `Colors` function. If you want a `~cycler.Cycler` instance that
@@ -771,7 +771,7 @@ def Norm(norm, *args, **kwargs):
     """
     Return an arbitrary `~matplotlib.colors.Normalize` instance. Used to
     interpret the `norm` and `norm_kw` arguments when passed to any plotting
-    method wrapped by `~proplot.axes.cmap_changer`. See
+    method wrapped by `~proplot.axes.apply_cmap`. See
     `this tutorial \
 <https://matplotlib.org/tutorials/colors/colormapnorms.html>`__
     for more info.

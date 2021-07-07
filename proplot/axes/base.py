@@ -22,11 +22,11 @@ from ..internals import ic  # noqa: F401
 from ..internals import _not_none, docstring, rcsetup, warnings
 from ..utils import edges, units
 from .plot import (
+    _apply_cmap,
+    _apply_cycle,
     _bar_wrapper,
     _barh_wrapper,
     _boxplot_wrapper,
-    _cmap_changer,
-    _cycle_changer,
     _fill_between_wrapper,
     _fill_betweenx_wrapper,
     _get_transform,
@@ -263,7 +263,7 @@ class Axes(maxes.Axes):
         ta = self.transAxes
         d['abc'] = self.text(0, 0, '', transform=ta)
         d['left'] = self._left_title  # WARNING: track in case mpl changes this
-        d['center'] = self._center_title
+        d['center'] = self.title
         d['right'] = self._right_title
         d['upper left'] = self.text(0, 0, '', va='top', ha='left', transform=ta)
         d['upper center'] = self.text(0, 0, '', va='top', ha='center', transform=ta)
@@ -1272,7 +1272,7 @@ optional
 
     @_parametric_wrapper
     @_standardize_1d
-    @_cmap_changer
+    @_apply_cmap
     def parametric(
         self, *args, values=None,
         cmap=None, norm=None, interp=0,
@@ -1810,47 +1810,44 @@ optional
             raise ValueError(f'Invalid number {num!r}. Must be integer >=1.')
         self._number = num
 
-    # For consistency with _left_title, _upper_left_title, etc.
-    _center_title = property(lambda self: self.title)
-
     # Wrapped by special functions
     # Also support redirecting to Basemap methods
     text = _text_wrapper(
         maxes.Axes.text
     )
-    plot = _plot_wrapper(_standardize_1d(_indicate_error(_cycle_changer(
+    plot = _plot_wrapper(_standardize_1d(_indicate_error(_apply_cycle(
         maxes.Axes.plot
     ))))
-    scatter = _scatter_wrapper(_standardize_1d(_indicate_error(_cycle_changer(
+    scatter = _scatter_wrapper(_standardize_1d(_indicate_error(_apply_cycle(
         maxes.Axes.scatter
     ))))
-    bar = _bar_wrapper(_standardize_1d(_indicate_error(_cycle_changer(
+    bar = _bar_wrapper(_standardize_1d(_indicate_error(_apply_cycle(
         maxes.Axes.bar
     ))))
     barh = _barh_wrapper(  # calls self.bar
         maxes.Axes.barh
     )
-    hist = _hist_wrapper(_standardize_1d(_cycle_changer(
+    hist = _hist_wrapper(_standardize_1d(_apply_cycle(
         maxes.Axes.hist
     )))
-    boxplot = _boxplot_wrapper(_standardize_1d(_cycle_changer(
+    boxplot = _boxplot_wrapper(_standardize_1d(_apply_cycle(
         maxes.Axes.boxplot
     )))
-    violinplot = _violinplot_wrapper(_standardize_1d(_indicate_error(_cycle_changer(
+    violinplot = _violinplot_wrapper(_standardize_1d(_indicate_error(_apply_cycle(
         maxes.Axes.violinplot
     ))))
-    fill_between = _fill_between_wrapper(_standardize_1d(_cycle_changer(
+    fill_between = _fill_between_wrapper(_standardize_1d(_apply_cycle(
         maxes.Axes.fill_between
     )))
-    fill_betweenx = _fill_betweenx_wrapper(_standardize_1d(_cycle_changer(
+    fill_betweenx = _fill_betweenx_wrapper(_standardize_1d(_apply_cycle(
         maxes.Axes.fill_betweenx
     )))
 
     # Wrapped by cycle wrapper and standardized
-    pie = _standardize_1d(_cycle_changer(
+    pie = _standardize_1d(_apply_cycle(
         maxes.Axes.pie
     ))
-    step = _standardize_1d(_cycle_changer(
+    step = _standardize_1d(_apply_cycle(
         maxes.Axes.step
     ))
 
@@ -1867,53 +1864,53 @@ optional
 
     # Wrapped by cmap wrapper and standardized
     # Also support redirecting to Basemap methods
-    hexbin = _standardize_1d(_cmap_changer(
+    hexbin = _standardize_1d(_apply_cmap(
         maxes.Axes.hexbin
     ))
-    contour = _standardize_2d(_cmap_changer(
+    contour = _standardize_2d(_apply_cmap(
         maxes.Axes.contour
     ))
-    contourf = _standardize_2d(_cmap_changer(
+    contourf = _standardize_2d(_apply_cmap(
         maxes.Axes.contourf
     ))
-    pcolor = _standardize_2d(_cmap_changer(
+    pcolor = _standardize_2d(_apply_cmap(
         maxes.Axes.pcolor
     ))
-    pcolormesh = _standardize_2d(_cmap_changer(
+    pcolormesh = _standardize_2d(_apply_cmap(
         maxes.Axes.pcolormesh
     ))
-    pcolorfast = _standardize_2d(_cmap_changer(
+    pcolorfast = _standardize_2d(_apply_cmap(
         maxes.Axes.pcolorfast  # WARNING: not available in cartopy and basemap
     ))
-    streamplot = _standardize_2d(_cmap_changer(
+    streamplot = _standardize_2d(_apply_cmap(
         maxes.Axes.streamplot
     ))
-    quiver = _standardize_2d(_cmap_changer(
+    quiver = _standardize_2d(_apply_cmap(
         maxes.Axes.quiver
     ))
-    barbs = _standardize_2d(_cmap_changer(
+    barbs = _standardize_2d(_apply_cmap(
         maxes.Axes.barbs
     ))
-    imshow = _cmap_changer(
+    imshow = _apply_cmap(
         maxes.Axes.imshow
     )
 
     # Wrapped only by cmap wrapper
-    tripcolor = _cmap_changer(
+    tripcolor = _apply_cmap(
         maxes.Axes.tripcolor
     )
-    tricontour = _cmap_changer(
+    tricontour = _apply_cmap(
         maxes.Axes.tricontour
     )
-    tricontourf = _cmap_changer(
+    tricontourf = _apply_cmap(
         maxes.Axes.tricontourf
     )
-    hist2d = _cmap_changer(
+    hist2d = _apply_cmap(
         maxes.Axes.hist2d
     )
-    spy = _cmap_changer(
+    spy = _apply_cmap(
         maxes.Axes.spy
     )
-    matshow = _cmap_changer(
+    matshow = _apply_cmap(
         maxes.Axes.matshow
     )

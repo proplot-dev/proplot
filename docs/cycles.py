@@ -64,7 +64,7 @@ fig, axs = plot.show_cycles()
 # Various plotting commands like `~matplotlib.axes.Axes.plot` and
 # `~matplotlib.axes.Axes.scatter` now accept a `cycle` keyword arg, which is
 # passed to the `~proplot.constructor.Cycle` constructor function (see
-# `~proplot.axes.cycle_changer`). To save your color cycle data and use
+# `~proplot.axes.apply_cycle`). To save your color cycle data and use
 # it every time ProPlot is imported, simply pass ``save=True`` to
 # `~proplot.constructor.Cycle`. If you want to change the global property
 # cycler, pass a *name* to the :rcraw:`cycle` setting or pass the result of
