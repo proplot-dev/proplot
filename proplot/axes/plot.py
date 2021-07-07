@@ -1189,7 +1189,7 @@ def indicate_error(
     boxdata=None, bardata=None, shadedata=None, fadedata=None,
     boxstds=None, barstds=None, shadestds=None, fadestds=None,
     boxpctiles=None, barpctiles=None, shadepctiles=None, fadepctiles=None,
-    boxmarker=True, boxmarkercolor='white',
+    boxmarker=None, boxmarkercolor='white',
     boxcolor=None, barcolor=None, shadecolor=None, fadecolor=None,
     shadelabel=False, fadelabel=False, shadealpha=0.4, fadealpha=0.2,
     boxlinewidth=None, boxlw=None, barlinewidth=None, barlw=None, capsize=None,
@@ -1274,7 +1274,7 @@ def indicate_error(
         are ``barlw=0.8`` and ``boxlw=4 * barlw``.
     boxmarker : bool, optional
         Whether to draw a small marker in the middle of the box denoting the mean or
-        median position. Ignored if `boxes` is ``False``. Default is ``True``.
+        median position. Ignored if `boxes` is ``False``.
     boxmarkercolor : color-spec, optional
         Color for the `boxmarker` marker. Default is ``'w'``.
     capsize : float, optional
@@ -1318,9 +1318,10 @@ def indicate_error(
 
     # Parse keyword args and apply defaults
     # NOTE: Should not use plot() 'linewidth' for bar elements
-    # NOTE: violinplot_wrapper passes some invalid keyword args with expectation
+    # NOTE: violinplot_extras passes some invalid keyword args with expectation
     # that indicate_error pops them and uses them for error bars.
     method = kwargs.pop if violin else kwargs.get if bar else lambda *args: None
+    boxmarker = _not_none(boxmarker, True if violin else False)
     capsize = _not_none(capsize, 3.0)
     linewidth = _not_none(method('linewidth', None), method('lw', None), 1.0)
     barlinewidth = _not_none(barlinewidth=barlinewidth, barlw=barlw, default=linewidth)
