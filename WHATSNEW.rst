@@ -111,7 +111,7 @@ ProPlot v0.7.0 (2021-07-##)
   otherwise (:commit:`6d7444fe`). Styles otherwise build on matplotlib defaults.
 * When using ``medians=True`` or ``means=True`` with `indicate_error` plot simple
   error bars by default instead of bars and "boxes" (:commit:`4e30f415`). Only plot
-  "boxes" by default for violin plots.
+  "boxes" with central "markers" by default for violin plots (:commit:`13b45ccd`).
 * `legend_wrapper` no longer returns the background patch generated for centered-row
   legends (:pr:`254`). This is consistent with `colorbar_wrapper` not returning
   background patches generated for inset colorbars. Until proplot adds new subclasses,
@@ -141,10 +141,10 @@ ProPlot v0.7.0 (2021-07-##)
   on polar projections" feature (:commit:`c9ca0bdd`).
 * Add `queue` keyword to `colorbar` and `legend` to support workflow where users
   successively add handles to location (:pr:`254`).
-* Add `nozero` keyword arg to `cmap_changer` to remove the zero contour
+* Add `nozero` keyword arg to `apply_cmap` to remove the zero contour
   from automatically generated levels (:commit:`10e0f13b`).
   Example usage: ``ax.contour(x, y, z, nozero=True)``.
-* Add `positive` and `negative` keyword args to `cmap_changer` for requesting
+* Add `positive` and `negative` keyword args to `apply_cmap` for requesting
   automatically-generated all-positive or all-negative levels (:commit:`335d58f4`).
   Example usage: ``ax.contourf(x, y, z, positive=True)``.
 * Add `xmin`, `xmax`, `ymin`, and `ymax` keyword args to
@@ -211,7 +211,7 @@ ProPlot v0.7.0 (2021-07-##)
   content due to adding as children (:issue:`223`).
 * Fix issue where default layout in complex subplot grids with non-adjacent
   edges is incorrect (:issue:`221`).
-* Fix issue where `cycle_changer` fails to merge mean-uncertainty legend handles
+* Fix issue where `apply_cycle` fails to merge mean-uncertainty legend handles
   due to presence of placeholder labels (:commit:`4e30f415`).
 * Fix issue where `standardize_1d` inappropriately infers legend entries from
   y-coordinate metadata rather than column metadata (:commit:`4e30f415`).
@@ -278,13 +278,15 @@ ProPlot v0.7.0 (2021-07-##)
 
 .. rubric:: Documentation
 
-* Major clean up of "Why ProPlot?" page and user guide example.
-* Rename "Changelog" to "What's New?" and list all contributors in "About the Authors".
+* Major clean up of "Why ProPlot?" page and user guide pages.
 * Fix incomplete ``cmap.from_file`` docstrings (:commit:`54f1bc7c`).
-* Move public/documented function `make_mapping_array` to private API, following lead
-  of matplotlib's `makeMappingArray` (:commit:`66ae574b`).
-* Move public/documented functions `cmap_changer` and `cycle_changer`
-  to `apply_cmap` and `apply_cycle` (:commit:`###`).
+* Rename "Changelog" to "What's New?" and list all contributors in "About the Authors".
+* Rename public/documented funcs ending in `_wrapper` to ending in `_extras` to avoid
+  implication they are the only funcs wrapping those commands (:commit:`d1e1e85b`).
+* Rename public/documented func `make_mapping_array` to private function,
+  following lead of matplotlib's `makeMappingArray` (:commit:`66ae574b`).
+* Rename public/documented funcs `cmap_changer` and `cycle_changer`
+  to `apply_cmap` and `apply_cycle` (:commit:`86f7699a`).
 
 
 ProPlot v0.6.4 (2020-06-13)
@@ -407,7 +409,7 @@ ProPlot v0.6.0 (2020-05-20)
   width (:pr:`166`, :commit:`f801852b`). Many were changed for no good reason.
 * Change default line style for geographic gridlines from ``':'`` to ``'-'``
   and match style from primary gridlines (:pr:`166`, :commit:`f801852b`).
-* Rename `add_errorbars` to `~proplot.axes.plot.indicate_error` and rename
+* Rename `add_errorbars` to `~proplot.axes.indicate_error` and rename
   various keyword args (:pr:`166`, :commit:`d8c50a8d`).
 * Remove ``'rgbcycle'`` setting (:pr:`166`, :commit:`6653b7f0`).
 * Deprecate support for "parametric" plots inside `~matplotlib.axes.Axes.plot`,
@@ -488,12 +490,12 @@ ProPlot v0.6.0 (2020-05-20)
   colormap (:pr:`171`, :commit:`4583736`).
 * Support passing colormap objects, not just names, to `~proplot.demos.show_cmaps`
   and `~proplot.demos.show_cycles` (:pr:`171`, :commit:`7f8ca59f`).
-* Add options to `~proplot.axes.plot.indicate_error` for adding *shading*
+* Add options to `~proplot.axes.indicate_error` for adding *shading*
   to arbitrary plots (:pr:`166`, :commit:`d8c50a8d`). Also support automatic legend
   entries for shading and ensure `indicate_error` preserves metadata.
 * Wrap ``pcolorfast`` just like ``pcolor`` and ``pcolormesh`` are
   wrapped (:pr:`166`, :commit:`50a262dd`).
-* Add ``negpos`` feature to `~proplot.axes.plot.bar_wrapper` and new :rcraw:`negcolor`
+* Add ``negpos`` feature to `~proplot.axes.bar_wrapper` and new :rcraw:`negcolor`
   and :rcraw:`poscolor` rc keyword arguments (:pr:`166`, :commit:`ab4d6746`).
 * Support `~matplotlib.axes.Axes.vlines` and `~matplotlib.axes.Axes.hlines`
   flexible arguments and add ``negpos`` feature
