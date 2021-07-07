@@ -57,12 +57,13 @@ ProPlot v0.8.0 (2021-##-##)
 
 .. rubric:: Internals
 
-* Assignments to `~proplot.config.RcConfigurator` are now validated, and
-  the configurator is now a monkey patch of `~matplotlib.rcParams`
-  (:pr:`109`).
-* Plotting wrapper features (e.g. `~proplot.wrappers.standardize_1d`) are now
-  implemented and documented on the individual methods themselves (e.g.
-  `~proplot.axes.Axes.plot`; :pr:`111`).  This is much easier for new users.
+* Add comprehensive unit tests and migrate from Travis CI to
+  Github Actions.
+* Validate assignments to `~proplot.config.RcConfigurator` and turn the configurator
+  into a monkey patch of `~matplotlib.rcParams` (:pr:`109`).
+* Implement and document plotting wrappers (e.g. `~proplot.wrappers.standardize_1d`)
+  on the individual methods themselves (e.g. `~proplot.axes.Axes.plot`; :pr:`111`).
+  This is much easier for users.
 * Handle all projection keyword arguments in
   `~proplot.subplots.Figure.add_subplot` instead of
   `~proplot.subplots.subplots` (:pr:`110`).
@@ -108,6 +109,9 @@ ProPlot v0.7.0 (2021-07-##)
   run close to the background patch (:commit:`f5435976`)
 * Use proplot TeX Gyre fonts with `~proplot.config.use_style` styles unless specified
   otherwise (:commit:`6d7444fe`). Styles otherwise build on matplotlib defaults.
+* When using ``medians=True`` or ``means=True`` with `indicate_error` plot simple
+  error bars by default instead of bars and "boxes" (:commit:`4e30f415`). Only plot
+  "boxes" by default for violin plots.
 * Move `make_mapping_array` to private API, following lead of matplotlib's deprecated
   `makeMappingArray` function (:commit:`66ae574b`).
 * `legend_wrapper` no longer returns the background patch generated for centered-row
@@ -120,9 +124,7 @@ ProPlot v0.7.0 (2021-07-##)
 
 * Permit different colors for `~matplotlib.axes.Axes.boxplot` and
   `~matplotlib.axes.Axes.violinplot` using color lists (:issue:`217`, :pr:`218`)
-  by `Mickaël Lalande`_.
-* Allow updating axes fonts that use scalings like ``'small'`` and ``'large'``
-  by passing ``fontsize=N`` to `format` (:issue:`212`).
+  by `Mickaël Lalande`_. Also allow passing other args as lists (:commit:`4e30f415`).
 * Add `titlebbox` and `abcbbox` as alternatives to `titleborder` and `abcborder` for
   "inner" titles and a-b-c labels (:pr:`240`) by `Pratiman Patel`_. Borders are still
   used by default.
@@ -131,6 +133,10 @@ ProPlot v0.7.0 (2021-07-##)
   by `Zachary Moon`_.
 * Add baseline support for "3D" `~matplotlib.mpl_toolkits.mplot3d.Axes3D` axes
   (:issue:`249`). Example usage: ``fig.subplots(proj='3d')``.
+* Allow updating axes fonts that use scalings like ``'small'`` and ``'large'``
+  by passing ``fontsize=N`` to `format` (:issue:`212`).
+* Interpret fontsize-relative legend rc params like ``legend.borderpad``
+  with ``'em'`` as default units rather than ``'pt'`` (:commit:`6d98fd44`).
 * Add :rcraw:`basemap` setting for changing the default backend (:commit:`c9ca0bdd`). If
   users have a cartopy vs. basemap preference, they probably want to use it globally.
 * Add :rcraw:`cartopy.circular` setting for optionally disabling the "circular bounds
@@ -178,6 +184,16 @@ ProPlot v0.7.0 (2021-07-##)
   solids rather than manual-blending workaround (:commit:`c9f59e49`).
 * More robust interpretation of :rcraw:`abc.style` -- now match case with first
   ``'a'`` or ``'A'`` in string, and only replace that one (:issue:`201`).
+* Allow passing e.g. ``barstds=3`` or ``barpctiles=90`` to request error bars
+  denoting +/-3 standard deviations and 5-95 percentile range (:commit:`4e30f415`).
+* Allow passing ``means=True`` to `boxplot` to toggle mean line
+  (:commit:`4e30f415`).
+* Allow setting the mean and median boxplot linestyle with
+  ``(mean|median)(ls|linestyle)`` keywords (:commit:`4e30f415`).
+* Automatically set ``fill=True`` when passing a fill color or color(s)
+  to `boxplot_wrapper` (:commit:`4e30f415`).
+* Add `stack` as alternative to `stacked` for bar and area plots (:commit:`4e30f415`).
+  Imperative keywords are better.
 
 .. rubric:: Bug fixes
 
@@ -197,6 +213,10 @@ ProPlot v0.7.0 (2021-07-##)
   content due to adding as children (:issue:`223`).
 * Fix issue where default layout in complex subplot grids with non-adjacent
   edges is incorrect (:issue:`221`).
+* Fix issue where `cycle_changer` fails to merge mean-uncertainty legend handles
+  due to presence of placeholder labels (:commit:`4e30f415`).
+* Fix issue where `standardize_1d` inappropriately infers legend entries from
+  y-coordinate metadata rather than column metadata (:commit:`4e30f415`).
 * Fix issue where `barb` and `quiver` cannot accept 1D data arrays (:issue:`255`).
 * Fix issue where cannot set ``rc.style = 'default'`` (:pr:`240`) by `Pratiman Patel`_.
 * Fix issue where `get_legend` returns None even with legends present (:issue:`224`).
