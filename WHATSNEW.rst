@@ -112,8 +112,6 @@ ProPlot v0.7.0 (2021-07-##)
 * When using ``medians=True`` or ``means=True`` with `indicate_error` plot simple
   error bars by default instead of bars and "boxes" (:commit:`4e30f415`). Only plot
   "boxes" by default for violin plots.
-* Move `make_mapping_array` to private API, following lead of matplotlib's deprecated
-  `makeMappingArray` function (:commit:`66ae574b`).
 * `legend_wrapper` no longer returns the background patch generated for centered-row
   legends (:pr:`254`). This is consistent with `colorbar_wrapper` not returning
   background patches generated for inset colorbars. Until proplot adds new subclasses,
@@ -280,7 +278,13 @@ ProPlot v0.7.0 (2021-07-##)
 
 .. rubric:: Documentation
 
+* Major clean up of "Why ProPlot?" page and user guide example.
+* Rename "Changelog" to "What's New?" and list all contributors in "About the Authors".
 * Fix incomplete ``cmap.from_file`` docstrings (:commit:`54f1bc7c`).
+* Move public/documented function `make_mapping_array` to private API, following lead
+  of matplotlib's `makeMappingArray` (:commit:`66ae574b`).
+* Move public/documented functions `cmap_changer` and `cycle_changer`
+  to `apply_cmap` and `apply_cycle` (:commit:`###`).
 
 
 ProPlot v0.6.4 (2020-06-13)
