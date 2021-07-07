@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.3.0
+#       jupytext_version: 1.11.3
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -231,7 +231,7 @@ axs[:, 0].format(ylabel='ylabel\nylabel')
 # subplots. To address this, `matplotlib.pyplot.subplots` includes the `sharex` and
 # `sharey` keyword arguments that permit sharing axis limits, ticks, and tick labels
 # between like rows and columns of subplots. ProPlot expands upon this feature by...
-
+#
 # 1. Adding an option for sharing labels in the same row or column of the subplot grid,
 #    controlled by the `spanx` and `spany` keywords (default is :rc:`subplots.span`).
 #    Use the `span` keyword as shorthand to set both `spanx` and `spany`.
@@ -323,15 +323,40 @@ for mode in (0, 1):
 # `~proplot.axes.Axes.format`. You can also modify the "a-b-c" label
 # location, weight, and size with the :rcraw:`abc.loc`, :rcraw:`abc.weight`,
 # and :rcraw:`abc.size` settings.
+#
+# .. note::
+#
+#     "Inner" abc labels and titles are surrounded with a white border when
+#     :rcraw:`abc.border` and :rcraw:`title.border` are ``True`` (the default).
+#     White boxes can be used instead by setting :rcraw:`abc.bbox` and
+#     :rcraw:`title.bbox` to ``True``. These options help labels stand
+#     out against plotted content. These simple "borders" and "boxes"
+#     can also be used by passing ``border=True`` or ``bbox=True`` to
+#     `~matplotlib.axes.Axes.text`, which ProPlot wraps with
+#     `~proplot.axes.Axes.text_wrapper`. See the :ref:`plotting sections <ug_1dplots>`
+#     for details on wrapper functions.
 
 # %%
 import proplot as plot
 fig, axs = plot.subplots(nrows=8, ncols=8, refwidth=0.7, space=0)
 axs.format(
-    abc=True, abcloc='ur', xlabel='x axis', ylabel='y axis',
-    xticks=[], yticks=[], suptitle='Subplot labels demo'
+    abc=True, abcloc='ur',
+    xlabel='x axis', ylabel='y axis', xticks=[], yticks=[],
+    suptitle='Subplot labels demo'
 )
 
+
+# %%
+import proplot as plot
+fig, axs = plot.subplots(ncols=3, nrows=2, space=0, refwidth='10em')
+axs.format(
+    abc=True, abcloc='ul', abcstyle='A.',
+    xticks='null', yticks='null', facecolor='gray',
+    xlabel='x axis', ylabel='y axis',
+    suptitle='Inner borders and boxes',
+)
+axs[:3].format(abcbbox=True)  # also disables abcborder
+# axs[3:].format(abcborder=True)  # this is already the default
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_units:

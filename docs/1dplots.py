@@ -421,7 +421,7 @@ data = pd.DataFrame(
 )
 
 # Figure
-fig, axs = plot.subplots(ncols=2, refwidth=2.5)
+fig, axs = plot.subplots([[1, 1, 2, 2], [0, 3, 3, 0]])
 axs.format(grid=False, suptitle='Boxes and violins demo')
 
 # Box plots
@@ -438,6 +438,13 @@ obj2 = ax.violinplot(
     points=500, bw_method=0.3, means=True,
 )
 ax.format(title='Violin plots', titleloc='uc')
+
+# Boxes with different colors
+ax = axs[2]
+data = state.rand(100, 7)
+colors = plot.Colors('pastel2')  # list of colors from the cycle
+ax.boxes(data, fillcolor=colors)
+ax.format(title='Multiple colors', titleloc='uc', ymargin=0.15)
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"

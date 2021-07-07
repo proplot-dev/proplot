@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.3.0
+#       jupytext_version: 1.11.3
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -37,7 +37,7 @@
 # them to your plots.
 
 
-# %% [raw] raw_mimetype="text/restructuredtext"
+# %% [raw] raw_mimetype="text/restructuredtext" tags=[]
 # .. _ug_cycles_included:
 #
 # Included color cycles
@@ -47,6 +47,8 @@
 # registered by default and loaded from your ``~/.proplot/cycles`` folder.
 # You can make new color cycles and add them to this folder using the
 # `~proplot.constructor.Cycle` :ref:`constructor function <why_constructor>`.
+# To retrieve the list of colors associated with the color cycle, use
+# `~proplot.colors.Colors`.
 
 # %%
 import proplot as plot
@@ -70,16 +72,21 @@ fig, axs = plot.show_cycles()
 # the :ref:`configuration guide <ug_config>`).
 
 # %%
+import proplot as plot
 import numpy as np
-lw = 5
+
+# Sample data
 state = np.random.RandomState(51423)
 data = (state.rand(12, 6) - 0.45).cumsum(axis=0)
 kwargs = {'legend': 'b', 'labels': list('abcdef')}
 
-# Modify the default color cycle
+# Figure
+lw = 5
 plot.rc.cycle = '538'
 fig, axs = plot.subplots(ncols=3, refwidth=1.9)
 axs.format(suptitle='Changing the color cycle')
+
+# Modify the default color cycle
 ax = axs[0]
 ax.plot(data, lw=lw, **kwargs)
 ax.format(title='Global color cycle')

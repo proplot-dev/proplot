@@ -325,8 +325,8 @@ import numpy as np
 
 # Sample data
 state = np.random.RandomState(51423)
-data1 = (state.rand(20, 20) - 0.43).cumsum(axis=0)
-data2 = (state.rand(20, 20) - 0.57).cumsum(axis=0)
+data1 = (state.rand(20, 20) - 0.485).cumsum(axis=1).cumsum(axis=0)
+data2 = (state.rand(20, 20) - 0.515).cumsum(axis=0).cumsum(axis=1)
 
 # Figure
 fig, axs = plot.subplots(nrows=2, ncols=2, refwidth=2.4, order='F')
@@ -335,16 +335,17 @@ cmap = plot.Colormap('DryWet', cut=0.1)
 
 # Diverging norms
 i = 0
-for data, mode, fair in zip(
+for data, mode, fair, locator in zip(
     (data1, data2),
     ('positive', 'negative'),
-    ('fair', 'unfair')
+    ('fair', 'unfair'),
+    (3, 3),
 ):
     for fair in ('fair', 'unfair'):
         norm = plot.Norm('diverging', fair=(fair == 'fair'))
         ax = axs[i]
         m = ax.contourf(data, cmap=cmap, norm=norm)
-        ax.colorbar(m, loc='b', locator=1)
+        ax.colorbar(m, loc='b', locator=locator)
         ax.format(title=f'{mode.title()}-skewed w/ {fair!r} scaling')
         i += 1
 
@@ -382,7 +383,7 @@ data = pd.DataFrame(data, index=pd.Index(['a', 'b', 'c', 'd', 'e', 'f']))
 # Figure
 fig, axs = plot.subplots(
     [[1, 1, 2, 2], [0, 3, 3, 0]],
-    refwidth=2.2, share=1, span=False, hratios=(1, 0.9)
+    refwidth=2.2, share=1, span=False,
 )
 axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Labels demo')
 
@@ -392,7 +393,7 @@ m = ax.heatmap(
     data, cmap='rocket', labels=True,
     precision=2, labels_kw={'weight': 'bold'}
 )
-ax.format(title='Heatmap plot with labels')
+ax.format(title='Heatmap with labels')
 
 # Filled contours with labels
 ax = axs[1]
@@ -400,7 +401,7 @@ m = ax.contourf(
     data.cumsum(axis=0), labels=True,
     cmap='rocket', labels_kw={'weight': 'bold'}
 )
-ax.format(title='Filled contour plot with labels')
+ax.format(title='Filled contours with labels')
 
 # Line contours with labels
 ax = axs[2]
@@ -408,7 +409,7 @@ ax.contour(
     data.cumsum(axis=1) - 2, color='gray8',
     labels=True, lw=2, labels_kw={'weight': 'bold'}
 )
-ax.format(title='Line contour plot with labels')
+ax.format(title='Line contours with labels')
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"

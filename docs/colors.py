@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.3.0
+#       jupytext_version: 1.11.3
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -63,24 +63,26 @@ fig, axs = plot.show_colors()
 # that accepts the `color` keyword. The ``coord`` should be between ``0`` and
 # ``1``, while the ``index`` is the index on the list of cycle colors. This
 # feature is powered by the `~proplot.colors.ColorDatabase` class. This is
-# useful if you spot a nice color in one of the available colormaps and want
-# to use it for some arbitrary plot element.
+# useful if you spot a nice color in one of the available colormaps or color
+# cycles and want to use it for some arbitrary plot element.
 
 # %%
 import proplot as plot
 import numpy as np
-state = np.random.RandomState(51423)
-fig, axs = plot.subplots(nrows=2, refwidth=3.2, share=0)
+
+# Figure
+fig, axs = plot.subplots(nrows=2, share=0)
 axs.format(
     xformatter='null', yformatter='null', abc=True, abcloc='ul', abcstyle='A.',
-    suptitle='Getting individual colors from colormaps and cycles'
+    suptitle='Individual colors from colormaps and cycles'
 )
 
-# Drawing from colormap
+# Drawing from colormaps
 ax = axs[0]
 name = 'Deep'
 cmap = plot.Colormap(name)
 idxs = plot.arange(0, 1, 0.2)
+state = np.random.RandomState(51423)
 state.shuffle(idxs)
 for idx in idxs:
     data = (state.rand(20) - 0.4).cumsum()
@@ -91,7 +93,7 @@ for idx in idxs:
 ax.colorbar(cmap, loc='ur', label='colormap', length='12em')
 ax.format(title='Drawing from the Solar colormap', grid=True)
 
-# Drawing from color cycle
+# Drawing from color cycles
 ax = axs[1]
 idxs = np.arange(6)
 state.shuffle(idxs)
