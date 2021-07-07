@@ -163,10 +163,10 @@ import proplot as plot
 import numpy as np
 import pandas as pd
 
-# Create cycle that loops through 'dashes' Line2D property
+# Cycle that loops through 'dashes' Line2D property
 cycle = plot.Cycle(dashes=[(1, 0.5), (1, 1.5), (3, 0.5), (3, 1.5)])
 
-# Generate sample data
+# Sample data
 state = np.random.RandomState(51423)
 data = (state.rand(20, 4) - 0.5).cumsum(axis=0)
 data = pd.DataFrame(data, columns=pd.Index(['a', 'b', 'c', 'd'], name='label'))

@@ -399,15 +399,15 @@ designed to make your life easier.
 The following features are relevant for "1D" plotting methods like
 `~matplotlib.axes.Axes.plot` and `~matplotlib.axes.Axes.scatter`:
 
-* The new `~proplot.axes.Axes.parametric` method draws *parametric* line
-  plots, where the parametric coordinate is denoted with a colorbar and
-  colormap colors rather than text annotations.
-* The `~matplotlib.axes.Axes.bar` and `~matplotlib.axes.Axes.barh` methods
-  accept 2D arrays and can *stack* or *group* successive columns. Similarly,
+* The new `~proplot.axes.Axes.parametric` method draws
+  :ref:`parametric lines <ug_parametric>`, where the parametric coordinate is
+  denoted with colormap colors rather than text annotations.
+* The `~matplotlib.axes.Axes.bar` and `~matplotlib.axes.Axes.barh` methods accept
+  2D arrays and can :ref:`stack or group <ug_bar>` successive columns. Similarly,
   the new `~proplot.axes.Axes.area` and `~proplot.axes.Axes.areax` methods
   (aliases for `~matplotlib.axes.Axes.fill_between` and
   `~matplotlib.axes.Axes.fill_betweenx`) also accept 2D arrays
-  and can *stack* or *overlay* successive columns.
+  and can :ref:`stack or overlay <ug_bar>` successive columns.
 * The `~matplotlib.axes.Axes.bar`, `~matplotlib.axes.Axes.barh`,
   `~matplotlib.axes.Axes.vlines`, `~matplotlib.axes.Axes.hlines`,
   `~proplot.axes.Axes.area`, and `~proplot.axes.Axes.areax` commands

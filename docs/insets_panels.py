@@ -130,13 +130,13 @@ for ax, side in zip(axs, 'tlbr'):
 import proplot as plot
 import numpy as np
 
-# Generate sample data
+# Sample data
 N = 20
 state = np.random.RandomState(51423)
 x, y = np.arange(10), np.arange(10)
 data = state.rand(10, 10)
 
-# Plot sample data
+# Plot data
 fig, ax = plot.subplots(refwidth=3)
 m = ax.pcolormesh(data, cmap='Grays', levels=N)
 ax.colorbar(m, loc='b', label='label')

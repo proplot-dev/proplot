@@ -106,7 +106,7 @@ data = 50 * state.normal(1, 0.2, size=(20, 20)) * (
 lat = xr.DataArray(
     np.linspace(-90, 90, 20),
     dims=('lat',),
-    attrs={'units': 'deg_north'}
+    attrs={'units': '\N{DEGREE SIGN}N'}
 )
 plev = xr.DataArray(
     np.linspace(1000, 0, 20),
@@ -171,16 +171,20 @@ axs[1].format(xtickminor=False)
 # %%
 import proplot as plot
 import numpy as np
+
+# Sample data
 N = 20
 state = np.random.RandomState(51423)
 data = 10 ** (0.25 * np.cumsum(state.rand(N, N), axis=0))
+
+# Figure
 fig, axs = plot.subplots(ncols=2, span=False)
 axs.format(
     xlabel='xlabel', ylabel='ylabel', grid=True,
     suptitle='On-the-fly colormaps and normalizers'
 )
 
-# On-the-fly colormaps and normalizers
+# Plot with colormaps and normalizers
 axs[0].pcolormesh(data, cmap=('orange0', 'blood'), colorbar='b')
 axs[1].pcolormesh(data, norm='log', cmap=('orange0', 'blood'), colorbar='b')
 axs[0].format(title='Linear normalizer')
@@ -219,26 +223,33 @@ axs[1].format(title='Logarithmic normalizer')
 import proplot as plot
 import numpy as np
 
-# Pcolor plot with and without distinct levels
-fig, axs = plot.subplots(ncols=2, refwidth=2)
+# Sample data
 state = np.random.RandomState(51423)
 data = (state.normal(0, 1, size=(33, 33))).cumsum(axis=0).cumsum(axis=1)
+
+# Pcolor plot with and without distinct levels
+fig, axs = plot.subplots(ncols=2, refwidth=2)
 axs.format(suptitle='Pcolor plot with levels')
 for ax, n, mode, side in zip(axs, (200, 10), ('Ambiguous', 'Discernible'), 'lr'):
-    ax.pcolor(data, cmap='spectral_r', N=n, symmetric=True, colorbar=side)
+    m = ax.pcolor(data, cmap='spectral_r', N=n, symmetric=True)
     ax.format(title=f'{mode} level boundaries', yformatter='null')
+    ax.colorbar(m, loc=side, locator=8)
 
 # %%
 import proplot as plot
 import numpy as np
+
+# Sample data
+state = np.random.RandomState(51423)
+data = (20 * (state.rand(20, 20) - 0.4).cumsum(axis=0).cumsum(axis=1)) % 360
+levels = plot.arange(0, 360, 45)
+
+# Figure
 fig, axs = plot.subplots(
     [[0, 0, 1, 1, 0, 0], [2, 3, 3, 4, 4, 5]],
     wratios=(1.5, 0.5, 1, 1, 0.5, 1.5), refwidth=1.7, ref=1, right='2em'
 )
 axs.format(suptitle='DiscreteNorm color-range standardization')
-levels = plot.arange(0, 360, 45)
-state = np.random.RandomState(51423)
-data = (20 * (state.rand(20, 20) - 0.4).cumsum(axis=0).cumsum(axis=1)) % 360
 
 # Cyclic colorbar with distinct end colors
 ax = axs[0]
@@ -260,8 +271,8 @@ for ax, extend in zip(axs[1:], ('min', 'max', 'neither', 'both')):
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_norm:
 #
-# Special normalizers
-# -------------------
+# Special colormap normalizers
+# ----------------------------
 #
 # The `~proplot.colors.LinearSegmentedNorm` colormap normalizer
 # provides even color gradations with respect to *index* for an
@@ -289,9 +300,11 @@ for ax, extend in zip(axs[1:], ('min', 'max', 'neither', 'both')):
 import proplot as plot
 import numpy as np
 
-# Linear segmented norm
+# Sample data
 state = np.random.RandomState(51423)
 data = 10**(2 * state.rand(20, 20).cumsum(axis=0) / 7)
+
+# Linear segmented norm
 fig, axs = plot.subplots(ncols=2, refwidth=2.4)
 ticks = [5, 10, 20, 50, 100, 200, 500, 1000]
 for i, (norm, title) in enumerate(zip(
@@ -310,13 +323,17 @@ axs.format(suptitle='Linear segmented normalizer demo')
 import proplot as plot
 import numpy as np
 
-# Diverging norm
+# Sample data
 state = np.random.RandomState(51423)
 data1 = (state.rand(20, 20) - 0.43).cumsum(axis=0)
 data2 = (state.rand(20, 20) - 0.57).cumsum(axis=0)
+
+# Figure
 fig, axs = plot.subplots(nrows=2, ncols=2, refwidth=2.4, order='F')
-cmap = plot.Colormap('DryWet', cut=0.1)
 axs.format(suptitle='Diverging normalizer demo')
+cmap = plot.Colormap('DryWet', cut=0.1)
+
+# Diverging norms
 i = 0
 for data, mode, fair in zip(
     (data1, data2),
@@ -328,7 +345,7 @@ for data, mode, fair in zip(
         ax = axs[i]
         m = ax.contourf(data, cmap=cmap, norm=norm)
         ax.colorbar(m, loc='b', locator=1)
-        ax.format(title=f'Skewed {mode} data, {fair!r} scaling')
+        ax.format(title=f'{mode.title()}-skewed w/ {fair!r} scaling')
         i += 1
 
 
@@ -356,13 +373,17 @@ for data, mode, fair in zip(
 import proplot as plot
 import pandas as pd
 import numpy as np
+
+# Sample data
+state = np.random.RandomState(51423)
+data = state.rand(6, 6)
+data = pd.DataFrame(data, index=pd.Index(['a', 'b', 'c', 'd', 'e', 'f']))
+
+# Figure
 fig, axs = plot.subplots(
     [[1, 1, 2, 2], [0, 3, 3, 0]],
     refwidth=2.2, share=1, span=False, hratios=(1, 0.9)
 )
-state = np.random.RandomState(51423)
-data = state.rand(6, 6)
-data = pd.DataFrame(data, index=pd.Index(['a', 'b', 'c', 'd', 'e', 'f']))
 axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Labels demo')
 
 # Heatmap with labeled boxes

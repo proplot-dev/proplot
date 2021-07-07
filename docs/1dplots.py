@@ -50,19 +50,19 @@
 import proplot as plot
 import numpy as np
 
-# Figure and sample data
 N = 5
 state = np.random.RandomState(51423)
 with plot.rc.context({'axes.prop_cycle': plot.Cycle('Grays', N=N, left=0.3)}):
-    fig, axs = plot.subplots(ncols=2, share=False)
+    # Figure and sample data
     x = np.linspace(-5, 5, N)
     y = state.rand(N, 5)
+    fig, axs = plot.subplots(ncols=2, share=False)
     axs.format(xlabel='xlabel', ylabel='ylabel')
     axs.format(suptitle='Standardized arguments demonstration')
 
     # Plot by passing both x and y coordinates
     ax = axs[0]
-    ax.area(x, -1 * y / N, stacked=True)
+    ax.area(x, -1 * y / N, stack=True)
     ax.bar(x, y, linewidth=0, alpha=1, width=0.8)
     ax.plot(x, y + 1, linewidth=2)
     ax.scatter(x, y + 2, marker='s', markersize=5**2)
@@ -72,7 +72,7 @@ with plot.rc.context({'axes.prop_cycle': plot.Cycle('Grays', N=N, left=0.3)}):
     # Default x coordinates are inferred from DataFrame,
     # inferred from DataArray, or set to np.arange(0, y.shape[0])
     ax = axs[1]
-    ax.area(-1 * y / N, stacked=True)
+    ax.area(-1 * y / N, stack=True)
     ax.bar(y, linewidth=0, alpha=1)
     ax.plot(y + 1, linewidth=2)
     ax.scatter(y + 2, marker='s', markersize=5**2)
@@ -105,18 +105,21 @@ data = (
     np.sin(np.linspace(0, 2 * np.pi, 20))[:, None]
     + state.rand(20, 8).cumsum(axis=1)
 )
-da = xr.DataArray(data, dims=('x', 'cat'), coords={
+coords = {
     'x': xr.DataArray(
         np.linspace(0, 1, 20),
         dims=('x',),
         attrs={'long_name': 'distance', 'units': 'km'}
     ),
-    'cat': xr.DataArray(
+    'num': xr.DataArray(
         np.arange(0, 80, 10),
-        dims=('cat',),
-        attrs={'long_name': 'parameter', 'units': 'K'}
+        dims=('num',),
+        attrs={'long_name': 'parameter'}
     )
-}, name='position series')
+}
+da = xr.DataArray(
+    data, dims=('x', 'num'), coords=coords, name='energy', attrs={'units': 'kJ'}
+)
 
 # DataFrame
 data = (
@@ -124,9 +127,9 @@ data = (
 )
 ts = pd.date_range('1/1/2000', periods=20)
 df = pd.DataFrame(data, index=ts, columns=['foo', 'bar', 'baz', 'zap', 'baf'])
-df.name = 'time series'
-df.index.name = 'time (s)'
-df.columns.name = 'columns'
+df.name = 'data'
+df.index.name = 'date'
+df.columns.name = 'category'
 
 # %%
 import proplot as plot
@@ -165,11 +168,15 @@ axs[1].plot(df, cycle=cycle, lw=3, legend='uc')
 # %%
 import proplot as plot
 import numpy as np
+
+# Sample data
 N = 4
 state = np.random.RandomState(51423)
 data1 = state.rand(6, N)
 data2 = state.rand(6, N) * 1.5
+
 with plot.rc.context({'lines.linewidth': 3}):
+    # Figure
     fig, axs = plot.subplots(ncols=2)
     axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Local property cycles demo')
 
@@ -214,41 +221,42 @@ import numpy as np
 import pandas as pd
 plot.rc['title.loc'] = 'uc'
 
-# Generate sample data
+# Sample data
 state = np.random.RandomState(51423)
 data = state.rand(20, 8).cumsum(axis=0).cumsum(axis=1)[:, ::-1]
 data = data + 20 * state.normal(size=(20, 8)) + 30
 data = pd.DataFrame(data, columns=np.arange(0, 16, 2))
 data.name = 'variable'
 
-# Generate figure
+# Figure
 fig, axs = plot.subplots(
     nrows=3, refaspect=1.5, refwidth=4,
     share=0, hratios=(2, 1, 1)
 )
-axs.format(suptitle='Indicating error bounds with various plotting commands')
+axs.format(suptitle='Indicating error bounds')
 axs[1:].format(xlabel='column number', xticks=1, xgrid=False)
 
-# Automatically calculate medians and display default percentile range
+# Medians and percentile ranges
 ax = axs[0]
 obj = ax.barh(
-    data,
-    color='light red', legend=True,
-    medians=True, boxpctiles=True, barpctiles=(5, 95),
+    data, color='light red', legend=True,
+    medians=True, barpctiles=90, boxpctiles=True,
+    # medians=True, barpctiles=(5, 95), boxpctiles=(25, 75)  # equivalent
 )
 ax.format(title='Column statistics')
 ax.format(ylabel='column number', title='Bar plot', ygrid=False)
 
-# Automatically calculate means and display requested standard deviation range
+# Means and standard deviation range
 ax = axs[1]
 ax.scatter(
-    data,
-    color='denim', marker='x', markersize=8**2, linewidth=0.8,
-    means=True, shadestds=(-1, 1), shadelabel=True, legend='ll',
+    data, color='denim', marker='x', markersize=8**2, linewidth=0.8, legend='ll',
+    label='mean', shadelabel=True,
+    means=True, shadestds=1,
+    # means=True, shadestds=(-1, 1)  # equivalent
 )
-ax.format(title='Scatter plot')
+ax.format(title='Marker plot')
 
-# Manually supply error bar data and legend labels
+# User-defined error bars
 ax = axs[2]
 means = data.mean(axis=0)
 means.name = data.name
@@ -257,7 +265,7 @@ fadedata = np.percentile(data, (5, 95), axis=0)  # light shading
 ax.plot(
     means,
     shadedata=shadedata, fadedata=fadedata,
-    shadelabel='50% CI', fadelabel='90% CI',
+    label='mean', shadelabel='50% CI', fadelabel='90% CI',
     color='ocean blue', barzorder=0, boxmarker=False, legend='ll',
 )
 ax.format(title='Line plot')
@@ -297,6 +305,8 @@ plot.rc.reset()
 import proplot as plot
 import numpy as np
 import pandas as pd
+
+# Sample data
 state = np.random.RandomState(51423)
 data = state.rand(5, 5).cumsum(axis=0).cumsum(axis=1)[:, ::-1]
 data = pd.DataFrame(
@@ -304,7 +314,7 @@ data = pd.DataFrame(
     index=pd.Index(['a', 'b', 'c', 'd', 'e'], name='row idx')
 )
 
-# Generate figure
+# Figure
 plot.rc.titleloc = 'uc'
 fig, axs = plot.subplots(nrows=2, refaspect=2, refwidth=4.8, share=0, hratios=(3, 2))
 
@@ -323,7 +333,7 @@ ax.format(
 ax = axs[1]
 obj = ax.barh(
     data.iloc[::-1, :], cycle='Blues',
-    legend='ur', edgecolor='blue9', stacked=True
+    legend='ur', edgecolor='blue9', stack=True
 )
 ax.format(title='Stacked')
 axs.format(grid=False)
@@ -332,11 +342,13 @@ plot.rc.reset()
 # %%
 import proplot as plot
 import numpy as np
+
+# Sample data
 state = np.random.RandomState(51423)
 data = state.rand(5, 3).cumsum(axis=0)
 cycle = ('gray3', 'gray5', 'gray7')
 
-# Generate figure
+# Figure
 fig, axs = plot.subplots(ncols=2, refwidth=2.3, share=0)
 axs.format(grid=False, xlabel='xlabel', ylabel='ylabel', suptitle='Area plot demo')
 
@@ -351,7 +363,7 @@ ax.format(title='Fill between columns')
 # Stacked area patches
 ax = axs[1]
 ax.area(
-    np.arange(5), data, stacked=True, cycle=cycle, alpha=0.8,
+    np.arange(5), data, stack=True, cycle=cycle, alpha=0.8,
     legend='ul', legend_kw={'center': True, 'ncols': 2, 'labels': ['z', 'y', 'qqqq']},
 )
 ax.format(title='Stack between columns')
@@ -359,10 +371,12 @@ ax.format(title='Stack between columns')
 # %%
 import proplot as plot
 import numpy as np
-state = np.random.RandomState(51423)
-data = 4 * (state.rand(50) - 0.5)
 
-# Generate figure
+# Sample data
+state = np.random.RandomState(51423)
+data = 4 * (state.rand(40) - 0.5)
+
+# Figure
 fig, axs = plot.subplots(nrows=2, refaspect=2, figwidth=5)
 axs.format(
     xmargin=0, xlabel='xlabel', ylabel='ylabel', grid=True,
@@ -398,32 +412,30 @@ import proplot as plot
 import numpy as np
 import pandas as pd
 
-# Generate sample data
+# Sample data
 N = 500
 state = np.random.RandomState(51423)
 data = state.normal(size=(N, 5)) + 2 * (state.rand(N, 5) - 0.5) * np.arange(5)
 data = pd.DataFrame(
-    data,
-    columns=pd.Index(['a', 'b', 'c', 'd', 'e'], name='xlabel')
+    data, columns=pd.Index(['a', 'b', 'c', 'd', 'e'], name='xlabel')
 )
 
-# Generate figure
+# Figure
 fig, axs = plot.subplots(ncols=2, refwidth=2.5)
 axs.format(grid=False, suptitle='Boxes and violins demo')
 
 # Box plots
 ax = axs[0]
 obj1 = ax.boxplot(
-    data, lw=0.7, marker='x', fillcolor='gray5',
-    medianlw=1, mediancolor='k'
+    data, means=True, meancolor='red', marker='x', fillcolor='gray5',
 )
 ax.format(title='Box plots', titleloc='uc')
 
 # Violin plots
 ax = axs[1]
 obj2 = ax.violinplot(
-    data, lw=0.7, fillcolor='gray7',
-    points=500, bw_method=0.3, means=True
+    data, fillcolor='gray7',
+    points=500, bw_method=0.3, means=True,
 )
 ax.format(title='Violin plots', titleloc='uc')
 
@@ -454,27 +466,31 @@ fig, axs = plot.subplots(
 axs.format(suptitle='Parametric plots demo')
 cmap = 'IceFire'
 
-# Parametric line with smooth gradations
-ax = axs[0]
+# Sample data
 state = np.random.RandomState(51423)
 N = 50
 x = (state.rand(N) - 0.52).cumsum()
 y = state.rand(N)
 c = np.linspace(-N / 2, N / 2, N)  # color values
+
+# Parametric line with smooth gradations
+ax = axs[0]
 m = ax.parametric(
     x, y, c, cmap=cmap, lw=7, interp=5, capstyle='round', joinstyle='round'
 )
 ax.format(xlabel='xlabel', ylabel='ylabel', title='Line with smooth gradations')
 ax.colorbar(m, loc='b', label='parametric coordinate', locator=5)
 
-# Parametric line with stepped gradations
+# Sample data
 N = 12
-ax = axs[1]
 radii = np.linspace(1, 0.2, N + 1)
 angles = np.linspace(0, 4 * np.pi, N + 1)
 x = radii * np.cos(1.4 * angles)
 y = radii * np.sin(1.4 * angles)
 c = np.linspace(-N / 2, N / 2, N + 1)
+
+# Parametric line with stepped gradations
+ax = axs[1]
 m = ax.parametric(x, y, c, cmap=cmap, lw=15)
 ax.format(
     xlim=(-1, 1), ylim=(-1, 1), title='Step gradations',
@@ -509,15 +525,20 @@ ax.colorbar(m, loc='b', maxn=10, label='parametric coordinate')
 import proplot as plot
 import numpy as np
 import pandas as pd
-fig, axs = plot.subplots(ncols=2, share=1)
+
+# Sample data
 state = np.random.RandomState(51423)
 x = (state.rand(20) - 0).cumsum()
 data = (state.rand(20, 4) - 0.5).cumsum(axis=0)
 data = pd.DataFrame(data, columns=pd.Index(['a', 'b', 'c', 'd'], name='label'))
 
+# Figure
+fig, axs = plot.subplots(ncols=2, share=1)
+axs.format(suptitle='Scatter plot demo')
+
 # Scatter plot with property cycler
 ax = axs[0]
-ax.format(suptitle='Scatter plot demo', title='Extra prop cycle properties')
+ax.format(title='Extra prop cycle properties')
 obj = ax.scatter(
     x, data, legend='ul', cycle='Set2', legend_kw={'ncols': 2},
     cycle_kw={'marker': ['x', 'o', 'x', 'o'], 'markersize': [5, 10, 20, 30]}

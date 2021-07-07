@@ -81,7 +81,7 @@
 #    for details.
 
 # %%
-# Generate sample data
+# Sample data
 import numpy as np
 state = np.random.RandomState(51423)
 data = 2 * (state.rand(100, 5) - 0.5).cumsum(axis=0)
