@@ -1976,55 +1976,58 @@ def barh_wrapper(self, func, y=None, right=None, width=0.8, left=None, **kwargs)
 
 def boxplot_wrapper(
     self, func, *args,
-    color='k', fill=True, fillcolor=None, fillalpha=0.7,
-    lw=None, linewidth=None, orientation=None,
+    orientation=None,
+    color=None, fill=True, fillcolor=None, fillalpha=None,
+    lw=None, linewidth=None,
     marker=None, markersize=None,
-    boxcolor=None, boxlw=None,
-    capcolor=None, caplw=None,
-    meancolor=None, meanlw=None,
-    mediancolor=None, medianlw=None,
-    whiskercolor=None, whiskerlw=None,
-    fliercolor=None, flierlw=None,
+    boxcolor=None, boxlw=None, boxlinewidth=None,
+    capcolor=None, caplw=None, caplinewidth=None,
+    meancolor=None, meanlw=None, meanlinewidth=None,
+    mediancolor=None, medianlw=None, medianlinewidth=None,
+    whiskercolor=None, whiskerlw=None, whiskerlinewidth=None,
+    fliercolor=None, flierlw=None, flierlinewidth=None,  # fliers have no line width
     **kwargs
 ):
     """
     Adds convenient keyword arguments and changes the default boxplot style.
 
-    Note
-    ----
+    Important
+    ---------
     This function wraps {methods}
 
     Parameters
     ----------
     *args : 1D or 2D ndarray
         The data array.
-    color : color-spec, list, optional
-        The color of all objects. If a list, it should be the same length as
-        the number of objects.
+    vert : bool, optional
+        If ``False``, box plots are drawn horizontally.
+    orientation : {{'vertical', 'horizontal'}}, optional
+        Alternative to the native `vert` keyword arg.
+        Added for consistency with `~matplotlib.axes.Axes.bar`.
+    lw, linewidth : float, optional
+        The linewidth of all objects. Default is ``0.8``.
     fill : bool, optional
         Whether to fill the box with a color.
     fillcolor : color-spec, list, optional
         The fill color for the boxes. Default is the next color cycler color. If
         a list, it should be the same length as the number of objects.
     fillalpha : float, optional
-        The opacity of the boxes. Default is ``1``.
-    lw, linewidth : float, optional
-        The linewidth of all objects.
-    vert : bool, optional
-        If ``False``, box plots are drawn horizontally.
-    orientation : {{'vertical', 'horizontal'}}, optional
-        Alternative to the native `vert` keyword arg.
-        Added for consistency with `~matplotlib.axes.Axes.bar`.
+        The opacity of the boxes. Default is ``0.7``. If a list, should be
+        the same length as the number of objects.
     marker : marker-spec, optional
         Marker style for the 'fliers', i.e. outliers.
     markersize : float, optional
         Marker size for the 'fliers', i.e. outliers.
-    boxcolor, capcolor, meancolor, mediancolor, whiskercolor : \
+    color : color-spec, list, optional
+        The color of all objects. Defalut is ``'black'``. If a list, it should
+        be the same length as the number of objects.
+    boxcolor, capcolor, meancolor, mediancolor, whiskercolor, fliercolor : \
 color-spec, list, optional
         The color of various boxplot components. If a list, it should be the
         same length as the number of objects. These are shorthands so you don't
         have to pass e.g. a ``boxprops`` dictionary.
-    boxlw, caplw, meanlw, medianlw, whiskerlw : float, optional
+    boxlw, caplw, meanlw, medianlw, whiskerlw, flierlw, boxlinewidth, caplinewidth, \
+meanlinewidth, medianlinewidth, whiskerlinewidth, flierlinewidth : float, optional
         The line width of various boxplot components. These are shorthands so
         you don't have to pass e.g. a ``boxprops`` dictionary.
 
@@ -2032,78 +2035,92 @@ color-spec, list, optional
     ----------------
     **kwargs
         Passed to the matplotlib plotting method.
+
+    See also
+    --------
+    proplot.axes.Axes.boxes
+    standardize_1d
+    indicate_error
+    cycle_changer
     """
+    # Parse keyword args
+    color = _not_none(color, default='black')
+    fillalpha = _not_none(fillalpha, default=0.7)
+    if fillcolor is None:
+        cycler = next(self._get_lines.prop_cycler)
+        fillcolor = cycler.get('color', None)
+    linewidth = _not_none(lw=lw, linewidth=linewidth, default=0.8)
+    boxlinewidth = _not_none(boxlw=boxlw, boxlinewidth=boxlinewidth)
+    caplinewidth = _not_none(caplw=caplw, caplinewidth=caplinewidth)
+    whiskerlinewidth = _not_none(whiskerlw=whiskerlw, whiskerlinewidth=whiskerlinewidth)
+    meanlinewidth = _not_none(meanlw=meanlw, meanlinewidth=meanlinewidth)
+    medianlinewidth = _not_none(medianlw=medianlw, medianlinewidth=medianlinewidth)
+    flierlinewidth = _not_none(flierlw=flierlw, flierlinewidth=flierlinewidth)
+    if orientation == 'horizontal':
+        kwargs['vert'] = False
+    elif orientation == 'vertical':
+        kwargs['vert'] = True
+    elif orientation is not None:
+        raise ValueError("Orientation must be 'horizontal' or 'vertical', got {orientation!r}.")  # noqa: E501
+
     # Call function
     if len(args) > 2:
         raise ValueError(f'Expected 1-2 positional args, got {len(args)}.')
-    if orientation is not None:
-        if orientation == 'horizontal':
-            kwargs['vert'] = False
-        elif orientation != 'vertical':
-            raise ValueError(
-                'Orientation must be "horizontal" or "vertical", '
-                f'got {orientation!r}.'
-            )
     obj = func(self, *args, **kwargs)
     if not args:
         return obj
 
-    # Modify results
+    # Modify artist settings
     # TODO: Pass props keyword args instead? Maybe does not matter.
-    lw = _not_none(lw=lw, linewidth=linewidth, default=0.8)
-    if fillcolor is None:
-        cycler = next(self._get_lines.prop_cycler)
-        fillcolor = cycler.get('color', None)
-    for key, icolor, ilw in (
-        ('boxes', boxcolor, boxlw),
-        ('caps', capcolor, caplw),
-        ('whiskers', whiskercolor, whiskerlw),
-        ('means', meancolor, meanlw),
-        ('medians', mediancolor, medianlw),
-        ('fliers', fliercolor, flierlw),
+    for key, icolor, ilinewidth in (
+        ('boxes', boxcolor, boxlinewidth),
+        ('caps', capcolor, caplinewidth),
+        ('whiskers', whiskercolor, whiskerlinewidth),
+        ('means', meancolor, meanlinewidth),
+        ('medians', mediancolor, medianlinewidth),
+        ('fliers', fliercolor, flierlinewidth),
     ):
         if key not in obj:  # possible if not rendered
             continue
         artists = obj[key]
-        ilw = _not_none(ilw, lw)
         icolor = _not_none(icolor, color)
-
-        # If fillcolor is a not list, make a list
+        ilinewidth = _not_none(ilinewidth, lw)
+        if not isinstance(fillalpha, list):
+            fillalpha = [fillalpha] * len(artists)
         if not isinstance(fillcolor, list):
             fillcolor = [fillcolor] * len(artists)
-
         for i, artist in enumerate(artists):
-            if icolor is not None:
-                if isinstance(icolor, list):
-                    if key in ['caps', 'whiskers']:
-                        artist.set_color(icolor[i // 2])
-                        artist.set_markeredgecolor(icolor[i // 2])
-                    else:
-                        artist.set_color(icolor[i])
-                        artist.set_markeredgecolor(icolor[i])
-                else:
-                    artist.set_color(icolor)
-                    artist.set_markeredgecolor(icolor)
-            if ilw is not None:
-                artist.set_linewidth(ilw)
-                artist.set_markeredgewidth(ilw)
+            # Lines used for boxplot components
+            jcolor = icolor
+            if isinstance(icolor, list):
+                jcolor = icolor[i // 2 if key in ('caps', 'whiskers') else i]
+            if jcolor is not None:
+                artist.set_color(jcolor)
+                artist.set_markeredgecolor(jcolor)
+            if ilinewidth is not None:
+                artist.set_linewidth(ilinewidth)
+                artist.set_markeredgewidth(ilinewidth)
+            # "Filled" boxplot by adding patch beneath line path
             if key == 'boxes' and fill:
                 patch = mpatches.PathPatch(
-                    artist.get_path(), color=fillcolor[i],
-                    alpha=fillalpha, linewidth=0)
+                    artist.get_path(), linewidth=0,
+                    facecolor=fillcolor[i], alpha=fillalpha[i]
+                )
                 self.add_artist(patch)
+            # Outlier markers
             if key == 'fliers':
                 if marker is not None:
                     artist.set_marker(marker)
                 if markersize is not None:
                     artist.set_markersize(markersize)
+
     return obj
 
 
 def violinplot_wrapper(
     self, func, *args,
-    lw=None, linewidth=None, fillcolor=None, edgecolor='black',
-    fillalpha=0.7, orientation=None,
+    orientation=None,
+    lw=None, linewidth=None, fillcolor=None, edgecolor=None, fillalpha=None,
     **kwargs
 ):
     """
@@ -2114,16 +2131,21 @@ def violinplot_wrapper(
     while this is useful for `~matplotlib.axes.Axes.boxplot`\\ s it is
     redundant for `~matplotlib.axes.Axes.violinplot`\\ s.
 
-    Note
-    ----
+    Important
+    ---------
     This function wraps {methods}
 
     Parameters
     ----------
     *args : 1D or 2D ndarray
         The data array.
+    vert : bool, optional
+        If ``False``, box plots are drawn horizontally.
+    orientation : {{'vertical', 'horizontal'}}, optional
+        Alternative to the native `vert` keyword arg.
+        Added for consistency with `~matplotlib.axes.Axes.bar`.
     lw, linewidth : float, optional
-        The linewidth of the line objects. Default is ``1``.
+        The linewidth of the line objects. Default is ``0.8``.
     edgecolor : color-spec, list, optional
         The edge color for the violin patches. Default is ``'black'``. If a
         list, it should be the same length as the number of objects.
@@ -2131,12 +2153,8 @@ def violinplot_wrapper(
         The violin plot fill color. Default is the next color cycler color. If
         a list, it should be the same length as the number of objects.
     fillalpha : float, optional
-        The opacity of the violins. Default is ``1``.
-    vert : bool, optional
-        If ``False``, box plots are drawn horizontally.
-    orientation : {{'vertical', 'horizontal'}}, optional
-        Alternative to the native `vert` keyword arg.
-        Added for consistency with `~matplotlib.axes.Axes.bar`.
+        The opacity of the violins. Default is ``0.7``. If a list, it
+        should be the same length as the number of objects.
     boxrange, barrange : (float, float), optional
         Percentile ranges for the thick and thin central bars. The defaults
         are ``(25, 75)`` and ``(5, 95)``, respectively.
@@ -2145,53 +2163,59 @@ def violinplot_wrapper(
     ----------------
     **kwargs
         Passed to `~matplotlib.axes.Axes.violinplot`.
-    """
-    # Orientation and checks
-    if len(args) > 2:
-        raise ValueError(f'Expected 1-2 positional args, got {len(args)}.')
-    if orientation is not None:
-        if orientation == 'horizontal':
-            kwargs['vert'] = False
-        elif orientation != 'vertical':
-            raise ValueError(
-                'Orientation must be "horizontal" or "vertical", '
-                f'got {orientation!r}.'
-            )
 
-    # Sanitize input
-    lw = _not_none(lw=lw, linewidth=linewidth, default=0.8)
+    See also
+    --------
+    proplot.axes.Axes.violins
+    standardize_1d
+    indicate_error
+    cycle_changer
+    """
+    # Parse keyword args
+    if orientation == 'horizontal':
+        kwargs['vert'] = False
+    elif orientation == 'vertical':
+        kwargs['vert'] = True
+    elif orientation is not None:
+        raise ValueError("Orientation must be 'horizontal' or 'vertical', got {orientation!r}.")  # noqa: E501
+    fillalpha = _not_none(fillalpha, default=0.7)
+    edgecolor = _not_none(edgecolor, default='black')
+    linewidth = _not_none(lw=lw, linewidth=linewidth, default=0.8)
     if kwargs.pop('showextrema', None):
         warnings._warn_proplot('Ignoring showextrema=True.')
-    if 'showmeans' in kwargs:
+    if 'showmeans' in kwargs:  # native argument overridden by proplot handling
         kwargs.setdefault('means', kwargs.pop('showmeans'))
-    if 'showmedians' in kwargs:
+    if 'showmedians' in kwargs:  # native argument overridden by proplot handling
         kwargs.setdefault('medians', kwargs.pop('showmedians'))
-    kwargs.setdefault('capsize', 0)
-    result = obj = func(
-        self, *args,
-        showmeans=False, showmedians=False, showextrema=False, lw=lw, **kwargs
-    )
+    kwargs.update({'showmeans': False, 'showmedians': False, 'showextrema': False})
+    kwargs.setdefault('capsize', 0)  # caps are redundant for violin plots
+
+    # Call function
+    if len(args) > 2:
+        raise ValueError(f'Expected 1-2 positional args, got {len(args)}.')
+    obj = result = func(self, *args, linewidth=linewidth, **kwargs)
     if not args:
         return result
 
     # Modify body settings
-    if isinstance(result, (list, tuple)):
-        obj = result[0]
-
+    if isinstance(obj, (list, tuple)):
+        obj = obj[0]
     artists = obj['bodies']
-
-    # If the color settings are not a list, make a list
-    if not isinstance(edgecolor, list):
-        edgecolor = [edgecolor] * len(artists)
+    if not isinstance(fillalpha, list):
+        fillalpha = [fillalpha] * len(artists)
     if not isinstance(fillcolor, list):
         fillcolor = [fillcolor] * len(artists)
-
+    if not isinstance(edgecolor, list):
+        edgecolor = [edgecolor] * len(artists)
     for i, artist in enumerate(artists):
-        artist.set_alpha(fillalpha)
-        artist.set_edgecolor(edgecolor[i])
-        artist.set_linewidths(lw)
-        if fillcolor is not None:
+        artist.set_linewidths(linewidth)
+        if fillalpha[i] is not None:
+            artist.set_alpha(fillalpha[i])
+        if fillcolor[i] is not None:
             artist.set_facecolor(fillcolor[i])
+        if edgecolor[i] is not None:
+            artist.set_edgecolor(edgecolor[i])
+
     return result
 
 
