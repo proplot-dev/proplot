@@ -333,7 +333,7 @@ for mode in (0, 1):
 #     out against plotted content. These simple "borders" and "boxes"
 #     can also be used by passing ``border=True`` or ``bbox=True`` to
 #     `~matplotlib.axes.Axes.text`, which ProPlot wraps with
-#     `~proplot.axes.Axes.text_wrapper`. See the :ref:`plotting sections <ug_1dplots>`
+#     `~proplot.axes.plot.text_wrapper`. See the :ref:`plotting sections <ug_1dplots>`
 #     for details on wrapper functions.
 
 # %%
