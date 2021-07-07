@@ -407,6 +407,10 @@ axs.format(suptitle='Zooming into specific regions', land=True)
 axs[0].format(lonlim=(-20, 50), latlim=(30, 70), title='Cartopy example')
 axs[1].format(lonlines=20, title='Basemap example')
 
+
+# %%
+import proplot as plot
+
 # Zooming to very small scale with degree-minute-second labels
 plot.rc.reso = 'hi'
 fig, axs = plot.subplots(ncols=2, refwidth=2.5, proj='cyl')
@@ -418,7 +422,6 @@ axs.format(
 axs[0].format(lonlim=(-7.5, 2), latlim=(49.5, 59))
 axs[1].format(lonlim=(-6, -2), latlim=(54.5, 58.5))
 plot.rc.reset()
-
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _proj_included:
