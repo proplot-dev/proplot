@@ -1014,6 +1014,10 @@ optional
     def area(self, *args, **kwargs):
         """
         Alias for `~matplotlib.axes.Axes.fill_between`.
+
+        See also
+        --------
+        proplot.axes.plot.fill_between_wrapper
         """
         # NOTE: *Cannot* assign area = axes.Axes.fill_between because the
         # wrapper won't be applied and for some reason it messes up
@@ -1023,12 +1027,20 @@ optional
     def areax(self, *args, **kwargs):
         """
         Alias for `~matplotlib.axes.Axes.fill_betweenx`.
+
+        See also
+        --------
+        proplot.axes.plot.fill_betweenx_wrapper
         """
         return self.fill_betweenx(*args, **kwargs)
 
     def boxes(self, *args, **kwargs):
         """
         Alias for `~matplotlib.axes.Axes.boxplot`.
+
+        See also
+        --------
+        proplot.axes.plot.boxplot_wrapper
         """
         return self.boxplot(*args, **kwargs)
 
@@ -1348,6 +1360,10 @@ optional
     def violins(self, *args, **kwargs):
         """
         Alias for `~matplotlib.axes.Axes.violinplot`.
+
+        See also
+        --------
+        proplot.axes.plot.violinplot_wrapper
         """
         return self.violinplot(*args, **kwargs)
 
@@ -1811,9 +1827,9 @@ optional
     bar = _bar_wrapper(_standardize_1d(_indicate_error(_cycle_changer(
         maxes.Axes.bar
     ))))
-    barh = _barh_wrapper(
+    barh = _barh_wrapper(  # calls self.bar
         maxes.Axes.barh
-    )  # calls self.bar
+    )
     hist = _hist_wrapper(_standardize_1d(_cycle_changer(
         maxes.Axes.hist
     )))
