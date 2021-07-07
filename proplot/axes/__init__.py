@@ -30,6 +30,7 @@ mproj.register_projection(Axes3D)
 __all__ = [
     'Axes', 'CartesianAxes', 'PolarAxes',
     'GeoAxes', 'CartopyAxes', 'BasemapAxes',
+    'Axes3D',
     'ProjAxes', 'XYAxes',  # deprecated
 ]
 __all__.extend(plot.__all__)  # document wrappers as part of proplot/axes submodule

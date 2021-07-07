@@ -13,7 +13,7 @@ except ImportError:
 
 class Axes3D(base.Axes, Axes3DBase):
     """
-    Simple mix-in of `~proplot.axes.Axes` with `~mpl_toolkits.mplot3d.Axes3D`.
+    Simple mix-in of `proplot.axes.Axes` with `~mpl_toolkits.mplot3d.Axes3D`.
     """
     #: The registered projection name.
     name = 'proplot_3d'
