@@ -24,26 +24,26 @@ from ..utils import edges, units
 from .plot import (
     _apply_cmap,
     _apply_cycle,
-    _bar_wrapper,
-    _barh_wrapper,
-    _boxplot_wrapper,
-    _fill_between_wrapper,
-    _fill_betweenx_wrapper,
+    _bar_extras,
+    _barh_extras,
+    _boxplot_extras,
+    _fill_between_extras,
+    _fill_betweenx_extras,
     _get_transform,
-    _hist_wrapper,
-    _hlines_wrapper,
+    _hist_extras,
+    _hlines_extras,
     _indicate_error,
-    _parametric_wrapper,
-    _plot_wrapper,
-    _scatter_wrapper,
+    _parametric_extras,
+    _plot_extras,
+    _scatter_extras,
     _standardize_1d,
     _standardize_2d,
-    _stem_wrapper,
-    _text_wrapper,
-    _violinplot_wrapper,
-    _vlines_wrapper,
-    colorbar_wrapper,
-    legend_wrapper,
+    _stem_extras,
+    _text_extras,
+    _violinplot_extras,
+    _vlines_extras,
+    colorbar_extras,
+    legend_extras,
 )
 
 __all__ = ['Axes']
@@ -1017,7 +1017,7 @@ optional
 
         See also
         --------
-        proplot.axes.plot.fill_between_wrapper
+        proplot.axes.fill_between_extras
         """
         # NOTE: *Cannot* assign area = axes.Axes.fill_between because the
         # wrapper won't be applied and for some reason it messes up
@@ -1030,7 +1030,7 @@ optional
 
         See also
         --------
-        proplot.axes.plot.fill_betweenx_wrapper
+        proplot.axes.fill_betweenx_extras
         """
         return self.fill_betweenx(*args, **kwargs)
 
@@ -1040,7 +1040,7 @@ optional
 
         See also
         --------
-        proplot.axes.plot.boxplot_wrapper
+        proplot.axes.boxplot_extras
         """
         return self.boxplot(*args, **kwargs)
 
@@ -1270,7 +1270,7 @@ optional
         side = self._loc_translate(side, 'panel')
         return self.figure._add_axes_panel(self, side, **kwargs)
 
-    @_parametric_wrapper
+    @_parametric_extras
     @_standardize_1d
     @_apply_cmap
     def parametric(
@@ -1363,7 +1363,7 @@ optional
 
         See also
         --------
-        proplot.axes.plot.violinplot_wrapper
+        proplot.axes.violinplot_extras
         """
         return self.violinplot(*args, **kwargs)
 
@@ -1581,7 +1581,7 @@ optional
     ):
         """
         Add an *inset* colorbar or *outer* colorbar along the outside edge of
-        the axes. See `~proplot.axes.colorbar_wrapper` for details.
+        the axes. See `~proplot.axes.colorbar_extras` for details.
 
         Parameters
         ----------
@@ -1638,7 +1638,12 @@ optional
         Other parameters
         ----------------
         *args, **kwargs
-            Passed to `~proplot.axes.colorbar_wrapper`.
+            Passed to `~proplot.axes.colorbar_extras`.
+
+        See also
+        --------
+        proplot.figure.Figure.colorbar
+        proplot.axes.colorbar_extras
         """
         # TODO: Add option to pad the frame away from the axes edge
         # TODO: Get the 'best' inset colorbar location using the legend algorithm.
@@ -1666,7 +1671,7 @@ optional
             ax, kwargs = self._inset_colorbar_axes(loc=loc, width=width, length=length, pad=pad, **kwargs)  # noqa: E501
 
         # Generate colorbar
-        obj = colorbar_wrapper(ax, mappable, values, **kwargs)
+        obj = colorbar_extras(ax, mappable, values, **kwargs)
         self._add_colorbar_legend(loc, obj, legend=False)  # possibly replace another
         return obj
 
@@ -1676,7 +1681,7 @@ optional
     ):
         """
         Add an *inset* legend or *outer* legend along the edge of the axes.
-        See `~proplot.axes.legend_wrapper` for details.
+        See `~proplot.axes.legend_extras` for details.
 
         Parameters
         ----------
@@ -1725,7 +1730,12 @@ optional
         Other parameters
         ----------------
         *args, **kwargs
-            Passed to `~proplot.axes.legend_wrapper`.
+            Passed to `~proplot.axes.legend_extras`.
+
+        See also
+        --------
+        proplot.figure.Figure.legend
+        proplot.axes.legend_extras
         """
         if loc != 'fill':
             loc = self._loc_translate(loc, 'legend')
@@ -1767,7 +1777,7 @@ optional
                 raise ValueError(f'Invalid panel side {side!r}.')
 
         # Generate legend
-        obj = legend_wrapper(self, handles, labels, loc=loc, **kwargs)
+        obj = legend_extras(self, handles, labels, loc=loc, **kwargs)
         self._add_colorbar_legend(loc, obj, legend=True)  # possibly replace another
         return obj
 
@@ -1812,34 +1822,34 @@ optional
 
     # Wrapped by special functions
     # Also support redirecting to Basemap methods
-    text = _text_wrapper(
+    text = _text_extras(
         maxes.Axes.text
     )
-    plot = _plot_wrapper(_standardize_1d(_indicate_error(_apply_cycle(
+    plot = _plot_extras(_standardize_1d(_indicate_error(_apply_cycle(
         maxes.Axes.plot
     ))))
-    scatter = _scatter_wrapper(_standardize_1d(_indicate_error(_apply_cycle(
+    scatter = _scatter_extras(_standardize_1d(_indicate_error(_apply_cycle(
         maxes.Axes.scatter
     ))))
-    bar = _bar_wrapper(_standardize_1d(_indicate_error(_apply_cycle(
+    bar = _bar_extras(_standardize_1d(_indicate_error(_apply_cycle(
         maxes.Axes.bar
     ))))
-    barh = _barh_wrapper(  # calls self.bar
+    barh = _barh_extras(  # calls self.bar
         maxes.Axes.barh
     )
-    hist = _hist_wrapper(_standardize_1d(_apply_cycle(
+    hist = _hist_extras(_standardize_1d(_apply_cycle(
         maxes.Axes.hist
     )))
-    boxplot = _boxplot_wrapper(_standardize_1d(_apply_cycle(
+    boxplot = _boxplot_extras(_standardize_1d(_apply_cycle(
         maxes.Axes.boxplot
     )))
-    violinplot = _violinplot_wrapper(_standardize_1d(_indicate_error(_apply_cycle(
+    violinplot = _violinplot_extras(_standardize_1d(_indicate_error(_apply_cycle(
         maxes.Axes.violinplot
     ))))
-    fill_between = _fill_between_wrapper(_standardize_1d(_apply_cycle(
+    fill_between = _fill_between_extras(_standardize_1d(_apply_cycle(
         maxes.Axes.fill_between
     )))
-    fill_betweenx = _fill_betweenx_wrapper(_standardize_1d(_apply_cycle(
+    fill_betweenx = _fill_betweenx_extras(_standardize_1d(_apply_cycle(
         maxes.Axes.fill_betweenx
     )))
 
@@ -1852,13 +1862,13 @@ optional
     ))
 
     # Wrapped by standardizer
-    stem = _standardize_1d(_stem_wrapper(
+    stem = _standardize_1d(_stem_extras(
         maxes.Axes.stem
     ))
-    hlines = _standardize_1d(_hlines_wrapper(
+    hlines = _standardize_1d(_hlines_extras(
         maxes.Axes.hlines
     ))
-    vlines = _standardize_1d(_vlines_wrapper(
+    vlines = _standardize_1d(_vlines_extras(
         maxes.Axes.vlines
     ))
 

@@ -840,7 +840,7 @@ def Locator(locator, *args, **kwargs):
     `yminorlocator_kw` arguments when passed to
     `~proplot.axes.CartesianAxes.format`, and the `locator`, `locator_kw`,
     `minorlocator`, and `minorlocator_kw` arguments when passed to colorbar
-    methods wrapped by `~proplot.axes.colorbar_wrapper`.
+    methods wrapped by `~proplot.axes.colorbar_extras`.
 
     Parameters
     ----------
@@ -951,7 +951,7 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
     `yformatter_kw` arguments when passed to
     `~proplot.axes.CartesianAxes.format`, and the `formatter`
     and `formatter_kw` arguments when passed to colorbar methods wrapped by
-    `~proplot.axes.colorbar_wrapper`.
+    `~proplot.axes.colorbar_extras`.
 
     Parameters
     ----------

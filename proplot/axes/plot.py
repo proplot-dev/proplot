@@ -50,23 +50,23 @@ except ModuleNotFoundError:
 __all__ = [
     'apply_cmap',
     'apply_cycle',
-    'bar_wrapper',
-    'barh_wrapper',
-    'boxplot_wrapper',
-    'colorbar_wrapper',
+    'bar_extras',
+    'barh_extras',
+    'boxplot_extras',
+    'colorbar_extras',
     'default_latlon',
     'default_transform',
-    'fill_between_wrapper',
-    'fill_betweenx_wrapper',
-    'hlines_wrapper',
+    'fill_between_extras',
+    'fill_betweenx_extras',
+    'hlines_extras',
     'indicate_error',
-    'legend_wrapper',
-    'scatter_wrapper',
+    'legend_extras',
+    'scatter_extras',
     'standardize_1d',
     'standardize_2d',
-    'text_wrapper',
-    'violinplot_wrapper',
-    'vlines_wrapper',
+    'text_extras',
+    'violinplot_extras',
+    'vlines_extras',
 ]
 
 
@@ -271,9 +271,9 @@ Parameters
     The dimensions of the bars. If the *{x}* coordinates are not provided,
     they are set to ``np.arange(0, len(height))``. Note that the units
     for `width` are now *relative*.
-orientation : {{'vertical', 'horizontal'}}, optional
+orientation : {{None, 'vertical', 'horizontal'}}, optional
     The orientation of the bars. If ``'horizontal'``, bars are drawn horizontally
-    rather than vertically.
+    rather than vertically. This is the default for `~matplotlib.axes.Axes.barh`.
 vert : bool, optional
     Alternative to the `orientation` keyword arg. If ``False``, bars are drawn
     horizontally. Added for consistency with `~matplotlib.axes.Axes.boxplot`.
@@ -1223,8 +1223,8 @@ def indicate_error(
         If ``False``, error data is drawn horizontally rather than vertially. Set
         automatically by methods like `bar`, `barh`, `area`, and `areax`.
     orientation : {{None, 'vertical', 'horizontal'}}, optional
-        Alternative to the `vert` keyword arg. If ``'horizontal'``, error data
-        is drawn horizontally rather than vertically.
+        Alternative to the `vert` keyword arg. If ``'horizontal'``, error data is
+        drawn horizontally rather than vertically.
     barstds : float, (float, float), or bool, optional
         Standard deviation multiples for *thin error bars* with optional whiskers
         (i.e. caps). If scalar, then +/- that number is used. If ``True``, the
@@ -1607,7 +1607,7 @@ def _lines_apply(
 
 
 @docstring.add_snippets
-def hlines_wrapper(self, func, *args, **kwargs):
+def hlines_extras(self, func, *args, **kwargs):
     """
     Plot horizontal lines with flexible positional arguments and optionally
     use different colors for "negative" and "positive" lines.
@@ -1628,7 +1628,7 @@ def hlines_wrapper(self, func, *args, **kwargs):
 
 
 @docstring.add_snippets
-def vlines_wrapper(self, func, *args, **kwargs):
+def vlines_extras(self, func, *args, **kwargs):
     """
     Plot vertical lines with flexible positional arguments and optionally
     use different colors for "negative" and "positive" lines.
@@ -1649,7 +1649,7 @@ def vlines_wrapper(self, func, *args, **kwargs):
 
 
 @docstring.add_snippets
-def scatter_wrapper(
+def scatter_extras(
     self, func, *args,
     s=None, size=None, markersize=None,
     c=None, color=None, markercolor=None, smin=None, smax=None,
@@ -1783,10 +1783,10 @@ def _fill_between_apply(
     # * When negpos is True, use fill_between(x, y1=0, y2) as the default
     #   instead of fill_between(x, y1, y2=0).
     name = func.__name__
-    args = list(args)
-    sx = 'y' if 'x' in name else 'x'
+    sx = 'y' if 'x' in name else 'x'  # i.e. fill_betweenx
     sy = 'x' if sx == 'y' else 'y'
     stack = _not_none(stack=stack, stacked=stacked)
+    args = list(args)
     if sx in kwargs:  # keyword 'x'
         args.insert(0, kwargs.pop(sx))
     if len(args) == 1:
@@ -1834,8 +1834,9 @@ def _fill_between_apply(
         obj2 = func(self, x, y1, y2, where=(y1 >= y2), color=poscolor, **kwargs)
         result = objs = (obj1, obj2)  # may be tuple of tuples due to apply_cycle
 
-    # Add sticky edges in x-direction, and sticky edges in y-direction *only*
-    # if one of the y limits is scalar. This should satisfy most users.
+    # Add sticky edges in x-direction, and sticky edges in y-direction
+    # *only* if one of the y limits is scalar. This should satisfy most users.
+    # NOTE: Could also retrieve data from PolyCollection but that's tricky.
     xsides = (np.min(_to_ndarray(x)), np.max(_to_ndarray(x)))
     ysides = []
     if y1.size == 1:
@@ -1853,7 +1854,7 @@ def _fill_between_apply(
 
 
 @docstring.add_snippets
-def fill_between_wrapper(self, func, *args, **kwargs):
+def fill_between_extras(self, func, *args, **kwargs):
     """
     %(axes.fill_between)s
     """
@@ -1861,7 +1862,7 @@ def fill_between_wrapper(self, func, *args, **kwargs):
 
 
 @docstring.add_snippets
-def fill_betweenx_wrapper(self, func, *args, **kwargs):
+def fill_betweenx_extras(self, func, *args, **kwargs):
     """
     %(axes.fill_betweenx)s
     """
@@ -1870,7 +1871,7 @@ def fill_betweenx_wrapper(self, func, *args, **kwargs):
 
 def _hist_apply(self, func, x, bins=None, **kwargs):
     """
-    Forces `bar_wrapper` to interpret `width` as literal rather than relative
+    Forces `bar_extras` to interpret `width` as literal rather than relative
     to step size and enforces all arguments after `bins` are keyword-only.
     """
     with _state_context(self, _absolute_bar_width=True):
@@ -1878,7 +1879,7 @@ def _hist_apply(self, func, x, bins=None, **kwargs):
 
 
 @docstring.add_snippets
-def bar_wrapper(
+def bar_extras(
     self, func, x=None, height=None, width=0.8, bottom=None, *,
     vert=None, orientation='vertical', stack=None, stacked=None,
     lw=None, linewidth=None, edgecolor='black',  # default edge color black
@@ -1943,7 +1944,7 @@ def bar_wrapper(
 
 
 @docstring.add_snippets
-def barh_wrapper(self, func, y=None, right=None, width=0.8, left=None, **kwargs):
+def barh_extras(self, func, y=None, right=None, width=0.8, left=None, **kwargs):
     """
     %(axes.barh)s
     """
@@ -1963,7 +1964,7 @@ def barh_wrapper(self, func, y=None, right=None, width=0.8, left=None, **kwargs)
     return self.bar(x=left, width=right, height=height, bottom=y, **kwargs)
 
 
-def boxplot_wrapper(
+def boxplot_extras(
     self, func, *args,
     orientation=None, means=None,
     fill=True, fillcolor=None, fillalpha=None,
@@ -1992,7 +1993,7 @@ def boxplot_wrapper(
         The data array.
     vert : bool, optional
         If ``False``, box plots are drawn horizontally.
-    orientation : {{'vertical', 'horizontal'}}, optional
+    orientation : {{None, 'vertical', 'horizontal'}}, optional
         Alternative to the native `vert` keyword arg. Added for
         consistency with `~matplotlib.axes.Axes.bar`.
     means : bool, optional
@@ -2121,7 +2122,7 @@ meanlinewidth, medianlinewidth, whiskerlinewidth, flierlinewidth : float, option
     return obj
 
 
-def violinplot_wrapper(
+def violinplot_extras(
     self, func, *args, orientation=None,
     fillcolor=None, fillalpha=None,
     lw=None, linewidth=None,
@@ -2146,7 +2147,7 @@ def violinplot_wrapper(
         The data array.
     vert : bool, optional
         If ``False``, box plots are drawn horizontally.
-    orientation : {{'vertical', 'horizontal'}}, optional
+    orientation : {{None, 'vertical', 'horizontal'}}, optional
         Alternative to the native `vert` keyword arg.
         Added for consistency with `~matplotlib.axes.Axes.bar`.
     fillcolor : color-spec, list, optional
@@ -2160,9 +2161,6 @@ def violinplot_wrapper(
     color, edgecolor : color-spec, list, optional
         The edge color for the violin patches. Default is ``'black'``. If a
         list, it should be the same length as the number of objects.
-    boxrange, barrange : (float, float), optional
-        Percentile ranges for the thick and thin central bars. The defaults
-        are ``(25, 75)`` and ``(5, 95)``, respectively.
 
     Other parameters
     ----------------
@@ -2307,7 +2305,7 @@ def _update_text(self, props):
     return type(self).update(self, props)
 
 
-def text_wrapper(
+def text_extras(
     self, func,
     x=0, y=0, text='', transform='data',
     family=None, fontfamily=None, fontname=None, fontsize=None, size=None,
@@ -2611,7 +2609,7 @@ def apply_cycle(
         stack = kwargs.pop('stack', False)
     if bar:
         barh = kwargs.get('orientation', None) == 'horizontal'
-        width = kwargs.pop('width', 0.8)  # 'width' for bar *and* barh (see bar_wrapper)
+        width = kwargs.pop('width', 0.8)  # 'width' for bar *and* barh (see bar_extras)
         if not stack and not getattr(self, '_absolute_bar_width', None):
             width = _convert_bar_width(x, width, ncols)
         kwargs['height' if barh else 'width'] = width
@@ -2670,7 +2668,7 @@ def apply_cycle(
 
         # The y coordinates and labels
         # WARNING: If stack=True then we always *ignore* second argument passed to
-        # fill_between. Warning should be issued by fill_between_wrapper in this case.
+        # fill_between. Warning should be issued by fill_between_extras in this case.
         if pie or box:  # only ever have one y value, cannot have legend labels
             iys = ys[:1]
         elif fill and stack:  # ignore argument 3 as warned in _fill_between_apply
@@ -2912,7 +2910,7 @@ def _build_discrete_norm(
 
     # NOTE: Matplotlib colorbar algorithm *cannot* handle descending levels
     # so this function reverses them and adds special attribute to the
-    # normalizer. Then colorbar_wrapper reads this attribute and flips the
+    # normalizer. Then colorbar_extras reads this attribute and flips the
     # axis and the colormap direction.
     # Check input levels and values
     for key, val in (('levels', levels), ('values', values)):
@@ -3469,7 +3467,7 @@ def _generate_mappable(
     return mappable, rotation
 
 
-def colorbar_wrapper(
+def colorbar_extras(
     self, mappable, values=None, *,  # analogous to handles and labels
     extend=None, extendsize=None,
     title=None, label=None,
@@ -3578,8 +3576,9 @@ or colormap-spec
         The font size, weight, and color for colorbar label text.
     ticklabelsize, ticklabelweight, ticklabelcolor : optional
         The font size, weight, and color for colorbar tick labels.
-    orientation : {{'horizontal', 'vertical'}}, optional
-        The colorbar orientation. You should not have to explicitly set this.
+    orientation : {{None, 'horizontal', 'vertical'}}, optional
+        The colorbar orientation. By default this depends on the "side" of the subplot
+        or figure where the colorbar is drawn. Inset colorbars are always horizontal.
 
     Other parameters
     ----------------
@@ -3598,7 +3597,7 @@ or colormap-spec
     # using a Normalize (for example) to determine colors between the levels
     # (see: https://stackoverflow.com/q/42723538/4970632). Workaround makes
     # sure locators are in vmin/vmax range exclusively; cannot match values.
-    # NOTE: In legend_wrapper() we try to add to the objects accepted by
+    # NOTE: In legend_extras() we try to add to the objects accepted by
     # legend() using handler_map. We can't really do anything similar for
     # colorbars; input must just be insnace of mixin class cm.ScalarMappable
     # Mutable args
@@ -4013,7 +4012,7 @@ def _single_legend(self, pairs, ncol=None, order=None, **kwargs):
     return mlegend.Legend(self, *zip(*pairs), ncol=ncol, **kwargs)
 
 
-def legend_wrapper(
+def legend_extras(
     self, handles=None, labels=None, *, loc=None, ncol=None, ncols=None,
     center=None, order='C', label=None, title=None,
     fontsize=None, fontweight=None, fontcolor=None,
@@ -4308,7 +4307,7 @@ def _basemap_norecurse(func):
     return wrapper
 
 
-def _process_wrapper(driver):
+def _process_extras(driver):
     """
     Generate generic wrapper decorator and dynamically modify the docstring
     to list methods wrapped by this function. Also set `__doc__` to ``None`` so
@@ -4412,32 +4411,55 @@ def _concatenate_docstrings(func):
 # Generate decorators and fill wrapper function docstrings. Each wrapper
 # function should call function(self, ...) somewhere.
 # Hidden wrapper functions providing only internal functionality
-_hist_wrapper = _process_wrapper(_hist_apply)
-_parametric_wrapper = _process_wrapper(_parametric_apply)
-_plot_wrapper = _process_wrapper(_plot_apply)
-_stem_wrapper = _process_wrapper(_stem_apply)
+_hist_extras = _process_extras(_hist_apply)
+_parametric_extras = _process_extras(_parametric_apply)
+_stem_extras = _process_extras(_stem_apply)
+_plot_extras = _process_extras(_plot_apply)
 # Public wrapper functions providing important functionality
-_bar_wrapper = _process_wrapper(bar_wrapper)
-_barh_wrapper = _process_wrapper(barh_wrapper)
-_default_latlon = _process_wrapper(default_latlon)
-_boxplot_wrapper = _process_wrapper(boxplot_wrapper)
-_default_transform = _process_wrapper(default_transform)
-_apply_cmap = _process_wrapper(apply_cmap)
-_apply_cycle = _process_wrapper(apply_cycle)
-_fill_between_wrapper = _process_wrapper(fill_between_wrapper)
-_fill_betweenx_wrapper = _process_wrapper(fill_betweenx_wrapper)
-_hlines_wrapper = _process_wrapper(hlines_wrapper)
-_indicate_error = _process_wrapper(indicate_error)
-_scatter_wrapper = _process_wrapper(scatter_wrapper)
-_standardize_1d = _process_wrapper(standardize_1d)
-_standardize_2d = _process_wrapper(standardize_2d)
-_text_wrapper = _process_wrapper(text_wrapper)
-_violinplot_wrapper = _process_wrapper(violinplot_wrapper)
-_vlines_wrapper = _process_wrapper(vlines_wrapper)
+_apply_cmap = _process_extras(apply_cmap)
+_apply_cycle = _process_extras(apply_cycle)
+_bar_extras = _process_extras(bar_extras)
+_barh_extras = _process_extras(barh_extras)
+_boxplot_extras = _process_extras(boxplot_extras)
+_default_latlon = _process_extras(default_latlon)
+_default_transform = _process_extras(default_transform)
+_fill_between_extras = _process_extras(fill_between_extras)
+_fill_betweenx_extras = _process_extras(fill_betweenx_extras)
+_hlines_extras = _process_extras(hlines_extras)
+_indicate_error = _process_extras(indicate_error)
+_scatter_extras = _process_extras(scatter_extras)
+_standardize_1d = _process_extras(standardize_1d)
+_standardize_2d = _process_extras(standardize_2d)
+_text_extras = _process_extras(text_extras)
+_violinplot_extras = _process_extras(violinplot_extras)
+_vlines_extras = _process_extras(vlines_extras)
 
 # Deprecated
-cmap_changer, cycle_changer = warnings._rename_objs(
-    '0.6',
+(
+    bar_extras,
+    barh_extras,
+    boxplot_extras,
+    cmap_changer,
+    cycle_changer,
+    fill_between_extras,
+    fill_betweenx_extras,
+    hlines_extras,
+    scatter_extras,
+    text_extras,
+    violinplot_extras,
+    vlines_extras,
+) = warnings._rename_objs(
+    '0.7',
+    bar_extras=bar_extras,
+    barh_extras=barh_extras,
+    boxplot_extras=boxplot_extras,
     cmap_changer=apply_cmap,
     cycle_changer=apply_cycle,
+    fill_between_extras=fill_between_extras,
+    fill_betweenx_extras=fill_betweenx_extras,
+    hlines_extras=hlines_extras,
+    scatter_extras=scatter_extras,
+    text_extras=text_extras,
+    violinplot_extras=violinplot_extras,
+    vlines_extras=vlines_extras,
 )

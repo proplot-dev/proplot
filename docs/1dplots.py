@@ -279,7 +279,7 @@ plot.rc.reset()
 # ------------------------
 #
 # The `~matplotlib.axes.Axes.bar` and `~matplotlib.axes.Axes.barh` methods
-# are wrapped by `~proplot.axes.bar_wrapper`,
+# are wrapped by `~proplot.axes.bar_extras`,
 # `~proplot.axes.apply_cycle`, and `~proplot.axes.standardize_1d`.
 # You can now *group* or *stack* columns of data by passing 2D arrays to
 # `~matplotlib.axes.Axes.bar` or `~matplotlib.axes.Axes.barh`, just like in
@@ -292,8 +292,8 @@ plot.rc.reset()
 # `~proplot.axes.Axes.areax` methods. These are alises for
 # `~matplotlib.axes.Axes.fill_between` and
 # `~matplotlib.axes.Axes.fill_betweenx`, which are wrapped by
-# `~proplot.axes.fill_between_wrapper` and
-# `~proplot.axes.fill_betweenx_wrapper`. You can now *stack* or *overlay*
+# `~proplot.axes.fill_between_extras` and
+# `~proplot.axes.fill_betweenx_extras`. You can now *stack* or *overlay*
 # columns of data by passing 2D arrays to `~proplot.axes.Axes.area` and
 # `~proplot.axes.Axes.areax`, just like in `pandas`_. You can also now draw
 # area plots that change color when the fill boundaries cross each other by
@@ -400,8 +400,8 @@ axs[1].format(title='Area plot')
 # --------------------------
 #
 # The `~matplotlib.axes.Axes.boxplot` and `~matplotlib.axes.Axes.violinplot`
-# methods are now wrapped with `~proplot.axes.boxplot_wrapper`,
-# `~proplot.axes.violinplot_wrapper`, `~proplot.axes.apply_cycle`,
+# methods are now wrapped with `~proplot.axes.boxplot_extras`,
+# `~proplot.axes.violinplot_extras`, `~proplot.axes.apply_cycle`,
 # and `~proplot.axes.standardize_1d`. These wrappers add some useful
 # options and apply aesthetically pleasing default settings. They also
 # automatically apply axis labels based on the `~pandas.DataFrame` column
@@ -513,7 +513,7 @@ ax.colorbar(m, loc='b', maxn=10, label='parametric coordinate')
 # ----------------------
 #
 # The `~matplotlib.axes.Axes.scatter` method is now wrapped by
-# `~proplot.axes.scatter_wrapper`, `~proplot.axes.apply_cycle`, and
+# `~proplot.axes.scatter_extras`, `~proplot.axes.apply_cycle`, and
 # `~proplot.axes.standardize_1d`. This means that
 # `~matplotlib.axes.Axes.scatter` now accepts 2D arrays, just like
 # `~matplotlib.axes.Axes.plot`. Also, successive calls to
@@ -525,7 +525,7 @@ ax.colorbar(m, loc='b', maxn=10, label='parametric coordinate')
 #
 # ProPlot also supports property cycling for `~proplot.axes.Axes.step` plots
 # and wraps the `~matplotlib.axes.Axes.vlines` and `~matplotlib.axes.Axes.hlines`
-# methods with `~proplot.axes.vlines_wrapper` and `~proplot.axes.hlines_wrapper`,
+# methods with `~proplot.axes.vlines_extras` and `~proplot.axes.hlines_extras`,
 # which adds the ability to use different colors for "negative" and "positive" lines.
 
 # %%
@@ -545,7 +545,7 @@ axs.format(suptitle='Scatter plot demo')
 
 # Scatter plot with property cycler
 ax = axs[0]
-ax.format(title='Extra prop cycle properties')
+ax.format(title='With property cycle')
 obj = ax.scatter(
     x, data, legend='ul', cycle='Set2', legend_kw={'ncols': 2},
     cycle_kw={'marker': ['x', 'o', 'x', 'o'], 'markersize': [5, 10, 20, 30]}
@@ -553,7 +553,7 @@ obj = ax.scatter(
 
 # Scatter plot with colormap
 ax = axs[1]
-ax.format(title='Scatter plot with cmap')
+ax.format(title='With colormap')
 data = state.rand(2, 100)
 obj = ax.scatter(
     *data, color=data.sum(axis=0), size=state.rand(100), smin=3, smax=30,

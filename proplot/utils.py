@@ -114,7 +114,7 @@ def edges(Z, axis=-1):
     you supply centers to `~matplotlib.axes.Axes.pcolor` or
     `~matplotlib.axes.Axes.pcolormesh`. It is also used to calculate colormap
     level boundaries when you supply centers to plotting methods wrapped by
-    `~proplot.axes.plot.apply_cmap`.
+    `~proplot.axes.apply_cmap`.
 
     Parameters
     ----------

@@ -25,11 +25,11 @@ from .plot import (
     _default_latlon,
     _default_transform,
     _indicate_error,
-    _plot_wrapper,
-    _scatter_wrapper,
+    _plot_extras,
+    _scatter_extras,
     _standardize_1d,
     _standardize_2d,
-    _text_wrapper,
+    _text_extras,
 )
 
 try:
@@ -1187,14 +1187,14 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
     # TODO: Remove this duplication!
     # NOTE: Do not wrap fill_between because it is broken in cartopy
     if GeoAxesBase is not object:
-        text = _text_wrapper(
+        text = _text_extras(
             GeoAxesBase.text
         )
         fill = _default_transform(GeoAxesBase.fill)
-        plot = _default_transform(_plot_wrapper(_standardize_1d(
+        plot = _default_transform(_plot_extras(_standardize_1d(
             _indicate_error(_apply_cycle(GeoAxesBase.plot))
         )))
-        scatter = _default_transform(_scatter_wrapper(_standardize_1d(
+        scatter = _default_transform(_scatter_extras(_standardize_1d(
             _indicate_error(_apply_cycle(GeoAxesBase.scatter))
         )))
         contour = _default_transform(_standardize_2d(_apply_cmap(
@@ -1520,10 +1520,10 @@ class BasemapAxes(GeoAxes):
         self._map_projection = map_projection
 
     # Wrapped methods
-    plot = _basemap_norecurse(_default_latlon(_plot_wrapper(_standardize_1d(
+    plot = _basemap_norecurse(_default_latlon(_plot_extras(_standardize_1d(
         _indicate_error(_apply_cycle(_basemap_redirect(maxes.Axes.plot)))
     ))))
-    scatter = _basemap_norecurse(_default_latlon(_scatter_wrapper(_standardize_1d(
+    scatter = _basemap_norecurse(_default_latlon(_scatter_extras(_standardize_1d(
         _indicate_error(_apply_cycle(_basemap_redirect(maxes.Axes.scatter)))
     ))))
     contour = _basemap_norecurse(_default_latlon(_standardize_2d(_apply_cmap(

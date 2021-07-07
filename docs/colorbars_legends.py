@@ -194,7 +194,7 @@ for ax, title in zip(
 # ---------------------
 #
 # The `proplot.figure.Figure.colorbar` and `proplot.axes.Axes.colorbar`
-# methods are wrapped by `~proplot.axes.colorbar_wrapper`, which adds several
+# methods are wrapped by `~proplot.axes.colorbar_extras`, which adds several
 # new features.
 #
 # You can now draw colorbars from *lists of colors* or *lists of artists* by
@@ -253,7 +253,7 @@ axs.format(
 # -------------------
 #
 # The `proplot.figure.Figure.legend` and `proplot.axes.Axes.legend` methods
-# are wrapped by `~proplot.axes.legend_wrapper`, which adds several new features.
+# are wrapped by `~proplot.axes.legend_extras`, which adds several new features.
 #
 # You can draw legends with centered legend rows, either by passing
 # ``center=True`` or by passing list of lists of plot handles. This is
