@@ -60,7 +60,7 @@ RcParams = mpl.RcParams  # the special class
 # TODO: Use explicit validators for specific settings like matplotlib.
 REGEX_STRING = re.compile('\\A(\'.*\'|".*")\\Z')
 REGEX_POINTS = re.compile(
-    r'\A(?!mono|colorbar|subplots|pdf|ps).*(width|space|size|pad|len)\Z'
+    r'\A(?!font.mono|colorbar|subplots|pdf|ps).*(width|space|size|pad|len)\Z'
 )
 FONT_KEYS = (
     'abc.size', 'axes.labelsize', 'axes.titlesize', 'figure.titlesize',
