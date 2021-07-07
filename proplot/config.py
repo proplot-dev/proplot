@@ -60,7 +60,7 @@ RcParams = mpl.RcParams  # the special class
 # TODO: Use explicit validators for specific settings like matplotlib.
 REGEX_STRING = re.compile('\\A(\'.*\'|".*")\\Z')
 REGEX_POINTS = re.compile(
-    r'\A(?!colorbar|subplots|pdf|ps).*(width|space|size|pad|len)\Z'
+    r'\A(?!font|colorbar|subplots|pdf|ps).*(width|space|size|pad|len)\Z'
 )
 FONT_KEYS = (
     'abc.size', 'axes.labelsize', 'axes.titlesize', 'figure.titlesize',
@@ -398,8 +398,10 @@ class RcConfigurator(object):
         if REGEX_POINTS.match(key):
             if key in FONT_KEYS and value in mfonts.font_scalings:
                 pass
+            elif key.startswith('legend') and not key.endswith('fontsize'):
+                value = units(value, 'em')  # scaled by font size
             else:
-                value = units(value, 'pt')  # allows e.g. fontsize='10px'
+                value = units(value, 'pt')  # untis points fontsize='10px'
 
         # Special key: configure inline backend
         if key == 'inlinefmt':
