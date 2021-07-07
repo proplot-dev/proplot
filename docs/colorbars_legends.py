@@ -150,7 +150,7 @@ axs.format(
     abcloc='l', abcstyle='a.', xlabel='xlabel', ylabel='ylabel'
 )
 fig.colorbar(m, label='column 1', ticks=0.5, loc='b', col=1)
-fig.colorbar(m, label='columns 2-3', ticks=0.2, loc='b', cols=(2, 3))
+fig.colorbar(m, label='columns 2 and 3', ticks=0.2, loc='b', cols=(2, 3))
 fig.colorbar(m, label='stacked colorbar', ticks=0.1, loc='b', minorticks=0.05)
 fig.colorbar(m, label='colorbar with length <1', ticks=0.1, loc='r', length=0.7)
 

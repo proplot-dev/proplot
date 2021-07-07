@@ -351,7 +351,7 @@ import proplot as plot
 fig, axs = plot.subplots(ncols=3, nrows=2, space=0, refwidth='10em')
 axs.format(
     abc=True, abcloc='ul', abcstyle='A.',
-    xticks='null', yticks='null', facecolor='gray',
+    xticks='null', yticks='null', facecolor='gray5',
     xlabel='x axis', ylabel='y axis',
     suptitle='Inner borders and boxes',
 )
