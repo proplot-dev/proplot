@@ -2277,6 +2277,10 @@ def _update_text(self, props):
             'color': facecolor,
             'path_effects': [mpatheffects.Stroke(**kwargs), mpatheffects.Normal()],
         })
+    elif border is False:
+        self.update({
+            'path_effects': None,
+        })
 
     # Update bounding box
     # NOTE: We use '_title_pad' and '_title_above' for both titles and a-b-c labels
@@ -2298,6 +2302,8 @@ def _update_text(self, props):
             'alpha': bboxalpha,
             'pad': bboxpad,
         })
+    elif bbox is False:
+        self.set_bbox(None)  # disables the bbox
 
     return type(self).update(self, props)
 
