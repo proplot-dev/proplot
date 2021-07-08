@@ -66,6 +66,12 @@ __all__ = [
     'vlines_extras',
     'hlines_extras',
     'scatter_extras',
+    # Hidden from top-level namespace
+    # hist_extras
+    # stem_extras
+    # plot_extras
+    # plotx_extras
+    # parametric_extras
 ]
 
 
@@ -1437,7 +1443,7 @@ def indicate_error(
         return res
 
 
-def _plot_extras(self, func, *args, cmap=None, values=None, **kwargs):
+def plot_extras(self, func, *args, cmap=None, values=None, **kwargs):
     """
     Adds the option `orientation` to change the default orientation of the
     lines. See also `~proplot.axes.Axes.plotx`.
@@ -1465,7 +1471,7 @@ def _plot_extras(self, func, *args, cmap=None, values=None, **kwargs):
     return result
 
 
-def _parametric_extras(self, func, *args, interp=0, **kwargs):
+def parametric_extras(self, func, *args, interp=0, **kwargs):
     """
     Calls `~proplot.axes.Axes.parametric` and optionally interpolates values before
     they get passed to `apply_cmap` and the colormap boundaries are drawn. Full
@@ -1516,7 +1522,7 @@ def _parametric_extras(self, func, *args, interp=0, **kwargs):
     return func(self, x, y, values=values, **kwargs)
 
 
-def _stem_extras(
+def stem_extras(
     self, func, *args, linefmt=None, basefmt=None, markerfmt=None, **kwargs
 ):
     """
@@ -1881,7 +1887,7 @@ def fill_betweenx_extras(self, func, *args, **kwargs):
     return _fill_between_apply(self, func, *args, **kwargs)
 
 
-def _hist_extras(self, func, x, bins=None, **kwargs):
+def hist_extras(self, func, x, bins=None, **kwargs):
     """
     Forces `bar_extras` to interpret `width` as literal rather than relative
     to step size and enforces all arguments after `bins` are keyword-only.
@@ -2494,18 +2500,20 @@ def _update_cycle(self, cycle, scatter=False, **kwargs):
                 reset = True
                 break
     if reset:
-        self.set_prop_cycle(cycle)
+        self.set_prop_cycle(cycle)  # updates both _get_lines and _get_patches_for_fill
 
-    # Psuedo-expansion of matplotlib's native property cycling for scatter(). Check out
-    # the current property cycle for extra keys not interpreted by matplotlib (all keys
-    # other than color, linestyle, and dashes). If they are present, and the user didn't
-    # explicitly override them with some other keyword arg, then take note of that.
-    # NOTE: By default matplotlib uses _get_patches_for_fill.get_next_color
-    # for scatter next scatter color, but cannot get anything else! We simultaneously
-    # iterate through the _get_lines property cycler and apply relevant properties.
+    # Psuedo-expansion of matplotlib's property cycling for scatter(). Return dict
+    # of cycle keys and translated scatter() keywords for those not specified by user
+    # NOTE: This is similar to _process_plot_var_args._getdefaults but want to rely
+    # minimally on private API.
+    # NOTE: By default matplotlib uses the property cycler in _get_patches_for_fill
+    # for scatter() plots. It also only inherits color from that cycler. We instead
+    # use _get_lines with scatter() to help overarching goal of unifying plot() and
+    # scatter(). Now shading/bars loop over one cycle, plot/scatter along another.
     apply_manually = {}  # which keys to apply from property cycler
     if scatter:
-        prop_keys = set(self._get_lines._prop_keys) - {'color', 'linestyle', 'dashes'}
+        parser = self._get_lines  # the _process_plot_var_args instance
+        prop_keys = set(parser.prop_cycler.keys) - {'color', 'linestyle', 'dashes'}
         for prop, key in (
             ('markersize', 's'),
             ('linewidth', 'linewidths'),
@@ -2664,6 +2672,7 @@ def apply_cycle(
     objs = []
     for i in range(ncols):
         # Property cycling for scatter plots
+        # NOTE: See comments in _update_cycle
         kw = kwargs.copy()
         if apply_manually:
             props = next(self._get_lines.prop_cycler)
@@ -4422,11 +4431,11 @@ def _concatenate_docstrings(func):
 
 # Generate decorators and fill wrapper function docstrings. Each wrapper
 # function should call function(self, ...) somewhere.
-# Hidden wrapper functions providing only internal functionality
-_hist_extras = _process_wrapper(_hist_extras)
-_stem_extras = _process_wrapper(_stem_extras)
-_plot_extras = _process_wrapper(_plot_extras)
-_parametric_extras = _process_wrapper(_parametric_extras)
+# Hidden functions providing only internal functionality
+_hist_extras = _process_wrapper(hist_extras)
+_stem_extras = _process_wrapper(stem_extras)
+_plot_extras = _process_wrapper(plot_extras)
+_parametric_extras = _process_wrapper(parametric_extras)
 # Public wrapper functions providing important functionality
 _apply_cmap = _process_wrapper(apply_cmap)
 _apply_cycle = _process_wrapper(apply_cycle)

@@ -28,9 +28,15 @@ mproj.register_projection(Axes3D)
 
 # Prevent importing module names and set order of appearance for objects
 __all__ = [
-    'Axes', 'CartesianAxes', 'PolarAxes',
-    'GeoAxes', 'CartopyAxes', 'BasemapAxes',
+    'Axes',
+    'CartesianAxes',
+    'PolarAxes',
+    'GeoAxes',
+    'CartopyAxes',
+    'BasemapAxes',
     'Axes3D',
-    'ProjAxes', 'XYAxes',  # deprecated
+    # Deprecated
+    'XYAxes',
+    'ProjAxes',
 ]
 __all__.extend(plot.__all__)  # document wrappers as part of proplot/axes submodule
