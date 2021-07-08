@@ -1337,34 +1337,34 @@ def indicate_error(
     # Draw dark and light shading
     method = kwargs.pop if plot else kwargs.get
     vert = method('vert', method('orientation', 'vertical') == 'vertical')
-    method = self.fill_between if vert else self.fill_betweenx
-    ex, ey = (x, y) if vert else (y, x)
     eobjs = []
+    method = self.fill_between if vert else self.fill_betweenx
     if fade:
         edata, label = _get_error_data(
-            data, ey, errdata=fadedata, stds=fadestds, pctiles=fadepctiles,
+            data, y, errdata=fadedata, stds=fadestds, pctiles=fadepctiles,
             stds_default=(-3, 3), pctiles_default=(0, 100), absolute=True,
             reduced=means or medians, label=fadelabel,
         )
         eobj = method(
-            ex, *edata, linewidth=0, label=label,
+            x, *edata, linewidth=0, label=label,
             color=fadecolor, alpha=fadealpha, zorder=fadezorder,
         )
         eobjs.append(eobj)
     if shade:
         edata, label = _get_error_data(
-            data, ey, errdata=shadedata, stds=shadestds, pctiles=shadepctiles,
+            data, y, errdata=shadedata, stds=shadestds, pctiles=shadepctiles,
             stds_default=(-2, 2), pctiles_default=(10, 90), absolute=True,
             reduced=means or medians, label=shadelabel,
         )
         eobj = method(
-            ex, *edata, linewidth=0, label=label,
+            x, *edata, linewidth=0, label=label,
             color=shadecolor, alpha=shadealpha, zorder=shadezorder,
         )
         eobjs.append(eobj)
 
     # Draw thin error bars and thick error boxes
-    axis = 'y' if vert else 'x'  # yerr
+    sy = 'y' if vert else 'x'  # yerr
+    ex, ey = (x, y) if vert else (y, x)
     if boxes:
         edata, _ = _get_error_data(
             data, y, errdata=boxdata, stds=boxstds, pctiles=boxpctiles,
@@ -1377,7 +1377,7 @@ def indicate_error(
             )
         eobj = self.errorbar(
             ex, ey, color=boxcolor, linewidth=boxlinewidth, linestyle='none',
-            capsize=0, zorder=boxzorder, **{axis + 'err': edata}
+            capsize=0, zorder=boxzorder, **{sy + 'err': edata}
         )
         eobjs.append(eobj)
     if bars:  # now impossible to make thin bar width different from cap width!
@@ -1389,7 +1389,7 @@ def indicate_error(
         eobj = self.errorbar(
             ex, ey, color=barcolor, linewidth=barlinewidth, linestyle='none',
             markeredgecolor=barcolor, markeredgewidth=barlinewidth,
-            capsize=capsize, zorder=barzorder, **{axis + 'err': edata}
+            capsize=capsize, zorder=barzorder, **{sy + 'err': edata}
         )
         eobjs.append(eobj)
 
