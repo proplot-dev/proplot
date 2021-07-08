@@ -4308,7 +4308,7 @@ def _basemap_norecurse(func):
     return wrapper
 
 
-def _process_extras(driver):
+def _process_wrapper(driver):
     """
     Generate generic wrapper decorator and dynamically modify the docstring
     to list methods wrapped by this function. Also set `__doc__` to ``None`` so
@@ -4412,28 +4412,28 @@ def _concatenate_docstrings(func):
 # Generate decorators and fill wrapper function docstrings. Each wrapper
 # function should call function(self, ...) somewhere.
 # Hidden wrapper functions providing only internal functionality
-_hist_extras = _process_extras(_hist_apply)
-_parametric_extras = _process_extras(_parametric_apply)
-_stem_extras = _process_extras(_stem_apply)
-_plot_extras = _process_extras(_plot_apply)
+_hist_extras = _process_wrapper(_hist_apply)
+_stem_extras = _process_wrapper(_stem_apply)
+_plot_extras = _process_wrapper(_plot_apply)
+_parametric_extras = _process_wrapper(_parametric_apply)
 # Public wrapper functions providing important functionality
-_apply_cmap = _process_extras(apply_cmap)
-_apply_cycle = _process_extras(apply_cycle)
-_bar_extras = _process_extras(bar_extras)
-_barh_extras = _process_extras(barh_extras)
-_boxplot_extras = _process_extras(boxplot_extras)
-_default_latlon = _process_extras(default_latlon)
-_default_transform = _process_extras(default_transform)
-_fill_between_extras = _process_extras(fill_between_extras)
-_fill_betweenx_extras = _process_extras(fill_betweenx_extras)
-_hlines_extras = _process_extras(hlines_extras)
-_indicate_error = _process_extras(indicate_error)
-_scatter_extras = _process_extras(scatter_extras)
-_standardize_1d = _process_extras(standardize_1d)
-_standardize_2d = _process_extras(standardize_2d)
-_text_extras = _process_extras(text_extras)
-_violinplot_extras = _process_extras(violinplot_extras)
-_vlines_extras = _process_extras(vlines_extras)
+_apply_cmap = _process_wrapper(apply_cmap)
+_apply_cycle = _process_wrapper(apply_cycle)
+_bar_extras = _process_wrapper(bar_extras)
+_barh_extras = _process_wrapper(barh_extras)
+_boxplot_extras = _process_wrapper(boxplot_extras)
+_default_latlon = _process_wrapper(default_latlon)
+_default_transform = _process_wrapper(default_transform)
+_fill_between_extras = _process_wrapper(fill_between_extras)
+_fill_betweenx_extras = _process_wrapper(fill_betweenx_extras)
+_hlines_extras = _process_wrapper(hlines_extras)
+_indicate_error = _process_wrapper(indicate_error)
+_scatter_extras = _process_wrapper(scatter_extras)
+_standardize_1d = _process_wrapper(standardize_1d)
+_standardize_2d = _process_wrapper(standardize_2d)
+_text_extras = _process_wrapper(text_extras)
+_violinplot_extras = _process_wrapper(violinplot_extras)
+_vlines_extras = _process_wrapper(vlines_extras)
 
 # Deprecated
 (
