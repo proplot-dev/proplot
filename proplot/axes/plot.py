@@ -4321,14 +4321,16 @@ def _apply_wrappers(method, *args):
         # Apply wrapper
         # NOTE: Must assign fucn and method as keywords to avoid overwriting
         # by look scope and associated recursion errors.
-        func._docstring_orig = func.__doc__ or ''
-        func._methods_wrapped = []
         method = functools.wraps(method)(
             lambda self, *args, func=func, method=method, **kwargs:
             func(self, *args, _method=method, **kwargs)
         )
 
         # List wrapped methods in the driver function docstring
+        if not hasattr(func, '_methods_wrapped'):
+            func._methods_wrapped = []
+        if not hasattr(func, '_docstring_orig'):
+            func._docstring_orig = func.__doc__ or ''
         docstring = func._docstring_orig
         if '{methods}' not in docstring:
             continue
@@ -4338,8 +4340,8 @@ def _apply_wrappers(method, *args):
         if link not in methods:
             methods.append(link)
         prefix = ', '.join(methods[:-1])
-        modifier = ',' if len(methods) > 2 else ' and ' if len(methods) > 1 else ''
-        suffix = methods[-1]
+        modifier = ', and ' if len(methods) > 2 else ' and ' if len(methods) > 1 else ''
+        suffix = methods[-1] + '`.'
         func.__doc__ = docstring.format(methods=prefix + modifier + suffix)
 
     # Remove documentation
