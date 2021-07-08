@@ -429,11 +429,10 @@ def _basemap_norecurse(self, *args, _method=None, **kwargs):
     """
     name = _method.__name__
     if getattr(_method, '_called_from_basemap', None):
-        result = getattr(maxes.Axes, name)(self, *args, **kwargs)
+        return getattr(maxes.Axes, name)(self, *args, **kwargs)
     else:
         with _state_context(_method, _called_from_basemap=True):
-            result = _method(self, *args, **kwargs)
-        return result
+            return _method(self, *args, **kwargs)
 
 
 def _get_label(obj):
