@@ -66,12 +66,6 @@ __all__ = [
     'vlines_extras',
     'hlines_extras',
     'scatter_extras',
-    # Hidden from top-level namespace
-    # hist_extras
-    # stem_extras
-    # plot_extras
-    # plotx_extras
-    # parametric_extras
 ]
 
 
@@ -414,6 +408,32 @@ def default_transform(self, func, *args, transform=None, **kwargs):
         transform = PlateCarree()
     result = func(self, *args, transform=transform, **kwargs)
     return result
+
+
+def _basemap_redirect(self, func, *args, **kwargs):
+    """
+    Docorator that calls the basemap version of the function of the
+    same name. This must be applied as the innermost decorator.
+    """
+    name = func.__name__
+    if getattr(self, 'name', None) == 'proplot_basemap':
+        return getattr(self.projection, name)(*args, ax=self, **kwargs)
+    else:
+        return func(self, *args, **kwargs)
+
+
+def _basemap_norecurse(self, func, *args, **kwargs):
+    """
+    Decorator to prevent recursion in basemap method overrides.
+    See `this post https://stackoverflow.com/a/37675810/4970632`__.
+    """
+    name = func.__name__
+    if getattr(func, '_called_from_basemap', None):
+        result = getattr(maxes.Axes, name)(self, *args, **kwargs)
+    else:
+        with _state_context(func, _called_from_basemap=True):
+            result = func(self, *args, **kwargs)
+        return result
 
 
 def _get_label(obj):
@@ -1443,7 +1463,7 @@ def indicate_error(
         return res
 
 
-def plot_extras(self, func, *args, cmap=None, values=None, **kwargs):
+def _plot_extras(self, func, *args, cmap=None, values=None, **kwargs):
     """
     Adds the option `orientation` to change the default orientation of the
     lines. See also `~proplot.axes.Axes.plotx`.
@@ -1471,7 +1491,7 @@ def plot_extras(self, func, *args, cmap=None, values=None, **kwargs):
     return result
 
 
-def parametric_extras(self, func, *args, interp=0, **kwargs):
+def _parametric_extras(self, func, *args, interp=0, **kwargs):
     """
     Calls `~proplot.axes.Axes.parametric` and optionally interpolates values before
     they get passed to `apply_cmap` and the colormap boundaries are drawn. Full
@@ -1522,7 +1542,7 @@ def parametric_extras(self, func, *args, interp=0, **kwargs):
     return func(self, x, y, values=values, **kwargs)
 
 
-def stem_extras(
+def _stem_extras(
     self, func, *args, linefmt=None, basefmt=None, markerfmt=None, **kwargs
 ):
     """
@@ -1555,14 +1575,32 @@ def stem_extras(
             return func(self, *args, **kwargs)
 
 
-def _lines_apply(
+def _mask_lines(y1, y2, mask):
+    """
+    Apply the mask based on the input filter.
+    """
+    y1_masked = y1.copy()
+    y2_masked = y2.copy()
+    if mask.size == 1:
+        if mask.item():
+            y1_masked = y2_masked = np.nan
+    else:
+        if y1.size > 1:
+            _to_indexer(y1_masked)[mask] = np.nan
+        if y2.size > 1:
+            _to_indexer(y2_masked)[mask] = np.nan
+    return y1_masked, y2_masked
+
+
+def _apply_lines(
     self, func, *args, negpos=False, negcolor=None, poscolor=None, **kwargs
 ):
     """
     Parse lines arguments. Support automatic *x* coordinates and default
     "minima" at zero.
     """
-    # Parse positional arguments, use default "base" position of zero
+    # Parse positional arguments
+    # Use default "base" position of zero as with bar and fill_between
     x = 'x' if func.__name__ == 'vlines' else 'y'
     y = 'y' if x == 'x' else 'x'
     args = list(args)
@@ -1582,46 +1620,20 @@ def _lines_apply(
 
     # Support "negative" and "positive" lines
     x, y1, y2 = args
-    if negpos and kwargs.get('color', None) is None:
+    if not negpos or kwargs.get('color', None) is None:
+        # Plot basic lines
+        return func(self, x, y1, y2, **kwargs)
+    else:
+        # Plot negative and positive colors
         y1 = _to_arraylike(y1)
         y2 = _to_arraylike(y2)
-        y1array = _to_ndarray(y1)
-        y2array = _to_ndarray(y2)
-
-        # Negative colors
-        mask = y2array >= y1array  # positive
-        y1neg = y1.copy()
-        y2neg = y2.copy()
-        if mask.size == 1:
-            if mask.item():
-                y1neg = y2neg = np.nan
-        else:
-            if y1.size > 1:
-                _to_indexer(y1neg)[mask] = np.nan
-            if y2.size > 1:
-                _to_indexer(y2neg)[mask] = np.nan
+        y1neg, y2neg = _mask_lines(_to_ndarray(y2) >= _to_ndarray(y1), y1, y2)
         color = _not_none(negcolor, rc['negcolor'])
         negobj = func(self, x, y1neg, y2neg, color=color, **kwargs)
-
-        # Positive colors
-        mask = y2array < y1array  # negative
-        y1pos = y1.copy()
-        y2pos = y2.copy()
-        if mask.size == 1:
-            if mask.item():
-                y1pos = y2pos = np.nan
-        else:
-            if y1.size > 1:
-                _to_indexer(y1pos)[mask] = np.nan
-            if y2.size > 1:
-                _to_indexer(y2pos)[mask] = np.nan
+        y1pos, y2pos = _mask_lines(_to_ndarray(y2) < _to_ndarray(y1), y1, y2)
         color = _not_none(poscolor, rc['poscolor'])
         posobj = func(self, x, y1pos, y2pos, color=color, **kwargs)
-
-        # Return both objects
         return (negobj, posobj)
-    else:
-        return func(self, x, y1, y2, **kwargs)
 
 
 @docstring.add_snippets
@@ -1642,7 +1654,7 @@ def hlines_extras(self, func, *args, **kwargs):
     --------
     standardize_1d
     """
-    return _lines_apply(self, func, *args, **kwargs)
+    return _apply_lines(self, func, *args, **kwargs)
 
 
 @docstring.add_snippets
@@ -1663,7 +1675,7 @@ def vlines_extras(self, func, *args, **kwargs):
     --------
     standardize_1d
     """
-    return _lines_apply(self, func, *args, **kwargs)
+    return _apply_lines(self, func, *args, **kwargs)
 
 
 @docstring.add_snippets
@@ -1788,7 +1800,7 @@ color-spec or list thereof, optional
     return obj
 
 
-def _fill_between_apply(
+def _apply_fill_between(
     self, func, *args, negcolor=None, poscolor=None, negpos=None,
     lw=None, linewidth=None, stack=None, stacked=None, where=None, **kwargs
 ):
@@ -1837,9 +1849,7 @@ def _fill_between_apply(
     else:
         # Plot negative and positive patches
         kwargs.setdefault('interpolate', True)
-        message = (
-            f'{name}() argument {{}}={{!r}} is incompatible with negpos=True. Ignoring.'
-        )
+        message = f'{name}() argument {{}}={{!r}} is incompatible with negpos=True. Ignoring.'  # noqa: E501
         if where is not None:
             warnings._warn_proplot(message.format('where', where))
         if stack:
@@ -1876,7 +1886,7 @@ def fill_between_extras(self, func, *args, **kwargs):
     """
     %(axes.fill_between)s
     """
-    return _fill_between_apply(self, func, *args, **kwargs)
+    return _apply_fill_between(self, func, *args, **kwargs)
 
 
 @docstring.add_snippets
@@ -1884,10 +1894,10 @@ def fill_betweenx_extras(self, func, *args, **kwargs):
     """
     %(axes.fill_betweenx)s
     """
-    return _fill_between_apply(self, func, *args, **kwargs)
+    return _apply_fill_between(self, func, *args, **kwargs)
 
 
-def hist_extras(self, func, x, bins=None, **kwargs):
+def _hist_extras(self, func, x, bins=None, **kwargs):
     """
     Forces `bar_extras` to interpret `width` as literal rather than relative
     to step size and enforces all arguments after `bins` are keyword-only.
@@ -1937,28 +1947,25 @@ def bar_extras(
     if not negpos or kwargs.get('color') is not None:
         # Draw simple bars
         kwargs['stack'] = stack
-        result = func(self, *args, **kwargs)
+        return func(self, *args, **kwargs)
     else:
         # Draw negative and positive bars
-        # NOTE: apply_cycle makes bar widths *relative* to step size between
-        # x coordinates so cannot just omit data. Instead make some heights nan.
-        message = 'bar() argument {}={!r} is incompatible with negpos=True. Ignoring.'
         stack = kwargs.pop('stack', None)
+        message = 'bar() argument {}={!r} is incompatible with negpos=True. Ignoring.'
         if stack:
             warnings._warn_proplot(message.format('stack', stack))
         height = _to_ndarray(height)
         if height.ndim > 1:
             raise ValueError('bar() heights with negpos=True must be 1D.')
-        height1 = height.astype(np.float64)
+        height1 = height.astype(np.float64)  # always copies by default
         height1[height >= 0] = np.nan
+        negcolor = _not_none(negcolor, rc['negcolor'])
+        obj1 = func(self, x, height1, color=negcolor, **kwargs)
         height2 = height.astype(np.float64)
         height2[height < 0] = np.nan
-        negcolor = _not_none(negcolor, rc['negcolor'])
         poscolor = _not_none(poscolor, rc['poscolor'])
-        obj1 = func(self, x, height1, color=negcolor, **kwargs)
         obj2 = func(self, x, height2, color=poscolor, **kwargs)
-        result = (obj1, obj2)
-    return result
+        return (obj1, obj2)
 
 
 @docstring.add_snippets
@@ -2692,7 +2699,7 @@ def apply_cycle(
         # fill_between. Warning should be issued by fill_between_extras in this case.
         if pie or box:  # only ever have one y value, cannot have legend labels
             iys = ys[:1]
-        elif fill and stack:  # ignore argument 3 as warned in _fill_between_apply
+        elif fill and stack:  # ignore argument 3 as warned in _apply_fill_between
             iys = tuple(iy if iy.ndim == 1 else _to_indexer(iy)[:, :ii].sum(axis=1) for ii in (i, i + 1))  # noqa: E501
             kw['label'] = labels[i] or None
         else:
@@ -4292,85 +4299,49 @@ property-spec, optional
     return objs[0] if len(objs) == 1 else tuple(objs)
 
 
-def _basemap_redirect(func):
+def _apply_wrappers(method, *args):
     """
-    Docorator that calls the basemap version of the function of the
-    same name. This must be applied as the innermost decorator.
+    Return the axes method `method` wrapped by input wrappers `args`. The order
+    of input should match the order you would apply the wrappers as decorator
+    functions (first argument is 'outermost' and last argument is 'innermost').
     """
-    name = func.__name__
+    # Local functions
+    name = method.__name__
+    local = name in ('area', 'areax', 'plotx', 'parametric', 'heatmap', 'scatterx')
 
-    @functools.wraps(func)
-    def wrapper(self, *args, **kwargs):
-        if getattr(self, 'name', None) == 'proplot_basemap':
-            return getattr(self.projection, name)(*args, ax=self, **kwargs)
-        else:
-            return func(self, *args, **kwargs)
-    wrapper.__doc__ = None
-    return wrapper
-
-
-def _basemap_norecurse(func):
-    """
-    Decorator to prevent recursion in basemap method overrides.
-    See `this post https://stackoverflow.com/a/37675810/4970632`__.
-    """
-    name = func.__name__
-    func._called_from_basemap = False
-
-    @functools.wraps(func)
-    def wrapper(self, *args, **kwargs):
-        if func._called_from_basemap:
-            result = getattr(maxes.Axes, name)(self, *args, **kwargs)
-        else:
-            with _state_context(func, _called_from_basemap=True):
-                result = func(self, *args, **kwargs)
-        return result
-    return wrapper
-
-
-def _process_wrapper(driver):
-    """
-    Generate generic wrapper decorator and dynamically modify the docstring
-    to list methods wrapped by this function. Also set `__doc__` to ``None`` so
-    that ProPlot fork of automodapi doesn't add these methods to the website
-    documentation. Users can still call help(ax.method) because python looks
-    for superclass method docstrings if a docstring is empty.
-    """
-    driver._docstring_orig = driver.__doc__ or ''
-    driver._methods_wrapped = []
-    proplot_methods = ('parametric', 'heatmap', 'area', 'areax')
-
-    def decorator(func):
-        # Define wrapper and suppress documentation
-        # We only document wrapper functions, not the methods they wrap
-        @functools.wraps(func)
-        def wrapper(self, *args, **kwargs):
-            return driver(self, func, *args, **kwargs)
-        name = func.__name__
-        if name not in proplot_methods:
-            wrapper.__doc__ = None
+    for func in args[::-1]:
+        # Apply wrapper
+        # NOTE: Must assign fucn and method as keywords to avoid overwriting
+        # by look scope and associated recursion errors.
+        func._docstring_orig = func.__doc__ or ''
+        func._methods_wrapped = []
+        method = functools.wraps(method)(
+            lambda self, *args, func=func, method=method, **kwargs:
+            func(self, method, *args, **kwargs)
+        )
 
         # List wrapped methods in the driver function docstring
-        # Prevents us from having to both explicitly apply decorators in
-        # axes.py and explicitly list functions *again* in this file
-        docstring = driver._docstring_orig
-        if '{methods}' in docstring:
-            if name in proplot_methods:
-                link = f'`~proplot.axes.Axes.{name}`'
-            else:
-                link = f'`~matplotlib.axes.Axes.{name}`'
-            methods = driver._methods_wrapped
-            if link not in methods:
-                methods.append(link)
-                string = (
-                    ', '.join(methods[:-1])
-                    + ',' * int(len(methods) > 2)  # Oxford comma bitches
-                    + ' and ' * int(len(methods) > 1)
-                    + methods[-1]
-                )
-                driver.__doc__ = docstring.format(methods=string)
-        return wrapper
-    return decorator
+        docstring = func._docstring_orig
+        if '{methods}' not in docstring:
+            continue
+        pkg = 'proplot' if local else 'matplotlib'
+        link = f'`~{pkg}.axes.Axes.{name}'
+        methods = func._methods_wrapped
+        if link not in methods:
+            methods.append(link)
+        prefix = ', '.join(methods[:-1])
+        modifier = ',' if len(methods) > 2 else ' and ' if len(methods) > 1 else ''
+        suffix = methods[-1]
+        func.__doc__ = docstring.format(methods=prefix + modifier + suffix)
+
+    # Remove documentation
+    # NOTE: Without this step matplotlib method documentation appears on proplot
+    # website! This doesn't affect user experience because help() will search for
+    # documentation on superclass matplotlib.axes.Axes above proplot.axes.Axes.
+    if not local:
+        method.__doc__ = None  # let help() function seek the superclass docstring
+
+    return method
 
 
 def _concatenate_docstrings(func):
@@ -4427,30 +4398,3 @@ def _concatenate_docstrings(func):
 
     # Return
     return func
-
-
-# Generate decorators and fill wrapper function docstrings. Each wrapper
-# function should call function(self, ...) somewhere.
-# Hidden functions providing only internal functionality
-_hist_extras = _process_wrapper(hist_extras)
-_stem_extras = _process_wrapper(stem_extras)
-_plot_extras = _process_wrapper(plot_extras)
-_parametric_extras = _process_wrapper(parametric_extras)
-# Public wrapper functions providing important functionality
-_apply_cmap = _process_wrapper(apply_cmap)
-_apply_cycle = _process_wrapper(apply_cycle)
-_bar_extras = _process_wrapper(bar_extras)
-_barh_extras = _process_wrapper(barh_extras)
-_boxplot_extras = _process_wrapper(boxplot_extras)
-_default_latlon = _process_wrapper(default_latlon)
-_default_transform = _process_wrapper(default_transform)
-_fill_between_extras = _process_wrapper(fill_between_extras)
-_fill_betweenx_extras = _process_wrapper(fill_betweenx_extras)
-_hlines_extras = _process_wrapper(hlines_extras)
-_indicate_error = _process_wrapper(indicate_error)
-_scatter_extras = _process_wrapper(scatter_extras)
-_standardize_1d = _process_wrapper(standardize_1d)
-_standardize_2d = _process_wrapper(standardize_2d)
-_text_extras = _process_wrapper(text_extras)
-_violinplot_extras = _process_wrapper(violinplot_extras)
-_vlines_extras = _process_wrapper(vlines_extras)

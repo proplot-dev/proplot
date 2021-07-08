@@ -21,30 +21,7 @@ from ..config import rc
 from ..internals import ic  # noqa: F401
 from ..internals import _not_none, docstring, rcsetup, warnings
 from ..utils import edges, units
-from .plot import (
-    _apply_cmap,
-    _apply_cycle,
-    _bar_extras,
-    _barh_extras,
-    _boxplot_extras,
-    _fill_between_extras,
-    _fill_betweenx_extras,
-    _get_transform,
-    _hist_extras,
-    _hlines_extras,
-    _indicate_error,
-    _parametric_extras,
-    _plot_extras,
-    _scatter_extras,
-    _standardize_1d,
-    _standardize_2d,
-    _stem_extras,
-    _text_extras,
-    _violinplot_extras,
-    _vlines_extras,
-    colorbar_extras,
-    legend_extras,
-)
+from . import plot as wrap
 
 __all__ = ['Axes']
 
@@ -1132,7 +1109,7 @@ optional
         if not transform:
             transform = self.transAxes
         else:
-            transform = _get_transform(self, transform)
+            transform = wrap._get_transform(self, transform)
         label = kwargs.pop('label', 'inset_axes')
         proj = _not_none(proj=proj, projection=projection)
         proj_kw = _not_none(proj_kw=proj_kw, projection_kw=projection_kw, default={})
@@ -1273,9 +1250,6 @@ optional
         side = self._loc_translate(side, 'panel')
         return self.figure._add_axes_panel(self, side, **kwargs)
 
-    @_parametric_extras
-    @_standardize_1d
-    @_apply_cmap
     def parametric(
         self, *args, values=None,
         cmap=None, norm=None, interp=0,
@@ -1676,7 +1650,7 @@ optional
             ax, kwargs = self._inset_colorbar_axes(loc=loc, width=width, length=length, pad=pad, **kwargs)  # noqa: E501
 
         # Generate colorbar
-        obj = colorbar_extras(ax, mappable, values, **kwargs)
+        obj = wrap.colorbar_extras(ax, mappable, values, **kwargs)
         self._add_colorbar_legend(loc, obj, legend=False)  # possibly replace another
         return obj
 
@@ -1782,7 +1756,7 @@ optional
                 raise ValueError(f'Invalid panel side {side!r}.')
 
         # Generate legend
-        obj = legend_extras(self, handles, labels, loc=loc, **kwargs)
+        obj = wrap.legend_extras(self, handles, labels, loc=loc, **kwargs)
         self._add_colorbar_legend(loc, obj, legend=True)  # possibly replace another
         return obj
 
@@ -1825,107 +1799,172 @@ optional
             raise ValueError(f'Invalid number {num!r}. Must be integer >=1.')
         self._number = num
 
-    # Wrapped by special functions
-    # Also support redirecting to Basemap methods
-    text = _text_extras(
-        maxes.Axes.text
-    )
-    plot = _plot_extras(_standardize_1d(_indicate_error(_apply_cycle(
-        maxes.Axes.plot
-    ))))
-    scatter = _scatter_extras(_standardize_1d(_indicate_error(_apply_cycle(
-        maxes.Axes.scatter
-    ))))
-    bar = _bar_extras(_standardize_1d(_indicate_error(_apply_cycle(
-        maxes.Axes.bar
-    ))))
-    barh = _barh_extras(  # calls self.bar
-        maxes.Axes.barh
-    )
-    hist = _hist_extras(_standardize_1d(_apply_cycle(
-        maxes.Axes.hist
-    )))
-    boxplot = _boxplot_extras(_standardize_1d(_apply_cycle(
-        maxes.Axes.boxplot
-    )))
-    violinplot = _violinplot_extras(_standardize_1d(_indicate_error(_apply_cycle(
-        maxes.Axes.violinplot
-    ))))
-    fill_between = _fill_between_extras(_standardize_1d(_apply_cycle(
-        maxes.Axes.fill_between
-    )))
-    fill_betweenx = _fill_betweenx_extras(_standardize_1d(_apply_cycle(
-        maxes.Axes.fill_betweenx
-    )))
-
-    # Wrapped by cycle wrapper and standardized
-    pie = _standardize_1d(_apply_cycle(
-        maxes.Axes.pie
-    ))
-    step = _standardize_1d(_apply_cycle(
-        maxes.Axes.step
-    ))
-
-    # Wrapped by standardizer
-    stem = _standardize_1d(_stem_extras(
-        maxes.Axes.stem
-    ))
-    hlines = _standardize_1d(_hlines_extras(
-        maxes.Axes.hlines
-    ))
-    vlines = _standardize_1d(_vlines_extras(
-        maxes.Axes.vlines
-    ))
-
-    # Wrapped by cmap wrapper and standardized
-    # Also support redirecting to Basemap methods
-    hexbin = _standardize_1d(_apply_cmap(
-        maxes.Axes.hexbin
-    ))
-    contour = _standardize_2d(_apply_cmap(
-        maxes.Axes.contour
-    ))
-    contourf = _standardize_2d(_apply_cmap(
-        maxes.Axes.contourf
-    ))
-    pcolor = _standardize_2d(_apply_cmap(
-        maxes.Axes.pcolor
-    ))
-    pcolormesh = _standardize_2d(_apply_cmap(
-        maxes.Axes.pcolormesh
-    ))
-    pcolorfast = _standardize_2d(_apply_cmap(
-        maxes.Axes.pcolorfast  # WARNING: not available in cartopy and basemap
-    ))
-    streamplot = _standardize_2d(_apply_cmap(
-        maxes.Axes.streamplot
-    ))
-    quiver = _standardize_2d(_apply_cmap(
-        maxes.Axes.quiver
-    ))
-    barbs = _standardize_2d(_apply_cmap(
-        maxes.Axes.barbs
-    ))
-    imshow = _apply_cmap(
-        maxes.Axes.imshow
+    # Apply text wrapper
+    text = wrap._apply_wrappers(
+        maxes.Axes.text,
+        wrap.text_extras,
     )
 
-    # Wrapped only by cmap wrapper
-    tripcolor = _apply_cmap(
-        maxes.Axes.tripcolor
+    # Apply 1D plotting command wrappers
+    plot = wrap._apply_wrappers(
+        maxes.Axes.plot,
+        wrap._plot_extras,
+        wrap.standardize_1d,
+        wrap.indicate_error,
+        wrap.apply_cycle,
     )
-    tricontour = _apply_cmap(
-        maxes.Axes.tricontour
+    scatter = wrap._apply_wrappers(
+        maxes.Axes.scatter,
+        wrap.scatter_extras,
+        wrap.standardize_1d,
+        wrap.indicate_error,
+        wrap.apply_cycle,
     )
-    tricontourf = _apply_cmap(
-        maxes.Axes.tricontourf
+    hist = wrap._apply_wrappers(
+        maxes.Axes.hist,
+        wrap._hist_extras,
+        wrap.standardize_1d,
+        wrap.apply_cycle,
     )
-    hist2d = _apply_cmap(
-        maxes.Axes.hist2d
+    bar = wrap._apply_wrappers(
+        maxes.Axes.bar,
+        wrap.bar_extras,
+        wrap.standardize_1d,
+        wrap.indicate_error,
+        wrap.apply_cycle,
     )
-    spy = _apply_cmap(
-        maxes.Axes.spy
+    barh = wrap._apply_wrappers(
+        maxes.Axes.barh,
+        wrap.barh_extras,
     )
-    matshow = _apply_cmap(
-        maxes.Axes.matshow
+    boxplot = wrap._apply_wrappers(
+        maxes.Axes.boxplot,
+        wrap.boxplot_extras,
+        wrap.standardize_1d,
+        wrap.apply_cycle,
+    )
+    violinplot = wrap._apply_wrappers(
+        maxes.Axes.violinplot,
+        wrap.violinplot_extras,
+        wrap.standardize_1d,
+        wrap.indicate_error,
+        wrap.apply_cycle,
+    )
+    fill_between = wrap._apply_wrappers(
+        maxes.Axes.fill_between,
+        wrap.fill_between_extras,
+        wrap.standardize_1d,
+        wrap.apply_cycle,
+    )
+    fill_betweenx = wrap._apply_wrappers(
+        maxes.Axes.fill_betweenx,
+        wrap.fill_betweenx_extras,
+        wrap.standardize_1d,
+        wrap.apply_cycle,
+    )
+    pie = wrap._apply_wrappers(
+        maxes.Axes.pie,
+        wrap.standardize_1d,
+        wrap.apply_cycle,
+
+    )
+    step = wrap._apply_wrappers(
+        maxes.Axes.step,
+        wrap.standardize_1d,
+        wrap.apply_cycle,
+    )
+    stem = wrap._apply_wrappers(
+        maxes.Axes.stem,
+        wrap._stem_extras,  # TODO check this
+        wrap.standardize_1d,
+    )
+    hlines = wrap._apply_wrappers(
+        maxes.Axes.hlines,
+        wrap.hlines_extras,  # TODO check this
+        wrap.standardize_1d,
+    )
+    vlines = wrap._apply_wrappers(
+        maxes.Axes.vlines,
+        wrap.vlines_extras,  # TODO check this
+        wrap.standardize_1d,
+    )
+    parametric = wrap._apply_wrappers(
+        parametric,
+        wrap._parametric_extras,
+        wrap.standardize_1d,
+        wrap.apply_cmap,
+    )
+    hexbin = wrap._apply_wrappers(
+        wrap.standardize_1d,
+        wrap.apply_cmap,
+    )
+
+    # Apply 2D plotting command wrappers
+    contour = wrap._apply_wrappers(
+        maxes.Axes.contour,
+        wrap.standardize_2d,
+        wrap.apply_cmap,
+    )
+    contourf = wrap._apply_wrappers(
+        maxes.Axes.contourf,
+        wrap.standardize_2d,
+        wrap.apply_cmap,
+    )
+    pcolor = wrap._apply_wrappers(
+        maxes.Axes.pcolor,
+        wrap.standardize_2d,
+        wrap.apply_cmap,
+    )
+    pcolormesh = wrap._apply_wrappers(
+        maxes.Axes.pcolormesh,
+        wrap.standardize_2d,
+        wrap.apply_cmap,
+    )
+    pcolorfast = wrap._apply_wrappers(
+        maxes.Axes.pcolorfast,  # WARNING: not available in cartopy and basemap
+        wrap.standardize_2d,
+        wrap.apply_cmap,
+    )
+    streamplot = wrap._apply_wrappers(
+        maxes.Axes.streamplot,
+        wrap.standardize_2d,
+        wrap.apply_cmap,
+    )
+    quiver = wrap._apply_wrappers(
+        maxes.Axes.quiver,
+        wrap.standardize_2d,
+        wrap.apply_cmap,
+    )
+    barbs = wrap._apply_wrappers(
+        maxes.Axes.barbs,
+        wrap.standardize_2d,
+        wrap.apply_cmap,
+    )
+    tripcolor = wrap._apply_wrappers(
+        maxes.Axes.tripcolor,
+        wrap.apply_cmap,
+    )
+    tricontour = wrap._apply_wrappers(
+        maxes.Axes.tricontour,
+        wrap.apply_cmap,
+    )
+    tricontourf = wrap._apply_wrappers(
+        maxes.Axes.tricontourf,
+        wrap.apply_cmap,
+    )
+    hist2d = wrap._apply_wrappers(
+        maxes.Axes.hist2d,
+        wrap.apply_cmap,
+    )
+    spy = wrap._apply_wrappers(
+        maxes.Axes.spy,
+        wrap.apply_cmap,
+    )
+    imshow = wrap._apply_wrappers(
+        maxes.Axes.imshow,
+        wrap.apply_cmap,
+    )
+    matshow = wrap._apply_wrappers(
+        maxes.Axes.matshow,
+        wrap.apply_cmap,
     )

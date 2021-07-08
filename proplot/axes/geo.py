@@ -17,20 +17,7 @@ from ..config import rc
 from ..internals import ic  # noqa: F401
 from ..internals import _not_none, _version, _version_cartopy, docstring, warnings
 from . import base
-from .plot import (
-    _apply_cmap,
-    _apply_cycle,
-    _basemap_norecurse,
-    _basemap_redirect,
-    _default_latlon,
-    _default_transform,
-    _indicate_error,
-    _plot_extras,
-    _scatter_extras,
-    _standardize_1d,
-    _standardize_2d,
-    _text_extras,
-)
+from . import plot as wrap
 
 try:
     import cartopy.crs as ccrs
@@ -1183,50 +1170,97 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
             raise ValueError('Projection must be a cartopy.crs.CRS instance.')
         self._map_projection = map_projection
 
-    # Wrapped methods
-    # TODO: Remove this duplication!
-    # NOTE: Do not wrap fill_between because it is broken in cartopy
-    if GeoAxesBase is not object:
-        text = _text_extras(
-            GeoAxesBase.text
+    if GeoAxesBase is object:
+        # Keep the base.Axes wrappers
+        pass
+
+    else:
+        # Apply text wrapper
+        text = wrap._apply_wrappers(
+            GeoAxesBase.text,
+            wrap.text_extras,
         )
-        fill = _default_transform(GeoAxesBase.fill)
-        plot = _default_transform(_plot_extras(_standardize_1d(
-            _indicate_error(_apply_cycle(GeoAxesBase.plot))
-        )))
-        scatter = _default_transform(_scatter_extras(_standardize_1d(
-            _indicate_error(_apply_cycle(GeoAxesBase.scatter))
-        )))
-        contour = _default_transform(_standardize_2d(_apply_cmap(
-            GeoAxesBase.contour
-        )))
-        contourf = _default_transform(_standardize_2d(_apply_cmap(
-            GeoAxesBase.contourf
-        )))
-        pcolor = _default_transform(_standardize_2d(_apply_cmap(
-            GeoAxesBase.pcolor
-        )))
-        pcolormesh = _default_transform(_standardize_2d(_apply_cmap(
-            GeoAxesBase.pcolormesh
-        )))
-        quiver = _default_transform(_standardize_2d(_apply_cmap(
-            GeoAxesBase.quiver
-        )))
-        streamplot = _default_transform(_standardize_2d(_apply_cmap(
-            GeoAxesBase.streamplot
-        )))
-        barbs = _default_transform(_standardize_2d(_apply_cmap(
-            GeoAxesBase.barbs
-        )))
-        tripcolor = _default_transform(_apply_cmap(
-            GeoAxesBase.tripcolor
-        ))
-        tricontour = _default_transform(_apply_cmap(
-            GeoAxesBase.tricontour
-        ))
-        tricontourf = _default_transform(_apply_cmap(
-            GeoAxesBase.tricontourf
-        ))
+
+        # Apply 1D plotting command wrappers
+        plot = wrap._apply_wrappers(
+            GeoAxesBase.plot,
+            wrap.default_transform,
+            wrap._plot_extras,
+            wrap.standardize_1d,
+            wrap.indicate_error,
+            wrap.apply_cycle,
+        )
+        scatter = wrap._apply_wrappers(
+            GeoAxesBase.scatter,
+            wrap.default_transform,
+            wrap.scatter_extras,
+            wrap.standardize_1d,
+            wrap.indicate_error,
+            wrap.apply_cycle,
+        )
+        fill = wrap._apply_wrappers(
+            GeoAxesBase.fill,
+            wrap.default_transform,
+        )
+
+        # Apply 1D plotting command wrappers
+        contour = wrap._apply_wrappers(
+            GeoAxesBase.contour,
+            wrap.default_transform,
+            wrap.standardize_2d,
+            wrap.apply_cmap,
+        )
+        contourf = wrap._apply_wrappers(
+            GeoAxesBase.contourf,
+            wrap.default_transform,
+            wrap.standardize_2d,
+            wrap.apply_cmap,
+        )
+        pcolor = wrap._apply_wrappers(
+            GeoAxesBase.pcolor,
+            wrap.default_transform,
+            wrap.standardize_2d,
+            wrap.apply_cmap,
+        )
+        pcolormesh = wrap._apply_wrappers(
+            GeoAxesBase.pcolormesh,
+            wrap.default_transform,
+            wrap.standardize_2d,
+            wrap.apply_cmap,
+        )
+        quiver = wrap._apply_wrappers(
+            GeoAxesBase.quiver,
+            wrap.default_transform,
+            wrap.standardize_2d,
+            wrap.apply_cmap,
+        )
+        streamplot = wrap._apply_wrappers(
+            GeoAxesBase.streamplot,
+            wrap.default_transform,
+            wrap.standardize_2d,
+            wrap.apply_cmap,
+        )
+        barbs = wrap._apply_wrappers(
+            GeoAxesBase.barbs,
+            wrap.default_transform,
+            wrap.standardize_2d,
+            wrap.apply_cmap,
+        )
+        tripcolor = wrap._apply_wrappers(
+            GeoAxesBase.tripcolor,
+            wrap.default_transform,
+            wrap.apply_cmap,
+        )
+        tricontour = wrap._apply_wrappers(
+            GeoAxesBase.tricontour,
+            wrap.default_transform,
+            wrap.apply_cmap,
+        )
+        tricontourf = wrap._apply_wrappers(
+            GeoAxesBase.tricontourf,
+            wrap.default_transform,
+            wrap.apply_cmap,
+        )
 
 
 class BasemapAxes(GeoAxes):
@@ -1519,37 +1553,95 @@ class BasemapAxes(GeoAxes):
             raise ValueError('Projection must be a basemap.Basemap instance.')
         self._map_projection = map_projection
 
-    # Wrapped methods
-    plot = _basemap_norecurse(_default_latlon(_plot_extras(_standardize_1d(
-        _indicate_error(_apply_cycle(_basemap_redirect(maxes.Axes.plot)))
-    ))))
-    scatter = _basemap_norecurse(_default_latlon(_scatter_extras(_standardize_1d(
-        _indicate_error(_apply_cycle(_basemap_redirect(maxes.Axes.scatter)))
-    ))))
-    contour = _basemap_norecurse(_default_latlon(_standardize_2d(_apply_cmap(
-        _basemap_redirect(maxes.Axes.contour)
-    ))))
-    contourf = _basemap_norecurse(_default_latlon(_standardize_2d(_apply_cmap(
-        _basemap_redirect(maxes.Axes.contourf)
-    ))))
-    pcolor = _basemap_norecurse(_default_latlon(_standardize_2d(_apply_cmap(
-        _basemap_redirect(maxes.Axes.pcolor)
-    ))))
-    pcolormesh = _basemap_norecurse(_default_latlon(_standardize_2d(_apply_cmap(
-        _basemap_redirect(maxes.Axes.pcolormesh)
-    ))))
-    quiver = _basemap_norecurse(_default_latlon(_standardize_2d(_apply_cmap(
-        _basemap_redirect(maxes.Axes.quiver)
-    ))))
-    streamplot = _basemap_norecurse(_default_latlon(_standardize_2d(_apply_cmap(
-        _basemap_redirect(maxes.Axes.streamplot)
-    ))))
-    barbs = _basemap_norecurse(_default_latlon(_standardize_2d(_apply_cmap(
-        _basemap_redirect(maxes.Axes.barbs)
-    ))))
-    hexbin = _basemap_norecurse(_standardize_1d(_apply_cmap(
-        _basemap_redirect(maxes.Axes.hexbin)
-    )))
-    imshow = _basemap_norecurse(_apply_cmap(
-        _basemap_redirect(maxes.Axes.imshow)
-    ))
+    # Apply 1D plotting command wrappers
+    plot = wrap._apply_wrappers(
+        maxes.Axes.plot,
+        wrap._basemap_norecurse,
+        wrap.default_latlon,
+        wrap._plot_extras,
+        wrap.standardize_1d,
+        wrap.indicate_error,
+        wrap.apply_cycle,
+        wrap._basemap_redirect,
+    )
+    scatter = wrap._apply_wrappers(
+        maxes.Axes.scatter,
+        wrap._basemap_norecurse,
+        wrap.default_latlon,
+        wrap.scatter_extras,
+        wrap.standardize_1d,
+        wrap.indicate_error,
+        wrap.apply_cycle,
+        wrap._basemap_redirect,
+    )
+    hexbin = wrap._apply_wrappers(
+        maxes.Axes.hexbin,
+        wrap._basemap_norecurse,
+        wrap.standardize_1d,
+        wrap.apply_cmap,
+        wrap._basemap_redirect,
+    )
+
+    # Apply 2D plotting command wrappers
+    contour = wrap._apply_wrappers(
+        maxes.Axes.contour,
+        wrap._basemap_norecurse,
+        wrap.default_latlon,
+        wrap.standardize_2d,
+        wrap.apply_cmap,
+        wrap._basemap_redirect,
+    )
+    contourf = wrap._apply_wrappers(
+        maxes.Axes.contourf,
+        wrap._basemap_norecurse,
+        wrap.default_latlon,
+        wrap.standardize_2d,
+        wrap.apply_cmap,
+        wrap._basemap_redirect,
+    )
+    pcolor = wrap._apply_wrappers(
+        maxes.Axes.pcolor,
+        wrap._basemap_norecurse,
+        wrap.default_latlon,
+        wrap.standardize_2d,
+        wrap.apply_cmap,
+        wrap._basemap_redirect,
+    )
+    pcolormesh = wrap._apply_wrappers(
+        maxes.Axes.pcolormesh,
+        wrap._basemap_norecurse,
+        wrap.default_latlon,
+        wrap.standardize_2d,
+        wrap.apply_cmap,
+        wrap._basemap_redirect,
+    )
+    quiver = wrap._apply_wrappers(
+        maxes.Axes.quiver,
+        wrap._basemap_norecurse,
+        wrap.default_latlon,
+        wrap.standardize_2d,
+        wrap.apply_cmap,
+        wrap._basemap_redirect,
+    )
+    streamplot = wrap._apply_wrappers(
+        maxes.Axes.streamplot,
+        wrap._basemap_norecurse,
+        wrap.default_latlon,
+        wrap.standardize_2d,
+        wrap.apply_cmap,
+        wrap._basemap_redirect,
+    )
+    barbs = wrap._apply_wrappers(
+        maxes.Axes.barbs,
+        wrap._basemap_norecurse,
+        wrap.default_latlon,
+        wrap.standardize_2d,
+        wrap.apply_cmap,
+        wrap._basemap_redirect,
+    )
+    imshow = wrap._apply_wrappers(
+        maxes.Axes.imshow,
+        wrap._basemap_norecurse,
+        wrap.apply_cmap,
+        wrap._basemap_redirect,
+    )
