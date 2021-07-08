@@ -2529,7 +2529,7 @@ def _update_cycle(self, cycle, scatter=False, **kwargs):
     apply_manually = {}  # which keys to apply from property cycler
     if scatter:
         parser = self._get_lines  # the _process_plot_var_args instance
-        prop_keys = set(parser.prop_cycler.keys) - {'color', 'linestyle', 'dashes'}
+        prop_keys = set(parser._prop_keys) - {'color', 'linestyle', 'dashes'}
         for prop, key in (
             ('markersize', 's'),
             ('linewidth', 'linewidths'),
