@@ -4335,13 +4335,13 @@ def _apply_wrappers(method, *args):
         if '{methods}' not in docstring:
             continue
         pkg = 'proplot' if local else 'matplotlib'
-        link = f'`~{pkg}.axes.Axes.{name}'
+        link = f'`~{pkg}.axes.Axes.{name}`'
         methods = func._methods_wrapped
         if link not in methods:
             methods.append(link)
         prefix = ', '.join(methods[:-1])
         modifier = ', and ' if len(methods) > 2 else ' and ' if len(methods) > 1 else ''
-        suffix = methods[-1] + '`.'
+        suffix = methods[-1] + '.'
         func.__doc__ = docstring.format(methods=prefix + modifier + suffix)
 
     # Remove documentation
