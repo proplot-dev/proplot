@@ -77,6 +77,48 @@
   --accent-bg-color: #505050;
 }
 
+/* Font families from modern pydata theme */
+/* Github fonts: */
+/* font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; */
+/* Pandas fonts: */
+/* -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; */
+/* SFMono-Regular, Menlo, Consolas, Monaco, "Liberation Mono", "Lucida Console", monospace; */
+body, h1, h2, h3, h4, h5, h6, .rst-content .toctree-wrapper p.caption{
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+
+/* Keep bold headers but slightly larger than RTD and smaller than pydata */
+.rst-content div[class^='highlight'] pre,
+.rst-content pre.literal-block,
+.rst-content .linenodiv pre{
+  font-size: 13px;
+}
+body, p, .rst-content{
+  font-size: 15px;
+}
+h1{
+  font-size: 200%;
+}
+h2{
+  font-size: 180%;
+}
+h3{
+  font-size: 160%;
+}
+h4, .rst-content p.rubric{
+  font-size: 140%;
+}
+h5{
+  font-size: 120%;
+}
+h6{
+  font-size: 100%;
+}
+.wy-menu-vertical header, .wy-menu-vertical p.caption {
+  font-size: 90%;  /* default is 85% */
+}
+
 /* RST content background color */
 body.scroll-up,
 body.scroll-down,
@@ -260,12 +302,11 @@ code,
 /* Parameters and Returns header colors */
 .rst-content dl:not(.docutils) .field-list>dt {
   font-weight: bold;
-  font-size: 16px; /* todo make relative */
   color: var(--main-color);
   background: var(--block-bg-color);
   border-left-color: var(--accent-bg-color);
   /* padding: 0; */ /* remove accents, decided against this */
-  /* border: 0; */
+  /* border: 0; */ /* remove accents, decided against this */
 }
 
 /* Parameter table colors */
