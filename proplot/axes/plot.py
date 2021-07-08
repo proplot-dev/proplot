@@ -377,7 +377,7 @@ def _to_ndarray(data):
     return np.atleast_1d(getattr(data, 'values', data))
 
 
-def default_latlon(self, func, *args, latlon=True, **kwargs):
+def default_latlon(self, *args, latlon=True, _method=None, **kwargs):
     """
     Makes ``latlon=True`` the default for basemap plots.
     This means you no longer have to pass ``latlon=True`` if your data
@@ -387,10 +387,10 @@ def default_latlon(self, func, *args, latlon=True, **kwargs):
     ---------
     This function wraps {methods} for `~proplot.axes.BasemapAxes`.
     """
-    return func(self, *args, latlon=latlon, **kwargs)
+    return _method(self, *args, latlon=latlon, **kwargs)
 
 
-def default_transform(self, func, *args, transform=None, **kwargs):
+def default_transform(self, *args, transform=None, _method=None, **kwargs):
     """
     Makes ``transform=cartopy.crs.PlateCarree()`` the default
     for cartopy plots. This means you no longer have to
@@ -406,33 +406,33 @@ def default_transform(self, func, *args, transform=None, **kwargs):
     # Deleted comment reported this issue
     if transform is None:
         transform = PlateCarree()
-    result = func(self, *args, transform=transform, **kwargs)
+    result = _method(self, *args, transform=transform, **kwargs)
     return result
 
 
-def _basemap_redirect(self, func, *args, **kwargs):
+def _basemap_redirect(self, *args, _method=None, **kwargs):
     """
     Docorator that calls the basemap version of the function of the
     same name. This must be applied as the innermost decorator.
     """
-    name = func.__name__
+    name = _method.__name__
     if getattr(self, 'name', None) == 'proplot_basemap':
         return getattr(self.projection, name)(*args, ax=self, **kwargs)
     else:
-        return func(self, *args, **kwargs)
+        return _method(self, *args, **kwargs)
 
 
-def _basemap_norecurse(self, func, *args, **kwargs):
+def _basemap_norecurse(self, *args, _method=None, **kwargs):
     """
     Decorator to prevent recursion in basemap method overrides.
     See `this post https://stackoverflow.com/a/37675810/4970632`__.
     """
-    name = func.__name__
-    if getattr(func, '_called_from_basemap', None):
+    name = _method.__name__
+    if getattr(_method, '_called_from_basemap', None):
         result = getattr(maxes.Axes, name)(self, *args, **kwargs)
     else:
-        with _state_context(func, _called_from_basemap=True):
-            result = func(self, *args, **kwargs)
+        with _state_context(_method, _called_from_basemap=True):
+            result = _method(self, *args, **kwargs)
         return result
 
 
@@ -636,7 +636,7 @@ def _auto_format_1d(
 
 
 @docstring.add_snippets
-def standardize_1d(self, func, *args, autoformat=None, **kwargs):
+def standardize_1d(self, *args, autoformat=None, _method=None, **kwargs):
     """
     Interpret positional arguments for the "1D" plotting methods so usage is
     consistent. Positional arguments are standardized as follows:
@@ -661,13 +661,13 @@ def standardize_1d(self, func, *args, autoformat=None, **kwargs):
     apply_cycle
     indicate_error
     """
-    name = func.__name__
+    name = _method.__name__
     fill = name in ('fill_between', 'fill_betweenx')
     box = name in ('boxplot', 'violinplot')
     autoformat = _not_none(autoformat, rc['autoformat'])
     _load_objects()
     if not args:
-        return func(self, *args, **kwargs)
+        return _method(self, *args, **kwargs)
 
     # Parse input args
     # WARNING: This will temporarily add pseudo-x coordinates to hist, boxplot, and
@@ -702,7 +702,7 @@ def standardize_1d(self, func, *args, autoformat=None, **kwargs):
     # Call function
     if box:
         kwargs.setdefault('positions', x)  # *this* is how 'x' is passed to boxplot
-    return func(self, x, *ys, *args, **kwargs)
+    return _method(self, x, *ys, *args, **kwargs)
 
 
 def _auto_format_2d(self, x, y, *Zs, order='C', autoformat=False, **kwargs):
@@ -993,7 +993,7 @@ def _fix_basemap(x, y, *Zs, globe=False, projection=None):
 
 @docstring.add_snippets
 def standardize_2d(
-    self, func, *args, autoformat=None, order='C', globe=False, **kwargs
+    self, *args, autoformat=None, order='C', globe=False, _method=None, **kwargs
 ):
     """
     Interpret positional arguments for the "2D" plotting methods so usage is
@@ -1034,13 +1034,13 @@ def standardize_2d(
     --------
     apply_cmap
     """
-    name = func.__name__
+    name = _method.__name__
     pcolor = name in ('pcolor', 'pcolormesh', 'pcolorfast')
     allow_1d = name in ('barbs', 'quiver')  # these also allow 1D data
     autoformat = _not_none(autoformat, rc['autoformat'])
     _load_objects()
     if not args:
-        return func(self, *args, **kwargs)
+        return _method(self, *args, **kwargs)
 
     # Parse input args
     if len(args) > 5:
@@ -1088,7 +1088,7 @@ def standardize_2d(
         kwargs['latlon'] = False
 
     # Call function
-    return func(self, x, y, *Zs, **kwargs)
+    return _method(self, x, y, *Zs, **kwargs)
 
 
 def _deprecate_add_errorbars(func):
@@ -1129,7 +1129,7 @@ def _get_error_data(
     Return values that can be passed to the `~matplotlib.axes.Axes.errorbar`
     `xerr` and `yerr` keyword args.
     """
-    # Parse arguments
+    # Parse stds arguments
     # NOTE: Have to guard against "truth value of an array is ambiguous" errors
     if stds is True:
         stds = stds_default
@@ -1139,6 +1139,8 @@ def _get_error_data(
         stds = sorted((-stds, stds))
     elif not np.iterable(stds) or len(stds) != 2:
         raise ValueError('Expected scalar or length-2 tuple stdev specification.')
+
+    # Parse pctiles arguments
     if pctiles is True:
         pctiles = pctiles_default
     elif pctiles is False or pctiles is None:
@@ -1170,9 +1172,10 @@ def _get_error_data(
             'and have *proplot* calculate the error bounds.'
         )
 
-    # Compute error data in format that can be passed to matplotlib.axes.Axes.errorbar()
+    # Compute error data in format that can be passed to maxes.Axes.errorbar()
     # NOTE: Include option to pass symmetric deviation from central points
     if errdata is not None:
+        # Manual error data
         label_default = 'uncertainty'
         err = _to_ndarray(errdata)
         if (
@@ -1189,17 +1192,23 @@ def _get_error_data(
             err[0, :] = y - abserr  # translated back to absolute deviations below
             err[1, :] = y + abserr
     elif stds is not None:
+        # Standard deviations
         label_default = fr'{abs(stds[1])}$\sigma$ range'
         err = y + np.std(data, axis=0)[None, :] * _to_ndarray(stds)[:, None]
     elif pctiles is not None:
+        # Percentiles
         label_default = f'{pctiles[1] - pctiles[0]}% range'
         err = np.percentile(data, pctiles, axis=0)
     else:
         raise ValueError('You must provide error bounds.')
+
+    # Return label possibly
     if label is True:
         label = label_default
     elif not label:
         label = None
+
+    # Make relative data for maxes.Axes.errorbar() ingestion
     if not absolute:
         err = err - y
         err[0, :] *= -1  # absolute deviations from central points
@@ -1210,7 +1219,7 @@ def _get_error_data(
 
 @_deprecate_add_errorbars
 def indicate_error(
-    self, func, *args,
+    self, *args,
     mean=None, means=None, median=None, medians=None,
     barstd=None, barstds=None, barpctile=None, barpctiles=None, bardata=None,
     boxstd=None, boxstds=None, boxpctile=None, boxpctiles=None, boxdata=None,
@@ -1221,7 +1230,7 @@ def indicate_error(
     shadelabel=False, fadelabel=False, shadealpha=0.4, fadealpha=0.2,
     boxlinewidth=None, boxlw=None, barlinewidth=None, barlw=None, capsize=None,
     boxzorder=2.5, barzorder=2.5, shadezorder=1.5, fadezorder=1.5,
-    **kwargs
+    _method=None, **kwargs
 ):
     """
     Adds support for drawing error bars and error shading on-the-fly. Includes
@@ -1314,7 +1323,7 @@ def indicate_error(
     h, err1, err2, ...
         The original plot object and the error bar or shading objects.
     """
-    name = func.__name__
+    name = _method.__name__
     bar = name in ('bar',)
     violin = name in ('violinplot',)
     plot = name in ('plot', 'scatter')
@@ -1435,7 +1444,7 @@ def indicate_error(
     # the shading. Never want legend entries for error bars.
     xy = (x, data) if name == 'violinplot' else (x, y)
     kwargs.setdefault('_errobjs', eobjs[:int(shade + fade)])
-    res = obj = func(self, *xy, *args, **kwargs)
+    res = obj = _method(self, *xy, *args, **kwargs)
 
     # Apply inferrred colors to objects
     i = 0
@@ -1463,7 +1472,7 @@ def indicate_error(
         return res
 
 
-def _plot_extras(self, func, *args, cmap=None, values=None, **kwargs):
+def _plot_extras(self, *args, cmap=None, values=None, _method=None, **kwargs):
     """
     Adds the option `orientation` to change the default orientation of the
     lines. See also `~proplot.axes.Axes.plotx`.
@@ -1479,7 +1488,7 @@ def _plot_extras(self, func, *args, cmap=None, values=None, **kwargs):
         return self.parametric(*args, cmap=cmap, values=values, **kwargs)
 
     # Call function
-    result = func(self, *args, values=values, **kwargs)
+    result = _method(self, *args, values=values, **kwargs)
 
     # Add sticky edges? No because there is no way to check whether "dependent variable"
     # is x or y axis like with area/areax and bar/barh. Better to always have margin.
@@ -1491,7 +1500,7 @@ def _plot_extras(self, func, *args, cmap=None, values=None, **kwargs):
     return result
 
 
-def _parametric_extras(self, func, *args, interp=0, **kwargs):
+def _parametric_extras(self, *args, interp=0, _method=None, **kwargs):
     """
     Calls `~proplot.axes.Axes.parametric` and optionally interpolates values before
     they get passed to `apply_cmap` and the colormap boundaries are drawn. Full
@@ -1539,11 +1548,11 @@ def _parametric_extras(self, func, *args, interp=0, **kwargs):
         x, y, values = np.array(x), np.array(y), np.array(values)
 
     # Call main function
-    return func(self, x, y, values=values, **kwargs)
+    return _method(self, x, y, values=values, **kwargs)
 
 
 def _stem_extras(
-    self, func, *args, linefmt=None, basefmt=None, markerfmt=None, **kwargs
+    self, *args, linefmt=None, basefmt=None, markerfmt=None, _method=None, **kwargs
 ):
     """
     Make `use_line_collection` the default to suppress warning message.
@@ -1569,10 +1578,10 @@ def _stem_extras(
         kwargs['markerfmt'] = _not_none(markerfmt, linefmt[:-1] + 'o')
         kwargs.setdefault('use_line_collection', True)
         try:
-            return func(self, *args, **kwargs)
+            return _method(self, *args, **kwargs)
         except TypeError:
             kwargs.pop('use_line_collection')  # old version
-            return func(self, *args, **kwargs)
+            return _method(self, *args, **kwargs)
 
 
 def _mask_lines(y1, y2, mask):
@@ -1593,7 +1602,7 @@ def _mask_lines(y1, y2, mask):
 
 
 def _apply_lines(
-    self, func, *args, negpos=False, negcolor=None, poscolor=None, **kwargs
+    self, *args, negpos=False, negcolor=None, poscolor=None, _method=None, **kwargs
 ):
     """
     Parse lines arguments. Support automatic *x* coordinates and default
@@ -1601,7 +1610,7 @@ def _apply_lines(
     """
     # Parse positional arguments
     # Use default "base" position of zero as with bar and fill_between
-    x = 'x' if func.__name__ == 'vlines' else 'y'
+    x = 'x' if _method.__name__ == 'vlines' else 'y'
     y = 'y' if x == 'x' else 'x'
     args = list(args)
     if x in kwargs:
@@ -1622,22 +1631,22 @@ def _apply_lines(
     x, y1, y2 = args
     if not negpos or kwargs.get('color', None) is None:
         # Plot basic lines
-        return func(self, x, y1, y2, **kwargs)
+        return _method(self, x, y1, y2, **kwargs)
     else:
         # Plot negative and positive colors
         y1 = _to_arraylike(y1)
         y2 = _to_arraylike(y2)
         y1neg, y2neg = _mask_lines(_to_ndarray(y2) >= _to_ndarray(y1), y1, y2)
         color = _not_none(negcolor, rc['negcolor'])
-        negobj = func(self, x, y1neg, y2neg, color=color, **kwargs)
+        negobj = _method(self, x, y1neg, y2neg, color=color, **kwargs)
         y1pos, y2pos = _mask_lines(_to_ndarray(y2) < _to_ndarray(y1), y1, y2)
         color = _not_none(poscolor, rc['poscolor'])
-        posobj = func(self, x, y1pos, y2pos, color=color, **kwargs)
+        posobj = _method(self, x, y1pos, y2pos, color=color, **kwargs)
         return (negobj, posobj)
 
 
 @docstring.add_snippets
-def hlines_extras(self, func, *args, **kwargs):
+def hlines_extras(self, *args, _method=None, **kwargs):
     """
     Plot horizontal lines with flexible positional arguments and optionally
     use different colors for "negative" and "positive" lines.
@@ -1654,11 +1663,11 @@ def hlines_extras(self, func, *args, **kwargs):
     --------
     standardize_1d
     """
-    return _apply_lines(self, func, *args, **kwargs)
+    return _apply_lines(self, *args, _method=_method, **kwargs)
 
 
 @docstring.add_snippets
-def vlines_extras(self, func, *args, **kwargs):
+def vlines_extras(self, *args, _method=None, **kwargs):
     """
     Plot vertical lines with flexible positional arguments and optionally
     use different colors for "negative" and "positive" lines.
@@ -1675,12 +1684,12 @@ def vlines_extras(self, func, *args, **kwargs):
     --------
     standardize_1d
     """
-    return _apply_lines(self, func, *args, **kwargs)
+    return _apply_lines(self, *args, _method=_method, **kwargs)
 
 
 @docstring.add_snippets
 def scatter_extras(
-    self, func, *args,
+    self, *args,
     s=None, size=None, markersize=None,
     c=None, color=None, markercolor=None, smin=None, smax=None,
     cmap=None, cmap_kw=None, norm=None, norm_kw=None,
@@ -1690,7 +1699,7 @@ def scatter_extras(
     markeredgewidth=None, markeredgewidths=None,
     edgecolor=None, edgecolors=None,
     markeredgecolor=None, markeredgecolors=None,
-    **kwargs
+    _method=None, **kwargs
 ):
     """
     Adds keyword arguments to `~matplotlib.axes.Axes.scatter` that are more
@@ -1788,7 +1797,7 @@ color-spec or list thereof, optional
         if smax is None:
             smax = smax_true
         s = smin + (smax - smin) * (np.array(s) - smin_true) / (smax_true - smin_true)
-    obj = objs = func(
+    obj = objs = _method(
         self, *args, c=c, s=s, cmap=cmap, norm=norm,
         linewidths=lw, edgecolors=ec, **kwargs
     )
@@ -1801,8 +1810,9 @@ color-spec or list thereof, optional
 
 
 def _apply_fill_between(
-    self, func, *args, negcolor=None, poscolor=None, negpos=None,
-    lw=None, linewidth=None, stack=None, stacked=None, where=None, **kwargs
+    self, *args, negcolor=None, poscolor=None, negpos=None,
+    lw=None, linewidth=None, stack=None, stacked=None, where=None,
+    _method=None, **kwargs
 ):
     """
     Helper function that powers `fill_between` and `fill_betweenx`.
@@ -1812,7 +1822,7 @@ def _apply_fill_between(
     #   arguments.
     # * When negpos is True, use fill_between(x, y1=0, y2) as the default
     #   instead of fill_between(x, y1, y2=0).
-    name = func.__name__
+    name = _method.__name__
     sx = 'y' if 'x' in name else 'x'  # i.e. fill_betweenx
     sy = 'x' if sx == 'y' else 'y'
     stack = _not_none(stack=stack, stacked=stacked)
@@ -1844,7 +1854,7 @@ def _apply_fill_between(
     if not negpos or kwargs.get('color') is not None:
         # Plot basic patches
         kwargs.update({'stack': stack, 'where': where})
-        result = func(self, x, y1, y2, **kwargs)
+        result = _method(self, x, y1, y2, **kwargs)
         objs = (result,)
     else:
         # Plot negative and positive patches
@@ -1858,8 +1868,8 @@ def _apply_fill_between(
             raise ValueError(f'{name}() arguments with negpos=True must be 1D.')
         negcolor = _not_none(negcolor, rc['negcolor'])
         poscolor = _not_none(poscolor, rc['poscolor'])
-        obj1 = func(self, x, y1, y2, where=(y1 < y2), color=negcolor, **kwargs)
-        obj2 = func(self, x, y1, y2, where=(y1 >= y2), color=poscolor, **kwargs)
+        obj1 = _method(self, x, y1, y2, where=(y1 < y2), color=negcolor, **kwargs)
+        obj2 = _method(self, x, y1, y2, where=(y1 >= y2), color=poscolor, **kwargs)
         result = objs = (obj1, obj2)  # may be tuple of tuples due to apply_cycle
 
     # Add sticky edges in x-direction, and sticky edges in y-direction
@@ -1882,37 +1892,37 @@ def _apply_fill_between(
 
 
 @docstring.add_snippets
-def fill_between_extras(self, func, *args, **kwargs):
+def fill_between_extras(self, *args, _method=None, **kwargs):
     """
     %(axes.fill_between)s
     """
-    return _apply_fill_between(self, func, *args, **kwargs)
+    return _apply_fill_between(self, *args, _method=_method, **kwargs)
 
 
 @docstring.add_snippets
-def fill_betweenx_extras(self, func, *args, **kwargs):
+def fill_betweenx_extras(self, *args, _method=None, **kwargs):
     """
     %(axes.fill_betweenx)s
     """
-    return _apply_fill_between(self, func, *args, **kwargs)
+    return _apply_fill_between(self, *args, _method=_method, **kwargs)
 
 
-def _hist_extras(self, func, x, bins=None, **kwargs):
+def _hist_extras(self, x, bins=None, _method=None, **kwargs):
     """
     Forces `bar_extras` to interpret `width` as literal rather than relative
     to step size and enforces all arguments after `bins` are keyword-only.
     """
     with _state_context(self, _absolute_bar_width=True):
-        return func(self, x, bins=bins, **kwargs)
+        return _method(self, x, bins=bins, **kwargs)
 
 
 @docstring.add_snippets
 def bar_extras(
-    self, func, x=None, height=None, width=0.8, bottom=None, *,
+    self, x=None, height=None, width=0.8, bottom=None, *,
     vert=None, orientation='vertical', stack=None, stacked=None,
     lw=None, linewidth=None, edgecolor='black',  # default edge color black
     negpos=False, negcolor=None, poscolor=None,
-    **kwargs
+    _method=None, **kwargs
 ):
     """
     %(axes.bar)s
@@ -1947,7 +1957,7 @@ def bar_extras(
     if not negpos or kwargs.get('color') is not None:
         # Draw simple bars
         kwargs['stack'] = stack
-        return func(self, *args, **kwargs)
+        return _method(self, *args, **kwargs)
     else:
         # Draw negative and positive bars
         stack = kwargs.pop('stack', None)
@@ -1960,16 +1970,16 @@ def bar_extras(
         height1 = height.astype(np.float64)  # always copies by default
         height1[height >= 0] = np.nan
         negcolor = _not_none(negcolor, rc['negcolor'])
-        obj1 = func(self, x, height1, color=negcolor, **kwargs)
+        obj1 = _method(self, x, height1, color=negcolor, **kwargs)
         height2 = height.astype(np.float64)
         height2[height < 0] = np.nan
         poscolor = _not_none(poscolor, rc['poscolor'])
-        obj2 = func(self, x, height2, color=poscolor, **kwargs)
+        obj2 = _method(self, x, height2, color=poscolor, **kwargs)
         return (obj1, obj2)
 
 
 @docstring.add_snippets
-def barh_extras(self, func, y=None, right=None, width=0.8, left=None, **kwargs):
+def barh_extras(self, y=None, right=None, width=0.8, left=None, _method=None, **kwargs):
     """
     %(axes.barh)s
     """
@@ -1981,7 +1991,7 @@ def barh_extras(self, func, y=None, right=None, width=0.8, left=None, **kwargs):
     # NOTE: You *must* do juggling of barh keyword order --> bar keyword order
     # --> barh keyword order, because horizontal hist passes arguments to bar
     # directly and will not use a 'barh' method with overridden argument order!
-    func  # avoid U100 error
+    _method  # avoid U100 error
     height = _not_none(height=kwargs.pop('height', None), width=width, default=0.8)
     kwargs.setdefault('orientation', 'horizontal')
     if y is None and width is None:
@@ -1990,7 +2000,7 @@ def barh_extras(self, func, y=None, right=None, width=0.8, left=None, **kwargs):
 
 
 def boxplot_extras(
-    self, func, *args,
+    self, *args,
     orientation=None, means=None,
     fill=True, fillcolor=None, fillalpha=None,
     lw=None, linewidth=None,
@@ -2003,7 +2013,7 @@ def boxplot_extras(
     mediancolor=None, medianlw=None, medianlinewidth=None,
     meanls=None, meanlinestyle=None, medianls=None, medianlinestyle=None,
     marker=None, markersize=None,
-    **kwargs
+    _method=None, **kwargs
 ):
     """
     Adds convenient keyword arguments and changes the default boxplot style.
@@ -2094,7 +2104,7 @@ meanlinewidth, medianlinewidth, whiskerlinewidth, flierlinewidth : float, option
     # Call function
     if len(args) > 2:
         raise ValueError(f'Expected 1-2 positional args, got {len(args)}.')
-    obj = func(self, *args, **kwargs)
+    obj = _method(self, *args, **kwargs)
     if not args:
         return obj
 
@@ -2148,11 +2158,11 @@ meanlinewidth, medianlinewidth, whiskerlinewidth, flierlinewidth : float, option
 
 
 def violinplot_extras(
-    self, func, *args, orientation=None,
+    self, *args, orientation=None,
     fillcolor=None, fillalpha=None,
     lw=None, linewidth=None,
     color=None, edgecolor=None,
-    **kwargs
+    _method=None, **kwargs
 ):
     """
     Adds convenient keyword arguments and changes the default violinplot style
@@ -2222,7 +2232,7 @@ def violinplot_extras(
     # Call function
     if len(args) > 2:
         raise ValueError(f'Expected 1-2 positional args, got {len(args)}.')
-    obj = result = func(self, *args, linewidth=linewidth, **kwargs)
+    obj = result = _method(self, *args, linewidth=linewidth, **kwargs)
     if not args:
         return result
 
@@ -2331,12 +2341,11 @@ def _update_text(self, props):
 
 
 def text_extras(
-    self, func,
-    x=0, y=0, text='', transform='data',
+    self, x=0, y=0, text='', transform='data',
     family=None, fontfamily=None, fontname=None, fontsize=None, size=None,
     border=False, bordercolor='w', borderwidth=2, borderinvert=False,
     bbox=False, bboxcolor='w', bboxstyle='round', bboxalpha=0.5, bboxpad=None,
-    **kwargs
+    _method=None, **kwargs
 ):
     """
     Enables specifying `tranform` with a string name and adds a feature for
@@ -2417,7 +2426,7 @@ or `~matplotlib.transforms.Transform`, optional
     # Apply monkey patch to text object
     # TODO: Why only support this here, and not in arbitrary places throughout
     # rest of matplotlib API? Units engine needs better implementation.
-    obj = func(self, x, y, text, transform=transform, **kwargs)
+    obj = _method(self, x, y, text, transform=transform, **kwargs)
     obj.update = _update_text.__get__(obj)
     obj.update({
         'border': border,
@@ -2537,12 +2546,12 @@ def _update_cycle(self, cycle, scatter=False, **kwargs):
 
 
 def apply_cycle(
-    self, func, *args,
+    self, *args,
     cycle=None, cycle_kw=None,
     label=None, labels=None, values=None,
     legend=None, legend_kw=None,
     colorbar=None, colorbar_kw=None,
-    _errobjs=None, **kwargs
+    _errobjs=None, _method=None, **kwargs
 ):
     """
     Adds features for controlling colors in the property cycler and drawing
@@ -2604,7 +2613,7 @@ def apply_cycle(
     """
     # NOTE: Requires standardize_1d wrapper before reaching this. Also note
     # that the 'x' coordinates are sometimes ignored below.
-    name = func.__name__
+    name = _method.__name__
     plot = name in ('plot',)
     scatter = name in ('scatter',)
     fill = name in ('fill_between', 'fill_betweenx')
@@ -2614,7 +2623,7 @@ def apply_cycle(
     box = name in ('boxplot', 'violinplot')
     violin = name in ('violinplot',)
     if not args:
-        return func(self, *args, **kwargs)
+        return _method(self, *args, **kwargs)
     x, y, *args = args
     ys = (y,)
     if fill and len(args) >= 1:
@@ -2715,7 +2724,7 @@ def apply_cycle(
             iargs = iys
         else:  # has x-coordinates, and maybe more than one y
             iargs = ix, *iys
-        obj = func(self, *iargs, *args, **kw)
+        obj = _method(self, *iargs, *args, **kw)
         if isinstance(obj, (list, tuple)) and len(obj) == 1:
             obj = obj[0]
         objs.append(obj)
@@ -3153,7 +3162,7 @@ def _labels_pcolor(self, obj, fmt=None, **kwargs):
 @warnings._rename_kwargs('0.6', centers='values')
 @docstring.add_snippets
 def apply_cmap(
-    self, func, *args,
+    self, *args,
     cmap=None, cmap_kw=None, norm=None, norm_kw=None,
     vmin=None, vmax=None, extend='neither', N=None, levels=None, values=None,
     symmetric=False, positive=False, negative=False, nozero=False,
@@ -3163,7 +3172,7 @@ def apply_cmap(
     lw=None, linewidth=None, linewidths=None,
     ls=None, linestyle=None, linestyles=None,
     color=None, colors=None, edgecolor=None, edgecolors=None,
-    **kwargs
+    _method=None, **kwargs
 ):
     """
     Adds several new keyword args and features for specifying the colormap,
@@ -3240,7 +3249,7 @@ def apply_cmap(
     proplot.constructor.Norm
     proplot.colors.DiscreteNorm
     """
-    name = func.__name__
+    name = _method.__name__
     contour = name in ('contour', 'tricontour')
     contourf = name in ('contourf', 'tricontourf')
     pcolor = name in ('pcolor', 'pcolormesh', 'pcolorfast')
@@ -3248,7 +3257,7 @@ def apply_cmap(
     parametric = name in ('parametric',)
     no_discrete_norm = hexbin  # TODO: this should be global setting!!!
     if not args:
-        return func(self, *args, **kwargs)
+        return _method(self, *args, **kwargs)
     sample = args[-1]  # used for labels
 
     # Parse keyword args
@@ -3357,7 +3366,7 @@ def apply_cmap(
 
     # Call function and possibly add solid contours between filled ones or
     # fix common "white lines" issues with vector graphic output
-    obj = func(self, *args, **kwargs)
+    obj = _method(self, *args, **kwargs)
     if not isinstance(obj, tuple):  # hist2d
         obj._colorbar_extend = extend  # used by proplot colorbar
         obj._colorbar_ticks = ticks  # used by proplot colorbar
@@ -4317,7 +4326,7 @@ def _apply_wrappers(method, *args):
         func._methods_wrapped = []
         method = functools.wraps(method)(
             lambda self, *args, func=func, method=method, **kwargs:
-            func(self, method, *args, **kwargs)
+            func(self, *args, _method=method, **kwargs)
         )
 
         # List wrapped methods in the driver function docstring
