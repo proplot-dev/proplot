@@ -1400,7 +1400,7 @@ def Proj(name, basemap=None, **kwargs):
 
     # Cartopy
     else:
-        import cartopy.crs  # noqa
+        import cartopy.crs  # noqa: F401
         kwproj = {
             CARTOPY_KW_ALIASES.get(key, key): value
             for key, value in kwargs.items()
