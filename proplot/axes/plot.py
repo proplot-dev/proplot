@@ -546,13 +546,14 @@ def _auto_format_1d(
     # NOTE: Where columns represent distributions, like for box and violin plots or
     # where we use 'means' or 'medians', columns coords (axis 1) are 'x' coords.
     # Otherwise, columns represent e.g. lines, and row coords (axis 0) are 'x' coords.
-    xaxis = int(box or hist or kwargs.get('means') or kwargs.get('medians') or False)
+    reduce = any(kwargs.get(s) for s in ('mean', 'means', 'median', 'medians'))
+    sx = int(box or hist or reduce or False)
     if hist:
         if labels is None:
-            labels = _get_labels(ys[0], axis=xaxis, always=False)  # hist labels
+            labels = _get_labels(ys[0], axis=sx, always=False)  # hist labels
     else:
         if x is None:
-            x = _get_labels(ys[0], axis=xaxis)  # infer from rows or columns
+            x = _get_labels(ys[0], axis=sx)  # infer from rows or columns
         x = _to_arraylike(x)
 
     # The labels and XY axis settings
@@ -1185,10 +1186,11 @@ def _get_error_data(
 @_deprecate_add_errorbars
 def indicate_error(
     self, func, *args,
-    medians=False, means=False,
-    boxdata=None, bardata=None, shadedata=None, fadedata=None,
-    boxstds=None, barstds=None, shadestds=None, fadestds=None,
-    boxpctiles=None, barpctiles=None, shadepctiles=None, fadepctiles=None,
+    mean=None, means=None, median=None, medians=None,
+    barstd=None, barstds=None, barpctile=None, barpctiles=None, bardata=None,
+    boxstd=None, boxstds=None, boxpctile=None, boxpctiles=None, boxdata=None,
+    shadestd=None, shadestds=None, shadepctile=None, shadepctiles=None, shadedata=None,
+    fadestd=None, fadestds=None, fadepctile=None, fadepctiles=None, fadedata=None,
     boxmarker=None, boxmarkercolor='white',
     boxcolor=None, barcolor=None, shadecolor=None, fadecolor=None,
     shadelabel=False, fadelabel=False, shadealpha=0.4, fadealpha=0.2,
@@ -1211,13 +1213,13 @@ def indicate_error(
     ----------
     *args
         The input data.
-    means : bool, optional
+    mean, means : bool, optional
         Whether to plot the means of each column in the input data. If no other
-        arguments specified, this also sets ``barstds=True`` (and ``boxstds=True``
+        arguments specified, this also sets ``barstd=True`` (and ``boxstd=True``
         for violin plots).
-    medians : bool, optional
+    median, medians : bool, optional
         Whether to plot the medians of each column in the input data. If no other
-        arguments specified, this also sets ``barstds=True`` (and ``boxstds=True``
+        arguments specified, this also sets ``barstd=True`` (and ``boxstd=True``
         for violin plots).
     vert : bool, optional
         If ``False``, error data is drawn horizontally rather than vertially. Set
@@ -1225,13 +1227,13 @@ def indicate_error(
     orientation : {{None, 'vertical', 'horizontal'}}, optional
         Alternative to the `vert` keyword arg. If ``'horizontal'``, error data is
         drawn horizontally rather than vertically.
-    barstds : float, (float, float), or bool, optional
+    barstd, barstds : float, (float, float), or bool, optional
         Standard deviation multiples for *thin error bars* with optional whiskers
         (i.e. caps). If scalar, then +/- that number is used. If ``True``, the
         default of +/-3 standard deviations is used. This argument is only valid
         if `means` or `medians` is ``True``.
-    barpctiles : float, (float, float) or bool, optional
-        As with `barstds`, but instead using *percentiles* for the error bars. The
+    barpctile, barpctiles : float, (float, float) or bool, optional
+        As with `barstd`, but instead using *percentiles* for the error bars. The
         percentiles are calculated with `numpy.percentile`. If scalar, that width
         surrounding the 50th percentile is used (e.g. ``90`` shows the 5th to 95th
         percentiles). If ``True``, the default percentile range of 0 to 100 is
@@ -1242,21 +1244,21 @@ def indicate_error(
         points.  This should be used if `means` and `medians` are both ``False`` (i.e.
         you did not provide dataset columns from which statistical properties can be
         calculated automatically).
-    boxstds, boxpctiles, boxdata : optional
-        As with `barstds`, `barpctiles`, and `bardata`, but for *thicker error bars*
+    boxstd, boxstds, boxpctile, boxpctiles, boxdata : optional
+        As with `barstd`, `barpctile`, and `bardata`, but for *thicker error bars*
         representing a smaller interval than the thin error bars. If `boxstds` is
         ``True``, the default standard deviation range of +/-1 is used. If `boxpctiles`
         is ``True``, the default percentile range of 25 to 75 is used (i.e. the
         interquartile range). When "boxes" and "bars" are combined, this has the effect
         of drawing miniature box-and-whisker plots.
-    shadestds, shadepctiles, shadedata : optional
-        As with `barstds`, `barpctiles`, and `bardata`, but using *shading* to indicate
+    shadestd, shadestds, shadepctile, shadepctiles, shadedata : optional
+        As with `barstd`, `barpctile`, and `bardata`, but using *shading* to indicate
         the error range. If `shadestds` is ``True``, the default standard deviation
         range of +/-2 is used. If `shadepctiles` is ``True``, the default
         percentile range of 10 to 90 is used. Shading is generally useful for
         `~matplotlib.axes.Axes.plot` plots.
-    fadestds, fadepctiles, fadedata : optional
-        As with `shadestds`, `shadepctiles`, and `shadedata`, but for an additional,
+    fadestd, fadestds, fadepctile, fadepctiles, fadedata : optional
+        As with `shadestd`, `shadepctile`, and `shadedata`, but for an additional,
         more faded, *secondary* shaded region. If `fadestds` is ``True``, the default
         standard deviation range of +/-3 is used. If `fadepctiles` is ``True``,
         the default percentile range of 0 to 100 is used.
@@ -1291,6 +1293,16 @@ def indicate_error(
     bar = name in ('bar',)
     violin = name in ('violinplot',)
     plot = name in ('plot', 'scatter')
+    means = _not_none(mean=mean, means=means)
+    medians = _not_none(median=median, medians=medians)
+    barstds = _not_none(barstd=barstd, barstds=barstds)
+    boxstds = _not_none(boxstd=boxstd, boxstds=boxstds)
+    shadestds = _not_none(shadestd=shadestd, shadestds=shadestds)
+    fadestds = _not_none(fadestd=fadestd, fadestds=fadestds)
+    barpctiles = _not_none(barpctile=barpctile, barpctiles=barpctiles)
+    boxpctiles = _not_none(boxpctile=boxpctile, boxpctiles=boxpctiles)
+    shadepctiles = _not_none(shadepctile=shadepctile, shadepctiles=shadepctiles)
+    fadepctiles = _not_none(fadepctile=fadepctile, fadepctiles=fadepctiles)
     bars = any(_ is not None for _ in (bardata, barstds, barpctiles))
     boxes = any(_ is not None for _ in (boxdata, boxstds, boxpctiles))
     shade = any(_ is not None for _ in (shadedata, shadestds, shadepctiles))

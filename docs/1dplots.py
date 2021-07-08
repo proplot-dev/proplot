@@ -205,14 +205,14 @@ with plot.rc.context({'lines.linewidth': 3}):
 # `~matplotlib.axes.Axes.plot`, `~matplotlib.axes.Axes.scatter`,
 # `~matplotlib.axes.Axes.bar`, or `~matplotlib.axes.Axes.barh`.
 #
-# If you pass 2D arrays to these methods with ``means=True`` or
-# ``medians=True``, the means or medians of each column are drawn as points,
-# lines, or bars, and *error bars* or *shading* is drawn to represent the spread
-# of the distribution for each column. You can also specify the error bounds
-# *manually* with the `bardata`, `boxdata`, `shadedata`, and `fadedata` keywords.
+# If you pass 2D arrays to these methods with ``mean=True`` or ``median=True``,
+# the means or medians of each column are drawn as points, lines, or bars, and
+# *error bars* or *shading* is drawn to represent the spread of the distribution
+# for each column. You can also specify the error bounds *manually* with the
+# `bardata`, `boxdata`, `shadedata`, and `fadedata` keywords.
 # `~proplot.axes.indicate_error` can draw thin error bars with optional whiskers,
-# thick "boxes" overlayed on top of these bars (think of this as a miniature boxplot),
-# and up to 2 regions of shading. See `~proplot.axes.indicate_error` for details.
+# thick "boxes" overlayed on top of these bars (think of these as miniature boxplots),
+# and up to 2 layers of shading. See `~proplot.axes.indicate_error` for details.
 
 
 # %%
@@ -240,8 +240,8 @@ axs[1:].format(xlabel='column number', xticks=1, xgrid=False)
 ax = axs[0]
 obj = ax.barh(
     data, color='light red', legend=True,
-    medians=True, barpctiles=90, boxpctiles=True,
-    # medians=True, barpctiles=(5, 95), boxpctiles=(25, 75)  # equivalent
+    median=True, barpctile=90, boxpctile=True,
+    # median=True, barpctile=(5, 95), boxpctile=(25, 75)  # equivalent
 )
 ax.format(title='Column statistics')
 ax.format(ylabel='column number', title='Bar plot', ygrid=False)
@@ -251,8 +251,8 @@ ax = axs[1]
 ax.scatter(
     data, color='denim', marker='x', markersize=8**2, linewidth=0.8, legend='ll',
     label='mean', shadelabel=True,
-    means=True, shadestds=1,
-    # means=True, shadestds=(-1, 1)  # equivalent
+    mean=True, shadestd=1,
+    # mean=True, shadestd=(-1, 1)  # equivalent
 )
 ax.format(title='Marker plot')
 
