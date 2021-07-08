@@ -15,11 +15,23 @@ from .internals import ic  # noqa: F401
 from .internals import docstring, warnings
 
 __all__ = [
-    'arange', 'edges', 'edges2d', 'units',
-    'set_alpha', 'set_hue', 'set_luminance', 'set_saturation',
-    'scale_luminance', 'scale_saturation',
-    'to_rgb', 'to_xyz', 'to_rgba', 'to_xyza',
-    'shade', 'saturate',
+    'arange',
+    'edges',
+    'edges2d',
+    'units',
+    'set_alpha',
+    'set_hue',
+    'set_luminance',
+    'set_saturation',
+    'scale_luminance',
+    'scale_saturation',
+    'to_rgb',
+    'to_xyz',
+    'to_rgba',
+    'to_xyza',
+    # Deprecated
+    'shade',
+    'saturate',
 ]
 
 NUMBER = re.compile(r'\A([-+]?[0-9._]+(?:[eE][-+]?[0-9_]+)?)(.*)\Z')

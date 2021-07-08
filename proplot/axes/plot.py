@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """
 The plotting wrappers that add functionality to various `~matplotlib.axes.Axes`
-methods. "Wrapped" `~matplotlib.axes.Axes` methods accept the additional keyword
-arguments documented by the wrapper function. In a future version, these features will
-be documented on the individual `~proplot.axes.Axes` methods themselves.
+methods. "Wrapped" `~matplotlib.axes.Axes` methods accept the additional
+arguments documented in the wrapper function.
 """
 import functools
 import inspect
@@ -48,25 +47,25 @@ except ModuleNotFoundError:
     PlateCarree = object
 
 __all__ = [
-    'apply_cmap',
-    'apply_cycle',
-    'bar_extras',
-    'barh_extras',
-    'boxplot_extras',
-    'colorbar_extras',
     'default_latlon',
     'default_transform',
-    'fill_between_extras',
-    'fill_betweenx_extras',
-    'hlines_extras',
-    'indicate_error',
-    'legend_extras',
-    'scatter_extras',
     'standardize_1d',
     'standardize_2d',
+    'indicate_error',
+    'apply_cmap',
+    'apply_cycle',
+    'colorbar_extras',
+    'legend_extras',
     'text_extras',
+    'bar_extras',
+    'barh_extras',
+    'fill_between_extras',
+    'fill_betweenx_extras',
+    'boxplot_extras',
     'violinplot_extras',
     'vlines_extras',
+    'hlines_extras',
+    'scatter_extras',
 ]
 
 
@@ -650,7 +649,7 @@ def standardize_1d(self, func, *args, autoformat=None, **kwargs):
     if len(args) == 1:
         x = None
         y, *args = args
-    elif len(args) <= 4:  # max signature is x, y, z, color
+    elif len(args) <= 4:  # max signature is x, y1, y2, color
         x, y, *args = args
     else:
         raise ValueError(f'Expected 1-4 positional arguments, got {len(args)}.')
@@ -1438,10 +1437,10 @@ def indicate_error(
         return res
 
 
-def _plot_apply(self, func, *args, cmap=None, values=None, **kwargs):
+def _plot_extras(self, func, *args, cmap=None, values=None, **kwargs):
     """
-    Calls `~proplot.axes.Axes.parametric` in certain cases. This behavior
-    is now deprecated.
+    Adds the option `orientation` to change the default orientation of the
+    lines. See also `~proplot.axes.Axes.plotx`.
     """
     if len(args) > 3:  # e.g. with fmt string
         raise ValueError(f'Expected 1-3 positional args, got {len(args)}.')
@@ -1453,7 +1452,7 @@ def _plot_apply(self, func, *args, cmap=None, values=None, **kwargs):
         )
         return self.parametric(*args, cmap=cmap, values=values, **kwargs)
 
-    # Draw lines
+    # Call function
     result = func(self, *args, values=values, **kwargs)
 
     # Add sticky edges? No because there is no way to check whether "dependent variable"
@@ -1466,7 +1465,7 @@ def _plot_apply(self, func, *args, cmap=None, values=None, **kwargs):
     return result
 
 
-def _parametric_apply(self, func, *args, interp=0, **kwargs):
+def _parametric_extras(self, func, *args, interp=0, **kwargs):
     """
     Calls `~proplot.axes.Axes.parametric` and optionally interpolates values before
     they get passed to `apply_cmap` and the colormap boundaries are drawn. Full
@@ -1517,7 +1516,7 @@ def _parametric_apply(self, func, *args, interp=0, **kwargs):
     return func(self, x, y, values=values, **kwargs)
 
 
-def _stem_apply(
+def _stem_extras(
     self, func, *args, linefmt=None, basefmt=None, markerfmt=None, **kwargs
 ):
     """
@@ -1882,7 +1881,7 @@ def fill_betweenx_extras(self, func, *args, **kwargs):
     return _fill_between_apply(self, func, *args, **kwargs)
 
 
-def _hist_apply(self, func, x, bins=None, **kwargs):
+def _hist_extras(self, func, x, bins=None, **kwargs):
     """
     Forces `bar_extras` to interpret `width` as literal rather than relative
     to step size and enforces all arguments after `bins` are keyword-only.
@@ -1961,11 +1960,11 @@ def barh_extras(self, func, y=None, right=None, width=0.8, left=None, **kwargs):
     """
     %(axes.barh)s
     """
-    # Converts y-->bottom, left-->x, width-->height, height-->width.
-    # Convert back to (x, bottom, width, height) so we can pass stuff
-    # through apply_cycle.
-    # NOTE: ProPlot calls second positional argument 'right' so that 'width'
-    # means the width of *bars*.
+    # NOTE: Also the second positional argument is called 'right' so that 'width'
+    # always means the width of *bars*.
+    # NOTE: This reverses the input arguemnts by setting y-->bottom, left-->x,
+    # width-->height, height-->width. Arguments then passed through standardize_1d
+    # indicate_error and reversed back by apply_cycle.
     # NOTE: You *must* do juggling of barh keyword order --> bar keyword order
     # --> barh keyword order, because horizontal hist passes arguments to bar
     # directly and will not use a 'barh' method with overridden argument order!
@@ -2201,9 +2200,9 @@ def violinplot_extras(
     if kwargs.pop('showextrema', None):
         warnings._warn_proplot('Ignoring showextrema=True.')
     if 'showmeans' in kwargs:  # native argument overridden by proplot handling
-        kwargs.setdefault('means', kwargs.pop('showmeans'))
+        kwargs.setdefault('mean', kwargs.pop('showmeans'))
     if 'showmedians' in kwargs:  # native argument overridden by proplot handling
-        kwargs.setdefault('medians', kwargs.pop('showmedians'))
+        kwargs.setdefault('median', kwargs.pop('showmedians'))
     kwargs.update({'showmeans': False, 'showmedians': False, 'showextrema': False})
     kwargs.setdefault('capsize', 0)  # caps are redundant for violin plots
 
@@ -4424,10 +4423,10 @@ def _concatenate_docstrings(func):
 # Generate decorators and fill wrapper function docstrings. Each wrapper
 # function should call function(self, ...) somewhere.
 # Hidden wrapper functions providing only internal functionality
-_hist_extras = _process_wrapper(_hist_apply)
-_stem_extras = _process_wrapper(_stem_apply)
-_plot_extras = _process_wrapper(_plot_apply)
-_parametric_extras = _process_wrapper(_parametric_apply)
+_hist_extras = _process_wrapper(_hist_extras)
+_stem_extras = _process_wrapper(_stem_extras)
+_plot_extras = _process_wrapper(_plot_extras)
+_parametric_extras = _process_wrapper(_parametric_extras)
 # Public wrapper functions providing important functionality
 _apply_cmap = _process_wrapper(apply_cmap)
 _apply_cycle = _process_wrapper(apply_cycle)
@@ -4448,31 +4447,38 @@ _violinplot_extras = _process_wrapper(violinplot_extras)
 _vlines_extras = _process_wrapper(vlines_extras)
 
 # Deprecated
+# NOTE: Unlike other deprecated functions don't bother importing them to the
+# top-level namespace. Will clutter things and it would have been impossible
+# for any user to work with these outside of the Axes interface.
 (
-    bar_extras,
-    barh_extras,
-    boxplot_extras,
     cmap_changer,
     cycle_changer,
-    fill_between_extras,
-    fill_betweenx_extras,
-    hlines_extras,
-    scatter_extras,
-    text_extras,
-    violinplot_extras,
-    vlines_extras,
+    colorbar_wrapper,
+    legend_wrapper,
+    text_wrapper,
+    bar_wrapper,
+    barh_wrapper,
+    fill_between_wrapper,
+    fill_betweenx_wrapper,
+    boxplot_wrapper,
+    violinplot_wrapper,
+    vlines_wrapper,
+    hlines_wrapper,
+    scatter_wrapper,
 ) = warnings._rename_objs(
     '0.7',
-    bar_extras=bar_extras,
-    barh_extras=barh_extras,
-    boxplot_extras=boxplot_extras,
     cmap_changer=apply_cmap,
     cycle_changer=apply_cycle,
-    fill_between_extras=fill_between_extras,
-    fill_betweenx_extras=fill_betweenx_extras,
-    hlines_extras=hlines_extras,
-    scatter_extras=scatter_extras,
-    text_extras=text_extras,
-    violinplot_extras=violinplot_extras,
-    vlines_extras=vlines_extras,
+    colorbar_wrapper=colorbar_extras,
+    legend_wrapper=legend_extras,
+    text_wrapper=text_extras,
+    bar_wrapper=bar_extras,
+    barh_wrapper=barh_extras,
+    fill_between_wrapper=fill_between_extras,
+    fill_betweenx_wrapper=fill_betweenx_extras,
+    boxplot_wrapper=boxplot_extras,
+    violinplot_wrapper=violinplot_extras,
+    vlines_wrapper=vlines_extras,
+    hlines_wrapper=hlines_extras,
+    scatter_wrapper=scatter_extras,
 )

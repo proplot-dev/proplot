@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-New cartopy projection classes.
+Additional cartopy projection classes.
 """
 import warnings
 

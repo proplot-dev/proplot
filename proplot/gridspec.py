@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-The new gridspec classes.
+New gridspec and subplotspec classes.
 """
 import matplotlib.axes as maxes
 import matplotlib.gridspec as mgridspec

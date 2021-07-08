@@ -41,10 +41,17 @@ except ImportError:
         return
 
 __all__ = [
-    'rc', 'RcConfigurator',
-    'register_cmaps', 'register_cycles', 'register_colors', 'register_fonts',
-    'config_inline_backend', 'use_style',
-    'inline_backend_fmt', 'rc_configurator',  # deprecated
+    'rc',
+    'RcConfigurator',
+    'register_cmaps',
+    'register_cycles',
+    'register_colors',
+    'register_fonts',
+    'config_inline_backend',
+    'use_style',
+    # Deprecated
+    'inline_backend_fmt',
+    'rc_configurator',
 ]
 
 logger = logging.getLogger('matplotlib.mathtext')
@@ -203,12 +210,11 @@ def _iter_data_paths(subfolder, **kwargs):
 
 class RcConfigurator(object):
     """
-    Magical abstract class for managing matplotlib's `builtin settings <rc_matplotlib>`_
+    Dictionary-like class for managing matplotlib's `builtin settings <rc_matplotlib>`_
     and ProPlot's :ref:`added settings <rc_proplot>`.
     When ProPlot is imported, this class is instantiated as the `rc` object
     and the ProPlot default settings and ``.proplotrc`` user overrides
-    are applied. To modify these settings, use the `rc` object.
-    See the :ref:`configuration guide <ug_config>` for details.
+    are applied. See the :ref:`configuration guide <ug_config>` for details.
     """
     def __repr__(self):
         rcdict = type('rc', (dict,), {})({  # encapsulate params in temporary class

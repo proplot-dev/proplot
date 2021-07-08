@@ -38,7 +38,11 @@ __all__ = [
     'LinearSegmentedNorm',
     'ColorDatabase',
     'ColormapDatabase',
-    'BinNorm', 'MidpointNorm', 'ColorDict', 'CmapDict',  # deprecated
+    # Deprecated
+    'BinNorm',
+    'MidpointNorm',
+    'ColorDict',
+    'CmapDict',
 ]
 
 # Constants

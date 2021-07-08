@@ -49,24 +49,32 @@
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. note::
 #
-#    ProPlot figure backgrounds are only gray when displayed by the
-#    `matplotlib backend <https://matplotlib.org/faq/usage_faq#what-is-a-backend>`__
-#    -- the default background color is white when the figure is saved. This is done
-#    by setting :rcraw:`figure.facecolor` to gray, in order to improve contrast
-#    when working with figures.
+#    ProPlot changes the default :rcraw:`figure.facecolor` so that the figure
+#    backgrounds shown by the `matplotlib backend\
+#    <https://matplotlib.org/faq/usage_faq#what-is-a-backend>`__ are gray (the
+#    :rcraw:`savefig.facecolor` applied to saved figures is still white). This can be
+#    helpful when designing figures. ProPlot also controls the appearence of figures
+#    in Jupyter notebooks using the new :rcraw:`inlinefmt` setting, which is passed
+#    to `~proplot.config.config_inline_backend` on import. This imposes a
+#    higher-quality default `"inline" format\
+#    <https://ipython.readthedocs.io/en/stable/interactive/plotting.html>`__
+#    and disables the backend-specific settings ``InlineBackend.rc`` and
+#    ``InlineBackend.print_figure_kwargs``, ensuring that the figures you save
+#    look identical to the figures displayed by the backend.
 #
-#    ProPlot also changes the default :rcraw:`savefig.format` from PNG to PDF for the
-#    following reasons:
+#    ProPlot also changes the default :rcraw:`savefig.format` from PNG to
+#    PDF for the following reasons:
 #
 #        #. Vector graphic formats are infinitely scalable.
 #        #. Vector graphic formats are preferred by academic journals.
-#        #. Most academic journals accept PDF figures alongside the traditional
-#           `EPS <https://en.wikipedia.org/wiki/Encapsulated_PostScript>`__ format.
-#        #. The EPS format does not support transparent graphic elements.
+#        #. Nearly all academic journals accept figures in the PDF format alongside
+#           the `EPS <https://en.wikipedia.org/wiki/Encapsulated_PostScript>`__ format.
+#        #. The EPS format is outdated and does not support transparent graphic
+#           elements.
 #
-#    In case you *do* need raster graphics, ProPlot sets the default
-#    :rcraw:`savefig.dpi` to 1000 dots per inch, which is
-#    `recommended by most journals <https://www.pnas.org/page/authors/format>`__
+#    In case you *do* need a raster format like PNG, ProPlot increases the
+#    default :rcraw:`savefig.dpi` to 1000 dots per inch, which is
+#    `recommended <https://www.pnas.org/page/authors/format>`__ by most journals
 #    as the minimum resolution for rasterized figures containing lines and text.
 #    See the :ref:`configuration section <ug_proplotrc>` for how to change
 #    these settings.
@@ -77,8 +85,8 @@
 #    column share the same axis limits, scales, ticks, and labels. This is often
 #    convenient, but may be annoying for some users. To keep this feature turned off,
 #    simply :ref:`change the default settings <ug_rc>` with e.g.
-#    ``plot.rc.update(share=False, span=False)``. See :ref:`this section <ug_share>`
-#    for details.
+#    ``plot.rc.update(share=False, span=False)``. See the
+#    :ref:`axis-sharing section <ug_share>` for details.
 
 # %%
 # Sample data

@@ -18,14 +18,15 @@ from .internals import _not_none, docstring, warnings
 from .utils import units
 
 __all__ = [
+    'subplots',
+    'SubplotsContainer',
     'close',
     'ion',
     'ioff',
     'isinteractive',
     'show',
     'switch_backend',
-    'subplots',
-    'SubplotsContainer',
+    # Deprecated
     'subplot_grid',
 ]
 
@@ -597,8 +598,8 @@ list thereof, or dict thereof, optional
 
 class SubplotsContainer(list):
     """
-    List subclass and pseudo-2d array used as a container for the
-    axes returned by `subplots`. See `~SubplotsContainer.__getattr__`
+    List-like class and pseudo-2d array used for the subplots returned
+    by `subplots`. See `~SubplotsContainer.__getattr__`
     and `~SubplotsContainer.__getitem__` for details.
     """
     def __init__(self, iterable=None, n=1, order='C'):

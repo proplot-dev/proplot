@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Functions for enumerating and contrasting the available colors and fonts.
+Functions for displaying colors and fonts.
 """
 import os
 

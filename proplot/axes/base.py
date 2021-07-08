@@ -1013,10 +1013,11 @@ optional
 
     def area(self, *args, **kwargs):
         """
-        Alias for `~matplotlib.axes.Axes.fill_between`.
+        Shorthand for `~matplotlib.axes.Axes.fill_between`.
 
         See also
         --------
+        matplotlib.axes.Axes.fill_between
         proplot.axes.fill_between_extras
         """
         # NOTE: *Cannot* assign area = axes.Axes.fill_between because the
@@ -1026,20 +1027,22 @@ optional
 
     def areax(self, *args, **kwargs):
         """
-        Alias for `~matplotlib.axes.Axes.fill_betweenx`.
+        Shorthand for `~matplotlib.axes.Axes.fill_betweenx`.
 
         See also
         --------
+        matplotlib.axes.Axes.fill_betweenx
         proplot.axes.fill_betweenx_extras
         """
         return self.fill_betweenx(*args, **kwargs)
 
     def boxes(self, *args, **kwargs):
         """
-        Alias for `~matplotlib.axes.Axes.boxplot`.
+        Shorthand for `~matplotlib.axes.Axes.boxplot`.
 
         See also
         --------
+        matplotlib.axes.Axes.boxplot
         proplot.axes.boxplot_extras
         """
         return self.boxplot(*args, **kwargs)
@@ -1320,8 +1323,9 @@ optional
             The parametric line. See `this matplotlib example \
 <https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line>`__.
         """
-        # Get x/y coordinates and values for points to the 'left' and 'right'
-        # of each joint
+        # NOTE: The 'extras' wrapper handles input before ingestion by other wrapper
+        # functions. *This* method is analogous to a native matplotlib method.
+        # Get coordinates and values for points to the 'left' and 'right' of joints
         x, y = args  # standardized by parametric wrapper
         interp  # avoid U100 unused argument error (arg is handled by wrapper)
         coords = []
@@ -1359,10 +1363,11 @@ optional
 
     def violins(self, *args, **kwargs):
         """
-        Alias for `~matplotlib.axes.Axes.violinplot`.
+        Shorthand for `~matplotlib.axes.Axes.violinplot`.
 
         See also
         --------
+        matplotlib.axes.Axes.violinplot
         proplot.axes.violinplot_extras
         """
         return self.violinplot(*args, **kwargs)
