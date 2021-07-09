@@ -2366,9 +2366,21 @@ class _ColorCache(dict):
 
 def _get_cmap(name=None, lut=None):
     """
-    Monkey patch for matplotlib `~matplotlib.get_cmap`. Permits case-insensitive
-    search of monkey-patched colormap database (which was broken in v3.2.0).
+    Return the registered colormap instance.
+
+    Parameters
+    ----------
+    name : `matplotlib.colors.Colormap` or str or None, optional
+        If a `~matplotlib.colors.Colormap` instance, it will be returned. Otherwise,
+        the name of the registered colormap will be looked up and resampled by `lut`.
+        If ``None``, the default colormap :rc:`image.cmap` is returned.
+    lut : int or None, optional
+        If `name` is not already a `~matplotlib.colors.Colormap` instance
+        and `lut` is not None, the colormap will be resampled to have `lut`
+        entries in the lookup table.
     """
+    # Monkey patch for matplotlib `~matplotlib.get_cmap`. Permits case-insensitive
+    # search of monkey-patched colormap database (which was broken in v3.2.0).
     if name is None:
         name = rcParams['image.cmap']
     if isinstance(name, mcolors.Colormap):
