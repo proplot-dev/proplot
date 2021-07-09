@@ -244,10 +244,11 @@ def _draw_bars(
             cmapdict.pop(cat)
 
     # Draw figure
+    # Allocate two colorbar widths for each title of sections
     naxs = 2 * len(cmapdict) + sum(map(len, cmapdict.values()))
     fig, axs = ui.subplots(
         nrows=naxs, refwidth=length, refheight=width,
-        share=0, hspace=0.03,
+        share=0, hspace='2pt', top='-1em',
     )
     iax = -1
     nheads = nbars = 0  # for deciding which axes to plot in
@@ -327,8 +328,8 @@ def show_channels(
         array += [np.array([4, 4, 5, 5, 6, 6]) + 2 * int(saturation)]
         labels += ('Red', 'Green', 'Blue')
     fig, axs = ui.subplots(
-        array=array, span=False, share=1,
-        refwidth=refwidth, innerpad='1em',
+        array=array, refwidth=refwidth, wratios=(1.5, 1, 1, 1, 1, 1.5),
+        share=1, span=False, innerpad='1em',
     )
     # Iterate through colormaps
     mc = ms = mp = 0
