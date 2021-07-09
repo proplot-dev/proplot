@@ -244,7 +244,7 @@ def _draw_bars(
             cmapdict.pop(cat)
 
     # Draw figure
-    naxs = len(cmapdict) + sum(map(len, cmapdict.values()))
+    naxs = 2 * len(cmapdict) + sum(map(len, cmapdict.values()))
     fig, axs = ui.subplots(
         nrows=naxs, refwidth=length, refheight=width,
         share=0, hspace=0.03,
@@ -257,11 +257,10 @@ def _draw_bars(
             iax += 1
             if imap + nheads + nbars > naxs:
                 break
-            ax = axs[iax]
             if imap == 0:  # allocate this axes for title
-                iax += 1
-                ax.set_visible(False)
-                ax = axs[iax]
+                iax += 2
+                axs[iax - 2:iax].set_visible(False)
+            ax = axs[iax]
             cmap = database[name]
             if N is not None:
                 cmap = cmap.copy(N=N)

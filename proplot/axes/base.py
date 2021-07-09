@@ -993,7 +993,9 @@ class Axes(maxes.Axes):
         See also
         --------
         matplotlib.axes.Axes.fill_between
+        proplot.axes.standardize_1d
         proplot.axes.fill_between_extras
+        proplot.axes.apply_cycle
         """
         # NOTE: *Cannot* assign area = axes.Axes.fill_between because the
         # wrapper won't be applied and for some reason it messes up
@@ -1007,7 +1009,9 @@ class Axes(maxes.Axes):
         See also
         --------
         matplotlib.axes.Axes.fill_betweenx
+        proplot.axes.standardize_1d
         proplot.axes.fill_betweenx_extras
+        proplot.axes.apply_cycle
         """
         return self.fill_betweenx(*args, **kwargs)
 
@@ -1018,7 +1022,9 @@ class Axes(maxes.Axes):
         See also
         --------
         matplotlib.axes.Axes.boxplot
+        proplot.axes.standardize_1d
         proplot.axes.boxplot_extras
+        proplot.axes.apply_cycle
         """
         return self.boxplot(*args, **kwargs)
 
@@ -1247,11 +1253,32 @@ class Axes(maxes.Axes):
         side = self._loc_translate(side, 'panel')
         return self.figure._add_axes_panel(self, side, **kwargs)
 
+    def plotx(self, *args, **kwargs):
+        """
+        As with `~matplotlib.axes.Axes.plot` but interpret a single
+        positional argument as *x* and multiple positional arguments
+        as *y* and *x* (in that order).
+
+        Parameters
+        ----------
+        *args, **kwargs
+            Passed to `~matplotlib.axes.Axes.plot`.
+
+        See also
+        --------
+        matplotlib.axes.Axes.plot
+        proplot.axes.standardize_1d
+        proplot.axes.indicate_error
+        proplot.axes.apply_cycle
+        """
+        # NOTE: Arguments are standardized once we reach this block
+        x, y, *args = args
+        return super().plot(y, x, *args, **kwargs)
+
+    @docstring.add_snippets
     def parametric(
-        self, *args, values=None,
-        cmap=None, norm=None, interp=0,
-        scalex=True, scaley=True,
-        **kwargs
+        self, x, y, values=None, cmap=None, norm=None, *,
+        interp=0, scalex=True, scaley=True, **kwargs
     ):
         """
         Draw a line whose color changes as a function of the parametric
@@ -1263,17 +1290,9 @@ class Axes(maxes.Axes):
         ----------
         *args : (y,), (x, y), or (x, y, values)
             The coordinates. If `x` is not provided, it is inferred from `y`.
-        values : list of float
-            The parametric values used to map points on the line to colors
-            in the colormap. This can also be passed as a third positional argument.
-        cmap : colormap spec, optional
-            The colormap specifier, passed to `~proplot.constructor.Colormap`.
-        cmap_kw : dict, optional
-            Keyword arguments passed to `~proplot.constructor.Colormap`.
-        norm : normalizer spec, optional
-            The normalizer, passed to `~proplot.constructor.Norm`.
-        norm_kw : dict, optional
-            Keyword arguments passed to `~proplot.constructor.Norm`.
+            The parametric coordinate can be indicated as a third positional
+            argument or with the `values` or `levels` keywords.
+        %(axes.cmap_norm)s
         interp : int, optional
             If greater than ``0``, we interpolate to additional points
             between the `values` coordinates. The number corresponds to the
@@ -1293,12 +1312,43 @@ class Axes(maxes.Axes):
         `~matplotlib.collections.LineCollection`
             The parametric line. See `this matplotlib example \
 <https://matplotlib.org/stable/gallery/lines_bars_and_markers/multicolored_line>`__.
+
+        See also
+        --------
+        matplotlib.axes.Axes.plot
+        proplot.axes.standardize_1d
+        proplot.axes.apply_cmap
         """
+        # Parse input
+        # NOTE: Input *x* and *y* will have been standardized by _standardize_1d
+        if values is None:
+            raise ValueError('Values must be provided.')
+        values = wrap._to_ndarray(values)
+        ndim = tuple(_.ndim for _ in (x, y, values))
+        size = tuple(_.size for _ in (x, y, values))
+        if any(_ != 1 for _ in ndim):
+            raise ValueError(f'Input coordinates must be 1D. Instead got dimensions {ndim}.')  # noqa: E501
+        if any(_ != size[0] for _ in size):
+            raise ValueError(f'Input coordinates must have identical size. Instead got sizes {size}.')  # noqa: E501
+
+        # Interpolate values to allow for smooth gradations between values
+        # (interp=False) or color switchover halfway between points
+        # (interp=True). Then optionally interpolate the colormap values.
         # NOTE: The 'extras' wrapper handles input before ingestion by other wrapper
         # functions. *This* method is analogous to a native matplotlib method.
+        if interp > 0:
+            x_orig, y_orig, v_orig = x, y, values
+            x, y, values = [], [], []
+            for j in range(x_orig.shape[0] - 1):
+                idx = slice(None)
+                if j + 1 < x_orig.shape[0] - 1:
+                    idx = slice(None, -1)
+                x.extend(np.linspace(x_orig[j], x_orig[j + 1], interp + 2)[idx].flat)
+                y.extend(np.linspace(y_orig[j], y_orig[j + 1], interp + 2)[idx].flat)
+                values.extend(np.linspace(v_orig[j], v_orig[j + 1], interp + 2)[idx].flat)  # noqa: E501
+            x, y, values = np.array(x), np.array(y), np.array(values)
+
         # Get coordinates and values for points to the 'left' and 'right' of joints
-        x, y = args  # standardized by parametric wrapper
-        interp  # avoid U100 unused argument error (arg is handled by wrapper)
         coords = []
         levels = edges(values)
         for i in range(y.shape[0]):
@@ -1330,7 +1380,29 @@ class Axes(maxes.Axes):
         self.autoscale_view(scalex=scalex, scaley=scaley)
         hs.values = values
         hs.levels = levels  # needed for other functions
+
         return hs
+
+    def scatterx(self, *args, **kwargs):
+        """
+        As with `~matplotlib.axes.Axes.scatter` but interpret a single
+        positional argument as *x* and multiple positional arguments
+        as *y* and *x* (in that order).
+
+        Parameters
+        ----------
+        *args, **kwargs
+            Passed to `~matplotlib.axes.Axes.scatter`.
+
+        See also
+        --------
+        proplot.axes.standardize_1d
+        matplotlib.axes.Axes.scatter
+        proplot.axes.scatterx_extras
+        """
+        # NOTE: Arguments are standardized once we reach this block
+        x, y, *args = args
+        return super().scatter(y, x, *args, **kwargs)
 
     def violins(self, *args, **kwargs):
         """
@@ -1339,7 +1411,10 @@ class Axes(maxes.Axes):
         See also
         --------
         matplotlib.axes.Axes.violinplot
+        proplot.axes.standardize_1d
         proplot.axes.violinplot_extras
+        proplot.axes.indicate_error
+        proplot.axes.apply_cycle
         """
         return self.violinplot(*args, **kwargs)
 
@@ -1805,65 +1880,17 @@ class Axes(maxes.Axes):
     # Apply 1D plotting command wrappers
     plot = wrap._apply_wrappers(
         maxes.Axes.plot,
+        wrap.standardize_1d,
         wrap._plot_extras,
-        wrap.standardize_1d,
         wrap.indicate_error,
         wrap.apply_cycle,
     )
-    scatter = wrap._apply_wrappers(
-        maxes.Axes.scatter,
-        wrap.scatter_extras,
+    plotx = wrap._apply_wrappers(
+        plotx,
         wrap.standardize_1d,
+        wrap._plotx_extras,
         wrap.indicate_error,
         wrap.apply_cycle,
-    )
-    hist = wrap._apply_wrappers(
-        maxes.Axes.hist,
-        wrap._hist_extras,
-        wrap.standardize_1d,
-        wrap.apply_cycle,
-    )
-    bar = wrap._apply_wrappers(
-        maxes.Axes.bar,
-        wrap.bar_extras,
-        wrap.standardize_1d,
-        wrap.indicate_error,
-        wrap.apply_cycle,
-    )
-    barh = wrap._apply_wrappers(
-        maxes.Axes.barh,
-        wrap.barh_extras,
-    )
-    boxplot = wrap._apply_wrappers(
-        maxes.Axes.boxplot,
-        wrap.boxplot_extras,
-        wrap.standardize_1d,
-        wrap.apply_cycle,
-    )
-    violinplot = wrap._apply_wrappers(
-        maxes.Axes.violinplot,
-        wrap.violinplot_extras,
-        wrap.standardize_1d,
-        wrap.indicate_error,
-        wrap.apply_cycle,
-    )
-    fill_between = wrap._apply_wrappers(
-        maxes.Axes.fill_between,
-        wrap.fill_between_extras,
-        wrap.standardize_1d,
-        wrap.apply_cycle,
-    )
-    fill_betweenx = wrap._apply_wrappers(
-        maxes.Axes.fill_betweenx,
-        wrap.fill_betweenx_extras,
-        wrap.standardize_1d,
-        wrap.apply_cycle,
-    )
-    pie = wrap._apply_wrappers(
-        maxes.Axes.pie,
-        wrap.standardize_1d,
-        wrap.apply_cycle,
-
     )
     step = wrap._apply_wrappers(
         maxes.Axes.step,
@@ -1872,22 +1899,83 @@ class Axes(maxes.Axes):
     )
     stem = wrap._apply_wrappers(
         maxes.Axes.stem,
+        wrap.standardize_1d,
         wrap._stem_extras,  # TODO check this
-        wrap.standardize_1d,
-    )
-    hlines = wrap._apply_wrappers(
-        maxes.Axes.hlines,
-        wrap.hlines_extras,  # TODO check this
-        wrap.standardize_1d,
     )
     vlines = wrap._apply_wrappers(
         maxes.Axes.vlines,
-        wrap.vlines_extras,  # TODO check this
         wrap.standardize_1d,
+        wrap.vlines_extras,  # TODO check this
+    )
+    hlines = wrap._apply_wrappers(
+        maxes.Axes.hlines,
+        wrap.standardize_1d,
+        wrap.hlines_extras,  # TODO check this
+    )
+    scatter = wrap._apply_wrappers(
+        maxes.Axes.scatter,
+        wrap.standardize_1d,
+        wrap.scatter_extras,
+        wrap.indicate_error,
+        wrap.apply_cycle,
+    )
+    scatterx = wrap._apply_wrappers(
+        scatterx,
+        wrap.standardize_1d,
+        wrap.scatterx_extras,
+        wrap.indicate_error,
+        wrap.apply_cycle,
+    )
+    bar = wrap._apply_wrappers(
+        maxes.Axes.bar,
+        wrap.standardize_1d,
+        wrap.bar_extras,
+        wrap.indicate_error,
+        wrap.apply_cycle,
+    )
+    barh = wrap._apply_wrappers(
+        maxes.Axes.barh,
+        wrap.barh_extras,
+    )
+    hist = wrap._apply_wrappers(
+        maxes.Axes.hist,
+        wrap.standardize_1d,
+        wrap._hist_extras,
+        wrap.apply_cycle,
+    )
+    fill_between = wrap._apply_wrappers(
+        maxes.Axes.fill_between,
+        wrap.standardize_1d,
+        wrap.fill_between_extras,
+        wrap.apply_cycle,
+    )
+    fill_betweenx = wrap._apply_wrappers(
+        maxes.Axes.fill_betweenx,
+        wrap.standardize_1d,
+        wrap.fill_betweenx_extras,
+        wrap.apply_cycle,
+    )
+    boxplot = wrap._apply_wrappers(
+        maxes.Axes.boxplot,
+        wrap.standardize_1d,
+        wrap.boxplot_extras,
+        wrap.apply_cycle,
+    )
+    violinplot = wrap._apply_wrappers(
+        maxes.Axes.violinplot,
+        wrap.standardize_1d,
+        wrap.violinplot_extras,
+        wrap.indicate_error,
+        wrap.apply_cycle,
+    )
+    pie = wrap._apply_wrappers(
+        maxes.Axes.pie,
+        wrap.standardize_1d,
+        wrap.apply_cycle,
+
     )
     parametric = wrap._apply_wrappers(
         parametric,
-        wrap._parametric_extras,
         wrap.standardize_1d,
         wrap.apply_cmap,
     )
@@ -1949,10 +2037,6 @@ class Axes(maxes.Axes):
         maxes.Axes.tricontourf,
         wrap.apply_cmap,
     )
-    hist2d = wrap._apply_wrappers(
-        maxes.Axes.hist2d,
-        wrap.apply_cmap,
-    )
     spy = wrap._apply_wrappers(
         maxes.Axes.spy,
         wrap.apply_cmap,
@@ -1963,5 +2047,9 @@ class Axes(maxes.Axes):
     )
     matshow = wrap._apply_wrappers(
         maxes.Axes.matshow,
+        wrap.apply_cmap,
+    )
+    hist2d = wrap._apply_wrappers(
+        maxes.Axes.hist2d,
         wrap.apply_cmap,
     )
