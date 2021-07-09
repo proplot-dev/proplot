@@ -1900,17 +1900,17 @@ class Axes(maxes.Axes):
     stem = wrap._apply_wrappers(
         maxes.Axes.stem,
         wrap.standardize_1d,
-        wrap._stem_extras,  # TODO check this
+        wrap._stem_extras,
     )
     vlines = wrap._apply_wrappers(
         maxes.Axes.vlines,
         wrap.standardize_1d,
-        wrap.vlines_extras,  # TODO check this
+        wrap.vlines_extras,
     )
     hlines = wrap._apply_wrappers(
         maxes.Axes.hlines,
         wrap.standardize_1d,
-        wrap.hlines_extras,  # TODO check this
+        wrap.hlines_extras,
     )
     scatter = wrap._apply_wrappers(
         maxes.Axes.scatter,
@@ -1935,7 +1935,10 @@ class Axes(maxes.Axes):
     )
     barh = wrap._apply_wrappers(
         maxes.Axes.barh,
+        wrap.standardize_1d,
         wrap.barh_extras,
+        wrap.indicate_error,
+        wrap.apply_cycle,
     )
     hist = wrap._apply_wrappers(
         maxes.Axes.hist,
