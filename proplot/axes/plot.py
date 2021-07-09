@@ -1681,10 +1681,10 @@ def _apply_lines(
     # Parse input arguments
     method = kwargs.pop('_method')
     name = method.__name__
-    args = list(args)
     colors = _not_none(color=color, colors=colors)
     linestyles = _not_none(linestyle=linestyle, linestyles=linestyles)
     linewidths = _not_none(lw=lw, linewidth=linewidth, linewidths=linewidths)
+    args = list(args)
     if len(args) > 3:
         raise ValueError(f'Expected 1-3 positional args, got {len(args)}.')
     if len(args) == 2:  # empty possible
@@ -1759,9 +1759,9 @@ def _apply_scatter(
     """
     # Manage input arguments
     method = kwargs.pop('_method')
+    args = list(args)
     if len(args) > 4:
         raise ValueError(f'Expected 1-4 positional arguments, got {len(args)}.')
-    args = list(args)
     if len(args) == 4:
         c = _not_none(c_positional=args.pop(-1), c=c)
     if len(args) == 3:
@@ -1861,10 +1861,10 @@ def _apply_fill_between(
     name = method.__name__
     sx = 'y' if 'x' in name else 'x'  # i.e. fill_betweenx
     sy = 'x' if sx == 'y' else 'y'
-    args = list(args)
     stack = _not_none(stack=stack, stacked=stacked)
     color = _not_none(color=color, facecolor=facecolor)
     linewidth = _not_none(lw=lw, linewidth=linewidth, default=0)
+    args = list(args)
     if len(args) > 4:
         raise ValueError(f'Expected 1-4 positional args, got {len(args)}.')
     if len(args) == 4:
@@ -1988,6 +1988,7 @@ def _apply_bar(
     color = _not_none(color=color, facecolor=facecolor)
     linewidth = _not_none(lw=lw, linewidth=linewidth, default=rc['patch.linewidth'])
     kwargs.update({'linewidth': linewidth, 'edgecolor': edgecolor})
+    args = list(args)
     if len(args) > 4:
         raise ValueError(f'Expected 1-4 positional args, got {len(args)}.')
     if len(args) == 4 and stack:
@@ -2631,7 +2632,7 @@ def apply_cycle(
     # Parse input arguments
     # NOTE: Requires standardize_1d wrapper before reaching this.
     method = kwargs.pop('_method')
-    errobjs = kwargs.pop('_errobjs')
+    errobjs = kwargs.pop('_errobjs', None)
     name = method.__name__
     plot = name in ('plot',)
     scatter = name in ('scatter',)
