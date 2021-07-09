@@ -57,15 +57,15 @@ __all__ = [
     'colorbar_extras',
     'legend_extras',
     'text_extras',
+    'vlines_extras',
+    'hlines_extras',
+    'scatter_extras',
     'bar_extras',
     'barh_extras',
     'fill_between_extras',
     'fill_betweenx_extras',
     'boxplot_extras',
     'violinplot_extras',
-    'vlines_extras',
-    'hlines_extras',
-    'scatter_extras',
 ]
 
 
