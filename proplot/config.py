@@ -1023,7 +1023,7 @@ class RcConfigurator(object):
                 '# Use this file to change the default proplot and matplotlib settings',
                 '# The syntax is identical to matplotlibrc syntax. For details see:',
                 '# https://proplot.readthedocs.io/en/latest/configuration.html',
-                '# https://matplotlib.org/3.1.1/tutorials/introductory/customizing',
+                '# https://matplotlib.org/stable/tutorials/introductory/customizing.html',  # noqa: E501
                 '#--------------------------------------------------------------------',
                 *rc_user,  # includes blank line
                 '# ProPlot settings',

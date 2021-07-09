@@ -244,14 +244,14 @@ _rc_matplotlib_default = {
 _addendum_units = ' Interpreted by `~proplot.utils.units`.'
 _addendum_fonts = (
     ' (see `this list of valid font sizes '
-    '<https://matplotlib.org/3.1.1/tutorials/text/text_props.html#default-font>`__).'
+    '<https://matplotlib.org/stable/tutorials/text/text_props.html#default-font>`__).'
 )
 _rc_proplot = {
     # Stylesheet
     'style': (
         None,
         'The default matplotlib `stylesheet '
-        '<https://matplotlib.org/3.2.1/gallery/style_sheets/style_sheets_reference.html>`__ '  # noqa: E501
+        '<https://matplotlib.org/stable/gallery/style_sheets/style_sheets_reference.html>`__ '  # noqa: E501
         'name. If ``None``, a custom proplot style is used. '
         "If ``'default'``, the default matplotlib style is used."
     ),
@@ -769,7 +769,7 @@ _rc_proplot = {
     'subplots.align': (
         False,
         'Whether to align axis labels during draw. See `aligning labels '
-        '<https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/align_labels_demo.html>`__.'  # noqa: E501
+        '<https://matplotlib.org/stable/gallery/subplots_axes_and_figures/align_labels_demo.html>`__.'  # noqa: E501
     ),
     'subplots.innerpad': (
         '1em',

@@ -67,8 +67,7 @@ class PolarAxes(base.Axes, mproj.PolarAxes):
             The radial origin.
         theta0 : {'N', 'NW', 'W', 'SW', 'S', 'SE', 'E', 'NE'}
             The zero azimuth location.
-        thetadir : {1, -1, 'anticlockwise', 'counterclockwise', 'clockwise'}, \
-optional
+        thetadir : {1, -1, 'anticlockwise', 'counterclockwise', 'clockwise'}, optional
             The positive azimuth direction. Clockwise corresponds to ``-1``
             and anticlockwise corresponds to ``1``. Default is ``1``.
         thetamin, thetamax : float, optional

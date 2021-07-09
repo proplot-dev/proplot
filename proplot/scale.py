@@ -236,10 +236,9 @@ class SymmetricalLogScale(_Scale, mscale.SymmetricalLogScale):
             of the base. For example, ``subs=(1, 2, 5)`` draws ticks on 1, 2,
             5, 10, 20, 50, 100, 200, 500, etc. The default is
             ``subs=numpy.arange(1, 10)``.
-        basex, basey, linthreshx, linthreshy, linscalex, linscaley, \
-subsx, subsy
-            Aliases for the above keywords. These used to be conditional
-            on the *name* of the axis.
+        basex, basey, linthreshx, linthreshy, linscalex, linscaley, subsx, subsy
+            Aliases for the above keywords. These keywords used to be
+            conditional on the name of the axis.
         """
         keys = ('base', 'linthresh', 'linscale', 'subs')
         super().__init__(**_parse_logscale_args(*keys, **kwargs))
@@ -263,16 +262,16 @@ class FuncScale(_Scale, mscale.ScaleBase):
         """
         Parameters
         ----------
-        arg : function, (function, function), or \
-`~matplotlib.scale.ScaleBase`
+        arg : function, (function, function), or `~matplotlib.scale.ScaleBase`
             The transform used to translate units from the parent axis to
             the secondary axis. Input can be as follows:
 
             * A single function that accepts a number and returns some
               transformation of that number. If you do not provide the
-              inverse, the function must be
-              `linear <https://en.wikipedia.org/wiki/Linear_function>`__ or \
-`involutory <https://en.wikipedia.org/wiki/Involution_(mathematics)>`__.
+              inverse, the function must be `linear \
+<https://en.wikipedia.org/wiki/Linear_function>`__
+              or `involutory \
+<https://en.wikipedia.org/wiki/Involution_(mathematics)>`__.
               For example, to convert Kelvin to Celsius, use
               ``ax.dual%(x)s(lambda x: x - 273.15)``. To convert kilometers
               to meters, use ``ax.dual%(x)s(lambda x: x*1e3)``.
@@ -298,8 +297,7 @@ class FuncScale(_Scale, mscale.ScaleBase):
             The default major and minor locator. By default these are
             borrowed from `transform`. If `transform` is not an axis scale,
             they are the same as `~matplotlib.scale.LinearScale`.
-        major_formatter, minor_formatter : `~matplotlib.ticker.Formatter`, \
-optional
+        major_formatter, minor_formatter : `~matplotlib.ticker.Formatter`, optional
             The default major and minor formatter. By default these are
             borrowed from `transform`. If `transform` is not an axis scale,
             they are the same as `~matplotlib.scale.LinearScale`.
@@ -578,10 +576,9 @@ class InvertedExpTransform(mtransforms.Transform):
 
 class MercatorLatitudeScale(_Scale, mscale.ScaleBase):
     """
-    Axis scale that transforms coordinates as with latitude in the
-    `Mercator projection <http://en.wikipedia.org/wiki/Mercator_projection>`__.
-    Adapted from `this matplotlib example \
-<https://matplotlib.org/examples/api/custom_scale_example.html>`__.
+    Axis scale that is linear in the `Mercator projection latitude \
+<http://en.wikipedia.org/wiki/Mercator_projection>`__. Adapted from `this example \
+<https://matplotlib.org/2.0.2/examples/api/custom_scale_example.html>`__.
     The scale function is as follows:
 
     .. math::
@@ -669,9 +666,9 @@ class InvertedMercatorLatitudeTransform(mtransforms.Transform):
 
 class SineLatitudeScale(_Scale, mscale.ScaleBase):
     r"""
-    Axis scale that is linear in the *sine* of *x*. The axis limits are
-    constrained to fall between ``-90`` and ``+90`` degrees. The scale
-    function is as follows:
+    Axis scale that is linear in the sine transformation of *x*. The axis
+    limits are constrained to fall between ``-90`` and ``+90`` degrees.
+    The scale function is as follows:
 
     .. math::
 

@@ -153,7 +153,7 @@ axs[0].plot(data, lw=2)
 # --------------
 #
 # Matplotlib has
-# `two different interfaces <https://matplotlib.org/3.2.1/api/index.html>`__:
+# `two different interfaces <https://matplotlib.org/stable/api/index.html>`__:
 # an object-oriented interface and a MATLAB-style `~matplotlib.pyplot` interface
 # (which uses the object-oriented interface internally). Plotting with ProPlot is
 # just like plotting with matplotlib's *object-oriented* interface. Proplot builds
@@ -321,7 +321,7 @@ for ax in axs[1:, 1:]:
 # :ref:`ProPlot settings <rc_proplot>`. `~proplot.config.rc` also
 # provides a ``style`` parameter that can be used to switch between
 # `matplotlib stylesheets\
-# <https://matplotlib.org/3.1.1/gallery/style_sheets/style_sheets_reference.html>`__.
+# <https://matplotlib.org/stable/gallery/style_sheets/style_sheets_reference.html>`__.
 # See the :ref:`configuration section <ug_config>` for details.
 #
 # To modify a setting for just one subplot, you can pass it to the

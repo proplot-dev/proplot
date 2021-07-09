@@ -89,8 +89,7 @@ Parameters
 ----------
 bounds : list of float
     The bounds for the inset axes, listed as ``(x, y, width, height)``.
-transform : {'data', 'axes', 'figure'} or \
-`~matplotlib.transforms.Transform`, optional
+transform : {'data', 'axes', 'figure'} or `~matplotlib.transforms.Transform`, optional
     The transform used to interpret `bounds`. Can be a
     `~matplotlib.transforms.Transform` object or a string representing
     the `~matplotlib.axes.Axes.transData`,
@@ -113,7 +112,7 @@ basemap : bool or dict-like, optional
     Whether to use `~mpl_toolkits.basemap.Basemap` or
     `~cartopy.crs.Projection` for map projections. Default is ``False``.
 zorder : float, optional
-    The `zorder <https://matplotlib.org/3.1.1/gallery/misc/zorder_demo.html>`__
+    The `zorder <https://matplotlib.org/stable/gallery/misc/zorder_demo.html>`__
     of the axes, should be greater than the zorder of
     elements in the parent axes. Default is ``4``.
 zoom : bool, optional
@@ -728,8 +727,8 @@ class Axes(maxes.Axes):
             lower right inside axes   ``'lower right'``, ``'lr'``
             ========================  ============================
 
-        ltitle, ctitle, rtitle, ultitle, uctitle, urtitle, lltitle, lctitle, \
-lrtitle : str, optional
+        ltitle, ctitle, rtitle, ultitle, uctitle, urtitle, lltitle, lctitle, lrtitle \
+: str, optional
             Axes titles in specific positions. Works as an alternative to
             ``ax.format(title='title', titleloc='loc')`` and lets you specify
             multiple title-like labels in a single subplot.
@@ -749,8 +748,7 @@ lrtitle : str, optional
         titleabove : bool, optional
             Whether to try to put outer titles and a-b-c labels above panels,
             colorbars, or legends that are above the axes. Default is :rc:`title.above`.
-        leftlabels, toplabels, rightlabels, bottomlabels : list of str, \
-optional
+        leftlabels, toplabels, rightlabels, bottomlabels : list of str, optional
             Labels for the subplots lying along the left, top, right, and
             bottom edges of the figure. The length of each list must match
             the number of subplots along the corresponding edge.
@@ -1184,9 +1182,8 @@ optional
         capstyle : {'butt', 'round', 'projecting'}
             The cap style for the zoom lines and box outline.
         zorder : float, optional
-            The `zorder \
-<https://matplotlib.org/3.1.1/gallery/misc/zorder_demo.html>`__
-            of the axes, should be greater than the zorder of
+            The `zorder <https://matplotlib.org/stable/gallery/misc/zorder_demo.html>`__
+            of the zoom lines. Should be greater than the zorder of
             elements in the parent axes. Default is ``3.5``.
 
         Other parameters
@@ -1295,7 +1292,7 @@ optional
         -------
         `~matplotlib.collections.LineCollection`
             The parametric line. See `this matplotlib example \
-<https://matplotlib.org/gallery/lines_bars_and_markers/multicolored_line>`__.
+<https://matplotlib.org/stable/gallery/lines_bars_and_markers/multicolored_line>`__.
         """
         # NOTE: The 'extras' wrapper handles input before ingestion by other wrapper
         # functions. *This* method is analogous to a native matplotlib method.

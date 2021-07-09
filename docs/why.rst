@@ -142,11 +142,11 @@ seconds, typing out these extra class names and import statements can be a major
 
 Parts of matplotlib's interface were actually designed with this in mind.
 `Backend classes <https://matplotlib.org/faq/usage_faq.html#what-is-a-backend>`__,
-`native axes projections <https://matplotlib.org/3.1.1/api/projections_api.html>`__,
-`axis scales <https://matplotlib.org/3.1.0/gallery/scales/scales.html>`__,
-`box styles <https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.patches.FancyBboxPatch.html?highlight=boxstyle>`__,
-`arrow styles <https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.patches.FancyArrowPatch.html?highlight=arrowstyle>`__,
-and `arc styles <https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.patches.ConnectionStyle.html?highlight=class%20name%20attrs>`__
+`native axes projections <https://matplotlib.org/stable/api/projections_api.html>`__,
+`axis scales <https://matplotlib.org/stable/gallery/scales/scales.html>`__,
+`box styles <https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.FancyBboxPatch.html>`__,
+`arrow styles <https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.FancyArrowPatch.html>`__,
+and `arc styles <https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.ConnectionStyle.html>`__
 are referenced with "registered" string names,
 as are `basemap projections <https://matplotlib.org/basemap/users/mapsetup.html>`__.
 So, why not "register" everything else?
@@ -208,7 +208,7 @@ figure, despite the fact that...
    number of subplot tiles in the figure.
 
 Also, while matplotlib's `tight layout algorithm
-<https://matplotlib.org/tutorials/intermediate/tight_layout_guide.html>`__
+<https://matplotlib.org/stable/tutorials/intermediate/tight_layout_guide.html>`__
 helps to avoid tweaking the *spacing*, the algorithm cannot apply different amounts of
 spacing between different subplot row and column boundaries.
 
@@ -218,7 +218,7 @@ In ProPlot, you can specify the physical dimensions of a *reference subplot*
 instead of the figure by passing `refwidth`, `refheight`, and/or `refaspect` to
 `~proplot.figure.Figure`. The default behavior is ``refaspect=1`` and
 ``refwidth=2`` (inches). If the `aspect ratio mode
-<https://matplotlib.org/2.0.2/examples/pylab_examples/equal_aspect_ratio.html>`__
+<https://matplotlib.org/stable/gallery/subplots_axes_and_figures/axis_equal_demo.html>`__
 for the reference subplot is set to ``'equal'``, as with
 :ref:`geographic and polar <ug_proj>` plots and `~matplotlib.axes.Axes.imshow` plots,
 the *imposed* aspect ratio will be used instead.
@@ -331,7 +331,7 @@ difficult to draw "inset" colorbars in matplotlib.
 
 ..
    The matplotlib example for `~matplotlib.figure.Figure` legends is `not pretty
-   <https://matplotlib.org/3.1.1/gallery/text_labels_and_annotations/figlegend_demo.html>`__.
+   <https://matplotlib.org/stable/gallery/text_labels_and_annotations/figlegend_demo.html>`__.
 
 ..
    Drawing colorbars and legends is pretty clumsy in matplotlib -- especially

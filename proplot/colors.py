@@ -1620,8 +1620,7 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         ----------
         name : str
             The name of the new colormap. Default is ``self.name + '_copy'``.
-        segmentdata, N, alpha, clip, cyclic, gamma, gamma1, gamma2, space : \
-optional
+        segmentdata, N, alpha, clip, cyclic, gamma, gamma1, gamma2, space : optional
             See `PerceptuallyUniformColormap`. If not provided,
             these are copied from the current colormap.
         """

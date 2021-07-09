@@ -287,7 +287,7 @@ def show_channels(
     Show how arbitrary colormap(s) vary with respect to the hue, chroma,
     luminance, HSL saturation, and HPL saturation channels, and optionally
     the red, blue and green channels. Adapted from `this example \
-<https://matplotlib.org/3.1.0/tutorials/colors/colormaps.html#lightness-of-matplotlib-colormaps>`__.
+<https://matplotlib.org/stable/tutorials/colors/colormaps.html#lightness-of-matplotlib-colormaps>`__.
 
     Parameters
     ----------
@@ -665,7 +665,7 @@ def show_cmaps(*args, **kwargs):
     """
     Generate a table of the registered colormaps or the input colormaps
     categorized by source. Adapted from `this example \
-<http://matplotlib.org/examples/color/colormaps_reference.html>`__.
+<http://matplotlib.org/stable/gallery/color/colormap_reference.html>`__.
 
     Parameters
     ----------
@@ -712,7 +712,7 @@ def show_cycles(*args, **kwargs):
     """
     Generate a table of registered color cycles or the input color cycles
     categorized by source. Adapted from `this example \
-<http://matplotlib.org/examples/color/colormaps_reference.html>`__.
+<http://matplotlib.org/stable/gallery/color/colormap_reference.html>`__.
 
     Parameters
     ----------
@@ -762,14 +762,14 @@ def show_fonts(
         The font name(s). If none are provided and the `family` keyword
         argument was not provided, the *available* :rcraw:`font.sans-serif`
         fonts and the fonts in your ``.proplot/fonts`` folder are shown.
-    family : {'serif', 'sans-serif', 'monospace', 'cursive', 'fantasy', \
-'tex-gyre'}, optional
+    family \
+: {'serif', 'sans-serif', 'monospace', 'cursive', 'fantasy', 'tex-gyre'}, optional
         If provided, the *available* fonts in the corresponding families
         are shown. The fonts belonging to these families are listed under the
         :rcraw:`font.serif`, :rcraw:`font.sans-serif`, :rcraw:`font.monospace`,
-        :rcraw:`font.cursive`, and :rcraw:`font.fantasy` settings. The special
-        family ``'tex-gyre'`` draws the `TeX Gyre \
-<http://www.gust.org.pl/projects/e-foundry/tex-gyre>`__ fonts.
+        :rcraw:`font.cursive`, and :rcraw:`font.fantasy` settings. The
+        family ``'tex-gyre'`` draws the
+        `TeX Gyre <http://www.gust.org.pl/projects/e-foundry/tex-gyre>`__ fonts.
     text : str, optional
         The sample text. The default sample text includes the Latin letters,
         Greek letters, Arabic numerals, and some simple mathematical symbols.

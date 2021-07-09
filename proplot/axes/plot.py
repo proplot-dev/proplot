@@ -232,7 +232,7 @@ negcolor, poscolor : color-spec, optional
     is ``False``. Defaults are :rc:`negcolor` and :rc:`poscolor`.
 where : ndarray, optional
     Boolean ndarray mask for points you want to shade. See `this example \
-<https://matplotlib.org/3.1.0/gallery/pyplots/whats_new_98_4_fill_between.html#sphx-glr-gallery-pyplots-whats-new-98-4-fill-between-py>`__.
+<https://matplotlib.org/stable/gallery/pyplots/whats_new_98_4_fill_between.html#sphx-glr-gallery-pyplots-whats-new-98-4-fill-between-py>`__.
 lw, linewidth : float, optional
     The edge width for the area patches.
 edgecolor : color-spec, optional
@@ -2049,8 +2049,8 @@ def boxplot_extras(
     meanls, medianls, meanlinestyle, medianlinestyle : line style-spec, optional
         The line style for the mean and median lines drawn horizontally
         across the box.
-    boxcolor, capcolor, whiskercolor, fliercolor, meancolor, mediancolor : \
-color-spec, list, optional
+    boxcolor, capcolor, whiskercolor, fliercolor, meancolor, mediancolor \
+: color-spec, list, optional
         The color of various boxplot components. If a list, it should be the
         same length as the number of objects. These are shorthands so you don't
         have to pass e.g. a ``boxprops`` dictionary.
@@ -2166,7 +2166,7 @@ def violinplot_extras(
     """
     Adds convenient keyword arguments and changes the default violinplot style
     to match `this matplotlib example \
-<https://matplotlib.org/3.1.0/gallery/statistics/customized_violin.html>`__.
+<https://matplotlib.org/stable/gallery/statistics/customized_violin.html>`__.
     It is also no longer possible to show minima and maxima with whiskers --
     while this is useful for `~matplotlib.axes.Axes.boxplot`\\ s it is
     redundant for `~matplotlib.axes.Axes.violinplot`\\ s.
@@ -2360,8 +2360,8 @@ def text_extras(
         The *x* and *y* coordinates for the text.
     text : str
         The text string.
-    transform : {{'data', 'axes', 'figure'}} \
-or `~matplotlib.transforms.Transform`, optional
+    transform \
+: {{'data', 'axes', 'figure'}} or `~matplotlib.transforms.Transform`, optional
         The transform used to interpret `x` and `y`. Can be a
         `~matplotlib.transforms.Transform` object or a string corresponding to
         `~matplotlib.axes.Axes.transData`, `~matplotlib.axes.Axes.transAxes`,
@@ -3286,7 +3286,7 @@ def apply_cmap(
     # plots by calling contour() after contourf() if 'linewidths' or
     # 'linestyles' are explicitly passed, but do not want to disable the
     # native matplotlib feature for manually coloring filled contours.
-    # https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.axes.Axes.contourf
+    # https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.contourf
     add_contours = contourf and (linewidths is not None or linestyles is not None)
     use_cmap = colors is None or (not contour and (not contourf or add_contours))
     if not use_cmap:

@@ -283,8 +283,9 @@ def subplots(
         Passed to `~proplot.gridspec.GridSpec`, denotes the width of padding between
         the subplots and figure edge. Units are interpreted by `~proplot.utils.units`.
         By default, these are determined by the "tight layout" algorithm.
-    proj, projection : str, `cartopy.crs.Projection`, `~mpl_toolkits.basemap.Basemap`, \
-list thereof, or dict thereof, optional
+    proj, projection \
+: str, `cartopy.crs.Projection`, `~mpl_toolkits.basemap.Basemap`, list thereof, \
+or dict thereof, optional
         The map projection specification(s). If ``'cartesian'`` (the default), a
         `~proplot.axes.CartesianAxes` is created. If ``'polar'``, a
         `~proplot.axes.PolarAxes` is created. Otherwise, the argument is
