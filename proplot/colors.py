@@ -22,13 +22,6 @@ from .internals import ic  # noqa: F401
 from .internals import _not_none, docstring, warnings
 from .utils import to_rgb, to_rgba, to_xyz, to_xyza
 
-if hasattr(mcm, '_cmap_registry'):
-    _cmap_database_attr = '_cmap_registry'
-else:
-    _cmap_database_attr = 'cmap_d'
-_cmap_database = getattr(mcm, _cmap_database_attr)
-
-
 __all__ = [
     'ListedColormap',
     'LinearSegmentedColormap',
@@ -2564,12 +2557,16 @@ if not isinstance(mcolors._colors_full_map, ColorDatabase):
     mcolors.colorConverter.colors = _map
 
 # Replace colormap database with custom database
+# WARNING: Skip over the matplotlib native duplicate entries with
+# suffixes '_r' and '_shifted'.
+_cmap_database_attr = '_cmap_registry' if hasattr(mcm, '_cmap_registry') else 'cmap_d'
+_cmap_database = getattr(mcm, _cmap_database_attr)
 if mcm.get_cmap is not _get_cmap:
     mcm.get_cmap = _get_cmap
 if not isinstance(_cmap_database, ColormapDatabase):
     _cmap_database = {
         key: value for key, value in _cmap_database.items()
-        if key[-2:] != '_r' and key[-2:] != '_s'
+        if key[-2:] != '_r' and key[-8:] != '_shifted'
     }
     _cmap_database = ColormapDatabase(_cmap_database)
     setattr(mcm, _cmap_database_attr, _cmap_database)
