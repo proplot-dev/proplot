@@ -262,12 +262,14 @@ class GeoAxes(base.Axes):
         proplot.axes.BasemapAxes
         """
         super().__init__(*args, **kwargs)
+        self.tick_params('both', which='both', size=0)
 
     @docstring.add_snippets
     def format(
         self, *,
         lonlim=None, latlim=None, boundinglat=None,
         longrid=None, latgrid=None, longridminor=None, latgridminor=None,
+        tick=None, lontick=None, lattick=None,
         lonlocator=None, lonlines=None,
         latlocator=None, latlines=None, latmax=None,
         lonminorlocator=None, lonminorlines=None,
@@ -302,12 +304,17 @@ class GeoAxes(base.Axes):
             South Pole-centered projections.
             Basemap bounding latitudes must be declared by passing keyword arguments
             to `~proplot.constructor.Proj`.
-        longrid, latgrid : bool, optional
+        grid, longrid, latgrid : bool, optional
             Whether to draw longitude and latitude gridlines.
             Default is :rc:`grid`. Use `grid` to toggle both.
-        longridminor, latgridminor : bool, optional
+        gridminor, longridminor, latgridminor : bool, optional
             Whether to draw "minor" longitude and latitude lines.
             Default is :rc:`gridminor`. Use `gridminor` to toggle both.
+        tick, lontick, lattick : bool or float, optional
+            *For cartopy axes only*.
+            Whether to draw longitude and latitude ticks (valid only for rectangular
+            projections). If ``True``, use the length :rc:`tick.len`. If float, use
+            this as the tick length. Default is ``False``.
         lonlocator, latlocator : str, float, list of float, or \
 `~matplotlib.ticker.Locator`, optional
             Used to determine the longitude and latitude gridline locations.
@@ -399,8 +406,7 @@ optional
             *For cartopy axes only.*
             The number of interpolation steps used to draw gridlines.
             Default is :rc:`grid.nsteps`.
-        land, ocean, coast, rivers, lakes, borders, innerborders : bool, \
-optional
+        land, ocean, coast, rivers, lakes, borders, innerborders : bool, optional
             Toggles various geographic features. These are actually the
             :rcraw:`land`, :rcraw:`ocean`, :rcraw:`coast`, :rcraw:`rivers`,
             :rcraw:`lakes`, :rcraw:`borders`, and :rcraw:`innerborders`
@@ -435,6 +441,14 @@ optional
             latgrid = _not_none(latgrid, grid)
             longridminor = _not_none(longridminor, gridminor)
             latgridminor = _not_none(latgridminor, gridminor)
+
+            # Tick lengths
+            for s, itick in zip('xy', (lontick, lattick)):
+                size = _not_none(itick, tick)
+                size = rc['tick.len'] if size is True else size
+                if size is not None:
+                    self.tick_params(s, which='major', size=size)
+                    self.tick_params(s, which='minor', size=size * rc['tick.lenratio'])
 
             # Label toggles
             labels = _not_none(labels, rc.get('grid.labels', context=True))
@@ -771,10 +785,6 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
         else:
             self.set_global()
 
-        # Zero out ticks to prevent extra label offset
-        for axis in (self.xaxis, self.yaxis):
-            axis.set_tick_params(which='both', size=0)
-
     def _apply_axis_sharing(self):  # noqa: U100
         """
         No-op for now. In future will hide labels on certain subplots.
@@ -1018,6 +1028,12 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
         lonlines = (np.asarray(lonlines) + 180) % 360 - 180  # specific to CartopyAxes
         gl.xlocator = mticker.FixedLocator(lonlines)
         gl.ylocator = mticker.FixedLocator(latlines)
+        # TODO: Former works but messes up bounds. Why doesn't latter work?
+        # self.set_xticks(lonlines, minor=(which == 'minor'))
+        # self.set_yticks(latlines, minor=(which == 'minor'))
+        getattr(self.xaxis, 'set_' + which + '_locator')(gl.xlocator)
+        getattr(self.yaxis, 'set_' + which + '_locator')(gl.ylocator)
+        self.stale = True
 
     def _update_major_gridlines(
         self,
@@ -1052,6 +1068,8 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
         lataxis = self._lataxis
         gl.xformatter = lonaxis.get_major_formatter()
         gl.yformatter = lataxis.get_major_formatter()
+        self.xaxis.set_major_formatter(mticker.NullFormatter())
+        self.yaxis.set_major_formatter(mticker.NullFormatter())
 
         # Gridline label toggling
         # Issue warning instead of error!
