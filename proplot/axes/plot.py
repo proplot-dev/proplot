@@ -570,7 +570,7 @@ def _get_labels(data, axis=0, always=True):
     # data values metadata but that is incorrect. The paradigm for 1D plots
     # is we have row coordinates representing x, data values representing y,
     # and column coordinates representing individual series.
-    if axis not in (0, 1):
+    if axis not in (0, 1, 2):
         raise ValueError(f'Invalid axis {axis}.')
     labels = None
     _load_objects()
@@ -591,14 +591,14 @@ def _get_labels(data, axis=0, always=True):
         else:
             labels = np.array([0])
     # Pandas object
-    elif axis == 0 and isinstance(data, (DataFrame, Series)):
-        labels = data.index
-    elif axis == 1 and isinstance(data, (DataFrame,)):
-        labels = data.columns
-    elif axis == 1 and isinstance(data, (Series, Index)):
-        if not always:
+    elif isinstance(data, (DataFrame, Series, Index)):
+        if axis == 0 and isinstance(data, (DataFrame, Series)):
+            labels = data.index
+        elif axis == 1 and isinstance(data, (DataFrame,)):
+            labels = data.columns
+        elif not always:
             pass
-        else:
+        else:  # beyond dimensionality
             labels = np.array([0])
     # Everything else
     # NOTE: We ensure data is at least 1D in _to_arraylike so this covers everything
@@ -692,11 +692,13 @@ def _auto_format_1d(
     )
 
     # The inferred x coords
+    # NOTE: Allow for "ragged array" input to boxplot and violinplot.
     # NOTE: Where columns represent distributions, like for box and violin plots or
     # where we use 'means' or 'medians', columns coords (axis 1) are 'x' coords.
     # Otherwise, columns represent e.g. lines, and row coords (axis 0) are 'x' coords
-    reduce = any(kwargs.get(s) for s in ('mean', 'means', 'median', 'medians'))
-    xaxis = int(box or reduce or False)
+    ragged = any(getattr(y, 'dtype', None) == 'object' for y in ys)
+    dists = box or any(kwargs.get(s) for s in ('mean', 'means', 'median', 'medians'))
+    xaxis = 1 if dists and not ragged else 0
     if x is None and not hist:
         x = _get_labels(ys[0], axis=xaxis)  # infer from rows or columns
 
@@ -705,28 +707,29 @@ def _auto_format_1d(
     # WARNING: Confusing terminology differences here -- for box and violin plots
     # 'labels' refer to indices along x axis. Get interpreted that way down the line.
     if autoformat and not stem:
-        # Dictionaries used to supply title to on-the-fly legend or colorbar
-        colorbar_kw = kwargs.setdefault('colorbar_kw', {})
-        if not nocycle:
-            legend_kw = kwargs.setdefault('legend_kw', {})
-
-        # The inferred labels or title
-        always = pie or box
+        # The inferred labels and title
+        title = None
         if labels is not None:
             title = _get_title(labels)
-        elif reduce or not always and not any(y.ndim > 1 for y in ys):
-            title = None
         else:
-            labels = _get_labels(ys[0], axis=1, always=always)
+            yaxis = xaxis if box or pie else xaxis + 1
+            labels = _get_labels(ys[0], axis=yaxis, always=False)
             title = _get_title(labels)  # e.g. if labels is a Series
-            if not title and labels is not None and any(isinstance(_, str) for _ in labels):  # noqa: E501
+            if labels is None:
+                pass
+            elif not title and not any(isinstance(_, str) for _ in labels):
                 labels = None
-
         # Apply the title
         if title:
-            colorbar_kw.setdefault('title', title)
+            kwargs.setdefault('colorbar_kw', {}).setdefault('title', title)
             if not nocycle:
-                legend_kw.setdefault('title', title)
+                kwargs.setdefault('legend_kw', {}).setdefault('title', title)
+    # Apply the labels
+    if labels is not None:
+        if not nocycle:
+            kwargs['labels'] = _to_ndarray(labels)
+        elif parametric:
+            kwargs['values'] = _to_ndarray(labels)
 
     # The basic x and y settings
     if not projection:
@@ -760,13 +763,6 @@ def _auto_format_1d(
     # WARNING: Most methods that accept 2D arrays use columns of data, but when
     # pandas DataFrame specifically is passed to hist, boxplot, or violinplot, rows
     # of data assumed! Converting to ndarray necessary.
-    if labels is None and (pie or box):
-        labels = x
-    if labels is not None:
-        if not nocycle:
-            kwargs['labels'] = _to_ndarray(labels)
-        elif parametric:
-            kwargs['values'] = _to_ndarray(labels)
     return _to_ndarray(x), *map(_to_ndarray, ys), kwargs
 
 
@@ -2206,8 +2202,6 @@ meanlinewidth, medianlinewidth, whiskerlinewidth, flierlinewidth : float, option
 
     # Call function
     obj = method(self, *args, **kwargs)
-    if not args:
-        return obj
 
     # Modify artist settings
     # TODO: Pass props keyword args instead? Maybe does not matter.
@@ -3087,7 +3081,6 @@ def _build_discrete_norm(
     # *levels* and *values* were not passed.
     if isinstance(norm, mcolors.BoundaryNorm):
         # Get levels from bounds
-        # TODO: Test this feature?
         # NOTE: No warning because we get here internally?
         levels = norm.boundaries
     elif np.iterable(values):
