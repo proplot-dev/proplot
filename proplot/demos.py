@@ -183,102 +183,6 @@ docstring.snippets['cycle.categories'] = ', '.join(
 )
 
 
-def _draw_bars(
-    cmaps, *, source, unknown='User', categories=None,
-    length=4.0, width=0.2, N=None
-):
-    """
-    Draw colorbars for "colormaps" and "color cycles". This is called by
-    `show_cycles` and `show_cmaps`.
-    """
-    # Translate local names into database of colormaps
-    # NOTE: Custom cmap database raises nice error if colormap name is unknown
-    i = 1
-    database = pcolors.ColormapDatabase({})  # subset to be drawn
-    for cmap in cmaps:
-        if isinstance(cmap, cycler.Cycler):
-            name = getattr(cmap, 'name', '_no_name')
-            cmap = mcolors.ListedColormap(cmap.by_key()['color'], name)
-        elif isinstance(cmap, (list, tuple)):
-            name = '_no_name'
-            cmap = mcolors.ListedColormap(cmap, name)
-        elif isinstance(cmap, mcolors.Colormap):
-            name = cmap.name
-        elif isinstance(cmap, str):
-            name = cmap
-            cmap = pcolors._cmap_database[cmap]
-        else:
-            raise ValueError(f'Invalid colormap or cycle type {cmap!r}.')
-        name = _not_none(name, '_no_name')
-        if name in database:
-            name = f'{name}_{i}'  # e.g. _no_name_2
-            i += 1
-        if name.lower()[-2:] == '_r':
-            name = name[:-2]
-        if name.lower()[-2:] == '_s':
-            name = name[:-2]
-        database[name] = cmap
-
-    # Categorize the input names
-    cmapdict = {}
-    names_all = list(map(str.lower, database.keys()))
-    names_known = list(map(str.lower, sum(map(list, source.values()), [])))
-    names_unknown = [name for name in names_all if name not in names_known]
-    if unknown and names_unknown:
-        cmapdict[unknown] = names_unknown
-    for cat, names in source.items():
-        names_cat = [name for name in names if name.lower() in names_all]
-        if names_cat:
-            cmapdict[cat] = names_cat
-
-    # Filter out certain categories
-    if categories is None:
-        categories = source.keys() - {'MATLAB', 'GNUplot', 'GIST', 'Other'}
-    if any(cat not in source for cat in categories):
-        raise ValueError(
-            f'Invalid categories {categories!r}. Options are: '
-            + ', '.join(map(repr, source)) + '.'
-        )
-    for cat in (*cmapdict,):
-        if cat not in categories and cat != unknown:
-            cmapdict.pop(cat)
-
-    # Draw figure
-    # Allocate two colorbar widths for each title of sections
-    naxs = 2 * len(cmapdict) + sum(map(len, cmapdict.values()))
-    fig, axs = ui.subplots(
-        nrows=naxs, refwidth=length, refheight=width,
-        share=0, hspace='2pt', top='-1em',
-    )
-    iax = -1
-    nheads = nbars = 0  # for deciding which axes to plot in
-    for cat, names in cmapdict.items():
-        nheads += 1
-        for imap, name in enumerate(names):
-            iax += 1
-            if imap + nheads + nbars > naxs:
-                break
-            if imap == 0:  # allocate this axes for title
-                iax += 2
-                axs[iax - 2:iax].set_visible(False)
-            ax = axs[iax]
-            cmap = database[name]
-            if N is not None:
-                cmap = cmap.copy(N=N)
-            ax.colorbar(
-                cmap, loc='fill',
-                orientation='horizontal', locator='null', linewidth=0
-            )
-            ax.text(
-                0 - (rc['axes.labelpad'] / 72) / length, 0.45, name,
-                ha='right', va='center', transform='axes',
-            )
-            if imap == 0:
-                ax.set_title(cat, weight='bold')
-        nbars += len(names)
-    return fig, axs
-
-
 def show_channels(
     *args, N=100, saturation=True, rgb=False, minhue=0,
     maxsat=500, width=100, refwidth=1.7
@@ -315,6 +219,11 @@ def show_channels(
     -------
     `~proplot.figure.Figure`
         The figure.
+
+    See also
+    --------
+    show_cmaps
+    show_colorspaces
     """
     # Figure and plot
     if not args:
@@ -432,6 +341,11 @@ def show_colorspaces(*, luminance=None, saturation=None, hue=None, refwidth=2):
     -------
     `~proplot.figure.Figure`
         The figure.
+
+    See also
+    --------
+    show_cmaps
+    show_channels
     """
     # Get colorspace properties
     hues = np.linspace(0, 360, 361)
@@ -490,7 +404,208 @@ def show_colorspaces(*, luminance=None, saturation=None, hue=None, refwidth=2):
     return fig, axs
 
 
-def _color_filter(hcl, ihue, nhues, minsat):
+def _draw_bars(
+    cmaps, *, source, unknown='User', categories=None,
+    length=4.0, width=0.2, N=None
+):
+    """
+    Draw colorbars for "colormaps" and "color cycles". This is called by
+    `show_cycles` and `show_cmaps`.
+    """
+    # Translate local names into database of colormaps
+    # NOTE: Custom cmap database raises nice error if colormap name is unknown
+    i = 1
+    database = pcolors.ColormapDatabase({})  # subset to be drawn
+    for cmap in cmaps:
+        if isinstance(cmap, cycler.Cycler):
+            name = getattr(cmap, 'name', '_no_name')
+            cmap = mcolors.ListedColormap(cmap.by_key()['color'], name)
+        elif isinstance(cmap, (list, tuple)):
+            name = '_no_name'
+            cmap = mcolors.ListedColormap(cmap, name)
+        elif isinstance(cmap, mcolors.Colormap):
+            name = cmap.name
+        elif isinstance(cmap, str):
+            name = cmap
+            cmap = pcolors._cmap_database[cmap]
+        else:
+            raise ValueError(f'Invalid colormap or cycle type {cmap!r}.')
+        name = _not_none(name, '_no_name')
+        if name in database:
+            name = f'{name}_{i}'  # e.g. _no_name_2
+            i += 1
+        if name.lower()[-2:] == '_r':
+            name = name[:-2]
+        if name.lower()[-2:] == '_s':
+            name = name[:-2]
+        database[name] = cmap
+
+    # Categorize the input names
+    cmapdict = {}
+    names_all = list(map(str.lower, database.keys()))
+    names_known = list(map(str.lower, sum(map(list, source.values()), [])))
+    names_unknown = tuple(name for name in names_all if name not in names_known)
+    if unknown and names_unknown:
+        cmapdict[unknown] = names_unknown
+    for cat, names in source.items():
+        names_cat = [name for name in names if name.lower() in names_all]
+        if names_cat:
+            cmapdict[cat] = names_cat
+
+    # Filter out certain categories
+    if categories is None:
+        categories = source.keys() - {'MATLAB', 'GNUplot', 'GIST', 'Other'}
+    if isinstance(categories, str):
+        categories = (categories,)
+    if any(cat not in source and cat != unknown for cat in categories):
+        raise ValueError(
+            f'Invalid categories {categories!r}. Options are: '
+            + ', '.join(map(repr, source)) + '.'
+        )
+    for cat in (*cmapdict,):
+        if cat not in categories and cat != unknown:
+            cmapdict.pop(cat)
+
+    # Draw figure
+    # Allocate two colorbar widths for each title of sections
+    naxs = 2 * len(cmapdict) + sum(map(len, cmapdict.values()))
+    fig, axs = ui.subplots(
+        nrows=naxs, refwidth=length, refheight=width,
+        share=0, hspace='2pt', top='-1em',
+    )
+    iax = -1
+    nheads = nbars = 0  # for deciding which axes to plot in
+    for cat, names in cmapdict.items():
+        nheads += 1
+        for imap, name in enumerate(names):
+            iax += 1
+            if imap + nheads + nbars > naxs:
+                break
+            if imap == 0:  # allocate this axes for title
+                iax += 2
+                axs[iax - 2:iax].set_visible(False)
+            ax = axs[iax]
+            cmap = database[name]
+            if N is not None:
+                cmap = cmap.copy(N=N)
+            ax.colorbar(
+                cmap, loc='fill',
+                orientation='horizontal', locator='null', linewidth=0
+            )
+            ax.text(
+                0 - (rc['axes.labelpad'] / 72) / length, 0.45, name,
+                ha='right', va='center', transform='axes',
+            )
+            if imap == 0:
+                ax.set_title(cat, weight='bold')
+        nbars += len(names)
+    return fig, axs
+
+
+@docstring.add_snippets
+def show_cmaps(*args, **kwargs):
+    """
+    Generate a table of the registered colormaps or the input colormaps
+    categorized by source. Adapted from `this example \
+<http://matplotlib.org/stable/gallery/color/colormap_reference.html>`__.
+
+    Parameters
+    ----------
+    *args : colormap-spec, optional
+        Colormap names or objects.
+    N : int, optional
+        The number of levels in each colorbar. Default is
+        :rc:`image.lut`.
+    unknown : str, optional
+        Category name for colormaps that are unknown to ProPlot. The
+        default is ``'User'``. Set this to ``False`` to hide
+        unknown colormaps.
+    categories : str or list of str, optional
+        Category names to be shown in the table.  By default, all categories
+        are shown except for ``'MATLAB'``, ``'GNUplot'``, ``'GIST'``, and
+        ``'Other'``. Use of these colormaps is discouraged, because they
+        contain a variety of non-uniform colormaps (see
+        :ref:`perceptually uniform colormaps <ug_perceptual>` for details).
+
+        Valid categories are %(cmap.categories)s.
+    %(show.colorbars)s
+
+    Returns
+    -------
+    `~proplot.figure.Figure`
+        The figure.
+
+    See also
+    --------
+    show_colorspaces
+    show_channels
+    show_cycles
+    show_colors
+    show_fonts
+    """
+    # Get the list of colormaps
+    if args:
+        cmaps = [constructor.Colormap(cmap) for cmap in args]
+    else:
+        cmaps = [
+            name for name, cmap in pcolors._cmap_database.items()
+            if isinstance(cmap, pcolors.LinearSegmentedColormap)
+            # and not name.endswith('_copy') and not name.endswith('_r')
+        ]
+
+    # Return figure of colorbars
+    kwargs.setdefault('source', CMAPS_TABLE)
+    return _draw_bars(cmaps, **kwargs)
+
+
+@docstring.add_snippets
+def show_cycles(*args, **kwargs):
+    """
+    Generate a table of registered color cycles or the input color cycles
+    categorized by source. Adapted from `this example \
+<http://matplotlib.org/stable/gallery/color/colormap_reference.html>`__.
+
+    Parameters
+    ----------
+    *args : colormap-spec, optional
+        Cycle names or objects.
+    unknown : str, optional
+        Category name for cycles that are unknown to ProPlot. The
+        default is ``'User'``. Set this to ``False`` to hide
+        unknown colormaps.
+    categories : str or list of str, optional
+        Category names to be shown in the table.
+        By default, all categories are shown.
+
+        Valid categories are %(cycle.categories)s.
+    %(show.colorbars)s
+
+    Returns
+    -------
+    `~proplot.figure.Figure`
+        The figure.
+
+    See also
+    --------
+    show_cmaps
+    show_colors
+    show_fonts
+    """
+    # Get the list of cycles
+    if args:
+        cycles = [constructor.Cycle(cmap, to_listed=True) for cmap in args]
+    else:
+        cycles = [
+            name for name, cmap in pcolors._cmap_database.items()
+            if isinstance(cmap, pcolors.ListedColormap)
+        ]
+
+    # Return figure of colorbars
+    kwargs.setdefault('source', CYCLES_TABLE)
+    return _draw_bars(cycles, **kwargs)
+
+
+def _filter_colors(hcl, ihue, nhues, minsat):
     """
     Filter colors into categories.
 
@@ -529,7 +644,7 @@ def show_colors(*, nhues=17, minsat=10, categories=None, unknown='User'):
     minsat : float, optional
         The threshold saturation, between ``0`` and ``100``, for designating
         "gray colors" in the color table.
-    categories : list of str, optional
+    categories : str or list of str, optional
         Category names to be shown in the table.
         By default, every category is shown except for CSS colors.
 
@@ -547,9 +662,9 @@ def show_colors(*, nhues=17, minsat=10, categories=None, unknown='User'):
     # Tables of known colors to be plotted
     colordict = {}
     if isinstance(categories, str):
-        categories = [categories]
+        categories = (categories,)
     if categories is None:
-        categories = ['base', 'opencolor', 'xkcd']  # preserve order
+        categories = ('base', 'opencolor', 'xkcd')  # preserve order
     for cat in categories:
         if cat not in COLORS_TABLE:
             raise ValueError(
@@ -585,7 +700,7 @@ def show_colors(*, nhues=17, minsat=10, categories=None, unknown='User'):
                 sorted(
                     [
                         pair for pair in hclpairs
-                        if _color_filter(pair[1], ihue, nhues, minsat)
+                        if _filter_colors(pair[1], ihue, nhues, minsat)
                     ],
                     key=lambda x: x[1][2]  # sort by luminance
                 )
@@ -660,94 +775,6 @@ def show_colors(*, nhues=17, minsat=10, categories=None, unknown='User'):
     return fig, axs
 
 
-@docstring.add_snippets
-def show_cmaps(*args, **kwargs):
-    """
-    Generate a table of the registered colormaps or the input colormaps
-    categorized by source. Adapted from `this example \
-<http://matplotlib.org/stable/gallery/color/colormap_reference.html>`__.
-
-    Parameters
-    ----------
-    *args : colormap-spec, optional
-        Colormap names or objects.
-    N : int, optional
-        The number of levels in each colorbar. Default is
-        :rc:`image.lut`.
-    unknown : str, optional
-        Category name for colormaps that are unknown to ProPlot. The
-        default is ``'User'``. Set this to ``False`` to hide
-        unknown colormaps.
-    categories : list of str, optional
-        Category names to be shown in the table.  By default, all categories
-        are shown except for ``'MATLAB'``, ``'GNUplot'``, ``'GIST'``, and
-        ``'Other'``. Use of these colormaps is discouraged, because they
-        contain a variety of non-uniform colormaps (see
-        :ref:`perceptually uniform colormaps <ug_perceptual>` for details).
-
-        Valid categories are %(cmap.categories)s.
-    %(show.colorbars)s
-
-    Returns
-    -------
-    `~proplot.figure.Figure`
-        The figure.
-    """
-    # Get the list of colormaps
-    if args:
-        cmaps = [constructor.Colormap(cmap) for cmap in args]
-    else:
-        cmaps = [
-            name for name in pcolors._cmap_database.keys() if
-            isinstance(pcolors._cmap_database[name], pcolors.LinearSegmentedColormap)
-        ]
-
-    # Return figure of colorbars
-    kwargs.setdefault('source', CMAPS_TABLE)
-    return _draw_bars(cmaps, **kwargs)
-
-
-@docstring.add_snippets
-def show_cycles(*args, **kwargs):
-    """
-    Generate a table of registered color cycles or the input color cycles
-    categorized by source. Adapted from `this example \
-<http://matplotlib.org/stable/gallery/color/colormap_reference.html>`__.
-
-    Parameters
-    ----------
-    *args : colormap-spec, optional
-        Cycle names or objects.
-    unknown : str, optional
-        Category name for cycles that are unknown to ProPlot. The
-        default is ``'User'``. Set this to ``False`` to hide
-        unknown colormaps.
-    categories : list of str, optional
-        Category names to be shown in the table.
-        By default, all categories are shown.
-
-        Valid categories are %(cycle.categories)s.
-    %(show.colorbars)s
-
-    Returns
-    -------
-    `~proplot.figure.Figure`
-        The figure.
-    """
-    # Get the list of cycles
-    if args:
-        cycles = [constructor.Cycle(cmap, to_listed=True) for cmap in args]
-    else:
-        cycles = [
-            name for name in pcolors._cmap_database.keys() if
-            isinstance(pcolors._cmap_database[name], pcolors.ListedColormap)
-        ]
-
-    # Return figure of colorbars
-    kwargs.setdefault('source', CYCLES_TABLE)
-    return _draw_bars(cycles, **kwargs)
-
-
 def show_fonts(
     *args, family=None, text=None,
     size=12, weight='normal', style='normal', stretch='normal',
@@ -781,6 +808,12 @@ def show_fonts(
         The font style.
     stretch : stretch-spec, optional
         The font stretch.
+
+    See also
+    --------
+    show_cmaps
+    show_cycles
+    show_colors
     """
     if not args and family is None:
         # User fonts and sans-serif fonts. Note all proplot sans-serif fonts
