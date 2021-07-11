@@ -11,16 +11,48 @@ try:
 except ImportError:
     cartopy = None
 
-
 try:  # print debugging
     from icecream import ic
 except ImportError:  # graceful fallback if IceCream isn't installed
-    ic = lambda *a: None if not a else (a[0] if len(a) == 1 else a)  # noqa
+    ic = lambda *args: print(*args)  # noqa: E731
 
 
-def _flexible_getattr(obj, attr, default=None):
+# Aliases. This package only works with a subset of available artists
+# and keywords so we simply create our own system rather than working
+# with matplotlib's normalize_kwargs and _alias_maps.
+ALIASES = {
+    'hsla': {
+        'hue': ('h',),
+        'saturation': ('s', 'c', 'chroma'),
+        'luminance': ('l',),
+        'alpha': ('a',),
+    },
+    'rgba': {
+        'red': ('r',),
+        'green': ('g',),
+        'blue': ('b',),
+        'alpha': ('a',),
+    },
+    'lines': {  # copied from lines.py but expanded to include plurals
+        'antialiased': ('aa',),
+        'alpha': ('a', 'alphas'),
+        'color': ('c', 'colors'),
+        'linewidth': ('lw', 'linewidths'),
+        'linestyle': ('ls', 'linestyles'),
+        'drawstyle': ('ds', 'drawstyles'),
+        'dashes': ('d',),
+        'marker': ('m', 'markers'),
+        'markersize': ('ms', 'markersizes'),
+        'markeredgecolor': ('mec', 'markeredgecolors'),
+        'markeredgewidth': ('mew', 'markeredgewidths'),
+        'markerfacecolor': ('mfc', 'markerfacecolors'),
+    },
+}
+
+
+def _getattr_flexible(obj, attr, default=None):
     """
-    Search for attribute ``attr`` and ``_attr``. This guards against simple
+    Search for attribute ``attr`` and ``_attr``. This crudely guards against
     upstream matplotlib changes.
     """
     if hasattr(obj, attr) and hasattr(obj, '_' + attr):
@@ -29,6 +61,26 @@ def _flexible_getattr(obj, attr, default=None):
             'Using former.'
         )
     return getattr(obj, attr, getattr(obj, '_' + attr, default))
+
+
+def _pop_props(kwargs, *categories):
+    """
+    Pop out properties from category `category` after accounting for
+    aliases. Return a dictionary of the non-None property values. This
+    modifies the input `kwargs` dictionary in-place.
+    """
+    props = {}
+    for category in categories:
+        if category not in ALIASES:
+            raise ValueError(f'Invalid alias category {category!r}.')
+        for key, aliases in ALIASES[category].items():
+            if isinstance(aliases, str):
+                aliases = (aliases,)
+            opts = {alias: kwargs.pop(alias, None) for alias in (key, *aliases)}
+            prop = _not_none(**opts)
+            if prop is not None:
+                props[key] = prop
+    return props
 
 
 def _not_none(*args, default=None, **kwargs):

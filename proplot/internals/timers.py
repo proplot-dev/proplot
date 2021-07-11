@@ -4,7 +4,7 @@ Utilities for timing ProPlot performance.
 """
 import time
 
-BENCHMARK = False  # toggle this to turn on benchmarking
+BENCHMARK = False  # toggle this to turn on benchmarking (see timers.py)
 
 
 class _benchmark(object):

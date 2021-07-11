@@ -7,9 +7,9 @@ A python package for making beautiful, publication-quality graphics.
 import pkg_resources as _pkg
 
 from .config import *  # noqa: F401 F403
-from .internals import timers
+from .internals import timers as _timers
 
-with timers._benchmark('imports'):
+with _timers._benchmark('imports'):
     from .utils import *  # noqa: F401 F403
     from .crs import *  # noqa: F401 F403
     from .colors import *  # noqa: F401 F403
