@@ -242,7 +242,7 @@ axs[1].format(title='Logarithmic normalizer')
 # The colormap levels used with `~proplot.colors.DiscreteNorm` can be configured
 # with the `levels`, `values`, or `N` keywords. If you pass an integer to
 # one of these keywords, approximately that many boundaries are automatically
-# generated at "nice" intervals. The keywords `vmin`, `vmax, and `locator`
+# generated at "nice" intervals. The keywords `vmin`, `vmax`, and `locator`
 # control how the automatic intervals are chosen. You can also use
 # the `positive`, `negative`, and `symmetric` keywords to ensure that
 # automatically-generated levels are strictly positive, strictly negative,

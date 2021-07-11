@@ -223,7 +223,7 @@ with plot.rc.context({'lines.linewidth': 3}):
 # as *x* coordinates (with *y* coordinates inferred from the data),
 # and multiple arguments are interpreted as (*y*, *x*) pairs. This is
 # analogous to `~matplotlib.axes.Axes.barh` and `~matplotlib.axes.Axes.fill_betweenx`.
-# Also, the *x* extent of lines drawn with `~proplot.axes.Axes.plot` and
+# Also, the *x* extent of lines drawn with `~matplotlib.axes.Axes.plot` and
 # the *y* extent of lines drawn with `~proplot.axes.Axes.plotx` are now
 # "sticky", i.e. there is no padding between the lines and axes edges by default.
 #
@@ -374,15 +374,15 @@ axs.format(xlabel='xlabel', ylabel='ylabel')
 # The `~matplotlib.axes.Axes.fill_between` and `~matplotlib.axes.Axes.fill_betweenx`
 # commands are wrapped by `~proplot.axes.fill_between_extras` and
 # `~proplot.axes.fill_betweenx_extras`. They also have the optional shorthands
-# `~proplot.axes.Axes.area` and `~proplot.axes.Axes.areax`.
-# You can now *stack* or *overlay* columns of data by passing 2D arrays to
-# to these commands, just like in `pandas`_. You can also draw area plots that
-# change color when the fill boundaries cross each other by passing ``negpos=True``
-# (the default colors are :rc:`negcolor` and :rc:`poscolor`). The most common
-# use case for this is highlighting *negative* and *positive* areas with different
-# colors. Also, the *x* extent of shading drawn with `~proplot.axes.Axes.fill_between`
-# and the *y* extent of shading drawn with `~proplot.axes.Axes.fill_betweenx` is now
-# "sticky", i.e. there is no padding between the shading and axes edges by default.
+# `~proplot.axes.Axes.area` and `~proplot.axes.Axes.areax`. You can now *stack*
+# or *overlay* columns of data by passing 2D arrays to to these commands, just like in
+# `pandas`_. You can also draw area plots that change color when the fill boundaries
+# cross each other by passing ``negpos=True`` (the default colors are :rc:`negcolor`
+# and :rc:`poscolor`). The most common use case for this is highlighting *negative*
+# and *positive* areas with different colors. Also, the *x* extent of shading drawn
+# with `~matplotlib.axes.Axes.fill_between` and the *y* extent of shading drawn with
+# `~proplot.axes.Axes.fill_betweenx` is now "sticky", i.e. there is no padding between
+# the shading and axes edges by default.
 
 # %%
 import proplot as plot
