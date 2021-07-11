@@ -43,8 +43,10 @@
 #   `~matplotlib.gridspec.GridSpec` slot that is occupied by the corresponding
 #   subplot and ``0`` indicates an empty space.
 #
-# In the below examples, we create a few simple figures with `~proplot.ui.subplots`.
-# See the :ref:`next sections <ug_format>` for details.
+# Figures can be saved with `proplot.figure.Figure.save` (or, equivalently,
+# `~matplotlib.figure.Figure.savefig`). Tildes in the filename are expanded
+# with `os.path.expanduser`. In the below examples, we create a few simple figures
+# with `~proplot.ui.subplots`. See the :ref:`next sections <ug_format>` for details.
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. note::
@@ -100,6 +102,8 @@ import proplot as pplt
 fig, ax = pplt.subplots()
 ax.plot(data, lw=2)
 ax.format(suptitle='Single subplot', xlabel='x axis', ylabel='y axis')
+# Save the figure
+fig.save('~/test1.png')
 
 
 # %%
@@ -112,6 +116,8 @@ axs.format(
     suptitle='Simple subplot grid', title='Title',
     xlabel='x axis', ylabel='y axis'
 )
+# Save the figure
+fig.save('~/test2.png')
 
 
 # %%
@@ -127,6 +133,8 @@ axs.format(
     xlabel='xlabel', ylabel='ylabel'
 )
 axs[2].plot(data, lw=2)
+# Save the figure
+fig.save('~/test3.png')
 
 
 # %%
@@ -144,6 +152,8 @@ axs.format(
     xlabel='xlabel', ylabel='ylabel', abc=True
 )
 axs[0].plot(data, lw=2)
+# Save the figure
+fig.save('~/test4.png')
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"

@@ -174,7 +174,7 @@ axs[1].plot(df, cycle=cycle, lw=3, legend='uc')
 # with any plotting method wrapped by `~proplot.axes.apply_cycle`. `cycle` and
 # `cycle_kw` are passed to the `~proplot.constructor.Cycle`
 # :ref:`constructor function <why_constructor>`, and the resulting property cycle
-# is used for the pplt. You can specify `cycle` once with 2D input data (in which case
+# is used for the plot. You can specify `cycle` once with 2D input data (in which case
 # each column is plotted in succession according to the property cycle) or call a
 # plotting command multiple times with the same `cycle` argument each time (the
 # property cycle is not reset). For more information on property cycles, see the

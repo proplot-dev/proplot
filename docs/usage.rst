@@ -77,8 +77,9 @@ and is :ref:`packed with new features <ug_subplots>`.
 
 Instead of instances of the native `matplotlib.figure.Figure` and
 `matplotlib.axes.Axes` classes, `~proplot.ui.subplots` :ref:`returns <ug_basics>`
-a `proplot.figure.Figure` instance populated with
-`proplot.axes.Axes` instance. All ProPlot axes also belong
+a `proplot.figure.Figure` instance populated with `proplot.axes.Axes` instances.
+ProPlot figures are saved with `~proplot.figure.Figure.save` (or, equivalently,
+`~matplotlib.figure.Figure.savefig`). All ProPlot axes also belong
 to one of the following three child classes:
 
 * `proplot.axes.CartesianAxes`: For ordinary plots with *x* and *y*

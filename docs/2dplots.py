@@ -176,13 +176,13 @@ axs[1].format(xtickminor=False, yreverse=True)
 # You can do so using the `cmap` and `cmap_kw` arguments, available with any
 # plotting method wrapped by `~proplot.axes.apply_cmap`. `cmap` and `cmap_kw`
 # are passed to `~proplot.constructor.Colormap` and the resulting colormap is
-# used for the pplt. For example, to create and apply a monochromatic colormap,
+# used for the plot. For example, to create and apply a monochromatic colormap,
 # you can simply use ``cmap='color_name'``.
 #
 # The `~proplot.axes.apply_cmap` wrapper also
 # adds the `norm` and `norm_kw` arguments. They are passed to the
 # `~proplot.constructor.Norm` :ref:`constructor function <why_constructor>`,
-# and the resulting normalizer is used for the pplt. For more information on colormaps
+# and the resulting normalizer is used for the plot. For more information on colormaps
 # and normalizers, see the :ref:`colormaps section <ug_cmaps>` and `this matplotlib
 # tutorial <https://matplotlib.org/tutorials/colors/colormapnorms.html>`__.
 
@@ -217,12 +217,17 @@ axs[1].format(title='Logarithmic normalizer')
 # ------------------------
 #
 # The `~proplot.axes.apply_cmap` wrapper also "discretizes" the colormaps
-# used with every pplt. This is done using `~proplot.colors.DiscreteNorm`,
+# used with certain plots. This is done using `~proplot.colors.DiscreteNorm`,
 # which converts data values into colormap colors by first (1) transforming
 # the data using an arbitrary *continuous* normalizer (e.g.,
 # `~matplotlib.colors.Normalize` or `~matplotlib.colors.LogNorm`), then
 # (2) mapping the normalized data to *distinct* colormap levels. This is
-# similar to matplotlib's `~matplotlib.colors.BoundaryNorm`.
+# similar to matplotlib's `~matplotlib.colors.BoundaryNorm`. By default,
+# this feature is disabled for `~matplotlib.axes.Axes.imshow`,
+# `~matplotlib.axes.Axes.matshow`, `~matplotlib.axes.Axes.spy`,
+# `~matplotlib.axes.Axes.hexbin`, and `~matplotlib.axes.Axes.hist2d` plots.
+# To explicitly toggle it, pass ``discrete=true_or_false`` to any plotting
+# command wrapped by `~proplot.axes.apply_cmap` or change :rcraw:`image.discrete`.
 #
 # Applying `~proplot.colors.DiscreteNorm` to every colormap lets us easily
 # draw `matplotlib.axes.Axes.pcolor` and `~matplotlib.axes.Axes.pcolormesh`
@@ -257,13 +262,19 @@ import numpy as np
 state = np.random.RandomState(51423)
 data = (state.normal(0, 1, size=(33, 33))).cumsum(axis=0).cumsum(axis=1)
 
-# Pcolor plot with and without distinct levels
-fig, axs = pplt.subplots(ncols=2, refwidth=2.2)
-axs.format(suptitle='DiscreteNorm with symmetric levels')
-for ax, n, mode, side in zip(axs, (200, 10), ('Ambiguous', 'Distinct'), 'lr'):
-    m = ax.pcolor(data, cmap='spectral_r', levels=n, symmetric=True)
-    ax.format(title=f'{mode} level boundaries', yformatter='null')
-    ax.colorbar(m, loc=side, locator=8)
+# Figure
+fig, axs = pplt.subplots([[1, 1, 2, 2], [0, 3, 3, 0]], ref=3, refwidth=2.3)
+axs.format(yformatter='none', suptitle='Distinct vs. smooth colormap levels')
+
+# Pcolor with DivergingNorm
+axs[0].pcolor(data, cmap='spectral_r', norm='div', colorbar='l')
+axs[0].set_title('Pcolor plot\nDiscreteNorm enabled (default)')
+axs[1].pcolor(data, discrete=False, cmap='spectral_r', norm='div', colorbar='r')
+axs[1].set_title('Pcolor plot\nDiscreteNorm disabled')
+
+# Imshow
+m = axs[2].imshow(data, cmap='roma', colorbar='b')
+axs[2].format(title='Imshow plot\nDiscreteNorm disabled (default)', yformatter='auto')
 
 # %%
 import proplot as pplt
