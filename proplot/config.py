@@ -209,10 +209,10 @@ def _iter_data_paths(subfolder, **kwargs):
 class RcConfigurator(object):
     """
     Dictionary-like class for managing matplotlib's `builtin settings <rc_matplotlib>`_
-    and ProPlot's :ref:`added settings <rc_proplot>`.
-    When ProPlot is imported, this class is instantiated as the `rc` object
-    and the ProPlot default settings and ``.proplotrc`` user overrides
-    are applied. See the :ref:`configuration guide <ug_config>` for details.
+    and ProPlot's :ref:`added settings <rc_proplot>`. When ProPlot is imported,
+    this class is instantiated as the `rc` object and the ProPlot default settings
+    and ``.proplotrc`` user overrides are applied. See the
+    :ref:`configuration guide <ug_config>` for details.
     """
     def __repr__(self):
         rcdict = type('rc', (dict,), {})({  # encapsulate params in temporary class
@@ -347,12 +347,6 @@ class RcConfigurator(object):
         rc_proplot.update(kw_proplot)
         rc_matplotlib.update(kw_matplotlib)
 
-    def _get_context_mode(self):
-        """
-        Return highest (least permissive) context mode.
-        """
-        return max((context.mode for context in self._context), default=0)
-
     def _get_item(self, key, mode=None):
         """
         As with `~RcConfigurator.__getitem__` but the search is limited
@@ -381,6 +375,12 @@ class RcConfigurator(object):
             raise KeyError(f'Invalid setting name {key!r}.')
         else:
             return
+
+    def _get_context_mode(self):
+        """
+        Return highest (least permissive) context mode.
+        """
+        return max((context.mode for context in self._context), default=0)
 
     def _get_synced_params(self, key, value):
         """
@@ -540,6 +540,13 @@ class RcConfigurator(object):
         return kw_proplot, kw_matplotlib
 
     @staticmethod
+    def _get_user_path():
+        """
+        Return location of user proplotrc file.
+        """
+        return os.path.join(os.path.expanduser('~'), '.proplotrc')
+
+    @staticmethod
     def _get_local_paths():
         """
         Return locations of local proplotrc files in this directory
@@ -556,13 +563,6 @@ class RcConfigurator(object):
                 break
             idir = ndir
         return paths[::-1]  # sort from decreasing to increasing importantce
-
-    @staticmethod
-    def _get_user_path():
-        """
-        Return location of user proplotrc file.
-        """
-        return os.path.join(os.path.expanduser('~'), '.proplotrc')
 
     @staticmethod
     def _sanitize_key(key):
@@ -643,6 +643,11 @@ class RcConfigurator(object):
             If ``True``, then each category setting that is not found in the
             context mode dictionaries is omitted from the output dictionary.
             See `~RcConfigurator.context`.
+
+        See also
+        --------
+        RcConfigurator.get
+        RcConfigurator.fill
         """
         if cat not in rcsetup._rc_categories:
             raise ValueError(
@@ -754,6 +759,11 @@ class RcConfigurator(object):
         context : bool, optional
             If ``True``, then ``None`` is returned if the setting is not found
             in the context mode dictionaries. See `~RcConfigurator.context`.
+
+        See also
+        --------
+        RcConfigurator.category
+        RcConfigurator.fill
         """
         mode = 0 if not context else None
         return self._get_item(key, mode)
@@ -771,6 +781,11 @@ class RcConfigurator(object):
             If ``True``, then each setting that is not found in the
             context mode dictionaries is omitted from the output dictionary.
             See `~RcConfigurator.context`.
+
+        See also
+        --------
+        RcConfigurator.category
+        RcConfigurator.get
         """
         kw = {}
         mode = 0 if not context else None
@@ -796,6 +811,10 @@ class RcConfigurator(object):
         **kwargs, optional
             `rc` keys and values passed as keyword arguments. If the
             name has dots, simply omit them.
+
+        See also
+        --------
+        RcConfigurator.fill
         """
         # Parse args
         kw = {}
@@ -928,6 +947,10 @@ class RcConfigurator(object):
         ----------
         path : str
             The file path.
+
+        See also
+        --------
+        RcConfigurator.save
         """
         kw_proplot, kw_matplotlib = self._load_file(path)
         rc_proplot.update(kw_proplot)
@@ -974,6 +997,10 @@ class RcConfigurator(object):
         description : bool, optional
             Whether to include descriptions of each setting as comments.
             Default is ``False``.
+
+        See also
+        --------
+        RcConfigurator.load_file
         """
         if path is None:
             path = '~'
@@ -1034,6 +1061,12 @@ class RcConfigurator(object):
         """
         Return an iterator that loops over all setting names and values.
         Same as `dict.items`.
+
+        See also
+        --------
+        RcConfigurator.keys
+        RcConfigurator.values
+        RcConfigurator.items
         """
         for key in self:
             yield key, self[key]
@@ -1042,6 +1075,11 @@ class RcConfigurator(object):
         """
         Return an iterator that loops over all setting names.
         Same as `dict.keys`.
+
+        See also
+        --------
+        RcConfigurator.values
+        RcConfigurator.items
         """
         for key in self:
             yield key
@@ -1050,6 +1088,11 @@ class RcConfigurator(object):
         """
         Return an iterator that loops over all setting values.
         Same as `dict.values`.
+
+        See also
+        --------
+        RcConfigurator.keys
+        RcConfigurator.items
         """
         for key in self:
             yield self[key]
@@ -1080,6 +1123,10 @@ def config_inline_backend(fmt=None):
         The inline backend file format(s). Default is :rc:`inlinefmt`.
         Valid formats include ``'jpg'``, ``'png'``, ``'svg'``, ``'pdf'``,
         and ``'retina'``.
+
+    See also
+    --------
+    RcConfigurator
     """
     # Note if inline backend is unavailable this will fail silently
     ipython = get_ipython()
@@ -1276,6 +1323,11 @@ def use_style(style):
         The matplotlib style name(s) or stylesheet filename(s), or dictionary(s)
         of settings. Use ``'default'`` to apply matplotlib default settings and
         ``'original'`` to include settings from your user ``matplotlibrc`` file.
+
+    See also
+    --------
+    RcConfigurator
+    matplotlib.style.use
     """
     # NOTE: This function is not really necessary but makes proplot's
     # stylesheet-supporting features obvious. Plus changing the style does
@@ -1301,6 +1353,13 @@ def register_cmaps(user=True, default=False):
     Parameters
     ----------
     %(register_cmaps.params)s
+
+    See also
+    --------
+    register_cycles
+    register_colors
+    register_fonts
+    proplot.demos.show_cmaps
     """
     for i, dirname, filename in _iter_data_paths('cmaps', user=user, default=default):
         path = os.path.join(dirname, filename)
@@ -1329,6 +1388,13 @@ def register_cycles(user=True, default=False):
     Parameters
     ----------
     %(register_cycles.params)s
+
+    See also
+    --------
+    register_cmaps
+    register_colors
+    register_fonts
+    proplot.demos.show_cycles
     """
     for _, dirname, filename in _iter_data_paths('cycles', user=user, default=default):
         path = os.path.join(dirname, filename)
@@ -1360,6 +1426,13 @@ def register_colors(user=True, default=False, space='hcl', margin=0.10):
         The margin by which a color's normalized hue, saturation, and
         luminance channel values must differ from the normalized channel
         values of the other colors to be deemed "perceptually distinct."
+
+    See also
+    --------
+    register_cmaps
+    register_cycles
+    register_fonts
+    proplot.demos.show_colors
     """
     # Reset native colors dictionary
     mcolors.colorConverter.colors.clear()  # clean out!
@@ -1371,7 +1444,7 @@ def register_colors(user=True, default=False, space='hcl', margin=0.10):
 
     # Load colors from file and get their HCL values
     # NOTE: Colors that come *later* overwrite colors that come earlier.
-    hex = re.compile(rf'\A{pcolors.HEX_PATTERN}\Z')  # match each string
+    hex = re.compile(rf'\A{pcolors.REGEX_HEX}\Z')  # match each string
     for i, dirname, filename in _iter_data_paths('colors', user=user, default=default):
         path = os.path.join(dirname, filename)
         cat, ext = os.path.splitext(filename)
@@ -1455,6 +1528,50 @@ def register_colors(user=True, default=False, space='hcl', margin=0.10):
             raise ValueError(f'Unknown proplot color database {path!r}.')
 
 
+def _patch_validators():
+    """
+    Fix the fontsize validators to allow for new font scalings.
+    """
+    # First define valdiators
+    # NOTE: In the future will subclass RcParams directly and control the
+    # validators ourselves.
+    def _validate_fontsize(s):
+        fontsizes = list(mfonts.font_scalings)
+        if isinstance(s, str):
+            s = s.lower()
+        if s in fontsizes:
+            return s
+        try:
+            return float(s)
+        except ValueError:
+            raise ValueError(
+                f'{s!r} is not a valid font size. Valid sizes are: '
+                + ', '.join(map(repr, fontsizes))
+            )
+
+    def _validate_fontsize_None(s):
+        if s is None or s == 'None':
+            return None
+        else:
+            return _validate_fontsize(s)
+
+    _validate_fontsizelist = None
+    if hasattr(msetup, '_listify_validator'):
+        _validate_fontsizelist = msetup._listify_validator(_validate_fontsize)
+
+    # Apply new functions
+    validate = RcParams.validate
+    for key in list(validate):  # modify in-place
+        validator = validate[key]
+        if validator is msetup.validate_fontsize:
+            validate[key] = _validate_fontsize
+        elif validator is getattr(msetup, 'validate_fontsize_None', None):
+            validate[key] = _validate_fontsize_None
+        elif validator is getattr(msetup, 'validate_fontsizelist', None):
+            if _validate_fontsizelist is not None:
+                validate[key] = _validate_fontsizelist
+
+
 def register_fonts():
     """
     Add fonts packaged with ProPlot or saved to the ``~/.proplot/fonts``
@@ -1465,6 +1582,13 @@ def register_fonts():
     ``.otf`` for use with matplotlib.
 
     To visualize the registered fonts, use `~proplot.demos.show_fonts`.
+
+    See also
+    --------
+    register_cmaps
+    register_cycles
+    register_colors
+    proplot.demos.show_fonts
     """
     # Find proplot fonts
     # WARNING: If you include a font file with an unrecognized style,
@@ -1529,50 +1653,6 @@ def register_fonts():
         if os.path.splitext(font.fname)[1] != '.ttc'
         or 'Thin' in os.path.basename(font.fname)
     ]
-
-
-def _patch_validators():
-    """
-    Fix the fontsize validators to allow for new font scalings.
-    """
-    # First define valdiators
-    # NOTE: In the future will subclass RcParams directly and control the
-    # validators ourselves.
-    def _validate_fontsize(s):
-        fontsizes = list(mfonts.font_scalings)
-        if isinstance(s, str):
-            s = s.lower()
-        if s in fontsizes:
-            return s
-        try:
-            return float(s)
-        except ValueError:
-            raise ValueError(
-                f'{s!r} is not a valid font size. Valid sizes are: '
-                + ', '.join(map(repr, fontsizes))
-            )
-
-    def _validate_fontsize_None(s):
-        if s is None or s == 'None':
-            return None
-        else:
-            return _validate_fontsize(s)
-
-    _validate_fontsizelist = None
-    if hasattr(msetup, '_listify_validator'):
-        _validate_fontsizelist = msetup._listify_validator(_validate_fontsize)
-
-    # Apply new functions
-    validate = RcParams.validate
-    for key in list(validate):  # modify in-place
-        validator = validate[key]
-        if validator is msetup.validate_fontsize:
-            validate[key] = _validate_fontsize
-        elif validator is getattr(msetup, 'validate_fontsize_None', None):
-            validate[key] = _validate_fontsize_None
-        elif validator is getattr(msetup, 'validate_fontsizelist', None):
-            if _validate_fontsizelist is not None:
-                validate[key] = _validate_fontsizelist
 
 
 # Initialize .proplotrc file
