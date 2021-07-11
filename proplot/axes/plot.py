@@ -45,6 +45,7 @@ from ..internals import (
     _dummy_context,
     _getattr_flexible,
     _not_none,
+    _pop_props,
     _state_context,
     docstring,
     warnings,
@@ -1807,16 +1808,10 @@ def hlines_extras(self, *args, **kwargs):
 
 def _apply_scatter(
     self, *args,
-    s=None, c=None,
-    color=None, markercolor=None, vmin=None, vmax=None,
-    size=None, markersize=None, smin=None, smax=None,
+    vmin=None, vmax=None, smin=None, smax=None,
     cmap=None, cmap_kw=None, norm=None, norm_kw=None,
     extend='neither', levels=None, N=None, values=None,
     symmetric=False, locator=None, locator_kw=None,
-    lw=None, linewidth=None, linewidths=None,
-    markeredgewidth=None, markeredgewidths=None,
-    edgecolor=None, edgecolors=None,
-    markeredgecolor=None, markeredgecolors=None,
     **kwargs
 ):
     """
@@ -1825,6 +1820,9 @@ def _apply_scatter(
     """
     # Manage input arguments
     method = kwargs.pop('_method')
+    props = _pop_props(kwargs, 'lines')
+    c = props.pop('color', None)
+    s = props.pop('markersize', None)
     args = list(args)
     if len(args) > 4:
         raise ValueError(f'Expected 1-4 positional arguments, got {len(args)}.')
@@ -1832,18 +1830,6 @@ def _apply_scatter(
         c = _not_none(c_positional=args.pop(-1), c=c)
     if len(args) == 3:
         s = _not_none(s_positional=args.pop(-1), s=s)
-
-    # Apply some aliases for keyword arguments
-    c = _not_none(c=c, color=color, markercolor=markercolor)
-    s = _not_none(s=s, size=size, markersize=markersize)
-    lw = _not_none(
-        lw=lw, linewidth=linewidth, linewidths=linewidths,
-        markeredgewidth=markeredgewidth, markeredgewidths=markeredgewidths,
-    )
-    ec = _not_none(
-        edgecolor=edgecolor, edgecolors=edgecolors,
-        markeredgecolor=markeredgecolor, markeredgecolors=markeredgecolors,
-    )
 
     # Get colormap
     cmap_kw = cmap_kw or {}
@@ -1883,10 +1869,7 @@ def _apply_scatter(
         s = smin + (smax - smin) * (np.array(s) - smin_true) / (smax_true - smin_true)
 
     # Call function
-    obj = objs = method(
-        self, *args, c=c, s=s, cmap=cmap, norm=norm,
-        linewidths=lw, edgecolors=ec, **kwargs
-    )
+    obj = objs = method(self, *args, c=c, s=s, cmap=cmap, norm=norm, **props, **kwargs)
     if not isinstance(objs, tuple):
         objs = (obj,)
     for iobj in objs:
@@ -3227,12 +3210,8 @@ def apply_cmap(
     extend='neither', levels=None, N=None, values=None,
     vmin=None, vmax=None, locator=None, locator_kw=None,
     symmetric=False, positive=False, negative=False, nozero=False,
-    edgefix=None, labels=False, labels_kw=None, fmt=None, precision=2,
-    colorbar=False, colorbar_kw=None,
-    lw=None, linewidth=None, linewidths=None,
-    ls=None, linestyle=None, linestyles=None,
-    color=None, colors=None, edgecolor=None, edgecolors=None,
-    **kwargs
+    discrete=None, edgefix=None, labels=False, labels_kw=None, fmt=None, precision=2,
+    colorbar=False, colorbar_kw=None, **kwargs
 ):
     """
     Adds several new keyword args and features for specifying the colormap,
@@ -3290,18 +3269,16 @@ def apply_cmap(
     ----------------
     lw, linewidth, linewidths
         The width of `~matplotlib.axes.Axes.contour` lines and
-        `~proplot.axes.Axes.parametric` lines. Also the width of lines
-        *between* `~matplotlib.axes.Axes.pcolor` boxes,
-        `~matplotlib.axes.Axes.pcolormesh` boxes, and
-        `~matplotlib.axes.Axes.contourf` filled contours.
+        `~proplot.axes.Axes.parametric` lines. Also the width of lines *between*
+        `~matplotlib.axes.Axes.pcolor` boxes, `~matplotlib.axes.Axes.pcolormesh`
+        boxes, and `~matplotlib.axes.Axes.contourf` filled contours.
     ls, linestyle, linestyles
         As above, but for the line style.
-    color, colors, edgecolor, edgecolors
+    c, color, colors, ec, edgecolor, edgecolors
         As above, but for the line color. For `~matplotlib.axes.Axes.contourf`
-        plots, if you provide `colors` without specifying the `linewidths`
-        or `linestyles`, this argument is used to manually specify the *fill
-        colors*. See the `~matplotlib.axes.Axes.contourf` documentation for
-        details.
+        plots, if you provide `colors` without specifying the `linewidths` or
+        `linestyles`, this argument is used to manually specify the *fill colors*.
+        See the `~matplotlib.axes.Axes.contourf` documentation for details.
     *args, **kwargs
         Passed to the matplotlib plotting method.
 
@@ -3338,11 +3315,10 @@ def apply_cmap(
     colorbar_kw = colorbar_kw or {}
     norm_kw = norm_kw or {}
     edgefix = _not_none(edgefix, rc['image.edgefix'])
-    linewidths = _not_none(lw=lw, linewidth=linewidth, linewidths=linewidths)
-    linestyles = _not_none(ls=ls, linestyle=linestyle, linestyles=linestyles)
-    colors = _not_none(
-        color=color, colors=colors, edgecolor=edgecolor, edgecolors=edgecolors,
-    )
+    props = _pop_props(kwargs, 'fills')
+    linewidths = props.get('linewidths', None)
+    linestyles = props.get('linestyles', None)
+    colors = props.get('colors', None)
     levels = _not_none(
         N=N, levels=levels, norm_kw_levels=norm_kw.pop('levels', None), default=rc['image.levels']  # noqa: E501
     )
