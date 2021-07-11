@@ -197,7 +197,10 @@ def _axes_dict(naxs, value, kw=False, default=None):
 def subplots(
     array=None, ncols=1, nrows=1, order='C',
     ref=1, refaspect=1, refwidth=None, refheight=None,
-    figwidth=None, figheight=None, journal=None, figsize=None,
+    axwidth=None, axheight=None, aspect=None,  # deprecated
+    figwidth=None, figheight=None, figsize=None,
+    width=None, height=None,  # shorthands
+    journal=None,
     hspace=None, wspace=None, space=None,
     hratios=None, wratios=None,
     width_ratios=None, height_ratios=None,
@@ -205,7 +208,6 @@ def subplots(
     left=None, bottom=None, right=None, top=None,
     basemap=None, proj=None, projection=None,
     proj_kw=None, projection_kw=None,
-    width=None, height=None, axwidth=None, axheight=None, aspect=None,  # deprecated
     **kwargs
 ):
     """
@@ -250,28 +252,41 @@ def subplots(
         `~proplot.utils.units`. Default is :rc:`subplots.refwidth`. Ignored
         if `width`, `height`, or `figsize` was passed.
     aspect, axwidth, axheight
-        Aliases for `refaspect`, `refwidth`, `refheight`. *Will be deprecated in the
-        next major release and removed in a subsequent release.*
+        Aliases for `refaspect`, `refwidth`, `refheight`. *This will be
+        deprecated in the next major release.*
     figwidth, figheight : float or str, optional
         The figure width and height. If you specify just one, the aspect
         ratio `refaspect` of the reference subplot `ref` will be preserved.
     figsize : length-2 tuple, optional
-        Tuple specifying the figure `(width, height)`.
+        Tuple specifying the figure ``(width, height)``.
     width, height
-        Aliases for `figwidth`, `figheight`. *Will be deprecated in the next
-        major release and removed in a subsequent release.*
+        Aliases for `figwidth`, `figheight`. *This will be deprecated
+        in the next major release*.
     wspace, hspace, space : float or str or list thereof, optional
-        Passed to `~proplot.gridspec.GridSpec`, denotes the
-        spacing between grid columns, rows, and both, respectively. If float
-        or string, expanded into lists of length ``ncols - 1`` (for `wspace`)
-        or length ``nrows - 1`` (for `hspace`).
+        Passed to `~proplot.gridspec.GridSpec`, denotes the spacing between
+        grid columns, rows, and both, respectively. If float, string, or
+        ``None``, this value is expanded into lists of length ``ncols - 1``
+        (for `wspace`) or length ``nrows - 1`` (for `hspace`). If list, the list
+        must match these lengths. Default is ``None``. Units are interpreted
+        by `~proplot.utils.units`.
 
-        Units are interpreted by `~proplot.utils.units` for each element of
-        the list. By default, these are determined by the "tight
-        layout" algorithm.
+        For list elements equal to ``None``, the space is determined automatically.
+        If :rcraw:`subplots.tight` is ``True``, the space is determined by the tight
+        layout algorithm. Otherwise, a sensible default value is chosen. For example,
+        ``subplots(ncols=3, tight=True, wspace=('2em', None))`` fixes the space between the
+        first 2 columns but uses the tight layout
+        algorithm between the last 2 columns.
     wequal, hequal, equal :  bool, optional
-        Whether to automatically make spacing between columns, rows, or both
-        equal. Default is ``False``.
+        Whether to make the tight layout algorithm apply equal spacing between
+        columns, rows, or both. Default is ``False``.
+    left, right, top, bottom : float or str, optional
+        Passed to `~proplot.gridspec.GridSpec`, denotes the amount of padding
+        between the subplots and the figure edge. Units are interpreted by
+        `~proplot.utils.units`. Default is ``None``.
+
+        If ``None``, the space is determined automatically. If :rcraw:`subplots.tight`
+        is ``True``, the space is determined by the tight layout algorithm. Otherwise,
+        a sensible default value is chosen.
     wratios, hratios : float or list thereof, optional
         Passed to `~proplot.gridspec.GridSpec`, denotes the width and height
         ratios for the subplot grid. Length of `wratios` must match the number
@@ -279,10 +294,33 @@ def subplots(
     width_ratios, height_ratios
         Aliases for `wratios`, `hratios`. Included for consistency with
         the `matplotlib.pyplot.subplots` command.
-    left, right, top, bottom : float or str, optional
-        Passed to `~proplot.gridspec.GridSpec`, denotes the width of padding between
-        the subplots and figure edge. Units are interpreted by `~proplot.utils.units`.
-        By default, these are determined by the "tight layout" algorithm.
+    journal : str, optional
+        String name corresponding to an academic journal standard that is used
+        to control the figure width `figwidth` and, if specified, the figure
+        height `figheight`. See the below table.
+
+        .. _journal_table:
+
+        ===========  ====================  ===============================================================================
+        Key          Size description      Organization
+        ===========  ====================  ===============================================================================
+        ``'aaas1'``  1-column              `American Association for the Advancement of Science <aaas_>`_ (e.g. *Science*)
+        ``'aaas2'``  2-column              ”
+        ``'agu1'``   1-column              `American Geophysical Union <agu_>`_
+        ``'agu2'``   2-column              ”
+        ``'agu3'``   full height 1-column  ”
+        ``'agu4'``   full height 2-column  ”
+        ``'ams1'``   1-column              `American Meteorological Society <ams_>`_
+        ``'ams2'``   small 2-column        ”
+        ``'ams3'``   medium 2-column       ”
+        ``'ams4'``   full 2-column         ”
+        ``'nat1'``   1-column              `Nature Research <nat_>`_
+        ``'nat2'``   2-column              ”
+        ``'pnas1'``  1-column              `Proceedings of the National Academy of Sciences <pnas_>`_
+        ``'pnas2'``  2-column              ”
+        ``'pnas3'``  landscape page        ”
+        ===========  ====================  ===============================================================================
+
     proj, projection \
 : str, `cartopy.crs.Projection`, `~mpl_toolkits.basemap.Basemap`, list thereof, \
 or dict thereof, optional
@@ -321,51 +359,37 @@ or dict thereof, optional
         string names like ``'pcarree'`` are used to create `~proplot.axes.BasemapAxes`
         or `~proplot.axes.CartopyAxes`. Default is :rc:`basemap`. If boolean, applies
         to all subplots. If list or dict, applies to specific subplots, as with `proj`.
-    journal : str, optional
-        String name corresponding to an academic journal standard that is used
-        to control the figure width `figwidth` and, if specified, the figure
-        height `figheight`. See the below table.
-
-        .. _journal_table:
-
-        ===========  ====================  ===============================================================================
-        Key          Size description      Organization
-        ===========  ====================  ===============================================================================
-        ``'aaas1'``  1-column              `American Association for the Advancement of Science <aaas_>`_ (e.g. *Science*)
-        ``'aaas2'``  2-column              ”
-        ``'agu1'``   1-column              `American Geophysical Union <agu_>`_
-        ``'agu2'``   2-column              ”
-        ``'agu3'``   full height 1-column  ”
-        ``'agu4'``   full height 2-column  ”
-        ``'ams1'``   1-column              `American Meteorological Society <ams_>`_
-        ``'ams2'``   small 2-column        ”
-        ``'ams3'``   medium 2-column       ”
-        ``'ams4'``   full 2-column         ”
-        ``'nat1'``   1-column              `Nature Research <nat_>`_
-        ``'nat2'``   2-column              ”
-        ``'pnas1'``  1-column              `Proceedings of the National Academy of Sciences <pnas_>`_
-        ``'pnas2'``  2-column              ”
-        ``'pnas3'``  landscape page        ”
-        ===========  ====================  ===============================================================================
-
-        .. _aaas: https://www.sciencemag.org/authors/instructions-preparing-initial-manuscript
-        .. _agu: https://www.agu.org/Publish-with-AGU/Publish/Author-Resources/Graphic-Requirements
-        .. _ams: https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/
-        .. _nat: https://www.nature.com/nature/for-authors/formatting-guide
-        .. _pnas: https://www.pnas.org/page/authors/format
-
 
     Other parameters
     ----------------
     **kwargs
-        Passed to `~proplot.figure.Figure`.
+        Passed to `proplot.figure.Figure`.
 
     Returns
     -------
-    fig : `~proplot.figure.Figure`
+    fig : `proplot.figure.Figure`
         The figure instance.
     axs : `SubplotsContainer`
-        A special list of axes instances. See `SubplotsContainer`.
+        A container of axes instances.
+
+    See also
+    --------
+    proplot.figure.Figure
+    proplot.axes.Axes
+    SubplotsContainer
+    matplotlib.figure.Figure
+
+    References
+    ----------
+    For academic journal figure size recommendations, see the
+    `Nature <nat_>`_ `AAAS <aaas_>`_, `PNAS <pnas_>`_, `AGU <agu_>`_,
+    and `AMS <ams_>`_ web pages.
+
+    .. _aaas: https://www.sciencemag.org/authors/instructions-preparing-initial-manuscript
+    .. _agu: https://www.agu.org/Publish-with-AGU/Publish/Author-Resources/Graphic-Requirements
+    .. _ams: https://www.ametsoc.org/ams/index.cfm/publications/authors/journal-and-bams-authors/figure-information-for-authors/
+    .. _nat: https://www.nature.com/nature/for-authors/formatting-guide
+    .. _pnas: https://www.pnas.org/page/authors/format
     """  # noqa
     # Build array
     if order not in ('C', 'F'):  # better error message
