@@ -673,11 +673,11 @@ def Cycle(
         will be filled to match the length of the longest list.  See
         `~matplotlib.axes.Axes.set_prop_cycle` for more info on cyclers.
         Also see the `line style reference \
-<https://matplotlib.org/gallery/lines_bars_and_markers/line_styles_reference.html>`__,
+<https://matplotlib.org/2.2.5/gallery/lines_bars_and_markers/line_styles_reference.html>`__,
         the `marker reference \
-<https://matplotlib.org/3.1.0/gallery/lines_bars_and_markers/marker_reference.html>`__,
+<https://matplotlib.org/stable/gallery/lines_bars_and_markers/marker_reference.html>`__,
         and the `custom dashes reference \
-<https://matplotlib.org/3.1.0/gallery/lines_bars_and_markers/line_demo_dash_control.html>`__.
+<https://matplotlib.org/stable/gallery/lines_bars_and_markers/line_demo_dash_control.html>`__.
 
     Other parameters
     ----------------
@@ -771,9 +771,8 @@ def Norm(norm, *args, **kwargs):
     """
     Return an arbitrary `~matplotlib.colors.Normalize` instance. Used to
     interpret the `norm` and `norm_kw` arguments when passed to any plotting
-    method wrapped by `~proplot.axes.apply_cmap`. See
-    `this tutorial \
-<https://matplotlib.org/tutorials/colors/colormapnorms.html>`__
+    method wrapped by `~proplot.axes.apply_cmap`. See `this tutorial \
+<https://matplotlib.org/stable/tutorials/colors/colormapnorms.html>`__
     for more info.
 
     Parameters

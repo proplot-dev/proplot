@@ -31,7 +31,7 @@
 # --------------
 #
 # `Tick locators\
-# <https://matplotlib.org/3.2.1/gallery/ticks_and_spines/tick-locators.html>`__
+# <https://matplotlib.org/stable/gallery/ticks_and_spines/tick-locators.html>`__
 # are used to automatically select sensible tick locations
 # based on the axis data limits. In ProPlot, you can change the tick locator
 # using the `~proplot.axes.Axes.format` keyword arguments `xlocator`,
@@ -126,7 +126,7 @@ axs[7].format(
 # -----------
 #
 # `Tick formatters\
-# <https://matplotlib.org/3.2.1/gallery/ticks_and_spines/tick-formatters.html>`__
+# <https://matplotlib.org/stable/gallery/ticks_and_spines/tick-formatters.html>`__
 # are used to convert floating point numbers to
 # nicely-formatted tick labels. In ProPlot, you can change the tick formatter
 # using the `~proplot.axes.Axes.format` keyword arguments `xformatter` and
@@ -493,7 +493,7 @@ for ax, scale, color in zip(axs[4:], ('sine', 'mercator'), ('coral', 'sky blue')
 # In the below examples, we generate dual axes with each of these three methods. Note
 # that the "parent" axis scale is now arbitrary -- in the first example shown below,
 # we create a `~proplot.axes.CartesianAxes.dualx` axis for an axis scaled by the
-# `symlog scale <https://matplotlib.org/3.1.0/gallery/scales/symlog_demo.html>`__.
+# `symlog scale <https://matplotlib.org/stable/gallery/scales/symlog_demo.html>`__.
 
 # %%
 import proplot as plot

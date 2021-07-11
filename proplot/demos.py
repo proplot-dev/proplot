@@ -244,10 +244,11 @@ def _draw_bars(
             cmapdict.pop(cat)
 
     # Draw figure
-    naxs = len(cmapdict) + sum(map(len, cmapdict.values()))
+    # Allocate two colorbar widths for each title of sections
+    naxs = 2 * len(cmapdict) + sum(map(len, cmapdict.values()))
     fig, axs = ui.subplots(
         nrows=naxs, refwidth=length, refheight=width,
-        share=0, hspace=0.03,
+        share=0, hspace='2pt', top='-1em',
     )
     iax = -1
     nheads = nbars = 0  # for deciding which axes to plot in
@@ -257,11 +258,10 @@ def _draw_bars(
             iax += 1
             if imap + nheads + nbars > naxs:
                 break
-            ax = axs[iax]
             if imap == 0:  # allocate this axes for title
-                iax += 1
-                ax.set_visible(False)
-                ax = axs[iax]
+                iax += 2
+                axs[iax - 2:iax].set_visible(False)
+            ax = axs[iax]
             cmap = database[name]
             if N is not None:
                 cmap = cmap.copy(N=N)
@@ -287,7 +287,7 @@ def show_channels(
     Show how arbitrary colormap(s) vary with respect to the hue, chroma,
     luminance, HSL saturation, and HPL saturation channels, and optionally
     the red, blue and green channels. Adapted from `this example \
-<https://matplotlib.org/3.1.0/tutorials/colors/colormaps.html#lightness-of-matplotlib-colormaps>`__.
+<https://matplotlib.org/stable/tutorials/colors/colormaps.html#lightness-of-matplotlib-colormaps>`__.
 
     Parameters
     ----------
@@ -328,8 +328,8 @@ def show_channels(
         array += [np.array([4, 4, 5, 5, 6, 6]) + 2 * int(saturation)]
         labels += ('Red', 'Green', 'Blue')
     fig, axs = ui.subplots(
-        array=array, span=False, share=1,
-        refwidth=refwidth, innerpad='1em',
+        array=array, refwidth=refwidth, wratios=(1.5, 1, 1, 1, 1, 1.5),
+        share=1, span=False, innerpad='1em',
     )
     # Iterate through colormaps
     mc = ms = mp = 0
@@ -665,7 +665,7 @@ def show_cmaps(*args, **kwargs):
     """
     Generate a table of the registered colormaps or the input colormaps
     categorized by source. Adapted from `this example \
-<http://matplotlib.org/examples/color/colormaps_reference.html>`__.
+<http://matplotlib.org/stable/gallery/color/colormap_reference.html>`__.
 
     Parameters
     ----------
@@ -712,7 +712,7 @@ def show_cycles(*args, **kwargs):
     """
     Generate a table of registered color cycles or the input color cycles
     categorized by source. Adapted from `this example \
-<http://matplotlib.org/examples/color/colormaps_reference.html>`__.
+<http://matplotlib.org/stable/gallery/color/colormap_reference.html>`__.
 
     Parameters
     ----------
@@ -762,14 +762,14 @@ def show_fonts(
         The font name(s). If none are provided and the `family` keyword
         argument was not provided, the *available* :rcraw:`font.sans-serif`
         fonts and the fonts in your ``.proplot/fonts`` folder are shown.
-    family : {'serif', 'sans-serif', 'monospace', 'cursive', 'fantasy', \
-'tex-gyre'}, optional
+    family \
+: {'serif', 'sans-serif', 'monospace', 'cursive', 'fantasy', 'tex-gyre'}, optional
         If provided, the *available* fonts in the corresponding families
         are shown. The fonts belonging to these families are listed under the
         :rcraw:`font.serif`, :rcraw:`font.sans-serif`, :rcraw:`font.monospace`,
-        :rcraw:`font.cursive`, and :rcraw:`font.fantasy` settings. The special
-        family ``'tex-gyre'`` draws the `TeX Gyre \
-<http://www.gust.org.pl/projects/e-foundry/tex-gyre>`__ fonts.
+        :rcraw:`font.cursive`, and :rcraw:`font.fantasy` settings. The
+        family ``'tex-gyre'`` draws the
+        `TeX Gyre <http://www.gust.org.pl/projects/e-foundry/tex-gyre>`__ fonts.
     text : str, optional
         The sample text. The default sample text includes the Latin letters,
         Greek letters, Arabic numerals, and some simple mathematical symbols.

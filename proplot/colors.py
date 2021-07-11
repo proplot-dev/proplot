@@ -22,13 +22,6 @@ from .internals import ic  # noqa: F401
 from .internals import _not_none, docstring, warnings
 from .utils import to_rgb, to_rgba, to_xyz, to_xyza
 
-if hasattr(mcm, '_cmap_registry'):
-    _cmap_database_attr = '_cmap_registry'
-else:
-    _cmap_database_attr = 'cmap_d'
-_cmap_database = getattr(mcm, _cmap_database_attr)
-
-
 __all__ = [
     'ListedColormap',
     'LinearSegmentedColormap',
@@ -1620,8 +1613,7 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         ----------
         name : str
             The name of the new colormap. Default is ``self.name + '_copy'``.
-        segmentdata, N, alpha, clip, cyclic, gamma, gamma1, gamma2, space : \
-optional
+        segmentdata, N, alpha, clip, cyclic, gamma, gamma1, gamma2, space : optional
             See `PerceptuallyUniformColormap`. If not provided,
             these are copied from the current colormap.
         """
@@ -2374,9 +2366,21 @@ class _ColorCache(dict):
 
 def _get_cmap(name=None, lut=None):
     """
-    Monkey patch for matplotlib `~matplotlib.get_cmap`. Permits case-insensitive
-    search of monkey-patched colormap database (which was broken in v3.2.0).
+    Return the registered colormap instance.
+
+    Parameters
+    ----------
+    name : `matplotlib.colors.Colormap` or str or None, optional
+        If a `~matplotlib.colors.Colormap` instance, it will be returned. Otherwise,
+        the name of the registered colormap will be looked up and resampled by `lut`.
+        If ``None``, the default colormap :rc:`image.cmap` is returned.
+    lut : int or None, optional
+        If `name` is not already a `~matplotlib.colors.Colormap` instance
+        and `lut` is not None, the colormap will be resampled to have `lut`
+        entries in the lookup table.
     """
+    # Monkey patch for matplotlib `~matplotlib.get_cmap`. Permits case-insensitive
+    # search of monkey-patched colormap database (which was broken in v3.2.0).
     if name is None:
         name = rcParams['image.cmap']
     if isinstance(name, mcolors.Colormap):
@@ -2565,12 +2569,16 @@ if not isinstance(mcolors._colors_full_map, ColorDatabase):
     mcolors.colorConverter.colors = _map
 
 # Replace colormap database with custom database
+# WARNING: Skip over the matplotlib native duplicate entries with
+# suffixes '_r' and '_shifted'.
+_cmap_database_attr = '_cmap_registry' if hasattr(mcm, '_cmap_registry') else 'cmap_d'
+_cmap_database = getattr(mcm, _cmap_database_attr)
 if mcm.get_cmap is not _get_cmap:
     mcm.get_cmap = _get_cmap
 if not isinstance(_cmap_database, ColormapDatabase):
     _cmap_database = {
         key: value for key, value in _cmap_database.items()
-        if key[-2:] != '_r' and key[-2:] != '_s'
+        if key[-2:] != '_r' and key[-8:] != '_shifted'
     }
     _cmap_database = ColormapDatabase(_cmap_database)
     setattr(mcm, _cmap_database_attr, _cmap_database)

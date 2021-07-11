@@ -112,8 +112,16 @@ h5{
 h6{
   font-size: 100%;
 }
+.rst-content dl:not(.docutils) dt,
+.rst-content dl:not(.docutils) .field-list>dt {
+  font-size: 100%; /* default is 90% */
+}
 .wy-menu-vertical header, .wy-menu-vertical p.caption {
-  font-size: 90%;  /* default is 85% */
+  font-size: 100%;  /* default is 85% */
+  padding: 0 1.4em;  /* fix alignment */
+}
+.wy-menu-vertical a {
+  padding: 0.4em 1.6em  /* mostly unchanged */
 }
 
 /* RST content background color */
@@ -298,8 +306,8 @@ code,
 
 /* Parameters and Returns header colors */
 .rst-content dl:not(.docutils) .field-list>dt {
-  font-weight: bold;
   color: var(--main-color);
+  font-weight: bold;
   background: var(--block-bg-color);
   border-left-color: var(--accent-bg-color);
   /* padding: 0; */ /* remove accents, decided against this */

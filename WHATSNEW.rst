@@ -112,8 +112,8 @@ ProPlot v0.7.0 (2021-07-##)
 * When using ``medians=True`` or ``means=True`` with `indicate_error` plot simple
   error bars by default instead of bars and "boxes" (:commit:`4e30f415`). Only plot
   "boxes" with central "markers" by default for violin plots (:commit:`13b45ccd`).
-* `legend_wrapper` no longer returns the background patch generated for centered-row
-  legends (:pr:`254`). This is consistent with `colorbar_wrapper` not returning
+* `legend_extras` no longer returns the background patch generated for centered-row
+  legends (:pr:`254`). This is consistent with `colorbar_extras` not returning
   background patches generated for inset colorbars. Until proplot adds new subclasses,
   it makes more sense if these functions only return `~matplotlib.legend.Legend` and
   `~matplotlib.colorbar.Colorbar` instances.
@@ -129,8 +129,16 @@ ProPlot v0.7.0 (2021-07-##)
 * Add `wequal`, `hequal`, and `equal` options to still use automatic spacing but force
   the tight layout algorithm to make spacings equal (:pr:`215`, :issue:`64`)
   by `Zachary Moon`_.
-* Add baseline support for "3D" `~matplotlib.mpl_toolkits.mplot3d.Axes3D` axes
+* Add minimal support for "3D" `~matplotlib.mpl_toolkits.mplot3d.Axes3D` axes
   (:issue:`249`). Example usage: ``fig.subplots(proj='3d')``.
+* Add `~proplot.axes.Axes.plotx` and `~proplot.axes.Axes.scatterx` commands that
+  interpret plotting args as ``(y, x)`` rather than ``(x, y)``, analogous to
+  `~proplot.axes.Axes.areax` (:commit:`###`).
+* Add support for `~proplot.axes.indicate_error` *horizontal* error bars and
+  shading for line and scatter plots (:commit:`###`).
+* Add support for ``ax.plot_command('x_key', 'y_key', data=dataset)`` for
+  virtually all plotting commands using `standardize_1d` and `standardize_2d`
+  (:commit:`###`). This was an existing `~matplotlib.axes.Axes.plot` feature.
 * Allow updating axes fonts that use scalings like ``'small'`` and ``'large'``
   by passing ``fontsize=N`` to `format` (:issue:`212`).
 * Interpret fontsize-relative legend rc params like ``legend.borderpad``
@@ -184,6 +192,9 @@ ProPlot v0.7.0 (2021-07-##)
   ``'a'`` or ``'A'`` in string, and only replace that one (:issue:`201`).
 * Allow passing e.g. ``barstds=3`` or ``barpctiles=90`` to request error bars
   denoting +/-3 standard deviations and 5-95 percentile range (:commit:`4e30f415`).
+* Add singular `indicate_error` keywords `barstd`, `barpctile`, etc. as
+  alternatives to `barstds`, `barpctiles`, etc. (:commit:`81151a58`).
+  Also prefer them in the documentation.
 * Allow passing ``means=True`` to `boxplot` to toggle mean line
   (:commit:`4e30f415`).
 * Allow setting the mean and median boxplot linestyle with

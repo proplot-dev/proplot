@@ -563,13 +563,13 @@ class CartesianAxes(base.Axes):
         xscale_kw, yscale_kw : dict-like, optional
             The *x* and *y* axis scale settings. Passed to
             `~proplot.scale.Scale`.
-        xspineloc, yspineloc : {'both', 'bottom', 'top', 'left', 'right', \
-'neither', 'center', 'zero'}, optional
+        xspineloc, yspineloc \
+: {'both', 'bottom', 'top', 'left', 'right', 'neither', 'center', 'zero'}, optional
             The *x* and *y* axis spine locations.
         xloc, yloc : optional
             Aliases for `xspineloc`, `yspineloc`.
-        xtickloc, ytickloc : {'both', 'bottom', 'top', 'left', 'right', \
-'neither'}, optional
+        xtickloc, ytickloc \
+: {'both', 'bottom', 'top', 'left', 'right', 'neither'}, optional
             Which *x* and *y* axis spines should have major and minor tick
             marks.
         xtickminor, ytickminor : bool, optional

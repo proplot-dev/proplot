@@ -115,7 +115,7 @@ for ax, side in zip(axs, 'tlbr'):
 # ----------
 #
 # `Inset axes\
-# <https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/zoom_inset_axes.html>`__
+# <https://matplotlib.org/stable/gallery/subplots_axes_and_figures/zoom_inset_axes.html>`__
 # can be generated with the `~proplot.axes.Axes.inset` or
 # `~proplot.axes.Axes.inset_axes` command. By default, inset axes
 # have the same projection as the parent axes, but you can also request

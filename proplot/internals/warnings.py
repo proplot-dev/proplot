@@ -40,14 +40,12 @@ def _deprecate_getter_setter(version, property):
             f'{type(self).__name__}.{property} instead.'
         )
         return getattr(self, '_' + property)
-
-    def setter(self, value):
+    def setter(self, value):  # noqa: E306
         _warn_proplot(
             f'set_{property}() was deprecated in {version}. The property is '
             f'now read-only.'
         )
         return
-
     getter.__name__ = f'get_{property}'
     setter.__name__ = f'set_{property}'
 
@@ -61,7 +59,6 @@ def _rename_objs(version, **kwargs):
     """
     wrappers = []
     for old_name, func_or_class in kwargs.items():
-
         def wrapper(*args, old_name=old_name, func_or_class=func_or_class, **kwargs):
             new_name = func_or_class.__name__
             _warn_proplot(
@@ -69,10 +66,8 @@ def _rename_objs(version, **kwargs):
                 f'removed in the next major release. Please use {new_name!r} instead.'
             )
             return func_or_class(*args, **kwargs)
-
         wrapper.__name__ = old_name
         wrappers.append(wrapper)
-
     if len(wrappers) == 1:
         return wrappers[0]
     else:

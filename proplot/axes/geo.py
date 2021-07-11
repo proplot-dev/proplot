@@ -308,8 +308,8 @@ class GeoAxes(base.Axes):
         longridminor, latgridminor : bool, optional
             Whether to draw "minor" longitude and latitude lines.
             Default is :rc:`gridminor`. Use `gridminor` to toggle both.
-        lonlocator, latlocator : str, float, list of float, or \
-`~matplotlib.ticker.Locator`, optional
+        lonlocator, latlocator \
+: str, float, list of float, or `~matplotlib.ticker.Locator`, optional
             Used to determine the longitude and latitude gridline locations.
             Passed to the `~proplot.constructor.Locator` constructor. Can be
             string, float, list of float, or `matplotlib.ticker.Locator` instance.
@@ -330,8 +330,8 @@ class GeoAxes(base.Axes):
         lonminorlocator, latminorlocator, lonminorlines, latminorlines : optional
             As with `lonlocator` and `latlocator` but for the "minor" gridlines.
             The defaults are :rc:`grid.lonminorstep` and :rc:`grid.latminorstep`.
-        lonminorlocator_kw, latminorlocator_kw, lonminorlines_kw, latminorlines_kw : \
-optional
+        lonminorlocator_kw, latminorlocator_kw, lonminorlines_kw, latminorlines_kw \
+: optional
             As with `lonlocator_kw` and `latlocator_kw` but for the "minor" gridlines.
         latmax : float, optional
             The maximum absolute latitude for longitude and latitude gridlines.
@@ -399,8 +399,7 @@ optional
             *For cartopy axes only.*
             The number of interpolation steps used to draw gridlines.
             Default is :rc:`grid.nsteps`.
-        land, ocean, coast, rivers, lakes, borders, innerborders : bool, \
-optional
+        land, ocean, coast, rivers, lakes, borders, innerborders : bool, optional
             Toggles various geographic features. These are actually the
             :rcraw:`land`, :rcraw:`ocean`, :rcraw:`coast`, :rcraw:`rivers`,
             :rcraw:`lakes`, :rcraw:`borders`, and :rcraw:`innerborders`
@@ -1185,16 +1184,16 @@ class CartopyAxes(GeoAxes, GeoAxesBase):
         plot = wrap._apply_wrappers(
             GeoAxesBase.plot,
             wrap.default_transform,
-            wrap._plot_extras,
             wrap.standardize_1d,
+            wrap._plot_extras,
             wrap.indicate_error,
             wrap.apply_cycle,
         )
         scatter = wrap._apply_wrappers(
             GeoAxesBase.scatter,
             wrap.default_transform,
-            wrap.scatter_extras,
             wrap.standardize_1d,
+            wrap.scatter_extras,
             wrap.indicate_error,
             wrap.apply_cycle,
         )
@@ -1558,8 +1557,8 @@ class BasemapAxes(GeoAxes):
         maxes.Axes.plot,
         wrap._basemap_norecurse,
         wrap.default_latlon,
-        wrap._plot_extras,
         wrap.standardize_1d,
+        wrap._plot_extras,
         wrap.indicate_error,
         wrap.apply_cycle,
         wrap._basemap_redirect,
@@ -1568,8 +1567,8 @@ class BasemapAxes(GeoAxes):
         maxes.Axes.scatter,
         wrap._basemap_norecurse,
         wrap.default_latlon,
-        wrap.scatter_extras,
         wrap.standardize_1d,
+        wrap.scatter_extras,
         wrap.indicate_error,
         wrap.apply_cycle,
         wrap._basemap_redirect,

@@ -63,7 +63,7 @@
 #      `nrows` arguments), the arguments `refaspect`, `refwidth`, and `refheight`
 #      apply to every subplot in the figure -- not just the reference subplot.
 #    * When the reference subplot `aspect ratio\
-#      <https://matplotlib.org/2.0.2/examples/pylab_examples/equal_aspect_ratio.html>`__
+#      <https://matplotlib.org/stable/examples/pylab_examples/equal_aspect_ratio.html>`__
 #      has been fixed (e.g., using ``ax.set_aspect(1)``) or is set to ``'equal'``
 #      (as with :ref:`geographic projections <ug_geo>` and
 #      `~matplotlib.axes.Axes.imshow` images), the fixed aspect ratio is used
@@ -157,7 +157,7 @@ for ref in (1, 2):
 # subplot rows and columns and the figure edge to accommodate labels.
 # It can be disabled by passing ``tight=False`` to `~proplot.ui.subplots`.
 # While matplotlib has `its own tight layout algorithm
-# <https://matplotlib.org/3.1.1/tutorials/intermediate/tight_layout_guide.html>`__,
+# <https://matplotlib.org/stable/tutorials/intermediate/tight_layout_guide.html>`__,
 # ProPlot's algorithm may change the figure size to accommodate the correct spacing
 # and permits variable spacing between subsequent subplot rows and columns (see the
 # new `~proplot.gridspec.GridSpec` class for details).

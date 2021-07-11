@@ -26,7 +26,7 @@
 # instances so that they can be `used with categorical data\
 # <https://journals.ametsoc.org/view-large/figure/9538246/bams-d-13-00155_1-f5.tif>`__.
 # Much more commonly, we build `property cycles\
-# <https://matplotlib.org/3.1.0/tutorials/intermediate/color_cycle.html>`__
+# <https://matplotlib.org/stable/tutorials/intermediate/color_cycle.html>`__
 # from the `~proplot.colors.ListedColormap` colors using the
 # `~proplot.constructor.Cycle` constructor function or by
 # :ref:`drawing samples <ug_cycles_new>` from continuous colormaps.

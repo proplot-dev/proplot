@@ -98,7 +98,7 @@ The .proplotrc file
 
 When you install ProPlot for the first time, a ``.proplotrc`` file is generated
 and placed in your home directory. This is just like the `matplotlibrc file\
-<https://matplotlib.org/3.1.1/tutorials/introductory/customizing.html#customizing-with-matplotlibrc-files>`__,
+<https://matplotlib.org/stable/tutorials/introductory/customizing.html#customizing-with-matplotlibrc-files>`__,
 but for changing both ProPlot *and* matplotlib settings. The syntax is basically
 the same as the ``matplotlibrc`` syntax.
 

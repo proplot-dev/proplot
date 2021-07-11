@@ -206,15 +206,15 @@ class Figure(mfigure.Figure):
             your figure will have 1 ylabel instead of 9.
         alignx, aligny, align : bool or {0, 1}, optional
             Whether to `align axis labels \
-<https://matplotlib.org/3.1.1/gallery/subplots_axes_and_figures/align_labels_demo.html>`__
+<https://matplotlib.org/stable/gallery/subplots_axes_and_figures/align_labels_demo.html>`__
             for the *x* axis, *y* axis, or both axes. Only has an effect when `spanx`,
             `spany`, or `span` are ``False``. Default is :rc:`subplots.align`.
         mathtext_fallback : bool or str, optional
             Figure-specific application of the :rc:`mathtext.fallback` property.
             If ``True`` or string, unavailable glyphs are replaced with a glyph from a
             fallback font (Computer Modern by default). Otherwise, they are replaced
-            with the "¤" dummy character. See `mathtext \
-<https://matplotlib.org/3.1.1/tutorials/text/mathtext.html#custom-fonts>`__
+            with the "¤" dummy character. See this `mathtext tutorial \
+<https://matplotlib.org/stable/tutorials/text/mathtext.html#custom-fonts>`__
             for details.
         gridspec_kw, subplots_kw, subplots_orig_kw
             Keywords used for initializing the main gridspec, for initializing
