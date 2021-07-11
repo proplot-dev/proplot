@@ -167,6 +167,15 @@ values : int or list of float, optional
     `locator` is used to generate this many level centers at "nice" intervals.
     If the latter, levels are inferred using `~proplot.utils.edges`.
     This will override any `levels` input.
+discrete : bool, optional
+    If ``False``, the `~proplot.colors.DiscreteNorm` is not applied to the
+    colormap when ``levels=N`` or ``levels=array_of_values``  are not
+    explicitly requested. Instead, the number of levels in the colormap will be
+    roughly controlled by :rcraw:`image.lut`. This has a similar effect
+    to using `levels=large_number` but it may improve rendering speed.
+    By default, this is ``False`` only for `~matplotlib.axes.Axes.imshow`,
+    `~matplotlib.axes.Axes.matshow`, `~matplotlib.axes.Axes.spy`,
+    `~matplotlib.axes.Axes.hexbin`, and `~matplotlib.axes.Axes.hist2d` plots.
 """
 
 docstring.snippets['axes.vmin_vmax'] = """
@@ -1811,7 +1820,8 @@ def _apply_scatter(
     vmin=None, vmax=None, smin=None, smax=None,
     cmap=None, cmap_kw=None, norm=None, norm_kw=None,
     extend='neither', levels=None, N=None, values=None,
-    symmetric=False, locator=None, locator_kw=None,
+    locator=None, locator_kw=None, discrete=None,
+    symmetric=False, positive=False, negative=False, nozero=False,
     **kwargs
 ):
     """
@@ -1840,16 +1850,23 @@ def _apply_scatter(
     # Get normalizer and levels
     ticks = None
     carray = np.atleast_1d(c)
+    discrete = _not_none(
+        getattr(self, '_discrete_norm', None),
+        discrete,
+        rc['image.discrete'],
+        True
+    )
     if (
-        np.issubdtype(carray.dtype, np.number)
+        discrete and np.issubdtype(carray.dtype, np.number)
         and not (carray.ndim == 2 and carray.shape[1] in (3, 4))
     ):
         carray = carray.ravel()
         norm, cmap, _, ticks = _build_discrete_norm(
             carray,  # sample data for getting suitable levels
-            levels=levels, N=N, values=values,
-            cmap=cmap, norm=norm, norm_kw=norm_kw, vmin=vmin, vmax=vmax, extend=extend,
-            symmetric=symmetric, locator=locator, locator_kw=locator_kw,
+            cmap=cmap, norm=norm, norm_kw=norm_kw, extend=extend,
+            levels=levels, N=N, values=values, vmin=vmin, vmax=vmax,
+            locator=locator, locator_kw=locator_kw,
+            symmetric=symmetric, positive=positive, negative=negative, nozero=nozero,
         )
 
     # Fix 2D arguments but still support scatter(x_vector, y_2d) usage
@@ -2848,84 +2865,87 @@ def _auto_levels_locator(
     locator : ndarray or `matplotlib.ticker.Locator`
         The locator used for colorbar tick locations.
     """
-    if np.iterable(N):
-        return N, N
-    if N is None:
-        N = 11
     norm_kw = norm_kw or {}
     locator_kw = locator_kw or {}
-    norm = constructor.Norm(norm or 'linear', **norm_kw)
-    if positive and negative:
-        raise ValueError('Incompatible options: positive=True and negative=True.')
-    if locator is not None:
-        level_locator = tick_locator = constructor.Locator(locator, **locator_kw)
-    elif isinstance(norm, mcolors.LogNorm):
-        level_locator = tick_locator = mticker.LogLocator(**locator_kw)
-    elif isinstance(norm, mcolors.SymLogNorm):
-        locator_kw.setdefault('base', _getattr_flexible(norm, 'base', 10))
-        locator_kw.setdefault('linthresh', _getattr_flexible(norm, 'linthresh', 1))
-        level_locator = tick_locator = mticker.SymmetricalLogLocator(**locator_kw)
+    if N is None:
+        N = 11
+    if np.iterable(N):
+        # Included so we can use this to apply positive, negative, nozero
+        tick_locator = N
     else:
-        nbins = N * 2 if positive or negative else N
-        locator_kw.setdefault('symmetric', symmetric or positive or negative)
-        level_locator = mticker.MaxNLocator(nbins, min_n_ticks=1, **locator_kw)
-        tick_locator = None
+        # Get default locator based on input norm
+        norm = constructor.Norm(norm or 'linear', **norm_kw)
+        if positive and negative:
+            raise ValueError('Incompatible options: positive=True and negative=True.')
+        if locator is not None:
+            level_locator = tick_locator = constructor.Locator(locator, **locator_kw)
+        elif isinstance(norm, mcolors.LogNorm):
+            level_locator = tick_locator = mticker.LogLocator(**locator_kw)
+        elif isinstance(norm, mcolors.SymLogNorm):
+            locator_kw.setdefault('base', _getattr_flexible(norm, 'base', 10))
+            locator_kw.setdefault('linthresh', _getattr_flexible(norm, 'linthresh', 1))
+            level_locator = tick_locator = mticker.SymmetricalLogLocator(**locator_kw)
+        else:
+            nbins = N * 2 if positive or negative else N
+            locator_kw.setdefault('symmetric', symmetric or positive or negative)
+            level_locator = mticker.MaxNLocator(nbins, min_n_ticks=1, **locator_kw)
+            tick_locator = None
 
-    # Get locations
-    automin = vmin is None
-    automax = vmax is None
-    if automin or automax:
-        vmins = []
-        vmaxs = []
-        for data in args:
-            data = ma.masked_invalid(data, copy=False)
-            if automin:
-                vmin = float(data.min())
-            if automax:
-                vmax = float(data.max())
-            if vmin == vmax or ma.is_masked(vmin) or ma.is_masked(vmax):
-                vmin, vmax = 0, 1
-            vmins.append(vmin)
-            vmaxs.append(vmax)
-        vmin = min(vmins)
-        vmax = max(vmaxs)
-    try:
-        levels = level_locator.tick_values(vmin, vmax)
-    except RuntimeError:  # too-many-ticks error
-        levels = np.linspace(vmin, vmax, N)  # TODO: _autolev used N+1
+        # Get level locations
+        automin = vmin is None
+        automax = vmax is None
+        if automin or automax:
+            vmins = []
+            vmaxs = []
+            for data in args:
+                data = ma.masked_invalid(data, copy=False)
+                if automin:
+                    vmin = float(data.min())
+                if automax:
+                    vmax = float(data.max())
+                if vmin == vmax or ma.is_masked(vmin) or ma.is_masked(vmax):
+                    vmin, vmax = 0, 1
+                vmins.append(vmin)
+                vmaxs.append(vmax)
+            vmin = min(vmins)
+            vmax = max(vmaxs)
+        try:
+            levels = level_locator.tick_values(vmin, vmax)
+        except RuntimeError:  # too-many-ticks error
+            levels = np.linspace(vmin, vmax, N)  # TODO: _autolev used N+1
 
-    # Trim excess levels the locator may have supplied
-    # NOTE: This part is mostly copied from matplotlib _autolev
-    if not locator_kw.get('symmetric', None):
-        i0, i1 = 0, len(levels)  # defaults
-        under, = np.where(levels < vmin)
-        if len(under):
-            i0 = under[-1]
-            if not automin or extend in ('min', 'both'):
-                i0 += 1  # permit out-of-bounds data
-        over, = np.where(levels > vmax)
-        if len(over):
-            i1 = over[0] + 1 if len(over) else len(levels)
-            if not automax or extend in ('max', 'both'):
-                i1 -= 1  # permit out-of-bounds data
-        if i1 - i0 < 3:
-            i0, i1 = 0, len(levels)  # revert
-        levels = levels[i0:i1]
+        # Trim excess levels the locator may have supplied
+        # NOTE: This part is mostly copied from matplotlib _autolev
+        if not locator_kw.get('symmetric', None):
+            i0, i1 = 0, len(levels)  # defaults
+            under, = np.where(levels < vmin)
+            if len(under):
+                i0 = under[-1]
+                if not automin or extend in ('min', 'both'):
+                    i0 += 1  # permit out-of-bounds data
+            over, = np.where(levels > vmax)
+            if len(over):
+                i1 = over[0] + 1 if len(over) else len(levels)
+                if not automax or extend in ('max', 'both'):
+                    i1 -= 1  # permit out-of-bounds data
+            if i1 - i0 < 3:
+                i0, i1 = 0, len(levels)  # revert
+            levels = levels[i0:i1]
 
-    # Compare the no. of levels we *got* (levels) to what we *wanted* (N)
-    # If we wanted more than 2 times the result, then add nn - 1 extra
-    # levels in-between the returned levels *in normalized space*.
-    # Example: A LogNorm gives too few levels, so we select extra levels
-    # here, but use the locator for determining tick locations.
-    nn = N // len(levels)
-    if nn >= 2:
-        olevels = norm(levels)
-        nlevels = []
-        for i in range(len(levels) - 1):
-            l1, l2 = olevels[i], olevels[i + 1]
-            nlevels.extend(np.linspace(l1, l2, nn + 1)[:-1])
-        nlevels.append(olevels[-1])
-        levels = norm.inverse(nlevels)
+        # Compare the no. of levels we *got* (levels) to what we *wanted* (N)
+        # If we wanted more than 2 times the result, then add nn - 1 extra
+        # levels in-between the returned levels *in normalized space*.
+        # Example: A LogNorm gives too few levels, so we select extra levels
+        # here, but use the locator for determining tick locations.
+        nn = N // len(levels)
+        if nn >= 2:
+            olevels = norm(levels)
+            nlevels = []
+            for i in range(len(levels) - 1):
+                l1, l2 = olevels[i], olevels[i + 1]
+                nlevels.extend(np.linspace(l1, l2, nn + 1)[:-1])
+            nlevels.append(olevels[-1])
+            levels = norm.inverse(nlevels)
 
     # Filter the remaining contours
     if nozero and 0 in levels:
@@ -2936,8 +2956,7 @@ def _auto_levels_locator(
         levels = levels[levels <= 0]
 
     # Use auto-generated levels for ticks if still None
-    locator = tick_locator or levels
-    return levels, locator
+    return levels, tick_locator or levels
 
 
 def _build_discrete_norm(
@@ -3229,15 +3248,6 @@ def apply_cmap(
     %(axes.levels_values)s
     %(axes.vmin_vmax)s
     %(axes.auto_levels)s
-    discrete : bool, optional
-        If ``False``, the `~proplot.colors.DiscreteNorm` is not applied to the
-        colormap when ``levels=N`` or ``levels=array_of_values``  are not
-        explicitly requested. Instead, the number of levels in the colormap will be
-        roughly controlled by :rcraw:`image.lut`. This has a similar effect
-        to using `levels=large_number` but it may improve rendering speed.
-        By default, this is ``False`` only for `~matplotlib.axes.Axes.imshow`,
-        `~matplotlib.axes.Axes.matshow`, `~matplotlib.axes.Axes.spy`,
-        `~matplotlib.axes.Axes.hexbin`, and `~matplotlib.axes.Axes.hist2d` plots.
     edgefix : bool, optional
         Whether to fix the the `white-lines-between-filled-contours \
 <https://stackoverflow.com/q/8263769/4970632>`__
@@ -3309,13 +3319,12 @@ def apply_cmap(
     hist2d = name in ('hist2d',)
     imshow = name in ('imshow', 'matshow', 'spy')
     parametric = name in ('parametric',)
-    if getattr(self, '_no_discrete_norm', None):
-        discrete = False
-    else:
-        discrete = _not_none(discrete, rc['image.discrete'])
-    if discrete is None:
-        discrete = not (hexbin or hist2d or imshow)
-    sample = args[-1]  # used for labels
+    discrete = _not_none(
+        getattr(self, '_discrete_norm', None),
+        discrete,
+        rc['image.discrete'],
+        not hexbin and not hist2d and not imshow
+    )
 
     # Parse keyword args
     # NOTE: For now when drawing contour or contourf plots with no colormap,
@@ -3378,9 +3387,7 @@ def apply_cmap(
     # to customize the "edges".
     styles = STYLE_ARGS_TRANSLATE.get(name, None)
     for idx, (key, value) in enumerate((
-        ('colors', colors),
-        ('linewidths', linewidths),
-        ('linestyles', linestyles)
+        ('colors', colors), ('linewidths', linewidths), ('linestyles', linestyles)
     )):
         if value is None or add_contours:
             continue
@@ -3389,47 +3396,54 @@ def apply_cmap(
         edgefix = False  # disable edgefix when specifying borders!
         kwargs[styles[idx]] = value
 
-    # Build colormap normalizer and update keyword args
+    # Build colormap normalizer
+    # NOTE: Try to get reasonable *count* levels for hexbin/hist2d, but in general have
+    # no way to select nice ones a priori which is why discrete is disabled by default
     # NOTE: Standard algorithm for obtaining default levels does not work
-    # for hexbin, because it colors *counts*, not data values!
+    # for histogram plots, because they colors *counts*, not data values!
     ticks = None
-    if not use_cmap and not np.iterable(levels):
+    sample = args[-1]
+    if hist2d or hexbin:
+        sample = np.array([0, sample.size])
+    if levels is None:
+        if norm is not None:
+            norm = constructor.Norm(norm, **norm_kw)
+    elif not use_cmap:
         levels, _ = _auto_levels_locator(
             sample, N=levels,
             norm=norm, norm_kw=norm_kw, locator=locator, locator_kw=locator_kw,
-            vmin=vmin, vmax=vmax, extend=extend, symmetric=symmetric,
+            vmin=vmin, vmax=vmax, extend=extend, nozero=nozero,
+            symmetric=symmetric, positive=positive, negative=negative,
         )
-    if use_cmap and levels is not None:
+    elif levels is not None:
         norm, cmap, levels, ticks = _build_discrete_norm(
-            sample, levels=levels, values=values,
-            cmap=cmap, norm=norm, norm_kw=norm_kw, vmin=vmin, vmax=vmax, extend=extend,
-            symmetric=symmetric, positive=positive, negative=negative, nozero=nozero,
-            locator=locator, locator_kw=locator_kw,
-            minlength=(2 - int(contour)),  # allow single contours
+            sample, cmap=cmap, norm=norm, norm_kw=norm_kw, extend=extend,
+            levels=levels, values=values, vmin=vmin, vmax=vmax, nozero=nozero,
+            symmetric=symmetric, positive=positive, negative=negative,
+            locator=locator, locator_kw=locator_kw, minlength=(2 - int(contour)),
         )
-    if nozero and np.iterable(levels) and 0 in levels:
-        levels = _to_ndarray(levels)
-        levels = levels[levels != 0]
+
+    # Call function with correct keyword args
     if cmap is not None:
         kwargs['cmap'] = cmap
     if norm is not None:
         kwargs['norm'] = norm
+    if parametric:
+        kwargs['values'] = values
     if levels is None:  # i.e. no DiscreteNorm was used
         kwargs['vmin'] = vmin
         kwargs['vmax'] = vmax
     if contour or contourf:
         kwargs['levels'] = levels
         kwargs['extend'] = extend
-    if parametric:
-        kwargs['values'] = values
-
-    # Call function and possibly add solid contours between filled ones or
-    # fix common "white lines" issues with vector graphic output
-    with _state_context(self, _no_discrete_norm=True):
+    with _state_context(self, _discrete_norm=False):
         obj = method(self, *args, **kwargs)
     if not isinstance(obj, tuple):  # hist2d
         obj._colorbar_extend = extend  # used by proplot colorbar
         obj._colorbar_ticks = ticks  # used by proplot colorbar
+
+    # Possibly add solid contours between filled ones or fix common "white lines"
+    # issues with vector graphic output
     if add_contours:
         colors = _not_none(colors, 'k')
         self.contour(
@@ -3554,11 +3568,11 @@ def _generate_mappable(
             f'objects or colors.'
         )
     norm, *_ = _build_discrete_norm(
-        values=values,
         cmap=cmap,
         norm=norm,
         norm_kw=norm_kw,
         extend='neither',
+        values=values,
     )
     mappable = mcm.ScalarMappable(norm, cmap)
 
@@ -3836,7 +3850,7 @@ def colorbar_extras(
         mappable.extend = extend  # required in mpl >= 3.3, else optional
     else:
         kwargs['extend'] = extend
-    with _state_context(self, _no_discrete_norm=True):
+    with _state_context(self, _discrete_norm=False):
         cb = self.figure.colorbar(mappable, **kwargs)
     axis = self.xaxis if orientation == 'horizontal' else self.yaxis
 
