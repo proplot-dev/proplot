@@ -156,11 +156,11 @@ axs.format(toplabels=('Automatic subplot formatting',))
 
 # Plot DataArray
 cmap = pplt.Colormap('PuBu', left=0.05)
-axs[0].contourf(da, cmap=cmap, colorbar='l', linewidth=0.7, color='k')
+axs[0].contourf(da, cmap=cmap, colorbar='l', lw=0.7, ec='k')
 axs[0].format(yreverse=True)
 
 # Plot DataFrame
-axs[1].contourf(df, cmap='YlOrRd', colorbar='r', linewidth=0.7, color='k')
+axs[1].contourf(df, cmap='YlOrRd', colorbar='r', lw=0.7, ec='k')
 axs[1].format(xtickminor=False, yreverse=True)
 
 
@@ -333,7 +333,7 @@ import numpy as np
 
 # Sample data
 state = np.random.RandomState(51423)
-data = 10**(2 * state.rand(20, 20).cumsum(axis=0) / 7)
+data = 11 ** (2 * state.rand(20, 20).cumsum(axis=0) / 7)
 
 # Linear segmented norm
 fig, axs = pplt.subplots(ncols=2, refwidth=2.4)

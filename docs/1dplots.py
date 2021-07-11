@@ -524,7 +524,7 @@ for name, array in zip(('horizontal', 'vertical'), (array_horizontal, array_vert
         array, refaspect=1.5, refwidth=4,
         share=0, hratios=(2, 1, 1)
     )
-    axs.format(abc=True, suptitle=f'Indicating {name} error bounds')
+    axs.format(abc=True, abcstyle='A.', suptitle=f'Indicating {name} error bounds')
 
     # Medians and percentile ranges
     ax = axs[0]
@@ -625,7 +625,7 @@ for ax, which, color in zip(axs, 'lr', ('blue9', 'orange9')):
     side = ax.panel(which, space=0)
     side.hist(y, bins, color=color, vert=False)  # or orientation='horizontal'
     side.format(grid=False, xlocator=[], xreverse=(which == 'l'))
-    top = ax.panel('t', space='2em')
+    top = ax.panel('t', space=0)
     top.hist(x, bins, color=color)
     top.format(grid=False, ylocator=[])
 
@@ -674,7 +674,7 @@ ax.format(title='Box plots')
 # Violin plots
 ax = axs[1]
 obj2 = ax.violinplot(
-    data1, fillcolor='gray7', points=500, means=True,
+    data1, fillcolor='gray7', means=True, points=100,
 )
 ax.format(title='Violin plots')
 

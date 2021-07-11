@@ -252,7 +252,7 @@ axs.format(
     suptitle='Format command demo',
     abc=True, abcloc='ul', abcstyle='A.',
     title='Main', ltitle='Left', rtitle='Right',  # different titles
-    urtitle='Title A', lltitle='Title B', lrtitle='Title C',  # extra titles
+    ultitle='Title 1', urtitle='Title 2', lltitle='Title 3', lrtitle='Title 4',
     toplabels=('Column 1', 'Column 2'),
     leftlabels=('Row 1', 'Row 2'),
     xlabel='x-axis', ylabel='y-axis',

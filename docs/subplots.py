@@ -110,7 +110,7 @@ for refwidth in ('4cm', '6cm'):
     )
 
 # Change the reference subplot aspect ratio
-for refaspect in (1, (3, 2)):
+for refaspect in (1, 1.5):
     fig, axs = pplt.subplots(ncols=2, nrows=2, refwidth=1.6, refaspect=refaspect)
     axs[0].format(
         suptitle='Effect of subplot aspect ratio on figure size',
@@ -337,16 +337,6 @@ for mode in (0, 1):
 
 # %%
 import proplot as pplt
-fig, axs = pplt.subplots(nrows=8, ncols=8, refwidth=0.7, space=0)
-axs.format(
-    abc=True, abcloc='ur',
-    xlabel='x axis', ylabel='y axis', xticks=[], yticks=[],
-    suptitle='Subplot labels demo'
-)
-
-
-# %%
-import proplot as pplt
 fig, axs = pplt.subplots(ncols=3, nrows=3, space=0, refwidth='10em')
 axs.format(
     abc=True, abcloc='ul', abcstyle='A.',
@@ -357,6 +347,16 @@ axs.format(
 axs[:3].format(abcloc='l', titleloc='l', title='Title')
 axs[-3:].format(abcbbox=True)  # also disables abcborder
 # axs[:-3].format(abcborder=True)  # this is already the default
+
+# %%
+import proplot as pplt
+fig, axs = pplt.subplots(nrows=8, ncols=8, refwidth=0.7, space=0)
+axs.format(
+    abc=True, abcloc='ur',
+    xlabel='x axis', ylabel='y axis', xticks=[], yticks=[],
+    suptitle='Subplot labels demo'
+)
+
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_units:
