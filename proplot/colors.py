@@ -19,7 +19,7 @@ import numpy.ma as ma
 from matplotlib import rcParams
 
 from .internals import ic  # noqa: F401
-from .internals import _not_none, docstring, warnings
+from .internals import _not_none, _pop_props, docstring, warnings
 from .utils import to_rgb, to_rgba, to_xyz, to_xyza
 
 __all__ = [
@@ -34,9 +34,11 @@ __all__ = [
 ]
 
 # Constants
-HEX_PATTERN = r'#(?:[0-9a-fA-F]{3,4}){2}'  # 6-8 digit hex
+# NOTE: Do not compile hex regex because config.py needs this with \A\Z surrounding
+REGEX_HEX = r'#(?:[0-9a-fA-F]{3,4}){2}'  # 6-8 digit hex
 CMAPS_DIVERGING = tuple(
-    (key1.lower(), key2.lower()) for key1, key2 in (
+    (key1.lower(), key2.lower())
+    for key1, key2 in (
         ('PiYG', 'GYPi'),
         ('PRGn', 'GnRP'),
         ('BrBG', 'GBBr'),
@@ -110,25 +112,13 @@ _cmaps_renamed = {
 }
 
 docstring.snippets['cmap.init'] = """
-name : str
-    The colormap name.
-segmentdata : dict-like
-    Mapping containing the keys ``'hue'``, ``'saturation'``, and
-    ``'luminance'``. The key values can be callable functions that
-    return channel values given a colormap index, or 3-column
-    arrays indicating the coordinates and channel transitions.
-    See `~matplotlib.colors.LinearSegmentedColormap` for a more
-    detailed explanation.
-N : int, optional
-    Number of points in the colormap lookup table.
-    Default is :rc:`image.lut`.
 alpha : float, optional
-    The opacity for the entire colormap. Overrides the input
+    The opacity for the entire colormap. This overrides the input
     segment data.
 cyclic : bool, optional
-    Whether the colormap is cyclic. If ``True``, this changes how the
-    leftmost and rightmost color levels are selected, and `extend` can
-    only be ``'neither'`` (a warning will be issued otherwise).
+    Whether the colormap is cyclic. If ``True``, this changes how the leftmost
+    and rightmost color levels are selected, and `extend` can only be
+    ``'neither'`` (a warning will be issued otherwise).
 """
 
 docstring.snippets['cmap.gamma'] = """
@@ -143,6 +133,43 @@ gamma2 : float, optional
     makes low luminance colors more prominent. Similar to the
     `HCLWizard <http://hclwizard.org:64230/hclwizard/>`_ option.
 """
+
+
+def _clip_colors(colors, clip=True, gray=0.2, warn=False):
+    """
+    Clip impossible colors rendered in an HSL-to-RGB colorspace conversion.
+    Used by `PerceptuallyUniformColormap`. If `mask` is ``True``, impossible
+    colors are masked out.
+
+    Parameters
+    ----------
+    colors : list of length-3 tuples
+        The RGB colors.
+    clip : bool, optional
+        If `clip` is ``True`` (the default), RGB channel values >1 are clipped
+        to 1. Otherwise, the color is masked out as gray.
+    gray : float, optional
+        The identical RGB channel values (gray color) to be used if `mask`
+        is ``True``.
+    warn : bool, optional
+        Whether to issue warning when colors are clipped.
+    """
+    colors = np.array(colors)
+    over = colors > 1
+    under = colors < 0
+    if clip:
+        colors[under] = 0
+        colors[over] = 1
+    else:
+        colors[under | over] = gray
+    if warn:
+        msg = 'Clipped' if clip else 'Invalid'
+        for i, name in enumerate('rgb'):
+            if under[:, i].any():
+                warnings._warn_proplot(f'{msg} {name!r} channel ( < 0).')
+            if over[:, i].any():
+                warnings._warn_proplot(f'{msg} {name!r} channel ( > 1).')
+    return colors
 
 
 def _get_channel(color, channel, space='hcl'):
@@ -185,43 +212,6 @@ def _get_channel(color, channel, space='hcl'):
             offset = float(match.group(0))
             color = color[:match.start()]
     return offset + to_xyz(color, space)[channel]
-
-
-def _clip_colors(colors, clip=True, gray=0.2, warn=False):
-    """
-    Clip impossible colors rendered in an HSL-to-RGB colorspace conversion.
-    Used by `PerceptuallyUniformColormap`. If `mask` is ``True``, impossible
-    colors are masked out.
-
-    Parameters
-    ----------
-    colors : list of length-3 tuples
-        The RGB colors.
-    clip : bool, optional
-        If `clip` is ``True`` (the default), RGB channel values >1 are clipped
-        to 1. Otherwise, the color is masked out as gray.
-    gray : float, optional
-        The identical RGB channel values (gray color) to be used if `mask`
-        is ``True``.
-    warn : bool, optional
-        Whether to issue warning when colors are clipped.
-    """
-    colors = np.array(colors)
-    over = colors > 1
-    under = colors < 0
-    if clip:
-        colors[under] = 0
-        colors[over] = 1
-    else:
-        colors[under | over] = gray
-    if warn:
-        msg = 'Clipped' if clip else 'Invalid'
-        for i, name in enumerate('rgb'):
-            if under[:, i].any():
-                warnings._warn_proplot(f'{msg} {name!r} channel ( < 0).')
-            if over[:, i].any():
-                warnings._warn_proplot(f'{msg} {name!r} channel ( > 1).')
-    return colors
 
 
 def _make_segment_data(values, coords=None, ratios=None):
@@ -578,7 +568,7 @@ class _Colormap(object):
         elif ext == 'hex':
             # Read arbitrary format
             string = open(filename).read()  # into single string
-            data = re.findall(HEX_PATTERN, string)
+            data = re.findall(REGEX_HEX, string)
             if len(data) < 2:
                 return _warn_or_raise(
                     f'Failed to load {filename!r}. Hex strings not found.'
@@ -641,12 +631,32 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         """
         Parameters
         ----------
-        %(cmap.init)s
+        name : str
+            The colormap name.
+        segmentdata : dict-like
+            Dictionary containing the keys ``'red'``, ``'blue'``, ``'green'``,
+            and (optionally) ``'alpha'``. The shorthands ``'r'``, ``'g'``, ``'b'``,
+            and ``'a'`` are also acceptable. The key values can be callable functions
+            that return channel values given a colormap index, or 3-column arrays
+            indicating the coordinates and channel transitions. See
+            `matplotlib.colors.LinearSegmentedColormap` for a detailed explanation.
+        N : int, optional
+            Number of points in the colormap lookup table. Default is :rc:`image.lut`.
         gamma : float, optional
             Gamma scaling used for the *x* coordinates.
+        %(cmap.init)s
+
+        See also
+        --------
+        ListedColormap
+        matplotlib.colors.LinearSegmentedColormap
+        proplot.constructor.Colormap
         """
         N = _not_none(N, rcParams['image.lut'])
-        super().__init__(name, segmentdata, N=N, gamma=gamma)
+        data = _pop_props(segmentdata, 'rgba', 'hsla')
+        if segmentdata:
+            raise ValueError(f'Invalid segmentdata keys {tuple(segmentdata)}.')
+        super().__init__(name, data, N=N, gamma=gamma)
         self._cyclic = cyclic
         if alpha is not None:
             self.set_alpha(alpha)
@@ -684,17 +694,16 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         -------
         `LinearSegmentedColormap`
             The colormap.
+
+        See also
+        --------
+        ListedColormap.append
         """
         # Parse input args
         if not args:
             return self
-        if not all(
-            isinstance(cmap, mcolors.LinearSegmentedColormap) for cmap in args
-        ):
-            raise TypeError(
-                f'Input arguments {args!r} must be instances of '
-                'LinearSegmentedColormap.'
-            )
+        if not all(isinstance(cmap, mcolors.LinearSegmentedColormap) for cmap in args):
+            raise TypeError(f'Arguments {args!r} must be LinearSegmentedColormaps.')
 
         # PerceptuallyUniformColormap --> LinearSegmentedColormap conversions
         cmaps = [self, *args]
@@ -723,8 +732,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             callable_ = [callable(cmap._segmentdata[key]) for cmap in cmaps]
             if all(callable_):  # expand range from x-to-w to 0-1
                 funcs = [cmap._segmentdata[key] for cmap in cmaps]
-
-                def xyy(ix, funcs=funcs):
+                def xyy(ix, funcs=funcs):  # noqa: E306
                     ix = np.atleast_1d(ix)
                     kx = np.empty(ix.shape)
                     for j, jx in enumerate(ix.flat):
@@ -748,40 +756,33 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
                 xyy[:, 0] = xyy[:, 0] / xyy[:, 0].max(axis=0)  # fix fp errors
 
             else:
-                raise TypeError(
-                    'Mixed callable and non-callable colormap values.'
-                )
+                raise TypeError('Mixed callable and non-callable colormap values.')
             segmentdata[key] = xyy
 
             # Handle gamma values
+            ikey = None
             if key == 'saturation':
                 ikey = 'gamma1'
             elif key == 'luminance':
                 ikey = 'gamma2'
-            else:
-                continue
-            if ikey in kwargs:
+            if not ikey or ikey in kwargs:
                 continue
             gamma = []
-
             for cmap in cmaps:
                 igamma = getattr(cmap, '_' + ikey)
                 if not np.iterable(igamma):
                     if all(callable_):
-                        igamma = [igamma]
+                        igamma = (igamma,)
                     else:
-                        igamma = (len(cmap._segmentdata[key]) - 1) * [igamma]
+                        igamma = (igamma,) * (len(cmap._segmentdata[key]) - 1)
                 gamma.extend(igamma)
-
             if all(callable_):
                 if any(igamma != gamma[0] for igamma in gamma[1:]):
                     warnings._warn_proplot(
-                        'Cannot use multiple segment gammas when '
-                        'concatenating callable segments. Using the first '
-                        f'gamma of {gamma[0]}.'
+                        'Cannot use multiple segment gammas when concatenating '
+                        f'callable segments. Using the first gamma of {gamma[0]}.'
                     )
                 gamma = gamma[0]
-
             kwargs[ikey] = gamma
 
         # Return copy or merge mixed types
@@ -821,6 +822,11 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         -------
         `LinearSegmentedColormap`
             The colormap.
+
+        See also
+        --------
+        LinearSegmentedColormap.truncate
+        ListedColormap.truncate
         """
         # Parse input args
         left = max(_not_none(left, 0), 0)
@@ -843,23 +849,24 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         cmap_right = self.truncate(0.5 + offset, right)
 
         # Permit adding extra 'white' to colormap center
+        # NOTE: Rely on channel abbreviations to simplify code here
         args = []
         if cut < 0:
             ratio = 0.5 - 0.5 * abs(cut)  # ratio for flanks on either side
-            xyza = to_xyza(self(0.5), space=getattr(self, '_space', None) or 'rgb')
+            space = getattr(self, '_space', None) or 'rgb'
+            xyza = to_xyza(self(0.5), space=space)
             segmentdata = {
-                key: _make_segment_data(x)
-                for key, x in zip(self._segmentdata, xyza)
+                key: _make_segment_data(x) for key, x in zip(space + 'a', xyza)
             }
             args.append(type(self)('_no_name', segmentdata, self.N))
             kwargs.setdefault('ratios', (ratio, abs(cut), ratio))
         args.append(cmap_right)
+
         return cmap_left.append(*args, name=name, **kwargs)
 
     def reversed(self, name=None, **kwargs):
         """
-        Return a reversed copy of the colormap, as in
-        `~matplotlib.colors.LinearSegmentedColormap`.
+        Return a reversed copy of the colormap.
 
         Parameters
         ----------
@@ -871,18 +878,14 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         **kwargs
             Passed to `LinearSegmentedColormap.copy`
             or `PerceptuallyUniformColormap.copy`.
-        """
-        if name is None:
-            name = self.name + '_r'
 
-        def factory(dat):
-            def func_r(x):
-                return dat(1.0 - x)
-            return func_r
+        See also
+        --------
+        matplotlib.colors.LinearSegmentedColormap.reversed
+        """
         segmentdata = {
-            key:
-            factory(data) if callable(data) else
-            [(1.0 - x, y1, y0) for x, y0, y1 in reversed(data)]
+            key: (lambda x: data(1.0 - x)) if callable(data)
+            else [(1.0 - x, y1, y0) for x, y0, y1 in reversed(data)]
             for key, data in self._segmentdata.items()
         }
         for key in ('gamma1', 'gamma2'):
@@ -891,6 +894,8 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             gamma = getattr(self, '_' + key, None)
             if gamma is not None and np.iterable(gamma):
                 kwargs[key] = gamma[::-1]
+        if name is None:
+            name = self.name + '_r'
         return self.copy(name, segmentdata, **kwargs)
 
     def save(self, path=None, alpha=True):
@@ -916,6 +921,10 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         alpha : bool, optional
             Whether to include an opacity column for ``.rgb``
             and ``.txt`` files.
+
+        See also
+        --------
+        ListedColormap.save
         """
         dirname = os.path.join('~', '.proplot', 'cmaps')
         filename = self._parse_path(path, dirname, 'json')
@@ -923,14 +932,13 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         # Save channel segment data in json file
         _, ext = os.path.splitext(filename)
         if ext[1:] == 'json':
-            # Sanitize segmentdata values
-            # Convert np.float to builtin float, np.array to list of lists,
-            # and callable to list of lists. We tried encoding func.__code__
-            # with base64 and marshal instead, but when cmap.concatenate()
-            # embeds functions as keyword arguments, this seems to make it
-            # *impossible* to load back up the function with FunctionType
-            # (error message: arg 5 (closure) must be tuple). Instead use
-            # this brute force workaround.
+            # Sanitize segmentdata values. Convert np.float to builtin float,
+            # np.array to list of lists, and callable to list of lists. We
+            # tried encoding func.__code__ with base64 and marshal instead, but
+            # when cmap.concatenate() embeds functions as keyword arguments, this
+            # seems to make it *impossible* to load back up the function with
+            # FunctionType (error message: arg 5 (closure) must be tuple). Instead
+            # use this brute force workaround.
             data = {}
             for key, value in self._segmentdata.items():
                 if callable(value):
@@ -938,6 +946,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
                     y = np.array([value(_) for _ in x]).squeeze()
                     value = np.vstack((x, y, y)).T
                 data[key] = np.asarray(value).astype(float).tolist()
+
             # Add critical attributes to the dictionary
             keys = ()
             if isinstance(self, PerceptuallyUniformColormap):
@@ -974,6 +983,10 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             equal ``len(alpha) + 1``. For example
             ``cmap.set_alpha((1, 1, 0), ratios=(2, 1))`` creates a transtion from
             100 percent to 0 percent opacity in the right *third* of the colormap.
+
+        See also
+        --------
+        ListedColormap.set_alpha
         """
         alpha = _make_segment_data(alpha, coords=coords, ratios=ratios)
         self._segmentdata['alpha'] = alpha
@@ -1005,6 +1018,10 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         **kwargs
             Passed to `LinearSegmentedColormap.copy`
             or `PerceptuallyUniformColormap.copy`.
+
+        See also
+        --------
+        ListedColormap.shifted
         """
         shift = ((shift or 0) / 360) % 1
         if shift == 0:
@@ -1046,6 +1063,10 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         **kwargs
             Passed to `LinearSegmentedColormap.copy`
             or `PerceptuallyUniformColormap.copy`.
+
+        See also
+        --------
+        ListedColormap.truncate
         """
         # Bail out
         left = max(_not_none(left, 0), 0)
@@ -1065,6 +1086,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             if callable(xyy):
                 def xyy(x, func=xyy):
                     return func(left + x * (right - left))
+
             # Slice
             # l is the first point where x > 0 or x > left, should be >= 1
             # r is the last point where r < 1 or r < right
@@ -1083,6 +1105,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
                 xyy = np.vstack(((left, *xl), xc, (right, *xr)))
                 xyy[:, 0] = (xyy[:, 0] - left) / (right - left)
             segmentdata[key] = xyy
+
             # Retain the corresponding gamma *segments*
             if key == 'saturation':
                 ikey = 'gamma1'
@@ -1109,6 +1132,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
                     else:
                         gamma = igamma
             kwargs[ikey] = gamma
+
         return self.copy(name, segmentdata, **kwargs)
 
     def copy(
@@ -1126,6 +1150,11 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         segmentdata, N, alpha, gamma, cyclic : optional
             See `LinearSegmentedColormap`. If not provided, these are copied from
             the current colormap.
+
+        See also
+        --------
+        ListedColormap.copy
+        PerceptuallyUniformColormap.copy
         """
         if name is None:
             name = self.name + '_copy'
@@ -1164,6 +1193,10 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         ----------------
         **kwargs
             Passed to `ListedColormap`.
+
+        See also
+        --------
+        ListedColormap.to_linear_segmented
         """
         if isinstance(samples, Integral):
             samples = np.linspace(0, 1, samples)
@@ -1196,6 +1229,10 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         warn_on_failure : bool, optional
             If ``True``, issue a warning when loading fails instead of
             raising an error.
+
+        See also
+        --------
+        ListedColormap.from_file
         """
         return cls._from_file(path, warn_on_failure=warn_on_failure)
 
@@ -1230,6 +1267,11 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         -------
         `LinearSegmentedColormap`
             The colormap.
+
+        See also
+        --------
+        matplotlib.colors.LinearSegmentedColormap.from_list
+        PerceptuallyUniformColormap.from_list
         """
         # Get coordinates
         coords = None
@@ -1287,6 +1329,12 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         ----------------
         *args, **kwargs
             Passed to `~matplotlib.colors.ListedColormap`.
+
+        See also
+        --------
+        LinearSegmentedColormap
+        matplotlib.colors.ListedColormap
+        proplot.constructor.Colormap
         """
         super().__init__(*args, **kwargs)
         if alpha is not None:
@@ -1311,14 +1359,15 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         ----------------
         **kwargs
             Passed to `~ListedColormap.copy`.
+
+        See also
+        --------
+        LinearSegmentedColormap.append
         """
-        if not args or not all(
-            isinstance(cmap, mcolors.ListedColormap) for cmap in args
-        ):
-            raise TypeError(
-                f'Input arguments {args!r} must be instances of '
-                'ListedColormap.'
-            )
+        if not args:
+            return self
+        if not all(isinstance(cmap, mcolors.ListedColormap) for cmap in args):
+            raise TypeError(f'Arguments {args!r} must be ListedColormap.')
         cmaps = (self, *args)
         if name is None:
             name = '_'.join(cmap.name for cmap in cmaps)
@@ -1347,6 +1396,10 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         alpha : bool, optional
             Whether to include an opacity column for ``.rgb``
             and ``.txt`` files.
+
+        See also
+        --------
+        LinearSegmentedColormap.save
         """
         dirname = os.path.join('~', '.proplot', 'cycles')
         filename = self._parse_path(path, dirname, 'hex')
@@ -1366,6 +1419,10 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         ----------
         alpha : float
             The opacity.
+
+        See also
+        --------
+        LinearSegmentedColormap.set_alpha
         """
         colors = [list(mcolors.to_rgba(color)) for color in self.colors]
         for color in colors:
@@ -1384,6 +1441,10 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
             The default is ``1``.
         name : str, optional
             The name of the new colormap. Default is ``self.name + '_s'``.
+
+        See also
+        --------
+        LinearSegmentedColormap.shifted
         """
         if not shift:
             return self
@@ -1410,6 +1471,10 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
             ``right=4`` deletes colors after the fourth color.
         name : str, optional
             The name of the new colormap. Default is ``self.name + '_copy'``.
+
+        See also
+        --------
+        LinearSegmentedColormap.truncate
         """
         if left is None and right is None:
             return self
@@ -1430,6 +1495,11 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         colors, N, alpha : optional
             See `ListedColormap`. If not provided,
             these are copied from the current colormap.
+
+        See also
+        --------
+        LinearSegmentedColormap.copy
+        PerceptuallyUniformColormap.copy
         """
         if name is None:
             name = self.name + '_copy'
@@ -1463,6 +1533,10 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         warn_on_failure : bool, optional
             If ``True``, issue a warning when loading fails instead of
             raising an error.
+
+        See also
+        --------
+        LinearSegmentedColormap.from_file
         """
         return cls._from_file(path, warn_on_failure=warn_on_failure)
 
@@ -1483,14 +1557,23 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
     """
     @docstring.add_snippets
     def __init__(
-        self, name, segmentdata, N=None, space=None, clip=True,
-        gamma=None, gamma1=None, gamma2=None,
-        **kwargs
+        self, name, segmentdata, N=None,
+        space=None, clip=True, gamma=None, gamma1=None, gamma2=None, **kwargs
     ):
         """
         Parameters
         ----------
-        %(cmap.init)s
+        name : str
+            The colormap name.
+        segmentdata : dict-like
+            Dictionary containing the keys ``'hue'``, ``'saturation'``,
+            ``'luminance'``, and (optionally) ``'alpha'``. The key ``'chroma'`` is
+            treated as a synonym for ``'saturation'``. The shorthands ``'h'``,
+            ``'s'``, ``'l'``, ``'a'``, and ``'c'`` are also acceptable. The key
+            values can be callable functions that return channel values given a
+            colormap index, or 3-column arrays indicating the coordinates and
+            channel transitions. See `~matplotlib.colors.LinearSegmentedColormap`
+            for a more detailed explanation.
         space : {'hsl', 'hpl', 'hcl'}, optional
             The hue, saturation, luminance-style colorspace to use for
             interpreting the channels. See
@@ -1498,6 +1581,7 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         clip : bool, optional
             Whether to "clip" impossible colors, i.e. truncate HCL colors
             with RGB channels with values >1, or mask them out as gray.
+        %(cmap.init)s
         %(cmap.gamma)s
 
         Other parameters
@@ -1513,33 +1597,35 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
 
         >>> import proplot as plot
         >>> data = {
-        >>>     'hue': [[0, 'red', 'red'], [1, 'blue', 'blue']],
-        >>>     'saturation': [[0, 100, 100], [1, 100, 100]],
-        >>>     'luminance': [[0, 100, 100], [1, 20, 20]],
+        >>>     'h': [[0, 'red', 'red'], [1, 'blue', 'blue']],
+        >>>     's': [[0, 100, 100], [1, 100, 100]],
+        >>>     'l': [[0, 100, 100], [1, 20, 20]],
         >>> }
         >>> cmap = plot.PerceptuallyUniformColormap(data)
+
+        See also
+        --------
+        LinearSegmentedColormap
+        proplot.constructor.Colormap
         """
         # Checks
+        data = _pop_props(segmentdata, 'hsla')
+        if segmentdata:
+            raise ValueError(f'Invalid segmentdata keys {tuple(segmentdata)}.')
         space = _not_none(space, 'hsl').lower()
         if space not in ('rgb', 'hsv', 'hpl', 'hsl', 'hcl'):
             raise ValueError(f'Unknown colorspace {space!r}.')
-        keys = {*segmentdata.keys()}
-        target = {'hue', 'saturation', 'luminance', 'alpha'}
-        if not keys <= target:
-            raise ValueError(
-                f'Invalid segmentdata dictionary with keys {keys!r}.'
-            )
         # Convert color strings to channel values
-        for key, array in segmentdata.items():
+        for key, array in data.items():
             if callable(array):  # permit callable
                 continue
             for i, xyy in enumerate(array):
                 xyy = list(xyy)  # make copy!
                 for j, y in enumerate(xyy[1:]):  # modify the y values
                     xyy[j + 1] = _get_channel(y, key, space)
-                segmentdata[key][i] = xyy
+                data[key][i] = xyy
         # Initialize
-        super().__init__(name, segmentdata, gamma=1.0, N=N, **kwargs)
+        super().__init__(name, data, gamma=1.0, N=N, **kwargs)
         # Custom properties
         self._gamma1 = _not_none(gamma1, gamma, 1.0)
         self._gamma2 = _not_none(gamma2, gamma, 1.0)
@@ -1556,9 +1642,7 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         inverses = (False, False, True)  # weight low chroma, high luminance
         gammas = (1.0, self._gamma1, self._gamma2)
         self._lut_hsl = np.ones((self.N + 3, 4), float)  # fill
-        for i, (channel, gamma, inverse) in enumerate(
-            zip(channels, gammas, inverses)
-        ):
+        for i, (channel, gamma, inverse) in enumerate(zip(channels, gammas, inverses)):
             self._lut_hsl[:-3, i] = _make_lookup_table(
                 self.N, self._segmentdata[channel], gamma, inverse
             )
@@ -1611,6 +1695,11 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         segmentdata, N, alpha, clip, cyclic, gamma, gamma1, gamma2, space : optional
             See `PerceptuallyUniformColormap`. If not provided,
             these are copied from the current colormap.
+
+        See also
+        --------
+        ListedColormap.copy
+        LinearSegmentedColormap.copy
         """
         if name is None:
             name = self.name + '_copy'
@@ -1654,6 +1743,10 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         ----------------
         **kwargs
             Passed to `LinearSegmentedColormap`.
+
+        See also
+        --------
+        ListedColormap.to_listed
         """
         if not self._isinit:
             self._init()
@@ -1662,9 +1755,10 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         return LinearSegmentedColormap.from_list(name, self._lut[:-3, :], **kwargs)
 
     @classmethod
-    def from_color(cls, name, color, fade=None, space='hsl', **kwargs):
+    @warnings._rename_kwargs('0.7', shade='luminance')
+    def from_color(cls, name, color, *, space='hsl', **kwargs):
         """
-        Return a monochromatic "sequential" colormap that blends from white
+        Return a simple monochromatic "sequential" colormap that blends from white
         or near-white to the input color.
 
         Parameters
@@ -1673,16 +1767,19 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
             The colormap name.
         color : color-spec
             RGB tuple, hex string, or named color string.
-        fade : float or color-spec, optional
+        l, s, a, c
+            Shorthands for `luminance`, `saturation`, `alpha`, and `chroma`.
+        luminance : float or channel-spec, optional
             If float, this is the luminance channel strength on the left-hand
-            side of the colormap (default is ``100``), and the saturation
-            channel is held constant throughout the colormap.
-
-            If RGB[A] tuple, hex string, or named color string, the luminance,
-            saturation, and opacity (but *not* the hue) from this color are used
-            for the left-hand side of the colormap.
+            side of the colormap (default is ``100``). If RGB[A] tuple, hex string,
+            or named color string, the luminance is inferred from the color.
+        saturation, alpha : float or channel-spec, optional
+            As with `luminance`, except the default `saturation` and the default
+            `alpha` are the channel values taken from `color`.
+        chroma
+            Alias for `saturation`.
         space : {'hsl', 'hpl', 'hcl'}, optional
-            The colorspace in which the luminance is varied.
+            The colorspace in which luminance and/or saturation are varied.
 
         Other parameters
         ----------------
@@ -1693,14 +1790,19 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         -------
         `PerceptuallyUniformColormap`
             The colormap.
+
+        See also
+        --------
+        PerceptuallyUniformColormap.from_hsl
+        PerceptuallyUniformColormap.from_list
         """
+        props = _pop_props(kwargs, 'hsla')
+        if props.get('hue', None) is not None:
+            raise TypeError("from_color() got an unexpected keyword argument 'hue'")
         hue, saturation, luminance, alpha = to_xyza(color, space)
-        if fade is None:
-            fade = 100
-        if isinstance(fade, Number):
-            alpha_fade, saturation_fade, luminance_fade = alpha, saturation, fade
-        else:
-            _, saturation_fade, luminance_fade, alpha_fade = to_xyza(fade, space)
+        alpha_fade = props.pop('alpha', 1)
+        luminance_fade = props.pop('luminance', 100)
+        saturation_fade = props.pop('saturation', saturation)
         return cls.from_hsl(
             name, hue=hue, space=space,
             alpha=(alpha_fade, alpha),
@@ -1710,10 +1812,7 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         )
 
     @classmethod
-    def from_hsl(
-        cls, name, hue=0, saturation=100, luminance=(100, 20), alpha=None,
-        ratios=None, **kwargs
-    ):
+    def from_hsl(cls, name, *, ratios=None, **kwargs):
         """
         Make a `~PerceptuallyUniformColormap` by specifying the hue,
         saturation, and luminance transitions individually.
@@ -1722,19 +1821,25 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         ----------
         name : str
             The colormap name.
-        hue : float, str, or list thereof, optional
-            Hue channel value or list of values. Values can be
-            any of the following.
+        h, s, l, a, c
+            Shorthands for `hue`, `saturation`, `luminance`, `alpha`, and `chroma`.
+        hue : float, color-spec, or list thereof, optional
+            Hue channel value or list of values. The shorthand keyword `h`
+            is also acceptable. Values can be any of the following.
 
-            1. Numbers, within the range 0-360 for hue and 0-100 for
+            1. Numbers, within the range 0 to 360 for hue and 0 to 100 for
                saturation and luminance.
             2. Color string names or hex strings, in which case the channel
                value for that color is looked up.
 
             If scalar, the hue does not change across the colormap.
-        saturation, luminance, alpha : float, str, or list thereof, optional
-            As with `hue`, but for the saturation, luminance, and alpha
-            (opacity) channels, respectively.
+            Default is ``0`` (i.e., red).
+        saturation, luminance, alpha : float, color-spec, or list thereof, optional
+            As with `hue`, but for the saturation, luminance, and alpha (opacity)
+            channels, respectively. The default `saturation` is ``50``, luminance is
+            ``(100, 20)``, and alpha is ``1`` (i.e., no transparency).
+        chroma
+            Alias for `saturation`.
         ratios : list of float, optional
             Relative extents of each color transition. Must have length
             ``len(colors) - 1``. Larger numbers indicate a slower
@@ -1744,6 +1849,8 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
             results in a colormap with the transition from luminance ``100``
             to ``50`` taking *twice as long* as the transition from luminance
             ``50`` to ``0``.
+        space : {'hsl', 'hpl', 'hcl'}, optional
+            The colorspace in which hue, luminance, and/or saturation are varied.
 
         Other parameters
         ----------------
@@ -1754,14 +1861,22 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         -------
         `PerceptuallyUniformColormap`
             The colormap.
+
+        See also
+        --------
+        PerceptuallyUniformColormap.from_color
+        PerceptuallyUniformColormap.from_list
         """
         cdict = {}
-        alpha = _not_none(alpha, 1.0)
-        for key, channel in zip(
-            ('hue', 'saturation', 'luminance', 'alpha'),
-            (hue, saturation, luminance, alpha)
+        props = _pop_props(kwargs, 'hsla')
+        for key, default in (
+            ('hue', 0),
+            ('saturation', 100),
+            ('luminance', (100, 20)),
+            ('alpha', 1),
         ):
-            cdict[key] = _make_segment_data(channel, ratios=ratios)
+            value = props.pop(key, default)
+            cdict[key] = _make_segment_data(value, ratios=ratios)
         return cls(name, cdict, **kwargs)
 
     @classmethod
@@ -1800,6 +1915,13 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         -------
         `PerceptuallyUniformColormap`
             The colormap.
+
+        See also
+        --------
+        matplotlib.colors.LinearSegmentedColormap.from_list
+        LinearSegmentedColormap.from_list
+        PerceptuallyUniformColormap.from_color
+        PerceptuallyUniformColormap.from_hsl
         """
         # Get coordinates
         coords = None
@@ -1928,22 +2050,19 @@ class DiscreteNorm(mcolors.BoundaryNorm):
 
         Note
         ----
-        This normalizer also makes sure that your levels always span the full range
+        This normalizer also makes sure that levels always span the full range
         of colors in the colormap, whether `extend` is set to ``'min'``, ``'max'``,
         ``'neither'``, or ``'both'``. By default, when `extend` is not ``'both'``,
-        matplotlib simply cuts off the most intense colors (reserved for
-        "out of bounds" data), even though they are not being used.
+        matplotlib cuts off the most intense colors (reserved for "out of bounds"
+        data), even though they are not being used. Note that this means
+        using a diverging colormap with ``extend='max'`` or ``extend='min'``
+        will shift the central color. But that is very strange usage anyway...
+        so please just don't do that :)
 
-        While this could also be done by limiting the number of colors in the colormap
-        lookup table by selecting a smaller ``N`` (see
-        `~matplotlib.colors.LinearSegmentedColormap`), ProPlot chooses to
-        always build colormaps with high resolution lookup tables and leave it
-        to the `~matplotlib.colors.Normalize` instance to handle *discretization*
-        of the color selections.
-
-        Note that this approach means if you use a diverging colormap with
-        ``extend='max'`` or ``extend='min'``, the central color will get messed up.
-        But that is very strange usage anyway... so please just don't do that :)
+        See also
+        --------
+        proplot.axes.apply_cmap
+        proplot.constructor.Norm
         """
         # Special properties specific to colormap type
         if cmap is not None:
@@ -2205,6 +2324,11 @@ class DivergingNorm(mcolors.Normalize):
             a misleading interpretation of your data.
         clip : bool, optional
             Whether to clip values falling outside of `vmin` and `vmax`.
+
+        See also
+        --------
+        proplot.axes.apply_cmap
+        proplot.constructor.Norm
         """
         # NOTE: This post is an excellent summary of matplotlib's DivergingNorm history:
         # https://github.com/matplotlib/matplotlib/issues/15336#issuecomment-535291287
@@ -2313,10 +2437,10 @@ class ColorDatabase(dict):
         A special dictionary subclass capable of retrieving colors
         "on-the-fly" from registered colormaps and color cycles.
 
-        * For a smooth colormap, usage is e.g. ``color=('Blues', 0.8)``. The
-          number is the colormap index, and must be between 0 and 1.
-        * For a color cycle, usage is e.g. ``color=('colorblind', 2)``. The
-          number is the list index.
+        * For a smooth colormap, usage is e.g. ``color=('Blues', 0.8)``.
+          The number is the colormap index, and must be between 0 and 1.
+        * For a color cycle, usage is e.g. ``color=('colorblind', 2)``.
+          The number is the list index.
 
         These examples work with any matplotlib command that accepts a `color`
         keyword arg.
@@ -2325,27 +2449,32 @@ class ColorDatabase(dict):
 
 
 class _ColorCache(dict):
+    """
+    Replacement for the native color cache.
+    """
+    # Matplotlib 'color' args are passed to to_rgba, which tries to read
+    # directly from cache and if that fails, sanitizes input, which raises
+    # error on receiving (colormap, idx) tuple. So we *have* to override cache.
     def __getitem__(self, key):
-        # Matplotlib 'color' args are passed to to_rgba, which tries to read
-        # directly from cache and if that fails, sanitizes input, which
-        # raises error on receiving (colormap, idx) tuple. So we *have* to
-        # override cache instead of color dict itself.
+        # Split into RGB tuple and opacity
+        # Matplotlib caches colors this way internally
         rgb, alpha = key
         if (
             not isinstance(rgb, str) and np.iterable(rgb) and len(rgb) == 2
-            and isinstance(rgb[1], Number) and isinstance(rgb[0], str)
+            and isinstance(rgb[0], str) and isinstance(rgb[1], Number)
         ):
+            # Try to get the colormap
             try:
                 cmap = _cmap_database[rgb[0]]
-            except (TypeError, KeyError):
+            except (KeyError, TypeError):
                 pass
+            # Read the colormap value
             else:
                 if isinstance(cmap, ListedColormap):
                     if not 0 <= rgb[1] < len(cmap.colors):
                         raise ValueError(
                             f'Color cycle sample for {rgb[0]!r} cycle must be '
-                            f'between 0 and {len(cmap.colors)-1}, '
-                            f'got {rgb[1]}.'
+                            f'between 0 and {len(cmap.colors) - 1}, got {rgb[1]}.'
                         )
                     rgb = cmap.colors[rgb[1]]  # draw from list of colors
                 else:
@@ -2355,8 +2484,10 @@ class _ColorCache(dict):
                             f'between 0 and 1, got {rgb[1]}.'
                         )
                     rgb = cmap(rgb[1])  # get color selection
-                rgba = mcolors.to_rgba(rgb, alpha)
-                return rgba
+                return mcolors.to_rgba(rgb, alpha)
+
+        # Proceed as usual
+        return super().__getitem__((rgb, alpha))
 
 
 def _get_cmap(name=None, lut=None):
@@ -2464,7 +2595,7 @@ class ColormapDatabase(dict):
                 test_new, version = _cmaps_renamed[test]
                 warnings._warn_proplot(
                     f'Colormap {test!r} was renamed in version {version} and will be '
-                    f'deprecated in a future release. Please use {test_new!r} instead.'
+                    f'removed in the next major release. Please use {test_new!r} instead.'  # noqa: E501
                 )
                 key = re.sub(test, test_new, key, flags=re.IGNORECASE)
 

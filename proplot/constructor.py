@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-The constructor functions used to build class instances
-from simple shorthand arguments.
+The constructor functions used to build class instances from simple shorthand arguments.
 """
 # NOTE: These functions used to be in separate files like crs.py and
 # ticker.py but makes more sense to group them together to ensure usage is
@@ -30,7 +29,14 @@ from . import scale as pscale
 from . import ticker as pticker
 from .config import rc
 from .internals import ic  # noqa: F401
-from .internals import _not_none, _version, _version_cartopy, _version_mpl, warnings
+from .internals import (
+    _not_none,
+    _pop_props,
+    _version,
+    _version_cartopy,
+    _version_mpl,
+    warnings,
+)
 from .utils import to_rgba
 
 try:
@@ -330,9 +336,23 @@ BASEMAP_FEATURES = {  # names of relevant basemap methods
 }
 
 
-def _mod_colormap(cmap, *, cut, left, right, shift, reverse, samples):
+def Colors(*args, **kwargs):
     """
-    Modify colormap in a variety of ways.
+    Pass all arguments to `Cycle` and return the list of colors from
+    the resulting `~cycler.Cycler` object.
+
+    See also
+    --------
+    cycler.Cycler
+    Cycle
+    """
+    cycle = Cycle(*args, **kwargs)
+    return list(dict_['color'] for dict_ in cycle)
+
+
+def _modify_colormap(cmap, *, cut, left, right, reverse, shift, alpha, samples):
+    """
+    Modify colormap using a variety of methods.
     """
     if cut is not None or left is not None or right is not None:
         if isinstance(cmap, pcolors.ListedColormap):
@@ -343,10 +363,12 @@ def _mod_colormap(cmap, *, cut, left, right, shift, reverse, samples):
             cmap = cmap.truncate(left=left, right=right)
         else:
             cmap = cmap.cut(cut, left=left, right=right)
-    if shift is not None:
-        cmap = cmap.shifted(shift)
     if reverse:
         cmap = cmap.reversed()
+    if shift is not None:
+        cmap = cmap.shifted(shift)
+    if alpha is not None:
+        cmap = cmap.copy(alpha=alpha)
     if samples is not None:
         if isinstance(cmap, pcolors.ListedColormap):
             cmap = cmap.copy(N=samples)
@@ -355,21 +377,10 @@ def _mod_colormap(cmap, *, cut, left, right, shift, reverse, samples):
     return cmap
 
 
-def Colors(*args, **kwargs):
-    """
-    Pass all arguments to `Cycle` and return the list of colors from
-    the resulting `~cycler.Cycler` object.
-    """
-    cycle = Cycle(*args, **kwargs)
-    return [dict_['color'] for dict_ in cycle]
-
-
+@warnings._rename_kwargs('v0.7', shade='luminance')
 def Colormap(
-    *args, name=None, listmode='perceptual',
-    samples=None, cut=None, left=None, right=None, reverse=False, shift=None,
-    fade=None, cycle=None, to_listed=False,
-    save=False, save_kw=None,
-    **kwargs
+    *args, name=None, listmode='perceptual', to_listed=False, cycle=None,
+    save=False, save_kw=None, **kwargs
 ):
     """
     Generate, retrieve, modify, and/or merge instances of
@@ -402,10 +413,10 @@ def Colormap(
         * If list of RGB tuples or color strings, a
           `~proplot.colors.PerceptuallyUniformColormap` is generated with
           `~proplot.colors.PerceptuallyUniformColormap.from_list`.
-        * If dictionary containing the keys ``'hue'``, ``'saturation'``, and
-          ``'luminance'``, a `~proplot.colors.PerceptuallyUniformColormap`
-          is generated with
-          `~proplot.colors.PerceptuallyUniformColormap.from_hsl`.
+        * If dictionary, a `~proplot.colors.PerceptuallyUniformColormap` is
+          generated with `~proplot.colors.PerceptuallyUniformColormap.from_hsl`.
+          The dictionary should contain the keys ``'hue'``, ``'saturation'``,
+          ``'luminance'``, and optionally ``'alpha'``, or their aliases (see below).
 
     name : str, optional
         Name under which the final colormap is registered. It can then be
@@ -414,12 +425,10 @@ def Colormap(
     listmode : {'perceptual', 'linear', 'listed'}, optional
         Controls how colormaps are generated when you input list(s) of colors.
         If ``'perceptual'``, a `~proplot.colors.PerceptuallyUniformColormap`
-        is generated with
-        `~proplot.colors.PerceptuallyUniformColormap.from_list`. If
-        ``'linear'``, a `~matplotlib.colors.LinearSegmentedColormap` is
+        is generated with `~proplot.colors.PerceptuallyUniformColormap.from_list`.
+        If ``'linear'``, a `~matplotlib.colors.LinearSegmentedColormap` is
         generated with `~matplotlib.colors.LinearSegmentedColormap.from_list`.
         If ``'listed'``, a `~matplotlib.colors.ListedColormap` is generated.
-
         Default is ``'perceptual'`` when calling `Colormap` directly and
         ``'listed'`` when `Colormap` is called by `Cycle`.
     samples : int or list of int, optional
@@ -429,39 +438,68 @@ def Colormap(
         `~proplot.colors.ListedColormap`\\ s, this is used to updates the
         number of colors in the cycle. If `samples` is integer, it applies
         to the final *merged* colormap. If it is a list of integers,
-        it applies to each input colormap-spec individually.
-    cut : float or list of float, optional
-        Passed to `~proplot.colors.LinearSegmentedColormap.cut`. If float,
-        this applies to the final *merged* colormap. If list of float, this
-        applies to each input colormap-spec individually.
-    left, right : float or list of float, optional
-        Passed to `~proplot.colors.LinearSegmentedColormap.truncate`.
-        If float, these apply to the final *merged* colormap. If list
-        of float, these apply to each input colormap-spec individually.
-    reverse : bool or list of bool, optional
-        Passed to `~proplot.colors.LinearSegmentedColormap.reversed`. If
-        float, this applies to the final *merged* colormap. If list of
-        float, this applies to each input colormap-spec individually.
-    shift : float or list of float, optional
-        Passed to `~proplot.colors.LinearSegmentedColormap.shifted`.
-        If float, this applies to the final *merged* colormap. If list of
-        float, this applies to each input colormap-spec individually.
-    fade : float or list of float, optional
-        The maximum luminosity used when generating colormaps with
-        `~proplot.colors.PerceptuallyUniformColormap.from_color`. Default is
-        ``100`` when calling `Colormap` directly, and ``90`` when `Colormap`
-        is called by `Cycle` (this prevents having pure white
-        in the color cycle).
-    cycle : str or list of color-spec, optional
-        The registered cycle name or a list of colors used to interpret cycle
-        color strings like ``'C0'`` and ``'C2'``. Default is colors from the
-        active property cycler.
+        it applies to each input colormap individually.
     to_listed : bool, optional
         If ``True``, when the final colormap is a
         `~proplot.colors.ListedColormap`, we leave it alone, but when it is a
-        `~proplot.colors.LinearSegmentedColormap`, we call
-        `~proplot.colors.LinearSegmentedColormap.to_listed` with
-        ``samples=10``. This option is used when `Cycle` calls `Colormap`.
+        `~proplot.colors.LinearSegmentedColormap`, we always call
+        `~proplot.colors.LinearSegmentedColormap.to_listed` with a
+        default `samples` value of ``10``. This argument is not
+        necessary if you provide the `samples` argument.
+    left, right : float or list of float, optional
+        Truncate the left or right edges of the colormap.
+        Passed to `~proplot.colors.LinearSegmentedColormap.truncate`.
+        If float, these apply to the final *merged* colormap. If list
+        of float, these apply to each input colormap individually.
+    cut : float or list of float, optional
+        Cut out the center of the colormap. Passed to
+        `~proplot.colors.LinearSegmentedColormap.cut`. If float,
+        this applies to the final *merged* colormap. If list of float,
+        these apply to each input colormap individually.
+    reverse : bool or list of bool, optional
+        Reverse the colormap. Passed to
+        `~proplot.colors.LinearSegmentedColormap.reversed`. If
+        float, this applies to the final *merged* colormap. If list of
+        float, these apply to each input colormap individually.
+    shift : float or list of float, optional
+        Cyclically shift the colormap.
+        Passed to `~proplot.colors.LinearSegmentedColormap.shifted`.
+        If float, this applies to the final *merged* colormap. If list of
+        float, these apply to each input colormap individually.
+    a
+        Shorthand for `alpha`.
+    alpha, a : channel-spec or list of channel-spec, optional
+        The opacity of the colormap or the opacity gradation. Passed to
+        `proplot.colors.LinearSegmentedColormap.set_alpha`
+        or `proplot.colors.ListedColormap.set_alpha`. If float, this applies
+        to the final *merged* colormap. If list of float, these apply to
+        each colormap individually.
+    h, s, l, c
+        Shorthands for `hue`, `luminance`, `saturation`, and `chroma`.
+    hue, saturation, luminance : channel-spec or list of channel-spec, optional
+        The channel value(s) used to generate colormaps with
+        `~proplot.colors.PerceptuallyUniformColormap.from_hsl` and
+        `~proplot.colors.PerceptuallyUniformColormap.from_color`.
+
+        * If you provided no positional arguments, these are used to create
+          an arbitrary perceptually uniform colormap with
+          `~proplot.colors.PerceptuallyUniformColormap.from_hsl`. This
+          is an alternative to passing a dictionary as a positional argument
+          with `hue`, `saturation`, and `luminance` as dictionary keys (see `args`).
+        * If you did provide positional arguments, and any of them are
+          color specifications, these control the look of monochromatic colormaps
+          generated with `~proplot.colors.PerceptuallyUniformColormap.from_color`.
+          To use different values for each colormap, pass a list of floats instead
+          of a scalar. Note the default `luminance` is ``90`` if `to_listed`
+          is ``True`` and ``100`` otherwise.
+
+    chroma
+        Alias for `saturation`.
+    cycle : str or list of str, optional
+        The registered cycle name or a list of colors used to interpret cycle
+        color strings like ``'C0'`` and ``'C2'``. Default is from the active
+        property cycler. This lets you make monochromatic colormaps using
+        colors selected from arbitrary property cycles.
     save : bool, optional
         Whether to call the colormap/color cycle save method, i.e.
         `proplot.colors.LinearSegmentedColormap.save` or
@@ -483,13 +521,64 @@ def Colormap(
     `~matplotlib.colors.Colormap`
         A `~proplot.colors.LinearSegmentedColormap` or
         `~proplot.colors.ListedColormap` instance.
+
+    See also
+    --------
+    matplotlib.colors.Colormap
+    matplotlib.colors.LinearSegmentedColormap
+    matplotlib.colors.ListedColormap
+    proplot.axes.apply_cmap
+    Cycle
     """
+    # Helper function
+    # NOTE: Very careful here! Try to support common use cases. For example
+    # adding opacity gradations to colormaps with Colormap('cmap', alpha=(0.5, 1))
+    # or sampling maps with Colormap('cmap', samples=np.linspace(0, 1, 11)) should
+    # be allowable.
+    # If *args is singleton try to preserve it.
+    def _pop_modification(key):
+        value = kwargs.pop(key, None)
+        if not np.iterable(value) or isinstance(value, str):
+            values = (None,) * len(args)
+        elif len(args) == len(value):
+            values, value = tuple(values), None
+        elif len(args) == 1:  # e.g. Colormap('cmap', alpha=(0.5, 1))
+            values = (None,)
+        else:
+            raise ValueError(
+                f'Got {len(args)} colormap-specs '
+                f'but {len(value)} values for {key!r}.'
+            )
+        return value, values
+
+    # Parse keyword args that can apply to the merged colormap or each
+    # colormap individually.
+    hsla = _pop_props(kwargs, 'hsla')
+    if not args and hsla.keys() - {'alpha'}:
+        args = (hsla,)
+    else:
+        kwargs.update(hsla)
+    cut, cuts = _pop_modification('cut')
+    left, lefts = _pop_modification('left')
+    right, rights = _pop_modification('right')
+    shift, shifts = _pop_modification('shift')
+    reverse, reverses = _pop_modification('reverse')
+    samples, sampless = _pop_modification('samples')
+    alpha, alphas = _pop_modification('alpha')
+    luminance, luminances = _pop_modification('luminance')
+    saturation, saturations = _pop_modification('saturation')
+    if luminance is not None:
+        luminances = (luminance,) * len(args)
+    if saturation is not None:
+        saturations = (saturation,) * len(args)
+
     # Parse input args
     # TODO: Play with using "qualitative" colormaps in realistic examples,
     # how to make colormaps cyclic.
     if not args:
         raise ValueError(
-            'Colormap() requires at least one positional argument.'
+            'Colormap() requires either positional arguments '
+            "or 'hue', 'chroma', 'saturation', and/or 'luminance' keywords."
         )
     if listmode not in ('listed', 'linear', 'perceptual'):
         raise ValueError(
@@ -497,31 +586,11 @@ def Colormap(
             "'listed', 'linear', 'perceptual'."
         )
 
-    # Parse keyword args that can apply to the merged colormap or each
-    # colormap individually.
-    def _parse_modification(key, value):
-        if not np.iterable(value):
-            values = (None,) * len(args)
-        elif len(value) != len(args):
-            raise ValueError(
-                f'Got {len(args)} colormap-specs '
-                f'but {len(value)} values for {key!r}.'
-            )
-        else:
-            value, values = None, tuple(value)
-        return value, values
-    cut, cuts = _parse_modification('cut', cut)
-    left, lefts = _parse_modification('left', left)
-    right, rights = _parse_modification('right', right)
-    shift, shifts = _parse_modification('shift', shift)
-    reverse, reverses = _parse_modification('reverse', reverse)
-    samples, sampless = _parse_modification('samples', samples)
-
     # Loop through colormaps
     tmp = '_no_name'
     cmaps = []
-    for arg, icut, ileft, iright, ireverse, ishift, isamples in zip(
-        args, cuts, lefts, rights, reverses, shifts, sampless
+    for arg, icut, ileft, iright, ireverse, ishift, isamples, iluminance, isaturation, ialpha in zip(  # noqa: E501
+        args, cuts, lefts, rights, reverses, shifts, sampless, luminances, saturations, alphas  # noqa: E501
     ):
         # Load registered colormaps and maps on file
         # TODO: Document how 'listmode' also affects loaded files
@@ -556,32 +625,36 @@ def Colormap(
             elif listmode == 'linear':
                 cmap = pcolors.LinearSegmentedColormap.from_list(tmp, colors)
             else:
-                cmap = pcolors.PerceptuallyUniformColormap.from_list(tmp, colors)  # noqa: E501
+                cmap = pcolors.PerceptuallyUniformColormap.from_list(tmp, colors)
 
         # Monochrome colormap from input color
+        # NOTE: Do not print color names in error message. Too long to be useful.
         else:
-            creverse = isinstance(arg, str) and arg[-2:] == '_r'
-            if creverse:
+            jreverse = isinstance(arg, str) and arg[-2:] == '_r'
+            if jreverse:
                 arg = arg[:-2]
             try:
                 color = to_rgba(arg, cycle=cycle)
             except (ValueError, TypeError):
                 message = f'Invalid colormap, color cycle, or color {arg!r}.'
                 if isinstance(arg, str) and arg[:1] != '#':
-                    # NOTE: Do not print color names. Message is too big to be useful.
                     message += (
                         ' Options are: '
                         + ', '.join(map(repr, pcolors._cmap_database)) + '.'
                     )
                 raise ValueError(message)
-            cmap = pcolors.PerceptuallyUniformColormap.from_color(tmp, color, fade)  # noqa: E501
+            if to_listed and iluminance is None:
+                iluminance = 90
+            cmap = pcolors.PerceptuallyUniformColormap.from_color(
+                tmp, color, luminance=iluminance, saturation=isaturation
+            )
             ireverse = _not_none(ireverse, False)
-            ireverse = ireverse ^ creverse  # xor
+            ireverse = ireverse ^ jreverse  # xor
 
         # Modify the colormap
-        cmap = _mod_colormap(
+        cmap = _modify_colormap(
             cmap, cut=icut, left=ileft, right=iright,
-            shift=ishift, reverse=ireverse, samples=isamples
+            reverse=ireverse, shift=ishift, alpha=ialpha, samples=isamples,
         )
         cmaps.append(cmap)
 
@@ -594,39 +667,33 @@ def Colormap(
         cmap = cmaps[0]
 
     # Modify the colormap
-    if (
-        to_listed and samples is None
-        and isinstance(cmap, pcolors.LinearSegmentedColormap)
-    ):
+    if to_listed and samples is None and isinstance(cmap, pcolors.LinearSegmentedColormap):  # noqa: E501
         samples = 10
-    cmap = _mod_colormap(
+    cmap = _modify_colormap(
         cmap, cut=cut, left=left, right=right,
-        shift=shift, reverse=reverse, samples=samples
+        reverse=reverse, shift=shift, alpha=alpha, samples=samples
     )
 
     # Initialize
     if not cmap._isinit:
         cmap._init()
 
-    # Register and save the colormap
+    # Register the colormap
     if name is None:
         name = cmap.name  # may have been modified by e.g. .shifted()
     else:
         cmap.name = name
     pcolors._cmap_database[name] = cmap
+
+    # Save the colormap
     if save:
         save_kw = save_kw or {}
         cmap.save(**save_kw)
+
     return cmap
 
 
-def Cycle(
-    *args, N=None, samples=None, name=None,
-    marker=None, alpha=None, dashes=None, linestyle=None, linewidth=None,
-    markersize=None, markeredgewidth=None,
-    markeredgecolor=None, markerfacecolor=None,
-    **kwargs
-):
+def Cycle(*args, N=None, samples=None, name=None, **kwargs):
     """
     Generate and merge `~cycler.Cycler` instances in a variety of ways.
     Used to interpret the `cycle` and `cycle_kw` arguments when passed to
@@ -656,18 +723,22 @@ def Cycle(
 
         If the last positional argument is numeric, it is used for the
         `samples` keyword argument.
-    N, samples : float or list of float, optional
+    N
+        Shorthand for `samples`.
+    samples : float or list of float, optional
         For `~proplot.colors.ListedColormap`\\ s, this is the number of
         colors to select. For example, ``Cycle('538', 4)`` returns the first 4
         colors of the ``'538'`` color cycle.
 
-        For `~proplot.colors.LinearSegmentedColormap`\\ s, this is the
-        a *list of sample coordinates* used to draw colors from the map, or an
-        *integer number of colors* to draw. If the latter, the sample
-        coordinates are ``np.linspace(0, 1, samples)``. For example,
-        ``Cycle('Reds', 5)`` divides the ``'Reds'`` colormap into five evenly
-        spaced colors.
-    marker, alpha, dashes, linestyle, linewidth, markersize, markeredgewidth, markeredgecolor, markerfacecolor : list of specs, optional
+        For `~proplot.colors.LinearSegmentedColormap`\\ s, this is either a
+        list of sample coordinates used to draw colors from the map, or an
+        integer number of colors to draw. If the latter, the sample coordinates
+        are ``np.linspace(0, 1, samples)``. For example, ``Cycle('Reds', 5)``
+        divides the ``'Reds'`` colormap into five evenly spaced colors.
+    lw, ls, d, a, m, ms, mew, mec, mfc
+        Shorthands for the below keywords.
+    linewidth, linestyle, dashes, alpha, marker, markersize, markeredgewidth, \
+markeredgecolor, markerfacecolor : spec or list of specs, optional
         Lists of `~matplotlib.lines.Line2D` properties that can be added to
         the `~cycler.Cycler` instance. If the lists have unequal length, they
         will be filled to match the length of the longest list.  See
@@ -678,52 +749,48 @@ def Cycle(
 <https://matplotlib.org/stable/gallery/lines_bars_and_markers/marker_reference.html>`__,
         and the `custom dashes reference \
 <https://matplotlib.org/stable/gallery/lines_bars_and_markers/line_demo_dash_control.html>`__.
+    linewidths, linestyles, dashes, alphas, markers, markersizes, markeredgewidths, \
+markeredgecolors, markerfacecolors
+        Aliases for the above keywords.
 
     Other parameters
     ----------------
     **kwargs
-        If the input is not already a `~cycler.Cycler` instance, these
-        are passed to `Colormap` and used to build the
-        `~proplot.colors.ListedColormap` from which the cycler will draw its
-        colors.
+        If the input is not already a `~cycler.Cycler` instance, these are passed
+        to `Colormap` and used to build the `~proplot.colors.ListedColormap` from
+        which the cycler will draw its colors.
 
     Returns
     -------
     `~cycler.Cycler`
         A cycler instance that can be passed to
         `~matplotlib.axes.Axes.set_prop_cycle`.
-    """  # noqa
-    # Add properties
-    props = {}
+
+    See also
+    --------
+    cycler.Cycler
+    proplot.axes.apply_cycle
+    Colormap
+    """
+    # Parse keyword arguments that rotate through other properties
+    # besides color cycles.
+    props = _pop_props(kwargs, 'lines')
     nprops = 0
-    samples = _not_none(samples=samples, N=N)
-    for key, value in (
-        ('marker', marker),
-        ('alpha', alpha),
-        ('dashes', dashes),
-        ('linestyle', linestyle),
-        ('linewidth', linewidth),
-        ('markersize', markersize),
-        ('markeredgewidth', markeredgewidth),
-        ('markeredgecolor', markeredgecolor),
-        ('markerfacecolor', markerfacecolor),
-    ):
-        if value is not None:
-            if isinstance(value, str) or not np.iterable(value):
-                raise ValueError(
-                    f'Invalid {key!r} property {value!r}. '
-                    f'Must be list or tuple of properties.'
-                )
+    samples = _not_none(samples=samples, N=N)  # trigger Colormap default
+    for key, value in tuple(props.items()):  # permit in-place modification
+        if value is None:
+            return
+        elif not np.iterable(value) or isinstance(value, str):
+            value = (value,)
+        elif len(value) != len(args):
             nprops = max(nprops, len(value))
-            props[key] = [*value]  # ensure mutable list
+        props[key] = list(value)  # ensure mutable list
 
     # If args is non-empty, means we want color cycle; otherwise is black
     if not args:
         props['color'] = [mcolors.to_rgba('k')]
         if kwargs:
-            warnings._warn_proplot(
-                f'Ignoring Cycle() keyword arg(s) {kwargs}.'
-            )
+            warnings._warn_proplot(f'Ignoring Cycle() keyword arg(s) {kwargs}.')
 
     # Merge cycler objects
     elif all(isinstance(arg, cycler.Cycler) for arg in args):
@@ -737,26 +804,24 @@ def Cycle(
                 for key, value in arg.by_key():
                     if key not in props:
                         props[key] = []
-                    props[key].extend([*value])
+                    props[key].extend(value)
             return cycler.cycler(**props)
 
     # Get cycler from a colormap
     else:
         # Get the ListedColormap
         if args and isinstance(args[-1], Number):
-            args, samples = args[:-1], args[-1]
-        kwargs.setdefault('fade', 90)
+            args, samples = args[:-1], _not_none(samples_positional=args[-1], samples=samples)  # noqa: #501
         kwargs.setdefault('listmode', 'listed')
-        kwargs.setdefault('to_listed', True)
+        kwargs.setdefault('to_listed', True)  # triggers default 'samples' value
         cmap = Colormap(*args, name=name, samples=samples, **kwargs)
         name = _not_none(name, cmap.name)
-
         # Add colors to property dict
         nprops = max(nprops, len(cmap.colors))
-        props['color'] = [
+        props['color'] = [  # save the tupled version!
             tuple(color) if not isinstance(color, str) else color
             for color in cmap.colors
-        ]  # save the tupled version!
+        ]
 
     # Build cycler, make sure lengths are the same
     for key, value in props.items():
@@ -764,6 +829,7 @@ def Cycle(
             value[:] = [value[i % len(value)] for i in range(nprops)]
     cycle = cycler.cycler(**props)
     cycle.name = _not_none(name, '_no_name')
+
     return cycle
 
 
@@ -810,6 +876,12 @@ def Norm(norm, *args, **kwargs):
     -------
     `~matplotlib.colors.Normalize`
         A `~matplotlib.colors.Normalize` instance.
+
+    See also
+    --------
+    matplotlib.colors.Normalize
+    proplot.axes.apply_cmap
+    proplot.colors.DiscreteNorm
     """
     if isinstance(norm, mcolors.Normalize):
         return norm
@@ -904,6 +976,15 @@ def Locator(locator, *args, **kwargs):
     -------
     `~matplotlib.ticker.Locator`
         A `~matplotlib.ticker.Locator` instance.
+
+    See also
+    --------
+    matplotlib.ticker.Locator
+    proplot.axes.CartesianAxes.format
+    proplot.axes.PolarAxes.format
+    proplot.axes.GeoAxes.format
+    proplot.axes.colorbar_extras
+    Formatter
     """  # noqa
     if isinstance(locator, mticker.Locator):
         return locator
@@ -1037,6 +1118,15 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
     -------
     `~matplotlib.ticker.Formatter`
         A `~matplotlib.ticker.Formatter` instance.
+
+    See also
+    --------
+    matplotlib.ticker.Formatter
+    proplot.axes.CartesianAxes.format
+    proplot.axes.PolarAxes.format
+    proplot.axes.GeoAxes.format
+    proplot.axes.colorbar_extras
+    Locator
     """  # noqa
     if isinstance(formatter, mticker.Formatter):  # formatter object
         return formatter
@@ -1144,6 +1234,13 @@ def Scale(scale, *args, **kwargs):
     -------
     `~matplotlib.scale.ScaleBase`
         The scale instance.
+
+    See also
+    --------
+    matplotlib.scale.ScaleBase
+    proplot.axes.CartesianAxes.format
+    proplot.axes.CartesianAxes.dualx
+    proplot.axes.CartesianAxes.dualy
     """  # noqa
     # NOTE: Why not try to interpret FuncScale arguments, like when lists
     # of numbers are passed to Locator? Because FuncScale *itself* accepts
@@ -1283,7 +1380,12 @@ def Proj(name, basemap=None, **kwargs):
 
     See also
     --------
-    proplot.axes.GeoAxes, proplot.axes.CartopyAxes, proplot.axes.BasemapAxes
+    mpl_toolkits.basemap.Basemap
+    cartopy.crs.Projection
+    proplot.ui.subplots
+    proplot.axes.GeoAxes
+    proplot.axes.CartopyAxes
+    proplot.axes.BasemapAxes
 
     References
     ----------
