@@ -3,7 +3,7 @@
 New colormap classes and colormap normalization classes.
 """
 # NOTE: Avoid colormap/color name conflicts by checking
-# set(plot.colors._cmap_database) & set(plot.colors.mcolors._colors_full_map)
+# set(pplt.colors._cmap_database) & set(pplt.colors.mcolors._colors_full_map)
 # whenever new default colormaps are added. Currently result is
 # {'gray', 'marine', 'ocean', 'pink'} which correspond to MATLAB and GNUplot maps.
 import json
@@ -1595,13 +1595,13 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         `segmentdata` dictionary that uses color names for the hue data,
         instead of channel values between ``0`` and ``360``.
 
-        >>> import proplot as plot
+        >>> import proplot as pplt
         >>> data = {
         >>>     'h': [[0, 'red', 'red'], [1, 'blue', 'blue']],
         >>>     's': [[0, 100, 100], [1, 100, 100]],
         >>>     'l': [[0, 100, 100], [1, 20, 20]],
         >>> }
-        >>> cmap = plot.PerceptuallyUniformColormap(data)
+        >>> cmap = pplt.PerceptuallyUniformColormap(data)
 
         See also
         --------
@@ -2244,11 +2244,11 @@ class LinearSegmentedNorm(mcolors.Normalize):
         `~matplotlib.axes.Axes.contourf`, resulting in the automatic
         application of `LinearSegmentedNorm`.
 
-        >>> import proplot as plot
+        >>> import proplot as pplt
         >>> import numpy as np
         >>> levels = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]
         >>> data = 10 ** (3 * np.random.rand(10, 10))
-        >>> fig, ax = plot.subplots()
+        >>> fig, ax = pplt.subplots()
         >>> ax.contourf(data, levels=levels)
         """
         levels = np.asarray(levels)

@@ -17,19 +17,19 @@ object:
 
 .. code-block:: python
 
-  import proplot as plot
-  plot.rc.name = value
-  plot.rc['name'] = value
-  plot.rc.update(name1=value1, name2=value2)
-  plot.rc.update({'name1': value1, 'name2': value2})
+  import proplot as pplt
+  pplt.rc.name = value
+  pplt.rc['name'] = value
+  pplt.rc.update(name1=value1, name2=value2)
+  pplt.rc.update({'name1': value1, 'name2': value2})
 
 To apply settings to a particular axes, pass the setting
 to the `~proplot.axes.Axes.format` command:
 
 .. code-block:: python
 
-  import proplot as plot
-  fig, ax = plot.subplots()
+  import proplot as pplt
+  fig, ax = pplt.subplots()
   ax.format(name1=value1, name2=value2)
   ax.format(rc_kw={'name1': value1, 'name2': value2})
 
@@ -38,11 +38,11 @@ to the `~proplot.config.RcConfigurator.context` command:
 
 .. code-block:: python
 
-   import proplot as plot
-   with plot.rc.context(name1=value1, name2=value2):
-       fig, ax = plot.subplots()
-   with plot.rc.context({'name1': value1, 'name2': value2}):
-       fig, ax = plot.subplots()
+   import proplot as pplt
+   with pplt.rc.context(name1=value1, name2=value2):
+       fig, ax = pplt.subplots()
+   with pplt.rc.context({'name1': value1, 'name2': value2}):
+       fig, ax = pplt.subplots()
 
 
 In all of these examples, if the setting name contains dots,
@@ -51,12 +51,12 @@ you can simply omit the dots. For example, to change the
 
 .. code-block:: python
 
-  import proplot as plot
+  import proplot as pplt
   # Apply globally
-  plot.rc.titleloc = value
-  plot.rc.update(titleloc=value)
+  pplt.rc.titleloc = value
+  pplt.rc.update(titleloc=value)
   # Apply locally
-  fig, ax = plot.subplots()
+  fig, ax = pplt.subplots()
   ax.format(titleloc=value)
 
 Matplotlib settings

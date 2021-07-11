@@ -72,12 +72,12 @@ class PolarAxes(base.Axes, mproj.PolarAxes):
             and anticlockwise corresponds to ``1``. Default is ``1``.
         thetamin, thetamax : float, optional
             The lower and upper azimuthal bounds in degrees. If
-            ``thetamax != thetamin + 360``, this produces a sector plot.
+            ``thetamax != thetamin + 360``, this produces a sector pplt.
         thetalim : (float, float), optional
             Specifies `thetamin` and `thetamax` at once.
         rmin, rmax : float, optional
             The inner and outer radial limits. If ``r0 != rmin``, this
-            produces an annular plot.
+            produces an annular pplt.
         rlim : (float, float), optional
             Specifies `rmin` and `rmax` at once.
         rborder : bool, optional

@@ -105,8 +105,8 @@ highly customized figures. As an example, it is trivial to see that...
 
 .. code-block:: python
 
-   import proplot as plot
-   fig, axs = plot.subplots(ncols=2)
+   import proplot as pplt
+   fig, axs = pplt.subplots(ncols=2)
    axs.format(linewidth=1, color='gray')
    axs.format(xlim=(0, 100), xticks=10, xtickminor=True, xlabel='foo', ylabel='bar')
 
@@ -500,7 +500,7 @@ longitude-latitude (i.e., "Plate Carrée") coordinates.
 
 ProPlot lets you specify geographic projections by simply passing
 the `PROJ <https://proj.org>`__ name to `~proplot.ui.subplots` with
-e.g. ``fig, ax = plot.subplots(proj='pcarree')``. Alternatively, the
+e.g. ``fig, ax = pplt.subplots(proj='pcarree')``. Alternatively, the
 `~proplot.constructor.Proj` constructor function can be used to quickly generate
 `cartopy.crs.Projection` and `~mpl_toolkits.basemap.Basemap` instances.
 
@@ -712,8 +712,8 @@ than globally.
 In ProPlot, you can use the `~proplot.config.rc` object to change lots of
 settings at once with convenient shorthands.  This is meant to replace
 matplotlib's `~matplotlib.rcParams` dictionary. Settings can be changed
-with ``plot.rc.key = value``, ``plot.rc[key] = value``,
-``plot.rc.update(...)``, with the `~proplot.axes.Axes.format` method, or with
+with ``pplt.rc.key = value``, ``pplt.rc[key] = value``,
+``pplt.rc.update(...)``, with the `~proplot.axes.Axes.format` method, or with
 the `~proplot.config.RcConfigurator.context` method. ProPlot also adds a bunch
 of new settings for controlling proplot-specific features.
 See the :ref:`user guide <ug_config>` for details.

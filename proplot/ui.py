@@ -334,12 +334,12 @@ or dict thereof, optional
         two options:
 
         * Pass a *list* of projection specifications, one for each subplot.
-          For example, ``plot.subplots(ncols=2, proj=('cartesian', 'robin'))``.
+          For example, ``pplt.subplots(ncols=2, proj=('cartesian', 'robin'))``.
         * Pass a *dictionary* of projection specifications, where the
           keys are integers or tuples of integers that indicate the projection
           to use for the corresponding subplot(s). If a key is not provided, the
           default projection ``'cartesian'`` is used. For example,
-          ``plot.subplots(ncols=4, proj={2: 'merc', (3, 4): 'stere'})`` creates
+          ``pplt.subplots(ncols=4, proj={2: 'merc', (3, 4): 'stere'})`` creates
           a figure with a Cartesian axes for the first subplot, a Mercator
           projection for the second subplot, and a Stereographic projection
           for the third and fourth subplots.
@@ -349,7 +349,7 @@ or dict thereof, optional
         `~cartopy.crs.Projection` classes on instantiation. If dictionary of
         properties, applies globally. If list of dictionaries or dictionary of
         dictionaries, these apply to specific subplots, as with `proj`. For example,
-        ``plot.subplots(ncols=2, proj_kw={1: {'lon_0': 0}, 2: {'lon_0': 180}})``
+        ``pplt.subplots(ncols=2, proj_kw={1: {'lon_0': 0}, 2: {'lon_0': 180}})``
         centers the projection in the left subplot on the prime meridian and
         in the right subplot on the international dateline.
     basemap : bool, list of bool, or dict of bool, optional
@@ -669,8 +669,8 @@ class SubplotsContainer(list):
 
         Example
         -------
-        >>> import proplot as plot
-        >>> fig, axs = plot.subplots(nrows=3, ncols=3, colorbars='b', bstack=2)
+        >>> import proplot as pplt
+        >>> fig, axs = pplt.subplots(nrows=3, ncols=3, colorbars='b', bstack=2)
         >>> axs[0]  # the subplot in the top-right corner
         >>> axs[3]  # the first subplot in the second row
         >>> axs[1,2]  # the subplot in the second row, third from the left
@@ -754,8 +754,8 @@ class SubplotsContainer(list):
 
         Example
         -------
-        >>> import proplot as plot
-        >>> fig, axs = plot.subplots(nrows=2, ncols=2)
+        >>> import proplot as pplt
+        >>> fig, axs = pplt.subplots(nrows=2, ncols=2)
         >>> axs.format(...)  # calls "format" on all subplots
         >>> panels = axs.panel_axes('right')  # returns SubplotsContainer of panels
         >>> panels.format(...)  # calls "format" on all panels

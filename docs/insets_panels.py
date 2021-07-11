@@ -42,7 +42,7 @@
 # adjusted by the tight layout algorithm.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 state = np.random.RandomState(51423)
 data = (state.rand(20, 20) - 0.48).cumsum(axis=1).cumsum(axis=0)
@@ -50,7 +50,7 @@ data = 10 * (data - data.min()) / (data.max() - data.min())
 
 # Stacked panels with outer colorbars
 for cbarloc, ploc in ('rb', 'br'):
-    fig, axs = plot.subplots(
+    fig, axs = pplt.subplots(
         refwidth=1.8, nrows=1, ncols=2,
         share=0, panelpad=0.1, includepanels=True
     )
@@ -91,8 +91,8 @@ for cbarloc, ploc in ('rb', 'br'):
     paxs.format(title='Stdev', **kwargs)
 
 # %%
-import proplot as plot
-fig, axs = plot.subplots(refwidth=1.5, nrows=2, ncols=2, share=0)
+import proplot as pplt
+fig, axs = pplt.subplots(refwidth=1.5, nrows=2, ncols=2, share=0)
 
 # Demonstrate that complex arrangements of panels does
 # not mess up subplot aspect ratios or tight layout spacing
@@ -127,7 +127,7 @@ for ax, side in zip(axs, 'tlbr'):
 # argument.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 
 # Sample data
@@ -137,7 +137,7 @@ x, y = np.arange(10), np.arange(10)
 data = state.rand(10, 10)
 
 # Plot data
-fig, ax = plot.subplots(refwidth=3)
+fig, ax = pplt.subplots(refwidth=3)
 m = ax.pcolormesh(data, cmap='Grays', levels=N)
 ax.colorbar(m, loc='b', label='label')
 ax.format(

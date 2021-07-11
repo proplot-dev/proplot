@@ -85,8 +85,8 @@
 #    or color cycle. See `~proplot.colors.ColormapDatabase` for more info.
 
 # %%
-import proplot as plot
-fig, axs = plot.show_cmaps()
+import proplot as pplt
+fig, axs = pplt.show_cmaps()
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -132,16 +132,16 @@ fig, axs = plot.show_cmaps()
 
 # %%
 # Colorspace demo
-import proplot as plot
-fig, axs = plot.show_colorspaces(refwidth=1.6, luminance=50)
-fig, axs = plot.show_colorspaces(refwidth=1.6, saturation=60)
-fig, axs = plot.show_colorspaces(refwidth=1.6, hue=0)
+import proplot as pplt
+fig, axs = pplt.show_colorspaces(refwidth=1.6, luminance=50)
+fig, axs = pplt.show_colorspaces(refwidth=1.6, saturation=60)
+fig, axs = pplt.show_colorspaces(refwidth=1.6, hue=0)
 
 # %%
 # Compare colormaps
-import proplot as plot
+import proplot as pplt
 for cmaps in (('magma', 'rocket'), ('fire', 'dusk')):
-    fig, axs = plot.show_channels(
+    fig, axs = pplt.show_channels(
         *cmaps, refwidth=1.5, minhue=-180, maxsat=400, rgb=False
     )
 
@@ -187,13 +187,13 @@ for cmaps in (('magma', 'rocket'), ('fire', 'dusk')):
 # ``'hpl'`` colorspaces.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 state = np.random.RandomState(51423)
 data = state.rand(30, 30).cumsum(axis=1)
 
 # Initialize figure
-fig, axs = plot.subplots(ncols=2, nrows=2, refwidth=2, span=0)
+fig, axs = pplt.subplots(ncols=2, nrows=2, refwidth=2, span=0)
 axs.format(
     xticklabels='none',
     yticklabels='none',
@@ -202,21 +202,21 @@ axs.format(
 
 # Colormap from a color
 # The trailing '_r' makes the colormap go dark-to-light instead of light-to-dark
-cmap1 = plot.Colormap('prussian blue_r', l=100, name='Pacific', space='hpl')
+cmap1 = pplt.Colormap('prussian blue_r', l=100, name='Pacific', space='hpl')
 ax = axs[0]
 ax.format(title='From single named color')
 m = ax.contourf(data, cmap=cmap1)
 ax.colorbar(m, loc='b', ticks='none', label=cmap1.name)
 
 # Colormap from lists
-cmap2 = plot.Colormap(('maroon', 'light tan'), name='Heatwave')
+cmap2 = pplt.Colormap(('maroon', 'light tan'), name='Heatwave')
 ax = axs[1]
 ax.format(title='From list of colors')
 m = ax.contourf(data, cmap=cmap2)
 ax.colorbar(m, loc='b', ticks='none', label=cmap2.name)
 
 # Sequential colormap from channel values
-cmap3 = plot.Colormap(
+cmap3 = pplt.Colormap(
     h=('red', 'red-720'), s=(80, 20), l=(20, 100), space='hpl', name='CubeHelix'
 )
 ax = axs[2]
@@ -225,7 +225,7 @@ m = ax.contourf(data, cmap=cmap3)
 ax.colorbar(m, loc='b', ticks='none', label=cmap3.name)
 
 # Cyclic colormap from channel values
-cmap4 = plot.Colormap(
+cmap4 = pplt.Colormap(
     h=(0, 360), c=50, l=70, space='hcl', cyclic=True, name='Spectrum'
 )
 ax = axs[3]
@@ -234,8 +234,8 @@ m = ax.contourf(data, cmap=cmap4)
 ax.colorbar(m, loc='b', ticks='none', label=cmap4.name)
 
 # Display the channels
-fig, axs = plot.show_channels(cmap1, cmap2, refwidth=1.5, rgb=False)
-fig, axs = plot.show_channels(cmap3, cmap4, refwidth=1.5, rgb=False)
+fig, axs = pplt.show_channels(cmap1, cmap2, refwidth=1.5, rgb=False)
+fig, axs = pplt.show_channels(cmap3, cmap4, refwidth=1.5, rgb=False)
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -261,13 +261,13 @@ fig, axs = plot.show_channels(cmap3, cmap4, refwidth=1.5, rgb=False)
 # `~proplot.constructor.Colormap`.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 state = np.random.RandomState(51423)
 data = state.rand(30, 30).cumsum(axis=1)
 
 # Generate figure
-fig, axs = plot.subplots([[0, 1, 1, 0], [2, 2, 3, 3]], refwidth=2.4, span=False)
+fig, axs = pplt.subplots([[0, 1, 1, 0], [2, 2, 3, 3]], refwidth=2.4, span=False)
 axs.format(
     xlabel='xlabel', ylabel='ylabel',
     suptitle='Merging colormaps'
@@ -275,16 +275,16 @@ axs.format(
 
 # Diverging colormap example
 title1 = 'Diverging from two sequential maps'
-cmap1 = plot.Colormap('Blues4_r', 'Reds3', name='Diverging', save=True)
+cmap1 = pplt.Colormap('Blues4_r', 'Reds3', name='Diverging', save=True)
 
 # SciVisColor examples
 title2 = 'SciVisColor example with equal ratios'
-cmap2 = plot.Colormap(
+cmap2 = pplt.Colormap(
     'Greens1_r', 'Oranges1', 'Blues1_r', 'Blues6',
     name='SciVisColorEven', save=True
 )
 title3 = 'SciVisColor example'
-cmap3 = plot.Colormap(
+cmap3 = pplt.Colormap(
     'Greens1_r', 'Oranges1', 'Blues1_r', 'Blues6',
     ratios=(1, 3, 5, 10), name='SciVisColorUneven', save=True
 )
@@ -339,13 +339,13 @@ for ax, cmap, title in zip(axs, (cmap1, cmap2, cmap3), (title1, title2, title3))
 #   `HCL wizard <http://hclwizard.org:64230/hclwizard/>`__ "power" sliders.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 state = np.random.RandomState(51423)
 data = state.rand(40, 40).cumsum(axis=0)
 
 # Generate figure
-fig, axs = plot.subplots(
+fig, axs = pplt.subplots(
     [[0, 1, 1, 0], [2, 2, 3, 3]], refwidth=1.9, span=False,
 )
 axs.format(
@@ -370,24 +370,24 @@ for ax, coord in zip(axs, (None, 0.3, 0.7)):
 
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 state = np.random.RandomState(51423)
 data = (state.rand(40, 40) - 0.5).cumsum(axis=0).cumsum(axis=1)
 
 # Generate figure
-fig, axs = plot.subplots(ncols=2, nrows=2, refwidth=1.7, span=False)
+fig, axs = pplt.subplots(ncols=2, nrows=2, refwidth=1.7, span=False)
 axs.format(
     xlabel='x axis', ylabel='y axis', xticklabels='none',
     suptitle='Modifying diverging colormaps',
 )
 
 # Cutting out central colors
-levels = plot.arange(-10, 10, 2)
+levels = pplt.arange(-10, 10, 2)
 for i, (ax, cut) in enumerate(zip(axs, (None, None, 0.2, -0.1))):
-    levels = plot.arange(-10, 10, 2)
+    levels = pplt.arange(-10, 10, 2)
     if i == 1 or i == 3:
-        levels = plot.edges(levels)
+        levels = pplt.edges(levels)
     if i < 2:
         title = 'Negative-positive cutoff' if i == 0 else 'Neutral-valued center'
         title = f'{title}\nlen(levels) = {len(levels)}'
@@ -402,13 +402,13 @@ for i, (ax, cut) in enumerate(zip(axs, (None, None, 0.2, -0.1))):
     )
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 state = np.random.RandomState(51423)
 data = (state.rand(50, 50) - 0.48).cumsum(axis=0).cumsum(axis=1) % 30
 
 # Rotating cyclic colormaps
-fig, axs = plot.subplots(ncols=3, refwidth=1.7, span=False)
+fig, axs = pplt.subplots(ncols=3, refwidth=1.7, span=False)
 for ax, shift in zip(axs, (0, 90, 180)):
     m = ax.pcolormesh(data, cmap='romaO', cmap_kw={'shift': shift}, levels=12)
     ax.format(
@@ -418,16 +418,16 @@ for ax, shift in zip(axs, (0, 90, 180)):
     ax.colorbar(m, loc='b', locator='null')
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 state = np.random.RandomState(51423)
 data = state.rand(20, 20).cumsum(axis=1)
 
 # Changing the colormap opacity
-fig, axs = plot.subplots(ncols=3, refwidth=1.7, span=False)
+fig, axs = pplt.subplots(ncols=3, refwidth=1.7, span=False)
 for ax, alpha in zip(axs, (1.0, 0.5, 0.0)):
     alpha = (alpha, 1.0)
-    cmap = plot.Colormap('batlow_r', alpha=alpha)
+    cmap = pplt.Colormap('batlow_r', alpha=alpha)
     m = ax.imshow(data, cmap=cmap, levels=10, extend='both')
     ax.colorbar(m, loc='b', locator='none')
     ax.format(
@@ -436,15 +436,15 @@ for ax, alpha in zip(axs, (1.0, 0.5, 0.0)):
     )
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 state = np.random.RandomState(51423)
 data = state.rand(20, 20).cumsum(axis=1)
 
 # Changing the colormap gamma
-fig, axs = plot.subplots(ncols=3, refwidth=1.7, span=False)
+fig, axs = pplt.subplots(ncols=3, refwidth=1.7, span=False)
 for ax, gamma in zip(axs, (0.7, 1.0, 1.4)):
-    cmap = plot.Colormap('boreal', gamma=gamma)
+    cmap = pplt.Colormap('boreal', gamma=gamma)
     m = ax.pcolormesh(data, cmap=cmap, levels=10, extend='both')
     ax.colorbar(m, loc='b', locator='none')
     ax.format(

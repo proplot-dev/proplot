@@ -51,20 +51,20 @@
 # edges in the ``pcolor`` plots shown below.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 
 # Sample data
 state = np.random.RandomState(51423)
 x = y = np.array([-10, -5, 0, 5, 10])
-xedges = plot.edges(x)
-yedges = plot.edges(y)
+xedges = pplt.edges(x)
+yedges = pplt.edges(y)
 data = state.rand(y.size, x.size)  # "center" coordinates
 lim = (np.min(xedges), np.max(xedges))
 
-with plot.rc.context({'image.cmap': 'Grays', 'image.levels': 21}):
+with pplt.rc.context({'image.cmap': 'Grays', 'image.levels': 21}):
     # Figure
-    fig, axs = plot.subplots(ncols=2, nrows=2, refwidth=2.3, share=False)
+    fig, axs = pplt.subplots(ncols=2, nrows=2, refwidth=2.3, share=False)
     axs.format(
         xlabel='xlabel', ylabel='ylabel',
         xlim=lim, ylim=lim, xlocator=5, ylocator=5,
@@ -150,12 +150,12 @@ df.index.name = 'month'
 df.columns.name = 'variable (units)'
 
 # %%
-import proplot as plot
-fig, axs = plot.subplots(nrows=2, refwidth=2.5, share=0)
+import proplot as pplt
+fig, axs = pplt.subplots(nrows=2, refwidth=2.5, share=0)
 axs.format(toplabels=('Automatic subplot formatting',))
 
 # Plot DataArray
-cmap = plot.Colormap('PuBu', left=0.05)
+cmap = pplt.Colormap('PuBu', left=0.05)
 axs[0].contourf(da, cmap=cmap, colorbar='l', linewidth=0.7, color='k')
 axs[0].format(yreverse=True)
 
@@ -176,18 +176,18 @@ axs[1].format(xtickminor=False, yreverse=True)
 # You can do so using the `cmap` and `cmap_kw` arguments, available with any
 # plotting method wrapped by `~proplot.axes.apply_cmap`. `cmap` and `cmap_kw`
 # are passed to `~proplot.constructor.Colormap` and the resulting colormap is
-# used for the plot. For example, to create and apply a monochromatic colormap,
+# used for the pplt. For example, to create and apply a monochromatic colormap,
 # you can simply use ``cmap='color_name'``.
 #
 # The `~proplot.axes.apply_cmap` wrapper also
 # adds the `norm` and `norm_kw` arguments. They are passed to the
 # `~proplot.constructor.Norm` :ref:`constructor function <why_constructor>`,
-# and the resulting normalizer is used for the plot. For more information on colormaps
+# and the resulting normalizer is used for the pplt. For more information on colormaps
 # and normalizers, see the :ref:`colormaps section <ug_cmaps>` and `this matplotlib
 # tutorial <https://matplotlib.org/tutorials/colors/colormapnorms.html>`__.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 
 # Sample data
@@ -196,7 +196,7 @@ state = np.random.RandomState(51423)
 data = 11 ** (0.25 * np.cumsum(state.rand(N, N), axis=0))
 
 # Figure
-fig, axs = plot.subplots(ncols=2, refwidth=2.3, span=False)
+fig, axs = pplt.subplots(ncols=2, refwidth=2.3, span=False)
 axs.format(
     xlabel='xlabel', ylabel='ylabel', grid=True,
     suptitle='On-the-fly colormaps and normalizers'
@@ -217,7 +217,7 @@ axs[1].format(title='Logarithmic normalizer')
 # ------------------------
 #
 # The `~proplot.axes.apply_cmap` wrapper also "discretizes" the colormaps
-# used with every plot. This is done using `~proplot.colors.DiscreteNorm`,
+# used with every pplt. This is done using `~proplot.colors.DiscreteNorm`,
 # which converts data values into colormap colors by first (1) transforming
 # the data using an arbitrary *continuous* normalizer (e.g.,
 # `~matplotlib.colors.Normalize` or `~matplotlib.colors.LogNorm`), then
@@ -250,7 +250,7 @@ axs[1].format(title='Logarithmic normalizer')
 # the `proplot.utils.arange` and `proplot.utils.edges` commands may be useful.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 
 # Sample data
@@ -258,7 +258,7 @@ state = np.random.RandomState(51423)
 data = (state.normal(0, 1, size=(33, 33))).cumsum(axis=0).cumsum(axis=1)
 
 # Pcolor plot with and without distinct levels
-fig, axs = plot.subplots(ncols=2, refwidth=2.2)
+fig, axs = pplt.subplots(ncols=2, refwidth=2.2)
 axs.format(suptitle='DiscreteNorm with symmetric levels')
 for ax, n, mode, side in zip(axs, (200, 10), ('Ambiguous', 'Distinct'), 'lr'):
     m = ax.pcolor(data, cmap='spectral_r', levels=n, symmetric=True)
@@ -266,16 +266,16 @@ for ax, n, mode, side in zip(axs, (200, 10), ('Ambiguous', 'Distinct'), 'lr'):
     ax.colorbar(m, loc=side, locator=8)
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 
 # Sample data
 state = np.random.RandomState(51423)
 data = (20 * (state.rand(20, 20) - 0.4).cumsum(axis=0).cumsum(axis=1)) % 360
-levels = plot.arange(0, 360, 45)
+levels = pplt.arange(0, 360, 45)
 
 # Figure
-fig, axs = plot.subplots(
+fig, axs = pplt.subplots(
     [[0, 1, 1, 0], [2, 3, 4, 5]],
     wratios=(1, 1, 1, 1), hratios=(1.5, 1),
     refwidth=2.4, refaspect=1, right='2em'
@@ -328,7 +328,7 @@ for ax, extend in zip(axs[1:], ('min', 'max', 'neither', 'both')):
 # with unusual statistical distributions.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 
 # Sample data
@@ -336,7 +336,7 @@ state = np.random.RandomState(51423)
 data = 10**(2 * state.rand(20, 20).cumsum(axis=0) / 7)
 
 # Linear segmented norm
-fig, axs = plot.subplots(ncols=2, refwidth=2.4)
+fig, axs = pplt.subplots(ncols=2, refwidth=2.4)
 ticks = [5, 10, 20, 50, 100, 200, 500, 1000]
 for i, (norm, title) in enumerate(zip(
     ('linear', 'segmented'),
@@ -351,7 +351,7 @@ for i, (norm, title) in enumerate(zip(
 axs.format(suptitle='Linear segmented normalizer demo')
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 
 # Sample data
@@ -360,9 +360,9 @@ data1 = (state.rand(20, 20) - 0.485).cumsum(axis=1).cumsum(axis=0)
 data2 = (state.rand(20, 20) - 0.515).cumsum(axis=0).cumsum(axis=1)
 
 # Figure
-fig, axs = plot.subplots(nrows=2, ncols=2, refwidth=2.2, order='F')
+fig, axs = pplt.subplots(nrows=2, ncols=2, refwidth=2.2, order='F')
 axs.format(suptitle='Diverging normalizer demo')
-cmap = plot.Colormap('DryWet', cut=0.1)
+cmap = pplt.Colormap('DryWet', cut=0.1)
 
 # Diverging norms
 i = 0
@@ -373,7 +373,7 @@ for data, mode, fair, locator in zip(
     (3, 3),
 ):
     for fair in ('fair', 'unfair'):
-        norm = plot.Norm('diverging', fair=(fair == 'fair'))
+        norm = pplt.Norm('diverging', fair=(fair == 'fair'))
         ax = axs[i]
         m = ax.contourf(data, cmap=cmap, norm=norm)
         ax.colorbar(m, loc='b', locator=locator)
@@ -402,7 +402,7 @@ for data, mode, fair, locator in zip(
 # `~proplot.axes.apply_cmap` for details.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import pandas as pd
 import numpy as np
 
@@ -412,7 +412,7 @@ data = state.rand(6, 6)
 data = pd.DataFrame(data, index=pd.Index(['a', 'b', 'c', 'd', 'e', 'f']))
 
 # Figure
-fig, axs = plot.subplots(
+fig, axs = pplt.subplots(
     [[1, 1, 2, 2], [0, 3, 3, 0]],
     refwidth=2.3, share=1, span=False,
 )
@@ -459,7 +459,7 @@ ax.format(title='Line contours with labels')
 # generally only be used with `~proplot.axes.CartesianAxes`.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 import pandas as pd
 
@@ -472,7 +472,7 @@ data[np.tril_indices(data.shape[0], -1)] = np.nan  # fill half with empty boxes
 data = pd.DataFrame(data, columns=list('abcdefghij'), index=list('abcdefghij'))
 
 # Covariance matrix plot
-fig, ax = plot.subplots(refwidth=4.5)
+fig, ax = pplt.subplots(refwidth=4.5)
 m = ax.heatmap(
     data, cmap='ColdHot', vmin=-1, vmax=1, N=100,
     lw=0.5, edgecolor='k', labels=True, labels_kw={'weight': 'bold'},

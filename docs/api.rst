@@ -4,7 +4,7 @@ API reference
 
 Comprehensive documentation of ProPlot functions and classes. All of these
 objects are imported into the top-level namespace, so you can read the
-documentation within python sessions using ``help(plot.<function_or_class>)``.
+documentation within python sessions using ``help(pplt.<function_or_class>)``.
 
 Top-level functions
 ===================

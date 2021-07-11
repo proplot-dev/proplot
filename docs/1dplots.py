@@ -47,18 +47,18 @@
 # plotting method is called for each column of the array.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 
 N = 5
 state = np.random.RandomState(51423)
-with plot.rc.context({'axes.prop_cycle': plot.Cycle('Grays', N=N, left=0.3)}):
+with pplt.rc.context({'axes.prop_cycle': pplt.Cycle('Grays', N=N, left=0.3)}):
     # Sample data
     x = np.linspace(-5, 5, N)
     y = state.rand(N, 5)
 
     # Figure
-    fig, axs = plot.subplots(ncols=2, share=False)
+    fig, axs = pplt.subplots(ncols=2, share=False)
     axs.format(xlabel='xlabel', ylabel='ylabel')
     axs.format(suptitle='Standardized arguments demonstration')
 
@@ -148,16 +148,16 @@ df.index.name = 'date'
 df.columns.name = 'category'
 
 # %%
-import proplot as plot
-fig, axs = plot.subplots(ncols=2, refwidth=2.2, share=0)
+import proplot as pplt
+fig, axs = pplt.subplots(ncols=2, refwidth=2.2, share=0)
 axs.format(suptitle='Automatic subplot formatting')
 
 # Plot DataArray
-cycle = plot.Cycle('dark blue', space='hpl', N=da.shape[1])
+cycle = pplt.Cycle('dark blue', space='hpl', N=da.shape[1])
 axs[0].scatter(da, cycle=cycle, lw=3, colorbar='ul', colorbar_kw={'locator': 20})
 
 # Plot Dataframe
-cycle = plot.Cycle('dark green', space='hpl', N=df.shape[1])
+cycle = pplt.Cycle('dark green', space='hpl', N=df.shape[1])
 axs[1].plot(df, cycle=cycle, lw=3, legend='uc')
 
 
@@ -174,7 +174,7 @@ axs[1].plot(df, cycle=cycle, lw=3, legend='uc')
 # with any plotting method wrapped by `~proplot.axes.apply_cycle`. `cycle` and
 # `cycle_kw` are passed to the `~proplot.constructor.Cycle`
 # :ref:`constructor function <why_constructor>`, and the resulting property cycle
-# is used for the plot. You can specify `cycle` once with 2D input data (in which case
+# is used for the pplt. You can specify `cycle` once with 2D input data (in which case
 # each column is plotted in succession according to the property cycle) or call a
 # plotting command multiple times with the same `cycle` argument each time (the
 # property cycle is not reset). For more information on property cycles, see the
@@ -182,7 +182,7 @@ axs[1].plot(df, cycle=cycle, lw=3, legend='uc')
 # <https://matplotlib.org/tutorials/intermediate/color_cycle.html#sphx-glr-tutorials-intermediate-color-cycle-py>`__.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 
 # Sample data
@@ -191,9 +191,9 @@ state = np.random.RandomState(51423)
 data1 = state.rand(M, N)
 data2 = state.rand(M, N) * 1.5
 
-with plot.rc.context({'lines.linewidth': 3}):
+with pplt.rc.context({'lines.linewidth': 3}):
     # Figure
-    fig, axs = plot.subplots(ncols=2, refwidth=2.2, span=False)
+    fig, axs = pplt.subplots(ncols=2, refwidth=2.2, span=False)
     axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Local property cycles demo')
 
     # Use property cycle for columns of 2D input data
@@ -238,10 +238,10 @@ with plot.rc.context({'lines.linewidth': 3}):
 # (the default colors are :rc:`negcolor` and :rc:`poscolor`).
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 state = np.random.RandomState(51423)
-fig, axs = plot.subplots(ncols=2, nrows=3, refwidth=2.2, share=1, span=False)
+fig, axs = pplt.subplots(ncols=2, nrows=3, refwidth=2.2, share=1, span=False)
 axs.format(suptitle='Line plots demo', xlabel='xlabel', ylabel='ylabel')
 
 # Vertical vs. horizontal
@@ -311,7 +311,7 @@ ax.format(title='Stem plot')
 # the keywords `smin` and `smax` (analogous to `vmin` and `vmax` used for colors).
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 import pandas as pd
 
@@ -322,7 +322,7 @@ data = (state.rand(20, 4) - 0.5).cumsum(axis=0)
 data = pd.DataFrame(data, columns=pd.Index(['a', 'b', 'c', 'd'], name='label'))
 
 # Figure
-fig, axs = plot.subplots(ncols=2, nrows=2, refwidth=2.2, share=1, span=False)
+fig, axs = pplt.subplots(ncols=2, nrows=2, refwidth=2.2, share=1, span=False)
 axs.format(suptitle='Scatter plot demo')
 
 # Vertical vs. horizontal
@@ -385,7 +385,7 @@ axs.format(xlabel='xlabel', ylabel='ylabel')
 # the shading and axes edges by default.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 import pandas as pd
 
@@ -398,10 +398,10 @@ data = pd.DataFrame(
 )
 
 # Figure
-plot.rc.abc = True
-plot.rc.titleloc = 'l'
-plot.rc.abcstyle = 'a.'
-fig, axs = plot.subplots(nrows=2, refaspect=2, refwidth=4.8, share=0, hratios=(3, 2))
+pplt.rc.abc = True
+pplt.rc.titleloc = 'l'
+pplt.rc.abcstyle = 'a.'
+fig, axs = pplt.subplots(nrows=2, refaspect=2, refwidth=4.8, share=0, hratios=(3, 2))
 
 # Side-by-side bars
 ax = axs[0]
@@ -424,7 +424,7 @@ ax.format(title='Stacked')
 axs.format(grid=False)
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 
 # Sample data
@@ -433,7 +433,7 @@ data = state.rand(5, 3).cumsum(axis=0)
 cycle = ('gray3', 'gray5', 'gray7')
 
 # Figure
-fig, axs = plot.subplots(ncols=2, refwidth=2.3, share=0)
+fig, axs = pplt.subplots(ncols=2, refwidth=2.3, share=0)
 axs.format(grid=False, xlabel='xlabel', ylabel='ylabel', suptitle='Area plot demo')
 
 # Overlaid area patches
@@ -453,7 +453,7 @@ ax.area(
 ax.format(title='Stack between columns')
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 
 # Sample data
@@ -461,7 +461,7 @@ state = np.random.RandomState(51423)
 data = 4 * (state.rand(40) - 0.5)
 
 # Figure
-fig, axs = plot.subplots(nrows=2, refaspect=2, figwidth=5)
+fig, axs = pplt.subplots(nrows=2, refaspect=2, figwidth=5)
 axs.format(
     xmargin=0, xlabel='xlabel', ylabel='ylabel', grid=True,
     suptitle='Positive and negative colors demo',
@@ -477,7 +477,7 @@ axs[1].area(data, negpos=True, lw=0.5, edgecolor='k')
 axs[1].format(title='Area plot')
 
 # Reset title styles changed above
-plot.rc.reset()
+pplt.rc.reset()
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -503,7 +503,7 @@ plot.rc.reset()
 
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 import pandas as pd
 
@@ -520,7 +520,7 @@ array_vertical = [[1], [2], [3]]
 array_horizontal = [[1, 1], [2, 3], [2, 3]]
 for name, array in zip(('horizontal', 'vertical'), (array_horizontal, array_vertical)):
     # Figure
-    fig, axs = plot.subplots(
+    fig, axs = pplt.subplots(
         array, refaspect=1.5, refwidth=4,
         share=0, hratios=(2, 1, 1)
     )
@@ -588,7 +588,7 @@ for name, array in zip(('horizontal', 'vertical'), (array_horizontal, array_vert
 # panels showing the marginal distributions.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 
 # Sample data
@@ -597,10 +597,10 @@ state = np.random.RandomState(51423)
 x = state.normal(size=(M, N)) + state.rand(M)[:, None] * np.arange(N) + 2 * np.arange(N)
 
 # Sample overlayed histograms
-fig, ax = plot.subplots(refwidth=4, refaspect=(3, 2))
+fig, ax = pplt.subplots(refwidth=4, refaspect=(3, 2))
 ax.format(suptitle='Overlaid histograms', xlabel='distribution', ylabel='count')
 ax.hist(
-    x, plot.arange(-3, 8, 0.2), alpha=0.7,
+    x, pplt.arange(-3, 8, 0.2), alpha=0.7,
     cycle=('blue9', 'gray9', 'orange9'), labels=list('abc'), legend='ul',
 )
 
@@ -608,10 +608,10 @@ ax.hist(
 N = 500
 x = state.normal(size=(N,))
 y = state.normal(size=(N,))
-bins = plot.arange(-3, 3, 0.25)
+bins = pplt.arange(-3, 3, 0.25)
 
 # Histogram with marginal distributions
-fig, axs = plot.subplots(ncols=2, refwidth=2.3)
+fig, axs = pplt.subplots(ncols=2, refwidth=2.3)
 axs.format(
     abc=True, abcstyle='A.', titleabove=True, title='Test',
     ylabel='y axis', suptitle='Histograms with marginal distributionss'
@@ -621,7 +621,7 @@ for ax, which, color in zip(axs, 'lr', ('blue9', 'orange9')):
         x, y, bins, vmin=0, vmax=10, levels=50,
         cmap=color, colorbar='b', colorbar_kw={'label': 'count'}
     )
-    color = plot.scale_luminance(color, 1.5)  # histogram colors
+    color = pplt.scale_luminance(color, 1.5)  # histogram colors
     side = ax.panel(which, space=0)
     side.hist(y, bins, color=color, vert=False)  # or orientation='horizontal'
     side.format(grid=False, xlocator=[], xreverse=(which == 'l'))
@@ -646,7 +646,7 @@ for ax, which, color in zip(axs, 'lr', ('blue9', 'orange9')):
 # `~xarray.DataArray` column labels or the input *x* coordinate labels.
 
 # %% tags=[]
-import proplot as plot
+import proplot as pplt
 import numpy as np
 import pandas as pd
 
@@ -659,7 +659,7 @@ data2 = state.rand(100, 7)
 data2 = pd.DataFrame(data2, columns=pd.Index(list('abcdefg'), name='label'))
 
 # Figure
-fig, axs = plot.subplots([[1, 1, 2, 2], [0, 3, 3, 0]], span=False)
+fig, axs = pplt.subplots([[1, 1, 2, 2], [0, 3, 3, 0]], span=False)
 axs.format(
     titleloc='l', abc=True, abcstyle='A.', grid=False,
     suptitle='Boxes and violins demo')
@@ -680,7 +680,7 @@ ax.format(title='Violin plots')
 
 # Boxes with different colors
 ax = axs[2]
-colors = plot.Colors('pastel2')  # list of colors from the cycle
+colors = pplt.Colors('pastel2')  # list of colors from the cycle
 ax.boxplot(data2, fillcolor=colors, orientation='horizontal')
 ax.format(title='Multiple colors', ymargin=0.15)
 
@@ -700,10 +700,10 @@ ax.format(title='Multiple colors', ymargin=0.15)
 # `~matplotlib.collections.LineCollection` returned by `~proplot.axes.Axes.parametric`.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 import pandas as pd
-fig, axs = plot.subplots(
+fig, axs = pplt.subplots(
     share=0, ncols=2, wratios=(2, 1),
     figwidth='16cm', refaspect=(2, 1)
 )

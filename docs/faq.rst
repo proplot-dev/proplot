@@ -7,7 +7,7 @@ What makes this project different?
 
 There is already a great matplotlib wrapper called
 `seaborn <https://seaborn.pydata.org/>`__. Also, `pandas
-<https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.plot.html>`__
+<https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.pplt.html>`__
 and `xarray <http://xarray.pydata.org/en/stable/plotting.html>`__
 both offer convenient matplotlib plotting commands.
 How does ProPlot compare against these tools?

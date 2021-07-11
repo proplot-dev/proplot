@@ -53,7 +53,7 @@ We recommend importing ProPlot as follows:
 
 .. code-block:: python
 
-   import proplot as plot
+   import proplot as pplt
 
 This differentiates ProPlot from the usual ``plt`` abbreviation reserved for
 the `~matplotlib.pyplot` module. The abbreviation ``pplt`` is a popular
@@ -69,7 +69,7 @@ Creating plots with ProPlot always begins with a call to the
 
 .. code-block:: python
 
-   fig, axs = plot.subplots(...)
+   fig, axs = pplt.subplots(...)
 
 The `~proplot.ui.subplots` command is modeled after
 matplotlib's native `matplotlib.pyplot.subplots` command

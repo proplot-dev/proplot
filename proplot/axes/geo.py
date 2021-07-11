@@ -1367,7 +1367,7 @@ class BasemapAxes(GeoAxes):
                 f'Got lonlim={lonlim!r}, latlim={latlim!r}, '
                 f'boundinglat={boundinglat!r}, but you cannot "zoom into" a '
                 'basemap projection after creating it. Add any of the following '
-                "keyword args in your call to plot.Proj('name', basemap=True, ...): "
+                "keyword args in your call to pplt.Proj('name', basemap=True, ...): "
                 "'boundinglat', 'llcrnrlon', 'llcrnrlat', "
                 "'urcrnrlon', 'urcrnrlat', 'llcrnrx', 'llcrnry', "
                 "'urcrnrx', 'urcrnry', 'width', or 'height'."

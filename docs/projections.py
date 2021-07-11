@@ -60,13 +60,13 @@
 # For details, see `proplot.axes.PolarAxes.format`.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 N = 200
 state = np.random.RandomState(51423)
 x = np.linspace(0, 2 * np.pi, N)
 y = 100 * (state.rand(N, 5) - 0.3).cumsum(axis=0) / N
-fig, axs = plot.subplots([[1, 1, 2, 2], [0, 3, 3, 0]], proj='polar')
+fig, axs = pplt.subplots([[1, 1, 2, 2], [0, 3, 3, 0]], proj='polar')
 axs.format(
     suptitle='Polar axes demo', linewidth=1, titlepad='1em',
     ticklabelsize=9, rlines=0.5, rlim=(0, 19),
@@ -78,14 +78,14 @@ for i in range(5):
 # Standard polar plot
 axs[0].format(
     title='Normal plot', thetaformatter='tau',
-    rlabelpos=225, rlines=plot.arange(5, 30, 5),
+    rlabelpos=225, rlines=pplt.arange(5, 30, 5),
     color='red8', tickpad='1em',
 )
 
 # Sector plot
 axs[1].format(
     title='Sector plot', thetadir=-1, thetalines=90, thetalim=(0, 270), theta0='N',
-    rlim=(0, 22), rlines=plot.arange(5, 30, 5),
+    rlim=(0, 22), rlines=pplt.arange(5, 30, 5),
 )
 
 # Annular plot
@@ -185,14 +185,14 @@ axs[2].format(
 # %%
 # Simple figure with just one projection
 
-# Option 1: Create a projection manually with plot.Proj()
+# Option 1: Create a projection manually with pplt.Proj()
 # immport proplot as plot
-# proj = plot.Proj('robin', lon_0=180)
-# fig, axs = plot.subplots(nrows=2, refwidth=3, proj=proj)
+# proj = pplt.Proj('robin', lon_0=180)
+# fig, axs = pplt.subplots(nrows=2, refwidth=3, proj=proj)
 
 # Option 2: Pass the name to 'proj' and keyword arguments to 'proj_kw'
-import proplot as plot
-fig, axs = plot.subplots(nrows=2, refwidth=3, proj='robin', proj_kw={'lon_0': 180})
+import proplot as pplt
+fig, axs = pplt.subplots(nrows=2, refwidth=3, proj='robin', proj_kw={'lon_0': 180})
 axs.format(
     suptitle='Figure with single projection',
     coast=True, latlines=30, lonlines=60,
@@ -200,8 +200,8 @@ axs.format(
 
 # %%
 # Complex figure with different projections
-import proplot as plot
-fig, axs = plot.subplots(
+import proplot as pplt
+fig, axs = pplt.subplots(
     ncols=2, nrows=3,
     hratios=(1, 1, 1.4),
     basemap=(False, True, False, True, False, True),  # cartopy column 1
@@ -215,7 +215,7 @@ axs.format(
     lonlabels='b', latlabels='r',  # or lonlabels=True, labels=True, etc.
 )
 axs[0, :].format(latlines=30, lonlines=60, labels=True)
-plot.rc.reset()
+pplt.rc.reset()
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -247,20 +247,20 @@ plot.rc.reset()
 # to ``True``. See the :ref:`next section <ug_geoformat>` for details.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 
 # Fake data with unusual longitude seam location and without coverage over poles
 offset = -40
-lon = plot.arange(offset, 360 + offset - 1, 60)
-lat = plot.arange(-60, 60 + 1, 30)
+lon = pplt.arange(offset, 360 + offset - 1, 60)
+lat = pplt.arange(-60, 60 + 1, 30)
 state = np.random.RandomState(51423)
 data = state.rand(len(lat), len(lon))
 
 # Plot data both without and with globe=True
 for globe in (False, True,):
     string = 'with' if globe else 'without'
-    fig, axs = plot.subplots(
+    fig, axs = pplt.subplots(
         ncols=2, nrows=2, refwidth=2.5,
         proj='kav7', basemap={(1, 3): False, (2, 4): True}
     )
@@ -303,8 +303,8 @@ for globe in (False, True,):
 # For details, see the `proplot.axes.GeoAxes.format` documentation.
 
 # %%
-import proplot as plot
-fig, axs = plot.subplots(
+import proplot as pplt
+fig, axs = pplt.subplots(
     [[1, 1, 2], [3, 3, 3]],
     refwidth=4, proj={1: 'eqearth', 2: 'ortho', 3: 'wintri'},
     wratios=(1, 1, 1.2), hratios=(1, 1.2),
@@ -367,12 +367,12 @@ ax.format(
 # projections with `format` after they have already been created.
 
 # %%
-import proplot as plot
+import proplot as pplt
 
 # Plate Carrée map projection
-plot.rc.reso = 'med'  # use higher res for zoomed in geographic features
-proj = plot.Proj('cyl', lonlim=(-20, 180), latlim=(-10, 50), basemap=True)
-fig, axs = plot.subplots(nrows=2, refwidth=5, proj=('cyl', proj))
+pplt.rc.reso = 'med'  # use higher res for zoomed in geographic features
+proj = pplt.Proj('cyl', lonlim=(-20, 180), latlim=(-10, 50), basemap=True)
+fig, axs = pplt.subplots(nrows=2, refwidth=5, proj=('cyl', proj))
 axs.format(
     land=True, labels=True, lonlines=20, latlines=20,
     gridminor=True, suptitle='Zooming into projections'
@@ -384,11 +384,11 @@ axs[0].format(
 axs[1].format(title='Basemap example')
 
 # %%
-import proplot as plot
+import proplot as pplt
 
 # Pole-centered map projections
-proj = plot.Proj('npaeqd', boundinglat=60, basemap=True)
-fig, axs = plot.subplots(ncols=2, refwidth=2.7, proj=('splaea', proj))
+proj = pplt.Proj('npaeqd', boundinglat=60, basemap=True)
+fig, axs = pplt.subplots(ncols=2, refwidth=2.7, proj=('splaea', proj))
 axs.format(
     land=True, latmax=80,  # no gridlines poleward of 80 degrees
     suptitle='Zooming into polar projections'
@@ -397,23 +397,23 @@ axs[0].format(boundinglat=-60, title='Cartopy example')
 axs[1].format(title='Basemap example')
 
 # %%
-import proplot as plot
+import proplot as pplt
 
 # Zooming in on continents
-proj1 = plot.Proj('lcc', lon_0=0)  # cartopy projection
-proj2 = plot.Proj('lcc', lon_0=-100, lat_0=45, width=8e6, height=8e6, basemap=True)
-fig, axs = plot.subplots(ncols=2, refwidth=3, proj=(proj1, proj2))
+proj1 = pplt.Proj('lcc', lon_0=0)  # cartopy projection
+proj2 = pplt.Proj('lcc', lon_0=-100, lat_0=45, width=8e6, height=8e6, basemap=True)
+fig, axs = pplt.subplots(ncols=2, refwidth=3, proj=(proj1, proj2))
 axs.format(suptitle='Zooming into specific regions', land=True)
 axs[0].format(lonlim=(-20, 50), latlim=(30, 70), title='Cartopy example')
 axs[1].format(lonlines=20, title='Basemap example')
 
 
 # %%
-import proplot as plot
+import proplot as pplt
 
 # Zooming to very small scale with degree-minute-second labels
-plot.rc.reso = 'hi'
-fig, axs = plot.subplots(ncols=2, refwidth=2.5, proj='cyl')
+pplt.rc.reso = 'hi'
+fig, axs = pplt.subplots(ncols=2, refwidth=2.5, proj='cyl')
 axs.format(
     land=True, labels=True,
     borders=True, borderscolor='white',
@@ -421,7 +421,7 @@ axs.format(
 )
 axs[0].format(lonlim=(-7.5, 2), latlim=(49.5, 59))
 axs[1].format(lonlim=(-6, -2), latlim=(54.5, 58.5))
-plot.rc.reset()
+pplt.rc.reset()
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _proj_included:
@@ -443,7 +443,7 @@ plot.rc.reset()
 # and `~cartopy.crs.SouthPolarStereo` projections.
 
 # %%
-import proplot as plot
+import proplot as pplt
 
 # Table of cartopy projections
 projs = [
@@ -453,7 +453,7 @@ projs = [
     'npstere', 'nplaea', 'npaeqd', 'npgnom', 'igh',
     'eck1', 'eck2', 'eck3', 'eck4', 'eck5', 'eck6'
 ]
-fig, axs = plot.subplots(ncols=3, nrows=10, figwidth=7, proj=projs)
+fig, axs = pplt.subplots(ncols=3, nrows=10, figwidth=7, proj=projs)
 axs.format(
     land=True, reso='lo', labels=False,
     suptitle='Table of cartopy projections'
@@ -462,7 +462,7 @@ for proj, ax in zip(projs, axs):
     ax.format(title=proj, titleweight='bold', labels=False)
 
 # %%
-import proplot as plot
+import proplot as pplt
 
 # Table of basemap projections
 projs = [
@@ -472,7 +472,7 @@ projs = [
     'vandg', 'aea', 'eqdc', 'gnom', 'cass', 'lcc',
     'npstere', 'npaeqd', 'nplaea'
 ]
-fig, axs = plot.subplots(ncols=3, nrows=8, basemap=True, figwidth=7, proj=projs)
+fig, axs = pplt.subplots(ncols=3, nrows=8, basemap=True, figwidth=7, proj=projs)
 axs.format(
     land=True, labels=False,
     suptitle='Table of basemap projections'

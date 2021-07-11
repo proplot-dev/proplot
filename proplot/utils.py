@@ -86,7 +86,7 @@ color : str
 def arange(min_, *args):
     """
     Identical to `numpy.arange` but with inclusive endpoints. For
-    example, ``plot.arange(2, 4)`` returns ``np.array([2, 3, 4])`` instead
+    example, ``pplt.arange(2, 4)`` returns ``np.array([2, 3, 4])`` instead
     of ``np.array([2, 3])``. This command is useful for generating lists of
     tick locations or colorbar level boundaries.
 

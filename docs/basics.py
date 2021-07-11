@@ -85,7 +85,7 @@
 #    column share the same axis limits, scales, ticks, and labels. This is often
 #    convenient, but may be annoying for some users. To keep this feature turned off,
 #    simply :ref:`change the default settings <ug_rc>` with e.g.
-#    ``plot.rc.update(share=False, span=False)``. See the
+#    ``pplt.rc.update(share=False, span=False)``. See the
 #    :ref:`axis-sharing section <ug_share>` for details.
 
 # %%
@@ -96,16 +96,16 @@ data = 2 * (state.rand(100, 5) - 0.5).cumsum(axis=0)
 
 # %%
 # Single subplot
-import proplot as plot
-fig, ax = plot.subplots()
+import proplot as pplt
+fig, ax = pplt.subplots()
 ax.plot(data, lw=2)
 ax.format(suptitle='Single subplot', xlabel='x axis', ylabel='y axis')
 
 
 # %%
 # Simple subplot grid
-import proplot as plot
-fig, axs = plot.subplots(ncols=2)
+import proplot as pplt
+fig, axs = pplt.subplots(ncols=2)
 axs[0].plot(data, lw=2)
 axs[0].format(xticks=20, xtickminor=False)
 axs.format(
@@ -116,12 +116,12 @@ axs.format(
 
 # %%
 # Complex grid
-import proplot as plot
+import proplot as pplt
 array = [  # the "picture" (0 == nothing, 1 == subplot A, 2 == subplot B, etc.)
     [1, 1, 2, 2],
     [0, 3, 3, 0],
 ]
-fig, axs = plot.subplots(array, refwidth=1.8)
+fig, axs = pplt.subplots(array, refwidth=1.8)
 axs.format(
     abc=True, abcloc='ul', suptitle='Complex subplot grid',
     xlabel='xlabel', ylabel='ylabel'
@@ -131,14 +131,14 @@ axs[2].plot(data, lw=2)
 
 # %%
 # Really complex grid
-import proplot as plot
+import proplot as pplt
 array = [  # the "picture" (1 == subplot A, 2 == subplot B, etc.)
     [1, 1, 2],
     [1, 1, 6],
     [3, 4, 4],
     [3, 5, 5],
 ]
-fig, axs = plot.subplots(array, figwidth=5, span=False)
+fig, axs = pplt.subplots(array, figwidth=5, span=False)
 axs.format(
     suptitle='Really complex subplot grid',
     xlabel='xlabel', ylabel='ylabel', abc=True
@@ -170,7 +170,7 @@ axs[0].plot(data, lw=2)
 
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 
 # Sample data
@@ -179,8 +179,8 @@ state = np.random.RandomState(51423)
 data = N + (state.rand(N, N) - 0.55).cumsum(axis=0).cumsum(axis=1)
 
 # Example plots
-cycle = plot.Cycle('greys', left=0.2, N=5)
-fig, axs = plot.subplots(ncols=2, nrows=2, figwidth=5, share=0)
+cycle = pplt.Cycle('greys', left=0.2, N=5)
+fig, axs = pplt.subplots(ncols=2, nrows=2, figwidth=5, share=0)
 axs[0].plot(data[:, :5], linewidth=2, linestyle='--', cycle=cycle)
 axs[1].scatter(data[:, :5], marker='x', cycle=cycle)
 axs[2].pcolormesh(data, cmap='greys')
@@ -240,9 +240,9 @@ fig.colorbar(m, loc='b', label='label')
 # efficiently customize your plots.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
-fig, axs = plot.subplots(ncols=2, nrows=2, share=0, tight=True, refwidth=2)
+fig, axs = pplt.subplots(ncols=2, nrows=2, share=0, tight=True, refwidth=2)
 state = np.random.RandomState(51423)
 N = 60
 x = np.linspace(1, 10, N)
@@ -258,7 +258,7 @@ axs.format(
     xlabel='x-axis', ylabel='y-axis',
     xscale='log',
     xlim=(1, 10), xticks=1,
-    ylim=(-3, 3), yticks=plot.arange(-3, 3),
+    ylim=(-3, 3), yticks=pplt.arange(-3, 3),
     yticklabels=('a', 'bb', 'c', 'dd', 'e', 'ff', 'g'),
     ytickloc='both', yticklabelloc='both',
     xtickdir='inout', xtickminor=False, ygridminor=True,
@@ -284,7 +284,7 @@ axs.format(
 #   The default order can be switched from row-major to column-major by passing
 #   ``order='F'`` to `~proplot.ui.subplots`.
 # * When it is singleton, `~proplot.ui.SubplotsContainer` behaves like a
-#   scalar. So when you make a single axes with ``fig, axs = plot.subplots()``,
+#   scalar. So when you make a single axes with ``fig, axs = pplt.subplots()``,
 #   ``axs[0].method(...)`` is equivalent to ``axs.method(...)``.
 #
 # `~proplot.ui.SubplotsContainer` is especially useful because it lets you call
@@ -294,10 +294,10 @@ axs.format(
 # several subplots at once.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 state = np.random.RandomState(51423)
-fig, axs = plot.subplots(ncols=4, nrows=4, refwidth=1.2)
+fig, axs = pplt.subplots(ncols=4, nrows=4, refwidth=1.2)
 axs.format(
     xlabel='xlabel', ylabel='ylabel', suptitle='SubplotsContainer demo',
     grid=False, xlim=(0, 50), ylim=(-4, 4)
@@ -339,20 +339,20 @@ for ax in axs[1:, 1:]:
 
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 
 # Update global settings in several different ways
-plot.rc.cycle = 'colorblind'
-plot.rc.color = 'gray6'
-plot.rc.update({'fontname': 'Source Sans Pro', 'fontsize': 11})
-plot.rc['figure.facecolor'] = 'gray3'
-plot.rc.axesfacecolor = 'gray4'
-# plot.rc.save()  # save the current settings to ~/.proplotrc
+pplt.rc.cycle = 'colorblind'
+pplt.rc.color = 'gray6'
+pplt.rc.update({'fontname': 'Source Sans Pro', 'fontsize': 11})
+pplt.rc['figure.facecolor'] = 'gray3'
+pplt.rc.axesfacecolor = 'gray4'
+# pplt.rc.save()  # save the current settings to ~/.proplotrc
 
 # Apply settings to figure with context()
-with plot.rc.context({'suptitle.size': 13}, toplabelcolor='gray6', linewidth=1.5):
-    fig, axs = plot.subplots(ncols=2, figwidth=6, sharey=2, span=False)
+with pplt.rc.context({'suptitle.size': 13}, toplabelcolor='gray6', linewidth=1.5):
+    fig, axs = pplt.subplots(ncols=2, figwidth=6, sharey=2, span=False)
 
 # Plot lines
 N, M = 100, 6
@@ -376,20 +376,20 @@ ay.format(ycolor='red', linewidth=1.5, ylabel='secondary axis')
 ay.plot((state.rand(100) - 0.2).cumsum(), color='r', lw=3)
 
 # Reset persistent modifications from head of cell
-plot.rc.reset()
+pplt.rc.reset()
 
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
-# plot.rc.style = 'style'  # set the style everywhere
+# pplt.rc.style = 'style'  # set the style everywhere
 
 # Sample data
 state = np.random.RandomState(51423)
 data = state.rand(10, 5)
 
 # Set up figure
-fig, axs = plot.subplots(ncols=2, nrows=2, span=False, share=False)
+fig, axs = pplt.subplots(ncols=2, nrows=2, span=False, share=False)
 axs.format(suptitle='Stylesheets demo')
 styles = ('ggplot', 'seaborn', '538', 'bmh')
 
