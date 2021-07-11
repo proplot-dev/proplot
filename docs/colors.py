@@ -52,7 +52,7 @@ import proplot as plot
 fig, axs = plot.show_colors()
 
 
-# %% [raw]
+# %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_colors_change:
 #
 # Modifying colors

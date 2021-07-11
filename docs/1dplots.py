@@ -572,7 +572,7 @@ for name, array in zip(('horizontal', 'vertical'), (array_horizontal, array_vert
     ax.format(title='Line plot')
 
 
-# %% [raw]
+# %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_hist:
 #
 # Histogram plots
