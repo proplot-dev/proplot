@@ -762,7 +762,7 @@ def _auto_format_1d(
             x, kw_format = _parse_string_coords(x, which=sx, **kw_format)
         if not hist and not box and not pie:
             *ys, kw_format = _parse_string_coords(*ys, which=sy, **kw_format)
-        if not hist and not scatter and x.ndim == 1 and x.size > 1 and x[1] < x[0]:
+        if not hist and not scatter and not parametric and x.ndim == 1 and x.size > 1 and x[1] < x[0]:  # noqa: E501
             kw_format[sx + 'reverse'] = True  # auto reverse
 
         # Appply
