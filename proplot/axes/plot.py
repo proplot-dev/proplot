@@ -1851,7 +1851,7 @@ def _apply_scatter(
     ticks = None
     carray = np.atleast_1d(c)
     discrete = _not_none(
-        getattr(self, '_discrete_norm', None),
+        getattr(self, '_image_discrete', None),
         discrete,
         rc['image.discrete'],
         True
@@ -3320,7 +3320,7 @@ def apply_cmap(
     imshow = name in ('imshow', 'matshow', 'spy')
     parametric = name in ('parametric',)
     discrete = _not_none(
-        getattr(self, '_discrete_norm', None),
+        getattr(self, '_image_discrete', None),
         discrete,
         rc['image.discrete'],
         not hexbin and not hist2d and not imshow
@@ -3436,7 +3436,7 @@ def apply_cmap(
     if contour or contourf:
         kwargs['levels'] = levels
         kwargs['extend'] = extend
-    with _state_context(self, _discrete_norm=False):
+    with _state_context(self, _image_discrete=False):
         obj = method(self, *args, **kwargs)
     if not isinstance(obj, tuple):  # hist2d
         obj._colorbar_extend = extend  # used by proplot colorbar
@@ -3850,7 +3850,7 @@ def colorbar_extras(
         mappable.extend = extend  # required in mpl >= 3.3, else optional
     else:
         kwargs['extend'] = extend
-    with _state_context(self, _discrete_norm=False):
+    with _state_context(self, _image_discrete=False):
         cb = self.figure.colorbar(mappable, **kwargs)
     axis = self.xaxis if orientation == 'horizontal' else self.yaxis
 
