@@ -76,22 +76,34 @@ ProPlot v0.7.0 (2021-07-##)
 
 .. rubric:: Deprecated
 
+* Remove v0.6.0 renamed classes (e.g. `ProjAxes`) from top-level namespace
+  (:commit:`442e6aa6`). These were kept available just for documentation. The renamed
+  functions `shade`, `saturate`, and `inline_backend_fmt` will be available until v0.8.
 * Rename :rcraw:`subplots.pad` and :rcraw:`subplots.axpad` to more understandable
   :rcraw:`subplots.outerpad` and :rcraw:`subplots.innerpad` (:commit:`3c7a33a8`).
-* Rename `width` and `height` `~proplot.subplots.subplots` keyword args to
-  more understandable `figwidth` and `figheight` (:commit:`12d01996`). Will accept old
-  keyword args without warning for now since they are used heavily.
-* Rename `aspect`, `axwidth`, and `axheight` keyword args to more understandable
+  Also rename `~proplot.figure.Figure` keywords.
+* Rename `width` and `height` `~proplot.subplots.subplots` keyword args to `figwidth`
+  and `figheight` to avoid confusion with `refwidth`/`refheight` (:commit:`12d01996`).
+  Will accept old keyword args without warning since they are used heavily.
+* Rename `aspect`, `axwidth`, and `axheight` keyword args to more intuitive
   `refaspect`, `refwidth`, and `refheight` (:commit:`12d01996`). Will accept old
-  keyword args without warning for now since they are used heavily.
+  keyword args without warning since they are used heavily.
 * Rename `abovetop` keyword for moving title/abc labels above top panels, colorbars,
   and legends to :rcraw:`title.above` (:commit:`9ceacb7b`). Example usage:
   ``ax.format(title='Title', titleabove=True)``.
+* Rename the `proplot.colors.PerceptuallyUniformColormap.from_color` keyword `shade`
+  to `luminance`, and add the `saturation` keyword (:commit:`3d8e7dd0`). These can also be
+  passed to `~proplot.contructor.Colormap` when it is called with positional arguments.
 * Rename seldom-used `Figure` argument `fallback_to_cm` to more understandable
   `mathtext_fallback` (:pr:`251`).
 * Change default :rcraw:`savefig.transparent` back to ``False`` (:pr:`252`). Dubious
   justification for ``True`` in the first place, and makes default PNG proplot figures
   unreadable wherever "dark mode" is enabled.
+* Disable `DiscreteNorm` by default for a select few plots: currently, just `imshow`
+  and another (:pr:`###`). Also add the :rcraw:`discretenorm` setting to permit
+  enabling or disabling it everywhere.
+* Change `~proplot.colors.DiscreteNorm` argument `extend` to more understandable
+  `unique`. Controls which sides get unique out-of-bounds colors.
 * Rename SciVisColor colormaps from ``Blue1``, ``Blue2``, etc. to plurals ``Blues1``,
   ``Blues2``, etc. to avoid name conflict with open-color colors (:commit:`8be0473f`).
   Requesting the old names (case-sensitive) redirects to the new names
@@ -120,33 +132,91 @@ ProPlot v0.7.0 (2021-07-##)
 
 .. rubric:: Features
 
-* Permit different colors for `~matplotlib.axes.Axes.boxplot` and
-  `~matplotlib.axes.Axes.violinplot` using color lists (:issue:`217`, :pr:`218`)
-  by `Mickaël Lalande`_. Also allow passing other args as lists (:commit:`4e30f415`).
-* Add `titlebbox` and `abcbbox` as alternatives to `titleborder` and `abcborder` for
-  "inner" titles and a-b-c labels (:pr:`240`) by `Pratiman Patel`_. Borders are still
-  used by default.
+* Add the remaining commonly-used backend-related `pyplot` functions `ion`, `ioff`,
+  `isinteractive`, and `switch_backend` to the top-level `proplot` namespace
+  (:commit:`cd440155`). This avoids forcing users to import pyplot inside a proplot
+  session (the remaining pyplot functions are related to the "non-object-oriented"
+  workflow, which proplot explicitly discourages).
+* Add minimal support for "3D" `~matplotlib.mpl_toolkits.mplot3d.Axes3D` axes
+  (:issue:`249`). Example usage: ``fig.subplots(proj='3d')``.
 * Add `wequal`, `hequal`, and `equal` options to still use automatic spacing but force
   the tight layout algorithm to make spacings equal (:pr:`215`, :issue:`64`)
   by `Zachary Moon`_.
-* Add minimal support for "3D" `~matplotlib.mpl_toolkits.mplot3d.Axes3D` axes
-  (:issue:`249`). Example usage: ``fig.subplots(proj='3d')``.
+* Allow calling `proplot.colors.PerceptuallyUniformColormap.from_hsl` by passing
+  `hue`, `saturation`, or `luminance` to `~proplot.constructor.Colormap` without
+  any positional arguments (:commit:`3d8e7dd0`).
+* Allow passing `alpha`, `luminance`, `saturation` to `~proplot.constructor.Colormap`
+  as lists to be applied to each component cmap (:commit:`3d8e7dd0`).
+* Add convenient shorthands for channel references throughout colormap functions --
+  e.g. `h` for hue, `l` for `luminance`, etc. (:commit:`3d8e7dd0`).
+* Add the ``'Flare'`` and ``'Crest'`` seaborn colormaps (:commit:`14bc16c9`). These
+  are seaborn's color cycle-friendly alternatives to existing maps.
+* Add the `~proplot.utils.shift_hue` function analogous to `scale_saturation`
+  and `scale_luminance` (:commit:`67488bb1`).
+* Add the `~proplot.utils.to_hex` function and make all color-manipulation funcs return
+  HEX strings by default (:commit:`67488bb1`). Otherwise `scatter` throws warnings.
+* Use ``90`` as the default `luminance` when creating monochromatic colormaps with
+  `to_listed` set to ``True`` (as when `~proplot.constructor.Cycle` calls
+  `~proplot.constructor.Colormap`; :commit:`3d8e7dd0`).
 * Add `~proplot.axes.Axes.plotx` and `~proplot.axes.Axes.scatterx` commands that
   interpret plotting args as ``(y, x)`` rather than ``(x, y)``, analogous to
-  `~proplot.axes.Axes.areax` (:commit:`###`).
-* Add support for `~proplot.axes.indicate_error` *horizontal* error bars and
-  shading for line and scatter plots (:commit:`###`).
+  `~proplot.axes.Axes.areax` (:pr:`258`).
+* Add support for `~proplot.axes.indicate_error` *horizontal* error bars and shading
+  for *horizontal* plotting commands `barh`, `plotx`, and `scatterx` (:pr:`258`).
 * Add support for ``ax.plot_command('x_key', 'y_key', data=dataset)`` for
   virtually all plotting commands using `standardize_1d` and `standardize_2d`
-  (:commit:`###`). This was an existing `~matplotlib.axes.Axes.plot` feature.
+  (:pr:`258`). This was an existing `~matplotlib.axes.Axes.plot` feature.
+* Add support for the plotting style ``ax.plot(x1, y1, fmt1, x2, y2, fmt2, ...)``
+  as allowed by matplotlib (:pr:`258`).
+* Add `absolute_width` keyword to `~proplot.plot.bar_extras` to make `width`
+  argument absolute (:pr:`258`). Remains ``False`` by default.
+* Use "sticky" edges in x-direction for lines drawn with `plot()` and in y-direction
+  for lines drawn with `plotx()` (:pr:`258`). This eliminates padding along the
+  "dependent" axis when limits are not specified, similar to histograms and
+  barplots and matching a feature we previously added to `fill_between` (:pr:`166`).
+* Add support for "stacked" plots to `~matplotlib.axes.Axes.vlines` and
+  `~matplotlib.axes.Axes.hlines` (:pr:`258`).
+* Add `stack` as alternative to `stacked` for bar and area plots (:commit:`4e30f415`).
+  Imperative keywords are better.
+* Allow passing e.g. ``barstds=3`` or ``barpctiles=90`` to request error bars
+  denoting +/-3 standard deviations and 5-95 percentile range (:commit:`4e30f415`).
+* Add singular `indicate_error` keywords `barstd`, `barpctile`, etc. as
+  alternatives to `barstds`, `barpctiles`, etc. (:commit:`81151a58`).
+  Also prefer them in the documentation.
+* Permit different colors for `~matplotlib.axes.Axes.boxplot` and
+  `~matplotlib.axes.Axes.violinplot` using color lists (:issue:`217`, :pr:`218`)
+  by `Mickaël Lalande`_. Also allow passing other args as lists (:commit:`4e30f415`).
+* Allow passing ``means=True`` to `boxplot` to toggle mean line
+  (:commit:`4e30f415`).
+* Allow setting the mean and median boxplot linestyle with
+  ``(mean|median)(ls|linestyle)`` keywords (:commit:`4e30f415`).
+* Automatically set ``fill=True`` when passing a fill color or color(s)
+  to `boxplot_wrapper` (:commit:`4e30f415`).
+* Allow updating `vlines` and `hlines` styling with singular `color` and `linestyle`
+  and all of their aliases (:pr:`258`).
 * Allow updating axes fonts that use scalings like ``'small'`` and ``'large'``
   by passing ``fontsize=N`` to `format` (:issue:`212`).
+* Add `titlebbox` and `abcbbox` as alternatives to `titleborder` and `abcborder` for
+  "inner" titles and a-b-c labels (:pr:`240`) by `Pratiman Patel`_. Borders are still
+  used by default.
+* Allow putting `title` and `abc` in the same location -- the title and label
+  are simply offset away from ech other (:issue:`402214f9`). Padding between
+  them is controlled by the new param :rcraw:`abc.titlepad`.
+* Add new :rcraw:`suptitle.pad`, :rcraw:`leftlabel.pad`, :rcraw:`toplabel.pad`,
+  :rcraw:`bottomlabel.pad`, :rcraw:`rightlabel.pad` settings to control padding
+  used when aligning super labels (:commit:`402214f9`). These can also be passed
+  to `~proplot.axes.Axes.format` and applied locally. The new defaults increase
+  super title padding by a bit.
+* More robust interpretation of :rcraw:`abc.style` -- now match case with first
+  ``'a'`` or ``'A'`` in string, and only replace that one (:issue:`201`).
 * Interpret fontsize-relative legend rc params like ``legend.borderpad``
   with ``'em'`` as default units rather than ``'pt'`` (:commit:`6d98fd44`).
 * Add :rcraw:`basemap` setting for changing the default backend (:commit:`c9ca0bdd`). If
   users have a cartopy vs. basemap preference, they probably want to use it globally.
 * Add :rcraw:`cartopy.circular` setting for optionally disabling the "circular bounds
   on polar projections" feature (:commit:`c9ca0bdd`).
+* Support the standard aliases ``'ls'``, ``'linestyle'``, ``'linestyles'``, etc.
+  in `~proplot.constructor.Cycle` calls (:commit:`3d8e7dd0`).
 * Add `queue` keyword to `colorbar` and `legend` to support workflow where users
   successively add handles to location (:pr:`254`).
 * Add `nozero` keyword arg to `apply_cmap` to remove the zero contour
@@ -155,32 +225,18 @@ ProPlot v0.7.0 (2021-07-##)
 * Add `positive` and `negative` keyword args to `apply_cmap` for requesting
   automatically-generated all-positive or all-negative levels (:commit:`335d58f4`).
   Example usage: ``ax.contourf(x, y, z, positive=True)``.
-* Add `xmin`, `xmax`, `ymin`, and `ymax` keyword args to
-  `~proplot.axes.CartesianAxes.format` as alternatives to `xlim` and `ylim`
-  (:commit:`ae0719b7`). Example usage: ``ax.format(xmin=0)`` as opposed to
-  ``ax.format(xlim=(0, None))``.
 * Add `rotation` keyword to `colorbar_wrapper` for rotating colorbar tick
   labels, like `xrotation` and `yrotation` (:commit:`2d835f20`).
 * Add `tickdir` and `tickdirection` keywords to `colorbar_wrapper` for
   controlling tick style, like `xtickdir` and `ytickdir` (:commit:`f377f090`).
-* Allow passing full "side" names to `lonlabels` and `latlabels` rather than
-  abbreviations, e.g. ``'left'`` instead of ``'l'`` (:commit:`a5060f67`). This is
-  more consistent with rest of package.
 * Allow specifying labels for auto-generated legends using a ``'labels'`` key
   in a `legend_kw` keyword argument (:commit:`a11d1813`).
 * Replace legends drawn in the same location by default rather than drawing two
   legends on top of each other (:pr:`254`).
-* Set default transform to ``ccrs.PlateCarree`` when calling `matplotlib.axes.Axes.fill`
-  on `CartopyAxes` (:issue:`193`). This is more consistent with rest of package.
 * Use `Artist` labels for the default list-of-artist colorbar tick labels if `values`
   was not passed -- and if labels are non-numeric, rotate them 90 degrees for horizontal
   colorbars by default (:commit:`ed8e1314`). Makes the choice between "traditional"
   legends and "colorbar-style" legends more seamless.
-* Add the remaining commonly-used backend-related `pyplot` functions `ion`, `ioff`,
-  `isinteractive`, and `switch_backend` to the top-level `proplot` namespace
-  (:commit:`cd440155`). This avoids forcing users to import pyplot inside a proplot
-  session (the remaining pyplot functions are related to the "non-object-oriented"
-  workflow, which proplot explicitly discourages).
 * Use same default-level generation algorithm for contour plots without colormaps as for
   all other colormap plots (:commit:`10e0f13b`). Makes automatically-generated
   solid-color contours and colormap-style contours identical.
@@ -188,21 +244,15 @@ ProPlot v0.7.0 (2021-07-##)
   `to_linear_segmented` to avoid accidental overwriting (:commit:`91998e93`).
 * If available, use :rcraw:`pcolormesh.snap` to repair overlap in transparent colorbar
   solids rather than manual-blending workaround (:commit:`c9f59e49`).
-* More robust interpretation of :rcraw:`abc.style` -- now match case with first
-  ``'a'`` or ``'A'`` in string, and only replace that one (:issue:`201`).
-* Allow passing e.g. ``barstds=3`` or ``barpctiles=90`` to request error bars
-  denoting +/-3 standard deviations and 5-95 percentile range (:commit:`4e30f415`).
-* Add singular `indicate_error` keywords `barstd`, `barpctile`, etc. as
-  alternatives to `barstds`, `barpctiles`, etc. (:commit:`81151a58`).
-  Also prefer them in the documentation.
-* Allow passing ``means=True`` to `boxplot` to toggle mean line
-  (:commit:`4e30f415`).
-* Allow setting the mean and median boxplot linestyle with
-  ``(mean|median)(ls|linestyle)`` keywords (:commit:`4e30f415`).
-* Automatically set ``fill=True`` when passing a fill color or color(s)
-  to `boxplot_wrapper` (:commit:`4e30f415`).
-* Add `stack` as alternative to `stacked` for bar and area plots (:commit:`4e30f415`).
-  Imperative keywords are better.
+* Add `xmin`, `xmax`, `ymin`, and `ymax` keyword args to
+  `~proplot.axes.CartesianAxes.format` as alternatives to `xlim` and `ylim`
+  (:commit:`ae0719b7`). Example usage: ``ax.format(xmin=0)`` as opposed to
+  ``ax.format(xlim=(0, None))``.
+* Allow passing full "side" names to `lonlabels` and `latlabels` rather than
+  abbreviations, e.g. ``'left'`` instead of ``'l'`` (:commit:`a5060f67`). This is
+  more consistent with rest of package.
+* Set default transform to ``ccrs.PlateCarree`` when calling `matplotlib.axes.Axes.fill`
+  on `CartopyAxes` (:issue:`193`). This is more consistent with rest of package.
 
 .. rubric:: Bug fixes
 
@@ -237,26 +287,37 @@ ProPlot v0.7.0 (2021-07-##)
 * Fix issue where `~matplotlib.axes.Axes.hexbin` ignores `vmin` and `vmax`
   keywords (:issue:`250`).
 * Fix issue where cannot have datetime labels on `area` plots (:issue:`255`).
+* Fix issue where e.g. `ax.area(x, 0, y2, negpos=True` has positive colors
+  below x-axis and negative above x-axis (:pr:`258`).
+* Fix issue where "negpos" plots ignore `edgecolor` because they pass
+  `color` rather than `facecolor` to plotting commands.
+* Fix issue where default orientation of `barh` vertical axis is reversed
+  (:commit:`258`).
+* Fix issue where `hist` with `xarray.DataArray` or `pandas.Dataframe` input causes
+  erroneous axis labels; use labels for legend instead (:issue:`195`).
 * Fix issue where axis is accidentally inverted for histogram plots (:issue:`191`).
-* Fix issue where numeric zero cannot be applied as legend label (:commit:`02417c8c`).
 * Fix issue where `[xy]minorlocator=1` is not allowed (:issue:`219`).
 * Fix issue where inner titles ignore axes-local `titlepad` (:commit:`14f3d0e3`).
+* Fix issue where we again fail to sufficiently pad title above tick marks
+  with tick marks on top x-axis (:commit:`402214f9`).
 * Fix issue where non-Cartesian `heatmap` errors rather than warns (:issue:`238`).
 * Fix issue where ``labels=True`` with no contours causes error (:issue:`238`).
 * Fix issue where `~proplot.colors.Cycle` fails to register new names and fails to
   display in `~proplot.demos.show_cycles` (:commit:`94ffc1dc`, :commit:`4a7a3c79`).
-* Fix issue where proplot fails to detect legend entries for "outer"
-  legends (:issue:`189`).
 * Fix issue where proplot ignores `set_under` and `set_over` values when translating
   matplotlib colormap classes to proplot subclasses (:issue:`190`).
 * Fix issue where `~proplot.colors.DiscreteNorm` does not account for `set_under` and
   `set_over` colors distinct from adjacent in-bounds colors (:issue:`190`).
-* Fix issue where multiple-artist legend entries (e.g., for lines indicating means and
-  shading indicating uncertainty) are accidentally truncated (:commit:`a11d1813`).
+* Fix issue where proplot fails to detect legend entries for "outer"
+  legends (:issue:`189`).
 * Fix issue where list-of-list-style `legend()` handle and label input fails completely
   (:commit:`a298f81f`). This input style is used to specify "centered" legend rows.
-* Fix issue where `hist` with `xarray.DataArray` or `pandas.Dataframe` input causes
-  erroneous axis labels; use labels for legend instead (:issue:`195`).
+* Fix error message when no legend handles are found (:commit:`2c6bf3e2`).
+* Fix issue where multiple-artist legend entries (e.g., for lines indicating means and
+  shading indicating uncertainty) are accidentally truncated (:commit:`a11d1813`).
+* Fix issue where numeric zero cannot be applied as legend label (:commit:`02417c8c`).
+* Fix issue where simple `pandas.DataFrame.plot` calls with ``legend=True`` fail
+  (:pr:`254`, :issue:`198`).
 * Fix unnecessary restriction where users can only draw <2 "alt" axes and clean
   up the `alt[xy]` and `dual[xy]` internals (:issue:`226`).
 * Fix matplotlib bug where `altx` and `alty` reset the minor locator of the shared
@@ -267,28 +328,28 @@ ProPlot v0.7.0 (2021-07-##)
 * Fix issue where `show_cmaps` cannot display reversed colormaps (:commit:`2dd51177`).
 * Fix issue where ``'grays_r'`` translated to ``'greys'`` (:commit:`074c6aef`).
 * First reverse, *then* shift ``cmap_r_s`` colormaps (:commit:`e5156294`).
-* Fix error message when no legend handles are found (:commit:`2c6bf3e2`).
 * Fix obscure `~proplot.axes.Axes.parametric` bug where `numpy.stack` tries to make
   nested ragged arrays from parametric coords (:commit:`b16d56a8`).
 * Fix issue where where `SubplotSpec.get_active_rows_columns` returned incorrect
   number of "active" rows and columns (:commit:`5cf20b84`).
-* Fix issue where simple `pandas.DataFrame.plot` calls with ``legend=True`` fail
-  (:pr:`254`, :issue:`198`).
 * For rc lookup with ``context=True``, use most restrictive search mode rather than least.
   Otherwise `ax.format()` calls inside context blocks can be overwritten with the
   default rc values in subsequent `ax.format()` calls (:commit:`8005fcc1`).
 
 .. rubric:: Internals
 
+* Refactor massive `standardize_(1d|2d)` and `(cmap|cycle)_changer` wrappers to break
+  things into manageable chunks (:pr:`258`, :commit:`6af22567`, :commit:`d3352720`).
 * Refactor `colorbar` and `legend` methods and their massive wrappers to clean
   things up and expand the "queueing" feature beyond wrappers (:pr:`254`).
-* Refactor massive `standardize_(1d|2d)` and `(cmap|cycle)_changer` wrappers to break
-  things into manageable chunks (:commit:`6af22567`, :commit:`d3352720`).
 * Add prefix ``'proplot_'`` to registered axes "projections" (:commit:`be7ef21e`). More
   clear and guards against conflicts with external packages and other mpl versions.
+* Add system for processing flexible keyword arguments across different commands
+  to ``internals/__init__.py``. Analogous to mpl ``_alias`` processing.
 
 .. rubric:: Documentation
 
+* Finally use ``pplt`` as the recommended abbreviation: ``import proplot as pplt``.
 * Major clean up of "Why ProPlot?" page and user guide pages.
 * Fix incomplete ``cmap.from_file`` docstrings (:commit:`54f1bc7c`).
 * Rename "Changelog" to "What's New?" and list all contributors in "About the Authors".
