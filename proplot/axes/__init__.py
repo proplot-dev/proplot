@@ -4,7 +4,6 @@ The axes classes used for all ProPlot figures.
 """
 import matplotlib.projections as mproj
 
-from ..internals import warnings
 from . import plot
 from .base import Axes  # noqa: F401
 from .cartesian import CartesianAxes
@@ -13,12 +12,6 @@ from .geo import BasemapAxes, CartopyAxes
 from .plot import *  # noqa: F401, F403
 from .polar import PolarAxes
 from .three import Axes3D  # noqa: F401
-
-XYAxes, ProjAxes = warnings._rename_objs(
-    '0.6',
-    XYAxes=CartesianAxes,
-    ProjAxes=GeoAxes,
-)
 
 mproj.register_projection(CartesianAxes)
 mproj.register_projection(PolarAxes)
@@ -35,8 +28,5 @@ __all__ = [
     'CartopyAxes',
     'BasemapAxes',
     'Axes3D',
-    # Deprecated
-    'XYAxes',
-    'ProjAxes',
 ]
 __all__.extend(plot.__all__)  # document wrappers as part of proplot/axes submodule

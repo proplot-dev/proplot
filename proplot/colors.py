@@ -31,11 +31,6 @@ __all__ = [
     'LinearSegmentedNorm',
     'ColorDatabase',
     'ColormapDatabase',
-    # Deprecated
-    'BinNorm',
-    'MidpointNorm',
-    'ColorDict',
-    'CmapDict',
 ]
 
 # Constants
@@ -2582,16 +2577,3 @@ if not isinstance(_cmap_database, ColormapDatabase):
     }
     _cmap_database = ColormapDatabase(_cmap_database)
     setattr(mcm, _cmap_database_attr, _cmap_database)
-
-# Deprecations
-CmapDict, ColorDict, MidpointNorm, BinNorm = warnings._rename_objs(
-    '0.6',
-    CmapDict=ColormapDatabase,
-    ColorDict=ColorDatabase,
-    MidpointNorm=DivergingNorm,
-    BinNorm=DiscreteNorm
-)
-make_mapping_array = warnings._rename_objs(
-    '0.7',
-    make_mapping_array=_make_lookup_table
-)

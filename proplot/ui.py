@@ -26,8 +26,6 @@ __all__ = [
     'isinteractive',
     'show',
     'switch_backend',
-    # Deprecated
-    'subplot_grid',
 ]
 
 docstring.snippets['pyplot.statement'] = """
@@ -805,10 +803,3 @@ class SubplotsContainer(list):
         incorrect. In such cases, 1d indexing should always be used.
         """
         return self._shape
-
-
-# Deprecations
-subplot_grid = warnings._rename_objs(
-    '0.6',
-    subplot_grid=SubplotsContainer,
-)
