@@ -1,3 +1,13 @@
+.. _cartopy: https://scitools.org.uk/cartopy/docs/latest/
+
+.. _basemap: https://matplotlib.org/basemap/index.html
+
+.. _seaborn: https://seaborn.pydata.org
+
+.. _pandas: https://pandas.pydata.org
+
+.. _xarray: http://xarray.pydata.org/en/stable/
+
 .. _usage:
 
 =============
@@ -15,20 +25,18 @@ Background
 
 ProPlot is an object-oriented matplotlib wrapper. The "wrapper" part means
 that ProPlot's features are largely a *superset* of matplotlib.  You can use
-your favorite plotting commands like `~matplotlib.axes.Axes.plot`,
-`~matplotlib.axes.Axes.scatter`, `~matplotlib.axes.Axes.contour`, and
-`~matplotlib.axes.Axes.pcolor` like you always have.  The "object-oriented"
-part means that ProPlot's features are implemented with *subclasses* of the
-`~matplotlib.figure.Figure` and `~matplotlib.axes.Axes` classes.
+plotting commands like `~matplotlib.axes.Axes.plot`, `~matplotlib.axes.Axes.scatter`,
+`~matplotlib.axes.Axes.contour`, and `~matplotlib.axes.Axes.pcolor` like you always
+have. The "object-oriented" part means that ProPlot's features are implemented with
+*subclasses* of the `~matplotlib.figure.Figure` and `~matplotlib.axes.Axes` classes.
 
 If you tend to use `~matplotlib.pyplot` and are not familiar with figure and
 axes *classes*, check out `this guide
-<https://matplotlib.org/api/api_overview.html#the-pyplot-api>`__.
-from the matplotlib documentation. Working with objects directly tends to be
-more clear and concise than `~matplotlib.pyplot`, makes things easier when
-working with multiple figures and axes, and is certainly more
-"`pythonic <https://www.python.org/dev/peps/pep-0020/>`__". Therefore,
-although some ProPlot features may still work, we do not officially support
+<https://matplotlib.org/stable/api/index.html>`__
+Directly working with objects tends to be more clear and concise than
+`~matplotlib.pyplot`, makes things easier when working with multiple figures and axes,
+and is certainly more "`pythonic <https://www.python.org/dev/peps/pep-0020/>`__".
+Therefore, although some ProPlot features may still work, we do not officially support
 the `~matplotlib.pyplot` interface.
 
 .. _usage_import:
@@ -39,7 +47,7 @@ Importing proplot
 Importing ProPlot immediately adds several
 new :ref:`colormaps <ug_cmaps>`, :ref:`property cycles <ug_cycles>`,
 :ref:`color names <ug_colors>`, and :ref:`fonts <ug_fonts>` to matplotlib.
-If you are only interested in these features, you may want to simply
+If you are only interested in these features, you may want to
 import ProPlot at the top of your script and do nothing else!
 We recommend importing ProPlot as follows:
 
@@ -48,7 +56,8 @@ We recommend importing ProPlot as follows:
    import proplot as plot
 
 This differentiates ProPlot from the usual ``plt`` abbreviation reserved for
-the `~matplotlib.pyplot` module.
+the `~matplotlib.pyplot` module. The abbreviation ``pplt`` is a popular
+and less generic alternative.
 
 .. _usage_classes:
 
@@ -66,41 +75,41 @@ The `~proplot.ui.subplots` command is modeled after
 matplotlib's native `matplotlib.pyplot.subplots` command
 and is :ref:`packed with new features <ug_subplots>`.
 
-Instead of native `matplotlib.figure.Figure` and `matplotlib.axes.Axes` classes,
-`~proplot.ui.subplots` :ref:`returns an instance <ug_basics>` of the
-`proplot.figure.Figure` subclass populated with instances of
-`proplot.axes.Axes` subclasses. Also, all ProPlot axes belong to one of the
-following three child classes:
+Instead of instances of the native `matplotlib.figure.Figure` and
+`matplotlib.axes.Axes` classes, `~proplot.ui.subplots` :ref:`returns <ug_basics>`
+a `proplot.figure.Figure` instance populated with
+`proplot.axes.Axes` instance. All ProPlot axes also belong
+to one of the following three child classes:
 
-* `proplot.axes.CartesianAxes`: For plotting ordinary data with *x* and *y*
+* `proplot.axes.CartesianAxes`: For ordinary plots with *x* and *y*
   coordinates.
 * `proplot.axes.GeoAxes`: For geographic plots with *longitude* and
   *latitude* coordinates.
 * `proplot.axes.PolarAxes`: For polar plots with *radius* and *azimuth*
   coordinates.
 
-Most of ProPlot's features are added via the figure and axes subclasses.
-They include several brand new methods and add to the functionality of
-several *existing* methods.
+Most of ProPlot's features are added via the `proplot.figure.Figure`
+and `proplot.axes.Axes` classes. They include several brand new methods
+and add new functionality to the *existing* methods.
 
 * The new `~proplot.axes.Axes.format` method is used to fine-tune various
   axes settings.  Think of this as a dedicated
-  `~matplotlib.artist.Artist.update` method for axes artists. See
+  `~matplotlib.artist.Artist.update` method for axes. See
   :ref:`formatting subplots <ug_format>` for a broad overview, along with the
   individual sections on formatting :ref:`Cartesian plots <ug_cartesian>`,
   :ref:`geographic plots <ug_geoformat>`, and :ref:`polar plots <ug_polar>`.
 * The `proplot.axes.Axes.colorbar` and `proplot.axes.Axes.legend` commands
   draw colorbars and legends inside of subplots or along the outside edges of
   subplots. The `proplot.figure.Figure.colorbar` and `proplot.figure.Figure.legend`
-  commands draw colorbars or legends along the edges of an entire figure (centered
-  between subplot boundaries). These commands :ref:`simplify <ug_cbars_legends>`
+  commands draw colorbars or legends along the edges of figures (aligned by
+  subplot boundaries). These commands :ref:`simplify <ug_cbars_legends>`
   the process of drawing colorbars and legends.
-* ProPlot adds a variety of useful features for working with the
+* ProPlot adds a variety of useful features to the
   `~matplotlib.axes.Axes.plot`, `~matplotlib.axes.Axes.bar`,
   `~proplot.axes.Axes.area`, `~matplotlib.axes.Axes.contour`,
   `~matplotlib.axes.Axes.contourf`, `~matplotlib.axes.Axes.pcolormesh`,
-  `~proplot.axes.Axes.heatmap`, and `~proplot.axes.Axes.parametric` plotting commands
-  by "wrapping" them. See the :ref:`1D plotting <ug_1dplots>` and
+  `~proplot.axes.Axes.heatmap`, and `~proplot.axes.Axes.parametric` plotting
+  commands by "wrapping" them. See the :ref:`1D plotting <ug_1dplots>` and
   :ref:`2D plotting <ug_2dplots>` sections for details.
 
 .. _usage_integration:
@@ -109,25 +118,26 @@ Integration features
 ====================
 
 ProPlot includes *optional* integration features with four external
-packages: the `pandas` and `xarray` packages, used for working with annotated
-tables and arrays, and the `cartopy` and `~mpl_toolkits.basemap` geographic
+packages: the `pandas`_ and `xarray`_ packages, used for working with annotated
+tables and arrays, and the `cartopy`_ and `basemap`_ geographic
 plotting packages.
 
-* When you pass a `pandas.Series`, `pandas.DataFrame`, or `xarray.DataArray`
+* If you pass a `pandas.Series`, `pandas.DataFrame`, or `xarray.DataArray`
   to any plotting command, the axis labels, tick labels, titles, colorbar
-  labels, and legend labels are automatically applied from the metadata. This
-  works just like the native `xarray.DataArray.plot` and
+  labels, and legend labels are automatically applied from the metadata. If
+  you did not supply the *x* and *y* coordinates, they are also inferred from
+  the metadata. This works just like the native `xarray.DataArray.plot` and
   `pandas.DataFrame.plot` methods. A demonstration of this feature is given
   in the sections on :ref:`1D plotting <ug_1dintegration>` and
   :ref:`2D plotting <ug_2dintegration>`. This feature can be disabled by
   setting :rcraw:`autoformat` to ``False``.
-* The `~proplot.axes.GeoAxes` class uses the `cartopy` or
-  `~mpl_toolkits.basemap` packages to :ref:`plot geophysical data <ug_geoplot>`,
+* The `~proplot.axes.GeoAxes` class uses the `cartopy`_ or
+  `basemap`_ packages to :ref:`plot geophysical data <ug_geoplot>`,
   :ref:`add geographic features <ug_geoformat>`, and
-  :ref:`format projections <ug_geoformat>`. This is a simpler, cleaner
-  interface than the original `cartopy` and `~mpl_toolkits.basemap`
-  interfaces. Figures can be filled with `~proplot.axes.GeoAxes` by using the
-  `proj` keyword argument with `~proplot.ui.subplots`.
+  :ref:`format projections <ug_geoformat>`. `~proplot.axes.GeoAxes` provides
+  provides a simpler, cleaner interface than the original `cartopy`_ and `basemap`_
+  interfaces. Figures can be filled with `~proplot.axes.GeoAxes` by passing the
+  `proj` keyword to `~proplot.ui.subplots`.
 
 Since these features are optional, ProPlot can be used without installing
 any of these packages.

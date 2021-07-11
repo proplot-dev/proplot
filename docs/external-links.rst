@@ -10,7 +10,7 @@ or are directly used by ProPlot.
 Python packages
 ===============
 
-* `matplotlib <https://matplotlib.org>`__ - The venerable plotting package we all know
+* `matplotlib <https://matplotlib.org>`__ - The venerable plotting workhorse we all know
   and love.
 * `xarray <http://xarray.pydata.org/en/stable/api.html>`__ - Package for working with
   annotated ND numpy arrays. If you haven't heard of it and you work with NetCDF files,
@@ -20,6 +20,12 @@ Python packages
 * `seaborn <https://seaborn.pydata.org>`__ - A statistical data visualization package.
   Seaborn is based on matplotlib, but its interface is mostly separate from matplotlib.
   It is not generally suitable for geophysical data.
+* `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`__ - A package for
+  plotting geographic and geophysical data in matplotlib. Includes a suite of
+  different map projections.
+* `basemap <https://github.com/matplotlib/basemap>`__ - The original cartographic
+  plotting package. Basemap is less closely integrated with matplotlib than
+  cartopy but still quite popular. As of 2020 it is no longer actively maintained.
 
 Downloadable colormaps
 ======================
@@ -28,23 +34,24 @@ The following colormap repositories are
 imported and registered by ProPlot.
 
 * `Color Brewer <http://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3>`__ - The
-  O.G. perceptually uniform colormap distribution. These are included with the
-  matplotlib distribution.
+  O.G. perceptually uniform colormap distribution. These are included with
+  matplotlib by default.
 * `cmocean <https://matplotlib.org/cmocean/>`__ - Perceptually uniform colormaps
   designed for oceanography, but suitable for plenty of other applications.
 * `SciVisColor <https://sciviscolor.org/>`__ - Science-focused colormaps created by the
   viz team at UT Austin. Provides tools for *concatenating* colormaps, suitable for
-  complex datasets with weird distributions.
+  complex datasets with funky distributions.
 * `Fabio Crameri <http://www.fabiocrameri.ch/colourmaps.php>`__ - Perceptually uniform
-  colormaps for geosciences. These maps have very unusual and interesting color
+  colormaps for geoscientists. These maps have unusual and interesting color
   transitions.
 
 Tools for making new colormaps
 ==============================
 
-Use these resources to make colormaps from scratch.
+Use these resources to make colormaps from scratch. Then import them into
+ProPlot by :ref:`adding files to the .proplot/cmaps folder <ug_cmaps_dl>`.
 
-* `Proplot API <https://proplot.readthedocs.io/en/latest/colormaps.html#Making-new-colormaps>`__
+* `ProPlot colormap API <https://proplot.readthedocs.io/en/latest/colormaps.html#Making-new-colormaps>`__
 * `HCL Picker <http://tristen.ca/hcl-picker/#/hlc/6/1/15534C/E2E062>`__
 * `Chroma.js <https://gka.github.io/palettes/>`__
 * `HCL Wizard <http://hclwizard.org:64230/hclwizard/>`__
@@ -53,9 +60,10 @@ Use these resources to make colormaps from scratch.
 Tools for making new color cycles
 =================================
 
-Use these resources to make color cycles from scratch.
+Use these resources to make color cycles from scratch. Then import them into
+ProPlot by :ref:`adding files to the .proplot/cycles folder <ug_cycles_dl>`.
 
-* `Proplot API <https://proplot.readthedocs.io/en/latest/cycles.html#Making-new-color-cycles>`__
+* `ProPlot color cycle API <https://proplot.readthedocs.io/en/latest/cycles.html#Making-new-color-cycles>`__
 * `Color Cycle Picker <https://colorcyclepicker.mpetroff.net/>`__
 * `i want hue <http://medialab.github.io/iwanthue/>`__
 * `Coolors <https://coolors.co/>`__

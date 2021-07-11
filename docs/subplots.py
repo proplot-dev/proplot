@@ -62,7 +62,7 @@
 #    * For very simple subplot grids (i.e. subplots created with the `ncols` and
 #      `nrows` arguments), the arguments `refaspect`, `refwidth`, and `refheight`
 #      apply to every subplot in the figure -- not just the reference subplot.
-#    * When the reference subplot `aspect ratio\
+#    * When the reference subplot `aspect ratio
 #      <https://matplotlib.org/stable/examples/pylab_examples/equal_aspect_ratio.html>`__
 #      has been fixed (e.g., using ``ax.set_aspect(1)``) or is set to ``'equal'``
 #      (as with :ref:`geographic projections <ug_geo>` and
@@ -184,15 +184,12 @@ import proplot as plot
 fig, axs = plot.subplots(nrows=3, ncols=3, refwidth=1.1, share=0)
 
 # Formatting that stress-tests the algorithm
-axs[4].format(
-    title='title\ntitle\ntitle',
-    suptitle='Tight layout with variable row-column spacing'
-)
-axs[1].format(ylabel='ylabel\nylabel\nylabel')
-axs[:4:2].format(xlabel='xlabel\nxlabel\nxlabel')
+axs[1].format(xlabel='xlabel\nxlabel\nxlabel', ylabel='ylabel\nylabel\nylabel')
+axs[3:6:2].format(title='title\ntitle\ntitle')
 axs.format(
     toplabels=('Column 1', 'Column 2', 'Column 3'),
     leftlabels=('Row 1', 'Row 2', 'Row 3'),
+    suptitle='Tight layout with variable row-column spacing'
 )
 
 # %%
@@ -322,15 +319,17 @@ for mode in (0, 1):
 # style, modify :rcraw:`abc.style` or pass e.g. ``abcstyle='A.'`` to
 # `~proplot.axes.Axes.format`. You can also modify the "a-b-c" label
 # location, weight, and size with the :rcraw:`abc.loc`, :rcraw:`abc.weight`,
-# and :rcraw:`abc.size` settings.
+# and :rcraw:`abc.size` settings. Also note that if the an "a-b-c" label
+# and title are in the same position, they are automatically offset
+# away from each other.
 #
 # .. note::
 #
-#     "Inner" abc labels and titles are surrounded with a white border when
+#     "Inner" a-b-c labels and titles are surrounded with a white border when
 #     :rcraw:`abc.border` and :rcraw:`title.border` are ``True`` (the default).
 #     White boxes can be used instead by setting :rcraw:`abc.bbox` and
 #     :rcraw:`title.bbox` to ``True``. These options help labels stand
-#     out against plotted content. These simple "borders" and "boxes"
+#     out against plotted content. These "borders" and "boxes"
 #     can also be used by passing ``border=True`` or ``bbox=True`` to
 #     `~matplotlib.axes.Axes.text`, which ProPlot wraps with
 #     `~proplot.axes.text_extras`. See the :ref:`plotting sections <ug_1dplots>`
@@ -348,15 +347,16 @@ axs.format(
 
 # %%
 import proplot as plot
-fig, axs = plot.subplots(ncols=3, nrows=2, space=0, refwidth='10em')
+fig, axs = plot.subplots(ncols=3, nrows=3, space=0, refwidth='10em')
 axs.format(
     abc=True, abcloc='ul', abcstyle='A.',
     xticks='null', yticks='null', facecolor='gray5',
     xlabel='x axis', ylabel='y axis',
-    suptitle='Inner borders and boxes',
+    suptitle='Automatic offsets, borders, and boxes',
 )
-axs[:3].format(abcbbox=True)  # also disables abcborder
-# axs[3:].format(abcborder=True)  # this is already the default
+axs[:3].format(abcloc='l', titleloc='l', title='Title')
+axs[-3:].format(abcbbox=True)  # also disables abcborder
+# axs[:-3].format(abcborder=True)  # this is already the default
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_units:

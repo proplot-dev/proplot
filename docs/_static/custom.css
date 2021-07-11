@@ -112,16 +112,19 @@ h5{
 h6{
   font-size: 100%;
 }
+/* Menu bar headers */
+.wy-menu-vertical header, .wy-menu-vertical p.caption {
+  font-size: 95%;  /* default is 85% */
+  padding: 0 1.45em;  /* fix alignment */
+}
+/* Menu bar items */
+.wy-menu-vertical a {
+  padding: 0.4em 1.6em  /* mostly unchanged */
+}
+/* Parameters and Returns headers */
 .rst-content dl:not(.docutils) dt,
 .rst-content dl:not(.docutils) .field-list>dt {
   font-size: 100%; /* default is 90% */
-}
-.wy-menu-vertical header, .wy-menu-vertical p.caption {
-  font-size: 100%;  /* default is 85% */
-  padding: 0 1.4em;  /* fix alignment */
-}
-.wy-menu-vertical a {
-  padding: 0.4em 1.6em  /* mostly unchanged */
 }
 
 /* RST content background color */

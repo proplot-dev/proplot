@@ -41,7 +41,7 @@
 #
 # The `~proplot.axes.standardize_1d` wrapper standardizes
 # positional arguments across all 1D plotting methods.
-# `~proplot.axes.standardize_1d` allows you to optionally omit *x*
+# `~proplot.axes.standardize_1d` lets you optionally omit the *x*
 # coordinates, in which case they are inferred from the data. It also permits
 # passing 2D *y* coordinate arrays to any plotting method, in which case the
 # plotting method is called for each column of the array.
@@ -53,9 +53,11 @@ import numpy as np
 N = 5
 state = np.random.RandomState(51423)
 with plot.rc.context({'axes.prop_cycle': plot.Cycle('Grays', N=N, left=0.3)}):
-    # Figure and sample data
+    # Sample data
     x = np.linspace(-5, 5, N)
     y = state.rand(N, 5)
+
+    # Figure
     fig, axs = plot.subplots(ncols=2, share=False)
     axs.format(xlabel='xlabel', ylabel='ylabel')
     axs.format(suptitle='Standardized arguments demonstration')
@@ -87,12 +89,26 @@ with plot.rc.context({'axes.prop_cycle': plot.Cycle('Grays', N=N, left=0.3)}):
 #
 # The `~proplot.axes.standardize_1d` wrapper integrates 1D plotting
 # methods with pandas `~pandas.DataFrame`\ s and xarray `~xarray.DataArray`\ s.
-# When you pass a DataFrame or DataArray to any plotting command, the x-axis
-# label, y-axis label, legend label, colorbar label, and/or title are
-# configured from the metadata. This restores some of the convenience you get
-# with the builtin `pandas`_ and `xarray`_ plotting functions. This feature is
-# *optional*. Installation of pandas and xarray are not required, and
-# it can be disabled by setting :rcraw:`autoformat` to ``False``.
+# If you omitted *x* coordinates, `~proplot.axes.standardize_1d` tries to
+# retrieve them from the DataFrame or DataArray. If the coordinates are string
+# labels, `~proplot.axes.standardize_1d` converts them into indices and tick labels
+# using `~matplotlib.ticker.FixedLocator` and `~matplotlib.ticker.IndexFormatter`.
+# If you did not explicitly set the x-axis label, y-axis label, title, or
+# :ref:`on-the-fly legend or colorbar <ug_cbars_axes>` label,
+# `~proplot.axes.standardize_1d` also tries to retrieve them from the DataFrame or
+# DataArray.
+#
+# You can also pass a Dataset, DataFrame, or dictionary to any plotting
+# command using the `data` keyword, then pass dataset keys as positional
+# arguments instead of arrays. For example, ``ax.plot('y', data=dataset)``
+# is translated to ``ax.plot(dataset['y'])``, and the *x* coordinates are
+# inferred thereafter.
+#
+# These features restore some of the convenience you get
+# with the builtin `pandas`_ and `xarray`_ plotting functions. They are also
+# *optional* -- installation of pandas and xarray are not required. All of
+# these features can be disabled by setting :rcraw:`autoformat` to ``False``
+# or by passing ``autoformat=False`` to any plotting command.
 
 # %%
 import xarray as xr
@@ -137,11 +153,11 @@ fig, axs = plot.subplots(ncols=2, refwidth=2.2, share=0)
 axs.format(suptitle='Automatic subplot formatting')
 
 # Plot DataArray
-cycle = plot.Cycle('dark blue', fade=90, space='hpl', N=da.shape[1])
+cycle = plot.Cycle('dark blue', space='hpl', N=da.shape[1])
 axs[0].scatter(da, cycle=cycle, lw=3, colorbar='ul', colorbar_kw={'locator': 20})
 
 # Plot Dataframe
-cycle = plot.Cycle('dark green', fade=90, space='hpl', N=df.shape[1])
+cycle = plot.Cycle('dark green', space='hpl', N=df.shape[1])
 axs[1].plot(df, cycle=cycle, lw=3, legend='uc')
 
 
@@ -156,13 +172,13 @@ axs[1].plot(df, cycle=cycle, lw=3, legend='uc')
 # and use different property cycles for different plot elements. You can create and
 # apply property cycles on-the-fly using the `cycle` and `cycle_kw` arguments, available
 # with any plotting method wrapped by `~proplot.axes.apply_cycle`. `cycle` and
-# `cycle_kw` are passed to the `~proplot.constructor.Cycle` :ref:`constructor function
-# <why_constructor>`, and the resulting property cycle is used for the plot. You can
-# specify `cycle` once with 2D input data (in which case each column is plotted in
-# succession according to the property cycle) or call a plotting command multiple times
-# with the same `cycle` argument each time (the property cycle is not reset). For more
-# information on property cycles, see the :ref:`color cycles section <ug_cycles>` and
-# `this matplotlib tutorial
+# `cycle_kw` are passed to the `~proplot.constructor.Cycle`
+# :ref:`constructor function <why_constructor>`, and the resulting property cycle
+# is used for the plot. You can specify `cycle` once with 2D input data (in which case
+# each column is plotted in succession according to the property cycle) or call a
+# plotting command multiple times with the same `cycle` argument each time (the
+# property cycle is not reset). For more information on property cycles, see the
+# :ref:`color cycles section <ug_cycles>` and `this matplotlib tutorial
 # <https://matplotlib.org/tutorials/intermediate/color_cycle.html#sphx-glr-tutorials-intermediate-color-cycle-py>`__.
 
 # %%
@@ -170,21 +186,21 @@ import proplot as plot
 import numpy as np
 
 # Sample data
-N = 4
+M, N = 9, 4
 state = np.random.RandomState(51423)
-data1 = state.rand(6, N)
-data2 = state.rand(6, N) * 1.5
+data1 = state.rand(M, N)
+data2 = state.rand(M, N) * 1.5
 
 with plot.rc.context({'lines.linewidth': 3}):
     # Figure
-    fig, axs = plot.subplots(ncols=2)
+    fig, axs = plot.subplots(ncols=2, refwidth=2.2, span=False)
     axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Local property cycles demo')
 
     # Use property cycle for columns of 2D input data
     axs[0].plot(
         data1 * data2,
         cycle='black',
-        cycle_kw={'linestyle': ('-', '--', '-.', ':')}
+        cycle_kw={'ls': ('-', '--', '-.', ':')}
     )
 
     # Use property cycle with successive plot() calls
@@ -202,14 +218,14 @@ with plot.rc.context({'lines.linewidth': 3}):
 #
 # The `~matplotlib.axes.Axes.plot` command is wrapped by
 # `~proplot.axes.apply_cycle` and `~proplot.axes.standardize_1d`.
-# Its behavior is the same -- ProPlot simply tries to expand
-# the flexibility of this command to the rest of the 1D plotting commands.
-# The new `~proplot.axes.Axes.plotx` command can be used just like
-# `~matplotlib.axes.Axes.plotx`, except a single argument is interpreted
-# as *x* coordinates (with default *y* coordinates inferred from the data),
-# and multiple arguments are interpreted as *y* and *x* coordinates (in that order).
-# This is analogous to `~matplotlib.axes.Axes.barh` and
-# `~matplotlib.axes.Axes.fill_betweenx`.
+# The new `~proplot.axes.Axes.plotx` command can be used
+# just like `~matplotlib.axes.Axes.plot`, except a single argument is interpreted
+# as *x* coordinates (with *y* coordinates inferred from the data),
+# and multiple arguments are interpreted as (*y*, *x*) pairs. This is
+# analogous to `~matplotlib.axes.Axes.barh` and `~matplotlib.axes.Axes.fill_betweenx`.
+# Also, the *x* extent of lines drawn with `~proplot.axes.Axes.plot` and
+# the *y* extent of lines drawn with `~proplot.axes.Axes.plotx` are now
+# "sticky", i.e. there is no padding between the lines and axes edges by default.
 #
 # As with the other 1D plotting commands, `~matplotlib.axes.Axes.step`,
 # `~matplotlib.axes.Axes.hlines`, `~matplotlib.axes.Axes.vlines`, and
@@ -217,7 +233,7 @@ with plot.rc.context({'lines.linewidth': 3}):
 # `~proplot.axes.Axes.step` now use the property cycle, just like
 # `~matplotlib.axes.Axes.plot`. `~matplotlib.axes.Axes.vlines` and
 # `~matplotlib.axes.Axes.hlines` are also wrapped by `~proplot.axes.vlines_extras`
-# and `~proplot.axes.hlines_extras`, which can use
+# and `~proplot.axes.hlines_extras`, which permit applying
 # different colors for "negative" and "positive" lines using ``negpos=True``
 # (the default colors are :rc:`negcolor` and :rc:`poscolor`).
 
@@ -225,35 +241,44 @@ with plot.rc.context({'lines.linewidth': 3}):
 import proplot as plot
 import numpy as np
 state = np.random.RandomState(51423)
-fig, axs = plot.subplots(ncols=2, nrows=2, share=0)
+fig, axs = plot.subplots(ncols=2, nrows=3, refwidth=2.2, share=1, span=False)
 axs.format(suptitle='Line plots demo', xlabel='xlabel', ylabel='ylabel')
 
-# Step
+# Vertical vs. horizontal
+data = (state.rand(10, 5) - 0.5).cumsum(axis=0)
 ax = axs[0]
-data = state.rand(20, 4).cumsum(axis=1).cumsum(axis=0)
-cycle = ('blue7', 'gray5', 'red7', 'gray5')
-ax.step(data, cycle=cycle, labels=list('ABCD'), legend='ul', legend_kw={'ncol': 2})
-ax.format(title='Step plot')
-
-# Stems
+ax.format(title='Dependent x-axis')
+ax.plot(data, lw=2.5, cycle='seaborn')
 ax = axs[1]
-data = state.rand(20)
-ax.stem(data, linefmt='k-')
-ax.format(title='Stem plot')
+ax.format(title='Dependent y-axis')
+ax.plotx(data, lw=2.5, cycle='seaborn')
 
 # Vertical lines
 gray = 'gray7'
 data = state.rand(20) - 0.5
 ax = axs[2]
 ax.area(data, color=gray, alpha=0.2)
-ax.vlines(data, negpos=True, linewidth=2)
+ax.vlines(data, negpos=True, lw=2)
 ax.format(title='Vertical lines')
 
 # Horizontal lines
 ax = axs[3]
 ax.areax(data, color=gray, alpha=0.2)
-ax.hlines(data, negpos=True, linewidth=2)
+ax.hlines(data, negpos=True, lw=2)
 ax.format(title='Horizontal lines')
+
+# Step
+ax = axs[4]
+data = state.rand(20, 4).cumsum(axis=1).cumsum(axis=0)
+cycle = ('gray6', 'blue7', 'red7', 'gray4')
+ax.step(data, cycle=cycle, labels=list('ABCD'), legend='ul', legend_kw={'ncol': 2})
+ax.format(title='Step plot')
+
+# Stems
+ax = axs[5]
+data = state.rand(20)
+ax.stem(data)
+ax.format(title='Stem plot')
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -265,22 +290,25 @@ ax.format(title='Horizontal lines')
 # The `~matplotlib.axes.Axes.scatter` command is wrapped by
 # `~proplot.axes.scatter_extras`, `~proplot.axes.apply_cycle`, and
 # `~proplot.axes.standardize_1d`. This means that
-# `~matplotlib.axes.Axes.scatter` now accepts 2D *y* coordinates and permits
-# omitting *x* coordinates, just like `~matplotlib.axes.Axes.plot`.
-# `~matplotlib.axes.Axes.scatter` now also accepts keywords that look like
-# `~matplotlib.axes.Axes.plot` keywords (e.g., `color` instead of `c` and
+# `~matplotlib.axes.Axes.scatter` now permits omitting *x* coordinates
+# and accepts 2D *y* coordinates, just like `~matplotlib.axes.Axes.plot`.
+# As with `~proplot.axes.Axes.plotx`, the new `~proplot.axes.Axes.scatterx`
+# command is used just like `~matplotlib.axes.Axes.scatter`, except a
+# single argument is interpreted as *x* coordinates (with default *y*
+# coordinates inferred from the data), and multiple arguments are interpreted
+# as (*y*, *x*) pairs. `~matplotlib.axes.Axes.scatter` also now accepts keywords
+# that look like `~matplotlib.axes.Axes.plot` keywords (e.g., `color` instead of `c` and
 # `markersize` instead of `s`). This way, `~matplotlib.axes.Axes.scatter` can
-# optionally be used simply to "plot markers, not lines" without changing the
+# be used simply to "plot markers, not lines" without changing the
 # input arguments relative to `~matplotlib.axes.Axes.plot`.
 #
-# Just like `~matplotlib.axes.Axes.plot`, the property cycle is used
-# with `~matplotlib.axes.Axes.scatter` plots by default. It can be changed
-# using the `cycle` keyword argument, and it can include properties like `marker`
-# and `markersize`. The colormap `cmap` and normalizer `norm` used with the
-# optional `c` color array are now passed through the `~proplot.constructor.Colormap`
-# and `~proplot.constructor.Norm` constructor functions, and the the `s` marker
-# size array can now be conveniently scaled using the arguments `smin` and `smax`
-# (analogous to `vmin` and `vmax` used for colors).
+# `~matplotlib.axes.Axes.scatter` now uses the property cycler by default, just like
+# `~matplotlib.axes.Axes.plot`. It can be changed using the `cycle` keyword argument,
+# and it can include properties like `marker` and `markersize`. The colormap `cmap`
+# and normalizer `norm` used with the optional `c` color array are now passed through
+# the `~proplot.constructor.Colormap` and `~proplot.constructor.Norm` constructor
+# functions, and the the `s` marker size array can now be conveniently scaled using
+# the keywords `smin` and `smax` (analogous to `vmin` and `vmax` used for colors).
 
 # %%
 import proplot as plot
@@ -294,24 +322,33 @@ data = (state.rand(20, 4) - 0.5).cumsum(axis=0)
 data = pd.DataFrame(data, columns=pd.Index(['a', 'b', 'c', 'd'], name='label'))
 
 # Figure
-fig, axs = plot.subplots(ncols=2, share=1)
+fig, axs = plot.subplots(ncols=2, nrows=2, refwidth=2.2, share=1, span=False)
 axs.format(suptitle='Scatter plot demo')
 
-# Scatter plot with property cycler
+# Vertical vs. horizontal
 ax = axs[0]
+ax.format(title='Dependent x-axis')
+ax.scatter(data, cycle='538')
+ax = axs[1]
+ax.format(title='Dependent y-axis')
+ax.scatterx(data, cycle='538')
+
+# Scatter plot with property cycler
+ax = axs[2]
 ax.format(title='With property cycle')
 obj = ax.scatter(
-    x, data, legend='ul', cycle='Set2', legend_kw={'ncols': 2},
-    cycle_kw={'marker': ['x', 'o', 'x', 'o'], 'markersize': [5, 10, 20, 30]}
+    x, data, legend='ul', legend_kw={'ncols': 2},
+    cycle='Set2', cycle_kw={'m': ['x', 'o', 'x', 'o'], 'ms': [5, 10, 20, 30]}
 )
 
 # Scatter plot with colormap
-ax = axs[1]
+ax = axs[3]
 ax.format(title='With colormap')
 data = state.rand(2, 100)
 obj = ax.scatter(
-    *data, color=data.sum(axis=0), size=state.rand(100), smin=3, smax=30,
-    marker='o', cmap='dark red', cmap_kw={'fade': 90}, vmin=0, vmax=2,
+    *data,
+    s=state.rand(100), smin=3, smax=60, marker='o',
+    c=data.sum(axis=0), cmap='dark red', vmin=0, vmax=2,
     colorbar='lr', colorbar_kw={'label': 'label', 'locator': 0.5},
 )
 axs.format(xlabel='xlabel', ylabel='ylabel')
@@ -336,14 +373,16 @@ axs.format(xlabel='xlabel', ylabel='ylabel')
 #
 # The `~matplotlib.axes.Axes.fill_between` and `~matplotlib.axes.Axes.fill_betweenx`
 # commands are wrapped by `~proplot.axes.fill_between_extras` and
-# `~proplot.axes.fill_betweenx_extras`. They also now have the optional shorthands
+# `~proplot.axes.fill_betweenx_extras`. They also have the optional shorthands
 # `~proplot.axes.Axes.area` and `~proplot.axes.Axes.areax`.
 # You can now *stack* or *overlay* columns of data by passing 2D arrays to
 # to these commands, just like in `pandas`_. You can also draw area plots that
 # change color when the fill boundaries cross each other by passing ``negpos=True``
 # (the default colors are :rc:`negcolor` and :rc:`poscolor`). The most common
 # use case for this is highlighting *negative* and *positive* areas with different
-# colors, as shown below.
+# colors. Also, the *x* extent of shading drawn with `~proplot.axes.Axes.fill_between`
+# and the *y* extent of shading drawn with `~proplot.axes.Axes.fill_betweenx` is now
+# "sticky", i.e. there is no padding between the shading and axes edges by default.
 
 # %%
 import proplot as plot
@@ -359,7 +398,9 @@ data = pd.DataFrame(
 )
 
 # Figure
-plot.rc.titleloc = 'uc'
+plot.rc.abc = True
+plot.rc.titleloc = 'l'
+plot.rc.abcstyle = 'a.'
 fig, axs = plot.subplots(nrows=2, refaspect=2, refwidth=4.8, share=0, hratios=(3, 2))
 
 # Side-by-side bars
@@ -377,11 +418,10 @@ ax.format(
 ax = axs[1]
 obj = ax.barh(
     data.iloc[::-1, :], cycle='Blues',
-    legend='ur', edgecolor='blue9', stack=True
+    legend='lr', edgecolor='blue9', stack=True,
 )
 ax.format(title='Stacked')
 axs.format(grid=False)
-plot.rc.reset()
 
 # %%
 import proplot as plot
@@ -429,12 +469,15 @@ axs.format(
 axs.axhline(0, color='k', linewidth=1)  # zero line
 
 # Bar plot
-axs[0].bar(data, width=1, edgecolor='none', negpos=True)
+axs[0].bar(data, width=1, negpos=True)
 axs[0].format(title='Bar plot')
 
 # Area plot
-axs[1].area(data, negpos=True)
+axs[1].area(data, negpos=True, lw=0.5, edgecolor='k')
 axs[1].format(title='Area plot')
+
+# Reset title styles changed above
+plot.rc.reset()
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -446,7 +489,8 @@ axs[1].format(title='Area plot')
 # The `~proplot.axes.indicate_error` wrapper lets you draw error bars
 # and error shading on-the-fly by passing certain keyword arguments to
 # `~matplotlib.axes.Axes.plot`, `~matplotlib.axes.Axes.scatter`,
-# `~matplotlib.axes.Axes.bar`, or `~matplotlib.axes.Axes.barh`.
+# `~matplotlib.axes.Axes.bar`, `~proplot.axes.Axes.plot`,
+# `~proplot.axes.Axes.scatterx`, or `~matplotlib.axes.Axes.barh`.
 #
 # If you pass 2D arrays to these methods with ``mean=True`` or ``median=True``,
 # the means or medians of each column are drawn as points, lines, or bars, and
@@ -462,58 +506,128 @@ axs[1].format(title='Area plot')
 import proplot as plot
 import numpy as np
 import pandas as pd
-plot.rc['title.loc'] = 'uc'
 
 # Sample data
 state = np.random.RandomState(51423)
 data = state.rand(20, 8).cumsum(axis=0).cumsum(axis=1)[:, ::-1]
 data = data + 20 * state.normal(size=(20, 8)) + 30
 data = pd.DataFrame(data, columns=np.arange(0, 16, 2))
+data.columns.name = 'column number'
 data.name = 'variable'
 
-# Figure
-fig, axs = plot.subplots(
-    nrows=3, refaspect=1.5, refwidth=4,
-    share=0, hratios=(2, 1, 1)
-)
-axs.format(suptitle='Indicating error bounds')
-axs[1:].format(xlabel='column number', xticks=1, xgrid=False)
+# Loop through "vertical" and "horizontal" versions
+array_vertical = [[1], [2], [3]]
+array_horizontal = [[1, 1], [2, 3], [2, 3]]
+for name, array in zip(('horizontal', 'vertical'), (array_horizontal, array_vertical)):
+    # Figure
+    fig, axs = plot.subplots(
+        array, refaspect=1.5, refwidth=4,
+        share=0, hratios=(2, 1, 1)
+    )
+    axs.format(abc=True, suptitle=f'Indicating {name} error bounds')
 
-# Medians and percentile ranges
-ax = axs[0]
-obj = ax.barh(
-    data, color='light red', legend=True,
-    median=True, barpctile=90, boxpctile=True,
-    # median=True, barpctile=(5, 95), boxpctile=(25, 75)  # equivalent
-)
-ax.format(title='Column statistics')
-ax.format(ylabel='column number', title='Bar plot', ygrid=False)
+    # Medians and percentile ranges
+    ax = axs[0]
+    kw = dict(
+        color='light red', legend=True,
+        median=True, barpctile=90, boxpctile=True,
+        # median=True, barpctile=(5, 95), boxpctile=(25, 75)  # equivalent
+    )
+    if name == 'horizontal':
+        ax.barh(data, **kw)
+    else:
+        ax.bar(data, **kw)
+    ax.format(title='Bar plot')
 
-# Means and standard deviation range
-ax = axs[1]
-ax.scatter(
-    data, color='denim', marker='x', markersize=8**2, linewidth=0.8, legend='ll',
-    label='mean', shadelabel=True,
-    mean=True, shadestd=1,
-    # mean=True, shadestd=(-1, 1)  # equivalent
-)
-ax.format(title='Marker plot')
+    # Means and standard deviation range
+    ax = axs[1]
+    kw = dict(
+        color='denim', marker='x', markersize=8**2, linewidth=0.8,
+        label='mean', shadelabel=True,
+        mean=True, shadestd=1,
+        # mean=True, shadestd=(-1, 1)  # equivalent
+    )
+    if name == 'horizontal':
+        ax.scatterx(data, legend='b', legend_kw={'ncol': 1}, **kw)
+    else:
+        ax.scatter(data, legend='ll', **kw)
+    ax.format(title='Marker plot')
 
-# User-defined error bars
-ax = axs[2]
-means = data.mean(axis=0)
-means.name = data.name
-shadedata = np.percentile(data, (25, 75), axis=0)  # dark shading
-fadedata = np.percentile(data, (5, 95), axis=0)  # light shading
-ax.plot(
-    means,
-    shadedata=shadedata, fadedata=fadedata,
-    label='mean', shadelabel='50% CI', fadelabel='90% CI',
-    color='ocean blue', barzorder=0, boxmarker=False, legend='ll',
-)
-ax.format(title='Line plot')
-plot.rc.reset()
+    # User-defined error bars
+    ax = axs[2]
+    means = data.mean(axis=0)
+    means.name = data.name
+    shadedata = np.percentile(data, (25, 75), axis=0)  # dark shading
+    fadedata = np.percentile(data, (5, 95), axis=0)  # light shading
+    method = ax.plotx if name == 'horizontal' else ax.plot
+    kw = dict(
+        shadedata=shadedata, fadedata=fadedata,
+        label='mean', shadelabel='50% CI', fadelabel='90% CI',
+        color='ocean blue', barzorder=0, boxmarker=False,
+    )
+    if name == 'horizontal':
+        ax.plotx(means, legend='b', legend_kw={'ncol': 1}, **kw)
+    else:
+        ax.plot(means, legend='ll', **kw)
+    ax.format(title='Line plot')
 
+
+# %% [raw]
+# .. _ug_hist:
+#
+# Histogram plots
+# ---------------
+#
+# ProPlot wraps the `~matplotlib.axes.Axes.hist` command with the
+# `~proplot.axes.standardize_1d` and `~proplot.axes.apply_cycle` wrappers.
+# It also wraps the `~matplotlib.axes.Axes.hist2d` and
+# `~matplotlib.axes.Axes.hexbin` commands with the
+# `~proplot.axes.standardize_2d` and `~proplot.axes.apply_cmap` wrappers.
+# In the future, ProPlot may introduce a `kdeplot` analogous to
+# `seaborn.kdeplot` for drawing "smooth" histograms with optional
+# panels showing the marginal distributions.
+
+# %%
+import proplot as plot
+import numpy as np
+
+# Sample data
+M, N = 300, 3
+state = np.random.RandomState(51423)
+x = state.normal(size=(M, N)) + state.rand(M)[:, None] * np.arange(N) + 2 * np.arange(N)
+
+# Sample overlayed histograms
+fig, ax = plot.subplots(refwidth=4, refaspect=(3, 2))
+ax.format(suptitle='Overlaid histograms', xlabel='distribution', ylabel='count')
+ax.hist(
+    x, plot.arange(-3, 8, 0.2), alpha=0.7,
+    cycle=('blue9', 'gray9', 'orange9'), labels=list('abc'), legend='ul',
+)
+
+# Sample data
+N = 500
+x = state.normal(size=(N,))
+y = state.normal(size=(N,))
+bins = plot.arange(-3, 3, 0.25)
+
+# Histogram with marginal distributions
+fig, axs = plot.subplots(ncols=2, refwidth=2.3)
+axs.format(
+    abc=True, abcstyle='A.', titleabove=True, title='Test',
+    ylabel='y axis', suptitle='Histograms with marginal distributionss'
+)
+for ax, which, color in zip(axs, 'lr', ('blue9', 'orange9')):
+    ax.hist2d(
+        x, y, bins, vmin=0, vmax=10, levels=50,
+        cmap=color, colorbar='b', colorbar_kw={'label': 'count'}
+    )
+    color = plot.scale_luminance(color, 1.5)  # histogram colors
+    side = ax.panel(which, space=0)
+    side.hist(y, bins, color=color, vert=False)  # or orientation='horizontal'
+    side.format(grid=False, xlocator=[], xreverse=(which == 'l'))
+    top = ax.panel('t', space='2em')
+    top.hist(x, bins, color=color)
+    top.format(grid=False, ylocator=[])
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_boxplots:
@@ -531,7 +645,7 @@ plot.rc.reset()
 # automatically apply axis labels based on the `~pandas.DataFrame` or
 # `~xarray.DataArray` column labels or the input *x* coordinate labels.
 
-# %%
+# %% tags=[]
 import proplot as plot
 import numpy as np
 import pandas as pd
@@ -539,36 +653,36 @@ import pandas as pd
 # Sample data
 N = 500
 state = np.random.RandomState(51423)
-data = state.normal(size=(N, 5)) + 2 * (state.rand(N, 5) - 0.5) * np.arange(5)
-data = pd.DataFrame(
-    data, columns=pd.Index(['a', 'b', 'c', 'd', 'e'], name='xlabel')
-)
+data1 = state.normal(size=(N, 5)) + 2 * (state.rand(N, 5) - 0.5) * np.arange(5)
+data1 = pd.DataFrame(data1, columns=pd.Index(list('abcde'), name='label'))
+data2 = state.rand(100, 7)
+data2 = pd.DataFrame(data2, columns=pd.Index(list('abcdefg'), name='label'))
 
 # Figure
-fig, axs = plot.subplots([[1, 1, 2, 2], [0, 3, 3, 0]])
-axs.format(grid=False, suptitle='Boxes and violins demo')
+fig, axs = plot.subplots([[1, 1, 2, 2], [0, 3, 3, 0]], span=False)
+axs.format(
+    titleloc='l', abc=True, abcstyle='A.', grid=False,
+    suptitle='Boxes and violins demo')
 
 # Box plots
 ax = axs[0]
 obj1 = ax.boxplot(
-    data, means=True, meancolor='red', marker='x', fillcolor='gray5',
+    data1, means=True, meancolor='red', marker='x', fillcolor='gray5',
 )
-ax.format(title='Box plots', titleloc='uc')
+ax.format(title='Box plots')
 
 # Violin plots
 ax = axs[1]
 obj2 = ax.violinplot(
-    data, fillcolor='gray7',
-    points=500, bw_method=0.3, means=True,
+    data1, fillcolor='gray7', points=500, means=True,
 )
-ax.format(title='Violin plots', titleloc='uc')
+ax.format(title='Violin plots')
 
 # Boxes with different colors
 ax = axs[2]
-data = state.rand(100, 7)
 colors = plot.Colors('pastel2')  # list of colors from the cycle
-ax.boxplot(data, fillcolor=colors, orientation='horizontal')
-ax.format(title='Multiple colors', titleloc='uc', ymargin=0.15)
+ax.boxplot(data2, fillcolor=colors, orientation='horizontal')
+ax.format(title='Multiple colors', ymargin=0.15)
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -588,6 +702,7 @@ ax.format(title='Multiple colors', titleloc='uc', ymargin=0.15)
 # %%
 import proplot as plot
 import numpy as np
+import pandas as pd
 fig, axs = plot.subplots(
     share=0, ncols=2, wratios=(2, 1),
     figwidth='16cm', refaspect=(2, 1)
@@ -601,14 +716,15 @@ N = 50
 x = (state.rand(N) - 0.52).cumsum()
 y = state.rand(N)
 c = np.linspace(-N / 2, N / 2, N)  # color values
+c = pd.Series(c, name='parametric coordinate')
 
 # Parametric line with smooth gradations
 ax = axs[0]
 m = ax.parametric(
-    x, y, c, cmap=cmap, lw=7, interp=5, capstyle='round', joinstyle='round'
+    x, y, c, interp=5, capstyle='round', joinstyle='round',
+    lw=7, cmap=cmap, colorbar='b', colorbar_kw={'locator': 5}
 )
 ax.format(xlabel='xlabel', ylabel='ylabel', title='Line with smooth gradations')
-ax.colorbar(m, loc='b', label='parametric coordinate', locator=5)
 
 # Sample data
 N = 12

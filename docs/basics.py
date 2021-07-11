@@ -50,13 +50,13 @@
 # .. note::
 #
 #    ProPlot changes the default :rcraw:`figure.facecolor` so that the figure
-#    backgrounds shown by the `matplotlib backend\
+#    backgrounds shown by the `matplotlib backend
 #    <https://matplotlib.org/faq/usage_faq#what-is-a-backend>`__ are gray (the
 #    :rcraw:`savefig.facecolor` applied to saved figures is still white). This can be
 #    helpful when designing figures. ProPlot also controls the appearence of figures
 #    in Jupyter notebooks using the new :rcraw:`inlinefmt` setting, which is passed
 #    to `~proplot.config.config_inline_backend` on import. This imposes a
-#    higher-quality default `"inline" format\
+#    higher-quality default `"inline" format
 #    <https://ipython.readthedocs.io/en/stable/interactive/plotting.html>`__
 #    and disables the backend-specific settings ``InlineBackend.rc`` and
 #    ``InlineBackend.print_figure_kwargs``, ensuring that the figures you save
@@ -176,7 +176,7 @@ import numpy as np
 # Sample data
 N = 20
 state = np.random.RandomState(51423)
-data = (state.rand(N, N) - 0.5).cumsum(axis=0).cumsum(axis=1)
+data = N + (state.rand(N, N) - 0.55).cumsum(axis=0).cumsum(axis=1)
 
 # Example plots
 cycle = plot.Cycle('greys', left=0.2, N=5)
@@ -184,8 +184,12 @@ fig, axs = plot.subplots(ncols=2, nrows=2, figwidth=5, share=0)
 axs[0].plot(data[:, :5], linewidth=2, linestyle='--', cycle=cycle)
 axs[1].scatter(data[:, :5], marker='x', cycle=cycle)
 axs[2].pcolormesh(data, cmap='greys')
-axs[3].contourf(data, cmap='greys')
-axs.format(abc=True, xlabel='xlabel', ylabel='ylabel', suptitle='Quick plotting demo')
+m = axs[3].contourf(data, cmap='greys')
+axs.format(
+    abc=True, abcstyle='a.', titleloc='l', title='Title',
+    xlabel='xlabel', ylabel='ylabel', suptitle='Quick plotting demo'
+)
+fig.colorbar(m, loc='b', label='label')
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -320,7 +324,7 @@ for ax in axs[1:, 1:]:
 # `matplotlib settings <https://matplotlib.org/users/customizing.html>`__ and
 # :ref:`ProPlot settings <rc_proplot>`. `~proplot.config.rc` also
 # provides a ``style`` parameter that can be used to switch between
-# `matplotlib stylesheets\
+# `matplotlib stylesheets
 # <https://matplotlib.org/stable/gallery/style_sheets/style_sheets_reference.html>`__.
 # See the :ref:`configuration section <ug_config>` for details.
 #
@@ -364,7 +368,7 @@ axs.format(
     toplabels=('Column 1', 'Column 2'),
     suptitle='Rc settings demo',
     suptitlecolor='gray7',
-    abc=True, abcloc='l', abcstyle='A)',
+    abc=True, abcloc='l', abcstyle='(A)',
     title='Title', titleloc='r', titlecolor='gray7'
 )
 ay = axs[-1].twinx()
@@ -380,14 +384,16 @@ import proplot as plot
 import numpy as np
 # plot.rc.style = 'style'  # set the style everywhere
 
-# Set up figure
-styles = ('ggplot', 'seaborn', '538', 'bmh')
+# Sample data
 state = np.random.RandomState(51423)
 data = state.rand(10, 5)
+
+# Set up figure
 fig, axs = plot.subplots(ncols=2, nrows=2, span=False, share=False)
+axs.format(suptitle='Stylesheets demo')
+styles = ('ggplot', 'seaborn', '538', 'bmh')
 
 # Apply different styles to different axes with format()
-axs.format(suptitle='Stylesheets demo')
 for ax, style in zip(axs, styles):
     ax.format(style=style, xlabel='xlabel', ylabel='ylabel', title=style)
     ax.plot(data, linewidth=3)

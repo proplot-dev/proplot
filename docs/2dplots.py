@@ -40,8 +40,10 @@
 # ----------------------
 #
 # The `~proplot.axes.standardize_2d` wrapper standardizes
-# positional arguments across all 2D plotting methods.  Among other things,
-# it guesses coordinate *edges* for `~matplotlib.axes.Axes.pcolor` and
+# positional arguments across all 2D plotting methods.
+# `~proplot.axes.standardize_2d` lets you optionally omit the *x* and *y*
+# coordinates, in which case they are inferred from the data.
+# It also guesses coordinate *edges* for `~matplotlib.axes.Axes.pcolor` and
 # `~matplotlib.axes.Axes.pcolormesh` plots when you supply coordinate
 # *centers*, and calculates coordinate *centers* for
 # `~matplotlib.axes.Axes.contourf` and `~matplotlib.axes.Axes.contour` plots
@@ -52,15 +54,17 @@
 import proplot as plot
 import numpy as np
 
-# Figure and sample data
+# Sample data
 state = np.random.RandomState(51423)
 x = y = np.array([-10, -5, 0, 5, 10])
 xedges = plot.edges(x)
 yedges = plot.edges(y)
 data = state.rand(y.size, x.size)  # "center" coordinates
 lim = (np.min(xedges), np.max(xedges))
+
 with plot.rc.context({'image.cmap': 'Grays', 'image.levels': 21}):
-    fig, axs = plot.subplots(ncols=2, nrows=2, share=False)
+    # Figure
+    fig, axs = plot.subplots(ncols=2, nrows=2, refwidth=2.3, share=False)
     axs.format(
         xlabel='xlabel', ylabel='ylabel',
         xlim=lim, ylim=lim, xlocator=5, ylocator=5,
@@ -82,14 +86,28 @@ with plot.rc.context({'image.cmap': 'Grays', 'image.levels': 21}):
 # Pandas and xarray integration
 # -----------------------------
 #
-# The `~proplot.axes.standardize_2d` wrapper also integrates 2D
-# plotting methods with pandas `~pandas.DataFrame`\ s and xarray
-# `~xarray.DataArray`\ s. When you pass a DataFrame or DataArray to any
-# plotting command, the x-axis label, y-axis label, legend label, colorbar
-# label, and/or title are configured from the metadata. This restores some of
-# the convenience you get with the builtin `pandas`_ and `xarray`_ plotting
-# functions. This feature is *optional*. Installation of pandas and xarray are
-# not required, and it can be disabled by setting :rcraw:`autoformat` to ``False``.
+# The `~proplot.axes.standardize_2d` wrapper integrates 2D plotting
+# methods with pandas `~pandas.DataFrame`\ s and xarray `~xarray.DataArray`\ s.
+# If you omitted *x* and *y* coordinates, `~proplot.axes.standardize_2d` tries to
+# retrieve them from the DataFrame or DataArray. If the coordinates are string
+# labels, `~proplot.axes.standardize_2d` converts them into indices and tick labels
+# using `~matplotlib.ticker.FixedLocator` and `~matplotlib.ticker.IndexFormatter`.
+# If you did not explicitly set the x-axis label, y-axis label, title, or
+# :ref:`on-the-fly legend or colorbar <ug_cbars_axes>` label,
+# `~proplot.axes.standardize_2d` also tries to retrieve them from the DataFrame or
+# DataArray.
+#
+# You can also pass a Dataset, DataFrame, or dictionary to any plotting
+# command using the `data` keyword, then pass dataset keys as positional
+# arguments instead of arrays. For example, ``ax.plot('z', data=dataset)``
+# is translated to ``ax.plot(dataset['z'])``, and the *x* and *y* coordinates
+# are inferred thereafter.
+#
+# These features restore some of the convenience you get
+# with the builtin `pandas`_ and `xarray`_ plotting functions. They are also
+# *optional* -- installation of pandas and xarray are not required. All of
+# these features can be disabled by setting :rcraw:`autoformat` to ``False``
+# or by passing ``autoformat=False`` to any plotting command.
 
 # %%
 import xarray as xr
@@ -111,7 +129,7 @@ lat = xr.DataArray(
 plev = xr.DataArray(
     np.linspace(1000, 0, 20),
     dims=('plev',),
-    attrs={'long_name': 'pressure', 'units': 'mb'}
+    attrs={'long_name': 'pressure', 'units': 'hPa'}
 )
 da = xr.DataArray(
     data,
@@ -137,13 +155,13 @@ fig, axs = plot.subplots(nrows=2, refwidth=2.5, share=0)
 axs.format(toplabels=('Automatic subplot formatting',))
 
 # Plot DataArray
-cmap = plot.Colormap('RdPu', left=0.05)
+cmap = plot.Colormap('PuBu', left=0.05)
 axs[0].contourf(da, cmap=cmap, colorbar='l', linewidth=0.7, color='k')
 axs[0].format(yreverse=True)
 
 # Plot DataFrame
 axs[1].contourf(df, cmap='YlOrRd', colorbar='r', linewidth=0.7, color='k')
-axs[1].format(xtickminor=False)
+axs[1].format(xtickminor=False, yreverse=True)
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -159,7 +177,7 @@ axs[1].format(xtickminor=False)
 # plotting method wrapped by `~proplot.axes.apply_cmap`. `cmap` and `cmap_kw`
 # are passed to `~proplot.constructor.Colormap` and the resulting colormap is
 # used for the plot. For example, to create and apply a monochromatic colormap,
-# you can simply use ``cmap='color name'``.
+# you can simply use ``cmap='color_name'``.
 #
 # The `~proplot.axes.apply_cmap` wrapper also
 # adds the `norm` and `norm_kw` arguments. They are passed to the
@@ -175,18 +193,19 @@ import numpy as np
 # Sample data
 N = 20
 state = np.random.RandomState(51423)
-data = 10 ** (0.25 * np.cumsum(state.rand(N, N), axis=0))
+data = 11 ** (0.25 * np.cumsum(state.rand(N, N), axis=0))
 
 # Figure
-fig, axs = plot.subplots(ncols=2, span=False)
+fig, axs = plot.subplots(ncols=2, refwidth=2.3, span=False)
 axs.format(
     xlabel='xlabel', ylabel='ylabel', grid=True,
     suptitle='On-the-fly colormaps and normalizers'
 )
 
 # Plot with colormaps and normalizers
-axs[0].pcolormesh(data, cmap=('orange0', 'blood'), colorbar='b')
-axs[1].pcolormesh(data, norm='log', cmap=('orange0', 'blood'), colorbar='b')
+cmap = 'magma'
+axs[0].pcolormesh(data, cmap=cmap, colorbar='b')
+axs[1].pcolormesh(data, norm='log', cmap=cmap, colorbar='b')
 axs[0].format(title='Linear normalizer')
 axs[1].format(title='Logarithmic normalizer')
 
@@ -194,30 +213,41 @@ axs[1].format(title='Logarithmic normalizer')
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_discrete:
 #
-# Discrete colormap levels
+# Distinct colormap levels
 # ------------------------
 #
-# The `~proplot.axes.apply_cmap` wrapper also applies the
-# `~proplot.colors.DiscreteNorm` normalizer to every colormap plot.
-# `~proplot.colors.DiscreteNorm` converts data values to colormap colors by (1)
-# transforming data using an arbitrary *continuous* normalizer (e.g.
-# `~matplotlib.colors.LogNorm`), then (2) mapping the normalized data to
-# *discrete* colormap levels (just like `~matplotlib.colors.BoundaryNorm`).
+# The `~proplot.axes.apply_cmap` wrapper also "discretizes" the colormaps
+# used with every plot. This is done using `~proplot.colors.DiscreteNorm`,
+# which converts data values into colormap colors by first (1) transforming
+# the data using an arbitrary *continuous* normalizer (e.g.,
+# `~matplotlib.colors.Normalize` or `~matplotlib.colors.LogNorm`), then
+# (2) mapping the normalized data to *distinct* colormap levels. This is
+# similar to matplotlib's `~matplotlib.colors.BoundaryNorm`.
 #
-# By applying `~proplot.colors.DiscreteNorm` to every plot, ProPlot permits
-# distinct "levels" even for commands like `~matplotlib.axes.Axes.pcolor` and
-# `~matplotlib.axes.Axes.pcolormesh`. Distinct levels can help the reader
+# Applying `~proplot.colors.DiscreteNorm` to every colormap lets us easily
+# draw `matplotlib.axes.Axes.pcolor` and `~matplotlib.axes.Axes.pcolormesh`
+# plots with distinct levels. Distinct levels can help the reader
 # discern exact numeric values and tends to reveal qualitative structure in
-# the figure. They are also critical for users that would *prefer* contours,
+# the data. They are also critical for users that would *prefer* contours,
 # but have complex 2D coordinate matrices that trip up the contouring
 # algorithm.  `~proplot.colors.DiscreteNorm` also fixes the colormap
 # end-colors by ensuring the following conditions are met (this may seem
 # nitpicky, but it is crucial for plots with very few levels):
 #
-# #. All colormaps always span the *entire color range*, independent of the
-#    `extend` setting.
+# #. All colormaps always span the *entire color range*, independent
+#    of the `extend` setting.
 # #. Cyclic colormaps always have *distinct color levels* on
 #    either end of the colorbar.
+#
+# The colormap levels used with `~proplot.colors.DiscreteNorm` can be configured
+# with the `levels`, `values`, or `N` keywords. If you pass an integer to
+# one of these keywords, approximately that many boundaries are automatically
+# generated at "nice" intervals. The keywords `vmin`, `vmax, and `locator`
+# control how the automatic intervals are chosen. You can also use
+# the `positive`, `negative`, and `symmetric` keywords to ensure that
+# automatically-generated levels are strictly positive, strictly negative,
+# or symmetric about zero (respectively). To generate your own level lists,
+# the `proplot.utils.arange` and `proplot.utils.edges` commands may be useful.
 
 # %%
 import proplot as plot
@@ -228,10 +258,10 @@ state = np.random.RandomState(51423)
 data = (state.normal(0, 1, size=(33, 33))).cumsum(axis=0).cumsum(axis=1)
 
 # Pcolor plot with and without distinct levels
-fig, axs = plot.subplots(ncols=2, refwidth=2)
-axs.format(suptitle='Pcolor plot with levels')
-for ax, n, mode, side in zip(axs, (200, 10), ('Ambiguous', 'Discernible'), 'lr'):
-    m = ax.pcolor(data, cmap='spectral_r', N=n, symmetric=True)
+fig, axs = plot.subplots(ncols=2, refwidth=2.2)
+axs.format(suptitle='DiscreteNorm with symmetric levels')
+for ax, n, mode, side in zip(axs, (200, 10), ('Ambiguous', 'Distinct'), 'lr'):
+    m = ax.pcolor(data, cmap='spectral_r', levels=n, symmetric=True)
     ax.format(title=f'{mode} level boundaries', yformatter='null')
     ax.colorbar(m, loc=side, locator=8)
 
@@ -246,10 +276,11 @@ levels = plot.arange(0, 360, 45)
 
 # Figure
 fig, axs = plot.subplots(
-    [[0, 0, 1, 1, 0, 0], [2, 3, 3, 4, 4, 5]],
-    wratios=(1.5, 0.5, 1, 1, 0.5, 1.5), refwidth=1.7, ref=1, right='2em'
+    [[0, 1, 1, 0], [2, 3, 4, 5]],
+    wratios=(1, 1, 1, 1), hratios=(1.5, 1),
+    refwidth=2.4, refaspect=1, right='2em'
 )
-axs.format(suptitle='DiscreteNorm color-range standardization')
+axs.format(suptitle='DiscreteNorm end-color standardization')
 
 # Cyclic colorbar with distinct end colors
 ax = axs[0]
@@ -257,13 +288,13 @@ ax.pcolormesh(
     data, levels=levels, cmap='phase', extend='neither',
     colorbar='b', colorbar_kw={'locator': 90}
 )
-ax.format(title='cyclic colormap\nwith distinct end colors')
+ax.format(title='distinct "cyclic" end colors')
 
 # Colorbars with different extend values
 for ax, extend in zip(axs[1:], ('min', 'max', 'neither', 'both')):
     ax.pcolormesh(
         data[:, :10], levels=levels, cmap='oxy',
-        extend=extend, colorbar='b', colorbar_kw={'locator': 90}
+        extend=extend, colorbar='b', colorbar_kw={'locator': 180}
     )
     ax.format(title=f'extend={extend!r}')
 
@@ -283,13 +314,13 @@ for ax, extend in zip(axs[1:], ('min', 'max', 'neither', 'both')):
 # The `~proplot.colors.DivergingNorm` normalizer
 # ensures the colormap midpoint lies on some *central* data value (usually 0),
 # even if `vmin`, `vmax`, or `levels` are asymmetric with respect to the central
-# value. This can be applied using e.g. ``norm='diverging'`` and be configured
+# value. This can be applied using e.g. ``norm='diverging'`` and configured
 # to scale colors "fairly" or "unfairly":
 #
-# * With fair scaling (the default), the gradations on either side of the midpoint
+# * With fair scaling (the default), gradations on either side of the midpoint
 #   have equal intensity. If `vmin` and `vmax` are not symmetric about zero, the most
 #   intense colormap colors on one side of the midpoint will be truncated.
-# * With unfair scaling, the gradations on either side of the midpoint are warped
+# * With unfair scaling, gradations on either side of the midpoint are warped
 #   so that the full range of colormap colors is traversed. This configuration should
 #   be used with care, as it may lead you to misinterpret your data!
 #
@@ -329,7 +360,7 @@ data1 = (state.rand(20, 20) - 0.485).cumsum(axis=1).cumsum(axis=0)
 data2 = (state.rand(20, 20) - 0.515).cumsum(axis=0).cumsum(axis=1)
 
 # Figure
-fig, axs = plot.subplots(nrows=2, ncols=2, refwidth=2.4, order='F')
+fig, axs = plot.subplots(nrows=2, ncols=2, refwidth=2.2, order='F')
 axs.format(suptitle='Diverging normalizer demo')
 cmap = plot.Colormap('DryWet', cut=0.1)
 
@@ -346,7 +377,7 @@ for data, mode, fair, locator in zip(
         ax = axs[i]
         m = ax.contourf(data, cmap=cmap, norm=norm)
         ax.colorbar(m, loc='b', locator=locator)
-        ax.format(title=f'{mode.title()}-skewed w/ {fair!r} scaling')
+        ax.format(title=f'{mode.title()}-skewed + {fair} scaling')
         i += 1
 
 
@@ -356,7 +387,7 @@ for data, mode, fair, locator in zip(
 # Contour and gridbox labels
 # --------------------------
 #
-# The `~proplot.axes.apply_cmap` wrapper also allows you to quickly add
+# The `~proplot.axes.apply_cmap` wrapper lets you quickly add
 # *labels* to `~proplot.axes.Axes.heatmap`, `~matplotlib.axes.Axes.pcolor`,
 # `~matplotlib.axes.Axes.pcolormesh`, `~matplotlib.axes.Axes.contour`, and
 # `~matplotlib.axes.Axes.contourf` plots by simply using ``labels=True``.
@@ -366,8 +397,8 @@ for data, mode, fair, locator in zip(
 # `~proplot.axes.apply_cmap` draws contour labels with
 # `~matplotlib.axes.Axes.clabel` and grid box labels with
 # `~matplotlib.axes.Axes.text`. You can pass keyword arguments to these
-# functions using the `labels_kw` dictionary keyword argument, and change the
-# label precision with the `precision` keyword argument. See
+# functions using a `labels_kw` dictionary keyword argument, and change the
+# label precision with the `precision` keyword. See
 # `~proplot.axes.apply_cmap` for details.
 
 # %%
@@ -383,7 +414,7 @@ data = pd.DataFrame(data, index=pd.Index(['a', 'b', 'c', 'd', 'e', 'f']))
 # Figure
 fig, axs = plot.subplots(
     [[1, 1, 2, 2], [0, 3, 3, 0]],
-    refwidth=2.2, share=1, span=False,
+    refwidth=2.3, share=1, span=False,
 )
 axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Labels demo')
 
@@ -419,10 +450,13 @@ ax.format(title='Line contours with labels')
 # -------------
 #
 # The new `~proplot.axes.Axes.heatmap` command calls
-# `~matplotlib.axes.Axes.pcolormesh` and configures the axes with settings
-# that are suitable for heatmaps -- fixed aspect ratio, no gridlines, no minor ticks,
-# and major ticks at the center of each box. Among other things, this is useful for
-# displaying covariance and correlation matrices, as shown below.
+# `~matplotlib.axes.Axes.pcolormesh` and configures the
+# axes with settings that are suitable for heatmaps --
+# fixed aspect ratio, no gridlines, no minor ticks,
+# and major ticks at the center of each box. Among other
+# things, this is useful for displaying covariance and
+# correlation matrices, as shown below. This should
+# generally only be used with `~proplot.axes.CartesianAxes`.
 
 # %%
 import proplot as plot

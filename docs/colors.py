@@ -52,6 +52,61 @@ import proplot as plot
 fig, axs = plot.show_colors()
 
 
+# %% [raw]
+# .. _ug_colors_change:
+#
+# Modifying colors
+# ----------------
+#
+# You can quickly modify colors using the `~proplot.utils.set_alpha',
+# `~proplot.utils.set_hue`, `~proplot.utils.set_saturation`,
+# `~proplot.utils.set_luminance`, `~proplot.utils.shift_hue`,
+# `~proplot.utils.scale_saturation` and `~proplot.utils.scale_luminance`
+# functions. The ``set`` functions change individual hue, saturation, or
+# luminance values in the :ref:`perceptually uniform colorspace <ug_perceptual>`
+# specified by the `space` keyword. The ``scale`` functions shift or scale
+# the hue, saturation, or luminance by the input value -- for example,
+# ``scale_luminance('color', 1.2)`` makes ``'color'`` color 20% brighter. These
+# are useful for creating color gradations outside of `~proplot.colors.Cycle` or
+# if you simply spot a color you like and want to make it a bit brighter,
+# less vibrant, etc.
+
+
+# %%
+import proplot as plot
+import numpy as np
+
+# Figure
+state = np.random.RandomState(51423)
+fig, axs = plot.subplots(ncols=3, axwidth=2)
+axs.format(
+    suptitle='Modifying colors',
+    toplabels=('Shifted hue', 'Scaled luminance', 'Scaled saturation'),
+    toplabelweight='normal',
+    xformatter='none', yformatter='none',
+)
+
+# Shifted hue
+with plot.rc.context({'legend.handlelength': 0}):
+    N = 50
+    marker = 'o'
+    for shift in (0, -60, 60):
+        x, y = state.rand(2, N)
+        color = plot.shift_hue('grass', shift)
+        axs[0].scatter(x, y, marker=marker, c=color, legend='b', label=shift)
+
+    # Scaled luminance
+    for scale in (0.2, 1, 2):
+        x, y = state.rand(2, N)
+        color = plot.scale_luminance('bright red', scale)
+        axs[1].scatter(x, y, marker=marker, c=color, legend='b', label=scale)
+
+    # Scaled saturation
+    for scale in (0, 1, 3):
+        x, y = state.rand(2, N)
+        color = plot.scale_saturation('ocean blue', scale)
+        axs[2].scatter(x, y, marker=marker, c=color, legend='b', label=scale)
+
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_colors_cmaps:
 #
@@ -64,7 +119,9 @@ fig, axs = plot.show_colors()
 # ``1``, while the ``index`` is the index on the list of cycle colors. This
 # feature is powered by the `~proplot.colors.ColorDatabase` class. This is
 # useful if you spot a nice color in one of the available colormaps or color
-# cycles and want to use it for some arbitrary plot element.
+# cycles and want to use it for some arbitrary plot element. Use the
+# `~proplot.utils.to_rgb` or `~proplot.utils.to_rgba` functions to retrieve
+# the RGB or RGBA channel values.
 
 # %%
 import proplot as plot
@@ -73,14 +130,13 @@ import numpy as np
 # Figure
 fig, axs = plot.subplots(nrows=2, share=0)
 axs.format(
-    xformatter='null', yformatter='null', abc=True, abcloc='ul', abcstyle='A.',
-    suptitle='Individual colors from colormaps and cycles'
+    xformatter='null', yformatter='null', abc=True, abcloc='l', abcstyle='A.',
+    suptitle='On-the-fly color selections'
 )
 
 # Drawing from colormaps
 ax = axs[0]
 name = 'Deep'
-cmap = plot.Colormap(name)
 idxs = plot.arange(0, 1, 0.2)
 state = np.random.RandomState(51423)
 state.shuffle(idxs)
@@ -90,20 +146,22 @@ for idx in idxs:
         data, lw=5, color=(name, idx),
         label=f'idx {idx:.1f}', legend='r', legend_kw={'ncols': 1}
     )
-ax.colorbar(cmap, loc='ur', label='colormap', length='12em')
-ax.format(title='Drawing from the Solar colormap', grid=True)
+ax.colorbar(plot.Colormap(name), loc='r', locator='none')
+ax.format(title=f'Drawing from the {name} colormap', grid=True)
 
 # Drawing from color cycles
 ax = axs[1]
+name = 'Qual1'
 idxs = np.arange(6)
 state.shuffle(idxs)
 for idx in idxs:
     data = (state.rand(20) - 0.4).cumsum()
     h = ax.plot(
-        data, lw=5, color=('qual1', idx),
+        data, lw=5, color=(name, idx),
         label=f'idx {idx:.0f}', legend='r', legend_kw={'ncols': 1}
     )
-ax.format(title='Drawing from the ggplot color cycle')
+ax.colorbar(plot.Colormap(name), loc='r', locator='none')
+ax.format(title=f'Drawing from the {name} cycle')
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"

@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.3.0
+#       jupytext_version: 1.11.3
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -193,38 +193,49 @@ state = np.random.RandomState(51423)
 data = state.rand(30, 30).cumsum(axis=1)
 
 # Initialize figure
-fig, axs = plot.subplots([[1, 1, 2, 2], [0, 3, 3, 0]], refwidth=2, span=0)
+fig, axs = plot.subplots(ncols=2, nrows=2, refwidth=2, span=0)
 axs.format(
-    xlabel='x axis', ylabel='y axis',
-    suptitle='Building your own PerceptuallyUniformColormaps'
+    xticklabels='none',
+    yticklabels='none',
+    suptitle='Making PerceptuallyUniformColormaps'
 )
 
-# Colormap from named color
+# Colormap from a color
 # The trailing '_r' makes the colormap go dark-to-light instead of light-to-dark
-cmap1 = plot.Colormap('prussian blue_r', name='pacific', fade=100, space='hpl')
-axs[0].format(title='From single named color')
-axs[0].pcolormesh(data, cmap=cmap1)
+cmap1 = plot.Colormap('prussian blue_r', l=100, name='Pacific', space='hpl')
+ax = axs[0]
+ax.format(title='From single named color')
+m = ax.contourf(data, cmap=cmap1)
+ax.colorbar(m, loc='b', ticks='none', label=cmap1.name)
 
 # Colormap from lists
-cmap2 = plot.Colormap(('maroon', 'light tan'), name='heatwave')
-axs[1].format(title='From list of colors')
-axs[1].pcolormesh(data, cmap=cmap2)
+cmap2 = plot.Colormap(('maroon', 'light tan'), name='Heatwave')
+ax = axs[1]
+ax.format(title='From list of colors')
+m = ax.contourf(data, cmap=cmap2)
+ax.colorbar(m, loc='b', ticks='none', label=cmap2.name)
 
-# Colormaps from channel value dictionaries
+# Sequential colormap from channel values
 cmap3 = plot.Colormap(
-    {
-        'hue': ['red', 'red-720'],
-        'saturation': [80, 20],
-        'luminance': [20, 100]
-    },
-    name='cubehelix',
-    space='hpl',
+    h=('red', 'red-720'), s=(80, 20), l=(20, 100), space='hpl', name='CubeHelix'
 )
-axs[2].format(title='From channel values')
-axs[2].pcolormesh(data, cmap=cmap3)
+ax = axs[2]
+ax.format(title='Sequential from channel values')
+m = ax.contourf(data, cmap=cmap3)
+ax.colorbar(m, loc='b', ticks='none', label=cmap3.name)
+
+# Cyclic colormap from channel values
+cmap4 = plot.Colormap(
+    h=(0, 360), c=50, l=70, space='hcl', cyclic=True, name='Spectrum'
+)
+ax = axs[3]
+ax.format(title='Cyclic from channel values')
+m = ax.contourf(data, cmap=cmap4)
+ax.colorbar(m, loc='b', ticks='none', label=cmap4.name)
 
 # Display the channels
-fig, axs = plot.show_channels(cmap1, cmap2, cmap3, refwidth=1.5, rgb=False)
+fig, axs = plot.show_channels(cmap1, cmap2, refwidth=1.5, rgb=False)
+fig, axs = plot.show_channels(cmap3, cmap4, refwidth=1.5, rgb=False)
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -234,8 +245,9 @@ fig, axs = plot.show_channels(cmap1, cmap2, cmap3, refwidth=1.5, rgb=False)
 # -----------------
 #
 # To *merge* colormaps, simply pass multiple positional arguments to the
-# `~proplot.constructor.Colormap` constructor. Each positional argument can
-# be a colormap name, a colormap instance, or a
+# `~proplot.constructor.Colormap` constructor. This calls the
+# `~proplot.colors.LinearSegmentedColormap.append` method. Each positional
+# argument can be a colormap name, a colormap instance, or a
 # :ref:`special argument <ug_cmaps_new>` that generates a new colormap
 # on-the-fly. This lets you create new diverging colormaps and segmented
 # `SciVisColor <https://sciviscolor.org/home/colormoves/>`__ style colormaps
@@ -243,8 +255,8 @@ fig, axs = plot.show_channels(cmap1, cmap2, cmap3, refwidth=1.5, rgb=False)
 # datasets with complex statistical distributions.
 #
 # In the below example, we create a new divering colormap and reconstruct the
-# colormap from `this SciVisColor example\
-# <https://sciviscolor.org/wp-content/uploads/sites/14/2018/04/colormoves-icon-1.png>`__.
+# colormap from `this SciVisColor example
+# <https://sciviscolor.org/media/filer_public/c7/27/c727e638-82eb-445b-bc96-e7b64c13efa2/colormoves.png>`__.
 # We also *save* the results for future use by passing ``save=True`` to
 # `~proplot.constructor.Colormap`.
 
@@ -258,28 +270,28 @@ data = state.rand(30, 30).cumsum(axis=1)
 fig, axs = plot.subplots([[0, 1, 1, 0], [2, 2, 3, 3]], refwidth=2.4, span=False)
 axs.format(
     xlabel='xlabel', ylabel='ylabel',
-    suptitle='Merging existing colormaps'
+    suptitle='Merging colormaps'
 )
 
 # Diverging colormap example
-title1 = 'Custom diverging map'
+title1 = 'Diverging from two sequential maps'
 cmap1 = plot.Colormap('Blues4_r', 'Reds3', name='Diverging', save=True)
 
 # SciVisColor examples
 title2 = 'SciVisColor example with equal ratios'
 cmap2 = plot.Colormap(
     'Greens1_r', 'Oranges1', 'Blues1_r', 'Blues6',
-    name='SciVisColorEqual', save=True
+    name='SciVisColorEven', save=True
 )
 title3 = 'SciVisColor example'
 cmap3 = plot.Colormap(
     'Greens1_r', 'Oranges1', 'Blues1_r', 'Blues6',
-    ratios=(1, 3, 5, 10), name='SciVisColor', save=True
+    ratios=(1, 3, 5, 10), name='SciVisColorUneven', save=True
 )
 
 # Plot examples
 for ax, cmap, title in zip(axs, (cmap1, cmap2, cmap3), (title1, title2, title3)):
-    m = ax.pcolormesh(data, cmap=cmap, levels=500)
+    m = ax.contourf(data, cmap=cmap, levels=500)
     ax.colorbar(m, loc='b', locator='null', label=cmap.name)
     ax.format(title=title)
 
@@ -290,7 +302,7 @@ for ax, cmap, title in zip(axs, (cmap1, cmap2, cmap3), (title1, title2, title3))
 # Modifying colormaps
 # -------------------
 #
-# ProPlot allows you to create modified versions of *existing* colormaps
+# ProPlot lets you create modified versions of *existing* colormaps
 # using the `~proplot.constructor.Colormap` constructor and the new
 # `~proplot.colors.LinearSegmentedColormap` and
 # `~proplot.colors.ListedColormap` classes, which are used to replace the
@@ -333,15 +345,17 @@ state = np.random.RandomState(51423)
 data = state.rand(40, 40).cumsum(axis=0)
 
 # Generate figure
-fig, axs = plot.subplots(ncols=3, refwidth=1.7, span=False)
+fig, axs = plot.subplots(
+    [[0, 1, 1, 0], [2, 2, 3, 3]], refwidth=1.9, span=False,
+)
 axs.format(
-    xlabel='x axis', ylabel='y axis',
+    xlabel='y axis', ylabel='x axis',
     suptitle='Truncating sequential colormaps',
 )
 
 # Cutting left and right
+cmap = 'Ice'
 for ax, coord in zip(axs, (None, 0.3, 0.7)):
-    cmap = 'grays'
     if coord is None:
         title, cmap_kw = 'Original', {}
     elif coord < 0.5:
@@ -349,7 +363,7 @@ for ax, coord in zip(axs, (None, 0.3, 0.7)):
     else:
         title, cmap_kw = f'right={coord}', {'right': coord}
     ax.format(title=title)
-    ax.pcolormesh(
+    ax.contourf(
         data, cmap=cmap, cmap_kw=cmap_kw,
         colorbar='b', colorbar_kw={'locator': 'null'}
     )
@@ -364,7 +378,7 @@ data = (state.rand(40, 40) - 0.5).cumsum(axis=0).cumsum(axis=1)
 # Generate figure
 fig, axs = plot.subplots(ncols=2, nrows=2, refwidth=1.7, span=False)
 axs.format(
-    xlabel='x axis', ylabel='y axis',
+    xlabel='x axis', ylabel='y axis', xticklabels='none',
     suptitle='Modifying diverging colormaps',
 )
 
@@ -374,13 +388,12 @@ for i, (ax, cut) in enumerate(zip(axs, (None, None, 0.2, -0.1))):
     levels = plot.arange(-10, 10, 2)
     if i == 1 or i == 3:
         levels = plot.edges(levels)
-    if i == 0:
-        title = 'Even number of levels'
-    elif i == 1:
-        title = 'Odd number of levels'
+    if i < 2:
+        title = 'Negative-positive cutoff' if i == 0 else 'Neutral-valued center'
+        title = f'{title}\nlen(levels) = {len(levels)}'
     else:
         title = 'Sharper cutoff' if cut > 0 else 'Expanded center'
-        title = f'{title}\ncut = ${cut}$'
+        title = f'{title}\ncut = {cut}'
     ax.format(title=title)
     m = ax.contourf(
         data, cmap='Div', cmap_kw={'cut': cut},
@@ -395,7 +408,7 @@ state = np.random.RandomState(51423)
 data = (state.rand(50, 50) - 0.48).cumsum(axis=0).cumsum(axis=1) % 30
 
 # Rotating cyclic colormaps
-fig, axs = plot.subplots(ncols=3, refwidth=1.7)
+fig, axs = plot.subplots(ncols=3, refwidth=1.7, span=False)
 for ax, shift in zip(axs, (0, 90, 180)):
     m = ax.pcolormesh(data, cmap='romaO', cmap_kw={'shift': shift}, levels=12)
     ax.format(
@@ -411,13 +424,11 @@ state = np.random.RandomState(51423)
 data = state.rand(20, 20).cumsum(axis=1)
 
 # Changing the colormap opacity
-# Use pcolorfast because AxesImage does not have issue where pixels
-# appear to have "outline" when colors are not 100% opaque
-fig, axs = plot.subplots(ncols=3, refwidth=1.7)
+fig, axs = plot.subplots(ncols=3, refwidth=1.7, span=False)
 for ax, alpha in zip(axs, (1.0, 0.5, 0.0)):
     alpha = (alpha, 1.0)
     cmap = plot.Colormap('batlow_r', alpha=alpha)
-    m = ax.pcolorfast(data, cmap=cmap, levels=10, extend='both')
+    m = ax.imshow(data, cmap=cmap, levels=10, extend='both')
     ax.colorbar(m, loc='b', locator='none')
     ax.format(
         title=f'alpha = {alpha}', xlabel='x axis', ylabel='y axis',
@@ -431,7 +442,7 @@ state = np.random.RandomState(51423)
 data = state.rand(20, 20).cumsum(axis=1)
 
 # Changing the colormap gamma
-fig, axs = plot.subplots(ncols=3, refwidth=1.7)
+fig, axs = plot.subplots(ncols=3, refwidth=1.7, span=False)
 for ax, gamma in zip(axs, (0.7, 1.0, 1.4)):
     cmap = plot.Colormap('boreal', gamma=gamma)
     m = ax.pcolormesh(data, cmap=cmap, levels=10, extend='both')

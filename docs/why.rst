@@ -134,7 +134,7 @@ Class constructor functions
 
 .. rubric:: Limitation
 
-Matplotlib and cartopy define several classes with verbose names like
+Matplotlib and `cartopy`_ define several classes with verbose names like
 `~matplotlib.ticker.MultipleLocator`, `~matplotlib.ticker.FormatStrFormatter`,
 and `~cartopy.crs.LambertAzimuthalEqualArea`. They also keep them out of
 the top-level package namespace. Since plotting code has a half life of about 30
@@ -153,7 +153,7 @@ So, why not "register" everything else?
 
 .. rubric:: Solution
 
-In ProPlot, tick locators, tick formatters, axis scales, cartopy projections, colormaps,
+In ProPlot, tick locators, tick formatters, axis scales, `cartopy`_ projections, colormaps,
 and property cyclers are all "registered". ProPlot does this by defining *constructor
 functions* and passing various keyword arguments through these functions. This may seem
 "unpythonic" but it is absolutely invaluable for writing plotting code.

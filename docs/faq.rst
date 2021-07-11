@@ -6,7 +6,7 @@ What makes this project different?
 ==================================
 
 There is already a great matplotlib wrapper called
-`seaborn <https://seaborn.pydata.org/>`__. Also, `pandas\
+`seaborn <https://seaborn.pydata.org/>`__. Also, `pandas
 <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.plot.html>`__
 and `xarray <http://xarray.pydata.org/en/stable/plotting.html>`__
 both offer convenient matplotlib plotting commands.
@@ -16,8 +16,6 @@ How does ProPlot compare against these tools?
   nice-looking plots from data stored in `~pandas.DataFrame`\ s and
   `~xarray.DataArray`\ s (ProPlot tries to apply labels from these objects, just like
   pandas and xarray).
-* Unlike seaborn, pandas, and xarray, ProPlot *also* works for arbitrarily complex
-  subplot grids, and ProPlot provides tools for heavily customizing plots.
 * ProPlot is integrated with *cartopy* and *basemap*. You will find plotting geophysical
   data in ProPlot to be much more concise than working with cartopy and basemap
   directly.
@@ -25,7 +23,7 @@ How does ProPlot compare against these tools?
   For example, see `~proplot.constructor.Colormap`,
   `~proplot.colors.PerceptuallyUniformColormap`, and `~proplot.config.RcConfigurator`.
 * ProPlot *expands upon* matplotlib by fixing various quirks, developing a more
-  sophisticated automatic layout algorithm, simplifying the process of drawing outer
+  advanced automatic layout algorithm, simplifying the process of drawing outer
   colorbars and legends, and much more.
 * ProPlot is *built right into the matplotlib API*, thanks to special subclasses of the
   `~matplotlib.figure.Figure` and `~matplotlib.axes.Axes` classes, while seaborn,
@@ -47,7 +45,7 @@ Since ProPlot is built right into the matplotlib API, you might be wondering why
 didn't contribute to the matplotlib project directly.
 
 * Certain features directly conflict with matplotlib. For example, ProPlot's tight
-  layout algorithm conflicts with matplotlib's `tight layout\
+  layout algorithm conflicts with matplotlib's `tight layout
   <https://matplotlib.org/tutorials/intermediate/tight_layout_guide.html>`__ by
   permitting *fluid figure dimensions*, and the new `~proplot.gridspec.GridSpec` class
   permits *variable spacing* between rows and columns and uses *physical units* rather
@@ -55,7 +53,7 @@ didn't contribute to the matplotlib project directly.
 * Certain features are arguably too redundant. For example, `~proplot.axes.Axes.format`
   is convenient, but the same tasks can be accomplished with existing axes and axis
   "setter" methods. Also, some of the functionality of `~proplot.ui.subplots` can be
-  replicated with `axes_grid1\
+  replicated with `axes_grid1
   <https://matplotlib.org/mpl_toolkits/axes_grid1/index.html>`__. Following `TOOWTDI
   <https://wiki.python.org/moin/TOOWTDI>`__ philosophy, these features should probably
   not be integrated.
@@ -66,9 +64,10 @@ didn't contribute to the matplotlib project directly.
      thousands of users. Matplotlib developers have to focus on support and API
      consistency, while ProPlot can make more dramatic improvements.
 
-Nevertheless, if any core matplotlib developers think that some of ProPlot's features
-should be added to matplotlib, please contact
-`Luke Davis <https://github.com/lukelbd>`__ and let him know!
+..
+   Nevertheless, if any core matplotlib developers think that some of ProPlot's features
+   should be added to matplotlib, please contact
+   `Luke Davis <https://github.com/lukelbd>`__ and let him know!
 
 Why do my inline figures look different?
 ========================================

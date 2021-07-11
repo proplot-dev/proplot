@@ -31,7 +31,7 @@
 # --------------
 #
 # Matplotlib provides a `~matplotlib.font_manager` module for working with
-# system fonts and classifies fonts into `five font families\
+# system fonts and classifies fonts into `five font families
 # <https://matplotlib.org/stable/gallery/text_labels_and_annotations/fonts_demo.html>`__:
 # :rcraw:`font.serif` :rcraw:`font.sans-serif`, :rcraw:`font.monospace`,
 # :rcraw:`font.cursive`, and :rcraw:`font.fantasy`. The default font family

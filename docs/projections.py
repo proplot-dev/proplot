@@ -15,7 +15,7 @@
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 #
-# .. _polar: https://matplotlib.org/stable/gallery/pie_and_polar_charts/polar_demo.html
+# .. _polar: https://matplotlib.org/3.1.0/gallery/pie_and_polar_charts/polar_demo.html
 #
 # .. _cartopy: https://scitools.org.uk/cartopy/docs/latest/
 #
@@ -241,7 +241,7 @@ plot.rc.reset()
 # `~mpl_toolkits.basemap.addcyclic`.
 #
 # Geographic features can be drawn underneath data or on top of data by changing the
-# corresponding `zorder <https://matplotlib.org/stable/gallery/misc/zorder_demo.html>`__
+# corresponding `zorder <https://matplotlib.org/3.1.1/gallery/misc/zorder_demo.html>`__
 # setting. For example, to draw land patches on top of all plotted content as
 # a "land mask," use ``ax.format(land=True, landzorder=4)`` or set :rcraw:`land.zorder`
 # to ``True``. See the :ref:`next section <ug_geoformat>` for details.

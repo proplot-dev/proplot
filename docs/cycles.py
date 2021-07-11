@@ -23,9 +23,9 @@
 # between these colors may not make sense. Color cycles are generally used
 # with bar plots, line plots, and other distinct plot elements. ProPlot's
 # named color cycles are actually registered as `~proplot.colors.ListedColormap`
-# instances so that they can be `used with categorical data\
+# instances so that they can be `used with categorical data
 # <https://journals.ametsoc.org/view-large/figure/9538246/bams-d-13-00155_1-f5.tif>`__.
-# Much more commonly, we build `property cycles\
+# Much more commonly, we build `property cycles
 # <https://matplotlib.org/stable/tutorials/intermediate/color_cycle.html>`__
 # from the `~proplot.colors.ListedColormap` colors using the
 # `~proplot.constructor.Cycle` constructor function or by
@@ -97,12 +97,13 @@ ax.plot(data, cycle='qual1', lw=lw, **kwargs)
 ax.format(title='Local color cycle')
 
 # As above but draw each line individually
-# Note that the color cycle is not reset with each plot call
+# Note that passing cycle=name to successive plot calls does
+# not reset the cycle position if the cycle is unchanged
 ax = axs[2]
 labels = kwargs['labels']
 for i in range(data.shape[1]):
     ax.plot(data[:, i], cycle='qual1', legend='b', label=labels[i], lw=lw)
-ax.format(title='With multiple plot calls')
+ax.format(title='Multiple plot calls')
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -126,21 +127,21 @@ ax.format(title='With multiple plot calls')
 #
 # In the below example, several cycles are constructed from scratch, and the
 # lines are referenced with colorbars and legends. Note that ProPlot allows
-# you to :ref:`generate colorbars from lists of lines <ug_cbars>`.
+# you to :ref:`generate colorbars from lists of artists <ug_cbars>`.
 
 # %%
 import proplot as plot
 import numpy as np
-fig, axs = plot.subplots(ncols=2, share=0, refwidth=2.3)
+fig, axs = plot.subplots(ncols=2, share=0, refwidth=2)
 state = np.random.RandomState(51423)
 data = (20 * state.rand(10, 21) - 10).cumsum(axis=0)
 
 # Cycle from on-the-fly monochromatic colormap
 ax = axs[0]
-lines = ax.plot(data[:, :5], cycle='plum', cycle_kw={'fade': 85}, lw=5)
+lines = ax.plot(data[:, :5], cycle='plum', lw=5)
 fig.colorbar(lines, loc='b', col=1, values=np.arange(0, len(lines)))
 fig.legend(lines, loc='b', col=1, labels=np.arange(0, len(lines)))
-ax.format(title='Cycle from color')
+ax.format(title='Cycle from a single color')
 
 # Cycle from registered colormaps
 ax = axs[1]
@@ -171,7 +172,7 @@ import numpy as np
 import pandas as pd
 
 # Cycle that loops through 'dashes' Line2D property
-cycle = plot.Cycle(dashes=[(1, 0.5), (1, 1.5), (3, 0.5), (3, 1.5)])
+cycle = plot.Cycle(lw=2, dashes=[(1, 0.5), (1, 1.5), (3, 0.5), (3, 1.5)])
 
 # Sample data
 state = np.random.RandomState(51423)
@@ -179,11 +180,11 @@ data = (state.rand(20, 4) - 0.5).cumsum(axis=0)
 data = pd.DataFrame(data, columns=pd.Index(['a', 'b', 'c', 'd'], name='label'))
 
 # Plot data
-fig, ax = plot.subplots(refwidth=2.6)
+fig, ax = plot.subplots(refwidth=2.5)
 ax.format(suptitle='Plot without color cycle')
 obj = ax.plot(
-    data, lw=3, cycle=cycle, legend='ul',
-    legend_kw={'ncols': 2, 'handlelength': 3}
+    data, cycle=cycle, legend='ll',
+    legend_kw={'ncols': 2, 'handlelength': 2.5}
 )
 
 

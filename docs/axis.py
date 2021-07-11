@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.3.0
+#       jupytext_version: 1.11.3
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -30,7 +30,7 @@
 # Tick locations
 # --------------
 #
-# `Tick locators\
+# `Tick locators
 # <https://matplotlib.org/stable/gallery/ticks_and_spines/tick-locators.html>`__
 # are used to automatically select sensible tick locations
 # based on the axis data limits. In ProPlot, you can change the tick locator
@@ -125,7 +125,7 @@ axs[7].format(
 # Tick labels
 # -----------
 #
-# `Tick formatters\
+# `Tick formatters
 # <https://matplotlib.org/stable/gallery/ticks_and_spines/tick-formatters.html>`__
 # are used to convert floating point numbers to
 # nicely-formatted tick labels. In ProPlot, you can change the tick formatter

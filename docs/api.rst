@@ -2,8 +2,8 @@
 API reference
 =============
 
-Comprehensive documentation of ProPlot functions and classes. Since all of
-these objects are imported into the top-level namespace, you can read the
+Comprehensive documentation of ProPlot functions and classes. All of these
+objects are imported into the top-level namespace, so you can read the
 documentation within python sessions using ``help(plot.<function_or_class>)``.
 
 Top-level functions
@@ -13,7 +13,6 @@ Top-level functions
 
 .. automodsumm:: proplot.ui
    :toctree: api
-   :skip: subplot_grid
 
 
 Figure class
@@ -50,7 +49,7 @@ Configuration tools
 
 .. automodsumm:: proplot.config
    :toctree: api
-   :skip: inline_backend_fmt, rc_configurator
+   :skip: inline_backend_fmt
 
 
 Plotting wrappers
@@ -61,7 +60,6 @@ Plotting wrappers
 .. automodsumm:: proplot.axes
    :toctree: api
    :functions-only:
-   :skip: ProjAxes, XYAxes
 
 
 Demo functions
@@ -80,7 +78,6 @@ Colormaps and normalizers
 
 .. automodsumm:: proplot.colors
    :toctree: api
-   :skip: BinNorm, MidpointNorm, ColorDict, CmapDict
 
 
 Locators and formatters
