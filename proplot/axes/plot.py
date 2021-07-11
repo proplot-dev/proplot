@@ -3043,10 +3043,11 @@ def _build_discrete_norm(
     descending = False
     if np.iterable(levels):
         if len(levels) == 1:
-            norm = mcolors.Normalize(vmin=levels[0] - 1, vmax=levels[0] + 1)
+            if norm is None:
+                norm = mcolors.Normalize(vmin=levels[0] - 1, vmax=levels[0] + 1)
         else:
             levels, descending = pcolors._check_levels(levels)
-            if len(levels) > 2 and norm is None:
+            if norm is None and len(levels) > 2:
                 steps = np.abs(np.diff(levels))
                 eps = np.mean(steps) / 1e3
                 if np.any(np.abs(np.diff(steps)) >= eps):
