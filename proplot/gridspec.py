@@ -475,13 +475,13 @@ class GridSpec(mgridspec.GridSpec):
         # Assign spacing as ratios
         nrows, ncols = self.get_geometry()
         wratios_final = [None] * ncols
-        wratios_final[::2] = [*wratios]
+        wratios_final[::2] = list(wratios)
         if ncols > 1:
-            wratios_final[1::2] = [*wspace]
+            wratios_final[1::2] = list(wspace)
         hratios_final = [None] * nrows
-        hratios_final[::2] = [*hratios]
+        hratios_final[::2] = list(hratios)
         if nrows > 1:
-            hratios_final[1::2] = [*hspace]
+            hratios_final[1::2] = list(hspace)
         return wratios_final, hratios_final, kwargs  # bring extra kwargs back
 
     def get_margins(self):
