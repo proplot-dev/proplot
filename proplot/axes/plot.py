@@ -3228,6 +3228,15 @@ def apply_cmap(
     %(axes.levels_values)s
     %(axes.vmin_vmax)s
     %(axes.auto_levels)s
+    discrete : bool, optional
+        If ``False``, the `~proplot.colors.DiscreteNorm` is not applied to the
+        colormap when ``levels=N`` or ``levels=array_of_values``  are not
+        explicitly requested. Instead, the number of levels in the colormap will be
+        roughly controlled by :rcraw:`image.lut`. This has a similar effect
+        to using `levels=large_number` but it may improve rendering speed.
+        By default, this is ``False`` only for `~matplotlib.axes.Axes.imshow`,
+        `~matplotlib.axes.Axes.matshow`, `~matplotlib.axes.Axes.spy`,
+        `~matplotlib.axes.Axes.hexbin`, and `~matplotlib.axes.Axes.hist2d` plots.
     edgefix : bool, optional
         Whether to fix the the `white-lines-between-filled-contours \
 <https://stackoverflow.com/q/8263769/4970632>`__
@@ -3297,10 +3306,14 @@ def apply_cmap(
     pcolor = name in ('pcolor', 'pcolormesh', 'pcolorfast')
     hexbin = name in ('hexbin',)
     hist2d = name in ('hist2d',)
+    imshow = name in ('imshow', 'matshow', 'spy')
     parametric = name in ('parametric',)
-    no_discrete_norm = hexbin  # TODO: this should be global setting!!!
-    if not args:
-        return method(self, *args, **kwargs)
+    if getattr(self, '_no_discrete_norm', None):
+        discrete = False
+    else:
+        discrete = _not_none(discrete, rc['image.discrete'])
+    if discrete is None:
+        discrete = not (hexbin or hist2d or imshow)
     sample = args[-1]  # used for labels
 
     # Parse keyword args
@@ -3320,7 +3333,10 @@ def apply_cmap(
     linestyles = props.get('linestyles', None)
     colors = props.get('colors', None)
     levels = _not_none(
-        N=N, levels=levels, norm_kw_levels=norm_kw.pop('levels', None), default=rc['image.levels']  # noqa: E501
+        N=N,
+        levels=levels,
+        norm_kw_levels=norm_kw.pop('levels', None),
+        default=rc['image.levels'] if discrete else None
     )
 
     # Get colormap, but do not use cmap when 'colors' are passed to contour()
@@ -3382,7 +3398,7 @@ def apply_cmap(
             norm=norm, norm_kw=norm_kw, locator=locator, locator_kw=locator_kw,
             vmin=vmin, vmax=vmax, extend=extend, symmetric=symmetric,
         )
-    if use_cmap and not no_discrete_norm:
+    if use_cmap and levels is not None:
         norm, cmap, levels, ticks = _build_discrete_norm(
             sample, levels=levels, values=values,
             cmap=cmap, norm=norm, norm_kw=norm_kw, vmin=vmin, vmax=vmax, extend=extend,
@@ -3397,7 +3413,7 @@ def apply_cmap(
         kwargs['cmap'] = cmap
     if norm is not None:
         kwargs['norm'] = norm
-    if no_discrete_norm:
+    if levels is None:  # i.e. no DiscreteNorm was used
         kwargs['vmin'] = vmin
         kwargs['vmax'] = vmax
     if contour or contourf:
@@ -3408,7 +3424,8 @@ def apply_cmap(
 
     # Call function and possibly add solid contours between filled ones or
     # fix common "white lines" issues with vector graphic output
-    obj = method(self, *args, **kwargs)
+    with _state_context(self, _no_discrete_norm=True):
+        obj = method(self, *args, **kwargs)
     if not isinstance(obj, tuple):  # hist2d
         obj._colorbar_extend = extend  # used by proplot colorbar
         obj._colorbar_ticks = ticks  # used by proplot colorbar
@@ -3818,7 +3835,8 @@ def colorbar_extras(
         mappable.extend = extend  # required in mpl >= 3.3, else optional
     else:
         kwargs['extend'] = extend
-    cb = self.figure.colorbar(mappable, **kwargs)
+    with _state_context(self, _no_discrete_norm=True):
+        cb = self.figure.colorbar(mappable, **kwargs)
     axis = self.xaxis if orientation == 'horizontal' else self.yaxis
 
     # The minor locator

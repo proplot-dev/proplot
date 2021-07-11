@@ -613,6 +613,13 @@ _rc_proplot = {
     ),
 
     # Image additions
+    'image.discrete': (
+        None,
+        'Whether to use `~proplot.colors.DiscreteNorm` for each plot. If ``True``, '
+        '`~proplot.colors.DiscreteNorm` is always used. If ``False``, it is never '
+        'used. If ``None``, it is used for all plot types except `imshow`, `matshow`, '
+        '`spy`, `hexbin`, and `hist2d`. See `~proplot.axes.apply_cmap` for details.'
+    ),
     'image.edgefix': (
         True,
         'Whether to fix the `white-lines-between-filled-contours '
