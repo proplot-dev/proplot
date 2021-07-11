@@ -46,7 +46,7 @@ CMAPS_TABLE = {
         'twilight',
     ),
     'Seaborn sequential': (
-        'Rocket', 'Mako',
+        'Rocket', 'Flare', 'Mako', 'Crest',
     ),
     'Seaborn diverging': (
         'IceFire', 'Vlag',
@@ -54,10 +54,10 @@ CMAPS_TABLE = {
     'ProPlot sequential': (
         'Fire',
         'Stellar',
-        'Boreal',
-        'Marine',
-        'Dusk',
         'Glacial',
+        'Dusk',
+        'Marine',
+        'Boreal',
         'Sunrise',
         'Sunset',
     ),
