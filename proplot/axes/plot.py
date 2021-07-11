@@ -1346,11 +1346,11 @@ def _get_error_data(
     elif stds is not None:
         # Standard deviations
         label_default = fr'{abs(stds[1])}$\sigma$ range'
-        err = y + np.std(data, axis=0)[None, :] * _to_ndarray(stds)[:, None]
+        err = y + np.nanstd(data, axis=0)[None, :] * _to_ndarray(stds)[:, None]
     elif pctiles is not None:
         # Percentiles
         label_default = f'{pctiles[1] - pctiles[0]}% range'
-        err = np.percentile(data, pctiles, axis=0)
+        err = np.nanpercentile(data, pctiles, axis=0)
     else:
         raise ValueError('You must provide error bounds.')
 
@@ -1505,9 +1505,9 @@ def indicate_error(
             if violin:
                 boxes = boxstds = True
         if means:
-            y = np.mean(data, axis=0)
+            y = np.nanmean(data, axis=0)
         elif medians:
-            y = np.percentile(data, 50, axis=0)
+            y = np.nanpercentile(data, 50, axis=0)
 
     # Parse keyword args and apply defaults
     # NOTE: Should not use plot() 'linewidth' for bar elements
