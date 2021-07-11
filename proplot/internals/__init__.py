@@ -42,11 +42,16 @@ ALIASES = {
         'drawstyle': ('ds', 'drawstyles'),
         'dashes': ('d',),
         'marker': ('m', 'markers'),
-        'markersize': ('ms', 'markersizes'),
+        'markersize': ('s', 'ms', 'markersizes'),
         'markeredgecolor': ('mec', 'markeredgecolors'),
         'markeredgewidth': ('mew', 'markeredgewidths'),
         'markerfacecolor': ('mfc', 'markerfacecolors'),
     },
+    'fills': {
+        'linewidths': ('lw', 'linewidth'),
+        'linestyles': ('ls', 'linestyle'),
+        'colors': ('c', 'color', 'ec', 'edgecolor', 'edgecolors'),
+    }
 }
 
 
