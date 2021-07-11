@@ -330,7 +330,7 @@ class AutoFormatter(mticker.ScalarFormatter):
         # only meant to be used for linear scales and cannot handle the wide
         # range of magnitudes in e.g. log scales. To correct this, we only
         # truncate if value is within `offset` order of magnitude of the float
-        # precision. Common issue is e.g. levels=plot.arange(-1, 1, 0.1).
+        # precision. Common issue is e.g. levels=pplt.arange(-1, 1, 0.1).
         # This choice satisfies even 1000 additions of 0.1 to -100.
         match = REGEX_ZERO.match(string)
         decimal_point = self._get_decimal_point()

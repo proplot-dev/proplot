@@ -1114,7 +1114,7 @@ class Axes(maxes.Axes):
         from .cartesian import CartesianAxes
         if not isinstance(self, CartesianAxes):
             warnings._warn_proplot(
-                'Cannot adjust aspect ratio or ticks for non-Cartesian heatmap plot. '
+                'Cannot adjust aspect ratio or ticks for non-Cartesian heatmap pplt. '
                 'Consider using pcolormesh() or pcolor() instead.'
             )
         else:

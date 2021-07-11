@@ -55,16 +55,16 @@
 # context.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 state = np.random.RandomState(51423)
-plot.rc.update(
-    facecolor=plot.scale_luminance('powderblue', 1.15),
+pplt.rc.update(
+    facecolor=pplt.scale_luminance('powderblue', 1.15),
     linewidth=1, fontsize=10,
     color='dark blue', suptitlecolor='dark blue',
     titleloc='upper center', titlecolor='dark blue', titleborder=False,
 )
-fig, axs = plot.subplots(nrows=8, refwidth=5, refaspect=(8, 1), share=0)
+fig, axs = pplt.subplots(nrows=8, refwidth=5, refaspect=(8, 1), share=0)
 axs.format(suptitle='Tick locators demo')
 
 # Step size for tick locations
@@ -105,7 +105,7 @@ axs[5].format(
     xformatter=[r'$\alpha$', r'$\beta$', r'$\gamma$', r'$\delta$', r'$\epsilon$'],
     title='IndexLocator',
 )
-plot.rc.reset()
+pplt.rc.reset()
 
 # Hide all ticks
 axs[6].format(
@@ -156,14 +156,14 @@ axs[7].format(
 # zero-trimming feature, set :rcraw:`formatter.zerotrim` to ``False``.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
-plot.rc.update(
+pplt.rc.update(
     linewidth=1.2, fontsize=10, facecolor='gray0', figurefacecolor='gray2',
     color='gray8', gridcolor='gray8', titlecolor='gray8', suptitlecolor='gray8',
     titleloc='upper center', titleborder=False,
 )
-fig, axs = plot.subplots(nrows=9, refwidth=5, refaspect=(8, 1), share=0)
+fig, axs = pplt.subplots(nrows=9, refwidth=5, refaspect=(8, 1), share=0)
 
 # Scientific notation
 axs[0].format(xlim=(0, 1e20), xformatter='sci', title='SciFormatter')
@@ -205,14 +205,14 @@ axs[8].format(
     xformatter='{x:.1f}', title='StrMethodFormatter',
 )
 axs.format(ylocator='null', suptitle='Tick formatters demo')
-plot.rc.reset()
+pplt.rc.reset()
 
 # %%
-import proplot as plot
-plot.rc.linewidth = 2
-plot.rc.fontsize = 11
+import proplot as pplt
+pplt.rc.linewidth = 2
+pplt.rc.fontsize = 11
 locator = [0, 0.25, 0.5, 0.75, 1]
-fig, axs = plot.subplots(ncols=2, nrows=2, refwidth=1.5, share=0)
+fig, axs = pplt.subplots(ncols=2, nrows=2, refwidth=1.5, share=0)
 
 # Formatter comparison
 axs[0].format(
@@ -236,7 +236,7 @@ axs.format(
     ytickloc='both', yticklabelloc='both',
     titlepad='0.5em', suptitle='Default formatters demo'
 )
-plot.rc.reset()
+pplt.rc.reset()
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -257,14 +257,14 @@ plot.rc.reset()
 # details.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
-plot.rc.update(
+pplt.rc.update(
     linewidth=1.2, fontsize=10, ticklenratio=0.7,
     figurefacecolor='w', facecolor='pastel blue',
     titleloc='upper center', titleborder=False,
 )
-fig, axs = plot.subplots(nrows=5, refwidth=6, refaspect=(8, 1), share=0)
+fig, axs = pplt.subplots(nrows=5, refwidth=6, refaspect=(8, 1), share=0)
 axs[:4].format(xrotation=0)  # no rotation for these examples
 
 # Default date locator
@@ -302,7 +302,7 @@ axs[4].format(
 axs.format(
     ylocator='null', suptitle='Datetime locators and formatters demo'
 )
-plot.rc.reset()
+pplt.rc.reset()
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -333,21 +333,21 @@ plot.rc.reset()
 # * While matplotlib axis scales must be instantiated with an
 #   `~matplotlib.axis.Axis` instance (for backward compatibility reasons),
 #   ProPlot axis scales can be instantiated without the axis instance (e.g.
-#   ``plot.LogScale()`` instead of ``plot.LogScale(ax.xaxis)``).
+#   ``pplt.LogScale()`` instead of ``pplt.LogScale(ax.xaxis)``).
 # * The default `subs` for the ``'symlog'`` axis scale is now ``np.arange(1, 10)``,
 #   and the default `linthresh` is now ``1``. Also the ``'log'`` and ``'symlog'``
 #   axis scales now accept the keywords `base`, `linthresh`, `linscale`, and
 #   `subs` rather than keywords with trailing ``x`` or ``y``.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 N = 200
 lw = 3
-plot.rc.update({
+pplt.rc.update({
     'linewidth': 1, 'ticklabelweight': 'bold', 'axeslabelweight': 'bold'
 })
-fig, axs = plot.subplots(ncols=2, nrows=2, refwidth=1.8, share=0)
+fig, axs = pplt.subplots(ncols=2, nrows=2, refwidth=1.8, share=0)
 axs.format(suptitle='Axis scales demo', ytickminor=True)
 
 # Linear and log scales
@@ -364,7 +364,7 @@ ax.plot(np.linspace(0, 1, N), np.linspace(-1000, 1000, N), lw=lw)
 ax = axs[3]
 ax.format(yscale='logit', ylabel='logit scale')
 ax.plot(np.linspace(0, 1, N), np.linspace(0.01, 0.99, N), lw=lw)
-plot.rc.reset()
+pplt.rc.reset()
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -385,9 +385,9 @@ plot.rc.reset()
 # :ref:`"dual" unit axes <ug_dual>`.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
-fig, axs = plot.subplots(nrows=4, refaspect=(5, 1), figwidth=6, sharex=False)
+fig, axs = pplt.subplots(nrows=4, refaspect=(5, 1), figwidth=6, sharex=False)
 ax = axs[0]
 
 # Sample data
@@ -424,10 +424,10 @@ for ax, iargs, title, locator in zip(axs, args, titles, locators):
     )
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
-plot.rc.reset()
-fig, axs = plot.subplots(nrows=2, ncols=3, refwidth=1.7, share=0, order='F')
+pplt.rc.reset()
+fig, axs = pplt.subplots(nrows=2, ncols=3, refwidth=1.7, share=0, order='F')
 axs.format(
     toplabels=('Power scales', 'Exponential scales', 'Cartographic scales'),
 )
@@ -496,11 +496,11 @@ for ax, scale, color in zip(axs[4:], ('sine', 'mercator'), ('coral', 'sky blue')
 # `symlog scale <https://matplotlib.org/stable/gallery/scales/symlog_demo.html>`__.
 
 # %%
-import proplot as plot
-plot.rc.update({'grid.alpha': 0.4, 'linewidth': 1, 'grid.linewidth': 1})
-c1 = plot.scale_luminance('cerulean', 0.5)
-c2 = plot.scale_luminance('red', 0.5)
-fig, axs = plot.subplots(
+import proplot as pplt
+pplt.rc.update({'grid.alpha': 0.4, 'linewidth': 1, 'grid.linewidth': 1})
+c1 = pplt.scale_luminance('cerulean', 0.5)
+c2 = pplt.scale_luminance('red', 0.5)
+fig, axs = pplt.subplots(
     [[1, 1, 2, 2], [0, 3, 3, 0]],
     share=0, refaspect=2.2, refwidth=3
 )
@@ -533,14 +533,14 @@ ax.dualx(
     lambda x: x * 1e6,
     label='Joules', formatter='log', grid=True, color=c2, gridcolor=c2
 )
-plot.rc.reset()
+pplt.rc.reset()
 
 # %%
-import proplot as plot
-plot.rc.update({'grid.alpha': 0.4, 'linewidth': 1, 'grid.linewidth': 1})
-c1 = plot.scale_luminance('cerulean', 0.5)
-c2 = plot.scale_luminance('red', 0.5)
-fig, axs = plot.subplots(ncols=2, share=0, refaspect=0.4, refwidth=1.8)
+import proplot as pplt
+pplt.rc.update({'grid.alpha': 0.4, 'linewidth': 1, 'grid.linewidth': 1})
+c1 = pplt.scale_luminance('cerulean', 0.5)
+c2 = pplt.scale_luminance('red', 0.5)
+fig, axs = pplt.subplots(ncols=2, share=0, refaspect=0.4, refwidth=1.8)
 axs.format(suptitle='Duplicate axes with special transformations')
 
 # Pressure as the linear scale, height on opposite axis (scale height 7km)
@@ -562,15 +562,15 @@ ax.format(
 ax.dualy(
     'pressure', label='pressure (hPa)', locator=100, color=c1, gridcolor=c1, grid=True,
 )
-plot.rc.reset()
+pplt.rc.reset()
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
-plot.rc.margin = 0
-c1 = plot.scale_luminance('cerulean', 0.5)
-c2 = plot.scale_luminance('red', 0.5)
-fig, ax = plot.subplots(refaspect=(3, 1), figwidth=6)
+pplt.rc.margin = 0
+c1 = pplt.scale_luminance('cerulean', 0.5)
+c2 = pplt.scale_luminance('red', 0.5)
+fig, ax = pplt.subplots(refaspect=(3, 1), figwidth=6)
 
 # Sample data
 cutoff = 1 / 5
@@ -589,4 +589,4 @@ ax.format(
 ax = ax.dualx(
     'inverse', locator='log', locator_kw={'subs': (1, 2, 5)}, label='period (days)'
 )
-plot.rc.reset()
+pplt.rc.reset()

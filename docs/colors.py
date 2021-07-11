@@ -48,8 +48,8 @@
 # example, ``'reddish'`` and ``'reddy'`` are changed to ``'red'``.
 
 # %%
-import proplot as plot
-fig, axs = plot.show_colors()
+import proplot as pplt
+fig, axs = pplt.show_colors()
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -73,12 +73,12 @@ fig, axs = plot.show_colors()
 
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 
 # Figure
 state = np.random.RandomState(51423)
-fig, axs = plot.subplots(ncols=3, axwidth=2)
+fig, axs = pplt.subplots(ncols=3, axwidth=2)
 axs.format(
     suptitle='Modifying colors',
     toplabels=('Shifted hue', 'Scaled luminance', 'Scaled saturation'),
@@ -87,24 +87,24 @@ axs.format(
 )
 
 # Shifted hue
-with plot.rc.context({'legend.handlelength': 0}):
+with pplt.rc.context({'legend.handlelength': 0}):
     N = 50
     marker = 'o'
     for shift in (0, -60, 60):
         x, y = state.rand(2, N)
-        color = plot.shift_hue('grass', shift)
+        color = pplt.shift_hue('grass', shift)
         axs[0].scatter(x, y, marker=marker, c=color, legend='b', label=shift)
 
     # Scaled luminance
     for scale in (0.2, 1, 2):
         x, y = state.rand(2, N)
-        color = plot.scale_luminance('bright red', scale)
+        color = pplt.scale_luminance('bright red', scale)
         axs[1].scatter(x, y, marker=marker, c=color, legend='b', label=scale)
 
     # Scaled saturation
     for scale in (0, 1, 3):
         x, y = state.rand(2, N)
-        color = plot.scale_saturation('ocean blue', scale)
+        color = pplt.scale_saturation('ocean blue', scale)
         axs[2].scatter(x, y, marker=marker, c=color, legend='b', label=scale)
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -124,11 +124,11 @@ with plot.rc.context({'legend.handlelength': 0}):
 # the RGB or RGBA channel values.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 
 # Figure
-fig, axs = plot.subplots(nrows=2, share=0)
+fig, axs = pplt.subplots(nrows=2, share=0)
 axs.format(
     xformatter='null', yformatter='null', abc=True, abcloc='l', abcstyle='A.',
     suptitle='On-the-fly color selections'
@@ -137,7 +137,7 @@ axs.format(
 # Drawing from colormaps
 ax = axs[0]
 name = 'Deep'
-idxs = plot.arange(0, 1, 0.2)
+idxs = pplt.arange(0, 1, 0.2)
 state = np.random.RandomState(51423)
 state.shuffle(idxs)
 for idx in idxs:
@@ -146,7 +146,7 @@ for idx in idxs:
         data, lw=5, color=(name, idx),
         label=f'idx {idx:.1f}', legend='r', legend_kw={'ncols': 1}
     )
-ax.colorbar(plot.Colormap(name), loc='r', locator='none')
+ax.colorbar(pplt.Colormap(name), loc='r', locator='none')
 ax.format(title=f'Drawing from the {name} colormap', grid=True)
 
 # Drawing from color cycles
@@ -160,7 +160,7 @@ for idx in idxs:
         data, lw=5, color=(name, idx),
         label=f'idx {idx:.0f}', legend='r', legend_kw={'ncols': 1}
     )
-ax.colorbar(plot.Colormap(name), loc='r', locator='none')
+ax.colorbar(pplt.Colormap(name), loc='r', locator='none')
 ax.format(title=f'Drawing from the {name} cycle')
 
 

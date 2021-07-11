@@ -1720,7 +1720,7 @@ def _stem_extras(
 
 def _check_negpos(name, **kwargs):
     """
-    Issue warnings if we are ignoring arguments for "negpos" plot.
+    Issue warnings if we are ignoring arguments for "negpos" pplt.
     """
     for key, arg in kwargs.items():
         if arg is None:
@@ -2861,7 +2861,7 @@ def _auto_levels_locator(
     nozero : bool, optional
         Whether zero should be excluded from automatic levels. This is also
         implemented in `apply_cmap` so that `nozero` can be used to remove user
-        input levels (e.g. ``ax.contour(..., levels=plot.arange(-5, 5), nozero=True)``),
+        input levels (e.g. ``ax.contour(..., levels=pplt.arange(-5, 5), nozero=True)``),
         but is replecated here so power users can use this function in isolation.
 
     Returns
@@ -3462,7 +3462,7 @@ def apply_cmap(
         elif pcolor:
             _labels_pcolor(self, obj, fmt=fmt, **labels_kw)
         else:
-            raise RuntimeError(f'Not possible to add labels to {name!r} plot.')
+            raise RuntimeError(f'Not possible to add labels to {name!r} pplt.')
 
     # Optionally add colorbar
     if colorbar:

@@ -143,7 +143,7 @@ class Figure(mfigure.Figure):
     # NOTE: If _rename_kwargs argument is an invalid identifier, it is
     # simply used in the warning message.
     @warnings._rename_kwargs('0.7', pad='outerpad', axpad='innerpad')
-    @warnings._rename_kwargs('0.6.4', autoformat='plot.rc.autoformat = {}')
+    @warnings._rename_kwargs('0.6.4', autoformat='pplt.rc.autoformat = {}')
     def __init__(
         self, tight=None,
         ref=1, outerpad=None, innerpad=None, panelpad=None, includepanels=False,
@@ -241,7 +241,7 @@ class Figure(mfigure.Figure):
                 f'Ignoring tight_layout={tight_layout} and '
                 f'contrained_layout={constrained_layout}. ProPlot uses its '
                 'own tight layout algorithm, activated by default or with '
-                'plot.subplots(tight=True).'
+                'pplt.subplots(tight=True).'
             )
         self._authorized_add_subplot = False
         self._is_preprocessing = False

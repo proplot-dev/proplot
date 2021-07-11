@@ -76,11 +76,11 @@
 #      avoid colorbars that look "too skinny" or "too fat".
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 
 # Auto sized grid of cartopy projections
-fig, axs = plot.subplots(ncols=2, nrows=3, proj='robin')
+fig, axs = pplt.subplots(ncols=2, nrows=3, proj='robin')
 axs.format(
     land=True, landcolor='k',
     suptitle='Auto figure sizing with grid of cartopy projections'
@@ -88,7 +88,7 @@ axs.format(
 
 # Auto sized grid of images
 state = np.random.RandomState(51423)
-fig, axs = plot.subplots(ncols=3, nrows=2, refwidth=1.7)
+fig, axs = pplt.subplots(ncols=3, nrows=2, refwidth=1.7)
 colors = state.rand(15, 12, 3).cumsum(axis=2)
 colors /= colors.max()
 axs.imshow(colors)
@@ -97,12 +97,12 @@ axs.format(
 )
 
 # %%
-import proplot as plot
+import proplot as pplt
 
 # Change the reference subplot width
 suptitle = 'Effect of subplot width on figure size'
 for refwidth in ('4cm', '6cm'):
-    fig, axs = plot.subplots(ncols=2, refwidth=refwidth,)
+    fig, axs = pplt.subplots(ncols=2, refwidth=refwidth,)
     axs[0].format(
         suptitle=suptitle,
         title=f'refwidth = {refwidth}', titleweight='bold',
@@ -111,7 +111,7 @@ for refwidth in ('4cm', '6cm'):
 
 # Change the reference subplot aspect ratio
 for refaspect in (1, (3, 2)):
-    fig, axs = plot.subplots(ncols=2, nrows=2, refwidth=1.6, refaspect=refaspect)
+    fig, axs = pplt.subplots(ncols=2, nrows=2, refwidth=1.6, refaspect=refaspect)
     axs[0].format(
         suptitle='Effect of subplot aspect ratio on figure size',
         title=f'refaspect = {refaspect}', titleweight='bold',
@@ -119,11 +119,11 @@ for refaspect in (1, (3, 2)):
     )
 
 # %%
-import proplot as plot
+import proplot as pplt
 
 # Change the reference subplot in presence of unequal width/height ratios
 for ref in (1, 2):
-    fig, axs = plot.subplots(
+    fig, axs = pplt.subplots(
         ref=ref, nrows=3, ncols=3, wratios=(3, 2, 2),
         refwidth=1.1,
     )
@@ -135,7 +135,7 @@ for ref in (1, 2):
 
 # Change the reference subplot in a complex grid
 for ref in (1, 2):
-    fig, axs = plot.subplots(
+    fig, axs = pplt.subplots(
         [[1, 2], [1, 3]],
         ref=ref, refwidth=1.8, span=False
     )
@@ -178,10 +178,10 @@ for ref in (1, 2):
 # variable spacing between subplot rows and columns.
 
 # %%
-import proplot as plot
+import proplot as pplt
 
 # Automatic spacing for all margins and between all columns and rows
-fig, axs = plot.subplots(nrows=3, ncols=3, refwidth=1.1, share=0)
+fig, axs = pplt.subplots(nrows=3, ncols=3, refwidth=1.1, share=0)
 
 # Formatting that stress-tests the algorithm
 axs[1].format(xlabel='xlabel\nxlabel\nxlabel', ylabel='ylabel\nylabel\nylabel')
@@ -193,10 +193,10 @@ axs.format(
 )
 
 # %%
-import proplot as plot
+import proplot as pplt
 
 # Manual spacing for certain margins and between certain columns and rows
-fig, axs = plot.subplots(
+fig, axs = pplt.subplots(
     ncols=4, nrows=3, refwidth=1.1, span=False,
     bottom='5em', right='5em',  # margin spacing overrides
     wspace=(0, 0, None), hspace=(0, None),  # column and row spacing overrides
@@ -249,12 +249,12 @@ axs[:, 0].format(ylabel='ylabel\nylabel')
 # on the appearance of simple subplot grids.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 N = 50
 M = 40
 state = np.random.RandomState(51423)
-colors = plot.Colors('grays_r', M, left=0.1, right=0.8)
+colors = pplt.Colors('grays_r', M, left=0.1, right=0.8)
 datas = []
 for scale in (1, 3, 7, 0.2):
     data = scale * (state.rand(N, M) - 0.5).cumsum(axis=0)[N // 2:, :]
@@ -262,7 +262,7 @@ for scale in (1, 3, 7, 0.2):
 
 # Same plot with different sharing and spanning settings
 for share in (0, 1, 2, 3):
-    fig, axs = plot.subplots(
+    fig, axs = pplt.subplots(
         ncols=4, refaspect=1, refwidth=1.06,
         sharey=share, spanx=share // 2
     )
@@ -275,16 +275,16 @@ for share in (0, 1, 2, 3):
         )
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
-plot.rc.reset()
-plot.rc.cycle = 'Set3'
+pplt.rc.reset()
+pplt.rc.cycle = 'Set3'
 state = np.random.RandomState(51423)
 titles = ['With redundant labels', 'Without redundant labels']
 
 # Same plot with and without default sharing settings
 for mode in (0, 1):
-    fig, axs = plot.subplots(
+    fig, axs = pplt.subplots(
         nrows=4, ncols=4, share=3 * mode,
         span=1 * mode, refwidth=1
     )
@@ -336,8 +336,8 @@ for mode in (0, 1):
 #     for details on wrapper functions.
 
 # %%
-import proplot as plot
-fig, axs = plot.subplots(nrows=8, ncols=8, refwidth=0.7, space=0)
+import proplot as pplt
+fig, axs = pplt.subplots(nrows=8, ncols=8, refwidth=0.7, space=0)
 axs.format(
     abc=True, abcloc='ur',
     xlabel='x axis', ylabel='y axis', xticks=[], yticks=[],
@@ -346,8 +346,8 @@ axs.format(
 
 
 # %%
-import proplot as plot
-fig, axs = plot.subplots(ncols=3, nrows=3, space=0, refwidth='10em')
+import proplot as pplt
+fig, axs = pplt.subplots(ncols=3, nrows=3, space=0, refwidth='10em')
 axs.format(
     abc=True, abcloc='ul', abcstyle='A.',
     xticks='null', yticks='null', facecolor='gray5',
@@ -381,14 +381,14 @@ axs[-3:].format(abcbbox=True)  # also disables abcborder
 # and `points <https://en.wikipedia.org/wiki/Point_(typography)>`__.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
-with plot.rc.context(fontsize='12px'):
-    fig, axs = plot.subplots(
+with pplt.rc.context(fontsize='12px'):
+    fig, axs = pplt.subplots(
         ncols=3, figwidth='15cm', figheight='3in',
         wspace=('10pt', '20pt'), right='10mm'
     )
-    cmap = plot.Colormap('Mono')
+    cmap = pplt.Colormap('Mono')
     cb = fig.colorbar(
         cmap, loc='b', extend='both', label='colorbar',
         width='2em', extendsize='3em', shrink=0.8,

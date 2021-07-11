@@ -64,10 +64,10 @@
 # `~proplot.axes.apply_cycle` wrappers.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
-with plot.rc.context(abc=True):
-    fig, axs = plot.subplots(ncols=2, share=0)
+with pplt.rc.context(abc=True):
+    fig, axs = pplt.subplots(ncols=2, share=0)
 
 # Colorbars
 ax = axs[0]
@@ -90,9 +90,9 @@ ax.legend(hs, loc='ll', label='legend label')
 axs.format(xlabel='xlabel', ylabel='ylabel')
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
-fig, axs = plot.subplots(nrows=2, share=0, refwidth='55mm', panelpad='1em')
+fig, axs = pplt.subplots(nrows=2, share=0, refwidth='55mm', panelpad='1em')
 axs.format(suptitle='Stacked colorbars demo')
 state = np.random.RandomState(51423)
 N = 10
@@ -137,9 +137,9 @@ for j, ax in enumerate(axs):
 # or pass a tuple to draw it beside a range of rows or columns.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
-fig, axs = plot.subplots(ncols=3, nrows=3, refwidth=1.4)
+fig, axs = pplt.subplots(ncols=3, nrows=3, refwidth=1.4)
 state = np.random.RandomState(51423)
 m = axs.pcolormesh(
     state.rand(20, 20), cmap='grays',
@@ -155,9 +155,9 @@ fig.colorbar(m, label='stacked colorbar', ticks=0.1, loc='b', minorticks=0.05)
 fig.colorbar(m, label='colorbar with length <1', ticks=0.1, loc='r', length=0.7)
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
-fig, axs = plot.subplots(
+fig, axs = pplt.subplots(
     ncols=2, nrows=2, refwidth=1.7,
     share=0, wspace=0.3, order='F'
 )
@@ -165,7 +165,7 @@ fig, axs = plot.subplots(
 # Plot data
 data = (np.random.rand(50, 50) - 0.1).cumsum(axis=0)
 m = axs[:2].contourf(data, cmap='grays', extend='both')
-colors = plot.Colors('grays', 5)
+colors = pplt.Colors('grays', 5)
 hs = []
 state = np.random.RandomState(51423)
 for abc, color in zip('ABCDEF', colors):
@@ -208,15 +208,15 @@ for ax, title in zip(
 # figure when its size is changed.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
-fig, axs = plot.subplots(share=0, ncols=2, refwidth=2)
+fig, axs = pplt.subplots(share=0, ncols=2, refwidth=2)
 
 # Colorbars from lines
 ax = axs[0]
 state = np.random.RandomState(51423)
 data = 1 + (state.rand(12, 10) - 0.45).cumsum(axis=0)
-cycle = plot.Cycle('algae')
+cycle = pplt.Cycle('algae')
 hs = ax.plot(
     data, lw=4, cycle=cycle, colorbar='lr',
     colorbar_kw={'length': '8em', 'label': 'from lines'}
@@ -230,7 +230,7 @@ axs.colorbar(
 ax = axs[1]
 m = ax.contourf(
     data.T, extend='both', cmap='algae',
-    levels=plot.arange(0, 3, 0.5)
+    levels=pplt.arange(0, 3, 0.5)
 )
 fig.colorbar(
     m, length=1, loc='r', label='inside ticks',
@@ -264,11 +264,11 @@ axs.format(
 # `order` keyword arg (default is row-major).
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
-plot.rc.cycle = '538'
+pplt.rc.cycle = '538'
 labels = ['a', 'bb', 'ccc', 'dddd', 'eeeee']
-fig, axs = plot.subplots(ncols=2, span=False, share=1, refwidth=2.3)
+fig, axs = pplt.subplots(ncols=2, span=False, share=1, refwidth=2.3)
 hs1, hs2 = [], []
 
 # On-the-fly legends

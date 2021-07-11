@@ -51,8 +51,8 @@
 # `~proplot.colors.Colors`.
 
 # %%
-import proplot as plot
-fig, axs = plot.show_cycles()
+import proplot as pplt
+fig, axs = pplt.show_cycles()
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -72,7 +72,7 @@ fig, axs = plot.show_cycles()
 # the :ref:`configuration guide <ug_config>`).
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 
 # Sample data
@@ -82,8 +82,8 @@ kwargs = {'legend': 'b', 'labels': list('abcdef')}
 
 # Figure
 lw = 5
-plot.rc.cycle = '538'
-fig, axs = plot.subplots(ncols=3, refwidth=1.9)
+pplt.rc.cycle = '538'
+fig, axs = pplt.subplots(ncols=3, refwidth=1.9)
 axs.format(suptitle='Changing the color cycle')
 
 # Modify the default color cycle
@@ -116,7 +116,7 @@ ax.format(title='Multiple plot calls')
 # :ref:`constructor function <why_constructor>`. One great way to make cycles is by
 # sampling a colormap! Just pass the colormap name to `~proplot.constructor.Cycle`,
 # and optionally specify the number of samples you want to draw as the last positional
-# argument (e.g., ``plot.Cycle('Blues', 5)``).
+# argument (e.g., ``pplt.Cycle('Blues', 5)``).
 #
 # Positional arguments passed to `~proplot.constructor.Cycle` are interpreted
 # by the `~proplot.constructor.Colormap` constructor, and the resulting
@@ -130,9 +130,9 @@ ax.format(title='Multiple plot calls')
 # you to :ref:`generate colorbars from lists of artists <ug_cbars>`.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
-fig, axs = plot.subplots(ncols=2, share=0, refwidth=2)
+fig, axs = pplt.subplots(ncols=2, share=0, refwidth=2)
 state = np.random.RandomState(51423)
 data = (20 * state.rand(10, 21) - 10).cumsum(axis=0)
 
@@ -145,7 +145,7 @@ ax.format(title='Cycle from a single color')
 
 # Cycle from registered colormaps
 ax = axs[1]
-cycle = plot.Cycle('blues', 'reds', 'oranges', 15, left=0.1)
+cycle = pplt.Cycle('blues', 'reds', 'oranges', 15, left=0.1)
 lines = ax.plot(data[:, :15], cycle=cycle, lw=5)
 fig.colorbar(lines, loc='b', col=2, values=np.arange(0, len(lines)), locator=2)
 fig.legend(lines, loc='b', col=2, labels=np.arange(0, len(lines)), ncols=4)
@@ -164,15 +164,15 @@ ax.format(
 # `~proplot.constructor.Cycle` can also generate cyclers that change
 # properties other than color. Below, a single-color dash style cycler is
 # constructed and applied to the axes locally. To apply it globally, simply
-# use ``plot.rc['axes.prop_cycle'] = cycle``.
+# use ``pplt.rc['axes.prop_cycle'] = cycle``.
 
 # %%
-import proplot as plot
+import proplot as pplt
 import numpy as np
 import pandas as pd
 
 # Cycle that loops through 'dashes' Line2D property
-cycle = plot.Cycle(lw=2, dashes=[(1, 0.5), (1, 1.5), (3, 0.5), (3, 1.5)])
+cycle = pplt.Cycle(lw=2, dashes=[(1, 0.5), (1, 1.5), (3, 0.5), (3, 1.5)])
 
 # Sample data
 state = np.random.RandomState(51423)
@@ -180,7 +180,7 @@ data = (state.rand(20, 4) - 0.5).cumsum(axis=0)
 data = pd.DataFrame(data, columns=pd.Index(['a', 'b', 'c', 'd'], name='label'))
 
 # Plot data
-fig, ax = plot.subplots(refwidth=2.5)
+fig, ax = pplt.subplots(refwidth=2.5)
 ax.format(suptitle='Plot without color cycle')
 obj = ax.plot(
     data, cycle=cycle, legend='ll',

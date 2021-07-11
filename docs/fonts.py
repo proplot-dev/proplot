@@ -88,8 +88,8 @@
 #    because the RTD server includes this style.
 
 # %%
-import proplot as plot
-fig, axs = plot.show_fonts()
+import proplot as pplt
+fig, axs = pplt.show_fonts()
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"

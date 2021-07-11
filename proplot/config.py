@@ -716,16 +716,16 @@ class RcConfigurator(object):
         The below applies settings to axes in a specific figure using
         `~RcConfigurator.context`.
 
-        >>> import proplot as plot
-        >>> with plot.rc.context(linewidth=2, ticklen=5):
-        >>>     fig, ax = plot.subplots()
+        >>> import proplot as pplt
+        >>> with pplt.rc.context(linewidth=2, ticklen=5):
+        >>>     fig, ax = pplt.subplots()
         >>>     ax.plot(data)
 
         The below applies settings to a specific axes using `~proplot.axes.Axes.format`,
         which uses `~RcConfigurator.context` internally.
 
-        >>> import proplot as plot
-        >>> fig, ax = plot.subplots()
+        >>> import proplot as pplt
+        >>> fig, ax = pplt.subplots()
         >>> ax.format(linewidth=2, ticklen=5)
         """
         # Add input dictionaries
