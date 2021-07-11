@@ -225,6 +225,12 @@ class Figure(mfigure.Figure):
         ----------------
         **kwargs
             Passed to `matplotlib.figure.Figure`.
+
+        See also
+        --------
+        proplot.axes.Axes
+        proplot.ui.subplots
+        matplotlib.figure.Figure
         """
         # Initialize first because need to provide fully initialized figure
         # as argument to gridspec (since matplotlib tight_layout does that)
@@ -280,17 +286,18 @@ class Figure(mfigure.Figure):
         gridspec_kw = gridspec_kw or {}
         gridspec = pgridspec.GridSpec(self, **gridspec_kw)
         nrows, ncols = gridspec.get_active_geometry()
+        self._auto_tight = _not_none(tight, rc['subplots.tight'])
         self._outer_pad = units(_not_none(outerpad, rc['subplots.outerpad']))
         self._inner_pad = units(_not_none(innerpad, rc['subplots.innerpad']))
         self._panel_pad = units(_not_none(panelpad, rc['subplots.panelpad']))
-        self._auto_tight = _not_none(tight, rc['subplots.tight'])
         self._include_panels = includepanels
-        self._mathtext_fallback = mathtext_fallback
         self._ref_num = ref
-        self._axes_main = []
+        self._gridspec_main = gridspec
+        self._subplots_main = []
         self._subplots_kw = subplots_kw
         self._subplots_orig_kw = subplots_orig_kw
-        self._gridspec_main = gridspec
+        self._suptitle_pad = rc['suptitle.pad']
+        self._mathtext_fallback = mathtext_fallback
         self.suptitle('')  # add _suptitle attribute
 
         # Figure panels
@@ -353,7 +360,7 @@ class Figure(mfigure.Figure):
 
         # Axis sharing and axis setup only for non-legend or colorbar axes
         if not filled:
-            for ax in self._axes_main:
+            for ax in self._subplots_main:
                 ax._auto_share_setup()
             axis = pax.yaxis if side in ('left', 'right') else pax.xaxis
             getattr(axis, 'tick_' + side)()  # set tick and label positions
@@ -473,7 +480,7 @@ class Figure(mfigure.Figure):
         # _update_geometry_from_spacing
         # call, so cannot put this inside Axes draw
         xaxs_updated = set()
-        for ax in self._axes_main:
+        for ax in self._subplots_main:
             if not isinstance(ax, paxes.CartesianAxes):
                 continue
             for s, axis in zip('xy', (ax.xaxis, ax.yaxis)):
@@ -533,7 +540,7 @@ class Figure(mfigure.Figure):
                         axis.label.set_visible((axis is axis_span))
                     label_span.update({'position': position, 'transform': transform})
 
-    def _align_subplot_super_labels(self, renderer):
+    def _align_super_labels(self, renderer):
         """
         Adjust the position of row and column labels, and align figure super
         title accounting for figure margins and axes and figure panels.
@@ -545,8 +552,10 @@ class Figure(mfigure.Figure):
         # labels are present: 1 not including the labels, used to position
         # them, and 1 including the labels, used to determine figure borders
         suptitle = self._suptitle
-        suptitle_on = suptitle.get_text().strip()
+        suptitle_on = suptitle.get_text()
         width, height = self.get_size_inches()
+        for ax in self._iter_axes():
+            ax._reassign_title()
         for side in ('left', 'right', 'bottom', 'top'):
             # Get axes and offset the label to relevant panel
             if side in ('left', 'right'):
@@ -565,7 +574,8 @@ class Figure(mfigure.Figure):
             # Adjust the labels
             with _hide_artists(*labels):
                 for i, (ax, label) in enumerate(zip(axs, labels)):
-                    label_on = label.get_text().strip()
+                    # Bail out
+                    label_on = label.get_text()
                     if not label_on:
                         continue
 
@@ -586,17 +596,14 @@ class Figure(mfigure.Figure):
                         c = c[0] if side in ('left', 'right') else c[1]
                         icoords.append(c)
 
-                    # Offset, and offset a bit extra for left/right labels
+                    # Offset, and offset a bit extra for left/right labels by default
                     # https://matplotlib.org/api/text_api.html#matplotlib.text.Text.set_linespacing
-                    fontsize = label.get_fontsize()
-                    if side in ('left', 'right'):
-                        scale1, scale2 = 0.6, width
-                    else:
-                        scale1, scale2 = 0.3, height
+                    pad = ax._label_pad[side]  # from rc or changed with format()
+                    base = width if side in ('left', 'right') else height
                     if side in ('left', 'bottom'):
-                        coords[i] = min(icoords) - (scale1 * fontsize / 72) / scale2
+                        coords[i] = min(icoords) - (pad / 72) / base
                     else:
-                        coords[i] = max(icoords) + (scale1 * fontsize / 72) / scale2
+                        coords[i] = max(icoords) + (pad / 72) / base
 
                 # Assign coords
                 coords = [i for i in coords if i is not None]
@@ -614,7 +621,7 @@ class Figure(mfigure.Figure):
                 _, y = self.transFigure.inverted().transform((0, bbox.ymax))
                 ys.append(y)
             x, _ = self._get_align_coord('top', supaxs)
-            y = max(ys) + (0.3 * suptitle.get_fontsize() / 72) / height
+            y = max(ys) + (self._suptitle_pad / 72) / height
             kw = {
                 'x': x, 'y': y,
                 'ha': 'center', 'va': 'bottom',
@@ -705,7 +712,7 @@ class Figure(mfigure.Figure):
             x, y = 'y', 'x'
 
         # Get edge index
-        axs = self._axes_main
+        axs = self._subplots_main
         if not axs:
             return []
         ranges = np.array([ax._range_gridspec(x) for ax in axs])
@@ -713,7 +720,7 @@ class Figure(mfigure.Figure):
         edge = min_ if side in ('left', 'top') else max_
 
         # Return axes on edge sorted by order of appearance
-        axs = [ax for ax in self._axes_main if ax._range_gridspec(x)[idx] == edge]
+        axs = [ax for ax in self._subplots_main if ax._range_gridspec(x)[idx] == edge]
         ranges = [ax._range_gridspec(y)[0] for ax in axs]
         return [ax for _, ax in sorted(zip(ranges, axs)) if ax.get_visible()]
 
@@ -899,9 +906,9 @@ class Figure(mfigure.Figure):
         identically zoomed-in cartopy projections and imshow images.
         """
         # Get aspect ratio
-        if not self._axes_main:
+        if not self._subplots_main:
             return
-        ax = self._axes_main[self._ref_num - 1]
+        ax = self._subplots_main[self._ref_num - 1]
         curaspect = ax.get_aspect()  # the aspect ratio in *data units*
         if curaspect == 'auto':
             return
@@ -941,7 +948,7 @@ class Figure(mfigure.Figure):
         # Temporarily disable spanning labels and get correct
         # positions for labels and suptitle
         self._align_axis_labels(False)
-        self._align_subplot_super_labels(renderer)
+        self._align_super_labels(renderer)
 
         # Tight box *around* figure
         # Get bounds from old bounding box
@@ -981,7 +988,7 @@ class Figure(mfigure.Figure):
         ):
             # Determine which rows and columns correspond to panels
             panels = subplots_kw[w + 'panels']
-            jspace = [*ispace]
+            jspace = list(ispace)  # a copy
             ralong = np.array([ax._range_gridspec(x) for ax in axs])
             racross = np.array([ax._range_gridspec(y) for ax in axs])
             for i, (space, space_orig) in enumerate(zip(ispace, ispace_orig)):
@@ -1043,9 +1050,11 @@ class Figure(mfigure.Figure):
                     space = max(0, space - min(jspaces) + pad)
                     space = _not_none(space_orig, space)  # overwritten by user
                 jspace[i] = space
+
+            # Add row or column space
             spaces.append(jspace)
 
-        # Apply new spacing
+        # Update with new spaces
         subplots_kw.update({'wspace': spaces[0], 'hspace': spaces[1]})
         self._update_geometry(resize=resize)
 
@@ -1117,7 +1126,7 @@ class Figure(mfigure.Figure):
 
         # Align labels after all is said and done
         self._align_axis_labels(True)
-        self._align_subplot_super_labels(renderer)
+        self._align_super_labels(renderer)
 
     def colorbar(
         self, mappable, values=None, *, loc='r', width=None, space=None,
@@ -1186,7 +1195,7 @@ class Figure(mfigure.Figure):
             return ax.colorbar(mappable, values, space=space, width=width, **kwargs)
 
         # Generate figure panel
-        loc = self._axes_main[0]._loc_translate(loc, 'panel')
+        loc = self._subplots_main[0]._loc_translate(loc, 'panel')
         ax = self._add_figure_panel(
             loc, space=space, width=width, span=span,
             row=row, col=col, rows=rows, cols=cols
@@ -1247,7 +1256,7 @@ class Figure(mfigure.Figure):
             return ax.legend(handles, labels, space=space, width=width, **kwargs)
 
         # Generate figure panel
-        loc = self._axes_main[0]._loc_translate(loc, 'panel')
+        loc = self._subplots_main[0]._loc_translate(loc, 'panel')
         ax = self._add_figure_panel(
             loc, space=space, width=width, span=span,
             row=row, col=col, rows=rows, cols=cols
@@ -1411,7 +1420,7 @@ class Figure(mfigure.Figure):
             Includes inset axes and, due to proplot change, "twin" axes.
         """
         for ax in (
-            *self._axes_main,
+            *self._subplots_main,
             *(pax for _ in self._panel_dict.values() for pax in _)
         ):
             if not hidden and ax._panel_hidden:

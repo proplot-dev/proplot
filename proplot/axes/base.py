@@ -11,7 +11,6 @@ import matplotlib.collections as mcollections
 import matplotlib.legend as mlegend
 import matplotlib.patches as mpatches
 import matplotlib.projections as mprojections
-import matplotlib.ticker as mticker
 import matplotlib.transforms as mtransforms
 import numpy as np
 
@@ -200,13 +199,15 @@ class Axes(maxes.Axes):
         self.xaxis.isDefault_minloc = self.yaxis.isDefault_minloc = True
 
         # Properties
+        # TODO: Why are some of these not set in __init__?
         if main:
-            self.figure._axes_main.append(self)
+            self.figure._subplots_main.append(self)
         self.number = number  # for a-b-c numbering
         self._auto_format = None  # manipulated by wrapper functions
         self._abc_loc = None
         self._abc_text = None
         self._abc_border_kwargs = {}
+        self._abc_pad = rc['abc.titlepad']
         self._title_loc = None
         self._title_border_kwargs = {}  # title border properties
         self._title_above = rc['title.above']
@@ -235,6 +236,7 @@ class Axes(maxes.Axes):
         d['top'] = []
 
         # Axes titles
+        # Record the original positions to account for offsetting
         d = self._title_dict = {}
         ta = self.transAxes
         d['abc'] = self.text(0, 0, '', transform=ta)
@@ -259,6 +261,11 @@ class Axes(maxes.Axes):
         d['right'] = self.text(0, 0.5, '', va='center', ha='left', transform=tr)
         d['bottom'] = self.text(0.5, 0, '', va='top', ha='center', transform=tc)
         d['top'] = self.text(0.5, 0, '', va='bottom', ha='center', transform=tc)
+        d = self._label_pad = {}
+        d['left'] = rc['leftlabel.pad']
+        d['right'] = rc['rightlabel.pad']
+        d['bottom'] = rc['bottomlabel.pad']
+        d['top'] = rc['toplabel.pad']
 
         # Subplot spec
         # WARNING: For mpl>=3.4.0 subplotspec assigned *after* initialization using
@@ -343,7 +350,7 @@ class Axes(maxes.Axes):
         if panels:
             axs = self.figure._iter_axes(hidden=False, children=False)
         else:
-            axs = self.figure._axes_main
+            axs = self.figure._subplots_main
         axs = [ax for ax in axs if ax._range_gridspec(x) == irange]
         if not axs:
             return [self]
@@ -366,7 +373,7 @@ class Axes(maxes.Axes):
         if panels:
             axs = self.figure._iter_axes(hidden=False, children=False)
         else:
-            axs = self.figure._axes_main
+            axs = self.figure._subplots_main
         axs = [ax for ax in axs if ax._range_gridspec(x)[idx] == coord]
         if not axs:
             return [self]
@@ -537,10 +544,18 @@ class Axes(maxes.Axes):
         for loc in ('abc', 'left', 'center', 'right'):
             kw = {}
             cobj = self._title_dict[loc]
+            if loc == 'abc':
+                loc = tax._abc_loc = self._abc_loc
+            if loc not in ('left', 'center', 'right'):
+                continue
             tobj = tax._title_dict[loc]
-            for key in ('text', 'color', 'fontproperties'):
+            text = cobj.get_text()
+            if not text:
+                continue
+            for key in ('color', 'fontproperties'):
                 kw[key] = getattr(cobj, 'get_' + key)()
             tobj.update(kw)
+            tobj.set_text(text)
             cobj.set_text('')
 
     def _sharex_setup(self, sharex):
@@ -598,48 +613,41 @@ class Axes(maxes.Axes):
         Update the position of proplot inset titles and builtin matplotlib
         titles. This is called by matplotlib at drawtime.
         """
-        # Update custom inset titles
-        pad = self._title_pad
+        # Update title positions
+        # NOTE: Critical to do this every time in case padding changes or
+        # we added or removed an a-b-c label in the same position as a title
         width, height = self.get_size_inches()
-        for loc in (
-            'abc',
-            'upper left', 'upper right', 'upper center',
-            'lower left', 'lower right', 'lower center',
-        ):
-            obj = self._title_dict[loc]
+        x_pad = self._title_pad / (72 * width)
+        y_pad = self._title_pad / (72 * height)
+        for loc, obj in self._title_dict.items():
+            x, y = (0, 1)
             if loc == 'abc':  # redirect
                 loc = self._abc_loc
-            if loc in ('left', 'right', 'center'):
-                continue
-            x_pad = pad / (72 * width)
+            if loc == 'left':
+                x = 0
+            elif loc == 'center':
+                x = 0.5
+            elif loc == 'right':
+                x = 1
             if loc in ('upper center', 'lower center'):
                 x = 0.5
             elif loc in ('upper left', 'lower left'):
                 x = x_pad
             elif loc in ('upper right', 'lower right'):
                 x = 1 - x_pad
-            y_pad = pad / (72 * height)
             if loc in ('upper left', 'upper right', 'upper center'):
                 y = 1 - y_pad
             elif loc in ('lower left', 'lower right', 'lower center'):
                 y = y_pad
             obj.set_position((x, y))
 
-        # Push title above tick marks, since builtin algorithm used to offset
-        # the title seems to ignore them. This is known matplotlib problem but
-        # especially annoying with top panels.
-        # TODO: Make sure this is robust. Seems 'default' is returned usually
-        # when tick sides is actually *both*.
-        pos = self.xaxis.get_ticks_position()
-        fmt = self.xaxis.get_major_formatter()
-        if self.xaxis.get_visible() and (
-            pos == 'default'
-            or (pos == 'top' and isinstance(fmt, mticker.NullFormatter))
-            or (
-                pos == 'unknown'
-                and self._panel_side == 'top'
-                and isinstance(fmt, mticker.NullFormatter)
-            )
+        # Push title above tick marks, since builtin algorithm seems to ignore them.
+        # This is known matplotlib problem but especially annoying with top panels.
+        # NOTE: See axis.get_ticks_position for inspiration
+        pad = self._title_pad
+        if self.xaxis.get_visible() and any(
+            tick.tick2line.get_visible() and not tick.label2.get_visible()
+            for tick in self.xaxis.majorTicks
         ):
             pad += self.xaxis.get_tick_padding()
 
@@ -650,14 +658,42 @@ class Axes(maxes.Axes):
             self._title_pad_current = pad
             self._set_title_offset_trans(pad)
 
-        # Adjust the title positions with builtin algorithm and match
-        # the a-b-c text to the relevant position.
+        # Adjust the above-axes positions with builtin algorithm
+        # WARNING: Make sure the name of this private function doesn't change
         super()._update_title_position(renderer)
-        if self._abc_loc in ('left', 'center', 'right'):
-            abc = self._title_dict['abc']
-            title = self._title_dict[self._abc_loc]
-            abc.set_position(title.get_position())
-            abc.set_transform(self.transAxes + self.titleOffsetTrans)
+
+        # Sync the title positiona with the a-b-c label position
+        aobj = self._title_dict['abc']
+        tobj = self._title_dict[self._abc_loc]
+        aobj.set_ha(tobj.get_ha())
+        aobj.set_va(tobj.get_va())
+        aobj.set_position(tobj.get_position())
+        aobj.set_transform(tobj.get_transform())
+
+        # Offset title away from a-b-c label
+        # NOTE: Title texts all use axes transform in x-direction
+        # TODO: Make empirical padding of '0.4' em tunable?
+        if not tobj.get_text() or not aobj.get_text():
+            return
+        awidth, twidth = (
+            obj.get_window_extent(renderer).transformed(self.transAxes.inverted()).width
+            for obj in (aobj, tobj)
+        )
+        apad, tpad = (
+            (self._abc_pad / 72) / self.get_size_inches()[0]
+            for obj in (aobj, tobj)
+        )
+        ha = aobj.get_ha()
+        aoffset = toffset = 0
+        if ha == 'left':
+            toffset = awidth + apad
+        elif ha == 'right':
+            aoffset = -(twidth + tpad)
+        else:  # guaranteed center, there are others
+            toffset = 0.5 * (awidth + apad)
+            aoffset = -0.5 * (twidth + tpad)
+        aobj.set_x(aobj.get_position()[0] + aoffset)
+        tobj.set_x(tobj.get_position()[0] + toffset)
 
     @staticmethod
     @warnings._rename_kwargs('0.6', mode='rc_mode')
@@ -787,14 +823,21 @@ class Axes(maxes.Axes):
         if cycle is not None:
             self.set_prop_cycle(cycle)
 
-        # Text positioning equivalent
+        # Text positioning adjustments, applied at drawtime
         above = rc.get('title.above', context=True)
         if above is not None:
             self._title_above = above
-        pad = rc.get('title.pad', context=True)
+        pad = rc.get('title.pad', context=True)  # title
         if pad is not None:
             self._set_title_offset_trans(pad)
             self._title_pad = pad
+        pad = rc.get('suptitle.pad', context=True)
+        if pad is not None:
+            self.figure._suptitle_pad = pad
+        for side in tuple(self._label_pad):  # labels
+            pad = rc.get(side + 'label.pad', context=True)
+            if pad is not None:
+                self._label_pad[side] = pad
 
         # Super title
         # NOTE: These are actually *figure-wide* settings, but that line gets
@@ -805,7 +848,7 @@ class Axes(maxes.Axes):
         # overwritten when user makes a new panels or insets. Funky limnitation but
         # kind of makes sense if these are inaccessible from panels.
         fig = self.figure
-        ignore = self not in fig._axes_main
+        ignore = self not in fig._subplots_main
         suptitle = _not_none(figtitle=figtitle, suptitle=suptitle)
         kw = {} if ignore else rc.fill(
             {
@@ -911,10 +954,6 @@ class Axes(maxes.Axes):
             kw = sanitize_kw(kw, loc)
             if loc_prev is None or loc != loc_prev:
                 tobj = self._title_dict[loc]
-                aobj.set_ha(tobj.get_ha())
-                aobj.set_va(tobj.get_va())
-                aobj.set_transform(tobj.get_transform())
-                aobj.set_position(tobj.get_position())
             aobj.update(kw)
             self._abc_loc = loc
 
@@ -973,17 +1012,17 @@ class Axes(maxes.Axes):
 
         # Remove previous text
         if loc_prev is not None and loc != loc_prev:
-            obj_prev = self._title_dict[loc_prev]
+            tobj_prev = self._title_dict[loc_prev]
             if title is None:
-                title = obj_prev.get_text()
-            obj_prev.set_text('')
+                title = tobj_prev.get_text()
+            tobj_prev.set_text('')
 
         # Add new text and settings
         kw = sanitize_kw(kw, loc)
-        obj = self._title_dict[loc]
-        obj.update(kw)
+        tobj = self._title_dict[loc]
+        tobj.update(kw)
         if title is not None:
-            obj.set_text(title)
+            tobj.set_text(title)
         self._title_loc = loc  # assigns default loc on first run
 
     def area(self, *args, **kwargs):
@@ -1030,7 +1069,8 @@ class Axes(maxes.Axes):
 
     def draw(self, renderer=None, *args, **kwargs):
         # Perform extra post-processing steps
-        self._reassign_title()
+        # NOTE: Used to have _reassign_title here (maybe _reassign_label too?)
+        # but figured out it needs to get called by Figure spacing algorithm.
         super().draw(renderer, *args, **kwargs)
 
     def get_size_inches(self):
@@ -1044,7 +1084,6 @@ class Axes(maxes.Axes):
     def get_tightbbox(self, renderer, *args, **kwargs):
         # Perform extra post-processing steps and cache the bounding
         # box as an attribute.
-        self._reassign_title()
         bbox = super().get_tightbbox(renderer, *args, **kwargs)
         self._tight_bbox = bbox
         return bbox
@@ -1556,7 +1595,7 @@ class Axes(maxes.Axes):
         # Get location in axes-relative coordinates
         # Bounds are x0, y0, width, height in axes-relative coordinates
         xspace = rc['xtick.major.size'] / 72
-        if kwargs.get('label', ''):
+        if kwargs.get('label', None) or kwargs.get('title', None):
             xspace += 2.4 * rc['font.size'] / 72
         else:
             xspace += 1.2 * rc['font.size'] / 72
@@ -1573,11 +1612,8 @@ class Axes(maxes.Axes):
         else:
             ibounds = (1 - xpad - cblength, ypad + xspace)
             fbounds = (1 - 2 * xpad - cblength, 0)
-        ibounds = (ibounds[0], ibounds[1], cblength, cbwidth)
-        fbounds = (
-            fbounds[0], fbounds[1],
-            2 * xpad + cblength, 2 * ypad + cbwidth + xspace
-        )
+        ibounds = (*ibounds, cblength, cbwidth)  # inset axes
+        fbounds = (*fbounds, 2 * xpad + cblength, 2 * ypad + cbwidth + xspace)  # frame
 
         # Make frame
         # NOTE: We do not allow shadow effects or fancy edges effect.
@@ -1906,11 +1942,13 @@ class Axes(maxes.Axes):
         maxes.Axes.vlines,
         wrap.standardize_1d,
         wrap.vlines_extras,
+        wrap.apply_cycle,
     )
     hlines = wrap._apply_wrappers(
         maxes.Axes.hlines,
         wrap.standardize_1d,
         wrap.hlines_extras,
+        wrap.apply_cycle,
     )
     scatter = wrap._apply_wrappers(
         maxes.Axes.scatter,
@@ -1943,7 +1981,6 @@ class Axes(maxes.Axes):
     hist = wrap._apply_wrappers(
         maxes.Axes.hist,
         wrap.standardize_1d,
-        wrap._hist_extras,
         wrap.apply_cycle,
     )
     fill_between = wrap._apply_wrappers(
@@ -1975,7 +2012,6 @@ class Axes(maxes.Axes):
         maxes.Axes.pie,
         wrap.standardize_1d,
         wrap.apply_cycle,
-
     )
     parametric = wrap._apply_wrappers(
         parametric,
@@ -1983,6 +2019,12 @@ class Axes(maxes.Axes):
         wrap.apply_cmap,
     )
     hexbin = wrap._apply_wrappers(
+        maxes.Axes.hexbin,
+        wrap.standardize_1d,
+        wrap.apply_cmap,
+    )
+    hist2d = wrap._apply_wrappers(
+        maxes.Axes.hist2d,
         wrap.standardize_1d,
         wrap.apply_cmap,
     )
@@ -2050,9 +2092,5 @@ class Axes(maxes.Axes):
     )
     matshow = wrap._apply_wrappers(
         maxes.Axes.matshow,
-        wrap.apply_cmap,
-    )
-    hist2d = wrap._apply_wrappers(
-        maxes.Axes.hist2d,
         wrap.apply_cmap,
     )

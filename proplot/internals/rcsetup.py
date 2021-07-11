@@ -310,6 +310,11 @@ _rc_proplot = {
         'a-b-c label style. Must be string containing the character ``a`` '
         "or ``A``, for example ``'a.'`` or ``'(A)'``."
     ),
+    'abc.titlepad': (
+        '0.5em',
+        'Padding used to displace the title and the a-b-c label when they are '
+        'in the same location.'
+    ),
     'abc.weight': (
         'bold',
         'a-b-c label font weight.'
@@ -405,6 +410,11 @@ _rc_proplot = {
     'bottomlabel.weight': (
         'bold',
         'Font weight for column labels on the bottom of the figure.'
+    ),
+    'bottomlabel.pad': (
+        '0.3em',
+        'Padding between axes content and column labels on the bottom of the figure. '
+        + _addendum_units
     ),
 
     # Special cartopy settings
@@ -682,6 +692,11 @@ _rc_proplot = {
         'bold',
         'Font weight for row labels on the left-hand side.'
     ),
+    'leftlabel.pad': (
+        '0.6em',
+        'Padding between axes content and row labels on the left-hand side. '
+        + _addendum_units
+    ),
 
     # Edge width bulk setting
     'linewidth': (
@@ -745,6 +760,11 @@ _rc_proplot = {
     'rightlabel.weight': (
         'bold',
         'Font weight for row labels on the right-hand side.'
+    ),
+    'rightlabel.pad': (
+        '0.6em',
+        'Padding between axes content and row labels on the right-hand side. '
+        + _addendum_units
     ),
 
     # River lines
@@ -818,6 +838,11 @@ _rc_proplot = {
     'suptitle.weight': (
         'bold',
         'Figure title font weight.'
+    ),
+    'suptitle.pad': (
+        '0.5em',
+        'Padding between axes content and the figure super title. '
+        + _addendum_units
     ),
 
     # Text settings
@@ -955,6 +980,11 @@ _rc_proplot = {
     'toplabel.weight': (
         'bold',
         'Font weight for column labels on the top of the figure.'
+    ),
+    'toplabel.pad': (
+        '0.3em',
+        'Padding between axes content and column labels on the top of the figure. '
+        + _addendum_units
     ),
 }
 
