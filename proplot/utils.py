@@ -19,19 +19,20 @@ __all__ = [
     'edges',
     'edges2d',
     'units',
-    'set_alpha',
     'set_hue',
-    'set_luminance',
     'set_saturation',
-    'scale_luminance',
+    'set_luminance',
+    'set_alpha',
+    'shift_hue',
     'scale_saturation',
+    'scale_luminance',
+    'to_hex',
     'to_rgb',
     'to_xyz',
     'to_rgba',
     'to_xyza',
-    # Deprecated
-    'shade',
-    'saturate',
+    'shade',  # deprecated
+    'saturate',  # deprecated
 ]
 
 NUMBER = re.compile(r'\A([-+]?[0-9._]+(?:[eE][-+]?[0-9_]+)?)(.*)\Z')
@@ -76,13 +77,9 @@ space : {'hcl', 'hpl', 'hsl', 'hsv'}, optional
 """
 
 # Shared return values
-docstring.snippets['return.rgb'] = """
-color : 3-tuple
-    An RGB tuple.
-"""
-docstring.snippets['return.rgba'] = """
-color : 4-tuple
-    An RGBA tuple.
+docstring.snippets['return.hex'] = """
+color : str
+    A HEX string.
 """
 
 
@@ -92,6 +89,12 @@ def arange(min_, *args):
     example, ``plot.arange(2, 4)`` returns ``np.array([2, 3, 4])`` instead
     of ``np.array([2, 3])``. This command is useful for generating lists of
     tick locations or colorbar level boundaries.
+
+    See also
+    --------
+    proplot.axes.CartesianAxes.format
+    proplot.constructor.Locator
+    proplot.axes.apply_cmap
     """
     # Optional arguments just like np.arange
     if len(args) == 0:
@@ -144,6 +147,8 @@ def edges(Z, axis=-1):
     See also
     --------
     edges2d
+    proplot.axes.standardize_2d
+    proplot.axes.apply_cmap
     """
     Z = np.asarray(Z)
     Z = np.swapaxes(Z, axis, -1)
@@ -180,6 +185,7 @@ def edges2d(Z):
     See also
     --------
     edges
+    proplot.axes.standardize_2d
     """
     Z = np.asarray(Z)
     if Z.ndim != 2:
@@ -204,14 +210,47 @@ def edges2d(Z):
 
 def _transform_color(func, color, space):
     """
-    Standardized input for color transformation functions.
+    Standardize input for color transformation functions.
     """
     *color, opacity = to_rgba(color)
     channels = list(to_xyz(color, space=space))
     channels = func(channels)  # apply transform
     color = to_rgb(channels, space=space)
     color = tuple(np.clip(color, 0, 1))  # clip to valid range
-    return (*color, opacity)
+    return mcolors.to_hex((*color, opacity))
+
+
+@docstring.add_snippets
+def shift_hue(color, shift=0, space='hcl'):
+    """
+    Shift the hue channel of a color.
+
+    Parameters
+    ----------
+    %(param.rgba)s
+    shift : float, optoinal
+        The HCL hue channel is offset by this value.
+    %(param.space)s
+
+    Returns
+    -------
+    %(return.hex)s
+
+    See also
+    --------
+    set_hue
+    set_saturation
+    set_luminance
+    set_alpha
+    scale_saturation
+    scale_luminance
+    """
+    def func(channels):
+        channels[0] += shift
+        channels[0] %= 360
+        return channels
+
+    return _transform_color(func, color, space)
 
 
 @docstring.add_snippets
@@ -228,11 +267,16 @@ def scale_saturation(color, scale=1, space='hcl'):
 
     Returns
     -------
-    %(return.rgba)s
+    %(return.hex)s
 
     See also
     --------
-    set_saturation, scale_luminance
+    set_hue
+    set_saturation
+    set_luminance
+    set_alpha
+    shift_hue
+    scale_luminance
     """
     def func(channels):
         channels[1] *= scale
@@ -255,33 +299,22 @@ def scale_luminance(color, scale=1, space='hcl'):
 
     Returns
     -------
-    %(return.rgba)s
+    %(return.hex)s
 
     See also
     --------
-    set_luminance, scale_saturation
+    set_hue
+    set_saturation
+    set_luminance
+    set_alpha
+    shift_hue
+    scale_saturation
     """
     def func(channels):
         channels[2] *= scale
         return channels
 
     return _transform_color(func, color, space)
-
-
-@docstring.add_snippets
-def set_alpha(color, alpha):
-    """
-    Return a color with the opacity channel set to the specified value.
-
-    Parameters
-    ----------
-    %(param.rgba)s
-    alpha : float, optional
-        The new opacity. Should be between ``0`` and ``1``.
-    """
-    color = list(to_rgba(color))
-    color[3] = alpha
-    return tuple(color)
 
 
 @docstring.add_snippets
@@ -299,11 +332,16 @@ def set_hue(color, hue, space='hcl'):
 
     Returns
     -------
-    %(return.rgba)s
+    %(return.hex)s
 
     See also
     --------
-    set_saturation, set_luminance
+    set_saturation
+    set_luminance
+    set_alpha
+    shift_hue
+    scale_saturation
+    scale_luminance
     """
     def func(channels):
         channels[0] = hue
@@ -327,11 +365,16 @@ def set_saturation(color, saturation, space='hcl'):
 
     Returns
     -------
-    %(return.rgba)s
+    %(return.hex)s
 
     See also
     --------
-    set_hue, set_luminance, scale_saturation
+    set_hue
+    set_luminance
+    set_alpha
+    shift_hue
+    scale_saturation
+    scale_luminance
     """
     def func(channels):
         channels[1] = saturation
@@ -355,17 +398,78 @@ def set_luminance(color, luminance, space='hcl'):
 
     Returns
     -------
-    %(return.rgba)s
+    %(return.hex)s
 
     See also
     --------
-    set_hue, set_saturation, scale_luminance
+    set_hue
+    set_saturation
+    set_alpha
+    shift_hue
+    scale_saturation
+    scale_luminance
     """
     def func(channels):
         channels[2] = luminance
         return channels
 
     return _transform_color(func, color, space)
+
+
+@docstring.add_snippets
+def set_alpha(color, alpha):
+    """
+    Return a color with the opacity channel set to the specified value.
+
+    Parameters
+    ----------
+    %(param.rgba)s
+    alpha : float, optional
+        The new opacity. Should be between ``0`` and ``1``.
+
+    Returns
+    -------
+    %(return.hex)s
+
+    See also
+    --------
+    set_hue
+    set_saturation
+    set_luminance
+    shift_hue
+    scale_saturation
+    scale_luminance
+    """
+    color = list(to_rgba(color))
+    color[3] = alpha
+    return to_hex(color)
+
+
+def to_hex(color, space='rgb', cycle=None, keep_alpha=True):
+    """
+    Translate the color in *any* format and from *any* colorspace
+    to a HEX string. This is a generalization of `matplotlib.colors.to_hex`.
+
+    Parameters
+    ----------
+    %(param.to_rgb)s
+    keep_alpha : bool, optional
+        Whether to keep the opacity channel. If ``True`` an 8-digit HEX
+        is returned. Otherwise a 6-digit HEX is returned. Default is ``True``.
+
+    Returns
+    -------
+    %(return.hex)s
+
+    See also
+    --------
+    to_rgb
+    to_rgba
+    to_xyz
+    to_xyza
+    """
+    rgba = to_rgba(color, space=space, cycle=cycle)
+    return mcolors.to_hex(rgba, keep_alpha=keep_alpha)
 
 
 @docstring.add_snippets
@@ -381,11 +485,15 @@ def to_rgb(color, space='rgb', cycle=None):
 
     Returns
     -------
-    %(return.rgb)s
+    color : 3-tuple
+        An RGB tuple.
 
     See also
     --------
-    to_rgba, to_xyz
+    to_hex
+    to_rgba
+    to_xyz
+    to_xyza
     """
     return to_rgba(color, space=space, cycle=cycle)[:3]
 
@@ -403,11 +511,15 @@ def to_rgba(color, space='rgb', cycle=None):
 
     Returns
     -------
-    %(return.rgba)s
+    color : 4-tuple
+        An RGBA tuple.
 
     See also
     --------
-    to_rgb, to_xyza
+    to_hex
+    to_rgb
+    to_xyz
+    to_xyza
     """
     # Convert color cycle strings
     if isinstance(color, str) and re.match(r'\AC[0-9]\Z', color):
@@ -490,7 +602,10 @@ def to_xyz(color, space='hcl'):
 
     See also
     --------
-    to_rgb, to_xyza
+    to_hex
+    to_rgb
+    to_rgba
+    to_xyza
     """
     return to_xyza(color, space)[:3]
 
@@ -514,7 +629,10 @@ def to_xyza(color, space='hcl'):
 
     See also
     --------
-    to_rgba, to_xyz
+    to_hex
+    to_rgb
+    to_rgba
+    to_xyz
     """
     # Run tuple conversions
     # NOTE: Don't pass color tuple, because we may want to permit
