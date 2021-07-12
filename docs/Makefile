@@ -6,7 +6,7 @@
 SPHINXOPTS  =
 SPHINXBUILD = sphinx-build
 SPHINXPROJ  = ProPlot
-SOURCEDIR   = source
+SOURCEDIR   = .
 BUILDDIR    = _build
 
 .PHONY: help clean Makefile
