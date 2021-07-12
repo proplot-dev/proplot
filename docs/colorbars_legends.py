@@ -190,8 +190,8 @@ for ax, title in zip(
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_cbars:
 #
-# New colorbar features
-# ---------------------
+# Additional colorbar features
+# ----------------------------
 #
 # The `proplot.figure.Figure.colorbar` and `proplot.axes.Axes.colorbar`
 # methods are wrapped by `~proplot.axes.colorbar_extras`, which adds several
@@ -249,8 +249,8 @@ axs.format(
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_legends:
 #
-# New legend features
-# -------------------
+# Additional legend features
+# --------------------------
 #
 # The `proplot.figure.Figure.legend` and `proplot.axes.Axes.legend` methods
 # are wrapped by `~proplot.axes.legend_extras`, which adds several new features.
