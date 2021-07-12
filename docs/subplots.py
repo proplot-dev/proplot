@@ -147,11 +147,10 @@ axs.format(
     suptitle='Auto figure sizing with grid of cartopy projections'
 )
 
-# Auto sized grid of images
+# Auto sized grid of images (note the square pixels)
 state = np.random.RandomState(51423)
+colors = np.tile(state.rand(15, 12, 1), (1, 1, 3))
 fig, axs = pplt.subplots(ncols=3, nrows=2, refwidth=1.7)
-colors = state.rand(15, 12, 3).cumsum(axis=2)
-colors /= colors.max()
 axs.imshow(colors)
 axs.format(
     suptitle='Auto figure sizing with grid of images'
