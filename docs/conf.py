@@ -123,7 +123,7 @@ automodapi_toctreedirnm = 'api'  # create much better URL for the page
 automodsumm_inherited_members = False
 
 # Logo
-html_logo = '_static/logo_square.png'
+html_logo = os.path.join('_static', 'logo_square.png')
 
 # Turn off code and image links for embedded mpl plots
 # plot_html_show_source_link = False
@@ -193,7 +193,7 @@ language = None
 # directories to ignore when looking for source files.
 exclude_patterns = [
     '.DS_Store',
-    '_build', '_templates', '_themes', 'trash',
+    '_build', '_templates', '_themes', 'trash', 'tmp',
     'conf.py', 'sphinxext', '*.ipynb', '**.ipynb_checkpoints',
 ]
 
