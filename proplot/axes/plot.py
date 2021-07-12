@@ -789,8 +789,8 @@ def _auto_format_1d(
 @docstring.add_snippets
 def standardize_1d(self, *args, data=None, autoformat=None, **kwargs):
     """
-    Interpret positional arguments for the "1D" plotting methods so usage is
-    consistent. Positional arguments are standardized as follows:
+    Interpret positional arguments for all "1D" plotting commands so the syntax
+    is consistent. The arguments are standardized as follows:
 
     * If a 2D array is passed, the corresponding plot command is called for
       each column of data (except for ``boxplot`` and ``violinplot``, in which
@@ -1182,8 +1182,8 @@ def standardize_2d(
     self, *args, data=None, autoformat=None, order='C', globe=False, **kwargs
 ):
     """
-    Interpret positional arguments for the "2D" plotting methods so usage is
-    consistent. Positional arguments are standardized as follows:
+    Interpret positional arguments for all "2D" plotting commands so the syntax is
+    consistent. The arguments are standardized as follows:
 
     * If *x* and *y* or *latitude* and *longitude* coordinates were not
       provided, and a `~pandas.DataFrame` or `~xarray.DataArray` is passed, we
@@ -1392,11 +1392,10 @@ def indicate_error(
     **kwargs
 ):
     """
-    Adds support for drawing error bars and error shading on-the-fly. Includes
-    options for interpreting columns of data as *samples*, representing the mean
-    or median of each sample with lines, points, or bars, and drawing error bars
-    representing percentile ranges or standard deviation multiples for each sample.
-    Also supports specifying error bar data explicitly.
+    Support on-the-fly error bars and error shading. Use the input error data or
+    optionally interpret columns of data as distributions, pass the column
+    means or medians to the relevant plotting command, and draw error
+    indications from the specified standard deviation or percentile range.
 
     Important
     ---------
@@ -2474,8 +2473,8 @@ def text_extras(
     bbox=False, bboxcolor='w', bboxstyle='round', bboxalpha=0.5, bboxpad=None, **kwargs
 ):
     """
-    Enables specifying `tranform` with a string name and adds a feature for
-    drawing borders and bbox around text.
+    Allow specificiation of the coordinate `tranform` with a string name and support
+    drawing white borders and bounding boxes around the text.
 
     Important
     ---------
@@ -2664,18 +2663,12 @@ def apply_cycle(
     **kwargs
 ):
     """
-    Adds features for controlling colors in the property cycler and drawing
-    legends or colorbars in one go.
+    Support on-the-fly creation and application of property cycles, and support
+    on-the-fly legends and colorbars.
 
     Important
     ---------
     This function wraps {methods}
-
-    This wrapper also *standardizes acceptable input* -- these methods now all
-    accept 2D arrays holding columns of data, and *x*-coordinates are always
-    optional. Note this alters the behavior of `~matplotlib.axes.Axes.boxplot`
-    and `~matplotlib.axes.Axes.violinplot`, which now compile statistics on
-    *columns* of data instead of *rows*.
 
     Parameters
     ----------
@@ -3341,9 +3334,8 @@ def apply_cmap(
     inbounds=True, colorbar=False, colorbar_kw=None, **kwargs
 ):
     """
-    Adds several new keyword args and features for specifying the colormap,
-    levels, and normalizers. Uses the `~proplot.colors.DiscreteNorm`
-    normalizer to bin data into discrete color levels (see notes).
+    Support on-the-fly creation of colormaps and normalizers, universal discrete
+    colormap levels, on-the-fly text labels, and on-the-fly colorbars.
 
     Important
     ---------
@@ -3697,7 +3689,8 @@ def colorbar_extras(
     **kwargs
 ):
     """
-    Adds useful features for controlling colorbars.
+    Support non-mappable input arguments and support flexible arguments controlling
+    ticks and styling.
 
     Important
     ---------
@@ -4235,8 +4228,8 @@ def legend_extras(
     **kwargs
 ):
     """
-    Adds useful features for controlling legends, including "centered-row"
-    legends.
+    Support centered-row legends and more flexible arguments controlling
+    legend styling.
 
     Important
     ---------
