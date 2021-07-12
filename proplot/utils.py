@@ -122,7 +122,7 @@ def arange(min_, *args):
     return np.arange(min_, max_, step)
 
 
-def edges(Z, axis=-1):
+def edges(z, axis=-1):
     """
     Calculate the approximate "edge" values along an axis given "center"
     values. This is used internally to calculate graticule edges when
@@ -133,7 +133,7 @@ def edges(Z, axis=-1):
 
     Parameters
     ----------
-    Z : array-like
+    z : array-like
         Array of any shape or size.
     axis : int, optional
         The axis along which "edges" are calculated. The size of this axis
@@ -150,22 +150,22 @@ def edges(Z, axis=-1):
     proplot.axes.standardize_2d
     proplot.axes.apply_cmap
     """
-    Z = np.asarray(Z)
-    Z = np.swapaxes(Z, axis, -1)
-    *nextra, nx = Z.shape
-    Zb = np.zeros((*nextra, nx + 1))
+    z = np.asarray(z)
+    z = np.swapaxes(z, axis, -1)
+    *nextra, nx = z.shape
+    zb = np.zeros((*nextra, nx + 1))
 
     # Inner edges
-    Zb[..., 1:-1] = 0.5 * (Z[..., :-1] + Z[..., 1:])
+    zb[..., 1:-1] = 0.5 * (z[..., :-1] + z[..., 1:])
 
     # Left, right edges
-    Zb[..., 0] = 1.5 * Z[..., 0] - 0.5 * Z[..., 1]
-    Zb[..., -1] = 1.5 * Z[..., -1] - 0.5 * Z[..., -2]
+    zb[..., 0] = 1.5 * z[..., 0] - 0.5 * z[..., 1]
+    zb[..., -1] = 1.5 * z[..., -1] - 0.5 * z[..., -2]
 
-    return np.swapaxes(Zb, axis, -1)
+    return np.swapaxes(zb, axis, -1)
 
 
-def edges2d(Z):
+def edges2d(z):
     """
     Calculate the approximate "edge" values given a 2d grid of "center"
     values. The size of both axes are increased by one. This is used
@@ -174,7 +174,7 @@ def edges2d(Z):
 
     Parameters
     ----------
-    Z : array-like
+    z : array-like
         A 2d array.
 
     Returns
@@ -187,25 +187,25 @@ def edges2d(Z):
     edges
     proplot.axes.standardize_2d
     """
-    Z = np.asarray(Z)
-    if Z.ndim != 2:
-        raise ValueError(f'Input must be a 2d array, but got {Z.ndim}d.')
-    ny, nx = Z.shape
-    Zb = np.zeros((ny + 1, nx + 1))
+    z = np.asarray(z)
+    if z.ndim != 2:
+        raise ValueError(f'Input must be a 2d array, but got {z.ndim}d.')
+    ny, nx = z.shape
+    zb = np.zeros((ny + 1, nx + 1))
 
     # Inner edges
-    Zb[1:-1, 1:-1] = 0.25 * (
-        Z[1:, 1:] + Z[:-1, 1:] + Z[1:, :-1] + Z[:-1, :-1]
+    zb[1:-1, 1:-1] = 0.25 * (
+        z[1:, 1:] + z[:-1, 1:] + z[1:, :-1] + z[:-1, :-1]
     )
 
     # Left, right, top, bottom edges
-    Zb[0, :] += edges(1.5 * Z[0, :] - 0.5 * Z[1, :])
-    Zb[-1, :] += edges(1.5 * Z[-1, :] - 0.5 * Z[-2, :])
-    Zb[:, 0] += edges(1.5 * Z[:, 0] - 0.5 * Z[:, 1])
-    Zb[:, -1] += edges(1.5 * Z[:, -1] - 0.5 * Z[:, -2])
-    Zb[[0, 0, -1, -1], [0, -1, -1, 0]] *= 0.5  # corner correction
+    zb[0, :] += edges(1.5 * z[0, :] - 0.5 * z[1, :])
+    zb[-1, :] += edges(1.5 * z[-1, :] - 0.5 * z[-2, :])
+    zb[:, 0] += edges(1.5 * z[:, 0] - 0.5 * z[:, 1])
+    zb[:, -1] += edges(1.5 * z[:, -1] - 0.5 * z[:, -2])
+    zb[[0, 0, -1, -1], [0, -1, -1, 0]] *= 0.5  # corner correction
 
-    return Zb
+    return zb
 
 
 def _transform_color(func, color, space):

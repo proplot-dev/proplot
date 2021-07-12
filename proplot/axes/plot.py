@@ -188,6 +188,11 @@ vmin, vmax : float, optional
 """
 
 docstring.snippets['axes.auto_levels'] = """
+inbounds : bool, optional
+    If ``True`` (the edefault), when automatically selecting levels in the presence
+    of hard *x* and *y* axis limits (i.e., when `~matplotlib.axes.Axes.set_xlim`
+    or `~matplotlib.axes.Axes.set_ylim` have been called previously), only the
+    in-bounds data is sampled. Default is :rc:`image.inbounds`.
 locator : locator-spec, optional
     The locator used to determine level locations if `levels` or `values`
     is an integer and `vmin` and `vmax` were not provided. Passed to the
@@ -445,6 +450,9 @@ def _to_arraylike(data):
     Convert list of lists to array-like type.
     """
     _load_objects()
+    if data is None:
+        raise ValueError('Cannot convert None data.')
+        return None
     if not isinstance(data, (ndarray, DataArray, DataFrame, Series, Index)):
         data = np.asarray(data)
     if not np.iterable(data):
@@ -701,13 +709,13 @@ def _auto_format_1d(
         legend_kw_labels=kwargs.get('legend_kw', {}).pop('labels', None),
     )
 
-    # The inferred x coords
+    # Retrieve the x coords
     # NOTE: Allow for "ragged array" input to boxplot and violinplot.
     # NOTE: Where columns represent distributions, like for box and violin plots or
     # where we use 'means' or 'medians', columns coords (axis 1) are 'x' coords.
     # Otherwise, columns represent e.g. lines, and row coords (axis 0) are 'x' coords
-    ragged = any(getattr(y, 'dtype', None) == 'object' for y in ys)
     dists = box or any(kwargs.get(s) for s in ('mean', 'means', 'median', 'medians'))
+    ragged = any(getattr(y, 'dtype', None) == 'object' for y in ys)
     xaxis = 1 if dists and not ragged else 0
     if x is None and not hist:
         x = _get_labels(ys[0], axis=xaxis)  # infer from rows or columns
@@ -858,7 +866,7 @@ def standardize_1d(self, *args, data=None, autoformat=None, **kwargs):
         x, ys, args = args[0], args[1:2], args[2:]
     if x is not None:
         x = _to_arraylike(x)
-    ys = tuple(_to_arraylike(y) for y in ys)
+    ys = tuple(map(_to_arraylike, ys))
 
     # Append remaining positional args
     # NOTE: This is currently just used for bar and barh. More convenient to pass
@@ -889,40 +897,39 @@ def standardize_1d(self, *args, data=None, autoformat=None, **kwargs):
     return method(self, x, *ys, *args, **kwargs)
 
 
-def _auto_format_2d(self, x, y, *Zs, order='C', autoformat=False, **kwargs):
+def _auto_format_2d(self, x, y, *zs, name=None, order='C', autoformat=False, **kwargs):
     """
     Try to retrieve default coordinates from array-like objects and apply default
     formatting. Also apply optional transpose and update the keyword arguments.
     """
     # Retrieve coordinates
+    allow1d = name in ('barbs', 'quiver')  # these also allow 1D data
     projection = hasattr(self, 'projection')
     if x is None and y is None:
-        Z = Zs[0]
-        if _to_arraylike(Z).ndim == 1:
-            x = _get_labels(Z, axis=0)
-            y = np.zeros(Z.shape)  # default barb() and quiver() behavior in matplotlib
+        z = zs[0]
+        if z.ndim == 1:
+            x = _get_labels(z, axis=0)
+            y = np.zeros(z.shape)  # default barb() and quiver() behavior in matplotlib
         else:
-            x = _get_labels(Z, axis=1)
-            y = _get_labels(Z, axis=0)
+            x = _get_labels(z, axis=1)
+            y = _get_labels(z, axis=0)
         if order == 'F':
             x, y = y, x
 
-    # Check coordinates
-    x, y = _to_arraylike(x), _to_arraylike(y)
+    # Check coordinate and data shapes
+    shapes = tuple(z.shape for z in zs)
+    if any(len(_) != 2 and not (allow1d and len(_) == 1) for _ in shapes):
+        raise ValueError(f'Data arrays must be 2d, but got shapes {shapes}.')
+    shapes = set(shapes)
+    if len(shapes) > 1:
+        raise ValueError(f'Data arrays must have same shape, but got shapes {shapes}.')
+    if any(_.ndim not in (1, 2) for _ in (x, y)):
+        raise ValueError('x and y coordinates must be 1d or 2d.')
     if x.ndim != y.ndim:
-        raise ValueError(
-            f'x coordinates are {x.ndim}-dimensional, '
-            f'but y coordinates are {y.ndim}-dimensional.'
-        )
-    for s, array in zip(('x', 'y'), (x, y)):
-        if array.ndim not in (1, 2):
-            raise ValueError(
-                f'{s} coordinates are {array.ndim}-dimensional, '
-                f'but must be 1 or 2-dimensional.'
-            )
+        raise ValueError('x and y coordinates must have same dimensionality.')
     if order == 'F':  # TODO: double check this
         x, y = x.T, y.T  # in case they are 2-dimensional
-        Zs = tuple(Z.T for Z in Zs)
+        zs = tuple(z.T for z in zs)
 
     # The labels and XY axis settings
     if not projection:
@@ -951,20 +958,20 @@ def _auto_format_2d(self, x, y, *Zs, order='C', autoformat=False, **kwargs):
     # wrapped by apply_cmap. So far there are none.
     if autoformat:
         kwargs.setdefault('colorbar_kw', {})
-        title = _get_title(Zs[0])
+        title = _get_title(zs[0])
         if title and True:
             kwargs['colorbar_kw'].setdefault('label', title)
 
     # Finally strip metadata
-    return _to_ndarray(x), _to_ndarray(y), *map(_to_ndarray, Zs), kwargs
+    return _to_ndarray(x), _to_ndarray(y), *map(_to_ndarray, zs), kwargs
 
 
-def _enforce_centers(x, y, Z):
+def _enforce_centers(x, y, z):
     """
     Enforce that coordinates are centers. Convert from edges if possible.
     """
     xlen, ylen = x.shape[-1], y.shape[0]
-    if Z.ndim == 2 and Z.shape[1] == xlen - 1 and Z.shape[0] == ylen - 1:
+    if z.ndim == 2 and z.shape[1] == xlen - 1 and z.shape[0] == ylen - 1:
         # Get centers given edges
         if all(z.ndim == 1 and z.size > 1 and _is_number(z) for z in (x, y)):
             x = 0.5 * (x[1:] + x[:-1])
@@ -980,22 +987,22 @@ def _enforce_centers(x, y, Z):
                 and _is_number(y)
             ):
                 y = 0.25 * (y[:-1, :-1] + y[:-1, 1:] + y[1:, :-1] + y[1:, 1:])
-    elif Z.shape[-1] != xlen or Z.shape[0] != ylen:
+    elif z.shape[-1] != xlen or z.shape[0] != ylen:
         # Helpful error message
         raise ValueError(
             f'Input shapes x {x.shape} and y {y.shape} '
-            f'must match Z centers {Z.shape} '
-            f'or Z borders {tuple(i+1 for i in Z.shape)}.'
+            f'must match z centers {z.shape} '
+            f'or z borders {tuple(i+1 for i in z.shape)}.'
         )
     return x, y
 
 
-def _enforce_edges(x, y, Z):
+def _enforce_edges(x, y, z):
     """
     Enforce that coordinates are edges. Convert from centers if possible.
     """
     xlen, ylen = x.shape[-1], y.shape[0]
-    if Z.ndim == 2 and Z.shape[1] == xlen and Z.shape[0] == ylen:
+    if z.ndim == 2 and z.shape[1] == xlen and z.shape[0] == ylen:
         # Get edges given centers
         if all(z.ndim == 1 and z.size > 1 and _is_number(z) for z in (x, y)):
             x = edges(x)
@@ -1011,12 +1018,12 @@ def _enforce_edges(x, y, Z):
                 and _is_number(y)
             ):
                 y = edges2d(y)
-    elif Z.shape[-1] != xlen - 1 or Z.shape[0] != ylen - 1:
+    elif z.shape[-1] != xlen - 1 or z.shape[0] != ylen - 1:
         # Helpful error message
         raise ValueError(
             f'Input shapes x {x.shape} and y {y.shape} must match '
-            f'array centers {Z.shape} or '
-            f'array borders {tuple(i + 1 for i in Z.shape)}.'
+            f'array centers {z.shape} or '
+            f'array borders {tuple(i + 1 for i in z.shape)}.'
         )
     return x, y
 
@@ -1060,36 +1067,35 @@ def _fix_latlon(x, y):
     if x.ndim != 1 or all(x < x[0]):  # skip 2D arrays and monotonic backwards data
         return x, y
     lon1 = x[0]
-    while True:
-        filter_ = (x < lon1)
-        if filter_.sum() == 0:
-            break
+    filter_ = x < lon1
+    while filter_.sum():
+        filter_ = x < lon1
         x[filter_] += 360
     return x, y
 
 
-def _fix_poles(y, Z):
+def _fix_poles(y, z):
     """
     Add data points on the poles as the average of highest latitude data.
     """
     # Get means
     with np.errstate(all='ignore'):
-        p1 = Z[0, :].mean()  # pole 1, make sure is not 0D DataArray!
-        p2 = Z[-1, :].mean()  # pole 2
+        p1 = z[0, :].mean()  # pole 1, make sure is not 0D DataArray!
+        p2 = z[-1, :].mean()  # pole 2
     if hasattr(p1, 'item'):
         p1 = np.asscalar(p1)  # happens with DataArrays
     if hasattr(p2, 'item'):
         p2 = np.asscalar(p2)
     # Concatenate
     ps = (-90, 90) if (y[0] < y[-1]) else (90, -90)
-    Z1 = np.repeat(p1, Z.shape[1])[None, :]
-    Z2 = np.repeat(p2, Z.shape[1])[None, :]
+    z1 = np.repeat(p1, z.shape[1])[None, :]
+    z2 = np.repeat(p2, z.shape[1])[None, :]
     y = ma.concatenate((ps[:1], y, ps[1:]))
-    Z = ma.concatenate((Z1, Z, Z2), axis=0)
-    return y, Z
+    z = ma.concatenate((z1, z, z2), axis=0)
+    return y, z
 
 
-def _fix_cartopy(x, y, *Zs, globe=False):
+def _fix_cartopy(x, y, *zs, globe=False):
     """
     Fix cartopy geographic data arrays.
     """
@@ -1097,25 +1103,25 @@ def _fix_cartopy(x, y, *Zs, globe=False):
     x, y = _fix_latlon(x, y)
 
     # Fix data
-    x_orig, y_orig, Zs_orig = x, y, Zs
-    Zs = []
-    for Z_orig in Zs_orig:
+    x_orig, y_orig, zs_orig = x, y, zs
+    zs = []
+    for z_orig in zs_orig:
         # Bail for 2D coordinates
         if not globe or x_orig.ndim > 1 or y_orig.ndim > 1:
-            Zs.append(Z_orig)
+            zs.append(z_orig)
             continue
         # Fix holes over poles by *interpolating* there
-        y, Z = _fix_poles(y_orig, Z_orig)
+        y, z = _fix_poles(y_orig, z_orig)
         # Fix seams by ensuring circular coverage (cartopy can plot over map edges)
         if x_orig[0] % 360 != (x_orig[-1] + 360) % 360:
             x = ma.concatenate((x_orig, [x_orig[0] + 360]))
-            Z = ma.concatenate((Z, Z[:, :1]), axis=1)
-        Zs.append(Z)
+            z = ma.concatenate((z, z[:, :1]), axis=1)
+        zs.append(z)
 
-    return x, y, *Zs
+    return x, y, *zs
 
 
-def _fix_basemap(x, y, *Zs, globe=False, projection=None):
+def _fix_basemap(x, y, *zs, globe=False, projection=None):
     """
     Fix basemap geographic data arrays.
     """
@@ -1124,47 +1130,47 @@ def _fix_basemap(x, y, *Zs, globe=False, projection=None):
 
     # Fix data
     xmin, xmax = projection.lonmin, projection.lonmax
-    x_orig, y_orig, Zs_orig = x, y, Zs
-    Zs = []
-    for Z_orig in Zs_orig:
+    x_orig, y_orig, zs_orig = x, y, zs
+    zs = []
+    for z_orig in zs_orig:
         # Ensure data is within map bounds
-        x, Z_orig = _fix_bounds(x_orig, Z_orig, xmin, xmax)
+        x, z_orig = _fix_bounds(x_orig, z_orig, xmin, xmax)
         # Bail for 2D coordinates
         if not globe or x_orig.ndim > 1 or y_orig.ndim > 1:
-            Zs.append(Z_orig)
+            zs.append(z_orig)
             continue
         # Fix holes over poles by *interpolating* there
-        y, Z = _fix_poles(y_orig, Z_orig)
+        y, z = _fix_poles(y_orig, z_orig)
         # Fix seams at map boundary
-        if x[0] == xmin and x.size - 1 == Z.shape[1]:  # scenario 1
+        if x[0] == xmin and x.size - 1 == z.shape[1]:  # scenario 1
             # Edges (e.g. pcolor) fit perfectly against seams. Size is unchanged.
             pass
-        elif x.size - 1 == Z.shape[1]:  # scenario 2
+        elif x.size - 1 == z.shape[1]:  # scenario 2
             # Edges (e.g. pcolor) do not fit perfectly. Size augmented by 1.
             x = ma.append(xmin, x)
             x[-1] = xmin + 360
-            Z = ma.concatenate((Z[:, -1:], Z), axis=1)
-        elif x.size == Z.shape[1]:  # scenario 3
+            z = ma.concatenate((z[:, -1:], z), axis=1)
+        elif x.size == z.shape[1]:  # scenario 3
             # Centers (e.g. contour) must be interpolated to edge. Size augmented by 2.
             xi = np.array([x[-1], x[0] + 360])
             if xi[0] == xi[1]:  # impossible to interpolate
                 pass
             else:
-                Zq = ma.concatenate((Z[:, -1:], Z[:, :1]), axis=1)
+                zq = ma.concatenate((z[:, -1:], z[:, :1]), axis=1)
                 xq = xmin + 360
-                Zq = (Zq[:, :1] * (xi[1] - xq) + Zq[:, 1:] * (xq - xi[0])) / (xi[1] - xi[0])  # noqa: E501
+                zq = (zq[:, :1] * (xi[1] - xq) + zq[:, 1:] * (xq - xi[0])) / (xi[1] - xi[0])  # noqa: E501
                 x = ma.concatenate(([xmin], x, [xmin + 360]))
-                Z = ma.concatenate((Zq, Z, Zq), axis=1)
+                z = ma.concatenate((zq, z, zq), axis=1)
         else:
             raise ValueError('Unexpected shapes of coordinates or data arrays.')
-        Zs.append(Z)
+        zs.append(z)
 
     # Convert coordinates
     if x.ndim == 1 and y.ndim == 1:
         x, y = np.meshgrid(x, y)
     x, y = projection(x, y)
 
-    return x, y, *Zs
+    return x, y, *zs
 
 
 @docstring.add_snippets
@@ -1216,7 +1222,7 @@ def standardize_2d(
     method = kwargs.pop('_method')
     name = method.__name__
     pcolor = name in ('pcolor', 'pcolormesh', 'pcolorfast')
-    allow_1d = name in ('barbs', 'quiver')  # these also allow 1D data
+    allow1d = name in ('barbs', 'quiver')  # these also allow 1D data
     autoformat = _not_none(autoformat, rc['autoformat'])
 
     # Find and translate input args
@@ -1226,52 +1232,44 @@ def standardize_2d(
         raise TypeError('Positional arguments are required.')
 
     # Parse input args
-    if len(args) > 5:
-        raise TypeError(f'Expected 1-5 positional arguments, got {len(args)}.')
     if len(args) > 2:
         x, y, *args = args
     else:
         x = y = None
-    if order not in ('C', 'F'):
-        raise ValueError(f"Expected order 'C' (row-major) or 'F' (column-major). Got {order!r}.")  # noqa: E501
-    Zs = []
-    for Z in args:
-        Z = _to_arraylike(Z)
-        if Z.ndim != 2 and not (allow_1d and Z.ndim == 1):
-            raise ValueError(f'Array must be 2-dimensional, but got shape {Z.shape}.')
-        Zs.append(Z)
-    shapes = tuple(Z.shape for Z in Zs)
-    if len(set(shapes)) > 1:
-        raise ValueError(f'Arrays must have same shape, but got shapes {shapes}.')
+    if x is not None:
+        x = _to_arraylike(x)
+    if y is not None:
+        y = _to_arraylike(y)
+    zs = tuple(map(_to_arraylike, args))
 
     # Automatic formatting
-    x, y, *Zs, kwargs = _auto_format_2d(
-        self, x, y, *Zs, autoformat=autoformat, **kwargs
+    x, y, *zs, kwargs = _auto_format_2d(
+        self, x, y, *zs, name=name, order=order, autoformat=autoformat, **kwargs
     )
 
     # Standardize coordinates
     if pcolor:
-        x, y = _enforce_edges(x, y, Zs[0])
+        x, y = _enforce_edges(x, y, zs[0])
     else:
-        x, y = _enforce_centers(x, y, Zs[0])
+        x, y = _enforce_centers(x, y, zs[0])
 
     # Cartopy projection axes
     if (
-        not allow_1d and getattr(self, 'name', None) == 'proplot_cartopy'
+        not allow1d and getattr(self, 'name', None) == 'proplot_cartopy'
         and isinstance(kwargs.get('transform', None), PlateCarree)
     ):
-        x, y, *Zs = _fix_cartopy(x, y, *Zs, globe=globe)
+        x, y, *zs = _fix_cartopy(x, y, *zs, globe=globe)
 
     # Basemap projection axes
     elif (
-        not allow_1d and getattr(self, 'name', None) == 'proplot_basemap'
+        not allow1d and getattr(self, 'name', None) == 'proplot_basemap'
         and kwargs.get('latlon', None)
     ):
-        x, y, *Zs = _fix_basemap(x, y, *Zs, globe=globe, projection=self.projection)
+        x, y, *zs = _fix_basemap(x, y, *zs, globe=globe, projection=self.projection)
         kwargs['latlon'] = False
 
     # Call function
-    return method(self, x, y, *Zs, **kwargs)
+    return method(self, x, y, *zs, **kwargs)
 
 
 def _get_error_data(
@@ -1821,7 +1819,7 @@ def _apply_scatter(
     cmap=None, cmap_kw=None, norm=None, norm_kw=None,
     extend='neither', levels=None, N=None, values=None,
     locator=None, locator_kw=None, discrete=None,
-    symmetric=False, positive=False, negative=False, nozero=False,
+    symmetric=False, positive=False, negative=False, nozero=False, inbounds=None,
     **kwargs
 ):
     """
@@ -1861,12 +1859,14 @@ def _apply_scatter(
         and not (carray.ndim == 2 and carray.shape[1] in (3, 4))
     ):
         carray = carray.ravel()
+        levels = _not_none(levels=levels, N=N)
         norm, cmap, _, ticks = _build_discrete_norm(
-            carray,  # sample data for getting suitable levels
+            self, carray,  # sample data for getting suitable levels
+            levels=levels, values=values,
             cmap=cmap, norm=norm, norm_kw=norm_kw, extend=extend,
-            levels=levels, N=N, values=values, vmin=vmin, vmax=vmax,
-            locator=locator, locator_kw=locator_kw,
-            symmetric=symmetric, positive=positive, negative=negative, nozero=nozero,
+            vmin=vmin, vmax=vmax, locator=locator, locator_kw=locator_kw,
+            symmetric=symmetric, positive=positive, negative=negative,
+            nozero=nozero, inbounds=inbounds,
         )
 
     # Fix 2D arguments but still support scatter(x_vector, y_2d) usage
@@ -2824,10 +2824,40 @@ def apply_cycle(
         return objs[0] if len(objs) == 1 else tuple(objs)
 
 
+def _adjust_inbounds(self, x, y, z, *, centers=False):
+    """
+    Adjust the smaple based on the axis limits.
+    """
+    # Get masks
+    # TODO: Expand this to selecting x-limits giving scales y-limits, vice versa?
+    # NOTE: X and Y coordinates were sanitized by standardize_2d when passed here.
+    xmask = ymask = None
+    if any(_ is None or _.ndim not in (1, 2) for _ in (x, y, z)):
+        return z
+    if centers and z.ndim == 2:
+        x, y = _enforce_centers(x, y, z)
+    if not self.get_autoscalex_on():
+        xlim = self.get_xlim()
+        xmask = (x >= xlim[0]) & (x <= xlim[1])
+    if not self.get_autoscaley_on():
+        ylim = self.get_ylim()
+        ymask = (y >= ylim[0]) & (y <= ylim[1])
+
+    # Subsample
+    if xmask is not None and ymask is not None:
+        z = z[np.ix_(ymask, xmask)] if z.ndim == 2 and xmask.ndim == 1 else z[ymask & xmask]  # noqa: E501
+    elif xmask is not None:
+        z = z[:, xmask] if z.ndim == 2 and xmask.ndim == 1 else z[xmask]
+    elif ymask is not None:
+        z = z[ymask, :] if z.ndim == 2 and ymask.ndim == 1 else z[ymask]
+    return z
+
+
 def _auto_levels_locator(
-    *args, N=None, norm=None, norm_kw=None, extend='neither',
+    self, *args, N=None, norm=None, norm_kw=None, extend='neither',
     vmin=None, vmax=None, locator=None, locator_kw=None,
     symmetric=False, positive=False, negative=False, nozero=False,
+    inbounds=None, centers=False, counts=False,
 ):
     """
     Automatically generate level locations based on the input data, the
@@ -2836,7 +2866,7 @@ def _auto_levels_locator(
     Parameters
     ----------
     *args
-        The sample dataset(s).
+        The x, y, z, data.
     N : int, optional
         The (approximate) number of levels to create.
     norm, norm_kw
@@ -2853,10 +2883,13 @@ def _auto_levels_locator(
         Whether the automatic levels should be symmetric, should be all positive
         with a minimum at zero, or should be all negative with a maximum at zero.
     nozero : bool, optional
-        Whether zero should be excluded from automatic levels. This is also
-        implemented in `apply_cmap` so that `nozero` can be used to remove user
-        input levels (e.g. ``ax.contour(..., levels=pplt.arange(-5, 5), nozero=True)``),
-        but is replecated here so power users can use this function in isolation.
+        Whether zero should be excluded from the levels.
+    inbounds : bool, optional
+        Whether to filter to in-bounds data.
+    centers : bool, optional
+        Whether to convert coordinates to 'centers'.
+    counts : bool, optional
+        Whether to guesstimate histogram counts rather than use data.
 
     Returns
     -------
@@ -2865,13 +2898,15 @@ def _auto_levels_locator(
     locator : ndarray or `matplotlib.ticker.Locator`
         The locator used for colorbar tick locations.
     """
+    # Input args
     norm_kw = norm_kw or {}
     locator_kw = locator_kw or {}
-    if N is None:
-        N = 11
+    inbounds = _not_none(inbounds, rc['image.inbounds'])
+    N = _not_none(N, rc['image.levels'])
+
     if np.iterable(N):
         # Included so we can use this to apply positive, negative, nozero
-        tick_locator = N
+        levels = tick_locator = N
     else:
         # Get default locator based on input norm
         norm = constructor.Norm(norm or 'linear', **norm_kw)
@@ -2892,23 +2927,51 @@ def _auto_levels_locator(
             tick_locator = None
 
         # Get level locations
+        # NOTE: Critical to use _to_arraylike here because some commands
+        # are unstandardized.
+        # NOTE: Try to get reasonable *count* levels for hexbin/hist2d, but in
+        # general have no way to select nice ones a priori which is why discrete
+        # is disabled by default.
         automin = vmin is None
         automax = vmax is None
         if automin or automax:
-            vmins = []
-            vmaxs = []
-            for data in args:
-                data = ma.masked_invalid(data, copy=False)
+            # Get sample data
+            x = y = None
+            if len(args) < 3:
+                zs = map(_to_arraylike, args)
+            else:
+                x, y, *zs = map(_to_arraylike, args)
+            vmins, vmaxs = [], []
+            for z in zs:
+                # Restrict to in-bounds data
+                # Use catch-all exception because it really isn't mission-critical.
+                if z.ndim > 2:
+                    continue  # 3D imshow plots will ignore the cmap we give it
+                if counts:
+                    z = np.array([0, z.size]) // 10
+                elif inbounds:
+                    # WARNING: Experimental, seems robust but this is not
+                    # mission-critical so keep this try-except clause for now.
+                    try:
+                        z = _adjust_inbounds(self, x, y, z, centers=centers)
+                    except Exception:
+                        warnings._warn_proplot(
+                            'Failed to adjust bounds for automatic colormap normalization.'  # noqa: E501
+                        )
+                # Mask invalid data
+                z = ma.masked_invalid(z, copy=False)
                 if automin:
-                    vmin = float(data.min())
+                    vmin = float(z.min())
                 if automax:
-                    vmax = float(data.max())
+                    vmax = float(z.max())
                 if vmin == vmax or ma.is_masked(vmin) or ma.is_masked(vmax):
                     vmin, vmax = 0, 1
                 vmins.append(vmin)
                 vmaxs.append(vmax)
-            vmin = min(vmins)
-            vmax = max(vmaxs)
+            if vmins:
+                vmin, vmax = min(vmins), max(vmaxs)
+            else:
+                vmin, vmax = 0, 1  # simple default
         try:
             levels = level_locator.tick_values(vmin, vmax)
         except RuntimeError:  # too-many-ticks error
@@ -2956,13 +3019,12 @@ def _auto_levels_locator(
         levels = levels[levels <= 0]
 
     # Use auto-generated levels for ticks if still None
-    return levels, tick_locator or levels
+    return levels, _not_none(tick_locator, levels)
 
 
 def _build_discrete_norm(
-    data=None, cmap=None, norm=None, norm_kw=None, extend='neither',
-    levels=None, N=None, values=None, vmin=None, vmax=None, minlength=2,
-    **kwargs,
+    self, *args, levels=None, values=None, cmap=None, norm=None, norm_kw=None,
+    extend='neither', vmin=None, vmax=None, minlength=2, **kwargs,
 ):
     """
     Build a `~proplot.colors.DiscreteNorm` or `~proplot.colors.BoundaryNorm`
@@ -2971,7 +3033,7 @@ def _build_discrete_norm(
 
     Parameters
     ----------
-    data : ndarray, optional
+    *args
         The data.
     cmap : `matplotlib.colors.Colormap`, optional
         The colormap. Passed to `DiscreteNorm`.
@@ -2998,7 +3060,8 @@ def _build_discrete_norm(
     # Parse flexible keyword args
     norm_kw = norm_kw or {}
     levels = _not_none(
-        N=N, levels=levels, norm_kw_levels=norm_kw.pop('levels', None),
+        levels=levels,
+        norm_kw_levels=norm_kw.pop('levels', None),
         default=rc['image.levels']
     )
     vmin = _not_none(vmin=vmin, norm_kw_vmin=norm_kw.pop('vmin', None))
@@ -3095,7 +3158,7 @@ def _build_discrete_norm(
     else:
         # Determine levels automatically
         levels, locator = _auto_levels_locator(
-            data, N=levels, norm=norm, vmin=vmin, vmax=vmax, extend=extend, **kwargs
+            self, *args, N=levels, norm=norm, vmin=vmin, vmax=vmax, extend=extend, **kwargs  # noqa: E501
         )
 
     # Generate DiscreteNorm and update "child" norm with vmin and vmax from
@@ -3162,15 +3225,16 @@ def _labels_contour(self, obj, *args, fmt=None, **kwargs):
     fmt = _not_none(fmt, pticker.SimpleFormatter())
 
     # Draw hidden additional contour for filled contour labels
+    cobj = obj
     colors = None
     if _getattr_flexible(obj, 'filled'):  # guard against changes?
-        lums = [to_xyz(obj.cmap(obj.norm(level)), 'hcl')[2] for level in obj.levels]
+        cobj = self.contour(*args, levels=obj.levels, linewidths=0)
+        lums = (to_xyz(obj.cmap(obj.norm(level)), 'hcl')[2] for level in obj.levels)
         colors = ['w' if lum < 50 else 'k' for lum in lums]
-        obj = self.contour(*args, levels=obj.levels, linewidths=0)
     kwargs.setdefault('colors', colors)
 
     # Draw labels
-    labs = obj.clabel(fmt=fmt, **kwargs)
+    labs = cobj.clabel(fmt=fmt, **kwargs)
     if labs is not None:  # returns None if no contours
         for lab in labs:
             lab.update(text_kw)
@@ -3231,7 +3295,7 @@ def apply_cmap(
     vmin=None, vmax=None, locator=None, locator_kw=None,
     symmetric=False, positive=False, negative=False, nozero=False,
     discrete=None, edgefix=None, labels=False, labels_kw=None, fmt=None, precision=2,
-    colorbar=False, colorbar_kw=None, **kwargs
+    inbounds=True, colorbar=False, colorbar_kw=None, **kwargs
 ):
     """
     Adds several new keyword args and features for specifying the colormap,
@@ -3397,31 +3461,23 @@ def apply_cmap(
         kwargs[styles[idx]] = value
 
     # Build colormap normalizer
-    # NOTE: Try to get reasonable *count* levels for hexbin/hist2d, but in general have
-    # no way to select nice ones a priori which is why discrete is disabled by default
-    # NOTE: Standard algorithm for obtaining default levels does not work
-    # for histogram plots, because they colors *counts*, not data values!
+    # NOTE: This ensures contour() and tricontour() use the same default levels
+    # whether or not colormap is active.
+    kw = dict(
+        norm=norm, norm_kw=norm_kw,
+        extend=extend, vmin=vmin, vmax=vmax, locator=locator, locator_kw=locator_kw,
+        symmetric=symmetric, positive=positive, negative=negative, nozero=nozero,
+        inbounds=inbounds, centers=pcolor, counts=hexbin or hist2d,
+    )
     ticks = None
-    sample = args[-1]
-    if hist2d or hexbin:
-        sample = np.array([0, sample.size])
     if levels is None:
         if norm is not None:
             norm = constructor.Norm(norm, **norm_kw)
     elif not use_cmap:
-        levels, _ = _auto_levels_locator(
-            sample, N=levels,
-            norm=norm, norm_kw=norm_kw, locator=locator, locator_kw=locator_kw,
-            vmin=vmin, vmax=vmax, extend=extend, nozero=nozero,
-            symmetric=symmetric, positive=positive, negative=negative,
-        )
-    elif levels is not None:
-        norm, cmap, levels, ticks = _build_discrete_norm(
-            sample, cmap=cmap, norm=norm, norm_kw=norm_kw, extend=extend,
-            levels=levels, values=values, vmin=vmin, vmax=vmax, nozero=nozero,
-            symmetric=symmetric, positive=positive, negative=negative,
-            locator=locator, locator_kw=locator_kw, minlength=(2 - int(contour)),
-        )
+        levels, _ = _auto_levels_locator(self, *args, N=levels, **kw)
+    else:
+        kw.update(levels=levels, values=values, cmap=cmap, minlength=2 - int(contour))
+        norm, cmap, levels, ticks = _build_discrete_norm(self, *args, **kw)
 
     # Call function with correct keyword args
     if cmap is not None:
@@ -3478,7 +3534,7 @@ def apply_cmap(
 
 
 def _generate_mappable(
-    mappable, values=None, *, orientation=None,
+    self, mappable, values=None, *, orientation=None,
     locator=None, formatter=None, norm=None, norm_kw=None, rotation=None,
 ):
     """
@@ -3568,6 +3624,7 @@ def _generate_mappable(
             f'objects or colors.'
         )
     norm, *_ = _build_discrete_norm(
+        self,
         cmap=cmap,
         norm=norm,
         norm_kw=norm_kw,
@@ -3760,7 +3817,7 @@ def colorbar_extras(
     # and PolyCollection matplotlib classes are iterable.
     if not isinstance(mappable, (martist.Artist, mcontour.ContourSet)):
         mappable, rotation = _generate_mappable(
-            mappable, values, locator=locator, formatter=formatter,
+            self, mappable, values, locator=locator, formatter=formatter,
             norm=norm, norm_kw=norm_kw, orientation=orientation, rotation=rotation
         )
 

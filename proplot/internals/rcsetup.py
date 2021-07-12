@@ -627,9 +627,15 @@ _rc_proplot = {
         '`white-lines-between-pcolor-rectangles '
         '<https://stackoverflow.com/q/27092991/4970632>`__ issues.'
     ),
+    'image.inbounds': (
+        True,
+        'Whether to only use in-bounds data when selecting automatic colormap limits '
+        'if the *x* or *y* axis limits have been explicitly set.'
+    ),
     'image.levels': (
         11,
-        'Default number of levels for ``pcolormesh`` and ``contourf`` plots.'
+        'Default number of `~proplot.colors.DiscreteNorm` levels for plotting '
+        'commands wrapped `~proplot.axes.apply_cmap`.'
     ),
 
     # Backend stuff
