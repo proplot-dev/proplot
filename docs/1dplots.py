@@ -503,17 +503,28 @@ pplt.rc.reset()
 
 
 # %%
-import proplot as pplt
 import numpy as np
 import pandas as pd
 
 # Sample data
+# Each column represents a distribution
 state = np.random.RandomState(51423)
 data = state.rand(20, 8).cumsum(axis=0).cumsum(axis=1)[:, ::-1]
 data = data + 20 * state.normal(size=(20, 8)) + 30
 data = pd.DataFrame(data, columns=np.arange(0, 16, 2))
 data.columns.name = 'column number'
 data.name = 'variable'
+
+# Calculate error data
+# This is passed to 'errdata' in the 3rd axes example
+means = data.mean(axis=0)
+means.name = data.name  # copy name for formatting
+shadedata = np.percentile(data, (25, 75), axis=0)  # dark shading
+fadedata = np.percentile(data, (5, 95), axis=0)  # light shading
+
+# %%
+import proplot as pplt
+import numpy as np
 
 # Loop through "vertical" and "horizontal" versions
 array_vertical = [[1], [2], [3]]
@@ -537,7 +548,7 @@ for name, array in zip(('horizontal', 'vertical'), (array_horizontal, array_vert
         ax.barh(data, **kw)
     else:
         ax.bar(data, **kw)
-    ax.format(title='Bar plot')
+    ax.set_title('Bar plot')
 
     # Means and standard deviation range
     ax = axs[1]
@@ -551,15 +562,10 @@ for name, array in zip(('horizontal', 'vertical'), (array_horizontal, array_vert
         ax.scatterx(data, legend='b', legend_kw={'ncol': 1}, **kw)
     else:
         ax.scatter(data, legend='ll', **kw)
-    ax.format(title='Marker plot')
+    ax.set_title('Marker plot')
 
     # User-defined error bars
     ax = axs[2]
-    means = data.mean(axis=0)
-    means.name = data.name
-    shadedata = np.percentile(data, (25, 75), axis=0)  # dark shading
-    fadedata = np.percentile(data, (5, 95), axis=0)  # light shading
-    method = ax.plotx if name == 'horizontal' else ax.plot
     kw = dict(
         shadedata=shadedata, fadedata=fadedata,
         label='mean', shadelabel='50% CI', fadelabel='90% CI',
@@ -569,7 +575,7 @@ for name, array in zip(('horizontal', 'vertical'), (array_horizontal, array_vert
         ax.plotx(means, legend='b', legend_kw={'ncol': 1}, **kw)
     else:
         ax.plot(means, legend='ll', **kw)
-    ax.format(title='Line plot')
+    ax.set_title('Line plot')
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
