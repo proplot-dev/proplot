@@ -839,7 +839,7 @@ class Figure(mfigure.Figure):
                     ax.set_position(ax.figbox)  # equivalent to above
 
         # Adjust figure size *after* gridspecs are fixed
-        self.set_size_inches(figsize, auto=True)
+        self.set_size_inches(figsize, internal=True)
 
         return gridspec
 
@@ -897,7 +897,7 @@ class Figure(mfigure.Figure):
         # find consistent solution. For some reason *this* works consistently.
         fixed = all(subplots_kw[key] is not None for key in ('figwidth', 'figheight'))
         if not fixed:
-            self.set_size_inches(figsize, auto=True)
+            self.set_size_inches(figsize, internal=True)
 
     def _update_geometry_from_aspect(self, resize=True):
         """
@@ -1294,14 +1294,13 @@ class Figure(mfigure.Figure):
         canvas.print_figure = _canvas_preprocessor(canvas, 'print_figure')
         super().set_canvas(canvas)
 
-    def set_size_inches(self, w, h=None, forward=True, auto=False):
+    def set_size_inches(self, w, h=None, forward=True, internal=False):
         # Set the figure size and, if this is being called manually or from
         # an interactive backend, override the geometry tracker so users can
-        # use interactive backends. If figure size is unchaged we *do not*
+        # use interactive backends. If figure size is unchanged we *do not*
         # update the geometry tracker (figure backends often do this when
         # the figure is being initialized). See #76. Undocumented because this
         # is only relevant internally.
-        # TODO: Concatenate docstrings.
         # NOTE: Bitmap renderers calculate the figure size in inches from
         # int(Figure.bbox.[width|height]) which rounds to whole pixels. When
         # renderer calls set_size_inches, size may be effectively the same, but
@@ -1324,7 +1323,7 @@ class Figure(mfigure.Figure):
                 width not in (width_true, width_trunc)
                 or height not in (height_true, height_trunc)
             )
-            and not auto
+            and not internal
             and not self._is_autoresizing
             and not self._is_preprocessing
             and not getattr(self.canvas, '_is_idle_drawing', None)
@@ -1333,7 +1332,7 @@ class Figure(mfigure.Figure):
         )
         if user:
             self._subplots_kw.update(width=width, height=height)
-        context = self._context_autoresizing if auto or not user else _dummy_context
+        context = self._context_autoresizing if internal or not user else _dummy_context
         with context():
             super().set_size_inches(width, height, forward=forward)
 
