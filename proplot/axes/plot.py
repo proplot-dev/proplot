@@ -216,8 +216,8 @@ nozero : bool, optional
 """
 
 _lines_docstring = """
-Plot {orientation} lines with flexible positional arguments and optionally
-use different colors for "negative" and "positive" lines.
+Support overlaying and stacking successive columns of data and support
+different colors for "negative" and "positive" lines.
 
 Important
 ---------
@@ -259,7 +259,7 @@ docstring.snippets['axes.hlines'] = _lines_docstring.format(
 )
 
 _scatter_docstring = """
-Support `apply_cmap` features and support keywords that are more
+Support `apply_cmap` features and support style keywords that are
 consistent with `~{package}.axes.Axes.plot{suffix}` keywords.
 
 Important
@@ -311,8 +311,8 @@ docstring.snippets['axes.scatterx'] = docstring.add_snippets(
 )
 
 _fill_between_docstring = """
-Support overlaying and stacking successive columns of data, and permits
-using different colors for "negative" and "positive" regions.
+Support overlaying and stacking successive columns of data support
+different colors for "negative" and "positive" regions.
 
 Important
 ---------
@@ -364,8 +364,9 @@ docstring.snippets['axes.fill_betweenx'] = _fill_between_docstring.format(
 )
 
 _bar_docstring = """
-Support grouping and stacking successive columns of data, and changes
-the default bar style.
+Support grouping and stacking successive columns of data, specifying bar widths
+relative to coordinate spacing, and using different colors for "negative" and
+"positive" bar heights.
 
 Important
 ---------
@@ -2299,7 +2300,7 @@ def violinplot_extras(
     lw=None, linewidth=None, color=None, edgecolor=None, **kwargs
 ):
     """
-    Adds convenient keyword arguments and changes the default violinplot style
+    Add convenient keyword arguments and change the default violinplot style
     to match `this matplotlib example \
 <https://matplotlib.org/stable/gallery/statistics/customized_violin.html>`__.
     It is also no longer possible to show minima and maxima with whiskers --
