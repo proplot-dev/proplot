@@ -50,7 +50,7 @@ The documentation is `published on readthedocs <https://proplot.readthedocs.io>`
 
 .. |doi| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.5093131.svg
    :alt: doi
-   :target: https://zenodo.org/record/3873879
+   :target: https://doi.org/10.5281/zenodo.5093131
 
 .. |docs| image:: https://readthedocs.org/projects/proplot/badge/?version=latest
    :alt: docs
