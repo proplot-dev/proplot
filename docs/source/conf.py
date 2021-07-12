@@ -241,13 +241,12 @@ html_static_path = ['_static']
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
-# pixels large. Static folder is for CSS and image files.
-# For icons see: https://icons8.com/icon
-# To convert: convert logo_blank.png logo_blank.ico
-html_favicon = os.path.join('_static', 'logo_blank.ico')
+# pixels large. Static folder is for CSS and image files. Use ImageMagick to
+# convert png to ico on command line with 'convert image.png image.ico'
+html_favicon = 'logo_blank.ico'
 
 # Logo
-html_logo = os.path.join('_static', 'logo_square.png')
+html_logo = 'logo_square.png'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
