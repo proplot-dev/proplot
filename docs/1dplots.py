@@ -516,26 +516,28 @@ data.columns.name = 'column number'
 data.name = 'variable'
 
 # Calculate error data
-# This is passed to 'errdata' in the 3rd axes example
+# Passed to 'errdata' in the 3rd subplot example
 means = data.mean(axis=0)
 means.name = data.name  # copy name for formatting
-shadedata = np.percentile(data, (25, 75), axis=0)  # dark shading
 fadedata = np.percentile(data, (5, 95), axis=0)  # light shading
+shadedata = np.percentile(data, (25, 75), axis=0)  # dark shading
 
 # %%
 import proplot as pplt
 import numpy as np
 
 # Loop through "vertical" and "horizontal" versions
-array_vertical = [[1], [2], [3]]
-array_horizontal = [[1, 1], [2, 3], [2, 3]]
-for name, array in zip(('horizontal', 'vertical'), (array_horizontal, array_vertical)):
+varray = [[1], [2], [3]]
+harray = [[1, 1], [2, 3], [2, 3]]
+for orientation, array in zip(('horizontal', 'vertical'), (harray, varray)):
     # Figure
     fig, axs = pplt.subplots(
         array, refaspect=1.5, refwidth=4,
         share=0, hratios=(2, 1, 1)
     )
-    axs.format(abc=True, abcstyle='A.', suptitle=f'Indicating {name} error bounds')
+    axs.format(
+        abc=True, abcstyle='A.', suptitle=f'Indicating {orientation} error bounds'
+    )
 
     # Medians and percentile ranges
     ax = axs[0]
@@ -544,7 +546,7 @@ for name, array in zip(('horizontal', 'vertical'), (array_horizontal, array_vert
         median=True, barpctile=90, boxpctile=True,
         # median=True, barpctile=(5, 95), boxpctile=(25, 75)  # equivalent
     )
-    if name == 'horizontal':
+    if orientation == 'horizontal':
         ax.barh(data, **kw)
     else:
         ax.bar(data, **kw)
@@ -558,7 +560,7 @@ for name, array in zip(('horizontal', 'vertical'), (array_horizontal, array_vert
         mean=True, shadestd=1,
         # mean=True, shadestd=(-1, 1)  # equivalent
     )
-    if name == 'horizontal':
+    if orientation == 'horizontal':
         ax.scatterx(data, legend='b', legend_kw={'ncol': 1}, **kw)
     else:
         ax.scatter(data, legend='ll', **kw)
@@ -571,27 +573,30 @@ for name, array in zip(('horizontal', 'vertical'), (array_horizontal, array_vert
         label='mean', shadelabel='50% CI', fadelabel='90% CI',
         color='ocean blue', barzorder=0, boxmarker=False,
     )
-    if name == 'horizontal':
+    if orientation == 'horizontal':
         ax.plotx(means, legend='b', legend_kw={'ncol': 1}, **kw)
     else:
         ax.plot(means, legend='ll', **kw)
     ax.set_title('Line plot')
 
 
-# %% [raw] raw_mimetype="text/restructuredtext"
+# %% [raw] raw_mimetype="text/restructuredtext" tags=[]
 # .. _ug_hist:
 #
 # Histogram plots
 # ---------------
 #
-# ProPlot wraps the `~matplotlib.axes.Axes.hist` command with the
-# `~proplot.axes.standardize_1d` and `~proplot.axes.apply_cycle` wrappers.
+# ProPlot wraps the `~matplotlib.axes.Axes.hist` command with
+# `~proplot.axes.standardize_1d` and `~proplot.axes.apply_cycle`
+# (see the :ref:`1d plotting section <ug_apply_cycle>`).
 # It also wraps the `~matplotlib.axes.Axes.hist2d` and
-# `~matplotlib.axes.Axes.hexbin` commands with the
-# `~proplot.axes.standardize_2d` and `~proplot.axes.apply_cmap` wrappers.
-# In the future, ProPlot may introduce a `kdeplot` analogous to
+# `~matplotlib.axes.Axes.hexbin` commands with
+# `~proplot.axes.standardize_2d` and `~proplot.axes.apply_cmap`.
+# In the future, ProPlot may introduce a `kdeplot` command analogous to
 # `seaborn.kdeplot` for drawing "smooth" histograms with optional
-# panels showing the marginal distributions.
+# panels showing the marginal distributions. For now, marginal distributions
+# for `~matplotlib.axes.Axes.hist2d` plots can be easily plotted
+# using :ref:`panel axes <ug_panels>`.
 
 # %%
 import proplot as pplt
