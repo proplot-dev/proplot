@@ -71,6 +71,7 @@ __all__ = [
     'vlines_extras',
     'hlines_extras',
     'scatter_extras',
+    'scatterx_extras',
     'bar_extras',
     'barh_extras',
     'fill_between_extras',
