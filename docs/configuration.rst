@@ -93,8 +93,8 @@ Finally, the ``land``, ``ocean``, ``rivers``, ``lakes``,
 
 .. _ug_proplotrc:
 
-The .proplotrc file
--------------------
+The proplotrc file
+------------------
 
 When you install ProPlot for the first time, a ``.proplotrc`` file is generated
 and placed in your home directory. This is just like the `matplotlibrc file
@@ -102,11 +102,11 @@ and placed in your home directory. This is just like the `matplotlibrc file
 but for changing both ProPlot *and* matplotlib settings. The syntax is basically
 the same as the ``matplotlibrc`` syntax.
 
-To change the default global settings, simply edit and uncomment the entries
-listed in this file. You can also change the settings for individual projects
-by placing a ``.proplotrc`` file in the same directory as your python scripts
-or jupyter notebooks, or in an arbitrary parent directory. As an example,
-a ``.proplotrc`` file containing the default settings is shown below.
+To change the default global settings, simply edit and uncomment the entries listed
+in this file. You can also change the settings for individual projects by placing
+a file named either ``.proplotrc`` or ``proplotrc`` in the same directory as
+your python scripts or jupyter sessions, or in an arbitrary parent directory.
+As an example, a ``proplotrc`` file containing the default settings is shown below.
 
 .. include:: _static/proplotrc
    :literal:

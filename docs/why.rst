@@ -720,27 +720,35 @@ See the :ref:`user guide <ug_config>` for details.
 
 .. _why_dotproplot:
 
-The .proplot folder
-===================
+Loading saved settings
+======================
 
 .. rubric:: Limitation
 
-In matplotlib, it can be difficult to design your own colormaps and color
-cycles, and there is no builtin way to save them for future use. It is also
-difficult to get matplotlib to use custom ``.ttc``, ``.ttf``, and ``.otf``
-font files, which may be desirable when you are working on Linux servers with
-limited font selections.
+Matplotlib `~matplotlib.rcParams` settings can be changed using a
+``matplotlibrc`` file in the same directory as your python script. But it
+can be difficult to design and store your own colormaps and color cycles for
+future use. It is also difficult to get matplotlib to use custom ``.ttf`` and
+``.otf`` font files, which may be desirable when you are working on
+Linux servers with limited font selections.
 
 .. rubric:: Solution
 
-ProPlot automatically adds colormaps, color cycles, and font files saved in
-the ``.proplot/cmaps``,  ``.proplot/cycles``, and ``.proplot/fonts`` folders
-in your home directory.  You can save colormaps and color cycles to these
-folders simply by passing ``save=True`` to `~proplot.constructor.Colormap`
-and `~proplot.constructor.Cycle`.  To *manually* load from these folders,
-e.g. if you have added files to these folders but you do not want to restart
-your ipython session, simply call `~proplot.config.register_cmaps`,
-`~proplot.config.register_cycles`, and `~proplot.config.register_fonts`.
+ProPlot settings can be changed using a ``~/.proplotrc`` file in the home
+directory or by adding files named ``.proplotrc`` or ``proplotrc`` to
+either 1) the current directory or 2) any parent directories. This
+can be useful when working in projects with lots of subfolders. See
+the :ref:`user guide <ug_config>` for details.
+
+ProPlot also automatically loads colormaps, color cycles, colors, and font files
+saved in the ``~/.proplot/cmaps``,  ``~/.proplot/cycles``, ``~/.proplot/colors``,
+and ``~/.proplot/fonts``, folders in your home directory.  You can save colormaps and
+color cycles to these folders simply by passing ``save=True`` to
+`~proplot.constructor.Colormap` and `~proplot.constructor.Cycle`.  To *manually*
+load from these folders, e.g. if you have added files to these folders but you do
+not want to restart your ipython session, simply call `~proplot.config.register_cmaps`,
+`~proplot.config.register_cycles`, `~proplot.config.register_colors`,
+or `~proplot.config.register_fonts`.
 
 ..
    As mentioned above, ProPlot introduces the `~proplot.constructor.Colormap`

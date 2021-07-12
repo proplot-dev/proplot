@@ -552,16 +552,22 @@ class RcConfigurator(object):
         Return locations of local proplotrc files in this directory
         and in parent directories.
         """
-        idir = os.getcwd()
+        cdir = os.getcwd()
         paths = []
-        while idir:  # not empty string
-            ipath = os.path.join(idir, '.proplotrc')
-            if os.path.exists(ipath):
-                paths.append(ipath)
-            ndir = os.path.dirname(idir)
-            if ndir == idir:  # root
+        # Loop until we reach root
+        while cdir:
+            # Look for hidden and unhidden proplotrc files
+            path = os.path.join(cdir, 'proplotrc')
+            if os.path.exists(path):
+                paths.append(path)
+            path = os.path.join(cdir, '.proplotrc')
+            if os.path.exists(path):
+                paths.append(path)
+            # Move on to next parent directory
+            ndir = os.path.dirname(cdir)
+            if ndir == cdir:  # root
                 break
-            idir = ndir
+            cdir = ndir
         return paths[::-1]  # sort from decreasing to increasing importantce
 
     @staticmethod
