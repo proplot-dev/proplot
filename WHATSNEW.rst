@@ -79,7 +79,27 @@ ProPlot v0.7.0 (2021-07-##)
 * Remove v0.6.0 renamed classes (e.g. `ProjAxes`) from top-level namespace
   (:commit:`442e6aa6`). These were kept available just for documentation. The renamed
   functions `shade`, `saturate`, and `inline_backend_fmt` will be available until v0.8.
-* Rename :rcraw:`subplots.pad` and :rcraw:`subplots.axpad` to more understandable
+* Change default :rcraw:`savefig.transparent` back to ``False`` (:pr:`252`). Dubious
+  justification for ``True`` in the first place, and makes default PNG proplot figures
+  unreadable wherever "dark mode" is enabled.
+* Rename SciVisColor colormaps from ``Blue1``, ``Blue2``, etc. to plurals ``Blues1``,
+  ``Blues2``, etc. to avoid name conflict with open-color colors (:commit:`8be0473f`).
+  Requesting the old names (case-sensitive) redirects to the new names
+  (:commit:`3f0794d0`). This permits making monochromatic open-color maps with e.g.
+  ``plot.Colormap('blue9')`` and feels more consistent with ColorBrewer convention of
+  using plurals like ``Blues``, ``Reds``, etc.
+* Shuffle various SciVisColor colormap names to make them consistent/succinct. Make
+  ``Browns1`` the most colorful/vibrant one, just like ``Greens1`` and ``Blues1``;
+  split up the ``RedPurple`` maps into ``Reds`` and ``Purples``; and add
+  the ``Yellows`` category from the ``Oranges`` maps (:commit:`8be0473f`). Requesting
+  the old names (case-sensitive) redirects to the new names (:commit:`3f0794d0`).
+* Add :rcraw:`image.discrete` options and `discrete` keyword for toggling
+  `~proplot.colors.DiscreteNorm` application, and disable by default for `imshow`,
+  `matshow`, `spy`, `hexbin`, and `hist2d` plots (:issue:`233`, :commit:`5a7e05e4`).
+  Also make `hexbin` and `hist2d` behavior with ``discrete=True`` more sane by using
+  maximum possible counts for autoscaling, and change `~proplot.colors.DiscreteNorm`
+  argument `extend` to more intuitive name `unique`.
+* Rename :rcraw:`subplots.pad` and :rcraw:`subplots.axpad` to more intuitive
   :rcraw:`subplots.outerpad` and :rcraw:`subplots.innerpad` (:commit:`3c7a33a8`).
   Also rename `~proplot.figure.Figure` keywords.
 * Rename `width` and `height` `~proplot.subplots.subplots` keyword args to `figwidth`
@@ -96,25 +116,6 @@ ProPlot v0.7.0 (2021-07-##)
   passed to `~proplot.contructor.Colormap` when it is called with positional arguments.
 * Rename seldom-used `Figure` argument `fallback_to_cm` to more understandable
   `mathtext_fallback` (:pr:`251`).
-* Change default :rcraw:`savefig.transparent` back to ``False`` (:pr:`252`). Dubious
-  justification for ``True`` in the first place, and makes default PNG proplot figures
-  unreadable wherever "dark mode" is enabled.
-* Disable `DiscreteNorm` by default for a select few plots: currently, just `imshow`
-  and another (:pr:`###`). Also add the :rcraw:`discretenorm` setting to permit
-  enabling or disabling it everywhere.
-* Change `~proplot.colors.DiscreteNorm` argument `extend` to more understandable
-  `unique`. Controls which sides get unique out-of-bounds colors.
-* Rename SciVisColor colormaps from ``Blue1``, ``Blue2``, etc. to plurals ``Blues1``,
-  ``Blues2``, etc. to avoid name conflict with open-color colors (:commit:`8be0473f`).
-  Requesting the old names (case-sensitive) redirects to the new names
-  (:commit:`3f0794d0`). This permits making monochromatic open-color maps with e.g.
-  ``plot.Colormap('blue9')`` and feels more consistent with ColorBrewer convention of
-  using plurals like ``Blues``, ``Reds``, etc.
-* Shuffle various SciVisColor colormap names to make them consistent/succinct. Make
-  ``Browns1`` the most colorful/vibrant one, just like ``Greens1`` and ``Blues1``;
-  split up the ``RedPurple`` maps into ``Reds`` and ``Purples``; and add
-  the ``Yellows`` category from the ``Oranges`` maps (:commit:`8be0473f`). Requesting
-  the old names (case-sensitive) redirects to the new names (:commit:`3f0794d0`).
 * Reduce default :rcraw:`savefig.dpi` to 1000 (:commit:`bfda9c98`). Nature recommends
   1000, Science recommends "more than 300", PNAS recommends 1000--1200. So 1000 is fine.
 * Increase default :rcraw:`colorbar.insetpad` to avoid recurring issue where ticklabels
@@ -137,11 +138,16 @@ ProPlot v0.7.0 (2021-07-##)
   (:commit:`cd440155`). This avoids forcing users to import pyplot inside a proplot
   session (the remaining pyplot functions are related to the "non-object-oriented"
   workflow, which proplot explicitly discourages).
+* Add support for local ``proplotrc`` files in addition to "hidden"
+  ``.proplotrc`` files with leading dot (:commit:`8a989aca`).
 * Add minimal support for "3D" `~matplotlib.mpl_toolkits.mplot3d.Axes3D` axes
   (:issue:`249`). Example usage: ``fig.subplots(proj='3d')``.
 * Add `wequal`, `hequal`, and `equal` options to still use automatic spacing but force
   the tight layout algorithm to make spacings equal (:pr:`215`, :issue:`64`)
   by `Zachary Moon`_.
+* Determine colormap levels using only in-bounds data if the *x* or *y* axis limits
+  were explicitly set (:issue:`209`). Add `inbounds` `~proplot.axes.apply_cmap`
+  keyword and :rcraw:`image.inbounds` setting to control this.
 * Allow calling `proplot.colors.PerceptuallyUniformColormap.from_hsl` by passing
   `hue`, `saturation`, or `luminance` to `~proplot.constructor.Colormap` without
   any positional arguments (:commit:`3d8e7dd0`).
@@ -286,11 +292,12 @@ ProPlot v0.7.0 (2021-07-##)
   `~matplotlib.axes.Axes.scatter` colorbars (:issue:`206`).
 * Fix issue where `~matplotlib.axes.Axes.hexbin` ignores `vmin` and `vmax`
   keywords (:issue:`250`).
-* Fix issue where cannot have datetime labels on `area` plots (:issue:`255`).
+* Fix issue where parametric plot *x* axis is reversed (:commit:`3bde6c47`).
 * Fix issue where e.g. `ax.area(x, 0, y2, negpos=True` has positive colors
   below x-axis and negative above x-axis (:pr:`258`).
 * Fix issue where "negpos" plots ignore `edgecolor` because they pass
   `color` rather than `facecolor` to plotting commands.
+* Fix issue where cannot have datetime labels on `area` plots (:issue:`255`).
 * Fix issue where default orientation of `barh` vertical axis is reversed
   (:commit:`258`).
 * Fix issue where `hist` with `xarray.DataArray` or `pandas.Dataframe` input causes
