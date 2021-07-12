@@ -668,6 +668,8 @@ def units(value, dest='in', axes=None, figure=None, width=True):
         like ``'123.456unit'``, where the number is the magnitude and
         ``'unit'`` is one of the following.
 
+        .. _units_table ::
+
         =========  =====================================================
         Key        Description
         =========  =====================================================
