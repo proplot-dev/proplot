@@ -130,17 +130,18 @@ The proplotrc file
 ------------------
 
 When you import ProPlot for the first time, a ``.proplotrc`` file is generated and
-placed in the home directory. To update this file after a version change, simply
-remove it, then import ProPlot again. This file is just like the `matplotlibrc file
+placed in your home directory. To update ``.proplotrc`` after a version change, simply
+remove it and restart your python session. This file is just like `matplotlibrc
 <https://matplotlib.org/stable/tutorials/introductory/customizing.html#customizing-with-matplotlibrc-files>`__,
-but for changing both ProPlot *and* matplotlib settings. The syntax is basically
-the same as the ``matplotlibrc`` syntax.
+except it controls both matplotlib *and* ProPlot settings. The syntax is essentially
+the same as matplotlibrc.
 
-To change the default global settings, simply edit and uncomment the entries listed
-in this file. You can also change the settings for individual projects by placing
-a file named either ``.proplotrc`` or ``proplotrc`` in the same directory as
-your python scripts or jupyter sessions, or in an arbitrary parent directory.
-As an example, a ``proplotrc`` file containing the default settings is shown below.
+To change the global `~proplot.config.rc` settings, edit and uncomment the entries
+listed in the proplotrc file in your home directory. To change the settings
+for a specific project, place a file named either ``.proplotrc`` or ``proplotrc``
+in the same directory as your python script or jupyter session, or in an arbitrary
+parent directory. As an example, a proplotrc file containing the default settings
+is shown below.
 
 .. include:: _static/proplotrc
    :literal:
