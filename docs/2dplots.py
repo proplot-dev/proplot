@@ -145,7 +145,7 @@ df = pd.DataFrame(
     (data - 0.4).cumsum(axis=0).cumsum(axis=1),
     index=list('JFMAMJJASOND'),
 )
-df.name = 'temporal data'
+df.name = 'temperature (\N{DEGREE SIGN}C)'
 df.index.name = 'month'
 df.columns.name = 'variable (units)'
 
@@ -173,8 +173,8 @@ axs[1].format(xtickminor=False, yreverse=True)
 # It is often useful to create ProPlot colormaps on-the-fly, without
 # explicitly calling the `~proplot.constructor.Colormap`
 # :ref:`constructor function <why_constructor>`.
-# You can do so using the `cmap` and `cmap_kw` arguments, available with any
-# plotting method wrapped by `~proplot.axes.apply_cmap`. `cmap` and `cmap_kw`
+# You can do so using the `cmap` and `cmap_kw` arguments, available with
+# plotting methods wrapped by `~proplot.axes.apply_cmap`. `cmap` and `cmap_kw`
 # are passed to `~proplot.constructor.Colormap` and the resulting colormap is
 # used for the plot. For example, to create and apply a monochromatic colormap,
 # you can simply use ``cmap='color_name'``.
@@ -182,9 +182,24 @@ axs[1].format(xtickminor=False, yreverse=True)
 # The `~proplot.axes.apply_cmap` wrapper also
 # adds the `norm` and `norm_kw` arguments. They are passed to the
 # `~proplot.constructor.Norm` :ref:`constructor function <why_constructor>`,
-# and the resulting normalizer is used for the plot. For more information on colormaps
-# and normalizers, see the :ref:`colormaps section <ug_cmaps>` and `this matplotlib
+# and the resulting normalizer is used for the plot. By default,
+# `~proplot.axes.apply_cmap` selects the colormap normalization range based on
+# the data. The range can be set explicitly by passing the usual `vmin` and `vmax`
+# keywords to the plotting command (see the :ref:`next section <ug_discrete>` for details).
+#
+# For more information on colormaps and normalizers, see the
+# :ref:`colormaps section <ug_cmaps>` and `this matplotlib
 # tutorial <https://matplotlib.org/tutorials/colors/colormapnorms.html>`__.
+#
+# .. note:
+#
+#     By default, when `~proplot.axes.apply_cmap` selects the colormap normalization
+#     range, it ignores data outside of the *x* or *y* axis limits if they
+#     were previously changed by `~matplotlib.axes.Axes.set_xlim` or
+#     `~matplotlib.axes.Axes.set_ylim` (or, equivalently, by passing `xlim` or `ylim`
+#     to `proplot.axes.CartesianAxes.format`). To disable this feature, pass
+#     ``inbounds=False`` to the plotting command or set :rcraw:`image.inbounds`
+#     to ``False``.
 
 # %%
 import proplot as pplt

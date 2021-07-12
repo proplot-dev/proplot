@@ -134,7 +134,7 @@ import numpy as np
 N = 20
 state = np.random.RandomState(51423)
 x, y = np.arange(10), np.arange(10)
-data = state.rand(10, 10)
+data = state.rand(10, 10).cumsum(axis=0)
 
 # Plot data
 fig, ax = pplt.subplots(refwidth=3)
@@ -154,4 +154,4 @@ iax.format(
     xlim=(2, 4), ylim=(2, 4), color='red7',
     linewidth=1.5, ticklabelweight='bold'
 )
-iax.pcolormesh(data, cmap='Grays', levels=N)
+iax.pcolormesh(data, cmap='Grays', levels=N, inbounds=False)

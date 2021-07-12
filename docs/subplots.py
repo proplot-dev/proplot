@@ -19,6 +19,67 @@
 # ========
 #
 # %% [raw] raw_mimetype="text/restructuredtext"
+# .. _ug_abc:
+#
+# A-b-c labels
+# ------------
+#
+# ProPlot can be used to add "a-b-c" labels to subplots. This is possible
+# because `~proplot.ui.subplots` assigns unique `~proplot.axes.Axes.number`\ s
+# to each subplot. If you :ref:`passed an array <ug_intro>` to
+# `~proplot.ui.subplots`, the subplot numbers correspond to the numbers in
+# the array. If you used the `ncols` and `nrows` keyword arguments, the number
+# order is row-major by default but can be switched to column-major by passing
+# ``order='F'`` to `~proplot.ui.subplots`. The number order also determines the
+# subplot order in the `~proplot.ui.SubplotsContainer` returned by
+# `~proplot.ui.subplots`.
+#
+# To turn on "a-b-c" labels, set :rcraw:`abc` to ``True`` or pass
+# ``abc=True`` to `~proplot.axes.Axes.format` (see
+# :ref:`the format command <ug_format>` for details). To change the label
+# style, modify :rcraw:`abc.style` or pass e.g. ``abcstyle='A.'`` to
+# `~proplot.axes.Axes.format`. You can also modify the "a-b-c" label
+# location, weight, and size with the :rcraw:`abc.loc`, :rcraw:`abc.weight`,
+# and :rcraw:`abc.size` settings. Also note that if the an "a-b-c" label
+# and title are in the same position, they are automatically offset
+# away from each other.
+#
+# .. note::
+#
+#     "Inner" a-b-c labels and titles are surrounded with a white border when
+#     :rcraw:`abc.border` and :rcraw:`title.border` are ``True`` (the default).
+#     White boxes can be used instead by setting :rcraw:`abc.bbox` and
+#     :rcraw:`title.bbox` to ``True``. These options help labels stand
+#     out against plotted content. These "borders" and "boxes"
+#     can also be used by passing ``border=True`` or ``bbox=True`` to
+#     `~matplotlib.axes.Axes.text`, which ProPlot wraps with
+#     `~proplot.axes.text_extras`. See the :ref:`plotting sections <ug_1dplots>`
+#     for details on wrapper functions.
+
+# %%
+import proplot as pplt
+fig, axs = pplt.subplots(ncols=3, nrows=3, space=0, refwidth='10em')
+axs.format(
+    abc=True, abcloc='ul', abcstyle='A.',
+    xticks='null', yticks='null', facecolor='gray5',
+    xlabel='x axis', ylabel='y axis',
+    suptitle='Automatic offsets, borders, and boxes',
+)
+axs[:3].format(abcloc='l', titleloc='l', title='Title')
+axs[-3:].format(abcbbox=True)  # also disables abcborder
+# axs[:-3].format(abcborder=True)  # this is already the default
+
+# %%
+import proplot as pplt
+fig, axs = pplt.subplots(nrows=8, ncols=8, refwidth=0.7, space=0)
+axs.format(
+    abc=True, abcloc='ur',
+    xlabel='x axis', ylabel='y axis', xticks=[], yticks=[],
+    suptitle='Subplot labels demo'
+)
+
+
+# %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_autosize:
 #
 # Automatic sizing
@@ -79,12 +140,12 @@
 import proplot as pplt
 import numpy as np
 
-# Auto sized grid of cartopy projections
-fig, axs = pplt.subplots(ncols=2, nrows=3, proj='robin')
-axs.format(
-    land=True, landcolor='k',
-    suptitle='Auto figure sizing with grid of cartopy projections'
-)
+# # Auto sized grid of cartopy projections
+# fig, axs = pplt.subplots(ncols=2, nrows=3, proj='robin')
+# axs.format(
+#     land=True, landcolor='k',
+#     suptitle='Auto figure sizing with grid of cartopy projections'
+# )
 
 # Auto sized grid of images
 state = np.random.RandomState(51423)
@@ -101,7 +162,7 @@ import proplot as pplt
 
 # Change the reference subplot width
 suptitle = 'Effect of subplot width on figure size'
-for refwidth in ('4cm', '6cm'):
+for refwidth in ('3cm', '5cm'):
     fig, axs = pplt.subplots(ncols=2, refwidth=refwidth,)
     axs[0].format(
         suptitle=suptitle,
@@ -110,8 +171,8 @@ for refwidth in ('4cm', '6cm'):
     )
 
 # Change the reference subplot aspect ratio
-for refaspect in (1, 1.5):
-    fig, axs = pplt.subplots(ncols=2, nrows=2, refwidth=1.6, refaspect=refaspect)
+for refaspect in (1, 2):
+    fig, axs = pplt.subplots(ncols=2, refwidth=1.6, refaspect=refaspect)
     axs[0].format(
         suptitle='Effect of subplot aspect ratio on figure size',
         title=f'refaspect = {refaspect}', titleweight='bold',
@@ -124,8 +185,7 @@ import proplot as pplt
 # Change the reference subplot in presence of unequal width/height ratios
 for ref in (1, 2):
     fig, axs = pplt.subplots(
-        ref=ref, nrows=3, ncols=3, wratios=(3, 2, 2),
-        refwidth=1.1,
+        ncols=3, wratios=(3, 2, 2), ref=ref, refwidth=1.1,
     )
     axs[ref - 1].format(
         suptitle='Effect of reference subplot on figure size',
@@ -185,7 +245,6 @@ fig, axs = pplt.subplots(nrows=3, ncols=3, refwidth=1.1, share=0)
 
 # Formatting that stress-tests the algorithm
 axs[1].format(xlabel='xlabel\nxlabel\nxlabel', ylabel='ylabel\nylabel\nylabel')
-axs[3:6:2].format(title='title\ntitle\ntitle')
 axs.format(
     toplabels=('Column 1', 'Column 2', 'Column 3'),
     leftlabels=('Row 1', 'Row 2', 'Row 3'),
@@ -295,67 +354,6 @@ for mode in (0, 1):
         abc=True, abcloc='ul',
         grid=False, xticks=25, yticks=5
     )
-
-
-# %% [raw] raw_mimetype="text/restructuredtext"
-# .. _ug_abc:
-#
-# A-b-c labels
-# ------------
-#
-# ProPlot can be used to add "a-b-c" labels to subplots. This is possible
-# because `~proplot.ui.subplots` assigns unique `~proplot.axes.Axes.number`\ s
-# to each subplot. If you :ref:`passed an array <ug_intro>` to
-# `~proplot.ui.subplots`, the subplot numbers correspond to the numbers in
-# the array. If you used the `ncols` and `nrows` keyword arguments, the number
-# order is row-major by default but can be switched to column-major by passing
-# ``order='F'`` to `~proplot.ui.subplots`. The number order also determines the
-# subplot order in the `~proplot.ui.SubplotsContainer` returned by
-# `~proplot.ui.subplots`.
-#
-# To turn on "a-b-c" labels, set :rcraw:`abc` to ``True`` or pass
-# ``abc=True`` to `~proplot.axes.Axes.format` (see
-# :ref:`the format command <ug_format>` for details). To change the label
-# style, modify :rcraw:`abc.style` or pass e.g. ``abcstyle='A.'`` to
-# `~proplot.axes.Axes.format`. You can also modify the "a-b-c" label
-# location, weight, and size with the :rcraw:`abc.loc`, :rcraw:`abc.weight`,
-# and :rcraw:`abc.size` settings. Also note that if the an "a-b-c" label
-# and title are in the same position, they are automatically offset
-# away from each other.
-#
-# .. note::
-#
-#     "Inner" a-b-c labels and titles are surrounded with a white border when
-#     :rcraw:`abc.border` and :rcraw:`title.border` are ``True`` (the default).
-#     White boxes can be used instead by setting :rcraw:`abc.bbox` and
-#     :rcraw:`title.bbox` to ``True``. These options help labels stand
-#     out against plotted content. These "borders" and "boxes"
-#     can also be used by passing ``border=True`` or ``bbox=True`` to
-#     `~matplotlib.axes.Axes.text`, which ProPlot wraps with
-#     `~proplot.axes.text_extras`. See the :ref:`plotting sections <ug_1dplots>`
-#     for details on wrapper functions.
-
-# %%
-import proplot as pplt
-fig, axs = pplt.subplots(ncols=3, nrows=3, space=0, refwidth='10em')
-axs.format(
-    abc=True, abcloc='ul', abcstyle='A.',
-    xticks='null', yticks='null', facecolor='gray5',
-    xlabel='x axis', ylabel='y axis',
-    suptitle='Automatic offsets, borders, and boxes',
-)
-axs[:3].format(abcloc='l', titleloc='l', title='Title')
-axs[-3:].format(abcbbox=True)  # also disables abcborder
-# axs[:-3].format(abcborder=True)  # this is already the default
-
-# %%
-import proplot as pplt
-fig, axs = pplt.subplots(nrows=8, ncols=8, refwidth=0.7, space=0)
-axs.format(
-    abc=True, abcloc='ur',
-    xlabel='x axis', ylabel='y axis', xticks=[], yticks=[],
-    suptitle='Subplot labels demo'
-)
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"

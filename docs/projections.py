@@ -258,7 +258,7 @@ state = np.random.RandomState(51423)
 data = state.rand(len(lat), len(lon))
 
 # Plot data both without and with globe=True
-for globe in (False, True,):
+for globe in (False, True):
     string = 'with' if globe else 'without'
     fig, axs = pplt.subplots(
         ncols=2, nrows=2, refwidth=2.5,

@@ -327,15 +327,15 @@ axs.format(suptitle='Scatter plot demo')
 
 # Vertical vs. horizontal
 ax = axs[0]
-ax.format(title='Dependent x-axis')
+ax.set_title('Dependent x-axis')
 ax.scatter(data, cycle='538')
 ax = axs[1]
-ax.format(title='Dependent y-axis')
+ax.set_title('Dependent y-axis')
 ax.scatterx(data, cycle='538')
 
 # Scatter plot with property cycler
 ax = axs[2]
-ax.format(title='With property cycle')
+ax.set_title('With property cycle')
 obj = ax.scatter(
     x, data, legend='ul', legend_kw={'ncols': 2},
     cycle='Set2', cycle_kw={'m': ['x', 'o', 'x', 'o'], 'ms': [5, 10, 20, 30]}
@@ -343,13 +343,13 @@ obj = ax.scatter(
 
 # Scatter plot with colormap
 ax = axs[3]
-ax.format(title='With colormap')
+ax.set_title('With colormap')
 data = state.rand(2, 100)
 obj = ax.scatter(
     *data,
     s=state.rand(100), smin=3, smax=60, marker='o',
-    c=data.sum(axis=0), cmap='dark red', vmin=0, vmax=2,
-    colorbar='lr', colorbar_kw={'label': 'label', 'locator': 0.5},
+    c=data.sum(axis=0), cmap='dark red',
+    colorbar='lr', colorbar_kw={'label': 'label'},
 )
 axs.format(xlabel='xlabel', ylabel='ylabel')
 
@@ -406,8 +406,8 @@ fig, axs = pplt.subplots(nrows=2, refaspect=2, refwidth=4.8, share=0, hratios=(3
 # Side-by-side bars
 ax = axs[0]
 obj = ax.bar(
-    data, cycle='Reds', colorbar='ul',
-    edgecolor='red9', colorbar_kw={'frameon': False}
+    data, cycle='Reds', edgecolor='red9',
+    colorbar='ul', colorbar_kw={'frameon': False}
 )
 ax.format(
     xlocator=1, xminorlocator=0.5, ytickminor=False,
@@ -417,8 +417,8 @@ ax.format(
 # Stacked bars
 ax = axs[1]
 obj = ax.barh(
-    data.iloc[::-1, :], cycle='Blues',
-    legend='lr', edgecolor='blue9', stack=True,
+    data.iloc[::-1, :], cycle='Blues', edgecolor='blue9',
+    legend='lr', stack=True,
 )
 ax.format(title='Stacked')
 axs.format(grid=False)
