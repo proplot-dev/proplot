@@ -80,6 +80,8 @@ ProPlot v0.7.1 (2021-##-##)
   is ignored (:commit:`70a8b87d`).
 * Fix issue where `~proplot.axes.Axes.parametric` ignores `interp` when
   selecting default colormap levels (:commit:`152a3a81`).
+* Fix issue where a-b-c labels are removed in presence of ``'top'`` panels
+  with ``titleabove=True`` (:commit:`7873d5e0`).
 
 
 ProPlot v0.7.0 (2021-07-11)
