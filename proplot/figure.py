@@ -852,7 +852,7 @@ class Figure(mfigure.Figure):
         if kwargs:
             self._suptitle.update(kwargs)
 
-    def _update_subplot_labels(self, ax, side, labels, **kwargs):
+    def _update_super_labels(self, ax, side, labels, **kwargs):
         """
         Assign the side labels and update settings.
         """

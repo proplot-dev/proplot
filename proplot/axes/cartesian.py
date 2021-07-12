@@ -440,19 +440,108 @@ class CartesianAxes(base.Axes):
             self.yaxis.major = sharey.yaxis.major
             self.yaxis.minor = sharey.yaxis.minor
 
-    def _update_axis_labels(self, x='x', **kwargs):
+    def _update_bounds(self, x, fixticks=False):
+        """
+        Ensure there are no out-of-bounds labels. Mostly a brute-force version of
+        `~matplotlib.axis.Axis.set_smart_bounds` (which I couldn't get to work).
+        """
+        # NOTE: Previously triggered this every time FixedFormatter was found
+        # on axis but 1) that seems heavy-handed + strange and 2) internal
+        # application of FixedFormatter by boxplot resulted in subsequent format()
+        # successfully calling this and messing up the ticks for some reason.
+        # So avoid using this when possible, and try to make behavior consistent
+        # by cacheing the locators before we use them for ticks.
+        axis = getattr(self, x + 'axis')
+        sides = ('bottom', 'top') if x == 'x' else ('left', 'right')
+        bounds = tuple(tuple(self.spines[side].get_bounds() or ()) for side in sides)
+        if fixticks or any(bounds) or axis.get_scale() == 'cutoff':
+            # Major locator
+            lim = bounds[0] or bounds[1] or getattr(self, 'get_' + x + 'lim')()
+            locator = getattr(axis, '_major_locator_cached', None)
+            if locator is None:
+                locator = axis._major_locator_cached = axis.get_major_locator()
+            locator = constructor.Locator([x for x in locator() if lim[0] <= x <= lim[1]])  # noqa: E501
+            axis.set_major_locator(locator)
+            # Minor locator
+            locator = getattr(axis, '_minor_locator_cached', None)
+            if locator is None:
+                locator = axis._minor_locator_cached = axis.get_minor_locator()
+            locator = constructor.Locator([x for x in locator() if lim[0] <= x <= lim[1]])  # noqa: E501
+            axis.set_minor_locator(locator)
+
+    def _update_formatter(
+        self, x, formatter=None, *, formatter_kw=None,
+        tickrange=None, wraprange=None,
+    ):
+        """
+        Update the axis formatter. Passes `formatter` through `Formatter` with kwargs.
+        """
+        # Is this a date axis?
+        # NOTE: Make sure to get this *after* lims set!
+        # See: https://matplotlib.org/api/units_api.html
+        # And: https://matplotlib.org/api/dates_api.html
+        # Also see: https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axis.py # noqa
+        # The axis_date() method just applies DateConverter
+        axis = getattr(self, x + 'axis')
+        date = isinstance(axis.converter, mdates.DateConverter)
+
+        # Major formatter
+        # NOTE: The only reliable way to disable ticks labels and then
+        # restore them is by messing with the *formatter*, rather than
+        # setting labelleft=False, labelright=False, etc.
+        formatter_kw = formatter_kw or {}
+        formatter_kw = formatter_kw.copy()
+        if formatter is not None or tickrange is not None or wraprange is not None:
+            # Tick range
+            if tickrange is not None or wraprange is not None:
+                if formatter not in (None, 'auto'):
+                    warnings._warn_proplot(
+                        'The tickrange and autorange features require '
+                        'proplot.AutoFormatter formatter. Overriding the input.'
+                    )
+                formatter = 'auto'
+                if tickrange is not None:
+                    formatter_kw.setdefault('tickrange', tickrange)
+                if wraprange is not None:
+                    formatter_kw.setdefault('wraprange', wraprange)
+
+            # Set the formatter
+            # Note some formatters require 'locator' as keyword arg
+            if formatter in ('date', 'concise'):
+                locator = axis.get_major_locator()
+                formatter_kw.setdefault('locator', locator)
+            formatter = constructor.Formatter(formatter, date=date, **formatter_kw)
+            axis.set_major_formatter(formatter)
+
+    def _update_labels(self, x, *, label=None, color=None, **kwargs):
         """
         Apply axis labels to the relevant shared axis. If spanning labels are toggled
         this keeps the labels synced for all subplots in the same row or column. Label
         positions will be adjusted at draw-time with figure._align_axislabels.
         """
-        if x not in 'xy':
+        # First get settings
+        kw = rc.fill(
+            {
+                'color': 'axes.labelcolor',
+                'weight': 'axes.labelweight',
+                'fontsize': 'axes.labelsize',
+                'fontfamily': 'font.family',
+            },
+            context=True,
+        )
+        if label is not None:
+            kw['text'] = label
+        if color:
+            kw['color'] = color
+        kw.update(kwargs)
+        if not kw:
             return
 
         # Get axes in 3 step process
         # 1. Walk to parent if it is a main axes
         # 2. Get spanning main axes in this row or column (ignore short panel edges)
         # 3. Walk to parent if it exists (may be a panel long edge)
+        # NOTE: Initially we keep spanning labels off
         # NOTE: Axis sharing between "main" axes is only ever one level deep.
         # NOTE: Critical to apply labels to *shared* axes attributes rather
         # than testing extents or we end up sharing labels with twin axes.
@@ -473,7 +562,271 @@ class CartesianAxes(base.Axes):
         for ax in axs:
             ax = getattr(ax, '_share' + x) or ax  # defer to panel
             axis = getattr(ax, x + 'axis')
-            axis.label.update(kwargs)
+            axis.label.update(kw)
+
+    def _update_locators(
+        self, x, locator=None, minorlocator=None, *,
+        tickminor=None, locator_kw=None, minorlocator_kw=None,
+    ):
+        """
+        Update the locators. Requires `Locator` instances.
+        """
+        # Major locator
+        # NOTE: Parts of API (dualxy) rely on minor tick toggling preserving the
+        # isDefault_minloc setting. In future should override mpl minorticks_on()
+        # NOTE: Unlike matplotlib when "turning on" minor ticks we *always* use the
+        # scale default, thanks to scale classes refactoring with _ScaleBase.
+        axis = getattr(self, x + 'axis')
+        locator_kw = locator_kw or {}
+        if locator is not None:
+            locator = constructor.Locator(locator, **locator_kw)
+        if locator is not None:
+            axis.set_major_locator(locator)
+            if isinstance(locator, mticker.IndexLocator):
+                tickminor = False  # 'index' minor ticks make no sense
+
+        # Minor locator
+        minorlocator_kw = minorlocator_kw or {}
+        if minorlocator is not None:
+            minorlocator = constructor.Locator(minorlocator, **minorlocator_kw)
+        if tickminor or minorlocator:
+            isdefault = minorlocator is None
+            if isdefault:
+                minorlocator = getattr(axis._scale, '_default_minor_locator', None)
+                if not minorlocator:
+                    minorlocator = constructor.Locator('minor')
+            axis.set_minor_locator(minorlocator)
+            axis.isDefault_minloc = isdefault
+        elif tickminor is not None and not tickminor:
+            # NOTE: Generally if you *enable* minor ticks on a dual axis, want to
+            # allow FuncScale updates to change the minor tick locators. If you
+            # *disable* minor ticks, do not want FuncScale applications to turn them
+            # on. So we allow below to set isDefault_minloc to False.
+            axis.set_minor_locator(constructor.Locator('null'))
+
+    def _update_limits(self, x, *, min_=None, max_=None, lim=None, reverse=None):
+        """
+        Update the axis limits.
+        """
+        # Set limits for just one side or both at once
+        axis = getattr(self, x + 'axis')
+        if min_ is not None or max_ is not None:
+            if lim is not None:
+                warnings._warn_proplot(
+                    f'Overriding {x}lim={lim!r} '
+                    f'with {x}min={min_!r} and {x}max={max_!r}.'
+                )
+            lim = (min_, max_)
+        if lim is not None:
+            getattr(self, 'set_' + x + 'lim')(lim)
+
+        # Reverse direction
+        # NOTE: 3.1+ has axis.set_inverted(), below is from source code
+        if reverse is not None:
+            lo, hi = axis.get_view_interval()
+            if reverse:
+                lim = (max(lo, hi), min(lo, hi))
+            else:
+                lim = (min(lo, hi), max(lo, hi))
+            axis.set_view_interval(*lim, ignore=True)
+
+    def _update_spines(self, x, *, loc='both', bounds=None, color=None, linewidth=None):
+        """
+        Update the spine settings.
+        """
+        # Get rc properties
+        kw = rc.fill(
+            {
+                'color': 'axes.edgecolor',
+                'linewidth': 'axes.linewidth',
+            },
+            context=True,
+        )
+        if color is not None:
+            kw['color'] = color
+        if linewidth is not None:
+            kw['linewidth'] = linewidth
+
+        # Iterate over spines associated with this axis
+        sides = ('bottom', 'top') if x == 'x' else ('left', 'right')
+        for side in sides:
+            # Line properties. Override if we're settings spine bounds
+            # In this case just have spines on edges by default
+            spine = self.spines[side]
+            if bounds is not None and loc not in sides:
+                loc = sides[0]
+
+            # Eliminate sides
+            if loc == 'neither':
+                spine.set_visible(False)
+            elif loc == 'both':
+                spine.set_visible(True)
+            elif loc in sides:  # make relevant spine visible
+                spine.set_visible(side == loc)
+            # Special spine location, usually 'zero', 'center', or tuple with
+            # (units, location) where 'units' can be 'axes', 'data', or 'outward'
+            elif loc is not None:
+                if side == sides[1]:
+                    spine.set_visible(False)
+                else:
+                    spine.set_visible(True)
+                    try:
+                        spine.set_position(loc)
+                    except ValueError:
+                        raise ValueError(
+                            f'Invalid {x} spine location {loc!r}. '
+                            'Options are: '
+                            + ', '.join(map(
+                                repr, (*sides, 'both', 'neither')
+                            )) + '.'
+                        )
+
+            # Apply spine bounds
+            if bounds is not None and spine.get_visible():
+                spine.set_bounds(*bounds)
+            spine.update(kw)
+
+    def _update_ticks(
+        self, x, *, grid=None, gridminor=None,
+        color=None, gridcolor=None, ticklen=None,
+        tickloc=None, ticklabelloc=None, labelloc=None,
+        tickdir=None, ticklabeldir=None, rotation=None,
+    ):
+        """
+        Update the ticks and gridlines.
+        """
+        # Initial stuff
+        axis = getattr(self, x + 'axis')
+        sides = ('bottom', 'top') if x == 'x' else ('left', 'right')
+        sides_active = tuple(side for side in sides if self.spines[side].get_visible())
+
+        # Tick and grid settings for major and minor ticks separately
+        # Override is just a "new default", but user can override this
+        for which, igrid in zip(('major', 'minor'), (grid, gridminor)):
+            # Tick properties
+            # NOTE: This loads xtick.major.size, xtick.major.width,
+            # xtick.major.pad, xtick.major.bottom, and xtick.major.top
+            # For all the x/y major/minor tick types
+            kwticks = rc.category(x + 'tick.' + which, context=True)
+            if kwticks is None:
+                kwticks = {}
+            else:
+                kwticks.pop('visible', None)  # invalid setting
+            if ticklen is not None:
+                kwticks['size'] = units(ticklen, 'pt')
+                if which == 'minor':
+                    kwticks['size'] *= rc['tick.lenratio']
+
+            # Grid style and toggling
+            name = 'grid' if which == 'major' else 'gridminor'
+            if igrid is not None:
+                axis.grid(igrid, which=which)
+            kwgrid = rc.fill(
+                {
+                    'grid_color': name + '.color',
+                    'grid_alpha': name + '.alpha',
+                    'grid_linewidth': name + '.linewidth',
+                    'grid_linestyle': name + '.linestyle',
+                },
+                context=True,
+            )
+            if gridcolor is not None:  # override for specific x/y axes
+                kwgrid['grid_color'] = gridcolor
+            axis.set_tick_params(which=which, **kwgrid, **kwticks)
+
+        # Tick and ticklabel properties that apply equally for major/minor lines
+        # Weird issue causes set_tick_params to reset/forget grid is turned on if
+        # you access tick.gridOn directly, instead of passing through tick_params.
+        # Since gridOn is undocumented feature, don't use it. So calling _format_axes
+        # a second time will remove the lines. First determine tick sides, avoiding
+        # situation where we draw ticks on top of invisible spine.
+        kw = {}
+        loc2sides = {
+            None: None,
+            'both': sides,
+            'none': (),
+            'neither': (),
+        }
+        if tickloc not in sides and any(self.spines[_].get_bounds() is not None for _ in sides):  # noqa: E501
+            tickloc = sides[0]  # override to just one side
+        ticklocs = loc2sides.get(tickloc, (tickloc,))
+        if ticklocs is not None:
+            kw.update({side: side in ticklocs for side in sides})
+        kw.update({side: False for side in sides if side not in sides_active})
+
+        # Tick label sides
+        # Will override to make sure only appear where ticks are
+        ticklabellocs = loc2sides.get(ticklabelloc, (ticklabelloc,))
+        if ticklabellocs is not None:
+            kw.update({'label' + side: (side in ticklabellocs) for side in sides})
+        kw.update(
+            {
+                'label' + side: False for side in sides
+                if side not in sides_active
+                or (ticklocs is not None and side not in ticklocs)
+            }
+        )
+
+        # The axis label side
+        if labelloc is None:
+            if ticklocs is not None:
+                options = tuple(
+                    side for side in sides if side in ticklocs and side in sides_active
+                )
+                if len(options) == 1:
+                    labelloc = options[0]
+        elif labelloc not in sides:
+            raise ValueError(
+                f'Got labelloc {labelloc!r}, valid options are '
+                + ', '.join(map(repr, sides)) + '.'
+            )
+
+        # Apply
+        axis.set_tick_params(which='both', **kw)
+        if labelloc is not None:
+            axis.set_label_position(labelloc)
+
+        # Tick label settings
+        kw = rc.fill(
+            {
+                'labelcolor': 'tick.labelcolor',  # new props
+                'labelsize': 'tick.labelsize',
+                'color': x + 'tick.color',
+            },
+            context=True,
+        )
+        if color:
+            kw['color'] = color
+            kw['labelcolor'] = color
+
+        # Tick label direction and rotation
+        if tickdir == 'in':  # ticklabels should be much closer
+            kw['pad'] = 1.0
+        if ticklabeldir == 'in':  # put tick labels inside the plot
+            tickdir = 'in'
+            kw['pad'] = -rc[f'{x}tick.major.size'] - rc[f'{x}tick.major.pad']
+            kw['pad'] -= rc._scale_font(rc[f'{x}tick.labelsize'])
+        if tickdir is not None:
+            kw['direction'] = tickdir
+        axis.set_tick_params(which='both', **kw)
+
+        # Settings that can't be controlled by set_tick_params
+        # Also set rotation and alignment here
+        kw = rc.fill(
+            {
+                'fontfamily': 'font.family',
+                'weight': 'tick.labelweight'
+            },
+            context=True,
+        )
+        if rotation is not None:
+            kw = {'rotation': rotation}
+            if x == 'x':
+                self._datex_rotated = True
+                if rotation not in (0, 90, -90):
+                    kw['ha'] = ('right' if rotation > 0 else 'left')
+        for t in axis.get_ticklabels():
+            t.update(kw)
 
     @docstring.add_snippets
     def format(
@@ -755,8 +1108,8 @@ class CartesianAxes(base.Axes):
             # Sensible defaults for spine, tick, tick label, and label locs
             # NOTE: Allow tick labels to be present without ticks! User may
             # want this sometimes! Same goes for spines!
-            xspineloc = _not_none(xloc=xloc, xspineloc=xspineloc,)
-            yspineloc = _not_none(yloc=yloc, yspineloc=yspineloc,)
+            xspineloc = _not_none(xloc=xloc, xspineloc=xspineloc)
+            yspineloc = _not_none(yloc=yloc, yspineloc=yspineloc)
             xtickloc = _not_none(xtickloc, xspineloc, _parse_rcloc('x', 'xtick'))
             ytickloc = _not_none(ytickloc, yspineloc, _parse_rcloc('y', 'ytick'))
             xspineloc = _not_none(xspineloc, _parse_rcloc('x', 'axes.spines'))
@@ -824,259 +1177,33 @@ class CartesianAxes(base.Axes):
                     getattr(self, 'set_' + x + 'scale')(scale)
 
                 # Axis limits
-                # NOTE: 3.1+ has axis.set_inverted(), below is from source code
-                # NOTE: Critical to apply axis limits first in case axis scale
-                # is incompatible with current limits.
-                if min_ is not None or max_ is not None:
-                    if lim is not None:
-                        warnings._warn_proplot(
-                            f'Overriding {x}lim={lim!r} '
-                            f'with {x}min={min_!r} and {x}max={max_!r}.'
-                        )
-                    lim = (min_, max_)
-                if lim is not None:
-                    getattr(self, 'set_' + x + 'lim')(lim)
-                if reverse is not None:
-                    lo, hi = axis.get_view_interval()
-                    if reverse:
-                        lim = (max(lo, hi), min(lo, hi))
-                    else:
-                        lim = (min(lo, hi), max(lo, hi))
-                    axis.set_view_interval(*lim, ignore=True)
-
-                # Is this a date axis?
-                # NOTE: Make sure to get this *after* lims set!
-                # See: https://matplotlib.org/api/units_api.html
-                # And: https://matplotlib.org/api/dates_api.html
-                # Also see: https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/axis.py # noqa
-                # The axis_date() method just applies DateConverter
-                date = isinstance(axis.converter, mdates.DateConverter)
-
-                # Fix spines
-                kw = rc.fill(
-                    {
-                        'color': 'axes.edgecolor',
-                        'linewidth': 'axes.linewidth',
-                    },
-                    context=True,
+                self._update_limits(
+                    x, min_=min_, max_=max_, lim=lim, reverse=reverse
                 )
-                if color is not None:
-                    kw['color'] = color
-                if linewidth is not None:
-                    kw['linewidth'] = linewidth
-                sides = ('bottom', 'top') if x == 'x' else ('left', 'right')
-                spines = [self.spines[side] for side in sides]
-                for spine, side in zip(spines, sides):
-                    # Line properties. Override if we're settings spine bounds
-                    # In this case just have spines on edges by default
-                    if bounds is not None and spineloc not in sides:
-                        spineloc = sides[0]
-
-                    # Eliminate sides
-                    if spineloc == 'neither':
-                        spine.set_visible(False)
-                    elif spineloc == 'both':
-                        spine.set_visible(True)
-                    elif spineloc in sides:  # make relevant spine visible
-                        b = True if side == spineloc else False
-                        spine.set_visible(b)
-                    elif spineloc is not None:
-                        # Special spine location, usually 'zero', 'center',
-                        # or tuple with (units, location) where 'units' can
-                        # be 'axes', 'data', or 'outward'.
-                        if side == sides[1]:
-                            spine.set_visible(False)
-                        else:
-                            spine.set_visible(True)
-                            try:
-                                spine.set_position(spineloc)
-                            except ValueError:
-                                raise ValueError(
-                                    f'Invalid {x} spine location {spineloc!r}. '
-                                    'Options are: '
-                                    + ', '.join(map(
-                                        repr, (*sides, 'both', 'neither')
-                                    )) + '.'
-                                )
-                    # Apply spine bounds
-                    if bounds is not None and spine.get_visible():
-                        spine.set_bounds(*bounds)
-                    spine.update(kw)
-
-                # Get available spines, needed for setting tick locations
-                spines = [
-                    side for side, spine in zip(sides, spines)
-                    if spine.get_visible()
-                ]
-
-                # Tick and grid settings for major and minor ticks separately
-                # Override is just a "new default", but user can override this
-                for which, igrid in zip(('major', 'minor'), (grid, gridminor)):
-                    # Tick properties
-                    # NOTE: This loads xtick.major.size, xtick.major.width,
-                    # xtick.major.pad, xtick.major.bottom, and xtick.major.top
-                    # For all the x/y major/minor tick types
-                    kwticks = rc.category(x + 'tick.' + which, context=True)
-                    if kwticks is None:
-                        kwticks = {}
-                    else:
-                        kwticks.pop('visible', None)  # invalid setting
-                    if ticklen is not None:
-                        kwticks['size'] = units(ticklen, 'pt')
-                        if which == 'minor':
-                            kwticks['size'] *= rc['tick.lenratio']
-
-                    # Grid style and toggling
-                    name = 'grid' if which == 'major' else 'gridminor'
-                    if igrid is not None:
-                        axis.grid(igrid, which=which)
-                    kwgrid = rc.fill(
-                        {
-                            'grid_color': name + '.color',
-                            'grid_alpha': name + '.alpha',
-                            'grid_linewidth': name + '.linewidth',
-                            'grid_linestyle': name + '.linestyle',
-                        },
-                        context=True,
-                    )
-                    if gridcolor is not None:  # override for specific x/y axes
-                        kw['grid_color'] = gridcolor
-                    axis.set_tick_params(which=which, **kwgrid, **kwticks)
-
-                # Tick and ticklabel properties that apply equally for major/minor lines
-                # Weird issue causes set_tick_params to reset/forget grid is turned
-                # on if you access tick.gridOn directly, instead of passing through
-                # tick_params. Since gridOn is undocumented feature, don't use it.
-                # So calling _format_axes() a second time will remove the lines.
-                # First determine tick sides, avoiding situation where we draw ticks
-                # on top of invisible spine.
-                kw = {}
-                loc2sides = {
-                    None: None,
-                    'both': sides,
-                    'none': (),
-                    'neither': (),
-                }
-                if bounds is not None and tickloc not in sides:
-                    tickloc = sides[0]  # override to just one side
-                ticklocs = loc2sides.get(tickloc, (tickloc,))
-                if ticklocs is not None:
-                    kw.update({side: side in ticklocs for side in sides})
-                kw.update({side: False for side in sides if side not in spines})
-
-                # Tick label sides
-                # Will override to make sure only appear where ticks are
-                ticklabellocs = loc2sides.get(ticklabelloc, (ticklabelloc,))
-                if ticklabellocs is not None:
-                    kw.update(
-                        {'label' + side: (side in ticklabellocs) for side in sides}
-                    )
-                kw.update(  # override
-                    {
-                        'label' + side: False for side in sides
-                        if side not in spines
-                        or (ticklocs is not None and side not in ticklocs)
-                    }
-                )  # override
-
-                # The axis label side
-                if labelloc is None:
-                    if ticklocs is not None:
-                        options = [
-                            side for side in sides
-                            if side in ticklocs and side in spines
-                        ]
-                        if len(options) == 1:
-                            labelloc = options[0]
-                elif labelloc not in sides:
-                    raise ValueError(
-                        f'Got labelloc {labelloc!r}, valid options are '
-                        + ', '.join(map(repr, sides)) + '.'
-                    )
-
-                # Apply
-                axis.set_tick_params(which='both', **kw)
-                if labelloc is not None:
-                    axis.set_label_position(labelloc)
-
-                # Tick label settings
-                kw = rc.fill(
-                    {
-                        'labelcolor': 'tick.labelcolor',  # new props
-                        'labelsize': 'tick.labelsize',
-                        'color': x + 'tick.color',
-                    },
-                    context=True,
-                )
-                if color:
-                    kw['color'] = color
-                    kw['labelcolor'] = color
-
-                # Tick label direction and rotation
-                if tickdir == 'in':  # ticklabels should be much closer
-                    kw['pad'] = 1.0
-                if ticklabeldir == 'in':  # put tick labels inside the plot
-                    tickdir = 'in'
-                    kw['pad'] = -rc[f'{x}tick.major.size'] - rc[f'{x}tick.major.pad']
-                    kw['pad'] -= rc._scale_font(rc[f'{x}tick.labelsize'])
-                if tickdir is not None:
-                    kw['direction'] = tickdir
-                axis.set_tick_params(which='both', **kw)
-
-                # Settings that can't be controlled by set_tick_params
-                # Also set rotation and alignment here
-                kw = rc.fill(
-                    {
-                        'fontfamily': 'font.family',
-                        'weight': 'tick.labelweight'
-                    },
-                    context=True,
-                )
-                if rotation is not None:
-                    kw = {'rotation': rotation}
-                    if x == 'x':
-                        self._datex_rotated = True
-                        if rotation not in (0, 90, -90):
-                            kw['ha'] = ('right' if rotation > 0 else 'left')
-                for t in axis.get_ticklabels():
-                    t.update(kw)
-
-                # Margins
                 if margin is not None:
                     self.margins(**{x: margin})
 
-                # Axis label updates
-                # NOTE: This has to come after set_label_position, or ha or va
-                # overrides in label_kw are overwritten
-                kw = rc.fill(
-                    {
-                        'color': 'axes.labelcolor',
-                        'weight': 'axes.labelweight',
-                        'fontsize': 'axes.labelsize',
-                        'fontfamily': 'font.family',
-                    },
-                    context=True,
+                # Axis spine settings
+                self._update_spines(
+                    x, loc=spineloc, bounds=bounds, linewidth=linewidth, color=color,
                 )
-                if label is not None:
-                    kw['text'] = label
-                if color:
-                    kw['color'] = color
-                kw.update(label_kw)
-                if kw:  # NOTE: initially keep spanning labels off
-                    self._update_axis_labels(x, **kw)
 
-                # Major and minor locator
-                # NOTE: Parts of API (dualxy) rely on minor tick toggling
-                # preserving the isDefault_minloc setting. In future should
-                # override the default matplotlib API minorticks_on!
-                # NOTE: Unlike matplotlib API when "turning on" minor ticks
-                # we *always* use the scale default, thanks to scale classes
-                # refactoring with _ScaleBase. See Axes.minorticks_on.
-                if locator is not None:
-                    locator = constructor.Locator(locator, **locator_kw)
-                    axis.set_major_locator(locator)
-                    if isinstance(locator, mticker.IndexLocator):
-                        tickminor = False  # 'index' minor ticks make no sense
+                # Axis tick settings
+                self._update_ticks(
+                    x, grid=grid, gridminor=gridminor,
+                    color=color, gridcolor=gridcolor, ticklen=ticklen,
+                    tickloc=tickloc, ticklabelloc=ticklabelloc, labelloc=labelloc,
+                    tickdir=tickdir, ticklabeldir=ticklabeldir, rotation=rotation,
+                )
+
+                # Axis label settings
+                # NOTE: This has to come after set_label_position, or
+                # ha or va overrides in label_kw are overwritten
+                self._update_labels(
+                    x, label=label, color=color, **label_kw
+                )
+
+                # Axis locator
                 if minorlocator is True or minorlocator is False:  # must test identity
                     warnings._warn_proplot(
                         f'You passed {x}minorticks={minorlocator}, but this '
@@ -1085,84 +1212,19 @@ class CartesianAxes(base.Axes):
                         f'please use {x}tickminor=True or {x}tickminor=False.'
                     )
                     minorlocator = None
-                if tickminor or minorlocator:
-                    isdefault = minorlocator is None
-                    if isdefault:
-                        minorlocator = getattr(
-                            axis._scale, '_default_minor_locator', None
-                        )
-                        if not minorlocator:
-                            minorlocator = constructor.Locator('minor')
-                    else:
-                        minorlocator = constructor.Locator(
-                            minorlocator, **minorlocator_kw
-                        )
-                    axis.set_minor_locator(minorlocator)
-                    axis.isDefault_minloc = isdefault
-                elif tickminor is not None and not tickminor:
-                    # NOTE: Generally if you *enable* minor ticks on a dual
-                    # axis, want to allow FuncScale updates to change the
-                    # minor tick locators. If you *disable* minor ticks, do
-                    # not want FuncScale applications to turn them on. So we
-                    # allow below to set isDefault_minloc to False.
-                    axis.set_minor_locator(constructor.Locator('null'))
+                self._update_locators(
+                    x, locator, minorlocator, tickminor=tickminor,
+                    locator_kw=locator_kw, minorlocator_kw=minorlocator_kw,
+                )
 
-                # Major formatter
-                # NOTE: The only reliable way to disable ticks labels and then
-                # restore them is by messing with the *formatter*, rather than
-                # setting labelleft=False, labelright=False, etc.
-                if (
-                    formatter is not None
-                    or tickrange is not None
-                    or wraprange is not None
-                ):
-                    # Tick range
-                    if tickrange is not None or wraprange is not None:
-                        if formatter not in (None, 'auto'):
-                            warnings._warn_proplot(
-                                'The tickrange and autorange features require '
-                                'proplot.AutoFormatter formatter. Overriding '
-                                'input formatter.'
-                            )
-                        formatter = 'auto'
-                        if tickrange is not None:
-                            formatter_kw.setdefault('tickrange', tickrange)
-                        if wraprange is not None:
-                            formatter_kw.setdefault('wraprange', wraprange)
+                # Axis formatter
+                self._update_formatter(
+                    x, formatter, formatter_kw=formatter_kw,
+                    tickrange=tickrange, wraprange=wraprange,
+                )
 
-                    # Set the formatter
-                    # Note some formatters require 'locator' as keyword arg
-                    if formatter in ('date', 'concise'):
-                        locator = axis.get_major_locator()
-                        formatter_kw.setdefault('locator', locator)
-                    formatter = constructor.Formatter(
-                        formatter, date=date, **formatter_kw
-                    )
-                    axis.set_major_formatter(formatter)
-
-                # Ensure no out-of-bounds ticks; set_smart_bounds() can fail
-                # * Using set_bounds did not work, so instead just turn
-                #   locators into fixed version.
-                # * Most locators take no arguments in __call__, and some do
-                #   not have tick_values method, so we just call them.
-                if (
-                    bounds is not None
-                    or fixticks
-                    or isinstance(formatter, mticker.FixedFormatter)
-                    or axis.get_scale() == 'cutoff'
-                ):
-                    if bounds is None:
-                        bounds = getattr(self, 'get_' + x + 'lim')()
-                    locator = constructor.Locator([
-                        x for x in axis.get_major_locator()()
-                        if bounds[0] <= x <= bounds[1]
-                    ])
-                    axis.set_major_locator(locator)
-                    locator = constructor.Locator([
-                        x for x in axis.get_minor_locator()()
-                        if bounds[0] <= x <= bounds[1]
-                    ])
-                    axis.set_minor_locator(locator)
+                # Ensure ticks are within axis bounds
+                self._update_bounds(x, fixticks=fixticks)
 
             # Call parent
             if aspect is not None:

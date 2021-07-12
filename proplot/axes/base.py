@@ -25,6 +25,9 @@ from . import plot as wrap
 __all__ = ['Axes']
 
 ABC_STRING = 'abcdefghijklmnopqrstuvwxyz'
+KEYS_INNER = (
+    'border', 'borderwidth', 'bbox', 'bboxpad', 'bboxcolor', 'bboxstyle', 'bboxalpha',
+)
 LOC_TRANSLATE = {  # for inset colorbars and legends TODO: also as text locations
     'inset': 'best',
     'i': 'best',
@@ -608,6 +611,186 @@ class Axes(maxes.Axes):
         for pax in paxs:
             getattr(pax, '_share' + axis + '_setup')(share)
 
+    def _update_abc(self):
+        """
+        Whether to update the label.
+        """
+        abc = False
+        if self._panel_side:
+            return
+
+        # Properties
+        # NOTE: Border props only apply for "inner" title locations so we
+        # need to store on the axes whenever they are modified and always
+        # re-apply the ones stored on the axes.
+        kw = rc.fill(
+            {
+                'fontsize': 'abc.size',
+                'weight': 'abc.weight',
+                'color': 'abc.color',
+                'fontfamily': 'font.family',
+            },
+            context=True
+        )
+        kwb = rc.fill(
+            {
+                'border': 'abc.border',
+                'borderwidth': 'abc.borderwidth',
+                'bbox': 'abc.bbox',
+                'bboxpad': 'abc.bboxpad',
+                'bboxcolor': 'abc.bboxcolor',
+                'bboxstyle': 'abc.bboxstyle',
+                'bboxalpha': 'abc.bboxalpha',
+            },
+            context=True,
+        )
+        self._abc_border_kwargs.update(kwb)
+        kw.update(self._abc_border_kwargs)
+
+        # A-b-c labels. Build as a...z...aa...zz...aaa...zzz
+        style = rc.get('abc.style', context=True)  # 1st run, or changed
+        if style and self.number is not None:
+            if not isinstance(style, str) or 'a' not in style and 'A' not in style:
+                raise ValueError(
+                    f'Invalid abcstyle {style!r}. Must include letter "a" or "A".'
+                )
+            nabc, iabc = divmod(self.number - 1, 26)
+            old = re.search('[aA]', style).group()  # return the *first* 'a'
+            new = (nabc + 1) * ABC_STRING[iabc]
+            new = new.upper() if old == 'A' else new
+            self._abc_text = style.replace(old, new, 1)
+
+        # Apply a-b-c text
+        abc = rc.get('abc', context=True)
+        aobj = self._title_dict['abc']
+        if abc is not None:
+            aobj.set_text(self._abc_text if bool(abc) else '')
+
+        # Apply a-b-c settings
+        loc = self._loc_translate(None, 'abc')
+        loc_prev = self._abc_loc
+        if loc is None:
+            loc = loc_prev
+        if loc in ('left', 'right', 'center'):
+            for key in KEYS_INNER:
+                kw.pop(key, None)
+        aobj.update(kw)
+        self._abc_loc = loc
+
+    def _update_super(self, suptitle, **kwargs):
+        """
+        Update super title and row and column labels.
+        """
+        # NOTE: These are actually *figure-wide* settings, but that line gets
+        # blurred where we have shared axes, spanning labels, and whatnot. May result
+        # in redundant assignments if formatting more than one axes, but operations
+        # are fast so some redundancy is nbd.
+        # NOTE: Below kludge prevents changed *figure-wide* settings from getting
+        # overwritten when user makes a new panels or insets. Funky limnitation but
+        # kind of makes sense if these are inaccessible from panels.
+        fig = self.figure
+        ignore = self not in fig._subplots_main
+        kw = {} if ignore else rc.fill(
+            {
+                'fontsize': 'suptitle.size',
+                'weight': 'suptitle.weight',
+                'color': 'suptitle.color',
+                'fontfamily': 'font.family'
+            },
+            context=True,
+        )
+        if suptitle or kw:
+            fig._update_super_title(suptitle, **kw)
+
+        # Labels
+        for side, labels in kwargs.items():
+            kw = {} if ignore else rc.fill(
+                {
+                    'fontsize': side + 'label.size',
+                    'weight': side + 'label.weight',
+                    'color': side + 'label.color',
+                    'fontfamily': 'font.family'
+                },
+                context=True,
+            )
+            if labels or kw:
+                fig._update_super_labels(self, side, labels, **kw)
+
+    def _update_title_all(self, title=None, **kwargs):
+        """
+        Update the titles.
+        """
+        # Titles, with two workflows here:
+        # 1. title='name' and titleloc='position'
+        # 2. ltitle='name', rtitle='name', etc., arbitrarily many titles
+        # NOTE: Matplotlib added axes.titlecolor in version 3.2 but we
+        # still use custom title.size, title.weight, title.color
+        # properties for retroactive support in older matplotlib versions.
+        # First get params and update kwargs
+        kw = rc.fill(
+            {
+                'fontsize': 'title.size',
+                'weight': 'title.weight',
+                'color': 'title.color',
+                'fontfamily': 'font.family',
+            },
+            context=True
+        )
+        if 'color' in kw and kw['color'] == 'auto':
+            del kw['color']  # WARNING: matplotlib permits invalid color here
+        kwb = rc.fill(
+            {
+                'border': 'title.border',
+                'borderwidth': 'title.borderwidth',
+                'bbox': 'title.bbox',
+                'bboxpad': 'title.bboxpad',
+                'bboxcolor': 'title.bboxcolor',
+                'bboxstyle': 'title.bboxstyle',
+                'bboxalpha': 'title.bboxalpha',
+            },
+            context=True,
+        )
+        self._title_border_kwargs.update(kwb)
+        kw.update(self._title_border_kwargs)
+
+        # Workflow 2, want this to come first so workflow 1 gets priority
+        for iloc, ititle in kwargs.items():
+            ikw = kw.copy()
+            iloc = self._loc_translate(iloc, 'title')
+            if iloc in ('left', 'center', 'right'):
+                for key in KEYS_INNER:
+                    ikw.pop(key, None)
+            iobj = self._title_dict[iloc]
+            iobj.update(ikw)
+            if ititle is not None:
+                iobj.set_text(ititle)
+
+        # Workflow 1, make sure that if user calls ax.format(title='Title')
+        # *then* ax.format(titleloc='left') it copies over the text.
+        # Get current and previous location, prevent overwriting abc label
+        loc = self._loc_translate(None, 'title')
+        loc_prev = self._title_loc
+        if loc is None:  # never None first run
+            loc = loc_prev  # never None on subsequent runs
+
+        # Remove previous text
+        if loc_prev is not None and loc != loc_prev:
+            tobj_prev = self._title_dict[loc_prev]
+            if title is None:
+                title = tobj_prev.get_text()
+            tobj_prev.set_text('')
+
+        # Add new text and settings
+        kw = kw.copy()
+        if loc in ('left', 'center', 'right'):
+            for key in KEYS_INNER:
+                kw.pop(key, None)
+        tobj = self._title_dict[loc]
+        tobj.update(kw)
+        if title is not None:
+            tobj.set_text(title)
+        self._title_loc = loc  # assigns default loc on first run
+
     def _update_title_position(self, renderer):
         """
         Update the position of proplot inset titles and builtin matplotlib
@@ -713,6 +896,7 @@ class Axes(maxes.Axes):
                 rc_kw[key_fixed] = value
         return rc_kw, rc_mode, kw
 
+    @docstring.add_snippets
     def format(
         self, *, title=None,
         figtitle=None, suptitle=None, rowlabels=None, collabels=None,
@@ -791,20 +975,31 @@ class Axes(maxes.Axes):
         rowlabels, collabels, llabels, tlabels, rlabels, blabels : list of str, optional
             Aliases for `leftlabels`, `toplabels`, `leftlabels`, `toplabels`,
             `rightlabels`, and `bottomlabels`.
-        figtitle, suptitle : str, optional
+        leftlabelpad, toplabelpad, rightlabelpad, bottomlabelpad : float, optional
+            The padding between the labels and the axes content in arbitrary units
+            (default is points). Defaults are :rcraw:`leftlabel.pad`,
+            :rcraw:`toplabel.pad`, :rcraw:`rightlabel.pad`, and :rcraw:`bottomlabel.pad`
+        suptitle, figtitle : str, optional
             The figure "super" title, centered between the left edge of
             the lefmost column of subplots and the right edge of the rightmost
             column of subplots, and automatically offset above figure titles.
             This is an improvement on matplotlib's "super" title, which just
             centers the text between figure edges.
+        suptitlepad : float, optional
+            The padding between the super title and the axes content in arbitrary
+            units (default is points). Default is :rcraw:`suptitle.pad`.
 
-        Note
-        ----
-        The `abc`, `abcstyle`, `abcloc`, and `titleloc` keyword arguments are
-        actually :ref:`configuration settings <ug_config>` that are temporarily
-        changed by the call to `~proplot.config.RcConfigurator.context`.  They
-        are also documented here because it is very common to change them with
-        `~Axes.format`.
+        Other parameters
+        ----------------
+        %(axes.other)s
+
+        Important
+        ---------
+        The `abc`, `abcstyle`, `abcloc`, `titleloc`, and `titleabove` keywords and
+        the various `pad` keywords are :ref:`configuration settings <ug_config>`.
+        We explicitly document these arguments here because it is very common to change
+        them. But many :ref:`other configuration settings <ug_format>` can be passed
+        to ``format`` too.
 
         See also
         --------
@@ -813,12 +1008,12 @@ class Axes(maxes.Axes):
         proplot.axes.PolarAxes.format
         proplot.axes.GeoAxes.format
         """
-        # Figure patch
+        # General figure settings
         # TODO: Work out awkward situation where "figure" settings applied on axes
         kw = rc.fill({'facecolor': 'figure.facecolor'}, context=True)
         self.figure.patch.update(kw)
 
-        # Axes settings
+        # General axes settings
         cycle = rc.get('axes.prop_cycle', context=True)
         if cycle is not None:
             self.set_prop_cycle(cycle)
@@ -827,6 +1022,9 @@ class Axes(maxes.Axes):
         above = rc.get('title.above', context=True)
         if above is not None:
             self._title_above = above
+        pad = rc.get('abc.titlepad', context=True)
+        if pad is not None:
+            self._abc_pad = pad
         pad = rc.get('title.pad', context=True)  # title
         if pad is not None:
             self._set_title_offset_trans(pad)
@@ -839,191 +1037,23 @@ class Axes(maxes.Axes):
             if pad is not None:
                 self._label_pad[side] = pad
 
-        # Super title
-        # NOTE: These are actually *figure-wide* settings, but that line gets
-        # blurred where we have shared axes, spanning labels, and whatnot. May result
-        # in redundant assignments if formatting more than one axes, but operations
-        # are fast so some redundancy is nbd.
-        # NOTE: Below kludge prevents changed *figure-wide* settings from getting
-        # overwritten when user makes a new panels or insets. Funky limnitation but
-        # kind of makes sense if these are inaccessible from panels.
-        fig = self.figure
-        ignore = self not in fig._subplots_main
-        suptitle = _not_none(figtitle=figtitle, suptitle=suptitle)
-        kw = {} if ignore else rc.fill(
-            {
-                'fontsize': 'suptitle.size',
-                'weight': 'suptitle.weight',
-                'color': 'suptitle.color',
-                'fontfamily': 'font.family'
-            },
-            context=True,
+        # Update a-b-c label and title(s)
+        self._update_abc()
+        self._update_title_all(
+            title, l=ltitle, r=rtitle, c=ctitle,
+            ul=ultitle, uc=uctitle, ur=urtitle,
+            ll=lltitle, lc=lctitle, lr=lrtitle,
         )
-        if suptitle or kw:
-            fig._update_super_title(suptitle, **kw)
 
-        # Labels
+        # Update 'super' labels
+        suptitle = _not_none(figtitle=figtitle, suptitle=suptitle)
         rlabels = _not_none(rightlabels=rightlabels, rlabels=rlabels)
         blabels = _not_none(bottomlabels=bottomlabels, blabels=blabels)
         llabels = _not_none(rowlabels=rowlabels, leftlabels=leftlabels, llabels=llabels)
         tlabels = _not_none(collabels=collabels, toplabels=toplabels, tlabels=tlabels)
-        for side, labels in zip(
-            ('left', 'right', 'top', 'bottom'),
-            (llabels, rlabels, tlabels, blabels)
-        ):
-            kw = {} if ignore else rc.fill(
-                {
-                    'fontsize': side + 'label.size',
-                    'weight': side + 'label.weight',
-                    'color': side + 'label.color',
-                    'fontfamily': 'font.family'
-                },
-                context=True,
-            )
-            if labels or kw:
-                fig._update_subplot_labels(self, side, labels, **kw)
-
-        # Helper function
-        def sanitize_kw(kw, loc):
-            kw = kw.copy()
-            if loc in ('left', 'right', 'center'):
-                kw.pop('border', None)
-                kw.pop('borderwidth', None)
-                kw.pop('bbox', None)
-                kw.pop('bboxpad', None)
-                kw.pop('bboxcolor', None)
-                kw.pop('bboxstyle', None)
-                kw.pop('bboxalpha', None)
-            return kw
-
-        # A-b-c labels
-        abc = False
-        if not self._panel_side:
-            # Properties
-            # NOTE: Border props only apply for "inner" title locations so we
-            # need to store on the axes whenever they are modified and always
-            # re-apply the ones stored on the axes.
-            kw = rc.fill(
-                {
-                    'fontsize': 'abc.size',
-                    'weight': 'abc.weight',
-                    'color': 'abc.color',
-                    'fontfamily': 'font.family',
-                },
-                context=True
-            )
-            kwb = rc.fill(
-                {
-                    'border': 'abc.border',
-                    'borderwidth': 'abc.borderwidth',
-                    'bbox': 'abc.bbox',
-                    'bboxpad': 'abc.bboxpad',
-                    'bboxcolor': 'abc.bboxcolor',
-                    'bboxstyle': 'abc.bboxstyle',
-                    'bboxalpha': 'abc.bboxalpha',
-                },
-                context=True,
-            )
-            self._abc_border_kwargs.update(kwb)
-            kw.update(self._abc_border_kwargs)
-
-            # A-b-c labels. Build as a...z...aa...zz...aaa...zzz
-            style = rc.get('abc.style', context=True)  # 1st run, or changed
-            if style and self.number is not None:
-                if not isinstance(style, str) or 'a' not in style and 'A' not in style:
-                    raise ValueError(
-                        f'Invalid abcstyle {style!r}. Must include letter "a" or "A".'
-                    )
-                nabc, iabc = divmod(self.number - 1, 26)
-                old = re.search('[aA]', style).group()  # return the *first* 'a'
-                new = (nabc + 1) * ABC_STRING[iabc]
-                new = new.upper() if old == 'A' else new
-                self._abc_text = style.replace(old, new, 1)
-
-            # Apply a-b-c text
-            abc = rc.get('abc', context=True)
-            aobj = self._title_dict['abc']
-            if abc is not None:
-                aobj.set_text(self._abc_text if bool(abc) else '')
-
-            # Apply a-b-c settings
-            loc = self._loc_translate(None, 'abc')
-            loc_prev = self._abc_loc
-            if loc is None:
-                loc = loc_prev
-            kw = sanitize_kw(kw, loc)
-            if loc_prev is None or loc != loc_prev:
-                tobj = self._title_dict[loc]
-            aobj.update(kw)
-            self._abc_loc = loc
-
-        # Titles, with two workflows here:
-        # 1. title='name' and titleloc='position'
-        # 2. ltitle='name', rtitle='name', etc., arbitrarily many titles
-        # NOTE: Matplotlib added axes.titlecolor in version 3.2 but we
-        # still use custom title.size, title.weight, title.color
-        # properties for retroactive support in older matplotlib versions.
-        # First get params and update kwargs
-        kw = rc.fill(
-            {
-                'fontsize': 'title.size',
-                'weight': 'title.weight',
-                'color': 'title.color',
-                'fontfamily': 'font.family',
-            },
-            context=True
+        self._update_super(
+            suptitle, left=llabels, right=rlabels, top=tlabels, bottom=blabels
         )
-        if 'color' in kw and kw['color'] == 'auto':
-            del kw['color']  # WARNING: matplotlib permits invalid color here
-        kwb = rc.fill(
-            {
-                'border': 'title.border',
-                'borderwidth': 'title.borderwidth',
-                'bbox': 'title.bbox',
-                'bboxpad': 'title.bboxpad',
-                'bboxcolor': 'title.bboxcolor',
-                'bboxstyle': 'title.bboxstyle',
-                'bboxalpha': 'title.bboxalpha',
-            },
-            context=True,
-        )
-        self._title_border_kwargs.update(kwb)
-        kw.update(self._title_border_kwargs)
-
-        # Workflow 2, want this to come first so workflow 1 gets priority
-        for iloc, ititle in zip(
-            ('l', 'r', 'c', 'ul', 'uc', 'ur', 'll', 'lc', 'lr'),
-            (ltitle, rtitle, ctitle, ultitle, uctitle, urtitle, lltitle, lctitle, lrtitle),  # noqa: E501
-        ):
-            iloc = self._loc_translate(iloc, 'title')
-            ikw = sanitize_kw(kw, iloc)
-            iobj = self._title_dict[iloc]
-            iobj.update(ikw)
-            if ititle is not None:
-                iobj.set_text(ititle)
-
-        # Workflow 1, make sure that if user calls ax.format(title='Title')
-        # *then* ax.format(titleloc='left') it copies over the text.
-        # Get current and previous location, prevent overwriting abc label
-        loc = self._loc_translate(None, 'title')
-        loc_prev = self._title_loc
-        if loc is None:  # never None first run
-            loc = loc_prev  # never None on subsequent runs
-
-        # Remove previous text
-        if loc_prev is not None and loc != loc_prev:
-            tobj_prev = self._title_dict[loc_prev]
-            if title is None:
-                title = tobj_prev.get_text()
-            tobj_prev.set_text('')
-
-        # Add new text and settings
-        kw = sanitize_kw(kw, loc)
-        tobj = self._title_dict[loc]
-        tobj.update(kw)
-        if title is not None:
-            tobj.set_text(title)
-        self._title_loc = loc  # assigns default loc on first run
 
     def area(self, *args, **kwargs):
         """
@@ -1114,7 +1144,7 @@ class Axes(maxes.Axes):
         from .cartesian import CartesianAxes
         if not isinstance(self, CartesianAxes):
             warnings._warn_proplot(
-                'Cannot adjust aspect ratio or ticks for non-Cartesian heatmap pplt. '
+                'Cannot adjust aspect ratio or ticks for non-Cartesian heatmap plot. '
                 'Consider using pcolormesh() or pcolor() instead.'
             )
         else:
@@ -2070,6 +2100,8 @@ class Axes(maxes.Axes):
         wrap.standardize_2d,
         wrap.apply_cmap,
     )
+
+    # Unstandardized commands
     tripcolor = wrap._apply_wrappers(
         maxes.Axes.tripcolor,
         wrap.apply_cmap,
