@@ -303,12 +303,12 @@ standardize_1d
 indicate_error
 apply_cycle
 """
-docstring.snippets['axes.scatter'] = _scatter_docstring.format(
-    x='x', y='y', suffix='', package='matplotlib',
-) % docstring.snippets
-docstring.snippets['axes.scatterx'] = _scatter_docstring.format(
-    x='y', y='x', suffix='', package='proplot',
-) % docstring.snippets
+docstring.snippets['axes.scatter'] = docstring.add_snippets(
+    _scatter_docstring.format(x='x', y='y', suffix='', package='matplotlib')
+)
+docstring.snippets['axes.scatterx'] = docstring.add_snippets(
+    _scatter_docstring.format(x='y', y='x', suffix='', package='proplot')
+)
 
 _fill_between_docstring = """
 Support overlaying and stacking successive columns of data, and permits
