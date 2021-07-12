@@ -99,11 +99,6 @@ Here's a broad overview of the new settings:
 Other `~proplot.config.rc` settings may be more accurately described as "meta-settings",
 as they change several matplotlib and ProPlot settings at once. For example:
 
-* Setting :rcraw:`color` changes the :rcraw:`axes.edgecolor`, :rcraw:`axes.labelcolor`
-  :rcraw:`tick.labelcolor`, :rcraw:`hatch.color`, :rcraw:`xtick.color`, and
-  :rcraw:`ytick.color` .
-* Setting :rcraw:`linewidth` changes the :rcraw:`axes.linewidth`,
-  :rcraw:`xtick.major.width`, and :rcraw:`ytick.major.width`.
 * Setting :rcraw:`text.labelsize` (or, equivalently, :rcraw:`textlabelsize`) changes
   the :rcraw:`tick.labelsize`, :rcraw:`xtick.labelsize`, :rcraw:`ytick.labelsize`,
   :rcraw:`grid.labelsize`, :rcraw:`legend.fontsize`, and :rcraw:`axes.labelsize`.
@@ -111,12 +106,25 @@ as they change several matplotlib and ProPlot settings at once. For example:
   the :rcraw:`abc.size`, :rcraw:`title.size`, :rcraw:`suptitle.size`,
   :rcraw:`leftlabel.size`, :rcraw:`toplabel.size`, :rcraw:`rightlabel.size`
   :rcraw:`bottomlabel.size`.
-* Setting :rcraw:`tick.len` (or, equivalently, :rcraw:`ticklen`) changes both
-  the major tickline and minor tickline length, with the latter scaled
-  by :rcraw:`tick.ratio`.
+* Setting :rcraw:`color` changes the :rcraw:`axes.edgecolor`, :rcraw:`axes.labelcolor`
+  :rcraw:`tick.labelcolor`, :rcraw:`hatch.color`, :rcraw:`xtick.color`, and
+  :rcraw:`ytick.color` .
 * Setting :rcraw:`grid.color`, :rcraw:`grid.linewidth`, :rcraw:`grid.linestyle`,
   or :rcraw:`grid.alpha` also changes the corresponding ``gridminor`` settings. Any
   distinct ``gridminor`` settings must be applied after ``grid`` settings.
+* Setting :rcraw:`linewidth` changes the :rcraw:`axes.linewidth` and the major
+  and minor tickline widths :rcraw:`xtick.major.width`, :rcraw:`ytick.major.width`,
+  :rcraw:`xtick.minor.width`, and :rcraw:`ytick.minor.width`. The minor tickline widths
+  are scaled by :rcraw:`tick.ratio` (or, equivalently, :rcraw:`tickratio`).
+* Setting :rcraw:`tick.len` (or, equivalently, :rcraw:`ticklen`) changes the major and
+  minor tickline lengths :rcraw:`xtick.major.size`, :rcraw:`ytick.major.size`,
+  :rcraw:`xtick.minor.size`, and :rcraw:`ytick.minor.size`. The minor tickline lengths
+  are scaled by :rcraw:`tick.lenratio` (or, equivalently, :rcraw:`ticklenratio`).
+* Setting :rcraw:`grid.linewidth` changes the major and minor gridline widths.
+  The minor gridline widths are scaled by :rcraw:`grid.ratio`
+  (or, equivalently, :rcraw:`gridratio`).
+* Setting :rcraw:`title.border` or :rcraw:`abc.border` to ``True`` automatically
+  sets :rcraw:`title.bbox` and :rcraw:`abc.bbox` to ``False``, and vice versa.
 
 .. rubric:: Table of settings
 
