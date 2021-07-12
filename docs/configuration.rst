@@ -8,7 +8,7 @@ Configuring ProPlot
 Overview
 --------
 
-A special object named `~proplot.config.rc`, belonging to the
+A dictionary-like object named `~proplot.config.rc`, belonging to the
 `~proplot.config.RcConfigurator` class, is created on import. This is your one-stop
 shop for working with `builtin matplotlib global settings <rc_matplotlib_>`_
 and the global settings :ref:`added by proplot <rc_proplot>`.
@@ -62,6 +62,8 @@ you can simply omit the dots. For example, to change the
 Matplotlib settings
 -------------------
 
+Matplotlib settings are natively controlled with the `~matplotlib.rcParams` dictionary.
+But all `~matplotlib.rcParams` settings can also be changed with `~proplot.config.rc`.
 Details on the matplotlib settings can be found on `this page <rc_matplotlib_>`_.
 
 .. _rc_proplot:
@@ -69,25 +71,56 @@ Details on the matplotlib settings can be found on `this page <rc_matplotlib_>`_
 ProPlot settings
 ----------------
 
-ProPlot adds several settings to customize things not covered by
-`matplotlib's builtin settings <https://matplotlib.org/users/customizing.html>`__.
-Some of these settings may be more accurately described as "meta-settings",
-as they change several matplotlib settings at once (for example,
-:rcraw:`linewidth` changes axes edge widths, gridline widths, and tick widths).
-Other settings are for specific features controlled by ProPlot, like a-b-c labels.
+.. rubric:: Specific settings
 
-The ``subplots`` category controls the default layout for figures and axes.
-The ``abc``, ``title``, and ``tick`` categories control a-b-c label, title,
-and axis tick label settings. The ``suptitle``, ``leftlabel``, ``toplabel``,
-``rightlabel``, and ``bottomlabel`` categories control figure title and edge
-label settings. There are two new additions to the ``image`` category, and the
-new ``colorbar`` category controls *inset* and *outer*
-`~proplot.axes.Axes.colorbar` properties. There is also a new ``gridminor``
-category for minor gridline settings (note that ``gridminor`` inherits
-``grid`` properties when they are changed).
-Finally, the ``land``, ``ocean``, ``rivers``, ``lakes``,
-``borders``, and ``innerborders`` categories control various
-`~proplot.axes.GeoAxes` settings.
+Some `~proplot.config.rc` settings are not found in `~matplotlib.rcParams`. These
+control ProPlot-specific features, like a-b-c labels and geographic content.
+Here's a broad overview of the new settings:
+
+* The ``subplots`` category includes settings that control the default
+  subplot layout and padding.
+* The ``abc``, ``title``, and ``tick`` categories control
+  the subplot a-b-c labels, subplot titles, and axis tick labels.
+* The ``suptitle``, ``leftlabel``, ``toplabel``, ``rightlabel``,
+  and ``bottomlabel`` categories control the figure titles and subplot edge labels.
+* The ``formatter`` category is a shorthand for matplotlib's ``axes.formatter``
+  and includes new settings that control the default ProPlot axis formatter.
+* The matplotlib ``image`` category includes new settings that control the generation
+  of automatic colormap levels.
+* The matplotlib ``grid`` category includes new settings that control the behavior
+  of `~proplot.axes.GeoAxes` gridlines.
+* The ``gridminor`` category optionally controls minor gridline settings separately
+  from major gridline settings.
+* The ``land``, ``ocean``, ``rivers``, ``lakes``, ``borders``, and ``innerborders``
+  categories control geographic content managed by `~proplot.axes.GeoAxes`.
+
+.. rubric:: Meta-settings
+
+Other `~proplot.config.rc` settings may be more accurately described as "meta-settings",
+as they change several matplotlib and ProPlot settings at once. For example:
+
+* Setting :rcraw:`color` changes the :rcraw:`axes.edgecolor`, :rcraw:`axes.labelcolor`
+  :rcraw:`tick.labelcolor`, :rcraw:`hatch.color`, :rcraw:`xtick.color`, and
+  :rcraw:`ytick.color` .
+* Setting :rcraw:`linewidth` changes the :rcraw:`axes.linewidth`,
+  :rcraw:`xtick.major.width`, and :rcraw:`ytick.major.width`.
+* Setting :rcraw:`text.labelsize` (or, equivalently, :rcraw:`textlabelsize`) changes
+  the :rcraw:`tick.labelsize`, :rcraw:`xtick.labelsize`, :rcraw:`ytick.labelsize`,
+  :rcraw:`grid.labelsize`, :rcraw:`legend.fontsize`, and :rcraw:`axes.labelsize`.
+* Setting :rcraw:`text.titlesize` (or, equivalently, :rcraw:`texttitlesize`) changes
+  the :rcraw:`abc.size`, :rcraw:`title.size`, :rcraw:`suptitle.size`,
+  :rcraw:`leftlabel.size`, :rcraw:`toplabel.size`, :rcraw:`rightlabel.size`
+  :rcraw:`bottomlabel.size`.
+* Setting :rcraw:`tick.len` (or, equivalently, :rcraw:`ticklen`) changes both
+  the major tickline and minor tickline length, with the latter scaled
+  by :rcraw:`tick.ratio`.
+* Setting :rcraw:`grid.color`, :rcraw:`grid.linewidth`, :rcraw:`grid.linestyle`,
+  or :rcraw:`grid.alpha` also changes the corresponding ``gridminor`` settings. Any
+  distinct ``gridminor`` settings must be applied after ``grid`` settings.
+
+.. rubric:: Table of settings
+
+A comprehensive table of the new ProPlot settings is shown below.
 
 .. include:: _static/rctable.rst
 
