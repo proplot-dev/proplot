@@ -14,7 +14,7 @@ before_install:
   - |
         MODIFIED_FILES=$(git diff --name-only "$TRAVIS_COMMIT_RANGE" 2>/dev/null)
         if [ $? -eq 0 ]; then
-          if ! echo "$MODIFIED_FILES" | grep -qvE '(.md)|(.rst)|(.yml)|(.html)'
+          if ! echo "$MODIFIED_FILES" | grep -qvE '(.md)|(.rst)|(.html)'
           then
             echo "Only doc files were updated, not running the CI."
             exit
@@ -34,8 +34,8 @@ install:
   - conda list
   - which conda
   - which python
-  - python -m build --wheel --no-isolation .
-  - python -m pip install --user ./dist/*.whl
+  - python setup.py sdist bdist_wheel
+  - pip install --user ./dist/*.whl
 
 script:
   - ci/run-linter.sh
