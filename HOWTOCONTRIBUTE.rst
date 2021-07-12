@@ -4,12 +4,12 @@
 How to contribute?
 ==================
 
-Contributions of any size are highly welcomed and highly appreciated!
-You can make a high impact on ProPlot just by using it and
+Contributions of any size are highly appreciated! You can make
+a significant impact on ProPlot just by using it and
 reporting `issues <https://github.com/lukelbd/proplot/issues>`__.
 
 The following sections cover some general guidelines
-regarding development in ProPlot for maintainers and contributors.
+regarding development in ProPlot for contributors.
 Feel free to suggest improvements or changes in the workflow.
 
 Feature requests and feedback
@@ -31,7 +31,7 @@ Report bugs
 Bugs should be reported on the Github
 `issues <https://github.com/lukelbd/proplot/issues>`__ page. When reporting a
 bug, please follow the template message and include copy-pasteable code that
-reproduces the issue. This is critical for developers to fix the bug quickly.
+reproduces the issue. This is critical for contributors to fix the bug quickly.
 
 If you can figure out how to fix the bug yourself, feel free to submit a pull
 request.
