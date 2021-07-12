@@ -124,7 +124,7 @@ as they change several matplotlib and ProPlot settings at once. For example:
   The minor gridline widths are scaled by :rcraw:`grid.ratio`
   (or, equivalently, :rcraw:`gridratio`).
 * Setting :rcraw:`title.border` or :rcraw:`abc.border` to ``True`` automatically
-  sets :rcraw:`title.bbox` and :rcraw:`abc.bbox` to ``False``, and vice versa.
+  sets :rcraw:`title.bbox` or :rcraw:`abc.bbox` to ``False``, and vice versa.
 
 .. rubric:: Table of settings
 
