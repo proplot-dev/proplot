@@ -122,9 +122,6 @@ autosummary_generate = True
 automodapi_toctreedirnm = 'api'  # create much better URL for the page
 automodsumm_inherited_members = False
 
-# Logo
-html_logo = os.path.join('_static', 'logo_square.png')
-
 # Turn off code and image links for embedded mpl plots
 # plot_html_show_source_link = False
 # plot_html_show_formats = False
@@ -229,19 +226,6 @@ default_role = 'py:obj'
 
 # -- Options for HTML output -------------------------------------------------
 
-# The theme to use for HTML and HTML Help pages.  See the documentation for
-# a list of builtin themes.
-
-# Use modified RTD theme with overrides in custom.css and custom.js
-html_theme = 'sphinx_rtd_theme'
-html_theme_options = {
-    'logo_only': True,
-    'display_version': False,
-    'collapse_navigation': True,
-    'navigation_depth': 4,
-    'prev_next_buttons_location': 'bottom',  # top and bottom
-}
-
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
@@ -261,6 +245,21 @@ html_static_path = ['_static']
 # For icons see: https://icons8.com/icon
 # To convert: convert logo_blank.png logo_blank.ico
 html_favicon = os.path.join('_static', 'logo_blank.ico')
+
+# Logo
+html_logo = os.path.join('_static', 'logo_square.png')
+
+# The theme to use for HTML and HTML Help pages.  See the documentation for
+# a list of builtin themes.
+# Use modified RTD theme with overrides in custom.css and custom.js
+html_theme = 'sphinx_rtd_theme'
+html_theme_options = {
+    'logo_only': True,
+    'display_version': False,
+    'collapse_navigation': True,
+    'navigation_depth': 4,
+    'prev_next_buttons_location': 'bottom',  # top and bottom
+}
 
 # -- Options for HTMLHelp output ---------------------------------------------
 

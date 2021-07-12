@@ -185,21 +185,22 @@ axs[1].format(xtickminor=False, yreverse=True)
 # and the resulting normalizer is used for the plot. By default,
 # `~proplot.axes.apply_cmap` selects the colormap normalization range based on
 # the data. The range can be set explicitly by passing the usual `vmin` and `vmax`
-# keywords to the plotting command (see the :ref:`next section <ug_discrete>` for details).
+# keywords to the plotting command (see the :ref:`next section <ug_discrete>`
+# for details).
 #
 # For more information on colormaps and normalizers, see the
 # :ref:`colormaps section <ug_cmaps>` and `this matplotlib
 # tutorial <https://matplotlib.org/tutorials/colors/colormapnorms.html>`__.
 #
-# .. note:
+# .. note::
 #
-#     By default, when `~proplot.axes.apply_cmap` selects the colormap normalization
-#     range, it ignores data outside of the *x* or *y* axis limits if they
-#     were previously changed by `~matplotlib.axes.Axes.set_xlim` or
-#     `~matplotlib.axes.Axes.set_ylim` (or, equivalently, by passing `xlim` or `ylim`
-#     to `proplot.axes.CartesianAxes.format`). To disable this feature, pass
-#     ``inbounds=False`` to the plotting command or set :rcraw:`image.inbounds`
-#     to ``False``.
+#    By default, when `~proplot.axes.apply_cmap` selects the colormap normalization
+#    range, it ignores data outside of the *x* or *y* axis limits if they
+#    were previously changed by `~matplotlib.axes.Axes.set_xlim` or
+#    `~matplotlib.axes.Axes.set_ylim` (or, equivalently, by passing `xlim` or `ylim`
+#    to `proplot.axes.CartesianAxes.format`). To disable this feature, pass
+#    ``inbounds=False`` to the plotting command or set :rcraw:`image.inbounds`
+#    to ``False``.
 
 # %%
 import proplot as pplt

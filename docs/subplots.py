@@ -46,15 +46,15 @@
 #
 # .. note::
 #
-#     "Inner" a-b-c labels and titles are surrounded with a white border when
-#     :rcraw:`abc.border` and :rcraw:`title.border` are ``True`` (the default).
-#     White boxes can be used instead by setting :rcraw:`abc.bbox` and
-#     :rcraw:`title.bbox` to ``True``. These options help labels stand
-#     out against plotted content. These "borders" and "boxes"
-#     can also be used by passing ``border=True`` or ``bbox=True`` to
-#     `~matplotlib.axes.Axes.text`, which ProPlot wraps with
-#     `~proplot.axes.text_extras`. See the :ref:`plotting sections <ug_1dplots>`
-#     for details on wrapper functions.
+#    "Inner" a-b-c labels and titles are surrounded with a white border when
+#    :rcraw:`abc.border` and :rcraw:`title.border` are ``True`` (the default).
+#    White boxes can be used instead by setting :rcraw:`abc.bbox` and
+#    :rcraw:`title.bbox` to ``True``. These options help labels stand
+#    out against plotted content. These "borders" and "boxes"
+#    can also be used by passing ``border=True`` or ``bbox=True`` to
+#    `~matplotlib.axes.Axes.text`, which ProPlot wraps with
+#    `~proplot.axes.text_extras`. See the :ref:`plotting sections <ug_1dplots>`
+#    for details on wrapper functions.
 
 # %%
 import proplot as pplt
