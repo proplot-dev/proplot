@@ -96,9 +96,7 @@ with pplt.rc.context({'axes.prop_cycle': pplt.Cycle('Grays', N=N, left=0.3)}):
 # If you did not explicitly set the x-axis label, y-axis label, title, or
 # :ref:`on-the-fly legend or colorbar <ug_cbars_axes>` label,
 # `~proplot.axes.standardize_1d` also tries to retrieve them from the DataFrame or
-# DataArray.
-#
-# You can also pass a Dataset, DataFrame, or dictionary to any plotting
+# DataArray. You can also pass a Dataset, DataFrame, or dictionary to any plotting
 # command using the `data` keyword, then pass dataset keys as positional
 # arguments instead of arrays. For example, ``ax.plot('y', data=dataset)``
 # is translated to ``ax.plot(dataset['y'])``, and the *x* coordinates are
@@ -170,7 +168,7 @@ axs[1].plot(df, cycle=cycle, lw=3, legend='uc')
 # It is often useful to create on-the-fly `property cycles
 # <https://matplotlib.org/tutorials/intermediate/color_cycle.html#sphx-glr-tutorials-intermediate-color-cycle-py>`__
 # and use different property cycles for different plot elements. You can create and
-# apply property cycles on-the-fly using the `cycle` and `cycle_kw` arguments, available
+# apply property cycles on-the-fly using the `cycle` and `cycle_kw` keywords, available
 # with any plotting method wrapped by `~proplot.axes.apply_cycle`. `cycle` and
 # `cycle_kw` are passed to the `~proplot.constructor.Cycle`
 # :ref:`constructor function <why_constructor>`, and the resulting property cycle
@@ -587,11 +585,11 @@ for orientation, array in zip(('horizontal', 'vertical'), (harray, varray)):
 # ---------------
 #
 # ProPlot wraps the `~matplotlib.axes.Axes.hist` command with
-# `~proplot.axes.standardize_1d` and `~proplot.axes.apply_cycle`
-# (see the :ref:`1d plotting section <ug_apply_cycle>`).
+# `~proplot.axes.standardize_1d` and `~proplot.axes.apply_cycle`.
 # It also wraps the `~matplotlib.axes.Axes.hist2d` and
 # `~matplotlib.axes.Axes.hexbin` commands with
-# `~proplot.axes.standardize_2d` and `~proplot.axes.apply_cmap`.
+# `~proplot.axes.standardize_2d` and `~proplot.axes.apply_cmap`
+# (see the :ref:`2d plotting section <ug_apply_cmap>`).
 # In the future, ProPlot may introduce a `kdeplot` command analogous to
 # `seaborn.kdeplot` for drawing "smooth" histograms with optional
 # panels showing the marginal distributions. For now, marginal distributions
@@ -649,10 +647,10 @@ for ax, which, color in zip(axs, 'lr', ('blue9', 'orange9')):
 # The `~matplotlib.axes.Axes.boxplot` and `~matplotlib.axes.Axes.violinplot`
 # commands are wrapped by `~proplot.axes.boxplot_extras`,
 # `~proplot.axes.violinplot_extras`, `~proplot.axes.apply_cycle`,
-# and `~proplot.axes.standardize_1d`. They also now have the optional shorthands
+# and `~proplot.axes.standardize_1d`. They also have the optional shorthands
 # `~proplot.axes.Axes.boxes` and `~proplot.axes.Axes.violins`. The wrappers
 # apply aesthetically pleasing default settings and permit configuration using
-# keyword arguments like ``color``, ``boxcolor``, and ``fillcolor``. They also
+# keywords like `color`, `barcolor`, and `fillcolor`. They also
 # automatically apply axis labels based on the `~pandas.DataFrame` or
 # `~xarray.DataArray` column labels or the input *x* coordinate labels.
 

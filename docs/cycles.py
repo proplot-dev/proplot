@@ -109,8 +109,8 @@ ax.format(title='Multiple plot calls')
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_cycles_new:
 #
-# Making new color cycles
-# -----------------------
+# Making color cycles
+# -------------------
 #
 # You can make new color cycles with the `~proplot.constructor.Cycle`
 # :ref:`constructor function <why_constructor>`. One great way to make cycles is by

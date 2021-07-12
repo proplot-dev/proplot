@@ -44,7 +44,8 @@
 # `~proplot.axes.standardize_2d` lets you optionally omit the *x* and *y*
 # coordinates, in which case they are inferred from the data.
 # It also guesses coordinate *edges* for `~matplotlib.axes.Axes.pcolor` and
-# `~matplotlib.axes.Axes.pcolormesh` plots when you supply coordinate
+# `~matplotlib.axes.Axes.pcolormesh` plots using `~proplot.utils.edges`
+# or `~proplot.utils.edges2d` when you supply coordinate
 # *centers*, and calculates coordinate *centers* for
 # `~matplotlib.axes.Axes.contourf` and `~matplotlib.axes.Axes.contour` plots
 # when you supply coordinate *edges*. Notice the locations of the rectangle
@@ -95,9 +96,7 @@ with pplt.rc.context({'image.cmap': 'Grays', 'image.levels': 21}):
 # If you did not explicitly set the x-axis label, y-axis label, title, or
 # :ref:`on-the-fly legend or colorbar <ug_cbars_axes>` label,
 # `~proplot.axes.standardize_2d` also tries to retrieve them from the DataFrame or
-# DataArray.
-#
-# You can also pass a Dataset, DataFrame, or dictionary to any plotting
+# DataArray. You can also pass a Dataset, DataFrame, or dictionary to any plotting
 # command using the `data` keyword, then pass dataset keys as positional
 # arguments instead of arrays. For example, ``ax.plot('z', data=dataset)``
 # is translated to ``ax.plot(dataset['z'])``, and the *x* and *y* coordinates
@@ -173,14 +172,14 @@ axs[1].format(xtickminor=False, yreverse=True)
 # It is often useful to create ProPlot colormaps on-the-fly, without
 # explicitly calling the `~proplot.constructor.Colormap`
 # :ref:`constructor function <why_constructor>`.
-# You can do so using the `cmap` and `cmap_kw` arguments, available with
+# You can do so using the `cmap` and `cmap_kw` keywords, available with
 # plotting methods wrapped by `~proplot.axes.apply_cmap`. `cmap` and `cmap_kw`
 # are passed to `~proplot.constructor.Colormap` and the resulting colormap is
 # used for the plot. For example, to create and apply a monochromatic colormap,
 # you can simply use ``cmap='color_name'``.
 #
 # The `~proplot.axes.apply_cmap` wrapper also
-# adds the `norm` and `norm_kw` arguments. They are passed to the
+# adds the `norm` and `norm_kw` keywords. They are passed to the
 # `~proplot.constructor.Norm` :ref:`constructor function <why_constructor>`,
 # and the resulting normalizer is used for the plot. By default,
 # `~proplot.axes.apply_cmap` selects the colormap normalization range based on
@@ -238,8 +237,8 @@ axs[1].format(title='Logarithmic normalizer')
 # the data using an arbitrary *continuous* normalizer (e.g.,
 # `~matplotlib.colors.Normalize` or `~matplotlib.colors.LogNorm`), then
 # (2) mapping the normalized data to *distinct* colormap levels. This is
-# similar to matplotlib's `~matplotlib.colors.BoundaryNorm`. By default,
-# this feature is disabled for `~matplotlib.axes.Axes.imshow`,
+# similar to matplotlib's `~matplotlib.colors.BoundaryNorm`, but more flexible.
+# By default, this feature is disabled for `~matplotlib.axes.Axes.imshow`,
 # `~matplotlib.axes.Axes.matshow`, `~matplotlib.axes.Axes.spy`,
 # `~matplotlib.axes.Axes.hexbin`, and `~matplotlib.axes.Axes.hist2d` plots.
 # To explicitly toggle it, pass ``discrete=true_or_false`` to any plotting
@@ -268,7 +267,7 @@ axs[1].format(title='Logarithmic normalizer')
 # the `positive`, `negative`, and `symmetric` keywords to ensure that
 # automatically-generated levels are strictly positive, strictly negative,
 # or symmetric about zero (respectively). To generate your own level lists,
-# the `proplot.utils.arange` and `proplot.utils.edges` commands may be useful.
+# the `~proplot.utils.arange` and `~proplot.utils.edges` commands may be useful.
 
 # %%
 import proplot as pplt
@@ -424,8 +423,8 @@ for data, mode, fair, locator in zip(
 # `~proplot.axes.apply_cmap` draws contour labels with
 # `~matplotlib.axes.Axes.clabel` and grid box labels with
 # `~matplotlib.axes.Axes.text`. You can pass keyword arguments to these
-# functions using a `labels_kw` dictionary keyword argument, and change the
-# label precision with the `precision` keyword. See
+# functions by passing a dictionary to `labels_kw`, and you can
+# change the label precision using the `precision` keyword. See
 # `~proplot.axes.apply_cmap` for details.
 
 # %%
@@ -476,14 +475,13 @@ ax.format(title='Line contours with labels')
 # Heatmap plots
 # -------------
 #
-# The new `~proplot.axes.Axes.heatmap` command calls
-# `~matplotlib.axes.Axes.pcolormesh` and configures the
-# axes with settings that are suitable for heatmaps --
-# fixed aspect ratio, no gridlines, no minor ticks,
-# and major ticks at the center of each box. Among other
-# things, this is useful for displaying covariance and
-# correlation matrices, as shown below. This should
-# generally only be used with `~proplot.axes.CartesianAxes`.
+# To make "heatmaps", use the new `~proplot.axes.Axes.heatmap` command.
+# `~proplot.axes.Axes.heatmap` simply calls `~matplotlib.axes.Axes.pcolormesh` and
+# configures the axes with settings suitable for heatmaps: fixed aspect ratios
+# (ensuring boxes are "square"), no gridlines, no minor ticks, and major ticks at the
+# center of each box. Among other things, this is useful for displaying covariance and
+# correlation matrices, as shown below. `~proplot.axes.Axes.heatmap` should generally
+# only be used with `~proplot.axes.CartesianAxes`.
 
 # %%
 import proplot as pplt

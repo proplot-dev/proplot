@@ -197,15 +197,17 @@ for ax, title in zip(
 # methods are wrapped by `~proplot.axes.colorbar_extras`, which adds several
 # new features.
 #
-# You can now draw colorbars from *lists of colors* or *lists of artists* by
-# passing a list instead of a mappable object. Colorbar minor ticks are now
-# easier to manipulate, and the tick location and formatter arguments are passed
-# through the `~proplot.constructor.Locator` and `~proplot.constructor.Formatter`
-# :ref:`constructor functions <why_constructor>`. The colorbar width and length can be
-# changed with the `width` and `length` keyword args. The colorbar width is now
-# specified using :ref:`physical units <ug_units>`, which helps avoid the common
-# issue where colorbars look "too skinny" or "too fat" and preserves the look of the
-# figure when its size is changed.
+# You can draw colorbars from lists of colors or `~matplotlib.artist.Artist`\ s by
+# passing a list to `colorbar` instead of a `~matplotlib.cm.ScalarMappable`. This can be
+# used e.g. to make a colorbar from lists of line objects. Major tick locations, minor
+# tick locations, and major tick labels can be changed using the `locator`,
+# `minorlocator`, `formatter`, `ticks`, `minorticks`, and `ticklabels` keywords. These
+# arguments are passed through the `~proplot.constructor.Locator` and
+# `~proplot.constructor.Formatter` :ref:`constructor functions <why_constructor>`. The
+# colorbar width and length can be changed with the `width` and `length` keywords,
+# and the width is now specified in :ref:`physical units <ug_units>`. This helps
+# avoid the common issue where colorbars look "too skinny" or "too fat" and
+# preserves the look of the figure when its size is changed.
 
 # %%
 import proplot as pplt
@@ -255,13 +257,13 @@ axs.format(
 # The `proplot.figure.Figure.legend` and `proplot.axes.Axes.legend` methods
 # are wrapped by `~proplot.axes.legend_extras`, which adds several new features.
 #
-# You can draw legends with centered legend rows, either by passing
-# ``center=True`` or by passing list of lists of plot handles. This is
-# accomplished by stacking multiple single-row, horizontally centered
-# legends, then manually adding an encompassing legend frame. You can also
-# modify legend *text and handle properties* with several keyword args, and
-# switch between row-major and column-major order for legend entries with the
-# `order` keyword arg (default is row-major).
+# You can draw legends with centered rows by passing ``center=True`` or
+# by passing list of lists of plot handles. This is accomplished by stacking
+# multiple single-row, horizontally centered legends, then adding an
+# encompassing legend frame. You can also switch between row-major and column-major
+# order for legend entries using the `order` keyword (the default is ``order='C'``)
+# or modify legend text and handles with keywords like `fontsize`, `fontweight`,
+# `linewidth`, and `color`.
 
 # %%
 import proplot as pplt

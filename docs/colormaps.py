@@ -149,16 +149,16 @@ for cmaps in (('magma', 'rocket'), ('fire', 'dusk')):
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_cmaps_new:
 #
-# Making new colormaps
-# --------------------
+# Making colormaps
+# ----------------
 #
 # ProPlot doesn't just include new colormaps -- it provides tools for merging
-# colormaps, modifying colormaps, making :ref:`perceptually uniform colormaps
-# <ug_perceptual>` from scratch, and saving the results for future use. For
-# your convenience, most of these features can be accessed via the
-# `~proplot.constructor.Colormap` :ref:`constructor function <why_constructor>`. Note
-# that every plotting command that accepts a `cmap` keyword passes it through this
-# function (see `~proplot.axes.apply_cmap`).
+# colormaps, modifying existing colormaps, making new
+# :ref:`perceptually uniform colormaps <ug_perceptual>`, and saving colormaps
+# for future use. Most of these features can be accessed via the
+# `~proplot.constructor.Colormap` :ref:`constructor function <why_constructor>`.
+# Note that every plotting command that accepts a `cmap` keyword passes it through
+# this function (see `~proplot.axes.apply_cmap`).
 #
 # To make `~proplot.colors.PerceptuallyUniformColormap`\ s from scratch, you
 # have the following three options:
@@ -173,11 +173,12 @@ for cmaps in (('magma', 'rocket'), ('fire', 'dusk')):
 #   the `~proplot.colors.PerceptuallyUniformColormap.from_list` static method,
 #   which linearly interpolates between each color in hue, saturation, and
 #   luminance.
-# * Pass a *dictionary* to `~proplot.constructor.Colormap`. This calls the
-#   `~proplot.colors.PerceptuallyUniformColormap.from_hsl` static method,
-#   which draws lines between channel values specified by the keyword arguments
-#   `hue`, `saturation`, and `luminance`. The values can be numbers, color
-#   strings, or lists thereof. Numbers indicate the channel value. For color
+# * Pass a *dictionary* to `~proplot.constructor.Colormap` containing the keys
+#   `hue`, `saturation`, and `luminance` (or their shorthands `h`, `s`, and `l`), or
+#   pass these to `~proplot.constructor.Colormap` as keyword arguments. This calls
+#   the `~proplot.colors.PerceptuallyUniformColormap.from_hsl` static method,
+#   which draws lines between the specified channel values. The values can be numbers,
+#   color strings, or lists thereof. Numbers indicate channel value. For color
 #   strings, the channel value is *inferred* from the specified color. You can
 #   end any color string with ``'+N'`` or ``'-N'`` to *offset* the channel
 #   value by the number ``N``.
@@ -244,7 +245,7 @@ fig, axs = pplt.show_channels(cmap3, cmap4, refwidth=1.5, rgb=False)
 # Merging colormaps
 # -----------------
 #
-# To *merge* colormaps, simply pass multiple positional arguments to the
+# To *merge* colormaps, you can pass multiple positional arguments to the
 # `~proplot.constructor.Colormap` constructor. This calls the
 # `~proplot.colors.LinearSegmentedColormap.append` method. Each positional
 # argument can be a colormap name, a colormap instance, or a

@@ -3719,7 +3719,7 @@ def colorbar_extras(
         Default is :rc:`colorbar.grid`.
     label, title : str, optional
         The colorbar label. The `title` keyword is also accepted for
-        consistency with `legend`.
+        consistency with `~matplotlib.axes.Axes.legend`.
     locator, ticks : locator spec, optional
         Used to determine the colorbar tick positions. Passed to the
         `~proplot.constructor.Locator` constructor.
@@ -4185,11 +4185,10 @@ def _single_legend(self, pairs, ncol=None, order=None, **kwargs):
 
 
 def legend_extras(
-    self, handles=None, labels=None, *, loc=None, ncol=None, ncols=None,
+    self, handles=None, labels=None, *, loc=None,
+    frame=None, frameon=None, ncol=None, ncols=None,
     center=None, order='C', label=None, title=None,
     fontsize=None, fontweight=None, fontcolor=None,
-    color=None, marker=None, lw=None, linewidth=None,
-    dashes=None, linestyle=None, markersize=None, frameon=None, frame=None,
     **kwargs
 ):
     """
@@ -4230,6 +4229,9 @@ def legend_extras(
         center              ``9``, ``'center'``, ``'c'``
         ==================  ================================================
 
+    frame, frameon : bool, optional
+        Toggles the legend frame. For centered-row legends, a frame
+        independent from matplotlib's built-in legend frame is created.
     ncol, ncols : int, optional
         The number of columns. `ncols` is an alias, added
         for consistency with `~matplotlib.pyplot.subplots`.
@@ -4238,18 +4240,17 @@ def legend_extras(
         (``'F'``) order. Analagous to `numpy.array` ordering. For some reason
         ``'F'`` was the original matplotlib default. Default is ``'C'``.
     center : bool, optional
-        Whether to center each legend row individually. If ``True``, we
-        actually draw successive single-row legends stacked on top of each
-        other. If ``None``, we infer this setting from `handles`. Default is
-        ``True`` if `handles` is a list of lists (each sublist is used as a *row*
-        in the legend). Otherwise, default is ``False``.
+        Whether to center each legend row individually. If ``True``, we actually draw
+        successive single-row legends stacked on top of each other. If ``None``, we
+        infer this setting from `handles`. By default, `center` is set to ``True``
+        if `handles` is a list of lists (each sublist is used as a row in the legend).
     title, label : str, optional
         The legend title. The `label` keyword is also accepted, for consistency
-        with `colorbar`.
+        with `~matplotlib.figure.Figure.colorbar`.
     fontsize, fontweight, fontcolor : optional
         The font size, weight, and color for the legend text. The default
         font size is :rcraw:`legend.fontsize`.
-    color, lw, linewidth, marker, linestyle, dashes, markersize \
+    color, lw, linewidth, m, marker, ls, linestyle, dashes, ms, markersize \
 : property-spec, optional
         Properties used to override the legend handles. For example, for a
         legend describing variations in line style ignoring variations in color, you
@@ -4311,18 +4312,8 @@ def legend_extras(
     for key, value in (('color', fontcolor), ('weight', fontweight)):
         if value is not None:
             kw_text[key] = value
-    kw_handle = {'solid_capstyle': 'butt'}
-    for key, value in (
-        ('color', color),
-        ('marker', marker),
-        ('linewidth', lw),
-        ('linewidth', linewidth),
-        ('markersize', markersize),
-        ('linestyle', linestyle),
-        ('dashes', dashes),
-    ):
-        if value is not None:
-            kw_handle[key] = value
+    kw_handle = _pop_props(kwargs, 'lines')
+    kw_handle['solid_capstyle'] = 'butt'
 
     # Get axes for legend handle detection
     # TODO: Update this when no longer use "filled panels" for outer legends

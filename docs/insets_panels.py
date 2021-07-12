@@ -30,7 +30,6 @@
 # In ProPlot, you can create panels by passing a location (e.g., ``loc='r'`` or
 # ``loc='right'``) to the `~proplot.axes.Axes.panel` or `~proplot.axes.Axes.panel_axes`
 # methods. The resulting axes are instances of `~proplot.axes.CartesianAxes`.
-#
 # To generate "stacked" panels, simply call `~proplot.axes.Axes.panel` more
 # than once. To include panels when centering spanning axis labels and super
 # titles, pass ``includepanels=True`` to `~proplot.figure.Figure`. Panels
@@ -119,12 +118,12 @@ for ax, side in zip(axs, 'tlbr'):
 # can be generated with the `~proplot.axes.Axes.inset` or
 # `~proplot.axes.Axes.inset_axes` command. By default, inset axes
 # have the same projection as the parent axes, but you can also request
-# a different projection (e.g., ``ax.inset(bounds, proj='polar')``).
+# a different projection (e.g., ``ax.inset_axes(bounds, proj='polar')``).
 # Passing ``zoom=True`` to `~proplot.axes.Axes.inset` draws "zoom indication"
 # lines with `~matplotlib.axes.Axes.indicate_inset_zoom` when the axes are both
-# Cartesian, and ProPlot automatically updates the lines when the axis limits of
-# the parent axes change. To modify the line properties, simply use the `zoom_kw`
-# argument.
+# `~proplot.axes.Axes.CartesianAxes`, and ProPlot automatically updates the lines
+# when the axis limits of the parent axes change. To modify the zoom line properties,
+# simply pass a dictionary to `zoom_kw`.
 
 # %%
 import proplot as pplt

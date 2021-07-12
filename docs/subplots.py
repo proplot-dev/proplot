@@ -140,12 +140,12 @@ axs.format(
 import proplot as pplt
 import numpy as np
 
-# # Auto sized grid of cartopy projections
-# fig, axs = pplt.subplots(ncols=2, nrows=3, proj='robin')
-# axs.format(
-#     land=True, landcolor='k',
-#     suptitle='Auto figure sizing with grid of cartopy projections'
-# )
+# Auto sized grid of cartopy projections
+fig, axs = pplt.subplots(ncols=2, nrows=3, proj='robin')
+axs.format(
+    land=True, landcolor='k',
+    suptitle='Auto figure sizing with grid of cartopy projections'
+)
 
 # Auto sized grid of images
 state = np.random.RandomState(51423)

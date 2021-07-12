@@ -281,8 +281,8 @@ axs.format(
 # ------------------
 #
 # `matplotlib.pyplot.subplots` returns a 2D `~numpy.ndarray` for figures with more
-# than one column and row, a 1D `~numpy.ndarray` for single-row or column figures,
-# or a lone `~matplotlib.axes.Axes` instance for single-subplot figures. By contrast,
+# than one column and row, a 1D `~numpy.ndarray` for single-column or row figures,
+# or an `~matplotlib.axes.Axes` for single-subplot figures. By contrast,
 # `proplot.ui.subplots` returns a `~proplot.ui.SubplotsContainer` that
 # unifies these three possible return values:
 #
@@ -328,8 +328,8 @@ for ax in axs[1:, 1:]:
 # Settings and styles
 # -------------------
 #
-# A special object named `~proplot.config.rc` is created whenever you import
-# ProPlot. `~proplot.config.rc` is similar to the matplotlib
+# A dictionary-like object named `~proplot.config.rc` is created when you
+# import ProPlot. `~proplot.config.rc` is similar to the matplotlib
 # `~matplotlib.rcParams` dictionary, but can be used to change both
 # `matplotlib settings <https://matplotlib.org/users/customizing.html>`__ and
 # :ref:`ProPlot settings <rc_proplot>`. `~proplot.config.rc` also

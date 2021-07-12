@@ -96,8 +96,9 @@ Finally, the ``land``, ``ocean``, ``rivers``, ``lakes``,
 The proplotrc file
 ------------------
 
-When you install ProPlot for the first time, a ``.proplotrc`` file is generated
-and placed in your home directory. This is just like the `matplotlibrc file
+When you import ProPlot for the first time, a ``.proplotrc`` file is generated and
+placed in the home directory. To update this file after a version change, simply
+remove it, then import ProPlot again. This file is just like the `matplotlibrc file
 <https://matplotlib.org/stable/tutorials/introductory/customizing.html#customizing-with-matplotlibrc-files>`__,
 but for changing both ProPlot *and* matplotlib settings. The syntax is basically
 the same as the ``matplotlibrc`` syntax.

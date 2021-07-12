@@ -738,7 +738,7 @@ ProPlot settings can be changed using a ``~/.proplotrc`` file in the home
 directory or by adding files named ``.proplotrc`` or ``proplotrc`` to
 either 1) the current directory or 2) any parent directories. This
 can be useful when working in projects with lots of subfolders. See
-the :ref:`user guide <ug_config>` for details.
+the :ref:`user guide <ug_proplotrc>` for details.
 
 ProPlot also automatically loads colormaps, color cycles, colors, and font files
 saved in the ``~/.proplot/cmaps``,  ``~/.proplot/cycles``, ``~/.proplot/colors``,
