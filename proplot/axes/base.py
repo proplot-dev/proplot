@@ -2016,8 +2016,8 @@ class Axes(maxes.Axes):
     )
     parametric = wrap._apply_wrappers(
         parametric,
-        wrap._parametric_extras,
         wrap.standardize_1d,
+        wrap._parametric_extras,
         wrap.apply_cmap,
     )
     hexbin = wrap._apply_wrappers(
