@@ -281,14 +281,14 @@ data = (state.normal(0, 1, size=(33, 33))).cumsum(axis=0).cumsum(axis=1)
 fig, axs = pplt.subplots([[1, 1, 2, 2], [0, 3, 3, 0]], ref=3, refwidth=2.3)
 axs.format(yformatter='none', suptitle='Distinct vs. smooth colormap levels')
 
-# Pcolor with DivergingNorm
+# Pcolor
 axs[0].pcolor(data, cmap='spectral_r', norm='div', colorbar='l')
 axs[0].set_title('Pcolor plot\nDiscreteNorm enabled (default)')
 axs[1].pcolor(data, discrete=False, cmap='spectral_r', norm='div', colorbar='r')
 axs[1].set_title('Pcolor plot\nDiscreteNorm disabled')
 
 # Imshow
-m = axs[2].imshow(data, cmap='roma', colorbar='b')
+m = axs[2].imshow(data, cmap='roma', norm='div', colorbar='b')
 axs[2].format(title='Imshow plot\nDiscreteNorm disabled (default)', yformatter='auto')
 
 # %%

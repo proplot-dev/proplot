@@ -103,10 +103,10 @@ h2{
 h3{
   font-size: 160%;
 }
-h4{
+h4, .rst-content p.rubric{
   font-size: 140%;
 }
-h5, .rst-content p.rubric{
+h5{
   font-size: 120%;
 }
 h6{
