@@ -43,10 +43,11 @@ matplotlib can be cumbersome or repetitive for users who...
 * Need to make new figures nearly every day.
 
 ProPlot's core mission is to provide a smoother plotting experience for
-the most demanding matplotlib users. We accomplish this by *expanding upon*
-matplotlib's object-oriented interface. ProPlot makes changes that would be
-hard to justify or difficult to incorporate into matplotlib itself, owing
-to differing design choices and backwards compatibility considerations.
+matplotlib's most demanding users. We accomplish this by *expanding upon*
+matplotlib's :ref:`object-oriented interface <usage_background>`. ProPlot
+makes changes that would be hard to justify or difficult to incorporate
+into matplotlib itself, owing to differing design choices and backwards
+compatibility considerations.
 
 This page enumerates these changes and explains how they
 address the limitations of matplotlib's default interface.
@@ -96,7 +97,7 @@ Think of this as an expanded and thoroughly documented version of the
 `matplotlib.artist.Artist.update` command. `~proplot.axes.Axes.format` can modify things
 like axis labels and titles and apply new :ref:`"rc" settings <why_rc>` to existing
 axes. It also integrates with various :ref:`constructor functions <why_constructor>`
-to help keep things succinct. Further, :ref:`subplot containers <ug_containers>` can
+to help keep things succinct. Further, :ref:`subplot containers <ug_container>` can
 be used to `~proplot.axes.Axes.format` several subplots at once.
 
 Together, these features significantly reduce the amount of code needed to create
