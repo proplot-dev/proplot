@@ -48,7 +48,7 @@ The documentation is `published on readthedocs <https://proplot.readthedocs.io>`
    :alt: license
    :target: LICENSE.txt
 
-.. |doi| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.3873879.svg
+.. |doi| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.5093131.svg
    :alt: doi
    :target: https://zenodo.org/record/3873879
 
