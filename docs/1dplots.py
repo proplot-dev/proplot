@@ -610,11 +610,16 @@ fig, ax = pplt.subplots(refwidth=4, refaspect=(3, 2))
 ax.format(suptitle='Overlaid histograms', xlabel='distribution', ylabel='count')
 ax.hist(
     x, pplt.arange(-3, 8, 0.2), alpha=0.7,
-    cycle=('blue9', 'gray9', 'orange9'), labels=list('abc'), legend='ul',
+    cycle=('indigo9', 'gray3', 'red9'), labels=list('abc'), legend='ul',
 )
+
+# %%
+import proplot as pplt
+import numpy as np
 
 # Sample data
 N = 500
+state = np.random.RandomState(51423)
 x = state.normal(size=(N,))
 y = state.normal(size=(N,))
 bins = pplt.arange(-3, 3, 0.25)
@@ -622,21 +627,23 @@ bins = pplt.arange(-3, 3, 0.25)
 # Histogram with marginal distributions
 fig, axs = pplt.subplots(ncols=2, refwidth=2.3)
 axs.format(
-    abc=True, abcstyle='A.', titleabove=True, title='Test',
-    ylabel='y axis', suptitle='Histograms with marginal distributionss'
+    abc=True, abcstyle='A.', abcloc='l', titleabove=True,
+    ylabel='y axis', suptitle='Histograms with marginal distributions'
 )
-for ax, which, color in zip(axs, 'lr', ('blue9', 'orange9')):
+for ax, which, color, title in zip(
+    axs, 'lr', ('indigo9', 'red9'), ('Group 1', 'Group 2')
+):
     ax.hist2d(
         x, y, bins, vmin=0, vmax=10, levels=50,
         cmap=color, colorbar='b', colorbar_kw={'label': 'count'}
     )
     color = pplt.scale_luminance(color, 1.5)  # histogram colors
     side = ax.panel(which, space=0)
-    side.hist(y, bins, color=color, vert=False)  # or orientation='horizontal'
+    side.hist(y, bins, lw=0, color=color, vert=False)  # or orientation='horizontal'
     side.format(grid=False, xlocator=[], xreverse=(which == 'l'))
     top = ax.panel('t', space=0)
-    top.hist(x, bins, color=color)
-    top.format(grid=False, ylocator=[])
+    top.hist(x, bins, lw=0, color=color)
+    top.format(grid=False, ylocator=[], title=title, titleloc='l')
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_boxplots:
