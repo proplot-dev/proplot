@@ -730,7 +730,7 @@ c = pd.Series(c, name='parametric coordinate')
 # Parametric line with smooth gradations
 ax = axs[0]
 m = ax.parametric(
-    x, y, c, interp=5, capstyle='round', joinstyle='round',
+    x, y, c, interp=10, capstyle='round', joinstyle='round',
     lw=7, cmap=cmap, colorbar='b', colorbar_kw={'locator': 5}
 )
 ax.format(xlabel='xlabel', ylabel='ylabel', title='Line with smooth gradations')

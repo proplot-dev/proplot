@@ -858,6 +858,8 @@ def standardize_1d(self, *args, data=None, autoformat=None, **kwargs):
     # Parse positional args
     if parametric and len(args) == 3:  # allow positional values
         kwargs['values'] = args.pop(2)
+    if parametric and 'c' in kwargs:  # handle aliases
+        kwargs['values'] = kwargs.pop('c')
     if onecoord or len(args) == 1:  # allow hist() positional bins
         x, ys, args = None, args[:1], args[1:]
     elif twocoords:
@@ -1720,6 +1722,45 @@ def _stem_extras(
         except TypeError:
             del kwargs['use_line_collection']  # older version
             return method(self, *args, **kwargs)
+
+
+def _parametric_extras(self, x, y, c=None, *, values=None, interp=0, **kwargs):
+    """
+    Interpolate the array.
+    """
+    # Parse input
+    # NOTE: Critical to put this here instead of parametric() so that the
+    # interpolated 'values' are used to select colormap levels in apply_cmap.
+    method = kwargs.pop('_method')
+    c = _not_none(c=c, values=values)
+    if c is None:
+        raise ValueError('Values must be provided.')
+    c = _to_ndarray(c)
+    ndim = tuple(_.ndim for _ in (x, y, c))
+    size = tuple(_.size for _ in (x, y, c))
+    if any(_ != 1 for _ in ndim):
+        raise ValueError(f'Input coordinates must be 1D. Instead got dimensions {ndim}.')  # noqa: E501
+    if any(_ != size[0] for _ in size):
+        raise ValueError(f'Input coordinates must have identical size. Instead got sizes {size}.')  # noqa: E501
+
+    # Interpolate values to allow for smooth gradations between values
+    # (interp=False) or color switchover halfway between points
+    # (interp=True). Then optionally interpolate the colormap values.
+    # NOTE: The 'extras' wrapper handles input before ingestion by other wrapper
+    # functions. *This* method is analogous to a native matplotlib method.
+    if interp > 0:
+        x_orig, y_orig, v_orig = x, y, c
+        x, y, c = [], [], []
+        for j in range(x_orig.shape[0] - 1):
+            idx = slice(None)
+            if j + 1 < x_orig.shape[0] - 1:
+                idx = slice(None, -1)
+            x.extend(np.linspace(x_orig[j], x_orig[j + 1], interp + 2)[idx].flat)
+            y.extend(np.linspace(y_orig[j], y_orig[j + 1], interp + 2)[idx].flat)
+            c.extend(np.linspace(v_orig[j], v_orig[j + 1], interp + 2)[idx].flat)  # noqa: E501
+        x, y, c = np.array(x), np.array(y), np.array(c)
+
+    return method(self, x, y, values=c, **kwargs)
 
 
 def _check_negpos(name, **kwargs):

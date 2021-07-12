@@ -1346,8 +1346,8 @@ class Axes(maxes.Axes):
 
     @docstring.add_snippets
     def parametric(
-        self, x, y, values=None, cmap=None, norm=None, *,
-        interp=0, scalex=True, scaley=True, **kwargs
+        self, x, y, c=None, *, values=None,
+        cmap=None, norm=None, scalex=True, scaley=True, **kwargs
     ):
         """
         Draw a line whose color changes as a function of the parametric
@@ -1357,10 +1357,10 @@ class Axes(maxes.Axes):
 
         Parameters
         ----------
-        *args : (y,), (x, y), or (x, y, values)
+        *args : (y,), (x, y), or (x, y, c)
             The coordinates. If `x` is not provided, it is inferred from `y`.
             The parametric coordinate can be indicated as a third positional
-            argument or with the `values` or `levels` keywords.
+            argument or with the `c` or `values` keywords.
         %(axes.cmap_norm)s
         interp : int, optional
             If greater than ``0``, we interpolate to additional points
@@ -1388,38 +1388,10 @@ class Axes(maxes.Axes):
         proplot.axes.standardize_1d
         proplot.axes.apply_cmap
         """
-        # Parse input
-        # NOTE: Input *x* and *y* will have been standardized by _standardize_1d
-        if values is None:
-            raise ValueError('Values must be provided.')
-        values = wrap._to_ndarray(values)
-        ndim = tuple(_.ndim for _ in (x, y, values))
-        size = tuple(_.size for _ in (x, y, values))
-        if any(_ != 1 for _ in ndim):
-            raise ValueError(f'Input coordinates must be 1D. Instead got dimensions {ndim}.')  # noqa: E501
-        if any(_ != size[0] for _ in size):
-            raise ValueError(f'Input coordinates must have identical size. Instead got sizes {size}.')  # noqa: E501
-
-        # Interpolate values to allow for smooth gradations between values
-        # (interp=False) or color switchover halfway between points
-        # (interp=True). Then optionally interpolate the colormap values.
-        # NOTE: The 'extras' wrapper handles input before ingestion by other wrapper
-        # functions. *This* method is analogous to a native matplotlib method.
-        if interp > 0:
-            x_orig, y_orig, v_orig = x, y, values
-            x, y, values = [], [], []
-            for j in range(x_orig.shape[0] - 1):
-                idx = slice(None)
-                if j + 1 < x_orig.shape[0] - 1:
-                    idx = slice(None, -1)
-                x.extend(np.linspace(x_orig[j], x_orig[j + 1], interp + 2)[idx].flat)
-                y.extend(np.linspace(y_orig[j], y_orig[j + 1], interp + 2)[idx].flat)
-                values.extend(np.linspace(v_orig[j], v_orig[j + 1], interp + 2)[idx].flat)  # noqa: E501
-            x, y, values = np.array(x), np.array(y), np.array(values)
-
         # Get coordinates and values for points to the 'left' and 'right' of joints
+        c = _not_none(c=c, values=values)
         coords = []
-        levels = edges(values)
+        levels = edges(c)
         for i in range(y.shape[0]):
             icoords = np.empty((3, 2))
             for j, arr in enumerate((x, y)):
@@ -1435,8 +1407,7 @@ class Axes(maxes.Axes):
             coords, cmap=cmap, norm=norm,
             linestyles='-', capstyle='butt', joinstyle='miter',
         )
-        values = np.asarray(values)
-        hs.set_array(values)
+        hs.set_array(c)
         hs.update({
             key: value for key, value in kwargs.items()
             if key not in ('color',)
@@ -1447,7 +1418,7 @@ class Axes(maxes.Axes):
         # backwards compatible to earliest matplotlib versions.
         self.add_collection(hs)
         self.autoscale_view(scalex=scalex, scaley=scaley)
-        hs.values = values
+        hs.values = c
         hs.levels = levels  # needed for other functions
 
         return hs
@@ -2045,6 +2016,7 @@ class Axes(maxes.Axes):
     )
     parametric = wrap._apply_wrappers(
         parametric,
+        wrap._parametric_extras,
         wrap.standardize_1d,
         wrap.apply_cmap,
     )
