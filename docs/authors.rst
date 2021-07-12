@@ -13,6 +13,7 @@ Contributors
 
 * `Luke Davis`_
 * `Riley Brady`_
+* `Mark Harfouche`_
 * `Stephane Raynaud`_
 * `Mickaël Lalande`_
 * `Pratiman Patel`_
@@ -46,6 +47,8 @@ Climate Analytics team at McKinsey & Company.
 .. _Luke Davis: https://github.com/lukelbd
 
 .. _Riley Brady: https://github.com/bradyrx
+
+.. _Mark Harfouche: https://github.com/hmaarrfk
 
 .. _Stephane Raynaud: https://github.com/stefraynaud
 

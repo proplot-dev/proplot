@@ -248,7 +248,7 @@ be carried out as follows:
 
       # Remove previous build products and build the package
       rm -r dist build *.egg-info
-      python setup.py sdist bdist_wheel --universal
+      python setup.py sdist bdist_wheel
       # Check the source and upload to the test repository
       twine check dist/*
       twine upload --repository-url https://test.pypi.org/legacy/ dist/*
