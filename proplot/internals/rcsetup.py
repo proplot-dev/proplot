@@ -615,10 +615,9 @@ _rc_proplot = {
     # Image additions
     'image.discrete': (
         None,
-        'Whether to use `~proplot.colors.DiscreteNorm` for each plot. If ``True``, '
-        '`~proplot.colors.DiscreteNorm` is always used. If ``False``, it is never '
-        'used. If ``None``, it is used for all plot types except `imshow`, `matshow`, '
-        '`spy`, `hexbin`, and `hist2d`. See `~proplot.axes.apply_cmap` for details.'
+        'If ``True``, `~proplot.colors.DiscreteNorm` is used for every colormap plot. '
+        'If ``False``, it is never used. If ``None``, it is used for all plot types '
+        'except `imshow`, `matshow`, `spy`, `hexbin`, and `hist2d`.'
     ),
     'image.edgefix': (
         True,
@@ -629,13 +628,13 @@ _rc_proplot = {
     ),
     'image.inbounds': (
         True,
-        'Whether to only use in-bounds data when selecting automatic colormap limits '
-        'if the *x* or *y* axis limits have been explicitly set.'
+        'If ``True`` and the *x* and *y* axis limits have been explicitly set, '
+        'only in-bounds data is considered when determining default colormap limits.'
     ),
     'image.levels': (
         11,
         'Default number of `~proplot.colors.DiscreteNorm` levels for plotting '
-        'commands wrapped `~proplot.axes.apply_cmap`.'
+        'commands that use colormaps.'
     ),
 
     # Backend stuff
