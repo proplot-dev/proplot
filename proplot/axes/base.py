@@ -547,11 +547,11 @@ class Axes(maxes.Axes):
         for loc in ('abc', 'left', 'center', 'right'):
             kw = {}
             cobj = self._title_dict[loc]
+            tobj = tax._title_dict[loc]  # WARNING: Careful to use 'abc' here
             if loc == 'abc':
                 loc = tax._abc_loc = self._abc_loc
             if loc not in ('left', 'center', 'right'):
                 continue
-            tobj = tax._title_dict[loc]
             text = cobj.get_text()
             if not text:
                 continue
