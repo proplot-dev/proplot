@@ -5,7 +5,7 @@ version: 2
 # Sphinx config
 sphinx:
   builder: html
-  configuration: docs/conf.py
+  configuration: docs/source/conf.py
 
 # Python config
 build:
@@ -14,4 +14,4 @@ python:
   version: 3.6
   system_packages: true
 conda:
-  environment: docs/environment.yml
+  environment: docs/source/environment.yml
