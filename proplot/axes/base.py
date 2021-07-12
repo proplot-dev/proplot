@@ -1062,8 +1062,8 @@ class Axes(maxes.Axes):
         See also
         --------
         matplotlib.axes.Axes.fill_between
-        proplot.axes.standardize_1d
         proplot.axes.fill_between_extras
+        proplot.axes.standardize_1d
         proplot.axes.apply_cycle
         """
         # NOTE: *Cannot* assign area = axes.Axes.fill_between because the
@@ -1078,8 +1078,8 @@ class Axes(maxes.Axes):
         See also
         --------
         matplotlib.axes.Axes.fill_betweenx
-        proplot.axes.standardize_1d
         proplot.axes.fill_betweenx_extras
+        proplot.axes.standardize_1d
         proplot.axes.apply_cycle
         """
         return self.fill_betweenx(*args, **kwargs)
@@ -1091,8 +1091,8 @@ class Axes(maxes.Axes):
         See also
         --------
         matplotlib.axes.Axes.boxplot
-        proplot.axes.standardize_1d
         proplot.axes.boxplot_extras
+        proplot.axes.standardize_1d
         proplot.axes.apply_cycle
         """
         return self.boxplot(*args, **kwargs)
@@ -1326,7 +1326,7 @@ class Axes(maxes.Axes):
         """
         As with `~matplotlib.axes.Axes.plot` but interpret a single
         positional argument as *x* and multiple positional arguments
-        as *y* and *x* (in that order).
+        as (*y*, *x*) pairs.
 
         Parameters
         ----------
@@ -1427,7 +1427,7 @@ class Axes(maxes.Axes):
         """
         As with `~matplotlib.axes.Axes.scatter` but interpret a single
         positional argument as *x* and multiple positional arguments
-        as *y* and *x* (in that order).
+        as (*y*, *x*) pairs.
 
         Parameters
         ----------
@@ -1436,9 +1436,12 @@ class Axes(maxes.Axes):
 
         See also
         --------
-        proplot.axes.standardize_1d
         matplotlib.axes.Axes.scatter
+        proplot.axes.scatter_extras
         proplot.axes.scatterx_extras
+        proplot.axes.standardize_1d
+        proplot.axes.indicate_error
+        proplot.axes.apply_cycle
         """
         # NOTE: Arguments are standardized once we reach this block
         x, y, *args = args
@@ -1451,8 +1454,8 @@ class Axes(maxes.Axes):
         See also
         --------
         matplotlib.axes.Axes.violinplot
-        proplot.axes.standardize_1d
         proplot.axes.violinplot_extras
+        proplot.axes.standardize_1d
         proplot.axes.indicate_error
         proplot.axes.apply_cycle
         """
@@ -1559,11 +1562,9 @@ class Axes(maxes.Axes):
             orientation = 'vertical'
 
         # Update default keyword args
-        orientation_user = kwargs.get('orientation', None)
-        if orientation_user and orientation_user != orientation:
-            warnings._warn_proplot(
-                f'Overriding input orientation={orientation_user!r}.'
-            )
+        iorientation = kwargs.get('orientation', None)
+        if iorientation and iorientation != orientation:
+            warnings._warn_proplot(f'Overriding input orientation={iorientation!r}.')
         ticklocation = _not_none(
             ticklocation=kwargs.pop('ticklocation', None),
             tickloc=kwargs.pop('tickloc', None),
