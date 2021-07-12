@@ -131,9 +131,9 @@ import proplot as pplt
 import numpy as np
 
 # Figure
-fig, axs = pplt.subplots(nrows=2, share=0)
+fig, axs = pplt.subplots(ncols=2, share=0, refwidth=2.3)
 axs.format(
-    xformatter='null', yformatter='null', abc=True, abcloc='l', abcstyle='A.',
+    xformatter='null', yformatter='null', abc=True, abcstyle='A.', titleloc='l',
     suptitle='On-the-fly color selections'
 )
 
@@ -147,10 +147,10 @@ for idx in idxs:
     data = (state.rand(20) - 0.4).cumsum()
     h = ax.plot(
         data, lw=5, color=(name, idx),
-        label=f'idx {idx:.1f}', legend='r', legend_kw={'ncols': 1}
+        label=f'idx {idx:.1f}', legend='l', legend_kw={'ncols': 1}
     )
-ax.colorbar(pplt.Colormap(name), loc='r', locator='none')
-ax.format(title=f'Drawing from the {name} colormap', grid=True)
+ax.colorbar(pplt.Colormap(name), loc='l', locator='none')
+ax.format(title=f'Drawing from colormap {name!r}', grid=True)
 
 # Drawing from color cycles
 ax = axs[1]
@@ -164,7 +164,7 @@ for idx in idxs:
         label=f'idx {idx:.0f}', legend='r', legend_kw={'ncols': 1}
     )
 ax.colorbar(pplt.Colormap(name), loc='r', locator='none')
-ax.format(title=f'Drawing from the {name} cycle')
+ax.format(title=f'Drawing from color cycle {name!r}')
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"

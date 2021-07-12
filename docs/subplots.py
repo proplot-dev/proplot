@@ -138,26 +138,6 @@ axs.format(
 
 # %%
 import proplot as pplt
-import numpy as np
-
-# Auto sized grid of cartopy projections
-fig, axs = pplt.subplots(ncols=2, nrows=3, proj='robin')
-axs.format(
-    land=True, landcolor='k',
-    suptitle='Auto figure sizing with grid of cartopy projections'
-)
-
-# Auto sized grid of images (note the square pixels)
-state = np.random.RandomState(51423)
-colors = np.tile(state.rand(15, 12, 1), (1, 1, 3))
-fig, axs = pplt.subplots(ncols=3, nrows=2, refwidth=1.7)
-axs.imshow(colors)
-axs.format(
-    suptitle='Auto figure sizing with grid of images'
-)
-
-# %%
-import proplot as pplt
 
 # Change the reference subplot width
 suptitle = 'Effect of subplot width on figure size'
@@ -203,6 +183,26 @@ for ref in (1, 2):
         title='reference', titleweight='bold',
         titleloc='uc', titlecolor='red9'
     )
+
+# %%
+import proplot as pplt
+import numpy as np
+
+# Auto sized grid of cartopy projections
+fig, axs = pplt.subplots(ncols=2, nrows=3, proj='robin')
+axs.format(
+    land=True, landcolor='k',
+    suptitle='Auto figure sizing with grid of cartopy projections'
+)
+
+# Auto sized grid of images (note the square pixels)
+state = np.random.RandomState(51423)
+colors = np.tile(state.rand(15, 12, 1), (1, 1, 3))
+fig, axs = pplt.subplots(ncols=3, nrows=2, refwidth=1.7)
+axs.imshow(colors)
+axs.format(
+    suptitle='Auto figure sizing with grid of images'
+)
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
