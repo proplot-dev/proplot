@@ -71,6 +71,15 @@ ProPlot v0.8.0 (2021-##-##)
   `~proplot.subplots.EdgeStack` stacks rather than getting inserted directly
   into the main `~proplot.subplots.GridSpec` (:pr:`110`).
 
+ProPlot v0.7.1 (2021-##-##)
+===========================
+
+.. rubric:: Bug fixes
+
+* Fix issue where deprecated `aspect` `~proplot.ui.subplots` argument
+  is ignored (:commit:`70a8b87d`).
+
+
 ProPlot v0.7.0 (2021-07-11)
 ===========================
 
