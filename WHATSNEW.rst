@@ -83,10 +83,13 @@ ProPlot v0.7.1 (2021-##-##)
 * Fix issue where a-b-c labels are removed in presence of ``'top'`` panels
   with ``titleabove=True`` (:commit:`7873d5e0`).
 
-.. rubric:: Bug fixes
+.. rubric:: Features
 
 * Support list-of-strings parametric coordinate and format on-the-fly colorbar ticks
   with those string labels (:commit:`02fbda45`).
+* Add new :rcraw:`leftlabel.rotation`, :rcraw:`toplabel.rotation`,
+  :rcraw:`rightlabel.rotation`, :rcraw:`bottomlabel.rotation` keywords, make
+  default row label rotation match default y label rotation (:commit:`bae85113`).
 
 
 ProPlot v0.7.0 (2021-07-11)

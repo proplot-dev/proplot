@@ -267,7 +267,7 @@ for globe in (False, True):
     axs.format(
         suptitle=f'Geophysical data {string} global coverage',
         toplabels=('Cartopy example', 'Basemap example'),
-        leftlabels=('Contourf', 'Pcolormesh'),
+        leftlabels=('Contourf', 'Pcolormesh'), leftlabelrotation=0,
         toplabelweight='normal', leftlabelweight='normal',
         abc=True, abcstyle='a)', abcloc='ul', abcborder=False,
         coast=True, lonlines=90,
