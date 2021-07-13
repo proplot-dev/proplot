@@ -786,6 +786,65 @@ def _auto_format_1d(
     return _to_ndarray(x), *map(_to_ndarray, ys), kwargs
 
 
+def _basemap_1d(x, *ys, projection=None):
+    """
+    Fix basemap geographic 1D data arrays.
+    """
+    xmin, xmax = projection.lonmin, projection.lonmax
+    x_orig, ys_orig = x, ys
+    ys = []
+    for y_orig in ys_orig:
+        x, y = _fix_span(*_fix_coords(x_orig, y_orig), xmin, xmax)
+        ys.append(y)
+    return x, *ys
+
+
+def _fix_coords(x, y):
+    """
+    Ensure longitudes are monotonic and make `~numpy.ndarray` copies so the
+    contents can be modified. Ignores 2D coordinate arrays.
+    """
+    if x.ndim != 1 or all(x < x[0]):  # skip 2D arrays and monotonic backwards data
+        return x, y
+    lon1 = x[0]
+    filter_ = x < lon1
+    while filter_.sum():
+        filter_ = x < lon1
+        x[filter_] += 360
+    return x, y
+
+
+def _fix_span(x, y, xmin, xmax):
+    """
+    Ensure data for basemap plots is restricted between the minimum and
+    maximum longitude of the projection. Input is the ``x`` and ``y``
+    coordinates. The ``y`` coordinates are rolled along the rightmost axis.
+    """
+    if x.ndim != 1:
+        return x, y
+
+    # Roll in same direction if some points on right-edge extend
+    # more than 360 above min longitude; *they* should be on left side
+    lonroll = np.where(x > xmin + 360)[0]  # tuple of ids
+    if lonroll.size:  # non-empty
+        roll = x.size - lonroll.min()
+        x = np.roll(x, roll)
+        y = np.roll(y, roll, axis=-1)
+        x[:roll] -= 360  # make monotonic
+
+    # Set NaN where data not in range xmin, xmax. Must be done
+    # for regional smaller projections or get weird side-effects due
+    # to having valid data way outside of the map boundaries
+    y = y.copy()
+    if x.size - 1 == y.shape[-1]:  # test western/eastern grid cell edges
+        y[..., (x[1:] < xmin) | (x[:-1] > xmax)] = np.nan
+    elif x.size == y.shape[-1]:  # test the centers and pad by one for safety
+        where = np.where((x < xmin) | (x > xmax))[0]
+        y[..., where[1:-1]] = np.nan
+
+    return x, y
+
+
 @docstring.add_snippets
 def standardize_1d(self, *args, data=None, autoformat=None, **kwargs):
     """
@@ -888,12 +947,7 @@ def standardize_1d(self, *args, data=None, autoformat=None, **kwargs):
 
     # Ensure data is monotonic and falls within map bounds
     if getattr(self, 'name', None) == 'proplot_basemap' and kwargs.get('latlon', None):
-        xmin, xmax = self.projection.lonmin, self.projection.lonmax
-        x_orig, ys_orig = x, ys
-        ys = []
-        for y_orig in ys_orig:
-            x, y = _fix_bounds(*_fix_latlon(x_orig, y_orig), xmin, xmax)
-            ys.append(y)
+        x, *ys = _basemap_1d(x, *ys, projection=self.projection)
 
     # Call function
     if box:
@@ -970,6 +1024,27 @@ def _auto_format_2d(self, x, y, *zs, name=None, order='C', autoformat=False, **k
     return _to_ndarray(x), _to_ndarray(y), *map(_to_ndarray, zs), kwargs
 
 
+def _add_poles(y, z):
+    """
+    Add data points on the poles as the average of highest latitude data.
+    """
+    # Get means
+    with np.errstate(all='ignore'):
+        p1 = z[0, :].mean()  # pole 1, make sure is not 0D DataArray!
+        p2 = z[-1, :].mean()  # pole 2
+    if hasattr(p1, 'item'):
+        p1 = np.asscalar(p1)  # happens with DataArrays
+    if hasattr(p2, 'item'):
+        p2 = np.asscalar(p2)
+    # Concatenate
+    ps = (-90, 90) if (y[0] < y[-1]) else (90, -90)
+    z1 = np.repeat(p1, z.shape[1])[None, :]
+    z2 = np.repeat(p2, z.shape[1])[None, :]
+    y = ma.concatenate((ps[:1], y, ps[1:]))
+    z = ma.concatenate((z1, z, z2), axis=0)
+    return y, z
+
+
 def _enforce_centers(x, y, z):
     """
     Enforce that coordinates are centers. Convert from edges if possible.
@@ -1032,79 +1107,12 @@ def _enforce_edges(x, y, z):
     return x, y
 
 
-def _fix_bounds(x, y, xmin, xmax):
+def _cartopy_2d(x, y, *zs, globe=False):
     """
-    Ensure data for basemap plots is restricted between the minimum and
-    maximum longitude of the projection. Input is the ``x`` and ``y``
-    coordinates. The ``y`` coordinates are rolled along the rightmost axis.
-    """
-    if x.ndim != 1:
-        return x, y
-
-    # Roll in same direction if some points on right-edge extend
-    # more than 360 above min longitude; *they* should be on left side
-    lonroll = np.where(x > xmin + 360)[0]  # tuple of ids
-    if lonroll.size:  # non-empty
-        roll = x.size - lonroll.min()
-        x = np.roll(x, roll)
-        y = np.roll(y, roll, axis=-1)
-        x[:roll] -= 360  # make monotonic
-
-    # Set NaN where data not in range xmin, xmax. Must be done
-    # for regional smaller projections or get weird side-effects due
-    # to having valid data way outside of the map boundaries
-    y = y.copy()
-    if x.size - 1 == y.shape[-1]:  # test western/eastern grid cell edges
-        y[..., (x[1:] < xmin) | (x[:-1] > xmax)] = np.nan
-    elif x.size == y.shape[-1]:  # test the centers and pad by one for safety
-        where = np.where((x < xmin) | (x > xmax))[0]
-        y[..., where[1:-1]] = np.nan
-
-    return x, y
-
-
-def _fix_latlon(x, y):
-    """
-    Ensure longitudes are monotonic and make `~numpy.ndarray` copies so the
-    contents can be modified. Ignores 2D coordinate arrays.
-    """
-    if x.ndim != 1 or all(x < x[0]):  # skip 2D arrays and monotonic backwards data
-        return x, y
-    lon1 = x[0]
-    filter_ = x < lon1
-    while filter_.sum():
-        filter_ = x < lon1
-        x[filter_] += 360
-    return x, y
-
-
-def _fix_poles(y, z):
-    """
-    Add data points on the poles as the average of highest latitude data.
-    """
-    # Get means
-    with np.errstate(all='ignore'):
-        p1 = z[0, :].mean()  # pole 1, make sure is not 0D DataArray!
-        p2 = z[-1, :].mean()  # pole 2
-    if hasattr(p1, 'item'):
-        p1 = np.asscalar(p1)  # happens with DataArrays
-    if hasattr(p2, 'item'):
-        p2 = np.asscalar(p2)
-    # Concatenate
-    ps = (-90, 90) if (y[0] < y[-1]) else (90, -90)
-    z1 = np.repeat(p1, z.shape[1])[None, :]
-    z2 = np.repeat(p2, z.shape[1])[None, :]
-    y = ma.concatenate((ps[:1], y, ps[1:]))
-    z = ma.concatenate((z1, z, z2), axis=0)
-    return y, z
-
-
-def _fix_cartopy(x, y, *zs, globe=False):
-    """
-    Fix cartopy geographic data arrays.
+    Fix cartopy 2D geographic data arrays.
     """
     # Fix coordinates
-    x, y = _fix_latlon(x, y)
+    x, y = _fix_coords(x, y)
 
     # Fix data
     x_orig, y_orig, zs_orig = x, y, zs
@@ -1115,7 +1123,7 @@ def _fix_cartopy(x, y, *zs, globe=False):
             zs.append(z_orig)
             continue
         # Fix holes over poles by *interpolating* there
-        y, z = _fix_poles(y_orig, z_orig)
+        y, z = _add_poles(y_orig, z_orig)
         # Fix seams by ensuring circular coverage (cartopy can plot over map edges)
         if x_orig[0] % 360 != (x_orig[-1] + 360) % 360:
             x = ma.concatenate((x_orig, [x_orig[0] + 360]))
@@ -1125,12 +1133,12 @@ def _fix_cartopy(x, y, *zs, globe=False):
     return x, y, *zs
 
 
-def _fix_basemap(x, y, *zs, globe=False, projection=None):
+def _basemap_2d(x, y, *zs, globe=False, projection=None):
     """
-    Fix basemap geographic data arrays.
+    Fix basemap 2D geographic data arrays.
     """
     # Fix coordinates
-    x, y = _fix_latlon(x, y)
+    x, y = _fix_coords(x, y)
 
     # Fix data
     xmin, xmax = projection.lonmin, projection.lonmax
@@ -1138,13 +1146,13 @@ def _fix_basemap(x, y, *zs, globe=False, projection=None):
     zs = []
     for z_orig in zs_orig:
         # Ensure data is within map bounds
-        x, z_orig = _fix_bounds(x_orig, z_orig, xmin, xmax)
+        x, z_orig = _fix_span(x_orig, z_orig, xmin, xmax)
         # Bail for 2D coordinates
         if not globe or x_orig.ndim > 1 or y_orig.ndim > 1:
             zs.append(z_orig)
             continue
         # Fix holes over poles by *interpolating* there
-        y, z = _fix_poles(y_orig, z_orig)
+        y, z = _add_poles(y_orig, z_orig)
         # Fix seams at map boundary
         if x[0] == xmin and x.size - 1 == z.shape[1]:  # scenario 1
             # Edges (e.g. pcolor) fit perfectly against seams. Size is unchanged.
@@ -1262,14 +1270,14 @@ def standardize_2d(
         not allow1d and getattr(self, 'name', None) == 'proplot_cartopy'
         and isinstance(kwargs.get('transform', None), PlateCarree)
     ):
-        x, y, *zs = _fix_cartopy(x, y, *zs, globe=globe)
+        x, y, *zs = _cartopy_2d(x, y, *zs, globe=globe)
 
     # Basemap projection axes
     elif (
         not allow1d and getattr(self, 'name', None) == 'proplot_basemap'
         and kwargs.get('latlon', None)
     ):
-        x, y, *zs = _fix_basemap(x, y, *zs, globe=globe, projection=self.projection)
+        x, y, *zs = _basemap_2d(x, y, *zs, globe=globe, projection=self.projection)
         kwargs['latlon'] = False
 
     # Call function
