@@ -342,8 +342,7 @@ _rc_proplot = {
     ),
     'formatter.timerotation': (
         90,
-        'Float, indicates the default *x* axis tick label rotation '
-        'for datetime tick labels.'
+        'Float, indicates the rotation in degrees for *x* axis datetime tick labels.'
     ),
     'formatter.zerotrim': (
         True,
@@ -403,6 +402,16 @@ _rc_proplot = {
         'black',
         'Font color for column labels on the bottom of the figure.'
     ),
+    'bottomlabel.pad': (
+        '0.3em',
+        'Padding between axes content and column labels on the bottom of the figure. '
+        + _addendum_units
+    ),
+    'bottomlabel.rotation': (
+        0,
+        'Float, indicates the rotation in degrees for column labels '
+        'at the bottom of the figure.'
+    ),
     'bottomlabel.size': (
         TITLESIZE,
         'Font size for column labels on the bottom of the figure.'
@@ -410,11 +419,6 @@ _rc_proplot = {
     'bottomlabel.weight': (
         'bold',
         'Font weight for column labels on the bottom of the figure.'
-    ),
-    'bottomlabel.pad': (
-        '0.3em',
-        'Padding between axes content and column labels on the bottom of the figure. '
-        + _addendum_units
     ),
 
     # Special cartopy settings
@@ -696,6 +700,16 @@ _rc_proplot = {
         'black',
         'Font color for row labels on the left-hand side.'
     ),
+    'leftlabel.pad': (
+        '0.6em',
+        'Padding between axes content and row labels on the left-hand side. '
+        + _addendum_units
+    ),
+    'leftlabel.rotation': (
+        90,
+        'Float, indicates the rotation in degrees for row labels '
+        'on the left-hand side.'
+    ),
     'leftlabel.size': (
         TITLESIZE,
         'Font size for row labels on the left-hand side.'
@@ -703,11 +717,6 @@ _rc_proplot = {
     'leftlabel.weight': (
         'bold',
         'Font weight for row labels on the left-hand side.'
-    ),
-    'leftlabel.pad': (
-        '0.6em',
-        'Padding between axes content and row labels on the left-hand side. '
-        + _addendum_units
     ),
 
     # Edge width bulk setting
@@ -765,6 +774,16 @@ _rc_proplot = {
         'black',
         'Font color for row labels on the right-hand side.'
     ),
+    'rightlabel.pad': (
+        '0.6em',
+        'Padding between axes content and row labels on the right-hand side. '
+        + _addendum_units
+    ),
+    'rightlabel.rotation': (
+        90,
+        'Float, indicates the rotation in degrees for row labels '
+        'on the right-hand side.'
+    ),
     'rightlabel.size': (
         TITLESIZE,
         'Font size for row labels on the right-hand side.'
@@ -772,11 +791,6 @@ _rc_proplot = {
     'rightlabel.weight': (
         'bold',
         'Font weight for row labels on the right-hand side.'
-    ),
-    'rightlabel.pad': (
-        '0.6em',
-        'Padding between axes content and row labels on the right-hand side. '
-        + _addendum_units
     ),
 
     # River lines
@@ -985,6 +999,16 @@ _rc_proplot = {
         'black',
         'Font color for column labels on the top of the figure.'
     ),
+    'toplabel.pad': (
+        '0.3em',
+        'Padding between axes content and column labels on the top of the figure. '
+        + _addendum_units
+    ),
+    'toplabel.rotation': (
+        0,
+        'Float, indicates the rotation in degrees for column labels '
+        'at the top of the figure.'
+    ),
     'toplabel.size': (
         TITLESIZE,
         'Font size for column labels on the top of the figure.'
@@ -992,11 +1016,6 @@ _rc_proplot = {
     'toplabel.weight': (
         'bold',
         'Font weight for column labels on the top of the figure.'
-    ),
-    'toplabel.pad': (
-        '0.3em',
-        'Padding between axes content and column labels on the top of the figure. '
-        + _addendum_units
     ),
 }
 

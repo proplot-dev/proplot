@@ -706,9 +706,10 @@ class Axes(maxes.Axes):
         for side, labels in kwargs.items():
             kw = {} if ignore else rc.fill(
                 {
+                    'color': side + 'label.color',
+                    'rotation': side + 'label.rotation',
                     'fontsize': side + 'label.size',
                     'weight': side + 'label.weight',
-                    'color': side + 'label.color',
                     'fontfamily': 'font.family'
                 },
                 context=True,
