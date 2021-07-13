@@ -671,6 +671,7 @@ def _parse_string_coords(*args, which='x', **kwargs):
     # correspond to indices while the latter can mysteriously truncate labels.
     res = []
     for arg in args:
+        arg = _to_arraylike(arg)
         if _is_string(arg) and arg.ndim > 1:
             raise ValueError('Non-1D string coordinate input is unsupported.')
         if not _is_string(arg):
@@ -749,7 +750,9 @@ def _auto_format_1d(
         if not nocycle:
             kwargs['labels'] = _to_ndarray(labels)
         elif parametric:
-            kwargs['values'] = _to_ndarray(labels)
+            values, colorbar_kw = _parse_string_coords(labels, which='')
+            kwargs['values'] = _to_ndarray(values)
+            kwargs.setdefault('colorbar_kw', {}).update(colorbar_kw)
 
     # The basic x and y settings
     if not projection:

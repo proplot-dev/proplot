@@ -1360,7 +1360,11 @@ class Axes(maxes.Axes):
         *args : (y,), (x, y), or (x, y, c)
             The coordinates. If `x` is not provided, it is inferred from `y`.
             The parametric coordinate can be indicated as a third positional
-            argument or with the `c` or `values` keywords.
+            argument or with the `c`, `values`, or `labels` keywords. The
+            parametric coordinate can be numeric or an array of string labels.
+        c, values, labels : array-like, optional
+            The parametric coordinates passed as a keyword argument. They
+            can also be passed as a third positional argument.
         %(axes.cmap_norm)s
         interp : int, optional
             If greater than ``0``, we interpolate to additional points
