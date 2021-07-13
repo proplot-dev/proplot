@@ -965,6 +965,9 @@ class Axes(maxes.Axes):
         titlepad : float, optional
             The padding for the inner and outer titles and a-b-c labels in
             arbitrary units (default is points). Default is :rc:`title.pad`.
+        abctitlepad : float, optional
+            The horizontal padding between the a-b-c label and title when they are
+            in the same location. Default is :rc:`abc.titlepad`.
         titleabove : bool, optional
             Whether to try to put outer titles and a-b-c labels above panels,
             colorbars, or legends that are above the axes. Default is :rc:`title.above`.
@@ -978,7 +981,8 @@ class Axes(maxes.Axes):
         leftlabelpad, toplabelpad, rightlabelpad, bottomlabelpad : float, optional
             The padding between the labels and the axes content in arbitrary units
             (default is points). Defaults are :rcraw:`leftlabel.pad`,
-            :rcraw:`toplabel.pad`, :rcraw:`rightlabel.pad`, and :rcraw:`bottomlabel.pad`
+            :rcraw:`toplabel.pad`, :rcraw:`rightlabel.pad`, and
+            :rcraw:`bottomlabel.pad`
         suptitle, figtitle : str, optional
             The figure "super" title, centered between the left edge of
             the lefmost column of subplots and the right edge of the rightmost
@@ -995,8 +999,9 @@ class Axes(maxes.Axes):
 
         Important
         ---------
-        The `abc`, `abcstyle`, `abcloc`, `titleloc`, and `titleabove` keywords and
-        the various `pad` keywords are :ref:`configuration settings <ug_config>`.
+        The `abc`, `abcstyle`, `abcloc`, `titleloc`, `titleabove`, `titlepad`,
+        `abctitlepad`, `leftlabelpad`, `toplabelpad`, `rightlabelpad`, and
+        `bottomlabelpad` keywords and are :ref:`configuration settings <ug_config>`.
         We explicitly document these arguments here because it is very common to change
         them. But many :ref:`other configuration settings <ug_format>` can be passed
         to ``format`` too.
