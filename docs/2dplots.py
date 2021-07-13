@@ -288,7 +288,7 @@ axs[1].pcolor(data, discrete=False, cmap='spectral_r', norm='div', colorbar='r')
 axs[1].set_title('Pcolor plot\nDiscreteNorm disabled')
 
 # Imshow
-m = axs[2].imshow(data, cmap='roma', norm='div', colorbar='b')
+m = axs[2].imshow(data, cmap='roma_r', norm='div', colorbar='b')
 axs[2].format(title='Imshow plot\nDiscreteNorm disabled (default)', yformatter='auto')
 
 # %%

@@ -83,6 +83,11 @@ ProPlot v0.7.1 (2021-##-##)
 * Fix issue where a-b-c labels are removed in presence of ``'top'`` panels
   with ``titleabove=True`` (:commit:`7873d5e0`).
 
+.. rubric:: Bug fixes
+
+* Support list-of-strings parametric coordinate and format on-the-fly colorbar ticks
+  with those string labels (:commit:`02fbda45`).
+
 
 ProPlot v0.7.0 (2021-07-11)
 ===========================

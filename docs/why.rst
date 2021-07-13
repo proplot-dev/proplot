@@ -429,9 +429,9 @@ The following features are relevant for "2D" plotting methods like
 * Wherever colormaps are used, they can be divided into
   :ref:`discrete levels <ug_discrete>` using keyword arguments like `levels`
   -- similar to `~matplotlib.axes.Axes.contourf`. This is accomplished by applying
-  `~proplot.colors.DiscreteNorm` as the new default colormap normalizer. This feature
+  `~proplot.colors.DiscreteNorm` as the default normalizer. This feature
   can be disabled by setting :rcraw:`image.discrete` to ``False``.
-* The new `~proplot.colors.DivergingNorm` normalizer is perfect for data with a
+* The `~proplot.colors.DivergingNorm` normalizer is perfect for data with a
   :ref:`natural midpoint <ug_norm>` and offers both "fair" and "unfair" scaling.
   The new `~proplot.colors.LinearSegmentedNorm` normalizer can generate the
   uneven color gradations useful for :ref:`unusually distributed <ug_norm>` data.
