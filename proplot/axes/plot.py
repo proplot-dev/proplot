@@ -1347,11 +1347,15 @@ def _get_error_data(
     # NOTE: Include option to pass symmetric deviation from central points
     if errdata is not None:
         # Manual error data
+        if y.ndim != 1:
+            raise ValueError(
+                'errdata with 2D y coordinates is not yet supported.'
+            )
         label_default = 'uncertainty'
         err = _to_ndarray(errdata)
         if (
             err.ndim not in (1, 2)
-            or err.shape[-1] != y.shape[-1]
+            or err.shape[-1] != y.size
             or err.ndim == 2 and err.shape[0] != 2
         ):
             raise ValueError(
@@ -2865,8 +2869,6 @@ def apply_cycle(
     # methods call these internally and expect a certain output format!
     if plot:
         return tuple(objs)  # always return tuple of objects
-    elif box:
-        return objs[0]  # always return singleton
     else:
         return objs[0] if len(objs) == 1 else tuple(objs)
 
