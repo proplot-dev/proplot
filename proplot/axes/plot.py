@@ -1616,7 +1616,7 @@ def indicate_error(
 
     # Apply inferrred colors to objects
     i = 0
-    if isinstance(res, (list, tuple)):  # avoid BarContainer
+    if isinstance(res, tuple):  # pull out patch from e.g. BarContainers
         obj = res[0]
     for b, infer in zip((fade, shade), (fadecolor_infer, shadecolor_infer)):
         if not b or not infer:
@@ -1632,12 +1632,14 @@ def indicate_error(
         i += 1
 
     # Return objects
-    # NOTE: This should not affect internal matplotlib calls to these funcs
+    # NOTE: For now 'errobjs' can only be returned with 1D y coordinates
     # NOTE: Avoid expanding matplolib collections that are list subclasses here
-    if eobjs:
-        return (*res, *eobjs) if isinstance(res, (list, tuple)) else (res, *eobjs)
-    else:
+    if not eobjs:
         return res
+    elif isinstance(res, tuple) and not isinstance(res, mcontainer.Container):
+        return ((*res, *eobjs),)  # for plot()
+    else:
+        return (res, *eobjs)
 
 
 def _apply_plot(self, *args, cmap=None, values=None, **kwargs):
