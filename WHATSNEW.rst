@@ -82,6 +82,8 @@ ProPlot v0.7.1 (2021-##-##)
   selecting default colormap levels (:commit:`152a3a81`).
 * Fix issue where a-b-c labels are removed in presence of ``'top'`` panels
   with ``titleabove=True`` (:commit:`7873d5e0`).
+* Ensure `plot` returns tuples of handles instead of lists, and ensure `indicate_error`
+  returns a singleton tuple containing ``(line, error)`` objects (:issue:`260`).
 
 .. rubric:: Features
 
@@ -90,6 +92,8 @@ ProPlot v0.7.1 (2021-##-##)
 * Add new :rcraw:`leftlabel.rotation`, :rcraw:`toplabel.rotation`,
   :rcraw:`rightlabel.rotation`, :rcraw:`bottomlabel.rotation` keywords, make
   default row label rotation match default y label rotation (:commit:`bae85113`).
+* Make `~proplot.axes.colorbar_extras` capture matplotlib-native `format` keyword
+  as alias for `formatter` and `ticklabels` (:issue:`262`).
 
 
 ProPlot v0.7.0 (2021-07-11)
