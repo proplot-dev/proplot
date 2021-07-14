@@ -3691,7 +3691,7 @@ def colorbar_extras(
     locator=None, ticks=None, maxn=None, maxn_minor=None,
     minorlocator=None, minorticks=None,
     locator_kw=None, minorlocator_kw=None,
-    formatter=None, ticklabels=None, formatter_kw=None, rotation=None,
+    format=None, formatter=None, ticklabels=None, formatter_kw=None, rotation=None,
     norm=None, norm_kw=None,  # normalizer to use when passing colors/lines
     orientation=None,
     edgecolor=None, linewidth=None,
@@ -3769,7 +3769,7 @@ def colorbar_extras(
         consistency with `~matplotlib.axes.Axes.legend`.
     locator, ticks : locator spec, optional
         Used to determine the colorbar tick positions. Passed to the
-        `~proplot.constructor.Locator` constructor.
+        `~proplot.constructor.Locator` constructor function.
     maxn : int, optional
         Used if `locator` is ``None``. Determines the maximum number of levels
         that are ticked. Default depends on the colorbar length relative
@@ -3779,9 +3779,9 @@ def colorbar_extras(
         The locator settings. Passed to `~proplot.constructor.Locator`.
     minorlocator, minorticks, maxn_minor, minorlocator_kw
         As with `locator`, `maxn`, and `locator_kw`, but for the minor ticks.
-    formatter, ticklabels : formatter spec, optional
+    format, formatter, ticklabels : formatter spec, optional
         The tick label format. Passed to the `~proplot.constructor.Formatter`
-        constructor.
+        constructor function.
     formatter_kw : dict-like, optional
         The formatter settings. Passed to `~proplot.constructor.Formatter`.
     rotation : float, optional
@@ -3829,7 +3829,7 @@ def colorbar_extras(
     minorlocator = _not_none(minorticks=minorticks, minorlocator=minorlocator)
     ticklocation = _not_none(tickloc=tickloc, ticklocation=ticklocation)
     tickdirection = _not_none(tickdir=tickdir, tickdirection=tickdirection)
-    formatter = _not_none(ticklabels=ticklabels, formatter=formatter)
+    formatter = _not_none(ticklabels=ticklabels, formatter=formatter, format=format)
 
     # Colorbar kwargs
     grid = _not_none(grid, rc['colorbar.grid'])
