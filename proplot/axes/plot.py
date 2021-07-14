@@ -493,7 +493,7 @@ def _mask_array(mask, *args):
 
 def default_latlon(self, *args, latlon=True, **kwargs):
     """
-    Makes ``latlon=True`` the default for basemap plots.
+    Make ``latlon=True`` the default for `~proplot.axes.BasemapAxes` plots.
     This means you no longer have to pass ``latlon=True`` if your data
     coordinates are longitude and latitude.
 
@@ -507,8 +507,8 @@ def default_latlon(self, *args, latlon=True, **kwargs):
 
 def default_transform(self, *args, transform=None, **kwargs):
     """
-    Makes ``transform=cartopy.crs.PlateCarree()`` the default
-    for cartopy plots. This means you no longer have to
+    Make ``transform=cartopy.crs.PlateCarree()`` the default for
+    `~proplot.axes.CartopyAxes` plots. This means you no longer have to
     pass ``transform=cartopy.crs.PlateCarree()`` if your data
     coordinates are longitude and latitude.
 
@@ -2310,7 +2310,7 @@ def violinplot_extras(
     lw=None, linewidth=None, color=None, edgecolor=None, **kwargs
 ):
     """
-    Add convenient keyword arguments and change the default violinplot style
+    Support convenient keyword arguments and change the default violinplot style
     to match `this matplotlib example \
 <https://matplotlib.org/stable/gallery/statistics/customized_violin.html>`__.
     It is also no longer possible to show minima and maxima with whiskers --
@@ -2484,7 +2484,7 @@ def text_extras(
     bbox=False, bboxcolor='w', bboxstyle='round', bboxalpha=0.5, bboxpad=None, **kwargs
 ):
     """
-    Allow specificiation of the coordinate `tranform` with a string name and support
+    Support specifying the coordinate `tranform` with a string name and
     drawing white borders and bounding boxes around the text.
 
     Important

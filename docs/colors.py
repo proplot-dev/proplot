@@ -61,15 +61,15 @@ fig, axs = pplt.show_colors()
 # Modifying colors
 # ----------------
 #
-# You can quickly modify colors using the `~proplot.utils.set_alpha',
+# You can quickly modify colors using the `~proplot.utils.set_alpha`,
 # `~proplot.utils.set_hue`, `~proplot.utils.set_saturation`,
 # `~proplot.utils.set_luminance`, `~proplot.utils.shift_hue`,
 # `~proplot.utils.scale_saturation` and `~proplot.utils.scale_luminance`
 # functions. The ``set`` functions change individual hue, saturation, or
 # luminance values in the :ref:`perceptually uniform colorspace <ug_perceptual>`
-# specified by the `space` keyword. The ``scale`` functions shift or scale
-# the hue, saturation, or luminance by the input value -- for example,
-# ``scale_luminance('color', 1.2)`` makes ``'color'`` color 20% brighter. These
+# specified by the `space` keyword. The ``shift`` and ``scale`` functions shift or
+# scale the hue, saturation, or luminance by the input value -- for example,
+# ``scale_luminance('color', 1.2)`` makes ``'color'`` 20% brighter. These
 # are useful for creating color gradations outside of `~proplot.colors.Cycle` or
 # if you simply spot a color you like and want to make it a bit brighter,
 # less vibrant, etc.
@@ -131,7 +131,7 @@ import proplot as pplt
 import numpy as np
 
 # Figure
-fig, axs = pplt.subplots(ncols=2, share=0, refwidth=2.3)
+fig, axs = pplt.subplots(ncols=2, share=0, refwidth=2.2)
 axs.format(
     xformatter='null', yformatter='null', abc=True, abcstyle='A.', titleloc='l',
     suptitle='On-the-fly color selections'

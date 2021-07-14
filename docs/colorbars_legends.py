@@ -67,7 +67,7 @@
 import proplot as pplt
 import numpy as np
 with pplt.rc.context(abc=True):
-    fig, axs = pplt.subplots(ncols=2, share=0)
+    fig, axs = pplt.subplots(ncols=2, share=0, refwidth=2.3)
 
 # Colorbars
 ax = axs[0]

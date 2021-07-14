@@ -401,11 +401,11 @@ The following features are relevant for "1D" plotting commands like
   and flexible property cycler application.
 * The `legend` and `colorbar` keywords draw :ref:`on-the-fly legends and colorbars
   <ug_cbars_axes>` using the result of the plotting command. Note that colorbars can
-  now be drawn from :ref:`lists of artists <ug_cbars>` (e.g., from a list of lines).
+  now be drawn from :ref:`lists of artists <ug_cbars>` (e.g., lists of lines).
 * The `~matplotlib.axes.Axes.bar` and `~matplotlib.axes.Axes.barh` commands accept
   2D arrays and can :ref:`stack or group <ug_bar>` successive columns. Likewise,
   the `~matplotlib.axes.Axes.fill_between` and `~matplotlib.axes.Axes.fill_betweenx`
-  commands (accessible via the new shorthands `~proplot.axes.Axes.area` and
+  commands (also accessible via the new shorthands `~proplot.axes.Axes.area` and
   `~proplot.axes.Axes.areax`) accept 2D arrays and can
   :ref:`stack or overlay <ug_bar>` successive columns.
 * The `~matplotlib.axes.Axes.bar`, `~matplotlib.axes.Axes.barh`,
@@ -417,12 +417,13 @@ The following features are relevant for "1D" plotting commands like
   `~matplotlib.axes.Axes.scatter`, `~proplot.axes.Axes.scatterx`,
   `~matplotlib.axes.Axes.bar`, and `~matplotlib.axes.Axes.barh` commands can draw
   :ref:`on-the-fly error bars and "shading" <ug_errorbars>` using a variety of keyword
-  arguments. This is often
-  more convenient than working with the `~matplotlib.axes.Axes.errorbar` command.
+  arguments. This is often more convenient than working with the
+  `~matplotlib.axes.Axes.errorbar` command.
 * The new `~proplot.axes.Axes.plotx` and `~proplot.axes.Axes.scatterx` commands
-  are just like `~proplot.axes.Axes.plot` and `~proplot.axes.Axes.scatter`, but
-  single positional arguments are interpreted as *y* coordinates and multiple
-  positional arguments are interpreted as (*y*, *x*) pairs.
+  are just like `~matplotlib.axes.Axes.plot` and `~matplotlib.axes.Axes.scatter`, but
+  single positional arguments are interpreted as *x* coordinates and multiple
+  positional arguments are interpreted as (*y*, *x*) pairs. These can be used
+  to draw horizontal error indications.
 * The new `~proplot.axes.Axes.parametric` command draws clean-looking
   :ref:`parametric lines <ug_parametric>` by encoding the parametric coordinate
   with colormap colors rather than using text annotations.
@@ -447,7 +448,7 @@ The following features are relevant for "2D" plotting commands like
   This can be disabled by setting :rcraw:`image.inbounds` to ``False`` or passing
   ``inbounds=False`` to plots.
 * The `~proplot.colors.DiscreteNorm` normalizer is paired with most colormaps by
-  default and can easily divide colormaps into distinct levels, similar to
+  default. It can easily divide colormaps into distinct levels, similar to
   `~matplotlib.axes.Axes.contourf`. This can be disabled by setting
   :rcraw:`image.discrete` to ``False`` or passing ``discrete=False`` to plots.
 * The new `~proplot.colors.DivergingNorm` normalizer is perfect for data with a
@@ -460,7 +461,7 @@ The following features are relevant for "2D" plotting commands like
   adds ticks to the center of each gridbox, and disables minor ticks and gridlines.
   This can be convenient for things like covariance matrices.
 * ProPlot transforms coordinate centers to "edges" when passed to commands like
-  `~matplotlib.axes.Axes.pcolor`, and transforms coordinate edges to "centers" when
+  `~matplotlib.axes.Axes.pcolor`, and coordinate edges to "centers" when
   passed to commands like `~matplotlib.axes.Axes.contour`. In matplotlib, `pcolor`
   truncates the data when it receives centers.
 * ProPlot fixes an irritating issue where saved vector graphics appear to have

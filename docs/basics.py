@@ -111,7 +111,6 @@ fig.save('~/test1.png')
 import proplot as pplt
 fig, axs = pplt.subplots(ncols=2)
 axs[0].plot(data, lw=2)
-axs[0].format(xticks=20, xtickminor=False)
 axs.format(
     suptitle='Simple subplot grid', title='Title',
     xlabel='x axis', ylabel='y axis'
