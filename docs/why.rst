@@ -395,66 +395,74 @@ designed to make your life easier.
 The following features are relevant for "1D" plotting commands like
 `~matplotlib.axes.Axes.plot` and `~matplotlib.axes.Axes.scatter`:
 
-* The `cycle` :ref:`keyword argument <ug_apply_cycle>` changes the property cycle
-  on-the-fly. It is interpreted by the `~proplot.constructor.Cycle`
-  :ref:`constructor function <why_constructor>`, allowing for flexible specification.
-* The `colorbar` and `legend` keywords draw
-  :ref:`colorbars and legends on-the-fly <ug_cbars_axes>`. Note that colorbars can
-  now be easily drawn from :ref:`lists of artists <ug_cbars>`.
+* The `cycle` keyword is interpreted by the `~proplot.constructor.Cycle`
+  :ref:`constructor function <why_constructor>` and applies
+  :ref:`property cyclers <ug_apply_cycle>` on-the-fly. This permits succinct
+  and flexible property cycler application.
+* The `legend` and `colorbar` keywords draw :ref:`on-the-fly legends and colorbars
+  <ug_cbars_axes>` using the result of the plotting command. Note that colorbars can
+  now be drawn from :ref:`lists of artists <ug_cbars>` (e.g., from a list of lines).
 * The `~matplotlib.axes.Axes.bar` and `~matplotlib.axes.Axes.barh` commands accept
-  2D arrays and can :ref:`stack or group <ug_bar>` successive columns.
-  The `~matplotlib.axes.Axes.fill_between` and `~matplotlib.axes.Axes.fill_betweenx`
-  commands (also accessible via the shorthands `~proplot.axes.Axes.area` and
-  `~proplot.axes.Axes.areax`) also accept 2D arrays and can
+  2D arrays and can :ref:`stack or group <ug_bar>` successive columns. Likewise,
+  the `~matplotlib.axes.Axes.fill_between` and `~matplotlib.axes.Axes.fill_betweenx`
+  commands (accessible via the new shorthands `~proplot.axes.Axes.area` and
+  `~proplot.axes.Axes.areax`) accept 2D arrays and can
   :ref:`stack or overlay <ug_bar>` successive columns.
 * The `~matplotlib.axes.Axes.bar`, `~matplotlib.axes.Axes.barh`,
   `~matplotlib.axes.Axes.vlines`, `~matplotlib.axes.Axes.hlines`,
-  `~proplot.axes.Axes.fill_between`, and `~proplot.axes.Axes.fill_betweenx`
+  `~matplotlib.axes.Axes.fill_between`, and `~matplotlib.axes.Axes.fill_betweenx`
   commands accept a `negpos` keyword argument that assigns different
   colors to "negative" and "positive" regions.
-* The `~matplotlib.axes.Axes.plot`, `~matplotlib.axes.Axes.scatter`, and
-  `~matplotlib.axes.Axes.bar` commands can draw :ref:`on-the-fly error bars and
-  "shading" <ug_errorbars>` using a variety of keyword arguments. This is often
+* The `~matplotlib.axes.Axes.plot`, `~proplot.axes.Axes.plotx`,
+  `~matplotlib.axes.Axes.scatter`, `~proplot.axes.Axes.scatterx`,
+  `~matplotlib.axes.Axes.bar`, and `~matplotlib.axes.Axes.barh` commands can draw
+  :ref:`on-the-fly error bars and "shading" <ug_errorbars>` using a variety of keyword
+  arguments. This is often
   more convenient than working with the `~matplotlib.axes.Axes.errorbar` command.
 * The new `~proplot.axes.Axes.plotx` and `~proplot.axes.Axes.scatterx` commands
   are just like `~proplot.axes.Axes.plot` and `~proplot.axes.Axes.scatter`, but
   single positional arguments are interpreted as *y* coordinates and multiple
   positional arguments are interpreted as (*y*, *x*) pairs.
-* The new `~proplot.axes.Axes.parametric` method can draw clean-looking
-  :ref:`parametric lines <ug_parametric>` with the parametric coordinate
-  denoted by colormap colors rather than text annotations.
+* The new `~proplot.axes.Axes.parametric` command draws clean-looking
+  :ref:`parametric lines <ug_parametric>` by encoding the parametric coordinate
+  with colormap colors rather than using text annotations.
 
 The following features are relevant for "2D" plotting commands like
 `~matplotlib.axes.Axes.pcolor` and `~matplotlib.axes.Axes.contour`:
 
 * The `cmap` and `norm` :ref:`keyword arguments <ug_apply_cmap>` are interpreted
   by the `~proplot.constructor.Colormap` and `~proplot.constructor.Norm`
-  :ref:`constructor functions <why_constructor>`, allowing for flexible specification.
-* The `colorbar` keyword draw :ref:`on-the-fly colorbars <ug_cbars_axes>`.
-  Note that "inset" colorbar locations can also be used, analogous to
-  "inset" legends.
+  :ref:`constructor functions <why_constructor>`. This permits succinct
+  and flexible colormap and normalizer application.
+* The `colorbar` keyword draws on-the-fly :ref:`colorbars <ug_cbars_axes>`
+  using the result of the plotting command. Note that "inset" colorbars can also
+  be drawn, analogous to "inset" legends.
 * The `~matplotlib.axes.Axes.contour`, `~matplotlib.axes.Axes.contourf`,
   `~matplotlib.axes.Axes.pcolormesh`, and `~matplotlib.axes.Axes.pcolor` commands
   all accept a `labels` keyword. This draws :ref:`contour and grid box labels
   <ug_labels>` on-the-fly. Labels are automatically colored black or white
   according to the luminance of the underlying filled contour or grid box color.
+* The default `vmin` and `vmax` used to normalize colormaps now exclude data outside
+  the *x* axis bounds `xlim` and *y* axis bounds `ylim` if they were explicitly set.
+  This can be disabled by setting :rcraw:`image.inbounds` to ``False`` or passing
+  ``inbounds=False`` to plots.
 * The `~proplot.colors.DiscreteNorm` normalizer is paired with most colormaps by
   default and can easily divide colormaps into distinct levels, similar to
   `~matplotlib.axes.Axes.contourf`. This can be disabled by setting
   :rcraw:`image.discrete` to ``False`` or passing ``discrete=False`` to plots.
-* The `~proplot.colors.DivergingNorm` normalizer is perfect for data with a
+* The new `~proplot.colors.DivergingNorm` normalizer is perfect for data with a
   :ref:`natural midpoint <ug_norm>` and offers both "fair" and "unfair" scaling.
-  The `~proplot.colors.LinearSegmentedNorm` normalizer can generate
-  uneven color gradations useful for :ref:`unusually distributed <ug_norm>` data.
+  The new `~proplot.colors.LinearSegmentedNorm` normalizer can generate
+  uneven color gradations useful for :ref:`unusual data distributions <ug_norm>`.
 * The new `~proplot.axes.Axes.heatmap` command invokes
-  `~matplotlib.axes.Axes.pcolormesh` then by default applies an :ref:`equal axes apect ratio
+  `~matplotlib.axes.Axes.pcolormesh` then applies an :ref:`equal axes apect ratio
   <https://matplotlib.org/stable/gallery/subplots_axes_and_figures/axis_equal_demo.html>`,
   adds ticks to the center of each gridbox, and disables minor ticks and gridlines.
   This can be convenient for things like covariance matrices.
-* ProPlot transforms coordinate edges into "centers" when passed to commands
-  like `~matplotlib.axes.Axes.contour`, and transforms coordinate centers to "edges"
-  when passed to commands like `~matplotlib.axes.Axes.pcolor`. In matplotlib, `contour`
-  requires centers, and `pcolor` truncates the data when it receives centers.
+* ProPlot transforms coordinate centers to "edges" when passed to commands like
+  `~matplotlib.axes.Axes.pcolor`, and transforms coordinate edges to "centers" when
+  passed to commands like `~matplotlib.axes.Axes.contour`. In matplotlib, `pcolor`
+  truncates the data when it receives centers.
 * ProPlot fixes an irritating issue where saved vector graphics appear to have
   thin white lines between `filled contours
   <https://stackoverflow.com/q/8263769/4970632>`__, `pcolor patches
@@ -552,10 +560,10 @@ ProPlot reproduces many of the `xarray.DataArray.plot`,
 `pandas.DataFrame.plot`, and `pandas.Series.plot` features on the
 `~proplot.axes.Axes` plotting methods themselves.  Passing a
 `~xarray.DataArray`, `~pandas.DataFrame`, or `~pandas.Series` through any
-plotting method automatically updates the axis tick labels, axis labels,
-subplot titles, and colorbar and legend labels from the metadata.  This
-feature can be disabled by setting :rcraw:`autoformat` to ``False`` or
-passing ``autoformat=False`` to any plotting command.
+plotting command updates the axis tick labels, axis labels, subplot title, and
+colorbar and legend labels from the metadata. This feature can be disabled
+by setting :rcraw:`autoformat` to ``False`` or passing ``autoformat=False``
+to any plotting command.
 
 As :ref:`described above <why_plotting>`, ProPlot also implements features
 that were originally only available from the `xarray.DataArray.plot`,
@@ -745,7 +753,7 @@ the :ref:`user guide <ug_proplotrc>` for details.
 
 ProPlot also automatically loads colormaps, color cycles, colors, and font files
 saved in the ``~/.proplot/cmaps``,  ``~/.proplot/cycles``, ``~/.proplot/colors``,
-and ``~/.proplot/fonts``, folders in your home directory.  You can save colormaps and
+and ``~/.proplot/fonts`` folders in your home directory.  You can save colormaps and
 color cycles to these folders simply by passing ``save=True`` to
 `~proplot.constructor.Colormap` and `~proplot.constructor.Cycle`.  To *manually*
 load from these folders, e.g. if you have added files to these folders but you do
