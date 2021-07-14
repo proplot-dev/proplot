@@ -1684,7 +1684,7 @@ def _apply_plot(self, *args, cmap=None, values=None, **kwargs):
 
         objs.extend(iobjs)
 
-    return objs
+    return tuple(objs)
 
 
 def _plot_extras(self, *args, **kwargs):
