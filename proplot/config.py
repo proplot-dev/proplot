@@ -1714,25 +1714,25 @@ class RcConfigurator(object):
             yield self[key]
 
 
-# Add custom font scalings to font_manager and monkey patch rcParams validator
+# Initialize configuration
 _init_user_file()
 _init_user_folders()
+
+# Patch matplotlib
 _patch_colormaps()
 _patch_validators()
 
 # Register objects and configure settings
 with timers._benchmark('cmaps'):
     register_cmaps(default=True)
-
 with timers._benchmark('cycles'):
     register_cycles(default=True)
-
 with timers._benchmark('colors'):
     register_colors(default=True)
-
 with timers._benchmark('fonts'):
     register_fonts()
 
+# Initialize configurator
 with timers._benchmark('rc'):
     _ = RcConfigurator()
 

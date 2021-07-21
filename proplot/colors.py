@@ -2398,6 +2398,59 @@ class DivergingNorm(mcolors.Normalize):
             self.vmax = self.vcenter
 
 
+def _init_color_database():
+    """
+    Initialize the subclassed database.
+    """
+    if not isinstance(mcolors._colors_full_map, ColorDatabase):
+        database = ColorDatabase(mcolors._colors_full_map)
+        mcolors._colors_full_map = database
+        mcolors.colorConverter.cache = database.cache
+        mcolors.colorConverter.colors = database
+
+
+class _ColorCache(dict):
+    """
+    Replacement for the native color cache.
+    """
+    # Matplotlib 'color' args are passed to to_rgba, which tries to read
+    # directly from cache and if that fails, sanitizes input, which raises
+    # error on receiving (colormap, idx) tuple. So we *have* to override cache.
+    def __getitem__(self, key):
+        # Split into RGB tuple and opacity
+        # Matplotlib caches colors this way internally
+        rgb, alpha = key
+        if (
+            not isinstance(rgb, str) and np.iterable(rgb) and len(rgb) == 2
+            and isinstance(rgb[0], str) and isinstance(rgb[1], Number)
+        ):
+            # Try to get the colormap
+            try:
+                cmap = _cmap_database[rgb[0]]
+            except (KeyError, TypeError):
+                pass
+            # Read the colormap value
+            else:
+                if isinstance(cmap, ListedColormap):
+                    if not 0 <= rgb[1] < len(cmap.colors):
+                        raise ValueError(
+                            f'Color cycle sample for {rgb[0]!r} cycle must be '
+                            f'between 0 and {len(cmap.colors) - 1}, got {rgb[1]}.'
+                        )
+                    rgb = cmap.colors[rgb[1]]  # draw from list of colors
+                else:
+                    if not 0 <= rgb[1] <= 1:
+                        raise ValueError(
+                            f'Colormap sample for {rgb[0]!r} colormap must be '
+                            f'between 0 and 1, got {rgb[1]}.'
+                        )
+                    rgb = cmap(rgb[1])  # get color selection
+                return mcolors.to_rgba(rgb, alpha)
+
+        # Proceed as usual
+        return super().__getitem__((rgb, alpha))
+
+
 class ColorDatabase(dict):
     """
     Dictionary subclass used to replace the builtin matplotlib color
@@ -2448,46 +2501,24 @@ class ColorDatabase(dict):
         return self._cache
 
 
-class _ColorCache(dict):
+def _init_cmap_database():
     """
-    Replacement for the native color cache.
+    Initialize the subclassed database.
     """
-    # Matplotlib 'color' args are passed to to_rgba, which tries to read
-    # directly from cache and if that fails, sanitizes input, which raises
-    # error on receiving (colormap, idx) tuple. So we *have* to override cache.
-    def __getitem__(self, key):
-        # Split into RGB tuple and opacity
-        # Matplotlib caches colors this way internally
-        rgb, alpha = key
-        if (
-            not isinstance(rgb, str) and np.iterable(rgb) and len(rgb) == 2
-            and isinstance(rgb[0], str) and isinstance(rgb[1], Number)
-        ):
-            # Try to get the colormap
-            try:
-                cmap = _cmap_database[rgb[0]]
-            except (KeyError, TypeError):
-                pass
-            # Read the colormap value
-            else:
-                if isinstance(cmap, ListedColormap):
-                    if not 0 <= rgb[1] < len(cmap.colors):
-                        raise ValueError(
-                            f'Color cycle sample for {rgb[0]!r} cycle must be '
-                            f'between 0 and {len(cmap.colors) - 1}, got {rgb[1]}.'
-                        )
-                    rgb = cmap.colors[rgb[1]]  # draw from list of colors
-                else:
-                    if not 0 <= rgb[1] <= 1:
-                        raise ValueError(
-                            f'Colormap sample for {rgb[0]!r} colormap must be '
-                            f'between 0 and 1, got {rgb[1]}.'
-                        )
-                    rgb = cmap(rgb[1])  # get color selection
-                return mcolors.to_rgba(rgb, alpha)
-
-        # Proceed as usual
-        return super().__getitem__((rgb, alpha))
+    # WARNING: Skip over the matplotlib native duplicate entries
+    # with suffixes '_r' and '_shifted'.
+    attr = '_cmap_registry' if hasattr(mcm, '_cmap_registry') else 'cmap_d'
+    database = getattr(mcm, attr)
+    if mcm.get_cmap is not _get_cmap:
+        mcm.get_cmap = _get_cmap
+    if not isinstance(database, ColormapDatabase):
+        database = {
+            key: value for key, value in database.items()
+            if key[-2:] != '_r' and key[-8:] != '_shifted'
+        }
+        database = ColormapDatabase(database)
+        setattr(mcm, attr, database)
+    return database
 
 
 def _get_cmap(name=None, lut=None):
@@ -2687,24 +2718,6 @@ class ColormapDatabase(dict):
         return key
 
 
-# Replace color database with custom database
-if not isinstance(mcolors._colors_full_map, ColorDatabase):
-    _map = ColorDatabase(mcolors._colors_full_map)
-    mcolors._colors_full_map = _map
-    mcolors.colorConverter.cache = _map.cache
-    mcolors.colorConverter.colors = _map
-
-# Replace colormap database with custom database
-# WARNING: Skip over the matplotlib native duplicate entries with
-# suffixes '_r' and '_shifted'.
-_cmap_database_attr = '_cmap_registry' if hasattr(mcm, '_cmap_registry') else 'cmap_d'
-_cmap_database = getattr(mcm, _cmap_database_attr)
-if mcm.get_cmap is not _get_cmap:
-    mcm.get_cmap = _get_cmap
-if not isinstance(_cmap_database, ColormapDatabase):
-    _cmap_database = {
-        key: value for key, value in _cmap_database.items()
-        if key[-2:] != '_r' and key[-8:] != '_shifted'
-    }
-    _cmap_database = ColormapDatabase(_cmap_database)
-    setattr(mcm, _cmap_database_attr, _cmap_database)
+# Initialize databases
+_init_color_database()
+_cmap_database = _init_cmap_database()
