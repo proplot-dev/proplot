@@ -188,13 +188,15 @@ for cmaps in (('magma', 'rocket'), ('fire', 'dusk')):
 # ``'hpl'`` colorspaces.
 
 # %%
+# Sample data
 import proplot as pplt
 import numpy as np
 state = np.random.RandomState(51423)
 data = state.rand(30, 30).cumsum(axis=1)
 
-# Initialize figure
-fig, axs = pplt.subplots(ncols=2, nrows=2, refwidth=2, span=0)
+# %%
+# Create figure
+fig, axs = pplt.subplots(ncols=2, refwidth=2, span=0)
 axs.format(
     xticklabels='none',
     yticklabels='none',
@@ -216,11 +218,23 @@ ax.format(title='From list of colors')
 m = ax.contourf(data, cmap=cmap2)
 ax.colorbar(m, loc='b', ticks='none', label=cmap2.name)
 
+# Display the channels
+fig, axs = pplt.show_channels(cmap1, cmap2, refwidth=1.5, rgb=False)
+
+# %%
+# Create figure
+fig, axs = pplt.subplots(ncols=2, refwidth=2, span=0)
+axs.format(
+    xticklabels='none',
+    yticklabels='none',
+    suptitle='Making PerceptuallyUniformColormaps'
+)
+
 # Sequential colormap from channel values
 cmap3 = pplt.Colormap(
     h=('red', 'red-720'), s=(80, 20), l=(20, 100), space='hpl', name='CubeHelix'
 )
-ax = axs[2]
+ax = axs[0]
 ax.format(title='Sequential from channel values')
 m = ax.contourf(data, cmap=cmap3)
 ax.colorbar(m, loc='b', ticks='none', label=cmap3.name)
@@ -229,13 +243,12 @@ ax.colorbar(m, loc='b', ticks='none', label=cmap3.name)
 cmap4 = pplt.Colormap(
     h=(0, 360), c=50, l=70, space='hcl', cyclic=True, name='Spectrum'
 )
-ax = axs[3]
+ax = axs[1]
 ax.format(title='Cyclic from channel values')
 m = ax.contourf(data, cmap=cmap4)
 ax.colorbar(m, loc='b', ticks='none', label=cmap4.name)
 
 # Display the channels
-fig, axs = pplt.show_channels(cmap1, cmap2, refwidth=1.5, rgb=False)
 fig, axs = pplt.show_channels(cmap3, cmap4, refwidth=1.5, rgb=False)
 
 
@@ -369,14 +382,13 @@ for ax, coord in zip(axs, (None, 0.3, 0.7)):
         colorbar='b', colorbar_kw={'locator': 'null'}
     )
 
-
 # %%
 import proplot as pplt
 import numpy as np
 state = np.random.RandomState(51423)
 data = (state.rand(40, 40) - 0.5).cumsum(axis=0).cumsum(axis=1)
 
-# Generate figure
+# Create figure
 fig, axs = pplt.subplots(ncols=2, nrows=2, refwidth=1.7, span=False)
 axs.format(
     xlabel='x axis', ylabel='y axis', xticklabels='none',

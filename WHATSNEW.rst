@@ -27,7 +27,7 @@ This will be published when some major refactoring tasks are completed,
 and deprecation warnings will be removed. See :pr:`89`, :pr:`109`, :pr:`110`,
 and :pr:`111`.
 
-ProPlot v0.8.0 (2021-##-##)
+ProPlot v0.9.0 (2021-##-##)
 ===========================
 
 .. rubric:: Deprecated
@@ -71,7 +71,7 @@ ProPlot v0.8.0 (2021-##-##)
   `~proplot.subplots.EdgeStack` stacks rather than getting inserted directly
   into the main `~proplot.subplots.GridSpec` (:pr:`110`).
 
-ProPlot v0.7.1 (2021-##-##)
+ProPlot v0.8.0 (2021-##-##)
 ===========================
 
 .. rubric:: Bug fixes
@@ -79,11 +79,13 @@ ProPlot v0.7.1 (2021-##-##)
 * Fix issue where deprecated `aspect` `~proplot.ui.subplots` argument
   is ignored (:commit:`70a8b87d`).
 * Fix issue where `~proplot.axes.Axes.parametric` ignores `interp` when
-  selecting default colormap levels (:commit:`152a3a81`).
-* Fix issue where a-b-c labels are removed in presence of ``'top'`` panels
-  with ``titleabove=True`` (:commit:`7873d5e0`).
+  selecting `DiscreteNorm` colormap levels (:commit:`152a3a81`).
 * Ensure `plot` returns tuples of handles instead of lists, and ensure `indicate_error`
   returns a singleton tuple containing ``(line, error)`` objects (:issue:`260`).
+* Fix issue where a-b-c labels are removed in presence of ``'top'`` panels
+  with ``titleabove=True`` (:commit:`7873d5e0`).
+* Fix issue where thin pyplot-function wrappers e.g. ``isinteractive``
+  do not return results (:commit:`e62e3655`).
 
 .. rubric:: Features
 
@@ -94,6 +96,20 @@ ProPlot v0.7.1 (2021-##-##)
   default row label rotation match default y label rotation (:commit:`bae85113`).
 * Make `~proplot.axes.colorbar_extras` capture matplotlib-native `format` keyword
   as alias for `formatter` and `ticklabels` (:issue:`262`).
+* Permit legends from mappables using ``ContourSet.legend_elements``
+  and ``Collection.legend_elements`` (:pr:`264`).
+* Add `stepx` command analogous to `plotx` and `histh`, `boxploth`, and `violinploth`
+  commands analogous to `barh` (:pr:`264`). Also add aliases.
+
+.. rubric:: Internals
+
+* Convert all plotting wrappers to dedicated overrides of individual functions
+  (:pr:`264`). This massively simplifies the internals and makes learning
+  and adopting proplot much easier for new users.
+* Use metaclasses to redirect internal plotting calls to native matplotlib
+  methods (:pr:`264`). Much safer/more stable this way.
+* Use metaclasses to efficiently impose defaults ``latlon=True`` and
+  ``transform=PlateCarree()`` in 90% fewer lines (:pr:`264`).
 
 
 ProPlot v0.7.0 (2021-07-11)

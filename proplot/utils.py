@@ -445,6 +445,7 @@ def set_alpha(color, alpha):
     return to_hex(color)
 
 
+@docstring.add_snippets
 def to_hex(color, space='rgb', cycle=None, keep_alpha=True):
     """
     Translate the color in *any* format and from *any* colorspace

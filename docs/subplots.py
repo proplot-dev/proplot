@@ -85,7 +85,7 @@ axs.format(
 # Automatic sizing
 # ----------------
 #
-# By default, ProPlot determines the suitable figure size given
+# ProPlot by default determines the suitable figure size given
 # the geometry of your subplot grid and the size of a "reference"
 # subplot. ProPlot can also determine the suitable figure height given a
 # fixed *figure* width, and figure width given a fixed *figure* height.

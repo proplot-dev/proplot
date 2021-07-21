@@ -30,13 +30,12 @@
 # Tick locations
 # --------------
 #
-# `Tick locators
+# Matplotlib `tick locators
 # <https://matplotlib.org/stable/gallery/ticks_and_spines/tick-locators.html>`__
-# are used to automatically select sensible tick locations
-# based on the axis data limits. In ProPlot, you can change the tick locator
-# using the `~proplot.axes.Axes.format` keyword arguments `xlocator`,
-# `ylocator`, `xminorlocator`, and `yminorlocator` (or their aliases,
-# `xticks`, `yticks`, `xminorticks`, and `yminorticks`). This is powered by
+# select sensible tick locations based on the axis data limits. In ProPlot, you can
+# change the tick locator using the `~proplot.axes.CartesianAxes.format` keyword
+# arguments `xlocator`, `ylocator`, `xminorlocator`, and `yminorlocator` (or their
+# aliases, `xticks`, `yticks`, `xminorticks`, and `yminorticks`). This is powered by
 # the `~proplot.constructor.Locator` :ref:`constructor function <why_constructor>`.
 #
 # These keyword arguments can be used to apply built-in matplotlib
@@ -122,16 +121,15 @@ axs[7].format(
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_formatters:
 #
-# Tick labels
-# -----------
+# Tick formatting
+# ---------------
 #
-# `Tick formatters
+# Matplotlib `tick formatters
 # <https://matplotlib.org/stable/gallery/ticks_and_spines/tick-formatters.html>`__
-# are used to convert floating point numbers to
-# nicely-formatted tick labels. In ProPlot, you can change the tick formatter
-# using the `~proplot.axes.Axes.format` keyword arguments `xformatter` and
-# `yformatter`  (or their aliases, `xticklabels` and `yticklabels`). This is
-# powered by the `~proplot.constructor.Formatter`
+# convert floating point numbers to nicely-formatted tick labels. In ProPlot, you can
+# change the tick formatter using the `~proplot.axes.CartesianAxes.format` keyword
+# arguments `xformatter` and `yformatter` (or their aliases, `xticklabels` and
+# `yticklabels`). This is powered by the `~proplot.constructor.Formatter`
 # :ref:`constructor function <why_constructor>`.
 #
 # These keyword arguments can be used to apply built-in matplotlib
@@ -154,6 +152,38 @@ axs[7].format(
 # can add arbitrary prefixes and suffixes to each label. See
 # `~proplot.ticker.AutoFormatter` for details. To disable the trailing
 # zero-trimming feature, set :rcraw:`formatter.zerotrim` to ``False``.
+
+# %%
+import proplot as pplt
+pplt.rc.linewidth = 2
+pplt.rc.fontsize = 11
+locator = [0, 0.25, 0.5, 0.75, 1]
+fig, axs = pplt.subplots(ncols=2, nrows=2, refwidth=1.5, share=0)
+
+# Formatter comparison
+axs[0].format(
+    xformatter='scalar', yformatter='scalar', title='Matplotlib formatter'
+)
+axs[1].format(yticklabelloc='both', title='ProPlot formatter')
+axs[:2].format(xlocator=locator, ylocator=locator)
+
+# Limiting the tick range
+axs[2].format(
+    title='Omitting tick labels', ticklen=5, xlim=(0, 5), ylim=(0, 5),
+    xtickrange=(0, 2), ytickrange=(0, 2), xlocator=1, ylocator=1
+)
+
+# Setting the wrap range
+axs[3].format(
+    title='Wrapping the tick range', ticklen=5, xlim=(0, 7), ylim=(0, 6),
+    xwraprange=(0, 5), ywraprange=(0, 3), xlocator=1, ylocator=1
+)
+axs.format(
+    ytickloc='both', yticklabelloc='both',
+    titlepad='0.5em', suptitle='Default formatters demo'
+)
+pplt.rc.reset()
+
 
 # %%
 import proplot as pplt
@@ -207,38 +237,6 @@ axs[8].format(
 axs.format(ylocator='null', suptitle='Tick formatters demo')
 pplt.rc.reset()
 
-# %%
-import proplot as pplt
-pplt.rc.linewidth = 2
-pplt.rc.fontsize = 11
-locator = [0, 0.25, 0.5, 0.75, 1]
-fig, axs = pplt.subplots(ncols=2, nrows=2, refwidth=1.5, share=0)
-
-# Formatter comparison
-axs[0].format(
-    xformatter='scalar', yformatter='scalar', title='Matplotlib formatter'
-)
-axs[1].format(yticklabelloc='both', title='ProPlot formatter')
-axs[:2].format(xlocator=locator, ylocator=locator)
-
-# Limiting the tick range
-axs[2].format(
-    title='Omitting tick labels', ticklen=5, xlim=(0, 5), ylim=(0, 5),
-    xtickrange=(0, 2), ytickrange=(0, 2), xlocator=1, ylocator=1
-)
-
-# Setting the wrap range
-axs[3].format(
-    title='Wrapping the tick range', ticklen=5, xlim=(0, 7), ylim=(0, 6),
-    xwraprange=(0, 5), ywraprange=(0, 3), xlocator=1, ylocator=1
-)
-axs.format(
-    ytickloc='both', yticklabelloc='both',
-    titlepad='0.5em', suptitle='Default formatters demo'
-)
-pplt.rc.reset()
-
-
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_datetime:
 #
@@ -246,15 +244,15 @@ pplt.rc.reset()
 # --------------
 #
 # ProPlot can also be used to customize the tick locations and tick label
-# format of "datetime" axes. To draw ticks on some particular time unit, just
-# use a unit string (e.g., ``xlocator='month'``). To draw ticks every ``N``
-# time units, just use a (unit, N) tuple (e.g., ``xlocator=('day', 5)``). For
-# `% style formatting
+# format of "datetime" axes.
+# To draw ticks on some particular time unit, just use a unit string (e.g.,
+# ``xlocator='month'``). To draw ticks every ``N`` time units, just use a (unit, N)
+# tuple (e.g., ``xlocator=('day', 5)``). For `% style formatting
 # <https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior>`__
 # of datetime tick labels, just use a string containing ``'%'`` (e.g.
-# ``xformatter='%Y-%m-%d'``). See `~proplot.axes.CartesianAxes.format`,
-# `~proplot.constructor.Locator`, and `~proplot.constructor.Formatter` for
-# details.
+# ``xformatter='%Y-%m-%d'``).
+# See `~proplot.axes.CartesianAxes.format`, `~proplot.constructor.Locator`,
+# and `~proplot.constructor.Formatter` for details.
 
 # %%
 import proplot as pplt
@@ -308,8 +306,8 @@ pplt.rc.reset()
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_scales:
 #
-# Changing the axis scale
-# -----------------------
+# Axis scale changes
+# ------------------
 #
 # "Axis scales" like ``'linear'`` and ``'log'`` control the *x* and *y* axis
 # coordinate system. To change the axis scale, simply pass e.g.
@@ -319,21 +317,20 @@ pplt.rc.reset()
 #
 # ProPlot also makes several changes to the axis scale API:
 #
-# * By default, the `~proplot.ticker.AutoFormatter` formatter is used for all
-#   axis scales instead of e.g. `~matplotlib.ticker.LogFormatter` for
-#   `~matplotlib.scale.LogScale` scales. This can be changed e.g. by passing
-#   ``xformatter='log'`` or ``yformatter='log'`` to
+# * The `~proplot.ticker.AutoFormatter` formatter is now used for all axis scales
+#   by default, including ``'log'`` and ``'symlog'``. Matplotlib's behavior can
+#   be restored by passing e.g. ``xformatter='log'`` or ``yformatter='log'`` to
 #   `~proplot.axes.CartesianAxes.format`.
 # * To make its behavior consistent with `~proplot.constructor.Locator` and
 #   `~proplot.constructor.Formatter`, the `~proplot.constructor.Scale`
 #   constructor function returns instances of `~matplotlib.scale.ScaleBase`,
 #   and `~matplotlib.axes.Axes.set_xscale` and
 #   `~matplotlib.axes.Axes.set_yscale` now accept these class instances in
-#   addition to string names like ``'log'``.
+#   addition to "registered" names like ``'log'``.
 # * While matplotlib axis scales must be instantiated with an
-#   `~matplotlib.axis.Axis` instance (for backward compatibility reasons),
-#   ProPlot axis scales can be instantiated without the axis instance (e.g.
-#   ``pplt.LogScale()`` instead of ``pplt.LogScale(ax.xaxis)``).
+#   `~matplotlib.axis.Axis` instance (for backwards compatibility reasons),
+#   ProPlot axis scales can be instantiated without the axis instance
+#   (e.g., ``pplt.LogScale()`` instead of ``pplt.LogScale(ax.xaxis)``).
 # * The default `subs` for the ``'symlog'`` axis scale is now ``np.arange(1, 10)``,
 #   and the default `linthresh` is now ``1``. Also the ``'log'`` and ``'symlog'``
 #   axis scales now accept the keywords `base`, `linthresh`, `linscale`, and
@@ -474,8 +471,8 @@ for ax, scale, color in zip(axs[4:], ('sine', 'mercator'), ('coral', 'sky blue')
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_dual:
 #
-# Dual unit axes
-# --------------
+# Dual unit scales
+# ----------------
 #
 # The `~proplot.axes.CartesianAxes.dualx` and
 # `~proplot.axes.CartesianAxes.dualy` methods can be used to draw duplicate

@@ -6,15 +6,6 @@ Comprehensive documentation of ProPlot functions and classes. All of these
 objects are imported into the top-level namespace, so you can read the
 documentation within python sessions using ``help(pplt.<function_or_class>)``.
 
-Top-level functions
-===================
-
-.. automodule:: proplot.ui
-
-.. automodsumm:: proplot.ui
-   :toctree: api
-
-
 Figure class
 ============
 
@@ -34,6 +25,15 @@ Axes classes
    :classes-only:
 
 
+Top-level functions
+===================
+
+.. automodule:: proplot.ui
+
+.. automodsumm:: proplot.ui
+   :toctree: api
+
+
 Constructor functions
 =====================
 
@@ -41,15 +41,6 @@ Constructor functions
 
 .. automodsumm:: proplot.constructor
    :toctree: api
-
-Configuration tools
-===================
-
-.. automodule:: proplot.config
-
-.. automodsumm:: proplot.config
-   :toctree: api
-   :skip: inline_backend_fmt
 
 
 Plotting wrappers
@@ -62,6 +53,16 @@ Plotting wrappers
    :functions-only:
 
 
+Configuration tools
+===================
+
+.. automodule:: proplot.config
+
+.. automodsumm:: proplot.config
+   :toctree: api
+   :skip: inline_backend_fmt
+
+
 Demo functions
 ==============
 
@@ -71,12 +72,30 @@ Demo functions
    :toctree: api
 
 
-Colormaps and normalizers
-=========================
+Gridspec classes
+================
 
-.. automodule:: proplot.colors
+.. automodule:: proplot.gridspec
 
-.. automodsumm:: proplot.colors
+.. automodsumm:: proplot.gridspec
+   :toctree: api
+
+
+Projection classes
+==================
+
+.. automodule:: proplot.crs
+
+.. automodsumm:: proplot.crs
+   :toctree: api
+
+
+Axis scales
+===========
+
+.. automodule:: proplot.scale
+
+.. automodsumm:: proplot.scale
    :toctree: api
 
 
@@ -89,30 +108,12 @@ Locators and formatters
    :toctree: api
 
 
-Axis scale classes
-==================
+Colormaps and normalizers
+=========================
 
-.. automodule:: proplot.scale
+.. automodule:: proplot.colors
 
-.. automodsumm:: proplot.scale
-   :toctree: api
-
-
-Cartopy projections
-===================
-
-.. automodule:: proplot.crs
-
-.. automodsumm:: proplot.crs
-   :toctree: api
-
-
-Gridspec classes
-================
-
-.. automodule:: proplot.gridspec
-
-.. automodsumm:: proplot.gridspec
+.. automodsumm:: proplot.colors
    :toctree: api
 
 

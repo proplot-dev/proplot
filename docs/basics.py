@@ -276,8 +276,8 @@ axs.format(
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_container:
 #
-# Subplot containers
-# ------------------
+# Multiple axes
+# -------------
 #
 # `matplotlib.pyplot.subplots` returns a 2D `~numpy.ndarray` for figures with more
 # than one column and row, a 1D `~numpy.ndarray` for single-column or row figures,
@@ -306,13 +306,15 @@ axs.format(
 import proplot as pplt
 import numpy as np
 state = np.random.RandomState(51423)
+
+# Format all subplots at once
 fig, axs = pplt.subplots(ncols=4, nrows=4, refwidth=1.2)
 axs.format(
     xlabel='xlabel', ylabel='ylabel', suptitle='SubplotsContainer demo',
     grid=False, xlim=(0, 50), ylim=(-4, 4)
 )
 
-# Various ways to select subplots in the container
+# Format selected subplots in the container
 axs[:, 0].format(facecolor='blush', color='gray7', linewidth=1)
 axs[0, :].format(facecolor='sky blue', color='gray7', linewidth=1)
 axs[0].format(color='black', facecolor='gray5', linewidth=1.4)

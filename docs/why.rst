@@ -179,9 +179,9 @@ Function                          Return type                                   
 `~proplot.constructor.Locator`    `~matplotlib.ticker.Locator`                                  `~proplot.axes.Axes.format` and `~proplot.axes.Axes.colorbar`  ``locator=``, ``xlocator=``, ``ylocator=``, ``minorlocator=``, ``xminorlocator=``, ``yminorlocator=``, ``ticks=``, ``xticks=``, ``yticks=``, ``minorticks=``, ``xminorticks=``, ``yminorticks=``
 `~proplot.constructor.Formatter`  `~matplotlib.ticker.Formatter`                                `~proplot.axes.Axes.format` and `~proplot.axes.Axes.colorbar`  ``formatter=``, ``xformatter=``, ``yformatter=``, ``ticklabels=``, ``xticklabels=``, ``yticklabels=``
 `~proplot.constructor.Scale`      `~matplotlib.scale.ScaleBase`                                 `~proplot.axes.Axes.format`                                    ``xscale=``, ``yscale=``
-`~proplot.constructor.Cycle`      `~cycler.Cycler`                                              :ref:`1D plotting methods <ug_1dplots>`                        ``cycle=``
-`~proplot.constructor.Colormap`   `~matplotlib.colors.Colormap`                                 :ref:`2D plotting methods <ug_2dplots>`                        ``cmap=``
-`~proplot.constructor.Norm`       `~matplotlib.colors.Normalize`                                :ref:`2D plotting methods <ug_2dplots>`                        ``norm=``
+`~proplot.constructor.Cycle`      `~cycler.Cycler`                                              :ref:`1D plotting commands <ug_1dplots>`                        ``cycle=``
+`~proplot.constructor.Colormap`   `~matplotlib.colors.Colormap`                                 :ref:`2D plotting commands <ug_2dplots>`                        ``cmap=``
+`~proplot.constructor.Norm`       `~matplotlib.colors.Normalize`                                :ref:`2D plotting commands <ug_2dplots>`                        ``norm=``
 `~proplot.constructor.Proj`       `~cartopy.crs.Projection` or `~mpl_toolkits.basemap.Basemap`  `~proplot.ui.subplots`                                         ``proj=``
 ================================  ============================================================  =============================================================  =================================================================================================================================================================================================
 
@@ -213,36 +213,35 @@ spacing between different subplot row and column boundaries.
 
 .. rubric:: Solution
 
-In ProPlot, you can specify the physical dimensions of a *reference subplot*
-instead of the figure by passing `refwidth`, `refheight`, and/or `refaspect` to
-`~proplot.figure.Figure`. The default behavior is ``refaspect=1`` and
-``refwidth=2`` (inches). If the `aspect ratio mode
+In ProPlot, you can specify the physical dimensions of a *reference subplot* by passing
+`refwidth`, `refheight`, and/or `refaspect` to `~proplot.figure.Figure`. The dimensions
+of the figure are calculated automatically. The default behavior is ``refaspect=1``
+and ``refwidth=2`` (inches). If the `aspect ratio mode
 <https://matplotlib.org/stable/gallery/subplots_axes_and_figures/axis_equal_demo.html>`__
-for the reference subplot is set to ``'equal'``, as with
-:ref:`geographic and polar <ug_proj>` plots and `~matplotlib.axes.Axes.imshow` plots,
-the *imposed* aspect ratio will be used instead.
+for the reference subplot is set to ``'equal'``, as with :ref:`geographic <ug_geo>`,
+:ref:`polar <ug_polar>`, `~matplotlib.axes.Axes.imshow`, and `~proplot.axes.Axes.heatmap`
+plots, the :ref:`projection or data aspect ratio is used instead <ug_autosize>`.
 
-The width or height of the *figure* can also be constrained independently with the
+You can also independently specify the width or height of the *figure* with the
 `figwidth` and `figheight` parameters. If only one is specified, the other will be
-adjusted to preserve subplot aspect ratios. You can select a `figwidth` and/or
+calculated to preserve subplot aspect ratios. You can also select a `figwidth` and/or
 `figheight` suitable for submission to :ref:`various publications <journal_table>`
 using the `journal` parameter.
 
-ProPlot also uses its own "tight layout" algorithm to automatically
+ProPlot also :ref:`uses its own "tight layout" algorithm <ug_tight>` to automatically
 determine the `left`, `right`, `bottom`, `top`, `wspace`, and `hspace`
 spacing parameters. This algorithm has the following advantages:
 
-* By using `proplot.gridspec.GridSpec` instead of `matplotlib.gridspec.GridSpec`,
-  spacing between rows and columns is *variable*. This is critical for putting
-  :ref:`colorbars and legends <ug_cbars_legends>` or
+* Spacing between rows and columns is *variable* thanks to the
+  `proplot.gridspec.GridSpec` subclass of `matplotlib.gridspec.GridSpec`.
+  This is critical for putting :ref:`colorbars and legends <ug_cbars_legends>` or
   :ref:`axes panels <ug_insets_panels>` outside of subplots
   without "stealing space" from the parent subplot.
-* By permitting just *one* `proplot.gridspec.GridSpec` per figure, the "tight
-  layout" algorithm is considerably simplified. This restriction is possible
-  because ProPlot requires users to draw their subplots all at once with
-  `~proplot.ui.subplots` (in a :pr:`future version <50>`, there will also be a
-  `figure` function that lets users add subplots one-by-one while retaining
-  this single-gridspec restriction).
+* Only *one* `proplot.gridspec.GridSpec` is permitted per figure, greatly
+  simplifying the "tight layout" algorithm. This is possible because ProPlot
+  requires users to draw their subplots all at once with `~proplot.ui.subplots`
+  (in a :pr:`future version <50>`, there will also be a `figure` function that
+  lets users add subplots one-by-one while retaining this single-gridspec restriction).
 
 See the :ref:`user guide <ug_subplots>` for details.
 
@@ -479,13 +478,13 @@ The following features are relevant for "2D" plotting commands like
 
 ..
    ProPlot also uses wrappers to *unify* the behavior of various
-   plotting methods.
+   plotting commands.
 
 ..
-  All positional arguments for 1D plotting methods are standardized by
+  All positional arguments for 1D plotting commands are standardized by
   `~proplot.axes.standardize_1d`. All positional arguments for 2D
-  plotting methods are standardized by `~proplot.axes.standardize_2d`.
-  See :ref:`1D plotting methods <1d_plots>` and :ref:`2D plotting methods <2d_plots>`
+  plotting commands are standardized by `~proplot.axes.standardize_2d`.
+  See :ref:`1D plotting commands <1d_plots>` and :ref:`2D plotting commands <2d_plots>`
   for details.
 
 .. _why_cartopy_basemap:
@@ -523,8 +522,8 @@ gridline labels, continents, coastlines, and political boundaries.
 
 Finally, `~proplot.axes.GeoAxes` makes longitude-latitude coordinates the "default"
 coordinate system by passing ``transform=ccrs.PlateCarree()``
-to `~proplot.axes.CartopyAxes` plotting methods and ``latlon=True``
-to `~proplot.axes.BasemapAxes` plotting methods. And to enforce global coverage
+to `~proplot.axes.CartopyAxes` plotting commands and ``latlon=True``
+to `~proplot.axes.BasemapAxes` plotting commands. And to enforce global coverage
 over the poles and across longitude seams, you can pass ``globe=True``
 to any 2D plotting command (e.g., `~matplotlib.axes.Axes.contourf`
 or `~matplotlib.axes.Axes.pcolormesh`).
@@ -559,7 +558,7 @@ in their own right, without requiring special containers and a separate interfac
 
 ProPlot reproduces many of the `xarray.DataArray.plot`,
 `pandas.DataFrame.plot`, and `pandas.Series.plot` features on the
-`~proplot.axes.Axes` plotting methods themselves.  Passing a
+`~proplot.axes.Axes` plotting commands themselves.  Passing a
 `~xarray.DataArray`, `~pandas.DataFrame`, or `~pandas.Series` through any
 plotting command updates the axis tick labels, axis labels, subplot title, and
 colorbar and legend labels from the metadata. This feature can be disabled
