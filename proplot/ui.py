@@ -20,12 +20,12 @@ from .utils import units
 __all__ = [
     'subplots',
     'SubplotsContainer',
+    'show',
     'close',
+    'switch_backend',
     'ion',
     'ioff',
     'isinteractive',
-    'show',
-    'switch_backend',
 ]
 
 docstring.snippets['pyplot.statement'] = """
@@ -54,47 +54,6 @@ JOURNAL_SPECS = {
 
 
 @docstring.add_snippets
-def close(*args, **kwargs):
-    """
-    Call `matplotlib.pyplot.close`.
-    %(pyplot.statement)s
-
-    Parameters
-    ----------
-    *args, **kwargs
-        Passed to `matplotlib.pyplot.close`.
-    """
-    plt.close(*args, **kwargs)
-
-
-@docstring.add_snippets
-def ion():
-    """
-    Call `matplotlib.pyplot.ion`.
-    %(pyplot.statement)s
-    """
-    plt.ion()
-
-
-@docstring.add_snippets
-def ioff():
-    """
-    Call `matplotlib.pyplot.ioff`.
-    %(pyplot.statement)s
-    """
-    plt.ioff()
-
-
-@docstring.add_snippets
-def isinteractive():
-    """
-    Call `matplotlib.pyplot.isinteractive`.
-    %(pyplot.statement)s
-    """
-    plt.isinteractive()
-
-
-@docstring.add_snippets
 def show(*args, **kwargs):
     """
     Call `matplotlib.pyplot.show`.
@@ -105,7 +64,21 @@ def show(*args, **kwargs):
     *args, **kwargs
         Passed to `matplotlib.pyplot.show`.
     """
-    plt.show(*args, **kwargs)
+    return plt.show(*args, **kwargs)
+
+
+@docstring.add_snippets
+def close(*args, **kwargs):
+    """
+    Call `matplotlib.pyplot.close`.
+    %(pyplot.statement)s
+
+    Parameters
+    ----------
+    *args, **kwargs
+        Passed to `matplotlib.pyplot.close`.
+    """
+    return plt.close(*args, **kwargs)
 
 
 @docstring.add_snippets
@@ -119,7 +92,34 @@ def switch_backend(*args, **kwargs):
     *args, **kwargs
         Passed to `matplotlib.pyplot.switch_backend`.
     """
-    plt.switch_backend(*args, **kwargs)
+    return plt.switch_backend(*args, **kwargs)
+
+
+@docstring.add_snippets
+def ion():
+    """
+    Call `matplotlib.pyplot.ion`.
+    %(pyplot.statement)s
+    """
+    return plt.ion()
+
+
+@docstring.add_snippets
+def ioff():
+    """
+    Call `matplotlib.pyplot.ioff`.
+    %(pyplot.statement)s
+    """
+    return plt.ioff()
+
+
+@docstring.add_snippets
+def isinteractive():
+    """
+    Call `matplotlib.pyplot.isinteractive`.
+    %(pyplot.statement)s
+    """
+    return plt.isinteractive()
 
 
 def _journals(journal):
