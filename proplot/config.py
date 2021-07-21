@@ -155,12 +155,11 @@ docstring.snippets['register_cycles.params'] = _config_docstring.format(name='cy
 docstring.snippets['register_colors.params'] = _config_docstring.format(name='colors')
 docstring.snippets['rc.params'] = """
 local : bool, optional
-    Whether to reload ``.proplotrc`` settings in this directory and parent
-    directories. Default is ``True``.
+    Whether to load settings from the `~RcConfigurator.local_files` file.
 user : bool, optional
-    Whether to reload ``~/.proplotrc`` user settings. Default is ``True``.
+    Whether to load settings from the `~RcConfigurator.user_file` file.
 default : bool, optional
-    Whether to reload default proplot settings. Default is ``True``.
+    Whether to reload built-in default ProPlot settings.
 """
 
 docstring.snippets['register.ext_table'] = """
@@ -176,29 +175,31 @@ Extension           Description
 """  # noqa: E501
 
 
-def _get_data_paths(subfolder, user=True, default=True, reverse=False):
+def _init_user_file():
     """
-    Return data folder paths in reverse order of precedence.
+    Initialize .proplotrc file.
     """
-    # When loading colormaps, cycles, and colors, files in the latter
-    # directories overwrite files in the former directories. When loading
-    # fonts, the resulting paths need to be *reversed*.
-    paths = []
-    if user:
-        paths.append(os.path.join(os.path.dirname(__file__), subfolder))
-    if default:
-        paths.append(os.path.join(os.path.expanduser('~'), '.proplot', subfolder))
-    if reverse:
-        paths = paths[::-1]
-    return paths
+    file = RcConfigurator.user_file()
+    if not os.path.exists(file):
+        RcConfigurator._save_yaml(file, comment=True)
 
 
-def _iter_data_paths(subfolder, **kwargs):
+def _init_user_folders():
+    """
+    Initialize .proplot folder.
+    """
+    for folder in ('', 'cmaps', 'cycles', 'colors', 'fonts'):
+        folder = RcConfigurator.user_folder(folder)
+        if not os.path.isdir(folder):
+            os.mkdir(folder)
+
+
+def _iter_data_folders(folder, **kwargs):
     """
     Iterate over all files in the data paths. Also yield an index indicating
     whether these are default ProPlot files or user files.
     """
-    for i, path in enumerate(_get_data_paths(subfolder, **kwargs)):
+    for i, path in enumerate(_get_data_folders(folder, **kwargs)):
         for dirname, dirnames, filenames in os.walk(path):
             for filename in filenames:
                 if filename[0] == '.':  # UNIX-style hidden files
@@ -206,13 +207,612 @@ def _iter_data_paths(subfolder, **kwargs):
                 yield i, dirname, filename
 
 
+def _get_data_folders(folder, user=True, default=True, reverse=False):
+    """
+    Return data folder paths in reverse order of precedence.
+    """
+    # When loading colormaps, cycles, and colors, files in the latter
+    # directories overwrite files in the former directories. When loading
+    # fonts, the resulting paths need to be *reversed*.
+    paths = []
+    if default:
+        paths.append(os.path.join(os.path.dirname(__file__), folder))
+    if user:
+        paths.append(RcConfigurator.user_folder(folder))
+    if reverse:
+        paths = paths[::-1]
+    return paths
+
+
+def _get_cycle_colors(cycle):
+    """
+    Update the color cycle.
+    """
+    try:
+        colors = pcolors._cmap_database[cycle].colors
+    except (KeyError, AttributeError):
+        cycles = sorted(
+            name for name, cmap in pcolors._cmap_database.items()
+            if isinstance(cmap, pcolors.ListedColormap)
+        )
+        raise ValueError(
+            f'Invalid cycle name {cycle!r}. Options are: '
+            + ', '.join(map(repr, cycles)) + '.'
+        )
+    return colors
+
+
+def _get_default_dict():
+    """
+    Get the default rc parameters dictionary with deprecated parameters filtered.
+    """
+    # NOTE: Use RcParams update to filter and translate deprecated settings
+    # before actually applying them to rcParams down pipeline. This way we can
+    # suppress warnings for deprecated default params but still issue warnings
+    # when user-supplied stylesheets have deprecated params.
+    # WARNING: Some deprecated rc params remain in dictionary as None so we
+    # filter them out. Beware if hidden attribute changes.
+    rcdict = _get_filtered_dict(mpl.rcParamsDefault, warn=False)
+    with _suppress_matplotlib_deprecation_warning():
+        rcdict = dict(RcParams(rcdict))
+    for attr in ('_deprecated_remain_as_none', '_deprecated_set'):
+        if hasattr(mpl, attr):  # _deprecated_set is in matplotlib before v3
+            for deprecated in getattr(mpl, attr):
+                rcdict.pop(deprecated, None)
+    return rcdict
+
+
+def _get_filtered_dict(rcdict, warn=True):
+    """
+    Filter out blacklisted style parameters.
+    """
+    # NOTE: This implements bugfix: https://github.com/matplotlib/matplotlib/pull/17252
+    # This fix is *critical* for proplot because we always run style.use()
+    # when the configurator is made. Without fix backend is reset every time
+    # you import proplot in jupyter notebooks. So apply retroactively.
+    rcdict_filtered = {}
+    for key in rcdict:
+        if key in mstyle.STYLE_BLACKLIST:
+            if warn:
+                warnings._warn_proplot(
+                    f'Dictionary includes a parameter, {key!r}, that is not related '
+                    'to style. Ignoring.'
+                )
+        else:
+            rcdict_filtered[key] = rcdict[key]
+    return rcdict_filtered
+
+
+def _get_style_dicts(style, infer=False, filter=True):
+    """
+    Return a dictionary of settings belonging to the requested style(s). If `infer`
+    is ``True``, two dictionaries are returned, where the second contains custom
+    ProPlot settings "inferred" from the matplotlib settings. If `filter` is ``True``,
+    invalid style parameters like `backend` are filtered out.
+    """
+    # NOTE: This is adapted from matplotlib source for the following changes:
+    # 1. Add 'original' option. Like rcParamsOrig except we also *reload*
+    #    from user matplotlibrc file.
+    # 2. When the style is changed we reset to the *default* state ignoring
+    #    matplotlibrc. Matplotlib applies styles on top of current state
+    #    (including matplotlibrc changes and runtime rcParams changes) but
+    #    IMO the word 'style' implies a *rigid* static format.
+    # 3. Add a separate function that returns lists of style dictionaries so
+    #    that we can modify the active style in a context block. ProPlot context
+    #    is more conservative than matplotlib's rc_context because it gets
+    #    called a lot (e.g. every time you make an axes and every format() call).
+    #    Instead of copying the entire rcParams dict we just track the keys
+    #    that were changed.
+    style_aliases = {
+        '538': 'fivethirtyeight',
+        'mpl20': 'default',
+        'mpl15': 'classic',
+        'original': mpl.matplotlib_fname(),
+    }
+
+    # Always apply the default style *first* so styles are rigid
+    kw_matplotlib = _get_default_dict()
+    if style == 'default' or style is mpl.rcParamsDefault:
+        if infer:
+            kw_proplot = _infer_added_params(kw_matplotlib)
+            return kw_matplotlib, kw_proplot
+        else:
+            return kw_matplotlib
+
+    # Apply limited deviations from the matplotlib style that we want to propagate to
+    # other styles. Want users selecting stylesheets to have few surprises, so
+    # currently just enforce the new aesthetically pleasing fonts.
+    kw_matplotlib['font.family'] = 'sans-serif'
+    for fmly in ('serif', 'sans-serif', 'monospace', 'cursive', 'fantasy'):
+        kw_matplotlib['font.' + fmly] = rcsetup._rc_matplotlib_default['font.' + fmly]
+
+    # Apply user input style(s) one by one
+    if isinstance(style, str) or isinstance(style, dict):
+        styles = [style]
+    else:
+        styles = style
+    for style in styles:
+        if isinstance(style, dict):
+            kw = style
+        elif isinstance(style, str):
+            style = style_aliases.get(style, style)
+            if style in mstyle.library:
+                kw = mstyle.library[style]
+            else:
+                try:
+                    kw = mpl.rc_params_from_file(style, use_default_template=False)
+                except IOError:
+                    raise IOError(
+                        f'Style {style!r} not found in the style library and input is '
+                        'not a valid URL or path. Available styles are: '
+                        + ', '.join(map(repr, mstyle.available)) + '.'
+                    )
+        else:
+            raise ValueError(f'Invalid style {style!r}. Must be string or dictionary.')
+        if filter:
+            kw = _get_filtered_dict(kw, warn=True)
+        kw_matplotlib.update(kw)
+
+    # Infer proplot params from stylesheet params
+    if infer:
+        kw_proplot = _infer_added_params(kw_matplotlib)
+        return kw_matplotlib, kw_proplot
+    else:
+        return kw_matplotlib
+
+
+def _infer_added_params(kw_params):
+    """
+    Infer values for proplot's "added" parameters from stylesheets.
+    """
+    kw_proplot = {}
+    mpl_to_proplot = {
+        'font.size': ('tick.labelsize',),
+        'axes.titlesize': (
+            'abc.size', 'suptitle.size', 'title.size',
+            'leftlabel.size', 'rightlabel.size',
+            'toplabel.size', 'bottomlabel.size',
+        ),
+        'text.color': (
+            'abc.color', 'suptitle.color', 'tick.labelcolor', 'title.color',
+            'leftlabel.color', 'rightlabel.color',
+            'toplabel.color', 'bottomlabel.color',
+        ),
+    }
+    for key, params in mpl_to_proplot.items():
+        if key in kw_params:
+            value = kw_params[key]
+            for param in params:
+                kw_proplot[param] = value
+    return kw_proplot
+
+
+def _apply_lut(lut):
+    """
+    Apply the lookup table size to all colormaps.
+    """
+    for cmap in pcolors._cmap_database.values():
+        if isinstance(cmap, mcolors.LinearSegmentedColormap):
+            cmap.N = lut
+            cmap._isinit = False
+
+
+def _patch_colormaps():
+    """
+    Convert colormaps that *should* be LinearSegmentedColormap from ListedColormap.
+    """
+    for name in ('viridis', 'plasma', 'inferno', 'magma', 'cividis', 'twilight'):
+        cmap = pcolors._cmap_database.get(name, None)
+        if cmap and isinstance(cmap, pcolors.ListedColormap):
+            del pcolors._cmap_database[name]
+            pcolors._cmap_database[name] = pcolors.LinearSegmentedColormap.from_list(
+                name, cmap.colors, cyclic=(name == 'twilight')
+            )
+
+
+def _patch_validators():
+    """
+    Fix the fontsize validators to allow for new font scalings.
+    """
+    # Add persistent font scalings
+    mfonts.font_scalings['med-small'] = 0.9
+    mfonts.font_scalings['med-large'] = 1.1
+
+    # Define new valdiators
+    # NOTE: In the future will subclass RcParams directly and control the validators
+    def _validate_fontsize(s):
+        fontsizes = list(mfonts.font_scalings)
+        if isinstance(s, str):
+            s = s.lower()
+        if s in fontsizes:
+            return s
+        try:
+            return float(s)
+        except ValueError:
+            raise ValueError(
+                f'{s!r} is not a valid font size. Valid sizes are: '
+                + ', '.join(map(repr, fontsizes))
+            )
+
+    def _validate_fontsize_None(s):
+        if s is None or s == 'None':
+            return None
+        else:
+            return _validate_fontsize(s)
+
+    _validate_fontsizelist = None
+    if hasattr(msetup, '_listify_validator'):
+        _validate_fontsizelist = msetup._listify_validator(_validate_fontsize)
+
+    # Apply new validators
+    validate = RcParams.validate
+    for key in list(validate):  # modify in-place
+        validator = validate[key]
+        if validator is msetup.validate_fontsize:
+            validate[key] = _validate_fontsize
+        elif validator is getattr(msetup, 'validate_fontsize_None', None):
+            validate[key] = _validate_fontsize_None
+        elif validator is getattr(msetup, 'validate_fontsizelist', None):
+            if _validate_fontsizelist is not None:
+                validate[key] = _validate_fontsizelist
+
+
+def config_inline_backend(fmt=None):
+    """
+    Set up the `ipython inline backend \
+<https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__
+    format and ensure that inline figures always look the same as saved
+    figures. This runs the following ipython magic commands:
+
+    .. code-block:: ipython
+
+        %config InlineBackend.figure_formats = rc['inlinefmt']
+        %config InlineBackend.rc = {}  # never override rc settings
+        %config InlineBackend.close_figures = True  \
+# cells start with no active figures
+        %config InlineBackend.print_figure_kwargs = {'bbox_inches': None}  \
+# never override rc settings
+
+    When the inline backend is inactive or unavailable, this has no effect.
+    This function is called when you modify the :rcraw:`inlinefmt` property.
+
+    Parameters
+    ----------
+    fmt : str or list of str, optional
+        The inline backend file format(s). Default is :rc:`inlinefmt`.
+        Valid formats include ``'jpg'``, ``'png'``, ``'svg'``, ``'pdf'``,
+        and ``'retina'``.
+
+    See also
+    --------
+    RcConfigurator
+    """
+    # Note if inline backend is unavailable this will fail silently
+    ipython = get_ipython()
+    if ipython is None:
+        return
+    fmt = _not_none(fmt, rc_proplot['inlinefmt'])
+    if isinstance(fmt, str):
+        fmt = [fmt]
+    elif np.iterable(fmt):
+        fmt = list(fmt)
+    else:
+        raise ValueError(
+            f'Invalid inline backend format {fmt!r}. Must be string or list thereof.'
+        )
+    ipython.magic('config InlineBackend.figure_formats = ' + repr(fmt))
+    ipython.magic('config InlineBackend.rc = {}')
+    ipython.magic('config InlineBackend.close_figures = True')
+    ipython.magic("config InlineBackend.print_figure_kwargs = {'bbox_inches': None}")
+
+
+def use_style(style):
+    """
+    Apply the `matplotlib style(s) \
+<https://matplotlib.org/tutorials/introductory/customizing.html>`__
+    with `matplotlib.style.use`. This function is
+    called when you modify the :rcraw:`style` property.
+
+    Parameters
+    ----------
+    style : str, dict, or list thereof
+        The matplotlib style name(s) or stylesheet filename(s), or dictionary(s)
+        of settings. Use ``'default'`` to apply matplotlib default settings and
+        ``'original'`` to include settings from your user ``matplotlibrc`` file.
+
+    See also
+    --------
+    RcConfigurator
+    matplotlib.style.use
+    """
+    # NOTE: This function is not really necessary but makes proplot's
+    # stylesheet-supporting features obvious. Plus changing the style does
+    # so much *more* than changing rc params or quick settings, so it is
+    # nice to have dedicated function instead of just another rc_param name.
+    kw_matplotlib, kw_proplot = _get_style_dicts(style, infer=True)
+    rc_matplotlib.update(kw_matplotlib)
+    rc_proplot.update(kw_proplot)
+
+
+@docstring.add_snippets
+def register_cmaps(user=True, default=False):
+    """
+    Register colormaps packaged with ProPlot or saved to the
+    ``~/.proplot/cmaps`` folder. This is called on import.
+    Colormaps are registered according to their filenames -- for example,
+    ``name.xyz`` will be registered as ``'name'``.
+
+    %(register.ext_table)s
+
+    To visualize the registered colormaps, use `~proplot.demos.show_cmaps`.
+
+    Parameters
+    ----------
+    %(register_cmaps.params)s
+
+    See also
+    --------
+    register_cycles
+    register_colors
+    register_fonts
+    proplot.demos.show_cmaps
+    """
+    for i, dirname, filename in _iter_data_folders('cmaps', user=user, default=default):
+        path = os.path.join(dirname, filename)
+        cmap = pcolors.LinearSegmentedColormap.from_file(path, warn_on_failure=True)
+        if not cmap:
+            continue
+        if i == 0 and cmap.name.lower() in (
+            'phase', 'graycycle', 'romao', 'broco', 'corko', 'viko',
+        ):
+            cmap.set_cyclic(True)
+        pcolors._cmap_database[cmap.name] = cmap
+
+
+@docstring.add_snippets
+def register_cycles(user=True, default=False):
+    """
+    Register color cycles packaged with ProPlot or saved to the
+    ``~/.proplot/cycles`` folder. This is called on import. Color cycles
+    are registered according to their filenames -- for example, ``name.hex``
+    will be registered as ``'name'``.
+
+    %(register.ext_table)s
+
+    To visualize the registered color cycles, use `~proplot.demos.show_cycles`.
+
+    Parameters
+    ----------
+    %(register_cycles.params)s
+
+    See also
+    --------
+    register_cmaps
+    register_colors
+    register_fonts
+    proplot.demos.show_cycles
+    """
+    for _, dirname, filename in _iter_data_folders('cycles', user=user, default=default):  # noqa: E501
+        path = os.path.join(dirname, filename)
+        cmap = pcolors.ListedColormap.from_file(path, warn_on_failure=True)
+        if not cmap:
+            continue
+        pcolors._cmap_database[cmap.name] = cmap
+
+
+@docstring.add_snippets
+def register_colors(user=True, default=False, space='hcl', margin=0.10):
+    """
+    Register the `open-color <https://yeun.github.io/open-color/>`_ colors,
+    XKCD `color survey <https://xkcd.com/color/rgb/>`_ colors, and colors
+    saved to the ``~/.proplot/colors`` folder. This is called on import.
+    The color survey colors are filtered to a subset that is "perceptually
+    distinct" in the HCL colorspace. The user color names are loaded from
+    ``.txt`` files saved in ``~/.proplot/colors``. Each file should contain
+    one line per color in the format ``name : hex``. Whitespace is ignored.
+
+    To visualize the registered colors, use `~proplot.demos.show_colors`.
+
+    Parameters
+    ----------
+    %(register_colors.params)s
+    space : {'hcl', 'hsl', 'hpl'}, optional
+        The colorspace used to detect "perceptually distinct" colors.
+    margin : float, optional
+        The margin by which a color's normalized hue, saturation, and
+        luminance channel values must differ from the normalized channel
+        values of the other colors to be deemed "perceptually distinct."
+
+    See also
+    --------
+    register_cmaps
+    register_cycles
+    register_fonts
+    proplot.demos.show_colors
+    """
+    # Reset native colors dictionary
+    mcolors.colorConverter.colors.clear()  # clean out!
+    mcolors.colorConverter.cache.clear()  # clean out!
+
+    # Add in base colors and CSS4 colors so user has no surprises
+    for name, dict_ in (('base', COLORS_BASE), ('css', mcolors.CSS4_COLORS)):
+        mcolors.colorConverter.colors.update(dict_)
+
+    # Load colors from file and get their HCL values
+    # NOTE: Colors that come *later* overwrite colors that come earlier.
+    hex = re.compile(rf'\A{pcolors.REGEX_HEX}\Z')  # match each string
+    for i, dirname, filename in _iter_data_folders('colors', user=user, default=default):  # noqa: E501
+        path = os.path.join(dirname, filename)
+        cat, ext = os.path.splitext(filename)
+        if ext != '.txt':
+            raise ValueError(
+                f'Unknown color data file extension ({path!r}). '
+                'All files in this folder should have extension .txt.'
+            )
+
+        # Read data
+        loaded = {}
+        with open(path, 'r') as fh:
+            for cnt, line in enumerate(fh):
+                # Load colors from file
+                stripped = line.strip()
+                if not stripped or stripped[0] == '#':
+                    continue
+                pair = tuple(
+                    item.strip().lower() for item in line.split(':')
+                )
+                if len(pair) != 2 or not hex.match(pair[1]):
+                    warnings._warn_proplot(
+                        f'Illegal line #{cnt + 1} in file {path!r}:\n'
+                        f'{line!r}\n'
+                        f'Lines must be formatted as "name: hexcolor".'
+                    )
+                    continue
+                # Never overwrite "base" colors with xkcd colors.
+                # Only overwrite with user colors.
+                name, color = pair
+                if i == 0 and name in COLORS_BASE:
+                    continue
+                loaded[name] = color
+
+        # Add every user color and every opencolor color and ensure XKCD
+        # colors are "perceptually distinct".
+        if i == 1:
+            mcolors.colorConverter.colors.update(loaded)
+        elif cat == 'opencolor':
+            mcolors.colorConverter.colors.update(loaded)
+            COLORS_OPEN.update(loaded)
+        elif cat == 'xkcd':
+            # Always add these colors, but make sure not to add other
+            # colors too close to them.
+            hcls = []
+            filtered = []
+            for name in COLORS_ADD:
+                color = loaded.pop(name, None)
+                if color is None:
+                    continue
+                if 'grey' in name:
+                    name = name.replace('grey', 'gray')
+                hcls.append(to_xyz(color, space=space))
+                filtered.append((name, color))
+                mcolors.colorConverter.colors[name] = color
+                COLORS_XKCD[name] = color
+
+            # Get locations of "perceptually distinct" colors
+            # WARNING: Unique axis argument requires numpy version >=1.13
+            for name, color in loaded.items():
+                for string, replace in COLORS_TRANSLATE:
+                    if string in name:
+                        name = name.replace(string, replace)
+                if any(string in name for string in COLORS_REMOVE):
+                    continue  # remove "unpofessional" names
+                hcls.append(to_xyz(color, space=space))
+                filtered.append((name, color))  # category name pair
+            hcls = np.asarray(hcls)
+            if not hcls.size:
+                continue
+            hcls = hcls / np.array([360, 100, 100])
+            hcls = np.round(hcls / margin).astype(np.int64)
+            _, idxs = np.unique(hcls, return_index=True, axis=0)
+
+            # Register "distinct" colors
+            for idx in idxs:
+                name, color = filtered[idx]
+                mcolors.colorConverter.colors[name] = color
+                COLORS_XKCD[name] = color
+        else:
+            raise ValueError(f'Unknown proplot color database {path!r}.')
+
+
+def register_fonts():
+    """
+    Add fonts packaged with ProPlot or saved to the ``~/.proplot/fonts``
+    folder, if they are not already added. Detects ``.ttf`` and ``.otf`` files
+    -- see `this link \
+<https://gree2.github.io/python/2015/04/27/python-change-matplotlib-font-on-mac>`__
+    for a guide on converting various other font file types to ``.ttf`` and
+    ``.otf`` for use with matplotlib.
+
+    To visualize the registered fonts, use `~proplot.demos.show_fonts`.
+
+    See also
+    --------
+    register_cmaps
+    register_cycles
+    register_colors
+    proplot.demos.show_fonts
+    """
+    # Find proplot fonts
+    # WARNING: If you include a font file with an unrecognized style,
+    # matplotlib may use that font instead of the 'normal' one! Valid styles:
+    # 'ultralight', 'light', 'normal', 'regular', 'book', 'medium', 'roman',
+    # 'semibold', 'demibold', 'demi', 'bold', 'heavy', 'extra bold', 'black'
+    # https://matplotlib.org/api/font_manager_api.html
+    # For macOS the only fonts with 'Thin' in one of the .ttf file names
+    # are Helvetica Neue and .SF NS Display Condensed. Never try to use these!
+    paths_proplot = _get_data_folders('fonts', reverse=True)
+    fnames_proplot = set(mfonts.findSystemFonts(paths_proplot))
+
+    # Detect user-input ttc fonts and issue warning
+    fnames_proplot_ttc = {
+        file for file in fnames_proplot if os.path.splitext(file)[1] == '.ttc'
+    }
+    if fnames_proplot_ttc:
+        warnings._warn_proplot(
+            'Ignoring the following .ttc fonts because they cannot be '
+            'saved into PDF or EPS files (see matplotlib issue #3135): '
+            + ', '.join(map(repr, sorted(fnames_proplot_ttc)))
+            + '. Please consider expanding them into separate .ttf files.'
+        )
+
+    # Rebuild font cache only if necessary! Can be >50% of total import time!
+    fnames_all = {font.fname for font in mfonts.fontManager.ttflist}
+    fnames_proplot -= fnames_proplot_ttc
+    if not fnames_all >= fnames_proplot:
+        warnings._warn_proplot('Rebuilding font cache.')
+        if hasattr(mfonts.fontManager, 'addfont'):
+            # New API lets us add font files manually and deprecates TTFPATH. However,
+            # to cache fonts added this way, we must call json_dump explicitly.
+            # NOTE: Previously, cache filename was specified as _fmcache variable, but
+            # recently became inaccessible. Must reproduce mpl code instead! Annoying.
+            # NOTE: Older mpl versions used fontList.json as the cache, but these
+            # versions also did not have 'addfont', so makes no difference.
+            for fname in fnames_proplot:
+                mfonts.fontManager.addfont(fname)
+            cache = os.path.join(
+                mpl.get_cachedir(),
+                f'fontlist-v{mfonts.FontManager.__version__}.json'
+            )
+            mfonts.json_dump(mfonts.fontManager, cache)
+        else:
+            # Old API requires us to modify TTFPATH
+            # NOTE: Previously we tried to modify TTFPATH before importing
+            # font manager with hope that it would load proplot fonts on
+            # initialization. But 99% of the time font manager just imports
+            # the FontManager from cache, so this doesn't work.
+            paths = ':'.join(paths_proplot)
+            if 'TTFPATH' not in os.environ:
+                os.environ['TTFPATH'] = paths
+            elif paths not in os.environ['TTFPATH']:
+                os.environ['TTFPATH'] += ':' + paths
+            mfonts._rebuild()
+
+    # Remove ttc files and 'Thin' fonts *after* rebuild
+    # NOTE: 'Thin' filter is ugly kludge but without this matplotlib picks up on
+    # Roboto thin ttf files installed on the RTD server when compiling docs.
+    mfonts.fontManager.ttflist = [
+        font for font in mfonts.fontManager.ttflist
+        if os.path.splitext(font.fname)[1] != '.ttc'
+        or 'Thin' in os.path.basename(font.fname)
+    ]
+
+
 class RcConfigurator(object):
     """
     Dictionary-like class for managing matplotlib's `builtin settings <rc_matplotlib>`_
-    and ProPlot's :ref:`added settings <rc_proplot>`. When ProPlot is imported,
-    this class is instantiated as the `rc` object and the ProPlot default settings
-    and ``.proplotrc`` user overrides are applied. See the
-    :ref:`configuration guide <ug_config>` for details.
+    and ProPlot's :ref:`added settings <rc_proplot>`. On import, this class is
+    instantiated as the `rc` object and the ProPlot default settings and ``proplotrc``
+    overrides are applied. See the :ref:`user guide <ug_config>` for details.
     """
     def __repr__(self):
         rcdict = type('rc', (dict,), {})({  # encapsulate params in temporary class
@@ -540,37 +1140,6 @@ class RcConfigurator(object):
         return kw_proplot, kw_matplotlib
 
     @staticmethod
-    def _get_user_path():
-        """
-        Return location of user proplotrc file.
-        """
-        return os.path.join(os.path.expanduser('~'), '.proplotrc')
-
-    @staticmethod
-    def _get_local_paths():
-        """
-        Return locations of local proplotrc files in this directory
-        and in parent directories.
-        """
-        cdir = os.getcwd()
-        paths = []
-        # Loop until we reach root
-        while cdir:
-            # Look for hidden and unhidden proplotrc files
-            path = os.path.join(cdir, 'proplotrc')
-            if os.path.exists(path):
-                paths.append(path)
-            path = os.path.join(cdir, '.proplotrc')
-            if os.path.exists(path):
-                paths.append(path)
-            # Move on to next parent directory
-            ndir = os.path.dirname(cdir)
-            if ndir == cdir:  # root
-                break
-            cdir = ndir
-        return paths[::-1]  # sort from decreasing to increasing importantce
-
-    @staticmethod
     def _sanitize_key(key):
         """
         Ensure string and convert keys with omitted dots.
@@ -632,6 +1201,47 @@ class RcConfigurator(object):
             )
         else:
             return rc_matplotlib['font.size'] * scale
+
+    @staticmethod
+    def local_files():
+        """
+        Return locations of local proplotrc files in this directory
+        and in parent directories.
+        """
+        cdir = os.getcwd()
+        paths = []
+        # Loop until we reach root
+        while cdir:
+            # Look for hidden and unhidden proplotrc files
+            for name in ('proplotrc', '.proplotrc'):
+                path = os.path.join(cdir, name)
+                if os.path.exists(path):
+                    paths.append(path)
+            # Move on to next parent directory
+            ndir = os.path.dirname(cdir)
+            if ndir == cdir:  # root
+                break
+            cdir = ndir
+        return paths[::-1]  # sort from decreasing to increasing importantce
+
+    @staticmethod
+    def user_file():
+        """
+        Return location of the default user proplotrc file.
+        """
+        # TODO: Add XDG support here
+        return os.path.join(os.path.expanduser('~'), '.proplotrc')
+
+    @staticmethod
+    def user_folder(subfolder=None):
+        """
+        Return location of the default user proplot folder.
+        """
+        # TODO: Add XDG support here
+        folder = os.path.join(os.path.expanduser('~'), '.proplot')
+        if subfolder:
+            folder = os.path.join(folder, subfolder)
+        return folder
 
     def category(self, cat, *, trimcat=True, context=False):
         """
@@ -873,13 +1483,13 @@ class RcConfigurator(object):
         # Update from user home
         user_path = None
         if user:
-            user_path = self._get_user_path()
+            user_path = self.user_file()
             if os.path.isfile(user_path):
                 self.load_file(user_path)
 
         # Update from local paths
         if local:
-            local_paths = self._get_local_paths()
+            local_paths = self.local_files()
             for path in local_paths:
                 if path == user_path:  # local files always have precedence
                     continue
@@ -972,7 +1582,7 @@ class RcConfigurator(object):
             fh.write(string)
 
     @staticmethod
-    def _save_proplotrc(path, comment=False):
+    def _save_yaml(path, comment=False):
         """
         Used internally to create initial proplotrc file and file for online docs.
         """
@@ -1104,592 +1714,11 @@ class RcConfigurator(object):
             yield self[key]
 
 
-def config_inline_backend(fmt=None):
-    """
-    Set up the `ipython inline backend \
-<https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-matplotlib>`__
-    format and ensure that inline figures always look the same as saved
-    figures. This runs the following ipython magic commands:
-
-    .. code-block:: ipython
-
-        %config InlineBackend.figure_formats = rc['inlinefmt']
-        %config InlineBackend.rc = {}  # never override rc settings
-        %config InlineBackend.close_figures = True  \
-# cells start with no active figures
-        %config InlineBackend.print_figure_kwargs = {'bbox_inches': None}  \
-# never override rc settings
-
-    When the inline backend is inactive or unavailable, this has no effect.
-    This function is called when you modify the :rcraw:`inlinefmt` property.
-
-    Parameters
-    ----------
-    fmt : str or list of str, optional
-        The inline backend file format(s). Default is :rc:`inlinefmt`.
-        Valid formats include ``'jpg'``, ``'png'``, ``'svg'``, ``'pdf'``,
-        and ``'retina'``.
-
-    See also
-    --------
-    RcConfigurator
-    """
-    # Note if inline backend is unavailable this will fail silently
-    ipython = get_ipython()
-    if ipython is None:
-        return
-    fmt = _not_none(fmt, rc_proplot['inlinefmt'])
-    if isinstance(fmt, str):
-        fmt = [fmt]
-    elif np.iterable(fmt):
-        fmt = list(fmt)
-    else:
-        raise ValueError(
-            f'Invalid inline backend format {fmt!r}. Must be string or list thereof.'
-        )
-    ipython.magic('config InlineBackend.figure_formats = ' + repr(fmt))
-    ipython.magic('config InlineBackend.rc = {}')
-    ipython.magic('config InlineBackend.close_figures = True')
-    ipython.magic("config InlineBackend.print_figure_kwargs = {'bbox_inches': None}")
-
-
-def _get_cycle_colors(cycle):
-    """
-    Update the color cycle.
-    """
-    try:
-        colors = pcolors._cmap_database[cycle].colors
-    except (KeyError, AttributeError):
-        cycles = sorted(
-            name for name, cmap in pcolors._cmap_database.items()
-            if isinstance(cmap, pcolors.ListedColormap)
-        )
-        raise ValueError(
-            f'Invalid cycle name {cycle!r}. Options are: '
-            + ', '.join(map(repr, cycles)) + '.'
-        )
-    return colors
-
-
-def _get_default_dict():
-    """
-    Get the default rc parameters dictionary with deprecated parameters filtered.
-    """
-    # NOTE: Use RcParams update to filter and translate deprecated settings
-    # before actually applying them to rcParams down pipeline. This way we can
-    # suppress warnings for deprecated default params but still issue warnings
-    # when user-supplied stylesheets have deprecated params.
-    # WARNING: Some deprecated rc params remain in dictionary as None so we
-    # filter them out. Beware if hidden attribute changes.
-    rcdict = _get_filtered_dict(mpl.rcParamsDefault, warn=False)
-    with _suppress_matplotlib_deprecation_warning():
-        rcdict = dict(RcParams(rcdict))
-    for attr in ('_deprecated_remain_as_none', '_deprecated_set'):
-        if hasattr(mpl, attr):  # _deprecated_set is in matplotlib before v3
-            for deprecated in getattr(mpl, attr):
-                rcdict.pop(deprecated, None)
-    return rcdict
-
-
-def _get_filtered_dict(rcdict, warn=True):
-    """
-    Filter out blacklisted style parameters.
-    """
-    # NOTE: This implements bugfix: https://github.com/matplotlib/matplotlib/pull/17252
-    # This fix is *critical* for proplot because we always run style.use()
-    # when the configurator is made. Without fix backend is reset every time
-    # you import proplot in jupyter notebooks. So apply retroactively.
-    rcdict_filtered = {}
-    for key in rcdict:
-        if key in mstyle.STYLE_BLACKLIST:
-            if warn:
-                warnings._warn_proplot(
-                    f'Dictionary includes a parameter, {key!r}, that is not related '
-                    'to style. Ignoring.'
-                )
-        else:
-            rcdict_filtered[key] = rcdict[key]
-    return rcdict_filtered
-
-
-def _get_style_dicts(style, infer=False, filter=True):
-    """
-    Return a dictionary of settings belonging to the requested style(s). If `infer`
-    is ``True``, two dictionaries are returned, where the second contains custom
-    ProPlot settings "inferred" from the matplotlib settings. If `filter` is ``True``,
-    invalid style parameters like `backend` are filtered out.
-    """
-    # NOTE: This is adapted from matplotlib source for the following changes:
-    # 1. Add 'original' option. Like rcParamsOrig except we also *reload*
-    #    from user matplotlibrc file.
-    # 2. When the style is changed we reset to the *default* state ignoring
-    #    matplotlibrc. Matplotlib applies styles on top of current state
-    #    (including matplotlibrc changes and runtime rcParams changes) but
-    #    IMO the word 'style' implies a *rigid* static format.
-    # 3. Add a separate function that returns lists of style dictionaries so
-    #    that we can modify the active style in a context block. ProPlot context
-    #    is more conservative than matplotlib's rc_context because it gets
-    #    called a lot (e.g. every time you make an axes and every format() call).
-    #    Instead of copying the entire rcParams dict we just track the keys
-    #    that were changed.
-    style_aliases = {
-        '538': 'fivethirtyeight',
-        'mpl20': 'default',
-        'mpl15': 'classic',
-        'original': mpl.matplotlib_fname(),
-    }
-
-    # Always apply the default style *first* so styles are rigid
-    kw_matplotlib = _get_default_dict()
-    if style == 'default' or style is mpl.rcParamsDefault:
-        if infer:
-            kw_proplot = _infer_added_params(kw_matplotlib)
-            return kw_matplotlib, kw_proplot
-        else:
-            return kw_matplotlib
-
-    # Apply limited deviations from the matplotlib style that we want to propagate to
-    # other styles. Want users selecting stylesheets to have few surprises, so
-    # currently just enforce the new aesthetically pleasing fonts.
-    kw_matplotlib['font.family'] = 'sans-serif'
-    for fmly in ('serif', 'sans-serif', 'monospace', 'cursive', 'fantasy'):
-        kw_matplotlib['font.' + fmly] = rcsetup._rc_matplotlib_default['font.' + fmly]
-
-    # Apply user input style(s) one by one
-    if isinstance(style, str) or isinstance(style, dict):
-        styles = [style]
-    else:
-        styles = style
-    for style in styles:
-        if isinstance(style, dict):
-            kw = style
-        elif isinstance(style, str):
-            style = style_aliases.get(style, style)
-            if style in mstyle.library:
-                kw = mstyle.library[style]
-            else:
-                try:
-                    kw = mpl.rc_params_from_file(style, use_default_template=False)
-                except IOError:
-                    raise IOError(
-                        f'Style {style!r} not found in the style library and input is '
-                        'not a valid URL or path. Available styles are: '
-                        + ', '.join(map(repr, mstyle.available)) + '.'
-                    )
-        else:
-            raise ValueError(f'Invalid style {style!r}. Must be string or dictionary.')
-        if filter:
-            kw = _get_filtered_dict(kw, warn=True)
-        kw_matplotlib.update(kw)
-
-    # Infer proplot params from stylesheet params
-    if infer:
-        kw_proplot = _infer_added_params(kw_matplotlib)
-        return kw_matplotlib, kw_proplot
-    else:
-        return kw_matplotlib
-
-
-def _infer_added_params(kw_params):
-    """
-    Infer values for proplot's "added" parameters from stylesheets.
-    """
-    kw_proplot = {}
-    mpl_to_proplot = {
-        'font.size': ('tick.labelsize',),
-        'axes.titlesize': (
-            'abc.size', 'suptitle.size', 'title.size',
-            'leftlabel.size', 'rightlabel.size',
-            'toplabel.size', 'bottomlabel.size',
-        ),
-        'text.color': (
-            'abc.color', 'suptitle.color', 'tick.labelcolor', 'title.color',
-            'leftlabel.color', 'rightlabel.color',
-            'toplabel.color', 'bottomlabel.color',
-        ),
-    }
-    for key, params in mpl_to_proplot.items():
-        if key in kw_params:
-            value = kw_params[key]
-            for param in params:
-                kw_proplot[param] = value
-    return kw_proplot
-
-
-def use_style(style):
-    """
-    Apply the `matplotlib style(s) \
-<https://matplotlib.org/tutorials/introductory/customizing.html>`__
-    with `matplotlib.style.use`. This function is
-    called when you modify the :rcraw:`style` property.
-
-    Parameters
-    ----------
-    style : str, dict, or list thereof
-        The matplotlib style name(s) or stylesheet filename(s), or dictionary(s)
-        of settings. Use ``'default'`` to apply matplotlib default settings and
-        ``'original'`` to include settings from your user ``matplotlibrc`` file.
-
-    See also
-    --------
-    RcConfigurator
-    matplotlib.style.use
-    """
-    # NOTE: This function is not really necessary but makes proplot's
-    # stylesheet-supporting features obvious. Plus changing the style does
-    # so much *more* than changing rc params or quick settings, so it is
-    # nice to have dedicated function instead of just another rc_param name.
-    kw_matplotlib, kw_proplot = _get_style_dicts(style, infer=True)
-    rc_matplotlib.update(kw_matplotlib)
-    rc_proplot.update(kw_proplot)
-
-
-@docstring.add_snippets
-def register_cmaps(user=True, default=False):
-    """
-    Register colormaps packaged with ProPlot or saved to the
-    ``~/.proplot/cmaps`` folder. This is called on import.
-    Colormaps are registered according to their filenames -- for example,
-    ``name.xyz`` will be registered as ``'name'``.
-
-    %(register.ext_table)s
-
-    To visualize the registered colormaps, use `~proplot.demos.show_cmaps`.
-
-    Parameters
-    ----------
-    %(register_cmaps.params)s
-
-    See also
-    --------
-    register_cycles
-    register_colors
-    register_fonts
-    proplot.demos.show_cmaps
-    """
-    for i, dirname, filename in _iter_data_paths('cmaps', user=user, default=default):
-        path = os.path.join(dirname, filename)
-        cmap = pcolors.LinearSegmentedColormap.from_file(path, warn_on_failure=True)
-        if not cmap:
-            continue
-        if i == 0 and cmap.name.lower() in (
-            'phase', 'graycycle', 'romao', 'broco', 'corko', 'viko',
-        ):
-            cmap.set_cyclic(True)
-        pcolors._cmap_database[cmap.name] = cmap
-
-
-@docstring.add_snippets
-def register_cycles(user=True, default=False):
-    """
-    Register color cycles packaged with ProPlot or saved to the
-    ``~/.proplot/cycles`` folder. This is called on import. Color cycles
-    are registered according to their filenames -- for example, ``name.hex``
-    will be registered as ``'name'``.
-
-    %(register.ext_table)s
-
-    To visualize the registered color cycles, use `~proplot.demos.show_cycles`.
-
-    Parameters
-    ----------
-    %(register_cycles.params)s
-
-    See also
-    --------
-    register_cmaps
-    register_colors
-    register_fonts
-    proplot.demos.show_cycles
-    """
-    for _, dirname, filename in _iter_data_paths('cycles', user=user, default=default):
-        path = os.path.join(dirname, filename)
-        cmap = pcolors.ListedColormap.from_file(path, warn_on_failure=True)
-        if not cmap:
-            continue
-        pcolors._cmap_database[cmap.name] = cmap
-
-
-@docstring.add_snippets
-def register_colors(user=True, default=False, space='hcl', margin=0.10):
-    """
-    Register the `open-color <https://yeun.github.io/open-color/>`_ colors,
-    XKCD `color survey <https://xkcd.com/color/rgb/>`_ colors, and colors
-    saved to the ``~/.proplot/colors`` folder. This is called on import.
-    The color survey colors are filtered to a subset that is "perceptually
-    distinct" in the HCL colorspace. The user color names are loaded from
-    ``.txt`` files saved in ``~/.proplot/colors``. Each file should contain
-    one line per color in the format ``name : hex``. Whitespace is ignored.
-
-    To visualize the registered colors, use `~proplot.demos.show_colors`.
-
-    Parameters
-    ----------
-    %(register_colors.params)s
-    space : {'hcl', 'hsl', 'hpl'}, optional
-        The colorspace used to detect "perceptually distinct" colors.
-    margin : float, optional
-        The margin by which a color's normalized hue, saturation, and
-        luminance channel values must differ from the normalized channel
-        values of the other colors to be deemed "perceptually distinct."
-
-    See also
-    --------
-    register_cmaps
-    register_cycles
-    register_fonts
-    proplot.demos.show_colors
-    """
-    # Reset native colors dictionary
-    mcolors.colorConverter.colors.clear()  # clean out!
-    mcolors.colorConverter.cache.clear()  # clean out!
-
-    # Add in base colors and CSS4 colors so user has no surprises
-    for name, dict_ in (('base', COLORS_BASE), ('css', mcolors.CSS4_COLORS)):
-        mcolors.colorConverter.colors.update(dict_)
-
-    # Load colors from file and get their HCL values
-    # NOTE: Colors that come *later* overwrite colors that come earlier.
-    hex = re.compile(rf'\A{pcolors.REGEX_HEX}\Z')  # match each string
-    for i, dirname, filename in _iter_data_paths('colors', user=user, default=default):
-        path = os.path.join(dirname, filename)
-        cat, ext = os.path.splitext(filename)
-        if ext != '.txt':
-            raise ValueError(
-                f'Unknown color data file extension ({path!r}). '
-                'All files in this folder should have extension .txt.'
-            )
-
-        # Read data
-        loaded = {}
-        with open(path, 'r') as fh:
-            for cnt, line in enumerate(fh):
-                # Load colors from file
-                stripped = line.strip()
-                if not stripped or stripped[0] == '#':
-                    continue
-                pair = tuple(
-                    item.strip().lower() for item in line.split(':')
-                )
-                if len(pair) != 2 or not hex.match(pair[1]):
-                    warnings._warn_proplot(
-                        f'Illegal line #{cnt + 1} in file {path!r}:\n'
-                        f'{line!r}\n'
-                        f'Lines must be formatted as "name: hexcolor".'
-                    )
-                    continue
-                # Never overwrite "base" colors with xkcd colors.
-                # Only overwrite with user colors.
-                name, color = pair
-                if i == 0 and name in COLORS_BASE:
-                    continue
-                loaded[name] = color
-
-        # Add every user color and every opencolor color and ensure XKCD
-        # colors are "perceptually distinct".
-        if i == 1:
-            mcolors.colorConverter.colors.update(loaded)
-        elif cat == 'opencolor':
-            mcolors.colorConverter.colors.update(loaded)
-            COLORS_OPEN.update(loaded)
-        elif cat == 'xkcd':
-            # Always add these colors, but make sure not to add other
-            # colors too close to them.
-            hcls = []
-            filtered = []
-            for name in COLORS_ADD:
-                color = loaded.pop(name, None)
-                if color is None:
-                    continue
-                if 'grey' in name:
-                    name = name.replace('grey', 'gray')
-                hcls.append(to_xyz(color, space=space))
-                filtered.append((name, color))
-                mcolors.colorConverter.colors[name] = color
-                COLORS_XKCD[name] = color
-
-            # Get locations of "perceptually distinct" colors
-            # WARNING: Unique axis argument requires numpy version >=1.13
-            for name, color in loaded.items():
-                for string, replace in COLORS_TRANSLATE:
-                    if string in name:
-                        name = name.replace(string, replace)
-                if any(string in name for string in COLORS_REMOVE):
-                    continue  # remove "unpofessional" names
-                hcls.append(to_xyz(color, space=space))
-                filtered.append((name, color))  # category name pair
-            hcls = np.asarray(hcls)
-            if not hcls.size:
-                continue
-            hcls = hcls / np.array([360, 100, 100])
-            hcls = np.round(hcls / margin).astype(np.int64)
-            _, idxs = np.unique(hcls, return_index=True, axis=0)
-
-            # Register "distinct" colors
-            for idx in idxs:
-                name, color = filtered[idx]
-                mcolors.colorConverter.colors[name] = color
-                COLORS_XKCD[name] = color
-        else:
-            raise ValueError(f'Unknown proplot color database {path!r}.')
-
-
-def _patch_validators():
-    """
-    Fix the fontsize validators to allow for new font scalings.
-    """
-    # First define valdiators
-    # NOTE: In the future will subclass RcParams directly and control the
-    # validators ourselves.
-    def _validate_fontsize(s):
-        fontsizes = list(mfonts.font_scalings)
-        if isinstance(s, str):
-            s = s.lower()
-        if s in fontsizes:
-            return s
-        try:
-            return float(s)
-        except ValueError:
-            raise ValueError(
-                f'{s!r} is not a valid font size. Valid sizes are: '
-                + ', '.join(map(repr, fontsizes))
-            )
-
-    def _validate_fontsize_None(s):
-        if s is None or s == 'None':
-            return None
-        else:
-            return _validate_fontsize(s)
-
-    _validate_fontsizelist = None
-    if hasattr(msetup, '_listify_validator'):
-        _validate_fontsizelist = msetup._listify_validator(_validate_fontsize)
-
-    # Apply new functions
-    validate = RcParams.validate
-    for key in list(validate):  # modify in-place
-        validator = validate[key]
-        if validator is msetup.validate_fontsize:
-            validate[key] = _validate_fontsize
-        elif validator is getattr(msetup, 'validate_fontsize_None', None):
-            validate[key] = _validate_fontsize_None
-        elif validator is getattr(msetup, 'validate_fontsizelist', None):
-            if _validate_fontsizelist is not None:
-                validate[key] = _validate_fontsizelist
-
-
-def register_fonts():
-    """
-    Add fonts packaged with ProPlot or saved to the ``~/.proplot/fonts``
-    folder, if they are not already added. Detects ``.ttf`` and ``.otf`` files
-    -- see `this link \
-<https://gree2.github.io/python/2015/04/27/python-change-matplotlib-font-on-mac>`__
-    for a guide on converting various other font file types to ``.ttf`` and
-    ``.otf`` for use with matplotlib.
-
-    To visualize the registered fonts, use `~proplot.demos.show_fonts`.
-
-    See also
-    --------
-    register_cmaps
-    register_cycles
-    register_colors
-    proplot.demos.show_fonts
-    """
-    # Find proplot fonts
-    # WARNING: If you include a font file with an unrecognized style,
-    # matplotlib may use that font instead of the 'normal' one! Valid styles:
-    # 'ultralight', 'light', 'normal', 'regular', 'book', 'medium', 'roman',
-    # 'semibold', 'demibold', 'demi', 'bold', 'heavy', 'extra bold', 'black'
-    # https://matplotlib.org/api/font_manager_api.html
-    # For macOS the only fonts with 'Thin' in one of the .ttf file names
-    # are Helvetica Neue and .SF NS Display Condensed. Never try to use these!
-    paths_proplot = _get_data_paths('fonts', reverse=True)
-    fnames_proplot = set(mfonts.findSystemFonts(paths_proplot))
-
-    # Detect user-input ttc fonts and issue warning
-    fnames_proplot_ttc = {
-        file for file in fnames_proplot if os.path.splitext(file)[1] == '.ttc'
-    }
-    if fnames_proplot_ttc:
-        warnings._warn_proplot(
-            'Ignoring the following .ttc fonts because they cannot be '
-            'saved into PDF or EPS files (see matplotlib issue #3135): '
-            + ', '.join(map(repr, sorted(fnames_proplot_ttc)))
-            + '. Please consider expanding them into separate .ttf files.'
-        )
-
-    # Rebuild font cache only if necessary! Can be >50% of total import time!
-    fnames_all = {font.fname for font in mfonts.fontManager.ttflist}
-    fnames_proplot -= fnames_proplot_ttc
-    if not fnames_all >= fnames_proplot:
-        warnings._warn_proplot('Rebuilding font cache.')
-        if hasattr(mfonts.fontManager, 'addfont'):
-            # New API lets us add font files manually and deprecates TTFPATH. However,
-            # to cache fonts added this way, we must call json_dump explicitly.
-            # NOTE: Previously, cache filename was specified as _fmcache variable, but
-            # recently became inaccessible. Must reproduce mpl code instead! Annoying.
-            # NOTE: Older mpl versions used fontList.json as the cache, but these
-            # versions also did not have 'addfont', so makes no difference.
-            for fname in fnames_proplot:
-                mfonts.fontManager.addfont(fname)
-            cache = os.path.join(
-                mpl.get_cachedir(),
-                f'fontlist-v{mfonts.FontManager.__version__}.json'
-            )
-            mfonts.json_dump(mfonts.fontManager, cache)
-        else:
-            # Old API requires us to modify TTFPATH
-            # NOTE: Previously we tried to modify TTFPATH before importing
-            # font manager with hope that it would load proplot fonts on
-            # initialization. But 99% of the time font manager just imports
-            # the FontManager from cache, so this doesn't work.
-            paths = ':'.join(paths_proplot)
-            if 'TTFPATH' not in os.environ:
-                os.environ['TTFPATH'] = paths
-            elif paths not in os.environ['TTFPATH']:
-                os.environ['TTFPATH'] += ':' + paths
-            mfonts._rebuild()
-
-    # Remove ttc files and 'Thin' fonts *after* rebuild
-    # NOTE: 'Thin' filter is ugly kludge but without this matplotlib picks up on
-    # Roboto thin ttf files installed on the RTD server when compiling docs.
-    mfonts.fontManager.ttflist = [
-        font for font in mfonts.fontManager.ttflist
-        if os.path.splitext(font.fname)[1] != '.ttc'
-        or 'Thin' in os.path.basename(font.fname)
-    ]
-
-
-# Initialize .proplotrc file
-_user_rc_file = os.path.join(os.path.expanduser('~'), '.proplotrc')
-if not os.path.exists(_user_rc_file):
-    RcConfigurator._save_proplotrc(_user_rc_file, comment=True)
-
-# Initialize customization folders
-_rc_folder = os.path.join(os.path.expanduser('~'), '.proplot')
-if not os.path.isdir(_rc_folder):
-    os.mkdir(_rc_folder)
-for _rc_sub in ('cmaps', 'cycles', 'colors', 'fonts'):
-    _rc_sub = os.path.join(_rc_folder, _rc_sub)
-    if not os.path.isdir(_rc_sub):
-        os.mkdir(_rc_sub)
-
 # Add custom font scalings to font_manager and monkey patch rcParams validator
-# NOTE: This is because we prefer large sizes
-if hasattr(mfonts, 'font_scalings'):
-    mfonts.font_scalings['med-small'] = 0.9
-    mfonts.font_scalings['med-large'] = 1.1
-    _patch_validators()
-
-# Convert colormaps that *should* be LinearSegmented from Listed
-for _name in ('viridis', 'plasma', 'inferno', 'magma', 'cividis', 'twilight'):
-    _cmap = pcolors._cmap_database.get(_name, None)
-    if _cmap and isinstance(_cmap, pcolors.ListedColormap):
-        del pcolors._cmap_database[_name]
-        pcolors._cmap_database[_name] = pcolors.LinearSegmentedColormap.from_list(
-            _name, _cmap.colors, cyclic=(_name == 'twilight')
-        )
+_init_user_file()
+_init_user_folders()
+_patch_colormaps()
+_patch_validators()
 
 # Register objects and configure settings
 with timers._benchmark('cmaps'):
@@ -1714,10 +1743,7 @@ rc = _
 # Modify N of existing colormaps because ProPlot settings may have changed
 # image.lut. We have to register colormaps and cycles first so that the 'cycle'
 # property accepts named cycles registered by ProPlot. No performance hit here.
-lut = rc['image.lut']
-for cmap in pcolors._cmap_database.values():
-    if isinstance(cmap, mcolors.LinearSegmentedColormap):
-        cmap.N = lut
+_apply_lut(rc['image.lut'])
 
 # Deprecated
 inline_backend_fmt = warnings._rename_objs(
