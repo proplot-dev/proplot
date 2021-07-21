@@ -216,8 +216,8 @@ for style in ('pastie', 'monokai'):  # WARNING: update when _static/custom.js ch
 
 # Create sample .proplotrc file
 from proplot.config import rc
-rc._save_proplotrc(os.path.join('_static', 'proplotrc'))
 rc._save_rst(os.path.join('_static', 'rctable.rst'))
+rc._save_yaml(os.path.join('_static', 'proplotrc'))
 
 # Role
 # default family is py, but can also set default role so don't need
