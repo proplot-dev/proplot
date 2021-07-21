@@ -11,7 +11,7 @@ import numpy as np
 
 from . import colors as pcolors
 from . import constructor, ui
-from .config import COLORS_BASE, COLORS_OPEN, COLORS_XKCD, _get_data_paths, rc
+from .config import COLORS_BASE, COLORS_OPEN, COLORS_XKCD, _get_data_folders, rc
 from .internals import ic  # noqa: F401
 from .internals import _not_none, docstring
 from .utils import to_rgb, to_xyz
@@ -821,7 +821,7 @@ def show_fonts(
         args = sorted({
             font.name for font in mfonts.fontManager.ttflist
             if font.name in rc['font.sans-serif']
-            or _get_data_paths('fonts')[1] == os.path.dirname(font.fname)
+            or _get_data_folders('fonts')[1] == os.path.dirname(font.fname)
         })
     elif family is not None:
         options = (

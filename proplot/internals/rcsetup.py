@@ -1149,6 +1149,28 @@ def _get_default_param(key):
     raise KeyError(f'Invalid key {key!r}.')
 
 
+def _gen_rst_table():
+    """
+    Return the settings in an RST-style table.
+    """
+    # Initial stuff
+    colspace = 2  # spaces between each column
+    descrips = tuple(descrip for _, descrip in _rc_proplot.values())
+    keylen = len(max((*_rc_proplot, 'Key'), key=len)) + 4  # for literal backticks
+    vallen = len(max((*descrips, 'Description'), key=len))
+    divider = '=' * keylen + ' ' * colspace + '=' * vallen + '\n'
+    header = 'Key' + ' ' * (keylen - 3 + colspace) + 'Description\n'
+
+    # Build table
+    string = divider + header + divider
+    for key, (_, descrip) in _rc_proplot.items():
+        spaces = ' ' * (keylen - (len(key) + 4) + colspace)
+        string += f'``{key}``{spaces}{descrip}\n'
+
+    string = string + divider
+    return '.. rst-class:: proplot-rctable\n\n' + string.strip()
+
+
 def _gen_yaml_table(rcdict, comment=True, description=True):
     """
     Return the settings as a nicely tabulated YAML-style table.
@@ -1197,25 +1219,3 @@ def _gen_yaml_table(rcdict, comment=True, description=True):
         string += f'{prefix}{key}:{space1}{value}{space2}{descrip}\n'
 
     return string.strip()
-
-
-def _gen_rst_table():
-    """
-    Return the settings in an RST-style table.
-    """
-    # Initial stuff
-    colspace = 2  # spaces between each column
-    descrips = tuple(descrip for _, descrip in _rc_proplot.values())
-    keylen = len(max((*_rc_proplot, 'Key'), key=len)) + 4  # for literal backticks
-    vallen = len(max((*descrips, 'Description'), key=len))
-    divider = '=' * keylen + ' ' * colspace + '=' * vallen + '\n'
-    header = 'Key' + ' ' * (keylen - 3 + colspace) + 'Description\n'
-
-    # Build table
-    string = divider + header + divider
-    for key, (_, descrip) in _rc_proplot.items():
-        spaces = ' ' * (keylen - (len(key) + 4) + colspace)
-        string += f'``{key}``{spaces}{descrip}\n'
-
-    string = string + divider
-    return '.. rst-class:: proplot-rctable\n\n' + string.strip()
