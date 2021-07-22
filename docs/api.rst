@@ -90,21 +90,21 @@ Projection classes
    :toctree: api
 
 
-Axis scales
-===========
-
-.. automodule:: proplot.scale
-
-.. automodsumm:: proplot.scale
-   :toctree: api
-
-
 Locators and formatters
 =======================
 
 .. automodule:: proplot.ticker
 
 .. automodsumm:: proplot.ticker
+   :toctree: api
+
+
+Axis scales
+===========
+
+.. automodule:: proplot.scale
+
+.. automodsumm:: proplot.scale
    :toctree: api
 
 

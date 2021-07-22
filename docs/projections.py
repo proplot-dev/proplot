@@ -35,9 +35,8 @@
 # a dictionary of projection names with the subplot number as the key -- for example,
 # a 2-column figure with a Cartesian axes on the left and a Plate Carrée projection
 # on the right can be built with either ``proj=('cartesian', 'pcarree')`` or
-# ``proj={2: 'pcarree'}``. The *default* projection is always
-# `~proplot.axes.CartesianAxes` and can be explicitly specified with
-# the ``'cartesian'`` key.
+# ``proj={2: 'pcarree'}``. The default "projection" is `~proplot.axes.CartesianAxes`
+# and can be explicitly specified with the ``'cartesian'`` key.
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -47,8 +46,8 @@
 # ---------------
 #
 # ProPlot can create geographic projection axes using
-# either `cartopy`_ or `basemap`_ as "backends". To draw geographic axes, pass
-# ``proj='name'`` or e.g. ``proj={2: 'name'}`` (:ref:`see above <ug_proj>`) to
+# either `cartopy`_ or `basemap`_ as "backends". To create geographic axes, pass
+# ``proj='name'`` or e.g. ``proj={2: 'name'}`` (see :ref:`above <ug_proj>`) to
 # `~proplot.ui.subplots` where ``name`` is any valid :ref:`PROJ projection name
 # <proj_included>`. You can also use ``proj=projection_instance``, where
 # ``projection_instance`` is a `cartopy.crs.Projection` or
@@ -164,8 +163,8 @@ pplt.rc.reset()
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_geoplot:
 #
-# Geographic plotting
-# -------------------
+# Plotting in projections
+# -----------------------
 #
 # In ProPlot, plotting with `~proplot.axes.GeoAxes` is not much different from
 # plotting with `~proplot.axes.CartesianAxes`. ProPlot makes longitude-latitude (i.e.,
@@ -430,15 +429,16 @@ for proj, ax in zip(projs, axs):
 # Polar axes
 # ----------
 #
-# To draw `polar axes <polar_>`_, pass ``proj='polar'`` or e.g. ``proj={1: 'polar'}``
-# to `~proplot.ui.subplots`. This generates a `proplot.axes.PolarAxes` instance with
-# its own `~proplot.axes.PolarAxes.format` method.
+# To create `polar axes <polar_>`_, pass ``proj='polar'`` or e.g. ``proj={2: 'polar'}``
+# (see :ref:`above <ug_proj>`) to `~proplot.ui.subplots`. This generates a
+# `proplot.axes.PolarAxes` instance with its own `~proplot.axes.PolarAxes.format`
+# method.
 #
 # The `proplot.axes.PolarAxes.format` method facilitates polar-specific axes
 # modifications like changing the central radius `r0`, the zero azimuth location
 # `theta0`, and the positive azimuthal direction `thetadir`. It also supports
 # changing gridline locations with `rlocator` and `thetalocator` (analogous to
-# `ylocator` and `xlocator` used by `~proplot.axes.CartesianAxes.format`) and
+# `ylocator` and `xlocator` used by `proplot.axes.CartesianAxes.format`) and
 # turning your polar plot into an "annular" or "sector" plot by changing the radial
 # limits `rlim` or the azimuthal limits `thetalim`. Finally, since
 # `proplot.axes.PolarAxes.format` calls `proplot.axes.Axes.format`, it can be used to

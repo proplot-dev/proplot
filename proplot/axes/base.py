@@ -1002,7 +1002,7 @@ class Axes(maxes.Axes):
         ---------
         The `abc`, `abcstyle`, `abcloc`, `titleloc`, `titleabove`, `titlepad`,
         `abctitlepad`, `leftlabelpad`, `toplabelpad`, `rightlabelpad`, and
-        `bottomlabelpad` keywords and are :ref:`configuration settings <ug_config>`.
+        `bottomlabelpad` keywords are :ref:`configuration settings <ug_config>`.
         We explicitly document these arguments here because it is very common to change
         them. But many :ref:`other configuration settings <ug_format>` can be passed
         to ``format`` too.

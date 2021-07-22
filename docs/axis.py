@@ -423,27 +423,35 @@ for ax, iargs, title, locator in zip(axs, args, titles, locators):
 # %%
 import proplot as pplt
 import numpy as np
+
+# Create figure
 pplt.rc.reset()
+state = np.random.RandomState(51423)
+colors = ('coral', 'sky blue')
 fig, axs = pplt.subplots(nrows=2, ncols=3, refwidth=1.7, share=0, order='F')
 axs.format(
-    toplabels=('Power scales', 'Exponential scales', 'Cartographic scales'),
+    toplabels=('Geographic scales', 'Exponential scales', 'Power scales'),
 )
-x = np.linspace(0, 1, 50)
-y = 10 * x
-state = np.random.RandomState(51423)
-data = state.rand(len(y) - 1, len(x) - 1)
 
-# Power scales
-colors = ('coral', 'sky blue')
-for ax, power, color in zip(axs[:2], (2, 1 / 4), colors):
-    ax.pcolormesh(x, y, data, cmap='grays', cmap_kw={'right': 0.8})
-    ax.plot(x, y, lw=4, color=color)
+# Geographic scales
+n = 20
+x = np.linspace(-180, 180, n)
+y1 = np.linspace(-85, 85, n)
+y2 = np.linspace(-85, 85, n)
+data = state.rand(len(x) - 1, len(y2) - 1)
+for ax, scale, color in zip(axs[:2], ('sine', 'mercator'), colors):
+    ax.plot(x, y1, '-', color=color, lw=4)
+    ax.pcolormesh(x, y2, data, cmap='grays', cmap_kw={'right': 0.8})
     ax.format(
-        ylim=(0.1, 10), yscale=('power', power),
-        title=f'$x^{{{power}}}$'
+        title=scale.title() + ' y-axis', yscale=scale, ytickloc='left',
+        yformatter='deg', grid=False, ylocator=20,
+        xscale='linear', xlim=None, ylim=(-85, 85)
     )
 
 # Exp scales
+x = np.linspace(0, 1, 50)
+y = 10 * x
+data = state.rand(len(y) - 1, len(x) - 1)
 for ax, a, c, color in zip(axs[2:4], (np.e, 2), (0.5, 2), colors):
     ax.pcolormesh(x, y, data, cmap='grays', cmap_kw={'right': 0.8})
     ax.plot(x, y, lw=4, color=color)
@@ -452,19 +460,13 @@ for ax, a, c, color in zip(axs[2:4], (np.e, 2), (0.5, 2), colors):
         title=f"${(a, 'e')[a == np.e]}^{{{(c, '')[c == 1]}x}}$"
     )
 
-# Geographic scales
-n = 20
-x = np.linspace(-180, 180, n)
-y1 = np.linspace(-85, 85, n)
-y2 = np.linspace(-85, 85, n)
-data = state.rand(len(x) - 1, len(y2) - 1)
-for ax, scale, color in zip(axs[4:], ('sine', 'mercator'), ('coral', 'sky blue')):
-    ax.plot(x, y1, '-', color=color, lw=4)
-    ax.pcolormesh(x, y2, data, cmap='grays', cmap_kw={'right': 0.8})
+# Power scales
+for ax, power, color in zip(axs[4:], (2, 1 / 4), colors):
+    ax.pcolormesh(x, y, data, cmap='grays', cmap_kw={'right': 0.8})
+    ax.plot(x, y, lw=4, color=color)
     ax.format(
-        title=scale.title() + ' y-axis', yscale=scale, ytickloc='left',
-        yformatter='deg', grid=False, ylocator=20,
-        xscale='linear', xlim=None, ylim=(-85, 85)
+        ylim=(0.1, 10), yscale=('power', power),
+        title=f'$x^{{{power}}}$'
     )
 
 
