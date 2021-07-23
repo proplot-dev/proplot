@@ -2,10 +2,10 @@
 """
 New colormap classes and colormap normalization classes.
 """
-# NOTE: Avoid colormap/color name conflicts by checking
-# set(pplt.colors._cmap_database) & set(pplt.colors.mcolors._colors_full_map)
-# whenever new default colormaps are added. Currently result is
-# {'gray', 'marine', 'ocean', 'pink'} which correspond to MATLAB and GNUplot maps.
+# NOTE: Avoid colormap/color name conflicts by checking set(pplt.colors._cmap_database)
+# & set(pplt.colors.mcolors._colors_full_map) whenever new default colormaps are added.
+# Currently result is {'gray', 'marine', 'ocean', 'pink'} which correspond to
+# MATLAB and GNUplot colormaps.
 import json
 import os
 import re
@@ -884,8 +884,8 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         matplotlib.colors.LinearSegmentedColormap.reversed
         """
         segmentdata = {
-            key: (lambda x: data(1.0 - x)) if callable(data)
-            else [(1.0 - x, y1, y0) for x, y0, y1 in reversed(data)]
+            key: lambda x, func=data: func(x) if callable(data) else
+            [(1.0 - x, y1, y0) for x, y0, y1 in reversed(data)]
             for key, data in self._segmentdata.items()
         }
         for key in ('gamma1', 'gamma2'):

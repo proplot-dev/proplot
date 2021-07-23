@@ -14,11 +14,12 @@ from . import gridspec as pgridspec
 from .config import rc
 from .internals import ic  # noqa: F401
 from .internals import (
-    _dummy_context,
+    _empty_context,
     _not_none,
     _state_context,
     _version,
     _version_mpl,
+    docstring,
     warnings,
 )
 from .utils import units
@@ -26,33 +27,106 @@ from .utils import units
 __all__ = ['Figure']
 
 
-def _parse_panel_args(
-    side, share=None, width=None, space=None,
-    filled=False, figure=False
-):
-    """
-    Return default properties for new axes and figure panels.
-    """
-    if side not in ('left', 'right', 'bottom', 'top'):
-        raise ValueError(f'Invalid panel location {side!r}.')
+# Figure docstring
+_figure_docstring = """
+tight : bool, optional
+    Toggles automatic tight layout adjustments. Default is :rc:`subplots.tight`.
+    If you manually specified a spacing in the call to `~proplot.ui.subplots`,
+    it will be used to override the tight layout spacing. For example, with
+    ``left=0.1``, the left margin is set to 0.1 inches wide, while the
+    remaining margin widths are calculated automatically.
+outerpad : float or str, optional
+    Padding around edge of figure. Units are interpreted by
+    `~proplot.utils.units`. Default is :rc:`subplots.outerpad`.
+innerpad, pad : float or str, optional
+    Padding between subplots in adjacent columns and rows. The shorthand
+    ``pad`` is also valid. Units are interpreted by `~proplot.utils.units`.
+    Default is :rc:`subplots.innerpad`.
+panelpad : float or str, optional
+    Padding between subplots and axes panels, and between "stacked"
+    panels. Units are interpreted by `~proplot.utils.units`. Default is
+    :rc:`subplots.panelpad`.
+sharex, sharey, share : {3, 2, 1, 0}, optional
+    The "axis sharing level" for the *x* axis, *y* axis, or both axes.
+    Default is :rc:`subplots.share`. Options are as follows:
 
-    space = space_user = units(space)
-    if share is None:
-        share = not filled
+    0. No axis sharing. Also sets the default `spanx` and `spany`
+        values to ``False``.
+    1. Only draw *axis label* on the leftmost column (*y*) or bottommost row
+        (*x*) of subplots. Axis tick labels still appear on every subplot.
+    2. As in 1, but forces the axis limits to be identical. Axis
+        tick labels still appear on every subplot.
+    3. As in 2, but only show the *axis tick labels* on the
+        leftmost column (*y*) or bottommost row (*x*) of subplots.
 
-    if width is None:
-        if filled:
-            width = rc['colorbar.width']
-        else:
-            width = rc['subplots.panelwidth']
-    width = units(width)
+spanx, spany, span : bool or {0, 1}, optional
+    Toggles "spanning" axis labels for the *x* axis, *y* axis, or both
+    axes.  Default is ``False`` if `sharex`, `sharey`, or `share` are
+    ``0``, :rc:`subplots.span` otherwise. When ``True``, a single, centered
+    axis label is used for all axes with bottom and left edges in the same
+    row or column.  This can considerably redundancy in your figure.
 
-    if space is None:
-        key = 'wspace' if side in ('left', 'right') else 'hspace'
-        pad = rc['subplots.innerpad'] if figure else rc['subplots.panelpad']
-        space = pgridspec._default_space(key, share, pad=pad)
+    "Spanning" labels integrate with "shared" axes. For example,
+    for a 3-row, 3-column figure, with ``sharey > 1`` and ``spany=1``,
+    your figure will have 1 ylabel instead of 9.
+alignx, aligny, align : bool or {0, 1}, optional
+    Whether to `"align" axis labels \
+<https://matplotlib.org/stable/gallery/subplots_axes_and_figures/align_labels_demo.html>`__
+    for the *x* axis, *y* axis, or both axes. Aligned labels always appear in the
+    same row or column. This Only has an effect when `spanx`, `spany`, or `span`
+    are ``False``. Default is :rc:`subplots.align`.
+includepanels : bool, optional
+    Whether to include panels when centering *x* axis labels,
+    *y* axis labels, and figure "super titles" along the edge of the
+    subplot grid. Default is ``False``.
+mathtext_fallback : bool or str, optional
+    Figure-specific application of the :rc:`mathtext.fallback` property.
+    If ``True`` or string, unavailable glyphs are replaced with a glyph from a
+    fallback font (Computer Modern by default). Otherwise, they are replaced
+    with the "¤" dummy character. See this `mathtext tutorial \
+<https://matplotlib.org/stable/tutorials/text/mathtext.html#custom-fonts>`__
+    for details.
+"""
+docstring.snippets['figure.figure'] = _figure_docstring
 
-    return share, width, space, space_user
+
+# Colorbar or legend panel docstring
+_space_docstring = """
+loc : str, optional
+    The {name} location. Valid location keys are as follows.
+
+    ===========  =====================
+    Location     Valid keys
+    ===========  =====================
+    left edge    ``'l'``, ``'left'``
+    right edge   ``'r'``, ``'right'``
+    bottom edge  ``'b'``, ``'bottom'``
+    top edge     ``'t'``, ``'top'``
+    ===========  =====================
+
+row, rows : optional
+    Aliases for `span` for panels on the left or right side.
+col, cols : optional
+    Aliases for `span` for panels on the top or bottom side.
+span : int or (int, int), optional
+    Describes how the {name} spans rows and columns of subplots.
+    For example, ``fig.{name}(loc='b', col=1)`` draws a {name}
+    beneath the leftmost column of subplots, and
+    ``fig.{name}(loc='b', cols=(1,2))`` draws a {name} beneath the
+    left two columns of subplots. By default, the {name} will span
+    all rows and columns.
+space : float or str, optional
+    The fixed space between the {name} and the subplot grid. Units are
+    interpreted by `~proplot.utils.units`. When the tight layout algorithm
+    is active for the figure, this is adjusted automatically using `pad`.
+    Otherwise, a suitable default is selected.
+pad : float or str, optional
+    The tight layout padding between the subplot grid and the {name}.
+    Default is :rc:`subplots.innerpad` for the first {name} and
+    :rc:`subplots.panelpad` for subsequently stacked {name}.
+"""
+docstring.snippets['figure.colorbar_space'] = _space_docstring.format(name='colorbar')
+docstring.snippets['figure.legend_space'] = _space_docstring.format(name='legend')
 
 
 def _canvas_preprocessor(canvas, method):
@@ -142,12 +216,13 @@ class Figure(mfigure.Figure):
     """
     # NOTE: If _rename_kwargs argument is an invalid identifier, it is
     # simply used in the warning message.
-    @warnings._rename_kwargs('0.7', pad='outerpad', axpad='innerpad')
+    @warnings._rename_kwargs('0.7', axpad='innerpad')
     @warnings._rename_kwargs('0.6.4', autoformat='pplt.rc.autoformat = {}')
+    @docstring.add_snippets
     def __init__(
-        self, tight=None,
-        ref=1, outerpad=None, innerpad=None, panelpad=None, includepanels=False,
-        span=None, spanx=None, spany=None,
+        self, ref=1, tight=None,
+        pad=None, outerpad=None, innerpad=None, panelpad=None,
+        span=None, spanx=None, spany=None, includepanels=False,
         align=None, alignx=None, aligny=None,
         share=None, sharex=None, sharey=None,
         gridspec_kw=None, subplots_kw=None, subplots_orig_kw=None,
@@ -157,69 +232,14 @@ class Figure(mfigure.Figure):
         """
         Parameters
         ----------
-        tight : bool, optional
-            Toggles automatic tight layout adjustments. Default is :rc:`subplots.tight`.
-            If you manually specified a spacing in the call to `~proplot.ui.subplots`,
-            it will be used to override the tight layout spacing. For example, with
-            ``left=0.1``, the left margin is set to 0.1 inches wide, while the
-            remaining margin widths are calculated automatically.
         ref : int, optional
             The reference subplot number. See `~proplot.ui.subplots` for
             details. Default is ``1``.
-        outerpad : float or str, optional
-            Padding around edge of figure. Units are interpreted by
-            `~proplot.utils.units`. Default is :rc:`subplots.outerpad`.
-        innerpad : float or str, optional
-            Padding between subplots in adjacent columns and rows. Units are
-            interpreted by `~proplot.utils.units`. Default is
-            :rc:`subplots.innerpad`.
-        panelpad : float or str, optional
-            Padding between subplots and axes panels, and between "stacked"
-            panels. Units are interpreted by `~proplot.utils.units`. Default is
-            :rc:`subplots.panelpad`.
-        includepanels : bool, optional
-            Whether to include panels when centering *x* axis labels,
-            *y* axis labels, and figure "super titles" along the edge of the
-            subplot grid. Default is ``False``.
-        sharex, sharey, share : {3, 2, 1, 0}, optional
-            The "axis sharing level" for the *x* axis, *y* axis, or both axes.
-            Default is :rc:`subplots.share`. Options are as follows:
-
-            0. No axis sharing. Also sets the default `spanx` and `spany`
-               values to ``False``.
-            1. Only draw *axis label* on the leftmost column (*y*) or bottommost row
-               (*x*) of subplots. Axis tick labels still appear on every subplot.
-            2. As in 1, but forces the axis limits to be identical. Axis
-               tick labels still appear on every subplot.
-            3. As in 2, but only show the *axis tick labels* on the
-               leftmost column (*y*) or bottommost row (*x*) of subplots.
-
-        spanx, spany, span : bool or {0, 1}, optional
-            Toggles "spanning" axis labels for the *x* axis, *y* axis, or both
-            axes.  Default is ``False`` if `sharex`, `sharey`, or `share` are
-            ``0``, :rc:`subplots.span` otherwise. When ``True``, a single, centered
-            axis label is used for all axes with bottom and left edges in the same
-            row or column.  This can considerably redundancy in your figure.
-
-            "Spanning" labels integrate with "shared" axes. For example,
-            for a 3-row, 3-column figure, with ``sharey > 1`` and ``spany=1``,
-            your figure will have 1 ylabel instead of 9.
-        alignx, aligny, align : bool or {0, 1}, optional
-            Whether to `align axis labels \
-<https://matplotlib.org/stable/gallery/subplots_axes_and_figures/align_labels_demo.html>`__
-            for the *x* axis, *y* axis, or both axes. Only has an effect when `spanx`,
-            `spany`, or `span` are ``False``. Default is :rc:`subplots.align`.
-        mathtext_fallback : bool or str, optional
-            Figure-specific application of the :rc:`mathtext.fallback` property.
-            If ``True`` or string, unavailable glyphs are replaced with a glyph from a
-            fallback font (Computer Modern by default). Otherwise, they are replaced
-            with the "¤" dummy character. See this `mathtext tutorial \
-<https://matplotlib.org/stable/tutorials/text/mathtext.html#custom-fonts>`__
-            for details.
+        %(figure.figure)s
         gridspec_kw, subplots_kw, subplots_orig_kw
-            Keywords used for initializing the main gridspec, for initializing
-            the figure, and original spacing keyword args used for initializing
-            the figure that override tight layout spacing.
+            Keywords used for initializing the main gridspec, the default
+            `~proplot.ui.subplots` layout, and the `~proplot.ui.subplots`
+            layout with user overrides.
 
         Other parameters
         ----------------
@@ -286,10 +306,13 @@ class Figure(mfigure.Figure):
         gridspec_kw = gridspec_kw or {}
         gridspec = pgridspec.GridSpec(self, **gridspec_kw)
         nrows, ncols = gridspec.get_active_geometry()
+        outerpad = _not_none(outerpad, rc['subplots.outerpad'])
+        innerpad = _not_none(innerpad, pad, rc['subplots.innerpad'])
+        panelpad = _not_none(panelpad, rc['subplots.panelpad'])
         self._auto_tight = _not_none(tight, rc['subplots.tight'])
-        self._outer_pad = units(_not_none(outerpad, rc['subplots.outerpad']))
-        self._inner_pad = units(_not_none(innerpad, rc['subplots.innerpad']))
-        self._panel_pad = units(_not_none(panelpad, rc['subplots.panelpad']))
+        self._outer_pad = units(outerpad, 'em', 'in')
+        self._inner_pad = units(innerpad, 'em', 'in')
+        self._panel_pad = units(panelpad, 'em', 'in')
         self._include_panels = includepanels
         self._ref_num = ref
         self._gridspec_main = gridspec
@@ -312,9 +335,166 @@ class Figure(mfigure.Figure):
         d['bottom'] = np.empty((0, ncols), dtype=bool)
         d['top'] = np.empty((0, ncols), dtype=bool)
 
+    def _context_authorize_add_subplot(self):
+        """
+        Prevent warning message when adding subplots one-by-one. Used
+        internally.
+        """
+        return _state_context(self, _authorized_add_subplot=True)
+
+    def _context_autoresizing(self):
+        """
+        Ensure backend calls to `~matplotlib.figure.Figure.set_size_inches`
+        during pre-processing are not interpreted as *manual* resizing.
+        """
+        return _state_context(self, _is_autoresizing=True)
+
+    def _context_preprocessing(self, cache=True):
+        """
+        Prevent re-running pre-processing steps due to draws triggered
+        by figure resizes during pre-processing. `cache` controls whether the
+        renderer passed to draw should be cached.
+        """
+        kwargs = {}
+        if not cache:
+            kwargs['_cachedRenderer'] = None  # __exit__ will restore previous value
+        return _state_context(self, _is_preprocessing=True, **kwargs)
+
+    def _draw_colorbars_legends(self):
+        """
+        Draw legends and colorbars requested via plotting commands. Drawing is
+        deferred so that successive calls to the plotting commands can successively
+        add entries to legends and colorbars in particular locations.
+        """
+        for ax in self._iter_axes(hidden=False, children=True):
+            if isinstance(ax, paxes.Axes):
+                ax._draw_colorbars_legends()  # may insert panels
+
+    def _get_align_coord(self, side, axs):
+        """
+        Return the figure coordinate for spanning labels or super titles.
+        The `x` can be ``'x'`` or ``'y'``.
+        """
+        # Get position in figure relative coordinates
+        if side in ('left', 'right'):
+            s = 'y'
+            panels = ('top', 'bottom')
+        else:
+            s = 'x'
+            panels = ('left', 'right')
+        if self._include_panels:
+            axs = [
+                iax for ax in axs
+                for iax in ax._iter_axes(panels=panels, children=False)
+            ]
+
+        # Get coordinates
+        ranges = np.array([ax._range_gridspec(s) for ax in axs])
+        min_, max_ = ranges[:, 0].min(), ranges[:, 1].max()
+        ax_lo = axs[np.where(ranges[:, 0] == min_)[0][0]]
+        ax_hi = axs[np.where(ranges[:, 1] == max_)[0][0]]
+        box_lo = ax_lo.get_subplotspec().get_position(self)
+        box_hi = ax_hi.get_subplotspec().get_position(self)
+        if s == 'x':
+            pos = 0.5 * (box_lo.x0 + box_hi.x1)
+        else:
+            pos = 0.5 * (box_lo.y1 + box_hi.y0)  # 'lo' is actually on top of figure
+
+        # Return axis suitable for spanning position
+        ax_span = axs[(np.argmin(ranges[:, 0]) + np.argmax(ranges[:, 1])) // 2]
+        ax_span = ax_span._panel_parent or ax_span
+        return pos, ax_span
+
+    def _get_align_axes(self, side):
+        """
+        Return the main axes along the left, right, bottom, or top sides
+        of the figure.
+        """
+        # Initial stuff
+        idx = 0 if side in ('left', 'top') else 1
+        if side in ('left', 'right'):
+            x, y = 'x', 'y'
+        else:
+            x, y = 'y', 'x'
+
+        # Get edge index
+        axs = self._subplots_main
+        if not axs:
+            return []
+        ranges = np.array([ax._range_gridspec(x) for ax in axs])
+        min_, max_ = ranges[:, 0].min(), ranges[:, 1].max()
+        edge = min_ if side in ('left', 'top') else max_
+
+        # Return axes on edge sorted by order of appearance
+        axs = [ax for ax in self._subplots_main if ax._range_gridspec(x)[idx] == edge]
+        ranges = [ax._range_gridspec(y)[0] for ax in axs]
+        return [ax for _, ax in sorted(zip(ranges, axs)) if ax.get_visible()]
+
+    def _get_renderer(self):
+        """
+        Get a renderer at all costs, even if it means generating a new one. Used for
+        updating the figure bounding box when it is accessed and calculating centered
+        row legend bounding boxes. This is copied from tight_layout.py in matplotlib.
+        """
+        if self._cachedRenderer:
+            renderer = self._cachedRenderer
+        else:
+            canvas = self.canvas
+            if canvas and hasattr(canvas, 'get_renderer'):
+                renderer = canvas.get_renderer()
+            else:
+                from matplotlib.backends.backend_agg import FigureCanvasAgg
+                canvas = FigureCanvasAgg(self)
+                renderer = canvas.get_renderer()
+        return renderer
+
+    def _parse_panel_args(
+        self, side, share=None, width=None, space=None, pad=None, filled=False, figure=False  # noqa: E501
+    ):
+        """
+        Return default properties for new axes and figure panels.
+        """
+        if side not in ('left', 'right', 'bottom', 'top'):
+            raise ValueError(f'Invalid panel location {side!r}.')
+        if share is None:
+            share = not filled
+
+        # Panel width
+        # NOTE: Colorbar width is em to match legend while panel width
+        # is in to match subplot refwidth.
+        if filled:
+            width = units(_not_none(width, rc['colorbar.width']), 'em', 'in')
+        else:
+            width = units(_not_none(width, rc['subplots.panelwidth']), 'in')
+
+        # Panel space
+        space = space_user = units(space, 'em', 'in')
+        if space is None:
+            key = 'wspace' if side in ('left', 'right') else 'hspace'
+            space = pgridspec._default_space(key, share, pad=pad)
+
+        # Panel padding
+        wpanels = self._subplots_kw['wpanels']
+        hpanels = self._subplots_kw['hpanels']
+        if pad is not None:
+            pass
+        elif (
+            not figure
+            or side == 'left' and wpanels[0] == 'f'
+            or side == 'right' and wpanels[-1] == 'f'
+            or side == 'top' and hpanels[0] == 'f'
+            or side == 'bottom' and hpanels[-1] == 'f'
+        ):
+            pad = self._panel_pad  # already converted with units
+        else:
+            pad = self._inner_pad
+        pad = units(pad, 'em', 'in')
+
+        return share, width, space, space_user, pad
+
     def _add_axes_panel(self, ax, side, filled=False, **kwargs):
         """
-        Hidden method that powers `~proplot.axes.panel_axes`.
+        Add an axes panel.
         """
         # Interpret args
         # NOTE: Axis sharing not implemented for figure panels, 99% of the
@@ -323,7 +503,7 @@ class Figure(mfigure.Figure):
         if side not in ('left', 'right', 'bottom', 'top'):
             raise ValueError(f'Invalid side {side!r}.')
         ax = ax._panel_parent or ax  # redirect to main axes
-        share, width, space, space_orig = _parse_panel_args(
+        share, width, space, space_orig, pad = self._parse_panel_args(
             side, filled=filled, figure=False, **kwargs
         )
 
@@ -342,7 +522,7 @@ class Figure(mfigure.Figure):
             idx2 = slice(col1, col2 + 1)
         gridspec_prev = self._gridspec_main
         gridspec = self._insert_row_column(
-            side, iratio, width, space, space_orig, figure=False
+            side, iratio, width, space=space, space_orig=space_orig, pad=pad, figure=0
         )
         if gridspec is not gridspec_prev:
             if side == 'top':
@@ -373,30 +553,23 @@ class Figure(mfigure.Figure):
         **kwargs
     ):
         """
-        Add a figure panel. Also modifies the panel attribute stored
-        on the figure to include these panels.
+        Add a figure panel.
         """
         # Interpret args and enforce sensible keyword args
         if side not in ('left', 'right', 'bottom', 'top'):
             raise ValueError(f'Invalid side {side!r}.')
-        _, width, space, space_orig = _parse_panel_args(
+        _, width, space, space_orig, pad = self._parse_panel_args(
             side, filled=True, figure=True, **kwargs
         )
         if side in ('left', 'right'):
             for key, value in (('col', col), ('cols', cols)):
                 if value is not None:
-                    raise ValueError(
-                        f'Invalid keyword arg {key!r} for figure panel '
-                        f'on side {side!r}.'
-                    )
+                    raise ValueError(f'Invalid keyword {key!r} for {side!r} panel.')
             span = _not_none(span=span, row=row, rows=rows)
         else:
             for key, value in (('row', row), ('rows', rows)):
                 if value is not None:
-                    raise ValueError(
-                        f'Invalid keyword arg {key!r} for figure panel '
-                        f'on side {side!r}.'
-                    )
+                    raise ValueError(f'Invalid keyword {key!r} for {side!r} panel.')
             span = _not_none(span=span, col=col, cols=cols)
 
         # Get props
@@ -457,7 +630,7 @@ class Figure(mfigure.Figure):
             idx1 = max(iratio, 0)
             idx2 = slice(idxs[start], idxs[stop - 1] + 1)
         gridspec = self._insert_row_column(
-            side, iratio, width, space, space_orig, figure=True
+            side, iratio, width, space=space, space_orig=space_orig, pad=pad, figure=1
         )
 
         # Draw and setup panel
@@ -469,6 +642,117 @@ class Figure(mfigure.Figure):
         pax._panel_share = False
         pax._panel_parent = None
         return pax
+
+    def _insert_row_column(
+        self, side, idx, ratio, space=None, space_orig=None, pad=None, figure=False,
+    ):
+        """
+        "Overwrite" the main figure gridspec to make room for a panel. The
+        `side` is the panel side, the `idx` is the slot you want the panel
+        to occupy, and the remaining args are the panel widths and spacings.
+        """
+        # Constants and stuff
+        # Insert spaces to the left of right panels or to the right of
+        # left panels. And note that since .insert() pushes everything in
+        # that column to the right, actually must insert 1 slot farther to
+        # the right when inserting left panels/spaces
+        if side not in ('left', 'right', 'bottom', 'top'):
+            raise ValueError(f'Invalid side {side}.')
+        idx_space = idx - 1 * bool(side in ('bottom', 'right'))
+        idx_offset = 1 * bool(side in ('top', 'left'))
+        if side in ('left', 'right'):
+            w, ncols = 'w', 'ncols'
+        else:
+            w, ncols = 'h', 'nrows'
+
+        # Load arrays and test if we need to insert
+        subplots_kw = self._subplots_kw
+        subplots_orig_kw = self._subplots_orig_kw
+        panels = subplots_kw[w + 'panels']
+        ratios = subplots_kw[w + 'ratios']
+        spaces = subplots_kw[w + 'space']
+        spaces_orig = subplots_orig_kw[w + 'space']
+        pads = subplots_kw[w + 'pad']
+
+        # Adjust space, ratio, and panel indicator arrays
+        slot_type = 'f' if figure else side[0]
+        slot_exists = idx not in (-1, len(panels)) and panels[idx] == slot_type
+        if slot_exists:
+            # Slot already exists
+            if spaces_orig[idx_space] is None:
+                spaces_orig[idx_space] = units(space_orig, 'em', 'in')
+            spaces[idx_space] = _not_none(spaces_orig[idx_space], space)
+            pads[idx_space] = pad
+        else:
+            # Modify basic geometry and insert new slot
+            idx += idx_offset
+            idx_space += idx_offset
+            subplots_kw[ncols] += 1
+            ratios.insert(idx, ratio)
+            panels.insert(idx, slot_type)
+            spaces.insert(idx_space, space)
+            spaces_orig.insert(idx_space, space_orig)
+            pads.insert(idx_space, pad)
+
+        # Update figure
+        figsize, gridspec_kw, _ = pgridspec._calc_geometry(**subplots_kw)
+        if slot_exists:
+            # Update gridspec
+            gridspec = self._gridspec_main
+            gridspec.update(**gridspec_kw)
+        else:
+            # Make new gridspec
+            gridspec = pgridspec.GridSpec(self, **gridspec_kw)
+            self._gridspec_main.figure = None
+            self._gridspec_main = gridspec
+            self._replace_subplotspecs(idx, side)
+
+        # Adjust figure size *after* gridspecs are fixed
+        self.set_size_inches(figsize, internal=True)
+
+        return gridspec
+
+    def _replace_subplotspecs(self, idx, side):
+        """
+        Replace subplot specs after inserting a row or column
+        at index `idx` to make room for a side-`side` panel.
+        """
+        gridspec = self._gridspec_main
+        if side not in ('left', 'right', 'bottom', 'top'):
+            raise ValueError(f'Invalid side {side}.')
+        for ax in self._iter_axes(hidden=True, children=True):
+            # Get old index
+            # NOTE: Endpoints are inclusive, not exclusive!
+            if not hasattr(ax, 'get_subplotspec'):
+                continue
+            if side in ('left', 'right'):
+                inserts = (None, None, idx, idx)
+            else:
+                inserts = (idx, idx, None, None)
+            subplotspec = ax.get_subplotspec()
+            subplotspec_top = subplotspec.get_topmost_subplotspec()
+            subplotspec_gridspec = subplotspec.get_gridspec()
+
+            # Apply new subplotspec
+            # NOTE: Should only have one possible level of GridSpecFromSubplotSpec
+            # nesting: when making side colorbars with length less than 1.
+            _, _, *coords = subplotspec_top.get_active_rows_columns()
+            for i in range(4):
+                if inserts[i] is not None and coords[i] >= inserts[i]:
+                    coords[i] += 1
+            row1, row2, col1, col2 = coords
+            subplotspec_new = gridspec[row1:row2 + 1, col1:col2 + 1]
+            if subplotspec_top is subplotspec:
+                ax.set_subplotspec(subplotspec_new)
+            elif subplotspec_top is subplotspec_gridspec._subplot_spec:
+                subplotspec_gridspec._subplot_spec = subplotspec_new
+            else:
+                raise RuntimeError('Unexpected GridSpecFromSubplotSpec nesting.')
+            if _version_mpl >= _version('3.4'):
+                ax.set_position(ax.get_subplotspec().get_position(ax.figure))
+            else:
+                ax.update_params()
+                ax.set_position(ax.figbox)  # equivalent to above
 
     def _align_axis_labels(self, b=True):
         """
@@ -629,220 +913,6 @@ class Figure(mfigure.Figure):
             }
             suptitle.update(kw)
 
-    def _context_authorize_add_subplot(self):
-        """
-        Prevent warning message when adding subplots one-by-one. Used
-        internally.
-        """
-        return _state_context(self, _authorized_add_subplot=True)
-
-    def _context_autoresizing(self):
-        """
-        Ensure backend calls to `~matplotlib.figure.Figure.set_size_inches`
-        during pre-processing are not interpreted as *manual* resizing.
-        """
-        return _state_context(self, _is_autoresizing=True)
-
-    def _context_preprocessing(self, cache=True):
-        """
-        Prevent re-running pre-processing steps due to draws triggered
-        by figure resizes during pre-processing. `cache` controls whether the
-        renderer passed to draw should be cached.
-        """
-        kwargs = {}
-        if not cache:
-            kwargs['_cachedRenderer'] = None  # __exit__ will restore previous value
-        return _state_context(self, _is_preprocessing=True, **kwargs)
-
-    def _draw_colorbars_legends(self):
-        """
-        Draw legends and colorbars requested via plotting commands. Drawing is
-        deferred so that successive calls to the plotting commands can successively
-        add entries to legends and colorbars in particular locations.
-        """
-        for ax in self._iter_axes(hidden=False, children=True):
-            if isinstance(ax, paxes.Axes):
-                ax._draw_colorbars_legends()  # may insert panels
-
-    def _get_align_coord(self, side, axs):
-        """
-        Return the figure coordinate for spanning labels or super titles.
-        The `x` can be ``'x'`` or ``'y'``.
-        """
-        # Get position in figure relative coordinates
-        if side in ('left', 'right'):
-            s = 'y'
-            panels = ('top', 'bottom')
-        else:
-            s = 'x'
-            panels = ('left', 'right')
-        if self._include_panels:
-            axs = [
-                iax for ax in axs
-                for iax in ax._iter_axes(panels=panels, children=False)
-            ]
-
-        # Get coordinates
-        ranges = np.array([ax._range_gridspec(s) for ax in axs])
-        min_, max_ = ranges[:, 0].min(), ranges[:, 1].max()
-        ax_lo = axs[np.where(ranges[:, 0] == min_)[0][0]]
-        ax_hi = axs[np.where(ranges[:, 1] == max_)[0][0]]
-        box_lo = ax_lo.get_subplotspec().get_position(self)
-        box_hi = ax_hi.get_subplotspec().get_position(self)
-        if s == 'x':
-            pos = 0.5 * (box_lo.x0 + box_hi.x1)
-        else:
-            pos = 0.5 * (box_lo.y1 + box_hi.y0)  # 'lo' is actually on top of figure
-
-        # Return axis suitable for spanning position
-        ax_span = axs[(np.argmin(ranges[:, 0]) + np.argmax(ranges[:, 1])) // 2]
-        ax_span = ax_span._panel_parent or ax_span
-        return pos, ax_span
-
-    def _get_align_axes(self, side):
-        """
-        Return the main axes along the left, right, bottom, or top sides
-        of the figure.
-        """
-        # Initial stuff
-        idx = 0 if side in ('left', 'top') else 1
-        if side in ('left', 'right'):
-            x, y = 'x', 'y'
-        else:
-            x, y = 'y', 'x'
-
-        # Get edge index
-        axs = self._subplots_main
-        if not axs:
-            return []
-        ranges = np.array([ax._range_gridspec(x) for ax in axs])
-        min_, max_ = ranges[:, 0].min(), ranges[:, 1].max()
-        edge = min_ if side in ('left', 'top') else max_
-
-        # Return axes on edge sorted by order of appearance
-        axs = [ax for ax in self._subplots_main if ax._range_gridspec(x)[idx] == edge]
-        ranges = [ax._range_gridspec(y)[0] for ax in axs]
-        return [ax for _, ax in sorted(zip(ranges, axs)) if ax.get_visible()]
-
-    def _get_renderer(self):
-        """
-        Get a renderer at all costs, even if it means generating a brand new one!
-        Used for updating the figure bounding box when it is accessed and calculating
-        centered-row legend bounding boxes. This is copied from tight_layout.py in
-        matplotlib.
-        """
-        if self._cachedRenderer:
-            renderer = self._cachedRenderer
-        else:
-            canvas = self.canvas
-            if canvas and hasattr(canvas, 'get_renderer'):
-                renderer = canvas.get_renderer()
-            else:
-                from matplotlib.backends.backend_agg import FigureCanvasAgg
-                canvas = FigureCanvasAgg(self)
-                renderer = canvas.get_renderer()
-        return renderer
-
-    def _insert_row_column(
-        self, side, idx,
-        ratio, space, space_orig, figure=False,
-    ):
-        """
-        "Overwrite" the main figure gridspec to make room for a panel. The
-        `side` is the panel side, the `idx` is the slot you want the panel
-        to occupy, and the remaining args are the panel widths and spacings.
-        """
-        # Constants and stuff
-        # Insert spaces to the left of right panels or to the right of
-        # left panels. And note that since .insert() pushes everything in
-        # that column to the right, actually must insert 1 slot farther to
-        # the right when inserting left panels/spaces
-        if side not in ('left', 'right', 'bottom', 'top'):
-            raise ValueError(f'Invalid side {side}.')
-        idx_space = idx - 1 * bool(side in ('bottom', 'right'))
-        idx_offset = 1 * bool(side in ('top', 'left'))
-        if side in ('left', 'right'):
-            w, ncols = 'w', 'ncols'
-        else:
-            w, ncols = 'h', 'nrows'
-
-        # Load arrays and test if we need to insert
-        subplots_kw = self._subplots_kw
-        subplots_orig_kw = self._subplots_orig_kw
-        panels = subplots_kw[w + 'panels']
-        ratios = subplots_kw[w + 'ratios']
-        spaces = subplots_kw[w + 'space']
-        spaces_orig = subplots_orig_kw[w + 'space']
-
-        # Adjust space, ratio, and panel indicator arrays
-        slot_type = 'f' if figure else side[0]
-        slot_exists = idx not in (-1, len(panels)) and panels[idx] == slot_type
-        if slot_exists:
-            # Slot already exists
-            if spaces_orig[idx_space] is None:
-                spaces_orig[idx_space] = units(space_orig)
-            spaces[idx_space] = _not_none(spaces_orig[idx_space], space)
-
-        else:
-            # Modify basic geometry and insert new slot
-            idx += idx_offset
-            idx_space += idx_offset
-            subplots_kw[ncols] += 1
-            spaces_orig.insert(idx_space, space_orig)
-            spaces.insert(idx_space, space)
-            ratios.insert(idx, ratio)
-            panels.insert(idx, slot_type)
-
-        # Update figure
-        figsize, gridspec_kw, _ = pgridspec._calc_geometry(**subplots_kw)
-        if slot_exists:
-            gridspec = self._gridspec_main
-            gridspec.update(**gridspec_kw)
-
-        else:
-            # Make new gridspec
-            gridspec = pgridspec.GridSpec(self, **gridspec_kw)
-            self._gridspec_main.figure = None
-            self._gridspec_main = gridspec
-
-            # Reassign subplotspecs to all axes and update positions
-            for ax in self._iter_axes(hidden=True, children=True):
-                # Get old index
-                # NOTE: Endpoints are inclusive, not exclusive!
-                if not hasattr(ax, 'get_subplotspec'):
-                    continue
-                if side in ('left', 'right'):
-                    inserts = (None, None, idx, idx)
-                else:
-                    inserts = (idx, idx, None, None)
-                subplotspec = ax.get_subplotspec()
-                gridspec_ss = subplotspec.get_gridspec()
-                subplotspec_top = subplotspec.get_topmost_subplotspec()
-
-                # Apply new subplotspec
-                _, _, *coords = subplotspec_top.get_active_rows_columns()
-                for i in range(4):
-                    if inserts[i] is not None and coords[i] >= inserts[i]:
-                        coords[i] += 1
-                row1, row2, col1, col2 = coords
-                subplotspec_new = gridspec[row1:row2 + 1, col1:col2 + 1]
-                if subplotspec_top is subplotspec:
-                    ax.set_subplotspec(subplotspec_new)
-                elif subplotspec_top is gridspec_ss._subplot_spec:
-                    gridspec_ss._subplot_spec = subplotspec_new
-                else:
-                    raise ValueError('Unexpected GridSpecFromSubplotSpec nesting.')
-                if _version_mpl >= _version('3.4'):
-                    ax.set_position(ax.get_subplotspec().get_position(ax.figure))
-                else:
-                    ax.update_params()
-                    ax.set_position(ax.figbox)  # equivalent to above
-
-        # Adjust figure size *after* gridspecs are fixed
-        self.set_size_inches(figsize, internal=True)
-
-        return gridspec
-
     def _update_super_title(self, title, **kwargs):
         """
         Assign the figure "super title" and update settings.
@@ -852,14 +922,13 @@ class Figure(mfigure.Figure):
         if kwargs:
             self._suptitle.update(kwargs)
 
-    def _update_super_labels(self, ax, side, labels, **kwargs):
+    def _update_super_labels(self, side, labels, **kwargs):
         """
         Assign the side labels and update settings.
         """
-        if side not in ('left', 'right', 'bottom', 'top'):
-            raise ValueError(f'Invalid label side {side!r}.')
-
         # Get main axes on the edge
+        if side not in ('left', 'right', 'bottom', 'top'):
+            raise ValueError(f'Invalid side {side!r}.')
         axs = self._get_align_axes(side)
         if not axs:
             return  # occurs if called while adding axes
@@ -971,39 +1040,27 @@ class Figure(mfigure.Figure):
             subplots_kw[key] = _not_none(previous, current - offset + pad)
 
         # Get arrays storing gridspec spacing args
-        innerpad = self._inner_pad
-        panelpad = self._panel_pad
+        # NOTE: The self._inner_pad and self._panel_pad are added to wpad and hpad
+        # arrays on figure instantiation and when panels are created
         gridspec = self._gridspec_main
         nrows, ncols = gridspec.get_active_geometry()
         wspace = subplots_kw['wspace']
         hspace = subplots_kw['hspace']
         wspace_orig = subplots_orig_kw['wspace']
         hspace_orig = subplots_orig_kw['hspace']
+        wpad = subplots_kw['wpad']
+        hpad = subplots_kw['hpad']
 
         # Get new subplot spacings, axes panel spacing, figure panel spacing
-        spaces = []
-        for (w, x, y, nacross, ispace, ispace_orig) in zip(
-            'wh', 'xy', 'yx', (nrows, ncols),
-            (wspace, hspace), (wspace_orig, hspace_orig),
+        spaces = {}
+        for (w, x, y, nacross, ispace, ispace_orig, ipad) in zip(
+            'wh', 'xy', 'yx', (nrows, ncols), (wspace, hspace), (wspace_orig, hspace_orig), (wpad, hpad),  # noqa: E501
         ):
             # Determine which rows and columns correspond to panels
-            panels = subplots_kw[w + 'panels']
             jspace = list(ispace)  # a copy
             ralong = np.array([ax._range_gridspec(x) for ax in axs])
             racross = np.array([ax._range_gridspec(y) for ax in axs])
-            for i, (space, space_orig) in enumerate(zip(ispace, ispace_orig)):
-                # Figure out whether this is a normal space, or a
-                # panel stack space/axes panel space
-                pad = innerpad
-                if (
-                    panels[i] in ('l', 't')
-                    and panels[i + 1] in ('l', 't', '')
-                    or panels[i] in ('r', 'b', '')
-                    and panels[i + 1] in ('r', 'b')
-                    or panels[i] == 'f' and panels[i + 1] == 'f'
-                ):
-                    pad = panelpad
-
+            for i, (space, space_orig, pad) in enumerate(zip(ispace, ispace_orig, ipad)):  # noqa: E501
                 # Find axes that abutt aginst this space on each row or column
                 groups = []
                 filt1 = ralong[:, 1] == i  # i.e. right/bottom edge abutts against this
@@ -1052,10 +1109,10 @@ class Figure(mfigure.Figure):
                 jspace[i] = space
 
             # Add row or column space
-            spaces.append(jspace)
+            spaces[w] = jspace
 
         # Update with new spaces
-        subplots_kw.update({'wspace': spaces[0], 'hspace': spaces[1]})
+        subplots_kw.update({'wspace': spaces['w'], 'hspace': spaces['h']})
         self._update_geometry(resize=resize)
 
     def add_subplot(self, *args, **kwargs):
@@ -1128,46 +1185,21 @@ class Figure(mfigure.Figure):
         self._align_axis_labels(True)
         self._align_super_labels(renderer)
 
+    @docstring.add_snippets
     def colorbar(
-        self, mappable, values=None, *, loc='r', width=None, space=None,
+        self, mappable, values=None, *, loc='r',
         row=None, col=None, rows=None, cols=None, span=None,
-        **kwargs
+        space=None, pad=None, width=None, **kwargs
     ):
         """
-        Draw a colorbar along the left, right, bottom, or top side
-        of the figure, centered between the leftmost and rightmost (or
-        topmost and bottommost) main axes.
+        Draw a colorbar along the left, right, bottom, or top side of the
+        figure, centered between the leftmost and rightmost (or topmost
+        and bottommost) main subplots.
 
         Parameters
         ----------
-        loc : str, optional
-            The colorbar location. Valid location keys are as follows.
-
-            ===========  =====================
-            Location     Valid keys
-            ===========  =====================
-            left edge    ``'l'``, ``'left'``
-            right edge   ``'r'``, ``'right'``
-            bottom edge  ``'b'``, ``'bottom'``
-            top edge     ``'t'``, ``'top'``
-            ===========  =====================
-
-        row, rows : optional
-            Aliases for `span` for panels on the left or right side.
-        col, cols : optional
-            Aliases for `span` for panels on the top or bottom side.
-        span : int or (int, int), optional
-            Describes how the colorbar spans rows and columns of subplots.
-            For example, ``fig.colorbar(loc='b', col=1)`` draws a colorbar
-            beneath the leftmost column of subplots, and
-            ``fig.colorbar(loc='b', cols=(1,2))`` draws a colorbar beneath the
-            left two columns of subplots. By default, the colorbar will span
-            all rows and columns.
-        space : float or str, optional
-            The space between the main subplot grid and the colorbar, or the space
-            between successively stacked colorbars. Units are interpreted by
-            `~proplot.utils.units`. By default, this is determined by the "tight layout"
-            algorithm, or is :rc:`subplots.panelpad` if "tight layout" is off.
+        %(axes.colorbar_args)s
+        %(figure.colorbar_space)s
         length : float or str, optional
             The colorbar length. Units are relative to the span of the rows and
             columns of subplots. Default is :rc:`colorbar.length`.
@@ -1180,86 +1212,77 @@ class Figure(mfigure.Figure):
 
         Other parameters
         ----------------
-        *args, **kwargs
-            Passed to `~proplot.axes.colorbar_extras`.
+        %(axes.colorbar_kwargs)s
+
+        See also
+        --------
+        proplot.axes.Axes.colorbar
+        matplotlib.figure.Figure.colorbar
         """
         ax = kwargs.pop('ax', None)
         cax = kwargs.pop('cax', None)
 
         # Fill this axes
         if cax is not None:
-            return super().colorbar(mappable, cax=cax, **kwargs)
+            with _state_context(cax, _internal_call=True):  # avoid wrapping pcolor
+                return super().colorbar(mappable, cax=cax, **kwargs)
 
         # Generate axes panel
         if ax is not None:
-            return ax.colorbar(mappable, values, space=space, width=width, **kwargs)
+            return ax.colorbar(
+                mappable, values, space=space, pad=pad, width=width, **kwargs
+            )
 
         # Generate figure panel
         loc = self._subplots_main[0]._loc_translate(loc, 'panel')
         ax = self._add_figure_panel(
-            loc, space=space, width=width, span=span,
-            row=row, col=col, rows=rows, cols=cols
+            loc, row=row, col=col, rows=rows, cols=cols, span=span,
+            space=space, pad=pad, width=width,
         )
         return ax.colorbar(mappable, values, loc='fill', **kwargs)
 
+    @docstring.add_snippets
     def legend(
-        self, handles=None, labels=None, *, loc='r', width=None, space=None,
+        self, handles=None, labels=None, *, loc='r',
         row=None, col=None, rows=None, cols=None, span=None,
-        **kwargs
+        space=None, pad=None, width=None, **kwargs
     ):
         """
         Draw a legend along the left, right, bottom, or top side of the
-        figure, centered between the leftmost and rightmost (or
-        topmost and bottommost) main axes.
+        figure, centered between the leftmost and rightmost (or topmost
+        and bottommost) main subplots.
 
         Parameters
         ----------
-        loc : str, optional
-            The legend location. Valid location keys are as follows.
-
-            ===========  =====================
-            Location     Valid keys
-            ===========  =====================
-            left edge    ``'l'``, ``'left'``
-            right edge   ``'r'``, ``'right'``
-            bottom edge  ``'b'``, ``'bottom'``
-            top edge     ``'t'``, ``'top'``
-            ===========  =====================
-
-        row, rows : optional
-            Aliases for `span` for panels on the left or right side.
-        col, cols : optional
-            Aliases for `span` for panels on the top or bottom side.
-        span : int or (int, int), optional
-            Describes how the legend spans rows and columns of subplots.
-            For example, ``fig.legend(loc='b', col=1)`` draws a legend
-            beneath the leftmost column of subplots, and
-            ``fig.legend(loc='b', cols=(1,2))`` draws a legend beneath the
-            left two columns of subplots. By default, the legend will span
-            all rows and columns.
-        space : float or str, optional
-            The space between the main subplot grid and the legend, or the
-            space between successively stacked colorbars. Units are interpreted
-            by `~proplot.utils.units`. By default, this is adjusted
-            automatically in the "tight layout" calculation, or is
-            :rc:`subplots.panelpad` if "tight layout" is turned off.
+        %(axes.legend_args)s
+        %(figure.legend_space)s
+        width : float or str, optional
+            The space allocated for the legend box. This does nothing if the
+            tight layout algorithm is active for the figure. Units are
+            interpreted by `~proplot.utils.units`.
 
         Other parameters
         ----------------
-        *args, **kwargs
-            Passed to `~proplot.axes.legend_extras`.
+        %(axes.legend_kwargs)s
+
+        See also
+        --------
+        proplot.axes.Axes.legend
+        matplotlib.axes.Axes.legend
         """
         ax = kwargs.pop('ax', None)
 
         # Generate axes panel
         if ax is not None:
-            return ax.legend(handles, labels, space=space, width=width, **kwargs)
+            return ax.legend(
+                handles, labels, space=space, pad=pad, width=width, **kwargs
+            )
 
         # Generate figure panel
         loc = self._subplots_main[0]._loc_translate(loc, 'panel')
         ax = self._add_figure_panel(
-            loc, space=space, width=width, span=span,
-            row=row, col=col, rows=rows, cols=cols
+            loc, row=row, col=col, rows=rows, cols=cols, span=span,
+            space=space, pad=pad, width=width,
         )
         return ax.legend(handles, labels, loc='fill', **kwargs)
 
@@ -1332,7 +1355,7 @@ class Figure(mfigure.Figure):
         )
         if user:
             self._subplots_kw.update(width=width, height=height)
-        context = self._context_autoresizing if internal or not user else _dummy_context
+        context = self._context_autoresizing if internal or not user else _empty_context
         with context():
             super().set_size_inches(width, height, forward=forward)
 

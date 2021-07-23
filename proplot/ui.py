@@ -28,9 +28,12 @@ __all__ = [
     'isinteractive',
 ]
 
-docstring.snippets['pyplot.statement'] = """
+
+# Docstrings
+_pyplot_docstring = """
 This is included so you don't have to import `~matplotlib.pyplot`.
 """
+docstring.snippets['pyplot.statement'] = _pyplot_docstring
 
 
 # Width or (width, height) dimensions for common journal specifications
@@ -122,7 +125,7 @@ def isinteractive():
     return plt.isinteractive()
 
 
-def _journals(journal):
+def _journal_size(journal):
     """
     Return the width and height corresponding to the given journal.
     """
@@ -192,6 +195,7 @@ def _axes_dict(naxs, value, kw=False, default=None):
     return kwargs
 
 
+@docstring.add_snippets
 def subplots(
     array=None, ncols=1, nrows=1, order='C',
     ref=1, refaspect=None, refwidth=None, refheight=None,
@@ -199,7 +203,8 @@ def subplots(
     figwidth=None, figheight=None, figsize=None,
     width=None, height=None,  # deprecated
     journal=None,
-    hspace=None, wspace=None, space=None,
+    wspace=None, hspace=None, space=None,
+    wpad=None, hpad=None, pad=None,
     hratios=None, wratios=None,
     width_ratios=None, height_ratios=None,
     wequal=None, hequal=None, equal=None,
@@ -274,6 +279,12 @@ def subplots(
         ``subplots(ncols=3, tight=True, wspace=('2em', None))`` fixes the space between the
         first 2 columns but uses the tight layout
         algorithm between the last 2 columns.
+    wpad, hpad, pad : float or str or list thereof, optional
+        The tight layout padding between grid columns, grid rows, and both,
+        respectively. Unlike ``space``, these arguments control the padding between
+        subplot content (including ticks, text, etc.) rather than subplot edges.
+        Default is :rcraw:`subplots.panelpad`. See the below ``innerpad``,
+        ``outerpad``, and ``panelpad`` arguments for details.
     wequal, hequal, equal :  bool, optional
         Whether to make the tight layout algorithm apply equal spacing between
         columns, rows, or both. Default is ``False``.
@@ -360,8 +371,9 @@ or dict thereof, optional
 
     Other parameters
     ----------------
+    %(figure.figure)s
     **kwargs
-        Passed to `proplot.figure.Figure`.
+        Passed to `matplotlib.figure.Figure`.
 
     Returns
     -------
@@ -380,7 +392,7 @@ or dict thereof, optional
     References
     ----------
     For academic journal figure size recommendations, see the
-    `Nature <nat_>`_ `AAAS <aaas_>`_, `PNAS <pnas_>`_, `AGU <agu_>`_,
+    `Nature <nat_>`_, `AAAS <aaas_>`_, `PNAS <pnas_>`_, `AGU <agu_>`_,
     and `AMS <ams_>`_ web pages.
 
     .. _aaas: https://www.sciencemag.org/authors/instructions-preparing-initial-manuscript
@@ -398,21 +410,21 @@ or dict thereof, optional
     if array is None:
         array = np.arange(1, nrows * ncols + 1)[..., None]
         array = array.reshape((nrows, ncols), order=order)
+
     # Standardize array
     try:
         array = np.array(array, dtype=int)  # enforce array type
         if array.ndim == 1:  # interpret as single row or column
             array = array[None, :] if order == 'C' else array[:, None]
         elif array.ndim != 2:
-            raise ValueError(
-                f'Array must be 1-2 dimensional, but got {array.ndim} dims.'
-            )
-        array[array == None] = 0  # use zero for placeholder  # noqa
+            raise ValueError(f'Array must be 1d or 2d, but got {array.ndim}d.')
+        array[array == None] = 0  # None or 0 both valid placeholders  # noqa: E711
     except (TypeError, ValueError):
         raise ValueError(
             f'Invalid subplot array {array!r}. '
             'Must be 1d or 2d array of integers.'
         )
+
     # Get other props
     nums = np.unique(array[array != 0])
     naxs = len(nums)
@@ -430,8 +442,8 @@ or dict thereof, optional
     nrows, ncols = array.shape
 
     # Get some axes properties, where locations are sorted by axes id.
+    # NOTE: The entry 0 stands for empty
     # NOTE: These ranges are endpoint exclusive, like a slice object!
-    # NOTE: 0 stands for empty
     axids = [np.where(array == i) for i in np.sort(np.unique(array)) if i > 0]
     xrange = np.array([[x.min(), x.max()] for _, x in axids])
     yrange = np.array([[y.min(), y.max()] for y, _ in axids])
@@ -479,8 +491,7 @@ or dict thereof, optional
     figwidth = _not_none(figwidth=figwidth, width=width)
     figheight = _not_none(figheight=figheight, height=height)
     if journal:
-        # if user passed width=<string > , will use that journal size
-        figsize = _journals(journal)
+        figsize = _journal_size(journal)
         spec = f'journal={journal!r}'
         names = ('refwidth', 'refheight', 'figwidth')
         values = (refwidth, refheight, figwidth)
@@ -499,81 +510,67 @@ or dict thereof, optional
         spec = ', '.join(spec)
         names = ('refwidth', 'refheight')
         values = (refwidth, refheight)
-    # Raise warning
+
+    # Warn sizing conflicts
     for name, value in zip(names, values):
         if value is not None:
             warnings._warn_proplot(
-                f'You specified both {spec} and {name}={value!r}. '
-                f'Ignoring {name!r}.'
+                f'You specified both {spec} and {name}={value!r}. Ignoring {name!r}.'
             )
 
-    # Standardized dimensions
-    figwidth, figheight = units(figwidth), units(figheight)
-    refwidth, refheight = units(refwidth), units(refheight)
+    # Helper functions
+    def _to_list(*args, n, descrip, **kwargs):  # noqa: E301
+        value = _not_none(*args, **kwargs)
+        value = np.atleast_1d(units(value, 'em', 'in'))
+        if len(value) == 1:
+            value = np.repeat(value, (n,))
+        if len(value) != n:
+            raise ValueError(f'Expected {n} {descrip}, but got {len(value)}.')
+        return value.tolist()
 
-    # Standardized user input border spaces
-    left, right = units(left), units(right)
-    bottom, top = units(bottom), units(top)
-
-    # Standardized user input spaces
-    wspace = np.atleast_1d(units(_not_none(wspace, space)))
-    hspace = np.atleast_1d(units(_not_none(hspace, space)))
-    if len(wspace) == 1:
-        wspace = np.repeat(wspace, (ncols - 1,))
-    if len(wspace) != ncols - 1:
-        raise ValueError(
-            f'Require {ncols-1} width spacings for {ncols} columns, '
-            'got {len(wspace)}.'
-        )
-    if len(hspace) == 1:
-        hspace = np.repeat(hspace, (nrows - 1,))
-    if len(hspace) != nrows - 1:
-        raise ValueError(
-            f'Require {nrows-1} height spacings for {nrows} rows, '
-            'got {len(hspace)}.'
-        )
-
-    # Standardized user input ratios
-    wratios = np.atleast_1d(_not_none(
-        width_ratios=width_ratios, wratios=wratios, default=1,
-    ))
-    hratios = np.atleast_1d(_not_none(
-        height_ratios=height_ratios, hratios=hratios, default=1,
-    ))
-    if len(wratios) == 1:
-        wratios = np.repeat(wratios, (ncols,))
-    if len(hratios) == 1:
-        hratios = np.repeat(hratios, (nrows,))
-    if len(wratios) != ncols:
-        raise ValueError(f'Got {ncols} columns, but {len(wratios)} wratios.')
-    if len(hratios) != nrows:
-        raise ValueError(f'Got {nrows} rows, but {len(hratios)} hratios.')
-
-    # Fill subplots_orig_kw with user input values
+    # Translate dimensions, space, pad, and ratios input
     # NOTE: 'Ratios' are only fixed for panel axes, but we store entire array
-    wspace, hspace = wspace.tolist(), hspace.tolist()
-    wratios, hratios = wratios.tolist(), hratios.tolist()
+    left = units(left, 'em', 'in')
+    right = units(right, 'em', 'in')
+    bottom = units(bottom, 'em', 'in')
+    top = units(top, 'em', 'in')
+    pad = _not_none(kwargs.get('innerpad', None), pad, rc['subplots.innerpad'])
+    wpad = _to_list(wpad, pad, n=ncols - 1, descrip='width spaces')
+    hpad = _to_list(hpad, pad, n=nrows - 1, descrip='height spaces')
+    wspace = _to_list(wspace, space, n=ncols - 1, descrip='width pads')
+    hspace = _to_list(hspace, space, n=nrows - 1, descrip='height pads')
+    wequal = _not_none(wequal, equal, False)
+    hequal = _not_none(hequal, equal, False)
+    figwidth = units(figwidth, 'in')
+    figheight = units(figheight, 'in')
+    refwidth = units(refwidth, 'in')
+    refheight = units(refheight, 'in')
+    wratios = _to_list(
+        wratios=wratios, width_ratios=width_ratios, default=1,
+        n=ncols, descrip='width ratios'
+    )
+    hratios = _to_list(
+        hratios=hratios, width_ratios=height_ratios, default=1,
+        n=nrows, descrip='height ratios'
+    )
     subplots_orig_kw = {
         'left': left, 'right': right, 'top': top, 'bottom': bottom,
-        'wspace': wspace, 'hspace': hspace,
+        'wspace': wspace, 'hspace': hspace, 'wpad': wpad, 'hpad': hpad,
     }
 
-    # Apply default settings
+    # Apply defaults for unspecified dimensions
+    _fill_with = lambda arr, default: [_not_none(_, default) for _ in arr]  # noqa: E731
     share = kwargs.get('share', None)
     sharex = _not_none(kwargs.get('sharex', None), share, rc['subplots.share'])
     sharey = _not_none(kwargs.get('sharey', None), share, rc['subplots.share'])
-
     left = _not_none(left, pgridspec._default_space('left'))
     right = _not_none(right, pgridspec._default_space('right'))
     bottom = _not_none(bottom, pgridspec._default_space('bottom'))
     top = _not_none(top, pgridspec._default_space('top'))
-
-    wspace, hspace = np.array(wspace), np.array(hspace)  # also copies!
-    wspace[wspace == None] = pgridspec._default_space('wspace', sharex)  # noqa: E711
-    hspace[hspace == None] = pgridspec._default_space('hspace', sharey)  # noqa: E711
-
-    wratios, hratios = list(wratios), list(hratios)
-    wspace, hspace = list(wspace), list(hspace)
+    wspace = _fill_with(wspace, pgridspec._default_space('wspace', sharex))
+    hspace = _fill_with(hspace, pgridspec._default_space('hspace', sharey))
+    wpad = _fill_with(wpad, pad)
+    hpad = _fill_with(hpad, pad)
 
     # Parse arguments, fix dimensions in light of desired aspect ratio
     figsize, gridspec_kw, subplots_kw = pgridspec._calc_geometry(
@@ -582,8 +579,9 @@ or dict thereof, optional
         figwidth=figwidth, figheight=figheight,
         refaspect=refaspect, refwidth=refwidth, refheight=refheight,
         refxrange=refxrange, refyrange=refyrange,
-        wratios=wratios, hratios=hratios, wspace=wspace, hspace=hspace,
-        wequal=bool(wequal), hequal=bool(hequal), equal=bool(equal),
+        wratios=wratios, hratios=hratios,
+        wspace=wspace, hspace=hspace, wpad=wpad, hpad=hpad,
+        wequal=wequal, hequal=hequal,
         wpanels=[''] * ncols, hpanels=[''] * nrows,
     )
     fig = plt.figure(

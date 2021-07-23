@@ -24,6 +24,7 @@ FONTSIZE = 9.0
 GRIDALPHA = 0.11
 GRIDBELOW = 'line'
 GRIDCOLOR = 'black'
+GRIDPAD = 5.0
 GRIDRATIO = 0.5  # differentiated from major by half size reduction
 GRIDSTYLE = '-'
 LABELPAD = 4.0  # default is 4.0, previously was 3.0
@@ -70,7 +71,6 @@ _rc_renamed = {  # {old_key: (new_key, version)} dictionary
     'large': ('text.titlesize', '0.6'),
     'span': ('subplots.span', '0.6'),
     'tight': ('subplots.tight', '0.6'),
-    'tick.labelpad': ('tick.pad', '0.6'),
     'axes.formatter.timerotation': ('formatter.timerotation', '0.6'),
     'axes.formatter.zerotrim': ('formatter.zerotrim', '0.6'),
     'abovetop': ('title.above', '0.7'),
@@ -84,12 +84,14 @@ _rc_renamed = {  # {old_key: (new_key, version)} dictionary
 # plots, 0.05 is good for line plot in y direction but not x direction.
 # WARNING: Critical to include every parameter here that can be changed by a
 # "meta" setting so that _get_default_param returns the value imposed by *proplot*
-# and so that "changed" settings detectd by RcConfigurator.save are correct.
+# and so that "changed" settings detected by RcConfigurator.save are correct.
 _rc_matplotlib_default = {
     'axes.axisbelow': GRIDBELOW,
     'axes.formatter.use_mathtext': MATHTEXT,
     'axes.grid': True,  # enable lightweight transparent grid by default
     'axes.grid.which': 'major',
+    'axes.edgecolor': COLOR,
+    'axes.labelcolor': COLOR,
     'axes.labelpad': LABELPAD,  # more compact
     'axes.labelsize': LABELSIZE,
     'axes.labelweight': 'normal',
@@ -99,6 +101,7 @@ _rc_matplotlib_default = {
     'axes.titleweight': 'normal',
     'axes.xmargin': MARGIN,
     'axes.ymargin': MARGIN,
+    'errorbar.capsize': 3.0,
     'figure.autolayout': False,
     'figure.dpi': 100,
     'figure.facecolor': '#f2f2f2',  # similar to MATLAB interface
@@ -200,6 +203,8 @@ _rc_matplotlib_default = {
     'legend.borderaxespad': 0,  # looks sleeker flush against edge
     'legend.borderpad': 0.5,  # a bit more space
     'legend.columnspacing': 1.5,  # more compact
+    'legend.edgecolor': COLOR,
+    'legend.facecolor': 'white',
     'legend.fancybox': False,  # looks modern without curvy box
     'legend.fontsize': LABELSIZE,
     'legend.framealpha': FRAMEALPHA,
@@ -213,6 +218,7 @@ _rc_matplotlib_default = {
     'savefig.facecolor': 'white',  # different from figure.facecolor
     'savefig.format': 'pdf',  # most users use bitmap, but vector graphics are better
     'savefig.transparent': False,
+    'xtick.color': COLOR,
     'xtick.direction': TICKDIR,
     'xtick.labelsize': LABELSIZE,
     'xtick.major.pad': TICKPAD,
@@ -222,6 +228,7 @@ _rc_matplotlib_default = {
     'xtick.minor.size': TICKLEN * TICKLENRATIO,
     'xtick.minor.visible': TICKMINOR,
     'xtick.minor.width': LINEWIDTH * TICKRATIO,
+    'ytick.color': COLOR,
     'ytick.direction': TICKDIR,
     'ytick.labelsize': LABELSIZE,
     'ytick.major.pad': TICKPAD,
@@ -241,7 +248,9 @@ _rc_matplotlib_default = {
 # RcParams and adding validators. Quick settings should be implemented in __getitem__.
 # NOTE: Cannot have different a-b-c and title paddings because they are both controlled
 # by matplotlib's _title_offset_trans transform and want to keep them aligned anyway.
-_addendum_units = ' Interpreted by `~proplot.utils.units`.'
+_addendum_em = ' Interpreted by `~proplot.utils.units`. Numeric units are font size-relative.'  # noqa: E501
+_addendum_in = ' Interpreted by `~proplot.utils.units`. Numeric units are inches.'
+_addendum_pt = ' Interpreted by `~proplot.utils.units`. Numeric units are points.'
 _addendum_fonts = (
     ' (see `this list of valid font sizes '
     '<https://matplotlib.org/stable/tutorials/text/text_props.html#default-font>`__).'
@@ -290,7 +299,7 @@ _rc_proplot = {
     'abc.bboxpad': (
         None,
         'Padding for the a-b-c label bounding box. By default this is scaled '
-        'to make the box flush against the subplot edge. ' + _addendum_units
+        'to make the box flush against the subplot edge. ' + _addendum_pt
     ),
     'abc.color': (
         'black',
@@ -405,7 +414,7 @@ _rc_proplot = {
     'bottomlabel.pad': (
         '0.3em',
         'Padding between axes content and column labels on the bottom of the figure. '
-        + _addendum_units
+        + _addendum_pt
     ),
     'bottomlabel.rotation': (
         0,
@@ -449,13 +458,21 @@ _rc_proplot = {
 
     # Colorbars
     'colorbar.extend': (
-        '1.3em',
+        1.3,
         'Length of rectangular or triangular "extensions" for panel colorbars. '
-        + _addendum_units
+        + _addendum_em
+    ),
+    'colorbar.edgecolor': (
+        COLOR,
+        'Color for colorbar dividers, outline, and inset frame edge.'
     ),
     'colorbar.framealpha': (
         FRAMEALPHA,
         'Opacity for inset colorbar frames.'
+    ),
+    'colorbar.facecolor': (
+        'white',
+        'Color for the inset colorbar frame.'
     ),
     'colorbar.frameon': (
         True,
@@ -466,21 +483,21 @@ _rc_proplot = {
         'Boolean, indicates whether to draw borders between each level of the colorbar.'
     ),
     'colorbar.insetextend': (
-        '1em',
+        1,
         'Length of rectangular or triangular "extensions" for inset colorbars. '
-        + _addendum_units
+        + _addendum_em
     ),
     'colorbar.insetlength': (
-        '8em',
-        'Length of inset colorbars. ' + _addendum_units
+        8,
+        'Length of inset colorbars. ' + _addendum_em
     ),
     'colorbar.insetpad': (
-        '0.7em',
-        'Padding between axes edge and inset colorbars. ' + _addendum_units
+        0.7,
+        'Padding between axes edge and inset colorbars. ' + _addendum_em
     ),
     'colorbar.insetwidth': (
-        '1.2em',
-        'Width of inset colorbars. ' + _addendum_units
+        1.2,
+        'Width of inset colorbars. ' + _addendum_em
     ),
     'colorbar.length': (
         1,
@@ -492,8 +509,8 @@ _rc_proplot = {
         '<colorbar_table>`.'
     ),
     'colorbar.width': (
-        '1.5em',
-        'Width of outer colorbars. ' + _addendum_units
+        1.5,
+        'Width of outer colorbars. ' + _addendum_em
     ),
 
     # Style shorthands
@@ -536,15 +553,20 @@ _rc_proplot = {
         'Boolean, indicates whether to use degrees-minutes-seconds rather than '
         'decimals for gridline labels on `~proplot.axes.CartopyAxes`.'
     ),
-    'grid.pad': (
-        5,
-        'Padding between map boundary edge and longitude and '
-        'latitude labels for `~proplot.axes.GeoAxes`. ' + _addendum_units
-    ),
     'grid.labels': (
         False,
         'Boolean, indicates whether to label the longitude and latitude gridlines '
         'in `~proplot.axes.GeoAxes`.'
+    ),
+    'grid.labelcolor': (
+        COLOR,
+        'Font color for longitude and latitude gridline labels in '
+        '`~proplot.axes.GeoAxes`.'
+    ),
+    'grid.labelpad': (
+        GRIDPAD,
+        'Padding between map boundary edge and longitude and '
+        'latitude labels for `~proplot.axes.GeoAxes`. ' + _addendum_pt
     ),
     'grid.labelsize': (
         LABELSIZE,
@@ -554,11 +576,6 @@ _rc_proplot = {
     'grid.labelweight': (
         'normal',
         'Font weight for longitude and latitude gridline labels in '
-        '`~proplot.axes.GeoAxes`.'
-    ),
-    'grid.labelcolor': (
-        COLOR,
-        'Font color for longitude and latitude gridline labels in '
         '`~proplot.axes.GeoAxes`.'
     ),
     'grid.latinline': (
@@ -574,6 +591,10 @@ _rc_proplot = {
     'grid.nsteps': (
         250,
         'Number of interpolation steps used to draw cartopy gridlines.'
+    ),
+    'grid.pad': (
+        GRIDPAD,
+        'Alias for :rcraw:`grid.labelpad`.'
     ),
     'grid.ratio': (
         GRIDRATIO,
@@ -703,7 +724,7 @@ _rc_proplot = {
     'leftlabel.pad': (
         '0.6em',
         'Padding between axes content and row labels on the left-hand side. '
-        + _addendum_units
+        + _addendum_pt
     ),
     'leftlabel.rotation': (
         90,
@@ -777,7 +798,7 @@ _rc_proplot = {
     'rightlabel.pad': (
         '0.6em',
         'Padding between axes content and row labels on the right-hand side. '
-        + _addendum_units
+        + _addendum_pt
     ),
     'rightlabel.rotation': (
         90,
@@ -818,25 +839,25 @@ _rc_proplot = {
         '<https://matplotlib.org/stable/gallery/subplots_axes_and_figures/align_labels_demo.html>`__.'  # noqa: E501
     ),
     'subplots.innerpad': (
-        '1em',
-        'Padding between adjacent subplots. ' + _addendum_units
+        1,
+        'Padding between adjacent subplots. ' + _addendum_em
     ),
     'subplots.outerpad': (
-        '0.5em',
-        'Padding around figure edge. ' + _addendum_units
+        0.5,
+        'Padding around figure edge. ' + _addendum_em
     ),
     'subplots.panelpad': (
-        '0.5em',
+        0.5,
         'Padding between subplots and panels, and between stacked panels. '
-        + _addendum_units
+        + _addendum_em
     ),
     'subplots.panelwidth': (
         '4em',
-        'Width of side panels. ' + _addendum_units
+        'Width of side panels. ' + _addendum_in
     ),
     'subplots.refwidth': (
         '20em',  # about 3 inches wide
-        'Default width of the reference subplot. ' + _addendum_units
+        'Default width of the reference subplot. ' + _addendum_in
     ),
     'subplots.share': (
         3,
@@ -868,7 +889,7 @@ _rc_proplot = {
     'suptitle.pad': (
         '0.5em',
         'Padding between axes content and the figure super title. '
-        + _addendum_units
+        + _addendum_pt
     ),
 
     # Text settings
@@ -903,6 +924,10 @@ _rc_proplot = {
         'Axis tick label color. Mirrors the *axis* label '
         ':rcraw:`axes.labelcolor` setting.'
     ),
+    'tick.labelpad': (
+        TICKPAD,
+        'Padding between ticks and tick labels. ' + _addendum_pt
+    ),
     'tick.labelsize': (
         LABELSIZE,
         'Axis tick label font size. Mirrors the *axis* label '
@@ -927,7 +952,7 @@ _rc_proplot = {
     ),
     'tick.pad': (
         TICKPAD,
-        'Padding between ticks and tick labels. ' + _addendum_units
+        'Alias for :rcraw:`tick.labelpad`.'
     ),
     'tick.ratio': (
         TICKRATIO,
@@ -943,7 +968,7 @@ _rc_proplot = {
     'title.pad': (
         TITLEPAD,
         'Padding between the axes edge and the inner and outer titles and '
-        'a-b-c labels. Alias for :rcraw:`axes.titlepad`. ' + _addendum_units
+        'a-b-c labels. Alias for :rcraw:`axes.titlepad`. ' + _addendum_pt
     ),
     'title.border': (
         True,
@@ -974,7 +999,7 @@ _rc_proplot = {
     'title.bboxpad': (
         None,
         'Padding for the title bounding box. By default this is scaled '
-        'to make the box flush against the axes edge. ' + _addendum_units
+        'to make the box flush against the axes edge. ' + _addendum_pt
     ),
     'title.color': (
         'black',
@@ -1002,7 +1027,7 @@ _rc_proplot = {
     'toplabel.pad': (
         '0.3em',
         'Padding between axes content and column labels on the top of the figure. '
-        + _addendum_units
+        + _addendum_pt
     ),
     'toplabel.rotation': (
         0,
@@ -1026,7 +1051,7 @@ _rc_proplot = {
 # and because setting was only introduced in version 3.2.
 _rc_children = {
     'color': (  # change the 'color' of an axes
-        'axes.edgecolor', 'axes.labelcolor',
+        'axes.edgecolor', 'axes.labelcolor', 'legend.edgecolor', 'colorbar.edgecolor',
         'tick.labelcolor', 'hatch.color', 'xtick.color', 'ytick.color'
     ),
     'text.labelsize': (  # the 'small' fonts
@@ -1105,6 +1130,8 @@ _rc_aliases = {
     'font.name': 'font.family',
     'grid.below': 'axes.axisbelow',
     'title.pad': 'axes.titlepad',
+    'grid.labelpad': 'grid.pad',
+    'tick.labelpad': 'tick.pad',
 }
 for key, value in _rc_aliases.items():
     _rc_children[key] = (value,)

@@ -19,8 +19,8 @@ def _default_space(key, share=0, pad=None):
     Return suitable default spacing given a shared axes setting.
     """
     # Pull out sizes
-    outerpad = _not_none(pad, rc['subplots.outerpad'])
-    innerpad = _not_none(pad, rc['subplots.innerpad'])
+    outerpad = units(_not_none(pad, rc['subplots.outerpad']), 'em', 'in')
+    innerpad = units(_not_none(pad, rc['subplots.innerpad']), 'em', 'in')
     xtick = rc['xtick.major.size']
     ytick = rc['ytick.major.size']
     xtickpad = rc['xtick.major.pad']
@@ -33,21 +33,21 @@ def _default_space(key, share=0, pad=None):
 
     # Get suitable size for various spaces
     if key == 'left':
-        space = units(outerpad) + (ytick + yticklabel + ytickpad + label) / 72
+        space = outerpad + (ytick + yticklabel + ytickpad + label) / 72
     elif key == 'right':
-        space = units(outerpad)
+        space = outerpad
     elif key == 'bottom':
-        space = units(outerpad) + (xtick + xticklabel + xtickpad + label) / 72
+        space = outerpad + (xtick + xticklabel + xtickpad + label) / 72
     elif key == 'top':
-        space = units(outerpad) + (title + titlepad) / 72
+        space = outerpad + (title + titlepad) / 72
     elif key == 'wspace':
-        space = units(innerpad) + ytick / 72
+        space = innerpad + ytick / 72
         if share < 3:
             space += (yticklabel + ytickpad) / 72
         if share < 1:
             space += label / 72
     elif key == 'hspace':
-        space = units(innerpad) + (title + titlepad + xtick) / 72
+        space = innerpad + (title + titlepad + xtick) / 72
         if share < 3:
             space += (xticklabel + xtickpad) / 72
         if share < 0:
@@ -60,9 +60,9 @@ def _default_space(key, share=0, pad=None):
 
 def _calc_geometry(**kwargs):
     """
-    Save arguments passed to `~proplot.ui.subplots`, calculates
-    gridspec settings and figure size necessary for requested geometry, and
-    returns keyword args necessary to reconstruct and modify this
+    Save arguments passed to `~proplot.ui.subplots`, calculate gridspec
+    settings and figure size necessary for requested geometry, and
+    return keyword args necessary to reconstruct and modify this
     configuration. Note that `wspace`, `hspace`, `left`, `right`, `top`, and
     `bottom` always have fixed physical units, then we scale figure width,
     figure height, and width and height ratios to accommodate spaces.
@@ -77,76 +77,65 @@ def _calc_geometry(**kwargs):
     nrows, ncols = kwargs['nrows'], kwargs['ncols']
 
     # Gridspec settings
+    wpad, hpad = kwargs['wpad'], kwargs['hpad']
     wspace, hspace = kwargs['wspace'], kwargs['hspace']
     wratios, hratios = kwargs['wratios'], kwargs['hratios']
     left, bottom = kwargs['left'], kwargs['bottom']
     right, top = kwargs['right'], kwargs['top']
-    wequal, hequal, equal = kwargs['wequal'], kwargs['hequal'], kwargs['equal']
+    wequal, hequal = kwargs['wequal'], kwargs['hequal']
 
-    # Panel string toggles, lists containing empty strings '' (indicating a
-    # main axes), or one of 'l', 'r', 'b', 't' (indicating axes panels) or
-    # 'f' (indicating figure panels)
+    # Panel string toggles, lists containing empty strings '' (indicating main axes),
+    # or one of 'l', 'r', 'b', 't' (indicating axes panels) or 'f' (figure panels)
     wpanels, hpanels = kwargs['wpanels'], kwargs['hpanels']
 
-    # Checks, important now that we modify gridspec geometry
-    if len(hratios) != nrows:
-        raise ValueError(
-            f'Expected {nrows} width ratios for {nrows} rows, '
-            f'got {len(hratios)}.'
-        )
-    if len(wratios) != ncols:
-        raise ValueError(
-            f'Expected {ncols} width ratios for {ncols} columns, '
-            f'got {len(wratios)}.'
-        )
-    if len(hspace) != nrows - 1:
-        raise ValueError(
-            f'Expected {nrows - 1} hspaces for {nrows} rows, '
-            f'got {len(hspace)}.'
-        )
-    if len(wspace) != ncols - 1:
-        raise ValueError(
-            f'Expected {ncols - 1} wspaces for {ncols} columns, '
-            f'got {len(wspace)}.'
-        )
-    if len(hpanels) != nrows:
-        raise ValueError(
-            f'Expected {nrows} hpanel toggles for {nrows} rows, '
-            f'got {len(hpanels)}.'
-        )
-    if len(wpanels) != ncols:
-        raise ValueError(
-            f'Expected {ncols} wpanel toggles for {ncols} columns, '
-            f'got {len(wpanels)}.'
-        )
+    # Check lengths, important now that we modify gridspec geometry
+    # NOTE: We do not need to touch 'pad' here
+    def _check_length(value, *, n, descrip):
+        if len(value) != n:
+            raise ValueError(f'Expected {n} {descrip}, got {len(value)}.')
+    _check_length(wpad, n=ncols - 1, descrip='width pads')
+    _check_length(hpad, n=nrows - 1, descrip='height pads')
+    _check_length(wspace, n=ncols - 1, descrip='width spaces')
+    _check_length(hspace, n=nrows - 1, descrip='height spaces')
+    _check_length(wratios, n=ncols, descrip='width ratios')
+    _check_length(hratios, n=nrows, descrip='height ratios')
+    _check_length(wpanels, n=ncols, descrip='column panel indicators')
+    _check_length(hpanels, n=nrows, descrip='row panel indicators')
 
     # Get indices corresponding to main axes or main axes space slots
-    idxs_ratios, idxs_space = [], []
-    for panels in (hpanels, wpanels):
+    idx_ratios, idx_spaces = {}, {}
+    for key, panels in zip('wh', (wpanels, hpanels)):
         # Ratio indices
-        mask = np.array([bool(s) for s in panels])
-        ratio_idxs, = np.where(~mask)
-        idxs_ratios.append(ratio_idxs)
+        idx_ratios[key] = [i for i, s in enumerate(panels) if not s]
         # Space indices
-        space_idxs = []
-        for idx in ratio_idxs[:-1]:  # exclude last axes slot
-            offset = 1
-            while panels[idx + offset] not in 'rbf':  # main space next to this
-                offset += 1
-            space_idxs.append(idx + offset - 1)
-        idxs_space.append(space_idxs)
+        idx_spaces[key] = [
+            i for i in range(len(panels) - 1)
+            if not (panels[i] == 'f' and panels[i + 1] == 'f')
+            and not (panels[i] in ('l', 't') and panels[i + 1] in ('l', 't', ''))
+            and not (panels[i] in ('r', 'b', '') and panels[i + 1] in ('r', 'b'))
+        ]
 
     # Separate the panel and axes ratios
-    hratios_main = [hratios[idx] for idx in idxs_ratios[0]]
-    wratios_main = [wratios[idx] for idx in idxs_ratios[1]]
-    hratios_panels = [r for idx, r in enumerate(hratios) if idx not in idxs_ratios[0]]
-    wratios_panels = [r for idx, r in enumerate(wratios) if idx not in idxs_ratios[1]]
-    hspace_main = [hspace[idx] for idx in idxs_space[0]]
-    wspace_main = [wspace[idx] for idx in idxs_space[1]]
+    wspace_main = [wspace[i] for i in idx_spaces['w']]
+    hspace_main = [hspace[i] for i in idx_spaces['h']]
+    wratios_main = [wratios[i] for i in idx_ratios['w']]
+    hratios_main = [hratios[i] for i in idx_ratios['h']]
+    wratios_panels = [r for i, r in enumerate(wratios) if i not in idx_ratios['w']]
+    hratios_panels = [r for i, r in enumerate(hratios) if i not in idx_ratios['h']]
 
-    # Reduced geometry
-    nrows_main = len(hratios_main)
+    # Geometry and space corrections
     ncols_main = len(wratios_main)
+    nrows_main = len(hratios_main)
+    if wequal and wspace_main:
+        space = max(wspace_main)
+        for i in idx_spaces['w']:
+            wspace[i] = space
+        wspace_main = [space] * len(wspace_main)
+    if hequal and hspace_main:
+        space = max(hspace_main)
+        for i in idx_spaces['h']:
+            hspace[i] = space
+        hspace_main = [space] * len(hspace_main)
 
     # Get reference properties, account for panel slots in space and ratios
     # TODO: Shouldn't panel space be included in these calculations?
@@ -171,7 +160,7 @@ def _calc_geometry(**kwargs):
     auto_height = figheight is None and figwidth is not None
     if figwidth is None and figheight is None:  # get stuff directly from axes
         if refwidth is None and refheight is None:
-            refwidth = units(rc['subplots.refwidth'])
+            refwidth = units(rc['subplots.refwidth'], 'in')
         if refheight is not None:
             auto_width = True
             refheight_all = (nrows_main * (refheight - rhspace)) / (dy * rhratio)
@@ -200,13 +189,13 @@ def _calc_geometry(**kwargs):
         refwidth_all = (ncols_main * (refwidth - rwspace)) / (dx * rwratio)
         figwidth = refwidth_all + left + right + sum(wspace) + sum(wratios_panels)
     if refwidth_all < 0:
-        raise ValueError(
+        raise RuntimeError(
             f'Not enough room for axes (would have width {refwidth_all}). '
             'Try using tight=False, increasing figure width, or decreasing '
             "'left', 'right', or 'wspace' spaces."
         )
     if refheight_all < 0:
-        raise ValueError(
+        raise RuntimeError(
             f'Not enough room for axes (would have height {refheight_all}). '
             'Try using tight=False, increasing figure height, or decreasing '
             "'top', 'bottom', or 'hspace' spaces."
@@ -216,24 +205,16 @@ def _calc_geometry(**kwargs):
     # The panel slots are unchanged because panels have fixed widths
     wratios_main = refwidth_all * np.array(wratios_main) / sum(wratios_main)
     hratios_main = refheight_all * np.array(hratios_main) / sum(hratios_main)
-    for idx, ratio in zip(idxs_ratios[0], hratios_main):
-        hratios[idx] = ratio
-    for idx, ratio in zip(idxs_ratios[1], wratios_main):
+    for idx, ratio in zip(idx_ratios['w'], wratios_main):
         wratios[idx] = ratio
+    for idx, ratio in zip(idx_ratios['h'], hratios_main):
+        hratios[idx] = ratio
 
     # Convert margins to figure-relative coordinates
     left = left / figwidth
     bottom = bottom / figheight
     right = 1 - right / figwidth
     top = 1 - top / figheight
-
-    # Constant spacing corrections
-    if equal:  # do both
-        wequal = hequal = True
-    if wequal:
-        wspace = [max(wspace) for _ in wspace]
-    if hequal:
-        hspace = [max(hspace) for _ in hspace]
 
     # Return gridspec keyword args
     gridspec_kw = {

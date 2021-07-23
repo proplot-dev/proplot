@@ -89,6 +89,34 @@ ProPlot v0.8.0 (2021-##-##)
 
 .. rubric:: Features
 
+* Add ``pad`` keyword to ``legend``, ``colorbar``, and ``panel`` that controls
+  tight layout padding, analogous to ``space`` (:pr:`###`).
+* Fix ``wequal`` and ``hequal`` so they only work between main subplot
+  rows and columns instead of panels.
+* Allow variable tight layout padding between subplot panels using ``wpad`` and
+  ``hpad``, analogous to ``wspace`` and ``hspace`` (:pr:`###`).
+* Support XDG directories for proplot configuration files, emit
+  warnings if multiple paths found (:issue:`###`).
+* Add public `~proplot.config.RcConfigurator.user_file` and
+  `~proplot.config.RcConfigurator.user_folder` methods for displaying
+  folder locations (:commit:`b11d744a`).
+* Add :rcraw:`colorbar.facecolor` and :rcraw:`colorbar.edgecolor` properties
+  analogous to legend properties for controlling frame (:pr:`264`).
+* Allow list-of-list "centered row" ``legend`` specification with e.g.
+  ``[h, [h1, h2, h3]]`` (i.e., mixed list and non-list input) (:pr:`264`).
+* Permit partial specification of labels with "centered rows", e.g.
+  ``labels=['label', None]`` can be combined with the above (:pr:`264`).
+* Treat singleton lists and tuple ``legend`` input same as scalar
+  handle input, i.e. never triggers "centered row" specification (:pr:`264`).
+* Silently ignore non-artist and non-container input -- e.g., ignore the bins
+  and values returned by ``hist`` (:pr:`264`).
+* Support auto-detection of tuple-grouped legend handle labels when labels
+  not passed explicitly (:pr:`264`).
+* Automatically pull out grouped tuples of artists if they have differing ``label``\ s
+  (:pr:`264`). This is convenient for passing error indications to ``legend``.
+* Support more artist synonyms throughout plotting overrides, e.g. ``ec``
+  for ``edgecolor``, ``lw`` for ``linewidth``, ``fc`` and ``fillcolor`` for
+  ``facecolor`` (:pr:`264`). This expands matplotlib synonyms.
 * Support list-of-strings parametric coordinate and format on-the-fly colorbar ticks
   with those string labels (:commit:`02fbda45`).
 * Add new :rcraw:`leftlabel.rotation`, :rcraw:`toplabel.rotation`,

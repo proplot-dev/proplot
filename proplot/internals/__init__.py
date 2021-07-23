@@ -20,20 +20,21 @@ except ImportError:  # graceful fallback if IceCream isn't installed
 # Aliases. This package only works with a subset of available artists
 # and keywords so we simply create our own system rather than working
 # with matplotlib's normalize_kwargs and _alias_maps.
+# NOTE: Add 'edgewidth' for patch edges and 'fillcolor' for patch face color
 ALIASES = {
-    'hsla': {
-        'hue': ('h',),
-        'saturation': ('s', 'c', 'chroma'),
-        'luminance': ('l',),
-        'alpha': ('a',),
-    },
     'rgba': {
         'red': ('r',),
         'green': ('g',),
         'blue': ('b',),
         'alpha': ('a',),
     },
-    'lines': {  # copied from lines.py but expanded to include plurals
+    'hsla': {
+        'hue': ('h',),
+        'saturation': ('s', 'c', 'chroma'),
+        'luminance': ('l',),
+        'alpha': ('a',),
+    },
+    'line': {  # copied from lines.py but expanded to include plurals
         'antialiased': ('aa',),
         'alpha': ('a', 'alphas'),
         'color': ('c', 'colors'),
@@ -46,46 +47,36 @@ ALIASES = {
         'markeredgecolor': ('mec', 'markeredgecolors'),
         'markeredgewidth': ('mew', 'markeredgewidths'),
         'markerfacecolor': ('mfc', 'markerfacecolors'),
+        'zorder': ('z', 'zorders'),
     },
-    'fills': {
-        'linewidths': ('lw', 'linewidth'),
-        'linestyles': ('ls', 'linestyle'),
+    'collection': {  # WARNING: face color gets ignored for line collections
+        'alphas': ('a', 'alphas'),
         'colors': ('c', 'color', 'ec', 'edgecolor', 'edgecolors'),
-    }
+        'facecolors': ('fc', 'facecolors', 'fillcolor', 'fillcolors'),
+        'linewidths': ('lw', 'linewidth', 'ew', 'edgewidth', 'edgewidths'),
+        'linestyles': ('ls', 'linestyle'),
+        'zorder': ('z', 'zorders'),
+    },
+    'patch': {  # TODO: remove breaking change where 'color' refers to 'edge'
+        'alpha': ('a', 'alphas', 'facealpha', 'facealphas', 'fillalpha', 'fillalphas'),
+        'facecolor': ('fc', 'facecolors', 'fillcolor', 'fillcolors'),
+        'edgecolor': ('ec', 'edgecolors', 'c', 'color', 'colors'),
+        'linewidth': ('lw', 'linewidths', 'ew', 'edgewidth', 'edgewidths'),
+        'linestyle': ('ls', 'linestyles'),
+        'zorder': ('z', 'zorders'),
+    },
+    'text': {
+        'color': ('c', 'fontcolor'),  # NOTE: see text.py source code
+        'fontfamily': ('family',),
+        'fontname': ('name',),
+        'fontsize': ('size',),
+        'fontstretch': ('stretch',),
+        'fontstyle': ('style',),
+        'fontvariant': ('variant',),
+        'fontweight': ('weight',),
+        'fontproperties': ('fp', 'font', 'font_properties'),
+    },
 }
-
-
-def _getattr_flexible(obj, attr, default=None):
-    """
-    Search for attribute ``attr`` and ``_attr``. This crudely guards against
-    upstream matplotlib changes.
-    """
-    if hasattr(obj, attr) and hasattr(obj, '_' + attr):
-        warnings._warn_proplot(
-            f"Object {obj!r} has both {attr!r} and {'_' + attr!r} attributes."
-            'Using former.'
-        )
-    return getattr(obj, attr, getattr(obj, '_' + attr, default))
-
-
-def _pop_props(kwargs, *categories):
-    """
-    Pop out properties from category `category` after accounting for
-    aliases. Return a dictionary of the non-None property values. This
-    modifies the input `kwargs` dictionary in-place.
-    """
-    props = {}
-    for category in categories:
-        if category not in ALIASES:
-            raise ValueError(f'Invalid alias category {category!r}.')
-        for key, aliases in ALIASES[category].items():
-            if isinstance(aliases, str):
-                aliases = (aliases,)
-            opts = {alias: kwargs.pop(alias, None) for alias in (key, *aliases)}
-            prop = _not_none(**opts)
-            if prop is not None:
-                props[key] = prop
-    return props
 
 
 def _not_none(*args, default=None, **kwargs):
@@ -116,7 +107,89 @@ def _not_none(*args, default=None, **kwargs):
     return first
 
 
-class _dummy_context(object):
+def _translate_kwargs(input, output, *keys, **aliases):
+    """
+    Driver function.
+    """
+    aliases.update({key: () for key in keys})
+    for key, aliases in aliases.items():
+        aliases = (aliases,) if isinstance(aliases, str) else aliases
+        opts = {key: input.pop(key, None) for key in (key, *aliases)}
+        value = _not_none(**opts)
+        if value is not None:
+            output[key] = value
+    return output
+
+
+def _translate_props(input, output, *categories, prefix=None, ignore=None):
+    """
+    Driver function.
+    """
+    # Get properties
+    prefix = prefix or ''  # e.g. 'box' for boxlw, boxlinewidth, etc.
+    for category in categories:
+        if category not in ALIASES:
+            raise ValueError(f'Invalid alias category {category!r}.')
+        for key, aliases in ALIASES[category].items():
+            if isinstance(aliases, str):
+                aliases = (aliases,)
+            opts = {prefix + alias: input.pop(prefix + alias, None) for alias in (key, *aliases)}  # noqa: E501
+            prop = _not_none(**opts)
+            if prop is not None:
+                output[key] = prop
+    # Ignore properties (e.g., ignore 'marker' properties)
+    ignore = ignore or ()
+    if isinstance(ignore, str):
+        ignore = (ignore,)
+    for string in ignore:
+        for key in tuple(output):
+            if string in key:
+                value = output.pop(key)
+                warnings._warn_proplot(f'Ignoring property {key}={value!r}.')
+    return output
+
+
+def _pop_kwargs(src, *keys, **aliases):
+    """
+    Pop out input properties and return them in a new dictionary.
+    """
+    return _translate_kwargs(src, {}, *keys, **aliases)
+
+
+def _process_kwargs(src, *keys, **aliases):
+    """
+    Translate input properties and add translated names to the original dictionary.
+    """
+    return _translate_kwargs(src, src, *keys, **aliases)
+
+
+def _pop_props(src, *categories, **kwargs):
+    """
+    Pop out registered properties and return them in a new dictionary.
+    """
+    return _translate_props(src, {}, *categories, **kwargs)
+
+
+def _process_props(src, *categories, **kwargs):
+    """
+    Translate registered properties and add translated names to the original dictionary.
+    """
+    return _translate_props(src, src, *categories, **kwargs)
+
+
+def _getattr_flexible(obj, attr, default=None):
+    """
+    Search for attribute ``attr`` and ``_attr``. This crudely guards against
+    upstream matplotlib changes.
+    """
+    if hasattr(obj, attr) and hasattr(obj, '_' + attr):
+        warnings._warn_proplot(
+            f"{obj!r} has both {attr!r} and {'_' + attr!r} attributes. Using former."
+        )
+    return getattr(obj, attr, getattr(obj, '_' + attr, default))
+
+
+class _empty_context(object):
     """
     Dummy context manager.
     """
@@ -167,7 +240,7 @@ class _version(list):
             major, minor = int(major), int(minor)
         except (ValueError, AttributeError):
             warnings._warn_proplot(
-                f"Invalid version {version!r}. Defaulting to '0.0'."
+                f"Invalid version {version!r}. Setting to '0.0'."
             )
             major = minor = 0
         self._version = version

@@ -12,7 +12,7 @@ from matplotlib import rcParams
 
 from .externals import hsluv
 from .internals import ic  # noqa: F401
-from .internals import docstring, warnings
+from .internals import _not_none, docstring, warnings
 
 __all__ = [
     'arange',
@@ -44,12 +44,23 @@ UNIT_DICT = {
     'dm': 3.937,
     'cm': 0.3937,
     'mm': 0.03937,
-    'pt': 1 / 72.0,
     'pc': 1 / 6.0,
+    'pt': 1 / 72.0,
     'ly': 3.725e+17,
 }
 
-# Shared parameters
+
+# Unit docstrings
+_units_docstring = (
+    'If float, units are {units}. '
+    'If string, units are interpreted by `~proplot.utils.units`.'
+)
+docstring.snippets['units.pt'] = _units_docstring.format(units='points')
+docstring.snippets['units.in'] = _units_docstring.format(units='inches')
+docstring.snippets['units.em'] = _units_docstring.format(units='font size-relative')
+
+
+# Color docstrings
 docstring.snippets['param.rgba'] = """
 color : color-spec
     The color. Sanitized with `to_rgba`.
@@ -75,8 +86,6 @@ space : {'hcl', 'hpl', 'hsl', 'hsv'}, optional
     The hue-saturation-luminance-like colorspace used to transform the color.
     Default is the perceptually uniform colorspace ``'hcl'``.
 """
-
-# Shared return values
 docstring.snippets['return.hex'] = """
 color : str
     A HEX string.
@@ -655,7 +664,9 @@ def to_xyza(color, space='hcl'):
 
 
 @warnings._rename_kwargs('0.6', units='dest')
-def units(value, dest='in', axes=None, figure=None, width=True):
+def units(
+    value, numeric='in', dest=None, *, axes=None, figure=None, width=True, fontsize=None
+):
     """
     Convert values and lists of values between arbitrary physical units. This
     is used internally all over ProPlot, permitting flexible units for various
@@ -664,10 +675,11 @@ def units(value, dest='in', axes=None, figure=None, width=True):
     Parameters
     ----------
     value : float or str or list thereof
-        A size specifier or *list thereof*. If numeric, nothing is done.
-        If string, it is converted to the units `dest`. The string should look
-        like ``'123.456unit'``, where the number is the magnitude and
-        ``'unit'`` is one of the following.
+        A size specifier or *list thereof*. If numeric, units are converted from
+        `numeric` to `dest`. If string, units are converted to `dest` according
+        to the string specifier. The string should look like ``'123.456unit'``,
+        where the number is the magnitude and ``'unit'`` matches a key in
+        the below table.
 
         .. _units_table ::
 
@@ -681,8 +693,8 @@ def units(value, dest='in', axes=None, figure=None, width=True):
         ``'yd'``   Yards
         ``'ft'``   Feet
         ``'in'``   Inches
-        ``'pt'``   `Points <pt_>`_ (1/72 inches)
         ``'pc'``   `Pica <pc_>`_ (1/6 inches)
+        ``'pt'``   `Points <pt_>`_ (1/72 inches)
         ``'px'``   Pixels on screen, using dpi of :rcraw:`figure.dpi`
         ``'pp'``   Pixels once printed, using dpi of :rcraw:`savefig.dpi`
         ``'em'``   `Em square <em_>`_ for :rcraw:`font.size`
@@ -699,23 +711,29 @@ def units(value, dest='in', axes=None, figure=None, width=True):
         .. _em: https://en.wikipedia.org/wiki/Em_(typography)
         .. _en: https://en.wikipedia.org/wiki/En_(typography)
 
+    numeric : str, optional
+        How to interpret numeric units. Default is inches.
     dest : str, optional
-        The destination units. Default is inches, i.e. ``'in'``.
+        The destination units. Default is the same as `numeric`.
     axes : `~matplotlib.axes.Axes`, optional
         The axes to use for scaling units that look like ``'0.1ax'``.
     figure : `~matplotlib.figure.Figure`, optional
-        The figure to use for scaling units that look like ``'0.1fig'``. If
-        ``None`` we try to get the figure from ``axes.figure``.
+        The figure to use for scaling units that look like ``'0.1fig'``.
+        If ``None`` we try to get the figure from ``axes.figure``.
     width : bool, optional
-        Whether to use the width or height for the axes and figure relative
-        coordinates.
+        Whether to use the width or height for the axes and figure
+        relative coordinates.
+    fontsize : size-spec, optional
+        The font size in points used for scaling. Default is
+        :rcraw:`font.size` for ``em`` and ``en`` units and
+        :rcraw:`axes.titlesize` for ``Em`` and ``En`` units.
     """
     # Font unit scales
     # NOTE: Delay font_manager import, because want to avoid rebuilding font
     # cache, which means import must come after TTFPATH added to environ
     # by register_fonts()!
-    fontsize_small = rcParams['font.size']  # must be absolute
-    fontsize_large = rcParams['axes.titlesize']
+    fontsize_small = _not_none(fontsize, rcParams['font.size'])  # must be absolute
+    fontsize_large = _not_none(fontsize, rcParams['axes.titlesize'])
     if isinstance(fontsize_large, str):
         scale = mfonts.font_scalings.get(fontsize_large, 1)
         fontsize_large = fontsize_small * scale
@@ -743,47 +761,41 @@ def units(value, dest='in', axes=None, figure=None, width=True):
         unit_dict['ax'] = axes.get_size_inches()[1 - int(width)]
     if figure is None:
         figure = getattr(axes, 'figure', None)
-    if figure is not None and hasattr(
-            figure, 'get_size_inches'):  # proplot axes
+    if figure is not None and hasattr(figure, 'get_size_inches'):
         unit_dict['fig'] = figure.get_size_inches()[1 - int(width)]
 
     # Scale for converting inches to arbitrary other unit
+    dest = _not_none(dest, numeric)
+    suffix = 'Valid units are ' + ', '.join(map(repr, unit_dict)) + '.'
     try:
-        scale = unit_dict[dest]
+        nscale = unit_dict[numeric]
     except KeyError:
-        raise ValueError(
-            f'Invalid destination units {dest!r}. Valid units are '
-            + ', '.join(map(repr, unit_dict.keys())) + '.'
-        )
+        raise ValueError(f'Invalid numeric units {numeric!r}. ' + suffix)
+    try:
+        dscale = unit_dict[dest]
+    except KeyError:
+        raise ValueError(f'Invalid destination units {dest!r}. ' + suffix)
 
     # Convert units for each value in list
     result = []
     singleton = not np.iterable(value) or isinstance(value, str)
     for val in ((value,) if singleton else value):
-        if val is None or isinstance(val, Number):
+        if val is None:
             result.append(val)
             continue
-        elif not isinstance(val, str):
-            raise ValueError(
-                f'Size spec must be string or number or list thereof. '
-                f'Got {value!r}.'
-            )
+        if isinstance(val, Number):
+            result.append(val * nscale / dscale)
+            continue
+        if not isinstance(val, str):
+            raise ValueError(f'Invalid size spec {val!r}. Must be string or number.')
         regex = NUMBER.match(val)
         if not regex:
-            raise ValueError(
-                f'Invalid size spec {val!r}. Valid units are '
-                + ', '.join(map(repr, unit_dict.keys())) + '.'
-            )
+            raise ValueError(f'Invalid size spec {val!r}. ' + suffix)
         number, units = regex.groups()  # second group is exponential
         try:
-            result.append(
-                float(number) * (unit_dict[units] / scale if units else 1)
-            )
+            result.append(float(number) * (unit_dict[units] / dscale if units else 1))
         except (KeyError, ValueError):
-            raise ValueError(
-                f'Invalid size spec {val!r}. Valid units are '
-                + ', '.join(map(repr, unit_dict.keys())) + '.'
-            )
+            raise ValueError(f'Invalid size spec {val!r}. ' + suffix)
     if singleton:
         result = result[0]
     return result

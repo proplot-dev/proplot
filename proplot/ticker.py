@@ -11,7 +11,7 @@ import matplotlib.ticker as mticker
 import numpy as np
 
 from .internals import ic  # noqa: F401
-from .internals import _dummy_context, _not_none, _state_context, docstring
+from .internals import _empty_context, _not_none, _state_context, docstring
 
 try:
     import cartopy.crs as ccrs
@@ -173,10 +173,10 @@ class _CartopyFormatter(object):
         super().__init__(*args, **kwargs)
 
     def __call__(self, value, pos=None):
-        if self.axis is not None:
-            context = _state_context(self.axis.axes, projection=ccrs.PlateCarree())
+        if self.axis is None:
+            context = _empty_context()
         else:
-            context = _dummy_context()
+            context = _state_context(self.axis.axes, projection=ccrs.PlateCarree())
         with context:
             return super().__call__(value, pos)
 

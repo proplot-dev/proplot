@@ -13,7 +13,7 @@ from . import colors as pcolors
 from . import constructor, ui
 from .config import COLORS_BASE, COLORS_OPEN, COLORS_XKCD, _get_data_folders, rc
 from .internals import ic  # noqa: F401
-from .internals import _not_none, docstring
+from .internals import _not_none, docstring, warnings
 from .utils import to_rgb, to_xyz
 
 __all__ = [
@@ -50,6 +50,9 @@ CMAPS_TABLE = {
     ),
     'Seaborn diverging': (
         'IceFire', 'Vlag',
+    ),
+    'Other sequential': (
+        'cubehelix',
     ),
     'ProPlot sequential': (
         'Fire',
@@ -138,7 +141,7 @@ CMAPS_TABLE = {
     ),
     'Other': (
         'binary', 'bwr', 'brg',  # appear to be custom matplotlib
-        'cubehelix', 'Wistia', 'CMRmap',  # individually released
+        'Wistia', 'CMRmap',  # individually released
         'seismic', 'terrain', 'nipy_spectral',  # origin ambiguous
         'tab10', 'tab20', 'tab20b', 'tab20c',  # merged colormap cycles
     )
@@ -238,7 +241,7 @@ def show_channels(
         labels += ('Red', 'Green', 'Blue')
     fig, axs = ui.subplots(
         array=array, refwidth=refwidth, wratios=(1.5, 1, 1, 1, 1, 1.5),
-        share=1, span=False, innerpad='1em',
+        share=1, span=False, innerpad=1,
     )
     # Iterate through colormaps
     mc = ms = mp = 0
@@ -384,7 +387,7 @@ def show_colorspaces(*, luminance=None, saturation=None, hue=None, refwidth=2):
 
     # Make figure, with black indicating invalid values
     # Note we invert the x-y ordering for imshow
-    fig, axs = ui.subplots(ncols=3, share=0, refwidth=refwidth, innerpad=0.05)
+    fig, axs = ui.subplots(ncols=3, share=0, refwidth=refwidth, innerpad=0.5)
     for ax, space in zip(axs, ('hcl', 'hsl', 'hpl')):
         rgba = np.ones((*hsl.shape[:2][::-1], 4))  # RGBA
         for j in range(hsl.shape[0]):
@@ -404,8 +407,9 @@ def show_colorspaces(*, luminance=None, saturation=None, hue=None, refwidth=2):
     return fig, axs
 
 
+@warnings._rename_kwargs('0.8', categories='include')
 def _draw_bars(
-    cmaps, *, source, unknown='User', categories=None,
+    cmaps, *, source, unknown='User', include=None, ignore=None,
     length=4.0, width=0.2, N=None
 ):
     """
@@ -453,17 +457,22 @@ def _draw_bars(
             cmapdict[cat] = names_cat
 
     # Filter out certain categories
-    if categories is None:
-        categories = source.keys() - {'MATLAB', 'GNUplot', 'GIST', 'Other'}
-    if isinstance(categories, str):
-        categories = (categories,)
-    if any(cat not in source and cat != unknown for cat in categories):
+    options = set(map(str.lower, source))
+    if ignore is None:
+        ignore = ('matlab', 'gnuplot', 'gist', 'other')
+    if isinstance(include, str):
+        include = (include.lower(),)
+    if isinstance(ignore, str):
+        ignore = (ignore.lower(),)
+    if include is None:
+        include = options - set(map(str.lower, ignore))
+    if any(cat not in options and cat != unknown for cat in include):
         raise ValueError(
-            f'Invalid categories {categories!r}. Options are: '
+            f'Invalid categories {include!r}. Options are: '
             + ', '.join(map(repr, source)) + '.'
         )
-    for cat in (*cmapdict,):
-        if cat not in categories and cat != unknown:
+    for cat in tuple(cmapdict):
+        if cat.lower() not in include and cat != unknown:
             cmapdict.pop(cat)
 
     # Draw figure
@@ -499,6 +508,7 @@ def _draw_bars(
             if imap == 0:
                 ax.set_title(cat, weight='bold')
         nbars += len(names)
+
     return fig, axs
 
 
@@ -520,14 +530,14 @@ def show_cmaps(*args, **kwargs):
         Category name for colormaps that are unknown to ProPlot. The
         default is ``'User'``. Set this to ``False`` to hide
         unknown colormaps.
-    categories : str or list of str, optional
-        Category names to be shown in the table.  By default, all categories
-        are shown except for ``'MATLAB'``, ``'GNUplot'``, ``'GIST'``, and
-        ``'Other'``. Use of these colormaps is discouraged, because they
-        contain a variety of non-uniform colormaps (see
-        :ref:`perceptually uniform colormaps <ug_perceptual>` for details).
-
-        Valid categories are %(cmap.categories)s.
+    include : str or list of str, optional
+        Category names to be shown in the table. Use this to limit the table
+        to a subset of categories. Valid categories are %(cmap.categories)s.
+    ignore : str or list of str, optional
+        Used only if `include` was not passed. Category names to be removed from the
+        table. Default is ``'MATLAB'``, ``'GNUplot'``, ``'GIST'``, and ``'Other'``.
+        Use of these colormaps is discouraged, because they contain non-uniform color
+        transitions (see the :ref:`user guide <ug_perceptual>`).
     %(show.colorbars)s
 
     Returns
@@ -544,17 +554,20 @@ def show_cmaps(*args, **kwargs):
     show_fonts
     """
     # Get the list of colormaps
+    # TODO: Filter out colormaps ending with '_copy' and '_r'?
     if args:
         cmaps = [constructor.Colormap(cmap) for cmap in args]
+        ignore = ()
     else:
         cmaps = [
             name for name, cmap in pcolors._cmap_database.items()
             if isinstance(cmap, pcolors.LinearSegmentedColormap)
-            # and not name.endswith('_copy') and not name.endswith('_r')
         ]
+        ignore = None
 
     # Return figure of colorbars
     kwargs.setdefault('source', CMAPS_TABLE)
+    kwargs.setdefault('ignore', ignore)
     return _draw_bars(cmaps, **kwargs)
 
 
@@ -570,14 +583,14 @@ def show_cycles(*args, **kwargs):
     *args : colormap-spec, optional
         Cycle names or objects.
     unknown : str, optional
-        Category name for cycles that are unknown to ProPlot. The
-        default is ``'User'``. Set this to ``False`` to hide
-        unknown colormaps.
-    categories : str or list of str, optional
-        Category names to be shown in the table.
-        By default, all categories are shown.
-
-        Valid categories are %(cycle.categories)s.
+        Category name for cycles that are unknown to ProPlot. The default
+        is ``'User'``. Set this to ``False`` to hide unknown colormaps.
+    include : str or list of str, optional
+        Category names to be shown in the table. Use this to limit the table
+        to a subset of categories. Valid categories are %(cycle.categories)s.
+    ignore : str or list of str, optional
+        Used only if `include` was not passed. Category names to be removed from
+        the table. Default is ``'MATLAB'``, ``'GNUplot'``, ``'GIST'``, and ``'Other'``.
     %(show.colorbars)s
 
     Returns
@@ -594,14 +607,17 @@ def show_cycles(*args, **kwargs):
     # Get the list of cycles
     if args:
         cycles = [constructor.Cycle(cmap, to_listed=True) for cmap in args]
+        ignore = ()
     else:
         cycles = [
             name for name, cmap in pcolors._cmap_database.items()
             if isinstance(cmap, pcolors.ListedColormap)
         ]
+        ignore = None
 
     # Return figure of colorbars
     kwargs.setdefault('source', CYCLES_TABLE)
+    kwargs.setdefault('ignore', ignore)
     return _draw_bars(cycles, **kwargs)
 
 
@@ -631,7 +647,9 @@ def _filter_colors(hcl, ihue, nhues, minsat):
 
 
 @docstring.add_snippets
-def show_colors(*, nhues=17, minsat=10, categories=None, unknown='User'):
+def show_colors(
+    *, nhues=17, minsat=10, unknown='User', include=None, ignore=None
+):
     """
     Generate tables of the registered color names. Adapted from
     `this example <https://matplotlib.org/examples/color/named_colors.html>`__.
@@ -644,15 +662,15 @@ def show_colors(*, nhues=17, minsat=10, categories=None, unknown='User'):
     minsat : float, optional
         The threshold saturation, between ``0`` and ``100``, for designating
         "gray colors" in the color table.
-    categories : str or list of str, optional
-        Category names to be shown in the table.
-        By default, every category is shown except for CSS colors.
-
-        Valid categories are %(color.categories)s.
     unknown : str, optional
-        Category name for color names that are unknown to ProPlot. The
-        default is ``'User'``. Set this to ``False`` to hide
-        unknown color names.
+        Category name for color names that are unknown to ProPlot. The default
+        is ``'User'``. Set this to ``False`` to hide unknown color names.
+    include : str or list of str, optional
+        Category names to be shown in the table. Use this to limti the table
+        to a subset of categories. Valid categories are %(color.categories)s.
+    ignore : str or list of str, optional
+        Used only if `include` was not passed. Category names to be removed
+        from the colormap table. Default is ``'CSS4'``.
 
     Returns
     -------
@@ -661,14 +679,19 @@ def show_colors(*, nhues=17, minsat=10, categories=None, unknown='User'):
     """
     # Tables of known colors to be plotted
     colordict = {}
-    if isinstance(categories, str):
-        categories = (categories,)
-    if categories is None:
-        categories = ('base', 'opencolor', 'xkcd')  # preserve order
-    for cat in categories:
+    if ignore is None:
+        ignore = 'css4'
+    if isinstance(include, str):
+        include = (include.lower(),)
+    if isinstance(ignore, str):
+        ignore = (ignore.lower(),)
+    if include is None:
+        include = COLORS_TABLE.keys()
+        include -= set(map(str.lower, ignore))
+    for cat in include:
         if cat not in COLORS_TABLE:
             raise ValueError(
-                f'Invalid categories {categories!r}. Options are: '
+                f'Invalid categories {include!r}. Options are: '
                 + ', '.join(map(repr, COLORS_TABLE)) + '.'
             )
         colordict[cat] = COLORS_TABLE[cat]
@@ -688,7 +711,7 @@ def show_colors(*, nhues=17, minsat=10, categories=None, unknown='User'):
     # colors, so just reshape them into grids. For other colors, we group
     # them by hue in descending order of luminance.
     namess = {}
-    for cat in categories:
+    for cat in include:
         if cat == 'base':
             names = np.asarray(colordict[cat]).reshape((2, 8)).T
         elif cat == 'opencolor':
@@ -726,7 +749,7 @@ def show_colors(*, nhues=17, minsat=10, categories=None, unknown='User'):
     maxcols = max(names.shape[0] for names in namess.values())
     hratios = tuple(names.shape[1] for names in namess.values())
     fig, axs = ui.subplots(
-        nrows=len(categories),
+        nrows=len(include),
         hratios=hratios,
         figwidth=figwidth,
         refaspect=refaspect,

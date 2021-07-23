@@ -999,13 +999,15 @@ class RcConfigurator(object):
         # Props matching the below strings use the units 'points'.
         # See: https://matplotlib.org/users/customizing.html
         # TODO: Incorporate into more sophisticated validation system
+        # NOTE: Ignores all proplot categories since we translate them before
+        # application wherever they are used.
         if REGEX_POINTS.match(key):
             if key in FONT_KEYS and value in mfonts.font_scalings:
                 pass
             elif key.startswith('legend') and not key.endswith('fontsize'):
                 value = units(value, 'em')  # scaled by font size
             else:
-                value = units(value, 'pt')  # untis points fontsize='10px'
+                value = units(value, 'pt')  # point units e.g. fontsize='10px'
 
         # Special key: configure inline backend
         if key == 'inlinefmt':
@@ -1187,20 +1189,19 @@ class RcConfigurator(object):
         """
         # NOTE: Critical this remains KeyError so except clause
         # in _get_synced_params works.
+        scalings = mfonts.font_scalings
         if not isinstance(size, str):
             return size
+        if size in mfonts.font_scalings:
+            return rc_matplotlib['font.size'] * scalings[size]
         try:
-            scale = mfonts.font_scalings[size]
-        except KeyError:
+            return units(size, 'pt')
+        except (TypeError, ValueError):
             raise KeyError(
                 f'Invalid font scaling {size!r}. Options are: '
-                + ', '.join(
-                    f'{key!r} ({value})'
-                    for key, value in mfonts.font_scalings.items()
-                ) + '.'
+                + ', '.join(f'{key!r} ({value})' for key, value in scalings.items())
+                + '.'
             )
-        else:
-            return rc_matplotlib['font.size'] * scale
 
     @staticmethod
     def local_files():
