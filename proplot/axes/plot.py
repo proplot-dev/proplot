@@ -682,7 +682,7 @@ def _parse_string_coords(*args, which='x', **kwargs):
         kwargs.setdefault(which + 'formatter', pticker._IndexFormatter(_to_ndarray(arg)))  # noqa: E501
         kwargs.setdefault(which + 'minorlocator', mticker.NullLocator())
         res.append(idx)
-    return *res, kwargs
+    return (*res, kwargs)
 
 
 def _auto_format_1d(
@@ -786,7 +786,7 @@ def _auto_format_1d(
     # WARNING: Most methods that accept 2D arrays use columns of data, but when
     # pandas DataFrame specifically is passed to hist, boxplot, or violinplot, rows
     # of data assumed! Converting to ndarray necessary.
-    return _to_ndarray(x), *map(_to_ndarray, ys), kwargs
+    return (_to_ndarray(x), *map(_to_ndarray, ys), kwargs)
 
 
 def _basemap_1d(x, *ys, projection=None):
@@ -799,7 +799,7 @@ def _basemap_1d(x, *ys, projection=None):
     for y_orig in ys_orig:
         x, y = _fix_span(*_fix_coords(x_orig, y_orig), xmin, xmax)
         ys.append(y)
-    return x, *ys
+    return (x, *ys)
 
 
 def _fix_coords(x, y):
@@ -1024,7 +1024,7 @@ def _auto_format_2d(self, x, y, *zs, name=None, order='C', autoformat=False, **k
             kwargs['colorbar_kw'].setdefault('label', title)
 
     # Finally strip metadata
-    return _to_ndarray(x), _to_ndarray(y), *map(_to_ndarray, zs), kwargs
+    return (_to_ndarray(x), _to_ndarray(y), *map(_to_ndarray, zs), kwargs)
 
 
 def _add_poles(y, z):
@@ -1133,7 +1133,7 @@ def _cartopy_2d(x, y, *zs, globe=False):
             z = ma.concatenate((z, z[:, :1]), axis=1)
         zs.append(z)
 
-    return x, y, *zs
+    return (x, y, *zs)
 
 
 def _basemap_2d(x, y, *zs, globe=False, projection=None):
@@ -1185,7 +1185,7 @@ def _basemap_2d(x, y, *zs, globe=False, projection=None):
         x, y = np.meshgrid(x, y)
     x, y = projection(x, y)
 
-    return x, y, *zs
+    return (x, y, *zs)
 
 
 @docstring.add_snippets
@@ -4209,7 +4209,7 @@ def _multiple_legend(
         self.add_artist(shadow)
 
     # Add patch to list
-    return patch, *legs
+    return (patch, *legs)
 
 
 def _single_legend(self, pairs, ncol=None, order=None, **kwargs):
