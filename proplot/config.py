@@ -1597,7 +1597,7 @@ class RcConfigurator(object):
             self.__setitem__(prefix + key, value)
 
     @docstring.add_snippets
-    def reset(self, local=True, user=True, default=True):
+    def reset(self, local=True, user=True, default=True, **kwargs):
         """
         Reset the configurator to its initial state.
 
@@ -1605,34 +1605,7 @@ class RcConfigurator(object):
         ----------
         %(rc.params)s
         """
-        # Always remove context objects
-        self._context.clear()
-
-        # Update from default settings
-        # NOTE: see _remove_blacklisted_style_params bugfix
-        if default:
-            rc_matplotlib.update(_get_style_dicts('original', filter=False))
-            rc_matplotlib.update(rcsetup._rc_matplotlib_default)
-            rc_proplot.update(rcsetup._rc_proplot_default)
-            for key, value in rc_proplot.items():
-                kw_proplot, kw_matplotlib = self._get_synced_params(key, value)
-                rc_matplotlib.update(kw_matplotlib)
-                rc_proplot.update(kw_proplot)
-
-        # Update from user home
-        user_path = None
-        if user:
-            user_path = self.user_file()
-            if os.path.isfile(user_path):
-                self.load_file(user_path)
-
-        # Update from local paths
-        if local:
-            local_paths = self.local_files()
-            for path in local_paths:
-                if path == user_path:  # local files always have precedence
-                    continue
-                self.load_file(path)
+        self._init(local=local, user=user, default=default, **kwargs)
 
     def _load_file(self, path):
         """
@@ -1643,69 +1616,56 @@ class RcConfigurator(object):
         kw_proplot = {}
         kw_matplotlib = {}
         with open(path, 'r') as fh:
-            for cnt, line in enumerate(fh):
-                # Parse line and ignore comments
+            for idx, line in enumerate(fh):
+                # Strip comments
+                message = f'line #{idx + 1} in file {path!r}'
                 stripped = line.split('#', 1)[0].strip()
                 if not stripped:
+                    pass  # no warning
                     continue
+                # Parse the pair
                 pair = stripped.split(':', 1)
                 if len(pair) != 2:
-                    warnings._warn_proplot(
-                        f'Illegal line #{cnt + 1} in file {path!r}:\n{line!r}"'
-                    )
+                    warnings._warn_proplot(f'Illegal {message}:\n{line}"')
                     continue
-
-                # Get key value pair
-                key, val = pair
-                key = key.strip()
-                val = val.strip()
+                # Detect duplicates
+                key, val = map(str.strip, pair)
                 if key in added:
-                    warnings._warn_proplot(
-                        f'Duplicate key {key!r} on line #{cnt + 1} in file {path!r}.'
-                    )
+                    warnings._warn_proplot(f'Duplicate rc key {key!r} on {message}.')
                 added.add(key)
-
-                # *Very primitive* type conversion system for proplot settings.
-                # Matplotlib does this automatically.
-                if REGEX_STRING.match(val):  # also do this for matplotlib settings
-                    val = val[1:-1]  # remove quotes from string
-                if key in rc_proplot:
-                    if not val or val == 'None':
-                        val = None  # older proplot versions supported this
-                    elif val == 'True':
-                        val = True
-                    elif val == 'False':
-                        val = False
-                    else:
-                        try:
-                            val = float(val) if '.' in val else int(val)
-                        except ValueError:
-                            pass
-
-                # Add to dictionaries
-                try:
-                    ikw_proplot, ikw_matplotlib = self._get_synced_params(key, val)
-                    kw_proplot.update(ikw_proplot)
-                    kw_matplotlib.update(ikw_matplotlib)
-                except KeyError:
-                    warnings._warn_proplot(
-                        f'Invalid key {key!r} on line #{cnt} in file {path!r}.'
-                    )
+                # Get child dictionaries. Careful to have informative messages
+                with warnings.catch_warnings():
+                    warnings.simplefilter('error', warnings.ProPlotWarning)
+                    try:
+                        ikw_proplot, ikw_matplotlib = self._get_params(key, val)
+                    except KeyError:
+                        warnings._warn_proplot(f'Invalid rc key {key!r} on {message}.', 'default')  # noqa: E501
+                        continue
+                    except ValueError as err:
+                        warnings._warn_proplot(f'Invalid rc val {val!r} for key {key!r} on {message}: {err}', 'default')  # noqa: E501
+                        continue
+                    except warnings.ProPlotWarning as err:
+                        warnings._warn_proplot(f'Outdated rc key {key!r} on {message}: {err}', 'default')  # noqa: E501
+                        warnings.simplefilter('ignore', warnings.ProPlotWarning)
+                        ikw_proplot, ikw_matplotlib = self._get_params(key, val)
+                # Update the settings
+                kw_proplot.update(ikw_proplot)
+                kw_matplotlib.update(ikw_matplotlib)
 
         return kw_proplot, kw_matplotlib
 
-    def load_file(self, path):
+    def load(self, path):
         """
         Load settings from the specified file.
 
         Parameters
         ----------
-        path : str
+        path : path-like
             The file path.
 
         See also
         --------
-        RcConfigurator.save
+        Configurator.save
         """
         kw_proplot, kw_matplotlib = self._load_file(path)
         rc_proplot.update(kw_proplot)
