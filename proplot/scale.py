@@ -12,7 +12,7 @@ import numpy.ma as ma
 
 from . import ticker as pticker
 from .internals import ic  # noqa: F401
-from .internals import _not_none, _version, _version_mpl, warnings
+from .internals import _not_none, _version_mpl, warnings
 
 scales = mscale._scale_mapping
 
@@ -38,7 +38,7 @@ def _parse_logscale_args(*keys, **kwargs):
     # NOTE: Scale classes ignore unused arguments with warnings, but matplotlib 3.3
     # version changes the keyword args. Since we can't do a try except clause, only
     # way to avoid warnings with 3.3 upgrade is to test version string.
-    kwsuffix = '' if _version_mpl >= _version('3.3') else 'x'
+    kwsuffix = '' if _version_mpl >= 3.3 else 'x'
     for key in keys:
         # Remove duplicates
         opts = {
@@ -73,10 +73,6 @@ class _Scale(object):
     """
     def __init__(self, *args, **kwargs):
         # Pass a dummy axis to the superclass
-        # WARNING: Smart bounds is deprecated. Figure out workaround by matplotlib
-        # 3.4: https://github.com/matplotlib/matplotlib/pull/11004
-        # Without smart bounds, inverse scale ticks disappear and Mercator ticks
-        # have weird issues.
         axis = type('Axis', (object,), {'axis_name': 'x'})()
         super().__init__(axis, *args, **kwargs)
         self._default_major_locator = None
@@ -94,11 +90,11 @@ class _Scale(object):
         axis : `~matplotlib.axis.Axis`
             The axis.
         only_if_default : bool, optional
-            Whether to refrain from updating the locators and formatters if
-            the axis is currently using non-default versions. Useful if we
-            want to avoid overwriting user customization when the scale
-            is changed.
+            Whether to refrain from updating the locators and formatters if the
+            axis is currently using non-default versions. Useful if we want to
+            avoid overwriting user customization when the scale is changed.
         """
+        # TODO: Always use only_if_default=True? Currently is only for dual axes.
         # Apply isDefault because matplotlib does this in axis._set_scale
         # but sometimes we need to bypass this method! Minor locator can be
         # "non default" even when user has not changed it, due to "turning
@@ -151,8 +147,8 @@ class LinearScale(_Scale, mscale.LinearScale):
 
 class LogitScale(_Scale, mscale.LogitScale):
     """
-    As with `~matplotlib.scale.LogitScale` but with
-    `~proplot.ticker.AutoFormatter` as the default major formatter.
+    As with `~matplotlib.scale.LogitScale` but with `~proplot.ticker.AutoFormatter`
+    as the default major formatter.
     """
     #: The registered scale name
     name = 'logit'
@@ -173,10 +169,9 @@ class LogitScale(_Scale, mscale.LogitScale):
 
 class LogScale(_Scale, mscale.LogScale):
     """
-    As with `~matplotlib.scale.LogScale` but with
-    `~proplot.ticker.AutoFormatter` as the default major formatter.
-    ``x`` and ``y`` versions of each keyword argument are no longer
-    required.
+    As with `~matplotlib.scale.LogScale` but with `~proplot.ticker.AutoFormatter`
+    as the default major formatter. ``x`` and ``y`` versions of each keyword
+    argument are no longer required.
     """
     #: The registered scale name
     name = 'log'
@@ -249,7 +244,7 @@ class SymmetricalLogScale(_Scale, mscale.SymmetricalLogScale):
 
 class FuncScale(_Scale, mscale.ScaleBase):
     """
-    An axis scale comprised of arbitrary forward and inverse transformations.
+    Axis scale composed of arbitrary forward and inverse transformations.
     """
     #: The registered scale name
     name = 'function'
@@ -273,19 +268,19 @@ class FuncScale(_Scale, mscale.ScaleBase):
               or `involutory \
 <https://en.wikipedia.org/wiki/Involution_(mathematics)>`__.
               For example, to convert Kelvin to Celsius, use
-              ``ax.dual%(x)s(lambda x: x - 273.15)``. To convert kilometers
-              to meters, use ``ax.dual%(x)s(lambda x: x*1e3)``.
+              ``ax.dualx(lambda x: x - 273.15)``. To convert kilometers
+              to meters, use ``ax.dualx(lambda x: x * 1e3)``.
             * A 2-tuple of such functions. The second function must be the
               *inverse* of the first. For example, to apply the square, use
-              ``ax.dual%(x)s((lambda x: x**2, lambda x: x**0.5))``.
+              ``ax.dualx((lambda x: x**2, lambda x: x**0.5))``.
               Again, if the first function is linear or involutory, you do
               not need to provide the second!
             * A scale specification interpreted by the `~proplot.constructor.Scale`
               constructor function. The forward transformation, inverse transformation,
               and default axis locators and formatters are borrowed from the resulting
               `~matplotlib.scale.ScaleBase` instance. For example, to apply the
-              inverse, use ``ax.dual%(x)s('inverse')``. To apply the base-10
-              exponential function, use ``ax.dual%(x)s(('exp', 10))``.
+              inverse, use ``ax.dualx('inverse')``. To apply the base-10
+              exponential function, use ``ax.dualx(('exp', 10))``.
 
         invert : bool, optional
             If ``True``, the forward and inverse functions are *swapped*.
@@ -898,30 +893,35 @@ class InverseTransform(mtransforms.Transform):
             return 1.0 / a
 
 
-# Monkey patch matplotlib scale factory with custom scale factory that
-# accepts ScaleBase instances. This permits set_xscale and set_yscale to accept
-# axis scales returned by Scale constructor and makes things constistent with
-# the other constructor functions.
 def _scale_factory(scale, axis, *args, **kwargs):  # noqa: U100
     """
-    If `scale` is a `~matplotlib.scale.ScaleBase` instance, do nothing. If
-    it is a registered scale name, look up and instantiate that scale.
+    Generate an axis scale.
+
+    Parameters
+    ----------
+    scale : str or `~matplotlib.scale.ScaleBase`
+        The axis scale name or scale instance.
+    axis : `~matplotlib.axis.Axis`
+        The axis instance.
+    *args, **kwargs
+        Passed to `~matplotlib.scale.ScaleBase` if `scale` is a string.
     """
     if isinstance(scale, mscale.ScaleBase):
         if args or kwargs:
-            warnings._warn_proplot(
-                f'Ignoring args {args} and keyword args {kwargs}.'
-            )
+            warnings._warn_proplot(f'Ignoring args {args} and keyword args {kwargs}.')
         return scale  # do nothing
     else:
         scale = scale.lower()
         if scale not in scales:
             raise ValueError(
-                f'Unknown scale {scale!r}. Options are '
+                f'Unknown axis scale {scale!r}. Options are '
                 + ', '.join(map(repr, scales.keys())) + '.'
             )
         return scales[scale](*args, **kwargs)
 
 
+# Monkey patch matplotlib scale factory with version that accepts ScaleBase instances.
+# This lets set_xscale and set_yscale accept axis scales returned by Scale constructor
+# and makes things constistent with the other constructor functions.
 if mscale.scale_factory is not _scale_factory:
     mscale.scale_factory = _scale_factory
