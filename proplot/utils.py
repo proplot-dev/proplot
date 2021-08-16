@@ -18,7 +18,7 @@ __all__ = [
     'arange',
     'edges',
     'edges2d',
-    'units',
+    'get_colors',
     'set_hue',
     'set_saturation',
     'set_luminance',
@@ -206,6 +206,33 @@ def edges2d(z):
     zb[[0, 0, -1, -1], [0, -1, -1, 0]] *= 0.5  # corner correction
 
     return zb
+
+
+def get_colors(*args, **kwargs):
+    """
+    Get the colors associated with a registered or
+    on-the-fly color cycle.
+
+    Parameters
+    ----------
+    *args, **kwargs
+        Passed to `~proplot.constructor.Cycle`.
+
+    Returns
+    -------
+    colors : list of str
+        A list of HEX strings.
+
+    See also
+    --------
+    cycler.Cycler
+    proplot.constructor.Cycle
+    proplot.constructor.Colormap
+    """
+    from .constructor import Cycle  # delayed to avoid cyclic imports
+    cycle = Cycle(*args, **kwargs)
+    colors = [to_hex(dict_['color']) for dict_ in cycle]
+    return colors
 
 
 def _transform_color(func, color, space):

@@ -37,7 +37,7 @@ from .internals import (
     _version_mpl,
     warnings,
 )
-from .utils import to_rgba
+from .utils import to_hex, to_rgba, get_colors
 
 try:
     from mpl_toolkits.basemap import Basemap
@@ -334,20 +334,6 @@ BASEMAP_FEATURES = {  # names of relevant basemap methods
     'borders': 'drawcountries',
     'innerborders': 'drawstates',
 }
-
-
-def Colors(*args, **kwargs):
-    """
-    Pass all arguments to `Cycle` and return the list of colors from
-    the resulting `~cycler.Cycler` object.
-
-    See also
-    --------
-    cycler.Cycler
-    Cycle
-    """
-    cycle = Cycle(*args, **kwargs)
-    return list(dict_['color'] for dict_ in cycle)
 
 
 def _modify_colormap(cmap, *, cut, left, right, reverse, shift, alpha, samples):
@@ -1523,3 +1509,9 @@ def Proj(name, basemap=None, **kwargs):
         proj._proj_package = 'cartopy'
 
     return proj
+
+
+# Deprecated
+Colors = warnings._rename_objs(
+    '0.8', Colors=get_colors
+)
