@@ -29,15 +29,8 @@ from . import scale as pscale
 from . import ticker as pticker
 from .config import rc
 from .internals import ic  # noqa: F401
-from .internals import (
-    _not_none,
-    _pop_props,
-    _version,
-    _version_cartopy,
-    _version_mpl,
-    warnings,
-)
-from .utils import to_hex, to_rgba, get_colors
+from .internals import _not_none, _pop_props, _version_cartopy, _version_mpl, warnings
+from .utils import get_colors, to_hex, to_rgba
 
 try:
     from mpl_toolkits.basemap import Basemap
@@ -51,8 +44,14 @@ except ModuleNotFoundError:
     CRS = ccrs = cticker = object
 
 __all__ = [
-    'Colormap', 'Colors', 'Cycle', 'Norm',
-    'Formatter', 'Locator', 'Scale', 'Proj',
+    'Proj',
+    'Locator',
+    'Formatter',
+    'Scale',
+    'Colormap',
+    'Norm',
+    'Cycle',
+    'Colors',  # deprecated
 ]
 
 # Dictionary of possible normalizers. See `Norm` for a table.
@@ -61,14 +60,12 @@ NORMS = {
     'null': mcolors.NoNorm,
     'div': pcolors.DivergingNorm,
     'diverging': pcolors.DivergingNorm,
-    'segmented': pcolors.LinearSegmentedNorm,
+    'segmented': pcolors.SegmentedNorm,
+    'segments': pcolors.SegmentedNorm,
     'log': mcolors.LogNorm,
     'linear': mcolors.Normalize,
     'power': mcolors.PowerNorm,
     'symlog': mcolors.SymLogNorm,
-    'zero': pcolors.DivergingNorm,  # deprecated
-    'midpoint': pcolors.DivergingNorm,  # deprecated
-    'segments': pcolors.LinearSegmentedNorm,  # deprecated
 }
 if hasattr(mcolors, 'TwoSlopeNorm'):
     NORMS['twoslope'] = mcolors.TwoSlopeNorm
@@ -102,7 +99,7 @@ LOCATORS = {
     'deglon': partial(pticker.LongitudeLocator, dms=False),
     'deglat': partial(pticker.LatitudeLocator, dms=False),
 }
-if _version_cartopy >= _version('0.18'):
+if _version_cartopy >= 0.18:
     # NOTE: This only makes sense when paired with degree-minute-second formatter
     # NOTE: We copied cartopy locators because they are short and necessary
     # for determining both cartopy and basemap tick locations. We did *not* copy
@@ -138,18 +135,18 @@ FORMATTERS = {  # note default LogFormatter uses ugly e+00 notation
     'logit': mticker.LogitFormatter,
     'eng': mticker.EngFormatter,
     'percent': mticker.PercentFormatter,
-    'index': pticker._IndexFormatter,
+    'index': pticker.IndexFormatter,
     'e': partial(pticker.FracFormatter, symbol=r'$e$', number=np.e),
     'pi': partial(pticker.FracFormatter, symbol=r'$\pi$', number=np.pi),
     'tau': partial(pticker.FracFormatter, symbol=r'$\tau$', number=2 * np.pi),
     'lat': partial(pticker.SimpleFormatter, negpos='SN'),
     'lon': partial(pticker.SimpleFormatter, negpos='WE', wraprange=(-180, 180)),
     'deg': partial(pticker.SimpleFormatter, suffix='\N{DEGREE SIGN}'),
-    'deglat': partial(pticker.SimpleFormatter, negpos='SN', suffix='\N{DEGREE SIGN}'),
-    'deglon': partial(pticker.SimpleFormatter, negpos='WE', suffix='\N{DEGREE SIGN}', wraprange=(-180, 180)),  # noqa: E501
+    'deglat': partial(pticker.SimpleFormatter, suffix='\N{DEGREE SIGN}', negpos='SN'),
+    'deglon': partial(pticker.SimpleFormatter, suffix='\N{DEGREE SIGN}', negpos='WE', wraprange=(-180, 180)),  # noqa: E501
     'math': mticker.LogFormatterMathtext,  # deprecated (use SciNotation subclass)
 }
-if _version_cartopy >= _version('0.18'):
+if _version_cartopy >= 0.18:
     # NOTE: Will raise error when you try to use these without cartopy >= 0.18
     FORMATTERS['dms'] = partial(pticker._DegreeFormatter, dms=True)
     FORMATTERS['dmslon'] = partial(pticker._LongitudeFormatter, dms=True)
@@ -175,24 +172,34 @@ SCALE_PRESETS = {
 }
 mscale.register_scale(pscale.CutoffScale)
 mscale.register_scale(pscale.ExpScale)
+mscale.register_scale(pscale.FuncScale)
+mscale.register_scale(pscale.InverseScale)
 mscale.register_scale(pscale.LogScale)
 mscale.register_scale(pscale.LinearScale)
 mscale.register_scale(pscale.LogitScale)
-mscale.register_scale(pscale.FuncScale)
-mscale.register_scale(pscale.PowerScale)
-mscale.register_scale(pscale.SymmetricalLogScale)
-mscale.register_scale(pscale.InverseScale)
-mscale.register_scale(pscale.SineLatitudeScale)
 mscale.register_scale(pscale.MercatorLatitudeScale)
+mscale.register_scale(pscale.PowerScale)
+mscale.register_scale(pscale.SineLatitudeScale)
+mscale.register_scale(pscale.SymmetricalLogScale)
 
-# Default keyword args for `~mpl_toolkits.basemap.Basemap` projections.
-# `~mpl_toolkits.basemap` will raise an error if you don't provide them,
-# so ProPlot imposes some sensible default behavior.
-BASEMAP_KW_DEFAULTS = {
-    'eck4': {'lon_0': 0},
+# Mapping of "projection names" to cartopy `~cartopy.crs.Projection` classes
+# and default keyword args for `~mpl_toolkits.basemap.Basemap` projections.
+# NOTE: Normally basemap raises error if you omit keyword args
+PROJ_ALIASES = {  # aliases to basemap naming conventions
+    'eqc': 'cyl',
+    'pcarree': 'cyl',
+}
+PROJ_ALIASES_KW = {  # use PROJ shorthands instead of verbose cartopy names
+    'lat_0': 'central_latitude',
+    'lon_0': 'central_longitude',
+    'lat_min': 'min_latitude',
+    'lat_max': 'max_latitude',
+}
+PROJ_DEFAULTS = {
     'geos': {'lon_0': 0},
-    'hammer': {'lon_0': 0},
+    'eck4': {'lon_0': 0},
     'moll': {'lon_0': 0},
+    'hammer': {'lon_0': 0},
     'kav7': {'lon_0': 0},
     'sinu': {'lon_0': 0},
     'vandg': {'lon_0': 0},
@@ -226,15 +233,9 @@ BASEMAP_KW_DEFAULTS = {
         'lon_1': 0, 'lon_2': 0, 'width': 10000e3, 'height': 10000e3
     },
 }
-BASEMAP_PROJ_ALIASES = {  # aliases to basemap naming conventions
-    'eqc': 'cyl',
-    'pcarree': 'cyl',
-}
-
-# Mapping of "projection names" to cartopy `~cartopy.crs.Projection` classes.
-CARTOPY_PROJS = {}
+PROJS = {}
 if ccrs is not object:
-    CARTOPY_PROJS.update({
+    PROJS.update({
         'aitoff': pcrs.Aitoff,
         'hammer': pcrs.Hammer,
         'kav7': pcrs.KavrayskiyVII,
@@ -246,7 +247,7 @@ if ccrs is not object:
         'nplaea': pcrs.NorthPolarLambertAzimuthalEqualArea,
         'splaea': pcrs.SouthPolarLambertAzimuthalEqualArea,
     })
-    CARTOPY_PROJS_UNAVAIL = {
+    PROJS_MISSING = {
         'aea': 'AlbersEqualArea',
         'aeqd': 'AzimuthalEquidistant',
         'cyl': 'PlateCarree',  # only basemap name not matching PROJ
@@ -283,42 +284,36 @@ if ccrs is not object:
         'tmerc': 'TransverseMercator',
         'utm': 'UTM',  # not in basemap
     }
-    for _key, _cls in list(CARTOPY_PROJS_UNAVAIL.items()):
+    for _key, _cls in list(PROJS_MISSING.items()):
         if hasattr(ccrs, _cls):
-            CARTOPY_PROJS[_key] = getattr(ccrs, _cls)
-            del CARTOPY_PROJS_UNAVAIL[_key]
-    if CARTOPY_PROJS_UNAVAIL:
+            PROJS[_key] = getattr(ccrs, _cls)
+            del PROJS_MISSING[_key]
+    if PROJS_MISSING:
         warnings._warn_proplot(
             'Cartopy projection(s) '
-            + ', '.join(map(repr, CARTOPY_PROJS_UNAVAIL.values()))
-            + 'are unavailable. Consider updating to cartopy >= 0.17.0.'
+            + ', '.join(map(repr, PROJS_MISSING.values()))
+            + ' are unavailable. Consider updating cartopy.'
         )
-CARTOPY_KW_ALIASES = {  # use PROJ shorthands instead of verbose cartopy names
-    'lat_0': 'central_latitude',
-    'lon_0': 'central_longitude',
-    'lat_min': 'min_latitude',
-    'lat_max': 'max_latitude',
-}
 
 # Resolution aliases
 # NOTE: Maximum basemap resolutions are much finer than cartopy
-CARTOPY_RESOS = {
+RESOS_CARTOPY = {
     'lo': '110m',
     'med': '50m',
     'hi': '10m',
     'x-hi': '10m',  # extra high
     'xx-hi': '10m',  # extra extra high
 }
-BASEMAP_RESOS = {
+RESOS_BASEMAP = {
     'lo': 'c',  # coarse
     'med': 'l',
-    'hi': 'i',
+    'hi': 'i',  # intermediate
     'x-hi': 'h',
     'xx-hi': 'f',  # fine
 }
 
 # Geographic feature properties
-CARTOPY_FEATURES = {  # positional arguments passed to NaturalEarthFeature
+FEATURES_CARTOPY = {  # positional arguments passed to NaturalEarthFeature
     'land': ('physical', 'land'),
     'ocean': ('physical', 'ocean'),
     'lakes': ('physical', 'lakes'),
@@ -327,7 +322,7 @@ CARTOPY_FEATURES = {  # positional arguments passed to NaturalEarthFeature
     'borders': ('cultural', 'admin_0_boundary_lines_land'),
     'innerborders': ('cultural', 'admin_1_states_provinces_lakes'),
 }
-BASEMAP_FEATURES = {  # names of relevant basemap methods
+FEATURES_BASEMAP = {  # names of relevant basemap methods
     'land': 'fillcontinents',
     'coast': 'drawcoastlines',
     'rivers': 'drawrivers',
@@ -341,7 +336,7 @@ def _modify_colormap(cmap, *, cut, left, right, reverse, shift, alpha, samples):
     Modify colormap using a variety of methods.
     """
     if cut is not None or left is not None or right is not None:
-        if isinstance(cmap, pcolors.ListedColormap):
+        if isinstance(cmap, pcolors.DiscreteColormap):
             if cut is not None:
                 warnings._warn_proplot(
                     "Invalid argument 'cut' for ListedColormap. Ignoring."
@@ -356,51 +351,52 @@ def _modify_colormap(cmap, *, cut, left, right, reverse, shift, alpha, samples):
     if alpha is not None:
         cmap = cmap.copy(alpha=alpha)
     if samples is not None:
-        if isinstance(cmap, pcolors.ListedColormap):
+        if isinstance(cmap, pcolors.DiscreteColormap):
             cmap = cmap.copy(N=samples)
         else:
-            cmap = cmap.to_listed(samples)
+            cmap = cmap.to_discrete(samples)
     return cmap
 
 
-@warnings._rename_kwargs('v0.7', shade='luminance')
+@warnings._rename_kwargs('0.8', to_listed='discrete')
+@warnings._rename_kwargs('0.7', fade='saturation', shade='luminance')
 def Colormap(
-    *args, name=None, listmode='perceptual', to_listed=False, cycle=None,
-    save=False, save_kw=None, **kwargs
+    *args, name=None, listmode='perceptual', filemode='continuous', discrete=False,
+    cycle=None, save=False, save_kw=None, **kwargs
 ):
     """
     Generate, retrieve, modify, and/or merge instances of
-    `~proplot.colors.PerceptuallyUniformColormap`,
-    `~proplot.colors.LinearSegmentedColormap`, and
-    `~proplot.colors.ListedColormap`.
-    Used to interpret the `cmap` and `cmap_kw` arguments
-    when passed to any plotting method wrapped by
-    `~proplot.axes.apply_cmap`.
+    `~proplot.colors.PerceptualColormap`,
+    `~proplot.colors.ContinuousColormap`, and
+    `~proplot.colors.DiscreteColormap`.
 
     Parameters
     ----------
     *args : colormap-spec
-        Positional arguments that individually generate colormaps. If more than
-        one argument is passed, the resulting colormaps are *merged* with
-        `~proplot.colors.LinearSegmentedColormap.append`
-        or `~proplot.colors.ListedColormap.append`.
-        Arguments are interpreted as follows:
+        Positional arguments that individually generate colormaps. If more
+        than one argument is passed, the resulting colormaps are *merged* with
+        `~proplot.colors.ContinuousColormap.append`
+        or `~proplot.colors.DiscreteColormap.append`.
+        The arguments are interpreted as follows:
 
-        * If the argument is a `~matplotlib.colors.Colormap` or a registered
-          colormap name, nothing more is done.
-        * If a filename string with valid extension, the colormap data will
-          be loaded. See `~proplot.config.register_cmaps` and
-          `~proplot.config.register_cycles`.
-        * If RGB tuple or color string, a
-          `~proplot.colors.PerceptuallyUniformColormap` is generated with
-          `~proplot.colors.PerceptuallyUniformColormap.from_color`. If the
-          string ends in ``'_r'``, the monochromatic map will be *reversed*,
-          i.e. will go from dark to light instead of light to dark.
-        * If list of RGB tuples or color strings, a
-          `~proplot.colors.PerceptuallyUniformColormap` is generated with
-          `~proplot.colors.PerceptuallyUniformColormap.from_list`.
-        * If dictionary, a `~proplot.colors.PerceptuallyUniformColormap` is
-          generated with `~proplot.colors.PerceptuallyUniformColormap.from_hsl`.
+        * If a registered colormap name, that colormap instance is looked up.
+          If colormap instance is a native matplotlib colormap class, it is
+          converted to a ProPlot colormap class.
+        * If a filename string with valid extension, the colormap data
+          is loaded with `proplot.colors.ContinuousColormap.from_file` or
+          `proplot.colors.DiscreteColormap.from_file` depending on the value of
+          `filemode` (see below). Default behavior is to load a
+          `~proplot.colors.ContinuousColormap`.
+        * If RGB tuple or color string, a `~proplot.colors.PerceptualColormap`
+          is generated with `~proplot.colors.PerceptualColormap.from_color`.
+          If the string ends in ``'_r'``, the monochromatic map will be
+          *reversed*, i.e. will go from dark to light instead of light to dark.
+        * If list of RGB tuples or color strings, a `~proplot.colors.DiscreteColormap`,
+          `~proplot.colors.PerceptualColormap`, or `~proplot.colors.ContinuousColormap`
+          is generated depending on the value of `listmode` (see below). Default
+          behavior is to generate a `~proplot.colors.PerceptualColormap`.
+        * If dictionary, a `~proplot.colors.PerceptualColormap` is
+          generated with `~proplot.colors.PerceptualColormap.from_hsl`.
           The dictionary should contain the keys ``'hue'``, ``'saturation'``,
           ``'luminance'``, and optionally ``'alpha'``, or their aliases (see below).
 
@@ -408,75 +404,92 @@ def Colormap(
         Name under which the final colormap is registered. It can then be
         reused by passing ``cmap='name'`` to plotting functions like
         `~matplotlib.axes.Axes.contourf`.
-    listmode : {'perceptual', 'linear', 'listed'}, optional
+    filemode : {'perceptual', 'continuous', 'discrete'}, optional
         Controls how colormaps are generated when you input list(s) of colors.
-        If ``'perceptual'``, a `~proplot.colors.PerceptuallyUniformColormap`
-        is generated with `~proplot.colors.PerceptuallyUniformColormap.from_list`.
-        If ``'linear'``, a `~matplotlib.colors.LinearSegmentedColormap` is
-        generated with `~matplotlib.colors.LinearSegmentedColormap.from_list`.
-        If ``'listed'``, a `~matplotlib.colors.ListedColormap` is generated.
+        The options are as follows:
+
+        * If ``'perceptual'`` or ``'continuous'``, a colormap is generated using
+          `~proplot.colors.ContinuousColormap.from_file`. The resulting
+          colormap may be a `~proplot.colors.ContinuousColormap` or
+          `~proplot.colors.PerceptualColormap` depending on the data file.
+        * If ``'discrete'``, a `~proplot.colors.DiscreteColormap` is generated
+          using `~proplot.colors.ContinuousColormap.from_file`.
+
+        Default is ``'continuous'`` when calling `Colormap` directly and
+        ``'discrete'`` when `Colormap` is called by `Cycle`.
+    listmode : {'perceptual', 'continuous', 'discrete'}, optional
+        Controls how colormaps are generated when you input list(s) of colors.
+        The options are as follows:
+
+        * If ``'perceptual'``, a `~proplot.colors.PerceptualColormap`
+          is generated with `~proplot.colors.PerceptualColormap.from_list`.
+        * If ``'continuous'``, a `~proplot.colors.ContinuousColormap` is
+          generated with `~proplot.colors.ContinuousColormap.from_list`.
+        * If ``'discrete'``, a `~proplot.colors.DiscreteColormap` is generated
+          by simply passing the colors to the class.
+
         Default is ``'perceptual'`` when calling `Colormap` directly and
-        ``'listed'`` when `Colormap` is called by `Cycle`.
+        ``'discrete'`` when `Colormap` is called by `Cycle`.
     samples : int or list of int, optional
-        For `~proplot.colors.LinearSegmentedColormap`\\ s, this is used to
-        generate `~proplot.colors.ListedColormap`\\ s with
-        `~proplot.colors.LinearSegmentedColormap.to_listed`. For
-        `~proplot.colors.ListedColormap`\\ s, this is used to updates the
+        For `~proplot.colors.ContinuousColormap`\\ s, this is used to
+        generate `~proplot.colors.DiscreteColormap`\\ s with
+        `~proplot.colors.ContinuousColormap.to_discrete`. For
+        `~proplot.colors.DiscreteColormap`\\ s, this is used to updates the
         number of colors in the cycle. If `samples` is integer, it applies
         to the final *merged* colormap. If it is a list of integers,
         it applies to each input colormap individually.
-    to_listed : bool, optional
+    discrete : bool, optional
         If ``True``, when the final colormap is a
-        `~proplot.colors.ListedColormap`, we leave it alone, but when it is a
-        `~proplot.colors.LinearSegmentedColormap`, we always call
-        `~proplot.colors.LinearSegmentedColormap.to_listed` with a
+        `~proplot.colors.DiscreteColormap`, we leave it alone, but when it is a
+        `~proplot.colors.ContinuousColormap`, we always call
+        `~proplot.colors.ContinuousColormap.to_discrete` with a
         default `samples` value of ``10``. This argument is not
         necessary if you provide the `samples` argument.
     left, right : float or list of float, optional
         Truncate the left or right edges of the colormap.
-        Passed to `~proplot.colors.LinearSegmentedColormap.truncate`.
+        Passed to `~proplot.colors.ContinuousColormap.truncate`.
         If float, these apply to the final *merged* colormap. If list
         of float, these apply to each input colormap individually.
     cut : float or list of float, optional
         Cut out the center of the colormap. Passed to
-        `~proplot.colors.LinearSegmentedColormap.cut`. If float,
+        `~proplot.colors.ContinuousColormap.cut`. If float,
         this applies to the final *merged* colormap. If list of float,
         these apply to each input colormap individually.
     reverse : bool or list of bool, optional
         Reverse the colormap. Passed to
-        `~proplot.colors.LinearSegmentedColormap.reversed`. If
+        `~proplot.colors.ContinuousColormap.reversed`. If
         float, this applies to the final *merged* colormap. If list of
         float, these apply to each input colormap individually.
     shift : float or list of float, optional
         Cyclically shift the colormap.
-        Passed to `~proplot.colors.LinearSegmentedColormap.shifted`.
+        Passed to `~proplot.colors.ContinuousColormap.shifted`.
         If float, this applies to the final *merged* colormap. If list of
         float, these apply to each input colormap individually.
     a
         Shorthand for `alpha`.
-    alpha, a : channel-spec or list of channel-spec, optional
+    alpha : channel-spec or list of channel-spec, optional
         The opacity of the colormap or the opacity gradation. Passed to
-        `proplot.colors.LinearSegmentedColormap.set_alpha`
-        or `proplot.colors.ListedColormap.set_alpha`. If float, this applies
+        `proplot.colors.ContinuousColormap.set_alpha`
+        or `proplot.colors.DiscreteColormap.set_alpha`. If float, this applies
         to the final *merged* colormap. If list of float, these apply to
         each colormap individually.
     h, s, l, c
         Shorthands for `hue`, `luminance`, `saturation`, and `chroma`.
     hue, saturation, luminance : channel-spec or list of channel-spec, optional
         The channel value(s) used to generate colormaps with
-        `~proplot.colors.PerceptuallyUniformColormap.from_hsl` and
-        `~proplot.colors.PerceptuallyUniformColormap.from_color`.
+        `~proplot.colors.PerceptualColormap.from_hsl` and
+        `~proplot.colors.PerceptualColormap.from_color`.
 
         * If you provided no positional arguments, these are used to create
           an arbitrary perceptually uniform colormap with
-          `~proplot.colors.PerceptuallyUniformColormap.from_hsl`. This
+          `~proplot.colors.PerceptualColormap.from_hsl`. This
           is an alternative to passing a dictionary as a positional argument
           with `hue`, `saturation`, and `luminance` as dictionary keys (see `args`).
         * If you did provide positional arguments, and any of them are
           color specifications, these control the look of monochromatic colormaps
-          generated with `~proplot.colors.PerceptuallyUniformColormap.from_color`.
+          generated with `~proplot.colors.PerceptualColormap.from_color`.
           To use different values for each colormap, pass a list of floats instead
-          of a scalar. Note the default `luminance` is ``90`` if `to_listed`
+          of a scalar. Note the default `luminance` is ``90`` if `discrete`
           is ``True`` and ``100`` otherwise.
 
     chroma
@@ -488,33 +501,34 @@ def Colormap(
         colors selected from arbitrary property cycles.
     save : bool, optional
         Whether to call the colormap/color cycle save method, i.e.
-        `proplot.colors.LinearSegmentedColormap.save` or
-        `proplot.colors.ListedColormap.save`.
+        `proplot.colors.ContinuousColormap.save` or
+        `proplot.colors.DiscreteColormap.save`.
     save_kw : dict-like, optional
         Ignored if `save` is ``False``. Passed to the colormap/color cycle
-        save method, i.e. `proplot.colors.LinearSegmentedColormap.save` or
-        `proplot.colors.ListedColormap.save`.
+        save method, i.e. `proplot.colors.ContinuousColormap.save` or
+        `proplot.colors.DiscreteColormap.save`.
 
     Other parameters
     ----------------
     **kwargs
-        Passed to `proplot.colors.LinearSegmentedColormap.copy`,
-        `proplot.colors.PerceptuallyUniformColormap.copy`, or
-        `proplot.colors.ListedColormap.copy`.
+        Passed to `proplot.colors.ContinuousColormap.copy`,
+        `proplot.colors.PerceptualColormap.copy`, or
+        `proplot.colors.DiscreteColormap.copy`.
 
     Returns
     -------
     `~matplotlib.colors.Colormap`
-        A `~proplot.colors.LinearSegmentedColormap` or
-        `~proplot.colors.ListedColormap` instance.
+        A `~proplot.colors.ContinuousColormap` or
+        `~proplot.colors.DiscreteColormap` instance.
 
     See also
     --------
     matplotlib.colors.Colormap
     matplotlib.colors.LinearSegmentedColormap
     matplotlib.colors.ListedColormap
-    proplot.axes.apply_cmap
+    Norm
     Cycle
+    proplot.utils.get_colors
     """
     # Helper function
     # NOTE: Very careful here! Try to support common use cases. For example
@@ -527,7 +541,7 @@ def Colormap(
         if not np.iterable(value) or isinstance(value, str):
             values = (None,) * len(args)
         elif len(args) == len(value):
-            values, value = tuple(values), None
+            values, value = tuple(value), None
         elif len(args) == 1:  # e.g. Colormap('cmap', alpha=(0.5, 1))
             values = (None,)
         else:
@@ -537,13 +551,13 @@ def Colormap(
             )
         return value, values
 
-    # Parse keyword args that can apply to the merged colormap or each
-    # colormap individually.
+    # Parse keyword args that can apply to the merged colormap or each one
     hsla = _pop_props(kwargs, 'hsla')
     if not args and hsla.keys() - {'alpha'}:
         args = (hsla,)
     else:
         kwargs.update(hsla)
+    default_luminance = kwargs.pop('default_luminance', None)  # used internally
     cut, cuts = _pop_modification('cut')
     left, lefts = _pop_modification('left')
     right, rights = _pop_modification('right')
@@ -558,22 +572,28 @@ def Colormap(
     if saturation is not None:
         saturations = (saturation,) * len(args)
 
-    # Parse input args
-    # TODO: Play with using "qualitative" colormaps in realistic examples,
-    # how to make colormaps cyclic.
+    # Issue warnings and errors
     if not args:
         raise ValueError(
-            'Colormap() requires either positional arguments '
-            "or 'hue', 'chroma', 'saturation', and/or 'luminance' keywords."
+            'Colormap() requires either positional arguments or '
+            "'hue', 'chroma', 'saturation', and/or 'luminance' keywords."
         )
-    if listmode not in ('listed', 'linear', 'perceptual'):
-        raise ValueError(
-            f'Invalid listmode={listmode!r}. Options are: '
-            "'listed', 'linear', 'perceptual'."
+    deprecated = {'listed': 'discrete', 'linear': 'continuous'}
+    if listmode in deprecated:
+        oldmode, listmode = listmode, deprecated[listmode]
+        warnings._warn_proplot(
+            f'Please use listmode={listmode!r} instead of listmode={oldmode!r}.'
+            'Option was renamed in v0.8 and will be removed in a future relase.'
         )
+    options = {'discrete', 'continuous', 'perceptual'}
+    for key, mode in zip(('listmode', 'filemode'), (listmode, filemode)):
+        if mode not in options:
+            raise ValueError(
+                f'Invalid {key}={mode!r}. Options are: '
+                + ', '.join(map(repr, options)) + '.'
+            )
 
     # Loop through colormaps
-    tmp = '_no_name'
     cmaps = []
     for arg, icut, ileft, iright, ireverse, ishift, isamples, iluminance, isaturation, ialpha in zip(  # noqa: E501
         args, cuts, lefts, rights, reverses, shifts, sampless, luminances, saturations, alphas  # noqa: E501
@@ -582,10 +602,10 @@ def Colormap(
         # TODO: Document how 'listmode' also affects loaded files
         if isinstance(arg, str):
             if '.' in arg and os.path.isfile(arg):
-                if listmode == 'listed':
-                    arg = pcolors.ListedColormap.from_file(arg)
+                if filemode == 'discrete':
+                    arg = pcolors.DiscreteColormap.from_file(arg)
                 else:
-                    arg = pcolors.LinearSegmentedColormap.from_file(arg)
+                    arg = pcolors.ContinuousColormap.from_file(arg)
             else:
                 try:
                     arg = pcolors._cmap_database[arg]
@@ -594,24 +614,25 @@ def Colormap(
 
         # Convert matplotlib colormaps to subclasses
         if isinstance(arg, mcolors.Colormap):
-            cmap = pcolors._to_proplot_colormap(arg)
+            cmap = pcolors._translate_cmap(arg)
 
         # Dictionary of hue/sat/luminance values or 2-tuples
         elif isinstance(arg, dict):
-            cmap = pcolors.PerceptuallyUniformColormap.from_hsl(tmp, **arg)
+            ic(arg)
+            cmap = pcolors.PerceptualColormap.from_hsl(**arg)
+            ic(cmap.name)
 
         # List of color tuples or color strings, i.e. iterable of iterables
         elif (
             not isinstance(arg, str) and np.iterable(arg)
             and all(np.iterable(color) for color in arg)
         ):
-            colors = [to_rgba(color, cycle=cycle) for color in arg]
-            if listmode == 'listed':
-                cmap = pcolors.ListedColormap(colors, tmp)
-            elif listmode == 'linear':
-                cmap = pcolors.LinearSegmentedColormap.from_list(tmp, colors)
+            if listmode == 'discrete':
+                cmap = pcolors.DiscreteColormap(arg)
+            elif listmode == 'continuous':
+                cmap = pcolors.ContinuousColormap.from_list(arg)
             else:
-                cmap = pcolors.PerceptuallyUniformColormap.from_list(tmp, colors)
+                cmap = pcolors.PerceptualColormap.from_list(arg)
 
         # Monochrome colormap from input color
         # NOTE: Do not print color names in error message. Too long to be useful.
@@ -626,13 +647,12 @@ def Colormap(
                 if isinstance(arg, str) and arg[:1] != '#':
                     message += (
                         ' Options are: '
-                        + ', '.join(map(repr, pcolors._cmap_database)) + '.'
+                        + ', '.join(sorted(map(repr, pcolors._cmap_database))) + '.'
                     )
                 raise ValueError(message)
-            if to_listed and iluminance is None:
-                iluminance = 90
-            cmap = pcolors.PerceptuallyUniformColormap.from_color(
-                tmp, color, luminance=iluminance, saturation=isaturation
+            iluminance = _not_none(iluminance, default_luminance)
+            cmap = pcolors.PerceptualColormap.from_color(
+                color, luminance=iluminance, saturation=isaturation
             )
             ireverse = _not_none(ireverse, False)
             ireverse = ireverse ^ jreverse  # xor
@@ -653,8 +673,8 @@ def Colormap(
         cmap = cmaps[0]
 
     # Modify the colormap
-    if to_listed and samples is None and isinstance(cmap, pcolors.LinearSegmentedColormap):  # noqa: E501
-        samples = 10
+    if discrete and isinstance(cmap, pcolors.ContinuousColormap):  # noqa: E501
+        samples = _not_none(samples, pcolors.DEFAULT_SAMPLES)
     cmap = _modify_colormap(
         cmap, cut=cut, left=left, right=right,
         reverse=reverse, shift=shift, alpha=alpha, samples=samples
@@ -665,6 +685,8 @@ def Colormap(
         cmap._init()
 
     # Register the colormap
+    # TODO: Make this optional? However we are very careful to avoid name conflicts
+    # so harmless. This usually just assigns dummy names like _Blues_copy.
     if name is None:
         name = cmap.name  # may have been modified by e.g. .shifted()
     else:
@@ -682,29 +704,23 @@ def Colormap(
 def Cycle(*args, N=None, samples=None, name=None, **kwargs):
     """
     Generate and merge `~cycler.Cycler` instances in a variety of ways.
-    Used to interpret the `cycle` and `cycle_kw` arguments when passed to
-    any plotting method wrapped by `~proplot.axes.apply_cycle`.
-
-    If you just want a list of colors instead of a `~cycler.Cycler` instance,
-    use the `Colors` function. If you want a `~cycler.Cycler` instance that
-    imposes black as the default color and cycles through properties like
-    ``linestyle`` instead, call this function without any positional arguments.
 
     Parameters
     ----------
     *args : colormap-spec or cycle-spec, optional
         Positional arguments control the *colors* in the `~cycler.Cycler`
-        object. If more than one argument is passed, the resulting cycles are
+        object. If zero arguments are passed, the single color ``'black'``
+        is used. If more than one argument is passed, the resulting cycles are
         merged. Arguments are interpreted as follows:
 
         * If a `~cycler.Cycler`, nothing more is done.
         * If a list of RGB tuples or color strings, these colors are used.
-        * If a `~proplot.colors.ListedColormap`, colors from the ``colors``
+        * If a `~proplot.colors.DiscreteColormap`, colors from the ``colors``
           attribute are used.
-        * If a string cycle name, that `~proplot.colors.ListedColormap`
+        * If a string cycle name, that `~proplot.colors.DiscreteColormap`
           is looked up and its ``colors`` attribute is used.
         * In all other cases, the argument is passed to `Colormap`, and
-          colors from the resulting `~proplot.colors.LinearSegmentedColormap`
+          colors from the resulting `~proplot.colors.ContinuousColormap`
           are used. See the `samples` argument.
 
         If the last positional argument is numeric, it is used for the
@@ -712,11 +728,11 @@ def Cycle(*args, N=None, samples=None, name=None, **kwargs):
     N
         Shorthand for `samples`.
     samples : float or list of float, optional
-        For `~proplot.colors.ListedColormap`\\ s, this is the number of
+        For `~proplot.colors.DiscreteColormap`\\ s, this is the number of
         colors to select. For example, ``Cycle('538', 4)`` returns the first 4
         colors of the ``'538'`` color cycle.
 
-        For `~proplot.colors.LinearSegmentedColormap`\\ s, this is either a
+        For `~proplot.colors.ContinuousColormap`\\ s, this is either a
         list of sample coordinates used to draw colors from the map, or an
         integer number of colors to draw. If the latter, the sample coordinates
         are ``np.linspace(0, 1, samples)``. For example, ``Cycle('Reds', 5)``
@@ -743,7 +759,7 @@ markeredgecolors, markerfacecolors
     ----------------
     **kwargs
         If the input is not already a `~cycler.Cycler` instance, these are passed
-        to `Colormap` and used to build the `~proplot.colors.ListedColormap` from
+        to `Colormap` and used to build the `~proplot.colors.DiscreteColormap` from
         which the cycler will draw its colors.
 
     Returns
@@ -755,12 +771,13 @@ markeredgecolors, markerfacecolors
     See also
     --------
     cycler.Cycler
-    proplot.axes.apply_cycle
     Colormap
+    Norm
+    proplot.utils.get_colors
     """
     # Parse keyword arguments that rotate through other properties
     # besides color cycles.
-    props = _pop_props(kwargs, 'lines')
+    props = _pop_props(kwargs, 'line')
     nprops = 0
     samples = _not_none(samples=samples, N=N)  # trigger Colormap default
     for key, value in tuple(props.items()):  # permit in-place modification
@@ -793,21 +810,20 @@ markeredgecolors, markerfacecolors
                     props[key].extend(value)
             return cycler.cycler(**props)
 
-    # Get cycler from a colormap
+    # Get a cycler from a colormap
+    # NOTE: Passing discrete=True does not imply default_luminance=90 because
+    # someone might be trying to make qualitative colormap for use in 2d plot
     else:
-        # Get the ListedColormap
         if args and isinstance(args[-1], Number):
             args, samples = args[:-1], _not_none(samples_positional=args[-1], samples=samples)  # noqa: #501
-        kwargs.setdefault('listmode', 'listed')
-        kwargs.setdefault('to_listed', True)  # triggers default 'samples' value
+        kwargs.setdefault('listmode', 'discrete')
+        kwargs.setdefault('filemode', 'discrete')
+        kwargs['discrete'] = True  # triggers application of default 'samples'
+        kwargs['default_luminance'] = pcolors.CYCLE_LUMINANCE
         cmap = Colormap(*args, name=name, samples=samples, **kwargs)
         name = _not_none(name, cmap.name)
-        # Add colors to property dict
         nprops = max(nprops, len(cmap.colors))
-        props['color'] = [  # save the tupled version!
-            tuple(color) if not isinstance(color, str) else color
-            for color in cmap.colors
-        ]
+        props['color'] = [c if isinstance(c, str) else to_hex(c) for c in cmap.colors]
 
     # Build cycler, make sure lengths are the same
     for key, value in props.items():
@@ -821,11 +837,9 @@ markeredgecolors, markerfacecolors
 
 def Norm(norm, *args, **kwargs):
     """
-    Return an arbitrary `~matplotlib.colors.Normalize` instance. Used to
-    interpret the `norm` and `norm_kw` arguments when passed to any plotting
-    method wrapped by `~proplot.axes.apply_cmap`. See `this tutorial \
-<https://matplotlib.org/stable/tutorials/colors/colormapnorms.html>`__
-    for more info.
+    Return an arbitrary `~matplotlib.colors.Normalize` instance. See this
+    `tutorial <https://matplotlib.org/stable/tutorials/colors/colormapnorms.html>`__
+    for an introduction to matplotlib normalizers.
 
     Parameters
     ----------
@@ -841,17 +855,17 @@ def Norm(norm, *args, **kwargs):
 
         .. _norm_table:
 
-        ==========================  =====================================
-        Key(s)                      Class
-        ==========================  =====================================
-        ``'null'``, ``'none'``      `~matplotlib.colors.NoNorm`
-        ``'diverging'``, ``'div'``  `~proplot.colors.DivergingNorm`
-        ``'segmented'``             `~proplot.colors.LinearSegmentedNorm`
-        ``'linear'``                `~matplotlib.colors.Normalize`
-        ``'log'``                   `~matplotlib.colors.LogNorm`
-        ``'power'``                 `~matplotlib.colors.PowerNorm`
-        ``'symlog'``                `~matplotlib.colors.SymLogNorm`
-        ==========================  =====================================
+        ===============================  =====================================
+        Key(s)                           Class
+        ===============================  =====================================
+        ``'null'``, ``'none'``           `~matplotlib.colors.NoNorm`
+        ``'diverging'``, ``'div'``       `~proplot.colors.DivergingNorm`
+        ``'segmented'``, ``'segments'``  `~proplot.colors.SegmentedNorm`
+        ``'linear'``                     `~matplotlib.colors.Normalize`
+        ``'log'``                        `~matplotlib.colors.LogNorm`
+        ``'power'``                      `~matplotlib.colors.PowerNorm`
+        ``'symlog'``                     `~matplotlib.colors.SymLogNorm`
+        ===============================  =====================================
 
     Other parameters
     ----------------
@@ -866,8 +880,8 @@ def Norm(norm, *args, **kwargs):
     See also
     --------
     matplotlib.colors.Normalize
-    proplot.axes.apply_cmap
     proplot.colors.DiscreteNorm
+    Colormap
     """
     if isinstance(norm, mcolors.Normalize):
         return norm
@@ -891,18 +905,12 @@ def Norm(norm, *args, **kwargs):
 
 def Locator(locator, *args, **kwargs):
     """
-    Return a `~matplotlib.ticker.Locator` instance. This function is used to
-    interpret the `xlocator`, `xlocator_kw`, `ylocator`, `ylocator_kw`,
-    `xminorlocator`, `xminorlocator_kw`, `yminorlocator`, and
-    `yminorlocator_kw` arguments when passed to
-    `~proplot.axes.CartesianAxes.format`, and the `locator`, `locator_kw`,
-    `minorlocator`, and `minorlocator_kw` arguments when passed to colorbar
-    methods wrapped by `~proplot.axes.colorbar_extras`.
+    Return a `~matplotlib.ticker.Locator` instance.
 
     Parameters
     ----------
     locator : `~matplotlib.ticker.Locator`, str, float, or list of float
-        The axis locator specification, interpreted as follows:
+        The locator specification, interpreted as follows:
 
         * If a `~matplotlib.ticker.Locator` instance already, the input
           argument is simply returned.
@@ -915,7 +923,8 @@ def Locator(locator, *args, **kwargs):
         of the "registered" locators (see below table). If `locator` is a
         list or tuple and the first element is a "registered" locator name,
         subsequent elements are passed to the locator class as positional
-        arguments.
+        arguments. For example, ``pplt.Locator(('multiple', 5))`` is
+        equivalent to ``pplt.Locator('multiple', 5)``.
 
         .. _locator_table:
 
@@ -969,9 +978,9 @@ def Locator(locator, *args, **kwargs):
     proplot.axes.CartesianAxes.format
     proplot.axes.PolarAxes.format
     proplot.axes.GeoAxes.format
-    proplot.axes.colorbar_extras
+    proplot.axes.Axes.colorbar
     Formatter
-    """  # noqa
+    """  # noqa: E501
     if isinstance(locator, mticker.Locator):
         return locator
 
@@ -1012,17 +1021,12 @@ def Locator(locator, *args, **kwargs):
 
 def Formatter(formatter, *args, date=False, index=False, **kwargs):
     """
-    Return a `~matplotlib.ticker.Formatter` instance. This function is used to
-    interpret the `xformatter`, `xformatter_kw`, `yformatter`, and
-    `yformatter_kw` arguments when passed to
-    `~proplot.axes.CartesianAxes.format`, and the `formatter`
-    and `formatter_kw` arguments when passed to colorbar methods wrapped by
-    `~proplot.axes.colorbar_extras`.
+    Return a `~matplotlib.ticker.Formatter` instance.
 
     Parameters
     ----------
     formatter : `~matplotlib.ticker.Formatter`, str, list of str, or function
-        The axis formatter specification, interpreted as follows:
+        The formatter specification, interpreted as follows:
 
         * If a `~matplotlib.ticker.Formatter` instance already, the input
           argument is simply returned.
@@ -1032,7 +1036,8 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
         * If a function, the labels will be generated using this function.
           Returns a `~matplotlib.ticker.FuncFormatter`.
         * If a string containing ``{x}`` or ``{x:...}``, ticks will be
-          formatted by calling ``string.format(x=number)``.
+          formatted by calling ``string.format(x=number)``. Returns
+          a `~matplotlib.ticker.StrMethodFormatter`.
         * If a string containing ``'%'`` and `date` is ``False``, ticks will be
           formatted using the C-style ``string % number`` method. See
           `this page <https://docs.python.org/3/library/stdtypes.html#printf-style-string-formatting>`__
@@ -1040,13 +1045,15 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
         * If a string containing ``'%'`` and `date` is ``True``, *datetime*
           `string % number`` formatting is used. See
           `this page <https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes>`__
-          for a review. Returns a `~matplotlib.ticker.DateFormatter`.
+          for a review. Returns a `~matplotlib.dates.DateFormatter`.
 
         Otherwise, `formatter` should be a string corresponding to one of the
         "registered" formatters or formatter presets (see below table). If
         `formatter` is a list or tuple and the first element is a "registered"
         formatter name, subsequent elements are passed to the formatter class
-        as positional arguments.
+        as positional arguments. For example, ``pplt.Formatter(('sigfig', 3))`` is
+        equivalent to ``Formatter('sigfig', 3)``.
+
 
         .. _tau: https://tauday.com/tau-manifesto
 
@@ -1057,7 +1064,7 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
         ======================  ==============================================  =================================================================
         ``'null'``, ``'none'``  `~matplotlib.ticker.NullFormatter`              No tick labels
         ``'auto'``              `~proplot.ticker.AutoFormatter`                 New default tick labels for axes
-        ``'sci'``               `~proplot.ticker.SciFormatter`                  Format ticks with scientific notation.
+        ``'sci'``               `~proplot.ticker.SciFormatter`                  Format ticks with scientific notation
         ``'simple'``            `~proplot.ticker.SimpleFormatter`               New default tick labels for e.g. contour labels
         ``'sigfig'``            `~proplot.ticker.SigFigFormatter`               Format labels using the first ``N`` significant digits
         ``'frac'``              `~proplot.ticker.FracFormatter`                 Rational fractions
@@ -1072,7 +1079,7 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
         ``'log'``               `~matplotlib.ticker.LogFormatterSciNotation`    For log-scale axes with scientific notation
         ``'logit'``             `~matplotlib.ticker.LogitFormatter`             For logistic-scale axes
         ``'percent'``           `~matplotlib.ticker.PercentFormatter`           Trailing percent sign
-        ``'scalar'``            `~matplotlib.ticker.ScalarFormatter`            Old default tick labels for axes
+        ``'scalar'``            `~matplotlib.ticker.ScalarFormatter`            The default matplotlib formatter
         ``'strmethod'``         `~matplotlib.ticker.StrMethodFormatter`         From the ``string.format`` method
         ``'theta'``             `~matplotlib.projections.polar.ThetaFormatter`  Formats radians as degrees, with a degree symbol
         ``'e'``                 `~proplot.ticker.FracFormatter` preset          Fractions of *e*
@@ -1111,9 +1118,9 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
     proplot.axes.CartesianAxes.format
     proplot.axes.PolarAxes.format
     proplot.axes.GeoAxes.format
-    proplot.axes.colorbar_extras
+    proplot.axes.Axes.colorbar
     Locator
-    """  # noqa
+    """  # noqa: E501
     if isinstance(formatter, mticker.Formatter):  # formatter object
         return formatter
 
@@ -1155,7 +1162,7 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
     elif np.iterable(formatter):
         # List of strings
         if index:
-            formatter = pticker._IndexFormatter(formatter)
+            formatter = pticker.IndexFormatter(formatter)
         else:
             formatter = mticker.FixedFormatter(formatter)
     else:
@@ -1165,9 +1172,7 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
 
 def Scale(scale, *args, **kwargs):
     """
-    Return a `~matplotlib.scale.ScaleBase` instance. This function is used to
-    interpret the `xscale`, `xscale_kw`, `yscale`, and `yscale_kw` arguments
-    when passed to `~proplot.axes.CartesianAxes.format`.
+    Return a `~matplotlib.scale.ScaleBase` instance.
 
     Parameters
     ----------
@@ -1227,7 +1232,7 @@ def Scale(scale, *args, **kwargs):
     proplot.axes.CartesianAxes.format
     proplot.axes.CartesianAxes.dualx
     proplot.axes.CartesianAxes.dualy
-    """  # noqa
+    """  # noqa: E501
     # NOTE: Why not try to interpret FuncScale arguments, like when lists
     # of numbers are passed to Locator? Because FuncScale *itself* accepts
     # ScaleBase classes as arguments... but constructor functions cannot
@@ -1264,9 +1269,7 @@ def Scale(scale, *args, **kwargs):
 
 def Proj(name, basemap=None, **kwargs):
     """
-    Return a `cartopy.crs.Projection` or `~mpl_toolkits.basemap.Basemap`
-    instance. Used to interpret the `proj` and `proj_kw` arguments when
-    passed to `~proplot.ui.subplots`.
+    Return a `cartopy.crs.Projection` or `~mpl_toolkits.basemap.Basemap` instance.
 
     Parameters
     ----------
@@ -1417,10 +1420,12 @@ def Proj(name, basemap=None, **kwargs):
     .. _utm: https://proj4.org/operations/projections/utm.html
     .. _vandg: https://proj4.org/operations/projections/vandg.html
     .. _wintri: https://proj4.org/operations/projections/wintri.html
-    """  # noqa
+    """  # noqa: E501
     # Class instances
+    use_basemap = _not_none(basemap, rc['basemap'])
     is_crs = CRS is not object and isinstance(name, CRS)
     is_basemap = Basemap is not object and isinstance(name, Basemap)
+    include_axes_projections = kwargs.pop('include_axes_projections', None)
     if is_crs or is_basemap:
         proj = name
         proj._proj_package = 'cartopy' if is_crs else 'basemap'
@@ -1438,7 +1443,7 @@ def Proj(name, basemap=None, **kwargs):
         )
 
     # Basemap
-    elif basemap or basemap is None and rc['basemap']:
+    elif use_basemap:
         # NOTE: Known issue that basemap sometimes produces backwards maps:
         # https://stackoverflow.com/q/56299971/4970632
         # NOTE: We set rsphere to fix non-conda installed basemap issue:
@@ -1446,18 +1451,18 @@ def Proj(name, basemap=None, **kwargs):
         # NOTE: Unlike cartopy, basemap resolution is configured on
         # initialization and controls *all* features.
         import mpl_toolkits.basemap as mbasemap
-        if _version_mpl >= _version('3.3'):
+        if _version_mpl >= 3.3:
             raise RuntimeError(
                 'Basemap is no longer maintained and is incompatible with '
-                'matplotlib >= 3.3. Please use cartopy as your cartographic '
+                'matplotlib >= 3.3. Please use cartopy as your geographic '
                 'plotting backend or downgrade to matplotlib <= 3.2.'
             )
         if 'lonlim' in kwargs:
             kwargs['llcrnrlon'], kwargs['urcrnrlon'] = kwargs.pop('lonlim')
         if 'latlim' in kwargs:
             kwargs['llcrnrlat'], kwargs['urcrnrlat'] = kwargs.pop('latlim')
-        name = BASEMAP_PROJ_ALIASES.get(name, name)
-        kwproj = BASEMAP_KW_DEFAULTS.get(name, {}).copy()
+        name = PROJ_ALIASES.get(name, name)
+        kwproj = PROJ_DEFAULTS.get(name, {}).copy()
         kwproj.update(kwargs)
         kwproj.setdefault('fix_aspect', True)
         if kwproj.get('lon_0', 0) > 0:
@@ -1475,24 +1480,24 @@ def Proj(name, basemap=None, **kwargs):
             default=rc['reso']
         )
         try:
-            reso = BASEMAP_RESOS[reso]
+            reso = RESOS_BASEMAP[reso]
         except KeyError:
             raise ValueError(
                 f'Invalid resolution {reso!r}. Options are: '
-                + ', '.join(map(repr, BASEMAP_RESOS)) + '.'
+                + ', '.join(map(repr, RESOS_BASEMAP)) + '.'
             )
         kwproj.update({'resolution': reso, 'projection': name})
         proj = mbasemap.Basemap(**kwproj)
         proj._proj_package = 'basemap'
 
     # Cartopy
-    else:
+    elif name in PROJS:
         import cartopy.crs  # noqa: F401
         kwproj = {
-            CARTOPY_KW_ALIASES.get(key, key): value
+            PROJ_ALIASES_KW.get(key, key): value
             for key, value in kwargs.items()
         }
-        crs = CARTOPY_PROJS.get(name, None)
+        crs = PROJS.get(name, None)
         if name == 'geos':  # fix common mistake
             kwproj.pop('central_latitude', None)
         if 'boundinglat' in kwproj:
@@ -1500,13 +1505,19 @@ def Proj(name, basemap=None, **kwargs):
                 '"boundinglat" must be passed to the ax.format() command '
                 'for cartopy axes.'
             )
-        if crs is None:
-            raise ValueError(
-                f'Unknown projection {name!r}. Options are: '
-                + ', '.join(map(repr, CARTOPY_PROJS.keys())) + '.'
-            )
         proj = crs(**kwproj)
         proj._proj_package = 'cartopy'
+
+    # Unknown
+    else:
+        options = tuple(PROJS)
+        if include_axes_projections:
+            from .figure import AXES_PROJS  # avoid circular import
+            options += tuple(AXES_PROJS)
+        raise ValueError(
+            f'Unknown projection {name!r}. Options are: '
+            + ', '.join(map(repr, options)) + '.'
+        )
 
     return proj
 
