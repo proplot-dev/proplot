@@ -2,13 +2,23 @@
 """
 New colormap classes and colormap normalization classes.
 """
-# NOTE: Avoid colormap/color name conflicts by checking
-# set(pplt.colors._cmap_database) & set(pplt.colors.mcolors._colors_full_map)
-# whenever new default colormaps are added. Currently result is
-# {'gray', 'marine', 'ocean', 'pink'} which correspond to MATLAB and GNUplot maps.
+# NOTE: To avoid name conflicts between registered colormaps and colors, print
+# set(pplt.colors._cmap_database) & set(pplt.colors._color_database) whenever you
+# add new colormaps. v0.8 result is {'gray', 'marine', 'ocean', 'pink'} due to the
+# MATLAB and GNUPlot colormaps. Want to minimize conflicts.
+# NOTE: We decided LinearSegmentedColormap should always and only be used for smooth
+# color transitions while ListedColormap should always and only be used for qualitative
+# color sets. Many others use ListedColormap for dense "perceptually uniform" colormaps
+# possibly seeking optimization. However testing reveals that initialization of even
+# extremely dense 256-level colormaps is only 1.25ms vs. 0.25ms for a ListedColormap
+# with the same data (+1ms). Also ListedColormap was clearly designed for qualitative
+# transitions because specifying N greater than len(colors) will cyclically loop around
+# the colors or truncate colors. Therefore we always encode smooth color transitions
+# with LinearSegmentedColormap and translate cmaps accordingly (rc['cmap.listedthesh'])
 import json
 import os
 import re
+from collections.abc import MutableMapping
 from numbers import Integral, Number
 from xml.etree import ElementTree
 
@@ -16,29 +26,54 @@ import matplotlib.cm as mcm
 import matplotlib.colors as mcolors
 import numpy as np
 import numpy.ma as ma
-from matplotlib import rcParams
 
+from .config import rc
 from .internals import ic  # noqa: F401
-from .internals import _not_none, _pop_props, docstring, warnings
-from .utils import to_rgb, to_rgba, to_xyz, to_xyza
+from .internals import (
+    _keyword_to_positional, _not_none, _pop_props, docstring, warnings
+)
+from .utils import to_rgb, to_rgba, to_xyz, to_xyza, to_hex
 
 __all__ = [
-    'ListedColormap',
-    'LinearSegmentedColormap',
-    'PerceptuallyUniformColormap',
+    'DiscreteColormap',
+    'ContinuousColormap',
+    'PerceptualColormap',
     'DiscreteNorm',
     'DivergingNorm',
-    'LinearSegmentedNorm',
+    'SegmentedNorm',
     'ColorDatabase',
     'ColormapDatabase',
+    'ListedColormap',  # deprecated
+    'LinearSegmentedColormap',  # deprecated
+    'PerceptuallyUniformColormap',  # deprecated
+    'LinearSegmentedNorm',  # deprecated
 ]
 
-# Constants
-# NOTE: Do not compile hex regex because config.py needs this with \A\Z surrounding
-REGEX_HEX = r'#(?:[0-9a-fA-F]{3,4}){2}'  # 6-8 digit hex
-CMAPS_DIVERGING = tuple(
-    (key1.lower(), key2.lower())
+# Default colormap properties
+DEFAULT_NAME = '_no_name'
+DEFAULT_SPACE = 'hsl'
+DEFAULT_SAMPLES = 10  # used in Colormap() and relied upon in Cycle()
+CYCLE_LUMINANCE = 90  # used in Cycle()
+
+# Color regexes
+# NOTE: We do not compile hex regex because config.py needs this surrounded by \A\Z
+_regex_hex = r'#(?:[0-9a-fA-F]{3,4}){2}'  # 6-8 digit hex
+REGEX_HEX = re.compile(rf'\A{_regex_hex}\Z')
+REGEX_HEX_MULTI = re.compile(_regex_hex)
+
+# Colormap constants
+CMAPS_CYCLIC = tuple(  # cyclic colormaps loaded from rgb files
+    key.lower() for key in
+    ('Phase', 'MonoCycle', 'romaO', 'brocO', 'corkO', 'vikO', 'twilight')
+)
+CMAPS_DIVERGING = {  # mirrored dictionary mapping for reversed names
+    key.lower(): value.lower()
     for key1, key2 in (
+        ('BR', 'RB'),
+        ('NegPos', 'PosNeg'),
+        ('CoolWarm', 'WarmCool'),
+        ('ColdHot', 'HotCold'),
+        ('DryWet', 'WetDry'),
         ('PiYG', 'GYPi'),
         ('PRGn', 'GnRP'),
         ('BrBG', 'GBBr'),
@@ -47,16 +82,15 @@ CMAPS_DIVERGING = tuple(
         ('RdBu', 'BuRd'),
         ('RdYlBu', 'BuYlRd'),
         ('RdYlGn', 'GnYlRd'),
-        ('BR', 'RB'),
-        ('CoolWarm', 'WarmCool'),
-        ('ColdHot', 'HotCold'),
-        ('NegPos', 'PosNeg'),
-        ('DryWet', 'WetDry')
     )
-)
-
-# Deprecations
-_cmaps_removed = {
+    for key, value in ((key1, key2), (key2, key1))
+}
+for _cmap_diverging in (  # remaining diverging cmaps (see PlotAxes._parse_cmap)
+    'Div', 'Vlag', 'Spectral', 'Balance', 'Delta', 'Curl',
+    'roma', 'broc', 'cork', 'vik', 'berlin', 'lisbon', 'tofino',
+):
+    CMAPS_DIVERGING[_cmap_diverging.lower()] = _cmap_diverging.lower()
+CMAPS_REMOVED = {
     'Blue0': '0.6',
     'Cool': '0.6',
     'Warm': '0.6',
@@ -66,7 +100,8 @@ _cmaps_removed = {
     'Sharp': '0.6',
     'Viz': '0.6',
 }
-_cmaps_renamed = {
+CMAPS_RENAMED = {
+    'GrayCycle': ('MonoCycle', '0.6'),
     'Blue1': ('Blues1', '0.7'),
     'Blue2': ('Blues2', '0.7'),
     'Blue3': ('Blues3', '0.7'),
@@ -111,7 +146,110 @@ _cmaps_renamed = {
     'RedPurple8': ('Purples3', '0.7'),
 }
 
-docstring.snippets['cmap.init'] = """
+# Color constants
+COLORS_OPEN = {}  # populated during register_colors
+COLORS_XKCD = {}  # populated during register_colors
+COLORS_BASE = {
+    **mcolors.BASE_COLORS,  # shorthand names like 'r', 'g', etc.
+    'blue': (0, 0, 1),
+    'green': (0, 0.5, 0),
+    'red': (1, 0, 0),
+    'cyan': (0, 0.75, 0.75),
+    'magenta': (0.75, 0, 0.75),
+    'yellow': (0.75, 0.75, 0),
+    'black': (0, 0, 0),
+    'white': (1, 1, 1),
+}
+COLORS_KEEP = (
+    *(  # common fancy names or natural names
+        'charcoal', 'tomato', 'burgundy', 'maroon', 'burgundy', 'lavendar',
+        'taupe', 'ocre', 'sand', 'stone', 'earth', 'sand brown', 'sienna',
+        'terracotta', 'moss', 'crimson', 'mauve', 'rose', 'teal', 'forest',
+        'grass', 'sage', 'pine', 'vermillion', 'russet', 'cerise', 'avocado',
+        'wine', 'brick', 'umber', 'mahogany', 'puce', 'grape', 'blurple',
+        'cranberry', 'sand', 'aqua', 'jade', 'coral', 'olive', 'magenta',
+        'turquoise', 'sea blue', 'royal blue', 'slate blue', 'slate grey',
+        'baby blue', 'salmon', 'beige', 'peach', 'mustard', 'lime', 'indigo',
+        'cornflower', 'marine', 'cloudy blue', 'tangerine', 'scarlet', 'navy',
+        'cool grey', 'warm grey', 'chocolate', 'raspberry', 'denim',
+        'gunmetal', 'midnight', 'chartreuse', 'ivory', 'khaki', 'plum',
+        'silver', 'tan', 'wheat', 'buff', 'bisque', 'cerulean',
+    ),
+    *(  # common combos
+        'red orange', 'yellow orange', 'yellow green',
+        'blue green', 'blue violet', 'red violet',
+    ),
+    *(  # common names
+        prefix + color
+        for color in (
+            'red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet',
+            'brown', 'grey'
+        )
+        for prefix in ('', 'light ', 'dark ', 'medium ', 'pale ')
+    )
+)
+COLORS_REMOVE = (
+    # filter these out, let's try to be professional here...
+    'shit',
+    'poop',
+    'poo',
+    'pee',
+    'piss',
+    'puke',
+    'vomit',
+    'snot',
+    'booger',
+    'bile',
+    'diarrhea',
+    'icky',
+    'sickly',
+)
+COLORS_TRANSLATE = (
+    # prevent registering similar-sounding names
+    # these can all be combined
+    ('/', ' '),  # convert [color1]/[color2] to compound (e.g. grey/blue to grey blue)
+    ("'s", 's'),  # robin's egg
+    ('egg blue', 'egg'),  # robin's egg blue
+    ('grey', 'gray'),  # 'Murica
+    ('forrest', 'forest'),  # survey typo?
+    ('reddish', 'red'),  # remove [color]ish where it modifies the spelling of color
+    ('purplish', 'purple'),  # ...
+    ('pinkish', 'pink'),
+    ('yellowish', 'yellow'),
+    ('bluish', 'blue'),
+    ('greyish', 'grey'),
+    ('ish', ''),  # these are all [color]ish ('ish' substring appears nowhere else)
+    ('bluey', 'blue'),  # remove [color]y trailing y
+    ('greeny', 'green'),  # ...
+    ('reddy', 'red'),
+    ('pinky', 'pink'),
+    ('purply', 'purple'),
+    ('purpley', 'purple'),
+    ('yellowy', 'yellow'),
+    ('orangey', 'orange'),
+    ('browny', 'brown'),
+    ('minty', 'mint'),  # now remove [object]y trailing y
+    ('grassy', 'grass'),  # ...
+    ('mossy', 'moss'),
+    ('dusky', 'dusk'),
+    ('rusty', 'rust'),
+    ('muddy', 'mud'),
+    ('sandy', 'sand'),
+    ('leafy', 'leaf'),
+    ('dusty', 'dust'),
+    ('dirty', 'dirt'),
+    ('peachy', 'peach'),
+    ('stormy', 'storm'),
+    ('cloudy', 'cloud'),
+    ('grayblue', 'gray blue'),  # separate merge compounds
+    ('bluegray', 'blue gray'),  # ...
+    ('lightblue', 'light blue'),
+    ('yellowgreen', 'yellow green'),
+    ('yelloworange', 'yellow orange'),
+)
+
+# Docstrings
+_init_docstring = """
 alpha : float, optional
     The opacity for the entire colormap. This overrides the input
     segment data.
@@ -120,8 +258,7 @@ cyclic : bool, optional
     and rightmost color levels are selected, and `extend` can only be
     ``'neither'`` (a warning will be issued otherwise).
 """
-
-docstring.snippets['cmap.gamma'] = """
+_gamma_docstring = """
 gamma : float, optional
     Sets `gamma1` and `gamma2` to this identical value.
 gamma1 : float, optional
@@ -133,24 +270,61 @@ gamma2 : float, optional
     makes low luminance colors more prominent. Similar to the
     `HCLWizard <http://hclwizard.org:64230/hclwizard/>`_ option.
 """
+_space_docstring = """
+space : {'hsl', 'hpl', 'hcl', 'hsv'}, optional
+    The hue, saturation, luminance-style colorspace to use for interpreting
+    the channels. See `this page <http://www.hsluv.org/comparison/>`__ for
+    a full description. Default is ``'hsl'``.
+"""
+_name_docstring = """
+name : str, optional
+    The colormap name. This can also be passed as the first
+    positional string argument. Default is ``'_no_name'``.
+"""
+_ratios_docstring = """
+ratios : list of float, optional
+    Relative extents of each color transition. Must have length
+    ``len(colors) - 1``. Larger numbers indicate a slower
+    transition, smaller numbers indicate a faster transition.
+"""
+_from_list_docstring = """
+colors : list of color-spec or (float, color-spec) tuples
+    If list of RGB[A] tuples or color strings, the colormap
+    transitions evenly from ``colors[0]`` at the left-hand side
+    to ``colors[-1]`` at the right-hand side.
+
+    If list of (float, color-spec) tuples, the float values are the
+    coordinate of each transition and must range from 0 to 1. This
+    can be used to divide  the colormap range unevenly.
+%(colors.name)s
+%(colors.ratios)s
+    For example, ``('red', 'blue', 'green')`` with ``ratios=(2, 1)``
+    creates a colormap with the transition from red to blue taking
+    *twice as long* as the transition from blue to green.
+"""
+docstring.snippets['colors.init'] = _init_docstring
+docstring.snippets['colors.gamma'] = _gamma_docstring
+docstring.snippets['colors.space'] = _space_docstring
+docstring.snippets['colors.ratios'] = _ratios_docstring
+docstring.snippets['colors.name'] = _name_docstring
+docstring.snippets['colors.from_list'] = docstring.add_snippets(_from_list_docstring)
 
 
 def _clip_colors(colors, clip=True, gray=0.2, warn=False):
     """
-    Clip impossible colors rendered in an HSL-to-RGB colorspace conversion.
-    Used by `PerceptuallyUniformColormap`. If `mask` is ``True``, impossible
-    colors are masked out.
+    Clip impossible colors rendered in an HSL-to-RGB colorspace
+    conversion. Used by `PerceptualColormap`.
 
     Parameters
     ----------
     colors : list of length-3 tuples
         The RGB colors.
     clip : bool, optional
-        If `clip` is ``True`` (the default), RGB channel values >1 are clipped
-        to 1. Otherwise, the color is masked out as gray.
+        If `clip` is ``True`` (the default), RGB channel values >1 are
+        clipped to 1. Otherwise, the color is masked out as gray.
     gray : float, optional
-        The identical RGB channel values (gray color) to be used if `mask`
-        is ``True``.
+        The identical RGB channel values (gray color) to be used if
+        `clip` is ``True``.
     warn : bool, optional
         Whether to issue warning when colors are clipped.
     """
@@ -174,18 +348,17 @@ def _clip_colors(colors, clip=True, gray=0.2, warn=False):
 
 def _get_channel(color, channel, space='hcl'):
     """
-    Get the hue, saturation, or luminance channel value from the input color.
-    The color name `color` can optionally be a string with the format
-    ``'color+x'`` or ``'color-x'``, where `x` specifies the offset from the
-    channel value.
+    Get the hue, saturation, or luminance channel value from the input color. The
+    color name `color` can optionally be a string with the format ``'color+x'``
+    or ``'color-x'``, where `x` is the offset from the channel value.
 
     Parameters
     ----------
     color : color-spec
         The color. Sanitized with `to_rgba`.
-    channel : {'hue', 'chroma', 'saturation', 'luminance'}
+    channel : optional
         The HCL channel to be retrieved.
-    space : {'hcl', 'hpl', 'hsl', 'hsv', 'rgb'}, optional
+    space : optional
         The colorspace for the corresponding channel value.
 
     Returns
@@ -271,46 +444,39 @@ def _make_segment_data(values, coords=None, ratios=None):
 
 def _make_lookup_table(N, data, gamma=1.0, inverse=False):
     r"""
-    Used to generate lookup tables of HSL values given gradations specified
-    by `PerceptuallyUniformColormap`. Similar to `~matplotlib.colors.makeMappingArray`
-    but permits *circular* hue gradations along 0-360, disables clipping of
-    out-of-bounds channel values, and uses fancier "gamma" scaling.
+    Generate lookup tables of HSL values given specified gradations. Similar to
+    `~matplotlib.colors.makeMappingArray` but permits *circular* hue gradations,
+    disables clipping of out-of-bounds values, and uses fancier "gamma" scaling.
 
     Parameters
     ----------
     N : int
         Number of points in the colormap lookup table.
     data : 2D array-like
-        List of :math:`(x, y_0, y_1)` tuples specifying the channel jump (from
-        :math:`y_0` to :math:`y_1`) and the :math:`x` coordinate of that
-        transition (ranges between 0 and 1).
-        See `~matplotlib.colors.LinearSegmentedColormap` for details.
+        List of `(x, y_0, y_1)` tuples specifying channel jump (from `y_0` to `y_1`)
+        and `x` coordinate of that jump (ranges between 0 and 1). See
+        `~matplotlib.colors.LinearSegmentedColormap` for details.
     gamma : float or list of float, optional
-        To obtain channel values between coordinates :math:`x_i` and
-        :math:`x_{i+1}` in rows :math:`i` and :math:`i+1` of `data`,
-        we use the formula:
+        To obtain channel values between coordinates `x_i` and `x_{i+1}`
+        in rows `i` and `i+1` of `data` we use the formula:
 
         .. math::
 
             y = y_{1,i} + w_i^{\gamma_i}*(y_{0,i+1} - y_{1,i})
 
-        where :math:`\gamma_i` corresponds to `gamma` and the weight
-        :math:`w_i` ranges from 0 to 1 between rows ``i`` and ``i+1``.
-        If `gamma` is float, it applies to every transition. Otherwise,
-        its length must equal ``data.shape[0]-1``.
+        where `\gamma_i` corresponds to `gamma` and the weight `w_i` ranges from
+        0 to 1 between rows ``i`` and ``i+1``. If `gamma` is float, it applies
+        to every transition. Otherwise, its length must equal ``data.shape[0]-1``.
 
-        This is like the `gamma` used with matplotlib's
-        `~matplotlib.colors.makeMappingArray`, except it controls the
-        weighting for transitions *between* each segment data coordinate rather
-        than the coordinates themselves. This makes more sense for
-        `PerceptuallyUniformColormap`\ s because they usually consist of just
-        one linear transition for *sequential* colormaps and two linear
-        transitions for *diverging* colormaps.
+        This is similar to the `matplotlib.colors.makeMappingArray` `gamma` except
+        it controls the weighting for transitions *between* each segment data
+        coordinate rather than the coordinates themselves. This makes more sense
+        for `PerceptualColormap`\ s because they usually contain just a
+        handful of transitions representing chained segments.
     inverse : bool, optional
-        If ``True``, :math:`w_i^{\gamma_i}` is replaced with
-        :math:`1 - (1 - w_i)^{\gamma_i}` -- that is, when `gamma` is greater
-        than 1, this weights colors toward *higher* channel values instead
-        of lower channel values.
+        If ``True``, `w_i^{\gamma_i}` is replaced with `1 - (1 - w_i)^{\gamma_i}` --
+        that is, when `gamma` is greater than 1, this weights colors toward *higher*
+        channel values instead of lower channel values.
 
         This is implemented in case we want to apply *equal* "gamma scaling"
         to different HSL channels in different directions. Usually, this
@@ -319,12 +485,11 @@ def _make_lookup_table(N, data, gamma=1.0, inverse=False):
     """
     # Allow for *callable* instead of linearly interpolating between segments
     gammas = np.atleast_1d(gamma)
-    if (gammas < 0.01).any() or (gammas > 10).any():
+    if np.any(gammas < 0.01) or np.any(gammas > 10):
         raise ValueError('Gamma can only be in range [0.01,10].')
     if callable(data):
         if len(gammas) > 1:
-            raise ValueError(
-                'Only one gamma allowed for functional segmentdata.')
+            raise ValueError('Only one gamma allowed for functional segmentdata.')
         x = np.linspace(0, 1, N)**gamma
         lut = np.array(data(x), dtype=float)
         return lut
@@ -333,12 +498,9 @@ def _make_lookup_table(N, data, gamma=1.0, inverse=False):
     data = np.array(data)
     shape = data.shape
     if len(shape) != 2 or shape[1] != 3:
-        raise ValueError('Data must be nx3 format.')
+        raise ValueError('Mapping data must have shape N x 3.')
     if len(gammas) != 1 and len(gammas) != shape[0] - 1:
-        raise ValueError(
-            f'Need {shape[0]-1} gammas for {shape[0]}-level mapping array, '
-            f'but got {len(gamma)}.'
-        )
+        raise ValueError(f'Expected {shape[0] - 1} gammas for {shape[0]} coords. Got {len(gamma)}.')  # noqa: E501
     if len(gammas) == 1:
         gammas = np.repeat(gammas, shape[:1])
 
@@ -347,50 +509,157 @@ def _make_lookup_table(N, data, gamma=1.0, inverse=False):
     y0 = data[:, 1]
     y1 = data[:, 2]
     if x[0] != 0.0 or x[-1] != 1.0:
-        raise ValueError(
-            'Data mapping points must start with x=0 and end with x=1.'
-        )
-    if (np.diff(x) < 0).any():
-        raise ValueError(
-            'Data mapping points must have x in increasing order.'
-        )
+        raise ValueError('Data mapping points must start with x=0 and end with x=1.')
+    if np.any(np.diff(x) < 0):
+        raise ValueError('Data mapping points must have x in increasing order.')
     x = x * (N - 1)
 
     # Get distances from the segmentdata entry to the *left* for each requested
-    # level, excluding ends at (0,1), which must exactly match segmentdata ends
+    # level, excluding ends at (0, 1), which must exactly match segmentdata ends.
+    # NOTE: numpy.searchsorted returns where xq[i] must be inserted so it is
+    # larger than x[ind[i]-1] but smaller than x[ind[i]].
     xq = (N - 1) * np.linspace(0, 1, N)
-    # where xq[i] must be inserted so it is larger than x[ind[i]-1] but
-    # smaller than x[ind[i]]
     ind = np.searchsorted(x, xq)[1:-1]
-    distance = (xq[1:-1] - x[ind - 1]) / (x[ind] - x[ind - 1])
+    offsets = (xq[1:-1] - x[ind - 1]) / (x[ind] - x[ind - 1])
 
     # Scale distances in each segment by input gamma
-    # The ui are starting-points, the ci are counts from that point
-    # over which segment applies (i.e. where to apply the gamma), the relevant
-    # 'segment' is to the *left* of index returned by searchsorted
+    # The ui are starting-points, the ci are counts from that point over which
+    # segment applies (i.e. where to apply the gamma), the relevant 'segment'
+    # is to the *left* of index returned by searchsorted
     _, uind, cind = np.unique(ind, return_index=True, return_counts=True)
     for ui, ci in zip(uind, cind):  # length should be N-1
-        # the relevant segment is to *left* of this number
-        gamma = gammas[ind[ui] - 1]
+        gamma = gammas[ind[ui] - 1]  # the relevant segment is *left* of this number
         if gamma == 1:
             continue
-        ireverse = False
-        if ci > 1:  # i.e. more than 1 color in this 'segment'
-            # by default want to weight toward a *lower* channel value
-            ireverse = ((y0[ind[ui]] - y1[ind[ui] - 1]) < 0)
-        if inverse:
-            ireverse = not ireverse
-        if ireverse:
-            distance[ui:ui + ci] = 1 - (1 - distance[ui:ui + ci])**gamma
+        if ci == 0:  # no lookup table coordinates fall inside this segment
+            reverse = False
+        else:  # reverse if we are transitioning to *lower* channel value
+            reverse = (y0[ind[ui]] - y1[ind[ui] - 1]) < 0
+        if inverse:  # reverse if we are transitioning to *higher* channel value
+            reverse = not reverse
+        if reverse:
+            offsets[ui:ui + ci] = 1 - (1 - offsets[ui:ui + ci]) ** gamma
         else:
-            distance[ui:ui + ci] **= gamma
+            offsets[ui:ui + ci] **= gamma
 
-    # Perform successive linear interpolations all rolled up into one equation
+    # Perform successive linear interpolations rolled up into one equation
     lut = np.zeros((N,), float)
-    lut[1:-1] = distance * (y0[ind] - y1[ind - 1]) + y1[ind - 1]
+    lut[1:-1] = y1[ind - 1] + offsets * (y0[ind] - y1[ind - 1])
     lut[0] = y1[0]
     lut[-1] = y0[-1]
     return lut
+
+
+def _load_colors(path, ignore_base=True, warn_on_failure=True):
+    """
+    Read colors from the input file.
+
+    Parameters
+    ----------
+    ignore_base : bool, optional
+        If ``True``, ignore colors matching "base" color names like
+        ``'red'`` and ``'blue'``.
+    warn_on_failure : bool, optional
+        If ``True``, issue a warning when loading fails instead of
+        raising an error.
+    """
+    # Warn or raise error (matches Colormap._from_file behavior)
+    def _warn_or_raise(filename, descrip, error=RuntimeError):
+        prefix = f'Failed to load color data file {filename!r}.'
+        if warn_on_failure:
+            warnings._warn_proplot(prefix + ' ' + descrip)
+        else:
+            raise error(prefix + ' ' + descrip)
+    if not os.path.exists(path):
+        return _warn_or_raise(f'File {path!r} not found.', FileNotFoundError)
+
+    # Check extension
+    cat, ext = os.path.splitext(path)
+    if ext != '.txt':
+        return _warn_or_raise(
+            f"Failed to load color data file {path!r}. Extension must be '.txt.'."
+        )
+
+    # Iterate through lines
+    loaded = {}
+    with open(path, 'r') as fh:
+        for count, line in enumerate(fh):
+            # Ignore comments
+            stripped = line.strip()
+            if not stripped or stripped[0] == '#':
+                continue
+            # Ensure line contains color
+            pair = tuple(item.strip().lower() for item in line.split(':'))
+            if len(pair) != 2 or not REGEX_HEX.match(pair[1]):
+                _warn_or_raise(
+                    f'Illegal line #{count + 1} in file {path!r}:\n'
+                    f'{line!r}\n'
+                    f'Lines must be formatted as "name: hexcolor".'
+                )
+                continue
+            # Never overwrite "base" colors with proplot defaults
+            name, color = pair
+            if ignore_base and name in COLORS_BASE:
+                continue
+            loaded[name] = color
+
+    return loaded
+
+
+def _standardize_colors(input, space='hcl', margin=0.10):
+    """
+    Standardize the input colors.
+
+    Parameters
+    ----------
+    space : optional
+        The colorspace used to filter colors.
+    margin : optional
+        The proportional margin required for "unique" colors (e.g. 0.10
+        represents 36 hue units, 10 saturation units, 10 luminance units).
+    """
+    output = {}
+    colors = []
+    channels = []
+
+    # Always add these colors and ignore other colors that are too close
+    # We do this for colors with nice names or that proplot devs really like
+    for name in COLORS_KEEP:
+        color = input.pop(name, None)
+        if color is None:
+            continue
+        if 'grey' in name:
+            name = name.replace('grey', 'gray')
+        colors.append((name, color))
+        channels.append(to_xyz(color, space=space))
+        output[name] = color  # required in case "kept" colors are close to each other
+
+    # Translate remaining colors and remove bad names
+    # WARNING: Unique axis argument requires numpy version >=1.13
+    for name, color in input.items():
+        for string, replace in COLORS_TRANSLATE:
+            if string in name:
+                name = name.replace(string, replace)
+        if any(string in name for string in COLORS_REMOVE):
+            continue  # remove "unpofessional" names
+        if name in output:
+            continue  # not necessary to recompute channels
+        colors.append((name, color))  # category name pair
+        channels.append(to_xyz(color, space=space))
+
+    # Get locations of "perceptually distinct" colors
+    channels = np.asarray(channels)
+    if not channels.size:
+        return output
+    channels = channels / np.array([360, 100, 100])
+    channels = np.round(channels / margin).astype(np.int64)
+    _, idxs = np.unique(channels, return_index=True, axis=0)
+
+    # Return only "distinct" colors
+    for idx in idxs:
+        name, color = colors[idx]
+        output[name] = color
+    return output
 
 
 class _Colormap(object):
@@ -429,24 +698,48 @@ class _Colormap(object):
             )
         return data
 
-    def _parse_path(self, path, dirname='.', ext=''):
+    @staticmethod
+    def _pop_args(*args, names=None, **kwargs):
+        """
+        Pop the name as a first positional argument or keyword argument.
+        Supports matplotlib-style ``Colormap(name, data)`` input
+        algongside more intuitive ``Colormap(data, name='name')`` input.
+        """
+        names = names or ()
+        if isinstance(names, str):
+            names = (names,)
+        names = ('name', *names)
+        args, kwargs = _keyword_to_positional(names, *args, **kwargs)
+        if args[0] is not None and args[1] is None:
+            args[:2] = (DEFAULT_NAME, args[0])
+        if args[0] is None:
+            args[0] = DEFAULT_NAME
+        return (*args, kwargs)
+
+    def _parse_path(self, path, ext=None, subfolder=None):
         """
         Parse the user input path.
 
         Parameters
         ----------
-        dirname : str, optional
-            The default directory.
-        ext : str, optional
+        path : path-like, optional
+            The file path.
+        ext : str
             The default extension.
+        subfolder : str, optional
+            The subfolder.
         """
-        path = os.path.expanduser(path or '')
-        dirname = os.path.expanduser(dirname or '')
-        if not path or os.path.isdir(path):
-            path = os.path.join(path or dirname, self.name)  # default name
-        dirname, basename = os.path.split(path)  # default to current directory
-        path = os.path.join(dirname or '.', basename)
-        if not os.path.splitext(path)[-1]:
+        # Get the folder
+        folder = rc.user_folder(subfolder=subfolder)
+        if path is not None:
+            path = os.path.expanduser(path or '.')  # interpret empty string as '.'
+            if os.path.isdir(path):
+                folder, path = path, None
+        # Get the filename
+        if path is None:
+            path = os.path.join(folder, self.name)
+        _, ext = os.path.splitext(path)
+        if not ext:
             path = path + '.' + ext  # default file extension
         return path
 
@@ -462,44 +755,43 @@ class _Colormap(object):
 
         # Warn if loading failed during `register_cmaps` or `register_cycles`
         # but raise error if user tries to load a file.
-        def _warn_or_raise(msg, error=RuntimeError):
+        def _warn_or_raise(filename, descrip, error=RuntimeError):
+            prefix = f'Failed to load colormap or color cycle file {filename!r}.'
             if warn_on_failure:
-                warnings._warn_proplot(msg)
+                warnings._warn_proplot(prefix + ' ' + descrip)
             else:
-                raise error(msg)
+                raise error(prefix + ' ' + descrip)
         if not os.path.exists(filename):
-            return _warn_or_raise(f'File {filename!r} not found.', FileNotFoundError)
+            return _warn_or_raise(
+                filename, 'File not found.', FileNotFoundError
+            )
 
         # Directly read segmentdata json file
         # NOTE: This is special case! Immediately return name and cmap
         ext = ext[1:]
         if ext == 'json':
             if listed:
-                raise TypeError(
-                    f'Cannot load listed colormaps from json files ({filename!r}).'
-                )
+                return _warn_or_raise(filename, 'Cannot load cycles from json files.')
             try:
                 with open(filename, 'r') as fh:
                     data = json.load(fh)
             except json.JSONDecodeError:
-                return _warn_or_raise(
-                    f'Failed to load {filename!r}.', json.JSONDecodeError
-                )
+                return _warn_or_raise(filename, 'Decoding error.', json.JSONDecodeError)
             kw = {}
             for key in ('cyclic', 'gamma', 'gamma1', 'gamma2', 'space'):
                 if key in data:
                     kw[key] = data.pop(key, None)
             if 'red' in data:
-                cmap = LinearSegmentedColormap(name, data)
+                cmap = ContinuousColormap(name, data)
             else:
-                cmap = PerceptuallyUniformColormap(name, data, **kw)
+                cmap = PerceptualColormap(name, data, **kw)
             if reversed:
                 cmap = cmap.reversed(name[:-2])
             return cmap
 
         # Read .rgb and .rgba files
         if ext in ('txt', 'rgb'):
-            # Load
+            # Load file
             # NOTE: This appears to be biggest import time bottleneck! Increases
             # time from 0.05s to 0.2s, with numpy loadtxt or with this regex thing.
             delim = re.compile(r'[,\s]+')
@@ -512,15 +804,13 @@ class _Colormap(object):
                 data = [[float(num) for num in line] for line in data]
             except ValueError:
                 return _warn_or_raise(
-                    f'Failed to load {filename!r}. Expected a table of comma '
-                    'or space-separated values.'
+                    filename, 'Expected a table of comma or space-separated floats.'
                 )
             # Build x-coordinates and standardize shape
             data = np.array(data)
             if data.shape[1] not in (3, 4):
                 return _warn_or_raise(
-                    f'Failed to load {filename!r}. Got {data.shape[1]} columns, '
-                    f'but expected 3 or 4.'
+                    filename, f'Got {data.shape[1]} columns but expected 3 or 4.'
                 )
             if ext[0] != 'x':  # i.e. no x-coordinates specified explicitly
                 x = np.linspace(0, 1, data.shape[0])
@@ -535,16 +825,15 @@ class _Colormap(object):
                 doc = ElementTree.parse(filename)
             except ElementTree.ParseError:
                 return _warn_or_raise(
-                    f'Failed to load {filename!r}. Parsing error.',
-                    ElementTree.ParseError
+                    filename, 'Parsing error.', ElementTree.ParseError
                 )
             x, data = [], []
             for s in doc.getroot().findall('.//Point'):
                 # Verify keys
                 if any(key not in s.attrib for key in 'xrgb'):
                     return _warn_or_raise(
-                        f'Failed to load {filename!r}. Missing an x, r, g, or b '
-                        'specification inside one or more <Point> tags.'
+                        filename,
+                        'Missing an x, r, g, or b key inside one or more <Point> tags.'
                     )
                 # Get data
                 color = []
@@ -560,18 +849,19 @@ class _Colormap(object):
                 for color in data
             ):
                 return _warn_or_raise(
-                    f'Failed to load {filename!r}. Unexpected number of channels '
-                    'or mixed channels across <Point> tags.'
+                    filename,
+                    'Unexpected channel number or mixed channels across <Point> tags.'
                 )
 
         # Read hex strings
         elif ext == 'hex':
             # Read arbitrary format
             string = open(filename).read()  # into single string
-            data = re.findall(REGEX_HEX, string)
+            data = REGEX_HEX_MULTI.findall(string)
             if len(data) < 2:
                 return _warn_or_raise(
-                    f'Failed to load {filename!r}. Hex strings not found.'
+                    filename,
+                    'Failed to find 6-digit or 8-digit HEX strings.'
                 )
             # Convert to array
             x = np.linspace(0, 1, len(data))
@@ -580,14 +870,17 @@ class _Colormap(object):
         # Invalid extension
         else:
             return _warn_or_raise(
-                f'Colormap or cycle file {filename!r} has unknown extension.'
+                filename,
+                'Unknown extension -- options are: '
+                + ', '.join(map(repr, ('json', 'txt', 'rgb', 'hex'))) + '.'
             )
 
         # Standardize and reverse if necessary to cmap
         # TODO: Document the fact that filenames ending in _r return a reversed
         # version of the colormap stored in that file.
-        x, data = np.array(x), np.array(data)
+        x = np.array(x)
         x = (x - x.min()) / (x.max() - x.min())  # ensure they span 0-1
+        data = np.array(data)
         if np.any(data > 2):  # from 0-255 to 0-1
             data = data / 255
         if reversed:
@@ -595,15 +888,15 @@ class _Colormap(object):
             data = data[::-1, :]
             x = 1 - x[::-1]
         if listed:
-            return ListedColormap(data, name)
+            return DiscreteColormap(data, name)
         else:
             data = [(x, color) for x, color in zip(x, data)]
-            return LinearSegmentedColormap.from_list(name, data)
+            return ContinuousColormap.from_list(name, data)
 
 
-class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
+class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
     r"""
-    New base class for all `~matplotlib.colors.LinearSegmentedColormap`\ s.
+    Replacement for `~matplotlib.colors.LinearSegmentedColormap`.
     """
     def __str__(self):
         return type(self).__name__ + f'(name={self.name!r})'
@@ -618,16 +911,13 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             if callable(data):
                 string += f' {key!r}: <function>,\n'
             else:
-                string += (
-                    f' {key!r}: [{data[0][2]:.3f}, ..., {data[-1][1]:.3f}],\n'
-                )
+                stop = data[-1][1]
+                start = data[0][2]
+                string += f' {key!r}: [{start:.2f}, ..., {stop:.2f}],\n'
         return type(self).__name__ + '({\n' + string + '})'
 
     @docstring.add_snippets
-    def __init__(
-        self, name, segmentdata, N=None, gamma=1,
-        cyclic=False, alpha=None,
-    ):
+    def __init__(self, *args, gamma=1, cyclic=False, alpha=None, **kwargs):
         """
         Parameters
         ----------
@@ -636,27 +926,33 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         segmentdata : dict-like
             Dictionary containing the keys ``'red'``, ``'blue'``, ``'green'``,
             and (optionally) ``'alpha'``. The shorthands ``'r'``, ``'g'``, ``'b'``,
-            and ``'a'`` are also acceptable. The key values can be callable functions
-            that return channel values given a colormap index, or 3-column arrays
-            indicating the coordinates and channel transitions. See
+            and ``'a'`` are also acceptable. The key values can be callable
+            functions that return channel values given a colormap index, or
+            3-column arrays indicating the coordinates and channel transitions. See
             `matplotlib.colors.LinearSegmentedColormap` for a detailed explanation.
         N : int, optional
             Number of points in the colormap lookup table. Default is :rc:`image.lut`.
         gamma : float, optional
             Gamma scaling used for the *x* coordinates.
-        %(cmap.init)s
+        %(colors.init)s
 
         See also
         --------
-        ListedColormap
+        DiscreteColormap
         matplotlib.colors.LinearSegmentedColormap
         proplot.constructor.Colormap
         """
-        N = _not_none(N, rcParams['image.lut'])
+        # NOTE: Additional keyword args should raise matplotlib error
+        name, segmentdata, N, kwargs = self._pop_args(
+            *args, names=('segmentdata', 'N'), **kwargs
+        )
+        if not isinstance(segmentdata, dict):
+            raise ValueError(f'Invalid segmentdata {segmentdata}. Must be a dict.')
+        N = _not_none(N, rc['image.lut'])
         data = _pop_props(segmentdata, 'rgba', 'hsla')
         if segmentdata:
             raise ValueError(f'Invalid segmentdata keys {tuple(segmentdata)}.')
-        super().__init__(name, data, N=N, gamma=gamma)
+        super().__init__(name, data, N=N, gamma=gamma, **kwargs)
         self._cyclic = cyclic
         if alpha is not None:
             self.set_alpha(alpha)
@@ -669,7 +965,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         Parameters
         ----------
         *args
-            Instances of `LinearSegmentedColormap`.
+            Instances of `ContinuousColormap`.
         ratios : list of float, optional
             Relative extent of each component colormap in the merged colormap.
             Length must equal ``len(args) + 1``.
@@ -687,17 +983,17 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         Other parameters
         ----------------
         **kwargs
-            Passed to `LinearSegmentedColormap.copy`
-            or `PerceptuallyUniformColormap.copy`.
+            Passed to `ContinuousColormap.copy`
+            or `PerceptualColormap.copy`.
 
         Returns
         -------
-        `LinearSegmentedColormap`
+        `ContinuousColormap`
             The colormap.
 
         See also
         --------
-        ListedColormap.append
+        DiscreteColormap.append
         """
         # Parse input args
         if not args:
@@ -705,14 +1001,14 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         if not all(isinstance(cmap, mcolors.LinearSegmentedColormap) for cmap in args):
             raise TypeError(f'Arguments {args!r} must be LinearSegmentedColormaps.')
 
-        # PerceptuallyUniformColormap --> LinearSegmentedColormap conversions
+        # PerceptualColormap --> ContinuousColormap conversions
         cmaps = [self, *args]
         spaces = {getattr(cmap, '_space', None) for cmap in cmaps}
-        to_linear_segmented = len(spaces) > 1  # mixed colorspaces *or* mixed types
-        if to_linear_segmented:
+        to_continuous = len(spaces) > 1  # mixed colorspaces *or* mixed types
+        if to_continuous:
             for i, cmap in enumerate(cmaps):
-                if isinstance(cmap, PerceptuallyUniformColormap):
-                    cmaps[i] = cmap.to_linear_segmented()
+                if isinstance(cmap, PerceptualColormap):
+                    cmaps[i] = cmap.to_continuous()
 
         # Combine the segmentdata, and use the y1/y2 slots at merge points so
         # we never interpolate between end colors of different colormaps
@@ -729,10 +1025,9 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             # WARNING: If just reference a global 'funcs' list from inside the
             # 'data' function it can get overwritten in this loop. Must
             # embed 'funcs' into the definition using a keyword argument.
-            callable_ = [callable(cmap._segmentdata[key]) for cmap in cmaps]
-            if all(callable_):  # expand range from x-to-w to 0-1
-                funcs = [cmap._segmentdata[key] for cmap in cmaps]
-                def xyy(ix, funcs=funcs):  # noqa: E306
+            datas = [cmap._segmentdata[key] for cmap in cmaps]
+            if all(map(callable, datas)):  # expand range from x-to-w to 0-1
+                def xyy(ix, funcs=datas):  # noqa: E306
                     ix = np.atleast_1d(ix)
                     kx = np.empty(ix.shape)
                     for j, jx in enumerate(ix.flat):
@@ -743,7 +1038,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             # Concatenate segment arrays and make the transition at the
             # seam instant so we *never interpolate* between end colors
             # of different maps.
-            elif not any(callable_):
+            elif not any(map(callable, datas)):
                 datas = []
                 for x, w, cmap in zip(x0[:-1], xw, cmaps):
                     xyy = np.array(cmap._segmentdata[key])
@@ -756,7 +1051,10 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
                 xyy[:, 0] = xyy[:, 0] / xyy[:, 0].max(axis=0)  # fix fp errors
 
             else:
-                raise TypeError('Mixed callable and non-callable colormap values.')
+                raise TypeError(
+                    'Cannot merge colormaps with mixed callable '
+                    'and non-callable segment data.'
+                )
             segmentdata[key] = xyy
 
             # Handle gamma values
@@ -768,15 +1066,16 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             if not ikey or ikey in kwargs:
                 continue
             gamma = []
+            callable_ = all(map(callable, datas))
             for cmap in cmaps:
                 igamma = getattr(cmap, '_' + ikey)
                 if not np.iterable(igamma):
-                    if all(callable_):
+                    if callable_:
                         igamma = (igamma,)
                     else:
                         igamma = (igamma,) * (len(cmap._segmentdata[key]) - 1)
                 gamma.extend(igamma)
-            if all(callable_):
+            if callable_:
                 if any(igamma != gamma[0] for igamma in gamma[1:]):
                     warnings._warn_proplot(
                         'Cannot use multiple segment gammas when concatenating '
@@ -786,8 +1085,8 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             kwargs[ikey] = gamma
 
         # Return copy or merge mixed types
-        if to_linear_segmented and isinstance(self, PerceptuallyUniformColormap):
-            return LinearSegmentedColormap(name, segmentdata, N, **kwargs)
+        if to_continuous and isinstance(self, PerceptualColormap):
+            return ContinuousColormap(name, segmentdata, N, **kwargs)
         else:
             return self.copy(name, segmentdata, N, **kwargs)
 
@@ -808,25 +1107,24 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         left, right : float, optional
             The colormap indices for the "leftmost" and "rightmost" colors.
             Defaults are ``0`` and ``1``. See
-            `~LinearSegmentedColormap.truncate` for details.
+            `~ContinuousColormap.truncate` for details.
         right : float, optional
             The colormap index for the new "rightmost" color. Must fall between
 
         Other parameters
         ----------------
         **kwargs
-            Passed to `LinearSegmentedColormap.copy`
-            or `PerceptuallyUniformColormap.copy`.
+            Passed to `ContinuousColormap.copy` or `PerceptualColormap.copy`.
 
         Returns
         -------
-        `LinearSegmentedColormap`
+        `ContinuousColormap`
             The colormap.
 
         See also
         --------
-        LinearSegmentedColormap.truncate
-        ListedColormap.truncate
+        ContinuousColormap.truncate
+        DiscreteColormap.truncate
         """
         # Parse input args
         left = max(_not_none(left, 0), 0)
@@ -858,7 +1156,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             segmentdata = {
                 key: _make_segment_data(x) for key, x in zip(space + 'a', xyza)
             }
-            args.append(type(self)('_no_name', segmentdata, self.N))
+            args.append(type(self)(DEFAULT_NAME, segmentdata, self.N))
             kwargs.setdefault('ratios', (ratio, abs(cut), ratio))
         args.append(cmap_right)
 
@@ -876,18 +1174,24 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         Other parameters
         ----------------
         **kwargs
-            Passed to `LinearSegmentedColormap.copy`
-            or `PerceptuallyUniformColormap.copy`.
+            Passed to `ContinuousColormap.copy`
+            or `PerceptualColormap.copy`.
 
         See also
         --------
         matplotlib.colors.LinearSegmentedColormap.reversed
         """
+        # Reverse segments
         segmentdata = {
-            key: (lambda x: data(1.0 - x)) if callable(data)
-            else [(1.0 - x, y1, y0) for x, y0, y1 in reversed(data)]
+            key: (
+                (lambda x, func=data: func(x))
+                if callable(data) else
+                [(1.0 - x, y1, y0) for x, y0, y1 in reversed(data)]
+            )
             for key, data in self._segmentdata.items()
         }
+
+        # Reverse gammas
         for key in ('gamma1', 'gamma2'):
             if key in kwargs:
                 continue
@@ -896,27 +1200,25 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
                 kwargs[key] = gamma[::-1]
         if name is None:
             name = self.name + '_r'
-        return self.copy(name, segmentdata, **kwargs)
 
+        cmap = self.copy(name, segmentdata, **kwargs)
+        cmap._rgba_under, cmap._rgba_over = cmap._rgba_over, cmap._rgba_under
+        return cmap
+
+    @docstring.add_snippets
     def save(self, path=None, alpha=True):
         """
         Save the colormap data to a file.
 
         Parameters
         ----------
-        path : str, optional
-            The output filename. If not provided, the colormap
-            is saved under ``~/.proplot/cmaps/name.json`` where ``name``
-            is the colormap name. Valid extensions are described in
-            the below table.
+        path : path-like, optional
+            The output filename. If not provided, the colormap is saved in the
+            ``cmaps`` subfolder in `~proplot.config.Configurator.user_folder`
+            under the filename ``name.json`` (where ``name`` is the colormap name).
+            Valid extensions are shown in the below table.
 
-            ===================  ==========================================
-            Extension            Description
-            ===================  ==========================================
-            ``.json`` (default)  JSON database of the channel segment data.
-            ``.hex``             Comma-delimited list of HEX strings.
-            ``.rgb``, ``.txt``   3-4 column table of channel values.
-            ===================  ==========================================
+            %(rc.cmap_exts)s
 
         alpha : bool, optional
             Whether to include an opacity column for ``.rgb``
@@ -924,21 +1226,17 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
         See also
         --------
-        ListedColormap.save
+        DiscreteColormap.save
         """
-        dirname = os.path.join('~', '.proplot', 'cmaps')
-        filename = self._parse_path(path, dirname, 'json')
-
-        # Save channel segment data in json file
+        filename = self._parse_path(path, ext='json', subfolder='cmaps')
         _, ext = os.path.splitext(filename)
         if ext[1:] == 'json':
-            # Sanitize segmentdata values. Convert np.float to builtin float,
-            # np.array to list of lists, and callable to list of lists. We
-            # tried encoding func.__code__ with base64 and marshal instead, but
-            # when cmap.concatenate() embeds functions as keyword arguments, this
-            # seems to make it *impossible* to load back up the function with
-            # FunctionType (error message: arg 5 (closure) must be tuple). Instead
-            # use this brute force workaround.
+            # Sanitize segmentdata values. Convert np.float to builtin float, np.array
+            # to list of lists, and callable to list of lists. We tried encoding
+            # func.__code__ with base64 and marshal instead, but when cmap.append()
+            # embeds functions as keyword arguments, this seems to make it *impossible*
+            # to load back up the function with FunctionType (error message: arg 5
+            # (closure) must be tuple). Instead use this brute force workaround.
             data = {}
             for key, value in self._segmentdata.items():
                 if callable(value):
@@ -946,20 +1244,17 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
                     y = np.array([value(_) for _ in x]).squeeze()
                     value = np.vstack((x, y, y)).T
                 data[key] = np.asarray(value).astype(float).tolist()
-
-            # Add critical attributes to the dictionary
             keys = ()
-            if isinstance(self, PerceptuallyUniformColormap):
+            if isinstance(self, PerceptualColormap):
                 keys = ('cyclic', 'gamma1', 'gamma2', 'space')
-            elif isinstance(self, LinearSegmentedColormap):
+            elif isinstance(self, ContinuousColormap):
                 keys = ('cyclic', 'gamma')
-            for key in keys:
+            for key in keys:  # add all attrs to dictionary
                 data[key] = getattr(self, '_' + key)
             with open(filename, 'w') as fh:
                 json.dump(data, fh, indent=4)
-
-        # Save lookup table colors
         else:
+            # Save lookup table colors
             data = self._get_data(ext[1:], alpha=alpha)
             with open(filename, 'w') as fh:
                 fh.write(data)
@@ -986,7 +1281,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
         See also
         --------
-        ListedColormap.set_alpha
+        DiscreteColormap.set_alpha
         """
         alpha = _make_segment_data(alpha, coords=coords, ratios=ratios)
         self._segmentdata['alpha'] = alpha
@@ -994,8 +1289,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
     def set_cyclic(self, b):
         """
-        Set whether this colormap is "cyclic". See `LinearSegmentedColormap`
-        for details.
+        Set whether this colormap is "cyclic". See `ContinuousColormap` for details.
         """
         self._cyclic = bool(b)
         self._isinit = False
@@ -1016,12 +1310,11 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         Other parameters
         ----------------
         **kwargs
-            Passed to `LinearSegmentedColormap.copy`
-            or `PerceptuallyUniformColormap.copy`.
+            Passed to `ContinuousColormap.copy` or `PerceptualColormap.copy`.
 
         See also
         --------
-        ListedColormap.shifted
+        DiscreteColormap.shifted
         """
         shift = ((shift or 0) / 360) % 1
         if shift == 0:
@@ -1030,9 +1323,8 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             name = self.name + '_s'
         if not self._cyclic:
             warnings._warn_proplot(
-                f'Shifting non-cyclic colormap {self.name!r}. '
-                f'Use cmap.set_cyclic(True) or Colormap(..., cyclic=True) to '
-                'suppress this warning.'
+                f'Shifting non-cyclic colormap {self.name!r}. Use cmap.set_cyclic(True)'
+                ' or Colormap(..., cyclic=True) to suppress this warning.'
             )
             self._cyclic = True
 
@@ -1061,12 +1353,12 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         Other parameters
         ----------------
         **kwargs
-            Passed to `LinearSegmentedColormap.copy`
-            or `PerceptuallyUniformColormap.copy`.
+            Passed to `ContinuousColormap.copy`
+            or `PerceptualColormap.copy`.
 
         See also
         --------
-        ListedColormap.truncate
+        DiscreteColormap.truncate
         """
         # Bail out
         left = max(_not_none(left, 0), 0)
@@ -1078,20 +1370,20 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
         # Resample the segmentdata arrays
         segmentdata = {}
-        for key, xyy in self._segmentdata.items():
+        for key, data in self._segmentdata.items():
             # Callable array
             # WARNING: If just reference a global 'xyy' callable from inside
             # the lambda function it gets overwritten in the loop! Must embed
             # the old callable in the new one as a default keyword arg.
-            if callable(xyy):
-                def xyy(x, func=xyy):
+            if callable(data):
+                def xyy(x, func=data):
                     return func(left + x * (right - left))
 
             # Slice
             # l is the first point where x > 0 or x > left, should be >= 1
             # r is the last point where r < 1 or r < right
             else:
-                xyy = np.asarray(xyy)
+                xyy = np.asarray(data)
                 x = xyy[:, 0]
                 l = np.searchsorted(x, left)  # first x value > left  # noqa
                 r = np.searchsorted(x, right) - 1  # last x value < right
@@ -1104,9 +1396,9 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
                 )
                 xyy = np.vstack(((left, *xl), xc, (right, *xr)))
                 xyy[:, 0] = (xyy[:, 0] - left) / (right - left)
-            segmentdata[key] = xyy
 
             # Retain the corresponding gamma *segments*
+            segmentdata[key] = xyy
             if key == 'saturation':
                 ikey = 'gamma1'
             elif key == 'luminance':
@@ -1148,13 +1440,13 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         name : str
             The name of the new colormap. Default is ``self.name + '_copy'``.
         segmentdata, N, alpha, gamma, cyclic : optional
-            See `LinearSegmentedColormap`. If not provided, these are copied from
+            See `ContinuousColormap`. If not provided, these are copied from
             the current colormap.
 
         See also
         --------
-        ListedColormap.copy
-        PerceptuallyUniformColormap.copy
+        DiscreteColormap.copy
+        PerceptualColormap.copy
         """
         if name is None:
             name = self.name + '_copy'
@@ -1166,7 +1458,7 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             cyclic = self._cyclic
         if N is None:
             N = self.N
-        cmap = LinearSegmentedColormap(
+        cmap = ContinuousColormap(
             name, segmentdata, N,
             alpha=alpha, gamma=gamma, cyclic=cyclic
         )
@@ -1175,28 +1467,28 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         cmap._rgba_over = self._rgba_over
         return cmap
 
-    def to_listed(self, samples=10, name=None, **kwargs):
+    def to_discrete(self, samples=10, name=None, **kwargs):
         """
-        Convert the `LinearSegmentedColormap` to a `ListedColormap` by drawing
+        Convert the `ContinuousColormap` to a `DiscreteColormap` by drawing
         samples from the colormap.
 
         Parameters
         ----------
         samples : int or list of float, optional
             If integer, draw samples at the colormap coordinates
-            ``np.linspace(0, 1, samples)``. If list of float, draw samples
-            at the specified points.
+            ``np.linspace(0, 1, samples)``. If list of float, draw
+            samples at the specified points.
         name : str, optional
             The name of the new colormap. Default is ``self.name + '_copy'``.
 
         Other parameters
         ----------------
         **kwargs
-            Passed to `ListedColormap`.
+            Passed to `DiscreteColormap`.
 
         See also
         --------
-        ListedColormap.to_linear_segmented
+        PerceptualColormap.to_continuous
         """
         if isinstance(samples, Integral):
             samples = np.linspace(0, 1, samples)
@@ -1206,25 +1498,20 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
         colors = self(samples)
         if name is None:
             name = self.name + '_copy'
-        return ListedColormap(colors, name=name, **kwargs)
+        return DiscreteColormap(colors, name=name, **kwargs)
 
     @classmethod
-    def from_file(cls, path, warn_on_failure=False):
+    @docstring.add_snippets
+    def from_file(cls, path, *, warn_on_failure=False):
         """
         Load colormap from a file.
 
         Parameters
         ----------
-        path : str
-            The file path. The file extension should be one of the following:
+        path : path-like
+            The file path. Valid file extensions are shown in the below table.
 
-            ===================  ==========================================
-            Extension            Description
-            ===================  ==========================================
-            ``.json``            JSON database of the channel segment data.
-            ``.hex``             Comma-delimited list of HEX strings.
-            ``.rgb``, ``.txt``   3-4 column table of channel values.
-            ===================  ==========================================
+            %(rc.cmap_exts)s
 
         warn_on_failure : bool, optional
             If ``True``, issue a warning when loading fails instead of
@@ -1232,48 +1519,39 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
         See also
         --------
-        ListedColormap.from_file
+        DiscreteColormap.from_file
         """
         return cls._from_file(path, warn_on_failure=warn_on_failure)
 
     @classmethod
-    def from_list(cls, name, colors, ratios=None, **kwargs):
+    @docstring.add_snippets
+    def from_list(cls, *args, **kwargs):
         """
-        Make a `LinearSegmentedColormap` from a list of colors.
+        Make a `ContinuousColormap` from a list of colors.
 
         Parameters
         ----------
-        name : str
-            The colormap name.
-        colors : list of color-spec or (float, color-spec) tuples, optional
-            If list of RGB[A] tuples or color strings, the colormap transitions
-            evenly from ``colors[0]`` at the left-hand side to
-            ``colors[-1]`` at the right-hand side.
-
-            If list of (float, color-spec) tuples, the float values are the
-            coordinate of each transition and must range from 0 to 1. This
-            can be used to divide  the colormap range unevenly.
-        ratios : list of float, optional
-            Relative extents of each color transition. Must have length
-            ``len(colors) - 1``. Larger numbers indicate a slower
-            transition, smaller numbers indicate a faster transition.
+        %(colors.from_list)s
 
         Other parameters
         ----------------
         **kwargs
-            Passed to `LinearSegmentedColormap`.
+            Passed to `ContinuousColormap`.
 
         Returns
         -------
-        `LinearSegmentedColormap`
+        `ContinuousColormap`
             The colormap.
 
         See also
         --------
         matplotlib.colors.LinearSegmentedColormap.from_list
-        PerceptuallyUniformColormap.from_list
+        PerceptualColormap.from_list
         """
         # Get coordinates
+        name, colors, ratios, kwargs = cls._pop_args(
+            *args, names=('colors', 'ratios'), **kwargs
+        )
         coords = None
         if not np.iterable(colors):
             raise TypeError('Colors must be iterable.')
@@ -1292,7 +1570,11 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
             cdict[key] = _make_segment_data(values, coords, ratios)
         return cls(name, cdict, **kwargs)
 
-    # Rename methods
+    # Deprecated
+    to_listed = warnings._rename_objs(
+        '0.8',
+        to_listed=to_discrete
+    )
     concatenate, punched, truncated, updated = warnings._rename_objs(
         '0.6',
         concatenate=append,
@@ -1302,28 +1584,27 @@ class LinearSegmentedColormap(mcolors.LinearSegmentedColormap, _Colormap):
     )
 
 
-class ListedColormap(mcolors.ListedColormap, _Colormap):
+class DiscreteColormap(mcolors.ListedColormap, _Colormap):
     r"""
-    New base class for all `~matplotlib.colors.ListedColormap`\ s.
+    Replacement for `~matplotlib.colors.ListedColormap`.
     """
     def __str__(self):
-        return f'ListedColormap(name={self.name!r})'
+        return f'DiscreteColormap(name={self.name!r})'
 
     def __repr__(self):
-        return (
-            'ListedColormap({\n'
-            f" 'name': {self.name!r},\n"
-            f" 'colors': {[mcolors.to_hex(color) for color in self.colors]},\n"
-            '})'
-        )
+        colors = [c if isinstance(c, str) else to_hex(c) for c in self.colors]
+        string = 'DiscreteColormap({\n'
+        string += f" 'name': {self.name!r},\n"
+        string += f" 'colors': {colors!r},\n"
+        string += '})'
+        return string
 
-    def __init__(self, *args, alpha=None, **kwargs):
+    def __init__(self, colors, name=None, N=None, alpha=None, **kwargs):
         """
         Parameters
         ----------
         alpha : float, optional
-            The opacity for the entire colormap. Overrides the input
-            colors.
+            The opacity for the entire colormap. Overrides the input colors.
 
         Other parameters
         ----------------
@@ -1332,11 +1613,13 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
 
         See also
         --------
-        LinearSegmentedColormap
+        ContinuousColormap
         matplotlib.colors.ListedColormap
         proplot.constructor.Colormap
         """
-        super().__init__(*args, **kwargs)
+        N = _not_none(N, len(colors))
+        name = _not_none(name, DEFAULT_NAME)
+        super().__init__(colors, name=name, N=N, **kwargs)
         if alpha is not None:
             self.set_alpha(alpha)
 
@@ -1347,7 +1630,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         Parameters
         ----------
         *args
-            Instances of `ListedColormap`.
+            Instances of `DiscreteColormap`.
         name : str, optional
             The name of the new colormap. Default is
             ``'_'.join(cmap.name for cmap in args)``.
@@ -1358,40 +1641,36 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         Other parameters
         ----------------
         **kwargs
-            Passed to `~ListedColormap.copy`.
+            Passed to `~DiscreteColormap.copy`.
 
         See also
         --------
-        LinearSegmentedColormap.append
+        ContinuousColormap.append
         """
         if not args:
             return self
         if not all(isinstance(cmap, mcolors.ListedColormap) for cmap in args):
-            raise TypeError(f'Arguments {args!r} must be ListedColormap.')
+            raise TypeError(f'Arguments {args!r} must be DiscreteColormap.')
         cmaps = (self, *args)
         if name is None:
             name = '_'.join(cmap.name for cmap in cmaps)
         colors = [color for cmap in cmaps for color in cmap.colors]
         return self.copy(colors, name, N or len(colors), **kwargs)
 
+    @docstring.add_snippets
     def save(self, path=None, alpha=True):
         """
         Save the colormap data to a file.
 
         Parameters
         ----------
-        path : str, optional
-            The output filename. If not provided, the colormap
-            is saved under ``~/.proplot/cycles/name.hex`` where ``name``
-            is the colormap name. Valid extensions are described in
-            the below table.
+        path : path-like, optional
+            The output filename. If not provided, the colormap is saved in the
+            ``cycles`` subfolder in `~proplot.config.Configurator.user_folder`
+            under the filename ``name.hex`` (where ``name`` is the color cycle
+            name). Valid extensions are described in the below table.
 
-            ==================  ====================================
-            Extension           Description
-            ==================  ====================================
-            ``.hex`` (default)  Comma-delimited list of HEX strings.
-            ``.rgb``, ``.txt``  3-4 column table of channel values.
-            ==================  ====================================
+            %(rc.cycle_exts)s
 
         alpha : bool, optional
             Whether to include an opacity column for ``.rgb``
@@ -1399,12 +1678,9 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
 
         See also
         --------
-        LinearSegmentedColormap.save
+        ContinuousColormap.save
         """
-        dirname = os.path.join('~', '.proplot', 'cycles')
-        filename = self._parse_path(path, dirname, 'hex')
-
-        # Save lookup table colors
+        filename = self._parse_path(path, ext='hex', subfolder='cycles')
         _, ext = os.path.splitext(filename)
         data = self._get_data(ext[1:], alpha=alpha)
         with open(filename, 'w') as fh:
@@ -1422,7 +1698,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
 
         See also
         --------
-        LinearSegmentedColormap.set_alpha
+        ContinuousColormap.set_alpha
         """
         colors = [list(mcolors.to_rgba(color)) for color in self.colors]
         for color in colors:
@@ -1444,7 +1720,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
 
         See also
         --------
-        LinearSegmentedColormap.shifted
+        ContinuousColormap.shifted
         """
         if not shift:
             return self
@@ -1474,7 +1750,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
 
         See also
         --------
-        LinearSegmentedColormap.truncate
+        ContinuousColormap.truncate
         """
         if left is None and right is None:
             return self
@@ -1493,13 +1769,13 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
         name : str
             The name of the new colormap. Default is ``self.name + '_copy'``.
         colors, N, alpha : optional
-            See `ListedColormap`. If not provided,
+            See `DiscreteColormap`. If not provided,
             these are copied from the current colormap.
 
         See also
         --------
-        LinearSegmentedColormap.copy
-        PerceptuallyUniformColormap.copy
+        ContinuousColormap.copy
+        PerceptualColormap.copy
         """
         if name is None:
             name = self.name + '_copy'
@@ -1507,28 +1783,24 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
             colors = list(self.colors)  # copy
         if N is None:
             N = self.N
-        cmap = ListedColormap(colors, name, N, alpha=alpha)
+        cmap = DiscreteColormap(colors, name, N=N, alpha=alpha)
         cmap._rgba_bad = self._rgba_bad
         cmap._rgba_under = self._rgba_under
         cmap._rgba_over = self._rgba_over
         return cmap
 
     @classmethod
-    def from_file(cls, path, warn_on_failure=False):
+    @docstring.add_snippets
+    def from_file(cls, path, *, warn_on_failure=False):
         """
         Load color cycle from a file.
 
         Parameters
         ----------
-        path : str
-            The file path. The file extension should be one of the following:
+        path : path-like
+            The file path. Valid file extensions are shown in the below table.
 
-            ==================  ==========================================
-            Extension           Description
-            ==================  ==========================================
-            ``.hex``            Comma-delimited list of HEX strings.
-            ``.rgb``, ``.txt``  3-4 column table of channel values.
-            ==================  ==========================================
+            %(rc.cycle_exts)s
 
         warn_on_failure : bool, optional
             If ``True``, issue a warning when loading fails instead of
@@ -1536,7 +1808,7 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
 
         See also
         --------
-        LinearSegmentedColormap.from_file
+        ContinuousColormap.from_file
         """
         return cls._from_file(path, warn_on_failure=warn_on_failure)
 
@@ -1549,22 +1821,19 @@ class ListedColormap(mcolors.ListedColormap, _Colormap):
     )
 
 
-class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
+class PerceptualColormap(ContinuousColormap, _Colormap):
     """
-    Similar to `~matplotlib.colors.LinearSegmentedColormap`, but instead
-    of varying the RGB channels, we vary hue, saturation, and luminance in
-    either the HCL colorspace or the HSL or HPL scalings of HCL.
+    A `ContinuousColormap` with linear transitions across hue, saturation,
+    and luminance rather than red, blue, and green.
     """
     @docstring.add_snippets
     def __init__(
-        self, name, segmentdata, N=None,
-        space=None, clip=True, gamma=None, gamma1=None, gamma2=None, **kwargs
+        self, *args, space=None, clip=True, gamma=None, gamma1=None, gamma2=None,
+        **kwargs
     ):
         """
         Parameters
         ----------
-        name : str
-            The colormap name.
         segmentdata : dict-like
             Dictionary containing the keys ``'hue'``, ``'saturation'``,
             ``'luminance'``, and (optionally) ``'alpha'``. The key ``'chroma'`` is
@@ -1574,24 +1843,22 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
             colormap index, or 3-column arrays indicating the coordinates and
             channel transitions. See `~matplotlib.colors.LinearSegmentedColormap`
             for a more detailed explanation.
-        space : {'hsl', 'hpl', 'hcl'}, optional
-            The hue, saturation, luminance-style colorspace to use for
-            interpreting the channels. See
-            `this page <http://www.hsluv.org/comparison/>`__ for a description.
+        %(colors.name)s
+        %(colors.space)s
         clip : bool, optional
             Whether to "clip" impossible colors, i.e. truncate HCL colors
             with RGB channels with values >1, or mask them out as gray.
-        %(cmap.init)s
-        %(cmap.gamma)s
+        %(colors.init)s
+        %(colors.gamma)s
 
         Other parameters
         ----------------
         **kwargs
-            Passed to `LinearSegmentedColormap`.
+            Passed to `ContinuousColormap`.
 
         Example
         -------
-        The below example generates a `PerceptuallyUniformColormap` from a
+        The below example generates a `PerceptualColormap` from a
         `segmentdata` dictionary that uses color names for the hue data,
         instead of channel values between ``0`` and ``360``.
 
@@ -1601,18 +1868,21 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         >>>     's': [[0, 100, 100], [1, 100, 100]],
         >>>     'l': [[0, 100, 100], [1, 20, 20]],
         >>> }
-        >>> cmap = pplt.PerceptuallyUniformColormap(data)
+        >>> cmap = pplt.PerceptualColormap(data)
 
         See also
         --------
-        LinearSegmentedColormap
+        ContinuousColormap
         proplot.constructor.Colormap
         """
         # Checks
+        name, segmentdata, N, kwargs = self._pop_args(
+            *args, names=('segmentdata', 'N'), **kwargs
+        )
         data = _pop_props(segmentdata, 'hsla')
         if segmentdata:
             raise ValueError(f'Invalid segmentdata keys {tuple(segmentdata)}.')
-        space = _not_none(space, 'hsl').lower()
+        space = _not_none(space, DEFAULT_SPACE).lower()
         if space not in ('rgb', 'hsv', 'hpl', 'hsl', 'hcl'):
             raise ValueError(f'Unknown colorspace {space!r}.')
         # Convert color strings to channel values
@@ -1626,7 +1896,6 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
                 data[key][i] = xyy
         # Initialize
         super().__init__(name, data, gamma=1.0, N=N, **kwargs)
-        # Custom properties
         self._gamma1 = _not_none(gamma1, gamma, 1.0)
         self._gamma2 = _not_none(gamma2, gamma, 1.0)
         self._space = space
@@ -1669,7 +1938,7 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
 
         Parameters
         ----------
-        %(cmap.gamma)s
+        %(colors.gamma)s
         """
         gamma1 = _not_none(gamma1, gamma)
         gamma2 = _not_none(gamma2, gamma)
@@ -1693,13 +1962,13 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         name : str
             The name of the new colormap. Default is ``self.name + '_copy'``.
         segmentdata, N, alpha, clip, cyclic, gamma, gamma1, gamma2, space : optional
-            See `PerceptuallyUniformColormap`. If not provided,
+            See `PerceptualColormap`. If not provided,
             these are copied from the current colormap.
 
         See also
         --------
-        ListedColormap.copy
-        LinearSegmentedColormap.copy
+        DiscreteColormap.copy
+        ContinuousColormap.copy
         """
         if name is None:
             name = self.name + '_copy'
@@ -1719,7 +1988,7 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
             cyclic = self._cyclic
         if N is None:
             N = self.N
-        cmap = PerceptuallyUniformColormap(
+        cmap = PerceptualColormap(
             name, segmentdata, N,
             alpha=alpha, clip=clip, cyclic=cyclic,
             gamma1=gamma1, gamma2=gamma2, space=space
@@ -1729,10 +1998,10 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         cmap._rgba_over = self._rgba_over
         return cmap
 
-    def to_linear_segmented(self, name=None, **kwargs):
+    def to_continuous(self, name=None, **kwargs):
         """
-        Convert the `PerceptuallyUniformColormap` to a standard
-        `LinearSegmentedColormap`. This is used to merge such colormaps.
+        Convert the `PerceptualColormap` to a standard `ContinuousColormap`.
+        This is used to merge such colormaps.
 
         Parameters
         ----------
@@ -1742,31 +2011,32 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         Other parameters
         ----------------
         **kwargs
-            Passed to `LinearSegmentedColormap`.
+            Passed to `ContinuousColormap`.
 
         See also
         --------
-        ListedColormap.to_listed
+        ContinuousColormap.to_discrete
         """
         if not self._isinit:
             self._init()
         if name is None:
             name = self.name + '_copy'
-        return LinearSegmentedColormap.from_list(name, self._lut[:-3, :], **kwargs)
+        return ContinuousColormap.from_list(name, self._lut[:-3, :], **kwargs)
 
     @classmethod
-    @warnings._rename_kwargs('0.7', shade='luminance')
-    def from_color(cls, name, color, *, space='hsl', **kwargs):
+    @docstring.add_snippets
+    @warnings._rename_kwargs('0.7', fade='saturation', shade='luminance')
+    def from_color(cls, *args, **kwargs):
         """
         Return a simple monochromatic "sequential" colormap that blends from white
         or near-white to the input color.
 
         Parameters
         ----------
-        name : str, optional
-            The colormap name.
         color : color-spec
             RGB tuple, hex string, or named color string.
+        %(colors.name)s
+        %(colors.space)s
         l, s, a, c
             Shorthands for `luminance`, `saturation`, `alpha`, and `chroma`.
         luminance : float or channel-spec, optional
@@ -1778,24 +2048,26 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
             `alpha` are the channel values taken from `color`.
         chroma
             Alias for `saturation`.
-        space : {'hsl', 'hpl', 'hcl'}, optional
-            The colorspace in which luminance and/or saturation are varied.
 
         Other parameters
         ----------------
         **kwargs
-            Passed to `PerceptuallyUniformColormap.from_hsl`.
+            Passed to `PerceptualColormap.from_hsl`.
 
         Returns
         -------
-        `PerceptuallyUniformColormap`
+        `PerceptualColormap`
             The colormap.
 
         See also
         --------
-        PerceptuallyUniformColormap.from_hsl
-        PerceptuallyUniformColormap.from_list
+        PerceptualColormap.from_hsl
+        PerceptualColormap.from_list
         """
+        name, color, space, kwargs = cls._pop_args(
+            *args, names=('color', 'space'), **kwargs
+        )
+        space = _not_none(space, DEFAULT_SPACE).lower()
         props = _pop_props(kwargs, 'hsla')
         if props.get('hue', None) is not None:
             raise TypeError("from_color() got an unexpected keyword argument 'hue'")
@@ -1812,15 +2084,20 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         )
 
     @classmethod
-    def from_hsl(cls, name, *, ratios=None, **kwargs):
+    @docstring.add_snippets
+    def from_hsl(cls, *args, **kwargs):
         """
-        Make a `~PerceptuallyUniformColormap` by specifying the hue,
+        Make a `~PerceptualColormap` by specifying the hue,
         saturation, and luminance transitions individually.
 
         Parameters
         ----------
-        name : str
-            The colormap name.
+        %(colors.space)s
+        %(colors.name)s
+        %(colors.ratios)s
+            For example, ``luminance=(100, 50, 0)`` with ``ratios=(2, 1)`` results
+            in a colormap with the transition from luminance ``100`` to ``50`` taking
+            *twice as long* as the transition from luminance ``50`` to ``0``.
         h, s, l, a, c
             Shorthands for `hue`, `saturation`, `luminance`, `alpha`, and `chroma`.
         hue : float, color-spec, or list thereof, optional
@@ -1840,33 +2117,25 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
             ``(100, 20)``, and alpha is ``1`` (i.e., no transparency).
         chroma
             Alias for `saturation`.
-        ratios : list of float, optional
-            Relative extents of each color transition. Must have length
-            ``len(colors) - 1``. Larger numbers indicate a slower
-            transition, smaller numbers indicate a faster transition.
-
-            For example, ``luminance=(100, 50, 0)`` with ``ratios=(2, 1)``
-            results in a colormap with the transition from luminance ``100``
-            to ``50`` taking *twice as long* as the transition from luminance
-            ``50`` to ``0``.
-        space : {'hsl', 'hpl', 'hcl'}, optional
-            The colorspace in which hue, luminance, and/or saturation are varied.
 
         Other parameters
         ----------------
         **kwargs
-            Passed to `PerceptuallyUniformColormap`.
+            Passed to `PerceptualColormap`.
 
         Returns
         -------
-        `PerceptuallyUniformColormap`
+        `PerceptualColormap`
             The colormap.
 
         See also
         --------
-        PerceptuallyUniformColormap.from_color
-        PerceptuallyUniformColormap.from_list
+        PerceptualColormap.from_color
+        PerceptualColormap.from_list
         """
+        name, space, ratios, kwargs = cls._pop_args(
+            *args, names=('space', 'ratios'), **kwargs
+        )
         cdict = {}
         props = _pop_props(kwargs, 'hsla')
         for key, default in (
@@ -1877,55 +2146,41 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
         ):
             value = props.pop(key, default)
             cdict[key] = _make_segment_data(value, ratios=ratios)
-        return cls(name, cdict, **kwargs)
+        return cls(name, cdict, space=space, **kwargs)
 
     @classmethod
-    def from_list(cls, name, colors, ratios=None, **kwargs):
+    @docstring.add_snippets
+    def from_list(cls, *args, **kwargs):
         """
-        Make a `PerceptuallyUniformColormap` from a list of colors.
+        Make a `PerceptualColormap` from a list of colors.
 
         Parameters
         ----------
-        name : str
-            The colormap name.
-        colors : list of color-spec or (float, color-spec) tuples, optional
-            If list of RGB[A] tuples or color strings, the colormap transitions
-            evenly from ``colors[0]`` at the left-hand side to
-            ``colors[-1]`` at the right-hand side.
-
-            If list of (float, color-spec) tuples, the float values are the
-            coordinate of each transition and must range from 0 to 1. This
-            can be used to divide  the colormap range unevenly.
-        ratios : list of float, optional
-            Relative extents of each color transition. Must have length
-            ``len(colors) - 1``. Larger numbers indicate a slower
-            transition, smaller numbers indicate a faster transition.
-
-            For example, ``red=(1, 0.5, 0)`` with ``ratios=(2, 1)``
-            results in a colormap with the transition from red ``1``
-            to ``0.5`` taking *twice as long* as the transition from red
-            ``0.5`` to ``0``.
+        %(colors.from_list)s
 
         Other parameters
         ----------------
         **kwargs
-            Passed to `PerceptuallyUniformColormap`.
+            Passed to `PerceptualColormap`.
 
         Returns
         -------
-        `PerceptuallyUniformColormap`
+        `PerceptualColormap`
             The colormap.
 
         See also
         --------
         matplotlib.colors.LinearSegmentedColormap.from_list
-        LinearSegmentedColormap.from_list
-        PerceptuallyUniformColormap.from_color
-        PerceptuallyUniformColormap.from_hsl
+        ContinuousColormap.from_list
+        PerceptualColormap.from_color
+        PerceptualColormap.from_hsl
         """
         # Get coordinates
         coords = None
-        space = kwargs.get('space', 'hsl')  # use the builtin default
+        space = kwargs.get('space', DEFAULT_SPACE).lower()
+        name, colors, ratios, kwargs = cls._pop_args(
+            *args, names=('colors', 'ratios'), **kwargs
+        )
         if not np.iterable(colors):
             raise ValueError(f'Colors must be iterable, got colors={colors!r}')
         if (
@@ -1942,30 +2197,11 @@ class PerceptuallyUniformColormap(LinearSegmentedColormap, _Colormap):
             cdict[key] = _make_segment_data(values, coords, ratios)
         return cls(name, cdict, **kwargs)
 
-
-def _check_levels(levels, allow_descending=True):
-    """
-    Ensure the levels are monotonic. If they are descending, either
-    reverse them or raise an error.
-    """
-    levels = np.atleast_1d(levels)
-    if levels.ndim != 1 or levels.size < 2:
-        raise ValueError(f'Levels {levels} must be 1d vector with size >= 2.')
-    if isinstance(levels, ma.core.MaskedArray):
-        levels = levels.filled(np.nan)
-    if not np.all(np.isfinite(levels)):
-        raise ValueError(f'Levels {levels} contain invalid values.')
-    diffs = np.sign(np.diff(levels))
-    if all(diffs == 1):
-        descending = False
-    elif all(diffs == -1) and allow_descending:
-        levels = levels[::-1]
-        descending = True
-    elif allow_descending:
-        raise ValueError(f'Levels {levels} must be monotonic.')
-    else:
-        raise ValueError(f'Levels {levels} must be monotonically increasing.')
-    return levels, descending
+    # Deprecated
+    to_linear_segmented = warnings._rename_objs(
+        '0.8',
+        to_linear_segmented=to_continuous
+    )
 
 
 def _interpolate_basic(x, x0, x1, y0, y1):
@@ -1999,11 +2235,36 @@ def _interpolate_extrapolate(xq, x, y):
     return yq
 
 
+def _sanitize_levels(levels, allow_descending=True):
+    """
+    Ensure the levels are monotonic. If they are descending, either
+    reverse them or raise an error.
+    """
+    levels = np.atleast_1d(levels)
+    if levels.ndim != 1 or levels.size < 2:
+        raise ValueError(f'Levels {levels} must be 1d vector with size >= 2.')
+    if isinstance(levels, ma.core.MaskedArray):
+        levels = levels.filled(np.nan)
+    if not np.all(np.isfinite(levels)):
+        raise ValueError(f'Levels {levels} contain invalid values.')
+    diffs = np.sign(np.diff(levels))
+    if all(diffs == 1):
+        descending = False
+    elif all(diffs == -1) and allow_descending:
+        levels = levels[::-1]
+        descending = True
+    elif allow_descending:
+        raise ValueError(f'Levels {levels} must be monotonic.')
+    else:
+        raise ValueError(f'Levels {levels} must be monotonically increasing.')
+    return levels, descending
+
+
 class DiscreteNorm(mcolors.BoundaryNorm):
     """
     Meta-normalizer that discretizes the possible color values returned by
     arbitrary continuous normalizers given a list of level boundaries. This
-    is applied to all colormap plots in ProPlot.
+    is applied with all plotting commands unless you pass ``discrete=False``.
     """
     # See this post: https://stackoverflow.com/a/48614231/4970632
     # WARNING: Must be child of BoundaryNorm. Many methods in ColorBarBase
@@ -2011,8 +2272,7 @@ class DiscreteNorm(mcolors.BoundaryNorm):
     # if it doesn't detect BoundaryNorm will try to use DiscreteNorm.inverse().
     @warnings._rename_kwargs('0.7', extend='unique')
     def __init__(
-        self, levels, norm=None, cmap=None,
-        unique=None, step=None, clip=False, descending=False,
+        self, levels, norm=None, unique=None, step=None, clip=False, descending=False,
     ):
         """
         Parameters
@@ -2020,29 +2280,25 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         levels : list of float
             The level boundaries.
         norm : `~matplotlib.colors.Normalize`, optional
-            The normalizer used to transform `levels` and all data passed
-            to `~DiscreteNorm.__call__` before discretization. The ``vmin``
-            and ``vmax`` of the normalizer are set to the minimum and
-            maximum values in `levels`.
-        cmap : `matplotlib.colors.Colormap`, optional
-            The colormap associated with this normalizer. This is used to
-            apply default `unique` and `step` settings depending on whether the
-            colormap is cyclic and whether distinct "extreme" colors have been
-            designated with `~matplotlib.colors.Colormap.set_under` and/or
-            `~matplotlib.colors.Colormap.set_over`.
+            The normalizer used to transform `levels` and data values passed to
+            `~DiscreteNorm.__call__` before discretization. The ``vmin`` and ``vmax``
+            of the normalizer are set to the minimum and maximum values in `levels`.
         unique : {'neither', 'both', 'min', 'max'}, optional
-            Which out-of-bounds regions should be assigned unique colormap
-            colors. The normalizer needs this information so it can ensure
-            the colorbar always spans the full range of colormap colors.
+            Which out-of-bounds regions should be assigned unique colormap colors.
+            Possible values are equivalent to the `extend` values. The normalizer
+            needs this information so it can ensure the colorbar always spans the
+            full range of colormap colors. Internally, proplot sets this automatically
+            depending on whether the colormap is cyclic and whether "extreme" colors
+            were designated separately using `~matplotlib.colors.Colormap.set_under`
+            and/or `~matplotlib.colors.Colormap.set_over`.
         step : float, optional
-            The intensity of the transition to out-of-bounds colors as a
-            fraction of the adjacent step between in-bounds colors.
-            Default is ``1``.
+            The intensity of the transition to out-of-bounds colors as a fraction
+            of the adjacent step between in-bounds colors. Internally, proplot sets
+            this to ``0.5`` for cyclic colormaps and ``1`` for all other colormaps.
         clip : bool, optional
-            Whether to clip values falling outside of the level bins. This
-            only has an effect on lower colors when unique is
-            ``'min'`` or ``'both'``, and on upper colors when unique is
-            ``'max'`` or ``'both'``.
+            Whether to clip values falling outside of the level bins. This only
+            has an effect on lower colors when unique is ``'min'`` or ``'both'``,
+            and on upper colors when unique is ``'max'`` or ``'both'``.
         descending : bool, optional
             Whether the levels are meant to be descending. This will cause
             the colorbar axis to be reversed when it is drawn with a
@@ -2064,34 +2320,6 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         proplot.axes.apply_cmap
         proplot.constructor.Norm
         """
-        # Special properties specific to colormap type
-        if cmap is not None:
-            over = cmap._rgba_over
-            under = cmap._rgba_under
-            cyclic = getattr(cmap, '_cyclic', None)
-            if cyclic:
-                # *Scale bins* as if extend='both' to omit end colors
-                step = 0.5
-                unique = 'both'
-
-            else:
-                # *Scale bins* as if unique='neither' because there may be *discrete
-                # change* between minimum color and out-of-bounds colors.
-                if over is not None and under is not None:
-                    unique = 'both'
-                elif over is not None:
-                    # Turn off unique bin for over-bounds colors
-                    if unique == 'both':
-                        unique = 'min'
-                    elif unique == 'max':
-                        unique = 'neither'
-                elif under is not None:
-                    # Turn off unique bin for under-bounds colors
-                    if unique == 'both':
-                        unique = 'min'
-                    elif unique == 'max':
-                        unique = 'neither'
-
         # Validate input arguments
         # NOTE: This must be a subclass BoundaryNorm, so ColorbarBase will
         # detect it... even though we completely override it.
@@ -2110,30 +2338,22 @@ class DiscreteNorm(mcolors.BoundaryNorm):
                 + ', '.join(map(repr, uniques)) + '.'
             )
 
-        # Ensure monotonically increasing levels
-        levels, _ = _check_levels(levels, allow_descending=False)
-        bins, _ = _check_levels(norm(levels), allow_descending=False)
-        self.N = levels.size
-        self.clip = clip
-        self.boundaries = levels
-        self.vmin = norm.vmin = vmin = np.min(levels)
-        self.vmax = norm.vmax = vmax = np.max(levels)
+        # Ensure monotonicaly increasing levels and add built-in attributes
+        levels, _ = _sanitize_levels(levels, allow_descending=False)
+        norm.vmin = vmin = np.min(levels)
+        norm.vmax = vmax = np.max(levels)
         vcenter = getattr(norm, 'vcenter', None)
+        bins, _ = _sanitize_levels(norm(levels), allow_descending=False)
 
-        # Get color coordinates corresponding to each bin, plus extra
-        # 2 color coordinates for out-of-bounds color bins.
-        # For *same* out-of-bounds colors, looks like [0, 0, ..., 1, 1]
-        # For *unique* out-of-bounds colors, looks like [0, X, ..., 1 - X, 1]
-        # NOTE: Ensure out-of-bounds bin values correspond to out-of-bounds
-        # coordinate in case user used set_under or set_over to apply discrete
-        # change. See lukelbd/proplot#190
-        # NOTE: Critical that we scale the bin centers in "physical space"
-        # and *then* translate to color coordinates so that nonlinearities in
-        # the normalization stay intact. If we scaled the bin centers in
-        # *normalized space* to have minimum 0 maximum 1, would mess up
-        # color distribution. However this is still not perfect... get
-        # asymmetric color intensity either side of central point. So add
-        # special handling for diverging norms below to improve symmetry.
+        # Get color coordinates for each bin, plus two extra for out-of-bounds
+        # For same out-of-bounds colors, looks like [0 - eps, 0, ..., 1, 1 + eps]
+        # For unique out-of-bounds colors, looks like [0 - eps, X, ..., 1 - X, 1 + eps]
+        # NOTE: Critical that we scale the bin centers in "physical space" and *then*
+        # translate to color coordinates so that nonlinearities in the normalization
+        # stay intact. If we scaled the bin centers in *normalized space* to have
+        # minimum 0 maximum 1, would mess up color distribution. However this is still
+        # not perfect... get asymmetric color intensity either side of central point.
+        # So we add special handling for diverging norms below to improve symmetry.
         mids = np.zeros((levels.size + 1,))
         mids[1:-1] = 0.5 * (levels[1:] + levels[:-1])
         mids[0], mids[-1] = mids[1], mids[-2]
@@ -2161,21 +2381,28 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         dest[-1] += eps
 
         # Attributes
-        # NOTE: If clip is True, we clip values to the centers of the end
-        # bins rather than vmin/vmax to prevent out-of-bounds colors from
-        # getting an in-bounds bin color due to landing on a bin edge.
+        # NOTE: If clip is True, we clip values to the centers of the end bins
+        # rather than vmin/vmax to prevent out-of-bounds colors from getting an
+        # in-bounds bin color due to landing on a bin edge.
         # NOTE: With unique='min' the minimimum in-bounds and out-of-bounds
         # colors are the same so clip=True will have no effect. Same goes
         # for unique='max' with maximum colors.
-        # WARNING: For some reason must clip manually for LogNorm, or
-        # end up with unpredictable fill value, weird "out-of-bounds" colors
         self._bmin = np.min(mids)
         self._bmax = np.max(mids)
         self._bins = bins
         self._dest = dest
         self._norm = norm
-        self._norm_clip = None
         self._descending = descending
+        self.vmin = vmin
+        self.vmax = vmax
+        self.boundaries = levels
+        self.clip = clip
+        self.N = levels.size
+
+        # Add special clipping
+        # WARNING: For some reason must clip manually for LogNorm, or end
+        # up with unpredictable fill value, weird "out-of-bounds" colors
+        self._norm_clip = None
         if isinstance(norm, mcolors.LogNorm):
             self._norm_clip = (5e-249, None)
 
@@ -2191,7 +2418,7 @@ class DiscreteNorm(mcolors.BoundaryNorm):
             Whether to clip values falling outside of the level bins.
             Default is ``self.clip``.
         """
-        # Follow example of LinearSegmentedNorm, but perform no interpolation,
+        # Follow example of SegmentedNorm, but perform no interpolation,
         # just use searchsorted to bin the data.
         norm_clip = self._norm_clip
         if norm_clip:  # special extra clipping due to normalizer
@@ -2214,16 +2441,19 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         """
         raise ValueError('DiscreteNorm is not invertible.')
 
+    @property
+    def descending(self):
+        """
+        Whether the colormap levels are descending.
+        """
+        return self._descending
 
-class LinearSegmentedNorm(mcolors.Normalize):
+
+class SegmentedNorm(mcolors.Normalize):
     """
-    Normalizer that scales data linearly with respect to average *position*
-    in an arbitrary monotonically increasing level lists. This is the same
-    algorithm used by `~matplotlib.colors.LinearSegmentedColormap` to
-    select colors in-between indices in the segment data tables.
-    This is the default normalizer paired with `DiscreteNorm` whenever `levels`
-    are non-linearly spaced. Can be explicitly used by passing ``norm='segmented'``
-    to any command accepting ``cmap``.
+    Normalizer that scales data linearly with respect to the interpolated list
+    index in an arbitrary monotonically increasing level list. Is applied
+    if you pass unevenly-spaced `levels` to a plotting command.
     """
     def __init__(self, levels, vmin=None, vmax=None, clip=False):
         """
@@ -2238,11 +2468,17 @@ class LinearSegmentedNorm(mcolors.Normalize):
             Whether to clip values falling outside of the minimum and
             maximum levels.
 
+        Note
+        ----
+        This normalizer adapts the algorithm used by
+        `~matplotlib.colors.LinearSegmentedColormap`
+        to select colors in-between indices in segment data tables.
+
         Example
         -------
         In the below example, unevenly spaced levels are passed to
         `~matplotlib.axes.Axes.contourf`, resulting in the automatic
-        application of `LinearSegmentedNorm`.
+        application of `SegmentedNorm`.
 
         >>> import proplot as pplt
         >>> import numpy as np
@@ -2252,17 +2488,17 @@ class LinearSegmentedNorm(mcolors.Normalize):
         >>> ax.contourf(data, levels=levels)
         """
         levels = np.asarray(levels)
-        levels, _ = _check_levels(levels, allow_descending=False)
+        levels, _ = _sanitize_levels(levels, allow_descending=False)
         dest = np.linspace(0, 1, len(levels))
         vmin, vmax = np.min(levels), np.max(levels)
         super().__init__(vmin=vmin, vmax=vmax, clip=clip)
-        self._x = levels
+        self._x = self.boundaries = levels  # we use 'boundaries' in plot wrapper
         self._y = dest
 
     def __call__(self, value, clip=None):
         """
         Normalize the data values to 0-1. Inverse
-        of `~LinearSegmentedNorm.inverse`.
+        of `~SegmentedNorm.inverse`.
 
         Parameters
         ----------
@@ -2284,7 +2520,7 @@ class LinearSegmentedNorm(mcolors.Normalize):
 
     def inverse(self, value):
         """
-        Inverse operation of `~LinearSegmentedNorm.__call__`.
+        Inverse operation of `~SegmentedNorm.__call__`.
 
         Parameters
         ----------
@@ -2301,9 +2537,12 @@ class LinearSegmentedNorm(mcolors.Normalize):
 class DivergingNorm(mcolors.Normalize):
     """
     Normalizer that ensures some central data value lies at the central
-    colormap color.  The default central value is ``0``. Can be used by
-    passing ``norm='diverging'`` to any command accepting ``cmap``.
+    colormap color.  The default central value is ``0``. Is applied if you
+    pass ``norm='diverging'`` or ``diverging=True`` to a plotting command.
     """
+    def __str__(self):
+        return type(self).__name__ + f'(center={self.vcenter!r})'
+
     def __init__(
         self, vcenter=0, vmin=None, vmax=None, fair=True, clip=None
     ):
@@ -2389,7 +2628,7 @@ class DivergingNorm(mcolors.Normalize):
 
     def autoscale_None(self, z):
         """
-        Get vmin and vmax, and then clip at vcenter
+        Get vmin and vmax, and then clip at vcenter.
         """
         super().autoscale_None(z)
         if self.vmin > self.vcenter:
@@ -2402,103 +2641,13 @@ def _init_color_database():
     """
     Initialize the subclassed database.
     """
-    if not isinstance(mcolors._colors_full_map, ColorDatabase):
-        database = ColorDatabase(mcolors._colors_full_map)
-        mcolors._colors_full_map = database
-        mcolors.colorConverter.cache = database.cache
-        mcolors.colorConverter.colors = database
-
-
-class _ColorCache(dict):
-    """
-    Replacement for the native color cache.
-    """
-    # Matplotlib 'color' args are passed to to_rgba, which tries to read
-    # directly from cache and if that fails, sanitizes input, which raises
-    # error on receiving (colormap, idx) tuple. So we *have* to override cache.
-    def __getitem__(self, key):
-        # Split into RGB tuple and opacity
-        # Matplotlib caches colors this way internally
-        rgb, alpha = key
-        if (
-            not isinstance(rgb, str) and np.iterable(rgb) and len(rgb) == 2
-            and isinstance(rgb[0], str) and isinstance(rgb[1], Number)
-        ):
-            # Try to get the colormap
-            try:
-                cmap = _cmap_database[rgb[0]]
-            except (KeyError, TypeError):
-                pass
-            # Read the colormap value
-            else:
-                if isinstance(cmap, ListedColormap):
-                    if not 0 <= rgb[1] < len(cmap.colors):
-                        raise ValueError(
-                            f'Color cycle sample for {rgb[0]!r} cycle must be '
-                            f'between 0 and {len(cmap.colors) - 1}, got {rgb[1]}.'
-                        )
-                    rgb = cmap.colors[rgb[1]]  # draw from list of colors
-                else:
-                    if not 0 <= rgb[1] <= 1:
-                        raise ValueError(
-                            f'Colormap sample for {rgb[0]!r} colormap must be '
-                            f'between 0 and 1, got {rgb[1]}.'
-                        )
-                    rgb = cmap(rgb[1])  # get color selection
-                return mcolors.to_rgba(rgb, alpha)
-
-        # Proceed as usual
-        return super().__getitem__((rgb, alpha))
-
-
-class ColorDatabase(dict):
-    """
-    Dictionary subclass used to replace the builtin matplotlib color
-    database. This allows users to draw colors from named colormaps and color
-    cycles for any plotting command that accepts a `color` keyword arg.
-    See `~ColorDatabase.cache` for details.
-    """
-    def __init__(self, mapping):
-        """
-        Parameters
-        ----------
-        mapping : dict-like
-            The colors.
-        """
-        super().__init__(mapping)
-        self._cache = _ColorCache({})
-
-    def __setitem__(self, key, value):
-        """
-        Add a color to the database and clear the cache.
-        """
-        if not isinstance(key, str):
-            raise ValueError(f'Invalid color name {key!r}. Must be string.')
-        super().__setitem__(key, value)
-        self.cache.clear()
-
-    def __delitem__(self, key):
-        """
-        Delete a color from the database and clear the cache.
-        """
-        super().__delitem__(key)
-        self.cache.clear()
-
-    @property
-    def cache(self):
-        """
-        A special dictionary subclass capable of retrieving colors
-        "on-the-fly" from registered colormaps and color cycles.
-
-        * For a smooth colormap, usage is e.g. ``color=('Blues', 0.8)``.
-          The number is the colormap index, and must be between 0 and 1.
-        * For a color cycle, usage is e.g. ``color=('colorblind', 2)``.
-          The number is the list index.
-
-        These examples work with any matplotlib command that accepts a `color`
-        keyword arg.
-        """
-        return self._cache
+    database = mcolors._colors_full_map
+    if not isinstance(database, ColorDatabase):
+        database = mcolors._colors_full_map = ColorDatabase(database)
+        if hasattr(mcolors, 'colorConverter'):  # suspect deprecation is coming soon
+            mcolors.colorConverter.cache = database.cache
+            mcolors.colorConverter.colors = database
+    return database
 
 
 def _init_cmap_database():
@@ -2539,7 +2688,7 @@ def _get_cmap(name=None, lut=None):
     # Monkey patch for matplotlib `~matplotlib.get_cmap`. Permits case-insensitive
     # search of monkey-patched colormap database (which was broken in v3.2.0).
     if name is None:
-        name = rcParams['image.cmap']
+        name = rc['image.cmap']
     if isinstance(name, mcolors.Colormap):
         return name
     cmap = _cmap_database[name]
@@ -2548,21 +2697,56 @@ def _get_cmap(name=None, lut=None):
     return cmap
 
 
-def _to_proplot_colormap(cmap):
+def _get_cmap_subtype(name, subtype):
     """
-    Translate the input argument to a ProPlot colormap subclass.
+    Get a colormap belonging to a particular class. If none are found then raise
+    a useful error message that omits colormaps from other classes.
     """
-    cmap_orig = cmap
-    if isinstance(cmap, (ListedColormap, LinearSegmentedColormap)):
+    # NOTE: Right now this is just used in rc validation but could be used elsewhere
+    if subtype == 'discrete':
+        cls = DiscreteColormap
+    elif subtype == 'continuous':
+        cls = ContinuousColormap
+    elif subtype == 'perceptual':
+        cls = PerceptualColormap
+    else:
+        raise RuntimeError(f'Invalid subtype {subtype!r}.')
+    cmap = _cmap_database.get(name, None)
+    if not isinstance(cmap, cls):
+        names = sorted(k for k, v in _cmap_database.items() if isinstance(v, cls))  # noqa: E501
+        raise ValueError(
+            f'Invalid {subtype} colormap name {name!r}. Options are: '
+            + ', '.join(map(repr, names)) + '.'
+        )
+    return cmap
+
+
+def _translate_cmap(cmap, lut=None, cyclic=None, listedthresh=None):
+    """
+    Translate the input argument to a ProPlot colormap subclass. Auto-detect
+    cyclic colormaps based on names and re-apply default lookup table size.
+    """
+    # Parse args
+    # WARNING: Apply default 'cyclic' property to native matplotlib colormaps
+    # based on known names. Maybe slightly dangerous but cleanest approach
+    lut = _not_none(lut, rc['image.lut'])
+    cyclic = _not_none(cyclic, cmap.name and cmap.name.lower() in CMAPS_CYCLIC)
+    listedthresh = _not_none(listedthresh, rc['cmap.listedthresh'])
+
+    # Translate the colormap. Convert ListedColormap to ContinuousColormap when there
+    # are so many levels it is clear this is as a "smooth" colormap (see notes at top)
+    bad = cmap._rgba_bad
+    under = cmap._rgba_under
+    over = cmap._rgba_over
+    if isinstance(cmap, (DiscreteColormap, ContinuousColormap)):
         pass
     elif isinstance(cmap, mcolors.LinearSegmentedColormap):
-        cmap = LinearSegmentedColormap(
-            cmap.name, cmap._segmentdata, cmap.N, cmap._gamma
-        )
+        cmap = ContinuousColormap(cmap.name, cmap._segmentdata, N=lut, gamma=cmap._gamma, cyclic=cyclic)  # noqa: E501
     elif isinstance(cmap, mcolors.ListedColormap):
-        cmap = ListedColormap(
-            cmap.colors, cmap.name, cmap.N
-        )
+        if cmap.N > listedthresh:
+            cmap = ContinuousColormap.from_list(cmap.name, cmap.colors, N=lut, cyclic=cyclic)  # noqa: E501
+        else:
+            cmap = DiscreteColormap(cmap.colors, cmap.name)
     elif isinstance(cmap, mcolors.Colormap):  # base class
         pass
     else:
@@ -2570,18 +2754,131 @@ def _to_proplot_colormap(cmap):
             f'Invalid colormap type {type(cmap).__name__!r}. '
             'Must be instance of matplotlib.colors.Colormap.'
         )
-    cmap._rgba_bad = cmap_orig._rgba_bad
-    cmap._rgba_under = cmap_orig._rgba_under
-    cmap._rgba_over = cmap_orig._rgba_over
+
+    # Apply hidden settings
+    cmap._rgba_bad = bad
+    cmap._rgba_under = under
+    cmap._rgba_over = over
+
     return cmap
 
 
-class ColormapDatabase(dict):
+class _ColorCache(dict):
+    """
+    Replacement for the native color cache.
+    """
+    def __getitem__(self, key):
+        """
+        Get the standard color, colormap color, or color cycle color.
+        """
+        # NOTE: Matplotlib 'color' args are passed to to_rgba, which tries to read
+        # directly from cache and if that fails, sanitizes input, which raises
+        # error on receiving (colormap, idx) tuple. So we have to override cache.
+        rgb, alpha = key
+        rgb = self._get_rgb(rgb)
+        return super().__getitem__((rgb, alpha))
+
+    def _get_rgb(self, rgb):
+        """
+        Get the RGB tuple from the registered colormap or color cycle.
+        """
+        if isinstance(rgb, str) or not np.iterable(rgb) or len(rgb) != 2:
+            return rgb
+        if not isinstance(rgb[0], str) or not isinstance(rgb[1], Number):
+            return rgb
+        # Try to get the colormap
+        try:
+            cmap = _cmap_database[rgb[0]]
+        except (KeyError, TypeError):
+            return rgb
+        # Read the colormap value
+        if isinstance(cmap, DiscreteColormap):
+            if not 0 <= rgb[1] < len(cmap.colors):
+                raise ValueError(
+                    f'Color cycle sample for {rgb[0]!r} cycle must be '
+                    f'between 0 and {len(cmap.colors) - 1}, got {rgb[1]}.'
+                )
+            rgb = cmap.colors[rgb[1]]  # draw from list of colors
+        else:
+            if not 0 <= rgb[1] <= 1:
+                raise ValueError(
+                    f'Colormap sample for {rgb[0]!r} colormap must be '
+                    f'between 0 and 1, got {rgb[1]}.'
+                )
+            rgb = cmap(rgb[1])  # get color selection
+        return rgb
+
+
+class ColorDatabase(dict):
+    """
+    Dictionary subclass used to replace the builtin matplotlib color database. Permits
+    drawing colors from registered colormaps and color cycles for any plotting command
+    wherever colors are specified. See `~ColorDatabase.cache` for details.
+    """
+    # NOTE: Matplotlib's database also inherits from dict. MutableMapping not needed
+    # since usage is entirely internal (we just make it public for documentation)
+    def __init__(self, mapping):
+        """
+        Parameters
+        ----------
+        mapping : dict-like
+            The colors.
+        """
+        super().__init__(mapping)
+        self._cache = _ColorCache({})
+
+    def __setitem__(self, key, value):
+        """
+        Add a color to the database and clear the cache.
+        """
+        if not isinstance(key, str):
+            raise ValueError(f'Invalid color name {key!r}. Must be string.')
+        super().__setitem__(key, value)
+        self.cache.clear()
+
+    def __delitem__(self, key):
+        """
+        Delete a color from the database and clear the cache.
+        """
+        super().__delitem__(key)
+        self.cache.clear()
+
+    @property
+    def cache(self):
+        """
+        A special dictionary subclass capable of retrieving colors
+        "on-the-fly" from registered colormaps and color cycles.
+
+        * For a colormap, use e.g. ``color=('Blues', 0.8)``.
+          The number is the colormap index, and must be between 0 and 1.
+        * For a color cycle, use e.g. ``color=('colorblind', 2)``.
+          The number is the list index.
+
+        These examples work with any matplotlib command that accepts
+        a `color` keyword arg.
+        """
+        return self._cache
+
+
+class ColormapDatabase(MutableMapping, dict):
     """
     Dictionary subclass used to replace the matplotlib
     colormap registry. See `~ColormapDatabase.__getitem__` and
     `~ColormapDatabase.__setitem__` for details.
     """
+    # NOTE: While usage of this is entirely internal (we just make it public for
+    # documentation) decided to go to the trouble of using MutableMapping so it is
+    # future-proof to cm.py changes. Also covers unregister_cmap() which uses pop().
+    def __iter__(self):
+        yield from dict.__iter__(self)
+
+    def __len__(self):
+        return dict.__len__(self)
+
+    def __delitem__(self, key):
+        key = self._parse_key(key, mirror=True)
+        dict.__delitem__(self, key)
+
     def __init__(self, kwargs):
         """
         Parameters
@@ -2591,13 +2888,6 @@ class ColormapDatabase(dict):
         """
         for key, value in kwargs.items():
             self.__setitem__(key, value)
-
-    def __delitem__(self, key):
-        """
-        Delete the item from the database.
-        """
-        key = self._sanitize_key(key, mirror=True)
-        super().__delitem__(key)
 
     def __getitem__(self, key):
         """
@@ -2611,89 +2901,49 @@ class ColormapDatabase(dict):
         * Reversed diverging colormaps can be requested with their "reversed"
           name -- for example, ``'BuRd'`` is equivalent to ``'RdBu_r'``.
         """
-        # Deprecate previous names with support for '_r' and '_s' suffixes
-        # NOTE: Must search only for case sensitive *capitalized* names or we would
-        # helpfully "redirect" user to correct cmap when they are trying to generate
-        # a monochromatic cmap in Colormap and would disallow some color names.
-        test = re.sub(r'(_r(_s)?|_s)?\Z', '', key, flags=re.IGNORECASE)
-        if not super().__contains__(test):
-            if test in _cmaps_removed:
-                version = _cmaps_removed[test]
-                raise ValueError(
-                    f'ProPlot colormap {key!r} was removed in version {version}.'
-                )
-            if test in _cmaps_renamed:
-                test_new, version = _cmaps_renamed[test]
-                warnings._warn_proplot(
-                    f'Colormap {test!r} was renamed in version {version} and will be '
-                    f'removed in the next major release. Please use {test_new!r} instead.'  # noqa: E501
-                )
-                key = re.sub(test, test_new, key, flags=re.IGNORECASE)
+        return self._get_item(key)
 
-        # Sanitize key and handle suffixes
-        key = self._sanitize_key(key, mirror=True)
-        shift = key[-2:] == '_s'
-        if shift:
-            key = key[:-2]
-        reverse = key[-2:] == '_r'
-        if reverse:
-            key = key[:-2]
+    def __setitem__(self, key, value):
+        """
+        Store the colormap under its lowercase name.
 
-        # Get item and issue nice error message
-        try:
-            value = super().__getitem__(key)  # may raise keyerror
-        except KeyError:
-            raise KeyError(
-                f'Invalid colormap or cycle name {key!r}. Options are: '
-                + ', '.join(map(repr, self)) + '.'
+        * If the object is a `matplotlib.colors.ListedColormap` it is converted
+          to `proplot.colors.DiscreteColormap` if ``cmap.N`` is smaller than
+          :rc:`cmap.listedthresh` and `proplot.colors.ContinuousColormap` otherwise.
+        * If the object is a `matplotlib.colors.LinearSegmentedColormap` it is
+          converted to `proplot.colors.ContinuousColormap`.
+        """
+        self._set_item(key, value)
+
+    def _translate_deprecated(self, key):
+        """
+        Check if a colormap has been deprecated.
+        """
+        # WARNING: Must search only for case-sensitive *capitalized* names or we would
+        # helpfully "redirect" user to SciVisColor cmap when they are trying to
+        # generate open-color monochromatic cmaps and would disallow some color names
+        if isinstance(key, str):
+            test = re.sub(r'(_r(_s)?|_s)?\Z', '', key, flags=re.IGNORECASE)
+        else:
+            test = None
+        found = dict.__contains__(self, test)
+        if not found and test in CMAPS_REMOVED:
+            version = CMAPS_REMOVED[test]
+            raise ValueError(
+                f'ProPlot colormap {key!r} was removed in version {version}.'
             )
+        if not found and test in CMAPS_RENAMED:
+            test_new, version = CMAPS_RENAMED[test]
+            warnings._warn_proplot(
+                f'Colormap {test!r} was renamed in version {version} and will be '
+                f'removed in a future release. Please use {test_new!r} instead.'  # noqa: E501
+            )
+            key = re.sub(test, test_new, key, flags=re.IGNORECASE)
+        return key
 
-        # Auto-reverse and auto-shift
-        if reverse:
-            if hasattr(value, 'reversed'):
-                value = value.reversed()
-            else:
-                raise KeyError(
-                    f'Item of type {type(value).__name__!r} '
-                    'does not have reversed() method.'
-                )
-        if shift:
-            if hasattr(value, 'shifted'):
-                value = value.shifted(180)
-            else:
-                raise KeyError(
-                    f'Item of type {type(value).__name__!r} '
-                    'does not have shifted() method.'
-                )
-        return value
-
-    def __setitem__(self, key, item):
+    def _translate_key(self, key, mirror=True):
         """
-        Store the colormap under its lowercase name. If the colormap is
-        a matplotlib `~matplotlib.colors.ListedColormap` or
-        `~matplotlib.colors.LinearSegmentedColormap`, it is converted to the
-        ProPlot `ListedColormap` or `LinearSegmentedColormap` subclass.
-        """
-        if not isinstance(key, str):
-            raise KeyError(f'Invalid key {key!r}. Must be string.')
-        key = self._sanitize_key(key, mirror=False)
-        item = _to_proplot_colormap(item)
-        super().__setitem__(key, item)
-
-    def __contains__(self, item):
-        """
-        Test for membership using the sanitized colormap name.
-        """
-        try:  # by default __contains__ ignores __getitem__ overrides
-            self.__getitem__(item)
-            return True
-        except KeyError:
-            return False
-
-    def _sanitize_key(self, key, mirror=True):
-        """
-        Return the sanitized colormap name. This is used for lookups *and*
-        assignments.
+        Return the sanitized colormap name. Used for lookups and assignments.
         """
         if not isinstance(key, str):
             raise KeyError(f'Invalid key {key!r}. Key must be a string.')
@@ -2702,22 +2952,67 @@ class ColormapDatabase(dict):
         reverse = key[-2:] == '_r'
         if reverse:
             key = key[:-2]
-        if mirror and not super().__contains__(key):  # search for mirrored key
-            key_mirror = key
-            for pair in CMAPS_DIVERGING:
-                try:
-                    idx = pair.index(key)
-                    key_mirror = pair[1 - idx]
-                except (ValueError, KeyError):
-                    continue
-            if super().__contains__(key_mirror):
+        if mirror and not dict.__contains__(self, key):  # avoid recursion here
+            key_mirror = CMAPS_DIVERGING.get(key, None)
+            if key_mirror and dict.__contains__(self, key_mirror):
                 reverse = not reverse
                 key = key_mirror
         if reverse:
             key = key + '_r'
         return key
 
+    def _get_item(self, key):
+        """
+        Get the colormap with flexible input keys.
+        """
+        key = self._translate_deprecated(key)
+        key = self._translate_key(key, mirror=True)
+        shift = key[-2:] == '_s'
+        if shift:
+            key = key[:-2]
+        reverse = key[-2:] == '_r'
+        if reverse:
+            key = key[:-2]
+        try:
+            value = dict.__getitem__(self, key)  # may raise keyerror
+        except KeyError:
+            raise KeyError(
+                f'Invalid colormap or color cycle name {key!r}. Options are: '
+                + ', '.join(map(repr, self)) + '.'
+            )
+        if reverse:
+            value = value.reversed()
+        if shift:
+            value = value.shifted(180)
+        return value
+
+    def _set_item(self, key, value):
+        """
+        Add the colormap after validating and converting.
+        """
+        if not isinstance(key, str):
+            raise KeyError(f'Invalid key {key!r}. Must be string.')
+        if not isinstance(value, mcolors.Colormap):
+            raise ValueError('Object is not a colormap.')
+        key = self._translate_key(key, mirror=False)
+        value = _translate_cmap(value)
+        dict.__setitem__(self, key, value)
+
 
 # Initialize databases
-_init_color_database()
 _cmap_database = _init_cmap_database()
+_color_database = _init_color_database()
+
+# Deprecated
+(
+    ListedColormap,
+    LinearSegmentedColormap,
+    PerceptuallyUniformColormap,
+    LinearSegmentedNorm,
+) = warnings._rename_objs(  # noqa: E501
+    '0.8',
+    ListedColormap=DiscreteColormap,
+    LinearSegmentedColormap=ContinuousColormap,
+    PerceptuallyUniformColormap=PerceptualColormap,
+    LinearSegmentedNorm=SegmentedNorm,
+)
