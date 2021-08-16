@@ -464,17 +464,26 @@ def _iter_data_objects(folder, *args, **kwargs):
             raise FileNotFoundError(f'Invalid file path {path!r}.')
 
 
-def _patch_colormaps():
+@warnings._rename_kwargs('0.6', mode='rc_mode')
+def _parse_format(rc_kw=None, rc_mode=None, **kwargs):
     """
-    Convert colormaps that *should* be LinearSegmentedColormap from ListedColormap.
+    Separate `rc` setting names from the keyword arguments for use in
+    a `~Config.context` block. Used by the various ``format`` functions.
     """
-    for name in ('viridis', 'plasma', 'inferno', 'magma', 'cividis', 'twilight'):
-        cmap = pcolors._cmap_database.get(name, None)
-        if cmap and isinstance(cmap, pcolors.ListedColormap):
-            del pcolors._cmap_database[name]
-            pcolors._cmap_database[name] = pcolors.LinearSegmentedColormap.from_list(
-                name, cmap.colors, cyclic=(name == 'twilight')
-            )
+    # NOTE: rc_mode == 2 applies only the updated params. A power user
+    # could use ax.format(rc_mode=0) to re-apply all the current settings
+    kw = {}
+    rc_kw = rc_kw or {}
+    rc_mode = _not_none(rc_mode, 2)  # 2 applies only the updated params
+    for key, value in kwargs.items():
+        rc_key = rcsetup._rc_nodots.get(key, None)
+        if rc_key in ('alpha', 'facecolor', 'edgecolor', 'linewidth'):
+            rc_key = None  # former renamed settings
+        if rc_key is None:
+            kw[key] = value
+        else:
+            rc_kw[rc_key] = value
+    return rc_kw, rc_mode, kw
 
 
 def _translate_loc(loc, mode, *, default=None):
