@@ -2,17 +2,19 @@
 """
 Various tools that may be useful while making plots.
 """
+# WARNING: Cannot import 'rc' anywhere in this file or we get circular import
+# issues. The rc param validators need functions in this file.
 import re
-from numbers import Integral, Number
+from numbers import Integral, Real
 
 import matplotlib.colors as mcolors
 import matplotlib.font_manager as mfonts
 import numpy as np
-from matplotlib import rcParams
+from matplotlib import rcParams as rc_matplotlib
 
 from .externals import hsluv
 from .internals import ic  # noqa: F401
-from .internals import docstring, warnings
+from .internals import _not_none, docstring, warnings
 
 __all__ = [
     'arange',
@@ -31,11 +33,14 @@ __all__ = [
     'to_xyz',
     'to_rgba',
     'to_xyza',
+    'units',
     'shade',  # deprecated
     'saturate',  # deprecated
 ]
 
-NUMBER = re.compile(r'\A([-+]?[0-9._]+(?:[eE][-+]?[0-9_]+)?)(.*)\Z')
+UNIT_REGEX = re.compile(
+    r'\A([-+]?[0-9._]+(?:[eE][-+]?[0-9_]+)?)(.*)\Z'  # float with trailing units
+)
 UNIT_DICT = {
     'in': 1.0,
     'ft': 12.0,
@@ -44,12 +49,24 @@ UNIT_DICT = {
     'dm': 3.937,
     'cm': 0.3937,
     'mm': 0.03937,
-    'pt': 1 / 72.0,
     'pc': 1 / 6.0,
+    'pt': 1 / 72.0,
     'ly': 3.725e+17,
 }
 
-# Shared parameters
+
+# Unit docstrings
+# NOTE: Try to fit this into a single line. Cannot break up with newline as that will
+# mess up docstring indentation since this is placed in indented param lines.
+_units_docstring = (
+    'If float, units are {units}. If string, interpreted by `~proplot.utils.units`.'
+)
+docstring.snippets['units.pt'] = _units_docstring.format(units='points')
+docstring.snippets['units.in'] = _units_docstring.format(units='inches')
+docstring.snippets['units.em'] = _units_docstring.format(units='em-widths')
+
+
+# Color docstrings
 docstring.snippets['param.rgba'] = """
 color : color-spec
     The color. Sanitized with `to_rgba`.
@@ -75,8 +92,6 @@ space : {'hcl', 'hpl', 'hsl', 'hsv'}, optional
     The hue-saturation-luminance-like colorspace used to transform the color.
     Default is the perceptually uniform colorspace ``'hcl'``.
 """
-
-# Shared return values
 docstring.snippets['return.hex'] = """
 color : str
     A HEX string.
@@ -472,6 +487,35 @@ def set_alpha(color, alpha):
     return to_hex(color)
 
 
+def _translate_cycle_color(color, cycle=None):
+    """
+    Parse the input cycle color.
+    """
+    if isinstance(cycle, str):
+        from .colors import _cmap_database
+        try:
+            cycle = _cmap_database[cycle].colors
+        except (KeyError, AttributeError):
+            cycles = sorted(
+                name for name, cmap in _cmap_database.items()
+                if isinstance(cmap, mcolors.ListedColormap)
+            )
+            raise ValueError(
+                f'Invalid color cycle {cycle!r}. Options are: '
+                + ', '.join(map(repr, cycles)) + '.'
+            )
+    elif cycle is None:
+        cycle = rc_matplotlib['axes.prop_cycle'].by_key()
+        if 'color' not in cycle:
+            cycle = ['k']
+        else:
+            cycle = cycle['color']
+    else:
+        raise ValueError(f'Invalid cycle {cycle!r}.')
+
+    return cycle[int(color[-1]) % len(cycle)]
+
+
 @docstring.add_snippets
 def to_hex(color, space='rgb', cycle=None, keep_alpha=True):
     """
@@ -549,37 +593,16 @@ def to_rgba(color, space='rgb', cycle=None):
     to_xyz
     to_xyza
     """
-    # Convert color cycle strings
+    # Translate color cycle strings
     if isinstance(color, str) and re.match(r'\AC[0-9]\Z', color):
-        if isinstance(cycle, str):
-            from .colors import _cmap_database
-            try:
-                cycle = _cmap_database[cycle].colors
-            except (KeyError, AttributeError):
-                cycles = sorted(
-                    name for name, cmap in _cmap_database.items()
-                    if isinstance(cmap, mcolors.ListedColormap)
-                )
-                raise ValueError(
-                    f'Invalid cycle {cycle!r}. Options are: '
-                    + ', '.join(map(repr, cycles)) + '.'
-                )
-        elif cycle is None:
-            cycle = rcParams['axes.prop_cycle'].by_key()
-            if 'color' not in cycle:
-                cycle = ['k']
-            else:
-                cycle = cycle['color']
-        else:
-            raise ValueError(f'Invalid cycle {cycle!r}.')
-        color = cycle[int(color[-1]) % len(cycle)]
+        color = _translate_cycle_color(color, cycle=cycle)
 
     # Translate RGB strings and (colormap, index) tuples
     opacity = 1
     if isinstance(color, str) or np.iterable(color) and len(color) == 2:
         try:
             *color, opacity = mcolors.to_rgba(color)  # ensure is valid color
-        except (ValueError, TypeError):
+        except (TypeError, ValueError):
             raise ValueError(f'Invalid RGB argument {color!r}.')
 
     # Pull out alpha channel
@@ -594,7 +617,7 @@ def to_rgba(color, space='rgb', cycle=None):
             if any(c > 2 for c in color):
                 color = [c / 255 for c in color]  # scale to within 0-1
             color = tuple(color)
-        except (ValueError, TypeError):
+        except (TypeError, ValueError):
             raise ValueError(f'Invalid RGB argument {color!r}.')
     elif space == 'hsv':
         color = hsluv.hsl_to_rgb(*color)
@@ -681,8 +704,28 @@ def to_xyza(color, space='hcl'):
     return (*color, opacity)
 
 
+def _fontsize_to_pt(size):
+    """
+    Translate font preset size or unit string to points.
+    """
+    scalings = mfonts.font_scalings
+    if not isinstance(size, str):
+        return size
+    if size in mfonts.font_scalings:
+        return rc_matplotlib['font.size'] * scalings[size]
+    try:
+        return units(size, 'pt')
+    except ValueError:
+        raise KeyError(
+            f'Invalid font size {size!r}. Can be points or one of the preset scalings: '
+            + ', '.join(f'{key!r} ({value})' for key, value in scalings.items()) + '.'
+        )
+
+
 @warnings._rename_kwargs('0.6', units='dest')
-def units(value, dest='in', axes=None, figure=None, width=True):
+def units(
+    value, numeric=None, dest=None, *, axes=None, figure=None, width=True, fontsize=None
+):
     """
     Convert values and lists of values between arbitrary physical units. This
     is used internally all over ProPlot, permitting flexible units for various
@@ -691,10 +734,11 @@ def units(value, dest='in', axes=None, figure=None, width=True):
     Parameters
     ----------
     value : float or str or list thereof
-        A size specifier or *list thereof*. If numeric, nothing is done.
-        If string, it is converted to the units `dest`. The string should look
-        like ``'123.456unit'``, where the number is the magnitude and
-        ``'unit'`` is one of the following.
+        A size specifier or *list thereof*. If numeric, units are converted from
+        `numeric` to `dest`. If string, units are converted to `dest` according
+        to the string specifier. The string should look like ``'123.456unit'``,
+        where the number is the magnitude and ``'unit'`` matches a key in
+        the below table.
 
         .. _units_table ::
 
@@ -708,8 +752,8 @@ def units(value, dest='in', axes=None, figure=None, width=True):
         ``'yd'``   Yards
         ``'ft'``   Feet
         ``'in'``   Inches
-        ``'pt'``   `Points <pt_>`_ (1/72 inches)
         ``'pc'``   `Pica <pc_>`_ (1/6 inches)
+        ``'pt'``   `Points <pt_>`_ (1/72 inches)
         ``'px'``   Pixels on screen, using dpi of :rcraw:`figure.dpi`
         ``'pp'``   Pixels once printed, using dpi of :rcraw:`savefig.dpi`
         ``'em'``   `Em square <em_>`_ for :rcraw:`font.size`
@@ -726,28 +770,28 @@ def units(value, dest='in', axes=None, figure=None, width=True):
         .. _em: https://en.wikipedia.org/wiki/Em_(typography)
         .. _en: https://en.wikipedia.org/wiki/En_(typography)
 
+    numeric : str, optional
+        The units associated with numeric input. Default is inches.
     dest : str, optional
-        The destination units. Default is inches, i.e. ``'in'``.
+        The destination units. Default is the same as `numeric`.
     axes : `~matplotlib.axes.Axes`, optional
         The axes to use for scaling units that look like ``'0.1ax'``.
     figure : `~matplotlib.figure.Figure`, optional
-        The figure to use for scaling units that look like ``'0.1fig'``. If
-        ``None`` we try to get the figure from ``axes.figure``.
+        The figure to use for scaling units that look like ``'0.1fig'``.
+        If ``None`` we try to get the figure from ``axes.figure``.
     width : bool, optional
-        Whether to use the width or height for the axes and figure relative
-        coordinates.
+        Whether to use the width or height for the axes and figure
+        relative coordinates.
+    fontsize : size-spec, optional
+        The font size in points used for scaling. Default is
+        :rcraw:`font.size` for ``em`` and ``en`` units and
+        :rcraw:`axes.titlesize` for ``Em`` and ``En`` units.
     """
-    # Font unit scales
-    # NOTE: Delay font_manager import, because want to avoid rebuilding font
-    # cache, which means import must come after TTFPATH added to environ
-    # by register_fonts()!
-    fontsize_small = rcParams['font.size']  # must be absolute
-    fontsize_large = rcParams['axes.titlesize']
-    if isinstance(fontsize_large, str):
-        scale = mfonts.font_scalings.get(fontsize_large, 1)
-        fontsize_large = fontsize_small * scale
-
     # Scales for converting physical units to inches
+    fontsize_small = _not_none(fontsize, rc_matplotlib['font.size'])  # always absolute
+    fontsize_small = _fontsize_to_pt(fontsize_small)
+    fontsize_large = _not_none(fontsize, rc_matplotlib['axes.titlesize'])
+    fontsize_large = _fontsize_to_pt(fontsize_large)
     unit_dict = UNIT_DICT.copy()
     unit_dict.update({
         'em': fontsize_small / 72.0,
@@ -758,62 +802,63 @@ def units(value, dest='in', axes=None, figure=None, width=True):
 
     # Scales for converting display units to inches
     # WARNING: In ipython shell these take the value 'figure'
-    if not isinstance(rcParams['figure.dpi'], str):
-        # once generated by backend
-        unit_dict['px'] = 1 / rcParams['figure.dpi']
-    if not isinstance(rcParams['savefig.dpi'], str):
-        # once 'printed' i.e. saved
-        unit_dict['pp'] = 1 / rcParams['savefig.dpi']
+    if not isinstance(rc_matplotlib['figure.dpi'], str):
+        unit_dict['px'] = 1 / rc_matplotlib['figure.dpi']  # once generated by backend
+    if not isinstance(rc_matplotlib['savefig.dpi'], str):
+        unit_dict['pp'] = 1 / rc_matplotlib['savefig.dpi']  # once 'printed' i.e. saved
 
     # Scales relative to axes and figure objects
-    if axes is not None and hasattr(axes, 'get_size_inches'):  # proplot axes
-        unit_dict['ax'] = axes.get_size_inches()[1 - int(width)]
+    if axes is not None and hasattr(axes, '_get_size_inches'):  # proplot axes
+        unit_dict['ax'] = axes._get_size_inches()[1 - int(width)]
     if figure is None:
         figure = getattr(axes, 'figure', None)
-    if figure is not None and hasattr(
-            figure, 'get_size_inches'):  # proplot axes
+    if figure is not None and hasattr(figure, 'get_size_inches'):
         unit_dict['fig'] = figure.get_size_inches()[1 - int(width)]
 
     # Scale for converting inches to arbitrary other unit
+    if numeric is None and dest is None:
+        numeric = dest = 'in'
+    elif numeric is None:
+        numeric = dest
+    elif dest is None:
+        dest = numeric
+    options = 'Valid units are ' + ', '.join(map(repr, unit_dict)) + '.'
     try:
-        scale = unit_dict[dest]
+        nscale = unit_dict[numeric]
     except KeyError:
-        raise ValueError(
-            f'Invalid destination units {dest!r}. Valid units are '
-            + ', '.join(map(repr, unit_dict.keys())) + '.'
-        )
+        raise ValueError(f'Invalid numeric units {numeric!r}. ' + options)
+    try:
+        dscale = unit_dict[dest]
+    except KeyError:
+        raise ValueError(f'Invalid destination units {dest!r}. ' + options)
 
     # Convert units for each value in list
     result = []
     singleton = not np.iterable(value) or isinstance(value, str)
     for val in ((value,) if singleton else value):
-        if val is None or isinstance(val, Number):
+        # Silently pass None
+        if val is None:
             result.append(val)
             continue
-        elif not isinstance(val, str):
-            raise ValueError(
-                f'Size spec must be string or number or list thereof. '
-                f'Got {value!r}.'
-            )
-        regex = NUMBER.match(val)
-        if not regex:
-            raise ValueError(
-                f'Invalid size spec {val!r}. Valid units are '
-                + ', '.join(map(repr, unit_dict.keys())) + '.'
-            )
-        number, units = regex.groups()  # second group is exponential
-        try:
-            result.append(
-                float(number) * (unit_dict[units] / scale if units else 1)
-            )
-        except (KeyError, ValueError):
-            raise ValueError(
-                f'Invalid size spec {val!r}. Valid units are '
-                + ', '.join(map(repr, unit_dict.keys())) + '.'
-            )
-    if singleton:
-        result = result[0]
-    return result
+        # Get unit string
+        if isinstance(val, Real):
+            number, units = val, None
+        elif isinstance(val, str):
+            regex = UNIT_REGEX.match(val)
+            if regex:
+                number, units = regex.groups()  # second group is exponential
+            else:
+                raise ValueError(f'Invalid unit size spec {val!r}.')
+        else:
+            raise ValueError(f'Invalid unit size spec {val!r}.')
+        # Convert with units
+        if not units:
+            result.append(float(number) * nscale / dscale)
+        elif units in unit_dict:
+            result.append(float(number) * unit_dict[units] / dscale)
+        else:
+            raise ValueError(f'Invalid input units {units!r}. ' + options)
+    return result[0] if singleton else result
 
 
 # Deprecations
