@@ -1313,20 +1313,72 @@ class RcConfigurator(object):
         return paths[::-1]  # sort from decreasing to increasing importantce
 
     @staticmethod
+    def _config_folder():
+        """
+        Get the XDG proplot folder.
+        """
+        home = os.path.expanduser('~')
+        xdg_base = os.environ.get('XDG_CONFIG_HOME')
+        if not xdg_base:
+            configdir = os.path.join(home, '.config')
+        if sys.platform.startswith(('linux', 'freebsd')):
+            configdir = os.path.join(xdg_base, 'proplot')
+        else:
+            configdir = os.path.join(home, '.proplot')
+        return configdir
+
+    @staticmethod
     def user_file():
         """
-        Return location of the default user proplotrc file.
+        Return location of the default user proplotrc file. On Linux, this is either
+        ``$XDG_CONFIG_HOME/proplot/proplotrc`` or ``~/.config/proplot/proplotrc``
+        if the `XDG directory <https://wiki.archlinux.org/title/XDG_Base_Directory>`__
+        is unset. On other operating systems, this is ``~/.proplot/proplotrc``. The
+        location ``~/.proplotrc`` or ``~/.proplot/proplotrc`` is always returned if the
+        file exists, regardless of the operating system. If multiple valid locations
+        are found, a warning is raised.
         """
-        # TODO: Add XDG support here
-        return os.path.join(os.path.expanduser('~'), '.proplotrc')
+        # Support both loose files and files inside .proplot
+        file = os.path.join(Configurator.user_folder(), 'proplotrc')
+        universal = os.path.join(os.path.expanduser('~'), '.proplotrc')
+        if os.path.isfile(universal) and os.path.isfile(file):
+            warnings._warn_proplot(
+                'Found conflicting default user proplotrc files at '
+                f'{universal!r} and {file!r}. Ignoring the second one.'
+            )
+        if os.path.isfile(universal):
+            return universal
+        else:
+            return file
 
     @staticmethod
     def user_folder(subfolder=None):
         """
-        Return location of the default user proplot folder.
+        Return location of the default user proplot folder. On Linux,
+        this is either ``$XDG_CONFIG_HOME/proplot`` or ``~/.config/proplot``
+        if the `XDG directory <https://wiki.archlinux.org/title/XDG_Base_Directory>`__
+        is unset. On other operating systems, this is ``~/.proplot``. The location
+        ``~/.proplot`` is always returned if the folder exists, regardless of the
+        operating system. If multiple valid locations are found, a warning is raised.
         """
-        # TODO: Add XDG support here
-        folder = os.path.join(os.path.expanduser('~'), '.proplot')
+        # Try the XDG standard location
+        # NOTE: This is borrowed from matplotlib.get_configdir
+        home = os.path.expanduser('~')
+        universal = folder = os.path.join(home, '.proplot')
+        if sys.platform.startswith(('linux', 'freebsd')):
+            xdg = os.environ.get('XDG_CONFIG_HOME')
+            xdg = xdg or os.path.join(home, '.config')
+            folder = os.path.join(xdg, 'proplot')
+        # Fallback to the loose ~/.proplot if it is present
+        # NOTE: This is critical or we might ignore previously stored settings!
+        if os.path.isdir(universal):
+            if universal != folder and os.path.isdir(folder):
+                warnings._warn_proplot(
+                    'Found conflicting default user proplot folders at '
+                    f'{universal!r} and {folder!r}. Ignoring the second one.'
+                )
+            folder = universal
+        # Return the folder
         if subfolder:
             folder = os.path.join(folder, subfolder)
         return folder
