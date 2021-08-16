@@ -20,20 +20,22 @@ except ModuleNotFoundError:
     SouthPolarStereo = object
 
 __all__ = [
-    'Aitoff', 'Hammer', 'KavrayskiyVII',
-    'NorthPolarAzimuthalEquidistant',
-    'NorthPolarGnomonic',
-    'NorthPolarLambertAzimuthalEqualArea',
-    'SouthPolarAzimuthalEquidistant',
-    'SouthPolarGnomonic',
-    'SouthPolarLambertAzimuthalEqualArea',
+    'Aitoff',
+    'Hammer',
+    'KavrayskiyVII',
     'WinkelTripel',
+    'NorthPolarAzimuthalEquidistant',
+    'SouthPolarAzimuthalEquidistant',
+    'NorthPolarGnomonic',
+    'SouthPolarGnomonic',
+    'NorthPolarLambertAzimuthalEqualArea',
+    'SouthPolarLambertAzimuthalEqualArea',
 ]
 
-docstring.snippets['proj.reso'] = """
+_reso_docstring = """
 The projection resolution.
 """
-docstring.snippets['proj.init'] = """
+_init_docstring = """
 Parameters
 ----------
 central_longitude : float, optional
@@ -45,12 +47,13 @@ false_northing: float, optional
 globe : `~cartopy.crs.Globe`, optional
     If omitted, a default globe is created.
 """
+docstring.snippets['proj.reso'] = _reso_docstring
+docstring.snippets['proj.init'] = _init_docstring
 
 
 class Aitoff(_WarpedRectangularProjection):
     """
-    The `Aitoff <https://en.wikipedia.org/wiki/Aitoff_projection>`__
-    projection.
+    The `Aitoff <https://en.wikipedia.org/wiki/Aitoff_projection>`__ projection.
     """
     #: Registered projection name.
     name = 'aitoff'
@@ -72,8 +75,7 @@ class Aitoff(_WarpedRectangularProjection):
         b = globe.semiminor_axis or a
         if b != a or globe.ellipse is not None:
             warnings.warn(
-                f'The {self.name!r} projection does not handle '
-                'elliptical globes.'
+                f'The {self.name!r} projection does not handle elliptical globes.'
             )
 
         proj4_params = {'proj': 'aitoff', 'lon_0': central_longitude}
@@ -95,8 +97,7 @@ class Aitoff(_WarpedRectangularProjection):
 
 class Hammer(_WarpedRectangularProjection):
     """
-    The `Hammer <https://en.wikipedia.org/wiki/Hammer_projection>`__
-    projection.
+    The `Hammer <https://en.wikipedia.org/wiki/Hammer_projection>`__ projection.
     """
     #: Registered projection name.
     name = 'hammer'
@@ -118,8 +119,7 @@ class Hammer(_WarpedRectangularProjection):
         b = globe.semiminor_axis or a
         if b != a or globe.ellipse is not None:
             warnings.warn(
-                f'The {self.name!r} projection does not handle '
-                'elliptical globes.'
+                f'The {self.name!r} projection does not handle elliptical globes.'
             )
 
         proj4_params = {'proj': 'hammer', 'lon_0': central_longitude}
@@ -164,8 +164,7 @@ class KavrayskiyVII(_WarpedRectangularProjection):
         b = globe.semiminor_axis or a
         if b != a or globe.ellipse is not None:
             warnings.warn(
-                f'The {self.name!r} projection does not handle '
-                'elliptical globes.'
+                f'The {self.name!r} projection does not handle elliptical globes.'
             )
 
         proj4_params = {'proj': 'kav7', 'lon_0': central_longitude}
