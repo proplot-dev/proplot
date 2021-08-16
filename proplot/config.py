@@ -1674,32 +1674,53 @@ class RcConfigurator(object):
     @staticmethod
     def _save_rst(path):
         """
-        Used internally to create table for online docs.
+        Create an RST table file. Used for online docs.
         """
-        string = rcsetup._gen_rst_table()
+        string = rcsetup._rst_table()
         with open(path, 'w') as fh:
             fh.write(string)
 
     @staticmethod
-    def _save_yaml(path, comment=False):
+    def _save_yaml(path, user_dict=None, *, comment=False, description=False):
         """
-        Used internally to create initial proplotrc file and file for online docs.
+        Create a YAML file. Used for online docs and default and user-generated
+        proplotrc files. Extra settings can be passed with the input dictionary.
         """
-        self = object()  # self is unused when 'user' is False
-        RcConfigurator.save(self, path, user=False, backup=False, comment=comment)
+        user_table = ()
+        if user_dict:  # add always-uncommented user settings
+            user_table = rcsetup._yaml_table(user_dict, comment=False)
+            user_table = ('# Changed settings', user_table, '')
+        proplot_dict = rcsetup._rc_proplot_table if description else rcsetup._rc_proplot_default  # noqa: E501
+        proplot_table = rcsetup._yaml_table(proplot_dict, comment=comment, description=description)  # noqa: E501
+        proplot_table = ('# ProPlot settings', proplot_table, '')
+        matplotlib_dict = rcsetup._rc_matplotlib_default
+        matplotlib_table = rcsetup._yaml_table(matplotlib_dict, comment=comment)
+        matplotlib_table = ('# Matplotlib settings', matplotlib_table)
+        parts = (
+            '#--------------------------------------------------------------------',
+            '# Use this file to change the default proplot and matplotlib settings.',
+            '# The syntax is identical to matplotlibrc syntax. For details see:',
+            '# https://proplot.readthedocs.io/en/latest/configuration.html',
+            '# https://matplotlib.org/stable/tutorials/introductory/customizing.html',
+            '#--------------------------------------------------------------------',
+            *user_table,  # empty if nothing passed
+            *proplot_table,
+            *matplotlib_table,
+        )
+        with open(path, 'w') as fh:
+            fh.write('\n'.join(parts))
 
     def save(self, path=None, user=True, comment=None, backup=True, description=False):
         """
-        Save the current settings to a ``.proplotrc`` file. This writes
+        Save the current settings to a ``proplotrc`` file. This writes
         the default values commented out plus the values that *differ*
         from the defaults at the top of the file.
 
         Parameters
         ----------
-        path : str, optional
-            The path name. The default file name is ``.proplotrc`` and the default
-            directory is the home directory. Use ``path=''`` to save to the current
-            directory.
+        path : path-like, optional
+            The path. The default file name is ``proplotrc`` and the default
+            directory is the current directory.
         user : bool, optional
             If ``True`` (the default), the settings you changed since importing
             proplot are shown uncommented at the very top of the file.
@@ -1715,102 +1736,50 @@ class RcConfigurator(object):
 
         See also
         --------
-        RcConfigurator.load_file
+        Configurator.load
         """
-        if path is None:
-            path = '~'
-        path = os.path.abspath(os.path.expanduser(path))
-        if os.path.isdir(path):
-            path = os.path.join(path, '.proplotrc')
+        path = os.path.expanduser(path or '.')
+        if os.path.isdir(path):  # includes ''
+            path = os.path.join(path, 'proplotrc')
         if os.path.isfile(path) and backup:
-            os.rename(path, path + '.bak')
-            warnings._warn_proplot(
-                f'Existing proplotrc file {path!r} was moved to {path + ".bak"!r}.'
-            )
-
-        # Generate user-specific table, ignoring non-style related
-        # settings that may be changed from defaults like 'backend'
-        rc_user = ()
-        if user:
-            # Changed settings
-            rcdict = {
-                key: value for key, value in self
-                if value != rcsetup._get_default_param(key)
-            }
-
-            # Special handling for certain settings
-            # TODO: For now not sure how to detect if prop cycle changed since
-            # we cannot load it from _cmap_database in rcsetup.
-            rcdict.pop('interactive', None)  # changed by backend
-            rcdict.pop('axes.prop_cycle', None)
-
-            # Filter and get table
-            rcdict = _get_filtered_dict(rcdict, warn=False)
-            rc_user_table = rcsetup._gen_yaml_table(rcdict, comment=False)
-            rc_user = ('# Settings changed by user', rc_user_table, '')  # + blank line
-
-        # Generate tables and write
+            backup = path + '.bak'
+            os.rename(path, backup)
+            warnings._warn_proplot(f'Existing file {path!r} was moved to {backup!r}.')
         comment = _not_none(comment, user)
-        rc_proplot_table = rcsetup._gen_yaml_table(
-            rcsetup._rc_proplot, comment=comment, description=description,
-        )
-        rc_matplotlib_table = rcsetup._gen_yaml_table(
-            rcsetup._rc_matplotlib_default, comment=comment
-        )
-        with open(path, 'w') as fh:
-            fh.write('\n'.join((
-                '#--------------------------------------------------------------------',
-                '# Use this file to change the default proplot and matplotlib settings',
-                '# The syntax is identical to matplotlibrc syntax. For details see:',
-                '# https://proplot.readthedocs.io/en/latest/configuration.html',
-                '# https://matplotlib.org/stable/tutorials/introductory/customizing.html',  # noqa: E501
-                '#--------------------------------------------------------------------',
-                *rc_user,  # includes blank line
-                '# ProPlot settings',
-                rc_proplot_table,
-                '\n# Matplotlib settings',
-                rc_matplotlib_table,
-            )))
+        user_dict = self.changed if user else None
+        self._save_yaml(path, user_dict, comment=comment, description=description)
 
-    def items(self):
+    @property
+    def _context_mode(self):
         """
-        Return an iterator that loops over all setting names and values.
-        Same as `dict.items`.
+        Return the highest (least permissive) context mode.
+        """
+        return max((context.mode for context in self._context), default=0)
 
-        See also
-        --------
-        RcConfigurator.keys
-        RcConfigurator.values
-        RcConfigurator.items
+    @property
+    def changed(self):
         """
-        for key in self:
-            yield key, self[key]
+        A dictionary of settings that have been changed from the ProPlot defaults.
+        """
+        # Carefully detect changed settings
+        rcdict = {}
+        for key, value in self.items():
+            default = rcsetup._get_default_param(key)
+            if isinstance(value, Real) and isinstance(default, Real) and np.isclose(value, default):  # noqa: E501
+                pass
+            elif value == default:
+                pass
+            else:
+                rcdict[key] = value
+        # Ignore non-style-related settings. See mstyle.STYLE_BLACKLIST
+        # TODO: For now not sure how to detect if prop cycle changed since
+        # we cannot load it from _cmap_database in rcsetup.
+        rcdict.pop('interactive', None)  # changed by backend
+        rcdict.pop('axes.prop_cycle', None)
+        return _get_filtered_dict(rcdict, warn=False)
 
-    def keys(self):
-        """
-        Return an iterator that loops over all setting names.
-        Same as `dict.keys`.
-
-        See also
-        --------
-        RcConfigurator.values
-        RcConfigurator.items
-        """
-        for key in self:
-            yield key
-
-    def values(self):
-        """
-        Return an iterator that loops over all setting values.
-        Same as `dict.values`.
-
-        See also
-        --------
-        RcConfigurator.keys
-        RcConfigurator.items
-        """
-        for key in self:
-            yield self[key]
+    # Renamed methods
+    load_file = warnings._rename_objs('0.8', load_file=load)
 
 
 # Initialize configuration
