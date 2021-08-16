@@ -1392,47 +1392,6 @@ class RcConfigurator(object):
             folder = os.path.join(folder, subfolder)
         return folder
 
-    def category(self, cat, *, trimcat=True, context=False):
-        """
-        Return a dictionary of settings beginning with the substring
-        ``cat + '.'``.
-
-        Parameters
-        ----------
-        cat : str, optional
-            The `rc` setting category.
-        trimcat : bool, optional
-            Whether to trim ``cat`` from the key names in the output
-            dictionary. Default is ``True``.
-        context : bool, optional
-            If ``True``, then each category setting that is not found in the
-            context mode dictionaries is omitted from the output dictionary.
-            See `~RcConfigurator.context`.
-
-        See also
-        --------
-        RcConfigurator.get
-        RcConfigurator.fill
-        """
-        if cat not in rcsetup._rc_categories:
-            raise ValueError(
-                f'Invalid rc category {cat!r}. Valid categories are '
-                + ', '.join(map(repr, rcsetup._rc_categories)) + '.'
-            )
-        kw = {}
-        mode = 0 if not context else None
-        for rcdict in (rc_proplot, rc_matplotlib):
-            for key in rcdict:
-                if not re.match(fr'\A{cat}\.[^.]+\Z', key):
-                    continue
-                value = self._get_item(key, mode)
-                if value is None:
-                    continue
-                if trimcat:
-                    key = re.sub(fr'\A{cat}\.', '', key)
-                kw[key] = value
-        return kw
-
     def context(self, *args, mode=0, file=None, **kwargs):
         """
         Temporarily modify the rc settings in a "with as" block.
@@ -1441,7 +1400,7 @@ class RcConfigurator(object):
         ----------
         *args
             Dictionaries of `rc` names and values.
-        file : str, optional
+        file : path-like, optional
             Filename from which settings should be loaded.
         **kwargs
             `rc` names and values passed as keyword arguments. If the
@@ -1450,20 +1409,19 @@ class RcConfigurator(object):
         Other parameters
         ----------------
         mode : {0, 1, 2}, optional
-            The context mode. Dictates the behavior of `~RcConfigurator.get`,
-            `~RcConfigurator.fill`, and `~RcConfigurator.category` within a
+            The context mode. Dictates the behavior of `~Configurator.find`,
+            `~Configurator.fill`, and `~Configurator.category` within a
             "with as" block when called with ``context=True``.
 
             The options are as follows:
 
-            0. Matplotlib's `builtin settings <rc_matplotlib>`_ and ProPlot's
-               :ref:`added settings <rc_proplot>` are all returned,
-               whether or not `~RcConfigurator.context` has changed them.
-            1. *Unchanged* `matplotlib settings <rc_matplotlib>`_ return ``None``.
-               All of ProPlot's :ref:`added settings <rc_proplot>` are returned
-               whether or not `~RcConfigurator.context` has changed them.
-               This is used in the `~proplot.axes.Axes.__init__` call to
-               `~proplot.axes.Axes.format`. When a lookup returns ``None``,
+            0. Matplotlib's `rc_matplotlib` settings and ProPlots `rc_proplot`
+               settings are all returned, whether or not `~Configurator.context`
+               has changed them.
+            1. Unchanged `rc_matplotlib` settings return ``None`` but `rc_proplot`
+               settings are returned whether or not `~Configurator.context` has
+               changed them. This is used in the `~proplot.axes.Axes.__init__` call
+               to `~proplot.axes.Axes.format`. When a lookup returns ``None``,
                `~proplot.axes.Axes.format` does not apply it.
             2. All unchanged settings return ``None``. This is used during
                user calls to `~proplot.axes.Axes.format`.
@@ -1479,19 +1437,20 @@ class RcConfigurator(object):
         Example
         -------
         The below applies settings to axes in a specific figure using
-        `~RcConfigurator.context`.
+        `~Configurator.context`.
 
         >>> import proplot as pplt
-        >>> with pplt.rc.context(linewidth=2, ticklen=5):
+        >>> with pplt.rc.context(ticklen=5, metalinewidth=2):
         >>>     fig, ax = pplt.subplots()
         >>>     ax.plot(data)
 
-        The below applies settings to a specific axes using `~proplot.axes.Axes.format`,
-        which uses `~RcConfigurator.context` internally.
+        The below applies settings to a specific axes using
+        `~proplot.axes.Axes.format`, which uses `~Configurator.context`
+        internally.
 
         >>> import proplot as pplt
         >>> fig, ax = pplt.subplots()
-        >>> ax.format(linewidth=2, ticklen=5)
+        >>> ax.format(ticklen=5, metalinewidth=2)
         """
         # Add input dictionaries
         for arg in args:
@@ -1500,7 +1459,6 @@ class RcConfigurator(object):
             kwargs.update(arg)
 
         # Add settings from file
-        # TODO: Incoporate with matplotlib 'stylesheets'
         if file is not None:
             kw_proplot, kw_matplotlib = self._load_file(file)
             kwargs.update(kw_proplot)
@@ -1509,99 +1467,131 @@ class RcConfigurator(object):
         # Activate context object
         if mode not in range(3):
             raise ValueError(f'Invalid mode {mode!r}.')
-        context = _RcContext(mode=mode, kwargs=kwargs, rc_new={}, rc_old={})
+        cls = namedtuple('RcContext', ('mode', 'kwargs', 'rc_new', 'rc_old'))
+        context = cls(mode=mode, kwargs=kwargs, rc_new={}, rc_old={})
         self._context.append(context)
         return self
 
-    def get(self, key, *, context=False):
+    def category(self, cat, *, trimcat=True, context=False):
         """
-        Return a single setting.
+        Return a dictionary of settings beginning with the substring ``cat + '.'``.
+        Optionally limit the search to the context level.
 
         Parameters
         ----------
-        key : str
-            The setting name.
+        cat : str, optional
+            The `rc` setting category.
+        trimcat : bool, optional
+            Whether to trim ``cat`` from the key names in the output
+            dictionary. Default is ``True``.
         context : bool, optional
-            If ``True``, then ``None`` is returned if the setting is not found
-            in the context mode dictionaries. See `~RcConfigurator.context`.
+            If ``True``, then each category setting that is not found in the
+            context mode dictionaries is omitted from the output dictionary.
+            See `~Configurator.context`.
 
         See also
         --------
-        RcConfigurator.category
-        RcConfigurator.fill
+        Configurator.find
+        Configurator.fill
         """
-        mode = 0 if not context else None
-        return self._get_item(key, mode)
+        kw = {}
+        if cat not in rcsetup._rc_categories:
+            raise ValueError(
+                f'Invalid rc category {cat!r}. Valid categories are: '
+                + ', '.join(map(repr, rcsetup._rc_categories)) + '.'
+            )
+        for key in self:
+            if not re.match(fr'\A{cat}\.[^.]+\Z', key):
+                continue
+            value = self._get_with_context(key, None if context else 0)
+            if value is None:
+                continue
+            if trimcat:
+                key = re.sub(fr'\A{cat}\.', '', key)
+            kw[key] = value
+        return kw
 
     def fill(self, props, *, context=False):
         """
-        Return a dictionary filled with settings whose names match the
-        string values in the input dictionary.
+        Return a dictionary filled with settings whose names match the string values
+        in the input dictionary. Optionally limit the search to the context level.
 
         Parameters
         ----------
         props : dict-like
-            Dictionary whose values are `rc` setting names.
+            Dictionary whose values are setting names.
         context : bool, optional
-            If ``True``, then each setting that is not found in the
-            context mode dictionaries is omitted from the output dictionary.
-            See `~RcConfigurator.context`.
+            If ``True``, then settings not found in the context mode dictionaries
+            are excluded from the output dictionary. See `~Configurator.context`.
 
         See also
         --------
-        RcConfigurator.category
-        RcConfigurator.get
+        Configurator.category
+        Configurator.find
         """
         kw = {}
-        mode = 0 if not context else None
         for key, value in props.items():
-            item = self._get_item(value, mode)
+            item = self._get_with_context(value, None if context else 0)
             if item is not None:
                 kw[key] = item
         return kw
 
+    def find(self, key, *, context=False):
+        """
+        Return a single setting. Optionally limit the search to the context level.
+
+        Parameters
+        ----------
+        key : str
+            The single setting name.
+        context : bool, optional
+            If ``True``, then ``None`` is returned if the setting is not found
+            in the context mode dictionaries. See `~Configurator.context`.
+
+        See also
+        --------
+        Configurator.category
+        Configurator.fill
+        """
+        return self._get_with_context(key, None if context else 0)
+
     def update(self, *args, **kwargs):
         """
-        Update several settings at once with a dictionary and/or
-        keyword arguments.
+        Update several settings at once.
 
         Parameters
         ----------
         *args : str, dict, or (str, dict), optional
-            A dictionary containing `rc` keys and values. You can also
-            pass a "category" name as the first argument, in which case all
+            A dictionary containing `rc` keys and values. You can also pass
+            a "category" name as the first argument, in which case all
             settings are prepended with ``'category.'``. For example,
             ``rc.update('axes', labelsize=20, titlesize=20)`` changes the
-            :rcraw:`axes.labelsize` and :rcraw:`axes.titlesize` properties.
+            :rcraw:`axes.labelsize` and :rcraw:`axes.titlesize` settings.
         **kwargs, optional
-            `rc` keys and values passed as keyword arguments. If the
-            name has dots, simply omit them.
+            `rc` keys and values passed as keyword arguments.
+            If the name has dots, simply omit them.
 
         See also
         --------
-        RcConfigurator.fill
+        Configurator.category
+        Configurator.fill
         """
-        # Parse args
-        kw = {}
-        prefix = ''
-        if len(args) > 2:
-            raise ValueError(
-                f'rc.update() accepts 1-2 arguments, got {len(args)}. Usage '
-                'is rc.update(kw), rc.update(category, kw), '
-                'rc.update(**kwargs), or rc.update(category, **kwargs).'
-            )
-        elif len(args) == 2:
+        prefix, kw = '', {}
+        if not args:
+            pass
+        elif len(args) == 1 and isinstance(args[0], str):
             prefix = args[0]
-            kw = args[1]
-        elif len(args) == 1:
-            if isinstance(args[0], str):
-                prefix = args[0]
-            else:
-                kw = args[0]
-
-        # Apply settings
-        if prefix:
-            prefix = prefix + '.'
+        elif len(args) == 1 and isinstance(args[0], dict):
+            kw = args[0]
+        elif len(args) == 2 and isinstance(args[0], str) and isinstance(args[1], dict):
+            prefix, kw = args
+        else:
+            raise ValueError(
+                f'Invalid arguments {args!r}. Usage is either '
+                'rc.update(dict), rc.update(kwy=value, ...), '
+                'rc.update(category, dict), or rc.update(category, key=value, ...).'
+            )
+        prefix = prefix and prefix + '.'
         kw.update(kwargs)
         for key, value in kw.items():
             self.__setitem__(prefix + key, value)
