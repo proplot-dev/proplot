@@ -10,8 +10,9 @@ from fractions import Fraction
 import matplotlib.ticker as mticker
 import numpy as np
 
+from .config import rc
 from .internals import ic  # noqa: F401
-from .internals import _dummy_context, _not_none, _state_context, docstring
+from .internals import _empty_context, _not_none, _state_context, docstring
 
 try:
     import cartopy.crs as ccrs
@@ -22,6 +23,9 @@ except ModuleNotFoundError:
     ccrs = None
     _PlateCarreeFormatter = LatitudeFormatter = LongitudeFormatter = object
 
+# NOTE: Keep IndexFormatter out of __all__ since we don't want it documented
+# on website. Just represents a matplotlib replacement. However *do* keep
+# it public so people can access it from module like all other classes.
 __all__ = [
     'AutoFormatter',
     'FracFormatter',
@@ -36,24 +40,35 @@ REGEX_ZERO = re.compile('\\A[-\N{MINUS SIGN}]?0(.0*)?\\Z')
 REGEX_MINUS = re.compile('\\A[-\N{MINUS SIGN}]\\Z')
 REGEX_MINUS_ZERO = re.compile('\\A[-\N{MINUS SIGN}]0(.0*)?\\Z')
 
-docstring.snippets['formatter.params'] = """
+_precision_docstring = """
+precision : int, optional
+    The maximum number of digits after the decimal point. Default is ``6``
+    when `zerotrim` is ``True`` and ``2`` otherwise.
+"""
+_zerotrim_docstring = """
 zerotrim : bool, optional
-    Whether to trim trailing zeros. Default is :rc:`formatter.zerotrim`.
+    Whether to trim trailing decimal zeros.
+    Default is :rc:`formatter.zerotrim`.
+"""
+_formatter_docstring = """
 tickrange : (float, float), optional
     Range within which major tick marks are labelled. Default is
     ``(-np.inf, np.inf)``.
 wraprange : (float, float), optional
-    Range outside of which tick values are wrapped. For example, ``(0, 2)``
-    will format a value of ``2.5`` as ``0.5``, and ``(-180, 180)`` will
-    format a value of ``200`` as ``-180 + 20 == -160``.
+    Range outside of which tick values are wrapped. For example,
+    ``(-180, 180)`` will format a value of ``200`` as ``-160``.
 prefix, suffix : str, optional
-    Prefix and suffix for all tick strings.
+    Prefix and suffix for all tick strings. The suffix is added before
+    the optional `negpos` suffix.
 negpos : str, optional
     Length-2 string indicating the suffix for "negative" and "positive"
     numbers, meant to replace the minus sign.
 """
+docstring.snippets['formatter.precision'] = _precision_docstring
+docstring.snippets['formatter.zerotrim'] = _zerotrim_docstring
+docstring.snippets['formatter.auto'] = _formatter_docstring
 
-docstring.snippets['formatter.call'] = """
+_formatter_call = """
 Convert number to a string.
 
 Parameters
@@ -63,12 +78,12 @@ x : float
 pos : float, optional
     The position.
 """
+docstring.snippets['formatter.call'] = _formatter_call
 
 
 class _DegreeLocator(mticker.MaxNLocator):
     """
-    A locator for determining longitude and latitude gridlines.
-    Adapted from cartopy.
+    A locator for longitude and latitude gridlines. Adapted from cartopy.
     """
     # NOTE: Locator implementation is weird AF. __init__ just calls set_params with all
     # keyword args and fills in missing params with default_params class attribute.
@@ -103,7 +118,7 @@ class _DegreeLocator(mticker.MaxNLocator):
 
 class LongitudeLocator(_DegreeLocator):
     """
-    A locator for determining longitude gridlines. Adapted from cartopy.
+    A locator for longitude gridlines. Adapted from cartopy.
     """
     def __init__(self, *args, **kwargs):
         """
@@ -134,7 +149,7 @@ class LongitudeLocator(_DegreeLocator):
 
 class LatitudeLocator(_DegreeLocator):
     """
-    A locator for determining latitude gridlines. Adapted from cartopy.
+    A locator for latitude gridlines. Adapted from cartopy.
     """
     def __init__(self, *args, **kwargs):
         """
@@ -173,10 +188,10 @@ class _CartopyFormatter(object):
         super().__init__(*args, **kwargs)
 
     def __call__(self, value, pos=None):
-        if self.axis is not None:
-            context = _state_context(self.axis.axes, projection=ccrs.PlateCarree())
+        if self.axis is None:
+            context = _empty_context()
         else:
-            context = _dummy_context()
+            context = _state_context(self.axis.axes, projection=ccrs.PlateCarree())
         with context:
             return super().__call__(value, pos)
 
@@ -207,13 +222,12 @@ class _DegreeFormatter(_CartopyFormatter, _PlateCarreeFormatter):
         return ''
 
 
-class _IndexFormatter(mticker.Formatter):
+class IndexFormatter(mticker.Formatter):
     """
-    Duplication of the exceedingly simple `~matplotlib.ticker.IndexFormatter`
-    class deprecated in matplotlib 3.3.0.
+    A duplicate of `~matplotlib.ticker.IndexFormatter`.
     """
-    # NOTE: For details check out https://github.com/matplotlib/matplotlib/issues/16631
-    # and bring some popcorn.
+    # NOTE: This was deprecated in matplotlib 3.3. For details check out
+    # https://github.com/matplotlib/matplotlib/issues/16631 and bring some popcorn.
     def __init__(self, labels):
         self.labels = labels
         self.n = len(labels)
@@ -226,10 +240,20 @@ class _IndexFormatter(mticker.Formatter):
             return self.labels[i]
 
 
+def _default_precision_zerotrim(precision=None, zerotrim=None):
+    """
+    Return the default zerotrim and precision. Shared by several formatters.
+    """
+    zerotrim = _not_none(zerotrim, rc['formatter.zerotrim'])
+    if precision is None:
+        precision = 6 if zerotrim else 2
+    return precision, zerotrim
+
+
 class AutoFormatter(mticker.ScalarFormatter):
     """
-    The new default formatter. Differs from `~matplotlib.ticker.ScalarFormatter`
-    in the following ways:
+    The new default number formatter. Differs from
+    `~matplotlib.ticker.ScalarFormatter` in the following ways:
 
     1. Trims trailing decimal zeros by default.
     2. Permits specifying *range* within which major tick marks are labeled.
@@ -246,7 +270,8 @@ class AutoFormatter(mticker.ScalarFormatter):
         """
         Parameters
         ----------
-        %(formatter.params)s
+        %(formatter.zerotrim)s
+        %(formatter.auto)s
 
         Other parameters
         ----------------
@@ -263,7 +288,6 @@ class AutoFormatter(mticker.ScalarFormatter):
         """
         tickrange = tickrange or (-np.inf, np.inf)
         super().__init__(**kwargs)
-        from .config import rc
         zerotrim = _not_none(zerotrim, rc['formatter.zerotrim'])
         self._zerotrim = zerotrim
         self._tickrange = tickrange
@@ -363,10 +387,7 @@ class AutoFormatter(mticker.ScalarFormatter):
         """
         Get decimal point symbol for current locale (e.g. in Europe will be comma).
         """
-        from .config import rc
-        use_locale = _not_none(
-            use_locale, self.get_useLocale(), rc['formatter.use_locale']
-        )
+        use_locale = _not_none(use_locale, self.get_useLocale(), rc['formatter.use_locale'])  # noqa: E501
         return locale.localeconv()['decimal_point'] if use_locale else '.'
 
     @staticmethod
@@ -374,7 +395,6 @@ class AutoFormatter(mticker.ScalarFormatter):
         """
         Get decimal point symbol for current locale. Called externally.
         """
-        from .config import rc
         use_locale = _not_none(use_locale, rc['formatter.use_locale'])
         return locale.localeconv()['decimal_point'] if use_locale else '.'
 
@@ -383,7 +403,6 @@ class AutoFormatter(mticker.ScalarFormatter):
         """
         Format the minus sign and avoid "negative zero," e.g. ``-0.000``.
         """
-        from .config import rc
         if rc['axes.unicode_minus'] and not rc['text.usetex']:
             string = string.replace('-', '\N{MINUS SIGN}')
         if REGEX_MINUS_ZERO.match(string):
@@ -446,20 +465,15 @@ class SciFormatter(mticker.Formatter):
     """
     Format numbers with scientific notation.
     """
+    @docstring.add_snippets
     def __init__(self, precision=None, zerotrim=None):
         """
         Parameters
         ----------
-        precision : int, optional
-            The maximum number of digits after the decimal point. Default is ``6``
-            when `zerotrim` is ``True`` and ``2`` otherwise.
-        zerotrim : bool, optional
-            Whether to trim trailing zeros. Default is
+        %(formatter.precision)s
+        %(formatter.zerotrim)s
         """
-        from .config import rc
-        zerotrim = _not_none(zerotrim, rc['formatter.zerotrim'])
-        if precision is None:
-            precision = 6 if zerotrim else 2
+        precision, zerotrim = _default_precision_zerotrim(precision, zerotrim)
         self._precision = precision
         self._zerotrim = zerotrim
 
@@ -497,18 +511,17 @@ class SciFormatter(mticker.Formatter):
 
 class SigFigFormatter(mticker.Formatter):
     """
-    Rounds numbers to the specified number of *significant digits*.
+    Format numbers by retaining the specified number of significant digits.
     """
+    @docstring.add_snippets
     def __init__(self, sigfig=3, zerotrim=None):
         """
         Parameters
         ----------
         sigfig : float, optional
             The number of significant digits.
-        zerotrim : bool, optional
-            Whether to trim trailing zeros.
+        %(formatter.zerotrim)s
         """
-        from .config import rc
         self._sigfig = sigfig
         self._zerotrim = _not_none(zerotrim, rc['formatter.zerotrim'])
 
@@ -537,9 +550,9 @@ class SigFigFormatter(mticker.Formatter):
 
 class SimpleFormatter(mticker.Formatter):
     """
-    Replicate various features from `AutoFormatter`. This is more suitable for
-    arbitrary number formatting not necessarily associated with any
-    `~matplotlib.axis.Axis` instance, e.g. labeling contours.
+    A general purpose number formatter. This is similar to `AutoFormatter`
+    but suitable for arbitrary formatting not necessarily associated with
+    an `~matplotlib.axis.Axis` instance.
     """
     @docstring.add_snippets
     def __init__(
@@ -550,15 +563,11 @@ class SimpleFormatter(mticker.Formatter):
         """
         Parameters
         ----------
-        precision : int, optional
-            The maximum number of digits after the decimal point. Default is ``6``
-            when `zerotrim` is ``True`` and ``2`` otherwise.
-        %(formatter.params)s
+        %(formatter.precision)s
+        %(formatter.zerotrim)s
+        %(formatter.auto)s
         """
-        from .config import rc
-        zerotrim = _not_none(zerotrim, rc['formatter.zerotrim'])
-        if precision is None:
-            precision = 6 if zerotrim else 2
+        precision, zerotrim = _default_precision_zerotrim(precision, zerotrim)
         self._precision = precision
         self._prefix = prefix or ''
         self._suffix = suffix or ''
@@ -600,7 +609,7 @@ class SimpleFormatter(mticker.Formatter):
 
 class FracFormatter(mticker.Formatter):
     r"""
-    Format numbers as fractions or multiples of some arbitrary value.
+    Format numbers as fractions or multiples of some value.
     This is powered by the builtin `~fractions.Fraction` class
     and the `~fractions.Fraction.limit_denominator` method.
     """
