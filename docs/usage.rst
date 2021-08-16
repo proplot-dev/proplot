@@ -30,14 +30,13 @@ plotting commands like `~matplotlib.axes.Axes.plot`, `~matplotlib.axes.Axes.scat
 have. The "object-oriented" part means that ProPlot's features are implemented with
 *subclasses* of the `~matplotlib.figure.Figure` and `~matplotlib.axes.Axes` classes.
 
-If you tend to use `~matplotlib.pyplot` and are not familiar with figure and
-axes *classes*, check out `this guide
-<https://matplotlib.org/stable/api/index.html>`__
-Directly working with objects tends to be more clear and concise than
+If you tend to use `~matplotlib.pyplot` and are not familiar with the figure and axes
+classes, check out `this guide <https://matplotlib.org/stable/api/index.html>`__.
+Directly working with matplotlib classes tends to be more clear and concise than
 `~matplotlib.pyplot`, makes things easier when working with multiple figures and axes,
 and is certainly more "`pythonic <https://www.python.org/dev/peps/pep-0020/>`__".
-Therefore, although some ProPlot features may still work, we do not officially support
-the `~matplotlib.pyplot` interface.
+Therefore, although many ProPlot features may still work, we do not officially
+support the `~matplotlib.pyplot` interface.
 
 .. _usage_import:
 
@@ -56,8 +55,7 @@ We recommend importing ProPlot as follows:
    import proplot as pplt
 
 This differentiates ProPlot from the usual ``plt`` abbreviation reserved for
-the `~matplotlib.pyplot` module. The abbreviation ``pplt`` is a popular
-and less generic alternative.
+the `~matplotlib.pyplot` module.
 
 .. _usage_classes:
 
@@ -73,7 +71,14 @@ Creating plots with ProPlot always begins with a call to the
 
 The `~proplot.ui.subplots` command is modeled after
 matplotlib's native `matplotlib.pyplot.subplots` command
-and is :ref:`packed with new features <ug_subplots>`.
+and is :ref:`packed with new features <ug_subplots>`. One highlight is the
+`~proplot.figure.Figure.auto_layout` algorithm that
+:ref:`automatically adjusts the space between subplots <ug_tight>` (similar to
+matplotlib's `~matplotlib.figure.Figure.tight_layout`) and
+:ref:`automatically adjusts the figure size <ug_autosize>` to preserve subplot
+sizes and aspect ratios (which is particularly useful for grids of map projections
+and images). All sizing arguments also take arbitrary units, including *metric*
+units like ``cm`` and ``mm``.
 
 Instead of instances of the native `matplotlib.figure.Figure` and
 `matplotlib.axes.Axes` classes, `~proplot.ui.subplots` :ref:`returns <ug_basics>`
@@ -157,10 +162,10 @@ classes and :ref:`constructor functions <why_constructor>`.
   and :ref:`merge <ug_cmaps_merge>` existing colormaps and color
   cycles. It can also :ref:`make new colormaps <ug_cmaps_new>`
   and :ref:`color cycles <ug_cycles_new>` from scratch.
-* The `~proplot.colors.LinearSegmentedColormap` and
-  `~proplot.colors.ListedColormap` subclasses replace the default matplotlib
+* The `~proplot.colors.ContinuousColormap` and
+  `~proplot.colors.DiscreteColormap` subclasses replace the default matplotlib
   colormap classes and add several methods. The new
-  `~proplot.colors.PerceptuallyUniformColormap` class is used to make
+  `~proplot.colors.PerceptualColormap` class is used to make
   colormaps with :ref:`perceptually uniform transitions <ug_perceptual>`.
 * The `~proplot.demos.show_cmaps`, `~proplot.demos.show_cycles`,
   `~proplot.demos.show_colors`, `~proplot.demos.show_fonts`,
@@ -170,7 +175,7 @@ classes and :ref:`constructor functions <why_constructor>`.
   :ref:`inspect individual colormaps <ug_perceptual>`.
 * The `~proplot.constructor.Norm` constructor function generates colormap
   normalizers from shorthand names. The new
-  `~proplot.colors.LinearSegmentedNorm` normalizer scales colors evenly
+  `~proplot.colors.SegmentedNorm` normalizer scales colors evenly
   w.r.t. index for arbitrarily spaced monotonic levels, and the new
   `~proplot.colors.DiscreteNorm` meta-normalizer is used to
   :ref:`break up colormap colors into discrete levels <ug_discrete>`.
@@ -180,7 +185,7 @@ classes and :ref:`constructor functions <why_constructor>`.
   arguments passed to `~proplot.axes.Axes.format`, and can be used to quickly
   and easily modify :ref:`x and y axis settings <ug_cartesian>`.
 * The `~proplot.config.rc` object, an instance of
-  `~proplot.config.RcConfigurator`, is used for
+  `~proplot.config.Configurator`, is used for
   :ref:`modifying individual settings, changing settings in bulk, and
   temporarily changing settings in context blocks <ug_rc>`.
   It also introduces several :ref:`new setings <ug_config>`

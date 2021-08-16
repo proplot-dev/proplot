@@ -21,7 +21,7 @@ How does ProPlot compare against these tools?
   directly.
 * ProPlot *expands upon* the seaborn tools for working with color and global settings.
   For example, see `~proplot.constructor.Colormap`,
-  `~proplot.colors.PerceptuallyUniformColormap`, and `~proplot.config.RcConfigurator`.
+  `~proplot.colors.PerceptualColormap`, and `~proplot.config.Configurator`.
 * ProPlot *expands upon* matplotlib by fixing various quirks, developing a more
   advanced automatic layout algorithm, simplifying the process of drawing outer
   colorbars and legends, and much more.

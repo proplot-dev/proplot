@@ -3,7 +3,7 @@
 .vimsession
 .*.sw[a-z]
 
-# Ignore auto-generated files
+# Auto-generated files
 proplotrc
 rctable.rst
 
@@ -18,16 +18,12 @@ docs/api
 docs/_build
 docs/_static/pygments
 
-# Subfolder used to consider new colormaps
+# Development subfolders
+dev
 sources
 
-# Folder of notebooks for testing and bugfixing
-notebooks
-
-# Notebook stuff
-.ipynb_checkpoints
-
 # Python extras
+.ipynb_checkpoints
 *.log
 *.pyc
 .*.pyc

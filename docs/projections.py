@@ -211,8 +211,8 @@ for globe in (False, True):
         toplabels=('Cartopy example', 'Basemap example'),
         leftlabels=('Contourf', 'Pcolormesh'), leftlabelrotation=0,
         toplabelweight='normal', leftlabelweight='normal',
-        abc=True, abcstyle='a)', abcloc='ul', abcborder=False,
         coast=True, lonlines=90,
+        abc='a)', abcloc='ul', abcborder=False,
     )
     for i, ax in enumerate(axs):
         cmap = ('sunset', 'sunrise')[i % 2]
@@ -254,7 +254,7 @@ fig, axs = pplt.subplots(
 axs.format(
     suptitle='Projection axes formatting demo',
     toplabels=('Column 1', 'Column 2'),
-    abc=True, abcstyle='A.', abcloc='ul', abcborder=False, linewidth=1.5
+    abc='A.', abcloc='ul', abcborder=False, linewidth=1.5
 )
 
 # Styling projections in different ways

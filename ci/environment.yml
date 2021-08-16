@@ -10,7 +10,7 @@ name: proplot-dev
 channels:
   - conda-forge
 dependencies:
-  - python>=3.6
+  - python==3.6
   - numpy
   - xarray
   - pandas

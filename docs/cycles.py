@@ -22,14 +22,14 @@
 # *distinct colors*. Unlike :ref:`colormaps <Colormaps>`, interpolation
 # between these colors may not make sense. Color cycles are generally used
 # with bar plots, line plots, and other distinct plot elements. ProPlot's
-# named color cycles are actually registered as `~proplot.colors.ListedColormap`
-# instances so that they can be `used with categorical data
-# <https://journals.ametsoc.org/view-large/figure/9538246/bams-d-13-00155_1-f5.tif>`__.
-# Much more commonly, we build `property cycles
+# color cycles are registered as `~proplot.colors.DiscreteColormap`\ s so that
+# they can also be used as "qualitative" colormaps. Much more commonly,
+# we convert the `~proplot.colors.DiscreteColormap`\ s into matplotlib
+# `property cyclers
 # <https://matplotlib.org/stable/tutorials/intermediate/color_cycle.html>`__
-# from the `~proplot.colors.ListedColormap` colors using the
-# `~proplot.constructor.Cycle` constructor function or by
-# :ref:`drawing samples <ug_cycles_new>` from continuous colormaps.
+# using the `~proplot.constructor.Cycle` constructor function. We can also
+# use `~proplot.constructor.Cycle` to :ref:`extract colors <ug_cycles_new>`
+# from `~proplot.colors.ContinuousColormap`\ s.
 #
 # ProPlot :ref:`adds several features <why_colormaps_cyles>` to help you use color
 # cycles effectively in your figures. This section documents the new registered
@@ -47,8 +47,8 @@
 # registered by default and loaded from your ``~/.proplot/cycles`` folder.
 # You can make new color cycles and add them to this folder using the
 # `~proplot.constructor.Cycle` :ref:`constructor function <why_constructor>`.
-# To retrieve the list of colors associated with the color cycle, use
-# `~proplot.colors.Colors`.
+# To retrieve the list of colors associated with the color cycle, simply
+# use `~proplot.utils.get_colors`.
 
 # %%
 import proplot as pplt
@@ -200,9 +200,9 @@ obj = ax.plot(
 # `coolers <https://coolors.co>`__, and
 # `viz palette <https://projects.susielu.com/viz-palette>`__.
 #
-# To add color cycles downloaded from any of these sources, save the cycle
-# data to a file in your ``~/.proplot/cycles`` folder and call
-# `~proplot.config.register_cycles` (or restart your python session), or use
-# `~proplot.colors.ListedColormap.from_file`. The file name is used as the
-# registered cycle name. See `~proplot.colors.ListedColormap.from_file` for a
-# table of valid file extensions.
+# To add color cycles downloaded from any of these sources, add a cycle data file
+# to the ``cycles`` subfolder inside `~proplot.config.Configurator.user_folder`
+# and call `~proplot.config.register_cycles` (or restart your python session), or use
+# `~proplot.colors.DiscreteColormap.from_file`. The file name is used for the
+# registered cycle name. See `~proplot.colors.DiscreteColormap.from_file` for a
+# table of valid data file extensions.

@@ -143,6 +143,7 @@ intersphinx_mapping = {
     'cartopy': ('https://scitools.org.uk/cartopy/docs/latest', None),
     'basemap': ('https://matplotlib.org/basemap', None),
     'pandas': ('https://pandas.pydata.org/pandas-docs/stable', None),
+    'pint': ('https://pint.readthedocs.io/en/stable/', None),
 }
 
 # If true, the current module name will be prepended to all description
@@ -153,6 +154,8 @@ add_module_names = False  # proplot imports everything in top-level namespace
 # See: http://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html
 # * use_param is set to False so that we can put multiple "parameters"
 #   on one line -- for example 'xlocator, ylocator : locator-spec, optional'
+# * docs claim napoleon_preprocess_types and napoleon_type_aliases only work
+#   when napoleon_use_param is True but xarray sets to False and it still works
 # * use_keyword is set to False because we do not want separate 'Keyword Arguments'
 #   section and have same issue for multiple keywords.
 # * use_ivar and use_rtype are set to False for (presumably) style consistency
@@ -164,6 +167,29 @@ napoleon_use_rtype = False
 napoleon_numpy_docstring = True
 napoleon_google_docstring = False
 napoleon_include_init_with_doc = False  # move init doc to 'class' doc
+napoleon_preprocess_types = True
+napoleon_type_aliases = {
+    # General terms
+    'sequence': ':term:`sequence`',
+    'iterable': ':term:`iterable`',
+    'callable': ':py:func:`callable`',
+    'mapping': ':term:`mapping`',
+    'hashable': ':term:`hashable <name>`',
+    'dict-like': ':term:`dict-like <mapping>`',
+    'path-like': ':term:`path-like <path-like object>`',
+    'file-like': ':term:`file-like <file-like object>`',
+    'bool': ':class:`bool <bool>`',
+    'string': ':class:`string <str>`',
+    'scalar': ':term:`scalar`',
+    'array-like': ':term:`array-like`',
+    # ProPlot terms
+    'locator-like': ':term:`locator-like <locator>`',
+    'formatter-like': ':term:`formatter-like <formatter>`',
+    'scale-like': ':term:`scale-like <formatter>`',
+    'colormap-like': ':term:`colormap-spec <colormap>`',
+    'cycle-like': ':term:`cycle-spec <cycle>`',
+    'color-like': ':py:func:`color-like <matplotlib.colors.is_color_like>`',
+}
 
 # Fix duplicate class member documentation from autosummary + numpydoc
 # See: https://github.com/phn/pytpm/issues/3#issuecomment-12133978
@@ -214,7 +240,7 @@ for style in ('pastie', 'monokai'):  # WARNING: update when _static/custom.js ch
     with open(path, 'w') as f:
         f.write(HtmlFormatter(style=style).get_style_defs('.highlight'))
 
-# Create sample .proplotrc file
+# Create RST table and sample proplotrc file
 from proplot.config import rc
 rc._save_rst(os.path.join('_static', 'rctable.rst'))
 rc._save_yaml(os.path.join('_static', 'proplotrc'))
@@ -318,7 +344,7 @@ texinfo_documents = [
         'ProPlot Documentation',
         author,
         'proplot',
-        'A lightweight matplotlib wrapper for making beautiful, '
+        'A powerful matplotlib wrapper for making beautiful, '
         'publication-quality graphics.',
         'Miscellaneous'
     )

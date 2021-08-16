@@ -22,15 +22,13 @@
 # Plotting 2D data
 # ================
 #
-# ProPlot :ref:`adds new features <why_plotting>` to various `~matplotlib.axes.Axes`
-# plotting methods using a set of "wrapper" functions. When a plotting method like
-# `~matplotlib.axes.Axes.contourf` is "wrapped" by one of these functions, it accepts
-# the same parameters as the wrapper. These additions are a strict *superset* of
-# matplotlib -- if you are not interested, you can use matplotlib's plotting methods
-# just like you always have. This section documents the features added by wrapper
-# functions to 2D plotting commands like `~matplotlib.axes.Axes.contour`,
-# `~matplotlib.axes.Axes.contourf`, `~matplotlib.axes.Axes.pcolor`, and
-# `~matplotlib.axes.Axes.pcolormesh`.
+# ProPlot :ref:`adds new features <why_plotting>` to various plotting commands
+# using the intermediate `~proplot.axes.PlotAxes` subclass. These additions are
+# a strict *superset* of matplotlib -- if you are not interested, you can use
+# matplotlib's plotting commands just like you always have. This section documents
+# the features added by `~proplot.axes.PlotAxes` to 2D plotting commands like
+# `~proplot.axes.PlotAxes.contour`, `~proplot.axes.PlotAxes.contourf`,
+# `~proplot.axes.PlotAxes.pcolor`, and `~proplot.axes.PlotAxes.pcolormesh`.
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -40,7 +38,7 @@
 # ----------------------
 #
 # The `~proplot.axes.standardize_2d` wrapper standardizes
-# positional arguments across all 2D plotting methods.
+# positional arguments across all 2D plotting commands.
 # `~proplot.axes.standardize_2d` lets you optionally omit the *x* and *y*
 # coordinates, in which case they are inferred from the data.
 # It also guesses coordinate *edges* for `~matplotlib.axes.Axes.pcolor` and
@@ -84,8 +82,8 @@ with pplt.rc.context({'image.cmap': 'Grays', 'image.levels': 21}):
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_2dintegration:
 #
-# Pandas and xarray integration
-# -----------------------------
+# Pandas, xarray, and pint integration
+# ------------------------------------
 #
 # The `~proplot.axes.standardize_2d` wrapper integrates 2D plotting
 # methods with pandas `~pandas.DataFrame`\ s and xarray `~xarray.DataArray`\ s.
@@ -97,10 +95,13 @@ with pplt.rc.context({'image.cmap': 'Grays', 'image.levels': 21}):
 # :ref:`on-the-fly legend or colorbar <ug_cbars_axes>` label,
 # `~proplot.axes.standardize_2d` also tries to retrieve them from the DataFrame or
 # DataArray. You can also pass a Dataset, DataFrame, or dictionary to any plotting
-# command using the `data` keyword, then pass dataset keys as positional
-# arguments instead of arrays. For example, ``ax.plot('z', data=dataset)``
-# is translated to ``ax.plot(dataset['z'])``, and the *x* and *y* coordinates
-# are inferred thereafter.
+# command using the `data` keyword, then pass dataset keys as positional arguments
+# instead of arrays. For example, ``ax.plot('z', data=dataset)`` is translated to
+# ``ax.plot(dataset['z'])``, and the *x* and *y* coordinates are inferred thereafter.
+# Finally, if you pass `pint.Quantity`\ s or `xarray.DataArray`\ s containing
+# `pint.Quantity`\ s to a plotting command, ProPlot will automatically call
+# `~pint.UnitRegistry.setup_matplotlib` and apply the unit string formatted as
+# :rcraw:`unitformat` for the default content labels.
 #
 # These features restore some of the convenience you get
 # with the builtin `pandas`_ and `xarray`_ plotting functions. They are also
@@ -170,36 +171,33 @@ axs[1].format(xtickminor=False, yreverse=True)
 # -------------------------
 #
 # It is often useful to create ProPlot colormaps on-the-fly, without
-# explicitly calling the `~proplot.constructor.Colormap`
-# :ref:`constructor function <why_constructor>`.
-# You can do so using the `cmap` and `cmap_kw` keywords, available with
-# plotting methods wrapped by `~proplot.axes.apply_cmap`. `cmap` and `cmap_kw`
-# are passed to `~proplot.constructor.Colormap` and the resulting colormap is
-# used for the plot. For example, to create and apply a monochromatic colormap,
-# you can simply use ``cmap='color_name'``.
+# explicitly calling the `~proplot.constructor.Colormap` :ref:`constructor function
+# <why_constructor>`. You can do so using the `cmap` and `cmap_kw` keywords.
+# `cmap` and `cmap_kw` are passed to `~proplot.constructor.Colormap` and the resulting
+# colormap is used for the plot. For example, to create and apply a monochromatic
+# colormap, you can simply use ``cmap='color_name'``. For more information on
+# colormaps, see the :ref:`colormaps section <ug_cmaps>` of the user guide.
 #
-# The `~proplot.axes.apply_cmap` wrapper also
-# adds the `norm` and `norm_kw` keywords. They are passed to the
-# `~proplot.constructor.Norm` :ref:`constructor function <why_constructor>`,
-# and the resulting normalizer is used for the plot. By default,
-# `~proplot.axes.apply_cmap` selects the colormap normalization range based on
-# the data. The range can be set explicitly by passing the usual `vmin` and `vmax`
-# keywords to the plotting command (see the :ref:`next section <ug_discrete>`
-# for details).
-#
-# For more information on colormaps and normalizers, see the
-# :ref:`colormaps section <ug_cmaps>` and `this matplotlib
-# tutorial <https://matplotlib.org/tutorials/colors/colormapnorms.html>`__.
+# In matplotlib, data values are translated
+# into colormap colors using so-called `colormap "normalizers"
+# <https://matplotlib.org/stable/tutorials/colors/colormapnorms.html>`__.
+# A normalizer can be selected from its "registered" name using the
+# `~proplot.constructor.Norm` :ref:`constructor function <why_constructor>`. You can
+# also build a normalizer on-the-fly using the `norm` and `norm_kw` keywords.
+# If you want to work with normalizer classes directly, they are also imported
+# into the top-level namespace (e.g., ``pplt.LogNorm(...)`` is allowed). To
+# explicitly set the normalization range, you can pass the usual `vmin` and `vmax`
+# keywords to the plotting command. See the :ref:`next section <ug_discrete>` for
+# details on how ProPlot handles colormap normalization.
 #
 # .. note::
 #
-#    By default, when `~proplot.axes.apply_cmap` selects the colormap normalization
-#    range, it ignores data outside of the *x* or *y* axis limits if they
-#    were previously changed by `~matplotlib.axes.Axes.set_xlim` or
-#    `~matplotlib.axes.Axes.set_ylim` (or, equivalently, by passing `xlim` or `ylim`
-#    to `proplot.axes.CartesianAxes.format`). To disable this feature, pass
-#    ``inbounds=False`` to the plotting command or set :rcraw:`image.inbounds`
-#    to ``False``.
+#    By default, when ProPlot selects the colormap normalization range, it ignores
+#    data outside of the *x* or *y* axis limits if they were previously changed
+#    by `~matplotlib.axes.Axes.set_xlim` or `~matplotlib.axes.Axes.set_ylim` (or,
+#    equivalently, by passing `xlim` or `ylim` to `proplot.axes.CartesianAxes.format`).
+#    To disable this feature, pass ``inbounds=False`` to the plotting command or
+#    set :rcraw:`image.inbounds` to ``False``.
 
 # %%
 import proplot as pplt
@@ -331,7 +329,7 @@ for ax, extend in zip(axs[1:], ('min', 'max', 'neither', 'both')):
 # Special colormap normalizers
 # ----------------------------
 #
-# The `~proplot.colors.LinearSegmentedNorm` colormap normalizer
+# The `~proplot.colors.SegmentedNorm` colormap normalizer
 # provides even color gradations with respect to *index* for an
 # arbitrary monotonically increasing list of levels. This is automatically applied
 # if you pass unevenly spaced `levels` to a plotting command, or it can be manually

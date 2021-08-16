@@ -133,8 +133,9 @@ import numpy as np
 # Figure
 fig, axs = pplt.subplots(ncols=2, share=0, refwidth=2.2)
 axs.format(
-    xformatter='null', yformatter='null', abc=True, abcstyle='A.', titleloc='l',
-    suptitle='On-the-fly color selections'
+    abc='A.', titleloc='l',
+    suptitle='On-the-fly color selections',
+    xformatter='null', yformatter='null',
 )
 
 # Drawing from colormaps
@@ -174,8 +175,8 @@ ax.format(title=f'Drawing from color cycle {name!r}')
 # ---------------------
 #
 # You can register your own colors by adding ``.txt`` files to the
-# ``~/.proplot/colors`` directory and calling
-# `~proplot.config.register_colors`. This command is also called on import.
-# Each file should contain lines that look like ``color: #xxyyzz`` where
-# ``color`` is the registered color name and ``#xxyyzz`` is the HEX color
-# value. Lines beginning with ``#`` are ignored as comments.
+# ``colors`` subfolder inside `~proplot.config.Configurator.user_folder`
+# and calling `~proplot.config.register_colors`. This command is also called
+# on import. Each file should contain lines that look like ``color: #xxyyzz``
+# where ``color`` is the registered color name and ``#xxyyzz`` is the HEX
+# color value. Lines beginning with ``#`` are ignored as comments.

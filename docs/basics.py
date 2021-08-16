@@ -5,9 +5,9 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.11.3
+#       jupytext_version: 1.4.2
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
@@ -53,7 +53,7 @@
 #
 #    ProPlot changes the default :rcraw:`figure.facecolor` so that the figure
 #    backgrounds shown by the `matplotlib backend
-#    <https://matplotlib.org/faq/usage_faq#what-is-a-backend>`__ are gray (the
+#    <https://matplotlib.org/faq/usage_faq#what-is-a-backend>`__ are light gray (the
 #    :rcraw:`savefig.facecolor` applied to saved figures is still white). This can be
 #    helpful when designing figures. ProPlot also controls the appearence of figures
 #    in Jupyter notebooks using the new :rcraw:`inlinefmt` setting, which is passed
@@ -83,45 +83,46 @@
 #
 # .. warning::
 #
-#    ProPlot enables "axis sharing" by default. This lets subplots in the same row or
-#    column share the same axis limits, scales, ticks, and labels. This is often
-#    convenient, but may be annoying for some users. To keep this feature turned off,
-#    simply :ref:`change the default settings <ug_rc>` with e.g.
-#    ``pplt.rc.update(share=False, span=False)``. See the
+#    ProPlot enables automatic :ref:`axis sharing <ug_share>` by default. This lets
+#    subplots in the same row or column share the same axis limits, scales, ticks,
+#    and labels. This is often convenient, but may be annoying for some users. To keep
+#    this feature turned off, simply :ref:`change the default settings <ug_rc>` with
+#    e.g. ``pplt.rc.update(share=False, span=False)``. See the
 #    :ref:`axis-sharing section <ug_share>` for details.
 
 # %%
-# Sample data
+# Single subplot
 import numpy as np
+import proplot as pplt
 state = np.random.RandomState(51423)
 data = 2 * (state.rand(100, 5) - 0.5).cumsum(axis=0)
-
-# %%
-# Single subplot
-import proplot as pplt
-fig, ax = pplt.subplots()
+fig, ax = pplt.subplots(tight=True, span=True)
 ax.plot(data, lw=2)
 ax.format(suptitle='Single subplot', xlabel='x axis', ylabel='y axis')
-# Save the figure
 fig.save('~/test1.png')
 
 
 # %%
 # Simple subplot grid
+import numpy as np
 import proplot as pplt
+state = np.random.RandomState(51423)
+data = 2 * (state.rand(100, 5) - 0.5).cumsum(axis=0)
 fig, axs = pplt.subplots(ncols=2)
 axs[0].plot(data, lw=2)
 axs.format(
     suptitle='Simple subplot grid', title='Title',
     xlabel='x axis', ylabel='y axis'
 )
-# Save the figure
 fig.save('~/test2.png')
 
 
 # %%
 # Complex grid
+import numpy as np
 import proplot as pplt
+state = np.random.RandomState(51423)
+data = 2 * (state.rand(100, 5) - 0.5).cumsum(axis=0)
 array = [  # the "picture" (0 == nothing, 1 == subplot A, 2 == subplot B, etc.)
     [1, 1, 2, 2],
     [0, 3, 3, 0],
@@ -132,13 +133,15 @@ axs.format(
     xlabel='xlabel', ylabel='ylabel'
 )
 axs[2].plot(data, lw=2)
-# Save the figure
 fig.save('~/test3.png')
 
 
 # %%
 # Really complex grid
+import numpy as np
 import proplot as pplt
+state = np.random.RandomState(51423)
+data = 2 * (state.rand(100, 5) - 0.5).cumsum(axis=0)
 array = [  # the "picture" (1 == subplot A, 2 == subplot B, etc.)
     [1, 1, 2],
     [1, 1, 6],
@@ -151,7 +154,6 @@ axs.format(
     xlabel='xlabel', ylabel='ylabel', abc=True
 )
 axs[0].plot(data, lw=2)
-# Save the figure
 fig.save('~/test4.png')
 
 
@@ -195,7 +197,7 @@ axs[1].scatter(data[:, :5], marker='x', cycle=cycle)
 axs[2].pcolormesh(data, cmap='greys')
 m = axs[3].contourf(data, cmap='greys')
 axs.format(
-    abc=True, abcstyle='a.', titleloc='l', title='Title',
+    abc='a.', titleloc='l', title='Title',
     xlabel='xlabel', ylabel='ylabel', suptitle='Quick plotting demo'
 )
 fig.colorbar(m, loc='b', label='label')
@@ -213,12 +215,12 @@ fig.colorbar(m, loc='b', label='label')
 #
 # .. rst-class:: dummy-line-break-class
 #
-# 1. Any keyword matching the name of an `~proplot.config.rc` setting
+# #. Any keyword matching the name of an `~proplot.config.rc` setting
 #    is used to update the axes. If the name has "dots", you can omit them
 #    (e.g., ``titleloc='left'`` changes the :rcraw:`title.loc` property).
 #    See the :ref:`configuration section <ug_config>` for details.
 #
-# 2. Valid keywords arguments are passed to
+# #. Valid keywords arguments are passed to
 #    `proplot.axes.CartesianAxes.format`, `proplot.axes.PolarAxes.format`, or
 #    `proplot.axes.GeoAxes.format`. These change settings that are
 #    specific to the axes type. For example:
@@ -232,7 +234,7 @@ fig.colorbar(m, loc='b', label='label')
 #
 # .. rst-class:: dummy-line-break-class
 #
-# 3. Remaining keyword arguments are passed to the base `proplot.axes.Axes.format`
+# #. Remaining keyword arguments are passed to the base `proplot.axes.Axes.format`
 #    method. `~proplot.axes.Axes` is the base class for all other axes classes.
 #    This changes things that are the same for all axes types, like titles and
 #    a-b-c subplot labels (e.g., ``title='Title'``).
@@ -259,12 +261,12 @@ y = (state.rand(N, 5) - 0.5).cumsum(axis=0)
 axs[0].plot(x, y, linewidth=1.5)
 axs.format(
     suptitle='Format command demo',
-    abc=True, abcloc='ul', abcstyle='A.',
+    abc='A.', abcloc='ul',
     title='Main', ltitle='Left', rtitle='Right',  # different titles
     ultitle='Title 1', urtitle='Title 2', lltitle='Title 3', lrtitle='Title 4',
     toplabels=('Column 1', 'Column 2'),
     leftlabels=('Row 1', 'Row 2'),
-    xlabel='x-axis', ylabel='y-axis',
+    xlabel='xaxis', ylabel='yaxis',
     xscale='log',
     xlim=(1, 10), xticks=1,
     ylim=(-3, 3), yticks=pplt.arange(-3, 3),
@@ -279,48 +281,56 @@ axs.format(
 # Multiple axes
 # -------------
 #
-# `matplotlib.pyplot.subplots` returns a 2D `~numpy.ndarray` for figures with more
-# than one column and row, a 1D `~numpy.ndarray` for single-column or row figures,
-# or an `~matplotlib.axes.Axes` for single-subplot figures. By contrast,
-# `proplot.ui.subplots` returns a `~proplot.ui.SubplotsContainer` that
+# In matplotlib, `~matplotlib.pyplot.subplots` returns a 2D `~numpy.ndarray` for figures
+# with more than one column and row, a 1D `~numpy.ndarray` for single-column or row
+# figures, or an `~matplotlib.axes.Axes` for single-subplot figures. In proplot,
+# `~proplot.ui.subplots` returns a `~proplot.figure.SubplotGrid` that
 # unifies these three possible return values:
 #
-# * `~proplot.ui.SubplotsContainer` permits 2D indexing, e.g. ``axs[1, 0]``.
+# * `~proplot.figure.SubplotGrid` permits 2D indexing, e.g. ``axs[1, 0]``.
 #   Since `~proplot.ui.subplots` can generate figures with arbitrarily complex
 #   subplot geometry, this 2D indexing is useful only when the arrangement
 #   happens to be a clean 2D matrix.
-# * `~proplot.ui.SubplotsContainer` permits 1D indexing, e.g. ``axs[0]``.
+# * `~proplot.figure.SubplotGrid` permits 1D indexing, e.g. ``axs[0]``.
 #   The default order can be switched from row-major to column-major by passing
 #   ``order='F'`` to `~proplot.ui.subplots`.
-# * When it is singleton, `~proplot.ui.SubplotsContainer` behaves like a
+# * When it is singleton, `~proplot.figure.SubplotGrid` behaves like a
 #   scalar. So when you make a single axes with ``fig, axs = pplt.subplots()``,
 #   ``axs[0].method(...)`` is equivalent to ``axs.method(...)``.
 #
-# `~proplot.ui.SubplotsContainer` is especially useful because it lets you call
-# `~proplot.axes.Axes` methods simultaneously for all subplots in the container.
-# In the below example, we use the `~proplot.ui.SubplotsContainer` returned by
-# `~proplot.ui.subplots` with the `proplot.axes.Axes.format` command to format
-# several subplots at once.
+# `~proplot.figure.SubplotGrid` is especially useful because it lets you call
+# ``format``, ``colorbar``, ``legend``, ``panel``, ``inset``, and the various "twin"
+# axis methods simultaneously for all subplots in the container. In the below example,
+# we use the `proplot.figure.SubplotGrid.format` command on the subplot grid returned
+# by `~proplot.ui.subplots` to format several subplots all at once.
 
 # %%
 import proplot as pplt
 import numpy as np
 state = np.random.RandomState(51423)
 
-# Format all subplots at once
+# Format all subplots
 fig, axs = pplt.subplots(ncols=4, nrows=4, refwidth=1.2)
 axs.format(
-    xlabel='xlabel', ylabel='ylabel', suptitle='SubplotsContainer demo',
+    xlabel='xlabel', ylabel='ylabel', suptitle='SubplotGrid demo',
     grid=False, xlim=(0, 50), ylim=(-4, 4)
 )
 
-# Format selected subplots in the container
-axs[:, 0].format(facecolor='blush', color='gray7', linewidth=1)
-axs[0, :].format(facecolor='sky blue', color='gray7', linewidth=1)
-axs[0].format(color='black', facecolor='gray5', linewidth=1.4)
-axs[1:, 1:].format(facecolor='gray1')
+# Selected subplots in a simple grid
+axs[:, 0].format(facecolor='blush', edgecolor='gray7', linewidth=1)  # eauivalent
+axs[:, 0].format(fc='blush', ec='gray7', lw=1)
+axs[0, :].format(fc='sky blue', ec='gray7', lw=1)
+axs[0].format(ec='black', fc='gray5', lw=1.4)
+axs[1:, 1:].format(fc='gray1')
 for ax in axs[1:, 1:]:
     ax.plot((state.rand(50, 5) - 0.5).cumsum(axis=0), cycle='Grays', lw=2)
+
+# Selected subplots in a complex grid
+fig, axs = pplt.subplots([[1, 1, 2], [3, 4, 2], [3, 4, 5]], hratios=[2, 1, 1], refwidth=2)
+fig.format(suptitle='SubplotGrid demo')
+axs[0, :].format(facecolor='blush')
+axs[1, :2].format(facecolor='sky blue')
+axs[-1, -1].format(facecolor='gray2', grid=False)
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -332,21 +342,20 @@ for ax in axs[1:, 1:]:
 # A dictionary-like object named `~proplot.config.rc` is created when you
 # import ProPlot. `~proplot.config.rc` is similar to the matplotlib
 # `~matplotlib.rcParams` dictionary, but can be used to change both
-# `matplotlib settings <https://matplotlib.org/users/customizing.html>`__ and
-# :ref:`ProPlot settings <rc_proplot>`. `~proplot.config.rc` also
-# provides a ``style`` parameter that can be used to switch between
-# `matplotlib stylesheets
+# `matplotlib settings <ug_rcmatplotlib_>`_ and :ref:`ProPlot settings <ug_rcproplot>`.
+# The matplotlib-specific settings are found in `~proplot.config.rc_matplotlib`
+# (identical to `~matplotlib.rcParams`) and the ProPlot-specific settings are
+# found in `~proplot.config.rc_proplot`. ProPlot also includes a :rcraw:`style`
+# setting that can be used to switch between `matplotlib stylesheets
 # <https://matplotlib.org/stable/gallery/style_sheets/style_sheets_reference.html>`__.
 # See the :ref:`configuration section <ug_config>` for details.
 #
 # To modify a setting for just one subplot, you can pass it to the
-# `proplot.axes.Axes.format` method. To temporarily
-# modify setting(s) for a block of code, use
-# `~proplot.config.RcConfigurator.context`. To modify setting(s) for the
-# entire python session, just assign it to the `~proplot.config.rc` object or
-# use `~proplot.config.RcConfigurator.update`.  To reset everything to the
-# default state, use `~proplot.config.RcConfigurator.reset`. See the below
-# example.
+# `proplot.axes.Axes.format` method. To temporarily modify setting(s) for a block of
+# code, use `~proplot.config.Configurator.context`. To modify setting(s) for the
+# entire python session, just assign it to the `~proplot.config.rc` dictionary or use
+# `~proplot.config.Configurator.update`. To reset everything to the default state,
+# use `~proplot.config.Configurator.reset`. See the below example.
 
 
 # %%
@@ -355,14 +364,14 @@ import numpy as np
 
 # Update global settings in several different ways
 pplt.rc.cycle = 'colorblind'
-pplt.rc.color = 'gray6'
+pplt.rc.metacolor = 'gray6'
 pplt.rc.update({'fontname': 'Source Sans Pro', 'fontsize': 11})
 pplt.rc['figure.facecolor'] = 'gray3'
 pplt.rc.axesfacecolor = 'gray4'
 # pplt.rc.save()  # save the current settings to ~/.proplotrc
 
 # Apply settings to figure with context()
-with pplt.rc.context({'suptitle.size': 13}, toplabelcolor='gray6', linewidth=1.5):
+with pplt.rc.context({'suptitle.size': 13}, toplabelcolor='gray6', metawidth=1.5):
     fig, axs = pplt.subplots(ncols=2, figwidth=6, sharey=2, span=False)
 
 # Plot lines
@@ -379,7 +388,7 @@ axs.format(
     toplabels=('Column 1', 'Column 2'),
     suptitle='Rc settings demo',
     suptitlecolor='gray7',
-    abc=True, abcloc='l', abcstyle='(A)',
+    abc='(A)', abcloc='l',
     title='Title', titleloc='r', titlecolor='gray7'
 )
 ay = axs[-1].twinx()

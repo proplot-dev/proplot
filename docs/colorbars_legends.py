@@ -5,9 +5,9 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.11.3
+#       jupytext_version: 1.4.2
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
@@ -146,8 +146,8 @@ m = axs.pcolormesh(
     levels=np.linspace(0, 1, 11), extend='both'
 )[0]
 axs.format(
-    suptitle='Figure colorbars and legends demo', abc=True,
-    abcloc='l', abcstyle='a.', xlabel='xlabel', ylabel='ylabel'
+    suptitle='Figure colorbars and legends demo',
+    abc='a.', abcloc='l', xlabel='xlabel', ylabel='ylabel'
 )
 fig.colorbar(m, label='column 1', ticks=0.5, loc='b', col=1)
 fig.colorbar(m, label='columns 2 and 3', ticks=0.2, loc='b', cols=(2, 3))
@@ -159,13 +159,13 @@ import proplot as pplt
 import numpy as np
 fig, axs = pplt.subplots(
     ncols=2, nrows=2, refwidth=1.7,
-    share=0, wspace=0.3, order='F'
+    share=0, wspace=2.5, order='F'
 )
 
 # Plot data
 data = (np.random.rand(50, 50) - 0.1).cumsum(axis=0)
 m = axs[:2].contourf(data, cmap='grays', extend='both')
-colors = pplt.Colors('grays', 5)
+colors = pplt.get_colors('grays', 5)
 hs = []
 state = np.random.RandomState(51423)
 for abc, color in zip('ABCDEF', colors):
@@ -179,7 +179,7 @@ fig.legend(hs, ncols=2, center=True, frame=False, loc='b', col=2)
 fig.legend(hs, ncols=1, label='legend label', frame=False, loc='r')
 axs.format(
     suptitle='Figure colorbars and legends demo',
-    abc=True, abcloc='ul', abcstyle='A'
+    abc='A', abcloc='ul',
 )
 for ax, title in zip(
     axs, ['2D dataset #1', '2D dataset #2', 'Line set #1', 'Line set #2']

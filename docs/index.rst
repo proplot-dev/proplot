@@ -8,7 +8,7 @@
 ProPlot
 =======
 
-A lightweight `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful,
+A powerful `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful,
 publication-quality graphics. This project is `published on GitHub
 <https://github.com/lukelbd/proplot>`__.
 
@@ -26,7 +26,7 @@ publication-quality graphics. This project is `published on GitHub
 
    basics
    subplots
-   axis
+   cartesian
    projections
    colorbars_legends
    insets_panels
@@ -54,3 +54,4 @@ Indices and tables
 
 * :ref:`genindex`
 * :ref:`modindex`
+* :ref:`glossary`

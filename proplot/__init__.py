@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-A comprehensive matplotlib wrapper for making beautiful, publication-quality graphics.
+A powerful matplotlib wrapper for making beautiful, publication-quality graphics.
 """
 # SCM versioning
 import pkg_resources as pkg

@@ -12,7 +12,7 @@ def get_nodes(rawtext, text, inliner):
     if len(relsource) == 1:
         return []
     if text in rcParams:
-        refuri = 'https://matplotlib.org/tutorials/introductory/customizing.html'
+        refuri = 'https://matplotlib.org/stable/tutorials/introductory/customizing.html'
         refuri = f'{refuri}?highlight={text}#the-matplotlibrc-file'
     else:
         levels = relsource[1].count('/')  # distance to base URL

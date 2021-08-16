@@ -26,7 +26,7 @@ Bios
 a PhD candidate at Colorado State University's
 `Department of Atmospheric Science <https://www.atmos.colostate.edu>`__
 who has always been frustrated by repetitive and
-cumbersome plotting code. As an undergraduate, he developed an extensive set of
+cumbersome plotting code. As an undergraduate, he developed a set of
 `MATLAB plotting utilities <https://github.com/lukelbd/matfuncs>`__ for personal use.
 When he switched to python in graduate school, he replicated most of these utilities in
 python, learned more about the language, began to rapidly develop them, and decided to
@@ -38,11 +38,9 @@ related to climate science, and has authored a number of
 as an avid vim user.
 
 `Riley Brady`_ is the next-biggest contributor. He helped Luke set up automatic
-testing, deploy this project to PyPi, and make ProPlot easier for new users. He is also
-ProPlot's earliest user and helped fix `a lot of the early bugs
+testing, deploy this project to PyPi, and make ProPlot easier for new users. He is
+also ProPlot's earliest user and helped fix `a lot of the early bugs
 <https://github.com/lukelbd/proplot/issues?q=is%3Aissue+is%3Aclosed>`__.
-He is currently `Senior Data Scientist <http://www.rileyxbrady.com>`__ for the
-Climate Analytics team at McKinsey & Company.
 
 .. _Luke Davis: https://github.com/lukelbd
 

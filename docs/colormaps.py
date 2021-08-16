@@ -34,8 +34,8 @@
 # ProPlot defines **colormaps** as color palettes that sample some
 # *continuous function* between two end colors. Colormaps are generally used
 # to encode data values on a pseudo-third dimension. They are are implemented
-# with the `~proplot.colors.LinearSegmentedColormap` and
-# `~proplot.colors.PerceptuallyUniformColormap` classes, which are
+# with the `~proplot.colors.ContinuousColormap` and
+# `~proplot.colors.PerceptualColormap` classes, which are
 # :ref:`subclassed from <ug_cmaps_new>`
 # `matplotlib.colors.LinearSegmentedColormap`.
 #
@@ -80,8 +80,8 @@
 #    are equivalent), diverging colormap names can be specified in their "reversed"
 #    form (e.g., ``'BuRd'`` is equivalent to ``'RdBu_r'``), and appending ``'_r'``
 #    or ``'_s'`` to *any* colormap name will return a
-#    `~proplot.colors.LinearSegmentedColormap.reversed` or
-#    `~proplot.colors.LinearSegmentedColormap.shifted` version of the colormap
+#    `~proplot.colors.ContinuousColormap.reversed` or
+#    `~proplot.colors.ContinuousColormap.shifted` version of the colormap
 #    or color cycle. See `~proplot.colors.ColormapDatabase` for more info.
 
 # %%
@@ -96,7 +96,7 @@ fig, axs = pplt.show_cmaps()
 # ------------------------------
 #
 # ProPlot's custom colormaps are instances of the
-# `~proplot.colors.PerceptuallyUniformColormap` class. These colormaps
+# `~proplot.colors.PerceptualColormap` class. These colormaps
 # generate colors by interpolating between coordinates in any of the
 # following three colorspaces:
 #
@@ -115,7 +115,7 @@ fig, axs = pplt.show_cmaps()
 #   saturation *for a given hue and luminance*. HSL gives you access to the
 #   entire RGB colorspace, but often results in sharp jumps in chroma.
 #
-# The colorspace used by each `~proplot.colors.PerceptuallyUniformColormap`
+# The colorspace used by each `~proplot.colors.PerceptualColormap`
 # is set with the `space` keyword arg. To plot arbitrary cross-sections of
 # these colorspaces, use `~proplot.demos.show_colorspaces` (the black
 # regions represent impossible colors). To see how colormaps vary with
@@ -160,32 +160,35 @@ for cmaps in (('magma', 'rocket'), ('fire', 'dusk')):
 # Note that every plotting command that accepts a `cmap` keyword passes it through
 # this function (see `~proplot.axes.apply_cmap`).
 #
-# To make `~proplot.colors.PerceptuallyUniformColormap`\ s from scratch, you
+# To make `~proplot.colors.PerceptualColormap`\ s from scratch, you
 # have the following three options:
 #
-# * Pass a color name, hex string, or RGB tuple to
-#   `~proplot.constructor.Colormap`. This builds a *monochromatic* (single
-#   hue) colormap by calling the
-#   `~proplot.colors.PerceptuallyUniformColormap.from_color` static method.
-#   The colormap colors will vary from the specified color to pure white or
-#   some shade *near* white (see the `fade` keyword arg).
-# * Pass a *list of colors* to `~proplot.constructor.Colormap`. This calls
-#   the `~proplot.colors.PerceptuallyUniformColormap.from_list` static method,
-#   which linearly interpolates between each color in hue, saturation, and
-#   luminance.
-# * Pass a *dictionary* to `~proplot.constructor.Colormap` containing the keys
-#   `hue`, `saturation`, and `luminance` (or their shorthands `h`, `s`, and `l`), or
-#   pass these to `~proplot.constructor.Colormap` as keyword arguments. This calls
-#   the `~proplot.colors.PerceptuallyUniformColormap.from_hsl` static method,
-#   which draws lines between the specified channel values. The values can be numbers,
-#   color strings, or lists thereof. Numbers indicate channel value. For color
-#   strings, the channel value is *inferred* from the specified color. You can
+# * Pass a color name, hex string, or RGB tuple to `~proplot.constructor.Colormap`.
+#   This builds a *monochromatic* (single hue) colormap by calling
+#   `~proplot.colors.PerceptualColormap.from_color.
+#   The colormap colors will progress from the specified color to a color with
+#   the same hue but changed saturation or luminance. These can be set with
+#   the `saturation` and `luminance` keywords (or their shorthands `s` and `l`).
+#   By default, the colormap will progress to white.
+# * Pass a list of color names, hex strings, or RGB tuples to
+#   `~proplot.constructor.Colormap`. This calls
+#   `~proplot.colors.PerceptualColormap.from_list,
+#   which linearly interpolates between the hues, saturations,
+#   and luminances of the input color.
+# * Pass the keywords `hue`, `saturation`, or `luminance` (or their shorthands `h`,
+#   `s`, and `l`) to `~proplot.constructor.Colormap` without any positional arguments
+#   (or pass a dictionary containing these keys as a positional argument).
+#   This calls `~proplot.colors.PerceptualColormap.from_hsl`, which
+#   linearly interpolates between the specified channel values. Channel values can be
+#   specified with numbers between ``0`` and ``100``, color strings, or lists thereof.
+#   For color strings, the value is *inferred* from the specified color. You can
 #   end any color string with ``'+N'`` or ``'-N'`` to *offset* the channel
-#   value by the number ``N``.
+#   value by the number ``N`` (e.g., ``hue='red+50'``).
 #
-# In the below example, we use all of these methods to make brand new
-# `~proplot.colors.PerceptuallyUniformColormap`\ s in the ``'hsl'`` and
-# ``'hpl'`` colorspaces.
+# To change the :ref:`colorspace <ug_perceptual>` used to construct the colormap,
+# use the `space` keyword. The default colorspace is ``'hsl'``. In the below example,
+# we use all of these methods to make `~proplot.colors.PerceptualColormap`\ s
+# in the ``'hsl'`` and ``'hpl'`` colorspaces.
 
 # %%
 # Sample data
@@ -200,7 +203,7 @@ fig, axs = pplt.subplots(ncols=2, refwidth=2, span=0)
 axs.format(
     xticklabels='none',
     yticklabels='none',
-    suptitle='Making PerceptuallyUniformColormaps'
+    suptitle='Making PerceptualColormaps'
 )
 
 # Colormap from a color
@@ -227,7 +230,7 @@ fig, axs = pplt.subplots(ncols=2, refwidth=2, span=0)
 axs.format(
     xticklabels='none',
     yticklabels='none',
-    suptitle='Making PerceptuallyUniformColormaps'
+    suptitle='Making PerceptualColormaps'
 )
 
 # Sequential colormap from channel values
@@ -260,7 +263,7 @@ fig, axs = pplt.show_channels(cmap3, cmap4, refwidth=1.5, rgb=False)
 #
 # To *merge* colormaps, you can pass multiple positional arguments to the
 # `~proplot.constructor.Colormap` constructor. This calls the
-# `~proplot.colors.LinearSegmentedColormap.append` method. Each positional
+# `~proplot.colors.ContinuousColormap.append` method. Each positional
 # argument can be a colormap name, a colormap instance, or a
 # :ref:`special argument <ug_cmaps_new>` that generates a new colormap
 # on-the-fly. This lets you create new diverging colormaps and segmented
@@ -318,34 +321,34 @@ for ax, cmap, title in zip(axs, (cmap1, cmap2, cmap3), (title1, title2, title3))
 #
 # ProPlot lets you create modified versions of *existing* colormaps
 # using the `~proplot.constructor.Colormap` constructor and the new
-# `~proplot.colors.LinearSegmentedColormap` and
-# `~proplot.colors.ListedColormap` classes, which are used to replace the
+# `~proplot.colors.ContinuousColormap` and
+# `~proplot.colors.DiscreteColormap` classes, which are used to replace the
 # native matplotlib colormap classes. They can be modified in the following
 # ways:
 #
 # * To remove colors from the left or right ends of a colormap, pass `left`
 #   or `right` to `~proplot.constructor.Colormap`. This calls the
-#   `~proplot.colors.LinearSegmentedColormap.truncate` method, and can be
+#   `~proplot.colors.ContinuousColormap.truncate` method, and can be
 #   useful when you want to use colormaps as :ref:`color cycles <ug_cycles>`
 #   and need to remove the "white" part so that your lines stand out against
 #   the background.
 # * To modify the central colors of a diverging colormap, pass `cut` to
 #   `~proplot.constructor.Colormap`. This calls the
-#   `~proplot.colors.LinearSegmentedColormap.cut` method, and can be used
+#   `~proplot.colors.ContinuousColormap.cut` method, and can be used
 #   to create a sharper cutoff between negative and positive values or (when
 #   `cut` is negative) to expand the "neutral" region of the colormap.
 # * To rotate a cyclic colormap,  pass `shift` to
 #   `~proplot.constructor.Colormap`. This calls the
-#   `~proplot.colors.LinearSegmentedColormap.shifted` method. ProPlot ensures
+#   `~proplot.colors.ContinuousColormap.shifted` method. ProPlot ensures
 #   the colors at the ends of "shifted" colormaps are *distinct* so that
 #   levels never blur together.
 # * To change the opacity of a colormap or add an opacity *gradation*, pass
 #   `alpha` to `~proplot.constructor.Colormap`. This calls the
-#   `~proplot.colors.LinearSegmentedColormap.set_alpha` method, and can be
+#   `~proplot.colors.ContinuousColormap.set_alpha` method, and can be
 #   useful when *layering* filled contour or mesh elements.
-# * To change the "gamma" of a `~proplot.colors.PerceptuallyUniformColormap`,
+# * To change the "gamma" of a `~proplot.colors.PerceptualColormap`,
 #   pass `gamma` to `~proplot.constructor.Colormap`. This calls the
-#   `~proplot.colors.PerceptuallyUniformColormap.set_gamma` method, and
+#   `~proplot.colors.PerceptualColormap.set_gamma` method, and
 #   controls how the luminance and saturation channels vary between colormap
 #   segments. ``gamma > 1`` emphasizes high luminance, low saturation colors,
 #   while ``gamma < 1`` emphasizes low luminance, high saturation colors. This
@@ -462,7 +465,7 @@ for ax, gamma in zip(axs, (0.7, 1.0, 1.4)):
     ax.colorbar(m, loc='b', locator='none')
     ax.format(
         title=f'gamma = {gamma}', xlabel='x axis', ylabel='y axis',
-        suptitle='Changing the PerceptuallyUniformColormap gamma'
+        suptitle='Changing the PerceptualColormap gamma'
     )
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -479,10 +482,9 @@ for ax, gamma in zip(axs, (0.7, 1.0, 1.4)):
 # the `CCC-tool <https://ccctool.com>`__,
 # and `SciVisColor <https://sciviscolor.org/home/colormaps/>`__.
 #
-# To add colormaps downloaded from any of these sources, save the colormap
-# data to a file in your ``~/.proplot/cmaps`` folder and call
-# `~proplot.config.register_cmaps` (or restart your python session), or use
-# `~proplot.colors.LinearSegmentedColormap.from_file`. The file name is used
-# as the registered colormap name. See
-# `~proplot.colors.LinearSegmentedColormap.from_file` for a table of valid
-# file extensions.
+# To add colormaps downloaded from any of these sources, save the colormap data file
+# to the ``cmaps`` subfolder inside `~proplot.config.Configurator.user_folder`
+# and call `~proplot.config.register_cmaps` (or restart your python session), or use
+# `~proplot.colors.ContinuousColormap.from_file`. The file name is used for the
+# registered colormap name. See `~proplot.colors.ContinuousColormap.from_file`
+# for a table of valid file extensions.

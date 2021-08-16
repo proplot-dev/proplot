@@ -6,24 +6,11 @@ Comprehensive documentation of ProPlot functions and classes. All of these
 objects are imported into the top-level namespace, so you can read the
 documentation within python sessions using ``help(pplt.<function_or_class>)``.
 
-Figure class
-============
-
-.. automodule:: proplot.figure
-
-.. automodsumm:: proplot.figure
-   :toctree: api
-
-
-Axes classes
-============
-
-.. automodule:: proplot.axes
-
-.. automodsumm:: proplot.axes
-   :toctree: api
-   :classes-only:
-
+Please note that the documentation associated with "wrapper" functions from
+before version 0.8 is now located on the individual plotting commands under
+`proplot.axes.PlotAxes`. Also note that when calling ``help(axes.command)``
+on plotting commands during a python session, both the ProPlot documentation
+and original matplotlib documentation are shown.
 
 Top-level functions
 ===================
@@ -34,23 +21,32 @@ Top-level functions
    :toctree: api
 
 
-Constructor functions
-=====================
+Figure class
+============
 
-.. automodule:: proplot.constructor
+.. automodule:: proplot.figure
 
-.. automodsumm:: proplot.constructor
+.. automodsumm:: proplot.figure
    :toctree: api
+   :skip: SubplotsContainer
 
 
-Plotting wrappers
-=================
+Axes classes
+============
 
-.. automodule:: proplot.axes.plot
+.. automodule:: proplot.axes
 
 .. automodsumm:: proplot.axes
    :toctree: api
-   :functions-only:
+
+
+Gridspec class
+==============
+
+.. automodule:: proplot.gridspec
+
+.. automodsumm:: proplot.gridspec
+   :toctree: api
 
 
 Configuration tools
@@ -60,34 +56,27 @@ Configuration tools
 
 .. automodsumm:: proplot.config
    :toctree: api
-   :skip: inline_backend_fmt
+   :skip: inline_backend_fmt, RcConfigurator
 
 
-Demo functions
-==============
+Miscellaneous tools
+===================
 
-.. automodule:: proplot.demos
+.. automodule:: proplot.utils
 
-.. automodsumm:: proplot.demos
+.. automodsumm:: proplot.utils
    :toctree: api
+   :skip: shade, saturate
 
 
-Gridspec classes
-================
+Constructor functions
+=====================
 
-.. automodule:: proplot.gridspec
+.. automodule:: proplot.constructor
 
-.. automodsumm:: proplot.gridspec
+.. automodsumm:: proplot.constructor
    :toctree: api
-
-
-Projection classes
-==================
-
-.. automodule:: proplot.crs
-
-.. automodsumm:: proplot.crs
-   :toctree: api
+   :skip: Colors
 
 
 Locators and formatters
@@ -99,8 +88,8 @@ Locators and formatters
    :toctree: api
 
 
-Axis scales
-===========
+Axis scale classes
+==================
 
 .. automodule:: proplot.scale
 
@@ -115,13 +104,22 @@ Colormaps and normalizers
 
 .. automodsumm:: proplot.colors
    :toctree: api
+   :skip: ListedColormap, LinearSegmentedColormap, PerceptuallyUniformColormap, LinearSegmentedNorm
 
 
-Miscellaneous tools
-===================
+Projection classes
+==================
 
-.. automodule:: proplot.utils
+.. automodule:: proplot.crs
 
-.. automodsumm:: proplot.utils
+.. automodsumm:: proplot.crs
    :toctree: api
-   :skip: shade, saturate
+
+
+Demo functions
+==============
+
+.. automodule:: proplot.demos
+
+.. automodsumm:: proplot.demos
+   :toctree: api

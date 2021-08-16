@@ -3,7 +3,7 @@
 
 |build-status| |docs| |pypi| |code-style| |pr-welcome| |license| |gitter| |doi|
 
-A lightweight `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful,
+A powerful `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful,
 publication-quality graphics.
 
 Installation
@@ -33,6 +33,7 @@ inside the ``proplot`` folder.
 
 Documentation
 =============
+
 The documentation is `published on readthedocs <https://proplot.readthedocs.io>`__.
 
 

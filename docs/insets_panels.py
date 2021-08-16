@@ -49,9 +49,10 @@ data = 10 * (data - data.min()) / (data.max() - data.min())
 
 # Stacked panels with outer colorbars
 for cbarloc, ploc in ('rb', 'br'):
+    # Create figure
     fig, axs = pplt.subplots(
         refwidth=1.8, nrows=1, ncols=2,
-        share=0, panelpad=0.1, includepanels=True
+        share=0, panelpad=0.8, includepanels=True
     )
     axs.format(
         xlabel='xlabel', ylabel='ylabel', title='Title',
@@ -59,10 +60,11 @@ for cbarloc, ploc in ('rb', 'br'):
     )
 
     # Plot 2D dataset
-    axs.contourf(
-        data, cmap='glacial', extend='both',
-        colorbar=cbarloc, colorbar_kw={'label': 'colorbar'},
-    )
+    for ax in axs:
+        ax.contourf(
+            data, cmap='glacial', extend='both',
+            colorbar=cbarloc, colorbar_kw={'label': 'colorbar'},
+        )
 
     # Get summary statistics and settings
     axis = int(ploc == 'r')  # dimension along which stats are taken
@@ -74,20 +76,21 @@ for cbarloc, ploc in ('rb', 'br'):
         titleloc = 'center'
         x1, x2, y1, y2 = y1, y2, x1, x2
 
-    # Panels for plotting the mean. We make two panels at once and plot data
-    # on both panels at once by calling functions from SubplotsContainers.
-    # More realistically, you would plot data on each panel one-by-one.
+    # Panels for plotting the mean. Note SubplotGrid.panel() returns a SubplotGrid
+    # of panel axes. We use this to call format() for all the panels at once.
     space = 0
     width = '4em'
     kwargs = {'titleloc': titleloc, 'xreverse': False, 'yreverse': False}
     paxs = axs.panel(ploc, space=space, width=width)
-    paxs.plot(x1, y1, color='gray7')
     paxs.format(title='Mean', **kwargs)
+    for pax in paxs:
+        pax.plot(x1, y1, color='gray7')
 
     # Panels for plotting the standard deviation
     paxs = axs.panel(ploc, space=space, width=width)
-    paxs.plot(x2, y2, color='gray7', ls='--')
     paxs.format(title='Stdev', **kwargs)
+    for pax in paxs:
+        pax.plot(x2, y2, color='gray7', ls='--')
 
 # %%
 import proplot as pplt

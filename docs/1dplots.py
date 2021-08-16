@@ -23,10 +23,10 @@
 # ================
 #
 # ProPlot :ref:`adds new features <why_plotting>` to various `~matplotlib.axes.Axes`
-# plotting methods using a set of "wrapper" functions. When a plotting method like
+# plotting commands using a set of "wrapper" functions. When a plotting method like
 # `~matplotlib.axes.Axes.plot` is "wrapped" by one of these functions, it accepts
 # the same parameters as the wrapper. These additions are a strict *superset* of
-# matplotlib -- if you are not interested, you can use matplotlib's plotting methods
+# matplotlib -- if you are not interested, you can use matplotlib's plotting commands
 # just like you always have. This section documents the features added by wrapper
 # functions to 1D plotting commands like `~matplotlib.axes.Axes.plot`,
 # `~matplotlib.axes.Axes.scatter`, `~matplotlib.axes.Axes.bar`, and
@@ -40,7 +40,7 @@
 # ----------------------
 #
 # The `~proplot.axes.standardize_1d` wrapper standardizes
-# positional arguments across all 1D plotting methods.
+# positional arguments across all 1D plotting commands.
 # `~proplot.axes.standardize_1d` lets you optionally omit the *x*
 # coordinates, in which case they are inferred from the data. It also permits
 # passing 2D *y* coordinate arrays to any plotting method, in which case the
@@ -84,11 +84,11 @@ with pplt.rc.context({'axes.prop_cycle': pplt.Cycle('Grays', N=N, left=0.3)}):
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_1dintegration:
 #
-# Pandas and xarray integration
-# -----------------------------
+# Pandas, xarray, and pint integration
+# ------------------------------------
 #
 # The `~proplot.axes.standardize_1d` wrapper integrates 1D plotting
-# methods with pandas `~pandas.DataFrame`\ s and xarray `~xarray.DataArray`\ s.
+# commands with pandas `~pandas.DataFrame`\ s and xarray `~xarray.DataArray`\ s.
 # If you omitted *x* coordinates, `~proplot.axes.standardize_1d` tries to
 # retrieve them from the DataFrame or DataArray. If the coordinates are string
 # labels, `~proplot.axes.standardize_1d` converts them into indices and tick labels
@@ -100,7 +100,10 @@ with pplt.rc.context({'axes.prop_cycle': pplt.Cycle('Grays', N=N, left=0.3)}):
 # command using the `data` keyword, then pass dataset keys as positional
 # arguments instead of arrays. For example, ``ax.plot('y', data=dataset)``
 # is translated to ``ax.plot(dataset['y'])``, and the *x* coordinates are
-# inferred thereafter.
+# inferred thereafter. Finally, if you pass `pint.Quantity`\ s or `xarray.DataArray`\ s
+# containing `pint.Quantity`\ s to a plotting command, ProPlot will automatically call
+# `~pint.UnitRegistry.setup_matplotlib` and apply the unit string formatted as
+# :rcraw:`unitformat` for the default content labels.
 #
 # These features restore some of the convenience you get
 # with the builtin `pandas`_ and `xarray`_ plotting functions. They are also
@@ -358,7 +361,7 @@ axs.format(xlabel='xlabel', ylabel='ylabel')
 # Bar plots and area plots
 # ------------------------
 #
-# The `~matplotlib.axes.Axes.bar` and `~matplotlib.axes.Axes.barh` methods
+# The `~matplotlib.axes.Axes.bar` and `~matplotlib.axes.Axes.barh` commands
 # are wrapped by `~proplot.axes.bar_extras`,
 # `~proplot.axes.apply_cycle`, and `~proplot.axes.standardize_1d`.
 # This means that `~matplotlib.axes.Axes.bar` and `~matplotlib.axes.Axes.barh` employ
@@ -396,9 +399,8 @@ data = pd.DataFrame(
 )
 
 # Figure
-pplt.rc.abc = True
+pplt.rc.abc = 'a.'
 pplt.rc.titleloc = 'l'
-pplt.rc.abcstyle = 'a.'
 fig, axs = pplt.subplots(nrows=2, refaspect=2, refwidth=4.8, share=0, hratios=(3, 2))
 
 # Side-by-side bars
@@ -490,7 +492,7 @@ pplt.rc.reset()
 # `~matplotlib.axes.Axes.bar`, `~proplot.axes.Axes.plot`,
 # `~proplot.axes.Axes.scatterx`, or `~matplotlib.axes.Axes.barh`.
 #
-# If you pass 2D arrays to these methods with ``mean=True`` or ``median=True``,
+# If you pass 2D arrays to these commands with ``mean=True`` or ``median=True``,
 # the means or medians of each column are drawn as points, lines, or bars, and
 # *error bars* or *shading* is drawn to represent the spread of the distribution
 # for each column. You can also specify the error bounds *manually* with the
@@ -533,9 +535,7 @@ for orientation, array in zip(('horizontal', 'vertical'), (harray, varray)):
         array, refaspect=1.5, refwidth=4,
         share=0, hratios=(2, 1, 1)
     )
-    axs.format(
-        abc=True, abcstyle='A.', suptitle=f'Indicating {orientation} error bounds'
-    )
+    axs.format(abc='A.', suptitle=f'Indicating {orientation} error bounds')
 
     # Medians and percentile ranges
     ax = axs[0]
@@ -627,7 +627,7 @@ bins = pplt.arange(-3, 3, 0.25)
 # Histogram with marginal distributions
 fig, axs = pplt.subplots(ncols=2, refwidth=2.3)
 axs.format(
-    abc=True, abcstyle='A.', abcloc='l', titleabove=True,
+    abc='A.', abcloc='l', titleabove=True,
     ylabel='y axis', suptitle='Histograms with marginal distributions'
 )
 for ax, which, color, title in zip(
@@ -677,7 +677,7 @@ data2 = pd.DataFrame(data2, columns=pd.Index(list('abcdefg'), name='label'))
 # Figure
 fig, axs = pplt.subplots([[1, 1, 2, 2], [0, 3, 3, 0]], span=False)
 axs.format(
-    titleloc='l', abc=True, abcstyle='A.', grid=False,
+    abc='A.', titleloc='l', grid=False,
     suptitle='Boxes and violins demo')
 
 # Box plots
@@ -696,7 +696,7 @@ ax.format(title='Violin plots')
 
 # Boxes with different colors
 ax = axs[2]
-colors = pplt.Colors('pastel2')  # list of colors from the cycle
+colors = pplt.get_colors('pastel2')  # list of colors from the cycle
 ax.boxplot(data2, fillcolor=colors, orientation='horizontal')
 ax.format(title='Multiple colors', ymargin=0.15)
 
