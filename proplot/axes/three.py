@@ -2,30 +2,29 @@
 """
 The "3D" axes class.
 """
-from ..config import rc
-from . import base
+from . import plot, shared
 
 try:
-    from mpl_toolkits.mplot3d import Axes3D as Axes3DBase
+    from mpl_toolkits.mplot3d import Axes3D
 except ImportError:
-    Axes3DBase = object
+    Axes3D = object
 
 
-class Axes3D(base.Axes, Axes3DBase):
+class ThreeAxes(shared._SharedAxes, plot.PlotAxes, Axes3D):
     """
-    Simple mix-in of `proplot.axes.Axes` with `~mpl_toolkits.mplot3d.Axes3D`.
+    Simple mix-in of `proplot.axes.PlotAxes` with `~mpl_toolkits.mplot3d.Axes3D`.
     """
     #: The registered projection name.
-    name = 'proplot_3d'
+    name = 'proplot_three'
 
     def __init__(self, *args, **kwargs):
-        # No additions for now
         import mpl_toolkits.mplot3d  # noqa: F401 verify package is available
         # Initialize axes
         super().__init__(*args, **kwargs)
 
-    def format(self, **kwargs):
-        # No additions for now
-        rc_kw, rc_mode, kwargs = self._parse_format(**kwargs)
-        with rc.context(rc_kw, mode=rc_mode):
-            return super().format(**kwargs)
+    def _update_background(self, **kwargs):
+        # Force the figure face color to the axes patch color or else the axes
+        # look haphazardly thrown onto a square background patch and the spines
+        # and labels bleed into the figure edge region.
+        super()._update_background(**kwargs)
+        self.figure.patch.set_facecolor(self.patch.get_facecolor())
