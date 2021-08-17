@@ -527,6 +527,19 @@ class GeoAxes(plot.PlotAxes):
         proplot.axes.Axes.format
         proplot.config.Configurator.context
         """
+        # Initialize map boundary
+        # WARNING: Normal workflow is Axes.format() does 'universal' tasks including
+        # updating the map boundary (in the future may also handle gridlines). However
+        # drawing gridlines before basemap map boundary will call set_axes_limits()
+        # which initializes a boundary hidden from external access. So we must call
+        # it here. Must do this between matplotlib.Axes.__init__() and Axes.format().
+        if (
+            self.name == 'proplot_basemap'
+            and self.projection.projection in self._proj_non_rectangular
+            and self._map_boundary is None
+        ):
+            self._map_boundary = self.projection.drawmapboundary(ax=self)
+
         # Initiate context block
         rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
         with rc.context(rc_kw, mode=rc_mode):
@@ -703,7 +716,7 @@ class _CartopyAxes(GeoAxes, _GeoAxes, metaclass=_MetaCartopyAxes):
         # NOTE: Initial extent is configured in _update_extent
         import cartopy  # noqa: F401 verify package is available
         if not isinstance(map_projection, ccrs.Projection):
-            raise ValueError('GeoAxes requires map_projection=cartopy.crs.Projection.')
+            raise ValueError('CartopyAxes requires map_projection=cartopy.crs.Projection.')  # noqa: E501
         latmax = 90
         boundinglat = None
         polar = isinstance(map_projection, self._proj_polar)
@@ -961,7 +974,7 @@ class _CartopyAxes(GeoAxes, _GeoAxes, metaclass=_MetaCartopyAxes):
                     feat._kwargs.update(kw)
 
     def _update_gridlines(
-        self, gl, which='major', longrid=None, latgrid=None, nsteps=None,
+        self, gl, which='major', longrid=None, latgrid=None, nsteps=None, context=None,
     ):
         """
         Update gridliner object with axis locators, and toggle gridlines on and off.
@@ -969,7 +982,7 @@ class _CartopyAxes(GeoAxes, _GeoAxes, metaclass=_MetaCartopyAxes):
         # Update gridliner collection properties
         # WARNING: Here we use native matplotlib 'grid' rc param for geographic
         # gridlines. If rc mode is 1 (first format call) use context=False
-        ctx = rc._context_mode == 2
+        ctx = _not_none(context, rc._context_mode == 2)
         kwlines = self._get_gridline_props(which=which, context=ctx)
         kwtext = self._get_ticklabel_props(context=ctx)
         gl.collection_kwargs.update(kwlines)
@@ -995,14 +1008,14 @@ class _CartopyAxes(GeoAxes, _GeoAxes, metaclass=_MetaCartopyAxes):
         self,
         longrid=None, latgrid=None,
         lonarray=None, latarray=None,
-        loninline=None, latinline=None, labelpad=None, rotatelabels=None,
-        nsteps=None,
+        loninline=None, latinline=None, labelpad=None,
+        rotatelabels=None, nsteps=None,
     ):
         """
         Update major gridlines.
         """
         # Update gridline locations and style
-        if not self._gridlines_major:
+        if self._gridlines_major is None:
             self._gridlines_major = self._init_gridlines()
         gl = self._gridlines_major
         self._update_gridlines(
@@ -1049,7 +1062,7 @@ class _CartopyAxes(GeoAxes, _GeoAxes, metaclass=_MetaCartopyAxes):
         """
         Update minor gridlines.
         """
-        if not self._gridlines_minor:
+        if self._gridlines_minor is None:
             self._gridlines_minor = self._init_gridlines()
         gl = self._gridlines_minor
         self._update_gridlines(
@@ -1117,8 +1130,9 @@ class _CartopyAxes(GeoAxes, _GeoAxes, metaclass=_MetaCartopyAxes):
             crs = ccrs.PlateCarree()
         if isinstance(crs, ccrs.PlateCarree):
             self._set_view_intervals(extent)
-            self._update_gridlines(self._gridlines_major)
-            self._update_gridlines(self._gridlines_minor)
+            with rc.context(mode=2):  # do not reset gridline properties!
+                self._update_gridlines(self._gridlines_major)
+                self._update_gridlines(self._gridlines_minor)
             if _version_cartopy < 0.18:
                 clipped_path = self.outline_patch.orig_path.clip_to_bbox(self.viewLim)
                 self.outline_patch._path = clipped_path
@@ -1186,26 +1200,22 @@ class _BasemapAxes(GeoAxes, metaclass=_MetaBasemapAxes):
             Passed to `GeoAxes`.
         """
         # First assign projection and set axis bounds for locators
-        # NOTE: Basemaps cannot normally be reused so we make copy.
+        # WARNING: Unlike cartopy projections basemaps cannot normally be reused.
+        # To make syntax similar we make a copy.
         # WARNING: Investigated whether Basemap.__init__() could be called
         # twice with updated proj kwargs to modify map bounds after creation
         # and python immmediately crashes. Do not try again.
         import mpl_toolkits.basemap  # noqa: F401 verify package is available
         if not isinstance(map_projection, mbasemap.Basemap):
-            raise ValueError(
-                'BasemapAxes requires map_projection=basemap.Basemap'
-            )
-        map_projection = copy.copy(map_projection)
-        self._map_projection = map_projection
+            raise ValueError('BasemapAxes requires map_projection=mpl_toolkits.basemap.Basemap.')  # noqa: E501
+        map_projection = self._map_projection = copy.copy(map_projection)
         lon0 = self._get_lon0()
         if map_projection.projection in self._proj_polar:
             latmax = 80  # default latmax for gridlines
             extent = [-180 + lon0, 180 + lon0]
-            boundinglat = getattr(map_projection, 'boundinglat', 0)
-            if map_projection.projection in self._proj_north:
-                extent.extend([boundinglat, 90])
-            else:
-                extent.extend([-90, boundinglat])
+            bound = getattr(map_projection, 'boundinglat', 0)
+            north = map_projection.projection in self._proj_north
+            extent.extend([bound, 90] if north else [-90, bound])
         else:
             latmax = 90
             attrs = ('lonmin', 'lonmax', 'latmin', 'latmax')
@@ -1214,12 +1224,14 @@ class _BasemapAxes(GeoAxes, metaclass=_MetaBasemapAxes):
                 extent = [180 - lon0, 180 + lon0, -90, 90]  # fallback
 
         # Initialize axes
-        self._map_boundary = None  # start with empty map boundary
+        self._map_boundary = None  # see format()
         self._has_recurred = False  # use this to override plotting methods
         self._lonlines_major = None  # store gridliner objects this way
         self._lonlines_minor = None
         self._latlines_major = None
         self._latlines_minor = None
+        self._lonarray = 4 * [False]  # cached label toggles
+        self._latarray = 4 * [False]  # cached label toggles
         self._lonaxis = _LonAxis(self)
         self._lataxis = _LatAxis(self, latmax=latmax)
         self._set_view_intervals(extent)
@@ -1261,32 +1273,21 @@ class _BasemapAxes(GeoAxes, metaclass=_MetaBasemapAxes):
         """
         Update the map boundary patches. This is called in `Axes.format`.
         """
-        # Rectangularly-bounded projections
-        context = rc._context_mode == 2
-        kw_face, kw_edge = self._get_background_props(context=context, **kwargs)
-        self.axesPatch = self.patch  # backwards compatibility
-        if self.projection.projection not in self._proj_non_rectangular:
+        # Non-rectangular projections
+        # WARNING: Map boundary must be drawn before all other tasks. See __init__.
+        # WARNING: With clipping on boundary lines are clipped by the axes bbox.
+        ctx = rc._context_mode == 2
+        if self.projection.projection in self._proj_non_rectangular:
+            self.patch.set_facecolor('none')  # make sure main patch is hidden
+            kw_face, kw_edge = self._get_background_props(context=ctx, **kwargs)
+            kw = {**kw_face, **kw_edge, 'rasterized': False, 'clip_on': False}
+            self._map_boundary.update(kw)
+        # Rectangular projections
+        else:
+            kw_face, kw_edge = self._get_background_props(context=ctx, **kwargs)
             self.patch.update({**kw_face, 'edgecolor': 'none'})
             for spine in self.spines.values():
                 spine.update(kw_edge)
-
-        # Non-rectangularly-bounded projections
-        # NOTE: Impossible to put map bounds 'above' plotted content because
-        # then would have to make fill color invisible.
-        # NOTE: Make sure to turn off clipping by invisible axes boundary. Otherwise
-        # get these weird flat edges where map boundaries, latitude/longitude
-        # markers come up to the axes bbox
-        else:
-            self.patch.set_facecolor('none')  # make main patch invisible
-            if not self.projection._mapboundarydrawn:
-                p = self.projection.drawmapboundary(ax=self)
-            else:
-                p = self.projection._mapboundarydrawn
-            self._map_boundary = p
-            kw = {**kw_face, **kw_edge}
-            p.set_rasterized(False)
-            p.set_clip_on(False)
-            p.update(kw)
 
     def _update_features(self):
         """
@@ -1325,7 +1326,6 @@ class _BasemapAxes(GeoAxes, metaclass=_MetaBasemapAxes):
         Apply changes to the basemap axes. Extra kwargs are used
         to update the proj4 params.
         """
-        ctx = rc._context_mode == 2
         latmax = self._lataxis.get_latmax()
         for axis, name, grid, array, method in zip(
             ('x', 'y'),
@@ -1334,12 +1334,17 @@ class _BasemapAxes(GeoAxes, metaclass=_MetaBasemapAxes):
             (lonarray, latarray),
             ('drawmeridians', 'drawparallels'),
         ):
-            # Correct lonarray and latarray, change fromm lrbt to lrtb
+            # Correct lonarray and latarray label toggles by changing from lrbt to lrtb.
+            # Then update the cahced toggle array. This lets us change gridline locs
+            # while preserving the label toggle setting from a previous format() call.
+            ctx = rc._context_mode == 2
             grid = self._get_gridline_toggle(grid, axis=axis, which=which, context=ctx)
-            if array is not None:
-                array = list(array)
-                array[2:] = array[2:][::-1]
             axis = getattr(self, f'_{name}axis')
+            bools = getattr(self, f'_{name}array')
+            array = [*array[:2], *array[2:][::-1]]  # flip to lrtb
+            for i, b in enumerate(array):
+                if b is not None:
+                    bools[i] = b  # update toggles
 
             # Get gridlines
             lines = getattr(self, f'_get_{name}ticklocs')(which=which)
@@ -1355,8 +1360,8 @@ class _BasemapAxes(GeoAxes, metaclass=_MetaBasemapAxes):
             attrs.append('isDefault_majfmt' if which == 'major' else 'isDefault_minloc')
             rebuild = lines and (
                 not objs
-                or any(_ is not None for _ in array)
-                or any(not getattr(axis, _) for _ in attrs)
+                or any(_ is not None for _ in array)  # user-input or initial toggles
+                or any(not getattr(axis, attr) for attr in attrs)  # none tracked yet
             )
             if rebuild and objs and grid is None:  # get *previous* toggle state
                 grid = all(obj.get_visible() for obj in self._iter_gridlines(objs))
@@ -1370,15 +1375,15 @@ class _BasemapAxes(GeoAxes, metaclass=_MetaBasemapAxes):
                     kwdraw['fmt'] = formatter
                 for obj in self._iter_gridlines(objs):
                     obj.set_visible(False)
-                array = [False if _ is None else _ for _ in array]  # None causes error
                 objs = getattr(self.projection, method)(
-                    lines, ax=self, latmax=latmax, labels=array, **kwdraw
+                    lines, ax=self, latmax=latmax, labels=bools, **kwdraw
                 )
                 setattr(self, attr, objs)
 
             # Update gridline settings
             # WARNING: Here we use native matplotlib 'grid' rc param for geographic
             # gridlines. If rc mode is 1 (first format call) use context=False
+            ctx = not rebuild and rc._context_mode == 2
             kwlines = self._get_gridline_props(which=which, context=ctx)
             kwtext = self._get_ticklabel_props(context=ctx)
             for obj in self._iter_gridlines(objs):
