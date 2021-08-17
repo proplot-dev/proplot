@@ -52,6 +52,18 @@ __all__ = ['PlotAxes']
 
 # Constant
 EDGEWIDTH = 0.25  # native linewidth used for grid box edges in matplotlib
+BASEMAP_FUNCS = (  # default latlon=True
+    'barbs', 'contour', 'contourf', 'hexbin',
+    'imshow', 'pcolor', 'pcolormesh', 'plot',
+    'quiver', 'scatter', 'streamplot', 'step',
+)
+CARTOPY_FUNCS = (  # default transform=PlateCarree()
+    'barbs', 'contour', 'contourf',
+    'fill', 'fill_between', 'fill_betweenx',  # NOTE: not sure if these work
+    'imshow', 'pcolor', 'pcolormesh', 'plot',
+    'quiver', 'scatter', 'streamplot', 'step',
+    'tricontour', 'tricontourf', 'tripcolor',  # NOTE: not sure why these work
+)
 
 # Data argument docstrings
 _args_1d_docstring = """
@@ -1078,60 +1090,36 @@ def _error_data(
     return err, label
 
 
-def _geo_basemap_1d(x, *ys, xmin=-180, xmax=180):
-    """
-    Fix basemap geographic 1D data arrays.
-    """
-    # Ensure data is within map bounds
-    x = _geo_monotonic(x)
-    x_orig, ys_orig, ys = x, ys, []
-    for y_orig in ys_orig:
-        x, y = x_orig, y_orig
-        if y is None:  # e.g. scatter color arrays
-            ys.append(y)
-            continue
-        x, y = _geo_inbounds(x, y, xmin=xmin, xmax=xmax)
-        ys.append(y)
-    return (x, *ys)
-
-
-def _geo_basemap_2d(x, y, *zs, globe=False, xmin=-180, xmax=180):
-    """
-    Fix basemap geographic 2D data arrays.
-    """
-    x = _geo_monotonic(x)
-    x_orig, y_orig, zs_orig, zs = x, y, zs, []
-    for z_orig in zs_orig:
-        # Ensure data is within map bounds
-        x, y, z = x_orig, y_orig, z_orig
-        if z is None:  # e.g. barb or quiver color arrays
-            zs.append(z)
-            continue
-        x, z = _geo_inbounds(x, z, xmin=xmin, xmax=xmax)
-        if not globe or x.ndim > 1 or y.ndim > 1:
-            zs.append(z)
-            continue
-        # Fix gaps in coverage
-        y, z = _geo_poles(y, z)
-        x, z = _geo_seams(x, z, xmin=xmin, modulo=False)
-        zs.append(z)
-    return (x, y, *zs)
-
-
 def _geo_cartopy_1d(x, *ys):
     """
     Fix cartopy geographic 1D data arrays.
     """
     # So far not much to do here
     x = _geo_monotonic(x)
+    ys = _geo_clip(ys)
     return (x, *ys)
 
 
-def _geo_cartopy_2d(self, x, y, *zs, globe=False):
+def _geo_basemap_1d(x, *ys, xmin=-180, xmax=180):
+    """
+    Fix basemap geographic 1D data arrays.
+    """
+    # Ensure data is within map bounds
+    x = _geo_monotonic(x)
+    ys = _geo_clip(ys)
+    x_orig, ys_orig, ys = x, ys, []
+    for y_orig in ys_orig:
+        x, y = _geo_inbounds(x_orig, y_orig, xmin=xmin, xmax=xmax)
+        ys.append(y)
+    return (x, *ys)
+
+
+def _geo_cartopy_2d(x, y, *zs, globe=False):
     """
     Fix cartopy geographic 2D data arrays.
     """
     x = _geo_monotonic(x)
+    y = _geo_clip(y)  # in case e.g. edges() added points beyond poles
     x_orig, y_orig, zs_orig = x, y, zs
     zs = []
     for z_orig in zs_orig:
@@ -1143,6 +1131,27 @@ def _geo_cartopy_2d(self, x, y, *zs, globe=False):
         # Fix gaps in coverage
         y, z = _geo_poles(y, z)
         x, z = _geo_seams(x, z, modulo=True)
+        zs.append(z)
+    return (x, y, *zs)
+
+
+def _geo_basemap_2d(x, y, *zs, globe=False, xmin=-180, xmax=180):
+    """
+    Fix basemap geographic 2D data arrays.
+    """
+    x = _geo_monotonic(x)
+    y = _geo_clip(y)  # in case e.g. edges() added points beyond poles
+    x_orig, y_orig, zs_orig, zs = x, y, zs, []
+    for z_orig in zs_orig:
+        # Ensure data is within map bounds
+        x, y, z = x_orig, y_orig, z_orig
+        x, z = _geo_inbounds(x, z, xmin=xmin, xmax=xmax)
+        if not globe or x.ndim > 1 or y.ndim > 1:
+            zs.append(z)
+            continue
+        # Fix gaps in coverage
+        y, z = _geo_poles(y, z)
+        x, z = _geo_seams(x, z, xmin=xmin, modulo=False)
         zs.append(z)
     return (x, y, *zs)
 
@@ -1175,10 +1184,17 @@ def _geo_inbounds(x, y, xmin=-180, xmax=180):
     return x, y
 
 
+def _geo_clip(*ys):
+    """
+    Ensure latitudes span only minus 90 to plus 90 degrees.
+    """
+    ys = tuple(np.clip(y, -90, 90) for y in ys)
+    return ys[0] if len(ys) == 1 else ys
+
+
 def _geo_monotonic(x):
     """
     Ensure longitudes are monotonic without rolling or filtering coordinates.
-    Ignores 2D coordinate arrays.
     """
     # Add 360 until data is greater than base value
     # TODO: Is this necessary for cartopy data? Maybe only with _geo_seams?
@@ -1589,6 +1605,14 @@ def _preprocess_data(*keys, keywords=None, allow_extra=True):
                 func_native = getattr(super(PlotAxes, self), name)
                 return func_native(*args, **kwargs)
             else:
+                # Impose default coordinate system
+                if self.name == 'proplot_basemap' and name in BASEMAP_FUNCS:
+                    latlon = kwargs.pop('latlon', None)
+                    kwargs['latlon'] = _not_none(latlon, True)
+                if self.name == 'proplot_cartopy' and name in CARTOPY_FUNCS:
+                    transform = kwargs.pop('transform', None)
+                    kwargs['transform'] = _not_none(transform, PlateCarree())
+
                 # Process data args
                 # NOTE: Raises error if there are more args than keys
                 args, kwargs = _keyword_to_positional(
@@ -1998,7 +2022,6 @@ class PlotAxes(base.Axes):
             x, y = _require_centers(x, y, zs[0])
 
         # Geographic corrections
-        # TODO: Does this work without basemap self.projection(*np.meshgrid(x, y))
         if allow1d:
             pass
         elif self.name == 'proplot_cartopy' and isinstance(kwargs.get('transform'), PlateCarree):  # noqa: E501
@@ -2006,6 +2029,7 @@ class PlotAxes(base.Axes):
         elif self.name == 'proplot_basemap' and kwargs.get('latlon', None):
             xmin, xmax = self.projection.lonmin, self.projection.lonmax
             x, y, *zs = _geo_basemap_2d(x, y, *zs, xmin=xmin, xmax=xmax, globe=globe)
+            x, y = np.meshgrid(x, y)  # WARNING: required always
 
         return (x, y, *zs, kwargs)
 

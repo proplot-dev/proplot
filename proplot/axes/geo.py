@@ -3,7 +3,6 @@
 Axes filled with cartographic projections.
 """
 import copy
-import functools
 
 import matplotlib.axis as maxis
 import matplotlib.path as mpath
@@ -1370,42 +1369,3 @@ class _BasemapAxes(GeoAxes):
             axis.isDefault_majfmt = True
             axis.isDefault_majloc = True
             axis.isDefault_minloc = True
-
-
-def _basemap_wrapper(func):
-    """
-    Impose default ``latlon=True``.
-    """
-    @functools.wraps(func)
-    def _default_latlon(self, *args, latlon=None, **kwargs):
-        latlon = _not_none(latlon, True)
-        return func(self, *args, latlon=latlon, **kwargs)
-    return _default_latlon
-
-
-def _cartopy_wrapper(func):
-    """
-    Impose default ``transform=cartopy.crs.PlateCarree()``.
-    """
-    @functools.wraps(func)
-    def _default_transform(self, *args, transform=None, **kwargs):
-        transform = _not_none(transform, ccrs.PlateCarree())
-        return func(self, *args, transform=transform, **kwargs)
-    return _default_transform
-
-
-# Impose longitude-latitude coordinates as the default
-for _attr in (
-    'barbs', 'contour', 'contourf', 'hexbin',
-    'imshow', 'pcolor', 'pcolormesh', 'plot',
-    'quiver', 'scatter', 'streamplot', 'step',
-):
-    setattr(_BasemapAxes, _attr, _basemap_wrapper(getattr(_BasemapAxes, _attr)))
-for _attr in (
-    'barbs', 'contour', 'contourf',
-    'fill', 'fill_between', 'fill_betweenx',  # NOTE: not sure if these work
-    'imshow', 'pcolor', 'pcolormesh', 'plot',
-    'quiver', 'scatter', 'streamplot', 'step',
-    'tricontour', 'tricontourf', 'tripcolor',  # NOTE: not sure why these work
-):
-    setattr(_CartopyAxes, _attr, _cartopy_wrapper(getattr(_CartopyAxes, _attr)))
