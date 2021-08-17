@@ -789,22 +789,23 @@ class Figure(mfigure.Figure):
         ax = ax._panel_parent or ax
         return pos, ax
 
-    def _get_offset_coord(self, side, axs, renderer, *, pad=None):
+    def _get_offset_coord(self, side, axs, renderer, *, pad=None, extra=None):
         """
         Return the figure coordinate for offsetting super labels and super titles.
         """
-        cs = []
-        width, height = self.get_size_inches()
         s = 'x' if side in ('left', 'right') else 'y'
-        for ax in axs:
-            for iax in ax._iter_axes(panels=True, children=True, hidden=True):
-                bbox = iax.get_tightbbox(renderer)  # cannot use cached bbox
-                attr = s + 'max' if side in ('top', 'right') else s + 'min'
-                c = getattr(bbox, attr)
-                c = (c, 0) if side in ('left', 'right') else (0, c)
-                c = self.transFigure.inverted().transform(c)
-                c = c[0] if side in ('left', 'right') else c[1]
-                cs.append(c)
+        cs = []
+        objs = tuple(_ for ax in axs for _ in ax._iter_axes(panels=True, children=True, hidden=True))  # noqa: E501
+        objs = objs + (extra or ())  # e.g. top super labels
+        for obj in objs:
+            bbox = obj.get_tightbbox(renderer)  # cannot use cached bbox
+            attr = s + 'max' if side in ('top', 'right') else s + 'min'
+            c = getattr(bbox, attr)
+            c = (c, 0) if side in ('left', 'right') else (0, c)
+            c = self.transFigure.inverted().transform(c)
+            c = c[0] if side in ('left', 'right') else c[1]
+            cs.append(c)
+        width, height = self.get_size_inches()
         if pad is None:
             pad = self._suplabel_pad[side] / 72
             pad = pad / width if side in ('left', 'right') else pad / height
@@ -986,15 +987,10 @@ class Figure(mfigure.Figure):
         axs = self._get_align_axes('top')  # returns outermost panels
         if not axs:
             return
+        labs = tuple(t for t in self._suplabel_dict['top'].values() if t.get_text())
         pad = (self._suptitle_pad / 72) / self.get_size_inches()[1]
         x = self._get_align_coord('top', axs)[0]
-        y = self._get_offset_coord('top', axs, renderer, pad=pad)
-        for label in self._suplabel_dict['top'].values():
-            if not label.get_text():
-                continue
-            bbox = label.get_tightbbox(renderer)
-            c = self.transFigure.inverted().transform((0, bbox.ymax))[1]
-            y = max(y, c)  # offset above top labels
+        y = self._get_offset_coord('top', axs, renderer, pad=pad, extra=labs)
         self._suptitle.set_ha('center')
         self._suptitle.set_va('bottom')
         self._suptitle.set_position((x, y))
