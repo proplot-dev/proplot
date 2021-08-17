@@ -1683,6 +1683,14 @@ class Figure(mfigure.Figure):
         self._gridspec = gs
         gs.figure = self  # trigger copying settings from the figure
 
+    @property
+    def subplotgrid(self):
+        """
+        The numbered `~proplot.axes.Axes` subplots in the figure. This
+        property is read-only.
+        """
+        return SubplotGrid([ax for num, ax in sorted(self._subplot_dict.items())])
+
 
 # Add deprecated properties. There are *lots* of properties we pass to Figure
 # and do not like idea of publicly tracking every single one of them. If we
