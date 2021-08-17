@@ -648,40 +648,7 @@ class GeoAxes(plot.PlotAxes):
         self._map_projection = map_projection
 
 
-def _meta_cartopy_wrapper(func):
-    """
-    Impose default ``transform=cartopy.crs.PlateCarree()``.
-    """
-    @functools.wraps(func)
-    def _default_transform(self, *args, transform=None, **kwargs):
-        transform = _not_none(transform, ccrs.PlateCarree())
-        return func(self, *args, transform=transform, **kwargs)
-    return _default_transform
-
-
-class _MetaCartopyAxes(type):
-    """
-    Meta class implementing default keyword args.
-    """
-    # NOTE: Not all of these appear to be wrapped directly in GeoAxes
-    # but they do accept transform argument.
-    def __new__(cls, name, bases, dct_orig):
-        dct = dct_orig.copy()
-        for attr in (
-            'barbs', 'contour', 'contourf',
-            'fill', 'fill_between', 'fill_betweenx',  # NOTE: not sure if these work
-            'imshow', 'pcolor', 'pcolormesh', 'plot',
-            'quiver', 'scatter', 'streamplot', 'step',
-            'tricontour', 'tricontourf', 'tripcolor',  # NOTE: not sure why these work
-        ):
-            func = dct_orig.get(attr, None)
-            if not callable(func):
-                continue
-            dct[attr] = _meta_cartopy_wrapper(func)
-        return super().__new__(cls, name, bases, dct_orig)
-
-
-class _CartopyAxes(GeoAxes, _GeoAxes, metaclass=_MetaCartopyAxes):
+class _CartopyAxes(GeoAxes, _GeoAxes):
     """
     Axes subclass for plotting cartopy projections.
     """
@@ -818,11 +785,6 @@ class _CartopyAxes(GeoAxes, _GeoAxes, metaclass=_MetaCartopyAxes):
                 if axis == 'x':
                     value = (value + 180) % 360 - 180
             return type(self)._add_gridline_label(self, value, axis, upper_end)
-
-        # NOTE: The 'xpadding' and 'ypadding' props were introduced in v0.16
-        # with default 5 points, then set to default None in v0.18.
-        # TODO: Cartopy has had two formatters for a while but we use newer one
-        # https://github.com/SciTools/cartopy/pull/1066
         gl = self.gridlines(crs=ccrs.PlateCarree())
         gl._draw_gridliner = _draw_gridliner.__get__(gl)  # apply monkey patch
         gl._axes_domain = _axes_domain.__get__(gl)
@@ -974,7 +936,7 @@ class _CartopyAxes(GeoAxes, _GeoAxes, metaclass=_MetaCartopyAxes):
                     feat._kwargs.update(kw)
 
     def _update_gridlines(
-        self, gl, which='major', longrid=None, latgrid=None, nsteps=None, context=None,
+        self, gl, which='major', longrid=None, latgrid=None, nsteps=None,
     ):
         """
         Update gridliner object with axis locators, and toggle gridlines on and off.
@@ -982,7 +944,7 @@ class _CartopyAxes(GeoAxes, _GeoAxes, metaclass=_MetaCartopyAxes):
         # Update gridliner collection properties
         # WARNING: Here we use native matplotlib 'grid' rc param for geographic
         # gridlines. If rc mode is 1 (first format call) use context=False
-        ctx = _not_none(context, rc._context_mode == 2)
+        ctx = rc._context_mode == 2
         kwlines = self._get_gridline_props(which=which, context=ctx)
         kwtext = self._get_ticklabel_props(context=ctx)
         gl.collection_kwargs.update(kwlines)
@@ -990,14 +952,18 @@ class _CartopyAxes(GeoAxes, _GeoAxes, metaclass=_MetaCartopyAxes):
         gl.ylabel_style.update(kwtext)
 
         # Apply tick locations from dummy _LonAxis and _LatAxis axes
+        # NOTE: This will re-apply existing gridline locations if unchanged.
+        if nsteps is not None:
+            gl.n_steps = nsteps
+        latmax = self._lataxis.get_latmax()
+        if hasattr(gl, 'ylim'):  # cartopy > 0.19
+            gl.ylim = (-latmax, latmax)
         longrid = self._get_gridline_toggle(longrid, axis='x', which=which, context=ctx)
         if longrid is not None:
             gl.xlines = longrid
         latgrid = self._get_gridline_toggle(latgrid, axis='y', which=which, context=ctx)
         if latgrid is not None:
             gl.ylines = latgrid
-        if nsteps is not None:
-            gl.n_steps = nsteps
         lonlines = self._get_lonticklocs(which=which)
         latlines = self._get_latticklocs(which=which)
         lonlines = (np.asarray(lonlines) + 180) % 360 - 180  # specific to _CartopyAxes
@@ -1023,6 +989,10 @@ class _CartopyAxes(GeoAxes, _GeoAxes, metaclass=_MetaCartopyAxes):
         )
 
         # Update gridline label parameters
+        # NOTE: The 'xpadding' and 'ypadding' props were introduced in v0.16
+        # with default 5 points, then set to default None in v0.18.
+        # TODO: Cartopy has had two formatters for a while but we use newer one
+        # https://github.com/SciTools/cartopy/pull/1066
         if labelpad is not None:
             gl.xpadding = gl.ypadding = labelpad
         if loninline is not None:
@@ -1131,8 +1101,8 @@ class _CartopyAxes(GeoAxes, _GeoAxes, metaclass=_MetaCartopyAxes):
         if isinstance(crs, ccrs.PlateCarree):
             self._set_view_intervals(extent)
             with rc.context(mode=2):  # do not reset gridline properties!
-                self._update_gridlines(self._gridlines_major)
-                self._update_gridlines(self._gridlines_minor)
+                self._update_gridlines(self._gridlines_major, which='major')
+                self._update_gridlines(self._gridlines_minor, which='minor')
             if _version_cartopy < 0.18:
                 clipped_path = self.outline_patch.orig_path.clip_to_bbox(self.viewLim)
                 self.outline_patch._path = clipped_path
@@ -1146,36 +1116,7 @@ class _CartopyAxes(GeoAxes, _GeoAxes, metaclass=_MetaCartopyAxes):
         return result
 
 
-def _meta_basemap_wrapper(func):
-    """
-    Impose default ``latlon=True``.
-    """
-    @functools.wraps(func)
-    def _default_latlon(self, *args, latlon=None, **kwargs):
-        latlon = _not_none(latlon, True)
-        return func(self, *args, latlon=latlon, **kwargs)
-    return _default_latlon
-
-
-class _MetaBasemapAxes(type):
-    """
-    Meta class implementing default keyword args.
-    """
-    def __new__(cls, name, bases, dct_orig):
-        dct = dct_orig.copy()
-        for attr in (
-            'barbs', 'contour', 'contourf', 'hexbin',
-            'imshow', 'pcolor', 'pcolormesh', 'plot',
-            'quiver', 'scatter', 'streamplot', 'step',
-        ):
-            func = dct_orig.get(attr, None)
-            if not callable(func):
-                continue
-            dct[attr] = _meta_basemap_wrapper(func)
-        return super().__new__(cls, name, bases, dct)
-
-
-class _BasemapAxes(GeoAxes, metaclass=_MetaBasemapAxes):
+class _BasemapAxes(GeoAxes):
     """
     Axes subclass for plotting basemap projections.
     """
@@ -1347,8 +1288,8 @@ class _BasemapAxes(GeoAxes, metaclass=_MetaBasemapAxes):
                     bools[i] = b  # update toggles
 
             # Get gridlines
-            lines = getattr(self, f'_get_{name}ticklocs')(which=which)
-            lines = list(lines)
+            # NOTE: This may re-apply existing gridlines.
+            lines = list(getattr(self, f'_get_{name}ticklocs')(which=which))
             if name == 'lon' and np.isclose(lines[0] + 360, lines[-1]):
                 lines = lines[:-1]  # prevent double labels
 
@@ -1429,3 +1370,42 @@ class _BasemapAxes(GeoAxes, metaclass=_MetaBasemapAxes):
             axis.isDefault_majfmt = True
             axis.isDefault_majloc = True
             axis.isDefault_minloc = True
+
+
+def _basemap_wrapper(func):
+    """
+    Impose default ``latlon=True``.
+    """
+    @functools.wraps(func)
+    def _default_latlon(self, *args, latlon=None, **kwargs):
+        latlon = _not_none(latlon, True)
+        return func(self, *args, latlon=latlon, **kwargs)
+    return _default_latlon
+
+
+def _cartopy_wrapper(func):
+    """
+    Impose default ``transform=cartopy.crs.PlateCarree()``.
+    """
+    @functools.wraps(func)
+    def _default_transform(self, *args, transform=None, **kwargs):
+        transform = _not_none(transform, ccrs.PlateCarree())
+        return func(self, *args, transform=transform, **kwargs)
+    return _default_transform
+
+
+# Impose longitude-latitude coordinates as the default
+for _attr in (
+    'barbs', 'contour', 'contourf', 'hexbin',
+    'imshow', 'pcolor', 'pcolormesh', 'plot',
+    'quiver', 'scatter', 'streamplot', 'step',
+):
+    setattr(_BasemapAxes, _attr, _basemap_wrapper(getattr(_BasemapAxes, _attr)))
+for _attr in (
+    'barbs', 'contour', 'contourf',
+    'fill', 'fill_between', 'fill_betweenx',  # NOTE: not sure if these work
+    'imshow', 'pcolor', 'pcolormesh', 'plot',
+    'quiver', 'scatter', 'streamplot', 'step',
+    'tricontour', 'tricontourf', 'tripcolor',  # NOTE: not sure why these work
+):
+    setattr(_CartopyAxes, _attr, _cartopy_wrapper(getattr(_CartopyAxes, _attr)))
