@@ -241,7 +241,7 @@ def show_channels(
         labels += ('Red', 'Green', 'Blue')
     fig, axs = ui.subplots(
         array=array, refwidth=refwidth, wratios=(1.5, 1, 1, 1, 1, 1.5),
-        share=1, span=False, innerpad=1,
+        share='labels', span=False, innerpad=1,
     )
     # Iterate through colormaps
     mc = ms = mp = 0
@@ -384,7 +384,7 @@ def show_colorspaces(*, luminance=None, saturation=None, hue=None, refwidth=2):
 
     # Make figure, with black indicating invalid values
     # Note we invert the x-y ordering for imshow
-    fig, axs = ui.subplots(ncols=3, share=0, refwidth=refwidth, innerpad=0.5)
+    fig, axs = ui.subplots(ncols=3, refwidth=refwidth, share=False, innerpad=0.5)
     for ax, space in zip(axs, ('hcl', 'hsl', 'hpl')):
         rgba = np.ones((*hsl.shape[:2][::-1], 4))  # RGBA
         for j in range(hsl.shape[0]):
@@ -479,7 +479,7 @@ def _draw_bars(
     naxs = 2 * len(cmapdict) + sum(map(len, cmapdict.values()))
     fig, axs = ui.subplots(
         nrows=naxs, refwidth=length, refheight=width,
-        share=0, hspace='2pt', top='-1em',
+        share=False, top='-1em', hspace='2pt',
     )
     iax = -1
     nheads = nbars = 0  # for deciding which axes to plot in

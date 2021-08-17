@@ -491,6 +491,11 @@ class Axes(maxes.Axes):
         if self._panel_side:
             name = name.replace('Subplot', 'Panel')  # e.g. CartesianAxesPanel
             params['side'] = self._panel_side
+        for package in ('cartopy', 'basemap'):
+            head = '_' + package.title()
+            if head in name:  # e.g. _CartopyAxeSubplot to GeoAxesSubplot
+                name = name.replace(head, 'Geo')
+                params['backend'] = package
         params = ', '.join(f'{key}={value!r}' for key, value in params.items())
         return f'{name}({params})'
 
@@ -1255,13 +1260,9 @@ class Axes(maxes.Axes):
         proplot.axes.GeoAxes.format
         proplot.figure.Figure.format
         """
-        # Update super labels and title
-        # NOTE: To avoid resetting figure-wide settings when new axes are created
-        # we only proceed if using the default context mode. Simliar to geo.py
+        skip_figure = kwargs.pop('skip_figure', False)  # internal keyword arg
         rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
         params = _pop_params(kwargs, self.figure.format)
-        if rc_mode != 1:  # avoid resetting
-            self.figure.format(rc_kw=rc_kw, rc_mode=rc_mode, **params)
 
         # Initiate context block
         with rc.context(rc_kw, mode=rc_mode):
@@ -1332,6 +1333,15 @@ class Axes(maxes.Axes):
             if cycle is not None:
                 self.set_prop_cycle(cycle)
             self._update_background(**kwargs)
+
+        # Update super labels and super title
+        # NOTE: To avoid resetting figure-wide settings when new axes are created
+        # we only proceed if using the default context mode. Simliar to geo.py
+        if skip_figure:  # avoid recursion
+            return
+        if rc_mode == 1:  # avoid resetting
+            return
+        self.figure.format(rc_kw=rc_kw, rc_mode=rc_mode, skip_axes=True, **params)
 
     def draw(self, renderer=None, *args, **kwargs):
         # Perform extra post-processing step
@@ -1787,10 +1797,7 @@ class Axes(maxes.Axes):
         # NOTE: Do not necessarily want minor tick locations at logminor for LogNorm!
         # In _auto_discrete_norm we sometimes select evenly spaced levels in log-space
         # *between* powers of 10, so logminor ticks would be misaligned with levels.
-        if isinstance(locator, mticker.Locator):
-            # Use this locator
-            pass
-        elif locator is None:
+        if locator is None:
             # This should only happen if user calls plotting method on native mpl axes
             if isinstance(mappable.norm, mcolors.LogNorm):
                 locator = 'log'
@@ -1799,7 +1806,7 @@ class Axes(maxes.Axes):
                 locator_kw.setdefault('linthresh', mappable.norm.linthresh)
             else:
                 locator = 'auto'
-        else:
+        elif np.iterable(locator) and not isinstance(locator, str):
             # Get default maxn, try to allot 2em squares per label maybe?
             # NOTE: Cannot use Axes.get_size_inches because this is a native mpl axes
             width, height = self.figure.get_size_inches()
@@ -1814,8 +1821,7 @@ class Axes(maxes.Axes):
             fontsize = _fontsize_to_pt(fontsize)
             maxn = _not_none(maxn, int(length / (scale * fontsize / 72)))
             maxn_minor = _not_none(maxn_minor, int(length / (0.5 * fontsize / 72)))
-
-            # Get locator
+            # Get tick locations
             if tickminor and minorlocator is None:
                 step = 1 + len(locator) // max(1, maxn_minor)
                 minorlocator = locator[::step]
@@ -1824,6 +1830,8 @@ class Axes(maxes.Axes):
 
         # Return tickers
         locator = constructor.Locator(locator, **locator_kw)
+        if tickminor and minorlocator is None:
+            minorlocator = 'minor'
         if minorlocator is not None:
             minorlocator = constructor.Locator(minorlocator, **minorlocator_kw)
         formatter = _not_none(formatter, 'auto')
@@ -2065,13 +2073,14 @@ class Axes(maxes.Axes):
                 obj.minorticks_off()
         elif not hasattr(obj, '_ticker'):
             warnings._warn_proplot(
-                'Matplotlib colorbar API has changed. '
-                f'Cannot use custom minor tick locator {minorlocator!r}.'
+                'Matplotlib colorbar API has changed. Cannot use '
+                f'custom minor tick locator {minorlocator!r}.'
             )
             obj.minorticks_on()  # at least turn them on
         else:
             # Set the minor ticks just like matplotlib internally sets the
             # major ticks. Private API is the only way!
+            minorlocator.set_axis(axis)
             ticks, *_ = obj._ticker(minorlocator, mticker.NullFormatter())
             axis.set_ticks(ticks, minor=True)
             axis.set_ticklabels([], minor=True)

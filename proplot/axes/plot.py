@@ -1639,8 +1639,8 @@ class PlotAxes(base.Axes):
 
     def _plot_safe(self, name, *args, add_attrs=None, **kwargs):
         """
-        Call the plotting method and use context object to redirect internal calls
-        to native methods. Finally add attributes to outgoing methods.
+        Call the plotting method and use context object to redirect internal
+        calls to native methods. Finally add attributes to outgoing methods.
         """
         # Safely plot stuff
         # NOTE: Previously allowed internal matplotlib plotting function calls to run
@@ -3174,11 +3174,11 @@ class PlotAxes(base.Axes):
         objs = []
         kws = kwargs.copy()
         _process_props(kws, 'line')
-        guide_kw = _pop_params(kws, self._auto_guide)
         kws, extents = self._parse_inbounds(**kws)
         for xs, ys, fmt in self._iter_pairs(*pairs):
             xs, ys, kw = self._standardize_1d(xs, ys, vert=vert, **kws)
             ys, kw = self._error_distribution(ys, **kw)
+            guide_kw = _pop_params(kw, self._auto_guide)  # must come after standardize
             for _, n, x, y, kw in self._iter_columns(xs, ys, **kw):
                 kw = self._parse_cycle(n, **kw)
                 *eb, kw = self._error_bars(x, y, vert=vert, **kw)
@@ -3255,13 +3255,13 @@ class PlotAxes(base.Axes):
         kws = kwargs.copy()
         if where not in ('pre', 'post', 'mid'):
             raise ValueError(f"Invalid where={where!r}. Options are 'pre', 'post', 'mid'.")  # noqa: E501
-        objs = []
         _process_props(kws, 'line')
         kws.setdefault('drawstyle', 'steps-' + where)
-        guide_kw = _pop_params(kws, self._auto_guide)
         kws, extents = self._parse_inbounds(**kws)
+        objs = []
         for xs, ys, fmt in self._iter_pairs(*pairs):
             xs, ys, kw = self._standardize_1d(xs, ys, vert=vert, **kws)
+            guide_kw = _pop_params(kw, self._auto_guide)  # must come after standardize
             if fmt is not None:
                 kw['fmt'] = fmt
             for _, n, x, y, *a, kw in self._iter_columns(xs, ys, **kw):
@@ -3303,9 +3303,9 @@ class PlotAxes(base.Axes):
         """
         # Parse input
         kw = kwargs.copy()
-        guide_kw = _pop_params(kw, self._auto_guide)
         kw, extents = self._parse_inbounds(**kw)
         x, y, kw = self._standardize_1d(x, y, autolabels=False, **kw)
+        guide_kw = _pop_params(kw, self._auto_guide)
 
         # Set default colors
         # NOTE: 'fmt' strings can only be 2 to 3 characters and include color
@@ -3404,13 +3404,13 @@ class PlotAxes(base.Axes):
         # Standardize arguments
         kw = kwargs.copy()
         _process_props(kw, 'collection')
-        guide_kw = _pop_params(kw, self._auto_guide)
         kw, extents = self._parse_inbounds(**kw)
         x, y, kw = self._standardize_1d(x, y, values=c, autovalues=True, autoreverse=False, **kw)  # noqa: E501
         c = kw.pop('values', None)  # permits inferring values e.g. a simple ordinate
         if c is None:
             raise ValueError('Values must be provided.')
         c = _to_numpy_array(c)  # NOTE: don't test dimensionality, let errors happen
+        guide_kw = _pop_params(kw, self._auto_guide)
 
         # Interpolate values to allow for smooth gradations between values or just
         # to color siwtchover halfway between points (interp True, False respectively)
@@ -3476,17 +3476,17 @@ class PlotAxes(base.Axes):
         name = 'vlines' if vert else 'hlines'
         if colors is not None:
             kw['colors'] = colors
+        _process_props(kw, 'collection')
         kw, extents = self._parse_inbounds(**kw)
         stack = _not_none(stack=stack, stacked=stacked)
         xs, ys1, ys2, kw = self._standardize_1d(xs, ys1, ys2, vert=vert, **kw)
+        guide_kw = _pop_params(kw, self._auto_guide)
 
         # Support "negative" and "positive" lines
         # TODO: Ensure 'linewidths' etc. are applied! For some reason
         # previously thought they had to be manually applied.
         y0 = 0
         objs, sides = [], []
-        _process_props(kw, 'collection')
-        guide_kw = _pop_params(kw, self._auto_guide)
         for _, n, x, y1, y2, kw in self._iter_columns(xs, ys1, ys2, **kw):
             kw = self._parse_cycle(n, **kw)
             if stack:
@@ -3562,15 +3562,15 @@ class PlotAxes(base.Axes):
         }
 
         # Iterate over the columns
-        objs = []
         kw = kwargs.copy()
         _process_props(kw, 'line')
-        guide_kw = _pop_params(kw, self._auto_guide)
         kw, extents = self._parse_inbounds(**kw)
         xs, ys, kw = self._standardize_1d(xs, ys, vert=vert, autoreverse=False, **kw)
         ss, kw = self._parse_markersize(ss, **kw)  # parse 's'
         cc, kw = self._parse_color_arg(xs, ys, cc, apply_cycle=False, **kw)  # parse 'c'
         ys, kw = self._error_distribution(ys, **kw)
+        guide_kw = _pop_params(kw, self._auto_guide)
+        objs = []
         for _, n, x, y, s, c, kw in self._iter_columns(xs, ys, ss, cc, **kw):
             kw['s'], kw['c'] = s, c  # make _parse_cycle() detect these
             kw = self._parse_cycle(n, cycle_manually=cycle_manually, **kw)
@@ -3619,6 +3619,7 @@ class PlotAxes(base.Axes):
         """
         # Parse input arguments
         kw = kwargs.copy()
+        _process_props(kw, 'patch')
         kw, extents = self._parse_inbounds(**kw)
         name = 'fill_between' if vert else 'fill_betweenx'
         stack = _not_none(stack=stack, stacked=stacked)
@@ -3627,7 +3628,6 @@ class PlotAxes(base.Axes):
         # Draw patches with default edge width zero
         y0 = 0
         objs, xsides, ysides = [], [], []
-        _process_props(kw, 'patch')
         guide_kw = _pop_params(kw, self._auto_guide)
         for _, n, x, y1, y2, w, kw in self._iter_columns(xs, ys1, ys2, where, **kw):
             kw = self._parse_cycle(n, **kw)
@@ -3729,8 +3729,8 @@ class PlotAxes(base.Axes):
         objs = []
         _process_props(kw, 'patch')
         kw.setdefault('edgecolor', 'black')
-        guide_kw = _pop_params(kw, self._auto_guide)
         hs, kw = self._error_distribution(hs, **kw)
+        guide_kw = _pop_params(kw, self._auto_guide)
         for i, n, x, h, w, b, kw in self._iter_columns(xs, hs, ws, bs, **kw):
             kw = self._parse_cycle(n, **kw)
             # Adjust x or y coordinates for grouped and stacked bars
@@ -4015,8 +4015,8 @@ class PlotAxes(base.Axes):
         Apply the histogram.
         """
         kwargs['bins'] = bins
-        guide_kw = _pop_params(kwargs, self._auto_guide)
         _, xs, kw = self._standardize_1d(xs, orientation=orientation, **kwargs)
+        guide_kw = _pop_params(kwargs, self._auto_guide)
         objs = []
         for _, n, x, kw in self._iter_columns(xs, **kw):
             kw = self._parse_cycle(n, **kw)
@@ -4075,8 +4075,8 @@ class PlotAxes(base.Axes):
         x, y, kw = self._standardize_1d(x, y, autovalues=True, **kwargs)
         kw['bins'] = bins
         _process_props(kw, 'collection')  # takes LineCollection props
-        labels_kw = _pop_params(kwargs, self._auto_labels)
         guide_kw = _pop_params(kwargs, self._auto_guide)
+        labels_kw = _pop_params(kwargs, self._auto_labels)
         kwargs = self._parse_cmap(x, y, y, is_counts=True, default_discrete=False, **kwargs)  # noqa: E501
         m = self._plot_safe('hist2d', x, y, **kwargs)
         self._auto_labels(m, **labels_kw)
@@ -4112,8 +4112,8 @@ class PlotAxes(base.Axes):
         """
         x, y, kw = self._standardize_1d(x, y, autovalues=True, **kwargs)
         _process_props(kw, 'collection')  # takes LineCollection props
-        labels_kw = _pop_params(kw, self._auto_labels)
         guide_kw = _pop_params(kw, self._auto_guide)
+        labels_kw = _pop_params(kw, self._auto_labels)
         kw = self._parse_cmap(x, y, y, is_counts=True, default_discrete=False, **kw)
         m = self._plot_safe('hexbin', x, y, weights, **kw)
         self._auto_labels(m, **labels_kw)
@@ -4166,9 +4166,9 @@ class PlotAxes(base.Axes):
         x, y, z, kw = self._standardize_2d(x, y, z, **kwargs)
         _process_props(kw, 'collection')
         contour_kw = _pop_kwargs(kw, 'edgecolors', 'linewidths', 'linestyles')
-        edgefix_kw = _pop_params(kw, self._fix_edges)
-        labels_kw = _pop_params(kw, self._auto_labels)
         guide_kw = _pop_params(kw, self._auto_guide)
+        labels_kw = _pop_params(kw, self._auto_labels)
+        edgefix_kw = _pop_params(kw, self._fix_edges)
         kw = self._parse_cmap(x, y, z, contour_plot=True, **kw)
         m = cm = self._plot_safe('contourf', x, y, z, **kw)
         self._fix_edges(m, **edgefix_kw, **contour_kw)  # skipped if bool(contour_kw)
@@ -4197,9 +4197,9 @@ class PlotAxes(base.Axes):
         """
         x, y, z, kw = self._standardize_2d(x, y, z, edges=True, **kwargs)
         _process_props(kw, 'collection')
-        edgefix_kw = _pop_params(kw, self._fix_edges)
-        labels_kw = _pop_params(kw, self._auto_labels)
         guide_kw = _pop_params(kw, self._auto_guide)
+        labels_kw = _pop_params(kw, self._auto_labels)
+        edgefix_kw = _pop_params(kw, self._fix_edges)
         kw = self._parse_cmap(x, y, z, to_centers=True, **kw)
         m = self._plot_safe('pcolor', x, y, z, **kw)
         self._fix_edges(m, **edgefix_kw, **kw)
@@ -4227,9 +4227,9 @@ class PlotAxes(base.Axes):
         """
         x, y, z, kw = self._standardize_2d(x, y, z, edges=True, **kwargs)
         _process_props(kw, 'collection')
-        edgefix_kw = _pop_params(kw, self._fix_edges)
-        labels_kw = _pop_params(kw, self._auto_labels)
         guide_kw = _pop_params(kw, self._auto_guide)
+        labels_kw = _pop_params(kw, self._auto_labels)
+        edgefix_kw = _pop_params(kw, self._fix_edges)
         kw = self._parse_cmap(x, y, z, to_centers=True, **kw)
         m = self._plot_safe('pcolormesh', x, y, z, **kw)
         self._fix_edges(m, **edgefix_kw, **kw)
@@ -4257,9 +4257,9 @@ class PlotAxes(base.Axes):
         """
         x, y, z, kw = self._standardize_2d(x, y, z, edges=True, **kwargs)
         _process_props(kw, 'collection')
-        edgefix_kw = _pop_params(kw, self._fix_edges)
-        labels_kw = _pop_params(kw, self._auto_labels)
         guide_kw = _pop_params(kw, self._auto_guide)
+        labels_kw = _pop_params(kw, self._auto_labels)
+        edgefix_kw = _pop_params(kw, self._fix_edges)
         kw = self._parse_cmap(x, y, z, to_centers=True, **kw)
         m = self._plot_safe('pcolorfast', x, y, z, **kw)
         self._fix_edges(m, **edgefix_kw, **kw)

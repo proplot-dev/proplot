@@ -618,9 +618,7 @@ def Colormap(
 
         # Dictionary of hue/sat/luminance values or 2-tuples
         elif isinstance(arg, dict):
-            ic(arg)
             cmap = pcolors.PerceptualColormap.from_hsl(**arg)
-            ic(cmap.name)
 
         # List of color tuples or color strings, i.e. iterable of iterables
         elif (

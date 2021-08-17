@@ -153,7 +153,9 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         """
         # Impose default formatter
         self._xaxis_current_rotation = 'horizontal'  # current rotation
+        self._yaxis_current_rotation = 'horizontal'
         self._xaxis_isdefault_rotation = True  # whether to auto rotate the axis
+        self._yaxis_isdefault_rotation = True
         super().__init__(*args, **kwargs)
         formatter = pticker.AutoFormatter()
         self.xaxis.set_major_formatter(formatter)
@@ -570,10 +572,12 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         # change alignment with set_tick_params so we must apply to text objects.
         # Note fig.autofmt_date calls subplots_adjust, so we cannot use it.
         x = _not_none(x, 'x')
+        current = '_' + x + 'axis_current_rotation'
+        default = '_' + x + 'axis_isdefault_rotation'
         axis = getattr(self, x + 'axis')
         if rotation is not None:
-            self._xaxis_isdefault_rotation = False
-        elif not self._xaxis_isdefault_rotation:
+            setattr(self, default, False)
+        elif not getattr(self, default):
             return  # do not rotate
         elif x == 'x' and isinstance(axis.converter, mdates.DateConverter):
             rotation = rc['formatter.timerotation']
@@ -581,14 +585,14 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             rotation = 'horizontal'
 
         # Apply tick label rotation if necessary
-        if rotation != self._xaxis_current_rotation:
+        if rotation != getattr(self, current):
             rotation = {'horizontal': 0, 'vertical': 90}.get(rotation, rotation)
             kw = {'rotation': rotation}
             if rotation not in (0, 90, -90):
                 kw['ha'] = 'right' if rotation > 0 else 'left'
             for label in axis.get_ticklabels():
                 label.update(kw)
-            self._xaxis_current_rotation = rotation
+            setattr(self, current, rotation)
 
     def _update_spines(self, x, *, loc=None, bounds=None):
         """

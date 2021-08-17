@@ -718,27 +718,20 @@ class Figure(mfigure.Figure):
         """
         return _state_context(self, _is_authorized=True)
 
-    def _parse_proj(
-        self, proj=None, projection=None, proj_kw=None, projection_kw=None,
-        basemap=None, use_aspect=False, **kwargs
-    ):
+    def _parse_proj(self, proj=None, projection=None, use_aspect=False, **kwargs):
         """
         Translate the user-input projection into keyword arguments that can be passed
         to `~proplot.figure.Figure.add_subplot`. Also return a default aspect ratio.
         """
         # Parse arguments
         proj = _not_none(proj=proj, projection=projection, default='cartesian')
-        proj_kw = _not_none(proj_kw=proj_kw, projection_kw=projection_kw, default={})
-        if basemap is not None:
-            proj_kw['basemap'] = basemap
-        proj = proj.lower()
-        proj = AXES_PROJS.get(proj, proj)
+        if isinstance(proj, str):
+            proj = proj.lower()
+            proj = AXES_PROJS.get(proj, proj)
 
         # Redirect to a basemap or cartopy projection
         # NOTE: The default aspect should already be '1'.
-        if proj in AXES_PROJS.values():
-            pass  # valid registered name
-        else:
+        if proj not in AXES_PROJS.values():
             m = constructor.Proj(proj, include_axes_projections=True, **kwargs)
             if m._proj_package == 'basemap':
                 aspect = (m.urcrnrx - m.llcrnrx) / (m.urcrnry - m.llcrnry)
@@ -748,6 +741,8 @@ class Figure(mfigure.Figure):
             kwargs = {'map_projection': m}
             if use_aspect:
                 self._refaspect_default = aspect
+        else:
+            kwargs.pop('basemap', None)  # basemap toggle behavios as no-op
 
         kwargs['projection'] = proj
         return kwargs
@@ -1385,6 +1380,7 @@ class Figure(mfigure.Figure):
         """
         # Initiate context block
         rc_kw, rc_mode, kwargs = _parse_format(**kwargs)
+        skip_axes = kwargs.pop('skip_axes', False)  # internal keyword arg
         with rc.context(rc_kw, mode=rc_mode):
             # Update background patch
             kw = rc.fill({'facecolor': 'figure.facecolor'}, context=True)
@@ -1430,12 +1426,12 @@ class Figure(mfigure.Figure):
                 **toplabels_kw
             )
 
-            # Update the main axes
-            if not kwargs:
-                return  # avoid recursion due to calls inside Axes.format()
-            axs = axs or self._subplot_dict.values()
-            for ax in axs:
-                ax.format(**kwargs)
+        # Update the main axes
+        if skip_axes:  # avoid recursion
+            return
+        axs = axs or self._subplot_dict.values()
+        for ax in axs:
+            ax.format(rc_kw=rc_kw, rc_mode=rc_mode, skip_figure=True, **kwargs)
 
     @docstring.concatenate_original
     @docstring.add_snippets
