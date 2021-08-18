@@ -30,9 +30,13 @@ import numpy.ma as ma
 from .config import rc
 from .internals import ic  # noqa: F401
 from .internals import (
-    _keyword_to_positional, _not_none, _pop_props, docstring, warnings
+    _keyword_to_positional,
+    _not_none,
+    _pop_props,
+    docstring,
+    warnings,
 )
-from .utils import to_rgb, to_rgba, to_xyz, to_xyza, to_hex
+from .utils import to_hex, to_rgb, to_rgba, to_xyz, to_xyza
 
 __all__ = [
     'DiscreteColormap',
@@ -2774,39 +2778,43 @@ class _ColorCache(dict):
         # NOTE: Matplotlib 'color' args are passed to to_rgba, which tries to read
         # directly from cache and if that fails, sanitizes input, which raises
         # error on receiving (colormap, idx) tuple. So we have to override cache.
-        rgb, alpha = key
-        rgb = self._get_rgb(rgb)
-        return super().__getitem__((rgb, alpha))
+        rgba, alpha = key
+        b, rgba = self._get_rgba(rgba)
+        if b:  # return right away
+            return rgba
+        else:  # try to retrieve from the cache
+            return super().__getitem__((rgba, alpha))
 
-    def _get_rgb(self, rgb):
+    def _get_rgba(self, arg):
         """
-        Get the RGB tuple from the registered colormap or color cycle.
+        Try to get the color from the registered colormap or color cycle.
         """
-        if isinstance(rgb, str) or not np.iterable(rgb) or len(rgb) != 2:
-            return rgb
-        if not isinstance(rgb[0], str) or not isinstance(rgb[1], Number):
-            return rgb
+        b = False
+        if isinstance(arg, str) or not np.iterable(arg) or len(arg) != 2:
+            return b, arg
+        if not isinstance(arg[0], str) or not isinstance(arg[1], Number):
+            return b, arg
         # Try to get the colormap
         try:
-            cmap = _cmap_database[rgb[0]]
+            cmap = _cmap_database[arg[0]]
         except (KeyError, TypeError):
-            return rgb
+            return b, arg
         # Read the colormap value
         if isinstance(cmap, DiscreteColormap):
-            if not 0 <= rgb[1] < len(cmap.colors):
+            if not 0 <= arg[1] < len(cmap.colors):
                 raise ValueError(
-                    f'Color cycle sample for {rgb[0]!r} cycle must be '
-                    f'between 0 and {len(cmap.colors) - 1}, got {rgb[1]}.'
+                    f'Color cycle sample for {arg[0]!r} cycle must be '
+                    f'between 0 and {len(cmap.colors) - 1}, got {arg[1]}.'
                 )
-            rgb = cmap.colors[rgb[1]]  # draw from list of colors
+            rgba = cmap.colors[arg[1]]  # draw from list of colors
         else:
-            if not 0 <= rgb[1] <= 1:
+            if not 0 <= arg[1] <= 1:
                 raise ValueError(
-                    f'Colormap sample for {rgb[0]!r} colormap must be '
-                    f'between 0 and 1, got {rgb[1]}.'
+                    f'Colormap sample for {arg[0]!r} colormap must be '
+                    f'between 0 and 1, got {arg[1]}.'
                 )
-            rgb = cmap(rgb[1])  # get color selection
-        return rgb
+            rgba = cmap(arg[1])  # get color selection
+        return True, rgba
 
 
 class ColorDatabase(dict):
@@ -2825,7 +2833,7 @@ class ColorDatabase(dict):
             The colors.
         """
         super().__init__(mapping)
-        self._cache = _ColorCache({})
+        self._cache = _ColorCache()
 
     def __setitem__(self, key, value):
         """
