@@ -3,10 +3,6 @@
 .vimsession
 .*.sw[a-z]
 
-# Auto-generated files
-proplotrc
-rctable.rst
-
 # PyPi stuff
 build
 dist
@@ -17,6 +13,8 @@ dist
 docs/api
 docs/_build
 docs/_static/pygments
+docs/_static/proplotrc
+docs/_static/rctable.rst
 
 # Development subfolders
 dev
