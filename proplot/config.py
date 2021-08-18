@@ -1158,11 +1158,11 @@ class Configurator(MutableMapping, dict):
         Get the XDG proplot folder.
         """
         home = os.path.expanduser('~')
-        xdg_base = os.environ.get('XDG_CONFIG_HOME')
-        if not xdg_base:
-            configdir = os.path.join(home, '.config')
-        if sys.platform.startswith(('linux', 'freebsd')):
-            configdir = os.path.join(xdg_base, 'proplot')
+        base = os.environ.get('XDG_CONFIG_HOME')
+        if not base:
+            base = os.path.join(home, '.config')
+        if sys.platform.startswith(('linux', 'freebsd')) and os.path.exists(base):
+            configdir = os.path.join(base, 'proplot')
         else:
             configdir = os.path.join(home, '.proplot')
         return configdir
