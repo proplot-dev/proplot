@@ -526,6 +526,7 @@ class Axes(maxes.Axes):
         super().__init__(*args, **kwargs)
 
         # Varous scalar properties
+        self._active_cycle = rc['axes.prop_cycle']
         self._auto_format = None  # manipulated by wrapper functions
         self._abc_border_kwargs = {}
         self._abc_loc = None

@@ -647,7 +647,7 @@ def Colormap(
                         ' Options are: '
                         + ', '.join(sorted(map(repr, pcolors._cmap_database))) + '.'
                     )
-                raise ValueError(message)
+                raise ValueError(message) from None
             iluminance = _not_none(iluminance, default_luminance)
             cmap = pcolors.PerceptualColormap.from_color(
                 color, luminance=iluminance, saturation=isaturation
@@ -708,8 +708,8 @@ def Cycle(*args, N=None, samples=None, name=None, **kwargs):
     *args : colormap-spec or cycle-spec, optional
         Positional arguments control the *colors* in the `~cycler.Cycler`
         object. If zero arguments are passed, the single color ``'black'``
-        is used. If more than one argument is passed, the resulting cycles are
-        merged. Arguments are interpreted as follows:
+        is used. If more than one argument is passed, the resulting cycles
+        are merged. Arguments are interpreted as follows:
 
         * If a `~cycler.Cycler`, nothing more is done.
         * If a list of RGB tuples or color strings, these colors are used.
@@ -735,15 +735,19 @@ def Cycle(*args, N=None, samples=None, name=None, **kwargs):
         integer number of colors to draw. If the latter, the sample coordinates
         are ``np.linspace(0, 1, samples)``. For example, ``Cycle('Reds', 5)``
         divides the ``'Reds'`` colormap into five evenly spaced colors.
+
+    Other parameters
+    ----------------
     lw, ls, d, a, m, ms, mew, mec, mfc
         Shorthands for the below keywords.
     linewidth, linestyle, dashes, alpha, marker, markersize, markeredgewidth, \
 markeredgecolor, markerfacecolor : spec or list of specs, optional
-        Lists of `~matplotlib.lines.Line2D` properties that can be added to
-        the `~cycler.Cycler` instance. If the lists have unequal length, they
-        will be filled to match the length of the longest list.  See
-        `~matplotlib.axes.Axes.set_prop_cycle` for more info on cyclers.
-        Also see the `line style reference \
+        Lists of `~matplotlib.lines.Line2D` properties that can be added to the
+        `~cycler.Cycler` instance. If the input was already a `~cycler.Cycler`,
+        these are added or appended to the existing cycle keys. If the lists have
+        unequal length, they are repeated to their least common multiple (note
+        that matplotlib throws an error in this case). For more info on cyclers see
+        `~matplotlib.axes.Axes.set_prop_cycle`. Also see the `line style reference \
 <https://matplotlib.org/2.2.5/gallery/lines_bars_and_markers/line_styles_reference.html>`__,
         the `marker reference \
 <https://matplotlib.org/stable/gallery/lines_bars_and_markers/marker_reference.html>`__,
@@ -752,13 +756,10 @@ markeredgecolor, markerfacecolor : spec or list of specs, optional
     linewidths, linestyles, dashes, alphas, markers, markersizes, markeredgewidths, \
 markeredgecolors, markerfacecolors
         Aliases for the above keywords.
-
-    Other parameters
-    ----------------
     **kwargs
         If the input is not already a `~cycler.Cycler` instance, these are passed
-        to `Colormap` and used to build the `~proplot.colors.DiscreteColormap` from
-        which the cycler will draw its colors.
+        to `Colormap` and used to build the `~proplot.colors.DiscreteColormap`
+        from which the cycler will draw its colors.
 
     Returns
     -------
@@ -776,43 +777,37 @@ markeredgecolors, markerfacecolors
     # Parse keyword arguments that rotate through other properties
     # besides color cycles.
     props = _pop_props(kwargs, 'line')
-    nprops = 0
     samples = _not_none(samples=samples, N=N)  # trigger Colormap default
     for key, value in tuple(props.items()):  # permit in-place modification
         if value is None:
             return
         elif not np.iterable(value) or isinstance(value, str):
             value = (value,)
-        elif len(value) != len(args):
-            nprops = max(nprops, len(value))
         props[key] = list(value)  # ensure mutable list
 
     # If args is non-empty, means we want color cycle; otherwise is black
     if not args:
-        props['color'] = [mcolors.to_rgba('k')]
+        props.setdefault('color', ['black'])
         if kwargs:
             warnings._warn_proplot(f'Ignoring Cycle() keyword arg(s) {kwargs}.')
 
-    # Merge cycler objects
+    # Merge cycler objects and/or update cycler objects with input kwargs
     elif all(isinstance(arg, cycler.Cycler) for arg in args):
         if kwargs:
             warnings._warn_proplot(f'Ignoring Cycle() keyword arg(s) {kwargs}.')
-        if len(args) == 1:
+        if len(args) == 1 and not props:
             return args[0]
-        else:
-            props = {}
-            for arg in args:
-                for key, value in arg.by_key():
-                    if key not in props:
-                        props[key] = []
-                    props[key].extend(value)
-            return cycler.cycler(**props)
+        dicts = tuple(arg.by_key() for arg in args) + (props,)
+        props = {}
+        for dict_ in dicts:
+            for key, value in dict_.items():
+                props.setdefault(key, []).extend(value)
 
     # Get a cycler from a colormap
     # NOTE: Passing discrete=True does not imply default_luminance=90 because
     # someone might be trying to make qualitative colormap for use in 2d plot
     else:
-        if args and isinstance(args[-1], Number):
+        if isinstance(args[-1], Number):
             args, samples = args[:-1], _not_none(samples_positional=args[-1], samples=samples)  # noqa: #501
         kwargs.setdefault('listmode', 'discrete')
         kwargs.setdefault('filemode', 'discrete')
@@ -820,13 +815,11 @@ markeredgecolors, markerfacecolors
         kwargs['default_luminance'] = pcolors.CYCLE_LUMINANCE
         cmap = Colormap(*args, name=name, samples=samples, **kwargs)
         name = _not_none(name, cmap.name)
-        nprops = max(nprops, len(cmap.colors))
         props['color'] = [c if isinstance(c, str) else to_hex(c) for c in cmap.colors]
 
-    # Build cycler, make sure lengths are the same
-    for key, value in props.items():
-        if len(value) < nprops:  # double back if necessary
-            value[:] = [value[i % len(value)] for i in range(nprops)]
+    # Build cycler with matching property lengths
+    maxlen = np.lcm.reduce([len(value) for value in props.values()])
+    props = {key: value * (maxlen // len(value)) for key, value in props.items()}
     cycle = cycler.cycler(**props)
     cycle.name = _not_none(name, '_no_name')
 
@@ -1477,9 +1470,9 @@ def Proj(name, basemap=None, **kwargs):
             resolution=kwproj.pop('resolution', None),
             default=rc['reso']
         )
-        try:
+        if reso in RESOS_BASEMAP:
             reso = RESOS_BASEMAP[reso]
-        except KeyError:
+        else:
             raise ValueError(
                 f'Invalid resolution {reso!r}. Options are: '
                 + ', '.join(map(repr, RESOS_BASEMAP)) + '.'

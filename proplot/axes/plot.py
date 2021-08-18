@@ -50,7 +50,7 @@ except ModuleNotFoundError:
 __all__ = ['PlotAxes']
 
 
-# Constant
+# Constants
 EDGEWIDTH = 0.25  # native linewidth used for grid box edges in matplotlib
 BASEMAP_FUNCS = (  # default latlon=True
     'barbs', 'contour', 'contourf', 'hexbin',
@@ -276,10 +276,12 @@ docstring.snippets['plot.error_shading'] = _error_shading_docstring
 # Color docstrings
 _cycle_docstring = """
 cycle : cycle-spec, optional
-    The cycle specifer, passed to the `~proplot.constructor.Cycle`
-    constructor. If the returned list of colors is unchanged from the
-    current axes color cycler, the axes cycle will **not** be reset to the
-    first position.
+    The cycle specifer, passed to the `~proplot.constructor.Cycle` constructor.
+    If the returned cycler is unchanged from the current cycler, the axes
+    cycler will not be reset to its first position. To disable property cycling
+    and just use black for the default color, use ``cycle=False``, ``cycle='none'``,
+    or ``cycle=()`` (analogous to disabling ticks with e.g. ``xformatter='none'``).
+    To restore the default property cycler, use ``cycle=True``.
 cycle_kw : dict-like, optional
     Passed to `~proplot.constructor.Cycle`.
 """
@@ -991,436 +993,7 @@ def _load_objects():
 _load_objects()
 
 
-# Utilties
-def _error_data(
-    y, stds=None, pctiles=None, errdata=None, distribution=None,
-    stds_default=None, pctiles_default=None, absolute=False, label=False,
-):
-    """
-    Return values that can be plotted as error data.
-    """
-    # Parse stds arguments
-    # NOTE: Have to guard against "truth value of an array is ambiguous" errors
-    if stds is True:
-        stds = stds_default
-    elif stds is False or stds is None:
-        stds = None
-    else:
-        stds = np.atleast_1d(stds)
-        if stds.size == 1:
-            stds = sorted((-stds.item(), stds.item()))
-        elif stds.size != 2:
-            raise ValueError('Expected scalar or length-2 stdev specification.')
-
-    # Parse pctiles arguments
-    if pctiles is True:
-        pctiles = pctiles_default
-    elif pctiles is False or pctiles is None:
-        pctiles = None
-    else:
-        pctiles = np.atleast_1d(pctiles)
-        if pctiles.size == 1:
-            delta = (100 - pctiles.item()) / 2.0
-            pctiles = sorted((delta, 100 - delta))
-        elif pctiles.size != 2:
-            raise ValueError('Expected scalar or length-2 pctiles specification.')
-
-    # Incompatible settings
-    if distribution is None and any(_ is not None for _ in (stds, pctiles)):
-        raise ValueError(
-            'To automatically compute standard deviations or percentiles on '
-            'columns of data you must pass means=True or medians=True.'
-        )
-    if stds is not None and pctiles is not None:
-        warnings._warn_proplot(
-            'Got both a standard deviation range and a percentile range for '
-            'auto error indicators. Using the standard deviation range.'
-        )
-        pctiles = None
-    if distribution is not None and errdata is not None:
-        stds = pctiles = None
-        warnings._warn_proplot(
-            'You explicitly provided the error bounds but also requested '
-            'automatically calculating means or medians on data columns. '
-            'It may make more sense to use the "stds" or "pctiles" keyword args '
-            'and have *proplot* calculate the error bounds.'
-        )
-
-    # Compute error data in format that can be passed to maxes.Axes.errorbar()
-    # NOTE: Include option to pass symmetric deviation from central points
-    if errdata is not None:
-        # Manual error data
-        if y.ndim != 1:
-            raise ValueError('errdata with 2D y coordinates is not yet supported.')
-        label_default = 'uncertainty'
-        err = _to_numpy_array(errdata)
-        if (
-            err.ndim not in (1, 2)
-            or err.shape[-1] != y.size
-            or err.ndim == 2 and err.shape[0] != 2
-        ):
-            raise ValueError(f'errdata has shape {err.shape}. Expected (2, {y.shape[-1]}).')  # noqa: E501
-        if err.ndim == 1:
-            abserr = err
-            err = np.empty((2, err.size))
-            err[0, :] = y - abserr  # translated back to absolute deviations below
-            err[1, :] = y + abserr
-    elif stds is not None:
-        # Standard deviations
-        # NOTE: Invalid values were handled by _error_distribution
-        label_default = fr'{abs(stds[1])}$\sigma$ range'
-        stds = _to_numpy_array(stds)[:, None]
-        err = y + stds * np.std(distribution, axis=0)
-    elif pctiles is not None:
-        # Percentiles
-        # NOTE: Invalid values were handled by _error_distribution
-        label_default = f'{pctiles[1] - pctiles[0]}% range'
-        err = np.percentile(distribution, pctiles, axis=0)
-    else:
-        raise ValueError('You must provide error bounds.')
-
-    # Return data with legend entry
-    if not absolute:  # for errorbar() ingestion
-        err = err - y
-        err[0, :] *= -1  # absolute deviations from central points
-    if label is True:
-        label = label_default
-    elif not label:
-        label = None
-    return err, label
-
-
-def _geo_cartopy_1d(x, *ys):
-    """
-    Fix cartopy geographic 1D data arrays.
-    """
-    # So far not much to do here
-    x = _geo_monotonic(x)
-    ys = _geo_clip(ys)
-    return (x, *ys)
-
-
-def _geo_basemap_1d(x, *ys, xmin=-180, xmax=180):
-    """
-    Fix basemap geographic 1D data arrays.
-    """
-    # Ensure data is within map bounds
-    x = _geo_monotonic(x)
-    ys = _geo_clip(ys)
-    x_orig, ys_orig, ys = x, ys, []
-    for y_orig in ys_orig:
-        x, y = _geo_inbounds(x_orig, y_orig, xmin=xmin, xmax=xmax)
-        ys.append(y)
-    return (x, *ys)
-
-
-def _geo_cartopy_2d(x, y, *zs, globe=False):
-    """
-    Fix cartopy geographic 2D data arrays.
-    """
-    x = _geo_monotonic(x)
-    y = _geo_clip(y)  # in case e.g. edges() added points beyond poles
-    x_orig, y_orig, zs_orig = x, y, zs
-    zs = []
-    for z_orig in zs_orig:
-        # Bail for 2D coordinates
-        x, y, z = x_orig, y_orig, z_orig
-        if z is None or not globe or x.ndim > 1 or y.ndim > 1:
-            zs.append(z)
-            continue
-        # Fix gaps in coverage
-        y, z = _geo_poles(y, z)
-        x, z = _geo_seams(x, z, modulo=True)
-        zs.append(z)
-    return (x, y, *zs)
-
-
-def _geo_basemap_2d(x, y, *zs, globe=False, xmin=-180, xmax=180):
-    """
-    Fix basemap geographic 2D data arrays.
-    """
-    x = _geo_monotonic(x)
-    y = _geo_clip(y)  # in case e.g. edges() added points beyond poles
-    x_orig, y_orig, zs_orig, zs = x, y, zs, []
-    for z_orig in zs_orig:
-        # Ensure data is within map bounds
-        x, y, z = x_orig, y_orig, z_orig
-        x, z = _geo_inbounds(x, z, xmin=xmin, xmax=xmax)
-        if not globe or x.ndim > 1 or y.ndim > 1:
-            zs.append(z)
-            continue
-        # Fix gaps in coverage
-        y, z = _geo_poles(y, z)
-        x, z = _geo_seams(x, z, xmin=xmin, modulo=False)
-        zs.append(z)
-    return (x, y, *zs)
-
-
-def _geo_inbounds(x, y, xmin=-180, xmax=180):
-    """
-    Fix conflicts with map coordinates by rolling the data to fall between the
-    minimum and maximum longitudes and masking out-of-bounds data points.
-    """
-    # Roll in same direction if some points on right-edge extend
-    # more than 360 above min longitude; *they* should be on left side
-    if x.ndim != 1:
-        return x, y
-    lonroll = np.where(x > xmin + 360)[0]  # tuple of ids
-    if lonroll.size:  # non-empty
-        roll = x.size - lonroll.min()
-        x = np.roll(x, roll)
-        y = np.roll(y, roll, axis=-1)
-        x[:roll] -= 360  # make monotonic
-    # Set NaN where data not in range xmin, xmax. Must be done for regional smaller
-    # projections or get weird side-effects from valid data outside boundaries
-    y = ma.masked_invalid(y, copy=False)
-    y = y.astype(np.float).filled(np.nan)
-    if x.size - 1 == y.shape[-1]:  # test western/eastern grid cell edges
-        mask = (x[1:] < xmin) | (x[:-1] > xmax)
-        y[..., mask] = np.nan
-    elif x.size == y.shape[-1]:  # test the centers and pad by one for safety
-        where, = np.where((x < xmin) | (x > xmax))
-        y[..., where[1:-1]] = np.nan
-    return x, y
-
-
-def _geo_clip(*ys):
-    """
-    Ensure latitudes span only minus 90 to plus 90 degrees.
-    """
-    ys = tuple(np.clip(y, -90, 90) for y in ys)
-    return ys[0] if len(ys) == 1 else ys
-
-
-def _geo_monotonic(x):
-    """
-    Ensure longitudes are monotonic without rolling or filtering coordinates.
-    """
-    # Add 360 until data is greater than base value
-    # TODO: Is this necessary for cartopy data? Maybe only with _geo_seams?
-    if x.ndim != 1 or all(x < x[0]):  # skip 2D arrays and monotonic backwards data
-        return x
-    xmin = x[0]
-    mask = np.array([True])
-    while mask.sum():
-        mask = x < xmin
-        x[mask] += 360
-    return x
-
-
-def _geo_poles(y, z):
-    """
-    Fix gaps in coverage over the poles by adding data points at the poles
-    using averages of the highest latitude data.
-    """
-    # Get means
-    with np.errstate(all='ignore'):
-        p1 = z[0, :].mean()  # pole 1, make sure is not 0D DataArray!
-        p2 = z[-1, :].mean()  # pole 2
-    if hasattr(p1, 'item'):
-        p1 = np.asscalar(p1)  # happens with DataArrays
-    if hasattr(p2, 'item'):
-        p2 = np.asscalar(p2)
-    # Concatenate
-    ps = (-90, 90) if (y[0] < y[-1]) else (90, -90)
-    z1 = np.repeat(p1, z.shape[1])[None, :]
-    z2 = np.repeat(p2, z.shape[1])[None, :]
-    y = ma.concatenate((ps[:1], y, ps[1:]))
-    z = ma.concatenate((z1, z, z2), axis=0)
-    return y, z
-
-
-def _geo_seams(x, z, xmin=-180, modulo=False):
-    """
-    Fix gaps in coverage over longitude seams by adding points to either
-    end or both ends of the array.
-    """
-    # Fix seams by ensuring circular coverage (cartopy can plot over map edges)
-    if modulo:
-        # Simply test the coverage % 360
-        if x[0] % 360 != (x[-1] + 360) % 360:
-            x = ma.concatenate((x, [x[0] + 360]))
-            z = ma.concatenate((z, z[:, :1]), axis=1)
-    else:
-        # Ensure exact match between data and seams
-        # Edges (e.g. pcolor) fit perfectly against seams. Size is unchanged.
-        if x[0] == xmin and x.size - 1 == z.shape[1]:
-            pass
-        # Edges (e.g. pcolor) do not fit perfectly. Size augmented by 1.
-        elif x.size - 1 == z.shape[1]:
-            x = ma.append(xmin, x)
-            x[-1] = xmin + 360
-            z = ma.concatenate((z[:, -1:], z), axis=1)
-        # Centers (e.g. contour) interpolated to edge. Size augmented by 2.
-        elif x.size == z.shape[1]:
-            xi = np.array([x[-1], x[0] + 360])
-            if xi[0] == xi[1]:  # impossible to interpolate
-                pass
-            else:
-                zq = ma.concatenate((z[:, -1:], z[:, :1]), axis=1)
-                xq = xmin + 360
-                zq = (zq[:, :1] * (xi[1] - xq) + zq[:, 1:] * (xq - xi[0])) / (xi[1] - xi[0])  # noqa: E501
-                x = ma.concatenate(([xmin], x, [xmin + 360]))
-                z = ma.concatenate((zq, z, zq), axis=1)
-        else:
-            raise ValueError('Unexpected shapes of coordinates or data arrays.')
-    return x, z
-
-
-def _get_data(data, *args):
-    """
-    Try to convert positional `key` arguments to `data[key]`. If argument is string
-    it could be a valid positional argument like `fmt` so do not raise error.
-    """
-    if data is None:
-        return
-    args = list(args)
-    for i, arg in enumerate(args):
-        if isinstance(arg, str):
-            try:
-                array = data[arg]
-            except KeyError:
-                pass
-            else:
-                args[i] = array
-    return args
-
-
-def _get_coords(*args, which='x', **kwargs):
-    """
-    Return the index arrays associated with string coordinates and
-    keyword arguments updated with index locators and formatters.
-    """
-    # NOTE: Why FixedLocator and not IndexLocator? The latter requires plotting
-    # lines or else an error is raised... very strange.
-    # NOTE: Why IndexFormatter and not FixedFormatter? The former ensures labels
-    # correspond to indices while the latter can mysteriously truncate labels.
-    res = []
-    for arg in args:
-        if arg is None:  # missing positional arg e.g. scatter 's' and 'c'
-            res.append(arg)
-            continue
-        arg = _to_duck_array(arg)
-        if not _is_categorical(arg):
-            res.append(arg)
-            continue
-        if arg.ndim > 1:
-            raise ValueError('Non-1D string coordinate input is unsupported.')
-        idx = np.arange(len(arg))
-        kwargs.setdefault(which + 'locator', mticker.FixedLocator(idx))
-        kwargs.setdefault(which + 'formatter', pticker.IndexFormatter(_to_numpy_array(arg)))  # noqa: E501
-        kwargs.setdefault(which + 'minorlocator', mticker.NullLocator())
-        res.append(idx)
-    return (*res, kwargs)
-
-
-def _get_labels(data, axis=0, always=True):
-    """
-    Return the array-like "labels" along axis `axis`. If `always` is ``False``
-    we return ``None`` for simple ndarray input.
-    """
-    # NOTE: Previously inferred 'axis 1' metadata of 1D variable using the
-    # data values metadata but that is incorrect. The paradigm for 1D plots
-    # is we have row coordinates representing x, data values representing y,
-    # and column coordinates representing individual series.
-    if axis not in (0, 1, 2):
-        raise ValueError(f'Invalid axis {axis}.')
-    labels = None
-    _load_objects()
-    if isinstance(data, (ndarray, Quantity)):
-        if not always:
-            pass
-        elif axis < data.ndim:
-            labels = np.arange(data.shape[axis])
-        else:  # requesting 'axis 1' on a 1D array
-            labels = np.array([0])
-    # Xarray object
-    # NOTE: Even if coords not present .coords[dim] auto-generates indices
-    elif isinstance(data, DataArray):
-        if axis < data.ndim:
-            labels = data.coords[data.dims[axis]]
-        elif not always:
-            pass
-        else:
-            labels = np.array([0])
-    # Pandas object
-    elif isinstance(data, (DataFrame, Series, Index)):
-        if axis == 0 and isinstance(data, (DataFrame, Series)):
-            labels = data.index
-        elif axis == 1 and isinstance(data, (DataFrame,)):
-            labels = data.columns
-        elif not always:
-            pass
-        else:  # beyond dimensionality
-            labels = np.array([0])
-    # Everything else
-    # NOTE: Ensure data is at least 1D in _to_duck_array so this covers everything
-    else:
-        raise ValueError(f'Unrecognized array type {type(data)}.')
-    return labels
-
-
-def _get_title(data, include_units=True):
-    """
-    Return the "title" of an array-like object with metadata. Include units in
-    the title if `include_units` is ``True``.
-    """
-    title = units = None
-    _load_objects()
-    if isinstance(data, ndarray):
-        pass
-    # Xarray object with possible long_name, standard_name, and units attributes.
-    # Output depends on if units is True. Prefer long_name (come last in loop).
-    elif isinstance(data, DataArray):
-        title = getattr(data, 'name', None)
-        for key in ('standard_name', 'long_name'):
-            title = data.attrs.get(key, title)
-        if include_units:
-            units = _get_units(data)
-    # Pandas object. DataFrame has no native name attribute but user can add one
-    # See: https://github.com/pandas-dev/pandas/issues/447
-    elif isinstance(data, (DataFrame, Series, Index)):
-        title = getattr(data, 'name', None) or None
-    # Pint Quantity
-    elif isinstance(data, Quantity):
-        if include_units:
-            units = _get_units(data)
-    # Add units or return units alone
-    if title and units:
-        title = f'{title} ({units})'
-    else:
-        title = title or units
-    if title is not None:
-        title = str(title).strip()
-    return title
-
-
-def _get_units(data):
-    """
-    Get the unit string from the `xarray.DataArray` attributes or the
-    `pint.Quantity`. Format the latter with :rcraw:`unitformat`.
-    """
-    # Get units from the attributes
-    if ndarray is not DataArray and isinstance(data, DataArray):
-        units = data.attrs.get('units', None)
-        data = data.data
-        if units is not None:
-            return units
-    # Get units from the quantity
-    if ndarray is not Quantity and isinstance(data, Quantity):
-        fmt = rc.unitformat
-        try:
-            units = format(data.units, fmt)
-        except (TypeError, ValueError):
-            warnings._warn_proplot(
-                f'Failed to format pint quantity with format string {fmt!r}.'
-            )
-        else:
-            if 'L' in fmt:  # auto-apply LaTeX math indicator
-                units = '$' + units + '$'
-            return units
-
-
+# Standardization utilities
 def _is_numeric(data):
     """
     Test whether input is numeric array rather than datetime or strings.
@@ -1583,7 +1156,480 @@ def _to_numpy_array(data, strip_units=False):
         return np.atleast_1d(data)  # natively preserves masked arrays
 
 
-# Preprocessor wrapper
+# Metadata utilities
+def _get_data(data, *args):
+    """
+    Try to convert positional `key` arguments to `data[key]`. If argument is string
+    it could be a valid positional argument like `fmt` so do not raise error.
+    """
+    if data is None:
+        return
+    args = list(args)
+    for i, arg in enumerate(args):
+        if isinstance(arg, str):
+            try:
+                array = data[arg]
+            except KeyError:
+                pass
+            else:
+                args[i] = array
+    return args
+
+
+def _get_coords(*args, which='x', **kwargs):
+    """
+    Return the index arrays associated with string coordinates and
+    keyword arguments updated with index locators and formatters.
+    """
+    # NOTE: Why FixedLocator and not IndexLocator? The latter requires plotting
+    # lines or else an error is raised... very strange.
+    # NOTE: Why IndexFormatter and not FixedFormatter? The former ensures labels
+    # correspond to indices while the latter can mysteriously truncate labels.
+    res = []
+    for arg in args:
+        if arg is None:  # missing positional arg e.g. scatter 's' and 'c'
+            res.append(arg)
+            continue
+        arg = _to_duck_array(arg)
+        if not _is_categorical(arg):
+            res.append(arg)
+            continue
+        if arg.ndim > 1:
+            raise ValueError('Non-1D string coordinate input is unsupported.')
+        idx = np.arange(len(arg))
+        kwargs.setdefault(which + 'locator', mticker.FixedLocator(idx))
+        kwargs.setdefault(which + 'formatter', pticker.IndexFormatter(_to_numpy_array(arg)))  # noqa: E501
+        kwargs.setdefault(which + 'minorlocator', mticker.NullLocator())
+        res.append(idx)
+    return (*res, kwargs)
+
+
+def _get_labels(data, axis=0, always=True):
+    """
+    Return the array-like "labels" along axis `axis`. If `always` is ``False``
+    we return ``None`` for simple ndarray input.
+    """
+    # NOTE: Previously inferred 'axis 1' metadata of 1D variable using the
+    # data values metadata but that is incorrect. The paradigm for 1D plots
+    # is we have row coordinates representing x, data values representing y,
+    # and column coordinates representing individual series.
+    if axis not in (0, 1, 2):
+        raise ValueError(f'Invalid axis {axis}.')
+    labels = None
+    _load_objects()
+    if isinstance(data, (ndarray, Quantity)):
+        if not always:
+            pass
+        elif axis < data.ndim:
+            labels = np.arange(data.shape[axis])
+        else:  # requesting 'axis 1' on a 1D array
+            labels = np.array([0])
+    # Xarray object
+    # NOTE: Even if coords not present .coords[dim] auto-generates indices
+    elif isinstance(data, DataArray):
+        if axis < data.ndim:
+            labels = data.coords[data.dims[axis]]
+        elif not always:
+            pass
+        else:
+            labels = np.array([0])
+    # Pandas object
+    elif isinstance(data, (DataFrame, Series, Index)):
+        if axis == 0 and isinstance(data, (DataFrame, Series)):
+            labels = data.index
+        elif axis == 1 and isinstance(data, (DataFrame,)):
+            labels = data.columns
+        elif not always:
+            pass
+        else:  # beyond dimensionality
+            labels = np.array([0])
+    # Everything else
+    # NOTE: Ensure data is at least 1D in _to_duck_array so this covers everything
+    else:
+        raise ValueError(f'Unrecognized array type {type(data)}.')
+    return labels
+
+
+def _get_title(data, include_units=True):
+    """
+    Return the "title" of an array-like object with metadata. Include units in
+    the title if `include_units` is ``True``.
+    """
+    title = units = None
+    _load_objects()
+    if isinstance(data, ndarray):
+        pass
+    # Xarray object with possible long_name, standard_name, and units attributes.
+    # Output depends on if units is True. Prefer long_name (come last in loop).
+    elif isinstance(data, DataArray):
+        title = getattr(data, 'name', None)
+        for key in ('standard_name', 'long_name'):
+            title = data.attrs.get(key, title)
+        if include_units:
+            units = _get_units(data)
+    # Pandas object. DataFrame has no native name attribute but user can add one
+    # See: https://github.com/pandas-dev/pandas/issues/447
+    elif isinstance(data, (DataFrame, Series, Index)):
+        title = getattr(data, 'name', None) or None
+    # Pint Quantity
+    elif isinstance(data, Quantity):
+        if include_units:
+            units = _get_units(data)
+    # Add units or return units alone
+    if title and units:
+        title = f'{title} ({units})'
+    else:
+        title = title or units
+    if title is not None:
+        title = str(title).strip()
+    return title
+
+
+def _get_units(data):
+    """
+    Get the unit string from the `xarray.DataArray` attributes or the
+    `pint.Quantity`. Format the latter with :rcraw:`unitformat`.
+    """
+    # Get units from the attributes
+    if ndarray is not DataArray and isinstance(data, DataArray):
+        units = data.attrs.get('units', None)
+        data = data.data
+        if units is not None:
+            return units
+    # Get units from the quantity
+    if ndarray is not Quantity and isinstance(data, Quantity):
+        fmt = rc.unitformat
+        try:
+            units = format(data.units, fmt)
+        except (TypeError, ValueError):
+            warnings._warn_proplot(
+                f'Failed to format pint quantity with format string {fmt!r}.'
+            )
+        else:
+            if 'L' in fmt:  # auto-apply LaTeX math indicator
+                units = '$' + units + '$'
+            return units
+
+
+# Geographic utilties
+def _geo_basemap_1d(x, *ys, xmin=-180, xmax=180):
+    """
+    Fix basemap geographic 1D data arrays.
+    """
+    # Ensure data is within map bounds
+    x = _geo_monotonic(x)
+    ys = _geo_clip(ys)
+    x_orig, ys_orig, ys = x, ys, []
+    for y_orig in ys_orig:
+        x, y = _geo_inbounds(x_orig, y_orig, xmin=xmin, xmax=xmax)
+        ys.append(y)
+    return (x, *ys)
+
+
+def _geo_basemap_2d(x, y, *zs, globe=False, xmin=-180, xmax=180):
+    """
+    Fix basemap geographic 2D data arrays.
+    """
+    x = _geo_monotonic(x)
+    y = _geo_clip(y)  # in case e.g. edges() added points beyond poles
+    x_orig, y_orig, zs_orig, zs = x, y, zs, []
+    for z_orig in zs_orig:
+        # Ensure data is within map bounds
+        x, y, z = x_orig, y_orig, z_orig
+        x, z = _geo_inbounds(x, z, xmin=xmin, xmax=xmax)
+        if not globe or x.ndim > 1 or y.ndim > 1:
+            zs.append(z)
+            continue
+        # Fix gaps in coverage
+        y, z = _geo_poles(y, z)
+        x, z = _geo_seams(x, z, xmin=xmin, modulo=False)
+        zs.append(z)
+    return (x, y, *zs)
+
+
+def _geo_cartopy_1d(x, *ys):
+    """
+    Fix cartopy geographic 1D data arrays.
+    """
+    # So far not much to do here
+    x = _geo_monotonic(x)
+    ys = _geo_clip(ys)
+    return (x, *ys)
+
+
+def _geo_cartopy_2d(x, y, *zs, globe=False):
+    """
+    Fix cartopy geographic 2D data arrays.
+    """
+    x = _geo_monotonic(x)
+    y = _geo_clip(y)  # in case e.g. edges() added points beyond poles
+    x_orig, y_orig, zs_orig = x, y, zs
+    zs = []
+    for z_orig in zs_orig:
+        # Bail for 2D coordinates
+        x, y, z = x_orig, y_orig, z_orig
+        if z is None or not globe or x.ndim > 1 or y.ndim > 1:
+            zs.append(z)
+            continue
+        # Fix gaps in coverage
+        y, z = _geo_poles(y, z)
+        x, z = _geo_seams(x, z, modulo=True)
+        zs.append(z)
+    return (x, y, *zs)
+
+
+def _geo_inbounds(x, y, xmin=-180, xmax=180):
+    """
+    Fix conflicts with map coordinates by rolling the data to fall between the
+    minimum and maximum longitudes and masking out-of-bounds data points.
+    """
+    # Roll in same direction if some points on right-edge extend
+    # more than 360 above min longitude; *they* should be on left side
+    if x.ndim != 1:
+        return x, y
+    lonroll = np.where(x > xmin + 360)[0]  # tuple of ids
+    if lonroll.size:  # non-empty
+        roll = x.size - lonroll.min()
+        x = np.roll(x, roll)
+        y = np.roll(y, roll, axis=-1)
+        x[:roll] -= 360  # make monotonic
+    # Set NaN where data not in range xmin, xmax. Must be done for regional smaller
+    # projections or get weird side-effects from valid data outside boundaries
+    y = ma.masked_invalid(y, copy=False)
+    y = y.astype(np.float).filled(np.nan)
+    if x.size - 1 == y.shape[-1]:  # test western/eastern grid cell edges
+        mask = (x[1:] < xmin) | (x[:-1] > xmax)
+        y[..., mask] = np.nan
+    elif x.size == y.shape[-1]:  # test the centers and pad by one for safety
+        where, = np.where((x < xmin) | (x > xmax))
+        y[..., where[1:-1]] = np.nan
+    return x, y
+
+
+def _geo_clip(*ys):
+    """
+    Ensure latitudes span only minus 90 to plus 90 degrees.
+    """
+    ys = tuple(np.clip(y, -90, 90) for y in ys)
+    return ys[0] if len(ys) == 1 else ys
+
+
+def _geo_monotonic(x):
+    """
+    Ensure longitudes are monotonic without rolling or filtering coordinates.
+    """
+    # Add 360 until data is greater than base value
+    # TODO: Is this necessary for cartopy data? Maybe only with _geo_seams?
+    if x.ndim != 1 or all(x < x[0]):  # skip 2D arrays and monotonic backwards data
+        return x
+    xmin = x[0]
+    mask = np.array([True])
+    while mask.sum():
+        mask = x < xmin
+        x[mask] += 360
+    return x
+
+
+def _geo_poles(y, z):
+    """
+    Fix gaps in coverage over the poles by adding data points at the poles
+    using averages of the highest latitude data.
+    """
+    # Get means
+    with np.errstate(all='ignore'):
+        p1 = z[0, :].mean()  # pole 1, make sure is not 0D DataArray!
+        p2 = z[-1, :].mean()  # pole 2
+    if hasattr(p1, 'item'):
+        p1 = np.asscalar(p1)  # happens with DataArrays
+    if hasattr(p2, 'item'):
+        p2 = np.asscalar(p2)
+    # Concatenate
+    ps = (-90, 90) if (y[0] < y[-1]) else (90, -90)
+    z1 = np.repeat(p1, z.shape[1])[None, :]
+    z2 = np.repeat(p2, z.shape[1])[None, :]
+    y = ma.concatenate((ps[:1], y, ps[1:]))
+    z = ma.concatenate((z1, z, z2), axis=0)
+    return y, z
+
+
+def _geo_seams(x, z, xmin=-180, modulo=False):
+    """
+    Fix gaps in coverage over longitude seams by adding points to either
+    end or both ends of the array.
+    """
+    # Fix seams by ensuring circular coverage (cartopy can plot over map edges)
+    if modulo:
+        # Simply test the coverage % 360
+        if x[0] % 360 != (x[-1] + 360) % 360:
+            x = ma.concatenate((x, [x[0] + 360]))
+            z = ma.concatenate((z, z[:, :1]), axis=1)
+    else:
+        # Ensure exact match between data and seams
+        # Edges (e.g. pcolor) fit perfectly against seams. Size is unchanged.
+        if x[0] == xmin and x.size - 1 == z.shape[1]:
+            pass
+        # Edges (e.g. pcolor) do not fit perfectly. Size augmented by 1.
+        elif x.size - 1 == z.shape[1]:
+            x = ma.append(xmin, x)
+            x[-1] = xmin + 360
+            z = ma.concatenate((z[:, -1:], z), axis=1)
+        # Centers (e.g. contour) interpolated to edge. Size augmented by 2.
+        elif x.size == z.shape[1]:
+            xi = np.array([x[-1], x[0] + 360])
+            if xi[0] == xi[1]:  # impossible to interpolate
+                pass
+            else:
+                zq = ma.concatenate((z[:, -1:], z[:, :1]), axis=1)
+                xq = xmin + 360
+                zq = (zq[:, :1] * (xi[1] - xq) + zq[:, 1:] * (xq - xi[0])) / (xi[1] - xi[0])  # noqa: E501
+                x = ma.concatenate(([xmin], x, [xmin + 360]))
+                z = ma.concatenate((zq, z, zq), axis=1)
+        else:
+            raise ValueError('Unexpected shapes of coordinates or data arrays.')
+    return x, z
+
+
+# Misc utilties
+def _get_vert(vert=None, orientation=None, **kwargs):
+    """
+    Get the orientation specified as either `vert` or `orientation`. This is
+    used internally by various helper functions.
+    """
+    if vert is not None:
+        return kwargs, vert
+    elif orientation is not None:
+        return kwargs, orientation != 'horizontal'  # should already be validated
+    else:
+        return kwargs, True  # fallback
+
+
+def _parse_vert(
+    vert=None, orientation=None, default_vert=None, default_orientation=None,
+    **kwargs
+):
+    """
+    Interpret both 'vert' and 'orientation' and add to outgoing keyword args
+    if a default is provided.
+    """
+    # NOTE: Users should only pass these to hist, boxplot, or violinplot. To change
+    # the plot, scatter, area, or bar orientation users should use the differently
+    # named functions. Internally, however, they use these keyword args.
+    if default_vert is not None:
+        kwargs['vert'] = _not_none(
+            vert=vert,
+            orientation=None if orientation is None else orientation == 'vertical',
+            default=default_vert,
+        )
+    if default_orientation is not None:
+        kwargs['orientation'] = _not_none(
+            orientation=orientation,
+            vert=None if vert is None else 'vertical' if vert else 'horizontal',
+            default=default_orientation,
+        )
+    if kwargs.get('orientation', None) not in (None, 'horizontal', 'vertical'):
+        raise ValueError("Orientation must be either 'horizontal' or 'vertical'.")
+    return kwargs
+
+
+def _error_data(
+    y, stds=None, pctiles=None, errdata=None, distribution=None,
+    stds_default=None, pctiles_default=None, absolute=False, label=False,
+):
+    """
+    Return values that can be plotted as error data.
+    """
+    # Parse stds arguments
+    # NOTE: Have to guard against "truth value of an array is ambiguous" errors
+    if stds is True:
+        stds = stds_default
+    elif stds is False or stds is None:
+        stds = None
+    else:
+        stds = np.atleast_1d(stds)
+        if stds.size == 1:
+            stds = sorted((-stds.item(), stds.item()))
+        elif stds.size != 2:
+            raise ValueError('Expected scalar or length-2 stdev specification.')
+
+    # Parse pctiles arguments
+    if pctiles is True:
+        pctiles = pctiles_default
+    elif pctiles is False or pctiles is None:
+        pctiles = None
+    else:
+        pctiles = np.atleast_1d(pctiles)
+        if pctiles.size == 1:
+            delta = (100 - pctiles.item()) / 2.0
+            pctiles = sorted((delta, 100 - delta))
+        elif pctiles.size != 2:
+            raise ValueError('Expected scalar or length-2 pctiles specification.')
+
+    # Incompatible settings
+    if distribution is None and any(_ is not None for _ in (stds, pctiles)):
+        raise ValueError(
+            'To automatically compute standard deviations or percentiles on '
+            'columns of data you must pass means=True or medians=True.'
+        )
+    if stds is not None and pctiles is not None:
+        warnings._warn_proplot(
+            'Got both a standard deviation range and a percentile range for '
+            'auto error indicators. Using the standard deviation range.'
+        )
+        pctiles = None
+    if distribution is not None and errdata is not None:
+        stds = pctiles = None
+        warnings._warn_proplot(
+            'You explicitly provided the error bounds but also requested '
+            'automatically calculating means or medians on data columns. '
+            'It may make more sense to use the "stds" or "pctiles" keyword args '
+            'and have *proplot* calculate the error bounds.'
+        )
+
+    # Compute error data in format that can be passed to maxes.Axes.errorbar()
+    # NOTE: Include option to pass symmetric deviation from central points
+    if errdata is not None:
+        # Manual error data
+        if y.ndim != 1:
+            raise ValueError('errdata with 2D y coordinates is not yet supported.')
+        label_default = 'uncertainty'
+        err = _to_numpy_array(errdata)
+        if (
+            err.ndim not in (1, 2)
+            or err.shape[-1] != y.size
+            or err.ndim == 2 and err.shape[0] != 2
+        ):
+            raise ValueError(f'errdata has shape {err.shape}. Expected (2, {y.shape[-1]}).')  # noqa: E501
+        if err.ndim == 1:
+            abserr = err
+            err = np.empty((2, err.size))
+            err[0, :] = y - abserr  # translated back to absolute deviations below
+            err[1, :] = y + abserr
+    elif stds is not None:
+        # Standard deviations
+        # NOTE: Invalid values were handled by _error_distribution
+        label_default = fr'{abs(stds[1])}$\sigma$ range'
+        stds = _to_numpy_array(stds)[:, None]
+        err = y + stds * np.std(distribution, axis=0)
+    elif pctiles is not None:
+        # Percentiles
+        # NOTE: Invalid values were handled by _error_distribution
+        label_default = f'{pctiles[1] - pctiles[0]}% range'
+        err = np.percentile(distribution, pctiles, axis=0)
+    else:
+        raise ValueError('You must provide error bounds.')
+
+    # Return data with legend entry
+    if not absolute:  # for errorbar() ingestion
+        err = err - y
+        err[0, :] *= -1  # absolute deviations from central points
+    if label is True:
+        label = label_default
+    elif not label:
+        label = None
+    return err, label
+
+
+# Input preprocessor
 def _preprocess_data(*keys, keywords=None, allow_extra=True):
     """
     Redirect internal plotting calls to native matplotlib methods. Also perform
@@ -1666,7 +1712,6 @@ class PlotAxes(base.Axes):
         Call the plotting method and use context object to redirect internal
         calls to native methods. Finally add attributes to outgoing methods.
         """
-        # Safely plot stuff
         # NOTE: Previously allowed internal matplotlib plotting function calls to run
         # through proplot overrides then avoided awkward conflicts in piecemeal fashion.
         # Now prevent internal calls from running through overrides using preprocessor
@@ -1679,15 +1724,14 @@ class PlotAxes(base.Axes):
             self._attr_add(obj, **add_attrs)  # add attributes
         return obj
 
-    def _plot_extra(self, method, *args, **kwargs):
+    def _plot_edges(self, method, *args, **kwargs):
         """
-        Add unfilled contours to a filled contour plot.
+        Call the contour method to add "edges" to filled contours.
         """
-        # NOTE: We make the default 'line width' identical to one used for pcolor
-        # plots rather than rc['contour.linewidth']. See mpl pcolor() source code
-        # NOTE: This is not just to add solid lines between patches but also to
-        # provide an object that can be used by 'clabel' for auto-labels. Using
-        # filled contours with 'clabel' seems to always create weird artifacts.
+        # NOTE: This is also used to provide an object that can be used by 'clabel'
+        # for auto-labels. Filled contours seem to create weird artifacts.
+        # NOTE: Make the default 'line width' identical to one used for pcolor plots
+        # rather than rc['contour.linewidth']. See mpl pcolor() source code
         if not any(key in kwargs for key in ('linewidths', 'linestyles', 'edgecolors')):
             kwargs['linewidths'] = 0  # for clabel
         kwargs.setdefault('linewidths', EDGEWIDTH)
@@ -1700,23 +1744,17 @@ class PlotAxes(base.Axes):
         use_where=False, use_zero=False, **kwargs
     ):
         """
-        Call the method with allotment for "negative" and "positive" regions.
+        Call the plot method separately for "negative" and "positive" data.
         """
-        # Handle ignored arguments
-        # NOTE: Negative-positive colors are now even possible
-        # combined with 'stacked' components.
         if use_where:
             kwargs.setdefault('interpolate', True)  # see fill_between docs
         for key in ('color', 'colors', 'where'):
             value = kwargs.pop(key, None)
-            if value is None:
-                continue
-            warnings._warn_proplot(
-                f'{name}() argument {key}={value!r} is incompatible with '
-                'negpos=True. Ignoring.'
-            )
-
-        # Plot negative component
+            if value is not None:
+                warnings._warn_proplot(
+                    f'{name}() argument {key}={value!r} is incompatible with negpos=True. Ignoring.'  # noqa: E501
+                )
+        # Negative component
         yneg = list(ys)  # copy
         if use_zero:  # filter bar heights
             yneg[0] = _safe_mask(ys[0] < 0, ys[0])
@@ -1726,8 +1764,7 @@ class PlotAxes(base.Axes):
             yneg = _safe_mask(ys[1] < ys[0], *ys)
         color = _not_none(negcolor, rc['negcolor'])
         negobj = self._plot_safe(name, x, *yneg, color=color, **kwargs)
-
-        # Plot positive component
+        # Positive component
         ypos = list(ys)  # copy
         if use_zero:  # filter bar heights
             ypos[0] = _safe_mask(ys[0] >= 0, ys[0])
@@ -1737,7 +1774,6 @@ class PlotAxes(base.Axes):
             ypos = _safe_mask(ys[1] >= ys[0], *ys)
         color = _not_none(poscolor, rc['poscolor'])
         posobj = self._plot_safe(name, x, *ypos, color=color, **kwargs)
-
         return (negobj, posobj)
 
     def _attr_add(self, obj, **kwargs):
@@ -1761,46 +1797,40 @@ class PlotAxes(base.Axes):
             for iobj in obj:
                 yield from self._attr_find(iobj, attr)
 
-    @staticmethod
-    def _get_vert(vert=None, orientation=None, **kwargs):
-        """
-        Get the orientation specified as either `vert` or `orientation`.
-        This is used inside various parser functions.
-        """
-        if vert is not None:
-            return kwargs, vert
-        elif orientation is not None:
-            return kwargs, orientation != 'horizontal'  # should already be validated
-        else:
-            return kwargs, True  # fallback
-
-    @staticmethod
-    def _parse_vert(
-        vert=None, orientation=None, default_vert=None, default_orientation=None,
-        **kwargs
+    def _add_queued_guide(
+        self, objs, colorbar=None, colorbar_kw=None, legend=None, legend_kw=None,
     ):
         """
-        Interpret both 'vert' and 'orientation' and add to keyword args
-        if a default is provided.
+        Queue the input artist(s) for an automatic legend or colorbar.
         """
-        # NOTE: Users should only pass these to hist, boxplot, or violinplot. To change
-        # the plot, scatter, area, or bar orientation users should use the differently
-        # named functions. Internally, however, they use these keyword args.
-        if default_vert is not None:
-            kwargs['vert'] = _not_none(
-                vert=vert,
-                orientation=None if orientation is None else orientation == 'vertical',
-                default=default_vert,
-            )
-        if default_orientation is not None:
-            kwargs['orientation'] = _not_none(
-                orientation=orientation,
-                vert=None if vert is None else 'vertical' if vert else 'horizontal',
-                default=default_orientation,
-            )
-        if kwargs.get('orientation', None) not in (None, 'horizontal', 'vertical'):
-            raise ValueError("Orientation must be either 'horizontal' or 'vertical'.")
-        return kwargs
+        # Add colorbar
+        # NOTE: Colorbar will get the labels from the artists. Don't need to extract
+        # them because can't have multiple-artist entries like for legend()
+        if colorbar:
+            colorbar_kw = colorbar_kw or {}
+            self.colorbar(objs, loc=colorbar, queue=True, **colorbar_kw)
+        # Add legend
+        if legend:
+            legend_kw = legend_kw or {}
+            self.legend(objs, loc=legend, queue=True, **legend_kw)
+
+    def _add_sticky_edges(self, objs, axis, *args):
+        """
+        Add sticky edges to the input artists using the minimum and maximum of the
+        input coordinates. This is used to copy `bar` behavior to `area` and `lines`.
+        """
+        iter_ = list(obj for _ in objs for obj in (_ if isinstance(_, tuple) else (_,)))
+        for sides in args:
+            sides = np.atleast_1d(sides)
+            if not sides.size:
+                continue
+            min_, max_ = _safe_range(sides)
+            if min_ is None or max_ is None:
+                continue
+            for obj in iter_:
+                convert = getattr(self, 'convert_' + axis + 'units')
+                edges = getattr(obj.sticky_edges, axis)
+                edges.extend(convert((min_, max_)))
 
     def _auto_format_1d(
         self, x, *ys, zerox=False, autox=True, autoy=True, autoreverse=True,
@@ -1813,7 +1843,7 @@ class PlotAxes(base.Axes):
         """
         # Parse input
         y = max(ys, key=lambda y: y.size)  # try to find a non-scalar y for metadata
-        kwargs, vert = self._get_vert(**kwargs)
+        kwargs, vert = _get_vert(**kwargs)
         autox = autox and not zerox  # so far just relevant for hist()
         autoformat = _not_none(autoformat, rc['autoformat'])
         labels = _not_none(
@@ -1977,7 +2007,7 @@ class PlotAxes(base.Axes):
 
         # Default colorbar label
         # WARNING: This will fail for any funcs wrapped by _standardize_2d but not
-        # wrapped by _auto_guide. So far there are none.
+        # wrapped by _add_queued_guide. So far there are none.
         if autoformat:
             title = _get_title(zs[0])
             if title:
@@ -2033,40 +2063,17 @@ class PlotAxes(base.Axes):
 
         return (x, y, *zs, kwargs)
 
-    def _add_sticky_edges(self, objs, axis, *args):
+    def _parse_inbounds(self, *, inbounds=None, **kwargs):
         """
-        Add sticky edges to the input artists using the minimum and maximum of the
-        input coordinates. This is used to copy `bar` behavior to `area` and `lines`.
+        Capture the `inbounds` keyword arg and return data limit
+        extents if it is ``True``. Otherwise return ``None``. When
+        ``_restrict_inbounds`` gets ``None`` it will silently exit.
         """
-        iter_ = list(obj for _ in objs for obj in (_ if isinstance(_, tuple) else (_,)))
-        for sides in args:
-            sides = np.atleast_1d(sides)
-            if not sides.size:
-                continue
-            min_, max_ = _safe_range(sides)
-            if min_ is None or max_ is None:
-                continue
-            for obj in iter_:
-                convert = getattr(self, 'convert_' + axis + 'units')
-                edges = getattr(obj.sticky_edges, axis)
-                edges.extend(convert((min_, max_)))
-
-    def _auto_guide(
-        self, objs, colorbar=None, colorbar_kw=None, legend=None, legend_kw=None,
-    ):
-        """
-        Queue the input artist(s) for an automatic legend or colorbar.
-        """
-        # Add colorbar
-        # NOTE: Colorbar will get the labels from the artists. Don't need to extract
-        # them because can't have multiple-artist entries like for legend()
-        if colorbar:
-            colorbar_kw = colorbar_kw or {}
-            self.colorbar(objs, loc=colorbar, queue=True, **colorbar_kw)
-        # Add legend
-        if legend:
-            legend_kw = legend_kw or {}
-            self.legend(objs, loc=legend, queue=True, **legend_kw)
+        extents = None
+        inbounds = _not_none(inbounds, rc['axes.inbounds'])
+        if inbounds:
+            extents = list(self.dataLim.extents)  # ensure modifiable
+        return kwargs, extents
 
     def _mask_inbounds(self, x, y, z, *, to_centers=False):
         """
@@ -2116,7 +2123,7 @@ class PlotAxes(base.Axes):
         # WARNING: This feature is still experimental. But seems obvious. Matplotlib
         # updates data limits in ad hoc fashion differently for each plotting command
         # but since proplot standardizes inputs we can easily use them for dataLim.
-        kwargs, vert = self._get_vert(**kwargs)
+        kwargs, vert = _get_vert(**kwargs)
         if extents is None or self.name != 'proplot_cartesian':
             return
         if not x.size or not y.size:
@@ -2149,13 +2156,12 @@ class PlotAxes(base.Axes):
                     trans.x1 = extents[2] = max(convert(xmax), extents[2])
                     self._request_autoscale_view()
         except Exception as err:
-            raise err
             warnings._warn_proplot(
                 'Failed to restrict automatic y (x) axis limit algorithm to '
                 f'data within locked x (y) limits only. Error message: {err}'
             )
 
-    def _parse_color_arg(self, x, y, c, *, apply_cycle=True, **kwargs):
+    def _parse_color(self, x, y, c, *, apply_cycle=True, **kwargs):
         """
         Parse either a colormap or color cycler. Colormap will be discrete and fade
         to subwhite luminance by default. Returns a HEX string if needed so we don't
@@ -2254,18 +2260,6 @@ class PlotAxes(base.Axes):
             if vmax is not None:
                 vmaxs.append(vmax)
         return min(vmins, default=0), max(vmaxs, default=1), kwargs
-
-    def _parse_inbounds(self, *, inbounds=None, **kwargs):
-        """
-        Capture the `inbounds` keyword arg and return data limit
-        extents if it is ``True``. Otherwise return ``None``. When
-        ``_restrict_inbounds`` gets ``None`` it will silently exit.
-        """
-        extents = None
-        inbounds = _not_none(inbounds, rc['axes.inbounds'])
-        if inbounds:
-            extents = list(self.dataLim.extents)  # ensure modifiable
-        return kwargs, extents
 
     def _parse_autolev(
         self, *args, levels=None,
@@ -2812,34 +2806,6 @@ class PlotAxes(base.Axes):
             )
             yield (i, n, *a, kw)
 
-    def _update_cycle(self, cycle):
-        """
-        Update the property cycler only if it differs from the current one.
-        """
-        # Generate the current cycler
-        # NOTE: Matplotlib only saves an itertools.cycle(cycler). So we manually build
-        # up sets of values under each key using next() then compare to the new cycle.
-        # If cycles are the same then final next() returns it to starting point.
-        i = 0
-        by_key = {}
-        cycle_orig = self._get_lines.prop_cycler
-        for i in range(len(cycle)):  # use the cycler object length as a guess
-            prop = next(cycle_orig)  # returns to original pos if they were identical
-            for key, value in prop.items():
-                if key not in by_key:
-                    by_key[key] = set()
-                if isinstance(value, (list, ndarray)):
-                    value = tuple(value)
-                by_key[key].add(value)
-        # Possibly reset the old cycler
-        if set(by_key) != set(cycle.by_key()):
-            self.set_prop_cycle(cycle)  # keys differ
-            return
-        for key, value in cycle.by_key().items():
-            if key in by_key and by_key[key] != set(value):
-                self.set_prop_cycle(cycle)  # set _get_lines and _get_patches_for_fill
-                return
-
     def _parse_cycle(
         self, ncycle=None, *,
         cycle=None, cycle_kw=None, cycle_manually=None, return_cycle=False, **kwargs
@@ -2847,14 +2813,24 @@ class PlotAxes(base.Axes):
         """
         Parse property cycle-related arguments.
         """
-        # Create the property cycler
+        # Create the property cycler and update it if necessary
+        # NOTE: Matplotlib Cycler() objects have built-in __eq__ operator
+        # so really easy to check if the cycler has changed!
         if cycle is not None or cycle_kw:
             cycle_kw = cycle_kw or {}
-            cycle_kw.setdefault('N', ncycle)  # if None will be filled in Colormap()
-            cycle_args = () if cycle is None else (cycle,)
-            cycle = constructor.Cycle(*cycle_args, **cycle_kw)
-            if not return_cycle:
-                self._update_cycle(cycle)
+            if ncycle != 1:  # ignore for column-by-column plotting commands
+                cycle_kw.setdefault('N', ncycle)  # if None then filled in Colormap()
+            if isinstance(cycle, str):
+                cycle = cycle.lower()  # recall cmaps are case insensitive so no harm
+            if cycle in ((), [], 'none', False):
+                args = ()
+            elif cycle is True:  # consistency with 'False' ('reactivate' the cycler)
+                args = (rc['axes.prop_cycle'],)
+            else:
+                args = (cycle,)
+            cycle = constructor.Cycle(*args, **cycle_kw)
+            if not return_cycle and cycle != self._active_cycle:
+                self.set_prop_cycle(cycle)
 
         # Manually extract and apply settings to outgoing keyword arguments
         # if native matplotlib function does not include desired properties
@@ -2862,7 +2838,7 @@ class PlotAxes(base.Axes):
         parser = self._get_lines  # the _process_plot_var_args instance
         props = {}  # which keys to apply from property cycler
         for prop, key in cycle_manually.items():
-            value = kwargs.get(key, None)  # an _update_cycle argument
+            value = kwargs.get(key, None)
             if value is None and prop in parser._prop_keys:
                 props[prop] = key
         if props:
@@ -2918,7 +2894,7 @@ class PlotAxes(base.Axes):
         Add up to 2 error indicators: thick "boxes" and thin "bars".
         """
         # TODO: Do not add auto error bars if user enabled shading!
-        kwargs, vert = self._get_vert(**kwargs)
+        kwargs, vert = _get_vert(**kwargs)
         bars = any(_ is not None for _ in (bardata, barstds, barpctiles))
         boxes = any(_ is not None for _ in (boxdata, boxstds, boxpctiles))
         barstds = _not_none(barstd=barstd, barstds=barstds)
@@ -2984,7 +2960,7 @@ class PlotAxes(base.Axes):
         """
         Add up to 2 error indicators: more opaque "shading" and less opaque "fading".
         """
-        kwargs, vert = self._get_vert(**kwargs)
+        kwargs, vert = _get_vert(**kwargs)
         shadestds = _not_none(shadestd=shadestd, shadestds=shadestds)
         fadestds = _not_none(fadestd=fadestd, fadestds=fadestds)
         shadepctiles = _not_none(shadepctile=shadepctile, shadepctiles=shadepctiles)
@@ -3202,9 +3178,10 @@ class PlotAxes(base.Axes):
         for xs, ys, fmt in self._iter_pairs(*pairs):
             xs, ys, kw = self._standardize_1d(xs, ys, vert=vert, **kws)
             ys, kw = self._error_distribution(ys, **kw)
-            guide_kw = _pop_params(kw, self._auto_guide)  # must come after standardize
+            guide_kw = _pop_params(kw, self._add_queued_guide)  # after standardize
             for _, n, x, y, kw in self._iter_columns(xs, ys, **kw):
                 kw = self._parse_cycle(n, **kw)
+                print(kw)
                 *eb, kw = self._error_bars(x, y, vert=vert, **kw)
                 *es, kw = self._error_shading(x, y, vert=vert, infer_lines=True, **kw)
                 if not vert:
@@ -3232,7 +3209,7 @@ class PlotAxes(base.Axes):
             if max_ is not None:
                 edges.append(convert(max_))
 
-        self._auto_guide(objs, **guide_kw)
+        self._add_queued_guide(objs, **guide_kw)
         return objs  # always return list to match matplotlib behavior
 
     @docstring.add_snippets
@@ -3256,7 +3233,7 @@ class PlotAxes(base.Axes):
         """
         %(plot.plot)s
         """
-        kwargs = self._parse_vert(default_vert=True, **kwargs)
+        kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_plot(*args, **kwargs)
 
     @_preprocess_data('y', 'x', allow_extra=True)
@@ -3265,7 +3242,7 @@ class PlotAxes(base.Axes):
         """
         %(plot.plotx)s
         """
-        kwargs = self._parse_vert(default_vert=False, **kwargs)
+        kwargs = _parse_vert(default_vert=False, **kwargs)
         return self._apply_plot(*args, **kwargs)
 
     def _apply_step(self, *pairs, vert=True, where='pre', **kwargs):
@@ -3285,7 +3262,7 @@ class PlotAxes(base.Axes):
         objs = []
         for xs, ys, fmt in self._iter_pairs(*pairs):
             xs, ys, kw = self._standardize_1d(xs, ys, vert=vert, **kws)
-            guide_kw = _pop_params(kw, self._auto_guide)  # must come after standardize
+            guide_kw = _pop_params(kw, self._add_queued_guide)  # after standardize
             if fmt is not None:
                 kw['fmt'] = fmt
             for _, n, x, y, *a, kw in self._iter_columns(xs, ys, **kw):
@@ -3296,7 +3273,7 @@ class PlotAxes(base.Axes):
                 self._restrict_inbounds(extents, x, y)
                 objs.append(obj)
 
-        self._auto_guide(objs, **guide_kw)
+        self._add_queued_guide(objs, **guide_kw)
         return objs  # always return list to match matplotlib behavior
 
     @_preprocess_data('x', 'y', allow_extra=True)
@@ -3306,7 +3283,7 @@ class PlotAxes(base.Axes):
         """
         %(plot.step)s
         """
-        kwargs = self._parse_vert(default_vert=True, **kwargs)
+        kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_step(*args, **kwargs)
 
     @_preprocess_data('y', 'x', allow_extra=True)
@@ -3315,7 +3292,7 @@ class PlotAxes(base.Axes):
         """
         %(plot.stepx)s
         """
-        kwargs = self._parse_vert(default_vert=False, **kwargs)
+        kwargs = _parse_vert(default_vert=False, **kwargs)
         return self._apply_step(*args, **kwargs)
 
     def _apply_stem(
@@ -3329,7 +3306,7 @@ class PlotAxes(base.Axes):
         kw = kwargs.copy()
         kw, extents = self._parse_inbounds(**kw)
         x, y, kw = self._standardize_1d(x, y, autolabels=False, **kw)
-        guide_kw = _pop_params(kw, self._auto_guide)
+        guide_kw = _pop_params(kw, self._add_queued_guide)
 
         # Set default colors
         # NOTE: 'fmt' strings can only be 2 to 3 characters and include color
@@ -3361,7 +3338,7 @@ class PlotAxes(base.Axes):
         with rc.context(ctx):
             obj = self._plot_safe('stem', x, y, **kw)
         self._restrict_inbounds(extents, x, y, orientation=orientation)
-        self._auto_guide(obj, **guide_kw)
+        self._add_queued_guide(obj, **guide_kw)
         return obj
 
     @_preprocess_data('x', 'y')
@@ -3371,7 +3348,7 @@ class PlotAxes(base.Axes):
         """
         %(plot.stem)s
         """
-        kwargs = self._parse_vert(default_orientation='vertical', **kwargs)
+        kwargs = _parse_vert(default_orientation='vertical', **kwargs)
         return self._apply_stem(*args, **kwargs)
 
     @_preprocess_data('x', 'y')
@@ -3380,7 +3357,7 @@ class PlotAxes(base.Axes):
         """
         %(plot.stemx)s
         """
-        kwargs = self._parse_vert(default_orientation='horizontal', **kwargs)
+        kwargs = _parse_vert(default_orientation='horizontal', **kwargs)
         return self._apply_stem(*args, **kwargs)
 
     @_preprocess_data('x', 'y', ('c', 'color', 'colors', 'values'))
@@ -3434,7 +3411,7 @@ class PlotAxes(base.Axes):
         if c is None:
             raise ValueError('Values must be provided.')
         c = _to_numpy_array(c)  # NOTE: don't test dimensionality, let errors happen
-        guide_kw = _pop_params(kw, self._auto_guide)
+        guide_kw = _pop_params(kw, self._add_queued_guide)
 
         # Interpolate values to allow for smooth gradations between values or just
         # to color siwtchover halfway between points (interp True, False respectively)
@@ -3485,7 +3462,7 @@ class PlotAxes(base.Axes):
         obj._colorbar_ticks = ticks
         self.add_collection(obj)
         self.autoscale_view(scalex=scalex, scaley=scaley)
-        self._auto_guide(obj, **guide_kw)
+        self._add_queued_guide(obj, **guide_kw)
         return obj
 
     def _apply_lines(
@@ -3504,7 +3481,7 @@ class PlotAxes(base.Axes):
         kw, extents = self._parse_inbounds(**kw)
         stack = _not_none(stack=stack, stacked=stacked)
         xs, ys1, ys2, kw = self._standardize_1d(xs, ys1, ys2, vert=vert, **kw)
-        guide_kw = _pop_params(kw, self._auto_guide)
+        guide_kw = _pop_params(kw, self._add_queued_guide)
 
         # Support "negative" and "positive" lines
         # TODO: Ensure 'linewidths' etc. are applied! For some reason
@@ -3529,7 +3506,7 @@ class PlotAxes(base.Axes):
 
         # Draw guide and add sticky edges
         self._add_sticky_edges(objs, 'y' if vert else 'x', *sides)
-        self._auto_guide(objs, **guide_kw)
+        self._add_queued_guide(objs, **guide_kw)
         return objs[0] if len(objs) == 1 else objs
 
     # WARNING: breaking change from native 'ymin' and 'ymax'
@@ -3539,7 +3516,7 @@ class PlotAxes(base.Axes):
         """
         %(plot.vlines)s
         """
-        kwargs = self._parse_vert(default_vert=True, **kwargs)
+        kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_lines(*args, **kwargs)
 
     # WARNING: breaking change from native 'xmin' and 'xmax'
@@ -3549,7 +3526,7 @@ class PlotAxes(base.Axes):
         """
         %(plot.hlines)s
         """
-        kwargs = self._parse_vert(default_vert=False, **kwargs)
+        kwargs = _parse_vert(default_vert=False, **kwargs)
         return self._apply_lines(*args, **kwargs)
 
     def _parse_markersize(self, s, *, smin=None, smax=None, **kwargs):
@@ -3591,9 +3568,9 @@ class PlotAxes(base.Axes):
         kw, extents = self._parse_inbounds(**kw)
         xs, ys, kw = self._standardize_1d(xs, ys, vert=vert, autoreverse=False, **kw)
         ss, kw = self._parse_markersize(ss, **kw)  # parse 's'
-        cc, kw = self._parse_color_arg(xs, ys, cc, apply_cycle=False, **kw)  # parse 'c'
+        cc, kw = self._parse_color(xs, ys, cc, apply_cycle=False, **kw)  # parse 'c'
         ys, kw = self._error_distribution(ys, **kw)
-        guide_kw = _pop_params(kw, self._auto_guide)
+        guide_kw = _pop_params(kw, self._add_queued_guide)
         objs = []
         for _, n, x, y, s, c, kw in self._iter_columns(xs, ys, ss, cc, **kw):
             kw['s'], kw['c'] = s, c  # make _parse_cycle() detect these
@@ -3606,7 +3583,7 @@ class PlotAxes(base.Axes):
             self._restrict_inbounds(extents, x, y)
             objs.append((*eb, *es, obj) if eb or es else obj)
 
-        self._auto_guide(objs, **guide_kw)
+        self._add_queued_guide(objs, **guide_kw)
         return objs[0] if len(objs) == 1 else objs
 
     @_preprocess_data(
@@ -3619,7 +3596,7 @@ class PlotAxes(base.Axes):
         """
         %(plot.scatter)s
         """
-        kwargs = self._parse_vert(default_vert=True, **kwargs)
+        kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_scatter(*args, **kwargs)
 
     @_preprocess_data(
@@ -3631,7 +3608,7 @@ class PlotAxes(base.Axes):
         """
         %(plot.scatterx)s
         """
-        kwargs = self._parse_vert(default_vert=False, **kwargs)
+        kwargs = _parse_vert(default_vert=False, **kwargs)
         return self._apply_scatter(*args, **kwargs)
 
     def _apply_fill(
@@ -3652,7 +3629,7 @@ class PlotAxes(base.Axes):
         # Draw patches with default edge width zero
         y0 = 0
         objs, xsides, ysides = [], [], []
-        guide_kw = _pop_params(kw, self._auto_guide)
+        guide_kw = _pop_params(kw, self._add_queued_guide)
         for _, n, x, y1, y2, w, kw in self._iter_columns(xs, ys1, ys2, where, **kw):
             kw = self._parse_cycle(n, **kw)
             if stack:
@@ -3672,7 +3649,7 @@ class PlotAxes(base.Axes):
             objs.append(obj)
 
         # Draw guide and add sticky edges
-        self._auto_guide(objs, **guide_kw)
+        self._add_queued_guide(objs, **guide_kw)
         for axis, sides in zip('xy' if vert else 'yx', (xsides, ysides)):
             self._add_sticky_edges(objs, axis, *sides)
         return objs[0] if len(objs) == 1 else objs
@@ -3698,7 +3675,7 @@ class PlotAxes(base.Axes):
         """
         %(plot.fill_between)s
         """
-        kwargs = self._parse_vert(default_vert=True, **kwargs)
+        kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_fill(*args, **kwargs)
 
     @_preprocess_data('y', 'x1', 'x2', 'where')
@@ -3710,7 +3687,7 @@ class PlotAxes(base.Axes):
         """
         # NOTE: The 'horizontal' orientation will be inferred by downstream
         # wrappers using the function name.
-        kwargs = self._parse_vert(default_vert=False, **kwargs)
+        kwargs = _parse_vert(default_vert=False, **kwargs)
         return self._apply_fill(*args, **kwargs)
 
     @staticmethod
@@ -3754,7 +3731,7 @@ class PlotAxes(base.Axes):
         _process_props(kw, 'patch')
         kw.setdefault('edgecolor', 'black')
         hs, kw = self._error_distribution(hs, **kw)
-        guide_kw = _pop_params(kw, self._auto_guide)
+        guide_kw = _pop_params(kw, self._add_queued_guide)
         for i, n, x, h, w, b, kw in self._iter_columns(xs, hs, ws, bs, **kw):
             kw = self._parse_cycle(n, **kw)
             # Adjust x or y coordinates for grouped and stacked bars
@@ -3766,8 +3743,9 @@ class PlotAxes(base.Axes):
                 b = b + b0
                 b0 = b0 + h
             else:  # instead "group" the bars (this is no-op if we have 1 column)
-                o = 0.5 * (n - 1)
-                x = x + w * (i - o) / n  # avoid integer/float casting issue
+                w = w / n  # rescaled
+                o = 0.5 * (n - 1)  # center coordinate
+                x = x + w * (i - o)  # += may cause integer/float casting issue
             # Draw simple bars
             *eb, kw = self._error_bars(x, b + h, orientation=orientation, **kw)
             if negpos:
@@ -3778,7 +3756,7 @@ class PlotAxes(base.Axes):
                 self._restrict_inbounds(extents, x, y, orientation=orientation)
             objs.append((*eb, obj) if eb else obj)
 
-        self._auto_guide(objs, **guide_kw)
+        self._add_queued_guide(objs, **guide_kw)
         return objs[0] if len(objs) == 1 else objs
 
     @_preprocess_data('x', 'height', 'width', 'bottom')
@@ -3788,7 +3766,7 @@ class PlotAxes(base.Axes):
         """
         %(plot.bar)s
         """
-        kwargs = self._parse_vert(default_orientation='vertical', **kwargs)
+        kwargs = _parse_vert(default_orientation='vertical', **kwargs)
         return self._apply_bar(*args, **kwargs)
 
     # WARNING: Swap 'height' and 'width' here so that they are always relative
@@ -3800,7 +3778,7 @@ class PlotAxes(base.Axes):
         """
         %(plot.barh)s
         """
-        kwargs = self._parse_vert(default_orientation='horizontal', **kwargs)
+        kwargs = _parse_vert(default_orientation='horizontal', **kwargs)
         return self._apply_bar(*args, **kwargs)
 
     # WARNING: 'labels' and 'colors' no longer passed through `data` (seems like
@@ -3938,7 +3916,7 @@ class PlotAxes(base.Axes):
         """
         %(plot.boxplot)s
         """
-        kwargs = self._parse_vert(default_vert=True, **kwargs)
+        kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_boxplot(*args, **kwargs)
 
     @_preprocess_data('positions', 'x')
@@ -3947,7 +3925,7 @@ class PlotAxes(base.Axes):
         """
         %(plot.boxploth)s
         """
-        kwargs = self._parse_vert(default_vert=False, **kwargs)
+        kwargs = _parse_vert(default_vert=False, **kwargs)
         return self._apply_boxplot(*args, **kwargs)
 
     def _apply_violinplot(self, x, y, vert=True, **kwargs):
@@ -4022,7 +4000,7 @@ class PlotAxes(base.Axes):
         """
         %(plot.violinplot)s
         """
-        kwargs = self._parse_vert(default_vert=True, **kwargs)
+        kwargs = _parse_vert(default_vert=True, **kwargs)
         return self._apply_violinplot(*args, **kwargs)
 
     @_preprocess_data('positions', 'x')
@@ -4031,7 +4009,7 @@ class PlotAxes(base.Axes):
         """
         %(plot.violinploth)s
         """
-        kwargs = self._parse_vert(default_vert=False, **kwargs)
+        kwargs = _parse_vert(default_vert=False, **kwargs)
         return self._apply_violinplot(*args, **kwargs)
 
     def _apply_hist(self, xs, bins, *, orientation='vertical', **kwargs):
@@ -4040,13 +4018,13 @@ class PlotAxes(base.Axes):
         """
         kwargs['bins'] = bins
         _, xs, kw = self._standardize_1d(xs, orientation=orientation, **kwargs)
-        guide_kw = _pop_params(kwargs, self._auto_guide)
+        guide_kw = _pop_params(kwargs, self._add_queued_guide)
         objs = []
         for _, n, x, kw in self._iter_columns(xs, **kw):
             kw = self._parse_cycle(n, **kw)
             obj = self._plot_safe('hist', x, orientation=orientation, **kw)
             objs.append(obj)
-        self._auto_guide(objs, **guide_kw)
+        self._add_queued_guide(objs, **guide_kw)
         return objs[0] if len(objs) == 1 else objs
 
     @_preprocess_data('x', 'bins', keywords='weights')
@@ -4056,7 +4034,7 @@ class PlotAxes(base.Axes):
         """
         %(plot.hist)s
         """
-        kwargs = self._parse_vert(default_orientation='vertical', **kwargs)
+        kwargs = _parse_vert(default_orientation='vertical', **kwargs)
         return self._apply_hist(*args, **kwargs)
 
     @_preprocess_data('y', 'bins', keywords='weights')
@@ -4065,7 +4043,7 @@ class PlotAxes(base.Axes):
         """
         %(plot.histh)s
         """
-        kwargs = self._parse_vert(default_orientation='horizontal', **kwargs)
+        kwargs = _parse_vert(default_orientation='horizontal', **kwargs)
         return self._apply_hist(*args, **kwargs)
 
     @_preprocess_data('x', 'y', 'bins', keywords='weights')
@@ -4099,12 +4077,12 @@ class PlotAxes(base.Axes):
         x, y, kw = self._standardize_1d(x, y, autovalues=True, **kwargs)
         kw['bins'] = bins
         _process_props(kw, 'collection')  # takes LineCollection props
-        guide_kw = _pop_params(kwargs, self._auto_guide)
+        guide_kw = _pop_params(kwargs, self._add_queued_guide)
         labels_kw = _pop_params(kwargs, self._auto_labels)
         kwargs = self._parse_cmap(x, y, y, is_counts=True, default_discrete=False, **kwargs)  # noqa: E501
         m = self._plot_safe('hist2d', x, y, **kwargs)
         self._auto_labels(m, **labels_kw)
-        self._auto_guide(m, **guide_kw)
+        self._add_queued_guide(m, **guide_kw)
         return m
 
     # WARNING: breaking change from native 'C'
@@ -4136,12 +4114,12 @@ class PlotAxes(base.Axes):
         """
         x, y, kw = self._standardize_1d(x, y, autovalues=True, **kwargs)
         _process_props(kw, 'collection')  # takes LineCollection props
-        guide_kw = _pop_params(kw, self._auto_guide)
+        guide_kw = _pop_params(kw, self._add_queued_guide)
         labels_kw = _pop_params(kw, self._auto_labels)
         kw = self._parse_cmap(x, y, y, is_counts=True, default_discrete=False, **kw)
         m = self._plot_safe('hexbin', x, y, weights, **kw)
         self._auto_labels(m, **labels_kw)
-        self._auto_guide(m, **guide_kw)
+        self._add_queued_guide(m, **guide_kw)
         return m
 
     @_preprocess_data('x', 'y', 'z')
@@ -4163,11 +4141,11 @@ class PlotAxes(base.Axes):
         x, y, z, kw = self._standardize_2d(x, y, z, **kwargs)
         _process_props(kw, 'collection')
         labels_kw = _pop_params(kw, self._auto_labels)
-        guide_kw = _pop_params(kw, self._auto_guide)
+        guide_kw = _pop_params(kw, self._add_queued_guide)
         kw = self._parse_cmap(x, y, z, minlength=1, contour_plot=True, **kw)
         m = self._plot_safe('contour', x, y, z, **kw)
         self._auto_labels(m, **labels_kw)
-        self._auto_guide(m, **guide_kw)
+        self._add_queued_guide(m, **guide_kw)
         return m
 
     @_preprocess_data('x', 'y', 'z')
@@ -4190,16 +4168,16 @@ class PlotAxes(base.Axes):
         x, y, z, kw = self._standardize_2d(x, y, z, **kwargs)
         _process_props(kw, 'collection')
         contour_kw = _pop_kwargs(kw, 'edgecolors', 'linewidths', 'linestyles')
-        guide_kw = _pop_params(kw, self._auto_guide)
+        guide_kw = _pop_params(kw, self._add_queued_guide)
         labels_kw = _pop_params(kw, self._auto_labels)
         edgefix_kw = _pop_params(kw, self._fix_edges)
         kw = self._parse_cmap(x, y, z, contour_plot=True, **kw)
         m = cm = self._plot_safe('contourf', x, y, z, **kw)
         self._fix_edges(m, **edgefix_kw, **contour_kw)  # skipped if bool(contour_kw)
         if contour_kw or labels_kw:
-            cm = self._plot_extra('contour', x, y, z, **kw, **contour_kw)
+            cm = self._plot_edges('contour', x, y, z, **kw, **contour_kw)
         self._auto_labels(m, cm, **labels_kw)
-        self._auto_guide(m, **guide_kw)
+        self._add_queued_guide(m, **guide_kw)
         return m
 
     @_preprocess_data('x', 'y', 'z')
@@ -4221,14 +4199,14 @@ class PlotAxes(base.Axes):
         """
         x, y, z, kw = self._standardize_2d(x, y, z, edges=True, **kwargs)
         _process_props(kw, 'collection')
-        guide_kw = _pop_params(kw, self._auto_guide)
+        guide_kw = _pop_params(kw, self._add_queued_guide)
         labels_kw = _pop_params(kw, self._auto_labels)
         edgefix_kw = _pop_params(kw, self._fix_edges)
         kw = self._parse_cmap(x, y, z, to_centers=True, **kw)
         m = self._plot_safe('pcolor', x, y, z, **kw)
         self._fix_edges(m, **edgefix_kw, **kw)
         self._auto_labels(m, **labels_kw)
-        self._auto_guide(m, **guide_kw)
+        self._add_queued_guide(m, **guide_kw)
         return m
 
     @_preprocess_data('x', 'y', 'z')
@@ -4251,14 +4229,14 @@ class PlotAxes(base.Axes):
         """
         x, y, z, kw = self._standardize_2d(x, y, z, edges=True, **kwargs)
         _process_props(kw, 'collection')
-        guide_kw = _pop_params(kw, self._auto_guide)
+        guide_kw = _pop_params(kw, self._add_queued_guide)
         labels_kw = _pop_params(kw, self._auto_labels)
         edgefix_kw = _pop_params(kw, self._fix_edges)
         kw = self._parse_cmap(x, y, z, to_centers=True, **kw)
         m = self._plot_safe('pcolormesh', x, y, z, **kw)
         self._fix_edges(m, **edgefix_kw, **kw)
         self._auto_labels(m, **labels_kw)
-        self._auto_guide(m, **guide_kw)
+        self._add_queued_guide(m, **guide_kw)
         return m
 
     @_preprocess_data('x', 'y', 'z')
@@ -4281,14 +4259,14 @@ class PlotAxes(base.Axes):
         """
         x, y, z, kw = self._standardize_2d(x, y, z, edges=True, **kwargs)
         _process_props(kw, 'collection')
-        guide_kw = _pop_params(kw, self._auto_guide)
+        guide_kw = _pop_params(kw, self._add_queued_guide)
         labels_kw = _pop_params(kw, self._auto_labels)
         edgefix_kw = _pop_params(kw, self._fix_edges)
         kw = self._parse_cmap(x, y, z, to_centers=True, **kw)
         m = self._plot_safe('pcolorfast', x, y, z, **kw)
         self._fix_edges(m, **edgefix_kw, **kw)
         self._auto_labels(m, **labels_kw)
-        self._auto_guide(m, **guide_kw)
+        self._add_queued_guide(m, **guide_kw)
         return m
 
     @docstring.add_snippets
@@ -4380,7 +4358,7 @@ class PlotAxes(base.Axes):
         """
         x, y, u, v, kw = self._standardize_2d(x, y, u, v, allow1d=True, **kwargs)
         _process_props(kw, 'line')  # applied to barbs
-        c, kw = self._parse_color_arg(x, y, c, **kw)
+        c, kw = self._parse_color(x, y, c, **kw)
         if mcolors.is_color_like(c):
             kw['barbcolor'], c = c, None
         kw = self._parse_cmap(x, y, c, default_discrete=False, **kw)
@@ -4425,7 +4403,7 @@ class PlotAxes(base.Axes):
         x, y, u, v, kw = self._standardize_2d(x, y, u, v, allow1d=True, **kwargs)
         _process_props(kwargs, 'line')  # applied to arrow outline
         color = None
-        c, kwargs = self._parse_color_arg(x, y, c, **kwargs)
+        c, kwargs = self._parse_color(x, y, c, **kwargs)
         if mcolors.is_color_like(c):
             color, c = c, None
         kw = self._parse_cmap(x, y, c, default_discrete=False, **kw)
@@ -4472,12 +4450,12 @@ class PlotAxes(base.Axes):
         """
         x, y, u, v, kw = self._standardize_2d(x, y, u, v, **kwargs)
         _process_props(kwargs, 'line')  # applied to lines
-        guide_kw = _pop_params(kw, self._auto_guide)
-        c, kwargs = self._parse_color_arg(x, y, c, **kwargs)
+        guide_kw = _pop_params(kw, self._add_queued_guide)
+        c, kwargs = self._parse_color(x, y, c, **kwargs)
         if c is not None:
             kwargs['color'] = c  # always pass this
         m = self._plot_safe('streamplot', x, y, u, v, **kw)
-        self._auto_guide(m.lines, **guide_kw)  # lines inside StreamplotSet
+        self._add_queued_guide(m.lines, **guide_kw)  # lines inside StreamplotSet
         return m
 
     @_preprocess_data('x', 'y', 'z')
@@ -4498,11 +4476,11 @@ class PlotAxes(base.Axes):
         kw = kwargs.copy()
         _process_props(kw, 'collection')
         labels_kw = _pop_params(kw, self._auto_labels)
-        guide_kw = _pop_params(kw, self._auto_guide)
+        guide_kw = _pop_params(kw, self._add_queued_guide)
         kw = self._parse_cmap(minlength=1, contour_plot=True, **kw)
         m = self._plot_safe('tricontour', x, y, z, **kw)
         self._auto_labels(m, **labels_kw)
-        self._auto_guide(m, **guide_kw)
+        self._add_queued_guide(m, **guide_kw)
         return m
 
     @_preprocess_data('x', 'y', 'z')
@@ -4525,15 +4503,15 @@ class PlotAxes(base.Axes):
         _process_props(kw, 'collection')
         edgefix_kw = _pop_params(kw, self._fix_edges)
         labels_kw = _pop_params(kw, self._auto_labels)
-        guide_kw = _pop_params(kw, self._auto_guide)
+        guide_kw = _pop_params(kw, self._add_queued_guide)
         contour_kw = _pop_kwargs(kw, 'edgecolors', 'linewidths', 'linestyles')
         kw = self._parse_cmap(contour_plot=True, **kw)
         m = cm = self._plot_safe('tricontourf', x, y, z, **kw)
         self._fix_edges(m, **edgefix_kw, **contour_kw)  # skipped if bool(contour_kw)
         if contour_kw or labels_kw:
-            cm = self._plot_extra('tricontour', x, y, z, **kw, **contour_kw)
+            cm = self._plot_edges('tricontour', x, y, z, **kw, **contour_kw)
         self._auto_labels(m, cm, **labels_kw)
-        self._auto_guide(m, **guide_kw)
+        self._add_queued_guide(m, **guide_kw)
         return m
 
     @_preprocess_data('x', 'y', 'z')
@@ -4554,13 +4532,13 @@ class PlotAxes(base.Axes):
         kw = kwargs.copy()
         edgefix_kw = _pop_params(kw, self._fix_edges)
         labels_kw = _pop_params(kw, self._auto_labels)
-        guide_kw = _pop_params(kw, self._auto_guide)
+        guide_kw = _pop_params(kw, self._add_queued_guide)
         _process_props(kw, 'collection')
         kw = self._parse_cmap(**kw)
         m = self._plot_safe('tripcolor', *args, **kw)
         self._fix_edges(m, **edgefix_kw, **kw)
         self._auto_labels(m, **labels_kw)
-        self._auto_guide(m, **guide_kw)
+        self._add_queued_guide(m, **guide_kw)
         return m
 
     # WARNING: breaking change from native 'X'
@@ -4586,10 +4564,10 @@ class PlotAxes(base.Axes):
         matplotlib.axes.Axes.imshow
         """
         kw = kwargs.copy()
-        guide_kw = _pop_params(kw, self._auto_guide)
+        guide_kw = _pop_params(kw, self._add_queued_guide)
         kw = self._parse_cmap(default_discrete=False, **kw)
         m = self._plot_safe('imshow', z, **kw)
-        self._auto_guide(m, **guide_kw)
+        self._add_queued_guide(m, **guide_kw)
         return m
 
     # WARNING: breaking change from native 'Z'
@@ -4615,10 +4593,10 @@ class PlotAxes(base.Axes):
         matplotlib.axes.Axes.matshow
         """
         kw = kwargs.copy()
-        guide_kw = _pop_params(kw, self._auto_guide)
+        guide_kw = _pop_params(kw, self._add_queued_guide)
         kw = self._parse_cmap(**kw)
         m = self._plot_safe('matshow', z, **kw)
-        self._auto_guide(m, **guide_kw)
+        self._add_queued_guide(m, **guide_kw)
         return m
 
     # WARNING: breaking change from native 'Z'
@@ -4645,12 +4623,20 @@ class PlotAxes(base.Axes):
         """
         kw = kwargs.copy()
         _process_props(kw, 'line')  # takes valid Line2D properties
-        guide_kw = _pop_params(kw, self._auto_guide)
+        guide_kw = _pop_params(kw, self._add_queued_guide)
         default_cmap = pcolors.DiscreteColormap(['w', 'k'], '_no_name')
         kw = self._parse_cmap(z, default_cmap=default_cmap, **kw)
         m = self._plot_safe('spy', z, **kw)
-        self._auto_guide(m, **guide_kw)
+        self._add_queued_guide(m, **guide_kw)
         return m
+
+    def set_prop_cycle(self, *args, **kwargs):
+        # Silent override. This is a strict superset of matplotlib functionality
+        # with one exception: you cannot use e.g. set_prop_cycle('color', color_list).
+        # Instead keyword args are required (but note naked positional arguments
+        # are assumed color arguments). Cycle are still validated in rcsetup.cycler()
+        cycle = self._active_cycle = constructor.Cycle(*args, **kwargs)
+        return super().set_prop_cycle(cycle)  # set the property cycler after validation
 
     # Rename the shorthands
     boxes = warnings._rename_objs('0.8', boxes=box)
