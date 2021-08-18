@@ -683,16 +683,12 @@ axs.format(
 
 # Box plots
 ax = axs[0]
-obj1 = ax.boxplot(
-    data1, means=True, meancolor='red', marker='x', fillcolor='gray5',
-)
+obj1 = ax.boxplot(data1, means=True, marker='x', meancolor='r', fillcolor='gray4')
 ax.format(title='Box plots')
 
 # Violin plots
 ax = axs[1]
-obj2 = ax.violinplot(
-    data1, fillcolor='gray7', means=True, points=100,
-)
+obj2 = ax.violinplot(data1, fillcolor='gray6', means=True, points=100)
 ax.format(title='Violin plots')
 
 # Boxes with different colors

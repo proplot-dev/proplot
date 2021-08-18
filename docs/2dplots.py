@@ -437,10 +437,10 @@ for data, mode, fair, locator in zip(
 # Contour and gridbox labels
 # --------------------------
 #
-# Labels can be quickly added to `~proplot.axes.PlotAxes.contour`,
+# You can now quickly add labels to `~proplot.axes.PlotAxes.contour`,
 # `~proplot.axes.PlotAxes.contourf`, `~proplot.axes.PlotAxes.pcolor`,
 # `~proplot.axes.PlotAxes.pcolormesh`, and `~proplot.axes.PlotAxes.heatmap`,
-# plots by simply passing ``labels=True`` to the plotting command. The
+# plots by passing ``labels=True`` to the plotting command. The
 # label text is colored black or white depending on the luminance of the underlying
 # grid box or filled contour (see the section on :ref:`colorspaces <ug_perceptual>`).
 # Contour labels are drawn with `~matplotlib.axes.Axes.clabel` and grid box
@@ -485,8 +485,8 @@ ax.format(title='Filled contours with labels')
 # Line contours with labels
 ax = axs[2]
 ax.contour(
-    data.cumsum(axis=1) - 2, color='gray8',
-    labels=True, lw=2, labels_kw={'weight': 'bold'}
+    data.cumsum(axis=1) - 2, labels=True, locator=0.4,
+    color='gray8', labels_kw={'weight': 'bold'}
 )
 ax.format(title='Line contours with labels')
 
@@ -497,13 +497,14 @@ ax.format(title='Line contours with labels')
 # Heatmap plots
 # -------------
 #
-# Heatmap plots can be made using the new `~proplot.axes.PlotAxes.heatmap` command.
-# This is a convenience function equivalent to `~proplot.axes.PlotAxes.pcolormesh`,
-# except the axes are configured with settings suitable for heatmaps: fixed aspect
-# ratios (ensuring "square" grid boxes), no gridlines, no minor ticks, and major ticks
-# at the center of each box. Among other things, this is useful for displaying
-# covariance and correlation matrices, as shown below. `~proplot.axes.PlotAxes.heatmap`
-# should generally only be used with `~proplot.axes.CartesianAxes`.
+# The `~proplot.axes.PlotAxes.heatmap` command can be used to draw "heatmaps" of
+# 2-dimensional data. This is a convenience function equivalent to
+# `~proplot.axes.PlotAxes.pcolormesh`, except the axes are configured with settings
+# suitable for heatmaps: fixed aspect ratios (ensuring "square" grid boxes), no
+# gridlines, no minor ticks, and major ticks at the center of each box. Among other
+# things, this is useful for displaying covariance and correlation matrices, as shown
+# below. `~proplot.axes.PlotAxes.heatmap` should generally only be used
+# with `~proplot.axes.CartesianAxes`.
 
 # %%
 import proplot as pplt
@@ -521,8 +522,8 @@ data = pd.DataFrame(data, columns=list('abcdefghij'), index=list('abcdefghij'))
 # Covariance matrix plot
 fig, ax = pplt.subplots(refwidth=4.5)
 m = ax.heatmap(
-    data, cmap='ColdHot', vmin=-1, vmax=1, N=100,
-    lw=0.5, edgecolor='k', labels=True, labels_kw={'weight': 'bold'},
+    data, cmap='ColdHot', vmin=-1, vmax=1, N=100, lw=0.5, ec='k',
+    labels=True, precision=2, labels_kw={'weight': 'bold'},
     clip_on=False,  # turn off clipping so box edges are not cut in half
 )
 ax.format(
