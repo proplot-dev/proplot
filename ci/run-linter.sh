@@ -14,7 +14,7 @@ flake8 proplot docs --exclude .ipynb_checkpoints --max-line-length=88 --ignore=W
 # black --check -S proplot
 
 echo '[isort]'
-isort --recursive --check-only --line-width=88 --multi-line=3 --force-grid-wrap=0 --trailing-comma proplot
+isort --recursive --check-only --line-width=88 --skip __init__.py --multi-line=3 --force-grid-wrap=0 --trailing-comma proplot
 
 # Apply once this handles long tables better
 # echo '[doc8]'
