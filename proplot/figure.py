@@ -666,6 +666,7 @@ class Figure(mfigure.Figure):
         self._gridspec = None
         self._panel_dict = {'left': [], 'right': [], 'bottom': [], 'top': []}
         self._subplot_dict = {}  # subplots indexed by number
+        self._subplot_counter = 0  # avoid add_subplot() returning an existing subplot
         self._is_adjusting = False
         self._is_authorized = False
         with self._context_authorized():
@@ -1161,11 +1162,16 @@ class Figure(mfigure.Figure):
 
         # Add the subplot
         # NOTE: Pass subplotspec as keyword arg for mpl >= 3.4 workaround
+        # NOTE: Must assign unique label to each subplot or else subsequent calls
+        # to add_subplot() in mpl < 3.4 may return an already-drawn subplot in the
+        # wrong location due to gridspec override. Is against OO package design.
         gs.figure = self
         if number is None:
             number = 1 + max((num for num in self._subplot_dict), default=0)
-        if number:
-            kwargs['number'] = number  # must be added first so a-b-c is drawn
+        if number:  # must be added for a-b-c labels
+            kwargs['number'] = number
+        self._subplot_counter += 1  # unique label for each subplot
+        kwargs.setdefault('label', f'subplot_{self._subplot_counter}')
         ax = super().add_subplot(ss, _subplotspec=ss, **kwargs)
         if number:
             self._subplot_dict[number] = ax
