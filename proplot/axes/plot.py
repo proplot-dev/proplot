@@ -121,10 +121,10 @@ docstring.snippets['plot.args_2d_flow'] = _args_2d_docstring.format(z1='(u, v)',
 # Shared docstrings
 _args_1d_shared_docstring = """
 data : dict-like, optional
-    A dict-like dataset container (e.g., `~pandas.DataFrame` or `~xarray.DataArray`).
-    If passed, positional arguments must be valid `data` keys and the arrays used for
-    plotting are retrieved with ``data[key]``. This is a native
-    `matplotlib feature \
+    A dict-like dataset container (e.g., `~pandas.DataFrame` or
+    `~xarray.DataArray`). If passed, positional arguments can optionally
+    be valid `data` keys and the arrays used for plotting are retrieved
+    with ``data[key]``. This is a `native matplotlib feature \
 <https://matplotlib.org/stable/gallery/misc/keyword_plotting.html>`__.
 autoformat : bool, optional
     Whether the `x` axis labels, `y` axis labels, axis formatters, axes titles,
@@ -135,8 +135,9 @@ autoformat : bool, optional
 _args_2d_shared_docstring = """
 %(plot.args_1d_shared)s
 order : {{'C', 'F'}}, optional
-    If ``'C'``, `z` coordinates should be shaped ``(y, x)``. If ``'F'``,
-    `z` coordinates should be shaped ``(x, y)``. Default is ``'C'``.
+    If ``'C'`` (C-style row-major order), `z` coordinates should be shaped
+    ``(y, x)``. If ``'F'`` (Fortran-style column-major order) `z` coordinates
+    should be shaped ``(x, y)``. Default is ``'C'``.
 globe : bool, optional
     *For `proplot.axes.GeoAxes` only*. Whether to ensure global coverage.
     Default is ``False``. When set to ``True`` this does the following:
@@ -152,10 +153,6 @@ globe : bool, optional
 docstring.snippets['plot.args_1d_shared'] = _args_1d_shared_docstring
 docstring.snippets['plot.args_2d_shared'] = docstring.add_snippets(_args_2d_shared_docstring)  # noqa: E501
 
-
-# Artist properties
-_patch_docstring = """
-"""
 
 # Auto colorbar and legend docstring
 _guide_docstring = """
@@ -561,6 +558,51 @@ docstring.snippets['plot.hlines'] = docstring.add_snippets(
 )
 
 
+# Scatter docstring
+_parametric_docstring = """
+Plot a parametric line.
+
+Parameters
+----------
+%(plot.args_1d_y)s
+c, color, colors, values : array-like, optional
+    The parametric coordinate. These can be passed as a third
+    positional argument or as a keyword argument. They can also
+    be string labels instead of numbers and the resulting
+    colorbar ticks will be labeled accordingly.
+%(plot.args_1d_shared)s
+
+Other parameters
+----------------
+%(plot.cmap_norm)s
+%(plot.levels_vlim)s
+%(plot.guide)s
+interp : int, optional
+    Interpolate to this many additional points between the parametric
+    coordinates. Default is ``0``. This can be increased to make the color
+    gradations between a small number of coordinates appear "smooth".
+scalex, scaley : bool, optional
+    Whether the view limits are adapted to the data limits. The values are
+    passed on to `~matplotlib.axes.Axes.autoscale_view`.
+%(plot.inbounds)s
+**kwargs
+    Valid `~matplotlib.collections.LineCollection` properties.
+
+Returns
+-------
+`~matplotlib.collections.LineCollection`
+    The parametric line. See `this matplotlib example \
+<https://matplotlib.org/stable/gallery/lines_bars_and_markers/multicolored_line>`__.
+
+See also
+--------
+PlotAxes.plot
+PlotAxes.plotx
+matplotlib.collections.LineCollection
+"""
+docstring.snippets['plot.parametric'] = docstring.add_snippets(_parametric_docstring)
+
+
 # Scatter function docstring
 _scatter_docstring = """
 Plot markers with flexible keyword arguments.
@@ -888,9 +930,13 @@ docstring.snippets['plot.violinploth'] = docstring.add_snippets(
 
 # Contour docstrings
 _contour_docstring = """
+Plot {descrip}.
+
 Parameters
 ----------
 %(plot.args_2d)s
+
+%(plot.args_2d_shared)s
 
 Other parameters
 ----------------
@@ -899,7 +945,7 @@ Other parameters
 %(plot.levels_vlim)s
 %(plot.levels_auto)s
 %(plot.guide)s
-lw, linewidth, linewidths : optional
+{add}lw, linewidth, linewidths : optional
     The width of the contour lines.
     For `contourf` plots, lines are added between the filled contours.
 ls, linestyle, linestyles : optional
@@ -911,23 +957,48 @@ ec, edgecolor, edgecolors : optional
 c, color, colors : optional
     The color(s) for the contour lines or filled contours. If not passed,
     the color is determined by `cmap` and the `z` data.
+**kwargs
+    Passed to `matplotlib.axes.Axes.{command}`.
+
+See also
+--------
+PlotAxes.contour
+PlotAxes.contourf
+PlotAxes.tricontour
+PlotAxes.tricontourf
+matplotlib.axes.Axes.{command}
 """
-_contour_edgefix_docstring = """
+_edgefix_docstring = """
 edgefix : bool or float, optional
     Whether to fix an issue where `white lines appear between filled contours \
 <https://stackoverflow.com/q/8263769/4970632>`__ in saved vector graphics.
     This can slow down figure rendering. Default is :rc:`cmap.edgefix`.
     If ``True``, a default linewidth is used. If float, this linewidth is used.
 """
-docstring.snippets['plot.contour'] = docstring.add_snippets(_contour_docstring)
-docstring.snippets['plot.contour_edgefix'] = _contour_edgefix_docstring
+docstring.snippets['plot.contour'] = docstring.add_snippets(
+    _contour_docstring.format(descrip='contour lines', command='contour', add='')
+)
+docstring.snippets['plot.contourf'] = docstring.add_snippets(
+    _contour_docstring.format(descrip='filled contours', command='contourf', add=_edgefix_docstring)  # noqa: E501
+)
+docstring.snippets['plot.tricontour'] = docstring.add_snippets(
+    _contour_docstring.format(descrip='contour lines on a triangular grid', command='tricontour', add='')  # noqa: E501
+)
+docstring.snippets['plot.tricontourf'] = docstring.add_snippets(
+    _contour_docstring.format(descrip='filled contours on a triangular grid', command='tricontourf', add=_edgefix_docstring)  # noqa: E501
+)
 
 
 # Pcolor docstring
 _pcolor_docstring = """
+Plot {descrip}.
+
 Parameters
 ----------
 %(plot.args_2d)s
+
+%(plot.args_2d_shared)s
+{add}
 
 Other parameters
 ----------------
@@ -950,15 +1021,65 @@ edgefix : bool, optional
 <https://stackoverflow.com/q/8263769/4970632>`__ in saved vector graphics.
     This can slow down figure rendering. Default is :rc:`cmap.edgefix`.
     If ``True``, a default linewidth is used. If float, this linewidth is used.
+**kwargs
+    Passed to `matplotlib.axes.Axes.{command}`.
+
+See also
+--------
+PlotAxes.pcolor
+PlotAxes.pcolormesh
+PlotAxes.pcolorfast
+PlotAxes.heatmap
+PlotAxes.tripcolor
+matplotlib.axes.Axes.{command}
 """
-docstring.snippets['plot.pcolor'] = docstring.add_snippets(_pcolor_docstring)
+_heatmap_descrip = """
+    grid boxes with formatting suitable for heatmaps. Ensure square grid boxes,
+    add major ticks to the center of each grid box, disable minor ticks
+    and gridlines, and set :rcraw:`cmap.discrete` to ``False`` by default
+""".strip()
+_heatmap_aspect = """
+aspect : {'equal', 'auto'} or float, optional
+    Modify the axes aspect ratio. The aspect ratio is of particular
+    relevance for heatmaps since it may lead to non-square grid boxes.
+    This parameter is a shortcut for calling `~matplotlib.axes.set_aspect`.
+    Default is :rc:`image.aspect`. The options are as follows:
+
+    * Number: The data aspect ratio.
+    * ``'equal'``: A data aspect ratio of 1.
+    * ``'auto'``: Allows the data aspect ratio to change depending on
+      the layout. In general this results in non-square grid boxes.
+"""
+docstring.snippets['plot.pcolor'] = docstring.add_snippets(
+    _pcolor_docstring.format(descrip='irregular grid boxes', command='pcolor', add='')
+)
+docstring.snippets['plot.pcolormesh'] = docstring.add_snippets(
+    _pcolor_docstring.format(descrip='regular grid boxes', command='pcolormesh', add='')
+)
+docstring.snippets['plot.pcolorfast'] = docstring.add_snippets(
+    _pcolor_docstring.format(descrip='grid boxes quickly', command='pcolorfast', add='')
+)
+docstring.snippets['plot.tripcolor'] = docstring.add_snippets(
+    _pcolor_docstring.format(descrip='triangular grid boxes', command='tripcolor', add='')  # noqa: E501
+)
+docstring.snippets['plot.heatmap'] = docstring.add_snippets(
+    _pcolor_docstring.format(descrip=_heatmap_descrip, command='pcolormesh', add=_heatmap_aspect)  # noqa: E501
+)
 
 
 # Flow function docstring
 _flow_docstring = """
+Plot {descrip}.
+
 Parameters
 ----------
-%(plot.args_2d)s
+%(plot.args_2d_flow)s
+
+c, color, colors : array-like or color-spec, optional
+    The colors of the {descrip} passed as either a keyword argument
+    or a fifth positional argument. This can be a single color or
+    a color array to be scaled by `cmap` and `norm`.
+%(plot.args_2d_shared)s
 
 Other parameters
 ----------------
@@ -966,8 +1087,62 @@ Other parameters
 %(plot.levels_manual)s
 %(plot.levels_vlim)s
 %(plot.levels_auto)s
+**kwargs
+    Passed to `matplotlib.axes.Axes.{command}`
+
+See also
+--------
+PlotAxes.barbs
+PlotAxes.quiver
+PlotAxes.stream
+PlotAxes.streamplot
+matplotlib.axes.Axes.{command}
 """
-docstring.snippets['plot.flow'] = docstring.add_snippets(_flow_docstring)
+docstring.snippets['plot.barbs'] = docstring.add_snippets(
+    _flow_docstring.format(descrip='wind barbs', command='barbs')
+)
+docstring.snippets['plot.quiver'] = docstring.add_snippets(
+    _flow_docstring.format(descrip='quiver arrows', command='quiver')
+)
+docstring.snippets['plot.stream'] = docstring.add_snippets(
+    _flow_docstring.format(descrip='streamlines', command='streamplot')
+)
+
+
+# Image docstring
+_show_docstring = """
+Plot {descrip}.
+
+Parameters
+----------
+z : array-like
+    The data passed as a positional argument or keyword argument.
+%(plot.args_1d_shared)s
+
+Other parameters
+----------------
+%(plot.cmap_norm)s
+%(plot.levels_manual)s
+%(plot.levels_vlim)s
+%(plot.levels_auto)s
+%(plot.guide)s
+**kwargs
+    Passed to `matplotlib.axes.Axes.{command}`.
+
+See also
+--------
+proplot.axes.PlotAxes
+matplotlib.axes.Axes.{command}
+"""
+docstring.snippets['plot.imshow'] = docstring.add_snippets(
+    _show_docstring.format(descrip='an image', command='imshow')
+)
+docstring.snippets['plot.matshow'] = docstring.add_snippets(
+    _show_docstring.format(descrip='a matrix', command='matshow')
+)
+docstring.snippets['plot.spy'] = docstring.add_snippets(
+    _show_docstring.format(descrip='a sparcity pattern', command='spy')
+)
 
 
 def _load_objects():
@@ -2379,7 +2554,6 @@ class PlotAxes(base.Axes):
             The levels list or (approximate) number of levels to create.
         values : int or list of float, optional
             The level center list or (approximate) number of level centers to create.
-            This can also be a list of labels or strings.
         minlength : int, optional
             The minimum number of levels allowed.
         positive, negative, nozero : bool, optional
@@ -2404,9 +2578,6 @@ class PlotAxes(base.Axes):
         levels = _not_none(
             N=N, levels=levels, norm_kw_levels=norm_kw.pop('levels', None),
         )
-        if np.iterable(values) and _is_categorical(values):
-            values, colorbar_kw = _get_coords(values, which='')
-            kwargs.setdefault('guide_kw', {}).update(colorbar_kw)
         if positive and negative:
             negative = False
             warnings._warn_proplot(
@@ -2482,10 +2653,10 @@ class PlotAxes(base.Axes):
         elif np.iterable(levels):
             ticks = _to_numpy_array(levels)  # prefer ticks at edges
         elif not skip_autolev:
-            kwargs['diverging'] = _not_none(diverging, positive, negative)
+            diverging = _not_none(diverging, positive, negative)
             levels, ticks, kwargs = self._parse_autolev(
-                *args, levels=levels, vmin=vmin, vmax=vmax,
-                norm=norm, norm_kw=norm_kw, extend=extend, **kwargs
+                *args, levels=levels, vmin=vmin, vmax=vmax, norm=norm, norm_kw=norm_kw,
+                extend=extend, diverging=diverging, **kwargs
             )
         else:
             ticks = levels = None
@@ -2604,8 +2775,8 @@ class PlotAxes(base.Axes):
         cmap=None, cmap_kw=None, c=None, color=None, colors=None, default_cmap=None,
         norm=None, norm_kw=None, extend='neither', vmin=None, vmax=None,
         sequential=None, diverging=None, qualitative=None, cyclic=None,
-        discrete=None, default_discrete=True, line_plot=False, contour_plot=False,
-        **kwargs
+        discrete=None, default_discrete=True, skip_autolev=False,
+        line_plot=False, contour_plot=False, **kwargs
     ):
         """
         Parse colormap and normalizer arguments.
@@ -2668,17 +2839,15 @@ class PlotAxes(base.Axes):
         # NOTE: Unlike xarray, but like matplotlib, vmin and vmax only approximately
         # determine level range. Levels are selected with Locator.tick_values().
         levels = None  # unused
-        if not discrete:
+        if discrete:
+            levels, kwargs = self._parse_levels(
+                *args, vmin=vmin, vmax=vmax, norm=norm, norm_kw=norm_kw,
+                extend=extend, diverging=diverging, skip_autolev=skip_autolev, **kwargs
+            )
+        elif not skip_autolev:
             vmin, vmax, kwargs = self._parse_vlim(
                 *args, vmin=vmin, vmax=vmax, **kwargs
             )
-        else:
-            levels, kwargs = self._parse_levels(
-                *args, vmin=vmin, vmax=vmax, norm=norm, norm_kw=norm_kw,
-                diverging=diverging, extend=extend, **kwargs
-            )
-        if levels is not None:
-            vmin, vmax = min(levels), max(levels)
         if autodiverging:
             default_diverging = None
             if levels is not None:
@@ -2699,6 +2868,7 @@ class PlotAxes(base.Axes):
                 vmin = _not_none(vmin, levels[0] - 1)
                 vmax = _not_none(vmax, levels[0] + 1)
             else:
+                vmin, vmax = min(levels), max(levels)
                 steps = np.abs(np.diff(levels))
                 eps = np.mean(steps) / 1e3
                 if np.any(np.abs(np.diff(steps)) >= eps):
@@ -2870,7 +3040,8 @@ class PlotAxes(base.Axes):
         if means or medians:
             if data.ndim != 2:
                 raise ValueError(f'Expected 2D array for means=True. Got {data.ndim}D.')
-            data = ma.masked_invalid(data, copy=False).filled(np.nan)
+            data = ma.masked_invalid(data, copy=False)
+            data = data.astype(np.float).filled(np.nan)
             if not data.size:
                 raise ValueError('The input data contains all masked or NaN values.')
             elif means:
@@ -3086,15 +3257,20 @@ class PlotAxes(base.Axes):
         kwargs.setdefault('ha', 'center')
         kwargs.setdefault('va', 'center')
 
-        # Apply colors
-        # NOTE: Hide edge colors for empty grids
+        # Apply colors and hide edge colors for empty grids
         labs = []
         array = obj.get_array()
         paths = obj.get_paths()
+        edgecolors = _to_numpy_array(obj.get_edgecolors())
+        if len(edgecolors) == 1:
+            edgecolors = np.repeat(edgecolors, len(array), axis=0)
         for i, (path, value) in enumerate(zip(paths, array)):
             # Round to the number corresponding to the *color*. This will generally
             # have a nice round 'level'. Otherwise end up with really long ugly grid
             # box labels unless we explicitly limit the precision.
+            if value is ma.masked or not np.isfinite(value):
+                edgecolors[i, :] = 0
+                continue
             if isinstance(obj.norm, pcolors.DiscreteNorm):
                 value = obj.norm._norm.inverse(obj.norm(value))
             icolor = color
@@ -3107,6 +3283,7 @@ class PlotAxes(base.Axes):
             lab = self.text(x, y, fmt(value), color=icolor, size=fontsize, **kwargs)
             labs.append(lab)
 
+        obj.set_edgecolors(edgecolors)
         return labs
 
     def _auto_labels(
@@ -3378,43 +3555,7 @@ class PlotAxes(base.Axes):
     @docstring.add_snippets
     def parametric(self, x, y, c, *, interp=0, scalex=True, scaley=True, **kwargs):
         """
-        Plot a parametric line.
-
-        Parameters
-        ----------
-        %(plot.args_1d_y)s
-        c, color, colors, values : array-like, optional
-            The parametric coordinate. These can be passed as a third
-            positional argument or as a keyword argument.
-        %(plot.args_1d_shared)s
-
-        Other parameters
-        ----------------
-        %(plot.cmap_norm)s
-        %(plot.levels_vlim)s
-        %(plot.guide)s
-        interp : int, optional
-            Interpolate to this many additional points between the parametric
-            coordinates. Default is ``0``. This can be increased to make the color
-            gradations between a small number of coordinates appear "smooth".
-        scalex, scaley : bool, optional
-            Whether the view limits are adapted to the data limits. The values are
-            passed on to `~matplotlib.axes.Axes.autoscale_view`.
-        %(plot.inbounds)s
-        **kwargs
-            Valid `~matplotlib.collections.LineCollection` properties.
-
-        Returns
-        -------
-        `~matplotlib.collections.LineCollection`
-            The parametric line. See `this matplotlib example \
-<https://matplotlib.org/stable/gallery/lines_bars_and_markers/multicolored_line>`__.
-
-        See also
-        --------
-        PlotAxes.plot
-        PlotAxes.plotx
-        matplotlib.collections.LineCollection
+        %(plot.parametric)s
         """
         # Standardize arguments
         # NOTE: Values are inferred in _auto_format() the same way legend labels are
@@ -3423,11 +3564,11 @@ class PlotAxes(base.Axes):
         _process_props(kw, 'collection')
         kw, extents = self._parse_inbounds(**kw)
         x, y, kw = self._standardize_1d(x, y, values=c, autovalues=True, autoreverse=False, **kw)  # noqa: E501
-        c = kw.get('values', None)  # permits inferring values e.g. a simple ordinate
+        c = kw.pop('values', None)  # permits inferring values e.g. a simple ordinate
         c = np.arange(y.size) if c is None else _to_numpy_array(c)
-        if np.iterable(c) and _is_categorical(c):
-            c, _ = _get_coords(c)
-        ticks = c  # use uninterpolated input ticks for colorbar
+        c, colorbar_kw = _get_coords(c, which='')
+        kw.setdefault('guide_kw', {}).update(colorbar_kw)
+        kw.setdefault('guide_kw', {}).setdefault('locator', c)
 
         # Interpolate values to allow for smooth gradations between values or just
         # to color siwtchover halfway between points (interp True, False respectively)
@@ -3457,10 +3598,9 @@ class PlotAxes(base.Axes):
         # Get the colormap accounting for 'discrete' mode
         discrete = kw.get('discrete', None)
         if discrete is not None and not discrete:
-            kw.pop('values', None)
             a = (x, y, c)  # pick levels from vmin and vmax, possibly limiting range
         else:
-            a = ()
+            a, kw['values'] = (), c
         kw = self._parse_cmap(*a, line_plot=True, **kw)
         cmap, norm = kw.pop('cmap'), kw.pop('norm')
 
@@ -3476,7 +3616,6 @@ class PlotAxes(base.Axes):
         _set_guide_kw(obj, guide_kw_attr)
         obj.set_array(c)  # the ScalarMappable method
         obj.update({key: value for key, value in kw.items() if key not in ('color',)})
-        obj._colorbar_ticks = ticks
         self.add_collection(obj)
         self.autoscale_view(scalex=scalex, scaley=scaley)
         self._add_queued_guide(obj, **guide_kw)
@@ -3798,43 +3937,6 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_orientation='horizontal', **kwargs)
         return self._apply_bar(*args, **kwargs)
 
-    # WARNING: 'labels' and 'colors' no longer passed through `data` (seems like
-    # extremely niche usage... `data` variables should be data-like)
-    @_preprocess_data('x', 'explode')
-    @docstring.concatenate_original
-    def pie(self, x, explode, *, labelpad=None, labeldistance=None, **kwargs):
-        """
-        Parameters
-        ----------
-        %(plot.args_1d_y)s
-        %(plot.args_1d_shared)s
-
-        Other parameters
-        ----------------
-        %(plot.cycle)s
-        %(plot.labels_1d)s
-        labelpad, labeldistance : float, optional
-            The distance at which labels are drawn in radial coordinates.
-        lw, linewidth, linewidths : float, optional
-            The edge width for the pie sectors.
-        ec, edgecolor, edgecolors : color-spec, optional
-            The edge color for the pie sectors.
-
-        See also
-        --------
-        matplotlib.axes.Axes.pie
-        """
-        pad = _not_none(labeldistance=labeldistance, labelpad=labelpad, default=1.15)
-        props = _pop_props(kwargs, 'patch')
-        props.setdefault('edgecolor', 'k')  # sensible default
-        _, x, kwargs = self._standardize_1d(
-            x, autox=False, autoy=False, **kwargs
-        )
-        kwargs = self._parse_cycle(**kwargs)
-        kwargs['labeldistance'] = pad
-        obj = self._plot_safe('pie', x, explode, wedgeprops=props, **kwargs)
-        return obj
-
     def _apply_boxplot(
         self, x, y, *,
         mean=None, means=None, vert=True,
@@ -4079,11 +4181,52 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_orientation='horizontal', **kwargs)
         return self._apply_hist(*args, **kwargs)
 
+    # WARNING: 'labels' and 'colors' no longer passed through `data` (seems like
+    # extremely niche usage... `data` variables should be data-like)
+    @_preprocess_data('x', 'explode')
+    @docstring.concatenate_original
+    def pie(self, x, explode, *, labelpad=None, labeldistance=None, **kwargs):
+        """
+        Plot a pie chart.
+
+        Parameters
+        ----------
+        %(plot.args_1d_y)s
+        %(plot.args_1d_shared)s
+
+        Other parameters
+        ----------------
+        %(plot.cycle)s
+        %(plot.labels_1d)s
+        labelpad, labeldistance : float, optional
+            The distance at which labels are drawn in radial coordinates.
+        lw, linewidth, linewidths : float, optional
+            The edge width for the pie sectors.
+        ec, edgecolor, edgecolors : color-spec, optional
+            The edge color for the pie sectors.
+
+        See also
+        --------
+        matplotlib.axes.Axes.pie
+        """
+        pad = _not_none(labeldistance=labeldistance, labelpad=labelpad, default=1.15)
+        props = _pop_props(kwargs, 'patch')
+        props.setdefault('edgecolor', 'k')  # sensible default
+        _, x, kwargs = self._standardize_1d(
+            x, autox=False, autoy=False, **kwargs
+        )
+        kwargs = self._parse_cycle(**kwargs)
+        kwargs['labeldistance'] = pad
+        obj = self._plot_safe('pie', x, explode, wedgeprops=props, **kwargs)
+        return obj
+
     @_preprocess_data('x', 'y', 'bins', keywords='weights')
     @docstring.concatenate_original
     @docstring.add_snippets
     def hist2d(self, x, y, bins, **kwargs):
         """
+        Plot a standard 2D histogram.
+
         Parameters
         ----------
         %(plot.args_1d_y)s
@@ -4118,6 +4261,8 @@ class PlotAxes(base.Axes):
     @docstring.add_snippets
     def hexbin(self, x, y, weights, **kwargs):
         """
+        Plot a 2D hexagonally binned histogram.
+
         Parameters
         ----------
         %(plot.args_1d_y)s
@@ -4143,10 +4288,12 @@ class PlotAxes(base.Axes):
         # _parse_autolev is skipped and args like levels=10 or locator=5 are ignored
         x, y, kw = self._standardize_1d(x, y, autovalues=True, **kwargs)
         _process_props(kw, 'collection')  # takes LineCollection props
-        kw['norm'].vmin = kw['norm'].vmax = None
         guide_kw = _pop_params(kw, self._add_queued_guide)
         labels_kw = _pop_params(kw, self._auto_labels)
         kw = self._parse_cmap(x, y, y, skip_autolev=True, default_discrete=False, **kw)
+        norm = kw.get('norm', None)
+        if norm is not None and not isinstance(norm, pcolors.DiscreteNorm):
+            norm.vmin = norm.vmax = None  # remove nonsense values
         m = self._plot_safe('hexbin', x, y, weights, **kw)
         self._auto_labels(m, **labels_kw)
         self._add_queued_guide(m, **guide_kw)
@@ -4157,22 +4304,18 @@ class PlotAxes(base.Axes):
     @docstring.add_snippets
     def contour(self, x, y, z, **kwargs):
         """
-        Plot contour lines.
-
         %(plot.contour)s
-        **kwargs
-            Passed to `matplotlib.axes.Axes.contour`.
-
-        See also
-        --------
-        PlotAxes.contourf
-        matplotlib.axes.Axes.contour
         """
         x, y, z, kw = self._standardize_2d(x, y, z, **kwargs)
         _process_props(kw, 'collection')
         labels_kw = _pop_params(kw, self._auto_labels)
         guide_kw = _pop_params(kw, self._add_queued_guide)
         kw = self._parse_cmap(x, y, z, minlength=1, contour_plot=True, **kw)
+        cmap = kw.pop('cmap', None)
+        if isinstance(cmap, pcolors.DiscreteColormap) and len(set(cmap.colors)) == 1:
+            kw['colors'] = cmap.colors[0]  # otherwise negative linestyle fails
+        else:
+            kw['cmap'] = cmap
         m = self._plot_safe('contour', x, y, z, **kw)
         self._auto_labels(m, **labels_kw)
         self._add_queued_guide(m, **guide_kw)
@@ -4183,17 +4326,7 @@ class PlotAxes(base.Axes):
     @docstring.add_snippets
     def contourf(self, x, y, z, **kwargs):
         """
-        Plot filled contour lines.
-
-        %(plot.contour)s
-        %(plot.contour_edgefix)s
-        **kwargs
-            Passed to `matplotlib.axes.Axes.contourf`.
-
-        See also
-        --------
-        PlotAxes.contour
-        matplotlib.axes.Axes.contourf
+        %(plot.contourf)s
         """
         x, y, z, kw = self._standardize_2d(x, y, z, **kwargs)
         _process_props(kw, 'collection')
@@ -4215,17 +4348,7 @@ class PlotAxes(base.Axes):
     @docstring.add_snippets
     def pcolor(self, x, y, z, **kwargs):
         """
-        Plot irregular grid boxes.
-
         %(plot.pcolor)s
-        **kwargs
-            Passed to `matplotlib.axes.Axes.pcolor`.
-
-        See also
-        --------
-        PlotAxes.pcolormesh
-        PlotAxes.pcolorfast
-        matplotlib.axes.Axes.pcolor
         """
         x, y, z, kw = self._standardize_2d(x, y, z, edges=True, **kwargs)
         _process_props(kw, 'collection')
@@ -4244,18 +4367,7 @@ class PlotAxes(base.Axes):
     @docstring.add_snippets
     def pcolormesh(self, x, y, z, **kwargs):
         """
-        Plot regular grid boxes.
-
-        %(plot.pcolor)s
-        **kwargs
-            Passed to `matplotlib.axes.Axes.pcolormesh`.
-
-        See also
-        --------
-        PlotAxes.pcolor
-        PlotAxes.pcolorfast
-        PlotAxes.heatmap
-        matplotlib.axes.Axes.pcolormesh
+        %(plot.pcolormesh)s
         """
         x, y, z, kw = self._standardize_2d(x, y, z, edges=True, **kwargs)
         _process_props(kw, 'collection')
@@ -4274,18 +4386,7 @@ class PlotAxes(base.Axes):
     @docstring.add_snippets
     def pcolorfast(self, x, y, z, **kwargs):
         """
-        Plot grid boxes quickly.
-
-        %(plot.pcolor)s
-        **kwargs
-            Passed to `matplotlib.axes.Axes.pcolorfast`.
-
-        See also
-        --------
-        PlotAxes.pcolor
-        PlotAxes.pcolormesh
-        PlotAxes.heatmap
-        matplotlib.axes.Axes.pcolorfast
+        %(plot.pcolorfast)s
         """
         x, y, z, kw = self._standardize_2d(x, y, z, edges=True, **kwargs)
         _process_props(kw, 'collection')
@@ -4302,31 +4403,7 @@ class PlotAxes(base.Axes):
     @docstring.add_snippets
     def heatmap(self, *args, aspect=None, **kwargs):
         """
-        Plot grid boxes with formatting suitable for heatmaps. Ensure square grid
-        boxes, add major ticks to the center of each grid box, disable minor ticks
-        and gridlines, and set :rcraw:`cmap.discrete` to ``False`` by default.
-
-        %(plot.pcolor)s
-        aspect : {'equal', 'auto'} or float, optional
-            Modify the axes aspect ratio. The aspect ratio is of particular
-            relevance for heatmaps since it may lead to non-square grid boxes.
-            This parameter is a shortcut for calling `~matplotlib.axes.set_aspect`.
-            Default is :rc:`image.aspect`. The options are as follows:
-
-            * ``'auto'``: Allows the axes aspect ratio to change depending on the
-              layout. In general this results in non-square grid boxes.
-            * ``'equal'``: Ensures a data aspect ratio of 1. Grid boxes are square.
-            * Float: The data aspect ratio passed explicitly.
-
-        **kwargs
-            Passed to `matplotlib.axes.Axes.pcolormesh`.
-
-        See also
-        --------
-        PlotAxes.pcolor
-        PlotAxes.pcolormesh
-        PlotAxes.pcolorfast
-        matplotlib.axes.Axes.pcolormesh
+        %(plot.heatmap)s
         """
         obj = self.pcolormesh(*args, default_discrete=False, **kwargs)
         aspect = _not_none(aspect, rc['image.aspect'])
@@ -4359,32 +4436,7 @@ class PlotAxes(base.Axes):
     @docstring.add_snippets
     def barbs(self, x, y, u, v, c, **kwargs):
         """
-        Plot wind barbs.
-
-        Parameters
-        ----------
-        %(plot.args_2d_flow)s
-
-        c, color, colors : array-like or color-spec, optional
-            The colors of the barbs passed as either a keyword argument or a
-            fifth positional argument. This can be a single color or a color
-            array to be scaled by `cmap` and `norm`.
-        %(plot.args_2d_shared)s
-
-        Other parameters
-        ----------------
-        %(plot.cmap_norm)s
-        %(plot.levels_manual)s
-        %(plot.levels_vlim)s
-        %(plot.levels_auto)s
-        **kwargs
-            Passed to `matplotlib.axes.Axes.barbs`.
-
-        See also
-        --------
-        PlotAxes.quiver
-        PlotAxes.streamplot
-        matplotlib.axes.Axes.barbs
+        %(plot.barbs)s
         """
         x, y, u, v, kw = self._standardize_2d(x, y, u, v, allow1d=True, **kwargs)
         c, kw = self._parse_color(x, y, c, default_discrete=False, **kw)
@@ -4402,36 +4454,11 @@ class PlotAxes(base.Axes):
     @docstring.add_snippets
     def quiver(self, x, y, u, v, c, **kwargs):
         """
-        Plot quiver arrows.
-
-        Parameters
-        ----------
-        %(plot.args_2d_flow)s
-
-        c, color, colors : array-like or color-spec, optional
-            The colors of the quivers passed as either a keyword argument or
-            a fifth positional argument. This can be a single color or a color
-            array to be scaled by `cmap` and `norm`.
-        %(plot.args_2d_shared)s
-
-        Other parameters
-        ----------------
-        %(plot.cmap_norm)s
-        %(plot.levels_manual)s
-        %(plot.levels_vlim)s
-        %(plot.levels_auto)s
-        **kwargs
-            Passed to `matplotlib.axes.Axes.quiver`.
-
-        See also
-        --------
-        PlotAxes.barbs
-        PlotAxes.streamplot
-        matplotlib.axes.Axes.quiver
+        %(plot.quiver)s
         """
         x, y, u, v, kw = self._standardize_2d(x, y, u, v, allow1d=True, **kwargs)
-        c, kwargs = self._parse_color(x, y, c, default_discrete=False, **kwargs)
-        _process_props(kwargs, 'line')  # applied to arrow outline
+        c, kw = self._parse_color(x, y, c, default_discrete=False, **kw)
+        _process_props(kw, 'line')  # applied to arrow outline
         color = None
         if mcolors.is_color_like(c):
             color, c = c, None
@@ -4443,45 +4470,28 @@ class PlotAxes(base.Axes):
         m = self._plot_safe('quiver', *a, **kw)
         return m
 
+    @docstring.add_snippets
+    def stream(self, *args, **kwargs):
+        """
+        %(plot.stream)s
+        """
+        return self.streamplot(*args, **kwargs)
+
     # WARNING: breaking change from native streamplot() fifth positional arg 'density'
     @_preprocess_data('x', 'y', 'u', 'v', ('c', 'color', 'colors'), keywords='start_points')  # noqa: E501
     @docstring.concatenate_original
     @docstring.add_snippets
     def streamplot(self, x, y, u, v, c, **kwargs):
         """
-        Plot streamlines.
-
-        Parameters
-        ----------
-        %(plot.args_2d_flow)s
-
-        c, color, colors : array-like or color-spec, optional
-            The colors of the streamlines passed as either a keyword argument
-            or a fifth positional argument. This can be a single color or a
-            color array to be scaled by `cmap` and `norm`.
-        %(plot.args_2d_shared)s
-
-        Other parameters
-        ----------------
-        %(plot.cmap_norm)s
-        %(plot.levels_manual)s
-        %(plot.levels_vlim)s
-        %(plot.levels_auto)s
-        **kwargs
-            Passed to `matplotlib.axes.Axes.streamplot`.
-
-        See also
-        --------
-        PlotAxes.barbs
-        PlotAxes.quiver
-        matplotlib.axes.Axes.streamplot
+        %(plot.stream)s
         """
         x, y, u, v, kw = self._standardize_2d(x, y, u, v, **kwargs)
-        c, kwargs = self._parse_color(x, y, c, **kwargs)
-        _process_props(kwargs, 'line')  # applied to lines
+        c, kw = self._parse_color(x, y, c, **kw)
+        _process_props(kw, 'line')  # applied to lines
         guide_kw = _pop_params(kw, self._add_queued_guide)
-        if c is not None:
-            kwargs['color'] = c  # always pass this
+        if c is None:  # throws an error if color not provided
+            c = pcolors.to_hex(self._get_lines.get_next_color())
+        kw['color'] = c  # always pass this
         m = self._plot_safe('streamplot', x, y, u, v, **kw)
         self._add_queued_guide(m.lines, **guide_kw)  # lines inside StreamplotSet
         return m
@@ -4491,21 +4501,18 @@ class PlotAxes(base.Axes):
     @docstring.add_snippets
     def tricontour(self, x, y, z, **kwargs):
         """
-        Plot contour lines from irregular points.
-
-        %(plot.contour)s
-        **kwargs
-            Passed to `matplotlib.axes.Axes.tricontour`.
-
-        See also
-        --------
-        matplotlib.axes.Axes.tricontour
+        %(plot.tricontour)s
         """
         kw = kwargs.copy()
         _process_props(kw, 'collection')
         labels_kw = _pop_params(kw, self._auto_labels)
         guide_kw = _pop_params(kw, self._add_queued_guide)
         kw = self._parse_cmap(x, y, z, minlength=1, contour_plot=True, **kw)
+        cmap = kw.pop('cmap', None)
+        if isinstance(cmap, pcolors.DiscreteColormap) and len(set(cmap.colors)) == 1:
+            kw['colors'] = cmap.colors[0]  # otherwise negative linestyle fails
+        else:
+            kw['cmap'] = cmap
         m = self._plot_safe('tricontour', x, y, z, **kw)
         self._auto_labels(m, **labels_kw)
         self._add_queued_guide(m, **guide_kw)
@@ -4516,16 +4523,7 @@ class PlotAxes(base.Axes):
     @docstring.add_snippets
     def tricontourf(self, x, y, z, **kwargs):
         """
-        Plot filled contour lines from irregular points.
-
-        %(plot.contour)s
-        %(plot.contour_edgefix)s
-        **kwargs
-            Passed to `matplotlib.axes.Axes.tricontourf`.
-
-        See also
-        --------
-        matplotlib.axes.Axes.tricontourf
+        %(plot.tricontourf)s
         """
         kw = kwargs.copy()
         _process_props(kw, 'collection')
@@ -4547,15 +4545,7 @@ class PlotAxes(base.Axes):
     @docstring.add_snippets
     def tripcolor(self, x, y, z, **kwargs):
         """
-        Plot grid boxes from irregular points.
-
-        %(plot.pcolor)s
-        **kwargs
-            Passed to `matplotlib.axes.Axes.tripcolor`.
-
-        See also
-        --------
-        matplotlib.axes.Axes.tripcolor
+        %(plot.tripcolor)s
         """
         kw = kwargs.copy()
         edgefix_kw = _pop_params(kw, self._fix_edges)
@@ -4575,21 +4565,7 @@ class PlotAxes(base.Axes):
     @docstring.add_snippets
     def imshow(self, z, **kwargs):
         """
-        Plot an image.
-
-        Other parameters
-        ----------------
-        %(plot.cmap_norm)s
-        %(plot.levels_manual)s
-        %(plot.levels_vlim)s
-        %(plot.levels_auto)s
-        %(plot.guide)s
-        **kwargs
-            Passed to `matplotlib.axes.Axes.imshow`.
-
-        See also
-        --------
-        matplotlib.axes.Axes.imshow
+        %(plot.imshow)s
         """
         kw = kwargs.copy()
         guide_kw = _pop_params(kw, self._add_queued_guide)
@@ -4604,21 +4580,7 @@ class PlotAxes(base.Axes):
     @docstring.add_snippets
     def matshow(self, z, **kwargs):
         """
-        Plot a matrix.
-
-        Other parameters
-        ----------------
-        %(plot.cmap_norm)s
-        %(plot.levels_manual)s
-        %(plot.levels_vlim)s
-        %(plot.levels_auto)s
-        %(plot.guide)s
-        **kwargs
-            Passed to `matplotlib.axes.Axes.matshow`.
-
-        See also
-        --------
-        matplotlib.axes.Axes.matshow
+        %(plot.matshow)s
         """
         kw = kwargs.copy()
         guide_kw = _pop_params(kw, self._add_queued_guide)
@@ -4633,21 +4595,7 @@ class PlotAxes(base.Axes):
     @docstring.add_snippets
     def spy(self, z, **kwargs):
         """
-        Plot a sparcity pattern.
-
-        Other parameters
-        ----------------
-        %(plot.cmap_norm)s
-        %(plot.levels_manual)s
-        %(plot.levels_vlim)s
-        %(plot.levels_auto)s
-        %(plot.guide)s
-        **kwargs
-            Passed to `matplotlib.axes.Axes.spy`.
-
-        See also
-        --------
-        matplotlib.axes.Axes.spy
+        %(plot.spy)s
         """
         kw = kwargs.copy()
         _process_props(kw, 'line')  # takes valid Line2D properties

@@ -2292,7 +2292,7 @@ class Axes(maxes.Axes):
                     continue
                 elif isinstance(obj, cbook.silent_list) and obj:
                     obj = obj[0]
-                if hasattr(obj, 'get_label') or isinstance(obj, tuple):
+                if hasattr(obj, 'get_label') or type(obj) is tuple:
                     out.append(obj)
             return tuple(out)
 
@@ -2305,7 +2305,8 @@ class Axes(maxes.Axes):
         ihandles, ilabels = [], []
         for objs, label in zip(handles, labels):
             # Filter objects
-            if not isinstance(objs, tuple):
+            # WARNING: BarContainer is a tuple so must test identically here.
+            if type(objs) is not tuple:
                 objs = (objs,)
             objs = _group_objs(*objs)
             labs = set(_group_labs(*objs))
