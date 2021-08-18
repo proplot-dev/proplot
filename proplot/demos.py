@@ -26,14 +26,15 @@ __all__ = [
 ]
 
 COLORS_TABLE = {
-    'base': list(pcolors.COLORS_BASE),
-    'opencolor': list(pcolors.COLORS_OPEN),
-    'xkcd': list(pcolors.COLORS_XKCD),
-    'css4': list(mcolors.CSS4_COLORS),
+    # NOTE: Just want the names but point to the dictionaries because they
+    # get filled after this module is imported in __init__.
+    'base': pcolors.COLORS_BASE,
+    'opencolor': pcolors.COLORS_OPEN,
+    'xkcd': pcolors.COLORS_XKCD,
+    'css4': mcolors.CSS4_COLORS,
 }
 
 CMAPS_TABLE = {
-    # Nice colormaps that get shown by default
     # NOTE: No longer rename colorbrewer greys map, just redirect 'grays'
     # to 'greys' in colormap database.
     'Grayscale': (  # assorted origin, but they belong together
@@ -694,7 +695,7 @@ def show_colors(
                 f'Invalid categories {include!r}. Options are: '
                 + ', '.join(map(repr, COLORS_TABLE)) + '.'
             )
-        colordict[cat] = COLORS_TABLE[cat]
+        colordict[cat] = list(COLORS_TABLE[cat])  # copy the names
 
     # Add "unknown" colors
     if unknown:
