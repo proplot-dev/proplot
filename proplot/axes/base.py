@@ -2173,14 +2173,17 @@ class Axes(maxes.Axes):
 
     @docstring.obfuscate_signature
     @docstring.add_snippets
-    def colorbar(self, mappable, values=None, *, loc=None, queue=False, **kwargs):
+    def colorbar(
+        self, mappable, values=None, *, loc=None, location=None, queue=False,
+        **kwargs
+    ):
         """
         Add an inset colorbar or an outer colorbar along the edge of the axes.
 
         Parameters
         ----------
         %(axes.colorbar_args)s
-        loc : str, optional
+        loc, location : str, optional
             The colorbar location. Default is :rc:`colorbar.loc`. Valid location
             keys are shown in the below table.
 
@@ -2228,6 +2231,7 @@ class Axes(maxes.Axes):
         # Either draw right now or queue up for later
         # The queue option lets us successively append objects (e.g. line handles)
         # to a list later used for colorbar levels. Same as legend.
+        loc = _not_none(loc=loc, location=location)
         loc = _translate_loc(loc, 'colorbar', default=rc['colorbar.loc'])
         if queue:
             obj = (mappable, values)
@@ -2663,14 +2667,17 @@ class Axes(maxes.Axes):
 
     @docstring.concatenate_original
     @docstring.add_snippets
-    def legend(self, handles=None, labels=None, *, loc=None, queue=False, **kwargs):
+    def legend(
+        self, handles=None, labels=None, *, loc=None, location=None, queue=False,
+        **kwargs
+    ):
         """
         Add an *inset* legend or *outer* legend along the edge of the axes.
 
         Parameters
         ----------
         %(axes.legend_args)s
-        loc : int or str, optional
+        loc, location : int or str, optional
             The legend location. Default is :rc:`legend.loc`. Valid location
             keys are shown in the below table.
 
@@ -2714,6 +2721,7 @@ class Axes(maxes.Axes):
         # Either draw right now or queue up for later
         # Handles can be successively added to a single location this way. This
         # is used internally for on-the-fly legends.
+        loc = _not_none(loc=loc, location=location)
         loc = _translate_loc(loc, 'legend', default=rc['legend.loc'])
         if queue:
             obj = (handles, labels)

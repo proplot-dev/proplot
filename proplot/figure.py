@@ -1459,7 +1459,7 @@ class Figure(mfigure.Figure):
     @docstring.concatenate_original
     @docstring.add_snippets
     def colorbar(
-        self, mappable, values=None, *, loc='r',
+        self, mappable, values=None, *, loc=None, location=None,
         row=None, col=None, rows=None, cols=None, span=None,
         space=None, pad=None, width=None, **kwargs
     ):
@@ -1500,13 +1500,14 @@ class Figure(mfigure.Figure):
             return ax.colorbar(mappable, values, space=space, pad=pad, width=width, **kwargs)  # noqa: E501
         # Figure panel colorbar
         else:
+            loc = _not_none(loc=loc, location=location, default='r')
             ax = self._add_figure_panel(loc, row=row, col=col, rows=rows, cols=cols, span=span, space=space, pad=pad, width=width)  # noqa: E501
             return ax.colorbar(mappable, values, loc='fill', **kwargs)
 
     @docstring.concatenate_original
     @docstring.add_snippets
     def legend(
-        self, handles=None, labels=None, *, loc='r',
+        self, handles=None, labels=None, *, loc=None, location=None,
         row=None, col=None, rows=None, cols=None, span=None,
         space=None, pad=None, width=None, **kwargs
     ):
@@ -1539,6 +1540,7 @@ class Figure(mfigure.Figure):
             return ax.legend(handles, labels, space=space, pad=pad, width=width, **kwargs)  # noqa: E501
         # Figure panel legend
         else:
+            loc = _not_none(loc=loc, location=location, default='r')
             ax = self._add_figure_panel(loc, row=row, col=col, rows=rows, cols=cols, span=span, space=space, pad=pad, width=width)  # noqa: E501
             return ax.legend(handles, labels, loc='fill', **kwargs)
 
