@@ -1614,8 +1614,8 @@ class Configurator(MutableMapping, dict):
 
 
 # Initialize locations
-_init_user_file()
 _init_user_folders()
+_init_user_file()
 
 #: A dictionary-like container of matplotlib settings. Assignments are
 #: validated and restricted to recognized setting names.
