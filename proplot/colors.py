@@ -2320,7 +2320,6 @@ class DiscreteNorm(mcolors.BoundaryNorm):
 
         See also
         --------
-        proplot.axes.apply_cmap
         proplot.constructor.Norm
         """
         # Validate input arguments
@@ -2569,7 +2568,6 @@ class DivergingNorm(mcolors.Normalize):
 
         See also
         --------
-        proplot.axes.apply_cmap
         proplot.constructor.Norm
         """
         # NOTE: This post is an excellent summary of matplotlib's DivergingNorm history:

@@ -191,8 +191,8 @@ import numpy as np
 import proplot as pplt
 state = np.random.RandomState(51423)
 data = 2 * (state.rand(100, 5) - 0.5).cumsum(axis=0)
-fig = pplt.figure(span=False, refwidth=2)
 gs = pplt.GridSpec(nrows=2, ncols=2, pad=1)
+fig = pplt.figure(span=False, refwidth=2)
 ax = fig.subplot(gs[:, 0])
 ax.plot(data, lw=2)
 ax = fig.subplot(gs[0, 1])

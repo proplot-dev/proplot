@@ -8,9 +8,9 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.4.2
 #   kernelspec:
-#     display_name: proplot-dev
+#     display_name: Python [conda env:proplot-dev]
 #     language: python
-#     name: proplot-dev
+#     name: conda-env-proplot-dev-py
 # ---
 
 # %% [raw] raw_mimetype="text/restructuredtext"

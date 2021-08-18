@@ -109,7 +109,6 @@ def arange(min_, *args):
     --------
     proplot.axes.CartesianAxes.format
     proplot.constructor.Locator
-    proplot.axes.apply_cmap
     """
     # Optional arguments just like np.arange
     if len(args) == 0:
@@ -162,8 +161,8 @@ def edges(z, axis=-1):
     See also
     --------
     edges2d
-    proplot.axes.standardize_2d
-    proplot.axes.apply_cmap
+    proplot.axes.PlotAxes.pcolor
+    proplot.axes.PlotAxes.pcolormesh
     """
     z = np.asarray(z)
     z = np.swapaxes(z, axis, -1)
@@ -200,7 +199,8 @@ def edges2d(z):
     See also
     --------
     edges
-    proplot.axes.standardize_2d
+    proplot.axes.PlotAxes.pcolor
+    proplot.axes.PlotAxes.pcolormesh
     """
     z = np.asarray(z)
     if z.ndim != 2:
