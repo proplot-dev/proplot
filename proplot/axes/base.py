@@ -552,7 +552,7 @@ class Axes(maxes.Axes):
         """
         # Initialize parent after removing args
         # NOTE: These are really "subplot" features so documented on add_subplot().
-        ss = kwargs.pop('_subplotspec', None)  # see below
+        ss = kwargs.pop('_subplot_spec', None)  # see below
         number = kwargs.pop('number', None)
         autoshare = kwargs.pop('autoshare', None)
         autoshare = _not_none(autoshare, True)

@@ -631,7 +631,7 @@ class Figure(mfigure.Figure):
             )
         rc_matplotlib['figure.autolayout'] = False  # this is rcParams
         rc_matplotlib['figure.constrained_layout.use'] = False  # this is rcParams
-        self._tightlayout = _not_none(tight, rc['subplots.tight'])
+        self._autospace = _not_none(tight, rc['subplots.tight'])
         self._includepanels = _not_none(includepanels, False)
 
         # Translate share settings
@@ -1180,7 +1180,7 @@ class Figure(mfigure.Figure):
             kwargs['number'] = number
         self._subplot_counter += 1  # unique label for each subplot
         kwargs.setdefault('label', f'subplot_{self._subplot_counter}')
-        ax = super().add_subplot(ss, _subplotspec=ss, **kwargs)
+        ax = super().add_subplot(ss, _subplot_spec=ss, **kwargs)
         if number:
             self._subplot_dict[number] = ax
         self.gridspec = gs  # trigger layout adjustment
@@ -1337,7 +1337,7 @@ class Figure(mfigure.Figure):
         if aspect is None:
             aspect = True
         if tight is None:
-            tight = self._tightlayout
+            tight = self._autospace
         if resize is None:
             backend = _not_none(rc.backend, '').lower()
             resize = 'nbagg' not in backend and 'ipympl' not in backend

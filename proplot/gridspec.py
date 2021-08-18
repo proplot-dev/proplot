@@ -7,6 +7,7 @@ import itertools
 
 import matplotlib.axes as maxes
 import matplotlib.gridspec as mgridspec
+import matplotlib.transforms as mtransforms
 import numpy as np
 
 from .config import rc
@@ -144,6 +145,28 @@ class _SubplotSpec(mgridspec.SubplotSpec):
         row1, col1 = divmod(num1, ncols)
         row2, col2 = divmod(num2, ncols)
         return row1, row2, col1, col2
+
+    def get_position(self, *args, **kwargs):
+        # Silent override. Older matplotlib versions can create subplots
+        # with negative heights and widths that crash on instantiation.
+        # Instead better to dynamically adjust the bounding box and hope
+        # that subsequent adjustments will correct the subplot position.
+        result = super().get_position(*args, **kwargs)
+        bbox = result[0] if isinstance(result, tuple) else result
+        if isinstance(bbox, mtransforms.BboxBase):
+            extents = bbox.extents
+            extents = [
+                extents[0],
+                extents[1],
+                max(extents[2], extents[0]),
+                max(extents[3], extents[1])
+            ]
+            bbox = mtransforms.Bbox.from_extents(extents)
+            if isinstance(result, tuple):
+                result = (bbox, *result[1:])
+            else:
+                result = bbox
+        return result
 
 
 class GridSpec(mgridspec.GridSpec):
