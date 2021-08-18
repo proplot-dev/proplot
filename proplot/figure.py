@@ -23,6 +23,7 @@ from .internals import ic  # noqa: F401
 from .internals import (
     _empty_context,
     _not_none,
+    _pop_params,
     _state_context,
     _version_mpl,
     docstring,
@@ -716,33 +717,39 @@ class Figure(mfigure.Figure):
         """
         return _state_context(self, _is_authorized=True)
 
-    def _parse_proj(self, proj=None, projection=None, use_aspect=False, **kwargs):
+    def _parse_proj(
+        self, proj=None, projection=None, proj_kw=None, projection_kw=None,
+        basemap=None, use_aspect=False, **kwargs
+    ):
         """
         Translate the user-input projection into keyword arguments that can be passed
         to `~proplot.figure.Figure.add_subplot`. Also return a default aspect ratio.
         """
         # Parse arguments
         proj = _not_none(proj=proj, projection=projection, default='cartesian')
+        proj_kw = _not_none(proj_kw=proj_kw, projection_kw=projection_kw, default={})
         if isinstance(proj, str):
             proj = proj.lower()
             proj = AXES_PROJS.get(proj, proj)
 
         # Redirect to a basemap or cartopy projection
         # NOTE: The default aspect should already be '1'.
-        if proj not in AXES_PROJS.values():
-            m = constructor.Proj(proj, include_axes_projections=True, **kwargs)
+        if proj in AXES_PROJS.values():
+            name = proj
+        else:
+            m = constructor.Proj(
+                proj, basemap=basemap, include_axes_projections=True, **proj_kw
+            )
             if m._proj_package == 'basemap':
                 aspect = (m.urcrnrx - m.llcrnrx) / (m.urcrnry - m.llcrnry)
             else:
                 aspect, = np.diff(m.x_limits) / np.diff(m.y_limits)  # pull out of array
-            proj = 'proplot_' + m._proj_package  # attribute added by Proj()
-            kwargs = {'map_projection': m}
+            name = 'proplot_' + m._proj_package  # attribute added by Proj()
+            kwargs['map_projection'] = m
             if use_aspect:
                 self._refaspect_default = aspect
-        else:
-            kwargs.pop('basemap', None)  # basemap toggle behavios as no-op
 
-        kwargs['projection'] = proj
+        kwargs['projection'] = name
         return kwargs
 
     def _get_align_axes(self, side):
@@ -1226,6 +1233,17 @@ class Figure(mfigure.Figure):
                 )
             return output
 
+        # Warning messages
+        for key in ('gridspec_kw', 'subplot_kw'):
+            kw = kwargs.pop(key, None)
+            if not kw:
+                continue
+            warnings._warn_proplot(
+                f'{key!r} is not necessary in ProPlot. Pass the '
+                'parameters as keyword arguments instead.'
+            )
+            kwargs.update(kw or {})
+
         # Build subplot array
         if order not in ('C', 'F'):  # better error message
             raise ValueError(f"Invalid order={order!r}. Options are 'C' or 'F'.")
@@ -1252,13 +1270,14 @@ class Figure(mfigure.Figure):
         proj_kw = _axes_dict(naxs, proj_kw, kw=True)
         basemap = _axes_dict(naxs, basemap, kw=False)
         axes_kw = {
-            num: {'proj': proj[num], 'basemap': basemap[num], **proj_kw[num]}
+            num: {'proj': proj[num], 'proj_kw': proj_kw[num], 'basemap': basemap[num]}
             for num in proj
         }
 
         # Create gridspec and add subplots with subplotspecs
         # NOTE: The gridspec is added to the figure when we pass the subplotspec
-        gs = pgridspec.GridSpec(nrows, ncols, **kwargs)
+        gridspec_kw = _pop_params(kwargs, pgridspec.GridSpec._update_params)
+        gs = pgridspec.GridSpec(nrows, ncols, **gridspec_kw)
         axs = naxs * [None]  # list of axes
         axids = [np.where(array == i) for i in np.sort(np.unique(array)) if i > 0]
         axcols = np.array([[x.min(), x.max()] for _, x in axids])
@@ -1268,7 +1287,8 @@ class Figure(mfigure.Figure):
             x0, x1 = axcols[idx, 0], axcols[idx, 1]
             y0, y1 = axrows[idx, 0], axrows[idx, 1]
             ss = gs[y0:y1 + 1, x0:x1 + 1]
-            axs[idx] = self.add_subplot(ss, number=num, **axes_kw[num])
+            kw = {**kwargs, **axes_kw[num], 'number': num}
+            axs[idx] = self.add_subplot(ss, **kw)
 
         return SubplotGrid(axs)
 
