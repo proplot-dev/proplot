@@ -40,6 +40,11 @@ from ..internals import (
 )
 from ..utils import _fontsize_to_pt, edges, to_rgb, units
 
+try:
+    from cartopy.crs import CRS, PlateCarree
+except Exception:
+    CRS = PlateCarree = object
+
 __all__ = ['Axes']
 
 
@@ -339,7 +344,7 @@ extend : {None, 'neither', 'both', 'min', 'max'}, optional
     default. If ``None``, we try to use the ``extend`` attribute on the
     mappable object. If the attribute is unavailable, we use ``'neither'``.
 extendsize : float or str, optional
-    The length of the colorbar "extensions" in *physical units*. Default is
+    The length of the colorbar "extensions" in physical units. Default is
     :rc:`colorbar.insetextend` for inset colorbars and :rc:`colorbar.extend`
     for outer colorbars. %(units.em)s
 frame, frameon : bool, optional
@@ -481,12 +486,14 @@ class Axes(maxes.Axes):
         # Show the position in the geometry excluding panels. Panels are
         # indicated by showing their parent geometry plus a 'side' argument.
         ax = self._get_topmost_axes()
-        if isinstance(ax, maxes.SubplotBase) and ax.get_subplotspec():
+        try:
             nrows, ncols, num1, num2 = ax.get_subplotspec()._get_subplot_geometry()
             params = {'nrows': nrows, 'ncols': ncols, 'index': (num1, num2)}
-        else:
+        except (IndexError, ValueError, AttributeError):  # e.g. a panel axes
             left, bottom, width, height = np.round(self._position.bounds, 2)
             params = {'left': left, 'bottom': bottom, 'size': (width, height)}
+        if self.number:
+            params['number'] = self.number
         name = type(self).__name__
         if self._panel_side:
             name = name.replace('Subplot', 'Panel')  # e.g. CartesianAxesPanel
@@ -609,10 +616,10 @@ class Axes(maxes.Axes):
             raise ValueError(f'Unexpected axisbelow value {axisbelow!r}.')
         return zorder
 
-    def _get_extent_axes(self, x, panels=False):
+    def _get_share_axes(self, x, panels=False):
         """
-        Return the axes whose horizontal or vertical extent in the main
-        gridspec matches the horizontal or vertical extend of this axes.
+        Return the axes whose horizontal or vertical extent in the main gridspec
+        matches the horizontal or vertical extent of this axes.
         """
         # NOTE: The lefmost or bottommost axes are at the start of the list.
         if not isinstance(self, maxes.SubplotBase):
@@ -627,22 +634,27 @@ class Axes(maxes.Axes):
         pax = axs.pop(argfunc([ax._range_subplotspec(y)[idx] for ax in axs]))
         return [pax, *axs]  # return with leftmost or bottommost first
 
-    def _get_side_axes(self, side, panels=False):
+    def _get_span_axes(self, side, panels=False):
         """
-        Return the axes whose left, right, top, or bottom sides abutt
-        against the same row or column as this axes.
+        Return the axes whose left, right, top, or bottom sides abutt against
+        the same row or column as this axes. Deflect to shared panels.
         """
         if side not in ('left', 'right', 'bottom', 'top'):
             raise ValueError(f'Invalid side {side!r}.')
         if not isinstance(self, maxes.SubplotBase):
             return [self]
-        x = 'x' if side in ('left', 'right') else 'y'
+        x, y = 'xy' if side in ('left', 'right') else 'yx'
         idx = 0 if side in ('left', 'top') else 1  # which side to test
         coord = self._range_subplotspec(x)[idx]  # side for a particular axes
         axs = self.figure._iter_axes(hidden=False, children=False, panels=panels)
-        axs = [ax for ax in axs if ax._range_subplotspec(x)[idx] == coord]
-        axs = axs or [self]
-        return axs  # return in no particular order
+        axs = [ax for ax in axs if ax._range_subplotspec(x)[idx] == coord] or [self]
+        out = []
+        for ax in axs:
+            other = getattr(ax, '_share' + y)
+            if other and other._panel_parent:  # this is a shared panel
+                ax = other
+            out.append(ax)
+        return out
 
     def _get_topmost_axes(self):
         """
@@ -833,6 +845,10 @@ class Axes(maxes.Axes):
         transform = _not_none(transform, default)
         if isinstance(transform, mtransforms.Transform):
             return transform
+        elif CRS is not object and isinstance(transform, CRS):
+            return transform
+        elif PlateCarree is not object and transform == 'map':
+            return PlateCarree()
         elif transform == 'figure':
             return self.figure.transFigure
         elif transform == 'axes':
@@ -1522,8 +1538,9 @@ class Axes(maxes.Axes):
             return [pax for pax in paxs if not pax._panel_hidden and pax._panel_share]
 
         # Internal axis sharing, share stacks of panels and main axes with each other
-        # NOTE: *This* block is why, even though share[xy] are figure-wide
-        # settings, we still need the axes-specific _share[xy]_override attr
+        # NOTE: This is called on the main axes whenver a panel is created.
+        # NOTE: This block is why, even though we have figure-wide share[xy], we
+        # still need the axes-specific _share[xy]_override attribute.
         if not self._panel_side:  # this is a main axes
             # Top and bottom
             bottom = self
@@ -1556,22 +1573,22 @@ class Axes(maxes.Axes):
         # External axes sharing, sometimes overrides panel axes sharing
         # NOTE: This can get very repetitive, but probably minimal impact?
         # Share x axes
-        parent, *children = self._get_extent_axes('x')
+        parent, *children = self._get_share_axes('x')
         for child in children:
             child._sharex_setup(parent)
         # Share y axes
-        parent, *children = self._get_extent_axes('y')
+        parent, *children = self._get_share_axes('y')
         for child in children:
             child._sharey_setup(parent)
 
-    def _add_guide(self, guide, loc, obj, **kwargs):
+    def _add_guide(self, guide, obj, loc, **kwargs):
         """
         Queue up or replace objects for legends and list-of-artist style colorbars.
         """
         # Initial stuff
         if guide not in ('legend', 'colorbar'):
             raise TypeError(f'Invalid type {guide!r}.')
-        d = self._legend_dict if guide == 'legend' else self._colorbar_dict
+        dict_ = self._legend_dict if guide == 'legend' else self._colorbar_dict
         if loc == 'fill':
             loc = self._panel_side
             if loc is None:  # cannot register 'filled' non panels
@@ -1580,8 +1597,8 @@ class Axes(maxes.Axes):
         # Remove previous instances
         # NOTE: No good way to remove inset colorbars right now until the bounding
         # box and axes are merged into some kind of subclass. Just fine for now.
-        if loc in d and not isinstance(d[loc], tuple):
-            obj_prev = d.pop(loc)  # possibly pop a queued object
+        if loc in dict_ and not isinstance(dict_[loc], tuple):
+            obj_prev = dict_.pop(loc)  # possibly pop a queued object
             if guide == 'colorbar':
                 pass
             elif hasattr(self, 'legend_') and self.legend_ is obj_prev:
@@ -1591,14 +1608,20 @@ class Axes(maxes.Axes):
 
         # Replace with instance or update the queue
         # NOTE: This replaces previous legends
-        if not isinstance(obj, tuple) or any(isinstance(_, mlegend.Legend) for _ in obj):  # noqa: E501
-            d[loc] = obj
-        else:
+        if isinstance(obj, tuple) and not any(isinstance(_, mlegend.Legend) for _ in obj):  # noqa: E501
             handles, labels = obj
-            handles_full, labels_full, kwargs_full = d.setdefault(loc, ([], [], {}))
+            handles = _not_none(handles, [])
+            if not isinstance(handles, list):
+                handles = [handles]  # e.g. mappable
+            labels = _not_none(labels, [])
+            if not isinstance(labels, list):
+                labels = [labels]  # not sure if this ever happens
+            handles_full, labels_full, kwargs_full = dict_.setdefault(loc, ([], [], {}))
             handles_full.extend(_not_none(handles, []))
             labels_full.extend(_not_none(labels, []))
             kwargs_full.update(kwargs)
+        else:
+            dict_[loc] = obj
 
     def _draw_guides(self):
         """
@@ -1624,8 +1647,8 @@ class Axes(maxes.Axes):
             self._legend_dict[loc] = leg
 
     def _fill_colorbar_axes(
-        self, length=None, shrink=None, tickloc=None, ticklocation=None,
-        extendsize=None, orientation=None, **kwargs
+        self, length=None, shrink=None,
+        tickloc=None, ticklocation=None, orientation=None, **kwargs
     ):
         """
         Return the axes and adjusted keyword args for a panel-filling colorbar.
@@ -1672,9 +1695,7 @@ class Axes(maxes.Axes):
                 outside, inside = inside, outside
             ticklocation = _not_none(ticklocation, outside)
             orientation = _not_none(orientation, 'vertical')
-        extendsize = _not_none(extendsize, rc['colorbar.extend'])
         kwargs.update({
-            'extendsize': extendsize,
             'orientation': orientation,
             'ticklocation': ticklocation
         })
@@ -1682,9 +1703,10 @@ class Axes(maxes.Axes):
         return ax, kwargs
 
     def _inset_colorbar_axes(
-        self, loc=None, width=None, length=None, shrink=None, pad=None,
-        frame=None, frameon=None, tickloc=None, ticklocation=None,
-        extendsize=None, orientation=None, label=None, **kwargs,
+        self, loc=None, width=None, length=None, shrink=None,
+        frame=None, frameon=None, label=None, pad=None,
+        tickloc=None, ticklocation=None, orientation=None,
+        **kwargs,
     ):
         """
         Return the axes and adjusted keyword args for an inset colorbar.
@@ -1767,9 +1789,7 @@ class Axes(maxes.Axes):
         ticklocation = _not_none(tickloc=tickloc, ticklocation=ticklocation)
         if ticklocation is not None and ticklocation != 'bottom':
             warnings._warn_proplot('Inset colorbars can only have ticks on the bottom.')
-        extendsize = _not_none(extendsize, rc['colorbar.insetextend'])
         kwargs.update({
-            'extendsize': extendsize,
             'orientation': 'horizontal',
             'ticklocation': 'bottom',
         })
@@ -1781,7 +1801,7 @@ class Axes(maxes.Axes):
         self, mappable, ticks=None, locator=None, locator_kw=None,
         format=None, formatter=None, ticklabels=None, formatter_kw=None,
         minorticks=None, minorlocator=None, minorlocator_kw=None,
-        maxn=None, maxn_minor=None, tickminor=False, fontsize=None, **kwargs,
+        maxn=None, maxn_minor=None, tickminor=None, fontsize=None, **kwargs,
     ):
         """
         Get the default locator for colorbar ticks.
@@ -1967,7 +1987,8 @@ class Axes(maxes.Axes):
         ec=None, edgecolor=None, lw=None, linewidth=None, edgefix=None,
         labelsize=None, labelweight=None, labelcolor=None,
         ticklabelsize=None, ticklabelweight=None, ticklabelcolor=None,
-        grid=None, edges=None, drawedges=None, rasterize=None, **kwargs
+        grid=None, edges=None, drawedges=None, rasterize=None,
+        extendsize=None, extendfrac=None, **kwargs
     ):
         """
         The driver function for adding axes colorbars.
@@ -1999,9 +2020,11 @@ class Axes(maxes.Axes):
             loc = 'fill'
         if loc == 'fill':
             kwargs.pop('width', None)
+            extendsize = _not_none(extendsize, rc['colorbar.extend'])
             cax, kwargs = self._fill_colorbar_axes(**kwargs)
         else:
             kwargs.update({'linewidth': linewidth, 'edgecolor': edgecolor, 'label': label})  # noqa: E501
+            extendsize = _not_none(extendsize, rc['colorbar.insetextend'])
             cax, kwargs = self._inset_colorbar_axes(loc=loc, pad=pad, **kwargs)  # noqa: E501
 
         # Test if we were given a mappable, or iterable of stuff. Note
@@ -2014,7 +2037,7 @@ class Axes(maxes.Axes):
             mappable, fontsize=ticklabelsize, tickminor=tickminor, **kwargs,
         )
 
-        # Define text property keyword args
+        # Parse text property keyword args
         kw_label = {}
         for key, value in (
             ('size', labelsize),
@@ -2033,16 +2056,19 @@ class Axes(maxes.Axes):
             if value is not None:
                 kw_ticklabels[key] = value
 
-        # Get extend triangles in physical units
-        width, height = self.figure.get_size_inches()
-        orientation = kwargs.get('orientation', 'horizontal')  # should be there
-        if orientation == 'vertical':
-            inches = height * abs(self.get_position().height)
-        else:
-            inches = width * abs(self.get_position().width)
-        extendsize = kwargs.pop('extendsize', rc['colorbar.extend'])
-        extendsize = units(extendsize, 'em', 'in')
-        extendfrac = extendsize / (inches - 2 * extendsize)
+        # Parse extend triangle keyword args
+        if extendsize is not None and extendfrac is not None:
+            warnings._warn_proplot(
+                f'You cannot specify both an absolute extendsize={extendsize!r} '
+                f"and a relative extendfrac={extendfrac!r}. Ignoring 'extendfrac'."
+            )
+            extendfrac = None
+        if extendfrac is None:
+            orientation = kwargs.get('orientation', 'horizontal')  # should be there
+            width, height = cax._get_size_inches()
+            scale = height if orientation == 'vertical' else width
+            extendsize = units(extendsize, 'em', 'in')
+            extendfrac = extendsize / max(scale - 2 * extendsize, units(1, 'em', 'in'))
 
         # Draw the colorbar
         # NOTE: Set default formatter here because we optionally apply a FixedFormatter
@@ -2063,10 +2089,22 @@ class Axes(maxes.Axes):
             kwargs['extend'] = extend
         obj = self.figure.colorbar(mappable, **kwargs)
 
+        # Label and tick label settings
+        # WARNING: Must use colorbar set_label to set text, calling set_text on
+        # the axis will do nothing!
+        axis = cax.yaxis if orientation == 'vertical' else cax.xaxis
+        if label is not None:
+            obj.set_label(label)
+        axis.label.update(kw_label)
+        for label in axis.get_ticklabels():
+            label.update(kw_ticklabels)
+        axis.set_tick_params(
+            which='both', color=edgecolor, width=linewidth, direction=tickdir
+        )
+
         # The minor locator
         # NOTE: Colorbar._use_auto_colorbar_locator() is never True because we use
         # the custom DiscreteNorm normalizer. Colorbar._ticks() always called.
-        axis = cax.yaxis if orientation == 'vertical' else cax.xaxis
         if minorlocator is None:
             if tickminor:
                 obj.minorticks_on()
@@ -2085,18 +2123,6 @@ class Axes(maxes.Axes):
             ticks, *_ = obj._ticker(minorlocator, mticker.NullFormatter())
             axis.set_ticks(ticks, minor=True)
             axis.set_ticklabels([], minor=True)
-
-        # Label and tick label settings
-        # WARNING: Must use colorbar set_label to set text, calling set_text on
-        # the axis will do nothing!
-        if label is not None:
-            obj.set_label(label)
-        axis.label.update(kw_label)
-        for label in axis.get_ticklabels():
-            label.update(kw_ticklabels)
-        axis.set_tick_params(
-            which='both', color=edgecolor, width=linewidth, direction=tickdir
-        )
 
         # Fix alpha-blending issues. Cannot set edgecolor to 'face' because blending
         # will occur, get colored lines instead of white ones. Need manual blending.
@@ -2142,7 +2168,7 @@ class Axes(maxes.Axes):
             axis.set_inverted(True)
 
         # Return after registering location
-        self._add_guide('colorbar', loc, obj)  # possibly replace another
+        self._add_guide('colorbar', obj, loc)  # possibly replace another
         return obj
 
     @docstring.obfuscate_signature
@@ -2204,15 +2230,15 @@ class Axes(maxes.Axes):
         # to a list later used for colorbar levels. Same as legend.
         loc = _translate_loc(loc, 'colorbar', default=rc['colorbar.loc'])
         if queue:
-            obj = ([mappable], values)
-            self._add_guide('colorbar', loc, obj, **kwargs)
+            obj = (mappable, values)
+            self._add_guide('colorbar', obj, loc, **kwargs)
         else:
             cb = self._draw_colorbar(mappable, values, loc=loc, **kwargs)
             return cb
 
     @staticmethod
     def _parse_handles_labels(
-        axs, handles, labels, ncol=None, center=None, alphabetize=None,
+        axs, handles, labels, ncol=None, order='C', center=None, alphabetize=None,
     ):
         """
         Parse input handles and labels.
@@ -2237,6 +2263,16 @@ class Axes(maxes.Axes):
         # Iterate over sublists
         handles, labels = _to_list(handles), _to_list(labels)
         list_of_lists = any(isinstance(h, (list, np.ndarray)) and len(h) > 1 for h in handles)  # noqa: E501
+        if list_of_lists and ncol is not None:
+            warnings._warn_proplot(
+                'Detected list of *lists* of legend handles. '
+                'Ignoring user input property "ncol".'
+            )
+        if list_of_lists and order == 'F':
+            raise NotImplementedError(
+                'Column-major ordering of legend handles is not supported '
+                'for horizontally-centered legends.'
+            )
         center = _not_none(center, list_of_lists)
         axs = axs or ()
         ncol = _not_none(ncol, 3)
@@ -2306,14 +2342,15 @@ class Axes(maxes.Axes):
 
         return pairs
 
-    def _legend_objects(self, children):
+    @staticmethod
+    def _legend_objects(children):
         """
         Iterate recursively through `_children` attributes of various `HPacker`,
         `VPacker`, and `DrawingArea` classes.
         """
         for obj in children:
             if hasattr(obj, '_children'):
-                yield from self._legend_objects(obj._children)
+                yield from Axes._legend_objects(obj._children)
             else:
                 yield obj
 
@@ -2339,7 +2376,7 @@ class Axes(maxes.Axes):
         return mlegend.Legend(self, *zip(*pairs), ncol=ncol, **kwargs)
 
     def _multiple_legend(
-        self, pairs, *, loc=None, ncol=None, order=None, fontsize=None, **kwargs
+        self, pairs, *, loc=None, title=None, fontsize=None, **kwargs
     ):
         """
         Draw "legend" with centered rows by creating separate legends for
@@ -2354,11 +2391,6 @@ class Axes(maxes.Axes):
             prop = kwargs.pop(override, None)
             if prop is not None:
                 overridden.append(override)
-        if ncol is not None:
-            warnings._warn_proplot(
-                'Detected list of *lists* of legend handles. '
-                'Ignoring user input property "ncol".'
-            )
         if overridden:
             warnings._warn_proplot(
                 'Ignoring user input properties '
@@ -2379,7 +2411,6 @@ class Axes(maxes.Axes):
         # NOTE: We confine possible bounding box in *y*-direction, but do not
         # confine it in *x*-direction. Matplotlib will automatically move
         # left-to-right if you request this.
-        ymin = ymax = None
         loc = _not_none(loc, 'upper center')
         if not isinstance(loc, str):
             raise ValueError(
@@ -2391,15 +2422,8 @@ class Axes(maxes.Axes):
                 'For centered-row legends, cannot use "best" location. '
                 'Using "upper center" instead.'
             )
-        if order == 'F':
-            raise NotImplementedError(
-                'Column-major ordering of legend handles is not supported '
-                'for horizontally-centered legends.'
-            )
         for i, ipairs in enumerate(pairs):
-            if i == 1:
-                title = kwargs.pop('title', None)
-            if i >= 1 and title is not None:
+            if i > 0 and title is not None:
                 i += 1  # add extra space!
             if 'upper' in loc:
                 y1 = 1 - (i + 1) * interval
@@ -2410,13 +2434,11 @@ class Axes(maxes.Axes):
             else:  # center
                 y1 = 0.5 + interval * len(pairs) / 2 - (i + 1) * interval
                 y2 = 0.5 + interval * len(pairs) / 2 - i * interval
-            ymin = min(y1, _not_none(ymin, y1))
-            ymax = max(y2, _not_none(ymax, y2))
             bbox = mtransforms.Bbox([[0, y1], [1, y2]])
             leg = mlegend.Legend(
                 self, *zip(*ipairs), loc=loc, ncol=len(ipairs),
-                bbox_transform=self.transAxes, bbox_to_anchor=bbox,
-                frameon=False, **kwargs
+                bbox_to_anchor=bbox, bbox_transform=self.transAxes,
+                frameon=False, title=(title if i == 0 else None), **kwargs
             )
             legs.append(leg)
 
@@ -2478,20 +2500,21 @@ class Axes(maxes.Axes):
         ncol = _not_none(ncols=ncols, ncol=ncol)
         frameon = _not_none(frame=frame, frameon=frameon, default=rc['legend.frameon'])
         fontsize = _not_none(kwargs.pop('fontsize', None), rc['legend.fontsize'])
-        fontsize = _fontsize_to_pt(fontsize)
         titlefontsize = _not_none(
             title_fontsize=kwargs.pop('title_fontsize', None),
             titlefontsize=titlefontsize,
             default=rc['legend.title_fontsize']
         )
+        fontsize = _fontsize_to_pt(fontsize)
         titlefontsize = _fontsize_to_pt(titlefontsize)
         if order not in ('F', 'C'):
             raise ValueError(
                 f'Invalid order {order!r}. Choose from '
                 '"C" (row-major, default) and "F" (column-major).'
             )
+
+        # Convert relevant keys to em-widths
         for setting in rcsetup.EM_KEYS:  # em-width keys
-            # Convert keys to em-widths
             pair = setting.split('legend.', 1)
             if len(pair) == 1:
                 continue
@@ -2501,20 +2524,22 @@ class Axes(maxes.Axes):
                 value = units(kwargs[key], 'em', fontsize=fontsize)
             if value is not None:
                 kwargs[key] = value
-        if pad is not None:
-            # Merge 'pad' arg (analogue for panel padding) and 'borderaxespad'
-            kwargs['borderaxespad'] = _not_none(
-                borderaxespad=kwargs.pop('borderaxespad', None),
-                pad=units(pad, 'em', fontsize=fontsize)
-            )
 
-        # Change default padding for "filled" axes
+        # Generate and fill panel axes
         # NOTE: Important to remove None valued args above for these setdefault calls
         if loc in ('left', 'right', 'top', 'bottom'):
-            self = self.panel_axes(loc, width=width, space=space, pad=pad, filled=True)
+            lax = self.panel_axes(loc, width=width, space=space, pad=pad, filled=True)
             loc = 'fill'
+        else:
+            lax = self
+            loc = loc
+            if pad is not None:  # allow using 'pad' for 'borderaxespad'
+                kwargs['borderaxespad'] = _not_none(
+                    borderaxespad=kwargs.pop('borderaxespad', None),
+                    pad=units(pad, 'em', fontsize=fontsize)
+                )
         if loc == 'fill':
-            self._hide_panel()
+            lax._hide_panel()
             kwargs.setdefault('borderaxespad', 0)
             if not frameon:
                 kwargs.setdefault('borderpad', 0)
@@ -2525,7 +2550,7 @@ class Axes(maxes.Axes):
                 'top': 'lower center',
                 'bottom': 'upper center',
             }
-            loc = loc_sides[self._panel_side]
+            loc = loc_sides[lax._panel_side]
 
         # Legend bounding box properties
         # NOTE: Here we permit only 'edgewidth' to avoid conflict with handle
@@ -2558,8 +2583,6 @@ class Axes(maxes.Axes):
         if fontweight is not None:
             kw_text['weight'] = fontweight
         kw_title = {}
-        if titlefontsize is not None:
-            kw_title['size'] = titlefontsize
         if titlefontcolor is not None:
             kw_title['color'] = titlefontcolor
         if titlefontweight is not None:
@@ -2567,31 +2590,39 @@ class Axes(maxes.Axes):
 
         # Parse the legend handles using axes for auto-handle detection
         # TODO: Update this when we no longer use "filled panels" for outer legends
-        axs = [self]
-        if self._panel_hidden:  # this is a "filled" legend
-            if self._panel_parent:  # axes panel i.e. axes-wide legend
-                axs = list(self._panel_parent._iter_axes(hidden=False, children=True))
+        axs = [lax]
+        if lax._panel_hidden:  # this is a "filled" legend
+            if lax._panel_parent:  # axes panel i.e. axes-wide legend
+                axs = list(lax._panel_parent._iter_axes(hidden=False, children=True))
             else:  # figure panel i.e. figure-wide legend
                 axs = list(self.figure._iter_axes(hidden=False, children=True))
         pairs = self._parse_handles_labels(
-            axs, handles, labels, ncol=ncol, center=center, alphabetize=alphabetize,
+            axs, handles, labels,
+            ncol=ncol, order=order, center=center, alphabetize=alphabetize,
         )
+        title = _not_none(label=label, title=title)
+        title = _not_none(title, *self._attr_find(pairs, '_default_title'))
 
         # Create legend object(s)
-        kwargs.update({'loc': loc, 'ncol': ncol, 'frameon': frameon})
+        kwargs.update({
+            'title': title,
+            'frameon': frameon,
+            'fontsize': fontsize,
+            'title_fontsize': titlefontsize,
+        })
         if not pairs:  # fallback
-            objs = [mlegend.Legend(self, [], [], **kwargs)]
+            objs = [mlegend.Legend(lax, [], [], **kwargs)]
         elif center:  # multi-legend pseudo-legend
-            objs = self._multiple_legend(pairs, order=order, **kwargs)
+            objs = lax._multiple_legend(pairs, loc=loc, **kwargs)
         else:  # standard legend
-            objs = [self._single_legend(pairs, order=order, **kwargs)]
+            objs = [lax._single_legend(pairs, loc=loc, ncol=ncol, **kwargs)]
         for obj in objs:
             if isinstance(obj, mpatches.FancyBboxPatch):
                 continue
-            if hasattr(self, 'legend_') and self.legend_ is None:
-                self.legend_ = obj  # set *first* legend accessible with get_legend()
+            if hasattr(lax, 'legend_') and lax.legend_ is None:
+                lax.legend_ = obj  # set *first* legend accessible with get_legend()
             else:
-                self.add_artist(obj)
+                lax.add_artist(obj)
 
         # Update legend patch and elements
         # TODO: Remove handle overrides? Idea was this lets users create *categorical*
@@ -2601,9 +2632,6 @@ class Axes(maxes.Axes):
         # WARNING: legendHandles only contains the *first* artist per legend because
         # HandlerBase.legend_artist() called in Legend._init_legend_box() only
         # returns the first artist. Instead we try to iterate through offset boxes.
-        title = _not_none(label=label, title=title)
-        title = _not_none(title, *self._attr_find(pairs, '_default_title'))
-        set_title = True
         for obj in objs:
             # Update patch
             if not isinstance(obj, mpatches.FancyBboxPatch):
@@ -2616,9 +2644,6 @@ class Axes(maxes.Axes):
             except AttributeError:  # older versions maybe?
                 children = []
             # Update title text, handle text, and handle artist properties
-            if title and set_title:
-                obj.set_title(title, prop=kw_title)
-                set_title = False
             for obj in self._legend_objects(children):
                 # NOTE: This silently other invalid properties
                 if isinstance(obj, mtext.Text):
@@ -2633,7 +2658,7 @@ class Axes(maxes.Axes):
         if isinstance(objs[0], mpatches.FancyBboxPatch):
             objs = objs[1:]
         obj = objs[0] if len(objs) == 1 else tuple(objs)
-        self._add_guide('legend', loc, obj)  # possibly replace another
+        self._add_guide('legend', obj, loc)  # possibly replace another
         return obj
 
     @docstring.concatenate_original
@@ -2692,7 +2717,7 @@ class Axes(maxes.Axes):
         loc = _translate_loc(loc, 'legend', default=rc['legend.loc'])
         if queue:
             obj = (handles, labels)
-            self._add_guide('legend', loc, obj, **kwargs)
+            self._add_guide('legend', obj, loc, **kwargs)
         else:
             leg = self._draw_legend(handles, labels, loc=loc, **kwargs)
             return leg
@@ -2929,16 +2954,6 @@ class Axes(maxes.Axes):
                 if not jax.get_visible():
                     continue  # safety first
                 yield jax
-
-    def _is_panel_group_member(self, other):
-        """
-        Return whether the axes are related.
-        """
-        return (
-            self._panel_parent is other  # child
-            or other._panel_parent is self   # parent
-            or other._panel_parent is self._panel_parent  # sibling
-        )
 
     @property
     def number(self):

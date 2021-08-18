@@ -1280,7 +1280,10 @@ class _BasemapAxes(GeoAxes):
             ctx = rc._context_mode == 2
             grid = self._get_gridline_toggle(grid, axis=axis, which=which, context=ctx)
             axis = getattr(self, f'_{name}axis')
-            bools = getattr(self, f'_{name}array')
+            if which == 'major':
+                bools = getattr(self, f'_{name}array')
+            else:
+                bools = 4 * [False]
             array = [*array[:2], *array[2:][::-1]]  # flip to lrtb
             for i, b in enumerate(array):
                 if b is not None:

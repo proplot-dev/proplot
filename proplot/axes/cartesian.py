@@ -173,6 +173,8 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         called at drawtime, "shared" labels can be inadvertantly turned off.
         """
         # X axis
+        # NOTE: Critical to apply labels to *shared* axes attributes rather
+        # than testing extents or we end up sharing labels with twin axes.
         # NOTE: The "panel sharing group" refers to axes and panels *above* the
         # bottommost or to the *right* of the leftmost panel. But the edge panel
         # sharing level is the *figure* sharing level.
@@ -180,18 +182,18 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         if self._sharex is not None:
             level = 3 if self._panel_sharex_group else self.figure._sharex
             if level > 0:
+                self._transfer_text(axis.label, self._sharex.xaxis.label)
                 axis.label.set_visible(False)
             if level > 2:
                 # WARNING: Cannot set NullFormatter because shared axes share the
-                # same axis.Ticker classes. Instead use the approach copied from
-                # matplotlib subplots().
+                # same Ticker(). Instead use approach copied from mpl subplots().
                 axis.set_tick_params(which='both', labelbottom=False, labeltop=False)
-
         # Y axis
         axis = self.yaxis
         if self._sharey is not None:
             level = 3 if self._panel_sharey_group else self.figure._sharey
             if level > 0:
+                self._transfer_text(axis.label, self._sharey.yaxis.label)
                 axis.label.set_visible(False)
             if level > 2:
                 axis.set_tick_params(which='both', labelleft=False, labelright=False)
@@ -248,6 +250,17 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         child.set_ylim(nlim, emit=False)
         child._dualy_prevstate = (scale, *olim)
 
+    def _is_panel_group_member(self, other):
+        """
+        Return whether the axes belong in a panel sharing stack..
+        """
+        return (
+            self._panel_parent is other  # other is child panel
+            or other._panel_parent is self  # other is main subplot
+            or other._panel_parent and self._panel_parent  # ...
+            and other._panel_parent is self._panel_parent  # other is sibling panel
+        )
+
     @staticmethod
     def _parse_alt(x, kwargs):
         """
@@ -276,23 +289,16 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         Configure shared axes accounting for panels. The input is the
         'parent' axes, from which this one will draw its properties.
         """
-        # Share *panels* across different subplots
+        # Share panels across *different* subplots
         super()._sharex_setup(sharex)
 
         # Get sharing level
         level = (
-            3 if self._panel_sharex_group
-            and self._is_panel_group_member(sharex)
+            3 if self._panel_sharex_group and self._is_panel_group_member(sharex)
             else self.figure._sharex
         )
-        if level not in range(4):
-            raise ValueError(
-                'Invalid sharing level sharex={value!r}. '
-                'Axis sharing level can be 0 (share nothing), '
-                '1 (hide axis labels), '
-                '2 (share limits and hide axis labels), or '
-                '3 (share limits and hide axis and tick labels).'
-            )
+        if level not in range(4):  # must be internal error
+            raise ValueError(f'Invalid sharing level sharex={level!r}.')
         if sharex in (None, self) or not isinstance(sharex, CartesianAxes):
             return
 
@@ -303,7 +309,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         if level > 0:
             self._sharex = sharex
             if not sharex.xaxis.label.get_text():
-                sharex.xaxis.label.set_text(self.xaxis.label.get_text())
+                self._transfer_text(self.xaxis.label, sharex.xaxis.label)
 
         # Share future axis tickers, limits, and scales
         # NOTE: Only difference between levels 2 and 3 is level 3 hides
@@ -341,18 +347,11 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
 
         # Get sharing level
         level = (
-            3 if self._panel_sharey_group
-            and self._is_panel_group_member(sharey)
+            3 if self._panel_sharey_group and self._is_panel_group_member(sharey)
             else self.figure._sharey
         )
-        if level not in range(4):
-            raise ValueError(
-                'Invalid sharing level sharey={value!r}. '
-                'Axis sharing level can be 0 (share nothing), '
-                '1 (hide axis labels), '
-                '2 (share limits and hide axis labels), or '
-                '3 (share limits and hide axis and tick labels).'
-            )
+        if level not in range(4):  # must be internal error
+            raise ValueError(f'Invalid sharing level sharey={level!r}.')
         if sharey in (None, self) or not isinstance(sharey, CartesianAxes):
             return
 
@@ -462,39 +461,14 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         this keeps the labels synced for all subplots in the same row or column. Label
         positions will be adjusted at draw-time with figure._align_axislabels.
         """
-        # NOTE: Critical to apply labels to *shared* axes attributes rather
-        # than testing extents or we end up sharing labels with twin axes.
         # NOTE: Critical to test whether arguments are None or else this
         # will set isDefault_label to False every time format() is called.
-        # NOTE: Initially we keep spanning labels off. Alignment is done
-        # at drawtime by Figure._align_axis_labels().
+        # NOTE: Spanning and sharing labels are implemented in _align_axis_labels()
+        # which also calls _apply_axis_sharing() for each axes.
         kwargs = self._get_label_props(**kwargs)
         if all(a is None for a in args) and all(v is None for v in kwargs.values()):
             return  # also returns if args and kwargs are empty
-
-        # Walk to shared parent if it is a main axes
-        # NOTE: Axis sharing between "main" axes is only ever one level deep.
-        # TODO: Instead iterate through self._shared_x_axes.get_siblings()
-        ax = self
-        share = getattr(ax, '_share' + x) or ax
-        if not share._panel_parent:  # this is not a panel i.e. it is a main axes
-            ax = share
-
-        # Get spanning main axes in this row or column (ignore short panel edges)
-        # TODO: Instead group axes into spanning label "groups" like shared axes.
-        axs = [ax]
-        if getattr(ax.figure, '_span' + x):
-            side = getattr(self, x + 'axis').get_label_position()
-            if side in ('left', 'bottom'):
-                axs = ax._get_side_axes(side, panels=False)
-
-        # Apply label
-        # NOTE: Must use label setter so it changes isDefault_label and others.
-        # NOTE: Walk to parent if it exists (may be a panel long edge)
-        for ax in axs:
-            ax = getattr(ax, '_share' + x) or ax  # defer to panel
-            ax = super(CartesianAxes, ax)
-            getattr(ax, 'set_' + x + 'label')(*args, **kwargs)
+        getattr(self, 'set_' + x + 'label')(*args, **kwargs)
 
     def _update_locators(
         self, x, locator=None, minorlocator=None, *,
