@@ -257,9 +257,9 @@ shadez, shadezorder, fadez, fadezorder : float, optional
 shadea, shadealpha, fadea, fadealpha : float, optional
     The opacity for the different shaded regions. Defaults are ``0.4`` and ``0.2``.
 shadelw, shadelinewidth, fadelw, fadelinewidth : float, optional
-    The edge line width for the shading patches. Default is ``0``.
+    The edge line width for the shading patches. Default is :rc:`patch.linewidth`.
 shdeec, shadeedgecolor, fadeec, fadeedgecolor : float, optional
-    The edge color for the shading patches. Default is ``'face'`` (i.e., inherited).
+    The edge color for the shading patches. Default is ``'none'``.
 shadelabel, fadelabel : bool or str, optional
     Labels for the shaded regions to be used as separate legend entries. To toggle
     labels "on" and apply a *default* label, use e.g. ``shadelabel=True``. To apply
@@ -787,10 +787,10 @@ fc, facecolor, fillcolor : color-spec, list, optional
     The fill color for the boxes. Default is the next color cycler color. If
     a list, it should be the same length as the number of objects.
 a, alpha, fa, facealpha, fillalpha : float, optional
-    The opacity of the boxes. Default is ``0.7``. If a list, should be
-    the same length as the number of objects.
+    The opacity of the boxes. Default is ``1``. If a list,
+    should be the same length as the number of objects.
 lw, linewidth, linewidths : float, optional
-    The linewidth of all objects. Default is ``0.8``.
+    The linewidth of all objects. Default is :rc:`patch.linewidth`.
 c, color, colors, ec, edgecolor, edgecolors : color-spec, list, optional
     The color of all objects. Default is ``'black'``. If a list, it should
     be the same length as the number of objects.
@@ -853,10 +853,10 @@ fc, facecolor, facecolors, fillcolor, fillcolors : color-spec, list, optional
     The violin plot fill color. Default is the next color cycler color. If
     a list, it should be the same length as the number of objects.
 a, alpha, fa, facealpha, fillalpha : float, optional
-    The opacity of the violins. Default is ``0.7``. If a list, it
-    should be the same length as the number of objects.
+    The opacity of the violins. Default is ``1``. If a list,
+    it should be the same length as the number of objects.
 lw, linewidth, linewidths : float, optional
-    The linewidth of the line objects. Default is ``0.8``.
+    The linewidth of the line objects. Default is :rc:`patch.linewidth`.
 c, color, colors, ec, edgecolor, edgecolors : color-spec, list, optional
     The edge color for the violin patches. Default is ``'black'``. If a
     list, it should be the same length as the number of objects.
@@ -2988,14 +2988,14 @@ class PlotAxes(base.Axes):
         shadeprops = _pop_props(kwargs, 'patch', prefix='shade')
         shadeprops.setdefault('alpha', 0.4)
         shadeprops.setdefault('zorder', 1.5)
-        shadeprops.setdefault('linewidth', 0)
-        shadeprops.setdefault('edgecolor', 'face')  # infer from face
+        shadeprops.setdefault('linewidth', rc['patch.linewidth'])
+        shadeprops.setdefault('edgecolor', 'none')
         # Fading properties
         fadeprops = _pop_props(kwargs, 'patch', prefix='fade')
-        fadeprops.setdefault('linewidth', shadeprops['linewidth'])
-        fadeprops.setdefault('alpha', 0.5 * shadeprops['alpha'])
         fadeprops.setdefault('zorder', shadeprops['zorder'])
-        fadeprops.setdefault('edgecolor', 'face')
+        fadeprops.setdefault('alpha', 0.5 * shadeprops['alpha'])
+        fadeprops.setdefault('linewidth', shadeprops['linewidth'])
+        fadeprops.setdefault('edgecolor', 'none')
         # Get default color then apply to outgoing keyword args so
         # that plotting function will not advance to next cycler color.
         # TODO: More robust treatment of 'color' vs. 'facecolor'
@@ -3847,8 +3847,8 @@ class PlotAxes(base.Axes):
         # Global and fill properties
         kw = kwargs.copy()
         _process_props(kw, 'patch')
+        linewidth = kw.pop('linewidth', rc['patch.linewidth'])
         edgecolor = kw.pop('edgecolor', 'black')
-        linewidth = kw.pop('linewidth', 0.8)
         fillcolor = kw.pop('facecolor', None)
         fillalpha = kw.pop('alpha', None)
         fill = fill is True or fillcolor is not None or fillalpha is not None
@@ -3954,10 +3954,10 @@ class PlotAxes(base.Axes):
         # Parse keyword args
         kw = kwargs.copy()
         _process_props(kw, 'patch')
-        linewidth = kw.pop('linewidth', 0.8)
+        linewidth = kw.pop('linewidth', rc['patch.linewidth'])
         edgecolor = kw.pop('edgecolor', 'black')
-        fillalpha = kw.pop('alpha', 0.7)
         fillcolor = kw.pop('facecolor', None)
+        fillalpha = kw.pop('alpha', None)
         kw.setdefault('capsize', 0)  # caps are redundant for violin plots
         kw.setdefault('means', kw.pop('showmeans', None))  # for _indicate_error
         kw.setdefault('medians', kw.pop('showmedians', None))
