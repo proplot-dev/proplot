@@ -2820,9 +2820,9 @@ class PlotAxes(base.Axes):
             cycle_kw = cycle_kw or {}
             if ncycle != 1:  # ignore for column-by-column plotting commands
                 cycle_kw.setdefault('N', ncycle)  # if None then filled in Colormap()
-            if isinstance(cycle, str):
-                cycle = cycle.lower()  # recall cmaps are case insensitive so no harm
-            if cycle in ((), [], 'none', False):
+            if isinstance(cycle, str) and cycle.lower() == 'none':
+                cycle = False
+            if cycle is False or cycle == () or cycle == []:
                 args = ()
             elif cycle is True:  # consistency with 'False' ('reactivate' the cycler)
                 args = (rc['axes.prop_cycle'],)
@@ -3181,7 +3181,6 @@ class PlotAxes(base.Axes):
             guide_kw = _pop_params(kw, self._add_queued_guide)  # after standardize
             for _, n, x, y, kw in self._iter_columns(xs, ys, **kw):
                 kw = self._parse_cycle(n, **kw)
-                print(kw)
                 *eb, kw = self._error_bars(x, y, vert=vert, **kw)
                 *es, kw = self._error_shading(x, y, vert=vert, infer_lines=True, **kw)
                 if not vert:
