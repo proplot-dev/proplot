@@ -13,12 +13,12 @@ except ImportError:  # graceful fallback if IceCream isn't installed
     ic = lambda *args: print(*args)  # noqa: E731
 
 INTERNAL_PARAMS = {  # silently pop these if we don't reach certain internal utilities
-    'default_discrete',
-    'default_cmap',
-    'contour_plot',
-    'is_counts',
     'to_centers',
-    'cycle_manually',
+    'line_plot',
+    'contour_plot',
+    'default_cmap',
+    'default_discrete',
+    'skip_autolev',
 }
 
 # Alias dictionaries. This package only works with a subset of available artists

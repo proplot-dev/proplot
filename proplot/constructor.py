@@ -358,8 +358,9 @@ def _modify_colormap(cmap, *, cut, left, right, reverse, shift, alpha, samples):
     return cmap
 
 
-@warnings._rename_kwargs('0.8', to_listed='discrete')
-@warnings._rename_kwargs('0.7', fade='saturation', shade='luminance')
+@warnings._rename_kwargs(
+    '0.8', fade='saturation', shade='luminance', to_listed='discrete'
+)
 def Colormap(
     *args, name=None, listmode='perceptual', filemode='continuous', discrete=False,
     cycle=None, save=False, save_kw=None, **kwargs
