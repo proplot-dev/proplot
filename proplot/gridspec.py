@@ -824,16 +824,18 @@ class GridSpec(mgridspec.GridSpec):
         bbox = fig.get_tightbbox(renderer)
 
         # Calculate new figure margins
-        # NOTE: Compare to the value last used to compute grid positions which
-        # is either the user-passed value or the default value.
+        # NOTE: Negative spaces are common where entire rows/columns of gridspec
+        # are empty but it seems to result in wrong figure size + grid positions. Not
+        # worth correcting so instead enforce positive margin sizes. Will leave big
+        # empty slot but that is probably what should happen under this scenario.
         left = self.left
         bottom = self.bottom
         right = self.right
         top = self.top
-        self._left_default = left - (bbox.xmin - 0) + pad
-        self._bottom_default = bottom - (bbox.ymin - 0) + pad
-        self._right_default = right - (obox.xmax - bbox.xmax) + pad
-        self._top_default = top - (obox.ymax - bbox.ymax) + pad
+        self._left_default = max(0, left - (bbox.xmin - 0) + pad)
+        self._bottom_default = max(0, bottom - (bbox.ymin - 0) + pad)
+        self._right_default = max(0, right - (obox.xmax - bbox.xmax) + pad)
+        self._top_default = max(0, top - (obox.ymax - bbox.ymax) + pad)
 
         # Calculate new subplot row and column spaces. Enforce equal
         # default spaces between main subplot edges if requested.
