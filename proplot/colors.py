@@ -742,8 +742,7 @@ class _Colormap(object):
         # Get the filename
         if path is None:
             path = os.path.join(folder, self.name)
-        _, ext = os.path.splitext(path)
-        if not ext:
+        if not os.path.splitext(path)[1]:
             path = path + '.' + ext  # default file extension
         return path
 
@@ -2778,27 +2777,22 @@ class _ColorCache(dict):
         # NOTE: Matplotlib 'color' args are passed to to_rgba, which tries to read
         # directly from cache and if that fails, sanitizes input, which raises
         # error on receiving (colormap, idx) tuple. So we have to override cache.
-        rgba, alpha = key
-        b, rgba = self._get_rgba(rgba)
-        if b:  # return right away
-            return rgba
-        else:  # try to retrieve from the cache
-            return super().__getitem__((rgba, alpha))
+        return self._get_rgba(*key)
 
-    def _get_rgba(self, arg):
+    def _get_rgba(self, arg, alpha):
         """
         Try to get the color from the registered colormap or color cycle.
         """
-        b = False
+        key = (arg, alpha)
         if isinstance(arg, str) or not np.iterable(arg) or len(arg) != 2:
-            return b, arg
+            return super().__getitem__(key)
         if not isinstance(arg[0], str) or not isinstance(arg[1], Number):
-            return b, arg
+            return super().__getitem__(key)
         # Try to get the colormap
         try:
             cmap = _cmap_database[arg[0]]
         except (KeyError, TypeError):
-            return b, arg
+            return super().__getitem__(key)
         # Read the colormap value
         if isinstance(cmap, DiscreteColormap):
             if not 0 <= arg[1] < len(cmap.colors):
@@ -2814,7 +2808,10 @@ class _ColorCache(dict):
                     f'between 0 and 1, got {arg[1]}.'
                 )
             rgba = cmap(arg[1])  # get color selection
-        return True, rgba
+        # Return the colormap value
+        rgba = to_rgba(rgba)
+        a = _not_none(alpha, rgba[3])
+        return (*rgba[:3], a)
 
 
 class ColorDatabase(dict):
