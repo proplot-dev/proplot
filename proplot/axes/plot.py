@@ -331,7 +331,7 @@ docstring.snippets['plot.cmap_norm'] = _cmap_norm_docstring
 
 # Levels docstrings
 # NOTE: In some functions we only need some components
-_vmin_vmax_docstring = """
+_vlim_levels_docstring = """
 vmin, vmax : float, optional
     Used to determine level locations if `levels` or `values` is an integer.
     Actual levels may not fall exactly on `vmin` and `vmax`, but the minimum
@@ -339,7 +339,7 @@ vmin, vmax : float, optional
     no larger than `vmax`. If `vmin` or `vmax` are not provided, the
     minimum and maximum data values are used.
 """
-_levels_values_docstring = """
+_manual_levels_docstring = """
 N
     Shorthand for `levels`.
 levels : int or list of float, optional
@@ -386,9 +386,9 @@ nozero : bool, optional
     If ``True``, ``0`` is removed from the level list. This is mainly useful for
     single-color `~matplotlib.axes.Axes.contour` plots.
 """
-docstring.snippets['plot.levels_manual'] = _levels_values_docstring
+docstring.snippets['plot.levels_vlim'] = _vlim_levels_docstring
+docstring.snippets['plot.levels_manual'] = _manual_levels_docstring
 docstring.snippets['plot.levels_auto'] = _auto_levels_docstring
-docstring.snippets['plot.vmin_vmax'] = _vmin_vmax_docstring
 
 
 # Labels docstrings
@@ -580,7 +580,7 @@ c, color, colors, mc, markercolor, markercolors \
 smin, smax : float, optional
     The minimum and maximum marker size in units ``points**2`` used to scale
     `s`. If not provided, the marker sizes are equivalent to the values in `s`.
-%(plot.vmin_vmax)s
+%(plot.levels_vlim)s
 %(plot.args_1d_shared)s
 
 Other parameters
@@ -898,7 +898,7 @@ Other parameters
 ----------------
 %(plot.cmap_norm)s
 %(plot.levels_manual)s
-%(plot.vmin_vmax)s
+%(plot.levels_vlim)s
 %(plot.levels_auto)s
 %(plot.guide)s
 lw, linewidth, linewidths : optional
@@ -935,7 +935,7 @@ Other parameters
 ----------------
 %(plot.cmap_norm)s
 %(plot.levels_manual)s
-%(plot.vmin_vmax)s
+%(plot.levels_vlim)s
 %(plot.levels_auto)s
 %(plot.guide)s
 lw, linewidth, linewidths : optional
@@ -966,7 +966,7 @@ Other parameters
 ----------------
 %(plot.cmap_norm)s
 %(plot.levels_manual)s
-%(plot.vmin_vmax)s
+%(plot.levels_vlim)s
 %(plot.levels_auto)s
 """
 docstring.snippets['plot.flow'] = docstring.add_snippets(_flow_docstring)
@@ -1102,7 +1102,7 @@ def _safe_range(data, lo=0, hi=100, automin=True, automax=True):
         else:
             min_ = None
     if data.size and automax:
-        max_ = float(np.max(data) if lo >= 100 else np.percentile(data, hi))
+        max_ = float(np.max(data) if hi >= 100 else np.percentile(data, hi))
         if np.isfinite(max_):
             max_ *= units
         else:
@@ -1187,9 +1187,6 @@ def _get_coords(*args, which='x', **kwargs):
     # correspond to indices while the latter can mysteriously truncate labels.
     res = []
     for arg in args:
-        if arg is None:  # missing positional arg e.g. scatter 's' and 'c'
-            res.append(arg)
-            continue
         arg = _to_duck_array(arg)
         if not _is_categorical(arg):
             res.append(arg)
@@ -1531,6 +1528,17 @@ def _parse_vert(
     return kwargs
 
 
+def _set_guide_kw(obj, kwargs):
+    """
+    Add dictionary to objects in arbitrary nested lists of arists or mappables.
+    """
+    if isinstance(obj, (martist.Artist, mcontour.ContourSet, mcontainer.Container)):
+        setattr(obj, '_guide_kw', kwargs)
+    elif isinstance(obj, (tuple, list, ndarray)):
+        for iobj in obj:
+            _set_guide_kw(iobj, kwargs)
+
+
 def _error_data(
     y, stds=None, pctiles=None, errdata=None, distribution=None,
     stds_default=None, pctiles_default=None, absolute=False, label=False,
@@ -1707,7 +1715,7 @@ class PlotAxes(base.Axes):
         """
         super().__init__(*args, **kwargs)
 
-    def _plot_safe(self, name, *args, add_attrs=None, **kwargs):
+    def _plot_safe(self, name, *args, guide_kw=None, **kwargs):
         """
         Call the plotting method and use context object to redirect internal
         calls to native methods. Finally add attributes to outgoing methods.
@@ -1715,13 +1723,14 @@ class PlotAxes(base.Axes):
         # NOTE: Previously allowed internal matplotlib plotting function calls to run
         # through proplot overrides then avoided awkward conflicts in piecemeal fashion.
         # Now prevent internal calls from running through overrides using preprocessor
-        add_attrs = add_attrs or {}
+        guide_kw = guide_kw or {}
+        kwargs.pop('distribution', None)  # remove stat distributions
         with _state_context(self, _internal_call=True):
             if getattr(self, 'name', None) == 'proplot_basemap':
                 obj = getattr(self.projection, name)(*args, ax=self, **kwargs)
             else:
                 obj = getattr(super(), name)(*args, **kwargs)
-            self._attr_add(obj, **add_attrs)  # add attributes
+            _set_guide_kw(obj, guide_kw)  # add attributes
         return obj
 
     def _plot_edges(self, method, *args, **kwargs):
@@ -1737,7 +1746,7 @@ class PlotAxes(base.Axes):
         kwargs.setdefault('linewidths', EDGEWIDTH)
         kwargs.pop('cmap', None)
         kwargs['colors'] = kwargs.pop('edgecolors', 'k')
-        self._plot_safe(method, *args, **kwargs)
+        return self._plot_safe(method, *args, **kwargs)
 
     def _plot_negpos(
         self, name, x, *ys, negcolor=None, poscolor=None,
@@ -1776,27 +1785,6 @@ class PlotAxes(base.Axes):
         posobj = self._plot_safe(name, x, *ypos, color=color, **kwargs)
         return (negobj, posobj)
 
-    def _attr_add(self, obj, **kwargs):
-        """
-        Add attribute to objects in arbitrary nested lists of arists or mappables.
-        """
-        if isinstance(obj, (martist.Artist, mcontour.ContourSet, mcontainer.Container)):
-            for key, value in kwargs.items():
-                setattr(obj, key, value)
-        elif isinstance(obj, (tuple, list, ndarray)):
-            for iobj in obj:
-                self._attr_add(iobj, **kwargs)
-
-    def _attr_find(self, obj, attr):
-        """
-        Find attributes within arbitrary nested lists of artists or mappables.
-        """
-        if hasattr(obj, attr):
-            yield getattr(obj, attr)
-        elif isinstance(obj, (tuple, list, ndarray)):
-            for iobj in obj:
-                yield from self._attr_find(iobj, attr)
-
     def _add_queued_guide(
         self, objs, colorbar=None, colorbar_kw=None, legend=None, legend_kw=None,
     ):
@@ -1833,8 +1821,8 @@ class PlotAxes(base.Axes):
                 edges.extend(convert((min_, max_)))
 
     def _auto_format_1d(
-        self, x, *ys, zerox=False, autox=True, autoy=True, autoreverse=True,
-        autolabels=True, autovalues=False, autoformat=None,
+        self, x, *ys, zerox=False, autox=True, autoy=True,
+        autoreverse=True, autolabels=True, autovalues=False, autoformat=None,
         label=None, labels=None, value=None, values=None, **kwargs
     ):
         """
@@ -1843,9 +1831,9 @@ class PlotAxes(base.Axes):
         """
         # Parse input
         y = max(ys, key=lambda y: y.size)  # try to find a non-scalar y for metadata
-        kwargs, vert = _get_vert(**kwargs)
         autox = autox and not zerox  # so far just relevant for hist()
         autoformat = _not_none(autoformat, rc['autoformat'])
+        kwargs, vert = _get_vert(**kwargs)
         labels = _not_none(
             label=label,
             labels=labels,
@@ -1872,7 +1860,10 @@ class PlotAxes(base.Axes):
         # labels refer to indices along x axis.
         if autolabels and labels is None:
             laxis = 0 if not autox and not autoy else xaxis if not autoy else xaxis + 1
-            labels = _get_labels(y, axis=laxis, always=False)
+            if laxis >= y.ndim:
+                labels = _get_title(y)
+            else:
+                labels = _get_labels(y, axis=laxis, always=False)
             notitle = not _get_title(labels)
             if labels is None:
                 pass
@@ -1880,20 +1871,16 @@ class PlotAxes(base.Axes):
                 labels = None
 
         # Apply the labels or values
-        if labels is None:
-            pass
-        elif autovalues:
-            values, colorbar_kw = _get_coords(labels, which='')
-            kwargs['values'] = _to_numpy_array(values)
-            kwargs.setdefault('colorbar_kw', {}).update(colorbar_kw)
-        elif autolabels:
-            kwargs['labels'] = _to_numpy_array(labels)
-
+        if labels is not None:
+            if autovalues:
+                kwargs['values'] = _to_numpy_array(labels)
+            elif autolabels:
+                kwargs['labels'] = _to_numpy_array(labels)
         # Apply title for legend or colorbar that uses the labels or values
         if autoformat:
             title = _get_title(labels)
             if title:
-                kwargs.setdefault('add_attrs', {}).update({'_default_title': title})
+                kwargs.setdefault('guide_kw', {}).update({'title': title})
 
         # Apply the basic x and y settings
         autox = autox and self.name == 'proplot_cartesian'
@@ -2006,13 +1993,10 @@ class PlotAxes(base.Axes):
                 self.format(**kw_format)
 
         # Default colorbar label
-        # WARNING: This will fail for any funcs wrapped by _standardize_2d but not
-        # wrapped by _add_queued_guide. So far there are none.
         if autoformat:
             title = _get_title(zs[0])
             if title:
-                kwargs.setdefault('legend_kw', {}).setdefault('title', title)
-                kwargs.setdefault('colorbar_kw', {}).setdefault('title', title)
+                kwargs.setdefault('guide_kw', {}).setdefault('title', title)
 
         # Finally strip metadata
         x = _to_numpy_array(x)
@@ -2187,7 +2171,7 @@ class PlotAxes(base.Axes):
 
     def _parse_vlim(
         self, *args,
-        vmin=None, vmax=None, is_counts=False, to_centers=False,
+        vmin=None, vmax=None, to_centers=False,
         robust=None, inbounds=None, **kwargs,
     ):
         """
@@ -2205,8 +2189,6 @@ class PlotAxes(base.Axes):
             Whether to filter to in-bounds data.
         to_centers : bool, optional
             Whether to convert coordinates to 'centers'.
-        is_counts : bool, optional
-            Whether to guesstimate histogram counts rather than use data.
 
         Returns
         -------
@@ -2249,10 +2231,10 @@ class PlotAxes(base.Axes):
         for z in zs:
             if z is None:  # e.g. empty scatter color
                 continue
+            if z.ndim > 2:  # e.g. imshow data
+                continue
             z = _to_numpy_array(z)
-            if is_counts:
-                z = np.array([0, z.size]) // 10
-            elif inbounds and x is not None and y is not None:  # ignore if None coords
+            if inbounds and x is not None and y is not None:  # ignore if None coords
                 z = self._mask_inbounds(x, y, z, to_centers=to_centers)
             vmin, vmax = _safe_range(z, pmin, pmax, automin=automin, automax=automax)
             if vmin is not None:
@@ -2382,7 +2364,7 @@ class PlotAxes(base.Axes):
     def _parse_levels(
         self, *args, N=None, levels=None, values=None, minlength=2,
         positive=False, negative=False, nozero=False, norm=None, norm_kw=None,
-        vmin=None, vmax=None, extend=None, diverging=None, **kwargs,
+        vmin=None, vmax=None, extend=None, diverging=None, skip_autolev=False, **kwargs,
     ):
         """
         Return levels resulting from a wide variety of keyword options.
@@ -2394,9 +2376,10 @@ class PlotAxes(base.Axes):
         N
             Shorthand for `levels`.
         levels : int or list of float, optional
-            The (approximate) number of levels to create or the level list.
+            The levels list or (approximate) number of levels to create.
         values : int or list of float, optional
-            The (approximate) number of level centers to create or the center list.
+            The level center list or (approximate) number of level centers to create.
+            This can also be a list of labels or strings.
         minlength : int, optional
             The minimum number of levels allowed.
         positive, negative, nozero : bool, optional
@@ -2416,9 +2399,14 @@ class PlotAxes(base.Axes):
             Unused arguments.
         """
         # Rigorously check user input levels and values
+        # NOTE: Include special case where color levels are referenced
+        # by string label values.
         levels = _not_none(
             N=N, levels=levels, norm_kw_levels=norm_kw.pop('levels', None),
         )
+        if np.iterable(values) and _is_categorical(values):
+            values, colorbar_kw = _get_coords(values, which='')
+            kwargs.setdefault('guide_kw', {}).update(colorbar_kw)
         if positive and negative:
             negative = False
             warnings._warn_proplot(
@@ -2493,27 +2481,25 @@ class PlotAxes(base.Axes):
             ticks = _to_numpy_array(values)  # prefer ticks at centers
         elif np.iterable(levels):
             ticks = _to_numpy_array(levels)  # prefer ticks at edges
-        else:
-            diverging = _not_none(diverging, positive, negative)
+        elif not skip_autolev:
+            kwargs['diverging'] = _not_none(diverging, positive, negative)
             levels, ticks, kwargs = self._parse_autolev(
-                *args, levels=levels, vmin=vmin, vmax=vmax, diverging=diverging,
+                *args, levels=levels, vmin=vmin, vmax=vmax,
                 norm=norm, norm_kw=norm_kw, extend=extend, **kwargs
             )
-
-        # Update outgoing keyword args
-        kwargs.setdefault('descending', descending)  # for _parse_discrete
-        kwargs.setdefault('add_attrs', {})['_colorbar_ticks'] = ticks
-        for key in ('vmin', 'vmax', 'extend'):  # _parse_autolev args
-            kwargs.pop(key, None)
+        else:
+            ticks = levels = None
 
         # Filter the resulting level boundaries
-        if nozero and 0 in levels:
-            levels = levels[levels != 0]
-        if positive:
-            levels = levels[levels >= 0]
-        if negative:
-            levels = levels[levels <= 0]
-
+        if levels is not None:
+            kwargs.setdefault('descending', descending)  # for _parse_discrete
+            kwargs.setdefault('guide_kw', {}).setdefault('locator', ticks)
+            if nozero and 0 in levels:
+                levels = levels[levels != 0]
+            if positive:
+                levels = levels[levels >= 0]
+            if negative:
+                levels = levels[levels <= 0]
         return levels, kwargs
 
     def _parse_discrete(
@@ -2617,7 +2603,7 @@ class PlotAxes(base.Axes):
         self, *args,
         cmap=None, cmap_kw=None, c=None, color=None, colors=None, default_cmap=None,
         norm=None, norm_kw=None, extend='neither', vmin=None, vmax=None,
-        sequential=None, diverging=None, qualitative=None, cyclic=None, autodiverging=None,  # noqa: E501
+        sequential=None, diverging=None, qualitative=None, cyclic=None,
         discrete=None, default_discrete=True, line_plot=False, contour_plot=False,
         **kwargs
     ):
@@ -2634,16 +2620,14 @@ class PlotAxes(base.Axes):
         vmin = _not_none(vmin=vmin, norm_kw_vmin=norm_kw.pop('vmin', None))
         vmax = _not_none(vmax=vmax, norm_kw_vmax=norm_kw.pop('vmax', None))
         colors = _not_none(c=c, color=color, colors=colors)  # in case untranslated
-        discrete_user = discrete
-        discrete = _not_none(discrete, rc['cmap.discrete'], default_discrete)
-        autodiverging = _not_none(autodiverging, rc['cmap.autodiverging'], True)
+        autodiverging = rc['cmap.autodiverging']
         name = getattr(cmap, 'name', cmap)
         if name is not None and name.lower() not in pcolors.CMAPS_DIVERGING:
             autodiverging = False  # avoid auto-truncation of sequential colormaps
 
         # Build qualitative colormap using 'colors'
-        # NOTE: Try to match number of level centers with number of colors by default
-        # WARNING: Previously 'colors' set the edgecolors. To avoid jarring all-black
+        # NOTE: Try to match number of level centers with number of colors here
+        # WARNING: Previously 'colors' set the edgecolors. To avoid all-black
         # colormap make sure to ignore 'colors' if 'cmap' was also passed.
         if cmap is not None and colors is not None:
             warnings._warn_proplot(
@@ -2654,9 +2638,7 @@ class PlotAxes(base.Axes):
         if colors is not None:
             cmap = np.atleast_1d(colors)
             cmap_kw['listmode'] = 'discrete'
-            if not discrete:
-                pass
-            elif all(kwargs.get(_) is None for _ in ('levels', 'values', 'N')):
+            if all(kwargs.get(_) is None for _ in ('levels', 'values', 'N')):
                 kwargs['values'] = len(colors)  # integer number of level centers
 
         # Create the user-input colormap
@@ -2670,18 +2652,23 @@ class PlotAxes(base.Axes):
             warnings._warn_proplot(f"Cyclic colormaps require extend='neither'. Ignoring extend={extend!r}.")  # noqa: E501
             extend = 'neither'
         qualitative = _not_none(qualitative, isinstance(cmap, pcolors.DiscreteColormap))
-        if qualitative and discrete_user is not None and not discrete_user:
+        if qualitative and discrete is not None and not discrete:
             warnings._warn_proplot('Qualitative colormaps require discrete=True. Ignoring discrete=False.')  # noqa: E501
             discrete = True
-        if contour_plot and discrete_user is not None and not discrete_user:
+        if contour_plot and discrete is not None and not discrete:
             warnings._warn_proplot('Contoured plots require discrete=True. Ignoring discrete=False.')  # noqa: E501
             discrete = True
+        keys = ('levels', 'values', 'locator', 'negative', 'positive', 'symmetric')
+        if discrete is None and any(key in kwargs for key in keys):
+            discrete = True  # override
+        else:
+            discrete = _not_none(discrete, rc['cmap.discrete'], default_discrete)
 
         # Determine the appropriate 'vmin', 'vmax', and/or 'levels'
         # NOTE: Unlike xarray, but like matplotlib, vmin and vmax only approximately
         # determine level range. Levels are selected with Locator.tick_values().
+        levels = None  # unused
         if not discrete:
-            levels = None  # unused
             vmin, vmax, kwargs = self._parse_vlim(
                 *args, vmin=vmin, vmax=vmax, **kwargs
             )
@@ -2690,15 +2677,24 @@ class PlotAxes(base.Axes):
                 *args, vmin=vmin, vmax=vmax, norm=norm, norm_kw=norm_kw,
                 diverging=diverging, extend=extend, **kwargs
             )
+        if levels is not None:
             vmin, vmax = min(levels), max(levels)
-        if autodiverging and vmin < 0 and vmax > 0:
-            diverging = _not_none(diverging, True)
+        if autodiverging:
+            default_diverging = None
+            if levels is not None:
+                _, counts = np.unique(np.sign(levels), return_counts=True)
+                if counts[counts > 1].size > 1:
+                    default_diverging = True
+            elif vmin is not None and vmax is not None:
+                if np.sign(vmin) != np.sign(vmax):
+                    default_diverging = True
+            diverging = _not_none(diverging, default_diverging)
 
         # Create the continuous normalizer. Only use SegmentedNorm if necessary
         # NOTE: We create normalizer here only because auto level generation depends
         # on the normalizer class (e.g. LogNorm). We don't have to worry about vmin
         # and vmax because they get applied to normalizer inside DiscreteNorm.
-        if norm is None and np.iterable(levels) and len(levels):
+        if norm is None and levels is not None and len(levels) > 0:
             if len(levels) == 1:  # edge case, use central colormap color
                 vmin = _not_none(vmin, levels[0] - 1)
                 vmax = _not_none(vmax, levels[0] + 1)
@@ -2736,17 +2732,16 @@ class PlotAxes(base.Axes):
             cmap = constructor.Colormap(cmap, **cmap_kw)
 
         # Create the discrete normalizer
-        if discrete:
+        # Then finally warn and remove unused args
+        if levels is not None:
             kwargs['extend'] = extend
             norm, cmap, kwargs = self._parse_discrete(levels, norm, cmap, **kwargs)
-
-        # Warning message
         methods = (self._parse_levels, self._parse_autolev, self._parse_vlim)
-        pop = _pop_params(kwargs, *methods, ignore_internal=True)
-        if 'N' in pop:  # use this for lookup table N instead of levels N
-            cmap = cmap.copy(N=pop.pop('N'))
-        if pop:
-            warnings._warn_proplot(f'Ignoring unused keyword args(s): {pop}')
+        params = _pop_params(kwargs, *methods, ignore_internal=True)
+        if 'N' in params:  # use this for lookup table N instead of levels N
+            cmap = cmap.copy(N=params.pop('N'))
+        if params:
+            warnings._warn_proplot(f'Ignoring unused keyword args(s): {params}')
 
         # Update outgoing args
         # NOTE: With contour(..., discrete=False, levels=levels) users can bypass
@@ -2755,7 +2750,7 @@ class PlotAxes(base.Axes):
             kwargs['levels'] = levels
             kwargs['extend'] = extend
         kwargs.update({'cmap': cmap, 'norm': norm})
-        kwargs.setdefault('add_attrs', {})['_colorbar_extend'] = extend
+        kwargs.setdefault('guide_kw', {}).setdefault('extend', extend)
 
         return kwargs
 
@@ -2822,15 +2817,19 @@ class PlotAxes(base.Axes):
                 cycle_kw.setdefault('N', ncycle)  # if None then filled in Colormap()
             if isinstance(cycle, str) and cycle.lower() == 'none':
                 cycle = False
-            if cycle is False or cycle == () or cycle == []:
+            if not cycle:
                 args = ()
             elif cycle is True:  # consistency with 'False' ('reactivate' the cycler)
                 args = (rc['axes.prop_cycle'],)
             else:
                 args = (cycle,)
             cycle = constructor.Cycle(*args, **cycle_kw)
-            if not return_cycle and cycle != self._active_cycle:
-                self.set_prop_cycle(cycle)
+            with warnings.catch_warnings():  # hide 'elementwise-comparison failed'
+                warnings.simplefilter('ignore', FutureWarning)
+                if return_cycle:
+                    pass
+                elif cycle != self._active_cycle:
+                    self.set_prop_cycle(cycle)
 
         # Manually extract and apply settings to outgoing keyword arguments
         # if native matplotlib function does not include desired properties
@@ -2861,7 +2860,6 @@ class PlotAxes(base.Axes):
         """
         Take means or medians from the columns.
         """
-        # Get means or medians along columns
         # TODO: Permit 3D array with error dimension coming first
         data = y
         means = _not_none(mean=mean, means=means)
@@ -2872,20 +2870,21 @@ class PlotAxes(base.Axes):
         if means or medians:
             if data.ndim != 2:
                 raise ValueError(f'Expected 2D array for means=True. Got {data.ndim}D.')
-            data = ma.masked_invalid(data, copy=False).compressed()
+            data = ma.masked_invalid(data, copy=False).filled(np.nan)
             if not data.size:
                 raise ValueError('The input data contains all masked or NaN values.')
             elif means:
-                y = np.mean(data, axis=0)
+                y = np.nanmean(data, axis=0)
             elif medians:
-                y = np.median(data, axis=0)
+                y = np.nanmedian(data, axis=0)
+            kwargs['distribution'] = data
 
         # Save argument passed to _error_bars
-        kwargs['distribution'] = data
         return (y, kwargs)
 
     def _error_bars(
-        self, x, y, *_, distribution=None, default_bars=True, default_boxes=False,
+        self, x, y, *_, distribution=None,
+        default_bars=True, default_boxes=False,
         barstd=None, barstds=None, barpctile=None, barpctiles=None, bardata=None,
         boxstd=None, boxstds=None, boxpctile=None, boxpctiles=None, boxdata=None,
         capsize=None, **kwargs,
@@ -2893,17 +2892,24 @@ class PlotAxes(base.Axes):
         """
         Add up to 2 error indicators: thick "boxes" and thin "bars".
         """
-        # TODO: Do not add auto error bars if user enabled shading!
+        # Parse input args
+        # NOTE: Want to keep _error_bars() and _error_shading() separate. But also
+        # want default behavior where some default error indicator is shown if user
+        # requests means/medians only. Result is the below kludge.
         kwargs, vert = _get_vert(**kwargs)
-        bars = any(_ is not None for _ in (bardata, barstds, barpctiles))
-        boxes = any(_ is not None for _ in (boxdata, boxstds, boxpctiles))
         barstds = _not_none(barstd=barstd, barstds=barstds)
         boxstds = _not_none(boxstd=boxstd, boxstds=boxstds)
         barpctiles = _not_none(barpctile=barpctile, barpctiles=barpctiles)
         boxpctiles = _not_none(boxpctile=boxpctile, boxpctiles=boxpctiles)
-        if distribution is not None and not bars and not boxes:
-            barstds = default_bars
-            boxstds = default_boxes
+        bars = any(_ is not None for _ in (bardata, barstds, barpctiles))
+        boxes = any(_ is not None for _ in (boxdata, boxstds, boxpctiles))
+        shade = any(
+            prefix + suffix in key for key in kwargs
+            for prefix in ('shade', 'fade') for suffix in ('std', 'pctile', 'data')
+        )
+        if distribution is not None and not bars and not boxes and not shade:
+            barstds = bars = default_bars
+            boxstds = boxes = default_boxes
 
         # Error bar properties
         edgecolor = kwargs.get('edgecolor', rc['boxplot.whiskerprops.color'])
@@ -2915,44 +2921,54 @@ class PlotAxes(base.Axes):
         barprops.setdefault('linewidth', rc['boxplot.whiskerprops.linewidth'])
 
         # Error box properties
+        # NOTE: Includes 'markerfacecolor' and 'markeredgecolor' props
         boxprops = _pop_props(kwargs, 'line', prefix='box')
         boxprops['capsize'] = 0
         boxprops['linestyle'] = 'none'
+        boxprops.setdefault('color', barprops['color'])
         boxprops.setdefault('zorder', barprops['zorder'])
         boxprops.setdefault('linewidth', 4 * barprops['linewidth'])
-        boxprops.setdefault('color', barprops['color'])
+
+        # Box marker properties
         boxmarker = {key: boxprops.pop(key) for key in tuple(boxprops) if 'marker' in key}  # noqa: E501
+        boxmarker['c'] = _not_none(boxmarker.pop('markerfacecolor', None), 'white')
+        boxmarker['s'] = _not_none(boxmarker.pop('markersize', None), boxprops['linewidth'] ** 0.5)  # noqa: E501
         boxmarker['zorder'] = boxprops['zorder']
-        if boxmarker.get('marker', None) is True:
+        boxmarker['edgecolor'] = boxmarker.pop('markeredgecolor', None)
+        boxmarker['linewidth'] = boxmarker.pop('markerlinewidth', None)
+        if boxmarker.get('marker') is True:
             boxmarker['marker'] = 'o'
+        elif default_boxes:  # enable by default
+            boxmarker.setdefault('marker', 'o')
 
         # Draw thin or thick error bars from distributions or explicit errdata
         sy = 'y' if vert else 'x'  # yerr
         ex, ey = (x, y) if vert else (y, x)
         eobjs = []
-        if boxes:
-            edata, _ = _error_data(
-                y, distribution=distribution,
-                stds=boxstds, pctiles=boxpctiles, errdata=boxdata,
-                stds_default=(-1, 1), pctiles_default=(25, 75),
-            )
-            obj = self.errorbar(ex, ey, **barprops, **{sy + 'err': edata})
-            if boxmarker.get('marker', None):
-                self.scatter(ex, ey, **boxmarker)
-            eobjs.append(obj)
         if bars:  # now impossible to make thin bar width different from cap width!
             edata, _ = _error_data(
                 y, distribution=distribution,
                 stds=barstds, pctiles=barpctiles, errdata=bardata,
                 stds_default=(-3, 3), pctiles_default=(0, 100),
             )
+            obj = self.errorbar(ex, ey, **barprops, **{sy + 'err': edata})
+            eobjs.append(obj)
+        if boxes:  # must go after so scatter point can go on top
+            edata, _ = _error_data(
+                y, distribution=distribution,
+                stds=boxstds, pctiles=boxpctiles, errdata=boxdata,
+                stds_default=(-1, 1), pctiles_default=(25, 75),
+            )
             obj = self.errorbar(ex, ey, **boxprops, **{sy + 'err': edata})
+            if boxmarker.get('marker', None):
+                self.scatter(ex, ey, **boxmarker)
             eobjs.append(obj)
 
+        kwargs['distribution'] = distribution
         return (*eobjs, kwargs)
 
     def _error_shading(
-        self, x, y, *_, distribution=None, infer_lines=False,
+        self, x, y, *_, distribution=None, color_key='color',
         shadestd=None, shadestds=None, shadepctile=None, shadepctiles=None, shadedata=None,  # noqa: E501
         fadestd=None, fadestds=None, fadepctile=None, fadepctiles=None, fadedata=None,
         shadelabel=False, fadelabel=False, **kwargs
@@ -2987,11 +3003,9 @@ class PlotAxes(base.Axes):
             shade and shadeprops.get('facecolor', None) is None
             or fade and fadeprops.get('facecolor', None) is None
         ):
-            key = 'color' if infer_lines else 'facecolor'
-            color = kwargs.get(key, kwargs.get('color', None))
-            if color is None:
-                parser = self._get_lines if infer_lines else self._get_patches_for_fill
-                kwargs[key] = color = parser.get_next_color()
+            color = kwargs.get(color_key, None)
+            if color is None:  # add to outgoing
+                color = kwargs[color_key] = self._get_lines.get_next_color()
             shadeprops.setdefault('facecolor', color)
             fadeprops.setdefault('facecolor', color)
 
@@ -3005,7 +3019,7 @@ class PlotAxes(base.Axes):
                 stds_default=(-3, 3), pctiles_default=(0, 100),
                 label=fadelabel, absolute=True,
             )
-            eobj = fill(x, *edata, label=label, **shadeprops)
+            eobj = fill(x, *edata, label=label, **fadeprops)
             eobjs.append(eobj)
         if shade:
             edata, label = _error_data(
@@ -3014,9 +3028,10 @@ class PlotAxes(base.Axes):
                 stds_default=(-2, 2), pctiles_default=(10, 90),
                 label=shadelabel, absolute=True,
             )
-            eobj = fill(x, *edata, label=label, **fadeprops)
+            eobj = fill(x, *edata, label=label, **shadeprops)
             eobjs.append(eobj)
 
+        kwargs['distribution'] = distribution
         return (*eobjs, kwargs)
 
     def _label_contours(
@@ -3180,9 +3195,9 @@ class PlotAxes(base.Axes):
             ys, kw = self._error_distribution(ys, **kw)
             guide_kw = _pop_params(kw, self._add_queued_guide)  # after standardize
             for _, n, x, y, kw in self._iter_columns(xs, ys, **kw):
-                kw = self._parse_cycle(n, **kw)
                 *eb, kw = self._error_bars(x, y, vert=vert, **kw)
-                *es, kw = self._error_shading(x, y, vert=vert, infer_lines=True, **kw)
+                *es, kw = self._error_shading(x, y, vert=vert, **kw)
+                kw = self._parse_cycle(n, **kw)
                 if not vert:
                     x, y = y, x
                 a = [x, y]
@@ -3190,7 +3205,7 @@ class PlotAxes(base.Axes):
                     a.append(fmt)
                 obj, = self._plot_safe('plot', *a, **kw)
                 self._restrict_inbounds(extents, x, y)
-                objs.append((*eb, *es, *obj) if eb or es else obj)
+                objs.append((*eb, *es, obj) if eb or es else obj)
 
         # Add sticky edges
         axis = 'x' if vert else 'y'
@@ -3304,7 +3319,7 @@ class PlotAxes(base.Axes):
         # Parse input
         kw = kwargs.copy()
         kw, extents = self._parse_inbounds(**kw)
-        x, y, kw = self._standardize_1d(x, y, autolabels=False, **kw)
+        x, y, kw = self._standardize_1d(x, y, **kw)
         guide_kw = _pop_params(kw, self._add_queued_guide)
 
         # Set default colors
@@ -3376,7 +3391,7 @@ class PlotAxes(base.Axes):
         Other parameters
         ----------------
         %(plot.cmap_norm)s
-        %(plot.vmin_vmax)s
+        %(plot.levels_vlim)s
         %(plot.guide)s
         interp : int, optional
             Interpolate to this many additional points between the parametric
@@ -3402,15 +3417,17 @@ class PlotAxes(base.Axes):
         matplotlib.collections.LineCollection
         """
         # Standardize arguments
+        # NOTE: Values are inferred in _auto_format() the same way legend labels are
+        # inferred. Will not always return an array like inferred coordinates do.
         kw = kwargs.copy()
         _process_props(kw, 'collection')
         kw, extents = self._parse_inbounds(**kw)
         x, y, kw = self._standardize_1d(x, y, values=c, autovalues=True, autoreverse=False, **kw)  # noqa: E501
-        c = kw.pop('values', None)  # permits inferring values e.g. a simple ordinate
-        if c is None:
-            raise ValueError('Values must be provided.')
-        c = _to_numpy_array(c)  # NOTE: don't test dimensionality, let errors happen
-        guide_kw = _pop_params(kw, self._add_queued_guide)
+        c = kw.get('values', None)  # permits inferring values e.g. a simple ordinate
+        c = np.arange(y.size) if c is None else _to_numpy_array(c)
+        if np.iterable(c) and _is_categorical(c):
+            c, _ = _get_coords(c)
+        ticks = c  # use uninterpolated input ticks for colorbar
 
         # Interpolate values to allow for smooth gradations between values or just
         # to color siwtchover halfway between points (interp True, False respectively)
@@ -3427,7 +3444,6 @@ class PlotAxes(base.Axes):
             x, y, c = np.array(x), np.array(y), np.array(c)
 
         # Get coordinates and values for points to the 'left' and 'right' of joints
-        ticks = c  # use input ticks for colorbar
         coords = []
         for i in range(y.shape[0]):
             icoords = np.empty((3, 2))
@@ -3439,23 +3455,25 @@ class PlotAxes(base.Axes):
         coords = np.array(coords)
 
         # Get the colormap accounting for 'discrete' mode
-        a = ()
         discrete = kw.get('discrete', None)
         if discrete is not None and not discrete:
+            kw.pop('values', None)
             a = (x, y, c)  # pick levels from vmin and vmax, possibly limiting range
         else:
-            kw['values'] = c  # pick levels from coordinates
-            # kw['levels'] = edges(c)
+            a = ()
         kw = self._parse_cmap(*a, line_plot=True, **kw)
-        cmap, norm, _ = kw.pop('cmap'), kw.pop('norm'), kw.pop('add_attrs')
+        cmap, norm = kw.pop('cmap'), kw.pop('norm')
 
         # Add collection with some custom attributes
         # NOTE: Modern API uses self._request_autoscale_view but this is
         # backwards compatible to earliest matplotlib versions.
+        guide_kw_attr = kw.pop('guide_kw', None)
+        guide_kw = _pop_params(kw, self._add_queued_guide)
         obj = mcollections.LineCollection(
             coords, cmap=cmap, norm=norm,
             linestyles='-', capstyle='butt', joinstyle='miter',
         )
+        _set_guide_kw(obj, guide_kw_attr)
         obj.set_array(c)  # the ScalarMappable method
         obj.update({key: value for key, value in kw.items() if key not in ('color',)})
         obj._colorbar_ticks = ticks
@@ -3533,7 +3551,7 @@ class PlotAxes(base.Axes):
         Scale the marker sizes with optional keyword args.
         """
         if np.atleast_1d(s).size == 1:  # None or scalar
-            return None, kwargs
+            return s, kwargs
         smin_true, smax_true = _safe_range(s)
         smin_true = _not_none(smin_true, 0)
         smax_true = _not_none(smax_true, rc['lines.markersize'])
@@ -3573,9 +3591,9 @@ class PlotAxes(base.Axes):
         objs = []
         for _, n, x, y, s, c, kw in self._iter_columns(xs, ys, ss, cc, **kw):
             kw['s'], kw['c'] = s, c  # make _parse_cycle() detect these
-            kw = self._parse_cycle(n, cycle_manually=cycle_manually, **kw)
             *eb, kw = self._error_bars(x, y, vert=vert, **kw)
-            *es, kw = self._error_shading(x, y, vert=vert, infer_lines=True, **kw)
+            *es, kw = self._error_shading(x, y, vert=vert, color_key='c', **kw)
+            kw = self._parse_cycle(n, cycle_manually=cycle_manually, **kw)
             if not vert:
                 x, y = y, x
             obj = self._plot_safe('scatter', x, y, **kw)
@@ -3820,7 +3838,7 @@ class PlotAxes(base.Axes):
     def _apply_boxplot(
         self, x, y, *,
         mean=None, means=None, vert=True,
-        fill=None, fillcolor=None, fillalpha=None, marker=None, markersize=None,
+        fill=None, marker=None, markersize=None,
         **kwargs
     ):
         """
@@ -3840,9 +3858,11 @@ class PlotAxes(base.Axes):
         fillalpha = _not_none(fillalpha, default=0.7)
 
         # Arist-specific properties
+        # NOTE: Output dict keys are plural but we use singular for keyword args
         props = {}
-        for key in ('box', 'cap', 'whisker', 'flier', 'mean', 'median'):
-            props[key] = iprops = _pop_props(kw, 'line', prefix=key)
+        for key in ('boxes', 'whiskers', 'caps', 'fliers', 'medians', 'means'):
+            prefix = key.rstrip('es')  # singular form
+            props[key] = iprops = _pop_props(kw, 'line', prefix=prefix)
             iprops.setdefault('color', edgecolor)
             iprops.setdefault('linewidth', linewidth)
             iprops.setdefault('markeredgecolor', edgecolor)
@@ -3876,9 +3896,9 @@ class PlotAxes(base.Axes):
                 }
                 artist.update(iprops)
                 # "Filled" boxplot by adding patch beneath line path
-                ifillcolor = fillcolor[i]
-                ifillalpha = fillalpha[i]
                 if key == 'boxes':
+                    ifillcolor = fillcolor[i]  # must stay within the if statement
+                    ifillalpha = fillalpha[i]
                     if ifillcolor is not None or ifillalpha is not None:
                         patch = mpatches.PathPatch(
                             artist.get_path(),
@@ -3934,7 +3954,7 @@ class PlotAxes(base.Axes):
         # Parse keyword args
         kw = kwargs.copy()
         _process_props(kw, 'patch')
-        linewidth = kw.setdefault('linewidth', 0.8)
+        linewidth = kw.pop('linewidth', 0.8)
         edgecolor = kw.pop('edgecolor', 'black')
         fillalpha = kw.pop('alpha', 0.7)
         fillcolor = kw.pop('facecolor', None)
@@ -3945,9 +3965,9 @@ class PlotAxes(base.Axes):
             warnings._warn_proplot('Ignoring showextrema=True.')
 
         # Parse and control error bars
-        x, y, kw = self._standardize_1d(x, y, autoy=False, vert=vert, **kwargs)
+        x, y, kw = self._standardize_1d(x, y, autoy=False, vert=vert, **kw)
         y, kw = self._error_distribution(y, **kw)
-        *eb, kw = self._error_bars(x, y, vert=vert, default_boxes=True, pop_lineprops=True, **kw)  # noqa: E501
+        *eb, kw = self._error_bars(x, y, vert=vert, default_boxes=True, **kw)  # noqa: E501
         kw = self._parse_cycle(**kw)
 
         # Call function
@@ -3983,7 +4003,10 @@ class PlotAxes(base.Axes):
         """
         # WARNING: This disables use of 'violin' by users but
         # probably very few people use this anyway.
-        return self.violinplot(*args, **kwargs)
+        if getattr(self, '_internal_call', None):
+            return super().violin(*args, **kwargs)
+        else:
+            return self.violinplot(*args, **kwargs)
 
     @docstring.add_snippets
     def violinh(self, *args, **kwargs):
@@ -4015,13 +4038,20 @@ class PlotAxes(base.Axes):
         """
         Apply the histogram.
         """
-        kwargs['bins'] = bins
+        # WARNING: Weirdly while Axes.bar() adds labels to the container
+        # Axes.hist() adds them to the first element in the container. The
+        # legend handle reader just looks for items with get_label() so we
+        # manually apply labels to the container on the result.
         _, xs, kw = self._standardize_1d(xs, orientation=orientation, **kwargs)
-        guide_kw = _pop_params(kwargs, self._add_queued_guide)
+        if bins is not None:
+            kw['bins'] = bins
+        guide_kw = _pop_params(kw, self._add_queued_guide)
         objs = []
         for _, n, x, kw in self._iter_columns(xs, **kw):
             kw = self._parse_cycle(n, **kw)
             obj = self._plot_safe('hist', x, orientation=orientation, **kw)
+            if 'label' in kw:  # apply to container
+                obj[-1].set_label(kw['label'])
             objs.append(obj)
         self._add_queued_guide(objs, **guide_kw)
         return objs[0] if len(objs) == 1 else objs
@@ -4062,27 +4092,21 @@ class PlotAxes(base.Axes):
         ----------------
         %(plot.cmap_norm)s
         %(plot.levels_manual)s
-        %(plot.vmin_vmax)s
+        %(plot.levels_vlim)s
         %(plot.levels_auto)s
         %(plot.guide)s
         **kwargs
-            Passed to `~matplotlib.axes.Axes.hexbin`.
+            Passed to `~matplotlib.axes.Axes.hist2d`.
 
         See also
         --------
         PlotAxes.hist2d
         matplotlib.axes.Axes.hexbin
         """
-        x, y, kw = self._standardize_1d(x, y, autovalues=True, **kwargs)
-        kw['bins'] = bins
-        _process_props(kw, 'collection')  # takes LineCollection props
-        guide_kw = _pop_params(kwargs, self._add_queued_guide)
-        labels_kw = _pop_params(kwargs, self._auto_labels)
-        kwargs = self._parse_cmap(x, y, y, is_counts=True, default_discrete=False, **kwargs)  # noqa: E501
-        m = self._plot_safe('hist2d', x, y, **kwargs)
-        self._auto_labels(m, **labels_kw)
-        self._add_queued_guide(m, **guide_kw)
-        return m
+        # Rely on pcolormesh() override for this.
+        if bins is not None:
+            kwargs['bins'] = bins
+        return super().hist2d(x, y, **kwargs)
 
     # WARNING: breaking change from native 'C'
     @_preprocess_data('x', 'y', 'weights')
@@ -4100,8 +4124,7 @@ class PlotAxes(base.Axes):
         ----------------
         %(plot.cmap_norm)s
         %(plot.levels_manual)s
-        %(plot.vmin_vmax)s
-        %(plot.levels_auto)s
+        %(plot.levels_vlim)s
         %(plot.guide)s
         **kwargs
             Passed to `~matplotlib.axes.Axes.hexbin`.
@@ -4111,11 +4134,15 @@ class PlotAxes(base.Axes):
         PlotAxes.hist2d
         matplotlib.axes.Axes.hexbin
         """
+        # WARNING: Cannot use automatic level generation here until counts are
+        # estimated. Inside _parse_levels if no manual levels were provided then
+        # _parse_autolev is skipped and args like levels=10 or locator=5 are ignored
         x, y, kw = self._standardize_1d(x, y, autovalues=True, **kwargs)
         _process_props(kw, 'collection')  # takes LineCollection props
+        kw['norm'].vmin = kw['norm'].vmax = None
         guide_kw = _pop_params(kw, self._add_queued_guide)
         labels_kw = _pop_params(kw, self._auto_labels)
-        kw = self._parse_cmap(x, y, y, is_counts=True, default_discrete=False, **kw)
+        kw = self._parse_cmap(x, y, y, skip_autolev=True, default_discrete=False, **kw)
         m = self._plot_safe('hexbin', x, y, weights, **kw)
         self._auto_labels(m, **labels_kw)
         self._add_queued_guide(m, **guide_kw)
@@ -4344,7 +4371,7 @@ class PlotAxes(base.Axes):
         ----------------
         %(plot.cmap_norm)s
         %(plot.levels_manual)s
-        %(plot.vmin_vmax)s
+        %(plot.levels_vlim)s
         %(plot.levels_auto)s
         **kwargs
             Passed to `matplotlib.axes.Axes.barbs`.
@@ -4356,11 +4383,10 @@ class PlotAxes(base.Axes):
         matplotlib.axes.Axes.barbs
         """
         x, y, u, v, kw = self._standardize_2d(x, y, u, v, allow1d=True, **kwargs)
+        c, kw = self._parse_color(x, y, c, default_discrete=False, **kw)
         _process_props(kw, 'line')  # applied to barbs
-        c, kw = self._parse_color(x, y, c, **kw)
         if mcolors.is_color_like(c):
             kw['barbcolor'], c = c, None
-        kw = self._parse_cmap(x, y, c, default_discrete=False, **kw)
         a = [x, y, u, v]
         if c is not None:
             a.append(c)
@@ -4388,7 +4414,7 @@ class PlotAxes(base.Axes):
         ----------------
         %(plot.cmap_norm)s
         %(plot.levels_manual)s
-        %(plot.vmin_vmax)s
+        %(plot.levels_vlim)s
         %(plot.levels_auto)s
         **kwargs
             Passed to `matplotlib.axes.Axes.quiver`.
@@ -4400,12 +4426,11 @@ class PlotAxes(base.Axes):
         matplotlib.axes.Axes.quiver
         """
         x, y, u, v, kw = self._standardize_2d(x, y, u, v, allow1d=True, **kwargs)
+        c, kwargs = self._parse_color(x, y, c, default_discrete=False, **kwargs)
         _process_props(kwargs, 'line')  # applied to arrow outline
         color = None
-        c, kwargs = self._parse_color(x, y, c, **kwargs)
         if mcolors.is_color_like(c):
             color, c = c, None
-        kw = self._parse_cmap(x, y, c, default_discrete=False, **kw)
         a = [x, y, u, v]
         if c is not None:
             a.append(c)
@@ -4436,7 +4461,7 @@ class PlotAxes(base.Axes):
         ----------------
         %(plot.cmap_norm)s
         %(plot.levels_manual)s
-        %(plot.vmin_vmax)s
+        %(plot.levels_vlim)s
         %(plot.levels_auto)s
         **kwargs
             Passed to `matplotlib.axes.Axes.streamplot`.
@@ -4448,9 +4473,9 @@ class PlotAxes(base.Axes):
         matplotlib.axes.Axes.streamplot
         """
         x, y, u, v, kw = self._standardize_2d(x, y, u, v, **kwargs)
+        c, kwargs = self._parse_color(x, y, c, **kwargs)
         _process_props(kwargs, 'line')  # applied to lines
         guide_kw = _pop_params(kw, self._add_queued_guide)
-        c, kwargs = self._parse_color(x, y, c, **kwargs)
         if c is not None:
             kwargs['color'] = c  # always pass this
         m = self._plot_safe('streamplot', x, y, u, v, **kw)
@@ -4476,7 +4501,7 @@ class PlotAxes(base.Axes):
         _process_props(kw, 'collection')
         labels_kw = _pop_params(kw, self._auto_labels)
         guide_kw = _pop_params(kw, self._add_queued_guide)
-        kw = self._parse_cmap(minlength=1, contour_plot=True, **kw)
+        kw = self._parse_cmap(x, y, z, minlength=1, contour_plot=True, **kw)
         m = self._plot_safe('tricontour', x, y, z, **kw)
         self._auto_labels(m, **labels_kw)
         self._add_queued_guide(m, **guide_kw)
@@ -4504,7 +4529,7 @@ class PlotAxes(base.Axes):
         labels_kw = _pop_params(kw, self._auto_labels)
         guide_kw = _pop_params(kw, self._add_queued_guide)
         contour_kw = _pop_kwargs(kw, 'edgecolors', 'linewidths', 'linestyles')
-        kw = self._parse_cmap(contour_plot=True, **kw)
+        kw = self._parse_cmap(x, y, z, contour_plot=True, **kw)
         m = cm = self._plot_safe('tricontourf', x, y, z, **kw)
         self._fix_edges(m, **edgefix_kw, **contour_kw)  # skipped if bool(contour_kw)
         if contour_kw or labels_kw:
@@ -4516,7 +4541,7 @@ class PlotAxes(base.Axes):
     @_preprocess_data('x', 'y', 'z')
     @docstring.concatenate_original
     @docstring.add_snippets
-    def tripcolor(self, *args, **kwargs):
+    def tripcolor(self, x, y, z, **kwargs):
         """
         Plot grid boxes from irregular points.
 
@@ -4533,8 +4558,8 @@ class PlotAxes(base.Axes):
         labels_kw = _pop_params(kw, self._auto_labels)
         guide_kw = _pop_params(kw, self._add_queued_guide)
         _process_props(kw, 'collection')
-        kw = self._parse_cmap(**kw)
-        m = self._plot_safe('tripcolor', *args, **kw)
+        kw = self._parse_cmap(x, y, z, **kw)
+        m = self._plot_safe('tripcolor', x, y, z, **kw)
         self._fix_edges(m, **edgefix_kw, **kw)
         self._auto_labels(m, **labels_kw)
         self._add_queued_guide(m, **guide_kw)
@@ -4552,7 +4577,7 @@ class PlotAxes(base.Axes):
         ----------------
         %(plot.cmap_norm)s
         %(plot.levels_manual)s
-        %(plot.vmin_vmax)s
+        %(plot.levels_vlim)s
         %(plot.levels_auto)s
         %(plot.guide)s
         **kwargs
@@ -4564,7 +4589,7 @@ class PlotAxes(base.Axes):
         """
         kw = kwargs.copy()
         guide_kw = _pop_params(kw, self._add_queued_guide)
-        kw = self._parse_cmap(default_discrete=False, **kw)
+        kw = self._parse_cmap(z, default_discrete=False, **kw)
         m = self._plot_safe('imshow', z, **kw)
         self._add_queued_guide(m, **guide_kw)
         return m
@@ -4581,7 +4606,7 @@ class PlotAxes(base.Axes):
         ----------------
         %(plot.cmap_norm)s
         %(plot.levels_manual)s
-        %(plot.vmin_vmax)s
+        %(plot.levels_vlim)s
         %(plot.levels_auto)s
         %(plot.guide)s
         **kwargs
@@ -4593,7 +4618,7 @@ class PlotAxes(base.Axes):
         """
         kw = kwargs.copy()
         guide_kw = _pop_params(kw, self._add_queued_guide)
-        kw = self._parse_cmap(**kw)
+        kw = self._parse_cmap(z, **kw)
         m = self._plot_safe('matshow', z, **kw)
         self._add_queued_guide(m, **guide_kw)
         return m
@@ -4610,7 +4635,7 @@ class PlotAxes(base.Axes):
         ----------------
         %(plot.cmap_norm)s
         %(plot.levels_manual)s
-        %(plot.vmin_vmax)s
+        %(plot.levels_vlim)s
         %(plot.levels_auto)s
         %(plot.guide)s
         **kwargs

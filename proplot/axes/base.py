@@ -478,6 +478,32 @@ docstring.snippets['axes.legend_args'] = _legend_args_docstring
 docstring.snippets['axes.legend_kwargs'] = _legend_kwargs_docstring
 
 
+def _update_guide_kw(kwargs, obj, ignore=None):
+    """
+    Update the legend or colorbar keyword args with the persistent dictionary
+    stored on the input mappable or artist(s).
+    """
+    ignore = ignore or ()
+    if isinstance(ignore, str):
+        ignore = (ignore,)
+    aliases = {
+        'title': ('label',),
+        'locator': ('ticks',),
+        'formatter': ('ticklabels',)
+    }
+    if hasattr(obj, '_guide_kw'):
+        for key, value in obj._guide_kw.items():
+            if key in ignore:
+                continue
+            keys = (key, *aliases.get(key, ()))
+            if not any(kwargs.get(key) is not None for key in keys):
+                kwargs[key] = value
+    elif isinstance(obj, (tuple, list, np.ndarray)):
+        for iobj in obj:
+            kwargs = _update_guide_kw(kwargs, iobj, ignore=ignore)
+    return kwargs
+
+
 class Axes(maxes.Axes):
     """
     The lowest-level `~matplotlib.axes.Axes` subclass used by proplot.
@@ -1633,7 +1659,7 @@ class Axes(maxes.Axes):
             if not isinstance(colorbar, tuple):
                 continue
             handles, labels, kwargs = colorbar
-            cb = self.colorbar(handles, labels or None, loc=loc, **kwargs)
+            cb = self._draw_colorbar(handles, labels or None, loc=loc, **kwargs)
             self._colorbar_dict[loc] = cb
 
         # Draw queued legends
@@ -1643,7 +1669,7 @@ class Axes(maxes.Axes):
             if not isinstance(legend, tuple) or any(isinstance(_, mlegend.Legend) for _ in legend):  # noqa: E501
                 continue
             handles, labels, kwargs = legend
-            leg = self.legend(handles, labels or None, loc=loc, **kwargs)
+            leg = self._draw_legend(handles, labels or None, loc=loc, **kwargs)
             self._legend_dict[loc] = leg
 
     def _fill_colorbar_axes(
@@ -1811,7 +1837,6 @@ class Axes(maxes.Axes):
         minorlocator_kw = minorlocator_kw or {}
         locator = _not_none(ticks=ticks, locator=locator)
         minorlocator = _not_none(minorticks=minorticks, minorlocator=minorlocator)
-        locator = _not_none(locator, *self._attr_find(mappable, '_colorbar_ticks'))
         formatter = _not_none(ticklabels=ticklabels, formatter=formatter, format=format)
 
         # Get colorbar locator
@@ -1859,7 +1884,7 @@ class Axes(maxes.Axes):
         formatter = constructor.Formatter(formatter, **formatter_kw)
         return locator, formatter, minorlocator, kwargs
 
-    def _parse_colorbar_mappable(
+    def _parse_mappable_values(
         self, mappable, values=None, *, norm=None, norm_kw=None, **kwargs,
     ):
         """
@@ -1877,6 +1902,10 @@ class Axes(maxes.Axes):
             mappable = mappable[0]
         if isinstance(mappable, mcm.ScalarMappable):
             return mappable, kwargs
+        else:
+            locator = _not_none(kwargs.pop('locator', None), kwargs.pop('ticks', None))
+            formatter = _not_none(kwargs.pop('ticklabels', None), kwargs.pop('formatter', None))  # noqa: E501
+            rotation = kwargs.pop('rotation', None)
 
         # For container objects, we just assume color is the same for every item.
         # Works for ErrorbarContainer, StemContainer, BarContainer.
@@ -1888,11 +1917,6 @@ class Axes(maxes.Axes):
             mappable = [obj[0] for obj in mappable]
 
         # A colormap instance
-        # TODO: Pass remaining arguments through Colormap()? This is really
-        # niche usage so maybe not necessary.
-        rotation = kwargs.pop('rotation', None)
-        locator = _not_none(kwargs.pop('ticks', None), kwargs.pop('locator', None))
-        formatter = _not_none(kwargs.pop('ticklabels', None), kwargs.pop('formatter', None))  # noqa: E501
         if isinstance(mappable, mcolors.Colormap) or isinstance(mappable, str):
             # NOTE: 'Values' makes no sense if this is just a colormap. Just
             # use unique color for every segmentdata / colors color.
@@ -1974,7 +1998,11 @@ class Axes(maxes.Axes):
             )
         norm_kw = norm_kw or {}
         norm = constructor.Norm(norm or 'linear', **norm_kw)
-        norm, cmap, _ = self._parse_discrete(edges(values), norm, cmap)
+        if len(values) > 1:
+            levels = edges(values)
+        elif len(values) == 1:
+            levels = [values[0] - 1, values[0] + 1]
+        norm, cmap, _ = self._parse_discrete(levels, norm, cmap)
         mappable = mcm.ScalarMappable(norm, cmap)
 
         kwargs.update({'locator': locator, 'formatter': formatter, 'rotation': rotation})  # noqa: E501
@@ -2005,7 +2033,6 @@ class Axes(maxes.Axes):
         norm_kw = norm_kw or {}
         grid = _not_none(grid=grid, edges=edges, drawedges=drawedges, default=rc['colorbar.grid'])  # noqa: E501
         label = _not_none(title=title, label=label)
-        label = _not_none(label, *self._attr_find(mappable, '_default_title'))
         linewidth = _not_none(lw=lw, linewidth=linewidth, default=rc['axes.linewidth'])
         edgecolor = _not_none(ec=ec, edgecolor=edgecolor, default=rc['colorbar.edgecolor'])  # noqa: E501
         tickdir = _not_none(tickdir=tickdir, tickdirection=tickdirection)
@@ -2027,15 +2054,20 @@ class Axes(maxes.Axes):
             extendsize = _not_none(extendsize, rc['colorbar.insetextend'])
             cax, kwargs = self._inset_colorbar_axes(loc=loc, pad=pad, **kwargs)  # noqa: E501
 
-        # Test if we were given a mappable, or iterable of stuff. Note
-        # Container and PolyCollection matplotlib classes are iterable.
-        mappable, kwargs = self._parse_colorbar_mappable(mappable, values, **kwargs)
-
-        # Try to get tick locations from *levels* or from *values* rather than
-        # random points along the axis.
+        # Parse the mappable and get the locator or formatter. Try to get them from
+        # values or artist labels rather than random points if possible.
+        # WARNING: Matplotlib >= 3.4 seems to have issue with assigning no ticks
+        # to colorbar. Tried to fix with below block but doesn't seem to help.
+        mappable, kwargs = self._parse_mappable_values(
+            mappable, values, **kwargs
+        )
         locator, formatter, minorlocator, kwargs = self._parse_colorbar_ticks(
             mappable, fontsize=ticklabelsize, tickminor=tickminor, **kwargs,
         )
+        if isinstance(locator, mticker.NullLocator):
+            locator = []  # passed as 'ticks'
+        if isinstance(minorlocator, mticker.NullLocator):
+            minorlocator, tickminor = None, False
 
         # Parse text property keyword args
         kw_label = {}
@@ -2081,7 +2113,6 @@ class Axes(maxes.Axes):
             'drawedges': grid,
         })
         kwargs.setdefault('spacing', 'uniform')
-        extend = _not_none(extend, *self._attr_find(mappable, '_colorbar_extend'))
         extend = _not_none(extend, 'neither')
         if isinstance(mappable, mcontour.ContourSet):
             mappable.extend = extend  # required in mpl >= 3.3, else optional
@@ -2233,6 +2264,7 @@ class Axes(maxes.Axes):
         # to a list later used for colorbar levels. Same as legend.
         loc = _not_none(loc=loc, location=location)
         loc = _translate_loc(loc, 'colorbar', default=rc['colorbar.loc'])
+        kwargs = _update_guide_kw(kwargs, mappable)
         if queue:
             obj = (mappable, values)
             self._add_guide('colorbar', obj, loc, **kwargs)
@@ -2241,21 +2273,63 @@ class Axes(maxes.Axes):
             return cb
 
     @staticmethod
+    def _parse_grouped_handles(handles, labels=None):
+        """
+        Parse possibly tuple-grouped input handles.
+        """
+        # Helper function
+        # NOTE: Allow handles and labels of different length like native
+        # matplotlib. Just truncate extra values with zip().
+        def _good_labels(*objs):  # noqa: E301
+            labs = []
+            for obj in objs:
+                lab = obj.get_label()
+                if lab is not None and str(lab)[:1] != '_':
+                    labs.append(lab)
+            return labs
+        # Sanitize labels. Ignore e.g. extra hist() or hist2d() return values,
+        # ignore unlabeled error bars in tuple group, auto-detect labels from
+        # tuple group, and auto-expand tuples containing different labels.
+        ignore = (mcontainer.ErrorbarContainer,)  # always ignore these if unlabled
+        if labels is None:
+            labels = [None] * len(handles)
+        handles = [
+            tuple(obj for obj in objs if hasattr(obj, 'get_label'))
+            if type(objs) is tuple else objs for objs in handles
+        ]
+        ihandles, ilabels = [], []
+        for objs, label in zip(handles, labels):
+            # Filter error bars
+            if hasattr(objs, 'get_label'):
+                objs = (objs,)
+            objs = tuple(
+                obj for obj in objs if not isinstance(obj, ignore) or _good_labels(obj)
+            )
+            labs = set(_good_labels(*objs))
+            if label is None and len(labs) > 1:
+                # Unfurl tuple of handles
+                ihandles.extend(objs)
+                ilabels.extend(obj.get_label() for obj in objs)
+            else:
+                # Append this handle with some name
+                if label is None:
+                    label = labs.pop() if labs else '_no_label'
+                ihandles.append(objs)
+                ilabels.append(label)
+        return ihandles, ilabels
+
     def _parse_handles_labels(
-        axs, handles, labels, ncol=None, order='C', center=None, alphabetize=None,
+        self, axs, handles, labels, ncol=None, order='C', center=None, alphabetize=None,
     ):
         """
         Parse input handles and labels.
         """
-        # TODO: Legend entries for colormap or scatterplot objects! Idea is we pass a
-        # scatter plot or contourf or whatever, and legend is generated by drawing
-        # patch rectangles or markers using data values and their corresponding cmap
-        # colors! For scatter just test get_facecolor() to see if it has > 1 color.
+        # Helper function
         # TODO: Often desirable to label a "mappable" with one data value. Maybe add a
         # legend option for the *number of samples* or *sample points* when drawing
         # legends for mappables. Look into "legend handlers", might just want to add
         # handlers by passing handler_map to legend() and get_legend_handles_labels().
-        def _to_list(obj):
+        def _to_list(obj):  # noqa: E301
             if obj is None:
                 pass
             elif isinstance(obj, np.ndarray):
@@ -2264,7 +2338,8 @@ class Axes(maxes.Axes):
                 obj = [obj]
             return obj
 
-        # Iterate over sublists
+        # Handle lists of lists
+        axs = axs or ()
         handles, labels = _to_list(handles), _to_list(labels)
         list_of_lists = any(isinstance(h, (list, np.ndarray)) and len(h) > 1 for h in handles)  # noqa: E501
         if list_of_lists and ncol is not None:
@@ -2277,51 +2352,17 @@ class Axes(maxes.Axes):
                 'Column-major ordering of legend handles is not supported '
                 'for horizontally-centered legends.'
             )
-        center = _not_none(center, list_of_lists)
-        axs = axs or ()
         ncol = _not_none(ncol, 3)
+        center = _not_none(center, list_of_lists)
+
+        # Iterate over each sublist and parse independently
         pairs = []
         if not list_of_lists:  # temporary
             handles, labels = [handles], [labels]
         for ihandles, ilabels in zip(handles, labels):
-            # Sanitize labels. Ignore e.g. extra hist() or hist2d() return values,
-            # auto-detect labels from tuple-grouped handles, and auto-expand tuples
-            # containing different non-default labels.
-            # NOTE: Allow handles and labels of different length like native
-            # matplotlib. Just truncate extra values with zip().
             ihandles, ilabels = _to_list(ihandles), _to_list(ilabels)
             if ihandles is not None:
-                if ilabels is None:
-                    ilabels = [None] * len(ihandles)
-                ihandles = [
-                    tuple(obj for obj in objs if hasattr(obj, 'get_label'))
-                    if type(objs) is tuple else objs for objs in ihandles
-                ]
-                ilabels, ilabels_prev = [], ilabels
-                ihandles, ihandles_prev = [], ihandles
-                for objs, label in zip(ihandles_prev, ilabels_prev):
-                    # Apply a manual label
-                    if hasattr(objs, 'get_label'):
-                        objs = (objs,)
-                    if label is not None:
-                        ilabels.append(label)
-                        ihandles.append(objs)
-                        continue
-                    # Unfurl tuple of handles
-                    # NOTE: This may also unfurl handles that get ignored
-                    labs = {obj.get_label() for obj in objs}
-                    labs = {_ for _ in labs if _ is not None and str(_)[:1] != '_'}
-                    if len(labs) > 1:
-                        ilabels.extend(obj.get_label() for obj in objs)
-                        ihandles.extend(objs)
-                        continue
-                    # Append this handle with some name
-                    if label is None:
-                        label = labs.pop() if labs else '_no_label'
-                    ilabels.append(label)
-                    ihandles.append(objs)
-            # Run through native parser and remove
-            # Optionally alphabetize pairs by label value
+                ihandles, ilabels = self._parse_grouped_handles(ihandles, ilabels)
             ihandles, ilabels, *_ = mlegend._parse_legend_args(
                 axs, handles=ihandles, labels=ilabels,
             )
@@ -2330,8 +2371,7 @@ class Axes(maxes.Axes):
                 ipairs = sorted(ipairs, key=lambda pair: pair[1])
             pairs.append(ipairs)
 
-        # Alphabetize handles
-        # Manage (handle, label) pairs in context of 'center' option
+        # Manage (handle, label) pairs in context of the 'center' option
         if not list_of_lists:
             pairs = pairs[0]
             if center:
@@ -2605,7 +2645,6 @@ class Axes(maxes.Axes):
             ncol=ncol, order=order, center=center, alphabetize=alphabetize,
         )
         title = _not_none(label=label, title=title)
-        title = _not_none(title, *self._attr_find(pairs, '_default_title'))
 
         # Create legend object(s)
         kwargs.update({
@@ -2723,6 +2762,7 @@ class Axes(maxes.Axes):
         # is used internally for on-the-fly legends.
         loc = _not_none(loc=loc, location=location)
         loc = _translate_loc(loc, 'legend', default=rc['legend.loc'])
+        kwargs = _update_guide_kw(kwargs, handles, ignore='extend')
         if queue:
             obj = (handles, labels)
             self._add_guide('legend', obj, loc, **kwargs)
