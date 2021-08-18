@@ -15,7 +15,7 @@ dependencies:
   - xarray
   - pandas
   - matplotlib==3.2.1
-  - cartopy
+  - cartopy==0.18.0
   - basemap
   - pandoc
   - ipykernel
