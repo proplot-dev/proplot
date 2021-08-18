@@ -918,7 +918,7 @@ _rc_proplot_table = {
         'Boolean, indicates whether to draw borders between each level of the colorbar.'
     ),
     'colorbar.insetextend': (
-        1,
+        0.9,
         _validate_em,
         'Length of rectangular or triangular "extensions" for inset colorbars.'
         + _addendum_em
