@@ -2305,7 +2305,10 @@ class Axes(maxes.Axes):
         ihandles, ilabels = [], []
         for objs, label in zip(handles, labels):
             # Filter objects
-            # WARNING: BarContainer is a tuple so must test identically here.
+            # WARNING: Matplotlib Containers are tuples and silent_lists
+            # are lists so we must test identities here.
+            if type(objs) is list and len(objs) == 1:
+                objs = objs[0]
             if type(objs) is not tuple:
                 objs = (objs,)
             objs = _group_objs(*objs)
