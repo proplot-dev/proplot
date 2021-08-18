@@ -163,7 +163,10 @@ def subplots(*args, **kwargs):
 
     Returns
     -------
-    %(figure.subplots_returns)s
+    fig : `proplot.figure.Figure`
+        The figure instance.
+    axs : `proplot.figure.SubplotGrid`
+        The axes instances stored in a `~proplot.figure.SubplotGrid`.
 
     See also
     --------

@@ -95,18 +95,19 @@ width, height
     Aliases for `figwidth`, `figheight`.
 figsize : length-2 tuple, optional
     Tuple specifying the figure ``(width, height)``.
-sharex, sharey, share : {0, False, 1, 'labels', 2, 'limits', 3, True}, optional
+sharex, sharey, share : {0, False, 1, 'labels', 'labs', 2, 'limits', 'lims', 3, True}, \
+optional
     The axis sharing "level" for the *x* axis, *y* axis, or both axes.
     Default is :rc:`subplots.share`. Options are as follows:
 
     * ``0`` or ``False``: No axis sharing. This also sets the default `spanx`
       and `spany` values to ``False``.
-    * ``1`` or ``'labels'``: Only draw axis labels on the bottommost row (*x*) or
-      leftmost column (*y*) of subplots. Tick labels still appear on every subplot.
-    * ``2`` or ``'limits'``: As above but force the axis limits to be identical.
-      Tick labels still appear on every subplot.
-    * ``3`` or ``True``: As above but only show the tick labels on the
-      bottommost row (*x*) and leftmost column (*y*) of subplots.
+    * ``1`` or ``'labels'`` or ``'labs'``: Only draw axis labels on the bottommost
+      row or leftmost column of subplots. Tick labels still appear on every subplot.
+    * ``2`` or ``'limits'`` or ``'lims'``: As above but force the axis limits to be
+      identical. Tick labels still appear on every subplot.
+    * ``3`` or ``True``: As above but only show the tick labels on the bottommost
+      row and leftmost column of subplots.
 
 spanx, spany, span : bool or {0, 1}, optional
     Whether to use "spanning" axis labels for the *x* axis, *y* axis, or both
@@ -231,16 +232,11 @@ order : {'C', 'F'}, optional
 %(axes.basemap)s
     If boolean, applies to all subplots. If list or dict, applies to specific
     subplots, as with `proj`.
+%(gridspec.shared)s
 %(gridspec.vector)s
-"""
-_subplots_returns_docstring = """
-fig : `proplot.figure.Figure`
-    The figure instance.
-axs : `SubplotGrid`
-    The axes instances stored in a `SubplotGrid`.
+%(gridspec.tight)s
 """
 docstring.snippets['figure.subplots_params'] = docstring.add_snippets(_subplots_params_docstring)  # noqa: E501
-docstring.snippets['figure.subplots_returns'] = _subplots_returns_docstring
 
 
 # Composed subplots docstring
@@ -255,11 +251,12 @@ Other parameters
 ----------------
 %(figure.figure)s
 **kwargs
-    Passed to `matplotlib.figure.Figure`.
+    Passed to `Figure.add_subplot`.
 
 Returns
 -------
-%(figure.subplots_returns)s
+axs : `SubplotGrid`
+    The axes instances stored in a `SubplotGrid`.
 
 See also
 --------
@@ -315,8 +312,8 @@ autoshare : bool, optional
 
 Other parameters
 ----------------
-*args, **kwargs
-    Passed to `~matplotlib.axes.Axes`.
+**kwargs
+    Passed to `matplotlib.axes.Axes`.
 """
 docstring.snippets['figure.subplot'] = docstring.add_snippets(_subplot_docstring)
 
@@ -476,8 +473,8 @@ class Figure(mfigure.Figure):
     # Shared error and warning messages
     _share_message = (
         'Axis sharing level can be 0 or False (share nothing), '
-        "1 or 'labels' (share axis labels), "
-        "2 or 'limits' (share axis limits and axis labels), or "
+        "1 or 'labels' or 'labs' (share axis labels), "
+        "2 or 'limits' or 'lims' (share axis limits and axis labels), or "
         '3 or True (share axis limits, axis labels, and tick labels).'
     )
     _space_message = (
@@ -637,7 +634,7 @@ class Figure(mfigure.Figure):
         self._includepanels = _not_none(includepanels, False)
 
         # Translate share settings
-        translate = {'labels': 1, 'limits': 2}
+        translate = {'labels': 1, 'labs': 1, 'limits': 2, 'lims': 2}
         sharex = _not_none(sharex, share, rc['subplots.share'])
         sharey = _not_none(sharey, share, rc['subplots.share'])
         sharex = 3 if sharex is True else translate.get(sharex, sharex)
