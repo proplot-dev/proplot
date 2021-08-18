@@ -6,11 +6,11 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.11.3
+#       jupytext_version: 1.4.2
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: Python [conda env:proplot-dev]
 #     language: python
-#     name: python3
+#     name: conda-env-proplot-dev-py
 # ---
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -45,7 +45,7 @@
 #
 # To reduce the number of registered color names to a more manageable size,
 # ProPlot filters the available XKCD colors so that they are *sufficiently
-# distinct* in the :ref:`perceptually uniform colorspace <ug_perceptual>`.
+# distinct* in a :ref:`perceptually uniform colorspace <ug_perceptual>`.
 # This makes it a bit easier to pick out colors from the table generated with
 # `~proplot.demos.show_colors`. Similar names were also cleaned up -- for
 # example, ``'reddish'`` and ``'reddy'`` are changed to ``'red'``.
@@ -90,25 +90,25 @@ axs.format(
 )
 
 # Shifted hue
-with pplt.rc.context({'legend.handlelength': 0}):
-    N = 50
-    marker = 'o'
-    for shift in (0, -60, 60):
-        x, y = state.rand(2, N)
-        color = pplt.shift_hue('grass', shift)
-        axs[0].scatter(x, y, marker=marker, c=color, legend='b', label=shift)
+N = 50
+fmt = pplt.SimpleFormatter()
+marker = 'o'
+for shift in (0, -60, 60):
+    x, y = state.rand(2, N)
+    color = pplt.shift_hue('grass', shift)
+    axs[0].scatter(x, y, marker=marker, c=color, legend='b', label=fmt(shift))
 
-    # Scaled luminance
-    for scale in (0.2, 1, 2):
-        x, y = state.rand(2, N)
-        color = pplt.scale_luminance('bright red', scale)
-        axs[1].scatter(x, y, marker=marker, c=color, legend='b', label=scale)
+# Scaled luminance
+for scale in (0.2, 1, 2):
+    x, y = state.rand(2, N)
+    color = pplt.scale_luminance('bright red', scale)
+    axs[1].scatter(x, y, marker=marker, c=color, legend='b', label=fmt(scale))
 
-    # Scaled saturation
-    for scale in (0, 1, 3):
-        x, y = state.rand(2, N)
-        color = pplt.scale_saturation('ocean blue', scale)
-        axs[2].scatter(x, y, marker=marker, c=color, legend='b', label=scale)
+# Scaled saturation
+for scale in (0, 1, 3):
+    x, y = state.rand(2, N)
+    color = pplt.scale_saturation('ocean blue', scale)
+    axs[2].scatter(x, y, marker=marker, c=color, legend='b', label=fmt(scale))
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_colors_cmaps:
@@ -130,16 +130,9 @@ with pplt.rc.context({'legend.handlelength': 0}):
 import proplot as pplt
 import numpy as np
 
-# Figure
-fig, axs = pplt.subplots(ncols=2, share=0, refwidth=2.2)
-axs.format(
-    abc='A.', titleloc='l',
-    suptitle='On-the-fly color selections',
-    xformatter='null', yformatter='null',
-)
-
 # Drawing from colormaps
-ax = axs[0]
+fig = pplt.figure(refwidth=2.2, share=False)
+ax = fig.subplot(121)
 name = 'Deep'
 idxs = pplt.arange(0, 1, 0.2)
 state = np.random.RandomState(51423)
@@ -154,7 +147,7 @@ ax.colorbar(pplt.Colormap(name), loc='l', locator='none')
 ax.format(title=f'Drawing from colormap {name!r}', grid=True)
 
 # Drawing from color cycles
-ax = axs[1]
+ax = fig.subplot(122)
 name = 'Qual1'
 idxs = np.arange(6)
 state.shuffle(idxs)
@@ -166,6 +159,11 @@ for idx in idxs:
     )
 ax.colorbar(pplt.Colormap(name), loc='r', locator='none')
 ax.format(title=f'Drawing from color cycle {name!r}')
+fig.format(
+    abc='A.', titleloc='l',
+    suptitle='On-the-fly color selections',
+    xformatter='null', yformatter='null',
+)
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -177,6 +175,8 @@ ax.format(title=f'Drawing from color cycle {name!r}')
 # You can register your own colors by adding ``.txt`` files to the
 # ``colors`` subfolder inside `~proplot.config.Configurator.user_folder`
 # and calling `~proplot.config.register_colors`. This command is also called
-# on import. Each file should contain lines that look like ``color: #xxyyzz``
-# where ``color`` is the registered color name and ``#xxyyzz`` is the HEX
-# color value. Lines beginning with ``#`` are ignored as comments.
+# on import. You can also manually pass file paths, dictionaries, ``name=color``
+# keyword arguments to `~proplot.config.register_colors`. Each color
+# file should contain lines that look like ``color: #xxyyzz``
+# where ``color`` is the registered color name and ``#xxyyzz`` is
+# the HEX value. Lines beginning with ``#`` are ignored as comments.

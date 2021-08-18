@@ -30,8 +30,8 @@ using either dot notation or as you would any other dictionary:
   pplt.rc.update(name1=value1, name2=value2)
   pplt.rc.update({'name1': value1, 'name2': value2})
 
-To apply settings to a particular axes, pass the setting
-to the `~proplot.axes.Axes.format` command:
+To apply settings to a particular axes or figure, pass the setting
+to `proplot.axes.Axes.format` or `proplot.figure.Figure.format`:
 
 .. code-block:: python
 
@@ -71,7 +71,7 @@ Matplotlib settings
 
 Matplotlib settings are natively controlled with the `~matplotlib.rcParams`
 dictionary. ProPlot makes this dictionary available in the top-level namespace as
-`~proplot.config.rc_matplotlib`. All matplotlib setings can also be changed with
+`~proplot.config.rc_matplotlib`. All matplotlib settings can also be changed with
 `~proplot.config.rc`. Details on the matplotlib settings can be found on
 `this page <ug_rcmatplotlib_>`_.
 
@@ -166,8 +166,9 @@ in the ``proplotrc`` file. To change the settings for a specific project, place 
 named either ``.proplotrc`` or ``proplotrc`` in the same directory as your python
 script or jupyter session, or in an arbitrary parent directory. To generate a
 ``proplotrc`` file containing the settings you have changed during a python session,
-use `~proplot.config.Configurator.save`. To explicitly load a ``proplotrc`` file,
-use `~proplot.config.Configurator.load`.
+use `~proplot.config.Configurator.save` (use `~proplot.config.Configurator.changed`
+to preview a dictionary of the changed settings). To explicitly load a ``proplotrc``
+file, use `~proplot.config.Configurator.load`.
 
 As an example, a ``proplotrc`` file containing the default settings
 is shown below.

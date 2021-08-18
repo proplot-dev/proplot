@@ -7,9 +7,9 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.4.2
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: Python [conda env:proplot-dev]
 #     language: python
-#     name: python3
+#     name: conda-env-proplot-dev-py
 # ---
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -26,17 +26,17 @@
 #
 # ProPlot can quickly add "a-b-c" labels to subplots. This is possible because
 # ProPlot assigns a unique `~proplot.axes.Axes.number` to each subplot. The
-# subplot number can be conrtrolled by passing a `number` keyword to
+# subplot number can be manually controlled by passing a `number` keyword to
 # `~proplot.figure.Figure.add_subplot`. Otherwise, the subplot number is
-# incremented by 1 each time you call `~proplot.figure.Figure.add_subplot`.
+# incremented by ``1`` each time you call `~proplot.figure.Figure.add_subplot`.
 #
-# If you draw all of your subplots at once with `~proplot.figure.Figure.subplots`,
-# the subplot numbers depend on the input arguments. If you :ref:`passed an array <ug_intro>`,
-# the subplot numbers correspond to the numbers in the array. If you used the
-# `ncols` and `nrows` keyword arguments, the number order is row-major by default
-# but can be switched to column-major by passing ``order='F'``. The number order
-# also determines the subplot order in the `~proplot.figure.SubplotGrid` returned
-# by `~proplot.ui.subplots`.
+# If you draw all of your subplots at once with `~proplot.figure.Figure.add_subplots`,
+# the subplot numbers depend on the input arguments. If you
+# :ref:`passed an array <ug_intro>`, the subplot numbers correspond to the numbers
+# in the array. But if you used the `ncols` and `nrows` keyword arguments, the
+# number order is row-major by default and can be switched to column-major by
+# passing ``order='F'``. The number order also determines the subplot order in
+# the `~proplot.figure.SubplotGrid` returned by `~proplot.figure.Figure.add_subplots`.
 #
 # To turn on "a-b-c" labels, set :rcraw:`abc` to ``True`` or pass ``abc=True``
 # to `~proplot.axes.Axes.format` (see :ref:`the format command <ug_format>`
@@ -52,16 +52,14 @@
 #    "Inner" a-b-c labels and titles are surrounded with a white border when
 #    :rcraw:`abc.border` and :rcraw:`title.border` are ``True`` (the default).
 #    White boxes can be used instead by setting :rcraw:`abc.bbox` and
-#    :rcraw:`title.bbox` to ``True``. These options help labels stand
-#    out against plotted content. These "borders" and "boxes"
-#    can also be used by passing ``border=True`` or ``bbox=True`` to
-#    `~matplotlib.axes.Axes.text`, which ProPlot wraps with
-#    `~proplot.axes.text_extras`. See the :ref:`plotting sections <ug_1dplots>`
-#    for details on wrapper functions.
+#    :rcraw:`title.bbox` to ``True``. These options help labels stand out
+#    against plotted content. Any text can be given "borders" or "boxes" by
+#    passing ``border=True`` or ``bbox=True`` to `proplot.axes.Axes.text`.
 
 # %%
 import proplot as pplt
-fig, axs = pplt.subplots(ncols=3, nrows=3, space=0, refwidth='10em')
+fig = pplt.figure(space=0, refwidth='10em')
+axs = fig.subplots(nrows=3, ncols=3)
 axs.format(
     abc='A.', abcloc='ul',
     xticks='null', yticks='null', facecolor='gray5',
@@ -74,7 +72,8 @@ axs[-3:].format(abcbbox=True)  # also disables abcborder
 
 # %%
 import proplot as pplt
-fig, axs = pplt.subplots(nrows=8, ncols=8, refwidth=0.7, space=0)
+fig = pplt.figure(space=0, refwidth=0.7)
+axs = fig.subplots(nrows=8, ncols=8)
 axs.format(
     abc=True, abcloc='ur',
     xlabel='x axis', ylabel='y axis', xticks=[], yticks=[],
@@ -85,18 +84,19 @@ axs.format(
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_autosize:
 #
-# Automatic size
-# --------------
+# Automatic sizes
+# ---------------
 #
 # By default, ProPlot determines the suitable figure size given the
 # geometry of the subplot grid and the size of a "reference" subplot.
-# This "reference" subplot is specified with the `~proplot.ui.subplots`
-# keyword `ref` (default is ``1``, i.e. the subplot in the upper left corner).
+# This "reference" subplot is specified with the `~proplot.figure.Figure`
+# keyword `refnum` (default is ``1``, i.e. the first subplot added to the figure
+# or the subplot in the upper-left corner when generated with `~proplot.ui.subplots`).
 # ProPlot can also determine the suitable figure height given a fixed figure
-# width, and figure width given a fixed figure height.
+# width, and the suitable figure width given a fixed figure height.
 #
-# The ultimate figure size is controlled by the following
-# `~proplot.ui.subplots` keyword arguments:
+# The figure size is ultimately controlled by the following
+# `~proplot.figure.Figure` keyword arguments:
 #
 # * `refwidth` and `refheight` set the physical dimensions of the reference subplot
 #   (default is :rc:`subplots.refwidth`). If one is specified, the other is calculated
@@ -121,12 +121,12 @@ axs.format(
 #
 #    * For very simple subplot grids (e.g., subplots created with the `ncols` and
 #      `nrows` arguments), the arguments `refaspect`, `refwidth`, and `refheight`
-#      effectively apply to every subplot in the figure -- not just the reference
-#      subplot.
+#      effectively apply to every subplot in the figure -- not just the
+#      reference subplot.
 #    * When the reference subplot `aspect ratio
 #      <https://matplotlib.org/stable/examples/pylab_examples/equal_aspect_ratio.html>`__
 #      has been fixed (e.g., using ``ax.set_aspect(1)``) or is set to ``'equal'`` (as
-#      with :ref:`geographic projections <ug_geo>` and `~matplotlib.axes.Axes.imshow`
+#      with :ref:`geographic projections <ug_geo>` and `~proplot.axes.PlotAxes.imshow`
 #      images), the fixed aspect ratio is used and the `~proplot.ui.subplots`
 #      `refaspect` parameter is ignored. This is critical for getting the figure
 #      size right when working with grids of images and geographic projections.
@@ -186,30 +186,36 @@ pplt.rc.reset()
 # Automatic spaces
 # ----------------
 #
-# In addition to automatic figure sizing, by default ProPlot applies a *tight layout*
-# algorithm to every figure. This algorithm automatically adjusts the space between
-# subplot rows and columns and the figure edge to accommodate labels.
-# It can be disabled by passing ``tight=False`` to `~proplot.ui.subplots`.
+# In addition the figure size, by default, ProPlot automatically determines
+# the suitable space between subplots using a tight layout algorithm. This
+# algorithm automatically expands or contracts the space between subplots
+# to accommodate labels. It can be disabled by passing ``tight=False`` to
+# `~proplot.ui.subplots` or setting :rcraw:`subplots.tight` to ``False``.
 # While matplotlib has `its own tight layout algorithm
 # <https://matplotlib.org/stable/tutorials/intermediate/tight_layout_guide.html>`__,
 # ProPlot's algorithm may change the figure size to accommodate the correct spacing
-# and permits variable spacing between subsequent subplot rows and columns (see the
-# new `~proplot.gridspec.GridSpec` class for details).
+# and permits variable spacing between subsequent subplot rows and columns
+# (see `proplot.gridspec.GridSpec` for details).
 #
-# The tight layout algorithm can also be overridden. When you use any
-# of the spacing arguments `left`, `right`, `top`, `bottom`, `wspace`, or
-# `hspace`, that value is always respected. For example:
+# The tight layout algorithm can also be completely or partly overridden. When
+# you pass any of the spacing arguments `left`, `right`, `top`, `bottom`,
+# `wspace`, or `hspace` to `~proplot.ui.figure`, `~proplot.ui.subplots`, or
+# `~proplot.gridspec.GridSpec`, that value is always respected. For example:
 #
-# * ``left='2em'`` fixes the left margin width, while the right,
+# * ``left=2`` fixes the left margin at 2 em-widths, while the right,
 #   bottom, and top margin widths are determined automatically.
-# * ``wspace='1em'`` fixes the spaces between subplot columns, while the spaces
-#   between subplot rows are determined automatically.
-# * ``wspace=('3em', None)`` fixes the space between the first two columns of
-#   a three-column plot, while the space between the second two columns is
-#   determined automatically.
+# * ``wspace=1`` fixes the spaces between subplot columns at 1 em-width, while the
+#   spaces between subplot rows are determined automatically.
+# * ``wspace=(3, None)`` fixes the space between the first two columns of
+#   a three-column plot at 3 em-widths, while the space between the second two
+#   columns is determined automatically.
 #
-# The below examples demonstrate how the tight layout algorithm permits
-# variable spacing between subplot rows and columns.
+# Alternatively, the padding used by the tight layout algorithm can be changed
+# by passing `outerpad`, `innerpad`, `panelpad`, `wpad`, or `hpad` to
+# `~proplot.ui.figure` or `~proplot.ui.subplots`. All spacing parameters
+# can be specified with a unit string interpreted by `~proplot.utils.units`,
+# but the default unit is an "em-width" (i.e. a :rcraw:`font.size` width -- see
+# the :ref:`units table <units_table>` for details).
 
 # %%
 import proplot as pplt
@@ -225,7 +231,7 @@ axs.format(
     grid=False,
     toplabels=('Column 1', 'Column 2', 'Column 3'),
     leftlabels=('Row 1', 'Row 2', 'Row 3'),
-    suptitle='Tight layout with variable row-column spacing'
+    suptitle='Tight layout with variable row-column spacing',
 )
 
 # %%
@@ -255,7 +261,7 @@ axs[-1, :].format(xlabel='xlabel', title='Title\nTitle\nTitle')
 axs[:, 0].format(ylabel='ylabel')
 
 
-# %% [raw] raw_mimetype="text/restructuredtext"
+# %% [raw] raw_mimetype="text/restructuredtext" tags=[]
 # .. _ug_share:
 #
 # Axis sharing
@@ -268,32 +274,31 @@ axs[:, 0].format(ylabel='ylabel')
 #
 # ProPlot builds on this feature by...
 #
-# #. Supporting automatic sharing of subplots and :ref:`axes panels <ug_panels>`
-#    spanning the same rows or columns of the `~proplot.gridspec.GridSpec`. This works
-#    for :ref:`aribtrarily complex subplot grids <ug_intro>`. It even works if
+# #. Automatically sharing axes between subplot and :ref:`panel <ug_panels>` axes
+#    spanning the same rows or columns of the `~proplot.gridspec.GridSpec`. This
+#    works for :ref:`aribtrarily complex subplot grids <ug_intro>`. It also works if
 #    subplots were generated one-by-one with `~proplot.figure.Figure.add_subplot`
 #    rather than `~proplot.figure.Figure.subplots`.
 # #. Adding four axis-sharing "levels", controlled by the `sharex` and `sharey`
-#    keywords (default is :rc:`subplots.share`). Use the `share` keyword as a
-#    shorthand to set both `sharex` and `sharey`. The axis-sharing "levels"
+#    keywords (default is :rc:`subplots.share`). You can use the `share` keyword
+#    as a shorthand to set both `sharex` and `sharey`. The axis-sharing "levels"
 #    are defined as follows:
 #
 #    * ``share=False`` or ``share=0`` disables axis sharing.
-#    * ``share='labels'`` or ``share=1`` automatically shares the axis
-#      labels, but nothing else.
-#    * ``share='limits'`` or ``share=2`` is the same as ``1``, but also
-#      shares the axis limits, axis tick locations, and axis scales.
-#    * ``share=True`` or ``share=3`` is the same as ``2``, but also
-#      shares the axis tick labels.
+#    * ``share='labels'``, ``share='labs'``, or ``share=1`` automatically shares
+#      the axis labels, but nothing else.
+#    * ``share='limits'``, ``share='lims'``, or ``share=2`` is the same as ``1``,
+#      but also shares the axis limits, axis scales, and tick locations.
+#    * ``share=True`` or ``share=3`` is the same as ``2``,
+#      but also shares the axis tick labels.
 #
-# #. Adding an option to automatically share labels in the same row or column
-#    of the subplot grid, controlled by the `spanx` and `spany` keywords
-#    (default is :rc:`subplots.span`). Use the `span` keyword as a shorthand
-#    to set both `spanx` and `spany`.
+# #. Adding an option to automatically share labels between axes spanning the same
+#    row or column of the subplot grid, controlled by the `spanx` and `spany`
+#    keywords (default is :rc:`subplots.span`). Use the `span` keyword as a
+#    shorthand to set both `spanx` and `spany`.
 #
-# Axis and label sharing works for :ref:`arbitrarily complex subplot grids <ug_intro>`.
-# The below examples demonstrate the effect of various axis and label sharing settings
-# on the appearance of simple subplot grids.
+# The below examples demonstrate the effect of various axis and label sharing
+# settings on the appearance of several subplot grids.
 
 # %%
 import proplot as pplt
@@ -309,16 +314,14 @@ for scale in (1, 3, 7, 0.2):
 
 # Same plot with different sharing and spanning settings
 for i, share in enumerate((False, 'labels', 'limits', True)):
-    fig, axs = pplt.subplots(
-        ncols=4, refaspect=1, refwidth=1.06,
-        sharey=share, spanx=i // 2
-    )
+    fig = pplt.figure(refaspect=1, refwidth=1.06, sharey=share, spanx=i // 2)
+    axs = fig.subplots(ncols=4)
     for ax, data in zip(axs, datas):
         on = ('off', 'on')[i // 2]
         ax.plot(data, cycle=cycle)
         ax.format(
             suptitle=f'Sharing mode {share!r} (level {i}) with spanning labels {on}',
-            grid=False, xlabel='spanning', ylabel='shared'
+            grid=False, xlabel='spanning axis', ylabel='shared axis'
         )
 
 # %%
@@ -331,9 +334,8 @@ state = np.random.RandomState(51423)
 # Same plot with and without default sharing settings
 titles = ('With redundant labels', 'Without redundant labels')
 for b in (False, True):
-    fig, axs = pplt.subplots(
-        nrows=4, ncols=4, refwidth=1, share=b, span=b,
-    )
+    fig = pplt.figure(refwidth=1, share=b, span=b)
+    axs = fig.subplots(nrows=4, ncols=4)
     for ax in axs:
         ax.plot((state.rand(100, 20) - 0.4).cumsum(axis=0))
     axs.format(
@@ -349,21 +351,24 @@ for b in (False, True):
 # Physical units
 # --------------
 #
-# ProPlot supports arbitrary *physical units* for controlling the figure
+# ProPlot supports arbitrary physical units for controlling the figure
 # `figwidth` and `figheight`, the reference subplot `refwidth` and `refheight`,
-# the gridspec spacing values `left`, `right`, `bottom`, `top`, `wspace`, and
-# `hspace`, and in a few other places, e.g. `~proplot.axes.Axes.panel` and
-# `~proplot.axes.Axes.colorbar` widths. This feature is powered by the
+# the gridspec spacing and tight layout padding values `left`, `right`, `bottom`,
+# `top`, `wspace`, `hspace`, `outerpad`, `innerpad`, `panelpad`, `wpad`, and `hpad`,
+# the `~proplot.axes.Axes.panel_axes` and `~proplot.axes.Axes.colorbar` widths,
+# and all applicable `~proplot.config.rc` settings (e.g., settings controlling
+# legend spacing, label padding, and font size). This feature is powered by the
 # `~proplot.utils.units` function.
 #
-# If a sizing argument is numeric, the units are inches or points; if it is
-# string, the units are converted to inches or points by
-# `~proplot.utils.units`. A table of acceptable units is found in the
-# `~proplot.utils.units` documentation. They include centimeters,
-# millimeters, pixels,
+# A table of acceptable physical units is found :ref:`here <units_table>`.
+# They include centimeters, millimeters, pixels,
 # `em-heights <https://en.wikipedia.org/wiki/Em_(typography)>`__,
 # `en-heights <https://en.wikipedia.org/wiki/En_(typography)>`__,
 # and `points <https://en.wikipedia.org/wiki/Point_(typography)>`__.
+# The default physical unit (assumed when an argument is numeric) depends on the
+# context. For legend and gridspec spaces, it is em-widths. For subplot and
+# figure sizes, it is inches. For text padding and font sizes, it is points. See
+# the relevant documentation in the :ref:`API reference <api>` for details.
 
 # %%
 import proplot as pplt

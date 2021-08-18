@@ -5,11 +5,11 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.11.3
+#       jupytext_version: 1.4.2
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: Python [conda env:root] *
 #     language: python
-#     name: python3
+#     name: conda-root-py
 # ---
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -27,18 +27,22 @@
 #
 # It is often useful to have narrow "panels" along the edge of a larger
 # subplot for plotting secondary 1-dimensional datasets or summary statistics.
-# In ProPlot, you can create panels by passing a location (e.g., ``loc='r'`` or
-# ``loc='right'``) to the `~proplot.axes.Axes.panel` or `~proplot.axes.Axes.panel_axes`
-# methods. The resulting axes are instances of `~proplot.axes.CartesianAxes`.
-# To generate "stacked" panels, simply call `~proplot.axes.Axes.panel` more
-# than once. To include panels when centering spanning axis labels and super
-# titles, pass ``includepanels=True`` to `~proplot.figure.Figure`. Panels
-# :ref:`do not interfere with the tight layout algorithm <ug_tight>` and
-# :ref:`do not affect the subplot aspect ratios <ug_autosize>`.
+# In ProPlot, you can create panels using the `~proplot.axes.Axes.panel` or
+# `~proplot.axes.Axes.panel_axes` commands. The location is specified with a
+# string, e.g. ``'r'`` or ``'right'`` for a right-hand side panel, and the
+# resulting panel axes are instances of `~proplot.axes.CartesianAxes`.
+# To generate "stacked" panels, call `~proplot.axes.Axes.panel_axes` more than once.
+# To generate several panels at once, call `~proplot.figure.SubplotGrid.panel_axes`
+# on the `~proplot.figure.SubplotGrid` returned by `~proplot.figure.subplots`.
+# Note that panels :ref:`do not interfere with the tight layout algorithm <ug_tight>`
+# and :ref:`do not affect the subplot aspect ratios <ug_autosize>`.
 #
 # In the first example below, the panel distance from the main subplot is
-# manually set to ``space=0``. In the second example, the distance is automatically
-# adjusted by the tight layout algorithm.
+# manually set to ``space=0``. In the second example, the distance is
+# automatically adjusted by the :ref:`tight layout algorithm <ug_tight>`.
+# Note that by default, panels are excluded when centering
+# :ref:`spanning axis labels <ug_share>` and super titles. To include
+# the panels, pass ``includepanels=True`` to `~proplot.figure.Figure`.
 
 # %%
 import proplot as pplt
@@ -51,8 +55,8 @@ data = 10 * (data - data.min()) / (data.max() - data.min())
 for cbarloc, ploc in ('rb', 'br'):
     # Create figure
     fig, axs = pplt.subplots(
-        refwidth=1.8, nrows=1, ncols=2,
-        share=0, panelpad=0.8, includepanels=True
+        nrows=1, ncols=2, refwidth=1.8, panelpad=0.8,
+        share=False, includepanels=True
     )
     axs.format(
         xlabel='xlabel', ylabel='ylabel', title='Title',
@@ -81,24 +85,28 @@ for cbarloc, ploc in ('rb', 'br'):
     space = 0
     width = '4em'
     kwargs = {'titleloc': titleloc, 'xreverse': False, 'yreverse': False}
-    paxs = axs.panel(ploc, space=space, width=width)
-    paxs.format(title='Mean', **kwargs)
-    for pax in paxs:
-        pax.plot(x1, y1, color='gray7')
+    pxs = axs.panel(ploc, space=space, width=width)
+    pxs.format(title='Mean', **kwargs)
+    for px in pxs:
+        px.plot(x1, y1, color='gray7')
 
     # Panels for plotting the standard deviation
-    paxs = axs.panel(ploc, space=space, width=width)
-    paxs.format(title='Stdev', **kwargs)
-    for pax in paxs:
-        pax.plot(x2, y2, color='gray7', ls='--')
+    pxs = axs.panel(ploc, space=space, width=width)
+    pxs.format(title='Stdev', **kwargs)
+    for px in pxs:
+        px.plot(x2, y2, color='gray7', ls='--')
 
 # %%
 import proplot as pplt
-fig, axs = pplt.subplots(refwidth=1.5, nrows=2, ncols=2, share=0)
 
-# Demonstrate that complex arrangements of panels does
-# not mess up subplot aspect ratios or tight layout spacing
-axs.format(
+# Demonstrate that complex arrangements preserve
+# spacing, aspect ratios, and axis sharing
+gs = pplt.GridSpec(nrows=2, ncols=2)
+fig = pplt.figure(refwidth=1.5, share=False)
+for ss, side in zip(gs, 'tlbr'):
+    ax = fig.add_subplot(ss)
+    px = ax.panel_axes(side, width='3em')
+fig.format(
     xlim=(0, 1), ylim=(0, 1),
     xlabel='xlabel', ylabel='ylabel',
     xticks=0.2, yticks=0.2,
@@ -106,8 +114,6 @@ axs.format(
     toplabels=('Column 1', 'Column 2'),
     abc=True, abcloc='ul', titleloc='uc', titleabove=False,
 )
-for ax, side in zip(axs, 'tlbr'):
-    ax.panel(side, width='3em')
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -119,14 +125,16 @@ for ax, side in zip(axs, 'tlbr'):
 # `Inset axes
 # <https://matplotlib.org/stable/gallery/subplots_axes_and_figures/zoom_inset_axes.html>`__
 # can be generated with the `~proplot.axes.Axes.inset` or
-# `~proplot.axes.Axes.inset_axes` command. By default, inset axes
-# have the same projection as the parent axes, but you can also request
-# a different projection (e.g., ``ax.inset_axes(bounds, proj='polar')``).
-# Passing ``zoom=True`` to `~proplot.axes.Axes.inset` draws "zoom indication"
+# `~proplot.axes.Axes.inset_axes` commands. To generate several insets at once,
+# call `~proplot.figure.SubplotGrid.inset_axes` on the `~proplot.figure.SubplotGrid`
+# returned by `~proplot.figure.Figure.subplots`. By default, inset axes have the
+# same projection as the parent axes, but you can also request a :ref:`different
+# projection <ug_proj>` (e.g., ``ax.inset_axes(bounds, proj='polar')``).
+# Passing ``zoom=True`` to `~proplot.axes.Axes.inset_axes` draws "zoom indication"
 # lines with `~matplotlib.axes.Axes.indicate_inset_zoom` when the axes are both
-# `~proplot.axes.Axes.CartesianAxes`, and ProPlot automatically updates the lines
-# when the axis limits of the parent axes change. To modify the zoom line properties,
-# simply pass a dictionary to `zoom_kw`.
+# `~proplot.axes.Axes.CartesianAxes`, and the lines when the axis limits of the
+# parent axes change. To modify the zoom line properties, simply
+# pass a dictionary to `zoom_kw`.
 
 # %%
 import proplot as pplt
@@ -148,12 +156,12 @@ ax.format(
 )
 
 # Create inset axes representing a "zoom-in"
-iax = ax.inset(
+ix = ax.inset(
     [5, 5, 4, 4], transform='data', zoom=True,
-    zoom_kw={'color': 'red3', 'lw': 2, 'ls': '--'}
+    zoom_kw={'edgecolor': 'red3', 'lw': 2, 'ls': '--'}
 )
-iax.format(
-    xlim=(2, 4), ylim=(2, 4), color='red7',
+ix.format(
+    xlim=(2, 4), ylim=(2, 4), metacolor='red7',
     linewidth=1.5, ticklabelweight='bold'
 )
-iax.pcolormesh(data, cmap='Grays', levels=N, inbounds=False)
+ix.pcolormesh(data, cmap='Grays', levels=N, inbounds=False)

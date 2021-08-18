@@ -6,9 +6,9 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.3.0
+#       jupytext_version: 1.4.2
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
@@ -98,11 +98,13 @@ fig, axs = pplt.show_fonts()
 # Using your own fonts
 # --------------------
 #
-# You can register your own fonts by adding files to the ``~/.proplot/fonts``
-# directory and calling `~proplot.config.register_fonts`. This command is
-# also called on import. To change the default font, use the
-# `~proplot.config.rc` object or modify your ``~/.proplotrc``. See
-# the :ref:`configuration section <ug_config>` for details.
+# You can register your own fonts by adding files to the ``fonts`` subfolder
+# inside `~proplot.config.Configurator.user_folder` and calling
+# `~proplot.config.register_fonts`. This command is called on import. You can
+# also manually pass file paths to `~proplot.config.register_fonts`.
+# To change the default font, use the `~proplot.config.rc`
+# object or modify your ``proplotrc``. See the
+# :ref:`configuration section <ug_config>` for details.
 #
 # Sometimes the font you would like to use *is* installed, but the font file
 # is not stored under the matplotlib-compatible ``.ttf``, ``.otf``, or ``.afm``

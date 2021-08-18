@@ -8,9 +8,9 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.4.2
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: proplot-dev
 #     language: python
-#     name: python3
+#     name: proplot-dev
 # ---
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -21,7 +21,7 @@
 #
 # This section documents features used for modifying Cartesian *x* and *y*
 # axis settings, including axis scales, tick locations, and tick label
-# formatting. It also documents a handy "dual axes" feature.
+# formatting. It also documents a handy "dual units" feature.
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -49,8 +49,8 @@
 #
 # To generate lists of tick locations, we recommend using ProPlot's
 # `~proplot.utils.arange` function -- it’s basically an *endpoint-inclusive*
-# version of `numpy.arange`, which is usually what you'll want in this
-# context.
+# version of `numpy.arange`, which is usually what you'll want in this context.
+
 # %%
 import proplot as pplt
 import numpy as np
@@ -61,48 +61,55 @@ pplt.rc.update(
     titleloc='upper center', titlecolor='dark blue', titleborder=False,
     axesfacecolor=pplt.scale_luminance('powderblue', 1.15),
 )
-fig, axs = pplt.subplots(nrows=7, refwidth=5, refaspect=(8, 1), share=0)
-axs.format(suptitle='Tick locators demo')
+fig = pplt.figure(share=False, refwidth=5, refaspect=(8, 1))
+fig.format(suptitle='Tick locators demo')
 
 # Step size for tick locations
-axs[0].format(
+ax = fig.subplot(711)
+ax.format(
     xlim=(0, 200), xminorlocator=10, xlocator=30,
     title='MultipleLocator'
 )
 
 # Specific list of locations
-axs[1].format(
+ax = fig.subplot(712)
+ax.format(
     xlim=(0, 10), xminorlocator=0.1,
     xlocator=[0, 0.3, 0.8, 1.6, 4.4, 8, 8.8, 10],
     title='FixedLocator',
 )
 
 # Ticks at numpy.linspace(xmin, xmax, N)
-axs[2].format(
+ax = fig.subplot(713)
+ax.format(
     xlim=(0, 10), xlocator=('linear', 21),
     title='LinearLocator',
 )
 
 # Logarithmic locator, used automatically for log scale plots
-axs[3].format(
+ax = fig.subplot(714)
+ax.format(
     xlim=(1, 100), xlocator='log', xminorlocator='logminor',
     title='LogLocator',
 )
 
 # Maximum number of ticks, but at "nice" locations
-axs[4].format(
+ax = fig.subplot(715)
+ax.format(
     xlim=(1, 7), xlocator=('maxn', 11),
     title='MaxNLocator',
 )
 
 # Hide all ticks
-axs[5].format(
+ax = fig.subplot(716)
+ax.format(
     xlim=(-10, 10), xlocator='null',
     title='NullLocator',
 )
 
 # Tick locations that cleanly divide 60 minute/60 second intervals
-axs[6].format(
+ax = fig.subplot(717)
+ax.format(
     xlim=(0, 2), xlocator='dms', xformatter='dms',
     title='Degree-Minute-Second Locator (requires cartopy)',
 )
@@ -134,7 +141,7 @@ pplt.rc.reset()
 # fractions of :math:`\pi`, or ``xformatter='sci'`` to label ticks with
 # scientific notation. If you want to work directly with the formatter classes,
 # they are also imported into the top-level namespace
-# (e.g., ``pplt.SigFigFormatter(3)`` is allowed).
+# (e.g., ``pplt.SciFormatter()`` is allowed).
 #
 # ProPlot also changes the default tick formatter to
 # `~proplot.ticker.AutoFormatter`. This class trims trailing zeros by
@@ -150,7 +157,7 @@ pplt.rc.metawidth = 1.5
 pplt.rc.gridwidth = 1
 
 # Create the figure
-fig, axs = pplt.subplots(ncols=2, nrows=2, refwidth=1.5, share=0)
+fig, axs = pplt.subplots(ncols=2, nrows=2, refwidth=1.5, share=False)
 axs.format(
     ytickloc='both', yticklabelloc='both',
     titlepad='0.5em', suptitle='Default formatters demo'
@@ -184,48 +191,57 @@ pplt.rc.update(
     metacolor='gray8', gridcolor='gray8', titlecolor='gray8', suptitlecolor='gray8',
     titleloc='upper center', titleborder=False,
 )
-fig, axs = pplt.subplots(nrows=9, refwidth=5, refaspect=(8, 1), share=0)
+fig = pplt.figure(refwidth=5, refaspect=(8, 1), share=False)
 
 # Scientific notation
-axs[0].format(xlim=(0, 1e20), xformatter='sci', title='SciFormatter')
+ax = fig.subplot(911)
+ax.format(xlim=(0, 1e20), xformatter='sci', title='SciFormatter')
 
 # N significant figures for ticks at specific values
-axs[1].format(
+ax = fig.subplot(912)
+ax.format(
     xlim=(0, 20), xlocator=(0.0034, 3.233, 9.2, 15.2344, 7.2343, 19.58),
     xformatter=('sigfig', 2), title='SigFigFormatter',  # 2 significant digits
 )
 
 # Fraction formatters
-axs[2].format(
+ax = fig.subplot(913)
+ax.format(
     xlim=(0, 3 * np.pi), xlocator=np.pi / 4, xformatter='pi', title='FracFormatter',
 )
-axs[3].format(
+ax = fig.subplot(914)
+ax.format(
     xlim=(0, 2 * np.e), xlocator=np.e / 2, xticklabels='e', title='FracFormatter',
 )
 
 # Geographic formatters
-axs[4].format(
+ax = fig.subplot(915)
+ax.format(
     xlim=(-90, 90), xlocator=30, xformatter='deglat', title='Latitude Formatter'
 )
-axs[5].format(
+ax = fig.subplot(916)
+ax.format(
     xlim=(0, 360), xlocator=60, xformatter='deglon', title='Longitude Formatter'
 )
 
 # User input labels
-axs[6].format(
+ax = fig.subplot(917)
+ax.format(
     xlim=(0, 5), xlocator=np.arange(5),
     xticklabels=['a', 'b', 'c', 'd', 'e'], title='FixedFormatter',
 )
 
 # Custom style labels
-axs[7].format(
+ax = fig.subplot(918)
+ax.format(
     xlim=(0, 0.001), xlocator=0.0001, xformatter='%.E', title='FormatStrFormatter',
 )
-axs[8].format(
+ax = fig.subplot(919)
+ax.format(
     xlim=(0, 100), xtickminor=False, xlocator=20,
     xformatter='{x:.1f}', title='StrMethodFormatter',
 )
-axs.format(ylocator='null', suptitle='Tick formatters demo')
+fig.format(ylocator='null', suptitle='Tick formatters demo')
 pplt.rc.reset()
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -235,14 +251,15 @@ pplt.rc.reset()
 # --------------
 #
 # ProPlot can also be used to customize the tick locations and tick label
-# format of "datetime" axes.
-# To draw ticks on some particular time unit, just use a unit string (e.g.,
-# ``xlocator='month'``). To draw ticks every ``N`` time units, just use a (unit, N)
-# tuple (e.g., ``xlocator=('day', 5)``). For `% style formatting
+# format of "datetime" axes. To draw ticks on some particular time unit, just use a
+# unit string (e.g., ``xlocator='month'``). To draw ticks every ``N`` time units,
+# just use a (unit, N) tuple (e.g., ``xlocator=('day', 5)``). For `% style formatting
 # <https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior>`__
 # of datetime tick labels, just use a string containing ``'%'`` (e.g.
-# ``xformatter='%Y-%m-%d'``).
-# See `~proplot.axes.CartesianAxes.format`, `~proplot.constructor.Locator`,
+# ``xformatter='%Y-%m-%d'``). By default, *x* axis datetime axis labels are
+# rotated 90 degrees, like in `pandas`_. This can be disabled by passing
+# ``xrotation=0`` to `~proplot.axes.CartesianAxes.format` or by setting
+# :rcraw:`formatter.timerotation` to ``0``. See `~proplot.constructor.Locator`
 # and `~proplot.constructor.Formatter` for details.
 
 # %%
@@ -253,44 +270,47 @@ pplt.rc.update(
     figurefacecolor='w', axesfacecolor='pastel blue',
     titleloc='upper center', titleborder=False,
 )
-fig, axs = pplt.subplots(nrows=5, refwidth=6, refaspect=(8, 1), share=0)
-axs[:4].format(xrotation=0)  # no rotation for these examples
+fig, axs = pplt.subplots(nrows=5, refwidth=6, refaspect=(8, 1), share=False)
 
 # Default date locator
 # This is enabled if you plot datetime data or set datetime limits
-axs[0].format(
+ax = axs[0]
+ax.format(
     xlim=(np.datetime64('2000-01-01'), np.datetime64('2001-01-02')),
     title='Auto date locator and formatter'
 )
 
 # Concise date formatter introduced in matplotlib 3.1
-axs[1].format(
+ax = axs[1]
+ax.format(
     xlim=(np.datetime64('2000-01-01'), np.datetime64('2001-01-01')),
     xformatter='concise', title='Concise date formatter',
 )
 
 # Minor ticks every year, major every 10 years
-axs[2].format(
+ax = axs[2]
+ax.format(
     xlim=(np.datetime64('2000-01-01'), np.datetime64('2050-01-01')),
     xlocator=('year', 10), xformatter='\'%y', title='Ticks every N units',
 )
 
 # Minor ticks every 10 minutes, major every 2 minutes
-axs[3].format(
+ax = axs[3]
+ax.format(
     xlim=(np.datetime64('2000-01-01T00:00:00'), np.datetime64('2000-01-01T12:00:00')),
     xlocator=('hour', range(0, 24, 2)), xminorlocator=('minute', range(0, 60, 10)),
     xformatter='T%H:%M:%S', title='Ticks at specific intervals',
 )
 
 # Month and year labels, with default tick label rotation
-axs[4].format(
+ax = axs[4]
+ax.format(
     xlim=(np.datetime64('2000-01-01'), np.datetime64('2008-01-01')),
     xlocator='year', xminorlocator='month',  # minor ticks every month
     xformatter='%b %Y', title='Ticks with default rotation',
 )
-axs.format(
-    ylocator='null', suptitle='Datetime locators and formatters demo'
-)
+axs[:4].format(xrotation=0)  # no rotation for the first four examples
+fig.format(ylocator='null', suptitle='Datetime locators and formatters demo')
 pplt.rc.reset()
 
 
@@ -328,41 +348,41 @@ pplt.rc.reset()
 # ProPlot also includes a few new axis scales. The ``'cutoff'`` scale (see
 # `~proplot.scale.CutoffScale`) is useful when the statistical distribution
 # of your data is very unusual. The ``'sine'`` scale `~proplot.scale.SineLatitudeScale`
-# scales the axis with a sine function (resulting in an area-weighted spherical
-# latitude coordinate) and the ``'mercator'`` scale
-# `~proplot.scale.MercatorLatitudeScale`
+# scales the axis with a sine function (resulting in an area-weighted spherical latitude
+# coordinate) and the ``'mercator'`` scale `~proplot.scale.MercatorLatitudeScale`
 # scales the axis with the Mercator projection latitude coordinate. The
 # ``'inverse'`` scale `~proplot.scale.InverseScale` can be useful when
 # working with spectral data, especially with :ref:`"dual" unit axes <ug_dual>`.
 # If you want to work with these axis scales directly, they are also imported
-# into the top-level namespace (e.g., ``pplt.ExpScale(...)`` is allowed).
+# into the top-level namespace (e.g., ``pplt.CutoffScale(...)`` is allowed).
 
 # %%
 import proplot as pplt
 import numpy as np
 N = 200
 lw = 3
-pplt.rc.update({
-    'meta.width': 1, 'tick.labelweight': 'bold', 'axes.labelweight': 'bold'
-})
-fig, axs = pplt.subplots(ncols=2, nrows=2, refwidth=1.8, share=0)
-axs.format(suptitle='Axis scales demo', ytickminor=True)
+pplt.rc.update({'meta.width': 1, 'label.weight': 'bold', 'tick.labelweight': 'bold'})
+fig = pplt.figure(refwidth=1.8, share=False)
 
 # Linear and log scales
-axs[0].format(yscale='linear', ylabel='linear scale')
-axs[1].format(ylim=(1e-3, 1e3), yscale='log', ylabel='log scale')
-for ax in axs[:2]:
+ax1 = fig.subplot(221)
+ax1.format(yscale='linear', ylabel='linear scale')
+ax2 = fig.subplot(222)
+ax2.format(ylim=(1e-3, 1e3), yscale='log', ylabel='log scale')
+for ax in (ax1, ax2):
     ax.plot(np.linspace(0, 1, N), np.linspace(0, 1000, N), lw=lw)
 
 # Symlog scale
-ax = axs[2]
+ax = fig.subplot(223)
 ax.format(yscale='symlog', ylabel='symlog scale')
 ax.plot(np.linspace(0, 1, N), np.linspace(-1000, 1000, N), lw=lw)
 
 # Logit scale
-ax = axs[3]
+ax = fig.subplot(224)
 ax.format(yscale='logit', ylabel='logit scale')
 ax.plot(np.linspace(0, 1, N), np.linspace(0.01, 0.99, N), lw=lw)
+
+fig.format(suptitle='Axis scales demo', ytickminor=True)
 pplt.rc.reset()
 
 
@@ -370,7 +390,6 @@ pplt.rc.reset()
 import proplot as pplt
 import numpy as np
 fig, axs = pplt.subplots(nrows=4, refaspect=(5, 1), figwidth=6, sharex=False)
-ax = axs[0]
 
 # Sample data
 x = np.linspace(0, 4 * np.pi, 100)
@@ -413,10 +432,8 @@ import numpy as np
 pplt.rc.reset()
 state = np.random.RandomState(51423)
 colors = ('coral', 'sky blue')
-fig, axs = pplt.subplots(nrows=2, ncols=3, refwidth=1.7, share=0, order='F')
-axs.format(
-    toplabels=('Geographic scales', 'Exponential scales', 'Power scales'),
-)
+fig, axs = pplt.subplots(nrows=2, ncols=3, refwidth=1.7, order='F', share=False)
+axs.format(toplabels=('Geographic scales', 'Exponential scales', 'Power scales'))
 
 # Geographic scales
 n = 20
@@ -425,10 +442,11 @@ y1 = np.linspace(-85, 85, n)
 y2 = np.linspace(-85, 85, n)
 data = state.rand(len(x) - 1, len(y2) - 1)
 for ax, scale, color in zip(axs[:2], ('sine', 'mercator'), colors):
+    title = scale.title() + ' y-axis'
     ax.plot(x, y1, '-', color=color, lw=4)
     ax.pcolormesh(x, y2, data, cmap='grays', cmap_kw={'right': 0.8})
     ax.format(
-        title=scale.title() + ' y-axis', yscale=scale, ytickloc='left',
+        title=title, yscale=scale, ytickloc='left',
         yformatter='deg', grid=False, ylocator=20,
         xscale='linear', xlim=None, ylim=(-85, 85)
     )
@@ -438,21 +456,16 @@ x = np.linspace(0, 1, 50)
 y = 10 * x
 data = state.rand(len(y) - 1, len(x) - 1)
 for ax, a, c, color in zip(axs[2:4], (np.e, 2), (0.5, 2), colors):
+    title = f"${(a, 'e')[a == np.e]}^{{{(c, '')[c == 1]}x}}$"
     ax.pcolormesh(x, y, data, cmap='grays', cmap_kw={'right': 0.8})
     ax.plot(x, y, lw=4, color=color)
-    ax.format(
-        ylim=(0.1, 10), yscale=('exp', a, c),
-        title=f"${(a, 'e')[a == np.e]}^{{{(c, '')[c == 1]}x}}$"
-    )
+    ax.format(ylim=(0.1, 10), yscale=('exp', a, c), title=title)
 
 # Power scales
 for ax, power, color in zip(axs[4:], (2, 1 / 4), colors):
     ax.pcolormesh(x, y, data, cmap='grays', cmap_kw={'right': 0.8})
     ax.plot(x, y, lw=4, color=color)
-    ax.format(
-        ylim=(0.1, 10), yscale=('power', power),
-        title=f'$x^{{{power}}}$'
-    )
+    ax.format(ylim=(0.1, 10), yscale=('power', power), title=f'$x^{{{power}}}$')
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -465,18 +478,18 @@ for ax, power, color in zip(axs[4:], (2, 1 / 4), colors):
 # `~proplot.axes.CartesianAxes.dualy` methods can be used to draw duplicate
 # *x* and *y* axes meant to represent *alternate units* in the same
 # coordinate range as the "parent" axis. This feature is powered by the
-# `~proplot.scale.FuncScale` class. `~proplot.axes.CartesianAxes.dualx` and
-# `~proplot.axes.CartesianAxes.dualy` accept either:
+# `~proplot.scale.FuncScale` class. `~proplot.axes.CartesianAxes.dualx`
+# and `~proplot.axes.CartesianAxes.dualy` accept either...
 #
 # #. A single linear forward function.
 # #. A pair of arbitrary forward and inverse functions.
 # #. An :ref:`axis scale <ug_scales>` name or class instance.
 #
-# In the axis scale case, the scale's transforms are used for the forward and
-# inverse functions, and the scale's default locators and formatters are used
-# for the default `~proplot.scale.FuncScale` locators and formatters.
-# In the below examples, we generate dual axes with each of these three methods. Note
-# that the "parent" axis scale is arbitrary -- in the first example, we create
+# In the third case, the axis scale transforms are used for the forward and
+# inverse functions, and the default axis scale locators and formatters are used
+# for the default dual axis locators and formatters. In the below examples,
+# we generate dual axes with each of these three methods. Note that the
+# "parent" axis scale is arbitrary -- in the first example, we create
 # a `~proplot.axes.CartesianAxes.dualx` axis for an axis scaled by the
 # `symlog scale <https://matplotlib.org/stable/gallery/scales/symlog_demo.html>`__.
 
@@ -485,14 +498,11 @@ import proplot as pplt
 pplt.rc.update({'grid.alpha': 0.4, 'meta.width': 1, 'grid.linewidth': 1})
 c1 = pplt.scale_luminance('cerulean', 0.5)
 c2 = pplt.scale_luminance('red', 0.5)
-fig, axs = pplt.subplots(
-    [[1, 1, 2, 2], [0, 3, 3, 0]],
-    share=0, refaspect=2.2, refwidth=3
-)
+fig = pplt.figure(refaspect=2.2, refwidth=3, share=False)
+axs = fig.subplots([[1, 1, 2, 2], [0, 3, 3, 0]])
 axs.format(
     suptitle='Duplicate axes with simple transformations',
-    xcolor=c1, gridcolor=c1,
-    ylocator=[], yformatter=[]
+    ylocator=[], yformatter=[], xcolor=c1, gridcolor=c1,
 )
 
 # Meters and kilometers
@@ -525,11 +535,11 @@ import proplot as pplt
 pplt.rc.update({'grid.alpha': 0.4, 'meta.width': 1, 'grid.linewidth': 1})
 c1 = pplt.scale_luminance('cerulean', 0.5)
 c2 = pplt.scale_luminance('red', 0.5)
-fig, axs = pplt.subplots(ncols=2, share=0, refaspect=0.4, refwidth=1.8)
-axs.format(suptitle='Duplicate axes with pressure and height')
+fig = pplt.figure(share=False, refaspect=0.4, refwidth=1.8)
+fig.format(suptitle='Duplicate axes with pressure and height')
 
 # Pressure as the linear scale, height on opposite axis (scale height 7km)
-ax = axs[0]
+ax = fig.subplot(121)
 ax.format(
     xformatter='null', ylabel='pressure (hPa)',
     ylim=(1000, 10), xlocator=[], ycolor=c1, gridcolor=c1
@@ -539,7 +549,7 @@ ax.dualy(
 )
 
 # Height as the linear scale, pressure on opposite axis (scale height 7km)
-ax = axs[1]  # span
+ax = fig.subplot(122)
 ax.format(
     xformatter='null', ylabel='height (km)', ylim=(0, 20), xlocator='null',
     grid=True, gridcolor=c2, ycolor=c2
@@ -567,9 +577,9 @@ ax.plot(x, response, color=c1, lw=2)
 
 # Add inverse scale to top
 ax.format(
-    xlabel='wavenumber (days$^{-1}$)', ylabel='response', grid=False,
     title='Imaginary response function',
     suptitle='Duplicate axes with wavenumber and period',
+    xlabel='wavenumber (days$^{-1}$)', ylabel='response', grid=False,
 )
 ax = ax.dualx(
     'inverse', locator='log', locator_kw={'subs': (1, 2, 5)}, label='period (days)'

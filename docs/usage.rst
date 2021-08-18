@@ -62,61 +62,70 @@ the `~matplotlib.pyplot` module.
 Figure and axes classes
 =======================
 
-Creating plots with ProPlot always begins with a call to the
-`~proplot.ui.subplots` command:
+Creating figures with ProPlot is very similar to
+matplotlib. You can either create the figure
+and all of its subplots at once:
 
 .. code-block:: python
 
    fig, axs = pplt.subplots(...)
 
-The `~proplot.ui.subplots` command is modeled after
-matplotlib's native `matplotlib.pyplot.subplots` command
-and is :ref:`packed with new features <ug_subplots>`. One highlight is the
-`~proplot.figure.Figure.auto_layout` algorithm that
+or create the figure first and add subplots subsequently:
+
+.. code-block:: python
+
+   fig = pplt.figure(...)
+   axs = fig.add_subplots(...)  # add several subplots
+   # axs = fig.subplots(...)  # equivalent
+   ax = fig.add_subplot(...)  # add a single subplot
+   # ax = fig.subplot(...)  # equivalent
+
+These commands are modeled after `matplotlib.pyplot.subplots` and
+`matplotlib.pyplot.figure` and are :ref:`packed with new features <ug_subplots>`.
+One highlight is the `~proplot.figure.Figure.auto_layout` algorithm that
 :ref:`automatically adjusts the space between subplots <ug_tight>` (similar to
 matplotlib's `~matplotlib.figure.Figure.tight_layout`) and
 :ref:`automatically adjusts the figure size <ug_autosize>` to preserve subplot
 sizes and aspect ratios (which is particularly useful for grids of map projections
-and images). All sizing arguments also take arbitrary units, including *metric*
-units like ``cm`` and ``mm``.
+and images or grids with panels and colorbars). All sizing arguments also take
+arbitrary units, including metric units like ``cm`` and ``mm``.
 
-Instead of instances of the native `matplotlib.figure.Figure` and
-`matplotlib.axes.Axes` classes, `~proplot.ui.subplots` :ref:`returns <ug_basics>`
-a `proplot.figure.Figure` instance populated with `proplot.axes.Axes` instances.
+Instead of the native `matplotlib.figure.Figure` and `matplotlib.axes.Axes` classes,
+ProPlot uses the `proplot.figure.Figure` and `proplot.axes.Axes` subclasses.
 ProPlot figures are saved with `~proplot.figure.Figure.save` (or, equivalently,
-`~matplotlib.figure.Figure.savefig`). All ProPlot axes also belong
-to one of the following three child classes:
+`~matplotlib.figure.Figure.savefig`) and ProPlot axes belong to one of the
+following three child classes:
 
-* `proplot.axes.CartesianAxes`: For ordinary plots with *x* and *y*
-  coordinates.
-* `proplot.axes.GeoAxes`: For geographic plots with *longitude* and
-  *latitude* coordinates.
-* `proplot.axes.PolarAxes`: For polar plots with *radius* and *azimuth*
-  coordinates.
+* `proplot.axes.CartesianAxes`:
+  For ordinary plots with *x* and *y* coordinates.
+* `proplot.axes.GeoAxes`:
+  For geographic plots with *longitude* and *latitude* coordinates.
+* `proplot.axes.PolarAxes`:
+  For polar plots with *azimuth* and *radius* coordinates.
 
-Most of ProPlot's features are added via the `proplot.figure.Figure`
-and `proplot.axes.Axes` classes. They include several brand new methods
-and add new functionality to the *existing* methods.
+Most of ProPlot's features are implemented using the figure and axes
+subclasses. They include several new figure and axes methods and
+added functionality to existing figure and axes methods.
 
-* The new `~proplot.axes.Axes.format` method is used to fine-tune various
-  axes settings.  Think of this as a dedicated
-  `~matplotlib.artist.Artist.update` method for axes. See
+* The `proplot.axes.Axes.format` and `proplot.figure.Figure.format` commands fine-tunes
+  various axes and figure settings.  Think of this as a dedicated
+  `~matplotlib.artist.Artist.update` method for axes and figures. See
   :ref:`formatting subplots <ug_format>` for a broad overview, along with the
   individual sections on formatting :ref:`Cartesian plots <ug_cartesian>`,
   :ref:`geographic plots <ug_geoformat>`, and :ref:`polar plots <ug_polar>`.
 * The `proplot.axes.Axes.colorbar` and `proplot.axes.Axes.legend` commands
   draw colorbars and legends inside of subplots or along the outside edges of
   subplots. The `proplot.figure.Figure.colorbar` and `proplot.figure.Figure.legend`
-  commands draw colorbars or legends along the edges of figures (aligned by
-  subplot boundaries). These commands :ref:`simplify <ug_cbars_legends>`
+  commands draw colorbars or legends along the edges of figures (aligned by subplot
+  boundaries). These commands considerably :ref:`simplify <ug_cbars_legends>`
   the process of drawing colorbars and legends.
-* ProPlot adds a variety of useful features to the
-  `~matplotlib.axes.Axes.plot`, `~matplotlib.axes.Axes.bar`,
-  `~proplot.axes.Axes.area`, `~matplotlib.axes.Axes.contour`,
-  `~matplotlib.axes.Axes.contourf`, `~matplotlib.axes.Axes.pcolormesh`,
-  `~proplot.axes.Axes.heatmap`, and `~proplot.axes.Axes.parametric` plotting
-  commands by "wrapping" them. See the :ref:`1D plotting <ug_1dplots>` and
-  :ref:`2D plotting <ug_2dplots>` sections for details.
+* The `proplot.axes.PlotAxes` subclass (used for all ProPlot axes)
+  adds many, many useful features to virtually every plotting command
+  (including `~proplot.axes.PlotAxes.plot`, `~proplot.axes.PlotAxes.scatter`,
+  `~proplot.axes.PlotAxes.bar`, `~proplot.axes.PlotAxes.area`,
+  `~proplot.axes.PlotAxes.contour`, and `~proplot.axes.PlotAxes.pcolor`.
+  See the :ref:`1D plotting <ug_1dplots>` and :ref:`2D plotting <ug_2dplots>`
+  sections for details.
 
 .. _usage_integration:
 
