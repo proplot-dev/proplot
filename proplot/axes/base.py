@@ -21,6 +21,7 @@ import matplotlib.text as mtext
 import matplotlib.ticker as mticker
 import matplotlib.transforms as mtransforms
 import numpy as np
+from matplotlib import cbook
 
 from .. import colors as pcolors
 from .. import constructor
@@ -48,11 +49,8 @@ except Exception:
 __all__ = ['Axes']
 
 
-# Label constants
+# A-b-c label string
 ABC_STRING = 'abcdefghijklmnopqrstuvwxyz'
-BOX_BORDER_KEYS = (
-    'border', 'borderwidth', 'bbox', 'bboxpad', 'bboxcolor', 'bboxstyle', 'bboxalpha',
-)
 
 
 # Transform docstring
@@ -2273,49 +2271,57 @@ class Axes(maxes.Axes):
             return cb
 
     @staticmethod
-    def _parse_grouped_handles(handles, labels=None):
+    def _parse_handle_groups(handles, labels=None):
         """
         Parse possibly tuple-grouped input handles.
         """
-        # Helper function
-        # NOTE: Allow handles and labels of different length like native
-        # matplotlib. Just truncate extra values with zip().
-        def _good_labels(*objs):  # noqa: E301
+        # Helper functions. Filter objects in a tuple group and retrieve
+        # labels from a tuple group. Possibly return none of either.
+        def _group_labs(*objs):  # noqa: E301
             labs = []
             for obj in objs:
                 lab = obj.get_label()
                 if lab is not None and str(lab)[:1] != '_':
                     labs.append(lab)
             return labs
+        def _group_objs(*objs):  # noqa: E306
+            out = []
+            ignore = (mcontainer.ErrorbarContainer,)
+            for obj in objs:
+                if isinstance(obj, ignore) and not _group_labs(obj):
+                    continue
+                elif isinstance(obj, cbook.silent_list) and obj:
+                    obj = obj[0]
+                if hasattr(obj, 'get_label') or isinstance(obj, tuple):
+                    out.append(obj)
+            return tuple(out)
+
         # Sanitize labels. Ignore e.g. extra hist() or hist2d() return values,
-        # ignore unlabeled error bars in tuple group, auto-detect labels from
-        # tuple group, and auto-expand tuples containing different labels.
-        ignore = (mcontainer.ErrorbarContainer,)  # always ignore these if unlabled
+        # auto-detect labels in tuple group, auto-expand tuples with diff labels
+        # NOTE: Allow handles and labels of different length like native
+        # matplotlib. Just truncate extra values with zip().
         if labels is None:
             labels = [None] * len(handles)
-        handles = [
-            tuple(obj for obj in objs if hasattr(obj, 'get_label'))
-            if type(objs) is tuple else objs for objs in handles
-        ]
         ihandles, ilabels = [], []
         for objs, label in zip(handles, labels):
-            # Filter error bars
-            if hasattr(objs, 'get_label'):
+            # Filter objects
+            if not isinstance(objs, tuple):
                 objs = (objs,)
-            objs = tuple(
-                obj for obj in objs if not isinstance(obj, ignore) or _good_labels(obj)
-            )
-            labs = set(_good_labels(*objs))
+            objs = _group_objs(*objs)
+            labs = set(_group_labs(*objs))
+            if not objs:
+                continue
+            # Unfurl tuple of handles
             if label is None and len(labs) > 1:
-                # Unfurl tuple of handles
                 ihandles.extend(objs)
                 ilabels.extend(obj.get_label() for obj in objs)
+            # Append this handle with some name
             else:
-                # Append this handle with some name
                 if label is None:
                     label = labs.pop() if labs else '_no_label'
                 ihandles.append(objs)
                 ilabels.append(label)
+
         return ihandles, ilabels
 
     def _parse_handles_labels(
@@ -2362,7 +2368,7 @@ class Axes(maxes.Axes):
         for ihandles, ilabels in zip(handles, labels):
             ihandles, ilabels = _to_list(ihandles), _to_list(ilabels)
             if ihandles is not None:
-                ihandles, ilabels = self._parse_grouped_handles(ihandles, ilabels)
+                ihandles, ilabels = self._parse_handle_groups(ihandles, ilabels)
             ihandles, ilabels, *_ = mlegend._parse_legend_args(
                 axs, handles=ihandles, labels=ilabels,
             )

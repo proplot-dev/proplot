@@ -10,12 +10,10 @@ import re
 import sys
 from numbers import Integral
 
-import matplotlib.artist as martist
 import matplotlib.axes as maxes
 import matplotlib.cm as mcm
 import matplotlib.collections as mcollections
 import matplotlib.colors as mcolors
-import matplotlib.container as mcontainer
 import matplotlib.contour as mcontour
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
@@ -787,7 +785,7 @@ fc, facecolor, fillcolor : color-spec, list, optional
     The fill color for the boxes. Default is the next color cycler color. If
     a list, it should be the same length as the number of objects.
 a, alpha, fa, facealpha, fillalpha : float, optional
-    The opacity of the boxes. Default is ``1``. If a list,
+    The opacity of the boxes. Default is ``1.0``. If a list,
     should be the same length as the number of objects.
 lw, linewidth, linewidths : float, optional
     The linewidth of all objects. Default is :rc:`patch.linewidth`.
@@ -853,7 +851,7 @@ fc, facecolor, facecolors, fillcolor, fillcolors : color-spec, list, optional
     The violin plot fill color. Default is the next color cycler color. If
     a list, it should be the same length as the number of objects.
 a, alpha, fa, facealpha, fillalpha : float, optional
-    The opacity of the violins. Default is ``1``. If a list,
+    The opacity of the violins. Default is ``1.0``. If a list,
     it should be the same length as the number of objects.
 lw, linewidth, linewidths : float, optional
     The linewidth of the line objects. Default is :rc:`patch.linewidth`.
@@ -1532,9 +1530,11 @@ def _set_guide_kw(obj, kwargs):
     """
     Add dictionary to objects in arbitrary nested lists of arists or mappables.
     """
-    if isinstance(obj, (martist.Artist, mcontour.ContourSet, mcontainer.Container)):
+    try:
         setattr(obj, '_guide_kw', kwargs)
-    elif isinstance(obj, (tuple, list, ndarray)):
+    except AttributeError:
+        pass
+    if isinstance(obj, (tuple, list, ndarray)):
         for iobj in obj:
             _set_guide_kw(iobj, kwargs)
 
@@ -3855,7 +3855,7 @@ class PlotAxes(base.Axes):
         if fill and fillcolor is None:  # TODO: support e.g. 'facecolor' cycle?
             parser = self._get_patches_for_fill
             fillcolor = parser.get_next_color()
-        fillalpha = _not_none(fillalpha, default=0.7)
+        fillalpha = _not_none(fillalpha, 1)
 
         # Arist-specific properties
         # NOTE: Output dict keys are plural but we use singular for keyword args
@@ -3958,6 +3958,7 @@ class PlotAxes(base.Axes):
         edgecolor = kw.pop('edgecolor', 'black')
         fillcolor = kw.pop('facecolor', None)
         fillalpha = kw.pop('alpha', None)
+        fillalpha = _not_none(fillalpha, 1)
         kw.setdefault('capsize', 0)  # caps are redundant for violin plots
         kw.setdefault('means', kw.pop('showmeans', None))  # for _indicate_error
         kw.setdefault('medians', kw.pop('showmedians', None))
@@ -4050,8 +4051,11 @@ class PlotAxes(base.Axes):
         for _, n, x, kw in self._iter_columns(xs, **kw):
             kw = self._parse_cycle(n, **kw)
             obj = self._plot_safe('hist', x, orientation=orientation, **kw)
-            if 'label' in kw:  # apply to container
-                obj[-1].set_label(kw['label'])
+            if 'label' in kw:
+                for arg in obj[2]:
+                    arg.set_label(kw['label'])
+                if hasattr(obj[2], 'set_label'):  # recent mpl versions
+                    obj[2].set_label(kw['label'])
             objs.append(obj)
         self._add_queued_guide(objs, **guide_kw)
         return objs[0] if len(objs) == 1 else objs
