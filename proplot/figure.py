@@ -778,7 +778,8 @@ class Figure(mfigure.Figure):
         if not all(isinstance(ax, maxes.SubplotBase) for ax in axs):
             raise RuntimeError('Axes must be subplots.')
         s = 'y' if side in ('left', 'right') else 'x'
-        if self._includepanels:
+        axs = [ax._panel_parent or ax for ax in axs]  # deflect to main axes
+        if self._includepanels:  # include panel short axes
             axs = [_ for ax in axs for _ in ax._iter_axes(panels=True, children=False)]
         ranges = np.array([ax._range_subplotspec(s) for ax in axs])
         min_, max_ = ranges[:, 0].min(), ranges[:, 1].max()
@@ -791,7 +792,9 @@ class Figure(mfigure.Figure):
         else:
             pos = 0.5 * (box_lo.y1 + box_hi.y0)  # 'lo' is actually on top of figure
         ax = axs[(np.argmin(ranges[:, 0]) + np.argmax(ranges[:, 1])) // 2]
-        ax = ax._panel_parent or ax
+        other = getattr(ax, f'_share{s}')
+        if other and other._panel_parent:  # deflect to shared panel axes
+            ax = other
         return pos, ax
 
     def _get_offset_coord(self, side, axs, renderer, *, pad=None, extra=None):
@@ -900,88 +903,49 @@ class Figure(mfigure.Figure):
         """
         Align *x* and *y* axis labels in the perpendicular and parallel directions.
         """
-        # NOTE: Previously we secretly used matplotlib axis labels for spanning labels,
-        # offsetting them between two subplots if necessary. Now we track designated
-        # 'super' labels and replace the actual labels with spaces so they still impact
-        # the tight bounding box and thus allocate space for the spanning label
-        y = 'y' if x == 'x' else 'x'
+        # NOTE: Always use 'align' if 'span' is True to get correct offset
+        # NOTE: Must trigger axis sharing here so that super label alignment
+        # with tight=False is valid. Kind of kludgey but oh well.
         seen = set()
-        sety = getattr(mtext.Text, 'set_' + y)
-        labs = getattr(self, '_sup' + x + 'label_dict')  # dict of spanning labels
         span = getattr(self, '_span' + x)
         align = getattr(self, '_align' + x)
-        if not span and not align:
-            return
         for ax in self._subplot_dict.values():
-            # Add appopriate labels to group that manages perpendicular alignment
-            # NOTE: Always 'align' labels if 'span' is True to get correct offset
-            if not isinstance(ax, paxes.CartesianAxes):
-                continue
-            axis = getattr(ax, x + 'axis')
-            side = axis.get_label_position()
-            if axis in seen or side not in ('bottom', 'left'):
-                continue
-            axs = ax._get_side_axes(side, panels=False)  # main subplots
-            axs = [getattr(ax, '_share' + x) or ax for ax in axs]  # redirect to edge
-            axislist = [getattr(ax, x + 'axis') for ax in axs]
-            seen.update(axislist)
-            group = getattr(self, '_align_' + x + 'label_grp', None)
-            if group is None and hasattr(self, '_align_label_groups'):
-                group = self._align_label_groups[x]
-            if group is not None:  # fail silently to avoid fragile API changes
-                for ax in axs[1:]:
-                    group.join(axs[0], ax)  # add to grouper
-            if not span:
-                continue
-
-            # Get the central label and "super" label for parallel alignment
-            # NOTE: Removing the continue blocks below leads to the below allocation
-            # of 'space' for non-existing spanning labels and unneeded subplot padding.
-            # NOTE: Copy text only from the "central" spanning axes. Others should be
-            # the same since all public methods sync labels applied to individual axes
-            c, ax = self._get_align_coord(side, axs)  # returns central main axes
-            ax = getattr(ax, '_share' + x) or ax  # back to the panel if possible
-            axis = getattr(ax, x + 'axis')  # the reference axis
-            label = labs.get(ax, None)
-            if label is None and not axis.label.get_text().strip():
-                continue  # there is nothing to transfer from the normal label
-            if label is not None and not label.get_text().strip():
-                continue  # there is nothing to update on the super label
-            if label is None:
-                label = labs[ax] = self.text(0, 0, '')
-                label.set_ha(axis.label.get_ha())
-                label.set_va(axis.label.get_va())
-                label.set_rotation(axis.label.get_rotation())
-                label.set_rotation_mode(axis.label.get_rotation_mode())
-
-            # Copy properties from the central label to the spanning label
-            # NOTE: With just newlines and no spaces the substituted text does not
-            # activate matplotlib's tight layout algorithm. See Text._get_layout()
-            cx, cy = axis.label.get_position()
-            ax._transfer_text(axis.label, label)  # text, color, and font properties
-            axis.label.set_text(label.get_text())
-            replace = '\n'.join(' ' * (1 + label.get_text().count('\n')))
-            for axis in axislist:  # should include original 'axis'
-                axis.label.set_text(replace)
-            trans = mtransforms.IdentityTransform()  # set in pixels
-            if x == 'x':
-                trans = mtransforms.blended_transform_factory(self.transFigure, trans)
-                coord = (c, cy)
+            if isinstance(ax, paxes.CartesianAxes):
+                ax._apply_axis_sharing()  # always!
             else:
-                trans = mtransforms.blended_transform_factory(trans, self.transFigure)
-                coord = (cx, c)
-            label.set_position(coord)
-            label.set_transform(trans)
+                continue
+            pos = getattr(ax, x + 'axis').get_label_position()
+            if ax in seen or pos not in ('bottom', 'left'):
+                continue  # already aligned or cannot align
+            axs = ax._get_span_axes(pos, panels=False)  # returns panel or main axes
+            if len(axs) == 1 or any(getattr(ax, '_share' + x) for ax in axs):
+                continue  # nothing to align or axes have parents
+            seen.update(axs)
+            if span or align:
+                if hasattr(self, '_align_label_groups'):
+                    group = self._align_label_groups[x]
+                else:
+                    group = getattr(self, '_align_' + x + 'label_grp', None)
+                if group is not None:  # fail silently to avoid fragile API changes
+                    for ax in axs[1:]:
+                        group.join(axs[0], ax)  # add to grouper
+            if span:
+                self._update_axis_label(pos, axs)
 
-            # Add very simple monkey patch to ensure positions stay in sync
-            # NOTE: Tried without this by triggering axis._update_label_position() but
-            # in some backends (inline backend) it fails. So this will do for now.
-            # NOTE: Critical to assign label in keyword arg or else gets overwritten
-            # by the loop scope.
-            def _set_coord(self, *args, other=label, **kwargs):
-                sety(self, *args, **kwargs)
-                sety(other, *args, **kwargs)
-            setattr(axis.label, 'set_' + y, _set_coord.__get__(axis.label))
+    def _align_super_labels(self, side, renderer):
+        """
+        Adjust the position of super labels.
+        """
+        if side not in ('left', 'right', 'bottom', 'top'):
+            raise ValueError(f'Invalid side {side!r}.')
+        labels = self._suplabel_dict[side]
+        axs = tuple(ax for ax, label in labels.items() if label.get_text())
+        if not axs:
+            return
+        c = self._get_offset_coord(side, axs, renderer)
+        for label in labels.values():
+            s = 'x' if side in ('left', 'right') else 'y'
+            label.update({s: c})
 
     def _align_super_title(self, renderer):
         """
@@ -1000,39 +964,60 @@ class Figure(mfigure.Figure):
         self._suptitle.set_va('bottom')
         self._suptitle.set_position((x, y))
 
-    def _align_super_labels(self, side, renderer):
+    def _update_axis_label(self, side, axs):
         """
-        Adjust the position of super labels.
+        Update the aligned axis label for the input axes.
         """
-        if side not in ('left', 'right', 'bottom', 'top'):
-            raise ValueError(f'Invalid side {side!r}.')
-        labels = self._suplabel_dict[side]
-        axs = tuple(ax for ax, label in labels.items() if label.get_text())
-        if not axs:
-            return
-        c = self._get_offset_coord(side, axs, renderer)
-        for label in labels.values():
-            s = 'x' if side in ('left', 'right') else 'y'
-            label.update({s: c})
+        # NOTE: Previously we secretly used matplotlib axis labels for spanning labels,
+        # offsetting them between two subplots if necessary. Now we track designated
+        # 'super' labels and replace the actual labels with spaces so they still impact
+        # the tight bounding box and thus allocate space for the spanning label.
+        x, y = 'xy' if side in ('bottom', 'top') else 'yx'
+        labs = getattr(self, '_sup' + x + 'label_dict')  # dict of spanning labels
+        setpos = getattr(mtext.Text, 'set_' + y)
+        axislist = [getattr(ax, x + 'axis') for ax in axs]
 
-    def _update_super_title(self, title, **kwargs):
-        """
-        Assign the figure super title and update settings.
-        """
-        kw = rc.fill(
-            {
-                'size': 'suptitle.size',
-                'weight': 'suptitle.weight',
-                'color': 'suptitle.color',
-                'family': 'font.family'
-            },
-            context=True,
-        )
-        kw.update(kwargs)
-        if kw:
-            self._suptitle.update(kw)
-        if title is not None:
-            self._suptitle.set_text(title)
+        # Get the central label and "super" label for parallel alignment.
+        # Initialize the super label if one does not already exist.
+        c, ax = self._get_align_coord(side, axs)  # returns panel axes
+        axis = getattr(ax, x + 'axis')  # use the central axis
+        label = labs.get(ax, None)
+        if label is None and not axis.label.get_text().strip():
+            return  # nothing to transfer from the normal label
+        if label is not None and not label.get_text().strip():
+            return  # nothing to update on the super label
+        if label is None:
+            props = ('ha', 'va', 'rotation', 'rotation_mode')
+            label = labs[ax] = self.text(0, 0, '')
+            label.update({p: getattr(axis.label, 'get_' + p)() for p in props})
+
+        # Copy text from central label to spanning label
+        # NOTE: Must use spaces rather than newlines, otherwise tight layout
+        # won't make room. Reason is Text implementation (see Text._get_layout())
+        ax._transfer_text(axis.label, label)  # text, color, and font properties
+        space = '\n'.join(' ' * (1 + label.get_text().count('\n')))
+        for axis in axislist:  # should include original 'axis'
+            axis.label.set_text(space)
+
+        # Update spanning label position
+        # NOTE: Simply using axis._update_label_position() when this is called
+        # is not sufficient. Fails with e.g. inline backend.
+        t = mtransforms.IdentityTransform()  # set in pixels
+        cx, cy = axis.label.get_position()
+        if x == 'x':
+            trans = mtransforms.blended_transform_factory(self.transFigure, t)
+            coord = (c, cy)
+        else:
+            trans = mtransforms.blended_transform_factory(t, self.transFigure)
+            coord = (cx, c)
+        label.set_transform(trans)
+        label.set_position(coord)
+
+        # Add simple monkey patch to ensure positions stay in sync
+        def _set_coord(self, *args, **kwargs):
+            setpos(self, *args, **kwargs)
+            setpos(label, *args, **kwargs)
+        setattr(axis.label, 'set_' + y, _set_coord.__get__(axis.label))
 
     def _update_super_labels(self, side, labels, **kwargs):
         """
@@ -1058,7 +1043,7 @@ class Figure(mfigure.Figure):
         # Get the label axes
         # WARNING: In case users added labels then changed the subplot geometry we
         # have to remove labels whose axes don't match the current 'align' axes.
-        axs = self._get_align_axes(side)  # return soutermost panels
+        axs = self._get_align_axes(side)
         if not labels or not axs:
             return  # occurs if called while adding axes
         if len(labels) != len(axs):
@@ -1090,6 +1075,25 @@ class Figure(mfigure.Figure):
                 obj.update(kw)
             if label is not None:
                 obj.set_text(label)
+
+    def _update_super_title(self, title, **kwargs):
+        """
+        Assign the figure super title and update settings.
+        """
+        kw = rc.fill(
+            {
+                'size': 'suptitle.size',
+                'weight': 'suptitle.weight',
+                'color': 'suptitle.color',
+                'family': 'font.family'
+            },
+            context=True,
+        )
+        kw.update(kwargs)
+        if kw:
+            self._suptitle.update(kw)
+        if title is not None:
+            self._suptitle.set_text(title)
 
     @docstring.concatenate_original
     @docstring.add_snippets
@@ -1880,8 +1884,7 @@ class SubplotGrid(MutableSequence, list):
                 row1_key, col1_key = divmod(ss_key.num1, gs.ncols)
                 row2_key, col2_key = divmod(ss_key.num2, gs.ncols)
             for ax in self:
-                ax = ax._get_topmost_axes()
-                ss = ax.get_subplotspec()
+                ss = ax._get_topmost_axes().get_subplotspec()
                 row1, col1 = divmod(ss.num1, gs.ncols)
                 row2, col2 = divmod(ss.num2, gs.ncols)
                 inrow = row1_key <= row1 <= row2_key or row1_key <= row2 <= row2_key
