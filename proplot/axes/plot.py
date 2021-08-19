@@ -2020,7 +2020,7 @@ class PlotAxes(base.Axes):
 
     def _auto_format_1d(
         self, x, *ys, zerox=False, autox=True, autoy=True, autoformat=None,
-        autoreverse=True, autolabels=True, autovalues=False, autotitle=None,
+        autoreverse=True, autolabels=True, autovalues=False, autotitle=True,
         label=None, labels=None, value=None, values=None, **kwargs
     ):
         """
@@ -4424,6 +4424,7 @@ class PlotAxes(base.Axes):
         a = [x, y, u, v]
         if c is not None:
             a.append(c)
+        kw.pop('colorbar_kw', None)  # added by _parse_cmap
         m = self._plot_safe('barbs', *a, **kw)
         return m
 
@@ -4440,11 +4441,12 @@ class PlotAxes(base.Axes):
         color = None
         if mcolors.is_color_like(c):
             color, c = c, None
+        if color is not None:
+            kw['color'] = color
         a = [x, y, u, v]
         if c is not None:
             a.append(c)
-        if color is not None:
-            kw['color'] = color
+        kw.pop('colorbar_kw', None)  # added by _parse_cmap
         m = self._plot_safe('quiver', *a, **kw)
         return m
 
