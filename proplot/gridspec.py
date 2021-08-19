@@ -93,6 +93,7 @@ def _disable_method(attr):
     """
     def _dummy_method(*args):
         raise AttributeError(f'Method {attr}() is disabled on ProPlot gridspecs.')
+    _dummy_method.__name__ = attr
     return _dummy_method
 
 

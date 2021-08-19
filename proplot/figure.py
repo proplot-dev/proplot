@@ -1708,8 +1708,8 @@ class Figure(mfigure.Figure):
     @property
     def subplotgrid(self):
         """
-        The numbered `~proplot.axes.Axes` subplots in the figure. This
-        property is read-only.
+        A `SubplotGrid` containing the numbered subplots in the figure,
+        ordered by increasing subplot number.
         """
         return SubplotGrid([ax for num, ax in sorted(self._subplot_dict.items())])
 
@@ -1751,6 +1751,7 @@ for _attr, _msg in (
             return func(self, *args, **kwargs)
         else:
             warnings._warn_proplot(message)  # noqa: E501, U100
+    _disable_method.__doc__ = None  # remove docs
     setattr(Figure, _attr, _disable_method)
 
 
