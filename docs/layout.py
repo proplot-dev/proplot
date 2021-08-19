@@ -186,12 +186,12 @@ pplt.rc.reset()
 # Automatic spacing
 # -----------------
 #
-# In addition the figure size, by default, ProPlot automatically determines
-# the suitable space between subplots using a tight layout algorithm. This
-# algorithm automatically expands or contracts the space between subplots
-# to accommodate labels. It can be disabled by passing ``tight=False`` to
-# `~proplot.ui.subplots` or setting :rcraw:`subplots.tight` to ``False``.
-# While matplotlib has `its own tight layout algorithm
+# By default, ProPlot automatically determines the suitable space between
+# subplots using a tight layout algorithm. This algorithm automatically
+# expands or contracts the space between subplots to accommodate labels.
+# It can be disabled by passing ``tight=False`` to `~proplot.ui.subplots` or
+# setting :rcraw:`subplots.tight` to ``False``. While matplotlib has
+# `its own tight layout algorithm
 # <https://matplotlib.org/stable/tutorials/intermediate/tight_layout_guide.html>`__,
 # ProPlot's algorithm may change the figure size to accommodate the correct spacing
 # and permits variable spacing between subsequent subplot rows and columns
