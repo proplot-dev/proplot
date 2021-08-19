@@ -27,6 +27,15 @@ ProPlot v1.0.0 (2022-##-##)
 This will be published when more comprehensive testing is completed
 and stability is improved.
 
+ProPlot v0.8.1 (2021-##-##)
+===========================
+
+Bug fixes
+---------
+
+* Fix regression where ``np.std`` and ``np.percentile`` no longer
+  ignore NaN values (:issue:`#257`, :commit:`d1906fce`).
+
 ProPlot v0.8.0 (2021-08-16)
 ===========================
 
