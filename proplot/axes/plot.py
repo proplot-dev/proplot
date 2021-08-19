@@ -27,6 +27,8 @@ from .. import ticker as pticker
 from ..config import rc
 from ..internals import ic  # noqa: F401
 from ..internals import (
+    _guide_kw_to_arg,
+    _guide_kw_to_obj,
     _keyword_to_positional,
     _not_none,
     _pop_kwargs,
@@ -65,7 +67,7 @@ CARTOPY_FUNCS = (  # default transform=PlateCarree()
 
 # Data argument docstrings
 _args_1d_docstring = """
-*args : {y} or ({x}, {y})
+*args : {y} or {x}, {y}
     The data passed as positional or keyword arguments. Interpreted as follows:
 
     * If only `{y}` coordinates are passed, try to infer the `{x}` coordinates
@@ -80,7 +82,7 @@ _args_1d_docstring = """
       A `pint.Quantity` embedded in an `xarray.DataArray` is also supported.
 """
 _args_1d_multi_docstring = """
-*args : {y}2, ({x}, {y}2), or ({x}, {y}1, {y}2)
+*args : {y}2 or {x}, {y}2, or {x}, {y}1, {y}2
     The data passed as positional or keyword arguments. Interpreted as follows:
 
     * If only `{y}` coordinates are passed, try to infer the `{x}` coordinates from
@@ -95,7 +97,7 @@ _args_1d_multi_docstring = """
       A `pint.Quantity` embedded in an `xarray.DataArray` is also supported.
 """
 _args_2d_docstring = """
-*args : {z1} or (x, y, {z2})
+*args : {z} or x, y, {z}
     The data passed as positional or keyword arguments. Interpreted as follows:
 
     * If only {zvar} coordinates are passed, try to infer the `x` and `y` coordinates
@@ -114,8 +116,8 @@ docstring.snippets['plot.args_1d_y'] = _args_1d_docstring.format(x='x', y='y')
 docstring.snippets['plot.args_1d_x'] = _args_1d_docstring.format(x='y', y='x')
 docstring.snippets['plot.args_1d_multiy'] = _args_1d_multi_docstring.format(x='x', y='y')  # noqa: E501
 docstring.snippets['plot.args_1d_multix'] = _args_1d_multi_docstring.format(x='y', y='x')  # noqa: E501
-docstring.snippets['plot.args_2d'] = _args_2d_docstring.format(z1='z', z2='z', zvar='`z`')  # noqa: E501
-docstring.snippets['plot.args_2d_flow'] = _args_2d_docstring.format(z1='(u, v)', z2='u, v', zvar='`u` and `v`')  # noqa: E501
+docstring.snippets['plot.args_2d'] = _args_2d_docstring.format(z='z', zvar='`z`')  # noqa: E501
+docstring.snippets['plot.args_2d_flow'] = _args_2d_docstring.format(z='u, v', zvar='`u` and `v`')  # noqa: E501
 
 
 # Shared docstrings
@@ -283,14 +285,13 @@ cycle_kw : dict-like, optional
 _cmap_norm_docstring = """
 cmap : colormap spec, optional
     The colormap specifer, passed to the `~proplot.constructor.Colormap`
-    constructor.
+    constructor function.
 cmap_kw : dict-like, optional
     Passed to `~proplot.constructor.Colormap`.
 norm : normalizer spec, optional
-    The continuous colormap normalizer. This is passed to the
-    `~proplot.constructor.Norm` constructor. If `discrete` is ``True`` this
-    is also used to normalize values passed to `~proplot.colors.DiscreteNorm`
-    before the colormap color is selected.
+    The continuous colormap normalizer, passed to the `~proplot.constructor.Norm`
+    constructor function. If `discrete` is ``True`` this is also used to normalize
+    values passed to `~proplot.colors.DiscreteNorm` before colors is selected.
 norm_kw : dict-like, optional
     Passed to `~proplot.constructor.Norm`.
 discrete : bool, optional
@@ -318,7 +319,7 @@ sequential, diverging, cyclic, qualitative : bool, optional
     latter three options also change level- and norm-generation behavior.
 extend : {{'neither', 'min', 'max', 'both'}}, optional
     Whether to assign unique colors to out-of-bounds data and draw
-    "extensions" (triangles, by default) on the colorbar.
+    colorbar "extensions" when a colorbar is drawn.
 """
 docstring.snippets['plot.cycle'] = _cycle_docstring
 docstring.snippets['plot.cmap_norm'] = _cmap_norm_docstring
@@ -1701,25 +1702,44 @@ def _parse_vert(
     return kwargs
 
 
-def _set_guide_kw(obj, kwargs):
-    """
-    Add dictionary to objects in arbitrary nested lists of arists or mappables.
-    """
-    try:
-        setattr(obj, '_guide_kw', kwargs)
-    except AttributeError:
-        pass
-    if isinstance(obj, (tuple, list, ndarray)):
-        for iobj in obj:
-            _set_guide_kw(iobj, kwargs)
-
-
-def _error_data(
-    y, stds=None, pctiles=None, errdata=None, distribution=None,
-    stds_default=None, pctiles_default=None, absolute=False, label=False,
+def _distribution_reduce(
+    y, *, mean=None, means=None, median=None, medians=None, **kwargs
 ):
     """
-    Return values that can be plotted as error data.
+    Return distribution columns reduced into means and medians. Tack on a
+    distribution keyword argument for processing down the line.
+    """
+    # TODO: Permit 3D array with error dimension coming first
+    data = y
+    means = _not_none(mean=mean, means=means)
+    medians = _not_none(median=median, medians=medians)
+    if means and medians:
+        warnings._warn_proplot('Cannot have both means=True and medians=True. Using former.')  # noqa: E501
+        medians = None
+    if means or medians:
+        if data.ndim != 2:
+            raise ValueError(f'Expected 2D array for means=True. Got {data.ndim}D.')
+        data = ma.masked_invalid(data, copy=False)
+        data = data.astype(np.float).filled(np.nan)
+        if not data.size:
+            raise ValueError('The input data contains all masked or NaN values.')
+        elif means:
+            y = np.nanmean(data, axis=0)
+        elif medians:
+            y = np.nanmedian(data, axis=0)
+        kwargs['distribution'] = data
+
+    # Save argument passed to _error_bars
+    return (y, kwargs)
+
+
+def _distribution_range(
+    y, distribution, *, errdata=None, absolute=False, label=False,
+    stds=None, pctiles=None, stds_default=None, pctiles_default=None,
+):
+    """
+    Return a plottable characteristic range for the distribution keyword
+    argument relative to the input coordinate means or medians.
     """
     # Parse stds arguments
     # NOTE: Have to guard against "truth value of an array is ambiguous" errors
@@ -1789,13 +1809,13 @@ def _error_data(
             err[1, :] = y + abserr
     elif stds is not None:
         # Standard deviations
-        # NOTE: Invalid values were handled by _error_distribution
+        # NOTE: Invalid values were handled by _distribution_reduce
         label_default = fr'{abs(stds[1])}$\sigma$ range'
         stds = _to_numpy_array(stds)[:, None]
         err = y + stds * np.std(distribution, axis=0)
     elif pctiles is not None:
         # Percentiles
-        # NOTE: Invalid values were handled by _error_distribution
+        # NOTE: Invalid values were handled by _distribution_reduce
         label_default = f'{pctiles[1] - pctiles[0]}% range'
         err = np.percentile(distribution, pctiles, axis=0)
     else:
@@ -1871,7 +1891,8 @@ def _preprocess_data(*keys, keywords=None, allow_extra=True):
 
 class PlotAxes(base.Axes):
     """
-    Second lowest-level axes subclass implementing plotting overrides.
+    The second lowest-level axes subclass used by proplot.
+    Implements all plotting overrides.
     """
     def __init__(self, *args, **kwargs):
         """
@@ -1890,7 +1911,7 @@ class PlotAxes(base.Axes):
         """
         super().__init__(*args, **kwargs)
 
-    def _plot_safe(self, name, *args, guide_kw=None, **kwargs):
+    def _plot_safe(self, name, *args, **kwargs):
         """
         Call the plotting method and use context object to redirect internal
         calls to native methods. Finally add attributes to outgoing methods.
@@ -1898,14 +1919,12 @@ class PlotAxes(base.Axes):
         # NOTE: Previously allowed internal matplotlib plotting function calls to run
         # through proplot overrides then avoided awkward conflicts in piecemeal fashion.
         # Now prevent internal calls from running through overrides using preprocessor
-        guide_kw = guide_kw or {}
         kwargs.pop('distribution', None)  # remove stat distributions
         with _state_context(self, _internal_call=True):
             if getattr(self, 'name', None) == 'proplot_basemap':
                 obj = getattr(self.projection, name)(*args, ax=self, **kwargs)
             else:
                 obj = getattr(super(), name)(*args, **kwargs)
-            _set_guide_kw(obj, guide_kw)  # add attributes
         return obj
 
     def _plot_edges(self, method, *args, **kwargs):
@@ -1964,18 +1983,22 @@ class PlotAxes(base.Axes):
         self, objs, colorbar=None, colorbar_kw=None, legend=None, legend_kw=None,
     ):
         """
-        Queue the input artist(s) for an automatic legend or colorbar.
+        Queue the input artist(s) for an automatic legend or colorbar once
+        the axes is drawn or auto layout is called.
         """
-        # Add colorbar
-        # NOTE: Colorbar will get the labels from the artists. Don't need to extract
-        # them because can't have multiple-artist entries like for legend()
+        # WARNING: This should generally be last in the pipeline before calling
+        # the plot function or looping over data columns. The colormap parser
+        # and standardize functions both modify colorbar_kw and legend_kw.
         if colorbar:
             colorbar_kw = colorbar_kw or {}
             self.colorbar(objs, loc=colorbar, queue=True, **colorbar_kw)
-        # Add legend
+        else:
+            _guide_kw_to_obj(objs, 'colorbar', colorbar_kw)  # save for later
         if legend:
             legend_kw = legend_kw or {}
             self.legend(objs, loc=legend, queue=True, **legend_kw)
+        else:
+            _guide_kw_to_obj(objs, 'legend', legend_kw)  # save for later
 
     def _add_sticky_edges(self, objs, axis, *args):
         """
@@ -2051,11 +2074,13 @@ class PlotAxes(base.Axes):
                 kwargs['values'] = _to_numpy_array(labels)
             elif autolabels:
                 kwargs['labels'] = _to_numpy_array(labels)
+
         # Apply title for legend or colorbar that uses the labels or values
         if autoformat:
             title = _get_title(labels)
-            if title:
-                kwargs.setdefault('guide_kw', {}).update({'title': title})
+            if title is not None:  # safely update legend_kw and colorbar_kw
+                _guide_kw_to_arg('legend', kwargs, title=title)
+                _guide_kw_to_arg('colorbar', kwargs, label=title)
 
         # Apply the basic x and y settings
         autox = autox and self.name == 'proplot_cartesian'
@@ -2167,11 +2192,12 @@ class PlotAxes(base.Axes):
             if kw_format:
                 self.format(**kw_format)
 
-        # Default colorbar label
+        # Apply title for legend or colorbar
         if autoformat:
             title = _get_title(zs[0])
-            if title:
-                kwargs.setdefault('guide_kw', {}).setdefault('title', title)
+            if title is not None:  # safely update legend_kw and colorbar_kw
+                _guide_kw_to_arg('legend', kwargs, title=title)
+                _guide_kw_to_arg('colorbar', kwargs, label=title)
 
         # Finally strip metadata
         x = _to_numpy_array(x)
@@ -2421,7 +2447,7 @@ class PlotAxes(base.Axes):
     def _parse_autolev(
         self, *args, levels=None,
         extend='neither', norm=None, norm_kw=None, vmin=None, vmax=None,
-        locator=None, locator_kw=None, diverging=None, symmetric=None, **kwargs
+        locator=None, locator_kw=None, symmetric=None, **kwargs
     ):
         """
         Return a suitable level list given the input data, normalizer,
@@ -2448,8 +2474,6 @@ class PlotAxes(base.Axes):
         ----------
         levels : list of float
             The level edges.
-        ticks : list of float
-            The default colorbar tick locations.
         kwargs
             Unused arguments.
         """
@@ -2470,32 +2494,26 @@ class PlotAxes(base.Axes):
         )
 
         # Get default locator from input norm
-        # NOTE: This normalizer is only *temporary* used for inferring level locations
+        # NOTE: This normalizer is only temporary for inferring level locs
         norm = constructor.Norm(norm or 'linear', **norm_kw)
         if locator is not None:
-            locator = ticks = constructor.Locator(locator, **locator_kw)
+            locator = constructor.Locator(locator, **locator_kw)
         elif isinstance(norm, mcolors.LogNorm):
-            locator = ticks = mticker.LogLocator(**locator_kw)
+            locator = mticker.LogLocator(**locator_kw)
         elif isinstance(norm, mcolors.SymLogNorm):
-            base = _not_none(getattr(norm, 'base', None), getattr(norm, '_base', None), 10)  # noqa: E501
-            linthresh = _not_none(getattr(norm, 'linthresh', None), getattr(norm, '_linthresh', None), 1)  # noqa: E501
-            locator_kw.setdefault('base', base)
-            locator_kw.setdefault('linthresh', linthresh)
-            locator = ticks = mticker.SymmetricalLogLocator(**locator_kw)
+            for key, default in (('base', 10), ('linthresh', 1)):
+                val = _not_none(getattr(norm, key, None), getattr(norm, '_' + key, None), default)  # noqa: E501
+                locator_kw.setdefault(key, val)
+            locator = mticker.SymmetricalLogLocator(**locator_kw)
         else:
-            # NOTE: We also infer diverging colormap in _parse_cmap if autodiverging
-            # is enabled and norm is a DivergingNorm.
-            diverging = _not_none(diverging, isinstance(norm, pcolors.DivergingNorm))
-            nbins = levels * 2 if diverging and not symmetric else levels
-            locator_kw.setdefault('symmetric', diverging or symmetric)
-            locator = mticker.MaxNLocator(nbins, min_n_ticks=1, **locator_kw)
-            ticks = None  # do not necessarily prefer ticks at these levels
+            locator_kw['symmetric'] = symmetric
+            locator = mticker.MaxNLocator(levels, min_n_ticks=1, **locator_kw)
 
         # Get default level locations
+        nlevs = levels
         automin = vmin is None
         automax = vmax is None
         vmin, vmax, kwargs = self._parse_vlim(*args, vmin=vmin, vmax=vmax, **kwargs)
-        levels_orig = levels
         try:
             levels = locator.tick_values(vmin, vmax)
         except RuntimeError:  # too-many-ticks error
@@ -2524,7 +2542,7 @@ class PlotAxes(base.Axes):
         # levels in-between the returned levels *in normalized space*.
         # Example: A LogNorm gives too few levels, so we select extra levels
         # here, but use the locator for determining tick locations.
-        nn = levels_orig // len(levels)
+        nn = nlevs // len(levels)
         if nn >= 2:
             olevels = norm(levels)
             nlevels = []
@@ -2534,12 +2552,12 @@ class PlotAxes(base.Axes):
             nlevels.append(olevels[-1])
             levels = norm.inverse(nlevels)
 
-        return levels, ticks, kwargs
+        return levels, kwargs
 
     def _parse_levels(
         self, *args, N=None, levels=None, values=None, minlength=2,
         positive=False, negative=False, nozero=False, norm=None, norm_kw=None,
-        vmin=None, vmax=None, extend=None, diverging=None, skip_autolev=False, **kwargs,
+        vmin=None, vmax=None, skip_autolev=False, **kwargs,
     ):
         """
         Return levels resulting from a wide variety of keyword options.
@@ -2562,7 +2580,7 @@ class PlotAxes(base.Axes):
         norm, norm_kw : optional
             Passed to `~proplot.constructor.Norm`. Used to possbily infer levels
             or to convert values to levels.
-        vmin, vmax, extend, diverging
+        vmin, vmax
             Passed to ``_parse_autolev``.
 
         Returns
@@ -2604,67 +2622,56 @@ class PlotAxes(base.Axes):
                 raise ValueError(
                     f'Invalid {key}={val}. Must be monotonically increasing or decreasing.'  # noqa: E501
                 )
-
-        # Infer 'levels' argument from rc settings, from 'norm', or from 'values'
-        # NOTE: The only way for user to manually impose BoundaryNorm is by passing
-        # one -- users cannot create one using Norm constructor key.
-        descending = False
         if isinstance(norm, (mcolors.BoundaryNorm, pcolors.SegmentedNorm)):
-            levels = norm.boundaries
-        elif values is None:
+            levels, values = norm.boundaries, None
+        else:
             levels = _not_none(levels, rc['cmap.levels'])
+
+        # Infer level edges from level centers if possible
+        # NOTE: The only way for user to manually impose BoundaryNorm is by
+        # passing one -- users cannot create one using Norm constructor key.
+        descending = None
+        if values is None:
+            pass
         elif isinstance(values, Integral):
             levels = values + 1
         elif np.iterable(values) and len(values) == 1:
             levels = [values[0] - 1, values[0] + 1]  # weird but why not
-        elif np.iterable(values) and len(values) > 1:
-            # Generate levels by finding in-between points in the normalized
-            # numeric space, e.g. LogNorm space.
-            if norm is not None and norm not in ('segments', 'segmented'):
-                norm_kw = norm_kw or {}
-                convert = constructor.Norm(norm, **norm_kw)
-                levels = convert.inverse(edges(convert(values)))
-            # Try to generate levels such that the SegmentedNorm will place
-            # 'values' ticks at the center of each colorbar level. edges() would
-            # only give us this result for evenly-spaced 'values'. We solve for:
-            # (x1 + x2) / 2 = y --> x2 = 2 * y - x1 with arbitrary starting point x1.
-            else:
-                values, descending = pcolors._sanitize_levels(values)
-                levels = [values[0] - (values[1] - values[0]) / 2]  # arbitrary x1
-                for val in values:
-                    levels.append(2 * val - levels[-1])
-                if any(np.diff(levels) < 0):  # backup plan in event of weird ticks
-                    levels = edges(values)
+        elif norm is None or norm in ('segments', 'segmented'):
+            # Try to generate levels so SegmentedNorm will place 'values' ticks at the
+            # center of each segment. edges() gives wrong result unless spacing is even.
+            # Solve: (x1 + x2) / 2 = y --> x2 = 2 * y - x1 with arbitrary starting x1.
+            values, descending = pcolors._sanitize_levels(values)
+            levels = [values[0] - (values[1] - values[0]) / 2]  # arbitrary x1
+            for val in values:
+                levels.append(2 * val - levels[-1])
+            if any(np.diff(levels) < 0):  # backup plan in event of weird ticks
+                levels = edges(values)
         else:
-            raise ValueError(
-                f'Unexpected values={values!r}. Must be int or list of float.'
-            )
+            # Generate levels by finding in-between points in the
+            # normalized numeric space, e.g. LogNorm space.
+            norm_kw = norm_kw or {}
+            convert = constructor.Norm(norm, **norm_kw)
+            levels = convert.inverse(edges(convert(values)))
 
-        # Infer default level edges and colorbar tick locations
+        # Process level edges and infer defaults
         # NOTE: Matplotlib colorbar algorithm *cannot* handle descending levels so
         # this function reverses them and adds special attribute to the normalizer.
         # Then colorbar() reads this attr and flips the axis and the colormap direction
         if np.iterable(levels) and len(levels) > 2:
             levels, descending = pcolors._sanitize_levels(levels)
-        if isinstance(norm, (mcolors.BoundaryNorm, pcolors.SegmentedNorm)):
-            ticks = levels = norm.boundaries  # use existing boundaries
-        elif np.iterable(values):
-            ticks = _to_numpy_array(values)  # prefer ticks at centers
-        elif np.iterable(levels):
-            ticks = _to_numpy_array(levels)  # prefer ticks at edges
-        elif not skip_autolev:
-            diverging = _not_none(diverging, positive, negative)
-            levels, ticks, kwargs = self._parse_autolev(
-                *args, levels=levels, vmin=vmin, vmax=vmax, norm=norm, norm_kw=norm_kw,
-                extend=extend, diverging=diverging, **kwargs
+        if not np.iterable(levels) and not skip_autolev:
+            levels, kwargs = self._parse_autolev(
+                *args, levels=levels, vmin=vmin, vmax=vmax, norm=norm, norm_kw=norm_kw, **kwargs  # noqa: E501
             )
-        else:
-            ticks = levels = None
+        ticks = values if np.iterable(values) else levels
+        if descending is not None:
+            kwargs.setdefault('descending', descending)  # for _parse_discrete
+        if ticks is not None and np.iterable(ticks):
+            _guide_kw_to_arg('colorbar', kwargs, locator=ticks)
 
         # Filter the resulting level boundaries
-        if levels is not None:
-            kwargs.setdefault('descending', descending)  # for _parse_discrete
-            kwargs.setdefault('guide_kw', {}).setdefault('locator', ticks)
+        if levels is not None and np.iterable(levels):
             if nozero and 0 in levels:
                 levels = levels[levels != 0]
             if positive:
@@ -2842,7 +2849,7 @@ class PlotAxes(base.Axes):
         if discrete:
             levels, kwargs = self._parse_levels(
                 *args, vmin=vmin, vmax=vmax, norm=norm, norm_kw=norm_kw,
-                extend=extend, diverging=diverging, skip_autolev=skip_autolev, **kwargs
+                extend=extend, skip_autolev=skip_autolev, **kwargs
             )
         elif not skip_autolev:
             vmin, vmax, kwargs = self._parse_vlim(
@@ -2920,7 +2927,7 @@ class PlotAxes(base.Axes):
             kwargs['levels'] = levels
             kwargs['extend'] = extend
         kwargs.update({'cmap': cmap, 'norm': norm})
-        kwargs.setdefault('guide_kw', {}).setdefault('extend', extend)
+        _guide_kw_to_arg('colorbar', kwargs, extend=extend)
 
         return kwargs
 
@@ -3023,36 +3030,6 @@ class PlotAxes(base.Axes):
         else:
             return kwargs
 
-    @staticmethod
-    def _error_distribution(
-        y, *, mean=None, means=None, median=None, medians=None, **kwargs
-    ):
-        """
-        Take means or medians from the columns.
-        """
-        # TODO: Permit 3D array with error dimension coming first
-        data = y
-        means = _not_none(mean=mean, means=means)
-        medians = _not_none(median=median, medians=medians)
-        if means and medians:
-            warnings._warn_proplot('Cannot have both means=True and medians=True. Using former.')  # noqa: E501
-            medians = None
-        if means or medians:
-            if data.ndim != 2:
-                raise ValueError(f'Expected 2D array for means=True. Got {data.ndim}D.')
-            data = ma.masked_invalid(data, copy=False)
-            data = data.astype(np.float).filled(np.nan)
-            if not data.size:
-                raise ValueError('The input data contains all masked or NaN values.')
-            elif means:
-                y = np.nanmean(data, axis=0)
-            elif medians:
-                y = np.nanmedian(data, axis=0)
-            kwargs['distribution'] = data
-
-        # Save argument passed to _error_bars
-        return (y, kwargs)
-
     def _error_bars(
         self, x, y, *_, distribution=None,
         default_bars=True, default_boxes=False,
@@ -3117,16 +3094,16 @@ class PlotAxes(base.Axes):
         ex, ey = (x, y) if vert else (y, x)
         eobjs = []
         if bars:  # now impossible to make thin bar width different from cap width!
-            edata, _ = _error_data(
-                y, distribution=distribution,
+            edata, _ = _distribution_range(
+                y, distribution,
                 stds=barstds, pctiles=barpctiles, errdata=bardata,
                 stds_default=(-3, 3), pctiles_default=(0, 100),
             )
             obj = self.errorbar(ex, ey, **barprops, **{sy + 'err': edata})
             eobjs.append(obj)
         if boxes:  # must go after so scatter point can go on top
-            edata, _ = _error_data(
-                y, distribution=distribution,
+            edata, _ = _distribution_range(
+                y, distribution,
                 stds=boxstds, pctiles=boxpctiles, errdata=boxdata,
                 stds_default=(-1, 1), pctiles_default=(25, 75),
             )
@@ -3184,8 +3161,8 @@ class PlotAxes(base.Axes):
         eobjs = []
         fill = self.fill_between if vert else self.fill_betweenx
         if fade:
-            edata, label = _error_data(
-                y, distribution=distribution,
+            edata, label = _distribution_range(
+                y, distribution,
                 stds=fadestds, pctiles=fadepctiles, errdata=fadedata,
                 stds_default=(-3, 3), pctiles_default=(0, 100),
                 label=fadelabel, absolute=True,
@@ -3193,8 +3170,8 @@ class PlotAxes(base.Axes):
             eobj = fill(x, *edata, label=label, **fadeprops)
             eobjs.append(eobj)
         if shade:
-            edata, label = _error_data(
-                y, distribution=distribution,
+            edata, label = _distribution_range(
+                y, distribution,
                 stds=shadestds, pctiles=shadepctiles, errdata=shadedata,
                 stds_default=(-2, 2), pctiles_default=(10, 90),
                 label=shadelabel, absolute=True,
@@ -3251,13 +3228,16 @@ class PlotAxes(base.Axes):
         Values are inferred from the unnormalized grid box color.
         """
         # Parse input args
-        # See: https://stackoverflow.com/a/20998634/4970632
+        # NOTE: This function also hides grid boxes filled with NaNs to avoid ugly
+        # issue where edge colors surround NaNs. Should maybe move this somewhere else.
+        obj.update_scalarmappable()  # update 'edgecolors' list
         color = _not_none(c=c, color=color, colors=colors)
         fontsize = _not_none(size=size, fontsize=fontsize, default=rc['font.smallsize'])
         kwargs.setdefault('ha', 'center')
         kwargs.setdefault('va', 'center')
 
         # Apply colors and hide edge colors for empty grids
+        # NOTE: Could also
         labs = []
         array = obj.get_array()
         paths = obj.get_paths()
@@ -3265,9 +3245,8 @@ class PlotAxes(base.Axes):
         if len(edgecolors) == 1:
             edgecolors = np.repeat(edgecolors, len(array), axis=0)
         for i, (path, value) in enumerate(zip(paths, array)):
-            # Round to the number corresponding to the *color*. This will generally
-            # have a nice round 'level'. Otherwise end up with really long ugly grid
-            # box labels unless we explicitly limit the precision.
+            # Round to the number corresponding to the *color* rather than
+            # the exact data value. Similar to contour label numbering.
             if value is ma.masked or not np.isfinite(value):
                 edgecolors[i, :] = 0
                 continue
@@ -3369,7 +3348,7 @@ class PlotAxes(base.Axes):
         kws, extents = self._parse_inbounds(**kws)
         for xs, ys, fmt in self._iter_pairs(*pairs):
             xs, ys, kw = self._standardize_1d(xs, ys, vert=vert, **kws)
-            ys, kw = self._error_distribution(ys, **kw)
+            ys, kw = _distribution_reduce(ys, **kw)
             guide_kw = _pop_params(kw, self._add_queued_guide)  # after standardize
             for _, n, x, y, kw in self._iter_columns(xs, ys, **kw):
                 *eb, kw = self._error_bars(x, y, vert=vert, **kw)
@@ -3567,8 +3546,8 @@ class PlotAxes(base.Axes):
         c = kw.pop('values', None)  # permits inferring values e.g. a simple ordinate
         c = np.arange(y.size) if c is None else _to_numpy_array(c)
         c, colorbar_kw = _get_coords(c, which='')
-        kw.setdefault('guide_kw', {}).update(colorbar_kw)
-        kw.setdefault('guide_kw', {}).setdefault('locator', c)
+        _guide_kw_to_arg('colorbar', kw, **colorbar_kw)
+        _guide_kw_to_arg('colorbar', kw, locator=c)
 
         # Interpolate values to allow for smooth gradations between values or just
         # to color siwtchover halfway between points (interp True, False respectively)
@@ -3607,13 +3586,11 @@ class PlotAxes(base.Axes):
         # Add collection with some custom attributes
         # NOTE: Modern API uses self._request_autoscale_view but this is
         # backwards compatible to earliest matplotlib versions.
-        guide_kw_attr = kw.pop('guide_kw', None)
         guide_kw = _pop_params(kw, self._add_queued_guide)
         obj = mcollections.LineCollection(
             coords, cmap=cmap, norm=norm,
             linestyles='-', capstyle='butt', joinstyle='miter',
         )
-        _set_guide_kw(obj, guide_kw_attr)
         obj.set_array(c)  # the ScalarMappable method
         obj.update({key: value for key, value in kw.items() if key not in ('color',)})
         self.add_collection(obj)
@@ -3725,7 +3702,7 @@ class PlotAxes(base.Axes):
         xs, ys, kw = self._standardize_1d(xs, ys, vert=vert, autoreverse=False, **kw)
         ss, kw = self._parse_markersize(ss, **kw)  # parse 's'
         cc, kw = self._parse_color(xs, ys, cc, apply_cycle=False, **kw)  # parse 'c'
-        ys, kw = self._error_distribution(ys, **kw)
+        ys, kw = _distribution_reduce(ys, **kw)
         guide_kw = _pop_params(kw, self._add_queued_guide)
         objs = []
         for _, n, x, y, s, c, kw in self._iter_columns(xs, ys, ss, cc, **kw):
@@ -3886,7 +3863,7 @@ class PlotAxes(base.Axes):
         objs = []
         _process_props(kw, 'patch')
         kw.setdefault('edgecolor', 'black')
-        hs, kw = self._error_distribution(hs, **kw)
+        hs, kw = _distribution_reduce(hs, **kw)
         guide_kw = _pop_params(kw, self._add_queued_guide)
         for i, n, x, h, w, b, kw in self._iter_columns(xs, hs, ws, bs, **kw):
             kw = self._parse_cycle(n, **kw)
@@ -4069,7 +4046,7 @@ class PlotAxes(base.Axes):
 
         # Parse and control error bars
         x, y, kw = self._standardize_1d(x, y, autoy=False, vert=vert, **kw)
-        y, kw = self._error_distribution(y, **kw)
+        y, kw = _distribution_reduce(y, **kw)
         *eb, kw = self._error_bars(x, y, vert=vert, default_boxes=True, **kw)  # noqa: E501
         kw = self._parse_cycle(**kw)
 
@@ -4077,7 +4054,7 @@ class PlotAxes(base.Axes):
         kw.pop('labels', None)  # already applied in _standardize_1d
         kw.update({'showmeans': False, 'showmedians': False, 'showextrema': False})
         kw.setdefault('positions', x)
-        y = kw.pop('distribution', None)  # 'y' was changes in _error_distribution
+        y = kw.pop('distribution', None)  # 'y' was changes in _distribution_reduce
         obj = self._plot_safe('violinplot', y, vert=vert, **kw)
 
         # Modify body settings
@@ -4146,10 +4123,10 @@ class PlotAxes(base.Axes):
         # legend handle reader just looks for items with get_label() so we
         # manually apply labels to the container on the result.
         _, xs, kw = self._standardize_1d(xs, orientation=orientation, **kwargs)
+        objs = []
+        guide_kw = _pop_params(kw, self._add_queued_guide)
         if bins is not None:
             kw['bins'] = bins
-        guide_kw = _pop_params(kw, self._add_queued_guide)
-        objs = []
         for _, n, x, kw in self._iter_columns(xs, **kw):
             kw = self._parse_cycle(n, **kw)
             obj = self._plot_safe('hist', x, orientation=orientation, **kw)
@@ -4185,6 +4162,7 @@ class PlotAxes(base.Axes):
     # extremely niche usage... `data` variables should be data-like)
     @_preprocess_data('x', 'explode')
     @docstring.concatenate_original
+    @docstring.add_snippets
     def pie(self, x, explode, *, labelpad=None, labeldistance=None, **kwargs):
         """
         Plot a pie chart.
@@ -4288,12 +4266,12 @@ class PlotAxes(base.Axes):
         # _parse_autolev is skipped and args like levels=10 or locator=5 are ignored
         x, y, kw = self._standardize_1d(x, y, autovalues=True, **kwargs)
         _process_props(kw, 'collection')  # takes LineCollection props
-        guide_kw = _pop_params(kw, self._add_queued_guide)
-        labels_kw = _pop_params(kw, self._auto_labels)
         kw = self._parse_cmap(x, y, y, skip_autolev=True, default_discrete=False, **kw)
         norm = kw.get('norm', None)
         if norm is not None and not isinstance(norm, pcolors.DiscreteNorm):
             norm.vmin = norm.vmax = None  # remove nonsense values
+        labels_kw = _pop_params(kw, self._auto_labels)
+        guide_kw = _pop_params(kw, self._add_queued_guide)
         m = self._plot_safe('hexbin', x, y, weights, **kw)
         self._auto_labels(m, **labels_kw)
         self._add_queued_guide(m, **guide_kw)
@@ -4308,14 +4286,14 @@ class PlotAxes(base.Axes):
         """
         x, y, z, kw = self._standardize_2d(x, y, z, **kwargs)
         _process_props(kw, 'collection')
-        labels_kw = _pop_params(kw, self._auto_labels)
-        guide_kw = _pop_params(kw, self._add_queued_guide)
         kw = self._parse_cmap(x, y, z, minlength=1, contour_plot=True, **kw)
         cmap = kw.pop('cmap', None)
         if isinstance(cmap, pcolors.DiscreteColormap) and len(set(cmap.colors)) == 1:
             kw['colors'] = cmap.colors[0]  # otherwise negative linestyle fails
         else:
             kw['cmap'] = cmap
+        labels_kw = _pop_params(kw, self._auto_labels)
+        guide_kw = _pop_params(kw, self._add_queued_guide)
         m = self._plot_safe('contour', x, y, z, **kw)
         self._auto_labels(m, **labels_kw)
         self._add_queued_guide(m, **guide_kw)
@@ -4330,11 +4308,11 @@ class PlotAxes(base.Axes):
         """
         x, y, z, kw = self._standardize_2d(x, y, z, **kwargs)
         _process_props(kw, 'collection')
-        contour_kw = _pop_kwargs(kw, 'edgecolors', 'linewidths', 'linestyles')
-        guide_kw = _pop_params(kw, self._add_queued_guide)
-        labels_kw = _pop_params(kw, self._auto_labels)
-        edgefix_kw = _pop_params(kw, self._fix_edges)
         kw = self._parse_cmap(x, y, z, contour_plot=True, **kw)
+        contour_kw = _pop_kwargs(kw, 'edgecolors', 'linewidths', 'linestyles')
+        edgefix_kw = _pop_params(kw, self._fix_edges)
+        labels_kw = _pop_params(kw, self._auto_labels)
+        guide_kw = _pop_params(kw, self._add_queued_guide)
         m = cm = self._plot_safe('contourf', x, y, z, **kw)
         self._fix_edges(m, **edgefix_kw, **contour_kw)  # skipped if bool(contour_kw)
         if contour_kw or labels_kw:
@@ -4352,10 +4330,10 @@ class PlotAxes(base.Axes):
         """
         x, y, z, kw = self._standardize_2d(x, y, z, edges=True, **kwargs)
         _process_props(kw, 'collection')
-        guide_kw = _pop_params(kw, self._add_queued_guide)
-        labels_kw = _pop_params(kw, self._auto_labels)
-        edgefix_kw = _pop_params(kw, self._fix_edges)
         kw = self._parse_cmap(x, y, z, to_centers=True, **kw)
+        edgefix_kw = _pop_params(kw, self._fix_edges)
+        labels_kw = _pop_params(kw, self._auto_labels)
+        guide_kw = _pop_params(kw, self._add_queued_guide)
         m = self._plot_safe('pcolor', x, y, z, **kw)
         self._fix_edges(m, **edgefix_kw, **kw)
         self._auto_labels(m, **labels_kw)
@@ -4371,10 +4349,10 @@ class PlotAxes(base.Axes):
         """
         x, y, z, kw = self._standardize_2d(x, y, z, edges=True, **kwargs)
         _process_props(kw, 'collection')
-        guide_kw = _pop_params(kw, self._add_queued_guide)
-        labels_kw = _pop_params(kw, self._auto_labels)
-        edgefix_kw = _pop_params(kw, self._fix_edges)
         kw = self._parse_cmap(x, y, z, to_centers=True, **kw)
+        edgefix_kw = _pop_params(kw, self._fix_edges)
+        labels_kw = _pop_params(kw, self._auto_labels)
+        guide_kw = _pop_params(kw, self._add_queued_guide)
         m = self._plot_safe('pcolormesh', x, y, z, **kw)
         self._fix_edges(m, **edgefix_kw, **kw)
         self._auto_labels(m, **labels_kw)
@@ -4390,10 +4368,10 @@ class PlotAxes(base.Axes):
         """
         x, y, z, kw = self._standardize_2d(x, y, z, edges=True, **kwargs)
         _process_props(kw, 'collection')
-        guide_kw = _pop_params(kw, self._add_queued_guide)
-        labels_kw = _pop_params(kw, self._auto_labels)
-        edgefix_kw = _pop_params(kw, self._fix_edges)
         kw = self._parse_cmap(x, y, z, to_centers=True, **kw)
+        edgefix_kw = _pop_params(kw, self._fix_edges)
+        labels_kw = _pop_params(kw, self._auto_labels)
+        guide_kw = _pop_params(kw, self._add_queued_guide)
         m = self._plot_safe('pcolorfast', x, y, z, **kw)
         self._fix_edges(m, **edgefix_kw, **kw)
         self._auto_labels(m, **labels_kw)
@@ -4439,8 +4417,8 @@ class PlotAxes(base.Axes):
         %(plot.barbs)s
         """
         x, y, u, v, kw = self._standardize_2d(x, y, u, v, allow1d=True, **kwargs)
-        c, kw = self._parse_color(x, y, c, default_discrete=False, **kw)
         _process_props(kw, 'line')  # applied to barbs
+        c, kw = self._parse_color(x, y, c, default_discrete=False, **kw)
         if mcolors.is_color_like(c):
             kw['barbcolor'], c = c, None
         a = [x, y, u, v]
@@ -4457,8 +4435,8 @@ class PlotAxes(base.Axes):
         %(plot.quiver)s
         """
         x, y, u, v, kw = self._standardize_2d(x, y, u, v, allow1d=True, **kwargs)
-        c, kw = self._parse_color(x, y, c, default_discrete=False, **kw)
         _process_props(kw, 'line')  # applied to arrow outline
+        c, kw = self._parse_color(x, y, c, default_discrete=False, **kw)
         color = None
         if mcolors.is_color_like(c):
             color, c = c, None
@@ -4486,12 +4464,12 @@ class PlotAxes(base.Axes):
         %(plot.stream)s
         """
         x, y, u, v, kw = self._standardize_2d(x, y, u, v, **kwargs)
-        c, kw = self._parse_color(x, y, c, **kw)
         _process_props(kw, 'line')  # applied to lines
-        guide_kw = _pop_params(kw, self._add_queued_guide)
+        c, kw = self._parse_color(x, y, c, **kw)
         if c is None:  # throws an error if color not provided
             c = pcolors.to_hex(self._get_lines.get_next_color())
         kw['color'] = c  # always pass this
+        guide_kw = _pop_params(kw, self._add_queued_guide)
         m = self._plot_safe('streamplot', x, y, u, v, **kw)
         self._add_queued_guide(m.lines, **guide_kw)  # lines inside StreamplotSet
         return m
@@ -4505,14 +4483,14 @@ class PlotAxes(base.Axes):
         """
         kw = kwargs.copy()
         _process_props(kw, 'collection')
-        labels_kw = _pop_params(kw, self._auto_labels)
-        guide_kw = _pop_params(kw, self._add_queued_guide)
         kw = self._parse_cmap(x, y, z, minlength=1, contour_plot=True, **kw)
         cmap = kw.pop('cmap', None)
         if isinstance(cmap, pcolors.DiscreteColormap) and len(set(cmap.colors)) == 1:
             kw['colors'] = cmap.colors[0]  # otherwise negative linestyle fails
         else:
             kw['cmap'] = cmap
+        labels_kw = _pop_params(kw, self._auto_labels)
+        guide_kw = _pop_params(kw, self._add_queued_guide)
         m = self._plot_safe('tricontour', x, y, z, **kw)
         self._auto_labels(m, **labels_kw)
         self._add_queued_guide(m, **guide_kw)
@@ -4527,11 +4505,11 @@ class PlotAxes(base.Axes):
         """
         kw = kwargs.copy()
         _process_props(kw, 'collection')
+        contour_kw = _pop_kwargs(kw, 'edgecolors', 'linewidths', 'linestyles')
+        kw = self._parse_cmap(x, y, z, contour_plot=True, **kw)
         edgefix_kw = _pop_params(kw, self._fix_edges)
         labels_kw = _pop_params(kw, self._auto_labels)
         guide_kw = _pop_params(kw, self._add_queued_guide)
-        contour_kw = _pop_kwargs(kw, 'edgecolors', 'linewidths', 'linestyles')
-        kw = self._parse_cmap(x, y, z, contour_plot=True, **kw)
         m = cm = self._plot_safe('tricontourf', x, y, z, **kw)
         self._fix_edges(m, **edgefix_kw, **contour_kw)  # skipped if bool(contour_kw)
         if contour_kw or labels_kw:
@@ -4548,11 +4526,11 @@ class PlotAxes(base.Axes):
         %(plot.tripcolor)s
         """
         kw = kwargs.copy()
+        _process_props(kw, 'collection')
+        kw = self._parse_cmap(x, y, z, **kw)
         edgefix_kw = _pop_params(kw, self._fix_edges)
         labels_kw = _pop_params(kw, self._auto_labels)
         guide_kw = _pop_params(kw, self._add_queued_guide)
-        _process_props(kw, 'collection')
-        kw = self._parse_cmap(x, y, z, **kw)
         m = self._plot_safe('tripcolor', x, y, z, **kw)
         self._fix_edges(m, **edgefix_kw, **kw)
         self._auto_labels(m, **labels_kw)
@@ -4568,8 +4546,8 @@ class PlotAxes(base.Axes):
         %(plot.imshow)s
         """
         kw = kwargs.copy()
-        guide_kw = _pop_params(kw, self._add_queued_guide)
         kw = self._parse_cmap(z, default_discrete=False, **kw)
+        guide_kw = _pop_params(kw, self._add_queued_guide)
         m = self._plot_safe('imshow', z, **kw)
         self._add_queued_guide(m, **guide_kw)
         return m
@@ -4583,8 +4561,8 @@ class PlotAxes(base.Axes):
         %(plot.matshow)s
         """
         kw = kwargs.copy()
-        guide_kw = _pop_params(kw, self._add_queued_guide)
         kw = self._parse_cmap(z, **kw)
+        guide_kw = _pop_params(kw, self._add_queued_guide)
         m = self._plot_safe('matshow', z, **kw)
         self._add_queued_guide(m, **guide_kw)
         return m
@@ -4599,9 +4577,9 @@ class PlotAxes(base.Axes):
         """
         kw = kwargs.copy()
         _process_props(kw, 'line')  # takes valid Line2D properties
-        guide_kw = _pop_params(kw, self._add_queued_guide)
         default_cmap = pcolors.DiscreteColormap(['w', 'k'], '_no_name')
         kw = self._parse_cmap(z, default_cmap=default_cmap, **kw)
+        guide_kw = _pop_params(kw, self._add_queued_guide)
         m = self._plot_safe('spy', z, **kw)
         self._add_queued_guide(m, **guide_kw)
         return m

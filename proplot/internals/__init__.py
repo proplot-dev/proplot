@@ -4,6 +4,8 @@ Utilities used internally by proplot.
 """
 import inspect
 
+import numpy as np
+
 from . import benchmarks, dependencies, docstring, rcsetup, warnings  # noqa: F401
 from .dependencies import _version, _version_cartopy, _version_mpl  # noqa: F401
 
@@ -94,8 +96,7 @@ _alias_dicts = {
 def _not_none(*args, default=None, **kwargs):
     """
     Return the first non-``None`` value. This is used with keyword arg aliases and
-    for setting default values. Use `kwargs` to issue warnings when multiple
-    non-``None`` values were passed. Use `args` to just ignore extra values.
+    for setting default values. Use `kwargs` to issue warnings when multiple passed.
     """
     first = default
     if args and kwargs:
@@ -225,6 +226,55 @@ def _pop_params(kwargs, *funcs, ignore_internal=False):
             if value is not None:
                 output[key] = value
     return output
+
+
+def _fill_guide_kw(kwargs, **pairs):
+    """
+    Add the keyword arguments to the dictionary if not already present.
+    """
+    aliases = (
+        ('title', 'label'),
+        ('locator', 'ticks'),
+        ('formatter', 'ticklabels')
+    )
+    for key, value in pairs.items():
+        keys = tuple(a for group in aliases for a in group if key in group)
+        if not any(kwargs.get(key) is not None for key in keys):
+            kwargs[key] = value
+
+
+def _guide_kw_to_arg(name, kwargs, **pairs):
+    """
+    Add to the `colorbar_kw` or `legend_kw` dict if there are no conflicts.
+    """
+    kw = kwargs.setdefault(f'{name}_kw', {})
+    _fill_guide_kw(kw, **pairs)
+
+
+def _guide_kw_from_obj(obj, name, kwargs):
+    """
+    Add to the dict from settings stored on the object if there are no conflicts.
+    """
+    pairs = getattr(obj, f'_{name}_kw', None)
+    pairs = pairs or {}  # needed for some reason
+    _fill_guide_kw(kwargs, **pairs)
+    if isinstance(obj, (tuple, list, np.ndarray)):
+        for iobj in obj:  # possibly iterate over matplotlib tuple/list subclasses
+            _guide_kw_from_obj(iobj, name, kwargs)
+    return kwargs
+
+
+def _guide_kw_to_obj(obj, name, kwargs):
+    """
+    Add the guide keyword dict to the objects.
+    """
+    try:
+        setattr(obj, f'_{name}_kw', kwargs)
+    except AttributeError:
+        pass
+    if isinstance(obj, (tuple, list, np.ndarray)):
+        for iobj in obj:
+            _guide_kw_to_obj(iobj, name, kwargs)
 
 
 class _empty_context(object):

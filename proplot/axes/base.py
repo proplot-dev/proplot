@@ -29,6 +29,7 @@ from .. import gridspec as pgridspec
 from ..config import _parse_format, _translate_loc, rc
 from ..internals import ic  # noqa: F401
 from ..internals import (
+    _guide_kw_from_obj,
     _keyword_to_positional,
     _not_none,
     _pop_kwargs,
@@ -377,15 +378,18 @@ label, title : str, optional
 locator, ticks : locator spec, optional
     Used to determine the colorbar tick positions. Passed to the
     `~proplot.constructor.Locator` constructor function.
-maxn : int, optional
-    Used if `locator` is ``None``. Determines the maximum number of levels
-    that are ticked. Default depends on the colorbar length relative
-    to the font size. The keyword name "maxn" is meant to mimic
-    the `~matplotlib.ticker.MaxNLocator` class name.
 locator_kw : dict-like, optional
     The locator settings. Passed to `~proplot.constructor.Locator`.
-minorlocator, minorticks, maxn_minor, minorlocator_kw
-    As with `locator`, `maxn`, and `locator_kw`, but for the minor ticks.
+maxn : int, optional
+    Used if `locator` is ``None``. Determines the maximum number of levels that
+    are ticked. Default depends on the colorbar length relative to the font size.
+    The name `maxn` is meant to be reminiscent of `~matplotlib.ticker.MaxNLocator`.
+minorlocator, minorticks
+    As with `locator`, `ticks` but for the minor ticks.
+minorlocator_kw
+    As with `locator_kw`, but for the minor ticks.
+maxn_minor
+    As with `maxn`, but for the minor ticks.
 format, formatter, ticklabels : formatter spec, optional
     The tick label format. Passed to the `~proplot.constructor.Formatter`
     constructor function.
@@ -476,35 +480,10 @@ docstring.snippets['axes.legend_args'] = _legend_args_docstring
 docstring.snippets['axes.legend_kwargs'] = _legend_kwargs_docstring
 
 
-def _update_guide_kw(kwargs, obj, ignore=None):
-    """
-    Update the legend or colorbar keyword args with the persistent dictionary
-    stored on the input mappable or artist(s).
-    """
-    ignore = ignore or ()
-    if isinstance(ignore, str):
-        ignore = (ignore,)
-    aliases = {
-        'title': ('label',),
-        'locator': ('ticks',),
-        'formatter': ('ticklabels',)
-    }
-    if hasattr(obj, '_guide_kw'):
-        for key, value in obj._guide_kw.items():
-            if key in ignore:
-                continue
-            keys = (key, *aliases.get(key, ()))
-            if not any(kwargs.get(key) is not None for key in keys):
-                kwargs[key] = value
-    elif isinstance(obj, (tuple, list, np.ndarray)):
-        for iobj in obj:
-            kwargs = _update_guide_kw(kwargs, iobj, ignore=ignore)
-    return kwargs
-
-
 class Axes(maxes.Axes):
     """
     The lowest-level `~matplotlib.axes.Axes` subclass used by proplot.
+    Implements basic universal features.
     """
     def __repr__(self):  # override matplotlib
         # Show the position in the geometry excluding panels. Panels are
@@ -1818,7 +1797,6 @@ class Axes(maxes.Axes):
             'ticklocation': 'bottom',
         })
         kwargs.setdefault('maxn', 5)  # passed to _parse_colorbar_ticks
-
         return ax, kwargs
 
     def _parse_colorbar_ticks(
@@ -1830,18 +1808,34 @@ class Axes(maxes.Axes):
         """
         Get the default locator for colorbar ticks.
         """
+        ticks = _not_none(ticks=ticks, locator=locator)
+        formatter = _not_none(ticklabels=ticklabels, formatter=formatter, format=format)
+        minorlocator = _not_none(minorticks=minorticks, minorlocator=minorlocator)
         locator_kw = locator_kw or {}
         formatter_kw = formatter_kw or {}
         minorlocator_kw = minorlocator_kw or {}
-        locator = _not_none(ticks=ticks, locator=locator)
-        minorlocator = _not_none(minorticks=minorticks, minorlocator=minorlocator)
-        formatter = _not_none(ticklabels=ticklabels, formatter=formatter, format=format)
+
+        # Get ticks at level locations
+        # NOTE: We virtually always want to subsample the level list. For example
+        # for LogNorm _parse_autolev will interpolate to even points in log-space
+        # between powers of 10 if the powers don't give us enough levels. Therefore
+        # x/y axis-style unevenly spaced log minor ticks would be confusing/ugly.
+        def _subsample_levels(maxn, scale, size):
+            maxn = _not_none(maxn, int(length / (scale * size / 72)))
+            diff = abs(ticks[1] - ticks[0])
+            step = 1 + len(ticks) // max(1, maxn)
+            idx, = np.where(np.isclose(np.array(ticks) % (step * diff), 0.0))
+            if idx.size:
+                locs = ticks[idx[0] % step::step]  # even multiples from zero
+            else:
+                locs = ticks[::step]  # unknown offset
+            return locs
 
         # Get colorbar locator
         # NOTE: Do not necessarily want minor tick locations at logminor for LogNorm!
         # In _auto_discrete_norm we sometimes select evenly spaced levels in log-space
         # *between* powers of 10, so logminor ticks would be misaligned with levels.
-        if locator is None:
+        if ticks is None:
             # This should only happen if user calls plotting method on native mpl axes
             if isinstance(mappable.norm, mcolors.LogNorm):
                 locator = 'log'
@@ -1850,27 +1844,20 @@ class Axes(maxes.Axes):
                 locator_kw.setdefault('linthresh', mappable.norm.linthresh)
             else:
                 locator = 'auto'
-        elif np.iterable(locator) and not isinstance(locator, str):
-            # Get default maxn, try to allot 2em squares per label maybe?
-            # NOTE: Cannot use Axes.get_size_inches because this is a native mpl axes
-            width, height = self.figure.get_size_inches()
+        elif np.iterable(ticks) and not isinstance(ticks, str) and len(ticks) > 1:
+            # Subsample the input list of ticks
+            width, height = self._get_size_inches()
             if kwargs.get('orientation', None) == 'vertical':
-                scale = 1
-                length = height * abs(self.get_position().height)
-                fontsize = _not_none(fontsize, rc['ytick.labelsize'])
+                length, scale, axis = height, 1.0, 'y'
             else:
-                scale = 3  # em squares alotted for labels
-                length = width * abs(self.get_position().width)
-                fontsize = _not_none(fontsize, rc['xtick.labelsize'])
-            fontsize = _fontsize_to_pt(fontsize)
-            maxn = _not_none(maxn, int(length / (scale * fontsize / 72)))
-            maxn_minor = _not_none(maxn_minor, int(length / (0.5 * fontsize / 72)))
-            # Get tick locations
+                length, scale, axis = width, 2.5, 'x'
+            size = _fontsize_to_pt(_not_none(fontsize, rc[axis + 'tick.labelsize']))
+            locator = _subsample_levels(maxn, scale, size)
             if tickminor and minorlocator is None:
-                step = 1 + len(locator) // max(1, maxn_minor)
-                minorlocator = locator[::step]
-            step = 1 + len(locator) // max(1, maxn)
-            locator = locator[::step]
+                minorlocator = _subsample_levels(maxn_minor, 0.5, size)
+        else:
+            # Manually specified locator
+            locator = ticks
 
         # Return tickers
         locator = constructor.Locator(locator, **locator_kw)
@@ -2056,10 +2043,10 @@ class Axes(maxes.Axes):
         # values or artist labels rather than random points if possible.
         # WARNING: Matplotlib >= 3.4 seems to have issue with assigning no ticks
         # to colorbar. Tried to fix with below block but doesn't seem to help.
-        mappable, kwargs = self._parse_mappable_values(
+        mappable, kwargs = cax._parse_mappable_values(
             mappable, values, **kwargs
         )
-        locator, formatter, minorlocator, kwargs = self._parse_colorbar_ticks(
+        locator, formatter, minorlocator, kwargs = cax._parse_colorbar_ticks(
             mappable, fontsize=ticklabelsize, tickminor=tickminor, **kwargs,
         )
         if isinstance(locator, mticker.NullLocator):
@@ -2262,7 +2249,7 @@ class Axes(maxes.Axes):
         # to a list later used for colorbar levels. Same as legend.
         loc = _not_none(loc=loc, location=location)
         loc = _translate_loc(loc, 'colorbar', default=rc['colorbar.loc'])
-        kwargs = _update_guide_kw(kwargs, mappable)
+        kwargs = _guide_kw_from_obj(mappable, 'colorbar', kwargs)
         if queue:
             obj = (mappable, values)
             self._add_guide('colorbar', obj, loc, **kwargs)
@@ -2772,7 +2759,7 @@ class Axes(maxes.Axes):
         # is used internally for on-the-fly legends.
         loc = _not_none(loc=loc, location=location)
         loc = _translate_loc(loc, 'legend', default=rc['legend.loc'])
-        kwargs = _update_guide_kw(kwargs, handles, ignore='extend')
+        kwargs = _guide_kw_from_obj(handles, 'legend', kwargs)
         if queue:
             obj = (handles, labels)
             self._add_guide('legend', obj, loc, **kwargs)
