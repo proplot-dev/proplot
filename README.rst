@@ -6,6 +6,11 @@
 A powerful `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful,
 publication-quality graphics.
 
+Documentation
+=============
+
+The documentation is `published on readthedocs <https://proplot.readthedocs.io>`__.
+
 Installation
 ============
 
@@ -30,11 +35,6 @@ To install a development version of ProPlot, you can use
 ``pip install git+https://github.com/lukelbd/proplot.git``
 or clone the repository and run ``pip install -e .``
 inside the ``proplot`` folder.
-
-Documentation
-=============
-
-The documentation is `published on readthedocs <https://proplot.readthedocs.io>`__.
 
 
 .. |code-style| image:: https://img.shields.io/badge/code%20style-black-000000.svg
