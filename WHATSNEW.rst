@@ -30,6 +30,13 @@ and stability is improved.
 ProPlot v0.8.1 (2021-##-##)
 ===========================
 
+Features
+--------
+
+* Add `~proplot.colors.PerceptualColormap.from_list` ``adjust_grays`` option
+  (enabled by default) to help make diverging colormaps with an intermediate
+  hueless white, gray, or black (:commit:`2e8cb495`).
+
 Bug fixes
 ---------
 
