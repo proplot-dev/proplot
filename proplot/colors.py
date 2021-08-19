@@ -2153,13 +2153,19 @@ class PerceptualColormap(ContinuousColormap, _Colormap):
 
     @classmethod
     @_snippet_manager
-    def from_list(cls, *args, **kwargs):
+    def from_list(cls, *args, adjust_grays=True, **kwargs):
         """
         Make a `PerceptualColormap` from a list of colors.
 
         Parameters
         ----------
         %(colors.from_list)s
+        adjust_grays : bool, optional
+            Whether to adjust the hues of grayscale colors (including
+            ``'white'`` and ``'black'``) to the hues of the preceding and
+            subsequent colors in the list. This facilitates the construction of
+            diverging colormaps with monochromatic segments using input like
+            ``PerceptualColormap.from_list(['blueish', 'white', 'reddish'])``.
 
         Other parameters
         ----------------
@@ -2191,13 +2197,27 @@ class PerceptualColormap(ContinuousColormap, _Colormap):
             and not isinstance(colors[0], str)
         ):
             coords, colors = zip(*colors)
-        colors = [to_xyza(color, space) for color in colors]
 
         # Build segmentdata
         keys = ('hue', 'saturation', 'luminance', 'alpha')
+        hslas = [to_xyza(color, space) for color in colors]
         cdict = {}
-        for key, values in zip(keys, zip(*colors)):
+        for key, values in zip(keys, zip(*hslas)):
             cdict[key] = _make_segment_data(values, coords, ratios)
+
+        # Adjust grays
+        if adjust_grays:
+            rgbs = [to_rgb(color) for color in colors]
+            hues = cdict['hue']  # segment data
+            for i, rgb in enumerate(rgbs):
+                if not np.allclose(np.array(rgb), rgb[0]):
+                    continue
+                hues[i] = list(hues[i])  # enforce mutability
+                if i > 0:
+                    hues[i][1] = hues[i - 1][2]
+                if i < len(hues) - 1:
+                    hues[i][2] = hues[i + 1][1]
+
         return cls(name, cdict, **kwargs)
 
     # Deprecated
