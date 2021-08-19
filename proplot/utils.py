@@ -722,7 +722,7 @@ def _fontsize_to_pt(size):
 
 @warnings._rename_kwargs('0.6', units='dest')
 def units(
-    value, numeric=None, dest=None, *, axes=None, figure=None, width=True, fontsize=None
+    value, numeric=None, dest=None, *, fontsize=None, figure=None, axes=None, width=None
 ):
     """
     Convert values and lists of values between arbitrary physical units. This
@@ -738,7 +738,7 @@ def units(
         where the number is the magnitude and ``'unit'`` matches a key in
         the below table.
 
-        .. _units_table ::
+        .. _units_table:
 
         =========  =====================================================
         Key        Description
@@ -772,6 +772,10 @@ def units(
         The units associated with numeric input. Default is inches.
     dest : str, optional
         The destination units. Default is the same as `numeric`.
+    fontsize : size-spec, optional
+        The font size in points used for scaling. Default is
+        :rcraw:`font.size` for ``em`` and ``en`` units and
+        :rcraw:`axes.titlesize` for ``Em`` and ``En`` units.
     axes : `~matplotlib.axes.Axes`, optional
         The axes to use for scaling units that look like ``'0.1ax'``.
     figure : `~matplotlib.figure.Figure`, optional
@@ -780,10 +784,6 @@ def units(
     width : bool, optional
         Whether to use the width or height for the axes and figure
         relative coordinates.
-    fontsize : size-spec, optional
-        The font size in points used for scaling. Default is
-        :rcraw:`font.size` for ``em`` and ``en`` units and
-        :rcraw:`axes.titlesize` for ``Em`` and ``En`` units.
     """
     # Scales for converting physical units to inches
     fontsize_small = _not_none(fontsize, rc_matplotlib['font.size'])  # always absolute
