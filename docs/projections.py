@@ -32,13 +32,13 @@
 # To change the axes projection, pass ``proj='name'`` to an axes-creation command
 # (i.e., `~proplot.figure.Figure.add_subplot`, `~proplot.figure.Figure.add_subplots`,
 # `~proplot.figure.Figure.subplot`, or `~proplot.figure.Figure.subplots`). To use
-# different projections for different subplots when creating them all at once
-# with `~proplot.figure.Figure.subplots`, pass either a list of projection names
-# or a dictionary of projection names with the subplot number as the key. For example,
-# a 2-column figure with a Cartesian axes on the left and a Plate Carrée projection
-# on the right can be built with either ``proj=('cartesian', 'pcarree')`` or
-# ``proj={2: 'pcarree'}``. The default projection is `~proplot.axes.CartesianAxes`,
-# specified with the key ``'cartesian'``.
+# different projections for different subplots when creating them all at once,
+# pass either a list of projection names or a dictionary of projection names
+# with the subplot number as the key. For example, a 2-column figure with a
+# Cartesian axes on the left and a Plate Carrée projection on the right can be
+# built with either ``proj=('cartesian', 'pcarree')`` or ``proj={2: 'pcarree'}``.
+# The default projection is `~proplot.axes.CartesianAxes`, optionally specified
+# with the key ``'cartesian'``.
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_geo:
