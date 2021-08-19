@@ -183,18 +183,19 @@ ax.format(xtickminor=False, yreverse=True)
 # It is often useful to create `~proplot.colors.ContinuousColormap`\ s
 # on-the-fly, without explicitly calling the `~proplot.constructor.Colormap`
 # :ref:`constructor function <why_constructor>`. You can do so using the `cmap`
-# and `cmap_kw` keywords. For example, to create and apply a monochromatic
-# colormap, you can use ``cmap='color_name'`` (see the :ref:`colormaps section
-# <ug_cmaps>` for more info). You can also create on-the-fly "qualitative"
-# `~proplot.colors.DiscreteColormap`\ s by passing lists of colors to
-# the keyword `c`, `color`, or `colors`.
+# and `cmap_kw` keywords, available with most `~proplot.axes.PlotAxes` 2d plotting
+# commands. For example, to create and apply a monochromatic colormap, you can use
+# ``cmap='color_name'`` (see the :ref:`colormaps section <ug_cmaps>` for more info).
+# You can also create on-the-fly "qualitative" `~proplot.colors.DiscreteColormap`\ s
+# by passing lists of colors to the keyword `c`, `color`, or `colors`.
 #
 # In matplotlib, data values are translated into
 # colormap colors using so-called `colormap "normalizers"
 # <https://matplotlib.org/stable/tutorials/colors/colormapnorms.html>`__.
 # A normalizer can be selected from its "registered" name using the
 # `~proplot.constructor.Norm` :ref:`constructor function <why_constructor>`. You
-# can also build a normalizer on-the-fly using the `norm` and `norm_kw` keywords.
+# can also build a normalizer on-the-fly using the `norm` and `norm_kw` keywords,
+# again available with most `~proplot.axes.PlotAxes` 2d plotting commands.
 # If you want to work with normalizer classes directly, they are also imported
 # into the top-level namespace (e.g., ``pplt.LogNorm(...)`` is allowed). To
 # explicitly set the normalization range, you can pass the usual `vmin` and `vmax`

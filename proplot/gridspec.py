@@ -2,8 +2,8 @@
 """
 The gridspec and subplotspec subclasses.
 """
-import functools
 import itertools
+from functools import partial
 
 import matplotlib.axes as maxes
 import matplotlib.gridspec as mgridspec
@@ -69,8 +69,8 @@ wequal, hequal, equal :  bool, optional
     Whether to make the tight layout algorithm apply equal spacing between columns,
     rows, or both. Default is ``False``. Ignored if :rcraw:`tight` is ``False``.
 outerpad : float or str, optional
-    The tight layout padding around edge of figure. Units are interpreted
-    by `~proplot.utils.units`. Default is :rc:`subplots.outerpad`.
+    The tight layout padding around the left, right, top, and bottom edges
+    of the figure.  Default is :rc:`subplots.outerpad`.
     %(units.em)s
 innerpad : float or str, optional
     The scalar tight layout padding between columns and rows. Synonymous with
@@ -83,7 +83,7 @@ panelpad : float or str, optional
 """
 docstring.snippets['gridspec.shared'] = docstring.add_snippets(_shared_docstring)
 docstring.snippets['gridspec.scalar'] = docstring.add_snippets(_scalar_docstring)
-docstring.snippets['gridspec.vector'] = docstring.add_snippets(_tight_docstring)
+docstring.snippets['gridspec.vector'] = docstring.add_snippets(_vector_docstring)
 docstring.snippets['gridspec.tight'] = docstring.add_snippets(_tight_docstring)
 
 
@@ -1112,14 +1112,14 @@ class GridSpec(mgridspec.GridSpec):
     # obfuscation makes this confusing. For example gs.update(wspace=gs.wspace) in
     # presence of panels would yield error. For now the only supported introspection
     # is the __repr__. Probably no big deal... introspection not critical here.
-    nrows = property(lambda self: self._nrows)  # in case missing
-    ncols = property(lambda self: self._ncols)  # ...
-    left = property(functools.partial(_get_current_space, key='left'))
-    bottom = property(functools.partial(_get_current_space, key='bottom'))
-    right = property(functools.partial(_get_current_space, key='right'))
-    top = property(functools.partial(_get_current_space, key='top'))
-    hspace = property(functools.partial(_get_current_space, key='hspace'))
-    wspace = property(functools.partial(_get_current_space, key='wspace'))
+    nrows = property(lambda self: self._nrows, doc='')  # in case missing
+    ncols = property(lambda self: self._ncols, doc='')  # ...
+    left = property(partial(_get_current_space, key='left'), doc='')
+    bottom = property(partial(_get_current_space, key='bottom'), doc='')
+    right = property(partial(_get_current_space, key='right'), doc='')
+    top = property(partial(_get_current_space, key='top'), doc='')
+    hspace = property(partial(_get_current_space, key='hspace'), doc='')
+    wspace = property(partial(_get_current_space, key='wspace'), doc='')
     hpad = property(lambda self: list(self._hpad))  # copy for consistency
     wpad = property(lambda self: list(self._wpad))  # ...
     hratios = property(lambda self: list(self._hratios))

@@ -182,16 +182,16 @@ ax.plot(df, cycle=cycle, lw=3, legend='uc')
 # <https://matplotlib.org/tutorials/intermediate/color_cycle.html#sphx-glr-tutorials-intermediate-color-cycle-py>`__
 # and use different property cycles for different plot elements. You can create and
 # apply property cycles on-the-fly using the `cycle` and `cycle_kw` keywords, available
-# with most 1D plotting commands. `cycle` and `cycle_kw` are passed to the
-# `~proplot.constructor.Cycle` :ref:`constructor function <why_constructor>`, and the
-# resulting property cycle is used for the plot. You can specify `cycle` once with
-# 2D input data (in which case each column is plotted in succession according to
-# the property cycle) or call a plotting command multiple times with the same
-# `cycle` argument each time (the property cycle is not reset). You can also
-# disable property cycling with ``cycle=False``, ``cycle='none'``, or ``cycle=()``
-# and re-enable the default property cycle with ``cycle=True``. For more information
-# on property cycling, see the :ref:`color cycles section <ug_cycles>` and
-# `this matplotlib tutorial
+# with most `~proplot.axes.PlotAxes` 1D plotting commands. `cycle` and `cycle_kw` are
+# passed to the `~proplot.constructor.Cycle` :ref:`constructor function
+# <why_constructor>`, and the resulting property cycle is used for the plot. You
+# can specify `cycle` once with 2D input data (in which case each column is
+# plotted in succession according to the property cycle) or call a plotting
+# command multiple times with the same `cycle` argument each time (the property
+# cycle is not reset). You can also disable property cycling with
+# ``cycle=False``, ``cycle='none'``, or ``cycle=()`` and re-enable the default
+# property cycle with ``cycle=True``. For more information on property cycling,
+# see the :ref:`color cycles section <ug_cycles>` and `this matplotlib tutorial
 # <https://matplotlib.org/tutorials/intermediate/color_cycle.html#sphx-glr-tutorials-intermediate-color-cycle-py>`__.
 
 # %%
@@ -490,16 +490,17 @@ pplt.rc.reset()
 # `~proplot.axes.PlotAxes.scatterx`. `~proplot.axes.PlotAxes.bar`, and
 # `~proplot.axes.PlotAxes.barh` plots using any of several keyword arguments.
 #
-# If you pass 2D arrays to these commands with ``mean=True`` or ``median=True``,
-# the means or medians of each column are drawn as lines, points, or bars, while
-# *error bars* or *error shading* indicates the spread of the distribution
-# for each column. Invalid data is ignored. You can also specify the error bounds
-# *manually* with the `bardata`, `boxdata`, `shadedata`, and `fadedata` keywords.
-# These commands can draw and style thin error bars (the ``bar`` keywords), thick
-# "boxes" overlaid on top of these bars (the ``box`` keywords; think of them as
-# miniature boxplots), a transparent shading region (the ``shade`` keywords), and
-# a more transparent secondary shading region (the ``fade`` keywords). See the
-# documentation on the plotting commands for details.
+# If you pass 2D arrays to these commands with ``mean=True``, ``means=True``,
+# ``median=True``, or ``medians=True``, the means or medians of each column are
+# drawn as lines, points, or bars, while *error bars* or *error shading*
+# indicates the spread of the distribution in each column. Invalid data is
+# ignored. You can also specify the error bounds *manually* with the `bardata`,
+# `boxdata`, `shadedata`, and `fadedata` keywords. These commands can draw and
+# style thin error bars (the ``bar`` keywords), thick "boxes" overlaid on top of
+# these bars (the ``box`` keywords; think of them as miniature boxplots), a
+# transparent primary shading region (the ``shade`` keywords), and a more
+# transparent secondary shading region (the ``fade`` keywords). See the documentation
+# on the plotting commands for details.
 
 
 # %%
@@ -704,14 +705,14 @@ ax.format(title='Multiple colors', ymargin=0.15)
 # Parametric plots
 # ----------------
 #
-# To make "parametric" plots, use the new `~proplot.axes.PlotAxes.parametric`
-# command. Parametric plots are `~matplotlib.collections.LineCollection`\ s that
-# map individual line segments to individual colors, where each segment represents a
+# Parametric plots can be drawn using the new `~proplot.axes.PlotAxes.parametric`
+# command. This creates `~matplotlib.collections.LineCollection`\ s that map
+# individual line segments to individual colors, where each segment represents a
 # "parametric" coordinate (e.g., time). The parametric coordinates are specified with
-# the `values` keyword argument. See `~proplot.axes.PlotAxes.parametric` for details.
-# As shown below, it is also easy to build colorbars from the
-# `~matplotlib.collections.LineCollection` returned by
-# `~proplot.axes.PlotAxes.parametric`.
+# a third positional argument or with the keywords `c`, `color`, `colors` or `values`.
+# Representing parametric coordinates with colors instead of text labels can be
+# cleaner. The below example makes a simple `~proplot.axes.PlotAxes.parametric`
+# plot with a colorbar indicating the parametric coordinate.
 
 # %%
 import proplot as pplt
