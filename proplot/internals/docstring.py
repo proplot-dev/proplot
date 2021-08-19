@@ -19,13 +19,12 @@ class _SnippetManager(dict):
         Add snippets to the string or object using ``%(name)s`` substitution.
         This lets snippet keys have invalid variable names.
         """
-        parts = {key: value.strip() for key, value in self.items()}
         if isinstance(obj, str):
-            obj %= parts  # add snippets to a string
+            obj %= self  # add snippets to a string
         else:
             obj.__doc__ = inspect.getdoc(obj)  # also dedents the docstring
             if obj.__doc__:
-                obj.__doc__ %= parts  # insert snippets after dedent
+                obj.__doc__ %= self  # insert snippets after dedent
         return obj
 
     def __setitem__(self, key, value):
@@ -34,6 +33,7 @@ class _SnippetManager(dict):
         care to import modules in the correct order.
         """
         value = self(value)
+        value = value.strip()
         super().__setitem__(key, value)
 
 
