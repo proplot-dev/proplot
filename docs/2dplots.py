@@ -94,8 +94,8 @@ with pplt.rc.context({'cmap': 'Grays', 'cmap.levels': 21}):
 # %% [raw]
 # .. _ug_2dintegration:
 #
-# Pandas, xarray, and pint integration
-# ------------------------------------
+# Pandas and xarray integration
+# -----------------------------
 #
 # The `~proplot.axes.PlotAxes` plotting commands are seamlessly integrated
 # with `pandas`_ and `xarray`_. If you omit *x* and *y* coordinates, the

@@ -26,8 +26,8 @@
 # Geographic and polar plots
 # ==========================
 #
-# ProPlot includes several advanced features for working with
-# `polar <polar_>`_ and :ref:`geographic projections <ug_geo>`.
+# ProPlot includes several advanced features for working with `polar`_
+# and :ref:`geographic projections <ug_geo>`.
 #
 # To change the axes projection, pass ``proj='name'`` to an axes-creation command
 # (i.e., `~proplot.figure.Figure.add_subplot`, `~proplot.figure.Figure.add_subplots`,
@@ -37,8 +37,8 @@
 # or a dictionary of projection names with the subplot number as the key. For example,
 # a 2-column figure with a Cartesian axes on the left and a Plate Carrée projection
 # on the right can be built with either ``proj=('cartesian', 'pcarree')`` or
-# ``proj={2: 'pcarree'}``. The default "projection" is `~proplot.axes.CartesianAxes`
-# and can be explicitly specified with the ``'cartesian'`` key.
+# ``proj={2: 'pcarree'}``. The default projection is `~proplot.axes.CartesianAxes`,
+# specified with the key ``'cartesian'``.
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_geo:
@@ -46,18 +46,40 @@
 # Geographic axes
 # ---------------
 #
-# Geographic plots can be created in ProPlot using either `cartopy`_ or `basemap`_
-# as "backends". Note that this feature is *optional* -- installation of cartopy
-# or basemap is not required. To create geographic axes, pass
-# e.g. ``proj='name'`` to an axes-creation command (see :ref:`above <ug_proj>`)
-# where ``name`` is any valid :ref:`PROJ projection name <proj_included>`.
-# Alternatively, you can use ``proj=projection_instance`` where ``projection_instance``
-# is a `cartopy.crs.Projection` or `mpl_toolkits.basemap.Basemap` generated with
+# To create geographic axes, pass e.g. ``proj='name'`` to an axes-creation
+# command (see :ref:`above <ug_proj>`) where ``name`` is any valid
+# :ref:`PROJ projection name <proj_included>`. Alternatively, you can use
+# ``proj=projection_instance`` where ``projection_instance`` is a
+# `cartopy.crs.Projection` or `mpl_toolkits.basemap.Basemap` generated with
 # the `~proplot.constructor.Proj` :ref:`constructor function <why_constructor>`.
+# A very simple geographic plot is shown below.
+
+# %%
+# Option A: Create a projection with pplt.Proj()
+# import proplot as plot
+# proj = pplt.Proj('robin', lon_0=180)
+# fig, axs = pplt.subplots(nrows=2, refwidth=3, proj=proj)
+
+# Option B: Create an on-the-fly projection
+import proplot as pplt
+fig = pplt.figure(refwidth=3)
+axs = fig.subplots(nrows=2, proj='robin', proj_kw={'lon_0': 180})
+axs.format(
+    suptitle='Figure with single projection',
+    coast=True, latlines=30, lonlines=60,
+)
+
+# %% [raw] raw_mimetype="text/restructuredtext"
+# .. _ug_backends:
 #
+# Cartopy and basemap
+# -------------------
+#
+# Geographic axes in ProPlot use either `cartopy`_ or `basemap`_ as "backends".
 # When you request a geographic projection, the axes-creation command returns
-# a `proplot.axes.GeoAxes` instance(s). This `~proplot.axes.Axes` subclass has its
-# own `~proplot.axes.GeoAxes.format` command that :ref:`manages geographic features
+# a `proplot.axes.GeoAxes` instance(s) that uses either cartopy or basemap
+# under the hood. The `proplot.axes.GeoAxes` subclass has its own
+# `~proplot.axes.GeoAxes.format` command that :ref:`manages geographic features
 # <ug_geoformat>` like meridional and parallel gridlines and land mass outlines
 # with the same syntax for either backend. A few details:
 #
@@ -89,11 +111,11 @@
 #   available via the `~proplot.axes.GeoAxes.projection` attribute.
 #
 # Together, these features let you work with geophysical data without invoking
-# verbose cartopy classes like `~cartopy.crs.LambertAzimuthalEqualArea` and
-# `~cartopy.feature.NaturalEarthFeature` or keeping track of separate
-# `~mpl_toolkits.basemap.Basemap` instances. They considerably reduce the amount of
-# code needed to make geographic plots. In the below examples, we create a variety
-# of geographic plots using both cartopy and basemap as backends.
+# verbose cartopy classes like `~cartopy.crs.LambertAzimuthalEqualArea`
+# or keeping track of separate `~mpl_toolkits.basemap.Basemap` instances. They
+# considerably reduce the amount of code needed to make geographic plots.
+# In the below examples, we create a variety of geographic plots using both
+# cartopy and basemap as backends.
 #
 # .. note::
 #
@@ -115,31 +137,13 @@
 #      of `central_longitude`) and instantiates `~mpl_toolkits.basemap.Basemap`
 #      projections with sensible default PROJ parameters rather than raising an error
 #      when they are omitted (e.g., ``lon_0=0`` as the default for most projections).
-#
-# .. warning::
-#
-#    Basemap is `no longer maintained \
-#    <https://matplotlib.org/basemap/users/intro.html#cartopy-new-management-and-eol-announcement>`__
-#    and will not work with matplotlib versions more recent than 3.2.2. However,
-#    as shown below, gridline labels often look nicer in basemap than cartopy --
-#    especially when "inline" cartopy labels are disabled. This is the main reason
-#    ProPlot continues to support basemap. When cartopy gridline labels improve,
-#    basemap support may be deprecated.
-
-# %%
-# Option A: Create a projection with pplt.Proj()
-# import proplot as plot
-# proj = pplt.Proj('robin', lon_0=180)
-# fig, axs = pplt.subplots(nrows=2, refwidth=3, proj=proj)
-
-# Option B: Create an on-the-fly projection
-import proplot as pplt
-fig = pplt.figure(refwidth=3)
-axs = fig.subplots(nrows=2, proj='robin', proj_kw={'lon_0': 180})
-axs.format(
-    suptitle='Figure with single projection',
-    coast=True, latlines=30, lonlines=60,
-)
+#    * Basemap is `no longer maintained \
+#      <https://matplotlib.org/basemap/users/intro.html#cartopy-new-management-and-eol-announcement>`__
+#      and will not work with matplotlib versions more recent than 3.2.2. However,
+#      basemap gridline labels often look nicer than cartopy -- especially when
+#      "inline" cartopy labels are disabled. This is the main reason ProPlot continues
+#      to support basemap. When cartopy gridline labels improve, basemap support
+#      may be deprecated.
 
 # %%
 import proplot as pplt

@@ -220,15 +220,15 @@ fig.save('~/example4.png')
 # `two different interfaces <https://matplotlib.org/stable/api/index.html>`__:
 # an object-oriented interface and a MATLAB-style `~matplotlib.pyplot` interface
 # (which uses the object-oriented interface internally). Plotting with ProPlot is just
-# like plotting with matplotlib's *object-oriented* interface. Proplot builds upon
-# the `proplot.axes.Axes` base class with an intermediate `proplot.axes.PlotAxes`
-# subclass that adds new plotting commands and new features to existing plotting
-# commands. These additions do not change the usage or syntax of existing commands,
-# which means a shallow learning curve for the average matplotlib user.
+# like plotting with matplotlib's *object-oriented* interface. ProPlot builds upon
+# the `proplot.axes.Axes` base class with a `proplot.axes.PlotAxes` subclass
+# that adds new plotting commands and new features to existing commands. These
+# additions do not change the usage or syntax of existing commands, which
+# means a shallow learning curve for the average matplotlib user.
 #
 # In the below example, we create a 4-panel figure with the familiar matplotlib
-# commands `~prplot.axes.PlotAxes.plot`, `~prplot.axes.PlotAxes.scatter`,
-# `~prplot.axes.PlotAxes.pcolormesh`, and `~prplot.axes.PlotAxes.contourf`.
+# commands `~proplot.axes.PlotAxes.plot`, `~proplot.axes.PlotAxes.scatter`,
+# `~proplot.axes.PlotAxes.pcolormesh`, and `~proplot.axes.PlotAxes.contourf`.
 # See the :ref:`1d plotting <ug_1dplots>` and :ref:`2d plotting <ug_2dplots>`
 # sections for details on the features added by ProPlot.
 
@@ -266,14 +266,12 @@ fig.colorbar(m, loc='b', label='label')
 # ``format`` method. This is your one-stop-shop for changing axes settings.
 # Keyword arguments passed to ``format`` are interpreted as follows:
 #
-# .. rst-class:: dummy-line-break-class
-#
-# #. Any keyword matching the name of an `~proplot.config.rc` setting
+# 1. Any keyword matching the name of an `~proplot.config.rc` setting
 #    is used to update the axes. If the name has "dots", you can omit them
 #    (e.g., ``titleloc='left'`` changes the :rcraw:`title.loc` property).
 #    See the :ref:`configuration section <ug_config>` for details.
 #
-# #. Valid keywords arguments are passed to
+# 2. Valid keywords arguments are passed to
 #    `proplot.axes.CartesianAxes.format`, `proplot.axes.PolarAxes.format`,
 #    or `proplot.axes.GeoAxes.format`. These change settings that are
 #    specific to the axes type. For example:
@@ -285,9 +283,7 @@ fig.colorbar(m, loc='b', label='label')
 #    * To change the meridional bounds on a `~proplot.axes.GeoAxes`,
 #      use e.g. ``lonlim=(-90, 0)``.
 #
-# .. rst-class:: dummy-line-break-class
-#
-# #. Remaining keyword arguments are passed to the base `proplot.axes.Axes.format`
+# 3. Remaining keyword arguments are passed to the base `proplot.axes.Axes.format`
 #    method. `~proplot.axes.Axes` is the base class for all other axes classes.
 #    This changes things that are the same for all axes types, like titles and
 #    a-b-c subplot labels (e.g., ``title='Title'``).
@@ -296,8 +292,9 @@ fig.colorbar(m, loc='b', label='label')
 # of settings at once, instead of one-liner setter methods like
 # ``ax.set_title()`` and ``ax.set_xlabel()``. They are also integrated with
 # the `~proplot.constructor.Locator`, `~proplot.constructor.Formatter`,
-# and `~proplot.constructor.Scale` :ref:`constructor functions <why_constructor>`
-# (see :ref:`this section <ug_cartesian>`).
+# and `~proplot.constructor.Scale` :ref:`constructor functions <ug_cartesian>`.
+# You can also call ``format`` for several subplots at once using
+# `proplot.figure.Figure.format` or `proplot.figure.SubplotGrid.format` (see below).
 #
 # The below example shows the many different keyword arguments accepted by
 # ``format``, and demonstrates how ``format`` can be used to succinctly and
@@ -341,7 +338,7 @@ axs.format(
 # unifies these three possible return values:
 #
 # * `~proplot.figure.SubplotGrid` permits array-like 2D indexing, e.g.
-#   ``axs[1, 0]``. Indexing the ~proplot.figure.SubplotGrid` is similar
+#   ``axs[1, 0]``. Indexing the `~proplot.figure.SubplotGrid` is similar
 #   to indexing a `~proplot.gridspec.GridSpec`. The result is a
 #   `~proplot.figure.SubplotGrid` of subplots that occupy the indexed
 #   `~proplot.gridspec.GridSpec` slot(s).
@@ -358,7 +355,7 @@ axs.format(
 # property. `~proplot.figure.SubplotGrid` is especially useful because it lets you
 # call ``format``, ``colorbar``, ``legend``, ``panel``, ``inset``, and the various
 # twin axis commands simultaneously for all subplots in the grid. In the below
-# example, we use the `proplot.figure.SubplotGrid.format` command on the grid
+# example, we use `~proplot.figure.SubplotGrid.format` command on the grid
 # returned by `~proplot.ui.subplots` to format several subplots all at once.
 
 # %%
