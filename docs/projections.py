@@ -32,27 +32,31 @@
 # To change the axes projection, pass ``proj='name'`` to an axes-creation command
 # (i.e., `~proplot.figure.Figure.add_subplot`, `~proplot.figure.Figure.add_subplots`,
 # `~proplot.figure.Figure.subplot`, or `~proplot.figure.Figure.subplots`). To use
-# different projections for different subplots when creating them all at once,
-# pass either a list of projection names or a dictionary of projection names
-# with the subplot number as the key. For example, a 2-column figure with a
-# Cartesian axes on the left and a Plate Carrée projection on the right can be
-# built with either ``proj=('cartesian', 'pcarree')`` or ``proj={2: 'pcarree'}``.
-# The default projection is `~proplot.axes.CartesianAxes`, optionally specified
-# with the key ``'cartesian'``.
+# different projections for different subplots when creating your subplots al
+# at once with `~proplot.figure.Figure.subplots`, pass either a list of projection
+# names or a dictionary of projection names with the subplot number as the key.
+# For example, a 2-column figure with a Cartesian axes on the left and a Plate Carrée
+# projection on the right can be built with either ``proj=('cartesian', 'pcarree')``
+# or ``proj={2: 'pcarree'}``. The default projection is `~proplot.axes.CartesianAxes`,
+# optionally specified with the key ``'cartesian'``.
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_geo:
 #
 # Geographic axes
 # ---------------
-#
-# To create geographic axes, pass e.g. ``proj='name'`` to an axes-creation
-# command (see :ref:`above <ug_proj>`) where ``name`` is any valid
+
+# To create geographic axes, pass e.g. ``proj='name'`` to an
+# axes-creation command (see :ref:`above <ug_proj>`) where ``name`` is any valid
 # :ref:`PROJ projection name <proj_included>`. Alternatively, you can use
-# ``proj=projection_instance`` where ``projection_instance`` is a
-# `cartopy.crs.Projection` or `mpl_toolkits.basemap.Basemap` generated with
-# the `~proplot.constructor.Proj` :ref:`constructor function <why_constructor>`.
-# A very simple geographic plot is shown below.
+# ``proj=projection_instance`` where ``projection_instance`` is an object returned
+# by the `~proplot.constructor.Proj` :ref:`constructor function <why_constructor>`
+# (see below for details). Requesting geographic projections returns
+# `~proplot.axes.GeoAxes` instance(s) with their own `~proplot.axes.GeoAxes.format`
+# command. `proplot.axes.GeoAxes.format` facilitates :ref:`geographic-specific
+# modifications <ug_geoformat>` like meridional and parallel gridlines and land
+# mass outlines. The syntax is very similar to `proplot.axes.CartesianAxes.format`.
+# In the below example, we create and format a very simple geographic plot.
 
 # %%
 # Option A: Create a projection with pplt.Proj()
@@ -75,31 +79,28 @@ axs.format(
 # Cartopy and basemap
 # -------------------
 #
-# Geographic axes in ProPlot use either `cartopy`_ or `basemap`_ as "backends".
-# When you request a geographic projection, the axes-creation command returns
-# a `proplot.axes.GeoAxes` instance(s) that uses either cartopy or basemap
-# under the hood. The `proplot.axes.GeoAxes` subclass has its own
-# `~proplot.axes.GeoAxes.format` command that :ref:`manages geographic features
-# <ug_geoformat>` like meridional and parallel gridlines and land mass outlines
-# with the same syntax for either backend. A few details:
+# The `proplot.axes.GeoAxes` class uses either `cartopy`_ or `basemap`_ as "backends"
+# to :ref:`format the axes <ug_geoformat>` and :ref:`plot stuff <ug_geoplot>` in
+# the axes. A few details:
 #
-# * Cartopy is the default backend. When you request projections with
-#   cartopy as the backend, the returned axes is a subclass of cartopy's
-#   `cartopy.mpl.geoaxes.GeoAxes`. Under the hood, invoking
-#   `~proplot.axes.GeoAxes.format` with cartopy as the backend changes map bounds using
-#   `~cartopy.mpl.geoaxes.GeoAxes.set_extent`, adds major and minor gridlines using
-#   `~cartopy.mpl.geoaxes.GeoAxes.gridlines`, and adds geographic features using
-#   `~cartopy.mpl.geoaxes.GeoAxes.add_feature`. If you prefer, you can use the
-#   standard `cartopy.mpl.geoaxes.GeoAxes` methods just like you would in cartopy.
-#   If you need to use the underlying `~cartopy.crs.Projection` instance, it is
-#   available via the `~proplot.axes.GeoAxes.projection` attribute.
+# * Cartopy is the default backend. When you request projection names with cartopy
+#   as the backend (or pass a `cartopy.crs.Projection` to the `proj` keyword), the
+#   returned axes is a subclass of `cartopy.mpl.geoaxes.GeoAxes`. Under the hood,
+#   invoking `~proplot.axes.GeoAxes.format` with cartopy as the backend changes map
+#   bounds using `~cartopy.mpl.geoaxes.GeoAxes.set_extent`, adds major and minor
+#   gridlines using `~cartopy.mpl.geoaxes.GeoAxes.gridlines`, and adds geographic
+#   features using `~cartopy.mpl.geoaxes.GeoAxes.add_feature`. If you prefer, you can
+#   use the standard `cartopy.mpl.geoaxes.GeoAxes` methods just like you would in
+#   cartopy. If you need to use the underlying `~cartopy.crs.Projection` instance, it
+#   is available via the `~proplot.axes.GeoAxes.projection` attribute.
 #
 # * Basemap is an alternative backend. To use basemap, set :rcraw:`basemap` to
-#   ``True`` or pass ``basemap=True`` to the axes-creation command. When you request
-#   projections with basemap as the backend, the resulting axes class redirects
-#   the plotting methods plot, scatter, contour, contourf, pcolor, pcolormesh,
-#   quiver, streamplot, and barb to the identically named methods on the
-#   `~mpl_toolkits.basemap.Basemap` instance. This means you can work
+#   ``True`` or pass ``basemap=True`` to the axes-creation command. When you
+#   request a projection name with basemap as the backend (or pass a
+#   `~mpl_toolkits.basemap.Basemap` to the `proj` keyword), the returned axes
+#   redirects the plotting methods plot, scatter, contour, contourf, pcolor,
+#   pcolormesh, quiver, streamplot, and barb to the identically named methods on
+#   the `~mpl_toolkits.basemap.Basemap` instance. This means you can work
 #   with the standard axes plotting methods rather than the basemap methods --
 #   just like cartopy. Under the hood, invoking `~proplot.axes.GeoAxes.format`
 #   with basemap as the backend adds major and minor gridlines using
@@ -111,10 +112,10 @@ axs.format(
 #   available via the `~proplot.axes.GeoAxes.projection` attribute.
 #
 # Together, these features let you work with geophysical data without invoking
-# verbose cartopy classes like `~cartopy.crs.LambertAzimuthalEqualArea`
-# or keeping track of separate `~mpl_toolkits.basemap.Basemap` instances. They
-# considerably reduce the amount of code needed to make geographic plots.
-# In the below examples, we create a variety of geographic plots using both
+# verbose cartopy classes like `~cartopy.crs.LambertAzimuthalEqualArea` or
+# keeping track of separate `~mpl_toolkits.basemap.Basemap` instances. This
+# considerably reduces the amount of code needed to make complex geographic
+# plots. In the below examples, we create a variety of plots using both
 # cartopy and basemap as backends.
 #
 # .. note::
@@ -124,8 +125,8 @@ axs.format(
 #      <https://scitools.org.uk/cartopy/docs/latest/gallery/lines_and_polygons/always_circular_stereo.html>`__
 #      from the cartopy website). This is consistent with basemap's default behavior.
 #      To disable this feature, set :rcraw:`cartopy.circular` to ``False``.
-#      Please note that cartopy cannot add gridline labels to polar plots with
-#      circular boundaries.
+#      Please note that cartopy cannot add gridline labels to polar plots
+#      with circular boundaries.
 #    * By default, ProPlot uses `~cartopy.mpl.geoaxes.GeoAxes.set_global` to give
 #      non-polar cartopy projections global extent and bounds polar cartopy projections
 #      at the equator. This is a deviation from cartopy, which determines map boundaries
@@ -434,17 +435,15 @@ for proj, ax in zip(projs, axs):
 # To create `polar axes <polar_>`_, pass ``proj='polar'`` to an axes-creation
 # command (see :ref:`above <ug_proj>`). This returns `proplot.axes.PolarAxes`
 # instance(s) with their own `~proplot.axes.PolarAxes.format` command.
-#
-# The `proplot.axes.PolarAxes.format` command facilitates polar-specific axes
-# modifications like changing the central radius `r0`, the zero azimuth location
-# `theta0`, and the positive azimuthal direction `thetadir`. It also supports
-# changing gridline locations with `rlocator` and `thetalocator` (analogous to
+# `proplot.axes.PolarAxes.format` facilitates polar-specific axes modifications
+# like changing the central radius `r0`, the zero azimuth location `theta0`,
+# and the positive azimuthal direction `thetadir`. It also supports changing
+# gridline locations with `rlocator` and `thetalocator` (analogous to
 # `ylocator` and `xlocator` used by `proplot.axes.CartesianAxes.format`) and
-# turning your polar plot into an "annular" or "sector" plot by changing the radial
-# limits `rlim` or the azimuthal limits `thetalim`. Finally, since
-# `proplot.axes.PolarAxes.format` calls `proplot.axes.Axes.format`, it can be
-# used to add axes titles, a-b-c labels, and figure titles, just like
-# `~proplot.axes.CartesianAxes`.
+# creating "annular" or "sector" plots by changing the radial or azimuthal
+# limits `rlim` and `thetalim`. Finally, since `proplot.axes.PolarAxes.format`
+# calls `proplot.axes.Axes.format`, it can be used to add axes titles, a-b-c
+# labels, and figure titles, just like `~proplot.axes.CartesianAxes`.
 #
 # For details, see `proplot.axes.PolarAxes.format`.
 
