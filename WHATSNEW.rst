@@ -35,6 +35,8 @@ Bug fixes
 
 * Fix regression where ``np.std`` and ``np.percentile`` no longer
   ignore NaN values (:issue:`#257`, :commit:`d1906fce`).
+* Fix regression where ``legend()`` cannot be called without
+  the input labels (:issue:`#188`, :commit:`fdd53a6c`).
 
 Documentation
 -------------
