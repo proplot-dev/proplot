@@ -25,7 +25,7 @@ publication-quality graphics. This project is `published on GitHub
    :caption: User Guide
 
    basics
-   subplots
+   layout
    cartesian
    projections
    colorbars_legends
