@@ -142,15 +142,15 @@ order : {{'C', 'F'}}, optional
     ``(y, x)``. If ``'F'`` (Fortran-style column-major order) `z` coordinates
     should be shaped ``(x, y)``. Default is ``'C'``.
 globe : bool, optional
-    *For `proplot.axes.GeoAxes` only*. Whether to ensure global coverage.
+    For `proplot.axes.GeoAxes` only. Whether to enforce global coverage.
     Default is ``False``. When set to ``True`` this does the following:
 
     #. Interpolates input data to the North and South poles by setting the data
        values at the poles to the mean from latitudes nearest each pole.
     #. Makes meridional coverage "circular", i.e. the last longitude coordinate
        equals the first longitude coordinate plus 360\N{DEGREE SIGN}.
-    #. *For `~proplot.axes.BasemapAxes` only*. Cycles 1D longitude vectors to fit
-       within the map edges. For example, if the central longitude is 90\N{DEGREE SIGN},
+    #. When basemap is the backend, cycles 1D longitude vectors to fit within
+       the map edges. For example, if the central longitude is 90\N{DEGREE SIGN},
        the data is shifted so that it spans -90\N{DEGREE SIGN} to 270\N{DEGREE SIGN}.
 """
 _snippet_manager['plot.args_1d_shared'] = _args_1d_shared_docstring

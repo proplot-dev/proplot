@@ -63,38 +63,40 @@ Figure and axes classes
 =======================
 
 Creating figures with ProPlot is very similar to
-matplotlib. You can either create the figure
-and all of its subplots at once:
+matplotlib. You can either create the figure and
+all of its subplots at once:
 
 .. code-block:: python
 
    fig, axs = pplt.subplots(...)
 
-or create the figure first and add subplots subsequently:
+or create an empty figure
+then fill it with subplots:
 
 .. code-block:: python
 
    fig = pplt.figure(...)
    axs = fig.add_subplots(...)  # add several subplots
-   # axs = fig.subplots(...)  # equivalent
    ax = fig.add_subplot(...)  # add a single subplot
-   # ax = fig.subplot(...)  # equivalent
+   # axs = fig.subplots(...)  # shorthand
+   # ax = fig.subplot(...)  # shorthand
 
 These commands are modeled after `matplotlib.pyplot.subplots` and
 `matplotlib.pyplot.figure` and are :ref:`packed with new features <ug_layout>`.
 One highlight is the `~proplot.figure.Figure.auto_layout` algorithm that
 :ref:`automatically adjusts the space between subplots <ug_tight>` (similar to
-matplotlib's `~matplotlib.figure.Figure.tight_layout`) and
-:ref:`automatically adjusts the figure size <ug_autosize>` to preserve subplot
-sizes and aspect ratios (which is particularly useful for grids of map projections
-and images or grids with panels and colorbars). All sizing arguments also take
-arbitrary units, including metric units like ``cm`` and ``mm``.
+matplotlib's `tight layout
+<https://matplotlib.org/stable/tutorials/intermediate/tight_layout_guide.html>`__)
+and :ref:`automatically adjusts the figure size <ug_autosize>` to preserve subplot
+sizes and aspect ratios (particularly useful for grids of map projections
+and images). All sizing arguments take :ref:`arbitrary units <ug_units>`,
+including metric units like ``cm`` and ``mm``.
 
 Instead of the native `matplotlib.figure.Figure` and `matplotlib.axes.Axes` classes,
-ProPlot uses the `proplot.figure.Figure` and `proplot.axes.Axes` subclasses.
-ProPlot figures are saved with `~proplot.figure.Figure.save` (or, equivalently,
-`~matplotlib.figure.Figure.savefig`) and ProPlot axes belong to one of the
-following three child classes:
+ProPlot uses the `proplot.figure.Figure`, `proplot.axes.Axes`, and
+`proplot.axes.PlotAxes` subclasses. ProPlot figures are saved with
+`~proplot.figure.Figure.save` or `~matplotlib.figure.Figure.savefig`,
+and ProPlot axes belong to one of the following three child classes:
 
 * `proplot.axes.CartesianAxes`:
   For ordinary plots with *x* and *y* coordinates.
@@ -103,9 +105,9 @@ following three child classes:
 * `proplot.axes.PolarAxes`:
   For polar plots with *azimuth* and *radius* coordinates.
 
-Most of ProPlot's features are implemented using the figure and axes
-subclasses. They include several new figure and axes methods and
-added functionality to existing figure and axes methods.
+Most of ProPlot's features are implemented using these subclasses.
+They include several new figure and axes methods and added
+functionality to existing figure and axes methods.
 
 * The `proplot.axes.Axes.format` and `proplot.figure.Figure.format` commands fine-tunes
   various axes and figure settings.  Think of this as a dedicated

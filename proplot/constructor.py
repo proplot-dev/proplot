@@ -1373,8 +1373,6 @@ def Proj(name, basemap=None, **kwargs):
     cartopy.crs.Projection
     proplot.ui.subplots
     proplot.axes.GeoAxes
-    proplot.axes.CartopyAxes
-    proplot.axes.BasemapAxes
 
     References
     ----------

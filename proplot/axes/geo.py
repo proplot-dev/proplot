@@ -516,10 +516,10 @@ class GeoAxes(plot.PlotAxes):
             For example, to change :rcraw:`land.color`, use
             ``ax.format(landcolor='green')``, and to change :rcraw:`land.zorder`,
             use ``ax.format(landzorder=4)``.
-        reso : {'lo', 'med', 'hi', 'x-hi', 'xx-hi'}
+        reso : {'lo', 'med', 'hi', 'x-hi', 'xx-hi'}, optional
             *For cartopy axes only.*
-            Resolution of geographic features. For basemap axes, this must be
-            passed to `~proplot.constructor.Proj`.
+            The resolution of geographic features. For basemap axes, this must
+            be passed to `~proplot.constructor.Proj`.
 
         Other parameters
         ----------------
