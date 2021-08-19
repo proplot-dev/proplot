@@ -2785,7 +2785,7 @@ class PlotAxes(base.Axes):
         colors = _not_none(c=c, color=color, colors=colors)  # in case untranslated
         autodiverging = rc['cmap.autodiverging']
         name = getattr(cmap, 'name', cmap)
-        if name is not None and name.lower() not in pcolors.CMAPS_DIVERGING:
+        if isinstance(name, str) and name not in pcolors.CMAPS_DIVERGING:
             autodiverging = False  # avoid auto-truncation of sequential colormaps
 
         # Build qualitative colormap using 'colors'
