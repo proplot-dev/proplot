@@ -2019,8 +2019,8 @@ class PlotAxes(base.Axes):
                 edges.extend(convert((min_, max_)))
 
     def _auto_format_1d(
-        self, x, *ys, zerox=False, autox=True, autoy=True,
-        autoreverse=True, autolabels=True, autovalues=False, autoformat=None,
+        self, x, *ys, zerox=False, autox=True, autoy=True, autoformat=None,
+        autoreverse=True, autolabels=True, autovalues=False, autotitle=None,
         label=None, labels=None, value=None, values=None, **kwargs
     ):
         """
@@ -2076,9 +2076,9 @@ class PlotAxes(base.Axes):
                 kwargs['labels'] = _to_numpy_array(labels)
 
         # Apply title for legend or colorbar that uses the labels or values
-        if autoformat:
+        if autotitle and autoformat:
             title = _get_title(labels)
-            if title is not None:  # safely update legend_kw and colorbar_kw
+            if title:  # safely update legend_kw and colorbar_kw
                 _guide_kw_to_arg('legend', kwargs, title=title)
                 _guide_kw_to_arg('colorbar', kwargs, label=title)
 
@@ -2152,7 +2152,7 @@ class PlotAxes(base.Axes):
 
         return (x, *ys, kwargs)
 
-    def _auto_format_2d(self, x, y, *zs, autoformat=None, **kwargs):
+    def _auto_format_2d(self, x, y, *zs, autotitle=True, autoformat=None, **kwargs):
         """
         Try to retrieve default coordinates from array-like objects and apply default
         formatting. Also apply optional transpose and update the keyword arguments.
@@ -2193,9 +2193,9 @@ class PlotAxes(base.Axes):
                 self.format(**kw_format)
 
         # Apply title for legend or colorbar
-        if autoformat:
+        if autotitle and autoformat:
             title = _get_title(zs[0])
-            if title is not None:  # safely update legend_kw and colorbar_kw
+            if title:  # safely update legend_kw and colorbar_kw
                 _guide_kw_to_arg('legend', kwargs, title=title)
                 _guide_kw_to_arg('colorbar', kwargs, label=title)
 
@@ -3950,7 +3950,7 @@ class PlotAxes(base.Axes):
             kw['showmeans'] = kw['meanline'] = True
 
         # Call function
-        x, y, kw = self._standardize_1d(x, y, autoy=False, vert=vert, **kw)
+        x, y, kw = self._standardize_1d(x, y, autoy=False, autotitle=False, vert=vert, **kw)  # noqa: E501
         kw.setdefault('positions', x)
         obj = self._plot_safe('boxplot', y, vert=vert, **kw)
 
@@ -4045,7 +4045,7 @@ class PlotAxes(base.Axes):
             warnings._warn_proplot('Ignoring showextrema=True.')
 
         # Parse and control error bars
-        x, y, kw = self._standardize_1d(x, y, autoy=False, vert=vert, **kw)
+        x, y, kw = self._standardize_1d(x, y, autoy=False, autotitle=False, vert=vert, **kw)  # noqa: E501
         y, kw = _distribution_reduce(y, **kw)
         *eb, kw = self._error_bars(x, y, vert=vert, default_boxes=True, **kw)  # noqa: E501
         kw = self._parse_cycle(**kw)
@@ -4416,7 +4416,7 @@ class PlotAxes(base.Axes):
         """
         %(plot.barbs)s
         """
-        x, y, u, v, kw = self._standardize_2d(x, y, u, v, allow1d=True, **kwargs)
+        x, y, u, v, kw = self._standardize_2d(x, y, u, v, allow1d=True, autotitle=False, **kwargs)  # noqa: E501
         _process_props(kw, 'line')  # applied to barbs
         c, kw = self._parse_color(x, y, c, default_discrete=False, **kw)
         if mcolors.is_color_like(c):
@@ -4434,7 +4434,7 @@ class PlotAxes(base.Axes):
         """
         %(plot.quiver)s
         """
-        x, y, u, v, kw = self._standardize_2d(x, y, u, v, allow1d=True, **kwargs)
+        x, y, u, v, kw = self._standardize_2d(x, y, u, v, allow1d=True, autotitle=False, **kwargs)  # noqa: E501
         _process_props(kw, 'line')  # applied to arrow outline
         c, kw = self._parse_color(x, y, c, default_discrete=False, **kw)
         color = None
