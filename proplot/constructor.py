@@ -794,6 +794,7 @@ markeredgecolors, markerfacecolors
         props.setdefault('color', ['black'])
         if kwargs:
             warnings._warn_proplot(f'Ignoring Cycle() keyword arg(s) {kwargs}.')
+        dicts = ()
 
     # Merge cycler objects and/or update cycler objects with input kwargs
     elif all(isinstance(arg, cycler.Cycler) for arg in args):
@@ -801,11 +802,7 @@ markeredgecolors, markerfacecolors
             warnings._warn_proplot(f'Ignoring Cycle() keyword arg(s) {kwargs}.')
         if len(args) == 1 and not props:
             return args[0]
-        dicts = tuple(arg.by_key() for arg in args) + (props,)
-        props = {}
-        for dict_ in dicts:
-            for key, value in dict_.items():
-                props.setdefault(key, []).extend(value)
+        dicts = tuple(arg.by_key() for arg in args)
 
     # Get a cycler from a colormap
     # NOTE: Passing discrete=True does not imply default_luminance=90 because
@@ -819,7 +816,15 @@ markeredgecolors, markerfacecolors
         kwargs['default_luminance'] = pcolors.CYCLE_LUMINANCE
         cmap = Colormap(*args, name=name, samples=samples, **kwargs)
         name = _not_none(name, cmap.name)
-        props['color'] = [c if isinstance(c, str) else to_hex(c) for c in cmap.colors]
+        dict_ = {'color': [c if isinstance(c, str) else to_hex(c) for c in cmap.colors]}
+        dicts = (dict_,)
+
+    # Update the cyler property
+    dicts = dicts + (props,)
+    props = {}
+    for dict_ in dicts:
+        for key, value in dict_.items():
+            props.setdefault(key, []).extend(value)
 
     # Build cycler with matching property lengths
     maxlen = np.lcm.reduce([len(value) for value in props.values()])
