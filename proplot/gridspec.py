@@ -81,10 +81,10 @@ panelpad : float or str, optional
     panels. Default is :rc:`subplots.panelpad`.
     %(units.em)s
 """
-docstring.snippets['gridspec.shared'] = _shared_docstring
-docstring.snippets['gridspec.scalar'] = _scalar_docstring
-docstring.snippets['gridspec.vector'] = _tight_docstring
-docstring.snippets['gridspec.tight'] = _tight_docstring
+docstring.snippets['gridspec.shared'] = docstring.add_snippets(_shared_docstring)
+docstring.snippets['gridspec.scalar'] = docstring.add_snippets(_scalar_docstring)
+docstring.snippets['gridspec.vector'] = docstring.add_snippets(_tight_docstring)
+docstring.snippets['gridspec.tight'] = docstring.add_snippets(_tight_docstring)
 
 
 def _disable_method(attr):
@@ -1111,9 +1111,7 @@ class GridSpec(mgridspec.GridSpec):
     # NOTE: Do not document these since intended usage is internal and panel slot
     # obfuscation makes this confusing. For example gs.update(wspace=gs.wspace) in
     # presence of panels would yield error. For now the only supported introspection
-    # is the __repr__. Probably no big deal... introspection not critical here. May
-    # add support for introspection once 'EdgeStacks' are implemented and the
-    # panel obfuscation is no longer required.
+    # is the __repr__. Probably no big deal... introspection not critical here.
     nrows = property(lambda self: self._nrows)  # in case missing
     ncols = property(lambda self: self._ncols)  # ...
     left = property(functools.partial(_get_current_space, key='left'))
