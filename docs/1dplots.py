@@ -7,9 +7,9 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.4.2
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: Python [conda env:proplot-dev]
 #     language: python
-#     name: python3
+#     name: conda-env-proplot-dev-py
 # ---
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -96,8 +96,8 @@ with pplt.rc.context({'axes.prop_cycle': pplt.Cycle('Grays', N=N, left=0.3)}):
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_1dintegration:
 #
-# Pandas, xarray, and pint integration
-# ------------------------------------
+# Pandas and xarray integration
+# -----------------------------
 #
 # The `~proplot.axes.PlotAxes` plotting commands are seamlessly integrated
 # with `pandas`_ and `xarray`_. If you omit dependent variable coordinates,

@@ -7,12 +7,12 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.4.2
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: Python [conda env:proplot-dev]
 #     language: python
-#     name: python3
+#     name: conda-env-proplot-dev-py
 # ---
 
-# %% [raw] raw_mimetype="text/restructuredtext"
+# %% [raw]
 # .. _pandas: https://pandas.pydata.org
 #
 # .. _xarray: http://xarray.pydata.org/en/stable/
@@ -30,8 +30,7 @@
 # `~proplot.axes.PlotAxes.contour`, `~proplot.axes.PlotAxes.pcolor`,
 # and `~proplot.axes.PlotAxes.quiver`.
 
-
-# %% [raw] raw_mimetype="text/restructuredtext"
+# %% [raw]
 # .. _ug_2dstd:
 #
 # Standardized arguments
@@ -92,8 +91,7 @@ with pplt.rc.context({'cmap': 'Grays', 'cmap.levels': 21}):
     axs[2].contourf(x, y, data)
     axs[3].contourf(xedges, yedges, data)
 
-
-# %% [raw] raw_mimetype="text/restructuredtext"
+# %% [raw]
 # .. _ug_2dintegration:
 #
 # Pandas, xarray, and pint integration
@@ -176,8 +174,7 @@ ax = fig.subplot(122)
 ax.contourf(df, cmap='YlOrRd', colorbar='r', lw=0.7, ec='k')
 ax.format(xtickminor=False, yreverse=True)
 
-
-# %% [raw] raw_mimetype="text/restructuredtext"
+# %% [raw]
 # .. _ug_apply_cmap:
 #
 # Colormaps and normalizers
@@ -239,7 +236,7 @@ ax = fig.subplot(gs[0, 2:])
 ax.pcolormesh(data, norm='log', colorbar='b')
 ax.format(title='Logarithmic normalizer')
 ax = fig.subplot(gs[1, 1:3])
-ax.pcolormesh(np.log(data) - 4, locator=1, colorbar='b')
+ax.pcolormesh(np.log(data) - 4, colorbar='b')
 ax.format(title='Auto diverging normalizer')
 
 # Format figure
@@ -247,8 +244,7 @@ fig.format(xlabel='xlabel', ylabel='ylabel', grid=True)
 fig.format(suptitle='On-the-fly colormap normalizers')
 pplt.rc.reset()
 
-
-# %% [raw] raw_mimetype="text/restructuredtext"
+# %% [raw]
 # .. _ug_discrete:
 #
 # Distinct colormap levels
@@ -344,8 +340,7 @@ for i, extend in enumerate(('min', 'max', 'neither', 'both')):
     )
     ax.format(title=f'extend={extend!r}')
 
-
-# %% [raw] raw_mimetype="text/restructuredtext"
+# %% [raw]
 # .. _ug_norm:
 #
 # Special colormap normalizers
@@ -430,8 +425,7 @@ for data, mode, fair, locator in zip(
         ax.format(title=f'{mode.title()}-skewed + {fair} scaling')
         i += 1
 
-
-# %% [raw] raw_mimetype="text/restructuredtext"
+# %% [raw]
 # .. _ug_labels:
 #
 # Contour and gridbox labels
@@ -490,8 +484,7 @@ ax.contour(
 )
 ax.format(title='Line contours with labels')
 
-
-# %% [raw] raw_mimetype="text/restructuredtext"
+# %% [raw]
 # .. _ug_heatmap:
 #
 # Heatmap plots
@@ -503,8 +496,8 @@ ax.format(title='Line contours with labels')
 # suitable for heatmaps: fixed aspect ratios (ensuring "square" grid boxes), no
 # gridlines, no minor ticks, and major ticks at the center of each box. Among other
 # things, this is useful for displaying covariance and correlation matrices, as shown
-# below. `~proplot.axes.PlotAxes.heatmap` should generally only be used
-# with `~proplot.axes.CartesianAxes`.
+# below. `~proplot.axes.PlotAxes.heatmap` should generally only be used with
+# `~proplot.axes.CartesianAxes`.
 
 # %%
 import proplot as pplt

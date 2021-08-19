@@ -1979,18 +1979,21 @@ class SubplotGrid(MutableSequence, list):
 def _add_grid_command(name, command=None, seealso=None, returns_grid=False):
     # Build the docstring
     seealso = seealso or command or ()
-    command = command or f'`{name}`'  # double backticks
+    if isinstance(seealso, str):
+        seealso = (seealso,)  # clean list of commands
+    if command:
+        command = f'`~{command}`'  # sphinx link to command
+    else:
+        command = f'``{name}``'  # literal text
     string = f"""
-    Call `{command}` for every axes in the grid.
+    Call {command} for every axes in the grid.
 
     Parameters
     ----------
     *args, **kwargs
-        Passed to `{command}`.
+        Passed to {command}.
     """
     string = inspect.cleandoc(string)
-    if isinstance(seealso, str):
-        seealso = (seealso,)
     string += '\n\nSee also\n--------\n' + '\n'.join(seealso)
     if returns_grid:
         string += '\n\nReturns\n-------\n'
@@ -2021,7 +2024,8 @@ def _add_grid_command(name, command=None, seealso=None, returns_grid=False):
 # Dynamically add commands
 # TODO: Plot on axes in the grid along an extra input dimension?
 _add_grid_command(
-    'format', seealso=(f'proplot.axes.{s}Axes.format' for s in ('', 'Cartesian', 'Geo', 'Polar'))  # noqa: E501
+    'format',
+    seealso=(f'proplot.axes.{s}Axes.format' for s in ('', 'Cartesian', 'Geo', 'Polar'))
 )  # noqa: E501
 for _name in (
     'panel',
@@ -2038,8 +2042,12 @@ for _name in (
     'legend',
     'colorbar',
 ):
+    if _name in ('altx', 'alty', 'twinx', 'twiny', 'dualx', 'dualy'):
+        _command = f'proplot.axes.CartesianAxes.{_name}'
+    else:
+        _command = f'proplot.axes.Axes.{_name}'
     _returns_grid = _name not in ('text', 'legend', 'colorbar')
-    _add_grid_command(_name, f'~proplot.axes.Axes.{_name}', returns_grid=_returns_grid)
+    _add_grid_command(_name, _command, returns_grid=_returns_grid)
 
 
 # Deprecated

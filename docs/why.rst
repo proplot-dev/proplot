@@ -513,8 +513,8 @@ See the :ref:`user guide <ug_proj>` for details.
 
 .. _why_xarray_pandas:
 
-Pandas, xarray, and pint integration
-====================================
+Pandas and xarray integration
+=============================
 
 .. rubric:: Limitation
 

@@ -29,7 +29,7 @@
 # `matplotlib.figure.Figure`, an `proplot.axes.Axes` subclass of
 # `matplotlib.axes.Axes`, and determining subplot locations using a
 # `proplot.gridspec.GridSpec` subclass of `matplotlib.gridspec.GridSpec`
-# (for more on gridspecs, see this :ref:`matplotlib tutorial
+# (for more on gridspecs, see this `matplotlib tutorial
 # <https://matplotlib.org/stable/tutorials/intermediate/gridspec.html>`__).
 #
 # Much like pyplot, figures are created with either the `~proplot.ui.figure` or

@@ -109,13 +109,12 @@
 #      at the equator. This is a deviation from cartopy, which determines map boundaries
 #      automatically based on the coordinates of the plotted content. To revert to
 #      cartopy's default behavior, set :rcraw:`cartopy.autoextent` to ``True``.
-#    * To make things more consistent between cartopy and basemap, the
-#      `~proplot.constructor.Proj` constructor function lets you supply native
-#      `PROJ <https://proj.org>`__ keyword names for the cartopy
-#      `~cartopy.crs.Projection` classes (e.g., `lon_0` instead of `central_longitude`)
-#      and instantiates `~mpl_toolkits.basemap.Basemap` projections with sensible
-#      default PROJ parameters rather than raising an error when they are
-#      omitted (e.g., ``lon_0=0`` as the default for most projections).
+#    * To make things more consistent, the `~proplot.constructor.Proj` constructor
+#      function lets you supply native `PROJ <https://proj.org>`__ keyword names
+#      for the cartopy `~cartopy.crs.Projection` classes (e.g., `lon_0` instead
+#      of `central_longitude`) and instantiates `~mpl_toolkits.basemap.Basemap`
+#      projections with sensible default PROJ parameters rather than raising an error
+#      when they are omitted (e.g., ``lon_0=0`` as the default for most projections).
 #
 # .. warning::
 #

@@ -6,13 +6,12 @@ API reference
 
 Comprehensive documentation of ProPlot functions and classes. All of these
 objects are imported into the top-level namespace, so you can read the
-documentation within python sessions using ``help(pplt.<function_or_class>)``.
-
-Please note that the documentation associated with "wrapper" functions from
-before version 0.8 is now located on the individual plotting commands under
-`proplot.axes.PlotAxes`. Also note that when calling ``help(axes.command)``
-on plotting commands during a python session, both the ProPlot documentation
-and original matplotlib documentation are shown.
+documentation within python sessions using ``help(pplt.function_or_class)``.
+Please note that the "wrapper" function documentation from proplot < 0.8
+is now located on the individual plotting commands under
+`proplot.axes.PlotAxes`. When calling ``help(axes.command)`` on
+plotting commands during a python session, both the ProPlot
+documentation and the original matplotlib documentation are shown.
 
 Top-level functions
 ===================
@@ -33,21 +32,21 @@ Figure class
    :skip: SubplotsContainer
 
 
-Axes classes
-============
-
-.. automodule:: proplot.axes
-
-.. automodsumm:: proplot.axes
-   :toctree: api
-
-
 Gridspec class
 ==============
 
 .. automodule:: proplot.gridspec
 
 .. automodsumm:: proplot.gridspec
+   :toctree: api
+
+
+Axes classes
+============
+
+.. automodule:: proplot.axes
+
+.. automodsumm:: proplot.axes
    :toctree: api
 
 
@@ -59,16 +58,6 @@ Configuration tools
 .. automodsumm:: proplot.config
    :toctree: api
    :skip: inline_backend_fmt, RcConfigurator
-
-
-Miscellaneous tools
-===================
-
-.. automodule:: proplot.utils
-
-.. automodsumm:: proplot.utils
-   :toctree: api
-   :skip: shade, saturate
 
 
 Constructor functions
@@ -116,6 +105,16 @@ Projection classes
 
 .. automodsumm:: proplot.crs
    :toctree: api
+
+
+Miscellaneous tools
+===================
+
+.. automodule:: proplot.utils
+
+.. automodsumm:: proplot.utils
+   :toctree: api
+   :skip: shade, saturate
 
 
 Demo functions

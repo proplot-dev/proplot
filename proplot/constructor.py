@@ -717,7 +717,7 @@ def Cycle(*args, N=None, samples=None, name=None, **kwargs):
         * If a `~proplot.colors.DiscreteColormap`, colors from the ``colors``
           attribute are used.
         * If a string cycle name, that `~proplot.colors.DiscreteColormap`
-          is looked up and its ``colors`` attribute is used.
+          is looked up and its ``colors`` are used.
         * In all other cases, the argument is passed to `Colormap`, and
           colors from the resulting `~proplot.colors.ContinuousColormap`
           are used. See the `samples` argument.
@@ -730,15 +730,18 @@ def Cycle(*args, N=None, samples=None, name=None, **kwargs):
         For `~proplot.colors.DiscreteColormap`\\ s, this is the number of
         colors to select. For example, ``Cycle('538', 4)`` returns the first 4
         colors of the ``'538'`` color cycle.
-
         For `~proplot.colors.ContinuousColormap`\\ s, this is either a
-        list of sample coordinates used to draw colors from the map, or an
-        integer number of colors to draw. If the latter, the sample coordinates
+        list of sample coordinates used to draw colors from the colormap, or
+        an integer number of colors to draw. If the latter, the sample coordinates
         are ``np.linspace(0, 1, samples)``. For example, ``Cycle('Reds', 5)``
         divides the ``'Reds'`` colormap into five evenly spaced colors.
 
     Other parameters
     ----------------
+    c, color, colors : list of color-spec, optional
+        A list of colors passed as keyword arguments. This is equivalent
+        to passing a list of colors as the first positional argument and is
+        included for consistency with `~matplotlib.axes.Axes.set_prop_cycle`.
     lw, ls, d, a, m, ms, mew, mec, mfc
         Shorthands for the below keywords.
     linewidth, linestyle, dashes, alpha, marker, markersize, markeredgewidth, \
