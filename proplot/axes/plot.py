@@ -1812,12 +1812,12 @@ def _distribution_range(
         # NOTE: Invalid values were handled by _distribution_reduce
         label_default = fr'{abs(stds[1])}$\sigma$ range'
         stds = _to_numpy_array(stds)[:, None]
-        err = y + stds * np.std(distribution, axis=0)
+        err = y + stds * np.nanstd(distribution, axis=0)
     elif pctiles is not None:
         # Percentiles
         # NOTE: Invalid values were handled by _distribution_reduce
         label_default = f'{pctiles[1] - pctiles[0]}% range'
-        err = np.percentile(distribution, pctiles, axis=0)
+        err = np.nanpercentile(distribution, pctiles, axis=0)
     else:
         raise ValueError('You must provide error bounds.')
 
