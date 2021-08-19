@@ -2339,7 +2339,12 @@ class Axes(maxes.Axes):
         # Handle lists of lists
         axs = axs or ()
         handles, labels = _to_list(handles), _to_list(labels)
-        list_of_lists = any(isinstance(h, (list, np.ndarray)) and len(h) > 1 for h in handles)  # noqa: E501
+        if handles is None:
+            list_of_lists = False
+        else:
+            list_of_lists = any(
+                isinstance(h, (list, np.ndarray)) and len(h) > 1 for h in handles
+            )
         if list_of_lists and ncol is not None:
             warnings._warn_proplot(
                 'Detected list of *lists* of legend handles. '
