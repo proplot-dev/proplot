@@ -18,7 +18,7 @@
 # Color cycles
 # ============
 #
-# ProPlot defines **discrete colormaps** or **color cycles** as color palettes
+# ProPlot defines **color cycles** or **discrete colormaps** as color palettes
 # comprising sets of *distinct colors*. Unlike :ref:`continuous colormaps <ug_cmaps>`,
 # interpolation between these colors may not make sense. Generally, color cycles are
 # used with line plots, bar plots, and other distinct plot elements. Occasionally,

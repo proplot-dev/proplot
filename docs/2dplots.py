@@ -12,7 +12,7 @@
 #     name: python3
 # ---
 
-# %% [raw]
+# %% [raw] raw_mimetype="text/restructuredtext"
 # .. _pandas: https://pandas.pydata.org
 #
 # .. _xarray: http://xarray.pydata.org/en/stable/
@@ -30,7 +30,7 @@
 # `~proplot.axes.PlotAxes.contour`, `~proplot.axes.PlotAxes.pcolor`,
 # and `~proplot.axes.PlotAxes.quiver`.
 
-# %% [raw]
+# %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_2dstd:
 #
 # Standardized arguments
@@ -91,7 +91,7 @@ with pplt.rc.context({'cmap': 'Grays', 'cmap.levels': 21}):
     axs[2].contourf(x, y, data)
     axs[3].contourf(xedges, yedges, data)
 
-# %% [raw]
+# %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_2dintegration:
 #
 # Pandas and xarray integration
@@ -174,7 +174,7 @@ ax = fig.subplot(122)
 ax.contourf(df, cmap='YlOrRd', colorbar='r', lw=0.7, ec='k')
 ax.format(xtickminor=False, yreverse=True)
 
-# %% [raw]
+# %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_apply_cmap:
 #
 # Colormaps and normalizers
@@ -244,7 +244,7 @@ fig.format(xlabel='xlabel', ylabel='ylabel', grid=True)
 fig.format(suptitle='On-the-fly colormap normalizers')
 pplt.rc.reset()
 
-# %% [raw]
+# %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_discrete:
 #
 # Distinct colormap levels
@@ -340,7 +340,7 @@ for i, extend in enumerate(('min', 'max', 'neither', 'both')):
     )
     ax.format(title=f'extend={extend!r}')
 
-# %% [raw]
+# %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_norm:
 #
 # Special colormap normalizers
@@ -425,7 +425,7 @@ for data, mode, fair, locator in zip(
         ax.format(title=f'{mode.title()}-skewed + {fair} scaling')
         i += 1
 
-# %% [raw]
+# %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_labels:
 #
 # Contour and gridbox labels
@@ -484,7 +484,7 @@ ax.contour(
 )
 ax.format(title='Line contours with labels')
 
-# %% [raw]
+# %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_heatmap:
 #
 # Heatmap plots
