@@ -39,4 +39,4 @@ dependencies:
     - jupytext
     - jinja2==2.11.3
     - nbsphinx==0.8.1
-    - git+https://github.com/lukelbd/sphinx-automodapi@v0.9.proplot-mods
+    - git+https://github.com/lukelbd/sphinx-automodapi@v0.10.proplot-mods
