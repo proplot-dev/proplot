@@ -36,6 +36,13 @@ Bug fixes
 * Fix regression where ``np.std`` and ``np.percentile`` no longer
   ignore NaN values (:issue:`#257`, :commit:`d1906fce`).
 
+Documentation
+-------------
+
+* Make docstring utils explicitly private and convert `_snippets` dictionary to
+  callable dictionary-like `_SnippetsManager` instance (:commit:`b73fe9e3`). This
+  helps prevent bug where assigned snippets have unfilled ``%(snippet)s`` markers.
+
 ProPlot v0.8.0 (2021-08-16)
 ===========================
 
@@ -80,9 +87,11 @@ Deprecated
 * Rename ``image`` category settings to :rcraw:`cmap.inbounds`,
   :rcraw:`cmap.discrete`, :rcraw:`cmap.edgefix`, :rcraw:`cmap.levels`, and
   :rcraw:`cmap.lut` (:commit:`a50d5264`).
-* Rename long and confusing :rcraw:`text.labelsize` and :rcraw:`text.titlesize`
-  settings to clearer :rcraw:`font.smallsize` and :rcraw:`font.largesize` (analogous
-  to :rcraw:`font.size`) (:pr:`a50d5264`).
+* Rename confusing :rcraw:`text.labelsize` and :rcraw:`text.titlesize` settings
+  to clearer :rcraw:`font.smallsize` and :rcraw:`font.largesize` with shorthands
+  :raw:`font.small` and :raw:`font.large` (analogous to :rcraw:`font.size`)
+  (:pr:`a50d5264`). Previous names were bad because "label size" applies to more than
+  just axis or tick labels and "title size" applies to more than just axes titles.
 * Rename :rcraw:`tick.ratio` to :rcraw:`tick.widthratio` and add missing
   :rcraw:`tick.width` setting (:commit:`a50d5264`).
 * Rename vague shorthands :rcraw:`alpha` and :rcraw:`facecolor` back to native
