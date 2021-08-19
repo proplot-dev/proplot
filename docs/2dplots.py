@@ -208,11 +208,8 @@ ax.format(xtickminor=False, yreverse=True)
 # type are :rc:`cmap.sequential`, :rc:`cmap.diverging`, :rc:`cmap.cyclic`, and
 # :rc:`cmap.qualitative`. Unless otherwise specified, the sequential colormap
 # is used with the default (linear) normalizer when data is strictly positive
-# or negative, and the diverging colormap is used together with
-# `~proplot.colors.DivergingNorm` when the data limits or colormap levels cross
-# zero (see the section on :ref:`special colormap normalizers <ug_norm>`). The
-# automatic detection of diverging datasets can be disabled by setting
-# :rcraw:`cmap.autodiverging` to ``False``.
+# or negative, and the diverging colormap is used when the data limits or
+# colormap levels cross zero (see :ref:`below <ug_autonorm>`).
 
 # %%
 import proplot as pplt
@@ -226,23 +223,35 @@ data = 11 ** (0.25 * np.cumsum(state.rand(N, N), axis=0))
 # Create figure
 pplt.rc['cmap.diverging'] = 'IceFire'
 pplt.rc['cmap.sequential'] = 'magma'
-gs = pplt.GridSpec(ncols=4, nrows=2)
+gs = pplt.GridSpec(ncols=2, nrows=2)
 fig = pplt.figure(refwidth=2.3, span=False)
 
 # Different normalizers
-ax = fig.subplot(gs[0, :2])
+ax = fig.subplot(gs[0, 0])
 ax.pcolormesh(data, colorbar='b')
-ax.format(title='Linear normalizer')
-ax = fig.subplot(gs[0, 2:])
+ax.format(title='Default normalizer')
+ax = fig.subplot(gs[0, 1])
 ax.pcolormesh(data, norm='log', colorbar='b')
 ax.format(title='Logarithmic normalizer')
-ax = fig.subplot(gs[1, 1:3])
-ax.pcolormesh(np.log(data) - 4, colorbar='b')
-ax.format(title='Auto diverging normalizer')
+
+# Different colormaps
+ax = fig.subplot(gs[1, 0])
+ax.pcolormesh(
+    np.log(data) - 4, colorbar='b',
+    diverging=True,  # use the default
+)
+ax.format(title='Default colormap')
+ax = fig.subplot(gs[1, 1])
+ax.pcolormesh(
+    np.log(data) - 4, colorbar='b',
+    cmap=('cobalt', 'white', 'violet red'),
+    cmap_kw={'space': 'hsl', 'cut': 0.15}
+)
+ax.format(title='On-the-fly colormap')
 
 # Format figure
 fig.format(xlabel='xlabel', ylabel='ylabel', grid=True)
-fig.format(suptitle='On-the-fly colormap normalizers')
+fig.format(suptitle='On-the-fly colormaps and normalizers')
 pplt.rc.reset()
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -294,7 +303,7 @@ import numpy as np
 
 # Sample data
 state = np.random.RandomState(51423)
-data = (state.normal(0, 1, size=(33, 33))).cumsum(axis=0).cumsum(axis=1)
+data = 10 + (state.normal(0, 1, size=(33, 33))).cumsum(axis=0).cumsum(axis=1)
 
 # Figure
 fig, axs = pplt.subplots([[1, 1, 2, 2], [0, 3, 3, 0]], ref=3, refwidth=2.3)
@@ -307,7 +316,8 @@ axs[1].pcolor(data, discrete=False, cmap='spectral_r', norm='div', colorbar='r')
 axs[1].set_title('Pcolor plot\nDiscreteNorm disabled')
 
 # Imshow
-m = axs[2].imshow(data, cmap='vik', norm='div', colorbar='b')
+data = 100 - data
+m = axs[2].imshow(data, cmap='sunset', colorbar='b')
 axs[2].format(title='Imshow plot\nDiscreteNorm disabled (default)', yformatter='auto')
 
 # %%
@@ -340,6 +350,68 @@ for i, extend in enumerate(('min', 'max', 'neither', 'both')):
         extend=extend, colorbar='b', colorbar_kw={'locator': 180}
     )
     ax.format(title=f'extend={extend!r}')
+
+# %% [raw] raw_mimetype="text/restructuredtext" tags=[]
+# .. _ug_autonorm:
+#
+# Auto colormap normalization
+# ---------------------------
+#
+# By default, colormaps are normalized to span from roughly the minimum
+# data value to the maximum data value. However in the presence of outliers,
+# this is not desirable. ProPlot adds the `robust` option to change this
+# behavior, inspired by the `xarray option
+# <http://xarray.pydata.org/en/stable/user-guide/plotting.html#robust>`__
+# of the same name. Passing ``robust=True`` to a `~proplot.axes.PlotAxes`
+# 2d plotting command will limit the default colormap normalization between
+# the 2nd and 98th data percentiles. This range can be customized by passing
+# an integer to `robust` (e.g. ``robust=90`` limits the normalization range
+# between the 5th and 95th percentiles) or by passing a 2-tuple to `robust`
+# (e.g. ``robust=(0, 90)`` will limit the normalization range between the
+# data minimum and the 90th percentile).
+#
+# A related xarray feature is the `automatic detection
+# <http://xarray.pydata.org/en/stable/user-guide/plotting.html#colormaps>`__
+# of "diverging" datasets. ProPlot automatically applies the default
+# diverging colormap :rc:`cmap.diverging` (rather than the default sequential
+# colormap :rc:`cmap.sequential`) along with the default continuous normalizer
+# `~proplot.colors.DivergingNorm` (see :ref:`below <ug_norm>`) if the
+# following conditions are met:
+#
+# #. The colormap was not passed, or the colormap was passed but its name
+#    matches the name of a :ref:`known diverging colormap <ug_cmaps_included>`.
+# #. If ``discerete=True`` (see :ref:`above <ug_discrete>`) and the discrete
+#    colormap levels include at least 2 positive values and 2 negative values.
+# #. If ``discrete=False`` (see :ref:`above <ug_discrete>`) and the normalization
+#    limits `vmin` and `vmax` have opposite signs.
+#
+# The automatic detection of diverging datasets can be disabled by
+# setting :rcraw:`cmap.autodiverging` to ``False``.
+
+# %%
+import proplot as pplt
+import numpy as np
+N = 20
+state = np.random.RandomState(51423)
+data = N * 2 + (state.rand(N, N) - 0.45).cumsum(axis=0).cumsum(axis=1) * 10
+fig, axs = pplt.subplots(nrows=2, ncols=2, refwidth=2)
+fig.format(suptitle='Auto normalization demo')
+
+# Auto diverging
+pplt.rc['cmap.sequential'] = 'lapaz_r'
+pplt.rc['cmap.diverging'] = 'vik'
+for i, ax in enumerate(axs[:2]):
+    ax.pcolor(data - i * N * 5, colorbar='b')
+    ax.format(title='Diverging ' + ('on' if i else 'off'))
+
+# Auto range
+pplt.rc['cmap.sequential'] = 'lajolla'
+data = data[::-1, :]
+data[-1, 0] = 1e3
+for i, ax in enumerate(axs[2:]):
+    ax.pcolor(data, robust=bool(i), colorbar='b')
+    ax.format(title='Robust ' + ('on' if i else 'off'))
+pplt.rc.reset()
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_norm:
