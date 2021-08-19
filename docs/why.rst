@@ -242,7 +242,7 @@ automatically determine the `left`, `right`, `bottom`, `top`, `wspace`, and
   calls to imply the same geometry and include only subplot specs
   generated from the same `~proplot.gridspec.GridSpec`.
 
-See the :ref:`user guide <ug_subplots>` for details.
+See the :ref:`user guide <ug_layout>` for details.
 
 ..
    #. The `~proplot.gridspec.GridSpec` spacing parameters are specified in

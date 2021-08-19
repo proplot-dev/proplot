@@ -81,7 +81,7 @@ or create the figure first and add subplots subsequently:
    # ax = fig.subplot(...)  # equivalent
 
 These commands are modeled after `matplotlib.pyplot.subplots` and
-`matplotlib.pyplot.figure` and are :ref:`packed with new features <ug_subplots>`.
+`matplotlib.pyplot.figure` and are :ref:`packed with new features <ug_layout>`.
 One highlight is the `~proplot.figure.Figure.auto_layout` algorithm that
 :ref:`automatically adjusts the space between subplots <ug_tight>` (similar to
 matplotlib's `~matplotlib.figure.Figure.tight_layout`) and
