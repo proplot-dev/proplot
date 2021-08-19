@@ -1876,7 +1876,7 @@ def _preprocess_data(*keys, keywords=None, allow_extra=True):
 
 class PlotAxes(base.Axes):
     """
-    The second lowest-level axes subclass used by proplot.
+    The second lowest-level `~matplotlib.axes.Axes` subclass used by proplot.
     Implements all plotting overrides.
     """
     def __init__(self, *args, **kwargs):

@@ -12,7 +12,7 @@ except ImportError:
 
 class ThreeAxes(shared._SharedAxes, plot.PlotAxes, Axes3D):
     """
-    Simple mix-in of `proplot.axes.PlotAxes` with `~mpl_toolkits.mplot3d.Axes3D`.
+    Simple mix-in of `proplot.axes.PlotAxes` with `~mpl_toolkits.mplot3d.axes3d.Axes3D`.
     """
     #: The registered projection name.
     name = 'proplot_three'
