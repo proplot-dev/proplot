@@ -1837,7 +1837,8 @@ class Axes(maxes.Axes):
         # In _auto_discrete_norm we sometimes select evenly spaced levels in log-space
         # *between* powers of 10, so logminor ticks would be misaligned with levels.
         if ticks is None:
-            # This should only happen if user calls plotting method on native mpl axes
+            # This should only happen if discrete=False since _parse_levels supplies
+            # default ticks to the colorbar. Treat this as smooth gradations.
             if isinstance(mappable.norm, mcolors.LogNorm):
                 locator = 'log'
             elif isinstance(mappable.norm, mcolors.SymLogNorm):
@@ -1846,7 +1847,8 @@ class Axes(maxes.Axes):
             else:
                 locator = 'auto'
         elif np.iterable(ticks) and not isinstance(ticks, str) and len(ticks) > 1:
-            # Subsample the input list of ticks
+            # These are usually ticks passed by _parse_levels but may also be user
+            # input lists. Users can use pplt.Locator(ticks) to avoid subsampling.
             width, height = self._get_size_inches()
             if kwargs.get('orientation', None) == 'vertical':
                 length, scale, axis = height, 1.0, 'y'
