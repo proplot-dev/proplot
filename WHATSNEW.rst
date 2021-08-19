@@ -12,14 +12,14 @@
 What's new?
 ===========
 
-This page lists the changes to ProPlot associated with each version. Please note
-that when functions and keywords are renamed, they are not removed -- requesting
+This page lists the API changes with each version. Please note that
+when functions and keywords are renamed, they are not removed -- requesting
 the old name will issue a warning rather than an error. Authors are shown next to
 each change. Where not indicated, `Luke Davis`_ was the author.
 
-See the :ref:`author page <authors>` for a list of contributors, and see the
-:ref:`contribution guide <contributions>` if you are interested in submitting
-your own changes.
+See the :ref:`author page <authors>` for a list of contributors, and see
+the :ref:`contribution guide <contributions>` if you are interested in
+submitting your own changes.
 
 ProPlot v1.0.0 (2022-##-##)
 ===========================
@@ -30,7 +30,8 @@ and stability is improved.
 ProPlot v0.8.0 (2021-08-16)
 ===========================
 
-.. rubric:: Deprecated
+Deprecated
+----------
 
 * Numbers passed to `pad`, `wpad`, `hpad`, `space`, `wspace`, `hspace`, `left`, `right`,
   `top`, and `bottom` are now interpreted as em-widths instead of inches
@@ -127,7 +128,8 @@ ProPlot v0.8.0 (2021-08-16)
   `lw` and `linewidth` to avoid conflict with feature that permits modifying
   legend handle properties (:commit:`6382cf91`).
 
-.. rubric:: Features
+Features
+--------
 
 * Dynamically add classes that are "registered" by contructor functions
   to the top-level namespace (:commit:`4382a1b1`). This is consistent with behavior
@@ -335,7 +337,8 @@ ProPlot v0.8.0 (2021-08-16)
   label text objects -- consistent with `xlabel_kw` and `ylabel_kw` used
   for `proplot.axes.CartesianAxes.format` (:commit:`6382cf91`).
 
-.. rubric:: Bug fixes
+Bug fixes
+---------
 
 * Fix issue with unpacking iterables inside return statements in python < 3.8
   (:pr:`268`) by `Eli Knaap`_.
@@ -386,7 +389,8 @@ ProPlot v0.8.0 (2021-08-16)
   (e.g., now we trigger application of :rcraw:`tick.widthratio` when either
   :rcraw:`tick.width` or :rcraw:`meta.width` are changed) (:commit:`5626bc88`).
 
-.. rubric:: Internals
+Internals
+---------
 
 * Convert all plotting wrappers to dedicated overrides of individual functions
   in `~proplot.axes.PlotAxes` class (:commit:`6382cf91`). This massively simplifies
@@ -408,7 +412,8 @@ ProPlot v0.8.0 (2021-08-16)
 * Efficiently impose `~proplot.axes.GeoAxes` defaults ``latlon=True`` and
   ``transform=PlateCarree()`` in 90% fewer lines by looping over funcs.
 
-.. rubric:: Documentation
+Documentation
+-------------
 
 * Move all plotting wrapper documentation to dedicated methods and remove
   references to wrappers in User Guide and Getting Started.
@@ -422,7 +427,8 @@ ProPlot v0.8.0 (2021-08-16)
 ProPlot v0.7.0 (2021-07-11)
 ===========================
 
-.. rubric:: Deprecated
+Deprecated
+----------
 
 * Remove v0.6.0 renamed classes (e.g. `ProjAxes`) from top-level namespace
   (:commit:`442e6aa6`). These were kept available just for documentation. The renamed
@@ -479,7 +485,8 @@ ProPlot v0.7.0 (2021-07-11)
   it makes more sense if these functions only return `~matplotlib.legend.Legend` and
   `~matplotlib.colorbar.Colorbar` instances.
 
-.. rubric:: Features
+Features
+--------
 
 * Add the remaining commonly-used backend-related `pyplot` functions `ion`, `ioff`,
   `isinteractive`, and `switch_backend` to the top-level `proplot` namespace
@@ -608,7 +615,8 @@ ProPlot v0.7.0 (2021-07-11)
 * Set default transform to ``ccrs.PlateCarree`` when calling `matplotlib.axes.Axes.fill`
   on `CartopyAxes` (:issue:`193`). This is more consistent with rest of package.
 
-.. rubric:: Bug fixes
+Bug fixes
+---------
 
 * Fix 3 fatal issues preventing proplot import and basic usage in matplotlib >= 3.4
   (:pr:`251`).
@@ -691,7 +699,8 @@ ProPlot v0.7.0 (2021-07-11)
   Otherwise `ax.format()` calls inside context blocks can be overwritten with the
   default rc values in subsequent `ax.format()` calls (:commit:`8005fcc1`).
 
-.. rubric:: Internals
+Internals
+---------
 
 * Refactor massive `standardize_(1d|2d)` and `(cmap|cycle)_changer` wrappers to break
   things into manageable chunks (:pr:`258`, :commit:`6af22567`, :commit:`d3352720`).
@@ -702,7 +711,8 @@ ProPlot v0.7.0 (2021-07-11)
 * Add system for processing flexible keyword arguments across different commands
   to ``internals/__init__.py``. Analogous to mpl ``_alias`` processing.
 
-.. rubric:: Documentation
+Documentation
+-------------
 
 * Finally use ``pplt`` as the recommended abbreviation: ``import proplot as pplt``.
 * Major clean up of "Why ProPlot?" page and user guide pages.
@@ -719,7 +729,8 @@ ProPlot v0.7.0 (2021-07-11)
 ProPlot v0.6.4 (2020-06-13)
 ===========================
 
-.. rubric:: Features
+Features
+--------
 
 * Change ``autoformat`` from a `Figure` keyword argument into the
   :rcraw:`autoformat` rc setting (:commit:`3a7e5a7c`).
@@ -727,7 +738,8 @@ ProPlot v0.6.4 (2020-06-13)
   shading using tuple of `fill_between`, `plot` handles, and have `shadelabel` and
   `fadelabel` instead create separate entries *only when passed* (:issue:`187`).
 
-.. rubric:: Bug fixes
+Bug fixes
+---------
 
 * Fix major issue where calling ``legend()`` without any handles
   triggers error rather than using default handles (:issue:`188`).
@@ -747,20 +759,23 @@ ProPlot v0.6.4 (2020-06-13)
 ProPlot v0.6.3 (2020-06-02)
 ===========================
 
-.. rubric:: Bug fixes
+Bug fixes
+---------
 
 * Fix issue where proplot import fails if cartopy is not installed (:commit:`e29d49e8`).
 
 ProPlot v0.6.2 (2020-06-02)
 ===========================
 
-.. rubric:: Deprecated
+Deprecated
+----------
 
 * Remove `~proplot.figure.Figure` setters like `set_sharex`, replace with
   read-only properties (:commit:`7b455008`). These did not work and did not
   add critical functionality.
 
-.. rubric:: Features
+Features
+--------
 
 * Add `autoformat` as `~proplot.axes.standardize_1d` and
   `~proplot.axes.standardize_2d` keyword arg, so inheriting labels can
@@ -782,7 +797,8 @@ ProPlot v0.6.2 (2020-06-02)
 * Make custom formatters like ``SciFormatter`` *classes* rather than functions
   returning `~matplotlib.ticker.FuncFormatter` (:commit:`7591f474`).
 
-.. rubric:: Bug fixes
+Bug fixes
+---------
 
 * Various improvements to auto-figure sizing with Qt backend and when calling
   `print_figure` (:commit:`db4e48d5`, :commit:`82457347`, :commit:`744d7d37`).
@@ -801,7 +817,8 @@ ProPlot v0.6.2 (2020-06-02)
 * Fix bug where `~matplotlib.figure.Figure.savefig` receives ``Path`` instead
   of string (:issue:`176`).
 
-.. rubric:: Documentation
+Documentation
+-------------
 
 * Various improvements to website and API docstrings.
 * Document `proplot.figure.Figure.save` method (:commit:`da25266a`).
@@ -811,7 +828,8 @@ ProPlot v0.6.2 (2020-06-02)
 ProPlot v0.6.1 (2020-05-20)
 ===========================
 
-.. rubric:: Bug fixes
+Bug fixes
+---------
 
 * Fix issue where cartopy version checking fails if cartopy is not installed
   (:commit:`86cd50b8`).
@@ -825,7 +843,8 @@ ProPlot v0.6.1 (2020-05-20)
 ProPlot v0.6.0 (2020-05-20)
 ===========================
 
-.. rubric:: Deprecated
+Deprecated
+----------
 
 * Remove the ``geoaxes`` and ``geogrid`` rc settings (:pr:`168`). Gridline
   settings are now controlled with ``grid``.
@@ -884,7 +903,8 @@ ProPlot v0.6.0 (2020-05-20)
   `~proplot.styletools.LinearSegmentedColormap.cut` (:pr:`149`, :commit:`e1a08930`).
   The old method names remain with a deprecation warning.
 
-.. rubric:: Features
+Features
+--------
 
 * Add `~proplot.ticker.SigFigFormatter` (:pr:`149`, :commit:`da6105d2`)
   and `~proplot.ticker.SciFormatter` (:pr:`175`, :commit:`c43f7f91`)
@@ -970,7 +990,8 @@ ProPlot v0.6.0 (2020-05-20)
   `~proplot.styletools.Colormap` rather than `~proplot.styletools.Cycle`
   (:issue:`84`, :commit:`972956b1`).
 
-.. rubric:: Bug fixes
+Bug fixes
+---------
 
 * Fix various issues with axis label sharing and axis sharing for
   twinned axes and panel axes (:pr:`164`).
@@ -1012,7 +1033,8 @@ ProPlot v0.6.0 (2020-05-20)
 * Permit special colormap normalization and level scaling for
   colormap-colored contour plots, just like contourf (:pr:`149`, :commit:`054cceb5`).
 
-.. rubric:: Internals
+Internals
+---------
 
 * **Major** internal change: Move functions into smaller separate
   files to mimic how matplotlib library is divided up (:pr:`149`).
@@ -1027,7 +1049,8 @@ ProPlot v0.6.0 (2020-05-20)
 * Remove "smart bounds" feature from `FuncScale` (:pr:`166`, :commit:`9ac149ea`).
 * Clean up axes iterators (:pr:`149`, :commit:`c8a0768a`).
 
-.. rubric:: Documentation
+Documentation
+-------------
 
 * Call figure objects `fig` instead of `f`.
 * Major clean up of notebook examples (:commit:`f86542b5`).
@@ -1039,7 +1062,8 @@ ProPlot v0.6.0 (2020-05-20)
 ProPlot v0.5.0 (2020-02-10)
 ===========================
 
-.. rubric:: Deprecated
+Deprecated
+----------
 
 * Remove `abcformat` from `~proplot.axes.Axes.format` (:commit:`2f295e18`).
 * Rename `top` to `abovetop` in `~proplot.axes.Axes.format` (:commit:`500dd381`).
@@ -1047,7 +1071,8 @@ ProPlot v0.5.0 (2020-02-10)
 * Rename `~proplot.wrappers.text_wrapper` `linewidth` and `invert` to
   `borderwidth` and `borderinvert` (:commit:`54eb4bee`).
 
-.. rubric:: Features
+Features
+--------
 
 * Add back `Fabio Crameri's scientific colour maps
   <http://www.fabiocrameri.ch/colourmaps.php>`__ (:pr:`116`).
@@ -1061,7 +1086,8 @@ ProPlot v0.5.0 (2020-02-10)
   `~proplot.styletools.show_cmaps` and `~proplot.styletools.show_cycles`
   tables (:commit:`cb206f19`).
 
-.. rubric:: Bug fixes
+Bug fixes
+---------
 
 * Fix issue where `~proplot.styletools.show_cmaps` and
   `~proplot.styletools.show_cycles` colormap names were messed up
@@ -1084,7 +1110,8 @@ ProPlot v0.5.0 (2020-02-10)
 * Let `~proplot.wrappers.colorbar_wrapper` accept lists of colors
   (:commit:`e5f11591`). This feature was accidentally removed.
 
-.. rubric:: Internals
+Internals
+---------
 
 * Remove various unused keyword arguments (:commit:`33654a42`).
 * Major improvements to the API controlling axes titles and a-b-c labels
@@ -1098,21 +1125,24 @@ ProPlot v0.5.0 (2020-02-10)
 ProPlot v0.4.3 (2020-01-21)
 ===========================
 
-.. rubric:: Deprecated
+Deprecated
+----------
 
 * Remove `~proplot.rctools.ipython_autoreload`,
   `~proplot.rctools.ipython_autosave`, and `~proplot.rctools.ipython_matplotlib`
   (:issue:`112`, :pr:`113`). Move inline backend configuration to a hidden
   method that gets called whenever the ``rc_configurator`` is initalized.
 
-.. rubric:: Features
+Features
+--------
 
 * Permit comments at the head of colormap and color files
   (:commit:`0ffc1d15`).
 * Make `~proplot.axes.Axes.parametric` match ``plot`` autoscaling behavior
   (:commit:`ecdcba82`).
 
-.. rubric:: Internals
+Internals
+---------
 
 * Use `~proplot.axes.Axes.colorbar` instead of `~matplotlib.axes.Axes.imshow`
   for `~proplot.styletools.show_cmaps` and `~proplot.styletools.show_cycles`
@@ -1121,7 +1151,8 @@ ProPlot v0.4.3 (2020-01-21)
 ProPlot v0.4.2 (2020-01-09)
 ===========================
 
-.. rubric:: Features
+Features
+--------
 
 * Add ``family`` keyword arg to `~proplot.styletools.show_fonts` (:pr:`106`).
 * Package the `TeX Gyre <http://www.gust.org.pl/projects/e-foundry/tex-gyre>`__
@@ -1129,33 +1160,38 @@ ProPlot v0.4.2 (2020-01-09)
 * Put the TeX Gyre fonts at the head of the serif, sans-serif, monospace,
   cursive, and fantasy ``rcParams`` font family lists (:issue:`104`, :pr:`106`).
 
-.. rubric:: Bug fixes
+Bug fixes
+---------
 
 * Fix issues with Fira Math weights unrecognized by matplotlib (:pr:`106`).
 
 ProPlot v0.4.1 (2020-01-08)
 ===========================
 
-.. rubric:: Deprecation
+Deprecation
+-----------
 
 * Change the default ``.proplotrc`` format from YAML to the ``.matplotlibrc``
   syntax (:pr:`101`).
 
-.. rubric:: Features
+Features
+--------
 
 * Comments (lines starting with ``#``) are now permitted in all RGB and HEX style
   colormap and cycle files (:pr:`100`).
 * Break down `~proplot.styletools.show_cycles` bars into categories, just
   like `~proplot.styletools.show_cmaps` (:pr:`100`).
 
-.. rubric:: Bug fixes
+Bug fixes
+---------
 
 * Fix issue where `~proplot.styletools.show_cmaps` and `~proplot.styletools.show_cycles`
   draw empty axes (:pr:`100`).
 * Add back the :ref:`default .proplorc file <The .proplotrc file>` to docs (:pr:`101`).
   To do this, ``conf.py`` auto-generates a file in ``_static``.
 
-.. rubric:: Internals
+Internals
+---------
 
 * Add ``geogrid.color/linewidth/etc`` and ``gridminor.color/linewidth/etc``
   props as *children* of ``grid.color/linewidth/etc`` (:pr:`101`).
@@ -1169,7 +1205,8 @@ ProPlot v0.4.1 (2020-01-08)
 ProPlot v0.4.0 (2020-01-07)
 ===========================
 
-.. rubric:: Deprecated
+Deprecated
+----------
 
 * Rename `basemap_defaults` to `~proplot.projs.basemap_kwargs` and
   `cartopy_projs` to `~proplot.projs.cartopy_names` (:commit:`431a06ce`).
@@ -1188,7 +1225,8 @@ ProPlot v0.4.0 (2020-01-07)
 * Rename `~proplot.styletools.Cycle` ``samples`` to ``N``, rename
   `~proplot.styletools.show_colors` ``nbreak`` to ``nhues`` (:pr:`98`).
 
-.. rubric:: Features
+Features
+--------
 
 * Add `~proplot.styletools.LinearSegmentedColormap.from_file` static methods
   (:pr:`98`).  You can now load files by passing a name to
@@ -1218,7 +1256,8 @@ ProPlot v0.4.0 (2020-01-07)
   `~proplot.rctools.rc_configurator.fill`, or
   `~proplot.rctools.rc_configurator.category` (:pr:`91`).
 
-.. rubric:: Bug fixes
+Bug fixes
+---------
 
 * Fix `~proplot.rctools.rc_configurator.context` bug (:issue:`80` and :pr:`91`).
 * Fix issues with `~proplot.axes.Axes.dualx` and `~proplot.axes.Axes.dualy`
@@ -1228,13 +1267,15 @@ ProPlot v0.4.0 (2020-01-07)
 * Do not try to use Helvetica Neue because "thin" font style is read as
   regular (:issue:`94` and :pr:`95`).
 
-.. rubric:: Documentation
+Documentation
+-------------
 
 * Use the imperative mood for docstring summaries (:pr:`92`).
 * Fix `~proplot.styletools.show_cycles` bug (:pr:`90`) and show cycles using
   colorbars rather than lines (:pr:`98`).
 
-.. rubric:: Internals
+Internals
+---------
 
 * Define `~proplot.rctools.rc` default values with inline dictionaries rather
   than with a default ``.proplotrc`` file, change the auto-generated user
@@ -1247,7 +1288,8 @@ ProPlot v0.4.0 (2020-01-07)
 ProPlot v0.3.1 (2019-12-16)
 ===========================
 
-.. rubric:: Bug fixes
+Bug fixes
+---------
 
 * Fix issue where custom fonts were not synced (:commit:`a1b47b4c`).
 * Fix issue with latest versions of matplotlib where ``%matplotlib inline``
@@ -1256,11 +1298,13 @@ ProPlot v0.3.1 (2019-12-16)
 ProPlot v0.3.0 (2019-12-15)
 ===========================
 
-.. rubric:: Deprecated
+Deprecated
+----------
 
 * Remove ``'Moisture'`` colormap (:commit:`cf8952b1`).
 
-.. rubric:: Features
+Features
+--------
 
 * Add `~proplot.styletools.use_font`, only sync Google Fonts fonts
   (:pr:`87`).
@@ -1268,7 +1312,8 @@ ProPlot v0.3.0 (2019-12-15)
 * Permit shifting arbitrary colormaps by ``180`` degrees by appending the
   name with ``'_shifted'``, just like ``'_r'`` (:commit:`e2e2b2c7`).
 
-.. rubric:: Bug fixes
+Bug fixes
+---------
 
 * Add brute force workaround for saving colormaps with *callable* segmentdata
   (:commit:`8201a806`).
@@ -1279,27 +1324,32 @@ ProPlot v0.3.0 (2019-12-15)
 * Save the ``cyclic`` and ``gamma`` attributes in JSON files too
   (:commit:`8201a806`).
 
-.. rubric:: Documentation
+Documentation
+-------------
 
 * Cleanup notebooks, especially the colormaps demo (e.g. :commit:`952d4cb3`).
 
-.. rubric:: Internals
+Internals
+---------
 
 * Change `~time.clock` to `~time.perf_counter` (:pr:`86`).
 
 ProPlot v0.2.7 (2019-12-09)
 ===========================
 
-.. rubric:: Bug fixes
+Bug fixes
+---------
 
 * Fix issue where `~proplot.styletools.AutoFormatter` logarithmic scale
   points are incorrect (:commit:`9b164733`).
 
-.. rubric:: Documentation
+Documentation
+-------------
 
 * Improve :ref:`Configuring proplot` documentation (:commit:`9d50719b`).
 
-.. rubric:: Internals
+Internals
+---------
 
 * Remove `prefix`, `suffix`, and `negpos` keyword args from
   `~proplot.styletools.SimpleFormatter`, remove `precision` keyword arg from
@@ -1312,7 +1362,8 @@ ProPlot v0.2.7 (2019-12-09)
 ProPlot v0.2.6 (2019-12-08)
 ===========================
 
-.. rubric:: Bug fixes
+Bug fixes
+---------
 
 * Fix issue where twin axes are drawn *twice* (:commit:`56145122`).
 
@@ -1320,7 +1371,8 @@ ProPlot v0.2.6 (2019-12-08)
 ProPlot v0.2.5 (2019-12-07)
 ===========================
 
-.. rubric:: Features
+Features
+--------
 
 * Much better `~proplot.axistools.CutoffScale` algorithm, permit arbitrary
   cutoffs (:pr:`83`).
@@ -1328,7 +1380,8 @@ ProPlot v0.2.5 (2019-12-07)
 ProPlot v0.2.4 (2019-12-07)
 ===========================
 
-.. rubric:: Deprecated
+Deprecated
+----------
 
 * Rename `ColorCacheDict` to `~proplot.styletools.ColorDict`
   (:commit:`aee7d1be`).
@@ -1337,18 +1390,21 @@ ProPlot v0.2.4 (2019-12-07)
   `~proplot.styletools.colors`, make top-level variables more robust
   (:commit:`861583f8`).
 
-.. rubric:: Documentation
+Documentation
+-------------
 
 * Params table for `~proplot.styletools.show_fonts` (:commit:`861583f8`).
 
-.. rubric:: Internals
+Internals
+---------
 
 * Improvements to `~proplot.styletools.register_colors`.
 
 ProPlot v0.2.3 (2019-12-05)
 ===========================
 
-.. rubric:: Bug fixes
+Bug fixes
+---------
 
 * Fix issue with overlapping gridlines using monkey patches on gridliner
   instances (:commit:`8960ebdc`).
@@ -1358,11 +1414,13 @@ ProPlot v0.2.3 (2019-12-05)
 * Fix issue where customized super title settings are overridden when new
   axes are created (:commit:`35cb21f2`).
 
-.. rubric:: Documentation
+Documentation
+-------------
 
 * Organize ipython notebook documentation (:commit:`35cb21f2`).
 
-.. rubric:: Internals
+Internals
+---------
 
 * Major cleanup of the `~proplot.wrappers.colorbar_wrapper` source code,
   handle minor ticks using the builtin matplotlib API just like major ticks
@@ -1371,16 +1429,19 @@ ProPlot v0.2.3 (2019-12-05)
 ProPlot v0.2.2 (2019-12-04)
 ===========================
 
-.. rubric:: Deprecated
+Deprecated
+----------
 
 * Rename `~proplot.subplots.axes_grid` to `~proplot.subplots.subplot_grid`
   (:commit:`ac14e9dd`).
 
-.. rubric:: Bug fixes
+Bug fixes
+---------
 
 * Fix shared *x* and *y* axis bugs (:commit:`ac14e9dd`).
 
-.. rubric:: Documentation
+Documentation
+-------------
 
 * Make notebook examples PEP8 compliant (:commit:`97f5ffd4`). Much more
   readable now.
@@ -1388,7 +1449,8 @@ ProPlot v0.2.2 (2019-12-04)
 ProPlot v0.2.1 (2019-12-02)
 ===========================
 
-.. rubric:: Deprecated
+Deprecated
+----------
 
 * Rename `autoreload_setup`, `autosave_setup`, and `matplotlib_setup` to
   `~proplot.rctools.ipython_autoreload`, `~proplot.rctools.ipython_autosave`,
@@ -1398,7 +1460,8 @@ ProPlot v0.2.1 (2019-12-02)
 ProPlot v0.2.0 (2019-12-02)
 ===========================
 
-.. rubric:: Deprecated
+Deprecated
+----------
 
 * Remove the ``nbsetup`` rc setting in favor of separate ``autosave``,
   ``autoreload``, and ``matplotlib`` settings for triggering the respective
@@ -1411,17 +1474,20 @@ ProPlot v0.2.0 (2019-12-02)
   ``SubplotSpec`` (:commit:`3a622887`; until :pr:`110` is merged it is
   impossible to use these manually, so this won't bother anyone).
 
-.. rubric:: Features
+Features
+--------
 
 * Support manual resizing for all backends, including ``osx`` and ``qt``
   (:commit:`3a622887`).
 
-.. rubric:: Bug fixes
+Bug fixes
+---------
 
 * Disable automatic resizing for the ``nbAgg`` interactive inline backend.
   Found no suitable workaround (:commit:`3a622887`).
 
-.. rubric:: Internals
+Internals
+---------
 
 * Organize the ``rc`` documentation and the default ``.proplotrc`` file
   (:commit:`3a622887`).
@@ -1435,7 +1501,8 @@ ProPlot v0.2.0 (2019-12-02)
 ProPlot v0.1.0 (2019-12-01)
 ===========================
 
-.. rubric:: Internals
+Internals
+---------
 
 * Include `flake8` in Travis CI testing (:commit:`8743b857`).
 * Enforce source code PEP8 compliance (:commit:`78da51a7`).
@@ -1444,7 +1511,8 @@ ProPlot v0.1.0 (2019-12-01)
   (:commit:`67221d10`).  ProPlot now works for arbitrary backends, not just
   inline and qt.
 
-.. rubric:: Documentation
+Documentation
+-------------
 
 * Various `RTD bugfixes
   <https://github.com/readthedocs/readthedocs.org/issues/6412>`__ (e.g.
