@@ -11,7 +11,7 @@ from .. import scale as pscale
 from .. import ticker as pticker
 from ..config import _parse_format, rc
 from ..internals import ic  # noqa: F401
-from ..internals import _not_none, docstring, rcsetup, warnings
+from ..internals import _not_none, _snippet_manager, docstring, rcsetup, warnings
 from . import plot, shared
 
 __all__ = ['CartesianAxes']
@@ -51,7 +51,7 @@ Parameters
 {args} : optional
     Prepended with ``'{x}'`` and passed to `Axes.format`.
 """
-docstring.snippets['axes.altx'] = _alt_doc.format(
+_snippet_manager['axes.altx'] = _alt_doc.format(
     x='x',
     x1='bottom',
     x2='top',
@@ -61,7 +61,7 @@ docstring.snippets['axes.altx'] = _alt_doc.format(
     args=', '.join(_alt_kwargs),
     xargs=', '.join('x' + key for key in _alt_kwargs),
 )
-docstring.snippets['axes.alty'] = _alt_doc.format(
+_snippet_manager['axes.alty'] = _alt_doc.format(
     x='y',
     x1='left',
     x2='right',
@@ -88,12 +88,12 @@ funcscale : function, (function, function), or scale-spec
 {args} : optional
     Prepended with ``'{x}'`` and passed to `Axes.format`.
 """
-docstring.snippets['axes.dualx'] = _dual_doc.format(
+_snippet_manager['axes.dualx'] = _dual_doc.format(
     x='x',
     args=', '.join(_alt_kwargs),
     xargs=', '.join('x' + key for key in _alt_kwargs),
 )
-docstring.snippets['axes.dualy'] = _dual_doc.format(
+_snippet_manager['axes.dualy'] = _dual_doc.format(
     x='y',
     args=', '.join(_alt_kwargs),
     xargs=', '.join('y' + key for key in _alt_kwargs),
@@ -120,13 +120,13 @@ Parameters
 {args} : optional
     Prepended with ``'{x}'`` and passed to `Axes.format`.
 """
-docstring.snippets['axes.twinx'] = _twin_doc.format(
+_snippet_manager['axes.twinx'] = _twin_doc.format(
     x='y', x1='left', x2='right',
     y='x', y1='bottom', y2='top',
     args=', '.join(_alt_kwargs),
     xargs=', '.join('y' + key for key in _alt_kwargs),
 )
-docstring.snippets['axes.twiny'] = _twin_doc.format(
+_snippet_manager['axes.twiny'] = _twin_doc.format(
     x='x', x1='bottom', x2='top',
     y='y', y1='left', y2='right',
     args=', '.join(_alt_kwargs),
@@ -651,8 +651,8 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         if labelloc is not None:
             getattr(self, x + 'axis').set_label_position(labelloc)
 
-    @docstring.obfuscate_signature
-    @docstring.add_snippets
+    @docstring._obfuscate_signature
+    @_snippet_manager
     def format(
         self, *,
         aspect=None,
@@ -1006,7 +1006,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             self.set_aspect(aspect)
         super().format(rc_kw=rc_kw, rc_mode=rc_mode, **kwargs)
 
-    @docstring.add_snippets
+    @_snippet_manager
     def altx(self, **kwargs):
         """
         %(axes.altx)s
@@ -1058,7 +1058,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
 
         return ax
 
-    @docstring.add_snippets
+    @_snippet_manager
     def alty(self, **kwargs):
         """
         %(axes.alty)s
@@ -1096,7 +1096,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
 
         return ax
 
-    @docstring.add_snippets
+    @_snippet_manager
     def dualx(self, funcscale, **kwargs):
         """
         %(axes.dualx)s
@@ -1109,7 +1109,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         ax._dualx_scale()
         return ax
 
-    @docstring.add_snippets
+    @_snippet_manager
     def dualy(self, funcscale, **kwargs):
         """
         %(axes.dualy)s
@@ -1120,14 +1120,14 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         ax._dualy_scale()
         return ax
 
-    @docstring.add_snippets
+    @_snippet_manager
     def twinx(self):
         """
         %(axes.twinx)s
         """
         return self.alty()
 
-    @docstring.add_snippets
+    @_snippet_manager
     def twiny(self):
         """
         %(axes.twiny)s

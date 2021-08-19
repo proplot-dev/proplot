@@ -12,7 +12,7 @@ import numpy as np
 
 from .config import rc
 from .internals import ic  # noqa: F401
-from .internals import _empty_context, _not_none, _state_context, docstring
+from .internals import _empty_context, _not_none, _snippet_manager, _state_context
 
 try:
     import cartopy.crs as ccrs
@@ -64,9 +64,9 @@ negpos : str, optional
     Length-2 string indicating the suffix for "negative" and "positive"
     numbers, meant to replace the minus sign.
 """
-docstring.snippets['formatter.precision'] = _precision_docstring
-docstring.snippets['formatter.zerotrim'] = _zerotrim_docstring
-docstring.snippets['formatter.auto'] = _formatter_docstring
+_snippet_manager['formatter.precision'] = _precision_docstring
+_snippet_manager['formatter.zerotrim'] = _zerotrim_docstring
+_snippet_manager['formatter.auto'] = _formatter_docstring
 
 _formatter_call = """
 Convert number to a string.
@@ -78,7 +78,7 @@ x : float
 pos : float, optional
     The position.
 """
-docstring.snippets['formatter.call'] = _formatter_call
+_snippet_manager['formatter.call'] = _formatter_call
 
 
 class _DegreeLocator(mticker.MaxNLocator):
@@ -260,7 +260,7 @@ class AutoFormatter(mticker.ScalarFormatter):
     3. Permits adding arbitrary prefix or suffix to every tick label string.
     4. Permits adding "negative" and "positive" indicator.
     """
-    @docstring.add_snippets
+    @_snippet_manager
     def __init__(
         self,
         zerotrim=None, tickrange=None, wraprange=None,
@@ -296,7 +296,7 @@ class AutoFormatter(mticker.ScalarFormatter):
         self._suffix = suffix or ''
         self._negpos = negpos or ''
 
-    @docstring.add_snippets
+    @_snippet_manager
     def __call__(self, x, pos=None):
         """
         %(formatter.call)s
@@ -465,7 +465,7 @@ class SciFormatter(mticker.Formatter):
     """
     Format numbers with scientific notation.
     """
-    @docstring.add_snippets
+    @_snippet_manager
     def __init__(self, precision=None, zerotrim=None):
         """
         Parameters
@@ -477,7 +477,7 @@ class SciFormatter(mticker.Formatter):
         self._precision = precision
         self._zerotrim = zerotrim
 
-    @docstring.add_snippets
+    @_snippet_manager
     def __call__(self, x, pos=None):  # noqa: U100
         """
         %(formatter.call)s
@@ -513,7 +513,7 @@ class SigFigFormatter(mticker.Formatter):
     """
     Format numbers by retaining the specified number of significant digits.
     """
-    @docstring.add_snippets
+    @_snippet_manager
     def __init__(self, sigfig=3, zerotrim=None):
         """
         Parameters
@@ -525,7 +525,7 @@ class SigFigFormatter(mticker.Formatter):
         self._sigfig = sigfig
         self._zerotrim = _not_none(zerotrim, rc['formatter.zerotrim'])
 
-    @docstring.add_snippets
+    @_snippet_manager
     def __call__(self, x, pos=None):  # noqa: U100
         """
         %(formatter.call)s
@@ -554,7 +554,7 @@ class SimpleFormatter(mticker.Formatter):
     but suitable for arbitrary formatting not necessarily associated with
     an `~matplotlib.axis.Axis` instance.
     """
-    @docstring.add_snippets
+    @_snippet_manager
     def __init__(
         self, precision=None, zerotrim=None,
         tickrange=None, wraprange=None,
@@ -576,7 +576,7 @@ class SimpleFormatter(mticker.Formatter):
         self._wraprange = wraprange
         self._zerotrim = zerotrim
 
-    @docstring.add_snippets
+    @_snippet_manager
     def __call__(self, x, pos=None):  # noqa: U100
         """
         %(formatter.call)s
@@ -626,7 +626,7 @@ class FracFormatter(mticker.Formatter):
         self._number = number
         super().__init__()
 
-    @docstring.add_snippets
+    @_snippet_manager
     def __call__(self, x, pos=None):  # noqa: U100
         """
         %(formatter.call)s

@@ -12,7 +12,7 @@ import numpy as np
 
 from .config import rc
 from .internals import ic  # noqa: F401
-from .internals import _not_none, docstring, warnings
+from .internals import _not_none, _snippet_manager, warnings
 from .utils import _fontsize_to_pt, units
 
 __all__ = ['GridSpec']
@@ -81,10 +81,10 @@ panelpad : float or str, optional
     panels. Default is :rc:`subplots.panelpad`.
     %(units.em)s
 """
-docstring.snippets['gridspec.shared'] = docstring.add_snippets(_shared_docstring)
-docstring.snippets['gridspec.scalar'] = docstring.add_snippets(_scalar_docstring)
-docstring.snippets['gridspec.vector'] = docstring.add_snippets(_vector_docstring)
-docstring.snippets['gridspec.tight'] = docstring.add_snippets(_tight_docstring)
+_snippet_manager['gridspec.shared'] = _shared_docstring
+_snippet_manager['gridspec.scalar'] = _scalar_docstring
+_snippet_manager['gridspec.vector'] = _vector_docstring
+_snippet_manager['gridspec.tight'] = _tight_docstring
 
 
 def _disable_method(attr):
@@ -193,7 +193,7 @@ class GridSpec(mgridspec.GridSpec):
             return None
         super().__getattribute__(attr)  # native error message
 
-    @docstring.add_snippets
+    @_snippet_manager
     def __init__(self, nrows=1, ncols=1, **kwargs):
         """
         Parameters
@@ -1048,7 +1048,7 @@ class GridSpec(mgridspec.GridSpec):
         lefts, rights = (self.left / figwidth + widths).reshape((-1, 2)).T
         return bottoms, tops, lefts, rights
 
-    @docstring.add_snippets
+    @_snippet_manager
     def update(self, **kwargs):
         """
         Update the gridspec with arbitrary initialization keyword arguments

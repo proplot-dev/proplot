@@ -4,9 +4,6 @@ Utilities for handling dependencies and version changes.
 """
 from numbers import Real
 
-# Matplotlib version
-import matplotlib
-
 from . import warnings
 
 
@@ -56,12 +53,14 @@ class _version(list):
         return super().__le__(_version(other))
 
 
+# Matplotlib version
+import matplotlib  # isort:skip
 _version_mpl = _version(matplotlib.__version__)
 
 # Cartopy version
 try:
     import cartopy
 except ImportError:
-    _version_cartopy = _version('0.0')
+    _version_cartopy = _version((0, 0))
 else:
     _version_cartopy = _version(cartopy.__version__)

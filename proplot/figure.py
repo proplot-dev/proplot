@@ -24,6 +24,7 @@ from .internals import (
     _empty_context,
     _not_none,
     _pop_params,
+    _snippet_manager,
     _state_context,
     _version_mpl,
     docstring,
@@ -188,7 +189,7 @@ https://www.nature.com/nature/for-authors/formatting-guide
     .. _pnas: \
 https://www.pnas.org/page/authors/format
 """
-docstring.snippets['figure.figure'] = docstring.add_snippets(_figure_docstring)
+_snippet_manager['figure.figure'] = _figure_docstring
 
 
 # Multiple subplots
@@ -237,7 +238,7 @@ order : {'C', 'F'}, optional
 %(gridspec.vector)s
 %(gridspec.tight)s
 """
-docstring.snippets['figure.subplots_params'] = docstring.add_snippets(_subplots_params_docstring)  # noqa: E501
+_snippet_manager['figure.subplots_params'] = _subplots_params_docstring
 
 
 # Composed subplots docstring
@@ -268,7 +269,7 @@ matplotlib.figure.Figure
 proplot.figure.SubplotGrid
 proplot.axes.Axes
 """
-docstring.snippets['figure.subplots'] = docstring.add_snippets(_subplots_docstring)
+_snippet_manager['figure.subplots'] = _subplots_docstring
 
 
 # Single subplots
@@ -316,7 +317,7 @@ Other parameters
 **kwargs
     Passed to `matplotlib.axes.Axes`.
 """
-docstring.snippets['figure.subplot'] = docstring.add_snippets(_subplot_docstring)
+_snippet_manager['figure.subplot'] = _subplot_docstring
 
 
 # Single axes
@@ -332,7 +333,7 @@ rect : 4-tuple of float
 %(axes.proj_kw)s
 %(axes.basemap)s
 """
-docstring.snippets['figure.axes'] = docstring.add_snippets(_axes_docstring)
+_snippet_manager['figure.axes'] = _axes_docstring
 
 
 # Colorbar or legend panel docstring
@@ -370,8 +371,8 @@ pad : float or str, optional
     Default is :rc:`subplots.innerpad` for the first {name} and
     :rc:`subplots.panelpad` for subsequently stacked {name}.
 """
-docstring.snippets['figure.colorbar_space'] = _space_docstring.format(name='colorbar')
-docstring.snippets['figure.legend_space'] = _space_docstring.format(name='legend')
+_snippet_manager['figure.colorbar_space'] = _space_docstring.format(name='colorbar')
+_snippet_manager['figure.legend_space'] = _space_docstring.format(name='legend')
 
 
 # Save docstring
@@ -391,7 +392,7 @@ Figure.save
 Figure.savefig
 matplotlib.figure.Figure.savefig
 """
-docstring.snippets['figure.save'] = _save_docstring
+_snippet_manager['figure.save'] = _save_docstring
 
 
 def _get_journal_size(preset):
@@ -505,7 +506,7 @@ class Figure(mfigure.Figure):
 
     # NOTE: If _rename_kwargs argument is an invalid identifier, it is
     # simply used in the warning message.
-    @docstring.add_snippets
+    @_snippet_manager
     @warnings._rename_kwargs(
         '0.7', axpad='innerpad', autoformat='pplt.rc.autoformat = {}'
     )
@@ -1095,8 +1096,8 @@ class Figure(mfigure.Figure):
         if title is not None:
             self._suptitle.set_text(title)
 
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def add_axes(self, rect, **kwargs):
         """
         %(figure.axes)s
@@ -1104,8 +1105,8 @@ class Figure(mfigure.Figure):
         kwargs = self._parse_proj(**kwargs)
         return super().add_axes(rect, **kwargs)
 
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def add_subplot(self, *args, number=None, **kwargs):
         """
         %(figure.subplot)s
@@ -1187,14 +1188,14 @@ class Figure(mfigure.Figure):
 
         return ax
 
-    @docstring.add_snippets
+    @_snippet_manager
     def subplot(self, *args, **kwargs):  # shorthand
         """
         %(figure.subplot)s
         """
         return self.add_subplot(*args, **kwargs)
 
-    @docstring.add_snippets
+    @_snippet_manager
     def add_subplots(
         self, array=None, *, ncols=1, nrows=1, order='C',
         proj=None, projection=None, proj_kw=None, projection_kw=None, basemap=None,
@@ -1296,7 +1297,7 @@ class Figure(mfigure.Figure):
 
         return SubplotGrid(axs)
 
-    @docstring.add_snippets
+    @_snippet_manager
     def subplots(self, *args, **kwargs):  # shorthand
         """
         %(figure.subplots)s
@@ -1456,8 +1457,8 @@ class Figure(mfigure.Figure):
         for ax in axs:
             ax.format(rc_kw=rc_kw, rc_mode=rc_mode, skip_figure=True, **kwargs)
 
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def colorbar(
         self, mappable, values=None, *, loc=None, location=None,
         row=None, col=None, rows=None, cols=None, span=None,
@@ -1504,8 +1505,8 @@ class Figure(mfigure.Figure):
             ax = self._add_figure_panel(loc, row=row, col=col, rows=rows, cols=cols, span=span, space=space, pad=pad, width=width)  # noqa: E501
             return ax.colorbar(mappable, values, loc='fill', **kwargs)
 
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def legend(
         self, handles=None, labels=None, *, loc=None, location=None,
         row=None, col=None, rows=None, cols=None, span=None,
@@ -1544,15 +1545,15 @@ class Figure(mfigure.Figure):
             ax = self._add_figure_panel(loc, row=row, col=col, rows=rows, cols=cols, span=span, space=space, pad=pad, width=width)  # noqa: E501
             return ax.legend(handles, labels, loc='fill', **kwargs)
 
-    @docstring.add_snippets
+    @_snippet_manager
     def save(self, filename, **kwargs):
         """
         %(figure.save)s
         """
         return self.savefig(filename, **kwargs)
 
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def savefig(self, filename, **kwargs):
         """
         %(figure.save)s
@@ -1563,7 +1564,7 @@ class Figure(mfigure.Figure):
             filename = os.path.expanduser(filename)
         super().savefig(filename, **kwargs)
 
-    @docstring.concatenate_original
+    @docstring._concatenate_original
     def set_canvas(self, canvas):
         """
         Set the figure canvas. Add monkey patches for the instance-level
@@ -1602,7 +1603,7 @@ class Figure(mfigure.Figure):
         else:
             return np.all(np.isclose(figsize, figsize_active, rtol=0, atol=eps))
 
-    @docstring.concatenate_original
+    @docstring._concatenate_original
     def set_size_inches(self, w, h=None, *, forward=True, internal=False, eps=None):
         """
         Set the figure size. If this is being called manually or from an interactive
@@ -1776,7 +1777,7 @@ class SubplotGrid(MutableSequence, list):
         value = self._validate_item(value, scalar=True)
         list.insert(self, key, value)
 
-    @docstring.obfuscate_signature  # hide deprecated args
+    @docstring._obfuscate_signature  # hide deprecated args
     def __init__(self, iterable=None, n=None, order=None):
         """
         Parameters

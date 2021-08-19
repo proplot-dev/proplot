@@ -13,7 +13,7 @@ from . import colors as pcolors
 from . import constructor, ui
 from .config import _get_data_folders, rc
 from .internals import ic  # noqa: F401
-from .internals import _not_none, docstring, warnings
+from .internals import _not_none, _snippet_manager, warnings
 from .utils import to_rgb, to_xyz
 
 __all__ = [
@@ -168,7 +168,7 @@ CYCLES_TABLE = {
     ),
 }
 
-docstring.snippets['show.colorbars'] = """
+_snippet_manager['show.colorbars'] = """
 length : float or str, optional
     The length of the colorbars. Units are interpreted by
     `~proplot.utils.units`.
@@ -176,13 +176,13 @@ width : float or str, optional
     The width of the colorbars. Units are interpreted by
     `~proplot.utils.units`.
 """
-docstring.snippets['color.categories'] = ', '.join(
+_snippet_manager['color.categories'] = ', '.join(
     f'``{cat!r}``' for cat in COLORS_TABLE
 )
-docstring.snippets['cmap.categories'] = ', '.join(
+_snippet_manager['cmap.categories'] = ', '.join(
     f'``{cat!r}``' for cat in CMAPS_TABLE
 )
-docstring.snippets['cycle.categories'] = ', '.join(
+_snippet_manager['cycle.categories'] = ', '.join(
     f'``{cat!r}``' for cat in CYCLES_TABLE
 )
 
@@ -513,7 +513,7 @@ def _draw_bars(
     return fig, axs
 
 
-@docstring.add_snippets
+@_snippet_manager
 def show_cmaps(*args, **kwargs):
     """
     Generate a table of the registered colormaps or the input colormaps
@@ -572,7 +572,7 @@ def show_cmaps(*args, **kwargs):
     return _draw_bars(cmaps, **kwargs)
 
 
-@docstring.add_snippets
+@_snippet_manager
 def show_cycles(*args, **kwargs):
     """
     Generate a table of registered color cycles or the input color cycles
@@ -647,7 +647,7 @@ def _filter_colors(hcl, ihue, nhues, minsat):
     return not gray and color
 
 
-@docstring.add_snippets
+@_snippet_manager
 def show_colors(
     *, nhues=17, minsat=10, unknown='User', include=None, ignore=None
 ):

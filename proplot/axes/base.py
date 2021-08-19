@@ -35,6 +35,7 @@ from ..internals import (
     _pop_kwargs,
     _pop_params,
     _pop_props,
+    _snippet_manager,
     _version_mpl,
     docstring,
     rcsetup,
@@ -64,7 +65,7 @@ transform : {'data', 'axes', 'figure'} or `~matplotlib.transforms.Transform`, op
     `~matplotlib.axes.Axes.transAxes`, or `~matplotlib.figure.Figure.transFigure`
     transforms. Default is ``'axes'``, i.e. `bounds` is in axes-relative coordinates.
 """
-docstring.snippets['axes.transform'] = _transform_docstring
+_snippet_manager['axes.transform'] = _transform_docstring
 
 
 # Projection docstring
@@ -89,9 +90,9 @@ basemap : bool or dict-like, optional
     Whether to use `~mpl_toolkits.basemap.Basemap` or `~cartopy.crs.Projection`
     for map projections. Default is :rc:`basemap`.
 """
-docstring.snippets['axes.proj'] = _proj_docstring
-docstring.snippets['axes.proj_kw'] = _proj_kw_docstring
-docstring.snippets['axes.basemap'] = _basemap_docstring
+_snippet_manager['axes.proj'] = _proj_docstring
+_snippet_manager['axes.proj_kw'] = _proj_kw_docstring
+_snippet_manager['axes.basemap'] = _basemap_docstring
 
 
 # Inset docstring
@@ -125,7 +126,7 @@ Other parameters
 **kwargs
     Passed to `CartesianAxes`.
 """
-docstring.snippets['axes.inset'] = docstring.add_snippets(_inset_docstring)
+_snippet_manager['axes.inset'] = _inset_docstring
 
 
 # Panel docstring
@@ -168,7 +169,7 @@ Returns
 `~proplot.axes.CartesianAxes`
     The panel axes.
 """
-docstring.snippets['axes.panel'] = docstring.add_snippets(_panel_docstring)
+_snippet_manager['axes.panel'] = _panel_docstring
 
 
 # Colorbar and legend space
@@ -191,11 +192,11 @@ queue : bool, optional
     *inset* {name}, the old {name} is removed. If ``False`` and `loc` is an
     *outer* {name}, the {name}s are stacked.
 """
-docstring.snippets['axes.legend_space'] = docstring.add_snippets(
-    _space_docstring.format(name='legend', default='legend.borderaxespad')
+_snippet_manager['axes.legend_space'] = _space_docstring.format(
+    name='legend', default='legend.borderaxespad'
 )
-docstring.snippets['axes.colorbar_space'] = docstring.add_snippets(
-    _space_docstring.format(name='colorbar', default='colorbar.insetpad')
+_snippet_manager['axes.colorbar_space'] = _space_docstring.format(
+    name='colorbar', default='colorbar.insetpad'
 )
 
 
@@ -302,9 +303,9 @@ rc_kw : dict-like, optional
     Many of the keyword arguments documented above are actually applied by updating
     the `~proplot.config.rc` settings then retrieving the updated settings.
 """
-docstring.snippets['axes.rc'] = _rc_format_docstring
-docstring.snippets['axes.format'] = _axes_format_docstring
-docstring.snippets['figure.format'] = _figure_format_docstring
+_snippet_manager['axes.rc'] = _rc_format_docstring
+_snippet_manager['axes.format'] = _axes_format_docstring
+_snippet_manager['figure.format'] = _figure_format_docstring
 
 
 # Colorbar docstrings
@@ -344,8 +345,8 @@ extend : {None, 'neither', 'both', 'min', 'max'}, optional
     mappable object. If the attribute is unavailable, we use ``'neither'``.
 extendsize : float or str, optional
     The length of the colorbar "extensions" in physical units. Default is
-    :rc:`colorbar.insetextend` for inset colorbars and :rc:`colorbar.extend`
-    for outer colorbars. %(units.em)s
+    :rc:`colorbar.insetextend` for inset colorbars and :rc:`colorbar.extend` for
+    outer colorbars. %(units.em)s
 frame, frameon : bool, optional
     For inset colorbars only. Indicates whether to draw a "frame", just
     like `~matplotlib.axes.Axes.legend`. Default is :rc:`colorbar.frameon`.
@@ -411,8 +412,8 @@ rasterize : bool, optional
 **kwargs
     Passed to `~matplotlib.figure.Figure.colorbar`.
 """
-docstring.snippets['axes.colorbar_args'] = _colorbar_args_docstring
-docstring.snippets['axes.colorbar_kwargs'] = _colorbar_kwargs_docstring
+_snippet_manager['axes.colorbar_args'] = _colorbar_args_docstring
+_snippet_manager['axes.colorbar_kwargs'] = _colorbar_kwargs_docstring
 
 
 # Legend docstrings
@@ -476,8 +477,8 @@ labelspacing, columnspacing : float or str, optional
 **kwargs
     Passed to `~matplotlib.axes.Axes.legend`.
 """
-docstring.snippets['axes.legend_args'] = _legend_args_docstring
-docstring.snippets['axes.legend_kwargs'] = _legend_kwargs_docstring
+_snippet_manager['axes.legend_args'] = _legend_args_docstring
+_snippet_manager['axes.legend_kwargs'] = _legend_kwargs_docstring
 
 
 class Axes(maxes.Axes):
@@ -1234,8 +1235,8 @@ class Axes(maxes.Axes):
         if labels or kw:
             fig._update_super_labels(side, labels, **kw)
 
-    @docstring.obfuscate_signature
-    @docstring.add_snippets
+    @docstring._obfuscate_signature
+    @_snippet_manager
     def format(
         self, *, title=None, title_kw=None, abc_kw=None,
         ltitle=None, lefttitle=None,
@@ -1378,14 +1379,14 @@ class Axes(maxes.Axes):
         self._tight_bbox = bbox
         return bbox
 
-    @docstring.add_snippets
+    @_snippet_manager
     def inset(self, *args, **kwargs):
         """
         %(axes.inset)s
         """
         return self.inset_axes(*args, **kwargs)
 
-    @docstring.add_snippets
+    @_snippet_manager
     def inset_axes(
         self, bounds, transform=None, *, proj=None, projection=None,
         zoom=None, zoom_kw=None, zorder=4, **kwargs
@@ -1486,14 +1487,14 @@ class Axes(maxes.Axes):
         self._inset_zoom_data = (rectpatch, connects)
         return rectpatch, connects
 
-    @docstring.add_snippets
+    @_snippet_manager
     def panel(self, *args, **kwargs):
         """
         %(axes.panel)s
         """
         return self.panel_axes(*args, **kwargs)
 
-    @docstring.add_snippets
+    @_snippet_manager
     def panel_axes(self, *args, **kwargs):
         """
         %(axes.panel)s
@@ -2187,8 +2188,8 @@ class Axes(maxes.Axes):
         self._add_guide('colorbar', obj, loc)  # possibly replace another
         return obj
 
-    @docstring.obfuscate_signature
-    @docstring.add_snippets
+    @docstring._obfuscate_signature
+    @_snippet_manager
     def colorbar(
         self, mappable, values=None, *, loc=None, location=None, queue=False,
         **kwargs
@@ -2701,8 +2702,8 @@ class Axes(maxes.Axes):
         self._add_guide('legend', obj, loc)  # possibly replace another
         return obj
 
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def legend(
         self, handles=None, labels=None, *, loc=None, location=None, queue=False,
         **kwargs
@@ -2838,7 +2839,8 @@ class Axes(maxes.Axes):
 
         return mtext.Text.update(text, props)
 
-    @docstring.concatenate_original
+    @docstring._concatenate_original
+    @_snippet_manager
     def text(
         self, *args,
         border=False, bordercolor='w', borderwidth=2, borderinvert=False,
@@ -2883,15 +2885,17 @@ class Axes(maxes.Axes):
             The alpha for the bounding box. Default is ``'0.5'``.
         bboxpad : float, optional
             The padding for the bounding box. Default is :rc:`title.bboxpad`.
-        family, fontfamily, name, fontname : str, optional
-            The font name (e.g., ``'Fira Math'``) or font family name (e.g.,
+        name, fontname
+            Aliases for `family`, `fontfamily`.
+        family, fontfamily : str, optional
+            The font typeface name (e.g., ``'Fira Math'``) or font family name (e.g.,
             ``'serif'``). Matplotlib falls back to the system default if not found.
         size, fontsize : float or str, optional
             The font size. %(units.pt)s
             This can also be a string indicating some scaling relative to
-            :rcraw:`font.size`. The sizes and scalings are shown below.
-            ``'med-small'`` and ``'med-large'`` are added by ProPlot
-            while the rest are native matplotlib sizes.
+            :rcraw:`font.size`. The sizes and scalings are shown below. The
+            scalings ``'med'``, ``'med-small'``, and ``'med-large'`` are
+            added by ProPlot while the rest are native matplotlib sizes.
 
             .. _font_table:
 

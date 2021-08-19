@@ -9,28 +9,35 @@ import matplotlib.axes as maxes
 import matplotlib.figure as mfigure
 from matplotlib import rcParams as rc_matplotlib
 
-#: A dictionary of docstring snippets.
-snippets = {}
 
-
-def add_snippets(obj):
+class _SnippetManager(dict):
     """
-    A decorator that dedents docstrings with `inspect.getdoc` and adds
-    un-indented snippets from the global `snippets` dictionary. This function
-    uses ``%(name)s`` substitution rather than `str.format` substitution so
-    that the `snippets` keys don't have to be valid variable names.
+    A simple database for snippets.
     """
-    parts = {key: value.strip() for key, value in snippets.items()}
-    if isinstance(obj, str):
-        obj %= parts  # add snippets to a string
-    else:
-        obj.__doc__ = inspect.getdoc(obj)  # also dedents the docstring
-        if obj.__doc__:
-            obj.__doc__ %= parts  # insert snippets after dedent
-    return obj
+    def __call__(self, obj):
+        """
+        Add snippets to the string or object using ``%(name)s`` substitution.
+        This lets snippet keys have invalid variable names.
+        """
+        parts = {key: value.strip() for key, value in self.items()}
+        if isinstance(obj, str):
+            obj %= parts  # add snippets to a string
+        else:
+            obj.__doc__ = inspect.getdoc(obj)  # also dedents the docstring
+            if obj.__doc__:
+                obj.__doc__ %= parts  # insert snippets after dedent
+        return obj
+
+    def __setitem__(self, key, value):
+        """
+        Populate input strings with other snippets. Developers should take
+        care to import modules in the correct order.
+        """
+        value = self(value)
+        super().__setitem__(key, value)
 
 
-def obfuscate_signature(func):
+def _obfuscate_signature(func):
     """
     Obfuscate a misleading or confusing call signature. Instead users
     should inspect the parameter table.
@@ -47,14 +54,13 @@ def obfuscate_signature(func):
     return func
 
 
-def concatenate_original(func, prepend_summary=False):
+def _concatenate_original(func, prepend_summary=False):
     """
     Concatenate docstrings from a matplotlib axes method with a ProPlot axes
     method and obfuscate the call signature.
     """
-    # NOTE: Originally had idea to use numpydoc.docscrape.NumpyDocString to
-    # interpolate docstrings but *enormous* number of assupmtions would go into
-    # this. And simple is better than complex.
+    # NOTE: Do not bother inheriting from cartopy GeoAxes. Cartopy completely
+    # truncates the matplotlib docstrings (which is kind of not great).
     # Get matplotlib axes func
     qual = func.__qualname__
     if 'Axes' in qual:
@@ -96,7 +102,11 @@ Matplotlib documentation
 {doc_orig}
 """
     func.__doc__ = inspect.cleandoc(doc)  # dedents and trims whitespace
-    func = obfuscate_signature(func)
+    func = _obfuscate_signature(func)
 
     # Return
     return func
+
+
+# Initiate snippets database
+_snippet_manager = _SnippetManager()

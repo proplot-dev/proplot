@@ -14,7 +14,13 @@ from .. import constructor
 from .. import crs as pcrs
 from ..config import _parse_format, rc
 from ..internals import ic  # noqa: F401
-from ..internals import _not_none, _version_cartopy, docstring, warnings
+from ..internals import (
+    _not_none,
+    _snippet_manager,
+    _version_cartopy,
+    docstring,
+    warnings,
+)
 from . import plot
 
 try:
@@ -365,8 +371,8 @@ class GeoAxes(plot.PlotAxes):
 
         return array
 
-    @docstring.obfuscate_signature
-    @docstring.add_snippets
+    @docstring._obfuscate_signature
+    @_snippet_manager
     def format(
         self, *,
         lonlim=None, latlim=None, boundinglat=None,

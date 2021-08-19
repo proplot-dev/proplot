@@ -35,6 +35,7 @@ from ..internals import (
     _pop_params,
     _pop_props,
     _process_props,
+    _snippet_manager,
     _state_context,
     docstring,
     warnings,
@@ -112,12 +113,12 @@ _args_2d_docstring = """
       {zvar} coordinates are `pint.Quantity`, pass the magnitude to the plotting
       command. A `pint.Quantity` embedded in an `xarray.DataArray` is also supported.
 """
-docstring.snippets['plot.args_1d_y'] = _args_1d_docstring.format(x='x', y='y')
-docstring.snippets['plot.args_1d_x'] = _args_1d_docstring.format(x='y', y='x')
-docstring.snippets['plot.args_1d_multiy'] = _args_1d_multi_docstring.format(x='x', y='y')  # noqa: E501
-docstring.snippets['plot.args_1d_multix'] = _args_1d_multi_docstring.format(x='y', y='x')  # noqa: E501
-docstring.snippets['plot.args_2d'] = _args_2d_docstring.format(z='z', zvar='`z`')  # noqa: E501
-docstring.snippets['plot.args_2d_flow'] = _args_2d_docstring.format(z='u, v', zvar='`u` and `v`')  # noqa: E501
+_snippet_manager['plot.args_1d_y'] = _args_1d_docstring.format(x='x', y='y')
+_snippet_manager['plot.args_1d_x'] = _args_1d_docstring.format(x='y', y='x')
+_snippet_manager['plot.args_1d_multiy'] = _args_1d_multi_docstring.format(x='x', y='y')
+_snippet_manager['plot.args_1d_multix'] = _args_1d_multi_docstring.format(x='y', y='x')
+_snippet_manager['plot.args_2d'] = _args_2d_docstring.format(z='z', zvar='`z`')
+_snippet_manager['plot.args_2d_flow'] = _args_2d_docstring.format(z='u, v', zvar='`u` and `v`')  # noqa: E501
 
 
 # Shared docstrings
@@ -125,9 +126,9 @@ _args_1d_shared_docstring = """
 data : dict-like, optional
     A dict-like dataset container (e.g., `~pandas.DataFrame` or
     `~xarray.DataArray`). If passed, positional arguments can optionally
-    be valid `data` keys and the arrays used for plotting are retrieved
-    with ``data[key]``. This is a `native matplotlib feature \
-<https://matplotlib.org/stable/gallery/misc/keyword_plotting.html>`__.
+    be string `data` keys and the arrays used for plotting are retrieved
+    with ``data[key]``. This is a `native matplotlib feature
+    <https://matplotlib.org/stable/gallery/misc/keyword_plotting.html>`__.
 autoformat : bool, optional
     Whether the `x` axis labels, `y` axis labels, axis formatters, axes titles,
     legend titles, and colorbar labels are automatically configured when a
@@ -152,8 +153,8 @@ globe : bool, optional
        within the map edges. For example, if the central longitude is 90\N{DEGREE SIGN},
        the data is shifted so that it spans -90\N{DEGREE SIGN} to 270\N{DEGREE SIGN}.
 """
-docstring.snippets['plot.args_1d_shared'] = _args_1d_shared_docstring
-docstring.snippets['plot.args_2d_shared'] = docstring.add_snippets(_args_2d_shared_docstring)  # noqa: E501
+_snippet_manager['plot.args_1d_shared'] = _args_1d_shared_docstring
+_snippet_manager['plot.args_2d_shared'] = _args_2d_shared_docstring
 
 
 # Auto colorbar and legend docstring
@@ -175,7 +176,7 @@ legend_kw : dict-like, optional
     Ignored if `legend` is ``None``. Extra keyword args for the call
     to `~proplot.axes.Axes.legend`.
 """
-docstring.snippets['plot.guide'] = _guide_docstring
+_snippet_manager['plot.guide'] = _guide_docstring
 
 
 # Misc shared 1D plotting docstrings
@@ -263,11 +264,11 @@ shadelabel, fadelabel : bool or str, optional
     a *custom* label, use e.g. ``shadelabel='label'``. Otherwise, the shading is
     drawn underneath the line and/or marker in the legend entry.
 """
-docstring.snippets['plot.inbounds'] = _inbounds_docstring
-docstring.snippets['plot.error_means_y'] = _error_means_docstring.format(y='y')
-docstring.snippets['plot.error_means_x'] = _error_means_docstring.format(y='x')
-docstring.snippets['plot.error_bars'] = _error_bars_docstring
-docstring.snippets['plot.error_shading'] = _error_shading_docstring
+_snippet_manager['plot.inbounds'] = _inbounds_docstring
+_snippet_manager['plot.error_means_y'] = _error_means_docstring.format(y='y')
+_snippet_manager['plot.error_means_x'] = _error_means_docstring.format(y='x')
+_snippet_manager['plot.error_bars'] = _error_bars_docstring
+_snippet_manager['plot.error_shading'] = _error_shading_docstring
 
 
 # Color docstrings
@@ -321,8 +322,8 @@ extend : {{'neither', 'min', 'max', 'both'}}, optional
     Whether to assign unique colors to out-of-bounds data and draw
     colorbar "extensions" when a colorbar is drawn.
 """
-docstring.snippets['plot.cycle'] = _cycle_docstring
-docstring.snippets['plot.cmap_norm'] = _cmap_norm_docstring
+_snippet_manager['plot.cycle'] = _cycle_docstring
+_snippet_manager['plot.cmap_norm'] = _cmap_norm_docstring
 
 
 # Levels docstrings
@@ -382,9 +383,9 @@ nozero : bool, optional
     If ``True``, ``0`` is removed from the level list. This is mainly useful for
     single-color `~matplotlib.axes.Axes.contour` plots.
 """
-docstring.snippets['plot.levels_vlim'] = _vlim_levels_docstring
-docstring.snippets['plot.levels_manual'] = _manual_levels_docstring
-docstring.snippets['plot.levels_auto'] = _auto_levels_docstring
+_snippet_manager['plot.levels_vlim'] = _vlim_levels_docstring
+_snippet_manager['plot.levels_manual'] = _manual_levels_docstring
+_snippet_manager['plot.levels_auto'] = _auto_levels_docstring
 
 
 # Labels docstrings
@@ -414,8 +415,8 @@ precision : int, optional
     are generated with the `~proplot.ticker.SimpleFormatter` formatter,
     which permits limiting the precision.
 """
-docstring.snippets['plot.labels_1d'] = _labels_1d_docstring
-docstring.snippets['plot.labels_2d'] = _labels_2d_docstring
+_snippet_manager['plot.labels_1d'] = _labels_1d_docstring
+_snippet_manager['plot.labels_2d'] = _labels_2d_docstring
 
 
 # Plot docstring
@@ -445,12 +446,8 @@ PlotAxes.plot
 PlotAxes.plotx
 matplotlib.axes.Axes.plot
 """
-docstring.snippets['plot.plot'] = docstring.add_snippets(
-    _plot_docstring.format(y='y')
-)
-docstring.snippets['plot.plotx'] = docstring.add_snippets(
-    _plot_docstring.format(y='x')
-)
+_snippet_manager['plot.plot'] = _plot_docstring.format(y='y')
+_snippet_manager['plot.plotx'] = _plot_docstring.format(y='x')
 
 
 # Step docstring
@@ -478,12 +475,8 @@ PlotAxes.step
 PlotAxes.stepx
 matplotlib.axes.Axes.step
 """
-docstring.snippets['plot.step'] = docstring.add_snippets(
-    _step_docstring.format(y='y')
-)
-docstring.snippets['plot.stepx'] = docstring.add_snippets(
-    _step_docstring.format(y='x')
-)
+_snippet_manager['plot.step'] = _step_docstring.format(y='y')
+_snippet_manager['plot.stepx'] = _step_docstring.format(y='x')
 
 
 # Stem docstring
@@ -503,12 +496,8 @@ Other parameters
 **kwargs
     Passed to `~matplotlib.axes.Axes.stem`.
 """
-docstring.snippets['plot.stem'] = docstring.add_snippets(
-    _stem_docstring.format(y='x')
-)
-docstring.snippets['plot.stemx'] = docstring.add_snippets(
-    _stem_docstring.format(y='x')
-)
+_snippet_manager['plot.stem'] = _stem_docstring.format(y='x')
+_snippet_manager['plot.stemx'] = _stem_docstring.format(y='x')
 
 
 # Lines docstrings
@@ -551,11 +540,11 @@ PlotAxes.hlines
 matplotlib.axes.Axes.vlines
 matplotlib.axes.Axes.hlines
 """
-docstring.snippets['plot.vlines'] = docstring.add_snippets(
-    _lines_docstring.format(y='y', prefix='v', orientation='vertical')
+_snippet_manager['plot.vlines'] = _lines_docstring.format(
+    y='y', prefix='v', orientation='vertical'
 )
-docstring.snippets['plot.hlines'] = docstring.add_snippets(
-    _lines_docstring.format(y='x', prefix='h', orientation='horizontal')
+_snippet_manager['plot.hlines'] = _lines_docstring.format(
+    y='x', prefix='h', orientation='horizontal'
 )
 
 
@@ -601,7 +590,7 @@ PlotAxes.plot
 PlotAxes.plotx
 matplotlib.collections.LineCollection
 """
-docstring.snippets['plot.parametric'] = docstring.add_snippets(_parametric_docstring)
+_snippet_manager['plot.parametric'] = _parametric_docstring
 
 
 # Scatter function docstring
@@ -651,12 +640,8 @@ PlotAxes.scatter
 PlotAxes.scatterx
 matplotlib.axes.Axes.scatter
 """
-docstring.snippets['plot.scatter'] = docstring.add_snippets(
-    _scatter_docstring.format(y='y')
-)
-docstring.snippets['plot.scatterx'] = docstring.add_snippets(
-    _scatter_docstring.format(y='x')
-)
+_snippet_manager['plot.scatter'] = _scatter_docstring.format(y='y')
+_snippet_manager['plot.scatterx'] = _scatter_docstring.format(y='x')
 
 
 # Bar function docstring
@@ -708,11 +693,11 @@ PlotAxes.barh
 matplotlib.axes.Axes.bar
 matplotlib.axes.Axes.barh
 """
-docstring.snippets['plot.bar'] = docstring.add_snippets(
-    _bar_docstring.format(x='x', y='y', bottom='bottom', suffix='')
+_snippet_manager['plot.bar'] = _bar_docstring.format(
+    x='x', y='y', bottom='bottom', suffix=''
 )
-docstring.snippets['plot.barh'] = docstring.add_snippets(
-    _bar_docstring.format(x='y', y='x', bottom='left', suffix='h')
+_snippet_manager['plot.barh'] = _bar_docstring.format(
+    x='y', y='x', bottom='left', suffix='h'
 )
 
 
@@ -760,11 +745,11 @@ PlotAxes.fill_betweenx
 matplotlib.axes.Axes.fill_between
 matplotlib.axes.Axes.fill_betweenx
 """
-docstring.snippets['plot.fill_between'] = docstring.add_snippets(
-    _fill_docstring.format(x='x', y='y', suffix='')
+_snippet_manager['plot.fill_between'] = _fill_docstring.format(
+    x='x', y='y', suffix=''
 )
-docstring.snippets['plot.fill_betweenx'] = docstring.add_snippets(
-    _fill_docstring.format(x='y', y='x', suffix='x')
+_snippet_manager['plot.fill_betweenx'] = _fill_docstring.format(
+    x='y', y='x', suffix='x'
 )
 
 
@@ -774,7 +759,7 @@ weights : array-like, optional
     The weights associated with each point. If string this
     can be retrieved from `data` (see below).
 """
-docstring.snippets['plot.weights'] = _weight_docstring
+_snippet_manager['plot.weights'] = _weight_docstring
 _hist_docstring = """
 Plot {orientation} histograms.
 
@@ -800,11 +785,11 @@ PlotAxes.hist
 PlotAxes.histh
 matplotlib.axes.Axes.hist
 """
-docstring.snippets['plot.hist'] = docstring.add_snippets(
-    _hist_docstring.format(y='x', orientation='vertical')
+_snippet_manager['plot.hist'] = _hist_docstring.format(
+    y='x', orientation='vertical'
 )
-docstring.snippets['plot.histh'] = docstring.add_snippets(
-    _hist_docstring.format(y='x', orientation='horizontal')
+_snippet_manager['plot.histh'] = _hist_docstring.format(
+    y='x', orientation='horizontal'
 )
 
 
@@ -869,11 +854,11 @@ PlotAxes.boxplot
 PlotAxes.boxploth
 matplotlib.axes.Axes.boxplot
 """
-docstring.snippets['plot.boxplot'] = docstring.add_snippets(
-    _boxplot_docstring.format(y='y', orientation='vertical')
+_snippet_manager['plot.boxplot'] = _boxplot_docstring.format(
+    y='y', orientation='vertical'
 )
-docstring.snippets['plot.boxploth'] = docstring.add_snippets(
-    _boxplot_docstring.format(y='x', orientation='horizontal')
+_snippet_manager['plot.boxploth'] = _boxplot_docstring.format(
+    y='x', orientation='horizontal'
 )
 
 
@@ -921,11 +906,11 @@ PlotAxes.violinplot
 PlotAxes.violinploth
 matplotlib.axes.Axes.violinplot
 """
-docstring.snippets['plot.violinplot'] = docstring.add_snippets(
-    _violinplot_docstring.format(y='y', orientation='vertical')
+_snippet_manager['plot.violinplot'] = _violinplot_docstring.format(
+    y='y', orientation='vertical'
 )
-docstring.snippets['plot.violinploth'] = docstring.add_snippets(
-    _violinplot_docstring.format(y='x', orientation='horizontal')
+_snippet_manager['plot.violinploth'] = _violinplot_docstring.format(
+    y='x', orientation='horizontal'
 )
 
 
@@ -971,22 +956,22 @@ matplotlib.axes.Axes.{command}
 """
 _edgefix_docstring = """
 edgefix : bool or float, optional
-    Whether to fix an issue where `white lines appear between filled contours \
-<https://stackoverflow.com/q/8263769/4970632>`__ in saved vector graphics.
+    Whether to fix an issue where `white lines appear between filled contours
+    <https://stackoverflow.com/q/8263769/4970632>`__ in saved vector graphics.
     This can slow down figure rendering. Default is :rc:`cmap.edgefix`.
     If ``True``, a default linewidth is used. If float, this linewidth is used.
 """
-docstring.snippets['plot.contour'] = docstring.add_snippets(
-    _contour_docstring.format(descrip='contour lines', command='contour', add='')
+_snippet_manager['plot.contour'] = _contour_docstring.format(
+    descrip='contour lines', command='contour', add=''
 )
-docstring.snippets['plot.contourf'] = docstring.add_snippets(
-    _contour_docstring.format(descrip='filled contours', command='contourf', add=_edgefix_docstring)  # noqa: E501
+_snippet_manager['plot.contourf'] = _contour_docstring.format(
+    descrip='filled contours', command='contourf', add=_edgefix_docstring
 )
-docstring.snippets['plot.tricontour'] = docstring.add_snippets(
-    _contour_docstring.format(descrip='contour lines on a triangular grid', command='tricontour', add='')  # noqa: E501
+_snippet_manager['plot.tricontour'] = _contour_docstring.format(
+    descrip='contour lines on a triangular grid', command='tricontour', add=''
 )
-docstring.snippets['plot.tricontourf'] = docstring.add_snippets(
-    _contour_docstring.format(descrip='filled contours on a triangular grid', command='tricontourf', add=_edgefix_docstring)  # noqa: E501
+_snippet_manager['plot.tricontourf'] = _contour_docstring.format(
+    descrip='filled contours on a triangular grid', command='tricontourf', add=_edgefix_docstring  # noqa: E501
 )
 
 
@@ -1018,8 +1003,8 @@ c, color, colors : optional
     The color(s) for the grid boxes. If not passed,
     the color is determined by `cmap` and the `z` data.
 edgefix : bool, optional
-    Whether to fix an issue where `white lines appear between grid boxes \
-<https://stackoverflow.com/q/8263769/4970632>`__ in saved vector graphics.
+    Whether to fix an issue where `white lines appear between grid boxes
+    <https://stackoverflow.com/q/8263769/4970632>`__ in saved vector graphics.
     This can slow down figure rendering. Default is :rc:`cmap.edgefix`.
     If ``True``, a default linewidth is used. If float, this linewidth is used.
 **kwargs
@@ -1035,10 +1020,10 @@ PlotAxes.tripcolor
 matplotlib.axes.Axes.{command}
 """
 _heatmap_descrip = """
-    grid boxes with formatting suitable for heatmaps. Ensure square grid boxes,
-    add major ticks to the center of each grid box, disable minor ticks
-    and gridlines, and set :rcraw:`cmap.discrete` to ``False`` by default
-""".strip()
+grid boxes with formatting suitable for heatmaps. Ensures square grid
+boxes, adds major ticks to the center of each grid box, disables minor ticks
+and gridlines, and sets :rcraw:`cmap.discrete` to ``False`` by default.
+"""
 _heatmap_aspect = """
 aspect : {'equal', 'auto'} or float, optional
     Modify the axes aspect ratio. The aspect ratio is of particular
@@ -1051,20 +1036,20 @@ aspect : {'equal', 'auto'} or float, optional
     * ``'auto'``: Allows the data aspect ratio to change depending on
       the layout. In general this results in non-square grid boxes.
 """
-docstring.snippets['plot.pcolor'] = docstring.add_snippets(
-    _pcolor_docstring.format(descrip='irregular grid boxes', command='pcolor', add='')
+_snippet_manager['plot.pcolor'] = _pcolor_docstring.format(
+    descrip='irregular grid boxes', command='pcolor', add=''
 )
-docstring.snippets['plot.pcolormesh'] = docstring.add_snippets(
-    _pcolor_docstring.format(descrip='regular grid boxes', command='pcolormesh', add='')
+_snippet_manager['plot.pcolormesh'] = _pcolor_docstring.format(
+    descrip='regular grid boxes', command='pcolormesh', add=''
 )
-docstring.snippets['plot.pcolorfast'] = docstring.add_snippets(
-    _pcolor_docstring.format(descrip='grid boxes quickly', command='pcolorfast', add='')
+_snippet_manager['plot.pcolorfast'] = _pcolor_docstring.format(
+    descrip='grid boxes quickly', command='pcolorfast', add=''
 )
-docstring.snippets['plot.tripcolor'] = docstring.add_snippets(
-    _pcolor_docstring.format(descrip='triangular grid boxes', command='tripcolor', add='')  # noqa: E501
+_snippet_manager['plot.tripcolor'] = _pcolor_docstring.format(
+    descrip='triangular grid boxes', command='tripcolor', add=''
 )
-docstring.snippets['plot.heatmap'] = docstring.add_snippets(
-    _pcolor_docstring.format(descrip=_heatmap_descrip, command='pcolormesh', add=_heatmap_aspect)  # noqa: E501
+_snippet_manager['plot.heatmap'] = _pcolor_docstring.format(
+    descrip=_heatmap_descrip.strip(), command='pcolormesh', add=_heatmap_aspect
 )
 
 
@@ -1099,14 +1084,14 @@ PlotAxes.stream
 PlotAxes.streamplot
 matplotlib.axes.Axes.{command}
 """
-docstring.snippets['plot.barbs'] = docstring.add_snippets(
-    _flow_docstring.format(descrip='wind barbs', command='barbs')
+_snippet_manager['plot.barbs'] = _flow_docstring.format(
+    descrip='wind barbs', command='barbs'
 )
-docstring.snippets['plot.quiver'] = docstring.add_snippets(
-    _flow_docstring.format(descrip='quiver arrows', command='quiver')
+_snippet_manager['plot.quiver'] = _flow_docstring.format(
+    descrip='quiver arrows', command='quiver'
 )
-docstring.snippets['plot.stream'] = docstring.add_snippets(
-    _flow_docstring.format(descrip='streamlines', command='streamplot')
+_snippet_manager['plot.stream'] = _flow_docstring.format(
+    descrip='streamlines', command='streamplot'
 )
 
 
@@ -1135,14 +1120,14 @@ See also
 proplot.axes.PlotAxes
 matplotlib.axes.Axes.{command}
 """
-docstring.snippets['plot.imshow'] = docstring.add_snippets(
-    _show_docstring.format(descrip='an image', command='imshow')
+_snippet_manager['plot.imshow'] = _show_docstring.format(
+    descrip='an image', command='imshow'
 )
-docstring.snippets['plot.matshow'] = docstring.add_snippets(
-    _show_docstring.format(descrip='a matrix', command='matshow')
+_snippet_manager['plot.matshow'] = _show_docstring.format(
+    descrip='a matrix', command='matshow'
 )
-docstring.snippets['plot.spy'] = docstring.add_snippets(
-    _show_docstring.format(descrip='a sparcity pattern', command='spy')
+_snippet_manager['plot.spy'] = _show_docstring.format(
+    descrip='a sparcity pattern', command='spy'
 )
 
 
@@ -2776,7 +2761,7 @@ class PlotAxes(base.Axes):
         return norm, cmap, kwargs
 
     @warnings._rename_kwargs('0.6', centers='values')
-    @docstring.add_snippets
+    @_snippet_manager
     def _parse_cmap(
         self, *args,
         cmap=None, cmap_kw=None, c=None, color=None, colors=None, default_cmap=None,
@@ -3382,14 +3367,14 @@ class PlotAxes(base.Axes):
         self._add_queued_guide(objs, **guide_kw)
         return objs  # always return list to match matplotlib behavior
 
-    @docstring.add_snippets
+    @_snippet_manager
     def line(self, *args, **kwargs):
         """
         %(plot.plot)s
         """
         return self.plot(*args, **kwargs)
 
-    @docstring.add_snippets
+    @_snippet_manager
     def linex(self, *args, **kwargs):
         """
         %(plot.plotx)s
@@ -3397,8 +3382,8 @@ class PlotAxes(base.Axes):
         return self.plotx(*args, **kwargs)
 
     @_preprocess_data('x', 'y', allow_extra=True)
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def plot(self, *args, **kwargs):
         """
         %(plot.plot)s
@@ -3407,7 +3392,7 @@ class PlotAxes(base.Axes):
         return self._apply_plot(*args, **kwargs)
 
     @_preprocess_data('y', 'x', allow_extra=True)
-    @docstring.add_snippets
+    @_snippet_manager
     def plotx(self, *args, **kwargs):
         """
         %(plot.plotx)s
@@ -3447,8 +3432,8 @@ class PlotAxes(base.Axes):
         return objs  # always return list to match matplotlib behavior
 
     @_preprocess_data('x', 'y', allow_extra=True)
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def step(self, *args, **kwargs):
         """
         %(plot.step)s
@@ -3457,7 +3442,7 @@ class PlotAxes(base.Axes):
         return self._apply_step(*args, **kwargs)
 
     @_preprocess_data('y', 'x', allow_extra=True)
-    @docstring.add_snippets
+    @_snippet_manager
     def stepx(self, *args, **kwargs):
         """
         %(plot.stepx)s
@@ -3512,8 +3497,8 @@ class PlotAxes(base.Axes):
         return obj
 
     @_preprocess_data('x', 'y')
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def stem(self, *args, **kwargs):
         """
         %(plot.stem)s
@@ -3522,7 +3507,7 @@ class PlotAxes(base.Axes):
         return self._apply_stem(*args, **kwargs)
 
     @_preprocess_data('x', 'y')
-    @docstring.add_snippets
+    @_snippet_manager
     def stemx(self, *args, **kwargs):
         """
         %(plot.stemx)s
@@ -3531,7 +3516,7 @@ class PlotAxes(base.Axes):
         return self._apply_stem(*args, **kwargs)
 
     @_preprocess_data('x', 'y', ('c', 'color', 'colors', 'values'))
-    @docstring.add_snippets
+    @_snippet_manager
     def parametric(self, x, y, c, *, interp=0, scalex=True, scaley=True, **kwargs):
         """
         %(plot.parametric)s
@@ -3644,7 +3629,7 @@ class PlotAxes(base.Axes):
 
     # WARNING: breaking change from native 'ymin' and 'ymax'
     @_preprocess_data('x', 'y1', 'y2', ('c', 'color', 'colors'))
-    @docstring.add_snippets
+    @_snippet_manager
     def vlines(self, *args, **kwargs):
         """
         %(plot.vlines)s
@@ -3654,7 +3639,7 @@ class PlotAxes(base.Axes):
 
     # WARNING: breaking change from native 'xmin' and 'xmax'
     @_preprocess_data('y', 'x1', 'x2', ('c', 'color', 'colors'))
-    @docstring.add_snippets
+    @_snippet_manager
     def hlines(self, *args, **kwargs):
         """
         %(plot.hlines)s
@@ -3723,8 +3708,8 @@ class PlotAxes(base.Axes):
         'x', 'y', ('s', 'ms', 'markersize'), ('c', 'color', 'colors'),
         keywords=('lw', 'linewidth', 'linewidths', 'ec', 'edgecolor', 'edgecolors', 'fc', 'facecolor', 'facecolors')  # noqa: E501
     )
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def scatter(self, *args, **kwargs):
         """
         %(plot.scatter)s
@@ -3736,7 +3721,7 @@ class PlotAxes(base.Axes):
         'y', 'x', ('s', 'ms', 'markersize'), ('c', 'color', 'colors'),
         keywords=('lw', 'linewidth', 'linewidths', 'ec', 'edgecolor', 'edgecolors', 'fc', 'facecolor', 'facecolors')  # noqa: E501
     )
-    @docstring.add_snippets
+    @_snippet_manager
     def scatterx(self, *args, **kwargs):
         """
         %(plot.scatterx)s
@@ -3787,14 +3772,14 @@ class PlotAxes(base.Axes):
             self._add_sticky_edges(objs, axis, *sides)
         return objs[0] if len(objs) == 1 else objs
 
-    @docstring.add_snippets
+    @_snippet_manager
     def area(self, *args, **kwargs):
         """
         %(plot.fill_between)s
         """
         return self.fill_between(*args, **kwargs)
 
-    @docstring.add_snippets
+    @_snippet_manager
     def areax(self, *args, **kwargs):
         """
         %(plot.fill_betweenx)s
@@ -3802,8 +3787,8 @@ class PlotAxes(base.Axes):
         return self.fill_betweenx(*args, **kwargs)
 
     @_preprocess_data('x', 'y1', 'y2', 'where')
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def fill_between(self, *args, **kwargs):
         """
         %(plot.fill_between)s
@@ -3812,8 +3797,8 @@ class PlotAxes(base.Axes):
         return self._apply_fill(*args, **kwargs)
 
     @_preprocess_data('y', 'x1', 'x2', 'where')
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def fill_betweenx(self, *args, **kwargs):
         """
         %(plot.fill_betweenx)s
@@ -3893,8 +3878,8 @@ class PlotAxes(base.Axes):
         return objs[0] if len(objs) == 1 else objs
 
     @_preprocess_data('x', 'height', 'width', 'bottom')
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def bar(self, *args, **kwargs):
         """
         %(plot.bar)s
@@ -3905,8 +3890,8 @@ class PlotAxes(base.Axes):
     # WARNING: Swap 'height' and 'width' here so that they are always relative
     # to the 'tall' axis. This lets people always pass 'width' as keyword
     @_preprocess_data('y', 'height', 'width', 'left')
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def barh(self, *args, **kwargs):
         """
         %(plot.barh)s
@@ -3993,14 +3978,14 @@ class PlotAxes(base.Axes):
 
         return obj
 
-    @docstring.add_snippets
+    @_snippet_manager
     def box(self, *args, **kwargs):
         """
         %(plot.boxplot)s
         """
         return self.boxplot(*args, **kwargs)
 
-    @docstring.add_snippets
+    @_snippet_manager
     def boxh(self, *args, **kwargs):
         """
         %(plot.boxploth)s
@@ -4008,8 +3993,8 @@ class PlotAxes(base.Axes):
         return self.boxploth(*args, **kwargs)
 
     @_preprocess_data('positions', 'y')
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def boxplot(self, *args, **kwargs):
         """
         %(plot.boxplot)s
@@ -4018,7 +4003,7 @@ class PlotAxes(base.Axes):
         return self._apply_boxplot(*args, **kwargs)
 
     @_preprocess_data('positions', 'x')
-    @docstring.add_snippets
+    @_snippet_manager
     def boxploth(self, *args, **kwargs):
         """
         %(plot.boxploth)s
@@ -4076,7 +4061,7 @@ class PlotAxes(base.Axes):
 
         return obj
 
-    @docstring.add_snippets
+    @_snippet_manager
     def violin(self, *args, **kwargs):
         """
         %(plot.violinplot)s
@@ -4088,7 +4073,7 @@ class PlotAxes(base.Axes):
         else:
             return self.violinplot(*args, **kwargs)
 
-    @docstring.add_snippets
+    @_snippet_manager
     def violinh(self, *args, **kwargs):
         """
         %(plot.violinploth)s
@@ -4096,8 +4081,8 @@ class PlotAxes(base.Axes):
         return self.violinploth(*args, **kwargs)
 
     @_preprocess_data('positions', 'y')
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def violinplot(self, *args, **kwargs):
         """
         %(plot.violinplot)s
@@ -4106,7 +4091,7 @@ class PlotAxes(base.Axes):
         return self._apply_violinplot(*args, **kwargs)
 
     @_preprocess_data('positions', 'x')
-    @docstring.add_snippets
+    @_snippet_manager
     def violinploth(self, *args, **kwargs):
         """
         %(plot.violinploth)s
@@ -4140,8 +4125,8 @@ class PlotAxes(base.Axes):
         return objs[0] if len(objs) == 1 else objs
 
     @_preprocess_data('x', 'bins', keywords='weights')
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def hist(self, *args, **kwargs):
         """
         %(plot.hist)s
@@ -4150,7 +4135,7 @@ class PlotAxes(base.Axes):
         return self._apply_hist(*args, **kwargs)
 
     @_preprocess_data('y', 'bins', keywords='weights')
-    @docstring.add_snippets
+    @_snippet_manager
     def histh(self, *args, **kwargs):
         """
         %(plot.histh)s
@@ -4161,8 +4146,8 @@ class PlotAxes(base.Axes):
     # WARNING: 'labels' and 'colors' no longer passed through `data` (seems like
     # extremely niche usage... `data` variables should be data-like)
     @_preprocess_data('x', 'explode')
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def pie(self, x, explode, *, labelpad=None, labeldistance=None, **kwargs):
         """
         Plot a pie chart.
@@ -4199,8 +4184,8 @@ class PlotAxes(base.Axes):
         return obj
 
     @_preprocess_data('x', 'y', 'bins', keywords='weights')
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def hist2d(self, x, y, bins, **kwargs):
         """
         Plot a standard 2D histogram.
@@ -4235,8 +4220,8 @@ class PlotAxes(base.Axes):
 
     # WARNING: breaking change from native 'C'
     @_preprocess_data('x', 'y', 'weights')
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def hexbin(self, x, y, weights, **kwargs):
         """
         Plot a 2D hexagonally binned histogram.
@@ -4278,8 +4263,8 @@ class PlotAxes(base.Axes):
         return m
 
     @_preprocess_data('x', 'y', 'z')
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def contour(self, x, y, z, **kwargs):
         """
         %(plot.contour)s
@@ -4300,8 +4285,8 @@ class PlotAxes(base.Axes):
         return m
 
     @_preprocess_data('x', 'y', 'z')
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def contourf(self, x, y, z, **kwargs):
         """
         %(plot.contourf)s
@@ -4322,8 +4307,8 @@ class PlotAxes(base.Axes):
         return m
 
     @_preprocess_data('x', 'y', 'z')
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def pcolor(self, x, y, z, **kwargs):
         """
         %(plot.pcolor)s
@@ -4341,8 +4326,8 @@ class PlotAxes(base.Axes):
         return m
 
     @_preprocess_data('x', 'y', 'z')
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def pcolormesh(self, x, y, z, **kwargs):
         """
         %(plot.pcolormesh)s
@@ -4360,8 +4345,8 @@ class PlotAxes(base.Axes):
         return m
 
     @_preprocess_data('x', 'y', 'z')
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def pcolorfast(self, x, y, z, **kwargs):
         """
         %(plot.pcolorfast)s
@@ -4378,7 +4363,7 @@ class PlotAxes(base.Axes):
         self._add_queued_guide(m, **guide_kw)
         return m
 
-    @docstring.add_snippets
+    @_snippet_manager
     def heatmap(self, *args, aspect=None, **kwargs):
         """
         %(plot.heatmap)s
@@ -4410,8 +4395,8 @@ class PlotAxes(base.Axes):
         return obj
 
     @_preprocess_data('x', 'y', 'u', 'v', ('c', 'color', 'colors'))
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def barbs(self, x, y, u, v, c, **kwargs):
         """
         %(plot.barbs)s
@@ -4429,8 +4414,8 @@ class PlotAxes(base.Axes):
         return m
 
     @_preprocess_data('x', 'y', 'u', 'v', ('c', 'color', 'colors'))
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def quiver(self, x, y, u, v, c, **kwargs):
         """
         %(plot.quiver)s
@@ -4450,7 +4435,7 @@ class PlotAxes(base.Axes):
         m = self._plot_safe('quiver', *a, **kw)
         return m
 
-    @docstring.add_snippets
+    @_snippet_manager
     def stream(self, *args, **kwargs):
         """
         %(plot.stream)s
@@ -4459,8 +4444,8 @@ class PlotAxes(base.Axes):
 
     # WARNING: breaking change from native streamplot() fifth positional arg 'density'
     @_preprocess_data('x', 'y', 'u', 'v', ('c', 'color', 'colors'), keywords='start_points')  # noqa: E501
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def streamplot(self, x, y, u, v, c, **kwargs):
         """
         %(plot.stream)s
@@ -4477,8 +4462,8 @@ class PlotAxes(base.Axes):
         return m
 
     @_preprocess_data('x', 'y', 'z')
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def tricontour(self, x, y, z, **kwargs):
         """
         %(plot.tricontour)s
@@ -4499,8 +4484,8 @@ class PlotAxes(base.Axes):
         return m
 
     @_preprocess_data('x', 'y', 'z')
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def tricontourf(self, x, y, z, **kwargs):
         """
         %(plot.tricontourf)s
@@ -4521,8 +4506,8 @@ class PlotAxes(base.Axes):
         return m
 
     @_preprocess_data('x', 'y', 'z')
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def tripcolor(self, x, y, z, **kwargs):
         """
         %(plot.tripcolor)s
@@ -4541,8 +4526,8 @@ class PlotAxes(base.Axes):
 
     # WARNING: breaking change from native 'X'
     @_preprocess_data('z')
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def imshow(self, z, **kwargs):
         """
         %(plot.imshow)s
@@ -4556,8 +4541,8 @@ class PlotAxes(base.Axes):
 
     # WARNING: breaking change from native 'Z'
     @_preprocess_data('z')
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def matshow(self, z, **kwargs):
         """
         %(plot.matshow)s
@@ -4571,8 +4556,8 @@ class PlotAxes(base.Axes):
 
     # WARNING: breaking change from native 'Z'
     @_preprocess_data('z')
-    @docstring.concatenate_original
-    @docstring.add_snippets
+    @docstring._concatenate_original
+    @_snippet_manager
     def spy(self, z, **kwargs):
         """
         %(plot.spy)s

@@ -9,7 +9,7 @@ from .. import constructor
 from .. import ticker as pticker
 from ..config import _parse_format, rc
 from ..internals import ic  # noqa: F401
-from ..internals import _not_none, docstring, warnings
+from ..internals import _not_none, _snippet_manager, docstring, warnings
 from . import plot, shared
 
 __all__ = ['PolarAxes']
@@ -105,8 +105,8 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mproj.PolarAxes):
             else:
                 axis.set_minor_locator(loc)
 
-    @docstring.obfuscate_signature
-    @docstring.add_snippets
+    @docstring._obfuscate_signature
+    @_snippet_manager
     def format(
         self, *, r0=None, theta0=None, thetadir=None,
         thetamin=None, thetamax=None, thetalim=None,

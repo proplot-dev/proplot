@@ -8,6 +8,7 @@ import numpy as np
 
 from . import benchmarks, dependencies, docstring, rcsetup, warnings  # noqa: F401
 from .dependencies import _version, _version_cartopy, _version_mpl  # noqa: F401
+from .docstring import _snippet_manager  # noqa: F401
 
 try:  # print debugging
     from icecream import ic

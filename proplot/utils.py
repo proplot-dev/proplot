@@ -14,7 +14,7 @@ from matplotlib import rcParams as rc_matplotlib
 
 from .externals import hsluv
 from .internals import ic  # noqa: F401
-from .internals import _not_none, docstring, warnings
+from .internals import _not_none, _snippet_manager, warnings
 
 __all__ = [
     'arange',
@@ -58,20 +58,18 @@ UNIT_DICT = {
 # Unit docstrings
 # NOTE: Try to fit this into a single line. Cannot break up with newline as that will
 # mess up docstring indentation since this is placed in indented param lines.
-_units_docstring = (
-    'If float, units are {units}. If string, interpreted by `~proplot.utils.units`.'
-)
-docstring.snippets['units.pt'] = _units_docstring.format(units='points')
-docstring.snippets['units.in'] = _units_docstring.format(units='inches')
-docstring.snippets['units.em'] = _units_docstring.format(units='em-widths')
+_units_docstring = 'If float, units are {units}. If string, interpreted by `~proplot.utils.units`.'  # noqa: E501
+_snippet_manager['units.pt'] = _units_docstring.format(units='points')
+_snippet_manager['units.in'] = _units_docstring.format(units='inches')
+_snippet_manager['units.em'] = _units_docstring.format(units='em-widths')
 
 
 # Color docstrings
-docstring.snippets['param.rgba'] = """
+_snippet_manager['param.rgba'] = """
 color : color-spec
     The color. Sanitized with `to_rgba`.
 """
-docstring.snippets['param.to_rgb'] = """
+_snippet_manager['param.to_rgb'] = """
 color : str, 3-tuple, or 4-tuple
     The color specification. Can be a tuple of channel values, a hex string,
     a registered color name, a cycle color like ``'C0'``, or a colormap color
@@ -87,12 +85,12 @@ cycle : str or list, optional
     The registered color cycle name used to interpret colors that
     look like ``'C0'``, ``'C1'``, etc. Default is :rc:`cycle`.
 """
-docstring.snippets['param.space'] = """
+_snippet_manager['param.space'] = """
 space : {'hcl', 'hpl', 'hsl', 'hsv'}, optional
     The hue-saturation-luminance-like colorspace used to transform the color.
     Default is the perceptually uniform colorspace ``'hcl'``.
 """
-docstring.snippets['return.hex'] = """
+_snippet_manager['return.hex'] = """
 color : str
     A HEX string.
 """
@@ -262,7 +260,7 @@ def _transform_color(func, color, space):
     return mcolors.to_hex((*color, opacity))
 
 
-@docstring.add_snippets
+@_snippet_manager
 def shift_hue(color, shift=0, space='hcl'):
     """
     Shift the hue channel of a color.
@@ -295,7 +293,7 @@ def shift_hue(color, shift=0, space='hcl'):
     return _transform_color(func, color, space)
 
 
-@docstring.add_snippets
+@_snippet_manager
 def scale_saturation(color, scale=1, space='hcl'):
     """
     Scale the saturation channel of a color.
@@ -327,7 +325,7 @@ def scale_saturation(color, scale=1, space='hcl'):
     return _transform_color(func, color, space)
 
 
-@docstring.add_snippets
+@_snippet_manager
 def scale_luminance(color, scale=1, space='hcl'):
     """
     Scale the luminance channel of a color.
@@ -359,7 +357,7 @@ def scale_luminance(color, scale=1, space='hcl'):
     return _transform_color(func, color, space)
 
 
-@docstring.add_snippets
+@_snippet_manager
 def set_hue(color, hue, space='hcl'):
     """
     Return a color with a different hue and the same luminance and saturation
@@ -392,7 +390,7 @@ def set_hue(color, hue, space='hcl'):
     return _transform_color(func, color, space)
 
 
-@docstring.add_snippets
+@_snippet_manager
 def set_saturation(color, saturation, space='hcl'):
     """
     Return a color with a different saturation and the same hue and luminance
@@ -425,7 +423,7 @@ def set_saturation(color, saturation, space='hcl'):
     return _transform_color(func, color, space)
 
 
-@docstring.add_snippets
+@_snippet_manager
 def set_luminance(color, luminance, space='hcl'):
     """
     Return a color with a different luminance and the same hue and saturation
@@ -458,7 +456,7 @@ def set_luminance(color, luminance, space='hcl'):
     return _transform_color(func, color, space)
 
 
-@docstring.add_snippets
+@_snippet_manager
 def set_alpha(color, alpha):
     """
     Return a color with the opacity channel set to the specified value.
@@ -516,7 +514,7 @@ def _translate_cycle_color(color, cycle=None):
     return cycle[int(color[-1]) % len(cycle)]
 
 
-@docstring.add_snippets
+@_snippet_manager
 def to_hex(color, space='rgb', cycle=None, keep_alpha=True):
     """
     Translate the color in *any* format and from *any* colorspace
@@ -544,7 +542,7 @@ def to_hex(color, space='rgb', cycle=None, keep_alpha=True):
     return mcolors.to_hex(rgba, keep_alpha=keep_alpha)
 
 
-@docstring.add_snippets
+@_snippet_manager
 def to_rgb(color, space='rgb', cycle=None):
     """
     Translate the color in *any* format and from *any* colorspace to an RGB
@@ -570,7 +568,7 @@ def to_rgb(color, space='rgb', cycle=None):
     return to_rgba(color, space=space, cycle=cycle)[:3]
 
 
-@docstring.add_snippets
+@_snippet_manager
 def to_rgba(color, space='rgb', cycle=None):
     """
     Translate the color in *any* format and from *any* colorspace to an RGB
@@ -634,7 +632,7 @@ def to_rgba(color, space='rgb', cycle=None):
     return (*color, opacity)
 
 
-@docstring.add_snippets
+@_snippet_manager
 def to_xyz(color, space='hcl'):
     """
     Translate color in *any* format to a tuple of channel values in *any*
@@ -661,7 +659,7 @@ def to_xyz(color, space='hcl'):
     return to_xyza(color, space)[:3]
 
 
-@docstring.add_snippets
+@_snippet_manager
 def to_xyza(color, space='hcl'):
     """
     Translate color in *any* format to a tuple of channel values in *any*
