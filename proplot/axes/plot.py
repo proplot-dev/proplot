@@ -1928,7 +1928,7 @@ class PlotAxes(base.Axes):
         return self._plot_safe(method, *args, **kwargs)
 
     def _plot_negpos(
-        self, name, x, *ys, negcolor=None, poscolor=None,
+        self, name, x, *ys, negcolor=None, poscolor=None, colorkey='facecolor',
         use_where=False, use_zero=False, **kwargs
     ):
         """
@@ -1936,7 +1936,7 @@ class PlotAxes(base.Axes):
         """
         if use_where:
             kwargs.setdefault('interpolate', True)  # see fill_between docs
-        for key in ('color', 'colors', 'where'):
+        for key in ('color', 'colors', 'facecolor', 'facecolors', 'where'):
             value = kwargs.pop(key, None)
             if value is not None:
                 warnings._warn_proplot(
@@ -1950,8 +1950,8 @@ class PlotAxes(base.Axes):
             kwargs['where'] = ys[1] < ys[0]
         else:
             yneg = _safe_mask(ys[1] < ys[0], *ys)
-        color = _not_none(negcolor, rc['negcolor'])
-        negobj = self._plot_safe(name, x, *yneg, color=color, **kwargs)
+        kwargs[colorkey] = _not_none(negcolor, rc['negcolor'])
+        negobj = self._plot_safe(name, x, *yneg, **kwargs)
         # Positive component
         ypos = list(ys)  # copy
         if use_zero:  # filter bar heights
@@ -1960,8 +1960,8 @@ class PlotAxes(base.Axes):
             kwargs['where'] = ys[1] >= ys[0]
         else:
             ypos = _safe_mask(ys[1] >= ys[0], *ys)
-        color = _not_none(poscolor, rc['poscolor'])
-        posobj = self._plot_safe(name, x, *ypos, color=color, **kwargs)
+        kwargs[colorkey] = _not_none(poscolor, rc['poscolor'])
+        posobj = self._plot_safe(name, x, *ypos, **kwargs)
         return (negobj, posobj)
 
     def _add_queued_guide(
@@ -3613,7 +3613,7 @@ class PlotAxes(base.Axes):
                 y2 = y2 + y0
                 y0 = y0 + y2 - y1  # irrelevant that we added y0 to both
             if negpos:
-                obj = self._plot_negpos(name, x, y1, y2, **kw)
+                obj = self._plot_negpos(name, x, y1, y2, colorkey='colors', **kw)
             else:
                 obj = self._plot_safe(name, x, y1, y2, **kw)
             for y in (y1, y2):
