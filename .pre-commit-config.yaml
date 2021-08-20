@@ -24,7 +24,7 @@ repos:
     hooks:
     - id: isort
       args: ['--line-width=88', '--multi-line=3', '--force-grid-wrap=0', '--trailing-comma']
-      exclude: '^docs/'
+      exclude: '(^docs|__init__)'
 
   - repo: https://github.com/PyCQA/flake8
     rev: 3.8.3

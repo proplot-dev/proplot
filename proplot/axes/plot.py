@@ -160,21 +160,19 @@ _snippet_manager['plot.args_2d_shared'] = _args_2d_shared_docstring
 # Auto colorbar and legend docstring
 _guide_docstring = """
 colorbar : bool, int, or str, optional
-    If not ``None``, this is a location specifying where to draw an *inset*
-    or *panel* colorbar from the resulting object(s). If ``True``, the default
-    :rc:`colorbar.loc` is used. Valid locations are described in
-    `~proplot.axes.Axes.colorbar`.
+    If not ``None``, this is a location specifying where to draw an
+    *inset* or *panel* colorbar from the resulting object(s). If ``True``,
+    the default :rc:`colorbar.loc` is used. Valid locations are described
+    in `~proplot.axes.Axes.colorbar`.
 colorbar_kw : dict-like, optional
-    Ignored if `colorbar` is ``None``. Extra keyword args for the call
-    to `~proplot.axes.Axes.colorbar`.
+    Extra keyword args for the call to `~proplot.axes.Axes.colorbar`.
 legend : bool, int, or str, optional
     If not ``None``, this is a location specifying where to draw an *inset*
     or *panel* legend from the resulting object(s). If ``True``, the default
     :rc:`legend.loc` is used. Valid locations are described in
     `~proplot.axes.Axes.legend`.
 legend_kw : dict-like, optional
-    Ignored if `legend` is ``None``. Extra keyword args for the call
-    to `~proplot.axes.Axes.legend`.
+    Extra keyword args for the call to `~proplot.axes.Axes.legend`.
 """
 _snippet_manager['plot.guide'] = _guide_docstring
 
@@ -1593,7 +1591,7 @@ def _geo_monotonic(x):
         return x
     xmin = x[0]
     mask = np.array([True])
-    while mask.sum():
+    while np.sum(mask):
         mask = x < xmin
         x[mask] += 360
     return x
@@ -1606,8 +1604,8 @@ def _geo_poles(y, z):
     """
     # Get means
     with np.errstate(all='ignore'):
-        p1 = z[0, :].mean()  # pole 1, make sure is not 0D DataArray!
-        p2 = z[-1, :].mean()  # pole 2
+        p1 = np.mean(z[0, :])  # do not ignore NaN if present
+        p2 = np.mean(z[-1, :])
     if hasattr(p1, 'item'):
         p1 = np.asscalar(p1)  # happens with DataArrays
     if hasattr(p2, 'item'):
@@ -4413,7 +4411,7 @@ class PlotAxes(base.Axes):
         """
         x, y, u, v, kw = self._standardize_2d(x, y, u, v, allow1d=True, autotitle=False, **kwargs)  # noqa: E501
         _process_props(kw, 'line')  # applied to barbs
-        c, kw = self._parse_color(x, y, c, default_discrete=False, **kw)
+        c, kw = self._parse_color(x, y, c, **kw)
         if mcolors.is_color_like(c):
             kw['barbcolor'], c = c, None
         a = [x, y, u, v]
@@ -4432,7 +4430,7 @@ class PlotAxes(base.Axes):
         """
         x, y, u, v, kw = self._standardize_2d(x, y, u, v, allow1d=True, autotitle=False, **kwargs)  # noqa: E501
         _process_props(kw, 'line')  # applied to arrow outline
-        c, kw = self._parse_color(x, y, c, default_discrete=False, **kw)
+        c, kw = self._parse_color(x, y, c, **kw)
         color = None
         if mcolors.is_color_like(c):
             color, c = c, None

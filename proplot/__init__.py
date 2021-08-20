@@ -54,7 +54,7 @@ for _key in ('cycle', 'cmap.sequential', 'cmap.diverging', 'cmap.cyclic', 'cmap.
         rc[_key] = rc[_key]
     except ValueError as err:
         warnings._warn_proplot(f'Invalid user rc file setting: {err}')
-        rc[_key] = 'Fire'  # fill value
+        rc[_key] = 'Greys'  # fill value
 
 # Validate color names now that colors are registered
 from .config import rc_proplot, rc_matplotlib
