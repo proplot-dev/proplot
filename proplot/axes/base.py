@@ -1030,13 +1030,11 @@ class Axes(maxes.Axes):
         # Update a-b-c label
         loc = rc.find('abc.loc', context=True)
         loc = self._abc_loc = _translate_loc(loc or self._abc_loc, 'text')
-        if loc in ('left', 'right', 'center'):
-            taxs = self._panel_dict['top']
-            self = taxs[-1] if taxs and self._title_above else self
-        else:
+        if loc not in ('left', 'right', 'center'):
             kw.update(self._abc_border_kwargs)
         kw.update(kwargs)
         self._title_dict['abc'].update(kw)
+        self._above_title()
 
     def _update_title(self, loc, title=None, **kwargs):
         """
@@ -1096,15 +1094,13 @@ class Axes(maxes.Axes):
 
         # Update the title text. For outer panels, add text to the panel if
         # necesssary. For inner panels, use the border and bbox settings.
-        if loc in ('left', 'right', 'center'):
-            taxs = self._panel_dict['top']
-            self = taxs[-1] if taxs and self._title_above else self
-        else:
+        if loc not in ('left', 'right', 'center'):
             kw.update(self._title_border_kwargs)
         if title is not None:
             kw['text'] = title
         kw.update(kwargs)
         self._title_dict[loc].update(kw)
+        self._above_title()
 
     def _update_title_position(self, renderer):
         """
@@ -1510,7 +1506,7 @@ class Axes(maxes.Axes):
     def _above_title(self):
         """
         Change assignment of outer titles between main subplot and upper panels.
-        This is called when :rcraw:`title.above` is changed or a panel is created.
+        This is called when a panel is created or `_update_title` is called.
         """
         # NOTE: After the panel is created, calling format() will automatically
         # reassign titles, a-b-c labels, and super labels
@@ -1521,7 +1517,7 @@ class Axes(maxes.Axes):
         names = ('left', 'center', 'right')
         if self._abc_loc in names:
             names += ('abc',)
-        if self._title_above is True or pax._panel_hidden and self._title_above == 'panels':  # noqa: E501
+        if self._title_above is True or not pax._panel_hidden and self._title_above == 'panels':  # noqa: E501
             src, dest = self, pax
         else:
             src, dest = pax, self
