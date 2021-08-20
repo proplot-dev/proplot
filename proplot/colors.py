@@ -1243,7 +1243,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
             data = {}
             for key, value in self._segmentdata.items():
                 if callable(value):
-                    x = np.linspace(0, 1, 256)  # just save the transitions
+                    x = np.linspace(0, 1, rc['image.lut'])  # just save the transitions
                     y = np.array([value(_) for _ in x]).squeeze()
                     value = np.vstack((x, y, y)).T
                 data[key] = np.asarray(value).astype(float).tolist()

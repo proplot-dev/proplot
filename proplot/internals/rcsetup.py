@@ -976,7 +976,8 @@ _rc_proplot_table = {
     'cmap.autodiverging': (
         True,
         _validate_bool,
-        'Boolean, whether to automatically apply a diverging colormap and normalizer.'
+        'Boolean, whether to automatically apply a diverging colormap and '
+        'normalizer based on the data.'
     ),
     'cmap.qualitative': (
         CMAPCAT,
@@ -1038,10 +1039,8 @@ _rc_proplot_table = {
     'cmap.robust': (
         False,
         _validate_bool,
-        'If ``True``, the default colormap `vmin` and `vmax` are chosen using the 2nd '
-        'to 98th percentiles rather than the minimum and maximum. If float, this '
-        'percentile range is used (for example, ``90`` corresponds to the 5th '
-        'to 95th percentiles).'
+        'If ``True``, the default colormap `vmin` and `vmax` are chosen using the '
+        '2nd to 98th percentiles rather than the minimum and maximum.'
     ),
     'cmap.sequential': (
         CMAPSEQ,

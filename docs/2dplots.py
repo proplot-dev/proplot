@@ -368,7 +368,8 @@ for i, extend in enumerate(('min', 'max', 'neither', 'both')):
 # an integer to `robust` (e.g. ``robust=90`` limits the normalization range
 # between the 5th and 95th percentiles) or by passing a 2-tuple to `robust`
 # (e.g. ``robust=(0, 90)`` will limit the normalization range between the
-# data minimum and the 90th percentile).
+# data minimum and the 90th percentile). This can be turned on persistently
+# by setting :rcraw:`cmap.robust` to ``True``.
 #
 # A related xarray feature is the `automatic detection
 # <http://xarray.pydata.org/en/stable/user-guide/plotting.html#colormaps>`__
