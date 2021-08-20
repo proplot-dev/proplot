@@ -412,7 +412,7 @@ ax.format(xlocator=1, xminorlocator=0.5, ytickminor=False, title='Side-by-side')
 # Stacked bars
 ax = fig.subplot(gs[1])
 obj = ax.barh(
-    data.iloc[::-1, :], cycle='Blues', edgecolor='blue9', legend='lr', stack=True,
+    data.iloc[::-1, :], cycle='Blues', edgecolor='blue9', legend='ur', stack=True,
 )
 ax.format(title='Stacked')
 fig.format(grid=False, suptitle='Bar plot demo')

@@ -135,7 +135,7 @@ pplt.rc.reset()
 # (e.g., ``xformatter='log'``), to apply a ``%``-style format directive with
 # `~matplotlib.ticker.FormatStrFormatter` (e.g., ``xformatter='%.0f'``), or
 # to apply custom tick labels with `~matplotlib.ticker.FixedFormatter` (just
-# like `~matplotlib.axes.Axes.set_xticklabels`) You can also apply one of ProPlot's
+# like `~matplotlib.axes.Axes.set_xticklabels`). You can also apply one of ProPlot's
 # new tick formatters -- for example, ``xformatter='deglat'`` to label ticks
 # as geographic latitude coordinates, ``xformatter='pi'`` to label ticks as
 # fractions of :math:`\pi`, or ``xformatter='sci'`` to label ticks with
@@ -490,8 +490,8 @@ for ax, power, color in zip(axs[4:], (2, 1 / 4), colors):
 # for the default dual axis locators and formatters. In the below examples,
 # we generate dual axes with each of these three methods. Note that the
 # "parent" axis scale is arbitrary -- in the first example, we create
-# a `~proplot.axes.CartesianAxes.dualx` axis for an axis scaled by the
-# `symlog scale <https://matplotlib.org/stable/gallery/scales/symlog_demo.html>`__.
+# a `~proplot.axes.CartesianAxes.dualx` axis for a `symlog-scaled
+# <https://matplotlib.org/stable/gallery/scales/symlog_demo.html>`__ axis.
 
 # %%
 import proplot as pplt

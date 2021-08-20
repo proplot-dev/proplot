@@ -57,9 +57,8 @@
 # `~proplot.demos.show_cmaps` to generate a table of registered maps. The
 # figure is broken down into the following sections:
 #
-# * "User" colormaps loaded from the ``cmaps``
-#   `~proplot.config.Configurator.user_folder` and/or created with the
-#   `~proplot.constructor.Colormap` :ref:`constructor function <why_constructor>`.
+# * "User" colormaps created with `~proplot.constructor.Colormap`
+#   or loaded from `~proplot.config.Configurator.user_folder`.
 # * `Matplotlib <matplotlib_>`_ and `seaborn <seaborn_>`_ original colormaps.
 # * ProPlot original :ref:`perceptually uniform colormaps <ug_perceptual>`.
 # * The `cmOcean <cmocean_>`_ colormaps, designed for

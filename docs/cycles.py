@@ -32,8 +32,8 @@
 #
 # ProPlot :ref:`adds several features <why_colormaps_cyles>` to help you use color
 # cycles effectively in your figures. This section documents the new registered
-# color cycles, explains how to make and modify colormaps, and shows how to apply
-# them to your plots.
+# color cycles, explains how to make and modify color cycles, and shows how to
+# apply them to your plots.
 
 
 # %% [raw] raw_mimetype="text/restructuredtext" tags=[]
@@ -66,9 +66,9 @@ fig, axs = pplt.show_cycles()
 # (see the :ref:`1D plotting section <ug_apply_cycle>`). To save
 # your color cycle data and use it every time ProPlot is imported, simply pass
 # ``save=True`` to `~proplot.constructor.Cycle`. If you want to change the global
-# property cycler, pass a colormap or colormap name to :rcraw:`cycle` or pass
-# the result of `~proplot.constructor.Cycle` to :rcraw:`axes.prop_cycle` (see
-# the :ref:`configuration guide <ug_config>`).
+# property cycler, pass a `~proplot.colors.DiscreteColormap` or colormap name
+# to :rcraw:`cycle` or pass the result of `~proplot.constructor.Cycle`
+# to :rcraw:`axes.prop_cycle` (see the :ref:`configuration guide <ug_config>`).
 
 # %%
 import proplot as pplt

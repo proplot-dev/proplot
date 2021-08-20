@@ -59,18 +59,15 @@
 # In the below example, we create and format a very simple geographic plot.
 
 # %%
-# Option A: Create a projection with pplt.Proj()
-# import proplot as plot
-# proj = pplt.Proj('robin', lon_0=180)
-# fig, axs = pplt.subplots(nrows=2, refwidth=3, proj=proj)
-
-# Option B: Create an on-the-fly projection
+# Use an on-the-fly projection
 import proplot as pplt
 fig = pplt.figure(refwidth=3)
 axs = fig.subplots(nrows=2, proj='robin', proj_kw={'lon_0': 180})
+# proj = pplt.Proj('robin', lon_0=180)
+# axs = pplt.subplots(nrows=2, proj=proj)  # equivalent to above
 axs.format(
     suptitle='Figure with single projection',
-    coast=True, latlines=30, lonlines=60,
+    land=True, latlines=30, lonlines=60,
 )
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -158,7 +155,7 @@ for i, proj in enumerate(('cyl', 'hammer', 'npstere')):
 
 # Format projections
 fig.format(
-    coast=True,
+    land=True,
     suptitle='Figure with several projections',
     toplabels=('Basemap projections', 'Cartopy projections'),
     toplabelweight='normal',

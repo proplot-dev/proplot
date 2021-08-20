@@ -317,7 +317,7 @@ axs[1].set_title('Pcolor plot\nDiscreteNorm disabled')
 
 # Imshow
 data = 100 - data
-m = axs[2].imshow(data, cmap='sunset', colorbar='b')
+m = axs[2].imshow(data, cmap='thermal', colorbar='b')
 axs[2].format(title='Imshow plot\nDiscreteNorm disabled (default)', yformatter='auto')
 
 # %%
@@ -380,7 +380,7 @@ for i, extend in enumerate(('min', 'max', 'neither', 'both')):
 #
 # #. The colormap was not passed, or the colormap was passed but its name
 #    matches the name of a :ref:`known diverging colormap <ug_cmaps_included>`.
-# #. If ``discerete=True`` (see :ref:`above <ug_discrete>`) and the discrete
+# #. If ``discrete=True`` (see :ref:`above <ug_discrete>`) and the discrete
 #    colormap levels include at least 2 positive values and 2 negative values.
 # #. If ``discrete=False`` (see :ref:`above <ug_discrete>`) and the normalization
 #    limits `vmin` and `vmax` have opposite signs.

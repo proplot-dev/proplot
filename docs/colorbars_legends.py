@@ -249,7 +249,7 @@ fig.format(
 #
 # The `proplot.figure.Figure.legend` and `proplot.axes.Axes.legend` commands
 # include several new, unique features. You can draw legends with centered rows by
-# passing ``center=True`` or by passing list of lists of plot handles. This is
+# passing ``center=True`` or by passing a list of lists of plot handles. This is
 # accomplished by stacking multiple single-row, horizontally centered legends, then
 # adding an encompassing legend frame. You can also switch between row-major and
 # column-major order for legend entries using the `order` keyword (the default is
