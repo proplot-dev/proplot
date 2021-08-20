@@ -684,8 +684,6 @@ class GridSpec(mgridspec.GridSpec):
         refwpanel = sum(self.wratios[i] for i in range(x1, x2 + 1) if self._wpanels[i])
         refhsubplot = sum(self.hratios[i] for i in range(y1, y2 + 1) if not self._hpanels[i])  # noqa: E501
         refwsubplot = sum(self.wratios[i] for i in range(x1, x2 + 1) if not self._wpanels[i])  # noqa: E501
-        subplotheight = sum(r for i, r in enumerate(self.hratios) if not self._hpanels[i])  # noqa: E501
-        subplotwidth = sum(r for i, r in enumerate(self.wratios) if not self._wpanels[i])  # noqa: E501
 
         # Get the reference sizes
         # NOTE: The sizing arguments should have been normalized already
@@ -695,7 +693,7 @@ class GridSpec(mgridspec.GridSpec):
         if refheight is None and figheight is None:
             if figwidth is not None:
                 gridwidth = figwidth - self.spacewidth - self.panelwidth
-                refwidth = gridwidth * refwsubplot / subplotwidth
+                refwidth = gridwidth * refwsubplot / self.subplotwidth
             if refwidth is not None:  # WARNING: do not change to elif!
                 refheight = refwidth / refaspect
             else:
@@ -703,7 +701,7 @@ class GridSpec(mgridspec.GridSpec):
         if refwidth is None and figwidth is None:
             if figheight is not None:
                 gridheight = figheight - self.spaceheight - self.panelheight
-                refheight = gridheight * refhsubplot / subplotheight
+                refheight = gridheight * refhsubplot / self.subplotheight
             if refheight is not None:
                 refwidth = refheight * refaspect
             else:
@@ -713,10 +711,10 @@ class GridSpec(mgridspec.GridSpec):
         # NOTE: For e.g. [[1, 1, 2, 2], [0, 3, 3, 0]] we make sure to still scale the
         # reference axes like a square even though takes two columns of gridspec.
         if refheight is not None:
-            gridheight = (refheight - refhspace - refhpanel) * subplotheight / refhsubplot  # noqa: E501
+            gridheight = (refheight - refhspace - refhpanel) * self.subplotheight / refhsubplot  # noqa: E501
             figheight = gridheight + self.spaceheight + self.panelheight
         if refwidth is not None:
-            gridwidth = (refwidth - refwspace - refwpanel) * subplotwidth / refwsubplot
+            gridwidth = (refwidth - refwspace - refwpanel) * self.subplotwidth / refwsubplot  # noqa: E501
             figwidth = gridwidth + self.spacewidth + self.panelwidth
         figsize = (figwidth, figheight)
         if not np.isfinite(figwidth) or not np.isfinite(figheight):
@@ -1011,16 +1009,19 @@ class GridSpec(mgridspec.GridSpec):
         figwidth, figheight = fig.get_size_inches()
         spacewidth, spaceheight = self.spacewidth, self.spaceheight
         panelwidth, panelheight = self.panelwidth, self.panelheight
-
-        # Scale the subplot slot ratios and keep the panel slots fixed
-        hidxs, widxs = self._get_subplot_indices('h'), self._get_subplot_indices('w')
-        hratios, wratios = self.hratios, self.wratios  # returns copies
+        hratios, wratios = self.hratios, self.wratios
+        hidxs = self._get_subplot_indices('h')
+        widxs = self._get_subplot_indices('w')
         hsubplot = np.array([hratios[i] for i in hidxs])
         wsubplot = np.array([wratios[i] for i in widxs])
+
+        # Scale the subplot slot ratios and keep the panel slots fixed
         hsubplot = (figheight - panelheight - spaceheight) * hsubplot / sum(hsubplot)
         wsubplot = (figwidth - panelwidth - spacewidth) * wsubplot / sum(wsubplot)
+        hratios, hidxs = self.hratios, self._get_subplot_indices('h')
         for idx, ratio in zip(hidxs, hsubplot):
             hratios[idx] = ratio  # modify the main subplot ratios
+        wratios, widxs = self.wratios, self._get_subplot_indices('w')
         for idx, ratio in zip(widxs, wsubplot):
             wratios[idx] = ratio
 
@@ -1134,3 +1135,5 @@ class GridSpec(mgridspec.GridSpec):
     spacewidth = property(lambda self: self.left + self.right + sum(self.wspace))
     panelheight = property(lambda self: sum(r for i, r in enumerate(self.hratios) if self._hpanels[i]))  # noqa: E501
     panelwidth = property(lambda self: sum(r for i, r in enumerate(self.wratios) if self._wpanels[i]))  # noqa: E501
+    subplotheight = property(lambda self: sum(r for i, r in enumerate(self.hratios) if not self._hpanels[i]))  # noqa: E501
+    subplotwidth = property(lambda self: sum(r for i, r in enumerate(self.wratios) if not self._wpanels[i]))  # noqa: E501

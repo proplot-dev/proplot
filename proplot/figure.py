@@ -369,7 +369,7 @@ space : float or str, optional
 pad : float or str, optional
     The tight layout padding between the subplot grid and the {name}.
     Default is :rc:`subplots.innerpad` for the first {name} and
-    :rc:`subplots.panelpad` for subsequently stacked {name}.
+    :rc:`subplots.panelpad` for subsequently stacked {name}s.
 """
 _snippet_manager['figure.colorbar_space'] = _space_docstring.format(name='colorbar')
 _snippet_manager['figure.legend_space'] = _space_docstring.format(name='legend')

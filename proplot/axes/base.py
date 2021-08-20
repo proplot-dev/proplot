@@ -310,14 +310,14 @@ _snippet_manager['figure.format'] = _figure_format_docstring
 
 # Colorbar docstrings
 _colorbar_args_docstring = """
-mappable : mappable, list of plot handles, list of color-spec, or colormap-spec
+mappable : mappable, list of artists, list of color-spec, or colormap-spec
     There are four options here:
 
     1. A mappable object. Basically, any object with a ``get_cmap`` method,
        like the objects returned by `~matplotlib.axes.Axes.contourf` and
        `~matplotlib.axes.Axes.pcolormesh`.
-    2. A list of "plot handles". Basically, any object with a ``get_color``
-       method, like `~matplotlib.lines.Line2D` instances. A colormap will
+    2. A list of matplotlib artists. Any object with a ``get_color`` method
+       will do, like `~matplotlib.lines.Line2D` instances. A colormap will
        be generated from the colors of these objects, and colorbar levels
        will be selected using `values`.  If `values` is ``None``, we try
        to infer them by converting the handle labels returned by
@@ -402,7 +402,7 @@ labelsize, labelweight, labelcolor : optional
     The font size, weight, and color for colorbar label text.
 ticklabelsize, ticklabelweight, ticklabelcolor : optional
     The font size, weight, and color for colorbar tick labels.
-orientation : {{None, 'horizontal', 'vertical'}}, optional
+orientation : {None, 'horizontal', 'vertical'}, optional
     The colorbar orientation. By default this depends on the "side" of the subplot
     or figure where the colorbar is drawn. Inset colorbars are always horizontal.
 rasterize : bool, optional
