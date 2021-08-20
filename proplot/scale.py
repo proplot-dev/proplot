@@ -257,7 +257,7 @@ class FuncScale(_Scale, mscale.ScaleBase):
         """
         Parameters
         ----------
-        arg : function, (function, function), or `~matplotlib.scale.ScaleBase`
+        arg : callable, 2-tuple of callable, or `~matplotlib.scale.ScaleBase`
             The transform used to translate units from the parent axis to
             the secondary axis. Input can be as follows:
 
@@ -747,7 +747,7 @@ class CutoffScale(_Scale, mscale.ScaleBase):
         """
         Parameters
         ----------
-        *args : (thresh_1, scale_1, ..., thresh_N, [scale_N]), optional
+        *args : thresh_1, scale_1, ..., thresh_N, [scale_N], optional
             Sequence of "thresholds" and "scales". If the final scale is
             omitted (i.e. you passed an odd number of arguments) it is set
             to ``1``. Each ``scale_i`` in the sequence can be interpreted

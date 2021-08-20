@@ -51,10 +51,10 @@ zerotrim : bool, optional
     Default is :rc:`formatter.zerotrim`.
 """
 _formatter_docstring = """
-tickrange : (float, float), optional
+tickrange : 2-tuple of float, optional
     Range within which major tick marks are labelled. Default is
     ``(-np.inf, np.inf)``.
-wraprange : (float, float), optional
+wraprange : 2-tuple of float, optional
     Range outside of which tick values are wrapped. For example,
     ``(-180, 180)`` will format a value of ``200`` as ``-160``.
 prefix, suffix : str, optional

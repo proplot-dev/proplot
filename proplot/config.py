@@ -1393,7 +1393,7 @@ class Configurator(MutableMapping, dict):
 
         Parameters
         ----------
-        *args : str, dict, or (str, dict), optional
+        *args : str, dict, or both, optional
             A dictionary containing `rc` keys and values. You can also pass
             a "category" name as the first argument, in which case all
             settings are prepended with ``'category.'``. For example,

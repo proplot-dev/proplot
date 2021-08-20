@@ -78,7 +78,7 @@ coordinates in *alternate units*.
 
 Parameters
 ----------
-funcscale : function, (function, function), or scale-spec
+funcscale : callable, 2-tuple of callables, or scale-spec
     Used to transform units from the parent axis to the secondary axis.
     This can be a `~proplot.scale.FuncScale` itself or a function,
     (function, function) tuple, or an axis scale specification interpreted
@@ -787,17 +787,17 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         xrotation, yrotation : float, optional
             The rotation for x and y axis tick labels. Default is ``0``
             for normal axes, :rc:`formatter.timerotation` for time x axes.
-        xbounds, ybounds : (float, float), optional
+        xbounds, ybounds : 2-tuple of float, optional
             The x and y axis data bounds within which to draw the spines.
             For example, the axis range ``(0, 4)`` with bounds ``(1, 4)``
             will prevent the spines from meeting at the origin.
-        xtickrange, ytickrange : (float, float), optional
+        xtickrange, ytickrange : 2-tuple of float, optional
             The x and y axis data ranges within which major tick marks
             are labelled. For example, the tick range ``(-1, 1)`` with
             axis range ``(-5, 5)`` and a tick interval of 1 will only
             label the ticks marks at -1, 0, and 1. See
             `~proplot.ticker.AutoFormatter` for details.
-        xwraprange, ywraprange : (float, float), optional
+        xwraprange, ywraprange : 2-tuple of float, optional
             The x and y axis data ranges with which major tick mark values are
             wrapped. For example, the wrap range ``(0, 3)`` causes the values 0
             through 9 to be formatted as 0, 1, 2, 0, 1, 2, 0, 1, 2, 0. See

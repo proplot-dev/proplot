@@ -197,11 +197,11 @@ median, medians : bool, optional
     specified, this also sets ``barstd=True`` (and ``boxstd=True`` for violin plots).
 """
 _error_bars_docstring = """
-barstd, barstds : float, (float, float), or bool, optional
+barstd, barstds : bool, float, or 2-tuple of float, optional
     *Valid only if `mean` or `median` is ``True``*. Standard deviation multiples for
     *thin error bars* with optional whiskers (i.e., caps). If scalar, then +/- that
     multiple is used. If ``True``, the default standard deviation range of +/-3 is used.
-barpctile, barpctiles : float, (float, float) or bool, optional
+barpctile, barpctiles : bool, float, or 2-tuple of float, optional
     *Valid only if `mean` or `median` is ``True``*. As with `barstd`, but instead
     using *percentiles* for the error bars. If scalar, that percentile range is
     used (e.g., ``90`` shows the 5th to 95th percentiles). If ``True``, the default

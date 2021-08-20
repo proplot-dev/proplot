@@ -278,7 +278,7 @@ Add a subplot axes to the figure.
 
 Parameters
 ----------
-*args : int, (int, int, int or 2-tuple of int), or `~matplotlib.gridspec.SubplotSpec`
+*args : int, tuple, or `~matplotlib.gridspec.SubplotSpec`, optional
     The subplot location specifier. Your options are:
 
     * A single 3-digit integer argument specifying the number of rows,
@@ -354,7 +354,7 @@ row, rows
     Aliases for `span` for {name}s on the left or right side.
 col, cols
     Aliases for `span` for {name}s on the top or bottom side.
-span : int or (int, int), optional
+span : int or 2-tuple of int, optional
     Describes how the {name} spans rows and columns of subplots.
     For example, ``fig.{name}(loc='b', col=1)`` draws a {name}
     beneath the leftmost column of subplots, and
@@ -1175,7 +1175,7 @@ class Figure(mfigure.Figure):
         # to add_subplot() in mpl < 3.4 may return an already-drawn subplot in the
         # wrong location due to gridspec override. Is against OO package design.
         if number is None:
-            number = 1 + max((num for num in self._subplot_dict), default=0)
+            number = 1 + max(self._subplot_dict, default=0)
         if number:  # must be added for a-b-c labels
             kwargs['number'] = number
         self._subplot_counter += 1  # unique label for each subplot

@@ -628,7 +628,7 @@ def _filter_colors(hcl, ihue, nhues, minsat):
 
     Parameters
     ----------
-    hcl : (name, hcl)
+    hcl : tuple
         The data.
     ihue : int
         The hue column.

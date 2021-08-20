@@ -399,7 +399,7 @@ class GeoAxes(plot.PlotAxes):
 
         Parameters
         ----------
-        lonlim, latlim : (float, float), optional
+        lonlim, latlim : 2-tuple of float, optional
             *For cartopy axes only.*
             The approximate longitude and latitude boundaries of the map,
             applied with `~cartopy.mpl.geoaxes.GeoAxes.set_extent`.

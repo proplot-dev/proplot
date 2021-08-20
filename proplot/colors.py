@@ -292,7 +292,7 @@ ratios : list of float, optional
     transition, smaller numbers indicate a faster transition.
 """
 _from_list_docstring = """
-colors : list of color-spec or (float, color-spec) tuples
+colors : list of color-spec or float, color-spec tuples
     If list of RGB[A] tuples or color strings, the colormap
     transitions evenly from ``colors[0]`` at the left-hand side
     to ``colors[-1]`` at the right-hand side.

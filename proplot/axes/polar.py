@@ -141,12 +141,12 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mproj.PolarAxes):
         thetamin, thetamax : float, optional
             The lower and upper azimuthal bounds in degrees. If
             ``thetamax != thetamin + 360``, this produces a sector plot.
-        thetalim : (float, float), optional
+        thetalim : 2-tuple of float or None, optional
             Specifies `thetamin` and `thetamax` at once.
         rmin, rmax : float, optional
             The inner and outer radial limits. If ``r0 != rmin``, this
             produces an annular plot.
-        rlim : (float, float), optional
+        rlim : 2-tuple of float or None, optional
             Specifies `rmin` and `rmax` at once.
         rborder : bool, optional
             Whether to draw the polar axes border. Visibility of the "inner"
