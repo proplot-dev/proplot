@@ -684,6 +684,8 @@ class GridSpec(mgridspec.GridSpec):
         refwpanel = sum(self.wratios[i] for i in range(x1, x2 + 1) if self._wpanels[i])
         refhsubplot = sum(self.hratios[i] for i in range(y1, y2 + 1) if not self._hpanels[i])  # noqa: E501
         refwsubplot = sum(self.wratios[i] for i in range(x1, x2 + 1) if not self._wpanels[i])  # noqa: E501
+        subplotheight = sum(r for i, r in enumerate(self.hratios) if not self._hpanels[i])  # noqa: E501
+        subplotwidth = sum(r for i, r in enumerate(self.wratios) if not self._wpanels[i])  # noqa: E501
 
         # Get the reference sizes
         # NOTE: The sizing arguments should have been normalized already
@@ -692,16 +694,16 @@ class GridSpec(mgridspec.GridSpec):
         refaspect = _not_none(fig._refaspect, fig._refaspect_default)
         if refheight is None and figheight is None:
             if figwidth is not None:
-                gridwidth = figwidth - self._spacewidth - self._panelwidth
-                refwidth = gridwidth * refwsubplot / self._subplotwidth
+                gridwidth = figwidth - self.spacewidth - self.panelwidth
+                refwidth = gridwidth * refwsubplot / subplotwidth
             if refwidth is not None:  # WARNING: do not change to elif!
                 refheight = refwidth / refaspect
             else:
                 raise RuntimeError('Figure size arguments are all missing.')
         if refwidth is None and figwidth is None:
             if figheight is not None:
-                gridheight = figheight - self._spaceheight - self._panelheight
-                refheight = gridheight * refhsubplot / self._subplotheight
+                gridheight = figheight - self.spaceheight - self.panelheight
+                refheight = gridheight * refhsubplot / subplotheight
             if refheight is not None:
                 refwidth = refheight * refaspect
             else:
@@ -711,11 +713,11 @@ class GridSpec(mgridspec.GridSpec):
         # NOTE: For e.g. [[1, 1, 2, 2], [0, 3, 3, 0]] we make sure to still scale the
         # reference axes like a square even though takes two columns of gridspec.
         if refheight is not None:
-            gridheight = (refheight - refhspace - refhpanel) * self._subplotheight / refhsubplot  # noqa: E501
-            figheight = gridheight + self._spaceheight + self._panelheight
+            gridheight = (refheight - refhspace - refhpanel) * subplotheight / refhsubplot  # noqa: E501
+            figheight = gridheight + self.spaceheight + self.panelheight
         if refwidth is not None:
-            gridwidth = (refwidth - refwspace - refwpanel) * self._subplotwidth / refwsubplot  # noqa: E501
-            figwidth = gridwidth + self._spacewidth + self._panelwidth
+            gridwidth = (refwidth - refwspace - refwpanel) * subplotwidth / refwsubplot
+            figwidth = gridwidth + self.spacewidth + self.panelwidth
         figsize = (figwidth, figheight)
         if not np.isfinite(figwidth) or not np.isfinite(figheight):
             warnings._warn_proplot(f'Auto resize failed. Invalid figure size ({figwidth}, {figheight}).')  # noqa: E501
@@ -1007,8 +1009,8 @@ class GridSpec(mgridspec.GridSpec):
             raise RuntimeError('Cannot get positiona with non-gridspec figure.')
         fig = _not_none(figure, self.figure)
         figwidth, figheight = fig.get_size_inches()
-        spacewidth, spaceheight = self._spacewidth, self._spaceheight
-        panelwidth, panelheight = self._panelwidth, self._panelheight
+        spacewidth, spaceheight = self.spacewidth, self.spaceheight
+        panelwidth, panelheight = self.panelwidth, self.panelheight
 
         # Scale the subplot slot ratios and keep the panel slots fixed
         hidxs, widxs = self._get_subplot_indices('h'), self._get_subplot_indices('w')
@@ -1108,43 +1110,27 @@ class GridSpec(mgridspec.GridSpec):
     get_subplot_params = _disable_method('get_subplot_params')
     locally_modified_subplot_params = _disable_method('locally_modified_subplot_params')
 
-    # Make formerly public instance-level attributes immutable. Also redirect
-    # spacing properties so they try to retrieve user defaults, then space defaults
-    # set by _insert_panel, then space defaults that depend on figure 'share' settings
+    # Make formerly public instance-level attributes immutable. Also redirect space
+    # properties so they try to retrieve user settings then fallback to defaults.
     # NOTE: Do not document these since intended usage is internal and panel slot
     # obfuscation makes this confusing. For example gs.update(wspace=gs.wspace) in
     # presence of panels would yield error. For now the only supported introspection
     # is the __repr__. Probably no big deal... introspection not critical here.
-    nrows = property(lambda self: self._nrows, doc='')  # in case missing
-    ncols = property(lambda self: self._ncols, doc='')  # ...
     left = property(partial(_get_current_space, key='left'), doc='')
     bottom = property(partial(_get_current_space, key='bottom'), doc='')
     right = property(partial(_get_current_space, key='right'), doc='')
     top = property(partial(_get_current_space, key='top'), doc='')
     hspace = property(partial(_get_current_space, key='hspace'), doc='')
     wspace = property(partial(_get_current_space, key='wspace'), doc='')
-    hpad = property(lambda self: list(self._hpad))  # copy for consistency
-    wpad = property(lambda self: list(self._wpad))  # ...
+    # Additional properties added for consistency
+    nrows = property(lambda self: self._nrows, doc='')  # in case missing
+    ncols = property(lambda self: self._ncols, doc='')  # ...
     hratios = property(lambda self: list(self._hratios))
     wratios = property(lambda self: list(self._wratios))
-
-    # Add hidden helper properties. These are used when calculating
-    # automatic figure size and subplot positions.
-    @property  # noqa: E301
-    def _spaceheight(self):
-        return self.bottom + self.top + sum(self.hspace)
-    @property  # noqa: E301
-    def _spacewidth(self):
-        return self.left + self.right + sum(self.wspace)
-    @property  # noqa: E301
-    def _panelheight(self):  # *absolute* height
-        return sum(r for i, r in enumerate(self.hratios) if self._hpanels[i])
-    @property  # noqa: E301
-    def _panelwidth(self):
-        return sum(r for i, r in enumerate(self.wratios) if self._wpanels[i])
-    @property  # noqa: E301
-    def _subplotheight(self):  # *relative* height
-        return sum(r for i, r in enumerate(self.hratios) if not self._hpanels[i])
-    @property  # noqa: E301
-    def _subplotwidth(self):
-        return sum(r for i, r in enumerate(self.wratios) if not self._wpanels[i])
+    hpad = property(lambda self: list(self._hpad))
+    wpad = property(lambda self: list(self._wpad))
+    # Hidden helper properties used to calculate figure size and subplot positions
+    spaceheight = property(lambda self: self.bottom + self.top + sum(self.hspace))
+    spacewidth = property(lambda self: self.left + self.right + sum(self.wspace))
+    panelheight = property(lambda self: sum(r for i, r in enumerate(self.hratios) if self._hpanels[i]))  # noqa: E501
+    panelwidth = property(lambda self: sum(r for i, r in enumerate(self.wratios) if self._wpanels[i]))  # noqa: E501
