@@ -655,10 +655,7 @@ class GridSpec(mgridspec.GridSpec):
 
         # Update the figure size and layout
         figsize = self._calc_figsize()
-        if not fig._is_same_size(figsize):
-            fig.set_size_inches(figsize, internal=True, forward=False)
-        else:  # still update the subplot positions
-            self.update()
+        fig.set_size_inches(figsize, internal=True, forward=False)
 
         # Return a subplotspec
         # NOTE: For figure panels indices are determined by user-input spans.
@@ -1091,8 +1088,7 @@ class GridSpec(mgridspec.GridSpec):
         self._update_params(**fig._gridspec_params)
         fig._gridspec_params.clear()
         figsize = self._calc_figsize()
-        if not fig._is_adjusting and not fig._is_same_size(figsize):
-            fig.set_size_inches(figsize, internal=True, forward=False)
+        fig.set_size_inches(figsize, internal=True, forward=False)
 
     # Delete attributes. Don't like having special setters and getters for some
     # settings and not others. Width and height ratios can be updated with update().

@@ -1582,8 +1582,6 @@ class Figure(mfigure.Figure):
         # Set the canvas and add monkey patches to the instance-level draw and
         # print_figure methods. The latter is called by save() and by the inline
         # backend. See `_add_canvas_preprocessor` for details.
-        # NOTE: Cannot use draw_idle() because it causes complications for qt5
-        # backend (wrong figure size).
         _add_canvas_preprocessor(canvas, 'print_figure')
         if callable(getattr(canvas, '_draw', None)):  # for macosx backend
             _add_canvas_preprocessor(canvas, '_draw')
