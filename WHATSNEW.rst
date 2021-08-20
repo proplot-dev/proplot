@@ -52,6 +52,8 @@ Bug fixes
   the input labels (:issue:`188`, :commit:`fdd53a6c`).
 * Fix issues with the ``%qt`` backend using ``forward=False``
   during subplot additions (:issue:`244`, :commit:`ac12bbc2`)
+* Fix issue where edge colors of area plots with ``negpos=True``
+  cannot be changed (:commit:`bb50dea4`).
 
 Documentation
 -------------
