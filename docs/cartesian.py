@@ -20,8 +20,8 @@
 # ===============
 #
 # This section documents features used for modifying Cartesian *x* and *y*
-# axis settings, including axis scales, tick locations, and tick label
-# formatting. It also documents a handy "dual units" feature.
+# axes, including axis scales, tick locations, tick label formatting, and
+# several twin and dual axes commands.
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -247,8 +247,8 @@ pplt.rc.reset()
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_datetime:
 #
-# Datetime ticks
-# --------------
+# Datetime axes
+# -------------
 #
 # ProPlot can also be used to customize the tick locations and tick label
 # format of "datetime" axes. To draw ticks on some particular time unit, just use a
@@ -469,10 +469,60 @@ for ax, power, color in zip(axs[4:], (2, 1 / 4), colors):
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
+# .. _ug_alt:
+#
+# Alternate axes
+# --------------
+#
+# The `matplotlib.axes.Axes` class includes `~matplotlib.axes.Axes.twinx`
+# and `~matplotlib.axes.Axes.twiny` commands for drawing "twin" *x* and
+# *y* axes in the same subplot. ProPlot expands on these commands and adds
+# the arguably more intuitive `~proplot.axes.CartesianAxes.altx` and
+# `~proplot.axes.CartesianAxes.alty` options. Here `~proplot.axes.CartesianAxes.altx`
+# is equivalent to `~proplot.axes.CartesianAxes.twiny` (makes an alternate *x*
+# axes and an identical twin *y* axes) and `~proplot.axes.CartesianAxes.alty`
+# is equivalent to `~proplot.axes.CartesianAxes.twinx` (makes an alternate *y*
+# axes and an identical twin *x* axes). The ProPlot versions can be quickly
+# formatted by passing `proplot.axes.CartesianAxes.format` keyword arguments
+# to the commands (e.g., ``ax.alty(ycolor='red')`` or, since the ``y`` prefix in
+# this context is redundant, just ``ax.altx(color='red')``. They also enforce
+# sensible default locations for the spines, ticks, and labels, and disable
+# the twin axes background patch and gridlines by default.
+
+# %%
+import proplot as pplt
+import numpy as np
+state = np.random.RandomState(51423)
+c0 = 'gray5'
+c1 = 'red8'
+c2 = 'blue8'
+N, M = 50, 10
+
+# Alternate y axis
+data = state.rand(M) + (state.rand(N, M) - 0.48).cumsum(axis=0)
+altdata = 5 * (state.rand(N) - 0.45).cumsum(axis=0)
+fig = pplt.figure(share=False, refwidth=2)
+ax = fig.subplot(121)
+ax.format(title='Alternate y twin x')
+ax.line(data, color=c0, ls='--')
+ox = ax.alty(color=c2, label='alternate ylabel', linewidth=1)
+ox.line(altdata, color=c2)
+
+# Alternate x axis
+data = state.rand(M) + (state.rand(N, M) - 0.48).cumsum(axis=0)
+altdata = 5 * (state.rand(N) - 0.45).cumsum(axis=0)
+ax = fig.subplot(122)
+ax.format(title='Alternate x twin y')
+ax.linex(data, color=c0, ls='--')
+ox = ax.altx(color=c1, label='alternate xlabel', linewidth=1)
+ox.linex(altdata, color=c1)
+fig.format(xlabel='xlabel', ylabel='ylabel', suptitle='Alternate axes demo')
+
+# %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_dual:
 #
-# Dual units
-# ----------
+# Dual unit axes
+# --------------
 #
 # The `~proplot.axes.CartesianAxes.dualx` and
 # `~proplot.axes.CartesianAxes.dualy` methods can be used to draw duplicate

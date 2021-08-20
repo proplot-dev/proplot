@@ -742,6 +742,8 @@ def Cycle(*args, N=None, samples=None, name=None, **kwargs):
         A list of colors passed as keyword arguments. This is equivalent
         to passing a list of colors as the first positional argument and is
         included for consistency with `~matplotlib.axes.Axes.set_prop_cycle`.
+        If positional arguments were passed, the colors in this list are
+        appended to the colors resulting from the positional arguments.
     lw, ls, d, a, m, ms, mew, mec, mfc
         Shorthands for the below keywords.
     linewidth, linestyle, dashes, alpha, marker, markersize, markeredgewidth, \

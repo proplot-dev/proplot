@@ -421,7 +421,6 @@ import proplot as pplt
 import numpy as np
 
 # Update global settings in several different ways
-pplt.rc.cycle = 'colorblind'
 pplt.rc.metacolor = 'gray6'
 pplt.rc.update({'fontname': 'Source Sans Pro', 'fontsize': 11})
 pplt.rc['figure.facecolor'] = 'gray3'
@@ -433,13 +432,14 @@ with pplt.rc.context({'suptitle.size': 13}, toplabelcolor='gray6', metawidth=1.5
     fig = pplt.figure(figwidth=6, sharey='limits', span=False)
     axs = fig.subplots(ncols=2)
 
-# Plot lines
-N, M = 100, 6
+# Plot lines with a custom cycler
+N, M = 100, 7
 state = np.random.RandomState(51423)
 values = np.arange(1, M + 1)
+cycle = pplt.get_colors('grays', M - 1) + ['red']
 for i, ax in enumerate(axs):
     data = np.cumsum(state.rand(N, M) - 0.5, axis=0)
-    lines = ax.plot(data, linewidth=3, cycle='Grays')
+    lines = ax.plot(data, linewidth=3, cycle=cycle)
 
 # Apply settings to axes with format()
 axs.format(
@@ -450,9 +450,6 @@ axs.format(
     abc='[A]', abcloc='l',
     title='Title', titleloc='r', titlecolor='gray7'
 )
-ay = axs[-1].twinx()
-ay.format(ycolor='red', linewidth=1.5, ylabel='secondary axis')
-ay.plot((state.rand(100) - 0.2).cumsum(), color='r', lw=3)
 
 # Reset persistent modifications from head of cell
 pplt.rc.reset()
