@@ -18,120 +18,89 @@ __all__ = ['CartesianAxes']
 
 
 _alt_kwargs = (  # TODO: More systematic approach?
-    'lim', 'reverse', 'scale', 'label',
+    'lim', 'min', 'max', 'reverse', 'scale', 'label',
     'tickdir', 'grid', 'gridminor',
     'tickminor', 'ticklabeldir', 'tickrange', 'wraprange',
     'rotation', 'formatter', 'ticklabels',
     'ticks', 'locator', 'minorticks', 'minorlocator',
-    'bounds', 'margin', 'color',
-    'ticklen', 'linewidth', 'gridcolor',
+    'bounds', 'margin', 'color', 'linewidth', 'ticklen', 'gridcolor',
     'label_kw', 'scale_kw', 'locator_kw', 'formatter_kw', 'minorlocator_kw',
 )
-_alt_doc = """
-Return an axes in the same location as this one but whose {x} axis is on
-the {x2}. This is an alias and more intuitive name for
-`~CartesianAxes.twin{y}`, which generates two *{x}* axes with
-a shared ("twin") *{y}* axes.
 
-Also enforces the following settings:
 
-* Places the old *{x}* axis on the {x1} and the new *{x}* axis
-  on the {x2}.
+# Shared docstring
+_shared_docstring = """
+%(descrip)s
+Parameters
+----------
+%(extra)s{xargs} : optional
+    Passed to `Axes.format`.
+{args} : optional
+    Prepended with ``'{x}'`` and passed to `Axes.format`.
+
+Note
+----
+This enforces the following settings:
+
+* Places the old *{x}* axis on the {x1} and the new *{x}*
+  axis on the {x2}.
 * Makes the old {x2} spine invisible and the new {x1}, {y1},
   and {y2} spines invisible.
 * Adjusts the *{x}* axis tick, tick label, and axis label positions
   according to the visible spine positions.
-* Locks the old and new *{y}* axis limits and scales, and makes the new
-  {y} axis labels invisible.
-
-Parameters
-----------
-{xargs} : optional
-    Passed to `Axes.format`.
-{args} : optional
-    Prepended with ``'{x}'`` and passed to `Axes.format`.
+* Syncs the old and new *{y}* axis limits and scales, and makes the
+  new *{y}* axis labels invisible.
 """
-_snippet_manager['axes.altx'] = _alt_doc.format(
-    x='x',
-    x1='bottom',
-    x2='top',
-    y='y',
-    y1='left',
-    y2='right',
-    args=', '.join(_alt_kwargs),
-    xargs=', '.join('x' + key for key in _alt_kwargs),
-)
-_snippet_manager['axes.alty'] = _alt_doc.format(
-    x='y',
-    x1='left',
-    x2='right',
-    y='x',
-    y1='bottom',
-    y2='top',
-    args=', '.join(_alt_kwargs),
-    xargs=', '.join('y' + key for key in _alt_kwargs),
-)
-
-_dual_doc = """
-Return a secondary *{x}* axis for denoting equivalent *{x}*
-coordinates in *alternate units*.
-
-Parameters
-----------
-funcscale : callable, 2-tuple of callables, or scale-spec
-    Used to transform units from the parent axis to the secondary axis.
-    This can be a `~proplot.scale.FuncScale` itself or a function,
-    (function, function) tuple, or an axis scale specification interpreted
-    by the `~proplot.constructor.Scale` constructor function, any of which will
-    be used to build a `~proplot.scale.FuncScale` and applied to the dual axis
-    (see `~proplot.scale.FuncScale` for details).
-{args} : optional
-    Prepended with ``'{x}'`` and passed to `Axes.format`.
-"""
-_snippet_manager['axes.dualx'] = _dual_doc.format(
-    x='x',
-    args=', '.join(_alt_kwargs),
-    xargs=', '.join('x' + key for key in _alt_kwargs),
-)
-_snippet_manager['axes.dualy'] = _dual_doc.format(
-    x='y',
-    args=', '.join(_alt_kwargs),
-    xargs=', '.join('y' + key for key in _alt_kwargs),
-)
-
-_twin_doc = """
-Mimics the builtin `~matplotlib.axes.Axes.twin{y}` method.
-
-Also enforces the following settings:
-
-* Places the old *{x}* axis on the {x1} and the new *{x}* axis
-  on the {x2}.
-* Makes the old {x2} spine invisible and the new {x1}, {y1},
-  and {y2} spines invisible.
-* Adjusts the *{x}* axis tick, tick label, and axis label positions
-  according to the visible spine positions.
-* Locks the old and new *{y}* axis limits and scales, and makes the new
-  {y} axis labels invisible.
-
-Parameters
-----------
-{xargs} : optional
-    Passed to `Axes.format`.
-{args} : optional
-    Prepended with ``'{x}'`` and passed to `Axes.format`.
-"""
-_snippet_manager['axes.twinx'] = _twin_doc.format(
-    x='y', x1='left', x2='right',
-    y='x', y1='bottom', y2='top',
-    args=', '.join(_alt_kwargs),
-    xargs=', '.join('y' + key for key in _alt_kwargs),
-)
-_snippet_manager['axes.twiny'] = _twin_doc.format(
+_shared_x_keys = dict(
     x='x', x1='bottom', x2='top',
     y='y', y1='left', y2='right',
     args=', '.join(_alt_kwargs),
     xargs=', '.join('x' + key for key in _alt_kwargs),
 )
+_shared_y_keys = dict(
+    x='y', x1='left', x2='right',
+    y='x', y1='bottom', y2='top',
+    args=', '.join(_alt_kwargs),
+    xargs=', '.join('y' + key for key in _alt_kwargs),
+)
+
+# Alt docstrings
+_alt_descrip = """
+Return an axes in the same location as this one but whose {x}
+axis is on the {x2}. This is an alias and more intuitive name
+for `~CartesianAxes.twin{y}`, which generates two *{x}* axes
+with a shared ("twin") *{y}* axes.
+"""
+_alt_docstring = _shared_docstring % {'descrip': _alt_descrip, 'extra': ''}
+_snippet_manager['axes.altx'] = _alt_docstring.format(**_shared_x_keys)
+_snippet_manager['axes.alty'] = _alt_docstring.format(**_shared_y_keys)
+
+# Twin docstrings
+_twin_descrip = """
+Return an axes in the same location as this one but whose {x}
+axis is on the {x2}. Mimics `matplotlib.axes.Axes.twin{y}`.
+"""
+_twin_docstring = _shared_docstring % {'descrip': _twin_descrip, 'extra': ''}
+_snippet_manager['axes.twinx'] = _twin_docstring.format(**_shared_y_keys)
+_snippet_manager['axes.twiny'] = _twin_docstring.format(**_shared_x_keys)
+
+# Dual docstrings
+_dual_descrip = """
+Return a secondary *{x}* axis for denoting equivalent *{x}*
+coordinates in *alternate units*.
+"""
+_dual_extra = """
+funcscale : callable, 2-tuple of callables, or scale-spec
+    The scale used to transform units from the parent axis to the secondary
+    axis. This can be a `~proplot.scale.FuncScale` itself or a function,
+    (function, function) tuple, or an axis scale specification
+    interpreted by the `~proplot.constructor.Scale` constructor function,
+    any of which will be used to build a `~proplot.scale.FuncScale` and
+    applied to the dual axis (see `~proplot.scale.FuncScale` for details).
+"""
+_dual_docstring = _shared_docstring % {'descrip': _dual_descrip, 'extra': _dual_extra.strip()}  # noqa: E501
+_snippet_manager['axes.dualx'] = _dual_docstring.format(**_shared_x_keys)
+_snippet_manager['axes.dualy'] = _dual_docstring.format(**_shared_y_keys)
 
 
 class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
