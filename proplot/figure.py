@@ -1174,7 +1174,6 @@ class Figure(mfigure.Figure):
         # NOTE: Must assign unique label to each subplot or else subsequent calls
         # to add_subplot() in mpl < 3.4 may return an already-drawn subplot in the
         # wrong location due to gridspec override. Is against OO package design.
-        gs.figure = self
         if number is None:
             number = 1 + max((num for num in self._subplot_dict), default=0)
         if number:  # must be added for a-b-c labels
