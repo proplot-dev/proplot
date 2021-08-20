@@ -37,6 +37,12 @@ Features
   (enabled by default) to help make diverging colormaps with an intermediate
   hueless white, gray, or black (:commit:`2e8cb495`).
 
+..
+  * Allow mappable `legend` input by retrieving ``ContourSet.legend_elements``
+    and ``Collection.legend_elements`` handles (:commit:`6382cf91`).
+  * Allow on-the-fly `~matplotlib.axes.Axes.quiverkey` creation with
+    ``key=loc`` where `loc` is a legend-like location (:commit:`###`).
+
 Bug fixes
 ---------
 
@@ -98,7 +104,7 @@ Deprecated
   :rcraw:`cmap.lut` (:commit:`a50d5264`).
 * Rename confusing :rcraw:`text.labelsize` and :rcraw:`text.titlesize` settings
   to clearer :rcraw:`font.smallsize` and :rcraw:`font.largesize` with shorthands
-  :raw:`font.small` and :raw:`font.large` (analogous to :rcraw:`font.size`)
+  :rcraw:`font.small` and :rcraw:`font.large` (analogous to :rcraw:`font.size`)
   (:pr:`a50d5264`). Previous names were bad because "label size" applies to more than
   just axis or tick labels and "title size" applies to more than just axes titles.
 * Rename :rcraw:`tick.ratio` to :rcraw:`tick.widthratio` and add missing
@@ -207,8 +213,7 @@ Features
   ``pplt.figure(subplotpars=SubplotParams)`` and auto-disable and warn when
   matplotlib "tight layout" rc settings are toggled (:commit:`51967ce3`).
 * Add nicer string representations of figures, gridspecs, subplotspecs, and
-  axes clearly showing the geometry and layout (:commit:`51967ce3`,
-  :commit:`51967ce3`, :commit:`6382cf91`).
+  axes clearly showing the geometry and layout (:commit:`51967ce3`, :commit:`6382cf91`).
 * Rename setting :rcraw:`abc.style` to :rcraw:`abc` (:commit:`a50d5264`). Setting this
   to ``False`` still "turns off" labels, setting to ``True`` "turns on" labels with
   the default style ``'a'``, and setting to a string "turns on" labels with this style.
@@ -330,8 +335,6 @@ Features
   differing labels (:commit:`6382cf91`). This is useful for passing error shading to `legend`.
 * Silently ignore non-artist and non-container `legend` input -- e.g., ignore the bins
   and values returned by `hist` (:commit:`6382cf91`).
-* Allow mappable `legend` input by retrieving ``ContourSet.legend_elements``
-  and ``Collection.legend_elements`` handles (:commit:`6382cf91`).
 * Allow list-of-list "centered row" `legend` specification with e.g.
   ``[h, [h1, h2, h3]]`` (i.e., mixed list and non-list input) (:commit:`6382cf91`).
 * Permit partial specification of `legend` labels, e.g. ``[h1, h2]`` paired
@@ -392,7 +395,7 @@ Bug fixes
   due to private matplotlib API change (:commit:`51967ce3`).
 * Fix issue where ``cmap.reverse()`` returns strange monochrome colormaps
   when channel values are specified by functions (e.g., ``cubehelix``) due
-  to loop scope overwriting a non-local lambda function variable (:pr:`ade787f9`).
+  to loop scope overwriting a non-local lambda function variable (:commit:`ade787f9`).
 * Fix issue where ``_restrict_inbounds`` fails for reversed/descending axis
   limits (:commit:`6382cf91`).
 * Fix issues where cartopy minor gridlines are toggled on when map bounds are changed

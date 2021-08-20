@@ -1,6 +1,6 @@
-.. _ug_rcmatplotlib: https://matplotlib.org/stable/tutorials/introductory/customizing.html
+.. _ug_rcmpl: https://matplotlib.org/stable/tutorials/introductory/customizing.html
 
-.. _ug_matplotlibrc: https://matplotlib.org/stable/tutorials/introductory/customizing.html#customizing-with-matplotlibrc-files
+.. _ug_mplrc: https://matplotlib.org/stable/tutorials/introductory/customizing.html#customizing-with-matplotlibrc-files
 
 .. _ug_config:
 
@@ -13,7 +13,7 @@ Overview
 A dictionary-like object named `~proplot.config.rc`, belonging to the
 `~proplot.config.Configurator` class, is created when you import ProPlot.
 This is your one-stop shop for working with
-`matplotlib settings <ug_rcmatplotlib_>`_
+`matplotlib settings <ug_rcmpl_>`_
 stored in `~proplot.config.rc_matplotlib`
 (our name for the `~matplotlib.rcParams` dictionary)
 and :ref:`ProPlot settings <ug_rcproplot>`
@@ -73,7 +73,7 @@ Matplotlib settings are natively controlled with the `~matplotlib.rcParams`
 dictionary. ProPlot makes this dictionary available in the top-level namespace as
 `~proplot.config.rc_matplotlib`. All matplotlib settings can also be changed with
 `~proplot.config.rc`. Details on the matplotlib settings can be found on
-`this page <ug_rcmatplotlib_>`_.
+`this page <ug_rcmpl_>`_.
 
 .. _ug_rcproplot:
 
@@ -153,7 +153,7 @@ The proplotrc file
 ------------------
 
 When you import ProPlot for the first time, a ``proplotrc`` file is generated with
-all lines commented out. This file is just like `matplotlibrc <ug_matplotlibrc_>`_,
+all lines commented out. This file is just like `matplotlibrc <ug_mplrc_>`_,
 except it controls both matplotlib *and* ProPlot settings. The syntax is essentially
 the same as matplotlibrc, and the file path is very similar to matplotlibrc. On most
 platforms it is found in ``~/.proplot/proplotrc``, but a loose hidden file in the

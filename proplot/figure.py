@@ -1001,8 +1001,6 @@ class Figure(mfigure.Figure):
             axis.label.set_text(space)
 
         # Update spanning label position
-        # NOTE: Simply using axis._update_label_position() when this is called
-        # is not sufficient. Fails with e.g. inline backend.
         t = mtransforms.IdentityTransform()  # set in pixels
         cx, cy = axis.label.get_position()
         if x == 'x':
@@ -1015,6 +1013,8 @@ class Figure(mfigure.Figure):
         label.set_position(coord)
 
         # Add simple monkey patch to ensure positions stay in sync
+        # NOTE: Simply using axis._update_label_position() when this is called
+        # is not sufficient. Fails with e.g. inline backend.
         def _set_coord(self, *args, **kwargs):
             setpos(self, *args, **kwargs)
             setpos(label, *args, **kwargs)

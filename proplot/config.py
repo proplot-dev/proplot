@@ -809,10 +809,11 @@ def register_fonts(*args, user=True, default=False):
 
 class Configurator(MutableMapping, dict):
     """
-    A dictionary-like class for managing `matplotlib settings <ug_rcmatplotlib_>`_
-    stored in `rc_matplotlib` and :ref:`ProPlot settings <ug_rcproplot>` stored
-    in `rc_proplot`. This class is instantiated as the `rc` object on import.
-    See the :ref:`user guide <ug_config>` for details.
+    A dictionary-like class for managing `matplotlib settings
+    <https://matplotlib.org/stable/tutorials/introductory/customizing.html>`__
+    stored in `rc_matplotlib` and :ref:`ProPlot settings <ug_rcproplot>`
+    stored in `rc_proplot`. This class is instantiated as the `rc` object
+    on import. See the :ref:`user guide <ug_config>` for details.
     """
     def __repr__(self):
         cls = type('rc', (dict,), {})  # temporary class with short name

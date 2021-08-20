@@ -395,14 +395,15 @@ axs[-1, -1].format(fc='gray2', grid=False)
 # Settings and styles
 # -------------------
 #
-# A dictionary-like object named `~proplot.config.rc` is created when you
-# import ProPlot. `~proplot.config.rc` is similar to the matplotlib
-# `~matplotlib.rcParams` dictionary, but can be used to change both
-# `matplotlib settings <ug_rcmatplotlib_>`_ and :ref:`ProPlot settings <ug_rcproplot>`.
-# The matplotlib-specific settings are stored in `~proplot.config.rc_matplotlib`
-# (our name for `matplotlib.rcParams`) and the ProPlot-specific settings are
-# stored in `~proplot.config.rc_proplot`. ProPlot also includes a :rcraw:`style`
-# setting that can be used to switch between `matplotlib stylesheets
+# A dictionary-like object named `~proplot.config.rc` is created when you import
+# ProPlot. `~proplot.config.rc` is similar to the matplotlib `~matplotlib.rcParams`
+# dictionary, but can be used to change both `matplotlib settings
+# <https://matplotlib.org/stable/tutorials/introductory/customizing.html>`__ and
+# :ref:`ProPlot settings <ug_rcproplot>`. The matplotlib-specific settings are
+# stored in `~proplot.config.rc_matplotlib` (our name for `matplotlib.rcParams`) and
+# the ProPlot-specific settings are stored in `~proplot.config.rc_proplot`.
+# ProPlot also includes a :rcraw:`style` setting that can be used to
+# switch between `matplotlib stylesheets
 # <https://matplotlib.org/stable/gallery/style_sheets/style_sheets_reference.html>`__.
 # See the :ref:`configuration section <ug_config>` for details.
 #
