@@ -1425,8 +1425,7 @@ class Axes(maxes.Axes):
         Draw lines indicating the zoom range of the inset axes. This is similar
         to the builtin `~matplotlib.axes.Axes.indicate_inset_zoom` except
         lines are *refreshed* at draw-time. This is also called automatically
-        when ``zoom=True`` is passed to `~Axes.inset_axes`. Note this method
-        must be called from the *inset* axes and not the parent axes.
+        when ``zoom=True`` is passed to `~Axes.inset_axes`.
 
         Parameters
         ----------
@@ -1436,7 +1435,7 @@ class Axes(maxes.Axes):
             The width of the zoom lines and box outline in points.
         ls, linestyle : linestyle-spec, optional
             The line style for the zoom lines and box outline.
-        color, ec, edgecolor : color-spec, optional
+        ec, edgecolor : color-spec, optional
             The color of the zoom lines and box outline.
         capstyle : {'butt', 'round', 'projecting'}
             The cap style for the zoom lines and box outline.
