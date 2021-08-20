@@ -56,7 +56,7 @@
 # * Both `~proplot.axes.Axes.colorbar` and `~proplot.axes.axes.legend` accept
 #   `space` and `pad` arguments. `space` controls the absolute separation of the
 #   colorbar or legend from the parent subplot edge and `pad` controls the
-#   :reg:`tight layout <ug_tight>` padding between the colorbar or legend
+#   :ref:`tight layout <ug_tight>` padding between the colorbar or legend
 #   and the subplot labels.
 #
 # You can also draw colorbars and legends on-the-fly by supplying keyword arguments

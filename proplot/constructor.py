@@ -909,7 +909,7 @@ def Locator(locator, *args, **kwargs):
 
     Parameters
     ----------
-    locator : `~matplotlib.ticker.Locator`, str, float, or list of float
+    locator : `~matplotlib.ticker.Locator`, str, float, list of float, or tuple
         The locator specification, interpreted as follows:
 
         * If a `~matplotlib.ticker.Locator` instance already, the input
@@ -1025,7 +1025,7 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
 
     Parameters
     ----------
-    formatter : `~matplotlib.ticker.Formatter`, str, list of str, or function
+    formatter : `~matplotlib.ticker.Formatter`, str, list of str, function, or tuple
         The formatter specification, interpreted as follows:
 
         * If a `~matplotlib.ticker.Formatter` instance already, the input
@@ -1176,7 +1176,7 @@ def Scale(scale, *args, **kwargs):
 
     Parameters
     ----------
-    scale : `~matplotlib.scale.ScaleBase`, str, or (str, ...)
+    scale : `~matplotlib.scale.ScaleBase`, str, or tuple
         The axis scale specification. If a `~matplotlib.scale.ScaleBase`
         instance already, the input argument is simply returned. Otherwise,
         `scale` should be a string corresponding to one of the

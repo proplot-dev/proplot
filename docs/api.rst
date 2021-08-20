@@ -13,15 +13,6 @@ ProPlot < 0.8 is now found in the individual `~proplot.axes.PlotAxes`
 plotting commands. Using ``help(ax.command)`` during a python session shows both
 the ProPlot documentation and the original matplotlib documentation.
 
-Top-level functions
-===================
-
-.. automodule:: proplot.ui
-
-.. automodsumm:: proplot.ui
-   :toctree: api
-
-
 Figure class
 ============
 
@@ -47,6 +38,15 @@ Axes classes
 .. automodule:: proplot.axes
 
 .. automodsumm:: proplot.axes
+   :toctree: api
+
+
+Top-level functions
+===================
+
+.. automodule:: proplot.ui
+
+.. automodsumm:: proplot.ui
    :toctree: api
 
 
