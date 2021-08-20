@@ -2286,8 +2286,7 @@ def _sanitize_levels(levels, allow_descending=True):
 class DiscreteNorm(mcolors.BoundaryNorm):
     """
     Meta-normalizer that discretizes the possible color values returned by
-    arbitrary continuous normalizers given a list of level boundaries. This
-    is applied with all plotting commands unless you pass ``discrete=False``.
+    arbitrary continuous normalizers given a list of level boundaries.
     """
     # See this post: https://stackoverflow.com/a/48614231/4970632
     # WARNING: Must be child of BoundaryNorm. Many methods in ColorBarBase
@@ -2474,8 +2473,7 @@ class DiscreteNorm(mcolors.BoundaryNorm):
 class SegmentedNorm(mcolors.Normalize):
     """
     Normalizer that scales data linearly with respect to the interpolated list
-    index in an arbitrary monotonically increasing level list. Is applied
-    if you pass unevenly-spaced `levels` to a plotting command.
+    index in an arbitrary monotonically increasing level list.
     """
     def __init__(self, levels, vmin=None, vmax=None, clip=False):
         """
@@ -2559,8 +2557,7 @@ class SegmentedNorm(mcolors.Normalize):
 class DivergingNorm(mcolors.Normalize):
     """
     Normalizer that ensures some central data value lies at the central
-    colormap color.  The default central value is ``0``. Is applied if you
-    pass ``norm='diverging'`` or ``diverging=True`` to a plotting command.
+    colormap color.  The default central value is ``0``.
     """
     def __str__(self):
         return type(self).__name__ + f'(center={self.vcenter!r})'
@@ -2834,9 +2831,8 @@ class _ColorCache(dict):
 
 class ColorDatabase(dict):
     """
-    Dictionary subclass used to replace the builtin matplotlib color database. Permits
-    drawing colors from registered colormaps and color cycles for any plotting command
-    wherever colors are specified. See `~ColorDatabase.cache` for details.
+    Dictionary subclass used to replace the builtin matplotlib color
+    database. See `~ColorDatabase.cache` for details.
     """
     # NOTE: Matplotlib's database also inherits from dict. MutableMapping not needed
     # since usage is entirely internal (we just make it public for documentation)
@@ -2877,8 +2873,8 @@ class ColorDatabase(dict):
         * For a color cycle, use e.g. ``color=('colorblind', 2)``.
           The number is the list index.
 
-        These examples work with any matplotlib command that accepts
-        a `color` keyword arg.
+        This works with anywhere that colors are used in matplotlib, for example
+        as ``'color'``, ``'edgecolor'``, or ``'facecolor'`` arguments.
         """
         return self._cache
 
@@ -2928,13 +2924,10 @@ class ColormapDatabase(MutableMapping, dict):
 
     def __setitem__(self, key, value):
         """
-        Store the colormap under its lowercase name.
-
-        * If the object is a `matplotlib.colors.ListedColormap` it is converted
-          to `proplot.colors.DiscreteColormap` if ``cmap.N`` is smaller than
-          :rc:`cmap.listedthresh` and `proplot.colors.ContinuousColormap` otherwise.
-        * If the object is a `matplotlib.colors.LinearSegmentedColormap` it is
-          converted to `proplot.colors.ContinuousColormap`.
+        Store the colormap under its lowercase name. If the object is a
+        `matplotlib.colors.ListedColormap` and ``cmap.N`` is smaller than
+        :rc:`cmap.listedthresh`, it is converted to a `proplot.colors.DiscreteColormap`.
+        Otherwise, it is converted to a `proplot.colors.ContinuousColormap`.
         """
         self._set_item(key, value)
 

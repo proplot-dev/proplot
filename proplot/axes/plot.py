@@ -161,16 +161,16 @@ _snippet_manager['plot.args_2d_shared'] = _args_2d_shared_docstring
 _guide_docstring = """
 colorbar : bool, int, or str, optional
     If not ``None``, this is a location specifying where to draw an *inset*
-    or *panel* colorbar from the resulting object(s). If ``True``, the
-    default location is used. Valid locations are described in
+    or *panel* colorbar from the resulting object(s). If ``True``, the default
+    :rc:`colorbar.loc` is used. Valid locations are described in
     `~proplot.axes.Axes.colorbar`.
 colorbar_kw : dict-like, optional
     Ignored if `colorbar` is ``None``. Extra keyword args for the call
     to `~proplot.axes.Axes.colorbar`.
 legend : bool, int, or str, optional
     If not ``None``, this is a location specifying where to draw an *inset*
-    or *panel* legend from the resulting object(s). If ``True``, the
-    default location is used. Valid locations are described in
+    or *panel* legend from the resulting object(s). If ``True``, the default
+    :rc:`legend.loc` is used. Valid locations are described in
     `~proplot.axes.Axes.legend`.
 legend_kw : dict-like, optional
     Ignored if `legend` is ``None``. Extra keyword args for the call
