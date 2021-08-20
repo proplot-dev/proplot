@@ -21,7 +21,7 @@
 # This section details a variety of features related to ProPlot subplots,
 # including automatic a-b-c subplot labels, axis sharing between subplots,
 # tight layout spacing of subplots, and a unique feature where the figure
-# size is automatically determined by the subplot layout.
+# width and/or height are automatically determined by the subplot layout.
 #
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_abc:

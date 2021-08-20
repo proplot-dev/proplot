@@ -485,7 +485,7 @@ for ax, power, color in zip(axs[4:], (2, 1 / 4), colors):
 # axes and an identical twin *x* axes). The ProPlot versions can be quickly
 # formatted by passing `proplot.axes.CartesianAxes.format` keyword arguments
 # to the commands (e.g., ``ax.alty(ycolor='red')`` or, since the ``y`` prefix in
-# this context is redundant, just ``ax.altx(color='red')``. They also enforce
+# this context is redundant, just ``ax.alty(color='red')``. They also enforce
 # sensible default locations for the spines, ticks, and labels, and disable
 # the twin axes background patch and gridlines by default.
 
@@ -525,14 +525,16 @@ fig.format(xlabel='xlabel', ylabel='ylabel', suptitle='Alternate axes demo')
 # --------------
 #
 # The `~proplot.axes.CartesianAxes.dualx` and
-# `~proplot.axes.CartesianAxes.dualy` methods can be used to draw duplicate
-# *x* and *y* axes meant to represent *alternate units* in the same
-# coordinate range as the "parent" axis. This feature is powered by the
-# `~proplot.scale.FuncScale` class. `~proplot.axes.CartesianAxes.dualx`
-# and `~proplot.axes.CartesianAxes.dualy` accept either...
+# `~proplot.axes.CartesianAxes.dualy` methods can be used to draw duplicate *x* and
+# *y* axes meant to represent *alternate units* in the same coordinate range as the
+# "parent" axis. This feature is powered by the `~proplot.scale.FuncScale` class.
+# `~proplot.axes.CartesianAxes.dualx` and `~proplot.axes.CartesianAxes.dualy` accept
+# the same axis formatting keyword arguments as `~proplot.axes.CartesianAxes.altx`
+# and `~proplot.axes.CartesianAxes.alty`. The alternate units are specified with
+# either of the following three positional arguments:
 #
 # #. A single linear forward function.
-# #. A pair of arbitrary forward and inverse functions.
+# #. A 2-tuple of arbitrary forward and inverse functions.
 # #. An :ref:`axis scale <ug_scales>` name or class instance.
 #
 # In the third case, the axis scale transforms are used for the forward and
