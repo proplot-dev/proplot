@@ -35,7 +35,7 @@ Features
 
 * Add `~proplot.colors.PerceptualColormap.from_list` ``adjust_grays`` option
   (enabled by default) to help make diverging colormaps with an intermediate
-  hueless white, gray, or black (:commit:`2e8cb495`).
+  hueless white, gray, or black color (:commit:`2e8cb495`).
 
 ..
   * Allow mappable `legend` input by retrieving ``ContourSet.legend_elements``
@@ -54,6 +54,14 @@ Bug fixes
   during subplot additions (:issue:`244`, :commit:`ac12bbc2`)
 * Fix issue where edge colors of area plots with ``negpos=True``
   cannot be changed (:commit:`bb50dea4`).
+* Fix issues where ``setup_matplotlib`` is not called for pint quantity
+  input and column iteration of 2D input to 1D funcs fails (:commit:`e57d238e`).
+* Fix issue where pint quantity *x* and *y* coordinates fail when passing
+  as pcolor centers or when :rcraw:`cmap.inbounds` enabled (:commit:`fd76af3a`).
+* Fix issue where pint quantity *z* data do not have units stripped
+  unless in xarray dataarray (:commit:`aadc65f9`).
+* Fix issue where making single-color contour plots creates just one contour
+  by no longer making ``levels`` count dependent on `colors` (:commit:`63eaf10e`).
 
 Documentation
 -------------
