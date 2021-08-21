@@ -33,7 +33,7 @@ class _SnippetManager(dict):
         care to import modules in the correct order.
         """
         value = self(value)
-        value = value.strip()
+        value = value.strip('\n')
         super().__setitem__(key, value)
 
 
