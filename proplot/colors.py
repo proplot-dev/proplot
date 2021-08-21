@@ -1218,10 +1218,10 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         path : path-like, optional
             The output filename. If not provided, the colormap is saved in the
             ``cmaps`` subfolder in `~proplot.config.Configurator.user_folder`
-            under the filename ``name.json`` (where ``name`` is the colormap name).
-            Valid extensions are shown in the below table.
+            under the filename ``name.json`` (where ``name`` is the colormap
+            name). Valid extensions are shown in the below table.
 
-            %(rc.cmap_exts)s
+        %(rc.cmap_exts)s
 
         alpha : bool, optional
             Whether to include an opacity column for ``.rgb``
@@ -1514,7 +1514,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         path : path-like
             The file path. Valid file extensions are shown in the below table.
 
-            %(rc.cmap_exts)s
+        %(rc.cmap_exts)s
 
         warn_on_failure : bool, optional
             If ``True``, issue a warning when loading fails instead of
@@ -1673,7 +1673,7 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
             under the filename ``name.hex`` (where ``name`` is the color cycle
             name). Valid extensions are described in the below table.
 
-            %(rc.cycle_exts)s
+        %(rc.cycle_exts)s
 
         alpha : bool, optional
             Whether to include an opacity column for ``.rgb``
@@ -1803,7 +1803,7 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
         path : path-like
             The file path. Valid file extensions are shown in the below table.
 
-            %(rc.cycle_exts)s
+        %(rc.cycle_exts)s
 
         warn_on_failure : bool, optional
             If ``True``, issue a warning when loading fails instead of

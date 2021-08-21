@@ -162,18 +162,21 @@ for cmaps in (('magma', 'rocket'), ('fire', 'dusk')):
 # To make `~proplot.colors.PerceptualColormap`\ s from
 # scratch, you have the following three options:
 #
-# * Pass a color name, hex string, or RGB tuple to `~proplot.constructor.Colormap`.
-#   This builds a *monochromatic* (single hue) colormap by calling
-#   `~proplot.colors.PerceptualColormap.from_color.
-#   The colormap colors will progress from the specified color to a color with
-#   the same hue but changed saturation or luminance. These can be set with
-#   the `saturation` and `luminance` keywords (or their shorthands `s` and `l`).
-#   By default, the colormap will progress to white.
-# * Pass a list of color names, hex strings, or RGB tuples to
-#   `~proplot.constructor.Colormap`. This calls
-#   `~proplot.colors.PerceptualColormap.from_list,
-#   which linearly interpolates between the hues, saturations,
-#   and luminances of the input color.
+# * Pass a color name, HEX string, or RGB tuple to `~proplot.constructor.Colormap`.
+#   This builds a monochromatic (single hue) colormap by calling
+#   `~proplot.colors.PerceptualColormap.from_color`. The colormap colors will
+#   progress from the specified color to a color with the same hue but changed
+#   saturation or luminance. These can be set with the `saturation` and `luminance`
+#   keywords (or their shorthands `s` and `l`). By default, the colormap will
+#   progress to pure white.
+# * Pass a list of color names, HEX strings, or RGB
+#   tuples to `~proplot.constructor.Colormap`. This calls
+#   `~proplot.colors.PerceptualColormap.from_list`, which linearly interpolates
+#   between the hues, saturations, and luminances of the input colors. To facillitate
+#   the construction of diverging colormaps, the hue channel values for nuetral
+#   colors (i.e., white, black, and gray) are adjusted to the hues of the preceding
+#   and subsequent colors in the list, with sharp hue cutoffs at the neutral colors.
+#   This permits generating diverging colormaps with e.g. ``['blue', 'white', 'red']``.
 # * Pass the keywords `hue`, `saturation`, or `luminance` (or their shorthands `h`,
 #   `s`, and `l`) to `~proplot.constructor.Colormap` without any positional arguments
 #   (or pass a dictionary containing these keys as a positional argument).

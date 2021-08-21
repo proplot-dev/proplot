@@ -718,7 +718,7 @@ be changed with ``pplt.rc.key = value``, ``pplt.rc[key] = value``,
 ``pplt.rc.update(key=value)``, using `proplot.axes.Axes.format`, or using
 `proplot.config.Configurator.context`. Settings that have changed during the
 python session can be saved to a file with `proplot.config.Configurator.save`
-(see `~proplot.config.Configutator.changed`), and settings can be loaded from
+(see `~proplot.config.Configurator.changed`), and settings can be loaded from
 files with `proplot.config.Configurator.load`. See the
 :ref:`user guide <ug_config>` for details.
 
