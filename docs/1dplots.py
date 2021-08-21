@@ -100,18 +100,22 @@ import numpy as np
 cycle = pplt.Cycle('davos', right=0.8)
 state = np.random.RandomState(51423)
 N, M = 400, 20
+xmax = 20
 x = np.linspace(0, 100, N)
 y = 100 * (state.rand(N, M) - 0.42).cumsum(axis=0)
 
 # Plot the data
-fig = pplt.figure(refwidth=3.2, share=False)
-axs = fig.subplots([[0, 1, 1, 0], [2, 2, 3, 3]], hratios=(1, 0.75))
+fig = pplt.figure(refwidth=2.2, share=False)
+axs = fig.subplots([[0, 1, 1, 0], [2, 2, 3, 3]], wratios=(2, 1, 1, 2))
+axs[0].axvspan(
+    0, xmax, zorder=3, edgecolor='red', facecolor=pplt.set_alpha('red', 0.2),
+)
 for i, ax in enumerate(axs):
     inbounds = i == 1
-    title = f'Manual x limits with inbounds={inbounds} '
+    title = f'Manual x limits inbounds={inbounds}'
     title += ' (default)' if inbounds else ''
     ax.format(
-        xlim=(None if i == 0 else (None, 20)),
+        xmax=(None if i == 0 else xmax),
         title=('Auto x limits' if i == 0 else title),
     )
     ax.plot(x, y, cycle=cycle, inbounds=inbounds)

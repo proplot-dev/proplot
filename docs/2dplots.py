@@ -106,15 +106,14 @@ xlim = ylim = (0, 25)
 
 # Plot the data
 fig, axs = pplt.subplots(
-    [[0, 1, 1, 0], [2, 2, 3, 3]], span=False, refwidth=2.7, hratios=(1, 0.9)
+    [[0, 1, 1, 0], [2, 2, 3, 3]], wratios=(1.3, 1, 1, 1.3), span=False, refwidth=2.2,
 )
 axs[0].fill_between(
-    xlim, *ylim, zorder=3,
-    facecolor=pplt.set_alpha('red', 0.2), edgecolor=pplt.set_alpha('red', 1),
+    xlim, *ylim, zorder=3, edgecolor='red', facecolor=pplt.set_alpha('red', 0.2),
 )
 for i, ax in enumerate(axs):
     inbounds = i == 1
-    title = f'Manual limits with inbounds={inbounds} '
+    title = f'Manual limits inbounds={inbounds}'
     title += ' (default)' if inbounds else ''
     ax.format(
         xlim=(None if i == 0 else xlim),
