@@ -389,15 +389,16 @@ pplt.rc.reset()
 # %%
 import proplot as pplt
 import numpy as np
-fig, axs = pplt.subplots(nrows=4, refaspect=(5, 1), figwidth=6, sharex=False)
 
-# Sample data
+# Create figure
 x = np.linspace(0, 4 * np.pi, 100)
 dy = np.linspace(-1, 1, 5)
-y1 = np.sin(x)
-y2 = np.cos(x)
+ys = (np.sin(x), np.cos(x))
 state = np.random.RandomState(51423)
 data = state.rand(len(dy) - 1, len(x) - 1)
+colors = ('coral', 'sky blue')
+cmap = pplt.Colormap('grays', right=0.8)
+fig, axs = pplt.subplots(nrows=4, refaspect=(5, 1), figwidth=5.5, sharex=False)
 
 # Loop through various cutoff scale options
 titles = ('Zoom out of left', 'Zoom into left', 'Discrete jump', 'Fast jump')
@@ -414,14 +415,14 @@ locators = (
     np.pi * np.append(np.linspace(0, 1, 4), np.linspace(3, 4, 4)),
 )
 for ax, iargs, title, locator in zip(axs, args, titles, locators):
-    ax.pcolormesh(x, dy, data, cmap='grays', cmap_kw={'right': 0.8})
-    for y, color in zip((y1, y2), ('coral', 'sky blue')):
+    ax.pcolormesh(x, dy, data, cmap=cmap)
+    for y, color in zip(ys, colors):
         ax.plot(x, y, lw=4, color=color)
     ax.format(
-        xscale=('cutoff', *iargs), title=title,
-        xlim=(0, 4 * np.pi), ylabel='wave amplitude',
-        xformatter='pi', xlocator=locator,
-        xtickminor=False, xgrid=True, ygrid=False, suptitle='Cutoff axis scales demo'
+        xscale=('cutoff', *iargs), xlim=(0, 4 * np.pi),
+        xlocator=locator, xformatter='pi', xtickminor=False,
+        ygrid=False, ylabel='wave amplitude',
+        title=title, suptitle='Cutoff axis scales demo'
     )
 
 # %%
@@ -429,43 +430,44 @@ import proplot as pplt
 import numpy as np
 
 # Create figure
-pplt.rc.reset()
+n = 30
 state = np.random.RandomState(51423)
+data = state.rand(n - 1, n - 1)
 colors = ('coral', 'sky blue')
-fig, axs = pplt.subplots(nrows=2, ncols=3, refwidth=1.7, order='F', share=False)
-axs.format(toplabels=('Geographic scales', 'Exponential scales', 'Power scales'))
+cmap = pplt.Colormap('grays', right=0.8)
+gs = pplt.GridSpec(nrows=2, ncols=2)
+fig = pplt.figure(refwidth=2.3, share=False)
+fig.format(grid=False, suptitle='Other axis scales demo')
 
 # Geographic scales
-n = 20
 x = np.linspace(-180, 180, n)
-y1 = np.linspace(-85, 85, n)
-y2 = np.linspace(-85, 85, n)
-data = state.rand(len(x) - 1, len(y2) - 1)
-for ax, scale, color in zip(axs[:2], ('sine', 'mercator'), colors):
-    title = scale.title() + ' y-axis'
-    ax.plot(x, y1, '-', color=color, lw=4)
-    ax.pcolormesh(x, y2, data, cmap='grays', cmap_kw={'right': 0.8})
+y = np.linspace(-85, 85, n)
+for i, scale in enumerate(('sine', 'mercator')):
+    ax = fig.subplot(gs[i, 0])
+    ax.plot(x, y, '-', color=colors[i], lw=4)
+    ax.pcolormesh(x, y, data, cmap='grays', cmap_kw={'right': 0.8})
     ax.format(
-        title=title, yscale=scale, ytickloc='left',
-        yformatter='deg', grid=False, ylocator=20,
-        xscale='linear', xlim=None, ylim=(-85, 85)
+        yscale=scale, title=scale.title() + ' scale',
+        ylim=(-85, 85), ylocator=20, yformatter='deg',
     )
 
-# Exp scales
-x = np.linspace(0, 1, 50)
-y = 10 * x
+# Exponential scale
+n = 50
+x = np.linspace(0, 1, n)
+y = 3 * np.linspace(0, 1, n)
 data = state.rand(len(y) - 1, len(x) - 1)
-for ax, a, c, color in zip(axs[2:4], (np.e, 2), (0.5, 2), colors):
-    title = f"${(a, 'e')[a == np.e]}^{{{(c, '')[c == 1]}x}}$"
-    ax.pcolormesh(x, y, data, cmap='grays', cmap_kw={'right': 0.8})
-    ax.plot(x, y, lw=4, color=color)
-    ax.format(ylim=(0.1, 10), yscale=('exp', a, c), title=title)
+ax = fig.subplot(gs[0, 1])
+title = 'Exponential $e^x$ scale'
+ax.pcolormesh(x, y, data, cmap='grays', cmap_kw={'right': 0.8})
+ax.plot(x, y, lw=4, color=colors[0])
+ax.format(ymin=0.05, yscale=('exp', np.e), title=title)
 
-# Power scales
-for ax, power, color in zip(axs[4:], (2, 1 / 4), colors):
-    ax.pcolormesh(x, y, data, cmap='grays', cmap_kw={'right': 0.8})
-    ax.plot(x, y, lw=4, color=color)
-    ax.format(ylim=(0.1, 10), yscale=('power', power), title=f'$x^{{{power}}}$')
+# Power scale
+ax = fig.subplot(gs[1, 1])
+title = 'Power $x^{0.5}$ scale'
+ax.pcolormesh(x, y, data, cmap='grays', cmap_kw={'right': 0.8})
+ax.plot(x, y, lw=4, color=colors[1])
+ax.format(ymin=0.05, yscale=('power', 0.5), title=title)
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
