@@ -2804,6 +2804,10 @@ class PlotAxes(base.Axes):
         # NOTE: Try to match number of level centers with number of colors here
         # WARNING: Previously 'colors' set the edgecolors. To avoid all-black
         # colormap make sure to ignore 'colors' if 'cmap' was also passed.
+        # WARNING: Previously tried setting number of levels to len(colors) but
+        # this would make single-level contour plots and _parse_autolev is designed
+        # to only give approximate level count so failed anyway. Users should pass
+        # their own levels to avoid truncation/cycling in these very special cases.
         if cmap is not None and colors is not None:
             warnings._warn_proplot(
                 f'You specifed both cmap={cmap!r} and the qualitative-colormap '
@@ -2811,10 +2815,10 @@ class PlotAxes(base.Axes):
             )
             colors = None
         if colors is not None:
-            cmap = np.atleast_1d(colors)
+            if mcolors.is_color_like(colors):
+                colors = [colors]  # RGB[A] tuple possibly
+            cmap = colors = np.atleast_1d(colors)
             cmap_kw['listmode'] = 'discrete'
-            if all(kwargs.get(_) is None for _ in ('levels', 'values', 'N')):
-                kwargs['values'] = len(colors)  # integer number of level centers
 
         # Create the user-input colormap
         # Also force options in special cases
