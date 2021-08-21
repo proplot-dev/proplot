@@ -440,7 +440,7 @@ for proj, ax in zip(projs, axs):
 # creating "annular" or "sector" plots by changing the radial or azimuthal
 # limits `rlim` and `thetalim`. Finally, since `proplot.axes.PolarAxes.format`
 # calls `proplot.axes.Axes.format`, it can be used to add axes titles, a-b-c
-# labels, and figure titles, just like `~proplot.axes.CartesianAxes`.
+# labels, and figure titles.
 #
 # For details, see `proplot.axes.PolarAxes.format`.
 

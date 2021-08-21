@@ -232,23 +232,27 @@ import proplot as pplt
 import numpy as np
 
 # Sample data
-M, N = 9, 4
+M, N = 50, 4
 state = np.random.RandomState(51423)
-data1 = state.rand(M, N)
-data2 = state.rand(M, N) * 1.5
+data1 = (state.rand(M, N) - 0.5).cumsum(axis=0)
+data2 = (state.rand(M, N) - 0.5).cumsum(axis=0) * 1.5
+data1 += state.rand(M, N)
+data2 += state.rand(M, N)
 
 with pplt.rc.context({'lines.linewidth': 3}):
     # Use property cycle for columns of 2D input data
-    fig = pplt.figure(refwidth=2.2, span=False)
+    fig = pplt.figure(refwidth=2.2, share=False)
     ax = fig.subplot(121)
+    ax.format(title='Grayscale cycle')
     ax.plot(
         data1 * data2,
-        cycle='black',
+        cycle='black',  # cycle from monochromatic colormap
         cycle_kw={'ls': ('-', '--', '-.', ':')}
     )
 
     # Use property cycle with successive plot() calls
     ax = fig.subplot(122)
+    ax.format(title='Colorful cycle')
     for i in range(data1.shape[1]):
         ax.plot(data1[:, i], cycle='Reds', cycle_kw={'N': N, 'left': 0.3})
     for i in range(data1.shape[1]):
