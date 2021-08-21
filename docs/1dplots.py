@@ -112,11 +112,11 @@ axs[0].axvspan(
 )
 for i, ax in enumerate(axs):
     inbounds = i == 1
-    title = f'Manual x limits inbounds={inbounds}'
+    title = f'Manual limits inbounds={inbounds}'
     title += ' (default)' if inbounds else ''
     ax.format(
         xmax=(None if i == 0 else xmax),
-        title=('Auto x limits' if i == 0 else title),
+        title=('Auto x axis limits' if i == 0 else title),
     )
     ax.plot(x, y, cycle=cycle, inbounds=inbounds)
 fig.format(
