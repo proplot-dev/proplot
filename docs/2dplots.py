@@ -24,11 +24,11 @@
 #
 # ProPlot adds :ref:`several new features <why_plotting>` to matplotlib's
 # plotting commands using the intermediate `~proplot.axes.PlotAxes` subclass.
-# These additions represent a strict *superset* of matplotlib -- if you are not
-# interested, you can use the plotting commands just like you always have. This
-# section documents the features added for 2D plotting commands like
-# `~proplot.axes.PlotAxes.contour`, `~proplot.axes.PlotAxes.pcolor`,
-# and `~proplot.axes.PlotAxes.quiver`.
+# For the most part, these additions represent a *superset* of matplotlib -- if
+# you are not interested, you can use the plotting commands just like you always
+# have. This section documents the features added for 2D plotting commands
+# like `~proplot.axes.PlotAxes.contour`, `~proplot.axes.PlotAxes.pcolor`,
+# and `~proplot.axes.PlotAxes.imshow`.
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_2dstd:
@@ -77,7 +77,8 @@ lim = (np.min(xedges), np.max(xedges))
 
 with pplt.rc.context({'cmap': 'Grays', 'cmap.levels': 21}):
     # Figure
-    fig, axs = pplt.subplots(ncols=2, nrows=2, refwidth=2.3, share=False)
+    fig = pplt.figure(refwidth=2.3, share=False)
+    axs = fig.subplots(ncols=2, nrows=2)
     axs.format(
         xlabel='xlabel', ylabel='ylabel',
         xlim=lim, ylim=lim, xlocator=5, ylocator=5,
@@ -90,6 +91,42 @@ with pplt.rc.context({'cmap': 'Grays', 'cmap.levels': 21}):
     axs[1].pcolormesh(xedges, yedges, data)
     axs[2].contourf(x, y, data)
     axs[3].contourf(xedges, yedges, data)
+
+# %%
+import proplot as pplt
+import numpy as np
+
+# Sample data
+cmap = 'turku_r'
+state = np.random.RandomState(51423)
+N = 80
+x = y = np.arange(N + 1)
+data = 10 + (state.normal(0, 3, size=(N, N))).cumsum(axis=0).cumsum(axis=1)
+xlim = ylim = (0, 25)
+
+# Plot the data
+fig, axs = pplt.subplots(
+    [[0, 1, 1, 0], [2, 2, 3, 3]], span=False, refwidth=2.7, hratios=(1, 0.9)
+)
+axs[0].fill_between(
+    xlim, *ylim, zorder=3,
+    facecolor=pplt.set_alpha('red', 0.2), edgecolor=pplt.set_alpha('red', 1),
+)
+for i, ax in enumerate(axs):
+    inbounds = i == 1
+    title = f'Manual limits with inbounds={inbounds} '
+    title += ' (default)' if inbounds else ''
+    ax.format(
+        xlim=(None if i == 0 else xlim),
+        ylim=(None if i == 0 else ylim),
+        title=('Auto axis limits' if i == 0 else title),
+    )
+    ax.pcolor(x, y, data, cmap=cmap, inbounds=inbounds)
+fig.format(
+    xlabel='xlabel',
+    ylabel='ylabel',
+    suptitle='Auto cmap normalization with in-bounds data'
+)
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_2dintegration:
@@ -553,7 +590,7 @@ ax.format(title='Filled contours with labels')
 # Line contours with labels
 ax = axs[2]
 ax.contour(
-    data.cumsum(axis=1) - 2, labels=True, locator=0.4,
+    data.cumsum(axis=1) - 2, labels=True,
     color='gray8', labels_kw={'weight': 'bold'}
 )
 ax.format(title='Line contours with labels')

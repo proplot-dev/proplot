@@ -501,7 +501,7 @@ N, M = 50, 10
 # Alternate y axis
 data = state.rand(M) + (state.rand(N, M) - 0.48).cumsum(axis=0)
 altdata = 5 * (state.rand(N) - 0.45).cumsum(axis=0)
-fig = pplt.figure(share=False, refwidth=2)
+fig = pplt.figure(share=False, refwidth=2.2, refaspect=0.8)
 ax = fig.subplot(121)
 ax.format(title='Alternate y twin x')
 ax.line(data, color=c0, ls='--')

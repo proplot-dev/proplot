@@ -1171,7 +1171,7 @@ class Configurator(MutableMapping, dict):
     @staticmethod
     def user_file():
         """
-        Return location of the default user proplotrc file. On Linux, this is either
+        Return location of the default proplotrc file. On Linux, this is either
         ``$XDG_CONFIG_HOME/proplot/proplotrc`` or ``~/.config/proplot/proplotrc``
         if the `XDG directory <https://wiki.archlinux.org/title/XDG_Base_Directory>`__
         is unset. On other operating systems, this is ``~/.proplot/proplotrc``. The
@@ -1195,8 +1195,8 @@ class Configurator(MutableMapping, dict):
     @staticmethod
     def user_folder(subfolder=None):
         """
-        Return location of the default user proplot folder. On Linux,
-        this is either ``$XDG_CONFIG_HOME/proplot`` or ``~/.config/proplot``
+        Return location of the default proplot folder. On Linux, this
+        is either ``$XDG_CONFIG_HOME/proplot`` or ``~/.config/proplot``
         if the `XDG directory <https://wiki.archlinux.org/title/XDG_Base_Directory>`__
         is unset. On other operating systems, this is ``~/.proplot``. The location
         ``~/.proplot`` is always returned if the folder exists, regardless of the

@@ -24,10 +24,10 @@
 #
 # ProPlot adds :ref:`several new features <why_plotting>` to matplotlib's
 # plotting commands using the intermediate `~proplot.axes.PlotAxes` subclass.
-# These additions represent a strict *superset* of matplotlib -- if you are not
-# interested, you can use the plotting commands just like you always have. This
-# section documents the features added for 1D plotting commands like
-# `~proplot.axes.PlotAxes.plot`, `~proplot.axes.PlotAxes.scatter`,
+# For the most part, these additions represent a *superset* of matplotlib -- if
+# you are not interested, you can use the plotting commands just like you always
+# have. This section documents the features added for 1D plotting commands
+# like `~proplot.axes.PlotAxes.plot`, `~proplot.axes.PlotAxes.scatter`,
 # and `~proplot.axes.PlotAxes.bar`.
 
 
@@ -91,6 +91,35 @@ with pplt.rc.context({'axes.prop_cycle': pplt.Cycle('Grays', N=N, left=0.3)}):
     ax.format(title='Auto x coordinates')
     fig.format(xlabel='xlabel', ylabel='ylabel')
     fig.format(suptitle='Standardized input demonstration')
+
+# %%
+import proplot as pplt
+import numpy as np
+
+# Sample data
+cycle = pplt.Cycle('davos', right=0.8)
+state = np.random.RandomState(51423)
+N, M = 400, 20
+x = np.linspace(0, 100, N)
+y = 100 * (state.rand(N, M) - 0.42).cumsum(axis=0)
+
+# Plot the data
+fig = pplt.figure(refwidth=3.2, share=False)
+axs = fig.subplots([[0, 1, 1, 0], [2, 2, 3, 3]], hratios=(1, 0.75))
+for i, ax in enumerate(axs):
+    inbounds = i == 1
+    title = f'Manual x limits with inbounds={inbounds} '
+    title += ' (default)' if inbounds else ''
+    ax.format(
+        xlim=(None if i == 0 else (None, 20)),
+        title=('Auto x limits' if i == 0 else title),
+    )
+    ax.plot(x, y, cycle=cycle, inbounds=inbounds)
+fig.format(
+    xlabel='xlabel',
+    ylabel='ylabel',
+    suptitle='Auto y limits with in-bounds data'
+)
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"

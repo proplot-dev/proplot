@@ -644,7 +644,7 @@ def to_rgba(color, space='rgb', cycle=None):
     elif space == 'hpl':
         color = hsluv.hpluv_to_rgb(*color)
     else:
-        raise ValueError('Invalid color {color!r} for colorspace {space!r}.')
+        raise ValueError(f'Invalid color {color!r} for colorspace {space!r}.')
 
     # Return RGB or RGBA
     return (*color, opacity)
