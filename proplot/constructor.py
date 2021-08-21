@@ -1027,7 +1027,7 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
 
     Parameters
     ----------
-    formatter : `~matplotlib.ticker.Formatter`, str, list of str, function, or tuple
+    formatter : `~matplotlib.ticker.Formatter`, str, list of str, callable, or tuple
         The formatter specification, interpreted as follows:
 
         * If a `~matplotlib.ticker.Formatter` instance already, the input

@@ -326,12 +326,12 @@ pplt.rc.reset()
 # The colormap levels used with `~proplot.colors.DiscreteNorm` can be configured
 # with the `levels`, `values`, or `N` keywords. If you pass an integer,
 # approximately that many boundaries are automatically generated at "nice"
-# intervals. The keywords `vmin`, `vmax`, and `locator` control how the automatic
-# intervals are chosen. You can also use the `positive`, `negative`, and `symmetric`
-# keywords to ensure that automatically-generated levels are strictly positive,
-# strictly negative, or symmetric about zero (respectively). To generate
-# your own level lists, the `~proplot.utils.arange` and `~proplot.utils.edges`
-# commands may be useful.
+# intervals. The keywords `vmin`, `vmax`, `locator`, and `locator_kw` control how
+# the automatic intervals are chosen. You can also use the `positive`, `negative`,
+# and `symmetric` keywords to ensure that automatically-generated levels are
+# strictly positive, strictly negative, or symmetric about zero (respectively).
+# To generate your own level lists, the `~proplot.utils.arange` and
+# `~proplot.utils.edges` commands may be useful.
 
 # %%
 import proplot as pplt
@@ -491,19 +491,15 @@ data = 11 ** (2 * state.rand(20, 20).cumsum(axis=0) / 7)
 
 # Linear segmented norm
 fig, axs = pplt.subplots(ncols=2, refwidth=2.4)
-fig.format(suptitle='Linear segmented normalizer demo')
+fig.format(suptitle='Segmented normalizer demo')
 ticks = [5, 10, 20, 50, 100, 200, 500, 1000]
-for ax, norm, title in zip(
-    axs,
-    ('linear', 'segmented'),
-    ('Linear normalizer', 'LinearSegmentedNorm')
-):
+for ax, norm in zip(axs, ('linear', 'segmented')):
     m = ax.contourf(
         data, levels=ticks, extend='both',
         cmap='Mako', norm=norm,
         colorbar='b', colorbar_kw={'ticks': ticks},
     )
-    ax.format(title=title)
+    ax.format(title=norm.title() + ' normalizer')
 
 # %%
 import proplot as pplt
@@ -521,17 +517,14 @@ cmap = pplt.Colormap('DryWet', cut=0.1)
 
 # Diverging norms
 i = 0
-for data, mode, fair, locator in zip(
-    (data1, data2),
-    ('positive', 'negative'),
-    ('fair', 'unfair'),
-    (3, 3),
+for data, mode, fair in zip(
+    (data1, data2), ('positive', 'negative'), ('fair', 'unfair'),
 ):
     for fair in ('fair', 'unfair'):
         norm = pplt.Norm('diverging', fair=(fair == 'fair'))
         ax = axs[i]
         m = ax.contourf(data, cmap=cmap, norm=norm)
-        ax.colorbar(m, loc='b', locator=locator)
+        ax.colorbar(m, loc='b')
         ax.format(title=f'{mode.title()}-skewed + {fair} scaling')
         i += 1
 
