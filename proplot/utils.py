@@ -4,6 +4,7 @@ Various tools that may be useful while making plots.
 """
 # WARNING: Cannot import 'rc' anywhere in this file or we get circular import
 # issues. The rc param validators need functions in this file.
+import functools
 import re
 from numbers import Integral, Real
 
@@ -96,6 +97,22 @@ color : str
 """
 
 
+def _preserve_units(func):
+    """
+    Very simple decorator to strip and re-apply the same units.
+    """
+    # NOTE: Native UnitRegistry.wraps() is not sufficient since it enforces
+    # unit types rather than arbitrary units. This wrapper is similar.
+    @functools.wraps(func)
+    def _with_stripped_units(data, *args, **kwargs):
+        units = 1
+        if hasattr(data, 'units') and hasattr(data, 'magnitude'):
+            data, units = data.magnitude, data.units
+        result = func(data, *args, **kwargs)
+        return result * units
+    return _with_stripped_units
+
+
 def arange(min_, *args):
     """
     Identical to `numpy.arange` but with inclusive endpoints. For
@@ -134,14 +151,14 @@ def arange(min_, *args):
     return np.arange(min_, max_, step)
 
 
+@_preserve_units
 def edges(z, axis=-1):
     """
-    Calculate the approximate "edge" values along an axis given "center"
-    values. This is used internally to calculate graticule edges when
-    you supply centers to `~matplotlib.axes.Axes.pcolor` or
-    `~matplotlib.axes.Axes.pcolormesh`. It is also used to calculate colormap
-    level boundaries when you supply centers to plotting methods wrapped by
-    `~proplot.axes.apply_cmap`.
+    Calculate the approximate "edge" values along an axis given "center" values.
+    This is used internally to calculate graticule edges when you supply centers
+    to `~matplotlib.axes.Axes.pcolor` or `~matplotlib.axes.Axes.pcolormesh`. It
+    is also used to calculate colormap level boundaries when you supply centers
+    to plotting methods wrapped by `~proplot.axes.apply_cmap`.
 
     Parameters
     ----------
@@ -177,6 +194,7 @@ def edges(z, axis=-1):
     return np.swapaxes(zb, axis, -1)
 
 
+@_preserve_units
 def edges2d(z):
     """
     Calculate the approximate "edge" values given a 2d grid of "center"

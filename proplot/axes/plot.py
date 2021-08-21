@@ -2269,7 +2269,7 @@ class PlotAxes(base.Axes):
         xmask = ymask = None
         if self.name != 'proplot_cartesian':
             return z  # TODO: support geographic projections when input is PlateCarree()
-        if not all(isinstance(a, np.ndarray) and a.ndim in (1, 2) for a in (x, y, z)):
+        if not all(getattr(a, 'ndim', None) in (1, 2) for a in (x, y, z)):
             raise ValueError('Invalid input coordinates. Must be 1D or 2D arrays.')
         try:
             # Get centers and masks
