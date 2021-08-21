@@ -187,11 +187,11 @@ da = xr.DataArray(
 # DataFrame
 data = state.rand(12, 20)
 df = pd.DataFrame(
-    (data - 0.4).cumsum(axis=0).cumsum(axis=1),
-    index=list('JFMAMJJASOND'),
+    (data - 0.4).cumsum(axis=0).cumsum(axis=1)[::1, ::-1],
+    index=pd.date_range('2000-01', '2000-12', freq='MS')
 )
 df.name = 'temperature (\N{DEGREE SIGN}C)'
-df.index.name = 'month'
+df.index.name = 'date'
 df.columns.name = 'variable (units)'
 
 # %%
@@ -202,13 +202,13 @@ fig.format(suptitle='Automatic subplot formatting')
 # Plot DataArray
 cmap = pplt.Colormap('PuBu', left=0.05)
 ax = fig.subplot(121)
-ax.contourf(da, cmap=cmap, colorbar='l', lw=0.7, ec='k')
+ax.contourf(da, cmap=cmap, colorbar='t', lw=0.7, ec='k')
 ax.format(yreverse=True)
 
 # Plot DataFrame
 ax = fig.subplot(122)
-ax.contourf(df, cmap='YlOrRd', colorbar='r', lw=0.7, ec='k')
-ax.format(xtickminor=False, yreverse=True)
+ax.contourf(df, cmap='YlOrRd', colorbar='t', lw=0.7, ec='k')
+ax.format(xtickminor=False, yreverse=True, yformatter='%b', ytickminor=False)
 
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_apply_cmap:
