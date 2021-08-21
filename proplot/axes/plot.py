@@ -1293,7 +1293,7 @@ def _to_duck_array(data, strip_units=False):
         # WARNING: this strips e.g. scalar DataArray metadata
         data = _to_numpy_array(data)
     if strip_units:  # used for z coordinates that cannot have units
-        if isinstance(data, ndarray):
+        if isinstance(data, (ndarray, Quantity)):
             if Quantity is not ndarray and isinstance(data, Quantity):
                 data = data.magnitude
         elif isinstance(data, DataArray):
