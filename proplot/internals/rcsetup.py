@@ -1143,6 +1143,12 @@ _rc_proplot_table = {
         'Boolean, indicates whether to use degrees-minutes-seconds rather than '
         'decimals for gridline labels on cartopy `~proplot.axes.GeoAxes`.'
     ),
+    'grid.inlinelabels': (
+        False,
+        _validate_bool,
+        'Whether to use inline labels for cartopy `~proplot.axes.GeoAxes` '
+        'longitude and latitude gridlines.'
+    ),
     'grid.labels': (
         False,
         _validate_bool,
@@ -1172,18 +1178,6 @@ _rc_proplot_table = {
         _validate_fontweight,
         'Font weight for longitude and latitude gridline labels in '
         '`~proplot.axes.GeoAxes`.'
-    ),
-    'grid.latinline': (
-        False,
-        _validate_bool,
-        'Whether to use inline labels for cartopy `~proplot.axes.GeoAxes` '
-        'latitude gridlines.'
-    ),
-    'grid.loninline': (
-        False,
-        _validate_bool,
-        'Whether to use inline labels for cartopy `~proplot.axes.GeoAxes` '
-        'longitude gridlines.'
     ),
     'grid.nsteps': (
         250,
@@ -1869,6 +1863,8 @@ _rc_renamed = {  # {old_key: (new_key, version)} dictionary
     'tick.ratio': ('tick.widthratio', '0.8'),
     'grid.ratio': ('grid.widthratio', '0.8'),
     'abc.style': ('abc', '0.8'),
+    'grid.loninline': ('grid.inlinelabels', '0.8'),
+    'grid.latinline': ('grid.inlinelabels', '0.8'),
 }
 for _key, (_key_new, _) in _rc_renamed.items():
     if _key_new in _rc_children:

@@ -504,7 +504,7 @@ class Axes(maxes.Axes):
             params['side'] = self._panel_side
         for package in ('cartopy', 'basemap'):
             head = '_' + package.title()
-            if head in name:  # e.g. _CartopyAxeSubplot to GeoAxesSubplot
+            if head in name:  # e.g. _CartopyAxesSubplot to GeoAxesSubplot
                 name = name.replace(head, 'Geo')
                 params['backend'] = package
         params = ', '.join(f'{key}={value!r}' for key, value in params.items())

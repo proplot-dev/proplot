@@ -388,7 +388,7 @@ class GeoAxes(plot.PlotAxes):
         lonformatter=None, latformatter=None,
         lonformatter_kw=None, latformatter_kw=None,
         labels=None, latlabels=None, lonlabels=None,
-        loninline=None, latinline=None, rotatelabels=None,
+        loninline=None, latinline=None, inlinelabels=None, rotatelabels=None,
         labelpad=None, dms=None, nsteps=None,
         **kwargs,
     ):
@@ -482,10 +482,10 @@ class GeoAxes(plot.PlotAxes):
             and "seconds" rather than decimal degrees.
         lonformatter_kw, latformatter_kw : dict-like, optional
             Keyword arguments passed to the `matplotlib.ticker.Formatter` class.
-        loninline, latinline : bool, optional
+        loninline, latinline, inlinelabels : bool, optional
             *For cartopy axes only.*
             Whether to draw inline longitude and latitude gridline labels.
-            Defaults are :rc:`grid.loninline` and :rc:`grid.latinline`.
+            Default is :rc:`grid.inlinelabels`.
         rotatelabels : bool, optional
             *For cartopy axes only.*
             Whether to rotate longitude and latitude gridline labels.
@@ -502,6 +502,7 @@ class GeoAxes(plot.PlotAxes):
             than decimal degrees. Setting this to ``False`` is equivalent to
             specifying ``ax.format(lonlocator='deglon', latlocator='deglon')``
             and ``ax.format(lonformatter='deglon', latformatter='deglat')``.
+            Default is :rc:`grid.dmslabels`.
         nsteps : int, optional
             *For cartopy axes only.*
             The number of interpolation steps used to draw gridlines.
@@ -601,10 +602,10 @@ class GeoAxes(plot.PlotAxes):
                 self._lataxis.set_minor_locator(locator)
 
             # Update formatters
-            loninline = _not_none(loninline, rc.find('grid.loninline', context=True))
-            latinline = _not_none(latinline, rc.find('grid.latinline', context=True))
-            labelpad = _not_none(labelpad, rc.find('grid.labelpad', context=True))
+            loninline = _not_none(loninline, inlinelabels, rc.find('grid.inlinelabels', context=True))  # noqa: E501
+            latinline = _not_none(latinline, inlinelabels, rc.find('grid.inlinelabels', context=True))  # noqa: E501
             rotatelabels = _not_none(rotatelabels, rc.find('grid.rotatelabels', context=True))  # noqa: E501
+            labelpad = _not_none(labelpad, rc.find('grid.labelpad', context=True))
             dms = _not_none(dms, rc.find('grid.dmslabels', context=True))
             nsteps = _not_none(nsteps, rc.find('grid.nsteps', context=True))
             if lonformatter is not None:
