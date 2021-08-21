@@ -234,17 +234,26 @@ for globe in (False, True):
 # ----------------------
 #
 # The `proplot.axes.GeoAxes.format` command facilitates geographic-specific axes
-# modifications. It can be used to configure "major" and "minor" longitude and
-# latitude gridline locations using `lonlocator`, `latlocator`, `lonminorlocator`,
-# and `latminorlocator` or configure gridline label formatting with `lonformatter`
-# and `latformatter` (analogous to `xlocator`, `xminorlocator`, and `xformatter`
-# used by `proplot.axes.CartesianAxes.format`). It can also set cartopy projection
-# bounds with `lonlim` and `latlim`, set circular polar projection bounds with
-# `boundinglat`, and toggle and configure geographic features like land masses,
-# coastlines, and administrative borders using :ref:`settings <rc_proplot>` like
-# `land` and `landcolor`. Finally, since `proplot.axes.GeoAxes.format`
-# calls `proplot.axes.Axes.format`, it can be used to add axes titles,
-# a-b-c labels, and figure titles, just like `~proplot.axes.CartesianAxes`.
+# modifications. It can toggle and configure the "major" and "minor" longitude and
+# latitude gridline locations using the `grid`, `lonlocator`, `latlocator`, `gridminor`,
+# `lonminorlocator`, and `latminorlocator` keys, and configure gridline label formatting
+# with `lonformatter` and `latformatter` (analogous to `xlocator`, `xminorlocator`,
+# and `xformatter` used by `proplot.axes.CartesianAxes.format`). By default, inline
+# cartopy labels and cartopy label rotation are turned off, but inline labels can
+# be turned on using ``loninline=True``, ``latinline=True``, or ``inlinelabels=True``
+# or by setting :rcraw:`grid.inlinelabels` to ``True``, and label rotation can be
+# turned on using ``rotatelabels=True`` or by setting :craw:`grid.rotatelabels`
+# to ``True``. The padding between the map edge and the labels can be changed
+# using `labelpad` or by changing :rcraw:`grid.labelpad`.
+
+# `proplot.axes.GeoAxes.format` can also set the cartopy projection bounding longitudes
+# and latitudes with `lonlim` and `latlim` (analogous to `xlim` and `ylim`), set the
+# latitude bound for circular polar projections using `boundinglat`, and toggle and
+# configure geographic features like land masses, coastlines, and administrative
+# borders using :ref:`settings <rc_proplot>` like `land`, `landcolor`, `coast`,
+# `coastcolor`, and `coastlinewidth`. Finally, since `proplot.axes.GeoAxes.format`
+# calls `proplot.axes.Axes.format`, it can be used to add axes titles, a-b-c labels,
+# and figure titles, just like `proplot.axes.CartesianAxes.format`.
 #
 # For details, see the `proplot.axes.GeoAxes.format` documentation.
 
@@ -434,13 +443,15 @@ for proj, ax in zip(projs, axs):
 # instance(s) with their own `~proplot.axes.PolarAxes.format` command.
 # `proplot.axes.PolarAxes.format` facilitates polar-specific axes modifications
 # like changing the central radius `r0`, the zero azimuth location `theta0`,
-# and the positive azimuthal direction `thetadir`. It also supports changing
-# gridline locations with `rlocator` and `thetalocator` (analogous to
-# `ylocator` and `xlocator` used by `proplot.axes.CartesianAxes.format`) and
-# creating "annular" or "sector" plots by changing the radial or azimuthal
-# limits `rlim` and `thetalim`. Finally, since `proplot.axes.PolarAxes.format`
+# and the positive azimuthal direction `thetadir`. It also supports toggling and
+# configuring the "major" and "minor" gridline locations with `grid`, `rlocator`,
+# `thetalocator`, `gridminor`, `rminorlocator`, and `thetaminorlocator` and formatting
+# the gridline labels with `rformatter` and `thetaformatter` (analogous to `xlocator`,
+# `xformatter, and` `xminorlocator` used by `proplot.axes.CartesianAxes.format`),
+# and creating "annular" or "sector" plots by changing the radial or azimuthal
+# bounds `rlim` and `thetalim`. Finally, since `proplot.axes.PolarAxes.format`
 # calls `proplot.axes.Axes.format`, it can be used to add axes titles, a-b-c
-# labels, and figure titles.
+# labels, and figure titles, just like `proplot.axes.CartesianAxes.format`.
 #
 # For details, see `proplot.axes.PolarAxes.format`.
 
