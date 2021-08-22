@@ -524,7 +524,7 @@ pplt.rc.reset()
 # `~proplot.axes.PlotAxes.line`, `~proplot.axes.PlotAxes.linex`
 # (equivalently, `~proplot.axes.PlotAxes.plot`,
 # `~proplot.axes.PlotAxes.plotx`), `~proplot.axes.PlotAxes.scatter`,
-# `~proplot.axes.PlotAxes.scatterx`. `~proplot.axes.PlotAxes.bar`, and
+# `~proplot.axes.PlotAxes.scatterx`, `~proplot.axes.PlotAxes.bar`, and
 # `~proplot.axes.PlotAxes.barh` plots using any of several keyword arguments.
 #
 # If you pass 2D arrays to these commands with ``mean=True``, ``means=True``,
