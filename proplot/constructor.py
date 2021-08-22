@@ -105,7 +105,7 @@ if _version_cartopy >= 0.18:
     # for determining both cartopy and basemap tick locations. We did *not* copy
     # formatter because they are long and we have nice, simpler alternatives of
     # deglon and deglat.
-    LOCATORS['dms'] = partial(pticker._DegreeLocator, dms=True)
+    LOCATORS['dms'] = partial(pticker.DegreeLocator, dms=True)
     LOCATORS['dmslon'] = partial(pticker.LongitudeLocator, dms=True)
     LOCATORS['dmslat'] = partial(pticker.LatitudeLocator, dms=True)
 if hasattr(mpolar, 'ThetaLocator'):
@@ -148,9 +148,9 @@ FORMATTERS = {  # note default LogFormatter uses ugly e+00 notation
 }
 if _version_cartopy >= 0.18:
     # NOTE: Will raise error when you try to use these without cartopy >= 0.18
-    FORMATTERS['dms'] = partial(pticker._DegreeFormatter, dms=True)
-    FORMATTERS['dmslon'] = partial(pticker._LongitudeFormatter, dms=True)
-    FORMATTERS['dmslat'] = partial(pticker._LatitudeFormatter, dms=True)
+    FORMATTERS['dms'] = partial(pticker.DegreeFormatter, dms=True)
+    FORMATTERS['dmslon'] = partial(pticker.LongitudeFormatter, dms=True)
+    FORMATTERS['dmslat'] = partial(pticker.LatitudeFormatter, dms=True)
 if hasattr(mpolar, 'ThetaFormatter'):
     FORMATTERS['theta'] = mpolar.ThetaFormatter
 if hasattr(mdates, 'ConciseDateFormatter'):
@@ -959,7 +959,7 @@ def Locator(locator, *args, **kwargs):
         ``'microsecond'``        `~matplotlib.dates.MicrosecondLocator`        Ticks every ``N`` microseconds
         ``'lon'``, ``'deglon'``  `~proplot.ticker.LongitudeLocator`            Longitude gridlines at sensible decimal locations
         ``'lat'``, ``'deglat'``  `~proplot.ticker.LatitudeLocator`             Latitude gridlines at sensible decimal locations
-        ``'dms'``                `~proplot.ticker._DegreeLocator`              Gridlines on nice minute and second intervals
+        ``'dms'``                `~proplot.ticker.DegreeLocator`              Gridlines on nice minute and second intervals
         ``'dmslon'``             `~proplot.ticker.LongitudeLocator`            Longitude gridlines on nice minute and second intervals
         ``'dmslat'``             `~proplot.ticker.LatitudeLocator`             Latitude gridlines on nice minute and second intervals
         =======================  ============================================  =====================================================================================
@@ -1092,9 +1092,9 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
         ``'deg'``               `~proplot.ticker.AutoFormatter` preset          Trailing degree symbol
         ``'deglat'``            `~proplot.ticker.AutoFormatter` preset          Trailing degree symbol and cardinal "SN" indicator
         ``'deglon'``            `~proplot.ticker.AutoFormatter` preset          Trailing degree symbol and cardinal "WE" indicator
-        ``'dms'``               `~cartopy.mpl.ticker._PlateCarreeFormatter`     Labels with degree/minute/second support
-        ``'dmslon'``            `~cartopy.mpl.ticker.LongitudeFormatter`        Longitude labels with degree/minute/second support
-        ``'dmslat'``            `~cartopy.mpl.ticker.LatitudeFormatter`         Latitude labels with degree/minute/second support
+        ``'dms'``               `~proplot.ticker.DegreeFormatter`               Labels with degree/minute/second support
+        ``'dmslon'``            `~proplot.ticker.LongitudeFormatter`            Longitude labels with degree/minute/second support
+        ``'dmslat'``            `~proplot.ticker.LatitudeFormatter`             Latitude labels with degree/minute/second support
         ======================  ==============================================  =================================================================
 
     date : bool, optional

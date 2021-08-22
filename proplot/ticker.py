@@ -29,11 +29,15 @@ except ModuleNotFoundError:
 __all__ = [
     'AutoFormatter',
     'FracFormatter',
-    'LongitudeLocator',
-    'LatitudeLocator',
     'SciFormatter',
     'SigFigFormatter',
     'SimpleFormatter',
+    'DegreeFormatter',
+    'LongitudeFormatter',
+    'LatitudeFormatter',
+    'DegreeLocator',
+    'LongitudeLocator',
+    'LatitudeLocator',
 ]
 
 REGEX_ZERO = re.compile('\\A[-\N{MINUS SIGN}]?0(.0*)?\\Z')
@@ -50,7 +54,7 @@ zerotrim : bool, optional
     Whether to trim trailing decimal zeros.
     Default is :rc:`formatter.zerotrim`.
 """
-_formatter_docstring = """
+_auto_docstring = """
 tickrange : 2-tuple of float, optional
     Range within which major tick marks are labelled. Default is
     ``(-np.inf, np.inf)``.
@@ -64,10 +68,6 @@ negpos : str, optional
     Length-2 string indicating the suffix for "negative" and "positive"
     numbers, meant to replace the minus sign.
 """
-_snippet_manager['formatter.precision'] = _precision_docstring
-_snippet_manager['formatter.zerotrim'] = _zerotrim_docstring
-_snippet_manager['formatter.auto'] = _formatter_docstring
-
 _formatter_call = """
 Convert number to a string.
 
@@ -78,10 +78,22 @@ x : float
 pos : float, optional
     The position.
 """
-_snippet_manager['formatter.call'] = _formatter_call
+_snippet_manager['ticker.precision'] = _precision_docstring
+_snippet_manager['ticker.zerotrim'] = _zerotrim_docstring
+_snippet_manager['ticker.auto'] = _auto_docstring
+_snippet_manager['ticker.call'] = _formatter_call
+
+_dms_docstring = """
+Parameters
+----------
+dms : bool, optional
+    Locate the ticks on clean degree-minute-second intervals and format the
+    ticks with minutes and seconds instead of decimals. Default is ``False``.
+"""
+_snippet_manager['ticker.dms'] = _dms_docstring
 
 
-class _DegreeLocator(mticker.MaxNLocator):
+class DegreeLocator(mticker.MaxNLocator):
     """
     A locator for longitude and latitude gridlines. Adapted from cartopy.
     """
@@ -90,6 +102,13 @@ class _DegreeLocator(mticker.MaxNLocator):
     # Unknown params result in warning instead of error.
     default_params = mticker.MaxNLocator.default_params.copy()
     default_params.update(nbins=8, dms=False)
+
+    @_snippet_manager
+    def __init__(self, *args, **kwargs):
+        """
+        %(ticker.dms)s
+        """
+        super().__init__(*args, **kwargs)
 
     def set_params(self, **kwargs):
         if 'dms' in kwargs:
@@ -116,16 +135,14 @@ class _DegreeLocator(mticker.MaxNLocator):
         return self._raw_ticks(vmin, vmax)  # may call Latitude/LongitudeLocator copies
 
 
-class LongitudeLocator(_DegreeLocator):
+class LongitudeLocator(DegreeLocator):
     """
     A locator for longitude gridlines. Adapted from cartopy.
     """
+    @_snippet_manager
     def __init__(self, *args, **kwargs):
         """
-        Parameters
-        ----------
-        dms : bool, optional
-            Allow the locator to stop on minutes and seconds. Default is ``False``.
+        %(ticker.dms)s
         """
         super().__init__(*args, **kwargs)
 
@@ -147,16 +164,14 @@ class LongitudeLocator(_DegreeLocator):
         return ticks
 
 
-class LatitudeLocator(_DegreeLocator):
+class LatitudeLocator(DegreeLocator):
     """
     A locator for latitude gridlines. Adapted from cartopy.
     """
+    @_snippet_manager
     def __init__(self, *args, **kwargs):
         """
-        Parameters
-        ----------
-        dms : bool, optional
-            Allow the locator to stop on minutes and seconds. Default is ``False``.
+        %(ticker.dms)s
         """
         super().__init__(*args, **kwargs)
 
@@ -196,25 +211,43 @@ class _CartopyFormatter(object):
             return super().__call__(value, pos)
 
 
-class _LongitudeFormatter(_CartopyFormatter, LongitudeFormatter):
+class LongitudeFormatter(_CartopyFormatter, LongitudeFormatter):
     """
-    Mix longitude formatter with custom formatter.
+    A formatter for longitude gridlines.
+    Adapted from `cartopy.mpl.ticker.LongitudeFormatter`.
     """
-    pass
+    @_snippet_manager
+    def __init__(self, *args, **kwargs):
+        """
+        %(ticker.dms)s
+        """
+        super().__init__(*args, **kwargs)
 
 
-class _LatitudeFormatter(_CartopyFormatter, LatitudeFormatter):
+class LatitudeFormatter(_CartopyFormatter, LatitudeFormatter):
     """
-    Mix latitude formatter with custom formatter.
+    A formatter for latitude gridlines.
+    Adapted from `cartopy.mpl.ticker.LatitudeFormatter`.
     """
-    pass
+    @_snippet_manager
+    def __init__(self, *args, **kwargs):
+        """
+        %(ticker.dms)s
+        """
+        super().__init__(*args, **kwargs)
 
 
-class _DegreeFormatter(_CartopyFormatter, _PlateCarreeFormatter):
+class DegreeFormatter(_CartopyFormatter, _PlateCarreeFormatter):
     """
-    Mix Plate Carrée formatter with custom formatter and add base methods
-    that permit using this as degree-minute-second formatter anywhere.
+    A formatter for longitude and latitude gridlines. Adapted from cartopy.
     """
+    @_snippet_manager
+    def __init__(self, *args, **kwargs):
+        """
+        %(ticker.dms)s
+        """
+        super().__init__(*args, **kwargs)
+
     def _apply_transform(self, value, *args, **kwargs):  # noqa: U100
         return value
 
@@ -270,8 +303,8 @@ class AutoFormatter(mticker.ScalarFormatter):
         """
         Parameters
         ----------
-        %(formatter.zerotrim)s
-        %(formatter.auto)s
+        %(ticker.zerotrim)s
+        %(ticker.auto)s
 
         Other parameters
         ----------------
@@ -299,7 +332,7 @@ class AutoFormatter(mticker.ScalarFormatter):
     @_snippet_manager
     def __call__(self, x, pos=None):
         """
-        %(formatter.call)s
+        %(ticker.call)s
         """
         # Tick range limitation
         x = self._wrap_tick_range(x, self._wraprange)
@@ -470,8 +503,8 @@ class SciFormatter(mticker.Formatter):
         """
         Parameters
         ----------
-        %(formatter.precision)s
-        %(formatter.zerotrim)s
+        %(ticker.precision)s
+        %(ticker.zerotrim)s
         """
         precision, zerotrim = _default_precision_zerotrim(precision, zerotrim)
         self._precision = precision
@@ -480,7 +513,7 @@ class SciFormatter(mticker.Formatter):
     @_snippet_manager
     def __call__(self, x, pos=None):  # noqa: U100
         """
-        %(formatter.call)s
+        %(ticker.call)s
         """
         # Get string
         decimal_point = AutoFormatter._get_default_decimal_point()
@@ -520,7 +553,7 @@ class SigFigFormatter(mticker.Formatter):
         ----------
         sigfig : float, optional
             The number of significant digits.
-        %(formatter.zerotrim)s
+        %(ticker.zerotrim)s
         """
         self._sigfig = sigfig
         self._zerotrim = _not_none(zerotrim, rc['formatter.zerotrim'])
@@ -528,7 +561,7 @@ class SigFigFormatter(mticker.Formatter):
     @_snippet_manager
     def __call__(self, x, pos=None):  # noqa: U100
         """
-        %(formatter.call)s
+        %(ticker.call)s
         """
         # Limit digits to significant figures
         if x == 0:
@@ -563,9 +596,9 @@ class SimpleFormatter(mticker.Formatter):
         """
         Parameters
         ----------
-        %(formatter.precision)s
-        %(formatter.zerotrim)s
-        %(formatter.auto)s
+        %(ticker.precision)s
+        %(ticker.zerotrim)s
+        %(ticker.auto)s
         """
         precision, zerotrim = _default_precision_zerotrim(precision, zerotrim)
         self._precision = precision
@@ -579,7 +612,7 @@ class SimpleFormatter(mticker.Formatter):
     @_snippet_manager
     def __call__(self, x, pos=None):  # noqa: U100
         """
-        %(formatter.call)s
+        %(ticker.call)s
         """
         # Tick range limitation
         x = AutoFormatter._wrap_tick_range(x, self._wraprange)
@@ -629,7 +662,7 @@ class FracFormatter(mticker.Formatter):
     @_snippet_manager
     def __call__(self, x, pos=None):  # noqa: U100
         """
-        %(formatter.call)s
+        %(ticker.call)s
         """
         frac = Fraction(x / self._number).limit_denominator()
         symbol = self._symbol
