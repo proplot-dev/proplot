@@ -40,7 +40,7 @@ Parameters
 
 Note
 ----
-This enforces the following settings:
+This enforces the following default settings:
 
 * Places the old *{x}* axis on the {x1} and the new *{x}*
   axis on the {x2}.
