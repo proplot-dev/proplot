@@ -529,6 +529,7 @@ _rc_matplotlib_default = {
     'axes.ymargin': MARGIN,
     'errorbar.capsize': 3.0,
     'figure.autolayout': False,
+    'figure.figsize': (3, 3),  # for interactife backends
     'figure.dpi': 100,
     'figure.facecolor': '#f4f4f4',  # similar to MATLAB interface
     'figure.titlesize': LARGESIZE,

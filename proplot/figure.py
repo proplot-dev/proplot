@@ -490,6 +490,7 @@ class Figure(mfigure.Figure):
         "To disable it, set pplt.rc['subplots.tight'] to False or pass tight=False "
         'to pplt.subplots(). For details, see fig.auto_layout().'
     )
+    _warn_interactive = True  # disabled after first warning
 
     def __repr__(self):
         opts = {}
@@ -584,6 +585,28 @@ class Figure(mfigure.Figure):
         self._refheight = units(refheight, 'in')
         self._figwidth = units(figwidth, 'in')
         self._figheight = units(figheight, 'in')
+
+        # Add special consideration for interactive backends
+        backend = _not_none(rc.backend, '')
+        backend = backend.lower()
+        interactive = 'nbagg' in backend or 'ipympl' in backend
+        if not interactive:
+            pass
+        elif figwidth is None or figheight is None:
+            figsize = rc['figure.figsize']  # modified by proplot
+            self._figwidth = figwidth = _not_none(figwidth, figsize[0])
+            self._figheight = figheight = _not_none(figheight, figsize[1])
+            self._refwidth = self._refheight = None  # critical!
+            if self._warn_interactive:
+                Figure._warn_interactive = False  # set class attribute
+                warnings._warn_proplot(
+                    'Auto-sized ProPlot figures are not compatible with interactive '
+                    "backends like '%matplotlib widget' and '%matplotlib notebook'. "
+                    f'Reverting to the figure size ({figwidth}, {figheight}). To make '
+                    'auto-sized figures, please consider using the non-interactive '
+                    '(default) backend. This warning message is shown the first time '
+                    'you create a figure without explicitly specifying the size.'
+                )
 
         # Add space settings
         # NOTE: This is analogous to 'subplotpars' but we don't worry about
@@ -1303,7 +1326,7 @@ class Figure(mfigure.Figure):
         """
         return self.add_subplots(*args, **kwargs)
 
-    def auto_layout(self, renderer=None, resize=None, aspect=None, tight=None):
+    def auto_layout(self, renderer=None, aspect=None, tight=None, resize=None):
         """
         Automatically adjust the figure size and subplot positions. This is
         triggered automatically whenever the figure is drawn.
@@ -1312,15 +1335,6 @@ class Figure(mfigure.Figure):
         ----------
         renderer : `~matplotlib.backend_bases.RendererBase`, optional
             The renderer. If ``None`` a default renderer will be produced.
-        resize : bool, optional
-            If ``False``, the current figure dimensions are fixed and automatic
-            figure resizing is disabled. This is set to ``False`` if the current
-            backend is the `interactive ipython notebook backend \
-<https://ipython.readthedocs.io/en/stable/interactive/plotting.html#id1>`__,
-            which cannot handle automatic resizing. By default, the figure size may
-            change unless both `figwidth` and `figheight` or `figsize` were passed
-            to `~Figure.subplots`, `~Figure.set_size_inches` was called manually,
-            or the figure was resized manually with an interactive backend.
         aspect : bool, optional
             Whether to update the figure size based on the reference subplot aspect
             ratio. By default, this is ``True``. This only has an effect if the
@@ -1329,6 +1343,12 @@ class Figure(mfigure.Figure):
             Whether to update the figuer size and subplot positions according to
             a "tight layout". By default, this takes on the value of `tight` passed
             to `Figure`. If nothing was passed, it is :rc:`subplots.tight`.
+        resize : bool, optional
+            If ``False``, the current figure dimensions are fixed and automatic
+            figure resizing is disabled. By default, the figure size may change
+            unless both `figwidth` and `figheight` or `figsize` were passed
+            to `~Figure.subplots`, `~Figure.set_size_inches` was called manually,
+            or the figure was resized manually with an interactive backend.
         """
         # *Impossible* to get notebook backend to work with auto resizing so we
         # just do the tight layout adjustments and skip resizing.
@@ -1338,9 +1358,9 @@ class Figure(mfigure.Figure):
             aspect = True
         if tight is None:
             tight = self._autospace
-        if resize is None:
-            backend = _not_none(rc.backend, '').lower()
-            resize = 'nbagg' not in backend and 'ipympl' not in backend
+        if resize is False:  # fix the size
+            self._figwidth, self._figheight = self.get_size_inches()
+            self._refwidth = self._refheight = None  # critical!
 
         # Helper functions
         # NOTE: Have to draw legends and colorbars early (before reaching axes
@@ -1349,7 +1369,7 @@ class Figure(mfigure.Figure):
         def _draw_content():
             for ax in self._iter_axes(hidden=False, children=True):
                 ax._draw_guides()  # may trigger resizes if panels are added
-        def _align_content():  # noqa: E301
+        def _align_content():  # noqa: E306
             for axis in 'xy':
                 self._align_axis_label(axis)
             for side in ('left', 'right', 'top', 'bottom'):
@@ -1363,10 +1383,10 @@ class Figure(mfigure.Figure):
         if not gs:
             return
         if aspect:
-            gs._auto_layout_aspect(resize=resize)
+            gs._auto_layout_aspect()
         _align_content()
         if tight:
-            gs._auto_layout_space(renderer, resize=resize)
+            gs._auto_layout_space(renderer)
         _align_content()
 
     def format(

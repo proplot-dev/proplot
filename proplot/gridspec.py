@@ -786,10 +786,9 @@ class GridSpec(mgridspec.GridSpec):
 
         return space
 
-    def _auto_layout_aspect(self, resize=True):
+    def _auto_layout_aspect(self):
         """
-        Update the underlying default aspect ratio. If `resize` is ``True``
-        and the auto figure size has changed then update the figure size.
+        Update the underlying default aspect ratio.
         """
         # Get the axes
         fig = self.figure
@@ -824,10 +823,10 @@ class GridSpec(mgridspec.GridSpec):
 
         # Update the layout
         figsize = self._calc_figsize()
-        if resize and not fig._is_same_size(figsize):
+        if not fig._is_same_size(figsize):
             fig.set_size_inches(figsize, internal=True)
 
-    def _auto_layout_space(self, renderer, *, resize=True):
+    def _auto_layout_space(self, renderer):
         """
         Update the underlying spaces with tight layout values. If `resize` is
         ``True`` and the auto figure size has changed then update the figure
@@ -883,7 +882,7 @@ class GridSpec(mgridspec.GridSpec):
         # spaces (necessary since native position coordinates are figure-relative)
         # and to enforce fixed panel ratios. So only self.update() if we skip resize.
         figsize = self._calc_figsize()
-        if resize and not fig._is_same_size(figsize):
+        if not fig._is_same_size(figsize):
             fig.set_size_inches(figsize, internal=True)
         else:
             self.update()
