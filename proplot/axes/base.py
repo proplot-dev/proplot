@@ -29,6 +29,7 @@ from .. import gridspec as pgridspec
 from ..config import _parse_format, _translate_loc, rc
 from ..internals import ic  # noqa: F401
 from ..internals import (
+    _fill_guide_kw,
     _guide_kw_from_obj,
     _keyword_to_positional,
     _not_none,
@@ -41,7 +42,7 @@ from ..internals import (
     rcsetup,
     warnings,
 )
-from ..utils import _fontsize_to_pt, edges, to_rgb, units
+from ..utils import _fontsize_to_pt, edges, units
 
 try:
     from cartopy.crs import CRS, PlateCarree
@@ -332,10 +333,12 @@ mappable : mappable, list of artists, list of color-spec, or colormap-spec
        `values`. If `values` is ``None``, it is set to
        ``np.linspace(0, 1, cmap.N)``.
 
-values : list of float, optional
+values : list of float or str, optional
     Ignored if `mappable` is a mappable object. This maps each color or
     plot handle in the `mappable` list to numeric values, from which a
-    colormap and normalizer are constructed.
+    colormap and normalizer are constructed. These can also be strings,
+    in which case the list indices are used for tick locations and the
+    strings are applied as tick labels.
 """
 _colorbar_kwargs_docstring = """
 extend : {None, 'neither', 'both', 'min', 'max'}, optional
@@ -420,18 +423,22 @@ _snippet_manager['axes.colorbar_kwargs'] = _colorbar_kwargs_docstring
 _legend_args_docstring = """
 handles : list of `~matplotlib.artist.Artist`, optional
     List of matplotlib artists, or a list of lists of artist instances (see
-    the `center` keyword). If ``None``, the artists are retrieved with
-    `~matplotlib.axes.Axes.get_legend_handles_labels`.
+    the `center` keyword). If ``None``, the artists are retrieved automatically.
+    If the object is a `~matplotlib.collections.Collection` or a
+    `~matplotlib.contour.ContourSet`, the ``legend_elements`` method is used to pair
+    the collection or contour set label with the central element in the list (generally
+    giving the central colormap color if the object is controlled with a colormap).
 labels : list of str, optional
-    Matching list of string labels or ``None`` placeholders, or a matching list of
-    lists (see the `center` keyword). Wherever ``None`` appears in the list (or if no
-    labels were passed at all), labels are retrieved by calling
+    A matching list of string labels or ``None`` placeholders, or a matching list of
+    lists (see the `center` keyword). Wherever ``None`` appears in the list (or
+    if no labels were passed at all), labels are retrieved by calling
     `~matplotlib.artist.Artist.get_label` on each `~matplotlib.artist.Artist` in the
     handle list. If a handle consists of a tuple group of artists, labels are
     inferred from the artists in the tuple. If there are multiple unique labels in
     the tuple group of artists, the tuple group is expanded into unique legend
-    entries. For details on matplotlib legend handlers, see the matplotlib
-    `legend guide \
+    entries. Otherwise, the tuple group elements are drawn on top of eachother.
+    For details on matplotlib's legend handlers, including tuple groups, see
+    the matplotlib `legend guide \
 <https://matplotlib.org/stable/tutorials/intermediate/legend_guide.html>`__.
 """
 _legend_kwargs_docstring = """
@@ -479,6 +486,17 @@ labelspacing, columnspacing : float or str, optional
 """
 _snippet_manager['axes.legend_args'] = _legend_args_docstring
 _snippet_manager['axes.legend_kwargs'] = _legend_kwargs_docstring
+
+
+def _legend_objects(children):
+    """
+    Iterate through `_children` of `HPacker`, `VPacker`, and `DrawingArea`.
+    """
+    for obj in children:
+        if hasattr(obj, '_children'):
+            yield from _legend_objects(obj._children)
+        else:
+            yield obj
 
 
 class Axes(maxes.Axes):
@@ -1571,7 +1589,6 @@ class Axes(maxes.Axes):
                 iax._sharey_setup(left)
 
         # External axes sharing, sometimes overrides panel axes sharing
-        # NOTE: This can get very repetitive, but probably minimal impact?
         # Share x axes
         parent, *children = self._get_share_axes('x')
         for child in children:
@@ -1607,21 +1624,19 @@ class Axes(maxes.Axes):
                 obj_prev.remove()  # remove legends and inner colorbars
 
         # Replace with instance or update the queue
-        # NOTE: This replaces previous legends
-        if isinstance(obj, tuple) and not any(isinstance(_, mlegend.Legend) for _ in obj):  # noqa: E501
-            handles, labels = obj
-            handles = _not_none(handles, [])
-            if not isinstance(handles, list):
-                handles = [handles]  # e.g. mappable
-            labels = _not_none(labels, [])
-            if not isinstance(labels, list):
-                labels = [labels]  # not sure if this ever happens
-            handles_full, labels_full, kwargs_full = dict_.setdefault(loc, ([], [], {}))
-            handles_full.extend(_not_none(handles, []))
-            labels_full.extend(_not_none(labels, []))
-            kwargs_full.update(kwargs)
-        else:
+        # NOTE: This is valid for both mappable-values pairs and handles-labels pairs
+        if not isinstance(obj, tuple) or any(isinstance(_, mlegend.Legend) for _ in obj):  # noqa: E501
             dict_[loc] = obj
+        else:
+            handles, labels = obj
+            if not isinstance(handles, list):  # e.g. mappable or None
+                handles = [handles]
+            if not isinstance(labels, list):  # e.g. string or None
+                labels = [labels] * len(handles)
+            handles_full, labels_full, kwargs_full = dict_.setdefault(loc, ([], [], {}))
+            handles_full.extend(handles)
+            labels_full.extend(labels)
+            kwargs_full.update(kwargs)
 
     def _draw_guides(self):
         """
@@ -1633,7 +1648,7 @@ class Axes(maxes.Axes):
             if not isinstance(colorbar, tuple):
                 continue
             handles, labels, kwargs = colorbar
-            cb = self._draw_colorbar(handles, labels or None, loc=loc, **kwargs)
+            cb = self._draw_colorbar(handles, labels, loc=loc, **kwargs)
             self._colorbar_dict[loc] = cb
 
         # Draw queued legends
@@ -1643,7 +1658,7 @@ class Axes(maxes.Axes):
             if not isinstance(legend, tuple) or any(isinstance(_, mlegend.Legend) for _ in legend):  # noqa: E501
                 continue
             handles, labels, kwargs = legend
-            leg = self._draw_legend(handles, labels or None, loc=loc, **kwargs)
+            leg = self._draw_legend(handles, labels, loc=loc, **kwargs)
             self._legend_dict[loc] = leg
 
     def _fill_colorbar_axes(
@@ -1705,8 +1720,7 @@ class Axes(maxes.Axes):
     def _inset_colorbar_axes(
         self, loc=None, width=None, length=None, shrink=None,
         frame=None, frameon=None, label=None, pad=None,
-        tickloc=None, ticklocation=None, orientation=None,
-        **kwargs,
+        tickloc=None, ticklocation=None, orientation=None, **kwargs,
     ):
         """
         Return the axes and adjusted keyword args for an inset colorbar.
@@ -1805,7 +1819,9 @@ class Axes(maxes.Axes):
         """
         Get the default locator for colorbar ticks.
         """
-        ticks = _not_none(ticks=ticks, locator=locator)
+        # Parse flexible input args
+        # NOTE: Capture 'format' for consistency with matplotlib keywords
+        ticks = locator = _not_none(ticks=ticks, locator=locator)
         formatter = _not_none(ticklabels=ticklabels, formatter=formatter, format=format)
         minorlocator = _not_none(minorticks=minorticks, minorlocator=minorlocator)
         locator_kw = locator_kw or {}
@@ -1832,7 +1848,7 @@ class Axes(maxes.Axes):
         # NOTE: Do not necessarily want minor tick locations at logminor for LogNorm!
         # In _auto_discrete_norm we sometimes select evenly spaced levels in log-space
         # *between* powers of 10, so logminor ticks would be misaligned with levels.
-        if ticks is None:
+        if locator is None:
             # This should only happen if discrete=False since _parse_levels supplies
             # default ticks to the colorbar. Treat this as smooth gradations.
             if isinstance(mappable.norm, mcolors.LogNorm):
@@ -1842,7 +1858,7 @@ class Axes(maxes.Axes):
                 locator_kw.setdefault('linthresh', mappable.norm.linthresh)
             else:
                 locator = 'auto'
-        elif np.iterable(ticks) and not isinstance(ticks, str) and len(ticks) > 1:
+        elif np.iterable(locator) and not isinstance(locator, str) and len(locator) > 1:
             # These are usually ticks passed by _parse_levels but may also be user
             # input lists. Users can use pplt.Locator(ticks) to avoid subsampling.
             width, height = self._get_size_inches()
@@ -1854,9 +1870,6 @@ class Axes(maxes.Axes):
             locator = _subsample_levels(maxn, scale, size)
             if tickminor and minorlocator is None:
                 minorlocator = _subsample_levels(maxn_minor, 0.5, size)
-        else:
-            # Manually specified locator
-            locator = ticks
 
         # Return tickers
         locator = constructor.Locator(locator, **locator_kw)
@@ -1868,8 +1881,8 @@ class Axes(maxes.Axes):
         formatter = constructor.Formatter(formatter, **formatter_kw)
         return locator, formatter, minorlocator, kwargs
 
-    def _parse_mappable_values(
-        self, mappable, values=None, *, norm=None, norm_kw=None, **kwargs,
+    def _parse_colorbar_mappable(
+        self, mappable, values=None, *, norm=None, norm_kw=None, rotation=None, **kwargs
     ):
         """
         Generate a mappable from flexible non-mappable input. Useful in bridging
@@ -1885,11 +1898,7 @@ class Axes(maxes.Axes):
         ):
             mappable = mappable[0]
         if isinstance(mappable, mcm.ScalarMappable):
-            return mappable, kwargs
-        else:
-            locator = _not_none(kwargs.pop('locator', None), kwargs.pop('ticks', None))
-            formatter = _not_none(kwargs.pop('ticklabels', None), kwargs.pop('formatter', None))  # noqa: E501
-            rotation = kwargs.pop('rotation', None)
+            return mappable, None, kwargs
 
         # For container objects, we just assume color is the same for every item.
         # Works for ErrorbarContainer, StemContainer, BarContainer.
@@ -1905,67 +1914,46 @@ class Axes(maxes.Axes):
             # NOTE: 'Values' makes no sense if this is just a colormap. Just
             # use unique color for every segmentdata / colors color.
             cmap = constructor.Colormap(mappable)
-            values = np.linspace(0, 1, cmap.N)
+            locator = np.linspace(0, 1, cmap.N)
 
         # List of colors
-        elif np.iterable(mappable) and all(
-            isinstance(obj, str) or (np.iterable(obj) and len(obj) in (3, 4))
-            for obj in mappable
-        ):
+        elif np.iterable(mappable) and all(map(mcolors.is_color_like, mappable)):
             cmap = pcolors.DiscreteColormap(list(mappable), '_no_name')
             if values is None:
-                values = np.arange(len(mappable))
-            locator = _not_none(locator, values)  # tick all values by default
+                values = [None] * len(mappable)
+            locator = [_not_none(value, i) for i, value in enumerate(values)]
 
         # List of artists
         # NOTE: Do not check for isinstance(Artist) in case it is an mpl collection
         elif np.iterable(mappable) and all(
-            hasattr(obj, 'get_color') or hasattr(obj, 'get_facecolor')
-            for obj in mappable
+            hasattr(obj, 'get_color') or hasattr(obj, 'get_facecolor') for obj in mappable  # noqa: E501
         ):
             # Generate colormap from colors and infer tick labels
             colors = []
             for obj in mappable:
-                if hasattr(obj, 'get_color'):
-                    color = obj.get_color()
-                else:
-                    color = obj.get_facecolor()
+                color = obj.get_color() if hasattr(obj, 'get_color') else obj.get_facecolor()  # noqa: E501
                 if isinstance(color, np.ndarray):
-                    color = color.squeeze()  # e.g. scatter plot
-                    if color.ndim != 1:
-                        raise ValueError(
-                            'Cannot make colorbar from list of artists '
-                            f'with more than one color: {color!r}.'
-                        )
-                colors.append(to_rgb(color))
-
+                    color = color.squeeze()  # e.g. single color scatter plot
+                if not mcolors.is_color_like(color):
+                    raise ValueError('Cannot make colorbar from artists with more than one color.')  # noqa: E501
+                colors.append(color)
             # Try to infer tick values and tick labels from Artist labels
             cmap = pcolors.DiscreteColormap(colors, '_no_name')
             if values is None:
-                # Get object labels and values
-                labels = []
-                values = []
-                for obj in mappable:
-                    label = obj.get_label()  # could be None
-                    if isinstance(label, str) and label[:1] == '_':
-                        label = None
-                    try:
-                        value = float(label)  # could be float(None)
-                    except (TypeError, ValueError):
+                values = [None] * len(mappable)
+            locator = []
+            for i, (obj, value) in enumerate(zip(mappable, values)):
+                if value is None:
+                    value = obj.get_label()
+                    if value and value[0] == '_':
                         value = None
-                    labels.append(label)
-                    values.append(value)
-                # Use default values if labels are non-numeric (numeric labels are
-                # common when making on-the-fly colorbars). Try to use object labels
-                # for ticks with default vertical rotation, like datetime axes.
-                if any(value is None for value in values):
-                    values = np.arange(len(mappable))
-                    if any(_ is not None for _ in labels):
-                        formatter = _not_none(formatter, labels)
-                        if kwargs.get('orientation', None) != 'vertical':
-                            rotation = _not_none(rotation, 90)
-            # Tick all values by default
-            locator = _not_none(locator, values)
+                    try:
+                        value = float(value)  # could be float(None)
+                    except (TypeError, ValueError):
+                        pass
+                if value is None:
+                    value = i
+                locator.append(value)
 
         else:
             raise ValueError(
@@ -1974,28 +1962,30 @@ class Axes(maxes.Axes):
                 f'Got {mappable!r}.'
             )
 
+        # Get locator, formatter, and level array for result
+        # NOTE: Set default rotation if 'values' were string labels
+        formatter = None
+        if any(isinstance(value, str) for value in locator):
+            locator, formatter = np.arange(len(locator)), list(map(str, locator))
+            if kwargs.get('orientation', None) != 'vertical':
+                rotation = _not_none(rotation, 90)
+        if len(locator) > 1:
+            levels = edges(locator)
+        elif len(locator) == 1:
+            levels = [locator[0] - 1, locator[0] + 1]
+
         # Build ad hoc ScalarMappable object from colors
-        if np.iterable(mappable) and len(values) != len(mappable):
-            raise ValueError(
-                f'Passed {len(values)} values, but only {len(mappable)} '
-                f'objects or colors.'
-            )
-        norm_kw = norm_kw or {}
-        norm = constructor.Norm(norm or 'linear', **norm_kw)
-        if len(values) > 1:
-            levels = edges(values)
-        elif len(values) == 1:
-            levels = [values[0] - 1, values[0] + 1]
+        # NOTE: If value list doesn't match this may cycle over colors.
+        norm = constructor.Norm(norm or 'linear', **(norm_kw or {}))
         norm, cmap, _ = self._parse_discrete(levels, norm, cmap)
         mappable = mcm.ScalarMappable(norm, cmap)
-
-        kwargs.update({'locator': locator, 'formatter': formatter, 'rotation': rotation})  # noqa: E501
-        return mappable, kwargs
+        _fill_guide_kw(kwargs, locator=locator, formatter=formatter)
+        return mappable, rotation, kwargs
 
     def _draw_colorbar(
         self, mappable, values=None, *, loc=None, space=None, pad=None,
         extend=None, reverse=False, tickdir=None, tickdirection=None, tickminor=None,
-        title=None, label=None, norm=None, norm_kw=None,
+        title=None, label=None,
         ec=None, edgecolor=None, lw=None, linewidth=None, edgefix=None,
         labelsize=None, labelweight=None, labelcolor=None,
         ticklabelsize=None, ticklabelweight=None, ticklabelcolor=None,
@@ -2005,7 +1995,7 @@ class Axes(maxes.Axes):
         """
         The driver function for adding axes colorbars.
         """
-        # Parse input axes
+        # Parse input args
         # TODO: Get the 'best' inset colorbar location using the legend algorithm.
         # NOTE: There is a weird problem with colorbars when simultaneously
         # passing levels and norm object to a mappable; fixed by passing vmin/vmax
@@ -2014,7 +2004,6 @@ class Axes(maxes.Axes):
         # using a Normalize (for example) to determine colors between the levels
         # (see: https://stackoverflow.com/q/42723538/4970632). Workaround makes
         # sure locators are in vmin/vmax range exclusively; cannot match values.
-        norm_kw = norm_kw or {}
         grid = _not_none(grid=grid, edges=edges, drawedges=drawedges, default=rc['colorbar.grid'])  # noqa: E501
         label = _not_none(title=title, label=label)
         linewidth = _not_none(lw=lw, linewidth=linewidth, default=rc['axes.linewidth'])
@@ -2042,7 +2031,7 @@ class Axes(maxes.Axes):
         # values or artist labels rather than random points if possible.
         # WARNING: Matplotlib >= 3.4 seems to have issue with assigning no ticks
         # to colorbar. Tried to fix with below block but doesn't seem to help.
-        mappable, kwargs = cax._parse_mappable_values(
+        mappable, rotation, kwargs = cax._parse_colorbar_mappable(
             mappable, values, **kwargs
         )
         locator, formatter, minorlocator, kwargs = cax._parse_colorbar_ticks(
@@ -2067,7 +2056,7 @@ class Axes(maxes.Axes):
             ('size', ticklabelsize),
             ('weight', ticklabelweight),
             ('color', ticklabelcolor),
-            ('rotation', kwargs.pop('rotation', None)),
+            ('rotation', rotation),
         ):
             if value is not None:
                 kw_ticklabels[key] = value
@@ -2250,8 +2239,7 @@ class Axes(maxes.Axes):
         loc = _translate_loc(loc, 'colorbar', default=rc['colorbar.loc'])
         kwargs = _guide_kw_from_obj(mappable, 'colorbar', kwargs)
         if queue:
-            obj = (mappable, values)
-            self._add_guide('colorbar', obj, loc, **kwargs)
+            self._add_guide('colorbar', (mappable, values), loc, **kwargs)
         else:
             cb = self._draw_colorbar(mappable, values, loc=loc, **kwargs)
             return cb
@@ -2267,7 +2255,8 @@ class Axes(maxes.Axes):
         else:  # this is a figure-wide legend
             axs = list(self.figure._iter_axes(hidden=False, children=True))
         handles = []
-        handler_map_full = mlegend.Legend.get_default_handler_map().copy()
+        handler_map_full = mlegend.Legend.get_default_handler_map()
+        handler_map_full = handler_map_full.copy()
         handler_map_full.update(handler_map or {})
         for ax in axs:
             for attr in ('lines', 'patches', 'collections', 'containers'):
@@ -2298,8 +2287,16 @@ class Axes(maxes.Axes):
             for obj in objs:
                 if isinstance(obj, ignore) and not _group_labs(obj):
                     continue
-                elif isinstance(obj, cbook.silent_list) and obj:
+                if isinstance(obj, cbook.silent_list) and obj:
                     obj = obj[0]
+                if hasattr(obj, 'update_scalarmappable'):  # for e.g. pcolor
+                    obj.update_scalarmappable()
+                if isinstance(obj, mcontour.ContourSet):
+                    label = getattr(obj, '_legend_label', '')  # custom label
+                    els, _ = obj.legend_elements()
+                    if els:  # non-empty
+                        obj = els[len(els) // 2]  # pick the central element
+                        obj.set_label(label)  # apply the label to the element
                 if hasattr(obj, 'get_label') or type(obj) is tuple:
                     out.append(obj)
             return tuple(out)
@@ -2324,20 +2321,26 @@ class Axes(maxes.Axes):
             if not objs:
                 continue
             # Unfurl tuple of handles
+            # WARNING: May trigger warning if some but not all objects in
+            # the tuple of valid differing labels. But pretty obscure edge case.
             if label is None and len(labs) > 1:
                 ihandles.extend(objs)
                 ilabels.extend(obj.get_label() for obj in objs)
             # Append this handle with some name
+            # WARNING: Filling tuple with object legend() has no handler for will
+            # trigger error rather than warning (pcolormesh). So unfurl if possible
             else:
+                if len(objs) == 1:  # unfurl
+                    objs = objs[0]
                 if label is None:
                     label = labs.pop() if labs else '_no_label'
                 ihandles.append(objs)
                 ilabels.append(label)
-
         return ihandles, ilabels
 
-    def _parse_handles_labels(
-        self, axs, handles, labels, ncol=None, order='C', center=None, alphabetize=None,
+    def _parse_legend_handles(
+        self, handles, labels, ncol=None, order=None, center=None,
+        alphabetize=None, handler_map=None,
     ):
         """
         Parse input handles and labels.
@@ -2357,7 +2360,6 @@ class Axes(maxes.Axes):
             return obj
 
         # Handle lists of lists
-        axs = axs or ()
         handles, labels = _to_list(handles), _to_list(labels)
         if handles is None:
             list_of_lists = False
@@ -2384,11 +2386,9 @@ class Axes(maxes.Axes):
             handles, labels = [handles], [labels]
         for ihandles, ilabels in zip(handles, labels):
             ihandles, ilabels = _to_list(ihandles), _to_list(ilabels)
-            if ihandles is not None:
-                ihandles, ilabels = self._parse_handle_groups(ihandles, ilabels)
-            ihandles, ilabels, *_ = mlegend._parse_legend_args(
-                axs, handles=ihandles, labels=ilabels,
-            )
+            if ihandles is None:
+                ihandles = self._get_legend_handles(handler_map)
+            ihandles, ilabels = self._parse_handle_groups(ihandles, ilabels)
             ipairs = list(zip(ihandles, ilabels))
             if alphabetize:
                 ipairs = sorted(ipairs, key=lambda pair: pair[1])
@@ -2409,25 +2409,12 @@ class Axes(maxes.Axes):
 
         return pairs
 
-    @staticmethod
-    def _legend_objects(children):
-        """
-        Iterate recursively through `_children` attributes of various `HPacker`,
-        `VPacker`, and `DrawingArea` classes.
-        """
-        for obj in children:
-            if hasattr(obj, '_children'):
-                yield from Axes._legend_objects(obj._children)
-            else:
-                yield obj
-
-    def _single_legend(self, pairs, ncol=None, order=None, **kwargs):
+    def _draw_normallegend(self, pairs, ncol=None, order=None, **kwargs):
         """
         Draw an individual legend with support for changing legend-entries
         between column-major and row-major.
         """
-        # Optionally change order
-        # See: https://stackoverflow.com/q/10101141/4970632
+        # Optionally change order. See: https://stackoverflow.com/q/10101141/4970632
         # Example: If 5 columns, but final row length 3, columns 0-2 have
         # N rows but 3-4 have N-1 rows.
         ncol = _not_none(ncol, 3)
@@ -2442,7 +2429,41 @@ class Axes(maxes.Axes):
                 pairs.extend(split[row][col] for row in range(nrow))
         return mlegend.Legend(self, *zip(*pairs), ncol=ncol, **kwargs)
 
-    def _multiple_legend(
+    def _draw_multiframe(self, legs, fontsize=None, **kwargs):
+        """
+        Add a frame for multiple legends with "centered rows".
+        """
+        width, height = self._get_size_inches()
+        renderer = self.figure._get_renderer()  # arbitrary renderer
+        trans = self.transAxes.inverted()
+        bboxs = [leg.get_window_extent(renderer).transformed(trans) for leg in legs]
+        xmin = min(bbox.xmin for bbox in bboxs)
+        xmax = max(bbox.xmax for bbox in bboxs)
+        ymin = min(bbox.ymin for bbox in bboxs)
+        ymax = max(bbox.ymax for bbox in bboxs)
+        fontsize = (fontsize / 72) / width  # axes relative units
+        fontsize = renderer.points_to_pixels(fontsize)
+
+        # Draw and format patch
+        # TODO: Shadow patch does not seem to work. Figure it out
+        patch = mpatches.FancyBboxPatch(
+            (xmin, ymin), xmax - xmin, ymax - ymin,
+            snap=True, zorder=4.5,
+            mutation_scale=fontsize,
+            transform=self.transAxes
+        )
+        if kwargs.get('fancybox', rc['legend.fancybox']):
+            patch.set_boxstyle('round', pad=0, rounding_size=0.2)
+        else:
+            patch.set_boxstyle('square', pad=0)
+        patch.set_clip_on(False)
+        self.add_artist(patch)
+        if kwargs.get('shadow', rc['legend.shadow']):
+            shadow = mpatches.Shadow(patch, 20, -20)
+            self.add_artist(shadow)
+        return patch
+
+    def _draw_multilegend(
         self, pairs, *, loc=None, title=None, fontsize=None, **kwargs
     ):
         """
@@ -2450,7 +2471,6 @@ class Axes(maxes.Axes):
         each row. The label spacing/border spacing will be exactly replicated.
         """
         # Issue warning when overriding some properties
-        legs = []
         frameon = kwargs.pop('frameon', None)  # we add our own frame
         fontsize = _not_none(fontsize, rc['legend.fontsize'])
         overridden = []
@@ -2480,15 +2500,11 @@ class Axes(maxes.Axes):
         # left-to-right if you request this.
         loc = _not_none(loc, 'upper center')
         if not isinstance(loc, str):
-            raise ValueError(
-                f'Invalid location {loc!r} for legend with center=True. '
-                'Must be a location *string*.'
-            )
-        elif loc == 'best':
-            warnings._warn_proplot(
-                'For centered-row legends, cannot use "best" location. '
-                'Using "upper center" instead.'
-            )
+            raise ValueError(f'Invalid loc={loc!r} for center=True legend. Must be string.')  # noqa: E501
+        if loc == 'best':
+            loc = 'upper center'
+            warnings._warn_proplot("Invalid loc='best' for center=True legend. Using 'upper center' instead.")  # noqa: E501
+        legs = []
         for i, ipairs in enumerate(pairs):
             if i > 0 and title is not None:
                 i += 1  # add extra space!
@@ -2516,55 +2532,31 @@ class Axes(maxes.Axes):
         # coordinates are messed up. In some tests all coordinates were just result
         # of get window extent multiplied by 2 (???). Anyway actual box is found in
         # _legend_box attribute, which is accessed by get_window_extent.
+        objs = tuple(legs)
         if not frameon:
-            return legs  # no frame needed
-        if len(legs) == 1:
+            pass
+        elif len(legs) == 1:
             legs[0].set_frame_on(True)
-            return legs  # use the native frame
-        width, height = self._get_size_inches()
-        renderer = self.figure._get_renderer()  # arbitrary renderer
-        trans = self.transAxes.inverted()
-        bboxs = [leg.get_window_extent(renderer).transformed(trans) for leg in legs]
-        xmin = min(bbox.xmin for bbox in bboxs)
-        xmax = max(bbox.xmax for bbox in bboxs)
-        ymin = min(bbox.ymin for bbox in bboxs)
-        ymax = max(bbox.ymax for bbox in bboxs)
-        fontsize = (fontsize / 72) / width  # axes relative units
-        fontsize = renderer.points_to_pixels(fontsize)
-
-        # Draw and format patch
-        # TODO: Shadow patch does not seem to work. Figure it out
-        patch = mpatches.FancyBboxPatch(
-            (xmin, ymin), xmax - xmin, ymax - ymin,
-            snap=True, zorder=4.5,
-            mutation_scale=fontsize,
-            transform=self.transAxes
-        )
-        if kwargs.get('fancybox', rc['legend.fancybox']):
-            patch.set_boxstyle('round', pad=0, rounding_size=0.2)
         else:
-            patch.set_boxstyle('square', pad=0)
-        patch.set_clip_on(False)
-        self.add_artist(patch)
-        if kwargs.get('shadow', rc['legend.shadow']):
-            shadow = mpatches.Shadow(patch, 20, -20)
-            self.add_artist(shadow)
-
-        return (patch, *legs)
+            frame = self._draw_multiframe(legs, fontsize=fontsize, **kwargs)
+            objs = (frame, *legs)
+        return objs
 
     def _draw_legend(
         self, handles=None, labels=None, *,
         loc=None, width=None, pad=None, space=None,
         frame=None, frameon=None, ncol=None, ncols=None,
-        alphabetize=False, center=None, order='C', label=None, title=None,
+        alphabetize=False, center=None, order=None, label=None, title=None,
         fontsize=None, fontweight=None, fontcolor=None,
-        titlefontsize=None, titlefontweight=None, titlefontcolor=None, **kwargs
+        titlefontsize=None, titlefontweight=None, titlefontcolor=None,
+        handler_map=None, **kwargs
     ):
         """
         The driver function for adding axes legends.
         """
         # Parse input argument units
         ncol = _not_none(ncols=ncols, ncol=ncol)
+        order = _not_none(order, 'C')
         frameon = _not_none(frame=frame, frameon=frameon, default=rc['legend.frameon'])
         fontsize = _not_none(kwargs.pop('fontsize', None), rc['legend.fontsize'])
         titlefontsize = _not_none(
@@ -2576,8 +2568,8 @@ class Axes(maxes.Axes):
         titlefontsize = _fontsize_to_pt(titlefontsize)
         if order not in ('F', 'C'):
             raise ValueError(
-                f'Invalid order {order!r}. Choose from '
-                '"C" (row-major, default) and "F" (column-major).'
+                f'Invalid order {order!r}. Please choose from '
+                "'C' (row-major, default) or 'F' (column-major)."
             )
 
         # Convert relevant keys to em-widths
@@ -2642,8 +2634,6 @@ class Axes(maxes.Axes):
         # Handle and text properties that are applied after-the-fact
         # NOTE: Set solid_capstyle to 'butt' so line does not extend past error bounds
         # shading in legend entry. This change is not noticable in other situations.
-        kw_handle = _pop_props(kwargs, 'collection')
-        kw_handle['solid_capstyle'] = 'butt'
         kw_text = {}
         if fontcolor is not None:
             kw_text['color'] = fontcolor
@@ -2654,18 +2644,14 @@ class Axes(maxes.Axes):
             kw_title['color'] = titlefontcolor
         if titlefontweight is not None:
             kw_title['weight'] = titlefontweight
+        kw_handle = _pop_props(kwargs, 'line')
+        kw_handle['solid_capstyle'] = 'butt'
 
         # Parse the legend handles using axes for auto-handle detection
         # TODO: Update this when we no longer use "filled panels" for outer legends
-        axs = [lax]
-        if lax._panel_hidden:  # this is a "filled" legend
-            if lax._panel_parent:  # axes panel i.e. axes-wide legend
-                axs = list(lax._panel_parent._iter_axes(hidden=False, children=True))
-            else:  # figure panel i.e. figure-wide legend
-                axs = list(self.figure._iter_axes(hidden=False, children=True))
-        pairs = self._parse_handles_labels(
-            axs, handles, labels,
-            ncol=ncol, order=order, center=center, alphabetize=alphabetize,
+        pairs = lax._parse_legend_handles(
+            handles, labels, ncol=ncol, order=order, center=center,
+            alphabetize=alphabetize, handler_map=handler_map
         )
         title = _not_none(label=label, title=title)
 
@@ -2674,14 +2660,15 @@ class Axes(maxes.Axes):
             'title': title,
             'frameon': frameon,
             'fontsize': fontsize,
+            'handler_map': handler_map,
             'title_fontsize': titlefontsize,
         })
         if not pairs:  # fallback
             objs = [mlegend.Legend(lax, [], [], **kwargs)]
         elif center:  # multi-legend pseudo-legend
-            objs = lax._multiple_legend(pairs, loc=loc, **kwargs)
+            objs = lax._draw_multilegend(pairs, loc=loc, **kwargs)
         else:  # standard legend
-            objs = [lax._single_legend(pairs, loc=loc, ncol=ncol, **kwargs)]
+            objs = [lax._draw_normallegend(pairs, loc=loc, ncol=ncol, order=order, **kwargs)]  # noqa: E50
         for obj in objs:
             if isinstance(obj, mpatches.FancyBboxPatch):
                 continue
@@ -2700,23 +2687,22 @@ class Axes(maxes.Axes):
         # returns the first artist. Instead we try to iterate through offset boxes.
         for obj in objs:
             # Update patch
-            if not isinstance(obj, mpatches.FancyBboxPatch):
-                obj.legendPatch.update(kw_patch)  # no-op if frame is off
-            else:
+            if isinstance(obj, mpatches.FancyBboxPatch):
                 obj.update(kw_patch)  # the multiple-legend bounding box
                 continue
+            obj.legendPatch.update(kw_patch)  # no-op if frame is off
+            # Update title text, handle text, and handle artist properties
+            # NOTE: This silently ignores invalid properties for common case
             try:
                 children = obj._legend_handle_box._children
             except AttributeError:  # older versions maybe?
                 children = []
-            # Update title text, handle text, and handle artist properties
-            for obj in self._legend_objects(children):
-                # NOTE: This silently other invalid properties
+            for obj in _legend_objects(children):
                 if isinstance(obj, mtext.Text):
                     obj.update(kw_text)
-                    continue
-                for key, value in kw_handle.items():
-                    getattr(obj, 'set_' + key, lambda value: None)(value)
+                else:
+                    kw = {key: val for key, val in kw_handle.items() if hasattr(obj, 'set_' + key)}  # noqa: E501
+                    obj.update(kw)
 
         # Return after registering location
         for obj in objs:
@@ -2774,6 +2760,10 @@ class Axes(maxes.Axes):
         Other parameters
         ----------------
         %(axes.legend_kwargs)s
+        handler_map : dict-like, optional
+            A dictionary mapping instances or types to a legend handler.
+            This `handler_map` updates the default handler map found at
+            `matplotlib.legend.Legend.get_legend_handler_map`.
 
         See also
         --------
@@ -2787,8 +2777,7 @@ class Axes(maxes.Axes):
         loc = _translate_loc(loc, 'legend', default=rc['legend.loc'])
         kwargs = _guide_kw_from_obj(handles, 'legend', kwargs)
         if queue:
-            obj = (handles, labels)
-            self._add_guide('legend', obj, loc, **kwargs)
+            self._add_guide('legend', (handles, labels), loc, **kwargs)
         else:
             leg = self._draw_legend(handles, labels, loc=loc, **kwargs)
             return leg

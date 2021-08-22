@@ -412,6 +412,10 @@ precision : int, optional
     Maximum number of decimal places for the number labels. Number labels
     are generated with the `~proplot.ticker.SimpleFormatter` formatter,
     which permits limiting the precision.
+label : str, optional
+    The legend label to be used for this object. In the case of
+    contours, this is paired with the the central artist in the artist
+    list returned by `matplotlib.contour.ContourSet.legend_elements`.
 """
 _snippet_manager['plot.labels_1d'] = _labels_1d_docstring
 _snippet_manager['plot.labels_2d'] = _labels_2d_docstring
@@ -928,6 +932,7 @@ Other parameters
 %(plot.levels_manual)s
 %(plot.levels_vlim)s
 %(plot.levels_auto)s
+%(plot.labels_2d)s
 %(plot.guide)s
 {add}lw, linewidth, linewidths : optional
     The width of the contour lines.
@@ -990,6 +995,7 @@ Other parameters
 %(plot.levels_manual)s
 %(plot.levels_vlim)s
 %(plot.levels_auto)s
+%(plot.labels_2d)s
 %(plot.guide)s
 lw, linewidth, linewidths : optional
     The width of lines between grid boxes.
@@ -4216,6 +4222,7 @@ class PlotAxes(base.Axes):
         %(plot.levels_manual)s
         %(plot.levels_vlim)s
         %(plot.levels_auto)s
+        %(plot.labels_2d)s
         %(plot.guide)s
         **kwargs
             Passed to `~matplotlib.axes.Axes.hist2d`.
@@ -4249,6 +4256,7 @@ class PlotAxes(base.Axes):
         %(plot.cmap_norm)s
         %(plot.levels_manual)s
         %(plot.levels_vlim)s
+        %(plot.labels_2d)s
         %(plot.guide)s
         **kwargs
             Passed to `~matplotlib.axes.Axes.hexbin`.
@@ -4291,7 +4299,9 @@ class PlotAxes(base.Axes):
             kw['cmap'] = cmap
         labels_kw = _pop_params(kw, self._auto_labels)
         guide_kw = _pop_params(kw, self._add_queued_guide)
+        label = kw.pop('label', None)
         m = self._plot_safe('contour', x, y, z, **kw)
+        m._legend_label = label
         self._auto_labels(m, **labels_kw)
         self._add_queued_guide(m, **guide_kw)
         return m
@@ -4310,7 +4320,9 @@ class PlotAxes(base.Axes):
         edgefix_kw = _pop_params(kw, self._fix_edges)
         labels_kw = _pop_params(kw, self._auto_labels)
         guide_kw = _pop_params(kw, self._add_queued_guide)
+        label = kw.pop('label', None)
         m = cm = self._plot_safe('contourf', x, y, z, **kw)
+        m._legend_label = label
         self._fix_edges(m, **edgefix_kw, **contour_kw)  # skipped if bool(contour_kw)
         if contour_kw or labels_kw:
             cm = self._plot_edges('contour', x, y, z, **kw, **contour_kw)
@@ -4469,7 +4481,9 @@ class PlotAxes(base.Axes):
             c = pcolors.to_hex(self._get_lines.get_next_color())
         kw['color'] = c  # always pass this
         guide_kw = _pop_params(kw, self._add_queued_guide)
+        label = kw.pop('label', None)
         m = self._plot_safe('streamplot', x, y, u, v, **kw)
+        m.lines.set_label(label)  # the collection label
         self._add_queued_guide(m.lines, **guide_kw)  # lines inside StreamplotSet
         return m
 
@@ -4490,7 +4504,9 @@ class PlotAxes(base.Axes):
             kw['cmap'] = cmap
         labels_kw = _pop_params(kw, self._auto_labels)
         guide_kw = _pop_params(kw, self._add_queued_guide)
+        label = kw.pop('label', None)
         m = self._plot_safe('tricontour', x, y, z, **kw)
+        m._legend_label = label
         self._auto_labels(m, **labels_kw)
         self._add_queued_guide(m, **guide_kw)
         return m
@@ -4509,7 +4525,9 @@ class PlotAxes(base.Axes):
         edgefix_kw = _pop_params(kw, self._fix_edges)
         labels_kw = _pop_params(kw, self._auto_labels)
         guide_kw = _pop_params(kw, self._add_queued_guide)
+        label = kw.pop('label', None)
         m = cm = self._plot_safe('tricontourf', x, y, z, **kw)
+        m._legend_label = label
         self._fix_edges(m, **edgefix_kw, **contour_kw)  # skipped if bool(contour_kw)
         if contour_kw or labels_kw:
             cm = self._plot_edges('tricontour', x, y, z, **kw, **contour_kw)

@@ -236,11 +236,13 @@ def _fill_guide_kw(kwargs, **pairs):
     aliases = (
         ('title', 'label'),
         ('locator', 'ticks'),
-        ('formatter', 'ticklabels')
+        ('format', 'formatter', 'ticklabels')
     )
     for key, value in pairs.items():
-        keys = tuple(a for group in aliases for a in group if key in group)
-        if not any(kwargs.get(key) is not None for key in keys):
+        if value is None:
+            continue
+        keys = tuple(a for group in aliases for a in group if key in group)  # may be ()
+        if not any(kwargs.get(key) is not None for key in keys):  # note any(()) is True
             kwargs[key] = value
 
 
