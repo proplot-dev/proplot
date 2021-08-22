@@ -98,7 +98,7 @@ funcscale : callable, 2-tuple of callables, or scale-spec
     any of which will be used to build a `~proplot.scale.FuncScale` and
     applied to the dual axis (see `~proplot.scale.FuncScale` for details).
 """
-_dual_docstring = _shared_docstring % {'descrip': _dual_descrip, 'extra': _dual_extra.strip()}  # noqa: E501
+_dual_docstring = _shared_docstring % {'descrip': _dual_descrip, 'extra': _dual_extra.lstrip()}  # noqa: E501
 _snippet_manager['axes.dualx'] = _dual_docstring.format(**_shared_x_keys)
 _snippet_manager['axes.dualy'] = _dual_docstring.format(**_shared_y_keys)
 
