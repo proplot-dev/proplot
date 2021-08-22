@@ -191,18 +191,18 @@ df.columns.name = 'category'
 
 # %%
 import proplot as pplt
-fig = pplt.figure(share=False, refwidth=2.2)
+fig = pplt.figure(share=False)
 fig.format(suptitle='Automatic subplot formatting')
 
 # Plot DataArray
 cycle = pplt.Cycle('dark blue', space='hpl', N=da.shape[1])
 ax = fig.subplot(121)
-ax.scatter(da, cycle=cycle, lw=3, colorbar='ul', colorbar_kw={'locator': 20})
+ax.scatter(da, cycle=cycle, lw=3, colorbar='t', colorbar_kw={'locator': 20})
 
 # Plot Dataframe
 cycle = pplt.Cycle('dark green', space='hpl', N=df.shape[1])
 ax = fig.subplot(122)
-ax.plot(df, cycle=cycle, lw=3, legend='uc')
+ax.plot(df, cycle=cycle, lw=3, legend='t', legend_kw={'frame': False})
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
@@ -241,7 +241,7 @@ data2 += state.rand(M, N)
 
 with pplt.rc.context({'lines.linewidth': 3}):
     # Use property cycle for columns of 2D input data
-    fig = pplt.figure(refwidth=2.2, share=False)
+    fig = pplt.figure(share=False)
     ax = fig.subplot(121)
     ax.format(title='Grayscale cycle')
     ax.plot(
