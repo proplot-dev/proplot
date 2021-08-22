@@ -294,13 +294,16 @@ axs[:, 0].format(ylabel='ylabel')
 #      the axis labels, but nothing else.
 #    * ``share='limits'``, ``share='lims'``, or ``share=2`` is the same as ``1``,
 #      but also shares the axis limits, axis scales, and tick locations.
-#    * ``share=True`` or ``share=3`` is the same as ``2``,
-#      but also shares the axis tick labels.
+#    * ``share=True`` or ``share=3`` is the same as ``2``, but also shares
+#      the axis tick labels.
+#    * ``share='all'`` or ``share=4`` is the same as ``3``, but also shares
+#      the axis limits, axis scales, and tick locations between subplots that
+#      are not in the same row or column.
 #
-# #. Adding an option to automatically share labels between axes spanning the same
-#    row or column of the subplot grid, controlled by the `spanx` and `spany`
-#    keywords (default is :rc:`subplots.span`). Use the `span` keyword as a
-#    shorthand to set both `spanx` and `spany`.
+# #. Adding an option to automatically share labels between axes spanning the
+#    same row or column of the subplot grid, controlled by the `spanx` and
+#    `spany` keywords (default is :rc:`subplots.span`). Use the `span` keyword
+#    as a shorthand to set both `spanx` and `spany`.
 #
 # The below examples demonstrate the effect of various axis and label sharing
 # settings on the appearance of several subplot grids.

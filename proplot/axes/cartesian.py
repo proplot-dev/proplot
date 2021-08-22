@@ -255,6 +255,54 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             raise TypeError(f'Unexpected keyword argument(s): {kw_bad!r}')
         return kw_out
 
+    def _sharex_limits(self, sharex):
+        """
+        Safely share limits and tickers without resetting things.
+        """
+        # Copy non-default limits and scales
+        # NOTE: If e.g. we make a top panel then 'sharex' will be the
+        # extant axes and 'self' is the new axes. But if e.g. we make a bottom
+        # panel then 'sharex' will be the new axes and 'self' the extant one.
+        for (ax1, ax2) in ((self, sharex), (sharex, self)):
+            if ax1.get_xscale() == 'linear' and ax2.get_xscale() != 'linear':
+                ax1.set_xscale(ax2.get_xscale())  # non-default scale
+            if ax1.get_autoscalex_on() and not ax2.get_autoscalex_on():
+                ax1.set_xlim(ax2.get_xlim())  # non-default limits
+        # Copy non-default locators and formatters
+        self._shared_x_axes.join(self, sharex)  # share limit/scale changes
+        if sharex.xaxis.isDefault_majloc and not self.xaxis.isDefault_majloc:
+            sharex.xaxis.set_major_locator(self.xaxis.get_major_locator())
+        if sharex.xaxis.isDefault_minloc and not self.xaxis.isDefault_minloc:
+            sharex.xaxis.set_minor_locator(self.xaxis.get_minor_locator())
+        if sharex.xaxis.isDefault_majfmt and not self.xaxis.isDefault_majfmt:
+            sharex.xaxis.set_major_formatter(self.xaxis.get_major_formatter())
+        if sharex.xaxis.isDefault_minfmt and not self.xaxis.isDefault_minfmt:
+            sharex.xaxis.set_minor_formatter(self.xaxis.get_minor_formatter())
+        self.xaxis.major = sharex.xaxis.major
+        self.xaxis.minor = sharex.xaxis.minor
+
+    def _sharey_limits(self, sharey):
+        """
+        Safely share limits and tickers without resetting things.
+        """
+        # NOTE: See _sharex_limits for notes
+        for (ax1, ax2) in ((self, sharey), (sharey, self)):
+            if ax1.get_yscale() == 'linear' and ax2.get_yscale() != 'linear':
+                ax1.set_yscale(ax2.get_yscale())
+            if ax1.get_autoscaley_on() and not ax2.get_autoscaley_on():
+                ax1.set_ylim(ax2.get_ylim())
+        self._shared_y_axes.join(self, sharey)  # share limit/scale changes
+        if sharey.yaxis.isDefault_majloc and not self.yaxis.isDefault_majloc:
+            sharey.yaxis.set_major_locator(self.yaxis.get_major_locator())
+        if sharey.yaxis.isDefault_minloc and not self.yaxis.isDefault_minloc:
+            sharey.yaxis.set_minor_locator(self.yaxis.get_minor_locator())
+        if sharey.yaxis.isDefault_majfmt and not self.yaxis.isDefault_majfmt:
+            sharey.yaxis.set_major_formatter(self.yaxis.get_major_formatter())
+        if sharey.yaxis.isDefault_minfmt and not self.yaxis.isDefault_minfmt:
+            sharey.yaxis.set_minor_formatter(self.yaxis.get_minor_formatter())
+        self.yaxis.major = sharey.yaxis.major
+        self.yaxis.minor = sharey.yaxis.minor
+
     def _sharex_setup(self, sharex):
         """
         Configure shared axes accounting for panels. The input is the
@@ -262,99 +310,55 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         """
         # Share panels across *different* subplots
         super()._sharex_setup(sharex)
-
-        # Get sharing level
+        # Get the axis sharing level
         level = (
             3 if self._panel_sharex_group and self._is_panel_group_member(sharex)
             else self.figure._sharex
         )
-        if level not in range(4):  # must be internal error
+        if level not in range(5):  # must be internal error
             raise ValueError(f'Invalid sharing level sharex={level!r}.')
         if sharex in (None, self) or not isinstance(sharex, CartesianAxes):
             return
-
-        # Share future changes to axis labels
-        # Proplot internally uses _sharex and _sharey for label sharing. Matplotlib
-        # only uses these in __init__() and cla() to share tickers -- all other builtin
-        # matplotlib axis sharing features derive from _shared_x_axes() group.
+        # Share future axis label changes. Implemented in _apply_axis_sharing().
+        # Matplotlib only uses these attributes in __init__() and cla() to share
+        # tickers -- all other builtin sharing features derives from _shared_x_axes
         if level > 0:
             self._sharex = sharex
-            if not sharex.xaxis.label.get_text():
-                self._transfer_text(self.xaxis.label, sharex.xaxis.label)
-
         # Share future axis tickers, limits, and scales
-        # NOTE: Only difference between levels 2 and 3 is level 3 hides
-        # tick labels. But this is done after the fact -- tickers are still shared.
+        # NOTE: Only difference between levels 2 and 3 is level 3 hides tick
+        # labels. But this is done after the fact -- tickers are still shared.
         if level > 1:
-            # Initial limits and scales should be shared both ways
-            for (ax1, ax2) in ((self, sharex), (sharex, self)):
-                if ax1.get_xscale() == 'linear' and ax2.get_xscale() != 'linear':
-                    ax1.set_xscale(ax2.get_xscale())
-                if ax1.get_autoscalex_on() and not ax2.get_autoscalex_on():
-                    ax1.set_xlim(ax2.get_xlim())
-
-            # Locators and formatters only need to be shared from children
-            # to parent, because this is done automatically when we assign
-            # parent sharex tickers to child.
-            self._shared_x_axes.join(self, sharex)  # share limit/scale changes
-            if sharex.xaxis.isDefault_majloc and not self.xaxis.isDefault_majloc:
-                sharex.xaxis.set_major_locator(self.xaxis.get_major_locator())
-            if sharex.xaxis.isDefault_minloc and not self.xaxis.isDefault_minloc:
-                sharex.xaxis.set_minor_locator(self.xaxis.get_minor_locator())
-            if sharex.xaxis.isDefault_majfmt and not self.xaxis.isDefault_majfmt:
-                sharex.xaxis.set_major_formatter(self.xaxis.get_major_formatter())
-            if sharex.xaxis.isDefault_minfmt and not self.xaxis.isDefault_minfmt:
-                sharex.xaxis.set_minor_formatter(self.xaxis.get_minor_formatter())
-            self.xaxis.major = sharex.xaxis.major
-            self.xaxis.minor = sharex.xaxis.minor
+            self._sharex_limits(sharex)
+        # Share limits with the entire subplot grid. Use the reference axes as
+        # the 'base' because that seems to make sense. Although should not matter.
+        if level > 3 and self.number:
+            ref = self.figure._subplot_dict.get(self.figure._refnum, None)
+            if self is not ref:
+                self._sharex_limits(ref)
 
     def _sharey_setup(self, sharey):
         """
         Configure shared axes accounting for panels. The input is the
         'parent' axes, from which this one will draw its properties.
         """
-        # Share *panels* across different subplots
+        # NOTE: See _sharex_setup for notes
         super()._sharey_setup(sharey)
-
-        # Get sharing level
         level = (
             3 if self._panel_sharey_group and self._is_panel_group_member(sharey)
             else self.figure._sharey
         )
-        if level not in range(4):  # must be internal error
+        if level not in range(5):  # must be internal error
             raise ValueError(f'Invalid sharing level sharey={level!r}.')
         if sharey in (None, self) or not isinstance(sharey, CartesianAxes):
             return
-
-        # Share future changes to axis labels
         if level > 0:
             self._sharey = sharey
-            if not sharey.yaxis.label.get_text():
-                sharey.yaxis.label.set_text(self.yaxis.label.get_text())
-
-        # Share future axis tickers, limits, and scales
         if level > 1:
-            # Initial limits and scales should be shared both ways
-            for (ax1, ax2) in ((self, sharey), (sharey, self)):
-                if ax1.get_yscale() == 'linear' and ax2.get_yscale() != 'linear':
-                    ax1.set_yscale(ax2.get_yscale())
-                if ax1.get_autoscaley_on() and not ax2.get_autoscaley_on():
-                    ax1.set_ylim(ax2.get_ylim())
-
-            # Locators and formatters only need to be shared from children
-            # to parent, because this is done automatically when we assign
-            # parent sharey tickers to child.
-            self._shared_y_axes.join(self, sharey)  # share limit/scale changes
-            if sharey.yaxis.isDefault_majloc and not self.yaxis.isDefault_majloc:
-                sharey.yaxis.set_major_locator(self.yaxis.get_major_locator())
-            if sharey.yaxis.isDefault_minloc and not self.yaxis.isDefault_minloc:
-                sharey.yaxis.set_minor_locator(self.yaxis.get_minor_locator())
-            if sharey.yaxis.isDefault_majfmt and not self.yaxis.isDefault_majfmt:
-                sharey.yaxis.set_major_formatter(self.yaxis.get_major_formatter())
-            if sharey.yaxis.isDefault_minfmt and not self.yaxis.isDefault_minfmt:
-                sharey.yaxis.set_minor_formatter(self.yaxis.get_minor_formatter())
-            self.yaxis.major = sharey.yaxis.major
-            self.yaxis.minor = sharey.yaxis.minor
+            self._sharey_limits(sharey)
+        if level > 3 and self.number:
+            ref = self.figure._subplot_dict.get(self.figure._refnum, None)
+            if self is not ref:
+                self._sharey_limits(ref)
 
     def _update_bounds(self, x, fixticks=False):
         """

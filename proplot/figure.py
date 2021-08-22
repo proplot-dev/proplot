@@ -97,8 +97,8 @@ width, height
     Aliases for `figwidth`, `figheight`.
 figsize : length-2 tuple, optional
     Tuple specifying the figure ``(width, height)``.
-sharex, sharey, share : {0, False, 1, 'labels', 'labs', 2, 'limits', 'lims', 3, True}, \
-optional
+sharex, sharey, share \
+: {0, False, 1, 'labels', 'labs', 2, 'limits', 'lims', 3, True, 4, 'all'}, optional
     The axis sharing "level" for the *x* axis, *y* axis, or both axes.
     Default is :rc:`subplots.share`. Options are as follows:
 
@@ -106,10 +106,12 @@ optional
       and `spany` values to ``False``.
     * ``1`` or ``'labels'`` or ``'labs'``: Only draw axis labels on the bottommost
       row or leftmost column of subplots. Tick labels still appear on every subplot.
-    * ``2`` or ``'limits'`` or ``'lims'``: As above but force the axis limits to be
-      identical. Tick labels still appear on every subplot.
+    * ``2`` or ``'limits'`` or ``'lims'``: As above but force the axis limits, scales,
+      and tick locations to be identical. Tick labels still appear on every subplot.
     * ``3`` or ``True``: As above but only show the tick labels on the bottommost
       row and leftmost column of subplots.
+    * ``4`` or ``'all'``: As above but also share the axis limits, scales, and
+      tick locations between subplots not in the same row or column.
 
 spanx, spany, span : bool or {0, 1}, optional
     Whether to use "spanning" axis labels for the *x* axis, *y* axis, or both
@@ -476,8 +478,10 @@ class Figure(mfigure.Figure):
     _share_message = (
         'Axis sharing level can be 0 or False (share nothing), '
         "1 or 'labels' or 'labs' (share axis labels), "
-        "2 or 'limits' or 'lims' (share axis limits and axis labels), or "
-        '3 or True (share axis limits, axis labels, and tick labels).'
+        "2 or 'limits' or 'lims' (share axis limits and axis labels), "
+        '3 or True (share axis limits, axis labels, and tick labels), '
+        "or 4 or 'all' (share axis labels and tick labels in the same gridspec "
+        'rows and columns and share axis limits across all subplots).'
     )
     _space_message = (
         'To set the left, right, bottom, top, wspace, or hspace gridspec values, '
@@ -659,29 +663,31 @@ class Figure(mfigure.Figure):
         self._includepanels = _not_none(includepanels, False)
 
         # Translate share settings
-        translate = {'labels': 1, 'labs': 1, 'limits': 2, 'lims': 2}
+        translate = {'labels': 1, 'labs': 1, 'limits': 2, 'lims': 2, 'all': 4}
         sharex = _not_none(sharex, share, rc['subplots.share'])
         sharey = _not_none(sharey, share, rc['subplots.share'])
         sharex = 3 if sharex is True else translate.get(sharex, sharex)
         sharey = 3 if sharey is True else translate.get(sharey, sharey)
-        if sharex not in range(4):
+        if sharex not in range(5):
             raise ValueError(f'Invalid sharex={sharex!r}. ' + self._share_message)
-        if sharey not in range(4):
+        if sharey not in range(5):
             raise ValueError(f'Invalid sharey={sharey!r}. ' + self._share_message)
         self._sharex = int(sharex)
         self._sharey = int(sharey)
 
         # Translate span and align settings
-        spanx = _not_none(spanx, span, 0 if sharex == 0 else None, rc['subplots.span'])
-        spany = _not_none(spany, span, 0 if sharey == 0 else None, rc['subplots.span'])
+        spanx = _not_none(spanx, span, False if not sharex else None, rc['subplots.span'])  # noqa: E501
+        spany = _not_none(spany, span, False if not sharey else None, rc['subplots.span'])  # noqa: E501
         if spanx and (alignx or align):  # only warn when explicitly requested
             warnings._warn_proplot('"alignx" has no effect when spanx=True.')
         if spany and (aligny or align):
             warnings._warn_proplot('"aligny" has no effect when spany=True.')
-        self._spanx = spanx
-        self._spany = spany
-        self._alignx = _not_none(alignx, align, rc['subplots.align'])
-        self._aligny = _not_none(aligny, align, rc['subplots.align'])
+        self._spanx = bool(spanx)
+        self._spany = bool(spany)
+        alignx = _not_none(alignx, align, rc['subplots.align'])
+        aligny = _not_none(aligny, align, rc['subplots.align'])
+        self._alignx = bool(alignx)
+        self._aligny = bool(aligny)
 
         # Initialize the figure
         # NOTE: Super labels are stored inside {axes: text} dictionaries
