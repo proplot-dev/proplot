@@ -36,12 +36,18 @@ Features
 * Add `~proplot.colors.PerceptualColormap.from_list` ``adjust_grays`` option
   (enabled by default) to help make diverging colormaps with an intermediate
   hueless white, gray, or black color (:commit:`2e8cb495`).
-
-..
-  * Allow mappable `legend` input by retrieving ``ContourSet.legend_elements``
-    and ``Collection.legend_elements`` handles (:commit:`6382cf91`).
-  * Allow on-the-fly `~matplotlib.axes.Axes.quiverkey` creation with
-    ``key=loc`` where `loc` is a legend-like location (:commit:`###`).
+* Add the axis sharing level ``4`` or ``'all'`` to share the limits, scales,
+  and tick labels between axes not in the same row/column (:commit:`73f355a2`).
+* Allow adding contours to `legend` by interpreting `label` keyword and using
+  central handle from ``ContourSet.legend_elements`` (:commit:`26bc77a4`).
+* Extend mixed auto-manual legend label input (e.g. ``labels=[None, 'override']``)
+  to case where legend handles are automatically retrieved from the axes
+  rather than manually passed to ``legend()`` (:commit:`26bc77a4`).
+* Add `inlinelabels` option to `~proplot.axes.GeoAxes.format` to set both
+  ``loninline=True`` and ``latinline=True`` at once, and change the
+  :rcraw:`grid.loninline` and :rcraw:`grid.latinline` settings to the
+  single :rcraw:`grid.inlinelabels` (consistent with :rcraw:`grid.rotatelabels`
+  and :rcraw:`grid.dmslabels`) (:commit:`560ed978`).
 
 Bug fixes
 ---------
@@ -54,6 +60,8 @@ Bug fixes
   during subplot additions (:issue:`244`, :commit:`ac12bbc2`)
 * Fix issue where edge colors of area plots with ``negpos=True``
   cannot be changed (:commit:`bb50dea4`).
+* Fix issue where `legend` `order` keyword arg is ignored and default is
+  changed back to ``'F'`` (:commit:`###`).
 * Fix issues where ``setup_matplotlib`` is not called for pint quantity
   input and column iteration of 2D input to 1D funcs fails (:commit:`e57d238e`).
 * Fix issue where pint quantity *x* and *y* coordinates fail when passing
@@ -62,6 +70,13 @@ Bug fixes
   unless in xarray dataarray (:commit:`aadc65f9`).
 * Fix issue where making single-color contour plots creates just one contour
   by no longer making ``levels`` count dependent on `colors` (:commit:`63eaf10e`).
+* Fix issue where common legend handle properties cannot be overridden due to
+  searching for ``collection`` props rather than ``line`` props (:commit:`26bc77a4`).
+* Fix issue where title/abc padding is overwritten in the presence of top panels
+  and make title deflection to top panels generally more robust (:commit:`d27d05cf`).
+* Fix issue where ``%matpolotlib notebook`` and ``%matplotlib widget`` display
+  unusable/cutoff figure previews by fixing the figure size at creation time and
+  issuing one-time warning if size was not fixed explicitly (:commit:`88fc2868`).
 
 Documentation
 -------------
