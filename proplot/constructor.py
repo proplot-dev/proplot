@@ -959,7 +959,7 @@ def Locator(locator, *args, **kwargs):
         ``'microsecond'``        `~matplotlib.dates.MicrosecondLocator`        Ticks every ``N`` microseconds
         ``'lon'``, ``'deglon'``  `~proplot.ticker.LongitudeLocator`            Longitude gridlines at sensible decimal locations
         ``'lat'``, ``'deglat'``  `~proplot.ticker.LatitudeLocator`             Latitude gridlines at sensible decimal locations
-        ``'dms'``                `~proplot.ticker.DegreeLocator`              Gridlines on nice minute and second intervals
+        ``'dms'``                `~proplot.ticker.DegreeLocator`               Gridlines on nice minute and second intervals
         ``'dmslon'``             `~proplot.ticker.LongitudeLocator`            Longitude gridlines on nice minute and second intervals
         ``'dmslat'``             `~proplot.ticker.LatitudeLocator`             Latitude gridlines on nice minute and second intervals
         =======================  ============================================  =====================================================================================
