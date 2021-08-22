@@ -15,8 +15,8 @@
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_layout:
 #
-# Subplot layout
-# ==============
+# The layout
+# ==========
 #
 # This section details a variety of features related to ProPlot subplots,
 # including automatic a-b-c subplot labels, axis sharing between subplots,
@@ -89,8 +89,8 @@ axs.format(
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_autosize:
 #
-# Automatic size
-# --------------
+# Figure size
+# -----------
 #
 # By default, ProPlot determines the suitable figure size given the
 # geometry of the subplot grid and the size of a "reference" subplot.
@@ -188,19 +188,19 @@ pplt.rc.reset()
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_tight:
 #
-# Automatic spacing
-# -----------------
+# Subplot spaces
+# --------------
 #
 # By default, ProPlot automatically determines the suitable space between
 # subplots using a tight layout algorithm. This algorithm automatically
 # expands or contracts the space between subplots to accommodate labels.
-# It can be disabled by passing ``tight=False`` to `~proplot.ui.subplots` or
-# setting :rcraw:`subplots.tight` to ``False``. While matplotlib has
-# `its own tight layout algorithm
+# It can be disabled by passing ``tight=False`` to `~proplot.ui.subplots`
+# or setting :rcraw:`subplots.tight` to ``False``. In contrast to
+# `matplotlib's tight layout algorithm
 # <https://matplotlib.org/stable/tutorials/intermediate/tight_layout_guide.html>`__,
-# ProPlot's algorithm may change the figure size to accommodate the correct spacing
-# and permits variable spacing between subsequent subplot rows and columns
-# (see `proplot.gridspec.GridSpec` for details).
+# ProPlot's algorithm may change the figure size to accommodate the correct
+# spacing and permits variable spacing between subsequent subplot rows and
+# columns (see `proplot.gridspec.GridSpec` for details).
 #
 # The tight layout algorithm can also be completely or partly overridden. When
 # you pass any of the spacing arguments `left`, `right`, `top`, `bottom`,
@@ -208,36 +208,49 @@ pplt.rc.reset()
 # `~proplot.gridspec.GridSpec`, that value is always respected. For example:
 #
 # * ``left=2`` fixes the left margin at 2 em-widths, while the right,
-#   bottom, and top margin widths are determined automatically.
+#   bottom, and top margin widths are determined by the tight layout algorithm.
 # * ``wspace=1`` fixes the spaces between subplot columns at 1 em-width, while the
-#   spaces between subplot rows are determined automatically.
+#   spaces between subplot rows are determined by the tight layout algorithm.
 # * ``wspace=(3, None)`` fixes the space between the first two columns of
 #   a three-column plot at 3 em-widths, while the space between the second two
-#   columns is determined automatically.
+#   columns is determined by the tight layout algorithm.
 #
-# Alternatively, the padding used by the tight layout algorithm can be changed
-# by passing `outerpad`, `innerpad`, `panelpad`, `wpad`, or `hpad` to
-# `~proplot.ui.figure` or `~proplot.ui.subplots`. All spacing parameters
-# can be specified with a unit string interpreted by `~proplot.utils.units`,
-# but the default unit is an "em-width" (i.e. a :rcraw:`font.size` width -- see
-# the :ref:`units table <units_table>` for details).
+# Alternatively, the padding used by the tight layout algorithm (rather than the
+# absolute spaces between subplot edges) can be changed by passing `outerpad`,
+# `innerpad`, or `panelpad` to `~proplot.ui.figure` or `~proplot.ui.subplots`.
+# This padding can be set locally by passing an array of values to `wpad`
+# and `hpad` (analogous to `wspace` and `hspace`), or by passing the `pad`
+# keyword when creating :ref:`panel axes <ug_panels>` or :ref:`outer
+# colorbars and legends <ug_cbars_axes>` (analogous to `space`). Finally,
+# to constrain the tight layout algorithm to produce equal spacing between
+# main subplot rows and columns, you can pass ``wequal=True``, ``hequal=True``
+# or ``equal=True`` to `~proplot.ui.figure` or `~proplot.ui.subplots` (note that
+# equal spacing is the default behavior when tight layout is disabled).
+
+# All the spacing parameters described above can be specified with a
+# :ref:`unit string <ug_units>` interpreted by `~proplot.utils.units`.
+# The default unit assumed for numeric arguments is an "em-width" (i.e., a
+# :rcraw:`font.size` width -- see the :ref:`units table <units_table>` for details).
 
 # %%
 import proplot as pplt
 
 # Stress test of the tight layout algorithm
 # Add large labels along the edge of one subplot
-fig, axs = pplt.subplots(nrows=3, ncols=3, refwidth=1.1, share=False)
-axs[1].format(
-    xlabel='xlabel\nxlabel',
-    ylabel='ylabel\nylabel\nylabel\nylabel'
-)
-axs.format(
-    grid=False,
-    toplabels=('Column 1', 'Column 2', 'Column 3'),
-    leftlabels=('Row 1', 'Row 2', 'Row 3'),
-    suptitle='Tight layout with variable row-column spacing',
-)
+for equal, descrip in enumerate(('variable', 'equal')):
+    fig, axs = pplt.subplots(
+        nrows=3, ncols=3, refwidth=1.1, share=False, equal=bool(equal)
+    )
+    axs[1].format(
+        xlabel='xlabel\nxlabel',
+        ylabel='ylabel\nylabel\nylabel\nylabel'
+    )
+    axs.format(
+        grid=False,
+        toplabels=('Column 1', 'Column 2', 'Column 3'),
+        leftlabels=('Row 1', 'Row 2', 'Row 3'),
+        suptitle=f'Tight layout with {descrip} row-column spacing',
+    )
 
 # %%
 import proplot as pplt
