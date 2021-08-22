@@ -49,9 +49,9 @@ inside the ``proplot`` folder.
    :alt: license
    :target: LICENSE.txt
 
-.. |doi| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.5118108.svg
+.. |doi| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.5234192.svg
    :alt: doi
-   :target: https://doi.org/10.5281/zenodo.5118108
+   :target: https://zenodo.org/record/5234192
 
 .. |docs| image:: https://readthedocs.org/projects/proplot/badge/?version=latest
    :alt: docs

@@ -8,9 +8,10 @@
 ProPlot
 =======
 
-A powerful `matplotlib <https://matplotlib.org/>`__ wrapper for making beautiful,
-publication-quality graphics. This project is `published on GitHub
-<https://github.com/lukelbd/proplot>`__.
+A powerful `matplotlib <https://matplotlib.org/>`__ wrapper
+for making beautiful, publication-quality graphics. This project
+is `published on GitHub <https://github.com/lukelbd/proplot>`__ and can
+be cited using its `Zenodo DOI <https://zenodo.org/record/5234192>`__.
 
 .. toctree::
    :maxdepth: 1
