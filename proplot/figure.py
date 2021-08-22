@@ -2022,9 +2022,11 @@ def _add_grid_command(name, command=None, seealso=None, returns_grid=False):
     """
     string = inspect.cleandoc(string)
     string += '\n\nSee also\n--------\n' + '\n'.join(seealso)
+    string += '\n\nReturns\n-------\n'
     if returns_grid:
-        string += '\n\nReturns\n-------\n'
-        string += '    axs : `SubplotGrid`\n    A subplot grid of the results.'
+        string += '`SubplotGrid`\n    A subplot grid of the results.'
+    else:
+        string += '`tuple`\n    A tuple of the results.'
 
     # Create the method
     def _grid_command(self, *args, **kwargs):
