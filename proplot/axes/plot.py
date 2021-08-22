@@ -2650,6 +2650,8 @@ class PlotAxes(base.Axes):
                 levels.append(2 * val - levels[-1])
             if any(np.diff(levels) < 0):  # backup plan in event of weird ticks
                 levels = edges(values)
+            if descending:  # then revert back below
+                levels = levels[::-1]
         else:
             # Generate levels by finding in-between points in the
             # normalized numeric space, e.g. LogNorm space.
