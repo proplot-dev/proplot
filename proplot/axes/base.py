@@ -1034,7 +1034,6 @@ class Axes(maxes.Axes):
             kw.update(self._abc_border_kwargs)
         kw.update(kwargs)
         self._title_dict['abc'].update(kw)
-        self._above_title()
 
     def _update_title(self, loc, title=None, **kwargs):
         """
@@ -1043,6 +1042,9 @@ class Axes(maxes.Axes):
         # Titles, with two workflows here:
         # 1. title='name' and titleloc='position'
         # 2. ltitle='name', rtitle='name', etc., arbitrarily many titles
+        # NOTE: This always updates the *current* title and deflection to panels
+        # is handled later so that titles set with set_title() are deflected too.
+        # See notes in _update_super_labels() and _apply_title_above().
         # NOTE: Matplotlib added axes.titlecolor in version 3.2 but we still use
         # custom title.size, title.weight, title.color properties for retroactive
         # support in older matplotlib versions. First get params and update kwargs.
@@ -1100,7 +1102,6 @@ class Axes(maxes.Axes):
             kw['text'] = title
         kw.update(kwargs)
         self._title_dict[loc].update(kw)
-        self._above_title()
 
     def _update_title_position(self, renderer):
         """
@@ -1135,10 +1136,11 @@ class Axes(maxes.Axes):
                 y = y_pad
             obj.set_position((x, y))
 
-        # Push title above tick marks, since builtin algorithm seems to ignore them.
+        # Get title padding. Push title above tick marks since matplotlib ignores them.
         # This is known matplotlib problem but especially annoying with top panels.
         # NOTE: See axis.get_ticks_position for inspiration
         pad = self._title_pad
+        abcpad = self._abc_title_pad
         if self.xaxis.get_visible() and any(
             tick.tick2line.get_visible() and not tick.label2.get_visible()
             for tick in self.xaxis.majorTicks
@@ -1173,7 +1175,7 @@ class Axes(maxes.Axes):
             .width for obj in (aobj, tobj)
         )
         ha = aobj.get_ha()
-        pad = (self._abc_title_pad / 72) / self._get_size_inches()[0]
+        pad = (abcpad / 72) / self._get_size_inches()[0]
         aoffset = toffset = 0
         if ha == 'left':
             toffset = awidth + pad
@@ -1287,7 +1289,6 @@ class Axes(maxes.Axes):
             above = rc.find('title.above', context=True)
             if above is not None:
                 self._title_above = above  # used for future titles
-                self._above_title()  # move past titles
 
             # Update a-b-c label and titles
             abc_kw = abc_kw or {}
@@ -1362,14 +1363,16 @@ class Axes(maxes.Axes):
 
     def draw(self, renderer=None, *args, **kwargs):
         # Perform extra post-processing step
-        # NOTE: In *principle* this step goes here. But should already be
+        # NOTE: In *principle* these steps go here. But should already be
         # complete because auto_layout() (called by figure pre-processor) has
         # to run them before aligning labels. So these are harmless no-ops.
+        self._apply_title_above()
         self._draw_guides()
         super().draw(renderer, *args, **kwargs)
 
     def get_tightbbox(self, renderer, *args, **kwargs):
         # Perform extra post-processing steps and cache the bounding box
+        self._apply_title_above()
         self._draw_guides()
         bbox = super().get_tightbbox(renderer, *args, **kwargs)
         self._tight_bbox = bbox
@@ -1502,13 +1505,13 @@ class Axes(maxes.Axes):
             raise RuntimeError('Cannot create panels for existing panel axes.')
         return self.figure._add_axes_panel(self, *args, **kwargs)
 
-    def _above_title(self):
+    def _apply_title_above(self):
         """
         Change assignment of outer titles between main subplot and upper panels.
         This is called when a panel is created or `_update_title` is called.
         """
-        # NOTE: After the panel is created, calling format() will automatically
-        # reassign titles, a-b-c labels, and super labels
+        # NOTE: Similar to how _align_axis_labels() calls _apply_axis_sharing() this
+        # is called inside _align_super_labels() so we get the right offset.
         paxs = self._panel_dict['top']
         if not paxs:
             return
@@ -1516,14 +1519,12 @@ class Axes(maxes.Axes):
         names = ('left', 'center', 'right')
         if self._abc_loc in names:
             names += ('abc',)
-        if self._title_above is True or not pax._panel_hidden and self._title_above == 'panels':  # noqa: E501
-            src, dest = self, pax
-        else:
-            src, dest = pax, self
+        if not self._title_above or pax._panel_hidden and self._title_above == 'panels':
+            return
+        pax._title_pad = self._title_pad
+        pax._abc_title_pad = self._abc_title_pad
         for name in names:
-            self._transfer_text(src._title_dict[name], dest._title_dict[name])
-        dest._title_pad = src._title_pad
-        dest._abc_title_pad = src._abc_title_pad
+            self._transfer_text(self._title_dict[name], pax._title_dict[name])
 
     def _auto_share(self):
         """
@@ -2254,6 +2255,28 @@ class Axes(maxes.Axes):
         else:
             cb = self._draw_colorbar(mappable, values, loc=loc, **kwargs)
             return cb
+
+    def _get_legend_handles(self, handler_map=None):
+        """
+        Internal implementation of matplotlib's ``get_legend_handles_labels``.
+        """
+        if not self._panel_hidden:  # this is a normal axes
+            axs = [self]
+        elif self._panel_parent:  # this is an axes-wide legend
+            axs = list(self._panel_parent._iter_axes(hidden=False, children=True))
+        else:  # this is a figure-wide legend
+            axs = list(self.figure._iter_axes(hidden=False, children=True))
+        handles = []
+        handler_map_full = mlegend.Legend.get_default_handler_map().copy()
+        handler_map_full.update(handler_map or {})
+        for ax in axs:
+            for attr in ('lines', 'patches', 'collections', 'containers'):
+                for handle in getattr(ax, attr, []):  # guard against API changes
+                    label = handle.get_label()
+                    handler = mlegend.Legend.get_legend_handler(handler_map_full, handle)  # noqa: E501
+                    if handler and label and label[0] != '_':
+                        handles.append(handle)
+        return handles
 
     @staticmethod
     def _parse_handle_groups(handles, labels=None):

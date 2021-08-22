@@ -883,7 +883,6 @@ class Figure(mfigure.Figure):
         pax._panel_share = share
         pax._panel_parent = ax
         ax._panel_dict[side].append(pax)
-        ax._above_title()
         ax._auto_share()
         axis = pax.yaxis if side in ('left', 'right') else pax.xaxis
         getattr(axis, 'tick_' + side)()  # set tick and tick label position
@@ -960,6 +959,9 @@ class Figure(mfigure.Figure):
         """
         Adjust the position of super labels.
         """
+        # NOTE: Ensure title is offset only here.
+        for ax in self._subplot_dict.values():
+            ax._apply_title_above()
         if side not in ('left', 'right', 'bottom', 'top'):
             raise ValueError(f'Invalid side {side!r}.')
         labels = self._suplabel_dict[side]

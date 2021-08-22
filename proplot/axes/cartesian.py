@@ -144,9 +144,11 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         # X axis
         # NOTE: Critical to apply labels to *shared* axes attributes rather
         # than testing extents or we end up sharing labels with twin axes.
+        # NOTE: Similar to how _align_super_labels() calls _apply_title_above() this
+        # is called inside _align_axis_labels() so we align the correct text.
         # NOTE: The "panel sharing group" refers to axes and panels *above* the
-        # bottommost or to the *right* of the leftmost panel. But the edge panel
-        # sharing level is the *figure* sharing level.
+        # bottommost or to the *right* of the leftmost panel. But the sharing level
+        # used for the leftmost and bottommost is the *figure* sharing level.
         axis = self.xaxis
         if self._sharex is not None:
             level = 3 if self._panel_sharex_group else self.figure._sharex
@@ -432,8 +434,9 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         """
         # NOTE: Critical to test whether arguments are None or else this
         # will set isDefault_label to False every time format() is called.
-        # NOTE: Spanning and sharing labels are implemented in _align_axis_labels()
-        # which also calls _apply_axis_sharing() for each axes.
+        # NOTE: This always updates the *current* labels and sharing is handled
+        # later so that labels set with set_xlabel() and set_ylabel() are shared too.
+        # See notes in _align_axis_labels() and _apply_axis_sharing().
         kwargs = self._get_label_props(**kwargs)
         if all(a is None for a in args) and all(v is None for v in kwargs.values()):
             return  # also returns if args and kwargs are empty
@@ -1105,8 +1108,9 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
 
     def draw(self, renderer=None, *args, **kwargs):
         # Perform extra post-processing steps
-        # NOTE: This mimics matplotlib API, which calls identical
-        # post-processing steps in both draw() and get_tightbbox()
+        # NOTE: In *principle* axis sharing application step goes here. But should
+        # already be complete because auto_layout() (called by figure pre-processor)
+        # has to run it before aligning labels. So this is harmless no-op.
         self._dualx_scale()
         self._dualy_scale()
         self._apply_axis_sharing()
