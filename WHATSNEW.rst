@@ -56,8 +56,6 @@ Bug fixes
   ignore NaN values (:issue:`257`, :commit:`d1906fce`).
 * Fix regression where ``legend()`` cannot be called without
   the input labels (:issue:`188`, :commit:`fdd53a6c`).
-* Fix issues with the ``%qt`` backend using ``forward=False``
-  during subplot additions (:issue:`244`, :commit:`ac12bbc2`)
 * Fix issue where edge colors of area plots with ``negpos=True``
   cannot be changed (:commit:`bb50dea4`).
 * Fix issue where `legend` `order` keyword arg is ignored and default is
@@ -74,6 +72,8 @@ Bug fixes
   searching for ``collection`` props rather than ``line`` props (:commit:`26bc77a4`).
 * Fix issue where title/abc padding is overwritten in the presence of top panels
   and make title deflection to top panels generally more robust (:commit:`d27d05cf`).
+* Fix issues with the ``%qt`` backend using ``forward=False``
+  during subplot additions (:issue:`244`, :commit:`ac12bbc2`)
 * Fix issue where ``%matpolotlib notebook`` and ``%matplotlib widget`` display
   unusable/cutoff figure previews by fixing the figure size at creation time and
   issuing one-time warning if size was not fixed explicitly (:commit:`88fc2868`).
