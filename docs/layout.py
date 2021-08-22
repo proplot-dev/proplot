@@ -272,38 +272,36 @@ axs[:, 0].format(ylabel='ylabel')
 # Axis sharing
 # ------------
 #
-# :ref:`Redundant labels <why_redundant>` are a common issue for figures with lots of
-# subplots. To address this, `matplotlib.pyplot.subplots` includes the `sharex` and
+# Figures with lots of subplots often have :ref:`redundant labels <why_redundant>`.
+# To help address this, `matplotlib.pyplot.subplots` includes the `sharex` and
 # `sharey` keyword arguments that permit sharing axis limits, ticks, and tick labels
-# between like rows and columns of subplots.
+# between like rows and columns of subplots. ProPlot builds on this feature by...
 #
-# ProPlot builds on this feature by...
-#
-# #. Automatically sharing axes between subplot and :ref:`panel <ug_panels>` axes
-#    spanning the same rows or columns of the `~proplot.gridspec.GridSpec`. This
-#    works for :ref:`aribtrarily complex subplot grids <ug_intro>`. It also works if
-#    subplots were generated one-by-one with `~proplot.figure.Figure.add_subplot`
-#    rather than `~proplot.figure.Figure.subplots`.
-# #. Adding four axis-sharing "levels", controlled by the `sharex` and `sharey`
-#    keywords (default is :rc:`subplots.share`). You can use the `share` keyword
-#    as a shorthand to set both `sharex` and `sharey`. The axis-sharing "levels"
+# #. Automatically sharing axes between subplots and :ref:`panels <ug_panels>`
+#    occupying the same rows or columns of the `~proplot.gridspec.GridSpec`. This
+#    works for :ref:`aribtrarily complex subplot grids <ug_details>`. It also works
+#    if subplots were generated one-by-one with `~proplot.figure.Figure.add_subplot`
+#    rather than `~proplot.figure.Figure.subplots`. It is controlled by the `sharex`
+#    and `sharey` keywords (default is :rc:`subplots.share`). You can use the
+#    `share` keyword as a shorthand to set both `sharex` and `sharey`.
+# #. Automatically sharing labels across subplots and :ref:`panels <ug_panels>`
+#    with edges against the same row or column of the `~proplot.gridspec.GridSpec`.
+#    This also works for complex grids and subplots generated one-by-one. It is
+#    controlled by the `spanx` and `spany` keywords (default is :rc:`subplots.span`).
+#    Use the `span` keyword as a shorthand to set both `spanx` and `spany`.
+# #. Supporting five sharing "levels". These values can be passed to `sharex`,
+#    `sharey`, or `share`, or assigned to :rcraw:`subplots.share`. The levels
 #    are defined as follows:
 #
-#    * ``share=False`` or ``share=0`` disables axis sharing.
-#    * ``share='labels'``, ``share='labs'``, or ``share=1`` automatically shares
-#      the axis labels, but nothing else.
-#    * ``share='limits'``, ``share='lims'``, or ``share=2`` is the same as ``1``,
-#      but also shares the axis limits, axis scales, and tick locations.
-#    * ``share=True`` or ``share=3`` is the same as ``2``, but also shares
-#      the axis tick labels.
-#    * ``share='all'`` or ``share=4`` is the same as ``3``, but also shares
-#      the axis limits, axis scales, and tick locations between subplots that
-#      are not in the same row or column.
-#
-# #. Adding an option to automatically share labels between axes spanning the
-#    same row or column of the subplot grid, controlled by the `spanx` and
-#    `spany` keywords (default is :rc:`subplots.span`). Use the `span` keyword
-#    as a shorthand to set both `spanx` and `spany`.
+#    * ``False`` or ``0``: Axis sharing is disabled.
+#    * ``'labels'``, ``'labs'``, or ``1``: Axis labels are shared, but
+#      nothing else. Labels will appear on the leftmost and bottommost subplots.
+#    * ``'limits'``, ``'lims'``, or ``2``: Same as ``1``, but axis limits, axis
+#      scales, and major and minor tick locations and formatting are also shared.
+#    * ``True`` or ``3``: Same as ``2``, but axis tick labels are also shared.
+#      Tick labels will appear on the leftmost and bottommost subplots.
+#    * ``'all'`` or ``4``: Same as ``3``, but axis limits, axis scales, and
+#      axis ticks are shared even between subplots not in the same row or column.
 #
 # The below examples demonstrate the effect of various axis and label sharing
 # settings on the appearance of several subplot grids.

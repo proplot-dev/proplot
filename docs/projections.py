@@ -242,7 +242,7 @@ for globe in (False, True):
 # cartopy labels and cartopy label rotation are turned off, but inline labels can
 # be turned on using ``loninline=True``, ``latinline=True``, or ``inlinelabels=True``
 # or by setting :rcraw:`grid.inlinelabels` to ``True``, and label rotation can be
-# turned on using ``rotatelabels=True`` or by setting :craw:`grid.rotatelabels`
+# turned on using ``rotatelabels=True`` or by setting :rcraw:`grid.rotatelabels`
 # to ``True``. The padding between the map edge and the labels can be changed
 # using `labelpad` or by changing :rcraw:`grid.labelpad`.
 
@@ -447,11 +447,11 @@ for proj, ax in zip(projs, axs):
 # configuring the "major" and "minor" gridline locations with `grid`, `rlocator`,
 # `thetalocator`, `gridminor`, `rminorlocator`, and `thetaminorlocator` and formatting
 # the gridline labels with `rformatter` and `thetaformatter` (analogous to `xlocator`,
-# `xformatter, and` `xminorlocator` used by `proplot.axes.CartesianAxes.format`),
+# `xformatter`, and` `xminorlocator` used by `proplot.axes.CartesianAxes.format`),
 # and creating "annular" or "sector" plots by changing the radial or azimuthal
 # bounds `rlim` and `thetalim`. Finally, since `proplot.axes.PolarAxes.format`
 # calls `proplot.axes.Axes.format`, it can be used to add axes titles, a-b-c
-# labels, and figure titles, just like `proplot.axes.CartesianAxes.format`.
+# labels, and figure titles.
 #
 # For details, see `proplot.axes.PolarAxes.format`.
 

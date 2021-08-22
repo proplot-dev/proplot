@@ -86,7 +86,7 @@ ax.format(suptitle='Single subplot', xlabel='x axis', ylabel='y axis')
 
 
 # %% [raw] raw_mimetype="text/restructuredtext"
-# .. _ug_details:
+# .. _ug_subplot:
 #
 # Creating subplots
 # -----------------
