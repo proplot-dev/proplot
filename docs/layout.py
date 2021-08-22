@@ -89,8 +89,8 @@ axs.format(
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_autosize:
 #
-# Automatic size
-# --------------
+# Figure sizes
+# ------------
 #
 # By default, ProPlot determines the suitable figure size given the
 # geometry of the subplot grid and the size of a "reference" subplot.
@@ -188,8 +188,8 @@ pplt.rc.reset()
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_tight:
 #
-# Automatic spaces
-# ----------------
+# Subplot spaces
+# --------------
 #
 # By default, ProPlot automatically determines the suitable space between
 # subplots using a tight layout algorithm. This algorithm automatically
