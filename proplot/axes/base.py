@@ -1600,8 +1600,10 @@ class Axes(maxes.Axes):
         # Global sharing, use the reference subplot because why not
         ref = self.figure._subplot_dict.get(self.figure._refnum, None)
         if self is not ref:
-            self._sharex_setup(ref, labels=False)
-            self._sharey_setup(ref, labels=False)
+            if self.figure._sharex > 3:
+                self._sharex_setup(ref, labels=False)
+            if self.figure._sharey > 3:
+                self._sharey_setup(ref, labels=False)
 
     def _add_guide(self, guide, obj, loc, **kwargs):
         """
