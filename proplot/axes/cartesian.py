@@ -259,10 +259,9 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         """
         Safely share limits and tickers without resetting things.
         """
-        # Copy non-default limits and scales
-        # NOTE: If e.g. we make a top panel then 'sharex' will be the
-        # extant axes and 'self' is the new axes. But if e.g. we make a bottom
-        # panel then 'sharex' will be the new axes and 'self' the extant one.
+        # Copy non-default limits and scales. Either this axes or the input
+        # axes could be a newly-created subplot while the other is a subplot
+        # with possibly-modified user settings we are careful to preserve.
         for (ax1, ax2) in ((self, sharex), (sharex, self)):
             if ax1.get_xscale() == 'linear' and ax2.get_xscale() != 'linear':
                 ax1.set_xscale(ax2.get_xscale())  # non-default scale
@@ -303,10 +302,10 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         self.yaxis.major = sharey.yaxis.major
         self.yaxis.minor = sharey.yaxis.minor
 
-    def _sharex_setup(self, sharex):
+    def _sharex_setup(self, sharex, *, labels=True, limits=True):
         """
-        Configure shared axes accounting for panels. The input is the
-        'parent' axes, from which this one will draw its properties.
+        Configure shared axes accounting. Input is the 'parent' axes from which this
+        one will draw its properties. Use keyword args to override settings.
         """
         # Share panels across *different* subplots
         super()._sharex_setup(sharex)
@@ -322,21 +321,15 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         # Share future axis label changes. Implemented in _apply_axis_sharing().
         # Matplotlib only uses these attributes in __init__() and cla() to share
         # tickers -- all other builtin sharing features derives from _shared_x_axes
-        if level > 0:
+        if level > 0 and labels:
             self._sharex = sharex
         # Share future axis tickers, limits, and scales
         # NOTE: Only difference between levels 2 and 3 is level 3 hides tick
         # labels. But this is done after the fact -- tickers are still shared.
-        if level > 1:
+        if level > 1 and limits:
             self._sharex_limits(sharex)
-        # Share limits with the entire subplot grid. Use the reference axes as
-        # the 'base' because that seems to make sense. Although should not matter.
-        if level > 3 and self.number:
-            ref = self.figure._subplot_dict.get(self.figure._refnum, None)
-            if self is not ref:
-                self._sharex_limits(ref)
 
-    def _sharey_setup(self, sharey):
+    def _sharey_setup(self, sharey, *, labels=True, limits=True):
         """
         Configure shared axes accounting for panels. The input is the
         'parent' axes, from which this one will draw its properties.
@@ -351,14 +344,10 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             raise ValueError(f'Invalid sharing level sharey={level!r}.')
         if sharey in (None, self) or not isinstance(sharey, CartesianAxes):
             return
-        if level > 0:
+        if level > 0 and labels:
             self._sharey = sharey
-        if level > 1:
+        if level > 1 and limits:
             self._sharey_limits(sharey)
-        if level > 3 and self.number:
-            ref = self.figure._subplot_dict.get(self.figure._refnum, None)
-            if self is not ref:
-                self._sharey_limits(ref)
 
     def _update_bounds(self, x, fixticks=False):
         """

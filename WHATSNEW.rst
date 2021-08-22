@@ -66,8 +66,8 @@ Bug fixes
   as pcolor centers or when :rcraw:`cmap.inbounds` enabled (:commit:`fd76af3a`).
 * Fix issue where pint quantity *z* data do not have units stripped
   unless in xarray dataarray (:commit:`aadc65f9`).
-* Fix issue where making single-color contour plots creates just one contour
-  by no longer making ``levels`` count dependent on `colors` (:commit:`63eaf10e`).
+* Fix issue where making single-color contour plots creates just one contour by
+  making default ``levels`` count independent from `colors` (:commit:`63eaf10e`).
 * Fix issue where common legend handle properties cannot be overridden due to
   searching for ``collection`` props rather than ``line`` props (:commit:`26bc77a4`).
 * Fix issue where title/abc padding is overwritten in the presence of top panels

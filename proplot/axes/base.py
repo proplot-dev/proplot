@@ -934,25 +934,25 @@ class Axes(maxes.Axes):
         else:
             return bbox.ymin, bbox.ymax
 
-    def _sharex_setup(self, sharex):
+    def _sharex_setup(self, sharex, **kwargs):
         """
         Configure x-axis sharing for panels. See also `~CartesianAxes._sharex_setup`.
         """
-        self._share_short_axis(sharex, 'left')  # x axis of left panels
-        self._share_short_axis(sharex, 'right')
-        self._share_long_axis(sharex, 'bottom')  # x axis of bottom panels
-        self._share_long_axis(sharex, 'top')
+        self._share_short_axis(sharex, 'left', **kwargs)  # x axis of left panels
+        self._share_short_axis(sharex, 'right', **kwargs)
+        self._share_long_axis(sharex, 'bottom', **kwargs)  # x axis of bottom panels
+        self._share_long_axis(sharex, 'top', **kwargs)
 
-    def _sharey_setup(self, sharey):
+    def _sharey_setup(self, sharey, **kwargs):
         """
         Configure y-axis sharing for panels. See also `~CartesianAxes._sharey_setup`.
         """
-        self._share_short_axis(sharey, 'bottom')  # y axis of bottom panels
-        self._share_short_axis(sharey, 'top')
-        self._share_long_axis(sharey, 'left')  # y axis of left panels
-        self._share_long_axis(sharey, 'right')
+        self._share_short_axis(sharey, 'bottom', **kwargs)  # y axis of bottom panels
+        self._share_short_axis(sharey, 'top', **kwargs)
+        self._share_long_axis(sharey, 'left', **kwargs)  # y axis of left panels
+        self._share_long_axis(sharey, 'right', **kwargs)
 
-    def _share_short_axis(self, share, side):
+    def _share_short_axis(self, share, side, **kwargs):
         """
         Share the "short" axes of panels in this subplot with other panels.
         """
@@ -964,9 +964,9 @@ class Axes(maxes.Axes):
         caxs = [pax for pax in caxs if not pax._panel_hidden]
         paxs = [pax for pax in paxs if not pax._panel_hidden]
         for cax, pax in zip(caxs, paxs):  # may be uneven
-            getattr(cax, '_share' + axis + '_setup')(pax)
+            getattr(cax, '_share' + axis + '_setup')(pax, **kwargs)
 
-    def _share_long_axis(self, share, side):
+    def _share_long_axis(self, share, side, **kwargs):
         """
         Share the "long" axes of panels in this subplot with other panels.
         """
@@ -978,7 +978,7 @@ class Axes(maxes.Axes):
         paxs = self._panel_dict[side]
         paxs = [pax for pax in paxs if not pax._panel_hidden]
         for pax in paxs:
-            getattr(pax, '_share' + axis + '_setup')(share)
+            getattr(pax, '_share' + axis + '_setup')(share, **kwargs)
 
     def _reposition_subplot(self):
         """
@@ -1597,6 +1597,11 @@ class Axes(maxes.Axes):
         parent, *children = self._get_share_axes('y')
         for child in children:
             child._sharey_setup(parent)
+        # Global sharing, use the reference subplot because why not
+        ref = self.figure._subplot_dict.get(self.figure._refnum, None)
+        if self is not ref:
+            self._sharex_setup(ref, labels=False)
+            self._sharey_setup(ref, labels=False)
 
     def _add_guide(self, guide, obj, loc, **kwargs):
         """

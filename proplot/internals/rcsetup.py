@@ -1519,7 +1519,7 @@ _rc_proplot_table = {
     ),
     'subplots.share': (
         True,
-        _validate_belongs(0, 1, 2, 3, False, 'labels', 'limits', True),
+        _validate_belongs(0, 1, 2, 3, 4, False, 'labels', 'limits', True, 'all'),
         'The axis sharing level, one of ``0``, ``1``, ``2``, or ``3``, or the '
         "more intuitive aliases ``False``, ``'labels'``, ``'limits'``, or ``True``. "
         'See `~proplot.figure.Figure` for details.'
