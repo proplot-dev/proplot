@@ -18,10 +18,10 @@
 # The layout
 # ==========
 #
-# This section details a variety of features related to ProPlot subplots,
+# This section documents a variety of features related to ProPlot subplots,
 # including automatic a-b-c subplot labels, axis sharing between subplots,
-# tight layout spacing of subplots, and a unique feature where the figure
-# width and/or height are automatically determined by the subplot layout.
+# automatic spacing between subplots, and a unique feature where the figure
+# size is determined automatically from the subplot layout.
 #
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_abc:
@@ -89,8 +89,8 @@ axs.format(
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_autosize:
 #
-# Figure size
-# -----------
+# Automatic size
+# --------------
 #
 # By default, ProPlot determines the suitable figure size given the
 # geometry of the subplot grid and the size of a "reference" subplot.
@@ -188,8 +188,8 @@ pplt.rc.reset()
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_tight:
 #
-# Subplot spaces
-# --------------
+# Automatic spaces
+# ----------------
 #
 # By default, ProPlot automatically determines the suitable space between
 # subplots using a tight layout algorithm. This algorithm automatically

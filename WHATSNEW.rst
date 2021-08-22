@@ -27,7 +27,7 @@ ProPlot v1.0.0 (2022-##-##)
 This will be published when more comprehensive testing is completed
 and stability is improved.
 
-ProPlot v0.8.1 (2021-##-##)
+ProPlot v0.8.1 (2021-08-22)
 ===========================
 
 Features
@@ -85,7 +85,7 @@ Documentation
   callable dictionary-like `_SnippetsManager` instance (:commit:`b73fe9e3`). This
   helps prevent bug where assigned snippets have unfilled ``%(snippet)s`` markers.
 
-ProPlot v0.8.0 (2021-08-16)
+ProPlot v0.8.0 (2021-08-18)
 ===========================
 
 Deprecated
