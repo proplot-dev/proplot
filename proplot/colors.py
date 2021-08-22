@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-New colormap classes and colormap normalization classes.
+Various colormap classes and colormap normalization classes.
 """
 # NOTE: To avoid name conflicts between registered colormaps and colors, print
 # set(pplt.colors._cmap_database) & set(pplt.colors._color_database) whenever you

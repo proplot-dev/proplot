@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-The gridspec and subplotspec subclasses.
+The gridspec class used for all ProPlot figures.
 """
 import itertools
 from functools import partial

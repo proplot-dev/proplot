@@ -107,16 +107,6 @@ Projection classes
    :toctree: api
 
 
-Miscellaneous tools
-===================
-
-.. automodule:: proplot.utils
-
-.. automodsumm:: proplot.utils
-   :toctree: api
-   :skip: shade, saturate
-
-
 Demo functions
 ==============
 
@@ -124,3 +114,13 @@ Demo functions
 
 .. automodsumm:: proplot.demos
    :toctree: api
+
+
+Miscellaneous functions
+=======================
+
+.. automodule:: proplot.utils
+
+.. automodsumm:: proplot.utils
+   :toctree: api
+   :skip: shade, saturate

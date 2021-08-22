@@ -82,11 +82,12 @@ ProPlot settings
 
 .. rubric:: Specific settings
 
-ProPlot-specific settings are controlled with the `~proplot.config.rc_proplot`
-dictionary. These settings are not found in `~proplot.config.rc_matplotlib`. They
-either control features introduced by ProPlot (e.g., a-b-c labels and geographic
-gridlines) or they represent existing matplotlib settings rearranged to be less
-verbose or more clearly ordered. Here's a broad overview of the new settings:
+ProPlot-specific settings are contained in the `~proplot.config.rc_proplot`
+dictionary. They can also be changed with `~proplot.config.rc`. These settings
+are not found in `~matplotlib.rcParams` -- they either control features
+introduced by ProPlot (e.g., a-b-c labels and geographic gridlines)
+or they represent existing matplotlib settings rearranged to be
+more clearly ordered. Here's a broad overview of the new settings:
 
 * The ``subplots`` category includes settings that control the default
   subplot layout and padding.
@@ -111,8 +112,11 @@ verbose or more clearly ordered. Here's a broad overview of the new settings:
 
 .. rubric:: Meta-settings
 
-Other `~proplot.config.rc` settings may be more accurately described as "meta-settings",
-as they change several matplotlib and ProPlot settings at once. For example:
+Other ProPlot settings may be more accurately described as "meta-settings",
+as they change several matplotlib and ProPlot settings at once (note that settings
+are only synced when they are changed on the `~proplot.config.rc` object rather than
+the `~proplot.config.rc_proplot` and `~proplot.config.rc_matplotlib` dictionaries).
+Here's a broad overview of the "meta-settings":
 
 * Setting :rcraw:`font.small` (or, equivalently, :rcraw:`fontsmall`) changes
   the :rcraw:`tick.labelsize`, :rcraw:`grid.labelsize`,
