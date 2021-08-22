@@ -1824,7 +1824,7 @@ _rc_removed = {  # {key: (alternative, version)} dictionary
     'gridminor.lonstep': ('Please use ax.format(lonminorlines=N) instead.', '0.6'),
 }
 _rc_renamed = {  # {old_key: (new_key, version)} dictionary
-    'abc.format': ('abc.style', '0.5'),
+    'abc.format': ('abc', '0.5'),
     'align': ('subplots.align', '0.6'),
     'axes.facealpha': ('axes.alpha', '0.6'),
     'geoaxes.edgecolor': ('axes.edgecolor', '0.6'),

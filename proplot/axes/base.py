@@ -1914,7 +1914,7 @@ class Axes(maxes.Axes):
             # NOTE: 'Values' makes no sense if this is just a colormap. Just
             # use unique color for every segmentdata / colors color.
             cmap = constructor.Colormap(mappable)
-            locator = np.linspace(0, 1, cmap.N)
+            locator = None
 
         # List of colors
         elif np.iterable(mappable) and all(map(mcolors.is_color_like, mappable)):
@@ -1962,22 +1962,25 @@ class Axes(maxes.Axes):
                 f'Got {mappable!r}.'
             )
 
-        # Get locator, formatter, and level array for result
+        # Get locator, formatter, and norm for result
         # NOTE: Set default rotation if 'values' were string labels
+        norm_kw = norm_kw or {}
+        norm = norm or 'linear'
+        norm = constructor.Norm(norm, **norm_kw)
         formatter = None
-        if any(isinstance(value, str) for value in locator):
-            locator, formatter = np.arange(len(locator)), list(map(str, locator))
-            if kwargs.get('orientation', None) != 'vertical':
-                rotation = _not_none(rotation, 90)
-        if len(locator) > 1:
-            levels = edges(locator)
-        elif len(locator) == 1:
-            levels = [locator[0] - 1, locator[0] + 1]
+        if locator is not None:
+            if any(isinstance(value, str) for value in locator):
+                locator, formatter = np.arange(len(locator)), list(map(str, locator))
+                if kwargs.get('orientation', None) != 'vertical':
+                    rotation = _not_none(rotation, 90)
+            if len(locator) == 1:
+                levels = [locator[0] - 1, locator[0] + 1]
+            else:
+                levels = edges(locator)
+            norm, cmap, _ = self._parse_discrete(levels, norm, cmap)
 
-        # Build ad hoc ScalarMappable object from colors
+        # Return ad hoc ScalarMappable and update locator and formatter
         # NOTE: If value list doesn't match this may cycle over colors.
-        norm = constructor.Norm(norm or 'linear', **(norm_kw or {}))
-        norm, cmap, _ = self._parse_discrete(levels, norm, cmap)
         mappable = mcm.ScalarMappable(norm, cmap)
         _fill_guide_kw(kwargs, locator=locator, formatter=formatter)
         return mappable, rotation, kwargs
