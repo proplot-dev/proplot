@@ -359,10 +359,11 @@ def _yaml_table(rcdict, comment=True, description=False):
     data = []
     for key, args in rcdict.items():
         # Optionally append description
+        includes_descrip = isinstance(args, tuple) and len(args) == 3
         if not description:
             descrip = ''
-            value = args[0] if isinstance(args, tuple) else args
-        elif isinstance(args, tuple) and len(args) == 3:
+            value = args[0] if includes_descrip else args
+        elif includes_descrip:
             value, validator, descrip = args
             descrip = '# ' + descrip  # skip the validator
         else:
