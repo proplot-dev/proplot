@@ -101,7 +101,7 @@ highly customized figures. As an example, it is trivial to see that...
 
    import proplot as pplt
    fig, axs = pplt.subplots(ncols=2)
-   axs.format(linewidth=1, color='gray')
+   axs.format(linewidth=1, edgecolor='gray')
    axs.format(xlim=(0, 100), xticks=10, xtickminor=True, xlabel='foo', ylabel='bar')
 
 is much more succinct than...
@@ -111,7 +111,7 @@ is much more succinct than...
    import matplotlib.pyplot as plt
    import matplotlib.ticker as mticker
    import matplotlib as mpl
-   with mpl.rc_context(rc={'axes.linewidth': 1, 'axes.color': 'gray'}):
+   with mpl.rc_context(rc={'axes.linewidth': 1, 'axes.edgecolor': 'gray'}):
        fig, axs = plt.subplots(ncols=2, sharey=True)
        axs[0].set_ylabel('bar', color='gray')
        for ax in axs:
@@ -214,7 +214,7 @@ amounts of spacing between different subplot row and column boundaries.
 In ProPlot, you can specify the physical dimensions of a *reference subplot* by
 passing `refwidth`, `refheight`, and/or `refaspect` to `~proplot.ui.figure` or
 `~proplot.ui.subplots`. The dimensions of the figure are calculated automatically.
-The default behavior is ``refaspect=1`` and ``refwidth=2`` (inches). If the
+The default behavior is ``refaspect=1`` and ``refwidth=2.5`` (inches). If the
 `aspect ratio mode
 <https://matplotlib.org/stable/gallery/subplots_axes_and_figures/axis_equal_demo.html>`__
 for the reference subplot is set to ``'equal'``, as with :ref:`geographic <ug_geo>`,
@@ -231,13 +231,14 @@ ProPlot also uses :ref:`its own tight layout algorithm <ug_tight>` to
 automatically determine the `left`, `right`, `bottom`, `top`, `wspace`, and
 `hspace` spacing parameters. This algorithm has the following advantages:
 
-* Spacing between rows and columns is *variable* thanks to the
-  `proplot.gridspec.GridSpec` subclass of `matplotlib.gridspec.GridSpec`.
-  This is critical for putting :ref:`colorbars and legends <ug_cbars_legends>` or
-  :ref:`axes panels <ug_insets_panels>` outside of subplots
-  without "stealing space" from the parent subplot.
-* The tight layout calculations are considerably simplified by permitting
-  only *one* `proplot.gridspec.GridSpec` per figure. This restriction is
+* The tight layout algorithm can produce variable spacing between
+  rows and columns using the `proplot.gridspec.GridSpec` subclass of
+  `matplotlib.gridspec.GridSpec`. This is critical for creating
+  outer :ref:`colorbars and legends <ug_cbars_legends>` and
+  :ref:`axes panels <ug_insets_panels>` without "stealing space"
+  from the parent subplot.
+* The tight layout calculations are simplified by permitting only one
+  `~proplot.gridspec.GridSpec` per figure. This restriction is
   possible by requiring successive `~proplot.figure.Figure.add_subplot`
   calls to imply the same geometry and include only subplot specs
   generated from the same `~proplot.gridspec.GridSpec`.
