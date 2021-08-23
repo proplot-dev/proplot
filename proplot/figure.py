@@ -1540,9 +1540,7 @@ class Figure(mfigure.Figure):
         space=None, pad=None, width=None, **kwargs
     ):
         """
-        Draw a legend along the left, right, bottom, or top side of the
-        figure, centered between the leftmost and rightmost (or topmost
-        and bottommost) main subplots.
+        Draw a legend along the side of the figure.
 
         Parameters
         ----------
