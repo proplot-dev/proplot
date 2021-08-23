@@ -2709,12 +2709,12 @@ class Axes(maxes.Axes):
                 children = []
             for obj in _legend_objects(children):
                 if isinstance(obj, mtext.Text):
-                    obj.update(kw_text)
+                    kw = kw_text
                 else:
                     kw = {key: val for key, val in kw_handle.items() if hasattr(obj, 'set_' + key)}  # noqa: E501
                     if hasattr(obj, 'set_sizes') and 'markersize' in kw_handle:
-                        kw['sizes'] = [kw_handle['markersize']]
-                    obj.update(kw)
+                        kw['sizes'] = np.atleast_1d(kw_handle['markersize'])
+                obj.update(kw)
 
         # Return after registering location
         for obj in objs:

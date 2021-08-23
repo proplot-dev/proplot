@@ -196,31 +196,33 @@ for ax, title in zip(axs, ('2D {} #1', '2D {} #2', 'Line {} #1', 'Line {} #2')):
 # or `~matplotlib.artist.Artist`\ s by passing a list to ``colorbar`` instead of a
 # `~matplotlib.cm.ScalarMappable`, e.g. with ``ax.colorbar(['red', 'blue', 'green'])``,
 # or by passing a location to :ref:`1d plotting commands <ug_1dplots>`, e.g. with
-# ``ax.plot(..., colorbar='r')``. This can be used e.g. to make a colorbar from
-# lists of lines, markers, or patches. In this case, the colorbar ticks can be
-# manually specified with `values`, or ProPlot will infer them from the
-# `~matplotlib.artist.Artist` labels (if the labels are numeric). You can also pass
-# a colormap name or `~matplotlib.colors.Colormap` instance to ``colorbar`` to build
-# a `~matplotlib.cm.ScalarMappable` that can be used with the colorbar on-the-fly.
-# The :ref:normalizer <ug_norm>` used with this `~matplotlib.cm.ScalarMappable` can be
-# specified with the `norm` and `norm_kw` keywords.
+# ``ax.plot(..., colorbar='r')``. This can be used to make a colorbar from
+# lists of lines, markers, or patches. The colorbar ticks can be manually specified
+# with `values`, or ProPlot will infer them from the `~matplotlib.artist.Artist`
+# labels. Non-numeric `~matplotlib.artist.Artist` labels will be applied
+# to the colorbar as tick labels. You can also pass a colormap name or
+# `~matplotlib.colors.Colormap` instance to ``colorbar`` to build a
+# `~matplotlib.cm.ScalarMappable` that can be used with the colorbar
+# on-the-fly. The associated :ref:`colormap normalizer <ug_norm>` can
+# be specified with the `norm` and `norm_kw` keywords.
 
 # Similar to `proplot.axes.CartesianAxes.format`, you can flexibly specify
 # major tick locations, minor tick locations, and major tick labels using the
 # `locator`, `minorlocator`, `formatter`, `ticks`, `minorticks`, and `ticklabels`
 # keywords. These arguments are passed through the `~proplot.constructor.Locator` and
 # `~proplot.constructor.Formatter` :ref:`constructor functions <why_constructor>`.
-# You can change the colorbar width and length with the `width` and `length`
-# keywords. Note that the width is now specified in :ref:`physical units <ug_units>`
-# -- this helps avoid the common issue where colorbars look "too skinny" or "too fat"
-# and preserves the look of the figure when its size is changed. For outer colorbars,
-# the default width in inches is :rc:`colorbar.width`, and the default length of ``1``
-# is relative to the subplot grid. For inner colorbars, the default width and length
-# in em-widths is :rc:`colorbar.insetwidth` and :rc:`colorbar.insetlength`. You can
-# also specify the size of the colorbar extensions (i.e., the usually-triangular
-# extreme value indicators) with physical units using the `extensize` keyword rather
-# than matplotlib's `extendfrac`. The default `extendsize` for outer and inner
-# colorbars is :rc:`colorbar.extend` and :rc:`colorbar.insetextend`. See
+# You can easily toggle minor ticks using ``tickminor=True``, and you can change the
+# colorbar width and length with the `width` and `length` keywords. Note that the width
+# is now specified in :ref:`physical units <ug_units>` -- this helps avoid the common
+# issue where colorbars look "too skinny" or "too fat" and preserves the look of the
+# figure when its size is changed. The default widths for outer and inset colorbars are
+# controlled with :rcraw:`colorbar.width` and :rcraw:`colorbar.insetwidth`, and the
+# default length for inset colorbars is controlled with :rcraw:`colorbar.insetlength`
+# (the outer colorbar length is always relative to the subplot grid, with a default
+# value of ``1``). You can also specify the size of the colorbar "extensions" in
+# physical units rather than relative units using the `extendsize` keyword rather
+# than matplotlib's `extendfrac`. The default sizes for outer and inset colorbars are
+# controlled with :rcraw:`colorbar.extend` and :rcraw:`colorbar.insetextend`. See
 # the full `~proplot.axes.Axes.colorbar` documentation for details.
 
 # %%
@@ -278,7 +280,7 @@ fig.format(
 # plotting command or, for the case of 2d arrays passed to :ref:`1d plotting commands
 # <ug_1dplots>`, by passing a list of labels using ``labels=['label1', 'label2', ...]``.
 # Labels can also be assigned to ``contour`` plots with ``label='label'`` like
-# any other plot, and the `~matplotlib.contour.ContourSet` objets returned by
+# any other plot, and the `~matplotlib.contour.ContourSet` objects returned by
 # commands like `~proplot.axes.PlotAxes.contour` can be passed to ``legend``.
 # If you pass legend artists that are grouped into tuples (see this `matplotlib guide
 # <https://matplotlib.org/stable/tutorials/intermediate/legend_guide.html#legend-handlers>`__),
