@@ -192,19 +192,17 @@ for ax, title in zip(axs, ('2D {} #1', '2D {} #2', 'Line {} #1', 'Line {} #2')):
 # -----------------
 #
 # The `proplot.figure.Figure.colorbar` and `proplot.axes.Axes.colorbar` commands
-# include several new, unique features. You can draw colorbars from lists of colors
-# or `~matplotlib.artist.Artist`\ s by passing a list to ``colorbar`` instead of a
-# `~matplotlib.cm.ScalarMappable`, e.g. with ``ax.colorbar(['red', 'blue', 'green'])``,
-# or by passing a location to :ref:`1d plotting commands <ug_1dplots>`, e.g. with
-# ``ax.plot(..., colorbar='r')``. This can be used to make a colorbar from
-# lists of lines, markers, or patches. The colorbar ticks can be manually specified
-# with `values`, or ProPlot will infer them from the `~matplotlib.artist.Artist`
-# labels. Non-numeric `~matplotlib.artist.Artist` labels will be applied
-# to the colorbar as tick labels. You can also pass a colormap name or
-# `~matplotlib.colors.Colormap` instance to ``colorbar`` to build a
-# `~matplotlib.cm.ScalarMappable` that can be used with the colorbar
-# on-the-fly. The associated :ref:`colormap normalizer <ug_norm>` can
-# be specified with the `norm` and `norm_kw` keywords.
+# include several new, unique features. Instead of a `~matplotlib.cm.ScalarMappable`,
+# you can pass colormap names, `~matplotlib.colormap.Colormap` instances, lists of
+# colors, or lists of `~matplotlib.artist.Artist` instances to ``colorbar`` and
+# a `~matplotlib.cm.ScalarMappable` will be built from these colors on-the-fly. The
+# associated :ref:`colormap normalizer <ug_norm>` can be specified with the `norm` and
+# `norm_kw` keywords. Lists of artists are passed when you use the `colorbar` keyword
+# with :ref:`1d plotting commands <ug_1dplots>` like `~proplot.axes.PlotAxes.plot`.
+# The colorbar ticks can be manually specified with `values`, or ProPlot will infer
+# them from the `~matplotlib.artist.Artist` labels (non-numeric labels will be
+# applied to the colorbar as tick labels). This feature is useful for labeling
+# discrete plot elements that bear some numeric relationship to each other.
 
 # Similar to `proplot.axes.CartesianAxes.format`, you can flexibly specify
 # major tick locations, minor tick locations, and major tick labels using the
@@ -223,7 +221,7 @@ for ax, title in zip(axs, ('2D {} #1', '2D {} #2', 'Line {} #1', 'Line {} #2')):
 # physical units rather than relative units using the `extendsize` keyword rather
 # than matplotlib's `extendfrac`. The default sizes for outer and inset colorbars are
 # controlled with :rcraw:`colorbar.extend` and :rcraw:`colorbar.insetextend`. See
-# the full `~proplot.axes.Axes.colorbar` documentation for details.
+# the `~proplot.axes.Axes.colorbar` documentation for details.
 
 # %%
 import proplot as pplt
@@ -294,7 +292,7 @@ fig.format(
 # the legend handles (in particular for `~proplot.axes.PlotAxes.plot` and
 # `~proplot.axes.PlotAxes.scatter` plots), simply pass the relevant properties
 # like `color`, `linewidth`, or `markersize` to ``legend``. To alphabetize the
-# legend entries, you can simply use ``alphabetize=True``. See the full
+# legend entries, you can simply use ``alphabetize=True``. See the
 # `~proplot.axes.Axes.legend` documentation for details.
 
 # %%

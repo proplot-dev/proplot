@@ -15,8 +15,8 @@
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_layout:
 #
-# The layout
-# ==========
+# Subplot layouts
+# ===============
 #
 # This section documents a variety of features related to ProPlot subplots,
 # including automatic a-b-c subplot labels, axis sharing between subplots,
