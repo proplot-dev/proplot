@@ -423,11 +423,11 @@ _snippet_manager['axes.colorbar_kwargs'] = _colorbar_kwargs_docstring
 _legend_args_docstring = """
 handles : list of `~matplotlib.artist.Artist`, optional
     List of matplotlib artists, or a list of lists of artist instances (see
-    the `center` keyword). If ``None``, the artists are retrieved automatically.
-    If the object is a `~matplotlib.collections.Collection` or a
-    `~matplotlib.contour.ContourSet`, the ``legend_elements`` method is used to pair
-    the collection or contour set label with the central element in the list (generally
-    giving the central colormap color if the object is controlled with a colormap).
+    the `center` keyword). If ``None``, artists with valid labels are retrieved
+    automatically. If the object is a `~matplotlib.contour.ContourSet`, the
+    ``legend_elements`` method is used to pair the collection or contour set label
+    with the central element in the list (generally giving the central colormap
+    color if the object is controlled with a colormap).
 labels : list of str, optional
     A matching list of string labels or ``None`` placeholders, or a matching list of
     lists (see the `center` keyword). Wherever ``None`` appears in the list (or
@@ -2712,6 +2712,8 @@ class Axes(maxes.Axes):
                     obj.update(kw_text)
                 else:
                     kw = {key: val for key, val in kw_handle.items() if hasattr(obj, 'set_' + key)}  # noqa: E501
+                    if hasattr(obj, 'set_sizes') and 'markersize' in kw_handle:
+                        kw['sizes'] = [kw_handle['markersize']]
                     obj.update(kw)
 
         # Return after registering location

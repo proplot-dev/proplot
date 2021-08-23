@@ -28,8 +28,8 @@
 # Axes colorbars and legends
 # --------------------------
 #
-# In matplotlib, colorbars are added to the edges of subplots using
-# the figure method `matplotlib.figure.Figure.colorbar`
+# In matplotlib, colorbars are added to the edges of subplots
+# using the figure method `matplotlib.figure.Figure.colorbar`
 # (e.g., ``fig.colorbar(m, ax=ax, location='right')``.
 # In ProPlot, this is done using the axes method
 # `proplot.axes.Axes.colorbar` (e.g., ``ax.colorbar(m, loc='r')``.
@@ -54,7 +54,7 @@
 #   colorbars have optional background "frames" that can be configured with
 #   various `~proplot.axes.Axes.colorbar` keywords.
 # * Both `~proplot.axes.Axes.colorbar` and `~proplot.axes.axes.legend` accept
-#   `space` and `pad` arguments. `space` controls the absolute separation of the
+#   `space` and `pad` keywords. `space` controls the absolute separation of the
 #   colorbar or legend from the parent subplot edge and `pad` controls the
 #   :ref:`tight layout <ug_tight>` padding between the colorbar or legend
 #   and the subplot labels.
@@ -129,8 +129,12 @@ for j, ax in enumerate(axs):
 # if you draw multiple colorbars or legends on the same side, they are stacked on
 # top of each other. To draw a colorbar or legend alongside particular row(s) or
 # column(s) of the subplot grid, use the `row`, `rows`, `col`, or `cols` keyword
-# arguments. You can pass an integer to draw the colorbar or legend beside a single
-# row or column, or pass a tuple to draw it beside a range of rows or columns.
+# arguments. You can pass an integer to draw the colorbar or legend beside a
+# single row or column (e.g., ``fig.colorbar(m, row=1)``), or pass a tuple to
+# draw the colorbar or legend along a range of rows or columns
+# (e.g., ``fig.colorbar(m, rows=(1, 2))``). The space separation between the subplot
+# grid edge and the colorbars or legends can be controlled with the `space` keyword,
+# and the tight layout padding can be controlled with the `pad` keyword.
 
 # %%
 import proplot as pplt
@@ -189,18 +193,35 @@ for ax, title in zip(axs, ('2D {} #1', '2D {} #2', 'Line {} #1', 'Line {} #2')):
 #
 # The `proplot.figure.Figure.colorbar` and `proplot.axes.Axes.colorbar` commands
 # include several new, unique features. You can draw colorbars from lists of colors
-# or `~matplotlib.artist.Artist`\ s by passing a list to `colorbar` instead of a
-# `~matplotlib.cm.ScalarMappable` (or by passing the same location to successive
-# plotting commands with e.g. ``colorbar='r'``). This can be used e.g. to make a
-# colorbar from lists of line objects. Major tick locations, minor tick locations,
-# and major tick labels can be changed using the `locator`, `minorlocator`,
-# `formatter`, `ticks`, `minorticks`, and `ticklabels` keywords. These arguments
-# are passed through the `~proplot.constructor.Locator` and
+# or `~matplotlib.artist.Artist`\ s by passing a list to ``colorbar`` instead of a
+# `~matplotlib.cm.ScalarMappable`, e.g. with ``ax.colorbar(['red', 'blue', 'green'])``,
+# or by passing a location to :ref:`1d plotting commands <ug_1dplots>`, e.g. with
+# ``ax.plot(..., colorbar='r')``. This can be used e.g. to make a colorbar from
+# lists of lines, markers, or patches. In this case, the colorbar ticks can be
+# manually specified with `values`, or ProPlot will infer them from the
+# `~matplotlib.artist.Artist` labels (if the labels are numeric). You can also pass
+# a colormap name or `~matplotlib.colors.Colormap` instance to ``colorbar`` to build
+# a `~matplotlib.cm.ScalarMappable` that can be used with the colorbar on-the-fly.
+# The :ref:normalizer <ug_norm>` used with this `~matplotlib.cm.ScalarMappable` can be
+# specified with the `norm` and `norm_kw` keywords.
+
+# Similar to `proplot.axes.CartesianAxes.format`, you can flexibly specify
+# major tick locations, minor tick locations, and major tick labels using the
+# `locator`, `minorlocator`, `formatter`, `ticks`, `minorticks`, and `ticklabels`
+# keywords. These arguments are passed through the `~proplot.constructor.Locator` and
 # `~proplot.constructor.Formatter` :ref:`constructor functions <why_constructor>`.
-# The colorbar width and length can be changed with the `width` and `length`
-# keywords, and the width is now specified in :ref:`physical units <ug_units>`.
-# This helps avoid the common issue where colorbars look "too skinny" or "too fat"
-# and preserves the look of the figure when its size is changed.
+# You can change the colorbar width and length with the `width` and `length`
+# keywords. Note that the width is now specified in :ref:`physical units <ug_units>`
+# -- this helps avoid the common issue where colorbars look "too skinny" or "too fat"
+# and preserves the look of the figure when its size is changed. For outer colorbars,
+# the default width in inches is :rc:`colorbar.width`, and the default length of ``1``
+# is relative to the subplot grid. For inner colorbars, the default width and length
+# in em-widths is :rc:`colorbar.insetwidth` and :rc:`colorbar.insetlength`. You can
+# also specify the size of the colorbar extensions (i.e., the usually-triangular
+# extreme value indicators) with physical units using the `extensize` keyword rather
+# than matplotlib's `extendfrac`. The default `extendsize` for outer and inner
+# colorbars is :rc:`colorbar.extend` and :rc:`colorbar.insetextend`. See
+# the full `~proplot.axes.Axes.colorbar` documentation for details.
 
 # %%
 import proplot as pplt
@@ -248,16 +269,31 @@ fig.format(
 # ---------------
 #
 # The `proplot.figure.Figure.legend` and `proplot.axes.Axes.legend` commands
-# include several new, unique features. You can draw legends with centered rows by
-# passing ``center=True`` or by passing a list of lists of plot handles. This is
-# accomplished by stacking multiple single-row, horizontally centered legends, then
-# adding an encompassing legend frame. You can also switch between row-major and
-# column-major order for legend entries using the `order` keyword (the default is
-# ``order='C'``) or modify legend handles with keywords like `linewidth` and `color`.
-# You can also alphabetize legend entries by passing ``alphabetize=True``, and if
-# you pass legend artists that are grouped into tuples (see this `matplotlib guide
+# include several new, unique features. Like matplotlib, calling ``legend`` without
+# any arguments automatically fills the legend with the labeled artists in the
+# figure. However unlike matplotlib, you can also call ``legend`` with a list of
+# matplotlib artists as the sole positional argument, and the labels will be
+# retrieved from the objects with `~matplotlib.artist.Artist.get_label`. Labels can
+# be assigned to artists when they are plotted by passing ``label='label'`` to the
+# plotting command or, for the case of 2d arrays passed to :ref:`1d plotting commands
+# <ug_1dplots>`, by passing a list of labels using ``labels=['label1', 'label2', ...]``.
+# Labels can also be assigned to ``contour`` plots with ``label='label'`` like
+# any other plot, and the `~matplotlib.contour.ContourSet` objets returned by
+# commands like `~proplot.axes.PlotAxes.contour` can be passed to ``legend``.
+# If you pass legend artists that are grouped into tuples (see this `matplotlib guide
 # <https://matplotlib.org/stable/tutorials/intermediate/legend_guide.html#legend-handlers>`__),
 # the default label will be inferred from the artists in the tuple.
+
+# You can also draw legends with centered rows by passing ``center=True`` or by passing
+# a list of lists of plot handles to ``legend``. This is accomplished by stacking
+# multiple single-row, horizontally centered legends, then adding an encompassing
+# legend frame. To switch between row-major and column-major order for legend
+# entries, simply use the `order` keyword (the default is ``order='C'``). To modify
+# the legend handles (in particular for `~proplot.axes.PlotAxes.plot` and
+# `~proplot.axes.PlotAxes.scatter` plots), simply pass the relevant properties
+# like `color`, `linewidth`, or `markersize` to ``legend``. To alphabetize the
+# legend entries, you can simply use ``alphabetize=True``. See the full
+# `~proplot.axes.Axes.legend` documentation for details.
 
 # %%
 import proplot as pplt
@@ -277,8 +313,8 @@ for i, label in enumerate(labels):
     )
     hs1.extend(h1)
     h2 = axs[1].plot(
-        data, lw=4, label=label, legend='r', cycle='Set3',
-        legend_kw={'ncols': 1, 'frame': False, 'title': 'no frame'}
+        data, lw=4, cycle='Set3', label=label, legend='r',
+        legend_kw={'lw': 8, 'ncols': 1, 'frame': False, 'title': 'modified\n handles'}
     )
     hs2.extend(h2)
 
