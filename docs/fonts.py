@@ -41,11 +41,10 @@
 # matplotlib.
 #
 # Matplotlib uses DejaVu Sans in part because it includes glyphs for a very wide
-# range of symbols, especially mathematical symbols. However DejaVu Sans is seldom
-# used outside of matplotlib and (in our opinion) is not very aesthetically pleasing.
-# To improve the font selection while keeping things consistent across different
-# workstations, ProPlot comes packaged with the open-source
-# `TeX Gyre font series <https://ctan.org/pkg/tex-gyre?lang=en>`__
+# range of symbols, especially mathematical symbols. However in our opinion,
+# DejaVu Sans is not very aesthetically pleasing. To improve the font selection while
+# keeping things consistent across different workstations, ProPlot comes packaged
+# with the open-source `TeX Gyre font series <https://ctan.org/pkg/tex-gyre?lang=en>`__
 # and adds them as the default entries for all of matplotlib's font famlies:
 #
 # * The `Century <https://en.wikipedia.org/wiki/Century_type_family>`__ lookalike

@@ -233,10 +233,11 @@ automatically determine the `left`, `right`, `bottom`, `top`, `wspace`, and
 
 * The tight layout algorithm can produce variable spacing between
   rows and columns using the `proplot.gridspec.GridSpec` subclass of
-  `matplotlib.gridspec.GridSpec`. This is critical for creating
+  `matplotlib.gridspec.GridSpec`. This is critical for making
   outer :ref:`colorbars and legends <ug_cbars_legends>` and
   :ref:`axes panels <ug_insets_panels>` without "stealing space"
-  from the parent subplot.
+  from the parent subplot -- these objects usually need to be
+  spaced closer to their parents than other subplots.
 * The tight layout calculations are simplified by permitting only one
   `~proplot.gridspec.GridSpec` per figure. This restriction is
   possible by requiring successive `~proplot.figure.Figure.add_subplot`
@@ -613,8 +614,8 @@ For details on adding new colormaps, colors, and fonts, see the
 
 .. _why_colormaps_cycles:
 
-Manipulating colormaps and cycles
-=================================
+Manipulating colormaps
+======================
 
 .. rubric:: Limitation
 
@@ -623,7 +624,7 @@ In matplotlib, colormaps are implemented with the
 color gradations) and the `~matplotlib.colors.ListedColormap` class (representing
 "categorical" color sets). They are generally cumbersome to modify or create from
 scratch. Meanwhile, property cycles used for individual plot elements are implemented
-with the `~cycler.Cycler` class. They are also cumbersome to modify and they cannot be
+with the `~cycler.Cycler` class. They are easier to modify but they cannot be
 "registered" by name like colormaps.
 
 The `seaborn`_ package introduces "color palettes" to make working with colormaps
