@@ -15,13 +15,13 @@
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_layout:
 #
-# The subplot
-# ===========
+# Subplot layout
+# ==============
 #
 # This section documents a variety of features related to ProPlot subplots,
 # including automatic a-b-c subplot labels, axis sharing between subplots,
 # automatic spacing between subplots, and a unique feature where the figure
-# size is determined automatically from the subplot layout.
+# size is determined automatically from the subplot geometry.
 #
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_abc:
