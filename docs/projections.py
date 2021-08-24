@@ -26,37 +26,33 @@
 # Geographic and polar plots
 # ==========================
 #
-# ProPlot includes several advanced features for working with `polar`_
-# and :ref:`geographic projections <ug_geo>`.
+# This section documents several advanced features for working with `polar`_
+# and :ref:`geographic projections <ug_geo>`. The geographic features are
+# powered by the `cartopy`_ and `basemap`_ packages. Note that these features are
+# *optional* -- installation of cartopy and basemap are not required to use ProPlot.
 #
-# To change the axes projection, pass ``proj='name'`` to an axes-creation command
-# (i.e., `~proplot.figure.Figure.add_subplot`, `~proplot.figure.Figure.add_subplots`,
-# `~proplot.figure.Figure.subplot`, or `~proplot.figure.Figure.subplots`). To use
-# different projections for different subplots when creating your subplots al
-# at once with `~proplot.figure.Figure.subplots`, pass either a list of projection
-# names or a dictionary of projection names with the subplot number as the key.
-# For example, a 2-column figure with a Cartesian axes on the left and a Plate Carrée
-# projection on the right can be built with either ``proj=('cartesian', 'pcarree')``
-# or ``proj={2: 'pcarree'}``. The default projection is `~proplot.axes.CartesianAxes`,
-# optionally specified with the key ``'cartesian'``.
-
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_geo:
 #
 # Geographic axes
 # ---------------
 
-# To create geographic axes, pass e.g. ``proj='name'`` to an
-# axes-creation command (see :ref:`above <ug_proj>`) where ``name`` is any valid
-# :ref:`PROJ projection name <proj_included>`. Alternatively, you can use
-# ``proj=projection_instance`` where ``projection_instance`` is an object returned
+# To create geographic axes, pass e.g. ``proj='name'`` to an axes-creation
+# command where ``name`` is any valid :ref:`PROJ projection name <proj_included>`.
+# Alternatively, you can use ``proj=projection_instance`` where ``projection_instance``
+# is a `cartopy.crs.Projection` or `~mpl_toolkits.basemap.Basemap` instance returned
 # by the `~proplot.constructor.Proj` :ref:`constructor function <why_constructor>`
-# (see below for details). Requesting geographic projections returns
-# `~proplot.axes.GeoAxes` instance(s) with their own `~proplot.axes.GeoAxes.format`
-# command. `proplot.axes.GeoAxes.format` facilitates :ref:`geographic-specific
-# modifications <ug_geoformat>` like meridional and parallel gridlines and land
-# mass outlines. The syntax is very similar to `proplot.axes.CartesianAxes.format`.
-# In the below example, we create and format a very simple geographic plot.
+# (see below for details). If you need different projections for different subplots,
+# but you want to create your subplots :ref:`all-at-once <ug_subplot>` using
+# `~proplot.figure.Figure.subplots`, you can pass a list or dictionary
+# to the `proj` keyword (e.g., ``proj=('cartesian', 'pcarree')`` or
+# ``proj={2: 'pcarree'}`` -- see `~proplot.figure.Figure.subplots` for details).
+# Geographic axes are represented with the `~proplot.axes.GeoAxes` subclass, which
+# has its own `~proplot.axes.GeoAxes.format` command. `proplot.axes.GeoAxes.format`
+# facilitates :ref:`geographic-specific modifications <ug_geoformat>` like meridional
+# and parallel gridlines and land mass outlines. The syntax is very similar to
+# `proplot.axes.CartesianAxes.format`. In the below example, we create
+# and format a very simple geographic plot.
 
 # %%
 # Use an on-the-fly projection
@@ -439,9 +435,9 @@ for proj, ax in zip(projs, axs):
 # ----------
 #
 # To create `polar axes <polar_>`_, pass ``proj='polar'`` to an axes-creation
-# command (see :ref:`above <ug_proj>`). This returns `proplot.axes.PolarAxes`
-# instance(s) with their own `~proplot.axes.PolarAxes.format` command.
-# `proplot.axes.PolarAxes.format` facilitates polar-specific axes modifications
+# command (see :ref:`above <ug_proj>`). Polar axes are represented with the
+# `~proplot.axes.PolarAxes` subclass, which has its own `~proplot.axes.PolarAxes.format`
+# command. `proplot.axes.PolarAxes.format` facilitates polar-specific modifications
 # like changing the central radius `r0`, the zero azimuth location `theta0`,
 # and the positive azimuthal direction `thetadir`. It also supports toggling and
 # configuring the "major" and "minor" gridline locations with `grid`, `rlocator`,
