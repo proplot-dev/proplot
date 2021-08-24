@@ -31,7 +31,7 @@ REGEX_NAMED_COLOR = re.compile(r'\A[a-zA-Z0-9:_ -]*\Z')
 # to sync them when proplot is imported... but also sync them here so that we can
 # simply compare any Configurator state to these dictionaries and use save() to
 # save only the settings changed by the user.
-COLOR = 'black'
+BLACK = 'black'
 CYCLE = 'colorblind'
 CMAPCYC = 'twilight'
 CMAPDIV = 'negpos'
@@ -43,7 +43,6 @@ FONTNAME = 'sans-serif'
 FONTSIZE = 9.0
 GRIDALPHA = 0.11
 GRIDBELOW = 'line'
-GRIDCOLOR = 'black'
 GRIDPAD = 4.0
 GRIDRATIO = 0.5  # differentiated from major by half size reduction
 GRIDSTYLE = '-'
@@ -60,6 +59,7 @@ TICKMINOR = True
 TICKPAD = 2.0
 TICKWIDTHRATIO = 0.8  # very slight width reduction
 TITLEPAD = 5.0  # default is 6.0, previously was 3.0
+WHITE = 'white'
 ZLINES = 2  # default zorder for lines
 ZPATCHES = 1
 
@@ -516,13 +516,12 @@ _rc_matplotlib_default = {
     'axes.formatter.use_mathtext': MATHTEXT,
     'axes.grid': True,  # enable lightweight transparent grid by default
     'axes.grid.which': 'major',
-    'axes.edgecolor': COLOR,
-    'axes.labelcolor': COLOR,
+    'axes.edgecolor': BLACK,
+    'axes.labelcolor': BLACK,
     'axes.labelpad': LABELPAD,  # more compact
     'axes.labelsize': SMALLSIZE,
     'axes.labelweight': 'normal',
     'axes.linewidth': LINEWIDTH,
-    'axes.titlecolor': 'black',
     'axes.titlepad': TITLEPAD,  # more compact
     'axes.titlesize': LARGESIZE,
     'axes.titleweight': 'normal',
@@ -620,10 +619,10 @@ _rc_matplotlib_default = {
     'font.family': FONTNAME,
     'font.size': FONTSIZE,
     'grid.alpha': GRIDALPHA,  # lightweight unobtrusive gridlines
-    'grid.color': GRIDCOLOR,  # lightweight unobtrusive gridlines
+    'grid.color': BLACK,  # lightweight unobtrusive gridlines
     'grid.linestyle': GRIDSTYLE,
     'grid.linewidth': LINEWIDTH,
-    'hatch.color': COLOR,
+    'hatch.color': BLACK,
     'hatch.linewidth': LINEWIDTH,
     'image.cmap': CMAPSEQ,
     'lines.linestyle': '-',
@@ -632,8 +631,8 @@ _rc_matplotlib_default = {
     'legend.borderaxespad': 0,  # looks sleeker flush against edge
     'legend.borderpad': 0.5,  # a bit more space
     'legend.columnspacing': 1.5,  # more compact
-    'legend.edgecolor': COLOR,
-    'legend.facecolor': 'white',
+    'legend.edgecolor': BLACK,
+    'legend.facecolor': WHITE,
     'legend.fancybox': False,  # looks modern without curvy box
     'legend.fontsize': SMALLSIZE,
     'legend.framealpha': FRAMEALPHA,
@@ -644,10 +643,10 @@ _rc_matplotlib_default = {
     'savefig.bbox': None,  # use custom tight layout
     'savefig.directory': '',  # current directory
     'savefig.dpi': 1000,  # academic journal recommendations for raster line art
-    'savefig.facecolor': 'white',  # different from figure.facecolor
+    'savefig.facecolor': WHITE,  # different from figure.facecolor
     'savefig.format': 'pdf',  # most users use bitmap, but vector graphics are better
     'savefig.transparent': False,
-    'xtick.color': COLOR,
+    'xtick.color': BLACK,
     'xtick.direction': TICKDIR,
     'xtick.labelsize': SMALLSIZE,
     'xtick.major.pad': TICKPAD,
@@ -657,7 +656,7 @@ _rc_matplotlib_default = {
     'xtick.minor.size': TICKLEN * TICKLENRATIO,
     'xtick.minor.width': LINEWIDTH * TICKWIDTHRATIO,
     'xtick.minor.visible': TICKMINOR,
-    'ytick.color': COLOR,
+    'ytick.color': BLACK,
     'ytick.direction': TICKDIR,
     'ytick.labelsize': SMALLSIZE,
     'ytick.major.pad': TICKPAD,
@@ -668,7 +667,6 @@ _rc_matplotlib_default = {
     'ytick.minor.width': LINEWIDTH * TICKWIDTHRATIO,
     'ytick.minor.visible': TICKMINOR,
 }
-
 
 # Proplot pseudo-setting defaults, validators, and descriptions
 # NOTE: Cannot have different a-b-c and title paddings because they are both controlled
@@ -718,7 +716,7 @@ _rc_proplot_table = {
         'when :rcraw:`abc.loc` is inside the axes.'
     ),
     'abc.bboxcolor': (
-        'w',
+        WHITE,
         _validate_color,
         'a-b-c label bounding box color.'
     ),
@@ -739,7 +737,7 @@ _rc_proplot_table = {
         'to make the box flush against the subplot edge.' + _addendum_pt
     ),
     'abc.color': (
-        'black',
+        BLACK,
         _validate_color,
         'a-b-c label color.'
     ),
@@ -813,7 +811,7 @@ _rc_proplot_table = {
         'Boolean, toggles country border lines on and off.'
     ),
     'borders.color': (
-        'black',
+        BLACK,
         _validate_color,
         'Line color for country borders.'
     ),
@@ -830,7 +828,7 @@ _rc_proplot_table = {
 
     # Bottom subplot labels
     'bottomlabel.color': (
-        'black',
+        BLACK,
         _validate_color,
         'Font color for column labels on the bottom of the figure.'
     ),
@@ -877,7 +875,7 @@ _rc_proplot_table = {
         'Boolean, toggles coastline lines on and off.'
     ),
     'coast.color': (
-        'black',
+        BLACK,
         _validate_color,
         'Line color for coast lines.'
     ),
@@ -889,7 +887,7 @@ _rc_proplot_table = {
 
     # Colorbars
     'colorbar.edgecolor': (
-        COLOR,
+        BLACK,
         _validate_color,
         'Color for colorbar dividers, outline, and inset frame edge.'
     ),
@@ -905,7 +903,7 @@ _rc_proplot_table = {
         'Opacity for inset colorbar frames.'
     ),
     'colorbar.facecolor': (
-        'white',
+        WHITE,
         _validate_color,
         'Color for the inset colorbar frame.'
     ),
@@ -1158,7 +1156,7 @@ _rc_proplot_table = {
         'in `~proplot.axes.GeoAxes`.'
     ),
     'grid.labelcolor': (
-        COLOR,
+        BLACK,
         _validate_color,
         'Font color for longitude and latitude gridline labels in '
         '`~proplot.axes.GeoAxes`.'
@@ -1225,7 +1223,7 @@ _rc_proplot_table = {
         'Minor gridline transparency.'
     ),
     'gridminor.color': (
-        GRIDCOLOR,
+        BLACK,
         _validate_color,
         'Minor gridline color.'
     ),
@@ -1266,7 +1264,7 @@ _rc_proplot_table = {
         'on and off.'
     ),
     'innerborders.color': (
-        'black',
+        BLACK,
         _validate_color,
         'Line color for internal political borders.'
     ),
@@ -1283,7 +1281,7 @@ _rc_proplot_table = {
 
     # Axis label settings
     'label.color': (
-        COLOR,
+        BLACK,
         _validate_color,
         'Alias for :rcraw:`axes.labelcolor`.'
     ),
@@ -1311,7 +1309,7 @@ _rc_proplot_table = {
         'Boolean, toggles lake patches on and off.'
     ),
     'lakes.color': (
-        'w',
+        WHITE,
         _validate_color,
         'Face color for lake patches.'
     ),
@@ -1328,7 +1326,7 @@ _rc_proplot_table = {
         'Boolean, toggles land patches on and off.'
     ),
     'land.color': (
-        'black',
+        BLACK,
         _validate_color,
         'Face color for land patches.'
     ),
@@ -1340,7 +1338,7 @@ _rc_proplot_table = {
 
     # Left subplot labels
     'leftlabel.color': (
-        'black',
+        BLACK,
         _validate_color,
         'Font color for row labels on the left-hand side.'
     ),
@@ -1374,12 +1372,12 @@ _rc_proplot_table = {
         'Alias for :rcraw:`axes.margin`.'
     ),
     'meta.edgecolor': (
-        COLOR,
+        BLACK,
         _validate_color,
         'Color of axis spines, tick marks, tick labels, and labels.'
     ),
     'meta.color': (
-        COLOR,
+        BLACK,
         _validate_color,
         'Color of axis spines, tick marks, tick labels, and labels. '
         'Alias for :rcraw:`meta.edgecolor`.'
@@ -1417,7 +1415,7 @@ _rc_proplot_table = {
         'Boolean, toggles ocean patches on and off.'
     ),
     'ocean.color': (
-        'w',
+        WHITE,
         _validate_color,
         'Face color for ocean patches.'
     ),
@@ -1437,7 +1435,7 @@ _rc_proplot_table = {
 
     # Right subplot labels
     'rightlabel.color': (
-        'black',
+        BLACK,
         _validate_color,
         'Font color for row labels on the right-hand side.'
     ),
@@ -1470,7 +1468,7 @@ _rc_proplot_table = {
         'Boolean, toggles river lines on and off.'
     ),
     'rivers.color': (
-        'black',
+        BLACK,
         _validate_color,
         'Line color for river lines.'
     ),
@@ -1538,7 +1536,7 @@ _rc_proplot_table = {
 
     # Super title settings
     'suptitle.color': (
-        'black',
+        BLACK,
         _validate_color,
         'Figure title color.'
     ),
@@ -1560,7 +1558,7 @@ _rc_proplot_table = {
 
     # Tick settings
     'tick.color': (
-        COLOR,
+        BLACK,
         _validate_color,
         'Major and minor tick color.'
     ),
@@ -1571,7 +1569,7 @@ _rc_proplot_table = {
         "``'out'``, ``'in'``, or ``'inout'``."
     ),
     'tick.labelcolor': (
-        COLOR,
+        BLACK,
         _validate_color,
         'Axis tick label color.'
     ),
@@ -1652,7 +1650,7 @@ _rc_proplot_table = {
         'when :rcraw:`title.loc` is inside the axes.'
     ),
     'title.bboxcolor': (
-        'white',
+        WHITE,
         _validate_color,
         'Axes title bounding box color.'
     ),
@@ -1673,7 +1671,7 @@ _rc_proplot_table = {
         'to make the box flush against the axes edge.' + _addendum_pt
     ),
     'title.color': (
-        'black',
+        BLACK,
         _validate_color,
         'Axes title color. Alias for :rcraw:`axes.titlecolor`.'
     ),
@@ -1701,7 +1699,7 @@ _rc_proplot_table = {
 
     # Top subplot label settings
     'toplabel.color': (
-        'black',
+        BLACK,
         _validate_color,
         'Font color for column labels on the top of the figure.'
     ),
@@ -1738,9 +1736,6 @@ _rc_proplot_table = {
 
 # Child settings. Changing the parent changes all the children, but
 # changing any of the children does not change the parent.
-# NOTE: Do not link title.color to axes.titlecolor because the latter
-# can have value 'auto' which is not handled in format() right now,
-# and because setting was only introduced in version 3.2.
 _rc_children = {
     'font.smallsize': (  # the 'small' fonts
         'tick.labelsize', 'xtick.labelsize', 'ytick.labelsize',
@@ -1803,7 +1798,6 @@ _rc_aliases = (
     ('tick.labelcolor', 'grid.labelcolor'),
     ('tick.labelweight', 'grid.labelweight'),
     ('tick.linewidth', 'tick.width'),
-    ('title.color', 'axes.titlecolor'),
     ('title.pad', 'axes.titlepad'),
     ('title.size', 'axes.titlesize'),
     ('title.weight', 'axes.titleweight'),
@@ -1812,6 +1806,18 @@ for _keys in _rc_aliases:
     for _key in _keys:
         _set = {_ for k in _keys for _ in {k, *_rc_children.get(k, ())}} - {_key}
         _rc_children[_key] = tuple(sorted(_set))
+
+# Recently added settings. Update these only if the version is recent enough
+# NOTE: We don't make 'title.color' a child of 'axes.titlecolor' because
+# the latter can take on the value 'auto' and can't handle that right now.
+if _version_mpl >= 3.2:
+    _rc_matplotlib_default['axes.titlecolor'] = BLACK
+    _rc_children['title.color'] = ('axes.titlecolor',)
+if _version_mpl >= 3.4:
+    _rc_matplotlib_default['xtick.labelcolor'] = BLACK
+    _rc_matplotlib_default['ytick.labelcolor'] = BLACK
+    _rc_children['meta.color'] += ('xtick.labelcolor', 'ytick.labelcolor')
+    _rc_children['tick.labelcolor'] = ('xtick.labelcolor', 'ytick.labelcolor')
 
 # Deprecated settings. Add renamed settings to children dictionary so that
 # pplt.rc[deprecated] = value updates the correct children. We don't natively
@@ -1871,13 +1877,6 @@ _rc_renamed = {  # {old_key: (new_key, version)} dictionary
 for _key, (_key_new, _) in _rc_renamed.items():
     if _key_new in _rc_children:
         _rc_children[_key] = _rc_children[_key_new]
-
-# Recently added settings. Update these only if the version is recent enough
-if _version_mpl >= 3.4:
-    _rc_matplotlib_default['xtick.labelcolor'] = COLOR
-    _rc_matplotlib_default['ytick.labelcolor'] = COLOR
-    _rc_children['meta.color'] += ('xtick.labelcolor', 'ytick.labelcolor')
-    _rc_children['tick.labelcolor'] = ('xtick.labelcolor', 'ytick.labelcolor')
 
 # The default settings dictionary. Analogous to matplotlib's rcParamsDefault
 _rc_proplot_default = {
