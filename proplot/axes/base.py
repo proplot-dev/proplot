@@ -25,7 +25,6 @@ from matplotlib import cbook
 
 from .. import colors as pcolors
 from .. import constructor
-from .. import gridspec as pgridspec
 from ..config import _parse_format, _translate_loc, rc
 from ..internals import ic  # noqa: F401
 from ..internals import (
@@ -1697,7 +1696,7 @@ class Axes(maxes.Axes):
             nrows, ncols, ss,
             hspace=0, wspace=0, height_ratios=hratios, width_ratios=wratios,
         )
-        ss = pgridspec._SubplotSpec(gs, 1, 1)
+        ss = type(ss)(gs, 1, 1)
         self._hide_panel()
         ax = self.figure.add_subplot(ss, autoshare=False, number=False)
         ax.patch.set_facecolor('none')  # ignore axes.alpha application

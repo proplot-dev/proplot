@@ -1,21 +1,29 @@
 #!/usr/bin/env python3
 """
-The gridspec class used for all ProPlot figures.
+The gridspec and subplot grid classes used throughout ProPlot.
 """
+import functools
+import inspect
 import itertools
-from functools import partial
+from collections.abc import MutableSequence
+from numbers import Integral
 
 import matplotlib.axes as maxes
 import matplotlib.gridspec as mgridspec
 import matplotlib.transforms as mtransforms
 import numpy as np
 
+from . import axes as paxes
 from .config import rc
 from .internals import ic  # noqa: F401
 from .internals import _not_none, _snippet_manager, warnings
 from .utils import _fontsize_to_pt, units
 
-__all__ = ['GridSpec']
+__all__ = [
+    'GridSpec',
+    'SubplotGrid',
+    'SubplotsContainer'  # deprecated
+]
 
 
 # Gridspec vector arguments
@@ -1116,12 +1124,12 @@ class GridSpec(mgridspec.GridSpec):
     # obfuscation makes this confusing. For example gs.update(wspace=gs.wspace) in
     # presence of panels would yield error. For now the only supported introspection
     # is the __repr__. Probably no big deal... introspection not critical here.
-    left = property(partial(_get_current_space, key='left'), doc='')
-    bottom = property(partial(_get_current_space, key='bottom'), doc='')
-    right = property(partial(_get_current_space, key='right'), doc='')
-    top = property(partial(_get_current_space, key='top'), doc='')
-    hspace = property(partial(_get_current_space, key='hspace'), doc='')
-    wspace = property(partial(_get_current_space, key='wspace'), doc='')
+    left = property(functools.partial(_get_current_space, key='left'), doc='')
+    bottom = property(functools.partial(_get_current_space, key='bottom'), doc='')
+    right = property(functools.partial(_get_current_space, key='right'), doc='')
+    top = property(functools.partial(_get_current_space, key='top'), doc='')
+    hspace = property(functools.partial(_get_current_space, key='hspace'), doc='')
+    wspace = property(functools.partial(_get_current_space, key='wspace'), doc='')
     # Additional properties added for consistency
     nrows = property(lambda self: self._nrows, doc='')  # in case missing
     ncols = property(lambda self: self._ncols, doc='')  # ...
@@ -1136,3 +1144,307 @@ class GridSpec(mgridspec.GridSpec):
     panelwidth = property(lambda self: sum(r for i, r in enumerate(self.wratios) if self._wpanels[i]))  # noqa: E501
     subplotheight = property(lambda self: sum(r for i, r in enumerate(self.hratios) if not self._hpanels[i]))  # noqa: E501
     subplotwidth = property(lambda self: sum(r for i, r in enumerate(self.wratios) if not self._wpanels[i]))  # noqa: E501
+
+
+class SubplotGrid(MutableSequence, list):
+    """
+    List-like object used to store subplots returned by `~Figure.subplots`. 1d indexing
+    uses the underlying list of axes while 2d indexing uses the `~SubplotGrid.gridspec`.
+    See `~SubplotGrid.__getitem__` for details.
+    """
+    def __repr__(self):
+        if not self:
+            return 'SubplotGrid(length=0)'
+        length = len(self)
+        nrows, ncols = self.gridspec.get_subplot_geometry()
+        return f'SubplotGrid(nrows={nrows}, ncols={ncols}, length={length})'
+
+    def __str__(self):
+        return self.__repr__()
+
+    def __len__(self):
+        return list.__len__(self)
+
+    def insert(self, key, value):  # required for MutableSequence
+        value = self._validate_item(value, scalar=True)
+        list.insert(self, key, value)
+
+    def __init__(self, iterable=None, **kwargs):
+        """
+        Parameters
+        ----------
+        iterable : list-like
+            An iterable of `proplot.axes.Axes` subplots or their children.
+
+        See also
+        --------
+        proplot.figure.Figure.subplots
+        proplot.ui.subplots
+        """
+        n = kwargs.pop('n', None)
+        order = kwargs.pop('order', None)
+        if n is not None or order is not None:
+            warnings._warn_proplot(
+                f'Ignoring n={n!r} and order={order!r}. As of v0.8 SubplotGrid '
+                'handles 2d indexing by leveraging the subplotspec extents rather than '
+                'directly emulating 2d array indexing. These arguments are no longer '
+                'needed and will be removed in a future release.'
+            )
+        iterable = _not_none(iterable, [])
+        iterable = self._validate_item(iterable, scalar=False)
+        super().__init__(iterable)
+
+    def __getattr__(self, attr):
+        """
+        Get a missing attribute. Simply redirects to the axes if the `SubplotGrid`
+        is singleton and raises an error otherwise. This can be very convenient
+        for single-axes figures generated with `~Figure.subplots`.
+        """
+        # Redirect to the axes
+        if not self or attr[:1] == '_':
+            return super().__getattribute__(attr)  # trigger default error
+        if len(self) == 1:
+            return getattr(self[0], attr)
+
+        # Obscure deprecated behavior
+        # WARNING: This is now deprecated! Instead we dynamically define a few
+        # dedicated relevant commands that can be called from the grid (see below).
+        warnings._warn_proplot(
+            'Calling arbitrary axes methods from SubplotGrid was deprecated in v0.8 '
+            'and will be removed in a future release. Please index the grid or loop '
+            'over the grid instead.'
+        )
+        if not self:
+            return None
+        objs = tuple(getattr(ax, attr) for ax in self)  # may raise error
+        if not any(map(callable, objs)):
+            return objs[0] if len(self) == 1 else objs
+        elif all(map(callable, objs)):
+            @functools.wraps(objs[0])
+            def _iterate_subplots(*args, **kwargs):
+                result = []
+                for func in objs:
+                    result.append(func(*args, **kwargs))
+                if len(self) == 1:
+                    return result[0]
+                elif all(res is None for res in result):
+                    return None
+                elif all(isinstance(res, paxes.Axes) for res in result):
+                    return SubplotGrid(result, n=self._n, order=self._order)
+                else:
+                    return tuple(result)
+            _iterate_subplots.__doc__ = inspect.getdoc(objs[0])
+            return _iterate_subplots
+        else:
+            raise AttributeError(f'Found mixed types for attribute {attr!r}.')
+
+    def __getitem__(self, key):
+        """
+        Get an axes.
+
+        Parameters
+        ----------
+        key : int, slice, or 2-tuple thereof
+            The index. If 1d then the axes in the corresponding
+            sublist are returned. If 2d then the axes that intersect
+            the corresponding `~SubplotGrid.gridspec` slots are returned.
+
+        Returns
+        -------
+        axs : `~proplot.axes.Axes` or `SubplotGrid`
+            The axes. If the index included slices then
+            another `SubplotGrid` is returned.
+
+        Example
+        -------
+        >>> import proplot as pplt
+        >>> fig, axs = pplt.subplots(nrows=3, ncols=3)
+        >>> axs[3]  # the subplots in the second row, first column
+        >>> axs[1, 2]  # the subplots in the second row, third column
+        >>> axs[:, 0]  # a grid of subplots in the first column
+        """
+        if isinstance(key, tuple) and len(key) == 1:
+            key = key[0]
+        # List-style indexing
+        if isinstance(key, (Integral, slice)):
+            slices = isinstance(key, slice)
+            objs = list.__getitem__(self, key)
+        # Gridspec-style indexing
+        elif isinstance(key, tuple) and len(key) == 2 and all(isinstance(ikey, (Integral, slice)) for ikey in key):  # noqa: E501
+            # WARNING: Permit no-op slicing of empty grids here
+            slices = any(isinstance(ikey, slice) for ikey in key)
+            objs = []
+            if self:
+                gs = self.gridspec
+                ss_key = gs._get_subplot_spec(key)  # obfuscates panels
+                row1_key, col1_key = divmod(ss_key.num1, gs.ncols)
+                row2_key, col2_key = divmod(ss_key.num2, gs.ncols)
+            for ax in self:
+                ss = ax._get_topmost_axes().get_subplotspec()
+                row1, col1 = divmod(ss.num1, gs.ncols)
+                row2, col2 = divmod(ss.num2, gs.ncols)
+                inrow = row1_key <= row1 <= row2_key or row1_key <= row2 <= row2_key
+                incol = col1_key <= col1 <= col2_key or col1_key <= col2 <= col2_key
+                if inrow and incol:
+                    objs.append(ax)
+            if not slices and len(objs) == 1:
+                objs = objs[0]
+        else:
+            raise IndexError(f'Invalid index {key!r}.')
+        if isinstance(objs, list):
+            return SubplotGrid(objs)
+        else:
+            return objs
+
+    def __setitem__(self, key, value):
+        """
+        Add an axes.
+
+        Parameters
+        ----------
+        key : int or slice
+            The 1d index.
+        value : `proplot.axes.Axes`
+            The proplot subplot or its child or panel axes,
+            or an iterable thereof if the index was a slice.
+        """
+        if isinstance(key, Integral):
+            value = self._validate_item(value, scalar=True)
+        elif isinstance(key, slice):
+            value = self._validate_item(value, scalar=False)
+        else:
+            raise IndexError('Multi dimensional item assignment is not supported.')
+        return super().__setitem__(key, value)  # could be list[:] = [1, 2, 3]
+
+    def _validate_item(self, items, scalar=False):
+        """
+        Validate assignments. Accept diverse iterable inputs.
+        """
+        gridspec = None
+        message = (
+            'SubplotGrid can only be filled with ProPlot subplots '
+            'belonging to the same GridSpec.'
+        )
+        items = np.atleast_1d(items)
+        if self:
+            gridspec = self.gridspec  # compare against existing gridspec
+        for item in items.flat:
+            if not isinstance(item, paxes.Axes):
+                raise ValueError(message)
+            item = item._get_topmost_axes()
+            if not isinstance(item, maxes.SubplotBase):
+                raise ValueError(message)  # noqa: E501
+            gs = item.get_subplotspec().get_gridspec()
+            if not isinstance(gs, GridSpec) or (gridspec and gs is not gridspec):
+                raise ValueError(message)
+            gridspec = gs
+        if not scalar:
+            items = tuple(items.flat)
+        elif items.size == 1:
+            items = items.flat[0]
+        else:
+            raise ValueError('Input must be a single ProPlot axes.')
+        return items
+
+    @property
+    def gridspec(self):
+        """
+        The `~proplot.gridspec.GridSpec` associated with the grid. This is used
+        to resolve 2d indexing. See `~SubplotGrid.__getitem__` for details.
+        """
+        # Return the gridspec associatd with the grid
+        if not self:
+            raise ValueError('Unknown gridspec for empty SubplotGrid.')
+        ax = self[0]
+        ax = ax._get_topmost_axes()
+        return ax.get_subplotspec().get_gridspec()
+
+    @property
+    def shape(self):
+        """
+        The shape of the `~proplot.gridspec.GridSpec` associated with the grid.
+        See `~SubplotGrid.__getitem__` for details.
+        """
+        # NOTE: Considered deprecating this but on second thought since this is
+        # a 2d array-like object it should definitely have a shape attribute.
+        return self.gridspec.get_subplot_geometry()
+
+
+def _add_grid_command(name, command=None, seealso=None, returns_grid=False):
+    # Build the docstring
+    seealso = seealso or command or ()
+    if isinstance(seealso, str):
+        seealso = (seealso,)  # clean list of commands
+    if command:
+        command = f'`~{command}`'  # sphinx link to command
+    else:
+        command = f'``{name}``'  # literal text
+    string = f"""
+    Call {command} for every axes in the grid.
+
+    Parameters
+    ----------
+    *args, **kwargs
+        Passed to {command}.
+    """
+    string = inspect.cleandoc(string)
+    string += '\n\nSee also\n--------\n' + '\n'.join(seealso)
+    string += '\n\nReturns\n-------\n'
+    if returns_grid:
+        string += '`SubplotGrid`\n    A subplot grid of the results.'
+    else:
+        string += '`tuple`\n    A tuple of the results.'
+
+    # Create the method
+    def _grid_command(self, *args, **kwargs):
+        objs = []
+        for ax in self:
+            obj = getattr(ax, name)(*args, **kwargs)
+            if obj is not None:
+                objs.append(obj)
+        if not objs:
+            return None
+        elif all(isinstance(obj, paxes.Axes) for obj in objs):
+            return SubplotGrid(objs)
+        elif len(objs) == 1:
+            return objs[0]
+        else:
+            return objs
+
+    # Apply the method
+    _grid_command.__name__ = name
+    _grid_command.__doc__ = string
+    setattr(SubplotGrid, name, _grid_command)
+
+
+# Dynamically add commands
+# TODO: Plot on axes in the grid along an extra input dimension?
+_add_grid_command(
+    'format',
+    seealso=(f'proplot.axes.{s}Axes.format' for s in ('', 'Cartesian', 'Geo', 'Polar'))
+)  # noqa: E501
+for _name in (
+    'panel',
+    'panel_axes',
+    'inset',
+    'inset_axes',
+    'altx',
+    'alty',
+    'dualx',
+    'dualy',
+    'twinx',
+    'twiny',
+    'text',
+    'legend',
+    'colorbar',
+):
+    if _name in ('altx', 'alty', 'twinx', 'twiny', 'dualx', 'dualy'):
+        _command = f'proplot.axes.CartesianAxes.{_name}'
+    else:
+        _command = f'proplot.axes.Axes.{_name}'
+    _returns_grid = _name not in ('text', 'legend', 'colorbar')
+    _add_grid_command(_name, _command, returns_grid=_returns_grid)
+
+
+# Deprecated
+SubplotsContainer = warnings._rename_objs('0.8', SubplotsContainer=SubplotGrid)
