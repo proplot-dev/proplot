@@ -38,7 +38,7 @@
 # ---------------
 #
 # To create geographic axes, pass e.g. ``proj='name'`` to an axes-creation
-# command where ``name`` is any valid :ref:`PROJ projection name <proj_included>`.
+# command where ``name`` is any valid :ref:`PROJ projection name <proj_table>`.
 # Alternatively, you can use ``proj=projection_instance`` where ``projection_instance``
 # is a `cartopy.crs.Projection` or `~mpl_toolkits.basemap.Basemap` instance returned
 # by the `~proplot.constructor.Proj` :ref:`constructor function <why_constructor>`
@@ -378,8 +378,8 @@ pplt.rc.reset()
 #
 # The available `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`__
 # and `basemap <https://matplotlib.org/basemap/index.html>`__ projections are
-# plotted below. See `~proplot.constructor.Proj` for a table of projection
-# names with links to the relevant `PROJ <https://proj.org>`__ documentation.
+# plotted below. The full table of projection names with links to the relevant
+# `PROJ <https://proj.org>`__ documentation is found :ref:`here <proj_table>`.
 #
 # ProPlot uses the cartopy API to add the Aitoff, Hammer, Winkel Tripel, and
 # Kavrisky VII projections (i.e., ``'aitoff'``, ``'hammer'``, ``'wintri'``,

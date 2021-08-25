@@ -286,18 +286,18 @@ name : str, optional
     positional string argument. Default is ``'_no_name'``.
 """
 _ratios_docstring = """
-ratios : list of float, optional
+ratios : sequence of float, optional
     Relative extents of each color transition. Must have length
     ``len(colors) - 1``. Larger numbers indicate a slower
     transition, smaller numbers indicate a faster transition.
 """
 _from_list_docstring = """
-colors : list of color-spec or float, color-spec tuples
-    If list of RGB[A] tuples or color strings, the colormap
+colors : sequence of color-spec or tuple
+    If a sequence of RGB[A] tuples or color strings, the colormap
     transitions evenly from ``colors[0]`` at the left-hand side
     to ``colors[-1]`` at the right-hand side.
 
-    If list of (float, color-spec) tuples, the float values are the
+    If a sequence of (float, color-spec) tuples, the float values are the
     coordinate of each transition and must range from 0 to 1. This
     can be used to divide  the colormap range unevenly.
 %(colors.name)s
@@ -321,7 +321,7 @@ def _clip_colors(colors, clip=True, gray=0.2, warn=False):
 
     Parameters
     ----------
-    colors : list of length-3 tuples
+    colors : sequence of 3-tuple
         The RGB colors.
     clip : bool, optional
         If `clip` is ``True`` (the default), RGB channel values >1 are
@@ -398,11 +398,11 @@ def _make_segment_data(values, coords=None, ratios=None):
 
     Parameters
     ----------
-    values : list of float
+    values : sequence of float
         The channel values.
-    coords : list of float, optional
+    coords : sequence of float, optional
         The segment coordinates.
-    ratios : list of float, optional
+    ratios : sequence of float, optional
         The relative length of each segment transition.
     """
     # Allow callables
@@ -457,10 +457,10 @@ def _make_lookup_table(N, data, gamma=1.0, inverse=False):
     N : int
         Number of points in the colormap lookup table.
     data : 2D array-like
-        List of `(x, y_0, y_1)` tuples specifying channel jump (from `y_0` to `y_1`)
-        and `x` coordinate of that jump (ranges between 0 and 1). See
-        `~matplotlib.colors.LinearSegmentedColormap` for details.
-    gamma : float or list of float, optional
+        Sequence of `(x, y_0, y_1)` tuples specifying channel jumps
+        (from `y_0` to `y_1`) and `x` coordinate of those jumps
+        (ranges between 0 and 1). See `~matplotlib.colors.LinearSegmentedColormap`.
+    gamma : float or sequence of float, optional
         To obtain channel values between coordinates `x_i` and `x_{i+1}`
         in rows `i` and `i+1` of `data` we use the formula:
 
@@ -969,7 +969,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         ----------
         *args
             Instances of `ContinuousColormap`.
-        ratios : list of float, optional
+        ratios : sequence of float, optional
             Relative extent of each component colormap in the merged colormap.
             Length must equal ``len(args) + 1``.
 
@@ -1269,14 +1269,14 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
         Parameters
         ----------
-        alpha : float or list of float
-            If float, this is the opacity for the entire colormap. If list of
+        alpha : float or sequence of float
+            If float, this is the opacity for the entire colormap. If sequence of
             float, the colormap traverses these opacity values.
-        coords : list of float, optional
+        coords : sequence of float, optional
             Colormap coordinates for the opacity values. The first and last
             coordinates must be ``0`` and ``1``. If `alpha` is not scalar, the
             default coordinates are ``np.linspace(0, 1, len(alpha))``.
-        ratios : list of float, optional
+        ratios : sequence of float, optional
             Relative extent of each opacity transition segment. Length should
             equal ``len(alpha) + 1``. For example
             ``cmap.set_alpha((1, 1, 0), ratios=(2, 1))`` creates a transtion from
@@ -1477,10 +1477,10 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
 
         Parameters
         ----------
-        samples : int or list of float, optional
+        samples : int or sequence of float, optional
             If integer, draw samples at the colormap coordinates
-            ``np.linspace(0, 1, samples)``. If list of float, draw
-            samples at the specified points.
+            ``np.linspace(0, 1, samples)``. If sequence of float,
+            draw samples at the specified points.
         name : str, optional
             The name of the new colormap. Default is ``self.name + '_copy'``.
 
@@ -1530,7 +1530,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
     @_snippet_manager
     def from_list(cls, *args, **kwargs):
         """
-        Make a `ContinuousColormap` from a list of colors.
+        Make a `ContinuousColormap` from a sequence of colors.
 
         Parameters
         ----------
@@ -2103,9 +2103,9 @@ class PerceptualColormap(ContinuousColormap, _Colormap):
             *twice as long* as the transition from luminance ``50`` to ``0``.
         h, s, l, a, c
             Shorthands for `hue`, `saturation`, `luminance`, `alpha`, and `chroma`.
-        hue : float, color-spec, or list, optional
-            Hue channel value or list of values. The shorthand keyword `h`
-            is also acceptable. Values can be any of the following.
+        hue : float or color-spec or sequence, optional
+            Hue channel value or sequence of values. The shorthand keyword
+            `h` is also acceptable. Values can be any of the following.
 
             1. Numbers, within the range 0 to 360 for hue and 0 to 100 for
                saturation and luminance.
@@ -2114,7 +2114,7 @@ class PerceptualColormap(ContinuousColormap, _Colormap):
 
             If scalar, the hue does not change across the colormap.
             Default is ``0`` (i.e., red).
-        saturation, luminance, alpha : float, color-spec, or list, optional
+        saturation, luminance, alpha : float or color-spec or sequence, optional
             As with `hue`, but for the saturation, luminance, and alpha (opacity)
             channels, respectively. The default `saturation` is ``50``, luminance is
             ``(100, 20)``, and alpha is ``1`` (i.e., no transparency).
@@ -2155,7 +2155,7 @@ class PerceptualColormap(ContinuousColormap, _Colormap):
     @_snippet_manager
     def from_list(cls, *args, adjust_grays=True, **kwargs):
         """
-        Make a `PerceptualColormap` from a list of colors.
+        Make a `PerceptualColormap` from a sequence of colors.
 
         Parameters
         ----------
@@ -2163,8 +2163,8 @@ class PerceptualColormap(ContinuousColormap, _Colormap):
         adjust_grays : bool, optional
             Whether to adjust the hues of grayscale colors (including
             ``'white'`` and ``'black'``) to the hues of the preceding and
-            subsequent colors in the list. This facilitates the construction of
-            diverging colormaps with monochromatic segments using input like
+            subsequent colors in the sequence. This facilitates the construction
+            of diverging colormaps with monochromatic segments using input like
             ``PerceptualColormap.from_list(['blueish', 'white', 'reddish'])``.
 
         Other parameters
@@ -2286,7 +2286,7 @@ def _sanitize_levels(levels, allow_descending=True):
 class DiscreteNorm(mcolors.BoundaryNorm):
     """
     Meta-normalizer that discretizes the possible color values returned by
-    arbitrary continuous normalizers given a list of level boundaries.
+    arbitrary continuous normalizers given a sequence of level boundaries.
     """
     # See this post: https://stackoverflow.com/a/48614231/4970632
     # WARNING: Must be child of BoundaryNorm. Many methods in ColorBarBase
@@ -2299,7 +2299,7 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         """
         Parameters
         ----------
-        levels : list of float
+        levels : sequence of float
             The level boundaries.
         norm : `~matplotlib.colors.Normalize`, optional
             The normalizer used to transform `levels` and data values passed to
@@ -2472,14 +2472,14 @@ class DiscreteNorm(mcolors.BoundaryNorm):
 
 class SegmentedNorm(mcolors.Normalize):
     """
-    Normalizer that scales data linearly with respect to the interpolated list
-    index in an arbitrary monotonically increasing level list.
+    Normalizer that scales data linearly with respect to the interpolated
+    index in an arbitrary monotonically increasing level sequence.
     """
     def __init__(self, levels, vmin=None, vmax=None, clip=False):
         """
         Parameters
         ----------
-        levels : list of float
+        levels : sequence of float
             The level boundaries.
         vmin, vmax : None
             Ignored. `vmin` and `vmax` are set to the minimum and
@@ -2871,7 +2871,7 @@ class ColorDatabase(dict):
         * For a colormap, use e.g. ``color=('Blues', 0.8)``.
           The number is the colormap index, and must be between 0 and 1.
         * For a color cycle, use e.g. ``color=('colorblind', 2)``.
-          The number is the list index.
+          The number is the color list index.
 
         This works with anywhere that colors are used in matplotlib, for example
         as ``'color'``, ``'edgecolor'``, or ``'facecolor'`` arguments.

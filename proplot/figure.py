@@ -72,7 +72,7 @@ refnum : int, optional
     keyword args are applied to this subplot, and the aspect ratio is conserved
     for this subplot in the `~Figure.auto_layout`. The default is the first
     subplot created in the figure.
-refaspect : float or length-2 list of floats, optional
+refaspect : float or 2-tuple of float, optional
     The reference subplot aspect ratio. If scalar, this indicates the width
     divided by height. If 2-tuple, indicates the (width, height). Ignored if both
     `figwidth` *and* `figheight` or both `refwidth` *and* `refheight` were passed.
@@ -90,7 +90,7 @@ figwidth, figheight : unit-spec, optional
     If you specify just one, `refaspect` will be respected.
 width, height
     Aliases for `figwidth`, `figheight`.
-figsize : length-2 tuple, optional
+figsize : 2-tuple, optional
     Tuple specifying the figure ``(width, height)``.
 sharex, sharey, share \
 : {0, False, 1, 'labels', 'labs', 2, 'limits', 'lims', 3, True, 4, 'all'}, optional
@@ -1407,12 +1407,13 @@ class Figure(mfigure.Figure):
 
         Parameters
         ----------
-        axs : list of axes, optional
-            The list of axes. By default every subplot is used.
-        %()
+        axs : sequence of `~proplot.axes.Axes`, optional
+            A sequence of axes. By default the numbered subplots are used.
+        %(figure.format)s
 
         Other parameters
         ----------------
+        %(axes.format)s
         %(axes.rc)s
         **kwargs
             Passed to the ``format`` command of each axes.
@@ -1686,7 +1687,7 @@ class Figure(mfigure.Figure):
             Whether to include "hidden" panels.
         children : bool, optional
             Whether to include child axes. Note this now includes "twin" axes.
-        panels : bool or str or list of str, optional
+        panels : bool or str or sequence of str, optional
             Whether to include panels or the panels to include.
         """
         # Parse panels

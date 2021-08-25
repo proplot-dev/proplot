@@ -337,14 +337,14 @@ vmin, vmax : float, optional
 _manual_levels_docstring = """
 N
     Shorthand for `levels`.
-levels : int or list of float, optional
-    The number of level edges or a list of level edges. If the former,
+levels : int or sequence of float, optional
+    The number of level edges or a sequence of level edges. If the former,
     `locator` is used to generate this many level edges at "nice" intervals.
     If the latter, the levels should be monotonically increasing or
     decreasing (note that decreasing levels will only work with ``pcolor``
     plots, not ``contour`` plots). Default is :rc:`cmap.levels`.
-values : int or list of float, optional
-    The number of level centers or a list of level centers. If the former,
+values : int or sequence of float, optional
+    The number of level centers or a sequence of level centers. If the former,
     `locator` is used to generate this many level centers at "nice" intervals.
     If the latter, levels are inferred using `~proplot.utils.edges`.
     This will override any `levels` input.
@@ -391,7 +391,7 @@ _labels_1d_docstring = """
 label, value : float or str, optional
     The single legend label or colorbar coordinate to be used for this plotted
     element. This is generally used with 1D input coordinates.
-labels, values : list of float or list of str, optional
+labels, values : sequence of float or sequence of str, optional
     The legend labels or colorbar coordinates used for each plotted element.
     Can be numeric or string, and must match the number of plotted elements.
     This is generally used with 2D input coordinates.
@@ -522,11 +522,11 @@ negpos : bool, optional
 negcolor, poscolor : color-spec, optional
     Colors to use for the negative and positive lines. Ignored if `negpos`
     is ``False``. Defaults are :rc:`negcolor` and :rc:`poscolor`.
-c, color, colors : color-spec or list, optional
+c, color, colors : color-spec or sequence, optional
     The line color(s).
-ls, linestyle, linestyles : str or list, optional
+ls, linestyle, linestyles : str or sequence, optional
     The line style(s).
-lw, linewidth, linewidths : float or list, optional
+lw, linewidth, linewidths : float or sequence, optional
     The line width(s).
 %(plot.cycle)s
 %(plot.labels_1d)s
@@ -602,7 +602,7 @@ Plot markers with flexible keyword arguments.
 Parameters
 ----------
 %(plot.args_1d_{y})s
-s, size, ms, markersize : float or list of float, optional
+s, size, ms, markersize : float or sequence of float, optional
     The marker size(s). If this is an array matching the shape of `x` and `y`,
     the units are scaled by `smin` and `smax`.
 c, color, colors, mc, markercolor, markercolors \
@@ -618,10 +618,10 @@ smin, smax : float, optional
 Other parameters
 ----------------
 lw, linewidth, linewidths, markeredgewidth, markeredgewidths \
-: float or list, optional
+: float or sequence, optional
     The marker edge width.
 edgecolors, markeredgecolor, markeredgecolors \
-: color-spec or list, optional
+: color-spec or sequence, optional
     The marker edge color.
 %(plot.cmap_norm)s
 %(plot.levels_manual)s
@@ -768,8 +768,8 @@ Plot {orientation} histograms.
 Parameters
 ----------
 %(plot.args_1d_{y})s
-bins : int or list of float, optional
-    The bin count or list of bins.
+bins : int or sequence of float, optional
+    The bin count or sequence of bins.
 %(plot.weights)s
 %(plot.args_1d_shared)s
 
@@ -811,16 +811,16 @@ mean, means : bool, optional
     `~matplotlib.axes.Axes.boxplot`.
 fill : bool, optional
     Whether to fill the box with a color.
-fc, facecolor, fillcolor : color-spec, list, optional
+fc, facecolor, fillcolor : color-spec or sequence, optional
     The fill color for the boxes. Default is the next color cycler color. If
-    a list, it should be the same length as the number of objects.
+    a sequence, it should be the same length as the number of objects.
 a, alpha, fa, facealpha, fillalpha : float, optional
-    The opacity of the boxes. Default is ``1.0``. If a list,
-    should be the same length as the number of objects.
+    The opacity of the boxes. Default is ``1.0``. If a sequence, should
+    be the same length as the number of objects.
 lw, linewidth, linewidths : float, optional
     The linewidth of all objects. Default is :rc:`patch.linewidth`.
-c, color, colors, ec, edgecolor, edgecolors : color-spec, list, optional
-    The color of all objects. Default is ``'black'``. If a list, it should
+c, color, colors, ec, edgecolor, edgecolors : color-spec or sequence, optional
+    The color of all objects. Default is ``'black'``. If a sequence, should
     be the same length as the number of objects.
 meanls, medianls, meanlinestyle, medianlinestyle, meanlinestyles, medianlinestyles \
 : line style-spec, optional
@@ -829,8 +829,8 @@ meanls, medianls, meanlinestyle, medianlinestyle, meanlinestyles, medianlinestyl
 boxc, capc, whiskerc, flierc, meanc, medianc, \
 boxcolor, capcolor, whiskercolor, fliercolor, meancolor, mediancolor \
 boxcolors, capcolors, whiskercolors, fliercolors, meancolors, mediancolors \
-: color-spec, list, optional
-    The color of various boxplot components. If a list, it should be the
+: color-spec or sequence, optional
+    The color of various boxplot components. If a sequence, should be the
     same length as the number of objects. These are shorthands so you don't
     have to pass e.g. a ``boxprops`` dictionary.
 boxlw, caplw, whiskerlw, flierlw, meanlw, medianlw, boxlinewidth, caplinewidth, \
@@ -877,17 +877,17 @@ Parameters
 
 Other parameters
 ----------------
-fc, facecolor, facecolors, fillcolor, fillcolors : color-spec, list, optional
+fc, facecolor, facecolors, fillcolor, fillcolors : color-spec or sequence, optional
     The violin plot fill color. Default is the next color cycler color. If
-    a list, it should be the same length as the number of objects.
-a, alpha, fa, facealpha, fillalpha : float, optional
-    The opacity of the violins. Default is ``1.0``. If a list,
-    it should be the same length as the number of objects.
+    a sequence, should be the same length as the number of objects.
+c, color, colors, ec, edgecolor, edgecolors : color-spec or sequence, optional
+    The edge color for the violin patches. Default is ``'black'``. If a
+    sequence, should be the same length as the number of objects.
+a, alpha, fa, facealpha, fillalpha : float or sequence, optional
+    The opacity of the violins. Default is ``1.0``. If a sequence,
+    should be the same length as the number of objects.
 lw, linewidth, linewidths : float, optional
     The linewidth of the line objects. Default is :rc:`patch.linewidth`.
-c, color, colors, ec, edgecolor, edgecolors : color-spec, list, optional
-    The edge color for the violin patches. Default is ``'black'``. If a
-    list, it should be the same length as the number of objects.
 %(plot.cycle)s
 %(plot.labels_1d)s
 %(plot.error_bars)s
@@ -2571,9 +2571,9 @@ class PlotAxes(base.Axes):
             The sample data. Passed to `_parse_vlim`.
         N
             Shorthand for `levels`.
-        levels : int or list of float, optional
+        levels : int or sequence of float, optional
             The levels list or (approximate) number of levels to create.
-        values : int or list of float, optional
+        values : int or sequence of float, optional
             The level center list or (approximate) number of level centers to create.
         minlength : int, optional
             The minimum number of levels allowed.
@@ -2694,7 +2694,7 @@ class PlotAxes(base.Axes):
 
         Parameters
         ----------
-        levels : list of float
+        levels : sequence of float
             The level boundaries.
         norm : `~matplotlib.colors.Normalize`
             The continuous normalizer.
@@ -4213,8 +4213,8 @@ class PlotAxes(base.Axes):
         Parameters
         ----------
         %(plot.args_1d_y)s
-        bins : int or 2-tuple of int, or array or 2-tuple of array, optional
-            The bin count or list of bins for each dimension or both dimensions.
+        bins : int or 2-tuple of int, or array-like or 2-tuple of array-like, optional
+            The bin count or sequence of bins for each dimension or both dimensions.
         %(plot.weights)s
         %(plot.args_1d_shared)s
 

@@ -185,9 +185,9 @@ class LogScale(_Scale, mscale.LogScale):
         nonpos : {'mask', 'clip'}, optional
             Non-positive values in *x* or *y* can be masked as
             invalid, or clipped to a very small positive number.
-        subs : list of int, optional
+        subs : sequence of int, optional
             Default *minor* tick locations are on these multiples of each power
-            of the base. For example, ``subs=(1,2,5)`` draws ticks on 1, 2, 5,
+            of the base. For example, ``subs=(1, 2, 5)`` draws ticks on 1, 2, 5,
             10, 20, 50, etc. The default is ``subs=numpy.arange(1, 10)``.
         basex, basey, nonposx, nonposy, subsx, subsy
             Aliases for the above keywords. These used to be conditional

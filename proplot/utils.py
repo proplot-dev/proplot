@@ -82,7 +82,7 @@ color : str, 3-tuple, or 4-tuple
 space : {'rgb', 'hsv', 'hcl', 'hpl', 'hsl'}, optional
     The colorspace for the input channel values. Ignored unless `color` is
     a tuple of numbers.
-cycle : str or list, optional
+cycle : str, optional
     The registered color cycle name used to interpret colors that
     look like ``'C0'``, ``'C1'``, etc. Default is :rc:`cycle`.
 """
@@ -743,18 +743,17 @@ def units(
     value, numeric=None, dest=None, *, fontsize=None, figure=None, axes=None, width=None
 ):
     """
-    Convert values and lists of values between arbitrary physical units. This
-    is used internally all over ProPlot, permitting flexible units for various
-    keyword arguments.
+    Convert values between arbitrary physical units. This is used internally all
+    over ProPlot, permitting flexible units for various keyword arguments.
 
     Parameters
     ----------
-    value : float or str or list thereof
-        A size specifier or *list thereof*. If numeric, units are converted from
-        `numeric` to `dest`. If string, units are converted to `dest` according
-        to the string specifier. The string should look like ``'123.456unit'``,
-        where the number is the magnitude and ``'unit'`` matches a key in
-        the below table.
+    value : float or str or sequence
+        A size specifier or sequence of size specifiers. If numeric, units are
+        converted from `numeric` to `dest`. If string, units are converted to
+        `dest` according to the string specifier. The string should look like
+        ``'123.456unit'``, where the number is the magnitude and ``'unit'``
+        matches a key in the below table.
 
         .. _units_table:
 

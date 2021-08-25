@@ -265,7 +265,7 @@ _figure_format_docstring = """
 rowlabels, collabels, llabels, tlabels, rlabels, blabels
     Aliases for `leftlabels` and `toplabels`, and for `leftlabels`,
     `toplabels`, `rightlabels`, and `bottomlabels`, respectively.
-leftlabels, toplabels, rightlabels, bottomlabels : list of str, optional
+leftlabels, toplabels, rightlabels, bottomlabels : sequence of str, optional
     Labels for the subplots lying along the left, top, right, and
     bottom edges of the figure. The length of each list must match
     the number of subplots along the corresponding edge.
@@ -310,20 +310,20 @@ _snippet_manager['figure.format'] = _figure_format_docstring
 
 # Colorbar docstrings
 _colorbar_args_docstring = """
-mappable : mappable, list of artists, list of color-spec, or colormap-spec
+mappable : mappable, sequence of artist, sequence of color-spec, or colormap-spec
     There are four options here:
 
     1. A mappable object. Basically, any object with a ``get_cmap`` method,
        like the objects returned by `~matplotlib.axes.Axes.contourf` and
        `~matplotlib.axes.Axes.pcolormesh`.
-    2. A list of matplotlib artists. Any object with a ``get_color`` method
+    2. A sequence of matplotlib artists. Any object with a ``get_color`` method
        will do, like `~matplotlib.lines.Line2D` instances. A colormap will
        be generated from the colors of these objects, and colorbar levels
        will be selected using `values`.  If `values` is ``None``, we try
        to infer them by converting the handle labels returned by
        `~matplotlib.artist.Artist.get_label` to `float`. Otherwise, it is
        set to ``np.linspace(0, 1, len(mappable))``.
-    3. A list of hex strings, color string names, or RGB tuples. A colormap
+    3. A sequence of hex strings, color string names, or RGB tuples. A colormap
        will be generated from these colors, and colorbar levels will be
        selected using `values`. If `values` is ``None``, it is set to
        ``np.linspace(0, 1, len(mappable))``.
@@ -332,7 +332,7 @@ mappable : mappable, list of artists, list of color-spec, or colormap-spec
        `values`. If `values` is ``None``, it is set to
        ``np.linspace(0, 1, cmap.N)``.
 
-values : list of float or str, optional
+values : sequence of float or str, optional
     Ignored if `mappable` is a mappable object. This maps each color or
     plot handle in the `mappable` list to numeric values, from which a
     colormap and normalizer are constructed. These can also be strings,
@@ -423,12 +423,12 @@ _snippet_manager['axes.colorbar_kwargs'] = _colorbar_kwargs_docstring
 
 # Legend docstrings
 _legend_args_docstring = """
-handles : list of `~matplotlib.artist.Artist`, optional
+handles : list of artist, optional
     List of matplotlib artists, or a list of lists of artist instances (see
     the `center` keyword). If ``None``, artists with valid labels are retrieved
     automatically. If the object is a `~matplotlib.contour.ContourSet`, the
     ``legend_elements`` method is used to pair the collection or contour set label
-    with the central element in the list (generally giving the central colormap
+    with the central artist in the list (generally giving the central colormap
     color if the object is controlled with a colormap).
 labels : list of str, optional
     A matching list of string labels or ``None`` placeholders, or a matching list of
@@ -3008,7 +3008,7 @@ class Axes(maxes.Axes):
             Whether to include "hidden" panels.
         children : bool, optional
             Whether to include children. Note this now includes "twin" axes.
-        panels : bool or str or list of str, optional
+        panels : bool or str or sequence of str, optional
             Whether to include panels or the panels to include.
         """
         # Parse panels

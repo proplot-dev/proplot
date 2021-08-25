@@ -531,10 +531,10 @@ def show_cmaps(*args, **kwargs):
         Category name for colormaps that are unknown to ProPlot. The
         default is ``'User'``. Set this to ``False`` to hide
         unknown colormaps.
-    include : str or list of str, optional
+    include : str or sequence of str, optional
         Category names to be shown in the table. Use this to limit the table
         to a subset of categories. Valid categories are %(cmap.categories)s.
-    ignore : str or list of str, optional
+    ignore : str or sequence of str, optional
         Used only if `include` was not passed. Category names to be removed from the
         table. Default is ``'MATLAB'``, ``'GNUplot'``, ``'GIST'``, and ``'Other'``.
         Use of these colormaps is discouraged, because they contain non-uniform color
@@ -586,10 +586,10 @@ def show_cycles(*args, **kwargs):
     unknown : str, optional
         Category name for cycles that are unknown to ProPlot. The default
         is ``'User'``. Set this to ``False`` to hide unknown colormaps.
-    include : str or list of str, optional
+    include : str or sequence of str, optional
         Category names to be shown in the table. Use this to limit the table
         to a subset of categories. Valid categories are %(cycle.categories)s.
-    ignore : str or list of str, optional
+    ignore : str or sequence of str, optional
         Used only if `include` was not passed. Category names to be removed from
         the table. Default is ``'MATLAB'``, ``'GNUplot'``, ``'GIST'``, and ``'Other'``.
     %(show.colorbars)s
@@ -666,10 +666,10 @@ def show_colors(
     unknown : str, optional
         Category name for color names that are unknown to ProPlot. The default
         is ``'User'``. Set this to ``False`` to hide unknown color names.
-    include : str or list of str, optional
+    include : str or sequence of str, optional
         Category names to be shown in the table. Use this to limti the table
         to a subset of categories. Valid categories are %(color.categories)s.
-    ignore : str or list of str, optional
+    ignore : str or sequence of str, optional
         Used only if `include` was not passed. Category names to be removed
         from the colormap table. Default is ``'CSS4'``.
 

@@ -173,7 +173,8 @@ napoleon_type_aliases = {
     'sequence': ':term:`sequence`',
     'iterable': ':term:`iterable`',
     'mapping': ':term:`mapping`',
-    'hashable': ':term:`hashable <name>`',
+    'hashable': ':term:`hashable`',
+    'sequence': ':term:`sequence`',
     'dict-like': ':term:`dict-like <mapping>`',
     'path-like': ':term:`path-like <path-like object>`',
     'file-like': ':term:`file-like <file-like object>`',
@@ -192,6 +193,7 @@ napoleon_type_aliases = {
     'norm-spec': ':py:func:`norm-spec <proplot.constructor.Norm>`',
     'color-spec': ':py:func:`color-spec <matplotlib.colors.is_color_like>`',
     'channel-spec': ':py:func:`color-spec <matplotlib.colors.is_color_like>`',
+    'artist': ':py:func:`artist <matplotlib.artist.Artist>`',
 }
 
 # Fix duplicate class member documentation from autosummary + numpydoc

@@ -45,27 +45,27 @@ wspace, hspace, space : unit-spec, optional
     determined by the tight layout algorithm.
 """
 _vector_docstring = """
-wspace, hspace, space : unit-spec or list, optional
+wspace, hspace, space : unit-spec or sequence, optional
     The fixed space between grid columns, rows, and both, respectively. If
     float, string, or ``None``, this value is expanded into lists of length
     ``ncols - 1`` (for `wspace`) or length ``nrows - 1`` (for `hspace`). If
-    list, the list must match these lengths. Default is ``None``.
+    a sequence, its length must match these lengths. Default is ``None``.
     %(units.em)s
 
-    For list elements equal to ``None``, the space is determined automatically based
+    For sequence elements equal to ``None``, the space is determined automatically based
     on the font size and axis settings. If :rcraw:`subplots.tight` is ``True``, the
     space is determined by the tight layout algorithm. Otherwise, a sensible default
     value is chosen. For example, ``subplots(ncols=3, tight=True, wspace=(2, None))``
     fixes the space between columns 1 and 2 but lets the tight layout algorithm
     determine the space between columns 2 and 3.
-wratios, hratios : float or list, optional
+wratios, hratios : float or sequence, optional
     Passed to `~proplot.gridspec.GridSpec`, denotes the width and height
     ratios for the subplot grid. Length of `wratios` must match the number
     of rows, and length of `hratios` must match the number of columns.
 width_ratios, height_ratios
     Aliases for `wratios`, `hratios`. Included for consistency with
     the `matplotlib.pyplot.subplots` command.
-wpad, hpad, pad : unit-spec or list, optional
+wpad, hpad, pad : unit-spec or sequence, optional
     The tight layout padding between columns, rows, and both, respectively. Unlike
     ``space``, these control the padding between subplot content (including text,
     ticks, etc.) rather than subplot edges. As with ``space``, these can be scalars
@@ -1148,8 +1148,9 @@ class GridSpec(mgridspec.GridSpec):
 
 class SubplotGrid(MutableSequence, list):
     """
-    List-like object used to store subplots returned by `~Figure.subplots`. 1d indexing
-    uses the underlying list of axes while 2d indexing uses the `~SubplotGrid.gridspec`.
+    List-like object used to store subplots returned by
+    `~proplot.figure.Figure.subplots`. 1d indexing uses the underlying list of
+    `~proplot.axes.Axes` while 2d indexing uses the `~SubplotGrid.gridspec`.
     See `~SubplotGrid.__getitem__` for details.
     """
     def __repr__(self):
@@ -1169,12 +1170,12 @@ class SubplotGrid(MutableSequence, list):
         value = self._validate_item(value, scalar=True)
         list.insert(self, key, value)
 
-    def __init__(self, iterable=None, **kwargs):
+    def __init__(self, sequence=None, **kwargs):
         """
         Parameters
         ----------
-        iterable : list-like
-            An iterable of `proplot.axes.Axes` subplots or their children.
+        sequence : sequence
+            A sequence of `proplot.axes.Axes` subplots or their children.
 
         See also
         --------
@@ -1190,9 +1191,9 @@ class SubplotGrid(MutableSequence, list):
                 'directly emulating 2d array indexing. These arguments are no longer '
                 'needed and will be removed in a future release.'
             )
-        iterable = _not_none(iterable, [])
-        iterable = self._validate_item(iterable, scalar=False)
-        super().__init__(iterable)
+        sequence = _not_none(sequence, [])
+        sequence = self._validate_item(sequence, scalar=False)
+        super().__init__(sequence, **kwargs)
 
     def __getattr__(self, attr):
         """

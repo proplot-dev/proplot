@@ -392,10 +392,11 @@ def Colormap(
           is generated with `~proplot.colors.PerceptualColormap.from_color`.
           If the string ends in ``'_r'``, the monochromatic map will be
           *reversed*, i.e. will go from dark to light instead of light to dark.
-        * If list of RGB tuples or color strings, a `~proplot.colors.DiscreteColormap`,
-          `~proplot.colors.PerceptualColormap`, or `~proplot.colors.ContinuousColormap`
-          is generated depending on the value of `listmode` (see below). Default
-          behavior is to generate a `~proplot.colors.PerceptualColormap`.
+        * If sequence of RGB tuples or color strings, a
+          `~proplot.colors.DiscreteColormap`, `~proplot.colors.PerceptualColormap`,
+          or `~proplot.colors.ContinuousColormap` is generated depending on
+          the value of `listmode` (see below). Default behavior is to generate a
+          `~proplot.colors.PerceptualColormap`.
         * If dictionary, a `~proplot.colors.PerceptualColormap` is
           generated with `~proplot.colors.PerceptualColormap.from_hsl`.
           The dictionary should contain the keys ``'hue'``, ``'saturation'``,
@@ -419,8 +420,8 @@ def Colormap(
         Default is ``'continuous'`` when calling `Colormap` directly and
         ``'discrete'`` when `Colormap` is called by `Cycle`.
     listmode : {'perceptual', 'continuous', 'discrete'}, optional
-        Controls how colormaps are generated when you input list(s) of colors.
-        The options are as follows:
+        Controls how colormaps are generated when you input sequence(s)
+        of colors. The options are as follows:
 
         * If ``'perceptual'``, a `~proplot.colors.PerceptualColormap`
           is generated with `~proplot.colors.PerceptualColormap.from_list`.
@@ -431,13 +432,13 @@ def Colormap(
 
         Default is ``'perceptual'`` when calling `Colormap` directly and
         ``'discrete'`` when `Colormap` is called by `Cycle`.
-    samples : int or list of int, optional
+    samples : int or sequence of int, optional
         For `~proplot.colors.ContinuousColormap`\\ s, this is used to
         generate `~proplot.colors.DiscreteColormap`\\ s with
         `~proplot.colors.ContinuousColormap.to_discrete`. For
         `~proplot.colors.DiscreteColormap`\\ s, this is used to updates the
         number of colors in the cycle. If `samples` is integer, it applies
-        to the final *merged* colormap. If it is a list of integers,
+        to the final *merged* colormap. If it is a sequence of integers,
         it applies to each input colormap individually.
     discrete : bool, optional
         If ``True``, when the final colormap is a
@@ -446,37 +447,37 @@ def Colormap(
         `~proplot.colors.ContinuousColormap.to_discrete` with a
         default `samples` value of ``10``. This argument is not
         necessary if you provide the `samples` argument.
-    left, right : float or list of float, optional
+    left, right : float or sequence of float, optional
         Truncate the left or right edges of the colormap.
         Passed to `~proplot.colors.ContinuousColormap.truncate`.
-        If float, these apply to the final *merged* colormap. If list
+        If float, these apply to the final *merged* colormap. If sequence
         of float, these apply to each input colormap individually.
-    cut : float or list of float, optional
+    cut : float or sequence of float, optional
         Cut out the center of the colormap. Passed to
         `~proplot.colors.ContinuousColormap.cut`. If float,
-        this applies to the final *merged* colormap. If list of float,
-        these apply to each input colormap individually.
-    reverse : bool or list of bool, optional
+        this applies to the final *merged* colormap. If sequence of
+        float, these apply to each input colormap individually.
+    reverse : bool or sequence of bool, optional
         Reverse the colormap. Passed to
         `~proplot.colors.ContinuousColormap.reversed`. If
-        float, this applies to the final *merged* colormap. If list of
-        float, these apply to each input colormap individually.
-    shift : float or list of float, optional
+        float, this applies to the final *merged* colormap. If
+        sequence of float, these apply to each input colormap individually.
+    shift : float or sequence of float, optional
         Cyclically shift the colormap.
         Passed to `~proplot.colors.ContinuousColormap.shifted`.
-        If float, this applies to the final *merged* colormap. If list of
-        float, these apply to each input colormap individually.
+        If float, this applies to the final *merged* colormap. If sequence
+        of float, these apply to each input colormap individually.
     a
         Shorthand for `alpha`.
-    alpha : float or color-spec or list, optional
+    alpha : float or color-spec or sequence, optional
         The opacity of the colormap or the opacity gradation. Passed to
         `proplot.colors.ContinuousColormap.set_alpha`
         or `proplot.colors.DiscreteColormap.set_alpha`. If float, this applies
-        to the final *merged* colormap. If list of float, these apply to
+        to the final *merged* colormap. If sequence of float, these apply to
         each colormap individually.
     h, s, l, c
         Shorthands for `hue`, `luminance`, `saturation`, and `chroma`.
-    hue, saturation, luminance : float or color-spec or list, optional
+    hue, saturation, luminance : float or color-spec or sequence, optional
         The channel value(s) used to generate colormaps with
         `~proplot.colors.PerceptualColormap.from_hsl` and
         `~proplot.colors.PerceptualColormap.from_color`.
@@ -489,16 +490,16 @@ def Colormap(
         * If you did provide positional arguments, and any of them are
           color specifications, these control the look of monochromatic colormaps
           generated with `~proplot.colors.PerceptualColormap.from_color`.
-          To use different values for each colormap, pass a list of floats instead
-          of a scalar. Note the default `luminance` is ``90`` if `discrete`
-          is ``True`` and ``100`` otherwise.
+          To use different values for each colormap, pass a sequence of floats
+          instead of a single float. Note the default `luminance` is ``90`` if
+          `discrete` is ``True`` and ``100`` otherwise.
 
     chroma
         Alias for `saturation`.
-    cycle : str or list of str, optional
-        The registered cycle name or a list of colors used to interpret cycle
-        color strings like ``'C0'`` and ``'C2'``. Default is from the active
-        property cycler. This lets you make monochromatic colormaps using
+    cycle : str, optional
+        The registered cycle name used to interpret cycle color strings
+        like ``'C0'`` and ``'C2'``. Default is from the active property
+        cycler. This lets you make monochromatic colormaps using
         colors selected from arbitrary property cycles.
     save : bool, optional
         Whether to call the colormap/color cycle save method, i.e.
@@ -713,7 +714,7 @@ def Cycle(*args, N=None, samples=None, name=None, **kwargs):
         are merged. Arguments are interpreted as follows:
 
         * If a `~cycler.Cycler`, nothing more is done.
-        * If a list of RGB tuples or color strings, these colors are used.
+        * If a sequence of RGB tuples or color strings, these colors are used.
         * If a `~proplot.colors.DiscreteColormap`, colors from the ``colors``
           attribute are used.
         * If a string cycle name, that `~proplot.colors.DiscreteColormap`
@@ -726,28 +727,28 @@ def Cycle(*args, N=None, samples=None, name=None, **kwargs):
         `samples` keyword argument.
     N
         Shorthand for `samples`.
-    samples : float or list of float, optional
+    samples : float or sequence of float, optional
         For `~proplot.colors.DiscreteColormap`\\ s, this is the number of
         colors to select. For example, ``Cycle('538', 4)`` returns the first 4
         colors of the ``'538'`` color cycle.
         For `~proplot.colors.ContinuousColormap`\\ s, this is either a
-        list of sample coordinates used to draw colors from the colormap, or
+        sequence of sample coordinates used to draw colors from the colormap, or
         an integer number of colors to draw. If the latter, the sample coordinates
         are ``np.linspace(0, 1, samples)``. For example, ``Cycle('Reds', 5)``
         divides the ``'Reds'`` colormap into five evenly spaced colors.
 
     Other parameters
     ----------------
-    c, color, colors : list of color-spec, optional
-        A list of colors passed as keyword arguments. This is equivalent
-        to passing a list of colors as the first positional argument and is
+    c, color, colors : sequence of color-spec, optional
+        A sequence of colors passed as keyword arguments. This is equivalent
+        to passing a sequence of colors as the first positional argument and is
         included for consistency with `~matplotlib.axes.Axes.set_prop_cycle`.
         If positional arguments were passed, the colors in this list are
         appended to the colors resulting from the positional arguments.
     lw, ls, d, a, m, ms, mew, mec, mfc
         Shorthands for the below keywords.
     linewidth, linestyle, dashes, alpha, marker, markersize, markeredgewidth, \
-markeredgecolor, markerfacecolor : object or list of object, optional
+markeredgecolor, markerfacecolor : object or sequence of object, optional
         Lists of `~matplotlib.lines.Line2D` properties that can be added to the
         `~cycler.Cycler` instance. If the input was already a `~cycler.Cycler`,
         these are added or appended to the existing cycle keys. If the lists have
@@ -911,12 +912,12 @@ def Locator(locator, *args, **kwargs):
 
     Parameters
     ----------
-    locator : `~matplotlib.ticker.Locator`, str, float, list of float, or tuple
+    locator : `~matplotlib.ticker.Locator`, str, float, or sequence
         The locator specification, interpreted as follows:
 
         * If a `~matplotlib.ticker.Locator` instance already, the input
           argument is simply returned.
-        * If a list of numbers, these points are ticked. Returns a
+        * If a sequence of numbers, these points are ticked. Returns a
           `~matplotlib.ticker.FixedLocator`.
         * If number, this specifies the *step size* between tick locations.
           Returns a `~matplotlib.ticker.MultipleLocator`.
@@ -1027,12 +1028,12 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
 
     Parameters
     ----------
-    formatter : `~matplotlib.ticker.Formatter`, str, list of str, callable, or tuple
+    formatter : `~matplotlib.ticker.Formatter`, str, callable, or sequence
         The formatter specification, interpreted as follows:
 
         * If a `~matplotlib.ticker.Formatter` instance already, the input
           argument is simply returned.
-        * If list of strings, the ticks are labeled with these strings. Returns
+        * If sequence of strings, the ticks are labeled with these strings. Returns
           a `~matplotlib.ticker.FixedFormatter` if `index` is ``False`` or an
           `~matplotlib.ticker.IndexFormatter` if `index` is ``True``.
         * If a function, the labels will be generated using this function.
@@ -1098,11 +1099,11 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
         ======================  ==============================================  =================================================================
 
     date : bool, optional
-        Toggles the behavior when `formatter` contains a ``'%'`` sign (see
-        above).
+        Toggles the behavior when `formatter` contains a ``'%'`` sign
+        (see above).
     index : bool, optional
-        Controls the behavior when `formatter` is a list of strings (see
-        above).
+        Controls the behavior when `formatter` is a sequence of strings
+        (see above).
 
     Other parameters
     ----------------

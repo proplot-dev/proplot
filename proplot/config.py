@@ -505,7 +505,7 @@ def config_inline_backend(fmt=None):
 
     Parameters
     ----------
-    fmt : str or list of str, optional
+    fmt : str or sequence, optional
         The inline backend file format(s). Default is :rc:`inlinefmt`. Valid formats
         include ``'jpg'``, ``'png'``, ``'svg'``, ``'pdf'``, and ``'retina'``.
 
@@ -539,7 +539,7 @@ def use_style(style):
 
     Parameters
     ----------
-    style : str, dict, or list
+    style : str or sequence or dict-like
         The matplotlib style name(s) or stylesheet filename(s), or dictionary(s)
         of settings. Use ``'default'`` to apply matplotlib default settings and
         ``'original'`` to include settings from your user ``matplotlibrc`` file.
@@ -1391,7 +1391,7 @@ class Configurator(MutableMapping, dict):
 
         Parameters
         ----------
-        *args : str, dict, or both, optional
+        *args : str or dict-like, optional
             A dictionary containing `rc` keys and values. You can also pass
             a "category" name as the first argument, in which case all
             settings are prepended with ``'category.'``. For example,
