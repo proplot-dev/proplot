@@ -1244,7 +1244,7 @@ Bug fixes
 
 * Fix issue where `~proplot.styletools.show_cmaps` and `~proplot.styletools.show_cycles`
   draw empty axes (:pr:`100`).
-* Add back the :ref:`default .proplorc file <The .proplotrc file>` to docs (:pr:`101`).
+* Add back the default .proplorc file section to docs (:pr:`101`).
   To do this, ``conf.py`` auto-generates a file in ``_static``.
 
 Internals

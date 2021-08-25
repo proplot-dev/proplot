@@ -674,7 +674,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         xlabel, ylabel : str, optional
             The x and y axis labels. Applied with `~matplotlib.axes.Axes.set_xlabel`
             and `~matplotlib.axes.Axes.set_ylabel`.
-        xlabelpad, ylabelpad : float or str, optional
+        xlabelpad, ylabelpad : unit-spec, optional
             The padding between the x and y axis bounding box and the
             x and y axis labels. Default is :rc:`label.pad`.
             %(units.pt)s
@@ -693,7 +693,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         xreverse, yreverse : bool, optional
             Whether to "reverse" the x and y axis direction. Makes the x and
             y axes ascend left-to-right and top-to-bottom, respectively.
-        xscale, yscale : axis scale spec, optional
+        xscale, yscale : scale-spec, optional
             The x and y axis scales. Passed to the `~proplot.scale.Scale` constructor.
             For example, ``xscale='log'`` applies logarithmic scaling, and
             ``xscale=('cutoff', 100, 2)`` applies a `~proplot.scale.CutoffScale`.
@@ -715,7 +715,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         xticklabeldir, yticklabeldir : {'in', 'out'}
             Whether to place x and y axis tick label text inside
             or outside the axes.
-        xticklabelpad, yticklabelpad : float or str, optional
+        xticklabelpad, yticklabelpad : unit-spec, optional
             The padding between the x and y axis ticks and
             tick labels. Default is :rcraw:`tick.labelpad`.
             %(units.pt)s
@@ -725,7 +725,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         xgridminor, ygridminor, gridminor : bool, optional
             Whether to draw minor gridlines for the x and y axis.
             Use `gridminor` to toggle both.
-        xlocator, ylocator : locator spec, optional
+        xlocator, ylocator : locator-spec, optional
             Used to determine the x and y axis tick mark positions. Passed
             to the `~proplot.constructor.Locator` constructor.  Can be float,
             list of float, string, or `matplotlib.ticker.Locator` instance.
@@ -740,7 +740,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             Aliases for `xminorlocator`, `yminorlocator`.
         xminorlocator_kw, yminorlocator_kw
             As for `xlocator_kw`, `ylocator_kw`, but for the minor locator.
-        xformatter, yformatter : formatter spec, optional
+        xformatter, yformatter : formatter-spec, optional
             Used to determine the x and y axis tick label string format.
             Passed to the `~proplot.constructor.Formatter` constructor.
             Can be string, list of strings, or `matplotlib.ticker.Formatter`

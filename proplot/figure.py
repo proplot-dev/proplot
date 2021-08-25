@@ -74,21 +74,20 @@ refnum : int, optional
     subplot created in the figure.
 refaspect : float or length-2 list of floats, optional
     The reference subplot aspect ratio. If scalar, this indicates the width
-    divided by height. If 2-tuple, indicates the (width, height). Ignored if
-    both `figwidth` *and* `figheight` or both `refwidth` *and* `refheight`
-    were passed.
-refwidth, refheight : float or str, optional
+    divided by height. If 2-tuple, indicates the (width, height). Ignored if both
+    `figwidth` *and* `figheight` or both `refwidth` *and* `refheight` were passed.
+refwidth, refheight : unit-spec, optional
     The width, height of the reference subplot. Default is :rc:`subplots.refwidth`.
     %(units.in)s
-    Ignored if `figwidth`, `figheight`, or `figsize` was passed.
+    Ignored if `figwidth`, `figheight`, or `figsize` was passed. If you specify
+    just one, `refaspect` will be respected.
 ref, aspect, axwidth, axheight
     Aliases for `refnum`, `refaspect`, `refwidth`, `refheight`.
     *These may be deprecated in a future release.*
-figwidth, figheight : float or str, optional
-    The figure width and height.
+figwidth, figheight : unit-spec, optional
+    The figure width and height. Default behavior is to use `refwidth`.
     %(units.in)s
-    If you specify just one, the aspect ratio `refaspect` of the reference
-    subplot will be preserved.
+    If you specify just one, `refaspect` will be respected.
 width, height
     Aliases for `figwidth`, `figheight`.
 figsize : length-2 tuple, optional

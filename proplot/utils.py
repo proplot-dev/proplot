@@ -790,7 +790,7 @@ def units(
         The units associated with numeric input. Default is inches.
     dest : str, optional
         The destination units. Default is the same as `numeric`.
-    fontsize : size-spec, optional
+    fontsize : str or float, optional
         The font size in points used for scaling. Default is
         :rcraw:`font.size` for ``em`` and ``en`` units and
         :rcraw:`axes.titlesize` for ``Em`` and ``En`` units.

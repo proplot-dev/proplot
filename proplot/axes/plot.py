@@ -204,7 +204,7 @@ barpctile, barpctiles : bool, float, or 2-tuple of float, optional
     using *percentiles* for the error bars. If scalar, that percentile range is
     used (e.g., ``90`` shows the 5th to 95th percentiles). If ``True``, the default
     percentile range of 0 to 100 is used.
-bardata : 2 x N array or 1D array, optional
+bardata : 2D array or 1D array, optional
     *Valid only if `mean` and `median` are ``False``*. If shape is 2 x N, these
     are the lower and upper bounds for the thin error bars. If shape is N, these
     are the absolute, symmetric deviations from the central points.
@@ -282,12 +282,12 @@ cycle_kw : dict-like, optional
     Passed to `~proplot.constructor.Cycle`.
 """
 _cmap_norm_docstring = """
-cmap : colormap spec, optional
+cmap : colormap-spec, optional
     The colormap specifer, passed to the `~proplot.constructor.Colormap`
     constructor function.
 cmap_kw : dict-like, optional
     Passed to `~proplot.constructor.Colormap`.
-norm : normalizer spec, optional
+norm : norm-spec, optional
     The continuous colormap normalizer, passed to the `~proplot.constructor.Norm`
     constructor function. If `discrete` is ``True`` this is also used to normalize
     values passed to `~proplot.colors.DiscreteNorm` before colors is selected.
@@ -522,11 +522,11 @@ negpos : bool, optional
 negcolor, poscolor : color-spec, optional
     Colors to use for the negative and positive lines. Ignored if `negpos`
     is ``False``. Defaults are :rc:`negcolor` and :rc:`poscolor`.
-c, color, colors : color-spec or list thereof, optional
+c, color, colors : color-spec or list, optional
     The line color(s).
-ls, linestyle, linestyles : linestyle-spec or list thereof, optional
+ls, linestyle, linestyles : str or list, optional
     The line style(s).
-lw, linewidth, linewidths : linewidth-spec or list thereof, optional
+lw, linewidth, linewidths : float or list, optional
     The line width(s).
 %(plot.cycle)s
 %(plot.labels_1d)s
@@ -606,7 +606,7 @@ s, size, ms, markersize : float or list of float, optional
     The marker size(s). If this is an array matching the shape of `x` and `y`,
     the units are scaled by `smin` and `smax`.
 c, color, colors, mc, markercolor, markercolors \
-: color-spec or list thereof, or array, optional
+: array-like or color-spec, optional
     The marker fill color(s). If this is an array matching the shape of `x` and `y`,
     the colors are generated using `cmap`, `norm`, `vmin`, and `vmax`.
 smin, smax : float, optional
@@ -618,10 +618,10 @@ smin, smax : float, optional
 Other parameters
 ----------------
 lw, linewidth, linewidths, markeredgewidth, markeredgewidths \
-: float or list thereof, optional
+: float or list, optional
     The marker edge width.
 edgecolors, markeredgecolor, markeredgecolors \
-: color-spec or list thereof, optional
+: color-spec or list, optional
     The marker edge color.
 %(plot.cmap_norm)s
 %(plot.levels_manual)s

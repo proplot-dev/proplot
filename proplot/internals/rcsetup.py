@@ -744,8 +744,8 @@ _rc_proplot_table = {
     'abc.loc': (
         'left',  # left side above the axes
         _validate_belongs(*TEXT_LOCS),
-        'a-b-c label position. For options, see the :ref:`title location '
-        'table <title_table>`.'
+        'a-b-c label position. '
+        'For options see the :ref:`location table <title_table>`.'
     ),
     'abc.size': (
         LARGESIZE,
@@ -946,8 +946,8 @@ _rc_proplot_table = {
     'colorbar.loc': (
         'right',
         _validate_belongs(*COLORBAR_LOCS),
-        'Inset colorbar location. For options, see the :ref:`location table '
-        '<colorbar_table>`.'
+        'Inset colorbar location. '
+        'For options see the :ref:`location table <colorbar_table>`.'
     ),
     'colorbar.width': (
         0.2,
@@ -1678,7 +1678,7 @@ _rc_proplot_table = {
     'title.loc': (
         'center',
         _validate_belongs(*TEXT_LOCS),
-        'Title position. For options see the :ref:`title location table <title_table>`.'
+        'Title position. For options see the :ref:`location table <title_table>`.'
     ),
     'title.pad': (
         TITLEPAD,

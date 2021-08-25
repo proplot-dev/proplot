@@ -5,9 +5,9 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.4.2
+#       jupytext_version: 1.11.4
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: Python 3
 #     language: python
 #     name: python3
 # ---
@@ -203,7 +203,7 @@ for ax, title in zip(axs, ('2D {} #1', '2D {} #2', 'Line {} #1', 'Line {} #2')):
 # them from the `~matplotlib.artist.Artist` labels (non-numeric labels will be
 # applied to the colorbar as tick labels). This feature is useful for labeling
 # discrete plot elements that bear some numeric relationship to each other.
-
+#
 # Similar to `proplot.axes.CartesianAxes.format`, you can flexibly specify
 # major tick locations, minor tick locations, and major tick labels using the
 # `locator`, `minorlocator`, `formatter`, `ticks`, `minorticks`, and `ticklabels`
@@ -283,7 +283,7 @@ fig.format(
 # If you pass legend artists that are grouped into tuples (see this `matplotlib guide
 # <https://matplotlib.org/stable/tutorials/intermediate/legend_guide.html#legend-handlers>`__),
 # the default label will be inferred from the artists in the tuple.
-
+#
 # You can also draw legends with centered rows by passing ``center=True`` or by passing
 # a list of lists of plot handles to ``legend``. This is accomplished by stacking
 # multiple single-row, horizontally centered legends, then adding an encompassing

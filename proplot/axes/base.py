@@ -147,15 +147,15 @@ side : str, optional
     top         ``'top'``, ``'t'``
     ==========  =====================
 
-width : float or str, optional
+width : unit-spec, optional
     The panel width. Default is :rc:`subplots.panelwidth`.
     %(units.in)s
-space : float or str, optional
+space : unit-spec, optional
     The fixed space between the main subplot and the panel.
     %(units.em)s
     When the tight layout algorithm is active for the figure, this is adjusted
     automatically using `pad`. Otherwise, a suitable default is selected.
-pad : float or str, optional
+pad : unit-spec, optional
     The tight layout padding between the main subplot and the panel. Units are
     interpreted by `~proplot.utils.units`. Default is :rc:`subplots.panelpad`.
 share : bool, optional
@@ -174,12 +174,12 @@ _snippet_manager['axes.panel'] = _panel_docstring
 
 # Colorbar and legend space
 _space_docstring = """
-space : float or str, optional
+space : unit-spec, optional
     For outer {name}s only. The fixed space between the {name} and the main axes.
     %(units.em)s
     When the tight layout algorithm is active for the figure, this is adjusted
     automatically using `pad`. Otherwise, a suitable default is selected.
-pad : float or str, optional
+pad : unit-spec, optional
     The padding between the axes edge and the {name}. For outer {name}s, this is the
     tight layout padding. Default is :rc:`subplots.panelpad`. For inset {name}s, this
     is the fixed space between the axes edge and the {name}. Default is :rc:`{default}`.
@@ -345,10 +345,13 @@ extend : {None, 'neither', 'both', 'min', 'max'}, optional
     out-of-bounds data with a unique color). These are triangles by
     default. If ``None``, we try to use the ``extend`` attribute on the
     mappable object. If the attribute is unavailable, we use ``'neither'``.
-extendsize : float or str, optional
+extendfrac : float, optional
+    The length of the colorbar "extensions" relative to the length of the colorbar.
+    This is a native matplotlib `~matplotlib.figure.Figure.colorbar` keyword.
+extendsize : unit-spec, optional
     The length of the colorbar "extensions" in physical units. Default is
-    :rc:`colorbar.insetextend` for inset colorbars and :rc:`colorbar.extend` for
-    outer colorbars. %(units.em)s
+    :rc:`colorbar.insetextend` for inset colorbars and :rc:`colorbar.extend` for outer
+    colorbars. %(units.em)s
 frame, frameon : bool, optional
     For inset colorbars only. Indicates whether to draw a "frame", just
     like `~matplotlib.axes.Axes.legend`. Default is :rc:`colorbar.frameon`.
@@ -358,7 +361,7 @@ lw, linewidth, ec, edgecolor : optional
 a, alpha, framealpha, fc, facecolor, framecolor : optional
     For inset colorbars only. Controls the transparency and color of the frame.
     Defaults are :rc:`colorbar.framealpha` and :rc:`colorbar.framecolor`.
-norm : normalizer spec, optional
+norm : norm-spec, optional
     Ignored if `values` is ``None``. The normalizer for converting `values`
     to colormap colors. Passed to `~proplot.constructor.Norm`.
 norm_kw : dict-like, optional
@@ -378,7 +381,7 @@ grid, edges, drawedges : bool, optional
 label, title : str, optional
     The colorbar label. The `title` keyword is also accepted for
     consistency with `~matplotlib.axes.Axes.legend`.
-locator, ticks : locator spec, optional
+locator, ticks : locator-spec, optional
     Used to determine the colorbar tick positions. Passed to the
     `~proplot.constructor.Locator` constructor function.
 locator_kw : dict-like, optional
@@ -393,7 +396,7 @@ minorlocator_kw
     As with `locator_kw`, but for the minor ticks.
 maxn_minor
     As with `maxn`, but for the minor ticks.
-format, formatter, ticklabels : formatter spec, optional
+format, formatter, ticklabels : formatter-spec, optional
     The tick label format. Passed to the `~proplot.constructor.Formatter`
     constructor function.
 formatter_kw : dict-like, optional
@@ -471,15 +474,14 @@ a, alpha, framealpha, fc, facecolor, framecolor, ec, edgecolor, ew, edgewidth : 
     The opacity, face color, edge color, and edge width for the legend frame.
     Defaults are :rc:`legend.framealpha`, :rc:`legend.facecolor`,
     :rc:`legend.edgecolor` and :rc:`axes.linewidth`.
-color, lw, linewidth, m, marker, ls, linestyle, dashes, ms, markersize \
-: property-spec, optional
+color, lw, linewidth, m, marker, ls, linestyle, dashes, ms, markersize : optional
     Properties used to override the legend handles. For example, for a
-    legend describing variations in line style ignoring variations in color, you
-    might want to use ``color='k'``.
+    legend describing variations in line style ignoring variations
+    in color, you might want to use ``color='k'``.
 borderpad, borderaxespad, handlelength, handleheight, handletextpad, \
-labelspacing, columnspacing : float or str, optional
-    Native `~matplotlib.axes.Axes.legend` spacing arguments interpreted with
-    `~proplot.utils.units`. The default units are still font size-relative.
+labelspacing, columnspacing : unit-spec, optional
+    Various native matplotlib `~matplotlib.axes.Axes.legend` spacing
+    arguments. %(units.em)s
 **kwargs
     Passed to `~matplotlib.axes.Axes.legend`.
 """
@@ -2217,14 +2219,14 @@ class Axes(maxes.Axes):
             "filled"            ``'fill'``
             ==================  =======================================
 
-        length : float or str, optional
+        length : unit-spec, optional
             The colorbar length. For outer colorbars, default is :rc:`colorbar.length`
             and units are relative to the axes width or height. For inset default is
             :rc:`colorbar.insetlength`. %(units.em)s
         shrink : float, optional
             Alias for `length`. This is included for consistency with
             `matplotlib.figure.Figure.colorbar`.
-        width : float or str, optional
+        width : unit-spec, optional
             The colorbar width. If string, units are interpreted by
             `~proplot.utils.units`. For outer colorbars, default is
             :rc:`colorbar.width`, and if float, units are inches.
@@ -2762,7 +2764,7 @@ class Axes(maxes.Axes):
             "filled"            ``'fill'``
             ==================  =======================================
 
-        width : float or str, optional
+        width : unit-spec, optional
             For outer legends only. The space allocated for the legend box. This
             does nothing if the tight layout algorithm is active for the figure.
             %(units.in)s
@@ -2915,7 +2917,7 @@ class Axes(maxes.Axes):
         family, fontfamily : str, optional
             The font typeface name (e.g., ``'Fira Math'``) or font family name (e.g.,
             ``'serif'``). Matplotlib falls back to the system default if not found.
-        size, fontsize : float or str, optional
+        size, fontsize : unit-spec or str, optional
             The font size. %(units.pt)s
             This can also be a string indicating some scaling relative to
             :rcraw:`font.size`. The sizes and scalings are shown below. The

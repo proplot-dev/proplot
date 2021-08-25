@@ -5,9 +5,9 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.4.2
+#       jupytext_version: 1.11.4
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: Python 3
 #     language: python
 #     name: python3
 # ---
@@ -15,8 +15,8 @@
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_layout:
 #
-# Subplot layout
-# ==============
+# The subplot
+# ===========
 #
 # This section documents a variety of features related to ProPlot subplots,
 # including automatic a-b-c subplot labels, axis sharing between subplots,
@@ -226,7 +226,7 @@ pplt.rc.reset()
 # main subplot rows and columns, you can pass ``wequal=True``, ``hequal=True``
 # or ``equal=True`` to `~proplot.ui.figure` or `~proplot.ui.subplots` (note that
 # equal spacing is the default behavior when tight layout is disabled).
-
+#
 # All the spacing parameters described above can be specified with a
 # :ref:`unit string <ug_units>` interpreted by `~proplot.utils.units`.
 # The default unit assumed for numeric arguments is an "em-width" (i.e., a
@@ -292,7 +292,7 @@ axs[:, 0].format(ylabel='ylabel')
 #
 # #. Automatically sharing axes between subplots and :ref:`panels <ug_panels>`
 #    occupying the same rows or columns of the `~proplot.gridspec.GridSpec`. This
-#    works for :ref:`aribtrarily complex subplot grids <ug_details>`. It also works
+#    works for :ref:`aribtrarily complex subplot grids <ug_layout>`. It also works
 #    if subplots were generated one-by-one with `~proplot.figure.Figure.add_subplot`
 #    rather than `~proplot.figure.Figure.subplots`. It is controlled by the `sharex`
 #    and `sharey` keywords (default is :rc:`subplots.share`). You can use the

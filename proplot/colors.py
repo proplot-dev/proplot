@@ -2042,11 +2042,11 @@ class PerceptualColormap(ContinuousColormap, _Colormap):
         %(colors.space)s
         l, s, a, c
             Shorthands for `luminance`, `saturation`, `alpha`, and `chroma`.
-        luminance : float or channel-spec, optional
+        luminance : float or color-spec, optional
             If float, this is the luminance channel strength on the left-hand
             side of the colormap (default is ``100``). If RGB[A] tuple, hex string,
             or named color string, the luminance is inferred from the color.
-        saturation, alpha : float or channel-spec, optional
+        saturation, alpha : float or color-spec, optional
             As with `luminance`, except the default `saturation` and the default
             `alpha` are the channel values taken from `color`.
         chroma
@@ -2103,7 +2103,7 @@ class PerceptualColormap(ContinuousColormap, _Colormap):
             *twice as long* as the transition from luminance ``50`` to ``0``.
         h, s, l, a, c
             Shorthands for `hue`, `saturation`, `luminance`, `alpha`, and `chroma`.
-        hue : float, color-spec, or list thereof, optional
+        hue : float, color-spec, or list, optional
             Hue channel value or list of values. The shorthand keyword `h`
             is also acceptable. Values can be any of the following.
 
@@ -2114,7 +2114,7 @@ class PerceptualColormap(ContinuousColormap, _Colormap):
 
             If scalar, the hue does not change across the colormap.
             Default is ``0`` (i.e., red).
-        saturation, luminance, alpha : float, color-spec, or list thereof, optional
+        saturation, luminance, alpha : float, color-spec, or list, optional
             As with `hue`, but for the saturation, luminance, and alpha (opacity)
             channels, respectively. The default `saturation` is ``50``, luminance is
             ``(100, 20)``, and alpha is ``1`` (i.e., no transparency).

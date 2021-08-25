@@ -6,9 +6,9 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.4.2
+#       jupytext_version: 1.11.4
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: Python 3
 #     language: python
 #     name: python3
 # ---
@@ -36,7 +36,7 @@
 #
 # Geographic axes
 # ---------------
-
+#
 # To create geographic axes, pass e.g. ``proj='name'`` to an axes-creation
 # command where ``name`` is any valid :ref:`PROJ projection name <proj_included>`.
 # Alternatively, you can use ``proj=projection_instance`` where ``projection_instance``
@@ -241,7 +241,7 @@ for globe in (False, True):
 # turned on using ``rotatelabels=True`` or by setting :rcraw:`grid.rotatelabels`
 # to ``True``. The padding between the map edge and the labels can be changed
 # using `labelpad` or by changing :rcraw:`grid.labelpad`.
-
+#
 # `proplot.axes.GeoAxes.format` can also set the cartopy projection bounding longitudes
 # and latitudes with `lonlim` and `latlim` (analogous to `xlim` and `ylim`), set the
 # latitude bound for circular polar projections using `boundinglat`, and toggle and

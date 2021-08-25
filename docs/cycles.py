@@ -5,9 +5,9 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.4.2
+#       jupytext_version: 1.11.4
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: Python 3
 #     language: python
 #     name: python3
 # ---
@@ -30,7 +30,7 @@
 # constructor function. `~proplot.constructor.Cycle` can also
 # :ref:`extract colors <ug_cycles_new>` from `~proplot.colors.ContinuousColormap`\ s.
 #
-# ProPlot :ref:`adds several features <why_colormaps_cyles>` to help you use color
+# ProPlot :ref:`adds several features <why_colormaps_cycles>` to help you use color
 # cycles effectively in your figures. This section documents the new registered
 # color cycles, explains how to make and modify color cycles, and shows how to
 # apply them to your plots.

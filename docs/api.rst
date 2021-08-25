@@ -20,7 +20,6 @@ Figure class
 
 .. automodsumm:: proplot.figure
    :toctree: api
-   :skip: SubplotsContainer
 
 
 Gridspec class
@@ -30,6 +29,7 @@ Gridspec class
 
 .. automodsumm:: proplot.gridspec
    :toctree: api
+   :skip: SubplotsContainer
 
 
 Axes classes

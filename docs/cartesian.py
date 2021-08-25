@@ -6,9 +6,9 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.4.2
+#       jupytext_version: 1.11.4
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: Python 3
 #     language: python
 #     name: python3
 # ---
@@ -245,6 +245,8 @@ fig.format(ylocator='null', suptitle='Tick formatters demo')
 pplt.rc.reset()
 
 # %% [raw] raw_mimetype="text/restructuredtext"
+# .. _pandas: https://pandas.pydata.org
+#
 # .. _ug_datetime:
 #
 # Datetime axes

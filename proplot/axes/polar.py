@@ -161,7 +161,7 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mproj.PolarAxes):
         thetagridcolor, rgridcolor, gridcolor : color-spec, optional
             Color for the major and minor azimuthal and radial gridlines.
             Use `gridcolor` to set both at once.
-        thetalocator, rlocator : locator spec, optional
+        thetalocator, rlocator : locator-spec, optional
             Used to determine the azimuthal and radial gridline positions.
             Passed to the `~proplot.constructor.Locator` constructor. Can be
             float, list of float, string, or `matplotlib.ticker.Locator` instance.
@@ -178,7 +178,7 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mproj.PolarAxes):
             As for `thetalocator_kw`, `rlocator_kw`, but for the minor locator.
         rlabelpos : float, optional
             The azimuth at which radial coordinates are labeled.
-        thetaformatter, rformatter : formatter spec, optional
+        thetaformatter, rformatter : formatter-spec, optional
             Used to determine the azimuthal and radial label format.
             Passed to the `~proplot.constructor.Formatter` constructor.
             Can be string, list of string, or `matplotlib.ticker.Formatter`
@@ -188,7 +188,7 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mproj.PolarAxes):
         thetaformatter_kw, rformatter_kw : dict-like, optional
             The azimuthal and radial label formatter settings. Passed to
             `~proplot.constructor.Formatter`.
-        labelpad : float or str, optional
+        labelpad : unit-spec, optional
             The padding between the axes edge and the radial and azimuthal
             labels. Default is :rcraw:`grid.labelpad`.
             %(units.pt)s

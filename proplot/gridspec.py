@@ -29,7 +29,7 @@ __all__ = [
 # Gridspec vector arguments
 # Valid for figure() and GridSpec()
 _shared_docstring = """
-left, right, top, bottom : float or str, optional
+left, right, top, bottom : unit-spec, optional
     The fixed space between the subplots and the figure edge. Default is ``None``.
     %(units.em)s
     If ``None``, the space is determined automatically based on the font size and
@@ -37,7 +37,7 @@ left, right, top, bottom : float or str, optional
     determined by the tight layout algorithm.
 """
 _scalar_docstring = """
-wspace, hspace, space : float or tr, optional
+wspace, hspace, space : unit-spec, optional
     The fixed space between grid columns, rows, or both. Default is ``None``.
     %(units.em)s
     If ``None``, the space is determined automatically based on the font size and
@@ -45,7 +45,7 @@ wspace, hspace, space : float or tr, optional
     determined by the tight layout algorithm.
 """
 _vector_docstring = """
-wspace, hspace, space : float or str or list thereof, optional
+wspace, hspace, space : unit-spec or list, optional
     The fixed space between grid columns, rows, and both, respectively. If
     float, string, or ``None``, this value is expanded into lists of length
     ``ncols - 1`` (for `wspace`) or length ``nrows - 1`` (for `hspace`). If
@@ -58,14 +58,14 @@ wspace, hspace, space : float or str or list thereof, optional
     value is chosen. For example, ``subplots(ncols=3, tight=True, wspace=(2, None))``
     fixes the space between columns 1 and 2 but lets the tight layout algorithm
     determine the space between columns 2 and 3.
-wratios, hratios : float or list thereof, optional
+wratios, hratios : float or list, optional
     Passed to `~proplot.gridspec.GridSpec`, denotes the width and height
     ratios for the subplot grid. Length of `wratios` must match the number
     of rows, and length of `hratios` must match the number of columns.
 width_ratios, height_ratios
     Aliases for `wratios`, `hratios`. Included for consistency with
     the `matplotlib.pyplot.subplots` command.
-wpad, hpad, pad : float or str or list thereof, optional
+wpad, hpad, pad : unit-spec or list, optional
     The tight layout padding between columns, rows, and both, respectively. Unlike
     ``space``, these control the padding between subplot content (including text,
     ticks, etc.) rather than subplot edges. As with ``space``, these can be scalars
@@ -76,15 +76,15 @@ _tight_docstring = """
 wequal, hequal, equal :  bool, optional
     Whether to make the tight layout algorithm apply equal spacing between columns,
     rows, or both. Default is ``False``. Ignored if :rcraw:`tight` is ``False``.
-outerpad : float or str, optional
+outerpad : unit-spec, optional
     The tight layout padding around the left, right, top, and bottom edges
     of the figure.  Default is :rc:`subplots.outerpad`.
     %(units.em)s
-innerpad : float or str, optional
+innerpad : unit-spec, optional
     The scalar tight layout padding between columns and rows. Synonymous with
     `pad`. Default is :rc:`subplots.innerpad`.
     %(units.em)s
-panelpad : float or str, optional
+panelpad : unit-spec, optional
     The tight layout padding between subplots and axes panels and between "stacked"
     panels. Default is :rc:`subplots.panelpad`.
     %(units.em)s

@@ -169,26 +169,29 @@ napoleon_google_docstring = False
 napoleon_include_init_with_doc = False  # move init doc to 'class' doc
 napoleon_preprocess_types = True
 napoleon_type_aliases = {
-    # General terms
+    # Python or inherited terms
     'sequence': ':term:`sequence`',
     'iterable': ':term:`iterable`',
-    'callable': ':py:func:`callable`',
     'mapping': ':term:`mapping`',
     'hashable': ':term:`hashable <name>`',
     'dict-like': ':term:`dict-like <mapping>`',
     'path-like': ':term:`path-like <path-like object>`',
     'file-like': ':term:`file-like <file-like object>`',
+    'array-like': ':term:`array-like <array_like>`',
+    'scalar': ':term:`scalar`',
     'bool': ':class:`bool <bool>`',
     'string': ':class:`string <str>`',
-    'scalar': ':term:`scalar`',
-    'array-like': ':term:`array-like`',
-    # ProPlot terms
-    'locator-like': ':term:`locator-like <locator>`',
-    'formatter-like': ':term:`formatter-like <formatter>`',
-    'scale-like': ':term:`scale-like <formatter>`',
-    'colormap-like': ':term:`colormap-spec <colormap>`',
-    'cycle-like': ':term:`cycle-spec <cycle>`',
-    'color-like': ':py:func:`color-like <matplotlib.colors.is_color_like>`',
+    'callable': ':py:func:`callable`',
+    # ProPlot defined terms
+    'unit-spec': ':py:func:`unit-spec <proplot.utils.units>`',
+    'locator-spec': ':py:func:`locator-spec <proplot.constructor.Locator>`',
+    'formatter-spec': ':py:func:`formatter-spec <proplot.constructor.Formatter>`',
+    'scale-spec': ':py:func:`scale-spec <proplot.constructor.Scale>`',
+    'colormap-spec': ':py:func:`colormap-spec <proplot.constructor.Colormap>`',
+    'cycle-spec': ':py:func:`cycle-spec <proplot.constructor.Cycle>`',
+    'norm-spec': ':py:func:`norm-spec <proplot.constructor.Norm>`',
+    'color-spec': ':py:func:`color-spec <matplotlib.colors.is_color_like>`',
+    'channel-spec': ':py:func:`color-spec <matplotlib.colors.is_color_like>`',
 }
 
 # Fix duplicate class member documentation from autosummary + numpydoc

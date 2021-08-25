@@ -417,7 +417,7 @@ class GeoAxes(plot.PlotAxes):
         longridminor, latgridminor : bool, optional
             Whether to draw "minor" longitude and latitude lines.
             Default is :rc:`gridminor`. Use `gridminor` to toggle both.
-        lonlocator, latlocator : locator spec, optional
+        lonlocator, latlocator : locator-spec, optional
             Used to determine the longitude and latitude gridline locations.
             Passed to the `~proplot.constructor.Locator` constructor. Can be
             string, float, list of float, or `matplotlib.ticker.Locator` instance.
@@ -466,7 +466,7 @@ class GeoAxes(plot.PlotAxes):
                `~mpl_toolkits.basemap.Basemap.drawparallels` `labels`
                keyword.
 
-        lonformatter, latformatter : formatter spec, optional
+        lonformatter, latformatter : formatter-spec, optional
             Formatter used to style longitude and latitude gridline labels.
             Passed to the `~proplot.constructor.Formatter` constructor.
             Can be string, list of string, or `matplotlib.ticker.Formatter`
@@ -490,7 +490,7 @@ class GeoAxes(plot.PlotAxes):
             *For cartopy axes only.*
             Whether to rotate longitude and latitude gridline labels.
             Default is :rc:`grid.rotatelabels`.
-        labelpad : float, optional
+        labelpad : unit-spec, optional
             *For cartopy axes only.*
             The padding between the map boundary and longitude and
             latitude gridline labels. Default is :rc:`grid.labelpad`.

@@ -523,9 +523,7 @@ def config_inline_backend(fmt=None):
     elif np.iterable(fmt):
         fmt = list(fmt)
     else:
-        raise ValueError(
-            f'Invalid inline backend format {fmt!r}. Must be string or list thereof.'
-        )
+        raise ValueError(f'Invalid inline backend format {fmt!r}. Must be string or list.')  # noqa: E501
     ipython.magic('config InlineBackend.figure_formats = ' + repr(fmt))
     ipython.magic('config InlineBackend.rc = {}')
     ipython.magic('config InlineBackend.close_figures = True')
@@ -541,7 +539,7 @@ def use_style(style):
 
     Parameters
     ----------
-    style : str, dict, or list thereof
+    style : str, dict, or list
         The matplotlib style name(s) or stylesheet filename(s), or dictionary(s)
         of settings. Use ``'default'`` to apply matplotlib default settings and
         ``'original'`` to include settings from your user ``matplotlibrc`` file.

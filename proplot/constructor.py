@@ -468,7 +468,7 @@ def Colormap(
         float, these apply to each input colormap individually.
     a
         Shorthand for `alpha`.
-    alpha : channel-spec or list of channel-spec, optional
+    alpha : float or color-spec or list, optional
         The opacity of the colormap or the opacity gradation. Passed to
         `proplot.colors.ContinuousColormap.set_alpha`
         or `proplot.colors.DiscreteColormap.set_alpha`. If float, this applies
@@ -476,7 +476,7 @@ def Colormap(
         each colormap individually.
     h, s, l, c
         Shorthands for `hue`, `luminance`, `saturation`, and `chroma`.
-    hue, saturation, luminance : channel-spec or list of channel-spec, optional
+    hue, saturation, luminance : float or color-spec or list, optional
         The channel value(s) used to generate colormaps with
         `~proplot.colors.PerceptualColormap.from_hsl` and
         `~proplot.colors.PerceptualColormap.from_color`.
@@ -747,7 +747,7 @@ def Cycle(*args, N=None, samples=None, name=None, **kwargs):
     lw, ls, d, a, m, ms, mew, mec, mfc
         Shorthands for the below keywords.
     linewidth, linestyle, dashes, alpha, marker, markersize, markeredgewidth, \
-markeredgecolor, markerfacecolor : spec or list of specs, optional
+markeredgecolor, markerfacecolor : object or list of object, optional
         Lists of `~matplotlib.lines.Line2D` properties that can be added to the
         `~cycler.Cycler` instance. If the input was already a `~cycler.Cycler`,
         these are added or appended to the existing cycle keys. If the lists have

@@ -824,11 +824,11 @@ def show_fonts(
         Greek letters, Arabic numerals, and some simple mathematical symbols.
     size : float, optional
         The font size in points.
-    weight : weight-spec, optional
+    weight : str, optional
         The font weight.
-    style : style-spec, optional
+    style : str, optional
         The font style.
-    stretch : stretch-spec, optional
+    stretch : str, optional
         The font stretch.
 
     See also

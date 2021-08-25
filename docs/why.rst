@@ -449,8 +449,8 @@ The following features are relevant for the 2D plotting commands like
   The `~proplot.colors.SegmentedNorm` normalizer can generate
   uneven color gradations useful for :ref:`unusual data distributions <ug_norm>`.
 * The `~proplot.axes.PlotAxes.heatmap` command invokes
-  `~proplot.axes.PlotAxes.pcolormesh` then applies an :ref:`equal axes apect ratio
-  <https://matplotlib.org/stable/gallery/subplots_axes_and_figures/axis_equal_demo.html>`,
+  `~proplot.axes.PlotAxes.pcolormesh` then applies an `equal axes apect ratio
+  <https://matplotlib.org/stable/gallery/subplots_axes_and_figures/axis_equal_demo.html>`__,
   adds ticks to the center of each gridbox, and disables minor ticks and gridlines.
   This can be convenient for things like covariance matrices.
 * Coordinate centers passed to commands like `~proplot.axes.PlotAxes.pcolor` are
@@ -643,7 +643,7 @@ In ProPlot, it is easy to manipulate colormaps and property cycles.
   and `~proplot.colors.DiscreteColormap` subclasses of
   `~matplotlib.colors.LinearSegmentedColormap` and `~matplotlib.colors.ListedColormap`.
   These classes include several useful features leveraged by the
-  :ref:`constructor functions <ug_constructor>`
+  :ref:`constructor functions <why_constructor>`
   `~proplot.constructor.Colormap` and `~proplot.constructor.Cycle`.
 * The `~proplot.constructor.Colormap` function can merge, truncate, and
   modify existing colormaps or generate brand new colormaps. It can also
