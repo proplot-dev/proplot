@@ -298,7 +298,7 @@ fig.colorbar(m, loc='b', label='label')
 # the `~proplot.constructor.Locator`, `~proplot.constructor.Formatter`,
 # and `~proplot.constructor.Scale` :ref:`constructor functions <ug_cartesian>`.
 # You can also call ``format`` for several subplots at once using
-# `proplot.figure.Figure.format` or `proplot.figure.SubplotGrid.format` (see below).
+# `proplot.figure.Figure.format` or `proplot.gridspec.SubplotGrid.format` (see below).
 #
 # The below example shows the many different keyword arguments accepted by
 # ``format``, and demonstrates how ``format`` can be used to succinctly and
@@ -338,28 +338,28 @@ axs.format(
 # In matplotlib, `~matplotlib.figure.Figure.subplots` returns a 2D `~numpy.ndarray` for
 # figures with more than one column and row, a 1D `~numpy.ndarray` for single-column or
 # row figures, or an `~matplotlib.axes.Axes` for single-subplot figures. In ProPlot,
-# `~proplot.figure.Figure.subplots` returns a `~proplot.figure.SubplotGrid` that
+# `~proplot.figure.Figure.subplots` returns a `~proplot.gridspec.SubplotGrid` that
 # unifies these three possible return values:
 #
-# * `~proplot.figure.SubplotGrid` permits array-like 2D indexing, e.g.
-#   ``axs[1, 0]``. Indexing the `~proplot.figure.SubplotGrid` is similar
+# * `~proplot.gridspec.SubplotGrid` permits array-like 2D indexing, e.g.
+#   ``axs[1, 0]``. Indexing the `~proplot.gridspec.SubplotGrid` is similar
 #   to indexing a `~proplot.gridspec.GridSpec`. The result is a
-#   `~proplot.figure.SubplotGrid` of subplots that occupy the indexed
+#   `~proplot.gridspec.SubplotGrid` of subplots that occupy the indexed
 #   `~proplot.gridspec.GridSpec` slot(s).
-# * `~proplot.figure.SubplotGrid` permits list-like 1D indexing, e.g. ``axs[0]``.
+# * `~proplot.gridspec.SubplotGrid` permits list-like 1D indexing, e.g. ``axs[0]``.
 #   The default order can be switched from row-major to column-major by passing
 #   ``order='F'`` to `~proplot.ui.subplots`.
-# * `~proplot.figure.SubplotGrid` behaves like a scalar when it is singleton.
+# * `~proplot.gridspec.SubplotGrid` behaves like a scalar when it is singleton.
 #   That is, if you make a single subplot with ``fig, ax = pplt.subplots()``,
 #   ``ax[0].method(...)`` is equivalent to ``ax.method(...)``.
 #
 # If you added subplots one-by-one with `~proplot.figure.Figure.subplot` or
-# `~proplot.figure.Figure.add_subplot`, a `~proplot.figure.SubplotGrid` containing
+# `~proplot.figure.Figure.add_subplot`, a `~proplot.gridspec.SubplotGrid` containing
 # the numbered subplots is available via the `proplot.figure.Figure.subplotgrid`
-# property. `~proplot.figure.SubplotGrid` is especially useful because it lets you
+# property. `~proplot.gridspec.SubplotGrid` is especially useful because it lets you
 # call ``format``, ``colorbar``, ``legend``, ``panel``, ``inset``, and the various
 # twin axis commands simultaneously for all subplots in the grid. In the below
-# example, we use `~proplot.figure.SubplotGrid.format` command on the grid
+# example, we use `~proplot.gridspec.SubplotGrid.format` command on the grid
 # returned by `~proplot.ui.subplots` to format several subplots all at once.
 
 # %%

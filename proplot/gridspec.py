@@ -1245,7 +1245,7 @@ class SubplotGrid(MutableSequence, list):
 
         Parameters
         ----------
-        key : int, slice, or 2-tuple thereof
+        key : int, slice, or 2-tuple
             The index. If 1d then the axes in the corresponding
             sublist are returned. If 2d then the axes that intersect
             the corresponding `~SubplotGrid.gridspec` slots are returned.
@@ -1307,7 +1307,7 @@ class SubplotGrid(MutableSequence, list):
             The 1d index.
         value : `proplot.axes.Axes`
             The proplot subplot or its child or panel axes,
-            or an iterable thereof if the index was a slice.
+            or a sequence thereof if the index was a slice.
         """
         if isinstance(key, Integral):
             value = self._validate_item(value, scalar=True)

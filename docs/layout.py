@@ -41,7 +41,7 @@
 # in the array. But if you used the `ncols` and `nrows` keyword arguments, the
 # number order is row-major by default and can be switched to column-major by
 # passing ``order='F'``. The number order also determines the subplot order in
-# the `~proplot.figure.SubplotGrid` returned by `~proplot.figure.Figure.add_subplots`.
+# the `~proplot.gridspec.SubplotGrid` returned by `~proplot.figure.Figure.add_subplots`.
 #
 # To turn on "a-b-c" labels, set :rcraw:`abc` to ``True`` or pass ``abc=True``
 # to `~proplot.axes.Axes.format` (see :ref:`the format command <ug_format>`

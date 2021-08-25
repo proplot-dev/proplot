@@ -91,7 +91,7 @@ Think of this as an expanded and thoroughly documented version of the
 like axis labels and titles and apply new :ref:`"rc" settings <why_rc>` to existing
 axes. It also integrates with various :ref:`constructor functions <why_constructor>`
 to help keep things succinct. Further, the `proplot.figure.Figure.format`
-and `proplot.figure.SubplotGrid.format` commands can be used to
+and `proplot.gridspec.SubplotGrid.format` commands can be used to
 `~proplot.axes.Axes.format` several subplots at once.
 
 Together, these features significantly reduce the amount of code needed to create
@@ -307,9 +307,9 @@ concise figures.
   setting -- for example, ``pplt.rc['abc'] = 'A.'`` or ``axs.format(abc='A.')``.
   This is possible because `~proplot.figure.Figure.add_subplot` assigns a unique
   `~proplot.axes.Axes.number` to every added subplot.
-* The `proplot.figure.SubplotGrid.format` command can easily format multiple subplots
+* The `proplot.gridspec.SubplotGrid.format` command can easily format multiple subplots
   at once or add colorbars, legends, panels, twin axes, or inset axes to multiple
-  subplots at once. A `~proplot.figure.SubplotGrid` is returned by
+  subplots at once. A `~proplot.gridspec.SubplotGrid` is returned by
   `proplot.figure.Figure.subplots`, and can be indexed like a list or like a 2D
   array (in which case the indices match the subplot grid extents).
   See the :ref:`user guide <ug_subplotgrid>` for details.

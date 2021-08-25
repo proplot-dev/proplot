@@ -165,14 +165,14 @@ def subplots(*args, **kwargs):
     -------
     fig : `proplot.figure.Figure`
         The figure instance.
-    axs : `proplot.figure.SubplotGrid`
-        The axes instances stored in a `~proplot.figure.SubplotGrid`.
+    axs : `proplot.gridspec.SubplotGrid`
+        The axes instances stored in a `~proplot.gridspec.SubplotGrid`.
 
     See also
     --------
     proplot.ui.figure
     proplot.figure.Figure.subplots
-    proplot.figure.SubplotGrid
+    proplot.gridspec.SubplotGrid
     proplot.figure.Figure
     matplotlib.figure.Figure
     """

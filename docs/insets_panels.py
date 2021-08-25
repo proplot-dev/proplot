@@ -32,8 +32,8 @@
 # string, e.g. ``'r'`` or ``'right'`` for a right-hand side panel, and the
 # resulting panel axes are instances of `~proplot.axes.CartesianAxes`.
 # To generate "stacked" panels, call `~proplot.axes.Axes.panel_axes` more than once.
-# To generate several panels at once, call `~proplot.figure.SubplotGrid.panel_axes`
-# on the `~proplot.figure.SubplotGrid` returned by `~proplot.figure.subplots`.
+# To generate several panels at once, call `~proplot.gridspec.SubplotGrid.panel_axes`
+# on the `~proplot.gridspec.SubplotGrid` returned by `~proplot.figure.subplots`.
 # Note that panels :ref:`do not interfere with the tight layout algorithm <ug_tight>`
 # and :ref:`do not affect the subplot aspect ratios <ug_autosize>`.
 #
@@ -126,7 +126,7 @@ fig.format(
 # <https://matplotlib.org/stable/gallery/subplots_axes_and_figures/zoom_inset_axes.html>`__
 # can be generated with the `~proplot.axes.Axes.inset` or
 # `~proplot.axes.Axes.inset_axes` commands. To generate several insets at once,
-# call `~proplot.figure.SubplotGrid.inset_axes` on the `~proplot.figure.SubplotGrid`
+# call `~proplot.gridspec.SubplotGrid.inset_axes` on the `~proplot.gridspec.SubplotGrid`
 # returned by `~proplot.figure.Figure.subplots`. By default, inset axes have the
 # same projection as the parent axes, but you can also request a :ref:`different
 # projection <ug_proj>` (e.g., ``ax.inset_axes(bounds, proj='polar')``).

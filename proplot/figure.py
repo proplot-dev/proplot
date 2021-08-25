@@ -263,7 +263,7 @@ proplot.ui.figure
 proplot.ui.subplots
 proplot.figure.Figure
 matplotlib.figure.Figure
-proplot.figure.SubplotGrid
+proplot.gridspec.SubplotGrid
 proplot.axes.Axes
 """
 _snippet_manager['figure.subplots'] = _subplots_docstring

@@ -3035,7 +3035,7 @@ class Axes(maxes.Axes):
     def number(self):
         """
         The axes number. This controls the order of a-b-c labels and the
-        order of appearence in the `~proplot.figure.SubplotGrid` returned by
+        order of appearence in the `~proplot.gridspec.SubplotGrid` returned by
         `proplot.figure.Figure.subplots` and `proplot.ui.subplots`.
         """
         return self._number
