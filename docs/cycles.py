@@ -23,7 +23,7 @@
 # interpolation between these colors may not make sense. Generally, color cycles are
 # used with line plots, bar plots, and other distinct plot elements. Occasionally,
 # they are used as colormaps for qualitative or categorical data. ProPlot's
-# discrete colormaps are registered as `~proplot.colors.DiscreteColormap`\ s,
+# color cycles are registered as `~proplot.colors.DiscreteColormap`\ s,
 # and can be converted into matplotlib `property cyclers
 # <https://matplotlib.org/stable/tutorials/intermediate/color_cycle.html>`__
 # for use with distinct plot elements using the `~proplot.constructor.Cycle`

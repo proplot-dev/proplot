@@ -1733,8 +1733,8 @@ class Figure(mfigure.Figure):
     @property
     def subplotgrid(self):
         """
-        A `SubplotGrid` containing the numbered subplots in the figure,
-        ordered by increasing subplot number.
+        A `~proplot.gridspec.SubplotGrid` containing the numbered subplots in
+        the figure. The subplots are ordered by increasing subplot number.
         """
         return pgridspec.SubplotGrid(
             [ax for num, ax in sorted(self._subplot_dict.items())]
