@@ -658,7 +658,7 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
     """
     Axes subclass for plotting cartopy projections.
     """
-    #: The registered projection name.
+    # The registered projection name.
     name = 'proplot_cartopy'
     _proj_class = Projection
     _proj_north = (
@@ -1126,7 +1126,7 @@ class _BasemapAxes(GeoAxes):
     """
     Axes subclass for plotting basemap projections.
     """
-    #: The registered projection name.
+    # The registered projection name.
     name = 'proplot_basemap'
     _proj_class = Basemap
     _proj_north = ('npaeqd', 'nplaea', 'npstere')

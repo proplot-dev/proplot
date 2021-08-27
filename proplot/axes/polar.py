@@ -20,7 +20,7 @@ class PolarAxes(shared._SharedAxes, plot.PlotAxes, mproj.PolarAxes):
     Axes subclass for plotting in polar coordinates. Adds the `~PolarAxes.format`
     method and overrides several existing methods.
     """
-    #: The registered projection name.
+    # The registered projection name.
     name = 'proplot_polar'
 
     def __init__(self, *args, **kwargs):
