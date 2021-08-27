@@ -1198,8 +1198,8 @@ class SubplotGrid(MutableSequence, list):
     def __getattr__(self, attr):
         """
         Get a missing attribute. Simply redirects to the axes if the `SubplotGrid`
-        is singleton and raises an error otherwise. This can be very convenient
-        for single-axes figures generated with `~Figure.subplots`.
+        is singleton and raises an error otherwise. This can be convenient for
+        single-axes figures generated with `~proplot.figure.Figure.subplots`.
         """
         # Redirect to the axes
         if not self or attr[:1] == '_':

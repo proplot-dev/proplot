@@ -402,8 +402,8 @@ and `~proplot.axes.PlotAxes.scatter`:
 * The `~proplot.axes.PlotAxes.bar`, `~proplot.axes.PlotAxes.barh`,
   `~proplot.axes.PlotAxes.vlines`, `~proplot.axes.PlotAxes.hlines`,
   `~proplot.axes.PlotAxes.area`, and `~proplot.axes.PlotAxes.areax`
-  commands accept a `negpos` keyword argument that assigns different
-  colors to "negative" and "positive" regions.
+  commands accept a `negpos` keyword argument that :ref:`assigns different colors
+  <ug_negpos>` colors to "negative" and "positive" regions.
 * The `~proplot.axes.PlotAxes.linex` and `~proplot.axes.PlotAxes.scatterx` commands
   are just like `~proplot.axes.PlotAxes.line` and `~proplot.axes.PlotAxes.scatter`,
   but positional arguments are interpreted as *x* coordinates or (*y*, *x*) pairs.

@@ -652,8 +652,14 @@ class Figure(mfigure.Figure):
             warnings._warn_proplot(
                 "Setting rc['figure.constrained_layout.use'] to False. " + self._tight_message  # noqa: E501
             )
-        rc_matplotlib['figure.autolayout'] = False  # this is rcParams
-        rc_matplotlib['figure.constrained_layout.use'] = False  # this is rcParams
+        try:
+            rc_matplotlib['figure.autolayout'] = False  # this is rcParams
+        except KeyError:
+            pass
+        try:
+            rc_matplotlib['figure.constrained_layout.use'] = False  # this is rcParams
+        except KeyError:
+            pass
         self._autospace = _not_none(tight, rc['subplots.tight'])
         self._includepanels = _not_none(includepanels, False)
 

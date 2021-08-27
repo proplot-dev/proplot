@@ -883,9 +883,9 @@ class Axes(maxes.Axes):
 
     def _hide_panel(self):
         """
-        Hide axes contents but do *not* make the entire axes invisible. This is used to
-        fill "panels" surreptitiously added to the gridspec for the purpose of drawing
-        outer colorbars and legends.
+        Hide axes contents but do *not* make the entire axes invisible. This
+        is used to fill "panels" surreptitiously added to the gridspec
+        for the purpose of drawing outer colorbars and legends.
         """
         # WARNING: Do not use self.clear in case we want to add a subplot
         # title or a-b-c label above a colorbar or legend in a top panel
@@ -893,7 +893,6 @@ class Axes(maxes.Axes):
             s.set_visible(False)
         self.xaxis.set_visible(False)
         self.yaxis.set_visible(False)
-        self.patch.set_alpha(0)
         self.patch.set_facecolor('none')
         self._panel_hidden = True
 

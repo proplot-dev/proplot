@@ -93,12 +93,12 @@ ax.format(suptitle='Single subplot', xlabel='x axis', ylabel='y axis')
 #
 # Similar to matplotlib, `proplot.axes.Axes` can be added to figures
 # one-by-one or all at once. To add subplots all at once, use the
-# `~proplot.figure.Figure.add_subplots` or `~proplot.figure.Figure.subplots`
-# commands. Note that under the hood, `~proplot.ui.subplots` simply calls
-# `~proplot.ui.figure` followed by `proplot.figure.Figure.add_subplots`.
+# `proplot.figure.Figure.add_subplots` (or its shorthand,
+# `proplot.figure.Figure.subplots`). Note that under the hood, `~proplot.ui.subplots`
+# simply calls `~proplot.ui.figure` followed by `proplot.figure.Figure.add_subplots`.
 #
-# * With no arguments, `~proplot.figure.Figure.add_subplots` returns single
-#   subplot generated from a 1-column, 1-row `~proplot.gridspec.GridSpec`.
+# * With no arguments, `~proplot.figure.Figure.add_subplots` returns a subplot
+#   generated from a 1-row, 1-column `~proplot.gridspec.GridSpec`.
 # * With `ncols` or `nrows`, `~proplot.figure.Figure.add_subplots` returns a
 #   simple grid of subplots from a `~proplot.gridspec.GridSpec` with
 #   matching geometry in either row-major or column-major `order`.
@@ -109,10 +109,10 @@ ax.format(suptitle='Single subplot', xlabel='x axis', ylabel='y axis')
 #   that is occupied by the corresponding subplot and ``0`` indicates an empty space.
 #
 # To add subplots one-by-one, use the `proplot.figure.Figure.add_subplot`
-# or `proplot.figure.Figure.subplot` commands.
+# command (or its shorthand `proplot.figure.Figure.subplot`).
 #
 # * With no arguments, `~proplot.figure.Figure.add_subplot` returns a subplot
-#   generated from a 1-column, 1-row `~proplot.gridspec.GridSpec`.
+#   generated from a 1-row, 1-column `~proplot.gridspec.GridSpec`.
 # * With integer arguments, `~proplot.figure.Figure.add_subplot` returns
 #   a subplot matching the corresponding `~proplot.gridspec.GridSpec` geometry,
 #   as in matplotlib. Note that unlike matplotlib, the geometry must be compatible
@@ -123,8 +123,8 @@ ax.format(suptitle='Single subplot', xlabel='x axis', ylabel='y axis')
 #   one `~proplot.figure.Figure.gridspec` instance can be used with each figure.
 #
 # As in matplotlib, to save figures, use `~matplotlib.figure.Figure.savefig` (or its
-# shorthand `proplot.figure.Figure.save`). Tildes in the filename are expanded with
-# `os.path.expanduser`. In the following examples, we add subplots to figures
+# shorthand `proplot.figure.Figure.save`). User paths in the filename are expanded
+# with `os.path.expanduser`. In the following examples, we add subplots to figures
 # with a variety of methods and then save the results to the home directory.
 #
 # .. warning::

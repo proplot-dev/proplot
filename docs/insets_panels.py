@@ -33,7 +33,7 @@
 # resulting panel axes are instances of `~proplot.axes.CartesianAxes`.
 # To generate "stacked" panels, call `~proplot.axes.Axes.panel_axes` more than once.
 # To generate several panels at once, call `~proplot.gridspec.SubplotGrid.panel_axes`
-# on the `~proplot.gridspec.SubplotGrid` returned by `~proplot.figure.subplots`.
+# on the `~proplot.gridspec.SubplotGrid` returned by `~proplot.figure.Figure.subplots`.
 # Note that panels :ref:`do not interfere with the tight layout algorithm <ug_tight>`
 # and :ref:`do not affect the subplot aspect ratios <ug_autosize>`.
 #

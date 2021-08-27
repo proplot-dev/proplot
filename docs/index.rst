@@ -26,13 +26,14 @@ be cited using its `Zenodo DOI <https://zenodo.org/record/5234192>`__.
    :caption: User Guide
 
    basics
-   layout
+   subplots
    cartesian
    projections
    colorbars_legends
    insets_panels
    1dplots
    2dplots
+   stats
    colormaps
    cycles
    colors

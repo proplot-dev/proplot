@@ -10,33 +10,6 @@ import matplotlib.figure as mfigure
 from matplotlib import rcParams as rc_matplotlib
 
 
-class _SnippetManager(dict):
-    """
-    A simple database for snippets.
-    """
-    def __call__(self, obj):
-        """
-        Add snippets to the string or object using ``%(name)s`` substitution.
-        This lets snippet keys have invalid variable names.
-        """
-        if isinstance(obj, str):
-            obj %= self  # add snippets to a string
-        else:
-            obj.__doc__ = inspect.getdoc(obj)  # also dedents the docstring
-            if obj.__doc__:
-                obj.__doc__ %= self  # insert snippets after dedent
-        return obj
-
-    def __setitem__(self, key, value):
-        """
-        Populate input strings with other snippets. Developers should take
-        care to import modules in the correct order.
-        """
-        value = self(value)
-        value = value.strip('\n')
-        super().__setitem__(key, value)
-
-
 def _obfuscate_signature(func):
     """
     Obfuscate a misleading or confusing call signature. Instead users
@@ -106,6 +79,33 @@ Matplotlib documentation
 
     # Return
     return func
+
+
+class _SnippetManager(dict):
+    """
+    A simple database for documentation snippets.
+    """
+    def __call__(self, obj):
+        """
+        Add snippets to the string or object using ``%(name)s`` substitution.
+        This lets snippet keys have invalid variable names.
+        """
+        if isinstance(obj, str):
+            obj %= self  # add snippets to a string
+        else:
+            obj.__doc__ = inspect.getdoc(obj)  # also dedents the docstring
+            if obj.__doc__:
+                obj.__doc__ %= self  # insert snippets after dedent
+        return obj
+
+    def __setitem__(self, key, value):
+        """
+        Populate input strings with other snippets. Developers should take
+        care to import modules in the correct order.
+        """
+        value = self(value)
+        value = value.strip('\n')
+        super().__setitem__(key, value)
 
 
 # Initiate snippets database

@@ -390,22 +390,22 @@ axs.format(
 )
 
 # Cutting out central colors
-levels = pplt.arange(-10, 10, 2)
-for i, (ax, cut) in enumerate(zip(axs, (None, None, 0.2, -0.1))):
-    levels = pplt.arange(-10, 10, 2)
-    if i == 1 or i == 3:
-        levels = pplt.edges(levels)
-    if i < 2:
-        title = 'Negative-positive cutoff' if i == 0 else 'Neutral-valued center'
-        title = f'{title}\nlen(levels) = {len(levels)}'
+titles = (
+    'Negative-positive cutoff', 'Neutral-valued center',
+    'Sharper cutoff', 'Expanded center'
+)
+for i, (ax, title, cut) in enumerate(zip(axs, titles, (None, None, 0.2, -0.1))):
+    if i % 2 == 0:
+        kw = {'levels': pplt.arange(-10, 10, 2)}  # negative-positive cutoff
     else:
-        title = 'Sharper cutoff' if cut > 0 else 'Expanded center'
+        kw = {'values': pplt.arange(-10, 10, 2)}  # dedicated center
+    if cut is not None:
         title = f'{title}\ncut = {cut}'
     ax.format(title=title)
     m = ax.contourf(
-        data, cmap='Div', cmap_kw={'cut': cut},
-        extend='both', levels=levels,
+        data, cmap='Div', cmap_kw={'cut': cut}, extend='both',
         colorbar='b', colorbar_kw={'locator': 'null'},
+        **kw  # level edges or centers
     )
 
 # %%

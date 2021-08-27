@@ -196,16 +196,16 @@ median, medians : bool, optional
 """
 _error_bars_docstring = """
 barstd, barstds : bool, float, or 2-tuple of float, optional
-    *Valid only if `mean` or `median` is ``True``*. Standard deviation multiples for
+    Valid only if `mean` or `median` is ``True``. Standard deviation multiples for
     *thin error bars* with optional whiskers (i.e., caps). If scalar, then +/- that
     multiple is used. If ``True``, the default standard deviation range of +/-3 is used.
 barpctile, barpctiles : bool, float, or 2-tuple of float, optional
-    *Valid only if `mean` or `median` is ``True``*. As with `barstd`, but instead
-    using *percentiles* for the error bars. If scalar, that percentile range is
+    Valid only if `mean` or `median` is ``True``. As with `barstd`, but instead
+    using percentiles for the error bars. If scalar, that percentile range is
     used (e.g., ``90`` shows the 5th to 95th percentiles). If ``True``, the default
     percentile range of 0 to 100 is used.
 bardata : 2D array or 1D array, optional
-    *Valid only if `mean` and `median` are ``False``*. If shape is 2 x N, these
+    Valid only if `mean` and `median` are ``False``. If shape is 2 x N, these
     are the lower and upper bounds for the thin error bars. If shape is N, these
     are the absolute, symmetric deviations from the central points.
 boxstd, boxstds, boxpctile, boxpctiles, boxdata : optional

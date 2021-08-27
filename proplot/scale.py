@@ -327,24 +327,24 @@ class FuncScale(_Scale, mscale.ScaleBase):
             forward, inverse = inverse, forward
         functransform = FuncTransform(forward, inverse)
 
-        # Manage the "parent" axis scale
-        # NOTE: Makes sense to use the "inverse" function here because this is
+        # Manage the parent axis scale
+        # NOTE: Must transform parent scale cutoff arguments as well.
+        # NOTE: Makes sense to use the inverse function here because this is
         # a transformation from some *other* axis to this one, not vice versa.
-        if isinstance(parent_scale, mscale.ScaleBase):
+        if parent_scale is None:
+            pass
+        elif isinstance(parent_scale, mscale.ScaleBase):
             if isinstance(parent_scale, mscale.SymmetricalLogScale):
-                kwargs = {
-                    key: getattr(parent_scale, key)
-                    for key in ('base', 'linthresh', 'linscale', 'subs')
-                }
+                keys = ('base', 'linthresh', 'linscale', 'subs')
+                kwargs = {key: getattr(parent_scale, key) for key in keys}
                 kwargs['linthresh'] = inverse(kwargs['linthresh'])
                 parent_scale = SymmetricalLogScale(**kwargs)
-            elif isinstance(parent_scale, CutoffScale):
-                args = list(parent_scale.args)  # copy
-                for i in range(0, len(args), 2):
-                    args[i] = inverse(args[i])
+            if isinstance(parent_scale, CutoffScale):
+                args = list(parent_scale.args)  # mutable copy
+                args[::2] = (inverse(arg) for arg in args[::2])  # transform cutoffs
                 parent_scale = CutoffScale(*args)
             functransform = parent_scale.get_transform() + functransform
-        elif parent_scale is not None:
+        else:
             raise ValueError(
                 f'parent_scale {parent_scale!r} must be a ScaleBase instance, '
                 f'not {type(parent_scale)!r}.'

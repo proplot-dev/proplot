@@ -125,9 +125,10 @@ functionality to existing figure and axes methods.
   adds many, many useful features to virtually every plotting command
   (including `~proplot.axes.PlotAxes.plot`, `~proplot.axes.PlotAxes.scatter`,
   `~proplot.axes.PlotAxes.bar`, `~proplot.axes.PlotAxes.area`,
-  `~proplot.axes.PlotAxes.contour`, and `~proplot.axes.PlotAxes.pcolor`.
-  See the :ref:`1D plotting <ug_1dplots>` and :ref:`2D plotting <ug_2dplots>`
-  sections for details.
+  `~proplot.axes.PlotAxes.box`, `~proplot.axes.PlotAxes.violin`,
+  `~proplot.axes.PlotAxes.contour`, `~proplot.axes.PlotAxes.pcolor`,
+  and `~proplot.axes.PlotAxes.imshow`). See the :ref:`1D plotting <ug_1dplots>`
+  and :ref:`2D plotting <ug_2dplots>` sections for details.
 
 .. _usage_integration:
 

@@ -692,33 +692,13 @@ class _Colormap(object):
         elif ext in ('txt', 'rgb'):
             rgb = mcolors.to_rgba if alpha else mcolors.to_rgb
             data = [rgb(color) for color in colors]
-            data = '\n'.join(
-                ' '.join(f'{num:0.6f}' for num in line) for line in data
-            )
+            data = '\n'.join(' '.join(f'{num:0.6f}' for num in line) for line in data)
         else:
             raise ValueError(
                 f'Invalid extension {ext!r}. Options are: '
                 "'hex', 'txt', 'rgb', 'rgba'."
             )
         return data
-
-    @staticmethod
-    def _pop_args(*args, names=None, **kwargs):
-        """
-        Pop the name as a first positional argument or keyword argument.
-        Supports matplotlib-style ``Colormap(name, data)`` input
-        algongside more intuitive ``Colormap(data, name='name')`` input.
-        """
-        names = names or ()
-        if isinstance(names, str):
-            names = (names,)
-        names = ('name', *names)
-        args, kwargs = _keyword_to_positional(names, *args, **kwargs)
-        if args[0] is not None and args[1] is None:
-            args[:2] = (DEFAULT_NAME, args[0])
-        if args[0] is None:
-            args[0] = DEFAULT_NAME
-        return (*args, kwargs)
 
     def _parse_path(self, path, ext=None, subfolder=None):
         """
@@ -745,6 +725,24 @@ class _Colormap(object):
         if not os.path.splitext(path)[1]:
             path = path + '.' + ext  # default file extension
         return path
+
+    @staticmethod
+    def _pop_args(*args, names=None, **kwargs):
+        """
+        Pop the name as a first positional argument or keyword argument.
+        Supports matplotlib-style ``Colormap(name, data)`` input
+        algongside more intuitive ``Colormap(data, name='name')`` input.
+        """
+        names = names or ()
+        if isinstance(names, str):
+            names = (names,)
+        names = ('name', *names)
+        args, kwargs = _keyword_to_positional(names, *args, **kwargs)
+        if args[0] is not None and args[1] is None:
+            args[:2] = (DEFAULT_NAME, args[0])
+        if args[0] is None:
+            args[0] = DEFAULT_NAME
+        return (*args, kwargs)
 
     @classmethod
     def _from_file(cls, filename, warn_on_failure=False):
