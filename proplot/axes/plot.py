@@ -2364,9 +2364,9 @@ class PlotAxes(base.Axes):
                 kwargs = self._parse_cycle(**kwargs)
             methods = (self._parse_cmap, self._parse_levels, self._parse_autolev, self._parse_vlim)  # noqa: E501
         else:
-            kwargs['line_plot'] = True
-            kwargs['default_discrete'] = False
-            kwargs = self._parse_cmap(x, y, c, **kwargs)
+            kwargs = self._parse_cmap(
+                x, y, c, line_plot=True, default_discrete=False, **kwargs
+            )
             methods = (self._parse_cycle,)
         pop = _pop_params(kwargs, *methods, ignore_internal=True)
         if pop:
@@ -2675,9 +2675,9 @@ class PlotAxes(base.Axes):
         if ticks is not None and np.iterable(ticks):
             _guide_kw_to_arg('colorbar', kwargs, locator=ticks)
 
-        # Filter the resulting level boundaries
+        # Filter the level boundaries
         if levels is not None and np.iterable(levels):
-            if nozero and 0 in levels:
+            if nozero:
                 levels = levels[levels != 0]
             if positive:
                 levels = levels[levels >= 0]
@@ -2857,10 +2857,9 @@ class PlotAxes(base.Axes):
         levels = None  # unused
         if discrete:
             levels, kwargs = self._parse_levels(
-                *args, vmin=vmin, vmax=vmax, norm=norm, norm_kw=norm_kw,
-                extend=extend, skip_autolev=skip_autolev, **kwargs
+                *args, vmin=vmin, vmax=vmax, norm=norm, norm_kw=norm_kw, extend=extend, skip_autolev=skip_autolev, **kwargs  # noqa: E501
             )
-        elif not skip_autolev:
+        if not discrete and not skip_autolev:
             vmin, vmax, kwargs = self._parse_vlim(
                 *args, vmin=vmin, vmax=vmax, **kwargs
             )
@@ -4237,7 +4236,7 @@ class PlotAxes(base.Axes):
         # Rely on pcolormesh() override for this.
         if bins is not None:
             kwargs['bins'] = bins
-        return super().hist2d(x, y, **kwargs)
+        return super().hist2d(x, y, default_discrete=False, **kwargs)
 
     # WARNING: breaking change from native 'C'
     @_preprocess_data('x', 'y', 'weights')
