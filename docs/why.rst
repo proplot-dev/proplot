@@ -75,13 +75,8 @@ setter (e.g. `~matplotlib.axes.Axes.set_xlabel` and
 setter (e.g. `~matplotlib.spines.Spine.set_bounds`), or a "bulk" property
 setter (e.g. `~matplotlib.axes.Axes.tick_params`), or whether one must dig
 into the figure architecture and apply settings to several different objects.
-While this is in the spirit of object-oriented design, it seems like there
-should be a more unified, straightforward way to change settings for
-day-to-day matplotlib usage.
-
-..
-   This is perhaps one reason why many users prefer the `~matplotlib.pyplot`
-   interface to the object-oriented interface (see :ref:`Using ProPlot`).
+It seems like there should be a more unified, straightforward way to change
+settings without sacrificing the advantages of object-oriented design.
 
 .. rubric:: Solution
 

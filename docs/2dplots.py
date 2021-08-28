@@ -296,26 +296,23 @@ pplt.rc.reset()
 # Distinct colormap levels
 # ------------------------
 #
-# In ProPlot, when colormaps are applied to plots, the color levels are
-# "discretized" using `~proplot.colors.DiscreteNorm`. This converts
-# data values into colors by first (1) transforming
-# the data using an arbitrary *continuous* normalizer (e.g.,
-# `~matplotlib.colors.Normalize` or `~matplotlib.colors.LogNorm`), then
-# (2) mapping the normalized data to *distinct* color levels. This is
-# similar to matplotlib's `~matplotlib.colors.BoundaryNorm`, but more
-# flexible. Distinct levels can help readers discern exact
-# numeric values and tend to reveal qualitative structure in the data.
-# They are especially useful for `~proplot.axes.PlotAxes.pcolor` and
-# `~proplot.axes.PlotAxes.pcolormesh` plots, analogous to
-# `~proplot.axes.PlotAxes.contourf`. By default, distinct levels are disabled for
-# `~proplot.axes.PlotAxes.imshow`, `~proplot.axes.PlotAxes.matshow`,
-# `~proplot.axes.PlotAxes.spy`, `~proplot.axes.PlotAxes.hexbin`,
-# `~proplot.axes.PlotAxes.hist2d`, and `~proplot.axes.PlotAxes.scatter` plots.
-# To explicitly toggle it, pass ``discrete=False`` or ``discrete=True`` to any
-# plotting command that accepts a `cmap` argument, or change :rcraw:`image.discrete`.
+# By default, ProPlot "discretizes" the possible colormap colors for contour plotting
+# commands like `~proplot.axes.PlotAxes.contour` and `~proplot.axes.PlotAxes.contourf`
+# and pseudocolor plotting commands like `~proplot.axes.PlotAxes.pcolor` and
+# `~proplot.axes.PlotAxes.pcolormesh` using `~proplot.colors.DiscreteNorm`, analogous
+# to matplotlib's `~matplotlib.colors.BoundaryNorm` (but with additional features).
+# `~proplot.colors.DiscreteNorm` converts data values into colors by first (1)
+# transforming the data using an arbitrary continuous normalizer
+# (e.g., `~matplotlib.colors.Normalize`, `~matplotlib.colors.LogNorm`,
+# `~proplot.colors.SegmentedNorm`, or `~proplot.colors.DivergingNorm`),
+# then (2) mapping the normalized data to distinct color levels. Distinct levels can
+# help readers discern exact numeric values and tend to reveal qualitative structure
+# in the data. To explicitly toggle distinct levels on or off, pass ``discrete=False``
+# or ``discrete=True`` to any plotting command that accepts a `cmap` argument, or
+# change :rcraw:`image.discrete`.
 #
 # `~proplot.colors.DiscreteNorm` also repairs the colormap end-colors by
-# ensuring the following conditions are met (this may seem nitpicky, but
+# ensuring the following conditions are met (this may seem excessive, but
 # it is crucial for plots with very few levels):
 #
 # #. All colormaps always span the *entire color range*,
@@ -323,15 +320,21 @@ pplt.rc.reset()
 # #. Cyclic colormaps always have *distinct color levels*
 #    on either end of the colorbar.
 #
-# The colormap levels used with `~proplot.colors.DiscreteNorm` can be configured
-# with the `levels`, `values`, or `N` keywords. If you pass an integer,
-# approximately that many boundaries are automatically generated at "nice"
-# intervals. The keywords `vmin`, `vmax`, `locator`, and `locator_kw` control how
-# the automatic intervals are chosen. You can also use the `positive`, `negative`,
-# and `symmetric` keywords to ensure that automatically-generated levels are
-# strictly positive, strictly negative, or symmetric about zero (respectively).
-# To generate your own level lists, the `~proplot.utils.arange` and
-# `~proplot.utils.edges` commands may be useful.
+# The level edges or centers used with `~proplot.colors.DiscreteNorm` can be explicitly
+# specified using the `levels` and `values` keywords (the `~proplot.utils.arange` and
+# `~proplot.utils.edges` commands may be useful for generating level lists). You can
+# also pass an integer to these keywords (or to the `N` keyword) to automatically
+# generate approximately that many level edges or centers at "nice" intervals. The
+# algorithm used to generate levels is similar to matplotlib's algorithm for selecting
+# contour levels (but with additional features). The default number of levels
+# is controlled by :rcraw:`cmap.levels`, and the keywords `vmin`, `vmax`, `locator`,
+# and `locator_kw` can be used to constrain the algorithm -- for example, ``vmin=100``
+# will ensure the minimum level is greater than or equal to ``100``, and ``locator=5``
+# will ensure a level step size of 5 units (see the :ref:`axis locators <ug_locators>`
+# section for details). You can also use the keywords `positive`, `negative`, and
+# `symmetric` to ensure that your levels are strictly positive, strictly negative,
+# or symmetric about zero, or use the `nozero` keyword to remove the zero
+# level (useful for single-color `~proplot.axes.PlotAxes.contour` plots).
 
 # %%
 import proplot as pplt
@@ -566,24 +569,25 @@ axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Labels demo')
 # Heatmap with labeled boxes
 ax = axs[0]
 m = ax.heatmap(
-    data, cmap='rocket', labels=True,
-    precision=2, labels_kw={'weight': 'bold'}
+    data, cmap='rocket',
+    labels=True, precision=2, labels_kw={'weight': 'bold'}
 )
 ax.format(title='Heatmap with labels')
 
 # Filled contours with labels
 ax = axs[1]
 m = ax.contourf(
-    data.cumsum(axis=0), labels=True,
-    cmap='rocket', labels_kw={'weight': 'bold'}
+    data.cumsum(axis=0), cmap='rocket',
+    labels=True, labels_kw={'weight': 'bold'}
 )
 ax.format(title='Filled contours with labels')
 
-# Line contours with labels
+# Line contours with labels and no zero level
+data = 5 * (data - 0.45).cumsum(axis=0) - 2
 ax = axs[2]
 ax.contour(
-    data.cumsum(axis=1) - 2, labels=True,
-    color='gray8', labels_kw={'weight': 'bold'}
+    data, nozero=True, color='gray8',
+    labels=True, labels_kw={'weight': 'bold'}
 )
 ax.format(title='Line contours with labels')
 

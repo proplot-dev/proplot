@@ -37,13 +37,13 @@
 # Geographic axes
 # ---------------
 #
-# To create geographic axes, pass e.g. ``proj='name'`` to an axes-creation
-# command where ``name`` is any valid :ref:`PROJ projection name <proj_table>`.
-# Alternatively, you can use ``proj=projection_instance`` where ``projection_instance``
-# is a `cartopy.crs.Projection` or `~mpl_toolkits.basemap.Basemap` instance returned
-# by the `~proplot.constructor.Proj` :ref:`constructor function <why_constructor>`
-# (see below for details). If you need different projections for different subplots,
-# but you want to create your subplots :ref:`all-at-once <ug_subplot>` using
+# To create geographic axes, pass ``proj='name'`` to an axes-creation command like
+# `~proplot.figure.Figure.subplot` where ``name`` is any valid :ref:`PROJ projection
+# name <proj_table>`. Alternatively, you can pass a `cartopy.crs.Projection` or
+# `~mpl_toolkits.basemap.Basemap` instance returned by the `~proplot.constructor.Proj`
+# :ref:`constructor function <why_constructor>` to `proj` (see below for details). If
+# you need different projections for different subplots, but you want to
+# create your subplots :ref:`all-at-once <ug_subplot>` using
 # `~proplot.figure.Figure.subplots`, you can pass a list or dictionary
 # to the `proj` keyword (e.g., ``proj=('cartesian', 'pcarree')`` or
 # ``proj={2: 'pcarree'}`` -- see `~proplot.figure.Figure.subplots` for details).
@@ -435,7 +435,7 @@ for proj, ax in zip(projs, axs):
 # ----------
 #
 # To create `polar axes <polar_>`_, pass ``proj='polar'`` to an axes-creation
-# command (see :ref:`above <ug_proj>`). Polar axes are represented with the
+# command like `~proplot.axes.PlotAxes.subplot`. Polar axes are represented with the
 # `~proplot.axes.PolarAxes` subclass, which has its own `~proplot.axes.PolarAxes.format`
 # command. `proplot.axes.PolarAxes.format` facilitates polar-specific modifications
 # like changing the central radius `r0`, the zero azimuth location `theta0`,
