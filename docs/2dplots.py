@@ -300,16 +300,15 @@ pplt.rc.reset()
 # commands like `~proplot.axes.PlotAxes.contour` and `~proplot.axes.PlotAxes.contourf`
 # and pseudocolor plotting commands like `~proplot.axes.PlotAxes.pcolor` and
 # `~proplot.axes.PlotAxes.pcolormesh` using `~proplot.colors.DiscreteNorm`, analogous
-# to matplotlib's `~matplotlib.colors.BoundaryNorm` (but with additional features).
-# `~proplot.colors.DiscreteNorm` converts data values into colors by first (1)
-# transforming the data using an arbitrary continuous normalizer
-# (e.g., `~matplotlib.colors.Normalize`, `~matplotlib.colors.LogNorm`,
-# `~proplot.colors.SegmentedNorm`, or `~proplot.colors.DivergingNorm`),
-# then (2) mapping the normalized data to distinct color levels. Distinct levels can
-# help readers discern exact numeric values and tend to reveal qualitative structure
-# in the data. To explicitly toggle distinct levels on or off, pass ``discrete=False``
-# or ``discrete=True`` to any plotting command that accepts a `cmap` argument, or
-# change :rcraw:`image.discrete`.
+# to matplotlib's `~matplotlib.colors.BoundaryNorm`. `~proplot.colors.DiscreteNorm`
+# converts data values into colors by (1) transforming the data using an
+# arbitrary continuous normalizer (e.g., `~matplotlib.colors.Normalize`,
+# `~matplotlib.colors.LogNorm`, `~proplot.colors.SegmentedNorm`, or
+# `~proplot.colors.DivergingNorm`), then (2) mapping the normalized data to distinct
+# color levels. Distinct levels can help readers discern exact numeric values and tend
+# to reveal qualitative structure in the data. To explicitly toggle distinct levels
+# on or off, pass ``discrete=False`` or ``discrete=True`` to any plotting command that
+# accepts a `cmap` argument, or change :rcraw:`image.discrete`.
 #
 # `~proplot.colors.DiscreteNorm` also repairs the colormap end-colors by
 # ensuring the following conditions are met (this may seem excessive, but
@@ -322,19 +321,19 @@ pplt.rc.reset()
 #
 # The level edges or centers used with `~proplot.colors.DiscreteNorm` can be explicitly
 # specified using the `levels` and `values` keywords (the `~proplot.utils.arange` and
-# `~proplot.utils.edges` commands may be useful for generating level lists). You can
+# `~proplot.utils.edges` commands are useful for generating level lists). You can
 # also pass an integer to these keywords (or to the `N` keyword) to automatically
 # generate approximately that many level edges or centers at "nice" intervals. The
 # algorithm used to generate levels is similar to matplotlib's algorithm for selecting
-# contour levels (but with additional features). The default number of levels
-# is controlled by :rcraw:`cmap.levels`, and the keywords `vmin`, `vmax`, `locator`,
-# and `locator_kw` can be used to constrain the algorithm -- for example, ``vmin=100``
-# will ensure the minimum level is greater than or equal to ``100``, and ``locator=5``
-# will ensure a level step size of 5 units (see the :ref:`axis locators <ug_locators>`
-# section for details). You can also use the keywords `positive`, `negative`, and
-# `symmetric` to ensure that your levels are strictly positive, strictly negative,
-# or symmetric about zero, or use the `nozero` keyword to remove the zero
-# level (useful for single-color `~proplot.axes.PlotAxes.contour` plots).
+# contour levels. The default number of levels is controlled by :rcraw:`cmap.levels`,
+# and the algorithm is constrained by the keywords `vmin`, `vmax`, `locator`, and
+# `locator_kw` -- for example, ``vmin=100`` ensures the minimum level is
+# greater than or equal to ``100``, and ``locator=5`` ensures a level step size of 5
+# (see the :ref:`axis locators <ug_locators>` section for details). You can also use
+# the keywords `positive`, `negative`, and `symmetric` to ensure that your levels are
+# strictly positive, strictly negative, or symmetric about zero, or use the `nozero`
+# keyword to remove the zero level
+# (useful for single-color `~proplot.axes.PlotAxes.contour` plots).
 
 # %%
 import proplot as pplt
