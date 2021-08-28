@@ -4584,12 +4584,8 @@ class PlotAxes(base.Axes):
         """
         %(plot.matshow)s
         """
-        kw = kwargs.copy()
-        kw = self._parse_cmap(z, **kw)
-        guide_kw = _pop_params(kw, self._add_queued_guide)
-        m = self._plot_safe('matshow', z, **kw)
-        self._add_queued_guide(m, **guide_kw)
-        return m
+        # Rely on imshow() override for this.
+        return super().matshow(z, **kwargs)
 
     # WARNING: breaking change from native 'Z'
     @_preprocess_data('z')
