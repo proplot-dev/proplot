@@ -27,6 +27,43 @@ ProPlot v1.0.0 (2022-##-##)
 This will be published when more comprehensive testing is completed
 and stability is improved.
 
+ProPlot v0.8.2 (2021-08-22)
+===========================
+
+Deprecations
+------------
+
+* Use default ``discrete=False`` for `~proplot.axes.PlotAxes.hist2d` plots,
+  consistent with `~proplot.axes.PlotAxes.hexbin` (:commit:`267dd161`). Now
+  "discrete" levels are only enabled for pcolor/contour plots by default.
+* Deprecate recently-introduced `proplot.gridspec.SubplotGrid.legend` and
+  `proplot.gridspec.SubplotGrid.colorbar` methods (:commit:`d21a61a3`). Idea
+  was this could be used to add an auto-legend to each subplot with ``axs.legend()``
+  or identical colorbars with ``axs.colorbar(m)``, but in the future we will use
+  these methods to add colorbars and legends centered along the edge of arbitrary
+  subplots with e.g. ``axs[0, :2].colorbar(m, loc='bottom')``.
+
+Features
+--------
+
+* Add cartopy-based ``LongitudeLocator``, ``LatitudeLocator``, ``DegreeLocator``,
+ ``LongitudeFormatter``, ``LatitudeFormatter``, ``DegreeFormatter`` to
+ public API for consistency with other "registered" tickers (:commit:`76e45c0c`).
+
+Bug fixes
+---------
+
+* Fix issue where tuple `~proplot.config.rc` values are truncated
+  to first scalar value when saving a ``proplotrc`` (:commit:`e731c709`).
+
+Internals
+---------
+
+* Update napoloen type aliases and specifiers (:commit:`c20ed1d1`). Use `sequence`
+  instead of `list` wherever params accept arbitrary sequences (:commit:`e627e95b`).
+* Move `~proplot.gridspec.SubplotGrid` from ``figure.py`` to ``gridspec.py``
+  (:commit:`7b688fc8`). Makes much more sense.
+
 ProPlot v0.8.1 (2021-08-22)
 ===========================
 
