@@ -1371,7 +1371,7 @@ class SubplotGrid(MutableSequence, list):
         return self.gridspec.get_subplot_geometry()
 
 
-def _add_grid_command(name, command=None, seealso=None, returns_grid=False):
+def _add_grid_command(name, command=None, seealso=None, returns_grid=True):
     # Build the docstring
     seealso = seealso or command or ()
     if isinstance(seealso, str):
@@ -1393,8 +1393,6 @@ def _add_grid_command(name, command=None, seealso=None, returns_grid=False):
     string += '\n\nReturns\n-------\n'
     if returns_grid:
         string += '`SubplotGrid`\n    A subplot grid of the results.'
-    else:
-        string += '`tuple`\n    A tuple of the results.'
 
     # Create the method
     def _grid_command(self, *args, **kwargs):
@@ -1418,12 +1416,13 @@ def _add_grid_command(name, command=None, seealso=None, returns_grid=False):
     setattr(SubplotGrid, name, _grid_command)
 
 
-# Dynamically add commands
+# Dynamically add commands to generate twin or inset axes
 # TODO: Plot on axes in the grid along an extra input dimension?
 _add_grid_command(
     'format',
-    seealso=(f'proplot.axes.{s}Axes.format' for s in ('', 'Cartesian', 'Geo', 'Polar'))
-)  # noqa: E501
+    seealso=(f'proplot.axes.{s}Axes.format' for s in ('', 'Cartesian', 'Geo', 'Polar')),
+    returns_grid=False,
+)
 for _name in (
     'panel',
     'panel_axes',
@@ -1435,14 +1434,12 @@ for _name in (
     'dualy',
     'twinx',
     'twiny',
-    'text',
 ):
     if _name in ('altx', 'alty', 'twinx', 'twiny', 'dualx', 'dualy'):
         _command = f'proplot.axes.CartesianAxes.{_name}'
     else:
         _command = f'proplot.axes.Axes.{_name}'
-    _returns_grid = _name not in ('text',)
-    _add_grid_command(_name, _command, returns_grid=_returns_grid)
+    _add_grid_command(_name, _command, returns_grid=True)
 
 
 # Deprecated
