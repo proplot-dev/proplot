@@ -42,6 +42,9 @@ Deprecations
   or identical colorbars with ``axs.colorbar(m)``, but in the future we will use
   these methods to add colorbars and legends centered along the edge of arbitrary
   subplots with e.g. ``axs[0, :2].colorbar(m, loc='bottom')``.
+* Deprecate recently-introduced `proplot.gridspec.SubplotGrid.text`
+  (:commit:`80deb71a`). Idea was this could be used to add identical text to
+  each subplot but that is pretty niche, does not need to be supported.
 
 Features
 --------
@@ -92,7 +95,7 @@ Bug fixes
 * Fix regression where ``np.std`` and ``np.percentile`` no longer
   ignore NaN values (:issue:`257`, :commit:`d1906fce`).
 * Fix regression where ``legend()`` cannot be called without
-  the input labels (:issue:`188`, :commit:`fdd53a6c`).
+  the input handles (:issue:`188`, :commit:`fdd53a6c`).
 * Fix issue where edge colors of area plots with ``negpos=True``
   cannot be changed (:commit:`bb50dea4`).
 * Fix issue where `legend` `order` keyword arg is ignored and default is
