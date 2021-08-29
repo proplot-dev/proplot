@@ -480,9 +480,9 @@ class Figure(mfigure.Figure):
     )
     _space_message = (
         'To set the left, right, bottom, top, wspace, or hspace gridspec values, '
-        'pass them as keyword arguments to pplt.subplots(). Please note they are '
-        'now specified in physical units, with strings interpreted by pplt.units() '
-        'and floats interpreted as font size-widths.'
+        'pass them as keyword arguments to pplt.figure() or pplt.subplots(). Please '
+        'note they are now specified in physical units, with strings interpreted by '
+        'pplt.units() and floats interpreted as font size-widths.'
     )
     _tight_message = (
         'ProPlot uses its own tight layout algorithm that is activated by default. '
@@ -1755,11 +1755,8 @@ for _attr in ('alignx', 'aligny', 'sharex', 'sharey', 'spanx', 'spany', 'tight',
     setattr(Figure, _attr, property(_get_deprecated))
 
 
-# Disable all native matplotlib layout and spacing functions
-# Instead of using 'subplotpars' we record spacing params in LayoutSolver
-# NOTE: In certain configurations with tight=False auto_layout() will not get
-# called and thus LayoutSolver will not overwrite subplotpars. However it is not
-# always clear when this is true. Better to disable user control of subplotpars.
+# Disable native matplotlib layout and spacing functions when called
+# manually and emit warning message to help new users.
 for _attr, _msg in (
     ('set_tight_layout', Figure._tight_message),
     ('set_constrained_layout', Figure._tight_message),

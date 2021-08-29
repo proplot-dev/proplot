@@ -1025,8 +1025,8 @@ matplotlib.axes.Axes.{command}
 """
 _heatmap_descrip = """
 grid boxes with formatting suitable for heatmaps. Ensures square grid
-boxes, adds major ticks to the center of each grid box, disables minor ticks
-and gridlines, and sets :rcraw:`cmap.discrete` to ``False`` by default.
+boxes, adds major ticks to the center of each grid box, disables minor
+ticks and gridlines, and sets :rcraw:`cmap.discrete` to ``False`` by default
 """
 _heatmap_aspect = """
 aspect : {'equal', 'auto'} or float, optional
@@ -2540,11 +2540,9 @@ class PlotAxes(base.Axes):
                 i0, i1 = 0, len(levels)  # revert
             levels = levels[i0:i1]
 
-        # Compare the no. of levels we *got* (levels) to what we *wanted* (N)
+        # Compare the no. of levels we got (levels) to what we wanted (nlevs)
         # If we wanted more than 2 times the result, then add nn - 1 extra
-        # levels in-between the returned levels *in normalized space*.
-        # Example: A LogNorm gives too few levels, so we select extra levels
-        # here, but use the locator for determining tick locations.
+        # levels in-between the returned levels in normalized space (e.g. LogNorm).
         nn = nlevs // len(levels)
         if nn >= 2:
             olevels = norm(levels)
