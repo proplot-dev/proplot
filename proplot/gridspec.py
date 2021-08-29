@@ -1436,14 +1436,12 @@ for _name in (
     'twinx',
     'twiny',
     'text',
-    'legend',
-    'colorbar',
 ):
     if _name in ('altx', 'alty', 'twinx', 'twiny', 'dualx', 'dualy'):
         _command = f'proplot.axes.CartesianAxes.{_name}'
     else:
         _command = f'proplot.axes.Axes.{_name}'
-    _returns_grid = _name not in ('text', 'legend', 'colorbar')
+    _returns_grid = _name not in ('text',)
     _add_grid_command(_name, _command, returns_grid=_returns_grid)
 
 
