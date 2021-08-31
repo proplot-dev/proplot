@@ -12,7 +12,7 @@ import numpy as np
 
 from .config import rc
 from .internals import ic  # noqa: F401
-from .internals import _empty_context, _not_none, _snippet_manager, _state_context
+from .internals import _not_none, context, docstring
 
 try:
     import cartopy.crs as ccrs
@@ -78,10 +78,10 @@ x : float
 pos : float, optional
     The position.
 """
-_snippet_manager['ticker.precision'] = _precision_docstring
-_snippet_manager['ticker.zerotrim'] = _zerotrim_docstring
-_snippet_manager['ticker.auto'] = _auto_docstring
-_snippet_manager['ticker.call'] = _formatter_call
+docstring._snippet_manager['ticker.precision'] = _precision_docstring
+docstring._snippet_manager['ticker.zerotrim'] = _zerotrim_docstring
+docstring._snippet_manager['ticker.auto'] = _auto_docstring
+docstring._snippet_manager['ticker.call'] = _formatter_call
 
 _dms_docstring = """
 Parameters
@@ -90,7 +90,7 @@ dms : bool, optional
     Locate the ticks on clean degree-minute-second intervals and format the
     ticks with minutes and seconds instead of decimals. Default is ``False``.
 """
-_snippet_manager['ticker.dms'] = _dms_docstring
+docstring._snippet_manager['ticker.dms'] = _dms_docstring
 
 
 class DegreeLocator(mticker.MaxNLocator):
@@ -103,7 +103,7 @@ class DegreeLocator(mticker.MaxNLocator):
     default_params = mticker.MaxNLocator.default_params.copy()
     default_params.update(nbins=8, dms=False)
 
-    @_snippet_manager
+    @docstring._snippet_manager
     def __init__(self, *args, **kwargs):
         """
         %(ticker.dms)s
@@ -139,7 +139,7 @@ class LongitudeLocator(DegreeLocator):
     """
     A locator for longitude gridlines. Adapted from cartopy.
     """
-    @_snippet_manager
+    @docstring._snippet_manager
     def __init__(self, *args, **kwargs):
         """
         %(ticker.dms)s
@@ -168,7 +168,7 @@ class LatitudeLocator(DegreeLocator):
     """
     A locator for latitude gridlines. Adapted from cartopy.
     """
-    @_snippet_manager
+    @docstring._snippet_manager
     def __init__(self, *args, **kwargs):
         """
         %(ticker.dms)s
@@ -203,11 +203,10 @@ class _CartopyFormatter(object):
         super().__init__(*args, **kwargs)
 
     def __call__(self, value, pos=None):
-        if self.axis is None:
-            context = _empty_context()
-        else:
-            context = _state_context(self.axis.axes, projection=ccrs.PlateCarree())
-        with context:
+        ctx = context._empty_context()
+        if self.axis is not None:
+            ctx = context._state_context(self.axis.axes, projection=ccrs.PlateCarree())
+        with ctx:
             return super().__call__(value, pos)
 
 
@@ -216,7 +215,7 @@ class LongitudeFormatter(_CartopyFormatter, LongitudeFormatter):
     A formatter for longitude gridlines.
     Adapted from `cartopy.mpl.ticker.LongitudeFormatter`.
     """
-    @_snippet_manager
+    @docstring._snippet_manager
     def __init__(self, *args, **kwargs):
         """
         %(ticker.dms)s
@@ -229,7 +228,7 @@ class LatitudeFormatter(_CartopyFormatter, LatitudeFormatter):
     A formatter for latitude gridlines.
     Adapted from `cartopy.mpl.ticker.LatitudeFormatter`.
     """
-    @_snippet_manager
+    @docstring._snippet_manager
     def __init__(self, *args, **kwargs):
         """
         %(ticker.dms)s
@@ -241,7 +240,7 @@ class DegreeFormatter(_CartopyFormatter, _PlateCarreeFormatter):
     """
     A formatter for longitude and latitude gridlines. Adapted from cartopy.
     """
-    @_snippet_manager
+    @docstring._snippet_manager
     def __init__(self, *args, **kwargs):
         """
         %(ticker.dms)s
@@ -293,7 +292,7 @@ class AutoFormatter(mticker.ScalarFormatter):
     3. Permits adding arbitrary prefix or suffix to every tick label string.
     4. Permits adding "negative" and "positive" indicator.
     """
-    @_snippet_manager
+    @docstring._snippet_manager
     def __init__(
         self,
         zerotrim=None, tickrange=None, wraprange=None,
@@ -329,7 +328,7 @@ class AutoFormatter(mticker.ScalarFormatter):
         self._suffix = suffix or ''
         self._negpos = negpos or ''
 
-    @_snippet_manager
+    @docstring._snippet_manager
     def __call__(self, x, pos=None):
         """
         %(ticker.call)s
@@ -362,7 +361,7 @@ class AutoFormatter(mticker.ScalarFormatter):
         """
         Get the offset but *always* use math text.
         """
-        with _state_context(self, _useMathText=True):
+        with context._state_context(self, _useMathText=True):
             return super().get_offset()
 
     @staticmethod
@@ -498,7 +497,7 @@ class SciFormatter(mticker.Formatter):
     """
     Format numbers with scientific notation.
     """
-    @_snippet_manager
+    @docstring._snippet_manager
     def __init__(self, precision=None, zerotrim=None):
         """
         Parameters
@@ -510,7 +509,7 @@ class SciFormatter(mticker.Formatter):
         self._precision = precision
         self._zerotrim = zerotrim
 
-    @_snippet_manager
+    @docstring._snippet_manager
     def __call__(self, x, pos=None):  # noqa: U100
         """
         %(ticker.call)s
@@ -546,7 +545,7 @@ class SigFigFormatter(mticker.Formatter):
     """
     Format numbers by retaining the specified number of significant digits.
     """
-    @_snippet_manager
+    @docstring._snippet_manager
     def __init__(self, sigfig=3, zerotrim=None):
         """
         Parameters
@@ -558,7 +557,7 @@ class SigFigFormatter(mticker.Formatter):
         self._sigfig = sigfig
         self._zerotrim = _not_none(zerotrim, rc['formatter.zerotrim'])
 
-    @_snippet_manager
+    @docstring._snippet_manager
     def __call__(self, x, pos=None):  # noqa: U100
         """
         %(ticker.call)s
@@ -587,7 +586,7 @@ class SimpleFormatter(mticker.Formatter):
     but suitable for arbitrary formatting not necessarily associated with
     an `~matplotlib.axis.Axis` instance.
     """
-    @_snippet_manager
+    @docstring._snippet_manager
     def __init__(
         self, precision=None, zerotrim=None,
         tickrange=None, wraprange=None,
@@ -609,7 +608,7 @@ class SimpleFormatter(mticker.Formatter):
         self._wraprange = wraprange
         self._zerotrim = zerotrim
 
-    @_snippet_manager
+    @docstring._snippet_manager
     def __call__(self, x, pos=None):  # noqa: U100
         """
         %(ticker.call)s
@@ -659,7 +658,7 @@ class FracFormatter(mticker.Formatter):
         self._number = number
         super().__init__()
 
-    @_snippet_manager
+    @docstring._snippet_manager
     def __call__(self, x, pos=None):  # noqa: U100
         """
         %(ticker.call)s

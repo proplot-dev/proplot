@@ -5,7 +5,7 @@ Additional cartopy projection classes.
 import warnings
 
 from .internals import ic  # noqa: F401
-from .internals import _snippet_manager
+from .internals import docstring
 
 try:
     from cartopy.crs import _WarpedRectangularProjection
@@ -47,8 +47,8 @@ false_northing: float, optional
 globe : `~cartopy.crs.Globe`, optional
     If omitted, a default globe is created.
 """
-_snippet_manager['proj.reso'] = _reso_docstring
-_snippet_manager['proj.init'] = _init_docstring
+docstring._snippet_manager['proj.reso'] = _reso_docstring
+docstring._snippet_manager['proj.init'] = _init_docstring
 
 
 class Aitoff(_WarpedRectangularProjection):
@@ -58,7 +58,7 @@ class Aitoff(_WarpedRectangularProjection):
     #: Registered projection name.
     name = 'aitoff'
 
-    @_snippet_manager
+    @docstring._snippet_manager
     def __init__(
         self, central_longitude=0, globe=None,
         false_easting=None, false_northing=None
@@ -86,7 +86,7 @@ class Aitoff(_WarpedRectangularProjection):
             globe=globe
         )
 
-    @_snippet_manager
+    @docstring._snippet_manager
     @property
     def threshold(self):  # how finely to interpolate line data, etc.
         """
@@ -102,7 +102,7 @@ class Hammer(_WarpedRectangularProjection):
     #: Registered projection name.
     name = 'hammer'
 
-    @_snippet_manager
+    @docstring._snippet_manager
     def __init__(
         self, central_longitude=0, globe=None,
         false_easting=None, false_northing=None
@@ -130,7 +130,7 @@ class Hammer(_WarpedRectangularProjection):
             globe=globe
         )
 
-    @_snippet_manager
+    @docstring._snippet_manager
     @property
     def threshold(self):  # how finely to interpolate line data, etc.
         """
@@ -147,7 +147,7 @@ class KavrayskiyVII(_WarpedRectangularProjection):
     #: Registered projection name.
     name = 'kavrayskiyVII'
 
-    @_snippet_manager
+    @docstring._snippet_manager
     def __init__(
         self, central_longitude=0, globe=None,
         false_easting=None, false_northing=None
@@ -175,7 +175,7 @@ class KavrayskiyVII(_WarpedRectangularProjection):
             globe=globe
         )
 
-    @_snippet_manager
+    @docstring._snippet_manager
     @property
     def threshold(self):
         """
@@ -192,7 +192,7 @@ class WinkelTripel(_WarpedRectangularProjection):
     #: Registered projection name.
     name = 'winkeltripel'
 
-    @_snippet_manager
+    @docstring._snippet_manager
     def __init__(
         self, central_longitude=0, globe=None,
         false_easting=None, false_northing=None
@@ -221,7 +221,7 @@ class WinkelTripel(_WarpedRectangularProjection):
             globe=globe
         )
 
-    @_snippet_manager
+    @docstring._snippet_manager
     @property
     def threshold(self):
         """
@@ -234,7 +234,7 @@ class NorthPolarAzimuthalEquidistant(AzimuthalEquidistant):
     """
     Analogous to `~cartopy.crs.NorthPolarStereo`.
     """
-    @_snippet_manager
+    @docstring._snippet_manager
     def __init__(self, central_longitude=0.0, globe=None):
         """
         %(proj.init)s
@@ -249,7 +249,7 @@ class SouthPolarAzimuthalEquidistant(AzimuthalEquidistant):
     """
     Analogous to `~cartopy.crs.SouthPolarStereo`.
     """
-    @_snippet_manager
+    @docstring._snippet_manager
     def __init__(self, central_longitude=0.0, globe=None):
         """
         %(proj.init)s
@@ -264,7 +264,7 @@ class NorthPolarLambertAzimuthalEqualArea(LambertAzimuthalEqualArea):
     """
     Analogous to `~cartopy.crs.NorthPolarStereo`.
     """
-    @_snippet_manager
+    @docstring._snippet_manager
     def __init__(self, central_longitude=0.0, globe=None):
         """
         %(proj.init)s
@@ -279,7 +279,7 @@ class SouthPolarLambertAzimuthalEqualArea(LambertAzimuthalEqualArea):
     """
     Analogous to `~cartopy.crs.SouthPolarStereo`.
     """
-    @_snippet_manager
+    @docstring._snippet_manager
     def __init__(self, central_longitude=0.0, globe=None):
         """
         %(proj.init)s
@@ -294,7 +294,7 @@ class NorthPolarGnomonic(Gnomonic):
     """
     Analogous to `~cartopy.crs.NorthPolarStereo`.
     """
-    @_snippet_manager
+    @docstring._snippet_manager
     def __init__(self, central_longitude=0.0, globe=None):
         """
         %(proj.init)s
@@ -309,7 +309,7 @@ class SouthPolarGnomonic(Gnomonic):
     """
     Analogous to `~cartopy.crs.SouthPolarStereo`.
     """
-    @_snippet_manager
+    @docstring._snippet_manager
     def __init__(self, central_longitude=0.0, globe=None):
         """
         %(proj.init)s

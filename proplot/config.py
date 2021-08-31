@@ -28,7 +28,7 @@ import numpy as np
 from matplotlib import RcParams
 
 from .internals import ic  # noqa: F401
-from .internals import _not_none, _snippet_manager, benchmarks, rcsetup, warnings
+from .internals import _not_none, benchmarks, docstring, rcsetup, warnings
 
 try:
     from IPython import get_ipython
@@ -92,7 +92,7 @@ default : bool, optional
     Whether to reload built-in default ProPlot settings.
     Default is ``True``.
 """
-_snippet_manager['rc.params'] = _rc_docstring
+docstring._snippet_manager['rc.params'] = _rc_docstring
 
 # Registration docstrings
 _shared_docstring = """
@@ -146,16 +146,16 @@ default : bool, optional
     Whether to reload the default {objects} packaged with ProPlot.
     Default is always ``False``.
 """
-_snippet_manager['rc.cmap_params'] = _register_docstring.format(objects='colormaps')
-_snippet_manager['rc.cycle_params'] = _register_docstring.format(objects='color cycles')  # noqa: E501
-_snippet_manager['rc.color_params'] = _register_docstring.format(objects='colors')
-_snippet_manager['rc.font_params'] = _register_docstring.format(objects='fonts')
-_snippet_manager['rc.cmap_args'] = _shared_docstring.format(objects='colormaps', type='Continuous')  # noqa: E501
-_snippet_manager['rc.cycle_args'] = _shared_docstring.format(objects='color cycles', type='Discrete')  # noqa: E501
-_snippet_manager['rc.color_args'] = _color_docstring
-_snippet_manager['rc.font_args'] = _font_docstring
-_snippet_manager['rc.cmap_exts'] = _cmap_exts_docstring
-_snippet_manager['rc.cycle_exts'] = _cycle_exts_docstring
+docstring._snippet_manager['rc.cmap_params'] = _register_docstring.format(objects='colormaps')  # noqa: E501
+docstring._snippet_manager['rc.cycle_params'] = _register_docstring.format(objects='color cycles')  # noqa: E501
+docstring._snippet_manager['rc.color_params'] = _register_docstring.format(objects='colors')  # noqa: E501
+docstring._snippet_manager['rc.font_params'] = _register_docstring.format(objects='fonts')  # noqa: E501
+docstring._snippet_manager['rc.cmap_args'] = _shared_docstring.format(objects='colormaps', type='Continuous')  # noqa: E501
+docstring._snippet_manager['rc.cycle_args'] = _shared_docstring.format(objects='color cycles', type='Discrete')  # noqa: E501
+docstring._snippet_manager['rc.color_args'] = _color_docstring
+docstring._snippet_manager['rc.font_args'] = _font_docstring
+docstring._snippet_manager['rc.cmap_exts'] = _cmap_exts_docstring
+docstring._snippet_manager['rc.cycle_exts'] = _cycle_exts_docstring
 
 
 def _init_user_file():
@@ -558,7 +558,7 @@ def use_style(style):
     rc_proplot.update(kw_proplot)
 
 
-@_snippet_manager
+@docstring._snippet_manager
 def register_cmaps(*args, user=None, default=False):
     """
     Register named colormaps. This is called on import.
@@ -598,7 +598,7 @@ def register_cmaps(*args, user=None, default=False):
         pcolors._cmap_database[cmap.name] = cmap
 
 
-@_snippet_manager
+@docstring._snippet_manager
 def register_cycles(*args, user=None, default=False):
     """
     Register named color cycles. This is called on import.
@@ -636,7 +636,7 @@ def register_cycles(*args, user=None, default=False):
         pcolors._cmap_database[cmap.name] = cmap
 
 
-@_snippet_manager
+@docstring._snippet_manager
 def register_colors(*args, user=None, default=False, space='hcl', margin=0.1, **kwargs):
     """
     Register named colors. This is called on import.
@@ -715,7 +715,7 @@ def register_colors(*args, user=None, default=False, space='hcl', margin=0.1, **
             raise RuntimeError(f'Unknown proplot color database {path!r}.')
 
 
-@_snippet_manager
+@docstring._snippet_manager
 def register_fonts(*args, user=True, default=False):
     """
     Register font names.
@@ -836,7 +836,7 @@ class Configurator(MutableMapping, dict):
     def __delattr__(self, attr):  # noqa: U100
         raise RuntimeError('rc settings cannot be deleted.')
 
-    @_snippet_manager
+    @docstring._snippet_manager
     def __init__(self, local=True, user=True, default=True, **kwargs):
         """
         Parameters
@@ -1426,7 +1426,7 @@ class Configurator(MutableMapping, dict):
         for key, value in kw.items():
             self.__setitem__(prefix + key, value)
 
-    @_snippet_manager
+    @docstring._snippet_manager
     def reset(self, local=True, user=True, default=True, **kwargs):
         """
         Reset the configurator to its initial state.

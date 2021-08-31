@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-The default ProPlot settings and a validated container for ProPlot settings.
+Utilities for global configuration.
 """
 import re
 from collections.abc import MutableMapping
@@ -15,8 +15,7 @@ from matplotlib import rcParamsDefault as _rc_matplotlib_native
 from matplotlib.colors import Colormap
 from matplotlib.font_manager import font_scalings
 
-from . import warnings
-from .dependencies import _version_mpl
+from . import dependencies, warnings
 
 # Regex for "probable" unregistered named colors. Try to retain warning message for
 # colors that were most likely a failed literal string evaluation during startup.
@@ -694,14 +693,14 @@ _rc_proplot_table = {
     'abc': (
         False,
         _validate_abc,
-        'Boolean or string. If ``False`` then a-b-c labels are disabled. If ``True`` '
-        'the default label style ``a`` is used. If string this indicates the style and '
-        "must contain the character ``a`` or ``A``, for example ``'a.'`` or ``'(A)'``."
+        'If ``False`` then a-b-c labels are disabled. If ``True`` the default label '
+        'style ``a`` is used. If string this indicates the style and must contain the '
+        "character ``a`` or ``A``, for example ``'a.'`` or ``'(A)'``."
     ),
     'abc.border': (
         True,
         _validate_bool,
-        'Boolean, indicates whether to draw a white border around a-b-c labels '
+        'Whether to draw a white border around a-b-c labels '
         'when :rcraw:`abc.loc` is inside the axes.'
     ),
     'abc.borderwidth': (
@@ -712,7 +711,7 @@ _rc_proplot_table = {
     'abc.bbox': (
         False,
         _validate_bool,
-        'Boolean, whether to draw semi-transparent bounding boxes around a-b-c labels '
+        'Whether to draw semi-transparent bounding boxes around a-b-c labels '
         'when :rcraw:`abc.loc` is inside the axes.'
     ),
     'abc.bboxcolor': (
@@ -790,25 +789,19 @@ _rc_proplot_table = {
         _validate_float,
         'The fractional *x* and *y* axis margins when limits are unset.'
     ),
-    'axes.titleabove': (
-        True,
-        _validate_bool,
-        'Boolean, indicates whether to move the title and a-b-c labels above any "top" '
-        'panels above axes.'
-    ),
 
     # Special basemap settings
     'basemap': (
         False,
         _validate_bool,
-        'Boolean, toggles whether basemap is the default backend.'
+        'Toggles whether basemap is the default backend.'
     ),
 
     # Country borders
     'borders': (
         False,
         _validate_bool,
-        'Boolean, toggles country border lines on and off.'
+        'Toggles country border lines on and off.'
     ),
     'borders.color': (
         BLACK,
@@ -872,7 +865,7 @@ _rc_proplot_table = {
     'coast': (
         False,
         _validate_bool,
-        'Boolean, toggles coastline lines on and off.'
+        'Toggles coastline lines on and off.'
     ),
     'coast.color': (
         BLACK,
@@ -889,13 +882,18 @@ _rc_proplot_table = {
     'colorbar.edgecolor': (
         BLACK,
         _validate_color,
-        'Color for colorbar dividers, outline, and inset frame edge.'
+        'Color for the inset colorbar frame edge.'
     ),
     'colorbar.extend': (
         1.3,
         _validate_em,
         'Length of rectangular or triangular "extensions" for panel colorbars.'
         + _addendum_em
+    ),
+    'colorbar.fancybox': (
+        False,
+        _validate_bool,
+        'Whether to use a "fancy" round bounding box for inset colorbar frames.'
     ),
     'colorbar.framealpha': (
         FRAMEALPHA,
@@ -910,12 +908,12 @@ _rc_proplot_table = {
     'colorbar.frameon': (
         True,
         _validate_bool,
-        'Boolean, indicates whether to draw a frame behind inset colorbars.'
+        'Whether to draw a frame behind inset colorbars.'
     ),
     'colorbar.grid': (
         False,
         _validate_bool,
-        'Boolean, indicates whether to draw borders between each level of the colorbar.'
+        'Whether to draw borders between each level of the colorbar.'
     ),
     'colorbar.insetextend': (
         0.9,
@@ -959,6 +957,11 @@ _rc_proplot_table = {
         _validate_bool,
         'Whether to rasterize colorbar solids.'
     ),
+    'colorbar.shadow': (
+        False,
+        _validate_bool,
+        'Whether to add a shadow underneath inset colorbar frames.'
+    ),
 
     # Color cycle additions
     'cycle': (
@@ -976,7 +979,7 @@ _rc_proplot_table = {
     'cmap.autodiverging': (
         True,
         _validate_bool,
-        'Boolean, whether to automatically apply a diverging colormap and '
+        'Whether to automatically apply a diverging colormap and '
         'normalizer based on the data.'
     ),
     'cmap.qualitative': (
@@ -1088,7 +1091,7 @@ _rc_proplot_table = {
     'formatter.zerotrim': (
         True,
         _validate_bool,
-        'Boolean, indicates whether trailing decimal zeros are trimmed on tick labels.'
+        'Whether to trim trailing decimal zeros on tick labels.'
     ),
     'formatter.limits': (
         [-5, 6],  # must be list or else validated
@@ -1140,8 +1143,8 @@ _rc_proplot_table = {
     'grid.dmslabels': (
         True,
         _validate_bool,
-        'Boolean, indicates whether to use degrees-minutes-seconds rather than '
-        'decimals for gridline labels on cartopy `~proplot.axes.GeoAxes`.'
+        'Whether to use degrees-minutes-seconds rather than decimals for gridline '
+        'labels on cartopy `~proplot.axes.GeoAxes`.'
     ),
     'grid.inlinelabels': (
         False,
@@ -1152,8 +1155,8 @@ _rc_proplot_table = {
     'grid.labels': (
         False,
         _validate_bool,
-        'Boolean, indicates whether to label the longitude and latitude gridlines '
-        'in `~proplot.axes.GeoAxes`.'
+        'Whether to label the longitude and latitude gridlines in '
+        '`~proplot.axes.GeoAxes`.'
     ),
     'grid.labelcolor': (
         BLACK,
@@ -1192,8 +1195,8 @@ _rc_proplot_table = {
     'grid.rotatelabels': (
         False,  # False limits projections where labels are available
         _validate_bool,
-        'Boolean, indicates whether to rotate longitude and latitude '
-        'gridline labels for cartopy `~proplot.axes.GeoAxes`.'
+        'Whether to rotate longitude and latitude gridline labels for cartopy '
+        '`~proplot.axes.GeoAxes`.'
     ),
     'grid.style': (
         '-',
@@ -1260,7 +1263,7 @@ _rc_proplot_table = {
     'innerborders': (
         False,
         _validate_bool,
-        'Boolean, toggles internal political border lines (e.g. states and provinces) '
+        'Toggles internal political border lines (e.g. states and provinces) '
         'on and off.'
     ),
     'innerborders.color': (
@@ -1306,7 +1309,7 @@ _rc_proplot_table = {
     'lakes': (
         False,
         _validate_bool,
-        'Boolean, toggles lake patches on and off.'
+        'Toggles lake patches on and off.'
     ),
     'lakes.color': (
         WHITE,
@@ -1323,7 +1326,7 @@ _rc_proplot_table = {
     'land': (
         False,
         _validate_bool,
-        'Boolean, toggles land patches on and off.'
+        'Toggles land patches on and off.'
     ),
     'land.color': (
         BLACK,
@@ -1412,7 +1415,7 @@ _rc_proplot_table = {
     'ocean': (
         False,
         _validate_bool,
-        'Boolean, toggles ocean patches on and off.'
+        'Toggles ocean patches on and off.'
     ),
     'ocean.color': (
         WHITE,
@@ -1465,7 +1468,7 @@ _rc_proplot_table = {
     'rivers': (
         False,
         _validate_bool,
-        'Boolean, toggles river lines on and off.'
+        'Toggles river lines on and off.'
     ),
     'rivers.color': (
         BLACK,
@@ -1526,12 +1529,12 @@ _rc_proplot_table = {
     'subplots.span': (
         True,
         _validate_bool,
-        'Boolean, toggles spanning axis labels. See `~proplot.ui.subplots` for details.'
+        'Toggles spanning axis labels. See `~proplot.ui.subplots` for details.'
     ),
     'subplots.tight': (
         True,
         _validate_bool,
-        'Boolean, indicates whether to auto-adjust figure bounds and subplot spacings.'
+        'Whether to auto-adjust the subplot spaces and figure margins.'
     ),
 
     # Super title settings
@@ -1606,7 +1609,7 @@ _rc_proplot_table = {
     'tick.minor': (
         TICKMINOR,
         _validate_bool,
-        'Boolean, toggles minor ticks on and off.',
+        'Toggles minor ticks on and off.',
     ),
     'tick.pad': (
         TICKPAD,
@@ -1628,14 +1631,14 @@ _rc_proplot_table = {
     'title.above': (
         True,
         _validate_belongs(False, True, 'panels'),
-        'Boolean or string, indicates whether to move outer titles and a-b-c labels '
-        'above panels, colorbars, or legends that are above the axes. If the string '
-        "'panels' then text is only redirected above axes panels."
+        'Whether to move outer titles and a-b-c labels above panels, colorbars, or '
+        "legends that are above the axes. If the string 'panels' then text is only "
+        'redirected above axes panels. Otherwise should be boolean.'
     ),
     'title.border': (
         True,
         _validate_bool,
-        'Boolean, indicates whether to draw a white border around titles '
+        'Whether to draw a white border around titles '
         'when :rcraw:`title.loc` is inside the axes.'
     ),
     'title.borderwidth': (
@@ -1646,7 +1649,7 @@ _rc_proplot_table = {
     'title.bbox': (
         False,
         _validate_bool,
-        'Boolean, whether to draw semi-transparent bounding boxes around titles '
+        'Whether to draw semi-transparent bounding boxes around titles '
         'when :rcraw:`title.loc` is inside the axes.'
     ),
     'title.bboxcolor': (
@@ -1810,10 +1813,10 @@ for _keys in _rc_aliases:
 # Recently added settings. Update these only if the version is recent enough
 # NOTE: We don't make 'title.color' a child of 'axes.titlecolor' because
 # the latter can take on the value 'auto' and can't handle that right now.
-if _version_mpl >= 3.2:
+if dependencies._version_mpl >= 3.2:
     _rc_matplotlib_default['axes.titlecolor'] = BLACK
     _rc_children['title.color'] = ('axes.titlecolor',)
-if _version_mpl >= 3.4:
+if dependencies._version_mpl >= 3.4:
     _rc_matplotlib_default['xtick.labelcolor'] = BLACK
     _rc_matplotlib_default['ytick.labelcolor'] = BLACK
     _rc_children['meta.color'] += ('xtick.labelcolor', 'ytick.labelcolor')

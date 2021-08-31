@@ -16,7 +16,7 @@ import numpy as np
 from . import axes as paxes
 from .config import rc
 from .internals import ic  # noqa: F401
-from .internals import _not_none, _snippet_manager, warnings
+from .internals import _not_none, docstring, warnings
 from .utils import _fontsize_to_pt, units
 
 __all__ = [
@@ -89,10 +89,10 @@ panelpad : unit-spec, optional
     panels. Default is :rc:`subplots.panelpad`.
     %(units.em)s
 """
-_snippet_manager['gridspec.shared'] = _shared_docstring
-_snippet_manager['gridspec.scalar'] = _scalar_docstring
-_snippet_manager['gridspec.vector'] = _vector_docstring
-_snippet_manager['gridspec.tight'] = _tight_docstring
+docstring._snippet_manager['gridspec.shared'] = _shared_docstring
+docstring._snippet_manager['gridspec.scalar'] = _scalar_docstring
+docstring._snippet_manager['gridspec.vector'] = _vector_docstring
+docstring._snippet_manager['gridspec.tight'] = _tight_docstring
 
 
 def _disable_method(attr):
@@ -202,13 +202,18 @@ class GridSpec(mgridspec.GridSpec):
             return None
         super().__getattribute__(attr)  # native error message
 
-    @_snippet_manager
+    @docstring._snippet_manager
     def __init__(self, nrows=1, ncols=1, **kwargs):
         """
         Parameters
         ----------
-        nrows, ncols : int, optional
-            The number of rows and columns on the subplot grid.
+        nrows : int, optional
+            The number of rows in the subplot grid.
+        ncols : int, optional
+            The number of columns in the subplot grid.
+
+        Other parameters
+        ----------------
         %(gridspec.shared)s
         %(gridspec.vector)s
         %(gridspec.tight)s
@@ -1059,7 +1064,7 @@ class GridSpec(mgridspec.GridSpec):
         lefts, rights = (self.left / figwidth + widths).reshape((-1, 2)).T
         return bottoms, tops, lefts, rights
 
-    @_snippet_manager
+    @docstring._snippet_manager
     def update(self, **kwargs):
         """
         Update the gridspec with arbitrary initialization keyword arguments
@@ -1069,6 +1074,7 @@ class GridSpec(mgridspec.GridSpec):
         ----------
         %(gridspec.shared)s
         %(gridspec.vector)s
+        %(gridspec.tight)s
         """
         # Apply positions to all axes
         # NOTE: This uses the current figure size to fix panel widths

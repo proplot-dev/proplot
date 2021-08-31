@@ -15,7 +15,6 @@ import matplotlib.contour as mcontour
 import matplotlib.gridspec as mgridspec
 import matplotlib.legend as mlegend
 import matplotlib.patches as mpatches
-import matplotlib.patheffects as mpatheffects
 import matplotlib.projections as mprojections
 import matplotlib.text as mtext
 import matplotlib.ticker as mticker
@@ -35,10 +34,10 @@ from ..internals import (
     _pop_kwargs,
     _pop_params,
     _pop_props,
-    _snippet_manager,
-    _version_mpl,
+    dependencies,
     docstring,
     rcsetup,
+    text,
     warnings,
 )
 from ..utils import _fontsize_to_pt, edges, units
@@ -65,7 +64,7 @@ transform : {'data', 'axes', 'figure'} or `~matplotlib.transforms.Transform`, op
     `~matplotlib.axes.Axes.transAxes`, or `~matplotlib.figure.Figure.transFigure`
     transforms. Default is ``'axes'``, i.e. `bounds` is in axes-relative coordinates.
 """
-_snippet_manager['axes.transform'] = _transform_docstring
+docstring._snippet_manager['axes.transform'] = _transform_docstring
 
 
 # Projection docstring
@@ -90,9 +89,9 @@ basemap : bool or dict-like, optional
     Whether to use `~mpl_toolkits.basemap.Basemap` or `~cartopy.crs.Projection`
     for map projections. Default is :rc:`basemap`.
 """
-_snippet_manager['axes.proj'] = _proj_docstring
-_snippet_manager['axes.proj_kw'] = _proj_kw_docstring
-_snippet_manager['axes.basemap'] = _basemap_docstring
+docstring._snippet_manager['axes.proj'] = _proj_docstring
+docstring._snippet_manager['axes.proj_kw'] = _proj_kw_docstring
+docstring._snippet_manager['axes.basemap'] = _basemap_docstring
 
 
 # Inset docstring
@@ -126,7 +125,7 @@ Other parameters
 **kwargs
     Passed to `CartesianAxes`.
 """
-_snippet_manager['axes.inset'] = _inset_docstring
+docstring._snippet_manager['axes.inset'] = _inset_docstring
 
 
 # Panel docstring
@@ -169,7 +168,7 @@ Returns
 `~proplot.axes.CartesianAxes`
     The panel axes.
 """
-_snippet_manager['axes.panel'] = _panel_docstring
+docstring._snippet_manager['axes.panel'] = _panel_docstring
 
 
 # Colorbar and legend space
@@ -192,10 +191,10 @@ queue : bool, optional
     *inset* {name}, the old {name} is removed. If ``False`` and `loc` is an
     *outer* {name}, the {name}s are stacked.
 """
-_snippet_manager['axes.legend_space'] = _space_docstring.format(
+docstring._snippet_manager['axes.legend_space'] = _space_docstring.format(
     name='legend', default='legend.borderaxespad'
 )
-_snippet_manager['axes.colorbar_space'] = _space_docstring.format(
+docstring._snippet_manager['axes.colorbar_space'] = _space_docstring.format(
     name='colorbar', default='colorbar.insetpad'
 )
 
@@ -303,9 +302,9 @@ rc_kw : dict-like, optional
     Many of the keyword arguments documented above are actually applied by updating
     the `~proplot.config.rc` settings then retrieving the updated settings.
 """
-_snippet_manager['axes.rc'] = _rc_format_docstring
-_snippet_manager['axes.format'] = _axes_format_docstring
-_snippet_manager['figure.format'] = _figure_format_docstring
+docstring._snippet_manager['axes.rc'] = _rc_format_docstring
+docstring._snippet_manager['axes.format'] = _axes_format_docstring
+docstring._snippet_manager['figure.format'] = _figure_format_docstring
 
 
 # Colorbar docstrings
@@ -352,15 +351,6 @@ extendsize : unit-spec, optional
     The length of the colorbar "extensions" in physical units. Default is
     :rc:`colorbar.insetextend` for inset colorbars and :rc:`colorbar.extend` for outer
     colorbars. %(units.em)s
-frame, frameon : bool, optional
-    For inset colorbars only. Indicates whether to draw a "frame", just
-    like `~matplotlib.axes.Axes.legend`. Default is :rc:`colorbar.frameon`.
-lw, linewidth, ec, edgecolor : optional
-    Controls the line width and edge color for the colorbar outline and
-    dividers. For inset colorbars, also controls frame properties.
-a, alpha, framealpha, fc, facecolor, framecolor : optional
-    For inset colorbars only. Controls the transparency and color of the frame.
-    Defaults are :rc:`colorbar.framealpha` and :rc:`colorbar.framecolor`.
 norm : norm-spec, optional
     Ignored if `values` is ``None``. The normalizer for converting `values`
     to colormap colors. Passed to `~proplot.constructor.Norm`.
@@ -371,29 +361,27 @@ reverse : bool, optional
 tickloc, ticklocation : {'bottom', 'top', 'left', 'right'}, optional
     Where to draw tick marks on the colorbar.
 tickdir, tickdirection : {'out', 'in', 'inout'}, optional
-    Direction that major and minor tick marks point.
+    Direction of major and minor colorbar ticks.
 tickminor : bool, optional
-    Whether to add minor ticks to the colorbar with
-    `~matplotlib.colorbar.ColorbarBase.minorticks_on`.
-grid, edges, drawedges : bool, optional
-    Whether to draw edges (i.e., gridlines) between each level of the colorbar.
-    Default is :rc:`colorbar.grid`.
+    Whether to add minor ticks using `~matplotlib.colorbar.ColorbarBase.minorticks_on`.
 label, title : str, optional
     The colorbar label. The `title` keyword is also accepted for
     consistency with `~matplotlib.axes.Axes.legend`.
+labelsize, labelweight, labelcolor : optional
+    The font size, weight, and color for colorbar label text.
 locator, ticks : locator-spec, optional
     Used to determine the colorbar tick positions. Passed to the
     `~proplot.constructor.Locator` constructor function.
 locator_kw : dict-like, optional
     The locator settings. Passed to `~proplot.constructor.Locator`.
-maxn : int, optional
-    Used if `locator` is ``None``. Determines the maximum number of levels that
-    are ticked. Default depends on the colorbar length relative to the font size.
-    The name `maxn` is meant to be reminiscent of `~matplotlib.ticker.MaxNLocator`.
 minorlocator, minorticks
     As with `locator`, `ticks` but for the minor ticks.
 minorlocator_kw
     As with `locator_kw`, but for the minor ticks.
+maxn : int, optional
+    Used if `locator` is ``None``. Determines the maximum number of levels that
+    are ticked. Default depends on the colorbar length relative to the font size.
+    The name `maxn` is meant to be reminiscent of `~matplotlib.ticker.MaxNLocator`.
 maxn_minor
     As with `maxn`, but for the minor ticks.
 format, formatter, ticklabels : formatter-spec, optional
@@ -403,10 +391,20 @@ formatter_kw : dict-like, optional
     The formatter settings. Passed to `~proplot.constructor.Formatter`.
 rotation : float, optional
     The tick label rotation. Default is ``0``.
-labelsize, labelweight, labelcolor : optional
-    The font size, weight, and color for colorbar label text.
 ticklabelsize, ticklabelweight, ticklabelcolor : optional
     The font size, weight, and color for colorbar tick labels.
+grid, edges, drawedges : bool, optional
+    Whether to draw level dividers (i.e., gridlines) between each distinct color.
+    Default is :rc:`colorbar.grid`.
+frame, frameon : bool, optional
+    For inset colorbars only. Indicates whether to draw a "frame", just
+    like `~matplotlib.axes.Axes.legend`. Default is :rc:`colorbar.frameon`.
+a, alpha, framealpha, fc, facecolor, framecolor, ec, edgecolor, ew, edgewidth : optional
+    For inset colorbars only. Controls the transparency and color of the frame.
+    Defaults are :rc:`colorbar.framealpha` and :rc:`colorbar.framecolor`.
+lw, linewidth, c, color : optional
+    Controls the line width and edge color for both the colorbar
+    outline and the level dividers.
 orientation : {None, 'horizontal', 'vertical'}, optional
     The colorbar orientation. By default this depends on the "side" of the subplot
     or figure where the colorbar is drawn. Inset colorbars are always horizontal.
@@ -417,8 +415,8 @@ rasterize : bool, optional
 **kwargs
     Passed to `~matplotlib.figure.Figure.colorbar`.
 """
-_snippet_manager['axes.colorbar_args'] = _colorbar_args_docstring
-_snippet_manager['axes.colorbar_kwargs'] = _colorbar_kwargs_docstring
+docstring._snippet_manager['axes.colorbar_args'] = _colorbar_args_docstring
+docstring._snippet_manager['axes.colorbar_kwargs'] = _colorbar_kwargs_docstring
 
 
 # Legend docstrings
@@ -470,32 +468,40 @@ fontsize, fontweight, fontcolor : optional
 titlefontsize, titlefontweight, titlefontcolor : optional
     The font size, weight, and color for the legend title. Font size is interpreted
     by `~proplot.utils.units`. The default size is `fontsize`.
+borderpad, borderaxespad, handlelength, handleheight, handletextpad, \
+labelspacing, columnspacing : unit-spec, optional
+    Various matplotlib `~matplotlib.axes.Axes.legend` spacing arguments.
+    %(units.em)s
 a, alpha, framealpha, fc, facecolor, framecolor, ec, edgecolor, ew, edgewidth : optional
     The opacity, face color, edge color, and edge width for the legend frame.
     Defaults are :rc:`legend.framealpha`, :rc:`legend.facecolor`,
     :rc:`legend.edgecolor` and :rc:`axes.linewidth`.
-color, lw, linewidth, m, marker, ls, linestyle, dashes, ms, markersize : optional
+c, color, lw, linewidth, m, marker, ls, linestyle, dashes, ms, markersize : optional
     Properties used to override the legend handles. For example, for a
     legend describing variations in line style ignoring variations
-    in color, you might want to use ``color='k'``.
-borderpad, borderaxespad, handlelength, handleheight, handletextpad, \
-labelspacing, columnspacing : unit-spec, optional
-    Various native matplotlib `~matplotlib.axes.Axes.legend` spacing
-    arguments. %(units.em)s
+    in color, you might want to use ``color='black'``.
+handle_kw : dict-like, optional
+    Additional properties used to override legend handles, e.g.
+    ``handle_kw={'edgecolor': 'black'}``. Only line properties
+    can be passed as keyword arguments.
+handler_map : dict-like, optional
+    A dictionary mapping instances or types to a legend handler.
+    This `handler_map` updates the default handler map found at
+    `matplotlib.legend.Legend.get_legend_handler_map`.
 **kwargs
     Passed to `~matplotlib.axes.Axes.legend`.
 """
-_snippet_manager['axes.legend_args'] = _legend_args_docstring
-_snippet_manager['axes.legend_kwargs'] = _legend_kwargs_docstring
+docstring._snippet_manager['axes.legend_args'] = _legend_args_docstring
+docstring._snippet_manager['axes.legend_kwargs'] = _legend_kwargs_docstring
 
 
-def _legend_objects(children):
+def _iter_children(children):
     """
     Iterate through `_children` of `HPacker`, `VPacker`, and `DrawingArea`.
     """
     for obj in children:
         if hasattr(obj, '_children'):
-            yield from _legend_objects(obj._children)
+            yield from _iter_children(obj._children)
         else:
             yield obj
 
@@ -821,7 +827,7 @@ class Axes(maxes.Axes):
         """
         # NOTE: 'tick.label' properties are now synonyms of 'grid.label' properties
         sprefix = axis or ''
-        cprefix = sprefix if _version_mpl >= 3.4 else ''  # newly introduced setting
+        cprefix = sprefix if dependencies._version_mpl >= 3.4 else ''  # new settings
         kwtext = rc.fill(
             {
                 'color': f'{cprefix}tick.labelcolor',  # native setting sometimes avail
@@ -994,7 +1000,7 @@ class Axes(maxes.Axes):
         if not isinstance(self, maxes.SubplotBase):
             raise RuntimeError('Axes must be a subplot.')
         setter = getattr(self, '_set_position', self.set_position)
-        if _version_mpl >= 3.4:
+        if dependencies._version_mpl >= 3.4:
             setter(self.get_subplotspec().get_position(self.figure))
         else:
             self.update_params()
@@ -1110,7 +1116,7 @@ class Axes(maxes.Axes):
             loc = rc.find('title.loc', context=True)
             loc = self._title_loc = _translate_loc(loc or self._title_loc, 'text')
             if loc != old and old is not None:
-                self._transfer_text(self._title_dict[old], self._title_dict[loc])
+                text._transfer_text(self._title_dict[old], self._title_dict[loc])
 
         # Update the title text. For outer panels, add text to the panel if
         # necesssary. For inner panels, use the border and bbox settings.
@@ -1252,7 +1258,7 @@ class Axes(maxes.Axes):
             fig._update_super_labels(side, labels, **kw)
 
     @docstring._obfuscate_signature
-    @_snippet_manager
+    @docstring._snippet_manager
     def format(
         self, *, title=None, title_kw=None, abc_kw=None,
         ltitle=None, lefttitle=None,
@@ -1396,14 +1402,14 @@ class Axes(maxes.Axes):
         self._tight_bbox = bbox
         return bbox
 
-    @_snippet_manager
+    @docstring._snippet_manager
     def inset(self, *args, **kwargs):
         """
         %(axes.inset)s
         """
         return self.inset_axes(*args, **kwargs)
 
-    @_snippet_manager
+    @docstring._snippet_manager
     def inset_axes(
         self, bounds, transform=None, *, proj=None, projection=None,
         zoom=None, zoom_kw=None, zorder=4, **kwargs
@@ -1503,14 +1509,14 @@ class Axes(maxes.Axes):
         self._inset_zoom_data = (rectpatch, connects)
         return rectpatch, connects
 
-    @_snippet_manager
+    @docstring._snippet_manager
     def panel(self, *args, **kwargs):
         """
         %(axes.panel)s
         """
         return self.panel_axes(*args, **kwargs)
 
-    @_snippet_manager
+    @docstring._snippet_manager
     def panel_axes(self, *args, **kwargs):
         """
         %(axes.panel)s
@@ -1522,6 +1528,36 @@ class Axes(maxes.Axes):
         if self._panel_parent:
             raise RuntimeError('Cannot create panels for existing panel axes.')
         return self.figure._add_axes_panel(self, *args, **kwargs)
+
+    def _add_frame(
+        self, xmin, ymin, width, height, *, fontsize, fancybox=None, **kwargs
+    ):
+        """
+        Manually add a colorbar or multilegend frame.
+        """
+        # TODO: Shadow patch does not seem to work. Unsure why.
+        # TODO: Add basic 'colorbar' and 'legend' artists with
+        # shared control over background frame.
+        shadow = kwargs.pop('shadow', None)  # noqa: F841
+        renderer = self.figure._get_renderer()
+        fontsize = _fontsize_to_pt(fontsize)
+        fontsize = (fontsize / 72) / self._get_size_inches()[0]  # axes relative units
+        fontsize = renderer.points_to_pixels(fontsize)
+        patch = mpatches.FancyBboxPatch(
+            (xmin, ymin), width, height,
+            snap=True,
+            zorder=3.5,
+            mutation_scale=fontsize,
+            transform=self.transAxes
+        )
+        patch.set_clip_on(False)
+        if fancybox:
+            patch.set_boxstyle('round', pad=0, rounding_size=0.2)
+        else:
+            patch.set_boxstyle('square', pad=0)
+        patch.update(kwargs)
+        self.add_artist(patch)
+        return patch
 
     def _apply_title_above(self):
         """
@@ -1542,7 +1578,7 @@ class Axes(maxes.Axes):
         pax._title_pad = self._title_pad
         pax._abc_title_pad = self._abc_title_pad
         for name in names:
-            self._transfer_text(self._title_dict[name], pax._title_dict[name])
+            text._transfer_text(self._title_dict[name], pax._title_dict[name])
 
     def _auto_share(self):
         """
@@ -1605,7 +1641,30 @@ class Axes(maxes.Axes):
             if self.figure._sharey > 3:
                 self._sharey_setup(ref, labels=False)
 
-    def _add_guide(self, guide, obj, loc, **kwargs):
+    def _draw_guides(self):
+        """
+        Draw the queued-up legends and colorbars. Wrapper funcs and legend func let
+        user add handles to location lists with successive calls.
+        """
+        # Draw queued colorbars
+        for loc, colorbar in tuple(self._colorbar_dict.items()):
+            if not isinstance(colorbar, tuple):
+                continue
+            handles, labels, kwargs = colorbar
+            cb = self._draw_colorbar(handles, labels, loc=loc, **kwargs)
+            self._colorbar_dict[loc] = cb
+
+        # Draw queued legends
+        # WARNING: Passing empty list labels=[] to legend causes matplotlib
+        # _parse_legend_args to search for everything. Ensure None if empty.
+        for loc, legend in tuple(self._legend_dict.items()):
+            if not isinstance(legend, tuple) or any(isinstance(_, mlegend.Legend) for _ in legend):  # noqa: E501
+                continue
+            handles, labels, kwargs = legend
+            leg = self._draw_legend(handles, labels, loc=loc, **kwargs)
+            self._legend_dict[loc] = leg
+
+    def _register_guide(self, guide, obj, loc, **kwargs):
         """
         Queue up or replace objects for legends and list-of-artist style colorbars.
         """
@@ -1645,30 +1704,34 @@ class Axes(maxes.Axes):
             labels_full.extend(labels)
             kwargs_full.update(kwargs)
 
-    def _draw_guides(self):
+    @staticmethod
+    def _parse_frame(guide, fancybox=None, shadow=None, **kwargs):
         """
-        Draw the queued-up legends and colorbars. Wrapper funcs and legend func let
-        user add handles to location lists with successive calls.
+        Parse frame arguments.
         """
-        # Draw queued colorbars
-        for loc, colorbar in tuple(self._colorbar_dict.items()):
-            if not isinstance(colorbar, tuple):
-                continue
-            handles, labels, kwargs = colorbar
-            cb = self._draw_colorbar(handles, labels, loc=loc, **kwargs)
-            self._colorbar_dict[loc] = cb
+        # NOTE: Here we permit only 'edgewidth' to avoid conflict with 'linewidth'
+        # used for legend handles and colorbar edge.
+        kw_frame = _pop_kwargs(
+            kwargs,
+            alpha=('a', 'framealpha', 'facealpha'),
+            facecolor=('fc', 'framecolor', 'facecolor'),
+            edgecolor=('ec',),
+            edgewidth=('ew',),
+        )
+        _kw_frame_default = {
+            'alpha': f'{guide}.framealpha',
+            'facecolor': f'{guide}.facecolor',
+            'edgecolor': f'{guide}.edgecolor',
+            'edgewidth': 'axes.linewidth',
+        }
+        for key, name in _kw_frame_default.items():
+            kw_frame.setdefault(key, rc[name])
+        kw_frame['linewidth'] = kw_frame.pop('edgewidth')
+        kw_frame['fancybox'] = _not_none(fancybox, rc[f'{guide}.fancybox'])
+        kw_frame['shadow'] = _not_none(shadow, rc[f'{guide}.shadow'])
+        return kw_frame, kwargs
 
-        # Draw queued legends
-        # WARNING: Passing empty list labels=[] to legend causes matplotlib
-        # _parse_legend_args to search for everything. Ensure None if empty.
-        for loc, legend in tuple(self._legend_dict.items()):
-            if not isinstance(legend, tuple) or any(isinstance(_, mlegend.Legend) for _ in legend):  # noqa: E501
-                continue
-            handles, labels, kwargs = legend
-            leg = self._draw_legend(handles, labels, loc=loc, **kwargs)
-            self._legend_dict[loc] = leg
-
-    def _fill_colorbar_axes(
+    def _parse_outer_colorbar(
         self, length=None, shrink=None,
         tickloc=None, ticklocation=None, orientation=None, **kwargs
     ):
@@ -1724,7 +1787,7 @@ class Axes(maxes.Axes):
 
         return ax, kwargs
 
-    def _inset_colorbar_axes(
+    def _parse_inset_colorbar(
         self, loc=None, width=None, length=None, shrink=None,
         frame=None, frameon=None, label=None, pad=None,
         tickloc=None, ticklocation=None, orientation=None, **kwargs,
@@ -1732,21 +1795,6 @@ class Axes(maxes.Axes):
         """
         Return the axes and adjusted keyword args for an inset colorbar.
         """
-        # Frame properties
-        # NOTE: Compare to same block in legend() code.
-        kw_patch = _pop_kwargs(
-            kwargs,
-            alpha=('a', 'framealpha', 'facealpha'),
-            facecolor=('fc', 'framecolor'),
-            edgecolor=('ec',),
-            linewidth=('lw',),
-        )
-        kw_patch['zorder'] = 4
-        kw_patch.setdefault('alpha', rc['colorbar.framealpha'])
-        kw_patch.setdefault('edgecolor', rc['colorbar.edgecolor'])
-        kw_patch.setdefault('facecolor', rc['colorbar.facecolor'])
-        kw_patch.setdefault('linewidth', rc['axes.linewidth'])
-
         # Basic colorbar properties
         frame = _not_none(frame=frame, frameon=frameon, default=rc['colorbar.frameon'])
         length = _not_none(length=length, shrink=shrink, default=rc['colorbar.insetlength'])  # noqa: E501
@@ -1759,10 +1807,12 @@ class Axes(maxes.Axes):
 
         # Extra space accounting for colorbar label and tick labels
         labspace = rc['xtick.major.size'] / 72
+        fontsize = rc['xtick.labelsize']
+        fontsize = _fontsize_to_pt(fontsize)
         if label is not None:
-            labspace += 2.4 * rc['font.size'] / 72
+            labspace += 2.4 * fontsize / 72
         else:
-            labspace += 1.2 * rc['font.size'] / 72
+            labspace += 1.2 * fontsize / 72
         labspace /= self._get_size_inches()[1]  # space for labels
 
         # Location in axes-relative coordinates
@@ -1782,24 +1832,16 @@ class Axes(maxes.Axes):
         ibounds = (*ibounds, length, width)  # inset axes
         fbounds = (*fbounds, 2 * xpad + length, 2 * ypad + width + labspace)
 
-        # Make frame
-        # NOTE: We do not allow shadow effects or fancy edges effect.
-        # Also keep zorder same as with legend.
-        if frame:
-            xmin, ymin, width, height = fbounds
-            patch = mpatches.Rectangle(
-                (xmin, ymin), width, height, snap=True, transform=self.transAxes
-            )
-            patch.update(kw_patch)
-            self.add_artist(patch)
-
-        # Make axes
+        # Make axes and frame
         from .cartesian import CartesianAxes
         locator = self._make_inset_locator(ibounds, self.transAxes)
         bbox = locator(None, None)
         ax = CartesianAxes(self.figure, bbox.bounds, zorder=5)
         ax.set_axes_locator(locator)
         self.add_child_axes(ax)
+        kw_frame, kwargs = self._parse_frame('colorbar', **kwargs)
+        if frame:
+            frame = self._add_frame(*fbounds, fontsize=fontsize, **kw_frame)
 
         # Default keyword args
         if orientation is not None and orientation != 'horizontal':
@@ -1873,10 +1915,11 @@ class Axes(maxes.Axes):
                 length, scale, axis = height, 1.0, 'y'
             else:
                 length, scale, axis = width, 2.5, 'x'
-            size = _fontsize_to_pt(_not_none(fontsize, rc[axis + 'tick.labelsize']))
-            locator = _subsample_levels(maxn, scale, size)
+            fontsize = _not_none(fontsize, rc[axis + 'tick.labelsize'])
+            fontsize = _fontsize_to_pt(fontsize)
+            locator = _subsample_levels(maxn, scale, fontsize)
             if tickminor and minorlocator is None:
-                minorlocator = _subsample_levels(maxn_minor, 0.5, size)
+                minorlocator = _subsample_levels(maxn_minor, 0.5, fontsize)
 
         # Return tickers
         locator = constructor.Locator(locator, **locator_kw)
@@ -1995,11 +2038,10 @@ class Axes(maxes.Axes):
     def _draw_colorbar(
         self, mappable, values=None, *, loc=None, space=None, pad=None,
         extend=None, reverse=False, tickdir=None, tickdirection=None, tickminor=None,
-        title=None, label=None,
-        ec=None, edgecolor=None, lw=None, linewidth=None, edgefix=None,
-        labelsize=None, labelweight=None, labelcolor=None,
+        title=None, label=None, labelsize=None, labelweight=None, labelcolor=None,
         ticklabelsize=None, ticklabelweight=None, ticklabelcolor=None,
         grid=None, edges=None, drawedges=None, rasterize=None,
+        c=None, color=None, lw=None, linewidth=None, edgefix=None,
         extendsize=None, extendfrac=None, **kwargs
     ):
         """
@@ -2016,8 +2058,8 @@ class Axes(maxes.Axes):
         # sure locators are in vmin/vmax range exclusively; cannot match values.
         grid = _not_none(grid=grid, edges=edges, drawedges=drawedges, default=rc['colorbar.grid'])  # noqa: E501
         label = _not_none(title=title, label=label)
+        color = _not_none(c=c, color=color, default=rc['axes.edgecolor'])
         linewidth = _not_none(lw=lw, linewidth=linewidth, default=rc['axes.linewidth'])
-        edgecolor = _not_none(ec=ec, edgecolor=edgecolor, default=rc['colorbar.edgecolor'])  # noqa: E501
         tickdir = _not_none(tickdir=tickdir, tickdirection=tickdirection)
         rasterize = _not_none(rasterize, rc['colorbar.rasterize'])
 
@@ -2031,11 +2073,11 @@ class Axes(maxes.Axes):
         if loc == 'fill':
             kwargs.pop('width', None)
             extendsize = _not_none(extendsize, rc['colorbar.extend'])
-            cax, kwargs = self._fill_colorbar_axes(**kwargs)
+            cax, kwargs = self._parse_outer_colorbar(**kwargs)
         else:
-            kwargs.update({'linewidth': linewidth, 'edgecolor': edgecolor, 'label': label})  # noqa: E501
+            kwargs['label'] = label  # for frame calculations
             extendsize = _not_none(extendsize, rc['colorbar.insetextend'])
-            cax, kwargs = self._inset_colorbar_axes(loc=loc, pad=pad, **kwargs)  # noqa: E501
+            cax, kwargs = self._parse_inset_colorbar(loc=loc, pad=pad, **kwargs)
 
         # Parse the mappable and get the locator or formatter. Try to get them from
         # values or artist labels rather than random points if possible.
@@ -2113,7 +2155,7 @@ class Axes(maxes.Axes):
         for label in axis.get_ticklabels():
             label.update(kw_ticklabels)
         axis.set_tick_params(
-            which='both', color=edgecolor, width=linewidth, direction=tickdir
+            which='both', color=color, width=linewidth, direction=tickdir
         )
 
         # The minor locator
@@ -2163,7 +2205,7 @@ class Axes(maxes.Axes):
             obj.draw_all()  # update contents
 
         # Fix colorbar outline
-        kw_outline = {'edgecolor': edgecolor, 'linewidth': linewidth}
+        kw_outline = {'edgecolor': color, 'linewidth': linewidth}
         if obj.outline is not None:
             obj.outline.update(kw_outline)
         if obj.dividers is not None:
@@ -2171,7 +2213,7 @@ class Axes(maxes.Axes):
 
         # Disable rasterization by default because it causes misalignment with grid
         if obj.solids:
-            cax._fix_edges(obj.solids, edgefix=edgefix)
+            cax._apply_edgefix(obj.solids, edgefix=edgefix)
             obj.solids.set_rasterized(rasterize)
 
         # Invert the axis if norm is a descending DiscreteNorm
@@ -2182,11 +2224,11 @@ class Axes(maxes.Axes):
             axis.set_inverted(True)
 
         # Return after registering location
-        self._add_guide('colorbar', obj, loc)  # possibly replace another
+        self._register_guide('colorbar', obj, loc)  # possibly replace another
         return obj
 
     @docstring._obfuscate_signature
-    @_snippet_manager
+    @docstring._snippet_manager
     def colorbar(
         self, mappable, values=None, *, loc=None, location=None, queue=False,
         **kwargs
@@ -2249,7 +2291,7 @@ class Axes(maxes.Axes):
         loc = _translate_loc(loc, 'colorbar', default=rc['colorbar.loc'])
         kwargs = _guide_kw_from_obj(mappable, 'colorbar', kwargs)
         if queue:
-            self._add_guide('colorbar', (mappable, values), loc, **kwargs)
+            self._register_guide('colorbar', (mappable, values), loc, **kwargs)
         else:
             cb = self._draw_colorbar(mappable, values, loc=loc, **kwargs)
             return cb
@@ -2419,119 +2461,74 @@ class Axes(maxes.Axes):
 
         return pairs
 
-    def _draw_normallegend(self, pairs, ncol=None, order=None, **kwargs):
+    def _add_single_legend(self, pairs, ncol=None, order=None, **kwargs):
         """
         Draw an individual legend with support for changing legend-entries
         between column-major and row-major.
         """
-        # Optionally change order. See: https://stackoverflow.com/q/10101141/4970632
-        # Example: If 5 columns, but final row length 3, columns 0-2 have
-        # N rows but 3-4 have N-1 rows.
+        # Optionally change the order
+        npairs = len(pairs)
         ncol = _not_none(ncol, 3)
+        nrow = npairs // ncol + 1
+        array = np.empty((nrow, ncol), dtype=object)
+        for i, pair in enumerate(pairs):
+            array.flat[i] = pair  # must be assigned individually
         if order == 'C':
-            nbase = len(pairs) // ncol + 1
-            split = [pairs[i * ncol:(i + 1) * ncol] for i in range(nbase)]
-            pairs = []
-            nrows_max = len(split)  # max possible row count
-            ncols_final = len(split[-1])  # columns in final row
-            nrows = [nrows_max] * ncols_final + [nrows_max - 1] * (ncol - ncols_final)
-            for col, nrow in enumerate(nrows):  # iterate through cols
-                pairs.extend(split[row][col] for row in range(nrow))
-        return mlegend.Legend(self, *zip(*pairs), ncol=ncol, **kwargs)
+            array = array.T
+        pairs = [pair for pair in array.flat if isinstance(pair, tuple)]
+        args = tuple(zip(*pairs)) or ([], [])
+        return mlegend.Legend(self, *args, ncol=ncol, **kwargs)
 
-    def _draw_multiframe(self, legs, fontsize=None, **kwargs):
-        """
-        Add a frame for multiple legends with "centered rows".
-        """
-        width, height = self._get_size_inches()
-        renderer = self.figure._get_renderer()  # arbitrary renderer
-        trans = self.transAxes.inverted()
-        bboxs = [leg.get_window_extent(renderer).transformed(trans) for leg in legs]
-        xmin = min(bbox.xmin for bbox in bboxs)
-        xmax = max(bbox.xmax for bbox in bboxs)
-        ymin = min(bbox.ymin for bbox in bboxs)
-        ymax = max(bbox.ymax for bbox in bboxs)
-        fontsize = (fontsize / 72) / width  # axes relative units
-        fontsize = renderer.points_to_pixels(fontsize)
-
-        # Draw and format patch
-        # TODO: Shadow patch does not seem to work. Figure it out
-        patch = mpatches.FancyBboxPatch(
-            (xmin, ymin), xmax - xmin, ymax - ymin,
-            snap=True, zorder=4.5,
-            mutation_scale=fontsize,
-            transform=self.transAxes
-        )
-        if kwargs.get('fancybox', rc['legend.fancybox']):
-            patch.set_boxstyle('round', pad=0, rounding_size=0.2)
-        else:
-            patch.set_boxstyle('square', pad=0)
-        patch.set_clip_on(False)
-        self.add_artist(patch)
-        if kwargs.get('shadow', rc['legend.shadow']):
-            shadow = mpatches.Shadow(patch, 20, -20)
-            self.add_artist(shadow)
-        return patch
-
-    def _draw_multilegend(
-        self, pairs, *, loc=None, title=None, fontsize=None, **kwargs
+    def _add_multi_legend(
+        self, pairs, *, fontsize,
+        loc=None, title=None, frameon=None, kw_frame=None, **kwargs
     ):
         """
         Draw "legend" with centered rows by creating separate legends for
         each row. The label spacing/border spacing will be exactly replicated.
         """
-        # Issue warning when overriding some properties
-        frameon = kwargs.pop('frameon', None)  # we add our own frame
-        fontsize = _not_none(fontsize, rc['legend.fontsize'])
-        overridden = []
-        for override in ('bbox_transform', 'bbox_to_anchor'):
-            prop = kwargs.pop(override, None)
-            if prop is not None:
-                overridden.append(override)
-        if overridden:
+        # Parse input args
+        # NOTE: Main legend() function applies default 'legend.loc' of 'best' when
+        # users pass legend=True or call legend without 'loc'. Cannot issue warning.
+        kw_frame = kw_frame or {}
+        kw_frame['fontsize'] = fontsize
+        if loc is None or loc == 'best':  # white lie
+            loc = 'upper center'
+        if not isinstance(loc, str):
+            raise ValueError(
+                f'Invalid loc={loc!r} for centered-row legend. Must be string.'
+            )
+        keys = ('bbox_transform', 'bbox_to_anchor')
+        kw_ignore = {key: kwargs.pop(key) for key in keys if key in kwargs}
+        if kw_ignore:
             warnings._warn_proplot(
-                'Ignoring user input properties '
-                + ', '.join(map(repr, overridden))
-                + ' for centered-row legend.'
+                f'Ignoring invalid centered-row legend keyword args: {kw_ignore!r}'
             )
 
-        # Determine space we want sub-legend to occupy as fraction of height
+        # Iterate and draw
         # NOTE: Empirical testing shows spacing fudge factor necessary to
         # exactly replicate the spacing of standard aligned legends.
-        width, height = self._get_size_inches()
-        spacing = kwargs.get('labelspacing', None) or rc['legend.labelspacing']
-        if pairs:
-            interval = 1 / len(pairs)  # split up axes
-            interval = (((1 + spacing * 0.85) * fontsize) / 72) / height
-
-        # Iterate and draw
         # NOTE: We confine possible bounding box in *y*-direction, but do not
         # confine it in *x*-direction. Matplotlib will automatically move
         # left-to-right if you request this.
-        loc = _not_none(loc, 'upper center')
-        if not isinstance(loc, str):
-            raise ValueError(f'Invalid loc={loc!r} for center=True legend. Must be string.')  # noqa: E501
-        if loc == 'best':
-            loc = 'upper center'
-            warnings._warn_proplot("Invalid loc='best' for center=True legend. Using 'upper center' instead.")  # noqa: E501
         legs = []
+        kwargs.update({'loc': loc, 'frameon': False})
+        space = kwargs.get('labelspacing', None) or rc['legend.labelspacing']
+        height = (((1 + space * 0.85) * fontsize) / 72) / self._get_size_inches()[1]
         for i, ipairs in enumerate(pairs):
-            if i > 0 and title is not None:
-                i += 1  # add extra space!
+            ii = np.array((i + 1, i))
+            extra = int(i > 0 and title is not None)
             if 'upper' in loc:
-                y1 = 1 - (i + 1) * interval
-                y2 = 1 - i * interval
+                base, offset = 1, -extra
             elif 'lower' in loc:
-                y1 = (len(pairs) + i - 2) * interval
-                y2 = (len(pairs) + i - 1) * interval
+                base, offset = 0, len(pairs)
             else:  # center
-                y1 = 0.5 + interval * len(pairs) / 2 - (i + 1) * interval
-                y2 = 0.5 + interval * len(pairs) / 2 - i * interval
-            bbox = mtransforms.Bbox([[0, y1], [1, y2]])
+                base, offset = 0.5, 0.5 * (len(pairs) - extra)
+            y1, y2 = base + (offset - ii) * height
+            box = mtransforms.Bbox([[0, y1], [1, y2]])
             leg = mlegend.Legend(
-                self, *zip(*ipairs), loc=loc, ncol=len(ipairs),
-                bbox_to_anchor=bbox, bbox_transform=self.transAxes,
-                frameon=False, title=(title if i == 0 else None), **kwargs
+                self, *zip(*ipairs), bbox_to_anchor=box, bbox_transform=self.transAxes,
+                ncol=len(ipairs), title=title if i == 0 else None, **kwargs
             )
             legs.append(leg)
 
@@ -2547,9 +2544,15 @@ class Axes(maxes.Axes):
             pass
         elif len(legs) == 1:
             legs[0].set_frame_on(True)
-        else:
-            frame = self._draw_multiframe(legs, fontsize=fontsize, **kwargs)
-            objs = (frame, *legs)
+        elif len(legs) > 1:
+            renderer = self.figure._get_renderer()  # arbitrary renderer
+            trans = self.transAxes.inverted()
+            bboxs = [leg.get_window_extent(renderer).transformed(trans) for leg in legs]
+            xmin = min(bbox.xmin for bbox in bboxs)
+            xmax = max(bbox.xmax for bbox in bboxs)
+            ymin = min(bbox.ymin for bbox in bboxs)
+            ymax = max(bbox.ymax for bbox in bboxs)
+            self._add_frame(xmin, ymin, xmax - xmin, ymax - ymin, **kw_frame)
         return objs
 
     def _draw_legend(
@@ -2559,7 +2562,7 @@ class Axes(maxes.Axes):
         alphabetize=False, center=None, order=None, label=None, title=None,
         fontsize=None, fontweight=None, fontcolor=None,
         titlefontsize=None, titlefontweight=None, titlefontcolor=None,
-        handler_map=None, **kwargs
+        handle_kw=None, handler_map=None, **kwargs
     ):
         """
         The driver function for adding axes legends.
@@ -2621,26 +2624,6 @@ class Axes(maxes.Axes):
             }
             loc = loc_sides[lax._panel_side]
 
-        # Legend bounding box properties
-        # NOTE: Here we permit only 'edgewidth' to avoid conflict with handle
-        # property overrides.
-        kw_patch = _pop_kwargs(
-            kwargs,
-            alpha=('a', 'framealpha', 'facealpha'),
-            facecolor=('fc', 'framecolor'),
-            edgecolor=('ec',),
-            edgewidth=('ew',),
-        )
-        kw_outline_default = {
-            'alpha': 'legend.framealpha',
-            'facecolor': 'legend.facecolor',
-            'edgecolor': 'legend.edgecolor',
-            'edgewidth': 'axes.linewidth',
-        }
-        for key, name in kw_outline_default.items():
-            kw_patch.setdefault(key, rc[name])
-        kw_patch['linewidth'] = kw_patch.pop('edgewidth')
-
         # Handle and text properties that are applied after-the-fact
         # NOTE: Set solid_capstyle to 'butt' so line does not extend past error bounds
         # shading in legend entry. This change is not noticable in other situations.
@@ -2655,17 +2638,17 @@ class Axes(maxes.Axes):
         if titlefontweight is not None:
             kw_title['weight'] = titlefontweight
         kw_handle = _pop_props(kwargs, 'line')
-        kw_handle['solid_capstyle'] = 'butt'
+        kw_handle.setdefault('solid_capstyle', 'butt')
+        kw_handle.update(handle_kw or {})
 
-        # Parse the legend handles using axes for auto-handle detection
+        # Parse the legend arguments using axes for auto-handle detection
         # TODO: Update this when we no longer use "filled panels" for outer legends
         pairs = lax._parse_legend_handles(
             handles, labels, ncol=ncol, order=order, center=center,
             alphabetize=alphabetize, handler_map=handler_map
         )
         title = _not_none(label=label, title=title)
-
-        # Create legend object(s)
+        kw_frame, kwargs = self._parse_frame('legend', **kwargs)
         kwargs.update({
             'title': title,
             'frameon': frameon,
@@ -2673,41 +2656,33 @@ class Axes(maxes.Axes):
             'handler_map': handler_map,
             'title_fontsize': titlefontsize,
         })
-        if not pairs:  # fallback
-            objs = [mlegend.Legend(lax, [], [], **kwargs)]
-        elif center:  # multi-legend pseudo-legend
-            objs = lax._draw_multilegend(pairs, loc=loc, **kwargs)
+
+        # Add the legend
+        if center:  # multi-legend pseudo-legend
+            objs = lax._add_multi_legend(pairs, loc=loc, kw_frame=kw_frame, **kwargs)
         else:  # standard legend
-            objs = [lax._draw_normallegend(pairs, loc=loc, ncol=ncol, order=order, **kwargs)]  # noqa: E50
+            kwargs.update({key: kw_frame.pop(key) for key in ('shadow', 'fancybox')})
+            leg = lax._add_single_legend(pairs, loc=loc, ncol=ncol, order=order, **kwargs)  # noqa: E501
+            leg.legendPatch.update(kw_frame)
+            objs = [leg]
         for obj in objs:
-            if isinstance(obj, mpatches.FancyBboxPatch):
-                continue
             if hasattr(lax, 'legend_') and lax.legend_ is None:
-                lax.legend_ = obj  # set *first* legend accessible with get_legend()
+                lax.legend_ = obj  # make first legend accessible with get_legend()
             else:
                 lax.add_artist(obj)
 
         # Update legend patch and elements
-        # TODO: Remove handle overrides? Idea was this lets users create *categorical*
-        # legends in clunky way, e.g. entries denoting *colors* and entries denoting
-        # *markers*. But would be better to add capacity for categorical labels in a
-        # *single* legend like seaborn rather than multiple legends.
+        # TODO: Add capcity for categorical labels in a single legend like seaborn
+        # rather than manual handle overrides with multiple legends.
         # WARNING: legendHandles only contains the *first* artist per legend because
         # HandlerBase.legend_artist() called in Legend._init_legend_box() only
         # returns the first artist. Instead we try to iterate through offset boxes.
         for obj in objs:
-            # Update patch
-            if isinstance(obj, mpatches.FancyBboxPatch):
-                obj.update(kw_patch)  # the multiple-legend bounding box
-                continue
-            obj.legendPatch.update(kw_patch)  # no-op if frame is off
-            # Update title text, handle text, and handle artist properties
-            # NOTE: This silently ignores invalid properties for common case
             try:
                 children = obj._legend_handle_box._children
             except AttributeError:  # older versions maybe?
                 children = []
-            for obj in _legend_objects(children):
+            for obj in _iter_children(children):
                 if isinstance(obj, mtext.Text):
                     kw = kw_text
                 else:
@@ -2722,11 +2697,11 @@ class Axes(maxes.Axes):
         if isinstance(objs[0], mpatches.FancyBboxPatch):
             objs = objs[1:]
         obj = objs[0] if len(objs) == 1 else tuple(objs)
-        self._add_guide('legend', obj, loc)  # possibly replace another
+        self._register_guide('legend', obj, loc)  # possibly replace another
         return obj
 
     @docstring._concatenate_original
-    @_snippet_manager
+    @docstring._snippet_manager
     def legend(
         self, handles=None, labels=None, *, loc=None, location=None, queue=False,
         **kwargs
@@ -2772,10 +2747,6 @@ class Axes(maxes.Axes):
         Other parameters
         ----------------
         %(axes.legend_kwargs)s
-        handler_map : dict-like, optional
-            A dictionary mapping instances or types to a legend handler.
-            This `handler_map` updates the default handler map found at
-            `matplotlib.legend.Legend.get_legend_handler_map`.
 
         See also
         --------
@@ -2789,84 +2760,13 @@ class Axes(maxes.Axes):
         loc = _translate_loc(loc, 'legend', default=rc['legend.loc'])
         kwargs = _guide_kw_from_obj(handles, 'legend', kwargs)
         if queue:
-            self._add_guide('legend', (handles, labels), loc, **kwargs)
+            self._register_guide('legend', (handles, labels), loc, **kwargs)
         else:
             leg = self._draw_legend(handles, labels, loc=loc, **kwargs)
             return leg
 
-    @staticmethod
-    def _transfer_text(src, dest):
-        """
-        Transfer the input text object properties and content to the destination
-        text object. Then clear the input object text.
-        """
-        text = src.get_text()
-        dest.set_color(src.get_color())  # not a font property
-        dest.set_fontproperties(src.get_fontproperties())  # size, weight, etc.
-        if not text.strip():  # WARNING: must test strip() (see _align_axis_labels())
-            return
-        dest.set_text(text)
-        src.set_text('')
-
-    @staticmethod
-    def _update_text(text, props=None, **kwargs):
-        """
-        Add a monkey patch for ``Text.update`` with pseudo "border" and "bbox"
-        properties without wrapping the entire class. This facillitates inset titles.
-        """
-        props = props or {}
-        props = props.copy()  # shallow copy
-        props.update(kwargs)
-
-        # Update border
-        border = props.pop('border', None)
-        bordercolor = props.pop('bordercolor', 'w')
-        borderinvert = props.pop('borderinvert', False)
-        borderwidth = props.pop('borderwidth', 2)
-        if border:
-            facecolor, bgcolor = text.get_color(), bordercolor
-            if borderinvert:
-                facecolor, bgcolor = bgcolor, facecolor
-            kwargs = {
-                'linewidth': borderwidth,
-                'foreground': bgcolor,
-                'joinstyle': 'miter',
-            }
-            text.set_color(facecolor)
-            text.set_path_effects(
-                [mpatheffects.Stroke(**kwargs), mpatheffects.Normal()],
-            )
-        elif border is False:
-            text.set_path_effects(None)
-
-        # Update bounding box
-        # NOTE: We use '_title_pad' and '_title_above' for both titles and a-b-c
-        # labels because always want to keep them aligned.
-        # NOTE: For some reason using pad / 10 results in perfect alignment for
-        # med-large labels. Tried scaling to be font size relative but never works.
-        pad = text.axes._title_pad / 10  # default pad
-        bbox = props.pop('bbox', None)
-        bboxcolor = props.pop('bboxcolor', 'w')
-        bboxstyle = props.pop('bboxstyle', 'round')
-        bboxalpha = props.pop('bboxalpha', 0.5)
-        bboxpad = _not_none(props.pop('bboxpad', None), pad)
-        if isinstance(bbox, dict):  # *native* matplotlib usage
-            props['bbox'] = bbox
-        elif bbox:
-            text.set_bbox({
-                'edgecolor': 'black',
-                'facecolor': bboxcolor,
-                'boxstyle': bboxstyle,
-                'alpha': bboxalpha,
-                'pad': bboxpad,
-            })
-        elif bbox is False:
-            text.set_bbox(None)  # disables the bbox
-
-        return mtext.Text.update(text, props)
-
     @docstring._concatenate_original
-    @_snippet_manager
+    @docstring._snippet_manager
     def text(
         self, *args,
         border=False, bordercolor='w', borderwidth=2, borderinvert=False,
@@ -2983,7 +2883,7 @@ class Axes(maxes.Axes):
 
         # Update the text object using monkey patch
         obj = add_text(*args, transform=transform, **kwargs)
-        obj.update = self._update_text.__get__(obj)
+        obj.update = text._update_text.__get__(obj)
         obj.update({
             'border': border,
             'bordercolor': bordercolor,

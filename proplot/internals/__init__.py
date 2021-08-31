@@ -1,21 +1,23 @@
 #!/usr/bin/env python3
 """
-Utilities used internally by proplot.
+Internal utilities.
 """
 import inspect
 
 import numpy as np
 
-from . import benchmarks, dependencies, docstring, rcsetup, warnings  # noqa: F401
-from .dependencies import _version, _version_cartopy, _version_mpl  # noqa: F401
-from .docstring import _snippet_manager  # noqa: F401
+from . import (  # noqa: F401
+    benchmarks, context, data, dependencies, docstring, rcsetup, text, warnings
+)
 
 try:  # print debugging
     from icecream import ic
 except ImportError:  # graceful fallback if IceCream isn't installed
     ic = lambda *args: print(*args)  # noqa: E731
 
-INTERNAL_PARAMS = {  # silently pop these if we don't reach certain internal utilities
+# Internal params to silently ignore instead of
+# warning about unused keyword arguments.
+INTERNAL_PARAMS = {
     'to_centers',
     'line_plot',
     'contour_plot',
@@ -24,13 +26,12 @@ INTERNAL_PARAMS = {  # silently pop these if we don't reach certain internal uti
     'skip_autolev',
 }
 
-# Alias dictionaries. This package only works with a subset of available artists
-# and keywords so we simply create our own system rather than working with
-# matplotlib's normalize_kwargs and _alias_maps.
+# Alias dictionaries. We only work with a small subset of artists so we create our
+# own system rather than using matplotlib's normalize_kwargs and _alias_maps.
 # WARNING: Add pseudo-props 'edgewidth' and 'fillcolor' for patch edges and faces
 # WARNING: Critical that alias does not appear in key dict or else _translate_kwargs
 # will overwrite settings with None after popping them!
-_alias_dicts = {
+ALIAS_DICTS = {
     'rgba': {
         'red': ('r',),
         'green': ('g',),
@@ -92,6 +93,22 @@ _alias_dicts = {
         'zorder': ('z', 'zorders'),
     },
 }
+
+
+def _pop_params(kwargs, *funcs, ignore_internal=False):
+    """
+    Pop parameters of the input functions or methods.
+    """
+    output = {}
+    for func in funcs:
+        sig = inspect.signature(func)
+        for key in sig.parameters:
+            value = kwargs.pop(key, None)
+            if ignore_internal and key in INTERNAL_PARAMS:
+                continue
+            if value is not None:
+                output[key] = value
+    return output
 
 
 def _not_none(*args, default=None, **kwargs):
@@ -164,9 +181,9 @@ def _translate_props(input, output, *categories, prefix=None, ignore=None):  # n
     # Get properties
     prefix = prefix or ''  # e.g. 'box' for boxlw, boxlinewidth, etc.
     for category in categories:
-        if category not in _alias_dicts:
+        if category not in ALIAS_DICTS:
             raise ValueError(f'Invalid alias category {category!r}.')
-        for key, aliases in _alias_dicts[category].items():
+        for key, aliases in ALIAS_DICTS[category].items():
             if isinstance(aliases, str):
                 aliases = (aliases,)
             opts = {prefix + alias: input.pop(prefix + alias, None) for alias in (key, *aliases)}  # noqa: E501
@@ -213,22 +230,7 @@ def _process_props(src, *categories, **kwargs):
     return _translate_props(src, src, *categories, **kwargs)
 
 
-def _pop_params(kwargs, *funcs, ignore_internal=False):
-    """
-    Pop parameters of the input functions or methods.
-    """
-    output = {}
-    for func in funcs:
-        sig = inspect.signature(func)
-        for key in sig.parameters:
-            value = kwargs.pop(key, None)
-            if ignore_internal and key in INTERNAL_PARAMS:
-                continue
-            if value is not None:
-                output[key] = value
-    return output
-
-
+# Legend and colorbar
 def _fill_guide_kw(kwargs, **pairs):
     """
     Add the keyword arguments to the dictionary if not already present.
@@ -244,14 +246,6 @@ def _fill_guide_kw(kwargs, **pairs):
         keys = tuple(a for group in aliases for a in group if key in group)  # may be ()
         if not any(kwargs.get(key) is not None for key in keys):  # note any(()) is True
             kwargs[key] = value
-
-
-def _guide_kw_to_arg(name, kwargs, **pairs):
-    """
-    Add to the `colorbar_kw` or `legend_kw` dict if there are no conflicts.
-    """
-    kw = kwargs.setdefault(f'{name}_kw', {})
-    _fill_guide_kw(kw, **pairs)
 
 
 def _guide_kw_from_obj(obj, name, kwargs):
@@ -280,38 +274,9 @@ def _guide_kw_to_obj(obj, name, kwargs):
             _guide_kw_to_obj(iobj, name, kwargs)
 
 
-class _empty_context(object):
+def _guide_kw_to_arg(name, kwargs, **pairs):
     """
-    A dummy context manager.
+    Add to the `colorbar_kw` or `legend_kw` dict if there are no conflicts.
     """
-    def __init__(self):
-        pass
-
-    def __enter__(self):
-        pass
-
-    def __exit__(self, *args):  # noqa: U100
-        pass
-
-
-class _state_context(object):
-    """
-    Temporarily modify attribute(s) for an arbitrary object.
-    """
-    def __init__(self, obj, **kwargs):
-        self._obj = obj
-        self._attrs_new = kwargs
-        self._attrs_prev = {
-            key: getattr(obj, key) for key in kwargs if hasattr(obj, key)
-        }
-
-    def __enter__(self):
-        for key, value in self._attrs_new.items():
-            setattr(self._obj, key, value)
-
-    def __exit__(self, *args):  # noqa: U100
-        for key in self._attrs_new.keys():
-            if key in self._attrs_prev:
-                setattr(self._obj, key, self._attrs_prev[key])
-            else:
-                delattr(self._obj, key)
+    kw = kwargs.setdefault(f'{name}_kw', {})
+    _fill_guide_kw(kw, **pairs)

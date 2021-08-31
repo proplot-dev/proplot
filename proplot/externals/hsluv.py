@@ -1,22 +1,6 @@
 #!/usr/bin/env python3
 """
-Tools for converting between various colorspaces. Adapted from `seaborn
-<https://github.com/mwaskom/seaborn/blob/master/seaborn/external/husl.py>`__
-and `hsluv-python
-<https://github.com/hsluv/hsluv-python/blob/master/hsluv.py>`__.
-For more info on colorspaces see the
-`CIULUV specification <https://en.wikipedia.org/wiki/CIELUV>`__, the
-`CIE 1931 colorspace <https://en.wikipedia.org/wiki/CIE_1931_color_space>`__,
-the `HCL colorspace <https://en.wikipedia.org/wiki/HCL_color_space>`__,
-and the `HSLuv system <http://www.hsluv.org/implementations/>`__.
-
-Provided by matplotlib:
-
-* `matplotlib.colors.to_rgb`
-* `matplotlib.colors.rgb_to_hsv`
-* `matplotlib.colors.hsv_to_rgb`
-
-Provided by this module:
+Utilities for converting between colorspaces. Includes the following:
 
 * `rgb_to_hsl` (same as `matplotlib.colors.rgb_to_hsv`)
 * `hsl_to_rgb` (same as `matplotlib.colors.hsv_to_rgb`)
@@ -26,9 +10,20 @@ Provided by this module:
 * `rgb_to_hsluv`
 * `hpluv_to_rgb`
 * `rgb_to_hpluv`
+
+Note
+----
+This file is adapted from `seaborn
+<https://github.com/mwaskom/seaborn/blob/master/seaborn/external/husl.py>`__
+and `hsluv-python
+<https://github.com/hsluv/hsluv-python/blob/master/hsluv.py>`__.
+For more information on colorspaces see the
+`CIULUV specification <https://en.wikipedia.org/wiki/CIELUV>`__, the
+`CIE 1931 colorspace <https://en.wikipedia.org/wiki/CIE_1931_color_space>`__,
+the `HCL colorspace <https://en.wikipedia.org/wiki/HCL_color_space>`__,
+and the `HSLuv system <http://www.hsluv.org/implementations/>`__.
 """
-# Imports (below functions are just meant to be used by user)
-# See: https://stackoverflow.com/a/2353265/4970632
+# Imports. See: https://stackoverflow.com/a/2353265/4970632
 # The HLS is actually HCL
 import math
 from colorsys import hls_to_rgb, rgb_to_hls

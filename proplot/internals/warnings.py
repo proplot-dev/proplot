@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Custom warning style and deprecation functions.
+Utilities for internal warnings and deprecations.
 """
 import functools
 import re

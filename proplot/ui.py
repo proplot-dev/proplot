@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from . import figure as pfigure
 from . import gridspec as pgridspec
 from .internals import ic  # noqa: F401
-from .internals import _not_none, _pop_params, _snippet_manager, docstring
+from .internals import _not_none, _pop_params, docstring
 
 __all__ = [
     'figure',
@@ -25,7 +25,7 @@ __all__ = [
 _pyplot_docstring = """
 This is included so you don't have to import `~matplotlib.pyplot`.
 """
-_snippet_manager['ui.pyplot'] = _pyplot_docstring
+docstring._snippet_manager['ui.pyplot'] = _pyplot_docstring
 
 
 def _parse_figsize(kwargs):
@@ -45,7 +45,7 @@ def _parse_figsize(kwargs):
     kwargs['figheight'] = figheight
 
 
-@_snippet_manager
+@docstring._snippet_manager
 def show(*args, **kwargs):
     """
     Call `matplotlib.pyplot.show`.
@@ -59,7 +59,7 @@ def show(*args, **kwargs):
     return plt.show(*args, **kwargs)
 
 
-@_snippet_manager
+@docstring._snippet_manager
 def close(*args, **kwargs):
     """
     Call `matplotlib.pyplot.close`.
@@ -73,7 +73,7 @@ def close(*args, **kwargs):
     return plt.close(*args, **kwargs)
 
 
-@_snippet_manager
+@docstring._snippet_manager
 def switch_backend(*args, **kwargs):
     """
     Call `matplotlib.pyplot.switch_backend`.
@@ -87,7 +87,7 @@ def switch_backend(*args, **kwargs):
     return plt.switch_backend(*args, **kwargs)
 
 
-@_snippet_manager
+@docstring._snippet_manager
 def ion():
     """
     Call `matplotlib.pyplot.ion`.
@@ -96,7 +96,7 @@ def ion():
     return plt.ion()
 
 
-@_snippet_manager
+@docstring._snippet_manager
 def ioff():
     """
     Call `matplotlib.pyplot.ioff`.
@@ -105,7 +105,7 @@ def ioff():
     return plt.ioff()
 
 
-@_snippet_manager
+@docstring._snippet_manager
 def isinteractive():
     """
     Call `matplotlib.pyplot.isinteractive`.
@@ -114,8 +114,7 @@ def isinteractive():
     return plt.isinteractive()
 
 
-@docstring._obfuscate_signature
-@_snippet_manager
+@docstring._snippet_manager
 def figure(**kwargs):
     """
     Create an empty figure. Subplots can be subsequently added using
@@ -143,8 +142,7 @@ def figure(**kwargs):
     return plt.figure(FigureClass=pfigure.Figure, **kwargs)
 
 
-@docstring._obfuscate_signature
-@_snippet_manager
+@docstring._snippet_manager
 def subplots(*args, **kwargs):
     """
     Create a figure with a single subplot or an arbitrary grid of

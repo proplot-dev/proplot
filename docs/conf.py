@@ -170,17 +170,12 @@ napoleon_include_init_with_doc = False  # move init doc to 'class' doc
 napoleon_preprocess_types = True
 napoleon_type_aliases = {
     # Python or inherited terms
-    'mapping': ':term:`mapping`',
-    'hashable': ':term:`hashable`',
+    # NOTE: float, int, and str are automatically included
+    'callable': ':py:func:`callable`',
     'sequence': ':term:`sequence`',
-    'iterable': ':term:`iterable`',
     'dict-like': ':term:`dict-like <mapping>`',
     'path-like': ':term:`path-like <path-like object>`',
     'array-like': ':term:`array-like <array_like>`',
-    'scalar': ':term:`scalar`',
-    'bool': ':class:`bool <bool>`',
-    'string': ':class:`string <str>`',
-    'callable': ':py:func:`callable`',
     # ProPlot defined terms
     'unit-spec': ':py:func:`unit-spec <proplot.utils.units>`',
     'locator-spec': ':py:func:`locator-spec <proplot.constructor.Locator>`',

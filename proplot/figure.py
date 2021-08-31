@@ -19,13 +19,12 @@ from . import gridspec as pgridspec
 from .config import _parse_format, _translate_loc, rc, rc_matplotlib
 from .internals import ic  # noqa: F401
 from .internals import (
-    _empty_context,
     _not_none,
     _pop_params,
-    _snippet_manager,
-    _state_context,
-    _version_mpl,
+    context,
+    dependencies,
     docstring,
+    text,
     warnings,
 )
 from .utils import units
@@ -186,7 +185,7 @@ https://www.nature.com/nature/for-authors/formatting-guide
     .. _pnas: \
 https://www.pnas.org/page/authors/format
 """
-_snippet_manager['figure.figure'] = _figure_docstring
+docstring._snippet_manager['figure.figure'] = _figure_docstring
 
 
 # Multiple subplots
@@ -235,7 +234,7 @@ order : {'C', 'F'}, optional
 %(gridspec.vector)s
 %(gridspec.tight)s
 """
-_snippet_manager['figure.subplots_params'] = _subplots_params_docstring
+docstring._snippet_manager['figure.subplots_params'] = _subplots_params_docstring
 
 
 # Composed subplots docstring
@@ -266,7 +265,7 @@ matplotlib.figure.Figure
 proplot.gridspec.SubplotGrid
 proplot.axes.Axes
 """
-_snippet_manager['figure.subplots'] = _subplots_docstring
+docstring._snippet_manager['figure.subplots'] = _subplots_docstring
 
 
 # Single subplots
@@ -314,7 +313,7 @@ Other parameters
 **kwargs
     Passed to `matplotlib.axes.Axes`.
 """
-_snippet_manager['figure.subplot'] = _subplot_docstring
+docstring._snippet_manager['figure.subplot'] = _subplot_docstring
 
 
 # Single axes
@@ -330,7 +329,7 @@ rect : 4-tuple of float
 %(axes.proj_kw)s
 %(axes.basemap)s
 """
-_snippet_manager['figure.axes'] = _axes_docstring
+docstring._snippet_manager['figure.axes'] = _axes_docstring
 
 
 # Colorbar or legend panel docstring
@@ -368,8 +367,8 @@ pad : float or str, optional
     Default is :rc:`subplots.innerpad` for the first {name} and
     :rc:`subplots.panelpad` for subsequently stacked {name}s.
 """
-_snippet_manager['figure.colorbar_space'] = _space_docstring.format(name='colorbar')
-_snippet_manager['figure.legend_space'] = _space_docstring.format(name='legend')
+docstring._snippet_manager['figure.colorbar_space'] = _space_docstring.format(name='colorbar')  # noqa: E501
+docstring._snippet_manager['figure.legend_space'] = _space_docstring.format(name='legend')  # noqa: E501
 
 
 # Save docstring
@@ -389,7 +388,7 @@ Figure.save
 Figure.savefig
 matplotlib.figure.Figure.savefig
 """
-_snippet_manager['figure.save'] = _save_docstring
+docstring._snippet_manager['figure.save'] = _save_docstring
 
 
 def _get_journal_size(preset):
@@ -506,10 +505,8 @@ class Figure(mfigure.Figure):
 
     # NOTE: If _rename_kwargs argument is an invalid identifier, it is
     # simply used in the warning message.
-    @_snippet_manager
-    @warnings._rename_kwargs(
-        '0.7', axpad='innerpad', autoformat='pplt.rc.autoformat = {}'
-    )
+    @docstring._snippet_manager
+    @warnings._rename_kwargs('0.7', axpad='innerpad', autoformat='pplt.rc.autoformat = {}')  # noqa: E501
     def __init__(
         self, *, refnum=None, ref=None, refaspect=None, aspect=None,
         refwidth=None, refheight=None, axwidth=None, axheight=None,
@@ -724,7 +721,7 @@ class Figure(mfigure.Figure):
         # Text drawing behavior
         if mathtext_fallback is None:
             context = {}
-        elif _version_mpl >= 3.4:
+        elif dependencies._version_mpl >= 3.4:
             context = {'mathtext.fallback': mathtext_fallback if isinstance(mathtext_fallback, str) else 'cm' if mathtext_fallback else None}  # noqa: E501
         else:
             context = {'mathtext.fallback_to_cm': bool(mathtext_fallback)}
@@ -739,14 +736,14 @@ class Figure(mfigure.Figure):
         kw = {'_is_adjusting': True}
         if not cache:
             kw['_cachedRenderer'] = None  # temporarily ignore it
-        return _state_context(self, **kw)
+        return context._state_context(self, **kw)
 
     def _context_authorized(self):
         """
         Prevent warning message when internally calling no-op methods. Otherwise
         emit warnings to help new users.
         """
-        return _state_context(self, _is_authorized=True)
+        return context._state_context(self, _is_authorized=True)
 
     def _parse_proj(
         self, proj=None, projection=None, proj_kw=None, projection_kw=None,
@@ -1027,7 +1024,7 @@ class Figure(mfigure.Figure):
         # Copy text from central label to spanning label
         # NOTE: Must use spaces rather than newlines, otherwise tight layout
         # won't make room. Reason is Text implementation (see Text._get_layout())
-        ax._transfer_text(axis.label, label)  # text, color, and font properties
+        text._transfer_text(axis.label, label)  # text, color, and font properties
         space = '\n'.join(' ' * (1 + label.get_text().count('\n')))
         for axis in axislist:  # should include original 'axis'
             axis.label.set_text(space)
@@ -1129,7 +1126,7 @@ class Figure(mfigure.Figure):
             self._suptitle.set_text(title)
 
     @docstring._concatenate_original
-    @_snippet_manager
+    @docstring._snippet_manager
     def add_axes(self, rect, **kwargs):
         """
         %(figure.axes)s
@@ -1138,7 +1135,7 @@ class Figure(mfigure.Figure):
         return super().add_axes(rect, **kwargs)
 
     @docstring._concatenate_original
-    @_snippet_manager
+    @docstring._snippet_manager
     def add_subplot(self, *args, number=None, **kwargs):
         """
         %(figure.subplot)s
@@ -1219,14 +1216,14 @@ class Figure(mfigure.Figure):
 
         return ax
 
-    @_snippet_manager
+    @docstring._snippet_manager
     def subplot(self, *args, **kwargs):  # shorthand
         """
         %(figure.subplot)s
         """
         return self.add_subplot(*args, **kwargs)
 
-    @_snippet_manager
+    @docstring._snippet_manager
     def add_subplots(
         self, array=None, *, ncols=1, nrows=1, order='C',
         proj=None, projection=None, proj_kw=None, projection_kw=None, basemap=None,
@@ -1328,7 +1325,7 @@ class Figure(mfigure.Figure):
 
         return pgridspec.SubplotGrid(axs)
 
-    @_snippet_manager
+    @docstring._snippet_manager
     def subplots(self, *args, **kwargs):  # shorthand
         """
         %(figure.subplots)s
@@ -1487,7 +1484,7 @@ class Figure(mfigure.Figure):
             ax.format(rc_kw=rc_kw, rc_mode=rc_mode, skip_figure=True, **kwargs)
 
     @docstring._concatenate_original
-    @_snippet_manager
+    @docstring._snippet_manager
     def colorbar(
         self, mappable, values=None, *, loc=None, location=None,
         row=None, col=None, rows=None, cols=None, span=None,
@@ -1523,7 +1520,7 @@ class Figure(mfigure.Figure):
         cax = kwargs.pop('cax', None)
         # Fill this axes
         if cax is not None:
-            with _state_context(cax, _internal_call=True):  # avoid wrapping pcolor
+            with context._state_context(cax, _internal_call=True):  # do not wrap pcolor
                 return super().colorbar(mappable, cax=cax, **kwargs)
         # Axes panel colorbar
         elif ax is not None:
@@ -1535,7 +1532,7 @@ class Figure(mfigure.Figure):
             return ax.colorbar(mappable, values, loc='fill', **kwargs)
 
     @docstring._concatenate_original
-    @_snippet_manager
+    @docstring._snippet_manager
     def legend(
         self, handles=None, labels=None, *, loc=None, location=None,
         row=None, col=None, rows=None, cols=None, span=None,
@@ -1572,7 +1569,7 @@ class Figure(mfigure.Figure):
             ax = self._add_figure_panel(loc, row=row, col=col, rows=rows, cols=cols, span=span, space=space, pad=pad, width=width)  # noqa: E501
             return ax.legend(handles, labels, loc='fill', **kwargs)
 
-    @_snippet_manager
+    @docstring._snippet_manager
     def save(self, filename, **kwargs):
         """
         %(figure.save)s
@@ -1580,7 +1577,7 @@ class Figure(mfigure.Figure):
         return self.savefig(filename, **kwargs)
 
     @docstring._concatenate_original
-    @_snippet_manager
+    @docstring._snippet_manager
     def savefig(self, filename, **kwargs):
         """
         %(figure.save)s
@@ -1668,16 +1665,16 @@ class Figure(mfigure.Figure):
         backend = any(getattr(self.canvas, attr, None) for attr in attrs)
         internal = internal or self._is_adjusting
         samesize = self._is_same_size(figsize, eps)
-        context = _empty_context  # context not necessary most of the time
+        ctx = context._empty_context()  # context not necessary most of the time
         if not backend and not internal and not samesize:
-            context = self._context_adjusting  # do not trigger layout solver
+            ctx = self._context_adjusting()  # do not trigger layout solver
             self._figwidth, self._figheight = figsize
             self._refwidth = self._refheight = None  # critical!
 
         # Apply the figure size
         # NOTE: If size changes we always update the gridspec to enforce fixed spaces
         # and panel widths (necessary since axes use figure relative coords)
-        with context():  # avoid recursion
+        with ctx:  # avoid recursion
             super().set_size_inches(figsize, forward=forward)
         if not samesize:  # gridspec positions will resolve differently
             self.gridspec.update()

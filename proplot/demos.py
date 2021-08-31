@@ -13,7 +13,7 @@ from . import colors as pcolors
 from . import constructor, ui
 from .config import _get_data_folders, rc
 from .internals import ic  # noqa: F401
-from .internals import _not_none, _snippet_manager, warnings
+from .internals import _not_none, docstring, warnings
 from .utils import to_rgb, to_xyz
 
 __all__ = [
@@ -26,8 +26,8 @@ __all__ = [
 ]
 
 COLORS_TABLE = {
-    # NOTE: Just want the names but point to the dictionaries because they
-    # get filled after this module is imported in __init__.
+    # NOTE: Just want the names but point to the dictionaries because
+    # they don't get filled until after __init__ imports this module.
     'base': pcolors.COLORS_BASE,
     'opencolor': pcolors.COLORS_OPEN,
     'xkcd': pcolors.COLORS_XKCD,
@@ -168,7 +168,7 @@ CYCLES_TABLE = {
     ),
 }
 
-_snippet_manager['show.colorbars'] = """
+_colorbar_docstring = """
 length : float or str, optional
     The length of the colorbars. Units are interpreted by
     `~proplot.utils.units`.
@@ -176,15 +176,10 @@ width : float or str, optional
     The width of the colorbars. Units are interpreted by
     `~proplot.utils.units`.
 """
-_snippet_manager['color.categories'] = ', '.join(
-    f'``{cat!r}``' for cat in COLORS_TABLE
-)
-_snippet_manager['cmap.categories'] = ', '.join(
-    f'``{cat!r}``' for cat in CMAPS_TABLE
-)
-_snippet_manager['cycle.categories'] = ', '.join(
-    f'``{cat!r}``' for cat in CYCLES_TABLE
-)
+docstring._snippet_manager['demos.colors'] = ', '.join(f'``{cat!r}``' for cat in COLORS_TABLE)  # noqa: E501
+docstring._snippet_manager['demos.cmaps'] = ', '.join(f'``{cat!r}``' for cat in CMAPS_TABLE)  # noqa: E501
+docstring._snippet_manager['demos.cycles'] = ', '.join(f'``{cat!r}``' for cat in CYCLES_TABLE)  # noqa: E501
+docstring._snippet_manager['demos.colorbar'] = _colorbar_docstring
 
 
 def show_channels(
@@ -513,7 +508,7 @@ def _draw_bars(
     return fig, axs
 
 
-@_snippet_manager
+@docstring._snippet_manager
 def show_cmaps(*args, **kwargs):
     """
     Generate a table of the registered colormaps or the input colormaps
@@ -532,14 +527,15 @@ def show_cmaps(*args, **kwargs):
         default is ``'User'``. Set this to ``False`` to hide
         unknown colormaps.
     include : str or sequence of str, optional
-        Category names to be shown in the table. Use this to limit the table
-        to a subset of categories. Valid categories are %(cmap.categories)s.
+        Category names to be shown in the table. Use this to limit
+        the table to a subset of categories. Valid categories are
+        %(demos.cmaps)s.
     ignore : str or sequence of str, optional
         Used only if `include` was not passed. Category names to be removed from the
         table. Default is ``'MATLAB'``, ``'GNUplot'``, ``'GIST'``, and ``'Other'``.
-        Use of these colormaps is discouraged, because they contain non-uniform color
+        Use of these colormaps is discouraged because they contain non-uniform color
         transitions (see the :ref:`user guide <ug_perceptual>`).
-    %(show.colorbars)s
+    %(demos.colorbar)s
 
     Returns
     -------
@@ -572,7 +568,7 @@ def show_cmaps(*args, **kwargs):
     return _draw_bars(cmaps, **kwargs)
 
 
-@_snippet_manager
+@docstring._snippet_manager
 def show_cycles(*args, **kwargs):
     """
     Generate a table of registered color cycles or the input color cycles
@@ -587,12 +583,13 @@ def show_cycles(*args, **kwargs):
         Category name for cycles that are unknown to ProPlot. The default
         is ``'User'``. Set this to ``False`` to hide unknown colormaps.
     include : str or sequence of str, optional
-        Category names to be shown in the table. Use this to limit the table
-        to a subset of categories. Valid categories are %(cycle.categories)s.
+        Category names to be shown in the table. Use this to limit
+        the table to a subset of categories. Valid categories are
+        %(demos.cycles)s.
     ignore : str or sequence of str, optional
-        Used only if `include` was not passed. Category names to be removed from
-        the table. Default is ``'MATLAB'``, ``'GNUplot'``, ``'GIST'``, and ``'Other'``.
-    %(show.colorbars)s
+        Used only if `include` was not passed. Category names to be removed
+        from the table.
+    %(demos.colorbar)s
 
     Returns
     -------
@@ -647,7 +644,7 @@ def _filter_colors(hcl, ihue, nhues, minsat):
     return not gray and color
 
 
-@_snippet_manager
+@docstring._snippet_manager
 def show_colors(
     *, nhues=17, minsat=10, unknown='User', include=None, ignore=None
 ):
@@ -667,8 +664,9 @@ def show_colors(
         Category name for color names that are unknown to ProPlot. The default
         is ``'User'``. Set this to ``False`` to hide unknown color names.
     include : str or sequence of str, optional
-        Category names to be shown in the table. Use this to limti the table
-        to a subset of categories. Valid categories are %(color.categories)s.
+        Category names to be shown in the table. Use this to limit
+        the table to a subset of categories. Valid categories are
+        %(demos.colors)s.
     ignore : str or sequence of str, optional
         Used only if `include` was not passed. Category names to be removed
         from the colormap table. Default is ``'CSS4'``.

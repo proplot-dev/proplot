@@ -33,7 +33,7 @@ from .internals import (
     _keyword_to_positional,
     _not_none,
     _pop_props,
-    _snippet_manager,
+    docstring,
     warnings,
 )
 from .utils import to_hex, to_rgb, to_rgba, to_xyz, to_xyza
@@ -306,12 +306,12 @@ colors : sequence of color-spec or tuple
     creates a colormap with the transition from red to blue taking
     *twice as long* as the transition from blue to green.
 """
-_snippet_manager['colors.init'] = _init_docstring
-_snippet_manager['colors.gamma'] = _gamma_docstring
-_snippet_manager['colors.space'] = _space_docstring
-_snippet_manager['colors.ratios'] = _ratios_docstring
-_snippet_manager['colors.name'] = _name_docstring
-_snippet_manager['colors.from_list'] = _from_list_docstring
+docstring._snippet_manager['colors.init'] = _init_docstring
+docstring._snippet_manager['colors.gamma'] = _gamma_docstring
+docstring._snippet_manager['colors.space'] = _space_docstring
+docstring._snippet_manager['colors.ratios'] = _ratios_docstring
+docstring._snippet_manager['colors.name'] = _name_docstring
+docstring._snippet_manager['colors.from_list'] = _from_list_docstring
 
 
 def _clip_colors(colors, clip=True, gray=0.2, warn=False):
@@ -917,7 +917,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
                 string += f' {key!r}: [{start:.2f}, ..., {stop:.2f}],\n'
         return type(self).__name__ + '({\n' + string + '})'
 
-    @_snippet_manager
+    @docstring._snippet_manager
     def __init__(self, *args, gamma=1, cyclic=False, alpha=None, **kwargs):
         """
         Parameters
@@ -1206,7 +1206,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         cmap._rgba_under, cmap._rgba_over = cmap._rgba_over, cmap._rgba_under
         return cmap
 
-    @_snippet_manager
+    @docstring._snippet_manager
     def save(self, path=None, alpha=True):
         """
         Save the colormap data to a file.
@@ -1502,7 +1502,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         return DiscreteColormap(colors, name=name, **kwargs)
 
     @classmethod
-    @_snippet_manager
+    @docstring._snippet_manager
     def from_file(cls, path, *, warn_on_failure=False):
         """
         Load colormap from a file.
@@ -1525,7 +1525,7 @@ class ContinuousColormap(mcolors.LinearSegmentedColormap, _Colormap):
         return cls._from_file(path, warn_on_failure=warn_on_failure)
 
     @classmethod
-    @_snippet_manager
+    @docstring._snippet_manager
     def from_list(cls, *args, **kwargs):
         """
         Make a `ContinuousColormap` from a sequence of colors.
@@ -1658,7 +1658,7 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
         colors = [color for cmap in cmaps for color in cmap.colors]
         return self.copy(colors, name, N or len(colors), **kwargs)
 
-    @_snippet_manager
+    @docstring._snippet_manager
     def save(self, path=None, alpha=True):
         """
         Save the colormap data to a file.
@@ -1791,7 +1791,7 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
         return cmap
 
     @classmethod
-    @_snippet_manager
+    @docstring._snippet_manager
     def from_file(cls, path, *, warn_on_failure=False):
         """
         Load color cycle from a file.
@@ -1827,7 +1827,7 @@ class PerceptualColormap(ContinuousColormap, _Colormap):
     A `ContinuousColormap` with linear transitions across hue, saturation,
     and luminance rather than red, blue, and green.
     """
-    @_snippet_manager
+    @docstring._snippet_manager
     def __init__(
         self, *args, space=None, clip=True, gamma=None, gamma1=None, gamma2=None,
         **kwargs
@@ -1932,7 +1932,7 @@ class PerceptualColormap(ContinuousColormap, _Colormap):
             self._lut[i, :3] = to_rgb(self._lut[i, :3], self._space)
         self._lut[:, :3] = _clip_colors(self._lut[:, :3], self._clip)
 
-    @_snippet_manager
+    @docstring._snippet_manager
     def set_gamma(self, gamma=None, gamma1=None, gamma2=None):
         """
         Modify the gamma value(s) and refresh the lookup table.
@@ -2025,7 +2025,7 @@ class PerceptualColormap(ContinuousColormap, _Colormap):
         return ContinuousColormap.from_list(name, self._lut[:-3, :], **kwargs)
 
     @classmethod
-    @_snippet_manager
+    @docstring._snippet_manager
     @warnings._rename_kwargs('0.7', fade='saturation', shade='luminance')
     def from_color(cls, *args, **kwargs):
         """
@@ -2085,7 +2085,7 @@ class PerceptualColormap(ContinuousColormap, _Colormap):
         )
 
     @classmethod
-    @_snippet_manager
+    @docstring._snippet_manager
     def from_hsl(cls, *args, **kwargs):
         """
         Make a `~PerceptualColormap` by specifying the hue,
@@ -2150,7 +2150,7 @@ class PerceptualColormap(ContinuousColormap, _Colormap):
         return cls(name, cdict, space=space, **kwargs)
 
     @classmethod
-    @_snippet_manager
+    @docstring._snippet_manager
     def from_list(cls, *args, adjust_grays=True, **kwargs):
         """
         Make a `PerceptualColormap` from a sequence of colors.

@@ -320,10 +320,7 @@ for i, label in enumerate(labels):
 
 # Outer legends
 ax = axs[0]
-ax.legend(
-    hs1, loc='b', ncols=3, title='row major', order='C',
-    facecolor='gray2'
-)
+ax.legend(hs1, loc='b', ncols=3, title='row major', order='C', facecolor='gray2')
 ax = axs[1]
 ax.legend(hs2, loc='b', ncols=3, center=True, title='centered rows')
 axs.format(xlabel='xlabel', ylabel='ylabel', suptitle='Legend formatting demo')

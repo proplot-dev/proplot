@@ -29,7 +29,7 @@ from . import scale as pscale
 from . import ticker as pticker
 from .config import rc
 from .internals import ic  # noqa: F401
-from .internals import _not_none, _pop_props, _version_cartopy, _version_mpl, warnings
+from .internals import _not_none, _pop_props, dependencies, warnings
 from .utils import get_colors, to_hex, to_rgba
 
 try:
@@ -99,7 +99,7 @@ LOCATORS = {
     'deglon': partial(pticker.LongitudeLocator, dms=False),
     'deglat': partial(pticker.LatitudeLocator, dms=False),
 }
-if _version_cartopy >= 0.18:
+if dependencies._version_cartopy >= 0.18:
     # NOTE: This only makes sense when paired with degree-minute-second formatter
     # NOTE: We copied cartopy locators because they are short and necessary
     # for determining both cartopy and basemap tick locations. We did *not* copy
@@ -146,7 +146,7 @@ FORMATTERS = {  # note default LogFormatter uses ugly e+00 notation
     'deglon': partial(pticker.SimpleFormatter, suffix='\N{DEGREE SIGN}', negpos='WE', wraprange=(-180, 180)),  # noqa: E501
     'math': mticker.LogFormatterMathtext,  # deprecated (use SciNotation subclass)
 }
-if _version_cartopy >= 0.18:
+if dependencies._version_cartopy >= 0.18:
     # NOTE: Will raise error when you try to use these without cartopy >= 0.18
     FORMATTERS['dms'] = partial(pticker.DegreeFormatter, dms=True)
     FORMATTERS['dmslon'] = partial(pticker.LongitudeFormatter, dms=True)
@@ -1452,7 +1452,7 @@ def Proj(name, basemap=None, **kwargs):
         # NOTE: Unlike cartopy, basemap resolution is configured on
         # initialization and controls *all* features.
         import mpl_toolkits.basemap as mbasemap
-        if _version_mpl >= 3.3:
+        if dependencies._version_mpl >= 3.3:
             raise RuntimeError(
                 'Basemap is no longer maintained and is incompatible with '
                 'matplotlib >= 3.3. Please use cartopy as your geographic '
