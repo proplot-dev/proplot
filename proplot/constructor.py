@@ -233,9 +233,10 @@ PROJ_DEFAULTS = {
         'lon_1': 0, 'lon_2': 0, 'width': 10000e3, 'height': 10000e3
     },
 }
-PROJS = {}
-if ccrs is not object:
-    PROJS.update({
+if ccrs is object:
+    PROJS = {}
+else:
+    PROJS = {
         'aitoff': pcrs.Aitoff,
         'hammer': pcrs.Hammer,
         'kav7': pcrs.KavrayskiyVII,
@@ -246,7 +247,7 @@ if ccrs is not object:
         'spaeqd': pcrs.SouthPolarAzimuthalEquidistant,
         'nplaea': pcrs.NorthPolarLambertAzimuthalEqualArea,
         'splaea': pcrs.SouthPolarLambertAzimuthalEqualArea,
-    })
+    }
     PROJS_MISSING = {
         'aea': 'AlbersEqualArea',
         'aeqd': 'AzimuthalEquidistant',
@@ -284,15 +285,15 @@ if ccrs is not object:
         'tmerc': 'TransverseMercator',
         'utm': 'UTM',  # not in basemap
     }
-    for _key, _cls in list(PROJS_MISSING.items()):
+    for _key, _cls in tuple(PROJS_MISSING.items()):
         if hasattr(ccrs, _cls):
             PROJS[_key] = getattr(ccrs, _cls)
             del PROJS_MISSING[_key]
     if PROJS_MISSING:
         warnings._warn_proplot(
-            'Cartopy projection(s) '
-            + ', '.join(map(repr, PROJS_MISSING.values()))
-            + ' are unavailable. Consider updating cartopy.'
+            'The following cartopy projection(s) are unavailable: '
+            + ', '.join(map(repr, PROJS_MISSING))
+            + ' . Please consider updating cartopy.'
         )
 
 # Resolution aliases
@@ -592,7 +593,8 @@ def Colormap(
         if mode not in options:
             raise ValueError(
                 f'Invalid {key}={mode!r}. Options are: '
-                + ', '.join(map(repr, options)) + '.'
+                + ', '.join(map(repr, options))
+                + '.'
             )
 
     # Loop through colormaps
@@ -646,8 +648,9 @@ def Colormap(
                 message = f'Invalid colormap, color cycle, or color {arg!r}.'
                 if isinstance(arg, str) and arg[:1] != '#':
                     message += (
-                        ' Options are: '
-                        + ', '.join(sorted(map(repr, pcolors._cmap_database))) + '.'
+                        ' Options include: '
+                        + ', '.join(sorted(map(repr, pcolors._cmap_database)))
+                        + '.'
                     )
                 raise ValueError(message) from None
             iluminance = _not_none(iluminance, default_luminance)
@@ -899,7 +902,8 @@ def Norm(norm, *args, **kwargs):
     if norm not in NORMS:
         raise ValueError(
             f'Unknown normalizer {norm!r}. Options are: '
-            + ', '.join(map(repr, NORMS.keys())) + '.'
+            + ', '.join(map(repr, NORMS))
+            + '.'
         )
     if norm == 'symlog' and not args and 'linthresh' not in kwargs:
         kwargs['linthresh'] = 1  # special case, needs argument
@@ -1009,8 +1013,9 @@ def Locator(locator, *args, **kwargs):
         # Lookup
         if locator not in LOCATORS:
             raise ValueError(
-                f'Unknown locator {locator!r}. Options are '
-                + ', '.join(map(repr, LOCATORS.keys())) + '.'
+                f'Unknown locator {locator!r}. Options are: '
+                + ', '.join(map(repr, LOCATORS))
+                + '.'
             )
         locator = LOCATORS[locator](*args, **kwargs)
     elif isinstance(locator, Number):  # scalar variable
@@ -1156,8 +1161,9 @@ def Formatter(formatter, *args, date=False, index=False, **kwargs):
             formatter = FORMATTERS[formatter](*args, **kwargs)
         else:
             raise ValueError(
-                f'Unknown formatter {formatter!r}. Options are '
-                + ', '.join(map(repr, FORMATTERS.keys())) + '.'
+                f'Unknown formatter {formatter!r}. Options are: '
+                + ', '.join(map(repr, FORMATTERS))
+                + '.'
             )
     elif callable(formatter):
         # Function
@@ -1264,8 +1270,9 @@ def Scale(scale, *args, **kwargs):
         scale = SCALES[scale]
     else:
         raise ValueError(
-            f'Unknown scale or preset {scale!r}. Options are '
-            + ', '.join(map(repr, list(SCALES) + list(SCALE_PRESETS))) + '.'
+            f'Unknown scale or preset {scale!r}. Options are: '
+            + ', '.join(map(repr, (*SCALES, *SCALE_PRESETS)))
+            + '.'
         )
     return scale(*args, **kwargs)
 
@@ -1485,7 +1492,8 @@ def Proj(name, basemap=None, **kwargs):
         else:
             raise ValueError(
                 f'Invalid resolution {reso!r}. Options are: '
-                + ', '.join(map(repr, RESOS_BASEMAP)) + '.'
+                + ', '.join(map(repr, RESOS_BASEMAP))
+                + '.'
             )
         kwproj.update({'resolution': reso, 'projection': name})
         proj = mbasemap.Basemap(**kwproj)
@@ -1517,7 +1525,8 @@ def Proj(name, basemap=None, **kwargs):
             options += tuple(AXES_PROJS)
         raise ValueError(
             f'Unknown projection {name!r}. Options are: '
-            + ', '.join(map(repr, options)) + '.'
+            + ', '.join(map(repr, options))
+            + '.'
         )
 
     return proj

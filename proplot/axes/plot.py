@@ -1860,7 +1860,11 @@ class PlotAxes(base.Axes):
             x, kw_format = data._meta_coords(x, which='x', **kw_format)
             y, kw_format = data._meta_coords(y, which='y', **kw_format)
             for s, d in zip('xy', (x, y)):
-                if d.size > 1 and d.ndim == 1 and data._to_numpy_array(d)[1] < data._to_numpy_array(d)[0]:  # noqa: E501
+                if (
+                    d.size > 1
+                    and d.ndim == 1
+                    and data._to_numpy_array(d)[1] < data._to_numpy_array(d)[0]
+                ):
                     kw_format[s + 'reverse'] = True
 
             # Apply formatting
@@ -2421,14 +2425,20 @@ class PlotAxes(base.Axes):
             cmap = constructor.Colormap(cmap, **cmap_kw)  # for testing only
         cyclic = _not_none(cyclic, getattr(cmap, '_cyclic', None))
         if cyclic and extend != 'neither':
-            warnings._warn_proplot(f"Cyclic colormaps require extend='neither'. Ignoring extend={extend!r}.")  # noqa: E501
+            warnings._warn_proplot(
+                f"Cyclic colormaps require extend='neither'. Ignoring extend={extend!r}"
+            )
             extend = 'neither'
         qualitative = _not_none(qualitative, isinstance(cmap, pcolors.DiscreteColormap))
         if qualitative and discrete is not None and not discrete:
-            warnings._warn_proplot('Qualitative colormaps require discrete=True. Ignoring discrete=False.')  # noqa: E501
+            warnings._warn_proplot(
+                'Qualitative colormaps require discrete=True. Ignoring discrete=False.'
+            )
             discrete = True
         if contour_plot and discrete is not None and not discrete:
-            warnings._warn_proplot('Contoured plots require discrete=True. Ignoring discrete=False.')  # noqa: E501
+            warnings._warn_proplot(
+                'Contoured plots require discrete=True. Ignoring discrete=False.'
+            )
             discrete = True
         keys = ('levels', 'values', 'locator', 'negative', 'positive', 'symmetric')
         if discrete is None and any(key in kwargs for key in keys):
@@ -2578,9 +2588,9 @@ class PlotAxes(base.Axes):
 
     def _apply_edgefix(self, obj, edgefix=None, **kwargs):
         """
-        Fix white lines between between filled contours and mesh and fix issues with
-        colormaps that are transparent. Also takes collection-translated keyword
-        args and if it detects any were passed then we skip this step.
+        Fix white lines between between filled contours and mesh and fix issues
+        with colormaps that are transparent. Also takes collection-translated
+        keyword args and if it detects any were passed then we skip this step.
         """
         # See: https://github.com/jklymak/contourfIssues
         # See: https://stackoverflow.com/q/15003353/4970632
@@ -2702,8 +2712,9 @@ class PlotAxes(base.Axes):
         # approach... but instead repeat _apply_plot internals here so we can
         # disable error indications that make no sense for 'step' plots.
         kws = kwargs.copy()
-        if where not in ('pre', 'post', 'mid'):
-            raise ValueError(f"Invalid where={where!r}. Options are 'pre', 'post', 'mid'.")  # noqa: E501
+        opts = ('pre', 'post', 'mid')
+        if where not in opts:
+            raise ValueError(f'Invalid where={where!r}. Options are {opts!r}.')
         _process_props(kws, 'line')
         kws.setdefault('drawstyle', 'steps-' + where)
         kws, extents = self._parse_inbounds(**kws)
@@ -2838,7 +2849,7 @@ class PlotAxes(base.Axes):
                     idx = slice(None, -1)
                 x.extend(np.linspace(x_orig[j], x_orig[j + 1], interp + 2)[idx].flat)
                 y.extend(np.linspace(y_orig[j], y_orig[j + 1], interp + 2)[idx].flat)
-                c.extend(np.linspace(v_orig[j], v_orig[j + 1], interp + 2)[idx].flat)  # noqa: E501
+                c.extend(np.linspace(v_orig[j], v_orig[j + 1], interp + 2)[idx].flat)
             x, y, c = np.array(x), np.array(y), np.array(c)
 
         # Get coordinates and values for points to the 'left' and 'right' of joints
@@ -2846,9 +2857,11 @@ class PlotAxes(base.Axes):
         for i in range(y.shape[0]):
             icoords = np.empty((3, 2))
             for j, arr in enumerate((x, y)):
-                icoords[0, j] = arr[0] if i == 0 else 0.5 * (arr[i - 1] + arr[i])
-                icoords[1, j] = arr[i]
-                icoords[2, j] = arr[-1] if i + 1 == y.shape[0] else 0.5 * (arr[i + 1] + arr[i])  # noqa: E501
+                icoords[:, j] = (
+                    arr[0] if i == 0 else 0.5 * (arr[i - 1] + arr[i]),
+                    arr[i],
+                    arr[-1] if i + 1 == y.shape[0] else 0.5 * (arr[i + 1] + arr[i]),
+                )
             coords.append(icoords)
         coords = np.array(coords)
 
@@ -3249,7 +3262,8 @@ class PlotAxes(base.Axes):
                         value[i // 2 if key in ('caps', 'whiskers') else i]
                         if isinstance(value, (list, np.ndarray))
                         else value
-                    ) for key, value in aprops.items()
+                    )
+                    for key, value in aprops.items()
                 }
                 artist.update(iprops)
                 # "Filled" boxplot by adding patch beneath line path
@@ -3259,7 +3273,9 @@ class PlotAxes(base.Axes):
                     if ifillcolor is not None or ifillalpha is not None:
                         patch = mpatches.PathPatch(
                             artist.get_path(),
-                            linewidth=0, facecolor=ifillcolor, alpha=ifillalpha,
+                            linewidth=0,
+                            facecolor=ifillcolor,
+                            alpha=ifillalpha,
                         )
                         self.add_artist(patch)
                 # Outlier markers
@@ -3742,7 +3758,9 @@ class PlotAxes(base.Axes):
         return self.streamplot(*args, **kwargs)
 
     # WARNING: breaking change from native streamplot() fifth positional arg 'density'
-    @data._preprocess('x', 'y', 'u', 'v', ('c', 'color', 'colors'), keywords='start_points')  # noqa: E501
+    @data._preprocess(
+        'x', 'y', 'u', 'v', ('c', 'color', 'colors'), keywords='start_points'
+    )
     @docstring._concatenate_original
     @docstring._snippet_manager
     def streamplot(self, x, y, u, v, c, **kwargs):

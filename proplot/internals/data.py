@@ -122,6 +122,57 @@ def _to_numpy_array(data, strip_units=False):
 
 
 # Processing utilities
+def _to_centers(x, y, z):
+    """
+    Enforce that coordinates are centers. Convert from edges if possible.
+    """
+    xlen, ylen = x.shape[-1], y.shape[0]
+    if z.ndim == 2 and z.shape[1] == xlen - 1 and z.shape[0] == ylen - 1:
+        # Get centers given edges
+        if all(z.ndim == 1 and z.size > 1 and _is_numeric(z) for z in (x, y)):
+            x = 0.5 * (x[1:] + x[:-1])
+            y = 0.5 * (y[1:] + y[:-1])
+        else:
+            if x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1 and _is_numeric(x):
+                x = 0.25 * (x[:-1, :-1] + x[:-1, 1:] + x[1:, :-1] + x[1:, 1:])
+            if y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1 and _is_numeric(y):
+                y = 0.25 * (y[:-1, :-1] + y[:-1, 1:] + y[1:, :-1] + y[1:, 1:])
+    elif z.shape[-1] != xlen or z.shape[0] != ylen:
+        # Helpful error message
+        raise ValueError(
+            f'Input shapes x {x.shape} and y {y.shape} '
+            f'must match z centers {z.shape} '
+            f'or z borders {tuple(i+1 for i in z.shape)}.'
+        )
+    return x, y
+
+
+def _to_edges(x, y, z):
+    """
+    Enforce that coordinates are edges. Convert from centers if possible.
+    """
+    from ..utils import edges, edges2d
+    xlen, ylen = x.shape[-1], y.shape[0]
+    if z.ndim == 2 and z.shape[1] == xlen and z.shape[0] == ylen:
+        # Get edges given centers
+        if all(z.ndim == 1 and z.size > 1 and _is_numeric(z) for z in (x, y)):
+            x = edges(x)
+            y = edges(y)
+        else:
+            if x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1 and _is_numeric(x):
+                x = edges2d(x)
+            if y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1 and _is_numeric(y):
+                y = edges2d(y)
+    elif z.shape[-1] != xlen - 1 or z.shape[0] != ylen - 1:
+        # Helpful error message
+        raise ValueError(
+            f'Input shapes x {x.shape} and y {y.shape} must match '
+            f'array centers {z.shape} or '
+            f'array borders {tuple(i + 1 for i in z.shape)}.'
+        )
+    return x, y
+
+
 def _from_data(data, *args):
     """
     Try to convert positional `key` arguments to `data[key]`. If argument is string
@@ -143,8 +194,8 @@ def _from_data(data, *args):
 
 def _preprocess(*keys, keywords=None, allow_extra=True):
     """
-    Redirect internal plotting calls to native matplotlib methods. Also perform
-    convert keyword args to positional and pass arguments through 'data' dictionary.
+    Redirect internal plotting calls to native matplotlib methods. Also convert
+    keyword args to positional and pass arguments through 'data' dictionary.
     """
     # Keyword arguments processed through 'data'
     # Positional arguments are always processed through data
@@ -206,61 +257,8 @@ def _preprocess(*keys, keywords=None, allow_extra=True):
     return decorator
 
 
-def _to_centers(x, y, z):
-    """
-    Enforce that coordinates are centers. Convert from edges if possible.
-    """
-    xlen, ylen = x.shape[-1], y.shape[0]
-    if z.ndim == 2 and z.shape[1] == xlen - 1 and z.shape[0] == ylen - 1:
-        # Get centers given edges
-        if all(z.ndim == 1 and z.size > 1 and _is_numeric(z) for z in (x, y)):
-            x = 0.5 * (x[1:] + x[:-1])
-            y = 0.5 * (y[1:] + y[:-1])
-        else:
-            if x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1 and _is_numeric(x):
-                x = 0.25 * (x[:-1, :-1] + x[:-1, 1:] + x[1:, :-1] + x[1:, 1:])
-            if y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1 and _is_numeric(y):
-                y = 0.25 * (y[:-1, :-1] + y[:-1, 1:] + y[1:, :-1] + y[1:, 1:])
-    elif z.shape[-1] != xlen or z.shape[0] != ylen:
-        # Helpful error message
-        raise ValueError(
-            f'Input shapes x {x.shape} and y {y.shape} '
-            f'must match z centers {z.shape} '
-            f'or z borders {tuple(i+1 for i in z.shape)}.'
-        )
-    return x, y
-
-
-def _to_edges(x, y, z):
-    """
-    Enforce that coordinates are edges. Convert from centers if possible.
-    """
-    from ..utils import edges, edges2d
-    xlen, ylen = x.shape[-1], y.shape[0]
-    if z.ndim == 2 and z.shape[1] == xlen and z.shape[0] == ylen:
-        # Get edges given centers
-        if all(z.ndim == 1 and z.size > 1 and _is_numeric(z) for z in (x, y)):
-            x = edges(x)
-            y = edges(y)
-        else:
-            if x.ndim == 2 and x.shape[0] > 1 and x.shape[1] > 1 and _is_numeric(x):
-                x = edges2d(x)
-            if y.ndim == 2 and y.shape[0] > 1 and y.shape[1] > 1 and _is_numeric(y):
-                y = edges2d(y)
-    elif z.shape[-1] != xlen - 1 or z.shape[0] != ylen - 1:
-        # Helpful error message
-        raise ValueError(
-            f'Input shapes x {x.shape} and y {y.shape} must match '
-            f'array centers {z.shape} or '
-            f'array borders {tuple(i + 1 for i in z.shape)}.'
-        )
-    return x, y
-
-
 # Stats utiltiies
-def _dist_reduce(
-    y, *, mean=None, means=None, median=None, medians=None, **kwargs
-):
+def _dist_reduce(y, *, mean=None, means=None, median=None, medians=None, **kwargs):
     """
     Reduce statistical distributions to means and medians. Tack on a
     distribution keyword argument for processing down the line.
@@ -270,7 +268,9 @@ def _dist_reduce(
     means = _not_none(mean=mean, means=means)
     medians = _not_none(median=median, medians=medians)
     if means and medians:
-        warnings._warn_proplot('Cannot have both means=True and medians=True. Using former.')  # noqa: E501
+        warnings._warn_proplot(
+            'Cannot have both means=True and medians=True. Using former.'
+        )
         medians = None
     if means or medians:
         dist = y
@@ -359,7 +359,7 @@ def _dist_range(
             or err.shape[-1] != y.size
             or err.ndim == 2 and err.shape[0] != 2
         ):
-            raise ValueError(f'errdata has shape {err.shape}. Expected (2, {y.shape[-1]}).')  # noqa: E501
+            raise ValueError(f'errdata has shape {err.shape}. Expected (2, {y.size}).')
         if err.ndim == 1:
             abserr = err
             err = np.empty((2, err.size))
@@ -407,7 +407,9 @@ def _safe_mask(mask, *args):
         arg = ma.masked_invalid(arg, copy=False)
         arg = arg.astype(np.float).filled(np.nan)
         if arg.size > 1 and arg.shape != invalid.shape:
-            raise ValueError(f'Mask shape {mask.shape} incompatible with array shape {arg.shape}.')  # noqa: E501
+            raise ValueError(
+                f'Mask shape {mask.shape} incompatible with array shape {arg.shape}.'
+            )
         if arg.size == 1 or invalid.size == 1:  # NOTE: happens with _restrict_inbounds
             pass
         elif invalid.size == 1:
@@ -422,7 +424,7 @@ def _safe_range(data, lo=0, hi=100, automin=True, automax=True):
     """
     Safely return the minimum and maximum (default) or percentile range accounting
     for masked values. Use min and max functions when possible for speed. Return
-    ``None`` if we faile to get a valid range.
+    ``None`` if we fail to get a valid range.
     """
     _load_objects()
     units = 1
@@ -522,8 +524,8 @@ def _meta_labels(data, axis=0, always=True):
 
 def _meta_title(data, include_units=True):
     """
-    Return the "title" of an array-like object with metadata. Include units in
-    the title if `include_units` is ``True``.
+    Return the "title" of an array-like object with metadata.
+    Include units in the title if `include_units` is ``True``.
     """
     title = units = None
     _load_objects()

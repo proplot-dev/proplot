@@ -105,8 +105,7 @@ COLORBAR_LOCS = {
     key: value for key, value in LEGEND_LOCS.items() if value in (
         'fill', 'best',
         'left', 'right', 'top', 'bottom',
-        'upper left', 'upper right',
-        'lower left', 'lower right',
+        'upper left', 'upper right', 'lower left', 'lower right',
     )
 }
 PANEL_LOCS = {
@@ -122,8 +121,8 @@ EM_KEYS = (  # em-width units
     'legend.handlelength',
     'legend.handleheight',
     'legend.handletextpad',
-    'legend.borderaxespad'
-    'legend.columnspacing'
+    'legend.borderaxespad',
+    'legend.columnspacing',
 )
 PT_KEYS = (
     'font.size',  # special case
@@ -205,7 +204,8 @@ def _validate_belongs(*options):
                 return opt
         raise ValueError(
             f'Invalid value {value!r}. Options are: '
-            + ', '.join(map(repr, options)) + '.'
+            + ', '.join(map(repr, options))
+            + '.'
         )
     return _validate_belongs
 
@@ -551,7 +551,7 @@ _rc_matplotlib_default = {
         'Times New Roman',
         'Times',
         'Utopia',
-        'serif'
+        'serif',
     ],
     'font.sans-serif': [
         'TeX Gyre Heros',  # Helvetica lookalike
@@ -576,7 +576,7 @@ _rc_matplotlib_default = {
         'Ubuntu',
         'Univers',
         'Verdana',
-        'sans-serif'
+        'sans-serif',
     ],
     'font.monospace': [
         'TeX Gyre Cursor',  # Courier lookalike
@@ -589,7 +589,7 @@ _rc_matplotlib_default = {
         'Fixed',
         'Nimbus Mono L',
         'Terminal',
-        'monospace'
+        'monospace',
     ],
     'font.cursive': [
         'TeX Gyre Chorus',  # Chancery lookalike
@@ -599,7 +599,7 @@ _rc_matplotlib_default = {
         'Script MT',
         'Textile',
         'Zapf Chancery',
-        'cursive'
+        'cursive',
     ],
     'font.fantasy': [
         'TeX Gyre Adventor',  # Avant Garde lookalike
@@ -613,7 +613,7 @@ _rc_matplotlib_default = {
         'Optima',
         'Western',
         'xkcd',
-        'fantasy'
+        'fantasy',
     ],
     'font.family': FONTNAME,
     'font.size': FONTSIZE,

@@ -52,7 +52,7 @@ UNIT_DICT = {
     'mm': 0.03937,
     'pc': 1 / 6.0,
     'pt': 1 / 72.0,
-    'ly': 3.725e+17,
+    'ly': 3.725e17,
 }
 
 
@@ -195,7 +195,7 @@ def edges(z, axis=-1):
     # Inner edges
     zb[..., 1:-1] = 0.5 * (z[..., :-1] + z[..., 1:])
 
-    # Left, right edges
+    # Outer edges
     zb[..., 0] = 1.5 * z[..., 0] - 0.5 * z[..., 1]
     zb[..., -1] = 1.5 * z[..., -1] - 0.5 * z[..., -2]
 
@@ -233,11 +233,9 @@ def edges2d(z):
     zb = np.zeros((ny + 1, nx + 1))
 
     # Inner edges
-    zb[1:-1, 1:-1] = 0.25 * (
-        z[1:, 1:] + z[:-1, 1:] + z[1:, :-1] + z[:-1, :-1]
-    )
+    zb[1:-1, 1:-1] = 0.25 * (z[1:, 1:] + z[:-1, 1:] + z[1:, :-1] + z[:-1, :-1])
 
-    # Left, right, top, bottom edges
+    # Outer edges
     zb[0, :] += edges(1.5 * z[0, :] - 0.5 * z[1, :])
     zb[-1, :] += edges(1.5 * z[-1, :] - 0.5 * z[-2, :])
     zb[:, 0] += edges(1.5 * z[:, 0] - 0.5 * z[:, 1])
@@ -519,12 +517,14 @@ def _translate_cycle_color(color, cycle=None):
             cycle = _cmap_database[cycle].colors
         except (KeyError, AttributeError):
             cycles = sorted(
-                name for name, cmap in _cmap_database.items()
+                name
+                for name, cmap in _cmap_database.items()
                 if isinstance(cmap, mcolors.ListedColormap)
             )
             raise ValueError(
                 f'Invalid color cycle {cycle!r}. Options are: '
-                + ', '.join(map(repr, cycles)) + '.'
+                + ', '.join(map(repr, cycles))
+                + '.'
             )
     elif cycle is None:
         cycle = rc_matplotlib['axes.prop_cycle'].by_key()
@@ -618,10 +618,18 @@ def to_rgba(color, space='rgb', cycle=None, clip=True):
         color = _translate_cycle_color(color, cycle=cycle)
 
     # Translate RGB strings and (colormap, index) tuples
+    # NOTE: Cannot use is_color_like because might have HSL channel values
     opacity = 1
-    if isinstance(color, str) or np.iterable(color) and len(color) == 2:
+    if (
+        isinstance(color, str)
+        or np.iterable(color) and len(color) == 2
+    ):
         color = mcolors.to_rgba(color)  # also enforced validity
-    if not np.iterable(color) or len(color) not in (3, 4) or not all(isinstance(c, Real) for c in color):  # noqa: E501
+    if (
+        not np.iterable(color)
+        or len(color) not in (3, 4)
+        or not all(isinstance(c, Real) for c in color)
+    ):
         raise ValueError(f'Invalid color-spec {color!r}.')
     if len(color) == 4:
         *color, opacity = color
@@ -736,7 +744,8 @@ def _fontsize_to_pt(size):
     except ValueError:
         raise KeyError(
             f'Invalid font size {size!r}. Can be points or one of the preset scalings: '
-            + ', '.join(f'{key!r} ({value})' for key, value in scalings.items()) + '.'
+            + ', '.join(f'{key!r} ({value})' for key, value in scalings.items())
+            + '.'
         )
 
 
@@ -810,12 +819,14 @@ def units(
     fontsize_large = _not_none(fontsize, rc_matplotlib['axes.titlesize'])
     fontsize_large = _fontsize_to_pt(fontsize_large)
     unit_dict = UNIT_DICT.copy()
-    unit_dict.update({
-        'em': fontsize_small / 72.0,
-        'en': 0.5 * fontsize_small / 72.0,
-        'Em': fontsize_large / 72.0,
-        'En': 0.5 * fontsize_large / 72.0,
-    })
+    unit_dict.update(
+        {
+            'em': fontsize_small / 72.0,
+            'en': 0.5 * fontsize_small / 72.0,
+            'Em': fontsize_large / 72.0,
+            'En': 0.5 * fontsize_large / 72.0,
+        }
+    )
 
     # Scales for converting display units to inches
     # WARNING: In ipython shell these take the value 'figure'
@@ -852,7 +863,7 @@ def units(
     # Convert units for each value in list
     result = []
     singleton = not np.iterable(value) or isinstance(value, str)
-    for val in ((value,) if singleton else value):
+    for val in (value,) if singleton else value:
         # Silently pass None
         if val is None:
             result.append(val)

@@ -380,7 +380,7 @@ def show_colorspaces(*, luminance=None, saturation=None, hue=None, refwidth=2):
 
     # Make figure, with black indicating invalid values
     # Note we invert the x-y ordering for imshow
-    fig, axs = ui.subplots(ncols=3, refwidth=refwidth, share=False, innerpad=0.5)
+    fig, axs = ui.subplots(refwidth=refwidth, ncols=3, share=False, innerpad=0.5)
     for ax, space in zip(axs, ('hcl', 'hsl', 'hpl')):
         rgba = np.ones((*hsl.shape[:2][::-1], 4))  # RGBA
         for j in range(hsl.shape[0]):
@@ -474,8 +474,8 @@ def _draw_bars(
     # Allocate two colorbar widths for each title of sections
     naxs = 2 * len(cmapdict) + sum(map(len, cmapdict.values()))
     fig, axs = ui.subplots(
-        nrows=naxs, refwidth=length, refheight=width,
-        share=False, top='-1em', hspace='2pt',
+        refwidth=length, refheight=width,
+        nrows=naxs, share=False, hspace='2pt', top='-1em',
     )
     iax = -1
     nheads = nbars = 0  # for deciding which axes to plot in
@@ -747,10 +747,10 @@ def show_colors(
     maxcols = max(names.shape[0] for names in namess.values())
     hratios = tuple(names.shape[1] for names in namess.values())
     fig, axs = ui.subplots(
-        nrows=len(include),
-        hratios=hratios,
         figwidth=figwidth,
         refaspect=refaspect,
+        nrows=len(include),
+        hratios=hratios,
     )
     title_dict = {
         'css4': 'CSS4 colors',
@@ -838,11 +838,13 @@ def show_fonts(
     if not args and family is None:
         # User fonts and sans-serif fonts. Note all proplot sans-serif
         # fonts are added to 'font.sans-serif' by default
-        args = sorted({
-            font.name for font in mfonts.fontManager.ttflist
-            if font.name in rc['font.sans-serif']
-            or _get_data_folders('fonts')[1] == os.path.dirname(font.fname)
-        })
+        args = sorted(
+            {
+                font.name for font in mfonts.fontManager.ttflist
+                if font.name in rc['font.sans-serif']
+                or _get_data_folders('fonts')[1] == os.path.dirname(font.fname)
+            }
+        )
     elif family is not None:
         options = ('serif', 'sans-serif', 'monospace', 'cursive', 'fantasy', 'tex-gyre')
         if family not in options:
@@ -863,11 +865,12 @@ def show_fonts(
             )
         else:
             family_fonts = rc['font.' + family]
-        args = (
-            *args, *sorted({
+        args = list(args)
+        args += sorted(
+            {
                 font.name for font in mfonts.fontManager.ttflist
                 if font.name in family_fonts
-            })
+            }
         )
 
     # Text
@@ -885,9 +888,9 @@ def show_fonts(
         )
 
     # Create figure
+    refheight = 1.2 * (text.count('\n') + 2.5) * size / 72
     fig, axs = ui.subplots(
-        ncols=1, nrows=len(args), space=0,
-        refwidth=4.5, refheight=1.2 * (text.count('\n') + 2.5) * size / 72,
+        refwidth=4.5, refheight=refheight, nrows=len(args), ncols=1, space=0,
         mathtext_fallback=False
     )
     axs.format(

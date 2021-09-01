@@ -768,11 +768,11 @@ class Figure(mfigure.Figure):
             m = constructor.Proj(
                 proj, basemap=basemap, include_axes_projections=True, **proj_kw
             )
-            if m._proj_package == 'basemap':
+            if m._proj_package == 'basemap':  # attribute added by Proj()
                 aspect = (m.urcrnrx - m.llcrnrx) / (m.urcrnry - m.llcrnry)
             else:
-                aspect, = np.diff(m.x_limits) / np.diff(m.y_limits)  # pull out of array
-            name = 'proplot_' + m._proj_package  # attribute added by Proj()
+                aspect, = np.diff(m.x_limits) / np.diff(m.y_limits)
+            name = 'proplot_' + m._proj_package
             kwargs['map_projection'] = m
             if use_aspect:
                 self._refaspect_default = aspect
@@ -1062,7 +1062,7 @@ class Figure(mfigure.Figure):
                 'rotation': side + 'label.rotation',
                 'size': side + 'label.size',
                 'weight': side + 'label.weight',
-                'family': 'font.family'
+                'family': 'font.family',
             },
             context=True,
         )
@@ -1086,19 +1086,22 @@ class Figure(mfigure.Figure):
         for ax in extra:  # e.g. while adding axes
             text = src[ax].get_text()
             if text:
-                warnings._warn_proplot(f'Removing {side} label with text {text!r} from axes {ax.number}.')  # noqa: E501
+                warnings._warn_proplot(
+                    f'Removing {side} label with text {text!r} from axes {ax.number}.'
+                )
             src[ax].remove()  # remove from the figure
 
         # Update the label text
+        tf = self.transFigure
         for ax, label in zip(axs, labels):
             if ax in src:
                 obj = src[ax]
             elif side in ('left', 'right'):
-                trans = mtransforms.blended_transform_factory(self.transFigure, ax.transAxes)  # noqa: E501
+                trans = mtransforms.blended_transform_factory(tf, ax.transAxes)
                 obj = src[ax] = self.text(0, 0.5, '', transform=trans)
                 obj.update(props)
             else:
-                trans = mtransforms.blended_transform_factory(ax.transAxes, self.transFigure)  # noqa: E501
+                trans = mtransforms.blended_transform_factory(ax.transAxes, tf)
                 obj = src[ax] = self.text(0.5, 0, '', transform=trans)
                 obj.update(props)
             if kw:
@@ -1164,9 +1167,13 @@ class Figure(mfigure.Figure):
             if gs is None:
                 gs = ss.get_topmost_subplotspec().get_gridspec()
             if not isinstance(gs, pgridspec.GridSpec):
-                raise ValueError('Subplotspec must be derived from a proplot.GridSpec.')
+                raise ValueError(
+                    'Input subplotspec must be derived from a proplot.GridSpec.'
+                )
             if ss.get_topmost_subplotspec().get_gridspec() is not gs:
-                raise ValueError('Subplotspec must be derived from the active figure gridspec.')  # noqa: E501
+                raise ValueError(
+                    'Input subplotspec must be derived from the active figure gridspec.'
+                )
 
         # Row and column spec
         # TODO: How to pass spacing parameters to gridspec? Consider overriding
@@ -1182,11 +1189,18 @@ class Figure(mfigure.Figure):
                 gs = pgridspec.GridSpec(nrows, ncols)
             orows, ocols = gs.get_subplot_geometry()
             if orows % nrows:
-                raise ValueError(f'Input rows {nrows} do not divide the figure gridspec rows {orows}.')  # noqa: E501
+                raise ValueError(
+                    f'Input rows {nrows} do not divide figure gridspec rows {orows}.'
+                )
             if ocols % ncols:
-                raise ValueError(f'Input columns {ncols} do not divide the figure gridspec columns {ocols}.')  # noqa: E501
+                raise ValueError(
+                    f'Input cols {ncols} do not divide figure gridspec cols {ocols}.'
+                )
             if any(_ < 1 or _ > nrows * ncols for _ in (i, j)):
-                raise ValueError(f'Input subplot indices must fall between 1 and {nrows * ncols}. Got {i} and {j}.')  # noqa: E501
+                raise ValueError(
+                    f'Input subplot indices must fall between 1 and {nrows * ncols}. '
+                    f'Instead got {i} and {j}.'
+                )
             rowfact, colfact = orows // nrows, ocols // ncols
             irow, icol = divmod(i - 1, ncols)  # convert to zero-based
             jrow, jcol = divmod(j - 1, ncols)
@@ -1293,7 +1307,7 @@ class Figure(mfigure.Figure):
         nums = np.unique(array[array != 0])
         naxs = len(nums)
         if any(num < 0 or not isinstance(num, Integral) for num in nums.flat):
-            raise ValueError(f'Invalid subplot array {array!r}. Must contain positive integers.')  # noqa: E501
+            raise ValueError(f'Expected array of positive integers. Got {array}.')
         nrows, ncols = array.shape
 
         # Get projection arguments used to initialize the axes
@@ -1473,7 +1487,7 @@ class Figure(mfigure.Figure):
             self._update_super_labels(
                 'top',
                 _not_none(collabels=collabels, toplabels=toplabels, tlabels=tlabels),
-                **toplabels_kw
+                **toplabels_kw,
             )
 
         # Update the main axes
@@ -1497,15 +1511,15 @@ class Figure(mfigure.Figure):
         ----------
         %(axes.colorbar_args)s
         %(figure.colorbar_space)s
+        width : float or str, optional
+            The colorbar width. Units are interpreted by
+            `~proplot.utils.units`. Default is :rc:`colorbar.width`.
         length : float or str, optional
             The colorbar length. Units are relative to the span of the rows and
             columns of subplots. Default is :rc:`colorbar.length`.
         shrink : float, optional
             Alias for `length`. This is included for consistency with
             `matplotlib.figure.Figure.colorbar`.
-        width : float or str, optional
-            The colorbar width. Units are interpreted by
-            `~proplot.utils.units`. Default is :rc:`colorbar.width`.
 
         Other parameters
         ----------------
@@ -1524,11 +1538,16 @@ class Figure(mfigure.Figure):
                 return super().colorbar(mappable, cax=cax, **kwargs)
         # Axes panel colorbar
         elif ax is not None:
-            return ax.colorbar(mappable, values, space=space, pad=pad, width=width, **kwargs)  # noqa: E501
+            return ax.colorbar(
+                mappable, values, space=space, pad=pad, width=width, **kwargs
+            )
         # Figure panel colorbar
         else:
             loc = _not_none(loc=loc, location=location, default='r')
-            ax = self._add_figure_panel(loc, row=row, col=col, rows=rows, cols=cols, span=span, space=space, pad=pad, width=width)  # noqa: E501
+            ax = self._add_figure_panel(
+                loc, row=row, col=col, rows=rows, cols=cols, span=span,
+                width=width, space=space, pad=pad,
+            )
             return ax.colorbar(mappable, values, loc='fill', **kwargs)
 
     @docstring._concatenate_original
@@ -1562,11 +1581,16 @@ class Figure(mfigure.Figure):
         ax = kwargs.pop('ax', None)
         # Axes panel legend
         if ax is not None:
-            return ax.legend(handles, labels, space=space, pad=pad, width=width, **kwargs)  # noqa: E501
+            return ax.legend(
+                handles, labels, space=space, pad=pad, width=width, **kwargs
+            )
         # Figure panel legend
         else:
             loc = _not_none(loc=loc, location=location, default='r')
-            ax = self._add_figure_panel(loc, row=row, col=col, rows=rows, cols=cols, span=span, space=space, pad=pad, width=width)  # noqa: E501
+            ax = self._add_figure_panel(
+                loc, row=row, col=col, rows=rows, cols=cols, span=span,
+                width=width, space=space, pad=pad,
+            )
             return ax.legend(handles, labels, loc='fill', **kwargs)
 
     @docstring._snippet_manager
@@ -1705,7 +1729,7 @@ class Figure(mfigure.Figure):
         # Iterate
         axs = (
             *self._subplot_dict.values(),
-            *(ax for side in panels for ax in self._panel_dict[side])
+            *(ax for side in panels for ax in self._panel_dict[side]),
         )
         for ax in axs:
             if not hidden and ax._panel_hidden:

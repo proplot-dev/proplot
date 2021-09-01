@@ -1780,11 +1780,7 @@ class Axes(maxes.Axes):
                 outside, inside = inside, outside
             ticklocation = _not_none(ticklocation, outside)
             orientation = _not_none(orientation, 'vertical')
-        kwargs.update({
-            'orientation': orientation,
-            'ticklocation': ticklocation
-        })
-
+        kwargs.update({'orientation': orientation, 'ticklocation': ticklocation})
         return ax, kwargs
 
     def _parse_inset_colorbar(
@@ -1852,10 +1848,7 @@ class Axes(maxes.Axes):
         ticklocation = _not_none(tickloc=tickloc, ticklocation=ticklocation)
         if ticklocation is not None and ticklocation != 'bottom':
             warnings._warn_proplot('Inset colorbars can only have ticks on the bottom.')
-        kwargs.update({
-            'orientation': 'horizontal',
-            'ticklocation': 'bottom',
-        })
+        kwargs.update({'orientation': 'horizontal', 'ticklocation': 'bottom'})
         kwargs.setdefault('maxn', 5)  # passed to _parse_colorbar_ticks
         return ax, kwargs
 
@@ -2130,13 +2123,15 @@ class Axes(maxes.Axes):
         # Draw the colorbar
         # NOTE: Set default formatter here because we optionally apply a FixedFormatter
         # using *labels* from handle input.
-        kwargs.update({
-            'cax': cax,
-            'ticks': locator,
-            'format': formatter,
-            'extendfrac': extendfrac,
-            'drawedges': grid,
-        })
+        kwargs.update(
+            {
+                'cax': cax,
+                'ticks': locator,
+                'format': formatter,
+                'extendfrac': extendfrac,
+                'drawedges': grid,
+            }
+        )
         kwargs.setdefault('spacing', 'uniform')
         extend = _not_none(extend, 'neither')
         if isinstance(mappable, mcontour.ContourSet):
@@ -2649,13 +2644,15 @@ class Axes(maxes.Axes):
         )
         title = _not_none(label=label, title=title)
         kw_frame, kwargs = self._parse_frame('legend', **kwargs)
-        kwargs.update({
-            'title': title,
-            'frameon': frameon,
-            'fontsize': fontsize,
-            'handler_map': handler_map,
-            'title_fontsize': titlefontsize,
-        })
+        kwargs.update(
+            {
+                'title': title,
+                'frameon': frameon,
+                'fontsize': fontsize,
+                'handler_map': handler_map,
+                'title_fontsize': titlefontsize,
+            }
+        )
 
         # Add the legend
         if center:  # multi-legend pseudo-legend
@@ -2884,17 +2881,19 @@ class Axes(maxes.Axes):
         # Update the text object using monkey patch
         obj = add_text(*args, transform=transform, **kwargs)
         obj.update = text._update_text.__get__(obj)
-        obj.update({
-            'border': border,
-            'bordercolor': bordercolor,
-            'borderinvert': borderinvert,
-            'borderwidth': borderwidth,
-            'bbox': bbox,
-            'bboxcolor': bboxcolor,
-            'bboxstyle': bboxstyle,
-            'bboxalpha': bboxalpha,
-            'bboxpad': bboxpad,
-        })
+        obj.update(
+            {
+                'border': border,
+                'bordercolor': bordercolor,
+                'borderinvert': borderinvert,
+                'borderwidth': borderwidth,
+                'bbox': bbox,
+                'bboxcolor': bboxcolor,
+                'bboxstyle': bboxstyle,
+                'bboxalpha': bboxalpha,
+                'bboxpad': bboxpad,
+            }
+        )
         return obj
 
     def _iter_axes(self, hidden=False, children=False, panels=True):

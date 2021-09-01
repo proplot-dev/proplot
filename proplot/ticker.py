@@ -419,8 +419,8 @@ class AutoFormatter(mticker.ScalarFormatter):
         """
         Get decimal point symbol for current locale (e.g. in Europe will be comma).
         """
-        use_locale = _not_none(use_locale, self.get_useLocale(), rc['formatter.use_locale'])  # noqa: E501
-        return locale.localeconv()['decimal_point'] if use_locale else '.'
+        use_locale = _not_none(use_locale, self.get_useLocale())
+        return self._get_default_decimal_point(use_locale)
 
     @staticmethod
     def _get_default_decimal_point(use_locale=None):

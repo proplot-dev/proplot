@@ -295,9 +295,10 @@ def _get_style_dicts(style, infer=False, filter=True):
                     kw = mpl.rc_params_from_file(style, use_default_template=False)
                 except IOError:
                     raise IOError(
-                        f'Style {style!r} not found in the style library and input is '
-                        'not a valid URL or path. Available styles are: '
-                        + ', '.join(map(repr, mstyle.available)) + '.'
+                        f'Style {style!r} not found in the style library and input '
+                        'is not a valid URL or file path. Available styles are: '
+                        + ', '.join(map(repr, mstyle.available))
+                        + '.'
                     )
         else:
             raise ValueError(f'Invalid style {style!r}. Must be string or dictionary.')
@@ -417,7 +418,8 @@ def _translate_loc(loc, mode, *, default=None):
         except KeyError:
             raise KeyError(
                 f'Invalid {mode} location {loc!r}. Options are: '
-                + ', '.join(map(repr, loc_dict)) + '.'
+                + ', '.join(map(repr, loc_dict))
+                + '.'
             )
     elif (
         mode == 'legend'
@@ -523,7 +525,7 @@ def config_inline_backend(fmt=None):
     elif np.iterable(fmt):
         fmt = list(fmt)
     else:
-        raise ValueError(f'Invalid inline backend format {fmt!r}. Must be string or list.')  # noqa: E501
+        raise ValueError(f'Invalid inline backend format {fmt!r}. Must be string.')
     ipython.magic('config InlineBackend.figure_formats = ' + repr(fmt))
     ipython.magic('config InlineBackend.rc = {}')
     ipython.magic('config InlineBackend.close_figures = True')
@@ -799,7 +801,8 @@ def register_fonts(*args, user=True, default=False):
     # NOTE: 'Thin' filter is ugly kludge but without this matplotlib picks up on
     # Roboto thin ttf files installed on the RTD server when compiling docs.
     mfonts.fontManager.ttflist = [
-        font for font in mfonts.fontManager.ttflist
+        font
+        for font in mfonts.fontManager.ttflist
         if os.path.splitext(font.fname)[1] != '.ttc'
         or 'Thin' in os.path.basename(font.fname)
     ]
@@ -1043,14 +1046,18 @@ class Configurator(MutableMapping, dict):
         # Fontsize
         # NOTE: Re-application of e.g. size='small' uses the updated 'font.size'
         elif contains('font.size'):
-            kw_proplot.update({
-                key: value for key, value in rc_proplot.items()
-                if key in rcsetup.FONT_KEYS and value in mfonts.font_scalings
-            })
-            kw_matplotlib.update({
-                key: value for key, value in rc_matplotlib.items()
-                if key in rcsetup.FONT_KEYS and value in mfonts.font_scalings
-            })
+            kw_proplot.update(
+                {
+                    key: value for key, value in rc_proplot.items()
+                    if key in rcsetup.FONT_KEYS and value in mfonts.font_scalings
+                }
+            )
+            kw_matplotlib.update(
+                {
+                    key: value for key, value in rc_matplotlib.items()
+                    if key in rcsetup.FONT_KEYS and value in mfonts.font_scalings
+                }
+            )
 
         # When linewidth is zero set tick lengths to zero to avoid unnecessary
         # padding of tick labels. TODO: Document this feature
@@ -1328,7 +1335,8 @@ class Configurator(MutableMapping, dict):
         if cat not in rcsetup._rc_categories:
             raise ValueError(
                 f'Invalid rc category {cat!r}. Valid categories are: '
-                + ', '.join(map(repr, rcsetup._rc_categories)) + '.'
+                + ', '.join(map(repr, rcsetup._rc_categories))
+                + '.'
             )
         for key in self:
             if not re.match(fr'\A{cat}\.[^.]+\Z', key):
@@ -1469,13 +1477,19 @@ class Configurator(MutableMapping, dict):
                     try:
                         ikw_proplot, ikw_matplotlib = self._get_params(key, val)
                     except KeyError:
-                        warnings._warn_proplot(f'Invalid rc key {key!r} on {message}.', 'default')  # noqa: E501
+                        warnings._warn_proplot(
+                            f'Invalid rc key {key!r} on {message}.', 'default'
+                        )
                         continue
                     except ValueError as err:
-                        warnings._warn_proplot(f'Invalid rc val {val!r} for key {key!r} on {message}: {err}', 'default')  # noqa: E501
+                        warnings._warn_proplot(
+                            f'Invalid rc val {val!r} for key {key!r} on {message}: {err}', 'default'  # noqa: E501
+                        )
                         continue
                     except warnings.ProPlotWarning as err:
-                        warnings._warn_proplot(f'Outdated rc key {key!r} on {message}: {err}', 'default')  # noqa: E501
+                        warnings._warn_proplot(
+                            f'Outdated rc key {key!r} on {message}: {err}', 'default'
+                        )
                         warnings.simplefilter('ignore', warnings.ProPlotWarning)
                         ikw_proplot, ikw_matplotlib = self._get_params(key, val)
                 # Update the settings

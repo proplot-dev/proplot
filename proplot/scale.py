@@ -17,13 +17,15 @@ from .internals import _not_none, dependencies, warnings
 scales = mscale._scale_mapping
 
 __all__ = [
-    'CutoffScale', 'ExpScale',
+    'CutoffScale',
+    'ExpScale',
     'FuncScale',
     'InverseScale',
     'LinearScale',
     'LogitScale',
     'LogScale',
-    'MercatorLatitudeScale', 'PowerScale',
+    'MercatorLatitudeScale',
+    'PowerScale',
     'SineLatitudeScale',
     'SymmetricalLogScale',
 ]
@@ -65,7 +67,7 @@ def _parse_logscale_args(*keys, **kwargs):
 
 class _Scale(object):
     """
-    Mixin class that standardizes the behavior of
+    Mix-in class that standardizes the behavior of
     `~matplotlib.scale.ScaleBase.set_default_locators_and_formatters`
     and `~matplotlib.scale.ScaleBase.get_transform`. Also overrides
     `__init__` so you no longer have to instantiate scales with an
@@ -367,7 +369,10 @@ class FuncScale(_Scale, mscale.ScaleBase):
             if isinstance(scale, mscale.LinearScale):
                 continue
             for name in (
-                'major_locator', 'minor_locator', 'major_formatter', 'minor_formatter'
+                'major_locator',
+                'minor_locator',
+                'major_formatter',
+                'minor_formatter'
             ):
                 attr = f'_default_{name}'
                 obj = getattr(scale, attr)
@@ -603,7 +608,7 @@ class MercatorLatitudeScale(_Scale, mscale.ScaleBase):
             raise ValueError("Mercator scale 'thresh' must be <= 90.")
         self._thresh = thresh
         self._transform = MercatorLatitudeTransform(thresh)
-        self._default_major_formatter = pticker.AutoFormatter(suffix='\N{DEGREE SIGN}')  # noqa: E501
+        self._default_major_formatter = pticker.AutoFormatter(suffix='\N{DEGREE SIGN}')
 
     def limit_range_for_scale(self, vmin, vmax, minpos):  # noqa: U100
         """
@@ -803,12 +808,11 @@ class CutoffTransform(mtransforms.Transform):
             raise ValueError('Final scale must be finite.')
         if any(dists < 0):
             raise ValueError('Thresholds must be monotonically increasing.')
-        if any((dists == 0) | (scales == 0)) and (
-                any((dists == 0) != (scales == 0)) or zero_dists is None):
-            raise ValueError(
-                'Got zero scales and distances in different places or '
-                'zero_dists is None.'
-            )
+        if any((dists == 0) | (scales == 0)):
+            if zero_dists is None:
+                raise ValueError('Keyword zero_dists is required for discrete steps.')
+            if any((dists == 0) != (scales == 0)):
+                raise ValueError('Input scales disagree with discrete step locations.')
         self._scales = scales
         self._threshs = threshs
         with np.errstate(divide='ignore', invalid='ignore'):
@@ -915,7 +919,7 @@ def _scale_factory(scale, axis, *args, **kwargs):  # noqa: U100
         if scale not in scales:
             raise ValueError(
                 f'Unknown axis scale {scale!r}. Options are '
-                + ', '.join(map(repr, scales.keys())) + '.'
+                + ', '.join(map(repr, scales)) + '.'
             )
         return scales[scale](*args, **kwargs)
 

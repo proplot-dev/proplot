@@ -68,8 +68,8 @@ REGEX_GRAY = re.compile(r'\A(light|dark|medium|pale|charcoal)?\s*(gray[0-9]?)?\Z
 
 # Colormap constants
 CMAPS_CYCLIC = tuple(  # cyclic colormaps loaded from rgb files
-    key.lower() for key in
-    ('Phase', 'MonoCycle', 'romaO', 'brocO', 'corkO', 'vikO', 'twilight')
+    key.lower()
+    for key in ('Phase', 'MonoCycle', 'romaO', 'brocO', 'corkO', 'vikO', 'twilight')
 )
 CMAPS_DIVERGING = {  # mirrored dictionary mapping for reversed names
     key.lower(): value.lower()
@@ -91,8 +91,19 @@ CMAPS_DIVERGING = {  # mirrored dictionary mapping for reversed names
     for key, value in ((key1, key2), (key2, key1))
 }
 for _cmap_diverging in (  # remaining diverging cmaps (see PlotAxes._parse_cmap)
-    'Div', 'Vlag', 'Spectral', 'Balance', 'Delta', 'Curl',
-    'roma', 'broc', 'cork', 'vik', 'berlin', 'lisbon', 'tofino',
+    'Div',
+    'Vlag',
+    'Spectral',
+    'Balance',
+    'Delta',
+    'Curl',
+    'roma',
+    'broc',
+    'cork',
+    'vik',
+    'berlin',
+    'lisbon',
+    'tofino',
 ):
     CMAPS_DIVERGING[_cmap_diverging.lower()] = _cmap_diverging.lower()
 CMAPS_REMOVED = {
@@ -188,7 +199,7 @@ COLORS_KEEP = (
         prefix + color
         for color in (
             'red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet',
-            'brown', 'grey'
+            'brown', 'grey', 'gray',
         )
         for prefix in ('', 'light ', 'dark ', 'medium ', 'pale ')
     )
@@ -737,39 +748,37 @@ class _Colormap(object):
         return (*args, kwargs)
 
     @classmethod
-    def _from_file(cls, filename, warn_on_failure=False):
+    def _from_file(cls, path, warn_on_failure=False):
         """
         Read generalized colormap and color cycle files.
         """
-        filename = os.path.expanduser(filename)
-        name, ext = os.path.splitext(os.path.basename(filename))
+        path = os.path.expanduser(path)
+        name, ext = os.path.splitext(os.path.basename(path))
         listed = issubclass(cls, mcolors.ListedColormap)
         reversed = name[-2:] == '_r'
 
         # Warn if loading failed during `register_cmaps` or `register_cycles`
         # but raise error if user tries to load a file.
-        def _warn_or_raise(filename, descrip, error=RuntimeError):
-            prefix = f'Failed to load colormap or color cycle file {filename!r}.'
+        def _warn_or_raise(descrip, error=RuntimeError):
+            prefix = f'Failed to load colormap or color cycle file {path!r}.'
             if warn_on_failure:
                 warnings._warn_proplot(prefix + ' ' + descrip)
             else:
                 raise error(prefix + ' ' + descrip)
-        if not os.path.exists(filename):
-            return _warn_or_raise(
-                filename, 'File not found.', FileNotFoundError
-            )
+        if not os.path.exists(path):
+            return _warn_or_raise('File not found.', FileNotFoundError)
 
         # Directly read segmentdata json file
         # NOTE: This is special case! Immediately return name and cmap
         ext = ext[1:]
         if ext == 'json':
             if listed:
-                return _warn_or_raise(filename, 'Cannot load cycles from json files.')
+                return _warn_or_raise('Cannot load cycles from JSON files.')
             try:
-                with open(filename, 'r') as fh:
+                with open(path, 'r') as fh:
                     data = json.load(fh)
             except json.JSONDecodeError:
-                return _warn_or_raise(filename, 'Decoding error.', json.JSONDecodeError)
+                return _warn_or_raise('JSON decoding error.', json.JSONDecodeError)
             kw = {}
             for key in ('cyclic', 'gamma', 'gamma1', 'gamma2', 'space'):
                 if key in data:
@@ -790,20 +799,20 @@ class _Colormap(object):
             delim = re.compile(r'[,\s]+')
             data = [
                 delim.split(line.strip())
-                for line in open(filename)
+                for line in open(path)
                 if line.strip() and line.strip()[0] != '#'
             ]
             try:
                 data = [[float(num) for num in line] for line in data]
             except ValueError:
                 return _warn_or_raise(
-                    filename, 'Expected a table of comma or space-separated floats.'
+                    'Expected a table of comma or space-separated floats.'
                 )
             # Build x-coordinates and standardize shape
             data = np.array(data)
             if data.shape[1] not in (3, 4):
                 return _warn_or_raise(
-                    filename, f'Got {data.shape[1]} columns but expected 3 or 4.'
+                    f'Expected 3 or 4 columns of floats. Got {data.shape[1]} columns.'
                 )
             if ext[0] != 'x':  # i.e. no x-coordinates specified explicitly
                 x = np.linspace(0, 1, data.shape[0])
@@ -815,17 +824,14 @@ class _Colormap(object):
         # https://sciviscolor.org/matlab-matplotlib-pv44/
         elif ext == 'xml':
             try:
-                doc = ElementTree.parse(filename)
+                doc = ElementTree.parse(path)
             except ElementTree.ParseError:
-                return _warn_or_raise(
-                    filename, 'Parsing error.', ElementTree.ParseError
-                )
+                return _warn_or_raise('XML parsing error.', ElementTree.ParseError)
             x, data = [], []
             for s in doc.getroot().findall('.//Point'):
                 # Verify keys
                 if any(key not in s.attrib for key in 'xrgb'):
                     return _warn_or_raise(
-                        filename,
                         'Missing an x, r, g, or b key inside one or more <Point> tags.'
                     )
                 # Get data
@@ -838,22 +844,19 @@ class _Colormap(object):
                 data.append(color)
             # Convert to array
             if not all(
-                len(data[0]) == len(color) and len(color) in (3, 4)
-                for color in data
+                len(data[0]) == len(color) and len(color) in (3, 4) for color in data
             ):
                 return _warn_or_raise(
-                    filename,
                     'Unexpected channel number or mixed channels across <Point> tags.'
                 )
 
         # Read hex strings
         elif ext == 'hex':
             # Read arbitrary format
-            string = open(filename).read()  # into single string
+            string = open(path).read()  # into single string
             data = REGEX_HEX_MULTI.findall(string)
             if len(data) < 2:
                 return _warn_or_raise(
-                    filename,
                     'Failed to find 6-digit or 8-digit HEX strings.'
                 )
             # Convert to array
@@ -863,9 +866,9 @@ class _Colormap(object):
         # Invalid extension
         else:
             return _warn_or_raise(
-                filename,
-                'Unknown extension -- options are: '
-                + ', '.join(map(repr, ('json', 'txt', 'rgb', 'hex'))) + '.'
+                'Unknown colormap file extension {ext!r}. Options are: '
+                + ', '.join(map(repr, ('json', 'txt', 'rgb', 'hex')))
+                + '.'
             )
 
         # Standardize and reverse if necessary to cmap
@@ -2346,7 +2349,8 @@ class DiscreteNorm(mcolors.BoundaryNorm):
         if unique not in uniques:
             raise ValueError(
                 f'Unknown unique option {unique!r}. Options are: '
-                + ', '.join(map(repr, uniques)) + '.'
+                + ', '.join(map(repr, uniques))
+                + '.'
             )
 
         # Ensure monotonicaly increasing levels and add built-in attributes
@@ -2724,7 +2728,8 @@ def _get_cmap_subtype(name, subtype):
         names = sorted(k for k, v in _cmap_database.items() if isinstance(v, cls))  # noqa: E501
         raise ValueError(
             f'Invalid {subtype} colormap name {name!r}. Options are: '
-            + ', '.join(map(repr, names)) + '.'
+            + ', '.join(map(repr, names))
+            + '.'
         )
     return cmap
 
@@ -2991,7 +2996,8 @@ class ColormapDatabase(MutableMapping, dict):
         except KeyError:
             raise KeyError(
                 f'Invalid colormap or color cycle name {key!r}. Options are: '
-                + ', '.join(map(repr, self)) + '.'
+                + ', '.join(map(repr, self))
+                + '.'
             )
         if reverse:
             value = value.reversed()
