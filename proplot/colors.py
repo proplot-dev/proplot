@@ -64,6 +64,7 @@ CYCLE_LUMINANCE = 90  # used in Cycle()
 _regex_hex = r'#(?:[0-9a-fA-F]{3,4}){2}'  # 6-8 digit hex
 REGEX_HEX = re.compile(rf'\A{_regex_hex}\Z')
 REGEX_HEX_MULTI = re.compile(_regex_hex)
+REGEX_GRAY = re.compile(r'\A(light|dark|medium|pale|charcoal)?\s*(gray[0-9]?)?\Z')
 
 # Colormap constants
 CMAPS_CYCLIC = tuple(  # cyclic colormaps loaded from rgb files
@@ -2159,11 +2160,11 @@ class PerceptualColormap(ContinuousColormap, _Colormap):
         ----------
         %(colors.from_list)s
         adjust_grays : bool, optional
-            Whether to adjust the hues of grayscale colors (including
-            ``'white'`` and ``'black'``) to the hues of the preceding and
-            subsequent colors in the sequence. This facilitates the construction
-            of diverging colormaps with monochromatic segments using input like
-            ``PerceptualColormap.from_list(['blueish', 'white', 'reddish'])``.
+            Whether to adjust the hues of grayscale colors (including ``'white'``,
+            ``'black'``, and the ``'grayN'`` open-color colors) to the hues of the
+            preceding and subsequent colors in the sequence. This facilitates the
+            construction of diverging colormaps with monochromatic segments using
+            e.g. ``PerceptualColormap.from_list(['blue', 'white', 'red'])``.
 
         Other parameters
         ----------------
@@ -2205,9 +2206,9 @@ class PerceptualColormap(ContinuousColormap, _Colormap):
 
         # Adjust grays
         if adjust_grays:
-            rgbs = [to_rgb(color) for color in colors]
             hues = cdict['hue']  # segment data
-            for i, rgb in enumerate(rgbs):
+            for i, color in enumerate(colors):
+                rgb = to_rgb(color)
                 if not np.allclose(np.array(rgb), rgb[0]):
                     continue
                 hues[i] = list(hues[i])  # enforce mutability
@@ -2829,8 +2830,8 @@ class _ColorCache(dict):
 
 class ColorDatabase(dict):
     """
-    Dictionary subclass used to replace the builtin matplotlib color
-    database. See `~ColorDatabase.cache` for details.
+    Dictionary subclass used to replace the builtin matplotlib color database.
+    See `~ColorDatabase.__getitem__` for details.
     """
     # NOTE: Matplotlib's database also inherits from dict. MutableMapping not needed
     # since usage is entirely internal (we just make it public for documentation)
@@ -2844,27 +2845,10 @@ class ColorDatabase(dict):
         super().__init__(mapping)
         self._cache = _ColorCache()
 
-    def __setitem__(self, key, value):
+    def __getitem__(self, key):
         """
-        Add a color to the database and clear the cache.
-        """
-        if not isinstance(key, str):
-            raise ValueError(f'Invalid color name {key!r}. Must be string.')
-        super().__setitem__(key, value)
-        self.cache.clear()
-
-    def __delitem__(self, key):
-        """
-        Delete a color from the database and clear the cache.
-        """
-        super().__delitem__(key)
-        self.cache.clear()
-
-    @property
-    def cache(self):
-        """
-        A special dictionary subclass capable of retrieving colors
-        "on-the-fly" from registered colormaps and color cycles.
+        Get a color. Translates ``grey`` into ``gray`` and supports retrieving
+        colors "on-the-fly" from registered colormaps and color cycles.
 
         * For a colormap, use e.g. ``color=('Blues', 0.8)``.
           The number is the colormap index, and must be between 0 and 1.
@@ -2874,6 +2858,30 @@ class ColorDatabase(dict):
         This works with anywhere that colors are used in matplotlib, for example
         as ``'color'``, ``'edgecolor'``, or ``'facecolor'`` arguments.
         """
+        if isinstance(key, str):
+            key = re.sub(r'\bgrey[0-9]?\b', 'gray', key)
+        return super().__getitem__(key)
+
+    def __setitem__(self, key, value):
+        """
+        Add a color and clear the cache.
+        """
+        if not isinstance(key, str):
+            raise ValueError(f'Invalid color name {key!r}. Must be string.')
+        super().__setitem__(key, value)
+        self.cache.clear()
+
+    def __delitem__(self, key):
+        """
+        Delete a color and clear the cache.
+        """
+        super().__delitem__(key)
+        self.cache.clear()
+
+    @property
+    def cache(self):
+        # Matplotlib uses 'cache' but treat '_cache' as synonym
+        # to guard against private API changes.
         return self._cache
 
 
