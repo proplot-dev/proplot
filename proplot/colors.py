@@ -569,21 +569,12 @@ def _load_colors(path, ignore_base=True, warn_on_failure=True):
         raising an error.
     """
     # Warn or raise error (matches Colormap._from_file behavior)
-    def _warn_or_raise(filename, descrip, error=RuntimeError):
-        prefix = f'Failed to load color data file {filename!r}.'
-        if warn_on_failure:
-            warnings._warn_proplot(prefix + ' ' + descrip)
-        else:
-            raise error(prefix + ' ' + descrip)
     if not os.path.exists(path):
-        return _warn_or_raise(f'File {path!r} not found.', FileNotFoundError)
-
-    # Check extension
-    cat, ext = os.path.splitext(path)
-    if ext != '.txt':
-        return _warn_or_raise(
-            f"Failed to load color data file {path!r}. Extension must be '.txt.'."
-        )
+        message = f'Failed to load color data file {path!r}. File not found.'
+        if warn_on_failure:
+            warnings._warn_proplot(message)
+        else:
+            raise FileNotFoundError(message)
 
     # Iterate through lines
     loaded = {}
@@ -596,8 +587,8 @@ def _load_colors(path, ignore_base=True, warn_on_failure=True):
             # Ensure line contains color
             pair = tuple(item.strip().lower() for item in line.split(':'))
             if len(pair) != 2 or not REGEX_HEX.match(pair[1]):
-                _warn_or_raise(
-                    f'Illegal line #{count + 1} in file {path!r}:\n'
+                warnings._warn_proplot(
+                    f'Illegal line #{count + 1} in color file {path!r}:\n'
                     f'{line!r}\n'
                     f'Lines must be formatted as "name: hexcolor".'
                 )
