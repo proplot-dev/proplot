@@ -390,10 +390,11 @@ def _parse_format(rc_kw=None, rc_mode=None, **kwargs):
     return rc_kw, rc_mode, kw
 
 
-def _translate_loc(loc, mode, *, default=None):
+def _translate_loc(loc, mode, *, default=None, **kwargs):
     """
-    Translate the location string `loc` into a standardized form. The `mode` must be
-    a string for which there is a :rcraw:`mode.loc` setting.
+    Translate the location string `loc` into a standardized form. The `mode`
+    must be a string for which there is a :rcraw:`mode.loc` setting. Additional
+    options can be added with keyword arguments.
     """
     # Create specific options dictionary
     # NOTE: This is not inside validators.py because it is also used to
@@ -408,6 +409,8 @@ def _translate_loc(loc, mode, *, default=None):
         loc_dict = rcsetup.TEXT_LOCS
     else:
         raise ValueError(f'Invalid mode {mode!r}.')
+    loc_dict = loc_dict.copy()
+    loc_dict.update(kwargs)
 
     # Translate location
     if loc in (None, True):

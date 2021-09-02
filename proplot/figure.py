@@ -346,29 +346,29 @@ loc : str, optional
     top edge     ``'t'``, ``'top'``
     ===========  =====================
 
+space : float or str, optional
+    The fixed space between the {name} and the subplot grid edge.
+    %(units.em)s
+    When the tight layout algorithm is active for the figure, this is adjusted
+    automatically using `pad`. Otherwise, a suitable default is selected.
+pad : float or str, optional
+    The tight layout padding between the {name} and the subplot grid.
+    Default is :rc:`subplots.innerpad` for the first {name} and
+    :rc:`subplots.panelpad` for subsequently stacked {name}s.
+    %(units.em)s
 row, rows
     Aliases for `span` for {name}s on the left or right side.
 col, cols
     Aliases for `span` for {name}s on the top or bottom side.
 span : int or 2-tuple of int, optional
-    Describes how the {name} spans rows and columns of subplots.
-    For example, ``fig.{name}(loc='b', col=1)`` draws a {name}
-    beneath the leftmost column of subplots, and
-    ``fig.{name}(loc='b', cols=(1,2))`` draws a {name} beneath the
-    left two columns of subplots. By default, the {name} will span
-    all rows and columns.
-space : float or str, optional
-    The fixed space between the {name} and the subplot grid. Units are
-    interpreted by `~proplot.utils.units`. When the tight layout algorithm
-    is active for the figure, this is adjusted automatically using `pad`.
-    Otherwise, a suitable default is selected.
-pad : float or str, optional
-    The tight layout padding between the subplot grid and the {name}.
-    Default is :rc:`subplots.innerpad` for the first {name} and
-    :rc:`subplots.panelpad` for subsequently stacked {name}s.
+    Integer(s) indicating the span of the {name} across rows and columns of
+    subplots. For example, ``fig.{name}(loc='b', col=1)`` draws a {name} beneath
+    the leftmost column of subplots, and ``fig.{name}(loc='b', cols=(1,2))``
+    draws a {name} beneath the left two columns of subplots. By default,
+    the {name} will span every subplot row and column.
 """
-docstring._snippet_manager['figure.colorbar_space'] = _space_docstring.format(name='colorbar')  # noqa: E501
 docstring._snippet_manager['figure.legend_space'] = _space_docstring.format(name='legend')  # noqa: E501
+docstring._snippet_manager['figure.colorbar_space'] = _space_docstring.format(name='colorbar')  # noqa: E501
 
 
 # Save docstring
@@ -1511,15 +1511,16 @@ class Figure(mfigure.Figure):
         ----------
         %(axes.colorbar_args)s
         %(figure.colorbar_space)s
-        width : float or str, optional
-            The colorbar width. Units are interpreted by
-            `~proplot.utils.units`. Default is :rc:`colorbar.width`.
-        length : float or str, optional
+        %(axes.colorbar_align)s
+        length : float, optional
             The colorbar length. Units are relative to the span of the rows and
             columns of subplots. Default is :rc:`colorbar.length`.
         shrink : float, optional
             Alias for `length`. This is included for consistency with
             `matplotlib.figure.Figure.colorbar`.
+        width : unit-spec, optional
+            The colorbar width. Default is :rc:`colorbar.width`.
+            %(units.in)s
 
         Other parameters
         ----------------
@@ -1564,10 +1565,11 @@ class Figure(mfigure.Figure):
         ----------
         %(axes.legend_args)s
         %(figure.legend_space)s
-        width : float or str, optional
-            The space allocated for the legend box. This does nothing if the
-            tight layout algorithm is active for the figure. Units are
-            interpreted by `~proplot.utils.units`.
+        %(axes.legend_align)s
+        width : unit-spec, optional
+            The space allocated for the legend box. This does nothing if
+            the tight layout algorithm is active for the figure.
+            %(units.in)s
 
         Other parameters
         ----------------

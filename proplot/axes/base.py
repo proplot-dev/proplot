@@ -53,6 +53,37 @@ __all__ = ['Axes']
 # A-b-c label string
 ABC_STRING = 'abcdefghijklmnopqrstuvwxyz'
 
+# Legned align options
+ALIGN_OPTS = {
+    None: {
+        'center': 'center',
+        'left': 'center left',
+        'right': 'center right',
+        'top': 'upper center',
+        'bottom': 'lower center',
+    },
+    'left': {
+        'top': 'upper right',
+        'center': 'center right',
+        'bottom': 'lower right',
+    },
+    'right': {
+        'top': 'upper left',
+        'center': 'center left',
+        'bottom': 'lower left',
+    },
+    'top': {
+        'left': 'lower left',
+        'center': 'lower center',
+        'right': 'lower right'
+    },
+    'bottom': {
+        'left': 'upper left',
+        'center': 'upper center',
+        'right': 'upper right'
+    },
+}
+
 
 # Transform docstring
 # Used for text and add_axes
@@ -92,6 +123,48 @@ basemap : bool or dict-like, optional
 docstring._snippet_manager['axes.proj'] = _proj_docstring
 docstring._snippet_manager['axes.proj_kw'] = _proj_kw_docstring
 docstring._snippet_manager['axes.basemap'] = _basemap_docstring
+
+
+# Colorbar and legend space
+_space_docstring = """
+space : unit-spec, optional
+    For outer {name}s only. The fixed space between the {name} and the subplot
+    edge. %(units.em)s
+    When the tight layout algorithm is active for the figure, this is adjusted
+    automatically using `pad`. Otherwise, a suitable default is selected.
+pad : unit-spec, optional
+    For outer {name}s, this is the tight layout padding between the {name} and
+    the subplot. Default is :rc:`subplots.panelpad`. For inset {name}s, this is the
+    fixed space between the axes edge and the {name}. Default is :rc:`{default}`.
+    %(units.em)s
+queue : bool, optional
+    If ``True`` and `loc` is the same as an existing {name}, the input
+    arguments are added to a queue and this function returns ``None``.
+    This is used to "update" the same {name} with successive ``ax.{name}(...)``
+    calls. If ``False`` (the default) and `loc` is the same as an existing
+    *inset* {name}, the old {name} is removed. If ``False`` and `loc` is an
+    *outer* {name}, the {name}s are stacked.
+"""
+_align_docstring = """
+align : {{'center', 'top', 't', 'bottom', 'b', 'left', 'l', 'right', 'r'}}, optional
+    For outer {name}s only. How to align the {name} against the
+    subplot edge. Default is ``'center'``. The values ``'top'``
+    and ``'bottom'`` are valid for left and right {name}s and
+    ``'left'`` and ``'right'`` are valid for top and bottom
+    {name}s. The default is always ``'center'``.
+"""
+docstring._snippet_manager['axes.legend_space'] = _space_docstring.format(
+    name='legend', default='legend.borderaxespad'
+)
+docstring._snippet_manager['axes.colorbar_space'] = _space_docstring.format(
+    name='colorbar', default='colorbar.insetpad'
+)
+docstring._snippet_manager['axes.legend_align'] = _align_docstring.format(
+    name='legend',
+)
+docstring._snippet_manager['axes.colorbar_align'] = _align_docstring.format(
+    name='colorbar',
+)
 
 
 # Inset docstring
@@ -150,13 +223,13 @@ width : unit-spec, optional
     The panel width. Default is :rc:`subplots.panelwidth`.
     %(units.in)s
 space : unit-spec, optional
-    The fixed space between the main subplot and the panel.
+    The fixed space between the panel and the subplot edge.
     %(units.em)s
     When the tight layout algorithm is active for the figure, this is adjusted
     automatically using `pad`. Otherwise, a suitable default is selected.
 pad : unit-spec, optional
-    The tight layout padding between the main subplot and the panel. Units are
-    interpreted by `~proplot.utils.units`. Default is :rc:`subplots.panelpad`.
+    The tight layout padding between the panel and the subplot.
+    %(units.em)s
 share : bool, optional
     Whether to enable axis sharing between the *x* and *y* axes of the
     main subplot and the panel long axes for each panel in the stack.
@@ -169,34 +242,6 @@ Returns
     The panel axes.
 """
 docstring._snippet_manager['axes.panel'] = _panel_docstring
-
-
-# Colorbar and legend space
-_space_docstring = """
-space : unit-spec, optional
-    For outer {name}s only. The fixed space between the {name} and the main axes.
-    %(units.em)s
-    When the tight layout algorithm is active for the figure, this is adjusted
-    automatically using `pad`. Otherwise, a suitable default is selected.
-pad : unit-spec, optional
-    The padding between the axes edge and the {name}. For outer {name}s, this is the
-    tight layout padding. Default is :rc:`subplots.panelpad`. For inset {name}s, this
-    is the fixed space between the axes edge and the {name}. Default is :rc:`{default}`.
-    %(units.em)s
-queue : bool, optional
-    If ``True`` and `loc` is the same as an existing {name}, the input
-    arguments are added to a queue and this function returns ``None``.
-    This is used to "update" the same {name} with successive ``ax.{name}(...)``
-    calls. If ``False`` (the default) and `loc` is the same as an existing
-    *inset* {name}, the old {name} is removed. If ``False`` and `loc` is an
-    *outer* {name}, the {name}s are stacked.
-"""
-docstring._snippet_manager['axes.legend_space'] = _space_docstring.format(
-    name='legend', default='legend.borderaxespad'
-)
-docstring._snippet_manager['axes.colorbar_space'] = _space_docstring.format(
-    name='colorbar', default='colorbar.insetpad'
-)
 
 
 # Format docstrings
@@ -418,12 +463,10 @@ orientation : {None, 'horizontal', 'vertical'}, optional
 """
 _edgefix_docstring = """
 edgefix : bool or float, optional
-    Whether to fix the common issue where white lines appear between
-    `filled contours <https://stackoverflow.com/q/8263769/4970632>`__
-    and `filled patches <https://stackoverflow.com/q/8263769/4970632>`__
-    in saved vector graphics. This can slow down figure rendering. Default
-    is :rc:`cmap.edgefix`. If ``True``, a default linewidth is used to fix
-    the edges. If float, this linewidth is used.
+    Whether to fix the common issue where white lines appear between adjacent
+    patches in saved vector graphics. This can slow down figure rendering.
+    Default is :rc:`cmap.edgefix`. If ``True``, a small default linewidth is
+    used to cover up the white lines. If float, this linewidth is used.
 """
 docstring._snippet_manager['axes.edgefix'] = _edgefix_docstring
 docstring._snippet_manager['axes.colorbar_args'] = _colorbar_args_docstring
@@ -1743,13 +1786,14 @@ class Axes(maxes.Axes):
         return kw_frame, kwargs
 
     def _parse_outer_colorbar(
-        self, length=None, shrink=None,
+        self, length=None, shrink=None, align=None,
         tickloc=None, ticklocation=None, orientation=None, **kwargs
     ):
         """
         Return the axes and adjusted keyword args for a panel-filling colorbar.
         """
         side = self._panel_side
+        align = _not_none(align, 'center')
         length = _not_none(length=length, shrink=shrink, default=rc['colorbar.length'])
         ticklocation = _not_none(tickloc=tickloc, ticklocation=ticklocation)
         if not 0 < length <= 1:
@@ -1760,18 +1804,37 @@ class Axes(maxes.Axes):
         # Draw colorbar axes within this one
         # WARNING: Use internal keyword arg '_child'
         ss = self.get_subplotspec()
-        ratios = (0.5 * (1 - length), length, 0.5 * (1 - length))
+        main = length
+        delta = 0.5 * (1 - length)
         if side in ('bottom', 'top'):
             nrows, ncols = (1, 3)
-            hratios, wratios = (1,), ratios
-        else:
+            if align == 'center':
+                wratios = (delta, main, delta)
+            elif align == 'left':
+                wratios = (main, delta, delta)
+            elif align == 'right':
+                wratios = (delta, delta, main)
+            else:
+                raise ValueError(f'Invalid align={align!r} for colorbar loc={side!r}.')
+            hratios = (1,)
+            idx = ('left', 'center', 'right').index(align)
+        elif side in ('left', 'right'):
             nrows, ncols = (3, 1)
-            hratios, wratios = ratios, (1,)
+            if align == 'center':
+                hratios = (delta, main, delta)
+            elif align == 'top':
+                hratios = (main, delta, delta)
+            elif align == 'bottom':
+                hratios = (delta, delta, main)
+            else:
+                raise ValueError(f'Invalid align={align!r} for colorbar loc={side!r}.')
+            wratios = (1,)
+            idx = ('top', 'center', 'bottom').index(align)
         gs = mgridspec.GridSpecFromSubplotSpec(
             nrows, ncols, ss,
-            hspace=0, wspace=0, height_ratios=hratios, width_ratios=wratios,
+            height_ratios=hratios, width_ratios=wratios, hspace=0.0, wspace=0.0,
         )
-        ss = type(ss)(gs, 1, 1)
+        ss = type(ss)(gs, idx, idx)
         self._hide_panel()
         ax = self.figure.add_subplot(ss, autoshare=False, number=False)
         ax.patch.set_facecolor('none')  # ignore axes.alpha application
@@ -2040,7 +2103,7 @@ class Axes(maxes.Axes):
         return mappable, rotation, kwargs
 
     def _draw_colorbar(
-        self, mappable, values=None, *, loc=None, space=None, pad=None,
+        self, mappable, values=None, *, loc=None, space=None, pad=None, align=None,
         extend=None, reverse=False, tickdir=None, tickdirection=None, tickminor=None,
         title=None, label=None, labelsize=None, labelweight=None, labelcolor=None,
         ticklabelsize=None, ticklabelweight=None, ticklabelcolor=None,
@@ -2063,6 +2126,7 @@ class Axes(maxes.Axes):
         grid = _not_none(grid=grid, edges=edges, drawedges=drawedges, default=rc['colorbar.grid'])  # noqa: E501
         label = _not_none(title=title, label=label)
         color = _not_none(c=c, color=color, default=rc['axes.edgecolor'])
+        align = _translate_loc(align, 'panel', default='center', c='center', center='center')  # noqa: E501
         linewidth = _not_none(lw=lw, linewidth=linewidth, default=rc['axes.linewidth'])
         tickdir = _not_none(tickdir=tickdir, tickdirection=tickdirection)
         rasterize = _not_none(rasterize, rc['colorbar.rasterize'])
@@ -2076,6 +2140,7 @@ class Axes(maxes.Axes):
             loc = 'fill'
         if loc == 'fill':
             kwargs.pop('width', None)
+            kwargs['align'] = align
             extendsize = _not_none(extendsize, rc['colorbar.extend'])
             cax, kwargs = self._parse_outer_colorbar(**kwargs)
         else:
@@ -2266,20 +2331,22 @@ class Axes(maxes.Axes):
             "filled"            ``'fill'``
             ==================  =======================================
 
-        length : unit-spec, optional
-            The colorbar length. For outer colorbars, default is :rc:`colorbar.length`
-            and units are relative to the axes width or height. For inset default is
-            :rc:`colorbar.insetlength`. %(units.em)s
+        length : float or unit-spec, optional
+            The colorbar length. For outer colorbars, default is
+            :rc:`colorbar.length` and units are relative to the axes
+            width or height. For inset colorbars, default is
+            :rc:`colorbar.insetlength` and units are absolute.
+            %(units.em)s
         shrink : float, optional
             Alias for `length`. This is included for consistency with
             `matplotlib.figure.Figure.colorbar`.
         width : unit-spec, optional
-            The colorbar width. If string, units are interpreted by
-            `~proplot.utils.units`. For outer colorbars, default is
-            :rc:`colorbar.width`, and if float, units are inches.
-            For inset colorbars, default is :rc:`colorbar.insetwidth`,
-            and if float, units are font size-relative.
+            The colorbar width. For outer colorbars, default is :rc:`colorbar.width`.
+            %(units.in)s
+            For inset colorbars, default is :rc:`colorbar.insetwidth`.
+            %(units.em)s
         %(axes.colorbar_space)s
+        %(axes.colorbar_align)s
 
         Other parameters
         ----------------
@@ -2467,7 +2534,7 @@ class Axes(maxes.Axes):
 
         return pairs
 
-    def _add_single_legend(self, pairs, ncol=None, order=None, **kwargs):
+    def _parse_single_legend(self, pairs, ncol=None, order=None, **kwargs):
         """
         Draw an individual legend with support for changing legend-entries
         between column-major and row-major.
@@ -2485,7 +2552,7 @@ class Axes(maxes.Axes):
         args = tuple(zip(*pairs)) or ([], [])
         return mlegend.Legend(self, *args, ncol=ncol, **kwargs)
 
-    def _add_multi_legend(
+    def _parse_multi_legend(
         self, pairs, *, fontsize,
         loc=None, title=None, frameon=None, kw_frame=None, **kwargs
     ):
@@ -2563,7 +2630,7 @@ class Axes(maxes.Axes):
 
     def _draw_legend(
         self, handles=None, labels=None, *,
-        loc=None, width=None, pad=None, space=None,
+        loc=None, width=None, pad=None, space=None, align=None,
         frame=None, frameon=None, ncol=None, ncols=None,
         alphabetize=False, center=None, order=None, label=None, title=None,
         fontsize=None, fontweight=None, fontcolor=None,
@@ -2576,6 +2643,7 @@ class Axes(maxes.Axes):
         # Parse input argument units
         ncol = _not_none(ncols=ncols, ncol=ncol)
         order = _not_none(order, 'C')
+        align = _translate_loc(align, 'panel', default='center', c='center', center='center')  # noqa: E501
         frameon = _not_none(frame=frame, frameon=frameon, default=rc['legend.frameon'])
         fontsize = _not_none(kwargs.pop('fontsize', None), rc['legend.fontsize'])
         titlefontsize = _not_none(
@@ -2605,30 +2673,26 @@ class Axes(maxes.Axes):
 
         # Generate and fill panel axes
         # NOTE: Important to remove None valued args above for these setdefault calls
+        lax = self
         if loc in ('left', 'right', 'top', 'bottom'):
             lax = self.panel_axes(loc, width=width, space=space, pad=pad, filled=True)
             loc = 'fill'
-        else:
-            lax = self
-            loc = loc
-            if pad is not None:  # allow using 'pad' for 'borderaxespad'
-                kwargs['borderaxespad'] = _not_none(
-                    borderaxespad=kwargs.pop('borderaxespad', None),
-                    pad=units(pad, 'em', fontsize=fontsize)
-                )
         if loc == 'fill':
             lax._hide_panel()
             kwargs.setdefault('borderaxespad', 0)
             if not frameon:
                 kwargs.setdefault('borderpad', 0)
-            loc_sides = {  # translate 'filled' legends to location
-                None: 'center',
-                'left': 'center right',
-                'right': 'center left',
-                'top': 'lower center',
-                'bottom': 'upper center',
-            }
-            loc = loc_sides[lax._panel_side]
+            opts = ALIGN_OPTS[self._panel_side]
+            if align not in opts:
+                raise ValueError(f'Invalid align={align!r} for legend loc={loc!r}.')
+            loc_legend = opts[align]
+        else:
+            if pad is not None:  # interpret 'pad' as 'borderaxespad'
+                kwargs['borderaxespad'] = _not_none(
+                    borderaxespad=kwargs.pop('borderaxespad', None),
+                    pad=units(pad, 'em', fontsize=fontsize)
+                )
+            loc_legend = loc  # location passed to legend
 
         # Handle and text properties that are applied after-the-fact
         # NOTE: Set solid_capstyle to 'butt' so line does not extend past error bounds
@@ -2654,7 +2718,7 @@ class Axes(maxes.Axes):
             alphabetize=alphabetize, handler_map=handler_map
         )
         title = _not_none(label=label, title=title)
-        kw_frame, kwargs = self._parse_frame('legend', **kwargs)
+        kw_frame, kwargs = lax._parse_frame('legend', **kwargs)
         kwargs.update(
             {
                 'title': title,
@@ -2666,13 +2730,13 @@ class Axes(maxes.Axes):
         )
 
         # Add the legend
+        kwargs['loc'] = loc_legend
         if center:  # multi-legend pseudo-legend
-            objs = lax._add_multi_legend(pairs, loc=loc, kw_frame=kw_frame, **kwargs)
+            objs = lax._parse_multi_legend(pairs, kw_frame=kw_frame, **kwargs)
         else:  # standard legend
             kwargs.update({key: kw_frame.pop(key) for key in ('shadow', 'fancybox')})
-            leg = lax._add_single_legend(pairs, loc=loc, ncol=ncol, order=order, **kwargs)  # noqa: E501
-            leg.legendPatch.update(kw_frame)
-            objs = [leg]
+            objs = [lax._parse_single_legend(pairs, ncol=ncol, order=order, **kwargs)]
+            objs[0].legendPatch.update(kw_frame)
         for obj in objs:
             if hasattr(lax, 'legend_') and lax.legend_ is None:
                 lax.legend_ = obj  # make first legend accessible with get_legend()
@@ -2680,7 +2744,7 @@ class Axes(maxes.Axes):
                 lax.add_artist(obj)
 
         # Update legend patch and elements
-        # TODO: Add capcity for categorical labels in a single legend like seaborn
+        # TODO: Add capacity for categorical labels in a single legend like seaborn
         # rather than manual handle overrides with multiple legends.
         # WARNING: legendHandles only contains the *first* artist per legend because
         # HandlerBase.legend_artist() called in Legend._init_legend_box() only
@@ -2751,6 +2815,7 @@ class Axes(maxes.Axes):
             does nothing if the tight layout algorithm is active for the figure.
             %(units.in)s
         %(axes.legend_space)s
+        %(axes.legend_align)s
 
         Other parameters
         ----------------
