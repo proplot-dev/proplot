@@ -21,14 +21,14 @@
 #
 # .. _ug_stats:
 #
-# Statistical plotting
-# ====================
+# Statistical tools
+# =================
 #
-# This section documents a few very basic plotting utilities that can be
+# This section documents a few very basic plotting tools that can be
 # useful for statistical analysis, including `~proplot.axes.PlotAxes.box`,
 # `~proplot.axes.PlotAxes.violin`, `~proplot.axes.PlotAxes.hist`, and on-the-fly
 # :ref:`error bars and shading <ug_errorbars>`. The :ref:`1d plotting <ug_1dplots>`
-# section should be read before this section. Some of these utilities will be
+# section should be read before this section. Some of these tools will be
 # expanded in the future, but for a more comprehensive suite of statistical
 # plotting utilities, you may be interested in `seaborn`_ (you should also be
 # able to use ProPlot axes and figures with most seaborn plotting commands).
@@ -223,7 +223,7 @@ x = state.normal(size=(M, N)) + state.rand(M)[:, None] * np.arange(N) + 2 * np.a
 fig, ax = pplt.subplots(refwidth=4, refaspect=(3, 2))
 ax.format(suptitle='Overlaid histograms', xlabel='distribution', ylabel='count')
 res = ax.hist(
-    x, pplt.arange(-3, 8, 0.2), alpha=0.7,
+    x, pplt.arange(-3, 8, 0.2), alpha=0.7, edgecolor='k',
     cycle=('indigo9', 'gray3', 'red9'), labels=list('abc'), legend='ul',
 )
 
@@ -253,8 +253,8 @@ for ax, which, color, title in zip(axs, 'lr', colors, titles):
     )
     color = pplt.scale_luminance(color, 1.5)  # histogram colors
     px = ax.panel(which, space=0)
-    px.hist(y, bins, lw=0, color=color, vert=False)  # or orientation='horizontal'
+    px.histh(y, bins, color=color, edgefix=True)
     px.format(grid=False, xlocator=[], xreverse=(which == 'l'))
     px = ax.panel('t', space=0)
-    px.hist(x, bins, lw=0, color=color)
+    px.hist(x, bins, color=color, edgefix=True)
     px.format(grid=False, ylocator=[], title=title, titleloc='l')

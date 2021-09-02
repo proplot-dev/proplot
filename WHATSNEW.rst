@@ -36,12 +36,19 @@ Deprecations
 * Use default ``discrete=False`` for `~proplot.axes.PlotAxes.hist2d` plots,
   consistent with `~proplot.axes.PlotAxes.hexbin` (:commit:`267dd161`). Now
   "discrete" levels are only enabled for pcolor/contour plots by default.
+* Revert back to matplotlib default behavior of ``edgecolor='none'`` for
+  `bar` plots (:commit:`cc602349`). Previously this behavior was annoying due
+  to "white lines" issue but now `edgefix` is applied to these plots (see below).
+* Control colorbar frame properties using same syntax as legend frame properties
+  -- `edgewidth`, `edgecolor`, and optional rounded box with ``fancybox=True``
+  (:commit:`58ce2c95`). Colorbar outline is now controlled with `linewidth`
+  and `color`. Previously these settings had to be in sync.
 * Deprecate recently-introduced `proplot.gridspec.SubplotGrid.legend` and
   `proplot.gridspec.SubplotGrid.colorbar` methods (:commit:`d21a61a3`). Idea
   was this could be used to add an auto-legend to each subplot with ``axs.legend()``
-  or identical colorbars with ``axs.colorbar(m)``, but in the future we will use
-  these methods to add colorbars and legends centered along the edge of arbitrary
-  subplots with e.g. ``axs[0, :2].colorbar(m, loc='bottom')``.
+  or identical colorbars with ``axs.colorbar(m)``, but in the future want to
+  instead use these methods to add colorbars and legends along the edge of
+  arbitrary subplots with e.g. ``axs[0, :2].colorbar(m, loc='bottom')``.
 * Deprecate recently-introduced `proplot.gridspec.SubplotGrid.text`
   (:commit:`80deb71a`). Idea was this could be used to add identical text to
   each subplot but that is pretty niche, does not need to be supported.
@@ -49,23 +56,54 @@ Deprecations
 Features
 --------
 
+* Add `edgefix` as option for ``bar``, ``hist``, and ``area`` plots to
+  fix the "white-lines-between-patches" issue with saved vector
+  graphics, just like ``pcolor`` and ``contourf`` (:commit:`cc602349`).
+* Add `handle_kw` to `~proplot.axes.Axes.legend` and `outline_kw` to
+  `~proplot.axes.Axes.colorbar` to optionally control handle and outline settings
+  that conflict with frame settings (e.g., ``'edgecolor'``) (:commit:`58ce2c95`).
+* Trigger ``adjust_grays`` hue adjustments for gray-like color names passed to
+  `~proplot.colors.PerceptualColormap.from_list` even if channel values slightly
+  differ, including ``'charcoal'``, ``'light gray'``, ``'gray[1-9]'``, etc.
+  (:commit:`6cf42896`). This supports using named grays as intermediate colors.
+* Interpret ``'grey'`` as a synonym of ``'gray'`` by translating substrings in
+  color database (:commit:`6cf42896`). Ignore compound words like ``'slategrey'``
+  as these represent CSS colors.
 * Add cartopy-based ``LongitudeLocator``, ``LatitudeLocator``, ``DegreeLocator``,
- ``LongitudeFormatter``, ``LatitudeFormatter``, ``DegreeFormatter`` to
- public API for consistency with other "registered" tickers (:commit:`76e45c0c`).
+  ``LongitudeFormatter``, ``LatitudeFormatter``, ``DegreeFormatter`` to
+  public API for consistency with other "registered" tickers (:commit:`76e45c0c`).
+* Permitting loading color names from files without ``.txt`` extension
+  (:commit:`55481a9c`). This restriction was unnecessary.
+* Add `align` keyword with options ``'bottom'``, ``'top'``, ``'left'``, ``'right'``,
+  or ``'center'`` (with optional single-char shorthands) to change alignment for
+  outer legends/colorbars (:commit:`4a50b4b2`). Previously they had to be centered.
 
 Bug fixes
 ---------
 
 * Fix issue where tuple `~proplot.config.rc` values are truncated
   to first scalar value when saving a ``proplotrc`` (:commit:`e731c709`).
+* Fix issue where channel-setting and scaling functions like ``scale_luminance``
+  drop the opacity channel (:commit:`58ce2c95`).
 
 Internals
 ---------
 
+* Remove unused, mostly undocumented :rcraw:`axes.titleabove` setting
+  (:commit:`9d9d0db7`). Users should be using :rcraw:`title.above` instead.
+* Move `~proplot.gridspec.SubplotGrid` from ``figure.py`` to ``gridspec.py``
+  (:commit:`7b688fc8`). Makes more sense there.
+* Improve organization of internal functions, add ``data.py``, ``context.py``,
+  and ``text.py`` to ``internals`` and rename and re-sort ``PlotAxes`` related
+  parsing utilities (:commit:`58ce2c95`).
+
+Documentation
+-------------
+
 * Update napoloen type aliases and specifiers (:commit:`c20ed1d1`). Use `sequence`
   instead of `list` wherever params accept arbitrary sequences (:commit:`e627e95b`).
-* Move `~proplot.gridspec.SubplotGrid` from ``figure.py`` to ``gridspec.py``
-  (:commit:`7b688fc8`). Makes much more sense.
+* Improve documentation of style-type arguments like `lw`, `linewidth`,
+  etc. on plotting commands (:commit:`cc602349`).
 
 ProPlot v0.8.1 (2021-08-22)
 ===========================
@@ -99,7 +137,7 @@ Bug fixes
 * Fix issue where edge colors of area plots with ``negpos=True``
   cannot be changed (:commit:`bb50dea4`).
 * Fix issue where `legend` `order` keyword arg is ignored and default is
-  changed back to ``'F'`` (:commit:`###`).
+  changed back to ``'F'`` (:commit:`06666296`).
 * Fix issues where ``setup_matplotlib`` is not called for pint quantity
   input and column iteration of 2D input to 1D funcs fails (:commit:`e57d238e`).
 * Fix issue where pint quantity *x* and *y* coordinates fail when passing

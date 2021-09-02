@@ -458,7 +458,7 @@ The following features are relevant for the 2D plotting commands like
   <https://stackoverflow.com/q/8263769/4970632>`__, `grid boxes
   <https://stackoverflow.com/q/27092991/4970632>`__, and `colorbar segments
   <https://stackoverflow.com/q/15003353/4970632>`__. This can be disabled by
-  passing ``fixedges=False`` to plot commands.
+  passing ``edgefix=False`` to plot commands.
 
 .. _why_cartopy_basemap:
 

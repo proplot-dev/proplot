@@ -337,14 +337,7 @@ _space_docstring = """
 loc : str, optional
     The {name} location. Valid location keys are as follows.
 
-    ===========  =====================
-    Location     Valid keys
-    ===========  =====================
-    left edge    ``'l'``, ``'left'``
-    right edge   ``'r'``, ``'right'``
-    bottom edge  ``'b'``, ``'bottom'``
-    top edge     ``'t'``, ``'top'``
-    ===========  =====================
+%(axes.panel_loc)s
 
 space : float or str, optional
     The fixed space between the {name} and the subplot grid edge.
@@ -366,6 +359,12 @@ span : int or 2-tuple of int, optional
     the leftmost column of subplots, and ``fig.{name}(loc='b', cols=(1,2))``
     draws a {name} beneath the left two columns of subplots. By default,
     the {name} will span every subplot row and column.
+align : {{'center', 'top', 't', 'bottom', 'b', 'left', 'l', 'right', 'r'}}, optional
+    For outer {name}s only. How to align the {name} against the
+    subplot edge. Default is ``'center'``. The values ``'top'``
+    and ``'bottom'`` are valid for left and right {name}s and
+    ``'left'`` and ``'right'`` are valid for top and bottom
+    {name}s. The default is always ``'center'``.
 """
 docstring._snippet_manager['figure.legend_space'] = _space_docstring.format(name='legend')  # noqa: E501
 docstring._snippet_manager['figure.colorbar_space'] = _space_docstring.format(name='colorbar')  # noqa: E501
@@ -1510,8 +1509,6 @@ class Figure(mfigure.Figure):
         Parameters
         ----------
         %(axes.colorbar_args)s
-        %(figure.colorbar_space)s
-        %(axes.colorbar_align)s
         length : float, optional
             The colorbar length. Units are relative to the span of the rows and
             columns of subplots. Default is :rc:`colorbar.length`.
@@ -1521,6 +1518,8 @@ class Figure(mfigure.Figure):
         width : unit-spec, optional
             The colorbar width. Default is :rc:`colorbar.width`.
             %(units.in)s
+        %(figure.colorbar_space)s
+            Has no visible effect if `length` is ``1``.
 
         Other parameters
         ----------------
@@ -1565,7 +1564,6 @@ class Figure(mfigure.Figure):
         ----------
         %(axes.legend_args)s
         %(figure.legend_space)s
-        %(axes.legend_align)s
         width : unit-spec, optional
             The space allocated for the legend box. This does nothing if
             the tight layout algorithm is active for the figure.

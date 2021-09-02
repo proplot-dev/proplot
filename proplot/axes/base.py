@@ -127,6 +127,13 @@ docstring._snippet_manager['axes.basemap'] = _basemap_docstring
 
 # Colorbar and legend space
 _space_docstring = """
+queue : bool, optional
+    If ``True`` and `loc` is the same as an existing {name}, the input
+    arguments are added to a queue and this function returns ``None``.
+    This is used to "update" the same {name} with successive ``ax.{name}(...)``
+    calls. If ``False`` (the default) and `loc` is the same as an existing
+    *inset* {name}, the old {name} is removed. If ``False`` and `loc` is an
+    *outer* {name}, the {name}s are stacked.
 space : unit-spec, optional
     For outer {name}s only. The fixed space between the {name} and the subplot
     edge. %(units.em)s
@@ -137,15 +144,6 @@ pad : unit-spec, optional
     the subplot. Default is :rc:`subplots.panelpad`. For inset {name}s, this is the
     fixed space between the axes edge and the {name}. Default is :rc:`{default}`.
     %(units.em)s
-queue : bool, optional
-    If ``True`` and `loc` is the same as an existing {name}, the input
-    arguments are added to a queue and this function returns ``None``.
-    This is used to "update" the same {name} with successive ``ax.{name}(...)``
-    calls. If ``False`` (the default) and `loc` is the same as an existing
-    *inset* {name}, the old {name} is removed. If ``False`` and `loc` is an
-    *outer* {name}, the {name}s are stacked.
-"""
-_align_docstring = """
 align : {{'center', 'top', 't', 'bottom', 'b', 'left', 'l', 'right', 'r'}}, optional
     For outer {name}s only. How to align the {name} against the
     subplot edge. Default is ``'center'``. The values ``'top'``
@@ -158,12 +156,6 @@ docstring._snippet_manager['axes.legend_space'] = _space_docstring.format(
 )
 docstring._snippet_manager['axes.colorbar_space'] = _space_docstring.format(
     name='colorbar', default='colorbar.insetpad'
-)
-docstring._snippet_manager['axes.legend_align'] = _align_docstring.format(
-    name='legend',
-)
-docstring._snippet_manager['axes.colorbar_align'] = _align_docstring.format(
-    name='colorbar',
 )
 
 
@@ -202,14 +194,7 @@ docstring._snippet_manager['axes.inset'] = _inset_docstring
 
 
 # Panel docstring
-_panel_docstring = """
-Return a panel drawn along the edge of this axes.
-
-Parameters
-----------
-side : str, optional
-    The panel location. The following location keys are valid:
-
+_panel_loc_docstring = """
     ==========  =====================
     Location    Valid keys
     ==========  =====================
@@ -218,6 +203,16 @@ side : str, optional
     bottom      ``'bottom'``, ``'b'``
     top         ``'top'``, ``'t'``
     ==========  =====================
+"""
+_panel_docstring = """
+Return a panel drawn along the edge of this axes.
+
+Parameters
+----------
+side : str, optional
+    The panel location. Valid location keys are as follows.
+
+%(axes.panel_loc)s
 
 width : unit-spec, optional
     The panel width. Default is :rc:`subplots.panelwidth`.
@@ -241,6 +236,7 @@ Returns
 `~proplot.axes.CartesianAxes`
     The panel axes.
 """
+docstring._snippet_manager['axes.panel_loc'] = _panel_loc_docstring
 docstring._snippet_manager['axes.panel'] = _panel_docstring
 
 
@@ -2346,7 +2342,7 @@ class Axes(maxes.Axes):
             For inset colorbars, default is :rc:`colorbar.insetwidth`.
             %(units.em)s
         %(axes.colorbar_space)s
-        %(axes.colorbar_align)s
+            Has no visible effect if `length` is ``1``.
 
         Other parameters
         ----------------
@@ -2815,7 +2811,6 @@ class Axes(maxes.Axes):
             does nothing if the tight layout algorithm is active for the figure.
             %(units.in)s
         %(axes.legend_space)s
-        %(axes.legend_align)s
 
         Other parameters
         ----------------
