@@ -47,7 +47,9 @@ __all__ = ['PlotAxes']
 
 
 # Constants
-EDGEWIDTH = 0.25  # native linewidth used for grid box edges in matplotlib
+# NOTE: Increased from native linewidth of 0.25 matplotlib uses for grid box edges.
+# This is half of rc['patch.linewidth'] of 0.6. Half seems like a nice default.
+EDGEWIDTH = 0.3
 
 # Data argument docstrings
 _args_1d_docstring = """
@@ -270,6 +272,9 @@ cmap : colormap-spec, optional
     constructor function.
 cmap_kw : dict-like, optional
     Passed to `~proplot.constructor.Colormap`.
+c, color, colors : color-spec or sequence of color-spec, optional
+    The color(s) used to create a `~proplot.colors.DiscreteColormap`.
+    If not passed, `cmap` is used.
 norm : norm-spec, optional
     The continuous colormap normalizer, passed to the `~proplot.constructor.Norm`
     constructor function. If `discrete` is ``True`` this is also used to normalize
@@ -284,21 +289,12 @@ discrete : bool, optional
     is ``False`` for `~proplot.axes.Axes.imshow`, `~proplot.axes.Axes.matshow`,
     `~proplot.axes.Axes.spy`, `~proplot.axes.Axes.hexbin`, `~proplot.axes.Axes.hist2d`,
     and `~proplot.axes.Axes.heatmap` plots, but ``True`` otherwise.
-sequential : bool, optional
-    Use :rc:`cmap.sequential` as the default colormap.
-diverging : bool, optional
-    Use :rc:`cmap.diverging` as the default colormap and use
-    `~proplot.colors.DivergingNorm` as the default continuous normalizer.
-    This will also ensure auto-generated levels include a value at zero.
-cyclic : bool, optional
-    Use :rc:`cmap.cyclic` as the default colormap and modify the default
-    arguments passed to `~proplot.colors.DiscreteNorm` so that colors
-    on either end are distinct.
 sequential, diverging, cyclic, qualitative : bool, optional
     Boolean arguments used if `cmap` is not passed. Set these to ``True``
     to use the default :rcraw:`cmap.sequential`, :rcraw:`cmap.diverging`,
-    :rcraw:`cmap.cyclic`, and :rcraw:`cmap.qualitative` colormaps. The
-    latter three options also change level- and norm-generation behavior.
+    :rcraw:`cmap.cyclic`, and :rcraw:`cmap.qualitative` colormaps.
+    The `diverging` option also applies `~proplot.colors.DivergingNorm`
+    as the default continuous normalizer.
 extend : {{'neither', 'min', 'max', 'both'}}, optional
     Whether to assign unique colors to out-of-bounds data and draw
     colorbar "extensions" when a colorbar is drawn.
@@ -364,7 +360,7 @@ nozero : bool, optional
     If ``True``, ``0`` is removed from the level list. This is mainly useful for
     single-color `~matplotlib.axes.Axes.contour` plots.
 """
-docstring._snippet_manager['plot.levels_vlim'] = _vlim_levels_docstring
+docstring._snippet_manager['plot.vmin_vmax'] = _vlim_levels_docstring
 docstring._snippet_manager['plot.levels_manual'] = _manual_levels_docstring
 docstring._snippet_manager['plot.levels_auto'] = _auto_levels_docstring
 
@@ -404,6 +400,79 @@ docstring._snippet_manager['plot.labels_1d'] = _labels_1d_docstring
 docstring._snippet_manager['plot.labels_2d'] = _labels_2d_docstring
 
 
+# Style docstrings
+_line_docstring = """
+lw, linewidth, linewidths : float, optional
+    The line width.
+ls, linestyle, linestyles : str, optional
+    The line style.
+c, color, colors : color-spec, optional
+    The line color.
+"""
+_patch_docstring = """
+lw, linewidth, linewidths : float, optional
+    The edge width for the patches.
+ls, linestyle, linestyles : str, optional
+    The edge style for the patches.
+ec, edgecolor, edgecolors : color-spec, optional
+    The edge color for the patches.
+fc, facecolor, facecolors, fillcolor, fillcolors : color-spec, optional
+    The face color for the patches.
+a, alpha, alphas : float, optional
+    The face opacity for the patches.
+"""
+_patches_docstring = """
+lw, linewidth, linewidths : float, optional
+    The edge width for the {objects}. Default is :rc:`patch.linewidth`.
+c, color, colors, ec, edgecolor, edgecolors : color-spec or sequence, optional
+    The edge color for the {objects}. Default is ``'black'``. If a
+    sequence, should be the same length as the number of {objects}.
+fc, facecolor, fillcolor, facecolors, fillcolors : color-spec or sequence, optional
+    The fill color for the {objects}. Default is the next color cycler color. If
+    a sequence, it should be the same length as the number of {objects}.
+a, alpha, fa, facealpha, fillalpha, facealphas, fillalphas : float, optional
+    The opacity of the {objects}. Default is ``1.0``. If a sequence, should
+    be the same length as the number of {objects}.
+"""
+_pcolor_collection_docstring = """
+lw, linewidth, linewidths : float, optional
+    The width of lines between grid boxes.
+ls, linestyle, linestyles : str, optional
+    The style of lines between grid boxes.
+ec, edgecolor, edgecolors : color-spec, optional
+    The color for lines between grid boxes.
+"""
+_contour_collection_docstring = """
+lw, linewidth, linewidths : float, optional
+    The width of the contour lines. For `contourf` plots,
+    lines are added between the filled contours.
+ls, linestyle, linestyles : str, optional
+    The style of the contour lines. For `contourf` plots,
+    lines are added between the filled contours.
+ec, edgecolor, edgecolors : color-spec, optional
+    The color for the contour lines. For `contourf` plots,
+    lines are added between the filled contours.
+"""
+_negpos_docstring = """
+negpos : bool, optional
+    Whether to shade regions where ``{pos}`` with `poscolor` and
+    where ``{neg}`` with `negcolor`. Default is ``False``. If
+    ``True`` this function will return a 2-tuple of values.
+negcolor, poscolor : color-spec, optional
+    Colors to use for the negative and positive shading. Ignored if `negpos`
+    is ``False``. Defaults are :rc:`negcolor` and :rc:`poscolor`.
+"""
+docstring._snippet_manager['plot.line'] = _line_docstring
+docstring._snippet_manager['plot.patch'] = _patch_docstring
+docstring._snippet_manager['plot.box_patches'] = _patches_docstring.format(objects='boxes')  # noqa: E501
+docstring._snippet_manager['plot.violin_patches'] = _patches_docstring.format(objects='violins')  # noqa: E501
+docstring._snippet_manager['plot.pcolor_collection'] = _pcolor_collection_docstring
+docstring._snippet_manager['plot.contour_collection'] = _contour_collection_docstring
+docstring._snippet_manager['plot.negpos_fill'] = _negpos_docstring.format(neg='y2 < y1', pos='y2 >= y1')  # noqa: E501
+docstring._snippet_manager['plot.negpos_lines'] = _negpos_docstring.format(neg='ymax < ymin', pos='ymax >= ymin')  # noqa: E501
+docstring._snippet_manager['plot.negpos_bar'] = _negpos_docstring.format(neg='height < 0', pos='height >= 0')  # noqa: E501
+
+
 # Plot docstring
 _plot_docstring = """
 Plot standard lines.
@@ -416,6 +485,7 @@ Parameters
 Other parameters
 ----------------
 %(plot.cycle)s
+%(plot.line)s
 %(plot.labels_1d)s
 %(plot.guide)s
 %(plot.error_means_{y})s
@@ -448,6 +518,7 @@ Parameters
 Other parameters
 ----------------
 %(plot.cycle)s
+%(plot.line)s
 %(plot.labels_1d)s
 %(plot.guide)s
 %(plot.inbounds)s
@@ -497,21 +568,11 @@ Parameters
 Other parameters
 ----------------
 stack, stacked : bool, optional
-    Whether to "stack" successive columns of the `{y}1` coordinates. If this
-    is ``True`` and `{y}2` was provided, it will be ignored.
-negpos : bool, optional
-    Whether to color lines greater than zero with `poscolor` and lines less
-    than zero with `negcolor`.
-negcolor, poscolor : color-spec, optional
-    Colors to use for the negative and positive lines. Ignored if `negpos`
-    is ``False``. Defaults are :rc:`negcolor` and :rc:`poscolor`.
-c, color, colors : color-spec or sequence, optional
-    The line color(s).
-ls, linestyle, linestyles : str or sequence, optional
-    The line style(s).
-lw, linewidth, linewidths : float or sequence, optional
-    The line width(s).
+    Whether to "stack" lines from successive columns of {y} data
+    or plot lines on top of each other. Default is ``False``.
 %(plot.cycle)s
+%(plot.line)s
+%(plot.negpos_lines)s
 %(plot.labels_1d)s
 %(plot.guide)s
 %(plot.inbounds)s
@@ -550,7 +611,7 @@ c, color, colors, values : array-like, optional
 Other parameters
 ----------------
 %(plot.cmap_norm)s
-%(plot.levels_vlim)s
+%(plot.vmin_vmax)s
 %(plot.guide)s
 interp : int, optional
     Interpolate to this many additional points between the parametric
@@ -590,12 +651,12 @@ s, size, ms, markersize : float or sequence of float, optional
     the units are scaled by `smin` and `smax`.
 c, color, colors, mc, markercolor, markercolors \
 : array-like or color-spec, optional
-    The marker fill color(s). If this is an array matching the shape of `x` and `y`,
+    The marker color(s). If this is an array matching the shape of `x` and `y`,
     the colors are generated using `cmap`, `norm`, `vmin`, and `vmax`.
 smin, smax : float, optional
     The minimum and maximum marker size in units ``points**2`` used to scale
     `s`. If not provided, the marker sizes are equivalent to the values in `s`.
-%(plot.levels_vlim)s
+%(plot.vmin_vmax)s
 %(plot.args_1d_shared)s
 
 Other parameters
@@ -650,19 +711,12 @@ absolute_width : bool, optional
 Other parameters
 ----------------
 stack, stacked : bool, optional
-    Whether to stack columns of the input array or plot the bars
-    side-by-side in groups.
-negpos : bool, optional
-    Whether to shade bars greater than zero with `poscolor` and bars less
-    than zero with `negcolor`.
-negcolor, poscolor : color-spec, optional
-    Colors to use for the negative and positive bars. Ignored if `negpos`
-    is ``False``. Defaults are :rc:`negcolor` and :rc:`poscolor`.
-lw, linewidth, linewidths : float, optional
-    The edge width for the bar patches.
-ec, edgecolor, edgecolors : color-spec, optional
-    The edge color for the bar patches.
+    Whether to "stack" bars from successive columns of {y} data
+    or plot bars side-by-side in groups. Default is ``False``.
 %(plot.cycle)s
+%(plot.patch)s
+%(plot.negpos_bar)s
+%(axes.edgefix)s
 %(plot.labels_1d)s
 %(plot.guide)s
 %(plot.error_means_{y})s
@@ -698,23 +752,16 @@ Parameters
 Other parameters
 ----------------
 stack, stacked : bool, optional
-    Whether to "stack" successive columns of the `{y}1` array. If this is
-    ``True`` and `{y}2` was provided, it will be ignored.
-negpos : bool, optional
-    Whether to shade where ``{y}1 >= {y}2`` with `poscolor` and where ``{y}1 < {y}2``
-    with `negcolor`. For example, to shade positive values red and negative values
-    blue, simply use ``ax.fill_between{suffix}({x}, {y}, negpos=True)``.
-negcolor, poscolor : color-spec, optional
-    Colors to use for the negative and positive shaded regions. Ignored if `negpos`
-    is ``False``. Defaults are :rc:`negcolor` and :rc:`poscolor`.
+    Whether to "stack" area patches from successive columns of {y} data
+    or plot area patches on top of each other. Default is ``False``.
 where : ndarray, optional
-    Boolean ndarray mask for points you want to shade. See `this example \
+    A boolean mask for the points that should be shaded.
+    See `this matplotlib example \
 <https://matplotlib.org/stable/gallery/pyplots/whats_new_98_4_fill_between.html>`__.
-lw, linewidth, linewidths : float, optional
-    The edge width for the area patches.
-ec, edgecolor, edgecolors : color-spec, optional
-    The edge color for the area patches.
 %(plot.cycle)s
+%(plot.patch)s
+%(plot.negpos_fill)s
+%(axes.edgefix)s
 %(plot.labels_1d)s
 %(plot.guide)s
 %(plot.inbounds)s
@@ -745,6 +792,7 @@ weights : array-like, optional
     can be retrieved from `data` (see below).
 """
 docstring._snippet_manager['plot.weights'] = _weight_docstring
+
 _hist_docstring = """
 Plot {orientation} histograms.
 
@@ -759,6 +807,8 @@ bins : int or sequence of float, optional
 Other parameters
 ----------------
 %(plot.cycle)s
+%(plot.patch)s
+%(axes.edgefix)s
 %(plot.labels_1d)s
 %(plot.guide)s
 **kwargs
@@ -789,22 +839,16 @@ Parameters
 
 Other parameters
 ----------------
-mean, means : bool, optional
-    If ``True``, this passes ``showmeans=True`` and ``meanline=True`` to
-    `~matplotlib.axes.Axes.boxplot`.
 fill : bool, optional
-    Whether to fill the box with a color.
-fc, facecolor, fillcolor : color-spec or sequence, optional
-    The fill color for the boxes. Default is the next color cycler color. If
-    a sequence, it should be the same length as the number of objects.
-a, alpha, fa, facealpha, fillalpha : float, optional
-    The opacity of the boxes. Default is ``1.0``. If a sequence, should
-    be the same length as the number of objects.
-lw, linewidth, linewidths : float, optional
-    The linewidth of all objects. Default is :rc:`patch.linewidth`.
-c, color, colors, ec, edgecolor, edgecolors : color-spec or sequence, optional
-    The color of all objects. Default is ``'black'``. If a sequence, should
-    be the same length as the number of objects.
+    Whether to fill the box with a color. Default is ``True``.
+mean, means : bool, optional
+    If ``True``, this passes ``showmeans=True`` and ``meanline=True``
+    to `~matplotlib.axes.Axes.boxplot`.
+%(plot.cycle)s
+%(plot.box_patches)s
+m, marker, ms, markersize : float or str, optional
+    Marker style and size for the 'fliers', i.e. outliers. Default is
+    determined by :rcraw:`boxplot.flierprops`.
 meanls, medianls, meanlinestyle, medianlinestyle, meanlinestyles, medianlinestyles \
 : line style-spec, optional
     The line style for the mean and median lines drawn horizontally
@@ -814,7 +858,7 @@ boxcolor, capcolor, whiskercolor, fliercolor, meancolor, mediancolor \
 boxcolors, capcolors, whiskercolors, fliercolors, meancolors, mediancolors \
 : color-spec or sequence, optional
     The color of various boxplot components. If a sequence, should be the
-    same length as the number of objects. These are shorthands so you don't
+    same length as the number of boxes. These are shorthands so you don't
     have to pass e.g. a ``boxprops`` dictionary.
 boxlw, caplw, whiskerlw, flierlw, meanlw, medianlw, boxlinewidth, caplinewidth, \
 meanlinewidth, medianlinewidth, whiskerlinewidth, flierlinewidth, boxlinewidths, \
@@ -822,11 +866,6 @@ caplinewidths, meanlinewidths, medianlinewidths, whiskerlinewidths, flierlinewid
 : float, optional
     The line width of various boxplot components. These are shorthands so
     you don't have to pass e.g. a ``boxprops`` dictionary.
-m, marker : marker-spec, optional
-    Marker style for the 'fliers', i.e. outliers.
-ms, markersize : float, optional
-    Marker size for the 'fliers', i.e. outliers.
-%(plot.cycle)s
 %(plot.labels_1d)s
 **kwargs
     Passed to `matplotlib.axes.Axes.boxplot`.
@@ -860,18 +899,8 @@ Parameters
 
 Other parameters
 ----------------
-fc, facecolor, facecolors, fillcolor, fillcolors : color-spec or sequence, optional
-    The violin plot fill color. Default is the next color cycler color. If
-    a sequence, should be the same length as the number of objects.
-c, color, colors, ec, edgecolor, edgecolors : color-spec or sequence, optional
-    The edge color for the violin patches. Default is ``'black'``. If a
-    sequence, should be the same length as the number of objects.
-a, alpha, fa, facealpha, fillalpha : float or sequence, optional
-    The opacity of the violins. Default is ``1.0``. If a sequence,
-    should be the same length as the number of objects.
-lw, linewidth, linewidths : float, optional
-    The linewidth of the line objects. Default is :rc:`patch.linewidth`.
 %(plot.cycle)s
+%(plot.violin_patches)s
 %(plot.labels_1d)s
 %(plot.error_bars)s
 **kwargs
@@ -913,23 +942,12 @@ Other parameters
 ----------------
 %(plot.cmap_norm)s
 %(plot.levels_manual)s
-%(plot.levels_vlim)s
+%(plot.vmin_vmax)s
 %(plot.levels_auto)s
 %(plot.labels_2d)s
 %(plot.guide)s
-{add}lw, linewidth, linewidths : optional
-    The width of the contour lines.
-    For `contourf` plots, lines are added between the filled contours.
-ls, linestyle, linestyles : optional
-    The style of the contour lines.
-    For `contourf` plots, lines are added between the filled contours.
-ec, edgecolor, edgecolors : optional
-    The color for the contour lines.
-    For `contourf` plots, lines are added between the filled contours.
-c, color, colors : optional
-    The color(s) for the contour lines or filled contours. If not passed,
-    the color is determined by `cmap` and the `z` data.
-**kwargs
+%(plot.contour_collection)s
+{edgefix}**kwargs
     Passed to `matplotlib.axes.Axes.{command}`.
 
 See also
@@ -940,24 +958,17 @@ PlotAxes.tricontour
 PlotAxes.tricontourf
 matplotlib.axes.Axes.{command}
 """
-_edgefix_docstring = """
-edgefix : bool or float, optional
-    Whether to fix an issue where `white lines appear between filled contours
-    <https://stackoverflow.com/q/8263769/4970632>`__ in saved vector graphics.
-    This can slow down figure rendering. Default is :rc:`cmap.edgefix`.
-    If ``True``, a default linewidth is used. If float, this linewidth is used.
-"""
 docstring._snippet_manager['plot.contour'] = _contour_docstring.format(
-    descrip='contour lines', command='contour', add=''
+    descrip='contour lines', command='contour', edgefix=''
 )
 docstring._snippet_manager['plot.contourf'] = _contour_docstring.format(
-    descrip='filled contours', command='contourf', add=_edgefix_docstring
+    descrip='filled contours', command='contourf', edgefix='%(axes.edgefix)s\n',
 )
 docstring._snippet_manager['plot.tricontour'] = _contour_docstring.format(
-    descrip='contour lines on a triangular grid', command='tricontour', add=''
+    descrip='contour lines on a triangular grid', command='tricontour', edgefix=''
 )
 docstring._snippet_manager['plot.tricontourf'] = _contour_docstring.format(
-    descrip='filled contours on a triangular grid', command='tricontourf', add=_edgefix_docstring  # noqa: E501
+    descrip='filled contours on a triangular grid', command='tricontourf', edgefix='%(axes.edgefix)s\n'  # noqa: E501
 )
 
 
@@ -970,30 +981,18 @@ Parameters
 %(plot.args_2d)s
 
 %(plot.args_2d_shared)s
-{add}
+{aspect}
 
 Other parameters
 ----------------
 %(plot.cmap_norm)s
 %(plot.levels_manual)s
-%(plot.levels_vlim)s
+%(plot.vmin_vmax)s
 %(plot.levels_auto)s
 %(plot.labels_2d)s
 %(plot.guide)s
-lw, linewidth, linewidths : optional
-    The width of lines between grid boxes.
-ls, linestyle, linestyles : optional
-    The style of lines between grid boxes.
-ec, edgecolor, edgecolors : optional
-    The color for lines between grid boxes.
-c, color, colors : optional
-    The color(s) for the grid boxes. If not passed,
-    the color is determined by `cmap` and the `z` data.
-edgefix : bool, optional
-    Whether to fix an issue where `white lines appear between grid boxes
-    <https://stackoverflow.com/q/8263769/4970632>`__ in saved vector graphics.
-    This can slow down figure rendering. Default is :rc:`cmap.edgefix`.
-    If ``True``, a default linewidth is used. If float, this linewidth is used.
+%(plot.pcolor_collection)s
+%(axes.edgefix)s
 **kwargs
     Passed to `matplotlib.axes.Axes.{command}`.
 
@@ -1024,19 +1023,55 @@ aspect : {'equal', 'auto'} or float, optional
       the layout. In general this results in non-square grid boxes.
 """
 docstring._snippet_manager['plot.pcolor'] = _pcolor_docstring.format(
-    descrip='irregular grid boxes', command='pcolor', add=''
+    descrip='irregular grid boxes', command='pcolor', aspect=''
 )
 docstring._snippet_manager['plot.pcolormesh'] = _pcolor_docstring.format(
-    descrip='regular grid boxes', command='pcolormesh', add=''
+    descrip='regular grid boxes', command='pcolormesh', aspect=''
 )
 docstring._snippet_manager['plot.pcolorfast'] = _pcolor_docstring.format(
-    descrip='grid boxes quickly', command='pcolorfast', add=''
+    descrip='grid boxes quickly', command='pcolorfast', aspect=''
 )
 docstring._snippet_manager['plot.tripcolor'] = _pcolor_docstring.format(
-    descrip='triangular grid boxes', command='tripcolor', add=''
+    descrip='triangular grid boxes', command='tripcolor', aspect=''
 )
 docstring._snippet_manager['plot.heatmap'] = _pcolor_docstring.format(
-    descrip=_heatmap_descrip.strip(), command='pcolormesh', add=_heatmap_aspect
+    descrip=_heatmap_descrip.strip(), command='pcolormesh', aspect=_heatmap_aspect
+)
+
+
+# Image docstring
+_show_docstring = """
+Plot {descrip}.
+
+Parameters
+----------
+z : array-like
+    The data passed as a positional argument or keyword argument.
+%(plot.args_1d_shared)s
+
+Other parameters
+----------------
+%(plot.cmap_norm)s
+%(plot.levels_manual)s
+%(plot.vmin_vmax)s
+%(plot.levels_auto)s
+%(plot.guide)s
+**kwargs
+    Passed to `matplotlib.axes.Axes.{command}`.
+
+See also
+--------
+proplot.axes.PlotAxes
+matplotlib.axes.Axes.{command}
+"""
+docstring._snippet_manager['plot.imshow'] = _show_docstring.format(
+    descrip='an image', command='imshow'
+)
+docstring._snippet_manager['plot.matshow'] = _show_docstring.format(
+    descrip='a matrix', command='matshow'
+)
+docstring._snippet_manager['plot.spy'] = _show_docstring.format(
+    descrip='a sparcity pattern', command='spy'
 )
 
 
@@ -1058,7 +1093,7 @@ Other parameters
 ----------------
 %(plot.cmap_norm)s
 %(plot.levels_manual)s
-%(plot.levels_vlim)s
+%(plot.vmin_vmax)s
 %(plot.levels_auto)s
 **kwargs
     Passed to `matplotlib.axes.Axes.{command}`
@@ -1079,42 +1114,6 @@ docstring._snippet_manager['plot.quiver'] = _flow_docstring.format(
 )
 docstring._snippet_manager['plot.stream'] = _flow_docstring.format(
     descrip='streamlines', command='streamplot'
-)
-
-
-# Image docstring
-_show_docstring = """
-Plot {descrip}.
-
-Parameters
-----------
-z : array-like
-    The data passed as a positional argument or keyword argument.
-%(plot.args_1d_shared)s
-
-Other parameters
-----------------
-%(plot.cmap_norm)s
-%(plot.levels_manual)s
-%(plot.levels_vlim)s
-%(plot.levels_auto)s
-%(plot.guide)s
-**kwargs
-    Passed to `matplotlib.axes.Axes.{command}`.
-
-See also
---------
-proplot.axes.PlotAxes
-matplotlib.axes.Axes.{command}
-"""
-docstring._snippet_manager['plot.imshow'] = _show_docstring.format(
-    descrip='an image', command='imshow'
-)
-docstring._snippet_manager['plot.matshow'] = _show_docstring.format(
-    descrip='a matrix', command='matshow'
-)
-docstring._snippet_manager['plot.spy'] = _show_docstring.format(
-    descrip='a sparcity pattern', command='spy'
 )
 
 
@@ -2598,32 +2597,36 @@ class PlotAxes(base.Axes):
         # enough to hide lines but thin enough to not add 'dots' to corners of boxes.
         edgefix = _not_none(edgefix, rc['cmap.edgefix'], True)
         linewidth = EDGEWIDTH if edgefix is True else 0 if edgefix is False else edgefix
-        if not linewidth or not isinstance(obj, mcm.ScalarMappable):
+        if not linewidth:
             return
-        if any(key in kwargs for key in ('linewidths', 'linestyles', 'edgecolors')):
+        keys = ('linewidth', 'linestyle', 'edgecolor')  # patches and collections
+        if any(key + suffix in kwargs for key in keys for suffix in ('', 's')):
             return
 
-        # Remove edges when cmap has transparency
-        cmap = obj.cmap
-        if not cmap._isinit:
-            cmap._init()
-        if all(cmap._lut[:-1, 3] == 1):  # skip for cmaps with transparency
-            edgecolor = 'face'
-        else:
-            edgecolor = 'none'
+        # Skip when cmap has transparency
+        if isinstance(obj, mcm.ScalarMappable):
+            cmap = obj.cmap
+            if not cmap._isinit:
+                cmap._init()
+            if not all(cmap._lut[:-1, 3] == 1):  # skip for cmaps with transparency
+                return
 
         # Apply fixes
         # NOTE: This also covers TriContourSet returned by tricontour
-        if isinstance(obj, mcollections.Collection):
-            obj.set_linewidth(linewidth)
-            obj.set_edgecolor(edgecolor)
         if isinstance(obj, mcontour.ContourSet):
             if not obj.filled:
                 return
             for contour in obj.collections:
-                contour.set_linestyle('-')
+                contour.set_linestyle('-')  # in case negative contours
                 contour.set_linewidth(linewidth)
-                contour.set_edgecolor(edgecolor)
+                contour.set_edgecolor('face')
+        if np.iterable(obj):  # e.g. BarContainer
+            for part in obj:
+                part.set_linewidth(linewidth)
+                part.set_edgecolor(part.get_facecolor())
+        if isinstance(obj, mcollections.Collection):  # e.g. QuadMesh or PolyCollection
+            obj.set_linewidth(linewidth)
+            obj.set_edgecolor('face')
 
     def _apply_plot(self, *pairs, vert=True, **kwargs):
         """
@@ -3049,6 +3052,7 @@ class PlotAxes(base.Axes):
         name = 'fill_between' if vert else 'fill_betweenx'
         stack = _not_none(stack=stack, stacked=stacked)
         xs, ys1, ys2, kw = self._parse_plot1d(xs, ys1, ys2, vert=vert, **kw)
+        edgefix_kw = _pop_params(kw, self._apply_edgefix)
 
         # Draw patches with default edge width zero
         y0 = 0
@@ -3065,6 +3069,7 @@ class PlotAxes(base.Axes):
                 obj = self._plot_multicolor(name, x, y1, y2, where=w, use_where=True, **kw)  # noqa: E501
             else:
                 obj = self._plot_native(name, x, y1, y2, where=w, **kw)
+            self._apply_edgefix(obj, **edgefix_kw, **kw)
             xsides.append(x)
             for y in (y1, y2):
                 self._inbounds_xylim(extents, x, y, vert=vert)
@@ -3148,12 +3153,13 @@ class PlotAxes(base.Axes):
         name = 'barh' if orientation == 'horizontal' else 'bar'
         stack = _not_none(stack=stack, stacked=stacked)
         xs, hs, kw = self._parse_plot1d(xs, hs, orientation=orientation, **kw)
+        edgefix_kw = _pop_params(kw, self._apply_edgefix)
 
         # Call func after converting bar width
         b0 = 0
         objs = []
         _process_props(kw, 'patch')
-        kw.setdefault('edgecolor', 'black')
+        # kw.setdefault('edgecolor', 'black')
         hs, kw = data._dist_reduce(hs, **kw)
         guide_kw = _pop_params(kw, self._update_guide)
         for i, n, x, h, w, b, kw in self._iter_arg_cols(xs, hs, ws, bs, **kw):
@@ -3176,6 +3182,7 @@ class PlotAxes(base.Axes):
                 obj = self._plot_multicolor(name, x, h, w, b, use_zero=True, **kw)
             else:
                 obj = self._plot_native(name, x, h, w, b, **kw)
+            self._apply_edgefix(obj, **edgefix_kw, **kw)
             for y in (b, b + h):
                 self._inbounds_xylim(extents, x, y, orientation=orientation)
             objs.append((*eb, obj) if eb else obj)
@@ -3417,7 +3424,9 @@ class PlotAxes(base.Axes):
         # legend handle reader just looks for items with get_label() so we
         # manually apply labels to the container on the result.
         _, xs, kw = self._parse_plot1d(xs, orientation=orientation, **kwargs)
+        _process_props(kw, 'patch')
         objs = []
+        edgefix_kw = _pop_params(kw, self._apply_edgefix)
         guide_kw = _pop_params(kw, self._update_guide)
         if bins is not None:
             kw['bins'] = bins
@@ -3429,6 +3438,7 @@ class PlotAxes(base.Axes):
                     arg.set_label(kw['label'])
                 if hasattr(obj[2], 'set_label'):  # recent mpl versions
                     obj[2].set_label(kw['label'])
+            self._apply_edgefix(obj[2], **edgefix_kw, **kw)
             objs.append(obj)
         self._update_guide(objs, **guide_kw)
         return objs[0] if len(objs) == 1 else objs
@@ -3511,7 +3521,7 @@ class PlotAxes(base.Axes):
         ----------------
         %(plot.cmap_norm)s
         %(plot.levels_manual)s
-        %(plot.levels_vlim)s
+        %(plot.vmin_vmax)s
         %(plot.levels_auto)s
         %(plot.labels_2d)s
         %(plot.guide)s
@@ -3546,7 +3556,7 @@ class PlotAxes(base.Axes):
         ----------------
         %(plot.cmap_norm)s
         %(plot.levels_manual)s
-        %(plot.levels_vlim)s
+        %(plot.vmin_vmax)s
         %(plot.labels_2d)s
         %(plot.guide)s
         **kwargs

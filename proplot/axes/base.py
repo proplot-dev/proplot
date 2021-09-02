@@ -405,16 +405,27 @@ a, alpha, framealpha, fc, facecolor, framecolor, ec, edgecolor, ew, edgewidth : 
 lw, linewidth, c, color : optional
     Controls the line width and edge color for both the colorbar
     outline and the level dividers.
-orientation : {None, 'horizontal', 'vertical'}, optional
-    The colorbar orientation. By default this depends on the "side" of the subplot
-    or figure where the colorbar is drawn. Inset colorbars are always horizontal.
+%(axes.edgefix)s
 rasterize : bool, optional
     Whether to rasterize the colorbar solids. The matplotlib default is ``True``
     but we change this to :rcraw:`colorbar.rasterize` because rasterization can
     cause misalignment between `edges` and the level patches.
+orientation : {None, 'horizontal', 'vertical'}, optional
+    The colorbar orientation. By default this depends on the "side" of the subplot
+    or figure where the colorbar is drawn. Inset colorbars are always horizontal.
 **kwargs
     Passed to `~matplotlib.figure.Figure.colorbar`.
 """
+_edgefix_docstring = """
+edgefix : bool or float, optional
+    Whether to fix the common issue where white lines appear between
+    `filled contours <https://stackoverflow.com/q/8263769/4970632>`__
+    and `filled patches <https://stackoverflow.com/q/8263769/4970632>`__
+    in saved vector graphics. This can slow down figure rendering. Default
+    is :rc:`cmap.edgefix`. If ``True``, a default linewidth is used to fix
+    the edges. If float, this linewidth is used.
+"""
+docstring._snippet_manager['axes.edgefix'] = _edgefix_docstring
 docstring._snippet_manager['axes.colorbar_args'] = _colorbar_args_docstring
 docstring._snippet_manager['axes.colorbar_kwargs'] = _colorbar_kwargs_docstring
 
