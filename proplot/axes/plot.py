@@ -453,24 +453,33 @@ ec, edgecolor, edgecolors : color-spec, optional
     The color for the contour lines. For `contourf` plots,
     lines are added between the filled contours.
 """
-_negpos_docstring = """
-negpos : bool, optional
-    Whether to shade regions where ``{pos}`` with `poscolor` and
-    where ``{neg}`` with `negcolor`. Default is ``False``. If
-    ``True`` this function will return a 2-tuple of values.
-negcolor, poscolor : color-spec, optional
-    Colors to use for the negative and positive shading. Ignored if `negpos`
-    is ``False``. Defaults are :rc:`negcolor` and :rc:`poscolor`.
-"""
 docstring._snippet_manager['plot.line'] = _line_docstring
 docstring._snippet_manager['plot.patch'] = _patch_docstring
 docstring._snippet_manager['plot.box_patches'] = _patches_docstring.format(objects='boxes')  # noqa: E501
 docstring._snippet_manager['plot.violin_patches'] = _patches_docstring.format(objects='violins')  # noqa: E501
 docstring._snippet_manager['plot.pcolor_collection'] = _pcolor_collection_docstring
 docstring._snippet_manager['plot.contour_collection'] = _contour_collection_docstring
-docstring._snippet_manager['plot.negpos_fill'] = _negpos_docstring.format(neg='y2 < y1', pos='y2 >= y1')  # noqa: E501
-docstring._snippet_manager['plot.negpos_lines'] = _negpos_docstring.format(neg='ymax < ymin', pos='ymax >= ymin')  # noqa: E501
-docstring._snippet_manager['plot.negpos_bar'] = _negpos_docstring.format(neg='height < 0', pos='height >= 0')  # noqa: E501
+
+
+# Negative-positive colors
+_negpos_docstring = """
+negpos : bool, optional
+    Whether to shade {objects} where ``{pos}`` with `poscolor`
+    and where ``{neg}`` with `negcolor`. Default is ``False``. If
+    ``True`` this function will return a 2-tuple of values.
+negcolor, poscolor : color-spec, optional
+    Colors to use for the negative and positive {objects}. Ignored if `negpos`
+    is ``False``. Defaults are :rc:`negcolor` and :rc:`poscolor`.
+"""
+docstring._snippet_manager['plot.negpos_fill'] = _negpos_docstring.format(
+    objects='patches', neg='y2 < y1', pos='y2 >= y1'
+)
+docstring._snippet_manager['plot.negpos_lines'] = _negpos_docstring.format(
+    objects='lines', neg='ymax < ymin', pos='ymax >= ymin'
+)
+docstring._snippet_manager['plot.negpos_bar'] = _negpos_docstring.format(
+    objects='bars', neg='height < 0', pos='height >= 0'
+)
 
 
 # Plot docstring

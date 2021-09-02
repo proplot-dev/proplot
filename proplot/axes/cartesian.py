@@ -773,11 +773,10 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
             Use this if you want whitespace between plotted content
             and the spines, but don't want to explicitly set `xlim` or `ylim`.
         xticklen, yticklen, ticklen : float or str, optional
-            Tick lengths for the x and y axis. Units are interpreted by
-            `~proplot.utils.units`, with "points" as the numeric unit.
-            Default is :rc:`ticklen`. Minor tick lengths are scaled according
-            to :rc:`tick.lenratio`. Use `ticklen` and `ticklenratio` to set
-            both at once.
+            Tick lengths for the x and y axis. Default is :rc:`ticklen`.
+            %(units.pt)s
+            Minor tick lengths are scaled according to :rc:`tick.lenratio`.
+            Use `ticklen` and `ticklenratio` to set both at once.
         xlinewidth, ylinewidth, linewidth : color-spec, optional
             Line width for the x and y axis spines and major ticks.
             Use `linewidth` to set both at once.

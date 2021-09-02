@@ -169,12 +169,12 @@ CYCLES_TABLE = {
 }
 
 _colorbar_docstring = """
-length : float or str, optional
-    The length of the colorbars. Units are interpreted by
-    `~proplot.utils.units`.
+length : unit-spec, optional
+    The length of the colorbars.
+    %(units.in)s
 width : float or str, optional
-    The width of the colorbars. Units are interpreted by
-    `~proplot.utils.units`.
+    The width of the colorbars.
+    %(units.in)s
 """
 docstring._snippet_manager['demos.colors'] = ', '.join(f'``{cat!r}``' for cat in COLORS_TABLE)  # noqa: E501
 docstring._snippet_manager['demos.cmaps'] = ', '.join(f'``{cat!r}``' for cat in CMAPS_TABLE)  # noqa: E501
