@@ -12,6 +12,7 @@ import matplotlib.axes as maxes
 import matplotlib.cm as mcm
 import matplotlib.collections as mcollections
 import matplotlib.colors as mcolors
+import matplotlib.container as mcontainer
 import matplotlib.contour as mcontour
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
@@ -2622,20 +2623,21 @@ class PlotAxes(base.Axes):
 
         # Apply fixes
         # NOTE: This also covers TriContourSet returned by tricontour
-        if isinstance(obj, mcontour.ContourSet):
-            if not obj.filled:
-                return
-            for contour in obj.collections:
-                contour.set_linestyle('-')  # in case negative contours
-                contour.set_linewidth(linewidth)
-                contour.set_edgecolor('face')
-        if np.iterable(obj):  # e.g. BarContainer
+        if isinstance(obj, mcollections.Collection):  # e.g. QuadMesh, PolyCollection
+            obj.set_linewidth(linewidth)
+            obj.set_edgecolor('face')
+        elif isinstance(obj, mcontainer.Container):  # e.g. BarContainer
             for part in obj:
                 part.set_linewidth(linewidth)
                 part.set_edgecolor(part.get_facecolor())
-        if isinstance(obj, mcollections.Collection):  # e.g. QuadMesh or PolyCollection
-            obj.set_linewidth(linewidth)
-            obj.set_edgecolor('face')
+        elif isinstance(obj, mcontour.ContourSet):
+            if obj.filled:
+                for contour in obj.collections:
+                    contour.set_linestyle('-')
+                    contour.set_linewidth(linewidth)
+                    contour.set_edgecolor('face')
+        else:
+            warnings._warn_proplot(f'Unexpected object {obj} passed to _apply_edgefix.')
 
     def _apply_plot(self, *pairs, vert=True, **kwargs):
         """
@@ -3073,12 +3075,12 @@ class PlotAxes(base.Axes):
                 y1 = y1 + y0  # avoid in-place modification
                 y2 = y2 + y0
                 y0 = y0 + y2 - y1  # irrelevant that we added y0 to both
-            if negpos:
-                # NOTE: pass 'where' so plot_negpos can ignore it and issue a warning
+            if negpos:  # NOTE: if user passes 'where' will issue a warning
                 obj = self._plot_multicolor(name, x, y1, y2, where=w, use_where=True, **kw)  # noqa: E501
             else:
                 obj = self._plot_native(name, x, y1, y2, where=w, **kw)
-            self._apply_edgefix(obj, **edgefix_kw, **kw)
+            for o in obj if negpos else (obj,):
+                self._apply_edgefix(o, **edgefix_kw, **kw)
             xsides.append(x)
             for y in (y1, y2):
                 self._inbounds_xylim(extents, x, y, vert=vert)
@@ -3191,7 +3193,8 @@ class PlotAxes(base.Axes):
                 obj = self._plot_multicolor(name, x, h, w, b, use_zero=True, **kw)
             else:
                 obj = self._plot_native(name, x, h, w, b, **kw)
-            self._apply_edgefix(obj, **edgefix_kw, **kw)
+            for o in obj if negpos else (obj,):
+                self._apply_edgefix(o, **edgefix_kw, **kw)
             for y in (b, b + h):
                 self._inbounds_xylim(extents, x, y, orientation=orientation)
             objs.append((*eb, obj) if eb else obj)
