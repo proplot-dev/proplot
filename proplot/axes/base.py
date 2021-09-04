@@ -2609,11 +2609,7 @@ class Axes(maxes.Axes):
         # of get window extent multiplied by 2 (???). Anyway actual box is found in
         # _legend_box attribute, which is accessed by get_window_extent.
         objs = tuple(legs)
-        if not frameon:
-            pass
-        elif len(legs) == 1:
-            legs[0].set_frame_on(True)
-        elif len(legs) > 1:
+        if frameon and legs:
             renderer = self.figure._get_renderer()  # arbitrary renderer
             trans = self.transAxes.inverted()
             bboxs = [leg.get_window_extent(renderer).transformed(trans) for leg in legs]
