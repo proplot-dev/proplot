@@ -190,8 +190,8 @@ docstring._snippet_manager['figure.figure'] = _figure_docstring
 
 # Multiple subplots
 _subplots_params_docstring = """
-array : 2d array-like of int, optional
-    Array specifying complex grid of subplots. Think of this as a "picture"
+array : array-like of int, optional
+    A 2D array specifying complex grid of subplots. Think of this as a "picture"
     of your figure. For example, the array ``[[1, 1], [2, 3]]`` creates one
     long subplot in the top row, two smaller subplots in the bottom row.
     Integers must range from 1 to the number of plots, and ``0`` indicates an
@@ -1302,7 +1302,7 @@ class Figure(mfigure.Figure):
         if array.ndim == 1:  # interpret as single row or column
             array = array[None, :] if order == 'C' else array[:, None]
         elif array.ndim != 2:
-            raise ValueError(f'Expected 1d or 2d array of integers. Got {array}.')
+            raise ValueError(f'Expected 1D or 2D array of integers. Got {array}.')
         nums = np.unique(array[array != 0])
         naxs = len(nums)
         if any(num < 0 or not isinstance(num, Integral) for num in nums.flat):

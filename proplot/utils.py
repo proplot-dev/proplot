@@ -171,7 +171,7 @@ def edges(z, axis=-1):
     Parameters
     ----------
     z : array-like
-        Array of any shape or size.
+        An array of any shape.
     axis : int, optional
         The axis along which "edges" are calculated. The size of this axis
         will be increased by one.
@@ -205,7 +205,7 @@ def edges(z, axis=-1):
 @_preserve_units
 def edges2d(z):
     """
-    Calculate the approximate "edge" values given a 2d grid of "center"
+    Calculate the approximate "edge" values given a 2D grid of "center"
     values. The size of both axes are increased by one. This is used
     internally to calculate graticule edges when you supply centers to
     `~matplotlib.axes.Axes.pcolor` or `~matplotlib.axes.Axes.pcolormesh`.
@@ -213,7 +213,7 @@ def edges2d(z):
     Parameters
     ----------
     z : array-like
-        A 2d array.
+        A 2D array.
 
     Returns
     -------
@@ -228,7 +228,7 @@ def edges2d(z):
     """
     z = np.asarray(z)
     if z.ndim != 2:
-        raise ValueError(f'Input must be a 2d array, but got {z.ndim}d.')
+        raise ValueError(f'Input must be a 2D array, but got {z.ndim}D.')
     ny, nx = z.shape
     zb = np.zeros((ny + 1, nx + 1))
 

@@ -198,7 +198,7 @@ for ax, title in zip(axs, ('2D {} #1', '2D {} #2', 'Line {} #1', 'Line {} #2')):
 # a `~matplotlib.cm.ScalarMappable` will be built from these colors on-the-fly. The
 # associated :ref:`colormap normalizer <ug_norm>` can be specified with the `norm` and
 # `norm_kw` keywords. Lists of artists are passed when you use the `colorbar` keyword
-# with :ref:`1d plotting commands <ug_1dplots>` like `~proplot.axes.PlotAxes.plot`.
+# with :ref:`1D plot commands <ug_1dplots>` like `~proplot.axes.PlotAxes.plot`.
 # The colorbar ticks can be manually specified with `values`, or ProPlot will infer
 # them from the `~matplotlib.artist.Artist` labels (non-numeric labels will be
 # applied to the colorbar as tick labels). This feature is useful for labeling
@@ -275,7 +275,7 @@ fig.format(
 # matplotlib artists as the sole positional argument, and the labels will be
 # retrieved from the objects with `~matplotlib.artist.Artist.get_label`. Labels can
 # be assigned to artists when they are plotted by passing ``label='label'`` to the
-# plotting command or, for the case of 2d arrays passed to :ref:`1d plotting commands
+# plotting command or, for the case of 2D arrays passed to :ref:`1D plot commands
 # <ug_1dplots>`, by passing a list of labels using ``labels=['label1', 'label2', ...]``.
 # Labels can also be assigned to ``contour`` plots with ``label='label'`` like
 # any other plot, and the `~matplotlib.contour.ContourSet` objects returned by

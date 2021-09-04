@@ -56,9 +56,7 @@ release = ''
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
-    # 'matplotlib.sphinxext.plot_directive', # see: https://matplotlib.org/sampledoc/extensions.html  # noqa
-    'IPython.sphinxext.ipython_console_highlighting',
-    'IPython.sphinxext.ipython_directive',  # for ipython highlighting
+    # 'matplotlib.sphinxext.plot_directive', # see: https://matplotlib.org/sampledoc/extensions.html  # noqa: E501
     'sphinx.ext.autodoc',  # include documentation from docstrings
     'sphinx.ext.doctest',  # >>> examples
     'sphinx.ext.extlinks',  # for :pr:, :issue:, :commit:
@@ -71,7 +69,7 @@ extensions = [
     'sphinx.ext.autosummary',  # autosummary directive
     'sphinxext.custom_roles',  # local extension
     'sphinx_copybutton',
-    'sphinx_automodapi.automodapi',  # see: https://github.com/lukelbd/sphinx-automodapi/tree/proplot-mods # noqa
+    'sphinx_automodapi.automodapi',  # see: https://github.com/lukelbd/sphinx-automodapi/tree/proplot-mods  # noqa: E501
     'nbsphinx',
 ]
 

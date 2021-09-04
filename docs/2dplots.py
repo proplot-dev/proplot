@@ -19,14 +19,14 @@
 #
 # .. _ug_2dplots:
 #
-# Plotting 2D data
-# ================
+# 2D plots
+# ========
 #
 # ProPlot adds :ref:`several new features <why_plotting>` to matplotlib's
 # plotting commands using the intermediate `~proplot.axes.PlotAxes` subclass.
 # For the most part, these additions represent a *superset* of matplotlib -- if
 # you are not interested, you can use the plotting commands just like you always
-# have. This section documents the features added for 2D plotting commands
+# have. This section documents the features added for 2D plot commands
 # like `~proplot.axes.PlotAxes.contour`, `~proplot.axes.PlotAxes.pcolor`,
 # and `~proplot.axes.PlotAxes.imshow`.
 
@@ -36,7 +36,7 @@
 # Standardized arguments
 # ----------------------
 #
-# Input arguments passed to 2D plotting commands are now uniformly
+# Input arguments passed to 2D plot commands are now uniformly
 # standardized. For each command, you can optionally omit the *x* and
 # *y* coordinates, in which case they are inferred from the data
 # (see :ref:`xarray and pandas integration <ug_2dintegration>`). If coordinates
@@ -219,7 +219,7 @@ ax.format(xtickminor=False, yreverse=True, yformatter='%b', ytickminor=False)
 # It is often useful to create `~proplot.colors.ContinuousColormap`\ s
 # on-the-fly, without explicitly calling the `~proplot.constructor.Colormap`
 # :ref:`constructor function <why_constructor>`. You can do so using the `cmap`
-# and `cmap_kw` keywords, available with most `~proplot.axes.PlotAxes` 2d plotting
+# and `cmap_kw` keywords, available with most `~proplot.axes.PlotAxes` 2D plot
 # commands. For example, to create and apply a monochromatic colormap, you can use
 # ``cmap='color_name'`` (see the :ref:`colormaps section <ug_cmaps>` for more info).
 # You can also create on-the-fly "qualitative" `~proplot.colors.DiscreteColormap`\ s
@@ -231,7 +231,7 @@ ax.format(xtickminor=False, yreverse=True, yformatter='%b', ytickminor=False)
 # A normalizer can be selected from its "registered" name using the
 # `~proplot.constructor.Norm` :ref:`constructor function <why_constructor>`. You
 # can also build a normalizer on-the-fly using the `norm` and `norm_kw` keywords,
-# again available with most `~proplot.axes.PlotAxes` 2d plotting commands.
+# again available with most `~proplot.axes.PlotAxes` 2D plot commands.
 # If you want to work with normalizer classes directly, they are also imported
 # into the top-level namespace (e.g., ``pplt.LogNorm(...)`` is allowed). To
 # explicitly set the normalization range, you can pass the usual `vmin` and `vmax`
@@ -401,7 +401,7 @@ for i, extend in enumerate(('min', 'max', 'neither', 'both')):
 # behavior, inspired by the `xarray option
 # <http://xarray.pydata.org/en/stable/user-guide/plotting.html#robust>`__
 # of the same name. Passing ``robust=True`` to a `~proplot.axes.PlotAxes`
-# 2d plotting command will limit the default colormap normalization between
+# 2D plot command will limit the default colormap normalization between
 # the 2nd and 98th data percentiles. This range can be customized by passing
 # an integer to `robust` (e.g. ``robust=90`` limits the normalization range
 # between the 5th and 95th percentiles) or by passing a 2-tuple to `robust`

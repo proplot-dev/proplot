@@ -812,7 +812,7 @@ markeredgecolors, markerfacecolors
 
     # Get a cycler from a colormap
     # NOTE: Passing discrete=True does not imply default_luminance=90 because
-    # someone might be trying to make qualitative colormap for use in 2d plot
+    # someone might be trying to make qualitative colormap for use in 2D plot
     else:
         if isinstance(args[-1], Number):
             args, samples = args[:-1], _not_none(samples_positional=args[-1], samples=samples)  # noqa: #501

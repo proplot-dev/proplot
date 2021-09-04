@@ -21,13 +21,11 @@
 #
 # .. _ug_stats:
 #
-# Statistical tools
-# =================
+# Statistics
+# ==========
 #
-# This section documents a few very basic plotting tools that can be
-# useful for statistical analysis, including `~proplot.axes.PlotAxes.box`,
-# `~proplot.axes.PlotAxes.violin`, `~proplot.axes.PlotAxes.hist`, and on-the-fly
-# :ref:`error bars and shading <ug_errorbars>`. The :ref:`1d plotting <ug_1dplots>`
+# This section documents a few very basic additions to matplotlib's plotting commands
+# that can be useful for statistical analysis. The :ref:`1D plots <ug_1dplots>`
 # section should be read before this section. Some of these tools will be
 # expanded in the future, but for a more comprehensive suite of statistical
 # plotting utilities, you may be interested in `seaborn`_ (you should also be
@@ -201,7 +199,7 @@ ax.format(title='Multiple colors', ymargin=0.15)
 # be drawn with the `~proplot.axes.PlotAxes.hist2d`
 # `~proplot.axes.PlotAxes.hexbin` commands, and their colormaps can
 # be changed on-the-fly with the `cmap` and `cmap_kw` keywords (see
-# the :ref:`2d plotting section <ug_apply_cmap>`). Marginal distributions
+# the :ref:`2D plots section <ug_apply_cmap>`). Marginal distributions
 # for the 2D histograms can be added using :ref:`panel axes <ug_panels>`.
 #
 # In the future, ProPlot will include options for adding "smooth" kernel density

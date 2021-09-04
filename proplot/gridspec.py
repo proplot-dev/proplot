@@ -1168,8 +1168,8 @@ class GridSpec(mgridspec.GridSpec):
 class SubplotGrid(MutableSequence, list):
     """
     List-like object used to store subplots returned by
-    `~proplot.figure.Figure.subplots`. 1d indexing uses the underlying list of
-    `~proplot.axes.Axes` while 2d indexing uses the `~SubplotGrid.gridspec`.
+    `~proplot.figure.Figure.subplots`. 1D indexing uses the underlying list of
+    `~proplot.axes.Axes` while 2D indexing uses the `~SubplotGrid.gridspec`.
     See `~SubplotGrid.__getitem__` for details.
     """
     def __repr__(self):
@@ -1206,8 +1206,8 @@ class SubplotGrid(MutableSequence, list):
         if n is not None or order is not None:
             warnings._warn_proplot(
                 f'Ignoring n={n!r} and order={order!r}. As of v0.8 SubplotGrid '
-                'handles 2d indexing by leveraging the subplotspec extents rather than '
-                'directly emulating 2d array indexing. These arguments are no longer '
+                'handles 2D indexing by leveraging the subplotspec extents rather than '
+                'directly emulating 2D array indexing. These arguments are no longer '
                 'needed and will be removed in a future release.'
             )
         sequence = _not_none(sequence, [])
@@ -1265,8 +1265,8 @@ class SubplotGrid(MutableSequence, list):
         Parameters
         ----------
         key : int, slice, or 2-tuple
-            The index. If 1d then the axes in the corresponding
-            sublist are returned. If 2d then the axes that intersect
+            The index. If 1D then the axes in the corresponding
+            sublist are returned. If 2D then the axes that intersect
             the corresponding `~SubplotGrid.gridspec` slots are returned.
 
         Returns
@@ -1327,7 +1327,7 @@ class SubplotGrid(MutableSequence, list):
         Parameters
         ----------
         key : int or slice
-            The 1d index.
+            The 1D index.
         value : `proplot.axes.Axes`
             The proplot subplot or its child or panel axes,
             or a sequence thereof if the index was a slice.
@@ -1374,7 +1374,7 @@ class SubplotGrid(MutableSequence, list):
     def gridspec(self):
         """
         The `~proplot.gridspec.GridSpec` associated with the grid. This is used
-        to resolve 2d indexing. See `~SubplotGrid.__getitem__` for details.
+        to resolve 2D indexing. See `~SubplotGrid.__getitem__` for details.
         """
         # Return the gridspec associatd with the grid
         if not self:
@@ -1390,7 +1390,7 @@ class SubplotGrid(MutableSequence, list):
         See `~SubplotGrid.__getitem__` for details.
         """
         # NOTE: Considered deprecating this but on second thought since this is
-        # a 2d array-like object it should definitely have a shape attribute.
+        # a 2D array-like object it should definitely have a shape attribute.
         return self.gridspec.get_subplot_geometry()
 
 

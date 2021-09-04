@@ -19,14 +19,14 @@
 #
 # .. _ug_1dplots:
 #
-# Plotting 1D data
-# ================
+# 1D plots
+# ========
 #
 # ProPlot adds :ref:`several new features <why_plotting>` to matplotlib's
 # plotting commands using the intermediate `~proplot.axes.PlotAxes` subclass.
 # For the most part, these additions represent a *superset* of matplotlib -- if
 # you are not interested, you can use the plotting commands just like you always
-# have. This section documents the features added for 1D plotting commands
+# have. This section documents the features added for 1D plot commands
 # like `~proplot.axes.PlotAxes.plot`, `~proplot.axes.PlotAxes.scatter`,
 # and `~proplot.axes.PlotAxes.bar`.
 
@@ -37,7 +37,7 @@
 # Standardized arguments
 # ----------------------
 #
-# Input arguments passed to 1D plotting commands are now uniformly
+# Input arguments passed to 1D plot commands are now uniformly
 # standardized. For each command, you can optionally omit the dependent
 # variable coordinates, in which case they are inferred from the data
 # (see :ref:`xarray and pandas integration <ug_1dintegration>`), or pass
@@ -215,7 +215,7 @@ ax.plot(df, cycle=cycle, lw=3, legend='t', legend_kw={'frame': False})
 # <https://matplotlib.org/tutorials/intermediate/color_cycle.html#sphx-glr-tutorials-intermediate-color-cycle-py>`__
 # and use different property cycles for different plot elements. You can create and
 # apply property cycles on-the-fly using the `cycle` and `cycle_kw` keywords, available
-# with most `~proplot.axes.PlotAxes` 1D plotting commands. `cycle` and `cycle_kw` are
+# with most `~proplot.axes.PlotAxes` 1D plot commands. `cycle` and `cycle_kw` are
 # passed to the `~proplot.constructor.Cycle` :ref:`constructor function
 # <why_constructor>`, and the resulting property cycle is used for the plot. You
 # can specify `cycle` once with 2D input data (in which case each column is

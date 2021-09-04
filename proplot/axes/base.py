@@ -2002,8 +2002,8 @@ class Axes(maxes.Axes):
         the gap between legends and colorbars (e.g., creating colorbars from line
         objects whose data values span a natural colormap range).
         """
-        # Special case where auto colorbar is generated from 1d methods, a list is
-        # always passed, but some 1d methods (scatter) do have colormaps.
+        # Special case where auto colorbar is generated from 1D methods, a list is
+        # always passed, but some 1D methods (scatter) do have colormaps.
         if (
             np.iterable(mappable)
             and len(mappable) == 1

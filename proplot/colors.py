@@ -2258,7 +2258,7 @@ def _sanitize_levels(levels, allow_descending=True):
     """
     levels = np.atleast_1d(levels)
     if levels.ndim != 1 or levels.size < 2:
-        raise ValueError(f'Levels {levels} must be a 1d array with size >= 2.')
+        raise ValueError(f'Levels {levels} must be a 1D array with size >= 2.')
     if isinstance(levels, ma.core.MaskedArray):
         levels = levels.filled(np.nan)
     if not np.all(np.isfinite(levels)):

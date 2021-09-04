@@ -831,7 +831,7 @@ class CutoffTransform(mtransforms.Transform):
 
     def transform_non_affine(self, a):
         # Cannot do list comprehension because this method sometimes
-        # received non-1d arrays
+        # received non-1D arrays
         dists = self._dists
         scales = self._scales
         threshs = self._threshs
