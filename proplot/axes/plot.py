@@ -1831,7 +1831,7 @@ class PlotAxes(base.Axes):
         if self.name == 'proplot_cartopy' and isinstance(kwargs.get('transform'), PlateCarree):  # noqa: E501
             x, *ys = data._geo_cartopy_1d(x, *ys)
         elif self.name == 'proplot_basemap' and kwargs.get('latlon', None):
-            xmin, xmax = self.projection.lonmin, self.projection.lonmax
+            xmin, xmax = self._lonaxis.get_view_interval()
             x, *ys = data._geo_basemap_1d(x, *ys, xmin=xmin, xmax=xmax)
 
         return (x, *ys, kwargs)
@@ -1930,7 +1930,7 @@ class PlotAxes(base.Axes):
         elif self.name == 'proplot_cartopy' and isinstance(kwargs.get('transform'), PlateCarree):  # noqa: E501
             x, y, *zs = data._geo_cartopy_2d(x, y, *zs, globe=globe)
         elif self.name == 'proplot_basemap' and kwargs.get('latlon', None):
-            xmin, xmax = self.projection.lonmin, self.projection.lonmax
+            xmin, xmax = self._lonaxis.get_view_interval()
             x, y, *zs = data._geo_basemap_2d(x, y, *zs, xmin=xmin, xmax=xmax, globe=globe)  # noqa: E501
             x, y = np.meshgrid(x, y)  # WARNING: required always
 

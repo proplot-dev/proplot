@@ -69,8 +69,8 @@ class _GeoAxis(object):
         self._interval = None
 
     def _get_extent(self):
-        # Try to get extent but bail out for projections where this is impossible
-        # So far just transverse Mercator
+        # Try to get extent but bail out for projections where this is
+        # impossible. So far just transverse Mercator
         try:
             return self.axes.get_extent()
         except Exception:

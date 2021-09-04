@@ -591,9 +591,7 @@ def _geo_basemap_1d(x, *ys, xmin=-180, xmax=180):
     """
     Fix basemap geographic 1D data arrays.
     """
-    # Ensure data is within map bounds
-    x = _geo_monotonic(x)
-    ys = _geo_clip(ys)
+    ys = _geo_clip(*ys)
     x_orig, ys_orig, ys = x, ys, []
     for y_orig in ys_orig:
         x, y = _geo_inbounds(x_orig, y_orig, xmin=xmin, xmax=xmax)
@@ -601,23 +599,17 @@ def _geo_basemap_1d(x, *ys, xmin=-180, xmax=180):
     return (x, *ys)
 
 
-def _geo_basemap_2d(x, y, *zs, globe=False, xmin=-180, xmax=180):
+def _geo_basemap_2d(x, y, *zs, xmin=-180, xmax=180, globe=False):
     """
     Fix basemap geographic 2D data arrays.
     """
-    x = _geo_monotonic(x)
-    y = _geo_clip(y)  # in case e.g. edges() added points beyond poles
+    y = _geo_clip(y)
     x_orig, y_orig, zs_orig, zs = x, y, zs, []
     for z_orig in zs_orig:
-        # Ensure data is within map bounds
         x, y, z = x_orig, y_orig, z_orig
         x, z = _geo_inbounds(x, z, xmin=xmin, xmax=xmax)
-        if not globe or x.ndim > 1 or y.ndim > 1:
-            zs.append(z)
-            continue
-        # Fix gaps in coverage
-        y, z = _geo_poles(y, z)
-        x, z = _geo_seams(x, z, xmin=xmin, modulo=False)
+        if globe and z is not None and x.ndim == 1 and y.ndim == 1:
+            x, y, z = _geo_globe(x, y, z, xmin=xmin, modulo=False)
         zs.append(z)
     return (x, y, *zs)
 
@@ -626,8 +618,6 @@ def _geo_cartopy_1d(x, *ys):
     """
     Fix cartopy geographic 1D data arrays.
     """
-    # So far not much to do here
-    x = _geo_monotonic(x)
     ys = _geo_clip(ys)
     return (x, *ys)
 
@@ -636,21 +626,24 @@ def _geo_cartopy_2d(x, y, *zs, globe=False):
     """
     Fix cartopy geographic 2D data arrays.
     """
-    x = _geo_monotonic(x)
-    y = _geo_clip(y)  # in case e.g. edges() added points beyond poles
+    y = _geo_clip(y)
     x_orig, y_orig, zs_orig = x, y, zs
     zs = []
     for z_orig in zs_orig:
-        # Bail for 2D coordinates
         x, y, z = x_orig, y_orig, z_orig
-        if z is None or not globe or x.ndim > 1 or y.ndim > 1:
-            zs.append(z)
-            continue
-        # Fix gaps in coverage
-        y, z = _geo_poles(y, z)
-        x, z = _geo_seams(x, z, modulo=True)
+        if globe and z is not None and x.ndim == 1 and y.ndim == 1:
+            x, y, z = _geo_globe(x, y, z, modulo=True)
         zs.append(z)
     return (x, y, *zs)
+
+
+def _geo_clip(*ys):
+    """
+    Ensure latitudes fall within ``-90`` to ``90``. Important if we
+    add graticule edges with `edges`.
+    """
+    ys = tuple(np.clip(y, -90, 90) for y in ys)
+    return ys[0] if len(ys) == 1 else ys
 
 
 def _geo_inbounds(x, y, xmin=-180, xmax=180):
@@ -668,6 +661,7 @@ def _geo_inbounds(x, y, xmin=-180, xmax=180):
         x = np.roll(x, roll)
         y = np.roll(y, roll, axis=-1)
         x[:roll] -= 360  # make monotonic
+
     # Set NaN where data not in range xmin, xmax. Must be done for regional smaller
     # projections or get weird side-effects from valid data outside boundaries
     y = ma.masked_invalid(y, copy=False)
@@ -678,87 +672,50 @@ def _geo_inbounds(x, y, xmin=-180, xmax=180):
     elif x.size == y.shape[-1]:  # test the centers and pad by one for safety
         where, = np.where((x < xmin) | (x > xmax))
         y[..., where[1:-1]] = np.nan
+
     return x, y
 
 
-def _geo_clip(*ys):
+def _geo_globe(x, y, z, xmin=-180, modulo=False):
     """
-    Ensure latitudes span only minus 90 to plus 90 degrees.
+    Ensure global coverage by fixing gaps over poles and across
+    longitude seams. Increases the size of the arrays.
     """
-    ys = tuple(np.clip(y, -90, 90) for y in ys)
-    return ys[0] if len(ys) == 1 else ys
-
-
-def _geo_monotonic(x):
-    """
-    Ensure longitudes are monotonic without rolling or filtering coordinates.
-    """
-    # Add 360 until data is greater than base value
-    # TODO: Is this necessary for cartopy data? Maybe only with _geo_seams?
-    if x.ndim != 1 or all(x < x[0]):  # skip 2D arrays and monotonic backwards data
-        return x
-    xmin = x[0]
-    mask = np.array([True])
-    while np.sum(mask):
-        mask = x < xmin
-        x[mask] += 360
-    return x
-
-
-def _geo_poles(y, z):
-    """
-    Fix gaps in coverage over the poles by adding data points at the poles
-    using averages of the highest latitude data.
-    """
-    # Get means
+    # Cover gaps over poles by appending polar data
     with np.errstate(all='ignore'):
         p1 = np.mean(z[0, :])  # do not ignore NaN if present
         p2 = np.mean(z[-1, :])
-    if hasattr(p1, 'item'):
-        p1 = np.asscalar(p1)  # happens with DataArrays
-    if hasattr(p2, 'item'):
-        p2 = np.asscalar(p2)
-    # Concatenate
     ps = (-90, 90) if (y[0] < y[-1]) else (90, -90)
-    z1 = np.repeat(p1, z.shape[1])[None, :]
-    z2 = np.repeat(p2, z.shape[1])[None, :]
+    z1 = np.repeat(p1, z.shape[1])
+    z2 = np.repeat(p2, z.shape[1])
     y = ma.concatenate((ps[:1], y, ps[1:]))
-    z = ma.concatenate((z1, z, z2), axis=0)
-    return y, z
+    z = ma.concatenate((z1[None, :], z, z2[None, :]), axis=0)
 
-
-def _geo_seams(x, z, xmin=-180, modulo=False):
-    """
-    Fix gaps in coverage over longitude seams by adding points to either
-    end or both ends of the array.
-    """
-    # Fix seams by ensuring circular coverage (cartopy can plot over map edges)
+    # Cover gaps over cartopy longitude seam
+    # Ensure coordinates span 360 after modulus
     if modulo:
-        # Simply test the coverage % 360
         if x[0] % 360 != (x[-1] + 360) % 360:
-            x = ma.concatenate((x, [x[0] + 360]))
+            x = ma.concatenate((x, (x[0] + 360,)))
             z = ma.concatenate((z, z[:, :1]), axis=1)
+    # Cover gaps over basemap longitude seam
+    # Ensure coordinates span exactly 360
     else:
-        # Ensure exact match between data and seams
-        # Edges (e.g. pcolor) fit perfectly against seams. Size is unchanged.
-        if x[0] == xmin and x.size - 1 == z.shape[1]:
-            pass
-        # Edges (e.g. pcolor) do not fit perfectly. Size augmented by 1.
-        elif x.size - 1 == z.shape[1]:
-            x = ma.append(xmin, x)
-            x[-1] = xmin + 360
-            z = ma.concatenate((z[:, -1:], z), axis=1)
-        # Centers (e.g. contour) interpolated to edge. Size augmented by 2.
-        elif x.size == z.shape[1]:
-            xi = np.array([x[-1], x[0] + 360])
-            if xi[0] == xi[1]:  # impossible to interpolate
-                pass
-            else:
+        # Interpolate coordinate centers to seam. Size possibly augmented by 2
+        if x.size == z.shape[1]:
+            if x[0] + 360 != x[-1]:
+                xi = np.array([x[-1], x[0] + 360])  # input coordinates
+                xq = xmin + 360  # query coordinate
                 zq = ma.concatenate((z[:, -1:], z[:, :1]), axis=1)
-                xq = xmin + 360
                 zq = (zq[:, :1] * (xi[1] - xq) + zq[:, 1:] * (xq - xi[0])) / (xi[1] - xi[0])  # noqa: E501
-                x = ma.concatenate(([xmin], x, [xmin + 360]))
+                x = ma.concatenate(((xmin,), x, (xmin + 360,)))
                 z = ma.concatenate((zq, z, zq), axis=1)
+        # Extend coordinate edges to seam. Size possibly augmented by 1.
+        elif x.size - 1 == z.shape[1]:
+            if x[0] != xmin:
+                x = ma.append(xmin, x)
+                x[-1] = xmin + 360
+                z = ma.concatenate((z[:, -1:], z), axis=1)
         else:
             raise ValueError('Unexpected shapes of coordinates or data arrays.')
-    return x, z
+
+    return x, y, z
