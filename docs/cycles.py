@@ -202,6 +202,6 @@ obj = ax.plot(
 # to the ``cycles`` subfolder inside `~proplot.config.Configurator.user_folder`
 # and call `~proplot.config.register_cycles` (or restart your python session). You
 # can also use `~proplot.colors.DiscreteColormap.from_file` or manually pass
-# colormaps or file paths to `~proplot.config.register_cmaps`. See
+# discrete colormaps or file paths to `~proplot.config.register_cycles`. See
 # `~proplot.colors.DiscreteColormap.from_file` for a table of valid
 # data file extensions.

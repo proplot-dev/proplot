@@ -80,8 +80,6 @@ dictionary. ProPlot makes this dictionary available in the top-level namespace a
 ProPlot settings
 ----------------
 
-.. rubric:: Specific settings
-
 ProPlot-specific settings are contained in the `~proplot.config.rc_proplot`
 dictionary. They can also be changed with `~proplot.config.rc`. These settings
 are not found in `~matplotlib.rcParams` -- they either control features
@@ -110,9 +108,10 @@ more clearly ordered. Here's a broad overview of the new settings:
 * The ``land``, ``ocean``, ``rivers``, ``lakes``, ``borders``, and ``innerborders``
   categories control geographic content managed by `~proplot.axes.GeoAxes`.
 
-.. rubric:: Meta-settings
+Meta-settings
+-------------
 
-Other ProPlot settings may be more accurately described as "meta-settings",
+Some ProPlot settings may be more accurately described as "meta-settings",
 as they change several matplotlib and ProPlot settings at once (note that settings
 are only synced when they are changed on the `~proplot.config.rc` object rather than
 the `~proplot.config.rc_proplot` and `~proplot.config.rc_matplotlib` dictionaries).
@@ -121,7 +120,7 @@ Here's a broad overview of the "meta-settings":
 * Setting :rcraw:`font.small` (or, equivalently, :rcraw:`fontsmall`) changes
   the :rcraw:`tick.labelsize`, :rcraw:`grid.labelsize`,
   :rcraw:`legend.fontsize`, and :rcraw:`axes.labelsize`.
-* Setting :rcraw:`font.large` (or, equivalently, :rcraw:`texttitlesize`) changes
+* Setting :rcraw:`font.large` (or, equivalently, :rcraw:`fontlarge`) changes
   the :rcraw:`abc.size`, :rcraw:`title.size`, :rcraw:`suptitle.size`,
   :rcraw:`leftlabel.size`, :rcraw:`toplabel.size`, :rcraw:`rightlabel.size`
   :rcraw:`bottomlabel.size`.
@@ -145,7 +144,8 @@ Here's a broad overview of the "meta-settings":
 * Setting :rcraw:`title.border` or :rcraw:`abc.border` to ``True`` automatically
   sets :rcraw:`title.bbox` or :rcraw:`abc.bbox` to ``False``, and vice versa.
 
-.. rubric:: Table of settings
+Table of settings
+-----------------
 
 A comprehensive table of the new ProPlot settings is shown below.
 

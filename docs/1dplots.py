@@ -19,8 +19,8 @@
 #
 # .. _ug_1dplots:
 #
-# 1D plots
-# ========
+# 1D plotting
+# ===========
 #
 # ProPlot adds :ref:`several new features <why_plotting>` to matplotlib's
 # plotting commands using the intermediate `~proplot.axes.PlotAxes` subclass.
@@ -588,7 +588,7 @@ ax.format(title='Line plot')
 
 # Bar plot
 ax = axs[1]
-ax.bar(data, width=1, negpos=True)
+ax.bar(data, width=1, negpos=True, edgecolor='k')
 ax.format(title='Bar plot')
 
 # Area plot

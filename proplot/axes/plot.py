@@ -190,13 +190,13 @@ barpctile, barpctiles : bool, float, or 2-tuple of float, optional
     using percentiles for the error bars. If scalar, that percentile range is
     used (e.g., ``90`` shows the 5th to 95th percentiles). If ``True``, the default
     percentile range of 0 to 100 is used.
-bardata : 2D array or 1D array, optional
+bardata : array-like, optional
     Valid only if `mean` and `median` are ``False``. If shape is 2 x N, these
     are the lower and upper bounds for the thin error bars. If shape is N, these
     are the absolute, symmetric deviations from the central points.
 boxstd, boxstds, boxpctile, boxpctiles, boxdata : optional
     As with `barstd`, `barpctile`, and `bardata`, but for *thicker error bars*
-    representing a smaller interval than the thin error bars. If `boxstd` is
+    representing a smaller interval than the thin error bars. If `boxstds` is
     ``True``, the default standard deviation range of +/-1 is used. If `boxpctiles`
     is ``True``, the default percentile range of 25 to 75 is used (i.e., the
     interquartile range). When "boxes" and "bars" are combined, this has the

@@ -27,13 +27,16 @@
 #
 # It is often useful to have narrow "panels" along the edge of a larger
 # subplot for plotting secondary 1-dimensional datasets or summary statistics.
-# In ProPlot, you can create panels using the `~proplot.axes.Axes.panel` or
-# `~proplot.axes.Axes.panel_axes` commands. The location is specified with a
-# string, e.g. ``'r'`` or ``'right'`` for a right-hand side panel, and the
-# resulting panel axes are instances of `~proplot.axes.CartesianAxes`.
-# To generate "stacked" panels, call `~proplot.axes.Axes.panel_axes` more than once.
-# To generate several panels at once, call `~proplot.gridspec.SubplotGrid.panel_axes`
-# on the `~proplot.gridspec.SubplotGrid` returned by `~proplot.figure.Figure.subplots`.
+# In ProPlot, you can generate panels using the `~proplot.axes.Axes.panel_axes`
+# command (or its shorthand, `~proplot.axes.Axes.panel`). The panel location
+# is specified with a string, e.g. ``ax.panel('r')`` or ``ax.panel('right')``
+# for a right-hand side panel, and the resulting panels are instances of
+# `~proplot.axes.CartesianAxes`. By default, the panel shares its axis limits,
+# axis labels, tick positions, and tick labels with the main subplot, but
+# this can be disabled by passing ``share=False``. To generate "stacked" panels,
+# call `~proplot.axes.Axes.panel_axes` more than once. To generate several
+# panels at once, call `~proplot.gridspec.SubplotGrid.panel_axes` on
+# the `~proplot.gridspec.SubplotGrid` returned by `~proplot.figure.Figure.subplots`.
 # Note that panels :ref:`do not interfere with the tight layout algorithm <ug_tight>`
 # and :ref:`do not affect the subplot aspect ratios <ug_autosize>`.
 #
@@ -124,17 +127,17 @@ fig.format(
 #
 # `Inset axes
 # <https://matplotlib.org/stable/gallery/subplots_axes_and_figures/zoom_inset_axes.html>`__
-# can be generated with the `~proplot.axes.Axes.inset` or
-# `~proplot.axes.Axes.inset_axes` commands. To generate several insets at once,
-# call `~proplot.gridspec.SubplotGrid.inset_axes` on the `~proplot.gridspec.SubplotGrid`
+# can be generated with the `~proplot.axes.Axes.inset_axes` command (or its
+# shorthand, `~proplot.axes.Axes.inset`). To generate several insets at once, call
+# `~proplot.gridspec.SubplotGrid.inset_axes` on the `~proplot.gridspec.SubplotGrid`
 # returned by `~proplot.figure.Figure.subplots`. By default, inset axes have the
 # same projection as the parent axes, but you can also request a :ref:`different
-# projection <ug_proj>` (e.g., ``ax.inset_axes(bounds, proj='polar')``).
-# Passing ``zoom=True`` to `~proplot.axes.Axes.inset_axes` draws "zoom indication"
-# lines with `~matplotlib.axes.Axes.indicate_inset_zoom` when the axes are both
-# `~proplot.axes.Axes.CartesianAxes`, and the lines when the axis limits of the
-# parent axes change. To modify the zoom line properties, simply
-# pass a dictionary to `zoom_kw`.
+# projection <ug_proj>` (e.g., ``ax.inset_axes(bounds, proj='polar')``). When the
+# axes are both `~proplot.axes.Axes.CartesianAxes`, you can pass ``zoom=True``
+# to `~proplot.axes.Axes.inset_axes` to quickly  add "zoom indication" lines
+# (this uses `~matplotlib.axes.Axes.indicate_inset_zoom` internally). The lines
+# are automatically updated when the axis limits of the parent axes change. To
+# modify the zoom line properties, you can pass a dictionary to `zoom_kw`.
 
 # %%
 import proplot as pplt

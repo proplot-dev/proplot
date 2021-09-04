@@ -21,11 +21,11 @@
 #
 # .. _ug_stats:
 #
-# Statistics
-# ==========
+# Statistical plotting
+# ====================
 #
 # This section documents a few very basic additions to matplotlib's plotting commands
-# that can be useful for statistical analysis. The :ref:`1D plots <ug_1dplots>`
+# that can be useful for statistical analysis. The :ref:`1D plotting <ug_1dplots>`
 # section should be read before this section. Some of these tools will be
 # expanded in the future, but for a more comprehensive suite of statistical
 # plotting utilities, you may be interested in `seaborn`_ (you should also be
@@ -93,7 +93,7 @@ for orientation, array in zip(('horizontal', 'vertical'), (harray, varray)):
     # Medians and percentile ranges
     ax = axs[0]
     kw = dict(
-        color='light red', legend=True,
+        color='light red', edgecolor='k', legend=True,
         median=True, barpctile=90, boxpctile=True,
         # median=True, barpctile=(5, 95), boxpctile=(25, 75)  # equivalent
     )
@@ -199,7 +199,7 @@ ax.format(title='Multiple colors', ymargin=0.15)
 # be drawn with the `~proplot.axes.PlotAxes.hist2d`
 # `~proplot.axes.PlotAxes.hexbin` commands, and their colormaps can
 # be changed on-the-fly with the `cmap` and `cmap_kw` keywords (see
-# the :ref:`2D plots section <ug_apply_cmap>`). Marginal distributions
+# the :ref:`2D plotting section <ug_apply_cmap>`). Marginal distributions
 # for the 2D histograms can be added using :ref:`panel axes <ug_panels>`.
 #
 # In the future, ProPlot will include options for adding "smooth" kernel density

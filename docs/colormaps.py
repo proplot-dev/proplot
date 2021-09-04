@@ -477,6 +477,6 @@ for ax, gamma in zip(axs, (0.7, 1.0, 1.4)):
 # to the ``cmaps`` subfolder inside `~proplot.config.Configurator.user_folder`
 # and call `~proplot.config.register_cmaps` (or restart your python session). You
 # can also use `~proplot.colors.ContinuousColormap.from_file` or manually pass
-# colormaps or file paths to `~proplot.config.register_cmaps` See
+# continuous colormaps or file paths to `~proplot.config.register_cmaps`. See
 # `~proplot.colors.ContinuousColormap.from_file` for a table of valid
 # data file extensions.

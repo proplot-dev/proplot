@@ -233,7 +233,7 @@ fig.save('~/example4.png')
 # In the below example, we create a 4-panel figure with the familiar "1D" and "2D"
 # plot commands `~proplot.axes.PlotAxes.plot`, `~proplot.axes.PlotAxes.scatter`,
 # `~proplot.axes.PlotAxes.pcolormesh`, and `~proplot.axes.PlotAxes.contourf`.
-# See the :ref:`1D plots <ug_1dplots>` and :ref:`2D plots <ug_2dplots>`
+# See the :ref:`1D plotting <ug_1dplots>` and :ref:`2D plotting <ug_2dplots>`
 # sections for details on the features added by ProPlot.
 
 

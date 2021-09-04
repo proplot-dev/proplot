@@ -468,7 +468,7 @@ def _make_lookup_table(N, data, gamma=1.0, inverse=False):
     ----------
     N : int
         Number of points in the colormap lookup table.
-    data : 2D array-like
+    data : array-like
         Sequence of `(x, y_0, y_1)` tuples specifying channel jumps
         (from `y_0` to `y_1`) and `x` coordinate of those jumps
         (ranges between 0 and 1). See `~matplotlib.colors.LinearSegmentedColormap`.

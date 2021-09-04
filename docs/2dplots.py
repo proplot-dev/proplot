@@ -19,8 +19,8 @@
 #
 # .. _ug_2dplots:
 #
-# 2D plots
-# ========
+# 2D plotting
+# ===========
 #
 # ProPlot adds :ref:`several new features <why_plotting>` to matplotlib's
 # plotting commands using the intermediate `~proplot.axes.PlotAxes` subclass.
@@ -293,8 +293,8 @@ pplt.rc.reset()
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_discrete:
 #
-# Distinct colormap levels
-# ------------------------
+# Distinct levels
+# ---------------
 #
 # By default, ProPlot "discretizes" the possible colormap colors for contour plotting
 # commands like `~proplot.axes.PlotAxes.contour` and `~proplot.axes.PlotAxes.contourf`
@@ -392,8 +392,8 @@ for i, extend in enumerate(('min', 'max', 'neither', 'both')):
 # %% [raw] raw_mimetype="text/restructuredtext" tags=[]
 # .. _ug_autonorm:
 #
-# Auto colormap normalization
-# ---------------------------
+# Auto normalization
+# ------------------
 #
 # By default, colormaps are normalized to span from roughly the minimum
 # data value to the maximum data value. However in the presence of outliers,
@@ -405,7 +405,7 @@ for i, extend in enumerate(('min', 'max', 'neither', 'both')):
 # the 2nd and 98th data percentiles. This range can be customized by passing
 # an integer to `robust` (e.g. ``robust=90`` limits the normalization range
 # between the 5th and 95th percentiles) or by passing a 2-tuple to `robust`
-# (e.g. ``robust=(0, 90)`` will limit the normalization range between the
+# (e.g. ``robust=(0, 90)`` limits the normalization range between the
 # data minimum and the 90th percentile). This can be turned on persistently
 # by setting :rcraw:`cmap.robust` to ``True``.
 #
@@ -455,8 +455,8 @@ pplt.rc.reset()
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_norm:
 #
-# Special colormap normalizers
-# ----------------------------
+# Special normalizers
+# -------------------
 #
 # ProPlot includes a few new colormap normalizers. `~proplot.colors.SegmentedNorm`
 # provides even color gradations with respect to *index* for an arbitrary
@@ -533,8 +533,8 @@ for data, mode, fair in zip(
 # %% [raw] raw_mimetype="text/restructuredtext"
 # .. _ug_labels:
 #
-# Contour and gridbox labels
-# --------------------------
+# Quick labels
+# ------------
 #
 # You can now quickly add labels to `~proplot.axes.PlotAxes.contour`,
 # `~proplot.axes.PlotAxes.contourf`, `~proplot.axes.PlotAxes.pcolor`,

@@ -33,12 +33,14 @@ ProPlot v0.8.2 (2021-##-##)
 Deprecations
 ------------
 
+* Rename :rcraw:`cmap.edgefix` to :rcraw:`edgefix` (:commit:`515f5132`). It now
+  applies to bar and area plot elements, not just scalar mappables (see below).
+* Revert back to matplotlib default behavior of ``edgecolor='none'`` for
+  `bar` plots (:commit:`cc602349`). Previously this behavior often resulted
+  in "white lines" issue but now `edgefix` is applied to these plots (see below).
 * Use default ``discrete=False`` for `~proplot.axes.PlotAxes.hist2d` plots,
   consistent with `~proplot.axes.PlotAxes.hexbin` (:commit:`267dd161`). Now
   "discrete" levels are only enabled for pcolor/contour plots by default.
-* Revert back to matplotlib default behavior of ``edgecolor='none'`` for
-  `bar` plots (:commit:`cc602349`). Previously this behavior was annoying due
-  to "white lines" issue but now `edgefix` is applied to these plots (see below).
 * Control colorbar frame properties using same syntax as legend frame properties
   -- `edgewidth`, `edgecolor`, and optional rounded box with ``fancybox=True``
   (:commit:`58ce2c95`). Colorbar outline is now controlled with `linewidth`
