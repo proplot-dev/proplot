@@ -2482,21 +2482,27 @@ class Axes(maxes.Axes):
 
         # Handle lists of lists
         handles, labels = _to_list(handles), _to_list(labels)
-        if handles is None:
-            list_of_lists = False
-        else:
-            list_of_lists = any(
-                isinstance(h, (list, np.ndarray)) and len(h) > 1 for h in handles
+        if handles and not labels and all(isinstance(h, str) for h in handles):
+            handles, labels = labels, handles
+        list_of_lists = any(isinstance(h, (list, np.ndarray)) and len(h) > 1 for h in (handles or ()))  # noqa: E501
+        if list_of_lists and order == 'F':
+            warnings._warn_proplot(
+                'Column-major ordering of legend handles is not supported '
+                'for horizontally-centered legends.'
             )
         if list_of_lists and ncol is not None:
             warnings._warn_proplot(
-                'Detected list of *lists* of legend handles. '
-                'Ignoring user input property "ncol".'
+                'Detected list of *lists* of legend handles. Ignoring '
+                'the user input property "ncol".'
             )
-        if list_of_lists and order == 'F':
-            raise NotImplementedError(
-                'Column-major ordering of legend handles is not supported '
-                'for horizontally-centered legends.'
+        if labels and not handles:
+            warnings._warn_proplot(
+                'Passing labels without handles is unsupported in ProPlot. '
+                'Please explicitly pass the handles to legend() or pass labels '
+                "to plotting commands with e.g. plot(data_1d, label='label') or "
+                "plot(data_2d, labels=['label1', 'label2', ...]). After passing "
+                'labels to plotting commands you can call legend() without any '
+                'arguments or with the handles as a sole positional argument.'
             )
         ncol = _not_none(ncol, 3)
         center = _not_none(center, list_of_lists)
@@ -2721,11 +2727,11 @@ class Axes(maxes.Axes):
             }
         )
 
-        # Add the legend
+        # Add the legend and update patch properties
         kwargs['loc'] = loc_legend
-        if center:  # multi-legend pseudo-legend
+        if center:
             objs = lax._parse_multi_legend(pairs, kw_frame=kw_frame, **kwargs)
-        else:  # standard legend
+        else:
             kwargs.update({key: kw_frame.pop(key) for key in ('shadow', 'fancybox')})
             objs = [lax._parse_single_legend(pairs, ncol=ncol, order=order, **kwargs)]
             objs[0].legendPatch.update(kw_frame)
