@@ -85,6 +85,8 @@ Bug fixes
   to first scalar value when saving a ``proplotrc`` (:commit:`e731c709`).
 * Fix issue where channel-setting and scaling functions like ``scale_luminance``
   drop the opacity channel (:commit:`58ce2c95`).
+* Fix issue where line plot coordinates get unnecessarily offset by ``360``
+  by removing unnecessary ``_geo_monotonic`` standardization (:issue:`274`).
 
 Internals
 ---------
