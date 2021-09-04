@@ -1696,7 +1696,7 @@ class DiscreteColormap(mcolors.ListedColormap, _Colormap):
         --------
         ContinuousColormap.set_alpha
         """
-        colors = [list(mcolors.to_rgba(color)) for color in self.colors]
+        colors = [list(to_rgba(color)) for color in self.colors]
         for color in colors:
             color[3] = alpha
         self.colors = colors

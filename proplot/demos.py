@@ -385,7 +385,7 @@ def show_colorspaces(*, luminance=None, saturation=None, hue=None, refwidth=2):
         rgba = np.ones((*hsl.shape[:2][::-1], 4))  # RGBA
         for j in range(hsl.shape[0]):
             for k in range(hsl.shape[1]):
-                rgb_jk = to_rgb(hsl[j, k, :].flat, space)
+                rgb_jk = to_rgb(hsl[j, k, :], space)
                 if not all(0 <= c <= 1 for c in rgb_jk):
                     rgba[k, j, 3] = 0  # black cell
                 else:
