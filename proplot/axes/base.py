@@ -1789,6 +1789,7 @@ class Axes(maxes.Axes):
         Return the axes and adjusted keyword args for a panel-filling colorbar.
         """
         side = self._panel_side
+        side = _not_none(side, 'left' if orientation == 'vertical' else 'bottom')
         align = _not_none(align, 'center')
         length = _not_none(length=length, shrink=shrink, default=rc['colorbar.length'])
         ticklocation = _not_none(tickloc=tickloc, ticklocation=ticklocation)
@@ -1814,7 +1815,7 @@ class Axes(maxes.Axes):
                 raise ValueError(f'Invalid align={align!r} for colorbar loc={side!r}.')
             hratios = (1,)
             idx = ('left', 'center', 'right').index(align)
-        elif side in ('left', 'right'):
+        else:
             nrows, ncols = (3, 1)
             if align == 'center':
                 hratios = (delta, main, delta)
@@ -1837,7 +1838,6 @@ class Axes(maxes.Axes):
         self.add_child_axes(ax)
 
         # Handle default keyword args
-        side = _not_none(side, 'left' if orientation == 'vertical' else 'bottom')
         if side in ('bottom', 'top'):
             outside, inside = 'bottom', 'top'
             if side == 'top':
