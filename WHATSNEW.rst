@@ -53,32 +53,30 @@ Deprecations
   arbitrary subplots with e.g. ``axs[0, :2].colorbar(m, loc='bottom')``.
 * Deprecate recently-introduced `proplot.gridspec.SubplotGrid.text`
   (:commit:`80deb71a`). Idea was this could be used to add identical text to
-  each subplot but that is pretty niche, does not need to be supported.
+  each subplot but that is pretty niche, does not need a dedicated command.
 
 Features
 --------
 
-* Add `edgefix` as option for ``bar``, ``hist``, and ``area`` plots to
-  fix the "white-lines-between-patches" issue with saved vector
-  graphics, just like ``pcolor`` and ``contourf`` (:commit:`cc602349`).
-* Add `handle_kw` to `~proplot.axes.Axes.legend` and `outline_kw` to
-  `~proplot.axes.Axes.colorbar` to optionally control handle and outline settings
-  that conflict with frame settings (e.g., ``'edgecolor'``) (:commit:`58ce2c95`).
-* Trigger ``adjust_grays`` hue adjustments for gray-like color names passed to
-  `~proplot.colors.PerceptualColormap.from_list` even if channel values slightly
-  differ, including ``'charcoal'``, ``'light gray'``, ``'gray[1-9]'``, etc.
-  (:commit:`6cf42896`). This supports using named grays as intermediate colors.
-* Interpret ``'grey'`` as a synonym of ``'gray'`` by translating substrings in
-  color database (:commit:`6cf42896`). Ignore compound words like ``'slategrey'``
-  as these represent CSS colors.
-* Add cartopy-based ``LongitudeLocator``, ``LatitudeLocator``, ``DegreeLocator``,
-  ``LongitudeFormatter``, ``LatitudeFormatter``, ``DegreeFormatter`` to
-  public API for consistency with other "registered" tickers (:commit:`76e45c0c`).
-* Permitting loading color names from files without ``.txt`` extension
-  (:commit:`55481a9c`). This restriction was unnecessary.
 * Add `align` keyword with options ``'bottom'``, ``'top'``, ``'left'``, ``'right'``,
   or ``'center'`` (with optional single-char shorthands) to change alignment for
   outer legends/colorbars (:commit:`4a50b4b2`). Previously they had to be centered.
+* Add `edgefix` as option for ``bar``, ``hist``, and ``area`` plots to
+  fix the "white-lines-between-patches" issue with saved vector
+  graphics, just like ``pcolor`` and ``contourf`` (:commit:`cc602349`).
+* Add `handle_kw` to `~proplot.axes.Axes.legend` to optionally control
+  handle settings that conflict with frame settings (:commit:`58ce2c95`).
+  Example: ``handle_kw={'edgecolor': 'k'}``.
+* Trigger ``adjust_grays`` hue adjustments for gray-like color names passed to
+  `~proplot.colors.PerceptualColormap.from_list` that aren't technically pure gray,
+  including ``'charcoal'``, ``'light gray'``, and ``'gray[0-9]'`` (:commit:`6cf42896`).
+* Interpret ``'grey'`` as a synonym of ``'gray'`` by translating substrings
+  in color database (:commit:`6cf42896`). Permits e.g. ``color='grey1'``.
+* Permit loading color names from files without ``.txt`` extension
+  (:commit:`55481a9c`). This restriction was unnecessary.
+* Add cartopy-based ``LongitudeLocator``, ``LatitudeLocator``, ``DegreeLocator``,
+  ``LongitudeFormatter``, ``LatitudeFormatter``, ``DegreeFormatter`` to
+  public API for consistency with other "registered" tickers (:commit:`76e45c0c`).
 
 Bug fixes
 ---------
