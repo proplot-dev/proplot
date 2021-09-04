@@ -72,13 +72,14 @@ color : color-spec
 """
 _docstring_to_rgb = """
 color : color-spec
-    The color. Can be a tuple of channel values, a hex string, a
-    registered color name, a cycle color like ``'C0'``, or a colormap
-    color specification (see `~proplot.colors.ColorDatabase`).
+    The color. Can be a 3-tuple or 4-tuple of channel values, a hex
+    string, a registered color name, a cycle color like ``'C0'``, or
+    a 2-tuple colormap coordinate specification like ``('magma', 0.5)``
+    (see `~proplot.colors.ColorDatabase` for details).
 
-    If `space` is ``'rgb'``, this is a tuple of RGB values, and if any
-    channels are larger than ``2``, the channels are assumed to be on
-    the ``0`` to ``255`` scale and are divided by ``255``.
+    If `space` is ``'rgb'``, this is a tuple of RGB values, and any
+    channels are larger than ``2``, the channels are assumed to be
+    on the ``0`` to ``255`` scale and are divided by ``255``.
 space : {'rgb', 'hsv', 'hcl', 'hpl', 'hsl'}, optional
     The colorspace for the input channel values. Ignored unless `color` is
     a tuple of numbers.
@@ -105,7 +106,7 @@ docstring._snippet_manager['utils.space'] = _docstring_space
 docstring._snippet_manager['utils.to'] = _docstring_to_rgb
 
 
-def _preserve_units(func):
+def _keep_units(func):
     """
     Very simple decorator to strip and re-apply the same units.
     """
@@ -123,15 +124,33 @@ def _preserve_units(func):
 
 def arange(min_, *args):
     """
-    Identical to `numpy.arange` but with inclusive endpoints. For
-    example, ``pplt.arange(2, 4)`` returns ``np.array([2, 3, 4])`` instead
-    of ``np.array([2, 3])``. This command is useful for generating lists of
-    tick locations or colorbar level boundaries.
+    Identical to `numpy.arange` but with inclusive endpoints. For example,
+    ``pplt.arange(2, 4)`` returns the numpy array ``[2, 3, 4]`` instead of
+    ``[2, 3]``. This is useful for generating lists of tick locations or
+    colormap levels, e.g. ``ax.format(xlocator=pplt.arange(0, 10))``
+    or ``ax.pcolor(levels=pplt.arange(0, 10))``.
+
+    Parameters
+    ----------
+    *args : float
+        If three arguments are passed, these are the minimum, maximum, and step
+        size. If fewer than three arguments are passed, the step size is ``1``.
+        If one argument is passed, this is the maximum, and the minimum is ``0``.
+
+    Returns
+    -------
+    numpy.ndarray
+        Array of points.
 
     See also
     --------
-    proplot.axes.CartesianAxes.format
+    numpy.arange
     proplot.constructor.Locator
+    proplot.axes.CartesianAxes.format
+    proplot.axes.PolarAxes.format
+    proplot.axes.GeoAxes.format
+    proplot.axes.Axes.colorbar
+    proplot.axes.PlotAxes
     """
     # Optional arguments just like np.arange
     if len(args) == 0:
@@ -159,26 +178,24 @@ def arange(min_, *args):
     return np.arange(min_, max_, step)
 
 
-@_preserve_units
+@_keep_units
 def edges(z, axis=-1):
     """
-    Calculate the approximate "edge" values along an axis given "center" values.
-    This is used internally to calculate graticule edges when you supply centers
-    to `~matplotlib.axes.Axes.pcolor` or `~matplotlib.axes.Axes.pcolormesh`. It
-    is also used to calculate colormap level boundaries when you supply centers
-    to plotting methods wrapped by `~proplot.axes.apply_cmap`.
+    Calculate the approximate "edge" values along an axis given "center" values. The
+    size of the axis is increased by one. This is used internally to calculate graticule
+    edges when you supply centers to pseudocolor commands.
 
     Parameters
     ----------
     z : array-like
         An array of any shape.
     axis : int, optional
-        The axis along which "edges" are calculated. The size of this axis
-        will be increased by one.
+        The axis along which "edges" are calculated. The size of this
+        axis will be increased by one.
 
     Returns
     -------
-    `~numpy.ndarray`
+    numpy.ndarray
         Array of "edge" coordinates.
 
     See also
@@ -186,6 +203,7 @@ def edges(z, axis=-1):
     edges2d
     proplot.axes.PlotAxes.pcolor
     proplot.axes.PlotAxes.pcolormesh
+    proplot.axes.PlotAxes.pcolorfast
     """
     z = np.asarray(z)
     z = np.swapaxes(z, axis, -1)
@@ -202,13 +220,13 @@ def edges(z, axis=-1):
     return np.swapaxes(zb, axis, -1)
 
 
-@_preserve_units
+@_keep_units
 def edges2d(z):
     """
     Calculate the approximate "edge" values given a 2D grid of "center"
-    values. The size of both axes are increased by one. This is used
-    internally to calculate graticule edges when you supply centers to
-    `~matplotlib.axes.Axes.pcolor` or `~matplotlib.axes.Axes.pcolormesh`.
+    values. The size of both axes is increased by one. This is used
+    internally to calculate graticule edges when you supply centers
+    to pseudocolor plot commands.
 
     Parameters
     ----------
@@ -217,7 +235,7 @@ def edges2d(z):
 
     Returns
     -------
-    `~numpy.ndarray`
+    numpy.ndarray
         Array of "edge" coordinates.
 
     See also
@@ -225,6 +243,7 @@ def edges2d(z):
     edges
     proplot.axes.PlotAxes.pcolor
     proplot.axes.PlotAxes.pcolormesh
+    proplot.axes.PlotAxes.pcolorfast
     """
     z = np.asarray(z)
     if z.ndim != 2:
