@@ -1004,15 +1004,6 @@ _rc_proplot_table = {
         _validate_cmap('continuous'),
         'Default colormap for diverging datasets.'
     ),
-    'cmap.edgefix': (
-        True,
-        _validate_bool,
-        'Whether to fix the `white-lines-between-filled-contours '
-        '<https://stackoverflow.com/q/8263769/4970632>`__ and '
-        '`white-lines-between-pcolor-rectangles '
-        '<https://stackoverflow.com/q/27092991/4970632>`__ issues. If float, '
-        'this linewidth is used to fix the issue.'
-    ),
     'cmap.inbounds': (
         True,
         _validate_bool,
@@ -1049,6 +1040,15 @@ _rc_proplot_table = {
         CMAPSEQ,
         _validate_cmap('continuous'),
         'Default colormap for sequential datasets. Alias for :rcraw:`image.cmap`.'
+    ),
+
+    # Special setting
+    'edgefix': (
+        True,
+        _validate_bool,
+        'Whether to fix issues with "white lines" appearing between patches '
+        'in saved vector graphics and with vector graphic backends. Applies '
+        'to colorbar levels and bar, area, pcolor, and contour plots.'
     ),
 
     # Font settings
@@ -1870,7 +1870,8 @@ _rc_renamed = {  # {old_key: (new_key, version)} dictionary
     'image.levels': ('cmap.levels', '0.8'),
     'image.inbounds': ('cmap.inbounds', '0.8'),
     'image.discrete': ('cmap.discrete', '0.8'),
-    'image.edgefix': ('cmap.edgefix', '0.8'),
+    'image.edgefix': ('edgefix', '0.8'),
+    'cmap.edgefix': ('edgefix', '0.8'),
     'tick.ratio': ('tick.widthratio', '0.8'),
     'grid.ratio': ('grid.widthratio', '0.8'),
     'abc.style': ('abc', '0.8'),

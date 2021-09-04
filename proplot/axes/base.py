@@ -461,7 +461,7 @@ _edgefix_docstring = """
 edgefix : bool or float, optional
     Whether to fix the common issue where white lines appear between adjacent
     patches in saved vector graphics. This can slow down figure rendering.
-    Default is :rc:`cmap.edgefix`. If ``True``, a small default linewidth is
+    Default is :rc:`edgefix`. If ``True``, a small default linewidth is
     used to cover up the white lines. If float, this linewidth is used.
 """
 docstring._snippet_manager['axes.edgefix'] = _edgefix_docstring

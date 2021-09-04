@@ -2605,7 +2605,7 @@ class PlotAxes(base.Axes):
         # See: https://stackoverflow.com/q/15003353/4970632
         # NOTE: Use default edge width used for pcolor grid box edges. This is thick
         # enough to hide lines but thin enough to not add 'dots' to corners of boxes.
-        edgefix = _not_none(edgefix, rc['cmap.edgefix'], True)
+        edgefix = _not_none(edgefix, rc.edgefix, True)
         linewidth = EDGEWIDTH if edgefix is True else 0 if edgefix is False else edgefix
         if not linewidth:
             return
