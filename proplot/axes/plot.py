@@ -3533,33 +3533,35 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_vert=False, **kwargs)
         return self._apply_violinplot(*args, **kwargs)
 
-    def _apply_hist(self, xs, bins, *, orientation='vertical', **kwargs):
+    def _apply_hist(
+        self, xs, bins, *,
+        width=None, rwidth=None, stack=None, stacked=None,
+        histtype=None, orientation='vertical', **kwargs
+    ):
         """
         Apply the histogram.
         """
-        # WARNING: Weirdly while Axes.bar() adds labels to the container
-        # Axes.hist() adds them to the first element in the container. The
-        # legend handle reader just looks for items with get_label() so we
-        # manually apply labels to the container on the result.
+        # NOTE: While Axes.bar() adds labels to the container Axes.hist() only
+        # adds them to the first elements in the container for each column
+        # of the input data. Make sure that legend() will read both containers
+        # and individual items inside those containers.
         _, xs, kw = self._parse_plot1d(xs, orientation=orientation, **kwargs)
+        kw['label'] = kw.pop('labels', None)  # multiple labels natively supported
+        kw['rwidth'] = _not_none(width=width, rwidth=rwidth)  # latter is native
+        kw['stacked'] = _not_none(stack=stack, stacked=stacked)
+        histtype = kw['histtype'] = _not_none(histtype, 'bar')
         _process_props(kw, 'patch')
-        objs = []
         edgefix_kw = _pop_params(kw, self._apply_edgefix)
         guide_kw = _pop_params(kw, self._update_guide)
         if bins is not None:
             kw['bins'] = bins
-        for _, n, x, kw in self._iter_arg_cols(xs, **kw):
-            kw = self._parse_cycle(n, **kw)
-            obj = self._plot_native('hist', x, orientation=orientation, **kw)
-            if 'label' in kw:
-                for arg in obj[2]:
-                    arg.set_label(kw['label'])
-                if hasattr(obj[2], 'set_label'):  # recent mpl versions
-                    obj[2].set_label(kw['label'])
+        n = xs.shape[1] if xs.ndim > 1 else 1
+        kw = self._parse_cycle(n, **kw)
+        obj = self._plot_native('hist', xs, orientation=orientation, **kw)
+        if histtype.startswith('bar'):
             self._apply_edgefix(obj[2], **edgefix_kw, **kw)
-            objs.append(obj)
-        self._update_guide(objs, **guide_kw)
-        return objs[0] if len(objs) == 1 else cbook.silent_list(objs)
+        self._update_guide(obj, **guide_kw)
+        return obj
 
     @data._preprocess('x', 'bins', keywords='weights')
     @docstring._concatenate_original
