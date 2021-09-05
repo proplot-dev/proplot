@@ -1871,12 +1871,12 @@ _rc_renamed = {  # {old_key: (new_key, version)} dictionary
     'image.inbounds': ('cmap.inbounds', '0.8'),
     'image.discrete': ('cmap.discrete', '0.8'),
     'image.edgefix': ('edgefix', '0.8'),
-    'cmap.edgefix': ('edgefix', '0.8'),
     'tick.ratio': ('tick.widthratio', '0.8'),
     'grid.ratio': ('grid.widthratio', '0.8'),
     'abc.style': ('abc', '0.8'),
     'grid.loninline': ('grid.inlinelabels', '0.8'),
     'grid.latinline': ('grid.inlinelabels', '0.8'),
+    'cmap.edgefix': ('edgefix', '0.9'),
 }
 for _key, (_key_new, _) in _rc_renamed.items():
     if _key_new in _rc_children:
