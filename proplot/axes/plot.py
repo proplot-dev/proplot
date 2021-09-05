@@ -3337,10 +3337,8 @@ class PlotAxes(base.Axes):
         return obj
 
     def _apply_boxplot(
-        self, x, y, *,
-        mean=None, means=None, vert=True,
-        fill=None, marker=None, markersize=None,
-        **kwargs
+        self, x, y, *, mean=None, means=None, vert=True,
+        fill=None, filled=None, marker=None, markersize=None, **kwargs
     ):
         """
         Apply the box plot.
@@ -3352,11 +3350,12 @@ class PlotAxes(base.Axes):
         edgecolor = kw.pop('edgecolor', 'black')
         fillcolor = kw.pop('facecolor', None)
         fillalpha = kw.pop('alpha', None)
-        fill = fill is True or fillcolor is not None or fillalpha is not None
+        fill = _not_none(fill=fill, filled=filled)
+        fill = fill or fillcolor is not None or fillalpha is not None
+        fillalpha = _not_none(fillalpha, 1)
         if fill and fillcolor is None:  # TODO: support e.g. 'facecolor' cycle?
             parser = self._get_patches_for_fill
             fillcolor = parser.get_next_color()
-        fillalpha = _not_none(fillalpha, 1)
 
         # Arist-specific properties
         # NOTE: Output dict keys are plural but we use singular for keyword args
