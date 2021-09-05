@@ -3570,7 +3570,18 @@ class PlotAxes(base.Axes):
         obj = self._plot_native('hist', xs, orientation=orientation, **kw)
         if histtype.startswith('bar'):
             self._apply_edgefix(obj[2], **edgefix_kw, **kw)
-        self._update_guide(obj, **guide_kw)
+        # Revert to mpl < 3.3 behavior where silent_list was always returned for
+        # non-bar-type histograms. The legend override triggers centered-row behavior
+        # when it reads lists of lists. The silent_list object clarifies when a list
+        # is internal matplotlib object rather than user-grouped list of artists.
+        res = obj[2]
+        if type(res) is list:  # 'step' histtype plots
+            res = obj[2] = cbook.silent_list('Polygon', res)
+        else:
+            for i, sub in enumerate(res):
+                if type(sub) is list:
+                    res[i] = cbook.silent_list('Polygon', sub)
+        self._update_guide(res, **guide_kw)
         return obj
 
     @data._preprocess('x', 'bins', keywords='weights')
