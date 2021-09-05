@@ -2503,6 +2503,8 @@ class Axes(maxes.Axes):
         pairs = []
         if not multi:  # temporary
             handles, labels = [handles], [labels]
+        elif labels is None:
+            labels = [labels] * len(handles)
         for ihandles, ilabels in zip(handles, labels):
             ihandles, ilabels = _to_list(ihandles), _to_list(ilabels)
             if ihandles is None:
