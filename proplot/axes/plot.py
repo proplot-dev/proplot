@@ -28,6 +28,7 @@ from ..internals import (
     _get_aliases,
     _guide_kw_to_arg,
     _guide_kw_to_obj,
+    _iter_iterables,
     _not_none,
     _pop_kwargs,
     _pop_params,
@@ -1494,7 +1495,6 @@ class PlotAxes(base.Axes):
         Add sticky edges to the input artists using the minimum and maximum of the
         input coordinates. This is used to copy `bar` behavior to `area` and `lines`.
         """
-        iter_ = list(obj for _ in objs for obj in (_ if isinstance(_, tuple) else (_,)))
         for sides in args:
             sides = np.atleast_1d(sides)
             if not sides.size:
@@ -1502,7 +1502,7 @@ class PlotAxes(base.Axes):
             min_, max_ = data._safe_range(sides)
             if min_ is None or max_ is None:
                 continue
-            for obj in iter_:
+            for obj in _iter_iterables(objs):
                 convert = getattr(self, 'convert_' + axis + 'units')
                 edges = getattr(obj.sticky_edges, axis)
                 edges.extend(convert((min_, max_)))
