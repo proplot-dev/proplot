@@ -45,7 +45,7 @@ ALIAS_MAPS = {
         'zorder': ('z', 'zorders'),
     },
     'collection': {  # NOTE: face color is ignored for line collections
-        'alphas': ('a', 'alpha'),
+        'alpha': ('a', 'alphas'),  # WARNING: collections and contours use singular!
         'colors': ('c', 'color'),
         'edgecolors': ('ec', 'edgecolor', 'mec', 'markeredgecolor', 'markeredgecolors'),
         'facecolors': (
