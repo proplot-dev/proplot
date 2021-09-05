@@ -2006,7 +2006,7 @@ class Axes(maxes.Axes):
         ):
             mappable = mappable[0]
         if isinstance(mappable, mcm.ScalarMappable):
-            return mappable, None, kwargs
+            return mappable, kwargs
 
         # For container objects, we just assume color is the same for every item.
         # Works for ErrorbarContainer, StemContainer, BarContainer.
