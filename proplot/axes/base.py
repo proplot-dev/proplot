@@ -1998,7 +1998,7 @@ class Axes(maxes.Axes):
         return locator, formatter, minorlocator, kwargs
 
     def _parse_colorbar_mappable(
-        self, mappable, values=None, *, norm=None, norm_kw=None, rotation=None, **kwargs
+        self, mappable, values=None, *, norm=None, norm_kw=None, **kwargs
     ):
         """
         Generate a mappable from flexible non-mappable input. Useful in bridging
@@ -2087,8 +2087,6 @@ class Axes(maxes.Axes):
         if locator is not None:
             if any(isinstance(value, str) for value in locator):
                 locator, formatter = np.arange(len(locator)), list(map(str, locator))
-                if kwargs.get('orientation', None) != 'vertical':
-                    rotation = _not_none(rotation, 90)
             if len(locator) == 1:
                 levels = [locator[0] - 1, locator[0] + 1]
             else:
@@ -2099,13 +2097,13 @@ class Axes(maxes.Axes):
         # NOTE: If value list doesn't match this may cycle over colors.
         mappable = mcm.ScalarMappable(norm, cmap)
         _fill_guide_kw(kwargs, locator=locator, formatter=formatter)
-        return mappable, rotation, kwargs
+        return mappable, kwargs
 
     def _draw_colorbar(
         self, mappable, values=None, *, loc=None, space=None, pad=None, align=None,
         extend=None, reverse=False, tickdir=None, tickdirection=None, tickminor=None,
         title=None, label=None, labelsize=None, labelweight=None, labelcolor=None,
-        ticklabelsize=None, ticklabelweight=None, ticklabelcolor=None,
+        ticklabelsize=None, ticklabelweight=None, ticklabelcolor=None, rotation=None,
         grid=None, edges=None, drawedges=None, rasterize=None,
         c=None, color=None, lw=None, linewidth=None, edgefix=None,
         extendsize=None, extendfrac=None, **kwargs
@@ -2151,7 +2149,7 @@ class Axes(maxes.Axes):
         # values or artist labels rather than random points if possible.
         # WARNING: Matplotlib >= 3.4 seems to have issue with assigning no ticks
         # to colorbar. Tried to fix with below block but doesn't seem to help.
-        mappable, rotation, kwargs = cax._parse_colorbar_mappable(
+        mappable, kwargs = cax._parse_colorbar_mappable(
             mappable, values, **kwargs
         )
         locator, formatter, minorlocator, kwargs = cax._parse_colorbar_ticks(
