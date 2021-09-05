@@ -21,7 +21,7 @@ except ImportError:  # graceful fallback if IceCream isn't installed
 # WARNING: Add pseudo-props 'edgewidth' and 'fillcolor' for patch edges and faces
 # WARNING: Critical that alias does not appear in key dict or else _translate_kwargs
 # will overwrite settings with None after popping them!
-ALIAS_DICTS = {
+ALIAS_MAPS = {
     'rgba': {
         'red': ('r',),
         'green': ('g',),
@@ -34,40 +34,46 @@ ALIAS_DICTS = {
         'luminance': ('l',),
         'alpha': ('a',),
     },
-    'line': {  # copied from lines.py but expanded to include plurals
-        'antialiased': ('aa',),
-        'alpha': ('a', 'alphas'),
+    'patch': {
+        'alpha': ('a', 'alphas', 'fa', 'facealpha', 'facealphas', 'fillalpha', 'fillalphas'),  # noqa: E501
         'color': ('c', 'colors'),
-        'linewidth': ('lw', 'linewidths'),
+        'edgecolor': ('ec', 'edgecolors'),
+        'facecolor': ('fc', 'facecolors', 'fillcolor', 'fillcolors'),
+        'hatch': ('h', 'hatching'),
         'linestyle': ('ls', 'linestyles'),
-        'drawstyle': ('ds', 'drawstyles'),
-        'dashes': ('d',),
-        'marker': ('m', 'markers'),
-        'markersize': ('s', 'ms', 'markersizes'),
-        'markeredgecolor': ('mec', 'markeredgecolors'),
-        'markeredgewidth': ('mew', 'markeredgewidths'),
-        'markerfacecolor': ('mfc', 'markerfacecolors', 'mc', 'markercolor', 'markercolors'),  # noqa: E501
-        'fillstyle': ('fs', 'fillstyles', 'mfs', 'markerfillstyle', 'markerfillstyles'),
+        'linewidth': ('lw', 'linewidths', 'ew', 'edgewidth', 'edgewidths'),
         'zorder': ('z', 'zorders'),
     },
     'collection': {  # NOTE: face color is ignored for line collections
         'alphas': ('a', 'alpha'),
         'colors': ('c', 'color'),
-        'edgecolors': ('ec', 'edgecolor'),
-        'facecolors': ('fc', 'fillcolor', 'fillcolors'),
-        'linewidths': ('lw', 'linewidth', 'ew', 'edgewidth', 'edgewidths'),
+        'edgecolors': ('ec', 'edgecolor', 'mec', 'markeredgecolor', 'markeredgecolors'),
+        'facecolors': (
+            'fc', 'facecolor', 'fillcolor', 'fillcolors',
+            'mc', 'markercolor', 'markercolors', 'mfc', 'markerfacecolor', 'markerfacecolors'  # noqa: E501
+        ),
         'linestyles': ('ls', 'linestyle'),
+        'linewidths': ('lw', 'linewidth', 'ew', 'edgewidth', 'edgewidths', 'mew', 'markeredgewidth', 'markeredgewidths'),  # noqa: E501
+        'sizes': ('s', 'ms', 'markersize', 'markersizes'),
         'zorder': ('z', 'zorders'),
     },
-    'patch': {
-        'alpha': ('a', 'alphas', 'facealpha', 'facealphas', 'fillalpha', 'fillalphas'),
+    'line': {  # copied from lines.py but expanded to include plurals
+        'alpha': ('a', 'alphas'),
         'color': ('c', 'colors'),
-        'edgecolor': ('ec', 'edgecolors'),
-        'facecolor': ('fc', 'facecolors', 'fillcolor', 'fillcolors'),
-        'linewidth': ('lw', 'linewidths', 'ew', 'edgewidth', 'edgewidths'),
+        'dashes': ('d', 'dash'),
+        'drawstyle': ('ds', 'drawstyles'),
+        'fillstyle': ('fs', 'fillstyles', 'mfs', 'markerfillstyle', 'markerfillstyles'),
         'linestyle': ('ls', 'linestyles'),
+        'linewidth': ('lw', 'linewidths'),
+        'marker': ('m', 'markers'),
+        'markersize': ('s', 'ms', 'markersizes', 'sizes'),
+        'markeredgewidth': ('ew', 'edgewidth', 'edgewidths', 'mew', 'markeredgewidths'),
+        'markeredgecolor': ('ec', 'edgecolor', 'edgecolors', 'mec', 'markeredgecolors'),
+        'markerfacecolor': (
+            'fc', 'facecolor', 'facecolors', 'fillcolor', 'fillcolors',
+            'mc', 'markercolor', 'markercolors', 'mfc', 'markerfacecolors'
+        ),
         'zorder': ('z', 'zorders'),
-        'hatch': ('h', 'hatching'),
     },
     'text': {
         'text': (),
@@ -158,6 +164,17 @@ def _pop_params(kwargs, *funcs, ignore_internal=False):
     return output
 
 
+def _get_aliases(category, *keys):
+    """
+    Get all available aliases.
+    """
+    aliases = []
+    for key in keys:
+        aliases.append(key)
+        aliases.extend(ALIAS_MAPS[category][key])
+    return tuple(aliases)
+
+
 def _translate_kwargs(input, output, *keys, **aliases):
     """
     The driver function.
@@ -179,9 +196,7 @@ def _translate_props(input, output, *categories, prefix=None, ignore=None):  # n
     # Get properties
     prefix = prefix or ''  # e.g. 'box' for boxlw, boxlinewidth, etc.
     for category in categories:
-        if category not in ALIAS_DICTS:
-            raise ValueError(f'Invalid alias category {category!r}.')
-        for key, aliases in ALIAS_DICTS[category].items():
+        for key, aliases in ALIAS_MAPS[category].items():
             if isinstance(aliases, str):
                 aliases = (aliases,)
             opts = {prefix + alias: input.pop(prefix + alias, None) for alias in (key, *aliases)}  # noqa: E501

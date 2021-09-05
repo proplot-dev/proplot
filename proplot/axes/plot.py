@@ -25,6 +25,7 @@ from .. import constructor, utils
 from ..config import rc
 from ..internals import ic  # noqa: F401
 from ..internals import (
+    _get_aliases,
     _guide_kw_to_arg,
     _guide_kw_to_obj,
     _not_none,
@@ -2659,8 +2660,7 @@ class PlotAxes(base.Axes):
         parser = self._get_lines  # the _process_plot_var_args instance
         props = {}  # which keys to apply from property cycler
         for prop, key in cycle_manually.items():
-            value = kwargs.get(key, None)
-            if value is None and prop in parser._prop_keys:
+            if kwargs.get(key, None) is None and prop in parser._prop_keys:
                 props[prop] = key
         if props:
             dict_ = next(parser.prop_cycler)
@@ -3070,24 +3070,21 @@ class PlotAxes(base.Axes):
         """
         Apply scatter or scatterx markers.
         """
-        # Apply from property cycle. Keys are cycle keys and values are scatter keys
+        # Manual property cycling. Converts Line2D keywords used in property
+        # cycle to PathCollection keywords that can be passed to scatter.
         # NOTE: Matplotlib uses the property cycler in _get_patches_for_fill for
         # scatter() plots. It only ever inherits color from that. We instead use
         # _get_lines to help overarching goal of unifying plot() and scatter().
         cycle_manually = {
-            'color': 'c',
-            'markersize': 's',
-            'linewidth': 'linewidths',
-            'linestyle': 'linestyles',
-            'markeredgewidth': 'linewidths',
-            'markeredgecolor': 'edgecolors',
-            'alpha': 'alpha',
-            'marker': 'marker',
+            'alpha': 'alpha', 'color': 'c',
+            'markerfacecolor': 'c', 'markeredgecolor': 'edgecolors',
+            'marker': 'marker', 'markersize': 's', 'markeredgewidth': 'linewidths',
+            'linestyle': 'linestyles', 'linewidth': 'linewidths',
         }
 
         # Iterate over the columns
         kw = kwargs.copy()
-        _process_props(kw, 'line')
+        _process_props(kw, 'collection')
         kw, extents = self._parse_inbounds(**kw)
         xs, ys, kw = self._parse_plot1d(xs, ys, vert=vert, autoreverse=False, **kw)
         ss, kw = self._parse_markersize(ss, **kw)  # parse 's'
@@ -3112,9 +3109,15 @@ class PlotAxes(base.Axes):
             else cbook.silent_list('PathCollection', objs)
         )
 
+    # NOTE: Matplotlib internally applies scatter 'c' arguments as the
+    # 'facecolors' argument to PathCollection. So perfectly reasonable to
+    # point both 'color' and 'facecolor' arguments to the 'c' keyword here.
     @data._preprocess(
-        'x', 'y', ('s', 'ms', 'markersize'), ('c', 'color', 'colors'),
-        keywords=('lw', 'linewidth', 'linewidths', 'ec', 'edgecolor', 'edgecolors', 'fc', 'facecolor', 'facecolors')  # noqa: E501
+        'x',
+        'y',
+        _get_aliases('collection', 'sizes'),
+        _get_aliases('collection', 'colors', 'facecolors'),
+        keywords=_get_aliases('collection', 'linewidths', 'edgecolors')
     )
     @docstring._concatenate_original
     @docstring._snippet_manager
@@ -3126,8 +3129,11 @@ class PlotAxes(base.Axes):
         return self._apply_scatter(*args, **kwargs)
 
     @data._preprocess(
-        'y', 'x', ('s', 'ms', 'markersize'), ('c', 'color', 'colors'),
-        keywords=('lw', 'linewidth', 'linewidths', 'ec', 'edgecolor', 'edgecolors', 'fc', 'facecolor', 'facecolors')  # noqa: E501
+        'y',
+        'x',
+        _get_aliases('collection', 'sizes'),
+        _get_aliases('collection', 'colors', 'facecolors'),
+        keywords=_get_aliases('collection', 'linewidths', 'edgecolors')
     )
     @docstring._snippet_manager
     def scatterx(self, *args, **kwargs):
