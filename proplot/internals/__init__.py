@@ -228,28 +228,28 @@ def _process_props(src, *categories, **kwargs):
     return _translate_props(src, src, *categories, **kwargs)
 
 
-def _iter_children(arg):
+def _iter_children(*args):
     """
     Iterate through `_children` of `HPacker`, `VPacker`, and `DrawingArea`.
     This is used to update legend handle properties.
     """
-    if hasattr(arg, '_children'):
-        for child in arg._children:
-            yield from _iter_children(child)
-    elif arg is not None:
-        yield arg
+    for arg in args:
+        if hasattr(arg, '_children'):
+            yield from _iter_children(*arg._children)
+        elif arg is not None:
+            yield arg
 
 
-def _iter_iterables(args):
+def _iter_iterables(*args):
     """
     Iterate over arbitrary nested lists of iterables. Used for deciphering legend input.
     Things can get complicated with e.g. bar colunns plus negative-positive colors.
     """
-    if np.iterable(args):
-        for arg in args:
-            yield from _iter_iterables(arg)
-    else:
-        yield args
+    for arg in args:
+        if np.iterable(arg):
+            yield from _iter_iterables(*arg)
+        elif arg is not None:
+            yield arg
 
 
 def _fill_guide_kw(kwargs, **pairs):
