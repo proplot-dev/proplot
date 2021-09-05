@@ -221,7 +221,7 @@ x = state.normal(size=(M, N)) + state.rand(M)[:, None] * np.arange(N) + 2 * np.a
 fig, ax = pplt.subplots(refwidth=4, refaspect=(3, 2))
 ax.format(suptitle='Overlaid histograms', xlabel='distribution', ylabel='count')
 res = ax.hist(
-    x, pplt.arange(-3, 8, 0.2), alpha=0.7, edgecolor='k',
+    x, pplt.arange(-3, 8, 0.2), filled=True, alpha=0.7, edgecolor='k',
     cycle=('indigo9', 'gray3', 'red9'), labels=list('abc'), legend='ul',
 )
 
