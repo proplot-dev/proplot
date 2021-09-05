@@ -2424,6 +2424,8 @@ class Axes(maxes.Axes):
                         handles.append(obj)
                 elif hasattr(obj, 'get_label'):
                     handles.append(obj)
+                else:
+                    warnings._warn_proplot(f'Ignoring invalid legend handle {obj!r}.')
             return tuple(handles)
 
         # Sanitize labels. Ignore e.g. extra hist() or hist2d() return values,
