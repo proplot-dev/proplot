@@ -1738,13 +1738,14 @@ class Axes(maxes.Axes):
             dict_[loc] = obj
         else:
             handles, labels = obj
-            if not isinstance(handles, list):  # e.g. mappable or None
+            if not np.iterable(handles) or type(handles) is tuple:
                 handles = [handles]
-            if not isinstance(labels, list):  # e.g. string or None
+            if not np.iterable(labels) or isinstance(labels, str):
                 labels = [labels] * len(handles)
+            length = min(len(handles), len(labels))  # mimics 'zip' behavior
             handles_full, labels_full, kwargs_full = dict_.setdefault(loc, ([], [], {}))
-            handles_full.extend(handles)
-            labels_full.extend(labels)
+            handles_full.extend(handles[:length])
+            labels_full.extend(labels[:length])
             kwargs_full.update(kwargs)
 
     @staticmethod
