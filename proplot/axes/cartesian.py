@@ -992,7 +992,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         # zorder of 4 and make the background transparent.
         minorlocator = self.yaxis.get_minor_locator()
         ax = self._make_twin_axes(
-            sharey=self, number=False, autoshare=False, projection='proplot_cartesian'
+            sharey=self, number=False, autoshare=False, projection='cartesian'
         )
 
         # Child defaults
@@ -1030,7 +1030,7 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
         # See altx() comments
         minorlocator = self.xaxis.get_minor_locator()
         ax = self._make_twin_axes(
-            sharex=self, number=False, autoshare=False, projection='proplot_cartesian'
+            sharex=self, number=False, autoshare=False, projection='cartesian'
         )
 
         # Child defaults

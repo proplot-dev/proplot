@@ -750,20 +750,28 @@ class Figure(mfigure.Figure):
         proj_kw = _not_none(proj_kw=proj_kw, projection_kw=projection_kw, default={})
         if isinstance(proj, str):
             proj = proj.lower()
-        elif isinstance(self, paxes.Axes):
+        if isinstance(self, paxes.Axes):
             proj = self._name
         elif isinstance(self, maxes.Axes):
             raise ValueError('Matplotlib axes cannot be added to ProPlot figures.')
 
-        # Redirect to basemap or cartopy projection
-        try:
-            mproj.get_projection_class('proplot_' + proj)
-        except (KeyError, ValueError):
-            m = constructor.Proj(proj, basemap=basemap, include_axes=True, **proj_kw)
-            proj = m._proj_package
-            kwargs['map_projection'] = m
+        # Search axes projections
+        if not isinstance(proj, str):
+            name = None
+        else:
+            name = 'proplot_' + proj
+            try:
+                mproj.get_projection_class(name)
+            except (KeyError, ValueError):
+                name = None
 
-        kwargs['projection'] = 'proplot_' + proj
+        # Redirect to basemap or cartopy projection
+        if name is None:
+            proj = constructor.Proj(proj, basemap=basemap, include_axes=True, **proj_kw)
+            name = 'proplot_' + proj._proj_package
+            kwargs['map_projection'] = proj
+
+        kwargs['projection'] = name
         return kwargs
 
     def _get_align_axes(self, side):
