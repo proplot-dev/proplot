@@ -26,7 +26,7 @@
 # plotting commands using the intermediate `~proplot.axes.PlotAxes` subclass.
 # For the most part, these additions represent a *superset* of matplotlib -- if
 # you are not interested, you can use the plotting commands just like you always
-# have. This section documents the features added for 2D plot commands
+# have. This section documents the features added for 2D plotting commands
 # like `~proplot.axes.PlotAxes.contour`, `~proplot.axes.PlotAxes.pcolor`,
 # and `~proplot.axes.PlotAxes.imshow`.
 

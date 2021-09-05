@@ -35,12 +35,6 @@ Deprecations
 
 * Rename :rcraw:`cmap.edgefix` to :rcraw:`edgefix` (:commit:`515f5132`). It now
   applies to bar and area plot elements, not just scalar mappables (see below).
-* Revert back to matplotlib default behavior of ``edgecolor='none'`` for
-  `bar` plots (:commit:`cc602349`). Previously this behavior often resulted
-  in "white lines" issue but now `edgefix` is applied to these plots (see below).
-* Use default ``discrete=False`` for `~proplot.axes.PlotAxes.hist2d` plots,
-  consistent with `~proplot.axes.PlotAxes.hexbin` (:commit:`267dd161`). Now
-  "discrete" levels are only enabled for pcolor/contour plots by default.
 * Control colorbar frame properties using same syntax as legend frame properties
   -- `edgewidth`, `edgecolor`, and optional rounded box with ``fancybox=True``
   (:commit:`58ce2c95`). Colorbar outline is now controlled with `linewidth`
@@ -58,9 +52,24 @@ Deprecations
 Features
 --------
 
+* Revert back to matplotlib default behavior of ``edgecolor='none'`` for
+  `bar` plots (:commit:`cc602349`). Previously this behavior often resulted
+  in "white lines" issue but now `edgefix` is applied to these plots (see below).
+* Use built-in matplotlib logic for plotting multiple `hist` columns, with
+  support for `stack` as alias of `stacked` and `width` as alias of `rwidth`
+  (consistent with `bar` keywords) (:commit:`###`). By default, histograms
+  for successive columns are now grouped side-by-side instead of overlaid, but
+  overlaid histograms can be triggered with `histtype`/`fill`/`filled` (see below).
+* Use default ``discrete=False`` for `~proplot.axes.PlotAxes.hist2d` plots,
+  consistent with `~proplot.axes.PlotAxes.hexbin` (:commit:`267dd161`). Now
+  "discrete" levels are only enabled for pcolor/contour plots by default.
 * Add `align` keyword with options ``'bottom'``, ``'top'``, ``'left'``, ``'right'``,
   or ``'center'`` (with optional single-char shorthands) to change alignment for
   outer legends/colorbars (:commit:`4a50b4b2`). Previously they had to be centered.
+* Add `fill` and `filled` keywords to `~proplot.axes.PlotAxes.hist`, analogous to
+  `stack` and `stacked` (:commit:`4a85773b`). Passing any of these 4 keywords
+  without explicitly passing `histtype` sets a default `histtype`. Also add
+  `filled` alias of `fill` for `boxplot` for consistency (:commit:`b5caf550`).
 * Add `edgefix` as option for ``bar``, ``hist``, and ``area`` plots to
   fix the "white-lines-between-patches" issue with saved vector
   graphics, just like ``pcolor`` and ``contourf`` (:commit:`cc602349`).
@@ -87,6 +96,14 @@ Bug fixes
   drop the opacity channel (:commit:`58ce2c95`).
 * Fix issue where line plot coordinates get unnecessarily offset by ``360``
   by removing unnecessary ``_geo_monotonic`` standardization (:issue:`274`).
+* Fix regression where `vmin` is ignored without explicitly specifying `vmax` and
+  vice versa (:issue:`276`).
+* Fix issue where `~proplot.axes.PlotAxes.scatter` ignores ``facecolors``
+  input by treating it the same as other color aliases (:issue:`275`).
+* Fix issue where calling ``legend()`` without arguments generates
+  duplicate labels for histograms (:issue:`277`).
+* Fix issue where list-of-list style input to `~proplot.axes.Axes.legend`
+  fails to trigger centered legend (:commit:`e598b470`).
 
 Internals
 ---------
@@ -174,8 +191,8 @@ ProPlot v0.8.0 (2021-08-18)
 Deprecated
 ----------
 
-* Numbers passed to `pad`, `wpad`, `hpad`, `space`, `wspace`, `hspace`, `left`, `right`,
-  `top`, and `bottom` are now interpreted as em-widths instead of inches
+* Numbers passed to `pad`, `wpad`, `hpad`, `space`, `wspace`, `hspace`, `left`,
+  `right`, `top`, and `bottom` are now interpreted as em-widths instead of inches
   (:commit:`20502345`). Unfortunately this is a major breaking change that cannot be
   "gently" phased in with warnings, but this will be much more convenient going forward.
 * Make default reference subplot size, panel widths, colorbar widths independent of
@@ -243,13 +260,11 @@ Deprecated
   rename `~proplot.constructor.Colormap` argument `to_listed` to `discrete`,
   change `listmode` options from ``'listed'``, ``'linear'`` to ``'discrete'``,
   ``'continuous'``, and add `filemode` option (:commit:`ade787f9`, :commit:`5ccd6c01`).
-* Allow omitting the colormap name when instantiating colormap classes or using
-  class methods like ``from_list`` (:commit:`ade787f9`). This is more intuitive.
 * Capture `colors` passed to commands like ``contour`` and ``pcolor`` and use
   it to build qualitative `~proplot.colors.DiscreteColormap` maps (:commit:`6382cf91`).
   This matches the behavior of xarray plotting utilities. No longer use `color`
   to change "edge color" of filled contours/grid boxes.
-* Set default linewidth to 0.25 when adding "edges" to filled contours
+* Set default linewidth to 0.3 when adding "edges" to filled contours
   (:commit:`6382cf91`). This matches matplotlib behavior when passing
   edgecolor to a ``pcolor`` command.
 * Deprecate ``boxes`` and ``violins`` shorthands in favor of singular
@@ -357,6 +372,8 @@ Features
 * Add `robust` keyword argument and :rc:`cmap.robust` setting to ignore
   outliers when selecting auto colormap ranges (:issue:`6382cf91`). It can take the
   value ``True``, a percentile range, or a 2-tuple percentile interval.
+* Allow omitting the colormap name when instantiating colormap classes or using
+  class methods like ``from_list`` (:commit:`ade787f9`). This is more intuitive.
 * Improve matplotlib-proplot colormap translation by converting
   `matplotlib.colors.ListedColormap` to `proplot.colors.DiscreteColormap` only if it
   has fewer than :rcraw:`cmap.listedthresh` levels (:commit:`ade787f9`). This is
