@@ -717,13 +717,13 @@ width : float or array-like, optional
 absolute_width : bool, optional
     Whether to make the `width` units *absolute*. If ``True``, this
     restores the default matplotlib behavior. Default is ``False``.
+stack, stacked : bool, optional
+    Whether to "stack" bars from successive columns of {y} data
+    or plot bars side-by-side in groups. Default is ``False``.
 %(plot.args_1d_shared)s
 
 Other parameters
 ----------------
-stack, stacked : bool, optional
-    Whether to "stack" bars from successive columns of {y} data
-    or plot bars side-by-side in groups. Default is ``False``.
 %(plot.cycle)s
 %(plot.patch)s
 %(plot.negpos_bar)s
@@ -759,12 +759,12 @@ Parameters
 ----------
 %(plot.args_1d_multi{y})s
 %(plot.args_1d_shared)s
-
-Other parameters
-----------------
 stack, stacked : bool, optional
     Whether to "stack" area patches from successive columns of {y} data
     or plot area patches on top of each other. Default is ``False``.
+
+Other parameters
+----------------
 where : ndarray, optional
     A boolean mask for the points that should be shaded.
     See `this matplotlib example \
@@ -793,49 +793,6 @@ docstring._snippet_manager['plot.fill_between'] = _fill_docstring.format(
 )
 docstring._snippet_manager['plot.fill_betweenx'] = _fill_docstring.format(
     x='y', y='x', suffix='x'
-)
-
-
-# Histogram docstrings
-_weight_docstring = """
-weights : array-like, optional
-    The weights associated with each point. If string this
-    can be retrieved from `data` (see below).
-"""
-docstring._snippet_manager['plot.weights'] = _weight_docstring
-
-_hist_docstring = """
-Plot {orientation} histograms.
-
-Parameters
-----------
-%(plot.args_1d_{y})s
-bins : int or sequence of float, optional
-    The bin count or sequence of bins.
-%(plot.weights)s
-%(plot.args_1d_shared)s
-
-Other parameters
-----------------
-%(plot.cycle)s
-%(plot.patch)s
-%(axes.edgefix)s
-%(plot.labels_1d)s
-%(plot.guide)s
-**kwargs
-    Passed to `~matplotlib.axes.Axes.hist`.
-
-See also
---------
-PlotAxes.hist
-PlotAxes.histh
-matplotlib.axes.Axes.hist
-"""
-docstring._snippet_manager['plot.hist'] = _hist_docstring.format(
-    y='x', orientation='vertical'
-)
-docstring._snippet_manager['plot.histh'] = _hist_docstring.format(
-    y='x', orientation='horizontal'
 )
 
 
@@ -939,6 +896,121 @@ docstring._snippet_manager['plot.violinploth'] = _violinplot_docstring.format(
 )
 
 
+# 1D histogram docstrings
+_hist_docstring = """
+Plot {orientation} histograms.
+
+Parameters
+----------
+%(plot.args_1d_{y})s
+bins : int or sequence of float, optional
+    The bin count or sequence of bins.
+%(plot.weights)s
+stack, stacked : bool, optional
+    Whether to "stack" histograms from successive columns of {y} data
+    or plot histograms side-by-side in groups. Default is ``False``.
+width, rwidth : float, optional
+    The width(s) of the histogram bars relative to the bin size. Default
+    is ``0.8`` for multiple columns of unstacked data and ``1`` otherwise.
+%(plot.args_1d_shared)s
+
+Other parameters
+----------------
+%(plot.cycle)s
+%(plot.patch)s
+%(axes.edgefix)s
+%(plot.labels_1d)s
+%(plot.guide)s
+**kwargs
+    Passed to `~matplotlib.axes.Axes.hist`.
+
+See also
+--------
+PlotAxes.hist
+PlotAxes.histh
+matplotlib.axes.Axes.hist
+"""
+_weights_docstring = """
+weights : array-like, optional
+    The weights associated with each point. If string this
+    can be retrieved from `data` (see below).
+"""
+docstring._snippet_manager['plot.weights'] = _weights_docstring
+docstring._snippet_manager['plot.hist'] = _hist_docstring.format(
+    y='x', orientation='vertical'
+)
+docstring._snippet_manager['plot.histh'] = _hist_docstring.format(
+    y='x', orientation='horizontal'
+)
+
+
+# 2D histogram docstrings
+_hist2d_docstring = """
+Plot a {descrip}.
+standard 2D histogram.
+
+Parameters
+----------
+%(plot.args_1d_y)s{bins}
+%(plot.weights)s
+%(plot.args_1d_shared)s
+
+Other parameters
+----------------
+%(plot.cmap_norm)s
+%(plot.levels_manual)s
+%(plot.vmin_vmax)s
+%(plot.levels_auto)s
+%(plot.labels_2d)s
+%(plot.guide)s
+**kwargs
+    Passed to `~matplotlib.axes.Axes.{command}`.
+
+See also
+--------
+PlotAxes.hist2d
+PlotAxes.hexbin
+matplotlib.axes.Axes.{command}
+"""
+_bins_docstring = """
+bins : int or 2-tuple of int, or array-like or 2-tuple of array-like, optional
+    The bin count or sequence of bins for each dimension or both dimensions.
+""".rstrip()
+docstring._snippet_manager['plot.hist2d'] = _hist2d_docstring.format(
+    command='hist2d', descrip='standard 2D histogram', bins=_bins_docstring
+)
+docstring._snippet_manager['plot.hexbin'] = _hist2d_docstring.format(
+    command='hexbin', descrip='2D hexagonally binned histogram', bins=''
+)
+
+
+# Pie chart docstring
+_pie_docstring = """
+Plot a pie chart.
+
+Parameters
+----------
+%(plot.args_1d_y)s
+%(plot.args_1d_shared)s
+
+Other parameters
+----------------
+%(plot.cycle)s
+%(plot.labels_1d)s
+labelpad, labeldistance : float, optional
+    The distance at which labels are drawn in radial coordinates.
+lw, linewidth, linewidths : float, optional
+    The edge width for the pie sectors.
+ec, edgecolor, edgecolors : color-spec, optional
+    The edge color for the pie sectors.
+
+See also
+--------
+matplotlib.axes.Axes.pie
+"""
+docstring._snippet_manager['plot.pie'] = _pie_docstring
+
+
 # Contour docstrings
 _contour_docstring = """
 Plot {descrip}.
@@ -957,8 +1029,8 @@ Other parameters
 %(plot.levels_auto)s
 %(plot.labels_2d)s
 %(plot.guide)s
-%(plot.contour_collection)s
-{edgefix}**kwargs
+%(plot.contour_collection)s{edgefix}
+**kwargs
     Passed to `matplotlib.axes.Axes.{command}`.
 
 See also
@@ -979,7 +1051,7 @@ docstring._snippet_manager['plot.tricontour'] = _contour_docstring.format(
     descrip='contour lines on a triangular grid', command='tricontour', edgefix=''
 )
 docstring._snippet_manager['plot.tricontourf'] = _contour_docstring.format(
-    descrip='filled contours on a triangular grid', command='tricontourf', edgefix='%(axes.edgefix)s\n'  # noqa: E501
+    descrip='filled contours on a triangular grid', command='tricontourf', edgefix='\n%(axes.edgefix)s'  # noqa: E501
 )
 
 
@@ -991,8 +1063,7 @@ Parameters
 ----------
 %(plot.args_2d)s
 
-%(plot.args_2d_shared)s
-{aspect}
+%(plot.args_2d_shared)s{aspect}
 
 Other parameters
 ----------------
@@ -1020,7 +1091,7 @@ _heatmap_descrip = """
 grid boxes with formatting suitable for heatmaps. Ensures square grid
 boxes, adds major ticks to the center of each grid box, disables minor
 ticks and gridlines, and sets :rcraw:`cmap.discrete` to ``False`` by default
-"""
+""".strip()
 _heatmap_aspect = """
 aspect : {'equal', 'auto'} or float, optional
     Modify the axes aspect ratio. The aspect ratio is of particular
@@ -1032,7 +1103,7 @@ aspect : {'equal', 'auto'} or float, optional
     * ``'equal'``: A data aspect ratio of 1.
     * ``'auto'``: Allows the data aspect ratio to change depending on
       the layout. In general this results in non-square grid boxes.
-"""
+""".rstrip()
 docstring._snippet_manager['plot.pcolor'] = _pcolor_docstring.format(
     descrip='irregular grid boxes', command='pcolor', aspect=''
 )
@@ -1046,7 +1117,7 @@ docstring._snippet_manager['plot.tripcolor'] = _pcolor_docstring.format(
     descrip='triangular grid boxes', command='tripcolor', aspect=''
 )
 docstring._snippet_manager['plot.heatmap'] = _pcolor_docstring.format(
-    descrip=_heatmap_descrip.strip(), command='pcolormesh', aspect=_heatmap_aspect
+    descrip=_heatmap_descrip, command='pcolormesh', aspect=_heatmap_aspect
 )
 
 
@@ -1211,8 +1282,8 @@ class PlotAxes(base.Axes):
         """
         Call the contour method to add "edges" to filled contours.
         """
-        # NOTE: This is also used to provide an object that can be used by 'clabel'
-        # for auto-labels. Filled contours seem to create weird artifacts.
+        # NOTE: This is used to provide an object that can be used by 'clabel' for
+        # auto-labels. Filled contours create strange artifacts.
         # NOTE: Make the default 'line width' identical to one used for pcolor plots
         # rather than rc['contour.linewidth']. See mpl pcolor() source code
         if not any(key in kwargs for key in ('linewidths', 'linestyles', 'edgecolors')):
@@ -2601,8 +2672,8 @@ class PlotAxes(base.Axes):
     def _apply_edgefix(self, obj, edgefix=None, **kwargs):
         """
         Fix white lines between between filled contours and mesh and fix issues
-        with colormaps that are transparent. Also takes collection-translated
-        keyword args and if it detects any were passed then we skip this step.
+        with colormaps that are transparent. If keyword args passed by user
+        include explicit edge properties then we skip this step.
         """
         # See: https://github.com/jklymak/contourfIssues
         # See: https://stackoverflow.com/q/15003353/4970632
@@ -3239,6 +3310,26 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_orientation='horizontal', **kwargs)
         return self._apply_bar(*args, **kwargs)
 
+    # WARNING: 'labels' and 'colors' no longer passed through `data` (seems like
+    # extremely niche usage... `data` variables should be data-like)
+    @data._preprocess('x', 'explode')
+    @docstring._concatenate_original
+    @docstring._snippet_manager
+    def pie(self, x, explode, *, labelpad=None, labeldistance=None, **kwargs):
+        """
+        %(plot.pie)s
+        """
+        pad = _not_none(labeldistance=labeldistance, labelpad=labelpad, default=1.15)
+        props = _pop_props(kwargs, 'patch')
+        props.setdefault('edgecolor', 'k')  # sensible default
+        _, x, kwargs = self._parse_plot1d(
+            x, autox=False, autoy=False, **kwargs
+        )
+        kwargs = self._parse_cycle(**kwargs)
+        kwargs['labeldistance'] = pad
+        obj = self._plot_native('pie', x, explode, wedgeprops=props, **kwargs)
+        return obj
+
     def _apply_boxplot(
         self, x, y, *,
         mean=None, means=None, vert=True,
@@ -3489,76 +3580,12 @@ class PlotAxes(base.Axes):
         kwargs = _parse_vert(default_orientation='horizontal', **kwargs)
         return self._apply_hist(*args, **kwargs)
 
-    # WARNING: 'labels' and 'colors' no longer passed through `data` (seems like
-    # extremely niche usage... `data` variables should be data-like)
-    @data._preprocess('x', 'explode')
-    @docstring._concatenate_original
-    @docstring._snippet_manager
-    def pie(self, x, explode, *, labelpad=None, labeldistance=None, **kwargs):
-        """
-        Plot a pie chart.
-
-        Parameters
-        ----------
-        %(plot.args_1d_y)s
-        %(plot.args_1d_shared)s
-
-        Other parameters
-        ----------------
-        %(plot.cycle)s
-        %(plot.labels_1d)s
-        labelpad, labeldistance : float, optional
-            The distance at which labels are drawn in radial coordinates.
-        lw, linewidth, linewidths : float, optional
-            The edge width for the pie sectors.
-        ec, edgecolor, edgecolors : color-spec, optional
-            The edge color for the pie sectors.
-
-        See also
-        --------
-        matplotlib.axes.Axes.pie
-        """
-        pad = _not_none(labeldistance=labeldistance, labelpad=labelpad, default=1.15)
-        props = _pop_props(kwargs, 'patch')
-        props.setdefault('edgecolor', 'k')  # sensible default
-        _, x, kwargs = self._parse_plot1d(
-            x, autox=False, autoy=False, **kwargs
-        )
-        kwargs = self._parse_cycle(**kwargs)
-        kwargs['labeldistance'] = pad
-        obj = self._plot_native('pie', x, explode, wedgeprops=props, **kwargs)
-        return obj
-
     @data._preprocess('x', 'y', 'bins', keywords='weights')
     @docstring._concatenate_original
     @docstring._snippet_manager
     def hist2d(self, x, y, bins, **kwargs):
         """
-        Plot a standard 2D histogram.
-
-        Parameters
-        ----------
-        %(plot.args_1d_y)s
-        bins : int or 2-tuple of int, or array-like or 2-tuple of array-like, optional
-            The bin count or sequence of bins for each dimension or both dimensions.
-        %(plot.weights)s
-        %(plot.args_1d_shared)s
-
-        Other parameters
-        ----------------
-        %(plot.cmap_norm)s
-        %(plot.levels_manual)s
-        %(plot.vmin_vmax)s
-        %(plot.levels_auto)s
-        %(plot.labels_2d)s
-        %(plot.guide)s
-        **kwargs
-            Passed to `~matplotlib.axes.Axes.hist2d`.
-
-        See also
-        --------
-        PlotAxes.hist2d
-        matplotlib.axes.Axes.hexbin
+        %(plot.hist2d)s
         """
         # Rely on pcolormesh() override for this.
         if bins is not None:
@@ -3571,28 +3598,7 @@ class PlotAxes(base.Axes):
     @docstring._snippet_manager
     def hexbin(self, x, y, weights, **kwargs):
         """
-        Plot a 2D hexagonally binned histogram.
-
-        Parameters
-        ----------
-        %(plot.args_1d_y)s
-        %(plot.weights)s
-        %(plot.args_1d_shared)s
-
-        Other parameters
-        ----------------
-        %(plot.cmap_norm)s
-        %(plot.levels_manual)s
-        %(plot.vmin_vmax)s
-        %(plot.labels_2d)s
-        %(plot.guide)s
-        **kwargs
-            Passed to `~matplotlib.axes.Axes.hexbin`.
-
-        See also
-        --------
-        PlotAxes.hist2d
-        matplotlib.axes.Axes.hexbin
+        %(plot.hexbin)s
         """
         # WARNING: Cannot use automatic level generation here until counts are
         # estimated. Inside _parse_levels if no manual levels were provided then
