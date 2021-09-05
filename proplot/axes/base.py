@@ -29,6 +29,7 @@ from ..internals import ic  # noqa: F401
 from ..internals import (
     _fill_guide_kw,
     _guide_kw_from_obj,
+    _iter_children,
     _keyword_to_positional,
     _not_none,
     _pop_kwargs,
@@ -543,17 +544,6 @@ handler_map : dict-like, optional
 """
 docstring._snippet_manager['axes.legend_args'] = _legend_args_docstring
 docstring._snippet_manager['axes.legend_kwargs'] = _legend_kwargs_docstring
-
-
-def _iter_children(children):
-    """
-    Iterate through `_children` of `HPacker`, `VPacker`, and `DrawingArea`.
-    """
-    for obj in children:
-        if hasattr(obj, '_children'):
-            yield from _iter_children(obj._children)
-        else:
-            yield obj
 
 
 class Axes(maxes.Axes):
@@ -2749,11 +2739,8 @@ class Axes(maxes.Axes):
         # HandlerBase.legend_artist() called in Legend._init_legend_box() only
         # returns the first artist. Instead we try to iterate through offset boxes.
         for obj in objs:
-            try:
-                children = obj._legend_handle_box._children
-            except AttributeError:  # older versions maybe?
-                children = []
-            for obj in _iter_children(children):
+            box = getattr(obj, '_legend_handle_box', None)
+            for obj in _iter_children(box):
                 if isinstance(obj, mtext.Text):
                     kw = kw_text
                 else:
