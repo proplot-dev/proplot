@@ -533,12 +533,13 @@ class GeoAxes(plot.PlotAxes):
         # drawing gridlines before basemap map boundary will call set_axes_limits()
         # which initializes a boundary hidden from external access. So we must call
         # it here. Must do this between matplotlib.Axes.__init__() and Axes.format().
-        if (
-            self.name == 'proplot_basemap'
-            and self.projection.projection in self._proj_non_rectangular
-            and self._map_boundary is None
-        ):
-            self._map_boundary = self.projection.drawmapboundary(ax=self)
+        if self.name == 'proplot_basemap' and self._map_boundary is None:
+            if self.projection.projection in self._proj_non_rectangular:
+                patch = self.projection.drawmapboundary(ax=self)
+                self._map_boundary = patch
+            else:
+                self.projection.set_axes_limits(self)  # initialize aspect ratio
+                self._map_boundary = object()  # sentinel
 
         # Initiate context block
         rc_kw, rc_mode, kwargs = _parse_format(**kwargs)

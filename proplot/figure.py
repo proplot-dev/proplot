@@ -746,7 +746,7 @@ class Figure(mfigure.Figure):
 
     def _parse_proj(
         self, proj=None, projection=None, proj_kw=None, projection_kw=None,
-        basemap=None, use_aspect=False, **kwargs
+        basemap=None, **kwargs
     ):
         """
         Translate the user-input projection into keyword arguments that can be passed
@@ -767,14 +767,8 @@ class Figure(mfigure.Figure):
             m = constructor.Proj(
                 proj, basemap=basemap, include_axes_projections=True, **proj_kw
             )
-            if m._proj_package == 'basemap':  # attribute added by Proj()
-                aspect = (m.urcrnrx - m.llcrnrx) / (m.urcrnry - m.llcrnry)
-            else:
-                aspect, = np.diff(m.x_limits) / np.diff(m.y_limits)
             name = 'proplot_' + m._proj_package
             kwargs['map_projection'] = m
-            if use_aspect:
-                self._refaspect_default = aspect
 
         kwargs['projection'] = name
         return kwargs
@@ -1143,8 +1137,6 @@ class Figure(mfigure.Figure):
         %(figure.subplot)s
         """
         # Parse arguments
-        # Also set the 'refaspect_default' is this is the reference axes
-        kwargs['use_aspect'] = number == self._refnum
         kwargs = self._parse_proj(**kwargs)
         args = args or (1, 1, 1)
         gs = self.gridspec
