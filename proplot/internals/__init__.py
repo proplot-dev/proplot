@@ -15,18 +15,8 @@ try:  # print debugging
 except ImportError:  # graceful fallback if IceCream isn't installed
     ic = lambda *args: print(*args)  # noqa: E731
 
-# Internal params to silently ignore instead of
-# warning about unused keyword arguments.
-INTERNAL_PARAMS = {
-    'to_centers',
-    'line_plot',
-    'contour_plot',
-    'default_cmap',
-    'default_discrete',
-    'skip_autolev',
-}
 
-# Alias dictionaries. We only work with a small subset of artists so we create our
+# Keyword aliases. We only work with a small subset of artists so we create our
 # own system rather than using matplotlib's normalize_kwargs and _alias_maps.
 # WARNING: Add pseudo-props 'edgewidth' and 'fillcolor' for patch edges and faces
 # WARNING: Critical that alias does not appear in key dict or else _translate_kwargs
@@ -95,22 +85,6 @@ ALIAS_DICTS = {
 }
 
 
-def _pop_params(kwargs, *funcs, ignore_internal=False):
-    """
-    Pop parameters of the input functions or methods.
-    """
-    output = {}
-    for func in funcs:
-        sig = inspect.signature(func)
-        for key in sig.parameters:
-            value = kwargs.pop(key, None)
-            if ignore_internal and key in INTERNAL_PARAMS:
-                continue
-            if value is not None:
-                output[key] = value
-    return output
-
-
 def _not_none(*args, default=None, **kwargs):
     """
     Return the first non-``None`` value. This is used with keyword arg aliases and
@@ -158,6 +132,30 @@ def _keyword_to_positional(options, *args, allow_extra=False, **kwargs):
             opts[key] = kwargs.pop(key, None)
         args[idx] = _not_none(**opts)  # may reassign None
     return args, kwargs
+
+
+def _pop_params(kwargs, *funcs, ignore_internal=False):
+    """
+    Pop parameters of the input functions or methods.
+    """
+    internal_params = {
+        'to_centers',
+        'line_plot',
+        'contour_plot',
+        'default_cmap',
+        'default_discrete',
+        'skip_autolev',
+    }
+    output = {}
+    for func in funcs:
+        sig = inspect.signature(func)
+        for key in sig.parameters:
+            value = kwargs.pop(key, None)
+            if ignore_internal and key in internal_params:
+                continue
+            if value is not None:
+                output[key] = value
+    return output
 
 
 def _translate_kwargs(input, output, *keys, **aliases):
@@ -230,7 +228,30 @@ def _process_props(src, *categories, **kwargs):
     return _translate_props(src, src, *categories, **kwargs)
 
 
-# Legend and colorbar
+def _iter_children(arg):
+    """
+    Iterate through `_children` of `HPacker`, `VPacker`, and `DrawingArea`.
+    This is used to update legend handle properties.
+    """
+    if hasattr(arg, '_children'):
+        for child in arg._children:
+            yield from _iter_children(child)
+    elif arg is not None:
+        yield arg
+
+
+def _iter_iterables(args):
+    """
+    Iterate over arbitrary nested lists of iterables. Used for deciphering legend input.
+    Things can get complicated with e.g. bar colunns plus negative-positive colors.
+    """
+    if np.iterable(args):
+        for arg in args:
+            yield from _iter_iterables(arg)
+    else:
+        yield args
+
+
 def _fill_guide_kw(kwargs, **pairs):
     """
     Add the keyword arguments to the dictionary if not already present.
