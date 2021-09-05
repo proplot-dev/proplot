@@ -30,6 +30,7 @@ from ..internals import (
     _fill_guide_kw,
     _guide_kw_from_obj,
     _iter_children,
+    _iter_iterables,
     _keyword_to_positional,
     _not_none,
     _pop_kwargs,
@@ -2380,74 +2381,76 @@ class Axes(maxes.Axes):
                         handles.append(handle)
         return handles
 
-    @staticmethod
-    def _parse_handle_groups(handles, labels=None):
+    def _parse_handle_groups(self, handles, labels=None):
         """
         Parse possibly tuple-grouped input handles.
         """
-        # Helper functions. Filter objects in a tuple group and retrieve
-        # labels from a tuple group. Possibly return none of either.
-        def _group_labs(*objs):  # noqa: E301
+        # Helper function. Retrieve labels from a tuple group or from objects
+        # in a container. Multiple labels lead to multiple legend entries.
+        def _legend_label(*objs):  # noqa: E301
             labs = []
             for obj in objs:
-                lab = obj.get_label()
-                if lab is not None and str(lab)[:1] != '_':
-                    labs.append(lab)
-            return labs
-        def _group_objs(*objs):  # noqa: E306
-            out = []
-            ignore = (mcontainer.ErrorbarContainer,)
+                if hasattr(obj, 'get_label'):  # e.g. silent list
+                    lab = obj.get_label()
+                    if lab is not None and str(lab)[:1] != '_':
+                        labs.append(lab)
+            return tuple(labs)
+
+        # Helper function. Translate handles in the input tuple group. Extracts
+        # legend handles from contour sets and extracts labeled elements from
+        # matplotlib containers (important for histogram plots).
+        ignore = (mcontainer.ErrorbarContainer,)
+        containers = (cbook.silent_list, mcontainer.Container)
+        def _legend_tuple(*objs):  # noqa: E306
+            handles = []
             for obj in objs:
-                if isinstance(obj, ignore) and not _group_labs(obj):
+                if isinstance(obj, ignore) and not _legend_label(obj):
                     continue
-                if isinstance(obj, cbook.silent_list) and obj:
-                    obj = obj[0]
                 if hasattr(obj, 'update_scalarmappable'):  # for e.g. pcolor
                     obj.update_scalarmappable()
-                if isinstance(obj, mcontour.ContourSet):
-                    label = getattr(obj, '_legend_label', '')  # custom label
-                    els, _ = obj.legend_elements()
-                    if els:  # non-empty
-                        obj = els[len(els) // 2]  # pick the central element
-                        obj.set_label(label)  # apply the label to the element
-                if hasattr(obj, 'get_label') or type(obj) is tuple:
-                    out.append(obj)
-            return tuple(out)
+                if isinstance(obj, mcontour.ContourSet):  # extract single element
+                    hs, _ = obj.legend_elements()
+                    label = getattr(obj, '_legend_label', '_no_label')
+                    if hs:  # non-empty
+                        obj = hs[len(hs) // 2]
+                        obj.set_label(label)
+                if isinstance(obj, containers):  # extract labeled elements
+                    hs = tuple(filter(_legend_label, (obj, *_iter_iterables(obj))))
+                    if hs:
+                        handles.extend(hs)
+                    elif obj:  # fallback to first element
+                        handles.append(obj[0])
+                    else:
+                        handles.append(obj)
+                elif hasattr(obj, 'get_label'):
+                    handles.append(obj)
+            return tuple(handles)
 
         # Sanitize labels. Ignore e.g. extra hist() or hist2d() return values,
         # auto-detect labels in tuple group, auto-expand tuples with diff labels
-        # NOTE: Allow handles and labels of different length like native
-        # matplotlib. Just truncate extra values with zip().
+        # NOTE: Allow handles and labels of different length like
+        # native matplotlib. Just truncate extra values with zip().
         if labels is None:
             labels = [None] * len(handles)
         ihandles, ilabels = [], []
-        for objs, label in zip(handles, labels):
+        for hs, label in zip(handles, labels):
             # Filter objects
-            # WARNING: Matplotlib Containers are tuples and silent_lists
-            # are lists so we must test identities here.
-            if type(objs) is list and len(objs) == 1:
-                objs = objs[0]
-            if type(objs) is not tuple:
-                objs = (objs,)
-            objs = _group_objs(*objs)
-            labs = set(_group_labs(*objs))
-            if not objs:
+            if type(hs) is not tuple:  # ignore Containers (tuple subclasses)
+                hs = (hs,)
+            hs = _legend_tuple(*hs)
+            labs = _legend_label(*hs)
+            if not hs:
                 continue
             # Unfurl tuple of handles
-            # WARNING: May trigger warning if some but not all objects in
-            # the tuple of valid differing labels. But pretty obscure edge case.
             if label is None and len(labs) > 1:
-                ihandles.extend(objs)
-                ilabels.extend(obj.get_label() for obj in objs)
+                hs = tuple(filter(_legend_label, hs))
+                ihandles.extend(hs)
+                ilabels.extend(_.get_label() for _ in hs)
             # Append this handle with some name
-            # WARNING: Filling tuple with object legend() has no handler for will
-            # trigger error rather than warning (pcolormesh). So unfurl if possible
             else:
-                if len(objs) == 1:  # unfurl
-                    objs = objs[0]
-                if label is None:
-                    label = labs.pop() if labs else '_no_label'
-                ihandles.append(objs)
+                hs = hs[0] if len(hs) == 1 else hs  # unfurl for better error messages
+                label = label if label is not None else labs[0] if labs else '_no_label'
+                ihandles.append(hs)
                 ilabels.append(label)
         return ihandles, ilabels
 
@@ -2458,25 +2461,17 @@ class Axes(maxes.Axes):
         """
         Parse input handles and labels.
         """
-        # Helper function
+        # Handle lists of lists
         # TODO: Often desirable to label a "mappable" with one data value. Maybe add a
         # legend option for the *number of samples* or *sample points* when drawing
         # legends for mappables. Look into "legend handlers", might just want to add
         # handlers by passing handler_map to legend() and get_legend_handles_labels().
-        def _to_list(obj):  # noqa: E301
-            if obj is None:
-                pass
-            elif isinstance(obj, np.ndarray):
-                obj = obj.tolist()
-            elif not isinstance(obj, list):
-                obj = [obj]
-            return obj
-
-        # Handle lists of lists
-        handles, labels = _to_list(handles), _to_list(labels)
+        is_list = lambda obj: np.iterable(obj) and not isinstance(obj, (str, tuple))  # noqa: E501, E731
+        to_list = lambda obj: obj if obj is None or is_list(obj) else [obj]  # noqa: E501, E731
+        handles, labels = to_list(handles), to_list(labels)
         if handles and not labels and all(isinstance(h, str) for h in handles):
             handles, labels = labels, handles
-        multi = any(type(h) is list for h in (handles or ()))
+        multi = any(is_list(h) and len(h) > 1 for h in (handles or ()))
         if multi and order == 'F':
             warnings._warn_proplot(
                 'Column-major ordering of legend handles is not supported '
@@ -2506,7 +2501,7 @@ class Axes(maxes.Axes):
         elif labels is None:
             labels = [labels] * len(handles)
         for ihandles, ilabels in zip(handles, labels):
-            ihandles, ilabels = _to_list(ihandles), _to_list(ilabels)
+            ihandles, ilabels = to_list(ihandles), to_list(ilabels)
             if ihandles is None:
                 ihandles = self._get_legend_handles(handler_map)
             ihandles, ilabels = self._parse_handle_groups(ihandles, ilabels)
