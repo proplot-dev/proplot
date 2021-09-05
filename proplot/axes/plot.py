@@ -2120,14 +2120,16 @@ class PlotAxes(base.Axes):
             z = data._to_numpy_array(z)
             if inbounds and x is not None and y is not None:  # ignore if None coords
                 z = self._inbounds_vlim(x, y, z, to_centers=to_centers)
-            vmin, vmax = data._safe_range(
-                z, pmin, pmax, automin=automin, automax=automax
-            )
-            if vmin is not None:
-                vmins.append(vmin)
-            if vmax is not None:
-                vmaxs.append(vmax)
-        return min(vmins, default=0), max(vmaxs, default=1), kwargs
+            imin, imax = data._safe_range(z, pmin, pmax)
+            if automin and imin is not None:
+                vmins.append(imin)
+            if automax and imax is not None:
+                vmaxs.append(imax)
+        if automin:
+            vmin = min(vmins, default=0)
+        if automax:
+            vmax = max(vmaxs, default=1)
+        return vmin, vmax, kwargs
 
     def _parse_autolev(
         self, *args, levels=None,

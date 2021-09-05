@@ -420,7 +420,7 @@ def _safe_mask(mask, *args):
     return args_masked[0] if len(args_masked) == 1 else args_masked
 
 
-def _safe_range(data, lo=0, hi=100, automin=True, automax=True):
+def _safe_range(data, lo=0, hi=100):
     """
     Safely return the minimum and maximum (default) or percentile range accounting
     for masked values. Use min and max functions when possible for speed. Return
@@ -433,13 +433,13 @@ def _safe_range(data, lo=0, hi=100, automin=True, automax=True):
     data = ma.masked_invalid(data, copy=False)
     data = data.compressed()  # remove all invalid values
     min_ = max_ = None
-    if data.size and automin:
+    if data.size:
         min_ = float(np.min(data) if lo <= 0 else np.percentile(data, lo))
         if np.isfinite(min_):
             min_ *= units
         else:
             min_ = None
-    if data.size and automax:
+    if data.size:
         max_ = float(np.max(data) if hi >= 100 else np.percentile(data, hi))
         if np.isfinite(max_):
             max_ *= units
