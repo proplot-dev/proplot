@@ -18,7 +18,7 @@ from numbers import Number
 import cycler
 import matplotlib.colors as mcolors
 import matplotlib.dates as mdates
-import matplotlib.projections.polar as mpolar
+import matplotlib.projections as mproj
 import matplotlib.scale as mscale
 import matplotlib.ticker as mticker
 import numpy as np
@@ -108,8 +108,8 @@ if dependencies._version_cartopy >= 0.18:
     LOCATORS['dms'] = partial(pticker.DegreeLocator, dms=True)
     LOCATORS['dmslon'] = partial(pticker.LongitudeLocator, dms=True)
     LOCATORS['dmslat'] = partial(pticker.LatitudeLocator, dms=True)
-if hasattr(mpolar, 'ThetaLocator'):
-    LOCATORS['theta'] = mpolar.ThetaLocator
+if hasattr(mproj.polar, 'ThetaLocator'):
+    LOCATORS['theta'] = mproj.polar.ThetaLocator
 
 # Mapping of strings to `~matplotlib.ticker.Formatter` classes. See
 # `Formatter` for a table.
@@ -151,8 +151,8 @@ if dependencies._version_cartopy >= 0.18:
     FORMATTERS['dms'] = partial(pticker.DegreeFormatter, dms=True)
     FORMATTERS['dmslon'] = partial(pticker.LongitudeFormatter, dms=True)
     FORMATTERS['dmslat'] = partial(pticker.LatitudeFormatter, dms=True)
-if hasattr(mpolar, 'ThetaFormatter'):
-    FORMATTERS['theta'] = mpolar.ThetaFormatter
+if hasattr(mproj.polar, 'ThetaFormatter'):
+    FORMATTERS['theta'] = mproj.polar.ThetaFormatter
 if hasattr(mdates, 'ConciseDateFormatter'):
     FORMATTERS['concise'] = mdates.ConciseDateFormatter
 
@@ -1433,7 +1433,7 @@ def Proj(name, basemap=None, **kwargs):
     use_basemap = _not_none(basemap, rc['basemap'])
     is_crs = CRS is not object and isinstance(name, CRS)
     is_basemap = Basemap is not object and isinstance(name, Basemap)
-    include_axes_projections = kwargs.pop('include_axes_projections', None)
+    include_axes = kwargs.pop('include_axes', None)
     if is_crs or is_basemap:
         proj = name
         proj._proj_package = 'cartopy' if is_crs else 'basemap'
@@ -1520,9 +1520,11 @@ def Proj(name, basemap=None, **kwargs):
     # Unknown
     else:
         options = tuple(PROJS)
-        if include_axes_projections:
-            from .figure import AXES_PROJS  # avoid circular import
-            options += tuple(AXES_PROJS)
+        if include_axes:
+            options += tuple(
+                proj.split('proplot_', 1)[1] for proj in mproj.get_projection_names()
+                if 'proplot_' in proj
+            )
         raise ValueError(
             f'Unknown projection {name!r}. Options are: '
             + ', '.join(map(repr, options))

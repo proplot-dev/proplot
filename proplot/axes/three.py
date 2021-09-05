@@ -14,8 +14,8 @@ class ThreeAxes(shared._SharedAxes, plot.PlotAxes, Axes3D):
     """
     Simple mix-in of `proplot.axes.PlotAxes` with `~mpl_toolkits.mplot3d.axes3d.Axes3D`.
     """
-    # The registered projection name.
-    name = 'proplot_three'
+    _name = 'three'
+    _name_aliases = ('3d',)
 
     def __init__(self, *args, **kwargs):
         import mpl_toolkits.mplot3d  # noqa: F401 verify package is available

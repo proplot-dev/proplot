@@ -217,13 +217,13 @@ def _preprocess(*keys, keywords=None, allow_extra=True):
             else:
                 # Impose default coordinate system
                 if (
-                    self.name == 'proplot_basemap'
+                    self._name == 'basemap'
                     and name in BASEMAP_FUNCS
                     and kwargs.get('latlon', None) is None
                 ):
                     kwargs['latlon'] = True
                 if (
-                    self.name == 'proplot_cartopy'
+                    self._name == 'cartopy'
                     and name in CARTOPY_FUNCS
                     and kwargs.get('transform', None) is None
                 ):

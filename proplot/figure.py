@@ -9,6 +9,7 @@ from numbers import Integral
 import matplotlib.axes as maxes
 import matplotlib.figure as mfigure
 import matplotlib.gridspec as mgridspec
+import matplotlib.projections as mproj
 import matplotlib.text as mtext
 import matplotlib.transforms as mtransforms
 import numpy as np
@@ -34,15 +35,6 @@ __all__ = [
 ]
 
 
-# Translation of input projections to native axes projections
-# NOTE: We work outside of matplotlib's built-in registration system to avoid conflicts
-AXES_PROJS = {
-    'cartesian': 'proplot_cartesian',
-    'cart': 'proplot_cartesian',
-    'polar': 'proplot_polar',
-    'three': 'proplot_three',
-    '3d': 'proplot_three',
-}
 # Preset figure widths or sizes based on academic journal recommendations
 # NOTE: Please feel free to add to this!
 JOURNAL_SIZES = {
@@ -749,28 +741,29 @@ class Figure(mfigure.Figure):
         basemap=None, **kwargs
     ):
         """
-        Translate the user-input projection into keyword arguments that can be passed
-        to `~proplot.figure.Figure.add_subplot`. Also return a default aspect ratio.
+        Translate the user-input projection into a registered matplotlib
+        axes class. Input projection can be a string, `matplotlib.axes.Axes`,
+        `cartopy.crs.Projection`, or `mpl_toolkits.basemap.Basemap`.
         """
         # Parse arguments
         proj = _not_none(proj=proj, projection=projection, default='cartesian')
         proj_kw = _not_none(proj_kw=proj_kw, projection_kw=projection_kw, default={})
         if isinstance(proj, str):
             proj = proj.lower()
-            proj = AXES_PROJS.get(proj, proj)
+        elif isinstance(self, paxes.Axes):
+            proj = self._name
+        elif isinstance(self, maxes.Axes):
+            raise ValueError('Matplotlib axes cannot be added to ProPlot figures.')
 
-        # Redirect to a basemap or cartopy projection
-        # NOTE: The default aspect should already be '1'.
-        if proj in AXES_PROJS.values():
-            name = proj
-        else:
-            m = constructor.Proj(
-                proj, basemap=basemap, include_axes_projections=True, **proj_kw
-            )
-            name = 'proplot_' + m._proj_package
+        # Redirect to basemap or cartopy projection
+        try:
+            mproj.get_projection_class('proplot_' + proj)
+        except (KeyError, ValueError):
+            m = constructor.Proj(proj, basemap=basemap, include_axes=True, **proj_kw)
+            proj = m._proj_package
             kwargs['map_projection'] = m
 
-        kwargs['projection'] = name
+        kwargs['projection'] = 'proplot_' + proj
         return kwargs
 
     def _get_align_axes(self, side):

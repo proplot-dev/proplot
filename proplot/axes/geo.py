@@ -533,7 +533,7 @@ class GeoAxes(plot.PlotAxes):
         # drawing gridlines before basemap map boundary will call set_axes_limits()
         # which initializes a boundary hidden from external access. So we must call
         # it here. Must do this between matplotlib.Axes.__init__() and Axes.format().
-        if self.name == 'proplot_basemap' and self._map_boundary is None:
+        if self._name == 'basemap' and self._map_boundary is None:
             if self.projection.projection in self._proj_non_rectangular:
                 patch = self.projection.drawmapboundary(ax=self)
                 self._map_boundary = patch
@@ -653,8 +653,8 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
     """
     Axes subclass for plotting cartopy projections.
     """
-    # The registered projection name.
-    name = 'proplot_cartopy'
+    _name = 'cartopy'
+    _name_aliases = ('geo', 'geographic')  # default 'geographic' axes
     _proj_class = Projection
     _proj_north = (
         pcrs.NorthPolarStereo,
@@ -684,7 +684,9 @@ class _CartopyAxes(GeoAxes, _GeoAxes):
         # NOTE: Initial extent is configured in _update_extent
         import cartopy  # noqa: F401 verify package is available
         if not isinstance(map_projection, ccrs.Projection):
-            raise ValueError('CartopyAxes requires map_projection=cartopy.crs.Projection.')  # noqa: E501
+            raise ValueError(
+                'Cartopy axes require map_projection=cartopy.crs.Projection.'
+            )
         latmax = 90
         boundinglat = None
         polar = isinstance(map_projection, self._proj_polar)
@@ -1121,8 +1123,7 @@ class _BasemapAxes(GeoAxes):
     """
     Axes subclass for plotting basemap projections.
     """
-    # The registered projection name.
-    name = 'proplot_basemap'
+    _name = 'basemap'
     _proj_class = Basemap
     _proj_north = ('npaeqd', 'nplaea', 'npstere')
     _proj_south = ('spaeqd', 'splaea', 'spstere')
@@ -1149,7 +1150,9 @@ class _BasemapAxes(GeoAxes):
         # and python immmediately crashes. Do not try again.
         import mpl_toolkits.basemap  # noqa: F401 verify package is available
         if not isinstance(map_projection, mbasemap.Basemap):
-            raise ValueError('BasemapAxes requires map_projection=mpl_toolkits.basemap.Basemap.')  # noqa: E501
+            raise ValueError(
+                'Basemap axes require map_projection=mpl_toolkits.basemap.Basemap.'
+            )
         map_projection = self._map_projection = copy.copy(map_projection)
         lon0 = self._get_lon0()
         if map_projection.projection in self._proj_polar:

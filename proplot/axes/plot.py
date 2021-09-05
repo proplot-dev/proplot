@@ -1200,7 +1200,7 @@ class PlotAxes(base.Axes):
         # Now prevent internal calls from running through overrides using preprocessor
         kwargs.pop('distribution', None)  # remove stat distributions
         with context._state_context(self, _internal_call=True):
-            if getattr(self, 'name', None) == 'proplot_basemap':
+            if self._name == 'basemap':
                 obj = getattr(self.projection, name)(*args, ax=self, **kwargs)
             else:
                 obj = getattr(super(), name)(*args, **kwargs)
@@ -1605,7 +1605,7 @@ class PlotAxes(base.Axes):
         # keep this in a try-except clause for now. However *internally* we should
         # not reach this block unless everything is an array so raise that error.
         xmask = ymask = None
-        if self.name != 'proplot_cartesian':
+        if self._name != 'cartesian':
             return z  # TODO: support geographic projections when input is PlateCarree()
         if not all(getattr(a, 'ndim', None) in (1, 2) for a in (x, y, z)):
             raise ValueError('Invalid input coordinates. Must be 1D or 2D arrays.')
@@ -1629,7 +1629,7 @@ class PlotAxes(base.Axes):
             return z
         except Exception as err:
             warnings._warn_proplot(
-                'Failed to restrict automatic colormap normalization algorithm '
+                'Failed to restrict automatic colormap normalization '
                 f'to in-bounds data only. Error message: {err}'
             )
             return z
@@ -1643,11 +1643,13 @@ class PlotAxes(base.Axes):
         # WARNING: This feature is still experimental. But seems obvious. Matplotlib
         # updates data limits in ad hoc fashion differently for each plotting command
         # but since proplot standardizes inputs we can easily use them for dataLim.
-        kwargs, vert = _get_vert(**kwargs)
-        if extents is None or self.name != 'proplot_cartesian':
+        if extents is None:
+            return
+        if self._name != 'cartesian':
             return
         if not x.size or not y.size:
             return
+        kwargs, vert = _get_vert(**kwargs)
         if not vert:
             x, y = y, x
         trans = self.dataLim
@@ -1767,8 +1769,8 @@ class PlotAxes(base.Axes):
                 _guide_kw_to_arg('colorbar', kwargs, label=title)
 
         # Apply the basic x and y settings
-        autox = autox and self.name == 'proplot_cartesian'
-        autoy = autoy and self.name == 'proplot_cartesian'
+        autox = autox and self._name == 'cartesian'
+        autoy = autoy and self._name == 'cartesian'
         sx, sy = 'xy' if vert else 'yx'
         kw_format = {}
         if autox and autoformat:  # 'x' axis
@@ -1828,9 +1830,9 @@ class PlotAxes(base.Axes):
         x, *ys, kwargs = self._parse_format1d(x, *ys, zerox=zerox, **kwargs)
 
         # Geographic corrections
-        if self.name == 'proplot_cartopy' and isinstance(kwargs.get('transform'), PlateCarree):  # noqa: E501
+        if self._name == 'cartopy' and isinstance(kwargs.get('transform'), PlateCarree):  # noqa: E501
             x, *ys = data._geo_cartopy_1d(x, *ys)
-        elif self.name == 'proplot_basemap' and kwargs.get('latlon', None):
+        elif self._name == 'basemap' and kwargs.get('latlon', None):
             xmin, xmax = self._lonaxis.get_view_interval()
             x, *ys = data._geo_basemap_1d(x, *ys, xmin=xmin, xmax=xmax)
 
@@ -1853,7 +1855,7 @@ class PlotAxes(base.Axes):
                 y = data._meta_labels(z, axis=0)
 
         # Apply labels and XY axis settings
-        if self.name == 'proplot_cartesian':
+        if self._name == 'cartesian':
             # Apply labels
             # NOTE: Do not overwrite existing labels!
             kw_format = {}
@@ -1927,9 +1929,9 @@ class PlotAxes(base.Axes):
         # Geographic corrections
         if allow1d:
             pass
-        elif self.name == 'proplot_cartopy' and isinstance(kwargs.get('transform'), PlateCarree):  # noqa: E501
+        elif self._name == 'cartopy' and isinstance(kwargs.get('transform'), PlateCarree):  # noqa: E501
             x, y, *zs = data._geo_cartopy_2d(x, y, *zs, globe=globe)
-        elif self.name == 'proplot_basemap' and kwargs.get('latlon', None):
+        elif self._name == 'basemap' and kwargs.get('latlon', None):
             xmin, xmax = self._lonaxis.get_view_interval()
             x, y, *zs = data._geo_basemap_2d(x, y, *zs, xmin=xmin, xmax=xmax, globe=globe)  # noqa: E501
             x, y = np.meshgrid(x, y)  # WARNING: required always
@@ -3707,12 +3709,7 @@ class PlotAxes(base.Axes):
         """
         obj = self.pcolormesh(*args, default_discrete=False, **kwargs)
         aspect = _not_none(aspect, rc['image.aspect'])
-        if self.name != 'proplot_cartesian':
-            warnings._warn_proplot(
-                'The heatmap() command is meant for CartesianAxes. '
-                'Please use pcolor() or pcolormesh() instead.'
-            )
-        else:
+        if self._name == 'cartesian':
             coords = getattr(obj, '_coordinates', None)
             xlocator = ylocator = None
             if coords is not None:
@@ -3729,6 +3726,11 @@ class PlotAxes(base.Axes):
             if self.yaxis.isDefault_minloc:
                 kw['ytickminor'] = False
             self.format(**kw)
+        else:
+            warnings._warn_proplot(
+                'The heatmap() command is meant for CartesianAxes. '
+                'Please use pcolor() or pcolormesh() instead.'
+            )
         return obj
 
     @data._preprocess('x', 'y', 'u', 'v', ('c', 'color', 'colors'))

@@ -561,6 +561,9 @@ class Axes(maxes.Axes):
     The lowest-level `~matplotlib.axes.Axes` subclass used by proplot.
     Implements basic universal features.
     """
+    _name = None  # derived must override
+    _name_aliases = ()
+
     def __repr__(self):  # override matplotlib
         # Show the position in the geometry excluding panels. Panels are
         # indicated by showing their parent geometry plus a 'side' argument.
@@ -577,11 +580,9 @@ class Axes(maxes.Axes):
         if self._panel_side:
             name = name.replace('Subplot', 'Panel')  # e.g. CartesianAxesPanel
             params['side'] = self._panel_side
-        for package in ('cartopy', 'basemap'):
-            head = '_' + package.title()
-            if head in name:  # e.g. _CartopyAxesSubplot to GeoAxesSubplot
-                name = name.replace(head, 'Geo')
-                params['backend'] = package
+        if self._name in ('cartopy', 'basemap'):
+            name = name.replace('_' + self._name.title(), 'Geo')
+            params['backend'] = self._name
         params = ', '.join(f'{key}={value!r}' for key, value in params.items())
         return f'{name}({params})'
 
@@ -1474,23 +1475,25 @@ class Axes(maxes.Axes):
         label = kwargs.pop('label', 'inset_axes')
 
         # Get projection, inherit from current axes by default
+        # NOTE: The _parse_proj method also accepts axes classes.
         proj = _not_none(proj=proj, projection=projection)
         if proj is None:
-            proj = self.name  # will have 'proplot_' prefix
-            if proj in ('proplot_cartopy', 'proplot_basemap'):
+            if self._name in ('cartopy', 'basemap'):
                 proj = copy.copy(self.projection)
+            else:
+                proj = self._name
         kwargs = self.figure._parse_proj(proj, **kwargs)
         cls = mprojections.get_projection_class(kwargs.pop('projection'))
 
         # Create axes and apply locator. The locator lets the axes adjust
-        # automatically if we used data coords. Gets called by ax.apply_aspect()
+        # automatically if we used data coords. Called by ax.apply_aspect()
         ax = cls(self.figure, bb.bounds, zorder=zorder, label=label, **kwargs)
         ax.set_axes_locator(locator)
         ax._inset_parent = self
         self.add_child_axes(ax)
 
-        # Add zoom indicator (NOTE: requires version >=3.0)
-        zoom = _not_none(zoom, self.name == ax.name)  # only zoom when same projection
+        # Add zoom indicator (NOTE: requires matplotlib >= 3.0)
+        zoom = _not_none(zoom, self._name == 'cartesian' and ax._name == 'cartesian')
         ax._inset_zoom = zoom
         if zoom:
             zoom_kw = zoom_kw or {}
@@ -2920,7 +2923,7 @@ class Axes(maxes.Axes):
         # Translate positional args
         # Audo-redirect to text2D for 3D axes if not enough arguments passed
         # NOTE: The transform must be passed positionally for 3D axes with 2D coords
-        keys = tuple('xyz' if self.name == 'proplot_three' else 'xy')
+        keys = tuple('xyz' if self._name == 'three' else 'xy')
         keys += (('s', 'text'),)  # interpret both 's' and 'text'
         args, kwargs = _keyword_to_positional(keys, *args, **kwargs)
         if len(args) == len(keys) + 1:
@@ -2929,13 +2932,13 @@ class Axes(maxes.Axes):
         elif len(args) == len(keys):
             add_text = super().text
             transform = kwargs.pop('transform', None)
-        elif len(args) == len(keys) - 1 and self.name == 'proplot_three':
+        elif len(args) == len(keys) - 1 and self._name == 'three':
             add_text = self.text2D
             transform = kwargs.pop('transform', None)
         else:
             raise TypeError(
-                f'Expected {len(keys) - 1} to {len(keys)} positional '
-                f'arguments but got {len(args)}.'
+                f'Expected {len(keys) - 1} to {len(keys)} '
+                f'positional arguments but got {len(args)}.'
             )
 
         # Translate keyword args

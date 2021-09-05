@@ -109,8 +109,8 @@ class CartesianAxes(shared._SharedAxes, plot.PlotAxes):
     Adds the `~CartesianAxes.format` method and overrides several existing
     methods.
     """
-    # The registered projection name.
-    name = 'proplot_cartesian'
+    _name = 'cartesian'
+    _name_aliases = ('cart', 'rect', 'rectilinar')  # include matplotlib name
 
     def __init__(self, *args, **kwargs):
         """
