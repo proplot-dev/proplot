@@ -2500,7 +2500,8 @@ class PlotAxes(base.Axes):
         if cmap is not None and colors is not None:
             warnings._warn_proplot(
                 f'You specifed both cmap={cmap!r} and the qualitative-colormap '
-                f'colors={colors!r}. Ignoring the latter.'
+                f"colors={colors!r}. Ignoring 'colors'. If you meant to specify the "
+                f'edge color please use ec={colors!r} or edgecolor={colors!r} instead.'
             )
             colors = None
         if colors is not None:
