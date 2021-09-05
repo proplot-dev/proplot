@@ -905,7 +905,7 @@ Parameters
 bins : int or sequence of float, optional
     The bin count or exact bin edges.
 %(plot.weights)s
-histtype : {'bar', 'barstacked', 'step', 'stepfilled'}, optional
+histtype : {{'bar', 'barstacked', 'step', 'stepfilled'}}, optional
     The histogram type. See `matplotlib.axes.Axes.hist` for details.
 stack, stacked : bool, optional
     Whether to "stack" successive columns of {y} data for bar-type histograms
