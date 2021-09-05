@@ -2697,19 +2697,21 @@ class PlotAxes(base.Axes):
 
         # Apply fixes
         # NOTE: This also covers TriContourSet returned by tricontour
-        if isinstance(obj, mcollections.Collection):  # e.g. QuadMesh, PolyCollection
-            obj.set_linewidth(linewidth)
-            obj.set_edgecolor('face')
-        elif isinstance(obj, mcontainer.Container):  # e.g. BarContainer
-            for part in obj:
-                part.set_linewidth(linewidth)
-                part.set_edgecolor(part.get_facecolor())
-        elif isinstance(obj, mcontour.ContourSet):
+        if isinstance(obj, mcontour.ContourSet):
             if obj.filled:
                 for contour in obj.collections:
                     contour.set_linestyle('-')
                     contour.set_linewidth(linewidth)
                     contour.set_edgecolor('face')
+        elif isinstance(obj, mcollections.Collection):  # e.g. QuadMesh, PolyCollection
+            obj.set_linewidth(linewidth)
+            obj.set_edgecolor('face')
+        elif isinstance(obj, mpatches.Patch):  # e.g. Rectangle
+            obj.set_linewidth(linewidth)
+            obj.set_edgecolor(obj.get_facecolor())
+        elif np.iterable(obj):  # e.g. silent_list of BarContainer
+            for element in obj:
+                self._apply_edgefix(element, edgefix=edgefix)
         else:
             warnings._warn_proplot(f'Unexpected object {obj} passed to _apply_edgefix.')
 
@@ -3159,8 +3161,7 @@ class PlotAxes(base.Axes):
                 obj = self._plot_multicolor(name, x, y1, y2, where=w, use_where=True, **kw)  # noqa: E501
             else:
                 obj = self._plot_native(name, x, y1, y2, where=w, **kw)
-            for o in obj if negpos else (obj,):
-                self._apply_edgefix(o, **edgefix_kw, **kw)
+            self._apply_edgefix(obj, **edgefix_kw, **kw)
             xsides.append(x)
             for y in (y1, y2):
                 self._inbounds_xylim(extents, x, y, vert=vert)
@@ -3276,8 +3277,7 @@ class PlotAxes(base.Axes):
                 obj = self._plot_multicolor(name, x, h, w, b, use_zero=True, **kw)
             else:
                 obj = self._plot_native(name, x, h, w, b, **kw)
-            for o in obj if negpos else (obj,):
-                self._apply_edgefix(o, **edgefix_kw, **kw)
+            self._apply_edgefix(obj, **edgefix_kw, **kw)
             for y in (b, b + h):
                 self._inbounds_xylim(extents, x, y, orientation=orientation)
             objs.append((*eb, obj) if eb else obj)
