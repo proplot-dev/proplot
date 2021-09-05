@@ -2485,13 +2485,13 @@ class Axes(maxes.Axes):
         handles, labels = _to_list(handles), _to_list(labels)
         if handles and not labels and all(isinstance(h, str) for h in handles):
             handles, labels = labels, handles
-        list_of_lists = any(isinstance(h, (list, np.ndarray)) and len(h) > 1 for h in (handles or ()))  # noqa: E501
-        if list_of_lists and order == 'F':
+        multi = any(type(h) is list for h in (handles or ()))
+        if multi and order == 'F':
             warnings._warn_proplot(
                 'Column-major ordering of legend handles is not supported '
                 'for horizontally-centered legends.'
             )
-        if list_of_lists and ncol is not None:
+        if multi and ncol is not None:
             warnings._warn_proplot(
                 'Detected list of *lists* of legend handles. Ignoring '
                 'the user input property "ncol".'
@@ -2506,11 +2506,11 @@ class Axes(maxes.Axes):
                 'arguments or with the handles as a sole positional argument.'
             )
         ncol = _not_none(ncol, 3)
-        center = _not_none(center, list_of_lists)
+        center = _not_none(center, multi)
 
         # Iterate over each sublist and parse independently
         pairs = []
-        if not list_of_lists:  # temporary
+        if not multi:  # temporary
             handles, labels = [handles], [labels]
         for ihandles, ilabels in zip(handles, labels):
             ihandles, ilabels = _to_list(ihandles), _to_list(ilabels)
@@ -2523,19 +2523,19 @@ class Axes(maxes.Axes):
             pairs.append(ipairs)
 
         # Manage (handle, label) pairs in context of the 'center' option
-        if not list_of_lists:
+        if not multi:
             pairs = pairs[0]
             if center:
-                list_of_lists = True
+                multi = True
                 pairs = [pairs[i * ncol:(i + 1) * ncol] for i in range(len(pairs))]
         else:
             if not center:  # standardize format based on input
-                list_of_lists = False  # no longer is list of lists
+                multi = False  # no longer is list of lists
                 pairs = [pair for ipairs in pairs for pair in ipairs]
-        if list_of_lists:  # remove empty sublists
-            pairs = [ipairs for ipairs in pairs if ipairs]
 
-        return pairs
+        if multi:
+            pairs = [ipairs for ipairs in pairs if ipairs]
+        return pairs, multi
 
     def _parse_single_legend(self, pairs, ncol=None, order=None, **kwargs):
         """
@@ -2712,7 +2712,7 @@ class Axes(maxes.Axes):
 
         # Parse the legend arguments using axes for auto-handle detection
         # TODO: Update this when we no longer use "filled panels" for outer legends
-        pairs = lax._parse_legend_handles(
+        pairs, multi = lax._parse_legend_handles(
             handles, labels, ncol=ncol, order=order, center=center,
             alphabetize=alphabetize, handler_map=handler_map
         )
@@ -2730,7 +2730,7 @@ class Axes(maxes.Axes):
 
         # Add the legend and update patch properties
         kwargs['loc'] = loc_legend
-        if center:
+        if multi:
             objs = lax._parse_multi_legend(pairs, kw_frame=kw_frame, **kwargs)
         else:
             kwargs.update({key: kw_frame.pop(key) for key in ('shadow', 'fancybox')})
