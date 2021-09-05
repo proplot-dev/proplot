@@ -98,6 +98,9 @@ Internals
 * Improve organization of internal functions, add ``data.py``, ``context.py``,
   and ``text.py`` to ``internals`` and rename and re-sort ``PlotAxes`` related
   parsing utilities (:commit:`58ce2c95`).
+* Hide the "registered" axes names (i.e., `name` attributes) from public
+  API (:commit:`ece1102b`). Users do not interact with the native matplotlib
+  projection registration system.
 
 Documentation
 -------------
