@@ -9,6 +9,7 @@ import re
 from numbers import Integral
 
 import matplotlib.axes as maxes
+import matplotlib.cbook as cbook
 import matplotlib.cm as mcm
 import matplotlib.collections as mcollections
 import matplotlib.colors as mcolors
@@ -1256,7 +1257,7 @@ class PlotAxes(base.Axes):
             ypos = data._safe_mask(ys[1] >= ys[0], *ys)
         kwargs[colorkey] = _not_none(poscolor, rc['poscolor'])
         posobj = self._plot_native(name, x, *ypos, **kwargs)
-        return (negobj, posobj)
+        return cbook.silent_list(type(negobj), (negobj, posobj))
 
     def _plot_errorbars(
         self, x, y, *_, distribution=None,
@@ -2684,7 +2685,7 @@ class PlotAxes(base.Axes):
                 edges.append(convert(max_))
 
         self._update_guide(objs, **guide_kw)
-        return objs  # always return list to match matplotlib behavior
+        return cbook.silent_list(mlines.Line2D, objs)  # always return list
 
     @docstring._snippet_manager
     def line(self, *args, **kwargs):
@@ -2749,7 +2750,7 @@ class PlotAxes(base.Axes):
                 objs.append(obj)
 
         self._update_guide(objs, **guide_kw)
-        return objs  # always return list to match matplotlib behavior
+        return cbook.silent_list(mlines.Line2D, objs)  # always return list
 
     @data._preprocess('x', 'y', allow_extra=True)
     @docstring._concatenate_original
@@ -2947,7 +2948,10 @@ class PlotAxes(base.Axes):
         # Draw guide and add sticky edges
         self._add_sticky_edges(objs, 'y' if vert else 'x', *sides)
         self._update_guide(objs, **guide_kw)
-        return objs[0] if len(objs) == 1 else objs
+        return (
+            objs[0] if len(objs) == 1
+            else cbook.silent_list(mcollections.LineCollection, objs)
+        )
 
     # WARNING: breaking change from native 'ymin' and 'ymax'
     @data._preprocess('x', 'y1', 'y2', ('c', 'color', 'colors'))
@@ -3024,7 +3028,10 @@ class PlotAxes(base.Axes):
             objs.append((*eb, *es, obj) if eb or es else obj)
 
         self._update_guide(objs, **guide_kw)
-        return objs[0] if len(objs) == 1 else objs
+        return (
+            objs[0] if len(objs) == 1
+            else cbook.silent_list(mcollections.PathCollection, objs)
+        )
 
     @data._preprocess(
         'x', 'y', ('s', 'ms', 'markersize'), ('c', 'color', 'colors'),
@@ -3094,7 +3101,10 @@ class PlotAxes(base.Axes):
         self._update_guide(objs, **guide_kw)
         for axis, sides in zip('xy' if vert else 'yx', (xsides, ysides)):
             self._add_sticky_edges(objs, axis, *sides)
-        return objs[0] if len(objs) == 1 else objs
+        return (
+            objs[0] if len(objs) == 1
+            else cbook.silent_list(mcollections.PolyCollection, objs)
+        )
 
     @docstring._snippet_manager
     def area(self, *args, **kwargs):
@@ -3202,7 +3212,10 @@ class PlotAxes(base.Axes):
             objs.append((*eb, obj) if eb else obj)
 
         self._update_guide(objs, **guide_kw)
-        return objs[0] if len(objs) == 1 else objs
+        return (
+            objs[0] if len(objs) == 1
+            else cbook.silent_list(mcontainer.BarContainer, objs)
+        )
 
     @data._preprocess('x', 'height', 'width', 'bottom')
     @docstring._concatenate_original
@@ -3455,7 +3468,7 @@ class PlotAxes(base.Axes):
             self._apply_edgefix(obj[2], **edgefix_kw, **kw)
             objs.append(obj)
         self._update_guide(objs, **guide_kw)
-        return objs[0] if len(objs) == 1 else objs
+        return objs[0] if len(objs) == 1 else cbook.silent_list(objs)
 
     @data._preprocess('x', 'bins', keywords='weights')
     @docstring._concatenate_original
