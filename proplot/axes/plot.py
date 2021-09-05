@@ -903,14 +903,21 @@ Parameters
 ----------
 %(plot.args_1d_{y})s
 bins : int or sequence of float, optional
-    The bin count or sequence of bins.
+    The bin count or exact bin edges.
 %(plot.weights)s
+histtype : {'bar', 'barstacked', 'step', 'stepfilled'}, optional
+    The histogram type. See `matplotlib.axes.Axes.hist` for details.
 stack, stacked : bool, optional
-    Whether to "stack" histograms from successive columns of {y} data
-    or plot histograms side-by-side in groups. Default is ``False``.
+    Whether to "stack" successive columns of {y} data for bar-type histograms
+    or show side-by-side in groups. Setting this to ``False`` is equivalent to
+    ``histtype='bar'`` and to ``True`` is equivalent to ``histtype='barstacked'``.
 width, rwidth : float, optional
-    The width(s) of the histogram bars relative to the bin size. Default
+    The bar width(s) for bar-type histograms relative to the bin size. Default
     is ``0.8`` for multiple columns of unstacked data and ``1`` otherwise.
+fill, filled : bool, optional
+    Whether to "fill" step-type histograms or just plot the edges. Setting
+    this to ``False`` is equivalent to ``histtype='step'`` and to ``True``
+    is equivalent to ``histtype='stepfilled'``.
 %(plot.args_1d_shared)s
 
 Other parameters
@@ -973,7 +980,7 @@ matplotlib.axes.Axes.{command}
 """
 _bins_docstring = """
 bins : int or 2-tuple of int, or array-like or 2-tuple of array-like, optional
-    The bin count or sequence of bins for each dimension or both dimensions.
+    The bin count or exact bin edges for each dimension or both dimensions.
 """.rstrip()
 docstring._snippet_manager['plot.hist2d'] = _hist2d_docstring.format(
     command='hist2d', descrip='standard 2D histogram', bins=_bins_docstring
@@ -3534,7 +3541,7 @@ class PlotAxes(base.Axes):
 
     def _apply_hist(
         self, xs, bins, *,
-        width=None, rwidth=None, stack=None, stacked=None,
+        width=None, rwidth=None, stack=None, stacked=None, fill=None, filled=None,
         histtype=None, orientation='vertical', **kwargs
     ):
         """
@@ -3545,15 +3552,20 @@ class PlotAxes(base.Axes):
         # of the input data. Make sure that legend() will read both containers
         # and individual items inside those containers.
         _, xs, kw = self._parse_plot1d(xs, orientation=orientation, **kwargs)
-        kw['label'] = kw.pop('labels', None)  # multiple labels natively supported
-        kw['rwidth'] = _not_none(width=width, rwidth=rwidth)  # latter is native
-        kw['stacked'] = _not_none(stack=stack, stacked=stacked)
         histtype = kw['histtype'] = _not_none(histtype, 'bar')
+        fill = _not_none(fill=fill, filled=filled)
+        stack = _not_none(stack=stack, stacked=stacked)
+        if fill is not None:
+            histtype = _not_none(histtype, 'stepfilled' if fill else 'step')
+        if stack is not None:
+            histtype = _not_none(histtype, 'barstacked' if stack else 'bar')
+        kw['bins'] = bins
+        kw['label'] = kw.pop('labels', None)  # multiple labels are natively supported
+        kw['rwidth'] = _not_none(width=width, rwidth=rwidth)  # latter is native
+        kw['histtype'] = histtype
         _process_props(kw, 'patch')
         edgefix_kw = _pop_params(kw, self._apply_edgefix)
         guide_kw = _pop_params(kw, self._update_guide)
-        if bins is not None:
-            kw['bins'] = bins
         n = xs.shape[1] if xs.ndim > 1 else 1
         kw = self._parse_cycle(n, **kw)
         obj = self._plot_native('hist', xs, orientation=orientation, **kw)
