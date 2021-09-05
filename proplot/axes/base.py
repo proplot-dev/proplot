@@ -2466,8 +2466,13 @@ class Axes(maxes.Axes):
         # legend option for the *number of samples* or *sample points* when drawing
         # legends for mappables. Look into "legend handlers", might just want to add
         # handlers by passing handler_map to legend() and get_legend_handles_labels().
-        is_list = lambda obj: np.iterable(obj) and not isinstance(obj, (str, tuple))  # noqa: E501, E731
-        to_list = lambda obj: obj if obj is None or is_list(obj) else [obj]  # noqa: E501, E731
+        is_list = lambda obj: (  # noqa: E731
+            np.iterable(obj) and not isinstance(obj, (str, tuple))
+        )
+        to_list = lambda obj: (  # noqa: E731
+            obj.tolist() if isinstance(obj, np.ndarray)
+            else obj if obj is None or is_list(obj) else [obj]
+        )
         handles, labels = to_list(handles), to_list(labels)
         if handles and not labels and all(isinstance(h, str) for h in handles):
             handles, labels = labels, handles
