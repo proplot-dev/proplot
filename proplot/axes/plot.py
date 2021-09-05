@@ -3551,7 +3551,6 @@ class PlotAxes(base.Axes):
         # of the input data. Make sure that legend() will read both containers
         # and individual items inside those containers.
         _, xs, kw = self._parse_plot1d(xs, orientation=orientation, **kwargs)
-        histtype = kw['histtype'] = _not_none(histtype, 'bar')
         fill = _not_none(fill=fill, filled=filled)
         stack = _not_none(stack=stack, stacked=stacked)
         if fill is not None:
@@ -3561,7 +3560,7 @@ class PlotAxes(base.Axes):
         kw['bins'] = bins
         kw['label'] = kw.pop('labels', None)  # multiple labels are natively supported
         kw['rwidth'] = _not_none(width=width, rwidth=rwidth)  # latter is native
-        kw['histtype'] = histtype
+        kw['histtype'] = histtype = _not_none(histtype, 'bar')
         _process_props(kw, 'patch')
         edgefix_kw = _pop_params(kw, self._apply_edgefix)
         guide_kw = _pop_params(kw, self._update_guide)
