@@ -13,7 +13,6 @@ import matplotlib.cbook as cbook
 import matplotlib.cm as mcm
 import matplotlib.collections as mcollections
 import matplotlib.colors as mcolors
-import matplotlib.container as mcontainer
 import matplotlib.contour as mcontour
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
@@ -1328,7 +1327,7 @@ class PlotAxes(base.Axes):
             ypos = data._safe_mask(ys[1] >= ys[0], *ys)
         kwargs[colorkey] = _not_none(poscolor, rc['poscolor'])
         posobj = self._plot_native(name, x, *ypos, **kwargs)
-        return cbook.silent_list(type(negobj), (negobj, posobj))
+        return cbook.silent_list(type(negobj).__name__, (negobj, posobj))
 
     def _plot_errorbars(
         self, x, y, *_, distribution=None,
@@ -2758,7 +2757,7 @@ class PlotAxes(base.Axes):
                 edges.append(convert(max_))
 
         self._update_guide(objs, **guide_kw)
-        return cbook.silent_list(mlines.Line2D, objs)  # always return list
+        return cbook.silent_list('Line2D', objs)  # always return list
 
     @docstring._snippet_manager
     def line(self, *args, **kwargs):
@@ -2823,7 +2822,7 @@ class PlotAxes(base.Axes):
                 objs.append(obj)
 
         self._update_guide(objs, **guide_kw)
-        return cbook.silent_list(mlines.Line2D, objs)  # always return list
+        return cbook.silent_list('Line2D', objs)  # always return list
 
     @data._preprocess('x', 'y', allow_extra=True)
     @docstring._concatenate_original
@@ -3023,7 +3022,7 @@ class PlotAxes(base.Axes):
         self._update_guide(objs, **guide_kw)
         return (
             objs[0] if len(objs) == 1
-            else cbook.silent_list(mcollections.LineCollection, objs)
+            else cbook.silent_list('LineCollection', objs)
         )
 
     # WARNING: breaking change from native 'ymin' and 'ymax'
@@ -3103,7 +3102,7 @@ class PlotAxes(base.Axes):
         self._update_guide(objs, **guide_kw)
         return (
             objs[0] if len(objs) == 1
-            else cbook.silent_list(mcollections.PathCollection, objs)
+            else cbook.silent_list('PathCollection', objs)
         )
 
     @data._preprocess(
@@ -3175,7 +3174,7 @@ class PlotAxes(base.Axes):
             self._add_sticky_edges(objs, axis, *sides)
         return (
             objs[0] if len(objs) == 1
-            else cbook.silent_list(mcollections.PolyCollection, objs)
+            else cbook.silent_list('PolyCollection', objs)
         )
 
     @docstring._snippet_manager
@@ -3285,7 +3284,7 @@ class PlotAxes(base.Axes):
         self._update_guide(objs, **guide_kw)
         return (
             objs[0] if len(objs) == 1
-            else cbook.silent_list(mcontainer.BarContainer, objs)
+            else cbook.silent_list('BarContainer', objs)
         )
 
     @data._preprocess('x', 'height', 'width', 'bottom')
