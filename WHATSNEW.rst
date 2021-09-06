@@ -51,6 +51,8 @@ Style changes
 
 * Fix issue where CSS colors matching "base" names overwrite base definitions,
   resulting in e.g. ``'y'`` different from ``'yellow'`` (:commit:`01db1223`).
+* Make default label rotation for colorbar-of-artist colorbars ``0``, consistent
+  with autoformat application of tick labels (:commit:`3f191f3b`).
 * Use default ``discrete=False`` for `~proplot.axes.PlotAxes.hist2d` plots,
   consistent with `~proplot.axes.PlotAxes.hexbin` (:commit:`267dd161`). Now
   "discrete" levels are only enabled for pcolor/contour plots by default.
