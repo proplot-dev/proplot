@@ -2240,30 +2240,6 @@ class Axes(maxes.Axes):
             axis.set_ticks(ticks, minor=True)
             axis.set_ticklabels([], minor=True)
 
-        # Fix alpha-blending issues. Cannot set edgecolor to 'face' because blending
-        # will occur, get colored lines instead of white ones. Need manual blending.
-        # NOTE: For some reason cb solids uses listed colormap with always 1.0 alpha,
-        # then alpha is applied after. See: https://stackoverflow.com/a/35672224/4970632
-        cmap = obj.cmap
-        blend = rc.get('pcolormesh.snap', False)  # rely on this only if available
-        if not cmap._isinit:
-            cmap._init()
-        if blend and any(cmap._lut[:-1, 3] < 1):
-            warnings._warn_proplot(
-                f'Using manual alpha-blending for {cmap.name!r} colorbar solids.'
-            )
-            lut = cmap._lut.copy()
-            cmap = mcolors.Colormap('_no_name', N=cmap.N)
-            cmap._isinit = True
-            cmap._init = lambda: None
-            for i in range(lut.shape[0] - 1):
-                alpha = lut[i, 3]
-                lut[i, :3] = (1 - alpha) * 1 + alpha * lut[i, :3]  # blend *white*
-                lut[i, 3] = 1  # set to opaque
-            cmap._lut = lut
-            obj.cmap = cmap
-            obj.draw_all()  # update contents
-
         # Fix colorbar outline
         kw_outline = {'edgecolor': color, 'linewidth': linewidth}
         if obj.outline is not None:
