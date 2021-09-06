@@ -68,6 +68,13 @@ Style changes
 * Revert back to matplotlib default behavior of ``edgecolor='none'`` for
   `bar` plots (:commit:`cc602349`). Previously this behavior often resulted
   in "white lines" issue but now `edgefix` is applied to these plots (see below).
+
+Features
+--------
+
+* Add `align` keyword with options ``'bottom'``, ``'top'``, ``'left'``, ``'right'``,
+  or ``'center'`` (with optional single-char shorthands) to change alignment for
+  outer legends/colorbars (:commit:`4a50b4b2`). Previously they had to be centered.
 * Use built-in matplotlib logic for plotting multiple `hist` columns, with
   support for `stack` as alias of `stacked` and `width` as alias of `rwidth`
   (consistent with `bar` keywords) (:commit:`734329a5`). By default, histograms
@@ -80,13 +87,6 @@ Style changes
   -- `edgewidth`, `edgecolor`, and optional rounded box with ``fancybox=True``
   (:commit:`58ce2c95`). Colorbar outline is now controlled with `linewidth`
   and `color`. Previously these settings had to be in sync.
-
-Features
---------
-
-* Add `align` keyword with options ``'bottom'``, ``'top'``, ``'left'``, ``'right'``,
-  or ``'center'`` (with optional single-char shorthands) to change alignment for
-  outer legends/colorbars (:commit:`4a50b4b2`). Previously they had to be centered.
 * Add `handle_kw` to `~proplot.axes.Axes.legend` to optionally control
   handle settings that conflict with frame settings (:commit:`58ce2c95`).
   Example: ``handle_kw={'edgecolor': 'k'}``.
@@ -94,6 +94,9 @@ Features
   database (:commit:`6cf42896`, :commit:`04538bad`). Permits e.g. ``color='grey1'``.
 * Permit loading color names from files without ``.txt`` extension
   (:commit:`55481a9c`). This restriction was unnecessary.
+* Set ``default=True`` automatically if users pass `margin` or `space` to
+  `~proplot.config.register_colors` to permit quickly/succinctly experimenting
+  with XKCD color filtering algorithm (:commit:`cfc3cef6`).
 * Add cartopy-based ``LongitudeLocator``, ``LatitudeLocator``, ``DegreeLocator``,
   ``LongitudeFormatter``, ``LatitudeFormatter``, ``DegreeFormatter`` to
   public API for consistency with other "registered" tickers (:commit:`76e45c0c`).
@@ -130,7 +133,7 @@ Internals
 * Move `~proplot.gridspec.SubplotGrid` from ``figure.py`` to ``gridspec.py``
   (:commit:`7b688fc8`). Makes more sense there.
 * Improve organization of internal functions, add ``data.py``, ``context.py``,
-  and ``text.py`` to ``internals`` and rename and re-sort ``PlotAxes`` related
+  and ``text.py`` to ``internals`` and rename and re-sort related ``PlotAxes``
   parsing utilities (:commit:`58ce2c95`).
 * Hide the "registered" axes names (i.e., `name` attributes) from public
   API (:commit:`ece1102b`). Users do not interact with the native matplotlib
@@ -139,7 +142,7 @@ Internals
 Documentation
 -------------
 
-* Update napoloen type aliases and specifiers (:commit:`c20ed1d1`). Use `sequence`
+* Update napoleon type aliases and specifiers (:commit:`c20ed1d1`). Use `sequence`
   instead of `list` wherever params accept arbitrary sequences (:commit:`e627e95b`).
 * Improve documentation of style-type arguments like `lw`, `linewidth`,
   etc. on plotting commands (:commit:`cc602349`).
@@ -311,9 +314,6 @@ Style changes
   settings as *synonyms* (:commit:`a50d5264`). In general the tick vs. grid distinction
   is not meaningful for text labels. However we often want different padding so still
   allow :rcraw:`tick.labelpad` and :rcraw:`grid.labelpad` to be distinct.
-* Control edge width for legend frames with `ew` or `edgewidth` rather than
-  `lw` and `linewidth` to avoid conflict with feature that permits modifying
-  legend handle properties (:commit:`6382cf91`).
 * Change default :rcraw:`legend.facecolor` to white instead of inheriting from
   axes background (:commit:`6382cf91`). Also set default :rcraw:`legend.edgecolor`
   to :rcraw:`meta.color` (black by default) and have `legend` read from rc
@@ -476,6 +476,9 @@ Features
   the artist label for ``h2`` (:commit:`6382cf91`).
 * Interpret all native matplotlib `legend` spacing arguments (e.g., `borderpad`
   and `columnspacing`) with `~proplot.utils.units` (:commit:`6382cf91`).
+* Control edge width for legend frames with `ew` or `edgewidth` rather than
+  `lw` and `linewidth` to avoid conflict with feature that permits modifying
+  legend handle properties (:commit:`6382cf91`).
 * Make `proplot.axes.Axes.colorbar` capture matplotlib-native `format`
   keyword as alias for `formatter` and `ticklabels` (:issue:`262`).
 * Support list-of-string parametric coordinates and format on-the-fly colorbar
