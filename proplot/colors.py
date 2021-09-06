@@ -2891,7 +2891,7 @@ class ColorDatabase(MutableMapping, dict):
         """
         if not isinstance(key, str):
             raise ValueError(f'Invalid color name {key!r}. Must be string.')
-        if isinstance(key, str):
+        if isinstance(key, str) and len(key) > 1:  # ignore base colors
             key = self._regex_grey.sub('gray', key.lower())
         return key
 
