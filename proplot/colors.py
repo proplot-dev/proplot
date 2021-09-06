@@ -64,7 +64,7 @@ CYCLE_LUMINANCE = 90  # used in Cycle()
 _regex_hex = r'#(?:[0-9a-fA-F]{3,4}){2}'  # 6-8 digit hex
 REGEX_HEX = re.compile(rf'\A{_regex_hex}\Z')
 REGEX_HEX_MULTI = re.compile(_regex_hex)
-REGEX_GRAY = re.compile(r'\A(light|dark|medium|pale|charcoal)?\s*(gray[0-9]?)?\Z')
+REGEX_GRAY = re.compile(r'\A(light|dark|medium|pale|charcoal)?\s*(gr[ea]y[0-9]?)?\Z')
 
 # Colormap constants
 CMAPS_CYCLIC = tuple(  # cyclic colormaps loaded from rgb files
@@ -2203,7 +2203,9 @@ class PerceptualColormap(ContinuousColormap, _Colormap):
             hues = cdict['hue']  # segment data
             for i, color in enumerate(colors):
                 rgb = to_rgb(color)
-                if not np.allclose(np.array(rgb), rgb[0]):
+                if isinstance(color, str) and REGEX_GRAY.match(color):
+                    pass
+                elif not np.allclose(np.array(rgb), rgb[0]):
                     continue
                 hues[i] = list(hues[i])  # enforce mutability
                 if i > 0:
