@@ -2667,6 +2667,7 @@ class Axes(maxes.Axes):
         # Handle and text properties that are applied after-the-fact
         # NOTE: Set solid_capstyle to 'butt' so line does not extend past error bounds
         # shading in legend entry. This change is not noticable in other situations.
+        kw_frame, kwargs = lax._parse_frame('legend', **kwargs)
         kw_text = {}
         if fontcolor is not None:
             kw_text['color'] = fontcolor
@@ -2688,7 +2689,6 @@ class Axes(maxes.Axes):
             alphabetize=alphabetize, handler_map=handler_map
         )
         title = _not_none(label=label, title=title)
-        kw_frame, kwargs = lax._parse_frame('legend', **kwargs)
         kwargs.update(
             {
                 'title': title,
