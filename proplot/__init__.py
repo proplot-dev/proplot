@@ -10,20 +10,43 @@ try:
 except pkg.DistributionNotFound:
     version = __version__ = 'unknown'
 
-# Import everything to top level
+# Import optional dependencies now to isolate import times
 from .internals import benchmarks, docstring, rcsetup, warnings  # noqa: F401
-with benchmarks._benchmark('imports'):
+with benchmarks._benchmark('basemap'):
+    try:
+        from mpl_toolkits import basemap  # noqa: F401
+    except ImportError:
+        pass
+with benchmarks._benchmark('cartopy'):
+    try:
+        import cartopy  # noqa: F401
+    except ImportError:
+        pass
+
+# Import everything to top level
+with benchmarks._benchmark('config'):
     from .config import *  # noqa: F401 F403
+with benchmarks._benchmark('crs'):
     from .crs import *  # noqa: F401 F403
+with benchmarks._benchmark('utils'):
     from .utils import *  # noqa: F401 F403
+with benchmarks._benchmark('colors'):
     from .colors import *  # noqa: F401 F403
+with benchmarks._benchmark('ticker'):
     from .ticker import *  # noqa: F401 F403
+with benchmarks._benchmark('scale'):
     from .scale import *  # noqa: F401 F403
-    from .gridspec import *  # noqa: F401 F403
-    from .constructor import *  # noqa: F401 F403
+with benchmarks._benchmark('axes'):
     from .axes import *  # noqa: F401 F403
+with benchmarks._benchmark('gridspec'):
+    from .gridspec import *  # noqa: F401 F403
+with benchmarks._benchmark('figure'):
     from .figure import *  # noqa: F401 F403
+with benchmarks._benchmark('constructor'):
+    from .constructor import *  # noqa: F401 F403
+with benchmarks._benchmark('ui'):
     from .ui import *  # noqa: F401 F403
+with benchmarks._benchmark('demos'):
     from .demos import *  # noqa: F401 F403
 
 # Dynamically add registered classes to top-level namespace
