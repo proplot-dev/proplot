@@ -669,15 +669,11 @@ def register_colors(*args, user=None, default=False, space='hcl', margin=0.1, **
     register_fonts
     proplot.demos.show_colors
     """
-    # Default-only actions
+    # Add in base colors and CSS4 colors so user has no surprises
     from . import colors as pcolors
     if default:
-        # Reset native colors dictionary
-        pcolors._color_database.clear()  # clean out!
-        pcolors._color_database.cache.clear()  # clean out!
-
-        # Add in base colors and CSS4 colors so user has no surprises
-        for name, src in (('base', pcolors.COLORS_BASE), ('css', mcolors.CSS4_COLORS)):
+        pcolors._color_database.clear()  # MutableMapping ensures cache also clears
+        for src in (pcolors.COLORS_BASE, mcolors.CSS4_COLORS):
             pcolors._color_database.update(src)
 
     # Register input colors

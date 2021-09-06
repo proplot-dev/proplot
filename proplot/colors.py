@@ -2795,14 +2795,14 @@ class _ColorCache(dict):
         """
         key = (arg, alpha)
         if isinstance(arg, str) or not np.iterable(arg) or len(arg) != 2:
-            return super().__getitem__(key)
+            return dict.__getitem__(self, key)
         if not isinstance(arg[0], str) or not isinstance(arg[1], Number):
-            return super().__getitem__(key)
+            return dict.__getitem__(self, key)
         # Try to get the colormap
         try:
             cmap = _cmap_database[arg[0]]
         except (KeyError, TypeError):
-            return super().__getitem__(key)
+            return dict.__getitem__(self, key)
         # Read the colormap value
         if isinstance(cmap, DiscreteColormap):
             if not 0 <= arg[1] < len(cmap.colors):
@@ -2824,22 +2824,36 @@ class _ColorCache(dict):
         return (*rgba[:3], a)
 
 
-class ColorDatabase(dict):
+class ColorDatabase(MutableMapping, dict):
     """
     Dictionary subclass used to replace the builtin matplotlib color database.
     See `~ColorDatabase.__getitem__` for details.
     """
-    # NOTE: Matplotlib's database also inherits from dict. MutableMapping not needed
-    # since usage is entirely internal (we just make it public for documentation)
-    def __init__(self, mapping):
+    _regex_grey = re.compile('grey')  # permit e.g. 'slategrey' and 'greyish'
+
+    def __iter__(self):
+        yield from dict.__iter__(self)
+
+    def __len__(self):
+        return dict.__len__(self)
+
+    def __delitem__(self, key):
+        key = self._parse_key(key)
+        dict.__delitem__(self, key)
+        self.cache.clear()
+
+    def __init__(self, mapping=None):
         """
         Parameters
         ----------
-        mapping : dict-like
+        mapping : dict-like, optional
             The colors.
         """
-        super().__init__(mapping)
+        # NOTE: Tested with and without standardization and speedup is marginal
         self._cache = _ColorCache()
+        mapping = mapping or {}
+        for key, value in mapping.items():
+            self.__setitem__(key, value)
 
     def __getitem__(self, key):
         """
@@ -2854,25 +2868,28 @@ class ColorDatabase(dict):
         This works with anywhere that colors are used in matplotlib, for example
         as ``'color'``, ``'edgecolor'``, or ``'facecolor'`` arguments.
         """
-        if isinstance(key, str):
-            key = re.sub(r'\bgrey[0-9]?\b', 'gray', key)
-        return super().__getitem__(key)
+        key = self._parse_key(key)
+        return dict.__getitem__(self, key)
 
     def __setitem__(self, key, value):
         """
-        Add a color and clear the cache.
+        Add a color. Translates ``grey`` into ``gray`` and clears the
+        cache. The color must be a string.
+        """
+        # Always standardize assignments.
+        key = self._parse_key(key)
+        dict.__setitem__(self, key, value)
+        self.cache.clear()
+
+    def _parse_key(self, key):
+        """
+        Parse the color key. Currently this just translates grays.
         """
         if not isinstance(key, str):
             raise ValueError(f'Invalid color name {key!r}. Must be string.')
-        super().__setitem__(key, value)
-        self.cache.clear()
-
-    def __delitem__(self, key):
-        """
-        Delete a color and clear the cache.
-        """
-        super().__delitem__(key)
-        self.cache.clear()
+        if isinstance(key, str):
+            key = self._regex_grey.sub('gray', key.lower())
+        return key
 
     @property
     def cache(self):
